@@ -6,11 +6,11 @@ The foundation of the universe.
 - [x] **Gravity System**: Async `HookManager` (Filters/Actions).
 - [x] **Orbit System**: Mounting mechanism for Hono apps.
 
-## 🪐 Phase 2: Atmosphere & Life Support (Next Steps)
+## 🪐 Phase 2: Atmosphere & Life Support (Current: v0.2.0)
 Essential utilities for building real-world applications.
-- [ ] **Configuration Loader**: Standardized way to load config from `.env`, `yaml`, or `json`.
-- [ ] **Logger Interface**: A standard PSR-3 style logger interface (so plugins can log without caring about the destination).
-- [ ] **Error Handling Orbit**: Centralized error manager for better debugging and standard JSON responses.
+- [x] **Configuration Loader**: Standardized way to load config from `.env` or object injection.
+- [x] **Logger Interface**: A standard PSR-3 style logger interface.
+- [x] **Error Handling Orbit**: Centralized error manager for standard JSON responses.
 
 ## 🏗️ Phase 3: Civilizations (Standard Orbits)
 Official "First-Party" Orbits to jumpstart development.
