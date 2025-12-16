@@ -21,7 +21,7 @@ Official "First-Party" Orbits to jumpstart development.
 
 ## 🛸 Phase 4: Interstellar Travel (Ecosystem)
 - [x] **CLI Tool**: `gravito create` to scaffold new projects and plugins.
-- [ ] **Plugin Marketplace Standard**: Defining how third-party plugins should be packaged and distributed.
+- [x] **Plugin Marketplace Standard**: Defining how third-party plugins should be packaged and distributed.
 
 ---
 
