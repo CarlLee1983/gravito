@@ -20,7 +20,7 @@ Official "First-Party" Orbits to jumpstart development.
 - [x] **@gravito/orbit-cache (Performance)**: Redis/InMemory caching layer.
 
 ## 🛸 Phase 4: Interstellar Travel (Ecosystem)
-- [ ] **CLI Tool**: `gravito create` to scaffold new projects and plugins.
+- [x] **CLI Tool**: `gravito create` to scaffold new projects and plugins.
 - [ ] **Plugin Marketplace Standard**: Defining how third-party plugins should be packaged and distributed.
 
 ---
