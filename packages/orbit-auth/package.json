@@ -1,6 +1,9 @@
 {
     "name": "@gravito/orbit-auth",
     "version": "0.3.0-alpha.0",
+    "publishConfig": {
+        "access": "public"
+    },
     "description": "Standard Authentication Orbit for Galaxy Architecture using Hono JWT",
     "module": "./dist/index.mjs",
     "main": "./dist/index.cjs",
