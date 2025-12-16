@@ -5,6 +5,11 @@ import cac from 'cac';
 import { downloadTemplate } from 'giget';
 import pc from 'picocolors';
 
+interface ProjectConfig {
+  name: string;
+  template: string;
+}
+
 const cli = cac('gravito');
 
 cli.command('create [name]', 'Create a new Gravito project').action(async (name) => {
@@ -12,17 +17,22 @@ cli.command('create [name]', 'Create a new Gravito project').action(async (name)
 
   intro(pc.bgBlack(pc.white(' 🌌 Gravito CLI ')));
 
-  const project = await group({
+  const project = await group<ProjectConfig>({
     name: () => {
-      if (name) return Promise.resolve(name);
+      if (name) {
+        return Promise.resolve(name);
+      }
       return text({
         message: 'What is the name of your new universe?',
         placeholder: 'my-galaxy-app',
         defaultValue: 'my-galaxy-app',
         validate: (value) => {
-          if (value.length === 0) return 'Name is required!';
-          if (/[^a-z0-9-_]/.test(value))
+          if (value.length === 0) {
+            return 'Name is required!';
+          }
+          if (/[^a-z0-9-_]/.test(value)) {
             return 'Name should only contain lowercase letters, numbers, dashes, and underscores.';
+          }
           return;
         },
       });
@@ -66,19 +76,21 @@ cli.command('create [name]', 'Create a new Gravito project').action(async (name)
 
     note(`Project: ${project.name}\nTemplate: ${project.template}`, 'Mission Succcessful');
 
-    outro(
-      `You're all set! \n\n  cd ${pc.cyan(project.name as string)}\n  bun install\n  bun run dev`
-    );
-  } catch (err: any) {
+    outro(`You're all set! \n\n  cd ${pc.cyan(project.name)}\n  bun install\n  bun run dev`);
+  } catch (err: unknown) {
     s.stop('Mission Failed');
-    console.error(pc.red(err.message));
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(pc.red(message));
     process.exit(1);
   }
 });
 
-function group(prompts: Record<string, () => Promise<any> | any>) {
-  return Object.keys(prompts).reduce(async (promise, key) => {
-    const results = await promise;
+async function group<T extends Record<string, unknown>>(
+  prompts: Record<string, () => Promise<unknown>>
+): Promise<T> {
+  const results: Record<string, unknown> = {};
+
+  for (const key of Object.keys(prompts)) {
     const result = await prompts[key]();
 
     if (isCancel(result)) {
@@ -86,8 +98,10 @@ function group(prompts: Record<string, () => Promise<any> | any>) {
       process.exit(0);
     }
 
-    return { ...results, [key]: result };
-  }, Promise.resolve({}));
+    results[key] = result;
+  }
+
+  return results as T;
 }
 
 cli.help();
