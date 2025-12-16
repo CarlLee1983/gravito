@@ -1,36 +1,41 @@
 # @gravito/orbit-db
 
-> The Standard Database Orbit for Galaxy Architecture.
+> Gravito Galaxy 架構的標準資料庫軌道。
 
-Provides seamless integration with [Drizzle ORM](https://orm.drizzle.team/).
+此 Orbit 整合了 **Drizzle ORM**，提供標準化的資料庫連線、Context 注入以及 Hooks。
 
-## 📦 Installation
+## 📦 安裝
 
 ```bash
 bun add @gravito/orbit-db drizzle-orm
 ```
 
-## 🚀 Usage
+## 🚀 用法
 
 ```typescript
 import { PlanetCore } from 'gravito-core';
 import orbitDB from '@gravito/orbit-db';
-import { drizzle } from 'drizzle-orm/bun-sqlite';
+import { drizzle } from 'drizzle-orm/bun-sqlite'; // 或您選擇的 driver
 import { Database } from 'bun:sqlite';
 
 const core = new PlanetCore();
-const sqlite = new Database('sqlite.db');
+const sqlite = new Database('mydb.sqlite');
 const db = drizzle(sqlite);
 
-// Register the orbit
-orbitDB(core, {
-  db,
-  exposeAs: 'database' // Access via c.get('database')
+// 初始化 DB Orbit
+orbitDB(core, { 
+    db,
+    exposeAs: 'db' // 預設為 'db'，可透過 c.get('db') 存取
 });
 
-core.mountOrbit('/api', app);
+// 在路由中使用
+core.app.get('/users', async (c) => {
+    const db = c.get('db');
+    // const users = await db.select().from(...);
+    return c.json({ users: [] });
+});
 ```
 
 ## 🪝 Hooks
 
-- `db:connected` - Fired when the DB orbit initializes.
+- `db:connected` - 當 DB Orbit 成功註冊時觸發。

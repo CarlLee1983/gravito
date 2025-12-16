@@ -7,84 +7,116 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
 [![Bun](https://img.shields.io/badge/Bun-1.0+-black.svg)](https://bun.sh/)
 
-**gravito-core** is the foundation for building modular backend applications using the **Galaxy Architecture**. It provides a robust Hook system (Filters & Actions) and an Orbit mounting mechanism, allowing you to build loosely coupled, highly extensible systems.
+# Gravito 核心概念
 
-## ✨ Features
+歡迎來到 Gravito Core v0.3.0-alpha.0！🚀
 
-- 🪐 **PlanetCore** - A centralized Hono-based kernel to manage your application lifecycle.
-- 🪝 **Hook System** - WordPress-style async **Filters** and **Actions** for powerful extensibility.
-- 🛰️ **Orbit Mounting** - Easily mount external Hono applications (Orbits) to specific paths.
-- 📝 **Logger System** - PSR-3 style logger interface with default standard output implementation.
-- ⚙️ **Config Manager** - Unified configuration management supporting environment variables (`Bun.env`) and runtime injection.
-- 🛡️ **Error Handling** - Built-in standardized JSON error responses and 404 handling.
-- 🚀 **Modern** - Built for **Bun** runtime with native TypeScript support.
-- 🪶 **Lightweight** - Zero external dependencies (except `hono`).
+Gravito 是一個創新的、受到星系啟發的後端架構，構建於 [Hono](https://hono.dev) 和 [Bun](https://bun.sh) 之上。其設計理念是提供一個微核心 (PlanetCore)，讓開發者能夠透過軌道 (Orbits) 和衛星 (Satellites) 來擴展功能。
 
-## 📦 Installation
+## 🌌 星系架構 (Galaxy Architecture)
+
+Gravito 遵循獨特的設計模式：
+
+1.  **PlanetCore (微核心)**:
+    *   這是萬有引力的中心。它是一個極簡的、高效能的基底，負責處理：
+        *   生命週期管理 (Liftoff)
+        *   Hook 系統 (Filters & Actions)
+        *   基本錯誤處理
+        *   設定 (Config) 與日誌 (Logger) 管理
+    *   它**不知道**任何關於資料庫、驗證或業務邏輯的資訊。
+
+2.  **Orbits (標準擴充模組)**:
+    *   圍繞核心運行的官方擴充模組。
+    *   提供基礎設施功能，例如：
+        *   `@gravito/orbit-db`: 資料庫整合 (Drizzle ORM)
+        *   `@gravito/orbit-auth`: 身份驗證 (JWT)
+        *   `@gravito/orbit-storage`: 檔案儲存
+        *   `@gravito/orbit-cache`: 快取機制
+    *   應用程式可以自由選擇要掛載哪些軌道。
+
+3.  **Satellites (業務邏輯插件)**:
+    *   這是**您**的程式碼所在之處。
+    *   Satellites 是小型的、專注於單一功能的模組 (例如 `Users`, `Products`, `Payment`)。
+    *   它們掛載於 Orbits 之上，使用 Orbits 提供的功能。
+
+## 🛠️ 安裝
 
 ```bash
 bun add gravito-core
 ```
 
-## 🚀 Quick Start
+## 🚀 快速開始
 
-### 1. Initialize the Core
+建立一個新的應用程式 (例如 `app.ts`):
 
 ```typescript
-import { PlanetCore } from 'gravito-core';
+import { PlanetCore, ConsoleLogger } from 'gravito-core';
 
-// Initialize with options (v0.2.0+)
+// 1. 初始化核心
 const core = new PlanetCore({
+  logger: new ConsoleLogger(),
   config: {
-    PORT: 4000,
-    DEBUG: true
+    PORT: 3000
   }
 });
-```
 
-### 2. Register Hooks
-
-Use **Filters** to modify data:
-
-```typescript
-core.hooks.addFilter('modify_content', async (content: string) => {
-  return content.toUpperCase();
+// 2. 使用 Hooks 擴充 (範例)
+core.hooks.addAction('app:ready', () => {
+  core.logger.info('我的第一個 Gravito 應用程式已準備就緒！');
 });
 
-const result = await core.hooks.applyFilters('modify_content', 'hello galaxy');
-// result: "HELLO GALAXY"
+// 3. 定義路由 (直接使用 Hono 實例)
+core.app.get('/', (c) => c.text('Hello Galaxy!'));
+
+// 4. 升空！
+core.liftoff();
 ```
 
-Use **Actions** to trigger side-effects:
+## 🧩 核心功能
+
+### 1. Hook 系統 (Hooks)
+
+Gravito 的強大之處在於它的 Hook 系統，受到 WordPress 的啟發但針對 TypeScript 進行了現代化。
+
+*   **Actions (`addAction`, `doAction`)**: 在特定時間點觸發的事件，沒有回傳值。
+*   **Filters (`addFilter`, `applyFilters`)**: 允許修改數據的事件，必須回傳修改後的值。
 
 ```typescript
-core.hooks.addAction('user_registered', async (userId: string) => {
-  core.logger.info(`Sending welcome email to ${userId}`);
+// 定義一個 Filter
+core.hooks.addFilter('response_message', (msg) => {
+  return `${msg} - 來自核心的問候`;
 });
 
-await core.hooks.doAction('user_registered', 'user_123');
+// 應用 Filter
+const finalMessage = await core.hooks.applyFilters('response_message', 'Hello');
+// 結果: "Hello - 來自核心的問候"
 ```
 
-### 3. Mount an Orbit
+### 2. 設定管理 (ConfigManager)
 
-Orbits are just standard Hono applications that plug into the core.
+自動載入 `.env` 檔案並支援執行時設定覆蓋。
 
 ```typescript
-import { Hono } from 'hono';
-
-const blogOrbit = new Hono();
-blogOrbit.get('/posts', (c) => c.json({ posts: [] }));
-
-// Mount the orbit to /api/blog
-core.mountOrbit('/api/blog', blogOrbit);
+const dbHost = core.config.get('DB_HOST', 'localhost');
 ```
 
-### 4. Liftoff! 🚀
+### 3. 日誌系統 (Logger)
+
+內建基於 PSR-3 風格的日誌介面。
 
 ```typescript
-// Export for Bun.serve
-export default core.liftoff(); // Automatically uses PORT from config/env
+core.logger.info('系統啟動中...', { memory: '512MB' });
+core.logger.error('連線失敗', new Error('Timeout'));
 ```
+
+## 📦 版本資訊
+
+目前版本: `v0.3.0-alpha.0`
+狀態: **Alpha** (API 可能會變動，請持續關注更新)
+
+---
+
+由 Carl Lee 用 ❤️ 打造 / [GitHub](https://github.com/carl-lee/gravito-core)
 
 ## 📖 API Reference
 

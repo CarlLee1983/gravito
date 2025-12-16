@@ -1,16 +1,16 @@
 # @gravito/orbit-storage
 
-> The Standard Storage Orbit for Galaxy Architecture.
+> Gravito Galaxy 架構的標準儲存軌道。
 
-Provides an abstraction layer for file storage, with a built-in Local Disk provider.
+提供檔案儲存的抽象層，內建本地磁碟提供者 (Local Disk Provider)。
 
-## 📦 Installation
+## 📦 安裝
 
 ```bash
 bun add @gravito/orbit-storage
 ```
 
-## 🚀 Usage
+## 🚀 用法
 
 ```typescript
 import { PlanetCore } from 'gravito-core';
@@ -18,16 +18,16 @@ import orbitStorage from '@gravito/orbit-storage';
 
 const core = new PlanetCore();
 
-// Initialize Storage Orbit (Local)
+// 初始化 Storage Orbit (本地)
 const storage = orbitStorage(core, {
   local: {
     root: './uploads',
     baseUrl: '/uploads'
   },
-  exposeAs: 'storage' // Access via c.get('storage')
+  exposeAs: 'storage' // 可透過 c.get('storage') 存取
 });
 
-// Use in routes
+// 在路由中使用
 core.app.post('/upload', async (c) => {
   const body = await c.req.parseBody();
   const file = body['file'];
@@ -42,6 +42,6 @@ core.app.post('/upload', async (c) => {
 
 ## 🪝 Hooks
 
-- `storage:init` - Fired when initialized.
-- `storage:upload` - (Filter) Modify data before upload.
-- `storage:uploaded` - (Action) Triggered after successful upload.
+- `storage:init` - 當模組初始化時觸發。
+- `storage:upload` - (Filter) 上傳前修改資料。
+- `storage:uploaded` - (Action) 上傳成功後觸發。

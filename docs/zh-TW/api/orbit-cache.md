@@ -1,16 +1,16 @@
 # @gravito/orbit-cache
 
-> The Standard Cache Orbit for Galaxy Architecture.
+> Gravito Galaxy 架構的標準快取軌道。
 
-Provides a unified caching interface with a built-in Memory (LRU-like) provider, extensible for Redis.
+提供簡單的快取抽象層，內建記憶體 (LRU-like) 提供者。
 
-## 📦 Installation
+## 📦 安裝
 
 ```bash
 bun add @gravito/orbit-cache
 ```
 
-## 🚀 Usage
+## 🚀 用法
 
 ```typescript
 import { PlanetCore } from 'gravito-core';
@@ -18,18 +18,23 @@ import orbitCache from '@gravito/orbit-cache';
 
 const core = new PlanetCore();
 
-// Initialize Cache Orbit (Memory)
+// 初始化 Cache Orbit
 const cache = orbitCache(core, {
-  defaultTTL: 60, // seconds
-  exposeAs: 'cache' 
+  ttl: 60, // 預設 TTL (秒)
+  exposeAs: 'cache' // 可透過 c.get('cache') 存取
 });
 
-// Use in routes
-core.app.get('/heavy-data', async (c) => {
-  const data = await cache.remember('heavy_key', 300, async () => {
-    // Expensive computation...
-    return { result: 42 };
-  });
+// 在路由中使用
+core.app.get('/cached-data', async (c) => {
+  const cache = c.get('cache');
+  
+  // 嘗試從快取獲取
+  const cached = await cache.get('my-key');
+  if (cached) return c.json(cached);
+
+  // 若無，則計算並儲存
+  const data = { value: Math.random() };
+  await cache.set('my-key', data);
   
   return c.json(data);
 });
@@ -37,5 +42,7 @@ core.app.get('/heavy-data', async (c) => {
 
 ## 🪝 Hooks
 
-- `cache:miss` - Fired when data is not found in cache.
-- `cache:hit` - Fired when data is retrieved from cache.
+- `cache:init` - 當模組初始化時觸發。
+- `cache:hit` - (Action) 當快取命中時觸發。
+- `cache:miss` - (Action) 當快取未命中時觸發。
+ retrieved from cache.
