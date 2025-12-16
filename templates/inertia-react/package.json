@@ -1,0 +1,26 @@
+{
+    "name": "my-gravito-inertia-app",
+    "version": "0.1.0",
+    "type": "module",
+    "scripts": {
+        "dev": "bun run --watch src/index.ts",
+        "build:client": "vite build",
+        "start": "bun run src/index.ts"
+    },
+    "dependencies": {
+        "gravito-core": "workspace:*",
+        "@gravito/orbit-cache": "workspace:*",
+        "@gravito/orbit-view": "workspace:*",
+        "@gravito/orbit-inertia": "workspace:*",
+        "@inertiajs/react": "^1.0.0",
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0",
+        "hono": "^4.0.0"
+    },
+    "devDependencies": {
+        "@vitejs/plugin-react": "^4.2.0",
+        "bun-types": "latest",
+        "typescript": "^5.0.0",
+        "vite": "^5.0.0"
+    }
+}

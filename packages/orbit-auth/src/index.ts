@@ -1,4 +1,4 @@
-import type { PlanetCore, GravitoOrbit } from 'gravito-core';
+import type { GravitoOrbit, PlanetCore } from 'gravito-core';
 import type { Context, Next } from 'hono';
 import { sign, verify } from 'hono/jwt';
 
@@ -14,13 +14,15 @@ export type AuthPayload = {
 };
 
 export class OrbitAuth implements GravitoOrbit {
-  constructor(private options?: OrbitAuthOptions) { }
+  constructor(private options?: OrbitAuthOptions) {}
 
   install(core: PlanetCore): void {
     const config = this.options || core.config.get('auth');
 
     if (!config || !config.secret) {
-      throw new Error('[OrbitAuth] Secret is required. Please provide options or set "auth.secret" in core config.');
+      throw new Error(
+        '[OrbitAuth] Secret is required. Please provide options or set "auth.secret" in core config.'
+      );
     }
 
     const { secret, exposeAs = 'auth' } = config;
@@ -80,4 +82,3 @@ export default function orbitAuth(core: PlanetCore, options: OrbitAuthOptions) {
 
   return authService;
 }
-

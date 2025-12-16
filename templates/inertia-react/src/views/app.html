@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gravito App</title>
+    <!-- In dev mode, we would load from vite server, but for simplicity we rely on build for now -->
+    <script type="module" src="/static/build/assets/index.js"></script>
+    <link rel="stylesheet" href="/static/build/assets/index.css">
+    <!-- TODO: Implement a proper Vite manifest loader in core/orbit -->
+</head>
+
+<body>
+    <div id="app" data-page='{{ page }}'></div>
+</body>
+
+</html>

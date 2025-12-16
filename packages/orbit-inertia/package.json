@@ -1,0 +1,49 @@
+{
+    "name": "@gravito/orbit-inertia",
+    "version": "0.1.0-alpha.1",
+    "description": "Inertia.js adapter for Gravito",
+    "module": "./dist/index.mjs",
+    "main": "./dist/index.cjs",
+    "type": "module",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.mjs",
+            "require": "./dist/index.cjs"
+        }
+    },
+    "files": [
+        "dist",
+        "README.md",
+        "LICENSE"
+    ],
+    "scripts": {
+        "build": "bun run build.ts",
+        "test": "bun test",
+        "typecheck": "tsc --noEmit"
+    },
+    "peerDependencies": {
+        "gravito-core": "workspace:*",
+        "hono": "^4.0.0"
+    },
+    "devDependencies": {
+        "gravito-core": "workspace:*",
+        "hono": "^4.0.0",
+        "@types/bun": "latest",
+        "typescript": "latest"
+    },
+    "keywords": [
+        "gravito",
+        "orbit",
+        "inertia",
+        "react",
+        "vue",
+        "adapter"
+    ],
+    "author": "Carl Lee <carllee1983@gmail.com>",
+    "license": "MIT",
+    "publishConfig": {
+        "access": "public"
+    }
+}

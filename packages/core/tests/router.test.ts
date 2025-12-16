@@ -1,10 +1,8 @@
-import { describe, expect, it, mock } from 'bun:test';
+import { describe, expect, it } from 'bun:test';
 import { PlanetCore } from '../src/PlanetCore';
 import { Router } from '../src/Router';
 
 class TestController {
-  constructor(private core: PlanetCore) {}
-
   index(c: any) {
     return c.text('index');
   }
@@ -56,7 +54,7 @@ describe('Router', () => {
     const router = new Router(core);
     let middlewareCalled = false;
 
-    const testMiddleware = async (c: any, next: any) => {
+    const testMiddleware = async (_c: any, next: any) => {
       middlewareCalled = true;
       await next();
     };

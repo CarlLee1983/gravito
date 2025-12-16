@@ -1,4 +1,4 @@
-import type { PlanetCore, GravitoOrbit } from 'gravito-core';
+import type { GravitoOrbit, PlanetCore } from 'gravito-core';
 import type { Context, Next } from 'hono';
 
 export interface OrbitDBOptions<TSchema extends Record<string, unknown> = Record<string, unknown>> {
@@ -12,14 +12,16 @@ export interface OrbitDBOptions<TSchema extends Record<string, unknown> = Record
  * Standard Database Orbit (Class Implementation)
  */
 export class OrbitDB implements GravitoOrbit {
-  constructor(private options?: OrbitDBOptions) { }
+  constructor(private options?: OrbitDBOptions) {}
 
   install(core: PlanetCore): void {
     // Try to resolve config from core if not provided in constructor
     const config = this.options || core.config.get('db');
 
     if (!config || !config.db) {
-      throw new Error('[OrbitDB] No database configuration found. Please provide options or set "db" in core config.');
+      throw new Error(
+        '[OrbitDB] No database configuration found. Please provide options or set "db" in core config.'
+      );
     }
 
     const { db, exposeAs = 'db' } = config;
@@ -48,4 +50,3 @@ export default function orbitDB<TSchema extends Record<string, unknown>>(
   orbit.install(core);
   return { db: options.db };
 }
-
