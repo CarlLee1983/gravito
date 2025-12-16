@@ -80,6 +80,40 @@ core.mountOrbit('/api/blog', blogOrbit);
 ```
 
 ### 4. Liftoff! 🚀
+### 4. Bootstrapping (IoC)
+
+Gravito v0.3 introduces an **IoC (Inversion of Control)** system to simplify plugin integration. instead of manually instantiating orbits, you define a `gravito.config.ts` and let the core auto-discover dependencies.
+
+**Old Way (Manual):**
+```typescript
+const core = new PlanetCore();
+orbitDB(core, { db });
+orbitAuth(core, { secret });
+```
+
+**New Way (Auto-Discovery):**
+```typescript
+// gravito.config.ts
+import { defineConfig } from 'gravito-core';
+import { OrbitAuth } from '@gravito/orbit-auth';
+import { OrbitDB } from '@gravito/orbit-db';
+
+export default defineConfig({
+  config: {
+    auth: { secret: process.env.JWT_SECRET },
+    db: { db: drizzle(...) }
+  },
+  orbits: [OrbitAuth, OrbitDB]
+});
+
+// index.ts
+import { PlanetCore } from 'gravito-core';
+import config from './gravito.config';
+
+PlanetCore.boot(config).then(core => core.liftoff());
+```
+
+This promotes structure and consistency across your galaxy.
 
 ```typescript
 // Export for Bun.serve

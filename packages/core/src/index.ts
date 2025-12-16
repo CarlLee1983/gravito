@@ -18,4 +18,11 @@ export type { Logger } from './Logger';
 export { ConsoleLogger } from './Logger';
 export type { PlanetCoreOptions } from './PlanetCore';
 // Core Exports
-export { PlanetCore } from './PlanetCore';
+export { PlanetCore, type GravitoConfig, type GravitoOrbit } from './PlanetCore';
+
+/**
+ * Configure your Gravito application
+ */
+export function defineConfig(config: GravitoConfig): GravitoConfig {
+    return config;
+}

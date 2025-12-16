@@ -1,46 +1,51 @@
-import type { PlanetCore } from 'gravito-core';
+import type { PlanetCore, GravitoOrbit } from 'gravito-core';
 import type { Context, Next } from 'hono';
 
 export interface OrbitDBOptions<TSchema extends Record<string, unknown> = Record<string, unknown>> {
   // biome-ignore lint/suspicious/noExplicitAny: generic db instance
-  db: any; // We allow any drizzle instance here (postgres, mysql, etc)
+  db: any;
   schema?: TSchema;
-  exposeAs?: string; // Key to expose in core (e.g., 'db'), default 'db'
+  exposeAs?: string;
 }
 
 /**
- * Standard Database Orbit using Drizzle ORM
- *
- * Provides:
- * 1. Global db access via `core.hooks` or context injection (?)
- *    - Actually, we can attach it to a global singleton or just use the hook system to retrieve it.
- *    - Better yet, we can attach it to the core instance if we extend the core interface, but that is hard dynamically.
- *    - We will register a request context hook to inject 'db' into context?
- *
- * 2. Hooks for query auditing
+ * Standard Database Orbit (Class Implementation)
+ */
+export class OrbitDB implements GravitoOrbit {
+  constructor(private options?: OrbitDBOptions) { }
+
+  install(core: PlanetCore): void {
+    // Try to resolve config from core if not provided in constructor
+    const config = this.options || core.config.get('db');
+
+    if (!config || !config.db) {
+      throw new Error('[OrbitDB] No database configuration found. Please provide options or set "db" in core config.');
+    }
+
+    const { db, exposeAs = 'db' } = config;
+
+    core.logger.info(`[OrbitDB] Initializing database integration (Exposed as: ${exposeAs})`);
+
+    // 1. Action: Database Connected
+    core.hooks.doAction('db:connected', { db });
+
+    // 2. Middleware injection
+    core.app.use('*', async (c: Context, next: Next) => {
+      c.set(exposeAs, db);
+      await next();
+    });
+  }
+}
+
+/**
+ * Standard Database Orbit (Functional Wrapper)
  */
 export default function orbitDB<TSchema extends Record<string, unknown>>(
   core: PlanetCore,
   options: OrbitDBOptions<TSchema>
 ) {
-  const { db, exposeAs = 'db' } = options;
-
-  core.logger.info(`[OrbitDB] Initializing database integration (Exposed as: ${exposeAs})`);
-
-  // 1. Action: Database Connected
-  core.hooks.doAction('db:connected', { db });
-
-  // 2. Middleware injection (Satellite style)
-  // Inject DB into every request context variable if using Hono
-  core.app.use('*', async (c: Context, next: Next) => {
-    c.set(exposeAs, db);
-    await next();
-  });
-
-  // 3. Helper to generic query execution (Optional wrapper could be provided, but usually we use db directly)
-  // For now, we mainly provide the context injection and connection hooking.
-
-  return {
-    db,
-  };
+  const orbit = new OrbitDB(options);
+  orbit.install(core);
+  return { db: options.db };
 }
+

@@ -109,6 +109,42 @@ core.logger.info('系統啟動中...', { memory: '512MB' });
 core.logger.error('連線失敗', new Error('Timeout'));
 ```
 
+### 4. 啟動程序 (Bootstrapping with IoC)
+
+Gravito v0.3 引入了 **IoC (控制反轉)** 系統來簡化插件整合。您不必手動實例化每個軌道 (Orbit)，只需定義 `gravito.config.ts`，核心就會自動探索並載入依賴。
+
+**舊方法 (手動 Mounting):**
+```typescript
+const core = new PlanetCore();
+orbitDB(core, { db });
+orbitAuth(core, { secret });
+```
+
+**新方法 (自動探索):**
+```typescript
+// gravito.config.ts
+import { defineConfig } from 'gravito-core';
+import { OrbitAuth } from '@gravito/orbit-auth';
+import { OrbitDB } from '@gravito/orbit-db';
+
+export default defineConfig({
+  config: {
+    auth: { secret: process.env.JWT_SECRET },
+    db: { db: drizzle(...) }
+  },
+  orbits: [OrbitAuth, OrbitDB]
+});
+
+// index.ts
+import { PlanetCore } from 'gravito-core';
+import config from './gravito.config';
+
+PlanetCore.boot(config).then(core => core.liftoff());
+```
+
+這促進了整個銀河系 (Galaxy) 專案結構的一致性與規範化。
+
+
 ## 📦 版本資訊
 
 目前版本: `v0.3.0-alpha.0`

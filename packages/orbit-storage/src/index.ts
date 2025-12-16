@@ -1,6 +1,6 @@
 import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
-import type { PlanetCore } from 'gravito-core';
+import type { PlanetCore, GravitoOrbit } from 'gravito-core';
 import type { Context, Next } from 'hono';
 
 export interface StorageProvider {
@@ -62,46 +62,91 @@ export interface OrbitStorageOptions {
   };
 }
 
+export class OrbitStorage implements GravitoOrbit {
+  constructor(private options?: OrbitStorageOptions) { }
+
+  install(core: PlanetCore): void {
+    const config = this.options || core.config.get('storage');
+
+    if (!config) {
+      throw new Error('[OrbitStorage] Configuration is required. Please provide options or set "storage" in core config.');
+    }
+
+    const { exposeAs = 'storage' } = config;
+    const logger = core.logger;
+
+    logger.info(`[OrbitStorage] Initializing Storage (Exposed as: ${exposeAs})`);
+
+    let provider = config.provider;
+
+    // Default to LocalStorage if not provided and local options are present
+    if (!provider && config.local) {
+      logger.info(`[OrbitStorage] Using LocalStorageProvider at ${config.local.root}`);
+      provider = new LocalStorageProvider(config.local.root, config.local.baseUrl);
+    }
+
+    if (!provider) {
+      throw new Error(
+        '[OrbitStorage] No provider configured. Please provide a provider instance or local configuration.'
+      );
+    }
+
+    const storageService = {
+      ...provider,
+      // Wrap methods if we want to add hooks later
+      put: async (key: string, data: Blob | Buffer | string) => {
+        // Hook: storage:upload
+        const finalData = await core.hooks.applyFilters('storage:upload', data, { key });
+        await provider?.put(key, finalData);
+        // Action: storage:uploaded
+        await core.hooks.doAction('storage:uploaded', { key });
+      },
+    };
+
+    // Inject helper into context
+    core.app.use('*', async (c: Context, next: Next) => {
+      c.set(exposeAs, storageService);
+      await next();
+    });
+
+    // Action: Storage Initialized
+    core.hooks.doAction('storage:init', storageService);
+  }
+}
+
 export default function orbitStorage(core: PlanetCore, options: OrbitStorageOptions) {
+  const orbit = new OrbitStorage(options);
+  orbit.install(core);
+
+  // NOTE: Functional wrapper requires specific return implementation which can't be easily extracted from void install()
+  // Re-implementing minimal return logic for backward compatibility
+  // This duplicates the service creation/wrapping logic - acceptable for legacy support
   const { exposeAs = 'storage' } = options;
-  const logger = core.logger;
-
-  logger.info(`[OrbitStorage] Initializing Storage (Exposed as: ${exposeAs})`);
-
   let provider = options.provider;
-
-  // Default to LocalStorage if not provided and local options are present
   if (!provider && options.local) {
-    logger.info(`[OrbitStorage] Using LocalStorageProvider at ${options.local.root}`);
     provider = new LocalStorageProvider(options.local.root, options.local.baseUrl);
   }
 
-  if (!provider) {
-    throw new Error(
-      '[OrbitStorage] No provider configured. Please provide a provider instance or local configuration.'
-    );
-  }
+  // Notice: The class version adds hooks wrapper, we should probably do the same here to be consistent
+  // Or simply rely on the fact that hooks/actions were registered inside install()
+  // But wait, user gets the RETURNED object. If we return the raw provider, hooks in 'put' won't fire 
+  // unless user calls c.get('storage').
+  // If user calls returnedService.put(), it bypasses the hooks wrapper created inside install().
 
-  const storageService = {
+  // To fix this without massive duplication, let's just return a proxy that delegates to Context? 
+  // No, context is per request.
+
+  // Let's accept that the "Returned Object" from functional API is the raw provider wrapped.
+  // We duplicate the wrapper logic here for safety.
+
+  if (!provider) throw new Error('[OrbitStorage] No provider configured.');
+
+  return {
     ...provider,
-    // Wrap methods if we want to add hooks later
     put: async (key: string, data: Blob | Buffer | string) => {
-      // Hook: storage:upload
       const finalData = await core.hooks.applyFilters('storage:upload', data, { key });
       await provider?.put(key, finalData);
-      // Action: storage:uploaded
       await core.hooks.doAction('storage:uploaded', { key });
     },
   };
-
-  // Inject helper into context
-  core.app.use('*', async (c: Context, next: Next) => {
-    c.set(exposeAs, storageService);
-    await next();
-  });
-
-  // Action: Storage Initialized
-  core.hooks.doAction('storage:init', storageService);
-
-  return storageService;
 }
