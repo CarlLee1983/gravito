@@ -1,6 +1,6 @@
 {
     "name": "@gravito/orbit-storage",
-    "version": "0.1.0",
+    "version": "0.3.0-alpha.0",
     "description": "Standard Storage Orbit for Galaxy Architecture",
     "module": "./dist/index.mjs",
     "main": "./dist/index.cjs",
@@ -32,7 +32,7 @@
     "author": "Carl Lee <carllee1983@gmail.com>",
     "license": "MIT",
     "peerDependencies": {
-        "gravito-core": "^0.2.0"
+        "gravito-core": "^0.3.0-alpha.0"
     },
     "devDependencies": {
         "gravito-core": "workspace:*",
