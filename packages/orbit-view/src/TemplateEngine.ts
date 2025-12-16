@@ -147,10 +147,26 @@ export class TemplateEngine {
   }
 
   private interpolate(template: string, data: Record<string, unknown>): string {
-    return template.replace(/\{\{\s*([\w.]+)\s*\}\}/g, (_, key) => {
+    // 1. Handle unescaped variables {{{ value }}}
+    template = template.replace(/\{\{\{\s*([\w.]+)\s*\}\}\}/g, (_, key) => {
       const value = this.getNestedValue(data, key);
       return String(value ?? '');
     });
+
+    // 2. Handle escaped variables {{ value }}
+    return template.replace(/\{\{\s*([\w.]+)\s*\}\}/g, (_, key) => {
+      const value = this.getNestedValue(data, key);
+      return this.escapeHtml(String(value ?? ''));
+    });
+  }
+
+  private escapeHtml(unsafe: string): string {
+    return unsafe
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
   }
 
   private getNestedValue(obj: unknown, path: string): unknown {
