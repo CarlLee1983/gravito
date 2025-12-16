@@ -8,6 +8,17 @@ export interface CacheProvider {
   clear(): Promise<void>;
 }
 
+/**
+ * CacheService interface exposed to Hono context via c.get('cache')
+ */
+export interface CacheService {
+  get<T = unknown>(key: string): Promise<T | null>;
+  set(key: string, value: unknown, ttl?: number): Promise<void>;
+  delete(key: string): Promise<void>;
+  clear(): Promise<void>;
+  remember<T>(key: string, ttl: number, callback: () => Promise<T>): Promise<T>;
+}
+
 export class MemoryCacheProvider implements CacheProvider {
   private store = new Map<string, { value: unknown; expiresAt: number }>();
 

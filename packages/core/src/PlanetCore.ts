@@ -3,11 +3,25 @@ import { ConfigManager } from './ConfigManager';
 import { HookManager } from './HookManager';
 import { ConsoleLogger, type Logger } from './Logger';
 
+/**
+ * CacheService interface for orbit-injected cache
+ * Orbits implementing cache should conform to this interface
+ */
+export interface CacheService {
+  get<T = unknown>(key: string): Promise<T | null>;
+  set(key: string, value: unknown, ttl?: number): Promise<void>;
+  delete(key: string): Promise<void>;
+  clear(): Promise<void>;
+  remember<T>(key: string, ttl: number, callback: () => Promise<T>): Promise<T>;
+}
+
 // Hono Variables Type for Context Injection
 type Variables = {
   core: PlanetCore;
   logger: Logger;
   config: ConfigManager;
+  // Optional orbit-injected variables
+  cache?: CacheService;
 };
 
 export interface GravitoOrbit {

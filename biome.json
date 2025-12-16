@@ -9,6 +9,8 @@
     "files": {
         "includes": [
             "packages/**/*.ts",
+            "templates/**/*.ts",
+            "examples/**/*.ts",
             "src/**/*.ts",
             "tests/**/*.ts",
             "build.ts",
