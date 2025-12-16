@@ -68,13 +68,26 @@ cli.command('create [name]', 'Create a new Gravito project').action(async (name)
 
     s.stop('Universe created!');
 
-    // Update package.json name
+    // Update package.json
     const pkgPath = path.join(process.cwd(), project.name, 'package.json');
     const pkg = JSON.parse(await fs.readFile(pkgPath, 'utf-8'));
+
+    // Update project name
     pkg.name = project.name;
+
+    // Replace workspace:* with actual versions
+    const gravitoVersion = '^0.3.0';
+    if (pkg.dependencies) {
+      for (const dep of Object.keys(pkg.dependencies)) {
+        if (pkg.dependencies[dep] === 'workspace:*') {
+          pkg.dependencies[dep] = gravitoVersion;
+        }
+      }
+    }
+
     await fs.writeFile(pkgPath, JSON.stringify(pkg, null, 2));
 
-    note(`Project: ${project.name}\nTemplate: ${project.template}`, 'Mission Succcessful');
+    note(`Project: ${project.name}\nTemplate: ${project.template}`, 'Mission Successful');
 
     outro(`You're all set! \n\n  cd ${pc.cyan(project.name)}\n  bun install\n  bun run dev`);
   } catch (err: unknown) {
