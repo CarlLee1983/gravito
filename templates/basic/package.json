@@ -7,8 +7,8 @@
         "start": "bun run src/index.ts"
     },
     "dependencies": {
-        "gravito-core": "^0.3.0-alpha.1",
-        "@gravito/orbit-cache": "^0.3.0-alpha.1",
+        "gravito-core": "workspace:*",
+        "@gravito/orbit-cache": "workspace:*",
         "hono": "^4.0.0"
     },
     "devDependencies": {
