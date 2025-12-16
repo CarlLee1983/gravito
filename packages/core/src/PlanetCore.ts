@@ -1,8 +1,14 @@
-import { type Context, Hono } from 'hono';
-import { serve } from 'bun';
+import { Hono } from 'hono';
 import { ConfigManager } from './ConfigManager';
 import { HookManager } from './HookManager';
 import { ConsoleLogger, type Logger } from './Logger';
+
+// Hono Variables Type for Context Injection
+type Variables = {
+  core: PlanetCore;
+  logger: Logger;
+  config: ConfigManager;
+};
 
 export interface GravitoOrbit {
   install(core: PlanetCore): void | Promise<void>;
@@ -10,26 +16,28 @@ export interface GravitoOrbit {
 
 export type GravitoConfig = {
   logger?: Logger;
+  // biome-ignore lint/suspicious/noExplicitAny: allow flexible config object
   config?: Record<string, any>;
   orbits?: (new () => GravitoOrbit)[] | GravitoOrbit[];
 };
 
 export class PlanetCore {
-  public app: Hono;
+  public app: Hono<{ Variables: Variables }>;
   public logger: Logger;
   public config: ConfigManager;
   public hooks: HookManager;
-  private isLiftedOff = false;
 
-  constructor(options: {
-    logger?: Logger,
-    config?: Record<string, any>
-  } = {}) {
-    this.logger = options.logger || new ConsoleLogger();
-    this.config = new ConfigManager(options.config);
-    this.hooks = new HookManager(this.logger);
+  constructor(
+    options: {
+      logger?: Logger;
+      config?: Record<string, unknown>;
+    } = {}
+  ) {
+    this.logger = options.logger ?? new ConsoleLogger();
+    this.config = new ConfigManager(options.config ?? {});
+    this.hooks = new HookManager();
 
-    this.app = new Hono();
+    this.app = new Hono<{ Variables: Variables }>();
 
     // Core Middleware for Context Injection
     this.app.use('*', async (c, next) => {
@@ -42,24 +50,30 @@ export class PlanetCore {
     // Standard Error Handling
     this.app.onError((err, c) => {
       this.logger.error(`[ERROR] Application Error: ${err.message}`, err);
-      return c.json({
-        success: false,
-        error: {
-          message: err.message || 'Internal Server Error',
-          code: 'INTERNAL_ERROR',
+      return c.json(
+        {
+          success: false,
+          error: {
+            message: err.message || 'Internal Server Error',
+            code: 'INTERNAL_ERROR',
+          },
         },
-      }, 500);
+        500
+      );
     });
 
     this.app.notFound((c) => {
       this.logger.info(`[INFO] 404 Not Found: ${c.req.url}`);
-      return c.json({
-        success: false,
-        error: {
-          message: 'Route not found',
-          code: 'NOT_FOUND',
+      return c.json(
+        {
+          success: false,
+          error: {
+            message: 'Route not found',
+            code: 'NOT_FOUND',
+          },
         },
-      }, 404);
+        404
+      );
     });
   }
 
@@ -68,8 +82,8 @@ export class PlanetCore {
    */
   static async boot(config: GravitoConfig): Promise<PlanetCore> {
     const core = new PlanetCore({
-      logger: config.logger,
-      config: config.config
+      ...(config.logger && { logger: config.logger }),
+      ...(config.config && { config: config.config }),
     });
 
     if (config.orbits) {
@@ -117,4 +131,3 @@ export class PlanetCore {
     };
   }
 }
-

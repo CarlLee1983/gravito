@@ -5,7 +5,7 @@ import orbitCache from '../src/index';
 describe('OrbitCache', () => {
   it('should register memory cache provider', async () => {
     const core = new PlanetCore();
-    core.hooks.doAction = mock((hook, args) => Promise.resolve());
+    core.hooks.doAction = mock((_hook, _args) => Promise.resolve());
 
     const cache = orbitCache(core, { defaultTTL: 1 });
 

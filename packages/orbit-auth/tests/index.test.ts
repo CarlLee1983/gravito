@@ -6,8 +6,8 @@ describe('OrbitAuth', () => {
   it('should register auth service and hooks', async () => {
     const core = new PlanetCore();
     // Mock hooks
-    core.hooks.doAction = mock((hook, args) => Promise.resolve());
-    core.hooks.applyFilters = mock((hook, val) => Promise.resolve(val));
+    core.hooks.doAction = mock((_hook, _args) => Promise.resolve());
+    core.hooks.applyFilters = mock((_hook, val) => Promise.resolve(val));
 
     const options = { secret: 'test-secret' };
 

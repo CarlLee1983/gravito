@@ -1,4 +1,4 @@
-import type { PlanetCore, GravitoOrbit } from 'gravito-core';
+import type { GravitoOrbit, PlanetCore } from 'gravito-core';
 import type { Context, Next } from 'hono';
 
 export interface CacheProvider {
@@ -13,7 +13,9 @@ export class MemoryCacheProvider implements CacheProvider {
 
   async get<T = unknown>(key: string): Promise<T | null> {
     const item = this.store.get(key);
-    if (!item) return null;
+    if (!item) {
+      return null;
+    }
 
     if (Date.now() > item.expiresAt) {
       this.store.delete(key);
@@ -46,7 +48,7 @@ export interface OrbitCacheOptions {
 }
 
 export class OrbitCache implements GravitoOrbit {
-  constructor(private options?: OrbitCacheOptions) { }
+  constructor(private options?: OrbitCacheOptions) {}
 
   install(core: PlanetCore): void {
     const config = this.options || core.config.get('cache') || {}; // Cache can work with defaults
@@ -94,7 +96,7 @@ export default function orbitCache(core: PlanetCore, options: OrbitCacheOptions 
   orbit.install(core);
 
   // Functional Wrapper Return Logic (Duplication for compatibility)
-  const { exposeAs = 'cache', defaultTTL = 60 } = options;
+  const { defaultTTL = 60 } = options;
   const provider = options.provider || new MemoryCacheProvider();
 
   return {

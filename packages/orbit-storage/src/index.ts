@@ -1,6 +1,6 @@
 import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
-import type { PlanetCore, GravitoOrbit } from 'gravito-core';
+import type { GravitoOrbit, PlanetCore } from 'gravito-core';
 import type { Context, Next } from 'hono';
 
 export interface StorageProvider {
@@ -31,7 +31,9 @@ export class LocalStorageProvider implements StorageProvider {
 
   async get(key: string): Promise<Blob | null> {
     const file = Bun.file(join(this.rootDir, key));
-    if (!(await file.exists())) return null;
+    if (!(await file.exists())) {
+      return null;
+    }
     return file;
   }
 
@@ -43,7 +45,7 @@ export class LocalStorageProvider implements StorageProvider {
     const fs = await import('node:fs/promises');
     try {
       await fs.unlink(join(this.rootDir, key));
-    } catch (e) {
+    } catch {
       // Ignore if not found
     }
   }
@@ -63,13 +65,15 @@ export interface OrbitStorageOptions {
 }
 
 export class OrbitStorage implements GravitoOrbit {
-  constructor(private options?: OrbitStorageOptions) { }
+  constructor(private options?: OrbitStorageOptions) {}
 
   install(core: PlanetCore): void {
     const config = this.options || core.config.get('storage');
 
     if (!config) {
-      throw new Error('[OrbitStorage] Configuration is required. Please provide options or set "storage" in core config.');
+      throw new Error(
+        '[OrbitStorage] Configuration is required. Please provide options or set "storage" in core config.'
+      );
     }
 
     const { exposeAs = 'storage' } = config;
@@ -121,7 +125,6 @@ export default function orbitStorage(core: PlanetCore, options: OrbitStorageOpti
   // NOTE: Functional wrapper requires specific return implementation which can't be easily extracted from void install()
   // Re-implementing minimal return logic for backward compatibility
   // This duplicates the service creation/wrapping logic - acceptable for legacy support
-  const { exposeAs = 'storage' } = options;
   let provider = options.provider;
   if (!provider && options.local) {
     provider = new LocalStorageProvider(options.local.root, options.local.baseUrl);
@@ -129,17 +132,19 @@ export default function orbitStorage(core: PlanetCore, options: OrbitStorageOpti
 
   // Notice: The class version adds hooks wrapper, we should probably do the same here to be consistent
   // Or simply rely on the fact that hooks/actions were registered inside install()
-  // But wait, user gets the RETURNED object. If we return the raw provider, hooks in 'put' won't fire 
+  // But wait, user gets the RETURNED object. If we return the raw provider, hooks in 'put' won't fire
   // unless user calls c.get('storage').
   // If user calls returnedService.put(), it bypasses the hooks wrapper created inside install().
 
-  // To fix this without massive duplication, let's just return a proxy that delegates to Context? 
+  // To fix this without massive duplication, let's just return a proxy that delegates to Context?
   // No, context is per request.
 
   // Let's accept that the "Returned Object" from functional API is the raw provider wrapped.
   // We duplicate the wrapper logic here for safety.
 
-  if (!provider) throw new Error('[OrbitStorage] No provider configured.');
+  if (!provider) {
+    throw new Error('[OrbitStorage] No provider configured.');
+  }
 
   return {
     ...provider,

@@ -16,13 +16,14 @@ export type { ActionCallback, FilterCallback } from './HookManager';
 export { HookManager } from './HookManager';
 export type { Logger } from './Logger';
 export { ConsoleLogger } from './Logger';
-export type { PlanetCoreOptions } from './PlanetCore';
 // Core Exports
-export { PlanetCore, type GravitoConfig, type GravitoOrbit } from './PlanetCore';
+export { type GravitoConfig, type GravitoOrbit, PlanetCore } from './PlanetCore';
+
+import type { GravitoConfig } from './PlanetCore';
 
 /**
  * Configure your Gravito application
  */
 export function defineConfig(config: GravitoConfig): GravitoConfig {
-    return config;
+  return config;
 }

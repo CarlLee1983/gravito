@@ -1,16 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import {
-  cancel,
-  intro,
-  isCancel,
-  note,
-  outbound,
-  outro,
-  select,
-  spinner,
-  text,
-} from '@clack/prompts';
+import { cancel, intro, isCancel, note, outro, select, spinner, text } from '@clack/prompts';
 import cac from 'cac';
 import { downloadTemplate } from 'giget';
 import pc from 'picocolors';

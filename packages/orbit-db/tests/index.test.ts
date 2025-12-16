@@ -1,13 +1,12 @@
 import { describe, expect, it, mock } from 'bun:test';
 import { PlanetCore } from 'gravito-core';
-import { Hono } from 'hono';
 import orbitDB from '../src/index';
 
 describe('OrbitDB', () => {
   it('should register db and hooks', () => {
     // Mock core
     const core = new PlanetCore();
-    core.hooks.doAction = mock((hook, args) => Promise.resolve());
+    core.hooks.doAction = mock((_hook, _args) => Promise.resolve());
     core.app.use = mock(() => core.app);
 
     const mockDb = { name: 'mock-db' };

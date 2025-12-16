@@ -1,7 +1,7 @@
 import { afterAll, describe, expect, it, mock } from 'bun:test';
 import { rmdir } from 'node:fs/promises';
 import { PlanetCore } from 'gravito-core';
-import orbitStorage, { LocalStorageProvider } from '../src/index';
+import orbitStorage from '../src/index';
 
 const TEST_DIR = './test-storage';
 
@@ -9,14 +9,16 @@ describe('OrbitStorage', () => {
   afterAll(async () => {
     try {
       await rmdir(TEST_DIR, { recursive: true });
-    } catch {}
+    } catch {
+      // Ignore cleanup errors in tests
+    }
   });
 
   it('should register local storage provider', async () => {
     const core = new PlanetCore();
     // Mock hooks
-    core.hooks.doAction = mock((hook, args) => Promise.resolve());
-    core.hooks.applyFilters = mock((hook, val) => Promise.resolve(val));
+    core.hooks.doAction = mock((_hook, _args) => Promise.resolve());
+    core.hooks.applyFilters = mock((_hook, val) => Promise.resolve(val));
 
     const storage = orbitStorage(core, {
       local: { root: TEST_DIR },
