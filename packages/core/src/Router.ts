@@ -8,6 +8,62 @@ export type ControllerClass = new (core: PlanetCore) => any;
 // Handler can be a function or [Class, 'methodName']
 export type RouteHandler = Handler | [ControllerClass, string];
 
+/**
+ * Interface for FormRequest classes (from @gravito/orbit-request).
+ * Used for duck-typing detection without hard dependency.
+ */
+export interface FormRequestLike {
+  schema: unknown;
+  source?: string;
+  validate?(ctx: unknown): Promise<{ success: boolean; data?: unknown; error?: unknown }>;
+}
+
+/**
+ * Type for FormRequest class constructor
+ */
+// biome-ignore lint/suspicious/noExplicitAny: FormRequest can have any schema
+export type FormRequestClass = new () => FormRequestLike;
+
+/**
+ * Check if a value is a FormRequest class
+ */
+function isFormRequestClass(value: unknown): value is FormRequestClass {
+  if (typeof value !== 'function') return false;
+  try {
+    const instance = new (value as new () => unknown)();
+    return (
+      instance !== null &&
+      typeof instance === 'object' &&
+      'schema' in instance &&
+      'validate' in instance &&
+      typeof (instance as FormRequestLike).validate === 'function'
+    );
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Convert a FormRequest class to middleware
+ */
+function formRequestToMiddleware(RequestClass: FormRequestClass): MiddlewareHandler {
+  return async (ctx, next) => {
+    const request = new RequestClass();
+    const result = await request.validate!(ctx);
+
+    if (!result.success) {
+      // Determine status code based on error type
+      const errorCode = (result.error as { error?: { code?: string } })?.error?.code;
+      const status = errorCode === 'AUTHORIZATION_ERROR' ? 403 : 422;
+      return ctx.json(result.error, status);
+    }
+
+    // Store validated data in context
+    ctx.set('validated', result.data);
+    return next();
+  };
+}
+
 interface RouteOptions {
   prefix?: string;
   domain?: string;
@@ -50,26 +106,58 @@ export class RouteGroup {
    * Define routes within this group
    */
   group(callback: (router: Router | RouteGroup) => void): void {
-    // We pass 'this' as the router to the callback
-    // So when they call .get(), it uses our scoped methods
     callback(this);
   }
 
   // Proxy HTTP methods to the main router with options merged
-  get(path: string, handler: RouteHandler) {
-    this.router.req('get', path, handler, this.options);
+  get(path: string, handler: RouteHandler): void;
+  get(path: string, request: FormRequestClass, handler: RouteHandler): void;
+  get(
+    path: string,
+    requestOrHandler: FormRequestClass | RouteHandler,
+    handler?: RouteHandler
+  ): void {
+    this.router.req('get', path, requestOrHandler, handler, this.options);
   }
-  post(path: string, handler: RouteHandler) {
-    this.router.req('post', path, handler, this.options);
+
+  post(path: string, handler: RouteHandler): void;
+  post(path: string, request: FormRequestClass, handler: RouteHandler): void;
+  post(
+    path: string,
+    requestOrHandler: FormRequestClass | RouteHandler,
+    handler?: RouteHandler
+  ): void {
+    this.router.req('post', path, requestOrHandler, handler, this.options);
   }
-  put(path: string, handler: RouteHandler) {
-    this.router.req('put', path, handler, this.options);
+
+  put(path: string, handler: RouteHandler): void;
+  put(path: string, request: FormRequestClass, handler: RouteHandler): void;
+  put(
+    path: string,
+    requestOrHandler: FormRequestClass | RouteHandler,
+    handler?: RouteHandler
+  ): void {
+    this.router.req('put', path, requestOrHandler, handler, this.options);
   }
-  delete(path: string, handler: RouteHandler) {
-    this.router.req('delete', path, handler, this.options);
+
+  delete(path: string, handler: RouteHandler): void;
+  delete(path: string, request: FormRequestClass, handler: RouteHandler): void;
+  delete(
+    path: string,
+    requestOrHandler: FormRequestClass | RouteHandler,
+    handler?: RouteHandler
+  ): void {
+    this.router.req('delete', path, requestOrHandler, handler, this.options);
   }
-  patch(path: string, handler: RouteHandler) {
-    this.router.req('patch', path, handler, this.options);
+
+  patch(path: string, handler: RouteHandler): void;
+  patch(path: string, request: FormRequestClass, handler: RouteHandler): void;
+  patch(
+    path: string,
+    requestOrHandler: FormRequestClass | RouteHandler,
+    handler?: RouteHandler
+  ): void {
+    this.router.req('patch', path, requestOrHandler, handler, this.options);
   }
 }
 
@@ -82,6 +170,7 @@ export class RouteGroup {
  * - Route groups with prefixes: router.prefix('/api').group(...)
  * - Domain-based routing: router.domain('api.app').group(...)
  * - Middleware chaining: router.middleware(auth).group(...)
+ * - FormRequest validation: router.post('/users', StoreUserRequest, [UserController, 'store'])
  */
 export class Router {
   // Singleton cache for controllers
@@ -112,71 +201,120 @@ export class Router {
     return new RouteGroup(this, { middleware: handlers.flat() });
   }
 
-  // Standard HTTP Methods
-  get(path: string, handler: RouteHandler) {
-    this.req('get', path, handler);
+  // Standard HTTP Methods with FormRequest support
+  get(path: string, handler: RouteHandler): void;
+  get(path: string, request: FormRequestClass, handler: RouteHandler): void;
+  get(
+    path: string,
+    requestOrHandler: FormRequestClass | RouteHandler,
+    handler?: RouteHandler
+  ): void {
+    this.req('get', path, requestOrHandler, handler);
   }
-  post(path: string, handler: RouteHandler) {
-    this.req('post', path, handler);
+
+  post(path: string, handler: RouteHandler): void;
+  post(path: string, request: FormRequestClass, handler: RouteHandler): void;
+  post(
+    path: string,
+    requestOrHandler: FormRequestClass | RouteHandler,
+    handler?: RouteHandler
+  ): void {
+    this.req('post', path, requestOrHandler, handler);
   }
-  put(path: string, handler: RouteHandler) {
-    this.req('put', path, handler);
+
+  put(path: string, handler: RouteHandler): void;
+  put(path: string, request: FormRequestClass, handler: RouteHandler): void;
+  put(
+    path: string,
+    requestOrHandler: FormRequestClass | RouteHandler,
+    handler?: RouteHandler
+  ): void {
+    this.req('put', path, requestOrHandler, handler);
   }
-  delete(path: string, handler: RouteHandler) {
-    this.req('delete', path, handler);
+
+  delete(path: string, handler: RouteHandler): void;
+  delete(path: string, request: FormRequestClass, handler: RouteHandler): void;
+  delete(
+    path: string,
+    requestOrHandler: FormRequestClass | RouteHandler,
+    handler?: RouteHandler
+  ): void {
+    this.req('delete', path, requestOrHandler, handler);
   }
-  patch(path: string, handler: RouteHandler) {
-    this.req('patch', path, handler);
+
+  patch(path: string, handler: RouteHandler): void;
+  patch(path: string, request: FormRequestClass, handler: RouteHandler): void;
+  patch(
+    path: string,
+    requestOrHandler: FormRequestClass | RouteHandler,
+    handler?: RouteHandler
+  ): void {
+    this.req('patch', path, requestOrHandler, handler);
   }
 
   /**
    * Internal Request Registration
    */
-  req(method: string, path: string, handler: RouteHandler, options: RouteOptions = {}) {
+  req(
+    method: string,
+    path: string,
+    requestOrHandler: FormRequestClass | RouteHandler,
+    handler?: RouteHandler,
+    options: RouteOptions = {}
+  ) {
     // 1. Resolve Path
     const fullPath = (options.prefix || '') + path;
 
-    // 2. Resolve Handler (Controller vs Function)
-    let finalHandler: Handler;
+    // 2. Determine if FormRequest is provided
+    let formRequestMiddleware: MiddlewareHandler | null = null;
+    let finalRouteHandler: RouteHandler;
 
-    if (Array.isArray(handler)) {
-      const [CtrlClass, methodName] = handler;
-      finalHandler = this.resolveControllerHandler(CtrlClass, methodName);
+    if (handler !== undefined) {
+      // FormRequest + Handler pattern: post('/users', StoreUserRequest, [Controller, 'method'])
+      if (isFormRequestClass(requestOrHandler)) {
+        formRequestMiddleware = formRequestToMiddleware(requestOrHandler);
+      }
+      finalRouteHandler = handler;
     } else {
-      finalHandler = handler;
+      // Traditional pattern: post('/users', [Controller, 'method'])
+      finalRouteHandler = requestOrHandler as RouteHandler;
     }
 
-    // 3. Prepare Handlers Stack
+    // 3. Resolve Handler (Controller vs Function)
+    let resolvedHandler: Handler;
+
+    if (Array.isArray(finalRouteHandler)) {
+      const [CtrlClass, methodName] = finalRouteHandler;
+      resolvedHandler = this.resolveControllerHandler(CtrlClass, methodName);
+    } else {
+      resolvedHandler = finalRouteHandler;
+    }
+
+    // 4. Prepare Handlers Stack
     const handlers: Handler[] = [];
 
     if (options.middleware) {
       handlers.push(...options.middleware);
     }
-    handlers.push(finalHandler);
+    if (formRequestMiddleware) {
+      handlers.push(formRequestMiddleware);
+    }
+    handlers.push(resolvedHandler);
 
-    // 4. Register with Hono
+    // 5. Register with Hono
     if (options.domain) {
-      // If domain is specified, we must compose handlers into a single one
-      // so we can wrap them behind a domain check.
       const wrappedHandler: Handler = async (c, next) => {
-        // 1. Check Domain
         if (c.req.header('host') !== options.domain) {
-          // Skip this entire route definition, look for next match
           return next();
         }
 
-        // 2. Execute Internal Pipeline
-        // We replicate Hono's execution model for this isolated stack
         let index = -1;
+        // biome-ignore lint/suspicious/noExplicitAny: Pipeline dispatch
         const dispatch = async (i: number): Promise<any> => {
           if (i <= index) throw new Error('next() called multiple times');
           index = i;
           const fn = handlers[i];
           if (!fn) {
-            // End of stack?
-            // If we are here, it means the last handler called next()
-            // Usually finalHandler returns response, so this might not be reached.
-            // But if it is, we fall through to next route (unlikely for controller)
             return next();
           }
           return fn(c, () => dispatch(i + 1));
@@ -186,7 +324,6 @@ export class Router {
 
       (this.core.app as any)[method](fullPath, wrappedHandler);
     } else {
-      // Standard registration
       (this.core.app as any)[method](fullPath, ...handlers);
     }
   }
@@ -195,19 +332,16 @@ export class Router {
    * Resolve Controller Instance and Method
    */
   private resolveControllerHandler(CtrlClass: ControllerClass, methodName: string): Handler {
-    // 1. Get or Create Controller Instance
     let instance = this.controllers.get(CtrlClass);
     if (!instance) {
       instance = new CtrlClass(this.core);
       this.controllers.set(CtrlClass, instance);
     }
 
-    // 2. Check method existence
     if (typeof instance[methodName] !== 'function') {
       throw new Error(`Method '${methodName}' not found in controller '${CtrlClass.name}'`);
     }
 
-    // 3. Bind context
     return instance[methodName].bind(instance);
   }
 }

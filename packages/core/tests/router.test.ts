@@ -119,4 +119,103 @@ describe('Router', () => {
     expect(await res.text()).toBe('ok');
     expect(callOrder).toEqual(['mw1', 'mw2', 'mw3']);
   });
+
+  it('should accept FormRequest as second parameter', async () => {
+    const core = new PlanetCore();
+    const router = new Router(core);
+
+    // Mock FormRequest class
+    class StoreUserRequest {
+      schema = { _type: 'mock' };
+      source = 'json';
+
+      async validate(ctx: any) {
+        const body = await ctx.req.json().catch(() => ({}));
+        if (!body.name || body.name.length < 2) {
+          return {
+            success: false,
+            error: {
+              success: false,
+              error: {
+                code: 'VALIDATION_ERROR',
+                message: 'Validation failed',
+                details: [{ field: 'name', message: 'Name too short' }],
+              },
+            },
+          };
+        }
+        return { success: true, data: body };
+      }
+    }
+
+    router.post('/users', StoreUserRequest, (ctx) => {
+      const validated = ctx.get('validated');
+      return ctx.json({ user: validated });
+    });
+
+    // Valid request
+    const res1 = await core.app.request('/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'Carl' }),
+    });
+    expect(res1.status).toBe(200);
+    const json1 = (await res1.json()) as { user: { name: string } };
+    expect(json1.user.name).toBe('Carl');
+
+    // Invalid request
+    const res2 = await core.app.request('/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'A' }),
+    });
+    expect(res2.status).toBe(422);
+    const json2 = (await res2.json()) as { error: { code: string } };
+    expect(json2.error.code).toBe('VALIDATION_ERROR');
+  });
+
+  it('should work with FormRequest in route groups', async () => {
+    const core = new PlanetCore();
+    const router = new Router(core);
+
+    class QueryRequest {
+      schema = {};
+      source = 'query';
+
+      async validate(ctx: any) {
+        const query = ctx.req.query();
+        if (!query.q) {
+          return {
+            success: false,
+            error: {
+              success: false,
+              error: {
+                code: 'VALIDATION_ERROR',
+                message: 'Missing q parameter',
+                details: [{ field: 'q', message: 'Required' }],
+              },
+            },
+          };
+        }
+        return { success: true, data: query };
+      }
+    }
+
+    router.prefix('/api').group((r) => {
+      r.get('/search', QueryRequest, (ctx) => {
+        const validated = ctx.get('validated') as { q: string };
+        return ctx.json({ query: validated.q });
+      });
+    });
+
+    // Valid
+    const res1 = await core.app.request('/api/search?q=hello');
+    expect(res1.status).toBe(200);
+    const json1 = (await res1.json()) as { query: string };
+    expect(json1.query).toBe('hello');
+
+    // Invalid
+    const res2 = await core.app.request('/api/search');
+    expect(res2.status).toBe(422);
+  });
 });

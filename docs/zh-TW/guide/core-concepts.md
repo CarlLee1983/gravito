@@ -281,6 +281,71 @@ csrf({
 })
 ```
 
+#### Request 驗證 (FormRequest)
+
+使用 `@gravito/orbit-request` 實現 Laravel 風格的 FormRequest 驗證：
+
+```bash
+bun add @gravito/orbit-request
+```
+
+**定義 FormRequest：**
+
+```typescript
+// src/requests/StoreUserRequest.ts
+import { FormRequest, z } from '@gravito/orbit-request'
+
+export class StoreUserRequest extends FormRequest {
+  schema = z.object({
+    name: z.string().min(2, '名稱至少 2 個字'),
+    email: z.string().email('請輸入有效的 Email'),
+  })
+}
+```
+
+**直接在路由中使用：**
+
+```typescript
+import { StoreUserRequest } from './requests/StoreUserRequest'
+
+// FormRequest 作為第二個參數，自動驗證
+core.router.post('/users', StoreUserRequest, [UserController, 'store'])
+
+// 或在群組中使用
+core.router.prefix('/api').group((r) => {
+  r.post('/users', StoreUserRequest, [UserController, 'store'])
+})
+```
+
+**在 Controller 中取得驗證資料：**
+
+```typescript
+export class UserController {
+  store(ctx: Context) {
+    // 型別安全的驗證資料
+    const data = ctx.get('validated') as { name: string; email: string }
+    return ctx.json({ user: data })
+  }
+}
+```
+
+驗證失敗時，自動回傳 422 錯誤：
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Validation failed",
+    "details": [
+      { "field": "email", "message": "請輸入有效的 Email" }
+    ]
+  }
+}
+```
+
+---
+
 ## 安裝
 
 ```bash
