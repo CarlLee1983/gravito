@@ -32,7 +32,7 @@
     "auth",
     "jwt"
   ],
-  "author": "Carl Lee <carllee1983@gmail.com>",
+  "author": "Carl Lee <carllee0520@gmail.com>",
   "license": "MIT",
   "peerDependencies": {
     "gravito-core": "^0.3.0-alpha.0",

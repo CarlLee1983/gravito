@@ -5,8 +5,8 @@ import { TemplateEngine } from '../src/TemplateEngine';
 
 describe('OrbitView', () => {
   it('should register view engine', async () => {
-    const _core = new PlanetCore();
-    const _orbit = new OrbitView();
+    new PlanetCore();
+    new OrbitView();
 
     // Mock config
     expect(true).toBe(true);

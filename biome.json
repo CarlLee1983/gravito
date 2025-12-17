@@ -9,10 +9,15 @@
   "files": {
     "includes": [
       "packages/**/*.ts",
+      "packages/**/*.tsx",
       "templates/**/*.ts",
+      "templates/**/*.tsx",
       "examples/**/*.ts",
+      "examples/**/*.tsx",
       "src/**/*.ts",
+      "src/**/*.tsx",
       "tests/**/*.ts",
+      "tests/**/*.tsx",
       "build.ts",
       "!**/dist",
       "!**/node_modules"
@@ -121,7 +126,9 @@
     "attributePosition": "auto"
   },
   "javascript": {
-    "globals": ["Bun"],
+    "globals": [
+      "Bun"
+    ],
     "formatter": {
       "jsxQuoteStyle": "double",
       "quoteProperties": "asNeeded",

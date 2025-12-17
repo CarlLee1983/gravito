@@ -33,7 +33,7 @@
     "prepublishOnly": "bun run typecheck && bun run check && bun run test:ci && bun run build"
   },
   "keywords": [],
-  "author": "Carl Lee <carllee1983@gmail.com>",
+  "author": "Carl Lee <carllee0520@gmail.com>",
   "license": "MIT",
   "repository": {
     "type": "git",

@@ -1,23 +1,49 @@
-import React from 'react';
+import { Head, Link } from '@inertiajs/react'
+import React from 'react'
+import Layout from '../components/Layout'
 
-export default function Home({ msg }: { msg: string }) {
-    const [count, setCount] = React.useState(0);
+export default function Home({ msg, version }: { msg: string, version: string }) {
+    const [count, setCount] = React.useState(0)
 
     return (
-        <div style={{ fontFamily: 'sans-serif', textAlign: 'center', padding: '50px' }}>
-            <h1>🚀 Gravito + Inertia + React</h1>
-            <p>{msg}</p>
+        <Layout>
+            <Head title="Home - Gravito" />
 
-            <button
-                onClick={() => setCount(count + 1)}
-                style={{ padding: '10px 20px', fontSize: '1.2rem', cursor: 'pointer' }}
-            >
-                Count is: {count}
-            </button>
+            <div className="container" style={{ textAlign: 'center' }}>
+                <header>
+                    <h1>🚀 Gravito + Inertia + React</h1>
+                    <p className="tagline">
+                        {msg} (v{version})
+                    </p>
+                </header>
 
-            <div style={{ marginTop: '20px' }}>
-                <a href="/about" style={{ color: '#6366f1' }}>Go to About Page (Inertia Link)</a>
+                <div className="stats">
+                    <div className="stat-card">
+                        <span className="stat-number">{count}</span>
+                        <span className="stat-label">Counter Interaction</span>
+                        <div style={{ marginTop: '1rem' }}>
+                            <button
+                                type="button"
+                                onClick={() => setCount(count + 1)}
+                                className="endpoint"
+                                style={{ cursor: 'pointer', background: 'var(--color-primary)', color: 'white' }}
+                            >
+                                Increment
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="features">
+                    <h2>Try Navigation</h2>
+                    <p style={{ color: 'var(--color-text-muted)', marginBottom: '1rem' }}>
+                        Click below to verify Inertia's client-side routing (no full reload):
+                    </p>
+                    <Link href="/about" className="endpoint">
+                        Go to About Page &rarr;
+                    </Link>
+                </div>
             </div>
-        </div>
-    );
+        </Layout>
+    )
 }

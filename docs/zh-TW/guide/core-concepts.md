@@ -1,43 +1,168 @@
-# gravito-core
+# Gravito 核心概念
 
-> The Micro-kernel for Galaxy Architecture. Lightweight, extensible, and built on Hono & Bun.
+> **「為工匠打造的高效能框架」**
+> "The High-Performance Framework for Artisans."
 
 [![npm version](https://img.shields.io/npm/v/gravito-core.svg)](https://www.npmjs.com/package/gravito-core)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
 [![Bun](https://img.shields.io/badge/Bun-1.0+-black.svg)](https://bun.sh/)
 
-# Gravito 核心概念
+歡迎來到 Gravito Core！🚀 本指南涵蓋框架的基本概念與架構。
 
-歡迎來到 Gravito Core v0.3.0-alpha.0！🚀
+---
 
-Gravito 是一個創新的、受到星系啟發的後端架構，構建於 [Hono](https://hono.dev) 和 [Bun](https://bun.sh) 之上。其設計理念是提供一個微核心 (PlanetCore)，讓開發者能夠透過軌道 (Orbits) 和衛星 (Satellites) 來擴展功能。
+## 🎯 核心定位
+
+### 關鍵差異化
+
+| 比較對象 | Gravito 優勢 |
+|---------|-------------|
+| **Laravel** | 基於 Bun + Hono，毫秒級啟動時間 |
+| **Next.js** | Binary-First 策略，單一執行檔，告別 `node_modules` 地獄 |
+| **Express/Koa** | 強制 MVC 分層，拒絕後端邏輯破碎化 |
+
+---
+
+## 📚 技術堆疊
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      TypeScript (Strict)                     │
+│                    為 AI 提供型別提示                         │
+├─────────────────────────────────────────────────────────────┤
+│  Inertia.js              │            Vite                  │
+│  (Frontend Bridge)       │       (Build Tool)               │
+│  後端 MVC，前端 SPA       │    React/Vue 熱更新              │
+├──────────────────────────┴──────────────────────────────────┤
+│                         Hono                                 │
+│              世界最快的 JS Web 標準庫                         │
+│            (Router + Request Parser)                         │
+├─────────────────────────────────────────────────────────────┤
+│                          Bun                                 │
+│            極速 JS 執行環境 + 打包工具                        │
+└─────────────────────────────────────────────────────────────┘
+```
+
+| 層級 | 技術 | 角色 |
+|------|------|------|
+| **Runtime** | Bun | 極速 JS 執行環境 + 打包工具 |
+| **HTTP Core** | Hono | 世界最快的 JS Web 標準庫 |
+| **Frontend Bridge** | Inertia.js | 後端 MVC 寫法，前端 SPA 體驗 |
+| **Build Tool** | Vite | React/Vue 熱更新與編譯 |
+| **Language** | TypeScript | 全嚴格模式，AI 友善型別提示 |
+
+---
 
 ## 🌌 星系架構 (Galaxy Architecture)
 
-Gravito 遵循獨特的設計模式：
+Gravito 遵循獨特的設計模式，靈感來自天體力學：
 
-1.  **PlanetCore (微核心)**:
-    *   這是萬有引力的中心。它是一個極簡的、高效能的基底，負責處理：
-        *   生命週期管理 (Liftoff)
-        *   Hook 系統 (Filters & Actions)
-        *   基本錯誤處理
-        *   設定 (Config) 與日誌 (Logger) 管理
-    *   它**不知道**任何關於資料庫、驗證或業務邏輯的資訊。
+### 1. PlanetCore (微核心)
 
-2.  **Orbits (標準擴充模組)**:
-    *   圍繞核心運行的官方擴充模組。
-    *   提供基礎設施功能，例如：
-        *   `@gravito/orbit-db`: 資料庫整合 (Drizzle ORM)
-        *   `@gravito/orbit-auth`: 身份驗證 (JWT)
-        *   `@gravito/orbit-storage`: 檔案儲存
-        *   `@gravito/orbit-cache`: 快取機制
-    *   應用程式可以自由選擇要掛載哪些軌道。
+萬有引力的中心。極簡、高效能的基底，負責處理：
 
-3.  **Satellites (業務邏輯插件)**:
-    *   這是**您**的程式碼所在之處。
-    *   Satellites 是小型的、專注於單一功能的模組 (例如 `Users`, `Products`, `Payment`)。
-    *   它們掛載於 Orbits 之上，使用 Orbits 提供的功能。
+- 生命週期管理 (Liftoff)
+- Hook 系統 (Filters & Actions)
+- 錯誤處理
+- 設定 (Config) 與日誌 (Logger) 管理
+
+它**不知道**任何關於資料庫、驗證或業務邏輯的資訊。
+
+```typescript
+const core = new PlanetCore({
+  orbits: [OrbitDB, OrbitAuth, OrbitInertia], // 選配插件
+})
+
+await core.boot()   // 啟動時編譯 (Boot-time Resolution)
+await core.ignite() // 啟動 HTTP 服務
+```
+
+### 2. Orbits (基礎設施模組)
+
+圍繞核心運行的標準擴充模組：
+
+- `@gravito/orbit-db`: 資料庫整合 (Drizzle ORM)
+- `@gravito/orbit-auth`: 身份驗證 (JWT)
+- `@gravito/orbit-storage`: 檔案儲存
+- `@gravito/orbit-cache`: 快取機制
+- `@gravito/orbit-inertia`: Inertia.js 整合
+
+### 3. Satellites (業務邏輯插件)
+
+這是**您的**程式碼所在之處。小型、專注於單一功能的模組 (例如 `Users`, `Products`, `Payment`)，掛載於 Orbits 之上。
+
+---
+
+## ⚡ 核心引擎功能
+
+### A. 微核心設計 (Micro-Kernel Design)
+
+- **核心零依賴**: 只負責 I/O 與插件調度
+- **啟動時編譯 (Boot-time Resolution)**: 路由與依賴於啟動時編譯，確保執行時為唯讀且極速
+
+### B. 智能上下文 (Smart Context)
+
+#### `ctx.view(template, props)` - 核心黑科技
+
+**協商機制 (Content Negotiation)**: 自動判斷請求來源
+
+| 請求類型 | 回應內容 | 用途 |
+|---------|---------|------|
+| **Inertia 請求** | JSON | React/Vue 前端接管 |
+| **HTML 請求** | Server-Side Render HTML (App Shell) | 爬蟲、首頁載入 |
+
+```typescript
+export class HomeController {
+  index(ctx: Context) {
+    return ctx.view('Home', { 
+      title: '歡迎來到 Gravito',
+      features: ['快速', '輕量', '清晰']
+    })
+  }
+}
+```
+
+#### `ctx.meta(tags)` - SEO 整合
+
+統一的 SEO 設定介面，自動注入 HTML `<head>` 或傳遞給 Inertia `<Head>` 組件。
+
+```typescript
+ctx.meta({
+  title: 'Gravito Framework',
+  description: '為工匠打造的高效能框架',
+  og: {
+    image: '/images/og-cover.png',
+    type: 'website'
+  }
+})
+```
+
+### C. 插件系統 (Plugin System)
+
+- **選配式 (Opt-in)**: 預設不含 DB、Auth，按需引入
+- **介面導向 (Interface-based)**: 透過 Hono Middleware 機制封裝
+
+#### 插件生命週期 Hooks
+
+| 階段 | Hook | 用途 |
+|------|------|------|
+| 啟動時 | `onBoot()` | 初始化連線、載入設定 |
+| 請求時 | `onRequest()` | 注入 Context、驗證 |
+
+```typescript
+export class OrbitDB implements GravitoOrbit {
+  async onBoot(core: PlanetCore) {
+    // 建立資料庫連線
+  }
+  
+  async onRequest(ctx: Context, next: Next) {
+    // 注入 ctx.db
+  }
+}
+```
+
+---
 
 ## 🛠️ 安裝
 
@@ -47,85 +172,64 @@ bun add gravito-core
 
 ## 🚀 快速開始
 
-建立一個新的應用程式 (例如 `app.ts`):
+### 1. 初始化核心
 
 ```typescript
-import { PlanetCore, ConsoleLogger } from 'gravito-core';
+import { PlanetCore } from 'gravito-core'
 
-// 1. 初始化核心
 const core = new PlanetCore({
-  logger: new ConsoleLogger(),
   config: {
-    PORT: 3000
+    PORT: 4000,
+    DEBUG: true
   }
-});
-
-// 2. 使用 Hooks 擴充 (範例)
-core.hooks.addAction('app:ready', () => {
-  core.logger.info('我的第一個 Gravito 應用程式已準備就緒！');
-});
-
-// 3. 定義路由 (直接使用 Hono 實例)
-core.app.get('/', (c) => c.text('Hello Galaxy!'));
-
-// 4. 升空！
-core.liftoff();
+})
 ```
 
-## 🧩 核心功能
+### 2. 註冊 Hooks
 
-### 1. Hook 系統 (Hooks)
-
-Gravito 的強大之處在於它的 Hook 系統，受到 WordPress 的啟發但針對 TypeScript 進行了現代化。
-
-*   **Actions (`addAction`, `doAction`)**: 在特定時間點觸發的事件，沒有回傳值。
-*   **Filters (`addFilter`, `applyFilters`)**: 允許修改數據的事件，必須回傳修改後的值。
+使用 **Filters** 修改資料：
 
 ```typescript
-// 定義一個 Filter
-core.hooks.addFilter('response_message', (msg) => {
-  return `${msg} - 來自核心的問候`;
-});
+core.hooks.addFilter('modify_content', async (content: string) => {
+  return content.toUpperCase()
+})
 
-// 應用 Filter
-const finalMessage = await core.hooks.applyFilters('response_message', 'Hello');
-// 結果: "Hello - 來自核心的問候"
+const result = await core.hooks.applyFilters('modify_content', 'hello galaxy')
+// result: "HELLO GALAXY"
 ```
 
-### 2. 設定管理 (ConfigManager)
-
-自動載入 `.env` 檔案並支援執行時設定覆蓋。
+使用 **Actions** 觸發副作用：
 
 ```typescript
-const dbHost = core.config.get('DB_HOST', 'localhost');
+core.hooks.addAction('user_registered', async (userId: string) => {
+  core.logger.info(`發送歡迎信給 ${userId}`)
+})
+
+await core.hooks.doAction('user_registered', 'user_123')
 ```
 
-### 3. 日誌系統 (Logger)
+### 3. 掛載 Orbit
 
-內建基於 PSR-3 風格的日誌介面。
+Orbits 就是標準的 Hono 應用程式，可插入核心。
 
 ```typescript
-core.logger.info('系統啟動中...', { memory: '512MB' });
-core.logger.error('連線失敗', new Error('Timeout'));
+import { Hono } from 'hono'
+
+const blogOrbit = new Hono()
+blogOrbit.get('/posts', (c) => c.json({ posts: [] }))
+
+core.mountOrbit('/api/blog', blogOrbit)
 ```
 
-### 4. 啟動程序 (Bootstrapping with IoC)
+### 4. 啟動程序 (IoC)
 
-Gravito v0.3 引入了 **IoC (控制反轉)** 系統來簡化插件整合。您不必手動實例化每個軌道 (Orbit)，只需定義 `gravito.config.ts`，核心就會自動探索並載入依賴。
+Gravito v0.3+ 引入 **IoC (控制反轉)** 簡化插件整合：
 
-**舊方法 (手動 Mounting):**
-```typescript
-const core = new PlanetCore();
-orbitDB(core, { db });
-orbitAuth(core, { secret });
-```
-
-**新方法 (自動探索):**
 ```typescript
 // gravito.config.ts
-import { defineConfig } from 'gravito-core';
-import { OrbitAuth } from '@gravito/orbit-auth';
-import { OrbitDB } from '@gravito/orbit-db';
+import { defineConfig } from 'gravito-core'
+import { OrbitAuth } from '@gravito/orbit-auth'
+import { OrbitDB } from '@gravito/orbit-db'
 
 export default defineConfig({
   config: {
@@ -133,57 +237,61 @@ export default defineConfig({
     db: { db: drizzle(...) }
   },
   orbits: [OrbitAuth, OrbitDB]
-});
+})
 
 // index.ts
-import { PlanetCore } from 'gravito-core';
-import config from './gravito.config';
+import { PlanetCore } from 'gravito-core'
+import config from './gravito.config'
 
-PlanetCore.boot(config).then(core => core.liftoff());
+PlanetCore.boot(config).then(core => core.liftoff())
 ```
 
-這促進了整個銀河系 (Galaxy) 專案結構的一致性與規範化。
+### 5. 升空！🚀
 
-
-## 📦 版本資訊
-
-目前版本: `v0.3.0-alpha.0`
-狀態: **Alpha** (API 可能會變動，請持續關注更新)
+```typescript
+export default core.liftoff() // 自動使用 config/env 中的 PORT
+```
 
 ---
 
-由 Carl Lee 用 ❤️ 打造 / [GitHub](https://github.com/carl-lee/gravito-core)
-
-## 📖 API Reference
+## 📖 API 參考
 
 ### `PlanetCore`
 
-- **`constructor(options?)`**: Initialize the core with optional Logger and Config.
-- **`mountOrbit(path: string, app: Hono)`**: Mount a Hono app to a sub-path.
-- **`liftoff(port?: number)`**: Returns the configuration object for `Bun.serve`.
-- **`app`**: Access the internal Hono instance.
-- **`hooks`**: Access the HookManager.
-- **`logger`**: Access the Logger instance.
-- **`config`**: Access the ConfigManager.
+| 方法/屬性 | 說明 |
+|----------|------|
+| `constructor(options?)` | 使用選配的 Logger 和 Config 初始化 |
+| `mountOrbit(path, app)` | 將 Hono app 掛載到子路徑 |
+| `liftoff(port?)` | 回傳 `Bun.serve` 的設定物件 |
+| `app` | 存取內部 Hono 實例 |
+| `hooks` | 存取 HookManager |
+| `logger` | 存取 Logger 實例 |
+| `config` | 存取 ConfigManager |
 
 ### `HookManager`
 
-- **`addFilter(hook, callback)`**: Register a filter.
-- **`applyFilters(hook, initialValue, ...args)`**: Execute filters sequentially.
-- **`addAction(hook, callback)`**: Register an action.
-- **`doAction(hook, ...args)`**: Execute actions.
+| 方法 | 說明 |
+|------|------|
+| `addFilter(hook, callback)` | 註冊一個過濾器 |
+| `applyFilters(hook, initialValue, ...args)` | 依序執行過濾器 |
+| `addAction(hook, callback)` | 註冊一個動作 |
+| `doAction(hook, ...args)` | 執行動作 |
 
 ### `ConfigManager`
 
-- **`get(key, default?)`**: Retrieve a config value.
-- **`set(key, value)`**: Set a config value.
-- **`has(key)`**: Check if a config key exists.
+| 方法 | 說明 |
+|------|------|
+| `get(key, default?)` | 取得設定值 |
+| `set(key, value)` | 設定值 |
+| `has(key)` | 檢查設定鍵是否存在 |
 
-## 🤝 Contributing
+---
 
-Contributions, issues and feature requests are welcome!
-Feel free to check the [issues page](https://github.com/CarlLee1983/gravito-core/issues).
+## 🤝 貢獻
 
-## 📝 License
+歡迎貢獻、問題回報和功能請求！
+請查看 [issues 頁面](https://github.com/CarlLee1983/gravito-core/issues)。
+
+## 📝 授權
 
 MIT © [Carl Lee](https://github.com/CarlLee1983)

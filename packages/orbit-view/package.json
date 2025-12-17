@@ -33,7 +33,7 @@
         "template",
         "html"
     ],
-    "author": "Carl Lee <carllee1983@gmail.com>",
+    "author": "Carl Lee <carllee0520@gmail.com>",
     "license": "MIT",
     "peerDependencies": {
         "gravito-core": "workspace:*",

@@ -10,6 +10,11 @@ export default defineConfig({
     manifest: true, // Generate manifest.json for backend mapping
     rollupOptions: {
       input: './src/client/app.tsx',
+      output: {
+        entryFileNames: 'assets/[name].js',
+        chunkFileNames: 'assets/[name].js',
+        assetFileNames: 'assets/[name].[ext]',
+      },
     },
   },
   server: {

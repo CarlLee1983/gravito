@@ -15,7 +15,7 @@ export class HomeController {
   };
 
   about = async (c: Context) => {
-    // TODO: Implement About Page
-    return c.text('About page placeholder');
+    const inertia = c.get('inertia') as InertiaService;
+    return inertia.render('About');
   };
 }

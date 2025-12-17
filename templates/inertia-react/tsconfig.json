@@ -4,10 +4,14 @@
         "module": "ESNext",
         "moduleResolution": "bundler",
         "lib": [
-            "ESNext"
+            "ESNext",
+            "DOM",
+            "DOM.Iterable"
         ],
+        "jsx": "react-jsx",
         "types": [
-            "bun-types"
+            "bun-types",
+            "vite/client"
         ],
         "strict": true,
         "skipLibCheck": true,

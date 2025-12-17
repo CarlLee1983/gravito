@@ -42,9 +42,13 @@ export class InertiaService {
     }
 
     return this.context.html(
-      view.render(rootView, {
-        page: JSON.stringify(page),
-      })
+      view.render(
+        rootView,
+        {
+          page: JSON.stringify(page),
+        },
+        { layout: '' }
+      )
     );
   }
 
