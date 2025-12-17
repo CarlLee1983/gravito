@@ -125,6 +125,7 @@ export default core.liftoff() // 啟動伺服器
 - `@gravito/orbit-storage`: 檔案儲存
 - `@gravito/orbit-cache`: 快取機制
 - `@gravito/orbit-inertia`: Inertia.js 整合
+- `@gravito/orbit-mail`: 郵件發送服務 (SMTP, AWS SES)
 
 ### 3. Satellites (業務邏輯衛星)
 
@@ -345,7 +346,64 @@ export class UserController {
 }
 ```
 
+
 ---
+
+#### 郵件發送 (Orbit Mail)
+
+使用 `@gravito/orbit-mail` 提供強大的郵件寄送功能，支援多種驅動 (SMTP, SES) 與 HTML/React/Vue 渲染：
+
+```bash
+bun add @gravito/orbit-mail
+```
+
+**建立 Mailable 類別：**
+
+```typescript
+import { Mailable } from '@gravito/orbit-mail';
+
+export class WelcomeEmail extends Mailable {
+  constructor(private user: User) {
+    super();
+  }
+
+  build() {
+    return this
+      .to(this.user.email)
+      .subject('歡迎加入 Gravito！')
+      .view('emails/welcome', { name: this.user.name });
+  }
+}
+```
+
+**發送郵件：**
+
+Orbit Mail 會注入到 Context 中，可直接調用：
+
+```typescript
+// 在 Controller 中
+await ctx.get('mail').send(new WelcomeEmail(user));
+```
+
+**佇列發送 (Queuing)：**
+
+```typescript
+// 設定延遲與佇列
+const email = new WelcomeEmail(user)
+  .onQueue('emails')
+  .delay(60); // 延遲 60 秒
+
+await email.queue();
+```
+
+**支援驅動：**
+- **SMTP**: 使用 `nodemailer` 標準協定
+- **AWS SES**: 使用 AWS SDK 發送
+- **Log**: 開發時將內容輸出至 Console
+- **Memory/Dev**: 開發模式下攔截郵件至 Dev UI (`/__mail`)
+
+---
+
 
 ## 安裝
 

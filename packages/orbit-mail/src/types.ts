@@ -1,4 +1,5 @@
 import type { Transport } from './transports/Transport';
+export type { Transport };
 
 export interface Address {
   name?: string;
@@ -60,4 +61,9 @@ export interface MailConfig {
    * Default: /__mail
    */
   devUiPrefix?: string;
+
+  /**
+   * Translation function for i18n support
+   */
+  translator?: (key: string, replace?: Record<string, unknown>, locale?: string) => string;
 }

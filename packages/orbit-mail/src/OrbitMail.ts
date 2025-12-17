@@ -7,11 +7,23 @@ import { MemoryTransport } from './transports/MemoryTransport';
 import type { MailConfig, Message } from './types';
 
 export class OrbitMail implements GravitoOrbit {
+  private static instance?: OrbitMail;
   private config: MailConfig;
   private devMailbox?: DevMailbox;
 
   private constructor(config: MailConfig) {
     this.config = config;
+    OrbitMail.instance = this;
+  }
+
+  /**
+   * Get the singleton instance of OrbitMail
+   */
+  static getInstance(): OrbitMail {
+    if (!OrbitMail.instance) {
+      throw new Error('OrbitMail has not been initialized. Call OrbitMail.configure() first.');
+    }
+    return OrbitMail.instance;
   }
 
   /**
@@ -51,6 +63,7 @@ export class OrbitMail implements GravitoOrbit {
       // @ts-expect-error: Extending Hono Context dynamically
       c.set('mail', {
         send: (mailable: Mailable) => this.send(mailable),
+        queue: (mailable: Mailable) => this.queue(mailable),
       });
       await next();
     });
@@ -87,5 +100,20 @@ export class OrbitMail implements GravitoOrbit {
 
     // 4. Send via transport
     await this.config.transport.send(message);
+  }
+
+  /**
+   * Queue a mailable instance
+   */
+  async queue(mailable: Mailable): Promise<void> {
+    // In a real implementation, this would push to a Queue Orbit.
+    // For now, we simulate queuing or log it.
+
+    // We can check if `mailable` has queue configuration
+    // const queueName = (mailable as any).queueName || 'default';
+
+    // Simulating async behavior
+    console.log(`[OrbitMail] Queuing message: ${mailable.constructor.name}`);
+    await this.send(mailable); // For now, just send it immediately in this POC
   }
 }

@@ -21,8 +21,9 @@
     "author": "Carl",
     "license": "MIT",
     "dependencies": {
-        "nodemailer": "^6.9.1",
-        "mjml": "^4.14.1"
+        "@aws-sdk/client-ses": "^3.953.0",
+        "mjml": "^4.14.1",
+        "nodemailer": "^6.9.1"
     },
     "peerDependencies": {
         "gravito-core": "workspace:*",

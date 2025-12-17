@@ -1,3 +1,4 @@
+import type { Queueable } from './Queueable'; // Import Queueable
 import { HtmlRenderer } from './renderers/HtmlRenderer';
 import type { Renderer } from './renderers/Renderer';
 import { TemplateRenderer } from './renderers/TemplateRenderer';
@@ -7,7 +8,7 @@ import type { Address, Attachment, Envelope, MailConfig } from './types';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type ComponentType<P = any> = any;
 
-export abstract class Mailable {
+export abstract class Mailable implements Queueable {
   protected envelope: Partial<Envelope> = {};
   protected renderer?: Renderer;
   private rendererResolver?: () => Promise<Renderer>;
@@ -108,6 +109,72 @@ export abstract class Mailable {
    */
   abstract build(): this;
 
+  // ===== Queueable Implementation =====
+
+  queueName?: string;
+  connectionName?: string;
+  delaySeconds?: number;
+
+  onQueue(queue: string): this {
+    this.queueName = queue;
+    return this;
+  }
+
+  onConnection(connection: string): this {
+    this.connectionName = connection;
+    return this;
+  }
+
+  delay(seconds: number): this {
+    this.delaySeconds = seconds;
+    return this;
+  }
+
+  /**
+   * Queue the mailable for sending.
+   */
+  async queue(): Promise<void> {
+    // Avoid circular dependency by dynamically importing OrbitMail
+    const { OrbitMail } = await import('./OrbitMail');
+    return OrbitMail.getInstance().queue(this);
+  }
+
+  // ===== I18n Support =====
+
+  protected currentLocale?: string;
+  protected translator?: (
+    key: string,
+    replace?: Record<string, unknown>,
+    locale?: string
+  ) => string;
+
+  /**
+   * Set the locale for the message.
+   */
+  locale(locale: string): this {
+    this.currentLocale = locale;
+    return this;
+  }
+
+  /**
+   * Internal: Set the translator function (called by OrbitMail)
+   */
+  setTranslator(
+    translator: (key: string, replace?: Record<string, unknown>, locale?: string) => string
+  ): void {
+    this.translator = translator;
+  }
+
+  /**
+   * Translate a string using the configured translator.
+   */
+  t(key: string, replace?: Record<string, unknown>): string {
+    if (this.translator) {
+      return this.translator(key, replace, this.currentLocale);
+    }
+    return key; // Fallback: just return the key if no translator
+  }
+
   // ===== Internal Systems =====
 
   /**
@@ -115,6 +182,12 @@ export abstract class Mailable {
    */
   async buildEnvelope(configPromise: MailConfig | Promise<MailConfig>): Promise<Envelope> {
     const config = await Promise.resolve(configPromise);
+
+    // Inject translator from config if available
+    if (config.translator) {
+      this.setTranslator(config.translator);
+    }
+
     this.build(); // User logic executes here
 
     // Ensure Renderer is initialized if using TemplateRenderer with config path
@@ -123,16 +196,19 @@ export abstract class Mailable {
       // For now, it defaults to process.cwd()/src/emails which is standard
     }
 
-    return {
+    const envelope: Envelope = {
       from: this.envelope.from || config.from,
       to: this.envelope.to || [],
-      cc: this.envelope.cc,
-      bcc: this.envelope.bcc,
-      replyTo: this.envelope.replyTo,
       subject: this.envelope.subject || '(No Subject)',
       priority: this.envelope.priority || 'normal',
-      attachments: this.envelope.attachments,
     };
+
+    if (this.envelope.cc) envelope.cc = this.envelope.cc;
+    if (this.envelope.bcc) envelope.bcc = this.envelope.bcc;
+    if (this.envelope.replyTo) envelope.replyTo = this.envelope.replyTo;
+    if (this.envelope.attachments) envelope.attachments = this.envelope.attachments;
+
+    return envelope;
   }
 
   /**
@@ -147,6 +223,14 @@ export abstract class Mailable {
     if (!this.renderer) {
       throw new Error('No content renderer specified. Use html(), view(), react(), or vue().');
     }
+
+    // Inject i18n helpers into renderData
+    this.renderData = {
+      ...this.renderData,
+      locale: this.currentLocale,
+      t: (key: string, replace?: Record<string, unknown>) => this.t(key, replace),
+    };
+
     return this.renderer.render(this.renderData);
   }
 
