@@ -1,0 +1,25 @@
+export default {
+    content: [
+        "./src/views/**/*.html",
+        "./src/client/**/*.{js,ts,jsx,tsx}",
+    ],
+    theme: {
+        extend: {
+            colors: {
+                brand: {
+                    50: '#f0f9ff',
+                    100: '#e0f2fe',
+                    500: '#0ea5e9',
+                    600: '#0284c7',
+                    900: '#0c4a6e',
+                }
+            },
+            fontFamily: {
+                sans: ['Inter', 'system-ui', 'sans-serif'],
+            }
+        },
+    },
+    plugins: [
+        require('@tailwindcss/typography'),
+    ],
+}

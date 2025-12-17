@@ -18,7 +18,11 @@ export function registerRoutes(core: PlanetCore): void {
   // ─────────────────────────────────────────────
   router.middleware(setLocale('en')).group((root) => {
     root.get('/', [HomeController, 'index']);
+    // Specific route for docs index
     root.get('/docs', [DocsController, 'index']);
+    // Wildcard for docs pages, needs to be after specific routes if order matters (Hono handles it smart usually)
+    // Using simple wildcard matching for sub-paths
+    root.get('/docs/:slug+', [DocsController, 'show']);
   });
 
   // ─────────────────────────────────────────────
@@ -30,9 +34,10 @@ export function registerRoutes(core: PlanetCore): void {
     .group((zh) => {
       zh.get('/', [HomeController, 'index']);
       zh.get('/docs', [DocsController, 'index']);
+      zh.get('/docs/:slug+', [DocsController, 'show']);
     });
 
-  // Newsletter (POST endpoints usually don't need locale prefix, or can share)
+  // Newsletter
   router.post('/newsletter', [HomeController, 'subscribe']);
 
   // ─────────────────────────────────────────────

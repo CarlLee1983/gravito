@@ -1,35 +1,88 @@
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import Layout from '../components/Layout';
+import { useTrans } from '../hooks/useTrans';
 
-export default function Docs({ title }: { title: string }) {
-    return (
-        <>
-            <Head title={title} />
-            <div className="container mx-auto px-6 py-12 max-w-4xl">
-                <h1 className="text-4xl font-bold mb-8">Documentation</h1>
-
-                <div className="prose dark:prose-invert max-w-none">
-                    <p className="lead text-xl text-gray-600 dark:text-gray-300 mb-8">
-                        Gravito is designed to be intuitive. If you know Hono and React, you already know Gravito.
-                    </p>
-
-                    <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-xl border border-gray-100 dark:border-gray-700 mb-8">
-                        <h3 className="text-lg font-bold mb-4">Quick Start</h3>
-                        <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto">
-                            <code>bun create gravito-app my-app</code>
-                        </pre>
-                    </div>
-
-                    <h2 className="text-2xl font-bold mt-12 mb-6">Core Concepts</h2>
-                    <ul className="space-y-4 list-disc pl-6 text-gray-700 dark:text-gray-300">
-                        <li><strong>PlanetCore:</strong> The micro-kernel that manages the application lifecycle.</li>
-                        <li><strong>Orbits:</strong> Infrastructure modules (DB, Auth, etc.) that plug into the core.</li>
-                        <li><strong>Satellites:</strong> Your business logic plugins.</li>
-                    </ul>
-                </div>
-            </div>
-        </>
-    );
+interface SidebarItem {
+    title: string;
+    path: string;
+    children?: SidebarItem[];
 }
 
-Docs.layout = (page: React.ReactNode) => <Layout>{page}</Layout>;
+interface DocsProps {
+    title: string;
+    content: string;
+    sidebar: SidebarItem[];
+    currentPath: string;
+}
+
+export default function Docs() {
+    const { trans } = useTrans();
+    // Safe cast
+    const props = usePage().props as unknown as DocsProps;
+    const { title, content, sidebar, currentPath } = props;
+
+    return (
+        <Layout>
+            <Head title={`${title} - Gravito Docs`} />
+
+            <div className="container mx-auto px-6 py-12 flex flex-col lg:flex-row gap-12">
+                {/* Sidebar - Desktop */}
+                <aside className="w-full lg:w-64 shrink-0 space-y-8">
+                    {sidebar.map((section, idx) => (
+                        <div key={idx}>
+                            <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-3">
+                                {section.title}
+                            </h3>
+                            <ul className="space-y-2 border-l border-gray-100 dark:border-gray-800 pl-4">
+                                {section.children?.map((item, cIdx) => {
+                                    const isActive = currentPath === item.path;
+                                    return (
+                                        <li key={cIdx}>
+                                            <a
+                                                href={item.path}
+                                                className={`block text-sm transition-colors ${isActive
+                                                        ? 'text-blue-600 font-medium border-l-2 border-blue-600 -ml-[17px] pl-[15px]'
+                                                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                                                    }`}
+                                            >
+                                                {item.title}
+                                            </a>
+                                        </li>
+                                    );
+                                })}
+                            </ul>
+                        </div>
+                    ))}
+                </aside>
+
+                {/* Content */}
+                <article className="flex-1 min-w-0">
+                    <h1 className="text-4xl font-extrabold tracking-tight mb-8 text-gray-900 dark:text-gray-100">
+                        {title}
+                    </h1>
+
+                    <div
+                        className="prose prose-lg dark:prose-invert max-w-none 
+                    prose-a:text-blue-600 hover:prose-a:text-blue-500
+                    prose-code:text-pink-500 prose-code:bg-pink-50 dark:prose-code:bg-pink-900/20 prose-code:px-1 prose-code:rounded
+                    prose-pre:bg-gray-900 prose-pre:border prose-pre:border-gray-800
+                "
+                        dangerouslySetInnerHTML={{ __html: content }}
+                    />
+
+                    <div className="mt-12 pt-8 border-t border-gray-200 dark:border-gray-800 flex justify-between text-sm text-gray-500">
+                        <span>Last updated: {new Date().toLocaleDateString()}</span>
+                        <a
+                            href="https://github.com/CarlLee1983/gravito-core/tree/main/docs"
+                            target="_blank"
+                            rel="noreferrer"
+                            className="hover:text-blue-600 flex items-center"
+                        >
+                            Edit this page on GitHub &rarr;
+                        </a>
+                    </div>
+                </article>
+            </div>
+        </Layout>
+    );
+}
