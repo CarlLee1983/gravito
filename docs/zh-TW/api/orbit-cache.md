@@ -31,24 +31,18 @@ const cache = orbitCache(core, {
 });
 
 // 在路由中使用
-core.app.get('/cached-data', async (c) => {
-  const cache = c.get('cache');
-  
-  // 嘗試從快取獲取
-  const cached = await cache.get('my-key');
-  if (cached) return c.json(cached);
+core.app.get('/heavy-data', async (c) => {
+  const data = await cache.remember('heavy_key', 300, async () => {
+    // 耗時運算...
+    return { result: 42 };
+  });
 
-  // 若無，則計算並儲存
-  const data = { value: Math.random() };
-  await cache.set('my-key', data);
-  
   return c.json(data);
 });
 ```
 
 ## Hooks
 
-- `cache:init` - 當模組初始化時觸發。
-- `cache:hit` - (Action) 當快取命中時觸發。
-- `cache:miss` - (Action) 當快取未命中時觸發。
- retrieved from cache.
+- `cache:init` - 當快取 Orbit 初始化時觸發。
+- `cache:hit` - 當快取命中時觸發。
+- `cache:miss` - 當快取未命中時觸發。

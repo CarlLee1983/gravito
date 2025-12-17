@@ -4,11 +4,23 @@ title: Gravito 核心概念
 
 # Gravito 核心概念
 
-> **"為工匠打造的高效能框架。"**
-> The High-Performance Framework for Artisans.
+> **"The High-Performance Framework for Artisans."**
+> 為工匠打造的高效能框架
 
-[![npm version](https://img.shields.io/npm/v/gravito-core.svg)](https://www.npmjs.com/package/gravito-core)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+<div class="not-prose my-5 flex flex-wrap items-center gap-2">
+  <a href="https://www.npmjs.com/package/gravito-core" target="_blank" rel="noreferrer">
+    <img alt="npm 版本" src="https://img.shields.io/npm/v/gravito-core.svg" class="h-5" loading="lazy" />
+  </a>
+  <a href="https://opensource.org/licenses/MIT" target="_blank" rel="noreferrer">
+    <img alt="授權：MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg" class="h-5" loading="lazy" />
+  </a>
+  <a href="https://www.typescriptlang.org/" target="_blank" rel="noreferrer">
+    <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5.0+-blue.svg" class="h-5" loading="lazy" />
+  </a>
+  <a href="https://bun.sh/" target="_blank" rel="noreferrer">
+    <img alt="Bun" src="https://img.shields.io/badge/Bun-1.0+-black.svg" class="h-5" loading="lazy" />
+  </a>
+</div>
 
 歡迎來到 Gravito Core。本指南將介紹框架的基本概念與架構。
 
@@ -113,7 +125,7 @@ export default core.liftoff() // 啟動伺服器
 ### A. 微核心設計 (Micro-Kernel)
 
 - **零依賴核心**: 僅處理 I/O 和外掛編排
-- **啟動時解析 (Boot-time Resolution)**: 路由與依賴在啟動時編譯，確保 Runtime 是 Read-only 且極快
+- **啟動時解析 (Boot-time Resolution)**: 路由與依賴在啟動時解析，讓執行期維持精簡與可預期
 
 ### B. 智慧 Context (Smart Context)
 
@@ -126,12 +138,39 @@ export default core.liftoff() // 啟動伺服器
 | **Inertia Request** | JSON | React/Vue 前端接管路由 |
 | **HTML Request** | Server-Side Rendered HTML (App Shell) | 爬蟲、首次頁面載入 |
 
+```typescript
+export class HomeController {
+  index(ctx: Context) {
+    return ctx.view('Home', {
+      title: 'Welcome to Gravito',
+      features: ['Fast', 'Light', 'Clean']
+    })
+  }
+}
+```
+
 ### C. 外掛系統 (Plugin System)
 
 - **可選用 (Opt-in)**: 預設沒有 DB 或 Auth，只加你需要的
 - **基於介面**: 透過 Hono Middleware 機制封裝
 
+#### `GravitoOrbit`（外掛介面）
+
+Gravito 透過 Orbits 擴充核心能力。Orbit 實作 `GravitoOrbit` 介面，並在 `install()` 階段註冊 hooks 與 middleware。
+
+```typescript
+export interface GravitoOrbit {
+  install(core: PlanetCore): void | Promise<void>
+}
+```
+
 ---
+
+## 安裝
+
+```bash
+bun add gravito-core
+```
 
 ## 快速開始
 
@@ -198,6 +237,24 @@ export default core.liftoff();
 | `router` | 存取 Gravito Router |
 | `hooks` | 存取 HookManager |
 | `logger` | 存取 Logger 實例 |
+
+---
+
+### `HookManager`
+
+| 方法 | 描述 |
+|------|------|
+| `addFilter(hook, callback)` | 註冊 Filter |
+| `applyFilters(hook, initialValue, ...args)` | 依序執行 Filter |
+| `addAction(hook, callback)` | 註冊 Action |
+| `doAction(hook, ...args)` | 執行 Action |
+
+---
+
+## 貢獻
+
+歡迎提交 PR、回報問題與提出功能建議。
+請參考 [Issues](https://github.com/CarlLee1983/gravito/issues)。
 
 ---
 

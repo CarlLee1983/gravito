@@ -21,7 +21,6 @@ bun add @gravito/orbit-db drizzle-orm
 ```typescript
 import { PlanetCore } from 'gravito-core';
 import orbitDB from '@gravito/orbit-db';
-import { Hono } from 'hono';
 import { drizzle } from 'drizzle-orm/bun-sqlite';
 import { Database } from 'bun:sqlite';
 
@@ -29,17 +28,18 @@ const core = new PlanetCore();
 const sqlite = new Database('sqlite.db');
 const db = drizzle(sqlite);
 
-// Register the orbit
+// Initialize DB Orbit
 orbitDB(core, {
   db,
-  exposeAs: 'database' // Access via c.get('database')
+  exposeAs: 'db' // Access via c.get('db')
 });
 
-const api = new Hono();
-
-api.get('/health', (c) => c.text('ok'));
-
-core.mountOrbit('/api', api);
+// Use in routes
+core.app.get('/users', async (c) => {
+  const db = c.get('db');
+  // const users = await db.select().from(...);
+  return c.json({ users: [] });
+});
 ```
 
 ## Hooks

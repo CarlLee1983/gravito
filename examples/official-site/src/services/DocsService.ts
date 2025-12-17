@@ -58,6 +58,21 @@ export class DocsService {
     return value.replace(/<[^>]*>/g, '');
   }
 
+  private static extractAndRemoveLeadingH1(html: string): { html: string; h1Text: string | null } {
+    // The docs layout renders the page title already. Strip a leading H1 from the rendered Markdown
+    // to avoid duplicated titles, while still allowing authors to keep an H1 in the source Markdown.
+    const match = html.match(/^\s*<h1\b[^>]*>([\s\S]*?)<\/h1>\s*/i);
+    if (!match) return { html, h1Text: null };
+
+    const innerHtml = match[1] ?? '';
+    const h1Text = DocsService.stripLeadingEmoji(
+      DocsService.decodeHtmlEntities(DocsService.stripHtmlTags(String(innerHtml))).trim()
+    );
+
+    const stripped = html.replace(/^\s*<h1\b[^>]*>[\s\S]*?<\/h1>\s*/i, '');
+    return { html: stripped, h1Text: h1Text || null };
+  }
+
   private static slugifyHeading(text: string): string {
     const normalized = text
       .trim()
@@ -139,10 +154,11 @@ export class DocsService {
       const raw = await fs.readFile(filePath, 'utf-8');
       const { data, content } = matter(raw);
       const html = (await marked.parse(content)) as string;
-      const processed = DocsService.addHeadingIdsAndToc(html);
+      const leading = DocsService.extractAndRemoveLeadingH1(html);
+      const processed = DocsService.addHeadingIdsAndToc(leading.html);
 
       return {
-        title: (data.title as string) || 'Untitled',
+        title: (data.title as string) || leading.h1Text || 'Untitled',
         content: processed.html,
         metadata: data as Record<string, unknown>,
         toc: processed.toc,

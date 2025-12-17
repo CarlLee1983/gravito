@@ -86,13 +86,10 @@ Orbits are lower-level extensions that provide infrastructure services. In v0.3+
 ### The GravitoOrbit Interface
 
 ```typescript
-// GravitoOrbit interface
-interface GravitoOrbit {
-  // Called during boot phase
-  onBoot(core: PlanetCore): Promise<void>
-  
-  // Optional: Called on each request
-  onRequest?(ctx: Context, next: Next): Promise<void>
+import type { GravitoOrbit, PlanetCore } from 'gravito-core'
+
+export interface GravitoOrbit {
+  install(core: PlanetCore): void | Promise<void>
 }
 ```
 
@@ -109,59 +106,42 @@ export interface CustomOrbitConfig {
 }
 
 export class OrbitCustom implements GravitoOrbit {
-  private config: CustomOrbitConfig
-  private service: CustomService
+  constructor(private options?: CustomOrbitConfig) {}
 
-  constructor(config?: CustomOrbitConfig) {
-    this.config = config ?? { apiKey: '' }
-  }
+  install(core: PlanetCore): void {
+    const config = this.options ?? core.config.get<CustomOrbitConfig>('custom')
+    const service = new CustomService(config)
 
-  async onBoot(core: PlanetCore): Promise<void> {
-    // Resolve config from core if not provided
-    if (!this.config.apiKey) {
-      this.config = core.config.get('custom')
-    }
+    core.hooks.doAction('custom:init', service)
 
-    // Initialize the service
-    this.service = new CustomService(this.config)
-    
-    // Trigger hook
-    await core.hooks.doAction('custom:init', this.service)
-    
-    core.logger.info('OrbitCustom initialized')
-  }
+    core.app.use('*', async (c: Context, next: Next) => {
+      c.set('custom', service)
+      await next()
+    })
 
-  async onRequest(ctx: Context, next: Next): Promise<void> {
-    // Inject service into context
-    ctx.set('custom', this.service)
-    await next()
+    core.logger.info('OrbitCustom installed')
   }
 }
 
 // Export for functional API compatibility
 export function orbitCustom(core: PlanetCore, config: CustomOrbitConfig) {
   const orbit = new OrbitCustom(config)
-  // Manual boot for legacy usage
-  orbit.onBoot(core)
-  core.app.use('*', orbit.onRequest.bind(orbit))
+  orbit.install(core)
 }
 ```
 
 ### Lifecycle Hooks
 
-| Phase | Method | Purpose |
-|-------|--------|---------|
-| **Boot** | `onBoot()` | Initialize connections, load configs |
-| **Request** | `onRequest()` | Inject context, validate tokens |
+`install()` is called during bootstrap. For request-level behavior, register Hono middleware inside `install()`.
 
 ### Using with IoC
 
 ```typescript
 // gravito.config.ts
-import { defineConfig } from 'gravito-core'
+import { PlanetCore, defineConfig } from 'gravito-core'
 import { OrbitCustom } from './orbit-custom'
 
-export default defineConfig({
+const config = defineConfig({
   config: {
     custom: {
       apiKey: process.env.CUSTOM_API_KEY,
@@ -170,6 +150,9 @@ export default defineConfig({
   },
   orbits: [OrbitCustom] // Will auto-resolve config
 })
+
+const core = await PlanetCore.boot(config)
+export default core.liftoff()
 ```
 
 ---
@@ -209,14 +192,10 @@ import { OrbitCustom } from './orbit-custom'
 
 describe('OrbitCustom', () => {
   it('should initialize with config', async () => {
-    const core = new PlanetCore({
-      config: {
-        custom: { apiKey: 'test-key' }
-      },
-      orbits: [OrbitCustom]
+    const core = await PlanetCore.boot({
+      config: { custom: { apiKey: 'test-key' } },
+      orbits: [OrbitCustom],
     })
-
-    await core.boot()
 
     // Verify service is available
     expect(core.config.get('custom').apiKey).toBe('test-key')

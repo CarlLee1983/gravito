@@ -86,13 +86,10 @@ Orbit 是更底層的擴充，負責提供基礎設施服務。在 v0.3+ 中，O
 ### GravitoOrbit 介面
 
 ```typescript
-// GravitoOrbit 介面
-interface GravitoOrbit {
-  // 在啟動階段呼叫
-  onBoot(core: PlanetCore): Promise<void>
-  
-  // 選配：在每個請求時呼叫
-  onRequest?(ctx: Context, next: Next): Promise<void>
+import type { GravitoOrbit, PlanetCore } from 'gravito-core'
+
+export interface GravitoOrbit {
+  install(core: PlanetCore): void | Promise<void>
 }
 ```
 
@@ -109,59 +106,42 @@ export interface CustomOrbitConfig {
 }
 
 export class OrbitCustom implements GravitoOrbit {
-  private config: CustomOrbitConfig
-  private service: CustomService
+  constructor(private options?: CustomOrbitConfig) {}
 
-  constructor(config?: CustomOrbitConfig) {
-    this.config = config ?? { apiKey: '' }
-  }
+  install(core: PlanetCore): void {
+    const config = this.options ?? core.config.get<CustomOrbitConfig>('custom')
+    const service = new CustomService(config)
 
-  async onBoot(core: PlanetCore): Promise<void> {
-    // 如果未提供，從 core 解析設定
-    if (!this.config.apiKey) {
-      this.config = core.config.get('custom')
-    }
+    core.hooks.doAction('custom:init', service)
 
-    // 初始化服務
-    this.service = new CustomService(this.config)
-    
-    // 觸發 hook
-    await core.hooks.doAction('custom:init', this.service)
-    
-    core.logger.info('OrbitCustom 已初始化')
-  }
+    core.app.use('*', async (c: Context, next: Next) => {
+      c.set('custom', service)
+      await next()
+    })
 
-  async onRequest(ctx: Context, next: Next): Promise<void> {
-    // 將服務注入到 context
-    ctx.set('custom', this.service)
-    await next()
+    core.logger.info('OrbitCustom 已安裝')
   }
 }
 
 // 匯出函式 API 以保持向後相容
 export function orbitCustom(core: PlanetCore, config: CustomOrbitConfig) {
   const orbit = new OrbitCustom(config)
-  // 手動啟動 (用於舊版用法)
-  orbit.onBoot(core)
-  core.app.use('*', orbit.onRequest.bind(orbit))
+  orbit.install(core)
 }
 ```
 
 ### 生命週期 Hooks
 
-| 階段 | 方法 | 用途 |
-|------|------|------|
-| **啟動時** | `onBoot()` | 初始化連線、載入設定 |
-| **請求時** | `onRequest()` | 注入 Context、驗證 Token |
+`install()` 會在啟動階段被呼叫；若需要請求層級的行為，請在 `install()` 內註冊 Hono middleware。
 
 ### 使用 IoC
 
 ```typescript
 // gravito.config.ts
-import { defineConfig } from 'gravito-core'
+import { PlanetCore, defineConfig } from 'gravito-core'
 import { OrbitCustom } from './orbit-custom'
 
-export default defineConfig({
+const config = defineConfig({
   config: {
     custom: {
       apiKey: process.env.CUSTOM_API_KEY,
@@ -170,6 +150,9 @@ export default defineConfig({
   },
   orbits: [OrbitCustom] // 會自動解析設定
 })
+
+const core = await PlanetCore.boot(config)
+export default core.liftoff()
 ```
 
 ---
@@ -209,14 +192,10 @@ import { OrbitCustom } from './orbit-custom'
 
 describe('OrbitCustom', () => {
   it('應該使用設定初始化', async () => {
-    const core = new PlanetCore({
-      config: {
-        custom: { apiKey: 'test-key' }
-      },
-      orbits: [OrbitCustom]
+    const core = await PlanetCore.boot({
+      config: { custom: { apiKey: 'test-key' } },
+      orbits: [OrbitCustom],
     })
-
-    await core.boot()
 
     // 驗證服務可用
     expect(core.config.get('custom').apiKey).toBe('test-key')

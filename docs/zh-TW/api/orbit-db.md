@@ -25,13 +25,13 @@ import { drizzle } from 'drizzle-orm/bun-sqlite'; // 或您選擇的 driver
 import { Database } from 'bun:sqlite';
 
 const core = new PlanetCore();
-const sqlite = new Database('mydb.sqlite');
+const sqlite = new Database('sqlite.db');
 const db = drizzle(sqlite);
 
 // 初始化 DB Orbit
 orbitDB(core, { 
     db,
-    exposeAs: 'db' // 預設為 'db'，可透過 c.get('db') 存取
+    exposeAs: 'db' // 可透過 c.get('db') 存取
 });
 
 // 在路由中使用

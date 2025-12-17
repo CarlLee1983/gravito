@@ -43,5 +43,6 @@ core.app.get('/heavy-data', async (c) => {
 
 ## Hooks
 
+- `cache:init` - Fired when the cache orbit initializes.
 - `cache:miss` - Fired when data is not found in cache.
 - `cache:hit` - Fired when data is retrieved from cache.

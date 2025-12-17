@@ -7,12 +7,30 @@ title: Gravito Core Concepts
 > **"The High-Performance Framework for Artisans."**
 > 為工匠打造的高效能框架
 
-[![npm version](https://img.shields.io/npm/v/gravito-core.svg)](https://www.npmjs.com/package/gravito-core)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
-[![Bun](https://img.shields.io/badge/Bun-1.0+-black.svg)](https://bun.sh/)
+<div class="not-prose my-5 flex flex-wrap items-center gap-2">
+  <a href="https://www.npmjs.com/package/gravito-core" target="_blank" rel="noreferrer">
+    <img alt="npm version" src="https://img.shields.io/npm/v/gravito-core.svg" class="h-5" loading="lazy" />
+  </a>
+  <a href="https://opensource.org/licenses/MIT" target="_blank" rel="noreferrer">
+    <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg" class="h-5" loading="lazy" />
+  </a>
+  <a href="https://www.typescriptlang.org/" target="_blank" rel="noreferrer">
+    <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5.0+-blue.svg" class="h-5" loading="lazy" />
+  </a>
+  <a href="https://bun.sh/" target="_blank" rel="noreferrer">
+    <img alt="Bun" src="https://img.shields.io/badge/Bun-1.0+-black.svg" class="h-5" loading="lazy" />
+  </a>
+</div>
 
 Welcome to Gravito Core. This guide covers the fundamental concepts and architecture of the framework.
+
+<div class="my-8 not-prose rounded-2xl overflow-hidden shadow-2xl border border-gray-800">
+  <picture>
+    <source media="(min-width: 1280px)" srcset="/static/image/hero-2560.webp">
+    <source media="(min-width: 768px)" srcset="/static/image/hero-1280.webp">
+    <img src="/static/image/hero-768.webp" alt="Gravito Core Architecture" class="w-full h-auto object-cover">
+  </picture>
+</div>
 
 ---
 
@@ -79,12 +97,11 @@ The gravitational center. A minimal, high-performance foundation responsible for
 It knows **nothing** about databases, authentication, or business logic.
 
 ```typescript
-const core = new PlanetCore({
-  orbits: [OrbitDB, OrbitAuth, OrbitInertia], // Opt-in plugins
+const core = await PlanetCore.boot({
+  orbits: [OrbitDB, OrbitAuth, OrbitInertia], // Opt-in extensions
 })
 
-await core.boot()   // Boot-time Resolution
-await core.ignite() // Start HTTP server
+export default core.liftoff()
 ```
 
 ### 2. Orbits (Infrastructure Modules)
@@ -124,7 +141,7 @@ This is where **your** code lives. Small, focused modules (e.g., `Users`, `Produ
 ```typescript
 export class HomeController {
   index(ctx: Context) {
-    return ctx.view('Home', { 
+    return ctx.view('Home', {
       title: 'Welcome to Gravito',
       features: ['Fast', 'Light', 'Clean']
     })
@@ -132,42 +149,18 @@ export class HomeController {
 }
 ```
 
-#### `ctx.meta(tags)` - SEO Integration
-
-Unified SEO interface, automatically injects into HTML `<head>` or passes to Inertia `<Head>` component.
-
-```typescript
-ctx.meta({
-  title: 'Gravito Framework',
-  description: 'The High-Performance Framework for Artisans',
-  og: {
-    image: '/images/og-cover.png',
-    type: 'website'
-  }
-})
-```
-
 ### C. Plugin System
 
 - **Opt-in**: No DB, Auth by default - add what you need
 - **Interface-based**: Wrapped via Hono Middleware mechanism
 
-#### Plugin Lifecycle Hooks
+#### `GravitoOrbit` (Extension Contract)
 
-| Phase | Hook | Purpose |
-|-------|------|---------|
-| Boot | `onBoot()` | Initialize connections, load configs |
-| Request | `onRequest()` | Inject context, validate |
+Gravito extends the core via Orbits. An Orbit implements the `GravitoOrbit` interface and registers hooks and middleware during `install()`.
 
 ```typescript
-export class OrbitDB implements GravitoOrbit {
-  async onBoot(core: PlanetCore) {
-    // Establish database connection
-  }
-  
-  async onRequest(ctx: Context, next: Next) {
-    // Inject ctx.db
-  }
+export interface GravitoOrbit {
+  install(core: PlanetCore): void | Promise<void>
 }
 ```
 
