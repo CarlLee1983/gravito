@@ -1,0 +1,26 @@
+{
+    "name": "@gravito/orbit-i18n",
+    "version": "0.1.0",
+    "description": "Internationalization orbit for Gravito framework",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "scripts": {
+        "build": "bun build ./src/index.ts --outdir ./dist --target node --external @gravito/core --external hono",
+        "test": "bun test"
+    },
+    "keywords": [
+        "gravito",
+        "orbit",
+        "i18n",
+        "internationalization"
+    ],
+    "author": "Carl",
+    "license": "MIT",
+    "peerDependencies": {
+        "gravito-core": "workspace:*",
+        "hono": "^4.0.0"
+    },
+    "devDependencies": {
+        "@types/bun": "latest"
+    }
+}
