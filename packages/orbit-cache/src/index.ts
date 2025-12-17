@@ -1,5 +1,21 @@
 import type { GravitoOrbit, PlanetCore } from 'gravito-core';
 import type { Context, Next } from 'hono';
+import { CacheManager } from './CacheManager';
+import type { CacheEvents } from './CacheRepository';
+import type { CacheStore } from './store';
+import { FileStore } from './stores/FileStore';
+import { MemoryStore } from './stores/MemoryStore';
+import { NullStore } from './stores/NullStore';
+import type { CacheTtl } from './types';
+
+export * from './CacheManager';
+export * from './CacheRepository';
+export * from './locks';
+export * from './store';
+export * from './stores/FileStore';
+export * from './stores/MemoryStore';
+export * from './stores/NullStore';
+export * from './types';
 
 export interface CacheProvider {
   get<T = unknown>(key: string): Promise<T | null>;
@@ -8,127 +24,196 @@ export interface CacheProvider {
   clear(): Promise<void>;
 }
 
-/**
- * CacheService interface exposed to Hono context via c.get('cache')
- */
 export interface CacheService {
   get<T = unknown>(key: string): Promise<T | null>;
-  set(key: string, value: unknown, ttl?: number): Promise<void>;
-  delete(key: string): Promise<void>;
+  set(key: string, value: unknown, ttl?: CacheTtl): Promise<void>;
+  delete(key: string): Promise<boolean>;
   clear(): Promise<void>;
-  remember<T>(key: string, ttl: number, callback: () => Promise<T>): Promise<T>;
+  remember<T>(key: string, ttl: CacheTtl, callback: () => Promise<T> | T): Promise<T>;
 }
 
 export class MemoryCacheProvider implements CacheProvider {
-  private store = new Map<string, { value: unknown; expiresAt: number }>();
+  private store = new MemoryStore();
 
   async get<T = unknown>(key: string): Promise<T | null> {
-    const item = this.store.get(key);
-    if (!item) {
-      return null;
-    }
-
-    if (Date.now() > item.expiresAt) {
-      this.store.delete(key);
-      return null;
-    }
-
-    return item.value as T;
+    return this.store.get<T>(key);
   }
 
   async set(key: string, value: unknown, ttl = 60): Promise<void> {
-    this.store.set(key, {
-      value,
-      expiresAt: Date.now() + ttl * 1000,
-    });
+    await this.store.put(key, value, ttl);
   }
 
   async delete(key: string): Promise<void> {
-    this.store.delete(key);
+    await this.store.forget(key);
   }
 
   async clear(): Promise<void> {
-    this.store.clear();
+    await this.store.flush();
   }
 }
 
+export type OrbitCacheStoreConfig =
+  | { driver: 'memory'; maxItems?: number }
+  | { driver: 'file'; directory: string }
+  | { driver: 'null' }
+  | { driver: 'custom'; store: CacheStore }
+  | { driver: 'provider'; provider: CacheProvider };
+
 export interface OrbitCacheOptions {
-  provider?: CacheProvider;
   exposeAs?: string; // Default: 'cache'
+  default?: string; // Default store name
+  prefix?: string;
+  defaultTtl?: CacheTtl;
+  stores?: Record<string, OrbitCacheStoreConfig>;
+
+  // Legacy options
+  provider?: CacheProvider;
   defaultTTL?: number;
 }
 
+function resolveStoreConfig(core: PlanetCore, options?: OrbitCacheOptions): OrbitCacheOptions {
+  if (options) {
+    return options;
+  }
+  if (core.config.has('cache')) {
+    return core.config.get<OrbitCacheOptions>('cache');
+  }
+  return {};
+}
+
+function createStoreFactory(config: OrbitCacheOptions): (name: string) => CacheStore {
+  const stores = config.stores ?? {};
+  const defaultSeconds = typeof config.defaultTtl === 'number' ? config.defaultTtl : 60;
+
+  return (name: string) => {
+    const storeConfig = stores[name];
+
+    if (!storeConfig) {
+      if (name === 'memory') {
+        return new MemoryStore();
+      }
+      return new MemoryStore();
+    }
+
+    if (storeConfig.driver === 'memory') {
+      return new MemoryStore({ maxItems: storeConfig.maxItems });
+    }
+
+    if (storeConfig.driver === 'file') {
+      return new FileStore({ directory: storeConfig.directory });
+    }
+
+    if (storeConfig.driver === 'null') {
+      return new NullStore();
+    }
+
+    if (storeConfig.driver === 'custom') {
+      return storeConfig.store;
+    }
+
+    if (storeConfig.driver === 'provider') {
+      const provider = storeConfig.provider;
+      return {
+        get: (key) => provider.get(key),
+        put: (key, value, ttl) =>
+          provider.set(key, value, typeof ttl === 'number' ? ttl : defaultSeconds),
+        add: async (key, value, ttl) => {
+          const existing = await provider.get(key);
+          if (existing !== null) {
+            return false;
+          }
+          await provider.set(key, value, typeof ttl === 'number' ? ttl : defaultSeconds);
+          return true;
+        },
+        forget: async (key) => {
+          await provider.delete(key);
+          return true;
+        },
+        flush: () => provider.clear(),
+        increment: async (key, value = 1) => {
+          const current = await provider.get<number>(key);
+          const next = (current ?? 0) + value;
+          await provider.set(key, next, defaultSeconds);
+          return next;
+        },
+        decrement: async (key, value = 1) => {
+          const current = await provider.get<number>(key);
+          const next = (current ?? 0) - value;
+          await provider.set(key, next, defaultSeconds);
+          return next;
+        },
+      } satisfies CacheStore;
+    }
+
+    return new MemoryStore();
+  };
+}
+
 export class OrbitCache implements GravitoOrbit {
+  private manager: CacheManager | undefined;
+
   constructor(private options?: OrbitCacheOptions) {}
 
   install(core: PlanetCore): void {
-    // Resolve config from options or core config (with empty fallback since cache works with defaults)
-    const resolvedConfig: OrbitCacheOptions =
-      this.options ?? (core.config.has('cache') ? core.config.get<OrbitCacheOptions>('cache') : {});
+    const resolvedConfig = resolveStoreConfig(core, this.options);
+    const exposeAs = resolvedConfig.exposeAs ?? 'cache';
+    const defaultStore = resolvedConfig.default ?? (resolvedConfig.provider ? 'default' : 'memory');
+    const defaultTtl =
+      resolvedConfig.defaultTtl ??
+      (typeof resolvedConfig.defaultTTL === 'number' ? resolvedConfig.defaultTTL : undefined) ??
+      60;
+    const prefix = resolvedConfig.prefix ?? '';
 
-    const { exposeAs = 'cache', defaultTTL = 60 } = resolvedConfig;
     const logger = core.logger;
-
     logger.info(`[OrbitCache] Initializing Cache (Exposed as: ${exposeAs})`);
 
-    const provider = resolvedConfig.provider ?? new MemoryCacheProvider();
-
-    const cacheService = {
-      get: (key: string) => provider.get(key),
-      delete: (key: string) => provider.delete(key),
-      clear: () => provider.clear(),
-
-      async remember<T>(key: string, ttl: number, callback: () => Promise<T>): Promise<T> {
-        let value = await provider.get<T>(key);
-        if (value) {
-          core.hooks.doAction('cache:hit', { key });
-          return value;
-        }
-        core.hooks.doAction('cache:miss', { key });
-        value = await callback();
-        await provider.set(key, value, ttl);
-        return value;
-      },
-
-      set: async (key: string, value: unknown, ttl?: number) => {
-        return provider.set(key, value, ttl ?? defaultTTL);
-      },
+    const events: CacheEvents = {
+      hit: (key) => core.hooks.doAction('cache:hit', { key }),
+      miss: (key) => core.hooks.doAction('cache:miss', { key }),
+      write: (key) => core.hooks.doAction('cache:write', { key }),
+      forget: (key) => core.hooks.doAction('cache:forget', { key }),
+      flush: () => core.hooks.doAction('cache:flush', {}),
     };
 
+    const stores =
+      resolvedConfig.stores ??
+      (resolvedConfig.provider
+        ? { default: { driver: 'provider' as const, provider: resolvedConfig.provider } }
+        : undefined);
+
+    const manager = new CacheManager(
+      createStoreFactory({ ...resolvedConfig, stores }),
+      {
+        default: defaultStore,
+        prefix,
+        defaultTtl,
+      },
+      events
+    );
+
+    this.manager = manager;
+
     core.app.use('*', async (c: Context, next: Next) => {
-      c.set(exposeAs, cacheService);
+      c.set(exposeAs, manager);
       await next();
     });
 
-    core.hooks.doAction('cache:init', cacheService);
+    core.hooks.doAction('cache:init', manager);
+  }
+
+  getCache(): CacheManager {
+    if (!this.manager) {
+      throw new Error('OrbitCache not installed yet.');
+    }
+    return this.manager;
   }
 }
 
-export default function orbitCache(core: PlanetCore, options: OrbitCacheOptions = {}) {
+export default function orbitCache(
+  core: PlanetCore,
+  options: OrbitCacheOptions = {}
+): CacheManager {
   const orbit = new OrbitCache(options);
   orbit.install(core);
-
-  // Functional Wrapper Return Logic (Duplication for compatibility)
-  const { defaultTTL = 60 } = options;
-  const provider = options.provider || new MemoryCacheProvider();
-
-  return {
-    get: (key: string) => provider.get(key),
-    delete: (key: string) => provider.delete(key),
-    clear: () => provider.clear(),
-    async remember<T>(key: string, ttl: number, callback: () => Promise<T>): Promise<T> {
-      let value = await provider.get<T>(key);
-      if (value) {
-        core.hooks.doAction('cache:hit', { key });
-        return value as T;
-      }
-      core.hooks.doAction('cache:miss', { key });
-      value = await callback();
-      await provider.set(key, value, ttl);
-      return value;
-    },
-    set: async (key: string, value: unknown, ttl?: number) => {
-      return provider.set(key, value, ttl ?? defaultTTL);
-    },
-  };
+  return orbit.getCache();
 }
