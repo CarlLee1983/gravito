@@ -14,7 +14,7 @@ export class TemplateRenderer implements Renderer {
 
   async render(data: Record<string, unknown>): Promise<RenderResult> {
     // Disable automatic layout by default for emails, unless explicitly handled in template
-    const html = this.engine.render(this.template, data, { layout: undefined });
+    const html = this.engine.render(this.template, data, {});
 
     return {
       html,

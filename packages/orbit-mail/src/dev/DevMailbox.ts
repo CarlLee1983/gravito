@@ -27,7 +27,7 @@ export class DevMailbox {
         ...(message.attachments ? { attachments: message.attachments } : {}),
       },
       html: message.html,
-      text: message.text,
+      ...(message.text ? { text: message.text } : {}),
       sentAt: new Date(),
     };
 

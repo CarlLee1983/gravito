@@ -6,7 +6,7 @@ import type { Address, Attachment, Envelope, MailConfig } from './types';
 
 // Type placeholders for React/Vue components to avoid hard dependencies in core
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type ComponentType<P = any> = any;
+type ComponentType = any;
 
 export abstract class Mailable implements Queueable {
   protected envelope: Partial<Envelope> = {};
@@ -82,7 +82,7 @@ export abstract class Mailable implements Queueable {
    * Set the content using a React component.
    * Dynamically imports ReactRenderer to avoid hard dependency errors if React is not installed.
    */
-  react<P extends object>(component: ComponentType<P>, props?: P): this {
+  react<P extends object>(component: ComponentType, props?: P): this {
     this.rendererResolver = async () => {
       const { ReactRenderer } = await import('./renderers/ReactRenderer');
       return new ReactRenderer(component, props);
@@ -94,7 +94,7 @@ export abstract class Mailable implements Queueable {
    * Set the content using a Vue component.
    * Dynamically imports VueRenderer to avoid hard dependency errors if Vue is not installed.
    */
-  vue<P extends object>(component: ComponentType<P>, props?: P): this {
+  vue<P extends object>(component: ComponentType, props?: P): this {
     this.rendererResolver = async () => {
       const { VueRenderer } = await import('./renderers/VueRenderer');
       return new VueRenderer(component, props as any);
