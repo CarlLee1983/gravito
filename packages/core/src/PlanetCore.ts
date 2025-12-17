@@ -1,6 +1,10 @@
+import type { Context } from 'hono';
 import { Hono } from 'hono';
+import { HTTPException } from 'hono/http-exception';
+import type { ContentfulStatusCode } from 'hono/utils/http-status';
 import { ConfigManager } from './ConfigManager';
 import { HookManager } from './HookManager';
+import { fail } from './helpers/response';
 import { ConsoleLogger, type Logger } from './Logger';
 
 /**
@@ -18,6 +22,23 @@ export interface CacheService {
 export interface ViewService {
   render(view: string, data?: Record<string, any>, options?: Record<string, any>): string;
 }
+
+export type ErrorHandlerContext = {
+  core: PlanetCore;
+  c: Context;
+  error: unknown;
+  isProduction: boolean;
+  accept: string;
+  wantsHtml: boolean;
+  status: ContentfulStatusCode;
+  payload: ReturnType<typeof fail>;
+  logLevel?: 'error' | 'warn' | 'info' | 'none';
+  logMessage?: string;
+  html?: {
+    templates: string[];
+    data: Record<string, unknown>;
+  };
+};
 
 // Hono Variables Type for Context Injection
 type Variables = {
@@ -71,63 +92,197 @@ export class PlanetCore {
     });
 
     // Standard Error Handling
-    this.app.onError((err, c) => {
-      this.logger.error(`[ERROR] Application Error: ${err.message}`, err);
+    this.app.onError(async (err, c) => {
+      const isProduction = process.env.NODE_ENV === 'production';
+      const codeFromStatus = (status: number): string => {
+        switch (status) {
+          case 400:
+            return 'BAD_REQUEST';
+          case 401:
+            return 'UNAUTHENTICATED';
+          case 403:
+            return 'FORBIDDEN';
+          case 404:
+            return 'NOT_FOUND';
+          case 405:
+            return 'METHOD_NOT_ALLOWED';
+          case 409:
+            return 'CONFLICT';
+          case 422:
+            return 'VALIDATION_ERROR';
+          case 429:
+            return 'TOO_MANY_REQUESTS';
+          default:
+            return status >= 500 ? 'INTERNAL_ERROR' : 'HTTP_ERROR';
+        }
+      };
 
       // Try rendering HTML if available and requested
       const view = c.get('view') as ViewService | undefined;
       const accept = c.req.header('Accept') || '';
-      if (view && accept.includes('text/html')) {
-        try {
-          return c.html(
-            view.render('errors/500', {
-              error: process.env.NODE_ENV !== 'production' ? err.stack : undefined,
-              debug: process.env.NODE_ENV !== 'production',
-            }),
-            500
-          );
-        } catch (renderError) {
-          // Fallback if view rendering fails
-          this.logger.error('[ERROR] Failed to render error view', renderError);
+      const wantsHtml = Boolean(
+        view && accept.includes('text/html') && !accept.includes('application/json')
+      );
+      let status: ContentfulStatusCode = 500;
+      let message = 'Internal Server Error';
+      let code = 'INTERNAL_ERROR';
+      let details: unknown;
+
+      if (err instanceof HTTPException) {
+        status = err.status as ContentfulStatusCode;
+        message = err.message || message;
+        code = codeFromStatus(status);
+      } else if (err instanceof Error) {
+        message = err.message || message;
+      } else if (typeof err === 'string') {
+        message = err;
+      }
+
+      if (!isProduction && err instanceof Error) {
+        details = { stack: err.stack };
+      }
+
+      let handlerContext: ErrorHandlerContext = {
+        core: this,
+        c,
+        error: err,
+        isProduction,
+        accept,
+        wantsHtml,
+        status,
+        payload: fail(message, code, details),
+        ...(wantsHtml
+          ? {
+              html: {
+                templates: status === 500 ? ['errors/500'] : [`errors/${status}`, 'errors/500'],
+                data: {
+                  status,
+                  message,
+                  code,
+                  error: !isProduction && err instanceof Error ? err.stack : undefined,
+                  debug: !isProduction,
+                },
+              },
+            }
+          : {}),
+      };
+
+      handlerContext = await this.hooks.applyFilters<ErrorHandlerContext>(
+        'error:context',
+        handlerContext
+      );
+
+      const defaultLogLevel = handlerContext.status >= 500 ? 'error' : 'none';
+      const logLevel = handlerContext.logLevel ?? defaultLogLevel;
+      if (logLevel !== 'none') {
+        const msg =
+          handlerContext.logMessage ??
+          (logLevel === 'error'
+            ? `Application Error: ${handlerContext.payload.error.message}`
+            : `HTTP ${handlerContext.status}: ${handlerContext.payload.error.message}`);
+
+        if (logLevel === 'error') {
+          this.logger.error(msg, err);
+        } else if (logLevel === 'warn') {
+          this.logger.warn(msg);
+        } else {
+          this.logger.info(msg);
         }
       }
 
-      return c.json(
-        {
-          success: false,
-          error: {
-            message: err.message || 'Internal Server Error',
-            code: 'INTERNAL_ERROR',
-          },
-        },
-        500
+      await this.hooks.doAction('error:report', handlerContext);
+
+      const customResponse = await this.hooks.applyFilters<Response | null>(
+        'error:render',
+        null,
+        handlerContext
       );
+      if (customResponse) {
+        return customResponse;
+      }
+
+      if (handlerContext.wantsHtml && view && handlerContext.html) {
+        let lastRenderError: unknown;
+        for (const template of handlerContext.html.templates) {
+          try {
+            return c.html(view.render(template, handlerContext.html.data), handlerContext.status);
+          } catch (renderError) {
+            lastRenderError = renderError;
+          }
+        }
+        this.logger.error('Failed to render error view', lastRenderError);
+      }
+
+      return c.json(handlerContext.payload, handlerContext.status);
     });
 
-    this.app.notFound((c) => {
-      this.logger.info(`[INFO] 404 Not Found: ${c.req.url}`);
-
+    this.app.notFound(async (c) => {
       // Try rendering HTML if available and requested
       const view = c.get('view') as ViewService | undefined;
       const accept = c.req.header('Accept') || '';
-      if (view && accept.includes('text/html')) {
-        try {
-          return c.html(view.render('errors/404'), 404);
-        } catch (renderError) {
-          // Fallback if view rendering fails
+      const wantsHtml =
+        view && accept.includes('text/html') && !accept.includes('application/json');
+
+      let handlerContext: ErrorHandlerContext = {
+        core: this,
+        c,
+        error: new HTTPException(404, { message: 'Route not found' }),
+        isProduction: process.env.NODE_ENV === 'production',
+        accept,
+        wantsHtml: Boolean(wantsHtml),
+        status: 404,
+        payload: fail('Route not found', 'NOT_FOUND'),
+        ...(wantsHtml
+          ? {
+              html: {
+                templates: ['errors/404', 'errors/500'],
+                data: { status: 404, message: 'Route not found', code: 'NOT_FOUND', debug: false },
+              },
+            }
+          : {}),
+      };
+
+      handlerContext = await this.hooks.applyFilters<ErrorHandlerContext>(
+        'notFound:context',
+        handlerContext
+      );
+
+      const logLevel = handlerContext.logLevel ?? 'info';
+      if (logLevel !== 'none') {
+        const msg = handlerContext.logMessage ?? `404 Not Found: ${c.req.url}`;
+        if (logLevel === 'error') {
+          this.logger.error(msg);
+        } else if (logLevel === 'warn') {
+          this.logger.warn(msg);
+        } else {
+          this.logger.info(msg);
         }
       }
 
-      return c.json(
-        {
-          success: false,
-          error: {
-            message: 'Route not found',
-            code: 'NOT_FOUND',
-          },
-        },
-        404
+      await this.hooks.doAction('notFound:report', handlerContext);
+
+      const customResponse = await this.hooks.applyFilters<Response | null>(
+        'notFound:render',
+        null,
+        handlerContext
       );
+      if (customResponse) {
+        return customResponse;
+      }
+
+      if (handlerContext.wantsHtml && view && handlerContext.html) {
+        let lastRenderError: unknown;
+        for (const template of handlerContext.html.templates) {
+          try {
+            return c.html(view.render(template, handlerContext.html.data), handlerContext.status);
+          } catch (renderError) {
+            lastRenderError = renderError;
+          }
+        }
+        this.logger.error('Failed to render 404 view', lastRenderError);
+      }
+
+      return c.json(handlerContext.payload, handlerContext.status);
     });
   }
 

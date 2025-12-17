@@ -21,6 +21,7 @@ export { ConsoleLogger } from './Logger';
 // Core Exports
 export {
   type CacheService,
+  type ErrorHandlerContext,
   type GravitoConfig,
   type GravitoOrbit,
   PlanetCore,

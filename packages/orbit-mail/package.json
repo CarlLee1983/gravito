@@ -1,0 +1,63 @@
+{
+    "name": "@gravito/orbit-mail",
+    "version": "1.0.0",
+    "description": "Powerful email framework for Gravito applications with Dev UI and multi-renderer support.",
+    "main": "dist/index.js",
+    "module": "dist/index.mjs",
+    "types": "dist/index.d.ts",
+    "scripts": {
+        "build": "tsup src/index.ts --format cjs,esm --dts",
+        "test": "bun test"
+    },
+    "keywords": [
+        "gravito",
+        "mail",
+        "smtp",
+        "mjml",
+        "email",
+        "react-email",
+        "vue-email"
+    ],
+    "author": "Carl",
+    "license": "MIT",
+    "dependencies": {
+        "nodemailer": "^6.9.1",
+        "mjml": "^4.14.1"
+    },
+    "peerDependencies": {
+        "gravito-core": "workspace:*",
+        "@gravito/orbit-view": "workspace:*",
+        "react": "^18.0.0",
+        "react-dom": "^18.0.0",
+        "vue": "^3.0.0"
+    },
+    "peerDependenciesMeta": {
+        "react": {
+            "optional": true
+        },
+        "react-dom": {
+            "optional": true
+        },
+        "vue": {
+            "optional": true
+        },
+        "@gravito/orbit-view": {
+            "optional": true
+        }
+    },
+    "devDependencies": {
+        "@types/nodemailer": "^6.4.14",
+        "@types/mjml": "^4.7.4",
+        "@types/react": "^18.2.0",
+        "@types/react-dom": "^18.2.0",
+        "gravito-core": "workspace:*",
+        "@gravito/orbit-view": "workspace:*",
+        "tsup": "^8.0.2",
+        "typescript": "^5.0.0",
+        "vue": "^3.0.0",
+        "@vue/server-renderer": "^3.0.0"
+    },
+    "publishConfig": {
+        "access": "public"
+    }
+}
