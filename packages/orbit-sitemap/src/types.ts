@@ -64,10 +64,30 @@ export interface SitemapIndexEntry {
 }
 
 export interface SitemapProvider {
-  getEntries(): Promise<SitemapEntry[]> | SitemapEntry[];
+  getEntries(): Promise<SitemapEntry[]> | SitemapEntry[] | AsyncIterable<SitemapEntry>;
 }
 
 export interface SitemapStreamOptions {
   baseUrl: string;
   pretty?: boolean | undefined;
+}
+
+// Phase 4-6: Storage & Cache Interfaces
+
+export interface SitemapStorage {
+  write(filename: string, content: string): Promise<void>;
+  read(filename: string): Promise<string | null>;
+  exists(filename: string): Promise<boolean>;
+  getUrl(filename: string): string;
+}
+
+export interface SitemapCache {
+  get(key: string): Promise<string | null>;
+  set(key: string, value: string, ttl?: number): Promise<void>;
+  has(key: string): Promise<boolean>;
+}
+
+export interface SitemapLock {
+  acquire(resource: string, ttl: number): Promise<boolean>;
+  release(resource: string): Promise<void>;
 }

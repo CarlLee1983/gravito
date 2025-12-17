@@ -1,8 +1,10 @@
 import { describe, expect, it, jest } from 'bun:test';
+import { SitemapGenerator } from '../src/core/SitemapGenerator';
 import { SitemapIndex } from '../src/core/SitemapIndex';
 import { SitemapStream } from '../src/core/SitemapStream';
 import { OrbitSitemap } from '../src/OrbitSitemap';
 import { RouteScanner } from '../src/providers/RouteScanner';
+import { MemorySitemapStorage } from '../src/storage/MemorySitemapStorage';
 
 // Mock core for OrbitSitemap tests
 const mockCore = {
@@ -185,5 +187,62 @@ describe('OrbitSitemap', () => {
       providers: [],
     });
     expect(orbit).toBeDefined();
+  });
+});
+
+describe('SitemapGenerator', () => {
+  it('should split sitemap into shards', async () => {
+    const storage = new MemorySitemapStorage('https://example.com');
+    const generator = new SitemapGenerator({
+      baseUrl: 'https://example.com',
+      storage,
+      providers: [
+        {
+          getEntries: () => [{ url: '/1' }, { url: '/2' }, { url: '/3' }],
+        },
+      ],
+      maxEntriesPerFile: 1,
+      filename: 'sitemap.xml',
+    });
+
+    await generator.run();
+
+    // Should produce sitemap-1.xml, sitemap-2.xml, sitemap-3.xml and sitemap.xml
+    expect(await storage.exists('sitemap-1.xml')).toBe(true);
+    expect(await storage.exists('sitemap-2.xml')).toBe(true);
+    expect(await storage.exists('sitemap-3.xml')).toBe(true);
+    expect(await storage.exists('sitemap.xml')).toBe(true);
+
+    const index = await storage.read('sitemap.xml');
+    expect(index).toContain('sitemap-1.xml');
+    expect(index).toContain('sitemap-3.xml');
+    expect(index).toContain('<sitemapindex');
+  });
+
+  it('should handle async iterables', async () => {
+    const storage = new MemorySitemapStorage('https://example.com');
+
+    async function* entryGenerator() {
+      yield { url: '/async-1' };
+      yield { url: '/async-2' };
+    }
+
+    const generator = new SitemapGenerator({
+      baseUrl: 'https://example.com',
+      storage,
+      providers: [
+        {
+          getEntries: () => entryGenerator(),
+        },
+      ],
+      filename: 'sitemap.xml',
+    });
+
+    await generator.run();
+
+    expect(await storage.exists('sitemap-1.xml')).toBe(true);
+    const content = await storage.read('sitemap-1.xml');
+    expect(content).toContain('/async-1');
+    expect(content).toContain('/async-2');
   });
 });

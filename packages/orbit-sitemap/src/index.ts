@@ -1,3 +1,4 @@
+export { SitemapGenerator, type SitemapGeneratorOptions } from './core/SitemapGenerator';
 export { SitemapIndex } from './core/SitemapIndex';
 export { SitemapStream } from './core/SitemapStream';
 export {
@@ -6,4 +7,6 @@ export {
   type StaticSitemapOptions,
 } from './OrbitSitemap';
 export { RouteScanner, type RouteScannerOptions, routeScanner } from './providers/RouteScanner';
+export { DiskSitemapStorage } from './storage/DiskSitemapStorage';
+export { MemorySitemapStorage } from './storage/MemorySitemapStorage';
 export * from './types';

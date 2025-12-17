@@ -1,18 +1,22 @@
 import type { PlanetCore } from 'gravito-core';
 import type { Context } from 'hono';
-import { SitemapStream } from './core/SitemapStream';
-import type { SitemapProvider, SitemapStreamOptions } from './types';
+import { SitemapGenerator } from './core/SitemapGenerator';
+import { MemorySitemapStorage } from './storage/MemorySitemapStorage';
+import type { SitemapLock, SitemapProvider, SitemapStorage, SitemapStreamOptions } from './types';
 
 export interface DynamicSitemapOptions extends SitemapStreamOptions {
   path?: string | undefined; // default: '/sitemap.xml'
   providers: SitemapProvider[];
   cacheSeconds?: number | undefined;
+  storage?: SitemapStorage | undefined;
+  lock?: SitemapLock | undefined;
 }
 
 export interface StaticSitemapOptions extends SitemapStreamOptions {
   outDir: string;
   filename?: string | undefined; // default: 'sitemap.xml'
   providers: SitemapProvider[];
+  storage?: SitemapStorage | undefined;
 }
 
 export class OrbitSitemap {
@@ -50,25 +54,64 @@ export class OrbitSitemap {
 
   private installDynamic(core: PlanetCore) {
     const opts = this.options as DynamicSitemapOptions;
+    const storage = opts.storage ?? new MemorySitemapStorage(opts.baseUrl);
+    const indexFilename = opts.path!.split('/').pop()!;
+    const baseDir = opts.path!.substring(0, opts.path!.lastIndexOf('/'));
 
-    core.router.get(opts.path!, async (ctx: Context) => {
-      const stream = new SitemapStream({
-        baseUrl: opts.baseUrl,
-        pretty: opts.pretty,
-      });
+    const handler = async (ctx: Context) => {
+      // Determine filename from request
+      const reqPath = ctx.req.path;
+      const filename = reqPath.split('/').pop() || indexFilename;
+      const isIndex = filename === indexFilename;
 
-      for (const provider of opts.providers) {
-        const entries = await provider.getEntries();
-        stream.addAll(entries);
+      // Check storage
+      let content = await storage.read(filename);
+
+      // If missing and is index, generate
+      if (!content && isIndex) {
+        // Locking
+        if (opts.lock) {
+          const locked = await opts.lock.acquire(filename, 60);
+          if (!locked) {
+            return ctx.text('Generating...', 503, { 'Retry-After': '5' });
+          }
+        }
+
+        try {
+          const generator = new SitemapGenerator({
+            ...opts,
+            storage,
+            filename: indexFilename,
+          });
+          await generator.run();
+        } finally {
+          if (opts.lock) await opts.lock.release(filename);
+        }
+
+        content = await storage.read(filename);
       }
 
-      const xml = stream.toXML();
+      if (!content) {
+        // If it's a shard and missing, return 404.
+        // If index is missing after generation attempt, return 404 (or 500?)
+        return ctx.text('Not Found', 404);
+      }
 
-      return ctx.body(xml, 200, {
+      return ctx.body(content, 200, {
         'Content-Type': 'application/xml',
         'Cache-Control': opts.cacheSeconds ? `public, max-age=${opts.cacheSeconds}` : 'no-cache',
       });
-    });
+    };
+
+    // Register Index Route
+    core.router.get(opts.path!, handler);
+
+    // Register Shard Route (e.g., sitemap-1.xml)
+    // We assume shards are in same directory and follow pattern {basename}-*.xml
+    // Hono pattern: /path/basename-:shard.xml
+    const basename = indexFilename.replace('.xml', '');
+    const shardRoute = `${baseDir}/${basename}-:shard.xml`;
+    core.router.get(shardRoute, handler);
   }
 
   async generate(): Promise<void> {
@@ -77,29 +120,21 @@ export class OrbitSitemap {
     }
 
     const opts = this.options as StaticSitemapOptions;
-    // In a real implementation, we would write to file system here.
-    // Since we don't want to bring in 'fs' dependency into the browser bundle if possible,
-    // we assume this runs in Node/Bun environment.
 
-    const stream = new SitemapStream({
-      baseUrl: opts.baseUrl,
-      pretty: opts.pretty,
-    });
-
-    for (const provider of opts.providers) {
-      const entries = await provider.getEntries();
-      stream.addAll(entries);
+    let storage = opts.storage;
+    if (!storage) {
+      const { DiskSitemapStorage } = await import('./storage/DiskSitemapStorage');
+      storage = new DiskSitemapStorage(opts.outDir, opts.baseUrl);
     }
 
-    const xml = stream.toXML();
+    const generator = new SitemapGenerator({
+      ...opts,
+      storage,
+      filename: opts.filename || 'sitemap.xml',
+    });
 
-    const fs = await import('node:fs/promises');
-    const path = await import('node:path');
+    await generator.run();
 
-    const filePath = path.join(opts.outDir, opts.filename!);
-    await fs.mkdir(opts.outDir, { recursive: true });
-    await fs.writeFile(filePath, xml);
-
-    console.log(`[OrbitSitemap] Generated ${filePath}`);
+    console.log(`[OrbitSitemap] Generated sitemap in ${opts.outDir}`);
   }
 }

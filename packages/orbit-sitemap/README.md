@@ -129,6 +129,53 @@ sitemap.add({
 })
 ```
 
+## Scaling & Distributed (Advanced)
+
+### Large Scale Sharding
+Orbit Sitemap automatically handles large datasets by splitting them into multiple files (default 50,000 URLs per file).
+
+```typescript
+OrbitSitemap.dynamic({
+  // ...
+  maxEntriesPerFile: 10000, // Custom split limit
+  storage: new RedisSitemapStorage({ ... }) // Store generated files in Redis/S3
+})
+```
+
+### Async Iterators (Streaming)
+For large datasets, use Async Generators in your providers to stream URLs without loading them all into memory.
+
+```typescript
+{
+  async *getEntries() {
+    for await (const row of db.cursor('SELECT * FROM massive_table')) {
+      yield { url: `/item/${row.id}` }
+    }
+  }
+}
+```
+
+### Distributed Locking
+In a distributed environment (e.g. Kubernetes), use `lock` to prevent concurrent sitemap generation.
+
+```typescript
+OrbitSitemap.dynamic({
+  // ...
+  lock: new RedisSitemapLock(redisClient),
+  storage: new S3SitemapStorage(bucket)
+})
+```
+
+### Creating Custom Storage/Lock
+Implement `SitemapStorage` and `SitemapLock` interfaces:
+
+```typescript
+import { SitemapStorage, SitemapLock } from '@gravito/orbit-sitemap'
+
+class MyStorage implements SitemapStorage { ... }
+class MyLock implements SitemapLock { ... }
+```
+
 ## Type Reference
 
 See `dist/index.d.ts` for full type definitions including `SitemapEntry`, `SitemapImage`, `SitemapVideo`, etc.
