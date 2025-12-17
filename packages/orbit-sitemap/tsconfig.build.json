@@ -1,0 +1,24 @@
+{
+    "extends": "../../tsconfig.build.json",
+    "compilerOptions": {
+        "baseUrl": ".",
+        "paths": {
+            "@gravito/orbit-sitemap": [
+                "./src/index.ts"
+            ]
+        },
+        "rootDir": "src",
+        "outDir": "dist",
+        "composite": true,
+        "declaration": true,
+        "declarationMap": true
+    },
+    "include": [
+        "src/**/*"
+    ],
+    "exclude": [
+        "node_modules",
+        "dist",
+        "**/*.test.ts"
+    ]
+}
