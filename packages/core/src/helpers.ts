@@ -1,5 +1,12 @@
 import { HTTPException } from 'hono/http-exception';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
+import type { PlanetCore } from './PlanetCore';
+import type { Router } from './Router';
+
+export { Arr } from './helpers/Arr';
+export * from './helpers/data';
+export * from './helpers/response';
+export { Str } from './helpers/Str';
 
 export class DumpDieError extends Error {
   override name = 'DumpDieError';
@@ -93,126 +100,6 @@ export function filled(value: unknown): boolean {
   return !blank(value);
 }
 
-export type PathSegment = string | number;
-export type DataPath = string | readonly PathSegment[];
-
-function parsePath(path: DataPath | null | undefined): PathSegment[] {
-  if (path === null || path === undefined) {
-    return [];
-  }
-  if (typeof path !== 'string') {
-    return [...path];
-  }
-
-  if (path === '') {
-    return [];
-  }
-
-  return path.split('.').map((segment) => {
-    const n = Number(segment);
-    if (Number.isInteger(n) && String(n) === segment) {
-      return n;
-    }
-    return segment;
-  });
-}
-
-function getChild(current: unknown, key: PathSegment): unknown {
-  if (current === null || current === undefined) {
-    return undefined;
-  }
-
-  if (current instanceof Map) {
-    return current.get(key);
-  }
-
-  if (typeof current === 'object' || typeof current === 'function') {
-    // biome-ignore lint/suspicious/noExplicitAny: Dynamic property access is required.
-    return (current as any)[key as any];
-  }
-
-  return undefined;
-}
-
-function setChild(current: unknown, key: PathSegment, next: unknown): void {
-  if (current === null || current === undefined) {
-    throw new TypeError('dataSet target cannot be null or undefined.');
-  }
-
-  if (current instanceof Map) {
-    current.set(key, next);
-    return;
-  }
-
-  if (typeof current === 'object' || typeof current === 'function') {
-    // biome-ignore lint/suspicious/noExplicitAny: Dynamic property access is required.
-    (current as any)[key as any] = next;
-    return;
-  }
-
-  throw new TypeError('dataSet target must be object-like.');
-}
-
-export function dataGet<TDefault = undefined>(
-  target: unknown,
-  path: DataPath | null | undefined,
-  defaultValue?: TDefault
-): unknown | TDefault {
-  const segments = parsePath(path);
-  if (segments.length === 0) {
-    return target;
-  }
-
-  let current: unknown = target;
-  for (const segment of segments) {
-    current = getChild(current, segment);
-    if (current === undefined) {
-      return defaultValue as TDefault;
-    }
-  }
-
-  return current;
-}
-
-export function dataSet(
-  target: unknown,
-  path: DataPath,
-  setValue: unknown,
-  overwrite = true
-): unknown {
-  const segments = parsePath(path);
-  if (segments.length === 0) {
-    return target;
-  }
-
-  let current: unknown = target;
-  for (let i = 0; i < segments.length - 1; i++) {
-    const segment = segments[i] as PathSegment;
-    const nextSegment = segments[i + 1] as PathSegment;
-
-    const existing = getChild(current, segment);
-    if (
-      existing !== undefined &&
-      (typeof existing === 'object' || typeof existing === 'function')
-    ) {
-      current = existing;
-      continue;
-    }
-
-    const created = typeof nextSegment === 'number' ? [] : {};
-    setChild(current, segment, created);
-    current = created;
-  }
-
-  const last = segments[segments.length - 1] as PathSegment;
-  const existingLast = getChild(current, last);
-  if (overwrite || existingLast === undefined) {
-    setChild(current, last, setValue);
-  }
-
-  return target;
-}
-
 function toError(error: Error | string | (() => Error)): Error {
   if (typeof error === 'string') {
     return new Error(error);
@@ -251,6 +138,40 @@ export function env<TDefault = string | undefined>(key: string, defaultValue?: T
   const bunEnv = (globalThis as EnvShape).Bun?.env;
   const value = bunEnv?.[key] ?? process.env[key];
   return (value ?? defaultValue) as string | TDefault;
+}
+
+let currentApp: PlanetCore | undefined;
+
+export function setApp(core: PlanetCore | null): void {
+  currentApp = core ?? undefined;
+}
+
+export function hasApp(): boolean {
+  return currentApp !== undefined;
+}
+
+export function app(): PlanetCore {
+  if (!currentApp) {
+    throw new Error('No app is bound. Call setApp(core) once during bootstrap.');
+  }
+  return currentApp;
+}
+
+export function config<T = unknown>(key: string): T;
+export function config<T>(key: string, defaultValue: T): T;
+export function config<T = unknown>(key: string, defaultValue?: T): T {
+  if (defaultValue === undefined) {
+    return app().config.get<T>(key);
+  }
+  return app().config.get<T>(key, defaultValue);
+}
+
+export function logger() {
+  return app().logger;
+}
+
+export function router(): Router {
+  return app().router;
 }
 
 export function abort(status: ContentfulStatusCode, message?: string): never {
