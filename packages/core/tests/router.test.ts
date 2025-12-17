@@ -88,4 +88,35 @@ describe('Router', () => {
     const res2 = await core.app.request('/', { headers: { host: 'www.example.com' } });
     expect(res2.status).toBe(404);
   });
+
+  it('should accept middleware as array', async () => {
+    const core = new PlanetCore();
+    const router = new Router(core);
+    const callOrder: string[] = [];
+
+    const mw1 = async (_c: any, next: any) => {
+      callOrder.push('mw1');
+      await next();
+    };
+    const mw2 = async (_c: any, next: any) => {
+      callOrder.push('mw2');
+      await next();
+    };
+    const mw3 = async (_c: any, next: any) => {
+      callOrder.push('mw3');
+      await next();
+    };
+
+    // Pass array directly
+    router
+      .prefix('/arr')
+      .middleware([mw1, mw2], mw3)
+      .group((r) => {
+        r.get('/test', (c) => c.text('ok'));
+      });
+
+    const res = await core.app.request('/arr/test');
+    expect(await res.text()).toBe('ok');
+    expect(callOrder).toEqual(['mw1', 'mw2', 'mw3']);
+  });
 });

@@ -35,12 +35,14 @@ export class RouteGroup {
   }
 
   /**
-   * Add middleware to the current group
+   * Add middleware to the current group.
+   * Accepts individual handlers or arrays of handlers.
    */
-  middleware(...handlers: MiddlewareHandler[]): RouteGroup {
+  middleware(...handlers: (MiddlewareHandler | MiddlewareHandler[])[]): RouteGroup {
+    const flattened = handlers.flat();
     return new RouteGroup(this.router, {
       ...this.options,
-      middleware: [...(this.options.middleware || []), ...handlers],
+      middleware: [...(this.options.middleware || []), ...flattened],
     });
   }
 
@@ -103,10 +105,11 @@ export class Router {
   }
 
   /**
-   * Start a route group with middleware
+   * Start a route group with middleware.
+   * Accepts individual handlers or arrays of handlers.
    */
-  middleware(...handlers: MiddlewareHandler[]): RouteGroup {
-    return new RouteGroup(this, { middleware: handlers });
+  middleware(...handlers: (MiddlewareHandler | MiddlewareHandler[])[]): RouteGroup {
+    return new RouteGroup(this, { middleware: handlers.flat() });
   }
 
   // Standard HTTP Methods

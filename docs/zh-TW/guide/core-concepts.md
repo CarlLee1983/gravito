@@ -34,6 +34,17 @@ title: Gravito 核心概念
 
 ---
 
+## 設計原則
+
+Gravito 把以下四個核心價值，刻在框架的骨子裡：
+
+- **高效能**：快速啟動、有效率的請求處理。
+- **低耗（低開銷）**：降低執行期負擔，減少隱性成本。
+- **輕量**：按需引入，維持小而可控的運行足跡。
+- **AI 友善**：嚴格型別與一致慣例，讓生成的程式碼更可靠。
+
+---
+
 ## 產品定位
 
 ### 關鍵差異
@@ -164,7 +175,111 @@ export interface GravitoOrbit {
 }
 ```
 
----
+### D. Middleware / Pipeline Pattern
+
+Gravito 路由支援完整的 Middleware 串接模式，讓你能在請求處理前後執行驗證、日誌、快取等邏輯。
+
+#### 基本用法
+
+```typescript
+import type { MiddlewareHandler } from 'hono'
+
+// 定義 Middleware
+const authMiddleware: MiddlewareHandler = async (ctx, next) => {
+  const token = ctx.req.header('Authorization')
+  if (!token) {
+    return ctx.json({ error: 'Unauthorized' }, 401)
+  }
+  // 驗證通過，繼續執行下一個 handler
+  await next()
+}
+
+const loggerMiddleware: MiddlewareHandler = async (ctx, next) => {
+  const start = Date.now()
+  await next()
+  const duration = Date.now() - start
+  console.log(`${ctx.req.method} ${ctx.req.path} - ${duration}ms`)
+}
+```
+
+#### 套用至路由群組
+
+`middleware()` 可接受單一 handler、多個 handlers，或陣列：
+
+```typescript
+// 方式 1: 多個參數
+core.router
+  .middleware(loggerMiddleware, authMiddleware)
+  .prefix('/api')
+  .group((r) => {
+    r.get('/users', [UserController, 'index'])
+  })
+
+// 方式 2: 陣列形式（適合動態組合）
+const commonMiddleware = [loggerMiddleware, corsMiddleware]
+core.router
+  .middleware(commonMiddleware, authMiddleware)
+  .prefix('/api/v2')
+  .group((r) => {
+    r.get('/users', [UserController, 'index'])
+  })
+
+// 方式 3: 巢狀群組
+core.router.prefix('/admin').group((admin) => {
+  admin.middleware(authMiddleware).group((secured) => {
+    secured.get('/dashboard', [AdminController, 'dashboard'])
+  })
+})
+```
+
+#### Pipeline 執行順序
+
+請求會依序通過所有 Middleware，最後到達 Controller：
+
+```
+Request → Logger → Auth → Controller → Auth (after) → Logger (after) → Response
+```
+
+每個 Middleware 可以：
+- **攔截請求**: 在 `await next()` 前返回 Response
+- **修改 Context**: 設定 `ctx.set('user', userData)`
+- **後處理**: 在 `await next()` 後執行清理邏輯
+
+#### CSRF 保護
+
+Gravito 可直接使用 Hono 內建的 CSRF middleware，保護表單與 API 免受跨站請求偽造攻擊：
+
+```typescript
+import { csrf } from 'hono/csrf'
+
+// 保護所有非安全方法（POST, PUT, DELETE, PATCH）
+core.router
+  .middleware(csrf())
+  .prefix('/api')
+  .group((r) => {
+    r.post('/users', [UserController, 'store'])
+    r.delete('/users/:id', [UserController, 'destroy'])
+  })
+```
+
+Hono CSRF middleware 會驗證：
+
+| 檢查項目 | 說明 |
+|----------|------|
+| `Origin` header | 確認請求來源與目標網域一致 |
+| `Sec-Fetch-Site` header | 瀏覽器提供的跨站指標 |
+
+> **Note**: 僅對「非安全方法」生效（`POST`, `PUT`, `DELETE`, `PATCH`）。`GET`, `HEAD`, `OPTIONS` 不受影響。
+
+進階設定：
+
+```typescript
+import { csrf } from 'hono/csrf'
+
+csrf({
+  origin: ['https://example.com', 'https://api.example.com'], // 允許的來源
+})
+```
 
 ## 安裝
 

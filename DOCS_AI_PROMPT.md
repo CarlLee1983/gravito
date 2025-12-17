@@ -18,6 +18,7 @@ Targets:
 - zh-TW pages: {ZH_PAGES}
 
 Hard requirements:
+- Reinforce Gravito’s four pillars in wording and structure: **high performance**, **low overhead**, **lightweight**, **AI-friendly** (zh-TW: **高效能、低耗（低開銷）、輕量、AI 友善**).
 - Keep English and zh-TW pages in sync (same section structure and equivalent meaning).
 - Use Taiwan-standard Traditional Chinese terms in zh-TW (e.g. 電腦/網路/資訊/軟體/資料/預設/模組/函式/變數/使用者/伺服器/日誌/環境變數/外掛/發佈/文件).
 - Avoid decorative emoji in headings and prose.
@@ -54,6 +55,7 @@ Scope:
 - docs/zh-TW/**
 
 Hard requirements:
+- Ensure the docs consistently reflect Gravito’s pillars: **high performance**, **low overhead**, **lightweight**, **AI-friendly** (zh-TW: **高效能、低耗（低開銷）、輕量、AI 友善**).
 - Keep en/zh-TW pages aligned in meaning and section structure.
 - zh-TW must follow Taiwan terminology (電腦/網路/資訊/軟體/資料/預設/模組/函式/變數/使用者/伺服器/日誌/環境變數/外掛/發佈/文件).
 - No decorative emoji in headings or prose.
@@ -71,4 +73,3 @@ Output:
 - A prioritized list of fixes (high/medium/low).
 - Patch/diff-ready edits for each affected file.
 ```
-

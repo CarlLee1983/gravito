@@ -34,6 +34,17 @@ Welcome to Gravito Core. This guide covers the fundamental concepts and architec
 
 ---
 
+## Design Principles
+
+Gravito is built around four non-negotiable pillars:
+
+- **High performance**: fast startup and efficient request handling.
+- **Low overhead**: minimize runtime work and reduce hidden costs.
+- **Lightweight**: opt-in components and a small operational footprint.
+- **AI-friendly**: strict types and consistent conventions for reliable code generation.
+
+---
+
 ## Product Positioning
 
 ### Key Differentiators
