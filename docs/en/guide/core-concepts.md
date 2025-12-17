@@ -1,7 +1,7 @@
 # Gravito Core Concepts
 
 > **"The High-Performance Framework for Artisans."**
-> 為工匠打造的高效能框架
+> 为工匠打造的高效能框架
 
 [![npm version](https://img.shields.io/npm/v/gravito-core.svg)](https://www.npmjs.com/package/gravito-core)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -172,85 +172,55 @@ bun add gravito-core
 
 ## 🚀 Quick Start
 
-### 1. Initialize the Core
+### 1. Structure
 
-```typescript
-import { PlanetCore } from 'gravito-core'
+Gravito promotes a flat, clean structure:
 
-const core = new PlanetCore({
-  config: {
-    PORT: 4000,
-    DEBUG: true
-  }
-})
+```
+src/
+  controllers/
+  models/
+  views/
+  index.ts
 ```
 
-### 2. Register Hooks
+### 2. Bootstrapping (IoC)
 
-Use **Filters** to modify data:
-
-```typescript
-core.hooks.addFilter('modify_content', async (content: string) => {
-  return content.toUpperCase()
-})
-
-const result = await core.hooks.applyFilters('modify_content', 'hello galaxy')
-// result: "HELLO GALAXY"
-```
-
-Use **Actions** to trigger side-effects:
+Gravito v0.3+ introduces **IoC (Inversion of Control)** via `PlanetCore.boot()`.
 
 ```typescript
-core.hooks.addAction('user_registered', async (userId: string) => {
-  core.logger.info(`Sending welcome email to ${userId}`)
-})
-
-await core.hooks.doAction('user_registered', 'user_123')
-```
-
-### 3. Mount an Orbit
-
-Orbits are standard Hono applications that plug into the core.
-
-```typescript
-import { Hono } from 'hono'
-
-const blogOrbit = new Hono()
-blogOrbit.get('/posts', (c) => c.json({ posts: [] }))
-
-core.mountOrbit('/api/blog', blogOrbit)
-```
-
-### 4. Bootstrapping (IoC)
-
-Gravito v0.3+ introduces **IoC (Inversion of Control)** for simplified plugin integration:
-
-```typescript
-// gravito.config.ts
-import { defineConfig } from 'gravito-core'
-import { OrbitAuth } from '@gravito/orbit-auth'
-import { OrbitDB } from '@gravito/orbit-db'
-
-export default defineConfig({
-  config: {
-    auth: { secret: process.env.JWT_SECRET },
-    db: { db: drizzle(...) }
-  },
-  orbits: [OrbitAuth, OrbitDB]
-})
-
 // index.ts
 import { PlanetCore } from 'gravito-core'
-import config from './gravito.config'
+import { OrbitInertia } from '@gravito/orbit-inertia'
+import { OrbitView } from '@gravito/orbit-view'
 
-PlanetCore.boot(config).then(core => core.liftoff())
+// Initialize Core with Orbits
+const core = await PlanetCore.boot({
+  orbits: [
+      OrbitInertia,
+      OrbitView
+  ],
+  config: {
+      app: { name: 'My Gravito App' }
+  }
+});
+
+// Register Routes
+core.router.group(root => {
+  root.get('/', ctx => ctx.text('Hello Galaxy!'));
+});
+
+// Liftoff 🚀
+export default core.liftoff();
 ```
 
-### 5. Liftoff! 🚀
+### 3. Real World Example
 
-```typescript
-export default core.liftoff() // Automatically uses PORT from config/env
-```
+Check out the [Gravito Official Site](https://github.com/CarlLee1983/gravito-core/tree/main/examples/official-site) in the `examples/` directory for a full-featured application showcasing:
+- **Inertia.js + React** frontend
+- **i18n** Internationalization
+- **Tailwind CSS v4** integration
+- **Markdown Documentation Engine**
 
 ---
 
@@ -260,13 +230,11 @@ export default core.liftoff() // Automatically uses PORT from config/env
 
 | Method/Property | Description |
 |-----------------|-------------|
-| `constructor(options?)` | Initialize with optional Logger and Config |
-| `mountOrbit(path, app)` | Mount a Hono app to a sub-path |
+| `boot(options)` | Static method to bootstrap core with IoC |
 | `liftoff(port?)` | Returns config object for `Bun.serve` |
-| `app` | Access internal Hono instance |
+| `router` | Access the Gravito Router |
 | `hooks` | Access HookManager |
 | `logger` | Access Logger instance |
-| `config` | Access ConfigManager |
 
 ### `HookManager`
 
@@ -276,14 +244,6 @@ export default core.liftoff() // Automatically uses PORT from config/env
 | `applyFilters(hook, initialValue, ...args)` | Execute filters sequentially |
 | `addAction(hook, callback)` | Register an action |
 | `doAction(hook, ...args)` | Execute actions |
-
-### `ConfigManager`
-
-| Method | Description |
-|--------|-------------|
-| `get(key, default?)` | Retrieve a config value |
-| `set(key, value)` | Set a config value |
-| `has(key)` | Check if a config key exists |
 
 ---
 
