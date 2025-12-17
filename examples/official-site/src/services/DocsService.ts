@@ -184,7 +184,12 @@ export class DocsService {
             plugins: '外掛開發',
             marketplace: '外掛市集標準',
             api: 'API 參考',
+            auth: 'Orbit Auth',
+            cache: 'Orbit Cache',
+            db: 'Orbit DB',
             inertia: 'Orbit Inertia',
+            session: 'Orbit Session',
+            storage: 'Orbit Storage',
           }
         : {
             guide: 'Guide',
@@ -193,7 +198,12 @@ export class DocsService {
             plugins: 'Plugin Development',
             marketplace: 'Marketplace Standard',
             api: 'API Reference',
+            auth: 'Orbit Auth',
+            cache: 'Orbit Cache',
+            db: 'Orbit DB',
             inertia: 'Orbit Inertia',
+            session: 'Orbit Session',
+            storage: 'Orbit Storage',
           };
 
     return [
@@ -211,8 +221,12 @@ export class DocsService {
         title: trans.api,
         path: '#',
         children: [
+          { title: trans.session, path: `${prefix}/api/orbit-session` },
+          { title: trans.auth, path: `${prefix}/api/orbit-auth` },
+          { title: trans.cache, path: `${prefix}/api/orbit-cache` },
+          { title: trans.db, path: `${prefix}/api/orbit-db` },
           { title: trans.inertia, path: `${prefix}/api/orbit-inertia` },
-          // { title: 'Orbit DB', path: `${prefix}/api/orbit-db` }, // Future
+          { title: trans.storage, path: `${prefix}/api/orbit-storage` },
         ],
       },
     ];

@@ -120,7 +120,8 @@ export default core.liftoff() // 啟動伺服器
 圍繞核心運行的標準擴充模組：
 
 - `@gravito/orbit-db`: 資料庫整合 (Drizzle ORM)
-- `@gravito/orbit-auth`: 身分驗證 (JWT/Session)
+- `@gravito/orbit-auth`: 身分驗證 (JWT)
+- `@gravito/orbit-session`: Session + CSRF 防護
 - `@gravito/orbit-storage`: 檔案儲存
 - `@gravito/orbit-cache`: 快取機制
 - `@gravito/orbit-inertia`: Inertia.js 整合

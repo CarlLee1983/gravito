@@ -121,6 +121,7 @@ Standard extension modules orbiting the core:
 
 - `@gravito/orbit-db`: Database integration (Drizzle ORM)
 - `@gravito/orbit-auth`: Authentication (JWT)
+- `@gravito/orbit-session`: Session + CSRF protection
 - `@gravito/orbit-storage`: File storage
 - `@gravito/orbit-cache`: Caching
 - `@gravito/orbit-inertia`: Inertia.js integration

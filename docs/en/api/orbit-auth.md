@@ -16,7 +16,7 @@ Provides simple JWT utilities and hooks for extending authentication logic.
 bun add @gravito/orbit-auth
 ```
 
-## Usage
+## Usage (JWT)
 
 ```typescript
 import { PlanetCore } from 'gravito-core';
@@ -35,6 +35,32 @@ core.app.post('/login', async (c) => {
   const token = await auth.sign({ sub: '123', role: 'admin' });
   return c.json({ token });
 });
+```
+
+## Usage (Session Guard)
+
+For Laravel-style login state, pair Orbit Auth with `@gravito/orbit-session` and enable the session guard:
+
+```ts
+import { PlanetCore } from 'gravito-core'
+import { OrbitSession } from '@gravito/orbit-session'
+import { OrbitAuth } from '@gravito/orbit-auth'
+
+const core = await PlanetCore.boot({
+  config: {
+    auth: {
+      secret: 'SUPER_SECRET_KEY',
+      guard: 'session',
+    },
+  },
+  orbits: [OrbitSession, OrbitAuth],
+})
+
+core.app.post('/login', async (c) => {
+  const auth = c.get('auth') as any
+  auth.login('user_123')
+  return c.json({ ok: true })
+})
 ```
 
 ## Hooks
