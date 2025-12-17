@@ -6,6 +6,7 @@
 
 // Export version from package.json
 import packageJson from '../package.json';
+import type { GravitoConfig } from './PlanetCore';
 
 export const VERSION = packageJson.version;
 
@@ -14,6 +15,7 @@ export { ConfigManager } from './ConfigManager';
 export type { ActionCallback, FilterCallback } from './HookManager';
 
 export { HookManager } from './HookManager';
+export * from './helpers';
 export type { Logger } from './Logger';
 export { ConsoleLogger } from './Logger';
 // Core Exports
@@ -31,8 +33,6 @@ export {
   type RouteHandler,
   Router,
 } from './Router';
-
-import type { GravitoConfig } from './PlanetCore';
 
 /**
  * Configure your Gravito application
