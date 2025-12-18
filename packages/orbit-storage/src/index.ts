@@ -1,40 +1,40 @@
-import { mkdir } from 'node:fs/promises';
-import { join } from 'node:path';
-import type { GravitoOrbit, PlanetCore } from 'gravito-core';
-import type { Context, Next } from 'hono';
+import { mkdir } from 'node:fs/promises'
+import { join } from 'node:path'
+import type { GravitoOrbit, PlanetCore } from 'gravito-core'
+import type { Context, Next } from 'hono'
 
 export interface StorageProvider {
-  put(key: string, data: Blob | Buffer | string): Promise<void>;
-  get(key: string): Promise<Blob | null>;
-  delete(key: string): Promise<void>;
-  getUrl(key: string): string;
+  put(key: string, data: Blob | Buffer | string): Promise<void>
+  get(key: string): Promise<Blob | null>
+  delete(key: string): Promise<void>
+  getUrl(key: string): string
 }
 
 export class LocalStorageProvider implements StorageProvider {
-  private rootDir: string;
-  private baseUrl: string;
+  private rootDir: string
+  private baseUrl: string
 
   constructor(rootDir: string, baseUrl = '/storage') {
-    this.rootDir = rootDir;
-    this.baseUrl = baseUrl;
+    this.rootDir = rootDir
+    this.baseUrl = baseUrl
   }
 
   async put(key: string, data: Blob | Buffer | string): Promise<void> {
-    const path = join(this.rootDir, key);
+    const path = join(this.rootDir, key)
     // Ensure dir exists
-    const dir = path.substring(0, path.lastIndexOf('/'));
+    const dir = path.substring(0, path.lastIndexOf('/'))
     if (dir && dir !== this.rootDir) {
-      await mkdir(dir, { recursive: true });
+      await mkdir(dir, { recursive: true })
     }
-    await Bun.write(path, data);
+    await Bun.write(path, data)
   }
 
   async get(key: string): Promise<Blob | null> {
-    const file = Bun.file(join(this.rootDir, key));
+    const file = Bun.file(join(this.rootDir, key))
     if (!(await file.exists())) {
-      return null;
+      return null
     }
-    return file;
+    return file
   }
 
   async delete(key: string): Promise<void> {
@@ -42,57 +42,57 @@ export class LocalStorageProvider implements StorageProvider {
     // But actually, Node COMPAT layer is preferred.
     // Or just use shell for "rm"? No, unsafe.
     // Let's use simple node:fs for deletion.
-    const fs = await import('node:fs/promises');
+    const fs = await import('node:fs/promises')
     try {
-      await fs.unlink(join(this.rootDir, key));
+      await fs.unlink(join(this.rootDir, key))
     } catch {
       // Ignore if not found
     }
   }
 
   getUrl(key: string): string {
-    return `${this.baseUrl}/${key}`;
+    return `${this.baseUrl}/${key}`
   }
 }
 
 export interface OrbitStorageOptions {
-  provider?: StorageProvider;
-  exposeAs?: string; // Default: 'storage'
+  provider?: StorageProvider
+  exposeAs?: string // Default: 'storage'
   local?: {
-    root: string;
-    baseUrl?: string;
-  };
+    root: string
+    baseUrl?: string
+  }
 }
 
 export class OrbitStorage implements GravitoOrbit {
   constructor(private options?: OrbitStorageOptions) {}
 
   install(core: PlanetCore): void {
-    const config = this.options || core.config.get('storage');
+    const config = this.options || core.config.get('storage')
 
     if (!config) {
       throw new Error(
         '[OrbitStorage] Configuration is required. Please provide options or set "storage" in core config.'
-      );
+      )
     }
 
-    const { exposeAs = 'storage' } = config;
-    const logger = core.logger;
+    const { exposeAs = 'storage' } = config
+    const logger = core.logger
 
-    logger.info(`[OrbitStorage] Initializing Storage (Exposed as: ${exposeAs})`);
+    logger.info(`[OrbitStorage] Initializing Storage (Exposed as: ${exposeAs})`)
 
-    let provider = config.provider;
+    let provider = config.provider
 
     // Default to LocalStorage if not provided and local options are present
     if (!provider && config.local) {
-      logger.info(`[OrbitStorage] Using LocalStorageProvider at ${config.local.root}`);
-      provider = new LocalStorageProvider(config.local.root, config.local.baseUrl);
+      logger.info(`[OrbitStorage] Using LocalStorageProvider at ${config.local.root}`)
+      provider = new LocalStorageProvider(config.local.root, config.local.baseUrl)
     }
 
     if (!provider) {
       throw new Error(
         '[OrbitStorage] No provider configured. Please provide a provider instance or local configuration.'
-      );
+      )
     }
 
     const storageService = {
@@ -100,34 +100,34 @@ export class OrbitStorage implements GravitoOrbit {
       // Wrap methods if we want to add hooks later
       put: async (key: string, data: Blob | Buffer | string) => {
         // Hook: storage:upload
-        const finalData = await core.hooks.applyFilters('storage:upload', data, { key });
-        await provider?.put(key, finalData);
+        const finalData = await core.hooks.applyFilters('storage:upload', data, { key })
+        await provider?.put(key, finalData)
         // Action: storage:uploaded
-        await core.hooks.doAction('storage:uploaded', { key });
+        await core.hooks.doAction('storage:uploaded', { key })
       },
-    };
+    }
 
     // Inject helper into context
     core.app.use('*', async (c: Context, next: Next) => {
-      c.set(exposeAs, storageService);
-      await next();
-    });
+      c.set(exposeAs, storageService)
+      await next()
+    })
 
     // Action: Storage Initialized
-    core.hooks.doAction('storage:init', storageService);
+    core.hooks.doAction('storage:init', storageService)
   }
 }
 
 export default function orbitStorage(core: PlanetCore, options: OrbitStorageOptions) {
-  const orbit = new OrbitStorage(options);
-  orbit.install(core);
+  const orbit = new OrbitStorage(options)
+  orbit.install(core)
 
   // NOTE: Functional wrapper requires specific return implementation which can't be easily extracted from void install()
   // Re-implementing minimal return logic for backward compatibility
   // This duplicates the service creation/wrapping logic - acceptable for legacy support
-  let provider = options.provider;
+  let provider = options.provider
   if (!provider && options.local) {
-    provider = new LocalStorageProvider(options.local.root, options.local.baseUrl);
+    provider = new LocalStorageProvider(options.local.root, options.local.baseUrl)
   }
 
   // Notice: The class version adds hooks wrapper, we should probably do the same here to be consistent
@@ -143,15 +143,15 @@ export default function orbitStorage(core: PlanetCore, options: OrbitStorageOpti
   // We duplicate the wrapper logic here for safety.
 
   if (!provider) {
-    throw new Error('[OrbitStorage] No provider configured.');
+    throw new Error('[OrbitStorage] No provider configured.')
   }
 
   return {
     ...provider,
     put: async (key: string, data: Blob | Buffer | string) => {
-      const finalData = await core.hooks.applyFilters('storage:upload', data, { key });
-      await provider?.put(key, finalData);
-      await core.hooks.doAction('storage:uploaded', { key });
+      const finalData = await core.hooks.applyFilters('storage:upload', data, { key })
+      await provider?.put(key, finalData)
+      await core.hooks.doAction('storage:uploaded', { key })
     },
-  };
+  }
 }

@@ -1,9 +1,9 @@
-import { $ } from 'bun';
+import { $ } from 'bun'
 
-console.log('🧹 Cleaning dist directory...');
-await $`rm -rf dist`;
+console.log('🧹 Cleaning dist directory...')
+await $`rm -rf dist`
 
-console.log('📦 Building ESM bundle...');
+console.log('📦 Building ESM bundle...')
 await Bun.build({
   entrypoints: ['./src/index.ts'],
   outdir: './dist',
@@ -12,9 +12,9 @@ await Bun.build({
   sourcemap: 'external',
   minify: false,
   naming: '[dir]/[name].mjs',
-});
+})
 
-console.log('📦 Building CJS bundle...');
+console.log('📦 Building CJS bundle...')
 await Bun.build({
   entrypoints: ['./src/index.ts'],
   outdir: './dist',
@@ -23,9 +23,9 @@ await Bun.build({
   sourcemap: 'external',
   minify: false,
   naming: '[dir]/[name].cjs',
-});
+})
 
-console.log('📝 Generating type declarations...');
-await $`bunx tsc --emitDeclarationOnly`;
+console.log('📝 Generating type declarations...')
+await $`bunx tsc --emitDeclarationOnly`
 
-console.log('✅ Build completed successfully!');
+console.log('✅ Build completed successfully!')

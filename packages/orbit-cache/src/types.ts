@@ -1,4 +1,4 @@
-export type CacheKey = string;
+export type CacheKey = string
 
 /**
  * Laravel-like TTL:
@@ -7,46 +7,46 @@ export type CacheKey = string;
  * - `null` = forever
  * - `undefined` = store default / repository default (when applicable)
  */
-export type CacheTtl = number | Date | null | undefined;
+export type CacheTtl = number | Date | null | undefined
 
-export type CacheValue<T = unknown> = T | null;
+export type CacheValue<T = unknown> = T | null
 
 export function normalizeCacheKey(key: string): string {
   if (!key) {
-    throw new Error('Cache key cannot be empty.');
+    throw new Error('Cache key cannot be empty.')
   }
-  return key;
+  return key
 }
 
 export function ttlToExpiresAt(ttl: CacheTtl, now = Date.now()): number | null | undefined {
   if (ttl === undefined) {
-    return undefined;
+    return undefined
   }
   if (ttl === null) {
-    return null;
+    return null
   }
 
   if (ttl instanceof Date) {
-    return ttl.getTime();
+    return ttl.getTime()
   }
 
   if (typeof ttl === 'number') {
     // seconds
     if (ttl <= 0) {
-      return now; // immediate expiry semantics
+      return now // immediate expiry semantics
     }
-    return now + ttl * 1000;
+    return now + ttl * 1000
   }
 
-  return undefined;
+  return undefined
 }
 
 export function isExpired(expiresAt: number | null | undefined, now = Date.now()): boolean {
   if (expiresAt === null) {
-    return false;
+    return false
   }
   if (expiresAt === undefined) {
-    return false;
+    return false
   }
-  return now > expiresAt;
+  return now > expiresAt
 }

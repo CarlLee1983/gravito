@@ -6,7 +6,7 @@
  */
 
 // Re-export zod for convenience
-export { z } from 'zod';
+export { z } from 'zod'
 
 export type {
   DataSource,
@@ -14,9 +14,9 @@ export type {
   MessageProvider,
   ValidationErrorDetail,
   ValidationErrorResponse,
-} from './FormRequest';
+} from './FormRequest'
 export {
   DefaultMessageProvider,
   FormRequest,
   validateRequest,
-} from './FormRequest';
+} from './FormRequest'

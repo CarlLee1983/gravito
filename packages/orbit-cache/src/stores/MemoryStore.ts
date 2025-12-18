@@ -1,6 +1,6 @@
-import { randomUUID } from 'node:crypto';
-import { type CacheLock, LockTimeoutError, sleep } from '../locks';
-import type { CacheStore, TaggableStore } from '../store';
+import { randomUUID } from 'node:crypto'
+import { type CacheLock, LockTimeoutError, sleep } from '../locks'
+import type { CacheStore, TaggableStore } from '../store'
 import {
   type CacheKey,
   type CacheTtl,
@@ -8,165 +8,165 @@ import {
   isExpired,
   normalizeCacheKey,
   ttlToExpiresAt,
-} from '../types';
+} from '../types'
 
 type Entry = {
-  value: unknown;
-  expiresAt: number | null;
-};
+  value: unknown
+  expiresAt: number | null
+}
 
 type LockEntry = {
-  owner: string;
-  expiresAt: number;
-};
+  owner: string
+  expiresAt: number
+}
 
 export type MemoryStoreOptions = {
-  maxItems?: number;
-};
+  maxItems?: number
+}
 
 export class MemoryStore implements CacheStore, TaggableStore {
-  private entries = new Map<string, Entry>();
-  private locks = new Map<string, LockEntry>();
+  private entries = new Map<string, Entry>()
+  private locks = new Map<string, LockEntry>()
 
-  private tagToKeys = new Map<string, Set<string>>();
-  private keyToTags = new Map<string, Set<string>>();
+  private tagToKeys = new Map<string, Set<string>>()
+  private keyToTags = new Map<string, Set<string>>()
 
   constructor(private options: MemoryStoreOptions = {}) {}
 
   private touchLRU(key: string): void {
-    const entry = this.entries.get(key);
+    const entry = this.entries.get(key)
     if (!entry) {
-      return;
+      return
     }
-    this.entries.delete(key);
-    this.entries.set(key, entry);
+    this.entries.delete(key)
+    this.entries.set(key, entry)
   }
 
   private pruneIfNeeded(): void {
-    const maxItems = this.options.maxItems;
+    const maxItems = this.options.maxItems
     if (!maxItems || maxItems <= 0) {
-      return;
+      return
     }
     while (this.entries.size > maxItems) {
-      const oldest = this.entries.keys().next().value as string | undefined;
+      const oldest = this.entries.keys().next().value as string | undefined
       if (!oldest) {
-        return;
+        return
       }
-      void this.forget(oldest);
+      void this.forget(oldest)
     }
   }
 
   private cleanupExpired(key: string, now = Date.now()): void {
-    const entry = this.entries.get(key);
+    const entry = this.entries.get(key)
     if (!entry) {
-      return;
+      return
     }
     if (isExpired(entry.expiresAt, now)) {
-      void this.forget(key);
+      void this.forget(key)
     }
   }
 
   async get<T = unknown>(key: CacheKey): Promise<CacheValue<T>> {
-    const normalized = normalizeCacheKey(key);
-    const entry = this.entries.get(normalized);
+    const normalized = normalizeCacheKey(key)
+    const entry = this.entries.get(normalized)
     if (!entry) {
-      return null;
+      return null
     }
 
     if (isExpired(entry.expiresAt)) {
-      await this.forget(normalized);
-      return null;
+      await this.forget(normalized)
+      return null
     }
 
-    this.touchLRU(normalized);
-    return entry.value as T;
+    this.touchLRU(normalized)
+    return entry.value as T
   }
 
   async put(key: CacheKey, value: unknown, ttl: CacheTtl): Promise<void> {
-    const normalized = normalizeCacheKey(key);
-    const expiresAt = ttlToExpiresAt(ttl);
+    const normalized = normalizeCacheKey(key)
+    const expiresAt = ttlToExpiresAt(ttl)
     if (expiresAt !== null && expiresAt !== undefined && expiresAt <= Date.now()) {
-      await this.forget(normalized);
-      return;
+      await this.forget(normalized)
+      return
     }
 
-    this.entries.set(normalized, { value, expiresAt: expiresAt ?? null });
-    this.pruneIfNeeded();
+    this.entries.set(normalized, { value, expiresAt: expiresAt ?? null })
+    this.pruneIfNeeded()
   }
 
   async add(key: CacheKey, value: unknown, ttl: CacheTtl): Promise<boolean> {
-    const normalized = normalizeCacheKey(key);
-    this.cleanupExpired(normalized);
+    const normalized = normalizeCacheKey(key)
+    this.cleanupExpired(normalized)
     if (this.entries.has(normalized)) {
-      return false;
+      return false
     }
-    await this.put(normalized, value, ttl);
-    return true;
+    await this.put(normalized, value, ttl)
+    return true
   }
 
   async forget(key: CacheKey): Promise<boolean> {
-    const normalized = normalizeCacheKey(key);
-    const existed = this.entries.delete(normalized);
-    this.tagIndexRemove(normalized);
-    return existed;
+    const normalized = normalizeCacheKey(key)
+    const existed = this.entries.delete(normalized)
+    this.tagIndexRemove(normalized)
+    return existed
   }
 
   async flush(): Promise<void> {
-    this.entries.clear();
-    this.tagToKeys.clear();
-    this.keyToTags.clear();
+    this.entries.clear()
+    this.tagToKeys.clear()
+    this.keyToTags.clear()
   }
 
   async increment(key: CacheKey, value = 1): Promise<number> {
-    const normalized = normalizeCacheKey(key);
-    const current = await this.get<number>(normalized);
-    const next = (current ?? 0) + value;
-    await this.put(normalized, next, null);
-    return next;
+    const normalized = normalizeCacheKey(key)
+    const current = await this.get<number>(normalized)
+    const next = (current ?? 0) + value
+    await this.put(normalized, next, null)
+    return next
   }
 
   async decrement(key: CacheKey, value = 1): Promise<number> {
-    return this.increment(key, -value);
+    return this.increment(key, -value)
   }
 
   lock(name: string, seconds = 10): CacheLock {
-    const lockKey = `lock:${normalizeCacheKey(name)}`;
-    const ttlMillis = Math.max(1, seconds) * 1000;
-    const locks = this.locks;
+    const lockKey = `lock:${normalizeCacheKey(name)}`
+    const ttlMillis = Math.max(1, seconds) * 1000
+    const locks = this.locks
 
     const acquire = async (): Promise<{ ok: boolean; owner?: string }> => {
-      const now = Date.now();
-      const existing = locks.get(lockKey);
+      const now = Date.now()
+      const existing = locks.get(lockKey)
       if (existing && existing.expiresAt > now) {
-        return { ok: false };
+        return { ok: false }
       }
 
-      const owner = randomUUID();
-      locks.set(lockKey, { owner, expiresAt: now + ttlMillis });
-      return { ok: true, owner };
-    };
+      const owner = randomUUID()
+      locks.set(lockKey, { owner, expiresAt: now + ttlMillis })
+      return { ok: true, owner }
+    }
 
-    let owner: string | undefined;
+    let owner: string | undefined
 
     return {
       async acquire(): Promise<boolean> {
-        const result = await acquire();
+        const result = await acquire()
         if (!result.ok) {
-          return false;
+          return false
         }
-        owner = result.owner;
-        return true;
+        owner = result.owner
+        return true
       },
 
       async release(): Promise<void> {
         if (!owner) {
-          return;
+          return
         }
-        const existing = locks.get(lockKey);
+        const existing = locks.get(lockKey)
         if (existing?.owner === owner) {
-          locks.delete(lockKey);
+          locks.delete(lockKey)
         }
-        owner = undefined;
+        owner = undefined
       },
 
       async block<T>(
@@ -174,100 +174,100 @@ export class MemoryStore implements CacheStore, TaggableStore {
         callback: () => Promise<T> | T,
         options?: { sleepMillis?: number }
       ): Promise<T> {
-        const deadline = Date.now() + Math.max(0, secondsToWait) * 1000;
-        const sleepMillis = options?.sleepMillis ?? 150;
+        const deadline = Date.now() + Math.max(0, secondsToWait) * 1000
+        const sleepMillis = options?.sleepMillis ?? 150
 
         while (Date.now() <= deadline) {
           if (await this.acquire()) {
             try {
-              return await callback();
+              return await callback()
             } finally {
-              await this.release();
+              await this.release()
             }
           }
-          await sleep(sleepMillis);
+          await sleep(sleepMillis)
         }
 
         throw new LockTimeoutError(
           `Failed to acquire lock '${name}' within ${secondsToWait} seconds.`
-        );
+        )
       },
-    };
+    }
   }
 
   tagKey(key: string, tags: readonly string[]): string {
-    const normalizedKey = normalizeCacheKey(key);
-    const normalizedTags = [...tags].map(String).filter(Boolean).sort();
+    const normalizedKey = normalizeCacheKey(key)
+    const normalizedTags = [...tags].map(String).filter(Boolean).sort()
     if (normalizedTags.length === 0) {
-      return normalizedKey;
+      return normalizedKey
     }
-    return `tags:${normalizedTags.join('|')}:${normalizedKey}`;
+    return `tags:${normalizedTags.join('|')}:${normalizedKey}`
   }
 
   tagIndexAdd(tags: readonly string[], taggedKey: string): void {
-    const normalizedTags = [...tags].map(String).filter(Boolean);
+    const normalizedTags = [...tags].map(String).filter(Boolean)
     if (normalizedTags.length === 0) {
-      return;
+      return
     }
 
     for (const tag of normalizedTags) {
-      let keys = this.tagToKeys.get(tag);
+      let keys = this.tagToKeys.get(tag)
       if (!keys) {
-        keys = new Set<string>();
-        this.tagToKeys.set(tag, keys);
+        keys = new Set<string>()
+        this.tagToKeys.set(tag, keys)
       }
-      keys.add(taggedKey);
+      keys.add(taggedKey)
     }
 
-    let tagSet = this.keyToTags.get(taggedKey);
+    let tagSet = this.keyToTags.get(taggedKey)
     if (!tagSet) {
-      tagSet = new Set<string>();
-      this.keyToTags.set(taggedKey, tagSet);
+      tagSet = new Set<string>()
+      this.keyToTags.set(taggedKey, tagSet)
     }
     for (const tag of normalizedTags) {
-      tagSet.add(tag);
+      tagSet.add(tag)
     }
   }
 
   tagIndexRemove(taggedKey: string): void {
-    const tags = this.keyToTags.get(taggedKey);
+    const tags = this.keyToTags.get(taggedKey)
     if (!tags) {
-      return;
+      return
     }
 
     for (const tag of tags) {
-      const keys = this.tagToKeys.get(tag);
+      const keys = this.tagToKeys.get(tag)
       if (!keys) {
-        continue;
+        continue
       }
-      keys.delete(taggedKey);
+      keys.delete(taggedKey)
       if (keys.size === 0) {
-        this.tagToKeys.delete(tag);
+        this.tagToKeys.delete(tag)
       }
     }
 
-    this.keyToTags.delete(taggedKey);
+    this.keyToTags.delete(taggedKey)
   }
 
   async flushTags(tags: readonly string[]): Promise<void> {
-    const normalizedTags = [...tags].map(String).filter(Boolean);
+    const normalizedTags = [...tags].map(String).filter(Boolean)
     if (normalizedTags.length === 0) {
-      return;
+      return
     }
 
-    const keysToDelete = new Set<string>();
+    const keysToDelete = new Set<string>()
     for (const tag of normalizedTags) {
-      const keys = this.tagToKeys.get(tag);
+      const keys = this.tagToKeys.get(tag)
       if (!keys) {
-        continue;
+        continue
       }
       for (const k of keys) {
-        keysToDelete.add(k);
+        keysToDelete.add(k)
       }
     }
 
     for (const key of keysToDelete) {
-      await this.forget(key);
+      await this.forget(key)
     }
   }
 }

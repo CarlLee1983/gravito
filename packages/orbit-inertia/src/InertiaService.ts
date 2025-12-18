@@ -1,8 +1,8 @@
-import type { Context } from 'hono';
+import type { Context } from 'hono'
 
 export interface InertiaConfig {
-  rootView?: string;
-  version?: string;
+  rootView?: string
+  version?: string
 }
 
 export class InertiaService {
@@ -11,7 +11,7 @@ export class InertiaService {
     private config: InertiaConfig = {}
   ) {}
 
-  private sharedProps: Record<string, unknown> = {};
+  private sharedProps: Record<string, unknown> = {}
 
   private escapeForSingleQuotedHtmlAttribute(value: string): string {
     return (
@@ -23,7 +23,7 @@ export class InertiaService {
         // data-page='{{{ page }}}' or data-page="{{{ page }}}"
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;')
-    );
+    )
   }
 
   /**
@@ -35,23 +35,23 @@ export class InertiaService {
       props: { ...this.sharedProps, ...props },
       url: this.context.req.url,
       version: this.config.version,
-    };
+    }
 
     // 1. If it's an Inertia request, return JSON
     if (this.context.req.header('X-Inertia')) {
-      this.context.header('X-Inertia', 'true');
-      this.context.header('Vary', 'Accept');
-      return this.context.json(page);
+      this.context.header('X-Inertia', 'true')
+      this.context.header('Vary', 'Accept')
+      return this.context.json(page)
     }
 
     // 2. Otherwise return the root HTML with data-page attribute
     // We assume there is a ViewService that handles the root template
     // The rootView should contain: <div id="app" data-page='{{{ page }}}'></div>
-    const view = this.context.get('view');
-    const rootView = this.config.rootView ?? 'app';
+    const view = this.context.get('view')
+    const rootView = this.config.rootView ?? 'app'
 
     if (!view) {
-      throw new Error('OrbitView is required for the initial page load in OrbitInertia');
+      throw new Error('OrbitView is required for the initial page load in OrbitInertia')
     }
 
     return this.context.html(
@@ -62,13 +62,13 @@ export class InertiaService {
         },
         { layout: '' }
       )
-    );
+    )
   }
 
   /**
    * Share data with all responses
    */
   public share(key: string, value: unknown) {
-    this.sharedProps[key] = value;
+    this.sharedProps[key] = value
   }
 }

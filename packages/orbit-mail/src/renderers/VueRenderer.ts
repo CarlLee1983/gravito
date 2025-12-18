@@ -1,6 +1,6 @@
-import { renderToString } from '@vue/server-renderer';
-import { type Component, createSSRApp, h } from 'vue';
-import type { Renderer, RenderResult } from './Renderer';
+import { renderToString } from '@vue/server-renderer'
+import { type Component, createSSRApp, h } from 'vue'
+import type { Renderer, RenderResult } from './Renderer'
 
 export class VueRenderer<P extends object = object> implements Renderer {
   constructor(
@@ -9,20 +9,20 @@ export class VueRenderer<P extends object = object> implements Renderer {
   ) {}
 
   async render(data: Record<string, unknown>): Promise<RenderResult> {
-    const mergedProps = { ...this.props, ...data };
+    const mergedProps = { ...this.props, ...data }
 
     const app = createSSRApp({
       render: () => h(this.component, mergedProps),
-    });
+    })
 
-    const html = await renderToString(app);
+    const html = await renderToString(app)
 
-    const fullHtml = html.startsWith('<!DOCTYPE') ? html : `<!DOCTYPE html>${html}`;
+    const fullHtml = html.startsWith('<!DOCTYPE') ? html : `<!DOCTYPE html>${html}`
 
     return {
       html: fullHtml,
       text: this.stripHtml(html),
-    };
+    }
   }
 
   private stripHtml(html: string): string {
@@ -32,6 +32,6 @@ export class VueRenderer<P extends object = object> implements Renderer {
       .replace(/<[^>]+>/g, '')
       .replace(/&nbsp;/g, ' ')
       .replace(/\s+/g, ' ')
-      .trim();
+      .trim()
   }
 }

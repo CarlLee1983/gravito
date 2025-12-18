@@ -37,4 +37,4 @@ export default {
     connect: 'Connect',
     copyright: 'Gravito Framework. MIT License.',
   },
-};
+}

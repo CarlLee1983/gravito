@@ -1,4 +1,4 @@
-import { type DataPath, dataGet, dataHas, dataSet } from './data';
+import { type DataPath, dataGet, dataHas, dataSet } from './data'
 
 export const Arr = {
   get<TDefault = undefined>(
@@ -6,86 +6,86 @@ export const Arr = {
     path: DataPath | null | undefined,
     defaultValue?: TDefault
   ): unknown | TDefault {
-    return dataGet(target, path, defaultValue);
+    return dataGet(target, path, defaultValue)
   },
 
   has(target: unknown, path: DataPath | null | undefined): boolean {
-    return dataHas(target, path);
+    return dataHas(target, path)
   },
 
   set(target: unknown, path: DataPath, value: unknown, overwrite = true): unknown {
-    return dataSet(target, path, value, overwrite);
+    return dataSet(target, path, value, overwrite)
   },
 
   wrap<T>(value: T | T[] | null | undefined): T[] {
     if (value === null || value === undefined) {
-      return [];
+      return []
     }
-    return Array.isArray(value) ? value : [value];
+    return Array.isArray(value) ? value : [value]
   },
 
   first<T>(items: readonly T[], callback?: (value: T, index: number) => boolean): T | undefined {
     if (!callback) {
-      return items[0];
+      return items[0]
     }
     for (let i = 0; i < items.length; i++) {
-      const value = items[i] as T;
+      const value = items[i] as T
       if (callback(value, i)) {
-        return value;
+        return value
       }
     }
-    return undefined;
+    return undefined
   },
 
   last<T>(items: readonly T[], callback?: (value: T, index: number) => boolean): T | undefined {
     if (!callback) {
-      return items.length ? items[items.length - 1] : undefined;
+      return items.length ? items[items.length - 1] : undefined
     }
     for (let i = items.length - 1; i >= 0; i--) {
-      const value = items[i] as T;
+      const value = items[i] as T
       if (callback(value, i)) {
-        return value;
+        return value
       }
     }
-    return undefined;
+    return undefined
   },
 
   only<T extends Record<string, unknown>>(target: T, keys: readonly string[]): Partial<T> {
-    const out: Partial<T> = {};
+    const out: Partial<T> = {}
     for (const key of keys) {
       if (key in target) {
-        out[key as keyof T] = target[key] as T[keyof T];
+        out[key as keyof T] = target[key] as T[keyof T]
       }
     }
-    return out;
+    return out
   },
 
   except<T extends Record<string, unknown>>(target: T, keys: readonly string[]): Partial<T> {
-    const out: Partial<T> = {};
-    const excluded = new Set(keys);
+    const out: Partial<T> = {}
+    const excluded = new Set(keys)
     for (const [key, value] of Object.entries(target)) {
       if (!excluded.has(key)) {
-        out[key as keyof T] = value as T[keyof T];
+        out[key as keyof T] = value as T[keyof T]
       }
     }
-    return out;
+    return out
   },
 
   flatten(items: unknown[], depth: number = Number.POSITIVE_INFINITY): unknown[] {
-    const out: unknown[] = [];
+    const out: unknown[] = []
     const walk = (value: unknown, currentDepth: number) => {
       if (Array.isArray(value) && currentDepth > 0) {
         for (const v of value) {
-          walk(v, currentDepth - 1);
+          walk(v, currentDepth - 1)
         }
-        return;
+        return
       }
-      out.push(value);
-    };
-    for (const item of items) {
-      walk(item, depth);
+      out.push(value)
     }
-    return out;
+    for (const item of items) {
+      walk(item, depth)
+    }
+    return out
   },
 
   pluck<TItem extends Record<string, unknown>>(
@@ -94,25 +94,25 @@ export const Arr = {
     keyPath?: DataPath
   ): unknown[] | Record<string, unknown> {
     if (!keyPath) {
-      return items.map((item) => dataGet(item, valuePath));
+      return items.map((item) => dataGet(item, valuePath))
     }
 
-    const out: Record<string, unknown> = {};
+    const out: Record<string, unknown> = {}
     for (const item of items) {
-      const key = dataGet(item, keyPath);
-      out[String(key)] = dataGet(item, valuePath);
+      const key = dataGet(item, keyPath)
+      out[String(key)] = dataGet(item, valuePath)
     }
-    return out;
+    return out
   },
 
   where<T>(items: readonly T[], callback: (value: T, index: number) => boolean): T[] {
-    const out: T[] = [];
+    const out: T[] = []
     for (let i = 0; i < items.length; i++) {
-      const value = items[i] as T;
+      const value = items[i] as T
       if (callback(value, i)) {
-        out.push(value);
+        out.push(value)
       }
     }
-    return out;
+    return out
   },
-} as const;
+} as const

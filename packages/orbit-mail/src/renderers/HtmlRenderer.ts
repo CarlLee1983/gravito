@@ -1,4 +1,4 @@
-import type { Renderer, RenderResult } from './Renderer';
+import type { Renderer, RenderResult } from './Renderer'
 
 export class HtmlRenderer implements Renderer {
   constructor(private content: string) {}
@@ -7,7 +7,7 @@ export class HtmlRenderer implements Renderer {
     return {
       html: this.content,
       text: this.stripHtml(this.content),
-    };
+    }
   }
 
   private stripHtml(html: string): string {
@@ -17,6 +17,6 @@ export class HtmlRenderer implements Renderer {
       .replace(/<[^>]+>/g, '') // Remove tags
       .replace(/&nbsp;/g, ' ') // Replace non-breaking space
       .replace(/\s+/g, ' ') // Collapse whitespace
-      .trim();
+      .trim()
   }
 }

@@ -34,4 +34,4 @@ export default {
     connect: '社群',
     copyright: 'Gravito Framework. MIT 授權。',
   },
-};
+}

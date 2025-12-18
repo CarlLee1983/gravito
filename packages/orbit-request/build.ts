@@ -1,9 +1,9 @@
-import { $ } from 'bun';
+import { $ } from 'bun'
 
-console.log('Building @gravito/orbit-request...');
+console.log('Building @gravito/orbit-request...')
 
 // Clean dist
-await $`rm -rf dist`;
+await $`rm -rf dist`
 
 // Build with bun
 await Bun.build({
@@ -12,9 +12,9 @@ await Bun.build({
   target: 'bun',
   format: 'esm',
   external: ['hono', 'zod'],
-});
+})
 
 // Generate types with tsc
-await $`bunx tsc -p tsconfig.build.json --emitDeclarationOnly`;
+await $`bunx tsc -p tsconfig.build.json --emitDeclarationOnly`
 
-console.log('Build complete!');
+console.log('Build complete!')

@@ -1,6 +1,6 @@
-import { type ComponentType, createElement } from 'react';
-import { renderToStaticMarkup } from 'react-dom/server';
-import type { Renderer, RenderResult } from './Renderer';
+import { type ComponentType, createElement } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
+import type { Renderer, RenderResult } from './Renderer'
 
 export class ReactRenderer<P extends object = object> implements Renderer {
   constructor(
@@ -9,18 +9,18 @@ export class ReactRenderer<P extends object = object> implements Renderer {
   ) {}
 
   async render(data: Record<string, unknown>): Promise<RenderResult> {
-    const mergedProps = { ...this.props, ...data } as P;
+    const mergedProps = { ...this.props, ...data } as P
 
     // We assume the component is a standard React component
-    const element = createElement(this.component, mergedProps);
-    const html = renderToStaticMarkup(element);
+    const element = createElement(this.component, mergedProps)
+    const html = renderToStaticMarkup(element)
 
-    const fullHtml = html.startsWith('<!DOCTYPE') ? html : `<!DOCTYPE html>${html}`;
+    const fullHtml = html.startsWith('<!DOCTYPE') ? html : `<!DOCTYPE html>${html}`
 
     return {
       html: fullHtml,
       text: this.stripHtml(html),
-    };
+    }
   }
 
   private stripHtml(html: string): string {
@@ -30,6 +30,6 @@ export class ReactRenderer<P extends object = object> implements Renderer {
       .replace(/<[^>]+>/g, '')
       .replace(/&nbsp;/g, ' ')
       .replace(/\s+/g, ' ')
-      .trim();
+      .trim()
   }
 }

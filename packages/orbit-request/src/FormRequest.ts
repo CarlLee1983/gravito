@@ -1,43 +1,43 @@
-import type { Context, MiddlewareHandler } from 'hono';
-import type { ContentfulStatusCode } from 'hono/utils/http-status';
-import type { z } from 'zod';
+import type { Context, MiddlewareHandler } from 'hono'
+import type { ContentfulStatusCode } from 'hono/utils/http-status'
+import type { z } from 'zod'
 
 /**
  * Validation error detail for a single field
  */
 export interface ValidationErrorDetail {
-  field: string;
-  message: string;
-  code?: string | undefined;
+  field: string
+  message: string
+  code?: string | undefined
 }
 
 /**
  * Structured validation error response
  */
 export interface ValidationErrorResponse {
-  success: false;
+  success: false
   error: {
-    code: 'VALIDATION_ERROR' | 'AUTHORIZATION_ERROR';
-    message: string;
-    details: ValidationErrorDetail[];
-  };
+    code: 'VALIDATION_ERROR' | 'AUTHORIZATION_ERROR'
+    message: string
+    details: ValidationErrorDetail[]
+  }
 }
 
 /**
  * Data source for validation
  */
-export type DataSource = 'json' | 'form' | 'query' | 'param';
+export type DataSource = 'json' | 'form' | 'query' | 'param'
 
 /**
  * i18n message provider interface
  */
 export interface MessageProvider {
   /** Get localized message for a validation error */
-  getMessage(code: string, field: string, defaultMessage: string): string;
+  getMessage(code: string, field: string, defaultMessage: string): string
   /** Get the "Validation failed" message */
-  getValidationFailedMessage(): string;
+  getValidationFailedMessage(): string
   /** Get the "Unauthorized" message */
-  getUnauthorizedMessage(): string;
+  getUnauthorizedMessage(): string
 }
 
 /**
@@ -45,13 +45,13 @@ export interface MessageProvider {
  */
 export class DefaultMessageProvider implements MessageProvider {
   getMessage(_code: string, _field: string, defaultMessage: string): string {
-    return defaultMessage;
+    return defaultMessage
   }
   getValidationFailedMessage(): string {
-    return 'Validation failed';
+    return 'Validation failed'
   }
   getUnauthorizedMessage(): string {
-    return 'Unauthorized';
+    return 'Unauthorized'
   }
 }
 
@@ -60,20 +60,20 @@ export class DefaultMessageProvider implements MessageProvider {
  */
 export interface FormRequestOptions {
   /** HTTP status code for validation errors (default: 422) */
-  errorStatus?: ContentfulStatusCode;
+  errorStatus?: ContentfulStatusCode
   /** HTTP status code for authorization errors (default: 403) */
-  authErrorStatus?: ContentfulStatusCode;
+  authErrorStatus?: ContentfulStatusCode
   /** i18n message provider for localized error messages */
-  messageProvider?: MessageProvider;
+  messageProvider?: MessageProvider
 }
 
 /**
  * Schema-agnostic validation result interface
  */
 interface SchemaValidationResult {
-  success: boolean;
-  data?: unknown;
-  errors?: Array<{ path: string[]; message: string; code?: string | undefined }>;
+  success: boolean
+  data?: unknown
+  errors?: Array<{ path: string[]; message: string; code?: string | undefined }>
 }
 
 /**
@@ -83,8 +83,8 @@ interface ValibotLikeSchema {
   _run?(
     dataset: unknown,
     config?: unknown
-  ): { issues?: Array<{ path?: Array<{ key: string }>; message: string; type?: string }> };
-  parse?(data: unknown): unknown;
+  ): { issues?: Array<{ path?: Array<{ key: string }>; message: string; type?: string }> }
+  parse?(data: unknown): unknown
 }
 
 /**
@@ -96,7 +96,7 @@ function isZodSchema(schema: unknown): schema is z.ZodType {
     typeof schema === 'object' &&
     'safeParse' in schema &&
     typeof (schema as { safeParse: unknown }).safeParse === 'function'
-  );
+  )
 }
 
 /**
@@ -107,16 +107,16 @@ function isValibotSchema(schema: unknown): schema is ValibotLikeSchema {
     schema !== null &&
     typeof schema === 'object' &&
     ('_run' in schema || ('parse' in schema && !('safeParse' in schema)))
-  );
+  )
 }
 
 /**
  * Validate data with Zod schema
  */
 function validateWithZod(schema: z.ZodType, data: unknown): SchemaValidationResult {
-  const result = schema.safeParse(data);
+  const result = schema.safeParse(data)
   if (result.success) {
-    return { success: true, data: result.data };
+    return { success: true, data: result.data }
   }
   return {
     success: false,
@@ -125,7 +125,7 @@ function validateWithZod(schema: z.ZodType, data: unknown): SchemaValidationResu
       message: err.message,
       code: err.code,
     })),
-  };
+  }
 }
 
 /**
@@ -135,9 +135,9 @@ function validateWithValibot(schema: ValibotLikeSchema, data: unknown): SchemaVa
   try {
     // Try using _run for Valibot v1+
     if (schema._run) {
-      const result = schema._run({ typed: false, value: data }, {});
+      const result = schema._run({ typed: false, value: data }, {})
       if (!result.issues || result.issues.length === 0) {
-        return { success: true, data };
+        return { success: true, data }
       }
       return {
         success: false,
@@ -146,18 +146,18 @@ function validateWithValibot(schema: ValibotLikeSchema, data: unknown): SchemaVa
           message: issue.message,
           code: issue.type,
         })),
-      };
+      }
     }
     // Fallback to parse (throws on error)
     if (schema.parse) {
-      const data2 = schema.parse(data);
-      return { success: true, data: data2 };
+      const data2 = schema.parse(data)
+      return { success: true, data: data2 }
     }
-    return { success: false, errors: [{ path: [], message: 'Invalid schema' }] };
+    return { success: false, errors: [{ path: [], message: 'Invalid schema' }] }
   } catch (err: unknown) {
     const error = err as {
-      issues?: Array<{ path?: Array<{ key: string }>; message: string; type?: string }>;
-    };
+      issues?: Array<{ path?: Array<{ key: string }>; message: string; type?: string }>
+    }
     if (error.issues) {
       return {
         success: false,
@@ -166,9 +166,9 @@ function validateWithValibot(schema: ValibotLikeSchema, data: unknown): SchemaVa
           message: issue.message,
           code: issue.type,
         })),
-      };
+      }
     }
-    return { success: false, errors: [{ path: [], message: String(err) }] };
+    return { success: false, errors: [{ path: [], message: String(err) }] }
   }
 }
 
@@ -207,13 +207,13 @@ function validateWithValibot(schema: ValibotLikeSchema, data: unknown): SchemaVa
  */
 export abstract class FormRequest<T = unknown> {
   /** Schema for request validation (Zod or Valibot) */
-  abstract schema: T;
+  abstract schema: T
 
   /** Data source: 'json' | 'form' | 'query' | 'param' */
-  source: DataSource = 'json';
+  source: DataSource = 'json'
 
   /** Configuration options */
-  options: FormRequestOptions = {};
+  options: FormRequestOptions = {}
 
   /**
    * Authorization check (optional).
@@ -227,19 +227,19 @@ export abstract class FormRequest<T = unknown> {
    * }
    * ```
    */
-  authorize?(ctx: Context): boolean | Promise<boolean>;
+  authorize?(ctx: Context): boolean | Promise<boolean>
 
   /**
    * Custom authorization error message (optional).
    * Override for custom messages.
    */
-  authorizationMessage?(): string;
+  authorizationMessage?(): string
 
   /**
    * Transform data before validation (optional).
    * Useful for coercing types or adding defaults.
    */
-  transform?(data: unknown): unknown;
+  transform?(data: unknown): unknown
 
   /**
    * Custom error messages (optional).
@@ -255,7 +255,7 @@ export abstract class FormRequest<T = unknown> {
    * }
    * ```
    */
-  messages?(): Record<string, string>;
+  messages?(): Record<string, string>
 
   /**
    * Get raw data from context based on source
@@ -263,22 +263,22 @@ export abstract class FormRequest<T = unknown> {
   protected async getData(ctx: Context): Promise<unknown> {
     switch (this.source) {
       case 'json':
-        return ctx.req.json().catch(() => ({}));
+        return ctx.req.json().catch(() => ({}))
       case 'form': {
-        const fd = await ctx.req.formData().catch(() => null);
-        if (!fd) return {};
-        const obj: Record<string, unknown> = {};
+        const fd = await ctx.req.formData().catch(() => null)
+        if (!fd) return {}
+        const obj: Record<string, unknown> = {}
         fd.forEach((value, key) => {
-          obj[key] = value;
-        });
-        return obj;
+          obj[key] = value
+        })
+        return obj
       }
       case 'query':
-        return ctx.req.query();
+        return ctx.req.query()
       case 'param':
-        return ctx.req.param();
+        return ctx.req.param()
       default:
-        return {};
+        return {}
     }
   }
 
@@ -292,24 +292,24 @@ export abstract class FormRequest<T = unknown> {
   ): string {
     // 1. Check custom messages from messages() method
     if (this.messages) {
-      const customMessages = this.messages();
-      const key = code ? `${field}.${code}` : field;
+      const customMessages = this.messages()
+      const key = code ? `${field}.${code}` : field
       if (customMessages[key]) {
-        return customMessages[key];
+        return customMessages[key]
       }
       // Try field-only key
       if (customMessages[field]) {
-        return customMessages[field];
+        return customMessages[field]
       }
     }
 
     // 2. Check i18n message provider
     if (this.options.messageProvider) {
-      return this.options.messageProvider.getMessage(code ?? '', field, defaultMessage);
+      return this.options.messageProvider.getMessage(code ?? '', field, defaultMessage)
     }
 
     // 3. Return default
-    return defaultMessage;
+    return defaultMessage
   }
 
   /**
@@ -320,14 +320,14 @@ export abstract class FormRequest<T = unknown> {
   ): Promise<
     { success: true; data: unknown } | { success: false; error: ValidationErrorResponse }
   > {
-    const messageProvider = this.options.messageProvider ?? new DefaultMessageProvider();
+    const messageProvider = this.options.messageProvider ?? new DefaultMessageProvider()
 
     // 1. Authorization check
     if (this.authorize) {
-      const authorized = await this.authorize(ctx);
+      const authorized = await this.authorize(ctx)
       if (!authorized) {
         const authMessage =
-          this.authorizationMessage?.() ?? messageProvider.getUnauthorizedMessage();
+          this.authorizationMessage?.() ?? messageProvider.getUnauthorizedMessage()
         return {
           success: false,
           error: {
@@ -338,38 +338,38 @@ export abstract class FormRequest<T = unknown> {
               details: [],
             },
           },
-        };
+        }
       }
     }
 
     // 2. Get data
-    let data = await this.getData(ctx);
+    let data = await this.getData(ctx)
 
     // 3. Transform if needed
     if (this.transform) {
-      data = this.transform(data);
+      data = this.transform(data)
     }
 
     // 4. Validate with appropriate schema library
-    let result: SchemaValidationResult;
+    let result: SchemaValidationResult
 
     if (isZodSchema(this.schema)) {
-      result = validateWithZod(this.schema, data);
+      result = validateWithZod(this.schema, data)
     } else if (isValibotSchema(this.schema)) {
-      result = validateWithValibot(this.schema, data);
+      result = validateWithValibot(this.schema, data)
     } else {
       // Unknown schema type, try duck-typing for safeParse
       const schemaAny = this.schema as {
         safeParse?: (data: unknown) => {
-          success: boolean;
-          data?: unknown;
-          error?: { errors: Array<{ path: unknown[]; message: string; code?: string }> };
-        };
-      };
+          success: boolean
+          data?: unknown
+          error?: { errors: Array<{ path: unknown[]; message: string; code?: string }> }
+        }
+      }
       if (schemaAny.safeParse) {
-        const r = schemaAny.safeParse(data);
+        const r = schemaAny.safeParse(data)
         if (r.success) {
-          result = { success: true, data: r.data };
+          result = { success: true, data: r.data }
         } else {
           result = {
             success: false,
@@ -379,10 +379,10 @@ export abstract class FormRequest<T = unknown> {
                 message: e.message,
                 code: e.code,
               })) ?? [],
-          };
+          }
         }
       } else {
-        throw new Error('Unsupported schema type. Use Zod or Valibot.');
+        throw new Error('Unsupported schema type. Use Zod or Valibot.')
       }
     }
 
@@ -391,7 +391,7 @@ export abstract class FormRequest<T = unknown> {
         field: err.path.join('.'),
         message: this.getErrorMessage(err.path.join('.'), err.code, err.message),
         code: err.code,
-      }));
+      }))
 
       return {
         success: false,
@@ -403,10 +403,10 @@ export abstract class FormRequest<T = unknown> {
             details,
           },
         },
-      };
+      }
     }
 
-    return { success: true, data: result.data };
+    return { success: true, data: result.data }
   }
 }
 
@@ -415,27 +415,27 @@ export abstract class FormRequest<T = unknown> {
  */
 export function validateRequest<T>(RequestClass: new () => FormRequest<T>): MiddlewareHandler {
   return async (ctx, next) => {
-    const request = new RequestClass();
-    const result = await request.validate(ctx);
+    const request = new RequestClass()
+    const result = await request.validate(ctx)
 
     if (!result.success) {
       const status: ContentfulStatusCode =
         result.error.error.code === 'AUTHORIZATION_ERROR'
           ? (request.options.authErrorStatus ?? 403)
-          : (request.options.errorStatus ?? 422);
+          : (request.options.errorStatus ?? 422)
 
-      return ctx.json(result.error, status);
+      return ctx.json(result.error, status)
     }
 
     // Store validated data in context
-    ctx.set('validated', result.data);
-    return next();
-  };
+    ctx.set('validated', result.data)
+    return next()
+  }
 }
 
 // Type augmentation for Hono context
 declare module 'hono' {
   interface ContextVariableMap {
-    validated: unknown;
+    validated: unknown
   }
 }

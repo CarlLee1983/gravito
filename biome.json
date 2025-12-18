@@ -126,14 +126,12 @@
     "attributePosition": "auto"
   },
   "javascript": {
-    "globals": [
-      "Bun"
-    ],
+    "globals": ["Bun"],
     "formatter": {
       "jsxQuoteStyle": "double",
       "quoteProperties": "asNeeded",
       "trailingCommas": "es5",
-      "semicolons": "always",
+      "semicolons": "asNeeded",
       "arrowParentheses": "always",
       "bracketSameLine": false,
       "quoteStyle": "single",

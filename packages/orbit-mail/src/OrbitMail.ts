@@ -1,19 +1,19 @@
-import type { GravitoOrbit, PlanetCore } from 'gravito-core';
-import { DevMailbox } from './dev/DevMailbox';
-import { DevServer } from './dev/DevServer';
-import type { Mailable } from './Mailable';
-import { LogTransport } from './transports/LogTransport';
-import { MemoryTransport } from './transports/MemoryTransport';
-import type { MailConfig, Message } from './types';
+import type { GravitoOrbit, PlanetCore } from 'gravito-core'
+import { DevMailbox } from './dev/DevMailbox'
+import { DevServer } from './dev/DevServer'
+import type { Mailable } from './Mailable'
+import { LogTransport } from './transports/LogTransport'
+import { MemoryTransport } from './transports/MemoryTransport'
+import type { MailConfig, Message } from './types'
 
 export class OrbitMail implements GravitoOrbit {
-  private static instance?: OrbitMail;
-  private config: MailConfig;
-  private devMailbox?: DevMailbox;
+  private static instance?: OrbitMail
+  private config: MailConfig
+  private devMailbox?: DevMailbox
 
   private constructor(config: MailConfig) {
-    this.config = config;
-    OrbitMail.instance = this;
+    this.config = config
+    OrbitMail.instance = this
   }
 
   /**
@@ -21,9 +21,9 @@ export class OrbitMail implements GravitoOrbit {
    */
   static getInstance(): OrbitMail {
     if (!OrbitMail.instance) {
-      throw new Error('OrbitMail has not been initialized. Call OrbitMail.configure() first.');
+      throw new Error('OrbitMail has not been initialized. Call OrbitMail.configure() first.')
     }
-    return OrbitMail.instance;
+    return OrbitMail.instance
   }
 
   /**
@@ -32,30 +32,30 @@ export class OrbitMail implements GravitoOrbit {
   static configure(config: MailConfig): OrbitMail {
     // Basic validation
     if (!config.transport && !config.devMode) {
-      console.warn('[OrbitMail] No transport provided, falling back to LogTransport');
-      config.transport = new LogTransport();
+      console.warn('[OrbitMail] No transport provided, falling back to LogTransport')
+      config.transport = new LogTransport()
     }
-    return new OrbitMail(config);
+    return new OrbitMail(config)
   }
 
   /**
    * Install the orbit into PlanetCore
    */
   install(core: PlanetCore): void {
-    core.logger.info('[OrbitMail] Initializing Mail Service (Exposed as: mail)');
+    core.logger.info('[OrbitMail] Initializing Mail Service (Exposed as: mail)')
 
     // In Dev Mode, override transport and setup Dev Server
     if (this.config.devMode) {
-      this.devMailbox = new DevMailbox();
+      this.devMailbox = new DevMailbox()
       // Only override if not explicitly set to something else, or maybe ALWAYS override in devMode?
       // Usually devMode implies intercepting all mails.
       // But let's log a warning if we are overriding a real transport
 
-      this.config.transport = new MemoryTransport(this.devMailbox);
-      core.logger.info('[OrbitMail] Dev Mode Enabled: Emails will be intercepted to Dev Mailbox');
+      this.config.transport = new MemoryTransport(this.devMailbox)
+      core.logger.info('[OrbitMail] Dev Mode Enabled: Emails will be intercepted to Dev Mailbox')
 
-      const devServer = new DevServer(this.devMailbox, this.config.devUiPrefix || '/__mail');
-      devServer.register(core);
+      const devServer = new DevServer(this.devMailbox, this.config.devUiPrefix || '/__mail')
+      devServer.register(core)
     }
 
     // Inject mail service into context
@@ -64,9 +64,9 @@ export class OrbitMail implements GravitoOrbit {
       c.set('mail', {
         send: (mailable: Mailable) => this.send(mailable),
         queue: (mailable: Mailable) => this.queue(mailable),
-      });
-      await next();
-    });
+      })
+      await next()
+    })
   }
 
   /**
@@ -74,15 +74,14 @@ export class OrbitMail implements GravitoOrbit {
    */
   async send(mailable: Mailable): Promise<void> {
     // 1. Build envelope and get configuration
-    const envelope = await mailable.buildEnvelope(this.config);
+    const envelope = await mailable.buildEnvelope(this.config)
 
     // Validate required fields
-    if (!envelope.from) throw new Error('Message is missing "from" address');
-    if (!envelope.to || envelope.to.length === 0)
-      throw new Error('Message is missing "to" address');
+    if (!envelope.from) throw new Error('Message is missing "from" address')
+    if (!envelope.to || envelope.to.length === 0) throw new Error('Message is missing "to" address')
 
     // 2. Render content
-    const content = await mailable.renderContent();
+    const content = await mailable.renderContent()
 
     // 3. Construct full message
     const message: Message = {
@@ -92,14 +91,14 @@ export class OrbitMail implements GravitoOrbit {
       subject: envelope.subject || '(No Subject)',
       priority: envelope.priority || 'normal',
       html: content.html,
-    };
+    }
 
     if (content.text) {
-      message.text = content.text;
+      message.text = content.text
     }
 
     // 4. Send via transport
-    await this.config.transport.send(message);
+    await this.config.transport.send(message)
   }
 
   /**
@@ -113,7 +112,7 @@ export class OrbitMail implements GravitoOrbit {
     // const queueName = (mailable as any).queueName || 'default';
 
     // Simulating async behavior
-    console.log(`[OrbitMail] Queuing message: ${mailable.constructor.name}`);
-    await this.send(mailable); // For now, just send it immediately in this POC
+    console.log(`[OrbitMail] Queuing message: ${mailable.constructor.name}`)
+    await this.send(mailable) // For now, just send it immediately in this POC
   }
 }

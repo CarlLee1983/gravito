@@ -1,31 +1,31 @@
-import { SESClient, SendRawEmailCommand } from '@aws-sdk/client-ses';
-import nodemailer from 'nodemailer';
-import type { Address, Message, Transport } from '../types';
+import { SESClient, SendRawEmailCommand } from '@aws-sdk/client-ses'
+import nodemailer from 'nodemailer'
+import type { Address, Message, Transport } from '../types'
 
 export interface SesConfig {
-  region: string;
-  accessKeyId?: string;
-  secretAccessKey?: string;
+  region: string
+  accessKeyId?: string
+  secretAccessKey?: string
 }
 
 export class SesTransport implements Transport {
-  private transporter: nodemailer.Transporter;
+  private transporter: nodemailer.Transporter
 
   constructor(config: SesConfig) {
-    const clientConfig: any = { region: config.region };
+    const clientConfig: any = { region: config.region }
 
     if (config.accessKeyId && config.secretAccessKey) {
       clientConfig.credentials = {
         accessKeyId: config.accessKeyId,
         secretAccessKey: config.secretAccessKey,
-      };
+      }
     }
 
-    const ses = new SESClient(clientConfig);
+    const ses = new SESClient(clientConfig)
 
     this.transporter = nodemailer.createTransport({
       SES: { ses, aws: { SendRawEmailCommand } },
-    } as any);
+    } as any)
   }
 
   async send(message: Message): Promise<void> {
@@ -47,10 +47,10 @@ export class SesTransport implements Transport {
         cid: a.cid,
         encoding: a.encoding,
       })),
-    });
+    })
   }
 
   private formatAddress(addr: Address): string {
-    return addr.name ? `"${addr.name}" <${addr.address}>` : addr.address;
+    return addr.name ? `"${addr.name}" <${addr.address}>` : addr.address
   }
 }

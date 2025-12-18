@@ -28,7 +28,7 @@ body { background: var(--bg-dark); color: var(--text); font-family: -apple-syste
 .badge { background: #475569; padding: 2px 6px; border-radius: 4px; font-size: 12px; }
 .badge-high { background: #dc2626; color: white; }
 .empty { padding: 40px; text-align: center; color: var(--text-muted); }
-`;
+`
 
 export const layout = (title: string, content: string) => `
 <!DOCTYPE html>
@@ -43,4 +43,4 @@ export const layout = (title: string, content: string) => `
   </div>
 </body>
 </html>
-`;
+`

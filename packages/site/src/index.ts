@@ -1,47 +1,48 @@
-import { PlanetCore, type GravitoConfig } from 'gravito-core';
-import { I18nOrbit } from '@gravito/orbit-i18n';
-import { ContentOrbit } from '@gravito/orbit-content';
-import { localeMiddleware } from '@gravito/orbit-i18n';
-import { existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync } from 'node:fs'
+import { join } from 'node:path'
+import { ContentOrbit } from '@gravito/orbit-content'
+import { I18nOrbit, localeMiddleware } from '@gravito/orbit-i18n'
+import { type GravitoConfig, PlanetCore } from 'gravito-core'
 
 // Load Translations (Mock for now)
 const translations = {
-    en: { "hero.title": "Gravito Framework", "nav.switch": "中文" },
-    zh: { "hero.title": "Gravito 框架", "nav.switch": "English" }
-};
+  en: { 'hero.title': 'Gravito Framework', 'nav.switch': '中文' },
+  zh: { 'hero.title': 'Gravito 框架', 'nav.switch': 'English' },
+}
 
 // Dynamic Content Path Logic (Dev vs Docker vs Root)
-const isSiteRoot = process.cwd().endsWith('site');
-const contentPath = isSiteRoot ? 'resources/content/docs' : 'packages/site/resources/content/docs';
+const isSiteRoot = process.cwd().endsWith('site')
+const contentPath = isSiteRoot ? 'resources/content/docs' : 'packages/site/resources/content/docs'
 
 const config: GravitoConfig = {
-    orbits: [
-        new I18nOrbit({
-            defaultLocale: 'en',
-            supportedLocales: ['en', 'zh'],
-            translations
-        }),
-        new ContentOrbit({
-            root: process.cwd(),
-            collections: {
-                docs: { path: contentPath }
-            }
-        })
-    ]
-};
+  orbits: [
+    new I18nOrbit({
+      defaultLocale: 'en',
+      supportedLocales: ['en', 'zh'],
+      translations,
+    }),
+    new ContentOrbit({
+      root: process.cwd(),
+      collections: {
+        docs: { path: contentPath },
+      },
+    }),
+  ],
+}
 
-export const app = await PlanetCore.boot(config);
+export const app = await PlanetCore.boot(config)
 
 // SEO & I18n Routing
-app.router.prefix('/:locale').middleware(localeMiddleware).group((router) => {
-
+app.router
+  .prefix('/:locale')
+  .middleware(localeMiddleware)
+  .group((router) => {
     // Landing Page
     router.get('/', async (c) => {
-        const i18n = c.get('i18n');
-        const lang = i18n.locale;
+      const i18n = c.get('i18n')
+      const lang = i18n.locale
 
-        return c.html(`
+      return c.html(`
             <!DOCTYPE html>
             <html lang="${lang}">
             <head>
@@ -56,28 +57,28 @@ app.router.prefix('/:locale').middleware(localeMiddleware).group((router) => {
                 </nav>
             </body>
             </html>
-        `);
-    });
+        `)
+    })
 
     // Docs Page with Full SEO
     router.get('/docs/:slug', async (c) => {
-        const content = c.get('content');
-        const i18n = c.get('i18n');
-        const slug = c.req.param('slug');
-        const locale = i18n.locale;
+      const content = c.get('content')
+      const i18n = c.get('i18n')
+      const slug = c.req.param('slug')
+      const locale = i18n.locale
 
-        const doc = await content.find('docs', slug, locale);
+      const doc = await content.find('docs', slug, locale)
 
-        if (!doc) {
-            return c.text('Not Found', 404);
-        }
+      if (!doc) {
+        return c.text('Not Found', 404)
+      }
 
-        const gaId = process.env.GA_MEASUREMENT_ID || 'G-XXXXXXXXXX';
-        const baseUrl = 'https://gravito.dev';
-        const url = `${baseUrl}/${locale}/docs/${slug}`;
-        const imageUrl = `${baseUrl}/og-image.jpg`; // Placeholder
+      const gaId = process.env.GA_MEASUREMENT_ID || 'G-XXXXXXXXXX'
+      const baseUrl = 'https://gravito.dev'
+      const url = `${baseUrl}/${locale}/docs/${slug}`
+      const imageUrl = `${baseUrl}/og-image.jpg` // Placeholder
 
-        return c.html(`
+      return c.html(`
             <!DOCTYPE html>
             <html lang="${locale}">
             <head>
@@ -126,24 +127,23 @@ app.router.prefix('/:locale').middleware(localeMiddleware).group((router) => {
                 </article>
             </body>
             </html>
-        `);
-    });
-
-});
+        `)
+    })
+  })
 
 // Root redirect
-app.app.get('/', (c) => c.redirect('/en'));
+app.app.get('/', (c) => c.redirect('/en'))
 
 // Liveness Probe
-app.app.get('/health', (c) => c.text('OK'));
+app.app.get('/health', (c) => c.text('OK'))
 
 // Conditional Start (Only if run directly via bun run)
 if (import.meta.main) {
-    app.liftoff(3000);
+  app.liftoff(3000)
 }
 
 // Default export for testing or library usage
 export default {
-    port: 3000,
-    fetch: app.app.fetch
-};
+  port: 3000,
+  fetch: app.app.fetch,
+}

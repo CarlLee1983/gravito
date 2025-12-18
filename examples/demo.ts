@@ -1,6 +1,6 @@
-import { serveStatic } from 'hono/bun';
-import { defineConfig, PlanetCore } from '../packages/core/src/index.ts';
-import { OrbitCache } from '../packages/orbit-cache/src/index.ts';
+import { serveStatic } from 'hono/bun'
+import { defineConfig, PlanetCore } from '../packages/core/src/index.ts'
+import { OrbitCache } from '../packages/orbit-cache/src/index.ts'
 
 // 1. Define Configuration (IoC Style)
 const config = defineConfig({
@@ -13,15 +13,15 @@ const config = defineConfig({
     // Cache orbit for visitor counter demo
     OrbitCache,
   ],
-});
+})
 
 // 2. Boot the Planet
-const core = await PlanetCore.boot(config);
+const core = await PlanetCore.boot(config)
 
 // 3. Add hooks to demonstrate the hook system
 core.hooks.addAction('app:liftoff', ({ port }) => {
-  core.logger.info(`🌌 ${core.config.get('APP_NAME')} is ready at http://localhost:${port}`);
-});
+  core.logger.info(`🌌 ${core.config.get('APP_NAME')} is ready at http://localhost:${port}`)
+})
 
 core.hooks.addFilter('api:response', async (data) => {
   // Add metadata to all API responses
@@ -31,19 +31,19 @@ core.hooks.addFilter('api:response', async (data) => {
       timestamp: new Date().toISOString(),
       poweredBy: 'Gravito',
     },
-  };
-});
+  }
+})
 
 // 4. Static file serving
-core.app.use('/static/*', serveStatic({ root: './templates/basic/' }));
-core.app.get('/favicon.ico', serveStatic({ path: './templates/basic/static/favicon.ico' }));
+core.app.use('/static/*', serveStatic({ root: './templates/basic/' }))
+core.app.get('/favicon.ico', serveStatic({ path: './templates/basic/static/favicon.ico' }))
 
 // 5. HTML Page Routes
 core.app.get('/', async (c) => {
   // Increment visitor counter using cache
-  const cache = c.get('cache');
-  const count = ((await cache.get<number>('visitor:count')) ?? 0) + 1;
-  await cache.set('visitor:count', count, 86400); // 24 hours TTL
+  const cache = c.get('cache')
+  const count = ((await cache.get<number>('visitor:count')) ?? 0) + 1
+  await cache.set('visitor:count', count, 86400) // 24 hours TTL
 
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -122,21 +122,21 @@ core.app.get('/', async (c) => {
       });
   </script>
 </body>
-</html>`;
+</html>`
 
-  return c.html(html);
-});
+  return c.html(html)
+})
 
 // 6. API Routes
-const startTime = Date.now();
+const startTime = Date.now()
 
 core.app.get('/api/health', async (c) => {
   const response = await core.hooks.applyFilters('api:response', {
     status: 'healthy',
     service: core.config.get('APP_NAME'),
-  });
-  return c.json(response);
-});
+  })
+  return c.json(response)
+})
 
 core.app.get('/api/config', async (c) => {
   const response = await core.hooks.applyFilters('api:response', {
@@ -148,16 +148,16 @@ core.app.get('/api/config', async (c) => {
       runtime: 'Bun',
       port: core.config.get('PORT'),
     },
-  });
-  return c.json(response);
-});
+  })
+  return c.json(response)
+})
 
 core.app.get('/api/stats', async (c) => {
-  const cache = c.get('cache');
-  const uptimeMs = Date.now() - startTime;
-  const uptimeSeconds = Math.floor(uptimeMs / 1000);
-  const minutes = Math.floor(uptimeSeconds / 60);
-  const seconds = uptimeSeconds % 60;
+  const cache = c.get('cache')
+  const uptimeMs = Date.now() - startTime
+  const uptimeSeconds = Math.floor(uptimeMs / 1000)
+  const minutes = Math.floor(uptimeSeconds / 60)
+  const seconds = uptimeSeconds % 60
 
   const response = await core.hooks.applyFilters('api:response', {
     uptime: minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`,
@@ -167,9 +167,9 @@ core.app.get('/api/stats', async (c) => {
       heapUsed: `${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB`,
       heapTotal: `${Math.round(process.memoryUsage().heapTotal / 1024 / 1024)}MB`,
     },
-  });
-  return c.json(response);
-});
+  })
+  return c.json(response)
+})
 
 // 7. Liftoff! 🚀
-export default core.liftoff();
+export default core.liftoff()

@@ -1,9 +1,9 @@
-import dts from 'bun-plugin-dts';
+import dts from 'bun-plugin-dts'
 
-console.log('Building @gravito/orbit-sitemap...');
+console.log('Building @gravito/orbit-sitemap...')
 
 // Clean dist
-await Bun.$`rm -rf dist`;
+await Bun.$`rm -rf dist`
 
 // Build ESM
 await Bun.build({
@@ -13,7 +13,7 @@ await Bun.build({
   format: 'esm',
   naming: '[name].mjs',
   plugins: [dts()],
-});
+})
 
 // Build CJS
 await Bun.build({
@@ -22,6 +22,6 @@ await Bun.build({
   target: 'node',
   format: 'cjs',
   naming: '[name].cjs',
-});
+})
 
-console.log('Build complete!');
+console.log('Build complete!')

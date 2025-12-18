@@ -1,20 +1,20 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import type { Address } from '../../types';
-import type { MailboxEntry } from '../DevMailbox';
-import { layout } from './shared';
+import type { Address } from '../../types'
+import type { MailboxEntry } from '../DevMailbox'
+import { layout } from './shared'
 
 function formatAddress(addr: { name?: string; address: string }): string {
-  return addr.name ? `${addr.name} <${addr.address}>` : addr.address;
+  return addr.name ? `${addr.name} <${addr.address}>` : addr.address
 }
 
 function timeAgo(date: Date): string {
-  const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
-  if (seconds < 60) return 'Just now';
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return date.toLocaleDateString();
+  const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000)
+  if (seconds < 60) return 'Just now'
+  const minutes = Math.floor(seconds / 60)
+  if (minutes < 60) return `${minutes}m ago`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours}h ago`
+  return date.toLocaleDateString()
 }
 
 export function getMailboxHtml(entries: MailboxEntry[], prefix: string): string {
@@ -39,7 +39,7 @@ export function getMailboxHtml(entries: MailboxEntry[], prefix: string): string 
       </a>
     `
           )
-          .join('');
+          .join('')
 
   const content = `
     <div class="header">
@@ -58,7 +58,7 @@ export function getMailboxHtml(entries: MailboxEntry[], prefix: string): string 
         window.location.reload();
       }
     </script>
-  `;
+  `
 
-  return layout('Inbox', content);
+  return layout('Inbox', content)
 }

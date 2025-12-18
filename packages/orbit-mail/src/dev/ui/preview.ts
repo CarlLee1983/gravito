@@ -1,11 +1,11 @@
-import type { MailboxEntry } from '../DevMailbox';
-import { layout } from './shared';
+import type { MailboxEntry } from '../DevMailbox'
+import { layout } from './shared'
 
 export function getPreviewHtml(entry: MailboxEntry, prefix: string): string {
   const from = entry.envelope.from
     ? `${entry.envelope.from.name || ''} &lt;${entry.envelope.from.address}&gt;`
-    : 'Unknown';
-  const to = entry.envelope.to?.map((t) => t.address).join(', ') || 'Unknown';
+    : 'Unknown'
+  const to = entry.envelope.to?.map((t) => t.address).join(', ') || 'Unknown'
 
   const content = `
     <div class="header">
@@ -53,7 +53,7 @@ export function getPreviewHtml(entry: MailboxEntry, prefix: string): string {
         window.location.href = '${prefix}';
       }
     </script>
-  `;
+  `
 
-  return layout(entry.envelope.subject || 'Preview', content);
+  return layout(entry.envelope.subject || 'Preview', content)
 }

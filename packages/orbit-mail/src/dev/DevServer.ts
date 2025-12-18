@@ -1,7 +1,7 @@
-import type { PlanetCore } from 'gravito-core';
-import type { DevMailbox, MailboxEntry } from './DevMailbox';
-import { getMailboxHtml } from './ui/mailbox';
-import { getPreviewHtml } from './ui/preview';
+import type { PlanetCore } from 'gravito-core'
+import type { DevMailbox, MailboxEntry } from './DevMailbox'
+import { getMailboxHtml } from './ui/mailbox'
+import { getPreviewHtml } from './ui/preview'
 
 export class DevServer {
   constructor(
@@ -10,74 +10,74 @@ export class DevServer {
   ) {}
 
   register(core: PlanetCore): void {
-    const router = core.router;
+    const router = core.router
 
     // Remove trailing slash
-    const prefix = this.base.replace(/\/$/, '');
+    const prefix = this.base.replace(/\/$/, '')
 
     // 1. Mailbox List
     router.get(prefix, (ctx) => {
-      const entries = this.mailbox.list();
-      return ctx.html(getMailboxHtml(entries, prefix));
-    });
+      const entries = this.mailbox.list()
+      return ctx.html(getMailboxHtml(entries, prefix))
+    })
 
     // 2. Single Email Preview
     router.get(`${prefix}/:id`, (ctx) => {
-      const id = ctx.req.param('id');
-      const entry = this.mailbox.get(id);
+      const id = ctx.req.param('id')
+      const entry = this.mailbox.get(id)
 
       if (!entry) {
-        return ctx.text('Email not found', 404);
+        return ctx.text('Email not found', 404)
       }
-      return ctx.html(getPreviewHtml(entry, prefix));
-    });
+      return ctx.html(getPreviewHtml(entry, prefix))
+    })
 
     // 3. Iframe Content: HTML
     router.get(`${prefix}/:id/html`, (ctx) => {
-      const id = ctx.req.param('id');
-      const entry = this.mailbox.get(id);
-      if (!entry) return ctx.text('Not found', 404);
-      return ctx.html(entry.html);
-    });
+      const id = ctx.req.param('id')
+      const entry = this.mailbox.get(id)
+      if (!entry) return ctx.text('Not found', 404)
+      return ctx.html(entry.html)
+    })
 
     // 4. Iframe Content: Text
     router.get(`${prefix}/:id/text`, (ctx) => {
-      const id = ctx.req.param('id');
-      const entry = this.mailbox.get(id);
-      if (!entry) return ctx.text('Not found', 404);
+      const id = ctx.req.param('id')
+      const entry = this.mailbox.get(id)
+      if (!entry) return ctx.text('Not found', 404)
       return ctx.text(entry.text || 'No text content', 200, {
         'Content-Type': 'text/plain; charset=utf-8',
-      });
-    });
+      })
+    })
 
     // 5. Raw JSON
     router.get(`${prefix}/:id/raw`, (ctx) => {
-      const id = ctx.req.param('id');
-      const entry = this.mailbox.get(id);
-      if (!entry) return ctx.json({ error: 'Not found' }, 404);
-      return ctx.json(entry);
-    });
+      const id = ctx.req.param('id')
+      const entry = this.mailbox.get(id)
+      if (!entry) return ctx.json({ error: 'Not found' }, 404)
+      return ctx.json(entry)
+    })
 
     // 6. API: Delete Single
     router.get(`${prefix}/:id/delete`, (ctx) => {
       // Using GET for simple links/redirects without JS fetch if needed, but better use fetch from UI
       // Actually let's accept POST or DELETE
-      return ctx.text('Method not allowed', 405);
-    });
+      return ctx.text('Method not allowed', 405)
+    })
     router.delete(`${prefix}/:id`, (ctx) => {
-      const success = this.mailbox.delete(ctx.req.param('id'));
-      return ctx.json({ success });
-    });
+      const success = this.mailbox.delete(ctx.req.param('id'))
+      return ctx.json({ success })
+    })
 
     // 7. API: Clear All
     router.delete(prefix, (ctx) => {
-      this.mailbox.clear();
-      return ctx.json({ success: true });
-    });
+      this.mailbox.clear()
+      return ctx.json({ success: true })
+    })
 
     // Redirect /__mail/ to /__mail
     // core.router.get(prefix + '/', (c) => c.redirect(prefix));
 
-    core.logger.info(`[OrbitMail] Dev Mailbox available at ${prefix}`);
+    core.logger.info(`[OrbitMail] Dev Mailbox available at ${prefix}`)
   }
 }
