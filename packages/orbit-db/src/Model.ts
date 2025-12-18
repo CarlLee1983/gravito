@@ -98,6 +98,8 @@ export interface ModelStatic<T extends Model = Model> {
   count(where?: WhereCondition): Promise<number>
   exists(where: WhereCondition): Promise<boolean>
   create(data: Partial<T['attributes']>): Promise<T>
+  withTrashed(): QueryBuilder<T>
+  onlyTrashed(): QueryBuilder<T>
   paginate(options: {
     page: number
     limit: number
@@ -270,6 +272,20 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
    */
   static query<T extends Model>(this: ModelStatic<T>): QueryBuilder<T> {
     return new QueryBuilder<T>(this)
+  }
+
+  /**
+   * Start a query builder including soft deleted records.
+   */
+  static withTrashed<T extends Model>(this: ModelStatic<T>): QueryBuilder<T> {
+    return new QueryBuilder<T>(this).withTrashed()
+  }
+
+  /**
+   * Start a query builder only for soft deleted records.
+   */
+  static onlyTrashed<T extends Model>(this: ModelStatic<T>): QueryBuilder<T> {
+    return new QueryBuilder<T>(this).onlyTrashed()
   }
 
   /**
@@ -1321,8 +1337,25 @@ export class QueryBuilder<T extends Model> {
   private limitValue?: number
   private offsetValue?: number
   private groupByColumns: unknown[] = []
+  private softDeleteMode: 'default' | 'withTrashed' | 'onlyTrashed' = 'default'
 
   constructor(private modelClass: ModelStatic<T>) {}
+
+  /**
+   * Include soft deleted records.
+   */
+  withTrashed(): this {
+    this.softDeleteMode = 'withTrashed'
+    return this
+  }
+
+  /**
+   * Only include soft deleted records.
+   */
+  onlyTrashed(): this {
+    this.softDeleteMode = 'onlyTrashed'
+    return this
+  }
 
   /**
    * Add WHERE conditions.
@@ -1670,7 +1703,15 @@ export class QueryBuilder<T extends Model> {
     // Apply soft delete filter.
     if ((modelClass as any).usesSoftDeletes) {
       const deletedAtColumn = (modelClass as any).deletedAtColumn || 'deleted_at'
-      finalWhere[deletedAtColumn] = null
+
+      if (this.softDeleteMode === 'default') {
+        // Exclude deleted (deleted_at IS NULL)
+        finalWhere[deletedAtColumn] = null
+      } else if (this.softDeleteMode === 'onlyTrashed') {
+        // Only deleted (deleted_at IS NOT NULL)
+        finalWhere[deletedAtColumn] = { $ne: null }
+      }
+      // if 'withTrashed', do nothing (include all)
     }
 
     return finalWhere
