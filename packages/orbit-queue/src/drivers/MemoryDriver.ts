@@ -4,10 +4,10 @@ import type { QueueDriver } from './QueueDriver'
 /**
  * Memory Driver
  *
- * 記憶體驅動，用於開發和測試。
- * 所有資料儲存在記憶體中，應用程式重啟後會丟失。
+ * In-memory driver for development and testing.
+ * All data is stored in memory and will be lost when the process restarts.
  *
- * **零配置啟動**：無需任何配置即可使用。
+ * Zero-config: works out of the box.
  *
  * @example
  * ```typescript
@@ -20,7 +20,7 @@ export class MemoryDriver implements QueueDriver {
   private queues = new Map<string, SerializedJob[]>()
 
   /**
-   * 推送 Job 到隊列
+   * Push a job to a queue.
    */
   async push(queue: string, job: SerializedJob): Promise<void> {
     if (!this.queues.has(queue)) {
@@ -30,7 +30,7 @@ export class MemoryDriver implements QueueDriver {
   }
 
   /**
-   * 從隊列取出 Job（FIFO）
+   * Pop a job from a queue (FIFO).
    */
   async pop(queue: string): Promise<SerializedJob | null> {
     const queueJobs = this.queues.get(queue)
@@ -38,7 +38,7 @@ export class MemoryDriver implements QueueDriver {
       return null
     }
 
-    // 檢查是否有延遲的 Job
+    // Respect delayed jobs
     const now = Date.now()
     const availableIndex = queueJobs.findIndex(
       (job) => !job.delaySeconds || now >= job.createdAt + job.delaySeconds * 1000
@@ -52,21 +52,21 @@ export class MemoryDriver implements QueueDriver {
   }
 
   /**
-   * 取得隊列大小
+   * Get queue size.
    */
   async size(queue: string): Promise<number> {
     return this.queues.get(queue)?.length ?? 0
   }
 
   /**
-   * 清空隊列
+   * Clear a queue.
    */
   async clear(queue: string): Promise<void> {
     this.queues.delete(queue)
   }
 
   /**
-   * 批量推送 Job
+   * Push multiple jobs.
    */
   async pushMany(queue: string, jobs: SerializedJob[]): Promise<void> {
     if (!this.queues.has(queue)) {
@@ -76,7 +76,7 @@ export class MemoryDriver implements QueueDriver {
   }
 
   /**
-   * 批量取出 Job
+   * Pop multiple jobs.
    */
   async popMany(queue: string, count: number): Promise<SerializedJob[]> {
     const results: SerializedJob[] = []

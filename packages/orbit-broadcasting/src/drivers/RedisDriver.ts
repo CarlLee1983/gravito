@@ -1,7 +1,7 @@
 import type { BroadcastDriver } from './BroadcastDriver'
 
 /**
- * Redis 驅動配置
+ * Redis driver configuration.
  */
 export interface RedisDriverConfig {
   url?: string
@@ -13,10 +13,10 @@ export interface RedisDriverConfig {
 }
 
 /**
- * Redis 驅動
+ * Redis driver.
  *
- * 通過 Redis Pub/Sub 進行廣播。
- * 需要 Redis 客戶端支援。
+ * Broadcasts via Redis Pub/Sub.
+ * Requires an external Redis client.
  */
 export class RedisDriver implements BroadcastDriver {
   private redis: {
@@ -24,12 +24,12 @@ export class RedisDriver implements BroadcastDriver {
   } | null = null
 
   constructor(private config: RedisDriverConfig) {
-    // Redis 客戶端應該由外部注入
-    // 這裡僅提供介面
+    // The Redis client should be injected from the outside.
+    // This class only provides the adapter interface.
   }
 
   /**
-   * 設置 Redis 客戶端
+   * Set Redis client.
    */
   setRedisClient(client: { publish(channel: string, message: string): Promise<number> }): void {
     this.redis = client
@@ -41,7 +41,9 @@ export class RedisDriver implements BroadcastDriver {
     data: Record<string, unknown>
   ): Promise<void> {
     if (!this.redis) {
-      throw new Error('Redis client not set. Please install a Redis client and call setRedisClient()')
+      throw new Error(
+        'Redis client not set. Please install a Redis client and call setRedisClient()'
+      )
     }
 
     const prefix = this.config.keyPrefix || 'gravito:broadcast:'
@@ -56,4 +58,3 @@ export class RedisDriver implements BroadcastDriver {
     await this.redis.publish(channelName, message)
   }
 }
-

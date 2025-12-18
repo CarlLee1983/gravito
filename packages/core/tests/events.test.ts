@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'bun:test'
+import type { Listener } from '../src'
+import { Event, EventManager } from '../src'
 import { ConsoleLogger } from '../src/Logger'
 import { PlanetCore } from '../src/PlanetCore'
-import { Event, EventManager } from '../src'
-import type { Listener } from '../src'
 
 describe('EventManager', () => {
   it('should dispatch events to listeners', async () => {
@@ -50,10 +50,10 @@ describe('EventManager', () => {
       }
     }
 
-    // 註冊字串事件名稱的監聽器
+    // Register a listener using a string event name.
     events.listen('TestEvent', new TestListener())
 
-    // 分發事件（會使用類別名稱 'TestEvent'）
+    // Dispatch (will use class name 'TestEvent').
     await events.dispatch(new TestEvent('Hello'))
 
     expect(handled).toBe(true)
@@ -80,4 +80,3 @@ describe('EventManager', () => {
     expect(event.getBroadcastData()).toEqual({ data: 'test' })
   })
 })
-

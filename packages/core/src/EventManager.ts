@@ -1,9 +1,9 @@
-import type { PlanetCore } from './PlanetCore'
 import { Event } from './Event'
 import type { Listener, ShouldQueue } from './Listener'
+import type { PlanetCore } from './PlanetCore'
 
 /**
- * 監聽器註冊資訊
+ * Listener registration metadata.
  */
 interface ListenerRegistration<TEvent extends Event = Event> {
   listener: Listener<TEvent> | (new () => Listener<TEvent>)
@@ -13,10 +13,10 @@ interface ListenerRegistration<TEvent extends Event = Event> {
 }
 
 /**
- * 事件管理器
+ * Event manager.
  *
- * 提供類型安全的事件分發和監聽器註冊功能。
- * 支援同步和異步（隊列）監聽器。
+ * Provides type-safe event dispatching and listener registration.
+ * Supports both synchronous listeners and asynchronous (queued) listeners.
  *
  * @example
  * ```typescript
@@ -28,70 +28,77 @@ interface ListenerRegistration<TEvent extends Event = Event> {
  *
  * class SendWelcomeEmail implements Listener<UserRegistered> {
  *   async handle(event: UserRegistered): Promise<void> {
- *     // 發送歡迎郵件
+ *     // send welcome email
  *   }
  * }
  *
- * // 註冊監聽器
+ * // Register listener
  * core.events.listen(UserRegistered, SendWelcomeEmail)
  *
- * // 分發事件
+ * // Dispatch event
  * await core.events.dispatch(new UserRegistered(user))
  * ```
  */
 export class EventManager {
   /**
-   * 監聽器映射表
-   * Key: 事件類別或事件名稱
-   * Value: 監聽器註冊資訊陣列
+   * Listener registry.
+   * Key: event class or event name
+   * Value: listener registrations
    */
   private listeners = new Map<string | (new () => Event), ListenerRegistration[]>()
 
   /**
-   * 廣播管理器（可選，由 orbit-broadcasting 注入）
+   * Broadcast manager (optional, injected by `orbit-broadcasting`).
    */
-  private broadcastManager: {
-    broadcast(event: Event, channel: string | { name: string; type: string }, data: Record<string, unknown>, eventName: string): Promise<void>
-  } | undefined
+  private broadcastManager:
+    | {
+        broadcast(
+          event: Event,
+          channel: string | { name: string; type: string },
+          data: Record<string, unknown>,
+          eventName: string
+        ): Promise<void>
+      }
+    | undefined
 
   /**
-   * 隊列管理器（可選，由 orbit-queue 注入）
+   * Queue manager (optional, injected by `orbit-queue`).
    */
-  private queueManager: {
-    push(job: unknown, queue?: string, connection?: string, delay?: number): Promise<void>
-  } | undefined
+  private queueManager:
+    | {
+        push(job: unknown, queue?: string, connection?: string, delay?: number): Promise<void>
+      }
+    | undefined
 
-  constructor(private core: PlanetCore) { }
+  constructor(private core: PlanetCore) {}
 
   /**
-   * 註冊廣播管理器
-   * 由 orbit-broadcasting 調用
+   * Register the broadcast manager (called by `orbit-broadcasting`).
    */
   setBroadcastManager(manager: EventManager['broadcastManager']): void {
     this.broadcastManager = manager
   }
 
   /**
-   * 註冊隊列管理器
-   * 由 orbit-queue 調用
+   * Register the queue manager (called by `orbit-queue`).
    */
   setQueueManager(manager: EventManager['queueManager']): void {
     this.queueManager = manager
   }
 
   /**
-   * 註冊事件監聽器
+   * Register an event listener.
    *
-   * @param event - 事件類別或事件名稱
-   * @param listener - 監聽器實例或監聽器類別
-   * @param options - 可選配置（用於隊列化）
+   * @param event - Event class or event name
+   * @param listener - Listener instance or listener class
+   * @param options - Optional queue options
    *
    * @example
    * ```typescript
-   * // 同步監聽器
+   * // Synchronous listener
    * core.events.listen(UserRegistered, SendWelcomeEmail)
    *
-   * // 異步監聽器（隊列化）
+   * // Queued listener (async)
    * core.events.listen(UserRegistered, SendWelcomeEmail, {
    *   queue: 'emails',
    *   delay: 60
@@ -121,10 +128,10 @@ export class EventManager {
   }
 
   /**
-   * 移除事件監聽器
+   * Remove an event listener.
    *
-   * @param event - 事件類別或事件名稱
-   * @param listener - 要移除的監聽器
+   * @param event - Event class or event name
+   * @param listener - Listener to remove
    */
   unlisten<TEvent extends Event>(
     event: string | (new (...args: unknown[]) => TEvent),
@@ -143,12 +150,12 @@ export class EventManager {
   }
 
   /**
-   * 分發事件
+   * Dispatch an event.
    *
-   * 執行所有註冊的監聽器。如果監聽器實作了 ShouldQueue 介面或指定了隊列選項，
-   * 則會將監聽器推送到隊列中異步執行。
+   * Runs all registered listeners. If a listener implements `ShouldQueue` or
+   * has queue options, the listener will be pushed to the queue for async execution.
    *
-   * @param event - 事件實例
+   * @param event - Event instance
    *
    * @example
    * ```typescript
@@ -159,11 +166,11 @@ export class EventManager {
     const eventKey = event.constructor as new () => Event
     const eventName = event.constructor.name
 
-    // 觸發 hooks（向後相容）
+    // Trigger hooks (backward compatible)
     await this.core.hooks.doAction(`event:${eventName}`, event)
     await this.core.hooks.doAction('event:dispatched', { event, eventName })
 
-    // 處理廣播
+    // Broadcast
     if (event instanceof Event && event.shouldBroadcast() && this.broadcastManager) {
       const channel = event.getBroadcastChannel()
       if (channel) {
@@ -180,25 +187,25 @@ export class EventManager {
       }
     }
 
-    // 獲取監聽器（先檢查類別，再檢查字串名稱）
+    // Collect listeners (check class key first, then string name)
     const registrations = this.listeners.get(eventKey) || []
     const stringRegistrations = this.listeners.get(eventName) || []
     const allRegistrations = [...registrations, ...stringRegistrations]
 
-    // 執行監聽器
+    // Execute listeners
     for (const registration of allRegistrations) {
       try {
-        // 解析監聽器實例
+        // Resolve listener instance
         let listenerInstance: Listener<TEvent>
         if (typeof registration.listener === 'function') {
-          // 是類別，需要實例化
+          // Class: instantiate
           listenerInstance = new registration.listener() as Listener<TEvent>
         } else {
-          // 已經是實例
+          // Instance: use directly
           listenerInstance = registration.listener as Listener<TEvent>
         }
 
-        // 檢查是否應該隊列化
+        // Determine whether it should be queued
         const shouldQueue =
           'queue' in listenerInstance ||
           registration.queue !== undefined ||
@@ -206,13 +213,13 @@ export class EventManager {
           registration.delay !== undefined
 
         if (shouldQueue && this.queueManager) {
-          // 推送到隊列
+          // Push to queue
           const queue = (listenerInstance as unknown as ShouldQueue).queue || registration.queue
           const connection =
             (listenerInstance as unknown as ShouldQueue).connection || registration.connection
           const delay = (listenerInstance as unknown as ShouldQueue).delay || registration.delay
 
-          // 創建隊列任務包裝器
+          // Create a queue job wrapper
           const queueJob = {
             type: 'event-listener',
             event: eventName,
@@ -225,21 +232,18 @@ export class EventManager {
 
           await this.queueManager.push(queueJob, queue, connection, delay)
         } else {
-          // 同步執行
+          // Run synchronously
           await listenerInstance.handle(event)
         }
       } catch (error) {
-        this.core.logger.error(
-          `[EventManager] Error in listener for event ${eventName}:`,
-          error
-        )
-        // 繼續執行其他監聽器
+        this.core.logger.error(`[EventManager] Error in listener for event ${eventName}:`, error)
+        // Continue with other listeners
       }
     }
   }
 
   /**
-   * 序列化事件（用於隊列化）
+   * Serialize an event (for queueing).
    */
   private serializeEvent(event: Event): Record<string, unknown> {
     const data: Record<string, unknown> = {}
@@ -252,7 +256,7 @@ export class EventManager {
   }
 
   /**
-   * 獲取所有註冊的監聽器
+   * Get all registered listeners.
    */
   getListeners(event?: string | (new () => Event)): ListenerRegistration[] {
     if (event) {
@@ -267,10 +271,9 @@ export class EventManager {
   }
 
   /**
-   * 清除所有監聽器
+   * Clear all listeners.
    */
   clear(): void {
     this.listeners.clear()
   }
 }
-

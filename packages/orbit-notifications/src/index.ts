@@ -1,21 +1,21 @@
 /**
  * @gravito/orbit-notifications
  *
- * 輕量、高效的通知系統，支援多種通道（郵件、資料庫、廣播、Slack、SMS）。
+ * Lightweight, high-performance notifications with multiple channels (mail, database, broadcast, Slack, SMS).
  */
 
-export { Notification } from './Notification'
-export type { ShouldQueue } from './Notification'
-export { NotificationManager } from './NotificationManager'
-export { OrbitNotifications } from './OrbitNotifications'
-export type { OrbitNotificationsOptions } from './OrbitNotifications'
 export { BroadcastChannel } from './channels/BroadcastChannel'
 export { DatabaseChannel } from './channels/DatabaseChannel'
 export { MailChannel } from './channels/MailChannel'
-export { SlackChannel } from './channels/SlackChannel'
 export type { SlackChannelConfig } from './channels/SlackChannel'
-export { SmsChannel } from './channels/SmsChannel'
+export { SlackChannel } from './channels/SlackChannel'
 export type { SmsChannelConfig } from './channels/SmsChannel'
+export { SmsChannel } from './channels/SmsChannel'
+export type { ShouldQueue } from './Notification'
+export { Notification } from './Notification'
+export { NotificationManager } from './NotificationManager'
+export type { OrbitNotificationsOptions } from './OrbitNotifications'
+export { OrbitNotifications } from './OrbitNotifications'
 export type {
   BroadcastNotification,
   DatabaseNotification,
@@ -25,4 +25,3 @@ export type {
   SlackMessage,
   SmsMessage,
 } from './types'
-

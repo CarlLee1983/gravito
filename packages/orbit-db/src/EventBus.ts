@@ -1,12 +1,12 @@
 import type { EventSource } from './types'
 
 /**
- * 事件處理器類型
+ * Event handler type.
  */
 export type EventHandler<T = any> = (payload: T, source?: EventSource) => Promise<void> | void
 
 /**
- * 事件訂閱資訊
+ * Event subscription info.
  */
 interface EventSubscription {
   handler: EventHandler
@@ -14,9 +14,9 @@ interface EventSubscription {
 }
 
 /**
- * Event Bus - 明確的事件追蹤和管理系統
+ * Event Bus - explicit event tracing and management.
  *
- * 提供明確的事件觸發點追蹤，讓開發者清楚知道事件在哪裡觸發
+ * Provides explicit event emit source tracking so developers can see where events originate.
  */
 export class EventBus {
   private handlers: Map<string, EventSubscription[]> = new Map()
@@ -29,24 +29,24 @@ export class EventBus {
   private maxHistorySize = 1000
 
   /**
-   * 發送事件（帶來源追蹤）
+   * Emit an event (with source tracking).
    */
   emit<T = any>(event: string, payload: T, source?: EventSource): void {
     const subscriptions = this.handlers.get(event) || []
     const timestamp = Date.now()
 
-    // 記錄事件歷史
+    // Record event history.
     this.eventHistory.push({ event, payload, source, timestamp })
     if (this.eventHistory.length > this.maxHistorySize) {
       this.eventHistory.shift()
     }
 
-    // 執行所有訂閱的處理器
+    // Execute subscribed handlers.
     for (const subscription of subscriptions) {
       try {
         const result = subscription.handler(payload, source)
         if (result instanceof Promise) {
-          // 非同步執行，不等待
+          // Fire-and-forget async handler.
           result.catch((error) => {
             console.error(`[EventBus] Error in handler for event '${event}':`, error)
           })
@@ -55,7 +55,7 @@ export class EventBus {
         console.error(`[EventBus] Error in handler for event '${event}':`, error)
       }
 
-      // 如果是一次性訂閱，移除它
+      // If it's a one-time subscription, remove it.
       if (subscription.once) {
         this.off(event, subscription.handler)
       }
@@ -63,7 +63,7 @@ export class EventBus {
   }
 
   /**
-   * 訂閱事件
+   * Subscribe to an event.
    */
   on<T = any>(event: string, handler: EventHandler<T>): void {
     if (!this.handlers.has(event)) {
@@ -73,7 +73,7 @@ export class EventBus {
   }
 
   /**
-   * 訂閱事件（只執行一次）
+   * Subscribe to an event (runs once).
    */
   once<T = any>(event: string, handler: EventHandler<T>): void {
     if (!this.handlers.has(event)) {
@@ -83,7 +83,7 @@ export class EventBus {
   }
 
   /**
-   * 取消訂閱
+   * Unsubscribe.
    */
   off<T = any>(event: string, handler: EventHandler<T>): void {
     const subscriptions = this.handlers.get(event)
@@ -98,7 +98,7 @@ export class EventBus {
   }
 
   /**
-   * 移除所有訂閱
+   * Remove all listeners.
    */
   removeAllListeners(event?: string): void {
     if (event) {
@@ -109,7 +109,7 @@ export class EventBus {
   }
 
   /**
-   * 獲取事件歷史
+   * Get event history.
    */
   getHistory(event?: string): Array<{
     event: string
@@ -124,14 +124,14 @@ export class EventBus {
   }
 
   /**
-   * 清除事件歷史
+   * Clear event history.
    */
   clearHistory(): void {
     this.eventHistory = []
   }
 
   /**
-   * 獲取事件來源資訊（從調用堆疊）
+   * Get event source info (from stack trace).
    */
   static getEventSource(): EventSource {
     const stack = new Error().stack
@@ -140,10 +140,10 @@ export class EventBus {
     }
 
     const lines = stack.split('\n')
-    // 跳過前兩行（Error 和 getEventSource）
+    // Skip first two lines (Error and getEventSource).
     if (lines.length > 2) {
       const callerLine = lines[2]
-      // 嘗試解析檔案和行號
+      // Try to parse file and line number.
       const match = callerLine.match(/at\s+(.+?):(\d+):(\d+)/)
       if (match) {
         return {

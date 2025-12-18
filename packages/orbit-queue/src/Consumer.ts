@@ -3,31 +3,31 @@ import type { WorkerOptions } from './Worker'
 import { Worker } from './Worker'
 
 /**
- * Consumer 選項
+ * Consumer options.
  */
 export interface ConsumerOptions {
   /**
-   * 要監聽的隊列列表
+   * Queues to listen on.
    */
   queues: string[]
 
   /**
-   * 連接名稱
+   * Connection name.
    */
   connection?: string
 
   /**
-   * Worker 選項
+   * Worker options.
    */
   workerOptions?: WorkerOptions
 
   /**
-   * 輪詢間隔（毫秒）
+   * Polling interval (milliseconds).
    */
   pollInterval?: number
 
   /**
-   * 是否在空隊列時繼續輪詢
+   * Whether to keep polling when queues are empty.
    */
   keepAlive?: boolean
 }
@@ -35,12 +35,12 @@ export interface ConsumerOptions {
 /**
  * Consumer
  *
- * 消費隊列中的 Job 並執行。
- * 支援內嵌模式（在主應用中運行）和獨立模式（作為微服務運行）。
+ * Consumes and executes jobs from queues.
+ * Supports embedded mode (inside the main app) and standalone mode (as a worker service).
  *
  * @example
  * ```typescript
- * // 內嵌模式
+ * // Embedded mode
  * const consumer = new Consumer(queueManager, {
  *   queues: ['default', 'emails'],
  *   pollInterval: 1000
@@ -48,8 +48,8 @@ export interface ConsumerOptions {
  *
  * consumer.start()
  *
- * // 獨立模式（CLI）
- * // 透過 CLI 工具啟動，支援優雅關閉
+ * // Standalone mode (CLI)
+ * // Start via CLI tooling with graceful shutdown
  * ```
  */
 export class Consumer {
@@ -62,7 +62,7 @@ export class Consumer {
   ) {}
 
   /**
-   * 啟動 Consumer
+   * Start the consumer loop.
    */
   async start(): Promise<void> {
     if (this.running) {
@@ -81,7 +81,7 @@ export class Consumer {
       connection: this.options.connection,
     })
 
-    // 主循環
+    // Main loop
     while (this.running && !this.stopRequested) {
       let processed = false
 
@@ -100,12 +100,12 @@ export class Consumer {
         }
       }
 
-      // 如果沒有處理任何 Job 且不保持存活，退出
+      // If nothing was processed and keepAlive is disabled, exit
       if (!processed && !keepAlive) {
         break
       }
 
-      // 等待後繼續輪詢
+      // Wait and poll again
       if (!this.stopRequested) {
         await new Promise((resolve) => setTimeout(resolve, pollInterval))
       }
@@ -116,20 +116,20 @@ export class Consumer {
   }
 
   /**
-   * 停止 Consumer（優雅關閉）
+   * Stop the consumer loop (graceful shutdown).
    */
   async stop(): Promise<void> {
     console.log('[Consumer] Stopping...')
     this.stopRequested = true
 
-    // 等待當前處理完成
+    // Wait for current processing to finish
     while (this.running) {
       await new Promise((resolve) => setTimeout(resolve, 100))
     }
   }
 
   /**
-   * 檢查是否正在運行
+   * Check whether the consumer is running.
    */
   isRunning(): boolean {
     return this.running

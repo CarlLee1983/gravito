@@ -2,11 +2,11 @@ import type { SerializedJob, TopicOptions } from '../types'
 import type { QueueDriver } from './QueueDriver'
 
 /**
- * Kafka Driver 配置
+ * Kafka driver configuration.
  */
 export interface KafkaDriverConfig {
   /**
-   * Kafka 客戶端實例（kafkajs）
+   * Kafka client instance (kafkajs).
    */
   client: {
     producer: () => {
@@ -40,7 +40,7 @@ export interface KafkaDriverConfig {
   }
 
   /**
-   * Consumer Group ID（用於消費消息）
+   * Consumer group ID (for consuming messages).
    */
   consumerGroupId?: string
 }
@@ -48,10 +48,10 @@ export interface KafkaDriverConfig {
 /**
  * Kafka Driver
  *
- * 使用 Apache Kafka 作為隊列儲存。
- * 支援 Topic 管理、Consumer Groups、批量操作等企業級功能。
+ * Uses Apache Kafka as the queue backend.
+ * Supports topic management, consumer groups, and batch operations.
  *
- * **要求**：需要安裝 `kafkajs` 套件。
+ * Requires `kafkajs`.
  *
  * @example
  * ```typescript
@@ -82,7 +82,7 @@ export class KafkaDriver implements QueueDriver {
   }
 
   /**
-   * 確保 Producer 已連接
+   * Ensure the producer is connected.
    */
   private async ensureProducer(): Promise<ReturnType<KafkaDriverConfig['client']['producer']>> {
     if (!this.producer) {
@@ -93,7 +93,7 @@ export class KafkaDriver implements QueueDriver {
   }
 
   /**
-   * 確保 Admin 已連接
+   * Ensure the admin client is connected.
    */
   private async ensureAdmin(): Promise<ReturnType<KafkaDriverConfig['client']['admin']>> {
     if (!this.admin) {
@@ -104,7 +104,7 @@ export class KafkaDriver implements QueueDriver {
   }
 
   /**
-   * 推送 Job 到 Topic（隊列）
+   * Push a job to a topic.
    */
   async push(queue: string, job: SerializedJob): Promise<void> {
     const producer = await this.ensureProducer()
@@ -131,30 +131,27 @@ export class KafkaDriver implements QueueDriver {
   }
 
   /**
-   * 從 Topic 取出 Job
+   * Pop is not supported for Kafka.
    *
-   * **注意**：Kafka 使用 Push-based 模式，應該使用 `subscribe()` 方法。
-   * 此方法僅用於相容性，實際應該使用訂閱模式。
+   * Note: Kafka uses a push-based model, so you should use `subscribe()`.
    */
   async pop(_queue: string): Promise<SerializedJob | null> {
-    // Kafka 是 Push-based，不支援傳統的 pop 操作
-    // 此方法僅用於相容性，實際應該使用 subscribe()
+    // Kafka is push-based; use subscribe() instead.
     throw new Error('[KafkaDriver] Kafka uses push-based model. Use subscribe() instead of pop().')
   }
 
   /**
-   * 取得隊列大小
+   * Kafka does not provide a direct queue size.
    *
-   * **注意**：Kafka 不直接支援取得隊列大小。
-   * 此方法返回 0，實際大小需要透過 Kafka 管理工具查詢。
+   * Returns 0; use Kafka tooling/metrics for lag/size insights.
    */
   async size(_queue: string): Promise<number> {
-    // Kafka 不直接支援取得隊列大小
+    // Kafka does not directly support queue size.
     return 0
   }
 
   /**
-   * 清空隊列（刪除 Topic）
+   * Clear a queue by deleting the topic.
    */
   async clear(queue: string): Promise<void> {
     const admin = await this.ensureAdmin()
@@ -162,7 +159,7 @@ export class KafkaDriver implements QueueDriver {
   }
 
   /**
-   * 批量推送 Job
+   * Push multiple jobs.
    */
   async pushMany(queue: string, jobs: SerializedJob[]): Promise<void> {
     if (jobs.length === 0) {
@@ -195,7 +192,7 @@ export class KafkaDriver implements QueueDriver {
   }
 
   /**
-   * 建立 Topic
+   * Create a topic.
    */
   async createTopic(topic: string, options?: TopicOptions): Promise<void> {
     const admin = await this.ensureAdmin()
@@ -211,14 +208,14 @@ export class KafkaDriver implements QueueDriver {
   }
 
   /**
-   * 刪除 Topic
+   * Delete a topic.
    */
   async deleteTopic(topic: string): Promise<void> {
     await this.clear(topic)
   }
 
   /**
-   * 訂閱 Topic（Push-based 模式）
+   * Subscribe to a topic (push-based model).
    */
   async subscribe(queue: string, callback: (job: SerializedJob) => Promise<void>): Promise<void> {
     const consumer = this.client.consumer({ groupId: this.consumerGroupId })
@@ -245,10 +242,10 @@ export class KafkaDriver implements QueueDriver {
 
         try {
           await callback(job)
-          // 確認消息（自動確認，因為 eachMessage 成功後會自動確認）
+          // Messages are committed automatically when eachMessage succeeds.
         } catch (error) {
           console.error('[KafkaDriver] Error processing message:', error)
-          // 可以實作重試邏輯或發送到死信隊列
+          // You can implement retry logic or send to a dead-letter topic here.
         }
       },
     })

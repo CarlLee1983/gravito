@@ -1,20 +1,20 @@
 import type { PlanetCore } from 'gravito-core'
-import type { NotificationChannel, Notifiable } from './types'
 import type { Notification } from './Notification'
+import type { Notifiable, NotificationChannel } from './types'
 
 /**
- * 通知管理器
+ * Notification manager.
  *
- * 負責管理通知通道並發送通知。
+ * Responsible for managing notification channels and delivering notifications.
  */
 export class NotificationManager {
   /**
-   * 通道映射表
+   * Channel registry.
    */
   private channels = new Map<string, NotificationChannel>()
 
   /**
-   * 隊列管理器（可選，由 orbit-queue 注入）
+   * Queue manager (optional, injected by `orbit-queue`).
    */
   private queueManager?: {
     push(job: unknown, queue?: string, connection?: string, delay?: number): Promise<void>
@@ -23,27 +23,26 @@ export class NotificationManager {
   constructor(private core: PlanetCore) {}
 
   /**
-   * 註冊通知通道
-   * @param name - 通道名稱
-   * @param channel - 通道實例
+   * Register a notification channel.
+   * @param name - Channel name
+   * @param channel - Channel instance
    */
   channel(name: string, channel: NotificationChannel): void {
     this.channels.set(name, channel)
   }
 
   /**
-   * 註冊隊列管理器
-   * 由 orbit-queue 調用
+   * Register the queue manager (called by `orbit-queue`).
    */
   setQueueManager(manager: NotificationManager['queueManager']): void {
     this.queueManager = manager
   }
 
   /**
-   * 發送通知
+   * Send a notification.
    *
-   * @param notifiable - 接收通知的實體
-   * @param notification - 通知實例
+   * @param notifiable - Recipient
+   * @param notification - Notification instance
    *
    * @example
    * ```typescript
@@ -53,11 +52,11 @@ export class NotificationManager {
   async send(notifiable: Notifiable, notification: Notification): Promise<void> {
     const channels = notification.via(notifiable)
 
-    // 檢查是否應該隊列化
+    // Check whether it should be queued.
     if (notification.shouldQueue() && this.queueManager) {
       const queueConfig = notification.getQueueConfig()
 
-      // 創建隊列任務
+      // Create a queue job.
       const queueJob = {
         type: 'notification',
         notification: notification.constructor.name,
@@ -79,12 +78,12 @@ export class NotificationManager {
       return
     }
 
-    // 立即發送
+    // Send immediately.
     await this.sendNow(notifiable, notification, channels)
   }
 
   /**
-   * 立即發送通知（不經過隊列）
+   * Send immediately (without queue).
    */
   private async sendNow(
     notifiable: Notifiable,
@@ -94,9 +93,7 @@ export class NotificationManager {
     for (const channelName of channels) {
       const channel = this.channels.get(channelName)
       if (!channel) {
-        this.core.logger.warn(
-          `[NotificationManager] Channel '${channelName}' not found, skipping`
-        )
+        this.core.logger.warn(`[NotificationManager] Channel '${channelName}' not found, skipping`)
         continue
       }
 
@@ -107,13 +104,13 @@ export class NotificationManager {
           `[NotificationManager] Failed to send notification via '${channelName}':`,
           error
         )
-        // 繼續發送其他通道
+        // Continue with other channels.
       }
     }
   }
 
   /**
-   * 序列化通知（用於隊列化）
+   * Serialize notification (for queuing).
    */
   private serializeNotification(notification: Notification): Record<string, unknown> {
     const data: Record<string, unknown> = {}
@@ -125,4 +122,3 @@ export class NotificationManager {
     return data
   }
 }
-

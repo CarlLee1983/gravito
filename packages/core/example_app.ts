@@ -1,32 +1,32 @@
 import { Hono } from 'hono'
 import { PlanetCore } from './src/PlanetCore'
 
-// 1. 實例化核心
+// 1. Instantiate core
 const core = new PlanetCore()
 
-// 2. 測試 Hook: 註冊一個 Filter
-// 假設有一個 hook 叫做 'filter_content'，我們會把內容轉成大寫
+// 2. Hook test: register a Filter
+// Assume there is a hook called 'filter_content' that transforms content to uppercase.
 core.hooks.addFilter('filter_content', async (content: string) => {
   console.log('[Filter] Transforming content to uppercase...')
   return content.toUpperCase()
 })
 
-// 3. 測試 Hook: 註冊一個 Action
+// 3. Hook test: register an Action
 core.hooks.addAction<{ path: string }>('log_access', async ({ path }) => {
   console.log(`[Action] Access logged for: ${path}`)
 })
 
-// 4. 建立一個 Orbit (迷你 Hono app)
+// 4. Create an Orbit (mini Hono app)
 const myOrbit = new Hono()
 
 myOrbit.get('/test', async (c) => {
-  // 觸發 Action
+  // Trigger action
   await core.hooks.doAction('log_access', { path: '/api/test' })
 
-  // 原始資料
+  // Raw data
   const originalData = 'hello ecosystem'
 
-  // 應用 Filter
+  // Apply filter
   const filteredData = await core.hooks.applyFilters('filter_content', originalData)
 
   return c.json({
@@ -36,8 +36,8 @@ myOrbit.get('/test', async (c) => {
   })
 })
 
-// 5. 掛載 Orbit
+// 5. Mount Orbit
 core.mountOrbit('/api', myOrbit)
 
-// 6. 啟動 (Liftoff)
+// 6. Start (liftoff)
 export default core.liftoff(3000)

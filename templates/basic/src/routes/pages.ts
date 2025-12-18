@@ -1,19 +1,18 @@
-import { Hono } from 'hono'
-import type { CacheService, ViewService } from 'gravito-core'
+import type { CacheService, PlanetCore, ViewService } from 'gravito-core'
 import type { Context } from 'hono'
-import type { PlanetCore } from 'gravito-core'
+import { Hono } from 'hono'
 
 /**
- * 頁面路由模組
+ * Pages route module.
  *
- * 重要：使用 Hono 的 .route() 方法來串接模組，
- * 這是為了獲得完整 TypeScript 型別推導的必要寫法。
+ * Important: use Hono's `.route()` to compose modules. This is required to preserve full
+ * TypeScript type inference.
  */
 export function createPagesRoute(core: PlanetCore) {
   const pagesRoute = new Hono()
 
   /**
-   * 首頁
+   * Home page
    * GET /
    */
   pagesRoute.get('/', async (c: Context) => {
@@ -40,16 +39,13 @@ export function createPagesRoute(core: PlanetCore) {
   })
 
   /**
-   * 關於頁面
+   * About page
    * GET /about
    */
   pagesRoute.get('/about', async (c: Context) => {
     const view = c.get('view') as ViewService
-    return c.html(
-      view.render('about', {}, { title: 'About Us', isAbout: true })
-    )
+    return c.html(view.render('about', {}, { title: 'About Us', isAbout: true }))
   })
 
   return pagesRoute
 }
-

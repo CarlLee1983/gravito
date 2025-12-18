@@ -7,7 +7,7 @@ describe('ImageService', () => {
   const imageService = new ImageService()
 
   describe('generateImageTag', () => {
-    it('應該生成基本的圖片標籤', () => {
+    it('should generate a basic image tag', () => {
       const options: ImageOptions = {
         src: '/static/hero.jpg',
         alt: 'Hero image',
@@ -25,7 +25,7 @@ describe('ImageService', () => {
       expect(html).toContain('decoding="async"')
     })
 
-    it('應該要求 alt 屬性', () => {
+    it('should require the alt attribute', () => {
       const options: ImageOptions = {
         src: '/static/hero.jpg',
         alt: '',
@@ -36,7 +36,7 @@ describe('ImageService', () => {
       )
     })
 
-    it('應該支援 loading="eager"', () => {
+    it('should support loading="eager"', () => {
       const options: ImageOptions = {
         src: '/static/hero.jpg',
         alt: 'Hero',
@@ -47,7 +47,7 @@ describe('ImageService', () => {
       expect(html).toContain('loading="eager"')
     })
 
-    it('應該支援 fetchpriority', () => {
+    it('should support fetchpriority', () => {
       const options: ImageOptions = {
         src: '/static/hero.jpg',
         alt: 'Hero',
@@ -58,7 +58,7 @@ describe('ImageService', () => {
       expect(html).toContain('fetchpriority="high"')
     })
 
-    it('應該支援 className 和 style', () => {
+    it('should support class and style', () => {
       const options: ImageOptions = {
         src: '/static/hero.jpg',
         alt: 'Hero',
@@ -71,7 +71,7 @@ describe('ImageService', () => {
       expect(html).toContain('style="max-width: 100%;"')
     })
 
-    it('應該轉義 HTML 特殊字元', () => {
+    it('should escape HTML special characters', () => {
       const options: ImageOptions = {
         src: '/static/hero.jpg',
         alt: 'Hero "image" & more',
@@ -83,7 +83,7 @@ describe('ImageService', () => {
   })
 
   describe('generateSrcset', () => {
-    it('應該生成 srcset 字串', () => {
+    it('should generate a srcset string', () => {
       const srcset = imageService.generateSrcset('/static/hero.jpg', [400, 800, 1200])
 
       expect(srcset).toContain('/static/hero-400w.jpg 400w')
@@ -91,29 +91,29 @@ describe('ImageService', () => {
       expect(srcset).toContain('/static/hero-1200w.jpg 1200w')
     })
 
-    it('應該處理空陣列', () => {
+    it('should handle an empty array', () => {
       const srcset = imageService.generateSrcset('/static/hero.jpg', [])
       expect(srcset).toBe('')
     })
 
-    it('應該處理單一寬度', () => {
+    it('should handle a single width', () => {
       const srcset = imageService.generateSrcset('/static/hero.jpg', [800])
       expect(srcset).toBe('')
     })
 
-    it('應該保留完整 URL', () => {
+    it('should preserve absolute URLs', () => {
       const srcset = imageService.generateSrcset('https://example.com/image.jpg', [400, 800])
       expect(srcset).toContain('https://example.com/image.jpg')
     })
   })
 
   describe('normalizePath', () => {
-    it('應該正規化相對路徑', () => {
+    it('should normalize relative paths', () => {
       expect(imageService.normalizePath('static/hero.jpg')).toBe('/static/hero.jpg')
       expect(imageService.normalizePath('/static/hero.jpg')).toBe('/static/hero.jpg')
     })
 
-    it('應該保留完整 URL', () => {
+    it('should preserve absolute URLs', () => {
       expect(imageService.normalizePath('https://example.com/image.jpg')).toBe(
         'https://example.com/image.jpg'
       )
@@ -125,7 +125,7 @@ describe('ImageService', () => {
   })
 
   describe('generateImageTag with srcset', () => {
-    it('應該自動生成 srcset（如果提供 width）', () => {
+    it('should generate srcset automatically (when width is provided)', () => {
       const options: ImageOptions = {
         src: '/static/hero.jpg',
         alt: 'Hero',
@@ -138,7 +138,7 @@ describe('ImageService', () => {
       expect(html).toContain('sizes=')
     })
 
-    it('應該使用自訂 srcset 寬度', () => {
+    it('should use custom srcset widths', () => {
       const options: ImageOptions = {
         src: '/static/hero.jpg',
         alt: 'Hero',
@@ -153,7 +153,7 @@ describe('ImageService', () => {
       expect(html).toContain('1200w')
     })
 
-    it('應該可以停用 srcset', () => {
+    it('should allow disabling srcset', () => {
       const options: ImageOptions = {
         src: '/static/hero.jpg',
         alt: 'Hero',
@@ -170,7 +170,7 @@ describe('ImageService', () => {
 describe('Image Helper', () => {
   const imageHelper = createImageHelper()
 
-  it('應該生成圖片標籤', () => {
+  it('should generate an image tag', () => {
     const result = imageHelper(
       {
         src: '/static/hero.jpg',
@@ -187,19 +187,19 @@ describe('Image Helper', () => {
     expect(result).toContain('height="600"')
   })
 
-  it('應該要求 src 參數', () => {
+  it('should require the src parameter', () => {
     expect(() => {
       imageHelper({ alt: 'Hero' }, {})
     }).toThrow('Image helper requires "src" parameter')
   })
 
-  it('應該要求 alt 參數', () => {
+  it('should require the alt parameter', () => {
     expect(() => {
       imageHelper({ src: '/static/hero.jpg' }, {})
     }).toThrow('Image helper requires "alt" parameter')
   })
 
-  it('應該處理字串數字轉換', () => {
+  it('should handle numeric strings', () => {
     const result = imageHelper(
       {
         src: '/static/hero.jpg',
@@ -214,7 +214,7 @@ describe('Image Helper', () => {
     expect(result).toContain('height="600"')
   })
 
-  it('應該處理 loading 參數', () => {
+  it('should handle the loading parameter', () => {
     const result = imageHelper(
       {
         src: '/static/hero.jpg',
@@ -227,7 +227,7 @@ describe('Image Helper', () => {
     expect(result).toContain('loading="eager"')
   })
 
-  it('應該處理 sizes 參數', () => {
+  it('should handle the sizes parameter', () => {
     const result = imageHelper(
       {
         src: '/static/hero.jpg',
@@ -240,7 +240,7 @@ describe('Image Helper', () => {
     expect(result).toContain('sizes="(max-width: 768px) 100vw, 50vw"')
   })
 
-  it('應該處理 class 參數', () => {
+  it('should handle the class parameter', () => {
     const result = imageHelper(
       {
         src: '/static/hero.jpg',
@@ -255,26 +255,26 @@ describe('Image Helper', () => {
 })
 
 describe('TemplateEngine with Image Helper', () => {
-  it('應該在模板中處理 image helper', () => {
+  it('should handle the image helper in templates', () => {
     const engine = new TemplateEngine('./tests/views')
     engine.registerHelper('image', createImageHelper())
 
-    // 由於我們無法直接測試 loadAndInterpolate（它是 private），
-    // 我們測試 helper 註冊是否成功
+    // Since we can't test `loadAndInterpolate` directly (it's private),
+    // we only verify that helper registration works.
     expect(engine).toBeDefined()
   })
 })
 
 describe('React Image Component', () => {
-  it('應該能正確導出（如果 React 可用）', () => {
-    // 嘗試導入 React 組件
-    // 如果 React 未安裝，這個測試會被跳過（這是可接受的，因為 React 是可選依賴）
+  it('should export correctly (when React is available)', () => {
+    // Try to import the React component.
+    // If React is not installed, skip (React is an optional dependency).
     try {
       const { Image } = require('../src/components/Image')
       expect(Image).toBeDefined()
       expect(typeof Image).toBe('function')
     } catch (error: unknown) {
-      // 如果 React 未安裝，跳過此測試
+      // If React is not installed, skip this test.
       const errorMessage =
         error instanceof Error
           ? error.message
@@ -286,21 +286,21 @@ describe('React Image Component', () => {
         errorMessage.includes('Cannot find module') ||
         errorMessage.includes('ResolveMessage')
       ) {
-        // 這是預期的，因為 React 是可選的 peerDependency
+        // This is expected because React is an optional peerDependency.
         return
       }
       throw error
     }
   })
 
-  it('應該能生成正確的 HTML（通過 ImageService）', () => {
-    // 由於 React 組件依賴 ImageService，我們已經通過 ImageService 測試覆蓋了核心邏輯
-    // 這裡只驗證組件能正確導出（如果 React 可用）
+  it('should be exportable (HTML behavior is covered by ImageService)', () => {
+    // The React component depends on ImageService, which already covers the core HTML logic.
+    // Here we only verify the component can be exported (when React is available).
     try {
       const { Image } = require('../src/components/Image')
       expect(Image).toBeDefined()
     } catch (error: unknown) {
-      // 如果 React 未安裝，跳過此測試
+      // If React is not installed, skip this test.
       const errorMessage =
         error instanceof Error
           ? error.message
@@ -312,7 +312,7 @@ describe('React Image Component', () => {
         errorMessage.includes('Cannot find module') ||
         errorMessage.includes('ResolveMessage')
       ) {
-        // 這是預期的，因為 React 是可選的 peerDependency
+        // This is expected because React is an optional peerDependency.
         return
       }
       throw error

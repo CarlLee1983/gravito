@@ -1,10 +1,10 @@
-import type { NotificationChannel, Notifiable } from '../types'
 import type { Notification } from '../Notification'
+import type { Notifiable, NotificationChannel } from '../types'
 
 /**
- * 資料庫通道
+ * Database channel.
  *
- * 將通知儲存到資料庫中。
+ * Persists notifications to a database.
  */
 export class DatabaseChannel implements NotificationChannel {
   constructor(
@@ -33,4 +33,3 @@ export class DatabaseChannel implements NotificationChannel {
     })
   }
 }
-

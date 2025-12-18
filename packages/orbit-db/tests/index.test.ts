@@ -39,10 +39,10 @@ describe('OrbitDB', () => {
 
     orbitDB(core, { db: mockDb })
 
-    // 檢查 middleware 是否被註冊
+    // Ensure middleware is registered
     expect(mockUse).toHaveBeenCalled()
 
-    // 模擬 middleware 執行
+    // Simulate middleware execution
     const middleware = (mockUse as any).mock.calls[0][1]
     if (middleware) {
       await middleware(mockContext, async () => {})
@@ -142,7 +142,7 @@ describe('OrbitDB', () => {
     })
 
     it('should support health check', async () => {
-      // 模擬健康檢查查詢
+      // Mock health check query
       mockDb.query = mock(() => Promise.resolve([]))
 
       const result = await dbService.healthCheck()
@@ -316,7 +316,7 @@ describe('OrbitDB', () => {
       })
 
       await dbService.delete(mockTable, { id: 1 })
-      // 如果沒有拋出錯誤，測試通過
+      // If no error is thrown, the test passes.
       expect(true).toBe(true)
     })
 
@@ -375,7 +375,7 @@ describe('OrbitDB', () => {
       })
 
       await dbService.bulkDelete(mockTable, [{ id: 1 }, { id: 2 }])
-      // 如果沒有拋出錯誤，測試通過
+      // If no error is thrown, the test passes.
       expect(true).toBe(true)
     })
 
@@ -440,7 +440,7 @@ describe('OrbitDB', () => {
     })
 
     it('should handle relation query errors', async () => {
-      // 模擬 query API 不存在的情況
+      // Simulate missing query API
       mockDb.query = undefined
 
       await expect(dbService.findByIdWith('users', 1, { posts: true })).rejects.toThrow()
@@ -530,9 +530,9 @@ describe('OrbitDB', () => {
     })
 
     it('should support deploy', async () => {
-      // 模擬健康檢查
+      // Mock health check
       mockDb.query = mock(() => Promise.resolve([]))
-      // 模擬遷移
+      // Mock migrations
       mockDb.migrate = mock(() => Promise.resolve({ migrations: ['001_initial'] }))
 
       const result = await dbService.deploy({
@@ -550,7 +550,7 @@ describe('OrbitDB', () => {
     })
 
     it('should handle deploy errors', async () => {
-      // 模擬健康檢查失敗
+      // Mock failing health check
       mockDb.query = mock(() => Promise.reject(new Error('Connection failed')))
 
       const result = await dbService.deploy({
@@ -600,7 +600,7 @@ describe('OrbitDB', () => {
 
       await dbService.findById(mockTable, 1)
 
-      // 檢查是否觸發了 db:query hook
+      // Ensure db:query hook was triggered
       expect(mockDoAction).toHaveBeenCalledWith(
         'db:query',
         expect.objectContaining({ query: expect.any(String) })
@@ -774,8 +774,8 @@ describe('OrbitDB', () => {
       expect(users).toHaveLength(2)
       expect(users[0].get('name')).toBe('John')
       expect(users[1].get('name')).toBe('Jane')
-      // 由於 findAll 現在會應用軟刪除過濾（即使未啟用），where 條件可能包含 deleted_at: null
-      // 檢查 mock 是否被調用，但允許 where 條件包含 deleted_at
+      // Since `findAll` applies a soft-delete filter, `where` may include `deleted_at: null`.
+      // Ensure the mock was called while allowing `deleted_at` to be present.
       expect(mockFindAll).toHaveBeenCalled()
     })
 
@@ -783,7 +783,7 @@ describe('OrbitDB', () => {
       class User extends Model {
         static table = { _: { name: 'users' } }
         static tableName = 'users'
-        static timestamps = false // 測試時關閉時間戳記
+        static timestamps = false // Disable timestamps for testing
         declare attributes: {
           id?: number
           name: string
@@ -803,7 +803,7 @@ describe('OrbitDB', () => {
 
       expect(user.get('id')).toBe(1)
       expect(user.get('name')).toBe('John')
-      // 由於 timestamps 關閉，不應該包含時間戳記
+      // Since timestamps are disabled, there should be no timestamp fields.
       expect(mockCreate).toHaveBeenCalledWith(
         { _: { name: 'users' } },
         { name: 'John', email: 'john@example.com' }
@@ -963,7 +963,7 @@ describe('OrbitDB', () => {
       ModelRegistry.register(User, { _: { name: 'users' } }, 'users')
       ModelRegistry.initialize(dbService)
 
-      // 應該不會拋出錯誤
+      // Should not throw
       expect(() => {
         User.setDBService(dbService)
         User.setTable({ _: { name: 'users' } }, 'users')
@@ -1084,7 +1084,7 @@ describe('OrbitDB', () => {
       Post.setDBService(dbService)
       Post.setTable({ _: { name: 'posts' } }, 'posts')
 
-      // 定義關聯
+      // Define relations
       User.hasMany(Post, 'userId', 'id')
 
       const mockFindByIdWith = mock(() =>

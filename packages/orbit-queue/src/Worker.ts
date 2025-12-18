@@ -1,30 +1,30 @@
 import type { Job } from './Job'
 
 /**
- * Worker 選項
+ * Worker options.
  */
 export interface WorkerOptions {
   /**
-   * 最大重試次數
+   * Maximum retry attempts.
    */
   maxAttempts?: number
 
   /**
-   * Job 超時時間（秒）
+   * Job timeout (seconds).
    */
   timeout?: number
 
   /**
-   * 失敗回調
+   * Failure callback.
    */
   onFailed?: (job: Job, error: Error) => Promise<void>
 }
 
 /**
- * Worker 基礎類別
+ * Base Worker.
  *
- * 負責執行 Job 的邏輯。
- * 提供錯誤處理、重試機制和超時處理。
+ * Responsible for executing `Job` instances.
+ * Provides error handling, retry logic, and timeout support.
  *
  * @example
  * ```typescript
@@ -40,8 +40,8 @@ export class Worker {
   constructor(private options: WorkerOptions = {}) {}
 
   /**
-   * 處理 Job
-   * @param job - Job 實例
+   * Process a Job.
+   * @param job - Job instance
    */
   async process(job: Job): Promise<void> {
     const maxAttempts = this.options.maxAttempts ?? 3
@@ -54,7 +54,7 @@ export class Worker {
         job.attempts = attempt
         job.maxAttempts = maxAttempts
 
-        // 執行 Job（支援超時）
+        // Execute job (with optional timeout)
         if (timeout) {
           await Promise.race([
             job.handle(),
@@ -69,18 +69,18 @@ export class Worker {
           await job.handle()
         }
 
-        // 成功，返回
+        // Success
         return
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error))
 
-        // 如果是最後一次嘗試，調用失敗處理
+        // Last attempt: run failure handling
         if (attempt === maxAttempts) {
           await this.handleFailure(job, lastError)
           throw lastError
         }
 
-        // 等待後重試（指數退避）
+        // Retry with exponential backoff
         const delay = Math.min(1000 * 2 ** (attempt - 1), 30000)
         await new Promise((resolve) => setTimeout(resolve, delay))
       }
@@ -88,17 +88,17 @@ export class Worker {
   }
 
   /**
-   * 處理失敗
+   * Handle failure.
    */
   private async handleFailure(job: Job, error: Error): Promise<void> {
-    // 調用 Job 的 failed 方法
+    // Call job.failed()
     try {
       await job.failed(error)
     } catch (failedError) {
       console.error('[Worker] Error in job.failed():', failedError)
     }
 
-    // 調用選項中的失敗回調
+    // Call onFailed callback
     if (this.options.onFailed) {
       try {
         await this.options.onFailed(job, error)

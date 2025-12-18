@@ -1,8 +1,7 @@
+import { AuthorizationException, ValidationException } from 'gravito-core'
 import type { Context, MiddlewareHandler } from 'hono'
 import type { ContentfulStatusCode } from 'hono/utils/http-status'
 import type { z } from 'zod'
-import { AuthorizationException, ValidationException } from 'gravito-core'
-
 
 /**
  * Validation error detail for a single field
@@ -251,8 +250,8 @@ export abstract class FormRequest<T = unknown> {
    * ```typescript
    * messages() {
    *   return {
-   *     'email.invalid_string': '請輸入有效的 Email 地址',
-   *     'name.too_small': '名稱至少需要 2 個字元',
+   *     'email.invalid_string': 'Please enter a valid email address',
+   *     'name.too_small': 'Name must be at least 2 characters',
    *   }
    * }
    * ```

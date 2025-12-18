@@ -1,16 +1,16 @@
 import type { BroadcastDriver } from './BroadcastDriver'
 
 /**
- * Ably 驅動配置
+ * Ably driver configuration.
  */
 export interface AblyDriverConfig {
   apiKey: string
 }
 
 /**
- * Ably 驅動
+ * Ably driver.
  *
- * 通過 Ably 服務進行廣播。
+ * Broadcasts through the Ably service.
  */
 export class AblyDriver implements BroadcastDriver {
   private baseUrl = 'https://rest.ably.io'
@@ -48,8 +48,8 @@ export class AblyDriver implements BroadcastDriver {
     socketId: string,
     userId?: string | number
   ): Promise<{ auth: string; channel_data?: string }> {
-    // Ably 使用不同的授權機制
-    // 這裡僅提供基礎實作
+    // Ably uses a different authorization mechanism.
+    // This is only a basic implementation.
     return {
       auth: this.config.apiKey,
       ...(channel.startsWith('presence-') && userId
@@ -62,4 +62,3 @@ export class AblyDriver implements BroadcastDriver {
     }
   }
 }
-

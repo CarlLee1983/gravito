@@ -1,15 +1,15 @@
 /**
- * 廣播驅動介面
+ * Broadcast driver interface.
  *
- * 所有廣播驅動都必須實作此介面。
+ * All broadcast drivers must implement this interface.
  */
 export interface BroadcastDriver {
   /**
-   * 廣播事件到頻道
+   * Broadcast an event to a channel.
    *
-   * @param channel - 頻道物件（包含名稱和類型）
-   * @param event - 事件名稱
-   * @param data - 事件資料
+   * @param channel - Channel object (name and type)
+   * @param event - Event name
+   * @param data - Event payload
    */
   broadcast(
     channel: { name: string; type: string },
@@ -18,12 +18,12 @@ export interface BroadcastDriver {
   ): Promise<void>
 
   /**
-   * 授權頻道存取（用於私有頻道和存在頻道）
+   * Authorize channel access (for private/presence channels).
    *
-   * @param channel - 頻道名稱
+   * @param channel - Channel name
    * @param socketId - Socket ID
-   * @param userId - 使用者 ID（可選）
-   * @returns 授權資訊
+   * @param userId - User ID (optional)
+   * @returns Authorization payload
    */
   authorizeChannel?(
     channel: string,
@@ -31,4 +31,3 @@ export interface BroadcastDriver {
     userId?: string | number
   ): Promise<{ auth: string; channel_data?: string }>
 }
-

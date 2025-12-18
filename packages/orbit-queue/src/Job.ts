@@ -1,10 +1,10 @@
 import type { Queueable } from './Queueable'
 
 /**
- * Job 基礎類別
+ * Base Job.
  *
- * 所有需要推送到隊列的任務都應該繼承此類別。
- * 實作了 Queueable 介面，提供流暢的 API 來設定隊列、連接和延遲。
+ * All tasks that should be pushed to a queue should extend this class.
+ * Implements the `Queueable` interface, providing a fluent API for queue/connection/delay.
  *
  * @example
  * ```typescript
@@ -19,7 +19,7 @@ import type { Queueable } from './Queueable'
  *   }
  * }
  *
- * // 使用
+ * // Usage
  * await queue.push(new SendWelcomeEmail('123'))
  *   .onQueue('emails')
  *   .delay(60)
@@ -27,32 +27,32 @@ import type { Queueable } from './Queueable'
  */
 export abstract class Job implements Queueable {
   /**
-   * 隊列名稱
+   * Queue name.
    */
   queueName?: string
 
   /**
-   * 連接名稱
+   * Connection name.
    */
   connectionName?: string
 
   /**
-   * 延遲執行時間（秒）
+   * Delay before execution (seconds).
    */
   delaySeconds?: number
 
   /**
-   * 重試次數
+   * Current attempt number.
    */
   attempts?: number
 
   /**
-   * 最大重試次數
+   * Maximum attempts.
    */
   maxAttempts?: number
 
   /**
-   * 設定目標隊列
+   * Set target queue.
    */
   onQueue(queue: string): this {
     this.queueName = queue
@@ -60,7 +60,7 @@ export abstract class Job implements Queueable {
   }
 
   /**
-   * 設定目標連接
+   * Set target connection.
    */
   onConnection(connection: string): this {
     this.connectionName = connection
@@ -68,7 +68,7 @@ export abstract class Job implements Queueable {
   }
 
   /**
-   * 設定延遲執行時間（秒）
+   * Set delay (seconds).
    */
   delay(delay: number): this {
     this.delaySeconds = delay
@@ -76,21 +76,21 @@ export abstract class Job implements Queueable {
   }
 
   /**
-   * 處理 Job 的邏輯
+   * Job handler logic.
    *
-   * 子類別必須實作此方法來定義 Job 的實際處理邏輯。
+   * Subclasses must implement this method.
    */
   abstract handle(): Promise<void>
 
   /**
-   * Job 失敗時的處理邏輯（可選）
+   * Failure handler (optional).
    *
-   * 當 Job 執行失敗且達到最大重試次數時，會調用此方法。
-   * 子類別可以覆寫此方法來實作自訂的失敗處理邏輯。
+   * Called when the job fails and reaches the maximum number of attempts.
+   * Subclasses can override to implement custom failure handling.
    *
-   * @param error - 錯誤物件
+   * @param error - Error instance
    */
   async failed(_error: Error): Promise<void> {
-    // 預設不做任何處理，子類別可以覆寫
+    // No-op by default (override in subclasses if needed)
   }
 }

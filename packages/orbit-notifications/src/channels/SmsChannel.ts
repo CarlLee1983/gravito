@@ -1,8 +1,8 @@
-import type { NotificationChannel, Notifiable } from '../types'
 import type { Notification } from '../Notification'
+import type { Notifiable, NotificationChannel } from '../types'
 
 /**
- * SMS 通道配置
+ * SMS channel configuration.
  */
 export interface SmsChannelConfig {
   provider: string
@@ -12,10 +12,10 @@ export interface SmsChannelConfig {
 }
 
 /**
- * SMS 通道
+ * SMS channel.
  *
- * 通過 SMS 服務發送通知。
- * 目前僅提供基礎介面，實際實作需要根據不同的 SMS 提供商進行擴展。
+ * Sends notifications via an SMS provider.
+ * Only a basic interface is provided; real implementations should be extended per provider.
  */
 export class SmsChannel implements NotificationChannel {
   constructor(private config: SmsChannelConfig) {}
@@ -27,7 +27,7 @@ export class SmsChannel implements NotificationChannel {
 
     const smsMessage = notification.toSms(notifiable)
 
-    // 根據不同的提供商實作
+    // Implement per provider.
     switch (this.config.provider) {
       case 'twilio':
         await this.sendViaTwilio(smsMessage)
@@ -41,7 +41,7 @@ export class SmsChannel implements NotificationChannel {
   }
 
   /**
-   * 通過 Twilio 發送 SMS
+   * Send SMS via Twilio.
    */
   private async sendViaTwilio(message: import('../types').SmsMessage): Promise<void> {
     if (!this.config.apiKey || !this.config.apiSecret) {
@@ -74,12 +74,11 @@ export class SmsChannel implements NotificationChannel {
   }
 
   /**
-   * 通過 AWS SNS 發送 SMS
+   * Send SMS via AWS SNS.
    */
   private async sendViaAwsSns(message: import('../types').SmsMessage): Promise<void> {
-    // AWS SNS 實作需要 AWS SDK
-    // 這裡僅提供介面，實際實作需要安裝 @aws-sdk/client-sns
+    // AWS SNS implementation requires AWS SDK.
+    // This is only a placeholder; install `@aws-sdk/client-sns` and implement it.
     throw new Error('AWS SNS SMS provider not yet implemented. Please install @aws-sdk/client-sns')
   }
 }
-

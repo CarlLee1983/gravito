@@ -1,42 +1,42 @@
 import type { GravitoOrbit, PlanetCore } from 'gravito-core'
-import { NotificationManager } from './NotificationManager'
 import { BroadcastChannel } from './channels/BroadcastChannel'
 import { DatabaseChannel } from './channels/DatabaseChannel'
 import { MailChannel } from './channels/MailChannel'
 import { SlackChannel } from './channels/SlackChannel'
 import { SmsChannel } from './channels/SmsChannel'
+import { NotificationManager } from './NotificationManager'
 
 /**
- * OrbitNotifications 配置選項
+ * OrbitNotifications options.
  */
 export interface OrbitNotificationsOptions {
   /**
-   * 是否啟用郵件通道
+   * Enable mail channel.
    */
   enableMail?: boolean
 
   /**
-   * 是否啟用資料庫通道
+   * Enable database channel.
    */
   enableDatabase?: boolean
 
   /**
-   * 是否啟用廣播通道
+   * Enable broadcast channel.
    */
   enableBroadcast?: boolean
 
   /**
-   * 是否啟用 Slack 通道
+   * Enable Slack channel.
    */
   enableSlack?: boolean
 
   /**
-   * 是否啟用 SMS 通道
+   * Enable SMS channel.
    */
   enableSms?: boolean
 
   /**
-   * 自訂通道配置
+   * Custom channel configuration.
    */
   channels?: Record<string, unknown>
 }
@@ -44,7 +44,7 @@ export interface OrbitNotificationsOptions {
 /**
  * Notifications Orbit
  *
- * 提供通知系統功能，支援多種通道（郵件、資料庫、廣播、Slack、SMS）。
+ * Provides notifications with multiple channels (mail, database, broadcast, Slack, SMS).
  */
 export class OrbitNotifications implements GravitoOrbit {
   private options: OrbitNotificationsOptions
@@ -61,7 +61,7 @@ export class OrbitNotifications implements GravitoOrbit {
   }
 
   /**
-   * 配置 OrbitNotifications
+   * Configure OrbitNotifications.
    */
   static configure(options: OrbitNotificationsOptions = {}): OrbitNotifications {
     return new OrbitNotifications(options)
@@ -70,7 +70,7 @@ export class OrbitNotifications implements GravitoOrbit {
   async install(core: PlanetCore): Promise<void> {
     const manager = new NotificationManager(core)
 
-    // 註冊預設通道
+    // Register default channels.
     if (this.options.enableMail) {
       const mail = core.services.get('mail') as
         | {
@@ -81,9 +81,7 @@ export class OrbitNotifications implements GravitoOrbit {
       if (mail) {
         manager.channel('mail', new MailChannel(mail))
       } else {
-        core.logger.warn(
-          '[OrbitNotifications] Mail service not found, mail channel disabled'
-        )
+        core.logger.warn('[OrbitNotifications] Mail service not found, mail channel disabled')
       }
     }
 
@@ -111,11 +109,7 @@ export class OrbitNotifications implements GravitoOrbit {
     if (this.options.enableBroadcast) {
       const broadcast = core.services.get('broadcast') as
         | {
-            broadcast(
-              channel: string,
-              event: string,
-              data: Record<string, unknown>
-            ): Promise<void>
+            broadcast(channel: string, event: string, data: Record<string, unknown>): Promise<void>
           }
         | undefined
 
@@ -158,24 +152,17 @@ export class OrbitNotifications implements GravitoOrbit {
       if (sms) {
         manager.channel('sms', new SmsChannel(sms))
       } else {
-        core.logger.warn(
-          '[OrbitNotifications] SMS configuration not found, sms channel disabled'
-        )
+        core.logger.warn('[OrbitNotifications] SMS configuration not found, sms channel disabled')
       }
     }
 
-    // 註冊到 core services
+    // Register into core services.
     core.services.set('notifications', manager)
 
-    // 嘗試整合隊列系統
+    // Try to integrate with queue system.
     const queue = core.services.get('queue') as
       | {
-          push(
-            job: unknown,
-            queue?: string,
-            connection?: string,
-            delay?: number
-          ): Promise<void>
+          push(job: unknown, queue?: string, connection?: string, delay?: number): Promise<void>
         }
       | undefined
 
@@ -190,4 +177,3 @@ export class OrbitNotifications implements GravitoOrbit {
     core.logger.info('[OrbitNotifications] Installed')
   }
 }
-

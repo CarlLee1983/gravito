@@ -1,41 +1,41 @@
 /**
- * 通知系統類型定義
+ * Notification system type definitions.
  */
 
 /**
- * 通知通道介面
+ * Notification channel interface.
  */
 export interface NotificationChannel {
   /**
-   * 發送通知
-   * @param notification - 通知實例
-   * @param notifiable - 接收通知的實體
+   * Send a notification.
+   * @param notification - Notification instance
+   * @param notifiable - Recipient
    */
   send(notification: Notification, notifiable: Notifiable): Promise<void>
 }
 
 /**
- * 可接收通知的實體介面
+ * Notifiable (notification recipient) interface.
  */
 export interface Notifiable {
   /**
-   * 接收通知的識別符（通常是 ID）
+   * Recipient identifier (usually an ID).
    */
   getNotifiableId(): string | number
 
   /**
-   * 接收通知的類型（可選，用於多態）
+   * Recipient type (optional, for polymorphic relations).
    */
   getNotifiableType?(): string
 
   /**
-   * 接收通知的通道偏好（可選）
+   * Preferred channels (optional).
    */
   preferredNotificationChannels?(): string[]
 }
 
 /**
- * 郵件訊息介面
+ * Mail message payload.
  */
 export interface MailMessage {
   subject: string
@@ -50,7 +50,7 @@ export interface MailMessage {
 }
 
 /**
- * 資料庫通知介面
+ * Database notification payload.
  */
 export interface DatabaseNotification {
   type: string
@@ -59,7 +59,7 @@ export interface DatabaseNotification {
 }
 
 /**
- * 廣播通知介面
+ * Broadcast notification payload.
  */
 export interface BroadcastNotification {
   type: string
@@ -67,7 +67,7 @@ export interface BroadcastNotification {
 }
 
 /**
- * Slack 訊息介面
+ * Slack message payload.
  */
 export interface SlackMessage {
   text: string
@@ -83,11 +83,10 @@ export interface SlackMessage {
 }
 
 /**
- * SMS 訊息介面
+ * SMS message payload.
  */
 export interface SmsMessage {
   to: string
   message: string
   from?: string
 }
-

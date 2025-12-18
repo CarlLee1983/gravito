@@ -1,30 +1,30 @@
 import type { Notifiable } from './types'
 
 /**
- * 應該被隊列化的通知標記介面
+ * Marker interface for notifications that should be queued.
  */
 export interface ShouldQueue {
   /**
-   * 隊列名稱（可選）
+   * Queue name (optional).
    */
   queue?: string
 
   /**
-   * 連接名稱（可選）
+   * Connection name (optional).
    */
   connection?: string
 
   /**
-   * 延遲執行時間（秒）
+   * Delay seconds.
    */
   delay?: number
 }
 
 /**
- * 通知基礎類別
+ * Base Notification class.
  *
- * 所有通知都應該繼承此類別。
- * 通知可以通過多種通道發送（郵件、資料庫、廣播、Slack、SMS 等）。
+ * All notifications should extend this class.
+ * Notifications can be delivered via multiple channels (mail, database, broadcast, Slack, SMS, etc.).
  *
  * @example
  * ```typescript
@@ -54,61 +54,61 @@ export interface ShouldQueue {
  */
 export abstract class Notification {
   /**
-   * 指定通知應該通過哪些通道發送
-   * @param notifiable - 接收通知的實體
-   * @returns 通道名稱陣列
+   * Specify which channels should be used for delivery.
+   * @param notifiable - Recipient
+   * @returns Channel names
    */
   abstract via(notifiable: Notifiable): string[]
 
   /**
-   * 獲取郵件訊息（可選）
-   * 如果通知需要通過郵件通道發送，應該實作此方法
+   * Get mail message (optional).
+   * Implement this if the notification will be sent via the mail channel.
    */
   toMail?(_notifiable: Notifiable): import('./types').MailMessage {
     throw new Error('toMail method not implemented')
   }
 
   /**
-   * 獲取資料庫通知（可選）
-   * 如果通知需要通過資料庫通道發送，應該實作此方法
+   * Get database notification (optional).
+   * Implement this if the notification will be stored via the database channel.
    */
   toDatabase?(_notifiable: Notifiable): import('./types').DatabaseNotification {
     throw new Error('toDatabase method not implemented')
   }
 
   /**
-   * 獲取廣播通知（可選）
-   * 如果通知需要通過廣播通道發送，應該實作此方法
+   * Get broadcast notification (optional).
+   * Implement this if the notification will be sent via the broadcast channel.
    */
   toBroadcast?(_notifiable: Notifiable): import('./types').BroadcastNotification {
     throw new Error('toBroadcast method not implemented')
   }
 
   /**
-   * 獲取 Slack 訊息（可選）
-   * 如果通知需要通過 Slack 通道發送，應該實作此方法
+   * Get Slack message (optional).
+   * Implement this if the notification will be sent via the Slack channel.
    */
   toSlack?(_notifiable: Notifiable): import('./types').SlackMessage {
     throw new Error('toSlack method not implemented')
   }
 
   /**
-   * 獲取 SMS 訊息（可選）
-   * 如果通知需要通過 SMS 通道發送，應該實作此方法
+   * Get SMS message (optional).
+   * Implement this if the notification will be sent via the SMS channel.
    */
   toSms?(_notifiable: Notifiable): import('./types').SmsMessage {
     throw new Error('toSms method not implemented')
   }
 
   /**
-   * 檢查通知是否應該被隊列化
+   * Check whether this notification should be queued.
    */
   shouldQueue(): boolean {
     return 'queue' in this || 'connection' in this || 'delay' in this
   }
 
   /**
-   * 獲取隊列配置
+   * Get queue configuration.
    */
   getQueueConfig(): { queue?: string; connection?: string; delay?: number } {
     if (this.shouldQueue()) {
@@ -122,4 +122,3 @@ export abstract class Notification {
     return {}
   }
 }
-

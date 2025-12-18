@@ -1,6 +1,7 @@
 /**
- * 標準日誌介面 (Logger Interface)
- * 遵循類 PSR-3 風格，讓外部可以輕鬆替換實作 (例如換成 Winston 或 Pino)
+ * Standard logger interface.
+ *
+ * PSR-3 inspired API for easy swapping (e.g., Winston, Pino).
  */
 export interface Logger {
   debug(message: string, ...args: unknown[]): void
@@ -10,7 +11,7 @@ export interface Logger {
 }
 
 /**
- * 預設的主控台日誌實作
+ * Default console logger implementation.
  */
 export class ConsoleLogger implements Logger {
   debug(message: string, ...args: unknown[]): void {

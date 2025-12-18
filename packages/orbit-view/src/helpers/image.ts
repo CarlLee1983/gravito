@@ -2,16 +2,16 @@ import { type ImageOptions, ImageService } from '../ImageService'
 import type { HelperFunction } from '../TemplateEngine'
 
 /**
- * Image helper 函數
+ * Image helper function.
  *
- * 在模板中使用：
+ * Usage in templates:
  * {{image src="/static/hero.jpg" width=800 height=600 alt="Hero image" loading="lazy"}}
  */
 export function createImageHelper(): HelperFunction {
   const imageService = new ImageService()
 
   return (args: Record<string, string | number | boolean>): string => {
-    // 驗證必要參數
+    // Validate required parameters
     if (!args.src || typeof args.src !== 'string') {
       throw new Error('Image helper requires "src" parameter')
     }
@@ -19,13 +19,13 @@ export function createImageHelper(): HelperFunction {
       throw new Error('Image helper requires "alt" parameter for accessibility')
     }
 
-    // 構建 ImageOptions
+    // Build ImageOptions
     const options: ImageOptions = {
       src: String(args.src),
       alt: String(args.alt),
     }
 
-    // 可選參數
+    // Optional parameters
     if (args.width !== undefined) {
       options.width = typeof args.width === 'number' ? args.width : Number(args.width)
     }
@@ -45,7 +45,7 @@ export function createImageHelper(): HelperFunction {
       if (typeof args.srcset === 'boolean') {
         options.srcset = args.srcset
       } else if (typeof args.srcset === 'string') {
-        // 嘗試解析為數字陣列（例如 "400,800,1200"）
+        // Try parsing into a number array (e.g. "400,800,1200")
         const widths = args.srcset
           .split(',')
           .map((w) => Number(w.trim()))
@@ -74,7 +74,7 @@ export function createImageHelper(): HelperFunction {
       }
     }
 
-    // 生成圖片標籤
+    // Generate <img> tag
     return imageService.generateImageTag(options)
   }
 }

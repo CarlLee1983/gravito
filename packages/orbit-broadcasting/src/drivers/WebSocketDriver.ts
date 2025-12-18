@@ -1,7 +1,7 @@
 import type { BroadcastDriver } from './BroadcastDriver'
 
 /**
- * WebSocket 連接
+ * WebSocket connection interface.
  */
 export interface WebSocketConnection {
   send(data: string): void
@@ -10,25 +10,25 @@ export interface WebSocketConnection {
 }
 
 /**
- * WebSocket 驅動配置
+ * WebSocket driver configuration.
  */
 export interface WebSocketDriverConfig {
   /**
-   * 獲取所有連接的 WebSocket
+   * Get all active connections.
    */
   getConnections(): WebSocketConnection[]
 
   /**
-   * 根據頻道過濾連接（可選）
+   * Filter connections by channel (optional).
    */
   filterConnectionsByChannel?(channel: string): WebSocketConnection[]
 }
 
 /**
- * WebSocket 驅動
+ * WebSocket driver.
  *
- * 通過 WebSocket 進行廣播。
- * 適用於單機部署或需要直接 WebSocket 連接的場景。
+ * Broadcasts via WebSocket.
+ * Suitable for single-node deployments or when direct WebSocket connections are required.
  */
 export class WebSocketDriver implements BroadcastDriver {
   constructor(private config: WebSocketDriverConfig) {}
@@ -46,23 +46,22 @@ export class WebSocketDriver implements BroadcastDriver {
 
     let connections = this.config.getConnections()
 
-    // 如果支援頻道過濾，使用它
+    // If channel filtering is supported, use it.
     if (this.config.filterConnectionsByChannel) {
       connections = this.config.filterConnectionsByChannel(channel.name)
     }
 
-    // 發送到所有連接
+    // Send to all connections.
     for (const connection of connections) {
       if (connection.readyState === 1) {
         // WebSocket.OPEN
         try {
           connection.send(message)
         } catch (error) {
-          // 忽略發送失敗的連接
+          // Ignore failed sends.
           console.error('Failed to send WebSocket message:', error)
         }
       }
     }
   }
 }
-

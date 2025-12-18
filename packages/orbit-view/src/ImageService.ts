@@ -1,10 +1,10 @@
 /**
- * ImageService - 核心圖片處理服務
+ * ImageService - core image rendering service.
  *
- * 負責生成優化的圖片標籤，符合 Core Web Vitals 標準
- * - 生成響應式 srcset
- * - 處理圖片路徑正規化
- * - 確保無障礙性和效能優化
+ * Generates optimized `<img>` tags aligned with Core Web Vitals:
+ * - Generates responsive `srcset`
+ * - Normalizes image paths
+ * - Ensures accessibility and performance defaults
  */
 
 export interface ImageOptions {
@@ -23,7 +23,7 @@ export interface ImageOptions {
 
 export class ImageService {
   /**
-   * 生成完整的 <img> 標籤 HTML
+   * Generate a full `<img>` tag HTML string.
    */
   public generateImageTag(options: ImageOptions): string {
     const {
@@ -40,22 +40,22 @@ export class ImageService {
       fetchpriority,
     } = options
 
-    // 驗證必要屬性
+    // Validate required properties
     if (!alt || alt.trim() === '') {
       throw new Error('Image alt attribute is required for accessibility')
     }
 
-    // 正規化圖片路徑
+    // Normalize image path
     const normalizedSrc = this.normalizePath(src)
 
-    // 生成屬性陣列
+    // Build attribute list
     const attributes: string[] = []
 
-    // 必要屬性
+    // Required attributes
     attributes.push(`src="${this.escapeHtml(normalizedSrc)}"`)
     attributes.push(`alt="${this.escapeHtml(alt)}"`)
 
-    // 寬高屬性（防止 CLS）
+    // Width/height (prevents CLS)
     if (width !== undefined) {
       attributes.push(`width="${width}"`)
     }
@@ -63,18 +63,18 @@ export class ImageService {
       attributes.push(`height="${height}"`)
     }
 
-    // 懶加載
+    // Lazy loading
     attributes.push(`loading="${loading}"`)
 
-    // 解碼方式
+    // Decoding hint
     attributes.push(`decoding="${decoding}"`)
 
-    // 優先級（用於 LCP 優化）
+    // Priority hint (LCP optimization)
     if (fetchpriority) {
       attributes.push(`fetchpriority="${fetchpriority}"`)
     }
 
-    // 生成 srcset（如果啟用）
+    // Generate srcset (if enabled)
     if (srcsetOption !== false && width !== undefined) {
       const widths = Array.isArray(srcsetOption)
         ? srcsetOption
@@ -85,15 +85,15 @@ export class ImageService {
       }
     }
 
-    // sizes 屬性（響應式圖片）
+    // `sizes` attribute (responsive images)
     if (sizes) {
       attributes.push(`sizes="${this.escapeHtml(sizes)}"`)
     } else if (srcsetOption !== false && width !== undefined) {
-      // 預設 sizes（如果提供 width 且啟用 srcset）
+      // Default `sizes` when width is provided and srcset is enabled
       attributes.push(`sizes="(max-width: ${width}px) 100vw, ${width}px"`)
     }
 
-    // 可選屬性
+    // Optional attributes
     if (className) {
       attributes.push(`class="${this.escapeHtml(className)}"`)
     }
@@ -105,23 +105,23 @@ export class ImageService {
   }
 
   /**
-   * 生成 srcset 字串
+   * Generate a `srcset` string.
    *
-   * @param src - 原始圖片路徑
-   * @param widths - 寬度陣列（例如 [400, 800, 1200]）
-   * @returns srcset 字串，例如 "image-400w.jpg 400w, image-800w.jpg 800w"
+   * @param src - Original image path
+   * @param widths - Width list (e.g. [400, 800, 1200])
+   * @returns A `srcset` string, e.g. `"image-400w.jpg 400w, image-800w.jpg 800w"`
    */
   public generateSrcset(src: string, widths: number[]): string {
     if (widths.length === 0) {
       return ''
     }
 
-    // 如果只有一個寬度，不需要 srcset
+    // If there's only one width, no need for srcset
     if (widths.length === 1) {
       return ''
     }
 
-    // 生成 srcset 項目
+    // Generate items
     const srcsetItems = widths.map((width) => {
       const srcWithWidth = this.addWidthToPath(src, width)
       return `${srcWithWidth} ${width}w`
@@ -131,25 +131,24 @@ export class ImageService {
   }
 
   /**
-   * 生成預設的 srcset 寬度陣列
-   * 基於原始寬度生成 1x, 1.5x, 2x 版本
+   * Generate default srcset widths based on a base width (1x, 1.5x, 2x).
    */
   private generateDefaultSrcsetWidths(baseWidth: number): number[] {
     const widths = new Set<number>()
 
-    // 添加原始寬度
+    // Add base width
     widths.add(baseWidth)
 
-    // 添加 1.5x 版本（如果合理）
+    // Add 1.5x (when reasonable)
     const width15x = Math.round(baseWidth * 1.5)
     if (width15x <= baseWidth * 2) {
       widths.add(width15x)
     }
 
-    // 添加 2x 版本
+    // Add 2x
     widths.add(baseWidth * 2)
 
-    // 添加較小版本（用於響應式）
+    // Add smaller widths (responsive)
     if (baseWidth >= 800) {
       widths.add(400)
       widths.add(800)
@@ -157,26 +156,27 @@ export class ImageService {
       widths.add(400)
     }
 
-    // 排序並返回
+    // Sort and return
     return Array.from(widths).sort((a, b) => a - b)
   }
 
   /**
-   * 在圖片路徑中添加寬度標記
-   * 例如：/static/hero.jpg -> /static/hero-800w.jpg
+   * Add a width marker to the image path.
+   * Example: `/static/hero.jpg` -> `/static/hero-800w.jpg`
    *
-   * 注意：這是簡化實作，實際應用中可能需要更複雜的路徑處理
+   * Note: This is a simplified implementation. Real-world setups may require
+   * more robust path handling and/or an image transformer service.
    */
   private addWidthToPath(src: string, width: number): string {
-    // 如果已經是完整 URL，直接返回（不修改外部 URL）
+    // If it's an absolute URL, return as-is (do not rewrite external URLs)
     if (src.startsWith('http://') || src.startsWith('https://')) {
       return src
     }
 
-    // 分離路徑和副檔名
+    // Split path and extension
     const lastDotIndex = src.lastIndexOf('.')
     if (lastDotIndex === -1) {
-      // 沒有副檔名，直接添加寬度
+      // No extension: append width directly
       return `${src}-${width}w`
     }
 
@@ -187,17 +187,17 @@ export class ImageService {
   }
 
   /**
-   * 正規化圖片路徑
-   * - 確保以 / 開頭（相對路徑）
-   * - 處理 ../ 和 ./ 路徑
+   * Normalize an image path:
+   * - Ensures it starts with `/` for relative paths
+   * - Leaves absolute URLs untouched
    */
   public normalizePath(src: string): string {
-    // 如果是完整 URL，直接返回
+    // Absolute URL: return as-is
     if (src.startsWith('http://') || src.startsWith('https://') || src.startsWith('//')) {
       return src
     }
 
-    // 確保以 / 開頭
+    // Ensure a leading slash
     if (!src.startsWith('/')) {
       return `/${src}`
     }
@@ -206,7 +206,7 @@ export class ImageService {
   }
 
   /**
-   * HTML 轉義
+   * Escape HTML.
    */
   private escapeHtml(unsafe: string): string {
     return unsafe

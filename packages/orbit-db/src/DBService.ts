@@ -27,16 +27,16 @@ type Table = any
 type WhereCondition = any
 
 /**
- * 資料庫服務介面
+ * Database service interface.
  */
 export interface DBService {
-  // 原始 Drizzle 實例（保持向後相容）
+  // Raw Drizzle instance (backward compatible)
   readonly raw: DrizzleDB
 
-  // 交易支援
+  // Transactions
   transaction<T>(callback: (tx: Transaction) => Promise<T>): Promise<T>
 
-  // 查詢輔助方法
+  // Query helpers
   findById<T>(table: Table, id: unknown): Promise<T | null>
   findOne<T>(table: Table, where: WhereCondition): Promise<T | null>
   findAll<T>(
@@ -48,7 +48,7 @@ export interface DBService {
   exists(table: Table, where: WhereCondition): Promise<boolean>
   paginate<T>(table: Table, options: PaginateOptions): Promise<PaginateResult<T>>
 
-  // 關聯查詢方法（使用 Drizzle 的 query API）
+  // Relation queries (using Drizzle query API)
   findByIdWith<T>(tableName: string, id: unknown, relations: RelationOptions): Promise<T | null>
   findOneWith<T>(
     tableName: string,
@@ -66,13 +66,13 @@ export interface DBService {
     }
   ): Promise<T[]>
 
-  // CRUD 操作
+  // CRUD
   create<T>(table: Table, data: Partial<T>): Promise<T>
   insert<T>(table: Table, data: Partial<T> | Partial<T>[]): Promise<T | T[]>
   update<T>(table: Table, where: WhereCondition, data: Partial<T>): Promise<T[]>
   delete(table: Table, where: WhereCondition): Promise<void>
 
-  // 批量操作
+  // Bulk operations
   bulkInsert<T>(table: Table, data: Partial<T>[]): Promise<T[]>
   bulkUpdate<T>(
     table: Table,
@@ -80,51 +80,51 @@ export interface DBService {
   ): Promise<T[]>
   bulkDelete(table: Table, whereConditions: WhereCondition[]): Promise<void>
 
-  // Upsert 操作
+  // Upsert
   upsert<T>(table: Table, data: Partial<T>, options?: UpsertOptions): Promise<T>
 
-  // 數值操作
+  // Numeric operations
   increment<T>(table: Table, where: WhereCondition, column: string, amount?: number): Promise<T[]>
   decrement<T>(table: Table, where: WhereCondition, column: string, amount?: number): Promise<T[]>
 
-  // 條件性創建/更新
+  // Conditional create/update
   firstOrCreate<T>(table: Table, where: WhereCondition, data: Partial<T>): Promise<T>
   firstOrNew<T>(table: Table, where: WhereCondition, data: Partial<T>): Promise<T>
   updateOrCreate<T>(table: Table, where: WhereCondition, data: Partial<T>): Promise<T>
 
-  // 表操作
+  // Table operations
   truncate(table: Table, options?: TruncateOptions): Promise<void>
 
-  // 聚合函數
+  // Aggregates
   sum(table: Table, column: string, where?: WhereCondition): Promise<number>
   avg(table: Table, column: string, where?: WhereCondition): Promise<number>
   min(table: Table, column: string, where?: WhereCondition): Promise<unknown>
   max(table: Table, column: string, where?: WhereCondition): Promise<unknown>
 
-  // 鎖定機制
+  // Row locking
   lockForUpdate<T>(table: Table, where: WhereCondition, options?: LockOptions): Promise<T[]>
   sharedLock<T>(table: Table, where: WhereCondition, options?: LockOptions): Promise<T[]>
 
-  // Raw SQL 執行
+  // Raw SQL execution
   execute<T = unknown>(sql: string, params?: unknown[]): Promise<T[]>
 
-  // 健康檢查
+  // Health check
   healthCheck(): Promise<HealthCheckResult>
 
-  // 遷移功能
+  // Migrations
   migrate(): Promise<MigrateResult>
   migrateTo(targetMigration?: string): Promise<MigrateResult>
 
-  // Seeder 功能
+  // Seeding
   seed(seedFunction: SeedFunction, seedName?: string): Promise<SeedResult>
   seedMany(seedFunctions: Array<{ name: string; seed: SeedFunction }>): Promise<SeedResult>
 
-  // 部署功能
+  // Deployment
   deploy(options?: DeployOptions): Promise<DeployResult>
 }
 
 /**
- * 資料庫服務實作
+ * Database service implementation.
  */
 export class DBServiceImpl implements DBService {
   private queryLogs: QueryLogInfo[] = []
@@ -150,24 +150,24 @@ export class DBServiceImpl implements DBService {
   }
 
   /**
-   * 獲取 EventBus 實例
+   * Get the EventBus instance.
    */
   get events(): EventBus {
     return this.eventBus
   }
 
   /**
-   * 觸發事件（帶來源追蹤）
+   * Emit an event (with source tracking).
    */
   protected async emitEvent(event: string, payload: any): Promise<void> {
     const source = EventBus.getEventSource()
     this.eventBus.emit(event, payload, source)
-    // 同時觸發 core hooks（保持向後相容）
+    // Also trigger core hooks (backward compatible).
     await this.core.hooks.doAction(event, payload)
   }
 
   /**
-   * 執行交易
+   * Execute a transaction.
    */
   async transaction<T>(callback: (tx: Transaction) => Promise<T>): Promise<T> {
     const transactionId = `tx_${Date.now()}_${Math.random().toString(36).substring(7)}`
@@ -179,7 +179,7 @@ export class DBServiceImpl implements DBService {
       queries: [],
     }
 
-    // 觸發交易開始 hook（帶來源追蹤）
+    // Emit transaction start (with source tracking).
     await this.emitEvent('db:transaction:start', {
       transactionId,
       startTime,
@@ -187,11 +187,11 @@ export class DBServiceImpl implements DBService {
 
     try {
       const result = await this.db.transaction(async (tx: Transaction) => {
-        // 包裝交易實例以支援查詢日誌
+        // Wrap transaction instance to support query logging (if needed).
         return await callback(tx)
       })
 
-      // 觸發交易提交 hook（帶來源追蹤）
+      // Emit transaction commit (with source tracking).
       await this.emitEvent('db:transaction:commit', {
         transactionId,
         duration: Date.now() - startTime,
@@ -200,14 +200,14 @@ export class DBServiceImpl implements DBService {
       this.currentTransaction = null
       return result
     } catch (error) {
-      // 觸發交易錯誤 hook（帶來源追蹤）
+      // Emit transaction error (with source tracking).
       await this.emitEvent('db:transaction:error', {
         transactionId,
         error,
         duration: Date.now() - startTime,
       })
 
-      // 觸發交易回滾 hook（帶來源追蹤）
+      // Emit transaction rollback (with source tracking).
       await this.emitEvent('db:transaction:rollback', {
         transactionId,
         duration: Date.now() - startTime,
@@ -219,14 +219,14 @@ export class DBServiceImpl implements DBService {
   }
 
   /**
-   * 根據 ID 查詢單筆記錄
+   * Find a single record by ID.
    */
   async findById<T>(table: Table, id: unknown): Promise<T | null> {
     const startTime = Date.now()
     const tableName = this.getTableName(table)
 
     try {
-      // 使用 Drizzle 的查詢 API
+      // Use Drizzle query API.
       // biome-ignore lint/suspicious/noExplicitAny: generic query result
       const result = await (this.db
         .select()
@@ -245,7 +245,7 @@ export class DBServiceImpl implements DBService {
   }
 
   /**
-   * 查詢單筆記錄
+   * Find a single record.
    */
   async findOne<T>(table: Table, where: WhereCondition): Promise<T | null> {
     const startTime = Date.now()
@@ -266,7 +266,7 @@ export class DBServiceImpl implements DBService {
   }
 
   /**
-   * 查詢所有記錄
+   * Find all records.
    */
   async findAll<T>(
     table: Table,
@@ -312,7 +312,7 @@ export class DBServiceImpl implements DBService {
   }
 
   /**
-   * 計算記錄數
+   * Count records.
    */
   async count(table: Table, where?: WhereCondition): Promise<number> {
     const startTime = Date.now()
@@ -326,8 +326,8 @@ export class DBServiceImpl implements DBService {
         query = query.where(where)
       }
 
-      // 獲取所有記錄並計算長度（簡化版本）
-      // 對於大型資料集，建議使用 db.raw 直接執行 COUNT 查詢
+      // Fetch all records and count in memory (simplified).
+      // For large datasets, use `db.raw` to run a proper COUNT query.
       // biome-ignore lint/suspicious/noExplicitAny: generic query result
       const result = await (query as Promise<any[]>)
       const count = result.length
@@ -343,7 +343,7 @@ export class DBServiceImpl implements DBService {
   }
 
   /**
-   * 檢查記錄是否存在
+   * Check whether a record exists.
    */
   async exists(table: Table, where: WhereCondition): Promise<boolean> {
     const startTime = Date.now()
@@ -364,8 +364,8 @@ export class DBServiceImpl implements DBService {
   }
 
   /**
-   * 使用關聯查詢根據 ID 查詢記錄
-   * 注意：此方法使用 Drizzle 的 query API，需要先定義 relations
+   * Find a record by ID with relations.
+   * Note: this uses Drizzle's query API; relations must be defined first.
    */
   async findByIdWith<T>(
     tableName: string,
@@ -375,7 +375,7 @@ export class DBServiceImpl implements DBService {
     const startTime = Date.now()
 
     try {
-      // 使用 Drizzle 的 query API
+      // Use Drizzle query API.
       // biome-ignore lint/suspicious/noExplicitAny: checking for query API
       const dbAny = this.db as any
 
@@ -407,8 +407,8 @@ export class DBServiceImpl implements DBService {
   }
 
   /**
-   * 使用關聯查詢單筆記錄
-   * 注意：此方法使用 Drizzle 的 query API，需要先定義 relations
+   * Find a single record with relations.
+   * Note: this uses Drizzle's query API; relations must be defined first.
    */
   async findOneWith<T>(
     tableName: string,
@@ -418,7 +418,7 @@ export class DBServiceImpl implements DBService {
     const startTime = Date.now()
 
     try {
-      // 使用 Drizzle 的 query API
+      // Use Drizzle query API.
       // biome-ignore lint/suspicious/noExplicitAny: checking for query API
       const dbAny = this.db as any
 
@@ -454,8 +454,8 @@ export class DBServiceImpl implements DBService {
   }
 
   /**
-   * 使用關聯查詢所有記錄
-   * 注意：此方法使用 Drizzle 的 query API，需要先定義 relations
+   * Find all records with relations.
+   * Note: this uses Drizzle's query API; relations must be defined first.
    */
   async findAllWith<T>(
     tableName: string,
@@ -470,7 +470,7 @@ export class DBServiceImpl implements DBService {
     const startTime = Date.now()
 
     try {
-      // 使用 Drizzle 的 query API
+      // Use Drizzle query API.
       // biome-ignore lint/suspicious/noExplicitAny: checking for query API
       const dbAny = this.db as any
 
@@ -515,7 +515,7 @@ export class DBServiceImpl implements DBService {
   }
 
   /**
-   * 創建單筆記錄
+   * Create a single record.
    */
   async create<T>(table: Table, data: Partial<T>): Promise<T> {
     const startTime = Date.now()
@@ -539,7 +539,7 @@ export class DBServiceImpl implements DBService {
   }
 
   /**
-   * 插入記錄（支援單筆或多筆）
+   * Insert records (single or multiple).
    */
   async insert<T>(table: Table, data: Partial<T> | Partial<T>[]): Promise<T | T[]> {
     const startTime = Date.now()
@@ -573,7 +573,7 @@ export class DBServiceImpl implements DBService {
   }
 
   /**
-   * 更新記錄
+   * Update records.
    */
   async update<T>(table: Table, where: WhereCondition, data: Partial<T>): Promise<T[]> {
     const startTime = Date.now()
@@ -603,7 +603,7 @@ export class DBServiceImpl implements DBService {
   }
 
   /**
-   * 刪除記錄
+   * Delete records.
    */
   async delete(table: Table, where: WhereCondition): Promise<void> {
     const startTime = Date.now()
@@ -622,7 +622,7 @@ export class DBServiceImpl implements DBService {
   }
 
   /**
-   * 批量插入
+   * Bulk insert.
    */
   async bulkInsert<T>(table: Table, data: Partial<T>[]): Promise<T[]> {
     const startTime = Date.now()
@@ -651,7 +651,7 @@ export class DBServiceImpl implements DBService {
   }
 
   /**
-   * 批量更新
+   * Bulk update.
    */
   async bulkUpdate<T>(
     table: Table,
@@ -661,7 +661,7 @@ export class DBServiceImpl implements DBService {
     const tableName = this.getTableName(table)
 
     try {
-      // 在交易中執行批量更新
+      // Execute bulk updates in a transaction.
       const result = await this.transaction(async (tx) => {
         const allResults: T[] = []
         for (const update of updates) {
@@ -692,14 +692,14 @@ export class DBServiceImpl implements DBService {
   }
 
   /**
-   * 批量刪除
+   * Bulk delete.
    */
   async bulkDelete(table: Table, whereConditions: WhereCondition[]): Promise<void> {
     const startTime = Date.now()
     const tableName = this.getTableName(table)
 
     try {
-      // 在交易中執行批量刪除
+      // Execute bulk delete in a transaction.
       await this.transaction(async (tx) => {
         for (const where of whereConditions) {
           // biome-ignore lint/suspicious/noExplicitAny: generic delete
@@ -725,8 +725,8 @@ export class DBServiceImpl implements DBService {
   }
 
   /**
-   * 分頁查詢（針對 PostgreSQL 優化）
-   * 注意：此方法需要用戶提供 count 函數，因為 Drizzle 的 count API 可能因版本而異
+   * Paginate (optimized for PostgreSQL).
+   * Note: this implementation is simplified; Drizzle count APIs can vary by version.
    */
   async paginate<T>(table: Table, options: PaginateOptions): Promise<PaginateResult<T>> {
     const { page, limit, orderBy, orderDirection = 'asc' } = options
@@ -735,7 +735,7 @@ export class DBServiceImpl implements DBService {
     const tableName = this.getTableName(table)
 
     try {
-      // 查詢資料（針對 PostgreSQL 優化）
+      // Query data (PostgreSQL optimized).
       // biome-ignore lint/suspicious/noExplicitAny: generic query builder
       let query: any = this.db.select().from(table)
 
@@ -744,13 +744,12 @@ export class DBServiceImpl implements DBService {
         query = query.orderBy(orderBy as any, orderDirection)
       }
 
-      // PostgreSQL 使用 LIMIT/OFFSET，這是標準且高效的方式
+      // PostgreSQL uses LIMIT/OFFSET, which is standard and efficient.
       // biome-ignore lint/suspicious/noExplicitAny: generic query result
       const data = await (query.limit(limit).offset(offset) as Promise<T[]>)
 
-      // 計算總數 - 使用相同的查詢但不包含 limit/offset
-      // 注意：這是一個簡化版本，實際使用中可能需要更複雜的 count 查詢
-      // 用戶可以通過 raw 屬性直接使用 Drizzle 的 count 功能
+      // Count total - same query without limit/offset (simplified).
+      // For production, consider using Drizzle's count helpers via `raw`.
       // biome-ignore lint/suspicious/noExplicitAny: generic count query
       const countQuery: any = this.db.select().from(table)
       // biome-ignore lint/suspicious/noExplicitAny: generic count result
@@ -785,7 +784,7 @@ export class DBServiceImpl implements DBService {
   }
 
   /**
-   * 健康檢查（PostgreSQL 優化：使用 SELECT 1）
+   * Health check (PostgreSQL optimized: `SELECT 1`).
    */
   async healthCheck(): Promise<HealthCheckResult> {
     if (!this.enableHealthCheck) {
@@ -795,30 +794,30 @@ export class DBServiceImpl implements DBService {
     const startTime = Date.now()
 
     try {
-      // PostgreSQL 使用最輕量級的查詢
+      // Use the lightest query possible.
       const query = this.healthCheckQuery || 'SELECT 1'
 
-      // 執行健康檢查查詢 - 使用 Drizzle 的 sql 函數
+      // Execute health check query - prefer Drizzle sql helpers when available.
       // biome-ignore lint/suspicious/noExplicitAny: checking for sql method
       const dbAny = this.db as any
 
       if (typeof dbAny.execute === 'function' && typeof dbAny.sql === 'function') {
-        // 使用 Drizzle 的 sql 函數
+        // Use Drizzle sql helpers.
         // biome-ignore lint/suspicious/noExplicitAny: generic sql execution
         await dbAny.execute(dbAny.sql.raw(query))
       } else if (typeof dbAny.query === 'function') {
-        // 備用方案：直接使用 query 方法
+        // Fallback: use `query` directly.
         // biome-ignore lint/suspicious/noExplicitAny: generic query execution
         await dbAny.query(query)
       } else {
-        // 最後的備用方案：嘗試執行一個簡單的 select 查詢
+        // Last fallback: run a simple select query.
         // biome-ignore lint/suspicious/noExplicitAny: generic query
         await (this.db.select().limit(1) as Promise<any[]>)
       }
 
       const latency = Date.now() - startTime
 
-      // 觸發健康檢查 hook
+      // Trigger health check hook.
       await this.core.hooks.doAction('db:health-check', {
         status: 'healthy',
         latency,
@@ -847,35 +846,35 @@ export class DBServiceImpl implements DBService {
   }
 
   /**
-   * 執行資料庫遷移（執行所有待處理的遷移）
+   * Run database migrations (apply all pending migrations).
    */
   async migrate(): Promise<MigrateResult> {
     const startTime = Date.now()
 
-    // 觸發遷移開始 hook
+    // Trigger migrate start hook.
     await this.core.hooks.doAction('db:migrate:start', {
       timestamp: startTime,
     })
 
     try {
-      // 嘗試使用 Drizzle 的 migrate 功能
+      // Try to use Drizzle migration APIs.
       // biome-ignore lint/suspicious/noExplicitAny: checking for migrate method
       const dbAny = this.db as any
 
       let appliedMigrations: string[] = []
 
       if (typeof dbAny.migrate === 'function') {
-        // 使用 Drizzle 的 migrate 方法
+        // Use Drizzle `migrate`.
         // biome-ignore lint/suspicious/noExplicitAny: generic migrate result
         const result = await dbAny.migrate()
         appliedMigrations = result?.migrations || []
       } else if (typeof dbAny.push === 'function') {
-        // 使用 Drizzle Kit 的 push 方法（開發模式）
+        // Use Drizzle Kit `push` (development mode).
         // biome-ignore lint/suspicious/noExplicitAny: generic push result
         await dbAny.push()
         appliedMigrations = ['schema pushed']
       } else {
-        // 如果 Drizzle 實例沒有 migrate 方法，拋出錯誤
+        // If no migration API is available, throw.
         throw new Error(
           '[OrbitDB] Migration not available. Please ensure your Drizzle instance has a migrate() method or use db.raw to access Drizzle migration APIs directly.'
         )
@@ -883,7 +882,7 @@ export class DBServiceImpl implements DBService {
 
       const duration = Date.now() - startTime
 
-      // 觸發遷移完成 hook
+      // Trigger migrate complete hook.
       await this.core.hooks.doAction('db:migrate:complete', {
         appliedMigrations,
         duration,
@@ -901,7 +900,7 @@ export class DBServiceImpl implements DBService {
     } catch (error) {
       const duration = Date.now() - startTime
 
-      // 觸發遷移錯誤 hook
+      // Trigger migrate error hook.
       await this.core.hooks.doAction('db:migrate:error', {
         error,
         duration,
@@ -920,12 +919,12 @@ export class DBServiceImpl implements DBService {
   }
 
   /**
-   * 遷移到指定的遷移版本
+   * Migrate to a target migration.
    */
   async migrateTo(targetMigration?: string): Promise<MigrateResult> {
     const startTime = Date.now()
 
-    // 觸發遷移開始 hook
+    // Trigger migrate start hook.
     await this.core.hooks.doAction('db:migrate:start', {
       targetMigration,
       timestamp: startTime,
@@ -938,7 +937,7 @@ export class DBServiceImpl implements DBService {
       let appliedMigrations: string[] = []
 
       if (typeof dbAny.migrate === 'function') {
-        // 如果 Drizzle 支援指定目標遷移
+        // If Drizzle supports migrating to a target.
         if (targetMigration) {
           // biome-ignore lint/suspicious/noExplicitAny: generic migrate result
           const result = await dbAny.migrate({ to: targetMigration })
@@ -949,7 +948,7 @@ export class DBServiceImpl implements DBService {
           appliedMigrations = result?.migrations || []
         }
       } else {
-        // 如果 Drizzle 實例沒有 migrate 方法，拋出錯誤
+        // If no migration API is available, throw.
         throw new Error(
           '[OrbitDB] Migration not available. Please ensure your Drizzle instance has a migrate() method or use db.raw to access Drizzle migration APIs directly.'
         )
@@ -957,7 +956,7 @@ export class DBServiceImpl implements DBService {
 
       const duration = Date.now() - startTime
 
-      // 觸發遷移完成 hook
+      // Trigger migrate complete hook.
       await this.core.hooks.doAction('db:migrate:complete', {
         targetMigration,
         appliedMigrations,
@@ -976,7 +975,7 @@ export class DBServiceImpl implements DBService {
     } catch (error) {
       const duration = Date.now() - startTime
 
-      // 觸發遷移錯誤 hook
+      // Trigger migrate error hook.
       await this.core.hooks.doAction('db:migrate:error', {
         targetMigration,
         error,
@@ -996,25 +995,25 @@ export class DBServiceImpl implements DBService {
   }
 
   /**
-   * 執行 seed 資料
+   * Run seed data.
    */
   async seed(seedFunction: SeedFunction, seedName?: string): Promise<SeedResult> {
     const startTime = Date.now()
     const name = seedName || 'default'
 
-    // 觸發 seed 開始 hook
+    // Trigger seed start hook.
     await this.core.hooks.doAction('db:seed:start', {
       seedName: name,
       timestamp: startTime,
     })
 
     try {
-      // 執行 seed 函數
+      // Execute seed function.
       await seedFunction(this.db)
 
       const duration = Date.now() - startTime
 
-      // 觸發 seed 完成 hook
+      // Trigger seed complete hook.
       await this.core.hooks.doAction('db:seed:complete', {
         seedName: name,
         duration,
@@ -1030,7 +1029,7 @@ export class DBServiceImpl implements DBService {
     } catch (error) {
       const duration = Date.now() - startTime
 
-      // 觸發 seed 錯誤 hook
+      // Trigger seed error hook.
       await this.core.hooks.doAction('db:seed:error', {
         seedName: name,
         error,
@@ -1050,14 +1049,14 @@ export class DBServiceImpl implements DBService {
   }
 
   /**
-   * 執行多個 seed 函數
+   * Run multiple seed functions.
    */
   async seedMany(seedFunctions: Array<{ name: string; seed: SeedFunction }>): Promise<SeedResult> {
     const startTime = Date.now()
     const seededFiles: string[] = []
     const errors: string[] = []
 
-    // 觸發 seed 開始 hook
+    // Trigger seed start hook.
     await this.core.hooks.doAction('db:seed:start', {
       seedCount: seedFunctions.length,
       timestamp: startTime,
@@ -1077,7 +1076,7 @@ export class DBServiceImpl implements DBService {
     const duration = Date.now() - startTime
 
     if (errors.length > 0) {
-      // 觸發 seed 錯誤 hook
+      // Trigger seed error hook.
       await this.core.hooks.doAction('db:seed:error', {
         errors,
         duration,
@@ -1091,7 +1090,7 @@ export class DBServiceImpl implements DBService {
       }
     }
 
-    // 觸發 seed 完成 hook
+    // Trigger seed complete hook.
     await this.core.hooks.doAction('db:seed:complete', {
       seededFiles,
       duration,
@@ -1107,7 +1106,7 @@ export class DBServiceImpl implements DBService {
   }
 
   /**
-   * 部署資料庫（執行遷移和 seed）
+   * Deploy database (migrations and seeding).
    */
   async deploy(options?: DeployOptions): Promise<DeployResult> {
     const {
@@ -1119,14 +1118,14 @@ export class DBServiceImpl implements DBService {
 
     const startTime = Date.now()
 
-    // 觸發部署開始 hook
+    // Trigger deploy start hook.
     await this.core.hooks.doAction('db:deploy:start', {
       options,
       timestamp: startTime,
     })
 
     try {
-      // 部署前驗證
+      // Pre-deploy validation.
       if (validateBeforeDeploy) {
         const healthCheck = await this.healthCheck()
         if (healthCheck.status !== 'healthy') {
@@ -1138,7 +1137,7 @@ export class DBServiceImpl implements DBService {
       let seedResult: SeedResult | undefined
       let healthCheckResult: HealthCheckResult | undefined
 
-      // 執行遷移
+      // Run migrations.
       if (runMigrations) {
         this.core.logger.info('[OrbitDB] Running migrations...')
         migrateResult = await this.migrate()
@@ -1147,17 +1146,17 @@ export class DBServiceImpl implements DBService {
         }
       }
 
-      // 執行 seed
+      // Run seeds.
       if (runSeeds) {
         this.core.logger.info('[OrbitDB] Running seeds...')
-        // 注意：這裡需要用戶提供 seed 函數，這裡只是示範結構
-        // 實際使用時，用戶應該通過選項或配置提供 seed 函數
+        // Note: seed execution requires seed functions. This is only a placeholder.
+        // In real usage, provide seed functions via options/config and call `seed()`/`seedMany()`.
         this.core.logger.warn(
           '[OrbitDB] Seeds require seed functions to be provided. Use seed() or seedMany() methods directly.'
         )
       }
 
-      // 部署後健康檢查
+      // Post-deploy health check.
       if (!skipHealthCheck) {
         healthCheckResult = await this.healthCheck()
         if (healthCheckResult.status !== 'healthy') {
@@ -1169,7 +1168,7 @@ export class DBServiceImpl implements DBService {
 
       const duration = Date.now() - startTime
 
-      // 觸發部署完成 hook
+      // Trigger deploy complete hook.
       await this.core.hooks.doAction('db:deploy:complete', {
         migrateResult,
         seedResult,
@@ -1189,7 +1188,7 @@ export class DBServiceImpl implements DBService {
     } catch (error) {
       const duration = Date.now() - startTime
 
-      // 觸發部署錯誤 hook
+      // Trigger deploy error hook.
       await this.core.hooks.doAction('db:deploy:error', {
         error,
         duration,
@@ -1208,7 +1207,7 @@ export class DBServiceImpl implements DBService {
   }
 
   /**
-   * 取得表名稱（輔助方法）
+   * Get table name (helper).
    */
   private getTableName(table: Table): string {
     // biome-ignore lint/suspicious/noExplicitAny: checking table structure
@@ -1217,7 +1216,7 @@ export class DBServiceImpl implements DBService {
   }
 
   /**
-   * 記錄查詢日誌（非同步，不阻塞）
+   * Log queries (async, non-blocking).
    */
   private async logQuery(
     queryType: string,
@@ -1236,18 +1235,18 @@ export class DBServiceImpl implements DBService {
       timestamp: Date.now(),
     }
 
-    // 添加到當前交易的查詢列表（如果有的話）
+    // Add to the current transaction query list (if any).
     if (this.currentTransaction) {
       this.currentTransaction.queries.push(logInfo)
     }
 
-    // 觸發查詢 hook
+    // Trigger query hook.
     await this.core.hooks.doAction('db:query', {
       ...logInfo,
       error: error ? (error instanceof Error ? error.message : String(error)) : undefined,
     })
 
-    // 非同步記錄到日誌（不阻塞）
+    // Log asynchronously (non-blocking).
     setImmediate(() => {
       const logger = this.core.logger
       const message = `[DB Query] ${logInfo.query} (${duration}ms)`
@@ -1274,20 +1273,20 @@ export class DBServiceImpl implements DBService {
   }
 
   /**
-   * Upsert（插入或更新）
-   * 如果記錄存在則更新，不存在則插入
+   * Upsert (insert or update).
+   * If the record exists, update it; otherwise insert.
    */
   async upsert<T>(table: Table, data: Partial<T>, options?: UpsertOptions): Promise<T> {
     const startTime = Date.now()
     const tableName = this.getTableName(table)
 
     try {
-      // 使用 PostgreSQL 的 ON CONFLICT 語法
+      // Use PostgreSQL ON CONFLICT.
       const conflictColumns = options?.conflictColumns || ['id']
       const updateColumns = options?.updateColumns
       const excludeColumns = options?.excludeColumns || []
 
-      // 構建更新資料（排除衝突欄位和指定排除的欄位）
+      // Build update payload (exclude conflict columns and explicitly excluded columns).
       const updateData: any = { ...data }
       for (const col of conflictColumns) {
         delete updateData[col]
@@ -1296,7 +1295,7 @@ export class DBServiceImpl implements DBService {
         delete updateData[col]
       }
 
-      // 如果指定了要更新的欄位，只更新這些欄位
+      // If update columns are specified, only update those.
       if (updateColumns && updateColumns.length > 0) {
         const filteredData: any = {}
         for (const col of updateColumns) {
@@ -1307,7 +1306,7 @@ export class DBServiceImpl implements DBService {
         Object.assign(updateData, filteredData)
       }
 
-      // 使用 Drizzle 的 onConflictDoUpdate
+      // Use Drizzle `onConflictDoUpdate`.
       // biome-ignore lint/suspicious/noExplicitAny: generic upsert result
       const result = await (this.db
         .insert(table)
@@ -1334,7 +1333,7 @@ export class DBServiceImpl implements DBService {
   }
 
   /**
-   * 增加數值欄位（原子操作）
+   * Increment a numeric column (atomic).
    */
   async increment<T>(
     table: Table,
@@ -1346,11 +1345,11 @@ export class DBServiceImpl implements DBService {
     const tableName = this.getTableName(table)
 
     try {
-      // 使用 SQL 的 UPDATE ... SET column = column + value
-      // 對於 PostgreSQL，使用 Drizzle 的 SQL 函數
+      // Use SQL: UPDATE ... SET column = column + value.
+      // For PostgreSQL, prefer Drizzle SQL helpers.
       const dbAny = this.db as any
       if (dbAny.sql && typeof dbAny.sql === 'function') {
-        // 使用 Drizzle 的 SQL builder
+        // Use Drizzle SQL builder.
         const sql = dbAny.sql
         const updateData: any = {}
         updateData[column] = sql`${sql.identifier(column)} + ${amount}`
@@ -1367,7 +1366,7 @@ export class DBServiceImpl implements DBService {
 
         return result
       } else {
-        // 備用方案：先查詢，再更新
+        // Fallback: read, then update.
         const existing = await this.findOne<T>(table, where)
         if (!existing) {
           throw new Error(`Record not found for increment operation`)
@@ -1393,7 +1392,7 @@ export class DBServiceImpl implements DBService {
   }
 
   /**
-   * 減少數值欄位（原子操作）
+   * Decrement a numeric column (atomic).
    */
   async decrement<T>(
     table: Table,
@@ -1405,20 +1404,20 @@ export class DBServiceImpl implements DBService {
   }
 
   /**
-   * 查找或創建
+   * Find or create.
    */
   async firstOrCreate<T>(table: Table, where: WhereCondition, data: Partial<T>): Promise<T> {
     const startTime = Date.now()
     const tableName = this.getTableName(table)
 
     try {
-      // 先嘗試查找
+      // Try to find first.
       const existing = await this.findOne<T>(table, where)
       if (existing) {
         return existing
       }
 
-      // 不存在則創建（合併 where 和 data）
+      // Create if not found (merge where + data).
       const createData = { ...where, ...data }
       const created = await this.create<T>(table, createData)
 
@@ -1438,20 +1437,20 @@ export class DBServiceImpl implements DBService {
   }
 
   /**
-   * 查找或新建（不保存）
+   * Find or instantiate (without persisting).
    */
   async firstOrNew<T>(table: Table, where: WhereCondition, data: Partial<T>): Promise<T> {
     const startTime = Date.now()
     const tableName = this.getTableName(table)
 
     try {
-      // 先嘗試查找
+      // Try to find first.
       const existing = await this.findOne<T>(table, where)
       if (existing) {
         return existing
       }
 
-      // 不存在則返回新實例（不保存）
+      // If not found, return a new instance (not persisted).
       const newData = { ...where, ...data } as T
 
       const duration = Date.now() - startTime
@@ -1470,22 +1469,22 @@ export class DBServiceImpl implements DBService {
   }
 
   /**
-   * 更新或創建
+   * Update or create.
    */
   async updateOrCreate<T>(table: Table, where: WhereCondition, data: Partial<T>): Promise<T> {
     const startTime = Date.now()
     const tableName = this.getTableName(table)
 
     try {
-      // 先嘗試查找
+      // Try to find first.
       const existing = await this.findOne<T>(table, where)
       if (existing) {
-        // 存在則更新
+        // Update if exists.
         const updated = await this.update<T>(table, where, data)
         return updated[0] as T
       }
 
-      // 不存在則創建（合併 where 和 data）
+      // Create if not found (merge where + data).
       const createData = { ...where, ...data }
       const created = await this.create<T>(table, createData)
 
@@ -1505,7 +1504,7 @@ export class DBServiceImpl implements DBService {
   }
 
   /**
-   * 清空表
+   * Truncate table.
    */
   async truncate(table: Table, options?: TruncateOptions): Promise<void> {
     const startTime = Date.now()
@@ -1514,7 +1513,7 @@ export class DBServiceImpl implements DBService {
     try {
       const dbAny = this.db as any
 
-      // 使用 Drizzle 的 SQL builder 或直接執行 SQL
+      // Use Drizzle SQL builder or run raw SQL.
       if (dbAny.sql && typeof dbAny.sql === 'function') {
         const sql = dbAny.sql
         let truncateSql = sql`TRUNCATE TABLE ${sql.identifier(tableName)}`
@@ -1530,13 +1529,13 @@ export class DBServiceImpl implements DBService {
         if (dbAny.execute && typeof dbAny.execute === 'function') {
           await dbAny.execute(truncateSql)
         } else {
-          // 備用方案：使用 raw SQL
+          // Fallback: use raw SQL.
           await this.execute(
             `TRUNCATE TABLE ${tableName}${options?.restartIdentity ? ' RESTART IDENTITY' : ''}${options?.cascade ? ' CASCADE' : ''}`
           )
         }
       } else {
-        // 備用方案：直接執行 SQL
+        // Fallback: execute SQL directly.
         await this.execute(
           `TRUNCATE TABLE ${tableName}${options?.restartIdentity ? ' RESTART IDENTITY' : ''}${options?.cascade ? ' CASCADE' : ''}`
         )
@@ -1551,7 +1550,7 @@ export class DBServiceImpl implements DBService {
   }
 
   /**
-   * 聚合函數：求和
+   * Aggregate: sum.
    */
   async sum(table: Table, column: string, where?: WhereCondition): Promise<number> {
     const startTime = Date.now()
@@ -1562,7 +1561,7 @@ export class DBServiceImpl implements DBService {
 
       if (dbAny.sql && typeof dbAny.sql === 'function') {
         const sql = dbAny.sql
-        // 使用 SQL SUM 函數
+        // Use SQL SUM.
         let query = this.db.select({ sum: sql`SUM(${sql.identifier(column)})` }).from(table)
 
         if (where) {
@@ -1578,7 +1577,7 @@ export class DBServiceImpl implements DBService {
 
         return Number(sumValue)
       } else {
-        // 備用方案：查詢所有記錄並在應用層計算
+        // Fallback: fetch all records and compute in application.
         const all = await this.findAll(table, where)
         const sum = all.reduce((acc: number, row: any) => {
           return acc + (Number(row[column]) || 0)
@@ -1596,7 +1595,7 @@ export class DBServiceImpl implements DBService {
   }
 
   /**
-   * 聚合函數：平均值
+   * Aggregate: average.
    */
   async avg(table: Table, column: string, where?: WhereCondition): Promise<number> {
     const startTime = Date.now()
@@ -1607,7 +1606,7 @@ export class DBServiceImpl implements DBService {
 
       if (dbAny.sql && typeof dbAny.sql === 'function') {
         const sql = dbAny.sql
-        // 使用 SQL AVG 函數
+        // Use SQL AVG.
         let query = this.db.select({ avg: sql`AVG(${sql.identifier(column)})` }).from(table)
 
         if (where) {
@@ -1623,7 +1622,7 @@ export class DBServiceImpl implements DBService {
 
         return Number(avgValue)
       } else {
-        // 備用方案：查詢所有記錄並在應用層計算
+        // Fallback: fetch all records and compute in application.
         const all = await this.findAll(table, where)
         if (all.length === 0) return 0
 
@@ -1643,7 +1642,7 @@ export class DBServiceImpl implements DBService {
   }
 
   /**
-   * 聚合函數：最小值
+   * Aggregate: minimum.
    */
   async min(table: Table, column: string, where?: WhereCondition): Promise<unknown> {
     const startTime = Date.now()
@@ -1654,7 +1653,7 @@ export class DBServiceImpl implements DBService {
 
       if (dbAny.sql && typeof dbAny.sql === 'function') {
         const sql = dbAny.sql
-        // 使用 SQL MIN 函數
+        // Use SQL MIN.
         let query = this.db.select({ min: sql`MIN(${sql.identifier(column)})` }).from(table)
 
         if (where) {
@@ -1670,7 +1669,7 @@ export class DBServiceImpl implements DBService {
 
         return minValue
       } else {
-        // 備用方案：查詢所有記錄並在應用層計算
+        // Fallback: fetch all records and compute in application.
         const all = await this.findAll(table, where)
         if (all.length === 0) return null
 
@@ -1693,7 +1692,7 @@ export class DBServiceImpl implements DBService {
   }
 
   /**
-   * 聚合函數：最大值
+   * Aggregate: maximum.
    */
   async max(table: Table, column: string, where?: WhereCondition): Promise<unknown> {
     const startTime = Date.now()
@@ -1704,7 +1703,7 @@ export class DBServiceImpl implements DBService {
 
       if (dbAny.sql && typeof dbAny.sql === 'function') {
         const sql = dbAny.sql
-        // 使用 SQL MAX 函數
+        // Use SQL MAX.
         let query = this.db.select({ max: sql`MAX(${sql.identifier(column)})` }).from(table)
 
         if (where) {
@@ -1720,7 +1719,7 @@ export class DBServiceImpl implements DBService {
 
         return maxValue
       } else {
-        // 備用方案：查詢所有記錄並在應用層計算
+        // Fallback: fetch all records and compute in application.
         const all = await this.findAll(table, where)
         if (all.length === 0) return null
 
@@ -1743,7 +1742,7 @@ export class DBServiceImpl implements DBService {
   }
 
   /**
-   * 鎖定記錄（FOR UPDATE）
+   * Lock rows (FOR UPDATE).
    */
   async lockForUpdate<T>(table: Table, where: WhereCondition, options?: LockOptions): Promise<T[]> {
     const startTime = Date.now()
@@ -1752,7 +1751,7 @@ export class DBServiceImpl implements DBService {
     try {
       let query = this.db.select().from(table).where(where)
 
-      // 添加鎖定選項
+      // Apply lock options.
       if (options?.nowait) {
         query = (query as any).for('update').noWait()
       } else if (options?.skipLocked) {
@@ -1780,7 +1779,7 @@ export class DBServiceImpl implements DBService {
   }
 
   /**
-   * 共享鎖（FOR SHARE）
+   * Shared lock (FOR SHARE).
    */
   async sharedLock<T>(table: Table, where: WhereCondition, options?: LockOptions): Promise<T[]> {
     const startTime = Date.now()
@@ -1789,7 +1788,7 @@ export class DBServiceImpl implements DBService {
     try {
       let query = this.db.select().from(table).where(where)
 
-      // 添加共享鎖選項
+      // Apply lock options.
       if (options?.nowait) {
         query = (query as any).for('share').noWait()
       } else if (options?.skipLocked) {
@@ -1817,7 +1816,7 @@ export class DBServiceImpl implements DBService {
   }
 
   /**
-   * 執行原始 SQL
+   * Execute raw SQL.
    */
   async execute<T = unknown>(sql: string, params?: unknown[]): Promise<T[]> {
     const startTime = Date.now()
@@ -1828,21 +1827,21 @@ export class DBServiceImpl implements DBService {
       let result: T[]
 
       if (dbAny.execute && typeof dbAny.execute === 'function') {
-        // 使用 Drizzle 的 execute 方法
+        // Use Drizzle `execute`.
         if (dbAny.sql && typeof dbAny.sql === 'function' && params) {
-          // 參數化查詢
+          // Parameterized query.
           const sqlBuilder = dbAny.sql
           const paramPlaceholders = params.map((_, i) => sqlBuilder.placeholder(`param${i}`))
-          // 注意：這是一個簡化版本，實際使用中需要更複雜的 SQL 構建
+          // Note: simplified implementation; complex SQL building may be required in real usage.
           result = await dbAny.execute(dbAny.sql.raw(sql, params))
         } else {
           result = await dbAny.execute(dbAny.sql?.raw?.(sql) || sql)
         }
       } else if (dbAny.query && typeof dbAny.query === 'function') {
-        // 使用 query 方法
+        // Use `query`.
         result = await dbAny.query(sql, params || [])
       } else {
-        // 最後的備用方案：嘗試直接執行
+        // Last fallback: try to invoke the db directly.
         result = await (dbAny as any)(sql, params || [])
       }
 
@@ -1858,28 +1857,28 @@ export class DBServiceImpl implements DBService {
 }
 
 /**
- * 檢測資料庫類型
+ * Detect database type.
  */
 export function detectDatabaseType(db: DrizzleDB): DatabaseType {
-  // 嘗試從 Drizzle 實例中檢測資料庫類型
+  // Try to detect database type from the Drizzle instance.
   // biome-ignore lint/suspicious/noExplicitAny: checking db internals
   const dbAny = db as any
 
-  // 檢查是否有 PostgreSQL 特定的屬性
+  // Check PostgreSQL-specific dialect name.
   if (dbAny._?.dialect?.name === 'postgresql' || dbAny.dialect?.name === 'postgresql') {
     return 'postgresql'
   }
 
-  // 檢查是否有 MySQL 特定的屬性
+  // Check MySQL-specific dialect name.
   if (dbAny._?.dialect?.name === 'mysql' || dbAny.dialect?.name === 'mysql') {
     return 'mysql'
   }
 
-  // 檢查是否有 SQLite 特定的屬性
+  // Check SQLite-specific dialect name.
   if (dbAny._?.dialect?.name === 'sqlite' || dbAny.dialect?.name === 'sqlite') {
     return 'sqlite'
   }
 
-  // 預設返回 auto，讓系統自動判斷
+  // Default to auto and let the system decide.
   return 'auto'
 }

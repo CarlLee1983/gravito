@@ -6,7 +6,7 @@ import { join, parse } from 'node:path'
  * Structure:
  * /lang
  *   /en.json -> { "welcome": "Hello" }
- *   /zh.json -> { "welcome": "你好" }
+ *   /zh.json -> { "welcome": "Hello" }
  *   /en/auth.json -> { "failed": "Login failed" } (Optional deep structure, maybe later)
  *
  * For now, we support flat JSON files per locale: en.json, zh.json

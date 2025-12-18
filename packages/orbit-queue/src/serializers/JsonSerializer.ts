@@ -5,10 +5,10 @@ import type { JobSerializer } from './JobSerializer'
 /**
  * JSON Serializer
  *
- * 使用 JSON 序列化 Job 資料。
- * 適合簡單場景，直接序列化 Job 的所有屬性。
+ * Serializes jobs using JSON.
+ * Suitable for simple scenarios where you only need to persist plain properties.
  *
- * **限制**：無法序列化函數、類別實例等複雜物件。
+ * Limitation: cannot restore class instances, functions, or complex objects.
  *
  * @example
  * ```typescript
@@ -19,7 +19,7 @@ import type { JobSerializer } from './JobSerializer'
  */
 export class JsonSerializer implements JobSerializer {
   /**
-   * 序列化 Job
+   * Serialize a job.
    */
   serialize(job: Job): SerializedJob {
     const id = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
@@ -39,10 +39,10 @@ export class JsonSerializer implements JobSerializer {
   }
 
   /**
-   * 反序列化 Job
+   * Deserialize a job.
    *
-   * **注意**：此實作僅能還原屬性，無法還原類別實例。
-   * 對於需要類別實例的場景，請使用 ClassNameSerializer。
+   * Note: this implementation only restores properties and does not recreate class instances.
+   * For class instances, use `ClassNameSerializer`.
    */
   deserialize(serialized: SerializedJob): Job {
     if (serialized.type !== 'json') {
@@ -50,8 +50,7 @@ export class JsonSerializer implements JobSerializer {
     }
 
     const parsed = JSON.parse(serialized.data)
-    // 注意：此實作僅能還原屬性，無法還原類別實例
-    // 實際使用時應該使用 ClassNameSerializer
+    // Only restores properties, not class instances.
     const job = Object.create({})
     Object.assign(job, parsed.properties)
     return job as Job

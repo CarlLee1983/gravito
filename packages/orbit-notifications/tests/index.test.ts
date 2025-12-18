@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 import { ConsoleLogger, PlanetCore } from 'gravito-core'
-import { Notification, NotificationManager } from '../src'
 import type { Notifiable } from '../src'
+import { Notification, NotificationManager } from '../src'
 
 describe('NotificationManager', () => {
   it('should send notifications through channels', async () => {
@@ -11,14 +11,14 @@ describe('NotificationManager', () => {
     let mailSent = false
     let databaseSaved = false
 
-    // 模擬郵件通道
+    // Mock mail channel
     manager.channel('mail', {
       send: async () => {
         mailSent = true
       },
     })
 
-    // 模擬資料庫通道
+    // Mock database channel
     manager.channel('database', {
       send: async () => {
         databaseSaved = true
@@ -74,4 +74,3 @@ describe('NotificationManager', () => {
     })
   })
 })
-

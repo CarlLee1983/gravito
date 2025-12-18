@@ -3,41 +3,40 @@ import type { SerializedJob } from '../types'
 import type { JobSerializer } from './JobSerializer'
 
 /**
- * Class Name Serializer（Laravel 風格）
+ * Class name serializer (Laravel-style).
  *
- * 儲存類別名稱和參數，執行時動態載入類別實例。
- * 這是推薦的序列化方式，因為它可以正確還原類別實例。
+ * Stores the class name and properties, then recreates an instance at runtime.
+ * This is the recommended serializer because it can restore class instances correctly.
  *
- * **要求**：Job 類別必須可以被動態載入（通過類別名稱）。
+ * Requirement: Job classes must be dynamically loadable (by class name).
  *
  * @example
  * ```typescript
  * const serializer = new ClassNameSerializer()
  * const serialized = serializer.serialize(new SendEmail('user@example.com'))
- * // serialized.data 包含類別名稱和參數
+ * // serialized.data contains class name and properties
  *
  * const job = serializer.deserialize(serialized)
- * // job 是 SendEmail 的實例
+ * // job is an instance of SendEmail
  * ```
  */
 export class ClassNameSerializer implements JobSerializer {
   /**
-   * Job 類別註冊表
-   * 用於根據類別名稱動態載入類別
+   * Job class registry (for resolving classes by name).
    */
   private jobClasses = new Map<string, new (...args: unknown[]) => Job>()
 
   /**
-   * 註冊 Job 類別
-   * @param jobClass - Job 類別
+   * Register a Job class.
+   * @param jobClass - Job class
    */
   register(jobClass: new (...args: unknown[]) => Job): void {
     this.jobClasses.set(jobClass.name, jobClass)
   }
 
   /**
-   * 批量註冊 Job 類別
-   * @param jobClasses - Job 類別陣列
+   * Register multiple Job classes.
+   * @param jobClasses - Job class array
    */
   registerMany(jobClasses: Array<new (...args: unknown[]) => Job>): void {
     for (const jobClass of jobClasses) {
@@ -46,13 +45,13 @@ export class ClassNameSerializer implements JobSerializer {
   }
 
   /**
-   * 序列化 Job
+   * Serialize a Job.
    */
   serialize(job: Job): SerializedJob {
     const id = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
     const className = job.constructor.name
 
-    // 提取 Job 的屬性（排除方法）
+    // Extract properties (exclude methods)
     const properties: Record<string, unknown> = {}
     for (const key in job) {
       if (Object.hasOwn(job, key) && typeof (job as Record<string, unknown>)[key] !== 'function') {
@@ -76,7 +75,7 @@ export class ClassNameSerializer implements JobSerializer {
   }
 
   /**
-   * 反序列化 Job
+   * Deserialize a Job.
    */
   deserialize(serialized: SerializedJob): Job {
     if (serialized.type !== 'class') {
@@ -97,12 +96,12 @@ export class ClassNameSerializer implements JobSerializer {
     const parsed = JSON.parse(serialized.data)
     const job = new JobClass()
 
-    // 還原屬性
+    // Restore properties
     if (parsed.properties) {
       Object.assign(job, parsed.properties)
     }
 
-    // 還原 Queueable 屬性
+    // Restore Queueable fields
     if (serialized.delaySeconds !== undefined) {
       job.delaySeconds = serialized.delaySeconds
     }

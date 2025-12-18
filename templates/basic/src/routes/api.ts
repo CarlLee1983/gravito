@@ -2,18 +2,18 @@ import { Hono } from 'hono'
 import { logger } from 'hono/logger'
 
 /**
- * API 路由模組
+ * API route module.
  *
- * 重要：使用 Hono 的 .route() 方法來串接模組，
- * 這是為了獲得完整 TypeScript 型別推導的必要寫法。
+ * Important: use Hono's `.route()` to compose modules. This is required to preserve full
+ * TypeScript type inference.
  */
 const apiRoute = new Hono()
 
-// API 日誌中間件
+// API logging middleware
 apiRoute.use('*', logger())
 
 /**
- * 健康檢查
+ * Health check
  * GET /api/health
  */
 apiRoute.get('/health', (c) => {
@@ -24,7 +24,7 @@ apiRoute.get('/health', (c) => {
 })
 
 /**
- * 取得設定
+ * Get configuration
  * GET /api/config
  */
 apiRoute.get('/config', (c) => {
@@ -35,7 +35,7 @@ apiRoute.get('/config', (c) => {
 })
 
 /**
- * 取得統計資訊
+ * Get stats
  * GET /api/stats
  */
 apiRoute.get('/stats', (c) => {
@@ -47,4 +47,3 @@ apiRoute.get('/stats', (c) => {
 })
 
 export { apiRoute }
-

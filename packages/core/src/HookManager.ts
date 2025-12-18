@@ -8,8 +8,9 @@ export class HookManager {
   private actions: Map<string, ActionCallback[]> = new Map()
 
   /**
-   * 註冊一個 Filter (過濾器)
-   * 用於修改資料，有進有出
+   * Register a filter hook.
+   *
+   * Filters are used to transform a value (input/output).
    */
   // biome-ignore lint/suspicious/noExplicitAny: convenient for users
   addFilter<T = any>(hook: string, callback: FilterCallback<T>): void {
@@ -20,8 +21,9 @@ export class HookManager {
   }
 
   /**
-   * 執行 Filters
-   * 依序執行所有註冊的 callbacks，將結果傳遞給下一個
+   * Apply all registered filters sequentially.
+   *
+   * Each callback receives the previous callback's return value.
    */
   // biome-ignore lint/suspicious/noExplicitAny: convenient for users
   async applyFilters<T = any>(hook: string, initialValue: T, ...args: unknown[]): Promise<T> {
@@ -41,8 +43,9 @@ export class HookManager {
   }
 
   /**
-   * 註冊一個 Action (動作)
-   * 用於觸發副作用，只進不出
+   * Register an action hook.
+   *
+   * Actions are for side effects (no return value).
    */
   // biome-ignore lint/suspicious/noExplicitAny: convenient for users
   addAction<TArgs = any>(hook: string, callback: ActionCallback<TArgs>): void {
@@ -53,8 +56,7 @@ export class HookManager {
   }
 
   /**
-   * 執行 Actions
-   * 依序執行所有註冊的 callbacks
+   * Run all registered actions sequentially.
    */
   // biome-ignore lint/suspicious/noExplicitAny: convenient for users
   async doAction<TArgs = any>(hook: string, args: TArgs): Promise<void> {

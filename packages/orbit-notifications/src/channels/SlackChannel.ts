@@ -1,8 +1,8 @@
-import type { NotificationChannel, Notifiable } from '../types'
 import type { Notification } from '../Notification'
+import type { Notifiable, NotificationChannel } from '../types'
 
 /**
- * Slack 通道配置
+ * Slack channel configuration.
  */
 export interface SlackChannelConfig {
   webhookUrl: string
@@ -10,9 +10,9 @@ export interface SlackChannelConfig {
 }
 
 /**
- * Slack 通道
+ * Slack channel.
  *
- * 通過 Slack Webhook 發送通知。
+ * Sends notifications via a Slack webhook.
  */
 export class SlackChannel implements NotificationChannel {
   constructor(private config: SlackChannelConfig) {}
@@ -24,7 +24,7 @@ export class SlackChannel implements NotificationChannel {
 
     const slackMessage = notification.toSlack(notifiable)
 
-    // 發送到 Slack Webhook
+    // Send to Slack webhook.
     const response = await fetch(this.config.webhookUrl, {
       method: 'POST',
       headers: {
@@ -44,4 +44,3 @@ export class SlackChannel implements NotificationChannel {
     }
   }
 }
-

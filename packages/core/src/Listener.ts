@@ -1,6 +1,5 @@
 /**
- * 監聽器相關類型定義和介面
+ * Listener-related types and interfaces.
  */
 
 export type { Listener, ShouldQueue } from './types/events'
-

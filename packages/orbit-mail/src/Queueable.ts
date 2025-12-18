@@ -1,9 +1,9 @@
 /**
- * Queueable 介面已遷移到 @gravito/orbit-queue
+ * The Queueable interface has been moved to `@gravito/orbit-queue`.
  *
- * 此檔案僅作為向後相容的重新導出。
- * 新程式碼應該直接從 @gravito/orbit-queue 導入。
+ * This file is kept only as a backward-compatible re-export.
+ * New code should import from `@gravito/orbit-queue` directly.
  *
- * @deprecated 請使用 `import type { Queueable } from '@gravito/orbit-queue'`
+ * @deprecated Use `import type { Queueable } from '@gravito/orbit-queue'`
  */
 export type { Queueable } from '@gravito/orbit-queue'

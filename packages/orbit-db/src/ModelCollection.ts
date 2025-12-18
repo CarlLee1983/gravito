@@ -1,5 +1,5 @@
 /**
- * Model 集合類別（類似 Laravel 的 Collection）
+ * Model collection (similar to Laravel's Collection).
  */
 export class ModelCollection<T> extends Array<T> {
   constructor(items: T[] = []) {
@@ -8,14 +8,14 @@ export class ModelCollection<T> extends Array<T> {
   }
 
   /**
-   * 轉換為普通陣列
+   * Convert to a plain array.
    */
   toArray(): T[] {
     return [...this]
   }
 
   /**
-   * 轉換為 JSON
+   * Convert to JSON.
    */
   toJSON(): any[] {
     return this.map((item: any) => {
@@ -27,35 +27,35 @@ export class ModelCollection<T> extends Array<T> {
   }
 
   /**
-   * 查找第一個符合條件的項目
+   * Find the first item that matches a predicate.
    */
   find(callback: (item: T, index: number) => boolean): T | undefined {
     return super.find(callback)
   }
 
   /**
-   * 獲取第一個項目
+   * Get the first item.
    */
   first(): T | undefined {
     return this[0]
   }
 
   /**
-   * 獲取最後一個項目
+   * Get the last item.
    */
   last(): T | undefined {
     return this[this.length - 1]
   }
 
   /**
-   * 映射
+   * Map.
    */
   map<U>(callback: (item: T, index: number) => U): ModelCollection<U> {
     return new ModelCollection(super.map(callback))
   }
 
   /**
-   * 過濾
+   * Filter.
    */
   filter(callback: (item: T, index: number) => boolean): ModelCollection<T> {
     return new ModelCollection(super.filter(callback))

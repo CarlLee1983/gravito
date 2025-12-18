@@ -1,99 +1,99 @@
 /**
- * 序列化後的 Job 資料結構
+ * Serialized job payload.
  */
 export interface SerializedJob {
   /**
-   * Job 的唯一識別碼
+   * Unique job identifier.
    */
   id: string
 
   /**
-   * 序列化類型：'json' 或 'class'
+   * Serializer type: `'json'` or `'class'`.
    */
   type: 'json' | 'class'
 
   /**
-   * 序列化後的資料
+   * Serialized data.
    */
   data: string
 
   /**
-   * 類別名稱（僅當 type === 'class' 時使用）
+   * Class name (only for `type === 'class'`).
    */
   className?: string
 
   /**
-   * 建立時間戳
+   * Created timestamp.
    */
   createdAt: number
 
   /**
-   * 延遲執行時間（秒）
+   * Delay before execution (seconds).
    */
   delaySeconds?: number
 
   /**
-   * 重試次數
+   * Current attempt number.
    */
   attempts?: number
 
   /**
-   * 最大重試次數
+   * Maximum attempts.
    */
   maxAttempts?: number
 }
 
 /**
- * Topic 選項（用於 Kafka 等）
+ * Topic options (for Kafka, etc.).
  */
 export interface TopicOptions {
   /**
-   * 分區數量
+   * Number of partitions.
    */
   partitions?: number
 
   /**
-   * 複製因子
+   * Replication factor.
    */
   replicationFactor?: number
 
   /**
-   * 其他配置
+   * Additional config.
    */
   config?: Record<string, string>
 }
 
 /**
- * Queue 連接配置
+ * Queue connection config.
  */
 export interface QueueConnectionConfig {
   /**
-   * 驅動類型
+   * Driver type.
    */
   driver: 'memory' | 'database' | 'redis' | 'kafka' | 'sqs' | 'rabbitmq' | 'nats'
 
   /**
-   * 驅動特定配置
+   * Driver-specific config.
    */
   [key: string]: unknown
 }
 
 /**
- * Queue 管理器配置
+ * Queue manager config.
  */
 export interface QueueConfig {
   /**
-   * 預設連接名稱
+   * Default connection name.
    */
   default?: string
 
   /**
-   * 連接配置
+   * Connection configs.
    */
   connections?: Record<string, QueueConnectionConfig>
 
   /**
-   * 預設序列化器類型
+   * Default serializer type.
    */
   defaultSerializer?: 'json' | 'class'
 }

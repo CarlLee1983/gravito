@@ -1,6 +1,6 @@
 /**
- * 事件基礎類別和相關類型
+ * Event base class and related types.
  */
 
+export type { Channel, ShouldBroadcast } from './types/events'
 export { Event } from './types/events'
-export type { ShouldBroadcast, Channel } from './types/events'

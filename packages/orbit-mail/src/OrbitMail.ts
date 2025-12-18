@@ -108,21 +108,21 @@ export class OrbitMail implements GravitoOrbit {
   /**
    * Queue a mailable instance
    *
-   * 將 Mailable 推送到隊列中執行。
-   * 需要 OrbitQueue 已安裝並注入到 Context 中。
+   * Push a mailable into the queue for execution.
+   * Requires OrbitQueue to be installed and available in the context.
    */
   async queue(mailable: Mailable): Promise<void> {
-    // 嘗試從 Context 取得 queue 服務
-    // 如果沒有 queue 服務，則直接發送（向後相容）
+    // Try to get queue service from context.
+    // If not available, send immediately (backward compatible).
     const queue = (
       this as unknown as { queueService?: { push: (job: unknown) => Promise<unknown> } }
     ).queueService
 
     if (queue) {
-      // 使用 Queue 系統推送
+      // Push via Queue system.
       await queue.push(mailable)
     } else {
-      // 降級：直接發送（向後相容）
+      // Fallback: send immediately (backward compatible).
       console.warn(
         '[OrbitMail] Queue service not available, sending immediately. Install OrbitQueue to enable queuing.'
       )

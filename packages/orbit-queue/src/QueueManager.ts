@@ -10,8 +10,8 @@ import type { QueueConfig, SerializedJob } from './types'
 /**
  * Queue Manager
  *
- * 管理多個隊列連接和驅動，提供統一的 API 來推送和處理 Job。
- * 支援按需載入驅動，確保輕量和高效能。
+ * Manages multiple queue connections and drivers, exposing a unified API for pushing and consuming jobs.
+ * Supports lazy-loading drivers to keep the core lightweight.
  *
  * @example
  * ```typescript
@@ -35,7 +35,7 @@ export class QueueManager {
   constructor(config: QueueConfig = {}) {
     this.defaultConnection = config.default ?? 'default'
 
-    // 初始化預設序列化器
+    // Initialize default serializer
     const serializerType = config.defaultSerializer ?? 'class'
     if (serializerType === 'class') {
       this.defaultSerializer = new ClassNameSerializer()
@@ -43,12 +43,12 @@ export class QueueManager {
       this.defaultSerializer = new JsonSerializer()
     }
 
-    // 初始化預設連接（MemoryDriver）
+    // Initialize default connection (MemoryDriver)
     if (!this.drivers.has('default')) {
       this.drivers.set('default', new MemoryDriver())
     }
 
-    // 初始化其他連接（按需載入）
+    // Initialize additional connections
     if (config.connections) {
       for (const [name, connectionConfig] of Object.entries(config.connections)) {
         this.registerConnection(name, connectionConfig)
@@ -57,9 +57,9 @@ export class QueueManager {
   }
 
   /**
-   * 註冊連接
-   * @param name - 連接名稱
-   * @param config - 連接配置
+   * Register a connection.
+   * @param name - Connection name
+   * @param config - Connection config
    */
   registerConnection(name: string, config: unknown): void {
     const driverType = (config as { driver: string }).driver
@@ -70,7 +70,7 @@ export class QueueManager {
         break
 
       case 'database': {
-        // 動態載入 DatabaseDriver
+        // Lazy-load DatabaseDriver
         const { DatabaseDriver } = require('./drivers/DatabaseDriver')
         const dbService = (config as { dbService?: unknown }).dbService
         if (!dbService) {
@@ -89,7 +89,7 @@ export class QueueManager {
       }
 
       case 'redis': {
-        // 動態載入 RedisDriver
+        // Lazy-load RedisDriver
         const { RedisDriver } = require('./drivers/RedisDriver')
         const client = (config as { client?: unknown }).client
         if (!client) {
@@ -108,7 +108,7 @@ export class QueueManager {
       }
 
       case 'kafka': {
-        // 動態載入 KafkaDriver
+        // Lazy-load KafkaDriver
         const { KafkaDriver } = require('./drivers/KafkaDriver')
         const client = (config as { client?: unknown }).client
         if (!client) {
@@ -127,7 +127,7 @@ export class QueueManager {
       }
 
       case 'sqs': {
-        // 動態載入 SQSDriver
+        // Lazy-load SQSDriver
         const { SQSDriver } = require('./drivers/SQSDriver')
         const client = (config as { client?: unknown }).client
         if (!client) {
@@ -155,9 +155,9 @@ export class QueueManager {
   }
 
   /**
-   * 取得驅動
-   * @param connection - 連接名稱
-   * @returns 驅動實例
+   * Get a driver for a connection.
+   * @param connection - Connection name
+   * @returns Driver instance
    */
   getDriver(connection: string): QueueDriver {
     const driver = this.drivers.get(connection)
@@ -168,9 +168,9 @@ export class QueueManager {
   }
 
   /**
-   * 取得序列化器
-   * @param type - 序列化器類型
-   * @returns 序列化器實例
+   * Get a serializer.
+   * @param type - Serializer type
+   * @returns Serializer instance
    */
   getSerializer(type?: string): JobSerializer {
     if (type) {
@@ -184,8 +184,8 @@ export class QueueManager {
   }
 
   /**
-   * 註冊 Job 類別（用於 ClassNameSerializer）
-   * @param jobClasses - Job 類別陣列
+   * Register Job classes (used by ClassNameSerializer).
+   * @param jobClasses - Job class array
    */
   registerJobClasses(jobClasses: Array<new (...args: unknown[]) => Job>): void {
     if (this.defaultSerializer instanceof ClassNameSerializer) {
@@ -194,9 +194,9 @@ export class QueueManager {
   }
 
   /**
-   * 推送 Job 到隊列
-   * @param job - Job 實例
-   * @returns 返回 Job 實例以支援鏈式調用
+   * Push a Job to the queue.
+   * @param job - Job instance
+   * @returns The same job instance (for fluent chaining)
    */
   async push<T extends Job & Queueable>(job: T): Promise<T> {
     const connection = job.connectionName ?? this.defaultConnection
@@ -204,25 +204,25 @@ export class QueueManager {
     const driver = this.getDriver(connection)
     const serializer = this.getSerializer()
 
-    // 序列化 Job
+    // Serialize job
     const serialized = serializer.serialize(job)
 
-    // 推送 to 隊列
+    // Push to queue
     await driver.push(queue, serialized)
 
     return job
   }
 
   /**
-   * 批量推送 Job
-   * @param jobs - Job 陣列
+   * Push multiple jobs.
+   * @param jobs - Job array
    */
   async pushMany<T extends Job & Queueable>(jobs: T[]): Promise<void> {
     if (jobs.length === 0) {
       return
     }
 
-    // 按連接和隊列分組
+    // Group by connection and queue
     const groups = new Map<string, SerializedJob[]>()
     const serializer = this.getSerializer()
 
@@ -238,7 +238,7 @@ export class QueueManager {
       groups.get(key)?.push(serialized)
     }
 
-    // 批量推送
+    // Batch push
     for (const [key, serializedJobs] of groups.entries()) {
       const [connection, queue] = key.split(':')
       const driver = this.getDriver(connection)
@@ -246,7 +246,7 @@ export class QueueManager {
       if (driver.pushMany) {
         await driver.pushMany(queue, serializedJobs)
       } else {
-        // 降級為單個推送
+        // Fallback: push one-by-one
         for (const job of serializedJobs) {
           await driver.push(queue, job)
         }
@@ -255,15 +255,12 @@ export class QueueManager {
   }
 
   /**
-   * 從隊列取出 Job
-   * @param queue - 隊列名稱
-   * @param connection - 連接名稱
-   * @returns Job 實例或 null
+   * Pop a job from the queue.
+   * @param queue - Queue name
+   * @param connection - Connection name
+   * @returns Job instance or null
    */
-  async pop(
-    queue = 'default',
-    connection: string = this.defaultConnection
-  ): Promise<Job | null> {
+  async pop(queue = 'default', connection: string = this.defaultConnection): Promise<Job | null> {
     const driver = this.getDriver(connection)
     const serializer = this.getSerializer()
 
@@ -275,37 +272,30 @@ export class QueueManager {
     try {
       return serializer.deserialize(serialized)
     } catch (error) {
-      // 反序列化失敗，記錄錯誤但繼續處理
+      // Deserialization failure: log and continue
       console.error('[QueueManager] Failed to deserialize job:', error)
       return null
     }
   }
 
   /**
-   * 取得隊列大小
-   * @param queue - 隊列名稱
-   * @param connection - 連接名稱
-   * @returns 隊列中的 Job 數量
+   * Get queue size.
+   * @param queue - Queue name
+   * @param connection - Connection name
+   * @returns Number of jobs in the queue
    */
-  async size(
-    queue = 'default',
-    connection: string = this.defaultConnection
-  ): Promise<number> {
+  async size(queue = 'default', connection: string = this.defaultConnection): Promise<number> {
     const driver = this.getDriver(connection)
     return driver.size(queue)
   }
 
   /**
-   * 清空隊列
-   * @param queue - 隊列名稱
-   * @param connection - 連接名稱
+   * Clear a queue.
+   * @param queue - Queue name
+   * @param connection - Connection name
    */
-  async clear(
-    queue = 'default',
-    connection: string = this.defaultConnection
-  ): Promise<void> {
+  async clear(queue = 'default', connection: string = this.defaultConnection): Promise<void> {
     const driver = this.getDriver(connection)
     await driver.clear(queue)
   }
 }
-

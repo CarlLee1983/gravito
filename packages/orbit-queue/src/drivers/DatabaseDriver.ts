@@ -3,17 +3,17 @@ import type { SerializedJob } from '../types'
 import type { QueueDriver } from './QueueDriver'
 
 /**
- * Database Driver 配置
+ * Database driver configuration.
  */
 export interface DatabaseDriverConfig {
   /**
-   * 資料表名稱（預設：'jobs'）
+   * Table name (default: `jobs`).
    */
   table?: string
 
   /**
-   * DBService 實例（從 orbit-db 取得）
-   * 如果未提供，會嘗試從 Context 取得
+   * DBService instance (from `orbit-db`).
+   * If not provided, it can be resolved from Context in OrbitQueue.
    */
   dbService?: DBService
 }
@@ -21,14 +21,14 @@ export interface DatabaseDriverConfig {
 /**
  * Database Driver
  *
- * 使用資料庫作為隊列儲存。
- * 重用 `orbit-db` 的資料庫連接，不建立新連接。
+ * Uses a database as the queue backend.
+ * Reuses the `orbit-db` connection instead of creating a new connection.
  *
- * **要求**：需要先安裝並配置 `@gravito/orbit-db`。
+ * Requires `@gravito/orbit-db` to be installed and configured.
  *
  * @example
  * ```typescript
- * // 從 Context 取得 DBService
+ * // Get DBService from Context
  * const dbService = c.get('db')
  * const driver = new DatabaseDriver({ dbService, table: 'jobs' })
  *
@@ -51,14 +51,14 @@ export class DatabaseDriver implements QueueDriver {
   }
 
   /**
-   * 推送 Job 到隊列
+   * Push a job to a queue.
    */
   async push(queue: string, job: SerializedJob): Promise<void> {
     const availableAt = job.delaySeconds
       ? new Date(Date.now() + job.delaySeconds * 1000)
       : new Date()
 
-    // 使用 DBService 的 execute 方法執行原始 SQL
+    // Use DBService.execute() to run raw SQL
     await this.dbService.execute(
       `INSERT INTO ${this.tableName} (queue, payload, attempts, available_at, created_at)
        VALUES ($1, $2, $3, $4, $5)`,
@@ -67,12 +67,12 @@ export class DatabaseDriver implements QueueDriver {
   }
 
   /**
-   * 從隊列取出 Job（FIFO，支援延遲）
+   * Pop a job from the queue (FIFO, with delay support).
    */
   async pop(queue: string): Promise<SerializedJob | null> {
-    // 使用 SELECT FOR UPDATE 來鎖定行（PostgreSQL/MySQL）
-    // 注意：SKIP LOCKED 是 PostgreSQL 特定功能，MySQL 8.0+ 也支援
-    // 對於不支援 SKIP LOCKED 的資料庫，會降級為普通 SELECT
+    // Use SELECT FOR UPDATE to lock rows (PostgreSQL/MySQL).
+    // Note: SKIP LOCKED is PostgreSQL-specific, and is supported by MySQL 8.0+ as well.
+    // For databases that don't support SKIP LOCKED, this falls back to a plain SELECT FOR UPDATE.
     const result = await this.dbService
       .execute<{
         id: string
@@ -92,7 +92,7 @@ export class DatabaseDriver implements QueueDriver {
         [queue]
       )
       .catch(() => {
-        // 降級：不支援 SKIP LOCKED 的資料庫
+        // Fallback: DB does not support SKIP LOCKED
         return this.dbService.execute<{
           id: string
           payload: string
@@ -118,7 +118,7 @@ export class DatabaseDriver implements QueueDriver {
 
     const row = result[0]!
 
-    // 標記為已保留
+    // Mark as reserved
     await this.dbService.execute(
       `UPDATE ${this.tableName}
        SET reserved_at = NOW()
@@ -126,7 +126,7 @@ export class DatabaseDriver implements QueueDriver {
       [row.id]
     )
 
-    // 計算延遲時間
+    // Compute delaySeconds
     const createdAt = new Date(row.created_at).getTime()
     const delaySeconds = row.available_at
       ? Math.max(0, Math.floor((new Date(row.available_at).getTime() - createdAt) / 1000))
@@ -134,7 +134,7 @@ export class DatabaseDriver implements QueueDriver {
 
     return {
       id: row.id,
-      type: 'class', // 預設，實際應該從 payload 解析
+      type: 'class', // Default; should be inferred from payload in a full implementation
       data: row.payload,
       createdAt,
       attempts: row.attempts,
@@ -143,7 +143,7 @@ export class DatabaseDriver implements QueueDriver {
   }
 
   /**
-   * 取得隊列大小
+   * Get queue size.
    */
   async size(queue: string): Promise<number> {
     const result = await this.dbService.execute<{ count: number }>(
@@ -159,21 +159,21 @@ export class DatabaseDriver implements QueueDriver {
   }
 
   /**
-   * 清空隊列
+   * Clear a queue.
    */
   async clear(queue: string): Promise<void> {
     await this.dbService.execute(`DELETE FROM ${this.tableName} WHERE queue = $1`, [queue])
   }
 
   /**
-   * 批量推送 Job
+   * Push multiple jobs.
    */
   async pushMany(queue: string, jobs: SerializedJob[]): Promise<void> {
     if (jobs.length === 0) {
       return
     }
 
-    // 使用事務批量插入
+    // Batch insert within a transaction
     await this.dbService.transaction(async (tx) => {
       for (const job of jobs) {
         const availableAt = job.delaySeconds

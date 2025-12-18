@@ -2,11 +2,11 @@ import type { SerializedJob } from '../types'
 import type { QueueDriver } from './QueueDriver'
 
 /**
- * Redis Driver 配置
+ * Redis driver configuration.
  */
 export interface RedisDriverConfig {
   /**
-   * Redis 客戶端實例（ioredis 或 redis）
+   * Redis client instance (ioredis or node-redis).
    */
   client: {
     lpush: (key: string, ...values: string[]) => Promise<number>
@@ -19,7 +19,7 @@ export interface RedisDriverConfig {
   }
 
   /**
-   * Key 前綴（預設：'queue:'）
+   * Key prefix (default: `queue:`).
    */
   prefix?: string
 }
@@ -27,10 +27,10 @@ export interface RedisDriverConfig {
 /**
  * Redis Driver
  *
- * 使用 Redis 作為隊列儲存。
- * 支援 List 結構，使用 LPUSH/RPOP 實現 FIFO 隊列。
+ * Uses Redis as the queue backend.
+ * Implements FIFO via Redis Lists (LPUSH/RPOP).
  *
- * **要求**：需要安裝 `ioredis` 或 `redis` 套件。
+ * Requires `ioredis` or `redis`.
  *
  * @example
  * ```typescript
@@ -58,14 +58,14 @@ export class RedisDriver implements QueueDriver {
   }
 
   /**
-   * 取得完整的 Redis key
+   * Get full Redis key for a queue.
    */
   private getKey(queue: string): string {
     return `${this.prefix}${queue}`
   }
 
   /**
-   * 推送 Job 到隊列（LPUSH，左側插入）
+   * Push a job (LPUSH).
    */
   async push(queue: string, job: SerializedJob): Promise<void> {
     const key = this.getKey(queue)
@@ -80,17 +80,17 @@ export class RedisDriver implements QueueDriver {
       maxAttempts: job.maxAttempts,
     })
 
-    // 如果有延遲，使用有序集合（ZADD）或延遲隊列
+    // For delayed jobs, prefer Sorted Sets (ZADD) when supported
     if (job.delaySeconds && job.delaySeconds > 0) {
       const delayKey = `${key}:delayed`
       const score = Date.now() + job.delaySeconds * 1000
-      // 使用 ZADD 儲存延遲的 Job
+      // Store delayed job in ZSET
       if (typeof (this.client as { zadd: unknown }).zadd === 'function') {
         await (
           this.client as { zadd: (key: string, score: number, member: string) => Promise<number> }
         ).zadd(delayKey, score, payload)
       } else {
-        // 降級：直接推送到主隊列（不支援延遲）
+        // Fallback: push directly (no delay support)
         await this.client.lpush(key, payload)
       }
     } else {
@@ -99,12 +99,12 @@ export class RedisDriver implements QueueDriver {
   }
 
   /**
-   * 從隊列取出 Job（RPOP，右側取出，FIFO）
+   * Pop a job (RPOP, FIFO).
    */
   async pop(queue: string): Promise<SerializedJob | null> {
     const key = this.getKey(queue)
 
-    // 先檢查延遲隊列
+    // Check delayed queue first
     const delayKey = `${key}:delayed`
     if (typeof (this.client as { zrange: unknown }).zrange === 'function') {
       const now = Date.now()
@@ -132,7 +132,7 @@ export class RedisDriver implements QueueDriver {
       }
     }
 
-    // 從主隊列取出
+    // Pop from main queue
     const payload = await this.client.rpop(key)
     if (!payload) {
       return null
@@ -142,7 +142,7 @@ export class RedisDriver implements QueueDriver {
   }
 
   /**
-   * 解析 Redis payload
+   * Parse Redis payload.
    */
   private parsePayload(payload: string): SerializedJob {
     const parsed = JSON.parse(payload)
@@ -159,7 +159,7 @@ export class RedisDriver implements QueueDriver {
   }
 
   /**
-   * 取得隊列大小
+   * Get queue size.
    */
   async size(queue: string): Promise<number> {
     const key = this.getKey(queue)
@@ -167,7 +167,7 @@ export class RedisDriver implements QueueDriver {
   }
 
   /**
-   * 清空隊列
+   * Clear a queue.
    */
   async clear(queue: string): Promise<void> {
     const key = this.getKey(queue)
@@ -179,7 +179,7 @@ export class RedisDriver implements QueueDriver {
   }
 
   /**
-   * 批量推送 Job
+   * Push multiple jobs.
    */
   async pushMany(queue: string, jobs: SerializedJob[]): Promise<void> {
     if (jobs.length === 0) {
@@ -204,7 +204,7 @@ export class RedisDriver implements QueueDriver {
   }
 
   /**
-   * 批量取出 Job
+   * Pop multiple jobs.
    */
   async popMany(queue: string, count: number): Promise<SerializedJob[]> {
     const key = this.getKey(queue)

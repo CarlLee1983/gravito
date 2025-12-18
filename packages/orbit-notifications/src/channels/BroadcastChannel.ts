@@ -1,10 +1,10 @@
-import type { NotificationChannel, Notifiable } from '../types'
 import type { Notification } from '../Notification'
+import type { Notifiable, NotificationChannel } from '../types'
 
 /**
- * 廣播通道
+ * Broadcast channel.
  *
- * 通過廣播服務發送通知。
+ * Sends notifications via a broadcast service.
  */
 export class BroadcastChannel implements NotificationChannel {
   constructor(
@@ -22,7 +22,7 @@ export class BroadcastChannel implements NotificationChannel {
     const notifiableId = notifiable.getNotifiableId()
     const notifiableType = notifiable.getNotifiableType?.() || 'user'
 
-    // 廣播到私有頻道
+    // Broadcast to a private channel.
     const channel = `private-${notifiableType}.${notifiableId}`
 
     await this.broadcastService.broadcast(
@@ -32,4 +32,3 @@ export class BroadcastChannel implements NotificationChannel {
     )
   }
 }
-

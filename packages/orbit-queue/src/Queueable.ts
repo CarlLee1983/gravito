@@ -1,8 +1,8 @@
 /**
- * Queueable 介面
+ * Queueable interface.
  *
- * 實作此介面的類別可以被推送到隊列中執行。
- * 這個介面提供了設定隊列、連接和延遲的方法。
+ * Classes implementing this interface can be pushed to a queue for execution.
+ * Provides a fluent API for queue/connection/delay configuration.
  *
  * @example
  * ```typescript
@@ -30,38 +30,38 @@
  */
 export interface Queueable {
   /**
-   * 隊列名稱，Job 應該被推送到這個隊列
+   * Queue name where the job should be pushed.
    */
   queueName?: string
 
   /**
-   * 連接名稱，Job 應該使用這個連接
+   * Connection name the job should use.
    */
   connectionName?: string
 
   /**
-   * 延遲執行時間（秒）
+   * Delay before execution (seconds).
    */
   delaySeconds?: number
 
   /**
-   * 設定目標隊列
-   * @param queue - 隊列名稱
-   * @returns 返回自身以支援鏈式調用
+   * Set target queue.
+   * @param queue - Queue name
+   * @returns Self for fluent chaining
    */
   onQueue(queue: string): this
 
   /**
-   * 設定目標連接
-   * @param connection - 連接名稱
-   * @returns 返回自身以支援鏈式調用
+   * Set target connection.
+   * @param connection - Connection name
+   * @returns Self for fluent chaining
    */
   onConnection(connection: string): this
 
   /**
-   * 設定延遲執行時間（秒）
-   * @param delay - 延遲秒數
-   * @returns 返回自身以支援鏈式調用
+   * Set delay (seconds).
+   * @param delay - Delay seconds
+   * @returns Self for fluent chaining
    */
   delay(delay: number): this
 }

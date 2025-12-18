@@ -3,18 +3,18 @@ import { Hono } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 import type { ContentfulStatusCode } from 'hono/utils/http-status'
 import { ConfigManager } from './ConfigManager'
+import { Container } from './Container'
+import { EventManager } from './EventManager'
+import { GravitoException } from './exceptions/GravitoException'
+import { ValidationException } from './exceptions/ValidationException'
 import {
   type RegisterGlobalErrorHandlersOptions,
   registerGlobalErrorHandlers,
 } from './GlobalErrorHandlers'
-import { EventManager } from './EventManager'
 import { HookManager } from './HookManager'
 import { fail } from './helpers/response'
 import { ConsoleLogger, type Logger } from './Logger'
-import { Container } from './Container'
-import { ServiceProvider } from './ServiceProvider'
-import { GravitoException } from './exceptions/GravitoException'
-import { ValidationException } from './exceptions/ValidationException'
+import type { ServiceProvider } from './ServiceProvider'
 
 /**
  * CacheService interface for orbit-injected cache
@@ -277,18 +277,18 @@ export class PlanetCore {
         payload: fail(message, code, details),
         ...(wantsHtml
           ? {
-            html: {
-              templates: status === 500 ? ['errors/500'] : [`errors/${status}`, 'errors/500'],
-              data: {
-                status,
-                message,
-                code,
-                error: !isProduction && err instanceof Error ? err.stack : undefined,
-                debug: !isProduction,
-                details,
+              html: {
+                templates: status === 500 ? ['errors/500'] : [`errors/${status}`, 'errors/500'],
+                data: {
+                  status,
+                  message,
+                  code,
+                  error: !isProduction && err instanceof Error ? err.stack : undefined,
+                  debug: !isProduction,
+                  details,
+                },
               },
-            },
-          }
+            }
           : {}),
       }
 
@@ -365,16 +365,16 @@ export class PlanetCore {
         payload: fail('Route not found', 'NOT_FOUND'),
         ...(wantsHtml
           ? {
-            html: {
-              templates: ['errors/404', 'errors/500'],
-              data: {
-                status: 404,
-                message: 'Route not found',
-                code: 'NOT_FOUND',
-                debug: !isProduction,
+              html: {
+                templates: ['errors/404', 'errors/500'],
+                data: {
+                  status: 404,
+                  message: 'Route not found',
+                  code: 'NOT_FOUND',
+                  debug: !isProduction,
+                },
               },
-            },
-          }
+            }
           : {}),
       }
 
@@ -455,8 +455,7 @@ export class PlanetCore {
   }
 
   /**
-   * 掛載軌道 (Orbit)
-   * 將外部的 Hono app 掛載到指定路徑
+   * Mount an Orbit (a Hono app) to a path.
    */
   mountOrbit(path: string, orbitApp: Hono): void {
     this.logger.info(`Mounting orbit at path: ${path}`)
@@ -464,11 +463,12 @@ export class PlanetCore {
   }
 
   /**
-   * 啟動核心 (Liftoff)
-   * 回傳用於 Bun.serve 的設定物件
+   * Start the core (Liftoff).
+   *
+   * Returns a config object for `Bun.serve`.
    */
   liftoff(port?: number): { port: number; fetch: Function; core: PlanetCore } {
-    // 優先使用參數 > 設定檔 > 預設值
+    // Priority: argument > config > default
     const finalPort = port ?? this.config.get<number>('PORT', 3000)
 
     // Call hooks before liftoff

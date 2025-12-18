@@ -1,10 +1,10 @@
-import type { NotificationChannel, Notifiable } from '../types'
 import type { Notification } from '../Notification'
+import type { Notifiable, NotificationChannel } from '../types'
 
 /**
- * 郵件通道
+ * Mail channel.
  *
- * 通過郵件服務發送通知。
+ * Sends notifications via the mail service.
  */
 export class MailChannel implements NotificationChannel {
   constructor(
@@ -22,4 +22,3 @@ export class MailChannel implements NotificationChannel {
     await this.mailService.send(message)
   }
 }
-

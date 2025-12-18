@@ -2,7 +2,7 @@ import type { PlanetCore } from 'gravito-core'
 import type { BroadcastDriver } from './drivers/BroadcastDriver'
 
 /**
- * 頻道授權回調
+ * Channel authorization callback.
  */
 export type ChannelAuthorizationCallback = (
   channel: string,
@@ -11,9 +11,9 @@ export type ChannelAuthorizationCallback = (
 ) => Promise<boolean>
 
 /**
- * 廣播管理器
+ * Broadcast manager.
  *
- * 負責管理廣播驅動並處理廣播請求。
+ * Responsible for managing the broadcast driver and handling broadcast requests.
  */
 export class BroadcastManager {
   private driver: BroadcastDriver | null = null
@@ -22,26 +22,26 @@ export class BroadcastManager {
   constructor(private core: PlanetCore) {}
 
   /**
-   * 設置廣播驅動
+   * Set the broadcast driver.
    */
   setDriver(driver: BroadcastDriver): void {
     this.driver = driver
   }
 
   /**
-   * 設置頻道授權回調
+   * Set the channel authorization callback.
    */
   setAuthCallback(callback: ChannelAuthorizationCallback): void {
     this.authCallback = callback
   }
 
   /**
-   * 廣播事件
+   * Broadcast an event.
    *
-   * @param event - 事件實例
-   * @param channel - 頻道物件
-   * @param data - 事件資料
-   * @param eventName - 事件名稱
+   * @param event - Event instance
+   * @param channel - Channel object
+   * @param data - Event payload
+   * @param eventName - Event name
    */
   async broadcast(
     event: unknown,
@@ -63,19 +63,19 @@ export class BroadcastManager {
   }
 
   /**
-   * 授權頻道存取
+   * Authorize channel access.
    *
-   * @param channel - 頻道名稱
+   * @param channel - Channel name
    * @param socketId - Socket ID
-   * @param userId - 使用者 ID（可選）
-   * @returns 授權資訊
+   * @param userId - User ID (optional)
+   * @returns Authorization payload
    */
   async authorizeChannel(
     channel: string,
     socketId: string,
     userId?: string | number
   ): Promise<{ auth: string; channel_data?: string } | null> {
-    // 檢查授權回調
+    // Check authorization callback first.
     if (this.authCallback) {
       const authorized = await this.authCallback(channel, socketId, userId)
       if (!authorized) {
@@ -83,18 +83,17 @@ export class BroadcastManager {
       }
     }
 
-    // 如果驅動支援授權，使用它
+    // If the driver supports authorization, use it.
     if (this.driver?.authorizeChannel) {
       return await this.driver.authorizeChannel(channel, socketId, userId)
     }
 
-    // 預設拒絕私有頻道和存在頻道
+    // Default deny for private/presence channels.
     if (channel.startsWith('private-') || channel.startsWith('presence-')) {
       return null
     }
 
-    // 公開頻道不需要授權
+    // Public channels do not require authorization.
     return { auth: '' }
   }
 }
-

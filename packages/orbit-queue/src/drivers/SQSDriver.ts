@@ -2,11 +2,11 @@ import type { SerializedJob } from '../types'
 import type { QueueDriver } from './QueueDriver'
 
 /**
- * SQS Driver 配置
+ * SQS driver configuration.
  */
 export interface SQSDriverConfig {
   /**
-   * SQS 客戶端實例（@aws-sdk/client-sqs）
+   * SQS client instance (`@aws-sdk/client-sqs`).
    */
   client: {
     send: (command: unknown) => Promise<{
@@ -20,17 +20,17 @@ export interface SQSDriverConfig {
   }
 
   /**
-   * 隊列 URL 前綴（用於構建完整的隊列 URL）
+   * Queue URL prefix (used to build full queue URLs).
    */
   queueUrlPrefix?: string
 
   /**
-   * 可見性超時（秒，預設：30）
+   * Visibility timeout (seconds, default: 30).
    */
   visibilityTimeout?: number
 
   /**
-   * 長輪詢時間（秒，預設：20）
+   * Long-polling duration (seconds, default: 20).
    */
   waitTimeSeconds?: number
 }
@@ -38,10 +38,10 @@ export interface SQSDriverConfig {
 /**
  * SQS Driver
  *
- * 使用 AWS SQS 作為隊列儲存。
- * 支援標準隊列和 FIFO 隊列、長輪詢、死信隊列等企業級功能。
+ * Uses AWS SQS as the queue backend.
+ * Supports standard/FIFO queues, long polling, DLQ setups, etc.
  *
- * **要求**：需要安裝 `@aws-sdk/client-sqs` 套件。
+ * Requires `@aws-sdk/client-sqs`.
  *
  * @example
  * ```typescript
@@ -80,27 +80,27 @@ export class SQSDriver implements QueueDriver {
   }
 
   /**
-   * 取得隊列 URL
+   * Resolve the full queue URL.
    */
   private async getQueueUrl(queue: string): Promise<string> {
     if (this.queueUrls.has(queue)) {
       return this.queueUrls.get(queue)!
     }
 
-    // 嘗試從前綴構建 URL
+    // Build from prefix if provided
     if (this.queueUrlPrefix) {
       const url = `${this.queueUrlPrefix}/${queue}`
       this.queueUrls.set(queue, url)
       return url
     }
 
-    // 如果沒有前綴，假設 queue 已經是完整的 URL
+    // Otherwise, assume `queue` is already a full URL
     this.queueUrls.set(queue, queue)
     return queue
   }
 
   /**
-   * 推送 Job 到隊列
+   * Push a job to SQS.
    */
   async push(queue: string, job: SerializedJob): Promise<void> {
     const { SendMessageCommand } = await import('@aws-sdk/client-sqs')
@@ -117,7 +117,7 @@ export class SQSDriver implements QueueDriver {
       maxAttempts: job.maxAttempts,
     })
 
-    const delaySeconds = job.delaySeconds ? Math.min(job.delaySeconds, 900) : 0 // SQS 最大延遲 15 分鐘
+    const delaySeconds = job.delaySeconds ? Math.min(job.delaySeconds, 900) : 0 // SQS max delay is 15 minutes
 
     await this.client.send(
       new SendMessageCommand({
@@ -129,7 +129,7 @@ export class SQSDriver implements QueueDriver {
   }
 
   /**
-   * 從隊列取出 Job（長輪詢）
+   * Pop a job (long polling).
    */
   async pop(queue: string): Promise<SerializedJob | null> {
     const { ReceiveMessageCommand } = await import('@aws-sdk/client-sqs')
@@ -160,13 +160,13 @@ export class SQSDriver implements QueueDriver {
       delaySeconds: payload.delaySeconds,
       attempts: payload.attempts,
       maxAttempts: payload.maxAttempts,
-      // 儲存 ReceiptHandle 用於確認
+      // Store ReceiptHandle for acknowledgement
       ...(message.ReceiptHandle && { receiptHandle: message.ReceiptHandle }),
     } as SerializedJob & { receiptHandle?: string }
   }
 
   /**
-   * 取得隊列大小（近似值）
+   * Get queue size (approximate).
    */
   async size(queue: string): Promise<number> {
     const { GetQueueAttributesCommand } = await import('@aws-sdk/client-sqs')
@@ -188,22 +188,23 @@ export class SQSDriver implements QueueDriver {
   }
 
   /**
-   * 清空隊列（刪除所有消息）
+   * Clear a queue by receiving and deleting messages.
    *
-   * **注意**：SQS 不直接支援清空操作，此方法會持續接收並刪除消息直到隊列為空。
+   * Note: SQS does not provide a direct "purge" API via this wrapper. This method will
+   * keep receiving and deleting messages until the queue is empty.
    */
   async clear(queue: string): Promise<void> {
     const { DeleteMessageCommand } = await import('@aws-sdk/client-sqs')
     const queueUrl = await this.getQueueUrl(queue)
 
-    // 持續接收並刪除消息
+    // Keep receiving and deleting
     while (true) {
       const job = await this.pop(queue)
       if (!job) {
         break
       }
 
-      // 刪除消息
+      // Delete message
       if ((job as SerializedJob & { receiptHandle?: string }).receiptHandle) {
         await this.client.send(
           new DeleteMessageCommand({
@@ -216,7 +217,7 @@ export class SQSDriver implements QueueDriver {
   }
 
   /**
-   * 批量推送 Job
+   * Push multiple jobs.
    */
   async pushMany(queue: string, jobs: SerializedJob[]): Promise<void> {
     if (jobs.length === 0) {
@@ -226,7 +227,7 @@ export class SQSDriver implements QueueDriver {
     const { SendMessageBatchCommand } = await import('@aws-sdk/client-sqs')
     const queueUrl = await this.getQueueUrl(queue)
 
-    // SQS 批量操作最多 10 條消息
+    // SQS batch operations are limited to 10 entries
     const batchSize = 10
     for (let i = 0; i < jobs.length; i += batchSize) {
       const batch = jobs.slice(i, i + batchSize)
@@ -259,17 +260,15 @@ export class SQSDriver implements QueueDriver {
   }
 
   /**
-   * 確認消息已處理
+   * Acknowledge is not supported via messageId.
    */
   async acknowledge(_messageId: string): Promise<void> {
-    // SQS 使用 ReceiptHandle 來確認消息
-    // 此方法需要從消息中取得 ReceiptHandle
-    // 實際使用時應該在 pop() 返回的 job 中包含 receiptHandle
+    // SQS acknowledgements require a ReceiptHandle.
     throw new Error('[SQSDriver] Use deleteMessage() with ReceiptHandle instead of acknowledge().')
   }
 
   /**
-   * 刪除消息（確認處理完成）
+   * Delete a message (acknowledge processing completion).
    */
   async deleteMessage(queue: string, receiptHandle: string): Promise<void> {
     const { DeleteMessageCommand } = await import('@aws-sdk/client-sqs')

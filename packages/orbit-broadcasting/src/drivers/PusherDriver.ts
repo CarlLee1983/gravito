@@ -1,7 +1,7 @@
 import type { BroadcastDriver } from './BroadcastDriver'
 
 /**
- * Pusher 驅動配置
+ * Pusher driver configuration.
  */
 export interface PusherDriverConfig {
   appId: string
@@ -12,9 +12,9 @@ export interface PusherDriverConfig {
 }
 
 /**
- * Pusher 驅動
+ * Pusher driver.
  *
- * 通過 Pusher 服務進行廣播。
+ * Broadcasts through the Pusher service.
  */
 export class PusherDriver implements BroadcastDriver {
   private baseUrl: string
@@ -88,7 +88,7 @@ export class PusherDriver implements BroadcastDriver {
   }
 
   private async hmacSHA256(message: string, secret: string): Promise<string> {
-    // 使用 Web Crypto API
+    // Uses the Web Crypto API.
     const encoder = new TextEncoder()
     const keyData = encoder.encode(secret)
     const messageData = encoder.encode(message)
@@ -107,9 +107,7 @@ export class PusherDriver implements BroadcastDriver {
   }
 
   private md5(text: string): string {
-    // 簡化的 MD5 實作（實際應該使用完整的 MD5 實作）
-    // 這裡僅作為範例，生產環境應該使用完整的 MD5 實作
+    // Simplified MD5 implementation (production should use a proper MD5 implementation).
     return btoa(text).replace(/[+/=]/g, '').substring(0, 32)
   }
 }
-

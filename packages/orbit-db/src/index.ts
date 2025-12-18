@@ -21,7 +21,7 @@ export interface OrbitDBOptions<TSchema extends Record<string, unknown> = Record
  * Standard Database Orbit (Class Implementation)
  */
 export class OrbitDB implements GravitoOrbit {
-  constructor(private options?: OrbitDBOptions) { }
+  constructor(private options?: OrbitDBOptions) {}
 
   install(core: PlanetCore): void {
     // Try to resolve config from core if not provided in constructor
@@ -43,13 +43,13 @@ export class OrbitDB implements GravitoOrbit {
       databaseType: providedDatabaseType,
     } = config
 
-    // 檢測資料庫類型
+    // Detect database type.
     const databaseType =
       providedDatabaseType === 'auto' || !providedDatabaseType
         ? detectDatabaseType(db)
         : providedDatabaseType
 
-    // 根據資料庫類型設定健康檢查查詢（PostgreSQL 優先）
+    // Set health check query based on database type (PostgreSQL prioritized).
     const defaultHealthCheckQuery =
       healthCheckQuery || (databaseType === 'postgresql' ? 'SELECT 1' : 'SELECT 1')
 
@@ -57,7 +57,7 @@ export class OrbitDB implements GravitoOrbit {
       `[OrbitDB] Initializing database integration (Exposed as: ${exposeAs}, Type: ${databaseType})`
     )
 
-    // 建立 DBService
+    // Create DBService.
     const dbService = new DBServiceImpl(
       db,
       core,
@@ -68,10 +68,10 @@ export class OrbitDB implements GravitoOrbit {
       defaultHealthCheckQuery
     )
 
-    // 1. 初始化所有已註冊的 Model
+    // 1. Initialize all registered Models.
     ModelRegistry.initialize(dbService)
 
-    // 2. 設定所有 Model 的 core 實例（用於觸發事件）
+    // 2. Set core instance on all Models (for emitting events).
     if (core) {
       ModelRegistry.setCore(core)
     }
@@ -79,7 +79,7 @@ export class OrbitDB implements GravitoOrbit {
     // 3. Action: Database Connected
     core.hooks.doAction('db:connected', { db, dbService, databaseType })
 
-    // 3. Middleware injection - 注入 DBService，同時保持向後相容（可透過 raw 存取原始實例）
+    // 3. Middleware injection - inject DBService (keep backward compatibility via `raw` access).
     core.app.use('*', async (c: Context, next: Next) => {
       c.set(exposeAs, dbService)
       await next()
@@ -96,15 +96,17 @@ export default function orbitDB<TSchema extends Record<string, unknown>>(
 ) {
   const orbit = new OrbitDB(options)
   orbit.install(core)
-  // 返回原始 db 實例以保持向後相容
+  // Return raw db instance for backward compatibility.
   return { db: options.db }
 }
 
 export type { DBService } from './DBService'
 export { DBServiceImpl, detectDatabaseType } from './DBService'
+export type { MigrationDriver, MigrationResult } from './MigrationDriver'
+export { DrizzleMigrationDriver } from './MigrationDriver'
 export type { ModelStatic } from './Model'
 export { Model, ModelRegistry } from './Model'
-// 匯出型別和服務
+// Export types and services
 export type {
   DatabaseType,
   DeployOptions,
@@ -118,6 +120,3 @@ export type {
   SeedFunction,
   SeedResult,
 } from './types'
-
-export type { MigrationDriver, MigrationResult } from './MigrationDriver'
-export { DrizzleMigrationDriver } from './MigrationDriver'

@@ -1,23 +1,23 @@
 /**
- * Resource Transformer - 明確的資料轉換機制
+ * Resource Transformer - explicit data transformation.
  *
- * 類似 Laravel 的 API Resources，明確知道資料在哪裡被轉換
+ * Similar to Laravel API Resources: transformation happens in an explicit, discoverable place.
  */
 export abstract class ResourceTransformer<TModel = any, TResource = any> {
   /**
-   * 轉換單個模型為資源
+   * Transform a single model into a resource.
    */
   abstract transform(model: TModel): TResource
 
   /**
-   * 轉換多個模型為資源陣列
+   * Transform multiple models into a resource array.
    */
   transformMany(models: TModel[]): TResource[] {
     return models.map((model) => this.transform(model))
   }
 
   /**
-   * 轉換模型集合為資源陣列
+   * Transform a model collection into a resource array.
    */
   transformCollection(models: TModel[] | { toArray(): TModel[] }): TResource[] {
     const array = Array.isArray(models) ? models : models.toArray()
@@ -25,21 +25,21 @@ export abstract class ResourceTransformer<TModel = any, TResource = any> {
   }
 
   /**
-   * 包含關聯資料（可選）
+   * Include relation data (optional).
    */
   with?(relation: string): this {
     return this
   }
 
   /**
-   * 排除欄位（可選）
+   * Exclude fields (optional).
    */
   except?(fields: string[]): this {
     return this
   }
 
   /**
-   * 只包含指定欄位（可選）
+   * Only include specific fields (optional).
    */
   only?(fields: string[]): this {
     return this
@@ -47,7 +47,7 @@ export abstract class ResourceTransformer<TModel = any, TResource = any> {
 }
 
 /**
- * Resource Transformer 工廠函數
+ * Resource Transformer factory.
  */
 export function createTransformer<TModel, TResource>(
   transformFn: (model: TModel) => TResource

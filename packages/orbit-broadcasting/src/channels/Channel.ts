@@ -1,20 +1,20 @@
 /**
- * 頻道基礎介面
+ * Base channel interface.
  */
 export interface Channel {
   /**
-   * 頻道名稱
+   * Channel name.
    */
   name: string
 
   /**
-   * 頻道類型
+   * Channel type.
    */
   type: 'public' | 'private' | 'presence'
 }
 
 /**
- * 公開頻道
+ * Public channel.
  */
 export class PublicChannel implements Channel {
   type = 'public' as const
@@ -23,7 +23,7 @@ export class PublicChannel implements Channel {
 }
 
 /**
- * 私有頻道
+ * Private channel.
  */
 export class PrivateChannel implements Channel {
   type = 'private' as const
@@ -32,11 +32,10 @@ export class PrivateChannel implements Channel {
 }
 
 /**
- * 存在頻道（可追蹤線上使用者）
+ * Presence channel (can track online users).
  */
 export class PresenceChannel implements Channel {
   type = 'presence' as const
 
   constructor(public name: string) {}
 }
-

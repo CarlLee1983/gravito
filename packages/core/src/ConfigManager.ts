@@ -1,22 +1,23 @@
 /**
- * 設定管理器 (ConfigManager)
- * 統一管理環境變數與應用程式設定
+ * Configuration manager (ConfigManager)
+ *
+ * Unifies environment variables and application configuration access.
  */
 export class ConfigManager {
   private config: Map<string, unknown> = new Map()
 
   constructor(initialConfig: Record<string, unknown> = {}) {
-    // 1. 載入傳入的初始設定
+    // 1. Load initial config
     for (const [key, value] of Object.entries(initialConfig)) {
       this.config.set(key, value)
     }
 
-    // 2. 自動載入 Bun 的環境變數
+    // 2. Auto-load Bun environment variables
     this.loadEnv()
   }
 
   /**
-   * 從 Bun.env 載入所有環境變數
+   * Load all environment variables from `Bun.env`.
    */
   private loadEnv() {
     const env = Bun.env
@@ -28,8 +29,7 @@ export class ConfigManager {
   }
 
   /**
-   * 取得設定值
-   * 支援泛型回傳
+   * Get a configuration value (generic return type supported).
    */
   // biome-ignore lint/suspicious/noExplicitAny: convenient for users
   get<T = any>(key: string, defaultValue?: T): T {
@@ -43,14 +43,14 @@ export class ConfigManager {
   }
 
   /**
-   * 設定值
+   * Set a configuration value.
    */
   set(key: string, value: unknown): void {
     this.config.set(key, value)
   }
 
   /**
-   * 檢查是否存在
+   * Check whether a key exists.
    */
   has(key: string): boolean {
     return this.config.has(key)

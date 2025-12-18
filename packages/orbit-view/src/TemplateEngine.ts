@@ -9,7 +9,7 @@ export interface RenderOptions {
 }
 
 /**
- * Helper 函數類型定義
+ * Helper function type definition.
  */
 export type HelperFunction = (
   args: Record<string, string | number | boolean>,
@@ -26,14 +26,14 @@ export class TemplateEngine {
   }
 
   /**
-   * 註冊 helper 函數
+   * Register a helper function.
    */
   public registerHelper(name: string, fn: HelperFunction): void {
     this.helpers.set(name, fn)
   }
 
   /**
-   * 移除 helper 函數
+   * Unregister a helper function.
    */
   public unregisterHelper(name: string): void {
     this.helpers.delete(name)
@@ -176,26 +176,26 @@ export class TemplateEngine {
   }
 
   /**
-   * 處理 helper 函數調用
-   * 語法：{{helper arg1=value1 arg2="value2" arg3=123}}
+   * Process helper invocations.
+   * Syntax: `{{helper arg1=value1 arg2="value2" arg3=123}}`
    */
   private processHelpers(template: string, data: Record<string, unknown>): string {
-    // 匹配 {{helper arg1=value1 arg2="value2"}}
-    // 不匹配已處理的變數插值（單一變數名）
+    // Match `{{helper arg1=value1 arg2="value2"}}`
+    // but avoid matching plain variable interpolation (`{{ key }}`).
     return template.replace(
       /\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*)\s+([^}]+)\s*\}\}/g,
       (match, helperName, argsString) => {
-        // 檢查是否是已註冊的 helper
+        // Check if this is a registered helper
         const helper = this.helpers.get(helperName)
         if (!helper) {
-          // 不是 helper，返回原樣（讓 interpolate 處理）
+          // Not a helper: return as-is (let interpolate handle it)
           return match
         }
 
-        // 解析參數
+        // Parse arguments
         const args = this.parseHelperArgs(argsString)
 
-        // 調用 helper 函數
+        // Execute helper
         try {
           return helper(args, data)
         } catch (error) {
@@ -207,13 +207,13 @@ export class TemplateEngine {
   }
 
   /**
-   * 解析 helper 函數參數
-   * 支援：arg=value, arg="value", arg='value', arg=123, arg=true
+   * Parse helper arguments.
+   * Supports: `arg=value`, `arg="value"`, `arg='value'`, `arg=123`, `arg=true`
    */
   private parseHelperArgs(argsString: string): Record<string, string | number | boolean> {
     const args: Record<string, string | number | boolean> = {}
 
-    // 匹配 key=value 或 key="value" 或 key='value'
+    // Match key=value, key="value", key='value'
     const argPattern = /(\w+)\s*=\s*("([^"]*)"|'([^']*)'|(\d+\.?\d*)|(true|false)|([^\s}]+))/g
     let match: RegExpExecArray | null = argPattern.exec(argsString)
 

@@ -1,16 +1,16 @@
 /**
- * 型別定義檔案
+ * Type-only exports.
  *
- * 重要：此檔案僅導出型別，不引入任何 runtime 依賴。
- * 這樣前端專案在 import 時才不會報錯（因為前端環境沒有 Bun/Node runtime）。
+ * Important: this file exports types only and must not import any runtime dependencies.
+ * This prevents frontend bundlers from failing when importing types (since the frontend runtime
+ * does not include Bun/Node APIs).
  *
- * 使用 import type 確保只引入型別資訊，不會執行任何程式碼。
+ * Use `import type` to ensure only type information is imported.
  */
 import type { AppRoutes } from './app'
 
 /**
- * 應用程式的路由型別
- * 從 app.ts 推導而來，包含所有 API 端點的完整型別資訊
+ * Application routes type.
+ * Inferred from `app.ts`, containing full type information for all API endpoints.
  */
 export type { AppRoutes }
-

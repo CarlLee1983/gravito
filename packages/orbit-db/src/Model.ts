@@ -9,7 +9,7 @@ type Table = any
 type WhereCondition = any
 
 /**
- * 關聯定義類型
+ * Relation definition type.
  */
 export type RelationType =
   | 'hasMany'
@@ -21,24 +21,24 @@ export type RelationType =
   | 'morphOne'
 
 /**
- * 關聯定義
+ * Relation definition.
  */
 export interface RelationDefinition {
   type: RelationType
-  model?: ModelStatic // morphTo 可能不需要 model
+  model?: ModelStatic // `morphTo` may not need a model
   foreignKey?: string
   localKey?: string
   pivotTable?: string
   pivotForeignKey?: string
   pivotRelatedKey?: string
-  // 多態關聯專用欄位
-  morphType?: string // 多態類型欄位名稱（如 'commentable_type'）
-  morphId?: string // 多態 ID 欄位名稱（如 'commentable_id'）
-  morphMap?: Map<string, ModelStatic> // 多態類型映射（如 'Post' -> PostModel）
+  // Polymorphic relation fields
+  morphType?: string // Polymorphic type column name (e.g. 'commentable_type')
+  morphId?: string // Polymorphic id column name (e.g. 'commentable_id')
+  morphMap?: Map<string, ModelStatic> // Polymorphic type map (e.g. 'Post' -> PostModel)
 }
 
 /**
- * 型別轉換定義
+ * Attribute cast definition.
  */
 export type CastType = 'string' | 'number' | 'boolean' | 'date' | 'json' | 'array'
 
@@ -47,7 +47,7 @@ export interface CastsDefinition {
 }
 
 /**
- * Model 靜態介面（用於型別推斷）
+ * Model static interface (for type inference).
  */
 export interface ModelStatic<T extends Model = Model> {
   new (): T
@@ -117,9 +117,9 @@ export interface ModelStatic<T extends Model = Model> {
 }
 
 /**
- * Model 基類（參考 Laravel Eloquent，但底層使用 Drizzle 保持效能）
+ * Base Model class (inspired by Laravel Eloquent, but built on Drizzle for performance).
  *
- * 使用範例：
+ * Example:
  * ```typescript
  * export class User extends Model {
  *   static table = usersTable;
@@ -132,14 +132,14 @@ export interface ModelStatic<T extends Model = Model> {
  *   };
  * }
  *
- * // 使用
+ * // Usage
  * const user = await User.find(1);
  * const user = await User.where('email', 'john@example.com');
  * const users = await User.all();
  * ```
  */
 export abstract class Model<TAttributes = Record<string, unknown>> {
-  // 靜態屬性，需要在子類中設定
+  // Static properties (must be configured by subclasses)
   protected static table?: Table
   protected static tableName?: string
   protected static primaryKey = 'id'
@@ -158,9 +158,9 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
   protected static usesSoftDeletes = false
   protected static localScopes: Map<string, (query: unknown) => unknown> = new Map()
   protected static globalScopes: Array<(query: unknown) => unknown> = []
-  protected static core?: PlanetCore // 用於觸發事件
+  protected static core?: PlanetCore // Used to emit events
 
-  // 實例屬性
+  // Instance properties
   public attributes: Partial<TAttributes> = {}
   private relationsCache: Map<string, unknown> = new Map()
   private relationsLoaded: Set<string> = new Set()
@@ -169,7 +169,7 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
   public wasRecentlyCreated = false
 
   /**
-   * 設定 DBService（需要在應用啟動時設定）
+   * Set DBService (must be set during application bootstrap).
    */
   static setDBService(dbService: DBService): void {
     const modelClass = this as unknown as typeof Model
@@ -177,7 +177,7 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
   }
 
   /**
-   * 設定表實例
+   * Set table instance.
    */
   static setTable(table: Table, tableName: string): void {
     const modelClass = this as unknown as typeof Model
@@ -186,7 +186,7 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
   }
 
   /**
-   * 獲取表實例
+   * Get table instance.
    */
   protected static getTable(): Table {
     const modelClass = this as unknown as typeof Model
@@ -200,7 +200,7 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
   }
 
   /**
-   * 獲取 DBService
+   * Get DBService.
    */
   protected static getDBService(): DBService {
     const modelClass = this as unknown as typeof Model
@@ -214,7 +214,7 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
   }
 
   /**
-   * 獲取主鍵名稱
+   * Get primary key name.
    */
   protected static getPrimaryKey(): string {
     const modelClass = this as unknown as typeof Model
@@ -222,7 +222,7 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
   }
 
   /**
-   * 根據 ID 查詢（類似 Laravel 的 find）
+   * Find by ID (similar to Laravel's `find`).
    */
   static async find<T extends Model>(this: ModelStatic<T>, id: unknown): Promise<T | null> {
     const modelClass = this as unknown as typeof Model
@@ -237,7 +237,7 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
   }
 
   /**
-   * 查詢單筆記錄（類似 Laravel 的 where()->first()）
+   * Find a single record (similar to `where()->first()`).
    */
   static async where<T extends Model>(
     this: ModelStatic<T>,
@@ -248,7 +248,7 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
   }
 
   /**
-   * 使用多個條件查詢單筆記錄
+   * Find a single record with multiple conditions.
    */
   static async whereMany<T extends Model>(
     this: ModelStatic<T>,
@@ -266,14 +266,14 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
   }
 
   /**
-   * 開始查詢建構器（鏈式查詢）
+   * Start a query builder (fluent chaining).
    */
   static query<T extends Model>(this: ModelStatic<T>): QueryBuilder<T> {
     return new QueryBuilder<T>(this)
   }
 
   /**
-   * 查詢所有記錄（類似 Laravel 的 all()）
+   * Fetch all records (similar to Laravel's `all()`).
    */
   static async all<T extends Model>(
     this: ModelStatic<T>,
@@ -283,7 +283,7 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
   }
 
   /**
-   * 查詢所有記錄（帶條件）
+   * Fetch records with optional conditions.
    */
   static async findAll<T extends Model>(
     this: ModelStatic<T>,
@@ -294,14 +294,14 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
     const dbService = modelClass.getDBService()
     const table = modelClass.getTable()
 
-    // 應用全域作用域
+    // Apply global scopes.
     let finalWhere = where || {}
     const globalScopes = modelClass.globalScopes || []
     for (const scope of globalScopes) {
       finalWhere = scope(finalWhere)
     }
 
-    // 應用軟刪除過濾
+    // Apply soft delete filter.
     if (modelClass.usesSoftDeletes) {
       const deletedAtColumn = modelClass.deletedAtColumn || 'deleted_at'
       finalWhere = { ...finalWhere, [deletedAtColumn]: null }
@@ -314,7 +314,7 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
   }
 
   /**
-   * 計數
+   * Count.
    */
   static async count<T extends Model>(
     this: ModelStatic<T>,
@@ -327,7 +327,7 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
   }
 
   /**
-   * 檢查是否存在
+   * Check existence.
    */
   static async exists<T extends Model>(
     this: ModelStatic<T>,
@@ -340,7 +340,7 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
   }
 
   /**
-   * 分頁查詢
+   * Paginate.
    */
   static async paginate<T extends Model>(
     this: ModelStatic<T>,
@@ -368,38 +368,38 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
   }
 
   /**
-   * 創建記錄（類似 Laravel 的 create）
+   * Create a record (similar to Laravel's `create`).
    */
   static async create<T extends Model>(this: ModelStatic<T>, data: any): Promise<T> {
     const modelClass = this as unknown as typeof Model
     const dbService = modelClass.getDBService()
     const table = modelClass.getTable()
 
-    // 應用填充保護
+    // Apply mass assignment protection.
     const fillable = modelClass.fillable || []
     const guarded = modelClass.guarded || []
     let dataToCreate: any = {}
 
     if (fillable.length > 0) {
-      // 只允許 fillable 中的欄位
+      // Only allow fields in `fillable`.
       for (const key of fillable) {
         if (data[key] !== undefined) {
           dataToCreate[key] = data[key]
         }
       }
     } else if (guarded.length > 0) {
-      // 排除 guarded 中的欄位
+      // Exclude fields in `guarded`.
       for (const key in data) {
         if (!guarded.includes(key)) {
           dataToCreate[key] = data[key]
         }
       }
     } else {
-      // 沒有 fillable 或 guarded，允許所有屬性
+      // No `fillable`/`guarded` configured: allow all attributes.
       dataToCreate = { ...data }
     }
 
-    // 自動時間戳記
+    // Auto timestamps.
     if (modelClass.timestamps) {
       const createdAtColumn = modelClass.createdAtColumn || 'created_at'
       const updatedAtColumn = modelClass.updatedAtColumn || 'updated_at'
@@ -412,7 +412,7 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
     const instance = (modelClass as any).fromData(created) as T
     instance.wasRecentlyCreated = true
 
-    // 觸發 created 事件
+    // Emit created event.
     const core = modelClass.core
     if (core) {
       await core.hooks.doAction('model:created', { model: instance })
@@ -426,7 +426,7 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
   }
 
   /**
-   * Upsert（插入或更新）
+   * Upsert (insert or update).
    */
   static async upsert<T extends Model>(
     this: ModelStatic<T>,
@@ -437,7 +437,7 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
     const dbService = modelClass.getDBService()
     const table = modelClass.getTable()
 
-    // 應用填充保護
+    // Apply mass assignment protection.
     const fillable = modelClass.fillable || []
     const guarded = modelClass.guarded || []
     let dataToUpsert: any = {}
@@ -464,7 +464,7 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
   }
 
   /**
-   * 查找或創建
+   * Find or create.
    */
   static async firstOrCreate<T extends Model>(
     this: ModelStatic<T>,
@@ -481,7 +481,7 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
   }
 
   /**
-   * 查找或新建（不保存）
+   * Find or instantiate (without persisting).
    */
   static async firstOrNew<T extends Model>(
     this: ModelStatic<T>,
@@ -498,7 +498,7 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
   }
 
   /**
-   * 更新或創建
+   * Update or create.
    */
   static async updateOrCreate<T extends Model>(
     this: ModelStatic<T>,
@@ -515,7 +515,7 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
   }
 
   /**
-   * 聚合函數：求和
+   * Aggregate: sum.
    */
   static async sum<T extends Model>(
     this: ModelStatic<T>,
@@ -529,7 +529,7 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
   }
 
   /**
-   * 聚合函數：平均值
+   * Aggregate: average.
    */
   static async avg<T extends Model>(
     this: ModelStatic<T>,
@@ -543,7 +543,7 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
   }
 
   /**
-   * 聚合函數：最小值
+   * Aggregate: minimum.
    */
   static async min<T extends Model>(
     this: ModelStatic<T>,
@@ -557,7 +557,7 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
   }
 
   /**
-   * 聚合函數：最大值
+   * Aggregate: maximum.
    */
   static async max<T extends Model>(
     this: ModelStatic<T>,
@@ -571,12 +571,12 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
   }
 
   /**
-   * 從資料建立 Model 實例
+   * Create a Model instance from raw data.
    */
   protected static fromData(this: ModelStatic, data: any): Model {
     const modelClass = this as unknown as typeof Model
     const instance = new (modelClass as any)()
-    // 應用型別轉換
+    // Apply casts.
     const casts = modelClass.casts || {}
     const processedData: any = {}
 
@@ -595,7 +595,7 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
   }
 
   /**
-   * 型別轉換
+   * Cast an attribute value.
    */
   static castAttribute(
     key: string,
@@ -629,16 +629,16 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
   }
 
   /**
-   * 獲取屬性值（支援存取器和型別轉換）
+   * Get an attribute value (supports accessors and casts).
    */
   get<K extends keyof TAttributes>(key: K): TAttributes[K] | undefined {
-    // 檢查是否有存取器
+    // Check accessor.
     const accessor = `get${String(key).charAt(0).toUpperCase() + String(key).slice(1)}Attribute`
     if (typeof (this as any)[accessor] === 'function') {
       return (this as any)[accessor](this.attributes[key])
     }
 
-    // 檢查是否有型別轉換
+    // Check casts.
     const casts = (this.constructor as typeof Model).casts
     const value = this.attributes[key]
     if (casts[String(key)] && value !== undefined && value !== null) {
@@ -653,7 +653,7 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
   }
 
   /**
-   * 獲取關聯屬性（使用 await user.relation('posts') 或 await user.posts）
+   * Get relation accessor (use `await user.relation('posts')` or `await user.posts`).
    */
   // biome-ignore lint/suspicious/noExplicitAny: dynamic relation access
   get relation(): (name: string) => Promise<any> {
@@ -661,10 +661,10 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
   }
 
   /**
-   * 設定屬性值（支援修改器）
+   * Set an attribute value (supports mutators).
    */
   set<K extends keyof TAttributes>(key: K, value: TAttributes[K]): this {
-    // 檢查是否有修改器
+    // Check mutator.
     const mutator = `set${String(key).charAt(0).toUpperCase() + String(key).slice(1)}Attribute`
     if (typeof (this as any)[mutator] === 'function') {
       this.attributes[key] = (this as any)[mutator](value)
@@ -675,7 +675,7 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
   }
 
   /**
-   * 獲取主鍵值
+   * Get primary key value.
    */
   getKey(): unknown {
     const pk = (this.constructor as typeof Model).getPrimaryKey()
@@ -683,7 +683,7 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
   }
 
   /**
-   * 儲存（更新或創建）
+   * Save (update or create).
    */
   async save(): Promise<this> {
     const modelClass = this.constructor as unknown as typeof Model
@@ -693,7 +693,7 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
     const id = this.getKey()
     const isCreating = !id
 
-    // 觸發 saving 事件
+    // Emit saving event.
     if (modelClass.core) {
       await modelClass.core.hooks.doAction(isCreating ? 'model:creating' : 'model:updating', {
         model: this,
@@ -701,74 +701,74 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
       })
     }
 
-    // 應用填充保護
+    // Apply mass assignment protection.
     const fillable = modelClass.fillable || []
     const guarded = modelClass.guarded || []
     let dataToSave: any = {}
 
     if (fillable.length > 0) {
-      // 只允許 fillable 中的欄位
+      // Only allow fields in `fillable`.
       for (const key of fillable) {
         if (this.attributes[key as keyof TAttributes] !== undefined) {
           dataToSave[key] = this.attributes[key as keyof TAttributes]
         }
       }
     } else if (guarded.length > 0) {
-      // 排除 guarded 中的欄位
+      // Exclude fields in `guarded`.
       for (const key in this.attributes) {
         if (!guarded.includes(key)) {
           dataToSave[key] = this.attributes[key as keyof TAttributes]
         }
       }
     } else {
-      // 沒有 fillable 或 guarded，允許所有屬性
+      // No `fillable`/`guarded` configured: allow all attributes.
       dataToSave = { ...this.attributes }
     }
 
-    // 自動時間戳記
+    // Auto timestamps.
     if (modelClass.timestamps) {
       const createdAtColumn = modelClass.createdAtColumn || 'created_at'
       const updatedAtColumn = modelClass.updatedAtColumn || 'updated_at'
 
       if (!id) {
-        // 創建時設定 created_at 和 updated_at
+        // On create: set created_at and updated_at.
         dataToSave[createdAtColumn] = new Date()
         dataToSave[updatedAtColumn] = new Date()
       } else {
-        // 更新時只設定 updated_at
+        // On update: only set updated_at.
         dataToSave[updatedAtColumn] = new Date()
       }
     }
 
     if (id) {
-      // 更新
+      // Update
       await dbService.update(table, { [pk]: id }, dataToSave)
-      // 重新查詢以獲取最新資料
+      // Re-fetch to get the latest data.
       const updated = await dbService.findById(table, id)
       if (updated) {
         this.attributes = updated as Partial<TAttributes>
         this.originalAttributes = { ...(updated as Partial<TAttributes>) }
       }
 
-      // 觸發 updated 事件
+      // Emit updated event.
       if (modelClass.core) {
         await modelClass.core.hooks.doAction('model:updated', { model: this })
       }
     } else {
-      // 創建
+      // Create
       const created = await dbService.create(table, dataToSave)
       this.attributes = created as Partial<TAttributes>
       this.originalAttributes = { ...(created as Partial<TAttributes>) }
       this.exists = true
       ;(this as any).wasRecentlyCreated = true
 
-      // 觸發 created 事件
+      // Emit created event.
       if (modelClass.core) {
         await modelClass.core.hooks.doAction('model:created', { model: this })
       }
     }
 
-    // 觸發 saved 事件
+    // Emit saved event.
     if (modelClass.core) {
       await modelClass.core.hooks.doAction('model:saved', {
         model: this,
@@ -780,7 +780,7 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
   }
 
   /**
-   * 更新記錄
+   * Update record.
    */
   async update(data: Partial<TAttributes>): Promise<this> {
     Object.assign(this.attributes, data)
@@ -788,7 +788,7 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
   }
 
   /**
-   * 增加數值欄位（原子操作）
+   * Increment a numeric column (atomic).
    */
   async increment(column: string, amount = 1): Promise<this> {
     const modelClass = this.constructor as unknown as typeof Model
@@ -803,7 +803,7 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
 
     await dbService.increment(table, { [pk]: id }, column, amount)
 
-    // 重新查詢以獲取最新資料
+    // Re-fetch to get the latest data.
     const updated = await dbService.findById(table, id)
     if (updated) {
       this.attributes = updated as Partial<TAttributes>
@@ -814,14 +814,14 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
   }
 
   /**
-   * 減少數值欄位（原子操作）
+   * Decrement a numeric column (atomic).
    */
   async decrement(column: string, amount = 1): Promise<this> {
     return this.increment(column, -amount)
   }
 
   /**
-   * 刪除（支援軟刪除）
+   * Delete (supports soft deletes).
    */
   async delete(): Promise<boolean> {
     const modelClass = this.constructor as unknown as typeof Model
@@ -833,19 +833,19 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
       throw new Error(`[Model] Cannot delete model without primary key value`)
     }
 
-    // 觸發 deleting 事件
+    // Emit deleting event.
     if (modelClass.core) {
       await modelClass.core.hooks.doAction('model:deleting', { model: this })
     }
 
-    // 如果啟用軟刪除，則更新 deleted_at
+    // If soft deletes are enabled, update `deleted_at`.
     if (modelClass.usesSoftDeletes) {
       const deletedAtColumn = modelClass.deletedAtColumn || 'deleted_at'
       await dbService.update(table, { [pk]: id }, { [deletedAtColumn]: new Date() } as any)
-      // 更新本地屬性
+      // Update local attributes.
       ;(this.attributes as any)[deletedAtColumn] = new Date()
 
-      // 觸發 deleted 事件（軟刪除）
+      // Emit deleted event (soft delete).
       if (modelClass.core) {
         await modelClass.core.hooks.doAction('model:deleted', { model: this, soft: true })
       }
@@ -853,10 +853,10 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
       return true
     }
 
-    // 硬刪除
+    // Hard delete
     await dbService.delete(table, { [pk]: id })
 
-    // 觸發 deleted 事件（硬刪除）
+    // Emit deleted event (hard delete).
     if (modelClass.core) {
       await modelClass.core.hooks.doAction('model:deleted', { model: this, soft: false })
     }
@@ -865,7 +865,7 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
   }
 
   /**
-   * 強制刪除（即使啟用軟刪除也真正刪除）
+   * Force delete (physically delete even when soft deletes are enabled).
    */
   async forceDelete(): Promise<boolean> {
     const modelClass = this.constructor as unknown as typeof Model
@@ -882,7 +882,7 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
   }
 
   /**
-   * 恢復軟刪除的記錄
+   * Restore a soft-deleted record.
    */
   async restore(): Promise<boolean> {
     const modelClass = this.constructor as unknown as typeof Model
@@ -900,13 +900,13 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
 
     const deletedAtColumn = modelClass.deletedAtColumn || 'deleted_at'
     await dbService.update(table, { [pk]: id }, { [deletedAtColumn]: null } as any)
-    // 更新本地屬性
+    // Update local attributes.
     ;(this.attributes as any)[deletedAtColumn] = null
     return true
   }
 
   /**
-   * 檢查是否被軟刪除
+   * Check whether the model is soft-deleted.
    */
   trashed(): boolean {
     const modelClass = this.constructor as unknown as typeof Model
@@ -920,10 +920,10 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
   }
 
   /**
-   * 獲取關聯（懶加載）
+   * Get a relation (lazy loading).
    */
   async getRelation(relationName: string): Promise<unknown> {
-    // 檢查快取
+    // Check cache.
     if (this.relationsCache.has(relationName)) {
       return this.relationsCache.get(relationName)
     }
@@ -946,9 +946,9 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
       return null
     }
 
-    // 處理多態關聯
+    // Handle polymorphic relations.
     if (relation.type === 'morphTo') {
-      // morphTo: 根據 morph_type 和 morph_id 查詢對應的模型
+      // morphTo: resolve model by morph_type and morph_id.
       const morphType = relation.morphType || `${relationName}_type`
       const morphId = relation.morphId || `${relationName}_id`
       const typeValue = (this.attributes as any)[morphType]
@@ -958,13 +958,13 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
         return null
       }
 
-      // 使用 morphMap 來查找對應的模型類別
+      // Use morphMap to resolve the related model class.
       const morphMap = relation.morphMap || new Map()
       const relatedModel = morphMap.get(typeValue)
 
       if (!relatedModel) {
-        // 如果沒有 morphMap，嘗試直接使用類型名稱
-        // 這裡簡化實作，實際使用時應該通過 morphMap 配置
+        // If there is no morphMap, skip (simplified implementation).
+        // In real usage, configure a proper morphMap.
         return null
       }
 
@@ -980,7 +980,7 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
 
       return null
     } else if (relation.type === 'morphMany' || relation.type === 'morphOne') {
-      // morphMany/morphOne: 根據當前模型的類型和 ID 查詢關聯模型
+      // morphMany/morphOne: query related models by current model type and ID.
       const morphType = relation.morphType || `${relationName}_type`
       const morphId = relation.morphId || `${relationName}_id`
       const relatedModel = relation.model
@@ -1017,7 +1017,7 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
         return collection
       }
     } else {
-      // 普通關聯：使用 DBService 的關聯查詢
+      // Regular relation: use DBService relation query helpers.
       const result = await dbService.findByIdWith(tableName, id, { [relationName]: true })
 
       if (result && (result as any)[relationName]) {
@@ -1031,7 +1031,7 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
   }
 
   /**
-   * 載入關聯（預加載）
+   * Load relations (eager loading).
    */
   async load(relationName: string | string[]): Promise<this> {
     const relations = Array.isArray(relationName) ? relationName : [relationName]
@@ -1066,7 +1066,7 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
   }
 
   /**
-   * 定義 hasMany 關聯
+   * Define a hasMany relation.
    */
   static hasMany<TRelated extends Model>(
     this: ModelStatic,
@@ -1087,7 +1087,7 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
   }
 
   /**
-   * 定義 belongsTo 關聯
+   * Define a belongsTo relation.
    */
   static belongsTo<TRelated extends Model>(
     this: ModelStatic,
@@ -1109,7 +1109,7 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
   }
 
   /**
-   * 定義 hasOne 關聯
+   * Define a hasOne relation.
    */
   static hasOne<TRelated extends Model>(
     this: ModelStatic,
@@ -1130,7 +1130,7 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
   }
 
   /**
-   * 定義 belongsToMany 關聯（多對多）
+   * Define a belongsToMany relation (many-to-many).
    */
   static belongsToMany<TRelated extends Model>(
     this: ModelStatic,
@@ -1153,13 +1153,13 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
   }
 
   /**
-   * 定義 morphTo 關聯（多態多對一）
-   * 例如：Comment belongs to Post or Video
+   * Define a morphTo relation (polymorphic many-to-one).
+   * Example: Comment belongs to Post or Video.
    *
-   * @param relationName 關聯名稱（預設為 'commentable'）
-   * @param morphType 多態類型欄位名稱（預設為 '{relationName}_type'）
-   * @param morphId 多態 ID 欄位名稱（預設為 '{relationName}_id'）
-   * @param morphMap 多態類型映射（可選，用於將類型名稱映射到模型類別）
+   * @param relationName - Relation name (default: 'commentable')
+   * @param morphType - Polymorphic type column name (default: '{relationName}_type')
+   * @param morphId - Polymorphic id column name (default: '{relationName}_id')
+   * @param morphMap - Polymorphic type map (optional, maps type name to Model class)
    */
   static morphTo(
     this: ModelStatic,
@@ -1169,7 +1169,7 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
     morphMap?: Map<string, ModelStatic>
   ): void {
     const modelClass = this as unknown as typeof Model
-    const name = relationName || 'commentable' // 預設名稱
+    const name = relationName || 'commentable' // Default name
     const typeColumn = morphType || `${name}_type`
     const idColumn = morphId || `${name}_id`
     const relations = new Map(modelClass.relations || [])
@@ -1183,13 +1183,13 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
   }
 
   /**
-   * 定義 morphMany 關聯（一對多多態）
-   * 例如：Post has many Comments
+   * Define a morphMany relation (polymorphic one-to-many).
+   * Example: Post has many Comments.
    *
-   * @param related 關聯的模型類別
-   * @param relationName 關聯名稱
-   * @param morphType 多態類型欄位名稱（預設為 '{relationName}_type'）
-   * @param morphId 多態 ID 欄位名稱（預設為 '{relationName}_id'）
+   * @param related - Related Model class
+   * @param relationName - Relation name
+   * @param morphType - Polymorphic type column name (default: '{relationName}_type')
+   * @param morphId - Polymorphic id column name (default: '{relationName}_id')
    */
   static morphMany<TRelated extends Model>(
     this: ModelStatic,
@@ -1212,13 +1212,13 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
   }
 
   /**
-   * 定義 morphOne 關聯（一對一多態）
-   * 例如：Post has one Image
+   * Define a morphOne relation (polymorphic one-to-one).
+   * Example: Post has one Image.
    *
-   * @param related 關聯的模型類別
-   * @param relationName 關聯名稱
-   * @param morphType 多態類型欄位名稱（預設為 '{relationName}_type'）
-   * @param morphId 多態 ID 欄位名稱（預設為 '{relationName}_id'）
+   * @param related - Related Model class
+   * @param relationName - Relation name
+   * @param morphType - Polymorphic type column name (default: '{relationName}_type')
+   * @param morphId - Polymorphic id column name (default: '{relationName}_id')
    */
   static morphOne<TRelated extends Model>(
     this: ModelStatic,
@@ -1241,19 +1241,19 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
   }
 
   /**
-   * 獲取關聯名稱（從 Model 類別名稱推斷）
+   * Infer relation name (from Model class name).
    */
   protected static getRelationName(model: ModelStatic): string {
     const name = model.name
-    // 將 User -> user, Post -> post
-    // 如果是複數形式，保持複數（如 Posts -> posts）
+    // User -> user, Post -> post
+    // If it is already plural, keep it (e.g. Posts -> posts)
     const lower = name.charAt(0).toLowerCase() + name.slice(1)
-    // 簡單的複數處理：如果以 's' 結尾，保持；否則添加 's'
+    // Simple pluralization: keep if ends with 's', otherwise add 's'.
     return lower.endsWith('s') ? lower : `${lower}s`
   }
 
   /**
-   * 設定型別轉換
+   * Set casts.
    */
   static setCasts(casts: CastsDefinition): void {
     const modelClass = this as unknown as typeof Model
@@ -1261,38 +1261,38 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
   }
 
   /**
-   * 轉換為 JSON（包含已載入的關聯和追加屬性）
+   * Convert to JSON (includes loaded relations and appended attributes).
    */
   toJSON(): Record<string, unknown> {
     const modelClass = this.constructor as unknown as typeof Model
     const json: Record<string, unknown> = { ...this.attributes } as Record<string, unknown>
 
-    // 包含已載入的關聯
+    // Include loaded relations.
     for (const [key, value] of this.relationsCache.entries()) {
       json[key] = value
     }
 
-    // 應用追加屬性（Appends）
+    // Apply appended attributes (appends).
     const appends = modelClass.appends || []
     for (const key of appends) {
-      // 檢查是否有存取器
+      // Check accessor.
       const accessor = `get${key.charAt(0).toUpperCase() + key.slice(1)}Attribute`
       if (typeof (this as any)[accessor] === 'function') {
         json[key] = (this as any)[accessor](this.attributes[key as keyof TAttributes])
       } else {
-        // 嘗試作為關聯
+        // Try as relation.
         if (this.relationsLoaded.has(key)) {
           json[key] = this.relationsCache.get(key)
         }
       }
     }
 
-    // 應用隱藏/可見屬性
+    // Apply hidden/visible.
     const hidden = modelClass.hidden || []
     const visible = modelClass.visible || []
 
     if (visible.length > 0) {
-      // 只顯示可見屬性
+      // Only include visible attributes.
       const filtered: Record<string, unknown> = {}
       for (const key of visible) {
         if (json[key] !== undefined) {
@@ -1302,7 +1302,7 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
       return filtered
     }
 
-    // 隱藏指定屬性
+    // Hide attributes.
     for (const key of hidden) {
       delete json[key]
     }
@@ -1312,7 +1312,7 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
 }
 
 /**
- * 查詢建構器（支援鏈式調用）
+ * Query builder (supports fluent chaining).
  */
 export class QueryBuilder<T extends Model> {
   private whereConditions: WhereCondition = {}
@@ -1325,7 +1325,7 @@ export class QueryBuilder<T extends Model> {
   constructor(private modelClass: ModelStatic<T>) {}
 
   /**
-   * 添加 WHERE 條件
+   * Add WHERE conditions.
    */
   where(column: string, value: unknown): this
   where(where: WhereCondition): this
@@ -1339,7 +1339,7 @@ export class QueryBuilder<T extends Model> {
   }
 
   /**
-   * 添加 WHERE IN 條件
+   * Add a WHERE IN condition.
    */
   whereIn(column: string, values: unknown[]): this {
     this.whereConditions[column] = { $in: values }
@@ -1347,7 +1347,7 @@ export class QueryBuilder<T extends Model> {
   }
 
   /**
-   * 添加 WHERE NOT IN 條件
+   * Add a WHERE NOT IN condition.
    */
   whereNotIn(column: string, values: unknown[]): this {
     this.whereConditions[column] = { $nin: values }
@@ -1355,7 +1355,7 @@ export class QueryBuilder<T extends Model> {
   }
 
   /**
-   * 添加 WHERE NULL 條件
+   * Add a WHERE NULL condition.
    */
   whereNull(column: string): this {
     this.whereConditions[column] = null
@@ -1363,7 +1363,7 @@ export class QueryBuilder<T extends Model> {
   }
 
   /**
-   * 添加 WHERE NOT NULL 條件
+   * Add a WHERE NOT NULL condition.
    */
   whereNotNull(column: string): this {
     this.whereConditions[column] = { $ne: null }
@@ -1371,7 +1371,7 @@ export class QueryBuilder<T extends Model> {
   }
 
   /**
-   * 添加 WHERE BETWEEN 條件
+   * Add a WHERE BETWEEN condition.
    */
   whereBetween(column: string, min: unknown, max: unknown): this {
     this.whereConditions[column] = { $gte: min, $lte: max }
@@ -1379,7 +1379,7 @@ export class QueryBuilder<T extends Model> {
   }
 
   /**
-   * 添加 WHERE LIKE 條件
+   * Add a WHERE LIKE condition.
    */
   whereLike(column: string, pattern: string): this {
     this.whereConditions[column] = { $like: pattern }
@@ -1387,7 +1387,7 @@ export class QueryBuilder<T extends Model> {
   }
 
   /**
-   * 排序
+   * Sort.
    */
   orderBy(column: unknown, direction: 'asc' | 'desc' = 'asc'): this {
     this.orderByColumn = column
@@ -1396,14 +1396,14 @@ export class QueryBuilder<T extends Model> {
   }
 
   /**
-   * 降序排序
+   * Sort descending.
    */
   orderByDesc(column: unknown): this {
     return this.orderBy(column, 'desc')
   }
 
   /**
-   * 限制結果數量
+   * Limit results.
    */
   limit(count: number): this {
     this.limitValue = count
@@ -1411,7 +1411,7 @@ export class QueryBuilder<T extends Model> {
   }
 
   /**
-   * 跳過記錄數
+   * Offset results.
    */
   offset(count: number): this {
     this.offsetValue = count
@@ -1419,7 +1419,7 @@ export class QueryBuilder<T extends Model> {
   }
 
   /**
-   * 分組
+   * Group by.
    */
   groupBy(...columns: unknown[]): this {
     this.groupByColumns = columns
@@ -1427,11 +1427,11 @@ export class QueryBuilder<T extends Model> {
   }
 
   /**
-   * Join（內連接）
+   * Join (inner join).
    */
   join(table: Table, on: WhereCondition): this {
-    // 注意：實際的 join 實作需要根據 Drizzle 的 API 調整
-    // 這裡只是標記 join 條件，實際執行在 get() 或 first() 時
+    // Note: the actual join implementation should be aligned with Drizzle APIs.
+    // This only stores join conditions; real execution happens in `get()`/`first()`.
     // biome-ignore lint/suspicious/noExplicitAny: join storage
     if (!(this as any).joins) {
       // biome-ignore lint/suspicious/noExplicitAny: join storage
@@ -1443,7 +1443,7 @@ export class QueryBuilder<T extends Model> {
   }
 
   /**
-   * Left Join（左連接）
+   * Left join.
    */
   leftJoin(table: Table, on: WhereCondition): this {
     // biome-ignore lint/suspicious/noExplicitAny: join storage
@@ -1457,7 +1457,7 @@ export class QueryBuilder<T extends Model> {
   }
 
   /**
-   * Right Join（右連接）
+   * Right join.
    */
   rightJoin(table: Table, on: WhereCondition): this {
     // biome-ignore lint/suspicious/noExplicitAny: join storage
@@ -1471,14 +1471,14 @@ export class QueryBuilder<T extends Model> {
   }
 
   /**
-   * Inner Join（內連接，與 join 相同）
+   * Inner join (same as `join`).
    */
   innerJoin(table: Table, on: WhereCondition): this {
     return this.join(table, on)
   }
 
   /**
-   * 鎖定記錄（FOR UPDATE）
+   * Lock rows (FOR UPDATE).
    */
   lockForUpdate(options?: LockOptions): this {
     // biome-ignore lint/suspicious/noExplicitAny: lock storage
@@ -1489,7 +1489,7 @@ export class QueryBuilder<T extends Model> {
   }
 
   /**
-   * 共享鎖（FOR SHARE）
+   * Shared lock (FOR SHARE).
    */
   sharedLock(options?: LockOptions): this {
     // biome-ignore lint/suspicious/noExplicitAny: lock storage
@@ -1500,14 +1500,14 @@ export class QueryBuilder<T extends Model> {
   }
 
   /**
-   * 獲取第一筆記錄
+   * Get the first record.
    */
   async first(): Promise<T | null> {
     const modelClass = this.modelClass as unknown as typeof Model
     const dbService = (modelClass as any).getDBService()
     const table = (modelClass as any).getTable()
 
-    // 應用全域作用域和軟刪除
+    // Apply global scopes and soft delete.
     const finalWhere = this.buildWhere()
 
     const data = await dbService.findOne(table, finalWhere)
@@ -1518,14 +1518,14 @@ export class QueryBuilder<T extends Model> {
   }
 
   /**
-   * 獲取所有記錄
+   * Get all records.
    */
   async get(): Promise<ModelCollection<T>> {
     const modelClass = this.modelClass as unknown as typeof Model
     const dbService = (modelClass as any).getDBService()
     const table = (modelClass as any).getTable()
 
-    // 應用全域作用域和軟刪除
+    // Apply global scopes and soft delete.
     const finalWhere = this.buildWhere()
 
     const options: { limit?: number; orderBy?: unknown; orderDirection?: 'asc' | 'desc' } = {}
@@ -1543,7 +1543,7 @@ export class QueryBuilder<T extends Model> {
   }
 
   /**
-   * 計數
+   * Count.
    */
   async count(): Promise<number> {
     const modelClass = this.modelClass as unknown as typeof Model
@@ -1555,7 +1555,7 @@ export class QueryBuilder<T extends Model> {
   }
 
   /**
-   * 檢查是否存在
+   * Check existence.
    */
   async exists(): Promise<boolean> {
     const modelClass = this.modelClass as unknown as typeof Model
@@ -1567,7 +1567,7 @@ export class QueryBuilder<T extends Model> {
   }
 
   /**
-   * 聚合函數：求和
+   * Aggregate: sum.
    */
   async sum(column: string): Promise<number> {
     const modelClass = this.modelClass as unknown as typeof Model
@@ -1579,7 +1579,7 @@ export class QueryBuilder<T extends Model> {
   }
 
   /**
-   * 聚合函數：平均值
+   * Aggregate: average.
    */
   async avg(column: string): Promise<number> {
     const modelClass = this.modelClass as unknown as typeof Model
@@ -1591,7 +1591,7 @@ export class QueryBuilder<T extends Model> {
   }
 
   /**
-   * 聚合函數：最小值
+   * Aggregate: minimum.
    */
   async min(column: string): Promise<unknown> {
     const modelClass = this.modelClass as unknown as typeof Model
@@ -1603,7 +1603,7 @@ export class QueryBuilder<T extends Model> {
   }
 
   /**
-   * 聚合函數：最大值
+   * Aggregate: maximum.
    */
   async max(column: string): Promise<unknown> {
     const modelClass = this.modelClass as unknown as typeof Model
@@ -1615,7 +1615,7 @@ export class QueryBuilder<T extends Model> {
   }
 
   /**
-   * 分頁
+   * Paginate.
    */
   async paginate(
     page: number,
@@ -1655,19 +1655,19 @@ export class QueryBuilder<T extends Model> {
   }
 
   /**
-   * 構建最終的 WHERE 條件（應用全域作用域和軟刪除）
+   * Build final WHERE conditions (apply global scopes and soft delete).
    */
   private buildWhere(): WhereCondition {
     const modelClass = this.modelClass as unknown as typeof Model
     let finalWhere = { ...this.whereConditions }
 
-    // 應用全域作用域
+    // Apply global scopes.
     const globalScopes = (modelClass as any).globalScopes || []
     for (const scope of globalScopes) {
       finalWhere = scope(finalWhere)
     }
 
-    // 應用軟刪除過濾
+    // Apply soft delete filter.
     if ((modelClass as any).usesSoftDeletes) {
       const deletedAtColumn = (modelClass as any).deletedAtColumn || 'deleted_at'
       finalWhere[deletedAtColumn] = null
@@ -1678,20 +1678,20 @@ export class QueryBuilder<T extends Model> {
 }
 
 /**
- * Model 註冊器（用於自動註冊所有 Model）
+ * Model registry (for auto-registering Models).
  */
 export class ModelRegistry {
   private static models: Array<{ model: ModelStatic; table: Table; tableName: string }> = []
 
   /**
-   * 註冊 Model
+   * Register a Model.
    */
   static register(model: ModelStatic, table: Table, tableName: string): void {
     ModelRegistry.models.push({ model, table, tableName })
   }
 
   /**
-   * 初始化所有已註冊的 Model（設定 DBService）
+   * Initialize all registered Models (set DBService).
    */
   static initialize(dbService: DBService): void {
     for (const { model, table, tableName } of ModelRegistry.models) {
@@ -1701,12 +1701,12 @@ export class ModelRegistry {
   }
 
   /**
-   * 設定所有 Model 的 core 實例（用於觸發事件）
+   * Set core instance for all Models (for emitting events).
    */
   static setCore(core: PlanetCore): void {
     if (!core) return
     for (const { model } of ModelRegistry.models) {
-      // 檢查 model 是否有 setCore 方法
+      // Check whether the model has a setCore method.
       if (typeof (model as any).setCore === 'function') {
         ;(model as any).setCore(core)
       }
@@ -1714,7 +1714,7 @@ export class ModelRegistry {
   }
 
   /**
-   * 清除所有註冊的 Model
+   * Clear all registered Models.
    */
   static clear(): void {
     ModelRegistry.models = []

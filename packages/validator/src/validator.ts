@@ -3,16 +3,16 @@ import type { TSchema } from '@sinclair/typebox'
 import type { Context, MiddlewareHandler } from 'hono'
 
 /**
- * 驗證來源類型
+ * Validation source type.
  */
 export type ValidationSource = 'json' | 'query' | 'param' | 'form'
 
 /**
- * 建立驗證中間件
+ * Create a validation middleware.
  *
- * @param source - 驗證資料來源（json、query、param、form）
+ * @param source - Validation source (json, query, param, form)
  * @param schema - TypeBox Schema
- * @returns Hono 中間件
+ * @returns Hono middleware
  *
  * @example
  * ```typescript

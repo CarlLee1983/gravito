@@ -1,35 +1,31 @@
 import type { GravitoOrbit, PlanetCore } from 'gravito-core'
 import { BroadcastManager } from './BroadcastManager'
-import { AblyDriver } from './drivers/AblyDriver'
 import type { AblyDriverConfig } from './drivers/AblyDriver'
+import { AblyDriver } from './drivers/AblyDriver'
 import type { BroadcastDriver } from './drivers/BroadcastDriver'
-import { PusherDriver } from './drivers/PusherDriver'
 import type { PusherDriverConfig } from './drivers/PusherDriver'
-import { RedisDriver } from './drivers/RedisDriver'
+import { PusherDriver } from './drivers/PusherDriver'
 import type { RedisDriverConfig } from './drivers/RedisDriver'
-import { WebSocketDriver } from './drivers/WebSocketDriver'
+import { RedisDriver } from './drivers/RedisDriver'
 import type { WebSocketDriverConfig } from './drivers/WebSocketDriver'
+import { WebSocketDriver } from './drivers/WebSocketDriver'
 
 /**
- * OrbitBroadcasting 配置選項
+ * OrbitBroadcasting options.
  */
 export interface OrbitBroadcastingOptions {
   /**
-   * 驅動類型
+   * Driver type.
    */
   driver: 'pusher' | 'ably' | 'redis' | 'websocket'
 
   /**
-   * 驅動配置
+   * Driver configuration.
    */
-  config:
-    | PusherDriverConfig
-    | AblyDriverConfig
-    | RedisDriverConfig
-    | WebSocketDriverConfig
+  config: PusherDriverConfig | AblyDriverConfig | RedisDriverConfig | WebSocketDriverConfig
 
   /**
-   * 頻道授權回調（可選）
+   * Channel authorization callback (optional).
    */
   authorizeChannel?: (
     channel: string,
@@ -41,7 +37,7 @@ export interface OrbitBroadcastingOptions {
 /**
  * Broadcasting Orbit
  *
- * 提供廣播系統功能，支援多種驅動（Pusher、Ably、Redis、WebSocket）。
+ * Provides broadcasting capabilities with multiple drivers (Pusher, Ably, Redis, WebSocket).
  */
 export class OrbitBroadcasting implements GravitoOrbit {
   private options: OrbitBroadcastingOptions
@@ -51,7 +47,7 @@ export class OrbitBroadcasting implements GravitoOrbit {
   }
 
   /**
-   * 配置 OrbitBroadcasting
+   * Configure OrbitBroadcasting.
    */
   static configure(options: OrbitBroadcastingOptions): OrbitBroadcasting {
     return new OrbitBroadcasting(options)
@@ -60,7 +56,7 @@ export class OrbitBroadcasting implements GravitoOrbit {
   async install(core: PlanetCore): Promise<void> {
     const manager = new BroadcastManager(core)
 
-    // 創建並設置驅動
+    // Create and set driver.
     let driver: BroadcastDriver
 
     switch (this.options.driver) {
@@ -70,9 +66,9 @@ export class OrbitBroadcasting implements GravitoOrbit {
       case 'ably':
         driver = new AblyDriver(this.options.config as AblyDriverConfig)
         break
-      case 'redis':
+      case 'redis': {
         driver = new RedisDriver(this.options.config as RedisDriverConfig)
-        // 如果提供了 Redis 客戶端，設置它
+        // If a Redis client is provided via core services, set it.
         const redisClient = core.services.get('redis') as
           | { publish(channel: string, message: string): Promise<number> }
           | undefined
@@ -80,6 +76,7 @@ export class OrbitBroadcasting implements GravitoOrbit {
           driver.setRedisClient(redisClient)
         }
         break
+      }
       case 'websocket':
         driver = new WebSocketDriver(this.options.config as WebSocketDriverConfig)
         break
@@ -89,15 +86,15 @@ export class OrbitBroadcasting implements GravitoOrbit {
 
     manager.setDriver(driver)
 
-    // 設置授權回調
+    // Set auth callback.
     if (this.options.authorizeChannel) {
       manager.setAuthCallback(this.options.authorizeChannel)
     }
 
-    // 註冊到 core services
+    // Register into core services.
     core.services.set('broadcast', manager)
 
-    // 整合到 EventManager
+    // Integrate with EventManager.
     if (core.events) {
       core.events.setBroadcastManager({
         broadcast: async (event, channel, data, eventName) => {
@@ -109,4 +106,3 @@ export class OrbitBroadcasting implements GravitoOrbit {
     core.logger.info(`[OrbitBroadcasting] Installed with ${this.options.driver} driver`)
   }
 }
-

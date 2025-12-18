@@ -1,10 +1,10 @@
 /**
- * 資料庫類型
+ * Database type.
  */
 export type DatabaseType = 'postgresql' | 'sqlite' | 'mysql' | 'auto'
 
 /**
- * 分頁選項
+ * Pagination options.
  */
 export interface PaginateOptions {
   page: number
@@ -14,7 +14,7 @@ export interface PaginateOptions {
 }
 
 /**
- * 分頁結果
+ * Pagination result.
  */
 export interface PaginateResult<T> {
   data: T[]
@@ -29,7 +29,7 @@ export interface PaginateResult<T> {
 }
 
 /**
- * 健康檢查結果
+ * Health check result.
  */
 export interface HealthCheckResult {
   healthy?: boolean
@@ -41,7 +41,7 @@ export interface HealthCheckResult {
 }
 
 /**
- * 查詢日誌資訊
+ * Query log info.
  */
 export interface QueryLogInfo {
   query: string
@@ -52,7 +52,7 @@ export interface QueryLogInfo {
 }
 
 /**
- * 遷移結果
+ * Migration result.
  */
 export interface MigrateResult {
   success: boolean
@@ -63,12 +63,12 @@ export interface MigrateResult {
 }
 
 /**
- * Seeder 函數
+ * Seed function.
  */
 export type SeedFunction = (db: any) => Promise<void>
 
 /**
- * Seeder 結果
+ * Seed result.
  */
 export interface SeedResult {
   success: boolean
@@ -79,7 +79,7 @@ export interface SeedResult {
 }
 
 /**
- * 部署選項
+ * Deployment options.
  */
 export interface DeployOptions {
   skipHealthCheck?: boolean
@@ -91,7 +91,7 @@ export interface DeployOptions {
 }
 
 /**
- * 部署結果
+ * Deployment result.
  */
 export interface DeployResult {
   success: boolean
@@ -105,14 +105,14 @@ export interface DeployResult {
 }
 
 /**
- * 關聯查詢選項
+ * Relation query options.
  */
 export interface RelationOptions {
   [relationName: string]: boolean | RelationOptions
 }
 
 /**
- * Upsert 選項
+ * Upsert options.
  */
 export interface UpsertOptions {
   conflictColumns?: string[]
@@ -121,14 +121,14 @@ export interface UpsertOptions {
 }
 
 /**
- * Increment/Decrement 選項
+ * Increment/Decrement options.
  */
 export interface IncrementOptions {
   amount?: number
 }
 
 /**
- * Truncate 選項
+ * Truncate options.
  */
 export interface TruncateOptions {
   cascade?: boolean
@@ -136,7 +136,7 @@ export interface TruncateOptions {
 }
 
 /**
- * 鎖定選項
+ * Lock options.
  */
 export interface LockOptions {
   nowait?: boolean
@@ -144,14 +144,14 @@ export interface LockOptions {
 }
 
 /**
- * Execute 選項
+ * Execute options.
  */
 export interface ExecuteOptions {
   params?: unknown[]
 }
 
 /**
- * 事件來源資訊
+ * Event source info.
  */
 export interface EventSource {
   file?: string

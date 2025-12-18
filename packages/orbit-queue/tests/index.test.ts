@@ -5,14 +5,14 @@ import { QueueManager } from '../src/QueueManager'
 import { ClassNameSerializer } from '../src/serializers/ClassNameSerializer'
 import { Worker } from '../src/Worker'
 
-// 測試用 Job
+// Test Job
 class TestJob extends Job {
   constructor(public message: string) {
     super()
   }
 
   async handle(): Promise<void> {
-    // 測試邏輯
+    // Test logic
   }
 }
 
@@ -110,7 +110,7 @@ describe('@gravito/orbit-queue', () => {
         },
         defaultSerializer: 'class',
       })
-      // 註冊 Job 類別
+      // Register Job class
       manager.registerJobClasses([TestJob])
     })
 

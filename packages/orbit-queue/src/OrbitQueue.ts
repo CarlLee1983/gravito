@@ -5,16 +5,16 @@ import { QueueManager } from './QueueManager'
 import type { QueueConfig } from './types'
 
 /**
- * Orbit Queue 配置選項
+ * Orbit Queue configuration options.
  */
 export interface OrbitQueueOptions extends QueueConfig {
   /**
-   * 是否在開發模式下自動啟動內嵌 Consumer
+   * Whether to auto-start an embedded worker in development.
    */
   autoStartWorker?: boolean
 
   /**
-   * 內嵌 Consumer 選項
+   * Embedded worker options.
    */
   workerOptions?: ConsumerOptions
 }
@@ -22,8 +22,8 @@ export interface OrbitQueueOptions extends QueueConfig {
 /**
  * Orbit Queue
  *
- * Gravito Orbit 實作，提供隊列功能。
- * 整合到 PlanetCore，注入 queue 服務到 Context。
+ * Gravito Orbit implementation providing queue functionality.
+ * Integrates with PlanetCore and injects a `queue` service into the Hono Context.
  *
  * @example
  * ```typescript
@@ -38,7 +38,7 @@ export interface OrbitQueueOptions extends QueueConfig {
  *   ]
  * })
  *
- * // 在 Controller 中使用
+ * // Use in a controller/handler
  * const queue = c.get('queue')
  * await queue.push(new SendEmail('user@example.com'))
  * ```
@@ -50,24 +50,24 @@ export class OrbitQueue implements GravitoOrbit {
   constructor(private options: OrbitQueueOptions = {}) {}
 
   /**
-   * 靜態配置方法
+   * Static configuration helper.
    */
   static configure(options: OrbitQueueOptions): OrbitQueue {
     return new OrbitQueue(options)
   }
 
   /**
-   * 安裝到 PlanetCore
+   * Install into PlanetCore.
    */
   install(core: PlanetCore): void {
-    // 建立 QueueManager
-    // 注意：database 驅動的 dbService 會在第一次請求時從 Context 動態取得
+    // Create QueueManager.
+    // Note: for the database driver, dbService can be resolved dynamically from Context on first request.
     this.queueManager = new QueueManager(this.options)
 
-    // 注入 queue 服務到 Context
-    // 如果配置了 database 連接但沒有提供 dbService，會在第一次使用時從 Context 取得
+    // Inject queue service into Context.
+    // If a database connection is configured without dbService, it will be resolved from Context on first use.
     core.app.use('*', async (c, next) => {
-      // 處理 database 連接的動態 dbService 解析
+      // Resolve dbService dynamically for database connections
       if (this.queueManager && this.options.connections) {
         for (const [name, config] of Object.entries(this.options.connections)) {
           if (
@@ -75,14 +75,14 @@ export class OrbitQueue implements GravitoOrbit {
             !(config as { dbService?: unknown }).dbService
           ) {
             try {
-              // 嘗試從 Context 取得 dbService
+              // Try to get dbService from Context
               const dbService = c.get('db')
               if (dbService) {
-                // 檢查是否已經註冊過
+                // Check whether the driver is already registered
                 try {
                   this.queueManager.getDriver(name)
                 } catch {
-                  // 尚未註冊，現在註冊
+                  // Not registered yet: register now
                   this.queueManager.registerConnection(name, {
                     ...config,
                     dbService,
@@ -90,7 +90,7 @@ export class OrbitQueue implements GravitoOrbit {
                 }
               }
             } catch {
-              // db 服務不存在，忽略（可能尚未安裝 OrbitDB）
+              // db service not present: ignore (OrbitDB may not be installed)
             }
           }
         }
@@ -102,7 +102,7 @@ export class OrbitQueue implements GravitoOrbit {
 
     core.logger.info('[OrbitQueue] Installed')
 
-    // 如果啟用自動啟動 Worker，且是開發模式
+    // Auto-start embedded worker in development (optional)
     if (
       this.options.autoStartWorker &&
       process.env.NODE_ENV === 'development' &&
@@ -113,7 +113,7 @@ export class OrbitQueue implements GravitoOrbit {
   }
 
   /**
-   * 啟動內嵌 Worker
+   * Start embedded worker.
    */
   startWorker(options: ConsumerOptions): void {
     if (!this.queueManager) {
@@ -131,7 +131,7 @@ export class OrbitQueue implements GravitoOrbit {
   }
 
   /**
-   * 停止內嵌 Worker
+   * Stop embedded worker.
    */
   async stopWorker(): Promise<void> {
     if (this.consumer) {
@@ -140,7 +140,7 @@ export class OrbitQueue implements GravitoOrbit {
   }
 
   /**
-   * 取得 QueueManager 實例
+   * Get QueueManager instance.
    */
   getQueueManager(): QueueManager | undefined {
     return this.queueManager
