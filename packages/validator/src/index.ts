@@ -24,15 +24,13 @@
  * ```
  */
 
+// 導出驗證器
+export { tbValidator as validator } from '@hono/typebox-validator'
+
+// 導出 TypeBox 型別
+export type { Static, TSchema } from '@sinclair/typebox'
 // 重新導出 TypeBox Schema 建構器作為 Schema
 export * as Schema from '@sinclair/typebox'
 
-// 導出 TypeBox 型別
-export type { TSchema, Static } from '@sinclair/typebox'
-
-// 導出驗證器
-export { validator } from '@hono/typebox-validator'
-
 // 導出 validate 函數
-export { validate, type ValidationSource } from './validator'
-
+export { type ValidationSource, validate } from './validator'

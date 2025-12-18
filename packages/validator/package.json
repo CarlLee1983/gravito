@@ -23,8 +23,8 @@
     "access": "public"
   },
   "dependencies": {
-    "@sinclair/typebox": "^0.34.0",
-    "@hono/typebox-validator": "^0.4.0"
+    "@hono/typebox-validator": "^1.1.0",
+    "@sinclair/typebox": "^0.34.0"
   },
   "peerDependencies": {
     "hono": "^4.0.0"
@@ -50,4 +50,3 @@
     "typescript"
   ]
 }
-

@@ -1,0 +1,24 @@
+{
+    "name": "@gravito/client",
+    "version": "0.1.0",
+    "type": "module",
+    "main": "src/index.ts",
+    "types": "src/index.ts",
+    "description": "Type-safe HTTP client wrapper for Gravito framework applications",
+    "license": "MIT",
+    "scripts": {
+        "test": "bun test"
+    },
+    "dependencies": {
+        "hono": "^4.0.0"
+    },
+    "devDependencies": {
+        "bun-types": "latest"
+    },
+    "peerDependencies": {
+        "hono": "^4.0.0"
+    },
+    "publishConfig": {
+        "access": "public"
+    }
+}

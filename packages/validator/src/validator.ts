@@ -1,7 +1,6 @@
-import type { Context } from 'hono'
-import type { MiddlewareHandler } from 'hono'
-import { validator } from '@hono/typebox-validator'
+import { tbValidator } from '@hono/typebox-validator'
 import type { TSchema } from '@sinclair/typebox'
+import type { Context, MiddlewareHandler } from 'hono'
 
 /**
  * 驗證來源類型
@@ -19,7 +18,7 @@ export type ValidationSource = 'json' | 'query' | 'param' | 'form'
  * ```typescript
  * import { Schema, validate } from '@gravito/validator'
  *
- * app.post('/users', 
+ * app.post('/users',
  *   validate('json', Schema.Object({
  *     username: Schema.String(),
  *     email: Schema.String({ format: 'email' })
@@ -31,10 +30,6 @@ export type ValidationSource = 'json' | 'query' | 'param' | 'form'
  * )
  * ```
  */
-export function validate(
-  source: ValidationSource,
-  schema: TSchema
-): MiddlewareHandler {
-  return validator(source, schema)
+export function validate(source: ValidationSource, schema: TSchema): MiddlewareHandler {
+  return tbValidator(source, schema)
 }
-
