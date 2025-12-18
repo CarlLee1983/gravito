@@ -452,6 +452,11 @@ await email.queue();
 
 ---
 
+## 延伸閱讀
+
+- [Laravel 12 MVC 對齊程度](./laravel-12-mvc-parity.md)
+- [ORM 使用指南](./orm-usage.md)
+- [Orbit DB（API）](../api/orbit-db.md)
 
 ## 安裝
 
