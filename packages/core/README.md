@@ -12,6 +12,8 @@
 ## ✨ Features
 
 - 🪐 **PlanetCore** - A centralized Hono-based kernel to manage your application lifecycle.
+- 📦 **IoC Container** - A lightweight dependency injection container with binding and singleton support.
+- 🧩 **Service Providers** - Modular service registration and booting lifecycle.
 - 🪝 **Hook System** - WordPress-style async **Filters** and **Actions** for powerful extensibility.
 - 🛰️ **Orbit Mounting** - Easily mount external Hono applications (Orbits) to specific paths.
 - 📝 **Logger System** - PSR-3 style logger interface with default standard output implementation.
@@ -42,7 +44,38 @@ const core = new PlanetCore({
 });
 ```
 
-### 2. Register Hooks
+### 2. Dependency Injection
+
+Use the IoC Container to manage your application services:
+
+```typescript
+import { ServiceProvider, Container } from 'gravito-core';
+
+class CacheServiceProvider extends ServiceProvider {
+  register(container: Container) {
+    // Bind a singleton service
+    container.singleton('cache', (c) => {
+      return new RedisCache(process.env.REDIS_URL);
+    });
+  }
+
+  async boot(core: PlanetCore) {
+    // Perform boot logic
+    core.logger.info('Cache provider booted');
+  }
+}
+
+// Register the provider
+core.register(new CacheServiceProvider());
+
+// Bootstrap the application (runs register() and boot())
+await core.bootstrap();
+
+// Resolve services
+const cache = core.container.make('cache');
+```
+
+### 3. Register Hooks
 
 Use **Filters** to modify data:
 
@@ -65,7 +98,7 @@ core.hooks.addAction('user_registered', async (userId: string) => {
 await core.hooks.doAction('user_registered', 'user_123');
 ```
 
-### 3. Mount an Orbit
+### 4. Mount an Orbit
 
 Orbits are just standard Hono applications that plug into the core.
 
@@ -79,14 +112,14 @@ blogOrbit.get('/posts', (c) => c.json({ posts: [] }));
 core.mountOrbit('/api/blog', blogOrbit);
 ```
 
-### 4. Liftoff! 🚀
+### 5. Liftoff! 🚀
 
 ```typescript
 // Export for Bun.serve
 export default core.liftoff(); // Automatically uses PORT from config/env
 ```
 
-### 5. Process-level Error Handling (Recommended)
+### 6. Process-level Error Handling (Recommended)
 
 Request-level errors are handled by `PlanetCore` automatically, but background jobs and startup code can still fail outside the request lifecycle.
 
@@ -106,13 +139,23 @@ core.hooks.addAction('processError:report', async (ctx) => {
 ### `PlanetCore`
 
 - **`constructor(options?)`**: Initialize the core with optional Logger and Config.
+- **`register(provider: ServiceProvider)`**: Register a service provider.
+- **`bootstrap()`**: Boot all registered providers.
 - **`mountOrbit(path: string, app: Hono)`**: Mount a Hono app to a sub-path.
 - **`liftoff(port?: number)`**: Returns the configuration object for `Bun.serve`.
-- **`registerGlobalErrorHandlers(options?)`**: Register process-level error handlers (returns an `unregister()` function).
+- **`container`**: Access the IoC Container.
 - **`app`**: Access the internal Hono instance.
 - **`hooks`**: Access the HookManager.
 - **`logger`**: Access the Logger instance.
 - **`config`**: Access the ConfigManager.
+
+### `Container`
+
+- **`bind(key, factory)`**: Register a transient binding.
+- **`singleton(key, factory)`**: Register a shared binding.
+- **`make<T>(key)`**: Resolve a service instance.
+- **`instance(key, instance)`**: Register an existing object instance.
+- **`has(key)`**: Check if a service is bound.
 
 ### `HookManager`
 
