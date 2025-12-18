@@ -11,6 +11,8 @@ import { EventManager } from './EventManager'
 import { HookManager } from './HookManager'
 import { fail } from './helpers/response'
 import { ConsoleLogger, type Logger } from './Logger'
+import { Container } from './Container'
+import { ServiceProvider } from './ServiceProvider'
 import { GravitoException } from './exceptions/GravitoException'
 import { ValidationException } from './exceptions/ValidationException'
 
@@ -80,7 +82,36 @@ export class PlanetCore {
   public hooks: HookManager
   public events: EventManager
   public router: Router
+  public container: Container = new Container()
+  /** @deprecated Use core.container instead */
   public services: Map<string, unknown> = new Map()
+
+  private providers: ServiceProvider[] = []
+
+  /**
+   * Register a service provider
+   */
+  register(provider: ServiceProvider): this {
+    this.providers.push(provider)
+    return this
+  }
+
+  /**
+   * Bootstrap the application by registering and booting providers
+   */
+  async bootstrap(): Promise<void> {
+    // Phase 1: Register all bindings
+    for (const provider of this.providers) {
+      provider.register(this.container)
+    }
+
+    // Phase 2: Boot all providers
+    for (const provider of this.providers) {
+      if (provider.boot) {
+        await provider.boot(this)
+      }
+    }
+  }
 
   constructor(
     options: {
@@ -194,8 +225,10 @@ export class PlanetCore {
               // Transform details to ErrorBag format: Record<string, string[]>
               const errorBag: Record<string, string[]> = {}
               for (const e of err.errors) {
-                if (!errorBag[e.field]) errorBag[e.field] = []
-                errorBag[e.field].push(e.message)
+                if (!errorBag[e.field]) {
+                  errorBag[e.field] = []
+                }
+                errorBag[e.field]!.push(e.message)
               }
               session.flash('errors', errorBag)
 

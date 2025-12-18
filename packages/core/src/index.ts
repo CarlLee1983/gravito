@@ -47,6 +47,9 @@ export {
   Router,
 } from './Router'
 
+export { Container, type Factory } from './Container'
+export { ServiceProvider } from './ServiceProvider'
+
 /**
  * Configure your Gravito application
  */
