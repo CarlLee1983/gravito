@@ -1,4 +1,5 @@
 import { type CacheEventMode, type CacheEvents, CacheRepository } from './CacheRepository'
+import { RateLimiter } from './RateLimiter'
 import type { CacheStore } from './store'
 import type { CacheTtl } from './types'
 
@@ -29,6 +30,15 @@ export class CacheManager {
       onError?: (error: unknown, event: keyof CacheEvents, payload: { key?: string }) => void
     }
   ) {}
+
+  /**
+   * Get a rate limiter instance for a store
+   * @param name - Store name (optional, defaults to default store)
+   */
+  limiter(name?: string): RateLimiter {
+    // We access the underlying store directly from the repository
+    return new RateLimiter(this.store(name).getStore())
+  }
 
   store(name?: string): CacheRepository {
     const storeName = name ?? this.config.default ?? 'memory'

@@ -13,6 +13,7 @@ type OrbitCacheNext = () => Promise<void>
 export * from './CacheManager'
 export * from './CacheRepository'
 export * from './locks'
+export * from './RateLimiter'
 export * from './store'
 export * from './stores/FileStore'
 export * from './stores/MemoryStore'
@@ -225,7 +226,6 @@ export class OrbitCache implements GravitoOrbit {
       await next()
     })
 
-    // @ts-expect-error
     core.services.set(exposeAs, manager)
     core.hooks.doAction('cache:init', manager)
   }

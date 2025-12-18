@@ -329,81 +329,89 @@ export class CacheRepository {
     return this.flush()
   }
 
-  async increment(key: CacheKey, value = 1): Promise<number> {
+  increment(key: string, value?: number) {
     return this.store.increment(this.key(key), value)
   }
 
-  async decrement(key: CacheKey, value = 1): Promise<number> {
+  decrement(key: string, value?: number) {
     return this.store.decrement(this.key(key), value)
   }
 
-  lock(name: string, seconds?: number): CacheLock {
-    if (!this.store.lock) {
-      throw new Error('This cache store does not support locks.')
-    }
-    const prefix = this.options.prefix ?? ''
-    return this.store.lock(prefix ? `${prefix}${name}` : name, seconds)
+  lock(name: string, seconds?: number) {
+    return this.store.lock ? this.store.lock(this.key(name), seconds) : undefined
   }
 
-  tags(tags: readonly string[]): CacheRepository {
+  tags(tags: readonly string[]) {
     if (!isTaggableStore(this.store)) {
       throw new Error('This cache store does not support tags.')
     }
+    return new CacheRepository(new TaggedStore(this.store, tags), this.options)
+  }
 
-    const normalizedTags = [...tags].map(String).filter(Boolean)
-    if (normalizedTags.length === 0) {
-      return this
+  /**
+   * Get the underlying store
+   */
+  getStore(): CacheStore {
+    return this.store
+  }
+}
+
+class TaggedStore implements CacheStore {
+  constructor(
+    private readonly store: CacheStore & {
+      flushTags: (tags: readonly string[]) => Promise<void>
+      tagKey: (key: string, tags: readonly string[]) => string
+      tagIndexAdd: (tags: readonly string[], taggedKey: string) => void
+    },
+    private readonly tags: readonly string[]
+  ) {}
+
+  private tagged(key: CacheKey): string {
+    return this.store.tagKey(normalizeCacheKey(key), this.tags)
+  }
+
+  async get<T = unknown>(key: CacheKey) {
+    return this.store.get<T>(this.tagged(key))
+  }
+
+  async put(key: CacheKey, value: unknown, ttl: CacheTtl): Promise<void> {
+    const taggedKey = this.tagged(key)
+    await this.store.put(taggedKey, value, ttl)
+    this.store.tagIndexAdd(this.tags, taggedKey)
+  }
+
+  async add(key: CacheKey, value: unknown, ttl: CacheTtl): Promise<boolean> {
+    const taggedKey = this.tagged(key)
+    const ok = await this.store.add(taggedKey, value, ttl)
+    if (ok) {
+      this.store.tagIndexAdd(this.tags, taggedKey)
     }
-    const store = this.store
+    return ok
+  }
 
-    return new (class TaggedCacheRepository extends CacheRepository {
-      protected override async putMetaKey(
-        metaKey: string,
-        value: unknown,
-        ttl: CacheTtl
-      ): Promise<void> {
-        store.tagIndexAdd(normalizedTags, metaKey)
-        await store.put(metaKey, value, ttl)
-      }
+  async forget(key: CacheKey): Promise<boolean> {
+    return this.store.forget(this.tagged(key))
+  }
 
-      protected override async forgetMetaKey(metaKey: string): Promise<void> {
-        await store.forget(metaKey)
-        store.tagIndexRemove(metaKey)
-      }
+  async flush(): Promise<void> {
+    return this.store.flushTags(this.tags)
+  }
 
-      protected override key(key: CacheKey): string {
-        const full = super.key(key)
-        return store.tagKey(full, normalizedTags)
-      }
+  async increment(key: CacheKey, value?: number): Promise<number> {
+    const taggedKey = this.tagged(key)
+    const next = await this.store.increment(taggedKey, value)
+    this.store.tagIndexAdd(this.tags, taggedKey)
+    return next
+  }
 
-      override async put(key: CacheKey, value: unknown, ttl: CacheTtl): Promise<void> {
-        const taggedKey = this.key(key)
-        store.tagIndexAdd(normalizedTags, taggedKey)
-        await store.put(taggedKey, value, ttl)
-        const e = this.emit('write', { key: taggedKey })
-        if (e) {
-          await e
-        }
-      }
+  async decrement(key: CacheKey, value?: number): Promise<number> {
+    const taggedKey = this.tagged(key)
+    const next = await this.store.decrement(taggedKey, value)
+    this.store.tagIndexAdd(this.tags, taggedKey)
+    return next
+  }
 
-      override async forget(key: CacheKey): Promise<boolean> {
-        const taggedKey = this.key(key)
-        const metaKey = this.flexibleFreshUntilKey(taggedKey)
-        const ok = await store.forget(taggedKey)
-        store.tagIndexRemove(taggedKey)
-        await this.forgetMetaKey(metaKey)
-        if (ok) {
-          const e = this.emit('forget', { key: taggedKey })
-          if (e) {
-            await e
-          }
-        }
-        return ok
-      }
-
-      override async flush(): Promise<void> {
-        await store.flushTags(normalizedTags)
-      }
-    })(this.store, this.options)
+  lock(name: string, seconds?: number): CacheLock | undefined {
+    return this.store.lock ? this.store.lock(this.tagged(name), seconds) : undefined
   }
 }
