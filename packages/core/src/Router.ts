@@ -1,5 +1,7 @@
 import type { Handler, MiddlewareHandler } from 'hono'
+import { ModelNotFoundException } from './exceptions/ModelNotFoundException'
 import type { PlanetCore } from './PlanetCore'
+import { Route } from './Route'
 
 // Type for Controller Class Constructor
 // biome-ignore lint/suspicious/noExplicitAny: Controllers can have any shape
@@ -68,7 +70,7 @@ function formRequestToMiddleware(RequestClass: FormRequestClass): MiddlewareHand
   }
 }
 
-interface RouteOptions {
+export interface RouteOptions {
   prefix?: string
   domain?: string
   middleware?: MiddlewareHandler[]
@@ -114,54 +116,110 @@ export class RouteGroup {
   }
 
   // Proxy HTTP methods to the main router with options merged
-  get(path: string, handler: RouteHandler): void
-  get(path: string, request: FormRequestClass, handler: RouteHandler): void
+  get(path: string, handler: RouteHandler): Route
+  get(path: string, request: FormRequestClass, handler: RouteHandler): Route
   get(
     path: string,
     requestOrHandler: FormRequestClass | RouteHandler,
     handler?: RouteHandler
-  ): void {
-    this.router.req('get', path, requestOrHandler, handler, this.options)
+  ): Route {
+    return this.router.req('get', path, requestOrHandler, handler, this.options)
   }
 
-  post(path: string, handler: RouteHandler): void
-  post(path: string, request: FormRequestClass, handler: RouteHandler): void
+  post(path: string, handler: RouteHandler): Route
+  post(path: string, request: FormRequestClass, handler: RouteHandler): Route
   post(
     path: string,
     requestOrHandler: FormRequestClass | RouteHandler,
     handler?: RouteHandler
-  ): void {
-    this.router.req('post', path, requestOrHandler, handler, this.options)
+  ): Route {
+    return this.router.req('post', path, requestOrHandler, handler, this.options)
   }
 
-  put(path: string, handler: RouteHandler): void
-  put(path: string, request: FormRequestClass, handler: RouteHandler): void
+  put(path: string, handler: RouteHandler): Route
+  put(path: string, request: FormRequestClass, handler: RouteHandler): Route
   put(
     path: string,
     requestOrHandler: FormRequestClass | RouteHandler,
     handler?: RouteHandler
-  ): void {
-    this.router.req('put', path, requestOrHandler, handler, this.options)
+  ): Route {
+    return this.router.req('put', path, requestOrHandler, handler, this.options)
   }
 
-  delete(path: string, handler: RouteHandler): void
-  delete(path: string, request: FormRequestClass, handler: RouteHandler): void
+  delete(path: string, handler: RouteHandler): Route
+  delete(path: string, request: FormRequestClass, handler: RouteHandler): Route
   delete(
     path: string,
     requestOrHandler: FormRequestClass | RouteHandler,
     handler?: RouteHandler
-  ): void {
-    this.router.req('delete', path, requestOrHandler, handler, this.options)
+  ): Route {
+    return this.router.req('delete', path, requestOrHandler, handler, this.options)
   }
 
-  patch(path: string, handler: RouteHandler): void
-  patch(path: string, request: FormRequestClass, handler: RouteHandler): void
+  patch(path: string, handler: RouteHandler): Route
+  patch(path: string, request: FormRequestClass, handler: RouteHandler): Route
   patch(
     path: string,
     requestOrHandler: FormRequestClass | RouteHandler,
     handler?: RouteHandler
-  ): void {
-    this.router.req('patch', path, requestOrHandler, handler, this.options)
+  ): Route {
+    return this.router.req('patch', path, requestOrHandler, handler, this.options)
+  }
+
+  resource(name: string, controller: ControllerClass, options: ResourceOptions = {}): void {
+    // We need to pass group options to the resource registration.
+    // The Router.resource method registers raw routes.
+    // To support groups, we need to manually prefix inside Router.resource OR use a temporary instance?
+    // Actually, Router.resource calls `this.req`.
+    // `this.req` handles prefixes if we were calling it on `Router`.
+    // But `Router` doesn't know about *this* group's options unless we tell it.
+    // `Router.req` takes `options`.
+
+    // So we should delegate to Router, but Router.resource needs to accept options merged with group options.
+    // Current Router.resource implementation uses `this.req`.
+    // We can't easily injection options into `Router.resource`.
+
+    // Better strategy: Re-implement logic here calling `this.router.req` WITH `this.options`.
+
+    const actions: ResourceAction[] = [
+      'index',
+      'create',
+      'store',
+      'show',
+      'edit',
+      'update',
+      'destroy',
+    ]
+    const map: Record<ResourceAction, { method: string; path: string }> = {
+      index: { method: 'get', path: `/${name}` },
+      create: { method: 'get', path: `/${name}/create` },
+      store: { method: 'post', path: `/${name}` },
+      show: { method: 'get', path: `/${name}/:id` },
+      edit: { method: 'get', path: `/${name}/:id/edit` },
+      update: { method: 'put', path: `/${name}/:id` },
+      destroy: { method: 'delete', path: `/${name}/:id` },
+    }
+
+    const allowed = actions.filter((action) => {
+      if (options.only) return options.only.includes(action)
+      if (options.except) return !options.except.includes(action)
+      return true
+    })
+
+    for (const action of allowed) {
+      const { method, path } = map[action]
+
+      if (action === 'update') {
+        this.router
+          .req('put', path, [controller, action], undefined, this.options)
+          .name(`${name}.${action}`)
+        this.router.req('patch', path, [controller, action], undefined, this.options)
+      } else {
+        this.router
+          .req(method, path, [controller, action], undefined, this.options)
+          .name(`${name}.${action}`)
+      }
+    }
   }
 }
 
@@ -181,7 +239,149 @@ export class Router {
   // biome-ignore lint/suspicious/noExplicitAny: Cache stores instances of any controller
   private controllers = new Map<ControllerClass, any>()
 
-  constructor(private core: PlanetCore) {}
+  private namedRoutes = new Map<
+    string,
+    { method: string; path: string; domain?: string | undefined }
+  >()
+  private bindings = new Map<string, (id: string) => Promise<any>>()
+
+  /**
+   * Register a named route.
+   *
+   * This is called by `Route.name(...)`.
+   */
+  registerName(name: string, method: string, path: string, options: RouteOptions = {}): void {
+    const fullPath = (options.prefix || '') + path
+    this.namedRoutes.set(name, {
+      method: method.toUpperCase(),
+      path: fullPath,
+      domain: options.domain,
+    })
+  }
+
+  /**
+   * Generate a URL from a named route.
+   *
+   * @example
+   * router.url('users.show', { id: 1 })
+   * router.url('users.show', { id: 1 }, { tab: 'profile' })
+   */
+  url(
+    name: string,
+    params: Record<string, string | number> = {},
+    query: Record<string, string | number | boolean | null | undefined> = {}
+  ): string {
+    const route = this.namedRoutes.get(name)
+    if (!route) {
+      throw new Error(`Named route '${name}' not found`)
+    }
+
+    let path = route.path
+    path = path.replace(/:([A-Za-z0-9_]+)/g, (_, key: string) => {
+      const value = params[key]
+      if (value === undefined || value === null) {
+        throw new Error(`Missing route param '${key}' for route '${name}'`)
+      }
+      return encodeURIComponent(String(value))
+    })
+
+    const qs = new URLSearchParams()
+    for (const [k, v] of Object.entries(query)) {
+      if (v === undefined || v === null) continue
+      qs.set(k, String(v))
+    }
+
+    const suffix = qs.toString()
+    return suffix ? `${path}?${suffix}` : path
+  }
+
+  /**
+   * Export named routes as a serializable manifest (for caching).
+   */
+  exportNamedRoutes(): Record<string, { method: string; path: string; domain?: string }> {
+    return Object.fromEntries(this.namedRoutes.entries()) as Record<
+      string,
+      { method: string; path: string; domain?: string }
+    >
+  }
+
+  /**
+   * Load named routes from a manifest (for caching).
+   *
+   * This is intentionally scoped to URL generation and introspection only.
+   * It does not affect the HTTP router matcher (Hono still needs route registrations).
+   */
+  loadNamedRoutes(
+    manifest: Record<string, { method: string; path: string; domain?: string }>
+  ): void {
+    this.namedRoutes = new Map(Object.entries(manifest))
+  }
+
+  /**
+   * Register a route model binding.
+   */
+  bind(param: string, resolver: (id: string) => Promise<any>) {
+    this.bindings.set(param, resolver)
+  }
+
+  /**
+   * Register a route model binding for a Model class.
+   */
+  // biome-ignore lint/suspicious/noExplicitAny: generic model class
+  model(param: string, modelClass: any) {
+    this.bind(param, async (id) => {
+      // Assuming modelClass has a `find` method (Active Record pattern)
+      if (typeof modelClass.find === 'function') {
+        const instance = await modelClass.find(id)
+        if (!instance) {
+          throw new Error('ModelNotFound') // Will be caught by 404 handler if we handle it
+        }
+        return instance
+      }
+      throw new Error(`Invalid model class for binding '${param}'`)
+    })
+  }
+
+  constructor(private core: PlanetCore) {
+    // Register global middleware for bindings
+    // Note: Hono's c.req.param() is available in middleware if the router matched.
+    // We attach this to '*' so it checks every request.
+    // Optimization: we could only check if the current route has the param,
+    // but Hono doesn't easily expose "current route params" names without checking values.
+
+    // We need to wait for app initialization to attach middleware?
+    // Or just attach it now.
+
+    // However, `this.core.app` is initialized in PlanetCore constructor.
+    // We are called FROM PlanetCore constructor.
+    // So `this.core.app` exists.
+
+    // We delay attachment slightly or just attach.
+    // BUT `bind` might be called later. The middleware needs to read `this.bindings` dynamically.
+
+    this.core.app.use('*', async (c, next) => {
+      const routeModels = (c.get('routeModels') ?? {}) as Record<string, unknown>
+
+      // Iterate over registered bindings
+      for (const [param, resolver] of this.bindings) {
+        const value = c.req.param(param)
+        if (value) {
+          try {
+            const resolved = await resolver(value)
+            routeModels[param] = resolved
+          } catch (e: any) {
+            if (e?.message === 'ModelNotFound') {
+              throw new ModelNotFoundException(param, value)
+            }
+            throw e
+          }
+        }
+      }
+
+      c.set('routeModels', routeModels)
+      await next()
+    })
+  }
 
   /**
    * Start a route group with a prefix
@@ -206,54 +406,100 @@ export class Router {
   }
 
   // Standard HTTP Methods with FormRequest support
-  get(path: string, handler: RouteHandler): void
-  get(path: string, request: FormRequestClass, handler: RouteHandler): void
+  get(path: string, handler: RouteHandler): Route
+  get(path: string, request: FormRequestClass, handler: RouteHandler): Route
   get(
     path: string,
     requestOrHandler: FormRequestClass | RouteHandler,
     handler?: RouteHandler
-  ): void {
-    this.req('get', path, requestOrHandler, handler)
+  ): Route {
+    return this.req('get', path, requestOrHandler, handler)
   }
 
-  post(path: string, handler: RouteHandler): void
-  post(path: string, request: FormRequestClass, handler: RouteHandler): void
+  post(path: string, handler: RouteHandler): Route
+  post(path: string, request: FormRequestClass, handler: RouteHandler): Route
   post(
     path: string,
     requestOrHandler: FormRequestClass | RouteHandler,
     handler?: RouteHandler
-  ): void {
-    this.req('post', path, requestOrHandler, handler)
+  ): Route {
+    return this.req('post', path, requestOrHandler, handler)
   }
 
-  put(path: string, handler: RouteHandler): void
-  put(path: string, request: FormRequestClass, handler: RouteHandler): void
+  put(path: string, handler: RouteHandler): Route
+  put(path: string, request: FormRequestClass, handler: RouteHandler): Route
   put(
     path: string,
     requestOrHandler: FormRequestClass | RouteHandler,
     handler?: RouteHandler
-  ): void {
-    this.req('put', path, requestOrHandler, handler)
+  ): Route {
+    return this.req('put', path, requestOrHandler, handler)
   }
 
-  delete(path: string, handler: RouteHandler): void
-  delete(path: string, request: FormRequestClass, handler: RouteHandler): void
+  delete(path: string, handler: RouteHandler): Route
+  delete(path: string, request: FormRequestClass, handler: RouteHandler): Route
   delete(
     path: string,
     requestOrHandler: FormRequestClass | RouteHandler,
     handler?: RouteHandler
-  ): void {
-    this.req('delete', path, requestOrHandler, handler)
+  ): Route {
+    return this.req('delete', path, requestOrHandler, handler)
   }
 
-  patch(path: string, handler: RouteHandler): void
-  patch(path: string, request: FormRequestClass, handler: RouteHandler): void
+  patch(path: string, handler: RouteHandler): Route
+  patch(path: string, request: FormRequestClass, handler: RouteHandler): Route
   patch(
     path: string,
     requestOrHandler: FormRequestClass | RouteHandler,
     handler?: RouteHandler
-  ): void {
-    this.req('patch', path, requestOrHandler, handler)
+  ): Route {
+    return this.req('patch', path, requestOrHandler, handler)
+  }
+
+  /**
+   * Register a resource route (Laravel-style).
+   * Creates index, create, store, show, edit, update, destroy routes.
+   */
+  resource(name: string, controller: ControllerClass, options: ResourceOptions = {}): void {
+    const actions: ResourceAction[] = [
+      'index',
+      'create',
+      'store',
+      'show',
+      'edit',
+      'update',
+      'destroy',
+    ]
+    const map: Record<ResourceAction, { method: string; path: string }> = {
+      index: { method: 'get', path: `/${name}` },
+      create: { method: 'get', path: `/${name}/create` },
+      store: { method: 'post', path: `/${name}` },
+      show: { method: 'get', path: `/${name}/:id` },
+      edit: { method: 'get', path: `/${name}/:id/edit` },
+      update: { method: 'put', path: `/${name}/:id` }, // Also register patch? Laravel usually does PUT/PATCH.
+      destroy: { method: 'delete', path: `/${name}/:id` },
+    }
+
+    const allowed = actions.filter((action) => {
+      if (options.only) return options.only.includes(action)
+      if (options.except) return !options.except.includes(action)
+      return true
+    })
+
+    for (const action of allowed) {
+      const { method, path } = map[action]
+      // Check if controller has the method
+      // We can't easily check at runtime here without instantiating, but we trust the user or fail at runtime.
+
+      // Register route
+      // Support PATCH for update
+      if (action === 'update') {
+        this.req('put', path, [controller, action]).name(`${name}.${action}`)
+        this.req('patch', path, [controller, action]) // Same name? Usually only one name.
+      } else {
+        this.req(method, path, [controller, action]).name(`${name}.${action}`)
+      }
+    }
   }
 
   /**
@@ -265,7 +511,7 @@ export class Router {
     requestOrHandler: FormRequestClass | RouteHandler,
     handler?: RouteHandler,
     options: RouteOptions = {}
-  ) {
+  ): Route {
     // 1. Resolve Path
     const fullPath = (options.prefix || '') + path
 
@@ -345,6 +591,8 @@ export class Router {
       }
       ;(route as (path: string, ...handlers: Handler[]) => unknown)(fullPath, ...handlers)
     }
+
+    return new Route(this, method, path, options)
   }
 
   /**
@@ -363,4 +611,11 @@ export class Router {
 
     return instance[methodName].bind(instance)
   }
+}
+
+export type ResourceAction = 'index' | 'create' | 'store' | 'show' | 'edit' | 'update' | 'destroy'
+
+export interface ResourceOptions {
+  only?: ResourceAction[]
+  except?: ResourceAction[]
 }

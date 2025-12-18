@@ -55,6 +55,8 @@ type Variables = {
   core: PlanetCore
   logger: Logger
   config: ConfigManager
+  cookieJar: CookieJar
+  routeModels?: Record<string, unknown>
   // Optional orbit-injected variables
   cache?: CacheService
   view?: ViewService
@@ -73,7 +75,9 @@ export type GravitoConfig = {
   orbits?: (new () => GravitoOrbit)[] | GravitoOrbit[]
 }
 
+import { CookieJar } from './http/CookieJar'
 import { Router } from './Router'
+import { Encrypter } from './security/Encrypter'
 
 export class PlanetCore {
   public app: Hono<{ Variables: Variables }>
@@ -85,6 +89,8 @@ export class PlanetCore {
   public container: Container = new Container()
   /** @deprecated Use core.container instead */
   public services: Map<string, unknown> = new Map()
+
+  public encrypter?: Encrypter
 
   private providers: ServiceProvider[] = []
 
@@ -123,7 +129,18 @@ export class PlanetCore {
     this.config = new ConfigManager(options.config ?? {})
     this.hooks = new HookManager()
     this.events = new EventManager(this)
-    this.router = new Router(this)
+
+    // Initialize Encrypter if APP_KEY is present
+    const appKey =
+      (this.config.has('APP_KEY') ? this.config.get<string>('APP_KEY') : undefined) ||
+      process.env.APP_KEY
+    if (appKey) {
+      try {
+        this.encrypter = new Encrypter({ key: appKey })
+      } catch (e) {
+        this.logger.warn('Failed to initialize Encrypter (invalid APP_KEY?):', e)
+      }
+    }
 
     this.app = new Hono<{ Variables: Variables }>()
 
@@ -132,8 +149,18 @@ export class PlanetCore {
       c.set('core', this)
       c.set('logger', this.logger)
       c.set('config', this.config)
+
+      const cookieJar = new CookieJar(this.encrypter)
+      c.set('cookieJar', cookieJar)
+
       await next()
+
+      // Attach queued cookies to response
+      cookieJar.attach(c)
     })
+
+    // Router depends on `core.app` for route registration and optional global middleware.
+    this.router = new Router(this)
 
     // Standard Error Handling
     this.app.onError(async (err, c) => {
