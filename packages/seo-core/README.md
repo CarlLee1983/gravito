@@ -25,11 +25,32 @@ The engine is controlled via a `SeoConfig` object, typically defined in `gravito
 import type { SeoConfig } from '@gravito/seo-core';
 
 const config: SeoConfig = {
-  mode: 'cached', // 'dynamic' | 'cached' | 'incremental'
+  mode: 'incremental', // 'dynamic' | 'cached' | 'incremental'
   baseUrl: 'https://example.com',
-  resolvers: [ /* ... */ ]
+  resolvers: [ /* ... */ ],
+  
+  // Required for 'incremental' mode
+  incremental: {
+    logDir: './storage/seo', // Directory to store LSM logs and snapshots
+    compactInterval: 3600000 // Autosave/Compact every 1 hour (in ms)
+  }
 };
 ```
+
+## Advanced Strategies
+
+### Incremental Mode (LSM-Tree Engine)
+Designed for large-scale sites (1M+ pages), this mode uses a **Log-Structured Merge-Tree** approach similar to databases like Cassandra or LevelDB.
+
+1. **Write-Optimized**: New URLs are appended to a sequential log file (`sitemap.ops.jsonl`). fast writing with zero lock contention.
+2. **Read-Optimized**: Serving the sitemap merges the memory snapshot with the latest ops log.
+3. **Background Compaction**: The engine automatically merges logs into the main snapshot (`sitemap.snapshot.json`) in the background based on `compactInterval`.
+
+### Sitemap Indexing & Pagination
+Gravito automatically handles the Google/Sitemap protocol limit of **50,000 URLs**.
+- If your sitemap exceeds 50k URLs, the engine automatically renders a **Sitemap Index** (`<sitemapindex>`).
+- It paginates the actual entries into sub-sitemaps (e.g., `sitemap.xml?page=1`, `sitemap.xml?page=2`).
+- This happens transparently—no extra configuration needed.
 
 ### Robots.txt Configuration
 You can define `robots.txt` rules directly in your config:

@@ -20,4 +20,9 @@ export interface SeoStrategy {
    * Remove an entry (Incremental mode only)
    */
   remove(url: string): Promise<void>
+
+  /**
+   * Optional: Shutdown the strategy (e.g., stop background timers)
+   */
+  shutdown?(): Promise<void>
 }

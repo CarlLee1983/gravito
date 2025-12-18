@@ -27,6 +27,12 @@ export class SeoEngine {
     await this.strategy.init()
   }
 
+  async shutdown(): Promise<void> {
+    if (this.strategy.shutdown) {
+      await this.strategy.shutdown()
+    }
+  }
+
   /**
    * Get the strategy instance (for direct manipulation like add/remove)
    */

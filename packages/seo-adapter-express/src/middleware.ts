@@ -1,4 +1,4 @@
-import { RobotsBuilder, type SeoConfig, SeoEngine, XmlStreamBuilder } from '@gravito/seo-core'
+import { RobotsBuilder, type SeoConfig, SeoEngine, SeoRenderer } from '@gravito/seo-core'
 import type { NextFunction, Request, Response } from 'express'
 
 export function gravitoSeo(config: SeoConfig) {
@@ -42,14 +42,14 @@ export function gravitoSeo(config: SeoConfig) {
       const strategy = engine.getStrategy()
       const entries = await strategy.getEntries()
 
-      const builder = new XmlStreamBuilder({
-        baseUrl: config.baseUrl,
-        branding: config.branding?.enabled,
-      })
+      const renderer = new SeoRenderer(config)
+      const page = req.query.page ? Number.parseInt(String(req.query.page)) : undefined
 
-      const xml = builder.buildFull(entries)
+      const fullUrl = `${config.baseUrl}${req.path}`
 
-      res.setHeader('Content-Type', 'application/xml')
+      const xml = renderer.render(entries, fullUrl, page)
+
+      res.header('Content-Type', 'application/xml')
       res.send(xml)
     } catch (e) {
       console.error('[GravitoSeo] Middleware Error:', e)

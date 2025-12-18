@@ -1,4 +1,4 @@
-import { RobotsBuilder, type SeoConfig, SeoEngine, XmlStreamBuilder } from '@gravito/seo-core'
+import { RobotsBuilder, type SeoConfig, SeoEngine, SeoRenderer } from '@gravito/seo-core'
 import type { Context, MiddlewareHandler } from 'hono'
 
 export function gravitoSeo(config: SeoConfig): MiddlewareHandler {
@@ -54,12 +54,20 @@ export function gravitoSeo(config: SeoConfig): MiddlewareHandler {
       const strategy = engine.getStrategy()
       const entries = await strategy.getEntries()
 
-      const builder = new XmlStreamBuilder({
-        baseUrl: config.baseUrl,
-        branding: config.branding?.enabled,
-      })
+      const renderer = new SeoRenderer(config)
+      const page = c.req.query('page') ? Number.parseInt(c.req.query('page')!) : undefined
 
-      const xml = builder.buildFull(entries)
+      // We need the full URL for the index to point back to itself?
+      // Actually we need the absolute URL of the *sitemap endpoint*.
+      // c.req.url gives full URL.
+      // But we probably want to use the public Base URL from config if possible,
+      // combined with the path.
+      // However, usually sitemap entries in the index MUST match the site's domain.
+
+      // Let's use config.baseUrl + path for the index links for consistency.
+      const fullUrl = `${config.baseUrl}${path}`
+
+      const xml = renderer.render(entries, fullUrl, page)
 
       c.header('Content-Type', 'application/xml')
       return c.body(xml)

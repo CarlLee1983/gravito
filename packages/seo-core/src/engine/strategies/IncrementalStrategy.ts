@@ -14,6 +14,9 @@ export class IncrementalStrategy implements SeoStrategy {
   private dynamic: DynamicStrategy
   private snapshotPath: string
 
+  private compactTimer: Timer | null = null
+  private compactInterval: number | undefined
+
   constructor(config: SeoConfig) {
     if (!config.incremental) {
       throw new Error('Config missing "incremental" settings for IncrementalStrategy')
@@ -29,6 +32,7 @@ export class IncrementalStrategy implements SeoStrategy {
     this.snapshotPath = join(logDir, 'sitemap.snapshot.json')
     this.compactor = new Compactor(this.logger)
     this.dynamic = new DynamicStrategy(config)
+    this.compactInterval = config.incremental.compactInterval
   }
 
   async init(): Promise<void> {
@@ -38,6 +42,31 @@ export class IncrementalStrategy implements SeoStrategy {
       // Initial Population from Resolvers
       const entries = await this.dynamic.getEntries()
       await this.saveSnapshot(entries)
+    }
+
+    this.startAutoCompact()
+  }
+
+  async shutdown(): Promise<void> {
+    this.stopAutoCompact()
+  }
+
+  private startAutoCompact() {
+    if (this.compactInterval && this.compactInterval > 0 && !this.compactTimer) {
+      console.log(`[GravitoSeo] Starting auto-compaction (interval: ${this.compactInterval}ms)`)
+      this.compactTimer = setInterval(() => {
+        this.compact().catch((err) => {
+          console.error('[GravitoSeo] Auto-compaction failed:', err)
+        })
+      }, this.compactInterval)
+    }
+  }
+
+  private stopAutoCompact() {
+    if (this.compactTimer) {
+      clearInterval(this.compactTimer)
+      this.compactTimer = null
+      console.log('[GravitoSeo] Stopped auto-compaction')
     }
   }
 
