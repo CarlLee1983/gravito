@@ -26,7 +26,8 @@ import { OrbitCache } from '@gravito/orbit-cache' // Optional, for cache lock
 await PlanetCore.boot({
   config: {
     scheduler: {
-      lock: { driver: 'cache' }
+      lock: { driver: 'cache' },
+      nodeRole: 'worker' // 'api', 'web', etc.
     }
   },
   orbits: [
@@ -100,3 +101,41 @@ The scheduler emits hooks providing execution metrics. You can listen to these e
 
 ### Lightweight Execution
 This package includes a lightweight, dependency-free cron parser (`SimpleCronParser`) for standard cron expressions (e.g. `* * * * *`, `0 0 * * *`). The heavy `cron-parser` library is only lazy-loaded when complex expressions are encountered, keeping your runtime memory footprint minimal.
+
+## Process Execution & Node Roles
+
+You can also run shell commands and restrict tasks to specific node roles (e.g., `api` vs `worker`).
+
+### Configuration
+
+Add `nodeRole` to your configuration:
+
+```typescript
+config: {
+  scheduler: {
+    nodeRole: 'worker'
+  }
+}
+```
+
+### Mode A: Broadcast (Maintenance)
+
+Run on EVERY node that matches the role. Useful for machine-specific maintenance.
+
+```typescript
+// Clean temp files on ALL 'api' nodes
+scheduler.exec('clean-tmp', 'rm -rf /tmp/*')
+  .daily()
+  .onNode('api')
+```
+
+### Mode B: Single-point (Task)
+
+Run on ONE matching node only. Useful for centralized jobs like DB migrations or reports.
+
+```typescript
+// Run migration on ONE 'worker' node
+scheduler.exec('migrate', 'bun run db:migrate')
+  .onNode('worker')
+  .onOneServer()
+```

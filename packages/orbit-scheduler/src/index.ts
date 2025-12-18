@@ -1,5 +1,6 @@
 export * from './CronParser'
 export * from './locks'
 export * from './OrbitScheduler'
+export * from './process'
 export * from './SchedulerManager'
 export * from './TaskSchedule'

@@ -8,10 +8,12 @@ export class OrbitScheduler implements GravitoOrbit {
     const config = core.config.get<{
       lock?: { driver: 'memory' | 'cache' }
       exposeAs?: string
+      nodeRole?: string
     }>('scheduler', {})
 
     const lockDriver = config.lock?.driver || 'cache'
     const exposeAs = config.exposeAs || 'scheduler'
+    const nodeRole = config.nodeRole
 
     let lockManager: LockManager
 
@@ -30,7 +32,7 @@ export class OrbitScheduler implements GravitoOrbit {
       lockManager = new LockManager('memory')
     }
 
-    const scheduler = new SchedulerManager(lockManager, core.logger, core.hooks)
+    const scheduler = new SchedulerManager(lockManager, core.logger, core.hooks, nodeRole)
 
     core.services.set(exposeAs, scheduler)
 

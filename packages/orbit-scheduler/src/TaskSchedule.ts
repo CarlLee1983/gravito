@@ -8,6 +8,8 @@ export interface ScheduledTask {
   shouldRunOnOneServer: boolean
   lockTtl: number // seconds
   background: boolean
+  nodeRole?: string
+  command?: string
 
   onSuccessCallbacks: ActionCallback[]
   onFailureCallbacks: ActionCallback[]
@@ -213,6 +215,25 @@ export class TaskSchedule {
    */
   runInBackground(): this {
     this.task.background = true
+    return this
+  }
+
+  /**
+   * Restrict task execution to a specific node role.
+   *
+   * @param role - The required node role (e.g., 'api', 'worker')
+   */
+  onNode(role: string): this {
+    this.task.nodeRole = role
+    return this
+  }
+
+  /**
+   * Set the command string for exec tasks.
+   * @internal
+   */
+  setCommand(command: string): this {
+    this.task.command = command
     return this
   }
 

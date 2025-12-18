@@ -2,6 +2,7 @@ import type { HookManager, Logger } from 'gravito-core'
 import { CronParser } from './CronParser'
 import type { LockManager } from './locks'
 import { type ScheduledTask, TaskSchedule } from './TaskSchedule'
+import { Process } from './process'
 
 /**
  * Core Scheduler Manager responsible for managing and executing tasks.
@@ -12,8 +13,9 @@ export class SchedulerManager {
   constructor(
     public lockManager: LockManager,
     private logger?: Logger,
-    private hooks?: HookManager
-  ) {}
+    private hooks?: HookManager,
+    private currentNodeRole?: string
+  ) { }
 
   /**
    * Define a new scheduled task.
@@ -23,6 +25,24 @@ export class SchedulerManager {
    */
   task(name: string, callback: () => void | Promise<void>): TaskSchedule {
     const task = new TaskSchedule(name, callback)
+    this.tasks.push(task)
+    return task
+  }
+
+  /**
+   * Define a new scheduled command execution task.
+   *
+   * @param name - Unique name for the task
+   * @param command - Shell command to execute
+   */
+  exec(name: string, command: string): TaskSchedule {
+    const task = new TaskSchedule(name, async () => {
+      const result = await Process.run(command)
+      if (!result.success) {
+        throw new Error(`Command failed: ${result.stderr || result.stdout}`)
+      }
+    })
+    task.setCommand(command)
     this.tasks.push(task)
     return task
   }
@@ -80,9 +100,16 @@ export class SchedulerManager {
    * @internal
    */
   async runTask(task: ScheduledTask): Promise<void> {
+    // Mode A & B: Node Role Check
+    if (task.nodeRole && this.currentNodeRole && task.nodeRole !== this.currentNodeRole) {
+      // This node doesn't match the required role, skip
+      return
+    }
+
     let acquiredLock = false
     const lockKey = `task:${task.name}`
 
+    // Mode B: Single-point (Locking)
     if (task.shouldRunOnOneServer) {
       acquiredLock = await this.lockManager.acquire(lockKey, task.lockTtl)
 
@@ -140,7 +167,7 @@ export class SchedulerManager {
       for (const cb of task.onSuccessCallbacks) {
         try {
           await cb({ name: task.name })
-        } catch {}
+        } catch { }
       }
     } catch (err: any) {
       const duration = Date.now() - startTime
@@ -155,7 +182,7 @@ export class SchedulerManager {
       for (const cb of task.onFailureCallbacks) {
         try {
           await cb(err)
-        } catch {}
+        } catch { }
       }
       // We don't rethrow here to ensure cleanup happens in runTask
     }

@@ -1,34 +1,9 @@
-export interface Queueable {
-  /**
-   * The name of the queue the job should be sent to.
-   */
-  queueName?: string
-
-  /**
-   * The name of the connection the job should be sent to.
-   */
-  connectionName?: string
-
-  /**
-   * The number of seconds to delay the job.
-   */
-  delaySeconds?: number
-
-  /**
-   * Set the desired queue for the job.
-   * @param queue
-   */
-  onQueue(queue: string): this
-
-  /**
-   * Set the desired connection for the job.
-   * @param connection
-   */
-  onConnection(connection: string): this
-
-  /**
-   * Set the delay for the job in seconds.
-   * @param delay
-   */
-  delay(delay: number): this
-}
+/**
+ * Queueable 介面已遷移到 @gravito/orbit-queue
+ *
+ * 此檔案僅作為向後相容的重新導出。
+ * 新程式碼應該直接從 @gravito/orbit-queue 導入。
+ *
+ * @deprecated 請使用 `import type { Queueable } from '@gravito/orbit-queue'`
+ */
+export type { Queueable } from '@gravito/orbit-queue'

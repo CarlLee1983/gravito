@@ -1,0 +1,57 @@
+{
+  "name": "@gravito/orbit-queue",
+  "version": "0.1.0",
+  "publishConfig": {
+    "access": "public"
+  },
+  "description": "Lightweight, high-performance queue system for Gravito framework. Supports multiple brokers (Database, Redis, Kafka, SQS) with zero runtime overhead.",
+  "module": "./dist/index.mjs",
+  "main": "./dist/index.cjs",
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "bun run build.ts",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "gravito",
+    "orbit",
+    "queue",
+    "job",
+    "worker",
+    "kafka",
+    "sqs",
+    "redis"
+  ],
+  "author": "Carl Lee <carllee0520@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "gravito-core": "workspace:*"
+  },
+  "peerDependencies": {
+    "@gravito/orbit-queue-database": "*",
+    "@gravito/orbit-queue-redis": "*",
+    "@gravito/orbit-queue-kafka": "*",
+    "@gravito/orbit-queue-sqs": "*",
+    "@gravito/orbit-queue-rabbitmq": "*",
+    "@gravito/orbit-queue-nats": "*"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.9.3"
+  }
+}
+

@@ -1,4 +1,4 @@
-import type { Queueable } from './Queueable' // Import Queueable
+import type { Queueable } from '@gravito/orbit-queue' // Import Queueable from orbit-queue
 import { HtmlRenderer } from './renderers/HtmlRenderer'
 import type { Renderer } from './renderers/Renderer'
 import { TemplateRenderer } from './renderers/TemplateRenderer'
@@ -199,10 +199,18 @@ export abstract class Mailable implements Queueable {
       priority: this.envelope.priority || 'normal',
     }
 
-    if (this.envelope.cc) envelope.cc = this.envelope.cc
-    if (this.envelope.bcc) envelope.bcc = this.envelope.bcc
-    if (this.envelope.replyTo) envelope.replyTo = this.envelope.replyTo
-    if (this.envelope.attachments) envelope.attachments = this.envelope.attachments
+    if (this.envelope.cc) {
+      envelope.cc = this.envelope.cc
+    }
+    if (this.envelope.bcc) {
+      envelope.bcc = this.envelope.bcc
+    }
+    if (this.envelope.replyTo) {
+      envelope.replyTo = this.envelope.replyTo
+    }
+    if (this.envelope.attachments) {
+      envelope.attachments = this.envelope.attachments
+    }
 
     return envelope
   }

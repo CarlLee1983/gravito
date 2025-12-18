@@ -77,8 +77,12 @@ export class OrbitMail implements GravitoOrbit {
     const envelope = await mailable.buildEnvelope(this.config)
 
     // Validate required fields
-    if (!envelope.from) throw new Error('Message is missing "from" address')
-    if (!envelope.to || envelope.to.length === 0) throw new Error('Message is missing "to" address')
+    if (!envelope.from) {
+      throw new Error('Message is missing "from" address')
+    }
+    if (!envelope.to || envelope.to.length === 0) {
+      throw new Error('Message is missing "to" address')
+    }
 
     // 2. Render content
     const content = await mailable.renderContent()
@@ -103,16 +107,26 @@ export class OrbitMail implements GravitoOrbit {
 
   /**
    * Queue a mailable instance
+   *
+   * 將 Mailable 推送到隊列中執行。
+   * 需要 OrbitQueue 已安裝並注入到 Context 中。
    */
   async queue(mailable: Mailable): Promise<void> {
-    // In a real implementation, this would push to a Queue Orbit.
-    // For now, we simulate queuing or log it.
+    // 嘗試從 Context 取得 queue 服務
+    // 如果沒有 queue 服務，則直接發送（向後相容）
+    const queue = (
+      this as unknown as { queueService?: { push: (job: unknown) => Promise<unknown> } }
+    ).queueService
 
-    // We can check if `mailable` has queue configuration
-    // const queueName = (mailable as any).queueName || 'default';
-
-    // Simulating async behavior
-    console.log(`[OrbitMail] Queuing message: ${mailable.constructor.name}`)
-    await this.send(mailable) // For now, just send it immediately in this POC
+    if (queue) {
+      // 使用 Queue 系統推送
+      await queue.push(mailable)
+    } else {
+      // 降級：直接發送（向後相容）
+      console.warn(
+        '[OrbitMail] Queue service not available, sending immediately. Install OrbitQueue to enable queuing.'
+      )
+      await this.send(mailable)
+    }
   }
 }
