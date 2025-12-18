@@ -1,6 +1,6 @@
 import type { CacheManager } from '@gravito/orbit-cache'
 import type { GravitoOrbit, PlanetCore } from 'gravito-core'
-import { LockManager } from './locks/LockManager'
+import { LockManager } from './locks'
 import { SchedulerManager } from './SchedulerManager'
 
 export class OrbitScheduler implements GravitoOrbit {
@@ -16,7 +16,6 @@ export class OrbitScheduler implements GravitoOrbit {
     let lockManager: LockManager
 
     if (lockDriver === 'cache') {
-      // @ts-expect-error - core.services is available at runtime
       const cacheManager = core.services.get('cache') as CacheManager | undefined
 
       if (!cacheManager) {
@@ -33,7 +32,6 @@ export class OrbitScheduler implements GravitoOrbit {
 
     const scheduler = new SchedulerManager(lockManager, core.logger, core.hooks)
 
-    // @ts-expect-error
     core.services.set(exposeAs, scheduler)
 
     core.app.use('*', async (c, next) => {

@@ -1,6 +1,6 @@
 import type { HookManager, Logger } from 'gravito-core'
 import { CronParser } from './CronParser'
-import type { LockManager } from './locks/LockManager'
+import type { LockManager } from './locks'
 import { type ScheduledTask, TaskSchedule } from './TaskSchedule'
 
 /**
