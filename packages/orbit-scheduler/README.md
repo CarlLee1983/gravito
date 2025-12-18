@@ -83,3 +83,20 @@ By default, commands look for `src/index.ts`. If your bootstrap file is elsewher
 ```bash
 gravito schedule:list --entry src/bootstrap.ts
 ```
+
+## Performance Monitoring
+
+The scheduler emits hooks providing execution metrics. You can listen to these events via `core.hooks`:
+
+| Hook | Payload | Description |
+|------|---------|-------------|
+| `scheduler:run:start` | `{ date }` | Scheduler checks started |
+| `scheduler:run:complete` | `{ date, dueCount }` | Scheduler checks completed |
+| `scheduler:task:start` | `{ name, startTime }` | Individual task execution started |
+| `scheduler:task:success` | `{ name, duration }` | Task completed successfully |
+| `scheduler:task:failure` | `{ name, error, duration }` | Task failed |
+
+## Optimizations
+
+### Lightweight Execution
+This package includes a lightweight, dependency-free cron parser (`SimpleCronParser`) for standard cron expressions (e.g. `* * * * *`, `0 0 * * *`). The heavy `cron-parser` library is only lazy-loaded when complex expressions are encountered, keeping your runtime memory footprint minimal.
