@@ -1,0 +1,53 @@
+{
+  "name": "@gravito/validator",
+  "version": "0.1.0-alpha.0",
+  "description": "TypeBox-based validation for Gravito - High-performance schema validation with full TypeScript support",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "bun run build.ts",
+    "test": "bun test",
+    "prepublishOnly": "bun run build"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@sinclair/typebox": "^0.34.0",
+    "@hono/typebox-validator": "^0.4.0"
+  },
+  "peerDependencies": {
+    "hono": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.1.0",
+    "typescript": "^5.0.0"
+  },
+  "author": "Carl Lee",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/CarlLee1983/gravito.git",
+    "directory": "packages/validator"
+  },
+  "keywords": [
+    "gravito",
+    "validation",
+    "typebox",
+    "schema",
+    "hono",
+    "middleware",
+    "typescript"
+  ]
+}
+
