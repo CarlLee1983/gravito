@@ -31,7 +31,7 @@ export class OrbitScheduler implements GravitoOrbit {
       lockManager = new LockManager('memory')
     }
 
-    const scheduler = new SchedulerManager(lockManager, core.logger)
+    const scheduler = new SchedulerManager(lockManager, core.logger, core.hooks)
 
     // @ts-expect-error
     core.services.set(exposeAs, scheduler)

@@ -49,4 +49,15 @@ describe('SchedulerManager', () => {
     await scheduler.runTask(task.getTask())
     expect(callback).toHaveBeenCalled()
   })
+
+  test('run() processes due tasks', async () => {
+    const callback = mock(() => {})
+    scheduler.task('due-task', callback).everyMinute()
+
+    // Mock date to be "due" (Run at 12:00, check at 12:00 -> should match * * * * *)
+    const now = new Date('2023-01-01T12:00:00Z')
+    await scheduler.run(now)
+
+    expect(callback).toHaveBeenCalled()
+  })
 })

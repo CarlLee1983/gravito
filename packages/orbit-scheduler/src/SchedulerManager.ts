@@ -1,18 +1,25 @@
-import type { Logger } from 'gravito-core'
+import type { HookManager, Logger } from 'gravito-core'
 import { CronParser } from './CronParser'
 import type { LockManager } from './locks/LockManager'
 import { type ScheduledTask, TaskSchedule } from './TaskSchedule'
 
+/**
+ * Core Scheduler Manager responsible for managing and executing tasks.
+ */
 export class SchedulerManager {
   private tasks: TaskSchedule[] = []
 
   constructor(
     public lockManager: LockManager,
-    private logger?: Logger
+    private logger?: Logger,
+    private hooks?: HookManager
   ) {}
 
   /**
-   * Define a new scheduled task
+   * Define a new scheduled task.
+   *
+   * @param name - Unique name for the task
+   * @param callback - Function to execute
    */
   task(name: string, callback: () => void | Promise<void>): TaskSchedule {
     const task = new TaskSchedule(name, callback)
@@ -21,22 +28,36 @@ export class SchedulerManager {
   }
 
   /**
-   * Add a pre-configured task schedule
+   * Add a pre-configured task schedule object.
    */
   add(schedule: TaskSchedule) {
     this.tasks.push(schedule)
   }
 
+  /**
+   * Get all registered task definitions.
+   */
   getTasks(): ScheduledTask[] {
     return this.tasks.map((t) => t.getTask())
   }
 
   /**
-   * Run due tasks
+   * Trigger the scheduler to check and run due tasks.
+   * This is typically called every minute by a system cron or worker loop.
+   *
+   * @param date - The current reference date (default: now)
    */
   async run(date: Date = new Date()): Promise<void> {
+    await this.hooks?.doAction('scheduler:run:start', { date })
+
     const tasks = this.getTasks()
-    const dueTasks = tasks.filter((task) => CronParser.isDue(task.expression, task.timezone, date))
+    const dueTasks: ScheduledTask[] = []
+
+    for (const task of tasks) {
+      if (await CronParser.isDue(task.expression, task.timezone, date)) {
+        dueTasks.push(task)
+      }
+    }
 
     if (dueTasks.length > 0) {
       // Log found tasks?
@@ -49,8 +70,15 @@ export class SchedulerManager {
         this.logger?.error(`[Scheduler] Unexpected error running task ${task.name}`, err)
       })
     }
+
+    await this.hooks?.doAction('scheduler:run:complete', { date, dueCount: dueTasks.length })
   }
 
+  /**
+   * Execute a specific task with locking logic.
+   *
+   * @internal
+   */
   async runTask(task: ScheduledTask): Promise<void> {
     let acquiredLock = false
     const lockKey = `task:${task.name}`
@@ -100,15 +128,30 @@ export class SchedulerManager {
   }
 
   private async executeTask(task: ScheduledTask) {
+    const startTime = Date.now()
+    await this.hooks?.doAction('scheduler:task:start', { name: task.name, startTime })
+
     try {
       await task.callback()
+
+      const duration = Date.now() - startTime
+      await this.hooks?.doAction('scheduler:task:success', { name: task.name, duration })
+
       for (const cb of task.onSuccessCallbacks) {
         try {
-          await cb({})
+          await cb({ name: task.name })
         } catch {}
       }
     } catch (err: any) {
+      const duration = Date.now() - startTime
       this.logger?.error(`Task ${task.name} failed`, err)
+
+      await this.hooks?.doAction('scheduler:task:failure', {
+        name: task.name,
+        error: err,
+        duration,
+      })
+
       for (const cb of task.onFailureCallbacks) {
         try {
           await cb(err)

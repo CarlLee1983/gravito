@@ -1,12 +1,21 @@
-import parser from 'cron-parser'
+import { SimpleCronParser } from './SimpleCronParser'
 
 export class CronParser {
   /**
-   * Get the next execution date
+   * Get the next execution date based on a cron expression.
+   *
+   * @param expression - Cron expression
+   * @param timezone - Timezone identifier
+   * @param currentDate - Reference date
    */
-  static nextDate(expression: string, timezone = 'UTC', currentDate: Date = new Date()): Date {
+  static async nextDate(
+    expression: string,
+    timezone = 'UTC',
+    currentDate: Date = new Date()
+  ): Promise<Date> {
     try {
-      const interval = parser.parseExpression(expression, {
+      const parser = await import('cron-parser')
+      const interval = parser.default.parseExpression(expression, {
         currentDate,
         tz: timezone,
       })
@@ -17,15 +26,32 @@ export class CronParser {
   }
 
   /**
-   * Check if the cron expression is due to run at the current time
+   * Check if the cron expression is due to run at the current time (minute precision).
+   *
+   * @param expression - Cron expression
+   * @param timezone - Timezone identifier
+   * @param currentDate - Reference date
    */
-  static isDue(expression: string, timezone = 'UTC', currentDate: Date = new Date()): boolean {
+  static async isDue(
+    expression: string,
+    timezone = 'UTC',
+    currentDate: Date = new Date()
+  ): Promise<boolean> {
+    // Try SimpleCronParser first (Synchronous and fast)
+    try {
+      return SimpleCronParser.isDue(expression, timezone, currentDate)
+    } catch (e) {
+      // Fallback to heavy cron-parser if expression is complex/unsupported
+      // or if calculation fails
+    }
+
     try {
       // Check from 1 minute ago to see if the next scheduled time is "now"
       // This assumes the scheduler runs every minute
       const previousMinute = new Date(currentDate.getTime() - 60000)
 
-      const interval = parser.parseExpression(expression, {
+      const parser = await import('cron-parser')
+      const interval = parser.default.parseExpression(expression, {
         currentDate: previousMinute,
         tz: timezone,
       })
