@@ -1,279 +1,79 @@
----
-title: Deployment Guide
----
+# 🚢 Deployment Guide
 
-# Deployment Guide
+Shipping your application is the final step of the journey. Gravito, being powered by **Bun**, offers extreme performance and multiple ways to reach your users—whether you want a full-stack dynamic app, a static site, or an edge function.
 
-Gravito supports two primary deployment strategies: **Binary-First** (recommended) and **Docker Containerization**.
+## 🛠 Preparation
 
----
-
-## Option 1: Single Executable (Binary-First)
-
-This is Gravito's headline feature. Compile your entire application into a standalone binary.
-
-### Build Command
+Before deploying, ensure you have your production environment variables set up. Create a `.env.production` file:
 
 ```bash
-# 1. Build frontend assets (if using Inertia)
-bun run build:client
-
-# 2. Compile backend into a single binary
-bun build --compile --outfile=server ./src/index.ts
+# .env.production
+NODE_ENV=production
+BASE_URL=https://your-app.com
+GA_MEASUREMENT_ID=G-XXXXXXXX
 ```
-
-### Output Structure
-
-When deploying, you need the binary and your static assets:
-
-```
-/opt/app/
-├── server              # Standalone binary executable
-└── static/            # Static assets folder (served by Nginx or Gravito)
-    ├── build/         # Vite output (CSS, JS)
-    └── public/        # Public images, fonts
-```
-
-### Advantages
-
-| Benefit | Description |
-|---------|-------------|
-| **Zero Dependencies** | Server doesn't need Node, npm, or Bun installed |
-| **Simple Deployment** | Just copy the binary and static folder |
-| **Fast Startup** | Sub-millisecond cold start |
-| **Security** | Source code is compiled, not exposed |
-
-### Deployment Steps
-
-1. **Build on your development machine:**
-   ```bash
-   bun run build:client
-   bun build --compile --outfile=server ./src/index.ts
-   ```
-
-2. **Copy to production server:**
-   ```bash
-   scp server user@host:/opt/app/
-   scp -r static/ user@host:/opt/app/
-   ```
-
-3. **Run on Linux:**
-   ```bash
-   chmod +x /opt/app/server
-   /opt/app/server
-   ```
-
-4. **Setup systemd service (optional):**
-   ```ini
-   [Unit]
-   Description=Gravito Application
-   After=network.target
-
-   [Service]
-   Type=simple
-   User=www-data
-   WorkingDirectory=/opt/app
-   ExecStart=/opt/app/server
-   Restart=on-failure
-   Environment=PORT=3000
-   Environment=NODE_ENV=production
-
-   [Install]
-   WantedBy=multi-user.target
-   ```
 
 ---
 
-## Option 2: Docker Containerization (Enterprise Standard)
+## 📦 Option 1: Full-stack Docker (Recommended)
 
-For teams requiring container orchestration (Kubernetes, Docker Swarm).
+Docker ensures your app runs exactly the same on your server as it does on your laptop.
 
-### Multi-stage Dockerfile
+### 1. The Multi-stage Dockerfile
+Use this optimized Dockerfile to keep your production image small and fast.
 
 ```dockerfile
-# ============================================
-# Stage 1: Build
-# ============================================
-FROM oven/bun:1 AS builder
-
+# Build Stage
+FROM oven/bun:latest as builder
 WORKDIR /app
-
-# Copy package files
-COPY package.json bun.lock ./
-# If monorepo, you might need to copy workspace packages too
-COPY packages/ ./packages/
-
-RUN bun install --frozen-lockfile
-
-# Copy source code
 COPY . .
+RUN bun install --frozen-lockfile
+RUN bun run build # Compiles React/Vite assets
 
-# Build frontend assets
-RUN bun run build:client
-
-# Compile binary (Optimization: We can run TS directly in container too)
-# RUN bun build --compile --outfile=server ./src/index.ts
-# OR run directly with Bun runtime
-
-# ============================================
-# Stage 2: Production
-# ============================================
-FROM oven/bun:1-slim
-
+# Production Stage
+FROM oven/bun:slim
 WORKDIR /app
-
-# Copy built assets
-COPY --from=builder /app/static ./static
-COPY --from=builder /app/src ./src
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json .
-
-ENV NODE_ENV=production
+COPY --from=builder /app .
 EXPOSE 3000
-
 CMD ["bun", "run", "src/index.ts"]
 ```
 
-### Docker Compose Example
-
-```yaml
-version: '3.8'
-
-services:
-  app:
-    build: .
-    ports:
-      - "3000:3000"
-    environment:
-      - NODE_ENV=production
-      - DATABASE_URL=postgres://postgres:password@db:5432/app
-    depends_on:
-      - db
-    restart: unless-stopped
-    volumes:
-       - ./static:/app/static
-
-  db:
-    image: postgres:16-alpine
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=app
-
-volumes:
-  pgdata:
-```
-
----
-
-## Production Checklist
-
-Before deploying to production, ensure:
-
-| Item | Command/Action |
-|------|----------------|
-| Run tests | `bun test` |
-| Build frontend | `bun run build:client` |
-| Set `NODE_ENV` | `export NODE_ENV=production` |
-| Configure secrets | Use environment variables, not `.env` |
-| Enable HTTPS | Use reverse proxy (nginx, Caddy) |
-| Setup logging | Configure log aggregation |
-| Health checks | Implement `/health` endpoint |
-
-## Database Deployment
-
-Gravito Orbit DB provides a `deploy` command that runs migrations and health checks in a safe manner.
-
+### 2. Build and Run
 ```bash
-# In your startup script or CI/CD pipeline
-gravito db:deploy
-```
-
-This command:
-1. Checks database connectivity
-2. Runs pending migrations (`gravito migrate`)
-3. Verifies post-migration health
-
----
-
-## Reverse Proxy Configuration
-
-### Nginx
-
-```nginx
-server {
-    listen 80;
-    server_name example.com;
-    return 301 https://$server_name$request_uri;
-}
-
-server {
-    listen 443 ssl http2;
-    server_name example.com;
-
-    ssl_certificate /etc/ssl/certs/example.com.pem;
-    ssl_certificate_key /etc/ssl/private/example.com.key;
-
-    # Serve static files directly (Performance)
-    location /assets/ {
-        alias /opt/app/static/build/assets/;
-        expires 30d;
-        access_log off;
-    }
-
-    location / {
-        proxy_pass http://127.0.0.1:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_cache_bypass $http_upgrade;
-    }
-
-    # Gzip compression
-    gzip on;
-    gzip_types text/plain application/json application/javascript text/css;
-}
-```
-
-### Caddy (Simpler Alternative)
-
-```caddyfile
-example.com {
-    reverse_proxy localhost:3000
-    file_server /assets/* {
-        root /opt/app/static/build/assets
-    }
-}
+docker build -t my-gravito-app .
+docker run -p 3000:3000 --env-file .env.production my-gravito-app
 ```
 
 ---
 
-## Monitoring
+## ⚡ Option 2: Static Site Generation (SSG)
 
-### Health Check Endpoint
+If you are building a documentation site or a blog, SSG is the fastest and cheapest option. It generates pure HTML files that you can host on **GitHub Pages**, **Vercel**, or **Netlify**.
 
-```typescript
-// src/routes/health.ts
-core.app.get('/health', (c) => {
-  return c.json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime()
-  })
-})
+### 1. Run the Build
+```bash
+bun run build:static
 ```
+
+### 2. The Output
+Your static files will be generated in the `dist/` directory. Simply upload this folder to any static hosting provider.
 
 ---
 
-## Security Recommendations
+## ☁️ Option 3: Edge & Serverless
 
-1. **Never commit secrets** - Use environment variables
-2. **Enable CORS carefully** - Restrict origins in production
-3. **Rate limiting** - Protect against DDoS
-4. **Keep dependencies updated** - Regular security audits
-5. **Use HTTPS only** - Redirect all HTTP traffic
+Because Gravito is built on the **Hono** engine, it can run "on the edge" (closer to your users).
+
+- **Cloudflare Workers**: Use our Cloudflare adapter.
+- **Vercel Functions**: Deploy directly using the Vercel CLI.
+- **AWS Lambda**: High-speed cold starts thanks to Bun's efficiency.
+
+## ⚙️ CI/CD Best Practices
+
+1. **Frozen Lockfile**: Always use `bun install --frozen-lockfile` in your pipeline to prevent version drift.
+2. **Build Verification**: Run `bun test` before building to ensure zero regressions.
+3. **Health Checks**: Implement a `/health` route to allow your load balancer to monitor the app.
+
+---
+
+> **Congratulations!** You've completed the Gravito "Babysitting" Guide. You are now ready to build high-performance, AI-friendly applications that scale to infinity. ☄️

@@ -1,174 +1,102 @@
 ---
-title: Routing
+title: Routing & Controllers
+description: Handling requests with elegance and precision.
 ---
 
-# Routing
+# 🛣 Routing & Controllers
 
-Gravito's routing system is built on top of [Hono](https://hono.dev/), providing a familiar, expressive, and fluent API similar to Laravel.
+Gravito combines the speed of **Hono** with the structured development of **MVC** (Model-View-Controller). This ensures your application stays organized as it grows.
 
-## Basic Routing
+## 🚦 The Router
 
-The most basic route accepts a URI and a closure:
+Routes are defined in `src/routes/index.ts`. Gravito provides a fluent API to map URLs to actions.
 
-```typescript
-import { PlanetCore } from 'gravito-core';
-
-// ... core initialization
-
-core.router.get('/hello', (c) => {
-  return c.text('Hello World');
-});
-
-core.router.post('/users', (c) => {
-  // Handle POST request
-});
-```
-
-## Controller Routing
-
-You can route requests to controller classes. Controllers are instantiated via the Service Container.
+### Basic Routing
 
 ```typescript
-import { UserController } from './controllers/UserController';
+// src/routes/index.ts
+import { HomeController } from '../controllers/HomeController'
 
-// Route to [ControllerClass, 'methodName']
-core.router.get('/users', [UserController, 'index']);
-core.router.post('/users', [UserController, 'store']);
+export default function(routes: Router) {
+  // Simple callback
+  routes.get('/hello', (c) => c.text('Hello World'))
+
+  // Mapping to a Controller
+  routes.get('/', [HomeController, 'index'])
+}
 ```
 
-## Named Routes
-
-Named routes allow you to generate URLs for specific routes easily. You can chain the `name` method to any route definition:
+### Route Groups
+Group related routes to apply common prefixes or middleware.
 
 ```typescript
-core.router.get('/users/:id', [UserController, 'show']).name('users.show');
-```
-
-### Generating URLs
-
-Once a route is named, you can generate URLs using the `url` method:
-
-```typescript
-const url = core.router.url('users.show', { id: 1 });
-// Result: /users/1
-
-// With query parameters
-const url = core.router.url('users.show', { id: 1 }, { sort: 'desc' });
-// Result: /users/1?sort=desc
-```
-
-## Resource Routes
-
-Gravito supports Laravel-style resource routing:
-
-```ts
-core.router.resource('users', UserController)
-```
-
-This registers the standard actions:
-
-| Action | Method | Path | Default Name |
-|--------|--------|------|--------------|
-| index | GET | `/users` | `users.index` |
-| create | GET | `/users/create` | `users.create` |
-| store | POST | `/users` | `users.store` |
-| show | GET | `/users/:id` | `users.show` |
-| edit | GET | `/users/:id/edit` | `users.edit` |
-| update | PUT/PATCH | `/users/:id` | `users.update` |
-| destroy | DELETE | `/users/:id` | `users.destroy` |
-
-Use `only` / `except` to narrow actions:
-
-```ts
-core.router.resource('users', UserController, { only: ['index', 'show'] })
-```
-
-## Route Model Binding
-
-Bind a route parameter to an async resolver:
-
-```ts
-core.router.bind('user', async (id) => {
-  const user = await UserModel.find(id)
-  if (!user) throw new Error('ModelNotFound')
-  return user
-})
-
-core.router.get('/users/:user', async (c) => {
-  const user = c.get('routeModels')?.user
-  return c.json({ user })
+routes.group({ prefix: '/api' }, (group) => {
+  group.get('/users', [UserController, 'list'])
+  group.get('/posts', [PostController, 'list'])
 })
 ```
 
-If a binding cannot resolve, Gravito throws `ModelNotFoundException` and returns a 404 response.
+---
 
-## Route Cache (Named Routes)
+## 🧠 Controllers
 
-Gravito can cache the **named route manifest** for faster URL generation in CLIs and tools:
+Controllers are the "Brains" of your application. Instead of writing all logic in one massive route file, you encapsulate them in classes.
 
-```bash
-gravito route:cache --entry src/index.ts
-gravito route:clear
-```
-
-> **Note**: This caches named routes for URL generation and introspection. HTTP request matching still comes from Hono route registrations.
-
-## Route Groups
-
-Route groups allow you to share route attributes, such as middleware, prefixes, or domain constraints, across a large number of routes.
-
-### Middleware
+### Anatomy of a Controller
 
 ```typescript
-import { authMiddleware } from './middleware/auth';
+// src/controllers/UserController.ts
+import { Context } from 'hono'
 
-core.router.middleware(authMiddleware).group((router) => {
-  router.get('/dashboard', [DashboardController, 'index']);
-  router.get('/profile', [ProfileController, 'edit']);
-});
+export class UserController {
+  /**
+   * List all users
+   * @param c Hono Context
+   */
+  async list(c: Context) {
+    // 1. Get services from the container
+    const userService = c.get('userService')
+    
+    // 2. Perform business logic
+    const users = await userService.all()
+
+    // 3. Return a response
+    return c.json({ data: users })
+  }
+}
 ```
 
-### Route Prefixes
+### Accessing Services
+The Hono `Context` object is your gateway to the Gravito ecosystem. Use `c.get()` to access Orbits and services:
+- `c.get('inertia')`: The Inertia bridge.
+- `c.get('view')`: The Template engine.
+- `c.get('seo')`: The SEO metadata manager.
+
+---
+
+## 📦 Handling Responses
+
+A Controller method must return a standard `Response`. Gravito/Hono makes this easy:
+
+| Type | Method | Description |
+|------|--------|-------------|
+| **JSON** | `c.json(data)` | Ideal for APIs. |
+| **HTML** | `c.html(string)` | Returns raw HTML strings. |
+| **Inertia** | `inertia.render(name, props)` | Returns a full-stack React view. |
+| **View** | `view.render(name, data)` | Returns a server-rendered template. |
+| **Redirect**| `c.redirect(url)` | Sends the user elsewhere. |
+
+---
+
+## 🛡 Middleware
+
+Middleware allows you to intercept requests before they reach your controller (e.g., for logging or auth).
 
 ```typescript
-core.router.prefix('/api').group((router) => {
-  router.get('/users', [UserController, 'index']);
-  // Matches: /api/users
-});
+// Applying middleware to a group
+routes.group({ middleware: [logger()] }, (group) => {
+  group.get('/dashboard', [DashboardController, 'index'])
+})
 ```
 
-### Sub-Domain Routing
-
-```typescript
-core.router.domain('api.myapp.com').group((router) => {
-  router.get('/users', [UserController, 'index']);
-});
-```
-
-## FormRequest Validation
-
-Gravito supports Laravel-like FormRequest validation directly in the route definition.
-
-```typescript
-import { StoreUserRequest } from './requests/StoreUserRequest';
-
-core.router.post('/users', StoreUserRequest, [UserController, 'store']);
-```
-
-If validation fails, the request is automatically stopped, and a 422 error is returned (or 403 for authorization failures).
-
-## Rate Limiting
-
-Gravito includes a middleware to rate limit access to routes.
-
-```typescript
-import { ThrottleRequests } from 'gravito-core';
-
-const throttle = new ThrottleRequests(core);
-
-core.router.middleware(throttle.handle(60, 60)).group((router) => {
-  router.get('/api/resource', [ApiController, 'index']);
-});
-```
-
-This example limits access to 60 requests per minute per IP address.
+> **Next Step**: Learn how to bridge your backend logic with a modern frontend in our [Inertia Guide](/docs/guide/inertia-react).

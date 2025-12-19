@@ -1,275 +1,79 @@
----
-title: 部署指南
----
+# 🚢 部署指南
 
-# 部署指南
+將應用程式發佈上線是旅程的最後一步。得益於 **Bun** 的強大效能，Gravito 提供了多種方式讓您的應用觸及使用者 —— 無論您是想要建構全端動態應用、純靜態網站，還是邊緣運算函數 (Edge Function)。
 
-Gravito 支援兩種主要的部署策略：**二進位優先 (Binary-First)**（推薦）與 **Docker 容器化**。
+## 🛠 部署前準備
 
----
-
-## 選項 1: 單一執行檔 (Binary-First)
-
-這是 Gravito 的旗艦功能。將你的整個應用程式編譯為獨立的執行檔。
-
-### 建置指令
+在準備部署之前，請確保您已經設定好生產環境的變數。建立一個 `.env.production` 檔案：
 
 ```bash
-# 1. 建置前端資源 (如果有使用 Inertia)
-bun run build:client
-
-# 2. 編譯後端為單一執行檔
-bun build --compile --outfile=server ./src/index.ts
+# .env.production
+NODE_ENV=production
+BASE_URL=https://your-app.com
+GA_MEASUREMENT_ID=G-XXXXXXXX
 ```
-
-### 輸出結構
-
-部署時，你需要此執行檔以及靜態資源資料夾：
-
-```
-/opt/app/
-├── server              # 獨立的二進位執行檔
-└── static/            # 靜態資源資料夾 (由 Nginx 或 Gravito 提供服務)
-    ├── build/         # Vite 輸出的資源 (CSS, JS)
-    └── public/        # 公用圖片、字型
-```
-
-### 優勢
-
-| 優點 | 描述 |
-|------|------|
-| **零依賴** | 伺服器無需安裝 Node, npm, 或 Bun |
-| **部署簡單** | 只需複製執行檔與 static 資料夾 |
-| **快速啟動** | 亞毫秒級冷啟動 |
-| **安全性** | 原始碼已編譯，不外洩 |
-
-### 部署步驟
-
-1. **在開發機上建置:**
-   ```bash
-   bun run build:client
-   bun build --compile --outfile=server ./src/index.ts
-   ```
-
-2. **複製到生產伺服器:**
-   ```bash
-   scp server user@host:/opt/app/
-   scp -r static/ user@host:/opt/app/
-   ```
-
-3. **在 Linux 上執行:**
-   ```bash
-   chmod +x /opt/app/server
-   /opt/app/server
-   ```
-
-4. **設定 systemd service (可選):**
-   ```ini
-   [Unit]
-   Description=Gravito Application
-   After=network.target
-
-   [Service]
-   Type=simple
-   User=www-data
-   WorkingDirectory=/opt/app
-   ExecStart=/opt/app/server
-   Restart=on-failure
-   Environment=PORT=3000
-   Environment=NODE_ENV=production
-
-   [Install]
-   WantedBy=multi-user.target
-   ```
 
 ---
 
-## 選項 2: Docker 容器化 (企業標準)
+## 📦 選項 1：全端 Docker 部署 (推薦)
 
-適用於需要容器編排的團隊 (Kubernetes, Docker Swarm)。
+Docker 能確保您的應用在伺服器上運行的樣子，與在您的筆記型電腦上一模一樣。
 
-### 多階段 Dockerfile
+### 1. 多階段構建 Dockerfile
+使用這份優化的 Dockerfile，能保持生產環境鏡像的小巧與快速。
 
 ```dockerfile
-# ============================================
-# Stage 1: Build
-# ============================================
-FROM oven/bun:1 AS builder
-
+# 構建階段 (Build Stage)
+FROM oven/bun:latest as builder
 WORKDIR /app
-
-# 複製 package 檔案
-COPY package.json bun.lock ./
-# 如果是 monorepo，可能需要複製 packages 目錄
-COPY packages/ ./packages/
-
-RUN bun install --frozen-lockfile
-
-# 複製原始碼
 COPY . .
+RUN bun install --frozen-lockfile
+RUN bun run build # 編譯 React/Vite 資產
 
-# 建置前端資源
-RUN bun run build:client
-
-# ============================================
-# Stage 2: Production
-# ============================================
-FROM oven/bun:1-slim
-
+# 執行階段 (Production Stage)
+FROM oven/bun:slim
 WORKDIR /app
-
-# 複製建置好的資源
-COPY --from=builder /app/static ./static
-COPY --from=builder /app/src ./src
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json .
-
-ENV NODE_ENV=production
+COPY --from=builder /app .
 EXPOSE 3000
-
 CMD ["bun", "run", "src/index.ts"]
 ```
 
-### Docker Compose 範例
-
-```yaml
-version: '3.8'
-
-services:
-  app:
-    build: .
-    ports:
-      - "3000:3000"
-    environment:
-      - NODE_ENV=production
-      - DATABASE_URL=postgres://postgres:password@db:5432/app
-    depends_on:
-      - db
-    restart: unless-stopped
-    volumes:
-       - ./static:/app/static
-
-  db:
-    image: postgres:16-alpine
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=app
-
-volumes:
-  pgdata:
-```
-
----
-
-## 生產環境檢查清單
-
-部署到生產環境前，請確保：
-
-| 項目 | 指令/動作 |
-|------|-----------|
-| 執行測試 | `bun test` |
-| 建置前端 | `bun run build:client` |
-| 設定 `NODE_ENV` | `export NODE_ENV=production` |
-| 設定機密資訊 | 使用環境變數，而非 `.env` |
-| 啟用 HTTPS | 使用反向代理 (nginx, Caddy) |
-| 設定 Logging | 設定日誌聚合 |
-| 健康檢查 | 實作 `/health` 端點 |
-
-## 資料庫部署
-
-Gravito Orbit DB 提供 `deploy` 指令，能安全地執行 Migration 與健康檢查。
-
+### 2. 構建與運行
 ```bash
-# 在您的啟動腳本或 CI/CD pipeline 中
-gravito db:deploy
-```
-
-此指令會：
-1. 檢查資料庫連線
-2. 執行待處理的 Migrations (`gravito migrate`)
-3. 驗證遷移後的健康狀態
-
----
-
-## 反向代理設定
-
-### Nginx
-
-```nginx
-server {
-    listen 80;
-    server_name example.com;
-    return 301 https://$server_name$request_uri;
-}
-
-server {
-    listen 443 ssl http2;
-    server_name example.com;
-
-    ssl_certificate /etc/ssl/certs/example.com.pem;
-    ssl_certificate_key /etc/ssl/private/example.com.key;
-
-    # 直接服務靜態檔案 (效能優化)
-    location /assets/ {
-        alias /opt/app/static/build/assets/;
-        expires 30d;
-        access_log off;
-    }
-
-    location / {
-        proxy_pass http://127.0.0.1:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_cache_bypass $http_upgrade;
-    }
-
-    # Gzip 壓縮
-    gzip on;
-    gzip_types text/plain application/json application/javascript text/css;
-}
-```
-
-### Caddy (更簡單的替代方案)
-
-```caddyfile
-example.com {
-    reverse_proxy localhost:3000
-    file_server /assets/* {
-        root /opt/app/static/build/assets
-    }
-}
+docker build -t my-gravito-app .
+docker run -p 3000:3000 --env-file .env.production my-gravito-app
 ```
 
 ---
 
-## 監控
+## ⚡ 選項 2：靜態網站生成 (SSG)
 
-### 健康檢查端點
+如果您正在建構文檔網站或部落格，SSG 是最快且最經濟的選擇。它會生成純 HTML 檔案，您可以將其託管在 **GitHub Pages**、**Vercel** 或 **Netlify**。
 
-```typescript
-// src/routes/health.ts
-core.app.get('/health', (c) => {
-  return c.json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime()
-  })
-})
+### 1. 執行構建
+```bash
+bun run build:static
 ```
+
+### 2. 產出結果
+您的靜態檔案會生成在 `dist/` 目錄中。只需將此資料夾上傳到任何靜態託管服務商即可。
 
 ---
 
-## 安全建議
+## ☁️ 選項 3：邊緣運算與 Serverless
 
-1. **絕不提交機密** - 使用環境變數
-2. **謹慎啟用 CORS** - 在生產環境限制來源 (Origin)
-3. **速率限制 (Rate limiting)** - 防止 DDoS
-4. **保持依賴更新** - 定期安全審計
-5. **僅使用 HTTPS** - 強制重定向 HTTP 流量
+由於 Gravito 基於 **Hono** 引擎建構，它天生具備「在邊緣運行」的能力。
+
+- **Cloudflare Workers**：使用我們的 Cloudflare 適配器。
+- **Vercel Functions**：使用 Vercel CLI 直接部署。
+- **AWS Lambda**：受益於 Bun 的高效能，冷啟動速度極快。
+
+## ⚙️ CI/CD 最佳實踐
+
+1. **鎖定依賴 (Frozen Lockfile)**：在流水線中務必使用 `bun install --frozen-lockfile` 以防止版本偏移。
+2. **構建驗證**：在構建前執行 `bun test`，確保程式碼零回歸。
+3. **健康檢查**：建立 `/health` 路由，以便負載平衡器對應用進行監控。
+
+---
+
+> **恭喜您！** 您已經完成了 Gravito 的「保姆級」開發指南。現在，您已經準備好構建高性能、AI 友善且具備無限擴展能力的應用程式了。 ☄️

@@ -22,533 +22,113 @@ title: Gravito 核心概念
   </a>
 </div>
 
-歡迎來到 Gravito Core。本指南將介紹框架的基本概念與架構。
-
-<div class="my-8 not-prose rounded-2xl overflow-hidden shadow-2xl border border-gray-800">
-  <picture>
-    <source media="(min-width: 1280px)" srcset="/static/image/hero-2560.webp">
-    <source media="(min-width: 768px)" srcset="/static/image/hero-1280.webp">
-    <img src="/static/image/hero-768.webp" alt="Gravito Core Architecture" class="w-full h-auto object-cover">
-  </picture>
-</div>
+歡迎來到 Gravito Core。這是一個追求極致效能與架構美學的後端框架，旨在讓開發者在 Bun 時代重拾「手工藝」般的開發樂趣。
 
 ---
 
-## 設計原則
+## 設計哲學：奇點與引力
 
-Gravito 把以下四個核心價值，刻在框架的骨子裡：
+在 Gravito 的世界觀中，系統被視為一個微型銀河系：
 
-- **高效能**：快速啟動、有效率的請求處理。
-- **低耗（低開銷）**：降低執行期負擔，減少隱性成本。
-- **輕量**：按需引入，維持小而可控的運行足跡。
-- **AI 友善**：嚴格型別與一致慣例，讓生成的程式碼更可靠。
+- **單一奇點 (Singularity)**：所有的請求最終都優化為單一的路徑跳轉，消弭框架開銷。
+- **核心引力 (Gravity)**：Kernel 僅負責維持系統的運作與協調，而不干涉具體業務。
+- **軌道擴展 (Orbits)**：基礎設施模組以軌道方式繞核心運行，完全解耦。
 
----
+### 四大核心價值
 
-## 產品定位
-
-### 關鍵差異
-
-| 對比 | Gravito 優勢 |
-|------|--------------|
-| **Laravel** | 基於 Bun + Hono，毫秒級啟動速度，保有優雅開發體驗 |
-| **Next.js** | 二進位優先 (Binary-First) 策略，單一執行檔部署，不必在正式環境配送 `node_modules` |
-| **Express/Koa** | 強制 MVC 分層結構，避免後端邏輯散亂 |
+- **高效能 (Performance)**：基於 Bun & Hono，實現微秒級的路由轉發。
+- **零損耗 (Zero Overhead)**：啟動時解析路由與依賴，避免運行時的過度掃描。
+- **微核心 (Micro-kernel)**：核心僅有幾 KB，功能完全按需引入。
+- **AI 友善 (AI-First)**：透過嚴格的介面契約與型別推導，讓 Copilot/Cursor 更聰明。
 
 ---
 
-## 技術棧 (Tech Stack)
+## 奇點架構 (Singularity Architecture)
 
-<div class="not-prose my-10 font-sans grid gap-4 text-left">
-  <div class="relative overflow-hidden rounded-xl border border-gray-800 bg-gray-900 p-6 text-center shadow-lg">
-    <div class="absolute left-0 top-0 h-1 w-full bg-blue-500"></div>
-    <h3 class="mb-2 text-xl font-bold text-gray-100">TypeScript (Strict)</h3>
-    <p class="text-sm text-gray-400">AI 友善的型別提示與嚴格模式</p>
-  </div>
-  <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-    <div class="relative overflow-hidden rounded-xl border border-gray-200 bg-white p-6 text-center shadow-sm dark:border-gray-700 dark:bg-gray-800">
-      <div class="absolute left-0 top-0 h-1 w-full bg-purple-500"></div>
-      <h4 class="mb-1 text-lg font-bold text-gray-900 dark:text-gray-100">Inertia.js</h4>
-      <p class="mb-2 text-xs font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400">Frontend Bridge</p>
-      <p class="text-sm text-gray-500 dark:text-gray-400">後端 MVC 架構，SPA 體驗</p>
-    </div>
-    <div class="relative overflow-hidden rounded-xl border border-gray-200 bg-white p-6 text-center shadow-sm dark:border-gray-700 dark:bg-gray-800">
-      <div class="absolute left-0 top-0 h-1 w-full bg-yellow-400"></div>
-      <h4 class="mb-1 text-lg font-bold text-gray-900 dark:text-gray-100">Vite</h4>
-      <p class="mb-2 text-xs font-bold uppercase tracking-wider text-yellow-600 dark:text-yellow-400">Build Tool</p>
-      <p class="text-sm text-gray-500 dark:text-gray-400">React/Vue 極速熱更新 (HMR)</p>
-    </div>
-  </div>
-  <div class="rounded-xl bg-gradient-to-br from-orange-500 to-red-600 p-6 text-center text-white shadow-lg">
-    <h3 class="mb-1 text-xl font-bold">Hono</h3>
-    <p class="mb-1 text-sm text-orange-50">高效能的 JavaScript Web 框架</p>
-    <p class="text-xs text-orange-100/80">(Router + Request Parser)</p>
-  </div>
-  <div class="rounded-xl border border-gray-800 bg-black p-6 text-center shadow-lg">
-    <h3 class="mb-1 text-xl font-bold text-white">Bun</h3>
-    <p class="text-sm text-gray-400">超高速 JavaScript Runtime + Bundler</p>
-  </div>
-</div>
-
----
-
-## 銀河架構 (Galaxy Architecture)
-
-Gravito 遵循一套受天文力學啟發的獨特設計模式：
-
-### 1. PlanetCore (微核心)
+### 1. PlanetCore (微內核)
 
 引力中心。一個極簡、高效的基礎，負責：
 
-- 生命週期管理 (Liftoff)
-- Hook 系統 (Filters & Actions)
-- 錯誤處理
-- Config 與 Logger 管理
-
-它**完全不知道**資料庫、驗證或業務邏輯的存在。
+- **生命週期管理**：從啟動 (Boot) 到升空 (Liftoff)。
+- **Hook 系統**：透過 Filter 與 Action 實現非侵入式擴展。
+- **依賴注入**：輕量級的 IoC 容器。
 
 ```typescript
+import { PlanetCore } from 'gravito-core'
+
 const core = await PlanetCore.boot({
-  orbits: [OrbitDB, OrbitAuth, OrbitInertia], // 按需掛載外掛
+  orbits: [OrbitInertia, OrbitSEO], // 僅加載 1.0 穩定模組
 })
 
-export default core.liftoff() // 啟動伺服器
+export default core.liftoff() // 點火升空
 ```
 
-### 2. Orbits (基礎設施模組)
+### 2. Orbits (1.0 核心模組)
 
-圍繞核心運行的標準擴充模組：
+目前 1.0 版本提供以下穩定軌道模組：
 
-- `@gravito/orbit-db`: 資料庫整合 (Drizzle ORM)
-- `@gravito/orbit-auth`: 身分驗證 (JWT)
-- `@gravito/orbit-session`: Session + CSRF 防護
-- `@gravito/orbit-storage`: 檔案儲存
-- `@gravito/orbit-cache`: 快取機制
-- `@gravito/orbit-inertia`: Inertia.js 整合
-- `@gravito/orbit-mail`: 郵件發送服務 (SMTP, AWS SES)
+- **`Orbit Kernel`**：核心協調與 IoC 容器。
+- **`Orbit Inertia`**：全棧橋接器，實現「後端 MVC，前端 SPA」的極致開發體驗。
+- **`Orbit SEO`**：智慧型 SmartMap 引擎與 Meta 標籤自動化管理。
+- **`Orbit CLI`**：自動化骨架生成與生產力工具。
 
-### 3. Satellites (業務邏輯衛星)
+> **Roadmap (v1.5 預計發佈)**: 
+> `Orbit DB` (Drizzle), `Orbit Auth` (JWT), `Orbit Mail`, `Orbit Queue`.
 
-這是**你的**程式碼所在之處。小巧、專注的模組 (例如 `Users`, `Products`, `Payment`)，掛載於 Orbits 之上。
+### 3. Satellites (業務衛星)
+
+這是你的領地。所有 Controller、Service 與業務邏輯都封裝在 Satellites 中，掛載於核心或軌道模組之上。
 
 ---
 
-## 核心引擎特性
+## 核心特性
 
-### A. 微核心設計 (Micro-Kernel)
+### 內容協商 (Content Negotiation)
 
-- **零依賴核心**: 僅處理 I/O 和外掛編排
-- **啟動時解析 (Boot-time Resolution)**: 路由與依賴在啟動時解析，讓執行期維持精簡與可預期
-
-### B. 智慧 Context (Smart Context)
-
-#### `ctx.view(template, props)` - 內容協商 (Content Negotiation)
-
-**內容協商**: 自動偵測請求來源
-
-| 請求類型 | 回應內容 | 使用場景 |
-|---------|----------|----------|
-| **Inertia Request** | JSON | React/Vue 前端接管路由 |
-| **HTML Request** | Server-Side Rendered HTML (App Shell) | 爬蟲、首次頁面載入 |
-
-```typescript
-export class HomeController {
-  index(ctx: Context) {
-    return ctx.view('Home', {
-      title: 'Welcome to Gravito',
-      features: ['Fast', 'Light', 'Clean']
-    })
-  }
-}
-```
-
-### C. 外掛系統 (Plugin System)
-
-- **可選用 (Opt-in)**: 預設沒有 DB 或 Auth，只加你需要的
-- **基於介面**: 透過 Hono Middleware 機制封裝
-
-#### `GravitoOrbit`（外掛介面）
-
-Gravito 透過 Orbits 擴充核心能力。Orbit 實作 `GravitoOrbit` 介面，並在 `install()` 階段註冊 hooks 與 middleware。
-
-```typescript
-export interface GravitoOrbit {
-  install(core: PlanetCore): void | Promise<void>
-}
-```
-
-### D. 錯誤處理 (Error Handling)
-
-Gravito 預設提供請求層級（HTTP）的全域錯誤處理，並支援行程層級（process-level）的錯誤處理，用來捕捉不在請求生命週期內的失敗（例如背景任務）。
-
-#### 請求層級（HTTP）
-
-`PlanetCore` 會註冊全域處理器來處理：
-
-- 路由 handler / middleware 中未捕捉的錯誤（`app.onError`）
-- 未匹配路由的 404（`app.notFound`）
-
-你可以透過 hooks 客製化行為：
-
-- `error:context`（Filter）：調整 status / payload / 日誌 / HTML templates
-- `error:render`（Filter）：回傳自訂 `Response`（例如 HTML/JSON 覆寫）
-- `error:report`（Action）：將錯誤上報到外部系統（Sentry、日誌、告警）
-- `notFound:context`、`notFound:render`、`notFound:report`：處理 404
-
-#### 行程層級（建議）
-
-不在請求生命週期內的錯誤不會進入 `app.onError`。例如：
-
-- 啟動（boot）階段的非同步程式碼
-- 背景任務 / queue worker
-- 未處理的 Promise rejection
-
-建議在啟動後註冊行程層級錯誤處理：
-
-```ts
-const core = await PlanetCore.boot(config)
-
-// 註冊 `unhandledRejection` / `uncaughtException`
-const unregister = core.registerGlobalErrorHandlers({
-  // mode: 'log' | 'exit' | 'exitInProduction'（預設）
-  mode: 'exitInProduction',
-})
-
-core.hooks.addAction('processError:report', async (ctx) => {
-  // ctx.kind: 'unhandledRejection' | 'uncaughtException'
-  // ctx.error: unknown
-})
-```
-
-你也可以透過：
-
-- `processError:context`（Filter）：設定 `logLevel`、`logMessage`、`exit`、`exitCode`、`gracePeriodMs`
-- `processError:report`（Action）：上報 / 告警等副作用
-
-### E. Middleware / Pipeline Pattern
-
-Gravito 路由支援完整的 Middleware 串接模式，讓你能在請求處理前後執行驗證、日誌、快取等邏輯。
-
-#### 基本用法
-
-```typescript
-import type { MiddlewareHandler } from 'hono'
-
-// 定義 Middleware
-const authMiddleware: MiddlewareHandler = async (ctx, next) => {
-  const token = ctx.req.header('Authorization')
-  if (!token) {
-    return ctx.json({ error: 'Unauthorized' }, 401)
-  }
-  // 驗證通過，繼續執行下一個 handler
-  await next()
-}
-
-const loggerMiddleware: MiddlewareHandler = async (ctx, next) => {
-  const start = Date.now()
-  await next()
-  const duration = Date.now() - start
-  console.log(`${ctx.req.method} ${ctx.req.path} - ${duration}ms`)
-}
-```
-
-#### 套用至路由群組
-
-`middleware()` 可接受單一 handler、多個 handlers，或陣列：
-
-```typescript
-// 方式 1: 多個參數
-core.router
-  .middleware(loggerMiddleware, authMiddleware)
-  .prefix('/api')
-  .group((r) => {
-    r.get('/users', [UserController, 'index'])
-  })
-
-// 方式 2: 陣列形式（適合動態組合）
-const commonMiddleware = [loggerMiddleware, corsMiddleware]
-core.router
-  .middleware(commonMiddleware, authMiddleware)
-  .prefix('/api/v2')
-  .group((r) => {
-    r.get('/users', [UserController, 'index'])
-  })
-
-// 方式 3: 巢狀群組
-core.router.prefix('/admin').group((admin) => {
-  admin.middleware(authMiddleware).group((secured) => {
-    secured.get('/dashboard', [AdminController, 'dashboard'])
-  })
-})
-```
-
-#### Pipeline 執行順序
-
-請求會依序通過所有 Middleware，最後到達 Controller：
-
-```
-Request → Logger → Auth → Controller → Auth (after) → Logger (after) → Response
-```
-
-每個 Middleware 可以：
-- **攔截請求**: 在 `await next()` 前返回 Response
-- **修改 Context**: 設定 `ctx.set('user', userData)`
-- **後處理**: 在 `await next()` 後執行清理邏輯
-
-#### CSRF 保護
-
-Gravito 可直接使用 Hono 內建的 CSRF middleware，保護表單與 API 免受跨站請求偽造攻擊：
-
-```typescript
-import { csrf } from 'hono/csrf'
-
-// 保護所有非安全方法（POST, PUT, DELETE, PATCH）
-core.router
-  .middleware(csrf())
-  .prefix('/api')
-  .group((r) => {
-    r.post('/users', [UserController, 'store'])
-    r.delete('/users/:id', [UserController, 'destroy'])
-  })
-```
-
-Hono CSRF middleware 會驗證：
-
-| 檢查項目 | 說明 |
-|----------|------|
-| `Origin` header | 確認請求來源與目標網域一致 |
-| `Sec-Fetch-Site` header | 瀏覽器提供的跨站指標 |
-
-> **Note**: 僅對「非安全方法」生效（`POST`, `PUT`, `DELETE`, `PATCH`）。`GET`, `HEAD`, `OPTIONS` 不受影響。
-
-進階設定：
-
-```typescript
-import { csrf } from 'hono/csrf'
-
-csrf({
-  origin: ['https://example.com', 'https://api.example.com'], // 允許的來源
-})
-```
-
-#### Request 驗證 (FormRequest)
-
-使用 `@gravito/orbit-request` 實現 Laravel 風格的 FormRequest 驗證：
-
-```bash
-bun add @gravito/orbit-request
-```
-
-**定義 FormRequest：**
-
-```typescript
-// src/requests/StoreUserRequest.ts
-import { FormRequest, z } from '@gravito/orbit-request'
-
-export class StoreUserRequest extends FormRequest {
-  schema = z.object({
-    name: z.string().min(2, '名稱至少 2 個字'),
-    email: z.string().email('請輸入有效的 Email'),
-  })
-}
-```
-
-**直接在路由中使用：**
-
-```typescript
-import { StoreUserRequest } from './requests/StoreUserRequest'
-
-// FormRequest 作為第二個參數，自動驗證
-core.router.post('/users', StoreUserRequest, [UserController, 'store'])
-
-// 或在群組中使用
-core.router.prefix('/api').group((r) => {
-  r.post('/users', StoreUserRequest, [UserController, 'store'])
-})
-```
-
-**在 Controller 中取得驗證資料：**
+Gravito 內建智慧型內容協商，同一個 Controller 能根據請求標頭自動切換回應類型：
 
 ```typescript
 export class UserController {
-  store(ctx: Context) {
-    // 型別安全的驗證資料
-    const data = ctx.get('validated') as { name: string; email: string }
-    return ctx.json({ user: data })
+  index(ctx: Context) {
+    return ctx.view('Users/Index', { users: [] })
+    // 如果是 Inertia 請求 -> 回傳 JSON
+    // 如果是首頁/爬蟲 -> 回傳 SSR HTML (App Shell)
   }
 }
 ```
 
-驗證失敗時，自動回傳 422 錯誤：
+### 二進位發佈策略 (Binary-First)
 
-```json
-{
-  "success": false,
-  "error": {
-    "code": "VALIDATION_ERROR",
-    "message": "Validation failed",
-    "details": [
-      { "field": "email", "message": "請輸入有效的 Email" }
-    ]
-  }
-}
-```
-
+我們推崇「單一執行檔」部署。透過 Bun 的編譯能力，你可以將整個應用（含 Runtime）打包成一個二進位檔案，徹底擺脫正式環境的 `node_modules` 噩夢。
 
 ---
 
-#### 郵件發送 (Orbit Mail)
+## 快速開始
 
-使用 `@gravito/orbit-mail` 提供強大的郵件寄送功能，支援多種驅動 (SMTP, SES) 與 HTML/React/Vue 渲染：
-
+### 安裝
 ```bash
-bun add @gravito/orbit-mail
+bun add gravito-core
 ```
 
-**建立 Mailable 類別：**
-
+### 第一個應用程式
 ```typescript
-import { Mailable } from '@gravito/orbit-mail';
+import { PlanetCore } from 'gravito-core'
 
-export class WelcomeEmail extends Mailable {
-  constructor(private user: User) {
-    super();
-  }
+const app = new PlanetCore()
 
-  build() {
-    return this
-      .to(this.user.email)
-      .subject('歡迎加入 Gravito！')
-      .view('emails/welcome', { name: this.user.name });
-  }
-}
+app.router.get('/', (c) => c.text('Hello Singularity!'))
+
+export default app.liftoff()
 ```
-
-**發送郵件：**
-
-Orbit Mail 會注入到 Context 中，可直接調用：
-
-```typescript
-// 在 Controller 中
-await ctx.get('mail').send(new WelcomeEmail(user));
-```
-
-**佇列發送 (Queuing)：**
-
-```typescript
-// 設定延遲與佇列
-const email = new WelcomeEmail(user)
-  .onQueue('emails')
-  .delay(60); // 延遲 60 秒
-
-await email.queue();
-```
-
-**支援驅動：**
-- **SMTP**: 使用 `nodemailer` 標準協定
-- **AWS SES**: 使用 AWS SDK 發送
-- **Log**: 開發時將內容輸出至 Console
-- **Memory/Dev**: 開發模式下攔截郵件至 Dev UI (`/__mail`)
 
 ---
 
 ## 延伸閱讀
 
-- [Laravel 12 MVC 對齊程度](./laravel-12-mvc-parity.md)
-- [路由 (Routing)](./routing.md)
-- [安全性 (Security)](./security.md)
-- [ORM 使用指南](./orm-usage.md)
-- [Orbit DB（API）](../api/orbit-db.md)
-
-## 安裝
-
-```bash
-bun add gravito-core
-```
-
-## 快速開始
-
-### 1. 專案結構
-
-Gravito 推崇扁平、潔淨的結構：
-
-```
-src/
-  controllers/
-  models/
-  views/
-  index.ts
-```
-
-### 2. 初始化 (IoC)
-
-Gravito v0.3+ 引入了 **IoC (控制反轉)** 透過 `PlanetCore.boot()` 簡化整合：
-
-```typescript
-// index.ts
-import { PlanetCore } from 'gravito-core'
-import { OrbitInertia } from '@gravito/orbit-inertia'
-import { OrbitView } from '@gravito/orbit-view'
-
-// 初始化核心與 Orbits
-const core = await PlanetCore.boot({
-  orbits: [
-      OrbitInertia,
-      OrbitView
-  ],
-  config: {
-      app: { name: 'My Gravito App' }
-  }
-});
-
-// 註冊路由
-core.router.group(root => {
-  root.get('/', ctx => ctx.text('你好，銀河！'));
-});
-
-// 啟動
-export default core.liftoff();
-```
-
-### 3. 真實範例 (Real World Example)
-
-請查看 `examples/` 目錄下的 [Gravito 官方網站範例](https://github.com/CarlLee1983/gravito/tree/main/examples/official-site)，展示了：
-- **Inertia.js + React** 前端整合
-- **i18n** 國際化多語系
-- **Tailwind CSS v4** 整合
-- **Markdown 文件引擎**
-
----
-
-## API 參考
-
-### `PlanetCore`
-
-| 方法/屬性 | 描述 |
-|-----------|------|
-| `boot(options)` | 靜態方法，使用 IoC 初始化系統 |
-| `liftoff(port?)` | 回傳 `Bun.serve` 所需的 config 物件 |
-| `router` | 存取 Gravito Router |
-| `hooks` | 存取 HookManager |
-| `logger` | 存取 Logger 實例 |
-
----
-
-### `HookManager`
-
-| 方法 | 描述 |
-|------|------|
-| `addFilter(hook, callback)` | 註冊 Filter |
-| `applyFilters(hook, initialValue, ...args)` | 依序執行 Filter |
-| `addAction(hook, callback)` | 註冊 Action |
-| `doAction(hook, ...args)` | 執行 Action |
-
----
-
-## 貢獻
-
-歡迎提交 PR、回報問題與提出功能建議。
-請參考 [Issues](https://github.com/CarlLee1983/gravito/issues)。
+- [與 Laravel 12 的對齊程度](./laravel-12-mvc-parity.md)
+- [佈署指南 (Deployment Guide)](./deployment.md)
+- [路由系統 (Routing)](./routing.md)
+- [ORM 實踐 (Drizzle)](./orm-usage.md) 
 
 ---
 

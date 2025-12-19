@@ -22,305 +22,115 @@ title: Gravito Core Concepts
   </a>
 </div>
 
-Welcome to Gravito Core. This guide covers the fundamental concepts and architecture of the framework.
-
-<div class="my-8 not-prose rounded-2xl overflow-hidden shadow-2xl border border-gray-800">
-  <picture>
-    <source media="(min-width: 1280px)" srcset="/static/image/hero-2560.webp">
-    <source media="(min-width: 768px)" srcset="/static/image/hero-1280.webp">
-    <img src="/static/image/hero-768.webp" alt="Gravito Core Architecture" class="w-full h-auto object-cover">
-  </picture>
-</div>
+Welcome to Gravito Core. A backend framework built for extreme performance and architectural elegance, designed to let developers rediscover the joy of true "craftsmanship" in the Bun era.
 
 ---
 
-## Design Principles
+## Philosophy: Singularity & Gravity
 
-Gravito is built around four non-negotiable pillars:
+In the Gravito worldview, a system is treated as a micro-galaxy:
 
-- **High performance**: fast startup and efficient request handling.
-- **Low overhead**: minimize runtime work and reduce hidden costs.
-- **Lightweight**: opt-in components and a small operational footprint.
-- **AI-friendly**: strict types and consistent conventions for reliable code generation.
+- **The Singularity**: Every request is optimized into a single path jump, eliminating framework overhead.
+- **The Core Gravity**: The Kernel maintains system health and coordination without interfering with specific business logic.
+- **Orbits**: Infrastructure modules orbit the core, completely decoupled.
 
----
+### Four Pillars of Excellence
 
-## Product Positioning
-
-### Key Differentiators
-
-| vs. | Gravito Advantage |
-|-----|-------------------|
-| **Laravel** | Bun + Hono powered, millisecond startup time |
-| **Next.js** | Binary-first distribution, deploy as a single executable without shipping `node_modules` |
-| **Express/Koa** | Enforced MVC layering, no scattered backend logic |
+- **High Performance**: Built on Bun & Hono for microsecond routing.
+- **Zero Overhead**: Boot-time resolution of routes and dependencies avoids runtime scanning.
+- **Micro-kernel**: A tiny core of just a few KBs; features are purely opt-in.
+- **AI-First**: Clear interface contracts and type inference make tools like Copilot/Cursor significantly smarter.
 
 ---
 
-## Technology Stack
+## Singularity Architecture
 
-<div class="not-prose my-10 font-sans grid gap-4 text-left">
-  <div class="relative overflow-hidden rounded-xl border border-gray-800 bg-gray-900 p-6 text-center shadow-lg">
-    <div class="absolute left-0 top-0 h-1 w-full bg-blue-500"></div>
-    <h3 class="mb-2 text-xl font-bold text-gray-100">TypeScript (Strict)</h3>
-    <p class="text-sm text-gray-400">Strict typing with AI-friendly hints</p>
-  </div>
-  <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-    <div class="relative overflow-hidden rounded-xl border border-gray-200 bg-white p-6 text-center shadow-sm dark:border-gray-700 dark:bg-gray-800">
-      <div class="absolute left-0 top-0 h-1 w-full bg-purple-500"></div>
-      <h4 class="mb-1 text-lg font-bold text-gray-900 dark:text-gray-100">Inertia.js</h4>
-      <p class="mb-2 text-xs font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400">Frontend Bridge</p>
-      <p class="text-sm text-gray-500 dark:text-gray-400">Backend MVC patterns with SPA user experience</p>
-    </div>
-    <div class="relative overflow-hidden rounded-xl border border-gray-200 bg-white p-6 text-center shadow-sm dark:border-gray-700 dark:bg-gray-800">
-      <div class="absolute left-0 top-0 h-1 w-full bg-yellow-400"></div>
-      <h4 class="mb-1 text-lg font-bold text-gray-900 dark:text-gray-100">Vite</h4>
-      <p class="mb-2 text-xs font-bold uppercase tracking-wider text-yellow-600 dark:text-yellow-400">Build Tool</p>
-      <p class="text-sm text-gray-500 dark:text-gray-400">React/Vue HMR and modern bundling</p>
-    </div>
-  </div>
-  <div class="rounded-xl bg-gradient-to-br from-orange-500 to-red-600 p-6 text-center text-white shadow-lg">
-    <h3 class="mb-1 text-xl font-bold">Hono</h3>
-    <p class="mb-1 text-sm text-orange-50">A fast JavaScript web framework</p>
-    <p class="text-xs text-orange-100/80">(Router + Request Parser)</p>
-  </div>
-  <div class="rounded-xl border border-gray-800 bg-black p-6 text-center shadow-lg">
-    <h3 class="mb-1 text-xl font-bold text-white">Bun</h3>
-    <p class="text-sm text-gray-400">Ultra-fast JavaScript runtime + bundler</p>
-  </div>
-</div>
+### 1. PlanetCore (The Micro-kernel)
 
----
+The gravitational center. A minimal, high-efficiency foundation responsible for:
 
-## Galaxy Architecture
-
-Gravito follows a unique design pattern inspired by celestial mechanics:
-
-### 1. PlanetCore (Micro-kernel)
-
-The gravitational center. A minimal, high-performance foundation responsible for:
-
-- Lifecycle management (Liftoff)
-- Hook system (Filters & Actions)
-- Error handling
-- Config & Logger management
-
-It knows **nothing** about databases, authentication, or business logic.
+- **Lifecycle Management**: From initial Boot to final Liftoff.
+- **Hook System**: Non-intrusive extension via Filters and Actions.
+- **Dependency Injection**: A lightweight, high-performance IoC container.
 
 ```typescript
+import { PlanetCore } from 'gravito-core'
+
 const core = await PlanetCore.boot({
-  orbits: [OrbitDB, OrbitAuth, OrbitInertia], // Opt-in extensions
+  orbits: [OrbitInertia, OrbitSEO], // Load only v1.0 stable modules
 })
 
-export default core.liftoff()
+export default core.liftoff() // Ignition for liftoff
 ```
 
-### 2. Orbits (Infrastructure Modules)
+### 2. Orbits (v1.0 Core Modules)
 
-Standard extension modules orbiting the core:
+The initial v1.0 release focuses on these stable Orbits:
 
-- `@gravito/orbit-db`: Database integration (Drizzle ORM)
-- `@gravito/orbit-auth`: Authentication (JWT)
-- `@gravito/orbit-session`: Session + CSRF protection
-- `@gravito/orbit-storage`: File storage
-- `@gravito/orbit-cache`: Caching
-- `@gravito/orbit-inertia`: Inertia.js integration
+- **`Orbit Kernel`**: Core coordination and IoC container.
+- **`Orbit Inertia`**: The full-stack bridge, enabling "Backend MVC, Frontend SPA" productivity.
+- **`Orbit SEO`**: SmartMap indexing engine and automated Meta tag management.
+- **`Orbit CLI`**: Automated scaffolding and productivity commands.
 
-### 3. Satellites (Business Logic Plugins)
+> **Roadmap (Scheduled for v1.5 Release)**: 
+> `Orbit DB` (Drizzle), `Orbit Auth` (JWT), `Orbit Mail`, `Orbit Queue`.
 
-This is where **your** code lives. Small, focused modules (e.g., `Users`, `Products`, `Payment`) that mount onto Orbits.
+### 3. Satellites (Business Logic)
+
+This is your territory. All Controllers, Services, and business logic are encapsulated in Satellites, mounting seamlessly onto the Core or Orbit modules.
 
 ---
 
-## Core Engine Features
+## Core Features
 
-### A. Micro-Kernel Design
+### Content Negotiation
 
-- **Zero Dependency Core**: Only handles I/O and plugin orchestration
-- **Boot-time Resolution**: Routes and dependencies resolved at startup, keeping runtime lean and read-only where possible
-
-### B. Smart Context
-
-#### `ctx.view(template, props)` - Content Negotiation
-
-**Content Negotiation**: Automatically detects request origin
-
-| Request Type | Response | Use Case |
-|--------------|----------|----------|
-| **Inertia Request** | JSON | React/Vue frontend takes over |
-| **HTML Request** | Server-Side Rendered HTML (App Shell) | Crawlers, initial page load |
+Gravito features built-in smart negotiation, allowing a single Controller to automatically switch response types:
 
 ```typescript
-export class HomeController {
+export class UserController {
   index(ctx: Context) {
-    return ctx.view('Home', {
-      title: 'Welcome to Gravito',
-      features: ['Fast', 'Light', 'Clean']
-    })
+    return ctx.view('Users/Index', { users: [] })
+    // Inertia Request -> returns JSON
+    // Landing/Crawler -> returns SSR HTML (App Shell)
   }
 }
 ```
 
-### C. Plugin System
+### Binary-First Distribution
 
-- **Opt-in**: No DB, Auth by default - add what you need
-- **Interface-based**: Wrapped via Hono Middleware mechanism
+We advocate for "Single File" deployment. Leveraging Bun's compilation, you can bundle your entire app (including runtime) into a single binary, completely eliminating `node_modules` from your production environment.
 
-#### `GravitoOrbit` (Extension Contract)
+---
 
-Gravito extends the core via Orbits. An Orbit implements the `GravitoOrbit` interface and registers hooks and middleware during `install()`.
+## Quick Start
 
+### Installation
+```bash
+bun add gravito-core
+```
+
+### Your First App
 ```typescript
-export interface GravitoOrbit {
-  install(core: PlanetCore): void | Promise<void>
-}
+import { PlanetCore } from 'gravito-core'
+
+const app = new PlanetCore()
+
+app.router.get('/', (c) => c.text('Hello Singularity!'))
+
+export default app.liftoff()
 ```
-
-### D. Error Handling
-
-Gravito provides request-level error handling out of the box, and also supports process-level error handling for failures outside the request lifecycle (e.g., background jobs).
-
-#### Request-level (HTTP)
-
-`PlanetCore` registers global handlers for:
-
-- Uncaught errors in route handlers and middleware (`app.onError`)
-- Unknown routes (`app.notFound`)
-
-You can customize behavior via hooks:
-
-- `error:context` (Filter): adjust status/payload/logging/HTML templates
-- `error:render` (Filter): return a custom `Response` (e.g., HTML/JSON override)
-- `error:report` (Action): report errors to external systems (Sentry, logs, alerts)
-- `notFound:context`, `notFound:render`, `notFound:report` for 404s
-
-#### Process-level (Recommended)
-
-Errors thrown outside the request lifecycle will not go through `app.onError`. For example:
-
-- Startup/boot-time async code
-- Background jobs and queue workers
-- Unhandled promise rejections
-
-Register process-level handlers:
-
-```ts
-const core = await PlanetCore.boot(config)
-
-// Register `unhandledRejection` / `uncaughtException`
-const unregister = core.registerGlobalErrorHandlers({
-  // mode: 'log' | 'exit' | 'exitInProduction' (default)
-  mode: 'exitInProduction',
-})
-
-core.hooks.addAction('processError:report', async (ctx) => {
-  // ctx.kind: 'unhandledRejection' | 'uncaughtException'
-  // ctx.error: unknown
-})
-```
-
-You can customize process-level behavior via:
-
-- `processError:context` (Filter): set `logLevel`, `logMessage`, `exit`, `exitCode`, `gracePeriodMs`
-- `processError:report` (Action): reporting side-effects
 
 ---
 
 ## Further Reading
 
-- [Laravel 12 MVC Parity](./laravel-12-mvc-parity.md)
-- [Routing](./routing.md)
-- [Security](./security.md)
-- [ORM Usage](./orm-usage.md)
-- [Orbit DB (API)](../api/orbit-db.md)
-
-## Installation
-
-```bash
-bun add gravito-core
-```
-
-## Quick Start
-
-### 1. Structure
-
-Gravito promotes a flat, clean structure:
-
-```
-src/
-  controllers/
-  models/
-  views/
-  index.ts
-```
-
-### 2. Bootstrapping (IoC)
-
-Gravito v0.3+ introduces **IoC (Inversion of Control)** via `PlanetCore.boot()`.
-
-```typescript
-// index.ts
-import { PlanetCore } from 'gravito-core'
-import { OrbitInertia } from '@gravito/orbit-inertia'
-import { OrbitView } from '@gravito/orbit-view'
-
-// Initialize Core with Orbits
-const core = await PlanetCore.boot({
-  orbits: [
-      OrbitInertia,
-      OrbitView
-  ],
-  config: {
-      app: { name: 'My Gravito App' }
-  }
-});
-
-// Register Routes
-core.router.group(root => {
-  root.get('/', ctx => ctx.text('Hello Galaxy!'));
-});
-
-// Liftoff
-export default core.liftoff();
-```
-
-### 3. Real World Example
-
-Check out the [Gravito Official Site](https://github.com/CarlLee1983/gravito/tree/main/examples/official-site) in the `examples/` directory for a full-featured application showcasing:
-- **Inertia.js + React** frontend
-- **i18n** Internationalization
-- **Tailwind CSS v4** integration
-- **Markdown Documentation Engine**
+- [Laravel 12 Parity](./laravel-12-mvc-parity.md)
+- [Deployment Guide](./deployment.md)
+- [Routing System](./routing.md)
+- [ORM Practice (Drizzle)](./orm-usage.md) 
 
 ---
-
-## API Reference
-
-### `PlanetCore`
-
-| Method/Property | Description |
-|-----------------|-------------|
-| `boot(options)` | Static method to bootstrap core with IoC |
-| `liftoff(port?)` | Returns config object for `Bun.serve` |
-| `router` | Access the Gravito Router |
-| `hooks` | Access HookManager |
-| `logger` | Access Logger instance |
-
-### `HookManager`
-
-| Method | Description |
-|--------|-------------|
-| `addFilter(hook, callback)` | Register a filter |
-| `applyFilters(hook, initialValue, ...args)` | Execute filters sequentially |
-| `addAction(hook, callback)` | Register an action |
-| `doAction(hook, ...args)` | Execute actions |
-
----
-
-## Contributing
-
-Contributions, issues and feature requests are welcome!
-Feel free to check the [issues page](https://github.com/CarlLee1983/gravito/issues).
 
 ## License
 

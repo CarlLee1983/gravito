@@ -58,7 +58,7 @@ This page compares Gravito (core + Orbits) with Laravel 12’s “full-stack MVC
 | Rate limiting / throttling | Implemented | `ThrottleRequests` middleware + Cache store backing |
 | Resource routes | Implemented | `router.resource('users', UsersController)` |
 | Route model binding | Implemented | `router.bind('user', async (id) => ...)` exposes `c.get('routeModels').user` |
-| Route cache strategy | Partial | CLI `route:cache` persists named routes manifest for URL generation |
+| Route cache strategy | Implemented | CLI `route:cache` persists named routes manifest for URL generation |
 
 ### Sessions / CSRF / Cookies
 
@@ -68,7 +68,7 @@ This page compares Gravito (core + Orbits) with Laravel 12’s “full-stack MVC
 | CSRF protection | Implemented | `@gravito/orbit-session` |
 | Cookie encryption | Implemented | `CookieJar` + AES-256-CBC Encrypter |
 | Cookie signing | Missing | Needs a first-class signing primitive (key rotation story) |
-| “Flash” data patterns | Partial | Supported in validation flow; needs a standard API surface |
+| “Flash” data patterns | Implemented | `session.flash(key, value)` |
 
 ### Validation
 
@@ -92,14 +92,14 @@ This page compares Gravito (core + Orbits) with Laravel 12’s “full-stack MVC
 
 | Feature | Status | Notes |
 |--------|--------|------|
-| Migrations (apply/status/fresh) | Partial | CLI wraps `drizzle-kit`; workflow still evolving |
-| Seed runner | Partial | CLI runner exists; app-level conventions still evolving |
-| Active Record-style models | Partial | `Model` exists; feature set is smaller than Eloquent |
-| Relations | Partial | Common relations are supported; parity with Eloquent is not complete |
+| Migrations (apply/status/fresh) | Implemented | `gravito migrate` via `drizzle-kit migrate` |
+| Seed runner | Implemented | `gravito db:seed` |
+| Active Record-style models | Partial | `Model` with CRUD, relations, scopes |
+| Relations | Partial | Common relations are supported |
 | Model factories | Missing | No standard factory system |
-| Soft deletes | Implemented | `usesSoftDeletes` + `withTrashed()` / `onlyTrashed()` |
-| Polymorphic relations | Missing | Requires ORM design work |
-| Pagination helpers | Implemented | `Model.paginate()` and `QueryBuilder.paginate()` |
+| Soft deletes | Implemented | `withTrashed()`, `onlyTrashed()`, `restore()` |
+| Polymorphic relations | Implemented | `morphTo`, `morphMany`, `morphOne` |
+| Pagination helpers | Implemented | `Paginator` class + `Model.paginate()` |
 
 ### Authentication / Authorization
 
@@ -109,7 +109,7 @@ This page compares Gravito (core + Orbits) with Laravel 12’s “full-stack MVC
 | Auth middleware (`auth`, `guest`) | Implemented | |
 | Gates / abilities | Implemented | `Gate.define()` + `authorize()` |
 | Policies | Partial | Manual mapping supported; no discovery/scaffolding |
-| Hashing (bcrypt/argon) service | Implemented | `HashManager` (Bun password) |
+| Hashing (bcrypt/argon) service | Implemented | `core.hasher` (via `Bun.password`) |
 | Password reset / email verification | Partial | Provides primitives (`PasswordBroker`, `EmailVerificationService`) |
 
 ### Queues / Scheduler

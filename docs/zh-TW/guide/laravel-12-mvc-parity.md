@@ -57,7 +57,7 @@ title: Laravel 12 MVC 對齊程度
 | 命名路由 + URL 產生器 | 已實作 | 支援 `router.get(...).name('home')` 與 `router.url('home')` |
 | Resource routes | 已實作 | `router.resource('users', UsersController)` |
 | Route model binding | 已實作 | `router.bind('user', async (id) => ...)`，可透過 `c.get('routeModels').user` 取得 |
-| Route cache 策略 | 部分 | CLI `route:cache` 可快取命名路由清單（manifest）供 URL 產生 |
+| Route cache 策略 | 已實作 | CLI `route:cache` 可快取命名路由清單（manifest）供 URL 產生 |
 | Rate limiting / 節流 | 已實作 | `ThrottleRequests` middleware + Cache store 支援 |
 
 ### Session / CSRF / Cookie
@@ -66,7 +66,7 @@ title: Laravel 12 MVC 對齊程度
 |------|------|------|
 | Session | 已實作 | `@gravito/orbit-session` |
 | CSRF 防護 | 已實作 | `@gravito/orbit-session` |
-| Flash 資料模式 | 部分 | 驗證流程可支援；仍需標準 API 介面 |
+| Flash 資料模式 | 已實作 | `session.flash(key, value)` |
 | Cookie 加密 | 已實作 | `CookieJar` + AES-256-CBC Encrypter |
 | Cookie 簽章 | 缺少 | 需要第一級的簽章 primitive（含金鑰輪替策略） |
 
@@ -92,14 +92,14 @@ title: Laravel 12 MVC 對齊程度
 
 | 功能 | 狀態 | 說明 |
 |------|------|------|
-| Migrations（apply/status/fresh） | 部分 | CLI 包裝 `drizzle-kit`；工作流程仍在演進中 |
-| Seeder 執行 | 部分 | CLI runner 已有；app 層級慣例仍在整理中 |
-| Active Record 風格 Model | 部分 | `Model` 已有；功能面小於 Eloquent |
-| Relations | 部分 | 常見關聯已支援；與 Eloquent 的完整度仍有差距 |
+| Migrations（apply/status/fresh） | 已實作 | `gravito migrate` (基於 `drizzle-kit migrate`) |
+| Seeder 執行 | 已實作 | `gravito db:seed` |
+| Active Record 風格 Model | 部分 | `Model` 具備 CRUD、關聯、Scopes |
+| 關聯 (Relations) | 部分 | 支援常見關聯 |
 | Model factories | 缺少 | 尚無標準化 factory 系統 |
-| Soft deletes | 已實作 | `usesSoftDeletes` + `withTrashed()` / `onlyTrashed()` |
-| Polymorphic relations | 缺少 | 需要 ORM 層設計 |
-| Pagination helpers | 已實作 | `Model.paginate()` 與 `QueryBuilder.paginate()` |
+| Soft deletes | 已實作 | `withTrashed()`, `onlyTrashed()`, `restore()` |
+| 多型關聯 (Polymorphic relations) | 已實作 | `morphTo`, `morphMany`, `morphOne` |
+| 分頁 helpers | 已實作 | `Paginator` 類別 + `Model.paginate()` |
 
 ### 認證 / 授權
 
@@ -108,8 +108,9 @@ title: Laravel 12 MVC 對齊程度
 | Auth guards（session/jwt/token） | 已實作 | `@gravito/orbit-auth` |
 | Auth middleware（`auth`、`guest`） | 已實作 | |
 | Gates / abilities | 已實作 | `Gate.define()` + `authorize()` |
-| Policies | 部分 | 支援手動 mapping；尚無自動 discovery/scaffolding |
-| 密碼雜湊（bcrypt/argon）服務 | 已實作 | `HashManager`（Bun password） |
+| Policies | 部分 | 支援手動 mapping |
+| 密碼重設 / 信箱驗證 | 缺少 | 需要設計 |
+| 密碼雜湊（bcrypt/argon）服務 | 已實作 | `core.hasher` (透過 `Bun.password`) |
 | 密碼重設 / 信箱驗證 | 部分 | 提供 primitives（`PasswordBroker`、`EmailVerificationService`） |
 
 ### 佇列 / 排程

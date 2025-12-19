@@ -1,174 +1,102 @@
 ---
-title: 路由 (Routing)
+title: 路由與控制器
+description: 以優雅且精確的方式處理每一位使用者的請求。
 ---
 
-# 路由 (Routing)
+# 🛣 路由與控制器 (Routing & Controllers)
 
-Gravito 的路由系統建立在 [Hono](https://hono.dev/) 之上，提供了類似 Laravel 的流暢且具表現力的 API。
+Gravito 結合了 **Hono** 的速度與 **MVC** (Model-View-Controller) 的架構化開發。這種設計確保了當您的應用程式規模擴大時，程式碼依然保持井然有序。
 
-## 基本路由
+## 🚦 路由器 (The Router)
 
-最基本的路由接受一個 URI 和一個閉包 (closure)：
+路由定義在 `src/routes/index.ts`。Gravito 提供了一套流暢的 API 來將網址映射到特定的動作。
 
-```typescript
-import { PlanetCore } from 'gravito-core';
-
-// ... core initialization
-
-core.router.get('/hello', (c) => {
-  return c.text('Hello World');
-});
-
-core.router.post('/users', (c) => {
-  // 處理 POST 請求
-});
-```
-
-## Controller 路由
-
-您可以將請求路由到 Controller 類別。Controller 會透過 Service Container 進行實例化。
+### 基礎路由
 
 ```typescript
-import { UserController } from './controllers/UserController';
+// src/routes/index.ts
+import { HomeController } from '../controllers/HomeController'
 
-// 路由至 [ControllerClass, 'methodName']
-core.router.get('/users', [UserController, 'index']);
-core.router.post('/users', [UserController, 'store']);
+export default function(routes: Router) {
+  // 簡單的匿名函式
+  routes.get('/hello', (c) => c.text('Hello World'))
+
+  // 映射到控制器 (Controller)
+  routes.get('/', [HomeController, 'index'])
+}
 ```
 
-## 命名路由 (Named Routes)
-
-命名路由讓您可以輕鬆地為特定路由產生 URL。您可以在任何路由定義後串接 `name` 方法：
+### 路由分組 (Route Groups)
+您可以將相關的路由編組，以便統一套用前綴 (Prefix) 或中間件 (Middleware)。
 
 ```typescript
-core.router.get('/users/:id', [UserController, 'show']).name('users.show');
-```
-
-### 產生 URL
-
-一旦路由被命名，您可以使用 `url` 方法來產生 URL：
-
-```typescript
-const url = core.router.url('users.show', { id: 1 });
-// 結果: /users/1
-
-// 帶有查詢參數 (query parameters)
-const url = core.router.url('users.show', { id: 1 }, { sort: 'desc' });
-// 結果: /users/1?sort=desc
-```
-
-## Resource Routes（資源路由）
-
-Gravito 支援 Laravel 風格的資源路由：
-
-```ts
-core.router.resource('users', UserController)
-```
-
-這會註冊標準動作：
-
-| 動作 | 方法 | 路徑 | 預設名稱 |
-|------|------|------|----------|
-| index | GET | `/users` | `users.index` |
-| create | GET | `/users/create` | `users.create` |
-| store | POST | `/users` | `users.store` |
-| show | GET | `/users/:id` | `users.show` |
-| edit | GET | `/users/:id/edit` | `users.edit` |
-| update | PUT/PATCH | `/users/:id` | `users.update` |
-| destroy | DELETE | `/users/:id` | `users.destroy` |
-
-你可以用 `only` / `except` 來限制動作：
-
-```ts
-core.router.resource('users', UserController, { only: ['index', 'show'] })
-```
-
-## Route Model Binding（路由模型綁定）
-
-將路由參數綁定到非同步解析器：
-
-```ts
-core.router.bind('user', async (id) => {
-  const user = await UserModel.find(id)
-  if (!user) throw new Error('ModelNotFound')
-  return user
-})
-
-core.router.get('/users/:user', async (c) => {
-  const user = c.get('routeModels')?.user
-  return c.json({ user })
+routes.group({ prefix: '/api' }, (group) => {
+  group.get('/users', [UserController, 'list'])
+  group.get('/posts', [PostController, 'list'])
 })
 ```
 
-若綁定解析失敗，Gravito 會丟出 `ModelNotFoundException` 並回傳 404 回應。
+---
 
-## Route Cache（命名路由快取）
+## 🧠 控制器 (Controllers)
 
-Gravito 可以快取「命名路由清單（manifest）」以加速 CLI 與工具場景的 URL 產生：
+控制器是應用程式的「大腦」。與其將所有邏輯寫在一個巨大的路由檔案中，我們將它們封裝在類別 (Class) 裡。
 
-```bash
-gravito route:cache --entry src/index.ts
-gravito route:clear
-```
-
-> **Note**: 這裡快取的是命名路由，用於 URL 產生與 introspection；HTTP 請求匹配仍然由 Hono 的路由註冊決定。
-
-## 路由群組 (Route Groups)
-
-路由群組允許您在大量路由之間共用路由屬性，例如 middleware、前綴 (prefixes) 或網域限制。
-
-### Middleware
+### 控制器結構剖析
 
 ```typescript
-import { authMiddleware } from './middleware/auth';
+// src/controllers/UserController.ts
+import { Context } from 'hono'
 
-core.router.middleware(authMiddleware).group((router) => {
-  router.get('/dashboard', [DashboardController, 'index']);
-  router.get('/profile', [ProfileController, 'edit']);
-});
+export class UserController {
+  /**
+   * 取得使用者列表
+   * @param c Hono Context
+   */
+  async list(c: Context) {
+    // 1. 從容器中取得服務
+    const userService = c.get('userService')
+    
+    // 2. 執行業務邏輯
+    const users = await userService.all()
+
+    // 3. 回傳回應
+    return c.json({ data: users })
+  }
+}
 ```
 
-### 路由前綴 (Prefixes)
+### 存取服務 (Accessing Services)
+Hono 的 `Context` 物件是您進入 Gravito 生態系統的入口。使用 `c.get()` 來存取各種 Orbits 與服務：
+- `c.get('inertia')`：Inertia 全端橋接器。
+- `c.get('view')`：樣板引擎。
+- `c.get('seo')`：SEO 標籤管理器。
+
+---
+
+## 📦 處理回應 (Handling Responses)
+
+控制器的每個方法都必須回傳一個標準的 `Response`。透過 Gravito/Hono，這變得非常簡單：
+
+| 回傳類型 | 方法 | 描述 |
+|------|--------|-------------|
+| **JSON** | `c.json(data)` | 適用於 API 開發。 |
+| **HTML** | `c.html(string)` | 回傳原始 HTML 字串。 |
+| **Inertia** | `inertia.render(name, props)` | 回傳全端 React 視圖頁面。 |
+| **View** | `view.render(name, data)` | 回傳後端渲染的樣板頁面。 |
+| **重新導向**| `c.redirect(url)` | 將使用者導向其他網址。 |
+
+---
+
+## 🛡 中間件 (Middleware)
+
+中間件允許您在請求到達控制器之前進行攔截（例如：日誌記錄或身分驗證）。
 
 ```typescript
-core.router.prefix('/api').group((router) => {
-  router.get('/users', [UserController, 'index']);
-  // 對應路徑: /api/users
-});
+// 為整個路由群組套用中間件
+routes.group({ middleware: [logger()] }, (group) => {
+  group.get('/dashboard', [DashboardController, 'index'])
+})
 ```
 
-### 子網域路由 (Sub-Domain Routing)
-
-```typescript
-core.router.domain('api.myapp.com').group((router) => {
-  router.get('/users', [UserController, 'index']);
-});
-```
-
-## FormRequest 驗證
-
-Gravito 支援在路由定義中直接使用類似 Laravel 的 FormRequest 驗證。
-
-```typescript
-import { StoreUserRequest } from './requests/StoreUserRequest';
-
-core.router.post('/users', StoreUserRequest, [UserController, 'store']);
-```
-
-如果驗證失敗，請求會自動停止，並回傳 422 錯誤（或授權失敗時回傳 403）。
-
-## 流量限制 (Rate Limiting)
-
-Gravito 內建 middleware 來限制路由的存取頻率。
-
-```typescript
-import { ThrottleRequests } from 'gravito-core';
-
-const throttle = new ThrottleRequests(core);
-
-core.router.middleware(throttle.handle(60, 60)).group((router) => {
-  router.get('/api/resource', [ApiController, 'index']);
-});
-```
-
-此範例將存取限制為每個 IP 地址每分鐘 60 次請求。
+> **下一步**：在 [Inertia 全端開發指南](/zh/docs/guide/inertia-react) 中學習如何橋接後端邏輯與現代前端介面。
