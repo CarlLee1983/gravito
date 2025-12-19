@@ -55,5 +55,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - HookManager
 - ConsoleLogger
 
-[0.3.0-alpha.1]: https://github.com/CarlLee1983/gravito/compare/v0.1.0...v0.3.0-alpha.1
-[0.1.0]: https://github.com/CarlLee1983/gravito/releases/tag/v0.1.0
+[0.3.0-alpha.1]: https://github.com/gravito-framework/gravito/compare/v0.1.0...v0.3.0-alpha.1
+[0.1.0]: https://github.com/gravito-framework/gravito/releases/tag/v0.1.0

@@ -1,6 +1,6 @@
 # 🌌 My Gravito App
 
-A web application built with [Gravito](https://github.com/CarlLee1983/gravito) - A micro-kernel framework for modular backend applications.
+A web application built with [Gravito](https://github.com/gravito-framework/gravito) - A micro-kernel framework for modular backend applications.
 
 ## Quick Start
 
@@ -84,7 +84,7 @@ core.hooks.addAction('request:start', (args) => {
 
 ## Learn More
 
-- [Gravito Documentation](https://github.com/CarlLee1983/gravito#readme)
+- [Gravito Documentation](https://github.com/gravito-framework/gravito#readme)
 - [Hono Documentation](https://hono.dev)
 - [Bun Documentation](https://bun.sh)
 

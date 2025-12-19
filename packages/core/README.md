@@ -173,7 +173,7 @@ core.hooks.addAction('processError:report', async (ctx) => {
 ## 🤝 Contributing
 
 Contributions, issues and feature requests are welcome!
-Feel free to check the [issues page](https://github.com/CarlLee1983/gravito/issues).
+Feel free to check the [issues page](https://github.com/gravito-framework/gravito/issues).
 
 ## 📝 License
 

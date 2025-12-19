@@ -27,7 +27,7 @@ git push origin backup-before-migration
 ### 步驟 1：在 GitHub 上移轉 Repository
 
 1. 前往您的 repository 設定頁面
-   - `https://github.com/CarlLee1983/gravito-core/settings`
+   - `https://github.com/gravito-framework/gravito-core/settings`
 
 2. 點擊「Transfer ownership」
    - 位於頁面最下方「Danger Zone」
@@ -165,12 +165,12 @@ grep -r "github.com/CarlLee1983" docs/ --include="*.md"
 {
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/CarlLee1983/gravito.git"
+    "url": "git+https://github.com/gravito-framework/gravito.git"
   },
   "bugs": {
-    "url": "https://github.com/CarlLee1983/gravito/issues"
+    "url": "https://github.com/gravito-framework/gravito/issues"
   },
-  "homepage": "https://github.com/CarlLee1983/gravito#readme"
+  "homepage": "https://github.com/gravito-framework/gravito#readme"
 }
 ```
 
@@ -192,7 +192,7 @@ grep -r "github.com/CarlLee1983" docs/ --include="*.md"
 
 **更新前**：
 ```typescript
-const editUrl = `https://github.com/CarlLee1983/gravito-core/blob/main/docs/${slug}.md`
+const editUrl = `https://github.com/gravito-framework/gravito-core/blob/main/docs/${slug}.md`
 ```
 
 **更新後**：
