@@ -56,12 +56,17 @@ type Variables = {
   logger: Logger
   config: ConfigManager
   cookieJar: CookieJar
-  routeModels?: Record<string, unknown>
+  route: (
+    name: string,
+    params?: Record<string, string | number>,
+    query?: Record<string, string | number>
+  ) => string
   // Optional orbit-injected variables
   cache?: CacheService
   view?: ViewService
   i18n?: unknown
   session?: unknown
+  routeModels?: Record<string, unknown>
 }
 
 export interface GravitoOrbit {
@@ -78,6 +83,7 @@ export type GravitoConfig = {
 import { CookieJar } from './http/CookieJar'
 import { Router } from './Router'
 import { Encrypter } from './security/Encrypter'
+import { BunHasher } from './security/Hasher'
 
 export class PlanetCore {
   public app: Hono<{ Variables: Variables }>
@@ -91,6 +97,7 @@ export class PlanetCore {
   public services: Map<string, unknown> = new Map()
 
   public encrypter?: Encrypter
+  public hasher: BunHasher
 
   private providers: ServiceProvider[] = []
 
@@ -130,6 +137,10 @@ export class PlanetCore {
     this.hooks = new HookManager()
     this.events = new EventManager(this)
 
+    this.hasher = new BunHasher()
+
+    // Initialize Encrypter if APP_KEY is present
+
     // Initialize Encrypter if APP_KEY is present
     const appKey =
       (this.config.has('APP_KEY') ? this.config.get<string>('APP_KEY') : undefined) ||
@@ -153,12 +164,15 @@ export class PlanetCore {
       const cookieJar = new CookieJar(this.encrypter)
       c.set('cookieJar', cookieJar)
 
+      // Add route helper
+      // @ts-expect-error
+      c.route = (name: string, params?: any, query?: any) => this.router.url(name, params, query)
+
       await next()
 
       // Attach queued cookies to response
       cookieJar.attach(c)
     })
-
     // Router depends on `core.app` for route registration and optional global middleware.
     this.router = new Router(this)
 

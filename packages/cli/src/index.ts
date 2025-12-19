@@ -172,8 +172,16 @@ cli.command('create [name]', 'Create a new Gravito project').action(async (name)
       select({
         message: 'Pick a starting point:',
         options: [
-          { value: 'basic', label: '🪐 Basic Planet (Core + Hono)', hint: 'Minimal setup' },
-          { value: 'inertia-react', label: '⚛️ Inertia + React', hint: 'Full-stack SPA with Vite' },
+          {
+            value: 'basic',
+            label: '🚀 Singularity (Light)',
+            hint: 'Ultra-fast, flat architecture for sites',
+          },
+          {
+            value: 'inertia-react',
+            label: '⚛️ Orbit App (Full-stack)',
+            hint: 'Inertia + React for complex apps',
+          },
         ],
       }),
   })

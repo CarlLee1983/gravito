@@ -246,9 +246,30 @@ export class Router {
   private bindings = new Map<string, (id: string) => Promise<any>>()
 
   /**
-   * Register a named route.
-   *
-   * This is called by `Route.name(...)`.
+   * Compile all registered routes into a flat array for caching or manifest generation.
+   */
+  compile() {
+    const routes: Array<{
+      method: string
+      path: string
+      name?: string
+      domain?: string | undefined
+    }> = []
+
+    for (const [name, info] of this.namedRoutes) {
+      routes.push({
+        name,
+        method: info.method,
+        path: info.path,
+        domain: info.domain,
+      })
+    }
+
+    return routes
+  }
+
+  /**
+   * Register a named route
    */
   registerName(name: string, method: string, path: string, options: RouteOptions = {}): void {
     const fullPath = (options.prefix || '') + path

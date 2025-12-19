@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import type { Listener } from '../src'
-import { Event, EventManager } from '../src'
+import { Event } from '../src'
 import { ConsoleLogger } from '../src/Logger'
 import { PlanetCore } from '../src/PlanetCore'
 
@@ -24,7 +24,7 @@ describe('EventManager', () => {
       }
     }
 
-    events.listen(TestEvent, new TestListener())
+    events.listen(TestEvent as any, new TestListener())
 
     await events.dispatch(new TestEvent('Hello'))
 

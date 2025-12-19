@@ -1,60 +1,60 @@
 {
-  "name": "gravito-core",
-  "version": "0.3.0-alpha.1",
-  "description": "",
-  "module": "./dist/index.mjs",
-  "main": "./dist/index.cjs",
-  "type": "module",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.cjs"
+    "name": "gravito-core",
+    "version": "1.0.0",
+    "description": "",
+    "module": "./dist/index.mjs",
+    "main": "./dist/index.cjs",
+    "type": "module",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.mjs",
+            "require": "./dist/index.cjs"
+        }
+    },
+    "files": [
+        "dist",
+        "README.md",
+        "LICENSE"
+    ],
+    "scripts": {
+        "build": "bun run build.ts",
+        "test": "bun test",
+        "test:coverage": "bun test --coverage",
+        "test:ci": "bun test --coverage --coverage-threshold=100",
+        "lint": "biome lint ./src ./tests",
+        "lint:fix": "biome lint --write ./src ./tests",
+        "format": "biome format --write ./src ./tests",
+        "format:check": "biome format ./src ./tests",
+        "check": "biome check ./src ./tests",
+        "check:fix": "biome check --write ./src ./tests",
+        "typecheck": "tsc --noEmit",
+        "prepublishOnly": "bun run typecheck && bun run check && bun run test:ci && bun run build"
+    },
+    "keywords": [],
+    "author": "Carl Lee <carllee0520@gmail.com>",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/CarlLee1983/gravito.git"
+    },
+    "bugs": {
+        "url": "https://github.com/CarlLee1983/gravito/issues"
+    },
+    "homepage": "https://github.com/CarlLee1983/gravito#readme",
+    "engines": {
+        "node": ">=18.0.0"
+    },
+    "devDependencies": {
+        "@types/bun": "latest",
+        "typescript": "^5.9.3"
+    },
+    "publishConfig": {
+        "access": "public",
+        "registry": "https://registry.npmjs.org/"
+    },
+    "dependencies": {
+        "hono": "^4.11.1"
     }
-  },
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE"
-  ],
-  "scripts": {
-    "build": "bun run build.ts",
-    "test": "bun test",
-    "test:coverage": "bun test --coverage",
-    "test:ci": "bun test --coverage --coverage-threshold=100",
-    "lint": "biome lint ./src ./tests",
-    "lint:fix": "biome lint --write ./src ./tests",
-    "format": "biome format --write ./src ./tests",
-    "format:check": "biome format ./src ./tests",
-    "check": "biome check ./src ./tests",
-    "check:fix": "biome check --write ./src ./tests",
-    "typecheck": "tsc --noEmit",
-    "prepublishOnly": "bun run typecheck && bun run check && bun run test:ci && bun run build"
-  },
-  "keywords": [],
-  "author": "Carl Lee <carllee0520@gmail.com>",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/CarlLee1983/gravito.git"
-  },
-  "bugs": {
-    "url": "https://github.com/CarlLee1983/gravito/issues"
-  },
-  "homepage": "https://github.com/CarlLee1983/gravito#readme",
-  "engines": {
-    "node": ">=18.0.0"
-  },
-  "devDependencies": {
-    "@types/bun": "latest",
-    "typescript": "^5.9.3"
-  },
-  "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org/"
-  },
-  "dependencies": {
-    "hono": "^4.11.1"
-  }
 }
