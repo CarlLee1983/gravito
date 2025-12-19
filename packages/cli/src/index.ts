@@ -201,32 +201,44 @@ cli
     const s = spinner()
     s.start('Scaffolding your universe...')
 
+    // Logic to handle directory vs package name
+    const isCurrentDir = project.name === '.' || project.name === './'
+    const targetDir = isCurrentDir ? '.' : project.name
+    const packageName = isCurrentDir
+      ? path.basename(process.cwd())
+      : project.name
+
     try {
       // Use giget to download from GitHub
-      // Format: github:user/repo/path/to/template
-      // We point to the 'templates/basic' folder in our repo
-      const templateSource = `github:CarlLee1983/gravito/templates/${project.template}#main`
+      const templateSource = `github:gravito-framework/gravito/templates/${project.template}#main`
 
       await downloadTemplate(templateSource, {
-        dir: project.name,
+        dir: targetDir,
         force: true, // Allow overwriting empty dir
       })
 
       s.stop('Universe created!')
 
       // Update package.json
-      const pkgPath = path.join(process.cwd(), project.name, 'package.json')
+      const pkgPath = path.join(process.cwd(), targetDir, 'package.json')
       const pkg = JSON.parse(await fs.readFile(pkgPath, 'utf-8'))
 
-      // Update project name
-      pkg.name = project.name
+      // Update project name with a clean NPM-safe name
+      pkg.name = packageName.toLowerCase().replace(/[^a-z0-9-_]/g, '-')
 
       // Replace workspace:* with actual versions
-      const gravitoVersion = '^1.0.0-beta.1'
+      const versionMap: Record<string, string> = {
+        'gravito-core': '^1.0.0-beta.1',
+        '@gravito/client': '^1.0.0-alpha.1',
+        '@gravito/orbit-view': '^1.0.0-beta.1',
+        '@gravito/orbit-cache': '^1.0.0-beta.1',
+        default: '^1.0.0-alpha.1', // Fallback for other orbits still in alpha
+      }
+
       if (pkg.dependencies) {
         for (const dep of Object.keys(pkg.dependencies)) {
           if (pkg.dependencies[dep] === 'workspace:*') {
-            pkg.dependencies[dep] = gravitoVersion
+            pkg.dependencies[dep] = versionMap[dep] || versionMap.default
           }
         }
       }
@@ -341,7 +353,7 @@ cli
   .action((options) => dbDeploy(options))
 
 cli.help()
-cli.version('1.0.0-alpha.1')
+cli.version('1.0.0-beta.4')
 
 try {
   cli.parse()
