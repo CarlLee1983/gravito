@@ -1,6 +1,6 @@
 {
     "name": "@gravito/orbit-view",
-    "version": "0.3.0-alpha.0",
+    "version": "1.0.0",
     "publishConfig": {
         "access": "public"
     },
@@ -14,6 +14,11 @@
             "types": "./dist/index.d.ts",
             "import": "./dist/index.mjs",
             "require": "./dist/index.cjs"
+        },
+        "./vue": {
+            "types": "./dist/vue.d.ts",
+            "import": "./dist/vue.mjs",
+            "require": "./dist/vue.cjs"
         }
     },
     "files": [
@@ -40,10 +45,11 @@
     "author": "Carl Lee <carllee0520@gmail.com>",
     "license": "MIT",
     "peerDependencies": {
-        "gravito-core": "workspace:*",
+        "gravito-core": "1.0.0",
         "hono": "^4.0.0",
         "react": "^18.0.0",
-        "react-dom": "^18.0.0"
+        "react-dom": "^18.0.0",
+        "vue": "^3.0.0"
     },
     "peerDependenciesMeta": {
         "react": {
@@ -51,13 +57,17 @@
         },
         "react-dom": {
             "optional": true
+        },
+        "vue": {
+            "optional": true
         }
     },
     "devDependencies": {
-        "gravito-core": "workspace:*",
-        "hono": "^4.0.0",
         "@types/bun": "latest",
         "@types/react": "^18.0.0",
-        "typescript": "latest"
+        "gravito-core": "1.0.0",
+        "hono": "^4.0.0",
+        "typescript": "latest",
+        "vue": "^3.5.26"
     }
 }

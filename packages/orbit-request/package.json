@@ -1,6 +1,6 @@
 {
     "name": "@gravito/orbit-request",
-    "version": "0.1.0-alpha.0",
+    "version": "1.0.0",
     "description": "Form Request validation for Gravito - Laravel-style request validation with Zod",
     "type": "module",
     "main": "./dist/index.js",
@@ -24,7 +24,7 @@
     },
     "dependencies": {
         "zod": "^3.23.0",
-        "gravito-core": "workspace:*"
+        "gravito-core": "1.0.0"
     },
     "peerDependencies": {
         "hono": "^4.0.0"

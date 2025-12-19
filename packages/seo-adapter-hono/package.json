@@ -1,11 +1,11 @@
 {
     "name": "@gravito/seo-adapter-hono",
-    "version": "0.1.0",
+    "version": "1.0.0",
     "description": "Hono adapter for Gravito SmartMap Engine",
     "main": "src/index.ts",
     "types": "src/index.ts",
     "dependencies": {
-        "@gravito/seo-core": "workspace:*"
+        "@gravito/seo-core": "1.0.0"
     },
     "peerDependencies": {
         "hono": "^4.0.0"

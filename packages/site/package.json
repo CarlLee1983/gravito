@@ -4,7 +4,7 @@
     "private": true,
     "scripts": {
         "dev": "bun run --watch src/index.ts",
-        "build": "bun build ./src/index.ts --outdir ./dist --target node",
+        "build": "bun build ./src/index.ts --outdir ./dist --target node --external gravito-core --external @gravito/orbit-content --external @gravito/orbit-i18n --external @gravito/orbit-sitemap --external hono",
         "generate": "bun run ./build-static.ts",
         "deploy": "bun run generate && gh-pages -d dist-static --dotfiles",
         "start": "bun run ./dist/index.js"

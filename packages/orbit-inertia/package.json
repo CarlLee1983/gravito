@@ -1,6 +1,6 @@
 {
     "name": "@gravito/orbit-inertia",
-    "version": "0.1.0-alpha.1",
+    "version": "1.0.0",
     "description": "Inertia.js adapter for Gravito",
     "module": "./dist/index.mjs",
     "main": "./dist/index.cjs",
@@ -24,11 +24,11 @@
         "typecheck": "tsc --noEmit"
     },
     "peerDependencies": {
-        "gravito-core": "workspace:*",
+        "gravito-core": "1.0.0",
         "hono": "^4.0.0"
     },
     "devDependencies": {
-        "gravito-core": "workspace:*",
+        "gravito-core": "1.0.0",
         "hono": "^4.0.0",
         "@types/bun": "latest",
         "typescript": "latest"

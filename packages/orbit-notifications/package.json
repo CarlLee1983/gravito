@@ -1,53 +1,52 @@
 {
-  "name": "@gravito/orbit-notifications",
-  "version": "0.1.0",
-  "publishConfig": {
-    "access": "public"
-  },
-  "description": "Lightweight, high-performance notification system for Gravito framework. Supports multiple channels (mail, database, broadcast, slack, sms) with zero runtime overhead.",
-  "module": "./dist/index.mjs",
-  "main": "./dist/index.cjs",
-  "type": "module",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.cjs"
+    "name": "@gravito/orbit-notifications",
+    "version": "1.0.0",
+    "publishConfig": {
+        "access": "public"
+    },
+    "description": "Lightweight, high-performance notification system for Gravito framework. Supports multiple channels (mail, database, broadcast, slack, sms) with zero runtime overhead.",
+    "module": "./dist/index.mjs",
+    "main": "./dist/index.cjs",
+    "type": "module",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.mjs",
+            "require": "./dist/index.cjs"
+        }
+    },
+    "files": [
+        "dist",
+        "README.md",
+        "LICENSE"
+    ],
+    "scripts": {
+        "build": "bun run build.ts",
+        "test": "bun test",
+        "typecheck": "tsc --noEmit"
+    },
+    "keywords": [
+        "gravito",
+        "orbit",
+        "notifications",
+        "mail",
+        "sms",
+        "slack",
+        "database"
+    ],
+    "author": "Carl Lee <carllee0520@gmail.com>",
+    "license": "MIT",
+    "dependencies": {
+        "gravito-core": "1.0.0"
+    },
+    "peerDependencies": {
+        "@gravito/orbit-queue": "1.0.0",
+        "@gravito/orbit-mail": "1.0.0",
+        "@gravito/orbit-broadcasting": "1.0.0"
+    },
+    "devDependencies": {
+        "@types/bun": "latest",
+        "typescript": "^5.9.3"
     }
-  },
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE"
-  ],
-  "scripts": {
-    "build": "bun run build.ts",
-    "test": "bun test",
-    "typecheck": "tsc --noEmit"
-  },
-  "keywords": [
-    "gravito",
-    "orbit",
-    "notifications",
-    "mail",
-    "sms",
-    "slack",
-    "database"
-  ],
-  "author": "Carl Lee <carllee0520@gmail.com>",
-  "license": "MIT",
-  "dependencies": {
-    "gravito-core": "workspace:*"
-  },
-  "peerDependencies": {
-    "@gravito/orbit-queue": "*",
-    "@gravito/orbit-mail": "*",
-    "@gravito/orbit-broadcasting": "*"
-  },
-  "devDependencies": {
-    "@types/bun": "latest",
-    "typescript": "^5.9.3"
-  }
 }
-

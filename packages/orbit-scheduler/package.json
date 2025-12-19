@@ -1,6 +1,6 @@
 {
     "name": "@gravito/orbit-scheduler",
-    "version": "0.3.0-alpha.1",
+    "version": "1.0.0",
     "description": "Distributed task scheduler for Gravito framework",
     "main": "./dist/index.cjs",
     "module": "./dist/index.mjs",
@@ -38,13 +38,13 @@
         "cron-parser": "^4.9.0"
     },
     "peerDependencies": {
-        "gravito-core": "workspace:*",
-        "@gravito/orbit-cache": "workspace:*",
+        "gravito-core": "1.0.0",
+        "@gravito/orbit-cache": "1.0.0",
         "hono": "^4.11.1"
     },
     "devDependencies": {
-        "gravito-core": "workspace:*",
-        "@gravito/orbit-cache": "workspace:*",
+        "gravito-core": "1.0.0",
+        "@gravito/orbit-cache": "1.0.0",
         "@types/bun": "latest",
         "typescript": "^5.9.3",
         "hono": "^4.11.1"

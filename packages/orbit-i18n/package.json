@@ -1,6 +1,6 @@
 {
     "name": "@gravito/orbit-i18n",
-    "version": "0.1.0",
+    "version": "1.0.0",
     "description": "Internationalization orbit for Gravito framework",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
@@ -17,7 +17,7 @@
     "author": "Carl",
     "license": "MIT",
     "peerDependencies": {
-        "gravito-core": "workspace:*",
+        "gravito-core": "1.0.0",
         "hono": "^4.0.0"
     },
     "devDependencies": {

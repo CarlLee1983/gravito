@@ -26,9 +26,9 @@
         "nodemailer": "^6.9.1"
     },
     "peerDependencies": {
-        "gravito-core": "workspace:*",
-        "@gravito/orbit-queue": "*",
-        "@gravito/orbit-view": "workspace:*",
+        "gravito-core": "1.0.0",
+        "@gravito/orbit-queue": "1.0.0",
+        "@gravito/orbit-view": "1.0.0",
         "react": "^18.0.0",
         "react-dom": "^18.0.0",
         "vue": "^3.0.0"
@@ -52,8 +52,8 @@
         "@types/mjml": "^4.7.4",
         "@types/react": "^18.2.0",
         "@types/react-dom": "^18.2.0",
-        "gravito-core": "workspace:*",
-        "@gravito/orbit-view": "workspace:*",
+        "gravito-core": "1.0.0",
+        "@gravito/orbit-view": "1.0.0",
         "tsup": "^8.0.2",
         "typescript": "^5.0.0",
         "vue": "^3.0.0",
