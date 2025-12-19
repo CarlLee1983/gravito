@@ -12,6 +12,7 @@ await Bun.build({
   sourcemap: 'external',
   minify: false,
   naming: '[dir]/[name].mjs',
+  external: ['gravito-core', 'bun:sqlite'],
 })
 
 console.log('📦 Building CJS bundle...')
@@ -23,6 +24,7 @@ await Bun.build({
   sourcemap: 'external',
   minify: false,
   naming: '[dir]/[name].cjs',
+  external: ['gravito-core', 'bun:sqlite'],
 })
 
 console.log('📝 Generating type declarations...')

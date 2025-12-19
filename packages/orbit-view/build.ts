@@ -5,7 +5,7 @@ await $`rm -rf dist`
 
 console.log('📦 Building ESM bundle...')
 await Bun.build({
-  entrypoints: ['./src/index.ts'],
+  entrypoints: ['./src/index.ts', './src/vue.ts'],
   outdir: './dist',
   format: 'esm',
   target: 'node',
@@ -19,12 +19,13 @@ await Bun.build({
     'react-dom',
     'react/jsx-dev-runtime',
     'react/jsx-runtime',
+    'vue',
   ],
 })
 
 console.log('📦 Building CJS bundle...')
 await Bun.build({
-  entrypoints: ['./src/index.ts'],
+  entrypoints: ['./src/index.ts', './src/vue.ts'],
   outdir: './dist',
   format: 'cjs',
   target: 'node',
@@ -38,6 +39,7 @@ await Bun.build({
     'react-dom',
     'react/jsx-dev-runtime',
     'react/jsx-runtime',
+    'vue',
   ],
 })
 

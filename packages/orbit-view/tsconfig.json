@@ -8,6 +8,11 @@
         "skipLibCheck": true,
         "declaration": true,
         "outDir": "./dist",
+        "paths": {
+            "gravito-core": [
+                "../../core/src/index.ts"
+            ]
+        },
         "types": [
             "bun-types"
         ]

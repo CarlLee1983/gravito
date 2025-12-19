@@ -22,4 +22,14 @@ await build({
   external: ['gravito-core'],
 })
 
+console.log('📝 Generating type declarations...')
+const tsc = Bun.spawn(['bunx', 'tsc', '--emitDeclarationOnly'], {
+  stdout: 'inherit',
+  stderr: 'inherit',
+})
+const exitCode = await tsc.exited
+if (exitCode !== 0) {
+  process.exit(1)
+}
+
 console.log('✅ Build completed')

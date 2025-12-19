@@ -11,7 +11,7 @@ await Bun.build({
   outdir: './dist',
   target: 'bun',
   format: 'esm',
-  external: ['hono', 'zod'],
+  external: ['hono', 'zod', 'gravito-core'],
 })
 
 // Generate types with tsc

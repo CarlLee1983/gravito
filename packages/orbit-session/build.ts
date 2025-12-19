@@ -12,6 +12,7 @@ await Bun.build({
   sourcemap: 'external',
   minify: false,
   naming: '[dir]/[name].mjs',
+  external: ['gravito-core', 'hono', '@gravito/orbit-cache'],
 })
 
 console.log('📦 Building CJS bundle...')
@@ -23,6 +24,7 @@ await Bun.build({
   sourcemap: 'external',
   minify: false,
   naming: '[dir]/[name].cjs',
+  external: ['gravito-core', 'hono', '@gravito/orbit-cache'],
 })
 
 console.log('📝 Generating type declarations...')

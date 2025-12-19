@@ -14,7 +14,15 @@
         "outDir": "./dist",
         "declaration": true,
         "emitDeclarationOnly": true,
-        "esModuleInterop": true
+        "esModuleInterop": true,
+        "paths": {
+            "gravito-core": [
+                "../../core/src/index.ts"
+            ],
+            "@gravito/orbit-cache": [
+                "../orbit-cache/src/index.ts"
+            ]
+        }
     },
     "include": [
         "src"
