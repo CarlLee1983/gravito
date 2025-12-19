@@ -29,7 +29,7 @@ export class DocsController {
     const page = await DocsService.getPage(locale, slug)
     const sidebar = DocsService.getSidebar(locale)
     const fsLocale = locale === 'zh' ? 'zh-TW' : 'en'
-    const editUrl = `https://github.com/CarlLee1983/gravito-core/blob/main/docs/${fsLocale}/${slug}.md`
+    const editUrl = `https://github.com/gravito-framework/gravito/blob/main/docs/${fsLocale}/${slug}.md`
 
     if (!page) {
       return (inertia as any).render('Error', { status: 404, message: 'Document not found' })

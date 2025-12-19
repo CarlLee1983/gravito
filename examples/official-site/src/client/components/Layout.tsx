@@ -68,8 +68,8 @@ export default function Layout({ children, noPadding = false }: LayoutProps) {
           {/* Navbar Background Capsule */}
           <div
             className={`absolute inset-y-[-8px] inset-x-[-20px] rounded-[32px] transition-all duration-700 -z-10 ${isScrolled
-                ? 'bg-void/60 backdrop-blur-2xl border border-white/10 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.7)] opacity-100 scale-100'
-                : 'bg-transparent opacity-0 scale-95'
+              ? 'bg-void/60 backdrop-blur-2xl border border-white/10 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.7)] opacity-100 scale-100'
+              : 'bg-transparent opacity-0 scale-95'
               }`}
           />
 
@@ -106,7 +106,7 @@ export default function Layout({ children, noPadding = false }: LayoutProps) {
             <div className="w-[1px] h-6 bg-white/5 mx-2" />
 
             <a
-              href="https://github.com/carllee1983/gravito"
+              href="https://github.com/gravito-framework/gravito"
               target="_blank"
               rel="noreferrer"
               className="px-6 py-2.5 rounded-xl text-sm font-bold text-gray-400 hover:text-white transition-all flex items-center gap-2 group/git"
@@ -202,7 +202,7 @@ export default function Layout({ children, noPadding = false }: LayoutProps) {
             <ul className="space-y-4 text-sm text-gray-400">
               <li>
                 <a
-                  href="https://github.com/carllee1983/gravito"
+                  href="https://github.com/gravito-framework/gravito"
                   className="hover:text-singularity transition-colors"
                 >
                   GitHub
