@@ -20,7 +20,7 @@
         "publish:dry-run": "bun run scripts/publish-all.ts --dry-run"
     },
     "devDependencies": {
-        "@biomejs/biome": "^2.3.8",
+        "@biomejs/biome": "^2.3.10",
         "@types/bun": "latest",
         "simple-git-hooks": "^2.13.1",
         "typescript": "^5.9.3"
