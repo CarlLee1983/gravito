@@ -34,3 +34,6 @@ coverage/
 tmp/
 temp/
 dist-static/
+
+# Test projects created by create-gravito-app
+test-create-app/
