@@ -8,7 +8,7 @@ export class DocsController {
   index = async (c: Context) => {
     // Redirect to the first meaningful doc page
     const locale = (c.get('locale') as string) || 'en'
-    const prefix = locale === 'zh' ? '/zh' : ''
+    const prefix = locale === 'zh' ? '/zh' : '/en'
     return c.redirect(`${prefix}/docs/guide/core-concepts`)
   }
 

@@ -33,6 +33,7 @@ async function build() {
   // 1. Static Routes
   routes.add('/')
   routes.add('/about')
+  routes.add('/docs') // This will generate a redirect to /docs/guide/core-concepts
 
   // 2. Discover Docs
   const docsRoot = resolve(process.cwd(), '../../docs')

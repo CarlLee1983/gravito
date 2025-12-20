@@ -34,10 +34,19 @@ export class InertiaService {
     props: Record<string, unknown> = {},
     rootVars: Record<string, unknown> = {}
   ) {
+    // For SSG, use relative URL (pathname only) to avoid cross-origin issues
+    let pageUrl: string
+    try {
+      const reqUrl = new URL(this.context.req.url, 'http://localhost')
+      pageUrl = reqUrl.pathname + reqUrl.search
+    } catch {
+      // Fallback if URL parsing fails
+      pageUrl = this.context.req.url
+    }
     const page = {
       component,
       props: { ...this.sharedProps, ...props },
-      url: this.context.req.url,
+      url: pageUrl,
       version: this.config.version,
     }
 
