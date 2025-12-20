@@ -10,6 +10,7 @@ import type {
   ConnectionContract,
   QueryBuilderContract,
   QueryResult,
+  CacheInterface,
 } from './types'
 
 /**
@@ -45,11 +46,26 @@ import type {
 export class DB {
   private static manager: ConnectionManager = new ConnectionManager()
   private static initialized = false
+  private static cache: CacheInterface | undefined
+
+  /**
+   * Set global cache provider
+   */
+  static setCache(cache: CacheInterface) {
+    DB.cache = cache
+  }
+
+  /**
+   * Get global cache provider
+   */
+  static getCache(): CacheInterface | undefined {
+    return DB.cache
+  }
 
   /**
    * Prevent instantiation
    */
-  private constructor() {}
+  private constructor() { }
 
   // ============================================================================
   // Configuration

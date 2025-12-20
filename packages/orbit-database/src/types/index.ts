@@ -434,6 +434,23 @@ export interface QueryBuilderContract<T = Record<string, unknown>> {
   // SCOPES
   applyScope(name: string, callback: (query: QueryBuilderContract<T>) => void): this
   withoutGlobalScope(name: string): this
+
+  // CACHING
+  cache(ttl: number, key?: string): this
+}
+
+/**
+ * Grammar Contract
+ */
+
+/**
+ * Cache Interface
+ */
+export interface CacheInterface {
+  get<T = any>(key: string): Promise<T | null>
+  set(key: string, value: any, ttl?: number): Promise<void>
+  delete(key: string): Promise<void>
+  clear(): Promise<void>
 }
 
 /**

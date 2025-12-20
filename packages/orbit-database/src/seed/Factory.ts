@@ -1,7 +1,5 @@
-/**
- * Factory
- * @description Model factory for generating fake data
- */
+import { DB } from '../DB'
+import { Model } from '../orm/model/Model'
 
 /**
  * Factory State
@@ -14,6 +12,14 @@ type FactoryState<T> = Partial<T>
 export type FactoryDefinition<T> = () => T
 
 /**
+ * Factory Options
+ */
+export interface FactoryOptions {
+  model?: typeof Model
+  table?: string
+}
+
+/**
  * Factory
  * Generate fake records for seeding
  *
@@ -23,22 +29,23 @@ export type FactoryDefinition<T> = () => T
  *   name: faker.person.fullName(),
  *   email: faker.internet.email(),
  *   password: 'hashed_password',
- * }))
+ * }), { table: 'users' })
  *
  * // Create 10 users
- * const users = userFactory.count(10).make()
- *
- * // Create with overrides
- * const admin = userFactory.state({ role: 'admin' }).make()
+ * const users = await userFactory.count(10).create()
  * ```
  */
 export class Factory<T extends Record<string, unknown>> {
   private definition: FactoryDefinition<T>
   private _count = 1
   private _states: FactoryState<T>[] = []
+  private model?: typeof Model
+  private tableName?: string
 
-  constructor(definition: FactoryDefinition<T>) {
+  constructor(definition: FactoryDefinition<T>, options: FactoryOptions = {}) {
     this.definition = definition
+    if (options.model) this.model = options.model
+    if (options.table) this.tableName = options.table
   }
 
   /**
@@ -104,6 +111,36 @@ export class Factory<T extends Record<string, unknown>> {
   }
 
   /**
+   * Create and insert records into the database
+   */
+  async create(attributes: FactoryState<T> = {}): Promise<T[]> {
+    if (Object.keys(attributes).length > 0) {
+      this.state(attributes)
+    }
+
+    const records = this.make()
+
+    const table = this.tableName ?? (this.model && (this.model as any).table)
+
+    if (!table) {
+      throw new Error('Cannot create records: No table or model specified for factory.')
+    }
+
+    if (records.length === 0) {
+      return []
+    }
+
+    // Bulk Insert
+    await DB.table(table).insert(records)
+
+    // TODO: Ideally we should return the fresh models from DB if possible
+    // But basic insert returns void or IDs depending on driver.
+    // For seeding, just returning the data we inserted is often enough.
+
+    return records
+  }
+
+  /**
    * Create a sequence generator
    */
   sequence<K extends keyof T>(key: K, generator: (index: number) => T[K]): this {
@@ -135,7 +172,8 @@ export class Factory<T extends Record<string, unknown>> {
  * Helper to create a factory
  */
 export function factory<T extends Record<string, unknown>>(
-  definition: FactoryDefinition<T>
+  definition: FactoryDefinition<T>,
+  options?: FactoryOptions
 ): Factory<T> {
-  return new Factory<T>(definition)
+  return new Factory<T>(definition, options)
 }

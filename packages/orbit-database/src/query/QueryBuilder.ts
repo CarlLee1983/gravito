@@ -19,6 +19,7 @@ import type {
   WhereClause,
 } from '../types'
 import { Expression } from './Expression'
+import { DB } from '../DB'
 
 /**
  * Query Builder Error
@@ -58,6 +59,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   protected offsetValue: number | undefined = undefined
   protected bindingsList: unknown[] = []
   protected eagerLoads = new Map<string, (query: QueryBuilderContract<any>) => void>()
+  protected _cache?: { ttl: number; key?: string }
 
   // Global Scopes
   protected globalScopes = new Map<string, (query: QueryBuilderContract<any>) => void>()
@@ -98,6 +100,18 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    */
   distinct(): this {
     this.distinctValue = true
+    return this
+  }
+
+  /**
+   * Cache the query result
+   */
+  cache(ttl: number, key?: string): this {
+    if (key !== undefined) {
+      this._cache = { ttl, key }
+    } else {
+      this._cache = { ttl }
+    }
     return this
   }
 
@@ -576,7 +590,24 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    */
   async get(): Promise<T[]> {
     const sql = this.grammar.compileSelect(this.getCompiledQuery())
+
+    // Check cache
+    const cache = DB.getCache()
+    let cacheKey: string | undefined
+
+    if (cache && this._cache) {
+      cacheKey = this._cache.key ?? `orbit:query:${sql}:${JSON.stringify(this.bindingsList)}`
+      const cached = await cache.get<T[]>(cacheKey)
+      if (cached) return cached
+    }
+
     const result = await this.connection.raw<T>(sql, this.bindingsList)
+
+    // Store cache
+    if (cache && this._cache && cacheKey) {
+      await cache.set(cacheKey, result.rows, this._cache.ttl)
+    }
+
     return result.rows
   }
 

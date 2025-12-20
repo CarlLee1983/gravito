@@ -76,6 +76,13 @@ export abstract class Model {
 
   /** Primary key column */
   static primaryKey = 'id'
+  static hidden: string[] = []
+  static visible: string[] = []
+  static appends: string[] = []
+  static observers: any[] = []
+
+  /** Attribute casting definition */
+  static casts: Record<string, string> = {}
 
   /** Database connection name */
   static connection?: string
@@ -139,8 +146,20 @@ export abstract class Model {
     attributes: Partial<ModelAttributes>,
     exists: boolean
   ): T {
+    // Cast initial attributes if they exist
+    const modelCtor = this.constructor as typeof Model
+    const castedAttributes = { ...attributes }
+
+    if (Object.keys(modelCtor.casts).length > 0) {
+      for (const [key, value] of Object.entries(attributes)) {
+        if (key in modelCtor.casts) {
+          castedAttributes[key] = this._castAttribute(key, value, modelCtor.casts[key]!)
+        }
+      }
+    }
+
     // Set initial state
-    this._attributes = { ...attributes }
+    this._attributes = castedAttributes
     this._exists = exists
 
     if (exists) {
@@ -148,10 +167,9 @@ export abstract class Model {
     }
 
     const model = this
-    const modelCtor = this.constructor as typeof Model
 
     return new Proxy(this, {
-      get(target, prop: string | symbol) {
+      get(target, prop: string | symbol, receiver) {
         // 1. Return internal properties (including _attributes, _exists, etc.)
         if (typeof prop === 'symbol' || (typeof prop === 'string' && prop.startsWith('_'))) {
           return Reflect.get(target, prop)
@@ -168,29 +186,41 @@ export abstract class Model {
         while (proto && proto !== Object.prototype) {
           const descriptor = Object.getOwnPropertyDescriptor(proto, prop)
           if (descriptor?.get) {
-            return descriptor.get.call(target)
+            return descriptor.get.call(receiver)
           }
           if (descriptor?.value && typeof descriptor.value === 'function') {
-            return descriptor.value.bind(target)
+            return descriptor.value.bind(receiver)
           }
           proto = Object.getPrototypeOf(proto)
         }
 
-        // 4. Return from attributes if it exists (prioritize DB values/relations over instance placeholders)
+        // 4. Check for Accessors (get[Name]Attribute)
+        if (typeof prop === 'string') {
+          const studly = prop.replace(/(?:^|_|(?=[A-Z]))(.)/g, (_, c) => c.toUpperCase())
+          const accessor = `get${studly}Attribute`
+          // Check if accessor exists on the instance (prototype)
+          if (typeof (target as any)[accessor] === 'function') {
+            const raw = model._attributes[prop]
+            // Bind to receiver (the proxy) to allow access to other attributes
+            return (target as any)[accessor].call(receiver, raw)
+          }
+        }
+
+        // 5. Return from attributes if it exists
         if (typeof prop === 'string' && prop in model._attributes) {
           return model._attributes[prop]
         }
 
-        // 5. Return instance values (for properties declared in the class body that aren't attributes)
+        // 6. Return instance values (for properties declared in the class body that aren't attributes)
         if (Object.prototype.hasOwnProperty.call(target, prop)) {
           const value = Reflect.get(target, prop)
           if (typeof value === 'function') {
-            return value.bind(target)
+            return value.bind(receiver)
           }
           return value
         }
 
-        // 6. Return static properties from the model constructor
+        // 7. Return static properties from the model constructor
         if (prop in modelCtor && !['name', 'prototype', 'length'].includes(prop as string)) {
           const value = Reflect.get(modelCtor, prop)
           if (typeof value === 'function') {
@@ -202,13 +232,23 @@ export abstract class Model {
         return undefined
       },
 
-      set(target, prop: string | symbol, value) {
+      set(target, prop: string | symbol, value, receiver) {
         // 1. Allow internal property setting
         if (typeof prop === 'symbol' || (typeof prop === 'string' && prop.startsWith('_'))) {
-          return Reflect.set(target, prop, value)
+          return Reflect.set(target, prop, value, receiver)
         }
 
-        // 2. Prioritize setting attributes/relations
+        // 2. Check for Mutators (set[Name]Attribute)
+        if (typeof prop === 'string') {
+          const studly = prop.replace(/(?:^|_|(?=[A-Z]))(.)/g, (_, c) => c.toUpperCase())
+          const mutator = `set${studly}Attribute`
+          if (typeof (target as any)[mutator] === 'function') {
+            (target as any)[mutator].call(receiver, value)
+            return true
+          }
+        }
+
+        // 3. Prioritize setting attributes/relations
         // If it's already an attribute, or if it's not in the target (instance), treat as attribute
         if (!(prop in target) || (typeof prop === 'string' && prop in model._attributes)) {
           model._setAttribute(prop as string, value)
@@ -262,8 +302,12 @@ export abstract class Model {
     // Mark dirty
     this._dirtyTracker.mark(key, value)
 
+    // Cast value before setting
+    const type = modelCtor.casts[key]
+    const castedValue = type ? this._castAttribute(key, value, type) : value
+
     // Set value
-    this._attributes[key] = value
+    this._attributes[key] = castedValue
   }
 
   /**
@@ -306,6 +350,57 @@ export abstract class Model {
     if (Array.isArray(value)) return 'array'
     if (value instanceof Date) return 'date'
     return typeof value
+  }
+
+  /**
+   * Cast attribute value to its type
+   */
+  private _castAttribute(key: string, value: any, type: string): any {
+    if (value === null || value === undefined) {
+      return value
+    }
+
+    switch (type) {
+      case 'int':
+      case 'integer':
+      case 'number':
+        return typeof value === 'string' ? parseFloat(value) : Number(value)
+
+      case 'real':
+      case 'float':
+      case 'double':
+        return parseFloat(value)
+
+      case 'string':
+        return String(value)
+
+      case 'bool':
+      case 'boolean':
+        return [true, 1, '1', 'true', 'on', 'yes'].includes(value)
+
+      case 'object':
+      case 'json':
+        if (typeof value === 'object') return value
+        try {
+          return JSON.parse(value)
+        } catch (e) {
+          return value
+        }
+
+      case 'collection':
+        // Placeholder for Collection support
+        return Array.isArray(value) ? value : [value]
+
+      case 'date':
+      case 'datetime':
+        if (value instanceof Date) return value
+        return new Date(value)
+
+      case 'timestamp':
+        return value instanceof Date ? value.getTime() : new Date(value).getTime()
+    }
+
+    return value
   }
 
   /**
@@ -706,13 +801,34 @@ export abstract class Model {
   }
 
   /**
+   * Register a model observer
+   */
+  static observe(observer: any) {
+    if (!Object.prototype.hasOwnProperty.call(this, 'observers')) {
+      this.observers = []
+    }
+    this.observers.push(observer)
+  }
+
+  /**
    * Emit a model event
    */
   protected async emit(event: string): Promise<void> {
-    // Support static listeners or overrides
+    const modelCtor = this.constructor as typeof Model
+
+    // 1. Instance method hooks (existing logic)
     const methodName = `on${event.charAt(0).toUpperCase()}${event.slice(1)}`
     if (typeof (this as any)[methodName] === 'function') {
       await (this as any)[methodName]()
+    }
+
+    // 2. Observers
+    if (modelCtor.observers && modelCtor.observers.length > 0) {
+      for (const observer of modelCtor.observers) {
+        if (typeof observer[event] === 'function') {
+          await observer[event](this)
+        }
+      }
     }
   }
 
@@ -1004,7 +1120,56 @@ export abstract class Model {
   /**
    * Convert to JSON
    */
-  toJSON(): ModelAttributes {
-    return this.getAttributes()
+  /**
+   * Convert model to plain object via toJSON
+   */
+  toJSON(): any {
+    const modelCtor = this.constructor as typeof Model
+    const attributes = { ...this._attributes }
+    const result: any = {}
+
+    // 1. Process attributes (trigger accessors)
+    for (const key of Object.keys(attributes)) {
+      result[key] = (this as any)[key]
+    }
+
+    // 2. Process appends
+    for (const key of modelCtor.appends) {
+      result[key] = (this as any)[key]
+    }
+
+    // 3. Process relations (eager loaded on instance)
+    const instanceKeys = Object.keys(this)
+    for (const key of instanceKeys) {
+      if (key.startsWith('_')) continue
+      if (key in result) continue // already processed
+
+      const value = (this as any)[key]
+      // Check if it's a Model or Array of Models (simple heuristic)
+      if (
+        value instanceof Model ||
+        (Array.isArray(value) && value.length > 0 && value[0] instanceof Model) ||
+        (Array.isArray(value) && value.length === 0) // Empty relation array
+      ) {
+        result[key] = value
+      }
+    }
+
+    // 4. Filter visible/hidden
+    if (modelCtor.visible.length > 0) {
+      const filtered: any = {}
+      for (const key of modelCtor.visible) {
+        if (key in result) filtered[key] = result[key]
+      }
+      return filtered
+    }
+
+    if (modelCtor.hidden.length > 0) {
+      for (const key of modelCtor.hidden) {
+        delete result[key]
+      }
+    }
+
+    return result
   }
 }

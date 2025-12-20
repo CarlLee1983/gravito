@@ -12,6 +12,9 @@
             "import": "./dist/index.js"
         }
     },
+    "bin": {
+        "orbit": "./src/cli.ts"
+    },
     "scripts": {
         "build": "bun run build.ts",
         "test": "bun test",

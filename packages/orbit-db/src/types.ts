@@ -32,12 +32,12 @@ export interface PaginateResult<T> {
  * Health check result.
  */
 export interface HealthCheckResult {
-  healthy?: boolean
-  status?: string
-  message?: string
-  duration?: number
-  latency?: number
-  error?: string
+  healthy?: boolean | undefined
+  status?: string | undefined
+  message?: string | undefined
+  duration?: number | undefined
+  latency?: number | undefined
+  error?: string | undefined
 }
 
 /**
@@ -56,10 +56,10 @@ export interface QueryLogInfo {
  */
 export interface MigrateResult {
   success: boolean
-  migrationsApplied?: number
-  appliedMigrations?: string[]
-  message?: string
-  error?: string
+  migrationsApplied?: number | undefined
+  appliedMigrations?: string[] | undefined
+  message?: string | undefined
+  error?: string | undefined
 }
 
 /**
@@ -72,10 +72,10 @@ export type SeedFunction = (db: any) => Promise<void>
  */
 export interface SeedResult {
   success: boolean
-  seedName?: string
-  seededFiles?: string[]
-  message?: string
-  error?: string
+  seedName?: string | undefined
+  seededFiles?: string[] | undefined
+  message?: string | undefined
+  error?: string | undefined
 }
 
 /**
@@ -95,13 +95,13 @@ export interface DeployOptions {
  */
 export interface DeployResult {
   success: boolean
-  healthCheck?: HealthCheckResult
-  migrations?: MigrateResult
-  seeding?: SeedResult[]
-  seeds?: SeedResult | SeedResult[]
-  message?: string
-  duration?: number
-  error?: string
+  healthCheck?: HealthCheckResult | undefined
+  migrations?: MigrateResult | undefined
+  seeding?: SeedResult[] | undefined
+  seeds?: SeedResult | SeedResult[] | undefined
+  message?: string | undefined
+  duration?: number | undefined
+  error?: string | undefined
 }
 
 /**
@@ -154,8 +154,8 @@ export interface ExecuteOptions {
  * Event source info.
  */
 export interface EventSource {
-  file?: string
-  line?: number
-  method?: string
-  stack?: string
+  file?: string | undefined
+  line?: number | undefined
+  method?: string | undefined
+  stack?: string | undefined
 }

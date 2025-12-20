@@ -23,7 +23,7 @@ export class EventBus {
   private eventHistory: Array<{
     event: string
     payload: unknown
-    source?: EventSource
+    source?: EventSource | undefined
     timestamp: number
   }> = []
   private maxHistorySize = 1000
@@ -116,7 +116,7 @@ export class EventBus {
   getHistory(event?: string): Array<{
     event: string
     payload: unknown
-    source?: EventSource
+    source?: EventSource | undefined
     timestamp: number
   }> {
     if (event) {
@@ -145,13 +145,15 @@ export class EventBus {
     // Skip first two lines (Error and getEventSource).
     if (lines.length > 2) {
       const callerLine = lines[2]
-      // Try to parse file and line number.
-      const match = callerLine.match(/at\s+(.+?):(\d+):(\d+)/)
-      if (match) {
-        return {
-          file: match[1],
-          line: parseInt(match[2], 10),
-          stack: callerLine,
+      if (callerLine) {
+        // Try to parse file and line number.
+        const match = callerLine.match(/at\s+(.+?):(\d+):(\d+)/)
+        if (match) {
+          return {
+            file: match[1],
+            line: match[2] ? parseInt(match[2], 10) : undefined,
+            stack: callerLine,
+          }
         }
       }
     }

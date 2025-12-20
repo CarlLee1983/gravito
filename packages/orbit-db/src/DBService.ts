@@ -1183,6 +1183,7 @@ export class DBServiceImpl implements DBService {
         migrations: migrateResult,
         seeds: seedResult,
         healthCheck: healthCheckResult,
+        duration,
       }
     } catch (error) {
       const duration = Date.now() - startTime
@@ -1839,10 +1840,7 @@ export class DBServiceImpl implements DBService {
         // Use Drizzle `execute`.
         if (dbAny.sql && typeof dbAny.sql === 'function' && params) {
           // Parameterized query.
-          const sqlBuilder = dbAny.sql
-          const _paramPlaceholders = params.map((_, i) => sqlBuilder.placeholder(`param${i}`))
-          // Note: simplified implementation; complex SQL building may be required in real usage.
-          result = await dbAny.execute(dbAny.sql.raw(sql, params))
+          result = await dbAny.execute(dbAny.sql.raw(sql))
         } else {
           result = await dbAny.execute(dbAny.sql?.raw?.(sql) || sql)
         }

@@ -49,7 +49,7 @@ export interface CastsDefinition {
 /**
  * Model static interface (for type inference).
  */
-export interface ModelStatic<T extends Model = Model> {
+export interface ModelStatic<T extends Model<any> = Model<any>> {
   new (): T
   table?: Table
   tableName?: string
@@ -76,7 +76,7 @@ export interface ModelStatic<T extends Model = Model> {
   getTable(): Table
   getDBService(): DBService
   getPrimaryKey(): string
-  getRelationName(model: ModelStatic): string
+  getRelationName(model: ModelStatic<any>): string
   fromData(data: unknown): T
   castAttribute(
     key: string,
@@ -98,8 +98,8 @@ export interface ModelStatic<T extends Model = Model> {
   count(where?: WhereCondition): Promise<number>
   exists(where: WhereCondition): Promise<boolean>
   create(data: Partial<T['attributes']>): Promise<T>
-  withTrashed(): QueryBuilder<T>
-  onlyTrashed(): QueryBuilder<T>
+  withTrashed(): any
+  onlyTrashed(): any
   paginate(options: {
     page: number
     limit: number
@@ -140,33 +140,37 @@ export interface ModelStatic<T extends Model = Model> {
  * const users = await User.all();
  * ```
  */
-export abstract class Model<TAttributes = Record<string, unknown>> {
+export abstract class Model<TAttributes = any> {
   // Static properties (must be configured by subclasses)
-  protected static table?: Table
-  protected static tableName?: string
-  protected static primaryKey = 'id'
-  protected static dbService?: DBService
-  protected static relations: Map<string, RelationDefinition> = new Map()
-  protected static casts: CastsDefinition = {}
-  protected static fillable: string[] = []
-  protected static guarded: string[] = []
-  protected static hidden: string[] = []
-  protected static visible: string[] = []
-  protected static appends: string[] = []
-  protected static timestamps = true
-  protected static createdAtColumn = 'created_at'
-  protected static updatedAtColumn = 'updated_at'
-  protected static deletedAtColumn = 'deleted_at'
-  protected static usesSoftDeletes = false
-  protected static localScopes: Map<string, (query: unknown) => unknown> = new Map()
-  protected static globalScopes: Array<(query: unknown) => unknown> = []
-  protected static core?: PlanetCore // Used to emit events
+  public static table?: Table
+  public static tableName?: string
+  public static primaryKey = 'id'
+  public static dbService?: DBService
+  public static relations: Map<string, RelationDefinition> = new Map()
+  public static casts: CastsDefinition = {}
+  public static fillable: string[] = []
+  public static guarded: string[] = []
+  public static hidden: string[] = []
+  public static visible: string[] = []
+  public static appends: string[] = []
+  public static timestamps = true
+  public static createdAtColumn = 'created_at'
+  public static updatedAtColumn = 'updated_at'
+  public static deletedAtColumn = 'deleted_at'
+  public static usesSoftDeletes = false
+  public static localScopes: Map<string, (query: unknown) => unknown> = new Map()
+  public static globalScopes: Array<(query: unknown) => unknown> = []
+  public static core?: PlanetCore // Used to emit events
 
   // Instance properties
   public attributes: Partial<TAttributes> = {}
+  public originalAttributes: Partial<TAttributes> = {}
   private relationsCache: Map<string, unknown> = new Map()
   private relationsLoaded: Set<string> = new Set()
-  private exists = false
+  private _exists = false
+  public isExists(): boolean {
+    return this._exists
+  }
   public wasRecentlyCreated = false
 
   /**
@@ -189,7 +193,7 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
   /**
    * Get table instance.
    */
-  protected static getTable(): Table {
+  public static getTable(): Table {
     const modelClass = this as unknown as typeof Model
     const table = modelClass.table
     if (!table) {
@@ -203,7 +207,7 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
   /**
    * Get DBService.
    */
-  protected static getDBService(): DBService {
+  public static getDBService(): DBService {
     const modelClass = this as unknown as typeof Model
     const dbService = modelClass.dbService
     if (!dbService) {
@@ -217,7 +221,7 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
   /**
    * Get primary key name.
    */
-  protected static getPrimaryKey(): string {
+  public static getPrimaryKey(): string {
     const modelClass = this as unknown as typeof Model
     return modelClass.primaryKey || 'id'
   }
@@ -605,7 +609,7 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
 
     instance.attributes = processedData
     instance.originalAttributes = { ...processedData }
-    instance.exists = true
+    instance._exists = true
     return instance
   }
 
@@ -660,7 +664,7 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
       return (this.constructor as typeof Model).castAttribute(
         String(key),
         value,
-        casts[String(key)]
+        casts[String(key)] as CastType | ((value: unknown) => unknown)
       ) as TAttributes[K]
     }
 
@@ -774,7 +778,7 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
       const created = await dbService.create(table, dataToSave)
       this.attributes = created as Partial<TAttributes>
       this.originalAttributes = { ...(created as Partial<TAttributes>) }
-      this.exists = true
+      this._exists = true
       ;(this as any).wasRecentlyCreated = true
 
       // Emit created event.
@@ -1004,8 +1008,7 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
         throw new Error(`[Model] Related model not defined for relation "${relationName}"`)
       }
 
-      const relatedTable = (relatedModel as unknown as typeof Model).getTable()
-      const _relatedTableName = (relatedModel as unknown as typeof Model).tableName
+      const _relatedTable = (relatedModel as unknown as typeof Model).getTable()
       const currentModelName = modelClass.name
 
       const where: any = {
@@ -1014,7 +1017,7 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
       }
 
       if (relation.type === 'morphOne') {
-        const data = await dbService.findOne(relatedTable, where)
+        const data = await dbService.findOne(_relatedTable, where)
         if (data) {
           const instance = (relatedModel as any).fromData(data)
           this.relationsCache.set(relationName, instance)
@@ -1024,7 +1027,7 @@ export abstract class Model<TAttributes = Record<string, unknown>> {
         return null
       } else {
         // morphMany
-        const data = await dbService.findAll(relatedTable, where)
+        const data = await dbService.findAll(_relatedTable, where)
         const instances = data.map((item: any) => (relatedModel as any).fromData(item))
         const collection = new ModelCollection(instances)
         this.relationsCache.set(relationName, collection)
@@ -1334,6 +1337,8 @@ export class QueryBuilder<T extends Model> {
   private orderByColumn?: unknown
   private orderDirection: 'asc' | 'desc' = 'asc'
   private limitValue?: number
+  private offsetValue?: number
+  private groupByColumns?: unknown[]
   private softDeleteMode: 'default' | 'withTrashed' | 'onlyTrashed' = 'default'
 
   constructor(private modelClass: ModelStatic<T>) {}
@@ -1558,13 +1563,25 @@ export class QueryBuilder<T extends Model> {
     // Apply global scopes and soft delete.
     const finalWhere = this.buildWhere()
 
-    const options: { limit?: number; orderBy?: unknown; orderDirection?: 'asc' | 'desc' } = {}
+    const options: {
+      limit?: number
+      offset?: number
+      orderBy?: unknown
+      orderDirection?: 'asc' | 'desc'
+      groupBy?: unknown[]
+    } = {}
     if (this.orderByColumn) {
       options.orderBy = this.orderByColumn
       options.orderDirection = this.orderDirection
     }
     if (this.limitValue) {
       options.limit = this.limitValue
+    }
+    if (this.offsetValue) {
+      options.offset = this.offsetValue
+    }
+    if (this.groupByColumns) {
+      options.groupBy = this.groupByColumns
     }
 
     const data = await dbService.findAll(table, finalWhere, options)
@@ -1667,13 +1684,23 @@ export class QueryBuilder<T extends Model> {
 
     const _finalWhere = this.buildWhere()
 
-    const options: { orderBy?: unknown; orderDirection?: 'asc' | 'desc' } = {}
+    const options: {
+      orderBy?: unknown
+      orderDirection?: 'asc' | 'desc'
+      offset?: number
+      groupBy?: unknown[]
+    } = {}
     if (this.orderByColumn) {
       options.orderBy = this.orderByColumn
       options.orderDirection = this.orderDirection
     }
 
-    const result = await dbService.paginate(table, { page, limit, ...options })
+    const result = await dbService.paginate(table, {
+      page,
+      limit,
+      ...options,
+      where: _finalWhere,
+    })
     const models = new ModelCollection(
       result.data.map((item: any) => (this.modelClass as any).fromData(item)) as T[]
     )
