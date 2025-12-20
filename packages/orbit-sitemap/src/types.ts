@@ -56,6 +56,13 @@ export interface SitemapEntry {
   images?: SitemapImage[] | undefined
   videos?: SitemapVideo[] | undefined
   news?: SitemapNews | undefined
+  // 301 轉址支援
+  redirect?: {
+    from: string // 原始 URL（如果這是轉址後的 URL）
+    to: string // 目標 URL（如果這是轉址前的 URL）
+    type: 301 | 302
+    canonical?: string // Canonical URL
+  }
 }
 
 export interface SitemapIndexEntry {
@@ -79,6 +86,11 @@ export interface SitemapStorage {
   read(filename: string): Promise<string | null>
   exists(filename: string): Promise<boolean>
   getUrl(filename: string): string
+  // 影子處理相關方法
+  writeShadow?(filename: string, content: string, shadowId?: string): Promise<void>
+  commitShadow?(shadowId: string): Promise<void>
+  listVersions?(filename: string): Promise<string[]>
+  switchVersion?(filename: string, version: string): Promise<void>
 }
 
 export interface SitemapCache {
@@ -90,4 +102,57 @@ export interface SitemapCache {
 export interface SitemapLock {
   acquire(resource: string, ttl: number): Promise<boolean>
   release(resource: string): Promise<void>
+}
+
+// 進度追蹤介面
+export interface SitemapProgress {
+  jobId: string
+  status: 'pending' | 'processing' | 'completed' | 'failed'
+  total: number
+  processed: number
+  percentage: number
+  startTime?: Date
+  endTime?: Date
+  error?: string
+}
+
+export interface SitemapProgressStorage {
+  get(jobId: string): Promise<SitemapProgress | null>
+  set(jobId: string, progress: SitemapProgress): Promise<void>
+  update(jobId: string, updates: Partial<SitemapProgress>): Promise<void>
+  delete(jobId: string): Promise<void>
+  list(limit?: number): Promise<SitemapProgress[]>
+}
+
+// 變更追蹤介面
+export type ChangeType = 'add' | 'update' | 'remove'
+
+export interface SitemapChange {
+  type: ChangeType
+  url: string
+  entry?: SitemapEntry
+  timestamp: Date
+}
+
+export interface ChangeTracker {
+  track(change: SitemapChange): Promise<void>
+  getChanges(since?: Date): Promise<SitemapChange[]>
+  getChangesByUrl(url: string): Promise<SitemapChange[]>
+  clear(since?: Date): Promise<void>
+}
+
+// 轉址相關介面
+export interface RedirectRule {
+  from: string
+  to: string
+  type: 301 | 302
+  createdAt?: Date
+}
+
+export interface RedirectManager {
+  register(redirect: RedirectRule): Promise<void>
+  registerBatch(redirects: RedirectRule[]): Promise<void>
+  get(from: string): Promise<RedirectRule | null>
+  getAll(): Promise<RedirectRule[]>
+  resolve(url: string, followChains?: boolean, maxChainLength?: number): Promise<string | null>
 }

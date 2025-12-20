@@ -103,6 +103,23 @@ export class SitemapStream {
       }
     }
 
+    // Canonical link (for redirects)
+    if (entry.redirect?.canonical) {
+      let canonicalUrl = entry.redirect.canonical
+      if (!canonicalUrl.startsWith('http')) {
+        if (!canonicalUrl.startsWith('/')) {
+          canonicalUrl = `/${canonicalUrl}`
+        }
+        canonicalUrl = baseUrl + canonicalUrl
+      }
+      item += `${subIndent}<xhtml:link rel="canonical" href="${this.escape(canonicalUrl)}"/>${nl}`
+    }
+
+    // Redirect comment (for documentation)
+    if (entry.redirect && !entry.redirect.canonical) {
+      item += `${subIndent}<!-- Redirect: ${entry.redirect.from} → ${entry.redirect.to} (${entry.redirect.type}) -->${nl}`
+    }
+
     // Images
     if (entry.images) {
       for (const img of entry.images) {
