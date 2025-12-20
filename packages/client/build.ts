@@ -12,7 +12,7 @@ await build({
 })
 
 console.log('📝 Generating type declarations...')
-const tsc = Bun.spawn(['bunx', 'tsc', '--emitDeclarationOnly', '--skipLibCheck'], {
+const tsc = Bun.spawn(['bunx', 'tsc', '-p', 'tsconfig.build.json'], {
   stdout: 'inherit',
   stderr: 'inherit',
 })

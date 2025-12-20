@@ -1,4 +1,4 @@
-import type { Hono } from 'hono'
+import type { Env, Hono, Schema } from 'hono'
 import { hc } from 'hono/client'
 import type { GravitoClientOptions } from './types'
 
@@ -67,7 +67,7 @@ import type { GravitoClientOptions } from './types'
  * })
  * ```
  */
-export function createGravitoClient<T extends Hono<any, any, any>>(
+export function createGravitoClient<T extends Hono<Env, Schema, string>>(
   baseUrl: string,
   options?: GravitoClientOptions
 ): ReturnType<typeof hc<T>> {

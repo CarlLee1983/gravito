@@ -1,6 +1,6 @@
 import { tbValidator } from '@hono/typebox-validator'
-import type { TSchema } from '@sinclair/typebox'
-import type { MiddlewareHandler } from 'hono'
+import type { Static, TSchema } from '@sinclair/typebox'
+import type { Env, MiddlewareHandler } from 'hono'
 
 /**
  * Validation source type.
@@ -13,23 +13,22 @@ export type ValidationSource = 'json' | 'query' | 'param' | 'form'
  * @param source - Validation source (json, query, param, form)
  * @param schema - TypeBox Schema
  * @returns Hono middleware
- *
- * @example
- * ```typescript
- * import { Schema, validate } from '@gravito/validator'
- *
- * app.post('/users',
- *   validate('json', Schema.Object({
- *     username: Schema.String(),
- *     email: Schema.String({ format: 'email' })
- *   })),
- *   (c) => {
- *     const data = c.req.valid('json')
- *     return c.json({ success: true, data })
- *   }
- * )
- * ```
  */
-export function validate(source: ValidationSource, schema: TSchema): MiddlewareHandler {
-  return tbValidator(source, schema)
+export function validate<
+  T extends TSchema,
+  S extends ValidationSource,
+  E extends Env = any,
+  P extends string = any,
+>(
+  source: S,
+  schema: T
+): MiddlewareHandler<
+  E,
+  P,
+  {
+    in: { [K in S]: Static<T> }
+    out: { [K in S]: Static<T> }
+  }
+> {
+  return tbValidator(source as any, schema) as any
 }

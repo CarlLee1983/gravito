@@ -80,11 +80,11 @@ export async function down(db: any): Promise<void> {
         success: true,
         message: 'Migrations applied successfully',
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       return {
         success: false,
         message: 'Migration failed',
-        error: err.message,
+        error: DrizzleMigrationDriver.getErrorMessage(err),
       }
     }
   }
@@ -99,11 +99,11 @@ export async function down(db: any): Promise<void> {
       await dropProc.exited
 
       return this.migrate()
-    } catch (err: any) {
+    } catch (err: unknown) {
       return {
         success: false,
         message: 'Fresh migration failed',
-        error: err.message,
+        error: DrizzleMigrationDriver.getErrorMessage(err),
       }
     }
   }
@@ -121,5 +121,12 @@ export async function down(db: any): Promise<void> {
     } catch {
       return { pending: [], applied: [] }
     }
+  }
+
+  private static getErrorMessage(err: unknown): string {
+    if (err instanceof Error) {
+      return err.message
+    }
+    return String(err)
   }
 }

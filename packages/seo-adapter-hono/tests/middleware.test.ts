@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
-import { gravitoSeo } from '../src/middleware'
 import type { SeoConfig } from '@gravito/seo-core'
+import { gravitoSeo } from '../src/middleware'
 
 describe('gravitoSeo middleware', () => {
   it('should export gravitoSeo function', () => {
@@ -17,4 +17,3 @@ describe('gravitoSeo middleware', () => {
     expect(typeof middleware).toBe('function')
   })
 })
-

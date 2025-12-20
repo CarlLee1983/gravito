@@ -109,9 +109,10 @@ export class MakeCommand {
       await fs.access(filepath)
       // If no error, file exists
       throw new Error(`File already exists: ${filepath}`)
-    } catch (e: any) {
-      if (e.code !== 'ENOENT') {
-        throw e
+    } catch (err: unknown) {
+      const error = err as NodeJS.ErrnoException
+      if (error.code !== 'ENOENT') {
+        throw err
       }
     }
 

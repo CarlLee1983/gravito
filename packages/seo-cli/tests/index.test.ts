@@ -5,4 +5,3 @@ describe('@gravito/seo-cli', () => {
     expect(true).toBe(true)
   })
 })
-

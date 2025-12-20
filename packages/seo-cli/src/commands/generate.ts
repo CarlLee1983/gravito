@@ -41,17 +41,17 @@ export async function generateCommand(options: GenerateCommandOptions) {
 
     console.log(pc.dim('Fetching entries...'))
     const strategy = engine.getStrategy()
-    
+
     // 支援串流處理
     const entries = await strategy.getEntries()
-    
+
     // 如果是 AsyncIterable，使用串流處理
     if (entries && typeof (entries as any)[Symbol.asyncIterator] === 'function') {
       await generateFromStream(entries as AsyncIterable<any>, config, outputPath)
     } else {
       // 陣列處理（現有邏輯）
       const entriesArray = Array.isArray(entries) ? entries : []
-      
+
       console.log(pc.dim(`Generating XML for ${entriesArray.length} URLs...`))
       const builder = new XmlStreamBuilder({
         baseUrl: config.baseUrl,
@@ -104,7 +104,7 @@ async function generateFromStream(
         xml += builder.entry(e)
       }
       batch = []
-      
+
       // 顯示進度
       if (count % 10000 === 0) {
         process.stdout.write(`\r${pc.dim(`Processed ${count} URLs...`)}`)

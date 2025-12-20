@@ -193,10 +193,11 @@ export async function schemaLock(options: { entry?: string; lockPath?: string })
       if (file.endsWith('.ts')) {
         const modelModule = await import(path.join(modelsDir, file))
         const modelClass = Object.values(modelModule).find(
-          (m: any) => m && m.prototype instanceof Model
-        ) as any
+          (value): value is typeof Model =>
+            typeof value === 'function' && value.prototype instanceof Model
+        )
 
-        if (modelClass && modelClass.table) {
+        if (modelClass?.table) {
           tables.push(modelClass.table)
         }
       }
@@ -211,7 +212,9 @@ export async function schemaLock(options: { entry?: string; lockPath?: string })
 
     await registry.saveToLock(tables, options.lockPath)
 
-    console.log(pc.green(`✅ Schema lock generated for ${tables.length} tables: ${tables.join(', ')}`))
+    console.log(
+      pc.green(`✅ Schema lock generated for ${tables.length} tables: ${tables.join(', ')}`)
+    )
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err)
     console.error(pc.red(`❌ Schema lock failed: ${message}`))

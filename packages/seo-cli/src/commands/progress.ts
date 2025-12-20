@@ -23,4 +23,3 @@ export async function progressCommand(options: ProgressCommandOptions) {
     process.exit(1)
   }
 }
-
