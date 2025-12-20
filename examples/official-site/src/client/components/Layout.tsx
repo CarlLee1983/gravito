@@ -1,6 +1,6 @@
 import { Link, usePage } from '@inertiajs/react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowUpRight, Book, Cpu, Github, Home as HomeIcon, Info, Layers, Menu, Zap } from 'lucide-react'
+import { ArrowUpRight, Book, Cpu, Github, Home as HomeIcon, Info, Menu, Zap } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTrans } from '../hooks/useTrans'
 import Logo from './Logo'
@@ -11,7 +11,7 @@ interface LayoutProps {
 }
 
 interface PageProps {
-  [key: string]: any
+  [key: string]: unknown
   locale?: string
 }
 
@@ -95,10 +95,11 @@ export default function Layout({ children, noPadding = false }: LayoutProps) {
         <div className="max-w-7xl mx-auto flex items-center justify-between relative">
           {/* Navbar Background Capsule */}
           <div
-            className={`absolute inset-y-[-8px] inset-x-[-20px] rounded-[32px] transition-all duration-700 -z-10 ${isScrolled
-              ? 'bg-void/60 backdrop-blur-2xl border border-white/10 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.7)] opacity-100 scale-100'
-              : 'bg-transparent opacity-0 scale-95'
-              }`}
+            className={`absolute inset-y-[-8px] inset-x-[-20px] rounded-[32px] transition-all duration-700 -z-10 ${
+              isScrolled
+                ? 'bg-void/60 backdrop-blur-2xl border border-white/10 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.7)] opacity-100 scale-100'
+                : 'bg-transparent opacity-0 scale-95'
+            }`}
           />
 
           <Logo isZh={currentLang === 'zh'} />
@@ -113,8 +114,9 @@ export default function Layout({ children, noPadding = false }: LayoutProps) {
                 <Link
                   key={item.path}
                   href={getLocalizedPath(item.path)}
-                  className={`relative px-6 py-2.5 rounded-xl text-sm font-bold tracking-tight transition-all duration-300 group ${active ? 'text-white' : 'text-gray-400 hover:text-white'
-                    }`}
+                  className={`relative px-6 py-2.5 rounded-xl text-sm font-bold tracking-tight transition-all duration-300 group ${
+                    active ? 'text-white' : 'text-gray-400 hover:text-white'
+                  }`}
                 >
                   {active && (
                     <motion.div
@@ -152,8 +154,9 @@ export default function Layout({ children, noPadding = false }: LayoutProps) {
             <div className="flex items-center p-1 bg-white/5 rounded-xl border border-white/5 backdrop-blur-md relative overflow-hidden">
               <Link
                 href={switchLocale('en')}
-                className={`relative z-10 px-3 py-1.5 rounded-lg text-[10px] font-black tracking-widest transition-colors duration-500 ${currentLang === 'en' ? 'text-black' : 'text-white/40 hover:text-white'
-                  }`}
+                className={`relative z-10 px-3 py-1.5 rounded-lg text-[10px] font-black tracking-widest transition-colors duration-500 ${
+                  currentLang === 'en' ? 'text-black' : 'text-white/40 hover:text-white'
+                }`}
               >
                 {currentLang === 'en' && (
                   <motion.div
@@ -166,8 +169,9 @@ export default function Layout({ children, noPadding = false }: LayoutProps) {
               </Link>
               <Link
                 href={switchLocale('zh')}
-                className={`relative z-10 px-3 py-1.5 rounded-lg text-[10px] font-black tracking-widest transition-colors duration-500 ${currentLang === 'zh' ? 'text-black' : 'text-white/40 hover:text-white'
-                  }`}
+                className={`relative z-10 px-3 py-1.5 rounded-lg text-[10px] font-black tracking-widest transition-colors duration-500 ${
+                  currentLang === 'zh' ? 'text-black' : 'text-white/40 hover:text-white'
+                }`}
               >
                 {currentLang === 'zh' && (
                   <motion.div
@@ -192,7 +196,11 @@ export default function Layout({ children, noPadding = false }: LayoutProps) {
                   closed: { rotate: 0 },
                 }}
               >
-                {isMobileMenuOpen ? <ArrowUpRight size={20} className="rotate-45" /> : <Menu size={20} />}
+                {isMobileMenuOpen ? (
+                  <ArrowUpRight size={20} className="rotate-45" />
+                ) : (
+                  <Menu size={20} />
+                )}
               </motion.div>
             </button>
           </div>
@@ -234,28 +242,28 @@ export default function Layout({ children, noPadding = false }: LayoutProps) {
                       variants={{ hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0 } }}
                       className="text-xs font-mono text-gray-500 uppercase tracking-widest pl-1"
                     >
-                      Navigation //
+                      Navigation {'//'}
                     </motion.h3>
                     {[
                       {
                         label: trans('footer.home', 'Home'),
                         sub: 'Dashboard & Overview',
                         path: '/',
-                        icon: HomeIcon
+                        icon: HomeIcon,
                       },
                       {
                         label: trans('nav.docs', 'Docs'),
                         sub: 'Knowledge Base',
                         path: '/docs',
-                        icon: Book
+                        icon: Book,
                       },
                       {
                         label: trans('nav.about', 'About'),
                         sub: 'Mission & Vision',
                         path: '/about',
-                        icon: Info
+                        icon: Info,
                       },
-                    ].map((item, idx) => (
+                    ].map((item, _idx) => (
                       <motion.div
                         key={item.path}
                         variants={{
@@ -266,23 +274,31 @@ export default function Layout({ children, noPadding = false }: LayoutProps) {
                         <Link
                           href={getLocalizedPath(item.path)}
                           onClick={() => setIsMobileMenuOpen(false)}
-                          className={`flex items-center gap-4 p-4 rounded-2xl border transition-all duration-300 group ${isPathActive(item.path)
-                            ? 'bg-white/10 border-white/20'
-                            : 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/10'
-                            }`}
+                          className={`flex items-center gap-4 p-4 rounded-2xl border transition-all duration-300 group ${
+                            isPathActive(item.path)
+                              ? 'bg-white/10 border-white/20'
+                              : 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/10'
+                          }`}
                         >
-                          <div className={`p-3 rounded-xl ${isPathActive(item.path) ? 'bg-singularity text-black' : 'bg-black/40 text-gray-400 group-hover:text-white group-hover:bg-black/60'} transition-colors`}>
+                          <div
+                            className={`p-3 rounded-xl ${isPathActive(item.path) ? 'bg-singularity text-black' : 'bg-black/40 text-gray-400 group-hover:text-white group-hover:bg-black/60'} transition-colors`}
+                          >
                             <item.icon size={24} />
                           </div>
                           <div>
-                            <div className={`text-xl font-bold tracking-tight ${isPathActive(item.path) ? 'text-white' : 'text-gray-300 group-hover:text-white'}`}>
+                            <div
+                              className={`text-xl font-bold tracking-tight ${isPathActive(item.path) ? 'text-white' : 'text-gray-300 group-hover:text-white'}`}
+                            >
                               {item.label}
                             </div>
                             <div className="text-xs font-mono text-gray-500 group-hover:text-gray-400">
                               {item.sub}
                             </div>
                           </div>
-                          <ArrowUpRight className={`ml-auto text-gray-600 group-hover:text-white transition-colors ${isPathActive(item.path) ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`} size={16} />
+                          <ArrowUpRight
+                            className={`ml-auto text-gray-600 group-hover:text-white transition-colors ${isPathActive(item.path) ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+                            size={16}
+                          />
                         </Link>
                       </motion.div>
                     ))}
@@ -319,7 +335,7 @@ export default function Layout({ children, noPadding = false }: LayoutProps) {
                   {/* Section: Community */}
                   <div className="mt-auto pt-6 border-t border-white/10">
                     <h3 className="text-xs font-mono text-gray-500 uppercase tracking-widest mb-4">
-                      Community Link //
+                      Community Link {'//'}
                     </h3>
                     <div className="grid grid-cols-2 gap-4">
                       <motion.a
