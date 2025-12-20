@@ -219,6 +219,10 @@ export class TemplateEngine {
 
     while (match !== null) {
       const key = match[1]
+      if (key === undefined) {
+        match = argPattern.exec(argsString)
+        continue
+      }
       const doubleQuoted = match[3]
       const singleQuoted = match[4]
       const number = match[5]

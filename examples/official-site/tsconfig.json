@@ -19,7 +19,16 @@
         "allowSyntheticDefaultImports": true,
         "resolveJsonModule": true,
         "noEmit": true,
-        "allowImportingTsExtensions": true
+        "allowImportingTsExtensions": true,
+        "baseUrl": ".",
+        "paths": {
+            "gravito-core": [
+                "../../packages/core/src/index.ts"
+            ],
+            "@gravito/*": [
+                "../../packages/*/src/index.ts"
+            ]
+        }
     },
     "include": [
         "src/**/*",

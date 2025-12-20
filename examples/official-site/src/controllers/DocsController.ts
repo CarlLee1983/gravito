@@ -4,6 +4,7 @@ import { DocsService } from '../services/DocsService'
 import { getTranslation } from '../services/I18nService'
 
 export class DocsController {
+  [key: string]: any
   index = async (c: Context) => {
     // Redirect to the first meaningful doc page
     const locale = (c.get('locale') as string) || 'en'

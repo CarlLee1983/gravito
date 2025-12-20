@@ -14,5 +14,6 @@ export const guest = (guard?: string, redirectTo = '/'): MiddlewareHandler => {
     }
 
     await next()
+    return
   }
 }

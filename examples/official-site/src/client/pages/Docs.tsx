@@ -20,6 +20,7 @@ interface TocItem {
 type Translation = Record<string, Record<string, string>>
 
 interface DocsProps {
+  [key: string]: unknown
   title: string
   content: string
   sidebar: SidebarItem[]
@@ -279,11 +280,10 @@ export default function Docs() {
                       <li key={item.path}>
                         <Link
                           href={item.path}
-                          className={`block text-sm py-3 px-6 transition-all duration-300 relative group font-medium rounded-xl border border-transparent ${
-                            isActive
+                          className={`block text-sm py-3 px-6 transition-all duration-300 relative group font-medium rounded-xl border border-transparent ${isActive
                               ? 'text-singularity font-bold border-white/5 bg-white/[0.03] shadow-[0_0_20px_rgba(20,241,149,0.05)]'
                               : 'text-gray-400 hover:text-white hover:bg-white/[0.02]'
-                          }`}
+                            }`}
                         >
                           <div className="flex items-center gap-3">
                             {isActive && (
@@ -537,11 +537,10 @@ export default function Docs() {
                           <li key={item.id} className={`${indent} relative`}>
                             <a
                               href={`#${item.id}`}
-                              className={`block text-[13px] leading-relaxed transition-all duration-300 ${
-                                isActive
+                              className={`block text-[13px] leading-relaxed transition-all duration-300 ${isActive
                                   ? 'text-singularity font-black tracking-tight translate-x-1'
                                   : 'text-gray-400 hover:text-white'
-                              }`}
+                                }`}
                             >
                               {item.text}
                             </a>

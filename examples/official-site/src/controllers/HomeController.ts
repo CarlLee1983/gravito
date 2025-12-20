@@ -4,6 +4,7 @@ import type { Context } from 'hono'
 import { getTranslation } from '../services/I18nService'
 
 export class HomeController {
+  [key: string]: any
   private core: PlanetCore
 
   constructor(core: PlanetCore) {

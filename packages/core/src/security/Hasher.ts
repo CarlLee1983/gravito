@@ -29,11 +29,11 @@ export class BunHasher implements Hasher {
   ): Promise<string> {
     // Bun.password.hash(text, options)
     // algorithm defaults to bcrypt
-    return await globalThis.Bun.password.hash(value, options)
+    return await (Bun as any).password.hash(value, options)
   }
 
   async check(value: string, hashedValue: string): Promise<boolean> {
-    return await globalThis.Bun.password.verify(value, hashedValue)
+    return await (Bun as any).password.verify(value, hashedValue)
   }
 
   needsRehash(_hashedValue: string, _options?: Record<string, unknown>): boolean {

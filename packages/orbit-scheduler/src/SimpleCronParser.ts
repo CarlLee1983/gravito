@@ -70,6 +70,15 @@ export class SimpleCronParser {
     }
 
     const [minute, hour, dayOfMonth, month, dayOfWeek] = fields
+    if (
+      minute === undefined ||
+      hour === undefined ||
+      dayOfMonth === undefined ||
+      month === undefined ||
+      dayOfWeek === undefined
+    ) {
+      throw new Error('Invalid cron expression')
+    }
 
     const matchMinute = this.matchField(minute, targetDate.getMinutes(), 0, 59)
     const matchHour = this.matchField(hour, targetDate.getHours(), 0, 23)
@@ -89,6 +98,7 @@ export class SimpleCronParser {
     // 2. Step (*\/5, 1-10/2)
     if (pattern.includes('/')) {
       const [range, stepStr] = pattern.split('/')
+      if (range === undefined || stepStr === undefined) return false
       const step = parseInt(stepStr, 10)
 
       if (range === '*') {
@@ -98,6 +108,7 @@ export class SimpleCronParser {
       // Range with step (e.g., 10-20/2)
       if (range.includes('-')) {
         const [startStr, endStr] = range.split('-')
+        if (startStr === undefined || endStr === undefined) return false
         const start = parseInt(startStr, 10)
         const end = parseInt(endStr, 10)
 
@@ -117,6 +128,7 @@ export class SimpleCronParser {
     // 4. Range (1-5)
     if (pattern.includes('-')) {
       const [startStr, endStr] = pattern.split('-')
+      if (startStr === undefined || endStr === undefined) return false
       const start = parseInt(startStr, 10)
       const end = parseInt(endStr, 10)
       return value >= start && value <= end

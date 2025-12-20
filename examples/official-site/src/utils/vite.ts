@@ -44,7 +44,7 @@ export function setupViteProxy(core: PlanetCore): void {
           core.logger.warn(`[Vite Proxy] ${response.status} for: ${url.pathname}`)
         }
         // Forward the error response from Vite
-        return c.body(await response.arrayBuffer(), response.status)
+        return c.body(await response.arrayBuffer(), response.status as any)
       }
 
       const contentType = response.headers.get('Content-Type') || 'text/javascript'
@@ -62,7 +62,7 @@ export function setupViteProxy(core: PlanetCore): void {
       }
 
       // Fix for specific Hono/Bun behavior with standard Response vs Hono Body
-      return c.body(buffer, response.status)
+      return c.body(buffer, response.status as any)
     } catch (error) {
       core.logger.error(`[Vite Proxy] Failed: ${error}`)
       return c.text('Vite dev server not available', 503)

@@ -8,6 +8,7 @@
         "dev:vite": "vite",
         "build:client": "vite build",
         "build:static": "bun build-static.ts",
+        "typecheck": "tsc --noEmit",
         "start": "bun run src/index.ts"
     },
     "dependencies": {

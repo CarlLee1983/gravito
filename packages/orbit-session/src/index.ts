@@ -436,6 +436,7 @@ export class OrbitSession implements GravitoOrbit {
           })
         )
       }
+      return
     })
   }
 }
