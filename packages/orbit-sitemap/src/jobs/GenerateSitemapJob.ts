@@ -1,8 +1,8 @@
 import { Job } from '@gravito/orbit-queue'
-import type { SitemapGeneratorOptions } from '../core/SitemapGenerator'
-import { SitemapGenerator } from '../core/SitemapGenerator'
 import type { ProgressTracker } from '../core/ProgressTracker'
 import type { ShadowProcessor } from '../core/ShadowProcessor'
+import type { SitemapGeneratorOptions } from '../core/SitemapGenerator'
+import { SitemapGenerator } from '../core/SitemapGenerator'
 
 export interface GenerateSitemapJobOptions {
   generatorOptions: SitemapGeneratorOptions
@@ -103,7 +103,14 @@ export class GenerateSitemapJob extends Job {
    */
   private async generateWithProgress(): Promise<void> {
     const { progressTracker, shadowProcessor, onProgress } = this.options
-    const { providers, maxEntriesPerFile = 50000, storage, baseUrl, pretty, filename } = this.options.generatorOptions
+    const {
+      providers,
+      maxEntriesPerFile = 50000,
+      storage,
+      baseUrl,
+      pretty,
+      filename,
+    } = this.options.generatorOptions
 
     // 這裡需要修改 SitemapGenerator 以支援進度回報
     // 為了簡化，我們直接使用現有的生成邏輯，並在外部追蹤進度
@@ -121,9 +128,11 @@ export class GenerateSitemapJob extends Job {
       onProgress({
         processed: this.processedEntries,
         total: this.totalEntries,
-        percentage: this.totalEntries > 0 ? Math.round((this.processedEntries / this.totalEntries) * 100) : 100,
+        percentage:
+          this.totalEntries > 0
+            ? Math.round((this.processedEntries / this.totalEntries) * 100)
+            : 100,
       })
     }
   }
 }
-

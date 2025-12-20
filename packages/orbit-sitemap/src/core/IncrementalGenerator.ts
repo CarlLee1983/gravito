@@ -1,4 +1,4 @@
-import type { SitemapEntry, ChangeTracker, SitemapChange } from '../types'
+import type { ChangeTracker, SitemapChange, SitemapEntry } from '../types'
 import { DiffCalculator } from './DiffCalculator'
 import type { SitemapGenerator, SitemapGeneratorOptions } from './SitemapGenerator'
 import { SitemapGenerator as SitemapGeneratorImpl } from './SitemapGenerator'
@@ -139,4 +139,3 @@ export class IncrementalGenerator {
     return array
   }
 }
-

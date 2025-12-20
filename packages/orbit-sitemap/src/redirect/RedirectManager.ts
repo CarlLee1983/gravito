@@ -169,4 +169,3 @@ export class RedisRedirectManager implements RedirectManager {
     return current
   }
 }
-

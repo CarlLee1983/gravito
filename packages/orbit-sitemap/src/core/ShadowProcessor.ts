@@ -43,11 +43,7 @@ export class ShadowProcessor {
 
     // 寫入影子位置
     if (this.options.storage.writeShadow) {
-      await this.options.storage.writeShadow(
-        operation.filename,
-        operation.content,
-        this.shadowId
-      )
+      await this.options.storage.writeShadow(operation.filename, operation.content, this.shadowId)
     } else {
       // 如果儲存不支援影子處理，直接寫入
       await this.options.storage.write(operation.filename, operation.content)
@@ -106,4 +102,3 @@ export class ShadowProcessor {
     return [...this.operations]
   }
 }
-

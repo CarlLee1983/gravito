@@ -1,8 +1,8 @@
 import type { SitemapProvider, SitemapStorage, SitemapStreamOptions } from '../types'
-import { SitemapIndex } from './SitemapIndex'
-import { SitemapStream } from './SitemapStream'
 import type { ShadowProcessor, ShadowProcessorOptions } from './ShadowProcessor'
 import { ShadowProcessor as ShadowProcessorImpl } from './ShadowProcessor'
+import { SitemapIndex } from './SitemapIndex'
+import { SitemapStream } from './SitemapStream'
 
 export interface SitemapGeneratorOptions extends SitemapStreamOptions {
   storage: SitemapStorage
@@ -113,10 +113,13 @@ export class SitemapGenerator {
 
     // Write Index
     const indexXml = index.toXML()
-    
+
     // 使用影子處理器（如果啟用）
     if (this.shadowProcessor) {
-      await this.shadowProcessor.addOperation({ filename: this.options.filename!, content: indexXml })
+      await this.shadowProcessor.addOperation({
+        filename: this.options.filename!,
+        content: indexXml,
+      })
       // 提交所有影子操作
       await this.shadowProcessor.commit()
     } else {

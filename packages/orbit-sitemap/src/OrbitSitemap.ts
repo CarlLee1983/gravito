@@ -1,13 +1,21 @@
+import { randomUUID } from 'node:crypto'
 import type { PlanetCore } from 'gravito-core'
 import type { Context } from 'hono'
-import { SitemapGenerator } from './core/SitemapGenerator'
-import { MemorySitemapStorage } from './storage/MemorySitemapStorage'
-import type { SitemapLock, SitemapProvider, SitemapStorage, SitemapStreamOptions, ChangeTracker, RedirectManager, SitemapProgressStorage } from './types'
 import { IncrementalGenerator } from './core/IncrementalGenerator'
-import { RedirectHandler } from './redirect/RedirectHandler'
-import { GenerateSitemapJob } from './jobs/GenerateSitemapJob'
 import { ProgressTracker } from './core/ProgressTracker'
-import { randomUUID } from 'node:crypto'
+import { SitemapGenerator } from './core/SitemapGenerator'
+import { GenerateSitemapJob } from './jobs/GenerateSitemapJob'
+import { RedirectHandler } from './redirect/RedirectHandler'
+import { MemorySitemapStorage } from './storage/MemorySitemapStorage'
+import type {
+  ChangeTracker,
+  RedirectManager,
+  SitemapLock,
+  SitemapProgressStorage,
+  SitemapProvider,
+  SitemapStorage,
+  SitemapStreamOptions,
+} from './types'
 
 export interface DynamicSitemapOptions extends SitemapStreamOptions {
   path?: string | undefined // default: '/sitemap.xml'
@@ -81,8 +89,8 @@ export class OrbitSitemap {
   private installDynamic(core: PlanetCore) {
     const opts = this.options as DynamicSitemapOptions
     const storage = opts.storage ?? new MemorySitemapStorage(opts.baseUrl)
-    const indexFilename = opts.path?.split('/').pop()!
-    const baseDir = opts.path?.substring(0, opts.path?.lastIndexOf('/'))
+    const indexFilename = opts.path?.split('/').pop() ?? 'sitemap.xml'
+    const baseDir = opts.path ? opts.path.substring(0, opts.path.lastIndexOf('/')) : undefined
 
     const handler = async (ctx: Context) => {
       // Determine filename from request
@@ -316,10 +324,7 @@ export class OrbitSitemap {
 
         return ctx.json({ jobId, status: 'started' })
       } catch (error) {
-        return ctx.json(
-          { error: error instanceof Error ? error.message : String(error) },
-          500
-        )
+        return ctx.json({ error: error instanceof Error ? error.message : String(error) }, 500)
       }
     })
 

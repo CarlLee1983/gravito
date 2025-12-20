@@ -228,4 +228,3 @@ export class GCPSitemapStorage implements SitemapStorage {
     await versionedFile.copy(bucket.file(key))
   }
 }
-

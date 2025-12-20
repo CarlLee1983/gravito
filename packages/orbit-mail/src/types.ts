@@ -15,14 +15,14 @@ export interface Attachment {
 }
 
 export interface Envelope {
-  from?: Address
-  to?: Address[]
-  cc?: Address[]
-  bcc?: Address[]
-  replyTo?: Address
-  subject?: string
-  priority?: 'high' | 'normal' | 'low'
-  attachments?: Attachment[]
+  from?: Address | undefined
+  to?: Address[] | undefined
+  cc?: Address[] | undefined
+  bcc?: Address[] | undefined
+  replyTo?: Address | undefined
+  subject?: string | undefined
+  priority?: 'high' | 'normal' | 'low' | undefined
+  attachments?: Attachment[] | undefined
 }
 
 export interface Message extends Envelope {
@@ -38,32 +38,34 @@ export interface MailConfig {
   /**
    * Default sender address
    */
-  from: Address
+  from?: Address
 
   /**
    * The transport mechanism used to send emails
    */
-  transport: Transport
+  transport?: Transport
 
   /**
    * Enable development mode (intercepts emails)
    */
-  devMode?: boolean
+  devMode?: boolean | undefined
 
   /**
    * Directory where email templates are located (for OrbitView)
    * Default: src/emails
    */
-  viewsDir?: string
+  viewsDir?: string | undefined
 
   /**
    * URL prefix for Dev UI
    * Default: /__mail
    */
-  devUiPrefix?: string
+  devUiPrefix?: string | undefined
 
   /**
    * Translation function for i18n support
    */
-  translator?: (key: string, replace?: Record<string, unknown>, locale?: string) => string
+  translator?:
+    | ((key: string, replace?: Record<string, unknown>, locale?: string) => string)
+    | undefined
 }

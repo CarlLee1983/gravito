@@ -83,7 +83,7 @@ export class RedisChangeTracker implements ChangeTracker {
 
     // 儲存變更
     await this.client.set(key, data, 'EX', this.ttl)
-    
+
     // 添加到時間序列列表
     const score = change.timestamp.getTime()
     await this.client.zadd(listKey, score, change.url)
@@ -131,7 +131,7 @@ export class RedisChangeTracker implements ChangeTracker {
   async clear(since?: Date): Promise<void> {
     try {
       const listKey = this.getListKey()
-      
+
       if (!since) {
         // 清除所有
         const urls = await this.client.zrange(listKey, 0, -1)
@@ -153,4 +153,3 @@ export class RedisChangeTracker implements ChangeTracker {
     }
   }
 }
-

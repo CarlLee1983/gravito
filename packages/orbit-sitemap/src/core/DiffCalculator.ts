@@ -1,4 +1,4 @@
-import type { SitemapEntry, SitemapChange, ChangeType } from '../types'
+import type { ChangeType, SitemapChange, SitemapEntry } from '../types'
 
 export interface DiffResult {
   added: SitemapEntry[]
@@ -88,10 +88,7 @@ export class DiffCalculator {
   /**
    * 從變更記錄計算差異
    */
-  calculateFromChanges(
-    baseEntries: SitemapEntry[],
-    changes: SitemapChange[]
-  ): DiffResult {
+  calculateFromChanges(baseEntries: SitemapEntry[], changes: SitemapChange[]): DiffResult {
     const entryMap = new Map<string, SitemapEntry>()
 
     // 建立基礎狀態的映射
@@ -140,4 +137,3 @@ export class DiffCalculator {
     return false
   }
 }
-

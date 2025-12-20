@@ -45,8 +45,16 @@ export class S3SitemapStorage implements SitemapStorage {
 
     try {
       // 動態載入 AWS SDK
-      const { S3Client, PutObjectCommand, GetObjectCommand, HeadObjectCommand, ListObjectsV2Command, CopyObjectCommand, DeleteObjectCommand } = await import('@aws-sdk/client-s3')
-      
+      const {
+        S3Client,
+        PutObjectCommand,
+        GetObjectCommand,
+        HeadObjectCommand,
+        ListObjectsV2Command,
+        CopyObjectCommand,
+        DeleteObjectCommand,
+      } = await import('@aws-sdk/client-s3')
+
       const clientOptions: any = {
         region: this.region,
       }
@@ -177,7 +185,7 @@ export class S3SitemapStorage implements SitemapStorage {
     }
 
     const s3 = await this.getS3Client()
-    
+
     // 列出所有影子檔案
     const prefix = this.prefix ? `${this.prefix}/` : ''
     const listResponse = await s3.client.send(
@@ -192,8 +200,8 @@ export class S3SitemapStorage implements SitemapStorage {
     }
 
     // 找到對應的影子檔案
-    const shadowFiles = listResponse.Contents.filter(
-      (obj) => obj.Key?.includes(`.shadow.${shadowId}`)
+    const shadowFiles = listResponse.Contents.filter((obj) =>
+      obj.Key?.includes(`.shadow.${shadowId}`)
     )
 
     for (const shadowFile of shadowFiles) {
@@ -320,4 +328,3 @@ export class S3SitemapStorage implements SitemapStorage {
     )
   }
 }
-

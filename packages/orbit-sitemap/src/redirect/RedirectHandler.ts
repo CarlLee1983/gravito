@@ -1,4 +1,4 @@
-import type { SitemapEntry, RedirectRule, RedirectManager } from '../types'
+import type { RedirectManager, RedirectRule, SitemapEntry } from '../types'
 
 export type RedirectHandlingStrategy =
   | 'remove_old_add_new' // 移除舊 URL，加入新 URL（預設）
@@ -187,4 +187,3 @@ export class RedirectHandler {
     return processed
   }
 }
-

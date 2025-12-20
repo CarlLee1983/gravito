@@ -11,7 +11,7 @@ export class OrbitMail implements GravitoOrbit {
   private config: MailConfig
   private devMailbox?: DevMailbox
 
-  private constructor(config: MailConfig) {
+  constructor(config: MailConfig = {}) {
     this.config = config
     OrbitMail.instance = this
   }
@@ -44,13 +44,14 @@ export class OrbitMail implements GravitoOrbit {
   install(core: PlanetCore): void {
     core.logger.info('[OrbitMail] Initializing Mail Service (Exposed as: mail)')
 
+    // Ensure transport exists (fallback to Log if not set)
+    if (!this.config.transport && !this.config.devMode) {
+      this.config.transport = new LogTransport()
+    }
+
     // In Dev Mode, override transport and setup Dev Server
     if (this.config.devMode) {
       this.devMailbox = new DevMailbox()
-      // Only override if not explicitly set to something else, or maybe ALWAYS override in devMode?
-      // Usually devMode implies intercepting all mails.
-      // But let's log a warning if we are overriding a real transport
-
       this.config.transport = new MemoryTransport(this.devMailbox)
       core.logger.info('[OrbitMail] Dev Mode Enabled: Emails will be intercepted to Dev Mailbox')
 
@@ -60,7 +61,6 @@ export class OrbitMail implements GravitoOrbit {
 
     // Inject mail service into context
     core.app.use('*', async (c, next) => {
-      // @ts-expect-error: Extending Hono Context dynamically
       c.set('mail', {
         send: (mailable: Mailable) => this.send(mailable),
         queue: (mailable: Mailable) => this.queue(mailable),
@@ -102,6 +102,11 @@ export class OrbitMail implements GravitoOrbit {
     }
 
     // 4. Send via transport
+    if (!this.config.transport) {
+      throw new Error(
+        '[OrbitMail] No transport configured. Did you call configure() or register the orbit?'
+      )
+    }
     await this.config.transport.send(message)
   }
 
@@ -127,6 +132,15 @@ export class OrbitMail implements GravitoOrbit {
         '[OrbitMail] Queue service not available, sending immediately. Install OrbitQueue to enable queuing.'
       )
       await this.send(mailable)
+    }
+  }
+}
+
+declare module 'hono' {
+  interface ContextVariableMap {
+    mail: {
+      send: (mailable: Mailable) => Promise<void>
+      queue: (mailable: Mailable) => Promise<void>
     }
   }
 }

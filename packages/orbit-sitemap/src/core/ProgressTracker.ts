@@ -45,9 +45,7 @@ export class ProgressTracker {
     }
 
     this.currentProgress.processed = processed
-    this.currentProgress.percentage = Math.round(
-      (processed / this.currentProgress.total) * 100
-    )
+    this.currentProgress.percentage = Math.round((processed / this.currentProgress.total) * 100)
 
     if (status) {
       this.currentProgress.status = status
@@ -131,4 +129,3 @@ export class ProgressTracker {
     return this.currentProgress ? { ...this.currentProgress } : null
   }
 }
-

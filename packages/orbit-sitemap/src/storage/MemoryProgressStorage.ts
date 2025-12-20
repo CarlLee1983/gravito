@@ -38,4 +38,3 @@ export class MemoryProgressStorage implements SitemapProgressStorage {
     return limit ? sorted.slice(0, limit) : sorted
   }
 }
-

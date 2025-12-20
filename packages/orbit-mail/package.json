@@ -48,16 +48,17 @@
     }
   },
   "devDependencies": {
-    "@types/nodemailer": "^6.4.14",
+    "@gravito/orbit-view": "1.0.0-beta.1",
     "@types/mjml": "^4.7.4",
+    "@types/nodemailer": "^6.4.14",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
+    "@vue/server-renderer": "^3.0.0",
     "gravito-core": "1.0.0-beta.1",
-    "@gravito/orbit-view": "1.0.0-beta.1",
+    "hono": "^4.11.1",
     "tsup": "^8.0.2",
     "typescript": "^5.0.0",
-    "vue": "^3.0.0",
-    "@vue/server-renderer": "^3.0.0"
+    "vue": "^3.0.0"
   },
   "publishConfig": {
     "access": "public"
