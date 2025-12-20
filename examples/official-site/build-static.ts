@@ -32,6 +32,7 @@ async function build() {
 
   // 1. Static Routes
   routes.add('/')
+  routes.add('/about')
 
   // 2. Discover Docs
   const docsRoot = resolve(process.cwd(), '../../docs')
