@@ -119,7 +119,7 @@ export class FlashController {
 
 Orbit Session 會自動產生 CSRF token，並在回應時寫入 `XSRF-TOKEN` cookie。你不需要每次手動重新取得 token，通常只要在前端把 cookie 的值帶回 `X-CSRF-Token` header 即可。
 
-1. 建立一個端點取得 CSRF Token（也會同時寫入 `XSRF-TOKEN` cookie）：
+1. **不一定需要**建立 token 端點。只要有任何回應啟動了 session，Orbit Session 就會自動寫入 `XSRF-TOKEN` cookie。以下端點僅用於除錯或想主動取得 token 的情境：
 
 ```ts
 import type { Context } from 'hono'
@@ -133,6 +133,27 @@ export class CsrfController {
 ```
 
 2. 前端送出請求時帶上 `X-CSRF-Token`：
+
+> **Note**: 多數前端工具（如 Axios）會自動把 `XSRF-TOKEN` cookie 帶入 `X-CSRF-Token` header，因此一般情況不需要手動設定。若你使用 `fetch` 或自訂 HTTP 客戶端，請自行加入此 header。
+
+從 `XSRF-TOKEN` cookie 取出 token 的範例：
+
+```ts
+const csrfToken = document.cookie
+  .split('; ')
+  .find((c) => c.startsWith('XSRF-TOKEN='))
+  ?.split('=')[1]
+
+const res = await fetch('/login', {
+  method: 'POST',
+  credentials: 'include',
+  headers: {
+    'Content-Type': 'application/json',
+    'X-CSRF-Token': decodeURIComponent(csrfToken ?? ''),
+  },
+  body: JSON.stringify({ email, password }),
+})
+```
 
 ```ts
 const res = await fetch('/login', {

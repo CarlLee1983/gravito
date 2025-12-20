@@ -119,7 +119,7 @@ export class FlashController {
 
 Orbit Session generates the CSRF token automatically and writes it to the `XSRF-TOKEN` cookie on the response. You do not need to fetch a new token for every request. In most cases, just read the cookie and send it back in the `X-CSRF-Token` header.
 
-1. Create an endpoint to retrieve the CSRF token (this also sets the `XSRF-TOKEN` cookie):
+1. **This endpoint is optional.** As soon as a response starts a session, Orbit Session writes the `XSRF-TOKEN` cookie automatically. The endpoint below is only for debugging or if you want to fetch the token on demand:
 
 ```ts
 import type { Context } from 'hono'
@@ -133,6 +133,8 @@ export class CsrfController {
 ```
 
 2. Send the `X-CSRF-Token` header from the frontend:
+
+> **Note**: Many frontend clients (like Axios) automatically map the `XSRF-TOKEN` cookie to the `X-CSRF-Token` header, so you usually do not need to set it manually. If you use `fetch` or a custom HTTP client, add the header yourself.
 
 ```ts
 const res = await fetch('/login', {
