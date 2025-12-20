@@ -61,8 +61,6 @@ export class Schema {
       case 'mysql':
       case 'mariadb':
         return new MySQLSchemaGrammar()
-      case 'postgres':
-      case 'postgresql':
       default:
         return new PostgresSchemaGrammar()
     }
@@ -148,8 +146,12 @@ export class Schema {
     // Handle different result formats
     if (result.length > 0) {
       const row = result[0] as Record<string, unknown>
-      if (row.exists !== undefined) return row.exists === true
-      if (row.count !== undefined) return Number(row.count) > 0
+      if (row.exists !== undefined) {
+        return row.exists === true
+      }
+      if (row.count !== undefined) {
+        return Number(row.count) > 0
+      }
     }
     return false
   }
@@ -164,8 +166,12 @@ export class Schema {
 
     if (result.length > 0) {
       const row = result[0] as Record<string, unknown>
-      if (row.exists !== undefined) return row.exists === true
-      if (row.count !== undefined) return Number(row.count) > 0
+      if (row.exists !== undefined) {
+        return row.exists === true
+      }
+      if (row.count !== undefined) {
+        return Number(row.count) > 0
+      }
     }
     return false
   }

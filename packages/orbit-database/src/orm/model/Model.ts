@@ -8,13 +8,13 @@ import type { QueryBuilderContract } from '../../types'
 import { SchemaRegistry } from '../schema/SchemaRegistry'
 import type { ColumnType, TableSchema } from '../schema/types'
 import { DirtyTracker } from './DirtyTracker'
+import { SOFT_DELETES_KEY } from './decorators'
 import {
   ColumnNotFoundError,
   ModelNotFoundError,
   NullableConstraintError,
   TypeMismatchError,
 } from './errors'
-import { SOFT_DELETES_KEY } from './decorators'
 
 /**
  * Model attributes type
@@ -30,7 +30,7 @@ export type ModelConstructor<T extends Model> = new () => T
  * Model static interface
  */
 export interface ModelStatic<T extends Model> {
-  new(): T
+  new (): T
   table: string
   primaryKey: string
   connection?: string
@@ -212,7 +212,7 @@ export abstract class Model {
         }
 
         // 6. Return instance values (for properties declared in the class body that aren't attributes)
-        if (Object.prototype.hasOwnProperty.call(target, prop)) {
+        if (Object.hasOwn(target, prop)) {
           const value = Reflect.get(target, prop)
           if (typeof value === 'function') {
             return value.bind(receiver)
@@ -243,7 +243,7 @@ export abstract class Model {
           const studly = prop.replace(/(?:^|_|(?=[A-Z]))(.)/g, (_, c) => c.toUpperCase())
           const mutator = `set${studly}Attribute`
           if (typeof (target as any)[mutator] === 'function') {
-            (target as any)[mutator].call(receiver, value)
+            ;(target as any)[mutator].call(receiver, value)
             return true
           }
         }
@@ -260,7 +260,9 @@ export abstract class Model {
       },
 
       has(target, prop) {
-        if (typeof prop === 'symbol') return false
+        if (typeof prop === 'symbol') {
+          return false
+        }
         return prop in model._attributes || Reflect.has(target, prop)
       },
 
@@ -346,16 +348,22 @@ export abstract class Model {
    * Get JavaScript type of value
    */
   private _getJSType(value: unknown): string {
-    if (value === null) return 'null'
-    if (Array.isArray(value)) return 'array'
-    if (value instanceof Date) return 'date'
+    if (value === null) {
+      return 'null'
+    }
+    if (Array.isArray(value)) {
+      return 'array'
+    }
+    if (value instanceof Date) {
+      return 'date'
+    }
     return typeof value
   }
 
   /**
    * Cast attribute value to its type
    */
-  private _castAttribute(key: string, value: any, type: string): any {
+  private _castAttribute(_key: string, value: any, type: string): any {
     if (value === null || value === undefined) {
       return value
     }
@@ -380,10 +388,12 @@ export abstract class Model {
 
       case 'object':
       case 'json':
-        if (typeof value === 'object') return value
+        if (typeof value === 'object') {
+          return value
+        }
         try {
           return JSON.parse(value)
-        } catch (e) {
+        } catch (_e) {
           return value
         }
 
@@ -393,7 +403,9 @@ export abstract class Model {
 
       case 'date':
       case 'datetime':
-        if (value instanceof Date) return value
+        if (value instanceof Date) {
+          return value
+        }
         return new Date(value)
 
       case 'timestamp':
@@ -515,10 +527,10 @@ export abstract class Model {
 
     // Wrap get to hydrate
     const originalGet = builder.get.bind(builder)
-      ; (builder as unknown as { get: () => Promise<R[]> }).get = async (): Promise<R[]> => {
-        const rows = await originalGet()
-        return rows.map((row) => related.hydrate<R>(row)) as R[]
-      }
+    ;(builder as unknown as { get: () => Promise<R[]> }).get = async (): Promise<R[]> => {
+      const rows = await originalGet()
+      return rows.map((row) => related.hydrate<R>(row)) as R[]
+    }
 
     return builder
   }
@@ -593,7 +605,9 @@ export abstract class Model {
       .where(fpk, localValue)
       .pluck<unknown>(rpk)
 
-    if (pivots.length === 0) return []
+    if (pivots.length === 0) {
+      return []
+    }
 
     // Get related models
     const rows = await connection.table<ModelAttributes>(related.table).whereIn(rk, pivots).get()
@@ -637,11 +651,15 @@ export abstract class Model {
         .offset(offset)
         .get()
 
-      if (rows.length === 0) break
+      if (rows.length === 0) {
+        break
+      }
 
       yield rows.map((row) => related.hydrate<R>(row)) as R[]
 
-      if (rows.length < chunkSize) break
+      if (rows.length < chunkSize) {
+        break
+      }
       offset += chunkSize
     }
   }
@@ -736,7 +754,9 @@ export abstract class Model {
    * Delete the model
    */
   async delete(): Promise<boolean> {
-    if (!this._exists) return false
+    if (!this._exists) {
+      return false
+    }
 
     await this.emit('deleting')
 
@@ -772,7 +792,9 @@ export abstract class Model {
   async restore(): Promise<boolean> {
     const modelCtor = this.constructor as any
     const softDeletes = modelCtor[SOFT_DELETES_KEY]
-    if (!softDeletes) return false
+    if (!softDeletes) {
+      return false
+    }
 
     const column = softDeletes.column || 'deleted_at'
     this._setAttribute(column, null)
@@ -804,7 +826,7 @@ export abstract class Model {
    * Register a model observer
    */
   static observe(observer: any) {
-    if (!Object.prototype.hasOwnProperty.call(this, 'observers')) {
+    if (!Object.hasOwn(this, 'observers')) {
       this.observers = []
     }
     this.observers.push(observer)
@@ -836,7 +858,9 @@ export abstract class Model {
    * Refresh the model from database
    */
   async refresh(): Promise<this> {
-    if (!this._exists) return this
+    if (!this._exists) {
+      return this
+    }
 
     const modelCtor = this.constructor as typeof Model
     const connection = DB.connection(modelCtor.connection)
@@ -872,7 +896,9 @@ export abstract class Model {
       .where(this.primaryKey, key)
       .first()
 
-    if (!row) return null
+    if (!row) {
+      return null
+    }
 
     return this.hydrate<T>(row)
   }
@@ -953,12 +979,16 @@ export abstract class Model {
         .offset(offset)
         .get()
 
-      if (rows.length === 0) break
+      if (rows.length === 0) {
+        break
+      }
 
       // Yield raw data - not hydrated yet
       yield rows
 
-      if (rows.length < chunkSize) break
+      if (rows.length < chunkSize) {
+        break
+      }
       offset += chunkSize
     }
   }
@@ -992,11 +1022,15 @@ export abstract class Model {
         .offset(offset)
         .get()
 
-      if (rows.length === 0) break
+      if (rows.length === 0) {
+        break
+      }
 
       yield rows.map((row) => this.hydrate<T>(row))
 
-      if (rows.length < chunkSize) break
+      if (rows.length < chunkSize) {
+        break
+      }
       offset += chunkSize
     }
   }
@@ -1028,38 +1062,40 @@ export abstract class Model {
 
     // Wrap get() to hydrate results and handle eager loading
     const originalGet = builder.get.bind(builder)
-      ; (builder as unknown as { get: () => Promise<T[]> }).get = async (): Promise<T[]> => {
-        const rows = await originalGet()
-        const models = rows.map((row) => this.hydrate<T>(row)) as unknown as T[]
+    ;(builder as unknown as { get: () => Promise<T[]> }).get = async (): Promise<T[]> => {
+      const rows = await originalGet()
+      const models = rows.map((row) => this.hydrate<T>(row)) as unknown as T[]
 
-        // Handle eager loading
-        const eagerLoads = (builder as any).getEagerLoads?.()
-        if (eagerLoads && eagerLoads.size > 0 && models.length > 0) {
-          const { eagerLoadMany } = await import('./relationships')
-          await eagerLoadMany(models, eagerLoads)
-        }
-
-        return models
+      // Handle eager loading
+      const eagerLoads = (builder as any).getEagerLoads?.()
+      if (eagerLoads && eagerLoads.size > 0 && models.length > 0) {
+        const { eagerLoadMany } = await import('./relationships')
+        await eagerLoadMany(models, eagerLoads)
       }
+
+      return models
+    }
 
     // Wrap first() to hydrate result and handle eager loading
     const originalFirst = builder.first.bind(builder)
-      ; (builder as unknown as { first: () => Promise<T | null> }).first =
-        async (): Promise<T | null> => {
-          const row = await originalFirst()
-          if (!row) return null
-
-          const model = this.hydrate<T>(row)
-
-          // Handle eager loading for a single model
-          const eagerLoads = (builder as any).getEagerLoads?.()
-          if (eagerLoads && eagerLoads.size > 0) {
-            const { eagerLoadMany } = await import('./relationships')
-            await eagerLoadMany([model], eagerLoads)
-          }
-
-          return model
+    ;(builder as unknown as { first: () => Promise<T | null> }).first =
+      async (): Promise<T | null> => {
+        const row = await originalFirst()
+        if (!row) {
+          return null
         }
+
+        const model = this.hydrate<T>(row)
+
+        // Handle eager loading for a single model
+        const eagerLoads = (builder as any).getEagerLoads?.()
+        if (eagerLoads && eagerLoads.size > 0) {
+          const { eagerLoadMany } = await import('./relationships')
+          await eagerLoadMany([model], eagerLoads)
+        }
+
+        return model
+      }
 
     // Support Local Scopes via Proxy
     const modelClass = this
@@ -1070,7 +1106,7 @@ export abstract class Model {
           const scopeMethod = `scope${prop.charAt(0).toUpperCase()}${prop.slice(1)}`
           if (typeof (modelClass as any)[scopeMethod] === 'function') {
             return (...args: any[]) => {
-              ; (modelClass as any)[scopeMethod](target, ...args)
+              ;(modelClass as any)[scopeMethod](target, ...args)
               return proxy
             }
           }
@@ -1141,8 +1177,12 @@ export abstract class Model {
     // 3. Process relations (eager loaded on instance)
     const instanceKeys = Object.keys(this)
     for (const key of instanceKeys) {
-      if (key.startsWith('_')) continue
-      if (key in result) continue // already processed
+      if (key.startsWith('_')) {
+        continue
+      }
+      if (key in result) {
+        continue // already processed
+      }
 
       const value = (this as any)[key]
       // Check if it's a Model or Array of Models (simple heuristic)
@@ -1159,7 +1199,9 @@ export abstract class Model {
     if (modelCtor.visible.length > 0) {
       const filtered: any = {}
       for (const key of modelCtor.visible) {
-        if (key in result) filtered[key] = result[key]
+        if (key in result) {
+          filtered[key] = result[key]
+        }
       }
       return filtered
     }

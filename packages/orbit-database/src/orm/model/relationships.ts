@@ -45,7 +45,9 @@ const relationships = new Map<typeof Model, Map<string, RelationshipMeta>>()
  */
 export function getRelationships(model: typeof Model): Map<string, RelationshipMeta> {
   const map = relationships.get(model)
-  if (map) return map
+  if (map) {
+    return map
+  }
 
   // Fallback: search for a model with the same name if it's a bound function/proxy
   // This helps when the class identity is lost but the name is preserved or slightly modified
@@ -205,7 +207,9 @@ export async function eagerLoad<T extends Model>(
   relationName: string,
   callback?: (query: any) => void
 ): Promise<void> {
-  if (parents.length === 0) return
+  if (parents.length === 0) {
+    return
+  }
 
   // Handle nested relations (e.g., 'posts.comments')
   const parts = relationName.split('.')
@@ -213,7 +217,9 @@ export async function eagerLoad<T extends Model>(
   const nestedRelation = parts.slice(1).join('.')
 
   const firstParent = parents[0]
-  if (!firstParent) return
+  if (!firstParent) {
+    return
+  }
 
   const parentModel = firstParent.constructor as typeof Model
   const rels = getRelationships(parentModel)
@@ -230,7 +236,9 @@ export async function eagerLoad<T extends Model>(
   const parentKeys = parents.map((p) => (p as any)[localKey])
   const validParentKeys = parentKeys.filter((k) => k !== undefined && k !== null)
 
-  if (validParentKeys.length === 0) return
+  if (validParentKeys.length === 0) {
+    return
+  }
 
   // Build and execute the query based on relationship type
   switch (type) {
@@ -248,9 +256,7 @@ export async function eagerLoad<T extends Model>(
       const grammar = (connection as any).getGrammar?.()
 
       const useLateral =
-        query.hasLimitOrOffset() &&
-        grammar &&
-        typeof grammar.compileLateralEagerLoad === 'function'
+        query.hasLimitOrOffset() && grammar && typeof grammar.compileLateralEagerLoad === 'function'
 
       let models: any[] = []
 
@@ -282,7 +288,7 @@ export async function eagerLoad<T extends Model>(
         if (!relatedByFk.has(fk)) {
           relatedByFk.set(fk, [])
         }
-        relatedByFk.get(fk)!.push(model)
+        relatedByFk.get(fk)?.push(model)
       }
 
       // Assign to parents
@@ -291,9 +297,9 @@ export async function eagerLoad<T extends Model>(
         const items = relatedByFk.get(pk) ?? []
 
         if (type === 'hasOne') {
-          ; (parent as any)[currentRelation] = items[0] ?? null
+          ;(parent as any)[currentRelation] = items[0] ?? null
         } else {
-          ; (parent as any)[currentRelation] = items
+          ;(parent as any)[currentRelation] = items
         }
       }
       break
@@ -305,7 +311,9 @@ export async function eagerLoad<T extends Model>(
         .map((p) => (p as any)[foreignKey])
         .filter((k) => k !== undefined && k !== null)
 
-      if (fks.length === 0) return
+      if (fks.length === 0) {
+        return
+      }
 
       const query = Related.query().whereIn(localKey, fks)
 
@@ -329,14 +337,16 @@ export async function eagerLoad<T extends Model>(
       for (const parent of parents) {
         const fk = (parent as any)[foreignKey]
         const row = relatedByPk.get(fk)
-          ; (parent as any)[currentRelation] = row ?? null
+        ;(parent as any)[currentRelation] = row ?? null
       }
       break
     }
 
     case 'belongsToMany': {
       const { pivotTable, relatedKey } = relationMeta
-      if (!pivotTable || !relatedKey) return
+      if (!pivotTable || !relatedKey) {
+        return
+      }
 
       const connection = DB.connection(Related.connection)
 
@@ -348,7 +358,9 @@ export async function eagerLoad<T extends Model>(
 
       // 2. Get related models
       const relatedIds = [...new Set(pivots.map((p) => p[relatedKey]))]
-      if (relatedIds.length === 0) return
+      if (relatedIds.length === 0) {
+        return
+      }
 
       const query = Related.query().whereIn(localKey, relatedIds)
 
@@ -375,7 +387,7 @@ export async function eagerLoad<T extends Model>(
         if (!pivotsByParent.has(pk)) {
           pivotsByParent.set(pk, [])
         }
-        pivotsByParent.get(pk)!.push(pivot[relatedKey])
+        pivotsByParent.get(pk)?.push(pivot[relatedKey])
       }
 
       // Assign to parents
@@ -386,7 +398,7 @@ export async function eagerLoad<T extends Model>(
           .map((rpk) => relatedByPk.get(rpk))
           .filter((r): r is any => r !== undefined)
 
-          ; (parent as any)[currentRelation] = relatedModels
+        ;(parent as any)[currentRelation] = relatedModels
       }
       break
     }

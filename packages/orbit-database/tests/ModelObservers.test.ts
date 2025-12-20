@@ -1,86 +1,86 @@
-import { describe, test, expect, spyOn, beforeEach } from 'bun:test'
-import { Model } from '../src/orm/model/Model'
+import { beforeEach, describe, expect, spyOn, test } from 'bun:test'
 import { DB } from '../src/DB'
+import { Model } from '../src/orm/model/Model'
 
 describe('Model Observers', () => {
-    class User extends Model {
-        static override table = 'users'
-        declare id: number
-        declare name: string
+  class User extends Model {
+    static override table = 'users'
+    declare id: number
+    declare name: string
+  }
+
+  class UserObserver {
+    created(_user: User) {}
+    updating(_user: User) {}
+    saved(_user: User) {}
+  }
+
+  let mockConnection: any
+
+  beforeEach(() => {
+    // Clear observers
+    ;(User as any).observers = []
+
+    mockConnection = {
+      table: () => mockConnection,
+      where: () => mockConnection,
+      insert: () => Promise.resolve([1]),
+      update: () => Promise.resolve(1),
+      getGrammar: () => ({
+        compileInsert: () => ({ sql: '', bindings: [] }),
+        compileUpdate: () => ({ sql: '', bindings: [] }),
+      }),
+      getDriver: () => ({
+        getGrammar: () => ({}),
+      }),
+      raw: () => Promise.resolve({ rows: [] }),
     }
+    spyOn(DB, 'connection').mockReturnValue(mockConnection)
 
-    class UserObserver {
-        created(user: User) { }
-        updating(user: User) { }
-        saved(user: User) { }
-    }
+    // Mock SchemaRegistry to avoid sniffing
+    const { SchemaRegistry } = require('../src/orm/schema/SchemaRegistry')
+    spyOn(SchemaRegistry.prototype, 'get').mockResolvedValue({
+      columns: new Map([
+        ['id', { type: 'integer' } as any],
+        ['name', { type: 'string' } as any],
+      ]),
+    } as any)
+  })
 
-    let mockConnection: any
+  test('it registers observer', () => {
+    const observer = new UserObserver()
+    User.observe(observer)
 
-    beforeEach(() => {
-        // Clear observers
-        ; (User as any).observers = []
+    expect((User as any).observers).toHaveLength(1)
+    expect((User as any).observers[0]).toBe(observer)
+  })
 
-        mockConnection = {
-            table: () => mockConnection,
-            where: () => mockConnection,
-            insert: () => Promise.resolve([1]),
-            update: () => Promise.resolve(1),
-            getGrammar: () => ({
-                compileInsert: () => ({ sql: '', bindings: [] }),
-                compileUpdate: () => ({ sql: '', bindings: [] }),
-            }),
-            getDriver: () => ({
-                getGrammar: () => ({}),
-            }),
-            raw: () => Promise.resolve({ rows: [] })
-        }
-        spyOn(DB, 'connection').mockReturnValue(mockConnection)
+  test('it triggers observer events', async () => {
+    const observer = new UserObserver()
+    const createdSpy = spyOn(observer, 'created')
+    const savedSpy = spyOn(observer, 'saved')
 
-        // Mock SchemaRegistry to avoid sniffing
-        const { SchemaRegistry } = require('../src/orm/schema/SchemaRegistry')
-        spyOn(SchemaRegistry.prototype, 'get').mockResolvedValue({
-            columns: new Map([
-                ['id', { type: 'integer' } as any],
-                ['name', { type: 'string' } as any]
-            ])
-        } as any)
-    })
+    User.observe(observer)
 
-    test('it registers observer', () => {
-        const observer = new UserObserver()
-        User.observe(observer)
+    const user = User.create<User>({ name: 'Carl' })
+    await user.save()
 
-        expect((User as any).observers).toHaveLength(1)
-        expect((User as any).observers[0]).toBe(observer)
-    })
+    expect(createdSpy).toHaveBeenCalled()
+    expect(createdSpy).toHaveBeenCalledWith(user) // Should receive model instance
+    expect(savedSpy).toHaveBeenCalled()
+  })
 
-    test('it triggers observer events', async () => {
-        const observer = new UserObserver()
-        const createdSpy = spyOn(observer, 'created')
-        const savedSpy = spyOn(observer, 'saved')
+  test('it triggers updating on observer', async () => {
+    const observer = new UserObserver()
+    const updatingSpy = spyOn(observer, 'updating')
 
-        User.observe(observer)
+    User.observe(observer)
 
-        const user = User.create<User>({ name: 'Carl' })
-        await user.save()
+    const user = User.hydrate<User>({ id: 1, name: 'Carl' })
+    user.name = 'Updated'
+    await user.save()
 
-        expect(createdSpy).toHaveBeenCalled()
-        expect(createdSpy).toHaveBeenCalledWith(user) // Should receive model instance
-        expect(savedSpy).toHaveBeenCalled()
-    })
-
-    test('it triggers updating on observer', async () => {
-        const observer = new UserObserver()
-        const updatingSpy = spyOn(observer, 'updating')
-
-        User.observe(observer)
-
-        const user = User.hydrate<User>({ id: 1, name: 'Carl' })
-        user.name = 'Updated'
-        await user.save()
-
-        expect(updatingSpy).toHaveBeenCalled()
-        expect(updatingSpy).toHaveBeenCalledWith(user)
-    })
+    expect(updatingSpy).toHaveBeenCalled()
+    expect(updatingSpy).toHaveBeenCalledWith(user)
+  })
 })

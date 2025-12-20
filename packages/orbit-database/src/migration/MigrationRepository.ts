@@ -114,7 +114,9 @@ export class MigrationRepository {
    */
   async getLast(): Promise<MigrationRecord[]> {
     const lastBatch = await this.getLastBatchNumber()
-    if (lastBatch === 0) return []
+    if (lastBatch === 0) {
+      return []
+    }
 
     return await this.getMigrations(lastBatch)
   }

@@ -127,9 +127,7 @@ export class PostgresGrammar extends Grammar {
     // and account for the fact that $1 is already used for parentKeys
     const innerWheresRaw = this.compileWheres(innerQuery, 1) // Offset by 1 for parentKeys
     const linkClause = `${wrappedFk} = p.parent_id`
-    const wheres = innerWheresRaw
-      ? `${innerWheresRaw} AND ${linkClause}`
-      : `WHERE ${linkClause}`
+    const wheres = innerWheresRaw ? `${innerWheresRaw} AND ${linkClause}` : `WHERE ${linkClause}`
 
     const orders = innerQuery.orders.length > 0 ? ` ${this.compileOrders(innerQuery)}` : ''
     const limit = innerQuery.limit !== undefined ? ` ${this.compileLimit(innerQuery)}` : ''
@@ -147,10 +145,16 @@ export class PostgresGrammar extends Grammar {
    * Guess the PostgreSQL type for an array of values
    */
   protected guessType(values: unknown[]): string {
-    if (values.length === 0) return 'text'
+    if (values.length === 0) {
+      return 'text'
+    }
     const first = values[0]
-    if (typeof first === 'number') return 'int'
-    if (typeof first === 'string' && /^[0-9a-f-]{36}$/i.test(first)) return 'uuid'
+    if (typeof first === 'number') {
+      return 'int'
+    }
+    if (typeof first === 'string' && /^[0-9a-f-]{36}$/i.test(first)) {
+      return 'uuid'
+    }
     return 'text'
   }
 }

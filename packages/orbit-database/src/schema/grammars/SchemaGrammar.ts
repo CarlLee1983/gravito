@@ -33,7 +33,7 @@ export abstract class SchemaGrammar {
     // Foreign key constraints
     const fks = blueprint.getForeignKeys()
     const fksSql =
-      fks.length > 0 ? ',\n  ' + fks.map((fk) => this.compileForeignKey(fk)).join(',\n  ') : ''
+      fks.length > 0 ? `,\n  ${fks.map((fk) => this.compileForeignKey(fk)).join(',\n  ')}` : ''
 
     return `CREATE TABLE ${this.wrapTable(blueprint.table)} (\n  ${columnsSql}${primarySql}${fksSql}\n)`
   }
@@ -150,10 +150,18 @@ export abstract class SchemaGrammar {
    * Compile default value
    */
   protected compileDefault(value: unknown): string {
-    if (value === null) return 'NULL'
-    if (typeof value === 'boolean') return value ? 'TRUE' : 'FALSE'
-    if (typeof value === 'number') return String(value)
-    if (typeof value === 'string') return this.quoteString(value)
+    if (value === null) {
+      return 'NULL'
+    }
+    if (typeof value === 'boolean') {
+      return value ? 'TRUE' : 'FALSE'
+    }
+    if (typeof value === 'number') {
+      return String(value)
+    }
+    if (typeof value === 'string') {
+      return this.quoteString(value)
+    }
     return String(value)
   }
 

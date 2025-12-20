@@ -3,6 +3,7 @@
  * @description Fluent query builder for constructing SQL queries
  */
 
+import { DB } from '../DB'
 import type {
   BooleanOperator,
   CompiledQuery,
@@ -19,7 +20,6 @@ import type {
   WhereClause,
 } from '../types'
 import { Expression } from './Expression'
-import { DB } from '../DB'
 
 /**
  * Query Builder Error
@@ -598,7 +598,9 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
     if (cache && this._cache) {
       cacheKey = this._cache.key ?? `orbit:query:${sql}:${JSON.stringify(this.bindingsList)}`
       const cached = await cache.get<T[]>(cacheKey)
-      if (cached) return cached
+      if (cached) {
+        return cached
+      }
     }
 
     const result = await this.connection.raw<T>(sql, this.bindingsList)
@@ -844,10 +846,10 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
     relation: string | string[] | Record<string, (query: QueryBuilderContract<any>) => void>
   ): this {
     if (typeof relation === 'string') {
-      this.eagerLoads.set(relation, () => { })
+      this.eagerLoads.set(relation, () => {})
     } else if (Array.isArray(relation)) {
       for (const rel of relation) {
-        this.eagerLoads.set(rel, () => { })
+        this.eagerLoads.set(rel, () => {})
       }
     } else {
       for (const [rel, callback] of Object.entries(relation)) {
@@ -1051,7 +1053,9 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * Apply all registered global scopes
    */
   protected applyGlobalScopes(): void {
-    if (this._isApplyingScopes) return
+    if (this._isApplyingScopes) {
+      return
+    }
     this._isApplyingScopes = true
 
     for (const [name, callback] of this.globalScopes) {

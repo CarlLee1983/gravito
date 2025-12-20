@@ -35,8 +35,6 @@ export interface SeederRunnerOptions {
  */
 export class SeederRunner {
   private seedersPath: string
-  // Reserved for future use with connection-specific seeding
-  private _connectionName: string | undefined
   private resolvedSeeders: Map<string, SeederConstructor> = new Map()
 
   constructor(options: SeederRunnerOptions = {}) {

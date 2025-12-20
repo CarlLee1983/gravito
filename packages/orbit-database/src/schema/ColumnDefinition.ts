@@ -282,9 +282,9 @@ export class ColumnDefinition {
     const base = this.name.replace(/_id$/, '')
     // Simple pluralization
     if (base.endsWith('y')) {
-      return base.slice(0, -1) + 'ies'
+      return `${base.slice(0, -1)}ies`
     }
-    return base + 's'
+    return `${base}s`
   }
 }
 

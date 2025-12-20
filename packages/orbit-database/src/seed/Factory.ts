@@ -1,5 +1,5 @@
 import { DB } from '../DB'
-import { Model } from '../orm/model/Model'
+import type { Model } from '../orm/model/Model'
 
 /**
  * Factory State
@@ -44,8 +44,12 @@ export class Factory<T extends Record<string, unknown>> {
 
   constructor(definition: FactoryDefinition<T>, options: FactoryOptions = {}) {
     this.definition = definition
-    if (options.model) this.model = options.model
-    if (options.table) this.tableName = options.table
+    if (options.model) {
+      this.model = options.model
+    }
+    if (options.table) {
+      this.tableName = options.table
+    }
   }
 
   /**

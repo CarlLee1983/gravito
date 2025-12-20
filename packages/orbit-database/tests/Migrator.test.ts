@@ -2,7 +2,7 @@
  * Migration Runner Tests
  */
 
-import { beforeEach, describe, expect, it } from 'bun:test'
+import { describe, expect, it } from 'bun:test'
 import { MigrationRepository, Migrator } from '../src/migration'
 
 describe('Migrator', () => {

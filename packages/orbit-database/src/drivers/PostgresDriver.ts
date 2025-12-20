@@ -159,7 +159,7 @@ export class PostgresDriver implements DriverContract {
       throw new Error('Transaction already in progress')
     }
 
-    this.transactionClient = await this.pool!.connect()
+    this.transactionClient = await this.pool?.connect()
     await this.transactionClient.query('BEGIN')
     this.transactionActive = true
   }
@@ -211,7 +211,7 @@ export class PostgresDriver implements DriverContract {
       return this.transactionClient
     }
 
-    return this.pool!.connect()
+    return this.pool?.connect()
   }
 
   /**

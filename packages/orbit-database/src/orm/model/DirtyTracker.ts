@@ -108,9 +108,15 @@ export class DirtyTracker<T extends Record<string, unknown>> {
    * Check if values are equal
    */
   private isEqual(a: unknown, b: unknown): boolean {
-    if (a === b) return true
-    if (a === null || b === null) return false
-    if (a === undefined || b === undefined) return false
+    if (a === b) {
+      return true
+    }
+    if (a === null || b === null) {
+      return false
+    }
+    if (a === undefined || b === undefined) {
+      return false
+    }
 
     // Deep compare for objects and arrays
     if (typeof a === 'object' && typeof b === 'object') {
@@ -124,7 +130,9 @@ export class DirtyTracker<T extends Record<string, unknown>> {
    * Clone value for storage
    */
   private cloneValue(value: unknown): unknown {
-    if (value === null || value === undefined) return value
+    if (value === null || value === undefined) {
+      return value
+    }
     if (typeof value === 'object') {
       return JSON.parse(JSON.stringify(value))
     }

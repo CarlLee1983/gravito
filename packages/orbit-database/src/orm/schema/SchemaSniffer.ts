@@ -236,13 +236,21 @@ export class SchemaSniffer {
    * Parse default value
    */
   private parseDefault(value: string | null): unknown {
-    if (value === null || value === 'NULL') return undefined
+    if (value === null || value === 'NULL') {
+      return undefined
+    }
     if (value.startsWith("'") && value.endsWith("'")) {
       return value.slice(1, -1)
     }
-    if (value === 'true') return true
-    if (value === 'false') return false
-    if (!isNaN(Number(value))) return Number(value)
+    if (value === 'true') {
+      return true
+    }
+    if (value === 'false') {
+      return false
+    }
+    if (!Number.isNaN(Number(value))) {
+      return Number(value)
+    }
     return undefined
   }
 
@@ -258,9 +266,13 @@ export class SchemaSniffer {
    * Extract enum values from MySQL type
    */
   private extractMySQLEnumValues(typeStr: string): string[] | undefined {
-    if (!typeStr.toLowerCase().startsWith('enum')) return undefined
+    if (!typeStr.toLowerCase().startsWith('enum')) {
+      return undefined
+    }
     const match = typeStr.match(/\((.+)\)/)
-    if (!match?.[1]) return undefined
+    if (!match?.[1]) {
+      return undefined
+    }
     return match[1].split(',').map((v) => v.trim().replace(/^'|'$/g, ''))
   }
 

@@ -134,7 +134,7 @@ export class SchemaRegistry {
 
     // AOT Mode: Must be in cache
     throw new Error(
-      `Table "${table}" not found in schema lock. ` + `Run 'bun db:schema:lock' to regenerate.`
+      `Table "${table}" not found in schema lock. Run 'bun db:schema:lock' to regenerate.`
     )
   }
 
@@ -238,7 +238,9 @@ export class SchemaRegistry {
    * Check if an error is schema-related
    */
   private isSchemaError(error: unknown): boolean {
-    if (!(error instanceof Error)) return false
+    if (!(error instanceof Error)) {
+      return false
+    }
 
     const schemaErrorPatterns = [
       /column.*not found/i,
@@ -265,7 +267,7 @@ export class SchemaRegistry {
 
     if (!existsSync(lockPath)) {
       throw new Error(
-        `Schema lock file not found: ${lockPath}. ` + `Run 'bun db:schema:lock' to generate.`
+        `Schema lock file not found: ${lockPath}. Run 'bun db:schema:lock' to generate.`
       )
     }
 

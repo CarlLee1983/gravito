@@ -3,12 +3,7 @@
  */
 
 import { describe, expect, it } from 'bun:test'
-import {
-  Blueprint,
-  ColumnDefinition,
-  MySQLSchemaGrammar,
-  PostgresSchemaGrammar,
-} from '../src/schema'
+import { Blueprint, MySQLSchemaGrammar, PostgresSchemaGrammar } from '../src/schema'
 
 describe('Blueprint', () => {
   describe('Column Types', () => {

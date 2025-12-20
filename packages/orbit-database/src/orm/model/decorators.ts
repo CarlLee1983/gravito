@@ -6,7 +6,7 @@
  * Soft Deletes Decorator Options
  */
 export interface SoftDeletesOptions {
-    column?: string
+  column?: string
 }
 
 /**
@@ -24,12 +24,12 @@ export const SOFT_DELETES_KEY = Symbol('soft_deletes')
  * ```
  */
 export function SoftDeletes(options: SoftDeletesOptions = {}): ClassDecorator {
-    return (target: any) => {
-        const column = options.column || 'deleted_at'
+  return (target: any) => {
+    const column = options.column || 'deleted_at'
 
-        // Store metadata on the model class
-        target[SOFT_DELETES_KEY] = { column }
+    // Store metadata on the model class
+    target[SOFT_DELETES_KEY] = { column }
 
-        // Add boot method logic if needed, or we'll check this in Model.query()
-    }
+    // Add boot method logic if needed, or we'll check this in Model.query()
+  }
 }
