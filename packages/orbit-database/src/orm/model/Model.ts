@@ -28,7 +28,7 @@ export type ModelConstructor<T extends Model> = new () => T
  * Model static interface
  */
 export interface ModelStatic<T extends Model> {
-  new (): T
+  new(): T
   table: string
   primaryKey: string
   connection?: string
@@ -393,10 +393,10 @@ export abstract class Model {
 
     // Wrap get to hydrate
     const originalGet = builder.get.bind(builder)
-    ;(builder as unknown as { get: () => Promise<R[]> }).get = async (): Promise<R[]> => {
-      const rows = await originalGet()
-      return rows.map((row) => related.hydrate<R>(row)) as R[]
-    }
+      ; (builder as unknown as { get: () => Promise<R[]> }).get = async (): Promise<R[]> => {
+        const rows = await originalGet()
+        return rows.map((row) => related.hydrate<R>(row)) as R[]
+      }
 
     return builder
   }
@@ -477,6 +477,51 @@ export abstract class Model {
     const rows = await connection.table<ModelAttributes>(related.table).whereIn(rk, pivots).get()
 
     return rows.map((row) => related.hydrate<R>(row)) as R[]
+  }
+
+  /**
+   * Stream hasMany relationship with cursor-based iteration
+   * Memory-safe for large relationship sets
+   * 
+   * @example
+   * ```typescript
+   * for await (const posts of user.hasManyStream(Post, 'user_id', 100)) {
+   *   for (const post of posts) {
+   *     await processPost(post)
+   *   }
+   * }
+   * ```
+   */
+  async *hasManyStream<R extends Model>(
+    related: ModelConstructor<R> & typeof Model,
+    foreignKey?: string,
+    chunkSize = 1000,
+    localKey?: string
+  ): AsyncGenerator<R[], void, unknown> {
+    const constructor = this.constructor as typeof Model
+    const fk = foreignKey ?? `${constructor.table.replace(/s$/, '')}_id`
+    const lk = localKey ?? constructor.primaryKey
+    const localValue = this._attributes[lk]
+
+    const connection = DB.connection(related.connection)
+    let offset = 0
+
+    while (true) {
+      const rows = await connection
+        .table<ModelAttributes>(related.table)
+        .where(fk, localValue)
+        .orderBy(related.primaryKey)
+        .limit(chunkSize)
+        .offset(offset)
+        .get()
+
+      if (rows.length === 0) break
+
+      yield rows.map(row => related.hydrate<R>(row)) as R[]
+
+      if (rows.length < chunkSize) break
+      offset += chunkSize
+    }
   }
 
   // ============================================================================
@@ -650,6 +695,52 @@ export abstract class Model {
   }
 
   /**
+   * Lazy hydration: returns an async generator that yields raw data
+   * Models are only instantiated when explicitly transformed
+   * 
+   * @example
+   * ```typescript
+   * // Memory efficient - rows stay as raw data until needed
+   * for await (const rawRows of User.lazyAll(100)) {
+   *   // Process raw data
+   *   const ids = rawRows.map(r => r.id)
+   *   
+   *   // Hydrate only when needed
+   *   for (const row of rawRows) {
+   *     if (shouldProcess(row)) {
+   *       const user = User.hydrate(row)
+   *       await user.save()
+   *     }
+   *   }
+   * }
+   * ```
+   */
+  static async *lazyAll<T extends Model>(
+    this: ModelConstructor<T> & typeof Model,
+    chunkSize = 1000
+  ): AsyncGenerator<ModelAttributes[], void, unknown> {
+    const connection = DB.connection(this.connection)
+    let offset = 0
+
+    while (true) {
+      const rows = await connection
+        .table<ModelAttributes>(this.table)
+        .orderBy(this.primaryKey)
+        .limit(chunkSize)
+        .offset(offset)
+        .get()
+
+      if (rows.length === 0) break
+
+      // Yield raw data - not hydrated yet
+      yield rows
+
+      if (rows.length < chunkSize) break
+      offset += chunkSize
+    }
+  }
+
+  /**
    * Cursor-based iteration for memory-safe processing
    * Yields chunks of models without loading all into memory
    *
@@ -706,10 +797,10 @@ export abstract class Model {
 
     // Wrap get() to hydrate results
     const originalGet = builder.get.bind(builder)
-    ;(builder as unknown as { get: () => Promise<T[]> }).get = async (): Promise<T[]> => {
-      const rows = await originalGet()
-      return rows.map((row) => this.hydrate<T>(row)) as unknown as T[]
-    }
+      ; (builder as unknown as { get: () => Promise<T[]> }).get = async (): Promise<T[]> => {
+        const rows = await originalGet()
+        return rows.map((row) => this.hydrate<T>(row)) as unknown as T[]
+      }
 
     // Wrap first() to hydrate result
     const originalFirst = builder.first.bind(builder)
