@@ -43,6 +43,39 @@ const core = await PlanetCore.boot(config)
 export default core.liftoff()
 ```
 
+## Drivers
+
+Orbit Session supports multiple drivers:
+
+- `memory`: Default. Good for development, lost on restart.
+- `cache`: Uses `orbit-cache` (requires `OrbitCache` in `orbits` list).
+- `redis`: Direct Redis connection (requires `@gravito/orbit-redis` dependency, but not necessarily the orbit).
+- `file`: Stores sessions as JSON files on disk.
+- `sqlite`: Stores sessions in a SQLite database file (uses `bun:sqlite`).
+
+### File Driver
+
+```ts
+// config
+session: {
+  driver: 'file',
+  file: { path: './storage/sessions' },
+}
+```
+
+### SQLite Driver
+
+```ts
+// config
+session: {
+  driver: 'sqlite',
+  sqlite: {
+    path: './storage/database.sqlite',
+    tableName: 'sessions', // optional, default: 'sessions'
+  },
+}
+```
+
 ## CSRF
 
 - Default: enabled

@@ -17,24 +17,24 @@ export interface AuthConfig {
     {
       driver: 'session' | 'jwt' | 'token' | string
       provider?: string
-      [key: string]: any
+      [key: string]: unknown
     }
   >
   providers: Record<
     string,
     {
       driver: 'callback' | string
-      [key: string]: any
+      [key: string]: unknown
     }
   >
 }
 
-export type UserProviderResolver = (config: any) => UserProvider
+export type UserProviderResolver = (config: Record<string, unknown>) => UserProvider
 export type GuardResolver = (
   ctx: Context,
   name: string,
-  config: any,
-  provider: UserProvider
+  config: Record<string, unknown>,
+  provider?: UserProvider
 ) => Guard
 
 export class AuthManager {
@@ -132,27 +132,55 @@ export class AuthManager {
 
     if (this.customGuardCreators.has(config.driver)) {
       const providerName = config.provider
-      const provider = providerName ? this.createUserProvider(providerName) : null
+      const provider = providerName ? this.createUserProvider(providerName) : undefined
       if (!provider && providerName) {
         throw new Error(`User provider [${providerName}] not found for guard [${name}].`)
       }
-      return this.customGuardCreators.get(config.driver)?.(this.ctx, name, config, provider!)
+      const creator = this.customGuardCreators.get(config.driver)
+      if (!creator) {
+        throw new Error(`Custom guard creator for [${config.driver}] not found.`)
+      }
+      return creator(this.ctx, name, config, provider)
     }
 
     throw new Error(`Auth driver [${config.driver}] for guard [${name}] is not supported.`)
   }
 
-  protected createSessionGuard(name: string, config: any): SessionGuard {
+  protected createSessionGuard(
+    name: string,
+    config: {
+      provider?: string
+      sessionKey?: string
+      [key: string]: unknown
+    }
+  ): SessionGuard {
     const provider = this.createUserProvider(config.provider)
     return new SessionGuard(name, provider, this.ctx, config.sessionKey)
   }
 
-  protected createJwtGuard(_name: string, config: any): JwtGuard {
+  protected createJwtGuard(
+    _name: string,
+    config: {
+      provider?: string
+      secret?: string
+      algo?: string
+      [key: string]: unknown
+    }
+  ): JwtGuard {
     const provider = this.createUserProvider(config.provider)
     return new JwtGuard(provider, this.ctx, config.secret, config.algo)
   }
 
-  protected createTokenGuard(_name: string, config: any): TokenGuard {
+  protected createTokenGuard(
+    _name: string,
+    config: {
+      provider?: string
+      inputKey?: string
+      storageKey?: string
+      hash?: boolean
+      [key: string]: unknown
+    }
+  ): TokenGuard {
     const provider = this.createUserProvider(config.provider)
     return new TokenGuard(provider, this.ctx, config.inputKey, config.storageKey, config.hash)
   }
@@ -161,7 +189,10 @@ export class AuthManager {
     const providerName = name || this.config.defaults.passwords || 'users'
 
     if (this.resolvedProviders.has(providerName)) {
-      return this.resolvedProviders.get(providerName)!
+      const existing = this.resolvedProviders.get(providerName)
+      if (existing) {
+        return existing
+      }
     }
 
     const config = this.config.providers[providerName]
@@ -174,15 +205,18 @@ export class AuthManager {
 
     if (config.driver === 'callback') {
       if (this.providerResolvers.has(providerName)) {
-        provider = this.providerResolvers.get(providerName)?.(config)
+        const resolver = this.providerResolvers.get(providerName)
+        provider = resolver ? resolver(config) : null
       }
     } else if (this.customProviderCreators.has(config.driver)) {
-      provider = this.customProviderCreators.get(config.driver)?.(config)
+      const creator = this.customProviderCreators.get(config.driver)
+      provider = creator ? creator(config) : null
     }
 
     if (!provider) {
       if (this.providerResolvers.has(providerName)) {
-        provider = this.providerResolvers.get(providerName)?.(config)
+        const resolver = this.providerResolvers.get(providerName)
+        provider = resolver ? resolver(config) : null
       }
     }
 

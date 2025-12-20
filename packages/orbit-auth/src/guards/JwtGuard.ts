@@ -33,7 +33,7 @@ export class JwtGuard<User extends Authenticatable = Authenticatable> implements
     }
 
     try {
-      const payload = await verify(token, this.secret, this.algo as any)
+      const payload = await verify(token, this.secret, this.algo as Parameters<typeof verify>[2])
       if (payload?.sub) {
         this.userInstance = await this.provider.retrieveById(payload.sub as string)
       }

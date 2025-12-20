@@ -1,109 +1,29 @@
 import { randomBytes } from 'node:crypto'
 import type { GravitoOrbit, PlanetCore } from 'gravito-core'
 import type { Context, Next } from 'hono'
+import { MemorySessionStore } from './stores/MemorySessionStore'
+import { RedisSessionStore } from './stores/RedisSessionStore'
+import { FileSessionStore } from './stores/FileSessionStore'
+import { SqliteSessionStore } from './stores/SqliteSessionStore'
+import type {
+  CsrfService,
+  OrbitSessionOptions,
+  SessionId,
+  SessionRecord,
+  SessionService,
+  SessionStore,
+} from './types'
 
-export type SessionId = string
-
-export interface SessionRecord {
-  data: Record<string, unknown>
-  createdAt: number
-  lastActivityAt: number
-  flash?: {
-    now: string[]
-    next: string[]
-  }
-}
-
-export interface SessionStore {
-  get(id: SessionId): Promise<SessionRecord | null>
-  set(id: SessionId, record: SessionRecord, ttlSeconds: number): Promise<void>
-  delete(id: SessionId): Promise<void>
-}
-
-export interface OrbitSessionCookieOptions {
-  name?: string
-  path?: string
-  httpOnly?: boolean
-  sameSite?: 'Lax' | 'Strict' | 'None'
-  secure?: boolean
-}
-
-export interface OrbitCsrfOptions {
-  enabled?: boolean
-  headerName?: string
-  cookieName?: string
-  cookiePath?: string
-  cookieSecure?: boolean
-  cookieSameSite?: 'Lax' | 'Strict' | 'None'
-  ignore?: (ctx: Context) => boolean
-}
-
-export interface OrbitSessionOptions {
-  exposeAs?: string
-  driver?: 'memory' | 'cache'
-  store?: SessionStore // Advanced: custom store overrides driver
-  cacheKey?: string // Default: 'cache' (ctx.get)
-  keyPrefix?: string // Default: 'session:'
-  cookie?: OrbitSessionCookieOptions
-  idleTimeoutSeconds?: number
-  absoluteTimeoutSeconds?: number
-  touchIntervalSeconds?: number
-  csrf?: OrbitCsrfOptions
-  now?: () => number
-}
-
-export interface SessionService {
-  id(): SessionId
-  isStarted(): boolean
-  get<T = unknown>(key: string, defaultValue?: T): T
-  has(key: string): boolean
-  put(key: string, value: unknown): void
-  forget(key: string): void
-  all(): Record<string, unknown>
-  pull<T = unknown>(key: string, defaultValue?: T): T
-
-  flash(key: string, value: unknown): void
-  getFlash<T = unknown>(key: string, defaultValue?: T): T
-  reflash(): void
-  keep(keys?: string[]): void
-
-  regenerate(): void
-  invalidate(): void
-}
-
-export interface CsrfService {
-  token(): string
-}
+export * from './types'
+export { MemorySessionStore } from './stores/MemorySessionStore'
+export { RedisSessionStore } from './stores/RedisSessionStore'
+export { FileSessionStore } from './stores/FileSessionStore'
+export { SqliteSessionStore } from './stores/SqliteSessionStore'
 
 declare module 'hono' {
   interface ContextVariableMap {
     session: SessionService
     csrf: CsrfService
-  }
-}
-
-class MemorySessionStore implements SessionStore {
-  private store = new Map<string, { record: SessionRecord; expiresAt: number }>()
-  constructor(private now: () => number) {}
-
-  async get(id: SessionId): Promise<SessionRecord | null> {
-    const item = this.store.get(id)
-    if (!item) {
-      return null
-    }
-    if (this.now() > item.expiresAt) {
-      this.store.delete(id)
-      return null
-    }
-    return item.record
-  }
-
-  async set(id: SessionId, record: SessionRecord, ttlSeconds: number): Promise<void> {
-    this.store.set(id, { record, expiresAt: this.now() + ttlSeconds * 1000 })
-  }
-
-  async delete(id: SessionId): Promise<void> {
-    this.store.delete(id)
   }
 }
 
@@ -186,6 +106,7 @@ export class OrbitSession implements GravitoOrbit {
       ...this.options,
       cookie: { ...(configFromCore.cookie ?? {}), ...(this.options.cookie ?? {}) },
       csrf: { ...(configFromCore.csrf ?? {}), ...(this.options.csrf ?? {}) },
+      redis: { ...(configFromCore.redis ?? {}), ...(this.options.redis ?? {}) },
     }
 
     const exposeAs = resolved.exposeAs ?? 'session'
@@ -214,7 +135,7 @@ export class OrbitSession implements GravitoOrbit {
     const memoryStore = new MemorySessionStore(now)
 
     core.logger.info(
-      `[OrbitSession] Initializing Session (cookie: ${cookieName}, idle: ${idleTimeoutSeconds}s, absolute: ${absoluteTimeoutSeconds}s)`
+      `[OrbitSession] Initializing Session (driver: ${driver}, cookie: ${cookieName})`
     )
 
     core.hooks.doAction('session:init', {
@@ -227,37 +148,50 @@ export class OrbitSession implements GravitoOrbit {
     })
 
     core.app.use('*', async (c: Context, next: Next) => {
-      const store: SessionStore = resolved.store
-        ? resolved.store
-        : driver === 'cache'
-          ? {
-              get: async (id) => {
-                const cache = c.get(cacheKey as any) as any
-                if (!cache?.get) {
-                  throw new Error(
-                    `[OrbitSession] Session driver is "cache" but cache service "${cacheKey}" was not found in context.`
-                  )
-                }
-                const raw = (await cache.get(`${keyPrefix}${id}`)) as string | null | undefined
-                if (!raw) {
-                  return null
-                }
-                try {
-                  return JSON.parse(raw) as SessionRecord
-                } catch {
-                  return null
-                }
-              },
-              set: async (id, record, ttlSeconds) => {
-                const cache = c.get(cacheKey as any) as any
-                await cache.set(`${keyPrefix}${id}`, JSON.stringify(record), ttlSeconds)
-              },
-              delete: async (id) => {
-                const cache = c.get(cacheKey as any) as any
-                await cache.delete(`${keyPrefix}${id}`)
-              },
+      let store: SessionStore
+
+      if (resolved.store) {
+        store = resolved.store
+      } else if (driver === 'redis') {
+        store = new RedisSessionStore(keyPrefix, resolved.redis?.connection)
+      } else if (driver === 'file') {
+        store = new FileSessionStore(resolved.file?.path ?? './storage/sessions')
+      } else if (driver === 'sqlite') {
+        store = new SqliteSessionStore(
+          resolved.sqlite?.path ?? 'sessions.sqlite',
+          resolved.sqlite?.tableName
+        )
+      } else if (driver === 'cache') {
+        store = {
+          get: async (id) => {
+            const cache = c.get(cacheKey as any) as any
+            if (!cache?.get) {
+              throw new Error(
+                `[OrbitSession] Session driver is "cache" but cache service "${cacheKey}" was not found in context.`
+              )
             }
-          : memoryStore
+            const raw = (await cache.get(`${keyPrefix}${id}`)) as string | null | undefined
+            if (!raw) {
+              return null
+            }
+            try {
+              return JSON.parse(raw) as SessionRecord
+            } catch {
+              return null
+            }
+          },
+          set: async (id, record, ttlSeconds) => {
+            const cache = c.get(cacheKey as any) as any
+            await cache.set(`${keyPrefix}${id}`, JSON.stringify(record), ttlSeconds)
+          },
+          delete: async (id) => {
+            const cache = c.get(cacheKey as any) as any
+            await cache.delete(`${keyPrefix}${id}`)
+          },
+        }
+      } else {
+        store = memoryStore
+      }
 
       const startedAt = now()
       const cookies = parseCookieHeader(c.req.header('Cookie'))

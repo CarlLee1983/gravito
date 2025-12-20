@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'bun:test'
+import { $ } from 'bun'
 import { PlanetCore } from 'gravito-core'
 import { OrbitSession } from '../src'
 
@@ -97,5 +98,73 @@ describe('OrbitSession', () => {
       headers: { Cookie: cookie, 'X-CSRF-Token': token },
     })
     expect(res3.status).toBe(200)
+  })
+
+  it('persists session data via file store', async () => {
+    const storagePath = './dist/test-sessions-file'
+    await $`rm -rf ${storagePath}`
+
+    const core = await PlanetCore.boot({
+      orbits: [
+        new OrbitSession({
+          driver: 'file',
+          file: { path: storagePath },
+          csrf: { enabled: false },
+        }),
+      ],
+    })
+
+    core.app.get('/set', (c) => {
+      c.get('session').put('foo', 'file-bar')
+      return c.json({ ok: true })
+    })
+
+    core.app.get('/get', (c) => {
+      return c.json({ foo: c.get('session').get('foo', null) })
+    })
+
+    const res1 = await core.app.request('http://localhost/set')
+    const cookie = res1.headers.get('set-cookie')!
+    expect(cookie).toContain('gravito_session=')
+
+    const res2 = await core.app.request('http://localhost/get', { headers: { Cookie: cookie } })
+    const body2 = (await res2.json()) as any
+    expect(body2.foo).toBe('file-bar')
+
+    await $`rm -rf ${storagePath}`
+  })
+
+  it('persists session data via sqlite store', async () => {
+    const dbPath = './dist/test-sessions.sqlite'
+    await $`rm -f ${dbPath}`
+
+    const core = await PlanetCore.boot({
+      orbits: [
+        new OrbitSession({
+          driver: 'sqlite',
+          sqlite: { path: dbPath },
+          csrf: { enabled: false },
+        }),
+      ],
+    })
+
+    core.app.get('/set', (c) => {
+      c.get('session').put('foo', 'sqlite-bar')
+      return c.json({ ok: true })
+    })
+
+    core.app.get('/get', (c) => {
+      return c.json({ foo: c.get('session').get('foo', null) })
+    })
+
+    const res1 = await core.app.request('http://localhost/set')
+    const cookie = res1.headers.get('set-cookie')!
+    expect(cookie).toContain('gravito_session=')
+
+    const res2 = await core.app.request('http://localhost/get', { headers: { Cookie: cookie } })
+    const body2 = (await res2.json()) as any
+    expect(body2.foo).toBe('sqlite-bar')
+
+    await $`rm -f ${dbPath}`
   })
 })
