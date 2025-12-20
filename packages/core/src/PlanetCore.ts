@@ -246,7 +246,7 @@ export class PlanetCore {
         status = err.status as ContentfulStatusCode
         code = err.code
 
-        if (i18n && err.i18nKey) {
+        if (i18n?.t && err.i18nKey) {
           message = i18n.t(err.i18nKey, err.i18nParams)
         } else {
           message = err.message

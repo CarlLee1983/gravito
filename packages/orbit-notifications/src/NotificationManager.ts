@@ -16,9 +16,16 @@ export class NotificationManager {
   /**
    * Queue manager (optional, injected by `orbit-queue`).
    */
-  private queueManager?: {
-    push(job: unknown, queue?: string, connection?: string, delay?: number): Promise<void>
-  }
+  private queueManager?:
+    | {
+        push(
+          job: unknown,
+          queue?: string | undefined,
+          connection?: string | undefined,
+          delay?: number | undefined
+        ): Promise<void>
+      }
+    | undefined
 
   constructor(private core: PlanetCore) {}
 

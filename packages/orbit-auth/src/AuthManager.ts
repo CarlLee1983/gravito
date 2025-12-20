@@ -168,7 +168,12 @@ export class AuthManager {
     }
   ): JwtGuard {
     const provider = this.createUserProvider(config.provider)
-    return new JwtGuard(provider, this.ctx, config.secret, config.algo)
+    return new JwtGuard(
+      provider,
+      this.ctx,
+      config.secret as string,
+      config.algo as 'HS256' | 'RS256'
+    )
   }
 
   protected createTokenGuard(

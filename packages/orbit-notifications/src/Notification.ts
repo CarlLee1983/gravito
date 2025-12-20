@@ -7,17 +7,9 @@ export interface ShouldQueue {
   /**
    * Queue name (optional).
    */
-  queue?: string
-
-  /**
-   * Connection name (optional).
-   */
-  connection?: string
-
-  /**
-   * Delay seconds.
-   */
-  delay?: number
+  queue?: string | undefined
+  connection?: string | undefined
+  delay?: number | undefined
 }
 
 /**
@@ -110,7 +102,11 @@ export abstract class Notification {
   /**
    * Get queue configuration.
    */
-  getQueueConfig(): { queue?: string; connection?: string; delay?: number } {
+  getQueueConfig(): {
+    queue?: string | undefined
+    connection?: string | undefined
+    delay?: number | undefined
+  } {
     if (this.shouldQueue()) {
       const queueable = this as unknown as ShouldQueue
       return {

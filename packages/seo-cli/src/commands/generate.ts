@@ -47,7 +47,7 @@ export async function generateCommand(options: GenerateCommandOptions) {
 
     // 如果是 AsyncIterable，使用串流處理
     if (entries && typeof (entries as any)[Symbol.asyncIterator] === 'function') {
-      await generateFromStream(entries as AsyncIterable<any>, config, outputPath)
+      await generateFromStream(entries as unknown as AsyncIterable<any>, config, outputPath)
     } else {
       // 陣列處理（現有邏輯）
       const entriesArray = Array.isArray(entries) ? entries : []

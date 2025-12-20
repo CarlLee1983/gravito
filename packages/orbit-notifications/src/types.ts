@@ -2,6 +2,8 @@
  * Notification system type definitions.
  */
 
+import type { Notification } from './Notification'
+
 /**
  * Notification channel interface.
  */

@@ -11,6 +11,8 @@ class TestController {
   api(c: Context) {
     return c.text('api')
   }
+
+  [key: string]: unknown
 }
 
 describe('Router', () => {

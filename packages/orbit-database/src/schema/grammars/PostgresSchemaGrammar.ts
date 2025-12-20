@@ -104,7 +104,7 @@ export class PostgresSchemaGrammar extends SchemaGrammar {
     return `CREATE INDEX ${this.wrapColumn(index.name)} ON ${this.wrapTable(table)} USING GIST (${columns})`
   }
 
-  protected compileDropIndex(_table: string, name: string): string {
+  public compileDropIndex(_table: string, name: string): string {
     return `DROP INDEX IF EXISTS ${this.wrapColumn(name)}`
   }
 

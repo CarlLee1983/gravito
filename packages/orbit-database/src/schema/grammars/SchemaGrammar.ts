@@ -172,7 +172,10 @@ export abstract class SchemaGrammar {
   /**
    * Compile CREATE INDEX statement
    */
-  protected compileIndex(table: string, index: IndexDefinition): string {
+  /**
+   * Compile CREATE INDEX statement
+   */
+  public compileIndex(table: string, index: IndexDefinition): string {
     const columns = index.columns.map((c) => this.wrapColumn(c)).join(', ')
 
     switch (index.type) {
@@ -202,7 +205,7 @@ export abstract class SchemaGrammar {
   /**
    * Compile DROP INDEX statement
    */
-  protected abstract compileDropIndex(table: string, name: string): string
+  public abstract compileDropIndex(table: string, name: string): string
 
   // ============================================================================
   // Foreign Key Compilation

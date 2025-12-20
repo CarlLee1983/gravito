@@ -12,7 +12,7 @@ describe('EventManager', () => {
     let handled = false
 
     class TestEvent extends Event {
-      constructor(public message: string) {
+      constructor(public message: any = 'default') {
         super()
       }
     }
@@ -38,7 +38,7 @@ describe('EventManager', () => {
     let handled = false
 
     class TestEvent extends Event {
-      constructor(public message: string) {
+      constructor(public message: any = 'default') {
         super()
       }
     }

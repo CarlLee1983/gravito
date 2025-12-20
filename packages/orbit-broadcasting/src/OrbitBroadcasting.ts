@@ -73,7 +73,7 @@ export class OrbitBroadcasting implements GravitoOrbit {
           | { publish(channel: string, message: string): Promise<number> }
           | undefined
         if (redisClient) {
-          driver.setRedisClient(redisClient)
+          ;(driver as RedisDriver).setRedisClient(redisClient)
         }
         break
       }
@@ -97,7 +97,7 @@ export class OrbitBroadcasting implements GravitoOrbit {
     // Integrate with EventManager.
     if (core.events) {
       core.events.setBroadcastManager({
-        broadcast: async (event, channel, data, eventName) => {
+        broadcast: async (event: any, channel: any, data: any, eventName: any) => {
           await manager.broadcast(event, channel, data, eventName)
         },
       })

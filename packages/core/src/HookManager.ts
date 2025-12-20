@@ -14,7 +14,8 @@ export class HookManager {
     if (!this.filters.has(hook)) {
       this.filters.set(hook, [])
     }
-    this.filters.get(hook)?.push(callback)
+    // Generic type erasure for storage
+    this.filters.get(hook)?.push(callback as unknown as FilterCallback)
   }
 
   /**
@@ -28,7 +29,7 @@ export class HookManager {
 
     for (const callback of callbacks) {
       try {
-        value = await callback(value, ...args)
+        value = (await callback(value, ...args)) as T
       } catch (error) {
         console.error(`[HookManager] Error in filter '${hook}':`, error)
         // Error handling strategy: log error and continue with current value
@@ -47,7 +48,8 @@ export class HookManager {
     if (!this.actions.has(hook)) {
       this.actions.set(hook, [])
     }
-    this.actions.get(hook)?.push(callback)
+    // Generic type erasure for storage
+    this.actions.get(hook)?.push(callback as unknown as ActionCallback)
   }
 
   /**

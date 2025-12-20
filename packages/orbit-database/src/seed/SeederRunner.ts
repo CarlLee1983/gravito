@@ -35,6 +35,7 @@ export interface SeederRunnerOptions {
  */
 export class SeederRunner {
   private seedersPath: string
+  private _connectionName: string | undefined
   private resolvedSeeders: Map<string, SeederConstructor> = new Map()
 
   constructor(options: SeederRunnerOptions = {}) {
@@ -70,6 +71,7 @@ export class SeederRunner {
    * Run all seeders in the directory
    */
   async run(): Promise<string[]> {
+    void this._connectionName // Suppress unused variable warning
     const files = await this.getSeederFiles()
     const executed: string[] = []
 

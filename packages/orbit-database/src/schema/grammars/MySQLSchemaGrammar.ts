@@ -95,7 +95,7 @@ export class MySQLSchemaGrammar extends SchemaGrammar {
     return `CREATE SPATIAL INDEX ${this.wrapColumn(index.name)} ON ${this.wrapTable(table)} (${columns})`
   }
 
-  protected compileDropIndex(table: string, name: string): string {
+  public compileDropIndex(table: string, name: string): string {
     return `DROP INDEX ${this.wrapColumn(name)} ON ${this.wrapTable(table)}`
   }
 
