@@ -17,7 +17,7 @@
     "hono": "^4.0.0"
   },
   "devDependencies": {
-    "@types/bun": "latest"
+    "bun-types": "latest"
   },
   "author": "Carl Lee <carllee0520@gmail.com>",
   "license": "MIT",

@@ -11,6 +11,7 @@ interface LayoutProps {
 }
 
 interface PageProps {
+  [key: string]: any
   locale?: string
 }
 
@@ -266,8 +267,8 @@ export default function Layout({ children, noPadding = false }: LayoutProps) {
                           href={getLocalizedPath(item.path)}
                           onClick={() => setIsMobileMenuOpen(false)}
                           className={`flex items-center gap-4 p-4 rounded-2xl border transition-all duration-300 group ${isPathActive(item.path)
-                              ? 'bg-white/10 border-white/20'
-                              : 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/10'
+                            ? 'bg-white/10 border-white/20'
+                            : 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/10'
                             }`}
                         >
                           <div className={`p-3 rounded-xl ${isPathActive(item.path) ? 'bg-singularity text-black' : 'bg-black/40 text-gray-400 group-hover:text-white group-hover:bg-black/60'} transition-colors`}>

@@ -45,7 +45,7 @@
   "devDependencies": {
     "gravito-core": "1.0.0-beta.1",
     "@gravito/orbit-cache": "1.0.0-beta.1",
-    "@types/bun": "latest",
+    "bun-types": "latest",
     "typescript": "^5.9.3",
     "hono": "^4.11.1"
   },

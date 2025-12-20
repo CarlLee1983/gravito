@@ -42,7 +42,7 @@
     "gravito-core": "1.0.0-beta.1"
   },
   "devDependencies": {
-    "@types/bun": "latest",
+    "bun-types": "latest",
     "typescript": "^5.9.3"
   },
   "homepage": "https://github.com/gravito-framework/gravito#readme",
