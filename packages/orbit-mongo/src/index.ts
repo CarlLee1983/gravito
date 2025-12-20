@@ -7,27 +7,27 @@
 export { Mongo } from './Mongo'
 export { MongoClient } from './MongoClient'
 export { MongoManager } from './MongoManager'
-export { MongoQueryBuilder, MongoAggregateBuilder } from './MongoQueryBuilder'
+export { MongoAggregateBuilder, MongoQueryBuilder } from './MongoQueryBuilder'
 
 // Type exports
 export type {
-    MongoConfig,
-    MongoManagerConfig,
-    MongoClientContract,
-    MongoDatabaseContract,
-    MongoCollectionContract,
-    MongoAggregateContract,
-    FilterOperator,
-    SortDirection,
-    SortSpec,
-    Projection,
-    FilterDocument,
-    UpdateDocument,
-    PipelineStage,
-    InsertResult,
-    InsertManyResult,
-    UpdateResult,
-    DeleteResult,
-    LookupOptions,
-    Document,
+  DeleteResult,
+  Document,
+  FilterDocument,
+  FilterOperator,
+  InsertManyResult,
+  InsertResult,
+  LookupOptions,
+  MongoAggregateContract,
+  MongoClientContract,
+  MongoCollectionContract,
+  MongoConfig,
+  MongoDatabaseContract,
+  MongoManagerConfig,
+  PipelineStage,
+  Projection,
+  SortDirection,
+  SortSpec,
+  UpdateDocument,
+  UpdateResult,
 } from './types'

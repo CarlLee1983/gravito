@@ -6,6 +6,7 @@ import type { CacheTtl } from './types'
 export type StoreConfig =
   | { driver: 'memory'; maxItems?: number }
   | { driver: 'file'; directory: string }
+  | { driver: 'redis'; connection?: string; prefix?: string }
   | { driver: 'null' }
   // legacy adapter: allow plugging any provider that matches old interface
   | { driver: 'provider' }

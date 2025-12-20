@@ -5,6 +5,7 @@ import type { CacheStore } from './store'
 import { FileStore } from './stores/FileStore'
 import { MemoryStore } from './stores/MemoryStore'
 import { NullStore } from './stores/NullStore'
+import { RedisStore } from './stores/RedisStore'
 import type { CacheTtl } from './types'
 
 type OrbitCacheContext = { set: (key: string, value: unknown) => void }
@@ -18,6 +19,7 @@ export * from './store'
 export * from './stores/FileStore'
 export * from './stores/MemoryStore'
 export * from './stores/NullStore'
+export * from './stores/RedisStore'
 export * from './types'
 
 export interface CacheProvider {
@@ -58,6 +60,7 @@ export class MemoryCacheProvider implements CacheProvider {
 export type OrbitCacheStoreConfig =
   | { driver: 'memory'; maxItems?: number }
   | { driver: 'file'; directory: string }
+  | { driver: 'redis'; connection?: string; prefix?: string }
   | { driver: 'null' }
   | { driver: 'custom'; store: CacheStore }
   | { driver: 'provider'; provider: CacheProvider }
@@ -114,6 +117,10 @@ function createStoreFactory(config: OrbitCacheOptions): (name: string) => CacheS
 
     if (storeConfig.driver === 'file') {
       return new FileStore({ directory: storeConfig.directory })
+    }
+
+    if (storeConfig.driver === 'redis') {
+      return new RedisStore({ connection: storeConfig.connection, prefix: storeConfig.prefix })
     }
 
     if (storeConfig.driver === 'null') {

@@ -10,15 +10,15 @@ export { RedisManager } from './RedisManager'
 
 // Type exports
 export type {
-    RedisConfig,
-    RedisManagerConfig,
-    RedisClientContract,
-    RedisPipelineContract,
-    SetOptions,
-    ZAddOptions,
-    ZRangeOptions,
-    ScanOptions,
-    ScanResult,
-    PipelineResult,
-    TLSOptions,
+  PipelineResult,
+  RedisClientContract,
+  RedisConfig,
+  RedisManagerConfig,
+  RedisPipelineContract,
+  ScanOptions,
+  ScanResult,
+  SetOptions,
+  TLSOptions,
+  ZAddOptions,
+  ZRangeOptions,
 } from './types'
