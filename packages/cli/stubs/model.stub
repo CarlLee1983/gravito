@@ -1,6 +1,10 @@
-export interface {{ Name }} {
-  id: number
-  // TODO: Define model properties
-  createdAt: Date
-  updatedAt: Date
+import { Model } from '@gravito/orbit-database'
+
+export class {{ Name }} extends Model {
+  static table = '{{ name }}s'
+
+  // Attributes are automatically handled by the ProxyModel
+  // You can add custom methods or relationships here:
+  // @HasMany(() => OtherModel)
+  // others!: OtherModel[]
 }

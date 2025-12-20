@@ -350,6 +350,19 @@ cli
   .option('--no-validate', 'Skip pre-deploy health check')
   .action((options) => dbDeploy(options))
 
+import { schemaLock, schemaRefresh } from './commands/database'
+
+cli
+  .command('db:schema:lock', 'Generate schema lock file by scanning models')
+  .option('--entry <file>', 'Entry file (default: src/index.ts)', { default: 'src/index.ts' })
+  .option('--output <file>', 'Output lock file path (default: .schema-lock.json)')
+  .action((options) => schemaLock({ entry: options.entry, lockPath: options.output }))
+
+cli
+  .command('db:schema:refresh', 'Refresh schema cache (invalidate all)')
+  .option('--entry <file>', 'Entry file (default: src/index.ts)', { default: 'src/index.ts' })
+  .action((options) => schemaRefresh(options))
+
 cli.help()
 cli.version('1.0.0-beta.4')
 

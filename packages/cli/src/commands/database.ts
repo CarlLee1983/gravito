@@ -91,10 +91,11 @@ export async function dbSeed(options: { class?: string }) {
     const seeders = files.filter((f) => f.endsWith('.ts'))
 
     if (options.class) {
+      const className = options.class
       // Run specific seeder
-      const seederFile = seeders.find((f) => f.includes(options.class!))
+      const seederFile = seeders.find((f) => f.includes(className))
       if (!seederFile) {
-        console.error(pc.red(`❌ Seeder not found: ${options.class}`))
+        console.error(pc.red(`❌ Seeder not found: ${className}`))
         process.exit(1)
       }
       await runSeeder(path.join(seedersDir, seederFile))
@@ -106,11 +107,13 @@ export async function dbSeed(options: { class?: string }) {
     }
 
     console.log(pc.green('✅ Seeding complete'))
-  } catch (err: any) {
-    if (err.code === 'ENOENT') {
+  } catch (err: unknown) {
+    const error = err as NodeJS.ErrnoException
+    if (error.code === 'ENOENT') {
       console.log(pc.yellow('No seeders directory found. Run `gravito make:seeder` first.'))
     } else {
-      console.error(pc.red(`❌ Seeding failed: ${err.message}`))
+      const message = error instanceof Error ? error.message : String(err)
+      console.error(pc.red(`❌ Seeding failed: ${message}`))
       process.exit(1)
     }
   }
@@ -159,8 +162,86 @@ export async function dbDeploy(options: {
       console.error(pc.red(`❌ Database deployment failed: ${result.error}`))
       process.exit(1)
     }
-  } catch (err: any) {
-    console.error(pc.red(`❌ Database deployment failed: ${err.message}`))
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err)
+    console.error(pc.red(`❌ Database deployment failed: ${message}`))
+    process.exit(1)
+  }
+}
+
+/**
+ * Generate schema lock file by scanning models
+ */
+export async function schemaLock(options: { entry?: string; lockPath?: string }) {
+  console.log(pc.cyan('🔒 Generating schema lock...'))
+
+  try {
+    const entryFile = options.entry ?? 'src/index.ts'
+    const entry = await import(path.join(process.cwd(), entryFile))
+    const core = entry.default?.core || entry.core
+
+    if (!core) {
+      throw new Error('Could not find core instance to access SchemaRegistry')
+    }
+
+    const { Model, SchemaRegistry } = await import('@gravito/orbit-database')
+    const modelsDir = path.join(process.cwd(), 'src/models')
+    const files = await fs.readdir(modelsDir)
+    const tables: string[] = []
+
+    for (const file of files) {
+      if (file.endsWith('.ts')) {
+        const modelModule = await import(path.join(modelsDir, file))
+        const modelClass = Object.values(modelModule).find(
+          (m: any) => m && m.prototype instanceof Model
+        ) as any
+
+        if (modelClass && modelClass.table) {
+          tables.push(modelClass.table)
+        }
+      }
+    }
+
+    if (tables.length === 0) {
+      console.log(pc.yellow('⚠️ No models found in src/models.'))
+      return
+    }
+
+    const registry = SchemaRegistry.getInstance()
+
+    await registry.saveToLock(tables, options.lockPath)
+
+    console.log(pc.green(`✅ Schema lock generated for ${tables.length} tables: ${tables.join(', ')}`))
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err)
+    console.error(pc.red(`❌ Schema lock failed: ${message}`))
+    process.exit(1)
+  }
+}
+
+/**
+ * Refresh schema cache for all models
+ */
+export async function schemaRefresh(options: { entry?: string }) {
+  console.log(pc.cyan('🔄 Refreshing schemas...'))
+
+  try {
+    const entryFile = options.entry ?? 'src/index.ts'
+    const entry = await import(path.join(process.cwd(), entryFile))
+    const core = entry.default?.core || entry.core
+
+    if (!core) {
+      throw new Error('Could not find core instance')
+    }
+
+    const { SchemaRegistry } = await import('@gravito/orbit-database')
+    const registry = SchemaRegistry.getInstance()
+
+    registry.invalidateAll()
+    console.log(pc.green('✅ Schema cache invalidated. Next access will re-sniff.'))
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err)
+    console.error(pc.red(`❌ Schema refresh failed: ${message}`))
     process.exit(1)
   }
 }
@@ -187,8 +268,9 @@ async function runSeeder(filepath: string) {
     const seeder = await import(filepath)
     const seedFn = seeder.default || seeder.seed
     await seedFn(db)
-  } catch (err: any) {
-    console.error(pc.red(`  Failed: ${err.message}`))
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err)
+    console.error(pc.red(`  Failed: ${message}`))
     throw err
   }
 }
