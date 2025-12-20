@@ -1,7 +1,7 @@
 import type { Handler, MiddlewareHandler } from 'hono'
 import type { PlanetCore } from './PlanetCore'
 import { Route } from './Route'
-export type ControllerClass = new (core: PlanetCore) => any
+export type ControllerClass = new (core: PlanetCore) => unknown
 export type RouteHandler = Handler | [ControllerClass, string]
 /**
  * Interface for FormRequest classes (from @gravito/orbit-request).
@@ -129,11 +129,11 @@ export declare class Router {
   /**
    * Register a route model binding.
    */
-  bind(param: string, resolver: (id: string) => Promise<any>): void
+  bind(param: string, resolver: (id: string) => Promise<unknown>): void
   /**
    * Register a route model binding for a Model class.
    */
-  model(param: string, modelClass: any): void
+  model(param: string, modelClass: unknown): void
   constructor(core: PlanetCore)
   /**
    * Start a route group with a prefix

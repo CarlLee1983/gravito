@@ -32,16 +32,14 @@ export function createErrorBag(errors: Record<string, string[]>): ErrorBag {
 
 // Helper to get errors from session flash
 export function errors(c: Context): ErrorBag {
-  // biome-ignore lint/suspicious/noExplicitAny: session might not be typed in core
-  const session = c.get('session') as any
+  const session = c.get('session') as { getFlash?: (key: string) => unknown } | undefined
   const flashed = session?.getFlash?.('errors') ?? {}
   return createErrorBag(flashed as Record<string, string[]>)
 }
 
 // Helper to get old input value
 export function old(c: Context, field: string, defaultValue?: unknown): unknown {
-  // biome-ignore lint/suspicious/noExplicitAny: session might not be typed in core
-  const session = c.get('session') as any
+  const session = c.get('session') as { getFlash?: (key: string) => unknown } | undefined
   const oldInput = session?.getFlash?.('_old_input') ?? {}
   return (oldInput as Record<string, unknown>)[field] ?? defaultValue
 }

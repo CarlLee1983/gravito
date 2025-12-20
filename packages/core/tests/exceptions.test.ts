@@ -21,7 +21,7 @@ describe('Exception Handling', () => {
     })
     expect(res.status).toBe(400)
     const json = await res.json()
-    const data = json as any
+    const data = json as { success: boolean; error: { code: string; message: string } }
     expect(data.success).toBe(false)
     expect(data.error.code).toBe('TEST_ERROR')
     expect(data.error.message).toBe('Test Message')
@@ -30,7 +30,7 @@ describe('Exception Handling', () => {
   test('handles ValidationException redirect for HTML with flash', async () => {
     const core = new PlanetCore()
 
-    const flashMock = mock((_key: string, _value: unknown) => {})
+    const flashMock = mock((_key: string, _value: unknown) => undefined)
     const sessionMock = {
       flash: flashMock,
     }

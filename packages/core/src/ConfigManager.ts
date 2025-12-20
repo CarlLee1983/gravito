@@ -31,8 +31,7 @@ export class ConfigManager {
   /**
    * Get a configuration value (generic return type supported).
    */
-  // biome-ignore lint/suspicious/noExplicitAny: convenient for users
-  get<T = any>(key: string, defaultValue?: T): T {
+  get<T = unknown>(key: string, defaultValue?: T): T {
     if (this.config.has(key)) {
       return this.config.get(key) as T
     }

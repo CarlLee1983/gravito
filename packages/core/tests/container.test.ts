@@ -52,7 +52,9 @@ class MockProvider extends ServiceProvider {
 }
 
 class BootProvider extends ServiceProvider {
-  register(_container: Container) {}
+  register(_container: Container) {
+    // Intentionally empty for test coverage.
+  }
   override boot(core: PlanetCore) {
     core.container.instance('booted', true)
   }

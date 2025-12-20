@@ -5,7 +5,7 @@ export interface Hasher {
   /**
    * Hash the given value
    */
-  make(value: string, options?: any): Promise<string>
+  make(value: string, options?: Record<string, unknown>): Promise<string>
   /**
    * Check the given plain value against a hash
    */
@@ -13,7 +13,7 @@ export interface Hasher {
   /**
    * Check if the given hash has been hashed using the given options
    */
-  needsRehash(hashedValue: string, options?: any): boolean
+  needsRehash(hashedValue: string, options?: Record<string, unknown>): boolean
 }
 /**
  * Bun Hasher
@@ -28,6 +28,6 @@ export declare class BunHasher implements Hasher {
     }
   ): Promise<string>
   check(value: string, hashedValue: string): Promise<boolean>
-  needsRehash(_hashedValue: string, _options?: any): boolean
+  needsRehash(_hashedValue: string, _options?: Record<string, unknown>): boolean
 }
 //# sourceMappingURL=Hasher.d.ts.map

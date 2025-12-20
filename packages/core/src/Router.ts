@@ -4,8 +4,7 @@ import type { PlanetCore } from './PlanetCore'
 import { Route } from './Route'
 
 // Type for Controller Class Constructor
-// biome-ignore lint/suspicious/noExplicitAny: Controllers can have any shape
-export type ControllerClass = new (core: PlanetCore) => any
+export type ControllerClass = new (core: PlanetCore) => Record<string, unknown>
 
 // Handler can be a function or [Class, 'methodName']
 export type RouteHandler = Handler | [ControllerClass, string]
@@ -240,14 +239,13 @@ export class RouteGroup {
  */
 export class Router {
   // Singleton cache for controllers
-  // biome-ignore lint/suspicious/noExplicitAny: Cache stores instances of any controller
-  private controllers = new Map<ControllerClass, any>()
+  private controllers = new Map<ControllerClass, Record<string, unknown>>()
 
   private namedRoutes = new Map<
     string,
     { method: string; path: string; domain?: string | undefined }
   >()
-  private bindings = new Map<string, (id: string) => Promise<any>>()
+  private bindings = new Map<string, (id: string) => Promise<unknown>>()
 
   /**
    * Compile all registered routes into a flat array for caching or manifest generation.
@@ -347,19 +345,23 @@ export class Router {
   /**
    * Register a route model binding.
    */
-  bind(param: string, resolver: (id: string) => Promise<any>) {
+  bind(param: string, resolver: (id: string) => Promise<unknown>) {
     this.bindings.set(param, resolver)
   }
 
   /**
    * Register a route model binding for a Model class.
    */
-  // biome-ignore lint/suspicious/noExplicitAny: generic model class
-  model(param: string, modelClass: any) {
+  model(param: string, modelClass: unknown) {
     this.bind(param, async (id) => {
       // Assuming modelClass has a `find` method (Active Record pattern)
-      if (typeof modelClass.find === 'function') {
-        const instance = await modelClass.find(id)
+      if (
+        modelClass &&
+        typeof modelClass === 'object' &&
+        'find' in modelClass &&
+        typeof (modelClass as { find?: (id: string) => Promise<unknown> }).find === 'function'
+      ) {
+        const instance = await (modelClass as { find: (id: string) => Promise<unknown> }).find(id)
         if (!instance) {
           throw new Error('ModelNotFound') // Will be caught by 404 handler if we handle it
         }
@@ -396,11 +398,12 @@ export class Router {
           try {
             const resolved = await resolver(value)
             routeModels[param] = resolved
-          } catch (e: any) {
-            if (e?.message === 'ModelNotFound') {
+          } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : undefined
+            if (message === 'ModelNotFound') {
               throw new ModelNotFoundException(param, value)
             }
-            throw e
+            throw err
           }
         }
       }
@@ -636,11 +639,12 @@ export class Router {
       this.controllers.set(CtrlClass, instance)
     }
 
-    if (typeof instance[methodName] !== 'function') {
+    const handler = instance[methodName]
+    if (typeof handler !== 'function') {
       throw new Error(`Method '${methodName}' not found in controller '${CtrlClass.name}'`)
     }
 
-    return instance[methodName].bind(instance)
+    return handler.bind(instance)
   }
 }
 

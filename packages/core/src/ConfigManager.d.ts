@@ -13,7 +13,7 @@ export declare class ConfigManager {
   /**
    * Get a configuration value (generic return type supported).
    */
-  get<T = any>(key: string, defaultValue?: T): T
+  get<T = unknown>(key: string, defaultValue?: T): T
   /**
    * Set a configuration value.
    */

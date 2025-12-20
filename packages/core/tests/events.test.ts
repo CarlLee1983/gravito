@@ -24,7 +24,7 @@ describe('EventManager', () => {
       }
     }
 
-    events.listen(TestEvent as any, new TestListener())
+    events.listen(TestEvent, new TestListener())
 
     await events.dispatch(new TestEvent('Hello'))
 

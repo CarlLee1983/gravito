@@ -32,8 +32,8 @@ function getChild(current: unknown, key: PathSegment): unknown {
   }
 
   if (typeof current === 'object' || typeof current === 'function') {
-    // biome-ignore lint/suspicious/noExplicitAny: Dynamic property access is required.
-    return (current as any)[key as any]
+    const record = current as Record<PropertyKey, unknown>
+    return record[key as PropertyKey]
   }
 
   return undefined
@@ -49,8 +49,8 @@ function hasChild(current: unknown, key: PathSegment): boolean {
   }
 
   if (typeof current === 'object' || typeof current === 'function') {
-    // biome-ignore lint/suspicious/noExplicitAny: Dynamic property access is required.
-    return key in (current as any)
+    const record = current as Record<PropertyKey, unknown>
+    return key in record
   }
 
   return false
@@ -67,8 +67,8 @@ function setChild(current: unknown, key: PathSegment, next: unknown): void {
   }
 
   if (typeof current === 'object' || typeof current === 'function') {
-    // biome-ignore lint/suspicious/noExplicitAny: Dynamic property access is required.
-    ;(current as any)[key as any] = next
+    const record = current as Record<PropertyKey, unknown>
+    record[key as PropertyKey] = next
     return
   }
 

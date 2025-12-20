@@ -1,7 +1,5 @@
-// biome-ignore lint/suspicious/noExplicitAny: convenient for users
-export type FilterCallback<T = any> = (value: T, ...args: unknown[]) => Promise<T> | T
-// biome-ignore lint/suspicious/noExplicitAny: convenient for users
-export type ActionCallback<TArgs = any> = (args: TArgs) => Promise<void> | void
+export type FilterCallback<T = unknown> = (value: T, ...args: unknown[]) => Promise<T> | T
+export type ActionCallback<TArgs = unknown> = (args: TArgs) => Promise<void> | void
 
 export class HookManager {
   private filters: Map<string, FilterCallback[]> = new Map()
@@ -12,8 +10,7 @@ export class HookManager {
    *
    * Filters are used to transform a value (input/output).
    */
-  // biome-ignore lint/suspicious/noExplicitAny: convenient for users
-  addFilter<T = any>(hook: string, callback: FilterCallback<T>): void {
+  addFilter<T = unknown>(hook: string, callback: FilterCallback<T>): void {
     if (!this.filters.has(hook)) {
       this.filters.set(hook, [])
     }
@@ -25,8 +22,7 @@ export class HookManager {
    *
    * Each callback receives the previous callback's return value.
    */
-  // biome-ignore lint/suspicious/noExplicitAny: convenient for users
-  async applyFilters<T = any>(hook: string, initialValue: T, ...args: unknown[]): Promise<T> {
+  async applyFilters<T = unknown>(hook: string, initialValue: T, ...args: unknown[]): Promise<T> {
     const callbacks = this.filters.get(hook) || []
     let value = initialValue
 
@@ -47,8 +43,7 @@ export class HookManager {
    *
    * Actions are for side effects (no return value).
    */
-  // biome-ignore lint/suspicious/noExplicitAny: convenient for users
-  addAction<TArgs = any>(hook: string, callback: ActionCallback<TArgs>): void {
+  addAction<TArgs = unknown>(hook: string, callback: ActionCallback<TArgs>): void {
     if (!this.actions.has(hook)) {
       this.actions.set(hook, [])
     }
@@ -58,8 +53,7 @@ export class HookManager {
   /**
    * Run all registered actions sequentially.
    */
-  // biome-ignore lint/suspicious/noExplicitAny: convenient for users
-  async doAction<TArgs = any>(hook: string, args: TArgs): Promise<void> {
+  async doAction<TArgs = unknown>(hook: string, args: TArgs): Promise<void> {
     const callbacks = this.actions.get(hook) || []
 
     for (const callback of callbacks) {

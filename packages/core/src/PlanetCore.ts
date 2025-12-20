@@ -29,8 +29,7 @@ export interface CacheService {
 }
 
 export interface ViewService {
-  // biome-ignore lint/suspicious/noExplicitAny: view engines define their own data/options shape
-  render(view: string, data?: Record<string, any>, options?: Record<string, any>): string
+  render(view: string, data?: Record<string, unknown>, options?: Record<string, unknown>): string
 }
 
 export type ErrorHandlerContext = {
@@ -51,16 +50,15 @@ export type ErrorHandlerContext = {
 }
 
 // Hono Variables Type for Context Injection
+type RouteParams = Record<string, string | number>
+type RouteQuery = Record<string, string | number | boolean | null | undefined>
+
 type Variables = {
   core: PlanetCore
   logger: Logger
   config: ConfigManager
   cookieJar: CookieJar
-  route: (
-    name: string,
-    params?: Record<string, string | number>,
-    query?: Record<string, string | number>
-  ) => string
+  route: (name: string, params?: RouteParams, query?: RouteQuery) => string
   // Optional orbit-injected variables
   cache?: CacheService
   view?: ViewService
@@ -75,8 +73,7 @@ export interface GravitoOrbit {
 
 export type GravitoConfig = {
   logger?: Logger
-  // biome-ignore lint/suspicious/noExplicitAny: allow flexible config object
-  config?: Record<string, any>
+  config?: Record<string, unknown>
   orbits?: (new () => GravitoOrbit)[] | GravitoOrbit[]
 }
 
@@ -166,7 +163,8 @@ export class PlanetCore {
 
       // Add route helper
       // @ts-expect-error
-      c.route = (name: string, params?: any, query?: any) => this.router.url(name, params, query)
+      c.route = (name: string, params?: RouteParams, query?: RouteQuery) =>
+        this.router.url(name, params, query)
 
       await next()
 
@@ -234,8 +232,7 @@ export class PlanetCore {
 
       // Try rendering HTML if available and requested
       const view = c.get('view') as ViewService | undefined
-      // biome-ignore lint/suspicious/noExplicitAny: i18n service duck typing
-      const i18n = c.get('i18n') as any
+      const i18n = c.get('i18n') as { t?: (key: string, params?: unknown) => string } | undefined
       const accept = c.req.header('Accept') || ''
       const wantsHtml = Boolean(
         view && accept.includes('text/html') && !accept.includes('application/json')
@@ -260,8 +257,9 @@ export class PlanetCore {
 
           // Handle HTML Redirect for Validation
           if (wantsHtml) {
-            // biome-ignore lint/suspicious/noExplicitAny: session duck typing
-            const session = c.get('session') as any
+            const session = c.get('session') as
+              | { flash: (key: string, value: unknown) => void }
+              | undefined
             if (session) {
               // Transform details to ErrorBag format: Record<string, string[]>
               const errorBag: Record<string, string[]> = {}
@@ -508,7 +506,11 @@ export class PlanetCore {
    *
    * Returns a config object for `Bun.serve`.
    */
-  liftoff(port?: number): { port: number; fetch: Function; core: PlanetCore } {
+  liftoff(port?: number): {
+    port: number
+    fetch: (request: Request, server?: unknown) => Response | Promise<Response>
+    core: PlanetCore
+  } {
     // Priority: argument > config > default
     const finalPort = port ?? this.config.get<number>('PORT', 3000)
 

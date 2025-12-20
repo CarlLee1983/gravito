@@ -21,7 +21,7 @@ export interface CacheService {
   remember<T>(key: string, ttl: number, callback: () => Promise<T>): Promise<T>
 }
 export interface ViewService {
-  render(view: string, data?: Record<string, any>, options?: Record<string, any>): string
+  render(view: string, data?: Record<string, unknown>, options?: Record<string, unknown>): string
 }
 export type ErrorHandlerContext = {
   core: PlanetCore
@@ -47,7 +47,7 @@ type Variables = {
   route: (
     name: string,
     params?: Record<string, string | number>,
-    query?: Record<string, string | number>
+    query?: Record<string, string | number | boolean | null | undefined>
   ) => string
   cache?: CacheService
   view?: ViewService
@@ -60,7 +60,7 @@ export interface GravitoOrbit {
 }
 export type GravitoConfig = {
   logger?: Logger
-  config?: Record<string, any>
+  config?: Record<string, unknown>
   orbits?: (new () => GravitoOrbit)[] | GravitoOrbit[]
 }
 import { CookieJar } from './http/CookieJar'
@@ -112,7 +112,7 @@ export declare class PlanetCore {
    */
   liftoff(port?: number): {
     port: number
-    fetch: Function
+    fetch: (request: Request, server?: unknown) => Response | Promise<Response>
     core: PlanetCore
   }
 }

@@ -5,7 +5,7 @@ export interface Hasher {
   /**
    * Hash the given value
    */
-  make(value: string, options?: any): Promise<string>
+  make(value: string, options?: Record<string, unknown>): Promise<string>
 
   /**
    * Check the given plain value against a hash
@@ -15,7 +15,7 @@ export interface Hasher {
   /**
    * Check if the given hash has been hashed using the given options
    */
-  needsRehash(hashedValue: string, options?: any): boolean
+  needsRehash(hashedValue: string, options?: Record<string, unknown>): boolean
 }
 
 /**
@@ -29,14 +29,14 @@ export class BunHasher implements Hasher {
   ): Promise<string> {
     // Bun.password.hash(text, options)
     // algorithm defaults to bcrypt
-    return await (globalThis as any).Bun.password.hash(value, options)
+    return await globalThis.Bun.password.hash(value, options)
   }
 
   async check(value: string, hashedValue: string): Promise<boolean> {
-    return await (globalThis as any).Bun.password.verify(value, hashedValue)
+    return await globalThis.Bun.password.verify(value, hashedValue)
   }
 
-  needsRehash(_hashedValue: string, _options?: any): boolean {
+  needsRehash(_hashedValue: string, _options?: Record<string, unknown>): boolean {
     return false
   }
 }

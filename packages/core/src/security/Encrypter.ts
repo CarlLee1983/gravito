@@ -80,7 +80,7 @@ export class Encrypter {
     return hmac.digest('hex')
   }
 
-  private validPayload(payload: any): boolean {
+  private validPayload(payload: unknown): payload is { iv: string; value: string; mac: string } {
     return (
       typeof payload === 'object' &&
       payload !== null &&
@@ -90,7 +90,7 @@ export class Encrypter {
     )
   }
 
-  private validMac(payload: any): boolean {
+  private validMac(payload: { iv: string; value: string; mac: string }): boolean {
     const calculated = this.hash(payload.iv, payload.value)
     return crypto.timingSafeEqual(Buffer.from(calculated), Buffer.from(payload.mac))
   }
