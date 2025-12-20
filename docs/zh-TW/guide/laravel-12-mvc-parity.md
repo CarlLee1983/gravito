@@ -23,7 +23,7 @@ title: Laravel 12 MVC 對齊程度
 | Exception Handler | `gravito-core` `PlanetCore` 的 error + notFound handler 與 hooks |
 | Events / Listeners | `gravito-core` `EventManager` / `Listener` |
 | Validation（FormRequest） | `@gravito/orbit-request`（`FormRequest`）+ `@gravito/validator` |
-| Views / Blade | `@gravito/orbit-view`（TSX Template Engine）/ `@gravito/orbit-inertia`（Inertia 橋接） |
+| Views / Blade | `@gravito/orbit-view`（TSX 樣板引擎）/ `@gravito/orbit-inertia`（Inertia 橋接） |
 | Database / Eloquent | `@gravito/orbit-db`（基於 Drizzle 的 DB layer） |
 | Auth / Gate / Policies | `@gravito/orbit-auth`（guards + `Gate`） |
 | Cache | `@gravito/orbit-cache` |
@@ -85,8 +85,8 @@ title: Laravel 12 MVC 對齊程度
 |------|------|------|
 | SSR HTML entry | 已實作 | 透過 Orbit View / Core 的 app shell render |
 | SPA 橋接（Inertia） | 已實作 | `@gravito/orbit-inertia` |
-| Blade 相容模板 | 缺少 | Gravito 使用 TSX templates，而非 Blade |
-| 資產管線（asset pipeline）慣例 | 部分 | 已有 templates；慣例仍在演進 |
+| Blade 相容樣板 | 缺少 | Gravito 使用 TSX 樣板，而非 Blade |
+| 資產管線（asset pipeline）慣例 | 部分 | 已有 `templates`；慣例仍在演進 |
 
 ### 資料庫 / ORM
 

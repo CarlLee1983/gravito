@@ -40,11 +40,11 @@ core.app.post('/upload', async (c) => {
   const storage = c.get('storage');
   const body = await c.req.parseBody();
   const file = body['file'];
-  
+
   if (file instanceof File) {
     // 上傳檔案
     await storage.put(file.name, file);
-    
+
     // 取得 URL
     return c.json({ url: storage.getUrl(file.name) });
   }

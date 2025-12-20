@@ -123,4 +123,58 @@ Calling `seo.toString()` will automatically include the required non-blocking sc
 ## 🛠️ Enterprise Architecture
 For sites with over 50,000 URLs, Gravito automatically generates a **Sitemap Index** and splits the entries into multiple paginated files, strictly following Google's best practices.
 
+### Example: Large Commerce Site (2M Products)
+Use `incremental` mode and split resolvers by content type or shard to keep each resolver focused and stable at scale.
+
+```typescript
+// src/config/seo.ts
+export const seoConfig: SeoConfig = {
+  mode: 'incremental',
+  baseUrl: 'https://shop.example.com',
+  resolvers: [
+    {
+      name: 'products',
+      fetch: async () => {
+        const pageSize = 5000
+        let page = 0
+        const entries = []
+
+        while (true) {
+          const rows = await db.products.findMany({
+            limit: pageSize,
+            offset: page * pageSize,
+            select: { slug: true, updatedAt: true }
+          })
+
+          if (rows.length === 0) break
+          entries.push(...rows.map(p => ({
+            url: `/products/${p.slug}`,
+            lastmod: p.updatedAt,
+            changefreq: 'weekly',
+            priority: 0.7
+          })))
+          page += 1
+        }
+
+        return entries
+      }
+    },
+    {
+      name: 'categories',
+      fetch: async () => {
+        const categories = await db.categories.all()
+        return categories.map(c => ({
+          url: `/categories/${c.slug}`,
+          lastmod: c.updatedAt,
+          changefreq: 'weekly',
+          priority: 0.6
+        }))
+      }
+    }
+  ]
+}
+```
+
+This setup keeps your sitemap generation deterministic, while the engine handles the heavy lifting of index splitting and background compaction.
+
 > **Final Step**: Ready to go live? Check out the [Deployment Guide](/en/docs/guide/deployment).

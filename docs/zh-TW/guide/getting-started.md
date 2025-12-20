@@ -3,21 +3,21 @@ title: 快速上手
 description: 在 5 分鐘內開啟您的 Gravito 開發之旅。
 ---
 
-# 🚀 快速上手
+# 快速上手
 
-歡迎來到 Gravito！本指南將幫助您建立開發環境，並構建您的第一個高性能全端應用程式。
+歡迎來到 Gravito！本指南將幫助您建立開發環境，並建構您的第一個高效能全端應用程式。
 
-## 🛠 準備工作
+## 準備工作
 
 Gravito 為現代開發而生。您只需要準備一樣東西：
-- **[Bun](https://bun.sh/) 1.1.0 或更高版本**：極致快速的 JavaScript 運行時。
+- **[Bun](https://bun.sh/) 1.1.0 或更高版本**：極致快速的 JavaScript 執行環境。
 
 要檢查您的版本，請執行：
 ```bash
 bun --version
 ```
 
-## 📦 建立您的專案
+## 建立您的專案
 
 開始最快的方法是使用我們的官方 CLI。在終端機中執行以下指令：
 
@@ -32,7 +32,7 @@ cd my-gravito-app
 bun install
 ```
 
-## ⚡️ 啟動開發伺服器
+## 啟動開發伺服器
 
 只需一個指令即可啟動開發引擎：
 
@@ -40,14 +40,14 @@ bun install
 bun dev
 ```
 
-您的應用程式現在運行在 **[http://localhost:3000](http://localhost:3000)**！ 🚀
+您的應用程式現在執行於 **[http://localhost:3000](http://localhost:3000)**！
 
 ### 剛才發生了什麼？
 Gravito 同時啟動了兩個同步運作的引擎：
 1. **Hono 後端**：處理您的路由、控制器與商業邏輯。
 2. **Vite 前端**：驅動 React/Inertia 介面，並提供閃擊般的震動熱更新 (HMR)。
 
-## 🎨 進行第一次修改
+## 進行第一次修改
 
 Gravito 的核心是 **「引擎不可知 (Engine Agnostic)」** 的。您可以根據專案需求，選擇最適合的 UI 建構方式。請打開 `src/controllers/HomeController.ts` 並嘗試這三種路徑：
 
@@ -89,15 +89,15 @@ export class HomeController {
 }
 ```
 
-### 🖖 那支援 Vue 嗎？
-當然！Gravito 完美支援 **Inertia-Vue**。您只需要在設定中將 `@gravito/orbit-inertia` 的組件目標從 React 換成 Vue，其他開發邏輯完全一致。
+### 那支援 Vue 嗎？
+當然！Gravito 完美支援 **Inertia-Vue**。您只需要在設定中將 `@gravito/orbit-inertia` 的元件目標從 React 換成 Vue，其他開發邏輯完全一致。
 
-## 🗺 下一步是什麼？
+## 下一步是什麼？
 
 您剛剛邁出了進入 Gravito 世界的第一步。接下來推薦閱讀：
 
 - **[核心概念](/zh/docs/guide/core-concepts)**：理解「行星與軌道」的設計哲學。
-- **[路由系統](/zh/docs/guide/routing)**：學習如何構建優雅的 MVC 路由。
+- **[路由系統](/zh/docs/guide/routing)**：學習如何建構優雅的 MVC 路由。
 - **[Inertia 全端開發](/zh/docs/guide/inertia-react)**：掌握現代單體架構 (Modern Monolith) 的藝術。
 
 ---

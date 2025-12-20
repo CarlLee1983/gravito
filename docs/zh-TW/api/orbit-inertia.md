@@ -4,7 +4,7 @@ title: Orbit Inertia
 
 # Orbit Inertia
 
-> 在後端 MVC 與前端 React/Vue 組件之間實現無縫整合。
+> 在後端 MVC 與前端 React/Vue 元件之間實現無縫整合。
 
 ## 安裝
 
@@ -44,10 +44,10 @@ import { InertiaService } from '@gravito/orbit-inertia';
 export class HomeController {
     index(c: Context) {
         const inertia = c.get('inertia') as InertiaService;
-        
+
         return inertia.render('Home', {
             user: { name: 'Carl' },
-            latest_posts: [] 
+            latest_posts: []
         });
     }
 }
@@ -83,14 +83,14 @@ import { InertiaService } from '@gravito/orbit-inertia';
 
 export const handleInertiaRequests = async (c: Context, next: Next) => {
     const inertia = c.get('inertia') as InertiaService;
-    
+
     inertia.share({
         auth: {
             user: c.get('user')
         },
         flash: c.get('flash')
     });
-    
+
     await next();
 };
 ```
@@ -103,11 +103,11 @@ export const handleInertiaRequests = async (c: Context, next: Next) => {
     ```typescript
     ctx.meta({ title: 'My App', description: '...' });
     ```
-    
+
 2.  **前端 (動態更新)**:
     ```tsx
     import { Head } from '@inertiajs/react';
-    
+
     <Head title="頁面標題" />
     ```
 

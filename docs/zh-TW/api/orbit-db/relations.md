@@ -49,4 +49,4 @@ const user = await db.findByIdWith('users', 1, { posts: true })
 ## 多態關聯
 
 Orbit DB 提供 `morphTo` / `morphMany` / `morphOne`。其中 `morphTo` 建議提供 `morphMap`，
-用於將 type 值映射到對應的 `Model` 類別。
+用於將 type 值對應到相應的 `Model` 類別。

@@ -3,13 +3,13 @@ title: 路由與控制器
 description: 以優雅且精確的方式處理每一位使用者的請求。
 ---
 
-# 🛣 路由與控制器 (Routing & Controllers)
+# 路由與控制器 (Routing & Controllers)
 
 Gravito 結合了 **Hono** 的速度與 **MVC** (Model-View-Controller) 的架構化開發。這種設計確保了當您的應用程式規模擴大時，程式碼依然保持井然有序。
 
-## 🚦 路由器 (The Router)
+## 路由器 (The Router)
 
-路由定義在 `src/routes/index.ts`。Gravito 提供了一套流暢的 API 來將網址映射到特定的動作。
+路由定義在 `src/routes/index.ts`。Gravito 提供了一套流暢的 API 來將網址對應到特定的動作。
 
 ### 基礎路由
 
@@ -21,7 +21,7 @@ export default function(routes: Router) {
   // 簡單的匿名函式
   routes.get('/hello', (c) => c.text('Hello World'))
 
-  // 映射到控制器 (Controller)
+  // 對應到控制器 (Controller)
   routes.get('/', [HomeController, 'index'])
 }
 ```
@@ -38,7 +38,7 @@ routes.group({ prefix: '/api' }, (group) => {
 
 ---
 
-## 🧠 控制器 (Controllers)
+## 控制器 (Controllers)
 
 控制器是應用程式的「大腦」。與其將所有邏輯寫在一個巨大的路由檔案中，我們將它們封裝在類別 (Class) 裡。
 
@@ -56,7 +56,7 @@ export class UserController {
   async list(c: Context) {
     // 1. 從容器中取得服務
     const userService = c.get('userService')
-    
+
     // 2. 執行業務邏輯
     const users = await userService.all()
 
@@ -74,7 +74,7 @@ Hono 的 `Context` 物件是您進入 Gravito 生態系統的入口。使用 `c.
 
 ---
 
-## 📦 處理回應 (Handling Responses)
+## 處理回應 (Handling Responses)
 
 控制器的每個方法都必須回傳一個標準的 `Response`。透過 Gravito/Hono，這變得非常簡單：
 
@@ -88,7 +88,7 @@ Hono 的 `Context` 物件是您進入 Gravito 生態系統的入口。使用 `c.
 
 ---
 
-## 🛡 中間件 (Middleware)
+## 中間件 (Middleware)
 
 中間件允許您在請求到達控制器之前進行攔截（例如：日誌記錄或身分驗證）。
 

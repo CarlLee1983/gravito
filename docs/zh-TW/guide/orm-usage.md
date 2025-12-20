@@ -8,7 +8,7 @@ title: ORM 使用指南
 
 ## 目錄
 
-1. [基本設置](#基本設置)
+1. [基本設定](#基本設定)
 2. [定義 Schema 和 Relations](#定義-schema-和-relations)
 3. [使用 Model 類別（優雅方式）](#使用-model-類別優雅方式)
 4. [CRUD 操作](#crud-操作)
@@ -19,7 +19,7 @@ title: ORM 使用指南
 9. [部署](#部署)
 10. [最佳實踐](#最佳實踐)
 
-## 基本設置
+## 基本設定
 
 ### 1. 安裝依賴
 
@@ -66,7 +66,7 @@ core.app.get('/users', async (c) => {
 ```typescript
 import { pgTable, serial, text, integer, timestamp } from 'drizzle-orm/pg-core';
 
-// 用戶表
+// 使用者表
 export const users = pgTable('users', {
   id: serial('id').primaryKey(),
   name: text('name').notNull(),
@@ -99,15 +99,15 @@ export const comments = pgTable('comments', {
 ```typescript
 import { relations } from 'drizzle-orm';
 
-// 用戶的關聯
+// 使用者的關聯
 export const usersRelations = relations(users, ({ many }) => ({
-  posts: many(posts),        // 一個用戶有多篇文章
-  comments: many(comments),  // 一個用戶有多個評論
+  posts: many(posts),        // 一個使用者有多篇文章
+  comments: many(comments),  // 一個使用者有多個評論
 }));
 
 // 文章的關聯
 export const postsRelations = relations(posts, ({ one, many }) => ({
-  user: one(users, {        // 一篇文章屬於一個用戶
+  user: one(users, {        // 一篇文章屬於一個使用者
     fields: [posts.userId],
     references: [users.id],
   }),
@@ -176,7 +176,7 @@ export class User extends Model {
   static table = usersTable;
   static tableName = 'users';
   static primaryKey = 'id'; // 可選，預設為 'id'
-  
+
   // 型別定義
   declare attributes: {
     id?: number;
@@ -213,7 +213,7 @@ const user = await User.find(1);
 const user = await User.where('email', 'john@example.com');
 
 // 使用多個條件查詢
-const user = await User.whereMany({ 
+const user = await User.whereMany({
   email: 'john@example.com',
   name: 'John'
 });
@@ -236,7 +236,7 @@ const count = await User.count({ name: 'John' });
 // 檢查是否存在
 const exists = await User.exists({ email: 'john@example.com' });
 
-// 創建記錄
+// 建立記錄
 const user = await User.create({
   name: 'John',
   email: 'john@example.com'
@@ -246,7 +246,7 @@ const user = await User.create({
 const user = new User();
 user.set('name', 'John');
 user.set('email', 'john@example.com');
-await user.save(); // 自動判斷是創建還是更新
+await user.save(); // 自動判斷是建立還是更新
 
 // 更新記錄
 const user = await User.find(1);
@@ -292,8 +292,8 @@ export class Post extends Model {
 }
 
 // 定義關聯
-User.hasMany(Post, 'userId', 'id');        // 一個用戶有多篇文章
-Post.belongsTo(User, 'userId', 'id');      // 一篇文章屬於一個用戶
+User.hasMany(Post, 'userId', 'id');        // 一個使用者有多篇文章
+Post.belongsTo(User, 'userId', 'id');      // 一篇文章屬於一個使用者
 
 // 使用關聯（懶加載）
 const user = await User.find(1);
@@ -352,7 +352,7 @@ export class Video extends Model {
 // 定義多態關聯
 Comment.morphTo('commentable', 'commentable_type', 'commentable_id');
 
-// 使用 morphMap 映射類型名稱到模型類別（可選）
+// 使用 morphMap 對應類型名稱到模型類別（可選）
 const morphMap = new Map();
 morphMap.set('Post', Post);
 morphMap.set('Video', Video);
@@ -387,7 +387,7 @@ const image = await post.getRelation('image'); // Image | null
 
 ### 查詢建構器（Query Builder）
 
-使用鏈式查詢建構器可以更靈活地構建複雜查詢：
+使用鏈式查詢建構器可以更靈活地建構複雜查詢：
 
 ```typescript
 // 開始查詢建構器
@@ -492,13 +492,13 @@ const deletedUsers = await User.onlyTrashed().get();
 export class User extends Model {
   static table = usersTable;
   static tableName = 'users';
-  
+
   // 白名單模式：只允許這些欄位
   static fillable = ['name', 'email'];
-  
+
   // 或黑名單模式：排除這些欄位
   // static guarded = ['id', 'created_at', 'updated_at'];
-  
+
   declare attributes: {
     id?: number;
     name: string;
@@ -526,7 +526,7 @@ export class User extends Model {
   static timestamps = true; // 預設為 true
   static createdAtColumn = 'created_at'; // 預設
   static updatedAtColumn = 'updated_at'; // 預設
-  
+
   declare attributes: {
     id?: number;
     name: string;
@@ -535,7 +535,7 @@ export class User extends Model {
   };
 }
 
-// 創建時自動設定 created_at 和 updated_at
+// 建立時自動設定 created_at 和 updated_at
 const user = await User.create({ name: 'John' });
 
 // 更新時自動更新 updated_at
@@ -550,16 +550,16 @@ await user.update({ name: 'Jane' });
 export class User extends Model {
   static table = usersTable;
   static tableName = 'users';
-  
+
   // 定義本地作用域
   static addScope('active', (query) => {
     return { ...query, status: 'active' };
   });
-  
+
   static addScope('recent', (query) => {
     return { ...query, created_at: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } };
   });
-  
+
   // 定義全域作用域（自動應用到所有查詢）
   static addGlobalScope((query) => {
     // 例如：自動過濾已刪除的記錄
@@ -620,7 +620,7 @@ core.hooks.addAction('model:deleted', async ({ model, soft }) => {
 預加載關聯的數量：
 
 ```typescript
-// 為每個用戶載入其文章數量
+// 為每個使用者載入其文章數量
 const users = await User.withCount('posts');
 
 users.forEach(user => {
@@ -753,7 +753,7 @@ orbit-db 提供兩種方式進行 CRUD 操作：
 ### 方式 1：使用 Model 類別（優雅）
 
 ```typescript
-// 創建
+// 建立
 const user = await User.create({ name: 'John', email: 'john@example.com' });
 
 // 讀取
@@ -772,7 +772,7 @@ await user.delete();
 ### 方式 2：使用 DBService（直接）
 
 ```typescript
-// 創建單筆記錄
+// 建立單筆記錄
 const newUser = await db.create(users, {
   name: 'John Doe',
   email: 'john@example.com',
@@ -855,18 +855,18 @@ await db.delete(users, { id: 1 });
 ### 基本關聯查詢
 
 ```typescript
-// 查詢用戶及其所有文章
+// 查詢使用者及其所有文章
 const user = await db.findByIdWith('users', 1, {
   posts: true,
 });
 
-// 查詢用戶及其文章和評論
+// 查詢使用者及其文章和評論
 const user = await db.findByIdWith('users', 1, {
   posts: true,
   comments: true,
 });
 
-// 嵌套關聯（載入文章及其評論）
+// 巢狀關聯（載入文章及其評論）
 const user = await db.findByIdWith('users', 1, {
   posts: {
     comments: true,  // 載入每篇文章的評論
@@ -1037,14 +1037,14 @@ if (result.success) {
 // 在應用啟動時執行部署
 core.hooks.addAction('app:ready', async () => {
   const db = core.app.get('db');
-  
+
   if (process.env.NODE_ENV === 'production') {
     const result = await db.deploy({
       runMigrations: true,
       runSeeds: false,  // 生產環境通常不執行 seed
       validateBeforeDeploy: true,
     });
-    
+
     if (!result.success) {
       throw new Error(`Database deployment failed: ${result.error}`);
     }
@@ -1092,7 +1092,7 @@ const result = await db.transaction(async (tx) => {
     { userId: user[0].id, title: 'Post 1' },
     { userId: user[0].id, title: 'Post 2' },
   ]).returning();
-  
+
   return { user: user[0], profile: profile[0], posts };
 });
 ```
@@ -1100,13 +1100,13 @@ const result = await db.transaction(async (tx) => {
 ### 4. 使用關聯查詢避免 N+1 問題
 
 ```typescript
-// ❌ 不好的做法（N+1 問題）
+//  不好的做法（N+1 問題）
 const users = await db.findAll(users);
 for (const user of users) {
   const posts = await db.findAll(posts, { userId: user.id }); // 每次查詢
 }
 
-// ✅ 好的做法（使用關聯查詢）
+//  好的做法（使用關聯查詢）
 const users = await db.findAllWith('users', { posts: true }); // 一次查詢
 ```
 
@@ -1234,29 +1234,29 @@ orbitDB(core, {
 core.app.get('/users/:id', async (c) => {
   const db = c.get('db');
   const userId = parseInt(c.req.param('id'));
-  
+
   // 使用關聯查詢
   const user = await db.findByIdWith('users', userId, {
     posts: true,
   });
-  
+
   if (!user) {
     return c.json({ error: 'User not found' }, 404);
   }
-  
+
   return c.json({ user });
 });
 
 core.app.post('/users', async (c) => {
   const db = c.get('db');
   const body = await c.req.json();
-  
-  // 創建用戶
+
+  // 建立使用者
   const user = await db.create(users, {
     name: body.name,
     email: body.email,
   });
-  
+
   return c.json({ user }, 201);
 });
 
@@ -1267,12 +1267,12 @@ core.liftoff();
 
 orbit-db 提供了完整的 ORM 功能：
 
-- ✅ **完整的 CRUD 操作** - 所有基本資料庫操作
-- ✅ **關聯查詢** - 支援嵌套關聯查詢
-- ✅ **交易支援** - 完整的事務處理
-- ✅ **批量操作** - 高效的批量處理
-- ✅ **遷移和 Seeder** - 資料庫版本管理
-- ✅ **部署支援** - 自動化部署流程
-- ✅ **PostgreSQL 優化** - 針對 PostgreSQL 的效能優化
+-  **完整的 CRUD 操作** - 所有基本資料庫操作
+-  **關聯查詢** - 支援巢狀關聯查詢
+-  **交易支援** - 完整的事務處理
+-  **批量操作** - 高效的批量處理
+-  **遷移和 Seeder** - 資料庫版本管理
+-  **部署支援** - 自動化部署流程
+-  **PostgreSQL 優化** - 針對 PostgreSQL 的效能優化
 
 透過 `db.raw` 可以存取 Drizzle ORM 的完整功能，確保靈活性和擴展性。

@@ -32,12 +32,12 @@ title: Gravito 核心概念
 
 - **單一奇點 (Singularity)**：所有的請求最終都優化為單一的路徑跳轉，消弭框架開銷。
 - **核心引力 (Gravity)**：Kernel 僅負責維持系統的運作與協調，而不干涉具體業務。
-- **軌道擴展 (Orbits)**：基礎設施模組以軌道方式繞核心運行，完全解耦。
+- **軌道擴展 (Orbits)**：基礎設施模組以軌道方式繞核心運作，完全解耦。
 
 ### 四大核心價值
 
 - **高效能 (Performance)**：基於 Bun & Hono，實現微秒級的路由轉發。
-- **零損耗 (Zero Overhead)**：啟動時解析路由與依賴，避免運行時的過度掃描。
+- **零損耗 (Zero Overhead)**：啟動時解析路由與依賴，避免執行時的過度掃描。
 - **微核心 (Micro-kernel)**：核心僅有幾 KB，功能完全按需引入。
 - **AI 友善 (AI-First)**：透過嚴格的介面契約與型別推導，讓 Copilot/Cursor 更聰明。
 
@@ -45,7 +45,7 @@ title: Gravito 核心概念
 
 ## 奇點架構 (Singularity Architecture)
 
-### 1. PlanetCore (微內核)
+### 1. PlanetCore (微核心)
 
 引力中心。一個極簡、高效的基礎，負責：
 
@@ -72,7 +72,7 @@ export default core.liftoff() // 點火升空
 - **`Orbit SEO`**：智慧型 SmartMap 引擎與 Meta 標籤自動化管理。
 - **`Orbit CLI`**：自動化骨架生成與生產力工具。
 
-> **Roadmap (v1.5 預計發佈)**: 
+> **Roadmap (v1.5 預計發佈)**:
 > `Orbit DB` (Drizzle), `Orbit Auth` (JWT), `Orbit Mail`, `Orbit Queue`.
 
 ### 3. Satellites (業務衛星)
@@ -128,7 +128,7 @@ export default app.liftoff()
 - [與 Laravel 12 的對齊程度](./laravel-12-mvc-parity.md)
 - [佈署指南 (Deployment Guide)](./deployment.md)
 - [路由系統 (Routing)](./routing.md)
-- [ORM 實踐 (Drizzle)](./orm-usage.md) 
+- [ORM 實踐 (Drizzle)](./orm-usage.md)
 
 ---
 

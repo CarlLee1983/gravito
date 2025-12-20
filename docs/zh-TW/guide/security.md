@@ -46,16 +46,16 @@ Gravito 提供安全的 `CookieJar` 來管理 Cookie，並支援自動加密。
 ```typescript
 core.app.get('/', (c) => {
     const cookies = c.get('cookieJar');
-    
+
     // 設定 Cookie (預設 60 分鐘)
     cookies.queue('name', 'value');
-    
+
     // 設定加密 Cookie
     cookies.queue('secret', 'value', 60, { encrypt: true });
-    
+
     // 設定永久 Cookie (5 年)
     cookies.forever('remember_token', 'token');
-    
+
     return c.text('Hello');
 });
 ```

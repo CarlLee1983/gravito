@@ -8,6 +8,10 @@ title: Orbit Session
 
 套件：`@gravito/orbit-session`
 
+## 新手教學
+
+- 第一次使用建議先閱讀 [Orbit Session 新手教學](../guide/orbit-session-starter.md)。
+
 ## 目的
 
 Orbit Session 提供：
@@ -86,4 +90,3 @@ Inertia Orbit 會自動將常見的 flash key（如 `success`、`error`）分享
 - 預設驗證方式是 **header**：`X-CSRF-Token`
 - token 會儲存在 session key `_csrf`
 - Orbit Session 也會設定一個可被前端讀取的 cookie（預設 `XSRF-TOKEN`），方便前端讀取後放進 header 送回來
-

@@ -66,12 +66,12 @@ const core = await PlanetCore.boot({
 ```typescript
 core.app.get('/user', async (c) => {
   const auth = c.get('auth');
-  
+
   if (await auth.check()) {
     const user = await auth.user();
     return c.json({ user });
   }
-  
+
   return c.json({ message: 'Unauthenticated' }, 401);
 });
 ```
@@ -185,7 +185,7 @@ await gate.authorize('update-post', post);
 ```typescript
 core.app.get('/posts/:id', async (c) => {
   // ... 取得 post
-  
+
   const gate = c.get('gate')
   await gate.authorize('update-post', post)
 });

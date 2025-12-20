@@ -3,7 +3,7 @@ title: Orbit SEO
 description: Gravito SEO 與 Sitemap 整合的 API 參考。
 ---
 
-# 🛰️ Orbit SEO
+# Orbit SEO
 
 `@gravito/seo-adapter-hono` (簡稱為 `OrbitSEO`) 提供了 Gravito 核心與 SEO 引擎之間的無縫整合。
 
@@ -33,11 +33,11 @@ app.use('*', gravitoSeo(seoConfig))
 | `baseUrl` | `string` | 所有絕對連結的基準 URL。 |
 | `resolvers` | `SeoResolver[]` | 動態網址生成器。 |
 | `robots` | `RobotsConfig` | robots.txt 的規則。 |
-| `analytics` | `AnalyticsConfig` | GA、Pixel 等追蹤配置。 |
+| `analytics` | `AnalyticsConfig` | GA、Pixel 等追蹤設定。 |
 
 ## 動態解析器 (Dynamic Resolvers)
 
-解析器是 Orbit SEO 最強大的部分。它們允許您從任何來源（數據庫、檔案系統等）獲取網址。
+解析器是 Orbit SEO 最強大的部分。它們允許您從任何來源（資料庫、檔案系統等）獲取網址。
 
 ```typescript
 const postsResolver = {
@@ -53,7 +53,7 @@ const postsResolver = {
 }
 ```
 
-## 分析工具構建器 (Analytics Builder)
+## 分析工具建構器 (Analytics Builder)
 
 引擎會生成專業、非阻塞的腳本標籤，支援：
 - **Google Analytics** (`gtag`)

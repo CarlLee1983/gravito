@@ -8,6 +8,10 @@ Session management + CSRF protection for Gravito (Laravel-style).
 
 Package: `@gravito/orbit-session`
 
+## Starter Guide
+
+- New to Orbit Session? Start with the [Orbit Session Starter Guide](../guide/orbit-session-starter.md).
+
 ## Why
 
 Orbit Session provides:
@@ -86,4 +90,3 @@ The Inertia Orbit automatically shares common flash keys (like `success`, `error
 - Default verification is **header-based**: `X-CSRF-Token`
 - The token is stored in the session key `_csrf`
 - Orbit Session also sets a readable cookie (default `XSRF-TOKEN`) so your frontend can read it and send it back in the header
-

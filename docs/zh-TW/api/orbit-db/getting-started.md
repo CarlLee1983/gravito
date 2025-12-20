@@ -60,7 +60,7 @@ core.app.get('/health/db', async (c) => {
 ## 選項（`OrbitDBOptions`）
 
 - `db`：Drizzle 實例（必填）
-- `exposeAs`：注入到 Context 的 key（默認：`db`）
+- `exposeAs`：注入到 Context 的 key（預設：`db`）
 - `databaseType`：`postgresql | sqlite | mysql | auto`
 - `enableQueryLogging`：啟用後會透過 hooks 觸發 `db:query`
 - `queryLogLevel`：`debug | info | warn | error`
