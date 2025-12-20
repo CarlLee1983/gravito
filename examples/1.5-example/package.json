@@ -1,0 +1,37 @@
+{
+  "name": "1-5-example",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --watch src/index.ts",
+    "build:client": "vite build",
+    "start": "bun run src/index.ts"
+  },
+  "dependencies": {
+    "@gravito/client": "^1.0.0-beta.1",
+    "@gravito/orbit-cache": "^1.0.0-beta.1",
+    "@gravito/orbit-db": "^1.0.0-beta.1",
+    "@gravito/orbit-inertia": "^1.0.0-beta.1",
+    "@gravito/orbit-mail": "^1.0.0-beta.1",
+    "@gravito/orbit-queue": "^1.0.0-beta.1",
+    "@gravito/orbit-request": "^1.0.0-beta.1",
+    "@gravito/orbit-view": "^1.0.0-beta.1",
+    "@gravito/validator": "^1.0.0-beta.1",
+    "@inertiajs/react": "^1.0.0",
+    "better-sqlite3": "^11.0.0",
+    "drizzle-orm": "^0.45.1",
+    "gravito-core": "^1.0.0-beta.1",
+    "hono": "^4.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@types/better-sqlite3": "^7.6.0",
+    "@vitejs/plugin-react": "^4.2.0",
+    "bun-types": "latest",
+    "typescript": "^5.0.0",
+    "vite": "^5.0.0"
+  }
+}

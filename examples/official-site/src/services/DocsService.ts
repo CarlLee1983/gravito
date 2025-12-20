@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import matter from 'gray-matter'
+import type { MarkedOptions } from 'marked'
 import { marked } from 'marked'
 import { createHighlighter } from 'shiki'
 
@@ -33,6 +34,7 @@ export interface SidebarItem {
   children?: SidebarItem[]
 }
 
+// biome-ignore lint/complexity/noStaticOnlyClass: Utility namespace for docs processing
 export class DocsService {
   private static stripLeadingEmoji(value: string): string {
     // biome-ignore lint/suspicious/noMisleadingCharacterClass: Emoji regex
@@ -168,7 +170,7 @@ export class DocsService {
       })
 
       // Configure marked with shiki
-      marked.setOptions({
+      const markedOptions = {
         async: true,
         highlight: (code: string, lang: string) => {
           return highlighter.codeToHtml(code, {
@@ -176,7 +178,8 @@ export class DocsService {
             theme: 'rose-pine-moon',
           })
         },
-      } as any)
+      } as MarkedOptions
+      marked.setOptions(markedOptions)
 
       // Helper to escape HTML
       const escapeHtml = (str: string): string => {

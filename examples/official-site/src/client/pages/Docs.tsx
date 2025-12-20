@@ -17,6 +17,8 @@ interface TocItem {
   level: number
 }
 
+type Translation = Record<string, Record<string, string>>
+
 interface DocsProps {
   title: string
   content: string
@@ -25,13 +27,12 @@ interface DocsProps {
   toc: TocItem[]
   editUrl?: string
   locale?: string
-  t?: any
+  t?: Translation
 }
 
 export default function Docs() {
   const { trans } = useTrans()
-  // Safe cast
-  const props = usePage().props as unknown as DocsProps
+  const props = usePage<DocsProps>().props
   const { title, content, sidebar, currentPath, toc, editUrl, locale } = props
   const isZh = locale === 'zh'
   const contentRef = useRef<HTMLDivElement | null>(null)
@@ -260,8 +261,8 @@ export default function Docs() {
               </div>
             </div>
 
-            {sidebar.map((section, idx) => (
-              <div key={idx} className="relative">
+            {sidebar.map((section) => (
+              <div key={section.title} className="relative">
                 {/* Section Connector Line */}
                 <div className="absolute -left-[13px] top-0 bottom-0 w-[1px] bg-gradient-to-b from-white/10 via-transparent to-transparent" />
 
@@ -272,10 +273,10 @@ export default function Docs() {
                   {section.title}
                 </h3>
                 <ul className="space-y-1 ml-1">
-                  {section.children?.map((item, cIdx) => {
+                  {section.children?.map((item) => {
                     const isActive = currentPath === item.path
                     return (
-                      <li key={cIdx}>
+                      <li key={item.path}>
                         <Link
                           href={item.path}
                           className={`block text-sm py-3 px-6 transition-all duration-300 relative group font-medium rounded-xl border border-transparent ${

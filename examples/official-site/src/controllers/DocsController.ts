@@ -32,7 +32,7 @@ export class DocsController {
     const editUrl = `https://github.com/gravito-framework/gravito/blob/main/docs/${fsLocale}/${slug}.md`
 
     if (!page) {
-      return (inertia as any).render('Error', { status: 404, message: 'Document not found' })
+      return inertia.render('Error', { status: 404, message: 'Document not found' })
     }
 
     const { generateSeoHtml } = await import('../utils/seo')
@@ -42,7 +42,7 @@ export class DocsController {
       page.metadata.description as string
     )
 
-    return (inertia as any).render(
+    return inertia.render(
       'Docs',
       {
         t,

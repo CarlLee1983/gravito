@@ -1,7 +1,7 @@
 import { Head, Link } from '@inertiajs/react'
 import { motion } from 'framer-motion'
+import { useMemo } from 'react'
 import Layout from '../components/Layout'
-import { useTrans } from '../hooks/useTrans'
 
 interface ErrorProps {
   status: number
@@ -9,13 +9,25 @@ interface ErrorProps {
 }
 
 export default function ErrorPage({ status, message }: ErrorProps) {
-  const { trans } = useTrans()
-
   const title = status === 404 ? '404: Lost in Singularity' : `${status}: System Collapse`
   const description =
     status === 404
       ? "The coordinate you're looking for doesn't exist in this galaxy."
       : "Experimental gravity stabilizers have failed. We're working on it."
+  const particles = useMemo(
+    () =>
+      Array.from({ length: 20 }, (_, index) => ({
+        id: `particle-${index}`,
+        x: Math.random() * 1000 - 500,
+        y: Math.random() * 1000 - 500,
+        opacity: Math.random(),
+        drift: Math.random() * 50 - 25,
+        duration: 10 + Math.random() * 20,
+        left: Math.random() * 100,
+        top: Math.random() * 100,
+      })),
+    []
+  )
 
   return (
     <Layout>
@@ -74,27 +86,27 @@ export default function ErrorPage({ status, message }: ErrorProps) {
 
         {/* Floating Debris / Particles */}
         <div className="absolute inset-0 pointer-events-none">
-          {[...Array(20)].map((_, i) => (
+          {particles.map((particle) => (
             <motion.div
-              key={i}
+              key={particle.id}
               initial={{
-                x: Math.random() * 1000 - 500,
-                y: Math.random() * 1000 - 500,
-                opacity: Math.random(),
+                x: particle.x,
+                y: particle.y,
+                opacity: particle.opacity,
               }}
               animate={{
-                y: [null, Math.random() * 50 - 25],
+                y: [null, particle.drift],
                 rotate: [0, 360],
               }}
               transition={{
-                duration: 10 + Math.random() * 20,
+                duration: particle.duration,
                 repeat: Infinity,
                 ease: 'linear',
               }}
               className="absolute w-1 h-1 bg-white/20 rounded-full"
               style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
+                left: `${particle.left}%`,
+                top: `${particle.top}%`,
               }}
             />
           ))}

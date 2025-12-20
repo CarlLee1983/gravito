@@ -1,11 +1,12 @@
 import type { PlanetCore } from 'gravito-core'
+import type { Context } from 'hono'
 
 /**
  * Configure Vite proxy middleware for development mode
  */
 export function setupViteProxy(core: PlanetCore): void {
   // Universal Vite Proxy
-  const proxyToVite = async (c: any) => {
+  const proxyToVite = async (c: Context) => {
     try {
       const url = new URL(c.req.url)
 
@@ -43,7 +44,7 @@ export function setupViteProxy(core: PlanetCore): void {
           core.logger.warn(`[Vite Proxy] ${response.status} for: ${url.pathname}`)
         }
         // Forward the error response from Vite
-        return c.body(await response.arrayBuffer(), response.status as any)
+        return c.body(await response.arrayBuffer(), response.status)
       }
 
       const contentType = response.headers.get('Content-Type') || 'text/javascript'
@@ -51,15 +52,17 @@ export function setupViteProxy(core: PlanetCore): void {
 
       // Set appropriate headers
       c.header('Content-Type', contentType)
-      if (response.headers.get('Cache-Control')) {
-        c.header('Cache-Control', response.headers.get('Cache-Control')!)
+      const cacheControl = response.headers.get('Cache-Control')
+      if (cacheControl) {
+        c.header('Cache-Control', cacheControl)
       }
-      if (response.headers.get('ETag')) {
-        c.header('ETag', response.headers.get('ETag')!)
+      const etag = response.headers.get('ETag')
+      if (etag) {
+        c.header('ETag', etag)
       }
 
       // Fix for specific Hono/Bun behavior with standard Response vs Hono Body
-      return c.body(buffer, response.status as any)
+      return c.body(buffer, response.status)
     } catch (error) {
       core.logger.error(`[Vite Proxy] Failed: ${error}`)
       return c.text('Vite dev server not available', 503)

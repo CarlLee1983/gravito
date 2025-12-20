@@ -10,9 +10,13 @@ interface LayoutProps {
   noPadding?: boolean
 }
 
+interface PageProps {
+  locale?: string
+}
+
 export default function Layout({ children, noPadding = false }: LayoutProps) {
   const { trans } = useTrans()
-  const { locale } = usePage().props as any
+  const { locale } = usePage<PageProps>().props
   const [isScrolled, setIsScrolled] = useState(false)
 
   const currentLang = locale || 'en'

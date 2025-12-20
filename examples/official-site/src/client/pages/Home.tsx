@@ -28,8 +28,10 @@ import React, { useRef, useState } from 'react'
 import { GravitoImage as Image } from '../components/GravitoImage'
 import Layout from '../components/Layout'
 
+type Translation = Record<string, Record<string, string>>
+
 // 強化版 Hero 組件（Star Shuttle Effect）
-const AdvancedHero = ({ t }: { t: any }) => {
+const AdvancedHero = ({ t }: { t: Translation }) => {
   const { scrollY } = useScroll()
   const y1 = useTransform(scrollY, [0, 500], [0, 200])
   const opacity = useTransform(scrollY, [0, 300], [1, 0])
@@ -47,7 +49,11 @@ const AdvancedHero = ({ t }: { t: any }) => {
     }))
   }, [])
 
-  const titleChars = (t.hero.title || 'GRAVITO').split('')
+  const titleCharItems = (t.hero.title || 'GRAVITO').split('').map((char, index) => ({
+    id: `hero-char-${index}-${char}`,
+    index,
+    char,
+  }))
 
   return (
     <section className="relative h-[120vh] flex items-center justify-center overflow-hidden bg-void">
@@ -108,15 +114,19 @@ const AdvancedHero = ({ t }: { t: any }) => {
       {/* 5. 浮動文字層 (Staggered Intro) */}
       <div className="relative z-30 flex flex-col items-center">
         <div className="flex overflow-hidden pb-2">
-          {titleChars.map((char: string, i: number) => (
+          {titleCharItems.map((item) => (
             <motion.span
-              key={i}
+              key={item.id}
               initial={{ y: 100, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.5 + i * 0.1, duration: 0.8, ease: [0.2, 0.65, 0.3, 0.9] }}
+              transition={{
+                delay: 0.5 + item.index * 0.1,
+                duration: 0.8,
+                ease: [0.2, 0.65, 0.3, 0.9],
+              }}
               className="text-6xl md:text-9xl font-black italic tracking-tighter text-white drop-shadow-[0_0_30px_rgba(0,100,200,0.5)] inline-block"
             >
-              {char}
+              {item.char}
             </motion.span>
           ))}
           <motion.span
@@ -171,7 +181,12 @@ const AdvancedHero = ({ t }: { t: any }) => {
   )
 }
 
-const GravitoLanding = ({ t, locale }: { t: any; locale: string }) => {
+interface HomeProps {
+  t: Translation
+  locale: string
+}
+
+const GravitoLanding = ({ t, locale }: HomeProps) => {
   return (
     <Layout noPadding>
       <Head>
@@ -290,7 +305,7 @@ const GravitoLanding = ({ t, locale }: { t: any; locale: string }) => {
       <BenchmarkSection t={t} />
 
       {/* Quick Start / Ignition Console Section */}
-      <QuickStartSection t={t} />
+      <QuickStartSection />
     </Layout>
   )
 }
@@ -300,7 +315,9 @@ const TechIcon = ({ type }: { type: string }) => {
       <svg
         viewBox="0 0 80 70"
         className="w-12 h-12 transition-transform duration-500 group-hover:scale-110"
+        role="img"
       >
+        <title>Bun</title>
         <defs>
           <linearGradient id="bun_skin" x1="0%" y1="0%" x2="0%" y2="100%">
             <stop offset="0%" stopColor="#FBF0DF" />
@@ -335,7 +352,9 @@ const TechIcon = ({ type }: { type: string }) => {
       <svg
         viewBox="0 0 500 500"
         className="w-12 h-12 transition-transform duration-500 group-hover:scale-110 drop-shadow-[0_0_15px_rgba(249,115,22,0.4)]"
+        role="img"
       >
+        <title>Hono</title>
         <path
           fill="#FF5B11"
           opacity="0.9"
@@ -353,7 +372,9 @@ const TechIcon = ({ type }: { type: string }) => {
       <svg
         viewBox="0 0 512 512"
         className="w-12 h-12 transition-transform duration-500 group-hover:scale-110"
+        role="img"
       >
+        <title>TypeScript</title>
         <rect fill="#3178c6" height="512" rx="60" width="512" />
         <path
           clipRule="evenodd"
@@ -367,7 +388,7 @@ const TechIcon = ({ type }: { type: string }) => {
   return null
 }
 
-const StackSection = ({ t }: { t: any }) => {
+const StackSection = ({ t }: { t: Translation }) => {
   const stack = [
     { type: 'bun', title: t.stack.bun_title, desc: t.stack.bun_desc, color: 'text-orange-400' },
     { type: 'hono', title: t.stack.hono_title, desc: t.stack.hono_desc, color: 'text-rose-500' },
@@ -382,12 +403,12 @@ const StackSection = ({ t }: { t: any }) => {
           <p className="text-gray-400 font-medium">{t.stack.subtitle}</p>
         </div>
         <div className="w-full md:w-2/3 grid grid-cols-1 md:grid-cols-3 gap-6">
-          {stack.map((item, i) => (
+          {stack.map((item, index) => (
             <motion.div
-              key={i}
+              key={item.type}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1 }}
+              transition={{ delay: index * 0.1 }}
               viewport={{ once: true }}
               className="p-8 rounded-2xl bg-white/[0.02] border border-white/5 backdrop-blur-sm group hover:border-white/10 transition-all hover:bg-white/[0.05]"
             >
@@ -407,7 +428,7 @@ const StackSection = ({ t }: { t: any }) => {
 }
 
 // 統計數據區塊
-const StatsSection = ({ t }: { t: any }) => {
+const StatsSection = ({ t }: { t: Translation }) => {
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, margin: '-100px' })
 
@@ -450,7 +471,7 @@ const StatsSection = ({ t }: { t: any }) => {
 }
 
 // 🚀 星際感啟動控制台 (Quick Start Section)
-const QuickStartSection = ({ t }: { t: any }) => {
+const QuickStartSection = () => {
   const [copied, setCopied] = useState(false)
   const command = 'bun create gravito-app@latest ./'
 
@@ -553,6 +574,7 @@ const QuickStartSection = ({ t }: { t: any }) => {
                 </div>
 
                 <button
+                  type="button"
                   onClick={handleCopy}
                   className="shrink-0 flex flex-col items-center justify-center p-8 md:w-32 md:h-32 rounded-[24px] bg-white group/btn relative overflow-hidden transition-all active:scale-95 shadow-[0_20px_40px_rgba(255,255,255,0.1)]"
                 >
@@ -590,8 +612,8 @@ const QuickStartSection = ({ t }: { t: any }) => {
                   { label: 'Engine', val: 'Singularity-V8' },
                   { label: 'Memory', val: 'Allocated: 64MB' },
                   { label: 'Security', val: 'Quantum_Shield' },
-                ].map((stat, i) => (
-                  <div key={i} className="flex flex-col gap-1">
+                ].map((stat) => (
+                  <div key={stat.label} className="flex flex-col gap-1">
                     <span className="text-[9px] font-bold text-gray-600 uppercase tracking-widest">
                       {stat.label}
                     </span>
@@ -613,7 +635,7 @@ const QuickStartSection = ({ t }: { t: any }) => {
   )
 }
 // Benchmark 性能測試區塊
-const BenchmarkSection = ({ t }: { t: any }) => {
+const BenchmarkSection = ({ t }: { t: Translation }) => {
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, margin: '-100px' })
 
@@ -659,7 +681,7 @@ const BenchmarkSection = ({ t }: { t: any }) => {
         <div ref={ref} className="grid grid-cols-1 md:grid-cols-3 gap-12">
           {data.map((item, i) => (
             <div
-              key={i}
+              key={item.label}
               className="flex flex-col gap-6 p-8 rounded-2xl bg-white/5 border border-white/5 backdrop-blur-md"
             >
               <h3 className="text-lg font-bold text-white/90">{item.label}</h3>

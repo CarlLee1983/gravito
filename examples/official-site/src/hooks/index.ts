@@ -40,7 +40,8 @@ export function registerHooks(core: PlanetCore): void {
     const c = args[0] as Context
     const inertia = c.get('inertia') as InertiaService
     // Optionally extract status from error if available in context
-    const status = c.error ? (c.error as any).status || 500 : 500
+    const error = c.error as { status?: number } | undefined
+    const status = typeof error?.status === 'number' ? error.status : 500
 
     if (inertia) {
       return inertia.render('Error', {

@@ -6,6 +6,17 @@ import { useTrans } from '../hooks/useTrans'
 
 export default function About() {
   const { trans } = useTrans()
+  const heroEase: [number, number, number, number] = [0.16, 1, 0.3, 1]
+  const gridCells = Array.from({ length: 36 }, (_, index) => ({ id: `grid-${index}` }))
+  const energyDust = Array.from({ length: 4 }, (_, index) => ({ id: `dust-${index}`, index }))
+  const driftFragments = Array.from({ length: 6 }, (_, index) => ({
+    id: `fragment-${index}`,
+    index,
+  }))
+  const pulseRings = Array.from({ length: 2 }, (_, index) => ({ id: `ring-${index}`, index }))
+  const flowPackets = Array.from({ length: 5 }, (_, index) => ({ id: `packet-${index}`, index }))
+  const driverNodes = Array.from({ length: 3 }, (_, index) => ({ id: `driver-${index}`, index }))
+  const aiLines = Array.from({ length: 8 }, (_, index) => ({ id: `ai-line-${index}`, index }))
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -20,9 +31,162 @@ export default function About() {
     visible: {
       y: 0,
       opacity: 1,
-      transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] as any },
+      transition: { duration: 0.8, ease: heroEase },
     },
   }
+
+  const pillars = [
+    {
+      id: 'speed',
+      icon: <Zap className="text-singularity" />,
+      title: trans('about.pillar1_title', 'Unrivaled Speed'),
+      desc: trans(
+        'about.pillar1_desc',
+        'By harnessing Bun and Hono, we eliminate the bloat of traditional Node.js stacks.'
+      ),
+    },
+    {
+      id: 'zen',
+      icon: <Shield className="text-purple-500" />,
+      title: trans('about.pillar2_title', 'Developer Zen'),
+      desc: trans(
+        'about.pillar2_desc',
+        'Clean, Laravel-inspired syntax that makes backend development a joy, not a chore.'
+      ),
+    },
+    {
+      id: 'ai',
+      icon: <Sparkles className="text-blue-400" />,
+      title: trans('about.pillar3_title', 'AI Ready'),
+      desc: trans(
+        'about.pillar3_desc',
+        'Designed with clean, structured code and CLI tools that are easily understood by AI agents.'
+      ),
+    },
+  ]
+
+  const teamHighlights = [
+    { id: 'distributed', icon: <Globe size={18} />, text: 'Distributed Kernel Architecture' },
+    { id: 'zero', icon: <Orbit size={18} />, text: 'Zero-Overhead Micro-Framework' },
+    { id: 'ai', icon: <Zap size={18} />, text: 'Built for the Age of AI' },
+  ]
+
+  const architectureCards = [
+    {
+      id: 'kernel',
+      title: trans('about.kernelTitle', 'PlanetCore (The Micro-Kernel)'),
+      desc: trans(
+        'about.kernelDesc',
+        'An ultra-minimalist core that handles only the most critical lifecycles and I/O coordination.'
+      ),
+      icon: <div className="w-2 h-2 rounded-full bg-singularity" />,
+    },
+    {
+      id: 'orbit',
+      title: trans('about.orbitTitle', 'Functional Orbits'),
+      desc: trans(
+        'about.orbitDesc',
+        'Features like Routing, Inertia, SEO, and Mail exist as "Orbits" that revolve around the core.'
+      ),
+      icon: <div className="w-2 h-2 bg-purple-500 rounded-sm" />,
+    },
+    {
+      id: 'scale',
+      title: trans('about.scaleTitle', 'Infinite Scalability'),
+      desc: trans(
+        'about.scaleDesc',
+        'From a single-file API to a global enterprise system, the architecture adapts dynamically.'
+      ),
+      icon: <div className="w-3 h-[1px] bg-white/40 rotate-45" />,
+    },
+  ]
+
+  const painPoints = [
+    {
+      id: 'pain-1',
+      title: trans('about.pain1Title'),
+      desc: trans('about.pain1Desc'),
+      color: 'from-blue-500/10',
+    },
+    {
+      id: 'pain-2',
+      title: trans('about.pain2Title'),
+      desc: trans('about.pain2Desc'),
+      color: 'from-purple-500/10',
+    },
+    {
+      id: 'pain-3',
+      title: trans('about.pain3Title'),
+      desc: trans('about.pain3Desc'),
+      color: 'from-singularity/10',
+    },
+    {
+      id: 'pain-4',
+      title: trans('about.pain4Title'),
+      desc: trans('about.pain4Desc'),
+      color: 'from-emerald-500/10',
+    },
+  ]
+
+  const dnaComparisons = [
+    {
+      id: 'frontend-first',
+      label: 'The Frontend-First Gaps',
+      title: 'Node/Bun Ecosystem',
+      desc: trans('about.dnaNodeGaps'),
+      status: 'Architecture Lite',
+      color: 'text-orange-400',
+    },
+    {
+      id: 'legacy',
+      label: 'The Legacy Heavyweights',
+      title: 'Traditional MVC',
+      desc: trans('about.dnaLaravelGaps'),
+      status: 'High Friction',
+      color: 'text-red-400',
+    },
+    {
+      id: 'gravito',
+      label: 'The Future Singularity',
+      title: 'Gravito Core',
+      desc: trans('about.dnaGravitoAdv'),
+      status: 'Enterprise Native',
+      color: 'text-singularity',
+      highlight: true,
+    },
+  ]
+
+  const driverTags = ['Redis', 'Amazon SQS', 'RabbitMQ', 'Apache Kafka', 'BullMQ', 'Beanstalkd']
+
+  const aiFeatures = [
+    {
+      id: 'patterns',
+      title: trans('about.aiFeature1Title', 'Predictable Patterns'),
+      desc: trans(
+        'about.aiFeature1Desc',
+        'Strict MVC and Service Layer patterns ensure AI agents understand and generate logic with precision.'
+      ),
+      icon: <Cpu size={24} className="text-singularity" />,
+    },
+    {
+      id: 'cli',
+      title: trans('about.aiFeature2Title', 'CLI-Driven Development'),
+      desc: trans(
+        'about.aiFeature2Desc',
+        'Structured CLI outputs and scaffolding allow AI assistants to perform complex operations.'
+      ),
+      icon: <Shield size={24} className="text-purple-400" />,
+    },
+    {
+      id: 'types',
+      title: trans('about.aiFeature3Title', 'Zero-Ambiguity Types'),
+      desc: trans(
+        'about.aiFeature3Desc',
+        'First-class TypeScript support eliminates AI "hallucinations" through clear code contracts.'
+      ),
+      icon: <Sparkles size={24} className="text-blue-400" />,
+    },
+  ]
 
   return (
     <Layout>
@@ -92,34 +256,9 @@ export default function About() {
               viewport={{ once: true }}
               className="grid grid-cols-1 md:grid-cols-3 gap-8"
             >
-              {[
-                {
-                  icon: <Zap className="text-singularity" />,
-                  title: trans('about.pillar1_title', 'Unrivaled Speed'),
-                  desc: trans(
-                    'about.pillar1_desc',
-                    'By harnessing Bun and Hono, we eliminate the bloat of traditional Node.js stacks.'
-                  ),
-                },
-                {
-                  icon: <Shield className="text-purple-500" />,
-                  title: trans('about.pillar2_title', 'Developer Zen'),
-                  desc: trans(
-                    'about.pillar2_desc',
-                    'Clean, Laravel-inspired syntax that makes backend development a joy, not a chore.'
-                  ),
-                },
-                {
-                  icon: <Sparkles className="text-blue-400" />,
-                  title: trans('about.pillar3_title', 'AI Ready'),
-                  desc: trans(
-                    'about.pillar3_desc',
-                    'Designed with clean, structured code and CLI tools that are easily understood by AI agents.'
-                  ),
-                },
-              ].map((pillar, i) => (
+              {pillars.map((pillar) => (
                 <motion.div
-                  key={i}
+                  key={pillar.id}
                   variants={itemVariants}
                   className="group p-8 rounded-[32px] bg-white/[0.03] border border-white/5 backdrop-blur-xl relative overflow-hidden transition-all hover:bg-white/[0.05] hover:border-white/10"
                 >
@@ -149,8 +288,8 @@ export default function About() {
               <div className="aspect-square rounded-[40px] bg-white/5 border border-white/10 backdrop-blur-3xl p-12 flex items-center justify-center relative overflow-hidden">
                 <div className="absolute inset-0 opacity-10 pointer-events-none">
                   <div className="grid grid-cols-6 h-full w-full">
-                    {[...Array(36)].map((_, i) => (
-                      <div key={i} className="border-[0.5px] border-white/20" />
+                    {gridCells.map((cell) => (
+                      <div key={cell.id} className="border-[0.5px] border-white/20" />
                     ))}
                   </div>
                 </div>
@@ -174,13 +313,9 @@ export default function About() {
               </p>
 
               <div className="space-y-6">
-                {[
-                  { icon: <Globe size={18} />, text: 'Distributed Kernel Architecture' },
-                  { icon: <Orbit size={18} />, text: 'Zero-Overhead Micro-Framework' },
-                  { icon: <Zap size={18} />, text: 'Built for the Age of AI' },
-                ].map((item, i) => (
+                {teamHighlights.map((item) => (
                   <div
-                    key={i}
+                    key={item.id}
                     className="flex items-center gap-4 text-white/60 font-black italic uppercase tracking-widest text-xs"
                   >
                     <span className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-singularity">
@@ -239,15 +374,15 @@ export default function About() {
                       className="absolute w-[70%] h-[70%] border border-dashed border-white/5 rounded-full"
                     >
                       {/* Floating Energy Dust on the ring */}
-                      {[...Array(4)].map((_, i) => (
+                      {energyDust.map((dust) => (
                         <motion.div
-                          key={i}
+                          key={dust.id}
                           animate={{ opacity: [0.2, 0.8, 0.2], scale: [1, 1.5, 1] }}
-                          transition={{ duration: 3 + i, repeat: Infinity }}
+                          transition={{ duration: 3 + dust.index, repeat: Infinity }}
                           className="absolute w-1 h-1 bg-singularity rounded-full blur-sm"
                           style={{
-                            top: `${50 + 40 * Math.cos(i * 1.5)}%`,
-                            left: `${50 + 40 * Math.sin(i * 1.5)}%`,
+                            top: `${50 + 40 * Math.cos(dust.index * 1.5)}%`,
+                            left: `${50 + 40 * Math.sin(dust.index * 1.5)}%`,
                           }}
                         />
                       ))}
@@ -307,25 +442,25 @@ export default function About() {
                           />
 
                           {/* Chaotic Drift Fragments */}
-                          {[...Array(6)].map((_, i) => (
+                          {driftFragments.map((fragment) => (
                             <motion.div
-                              key={i}
+                              key={fragment.id}
                               animate={{
                                 rotate: [0, 360],
-                                x: [0, i % 2 === 0 ? 10 : -10, 0],
-                                y: [0, i % 3 === 0 ? -10 : 10, 0],
+                                x: [0, fragment.index % 2 === 0 ? 10 : -10, 0],
+                                y: [0, fragment.index % 3 === 0 ? -10 : 10, 0],
                                 scale: [1, 1.5, 1],
                                 opacity: [0.2, 0.5, 0.2],
                               }}
                               transition={{
-                                duration: 5 + i,
+                                duration: 5 + fragment.index,
                                 repeat: Infinity,
                                 ease: 'easeInOut',
                               }}
                               className="absolute w-1.5 h-1.5 bg-white blur-[1.5px] rounded-full"
                               style={{
-                                left: `${25 + i * 12}%`,
-                                top: `${30 + (i % 2) * 20}%`,
+                                left: `${25 + fragment.index * 12}%`,
+                                top: `${30 + (fragment.index % 2) * 20}%`,
                               }}
                             />
                           ))}
@@ -346,11 +481,11 @@ export default function About() {
                         </div>
 
                         {/* Fluid Pulse Rings */}
-                        {[...Array(2)].map((_, i) => (
+                        {pulseRings.map((ring) => (
                           <motion.div
-                            key={i}
+                            key={ring.id}
                             animate={{ scale: [1, 1.8], opacity: [0.3, 0] }}
-                            transition={{ duration: 3, repeat: Infinity, delay: i * 1.5 }}
+                            transition={{ duration: 3, repeat: Infinity, delay: ring.index * 1.5 }}
                             className="absolute inset-0 border border-singularity/40 rounded-full"
                           />
                         ))}
@@ -389,37 +524,12 @@ export default function About() {
 
               {/* Architecture Info Cards */}
               <div className="lg:col-span-12 xl:col-span-7 grid grid-cols-1 md:grid-cols-2 gap-6">
-                {[
-                  {
-                    title: trans('about.kernelTitle', 'PlanetCore (The Micro-Kernel)'),
-                    desc: trans(
-                      'about.kernelDesc',
-                      'An ultra-minimalist core that handles only the most critical lifecycles and I/O coordination.'
-                    ),
-                    icon: <div className="w-2 h-2 rounded-full bg-singularity" />,
-                  },
-                  {
-                    title: trans('about.orbitTitle', 'Functional Orbits'),
-                    desc: trans(
-                      'about.orbitDesc',
-                      'Features like Routing, Inertia, SEO, and Mail exist as "Orbits" that revolve around the core.'
-                    ),
-                    icon: <div className="w-2 h-2 bg-purple-500 rounded-sm" />,
-                  },
-                  {
-                    title: trans('about.scaleTitle', 'Infinite Scalability'),
-                    desc: trans(
-                      'about.scaleDesc',
-                      'From a single-file API to a global enterprise system, the architecture adapts dynamically.'
-                    ),
-                    icon: <div className="w-3 h-[1px] bg-white/40 rotate-45" />,
-                  },
-                ].map((card, i) => (
+                {architectureCards.map((card, index) => (
                   <motion.div
-                    key={i}
+                    key={card.id}
                     initial={{ opacity: 0, x: 20 }}
                     whileInView={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.1 }}
+                    transition={{ delay: index * 0.1 }}
                     className="p-8 rounded-3xl bg-white/[0.02] border border-white/5 hover:border-white/10 transition-colors"
                   >
                     <div className="flex items-center gap-3 mb-4">
@@ -451,33 +561,12 @@ export default function About() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {[
-                {
-                  title: trans('about.pain1Title'),
-                  desc: trans('about.pain1Desc'),
-                  color: 'from-blue-500/10',
-                },
-                {
-                  title: trans('about.pain2Title'),
-                  desc: trans('about.pain2Desc'),
-                  color: 'from-purple-500/10',
-                },
-                {
-                  title: trans('about.pain3Title'),
-                  desc: trans('about.pain3Desc'),
-                  color: 'from-singularity/10',
-                },
-                {
-                  title: trans('about.pain4Title'),
-                  desc: trans('about.pain4Desc'),
-                  color: 'from-emerald-500/10',
-                },
-              ].map((item, i) => (
+              {painPoints.map((item, index) => (
                 <motion.div
-                  key={i}
+                  key={item.id}
                   initial={{ opacity: 0, scale: 0.9 }}
                   whileInView={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: i * 0.1 }}
+                  transition={{ delay: index * 0.1 }}
                   whileHover={{ y: -8, backgroundColor: 'rgba(255,255,255,0.03)' }}
                   className={`p-10 rounded-[40px] bg-gradient-to-br ${item.color} to-transparent border border-white/5 hover:border-white/10 transition-all flex flex-col h-full group`}
                 >
@@ -510,35 +599,12 @@ export default function About() {
 
             {/* The Architecture Gap Comparison */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-24 relative">
-              {[
-                {
-                  label: 'The Frontend-First Gaps',
-                  title: 'Node/Bun Ecosystem',
-                  desc: trans('about.dnaNodeGaps'),
-                  status: 'Architecture Lite',
-                  color: 'text-orange-400',
-                },
-                {
-                  label: 'The Legacy Heavyweights',
-                  title: 'Traditional MVC',
-                  desc: trans('about.dnaLaravelGaps'),
-                  status: 'High Friction',
-                  color: 'text-red-400',
-                },
-                {
-                  label: 'The Future Singularity',
-                  title: 'Gravito Core',
-                  desc: trans('about.dnaGravitoAdv'),
-                  status: 'Enterprise Native',
-                  color: 'text-singularity',
-                  highlight: true,
-                },
-              ].map((box, i) => (
+              {dnaComparisons.map((box, index) => (
                 <motion.div
-                  key={i}
+                  key={box.id}
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.1 }}
+                  transition={{ delay: index * 0.1 }}
                   className={`p-10 rounded-[40px] border ${box.highlight ? 'bg-white/[0.03] border-singularity/30 shadow-[0_0_50px_rgba(20,241,149,0.1)]' : 'bg-white/[0.01] border-white/5'} relative overflow-hidden group`}
                 >
                   <div className="mb-10">
@@ -667,19 +733,17 @@ export default function About() {
 
                 {/* Driver Tags/Marquee */}
                 <div className="flex flex-wrap gap-3">
-                  {['Redis', 'Amazon SQS', 'RabbitMQ', 'Apache Kafka', 'BullMQ', 'Beanstalkd'].map(
-                    (driver, i) => (
-                      <motion.div
-                        key={i}
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        whileInView={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: i * 0.05 }}
-                        className="px-6 py-3 rounded-2xl bg-white/5 border border-white/10 text-xs font-black text-white uppercase tracking-widest hover:bg-singularity/10 hover:border-singularity/30 transition-all cursor-default"
-                      >
-                        {driver}
-                      </motion.div>
-                    )
-                  )}
+                  {driverTags.map((driver, index) => (
+                    <motion.div
+                      key={driver}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      whileInView={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: index * 0.05 }}
+                      className="px-6 py-3 rounded-2xl bg-white/5 border border-white/10 text-xs font-black text-white uppercase tracking-widest hover:bg-singularity/10 hover:border-singularity/30 transition-all cursor-default"
+                    >
+                      {driver}
+                    </motion.div>
+                  ))}
                 </div>
               </div>
 
@@ -690,9 +754,9 @@ export default function About() {
                 {/* Horizontal Pipeline */}
                 <div className="w-full h-px bg-gradient-to-r from-transparent via-white/20 to-transparent relative">
                   {/* Flowing Packets */}
-                  {[...Array(5)].map((_, i) => (
+                  {flowPackets.map((packet) => (
                     <motion.div
-                      key={i}
+                      key={packet.id}
                       animate={{
                         x: ['-10%', '110%'],
                         opacity: [0, 1, 1, 0],
@@ -700,7 +764,7 @@ export default function About() {
                       transition={{
                         duration: 3,
                         repeat: Infinity,
-                        delay: i * 0.6,
+                        delay: packet.index * 0.6,
                         ease: 'linear',
                       }}
                       className="absolute top-1/2 -translate-y-1/2 w-2 h-2 bg-singularity rounded-full shadow-[0_0_15px_#14f195] blur-[1px]"
@@ -727,18 +791,22 @@ export default function About() {
 
                 {/* Driver Nodes (Orbiting icons) */}
                 <div className="absolute inset-0">
-                  {[...Array(3)].map((_, i) => (
+                  {driverNodes.map((node) => (
                     <motion.div
-                      key={i}
+                      key={node.id}
                       animate={{ rotate: 360 }}
-                      transition={{ duration: 15 + i * 5, repeat: Infinity, ease: 'linear' }}
+                      transition={{
+                        duration: 15 + node.index * 5,
+                        repeat: Infinity,
+                        ease: 'linear',
+                      }}
                       className="absolute inset-0"
                     >
                       <div
                         className="absolute w-10 h-10 rounded-xl bg-panel border border-white/10 flex items-center justify-center backdrop-blur-md"
                         style={{
-                          top: `${20 + i * 20}%`,
-                          left: i % 2 === 0 ? '10%' : '85%',
+                          top: `${20 + node.index * 20}%`,
+                          left: node.index % 2 === 0 ? '10%' : '85%',
                         }}
                       >
                         <div className="w-1.5 h-1.5 rounded-full bg-white/40 animate-pulse" />
@@ -766,37 +834,12 @@ export default function About() {
                 </h2>
 
                 <div className="space-y-8">
-                  {[
-                    {
-                      title: trans('about.aiFeature1Title', 'Predictable Patterns'),
-                      desc: trans(
-                        'about.aiFeature1Desc',
-                        'Strict MVC and Service Layer patterns ensure AI agents understand and generate logic with precision.'
-                      ),
-                      icon: <Cpu size={24} className="text-singularity" />,
-                    },
-                    {
-                      title: trans('about.aiFeature2Title', 'CLI-Driven Development'),
-                      desc: trans(
-                        'about.aiFeature2Desc',
-                        'Structured CLI outputs and scaffolding allow AI assistants to perform complex operations.'
-                      ),
-                      icon: <Shield size={24} className="text-purple-400" />,
-                    },
-                    {
-                      title: trans('about.aiFeature3Title', 'Zero-Ambiguity Types'),
-                      desc: trans(
-                        'about.aiFeature3Desc',
-                        'First-class TypeScript support eliminates AI "hallucinations" through clear code contracts.'
-                      ),
-                      icon: <Sparkles size={24} className="text-blue-400" />,
-                    },
-                  ].map((feature, i) => (
+                  {aiFeatures.map((feature, index) => (
                     <motion.div
-                      key={i}
+                      key={feature.id}
                       initial={{ opacity: 0, y: 20 }}
                       whileInView={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.1 }}
+                      transition={{ delay: index * 0.1 }}
                       className="flex gap-6 items-start group"
                     >
                       <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0 group-hover:bg-white/10 transition-colors">
@@ -831,23 +874,23 @@ export default function About() {
                     <Cpu size={80} className="text-white opacity-20" />
                   </div>
 
-                  {[...Array(8)].map((_, i) => (
+                  {aiLines.map((line) => (
                     <motion.div
-                      key={i}
+                      key={line.id}
                       animate={{
                         x: [0, 100, 0],
                         y: [0, -50, 0],
                         opacity: [0, 0.5, 0],
                       }}
                       transition={{
-                        duration: 4 + i,
+                        duration: 4 + line.index,
                         repeat: Infinity,
-                        delay: i * 0.5,
+                        delay: line.index * 0.5,
                       }}
                       className="absolute w-px h-16 bg-gradient-to-t from-transparent via-singularity/40 to-transparent"
                       style={{
-                        left: `${15 + i * 10}%`,
-                        top: `${20 + (i % 3) * 20}%`,
+                        left: `${15 + line.index * 10}%`,
+                        top: `${20 + (line.index % 3) * 20}%`,
                       }}
                     />
                   ))}

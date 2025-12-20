@@ -181,5 +181,5 @@ export const GravitoImage = (props: ImageProps) => {
 
   const imgProps = imageService.generateImageProps(options)
 
-  return <img {...imgProps} />
+  return <img {...imgProps} alt={props.alt} />
 }

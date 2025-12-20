@@ -17,7 +17,7 @@ export class HomeController {
     const { generateSeoHtml } = await import('../utils/seo')
     const seoHtml = generateSeoHtml(locale)
 
-    return (inertia as any).render('Home', { t, locale }, { seoHtml })
+    return inertia.render('Home', { t, locale }, { seoHtml })
   }
 
   about = async (c: Context) => {
@@ -27,7 +27,7 @@ export class HomeController {
     const { generateSeoHtml } = await import('../utils/seo')
     const seoHtml = generateSeoHtml(locale, `${t.nav.about} | ${t.site.title}`)
 
-    return (inertia as any).render('About', { t, locale }, { seoHtml })
+    return inertia.render('About', { t, locale }, { seoHtml })
   }
 
   subscribe = async (c: Context) => {
