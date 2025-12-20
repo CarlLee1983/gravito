@@ -1,0 +1,44 @@
+{
+    "name": "@gravito/orbit-mongo",
+    "version": "0.1.0",
+    "description": "MongoDB client for Gravito - Bun native, Laravel-style API",
+    "type": "module",
+    "main": "./dist/index.js",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js"
+        }
+    },
+    "scripts": {
+        "build": "bun run build.ts",
+        "test": "bun test",
+        "typecheck": "bunx tsc --noEmit"
+    },
+    "files": [
+        "dist",
+        "README.md"
+    ],
+    "keywords": [
+        "gravito",
+        "mongodb",
+        "nosql",
+        "bun",
+        "document-database"
+    ],
+    "author": "Gravito Team",
+    "license": "MIT",
+    "peerDependencies": {
+        "mongodb": "^6.0.0"
+    },
+    "peerDependenciesMeta": {
+        "mongodb": {
+            "optional": true
+        }
+    },
+    "devDependencies": {
+        "typescript": "^5.0.0"
+    }
+}
