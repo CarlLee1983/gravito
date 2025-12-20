@@ -1,14 +1,18 @@
 {
     "extends": "../../tsconfig.json",
     "compilerOptions": {
-        "module": "esnext",
-        "target": "esnext",
-        "moduleResolution": "bundler",
+        "outDir": "./dist",
+        "baseUrl": ".",
         "allowImportingTsExtensions": true,
         "noEmit": true,
-        "strict": true,
         "composite": true,
         "paths": {
+            "gravito-core": [
+                "../../packages/core/src/index.ts"
+            ],
+            "@gravito/*": [
+                "../../packages/*/src/index.ts"
+            ],
             "@gravito/client": [
                 "./src/index.ts"
             ]
@@ -17,5 +21,10 @@
     "include": [
         "src/**/*",
         "tests/**/*"
+    ],
+    "exclude": [
+        "node_modules",
+        "dist",
+        "**/*.test.ts"
     ]
 }

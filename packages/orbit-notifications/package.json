@@ -1,6 +1,6 @@
 {
   "name": "@gravito/orbit-notifications",
-  "version": "1.0.0-beta.1",
+  "version": "1.0.0-alpha.1",
   "publishConfig": {
     "access": "public"
   },
@@ -41,9 +41,9 @@
     "gravito-core": "1.0.0-beta.1"
   },
   "peerDependencies": {
-    "@gravito/orbit-queue": "1.0.0-beta.1",
-    "@gravito/orbit-mail": "1.0.0-beta.1",
-    "@gravito/orbit-broadcasting": "1.0.0-beta.1"
+    "@gravito/orbit-queue": "1.0.0-alpha.1",
+    "@gravito/orbit-mail": "1.0.0-alpha.1",
+    "@gravito/orbit-broadcasting": "1.0.0-alpha.1"
   },
   "devDependencies": {
     "bun-types": "latest",

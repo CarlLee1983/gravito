@@ -1,1 +1,1 @@
-{"version":3,"file":"AuthorizationException.d.ts","sourceRoot":"","sources":["AuthorizationException.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,gBAAgB,EAAE,MAAM,oBAAoB,CAAA;AAErD,qBAAa,sBAAuB,SAAQ,gBAAgB;gBAC5C,OAAO,SAAiC;CAMvD"}
+{"version":3,"file":"AuthorizationException.d.ts","sourceRoot":"","sources":["AuthorizationException.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,gBAAgB,EAAE,MAAM,oBAAoB,CAAA;AAErD,qBAAa,sBAAuB,SAAQ,gBAAgB;gBAC9C,OAAO,SAAiC;CAMrD"}

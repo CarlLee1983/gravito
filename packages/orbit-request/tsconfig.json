@@ -2,11 +2,10 @@
     "extends": "../../tsconfig.json",
     "compilerOptions": {
         "outDir": "./dist",
-        "rootDir": "./src",
+        "baseUrl": ".",
         "paths": {
-            "gravito-core": [
-                "../../core/src/index.ts"
-            ]
+            "gravito-core": ["../../packages/core/src/index.ts"],
+            "@gravito/*": ["../../packages/*/src/index.ts"]
         }
     },
     "include": [
@@ -15,6 +14,6 @@
     "exclude": [
         "node_modules",
         "dist",
-        "tests"
+        "**/*.test.ts"
     ]
 }

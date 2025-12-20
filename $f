@@ -1,6 +1,6 @@
 import { spawn } from 'bun'
 
-console.log('Building @gravito/orbit-scheduler...')
+console.log('Building $(basename $(dirname $f))...')
 
 // Clean dist
 await Bun.$`rm -rf dist`
@@ -13,7 +13,7 @@ await Bun.build({
   target: 'node',
   minify: false,
   naming: '[dir]/[name].mjs',
-  external: ['gravito-core', 'hono', '@gravito/orbit-cache'],
+  external: ['gravito-core', 'hono'],
 })
 
 // Build CJS
@@ -24,14 +24,17 @@ await Bun.build({
   target: 'node',
   minify: false,
   naming: '[dir]/[name].cjs',
-  external: ['gravito-core', 'hono', '@gravito/orbit-cache'],
+  external: ['gravito-core', 'hono'],
 })
 
 console.log('📝 Generating type declarations...')
-const tsc = spawn(['bunx', 'tsc', '--emitDeclarationOnly', '--skipLibCheck'], {
-  stdout: 'inherit',
-  stderr: 'inherit',
-})
+const tsc = spawn(
+  ['bunx', 'tsc', '--emitDeclarationOnly', '--skipLibCheck'],
+  {
+    stdout: 'inherit',
+    stderr: 'inherit',
+  }
+)
 
 const code = await tsc.exited
 if (code !== 0) {

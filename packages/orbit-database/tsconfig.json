@@ -1,13 +1,12 @@
 {
     "extends": "../../tsconfig.json",
     "compilerOptions": {
-        "rootDir": "./src",
         "outDir": "./dist",
-        "declaration": true,
-        "declarationMap": true,
-        "strict": true,
-        "exactOptionalPropertyTypes": true,
-        "noUncheckedIndexedAccess": true
+        "baseUrl": ".",
+        "paths": {
+            "gravito-core": ["../../packages/core/src/index.ts"],
+            "@gravito/*": ["../../packages/*/src/index.ts"]
+        }
     },
     "include": [
         "src/**/*"
@@ -15,6 +14,6 @@
     "exclude": [
         "node_modules",
         "dist",
-        "tests"
+        "**/*.test.ts"
     ]
 }

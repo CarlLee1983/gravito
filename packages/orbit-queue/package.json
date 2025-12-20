@@ -1,6 +1,6 @@
 {
   "name": "@gravito/orbit-queue",
-  "version": "1.0.0-beta.1",
+  "version": "1.0.0-alpha.1",
   "publishConfig": {
     "access": "public"
   },
@@ -43,7 +43,7 @@
     "gravito-core": "1.0.0-beta.1"
   },
   "devDependencies": {
-    "@gravito/orbit-db": "1.0.0-beta.1",
+    "@gravito/orbit-db": "1.0.0-alpha.1",
     "bun-types": "latest",
     "hono": "^4.11.1",
     "typescript": "^5.9.3"

@@ -1,34 +1,19 @@
 {
+    "extends": "../../tsconfig.json",
     "compilerOptions": {
-        "target": "ESNext",
-        "module": "ESNext",
-        "moduleResolution": "bundler",
-        "lib": [
-            "ESNext"
-        ],
-        "types": [
-            "bun-types"
-        ],
-        "strict": true,
-        "skipLibCheck": true,
         "outDir": "./dist",
-        "declaration": true,
-        "emitDeclarationOnly": true,
-        "esModuleInterop": true,
+        "baseUrl": ".",
         "paths": {
-            "gravito-core": [
-                "../../core/src/index.ts"
-            ],
-            "@gravito/orbit-cache": [
-                "../orbit-cache/src/index.ts"
-            ]
+            "gravito-core": ["../../packages/core/src/index.ts"],
+            "@gravito/*": ["../../packages/*/src/index.ts"]
         }
     },
     "include": [
-        "src"
+        "src/**/*"
     ],
     "exclude": [
         "node_modules",
-        "dist"
+        "dist",
+        "**/*.test.ts"
     ]
 }

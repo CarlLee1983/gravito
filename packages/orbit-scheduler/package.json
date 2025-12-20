@@ -1,6 +1,6 @@
 {
   "name": "@gravito/orbit-scheduler",
-  "version": "1.0.0-beta.1",
+  "version": "1.0.0-alpha.1",
   "description": "Distributed task scheduler for Gravito framework",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",

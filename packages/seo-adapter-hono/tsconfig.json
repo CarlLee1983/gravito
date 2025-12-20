@@ -1,27 +1,19 @@
 {
+    "extends": "../../tsconfig.json",
     "compilerOptions": {
-        "target": "ESNext",
-        "module": "ESNext",
-        "moduleResolution": "bundler",
-        "lib": [
-            "ESNext"
-        ],
-        "strict": true,
-        "declaration": true,
-        "skipLibCheck": true,
-        "allowSyntheticDefaultImports": true,
-        "forceConsistentCasingInFileNames": true,
         "outDir": "./dist",
-        "rootDir": "./src",
-        "types": [
-            "bun-types"
-        ]
+        "baseUrl": ".",
+        "paths": {
+            "gravito-core": ["../../packages/core/src/index.ts"],
+            "@gravito/*": ["../../packages/*/src/index.ts"]
+        }
     },
     "include": [
         "src/**/*"
     ],
     "exclude": [
         "node_modules",
-        "dist"
+        "dist",
+        "**/*.test.ts"
     ]
 }

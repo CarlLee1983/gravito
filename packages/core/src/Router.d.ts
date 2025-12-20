@@ -1,7 +1,7 @@
 import type { Handler, MiddlewareHandler } from 'hono'
 import type { PlanetCore } from './PlanetCore'
 import { Route } from './Route'
-export type ControllerClass = new (core: PlanetCore) => unknown
+export type ControllerClass = new (core: PlanetCore) => Record<string, unknown>
 export type RouteHandler = Handler | [ControllerClass, string]
 /**
  * Interface for FormRequest classes (from @gravito/orbit-request).

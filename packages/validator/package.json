@@ -1,6 +1,6 @@
 {
   "name": "@gravito/validator",
-  "version": "1.0.0-beta.1",
+  "version": "1.0.0-alpha.1",
   "description": "TypeBox-based validation for Gravito - High-performance schema validation with full TypeScript support",
   "type": "module",
   "main": "./dist/index.js",

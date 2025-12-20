@@ -1,6 +1,6 @@
 {
   "name": "@gravito/seo-cli",
-  "version": "1.0.0-beta.1",
+  "version": "1.0.0-alpha.1",
   "description": "CLI tool for Gravito SmartMap Engine",
   "bin": {
     "gravito-seo": "dist/bin/gravito-seo.js"

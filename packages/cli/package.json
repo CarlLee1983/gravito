@@ -1,6 +1,6 @@
 {
   "name": "@gravito/cli",
-  "version": "1.0.0-beta.4",
+  "version": "1.0.0-alpha.1",
   "description": "The official CLI for Gravito Galaxy Architecture. Scaffold projects and manage your universe.",
   "bin": {
     "gravito": "bin/gravito.mjs"

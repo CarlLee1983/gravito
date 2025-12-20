@@ -1,6 +1,6 @@
 {
   "name": "@gravito/seo-adapter-express",
-  "version": "1.0.0-beta.1",
+  "version": "1.0.0-alpha.1",
   "description": "Express/Koa adapter for Gravito SmartMap Engine",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

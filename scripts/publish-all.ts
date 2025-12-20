@@ -90,6 +90,20 @@ async function checkNpmRegistry(): Promise<boolean> {
 }
 
 async function buildPackage(pkg: PackageInfo): Promise<boolean> {
+    // 檢查 package.json 是否有 build 腳本
+    try {
+        const pkgJsonPath = join(pkg.path, 'package.json');
+        const content = await readFile(pkgJsonPath, 'utf-8');
+        const json = JSON.parse(content);
+        
+        if (!json.scripts || !json.scripts.build) {
+            console.log(`\n📦 ${pkg.name} 沒有 build 腳本，跳過構建`);
+            return true;
+        }
+    } catch {
+        // 如果讀取失敗，繼續嘗試構建
+    }
+
     console.log(`\n📦 構建 ${pkg.name}...`);
     try {
         await execAsync('bun run build', { cwd: pkg.path });

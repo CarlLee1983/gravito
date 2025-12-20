@@ -1,49 +1,19 @@
 {
+    "extends": "../../tsconfig.json",
     "compilerOptions": {
-        // Target & Module
-        "target": "ESNext",
-        "module": "ESNext",
-        "moduleResolution": "bundler",
-        "lib": [
-            "ESNext"
-        ],
-        // Strict Type Checking (TS 6/7 Readiness)
-        "strict": true,
-        "verbatimModuleSyntax": true,
-        "noUncheckedIndexedAccess": true,
-        "exactOptionalPropertyTypes": true,
-        "noImplicitOverride": true,
-        // Additional Strict Flags
-        "noImplicitReturns": true,
-        "noFallthroughCasesInSwitch": true,
-        "noUnusedLocals": true,
-        "noUnusedParameters": true,
-        "forceConsistentCasingInFileNames": true,
-        // Output
-        "declaration": true,
-        "declarationMap": true,
-        "sourceMap": true,
-        "noEmit": true,
-        // Interop
-        "esModuleInterop": true,
-        "allowSyntheticDefaultImports": true,
-        "resolveJsonModule": true,
-        "isolatedModules": true,
-        "skipLibCheck": true,
-        // Bun Types
-        "types": [
-            "bun-types"
-        ],
-        "baseUrl": "."
+        "outDir": "./dist",
+        "baseUrl": ".",
+        "paths": {
+            "gravito-core": ["../../packages/core/src/index.ts"],
+            "@gravito/*": ["../../packages/*/src/index.ts"]
+        }
     },
     "include": [
-        "src/**/*",
-        "tests/**/*",
-        "build.ts",
-        "package.json"
+        "src/**/*"
     ],
     "exclude": [
         "node_modules",
-        "dist"
+        "dist",
+        "**/*.test.ts"
     ]
 }

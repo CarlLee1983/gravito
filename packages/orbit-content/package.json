@@ -1,6 +1,6 @@
 {
   "name": "@gravito/orbit-content",
-  "version": "1.0.0-beta.1",
+  "version": "1.0.0-alpha.1",
   "description": "Content management and Markdown rendering orbit for Gravito",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

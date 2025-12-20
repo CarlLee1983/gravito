@@ -1,60 +1,60 @@
 {
-    "name": "@gravito/orbit-database",
-    "version": "0.1.0",
-    "description": "The Standard Database Orbit - Custom Query Builder & ORM for Gravito",
-    "type": "module",
-    "main": "./dist/index.js",
-    "module": "./dist/index.js",
-    "types": "./dist/index.d.ts",
-    "exports": {
-        ".": {
-            "types": "./dist/index.d.ts",
-            "import": "./dist/index.js"
-        }
-    },
-    "bin": {
-        "orbit": "./src/cli.ts"
-    },
-    "scripts": {
-        "build": "bun run build.ts",
-        "test": "bun test",
-        "typecheck": "bunx tsc --noEmit"
-    },
-    "files": [
-        "dist",
-        "README.md"
-    ],
-    "keywords": [
-        "gravito",
-        "database",
-        "query-builder",
-        "orm",
-        "postgresql",
-        "mysql",
-        "mariadb",
-        "sqlite"
-    ],
-    "author": "Gravito Team",
-    "license": "MIT",
-    "peerDependencies": {
-        "pg": "^8.0.0",
-        "mysql2": "^3.0.0",
-        "better-sqlite3": "^11.0.0"
-    },
-    "peerDependenciesMeta": {
-        "pg": {
-            "optional": true
-        },
-        "mysql2": {
-            "optional": true
-        },
-        "better-sqlite3": {
-            "optional": true
-        }
-    },
-    "devDependencies": {
-        "@types/pg": "^8.11.0",
-        "@types/better-sqlite3": "^7.6.0",
-        "typescript": "^5.0.0"
+  "name": "@gravito/orbit-database",
+  "version": "1.0.0-alpha.1",
+  "description": "The Standard Database Orbit - Custom Query Builder & ORM for Gravito",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     }
+  },
+  "bin": {
+    "orbit": "./src/cli.ts"
+  },
+  "scripts": {
+    "build": "bun run build.ts",
+    "test": "bun test",
+    "typecheck": "bunx tsc --noEmit"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "keywords": [
+    "gravito",
+    "database",
+    "query-builder",
+    "orm",
+    "postgresql",
+    "mysql",
+    "mariadb",
+    "sqlite"
+  ],
+  "author": "Gravito Team",
+  "license": "MIT",
+  "peerDependencies": {
+    "pg": "^8.0.0",
+    "mysql2": "^3.0.0",
+    "better-sqlite3": "^11.0.0"
+  },
+  "peerDependenciesMeta": {
+    "pg": {
+      "optional": true
+    },
+    "mysql2": {
+      "optional": true
+    },
+    "better-sqlite3": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/pg": "^8.11.0",
+    "@types/better-sqlite3": "^7.6.0",
+    "typescript": "^5.0.0"
+  }
 }

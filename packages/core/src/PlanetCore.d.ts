@@ -39,16 +39,14 @@ export type ErrorHandlerContext = {
     data: Record<string, unknown>
   }
 }
+type RouteParams = Record<string, string | number>
+type RouteQuery = Record<string, string | number | boolean | null | undefined>
 type Variables = {
   core: PlanetCore
   logger: Logger
   config: ConfigManager
   cookieJar: CookieJar
-  route: (
-    name: string,
-    params?: Record<string, string | number>,
-    query?: Record<string, string | number | boolean | null | undefined>
-  ) => string
+  route: (name: string, params?: RouteParams, query?: RouteQuery) => string
   cache?: CacheService
   view?: ViewService
   i18n?: unknown

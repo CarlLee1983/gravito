@@ -4,7 +4,8 @@
         "module": "ESNext",
         "moduleResolution": "bundler",
         "lib": [
-            "ESNext"
+            "ESNext",
+            "DOM"
         ],
         "strict": true,
         "verbatimModuleSyntax": true,
@@ -26,9 +27,18 @@
         "isolatedModules": true,
         "skipLibCheck": true,
         "types": [
-            "bun-types"
+            "bun-types",
+            "node"
         ],
-        "baseUrl": "."
+        "baseUrl": ".",
+        "paths": {
+            "gravito-core": [
+                "packages/core/src/index.ts"
+            ],
+            "@gravito/*": [
+                "packages/*/src/index.ts"
+            ]
+        }
     },
     "exclude": [
         "node_modules",

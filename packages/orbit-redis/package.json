@@ -1,45 +1,45 @@
 {
-    "name": "@gravito/orbit-redis",
-    "version": "0.1.0",
-    "description": "Redis client for Gravito - Bun native, Laravel-style API",
-    "type": "module",
-    "main": "./dist/index.js",
-    "module": "./dist/index.js",
-    "types": "./dist/index.d.ts",
-    "exports": {
-        ".": {
-            "types": "./dist/index.d.ts",
-            "import": "./dist/index.js"
-        }
-    },
-    "scripts": {
-        "build": "bun run build.ts",
-        "test": "bun test",
-        "typecheck": "bunx tsc --noEmit"
-    },
-    "files": [
-        "dist",
-        "README.md"
-    ],
-    "keywords": [
-        "gravito",
-        "redis",
-        "cache",
-        "bun",
-        "key-value"
-    ],
-    "author": "Gravito Team",
-    "license": "MIT",
-    "peerDependencies": {
-        "ioredis": "^5.0.0"
-    },
-    "peerDependenciesMeta": {
-        "ioredis": {
-            "optional": true
-        }
-    },
-    "devDependencies": {
-        "@types/ioredis": "^5.0.0",
-        "typescript": "^5.0.0"
+  "name": "@gravito/orbit-redis",
+  "version": "1.0.0-alpha.1",
+  "description": "Redis client for Gravito - Bun native, Laravel-style API",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     }
+  },
+  "scripts": {
+    "build": "bun run build.ts",
+    "test": "bun test",
+    "typecheck": "bunx tsc --noEmit"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "keywords": [
+    "gravito",
+    "redis",
+    "cache",
+    "bun",
+    "key-value"
+  ],
+  "author": "Gravito Team",
+  "license": "MIT",
+  "peerDependencies": {
+    "ioredis": "^5.0.0"
+  },
+  "peerDependenciesMeta": {
+    "ioredis": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/ioredis": "^5.0.0",
+    "typescript": "^5.0.0"
+  }
 }
