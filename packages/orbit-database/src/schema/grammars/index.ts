@@ -2,6 +2,6 @@
  * Schema Grammars Index
  */
 
-export { SchemaGrammar } from './SchemaGrammar'
-export { PostgresSchemaGrammar } from './PostgresSchemaGrammar'
 export { MySQLSchemaGrammar } from './MySQLSchemaGrammar'
+export { PostgresSchemaGrammar } from './PostgresSchemaGrammar'
+export { SchemaGrammar } from './SchemaGrammar'

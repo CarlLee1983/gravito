@@ -57,6 +57,12 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   protected limitValue: number | undefined = undefined
   protected offsetValue: number | undefined = undefined
   protected bindingsList: unknown[] = []
+  protected eagerLoads = new Map<string, (query: QueryBuilderContract<any>) => void>()
+
+  // Global Scopes
+  protected globalScopes = new Map<string, (query: QueryBuilderContract<any>) => void>()
+  protected removedScopes = new Set<string>()
+  protected _isApplyingScopes = false
 
   constructor(
     protected readonly connection: ConnectionContract,
@@ -800,6 +806,67 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
     return this.update(data)
   }
 
+  /**
+   * Add a relationship to be eager loaded
+   */
+  with(
+    relation: string | string[] | Record<string, (query: QueryBuilderContract<any>) => void>
+  ): this {
+    if (typeof relation === 'string') {
+      this.eagerLoads.set(relation, () => { })
+    } else if (Array.isArray(relation)) {
+      for (const rel of relation) {
+        this.eagerLoads.set(rel, () => { })
+      }
+    } else {
+      for (const [rel, callback] of Object.entries(relation)) {
+        this.eagerLoads.set(rel, callback)
+      }
+    }
+    return this
+  }
+
+  /**
+   * Get eager loads
+   */
+  getEagerLoads(): Map<string, (query: QueryBuilderContract<any>) => void> {
+    return this.eagerLoads
+  }
+
+  // ============================================================================
+  // SOFT DELETES
+  // ============================================================================
+
+  /**
+   * Remove the soft delete global scope
+   */
+  withTrashed(): this {
+    return this.withoutGlobalScope('softDeletes')
+  }
+
+  /**
+   * Filter for only trashed records
+   */
+  onlyTrashed(): this {
+    this.withTrashed()
+    this.whereNotNull('deleted_at')
+    return this
+  }
+
+  /**
+   * Restore soft deleted records
+   */
+  async restore(): Promise<number> {
+    return this.withTrashed().update({ deleted_at: null } as any)
+  }
+
+  /**
+   * Force delete records physically
+   */
+  async forceDelete(): Promise<number> {
+    return this.withTrashed().delete()
+  }
+
   // ============================================================================
   // UPSERT Method
   // ============================================================================
@@ -928,7 +995,41 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
     cloned.limitValue = this.limitValue
     cloned.offsetValue = this.offsetValue
     cloned.bindingsList = [...this.bindingsList]
+    cloned.globalScopes = new Map(this.globalScopes)
+    cloned.removedScopes = new Set(this.removedScopes)
     return cloned
+  }
+
+  /**
+   * Apply a global scope to the query
+   */
+  applyScope(name: string, callback: (query: QueryBuilderContract<T>) => void): this {
+    this.globalScopes.set(name, callback)
+    return this
+  }
+
+  /**
+   * Remove a global scope from the query
+   */
+  withoutGlobalScope(name: string): this {
+    this.removedScopes.add(name)
+    return this
+  }
+
+  /**
+   * Apply all registered global scopes
+   */
+  protected applyGlobalScopes(): void {
+    if (this._isApplyingScopes) return
+    this._isApplyingScopes = true
+
+    for (const [name, callback] of this.globalScopes) {
+      if (!this.removedScopes.has(name)) {
+        callback(this as unknown as QueryBuilderContract<T>)
+      }
+    }
+
+    this._isApplyingScopes = false
   }
 
   // ============================================================================
@@ -938,7 +1039,8 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   /**
    * Get the compiled query structure
    */
-  protected getCompiledQuery(): CompiledQuery {
+  getCompiledQuery(): CompiledQuery {
+    this.applyGlobalScopes()
     return {
       table: this.tableName,
       columns: this.columns,
@@ -952,5 +1054,12 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
       offset: this.offsetValue,
       bindings: this.bindingsList,
     }
+  }
+
+  /**
+   * Check if the query has limit or offset
+   */
+  hasLimitOrOffset(): boolean {
+    return this.limitValue !== undefined || this.offsetValue !== undefined
   }
 }

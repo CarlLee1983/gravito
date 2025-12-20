@@ -4,6 +4,7 @@
  */
 
 import { DB } from '../../DB'
+import type { QueryBuilderContract } from '../../types'
 import { SchemaRegistry } from '../schema/SchemaRegistry'
 import type { ColumnType, TableSchema } from '../schema/types'
 import { DirtyTracker } from './DirtyTracker'
@@ -13,6 +14,7 @@ import {
   NullableConstraintError,
   TypeMismatchError,
 } from './errors'
+import { SOFT_DELETES_KEY } from './decorators'
 
 /**
  * Model attributes type
@@ -121,7 +123,12 @@ export abstract class Model {
    */
   static hydrate<T extends Model>(this: ModelConstructor<T>, row: ModelAttributes): T {
     const instance = new this()
-    return instance._createProxy(row, true)
+    const proxy = instance._createProxy(row, true)
+
+    // Trigger retrieved event (async)
+    void (proxy as any).emit?.('retrieved')
+
+    return proxy
   }
 
   /**
@@ -141,55 +148,75 @@ export abstract class Model {
     }
 
     const model = this
-    const constructor = this.constructor as typeof Model
+    const modelCtor = this.constructor as typeof Model
 
     return new Proxy(this, {
       get(target, prop: string | symbol) {
-        // Return internal properties
+        // 1. Return internal properties (including _attributes, _exists, etc.)
         if (typeof prop === 'symbol' || (typeof prop === 'string' && prop.startsWith('_'))) {
           return Reflect.get(target, prop)
         }
 
-        // Check for instance properties/getters first (exists, isDirty, etc.)
-        // Traverse prototype chain to find getters
+        // 2. Explicitly handle constructor to preserve class identity
+        if (prop === 'constructor') {
+          return target.constructor
+        }
+
+        // 3. Check for instance getters/methods first
+        // We prioritize methods like save(), delete(), find() etc. from the prototype
         let proto = Object.getPrototypeOf(target)
-        while (proto) {
+        while (proto && proto !== Object.prototype) {
           const descriptor = Object.getOwnPropertyDescriptor(proto, prop)
           if (descriptor?.get) {
             return descriptor.get.call(target)
           }
+          if (descriptor?.value && typeof descriptor.value === 'function') {
+            return descriptor.value.bind(target)
+          }
           proto = Object.getPrototypeOf(proto)
         }
 
-        // Return methods from prototype
-        const value = Reflect.get(target, prop)
-        if (typeof value === 'function') {
-          return value.bind(target)
-        }
-
-        // Check attributes first before static properties
+        // 4. Return from attributes if it exists (prioritize DB values/relations over instance placeholders)
         if (typeof prop === 'string' && prop in model._attributes) {
           return model._attributes[prop]
         }
 
-        // Return static properties (but not for common attribute names)
-        if (prop in constructor && !['name', 'email', 'id'].includes(prop as string)) {
-          return Reflect.get(constructor, prop)
+        // 5. Return instance values (for properties declared in the class body that aren't attributes)
+        if (Object.prototype.hasOwnProperty.call(target, prop)) {
+          const value = Reflect.get(target, prop)
+          if (typeof value === 'function') {
+            return value.bind(target)
+          }
+          return value
         }
 
-        // Return attribute (fallback)
-        return typeof prop === 'string' ? model._attributes[prop] : undefined
+        // 6. Return static properties from the model constructor
+        if (prop in modelCtor && !['name', 'prototype', 'length'].includes(prop as string)) {
+          const value = Reflect.get(modelCtor, prop)
+          if (typeof value === 'function') {
+            return value.bind(modelCtor)
+          }
+          return value
+        }
+
+        return undefined
       },
 
       set(target, prop: string | symbol, value) {
-        // Allow internal property setting
-        if (typeof prop === 'symbol' || prop.startsWith('_')) {
+        // 1. Allow internal property setting
+        if (typeof prop === 'symbol' || (typeof prop === 'string' && prop.startsWith('_'))) {
           return Reflect.set(target, prop, value)
         }
 
-        // Validate and set attribute
-        model._setAttribute(prop, value)
-        return true
+        // 2. Prioritize setting attributes/relations
+        // If it's already an attribute, or if it's not in the target (instance), treat as attribute
+        if (!(prop in target) || (typeof prop === 'string' && prop in model._attributes)) {
+          model._setAttribute(prop as string, value)
+          return true
+        }
+
+        // 3. Set on instance (for non-attribute properties like events array)
+        return Reflect.set(target, prop, value)
       },
 
       has(target, prop) {
@@ -223,13 +250,13 @@ export abstract class Model {
    * Set attribute with validation (Smart Guard)
    */
   protected _setAttribute(key: string, value: unknown): void {
-    const constructor = this.constructor as typeof Model
+    const modelCtor = this.constructor as typeof Model
 
-    if (constructor.strictMode) {
+    if (modelCtor.strictMode) {
       // Asynchronously validate - for now, skip schema check in sync setter
       // Real validation happens in save()
       // This allows setting attributes that will be validated before persist
-      void constructor.table // Referenced to avoid unused warning
+      void modelCtor.table // Referenced to avoid unused warning
     }
 
     // Mark dirty
@@ -243,21 +270,21 @@ export abstract class Model {
    * Validate attribute against schema
    */
   protected async _validateAttribute(key: string, value: unknown): Promise<void> {
-    const constructor = this.constructor as typeof Model
+    const modelCtor = this.constructor as typeof Model
     const schema = await this._getSchema()
 
     const column = schema.columns.get(key)
 
     if (!column) {
-      if (constructor.strictMode) {
-        throw new ColumnNotFoundError(constructor.table, key)
+      if (modelCtor.strictMode) {
+        throw new ColumnNotFoundError(modelCtor.table, key)
       }
       return
     }
 
     // Null check
     if (value === null && !column.nullable) {
-      throw new NullableConstraintError(constructor.table, key)
+      throw new NullableConstraintError(modelCtor.table, key)
     }
 
     // Type check (only if value is not null)
@@ -266,7 +293,7 @@ export abstract class Model {
       const expectedTypes = this._getExpectedJSTypes(column.type)
 
       if (!expectedTypes.includes(jsType)) {
-        throw new TypeMismatchError(constructor.table, key, expectedTypes.join(' | '), jsType)
+        throw new TypeMismatchError(modelCtor.table, key, expectedTypes.join(' | '), jsType)
       }
     }
   }
@@ -314,8 +341,8 @@ export abstract class Model {
    */
   protected async _getSchema(): Promise<TableSchema> {
     if (!this._schema) {
-      const constructor = this.constructor as typeof Model
-      this._schema = await SchemaRegistry.getInstance().get(constructor.table)
+      const modelCtor = this.constructor as typeof Model
+      this._schema = await SchemaRegistry.getInstance().get(modelCtor.table)
     }
     return this._schema
   }
@@ -363,8 +390,8 @@ export abstract class Model {
    * Get primary key value
    */
   getKey(): unknown {
-    const constructor = this.constructor as typeof Model
-    return this._attributes[constructor.primaryKey]
+    const modelCtor = this.constructor as typeof Model
+    return this._attributes[modelCtor.primaryKey]
   }
 
   // ============================================================================
@@ -383,9 +410,9 @@ export abstract class Model {
     foreignKey?: string,
     localKey?: string
   ) {
-    const constructor = this.constructor as typeof Model
-    const fk = foreignKey ?? `${constructor.table.replace(/s$/, '')}_id`
-    const lk = localKey ?? constructor.primaryKey
+    const modelCtor = this.constructor as typeof Model
+    const fk = foreignKey ?? `${modelCtor.table.replace(/s$/, '')}_id`
+    const lk = localKey ?? modelCtor.primaryKey
     const localValue = this._attributes[lk]
 
     const connection = DB.connection(related.connection)
@@ -456,10 +483,10 @@ export abstract class Model {
     localKey?: string,
     relatedKey?: string
   ): Promise<R[]> {
-    const constructor = this.constructor as typeof Model
-    const fpk = foreignPivotKey ?? `${constructor.table.replace(/s$/, '')}_id`
+    const modelCtor = this.constructor as typeof Model
+    const fpk = foreignPivotKey ?? `${modelCtor.table.replace(/s$/, '')}_id`
     const rpk = relatedPivotKey ?? `${related.table.replace(/s$/, '')}_id`
-    const lk = localKey ?? constructor.primaryKey
+    const lk = localKey ?? modelCtor.primaryKey
     const rk = relatedKey ?? related.primaryKey
     const localValue = this._attributes[lk]
 
@@ -482,7 +509,7 @@ export abstract class Model {
   /**
    * Stream hasMany relationship with cursor-based iteration
    * Memory-safe for large relationship sets
-   * 
+   *
    * @example
    * ```typescript
    * for await (const posts of user.hasManyStream(Post, 'user_id', 100)) {
@@ -498,9 +525,9 @@ export abstract class Model {
     chunkSize = 1000,
     localKey?: string
   ): AsyncGenerator<R[], void, unknown> {
-    const constructor = this.constructor as typeof Model
-    const fk = foreignKey ?? `${constructor.table.replace(/s$/, '')}_id`
-    const lk = localKey ?? constructor.primaryKey
+    const modelCtor = this.constructor as typeof Model
+    const fk = foreignKey ?? `${modelCtor.table.replace(/s$/, '')}_id`
+    const lk = localKey ?? modelCtor.primaryKey
     const localValue = this._attributes[lk]
 
     const connection = DB.connection(related.connection)
@@ -517,7 +544,7 @@ export abstract class Model {
 
       if (rows.length === 0) break
 
-      yield rows.map(row => related.hydrate<R>(row)) as R[]
+      yield rows.map((row) => related.hydrate<R>(row)) as R[]
 
       if (rows.length < chunkSize) break
       offset += chunkSize
@@ -532,43 +559,55 @@ export abstract class Model {
    * Save the model (insert or update)
    */
   async save(): Promise<this> {
+    // Trigger saving event
+    await this.emit('saving')
+
     // Validate all dirty attributes
     for (const key of this._dirtyTracker.getDirty()) {
       await this._validateAttribute(key as string, this._attributes[key as string])
     }
 
+    let result: this
     if (this._exists) {
-      return await this._performUpdate()
+      result = await this._performUpdate()
     } else {
-      return await this._performInsert()
+      result = await this._performInsert()
     }
+
+    // Trigger saved event
+    await this.emit('saved')
+    return result
   }
 
   /**
    * Perform insert
    */
   protected async _performInsert(): Promise<this> {
-    const constructor = this.constructor as typeof Model
-    const connection = DB.connection(constructor.connection)
+    const modelCtor = this.constructor as typeof Model
+    const connection = DB.connection(modelCtor.connection)
 
-    const result = await connection
-      .table<ModelAttributes>(constructor.table)
-      .insert(this._attributes)
+    // Trigger creating event
+    await this.emit('creating')
+
+    const result = await connection.table<ModelAttributes>(modelCtor.table).insert(this._attributes)
 
     // Set primary key from result
     if (Array.isArray(result) && result.length > 0) {
       const pk = result[0]
       if (typeof pk === 'object' && pk !== null) {
-        this._attributes[constructor.primaryKey] = (pk as Record<string, unknown>)[
-          constructor.primaryKey
+        this._attributes[modelCtor.primaryKey] = (pk as Record<string, unknown>)[
+          modelCtor.primaryKey
         ]
       } else {
-        this._attributes[constructor.primaryKey] = pk
+        this._attributes[modelCtor.primaryKey] = pk
       }
     }
 
     this._exists = true
     this._dirtyTracker.sync(this._attributes)
+
+    // Trigger created event
+    await this.emit('created')
 
     return this
   }
@@ -577,20 +616,23 @@ export abstract class Model {
    * Perform update
    */
   protected async _performUpdate(): Promise<this> {
-    const constructor = this.constructor as typeof Model
-    const connection = DB.connection(constructor.connection)
+    const modelCtor = this.constructor as typeof Model
+    const connection = DB.connection(modelCtor.connection)
+
+    // Trigger updating event
+    await this.emit('updating')
 
     const dirty = this.getDirty()
     if (Object.keys(dirty).length === 0) {
       return this // Nothing to update
     }
 
-    await connection
-      .table(constructor.table)
-      .where(constructor.primaryKey, this.getKey())
-      .update(dirty)
+    await connection.table(modelCtor.table).where(modelCtor.primaryKey, this.getKey()).update(dirty)
 
     this._dirtyTracker.sync(this._attributes)
+
+    // Trigger updated event
+    await this.emit('updated')
 
     return this
   }
@@ -598,15 +640,80 @@ export abstract class Model {
   /**
    * Delete the model
    */
-  async delete(): Promise<void> {
-    if (!this._exists) return
+  async delete(): Promise<boolean> {
+    if (!this._exists) return false
 
-    const constructor = this.constructor as typeof Model
-    const connection = DB.connection(constructor.connection)
+    await this.emit('deleting')
 
-    await connection.table(constructor.table).where(constructor.primaryKey, this.getKey()).delete()
+    const modelCtor = this.constructor as any
+    const softDeletes = modelCtor[SOFT_DELETES_KEY]
+    let result: boolean
 
-    this._exists = false
+    if (softDeletes) {
+      const column = softDeletes.column || 'deleted_at'
+      this._setAttribute(column, new Date())
+      await this.save()
+      result = true
+    } else {
+      const connection = DB.connection(modelCtor.connection)
+      const affected = await connection
+        .table(modelCtor.table)
+        .where(modelCtor.primaryKey, this.getKey())
+        .delete()
+      result = affected > 0
+    }
+
+    if (result) {
+      this._exists = !softDeletes
+      await this.emit('deleted')
+    }
+
+    return result
+  }
+
+  /**
+   * Restore a soft deleted model
+   */
+  async restore(): Promise<boolean> {
+    const modelCtor = this.constructor as any
+    const softDeletes = modelCtor[SOFT_DELETES_KEY]
+    if (!softDeletes) return false
+
+    const column = softDeletes.column || 'deleted_at'
+    this._setAttribute(column, null)
+    await this.save()
+    return true
+  }
+
+  /**
+   * Force delete a soft deleted model physically
+   */
+  async forceDelete(): Promise<boolean> {
+    const modelCtor = this.constructor as any
+    const connection = DB.connection(modelCtor.connection)
+    const affected = await connection
+      .table(modelCtor.table)
+      .where(modelCtor.primaryKey, this.getKey())
+      .forceDelete()
+
+    if (affected > 0) {
+      this._exists = false
+      await this.emit('deleted')
+      return true
+    }
+
+    return false
+  }
+
+  /**
+   * Emit a model event
+   */
+  protected async emit(event: string): Promise<void> {
+    // Support static listeners or overrides
+    const methodName = `on${event.charAt(0).toUpperCase()}${event.slice(1)}`
+    if (typeof (this as any)[methodName] === 'function') {
+      await (this as any)[methodName]()
+    }
   }
 
   /**
@@ -615,12 +722,12 @@ export abstract class Model {
   async refresh(): Promise<this> {
     if (!this._exists) return this
 
-    const constructor = this.constructor as typeof Model
-    const connection = DB.connection(constructor.connection)
+    const modelCtor = this.constructor as typeof Model
+    const connection = DB.connection(modelCtor.connection)
 
     const row = await connection
-      .table<ModelAttributes>(constructor.table)
-      .where(constructor.primaryKey, this.getKey())
+      .table<ModelAttributes>(modelCtor.table)
+      .where(modelCtor.primaryKey, this.getKey())
       .first()
 
     if (row) {
@@ -697,14 +804,14 @@ export abstract class Model {
   /**
    * Lazy hydration: returns an async generator that yields raw data
    * Models are only instantiated when explicitly transformed
-   * 
+   *
    * @example
    * ```typescript
    * // Memory efficient - rows stay as raw data until needed
    * for await (const rawRows of User.lazyAll(100)) {
    *   // Process raw data
    *   const ids = rawRows.map(r => r.id)
-   *   
+   *
    *   // Hydrate only when needed
    *   for (const row of rawRows) {
    *     if (shouldProcess(row)) {
@@ -795,21 +902,83 @@ export abstract class Model {
     const connection = DB.connection(this.connection)
     const builder = connection.table<ModelAttributes>(this.table)
 
-    // Wrap get() to hydrate results
+    // Check for Soft Deletes
+    const softDeletes = (this as any)[SOFT_DELETES_KEY]
+    if (softDeletes) {
+      builder.applyScope('softDeletes', (query) => {
+        query.whereNull(softDeletes.column || 'deleted_at')
+      })
+    }
+
+    // Wrap get() to hydrate results and handle eager loading
     const originalGet = builder.get.bind(builder)
       ; (builder as unknown as { get: () => Promise<T[]> }).get = async (): Promise<T[]> => {
         const rows = await originalGet()
-        return rows.map((row) => this.hydrate<T>(row)) as unknown as T[]
+        const models = rows.map((row) => this.hydrate<T>(row)) as unknown as T[]
+
+        // Handle eager loading
+        const eagerLoads = (builder as any).getEagerLoads?.()
+        if (eagerLoads && eagerLoads.size > 0 && models.length > 0) {
+          const { eagerLoadMany } = await import('./relationships')
+          await eagerLoadMany(models, eagerLoads)
+        }
+
+        return models
       }
 
-    // Wrap first() to hydrate result
+    // Wrap first() to hydrate result and handle eager loading
     const originalFirst = builder.first.bind(builder)
-    builder.first = (async (): Promise<T | null> => {
-      const row = await originalFirst()
-      return row ? this.hydrate<T>(row) : null
-    }) as typeof builder.first
+      ; (builder as unknown as { first: () => Promise<T | null> }).first =
+        async (): Promise<T | null> => {
+          const row = await originalFirst()
+          if (!row) return null
 
-    return builder
+          const model = this.hydrate<T>(row)
+
+          // Handle eager loading for a single model
+          const eagerLoads = (builder as any).getEagerLoads?.()
+          if (eagerLoads && eagerLoads.size > 0) {
+            const { eagerLoadMany } = await import('./relationships')
+            await eagerLoadMany([model], eagerLoads)
+          }
+
+          return model
+        }
+
+    // Support Local Scopes via Proxy
+    const modelClass = this
+    const proxy = new Proxy(builder, {
+      get(target, prop: string | symbol) {
+        if (typeof prop === 'string' && !(prop in target)) {
+          // Check for local scope: active -> scopeActive
+          const scopeMethod = `scope${prop.charAt(0).toUpperCase()}${prop.slice(1)}`
+          if (typeof (modelClass as any)[scopeMethod] === 'function') {
+            return (...args: any[]) => {
+              ; (modelClass as any)[scopeMethod](target, ...args)
+              return proxy
+            }
+          }
+        }
+
+        const value = Reflect.get(target, prop)
+        if (typeof value === 'function') {
+          return value.bind(target)
+        }
+        return value
+      },
+    })
+
+    return proxy as unknown as QueryBuilderContract<T>
+  }
+
+  /**
+   * Start a query with eager loading
+   */
+  static with<T extends Model>(
+    this: ModelConstructor<T> & typeof Model,
+    relation: string | string[] | Record<string, (query: QueryBuilderContract<any>) => void>
+  ): QueryBuilderContract<ModelAttributes> {
+    return this.query().with(relation) as unknown as QueryBuilderContract<ModelAttributes>
   }
 
   /**

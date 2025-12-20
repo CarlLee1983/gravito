@@ -205,7 +205,7 @@ export class SchemaRegistry {
   /**
    * Wrap a database operation with self-healing
    * Automatically re-sniffs schema on column-related errors and retries
-   * 
+   *
    * @example
    * ```typescript
    * const result = await registry.withSelfHealing('users', async () => {
@@ -219,7 +219,9 @@ export class SchemaRegistry {
     } catch (error) {
       // Check if error is schema-related
       if (this.isSchemaError(error)) {
-        console.warn(`[SchemaRegistry] Schema error detected for "${table}", attempting self-heal...`)
+        console.warn(
+          `[SchemaRegistry] Schema error detected for "${table}", attempting self-heal...`
+        )
 
         // Invalidate and retry (JIT mode only)
         if (this.mode === 'jit') {
@@ -248,7 +250,7 @@ export class SchemaRegistry {
       /table.*doesn't exist/i,
     ]
 
-    return schemaErrorPatterns.some(pattern => pattern.test(error.message))
+    return schemaErrorPatterns.some((pattern) => pattern.test(error.message))
   }
 
   // ============================================================================

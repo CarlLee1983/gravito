@@ -6,7 +6,7 @@
 /**
  * Seeder Interface
  * All seeder classes must implement this interface
- * 
+ *
  * @example
  * ```typescript
  * export default class UserSeeder implements Seeder {
@@ -20,10 +20,10 @@
  * ```
  */
 export interface Seeder {
-    /**
-     * Run the seeder
-     */
-    run(): Promise<void>
+  /**
+   * Run the seeder
+   */
+  run(): Promise<void>
 }
 
 /**
@@ -35,8 +35,8 @@ export type SeederConstructor = new () => Seeder
  * Seeder file info
  */
 export interface SeederFile {
-    /** Seeder class name */
-    name: string
-    /** Full file path */
-    path: string
+  /** Seeder class name */
+  name: string
+  /** Full file path */
+  path: string
 }

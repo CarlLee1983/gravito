@@ -6,7 +6,7 @@
 /**
  * Migration Interface
  * All migration classes must implement this interface
- * 
+ *
  * @example
  * ```typescript
  * export default class CreateUsersTable implements Migration {
@@ -17,7 +17,7 @@
  *       table.timestamps()
  *     })
  *   }
- * 
+ *
  *   async down(): Promise<void> {
  *     await Schema.dropIfExists('users')
  *   }
@@ -25,15 +25,15 @@
  * ```
  */
 export interface Migration {
-    /**
-     * Run the migration (create tables, add columns, etc.)
-     */
-    up(): Promise<void>
+  /**
+   * Run the migration (create tables, add columns, etc.)
+   */
+  up(): Promise<void>
 
-    /**
-     * Reverse the migration (drop tables, remove columns, etc.)
-     */
-    down(): Promise<void>
+  /**
+   * Reverse the migration (drop tables, remove columns, etc.)
+   */
+  down(): Promise<void>
 }
 
 /**
@@ -45,20 +45,20 @@ export type MigrationConstructor = new () => Migration
  * Migration record stored in the database
  */
 export interface MigrationRecord {
-    /** Migration ID */
-    id: number
-    /** Migration file name (without path) */
-    migration: string
-    /** Batch number when the migration was run */
-    batch: number
+  /** Migration ID */
+  id: number
+  /** Migration file name (without path) */
+  migration: string
+  /** Batch number when the migration was run */
+  batch: number
 }
 
 /**
  * Migration file info
  */
 export interface MigrationFile {
-    /** Migration file name (without path) */
-    name: string
-    /** Full file path */
-    path: string
+  /** Migration file name (without path) */
+  name: string
+  /** Full file path */
+  path: string
 }

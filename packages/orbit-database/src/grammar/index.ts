@@ -3,8 +3,8 @@
  */
 
 export { Grammar } from './Grammar'
-export { PostgresGrammar } from './PostgresGrammar'
 export { MySQLGrammar } from './MySQLGrammar'
+export { PostgresGrammar } from './PostgresGrammar'
 
 // Future grammars
 // export { SQLiteGrammar } from './SQLiteGrammar'

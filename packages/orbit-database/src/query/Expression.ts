@@ -3,36 +3,36 @@
  * @description Represents a raw SQL expression that should not be escaped
  */
 export class Expression {
-    constructor(
-        private readonly sql: string,
-        private readonly bindings: unknown[] = []
-    ) { }
+  constructor(
+    private readonly sql: string,
+    private readonly bindings: unknown[] = []
+  ) {}
 
-    /**
-     * Get the raw SQL string
-     */
-    getValue(): string {
-        return this.sql
-    }
+  /**
+   * Get the raw SQL string
+   */
+  getValue(): string {
+    return this.sql
+  }
 
-    /**
-     * Get the bindings for this expression
-     */
-    getBindings(): unknown[] {
-        return this.bindings
-    }
+  /**
+   * Get the bindings for this expression
+   */
+  getBindings(): unknown[] {
+    return this.bindings
+  }
 
-    /**
-     * Convert to string
-     */
-    toString(): string {
-        return this.sql
-    }
+  /**
+   * Convert to string
+   */
+  toString(): string {
+    return this.sql
+  }
 }
 
 /**
  * Create a raw SQL expression
  */
 export function raw(sql: string, bindings: unknown[] = []): Expression {
-    return new Expression(sql, bindings)
+  return new Expression(sql, bindings)
 }

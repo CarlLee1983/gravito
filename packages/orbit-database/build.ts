@@ -7,13 +7,13 @@ await $`rm -rf dist`
 
 // Build with Bun
 await Bun.build({
-    entrypoints: ['./src/index.ts'],
-    outdir: './dist',
-    format: 'esm',
-    target: 'node',
-    minify: false,
-    splitting: true,
-    external: ['pg', 'mysql2', 'better-sqlite3'],
+  entrypoints: ['./src/index.ts'],
+  outdir: './dist',
+  format: 'esm',
+  target: 'node',
+  minify: false,
+  splitting: true,
+  external: ['pg', 'mysql2', 'better-sqlite3'],
 })
 
 // Generate types

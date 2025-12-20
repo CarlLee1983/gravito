@@ -4,7 +4,7 @@
  */
 
 import { DB } from '../../DB'
-import type { Model, ModelAttributes, ModelConstructor } from './Model'
+import type { Model, ModelConstructor } from './Model'
 
 /**
  * Relationship Type
@@ -38,13 +38,25 @@ export interface RelationshipMeta {
 /**
  * Model Relationships Map
  */
-const relationships = new WeakMap<typeof Model, Map<string, RelationshipMeta>>()
+const relationships = new Map<typeof Model, Map<string, RelationshipMeta>>()
 
 /**
  * Get relationships for a model
  */
 export function getRelationships(model: typeof Model): Map<string, RelationshipMeta> {
-  return relationships.get(model) ?? new Map()
+  const map = relationships.get(model)
+  if (map) return map
+
+  // Fallback: search for a model with the same name if it's a bound function/proxy
+  // This helps when the class identity is lost but the name is preserved or slightly modified
+  const modelName = model.name.replace('bound ', '')
+  for (const [m, mRels] of relationships.entries()) {
+    if (m.name === modelName) {
+      return mRels
+    }
+  }
+
+  return new Map()
 }
 
 /**
@@ -191,25 +203,31 @@ export function BelongsToMany(
 export async function eagerLoad<T extends Model>(
   parents: T[],
   relationName: string,
-  limit?: number
+  callback?: (query: any) => void
 ): Promise<void> {
   if (parents.length === 0) return
+
+  // Handle nested relations (e.g., 'posts.comments')
+  const parts = relationName.split('.')
+  const currentRelation = parts[0] as string
+  const nestedRelation = parts.slice(1).join('.')
 
   const firstParent = parents[0]
   if (!firstParent) return
 
   const parentModel = firstParent.constructor as typeof Model
-  const relationMeta = getRelationships(parentModel).get(relationName)
+  const rels = getRelationships(parentModel)
+  const relationMeta = rels.get(currentRelation)
 
   if (!relationMeta) {
-    throw new Error(`Relationship "${relationName}" not found on ${parentModel.name}`)
+    throw new Error(`Relationship "${currentRelation}" not found on ${parentModel.name}`)
   }
 
   const Related = relationMeta.related()
   const { type, foreignKey, localKey } = relationMeta
 
   // Get parent keys
-  const parentKeys = parents.map((p) => (p as unknown as Record<string, unknown>)[localKey])
+  const parentKeys = parents.map((p) => (p as any)[localKey])
   const validParentKeys = parentKeys.filter((k) => k !== undefined && k !== null)
 
   if (validParentKeys.length === 0) return
@@ -218,39 +236,64 @@ export async function eagerLoad<T extends Model>(
   switch (type) {
     case 'hasOne':
     case 'hasMany': {
-      const connection = DB.connection(Related.connection)
-      let query = connection
-        .table<ModelAttributes>(Related.table)
-        .whereIn(foreignKey, validParentKeys)
+      const query = Related.query().whereIn(foreignKey, validParentKeys)
 
-      if (limit && type === 'hasMany') {
-        // Defensive loading: limit per parent (simplified - full LATERAL JOIN in P2)
-        query = query.limit(limit * parents.length)
+      // Apply constraint callback if provided
+      if (callback) {
+        callback(query)
       }
 
-      const related = await query.get()
+      // Check if we should use LATERAL optimization (PostgreSQL + limit/offset)
+      const connection = DB.connection(Related.connection)
+      const grammar = (connection as any).getGrammar?.()
+
+      const useLateral =
+        query.hasLimitOrOffset() &&
+        grammar &&
+        typeof grammar.compileLateralEagerLoad === 'function'
+
+      let models: any[] = []
+
+      if (useLateral) {
+        const compiled = query.getCompiledQuery()
+        const { sql, bindings } = grammar.compileLateralEagerLoad(
+          Related.table,
+          foreignKey,
+          validParentKeys,
+          compiled
+        )
+        const result = await (connection as any).raw(sql, bindings)
+        models = result.rows.map((row: any) => Related.hydrate(row))
+      } else {
+        // Fallback to whereIn
+        query.whereIn(foreignKey, validParentKeys)
+
+        if (nestedRelation) {
+          query.with(nestedRelation)
+        }
+
+        models = await query.get()
+      }
 
       // Map results back to parents
-      const relatedByFk = new Map<unknown, ModelAttributes[]>()
-      for (const row of related) {
-        const fk = row[foreignKey]
+      const relatedByFk = new Map<unknown, any[]>()
+      for (const model of models) {
+        const fk = (model as any)[foreignKey]
         if (!relatedByFk.has(fk)) {
           relatedByFk.set(fk, [])
         }
-        relatedByFk.get(fk)!.push(row)
+        relatedByFk.get(fk)!.push(model)
       }
 
       // Assign to parents
       for (const parent of parents) {
-        const pk = (parent as unknown as Record<string, unknown>)[localKey]
+        const pk = (parent as any)[localKey]
         const items = relatedByFk.get(pk) ?? []
 
         if (type === 'hasOne') {
-          const item = items[0] ? Related.hydrate(items[0]) : null
-          ;(parent as unknown as Record<string, unknown>)[relationName] = item
+          ; (parent as any)[currentRelation] = items[0] ?? null
         } else {
-          const models = items.slice(0, limit).map((r) => Related.hydrate(r))
-          ;(parent as unknown as Record<string, unknown>)[relationName] = models
+          ; (parent as any)[currentRelation] = items
         }
       }
       break
@@ -259,30 +302,34 @@ export async function eagerLoad<T extends Model>(
     case 'belongsTo': {
       // Get foreign keys from parents
       const fks = parents
-        .map((p) => (p as unknown as Record<string, unknown>)[foreignKey])
+        .map((p) => (p as any)[foreignKey])
         .filter((k) => k !== undefined && k !== null)
 
       if (fks.length === 0) return
 
-      const connection = DB.connection(Related.connection)
-      const related = await connection
-        .table<ModelAttributes>(Related.table)
-        .whereIn(localKey, fks)
-        .get()
+      const query = Related.query().whereIn(localKey, fks)
+
+      if (callback) {
+        callback(query)
+      }
+
+      if (nestedRelation) {
+        query.with(nestedRelation)
+      }
+
+      const models = await query.get()
 
       // Map results
-      const relatedByPk = new Map<unknown, ModelAttributes>()
-      for (const row of related) {
-        relatedByPk.set(row[localKey], row)
+      const relatedByPk = new Map<unknown, any>()
+      for (const model of models) {
+        relatedByPk.set((model as any)[localKey], model)
       }
 
       // Assign to parents
       for (const parent of parents) {
-        const fk = (parent as unknown as Record<string, unknown>)[foreignKey]
+        const fk = (parent as any)[foreignKey]
         const row = relatedByPk.get(fk)
-        ;(parent as unknown as Record<string, unknown>)[relationName] = row
-          ? Related.hydrate(row)
-          : null
+          ; (parent as any)[currentRelation] = row ?? null
       }
       break
     }
@@ -293,26 +340,32 @@ export async function eagerLoad<T extends Model>(
 
       const connection = DB.connection(Related.connection)
 
-      // Get pivot records
+      // 1. Get pivot records
       const pivots = await connection
         .table<Record<string, unknown>>(pivotTable)
         .whereIn(foreignKey, validParentKeys)
         .get()
 
-      // Get related model IDs
+      // 2. Get related models
       const relatedIds = [...new Set(pivots.map((p) => p[relatedKey]))]
       if (relatedIds.length === 0) return
 
-      // Get related models
-      const relatedRows = await connection
-        .table<ModelAttributes>(Related.table)
-        .whereIn(localKey, relatedIds)
-        .get()
+      const query = Related.query().whereIn(localKey, relatedIds)
+
+      if (callback) {
+        callback(query)
+      }
+
+      if (nestedRelation) {
+        query.with(nestedRelation)
+      }
+
+      const models = await query.get()
 
       // Map related by primary key
-      const relatedByPk = new Map<unknown, ModelAttributes>()
-      for (const row of relatedRows) {
-        relatedByPk.set(row[localKey], row)
+      const relatedByPk = new Map<unknown, any>()
+      for (const model of models) {
+        relatedByPk.set((model as any)[localKey], model)
       }
 
       // Map pivots by parent FK
@@ -327,14 +380,13 @@ export async function eagerLoad<T extends Model>(
 
       // Assign to parents
       for (const parent of parents) {
-        const pk = (parent as unknown as Record<string, unknown>)[relationMeta.localKey]
+        const pk = (parent as any)[relationMeta.localKey]
         const relatedPks = pivotsByParent.get(pk) ?? []
-        const models = relatedPks
-          .slice(0, limit)
+        const relatedModels = relatedPks
           .map((rpk) => relatedByPk.get(rpk))
-          .filter((r): r is ModelAttributes => r !== undefined)
-          .map((r) => Related.hydrate(r))
-        ;(parent as unknown as Record<string, unknown>)[relationName] = models
+          .filter((r): r is any => r !== undefined)
+
+          ; (parent as any)[currentRelation] = relatedModels
       }
       break
     }
@@ -346,15 +398,25 @@ export async function eagerLoad<T extends Model>(
  */
 export async function eagerLoadMany<T extends Model>(
   parents: T[],
-  relations: string[] | Record<string, number | undefined>
+  relations: string[] | Record<string, any> | Map<string, (query: any) => void>
 ): Promise<void> {
-  if (Array.isArray(relations)) {
+  if (relations instanceof Map) {
+    for (const [rel, callback] of relations.entries()) {
+      await eagerLoad(parents, rel, callback)
+    }
+  } else if (Array.isArray(relations)) {
     for (const rel of relations) {
       await eagerLoad(parents, rel)
     }
   } else {
-    for (const [rel, limit] of Object.entries(relations)) {
-      await eagerLoad(parents, rel, limit)
+    for (const [rel, callbackOrLimit] of Object.entries(relations)) {
+      if (typeof callbackOrLimit === 'function') {
+        await eagerLoad(parents, rel, callbackOrLimit)
+      } else if (typeof callbackOrLimit === 'number') {
+        await eagerLoad(parents, rel, (q) => q.limit(callbackOrLimit))
+      } else {
+        await eagerLoad(parents, rel)
+      }
     }
   }
 }
