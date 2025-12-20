@@ -1,4 +1,4 @@
-export { ChangeTracker as MemoryChangeTracker, RedisChangeTracker } from './core/ChangeTracker'
+export { MemoryChangeTracker, RedisChangeTracker } from './core/ChangeTracker'
 export { DiffCalculator } from './core/DiffCalculator'
 export { IncrementalGenerator, type IncrementalGeneratorOptions } from './core/IncrementalGenerator'
 export { ProgressTracker, type ProgressTrackerOptions } from './core/ProgressTracker'

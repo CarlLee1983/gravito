@@ -34,9 +34,13 @@ export class RedirectHandler {
 
     // 1. 解析所有轉址
     for (const entry of entries) {
-      const redirect = await manager.resolve(entry.url, followChains, maxChainLength)
-      if (redirect && redirect.from !== redirect.to) {
-        redirectMap.set(entry.url, redirect)
+      const redirectTarget = await manager.resolve(entry.url, followChains, maxChainLength)
+      if (redirectTarget && entry.url !== redirectTarget) {
+        redirectMap.set(entry.url, {
+          from: entry.url,
+          to: redirectTarget,
+          type: 301, // Default to 301 for resolved chains
+        })
       }
     }
 

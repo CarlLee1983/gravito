@@ -15,7 +15,7 @@ export default {
   hero: {
     title: 'GRAVITO',
     core: 'CORE',
-    tagline: '高密度後端引擎',
+    tagline: '極致輕量企業級核心',
     startBtn: '快速上手',
     githubBtn: 'GitHub 源碼',
     deployBtn: '立即部署',

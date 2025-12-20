@@ -175,7 +175,7 @@ export class OrbitSitemap {
 
       // 包裝 providers 以處理轉址
       providers = opts.providers.map((provider) => ({
-        async getEntries() {
+        getEntries: async () => {
           const entries = await provider.getEntries()
           const entriesArray = Array.isArray(entries) ? entries : await this.toArray(entries)
           return handler.processEntries(entriesArray)
@@ -263,7 +263,7 @@ export class OrbitSitemap {
       })
 
       providers = opts.providers.map((provider) => ({
-        async getEntries() {
+        getEntries: async () => {
           const entries = await provider.getEntries()
           const entriesArray = Array.isArray(entries) ? entries : await this.toArray(entries)
           return handler.processEntries(entriesArray)

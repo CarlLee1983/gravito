@@ -200,7 +200,7 @@ export class S3SitemapStorage implements SitemapStorage {
     }
 
     // 找到對應的影子檔案
-    const shadowFiles = listResponse.Contents.filter((obj) =>
+    const shadowFiles = listResponse.Contents.filter((obj: any) =>
       obj.Key?.includes(`.shadow.${shadowId}`)
     )
 

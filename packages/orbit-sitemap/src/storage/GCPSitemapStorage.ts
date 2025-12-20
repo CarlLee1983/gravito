@@ -148,7 +148,7 @@ export class GCPSitemapStorage implements SitemapStorage {
     const [files] = await bucket.getFiles({ prefix })
 
     // 找到對應的影子檔案
-    const shadowFiles = files.filter((file) => {
+    const shadowFiles = files.filter((file: any) => {
       const name = file.name
       return name.includes(`.shadow.${shadowId}`)
     })

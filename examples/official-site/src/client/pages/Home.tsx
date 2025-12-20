@@ -113,7 +113,7 @@ const AdvancedHero = ({ t }: { t: Translation }) => {
 
       {/* 5. 浮動文字層 (Staggered Intro) */}
       <div className="relative z-30 flex flex-col items-center">
-        <div className="flex overflow-hidden pb-2">
+        <div className="flex flex-wrap justify-center overflow-hidden pb-2 px-4 gap-x-2 md:gap-x-0">
           {titleCharItems.map((item) => (
             <motion.span
               key={item.id}
@@ -124,7 +124,7 @@ const AdvancedHero = ({ t }: { t: Translation }) => {
                 duration: 0.8,
                 ease: [0.2, 0.65, 0.3, 0.9],
               }}
-              className="text-6xl md:text-9xl font-black italic tracking-tighter text-white drop-shadow-[0_0_30px_rgba(0,100,200,0.5)] inline-block"
+              className="text-5xl sm:text-6xl md:text-9xl font-black italic tracking-tighter text-white drop-shadow-[0_0_30px_rgba(0,100,200,0.5)] inline-block"
             >
               {item.char}
             </motion.span>
@@ -133,7 +133,7 @@ const AdvancedHero = ({ t }: { t: Translation }) => {
             initial={{ x: 50, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             transition={{ delay: 1.5, duration: 0.8 }}
-            className="text-6xl md:text-9xl font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500 ml-4 pr-12 inline-block select-none"
+            className="text-5xl sm:text-6xl md:text-9xl font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500 ml-2 md:ml-4 pr-2 md:pr-12 inline-block select-none"
           >
             {t.hero.core}
           </motion.span>

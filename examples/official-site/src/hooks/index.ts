@@ -28,8 +28,13 @@ export function registerHooks(core: PlanetCore): void {
 
   // Handle 404 Not Found
   core.hooks.addFilter('notFound:render', async (_initial, ...args) => {
-    const c = args[0] as Context
+    // args[0] is ErrorHandlerContext, not Context directly
+    const context = args[0] as { c: Context }
+    const c = context.c
     const inertia = c.get('inertia') as InertiaService
+
+    // Only intercept if this is an Inertia request or we want to render HTML
+    // But OrbitInertia typically handles all HTML requests if installed
     if (inertia) {
       return inertia.render('Error', { status: 404 })
     }
@@ -37,10 +42,12 @@ export function registerHooks(core: PlanetCore): void {
 
   // Handle 500 Internal Server Error
   core.hooks.addFilter('error:render', async (_initial, ...args) => {
-    const c = args[0] as Context
+    const context = args[0] as { c: Context; error: unknown }
+    const c = context.c
     const inertia = c.get('inertia') as InertiaService
+
     // Optionally extract status from error if available in context
-    const error = c.error as { status?: number } | undefined
+    const error = context.error as { status?: number; message?: string } | undefined
     const status = typeof error?.status === 'number' ? error.status : 500
 
     if (inertia) {
@@ -49,7 +56,9 @@ export function registerHooks(core: PlanetCore): void {
         message:
           process.env.NODE_ENV === 'production'
             ? undefined
-            : c.error?.message || 'Unknown distortion in space-time',
+            : error?.message ||
+              (error instanceof Error ? error.message : undefined) ||
+              'Unknown distortion in space-time',
       })
     }
   })

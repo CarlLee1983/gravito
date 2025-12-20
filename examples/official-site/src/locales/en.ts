@@ -16,7 +16,7 @@ export default {
   hero: {
     title: 'GRAVITO',
     core: 'CORE',
-    tagline: 'High-Density Backend Engine',
+    tagline: 'Ultra-Lightweight Enterprise Core',
     startBtn: 'Quick Start',
     githubBtn: 'Github',
     deployBtn: 'Deploy Now',

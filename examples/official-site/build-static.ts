@@ -51,8 +51,22 @@ async function build() {
   try {
     const res = await core.app.request('/')
     if (res.status === 200) {
+      const gaId = process.env.VITE_GA_ID
       const html = await res.text()
-      await writeFile(join(outputDir, 'index.html'), html)
+      const finalHtml = gaId
+        ? html.replace(
+            '<!-- Google Analytics Placeholder -->',
+            `<script async src="https://www.googletagmanager.com/gtag/js?id=${gaId}"></script>
+             <script>
+               window.dataLayer = window.dataLayer || [];
+               function gtag(){dataLayer.push(arguments);}
+               gtag('js', new Date());
+               gtag('config', '${gaId}');
+             </script>`
+          )
+        : html
+
+      await writeFile(join(outputDir, 'index.html'), finalHtml)
       smStream.add({ url: `${domain}/`, priority: 1.0 })
     }
   } catch (e) {
@@ -94,11 +108,25 @@ async function build() {
           continue
         }
 
+        const gaId = process.env.VITE_GA_ID
         const html = await res.text()
+        const finalHtml = gaId
+          ? html.replace(
+              '<!-- Google Analytics Placeholder -->',
+              `<script async src="https://www.googletagmanager.com/gtag/js?id=${gaId}"></script>
+             <script>
+               window.dataLayer = window.dataLayer || [];
+               function gtag(){dataLayer.push(arguments);}
+               gtag('js', new Date());
+               gtag('config', '${gaId}');
+             </script>`
+            )
+          : html
+
         // For paths like /en/docs/foo, we save to en/docs/foo/index.html
         const filePath = join(outputDir, pathname, 'index.html')
         await mkdir(dirname(filePath), { recursive: true })
-        await writeFile(filePath, html)
+        await writeFile(filePath, finalHtml)
       } catch (e) {
         console.error(`❌ Error rendering ${pathname}:`, e)
       }
@@ -140,6 +168,20 @@ async function build() {
     }
   } catch (e) {
     console.warn('⚠️  Error fetching robots.txt:', e)
+  }
+
+  // 5. Generate 404.html for GitHub Pages
+  console.log('🚫 Generating 404.html...')
+  try {
+    // Request a known non-existent route to trigger the 404 hook
+    const res = await core.app.request('/__force_404_generation__')
+    const html = await res.text()
+    // It might return 200 or 404 depending on how Inertia handles the render,
+    // but the HTML content is what we want for the static fallback.
+    await writeFile(join(outputDir, '404.html'), html)
+    console.log('✅ 404.html generated.')
+  } catch (e) {
+    console.error('❌ Failed to generate 404.html:', e)
   }
 
   // CNAME (Note: Ensure this matches your production domain)

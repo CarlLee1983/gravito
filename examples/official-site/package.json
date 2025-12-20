@@ -13,6 +13,7 @@
     "dependencies": {
         "@gravito/orbit-cache": "workspace:*",
         "@gravito/orbit-inertia": "workspace:*",
+        "@gravito/orbit-sitemap": "workspace:*",
         "@gravito/orbit-view": "workspace:*",
         "@gravito/seo-adapter-hono": "workspace:*",
         "@gravito/seo-core": "workspace:*",
