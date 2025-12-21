@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 import { Schema, validate } from '../src/index'
 
-describe('@gravito/validator', () => {
+describe('@gravito/mass', () => {
   it('should export Schema from TypeBox', () => {
     expect(Schema).toBeDefined()
     expect(Schema.String).toBeDefined()

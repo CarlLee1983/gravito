@@ -1,5 +1,5 @@
 /**
- * @gravito/validator
+ * @gravito/mass
  *
  * TypeBox-based validation for Gravito
  * High-performance schema validation with full TypeScript support
@@ -7,7 +7,7 @@
  * @example
  * ```typescript
  * import { Hono } from 'hono'
- * import { Schema, validate } from '@gravito/validator'
+ * import { Schema, validate } from '@gravito/mass'
  *
  * const app = new Hono()
  *

@@ -1,5 +1,5 @@
 {
-  "name": "@gravito/validator",
+  "name": "@gravito/mass",
   "version": "1.0.0-alpha.1",
   "description": "TypeBox-based validation for Gravito - High-performance schema validation with full TypeScript support",
   "type": "module",
@@ -39,7 +39,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/gravito-framework/gravito.git",
-    "directory": "packages/validator"
+    "directory": "packages/mass"
   },
   "keywords": [
     "gravito",

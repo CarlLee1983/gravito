@@ -1,4 +1,4 @@
-import { Schema, validate } from '@gravito/validator'
+import { Schema, validate } from '@gravito/mass'
 import { Hono } from 'hono'
 import { logger } from 'hono/logger'
 

@@ -120,7 +120,7 @@ bun run --filter '*' publish
 - `@gravito/orbit-storage` - 儲存模組
 - `@gravito/seo-adapter-express` - SEO Express 適配器
 - `@gravito/seo-cli` - SEO CLI 工具
-- `@gravito/validator` - 驗證器模組
+- `@gravito/mass` - 驗證器模組
 - `@gravito/client` - 客戶端
 - `@gravito/cli` - CLI 工具
 

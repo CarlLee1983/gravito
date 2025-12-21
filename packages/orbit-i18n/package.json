@@ -1,0 +1,35 @@
+{
+  "name": "@gravito/cosmos",
+  "version": "1.0.0-alpha.1",
+  "description": "Internationalization orbit for Gravito framework",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "bun build ./src/index.ts --outdir ./dist --target node --external @gravito/core --external hono",
+    "test": "bun test"
+  },
+  "keywords": [
+    "gravito",
+    "orbit",
+    "i18n",
+    "internationalization"
+  ],
+  "author": "Carl Lee <carllee0520@gmail.com>",
+  "license": "MIT",
+  "peerDependencies": {
+    "gravito-core": "1.0.0-beta.1",
+    "hono": "^4.0.0"
+  },
+  "devDependencies": {
+    "bun-types": "latest"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "homepage": "https://github.com/gravito-framework/gravito#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gravito-framework/gravito.git",
+    "directory": "packages/cosmos"
+  }
+}

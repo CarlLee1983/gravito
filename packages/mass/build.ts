@@ -1,6 +1,6 @@
 import { spawn } from 'bun'
 
-console.log('Building @gravito/validator...')
+console.log('Building @gravito/mass...')
 
 // Clean dist
 await Bun.$`rm -rf dist`

@@ -1,4 +1,4 @@
-# @gravito/validator
+# @gravito/mass
 
 TypeBox-based validation for Gravito - High-performance schema validation with full TypeScript support.
 
@@ -12,7 +12,7 @@ TypeBox-based validation for Gravito - High-performance schema validation with f
 ## 安裝
 
 ```bash
-bun add @gravito/validator
+bun add @gravito/mass
 ```
 
 ## 基本使用
@@ -21,7 +21,7 @@ bun add @gravito/validator
 
 ```typescript
 import { Hono } from 'hono'
-import { Schema, validate } from '@gravito/validator'
+import { Schema, validate } from '@gravito/mass'
 
 const app = new Hono()
 
@@ -71,7 +71,7 @@ app.get('/users/:id',
 `Schema` 物件提供所有 TypeBox 的建構器：
 
 ```typescript
-import { Schema } from '@gravito/validator'
+import { Schema } from '@gravito/mass'
 
 // 基本型別
 Schema.String()

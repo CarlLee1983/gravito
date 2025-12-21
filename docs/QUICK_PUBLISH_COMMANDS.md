@@ -72,8 +72,8 @@ cd packages/seo-adapter-express && npm publish --access public --tag alpha && cd
 # @gravito/seo-cli
 cd packages/seo-cli && npm publish --access public --tag alpha && cd ../..
 
-# @gravito/validator
-cd packages/validator && npm publish --access public --tag alpha && cd ../..
+# @gravito/mass
+cd packages/mass && npm publish --access public --tag alpha && cd ../..
 
 # @gravito/client
 cd packages/client && npm publish --access public --tag alpha && cd ../..

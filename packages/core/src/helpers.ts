@@ -1,5 +1,5 @@
-import { HTTPException } from 'hono/http-exception'
-import type { ContentfulStatusCode } from 'hono/utils/http-status'
+import { HttpException } from './exceptions/HttpException'
+import type { ContentfulStatusCode } from './http/types'
 import type { PlanetCore } from './PlanetCore'
 import type { Router } from './Router'
 
@@ -177,9 +177,9 @@ export function router(): Router {
 
 export function abort(status: ContentfulStatusCode, message?: string): never {
   if (message === undefined) {
-    throw new HTTPException(status)
+    throw new HttpException(status)
   }
-  throw new HTTPException(status, { message })
+  throw new HttpException(status, { message })
 }
 
 export function abortIf(condition: unknown, status: ContentfulStatusCode, message?: string): void {

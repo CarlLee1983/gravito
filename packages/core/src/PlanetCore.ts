@@ -8,8 +8,8 @@
  * @since 1.0.0
  */
 
-import { Hono } from 'hono'
-import { HTTPException } from 'hono/http-exception'
+// import { Hono } from 'hono' - Decoupled
+// import { HTTPException } from 'hono/http-exception' - Decoupled
 import { HonoAdapter } from './adapters/HonoAdapter'
 import type { HttpAdapter } from './adapters/types'
 import { ConfigManager } from './ConfigManager'
@@ -110,8 +110,8 @@ export class PlanetCore {
    * Access the underlying Hono app instance.
    * @deprecated Use adapter methods for new code. This property is kept for backward compatibility.
    */
-  public get app(): Hono<{ Variables: Variables }> {
-    return this._adapter.native as Hono<{ Variables: Variables }>
+  public get app(): unknown {
+    return this._adapter.native
   }
 
   /**
@@ -197,8 +197,7 @@ export class PlanetCore {
     } else if (typeof Bun !== 'undefined') {
       this._adapter = new BunNativeAdapter()
     } else {
-      const honoApp = new Hono<{ Variables: Variables }>()
-      this._adapter = new HonoAdapter({}, honoApp)
+      this._adapter = new HonoAdapter()
     }
 
     // Core Middleware for Context Injection
@@ -332,11 +331,13 @@ export class PlanetCore {
         } else if (err instanceof Error && !isProduction && err.cause) {
           details = { cause: err.cause }
         }
-      } else if (err instanceof HTTPException) {
-        status = err.status as ContentfulStatusCode
-        const rawMessage = err.message?.trim()
-        message = rawMessage ? rawMessage : messageFromStatus(status)
-        code = codeFromStatus(status)
+      } else if (err instanceof HttpException) {
+        status = err.status
+        message = err.message
+      } else if (err instanceof Error && 'status' in err && typeof (err as any).status === 'number') {
+        // Handle Hono or other framework exceptions via duck typing
+        status = (err as any).status as ContentfulStatusCode
+        message = err.message
       } else if (err instanceof Error) {
         if (!isProduction) {
           message = err.message || message
@@ -447,7 +448,7 @@ export class PlanetCore {
       let handlerContext: ErrorHandlerContext = {
         core: this,
         c,
-        error: new HTTPException(404, { message: 'Route not found' }),
+        error: new HttpException(404, { message: 'Route not found' }),
         isProduction,
         accept,
         wantsHtml: Boolean(wantsHtml),
@@ -547,7 +548,7 @@ export class PlanetCore {
   /**
    * Mount an Orbit (a Hono app) to a path.
    */
-  mountOrbit(path: string, orbitApp: Hono): void {
+  mountOrbit(path: string, orbitApp: unknown): void {
     this.logger.info(`Mounting orbit at path: ${path}`)
     // Should reuse this.adapter.mount logic if possible, or fallback.
     // HonoAdapter has special mount. BunNativeAdapter might not fully support mounting Hono apps yet.
@@ -561,12 +562,13 @@ export class PlanetCore {
     // This is a break.
     // Temporary fix: Check adapter type or wrap orbitApp.
     if (this.adapter.name === 'hono') {
-      (this.adapter.native as Hono).route(path, orbitApp)
+      (this.adapter.native as any).route(path, orbitApp)
     } else {
       // Warn or try to mount if adapter supports it?
       // BunNativeAdapter "mount" takes HttpAdapter.
       // orbitApp is Hono. We can wrap orbitApp in HonoAdapter!
-      const subAdapter = new HonoAdapter({}, orbitApp);
+      // NOTE: We assume 'orbitApp' is a Hono instance compatible with HonoAdapter
+      const subAdapter = new HonoAdapter({}, orbitApp as any);
       this.adapter.mount(path, subAdapter);
     }
   }

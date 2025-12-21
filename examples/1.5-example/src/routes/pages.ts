@@ -1,7 +1,7 @@
 import type { InertiaService } from '@gravito/orbit-inertia'
 import type { OrbitMail } from '@gravito/orbit-mail'
 import { Mailable } from '@gravito/orbit-mail'
-import { Schema, validate } from '@gravito/validator'
+import { Schema, validate } from '@gravito/mass'
 import type { PlanetCore } from 'gravito-core'
 import type { Context } from 'hono'
 import { Hono } from 'hono'

@@ -16,7 +16,7 @@
     "@gravito/orbit-queue": "^1.0.0-beta.1",
     "@gravito/orbit-request": "^1.0.0-beta.1",
     "@gravito/orbit-view": "^1.0.0-beta.1",
-    "@gravito/validator": "^1.0.0-beta.1",
+    "@gravito/mass": "^1.0.0-beta.1",
     "@inertiajs/react": "^1.0.0",
     "better-sqlite3": "^11.0.0",
     "drizzle-orm": "^0.45.1",

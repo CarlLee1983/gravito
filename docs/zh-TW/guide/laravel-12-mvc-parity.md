@@ -22,7 +22,7 @@ title: Laravel 12 MVC 對齊程度
 | HTTP Kernel / Middleware | `gravito-core` Router + Hono middleware；以及 Orbit 提供的 middleware（Auth/Session/…） |
 | Exception Handler | `gravito-core` `PlanetCore` 的 error + notFound handler 與 hooks |
 | Events / Listeners | `gravito-core` `EventManager` / `Listener` |
-| Validation（FormRequest） | `@gravito/orbit-request`（`FormRequest`）+ `@gravito/validator` |
+| Validation（FormRequest） | `@gravito/orbit-request`（`FormRequest`）+ `@gravito/mass` |
 | Views / Blade | `@gravito/orbit-view`（TSX 樣板引擎）/ `@gravito/orbit-inertia`（Inertia 橋接） |
 | Database / Eloquent | `@gravito/orbit-db`（基於 Drizzle 的 DB layer） |
 | Auth / Gate / Policies | `@gravito/orbit-auth`（guards + `Gate`） |

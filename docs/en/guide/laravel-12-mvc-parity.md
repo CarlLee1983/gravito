@@ -22,7 +22,7 @@ This page compares Gravito (core + Orbits) with Laravel 12’s “full-stack MVC
 | HTTP Kernel / Middleware | `gravito-core` Router + Hono middleware; Orbit-provided middleware (Auth/Session/…) |
 | Exception Handler | `gravito-core` `PlanetCore` error + notFound handlers and hooks |
 | Events / Listeners | `gravito-core` `EventManager` / `Listener` |
-| Validation (FormRequest) | `@gravito/orbit-request` (`FormRequest`) + `@gravito/validator` |
+| Validation (FormRequest) | `@gravito/orbit-request` (`FormRequest`) + `@gravito/mass` |
 | Views / Blade | `@gravito/orbit-view` (TSX template engine) / `@gravito/orbit-inertia` (Inertia bridge) |
 | Database / Eloquent | `@gravito/orbit-db` (Drizzle-based DB layer) |
 | Auth / Gate / Policies | `@gravito/orbit-auth` (guards + `Gate`) |

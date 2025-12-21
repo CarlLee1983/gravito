@@ -29,8 +29,8 @@ Export the type of your Hono app instance directly.
 ```typescript
 // server/app.ts
 import { Hono } from 'hono'
-import { validate } from '@gravito/validator'
-import { Schema } from '@gravito/validator'
+import { validate } from '@gravito/mass'
+import { Schema } from '@gravito/mass'
 
 const app = new Hono()
   .get('/hello', (c) => c.json({ message: 'Hello World' }))
