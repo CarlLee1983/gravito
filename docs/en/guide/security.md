@@ -84,4 +84,4 @@ core.app.get('/read', (c) => {
 
 ## CSRF Protection
 
-CSRF protection is provided by `@gravito/orbit-session`. See the [Session Documentation](../api/orbit-session.md) for details.
+CSRF protection is provided by `@gravito/orbit`. See the [Session Documentation](../api/orbit-session.md) for details.

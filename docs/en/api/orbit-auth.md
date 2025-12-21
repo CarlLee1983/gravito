@@ -23,7 +23,7 @@ Orbit Auth is configured via the `auth` configuration object in `PlanetCore`.
 ```typescript
 import { PlanetCore } from 'gravito-core';
 import { OrbitAuth } from '@gravito/orbit-auth';
-import { OrbitSession } from '@gravito/orbit-session';
+import { OrbitSession } from '@gravito/orbit';
 
 const core = await PlanetCore.boot({
   config: {
