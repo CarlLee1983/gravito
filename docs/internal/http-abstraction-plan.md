@@ -1,6 +1,6 @@
 # Gravito HTTP Abstraction Layer - Implementation Plan
 
-> **Status**: Phase 1 Complete ✅ | Phase 2 In Progress 🚧 | Phase 3 Pending ⏳
+> **Status**: Phase 1 Complete ✅ | Phase 2 Complete ✅ | Phase 3 Pending ⏳
 
 ## Overview
 
@@ -49,31 +49,35 @@ This document outlines the plan to decouple Gravito from Hono, enabling future r
 
 ---
 
-## Phase 2: Internal Migration 🚧
+## Phase 2: Internal Migration ✅
 
-**Status**: In Progress
+**Status**: Complete (2025-12-21)
 
 ### Completed Tasks ✅
 
-- [x] **2.4.1** Migrate `orbit-inertia/InertiaService.ts` to use `GravitoContext`
-- [x] **2.4.2** Update `orbit-inertia/index.ts` with `HonoContextWrapper` bridge
+- [x] **2.1** Update `PlanetCore.ts` to use `HttpAdapter` interface
+  - Added `_adapter` private property with public getter
+  - `app` property now returns `adapter.native` for backward compat
+  - Added `adapter` option to `GravitoConfig`
+- [x] **2.4** Update Orbit modules with `GravitoVariables` augmentation:
+  - [x] `orbit-inertia` - Full migration to `GravitoContext`
+  - [x] `orbit-session` - Added `session`, `csrf` to GravitoVariables
+  - [x] `orbit-auth` - Added `auth`, `gate`, `hash`, etc. to GravitoVariables
+  - [x] `orbit-request` - Added `validated` to GravitoVariables
+  - [x] `orbit-cache` - Added `cache` to GravitoVariables
+  - [x] `orbit-mail` - Added `mail` to GravitoVariables
+  - [x] `orbit-queue` - Added `queue`, `db` to GravitoVariables
+- [x] **2.6** Add adapter injection to `PlanetCore.boot()`
 
-### Pending Tasks
+### Deferred Tasks (Low Priority)
 
-- [ ] **2.1** Update `PlanetCore.ts` to use `HttpAdapter` interface
-- [ ] **2.2** Update `Router.ts` to use `GravitoHandler` types
-- [ ] **2.3** Update `CookieJar.ts` to work with `GravitoContext`
-- [ ] **2.4** Update Orbit modules:
-  - [x] `orbit-inertia` ✅
-  - [ ] `orbit-session`
-  - [ ] `orbit-auth`
-  - [ ] `orbit-request`
-- [ ] **2.5** Update helper functions in `helpers/response.ts`
-- [ ] **2.6** Add adapter injection to `PlanetCore.boot()`
+- [ ] **2.2** Update `Router.ts` to use `GravitoHandler` types (optional, works as-is)
+- [ ] **2.3** Update `CookieJar.ts` to work with `GravitoContext` (optional, Hono-coupled for now)
+- [ ] **2.5** Update helper functions in `helpers/response.ts` (optional)
 
 ---
 
-## Phase 3: Documentation & User Migration ⏳
+## Phase 3: Documentation & User Migration
 
 **Status**: Pending
 
@@ -191,4 +195,10 @@ import type { GravitoContext } from 'gravito-core'
 
 ## Changelog
 
+- **2025-12-21**: Phase 2 complete - PlanetCore adapter integration
+  - Added `_adapter` property to PlanetCore
+  - `app` is now a getter returning `adapter.native`
+  - All orbit modules have GravitoVariables augmentation
+  - Migration guide created at `docs/en/guide/migration-http-abstraction.md`
 - **2025-12-21**: Phase 1 complete - Created abstraction layer
+
