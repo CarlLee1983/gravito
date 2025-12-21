@@ -406,7 +406,7 @@ export type GravitoHandler<V extends GravitoVariables = GravitoVariables> = (
 export type GravitoMiddleware<V extends GravitoVariables = GravitoVariables> = (
   ctx: GravitoContext<V>,
   next: GravitoNext
-) => Response | Promise<Response | undefined>
+) => Response | Promise<Response | undefined | void>
 
 /**
  * Error handler type

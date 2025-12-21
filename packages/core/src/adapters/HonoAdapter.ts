@@ -108,6 +108,7 @@ class HonoContextWrapper<V extends GravitoVariables = GravitoVariables>
   implements GravitoContext<V>
 {
   private _req: HonoRequestWrapper
+  private _statusCode: StatusCode = 200
 
   constructor(private honoCtx: Context) {
     this._req = new HonoRequestWrapper(honoCtx)
@@ -235,7 +236,7 @@ function toHonoMiddleware<V extends GravitoVariables>(
     const gravitoNext: GravitoNext = async () => {
       await next()
     }
-    return middleware(ctx, gravitoNext)
+    return middleware(ctx, gravitoNext) as any
   }
 }
 
