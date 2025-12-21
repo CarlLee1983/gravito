@@ -94,13 +94,17 @@ export class BunContext<V extends GravitoVariables = GravitoVariables> implement
     }
 
     // Headers
-    header(name: string, value: string): void
+    header(name: string, value: string, options?: { append?: boolean }): void
     header(name: string): string | undefined
-    header(name: string, value?: string): string | undefined | void {
+    header(name: string, value?: string, options?: { append?: boolean }): string | undefined | void {
         if (value === undefined) {
             return this.req.header(name)
         }
-        this._headers.set(name, value)
+        if (options?.append) {
+            this._headers.append(name, value)
+        } else {
+            this._headers.set(name, value)
+        }
     }
 
     status(code: StatusCode): void {

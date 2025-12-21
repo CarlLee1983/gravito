@@ -1,5 +1,4 @@
-import type { Context } from 'hono'
-import type { ContentfulStatusCode } from 'hono/utils/http-status'
+import type { GravitoContext, ContentfulStatusCode } from '../http/types'
 
 export type ApiSuccess<T> = {
   success: true
@@ -30,12 +29,12 @@ export function fail(message: string, code?: string, details?: unknown): ApiFail
   return { success: false, error }
 }
 
-export function jsonSuccess<T>(c: Context, data: T, status: ContentfulStatusCode = 200): Response {
+export function jsonSuccess<T>(c: GravitoContext, data: T, status: ContentfulStatusCode = 200): Response {
   return c.json(ok(data), status)
 }
 
 export function jsonFail(
-  c: Context,
+  c: GravitoContext,
   message: string,
   status: ContentfulStatusCode = 400,
   code?: string,

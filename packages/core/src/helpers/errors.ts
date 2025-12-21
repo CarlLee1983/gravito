@@ -1,4 +1,4 @@
-import type { Context } from 'hono'
+import type { GravitoContext } from '../http/types'
 
 export interface ErrorBag {
   has(field: string): boolean
@@ -31,14 +31,14 @@ export function createErrorBag(errors: Record<string, string[]>): ErrorBag {
 }
 
 // Helper to get errors from session flash
-export function errors(c: Context): ErrorBag {
+export function errors(c: GravitoContext): ErrorBag {
   const session = c.get('session') as { getFlash?: (key: string) => unknown } | undefined
   const flashed = session?.getFlash?.('errors') ?? {}
   return createErrorBag(flashed as Record<string, string[]>)
 }
 
 // Helper to get old input value
-export function old(c: Context, field: string, defaultValue?: unknown): unknown {
+export function old(c: GravitoContext, field: string, defaultValue?: unknown): unknown {
   const session = c.get('session') as { getFlash?: (key: string) => unknown } | undefined
   const oldInput = session?.getFlash?.('_old_input') ?? {}
   return (oldInput as Record<string, unknown>)[field] ?? defaultValue

@@ -1,4 +1,4 @@
-import type { Context, MiddlewareHandler, Next } from 'hono'
+import type { GravitoContext, GravitoMiddleware, GravitoNext } from '../../http/types'
 import type { PlanetCore } from '../../PlanetCore'
 
 type RateLimiterLike = {
@@ -14,15 +14,15 @@ type CacheLike = {
 }
 
 export class ThrottleRequests {
-  constructor(private core: PlanetCore) {}
+  constructor(private core: PlanetCore) { }
 
   /**
    * Create the middleware
    * @param maxAttempts - Max requests allowed
    * @param decaySeconds - Time window in seconds
    */
-  handle(maxAttempts = 60, decaySeconds = 60): MiddlewareHandler {
-    return async (c: Context, next: Next) => {
+  handle(maxAttempts = 60, decaySeconds = 60): GravitoMiddleware {
+    return async (c: GravitoContext, next: GravitoNext) => {
       const cache = c.get('cache') as CacheLike | undefined
       if (!cache) {
         // If cache is not available, we can't rate limit.

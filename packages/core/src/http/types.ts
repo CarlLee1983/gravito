@@ -294,8 +294,9 @@ export interface GravitoContext<V extends GravitoVariables = GravitoVariables> {
    * Set a response header
    * @param name - Header name
    * @param value - Header value
+   * @param options - Options (append: true to add multiple values)
    */
-  header(name: string, value: string): void
+  header(name: string, value: string, options?: { append?: boolean }): void
 
   /**
    * Get a request header

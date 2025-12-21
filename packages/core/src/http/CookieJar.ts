@@ -1,5 +1,4 @@
-import type { Context } from 'hono'
-import { setCookie } from 'hono/cookie'
+import type { GravitoContext } from './types'
 import type { Encrypter } from '../security/Encrypter'
 
 export interface CookieOptions {
@@ -16,7 +15,7 @@ export interface CookieOptions {
 export class CookieJar {
   private queued: Map<string, { value: string; options: CookieOptions }> = new Map()
 
-  constructor(private encrypter?: Encrypter) {}
+  constructor(private encrypter?: Encrypter) { }
 
   /**
    * Queue a cookie to be sent with the response
@@ -54,11 +53,26 @@ export class CookieJar {
   }
 
   /**
+   * Serialize a cookie to a Set-Cookie header value
+   */
+  private serializeCookie(name: string, value: string, opts: CookieOptions): string {
+    const parts = [`${name}=${encodeURIComponent(value)}`]
+    if (opts.maxAge !== undefined) parts.push(`Max-Age=${opts.maxAge}`)
+    if (opts.expires) parts.push(`Expires=${opts.expires.toUTCString()}`)
+    if (opts.path) parts.push(`Path=${opts.path}`)
+    if (opts.domain) parts.push(`Domain=${opts.domain}`)
+    if (opts.secure) parts.push('Secure')
+    if (opts.httpOnly) parts.push('HttpOnly')
+    if (opts.sameSite) parts.push(`SameSite=${opts.sameSite}`)
+    return parts.join('; ')
+  }
+
+  /**
    * Attach queued cookies to the context
    */
-  attach(c: Context) {
+  attach(c: GravitoContext) {
     for (const [name, { value, options }] of this.queued) {
-      setCookie(c, name, value, options)
+      c.header('Set-Cookie', this.serializeCookie(name, value, options), { append: true })
     }
   }
 }

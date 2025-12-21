@@ -159,10 +159,14 @@ class HonoContextWrapper<V extends GravitoVariables = GravitoVariables>
 
   // Implement header as separate methods internally
   header(name: string): string | undefined
-  header(name: string, value: string): void
-  header(name: string, value?: string): string | undefined | void {
+  header(name: string, value: string, options?: { append?: boolean }): void
+  header(name: string, value?: string, options?: { append?: boolean }): string | undefined | void {
     if (value !== undefined) {
-      this.honoCtx.header(name, value)
+      if (options?.append) {
+        this.honoCtx.header(name, value, { append: true })
+      } else {
+        this.honoCtx.header(name, value)
+      }
       return undefined // Return undefined for setter to match type
     }
     return this.honoCtx.req.header(name)
