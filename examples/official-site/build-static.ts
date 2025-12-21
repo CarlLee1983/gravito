@@ -268,49 +268,15 @@ async function build() {
             const doc = parser.parseFromString(html, 'text/html');
             const appDiv = doc.querySelector('#app');
             
-            if (appDiv && appDiv.getAttribute('data-page')) {
-              try {
-                const pageData = JSON.parse(appDiv.getAttribute('data-page') || '{}');
-                
-                // Update the current page's data-page attribute
-                const currentAppDiv = document.querySelector('#app');
-                if (currentAppDiv) {
-                  currentAppDiv.setAttribute('data-page', appDiv.getAttribute('data-page') || '');
-                  
-                  // Update URL without reload
-                  window.history.replaceState(null, '', currentPath + currentSearch + currentHash);
-                  
-                  // Trigger Inertia to re-render if available
-                  if (window.Inertia && window.Inertia.setPage) {
-                    window.Inertia.setPage(pageData);
-                  } else {
-                    // If Inertia is not ready, wait for it
-                    const checkInertia = setInterval(function() {
-                      if (window.Inertia && window.Inertia.setPage) {
-                        clearInterval(checkInertia);
-                        window.Inertia.setPage(pageData);
-                      }
-                    }, 100);
-                    
-                    // Timeout after 5 seconds
-                    setTimeout(function() {
-                      clearInterval(checkInertia);
-                    }, 5000);
-                  }
-                }
-              } catch (e) {
-                console.error('Error parsing page data:', e);
-                // Fallback: do a full page replacement
-                document.open();
-                document.write(html);
-                document.close();
-              }
-            } else {
-              // If no data-page attribute, do a full page replacement
-              document.open();
-              document.write(html);
-              document.close();
-            }
+            // For static deployment, the simplest approach is to replace the entire page
+            // This ensures Inertia.js re-initializes with the correct data-page attribute
+            // Update URL first
+            window.history.replaceState(null, '', currentPath + currentSearch + currentHash);
+            
+            // Replace the entire document to trigger Inertia re-initialization
+            document.open();
+            document.write(html);
+            document.close();
           });
         }
         
@@ -324,7 +290,15 @@ async function build() {
     </script>`
 
     // Insert the script before the closing body tag
-    html = html.replace('</body>', spaScript + '\n</body>')
+    // Use a more reliable method to find and replace </body>
+    if (html.includes('</body>')) {
+      html = html.replace('</body>', spaScript + '\n</body>')
+    } else if (html.includes('</BODY>')) {
+      html = html.replace('</BODY>', spaScript + '\n</BODY>')
+    } else {
+      // If no body tag found, append before closing html tag
+      html = html.replace('</html>', spaScript + '\n</html>')
+    }
 
     await writeFile(join(outputDir, '404.html'), html)
     console.log('✅ 404.html generated with SPA routing support.')
@@ -337,6 +311,13 @@ async function build() {
 
   // .nojekyll
   await writeFile(join(outputDir, '.nojekyll'), '')
+
+  // Create redirect for /docs to /en/docs/guide/core-concepts
+  console.log('🔄 Creating /docs redirect...')
+  const docsRedirectHtml = `<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=/en/docs/guide/core-concepts" /><script>window.location.href='/en/docs/guide/core-concepts';</script></head><body>Redirecting to <a href="/en/docs/guide/core-concepts">/en/docs/guide/core-concepts</a>...</body></html>`
+  await mkdir(join(outputDir, 'docs'), { recursive: true })
+  await writeFile(join(outputDir, 'docs', 'index.html'), docsRedirectHtml)
+  console.log('✅ /docs redirect created')
 
   // Copy root assets (favicon, manifest) from static to root
   const rootAssets = [
