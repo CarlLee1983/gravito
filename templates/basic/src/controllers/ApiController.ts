@@ -1,5 +1,4 @@
-import type { CacheService, PlanetCore } from 'gravito-core'
-import type { Context } from 'hono'
+import type { CacheService, GravitoContext, PlanetCore } from 'gravito-core'
 
 const startTime = Date.now()
 
@@ -8,25 +7,25 @@ const startTime = Date.now()
  * Handles all API endpoints
  */
 export class ApiController {
-  constructor(private core: PlanetCore) {}
+  constructor(private core: PlanetCore) { }
 
   /**
    * GET /api/health
    * Health check endpoint
    */
-  health = async (c: Context) => {
+  health = async (ctx: GravitoContext) => {
     const response = await this.core.hooks.applyFilters('api:response', {
       status: 'healthy',
       service: this.core.config.get('APP_NAME'),
     })
-    return c.json(response)
+    return ctx.json(response)
   }
 
   /**
    * GET /api/config
    * Application configuration
    */
-  config = async (c: Context) => {
+  config = async (ctx: GravitoContext) => {
     const response = await this.core.hooks.applyFilters('api:response', {
       app: {
         name: this.core.config.get('APP_NAME'),
@@ -37,15 +36,15 @@ export class ApiController {
         port: this.core.config.get('PORT'),
       },
     })
-    return c.json(response)
+    return ctx.json(response)
   }
 
   /**
    * GET /api/stats
    * Server statistics
    */
-  stats = async (c: Context) => {
-    const cache = c.get('cache') as CacheService | undefined
+  stats = async (ctx: GravitoContext) => {
+    const cache = ctx.get('cache') as CacheService | undefined
     const uptimeMs = Date.now() - startTime
     const uptimeSeconds = Math.floor(uptimeMs / 1000)
     const minutes = Math.floor(uptimeSeconds / 60)
@@ -60,6 +59,7 @@ export class ApiController {
         heapTotal: `${Math.round(process.memoryUsage().heapTotal / 1024 / 1024)}MB`,
       },
     })
-    return c.json(response)
+    return ctx.json(response)
   }
 }
+

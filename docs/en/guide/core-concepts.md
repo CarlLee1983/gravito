@@ -36,10 +36,11 @@ In the Gravito worldview, a system is treated as a micro-galaxy:
 
 ### Four Pillars of Excellence
 
-- **High Performance**: Built on Bun & Hono for microsecond routing.
+- **High Performance**: Built on Bun with adapter-agnostic HTTP layer for microsecond routing.
 - **Zero Overhead**: Boot-time resolution of routes and dependencies avoids runtime scanning.
 - **Micro-kernel**: A tiny core of just a few KBs; features are purely opt-in.
 - **AI-First**: Clear interface contracts and type inference make tools like Copilot/Cursor significantly smarter.
+- **Future-Proof**: HTTP abstraction layer enables swapping underlying engine without code changes.
 
 ---
 
@@ -88,8 +89,10 @@ This is your territory. All Controllers, Services, and business logic are encaps
 Gravito features built-in smart negotiation, allowing a single Controller to automatically switch response types:
 
 ```typescript
+import type { GravitoContext } from 'gravito-core'
+
 export class UserController {
-  index(ctx: Context) {
+  index(ctx: GravitoContext) {
     return ctx.view('Users/Index', { users: [] })
     // Inertia Request -> returns JSON
     // Landing/Crawler -> returns SSR HTML (App Shell)
@@ -113,10 +116,11 @@ bun add gravito-core
 ### Your First App
 ```typescript
 import { PlanetCore } from 'gravito-core'
+import type { GravitoContext } from 'gravito-core'
 
 const app = new PlanetCore()
 
-app.router.get('/', (c) => c.text('Hello Singularity!'))
+app.router.get('/', (ctx: GravitoContext) => ctx.text('Hello Singularity!'))
 
 export default app.liftoff()
 ```
@@ -126,6 +130,7 @@ export default app.liftoff()
 ## Further Reading
 
 - [Laravel 12 Parity](./laravel-12-mvc-parity.md)
+- [HTTP Abstraction Migration](./migration-http-abstraction.md)
 - [Deployment Guide](./deployment.md)
 - [Routing System](./routing.md)
 - [ORM Practice (Drizzle)](./orm-usage.md) 

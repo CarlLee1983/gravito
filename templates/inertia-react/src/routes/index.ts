@@ -1,5 +1,4 @@
-import type { PlanetCore } from 'gravito-core'
-import type { Context, Next } from 'hono'
+import type { GravitoContext, GravitoNext, PlanetCore } from 'gravito-core'
 import { ApiController } from '../controllers/ApiController'
 import { HomeController } from '../controllers/HomeController'
 
@@ -22,8 +21,8 @@ export function registerRoutes(core: PlanetCore): void {
   // API Routes
   // ─────────────────────────────────────────────
   // Example inline middleware for API logging
-  const apiLogger = async (c: Context, next: Next) => {
-    console.log(`[API] ${c.req.method} ${c.req.url}`)
+  const apiLogger = async (ctx: GravitoContext, next: GravitoNext) => {
+    console.log(`[API] ${ctx.req.method} ${ctx.req.url}`)
     await next()
   }
 
@@ -36,3 +35,4 @@ export function registerRoutes(core: PlanetCore): void {
       api.get('/stats', [ApiController, 'stats'])
     })
 }
+
