@@ -51,6 +51,24 @@ jobs:
           NODE_ENV: production
           VITE_GA_ID: ${{ secrets.VITE_GA_ID }}
 
+      - name: Verify Build Output
+        working-directory: examples/official-site
+        run: |
+          if [ ! -d "dist-static" ]; then
+            echo "❌ dist-static directory not found!"
+            exit 1
+          fi
+          if [ ! -f "dist-static/index.html" ]; then
+            echo "❌ dist-static/index.html not found!"
+            exit 1
+          fi
+          if [ ! -f "dist-static/404.html" ]; then
+            echo "❌ dist-static/404.html not found!"
+            exit 1
+          fi
+          echo "✅ Build output verified"
+          ls -la dist-static/ | head -20
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:

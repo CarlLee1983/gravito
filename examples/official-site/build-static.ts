@@ -173,15 +173,139 @@ async function build() {
   }
 
   // 5. Generate 404.html for GitHub Pages
+  // GitHub Pages uses 404.html to handle SPA routing
+  // When a route doesn't exist, GitHub Pages serves 404.html
+  // We need to make 404.html try to load the corresponding HTML file
   console.log('🚫 Generating 404.html...')
   try {
     // Request a known non-existent route to trigger the 404 hook
     const res = await core.app.request('/__force_404_generation__')
-    const html = await res.text()
-    // It might return 200 or 404 depending on how Inertia handles the render,
-    // but the HTML content is what we want for the static fallback.
+    let html = await res.text()
+
+    // For GitHub Pages SPA support, we need to add a script that:
+    // 1. Reads the current URL
+    // 2. Tries to fetch the corresponding HTML file
+    // 3. If found, replaces the current page content
+    // 4. If not found, shows the 404 error
+
+    // Insert a script before closing body tag to handle SPA routing
+    const spaScript = `
+    <script>
+      // GitHub Pages SPA routing handler for Inertia.js
+      (function() {
+        const currentPath = window.location.pathname;
+        const currentSearch = window.location.search;
+        const currentHash = window.location.hash;
+        
+        // Skip if we're already on a 404 page or if this is a direct 404.html request
+        if (currentPath === '/404.html' || currentPath.endsWith('/404.html')) {
+          return;
+        }
+        
+        // Function to try loading HTML file
+        function tryLoadHtml(path, callback) {
+          // Try with trailing slash first (directory index)
+          let htmlPath = path.endsWith('/') ? path + 'index.html' : path + '/index.html';
+          
+          fetch(htmlPath)
+            .then(function(response) {
+              if (response.ok) {
+                return response.text();
+              }
+              // If not found, try without trailing slash
+              if (htmlPath.endsWith('/index.html')) {
+                const altPath = path + '.html';
+                return fetch(altPath).then(function(altResponse) {
+                  if (altResponse.ok) {
+                    return altResponse.text();
+                  }
+                  throw new Error('Not found');
+                });
+              }
+              throw new Error('Not found');
+            })
+            .then(function(html) {
+              callback(null, html);
+            })
+            .catch(function(error) {
+              callback(error, null);
+            });
+        }
+        
+        // Wait for Inertia to be initialized
+        function handleRoute() {
+          tryLoadHtml(currentPath, function(error, html) {
+            if (error || !html) {
+              // Route not found, show 404
+              console.log('Route not found:', currentPath);
+              return;
+            }
+            
+            // Parse the HTML and extract the data-page attribute
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const appDiv = doc.querySelector('#app');
+            
+            if (appDiv && appDiv.getAttribute('data-page')) {
+              try {
+                const pageData = JSON.parse(appDiv.getAttribute('data-page') || '{}');
+                
+                // Update the current page's data-page attribute
+                const currentAppDiv = document.querySelector('#app');
+                if (currentAppDiv) {
+                  currentAppDiv.setAttribute('data-page', appDiv.getAttribute('data-page') || '');
+                  
+                  // Update URL without reload
+                  window.history.replaceState(null, '', currentPath + currentSearch + currentHash);
+                  
+                  // Trigger Inertia to re-render if available
+                  if (window.Inertia && window.Inertia.setPage) {
+                    window.Inertia.setPage(pageData);
+                  } else {
+                    // If Inertia is not ready, wait for it
+                    const checkInertia = setInterval(function() {
+                      if (window.Inertia && window.Inertia.setPage) {
+                        clearInterval(checkInertia);
+                        window.Inertia.setPage(pageData);
+                      }
+                    }, 100);
+                    
+                    // Timeout after 5 seconds
+                    setTimeout(function() {
+                      clearInterval(checkInertia);
+                    }, 5000);
+                  }
+                }
+              } catch (e) {
+                console.error('Error parsing page data:', e);
+                // Fallback: do a full page replacement
+                document.open();
+                document.write(html);
+                document.close();
+              }
+            } else {
+              // If no data-page attribute, do a full page replacement
+              document.open();
+              document.write(html);
+              document.close();
+            }
+          });
+        }
+        
+        // Try to handle route immediately
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', handleRoute);
+        } else {
+          handleRoute();
+        }
+      })();
+    </script>`
+
+    // Insert the script before the closing body tag
+    html = html.replace('</body>', spaScript + '\n</body>')
+
     await writeFile(join(outputDir, '404.html'), html)
-    console.log('✅ 404.html generated.')
+    console.log('✅ 404.html generated with SPA routing support.')
   } catch (e) {
     console.error('❌ Failed to generate 404.html:', e)
   }
