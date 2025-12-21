@@ -8,20 +8,22 @@ Phase 2 focuses on renaming data storage and cache modules. This phase involves 
 
 ### Data Storage Modules (3 modules)
 
-1. **`@gravito/orbit-db` → `@gravito/matter`**
+1. **`@gravito/orbit-db` → ⚠️ DEPRECATED**
    - **Type**: SQL Database / ORM (Drizzle-based)
+   - **Status**: 🚫 **DEPRECATED** - Will be phased out
    - **Complexity**: ⚠️ **HIGH**
    - **Dependencies**: `gravito-core`, `drizzle-orm`
-   - **Used by**: Many examples, templates, CLI, docs
+   - **Used by**: Some examples, templates, CLI, docs (needs migration)
    - **Note**: Uses Drizzle ORM, provides Eloquent-like Model API
+   - **Action**: Mark as deprecated, migrate users to `orbit-database` → `matter`
+   - **Decision needed**: Should we rename it to `@gravito/matter-deprecated` or keep old name with deprecation notice?
 
-2. **`@gravito/orbit-database` → `@gravito/matter`**
-   - **Type**: Database abstraction layer (Custom Query Builder)
+2. **`@gravito/orbit-database` → `@gravito/matter`** ✅ **PRIMARY**
+   - **Type**: Database abstraction layer (Custom Query Builder) - **This is the main module**
    - **Complexity**: ⚠️ **HIGH**
    - **Dependencies**: `pg`, `mysql2`, `better-sqlite3` (optional)
-   - **Used by**: CLI, some examples
-   - **⚠️ CRITICAL**: Both `orbit-db` and `orbit-database` map to `@gravito/matter`!
-   - **Decision needed**: Should these be merged or kept separate with different names?
+   - **Used by**: CLI, examples, core functionality
+   - **Status**: ✅ **ACTIVE** - This is the module to use going forward
 
 3. **`@gravito/orbit-mongo` → `@gravito/dark-matter`**
    - **Type**: MongoDB / NoSQL
@@ -70,18 +72,19 @@ Phase 2 focuses on renaming data storage and cache modules. This phase involves 
 
 ## Critical Issues
 
-### 1. Name Conflict: `orbit-db` vs `orbit-database`
+### 1. Deprecation: `orbit-db` → `orbit-database`
 
-**Problem**: Both modules map to `@gravito/matter` according to `rename-mapping.json`.
+**Status**: `orbit-db` is **DEPRECATED**. `orbit-database` is the **PRIMARY** module.
 
-**Options**:
-- **Option A**: Merge both into `@gravito/matter` (requires code consolidation)
-- **Option B**: Keep separate with different names:
-  - `orbit-db` → `@gravito/matter` (Drizzle-based)
-  - `orbit-database` → `@gravito/matter-query` or `@gravito/matter-builder` (Query Builder)
-- **Option C**: Deprecate one in favor of the other
+**Decision needed for `orbit-db`**:
+- **Option A**: Keep old name `@gravito/orbit-db` with deprecation notice (recommended for backward compatibility)
+- **Option B**: Rename to `@gravito/matter-deprecated` to clearly indicate status
+- **Option C**: Remove entirely (not recommended - breaks existing code)
 
-**Recommendation**: **Option B** - Keep separate with `@gravito/matter-query` for the query builder, as they serve different use cases.
+**Recommendation**: **Option A** - Keep `@gravito/orbit-db` name but add deprecation warnings, guide users to migrate to `@gravito/matter` (`orbit-database`).
+
+**Action for `orbit-database`**: 
+- ✅ Rename to `@gravito/matter` (this is the primary module)
 
 ### 2. Dependency Chain
 
@@ -109,9 +112,9 @@ Phase 2 focuses on renaming data storage and cache modules. This phase involves 
 5. ✅ `orbit-storage` → `nebula`
 6. ✅ `orbit-content` → `nebula-content`
 
-### Batch 4: Database (High Risk - Requires Decision)
-7. ⚠️ `orbit-db` → `matter` (Drizzle-based)
-8. ⚠️ `orbit-database` → `matter-query` or merge decision
+### Batch 4: Database (High Risk)
+7. ✅ `orbit-database` → `matter` (PRIMARY - Custom Query Builder)
+8. ⚠️ `orbit-db` → Handle deprecation (keep name or rename to `matter-deprecated`)
 
 ## Risk Assessment
 
@@ -123,8 +126,8 @@ Phase 2 focuses on renaming data storage and cache modules. This phase involves 
 | `orbit-session` → `orbit` | 🟡 Medium | Many references, optional redis dependency |
 | `orbit-storage` → `nebula` | 🟢 Low-Medium | Moderate references |
 | `orbit-content` → `nebula-content` | 🟢 Low-Medium | Moderate references |
-| `orbit-db` → `matter` | 🔴 High | **Many references (104 files), core functionality** |
-| `orbit-database` → `matter-query` | 🔴 High | **Name conflict resolution needed** |
+| `orbit-database` → `matter` | 🔴 High | **Many references (104 files), PRIMARY module** |
+| `orbit-db` (deprecated) | 🟡 Medium | **Deprecation handling, migration needed** |
 
 ## File Impact Analysis
 
@@ -153,10 +156,13 @@ Phase 2 focuses on renaming data storage and cache modules. This phase involves 
 
 ## Action Items Before Starting
 
-1. ✅ **DECISION NEEDED**: Resolve `orbit-db` vs `orbit-database` naming conflict
+1. ✅ **DECISION NEEDED**: How to handle deprecated `orbit-db`?
+   - Option A: Keep name with deprecation notice (recommended)
+   - Option B: Rename to `@gravito/matter-deprecated`
+   - Option C: Remove (not recommended)
 2. ✅ Verify all tests pass before starting
 3. ✅ Create backup branch
-4. ✅ Document the decision on database module naming
+4. ✅ Document migration path from `orbit-db` to `orbit-database` → `matter`
 
 ## Next Steps
 
