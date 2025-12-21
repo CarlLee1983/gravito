@@ -101,9 +101,14 @@ export class BunContext<V extends GravitoVariables = GravitoVariables> implement
             return this.req.header(name)
         }
         if (options?.append) {
+            console.log('[BunContext] Appending to RES headers:', name, value)
             this._headers.append(name, value)
+            this.res?.headers.append(name, value)
         } else {
             this._headers.set(name, value)
+            if (this.res) {
+                this.res.headers.set(name, value)
+            }
         }
     }
 

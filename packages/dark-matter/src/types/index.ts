@@ -1,5 +1,5 @@
 /**
- * @gravito/orbit-mongo - Type Definitions
+ * @gravito/dark-matter - Type Definitions
  */
 
 // ============================================================================

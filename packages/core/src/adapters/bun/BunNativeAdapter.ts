@@ -156,8 +156,8 @@ export class BunNativeAdapter implements HttpAdapter {
                 const res = await dispatch(i + 1)
                 // If next() returned a response, attach it to context so subsequent c.header() calls work
                 if (res && (ctx as BunContext).res !== res) {
-                    console.log('[BunNativeAdapter] Linking response to context')
-                        (ctx as BunContext).res = res
+                    console.log('[BunNativeAdapter] Linking response to context');
+                    (ctx as BunContext).res = res
                 }
                 return res
             })

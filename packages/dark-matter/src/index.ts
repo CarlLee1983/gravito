@@ -1,5 +1,5 @@
 /**
- * @gravito/orbit-mongo
+ * @gravito/dark-matter
  * MongoDB client for Gravito - Bun native, Laravel-style API
  */
 

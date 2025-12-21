@@ -22,7 +22,7 @@ const manager = new MongoManager()
  *
  * @example
  * ```typescript
- * import { Mongo } from '@gravito/orbit-mongo'
+ * import { Mongo } from '@gravito/dark-matter'
  *
  * // Configure
  * Mongo.configure({

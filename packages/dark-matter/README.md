@@ -1,17 +1,17 @@
-# @gravito/orbit-mongo
+# @gravito/dark-matter
 
 > MongoDB client for Gravito - Bun native, Laravel-style API
 
 ## Installation
 
 ```bash
-bun add @gravito/orbit-mongo mongodb
+bun add @gravito/dark-matter mongodb
 ```
 
 ## Quick Start
 
 ```typescript
-import { Mongo } from '@gravito/orbit-mongo'
+import { Mongo } from '@gravito/dark-matter'
 
 // Configure
 Mongo.configure({

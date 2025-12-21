@@ -1,5 +1,5 @@
 {
-  "name": "@gravito/orbit-mongo",
+  "name": "@gravito/dark-matter",
   "version": "1.0.0-alpha.1",
   "description": "MongoDB client for Gravito - Bun native, Laravel-style API",
   "type": "module",

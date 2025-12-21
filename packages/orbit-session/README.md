@@ -49,7 +49,7 @@ Orbit Session supports multiple drivers:
 
 - `memory`: Default. Good for development, lost on restart.
 - `cache`: Uses `orbit-cache` (requires `OrbitCache` in `orbits` list).
-- `redis`: Direct Redis connection (requires `@gravito/orbit-redis` dependency, but not necessarily the orbit).
+- `redis`: Direct Redis connection (requires `@gravito/plasma` dependency, but not necessarily the orbit).
 - `file`: Stores sessions as JSON files on disk.
 - `sqlite`: Stores sessions in a SQLite database file (uses `bun:sqlite`).
 
