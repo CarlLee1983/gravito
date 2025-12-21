@@ -109,7 +109,7 @@ bun run --filter '*' publish
 - `@gravito/orbit-broadcasting` - 廣播模組
 - `@gravito/orbit-content` - 內容管理模組
 - `@gravito/orbit-db` - 資料庫模組
-- `@gravito/orbit-i18n` - 國際化模組
+- `@gravito/cosmos` - 國際化模組
 - `@gravito/orbit-mail` - 郵件模組
 - `@gravito/orbit-notifications` - 通知模組
 - `@gravito/orbit-queue` - 佇列模組

@@ -1,5 +1,5 @@
 {
-  "name": "@gravito/orbit-i18n",
+  "name": "@gravito/cosmos",
   "version": "1.0.0-alpha.1",
   "description": "Internationalization orbit for Gravito framework",
   "main": "dist/index.js",
@@ -30,6 +30,6 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/gravito-framework/gravito.git",
-    "directory": "packages/orbit-i18n"
+    "directory": "packages/cosmos"
   }
 }

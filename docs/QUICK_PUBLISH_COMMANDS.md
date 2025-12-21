@@ -39,8 +39,8 @@ cd packages/orbit-content && npm publish --access public --tag alpha && cd ../..
 # @gravito/orbit-db
 cd packages/orbit-db && npm publish --access public --tag alpha && cd ../..
 
-# @gravito/orbit-i18n
-cd packages/orbit-i18n && npm publish --access public --tag alpha && cd ../..
+# @gravito/cosmos
+cd packages/cosmos && npm publish --access public --tag alpha && cd ../..
 
 # @gravito/orbit-mail
 cd packages/orbit-mail && npm publish --access public --tag alpha && cd ../..

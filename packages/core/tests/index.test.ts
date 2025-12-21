@@ -80,31 +80,7 @@ describe('gravito-core', () => {
 
       // Use a fresh instance to rule out state issues
       const freshOrbit = new Hono()
-      freshOrbit.use('*', async (c, next) => {
-        console.log('[DEBUG-ORBIT] Middleware HIT')
-        console.log('[DEBUG-ORBIT] URL:', c.req.url)
-        console.log('[DEBUG-ORBIT] Path:', c.req.path)
-        console.log('[DEBUG-ORBIT] Path Length:', c.req.path.length)
-        console.log('[DEBUG-ORBIT] Method:', c.req.method)
-        await next()
-      })
-      freshOrbit.notFound((c) => {
-        console.log('[DEBUG-ORBIT] 404 Handler Triggered')
-        return c.text('CUSTOM 404', 404)
-      })
-      freshOrbit.all('*', (c) => {
-        console.log('[DEBUG-ORBIT] Catch-all HIT for:', c.req.path)
-        return c.text('pong-wildcard')
-      })
-
-      // VERIFY LOCALLY
-      const localRes = await freshOrbit.fetch(new Request('http://localhost/ping'))
-      console.log('Local Check (Clean):', await localRes.text())
-
-      const localResHeaders = await freshOrbit.fetch(new Request('http://localhost/ping', {
-        headers: { 'Host': 'localhost:3000' }
-      }))
-      console.log('Local Check (Headers):', await localResHeaders.text())
+      freshOrbit.get('/ping', (c) => c.text('pong'))
 
       core.mountOrbit('/fresh', freshOrbit)
       const { fetch } = core.liftoff(0)

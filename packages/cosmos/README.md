@@ -1,4 +1,4 @@
-# @gravito/orbit-i18n
+# @gravito/cosmos
 
 > Lightweight Internationalization (i18n) Orbit for Gravito.
 
@@ -7,7 +7,7 @@ Provides simple JSON-based localization support for your Gravito application, wi
 ## 📦 Installation
 
 ```bash
-bun add @gravito/orbit-i18n
+bun add @gravito/cosmos
 ```
 
 ## 🚀 Quick Start
@@ -15,7 +15,7 @@ bun add @gravito/orbit-i18n
 1.  **Register the Orbit**:
     ```typescript
     import { PlanetCore } from 'gravito-core';
-    import { OrbitI18n } from '@gravito/orbit-i18n';
+    import { OrbitI18n } from '@gravito/cosmos';
 
     const core = new PlanetCore();
 

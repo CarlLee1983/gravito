@@ -1,5 +1,5 @@
 import { ContentOrbit } from '@gravito/orbit-content'
-import { I18nOrbit, localeMiddleware } from '@gravito/orbit-i18n'
+import { I18nOrbit, localeMiddleware } from '@gravito/cosmos'
 import { type GravitoConfig, PlanetCore } from 'gravito-core'
 
 // Load Translations (Mock for now)

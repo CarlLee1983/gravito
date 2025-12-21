@@ -33,7 +33,7 @@ This page compares Gravito (core + Orbits) with Laravel 12’s “full-stack MVC
 | Notifications | `@gravito/orbit-notifications` |
 | Broadcasting | `@gravito/orbit-broadcasting` |
 | Storage | `@gravito/orbit-storage` |
-| i18n | `@gravito/orbit-i18n` |
+| i18n | `@gravito/cosmos` |
 
 ## Feature Matrix
 
@@ -136,7 +136,7 @@ This page compares Gravito (core + Orbits) with Laravel 12’s “full-stack MVC
 |--------|--------|------|
 | Cache | Implemented | `@gravito/orbit-cache` |
 | Storage | Implemented | `@gravito/orbit-storage` |
-| Localization (i18n) | Implemented | `@gravito/orbit-i18n` |
+| Localization (i18n) | Implemented | `@gravito/cosmos` |
 
 ### Observability
 

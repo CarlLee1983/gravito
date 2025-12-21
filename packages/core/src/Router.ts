@@ -70,7 +70,7 @@ function formRequestToMiddleware(RequestClass: FormRequestClass): GravitoMiddlew
 
     // Store validated data in context
     ctx.set('validated', result.data)
-    await next()
+    return await next()
   }
 }
 

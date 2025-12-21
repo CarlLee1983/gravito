@@ -64,15 +64,18 @@ export class BunNativeAdapter implements HttpAdapter {
                 url.pathname = newPath === '' ? '/' : newPath
             }
 
-            // that might confuse the sub-adapter (e.g. body already used flags, though we are in GET)
-            // console.log('[DEBUG] Rewritten URL:', url.toString())
-            // Hardcode to test
+            // Create a clean request with minimal properties to avoid carrying over internal state
             const newReq = new Request(url.toString(), {
                 method: ctx.req.method,
                 headers: ctx.req.raw.headers,
             })
 
-            return await subAdapter.fetch(newReq)
+            const res = await subAdapter.fetch(newReq)
+            // Ensure response is stored in context for middleware chain
+            if (ctx instanceof BunContext) {
+                ctx.res = res
+            }
+            return res
         })
     }
 

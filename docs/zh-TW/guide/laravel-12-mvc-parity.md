@@ -33,7 +33,7 @@ title: Laravel 12 MVC 對齊程度
 | Notifications | `@gravito/orbit-notifications` |
 | Broadcasting | `@gravito/orbit-broadcasting` |
 | Storage | `@gravito/orbit-storage` |
-| i18n | `@gravito/orbit-i18n` |
+| i18n | `@gravito/cosmos` |
 
 ## 功能矩陣
 
@@ -137,7 +137,7 @@ title: Laravel 12 MVC 對齊程度
 |------|------|------|
 | Cache | 已實作 | `@gravito/orbit-cache` |
 | Storage | 已實作 | `@gravito/orbit-storage` |
-| 多語系（i18n） | 已實作 | `@gravito/orbit-i18n` |
+| 多語系（i18n） | 已實作 | `@gravito/cosmos` |
 
 ### 可觀測性（Observability）
 
