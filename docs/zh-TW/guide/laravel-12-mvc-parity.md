@@ -32,7 +32,7 @@ title: Laravel 12 MVC 對齊程度
 | Mail | `@gravito/orbit-mail` |
 | Notifications | `@gravito/orbit-notifications` |
 | Broadcasting | `@gravito/orbit-broadcasting` |
-| Storage | `@gravito/orbit-storage` |
+| Storage | `@gravito/nebula` |
 | i18n | `@gravito/cosmos` |
 
 ## 功能矩陣
