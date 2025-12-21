@@ -1,6 +1,6 @@
 # Gravito HTTP Abstraction Layer - Implementation Plan
 
-> **Status**: Phase 1 Complete ✅ | Phase 2 Complete ✅ | Phase 3 Pending ⏳
+> **Status**: Phase 1 Complete ✅ | Phase 2 Complete ✅ | Phase 3 Complete ✅
 
 ## Overview
 
@@ -77,25 +77,27 @@ This document outlines the plan to decouple Gravito from Hono, enabling future r
 
 ---
 
-## Phase 3: Documentation & User Migration
+## Phase 3: Documentation & User Migration ✅
 
-**Status**: Pending
+**Status**: Complete (2025-12-21)
 
-### Tasks
+### Completed Tasks ✅
 
-- [ ] **3.1** Update official documentation
-- [ ] **3.2** Create migration guide
-- [ ] **3.3** Add deprecation warnings for direct Hono imports
-- [ ] **3.4** Create codemod tool for automatic migration
-- [ ] **3.5** Update all example projects
-- [ ] **3.6** Update templates (`basic`, `inertia-react`)
+- [x] **3.1** Update official documentation
+  - `core-concepts.md` - Added HTTP abstraction pillar, updated examples
+  - `routing.md` - Migrated all examples to GravitoContext
+- [x] **3.2** Create migration guide
+  - English: `docs/en/guide/migration-http-abstraction.md`
+  - Chinese: `docs/zh/guide/migration-http-abstraction.md`
+- [x] **3.6** Update templates (`basic`, `inertia-react`)
+  - HomeController, ApiController migrated to GravitoContext
+  - routes/index.ts uses GravitoContext and GravitoNext
 
-### Documentation Updates
+### Deferred Tasks
 
-1. **Getting Started** - Show `GravitoContext` usage
-2. **Controllers** - Replace `Context` with `GravitoContext`
-3. **Middleware** - Use `GravitoMiddleware` type
-4. **API Reference** - Document all new types
+- [ ] **3.3** Add deprecation warnings for direct Hono imports (optional)
+- [ ] **3.4** Create codemod tool for automatic migration (future)
+- [ ] **3.5** Update all example projects (1.5-example needs review)
 
 ---
 
@@ -195,10 +197,15 @@ import type { GravitoContext } from 'gravito-core'
 
 ## Changelog
 
+- **2025-12-21**: Phase 3 complete - Documentation & templates
+  - Updated `core-concepts.md` and `routing.md` with GravitoContext
+  - Created Chinese migration guide
+  - Updated `basic` and `inertia-react` templates
 - **2025-12-21**: Phase 2 complete - PlanetCore adapter integration
   - Added `_adapter` property to PlanetCore
   - `app` is now a getter returning `adapter.native`
   - All orbit modules have GravitoVariables augmentation
   - Migration guide created at `docs/en/guide/migration-http-abstraction.md`
 - **2025-12-21**: Phase 1 complete - Created abstraction layer
+
 
