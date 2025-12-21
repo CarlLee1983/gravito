@@ -147,9 +147,20 @@ export class OrbitQueue implements GravitoOrbit {
   }
 }
 
+// Module augmentation for Hono (backward compatibility)
 declare module 'hono' {
   interface ContextVariableMap {
     queue: QueueManager
+    db?: unknown
+  }
+}
+
+// Module augmentation for GravitoVariables (new abstraction)
+declare module 'gravito-core' {
+  interface GravitoVariables {
+    /** Queue manager for job processing */
+    queue?: QueueManager
+    /** Database service (from orbit-db) */
     db?: unknown
   }
 }

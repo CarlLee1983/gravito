@@ -1,3 +1,13 @@
+/**
+ * @fileoverview Orbit Auth - Authentication & Authorization for Gravito
+ *
+ * Provides comprehensive authentication with multiple guards, password
+ * reset, email verification, and authorization gates.
+ *
+ * @module @gravito/orbit-auth
+ * @since 1.0.0
+ */
+
 import type { GravitoOrbit, PlanetCore } from 'gravito-core'
 import type { Context, Next } from 'hono'
 import { type AuthConfig, AuthManager, type UserProviderResolver } from './AuthManager'
@@ -128,12 +138,29 @@ export class OrbitAuth implements GravitoOrbit {
   }
 }
 
+// Module augmentation for Hono (backward compatibility)
 declare module 'hono' {
   interface ContextVariableMap {
     auth: AuthManager
     gate: Gate
     hash: HashManager
     passwords?: PasswordBroker
+    emailVerification?: EmailVerificationService
+  }
+}
+
+// Module augmentation for GravitoVariables (new abstraction)
+declare module 'gravito-core' {
+  interface GravitoVariables {
+    /** Authentication manager for user authentication */
+    auth?: AuthManager
+    /** Authorization gate for permission checks */
+    gate?: Gate
+    /** Hash manager for password hashing */
+    hash?: HashManager
+    /** Password reset broker */
+    passwords?: PasswordBroker
+    /** Email verification service */
     emailVerification?: EmailVerificationService
   }
 }

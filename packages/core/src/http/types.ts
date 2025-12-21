@@ -89,47 +89,13 @@ export interface GravitoVariables {
   ) => string
 
   // Optional orbit-injected services
-  // Extend via module augmentation
-
-  /**
-   * Cache service (from orbit-cache)
-   */
-  cache?: unknown
-
-  /**
-   * View service (from orbit-view)
-   */
-  view?: unknown
-
-  /**
-   * Internationalization service (from orbit-i18n)
-   */
-  i18n?: unknown
-
-  /**
-   * Session service (from orbit-session)
-   */
-  session?: unknown
-
-  /**
-   * Route model bindings
-   */
-  routeModels?: Record<string, unknown>
-
-  /**
-   * Validated request data (from FormRequest)
-   */
-  validated?: unknown
-
-  /**
-   * Inertia.js service (from orbit-inertia)
-   */
-  inertia?: unknown
-
-  /**
-   * Authentication service (from orbit-auth)
-   */
-  auth?: unknown
+  // Each orbit extends this interface via module augmentation:
+  //
+  // declare module 'gravito-core' {
+  //   interface GravitoVariables {
+  //     myService: MyService
+  //   }
+  // }
 
   // Allow any additional properties for extensibility
   [key: string]: unknown

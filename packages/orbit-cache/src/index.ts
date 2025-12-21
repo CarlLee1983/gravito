@@ -253,3 +253,11 @@ export default function orbitCache(
   orbit.install(core)
   return orbit.getCache()
 }
+
+// Module augmentation for GravitoVariables (abstraction layer)
+declare module 'gravito-core' {
+  interface GravitoVariables {
+    /** Cache manager for caching operations */
+    cache?: CacheManager
+  }
+}

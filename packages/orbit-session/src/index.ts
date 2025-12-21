@@ -1,3 +1,13 @@
+/**
+ * @fileoverview Orbit Session - Session management for Gravito
+ *
+ * Provides secure session handling with multiple storage backends
+ * and CSRF protection.
+ *
+ * @module @gravito/orbit-session
+ * @since 1.0.0
+ */
+
 import { randomBytes } from 'node:crypto'
 import type { CacheService, GravitoOrbit, PlanetCore } from 'gravito-core'
 import type { Context, Next } from 'hono'
@@ -20,10 +30,21 @@ export { RedisSessionStore } from './stores/RedisSessionStore'
 export { SqliteSessionStore } from './stores/SqliteSessionStore'
 export * from './types'
 
+// Module augmentation for Hono (backward compatibility)
 declare module 'hono' {
   interface ContextVariableMap {
     session: SessionService
     csrf: CsrfService
+  }
+}
+
+// Module augmentation for GravitoVariables (new abstraction)
+declare module 'gravito-core' {
+  interface GravitoVariables {
+    /** Session service for managing user sessions */
+    session?: SessionService
+    /** CSRF protection service */
+    csrf?: CsrfService
   }
 }
 

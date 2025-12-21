@@ -136,9 +136,21 @@ export class OrbitMail implements GravitoOrbit {
   }
 }
 
+// Module augmentation for Hono (backward compatibility)
 declare module 'hono' {
   interface ContextVariableMap {
     mail: {
+      send: (mailable: Mailable) => Promise<void>
+      queue: (mailable: Mailable) => Promise<void>
+    }
+  }
+}
+
+// Module augmentation for GravitoVariables (new abstraction)
+declare module 'gravito-core' {
+  interface GravitoVariables {
+    /** Mail service for sending emails */
+    mail?: {
       send: (mailable: Mailable) => Promise<void>
       queue: (mailable: Mailable) => Promise<void>
     }
