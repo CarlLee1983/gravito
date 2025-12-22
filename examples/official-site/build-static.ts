@@ -60,7 +60,7 @@ async function build() {
   console.log(`Render: / (Root Default)`)
   console.log('🌐 Making request to root path...')
   try {
-    const res = await core.app.request('/')
+    const res = await (core.app as any).request('/')
     console.log(`📡 Response status: ${res.status}`)
     if (res.status === 200) {
       const gaId = process.env.VITE_GA_ID
@@ -117,7 +117,7 @@ async function build() {
       console.log(`Render: ${pathname}`)
 
       try {
-        const res = await core.app.request(pathname)
+        const res = await (core.app as any).request(pathname)
         if (res.status !== 200) {
           if (res.status === 302 || res.status === 301) {
             const location = res.headers.get('Location')
@@ -183,7 +183,7 @@ async function build() {
   // 4. Fetch dynamic robots.txt
   console.log('🤖 Fetching robots.txt...')
   try {
-    const res = await core.app.request('/robots.txt')
+    const res = await (core.app as any).request('/robots.txt')
     if (res.status === 200) {
       const content = await res.text()
       await writeFile(join(outputDir, 'robots.txt'), content)
@@ -201,7 +201,7 @@ async function build() {
   console.log('🚫 Generating 404.html...')
   try {
     // Request a known non-existent route to trigger the 404 hook
-    const res = await core.app.request('/__force_404_generation__')
+    const res = await (core.app as any).request('/__force_404_generation__')
     let html = await res.text()
 
     // For GitHub Pages SPA support, we need to add a script that:

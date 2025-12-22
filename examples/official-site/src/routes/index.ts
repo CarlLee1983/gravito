@@ -22,6 +22,7 @@ export function registerRoutes(core: PlanetCore): void {
     // Wildcard for docs pages
     root.get('/docs/*', [DocsController, 'show'])
     root.get('/about', [HomeController, 'about'])
+    root.get('/features', [HomeController, 'features'])
   })
 
   // ─────────────────────────────────────────────
@@ -36,6 +37,7 @@ export function registerRoutes(core: PlanetCore): void {
       en.get('/docs', [DocsController, 'index'])
       en.get('/docs/*', [DocsController, 'show'])
       en.get('/about', [HomeController, 'about'])
+      en.get('/features', [HomeController, 'features'])
     })
 
   // ─────────────────────────────────────────────
@@ -50,6 +52,7 @@ export function registerRoutes(core: PlanetCore): void {
       zh.get('/docs', [DocsController, 'index'])
       zh.get('/docs/*', [DocsController, 'show'])
       zh.get('/about', [HomeController, 'about'])
+      zh.get('/features', [HomeController, 'features'])
     })
 
   // Newsletter
