@@ -70,7 +70,6 @@ The initial v1.0 release focuses on these stable modules:
 
 - **`@gravito/ion`**: The full-stack bridge, enabling "Backend MVC, Frontend SPA" productivity.
 - **`@gravito/luminosity`**: SmartMap indexing engine and automated Meta tag management.
-- **`@gravito/atlas`**: Standard database module with a fluent Query Builder and ORM.
 - **`@gravito/sentinel`**: Secure and robust authentication and authorization system.
 - **`@gravito/prism`**: Template rendering engine with extreme image optimization.
 - **`@gravito/cosmos`**: Enterprise-grade internationalization solution.
@@ -78,7 +77,7 @@ The initial v1.0 release focuses on these stable modules:
 - **`@gravito/pulse`**: Automated scaffolding and productivity commands.
 
 > **Roadmap (Scheduled for v1.5 Release)**: 
-> `Mail` (@gravito/signal), `Queue` (@gravito/kinetic), `Scheduler` (@gravito/chronon).
+> `Database` (@gravito/atlas), `Mail` (@gravito/signal), `Queue` (@gravito/kinetic), `Scheduler` (@gravito/chronon).
 
 ### 3. Satellites (Business Logic)
 

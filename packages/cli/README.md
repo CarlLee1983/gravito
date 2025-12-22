@@ -34,36 +34,8 @@ Generate code quickly using standard templates:
 # Create a Controller
 gravito make:controller UserController
 
-# Create a Model
-gravito make:model User
-
 # Create a Middleware
 gravito make:middleware EnsureAdmin
-
-# Create a Migration
-gravito make:migration create_users_table
-
-# Create a Seeder
-gravito make:seeder UserSeeder
-```
-
-### Database Management
-
-Manage your database migrations and seeders (wraps `drizzle-kit`):
-
-```bash
-# Run pending migrations
-gravito migrate
-
-# Drop all tables and re-run migrations
-gravito migrate --fresh
-
-# Check migration status
-gravito migrate:status
-
-# Run database seeders
-gravito db:seed
-gravito db:seed --class UserSeeder
 ```
 
 ### Development Utilities
@@ -76,20 +48,7 @@ gravito route:list
 gravito tinker
 ```
 
-### Scheduler Commands
-
-Manage scheduled tasks in your application:
-
-```bash
-# List all scheduled tasks
-gravito schedule:list
-
-# Run due tasks (for cron integration)
-gravito schedule:run
-
-# Run scheduler in daemon mode
-gravito schedule:work
-```
+> **Note**: Database management commands (`migrate`, `db:seed`, etc.) and scheduler commands (`schedule:*`) are not available in v1.0. These features will be introduced in future releases.
 
 ## Available Templates
 

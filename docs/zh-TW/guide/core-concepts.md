@@ -69,7 +69,6 @@ export default core.liftoff() // 點火升空
 
 - **`@gravito/ion`**：全棧橋接器，實現「後端 MVC，前端 SPA」的極致開發體驗。
 - **`@gravito/luminosity`**：智慧型 SmartMap 引擎與 Meta 標籤自動化管理。
-- **`@gravito/atlas`**：標準資料庫模組，提供流暢的 Query Builder 與 ORM 體驗。
 - **`@gravito/sentinel`**：提供安全穩固的身份驗證與授權系統。
 - **`@gravito/prism`**：極致影像優化的樣板渲染引擎。
 - **`@gravito/cosmos`**：企業級國際化解決方案。
@@ -77,7 +76,7 @@ export default core.liftoff() // 點火升空
 - **`@gravito/pulse`**：自動化骨架生成與生產力工具。
 
 > **Roadmap (v1.5 預計發佈)**: 
-> `Mail` (@gravito/signal), `Queue` (@gravito/kinetic), `Scheduler` (@gravito/chronon).
+> `資料庫` (@gravito/atlas), `Mail` (@gravito/signal), `Queue` (@gravito/kinetic), `Scheduler` (@gravito/chronon).
 
 ### 3. Satellites (業務衛星)
 

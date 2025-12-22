@@ -381,7 +381,7 @@ export class ProductController {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
   <!-- Server-Side Meta Injection -->
-  {{{ metaTags || '' }}}
+  {{ metaTags || '' }}
   
   @vite(['src/main.tsx'])
 </head>
@@ -426,9 +426,6 @@ npx luminosity compact
 ---
 
 ## 💎 為什麽 Luminosity 是最強大的 SEO 引擎？
-
-
-
 
 Luminosity 不僅僅是一個 Sitemap 生成器，它是 Gravito 為了極致開發體驗與商業成功而打造的全方位解決方案：
 

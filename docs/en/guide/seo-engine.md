@@ -372,7 +372,7 @@ Ensure your root template (e.g., `resources/views/app.edge`) has a slot in the `
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
   <!-- Server-Side Meta Injection -->
-  {{{ metaTags || '' }}}
+  {{ metaTags || '' }}
   
   @vite(['src/main.tsx'])
 </head>
