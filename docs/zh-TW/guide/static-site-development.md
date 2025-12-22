@@ -8,13 +8,37 @@ title: 靜態網站開發指南
 
 ## 🚀 快速開始
 
-### 1. 安裝套件
+### 選項 1：使用 CLI 模板（推薦）
+
+最快的方式是使用 CLI 模板生成器：
+
+```bash
+# 創建新的靜態網站專案
+gravito create my-static-site --template static-site
+
+# 系統會提示您選擇 React 或 Vue 3
+cd my-static-site
+bun install
+bun run dev
+```
+
+這將為您生成一個完整的靜態網站專案，包含：
+- 預先配置的 `@gravito/freeze` 設定
+- React 或 Vue 的 StaticLink 元件
+- 靜態生成建構腳本
+- 範例配置檔案
+
+### 選項 2：手動設定
+
+如果您偏好手動設定：
+
+#### 1. 安裝套件
 
 ```bash
 bun add @gravito/freeze
 ```
 
-### 2. 建立設定檔
+#### 2. 建立設定檔
 
 在專案根目錄建立 `freeze.config.ts`：
 
