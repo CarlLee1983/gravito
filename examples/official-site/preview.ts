@@ -8,7 +8,7 @@ const DIST_DIR = join(process.cwd(), 'dist-static')
 console.log(`🚀 Starting local preview server for static build...`)
 console.log(`📂 Serving directory: ${DIST_DIR}`)
 
-const server = serve({
+const _server = serve({
   port: PORT,
   async fetch(req) {
     const url = new URL(req.url)
@@ -25,13 +25,13 @@ const server = serve({
       if (s.isDirectory()) {
         filePath = join(filePath, 'index.html')
       }
-    } catch (e) {
+    } catch (_e) {
       // Check if adding .html helps (clean urls)
       try {
-        const htmlPath = filePath + '.html'
+        const htmlPath = `${filePath}.html`
         await stat(htmlPath)
         filePath = htmlPath
-      } catch (e2) {
+      } catch (_e2) {
         // Return 404.html for SPA behavior
         filePath = join(DIST_DIR, '404.html')
       }
@@ -71,21 +71,37 @@ const server = serve({
           'Content-Type': contentType,
         },
       })
-    } catch (e) {
+    } catch (_e) {
       return new Response('Not Found', { status: 404 })
     }
   },
 })
 
 function getContentType(path: string): string {
-  if (path.endsWith('.html')) return 'text/html'
-  if (path.endsWith('.js')) return 'application/javascript'
-  if (path.endsWith('.css')) return 'text/css'
-  if (path.endsWith('.png')) return 'image/png'
-  if (path.endsWith('.jpg') || path.endsWith('.jpeg')) return 'image/jpeg'
-  if (path.endsWith('.svg')) return 'image/svg+xml'
-  if (path.endsWith('.json')) return 'application/json'
-  if (path.endsWith('.ico')) return 'image/x-icon'
+  if (path.endsWith('.html')) {
+    return 'text/html'
+  }
+  if (path.endsWith('.js')) {
+    return 'application/javascript'
+  }
+  if (path.endsWith('.css')) {
+    return 'text/css'
+  }
+  if (path.endsWith('.png')) {
+    return 'image/png'
+  }
+  if (path.endsWith('.jpg') || path.endsWith('.jpeg')) {
+    return 'image/jpeg'
+  }
+  if (path.endsWith('.svg')) {
+    return 'image/svg+xml'
+  }
+  if (path.endsWith('.json')) {
+    return 'application/json'
+  }
+  if (path.endsWith('.ico')) {
+    return 'image/x-icon'
+  }
   return 'text/plain'
 }
 

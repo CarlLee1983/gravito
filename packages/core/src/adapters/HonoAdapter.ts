@@ -108,7 +108,6 @@ class HonoContextWrapper<V extends GravitoVariables = GravitoVariables>
   implements GravitoContext<V>
 {
   private _req: HonoRequestWrapper
-  private _statusCode: StatusCode = 200
 
   constructor(private honoCtx: Context) {
     this._req = new HonoRequestWrapper(honoCtx)

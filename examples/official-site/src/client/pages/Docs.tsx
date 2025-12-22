@@ -284,10 +284,11 @@ export default function Docs() {
                       <li key={item.path}>
                         <StaticLink
                           href={item.path}
-                          className={`block text-sm py-3 px-6 transition-all duration-300 relative group font-medium rounded-xl border border-transparent ${isActive
-                            ? 'text-singularity font-bold border-white/5 bg-white/[0.03] shadow-[0_0_20px_rgba(20,241,149,0.05)]'
-                            : 'text-gray-400 hover:text-white hover:bg-white/[0.02]'
-                            }`}
+                          className={`block text-sm py-3 px-6 transition-all duration-300 relative group font-medium rounded-xl border border-transparent ${
+                            isActive
+                              ? 'text-singularity font-bold border-white/5 bg-white/[0.03] shadow-[0_0_20px_rgba(20,241,149,0.05)]'
+                              : 'text-gray-400 hover:text-white hover:bg-white/[0.02]'
+                          }`}
                         >
                           <div className="flex items-center gap-3">
                             {isActive && (
@@ -355,7 +356,10 @@ export default function Docs() {
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
                 {/* Breadcrumbs */}
                 <nav className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">
-                  <StaticLink href={isZh ? '/zh' : '/'} className="hover:text-white transition-colors">
+                  <StaticLink
+                    href={isZh ? '/zh' : '/'}
+                    className="hover:text-white transition-colors"
+                  >
                     SINGULARITY
                   </StaticLink>
                   <ChevronRight size={10} className="opacity-20" />
@@ -541,10 +545,11 @@ export default function Docs() {
                           <li key={item.id} className={`${indent} relative`}>
                             <a
                               href={`#${item.id}`}
-                              className={`block text-[13px] leading-relaxed transition-all duration-300 ${isActive
-                                ? 'text-singularity font-black tracking-tight translate-x-1'
-                                : 'text-gray-400 hover:text-white'
-                                }`}
+                              className={`block text-[13px] leading-relaxed transition-all duration-300 ${
+                                isActive
+                                  ? 'text-singularity font-black tracking-tight translate-x-1'
+                                  : 'text-gray-400 hover:text-white'
+                              }`}
                             >
                               {item.text}
                             </a>

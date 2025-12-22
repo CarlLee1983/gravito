@@ -38,7 +38,7 @@ export function generateRedirects(config: FreezeConfig): Map<string, string> {
   for (const rule of config.redirects) {
     const html = generateRedirectHtml(rule.to)
     // Path like '/about' -> 'about/index.html'
-    const outputPath = rule.from.replace(/^\//, '') + '/index.html'
+    const outputPath = `${rule.from.replace(/^\//, '')}/index.html`
     redirects.set(outputPath, html)
   }
 
@@ -78,7 +78,7 @@ export function generateLocalizedRoutes(abstractRoutes: string[], locales: strin
  * // Returns redirects from abstract routes to default locale versions
  */
 export function inferRedirects(
-  locales: string[],
+  _locales: string[],
   defaultLocale: string,
   commonRoutes: string[]
 ): RedirectRule[] {
@@ -122,7 +122,7 @@ export function generateSitemapEntries(routes: string[], config: FreezeConfig): 
     if (!routeGroups.has(cleanPath)) {
       routeGroups.set(cleanPath, [])
     }
-    routeGroups.get(cleanPath)!.push(route)
+    routeGroups.get(cleanPath)?.push(route)
   }
 
   // Generate entries with alternates

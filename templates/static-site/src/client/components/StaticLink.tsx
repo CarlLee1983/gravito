@@ -65,7 +65,7 @@ export function StaticLink({ href, children, className, onClick, ...props }: Sta
     const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
       // 如果提供了 onClick 處理器，先執行它
       if (onClick) {
-        ; (onClick as (e: React.MouseEvent<HTMLAnchorElement>) => void)(e)
+        ;(onClick as (e: React.MouseEvent<HTMLAnchorElement>) => void)(e)
       }
       // 在靜態環境中，讓瀏覽器處理導航（不阻止默認行為）
     }
