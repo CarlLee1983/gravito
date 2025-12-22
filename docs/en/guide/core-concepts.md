@@ -4,7 +4,7 @@ title: Gravito Core Concepts
 
 # Gravito Core Concepts
 
-> **"The High-Performance Framework for Artisans."**
+> **"The High-Performance Framework for Artisans."**  
 > 為工匠打造的高效能框架
 
 <div class="not-prose my-5 flex flex-wrap items-center gap-2">
