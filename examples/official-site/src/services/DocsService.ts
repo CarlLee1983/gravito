@@ -240,7 +240,11 @@ export class DocsService {
           finalHref = `${prefix}/${finalHref}`
         }
 
-        return `<a href="${finalHref}"${title ? ` title="${title}"` : ''}>${text}</a>`
+        // Escape href and title for HTML attributes
+        const escapedHref = escapeHtml(finalHref)
+        const escapedTitle = title ? escapeHtml(title) : null
+
+        return `<a href="${escapedHref}"${escapedTitle ? ` title="${escapedTitle}"` : ''}>${text}</a>`
       }
 
       renderer.code = ({ text, lang }: { text: string; lang?: string }) => {
