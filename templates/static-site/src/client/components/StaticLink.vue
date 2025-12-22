@@ -12,7 +12,7 @@ interface Props {
   href: string
   as?: string
   method?: string
-  data?: Record<string, any>
+  data?: Record<string, unknown>
   replace?: boolean
   preserveScroll?: boolean
   preserveState?: boolean
@@ -21,7 +21,7 @@ interface Props {
   headers?: Record<string, string>
   queryStringArrayFormat?: 'brackets' | 'indices'
   class?: string
-  [key: string]: any
+  [key: string]: unknown
 }
 
 const props = defineProps<Props>()
@@ -30,7 +30,7 @@ const props = defineProps<Props>()
  * 檢測是否在靜態網站環境中（GitHub Pages、Vercel、Netlify 等）
  * 在靜態環境中，沒有後端伺服器處理 Inertia 的 AJAX 請求，
  * 因此需要使用普通的 <a> 標籤進行完整頁面導航
- * 
+ *
  * 從環境變數 VITE_STATIC_SITE_DOMAINS 讀取生產環境域名列表
  */
 function isStaticSite(): boolean {
@@ -39,6 +39,17 @@ function isStaticSite(): boolean {
   }
 
   const hostname = window.location.hostname
+  const port = window.location.port
+
+  // 🔥 Static preview server detection (bun run build:preview)
+  if ((hostname === 'localhost' || hostname === '127.0.0.1') && port === '4173') {
+    return true
+  }
+
+  // 🔥 Development mode with Inertia backend (port 3000/5173)
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return false
+  }
 
   // 從環境變數讀取靜態網站域名列表
   const staticDomainsEnv = import.meta.env.VITE_STATIC_SITE_DOMAINS || ''
@@ -81,4 +92,3 @@ const linkProps = computed(() => {
   return props
 })
 </script>
-

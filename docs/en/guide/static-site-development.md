@@ -104,6 +104,56 @@ export function StaticLink({ href, children, className, ...props }: StaticLinkPr
 }
 ```
 
+**Vue StaticLink Implementation**:
+```vue
+<!-- src/client/components/StaticLink.vue -->
+<template>
+  <component :is="linkComponent" v-bind="linkProps">
+    <slot />
+  </component>
+</template>
+
+<script setup lang="ts">
+import { Link } from '@inertiajs/vue3'
+import { computed } from 'vue'
+
+interface Props {
+  href: string
+  class?: string
+  [key: string]: unknown
+}
+
+const props = defineProps<Props>()
+
+function isStaticSite(): boolean {
+  if (typeof window === 'undefined') return false
+  
+  const hostname = window.location.hostname
+  const port = window.location.port
+  
+  // Static preview server (bun preview.ts)
+  if (hostname === 'localhost' && port === '4173') return true
+  
+  // Production domains
+  if (hostname.includes('github.io')) return true
+  if (hostname.includes('vercel.app')) return true
+  
+  return false
+}
+
+const isStatic = isStaticSite()
+
+const linkComponent = computed(() => isStatic ? 'a' : Link)
+const linkProps = computed(() => {
+  if (isStatic) {
+    const { href, class: className, ...rest } = props
+    return { href, class: className, ...rest }
+  }
+  return props
+})
+</script>
+```
+
 ---
 
 ### 2. Locale Path Prefix Issues

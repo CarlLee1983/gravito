@@ -12,7 +12,7 @@ interface Props {
   href: string
   as?: string
   method?: string
-  data?: Record<string, any>
+  data?: Record<string, unknown>
   replace?: boolean
   preserveScroll?: boolean
   preserveState?: boolean
@@ -21,7 +21,7 @@ interface Props {
   headers?: Record<string, string>
   queryStringArrayFormat?: 'brackets' | 'indices'
   class?: string
-  [key: string]: any
+  [key: string]: unknown
 }
 
 const props = defineProps<Props>()
@@ -37,12 +37,30 @@ function isStaticSite(): boolean {
   }
 
   const hostname = window.location.hostname
-  // 在此添加您的生產環境域名
-  const staticDomains = [
-    'gravito.dev',
-    // 如果需要，可以添加 GitHub Pages 模式
-    // hostname.includes('github.io')
-  ]
+  const port = window.location.port
+
+  // 🔥 Static preview server detection (bun run build:preview)
+  if ((hostname === 'localhost' || hostname === '127.0.0.1') && port === '4173') {
+    return true
+  }
+
+  // 🔥 Development mode with Inertia backend (port 3000/5173)
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return false
+  }
+
+  // Production domains that should use hard reloads for safety on static CDNs
+  const staticDomains = ['gravito.dev', 'gravito-framework.github.io']
+
+  // Also check common static hosting patterns
+  if (
+    hostname.includes('github.io') ||
+    hostname.includes('vercel.app') ||
+    hostname.includes('netlify.app') ||
+    hostname.includes('pages.dev')
+  ) {
+    return true
+  }
 
   return staticDomains.includes(hostname)
 }
@@ -68,4 +86,3 @@ const linkProps = computed(() => {
   return props
 })
 </script>
-
