@@ -66,6 +66,7 @@ export class OrbitSignal implements GravitoOrbit {
         queue: (mailable: Mailable) => this.queue(mailable),
       })
       await next()
+      return undefined
     })
   }
 
