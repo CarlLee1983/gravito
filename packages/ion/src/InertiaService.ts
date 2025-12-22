@@ -53,22 +53,21 @@ export class InertiaService {
   constructor(
     private context: GravitoContext<GravitoVariables>,
     private config: InertiaConfig = {}
-  ) {}
+  ) { }
 
   /**
    * Escape a string for safe use in HTML attributes
    */
   private escapeForSingleQuotedHtmlAttribute(value: string): string {
-    return (
-      value
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        // Also escape double quotes so templates can safely use either:
-        // data-page='{{{ page }}}' or data-page="{{{ page }}}"
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;')
-    )
+    return value
+      .replace(/\\/g, '\\\\')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      // Also escape double quotes so templates can safely use either:
+      // data-page='{{{ page }}}' or data-page="{{{ page }}}"
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;')
   }
 
   /**

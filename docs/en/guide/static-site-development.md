@@ -119,24 +119,57 @@ bun run build:preview
 
 ## 📐 How It Works
 
+Gravito SSG follows a three-stage process from dynamic development to static deployment:
+
+### Stage 1: Development Mode (Dynamic)
+
+During development, the application runs in traditional dynamic mode:
+
+- **Inertia SPA**: Full single-page application experience with Inertia.js
+- **Hot Module Reload (HMR)**: Instant development feedback via Vite
+- **Backend Server**: Full Gravito core functionality available
+- **Dynamic Rendering**: All routes generated on-demand
+
+### Stage 2: Build SSG (Freeze)
+
+When running `bun run build:static`, the system:
+
+- **Pre-renders all pages**: Traverses all routes and generates HTML
+- **Generates redirects**: Creates redirect HTML for abstract routes
+- **Creates sitemap**: Automatically generates sitemap.xml with i18n support
+- **Localizes routes**: Generates path structure for each locale
+
+### Stage 3: Deploy (Static)
+
+Generated static files can be deployed to any static hosting service:
+
+- **GitHub Pages**: Free static website hosting
+- **Vercel**: Global CDN acceleration
+- **Netlify**: Automated deployment workflow
+- **Cloudflare Pages**: Edge computing optimization
+
+### Flow Diagram
+
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Gravito SSG Flow                          │
-├─────────────────────────────────────────────────────────────┤
-│                                                              │
-│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐  │
-│  │   Dev Mode   │    │  Build SSG   │    │   Deploy     │  │
-│  │  (Dynamic)   │ => │  (Freeze)    │ => │  (Static)    │  │
-│  └──────────────┘    └──────────────┘    └──────────────┘  │
-│                                                              │
-│  • Inertia SPA       • Pre-render all     • GitHub Pages   │
-│  • Hot reload          pages              • Vercel         │
-│  • Backend server    • Generate           • Netlify        │
-│                        redirects          • Cloudflare     │
-│                      • Create sitemap                       │
-│                                                              │
-└─────────────────────────────────────────────────────────────┘
+Development (Dynamic)  →  Build SSG (Freeze)  →  Deploy (Static)
+        │                       │                      │
+        ├─ Inertia SPA          ├─ Pre-render pages    ├─ GitHub Pages
+        ├─ Hot reload           ├─ Generate redirects   ├─ Vercel
+        └─ Backend server       └─ Create sitemap      └─ Netlify/Cloudflare
 ```
+
+### Environment Detection Mechanism
+
+`FreezeDetector` automatically switches modes based on the current environment:
+
+| Environment | Mode | Behavior |
+|-------------|------|----------|
+| `localhost:3000` | Dynamic | Uses Inertia navigation |
+| `localhost:5173` | Dynamic | Vite dev server |
+| `localhost:4173` | Static | Preview mode, uses `<a>` tags |
+| `*.github.io` | Static | Static mode, uses `<a>` tags |
+| `*.vercel.app` | Static | Static mode, uses `<a>` tags |
+| Custom domain | Static | Based on `staticDomains` config |
 
 ---
 
