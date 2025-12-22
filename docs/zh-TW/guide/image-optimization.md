@@ -100,11 +100,17 @@ import { Image } from '@gravito/prism/vue'
 
 ## 在 HTML 樣板中使用
 
-如果您使用我們內建的樣板引擎，請使用 `image` 助手（Helper）。
+如果您使用我們內建的樣板引擎（Orbit Prism V2+），可以使用 `image` 助手（Helper）。
 
 ```html
 <!-- 一行程式碼，火力全開 -->
 {{image src="/static/hero.jpg" alt="Hero" width=1920 height=1080 loading="eager"}}
+
+<!-- 或者在組件中使用 -->
+<x-card>
+  {{image src="/static/thumb.jpg" alt="Thumb" width=400 height=300}}
+  <p>Card Content</p>
+</x-card>
 ```
 
 ---
