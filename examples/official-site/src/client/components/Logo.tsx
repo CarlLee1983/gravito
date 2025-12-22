@@ -28,7 +28,7 @@ export default function Logo({ isZh = false }) {
           Gravito
         </span>
         <span className="text-[9px] font-bold tracking-[0.2em] text-gray-500 uppercase leading-tight">
-          Singularity Engine
+          Gravito Engine
         </span>
       </div>
     </StaticLink>

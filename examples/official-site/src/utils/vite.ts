@@ -37,8 +37,8 @@ export function setupViteProxy(core: PlanetCore): void {
         }
       }
 
-      if (!response.ok) {
-        // Only log if it's not a 404 (Vite might return 404 for valid reasons like missing map files)
+      if (!response.ok && response.status !== 304) {
+        // Only log if it's not a 404
         if (response.status !== 404) {
           core.logger.warn(`[Vite Proxy] ${response.status} for: ${url.pathname}`)
         }
@@ -46,22 +46,43 @@ export function setupViteProxy(core: PlanetCore): void {
         return c.body(await response.arrayBuffer(), response.status as never)
       }
 
-      const contentType = response.headers.get('Content-Type') || 'text/javascript'
-      const buffer = await response.arrayBuffer() // Use arrayBuffer to support binary assets (images, etc.)
-
-      // Set appropriate headers
-      c.header('Content-Type', contentType)
-      const cacheControl = response.headers.get('Cache-Control')
-      if (cacheControl) {
-        c.header('Cache-Control', cacheControl)
+      // If 304, we don't need to read the body
+      if (response.status === 304) {
+        // Forward all headers from Vite
+        response.headers.forEach((value, key) => {
+          // Skip some headers that might cause issues
+          if (['content-encoding', 'transfer-encoding', 'content-length'].includes(key.toLowerCase())) {
+            return
+          }
+          c.header(key, value)
+        })
+        return c.body(null, 304)
       }
-      const etag = response.headers.get('ETag')
-      if (etag) {
-        c.header('ETag', etag)
+
+      const buffer = await response.arrayBuffer()
+
+      // Map headers for the final response
+      const responseHeaders = new Headers()
+      response.headers.forEach((value, key) => {
+        if (!['content-encoding', 'transfer-encoding', 'content-length'].includes(key.toLowerCase())) {
+          responseHeaders.set(key, value)
+        }
+      })
+
+      // Force correct Content-Type for JS modules
+      const p = url.pathname
+      const isViteSpecial = p.startsWith('/@')
+      const isJSAsset = /\.(ts|tsx|js|jsx)$/.test(p) || p.includes('react-refresh')
+
+      if (isViteSpecial || isJSAsset) {
+        responseHeaders.set('Content-Type', 'application/javascript')
       }
 
-      // Fix for specific Hono/Bun behavior with standard Response vs Hono Body
-      return c.body(buffer, response.status as never)
+      // Return a RAW Web Response to bypass any Hono/Adapter body-shaping that defaults to octet-stream
+      return new Response(buffer, {
+        status: response.status,
+        headers: responseHeaders,
+      }) as any
     } catch (error) {
       core.logger.error(`[Vite Proxy] Failed: ${error}`)
       return c.text('Vite dev server not available', 503)

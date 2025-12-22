@@ -1,7 +1,7 @@
 import { OrbitIon } from '@gravito/ion'
 import { OrbitPrism } from '@gravito/prism'
 import { OrbitCache } from '@gravito/stasis'
-import { defineConfig, HonoAdapter, PlanetCore } from 'gravito-core'
+import { defineConfig, GravitoAdapter, PlanetCore } from 'gravito-core'
 import { serveStatic } from 'hono/bun'
 import { registerHooks } from './hooks'
 import { registerRoutes } from './routes'
@@ -26,7 +26,7 @@ export async function bootstrap(options: AppConfig = {}): Promise<PlanetCore> {
     },
     // Add OrbitIon
     orbits: [OrbitCache, OrbitPrism, OrbitIon],
-    adapter: new HonoAdapter(),
+    adapter: new GravitoAdapter(),
   })
 
   // 2. Boot

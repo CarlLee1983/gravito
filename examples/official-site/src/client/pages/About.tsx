@@ -42,7 +42,7 @@ export default function About() {
       title: trans('about.pillar1_title', 'Unrivaled Speed'),
       desc: trans(
         'about.pillar1_desc',
-        'By harnessing Bun and Hono, we eliminate the bloat of traditional Node.js stacks.'
+        'By harnessing Bun and Gravito Core, we eliminate the bloat of traditional Node.js stacks.'
       ),
     },
     {
@@ -67,7 +67,7 @@ export default function About() {
 
   const teamHighlights = [
     { id: 'distributed', icon: <Globe size={18} />, text: 'Distributed Kernel Architecture' },
-    { id: 'zero', icon: <Orbit size={18} />, text: 'Zero-Overhead Micro-Framework' },
+    { id: 'zero', icon: <Orbit size={18} />, text: 'Gravito Engine Architecture' },
     { id: 'ai', icon: <Zap size={18} />, text: 'Built for the Age of AI' },
   ]
 
@@ -83,10 +83,10 @@ export default function About() {
     },
     {
       id: 'orbit',
-      title: trans('about.orbitTitle', 'Functional Orbits'),
+      title: trans('about.orbitTitle', 'Kinetic Modules'),
       desc: trans(
         'about.orbitDesc',
-        'Features like Routing, Inertia, SEO, and Mail exist as "Orbits" that revolve around the core.'
+        'Features like Routing, Inertia, SEO, and Mail exist as specialized modules that revolve around the core.'
       ),
       icon: <div className="w-2 h-2 bg-purple-500 rounded-sm" />,
     },

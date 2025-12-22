@@ -34,27 +34,27 @@ export default {
   features: {
     sectionBadge: '1.0 Core Release',
     sectionTitle: 'The',
-    sectionTitleHighlight: 'Orbit Ecosystem',
+    sectionTitleHighlight: 'Gravito Ecosystem',
     sectionDesc:
       'Gravito uses a micro-kernel design. The initial 1.0 release features our most stable and powerful base modules.',
-    kernel_title: 'Orbit Kernel',
+    kernel_title: 'PlanetCore',
     kernel_subtitle: 'The Soul',
     kernel_desc: 'Ultra-minimal core handling I/O coordination and lifecycle.',
-    inertia_title: 'Orbit Inertia',
-    inertia_subtitle: 'Full-stack Bridge',
+    inertia_title: 'Ion',
+    inertia_subtitle: 'Full-stack Bridge (Inertia)',
     inertia_desc: 'Let the backend fully control UI, creating a seamless SPA-like experience.',
-    cli_title: 'Orbit CLI',
-    cli_subtitle: 'Productivity Tool',
+    cli_title: 'Pulse',
+    cli_subtitle: 'Productivity Tool (CLI)',
     cli_desc: 'Automated scaffolding and dev commands for better workflow.',
-    seo_title: 'Orbit SEO',
-    seo_subtitle: 'Smart Indexing',
+    seo_title: 'Luminosity',
+    seo_subtitle: 'Smart Indexing (SEO)',
     seo_desc: 'Automated sitemap generation and meta management for visibility.',
-    image_title: 'Orbit Image',
-    image_subtitle: 'Performance Focus',
+    image_title: 'Prism',
+    image_subtitle: 'Performance Focus (Image)',
     image_desc:
       'Inspired by Next.js, our image component handles CLS prevention, lazy loading, and responsive `srcset` with zero client-side overhead.',
-    i18n_title: 'Orbit I18n',
-    i18n_subtitle: 'Global Gravity',
+    i18n_title: 'Cosmos',
+    i18n_subtitle: 'Global Gravity (I18n)',
     i18n_desc:
       'Native locale detection and prefixed routing with type-safe translations, ready for global scaling.',
     getStarted: 'Get Started',
@@ -130,7 +130,7 @@ export default {
     painTitle: 'Pain-Point Driven Evolution',
     pain1Title: 'The SEO x SPA Paradox',
     pain1Desc:
-      "Gravito bridges the gap between fluid SPA experiences and absolute SEO visibility via OrbitSEO's integrated rendering.",
+      "Gravito bridges the gap between fluid SPA experiences and absolute SEO visibility via Luminosity's integrated rendering.",
     pain2Title: 'Resource Density',
     pain2Desc:
       'Built on a micro-kernel, Gravito consumes up to 60% less memory than bloated enterprise frameworks.',
@@ -159,7 +159,7 @@ export default {
     featAITypesTitle: 'LLM-Optimized Core',
     featAITypesDesc:
       "Leveraging TypeScript—the world's best-trained language for LLMs—to eliminate hallucinations through rock-solid type contracts.",
-    queueTitle: 'Universal Orbit Queue',
+    queueTitle: 'Universal Kinetic Queue (Stream)',
     queueDesc:
       'One interface, infinite possibilities. Native ambition for full-spectrum driver support: Redis, Amazon SQS, RabbitMQ, Kafka, and more—switch infrastructure without touching business logic.',
     ctaTitle: 'Ready to Enter the Singularity?',
