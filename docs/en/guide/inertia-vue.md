@@ -2,6 +2,8 @@
 
 Gravito leverages **Inertia.js** to bridge the gap between your powerful Gravito Core backend and modern Vue frontend. It allows you to build single-page apps (SPAs) without the complexity of client-side routing or building a Rest/GraphQL API.
 
+> 💡 **Using React?** Check out the [Inertia-React Guide](/docs/guide/inertia-react) for complete React examples.
+
 ## 💡 The "No-API" Data Flow
 
 In a traditional SPA, you'd build an API and fetch data with `onMounted`. With Gravito + Inertia, after you `bun add @gravito/ion @gravito/prism`, your Controller **is** your Data Fetcher.
