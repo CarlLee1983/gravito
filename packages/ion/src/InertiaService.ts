@@ -61,15 +61,19 @@ export class InertiaService {
    * Note: We don't escape backslashes here because JSON.stringify already
    * escapes special characters. Escaping backslashes would double-escape
    * JSON escape sequences like \n, causing JSON.parse to fail.
+   * 
+   * Also note: We don't escape double quotes here because JSON.stringify
+   * already escapes them as \". Escaping them again would create invalid
+   * JSON sequences like \&quot;.
    */
   private escapeForSingleQuotedHtmlAttribute(value: string): string {
     return value
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
-      // Also escape double quotes so templates can safely use either:
-      // data-page='{{{ page }}}' or data-page="{{{ page }}}"
-      .replace(/"/g, '&quot;')
+      // Don't escape double quotes - JSON.stringify already handles them
+      // Escaping them would create invalid sequences like \&quot;
+      // Only escape single quotes for the HTML attribute delimiter
       .replace(/'/g, '&#039;')
   }
 
