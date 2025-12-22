@@ -68,27 +68,70 @@ export class HomeController {
 }
 ```
 
-### 3. 模板語法
+### 3. V2 模板語法 (New in Level 2)
 
-建立 `src/views/home.html`：
+#### 佈局繼承 (Layout Inheritance)
 
+`src/views/layout.html`:
 ```html
-<h1>{{title}}</h1>
-<p>Visitors: {{visitors}}</p>
-<p>Version: {{version}}</p>
-
-{{#if visitors}}
-  <p>We have visitors!</p>
-{{else}}
-  <p>No visitors yet.</p>
-{{/if}}
-
-{{#each items}}
-  <div>{{this}}</div>
-{{/each}}
-
-{{include "partials/header"}}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>@yield('title', 'Default Title')</title>
+    @stack('styles')
+</head>
+<body>
+    <header>@include('partials/header')</header>
+    <main>
+        @yield('content')
+    </main>
+    @stack('scripts')
+</body>
+</html>
 ```
+
+`src/views/home.html`:
+```html
+@extends('layout')
+
+@section('title')
+Home Page
+@endsection
+
+@section('content')
+    <h1>Welcome {{ user }}</h1>
+    
+    <!-- 組件使用 -->
+    <x-alert type="success">
+        <x-slot:title>Success!</x-slot:title>
+        Operation completed.
+    </x-alert>
+
+    @push('scripts')
+    <script>console.log('Page loaded')</script>
+    @endpush
+@endsection
+```
+
+#### 組件系統 (Components)
+
+建立 `src/views/components/alert.html`:
+```html
+<div class="alert alert-{{ type }}">
+    <strong>{{ title }}</strong>
+    <p>{{ slot }}</p>
+</div>
+```
+
+使用 `<x-alert>` 標籤調用。支援屬性傳遞（`type="success"`）和 Slot 插槽（`x-slot:title`）。
+
+#### 常用指令 (Directives)
+
+- **@if(condition)** ... **@else** ... **@endif**
+- **@foreach(items as item)** ... **@endforeach** (Alias to `{{#each}}`)
+- **@include('partial')**
+
+當然，V1 的 `{{#if}}`, `{{#each}}` 語法依然完全支援。
 
 ## 🖼️ Image 元件使用
 

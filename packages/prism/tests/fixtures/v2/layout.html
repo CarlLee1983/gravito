@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>@yield('title', 'Default Title')</title>
+    @stack('styles')
+</head>
+
+<body>
+    <header>
+        @include('partials/header')
+    </header>
+
+    <main>
+        @yield('content')
+    </main>
+
+    <footer>
+        Footer Content
+    </footer>
+
+    @stack('scripts')
+</body>
+
+</html>

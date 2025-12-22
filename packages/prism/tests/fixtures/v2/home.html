@@ -1,0 +1,18 @@
+@extends('layout')
+
+@section('title')
+Home Page
+@endsection
+
+@section('content')
+<h1>Welcome {{ user }}</h1>
+
+<x-alert type="success">
+    <x-slot:title>Success!</x-slot:title>
+    Operation completed.
+</x-alert>
+
+@push('scripts')
+<script>console.log('Home Script')</script>
+@endpush
+@endsection

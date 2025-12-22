@@ -2,19 +2,19 @@ import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 export interface RenderOptions {
-  layout?: string
-  scripts?: string
-  title?: string
+  layout?: string // Legacy layout support
   [key: string]: unknown
 }
 
-/**
- * Helper function type definition.
- */
 export type HelperFunction = (
   args: Record<string, string | number | boolean>,
   data: Record<string, unknown>
 ) => string
+
+interface RenderContext {
+  sections: Map<string, string>
+  stacks: Map<string, string[]>
+}
 
 export class TemplateEngine {
   private cache = new Map<string, string>()
@@ -25,136 +25,318 @@ export class TemplateEngine {
     this.viewsDir = viewsDir
   }
 
-  /**
-   * Register a helper function.
-   */
   public registerHelper(name: string, fn: HelperFunction): void {
     this.helpers.set(name, fn)
   }
 
-  /**
-   * Unregister a helper function.
-   */
   public unregisterHelper(name: string): void {
     this.helpers.delete(name)
   }
 
-  /**
-   * Render a view with optional layout
-   */
   public render(
     view: string,
     data: Record<string, unknown> = {},
     options: RenderOptions = {}
   ): string {
-    const { layout = 'layout', ...layoutData } = options
-
-    // 1. Render the main view
-    // Merge options into data so they are available in the view too
-    const viewContent = this.loadAndInterpolate(view, { ...data, ...layoutData })
-
-    // 2. If no layout, return view content
-    if (!layout) {
-      return viewContent
+    const context: RenderContext = {
+      sections: new Map(),
+      stacks: new Map(),
     }
 
-    // 3. Render the layout with injected content
-    // We merge data into layout so it can access variables too
-    return this.loadAndInterpolate(layout, {
-      ...data,
-      ...layoutData,
-      content: viewContent,
+    // 1. Load the initial view
+    let template = this.readTemplate(view)
+
+    // Merge options into data
+    const viewData = { ...data, ...options }
+
+    // 2. Handle Blade-style Layout Inheritance (@extends)
+    const extendsMatch = template.match(/^\s*@extends\s*\(\s*['"](.+?)['"]\s*\)/m)
+
+    if (extendsMatch) {
+      const layoutName = extendsMatch[1]
+
+      // Remove @extends line
+      template = template.replace(extendsMatch[0], '')
+
+      // Extract Sections (`@section('name')...@endsection`)
+      this.extractSections(template, context)
+
+      // Extract Stacks (`@push('name')...@endpush`)
+      this.extractStacks(template, context)
+      // Remove stacks from template to avoid processing them in sections if nested
+      template = this.removeStacks(template)
+
+      // Switch master template to the layout
+      if (layoutName) {
+        template = this.readTemplate(layoutName)
+      }
+    } else if (options.layout) {
+      // Legacy "layout" option support
+      const layoutContent = this.readTemplate(options.layout)
+      context.sections.set('content', template)
+      template = layoutContent
+    }
+
+    // 3. Compile the result
+    return this.compile(template, viewData, context)
+  }
+
+  // --- Core Compilation Pipeline ---
+
+  private compile(template: string, data: Record<string, unknown>, ctx: RenderContext): string {
+    let result = template
+
+    // 1. Process Includes (Recursive)
+    result = this.processIncludes(result)
+
+    // 2. Inject Layout Structure (@yield, @stack)
+    // IMPORTANT: Inherited structure must be assembled BEFORE components are processed
+    result = this.processYields(result, ctx)
+    result = this.processStacks(result, ctx)
+
+    // 3. Process Components <x-name> (Recursive)
+    result = this.processComponents(result, data, ctx)
+
+    // 4. Directives Upgrade (@if, @foreach) mapping to legacy logic
+    result = this.processDirectives(result)
+
+    // 5. Logic (Loops & Conditionals)
+    result = this.processLoops(result, data)
+    result = this.processConditionals(result, data)
+
+    // 6. Helpers & Interpolation
+    result = this.processHelpers(result, data)
+    result = this.interpolate(result, data)
+
+    return result
+  }
+
+  // --- Structural Processors ---
+
+  private extractSections(template: string, ctx: RenderContext) {
+    const sectionRegex = /@section\s*\(\s*['"](.+?)['"]\s*\)([\s\S]*?)@endsection/g
+    let match
+    while ((match = sectionRegex.exec(template)) !== null) {
+      const name = match[1]
+      const content = match[2]
+      if (name && content) {
+        ctx.sections.set(name, content.trim())
+      }
+    }
+  }
+
+  private extractStacks(template: string, ctx: RenderContext) {
+    const pushRegex = /@push\s*\(\s*['"](.+?)['"]\s*\)([\s\S]*?)@endpush/g
+    let match
+    while ((match = pushRegex.exec(template)) !== null) {
+      const name = match[1]
+      const content = match[2]
+      if (name && content) {
+        if (!ctx.stacks.has(name)) {
+          ctx.stacks.set(name, [])
+        }
+        ctx.stacks.get(name)!.push(content.trim())
+      }
+    }
+  }
+
+  private removeStacks(template: string): string {
+    return template.replace(/@push\s*\(\s*['"](.+?)['"]\s*\)([\s\S]*?)@endpush/g, '')
+  }
+
+  private processYields(template: string, ctx: RenderContext): string {
+    // @yield('name', 'default')
+    return template.replace(/@yield\s*\(\s*['"](.+?)['"](?:\s*,\s*['"](.+?)['"])?\s*\)/g, (_, name, defaultValue) => {
+      return ctx.sections.get(name) || defaultValue || ''
     })
   }
 
-  /**
-   * Load template, process includes, and replace {{key}} variables
-   */
-  private loadAndInterpolate(name: string, data: Record<string, unknown>): string {
-    let template = this.readTemplate(name)
-
-    // 1. Process Includes (Recursive)
-    template = this.processIncludes(template)
-
-    // 2. Process Loops (Handle arrays)
-    template = this.processLoops(template, data)
-
-    // 3. Process Conditionals (Handle if/else/unless)
-    template = this.processConditionals(template, data)
-
-    // 4. Process Helpers (Handle {{helper arg1=value1 arg2=value2}})
-    template = this.processHelpers(template, data)
-
-    // 5. Interpolate Variables (Final pass)
-    return this.interpolate(template, data)
+  private processStacks(template: string, ctx: RenderContext): string {
+    // @stack('name')
+    return template.replace(/@stack\s*\(\s*['"](.+?)['"]\s*\)/g, (_, name) => {
+      const stack = ctx.stacks.get(name)
+      return stack ? stack.join('\n') : ''
+    })
   }
+
+  // --- Component Processors ---
+
+  private processComponents(template: string, data: Record<string, unknown>, ctx: RenderContext, depth = 0): string {
+    if (depth > 10) throw new Error('Maximum component depth exceeded')
+
+    let result = template
+    let hasComponent = true
+
+    while (hasComponent) {
+      const startTagMatch = result.match(/<x-([a-zA-Z0-9-]+)([^>]*)>/)
+      if (!startTagMatch) {
+        hasComponent = false
+        break
+      }
+
+      const tagName = startTagMatch[1]
+      const attrsString = startTagMatch[2]
+      const startIndex = startTagMatch.index!
+      const contentStartIndex = startIndex + startTagMatch[0].length
+
+      // Find closing tag </x-tagName>
+      let depthCounter = 1
+      let searchIndex = contentStartIndex
+      let finalCloseIndex = -1
+
+      while (depthCounter > 0) {
+        const nextOpen = result.indexOf(`<x-${tagName}`, searchIndex)
+        const nextClose = result.indexOf(`</x-${tagName}>`, searchIndex)
+
+        if (nextClose === -1) {
+          return result
+        }
+
+        if (nextOpen !== -1 && nextOpen < nextClose) {
+          depthCounter++
+          searchIndex = nextOpen + 1
+        } else {
+          depthCounter--
+          searchIndex = nextClose + 1
+          if (depthCounter === 0) {
+            finalCloseIndex = nextClose
+          }
+        }
+      }
+
+      // We found the component block
+      const innerContent = result.substring(contentStartIndex, finalCloseIndex)
+
+      // Process Attributes
+      const componentData = this.parseAttributes(attrsString || '')
+
+      // Load Component Template
+      let componentTemplate = ''
+      try {
+        componentTemplate = this.readTemplate(`components/${tagName}`)
+      } catch (e) {
+        console.warn(`Component x-${tagName} not found.`)
+        // Replace with comment to prevent infinite loop
+        const fullMatch = result.substring(startIndex, finalCloseIndex + `</x-${tagName}>`.length)
+        result = result.replace(fullMatch, `<!-- Component ${tagName} not found -->`)
+        continue
+      }
+
+      // Handle Slots
+      const slots: Record<string, string> = {
+        slot: innerContent
+      }
+
+      let processedDefaultSlot = innerContent
+      const slotRegex = /<x-slot:([a-zA-Z0-9-]+)>([\s\S]*?)<\/x-slot:\1>/g
+      processedDefaultSlot = processedDefaultSlot.replace(slotRegex, (_, slotName, slotContent) => {
+        slots[slotName] = this.compile(slotContent, data, ctx)
+        return ''
+      })
+      slots.slot = this.compile(processedDefaultSlot.trim(), data, ctx)
+
+      const componentScope = { ...componentData, ...slots }
+
+      let renderedComponent = this.compile(componentTemplate, componentScope, ctx)
+
+      // Careful replacement
+      const before = result.substring(0, startIndex)
+      const after = result.substring(finalCloseIndex + `</x-${tagName}>`.length)
+      result = before + renderedComponent + after
+    }
+
+    return result
+  }
+
+  private parseAttributes(attrString: string): Record<string, unknown> {
+    const args: Record<string, unknown> = {}
+    const pattern = /([a-zA-Z0-9-:]+)(?:=(?:"([^"]*)"|'([^']*)'|(\S+)))?/g
+
+    let match
+    while ((match = pattern.exec(attrString)) !== null) {
+      const key = match[1]
+      const valDouble = match[2]
+      const valSingle = match[3]
+      const valRaw = match[4]
+
+      if (!key) continue
+
+      if (valDouble !== undefined) args[key] = valDouble
+      else if (valSingle !== undefined) args[key] = valSingle
+      else if (valRaw !== undefined) {
+        if (valRaw === 'true') args[key] = true
+        else if (valRaw === 'false') args[key] = false
+        else if (!isNaN(Number(valRaw))) args[key] = Number(valRaw)
+        else args[key] = valRaw
+      } else {
+        args[key] = true
+      }
+    }
+    return args
+  }
+
+  // --- Directives & Legacy ---
+
+  private processDirectives(template: string): string {
+    return template
+      .replace(/@if\s*\((.+?)\)/g, '{{#if $1}}')
+      .replace(/@else/g, '{{else}}')
+      .replace(/@endif/g, '{{/if}}')
+      .replace(/@unless\s*\((.+?)\)/g, '{{#unless $1}}')
+      .replace(/@endunless/g, '{{/unless}}')
+  }
+
+  // --- Existing Methods (Preserved) ---
 
   private readTemplate(name: string): string {
     const cached = this.cache.get(name)
-    if (cached !== undefined) {
-      return cached
-    }
+    if (cached !== undefined) return cached
 
     const path = resolve(this.viewsDir, `${name}.html`)
-
     if (!existsSync(path)) {
       throw new Error(`View not found: ${path}`)
     }
 
     const content = readFileSync(path, 'utf-8')
-
     if (process.env.NODE_ENV === 'production') {
       this.cache.set(name, content)
     }
-
     return content
   }
 
   private processIncludes(template: string, depth = 0): string {
-    if (depth > 10) {
-      throw new Error('Maximum include depth exceeded')
-    }
+    if (depth > 10) throw new Error('Maximum include depth exceeded')
 
-    return template.replace(/\{\{\s*include\s+['"](.+?)['"]\s*\}\}/g, (_, partialName) => {
+    const regex = /(?:\{\{\s*include\s+['"](.+?)['"]\s*\}\}|@include\s*\(\s*['"](.+?)['"]\s*\))/g
+
+    return template.replace(regex, (_, p1, p2) => {
+      const partialName = p1 || p2
       const partialContent = this.readTemplate(partialName)
       return this.processIncludes(partialContent, depth + 1)
     })
   }
 
   private processLoops(template: string, data: Record<string, unknown>): string {
-    // Match {{#each items}}...{{/each}}
     return template.replace(
       /\{\{\s*#each\s+([\w.]+)\s*\}\}([\s\S]*?)\{\{\s*\/each\s*\}\}/g,
       (_, key, content) => {
         const items = this.getNestedValue(data, key)
-
-        if (!Array.isArray(items) || items.length === 0) {
-          return ''
-        }
-
-        return items
-          .map((item) => {
-            // If item is primitive, use {{this}}
-            // If item is object, merge it into data scope (simplified scope handling)
-            const itemData =
-              typeof item === 'object' && item !== null
-                ? { ...data, ...(item as object), this: item }
-                : { ...data, this: item }
-
-            // Recursively process the inner content (for nested logic)
-            let inner = content
-            inner = this.processLoops(inner, itemData) // Nested loops
-            inner = this.processConditionals(inner, itemData)
-            inner = this.interpolate(inner, itemData)
-            return inner
-          })
-          .join('')
+        if (!Array.isArray(items) || items.length === 0) return ''
+        return items.map((item) => {
+          const itemData = typeof item === 'object' && item !== null
+            ? { ...data, ...(item as object), this: item }
+            : { ...data, this: item }
+          let inner = content
+          inner = this.processLoops(inner, itemData)
+          inner = this.processConditionals(inner, itemData)
+          inner = this.interpolate(inner, itemData)
+          return inner
+        }).join('')
       }
     )
   }
 
   private processConditionals(template: string, data: Record<string, unknown>): string {
-    // Handle {{#if key}}...{{else}}...{{/if}} and {{#if key}}...{{/if}}
     let result = template.replace(
       /\{\{\s*#if\s+([\w.]+)\s*\}\}([\s\S]*?)(\{\{\s*else\s*\}\}([\s\S]*?))?\{\{\s*\/if\s*\}\}/g,
       (_, key, trueBlock, _elseGroup, falseBlock) => {
@@ -162,8 +344,6 @@ export class TemplateEngine {
         return value ? trueBlock : falseBlock || ''
       }
     )
-
-    // Handle {{#unless key}}...{{/unless}}
     result = result.replace(
       /\{\{\s*#unless\s+([\w.]+)\s*\}\}([\s\S]*?)\{\{\s*\/unless\s*\}\}/g,
       (_, key, content) => {
@@ -171,31 +351,16 @@ export class TemplateEngine {
         return !value ? content : ''
       }
     )
-
     return result
   }
 
-  /**
-   * Process helper invocations.
-   * Syntax: `{{helper arg1=value1 arg2="value2" arg3=123}}`
-   */
   private processHelpers(template: string, data: Record<string, unknown>): string {
-    // Match `{{helper arg1=value1 arg2="value2"}}`
-    // but avoid matching plain variable interpolation (`{{ key }}`).
     return template.replace(
       /\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*)\s+([^}]+)\s*\}\}/g,
       (match, helperName, argsString) => {
-        // Check if this is a registered helper
         const helper = this.helpers.get(helperName)
-        if (!helper) {
-          // Not a helper: return as-is (let interpolate handle it)
-          return match
-        }
-
-        // Parse arguments
+        if (!helper) return match
         const args = this.parseHelperArgs(argsString)
-
-        // Execute helper
         try {
           return helper(args, data)
         } catch (error) {
@@ -206,54 +371,29 @@ export class TemplateEngine {
     )
   }
 
-  /**
-   * Parse helper arguments.
-   * Supports: `arg=value`, `arg="value"`, `arg='value'`, `arg=123`, `arg=true`
-   */
   private parseHelperArgs(argsString: string): Record<string, string | number | boolean> {
     const args: Record<string, string | number | boolean> = {}
-
-    // Match key=value, key="value", key='value'
     const argPattern = /(\w+)\s*=\s*("([^"]*)"|'([^']*)'|(\d+\.?\d*)|(true|false)|([^\s}]+))/g
     let match: RegExpExecArray | null = argPattern.exec(argsString)
-
     while (match !== null) {
       const key = match[1]
-      if (key === undefined) {
-        match = argPattern.exec(argsString)
-        continue
-      }
-      const doubleQuoted = match[3]
-      const singleQuoted = match[4]
-      const number = match[5]
-      const booleanValue = match[6]
-      const unquoted = match[7]
-
-      if (doubleQuoted !== undefined) {
-        args[key] = doubleQuoted
-      } else if (singleQuoted !== undefined) {
-        args[key] = singleQuoted
-      } else if (number !== undefined) {
-        args[key] = Number(number)
-      } else if (booleanValue !== undefined) {
-        args[key] = booleanValue === 'true'
-      } else if (unquoted !== undefined) {
-        args[key] = unquoted
+      if (key) {
+        if (match[3] !== undefined) args[key] = match[3]
+        else if (match[4] !== undefined) args[key] = match[4]
+        else if (match[5] !== undefined) args[key] = Number(match[5])
+        else if (match[6] !== undefined) args[key] = match[6] === 'true'
+        else if (match[7] !== undefined) args[key] = match[7]
       }
       match = argPattern.exec(argsString)
     }
-
     return args
   }
 
   private interpolate(template: string, data: Record<string, unknown>): string {
-    // 1. Handle unescaped variables {{{ value }}}
     const result = template.replace(/\{\{\{\s*([\w.]+)\s*\}\}\}/g, (_, key) => {
       const value = this.getNestedValue(data, key)
       return String(value ?? '')
     })
-
-    // 2. Handle escaped variables {{ value }}
     return result.replace(/\{\{\s*([\w.]+)\s*\}\}/g, (_, key) => {
       const value = this.getNestedValue(data, key)
       return this.escapeHtml(String(value ?? ''))
@@ -271,7 +411,7 @@ export class TemplateEngine {
 
   private getNestedValue(obj: unknown, path: string): unknown {
     return path.split('.').reduce((prev, curr) => {
-      // @ts-expect-error: Dynamic access on unknown/any
+      // @ts-expect-error: Dynamic access
       return prev ? prev[curr] : undefined
     }, obj)
   }
