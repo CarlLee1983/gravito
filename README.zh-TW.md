@@ -45,16 +45,20 @@ core.liftoff();
 
 ## 📦 生態系 (Orbits)
 
-| 套件 | 描述 | 狀態 |
-|---|---|---|
-| `gravito-core` | 微核心框架。 | ✅ Stable (Alpha) |
-| `@gravito/db` | 標準資料庫軌道 (Drizzle)。 | ✅ Alpha |
-| `@gravito/sentinel` | 標準身份驗證軌道 (Auth)。 | ✅ Alpha |
-| `@gravito/nebula` | 標準儲存軌道 (Local/S3)。 | ✅ Alpha |
-| `@gravito/stasis` | 標準快取軌道 (Memory/Redis)。 | ✅ Alpha |
-| `@gravito/prism` | 標準視圖軌道 (Template/Image)。 | ✅ Alpha |
-| `@gravito/luminosity` | 標準 SEO 軌道 (SmartMap)。 | ✅ Alpha |
-| `@gravito/flare` | 標準通知軌道 (Flare)。 | ✅ Alpha |
+Gravito 提供了豐富的官方 Orbit 模組，所有模組皆為可插拔設計 (Pluggable)：
+
+| 套件 | 對應名稱 | 功能描述 | 狀態 |
+|---|---|---|---|
+| `gravito-core` | **PlanetCore** | 極輕量微內核，提供 Hook 與生命週期管理。 | ✅ Stable |
+| `@gravito/orbit-db` | **Orbit** | 基於 Drizzle ORM 的資料庫層，提供遷移與種子系統。 | ✅ Stable |
+| `@gravito/sentinel` | **Sentinel** | 現代化身份驗證軌道 (JWT/Session)。 | ✅ Alpha |
+| `@gravito/nebula` | **Nebula** | 檔案儲存與 CDN 整合 (Local/S3/R2)。 | ✅ Beta |
+| `@gravito/stasis` | **Stasis** | 多層快取系統 (Memory/Redis)。 | ✅ Stable |
+| `@gravito/prism` | **Prism** | 視圖引擎，整合圖像優化與模板渲染 (Edge)。 | ✅ Stable |
+| `@gravito/luminosity` | **Luminosity** | 企業級 SEO 引擎 (Sitemaps/Meta/Robots)。 | ✅ Stable |
+| `@gravito/flare` | **Flare** | 多管道通知與郵件佇列系統 (SMTP/Resend)。 | ✅ Alpha |
+| `@gravito/ion` | **Ion** | Inertia.js 協議適配器，連結 React/Vue 前端。 | ✅ Stable |
+| `@gravito/constellation` | **Constellation** | 基於 Radix Tree 的高效路由系統。 | ✅ Stable |
 
 ## 🤝 貢獻
 

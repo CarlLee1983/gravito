@@ -57,10 +57,13 @@ export class InertiaService {
 
   /**
    * Escape a string for safe use in HTML attributes
+   * 
+   * Note: We don't escape backslashes here because JSON.stringify already
+   * escapes special characters. Escaping backslashes would double-escape
+   * JSON escape sequences like \n, causing JSON.parse to fail.
    */
   private escapeForSingleQuotedHtmlAttribute(value: string): string {
     return value
-      .replace(/\\/g, '\\\\')
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')

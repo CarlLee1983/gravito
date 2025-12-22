@@ -44,17 +44,20 @@ Detailed documentation is available in the [docs](./docs) directory.
 - [中文文檔](./README.zh-TW.md)
 
 ## 📦 Ecosystem (Orbits)
+Gravito provides a rich set of official Orbit modules, all designed to be completely pluggable:
 
-| Package | Description | Status |
-|---|---|---|
-| `gravito-core` | The micro-kernel Framework. | ✅ Stable (Alpha) |
-| `@gravito/db` | Standard Database Orbit (Drizzle). | ✅ Alpha |
-| `@gravito/sentinel` | Standard Authentication Orbit (Auth). | ✅ Alpha |
-| `@gravito/nebula` | Standard Storage Orbit (Local/S3). | ✅ Alpha |
-| `@gravito/stasis` | Standard Cache Orbit (Memory/Redis). | ✅ Alpha |
-| `@gravito/prism` | Standard View Orbit (Template/Image). | ✅ Alpha |
-| `@gravito/luminosity` | Standard SEO Orbit (SmartMap). | ✅ Alpha |
-| `@gravito/flare` | Standard Notification Orbit. | ✅ Alpha |
+| Package | Name | Description | Status |
+|---|---|---|---|
+| `gravito-core` | **PlanetCore** | Ultra-lightweight micro-kernel with Hooks & Lifecycle management. | ✅ Stable |
+| `@gravito/orbit-db` | **Orbit** | Database layer based on Drizzle ORM with Migration/Seeding. | ✅ Stable |
+| `@gravito/sentinel` | **Sentinel** | Modern Authentication Orbit (JWT/Session). | ✅ Alpha |
+| `@gravito/nebula` | **Nebula** | File Storage & CDN Integration (Local/S3/R2). | ✅ Beta |
+| `@gravito/stasis` | **Stasis** | Multi-layer Cache System (Memory/Redis). | ✅ Stable |
+| `@gravito/prism` | **Prism** | View Engine with Image Optimization & Edge Templates. | ✅ Stable |
+| `@gravito/luminosity` | **Luminosity** | Enterprise SEO Engine (Sitemaps/Meta/Robots). | ✅ Stable |
+| `@gravito/flare` | **Flare** | Notification & Mail Queue System (SMTP/Resend). | ✅ Alpha |
+| `@gravito/ion` | **Ion** | Inertia.js Protocol Adapter for React/Vue. | ✅ Stable |
+| `@gravito/constellation` | **Constellation** | High-performance Radix Tree Router. | ✅ Stable |
 
 ## 🤝 Contributing
 
