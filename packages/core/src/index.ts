@@ -18,7 +18,9 @@ export const VERSION = packageJson.version
 // ─────────────────────────────────────────────────────────────────────────────
 
 export {
+  createGravitoAdapter,
   createHonoAdapter,
+  GravitoAdapter,
   HonoAdapter,
   HonoContextWrapper,
   HonoRequestWrapper,

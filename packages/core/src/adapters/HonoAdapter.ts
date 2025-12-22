@@ -31,7 +31,7 @@ import type { AdapterConfig, HttpAdapter, RouteDefinition } from './types'
  * Wraps Hono's request object to implement GravitoRequest
  */
 class HonoRequestWrapper implements GravitoRequest {
-  constructor(private honoCtx: Context) {}
+  constructor(private honoCtx: Context) { }
 
   get url(): string {
     return this.honoCtx.req.url
@@ -105,8 +105,7 @@ class HonoRequestWrapper implements GravitoRequest {
  * Wraps Hono's context to implement GravitoContext
  */
 class HonoContextWrapper<V extends GravitoVariables = GravitoVariables>
-  implements GravitoContext<V>
-{
+  implements GravitoContext<V> {
   private _req: HonoRequestWrapper
 
   constructor(private honoCtx: Context) {
@@ -255,27 +254,20 @@ function toHonoErrorHandler<V extends GravitoVariables>(
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Default HTTP adapter using Hono as the underlying engine.
+ * Default HTTP adapter using the optimized Gravito Core Engine.
  *
- * This adapter wraps Hono to provide a consistent interface that can be
- * swapped out for other implementations (custom Bun, etc.) without changing
- * application code.
+ * This adapter provides a consistent interface that can be
+ * swapped out for other implementations without changing application code.
  *
  * @example
  * ```typescript
- * import { HonoAdapter } from '@gravito/core/adapters'
+ * import { GravitoAdapter } from '@gravito/core'
  *
- * const adapter = new HonoAdapter()
+ * const adapter = new GravitoAdapter()
  *
  * // Register routes
  * adapter.route('get', '/hello', async (ctx) => {
  *   return ctx.json({ message: 'Hello, World!' })
- * })
- *
- * // Serve with Bun
- * Bun.serve({
- *   port: 3000,
- *   fetch: adapter.fetch
  * })
  * ```
  */
@@ -397,7 +389,7 @@ export class HonoAdapter<V extends GravitoVariables = GravitoVariables> implemen
     // In practice, this is called through the Hono routing pipeline
     throw new Error(
       'HonoAdapter.createContext() should not be called directly. ' +
-        'Use the router pipeline instead.'
+      'Use the router pipeline instead.'
     )
   }
 
@@ -428,3 +420,20 @@ export function createHonoAdapter<V extends GravitoVariables = GravitoVariables>
 // ─────────────────────────────────────────────────────────────────────────────
 
 export { HonoContextWrapper, HonoRequestWrapper, toHonoHandler, toHonoMiddleware }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Rebranded Aliases (Gravito Core)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Rebranded alias for HonoAdapter.
+ * @category Rebranding
+ */
+export const GravitoAdapter = HonoAdapter
+export type GravitoAdapter<V extends GravitoVariables = GravitoVariables> = HonoAdapter<V>
+
+/**
+ * Rebranded alias for createHonoAdapter.
+ * @category Rebranding
+ */
+export const createGravitoAdapter = createHonoAdapter

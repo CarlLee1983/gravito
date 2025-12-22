@@ -217,9 +217,6 @@ export class PlanetCore {
 
       await next()
       return undefined
-
-      // Attach queued cookies to response
-      cookieJar.attach(c)
     })
     // Router depends on `core.app` for route registration and optional global middleware.
     this.router = new Router(this)
@@ -379,18 +376,18 @@ export class PlanetCore {
         payload: fail(message, code, details),
         ...(wantsHtml
           ? {
-              html: {
-                templates: status === 500 ? ['errors/500'] : [`errors/${status}`, 'errors/500'],
-                data: {
-                  status,
-                  message,
-                  code,
-                  error: !isProduction && err instanceof Error ? err.stack : undefined,
-                  debug: !isProduction,
-                  details,
-                },
+            html: {
+              templates: status === 500 ? ['errors/500'] : [`errors/${status}`, 'errors/500'],
+              data: {
+                status,
+                message,
+                code,
+                error: !isProduction && err instanceof Error ? err.stack : undefined,
+                debug: !isProduction,
+                details,
               },
-            }
+            },
+          }
           : {}),
       }
 
@@ -468,16 +465,16 @@ export class PlanetCore {
         payload: fail('Route not found', 'NOT_FOUND'),
         ...(wantsHtml
           ? {
-              html: {
-                templates: ['errors/404', 'errors/500'],
-                data: {
-                  status: 404,
-                  message: 'Route not found',
-                  code: 'NOT_FOUND',
-                  debug: !isProduction,
-                },
+            html: {
+              templates: ['errors/404', 'errors/500'],
+              data: {
+                status: 404,
+                message: 'Route not found',
+                code: 'NOT_FOUND',
+                debug: !isProduction,
               },
-            }
+            },
+          }
           : {}),
       }
 
@@ -523,6 +520,30 @@ export class PlanetCore {
 
       return c.json(handlerContext.payload, handlerContext.status)
     })
+  }
+
+  /**
+   * Programmatically register an infrastructure module (Orbit).
+   * @since 2.0.0
+   */
+  async orbit(orbit: GravitoOrbit | (new () => GravitoOrbit)): Promise<this> {
+    const instance = typeof orbit === 'function' ? new orbit() : orbit
+    await instance.install(this)
+    return this
+  }
+
+  /**
+   * Programmatically register a feature module (Satellite).
+   * Alias for register() with provider support.
+   * @since 2.0.0
+   */
+  async use(satellite: ServiceProvider | ((core: PlanetCore) => void | Promise<void>)): Promise<this> {
+    if (typeof satellite === 'function') {
+      await satellite(this)
+    } else {
+      this.register(satellite)
+    }
+    return this
   }
 
   registerGlobalErrorHandlers(
@@ -575,7 +596,7 @@ export class PlanetCore {
     // This is a break.
     // Temporary fix: Check adapter type or wrap orbitApp.
     if (this.adapter.name === 'hono') {
-      ;(this.adapter.native as any).route(path, orbitApp)
+      ; (this.adapter.native as any).route(path, orbitApp)
     } else {
       // Warn or try to mount if adapter supports it?
       // BunNativeAdapter "mount" takes HttpAdapter.
