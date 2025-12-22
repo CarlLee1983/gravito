@@ -28,7 +28,7 @@
   "peerDependencies": {
     "gravito-core": "1.0.0-beta.2",
     "@gravito/stream": "1.0.0-alpha.2",
-    "@gravito/prism": "1.0.0-beta.2",
+    "@gravito/prism": "^0.1.0",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
     "vue": "^3.0.0"
@@ -49,7 +49,7 @@
   },
   "devDependencies": {
     "@gravito/stream": "1.0.0-alpha.2",
-    "@gravito/prism": "1.0.0-beta.2",
+    "@gravito/prism": "^0.1.0",
     "@types/mjml": "^4.7.4",
     "@types/nodemailer": "^6.4.14",
     "@types/react": "^18.2.0",
