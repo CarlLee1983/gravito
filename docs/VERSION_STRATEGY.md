@@ -2,26 +2,24 @@
 
 ## 📋 版本分類
 
-### Beta 版本 (`1.0.0-beta.1`)
+### Beta 版本 (`1.0.0-beta.*`)
 
-**官網實際使用的套件**，已經過實際驗證，可以發布為 beta 版本：
+**核心穩定套件**，主要用於核心框架和基礎設施：
 
-- `gravito-core` - 核心框架
-- `@gravito/stasis` - 快取模組
-- `@gravito/orbit-inertia` - Inertia.js 整合
-- `@gravito/orbit-view` - 視圖模組
-- `@gravito/seo-adapter-hono` - SEO Hono 適配器
-- `@gravito/seo-core` - SEO 核心模組
+- `gravito-core`
+- `@gravito/horizon`
+- `@gravito/luminosity`
+- `@gravito/luminosity-adapter-hono`
+- `@gravito/stasis`
 
-### Alpha 版本 (`1.0.0-alpha.1`)
+### Alpha 版本 (`1.0.0-alpha.*`)
 
-**尚未在官網使用的套件**，仍在開發或測試階段：
+**功能模組與工具**，仍在積極開發或測試階段：
 
-- 所有其他 `@gravito/orbit-*` 套件
-- 所有其他 `@gravito/seo-*` 套件
-- `@gravito/validator`
-- `@gravito/client`
-- `@gravito/cli`
+- 資料與儲存：`@gravito/db`, `@gravito/dark-matter`, `@gravito/nebula`, `@gravito/plasma`
+- 系統功能：`@gravito/sentinel` (Auth), `@gravito/impulse`, `@gravito/ion`, `@gravito/pulsar`
+- 視圖層：`@gravito/freeze` 系列, `@gravito/prism`
+- 工具：`@gravito/cli`, `@gravito/client`, `@gravito/atlas`, `@gravito/constellation`
 
 ## 🔄 版本更新流程
 
@@ -96,14 +94,14 @@ bun run publish:all
 
 ```bash
 npm install gravito-core@beta
-npm install @gravito/orbit-inertia@beta
+npm install @gravito/horizon@beta
 ```
 
 ### 安裝 Alpha 版本
 
 ```bash
-npm install @gravito/orbit-auth@alpha
-npm install @gravito/orbit-queue@alpha
+npm install @gravito/sentinel@alpha
+npm install @gravito/pulsar@alpha
 ```
 
 ### 安裝穩定版本

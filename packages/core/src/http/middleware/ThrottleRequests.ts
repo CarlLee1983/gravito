@@ -28,7 +28,7 @@ export class ThrottleRequests {
         // If cache is not available, we can't rate limit.
         this.core.logger.warn('RateLimiter: OrbitCache not found. Skipping rate limiting.')
         await next()
-        return
+        return undefined
       }
 
       // Resolve IP
@@ -51,7 +51,8 @@ export class ThrottleRequests {
         return c.text('Too Many Requests', 429)
       }
 
-      return next()
+      await next()
+      return undefined
     }
   }
 }

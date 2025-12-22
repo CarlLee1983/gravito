@@ -67,43 +67,39 @@ npm publish --access public
 
 ## 📋 快速參考
 
-### 官網使用的套件（Beta）
+### Beta 版本（核心穩定）
 
 ```bash
 # gravito-core
 cd packages/core
 npm publish --access public --tag beta
 
+# @gravito/horizon
+cd packages/horizon
+npm publish --access public --tag beta
+
+# @gravito/luminosity
+cd packages/luminosity
+npm publish --access public --tag beta
+
 # @gravito/stasis
 cd packages/stasis
 npm publish --access public --tag beta
-
-# @gravito/orbit-inertia
-cd packages/orbit-inertia
-npm publish --access public --tag beta
-
-# @gravito/orbit-view
-cd packages/orbit-view
-npm publish --access public --tag beta
-
-# @gravito/seo-adapter-hono
-cd packages/seo-adapter-hono
-npm publish --access public --tag beta
-
-# @gravito/seo-core
-cd packages/seo-core
-npm publish --access public --tag beta
 ```
 
-### 其他套件（Alpha）
+### Alpha 版本（功能模組）
 
 ```bash
-# 例如：@gravito/orbit-auth
-cd packages/orbit-auth
+# 例如：@gravito/sentinel (認證)
+cd packages/sentinel
 npm publish --access public --tag alpha
 
-# 例如：@gravito/orbit-queue
-cd packages/orbit-queue
+# 例如：@gravito/plasma (Redis)
+cd packages/plasma
+npm publish --access public --tag alpha
+
+# 例如：@gravito/db (資料庫)
+cd packages/db
 npm publish --access public --tag alpha
 ```
 

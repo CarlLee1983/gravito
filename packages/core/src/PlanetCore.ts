@@ -216,6 +216,7 @@ export class PlanetCore {
         this.router.url(name, params, query)
 
       await next()
+      return undefined
 
       // Attach queued cookies to response
       cookieJar.attach(c)

@@ -90,46 +90,57 @@ bun run --filter '*' publish
 
 ## 📦 版本策略
 
-### Beta 版本（官網使用的套件）
+### Beta 版本（核心穩定套件）
 
-以下套件已在官網實際使用，發布為 **beta 版本** (`1.0.0-beta.1`)：
+以下套件已進入 Beta 階段，主要用於核心框架和基礎設施 (`1.0.0-beta.*`)：
 
 - `gravito-core` - 核心框架
-- `@gravito/stasis` - 快取模組
-- `@gravito/orbit-inertia` - Inertia.js 整合
-- `@gravito/orbit-view` - 視圖模組
-- `@gravito/seo-adapter-hono` - SEO Hono 適配器
-- `@gravito/seo-core` - SEO 核心模組
+- `@gravito/horizon` - 路由系統
+- `@gravito/luminosity` - SEO 核心模組
+- `@gravito/luminosity-adapter-hono` - SEO Hono 適配器
+- `@gravito/stasis` - 靜態快取系統
 
-### Alpha 版本（其他套件）
+### Alpha 版本（功能模組）
 
-以下套件尚未在官網使用，發布為 **alpha 版本** (`1.0.0-alpha.1`)：
+以下套件處於 Alpha 階段，正在積極開發中 (`1.0.0-alpha.*`)：
 
-- `@gravito/orbit-auth` - 認證模組
-- `@gravito/orbit-broadcasting` - 廣播模組
-- `@gravito/orbit-content` - 內容管理模組
-- `@gravito/orbit-db` - 資料庫模組
-- `@gravito/cosmos` - 國際化模組
-- `@gravito/orbit-mail` - 郵件模組
-- `@gravito/orbit-notifications` - 通知模組
-- `@gravito/orbit-queue` - 佇列模組
-- `@gravito/orbit-request` - 請求驗證模組
-- `@gravito/orbit-scheduler` - 排程模組
-- `@gravito/orbit` - Session 模組
-- `@gravito/orbit-sitemap` - Sitemap 模組
-- `@gravito/nebula` - 儲存模組
-- `@gravito/seo-adapter-express` - SEO Express 適配器
-- `@gravito/seo-cli` - SEO CLI 工具
-- `@gravito/mass` - 驗證器模組
-- `@gravito/client` - 客戶端
-- `@gravito/cli` - CLI 工具
+**資料與儲存**
+- `@gravito/db` - 資料庫核心
+- `@gravito/dark-matter` - NoSQL/Document 儲存
+- `@gravito/nebula` - 檔案儲存系統
+- `@gravito/plasma` - Redis 快取適配器
+- `@gravito/matter` - 資料實體管理
+
+**視圖與前端**
+- `@gravito/freeze` - 視圖凍結/渲染核心
+- `@gravito/freeze-react` - React 適配器
+- `@gravito/freeze-vue` - Vue 適配器
+- `@gravito/prism` - 視圖轉換與處理
+
+**系統與工具**
+- `@gravito/cli` - 命令列工具
+- `@gravito/client` - API 客戶端
+- `@gravito/atlas` - 系統導航與映射
+- `@gravito/constellation` - Sitemap 生成
+- `@gravito/cosmos` - 國際化 (i18n)
+- `@gravito/impulse` - 事件驅動系統
+- `@gravito/ion` - 依賴注入容器
+- `@gravito/mass` - 驗證器
+- `@gravito/monolith` - 單體架構工具
+- `@gravito/pulsar` - 排程系統
+- `@gravito/radiance` - 監控與日誌
+- `@gravito/sentinel` - 認證與授權
+- `@gravito/signal` - 通訊與信號
+- `@gravito/stream` - 串流處理
+- `@gravito/flare` - 錯誤追蹤與通知
 
 ## 📦 需要發布的套件
 
-以下套件會被發布到 NPM：
+所有位於 `packages/` 目錄下且 `package.json` 中 `private` 不為 `true` 的套件都會被發布。
 
 **不會發布的套件**（標記為 `private: true`）：
 - `@gravito/site` - 內部網站套件
+- `create-gravito-app` - 獨立發布的脚手架工具
 
 ## 🔄 更新版本號
 

@@ -81,6 +81,7 @@ export class OrbitDB implements GravitoOrbit {
     core.adapter.use('*', async (c: GravitoContext, next: GravitoNext) => {
       c.set(exposeAs, dbService)
       await next()
+      return undefined
     })
   }
 }

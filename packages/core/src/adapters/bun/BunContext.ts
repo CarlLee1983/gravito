@@ -114,6 +114,7 @@ export class BunContext<V extends GravitoVariables = GravitoVariables>
         this.res.headers.set(name, value)
       }
     }
+    return undefined
   }
 
   status(code: StatusCode): void {

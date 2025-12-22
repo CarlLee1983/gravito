@@ -95,6 +95,8 @@ export class OrbitStream implements GravitoOrbit {
           }
         }
       }
+      await next()
+      return undefined
 
       c.set('queue', this.queueManager!)
       await next()

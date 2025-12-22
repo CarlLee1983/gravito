@@ -184,7 +184,6 @@ class HonoContextWrapper<V extends GravitoVariables = GravitoVariables>
   }
 
   status(code: StatusCode): void {
-    this._statusCode = code
     this.honoCtx.status(code as 200)
   }
 

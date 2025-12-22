@@ -21,6 +21,7 @@ export class I18nOrbit implements GravitoOrbit {
     core.adapter.use('*', async (c, next) => {
       c.set('i18n', i18n)
       await next()
+      return undefined
     })
 
     // Register a helper if using Orbit View (View Rendering)

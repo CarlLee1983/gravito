@@ -65,7 +65,8 @@ function formRequestToMiddleware(RequestClass: FormRequestClass): GravitoMiddlew
 
     // Store validated data in context
     ctx.set('validated', result.data)
-    return await next()
+    await next()
+    return undefined
   }
 }
 
@@ -375,6 +376,7 @@ export class Router {
 
       c.set('routeModels', routeModels)
       await next()
+      return undefined
     })
   }
 

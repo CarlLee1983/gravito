@@ -104,19 +104,21 @@ npm publish --access public --otp=<你的OTP代碼>
 
 ## 🎯 版本策略
 
-### Beta 版本（官網使用）
+### Beta 版本（核心穩定）
 
-以下套件發布為 `1.0.0-beta.1`：
+以下套件發布為 `1.0.0-beta.*`：
 - `gravito-core`
+- `@gravito/horizon`
+- `@gravito/luminosity`
+- `@gravito/luminosity-adapter-hono`
 - `@gravito/stasis`
-- `@gravito/orbit-inertia`
-- `@gravito/orbit-view`
-- `@gravito/seo-adapter-hono`
-- `@gravito/seo-core`
 
-### Alpha 版本（其他套件）
+### Alpha 版本（功能模組）
 
-其他套件發布為 `1.0.0-alpha.1`
+其他套件發布為 `1.0.0-alpha.*`，包括：
+- 資料庫與儲存：`db`, `dark-matter`, `nebula`, `plasma`
+- 視圖：`freeze`, `freeze-react`, `freeze-vue`, `prism`
+- 系統：`sentinel`, `impulse`, `ion`, `pulsar`, `signal` 等
 
 ## 🔍 安裝方式
 

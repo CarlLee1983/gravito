@@ -177,4 +177,4 @@ Feel free to check the [issues page](https://github.com/gravito-framework/gravit
 
 ## 📝 License
 
-MIT © [Carl Lee](https://github.com/CarlLee1983)
+MIT © [Carl Lee](https://github.com/gravito-framework/gravito)

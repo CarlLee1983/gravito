@@ -25,6 +25,7 @@ export class OrbitPrism implements GravitoOrbit {
     core.adapter.use('*', async (c, next) => {
       c.set('view', engine)
       await next()
+      return undefined
     })
 
     // 5. Trigger hook for additional helper registration
