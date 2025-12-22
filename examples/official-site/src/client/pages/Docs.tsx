@@ -73,11 +73,11 @@ export default function Docs() {
       const wrapper = document.createElement('div')
       wrapper.dataset.preWrapper = 'true'
       wrapper.className =
-        'relative group my-10 overflow-hidden rounded-2xl border border-white/10 bg-[#0d1117]/50 backdrop-blur shadow-2xl transition-all hover:border-singularity/30'
+        'relative group my-10 overflow-hidden rounded-2xl border border-white/20 bg-gray-900/80 backdrop-blur shadow-2xl transition-all hover:border-singularity/40'
 
       // Add "Console" Header (Mac terminal style)
       const header = document.createElement('div')
-      header.className = 'flex items-center gap-2 px-4 py-3 border-b border-white/5 bg-white/5'
+      header.className = 'flex items-center gap-2 px-4 py-3 border-b border-white/10 bg-white/10'
       header.innerHTML = `
         <div class="flex gap-1.5">
           <div class="w-2.5 h-2.5 rounded-full bg-red-500/20 border border-red-500/40"></div>
@@ -438,7 +438,7 @@ export default function Docs() {
                                 prose-h2:text-white prose-h2:border-b prose-h2:border-white/5 prose-h2:pb-4 prose-h2:mt-16
                                 prose-h3:text-white/90
                                 prose-a:font-bold prose-a:text-singularity hover:prose-a:text-cyan-300 transition-colors
-                                prose-pre:bg-black/50 prose-pre:border prose-pre:border-white/5 prose-pre:rounded-2xl prose-pre:shadow-2xl
+                                prose-pre:bg-transparent prose-pre:border-0 prose-pre:rounded-2xl prose-pre:shadow-none
                                 prose-strong:text-white prose-strong:font-black
                                 prose-hr:border-white/5
                                 prose-blockquote:border-singularity prose-blockquote:bg-singularity/5 prose-blockquote:py-1 prose-blockquote:px-6 prose-blockquote:rounded-r-xl
