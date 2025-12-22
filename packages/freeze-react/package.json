@@ -1,6 +1,6 @@
 {
     "name": "@gravito/freeze-react",
-    "version": "0.1.0-beta.1",
+    "version": "0.1.0-beta.2",
     "description": "React adapter for @gravito/freeze SSG module",
     "type": "module",
     "main": "./dist/index.js",
