@@ -1,46 +1,5 @@
-<!DOCTYPE html>
-<html lang="en">
+@extends('layouts/main')
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gravito Framework - High Performance Backend Ecosystem</title>
-    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
-    <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
-    <link rel="manifest" href="/static/site.webmanifest">
-    {{#unless isDev}}
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; 
-                   script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com https://www.googletagmanager.com; 
-                   connect-src 'self' https://cloudflareinsights.com https://www.google-analytics.com;
-                   img-src 'self' data: https:;
-                   style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-                   font-src 'self' https://fonts.gstatic.com;">
-    {{/unless}}
-    {{{ seoHtml }}}
-
-    <!-- Google Analytics (Uncomment and add ID when ready) -->
-    <!-- Google Analytics Placeholder -->
-
-    {{#if isDev}}
-    <!-- Development mode: Load from Vite dev server (proxied through backend) -->
-    <script type="module">
-        import RefreshRuntime from "/@react-refresh"
-        RefreshRuntime.injectIntoGlobalHook(window)
-        window.$RefreshReg$ = () => { }
-        window.$RefreshSig$ = () => (type) => type
-        window.__vite_plugin_react_preamble_installed__ = true
-    </script>
-    <script type="module" src="/@vite/client"></script>
-    <script type="module" src="/app.tsx"></script>
-    {{else}}
-    <!-- Production mode: Load from built assets -->
-    <script type="module" src="/static/build/assets/app.js"></script>
-    <link rel="stylesheet" href="/static/build/assets/app.css">
-    {{/if}}
-</head>
-
-<body>
-    <div id="app" data-page='{{{ page }}}'></div>
-</body>
-
-</html>
+@section('content')
+<div id="app" data-page='{{{ page }}}'></div>
+@endsection
