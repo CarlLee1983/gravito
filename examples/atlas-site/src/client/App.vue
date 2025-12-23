@@ -30,7 +30,6 @@
         <a href="#" class="hover:text-atlas-cyan transition-colors">Gravits</a>
       </div>
       <div class="flex items-center gap-6">
-        <a href="#" class="text-xs font-mono text-gray-500 hover:text-white transition-colors">Log in</a>
         <button class="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white px-6 py-2 rounded-full text-sm font-bold shadow-[0_0_20px_rgba(0,240,255,0.3)] transition-all transform hover:scale-105 active:scale-95">
           Download
         </button>
@@ -86,6 +85,10 @@
         </div>
       </div>
     </main>
+
+    <Features />
+    <Installation />
+    <Footer />
 
     <!-- 3D Structural Effect (Simulated) -->
     <!-- Floating Orbit Elements -->
@@ -146,6 +149,9 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import Features from './components/Features.vue'
+import Installation from './components/Installation.vue'
+import Footer from './components/Footer.vue'
 
 const demoResult = ref<any>(null)
 const loading = ref(true)
