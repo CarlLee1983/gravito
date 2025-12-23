@@ -18,6 +18,15 @@ export default {
         'grid-pattern':
           "url(\"data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h40v40H0V0zm1 1h38v38H1V1z' fill='%2300f0ff' fill-opacity='0.03' fill-rule='evenodd'/%3E%3C/svg%3E\")",
       },
+      keyframes: {
+        'slide-in-up': {
+          '0%': { transform: 'translateY(20px)', opacity: '0' },
+          '100%': { transform: 'translateY(0)', opacity: '1' },
+        },
+      },
+      animation: {
+        'slide-in-up': 'slide-in-up 0.8s ease-out forwards',
+      },
     },
   },
   plugins: [],

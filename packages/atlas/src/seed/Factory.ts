@@ -135,12 +135,16 @@ export class Factory<T extends Record<string, unknown>> {
     }
 
     // Bulk Insert
-    await DB.table(table).insert(records)
+    const inserted = await DB.table<T>(table).insert(records)
 
-    // TODO: Ideally we should return the fresh models from DB if possible
-    // But basic insert returns void or IDs depending on driver.
-    // For seeding, just returning the data we inserted is often enough.
+    // Return fresh models from DB if available
+    if (inserted && inserted.length > 0) {
+        // Merge attributes to keep any local overrides not in DB?
+        // No, DB is truth.
+        return inserted
+    }
 
+    // Fallback if driver doesn't return rows
     return records
   }
 

@@ -8,7 +8,7 @@ import type { QueryBuilderContract } from '../../types'
 import { SchemaRegistry } from '../schema/SchemaRegistry'
 import type { ColumnType, TableSchema } from '../schema/types'
 import { DirtyTracker } from './DirtyTracker'
-import { SOFT_DELETES_KEY } from './decorators'
+import { COLUMN_KEY, SOFT_DELETES_KEY } from './decorators'
 import {
   ColumnNotFoundError,
   ModelNotFoundError,
@@ -80,6 +80,11 @@ export abstract class Model {
   static visible: string[] = []
   static appends: string[] = []
   static observers: any[] = []
+
+  /** Enable automatic timestamps */
+  static timestamps = true
+  static createdAtColumn = 'created_at'
+  static updatedAtColumn = 'updated_at'
 
   /** Attribute casting definition */
   static casts: Record<string, string> = {}
@@ -702,6 +707,27 @@ export abstract class Model {
     // Trigger creating event
     await this.emit('creating')
 
+    // Handle Timestamps
+    if (modelCtor.timestamps) {
+        const now = new Date()
+        if (!this._attributes[modelCtor.createdAtColumn]) {
+             this._setAttribute(modelCtor.createdAtColumn, now)
+        }
+        if (!this._attributes[modelCtor.updatedAtColumn]) {
+             this._setAttribute(modelCtor.updatedAtColumn, now)
+        }
+    }
+
+    // Handle @column(autoCreate)
+    const columns = (modelCtor as any)[COLUMN_KEY]
+    if (columns) {
+        for (const [prop, options] of Object.entries(columns)) {
+            if ((options as any).autoCreate && !this._attributes[prop]) {
+                 this._setAttribute(prop, new Date())
+            }
+        }
+    }
+
     const result = await connection.table<ModelAttributes>(modelCtor.table).insert(this._attributes)
 
     // Set primary key from result
@@ -734,6 +760,21 @@ export abstract class Model {
 
     // Trigger updating event
     await this.emit('updating')
+
+    // Handle Timestamps
+    if (modelCtor.timestamps) {
+         this._setAttribute(modelCtor.updatedAtColumn, new Date())
+    }
+
+    // Handle @column(autoUpdate)
+    const columns = (modelCtor as any)[COLUMN_KEY]
+    if (columns) {
+        for (const [prop, options] of Object.entries(columns)) {
+            if ((options as any).autoUpdate) {
+                 this._setAttribute(prop, new Date())
+            }
+        }
+    }
 
     const dirty = this.getDirty()
     if (Object.keys(dirty).length === 0) {

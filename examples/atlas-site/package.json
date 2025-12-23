@@ -12,9 +12,10 @@
     },
     "dependencies": {
         "@gravito/atlas": "workspace:*",
+        "hono": "^4.6.14",
         "vue": "^3.5.13",
-        "vue-router": "^4.5.0",
-        "hono": "^4.6.14"
+        "vue-i18n": "^11.2.7",
+        "vue-router": "^4.5.0"
     },
     "devDependencies": {
         "@vitejs/plugin-vue": "^5.2.1",

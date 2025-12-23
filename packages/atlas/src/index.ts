@@ -49,6 +49,7 @@ export { ConnectionManager } from './connection/ConnectionManager'
 export { DB } from './DB'
 // Drivers
 export { PostgresDriver } from './drivers/PostgresDriver'
+export { SQLiteDriver } from './drivers/SQLiteDriver'
 // Grammar
 export { Grammar } from './grammar/Grammar'
 export { PostgresGrammar } from './grammar/PostgresGrammar'
@@ -88,7 +89,7 @@ export { QueryBuilder, QueryBuilderError, RecordNotFoundError } from './query/Qu
 export type { ColumnType, ForeignKeyAction, ForeignKeyDefinition, IndexDefinition } from './schema'
 // Schema
 export { Blueprint, ColumnDefinition, Schema } from './schema'
-export { MySQLSchemaGrammar, PostgresSchemaGrammar, SchemaGrammar } from './schema/grammars'
+export { MySQLSchemaGrammar, PostgresSchemaGrammar, SchemaGrammar, SQLiteSchemaGrammar } from './schema/grammars'
 export type { FactoryDefinition, Seeder, SeederFile, SeederRunnerOptions } from './seed'
 // Seed
 export { Factory, factory, SeederRunner } from './seed'

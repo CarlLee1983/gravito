@@ -3,6 +3,7 @@
  */
 
 export { DirtyTracker } from './DirtyTracker'
+export { column, SoftDeletes } from './decorators'
 export {
   ColumnNotFoundError,
   ModelNotFoundError,

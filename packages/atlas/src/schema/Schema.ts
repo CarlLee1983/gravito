@@ -5,7 +5,7 @@
 
 import { DB } from '../DB'
 import { Blueprint } from './Blueprint'
-import { MySQLSchemaGrammar, PostgresSchemaGrammar, type SchemaGrammar } from './grammars'
+import { MySQLSchemaGrammar, PostgresSchemaGrammar, SQLiteSchemaGrammar, type SchemaGrammar } from './grammars'
 
 /**
  * Schema Facade
@@ -61,6 +61,8 @@ export class Schema {
       case 'mysql':
       case 'mariadb':
         return new MySQLSchemaGrammar()
+      case 'sqlite':
+        return new SQLiteSchemaGrammar()
       default:
         return new PostgresSchemaGrammar()
     }

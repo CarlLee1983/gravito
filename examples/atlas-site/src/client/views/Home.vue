@@ -1,84 +1,54 @@
 <template>
   <div class="relative z-10 pb-20">
     <!-- Hero Content -->
-    <main class="flex flex-col justify-center items-start px-8 md:px-20 max-w-7xl mx-auto w-full mt-10 md:mt-24 mb-20">
-      <h2 class="text-atlas-cyan font-bold tracking-[0.2em] mb-4 text-sm md:text-base animate-slide-in-up uppercase">ATLAS:</h2>
-      <h1 class="text-5xl md:text-7xl font-extrabold leading-tight text-white mb-8 max-w-4xl font-sans drop-shadow-2xl">
-        STRUCTURING THE CHAOS<br /> 
-        <span class="text-transparent bg-clip-text bg-gradient-to-r from-gray-200 to-gray-500">AT THE EDGE OF GRAVITY.</span>
-      </h1>
-      <p class="text-gray-400 max-w-xl text-lg mb-12 leading-relaxed font-light border-l-2 border-atlas-cyan pl-6">
-        The universal database interface for the Gravito ecosystem.  
-        Query, migrate, and structure your data with cosmic precision.
-      </p>
+    <!-- Hero Content -->
+    <!-- Hero Content -->
+    <main class="relative z-20 flex flex-col lg:flex-row items-center justify-between px-8 md:px-20 max-w-7xl mx-auto w-full min-h-[90vh] pt-32 md:pt-10 gap-12">
+      <!-- Left side: Minimalist HUD & Intros -->
+      <div class="flex-1 flex flex-col items-start text-left">
+          <div class="flex flex-col gap-2 font-mono text-[10px] tracking-[0.3em] text-atlas-cyan/60 animate-pulse uppercase mb-8">
+            <span class="flex items-center gap-2"><div class="w-1.5 h-1.5 rounded-full bg-atlas-cyan shadow-[0_0_8px_cyan]"></div> System Orbit: Active</span>
+            <span>Data Flux: Stable</span>
+            <span>Gravitational Metric: 9.81 G_CORE</span>
+          </div>
 
-      <!-- Verification Demo Preview -->
-      <div class="w-full max-w-2xl bg-[#0a0a0a]/80 backdrop-blur-xl border border-atlas-cyan/20 rounded-lg p-6 font-mono text-sm shadow-2xl relative group hover:border-atlas-cyan/50 transition-all duration-500 transform overflow-hidden" ref="demoCard">
-        <!-- Glow effect -->
-        <div class="absolute -inset-[100%] bg-gradient-to-r from-transparent via-atlas-cyan/10 to-transparent rotate-45 group-hover:via-atlas-cyan/20 transition-all duration-1000 translate-x-[-100%] group-hover:translate-x-[100%]"></div>
-        
-        <div class="absolute -top-3 -right-3 bg-atlas-cyan text-black px-3 py-1 text-xs font-bold rounded shadow-[0_0_10px_rgba(0,240,255,0.5)]">LIVE DEMO</div>
-        
-        <div class="flex gap-2 mb-4 border-b border-gray-800 pb-2">
-           <div class="w-3 h-3 rounded-full bg-red-500"></div>
-           <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
-           <div class="w-3 h-3 rounded-full bg-green-500"></div>
-        </div>
-        
-        <div class="space-y-2 relative z-10">
-            <div class="text-gray-500 italic">// Initialize Atlas Connection & Query</div>
-            <div>
-              <span class="text-purple-400">const</span> <span class="text-blue-300">planet</span> = <span class="text-purple-400">await</span> <span class="text-yellow-400">DB</span>.<span class="text-blue-300">table</span>(<span class="text-green-300">'exoplanets'</span>)
-            </div>
-            <div class="pl-4">.<span class="text-blue-300">where</span>(<span class="text-green-300">'gravity_g'</span>, <span class="text-pink-400">'>='</span>, <span class="text-orange-300">1.8</span>)</div>
-            <div class="pl-4">.<span class="text-blue-300">orderBy</span>(<span class="text-green-300">'distance_ly'</span>, <span class="text-green-300">'asc'</span>)</div>
-            <div class="pl-4">.<span class="text-blue-300">first</span>()</div>
-            
-            <div class="pt-4 text-gray-400 border-t border-gray-800 mt-4 text-xs flex justify-between">
-                <span>Console Output:</span>
-                <button @click="runDemo" class="text-atlas-cyan hover:text-white cursor-pointer px-2 py-0.5 rounded bg-atlas-cyan/10 hover:bg-atlas-cyan/20">▶ Re-run</button>
-            </div>
-            <div v-if="loading" class="text-atlas-cyan/50 italic animate-pulse mt-2 h-10 flex items-center">
-                <span class="inline-block w-2 h-2 bg-atlas-cyan rounded-full animate-ping mr-2"></span>
-                Running query on cosmic stream...
-            </div>
-            <div v-else class="text-atlas-cyan font-bold break-all mt-2 font-mono text-xs">
-                <div class="text-[10px] text-gray-600 mb-2 border-b border-gray-900 pb-1 font-mono opacity-50">{{ demoResult?.sql }}</div>
-                <pre class="bg-black/30 p-2 rounded">{{ JSON.stringify(demoResult?.data, null, 2) }}</pre>
-            </div>
-        </div>
+          <h1 class="text-3xl md:text-5xl font-bold text-white mb-6 leading-tight tracking-tight max-w-md">
+             {{ t('hero.title_line1') }}
+          </h1>
+          
+          <p class="text-gray-500 max-w-sm text-sm leading-relaxed font-light animate-slide-in-up border-l border-atlas-cyan/20 pl-4 mb-10">
+            {{ t('hero.desc') }}
+          </p>
+
+          <!-- CTA Buttons (Restored & Refined) -->
+          <div class="flex gap-4 animate-slide-in-up">
+            <a href="#installation" class="px-5 py-2.5 bg-atlas-cyan/10 border border-atlas-cyan/40 text-atlas-cyan text-[10px] font-bold tracking-[0.2em] uppercase hover:bg-atlas-cyan hover:text-black transition-all">
+                {{ t('nav.install') }}
+            </a>
+            <router-link to="/features" class="px-5 py-2.5 bg-white/5 border border-white/10 text-gray-500 text-[10px] font-bold tracking-[0.2em] uppercase hover:border-white hover:text-white transition-all">
+                {{ t('nav.features') }}
+            </router-link>
+          </div>
+      </div>
+
+      <!-- Right side: Floating Live Console -->
+      <div class="flex-1 w-full lg:max-w-xl animate-float-slow">
+          <LiveConsole />
       </div>
     </main>
 
-    <Features />
-    <Installation />
+    <!-- Enhanced Features Section (Moved up visually to connect) -->
+    <Features id="features" class="relative z-20" />
+    <Installation id="installation" class="relative z-20" />
   </div>
 </template>
 
+
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import Features from '@/client/components/Features.vue'
 import Installation from '@/client/components/Installation.vue'
+import LiveConsole from '@/client/components/LiveConsole.vue'
 
-const demoResult = ref<any>(null)
-const loading = ref(true)
-
-async function runDemo() {
-    loading.value = true
-    try {
-        const res = await fetch('/api/demo')
-        const data = await res.json()
-        setTimeout(() => {
-            demoResult.value = data
-            loading.value = false
-        }, 1500)
-    } catch (e) {
-        console.error(e)
-        loading.value = false
-    }
-}
-
-onMounted(() => {
-    runDemo()
-})
+const { t } = useI18n()
 </script>

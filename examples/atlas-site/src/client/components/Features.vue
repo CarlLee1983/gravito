@@ -8,6 +8,10 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
             <!-- Feature 1: Query Builder -->
             <div class="group relative bg-atlas-abyss border border-white/10 p-8 rounded-2xl overflow-hidden hover:border-atlas-cyan/50 transition-all duration-500">
+                <!-- Card Internal Data Flux -->
+                <div class="absolute inset-0 opacity-20 group-hover:opacity-40 transition-opacity">
+                    <DataSortingGrid />
+                </div>
                 <div class="absolute inset-0 bg-gradient-to-b from-atlas-cyan/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                 <div class="relative z-10">
                     <div class="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center mb-6 text-blue-400 group-hover:scale-110 transition-transform">
@@ -28,6 +32,10 @@
 
             <!-- Feature 2: Migration -->
             <div class="group relative bg-atlas-abyss border border-white/10 p-8 rounded-2xl overflow-hidden hover:border-purple-500/50 transition-all duration-500">
+                <!-- Card Internal Data Flux -->
+                <div class="absolute inset-0 opacity-20 group-hover:opacity-40 transition-opacity">
+                    <DataSortingGrid />
+                </div>
                 <div class="absolute inset-0 bg-gradient-to-b from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                 <div class="relative z-10">
                     <div class="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center mb-6 text-purple-400 group-hover:scale-110 transition-transform">
@@ -43,12 +51,18 @@
                         <div class="pl-4"><span class="text-orange-300">t</span>.<span class="text-blue-300">string</span>(<span class="text-green-300">'email'</span>).<span class="text-blue-300">unique</span>()</div>
                         <div class="pl-4"><span class="text-orange-300">t</span>.<span class="text-blue-300">timestamps</span>()</div>
                         <div>})</div>
+                        <div class="mt-2 text-gray-500 opacity-50 font-italic">// Rollback</div>
+                        <div><span class="text-purple-400">Schema</span>.<span class="text-blue-300">dropTable</span>(<span class="text-green-300">'users'</span>)</div>
                     </div>
                 </div>
             </div>
 
             <!-- Feature 3: Seeding -->
             <div class="group relative bg-atlas-abyss border border-white/10 p-8 rounded-2xl overflow-hidden hover:border-green-500/50 transition-all duration-500">
+                <!-- Card Internal Data Flux -->
+                <div class="absolute inset-0 opacity-20 group-hover:opacity-40 transition-opacity">
+                    <DataSortingGrid />
+                </div>
                 <div class="absolute inset-0 bg-gradient-to-b from-green-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                 <div class="relative z-10">
                     <div class="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center mb-6 text-green-400 group-hover:scale-110 transition-transform">
@@ -70,3 +84,7 @@
     </div>
   </section>
 </template>
+
+<script setup lang="ts">
+import DataSortingGrid from './DataSortingGrid.vue'
+</script>

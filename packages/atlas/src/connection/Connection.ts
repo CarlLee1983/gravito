@@ -4,7 +4,9 @@
  */
 
 import { PostgresDriver } from '../drivers/PostgresDriver'
+import { SQLiteDriver } from '../drivers/SQLiteDriver'
 import { PostgresGrammar } from '../grammar/PostgresGrammar'
+import { SQLiteGrammar } from '../grammar/SQLiteGrammar'
 import { QueryBuilder } from '../query/QueryBuilder'
 import type {
   ConnectionConfig,
@@ -136,7 +138,7 @@ export class Connection implements ConnectionContract {
       case 'mariadb':
         throw new Error(`Driver "${this.config.driver}" is not yet implemented`)
       case 'sqlite':
-        throw new Error('SQLite driver is not yet implemented')
+        return new SQLiteDriver(this.config)
       default:
         throw new Error(`Unknown driver: ${this.config.driver}`)
     }
@@ -153,7 +155,7 @@ export class Connection implements ConnectionContract {
       case 'mariadb':
         throw new Error(`Grammar for "${this.config.driver}" is not yet implemented`)
       case 'sqlite':
-        throw new Error('SQLite grammar is not yet implemented')
+        return new SQLiteGrammar()
       default:
         throw new Error(`Unknown grammar: ${this.config.driver}`)
     }
