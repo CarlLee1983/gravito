@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0-alpha](https://github.com/gravito-framework/gravito/compare/v0.4.0-alpha...v0.5.0-alpha) (2025-12-23)
+
+
+### Features
+
+* complete luminosity site with real seo engine integration ([d1100de](https://github.com/gravito-framework/gravito/commit/d1100de3a57a83358eb7b8c696a7db1d052b47c8))
+* **docs:** add usage examples page and link in footer ([810da55](https://github.com/gravito-framework/gravito/commit/810da5592b735cf12ab534860a74713587a599d0))
+* implement comprehensive SEO metadata for home and docs pages ([d289855](https://github.com/gravito-framework/gravito/commit/d2898556e2d2ed47a53e7cc4e4fd5742522e22e4))
+* implement SSG metadata injection for perfect SEO ([bd08554](https://github.com/gravito-framework/gravito/commit/bd085545f6a8800cc634425003bde3240dcd4e24))
+
+
+### Bug Fixes
+
+* **docs:** resolve i18n link prefix, add cli/examples docs, and standardize sidebar order ([430a6b4](https://github.com/gravito-framework/gravito/commit/430a6b43ee9b765ad7342db4fffdd64d305fbb6e))
+* **lint:** resolve remaining biome import sorting and type errors ([fd56a96](https://github.com/gravito-framework/gravito/commit/fd56a969987f6b5e96fb6e9175468559ae2d4cbb))
+* **nav:** correct documentation link path to prevent locale loss ([c41a751](https://github.com/gravito-framework/gravito/commit/c41a751acc62a65eb02ddce57b1e7fee248d3900))
+* **site:** ensure favicon presence and fix build script type error ([cc02364](https://github.com/gravito-framework/gravito/commit/cc023646dd1ebcc4fb97f381813b601bce3a5043))
+* **site:** link footer resources and harden i18n access ([b8b2796](https://github.com/gravito-framework/gravito/commit/b8b2796435eaa43b42856d90c04bb5d7a9cb2fa6))
+
 ## [0.4.0-alpha](https://github.com/gravito-framework/gravito/compare/v0.3.0-alpha...v0.4.0-alpha) (2025-12-23)
 
 
