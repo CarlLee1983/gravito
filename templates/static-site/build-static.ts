@@ -152,7 +152,7 @@ async function build() {
   console.log('🚫 Generating 404.html...')
   try {
     // Request a known non-existent route to trigger the 404 hook
-    const res = await core.app.request('/__force_404_generation__')
+    const res = await core.app.request(`/__force_404_generation_${Date.now()}__`)
     let html = await res.text()
 
     // Insert SPA routing script
