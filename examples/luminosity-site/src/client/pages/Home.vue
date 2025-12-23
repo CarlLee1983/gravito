@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, usePage, Link } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
 import { Activity, Zap, HardDrive, FileText, ChevronRight, Share2, Shield, Search } from 'lucide-vue-next';
 import Layout from '../components/Layout.vue';
 import Logo from '../components/Logo.vue';
@@ -15,21 +15,21 @@ const { t, locale } = useI18n()
 <template>
   <Layout>
     <Head>
-      <title>{{ t.hero.title }} - Luminosity SEO</title>
-      <meta name="description" :content="t.hero.subtitle + ' - ' + t.hero.desc" />
+      <title>{{ t?.hero?.title }} - Luminosity SEO</title>
+      <meta name="description" :content="t?.hero?.subtitle + ' - ' + t?.hero?.desc" />
       
       <!-- Open Graph / Facebook -->
       <meta property="og:type" content="website" />
       <meta property="og:url" content="https://lux.gravito.dev/" />
-      <meta property="og:title" :content="t.hero.title + ' - Luminosity SEO'" />
-      <meta property="og:description" :content="t.hero.subtitle" />
+      <meta property="og:title" :content="t?.hero?.title + ' - Luminosity SEO'" />
+      <meta property="og:description" :content="t?.hero?.subtitle" />
       <meta property="og:image" content="https://lux.gravito.dev/og-image.png" />
 
       <!-- Twitter -->
       <meta property="twitter:card" content="summary_large_image" />
       <meta property="twitter:url" content="https://lux.gravito.dev/" />
-      <meta property="twitter:title" :content="t.hero.title + ' - Luminosity SEO'" />
-      <meta property="twitter:description" :content="t.hero.subtitle" />
+      <meta property="twitter:title" :content="t?.hero?.title + ' - Luminosity SEO'" />
+      <meta property="twitter:description" :content="t?.hero?.subtitle" />
       <meta property="twitter:image" content="https://lux.gravito.dev/og-image.png" />
     </Head>
     
@@ -54,16 +54,16 @@ const { t, locale } = useI18n()
           class="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-emerald-500/20 bg-emerald-500/5 text-emerald-400 text-xs font-mono tracking-widest uppercase mb-6 backdrop-blur-sm animate-fade-in"
         >
           <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-          {{ t.hero.tag }}
+          {{ t?.hero?.tag }}
         </div>
         
         <h1 class="text-6xl md:text-9xl font-black tracking-tighter mb-8 leading-[0.9] text-white">
-          {{ t.hero.title }} <br />
-          <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-green-500 to-emerald-600">{{ t.hero.subtitle }}</span>
+          {{ t?.hero?.title }} <br />
+          <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-green-500 to-emerald-600">{{ t?.hero?.subtitle }}</span>
         </h1>
         
         <p class="text-xl md:text-2xl text-gray-400 max-w-3xl mx-auto mb-16 font-light leading-relaxed">
-          {{ t.hero.desc }}
+          {{ t?.hero?.desc }}
         </p>
         
         <div class="flex flex-col sm:flex-row gap-6 justify-center items-center">
@@ -71,20 +71,20 @@ const { t, locale } = useI18n()
             :href="locale === 'zh' ? '/zh/features' : '/features'"
             class="w-full sm:w-auto px-10 py-5 bg-white text-black font-black rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-[0_0_30px_rgba(255,255,255,0.2)] flex items-center justify-center gap-2"
           >
-            {{ t.hero.ctaPro }} <ChevronRight :size="20" />
+            {{ t?.hero?.ctaPro }} <ChevronRight :size="20" />
           </Link>
           <Link 
             :href="locale === 'zh' ? '/zh/docs' : '/docs'"
             class="w-full sm:w-auto px-10 py-5 border border-white/10 text-white font-bold rounded-2xl hover:bg-white/5 transition-all backdrop-blur-sm"
           >
-            {{ t.hero.ctaDocs }}
+            {{ t?.hero?.ctaDocs }}
           </Link>
         </div>
       </div>
 
       <!-- Scroll Indicator -->
       <div class="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-50">
-        <span class="text-[10px] font-mono uppercase tracking-[0.3em]">{{ t.scroll }}</span>
+        <span class="text-[10px] font-mono uppercase tracking-[0.3em]">{{ t?.scroll }}</span>
         <div class="w-[1px] h-12 bg-gradient-to-b from-emerald-500 to-transparent"></div>
       </div>
     </section>
@@ -99,9 +99,9 @@ const { t, locale } = useI18n()
             </div>
             <div class="relative z-10">
               <div class="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-400 mb-6 font-bold">01</div>
-              <h3 class="text-3xl font-bold mb-4">{{ t.features.lsm.title }}</h3>
+              <h3 class="text-3xl font-bold mb-4">{{ t?.features?.lsm?.title }}</h3>
               <p class="text-gray-400 text-lg max-w-lg">
-                {{ t.features.lsm.desc }}
+                {{ t?.features?.lsm?.desc }}
               </p>
             </div>
           </div>
@@ -110,9 +110,9 @@ const { t, locale } = useI18n()
             <div class="relative z-10 h-full flex flex-col justify-between">
               <div>
                 <Shield class="text-white/80 mb-6" :size="40" />
-                <h3 class="text-2xl font-bold text-white mb-4">{{ t.features.enterprise.title }}</h3>
+                <h3 class="text-2xl font-bold text-white mb-4">{{ t?.features?.enterprise?.title }}</h3>
                 <p class="text-emerald-100/70">
-                  {{ t.features.enterprise.desc }}
+                  {{ t?.features?.enterprise?.desc }}
                 </p>
               </div>
               <div class="pt-8 flex justify-end">
@@ -123,25 +123,25 @@ const { t, locale } = useI18n()
           
           <div class="p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-md">
             <Search class="text-emerald-500 mb-6" :size="32" />
-            <h3 class="text-xl font-bold mb-2">{{ t.features.index.title }}</h3>
+            <h3 class="text-xl font-bold mb-2">{{ t?.features?.index?.title }}</h3>
             <p class="text-gray-500 text-sm">
-              {{ t.features.index.desc }}
+              {{ t?.features?.index?.desc }}
             </p>
           </div>
 
           <div class="p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-md">
             <Shield class="text-emerald-500 mb-6" :size="32" />
-            <h3 class="text-xl font-bold mb-2">{{ t.features.proxy.title }}</h3>
+            <h3 class="text-xl font-bold mb-2">{{ t?.features?.proxy?.title }}</h3>
             <p class="text-gray-500 text-sm">
-               {{ t.features.proxy.desc }}
+               {{ t?.features?.proxy?.desc }}
             </p>
           </div>
 
           <div class="p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-md">
             <FileText class="text-emerald-500 mb-6" :size="32" />
-            <h3 class="text-xl font-bold mb-2">{{ t.features.meta.title }}</h3>
+            <h3 class="text-xl font-bold mb-2">{{ t?.features?.meta?.title }}</h3>
             <p class="text-gray-500 text-sm">
-              {{ t.features.meta.desc }}
+              {{ t?.features?.meta?.desc }}
             </p>
           </div>
         </div>
@@ -155,9 +155,9 @@ const { t, locale } = useI18n()
         <!-- Section Header -->
         <div class="text-center mb-24">
           <h2 class="text-5xl md:text-7xl font-black tracking-tighter mb-4 italic">
-            {{ t.benchmark.title }} <span class="text-emerald-500">{{ t.benchmark.subtitle }}</span>
+            {{ t?.benchmark?.title }} <span class="text-emerald-500">{{ t?.benchmark?.subtitle }}</span>
           </h2>
-          <p class="text-gray-400 text-xl font-mono tracking-widest uppercase">{{ t.benchmark.metric }}</p>
+          <p class="text-gray-400 text-xl font-mono tracking-widest uppercase">{{ t?.benchmark?.metric }}</p>
         </div>
 
         <!-- Metrics Grid -->
@@ -165,7 +165,7 @@ const { t, locale } = useI18n()
           <div class="p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-sm group hover:border-emerald-500/50 transition-colors">
             <div class="flex items-center gap-3 mb-4 text-emerald-400">
               <FileText :size="20" />
-              <span class="text-xs font-mono uppercase tracking-wider">{{ t.benchmark.urls }}</span>
+              <span class="text-xs font-mono uppercase tracking-wider">{{ t?.benchmark?.urls }}</span>
             </div>
             <div class="text-5xl font-black text-white mb-2">1,000,000</div>
             <div class="text-xs text-gray-500 uppercase tracking-widest">Single Stream Scan</div>
@@ -174,7 +174,7 @@ const { t, locale } = useI18n()
           <div class="p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-sm group hover:border-emerald-500/50 transition-colors">
             <div class="flex items-center gap-3 mb-4 text-blue-400">
               <Zap :size="20" />
-              <span class="text-xs font-mono uppercase tracking-wider">{{ t.benchmark.throughput }}</span>
+              <span class="text-xs font-mono uppercase tracking-wider">{{ t?.benchmark?.throughput }}</span>
             </div>
             <div class="text-5xl font-black text-white mb-2">70k<span class="text-xl text-gray-500 italic ml-1">/sec</span></div>
             <div class="text-xs text-gray-500 uppercase tracking-widest">LSM Optimized</div>
@@ -183,7 +183,7 @@ const { t, locale } = useI18n()
           <div class="p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-sm group hover:border-emerald-500/50 transition-colors">
             <div class="flex items-center gap-3 mb-4 text-amber-400">
               <HardDrive :size="20" />
-              <span class="text-xs font-mono uppercase tracking-wider">{{ t.benchmark.memory }}</span>
+              <span class="text-xs font-mono uppercase tracking-wider">{{ t?.benchmark?.memory }}</span>
             </div>
             <div class="text-5xl font-black text-white mb-2">84<span class="text-xl text-gray-500 italic ml-1">MB</span></div>
             <div class="text-xs text-gray-500 uppercase tracking-widest">Constant Heap Usage</div>
@@ -192,7 +192,7 @@ const { t, locale } = useI18n()
           <div class="p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-sm group hover:border-emerald-500/50 transition-colors">
             <div class="flex items-center gap-3 mb-4 text-purple-400">
               <Activity :size="20" />
-              <span class="text-xs font-mono uppercase tracking-wider">{{ t.benchmark.build }}</span>
+              <span class="text-xs font-mono uppercase tracking-wider">{{ t?.benchmark?.build }}</span>
             </div>
             <div class="text-5xl font-black text-white mb-2">14.2<span class="text-xl text-gray-500 italic ml-1">s</span></div>
             <div class="text-xs text-gray-500 uppercase tracking-widest">100% Success Rate</div>
@@ -237,6 +237,20 @@ const { t, locale } = useI18n()
               </div>
             </div>
           </div>
+        </div>
+
+        <!-- Full Report Link -->
+        <div class="mt-12 text-center animate-fade-in" style="animation-delay: 0.5s">
+          <Link 
+            :href="locale === 'zh' ? '/zh/docs/benchmark' : '/docs/benchmark'"
+            class="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 hover:scale-105 transition-all font-mono text-sm group"
+          >
+            <FileText :size="16" />
+            <span class="group-hover:underline underline-offset-4">
+              {{ locale === 'zh' ? '查看完整基準測試報告' : 'View Full Benchmark Report' }}
+            </span>
+            <ChevronRight :size="16" class="group-hover:translate-x-1 transition-transform" />
+          </Link>
         </div>
 
       </div>

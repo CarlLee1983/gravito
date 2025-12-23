@@ -82,21 +82,35 @@ async function build() {
     }
   }
 
-  // Helper to Inject Meta
+  // 4. Generate SEO Assets (Luminosity)
+  console.log('🌟 Generating Sitemap & Robots via Luminosity...')
+  const { SeoEngine, SeoRenderer, RobotsBuilder, SeoMetadata } = await import('@gravito/luminosity')
+
+  // Helper to Inject Meta using Luminosity Engine
   const injectMeta = (html: string, meta: RouteTask['meta']) => {
-    const tags = [
-      `<title>${meta.title}</title>`,
-      `<meta name="description" content="${meta.description}">`,
-      `<meta property="og:title" content="${meta.title}">`,
-      `<meta property="og:description" content="${meta.description}">`,
-      `<meta property="og:url" content="${meta.url}">`,
-      `<meta property="og:type" content="website">`,
-      `<meta property="og:image" content="${baseMeta.image}">`,
-      `<meta name="twitter:card" content="summary_large_image">`,
-      `<meta name="twitter:title" content="${meta.title}">`,
-      `<meta name="twitter:description" content="${meta.description}">`,
-      `<meta name="twitter:image" content="${baseMeta.image}">`,
-    ].join('\n    ')
+    // Construct Luminosity SEO Config
+    const seo = new SeoMetadata({
+      meta: {
+        title: meta.title,
+        description: meta.description,
+        canonical: meta.url,
+      },
+      og: {
+        title: meta.title,
+        description: meta.description,
+        url: meta.url,
+        image: baseMeta.image,
+        type: 'website',
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title: meta.title,
+        description: meta.description,
+        image: baseMeta.image,
+      },
+    })
+
+    const tags = seo.toString()
 
     // Replace existing <title> and inject new tags
     return html.replace(/<title>.*?<\/title>/, '').replace('</head>', `${tags}\n</head>`)
@@ -129,11 +143,7 @@ async function build() {
     }
   }
 
-  // 4. Generate SEO Assets (Luminosity)
-  console.log('🌟 Generating Sitemap & Robots via Luminosity...')
-  const { SeoEngine, SeoRenderer, RobotsBuilder } = await import('@gravito/luminosity')
-
-  // Initialize Engine
+  // Initialize Engine for Sitemap
   const engine = new SeoEngine({
     mode: 'incremental',
     baseUrl,

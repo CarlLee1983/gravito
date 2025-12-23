@@ -20,3 +20,11 @@
 {"op":"add","timestamp":1766494045765,"entry":{"url":"https://lux.gravito.dev/zh/docs/introduction","lastmod":"2025-12-23T12:47:25.765Z","changefreq":"weekly","priority":0.8}}
 {"op":"add","timestamp":1766494045765,"entry":{"url":"https://lux.gravito.dev/zh/docs/getting-started","lastmod":"2025-12-23T12:47:25.765Z","changefreq":"weekly","priority":0.8}}
 {"op":"add","timestamp":1766494045765,"entry":{"url":"https://lux.gravito.dev/zh/docs/frameworks","lastmod":"2025-12-23T12:47:25.765Z","changefreq":"weekly","priority":0.8}}
+{"op":"add","timestamp":1766494285542,"entry":{"url":"https://lux.gravito.dev","lastmod":"2025-12-23T12:51:25.542Z","changefreq":"daily","priority":1}}
+{"op":"add","timestamp":1766494285543,"entry":{"url":"https://lux.gravito.dev/features","lastmod":"2025-12-23T12:51:25.543Z","changefreq":"daily","priority":0.8}}
+{"op":"add","timestamp":1766494285543,"entry":{"url":"https://lux.gravito.dev/docs/frameworks","lastmod":"2025-12-23T12:51:25.543Z","changefreq":"weekly","priority":0.8}}
+{"op":"add","timestamp":1766494285543,"entry":{"url":"https://lux.gravito.dev/docs/introduction","lastmod":"2025-12-23T12:51:25.543Z","changefreq":"weekly","priority":0.8}}
+{"op":"add","timestamp":1766494285543,"entry":{"url":"https://lux.gravito.dev/docs/getting-started","lastmod":"2025-12-23T12:51:25.543Z","changefreq":"weekly","priority":0.8}}
+{"op":"add","timestamp":1766494285543,"entry":{"url":"https://lux.gravito.dev/zh/docs/introduction","lastmod":"2025-12-23T12:51:25.543Z","changefreq":"weekly","priority":0.8}}
+{"op":"add","timestamp":1766494285543,"entry":{"url":"https://lux.gravito.dev/zh/docs/getting-started","lastmod":"2025-12-23T12:51:25.543Z","changefreq":"weekly","priority":0.8}}
+{"op":"add","timestamp":1766494285543,"entry":{"url":"https://lux.gravito.dev/zh/docs/frameworks","lastmod":"2025-12-23T12:51:25.543Z","changefreq":"weekly","priority":0.8}}
