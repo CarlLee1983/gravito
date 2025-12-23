@@ -46,7 +46,7 @@ export function sql(strings: TemplateStringsArray, ...values: unknown[]): Expres
   const bindings: unknown[] = []
 
   for (let i = 0; i < values.length; i++) {
-    sqlString += '?' + (strings[i + 1] ?? '')
+    sqlString += `?${strings[i + 1] ?? ''}`
     bindings.push(values[i])
   }
 

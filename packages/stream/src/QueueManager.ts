@@ -81,7 +81,9 @@ export class QueueManager {
         this.drivers.set(
           name,
           new DatabaseDriver({
+            // biome-ignore lint/suspicious/noExplicitAny: Dynamic driver loading requires type assertion
             dbService: dbService as any,
+            // biome-ignore lint/suspicious/noExplicitAny: Dynamic driver config type
             table: (config as any).table,
           })
         )
@@ -100,7 +102,9 @@ export class QueueManager {
         this.drivers.set(
           name,
           new RedisDriver({
+            // biome-ignore lint/suspicious/noExplicitAny: Dynamic driver loading requires type assertion
             client: client as any,
+            // biome-ignore lint/suspicious/noExplicitAny: Dynamic driver config type
             prefix: (config as any).prefix,
           })
         )
@@ -119,7 +123,9 @@ export class QueueManager {
         this.drivers.set(
           name,
           new KafkaDriver({
+            // biome-ignore lint/suspicious/noExplicitAny: Dynamic driver loading requires type assertion
             client: client as any,
+            // biome-ignore lint/suspicious/noExplicitAny: Dynamic driver config type
             consumerGroupId: (config as any).consumerGroupId,
           })
         )
@@ -138,9 +144,13 @@ export class QueueManager {
         this.drivers.set(
           name,
           new SQSDriver({
+            // biome-ignore lint/suspicious/noExplicitAny: Dynamic driver loading requires type assertion
             client: client as any,
+            // biome-ignore lint/suspicious/noExplicitAny: Dynamic driver config type
             queueUrlPrefix: (config as any).queueUrlPrefix,
+            // biome-ignore lint/suspicious/noExplicitAny: Dynamic driver config type
             visibilityTimeout: (config as any).visibilityTimeout,
+            // biome-ignore lint/suspicious/noExplicitAny: Dynamic driver config type
             waitTimeSeconds: (config as any).waitTimeSeconds,
           })
         )

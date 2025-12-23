@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import type { PlanetCore } from 'gravito-core'
+import type { GravitoContext, PlanetCore } from 'gravito-core'
 import { IncrementalGenerator } from './core/IncrementalGenerator'
 import { ProgressTracker } from './core/ProgressTracker'
 import { SitemapGenerator } from './core/SitemapGenerator'
@@ -56,7 +56,10 @@ export class OrbitSitemap {
   private options: DynamicSitemapOptions | StaticSitemapOptions
   private mode: 'dynamic' | 'static'
 
-  private constructor(mode: 'dynamic' | 'static', options: any) {
+  private constructor(
+    mode: 'dynamic' | 'static',
+    options: DynamicSitemapOptions | StaticSitemapOptions
+  ) {
     this.mode = mode
     this.options = options
   }
@@ -108,7 +111,7 @@ export class OrbitSitemap {
     const indexFilename = opts.path?.split('/').pop() ?? 'sitemap.xml'
     const baseDir = opts.path ? opts.path.substring(0, opts.path.lastIndexOf('/')) : undefined
 
-    const handler = async (ctx: any) => {
+    const handler = async (ctx: GravitoContext) => {
       // Determine filename from request
       const reqPath = ctx.req.path
       const filename = reqPath.split('/').pop() || indexFilename
@@ -123,7 +126,10 @@ export class OrbitSitemap {
         if (opts.lock) {
           const locked = await opts.lock.acquire(filename, 60)
           if (!locked) {
-            return ctx.text('Generating...', 503, { 'Retry-After': '5' })
+            return new Response('Generating...', {
+              status: 503,
+              headers: { 'Retry-After': '5' },
+            })
           }
         }
 
@@ -149,14 +155,19 @@ export class OrbitSitemap {
         return ctx.text('Not Found', 404)
       }
 
-      return ctx.body(content, 200, {
-        'Content-Type': 'application/xml',
-        'Cache-Control': opts.cacheSeconds ? `public, max-age=${opts.cacheSeconds}` : 'no-cache',
+      return new Response(content, {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/xml',
+          'Cache-Control': opts.cacheSeconds ? `public, max-age=${opts.cacheSeconds}` : 'no-cache',
+        },
       })
     }
 
     // Register Index Route
-    core.router.get(opts.path!, handler)
+    if (opts.path) {
+      core.router.get(opts.path, handler)
+    }
 
     // Register Shard Route (e.g., sitemap-1.xml)
     // We assume shards are in same directory and follow pattern {basename}-*.xml
@@ -347,9 +358,12 @@ export class OrbitSitemap {
     const opts = this.options as StaticSitemapOptions
 
     // 觸發生成
-    core.router.post(`${basePath}/generate`, async (ctx: any) => {
+    core.router.post(`${basePath}/generate`, async (ctx: GravitoContext) => {
       try {
-        const body = await ctx.req.json().catch(() => ({}))
+        const body = (await ctx.req.json().catch(() => ({}))) as {
+          incremental?: boolean
+          since?: string
+        }
         const jobId = await this.generateAsync({
           incremental: body.incremental,
           since: body.since ? new Date(body.since) : undefined,
@@ -362,10 +376,13 @@ export class OrbitSitemap {
     })
 
     // 查詢進度
-    core.router.get(`${basePath}/status/:jobId`, async (ctx: any) => {
+    core.router.get(`${basePath}/status/:jobId`, async (ctx: GravitoContext) => {
       const jobId = ctx.req.param('jobId')
       if (!opts.progressStorage) {
         return ctx.json({ error: 'Progress tracking is not enabled' }, 400)
+      }
+      if (!jobId) {
+        return ctx.json({ error: 'Job ID is required' }, 400)
       }
 
       const progress = await opts.progressStorage.get(jobId)
@@ -377,12 +394,12 @@ export class OrbitSitemap {
     })
 
     // 查詢歷史記錄
-    core.router.get(`${basePath}/history`, async (ctx: any) => {
+    core.router.get(`${basePath}/history`, async (ctx: GravitoContext) => {
       if (!opts.progressStorage) {
         return ctx.json({ error: 'Progress tracking is not enabled' }, 400)
       }
 
-      const limit = Number.parseInt(ctx.req.query('limit') || '10', 10)
+      const limit = Number.parseInt(ctx.req.query('limit') ?? '10', 10)
       const history = await opts.progressStorage.list(limit)
 
       return ctx.json(history)
