@@ -1,6 +1,6 @@
 {
   "name": "@gravito/luminosity",
-  "version": "1.0.0-beta.2",
+  "version": "1.0.0-beta.3",
   "description": "Core logic for Gravito SmartMap Engine",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
