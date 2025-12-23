@@ -13,7 +13,7 @@
 
     <!-- Navigation -->
     <nav class="relative z-50 flex justify-between items-center px-8 py-6 border-b border-white/5 backdrop-blur-sm">
-      <div class="flex items-center gap-3">
+      <div class="flex items-center gap-3 cursor-pointer" @click="$router.push('/')">
         <!-- Logo Icon (Abstract Spiral) -->
         <svg class="w-8 h-8 text-atlas-cyan animate-pulse" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -23,11 +23,11 @@
         <span class="text-xl font-bold tracking-wider font-mono">@gravito/<span class="text-atlas-cyan">atlas</span></span>
       </div>
       <div class="hidden md:flex gap-8 text-sm font-medium text-gray-400">
-        <a href="#" class="hover:text-atlas-cyan transition-colors">Home</a>
-        <a href="#" class="hover:text-atlas-cyan transition-colors">Features</a>
-        <a href="#" class="hover:text-atlas-cyan transition-colors">Company</a>
-        <a href="#" class="hover:text-atlas-cyan transition-colors">Support</a>
-        <a href="#" class="hover:text-atlas-cyan transition-colors">Gravits</a>
+        <router-link to="/" class="hover:text-atlas-cyan transition-colors" active-class="text-atlas-cyan">Home</router-link>
+        <router-link to="/features" class="hover:text-atlas-cyan transition-colors" active-class="text-atlas-cyan">Features</router-link>
+        <router-link to="/company" class="hover:text-atlas-cyan transition-colors" active-class="text-atlas-cyan">Company</router-link>
+        <router-link to="/support" class="hover:text-atlas-cyan transition-colors" active-class="text-atlas-cyan">Support</router-link>
+        <router-link to="/gravits" class="hover:text-atlas-cyan transition-colors" active-class="text-atlas-cyan">Gravits</router-link>
       </div>
       <div class="flex items-center gap-6">
         <button class="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white px-6 py-2 rounded-full text-sm font-bold shadow-[0_0_20px_rgba(0,240,255,0.3)] transition-all transform hover:scale-105 active:scale-95">
@@ -36,63 +36,20 @@
       </div>
     </nav>
 
-    <!-- Hero Content -->
-    <main class="flex-grow relative z-10 flex flex-col justify-center items-start px-8 md:px-20 max-w-7xl mx-auto w-full mt-10 md:mt-0">
-      <h2 class="text-atlas-cyan font-bold tracking-[0.2em] mb-4 text-sm md:text-base animate-slide-in-up uppercase">ATLAS:</h2>
-      <h1 class="text-5xl md:text-7xl font-extrabold leading-tight text-white mb-8 max-w-4xl font-sans drop-shadow-2xl">
-        STRUCTURING THE CHAOS<br /> 
-        <span class="text-transparent bg-clip-text bg-gradient-to-r from-gray-200 to-gray-500">AT THE EDGE OF GRAVITY.</span>
-      </h1>
-      <p class="text-gray-400 max-w-xl text-lg mb-12 leading-relaxed font-light border-l-2 border-atlas-cyan pl-6">
-        The universal database interface for the Gravito ecosystem.  
-        Query, migrate, and structure your data with cosmic precision.
-      </p>
+    <!-- Main Content -->
+    <div class="flex-grow flex flex-col">
+        <router-view v-slot="{ Component }">
+            <transition name="fade" mode="out-in">
+                <component :is="Component" />
+            </transition>
+        </router-view>
+    </div>
 
-      <!-- Verification Demo Preview -->
-      <div class="w-full max-w-2xl bg-[#0a0a0a]/80 backdrop-blur-xl border border-atlas-cyan/20 rounded-lg p-6 font-mono text-sm shadow-2xl relative group hover:border-atlas-cyan/50 transition-all duration-500 transform overflow-hidden" ref="demoCard">
-        <!-- Glow effect -->
-        <div class="absolute -inset-[100%] bg-gradient-to-r from-transparent via-atlas-cyan/10 to-transparent rotate-45 group-hover:via-atlas-cyan/20 transition-all duration-1000 translate-x-[-100%] group-hover:translate-x-[100%]"></div>
-        
-        <div class="absolute -top-3 -right-3 bg-atlas-cyan text-black px-3 py-1 text-xs font-bold rounded shadow-[0_0_10px_rgba(0,240,255,0.5)]">LIVE DEMO</div>
-        
-        <div class="flex gap-2 mb-4 border-b border-gray-800 pb-2">
-           <div class="w-3 h-3 rounded-full bg-red-500"></div>
-           <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
-           <div class="w-3 h-3 rounded-full bg-green-500"></div>
-        </div>
-        
-        <div class="space-y-2 relative z-10">
-            <div class="text-gray-500 italic">// Initialize Atlas Connection & Query</div>
-            <div>
-              <span class="text-purple-400">const</span> <span class="text-blue-300">planet</span> = <span class="text-purple-400">await</span> <span class="text-yellow-400">DB</span>.<span class="text-blue-300">table</span>(<span class="text-green-300">'exoplanets'</span>)
-            </div>
-            <div class="pl-4">.<span class="text-blue-300">where</span>(<span class="text-green-300">'gravity_g'</span>, <span class="text-pink-400">'>='</span>, <span class="text-orange-300">1.8</span>)</div>
-            <div class="pl-4">.<span class="text-blue-300">orderBy</span>(<span class="text-green-300">'distance_ly'</span>, <span class="text-green-300">'asc'</span>)</div>
-            <div class="pl-4">.<span class="text-blue-300">first</span>()</div>
-            
-            <div class="pt-4 text-gray-400 border-t border-gray-800 mt-4 text-xs flex justify-between">
-                <span>Console Output:</span>
-                <button @click="runDemo" class="text-atlas-cyan hover:text-white cursor-pointer px-2 py-0.5 rounded bg-atlas-cyan/10 hover:bg-atlas-cyan/20">▶ Re-run</button>
-            </div>
-            <div v-if="loading" class="text-atlas-cyan/50 italic animate-pulse mt-2 h-10 flex items-center">
-                <span class="inline-block w-2 h-2 bg-atlas-cyan rounded-full animate-ping mr-2"></span>
-                Running query on cosmic stream...
-            </div>
-            <div v-else class="text-atlas-cyan font-bold break-all mt-2 font-mono text-xs">
-                <div class="text-[10px] text-gray-600 mb-2 border-b border-gray-900 pb-1 font-mono opacity-50">{{ demoResult?.sql }}</div>
-                <pre class="bg-black/30 p-2 rounded">{{ JSON.stringify(demoResult?.data, null, 2) }}</pre>
-            </div>
-        </div>
-      </div>
-    </main>
-
-    <Features />
-    <Installation />
     <Footer />
 
     <!-- 3D Structural Effect (Simulated) -->
     <!-- Floating Orbit Elements -->
-    <div class="absolute right-[-5%] top-[15%] w-[800px] h-[800px] perspective-1000 hidden lg:block opacity-60 pointer-events-none">
+    <div class="absolute right-[-5%] top-[15%] w-[800px] h-[800px] perspective-1000 hidden lg:block opacity-60 pointer-events-none fixed">
         
         <!-- Orbital Rings -->
         <div class="absolute inset-0 border border-atlas-cyan/20 rounded-full w-[600px] h-[600px] top-[100px] left-[100px] animate-spin-slow"></div>
@@ -145,33 +102,18 @@
 .animate-float-1 { animation: float 6s ease-in-out infinite; }
 .animate-float-2 { animation: float-rev 7s ease-in-out infinite; }
 .animate-float-3 { animation: float 5s ease-in-out infinite; }
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
 </style>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import Features from './components/Features.vue'
-import Installation from './components/Installation.vue'
 import Footer from './components/Footer.vue'
-
-const demoResult = ref<any>(null)
-const loading = ref(true)
-
-async function runDemo() {
-    loading.value = true
-    try {
-        const res = await fetch('/api/demo')
-        const data = await res.json()
-        setTimeout(() => {
-            demoResult.value = data
-            loading.value = false
-        }, 1500) // Delay for cinematic effect
-    } catch (e) {
-        console.error(e)
-        loading.value = false
-    }
-}
-
-onMounted(() => {
-    runDemo()
-})
 </script>
