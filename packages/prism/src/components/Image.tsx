@@ -1,5 +1,6 @@
 import type { ImageOptions } from '../ImageService'
 import { ImageService } from '../ImageService'
+import React from 'react'
 
 /**
  * Props for the `Image` component.
@@ -35,7 +36,7 @@ export interface ImageProps {
  * />
  * ```
  */
-export function Image(props: ImageProps): JSX.Element {
+export function Image(props: ImageProps): React.JSX.Element {
   const imageService = new ImageService()
 
   // Convert React props to ImageOptions

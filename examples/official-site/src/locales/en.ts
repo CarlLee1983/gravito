@@ -1,6 +1,6 @@
 export default {
   site: {
-    title: 'Gravito Framework - The High-Performance Backend Ecosystem for Artisans',
+    title: 'Gravito Framework - The High-Performance Backend Ecosystem for Builders',
     description:
       'Superior development framework. Designed for enterprise scalability with native queuing, scheduling, and AI-optimized type contracts.',
     keywords:
@@ -114,7 +114,7 @@ export default {
     integrity: 'Architectural Integrity',
   },
   footer: {
-    desc: 'The High-Performance Framework for Artisans. Powered by Gravito Core & Bun for extreme speed and simplicity.',
+    desc: 'The High-Performance Framework for Builders. Powered by Gravito Core & Bun for extreme speed and simplicity.',
     links: 'Links',
     home: 'Home',
     connect: 'Connect',

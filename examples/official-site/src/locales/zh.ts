@@ -1,6 +1,6 @@
 export default {
   site: {
-    title: 'Gravito Framework - 為工匠打造的高效能後端生態系統',
+    title: 'Gravito Framework - 為創造者打造的高效能後端生態系統',
     description:
       '極致開發框架。具備原生企業級系統（消息隊列、排程、微服務架構）與 AI 優化的型別契約，專為大規模系統擴展而生。',
     keywords: 'Bun 框架, Gravito 核心, Inertia.js 橋接器, 企業級 TS 框架, 微內核架構, AI 友善開發',
@@ -109,7 +109,7 @@ export default {
     integrity: '架構完整性',
   },
   footer: {
-    desc: '為開發工匠打造的高效能框架。基於自主研發核心與 Bun 驅動，追求極致速度與簡約架構。',
+    desc: '為創造者打造的高效能框架。基於自主研發核心與 Bun 驅動，追求極致速度與簡約架構。',
     links: '連結',
     home: '首頁',
     connect: '社群',
