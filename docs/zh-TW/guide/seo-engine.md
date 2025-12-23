@@ -386,7 +386,7 @@ export class ProductController {
   @vite(['src/main.tsx'])
 </head>
 <body>
-  <div id="app" data-page='\{{ page }}'></div>
+  <div id="app" data-page="{ { page } }"></div>
 </body>
 </html>
 ```
