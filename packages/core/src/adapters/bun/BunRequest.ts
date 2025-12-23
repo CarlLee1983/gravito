@@ -89,6 +89,22 @@ export class BunRequest implements GravitoRequest {
     return this.raw.arrayBuffer()
   }
 
+  async parseBody<T = unknown>(): Promise<T> {
+    const contentType = this.raw.headers.get('Content-Type')
+    if (
+      contentType?.includes('application/x-www-form-urlencoded') ||
+      contentType?.includes('multipart/form-data')
+    ) {
+      const formData = await this.formData()
+      const body: Record<string, any> = {}
+      formData.forEach((value, key) => {
+        body[key] = value
+      })
+      return body as T
+    }
+    return {} as T
+  }
+
   // Internal method to set validated data
   // This can be used by middleware to attach validated data to the request
   setValidated(target: ValidationTarget, data: unknown) {

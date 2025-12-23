@@ -1,55 +1,55 @@
 {
-    "name": "@gravito/freeze-vue",
-    "version": "0.1.0-beta.1",
-    "description": "Vue adapter for @gravito/freeze SSG module",
-    "type": "module",
-    "main": "./dist/index.js",
-    "module": "./dist/index.js",
-    "types": "./dist/index.d.ts",
-    "exports": {
-        ".": {
-            "types": "./dist/index.d.ts",
-            "import": "./dist/index.js"
-        }
-    },
-    "files": [
-        "dist"
-    ],
-    "scripts": {
-        "build": "tsup",
-        "dev": "tsup --watch",
-        "typecheck": "tsc --noEmit",
-        "test": "bun test"
-    },
-    "keywords": [
-        "gravito",
-        "ssg",
-        "vue",
-        "static-site",
-        "inertia"
-    ],
-    "author": "Carl Lee",
-    "license": "MIT",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/gravito-framework/gravito.git",
-        "directory": "packages/freeze-vue"
-    },
-    "peerDependencies": {
-        "vue": ">=3.0.0",
-        "@inertiajs/vue3": ">=1.0.0"
-    },
-    "peerDependenciesMeta": {
-        "@inertiajs/vue3": {
-            "optional": true
-        }
-    },
-    "dependencies": {
-        "@gravito/freeze": "workspace:*"
-    },
-    "devDependencies": {
-        "vue": "^3.0.0",
-        "tsup": "^8.0.0",
-        "typescript": "^5.7.0"
+  "name": "@gravito/freeze-vue",
+  "version": "1.0.0-alpha.2",
+  "description": "Vue adapter for @gravito/freeze SSG module",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "keywords": [
+    "gravito",
+    "ssg",
+    "vue",
+    "static-site",
+    "inertia"
+  ],
+  "author": "Carl Lee",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gravito-framework/gravito.git",
+    "directory": "packages/freeze-vue"
+  },
+  "peerDependencies": {
+    "vue": ">=3.0.0",
+    "@inertiajs/vue3": ">=1.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@inertiajs/vue3": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "@gravito/freeze": "1.0.0-alpha.2"
+  },
+  "devDependencies": {
+    "vue": "^3.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.7.0"
+  }
 }

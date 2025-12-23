@@ -148,14 +148,6 @@ export class OrbitStream implements GravitoOrbit {
   }
 }
 
-// Module augmentation for Hono (backward compatibility)
-declare module 'hono' {
-  interface ContextVariableMap {
-    queue: QueueManager
-    db?: unknown
-  }
-}
-
 // Module augmentation for GravitoVariables (new abstraction)
 declare module 'gravito-core' {
   interface GravitoVariables {

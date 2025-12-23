@@ -1,6 +1,27 @@
 import { RobotsBuilder, type SeoConfig, SeoEngine, SeoRenderer } from '@gravito/luminosity'
 import type { NextFunction, Request, Response } from 'express'
 
+/**
+ * Create a Gravito SEO middleware for Express.
+ *
+ * This middleware handles requests for `sitemap.xml` and `robots.txt`.
+ * It automatically initializes the SEO engine and renders the appropriate content
+ * based on the request path.
+ *
+ * @param config - The SEO configuration object.
+ * @returns An Express middleware function.
+ *
+ * @example
+ * ```typescript
+ * import { gravitoSeo } from '@gravito/luminosity-adapter-express'
+ *
+ * app.use(gravitoSeo({
+ *   baseUrl: 'https://example.com',
+ *   mode: 'dynamic',
+ *   // ... other config
+ * }))
+ * ```
+ */
 export function gravitoSeo(config: SeoConfig) {
   const engine = new SeoEngine(config)
   let initialized = false

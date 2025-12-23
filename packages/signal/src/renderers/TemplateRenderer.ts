@@ -1,20 +1,22 @@
-import { TemplateEngine } from '@gravito/prism'
 import type { Renderer, RenderResult } from './Renderer'
 
 export class TemplateRenderer implements Renderer {
-  private engine: TemplateEngine
   private template: string
+  private viewsDir: string
 
   constructor(templateName: string, viewsDir?: string) {
     this.template = templateName
     // Default to src/emails if not provided, falling back to process cwd
-    const defaultDir = viewsDir || `${process.cwd()}/src/emails`
-    this.engine = new TemplateEngine(defaultDir)
+    this.viewsDir = viewsDir || `${process.cwd()}/src/emails`
   }
 
   async render(data: Record<string, unknown>): Promise<RenderResult> {
+    // Dynamic import to avoid hard dependency on @gravito/prism
+    const { TemplateEngine } = await import('@gravito/prism')
+    const engine = new TemplateEngine(this.viewsDir)
+
     // Disable automatic layout by default for emails, unless explicitly handled in template
-    const html = this.engine.render(this.template, data, {})
+    const html = engine.render(this.template, data, {})
 
     return {
       html,

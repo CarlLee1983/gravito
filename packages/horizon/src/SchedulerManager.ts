@@ -22,6 +22,7 @@ export class SchedulerManager {
    *
    * @param name - Unique name for the task
    * @param callback - Function to execute
+   * @returns The newly created TaskSchedule.
    */
   task(name: string, callback: () => void | Promise<void>): TaskSchedule {
     const task = new TaskSchedule(name, callback)
@@ -34,6 +35,7 @@ export class SchedulerManager {
    *
    * @param name - Unique name for the task
    * @param command - Shell command to execute
+   * @returns The newly created TaskSchedule.
    */
   exec(name: string, command: string): TaskSchedule {
     const task = new TaskSchedule(name, async () => {
@@ -49,6 +51,8 @@ export class SchedulerManager {
 
   /**
    * Add a pre-configured task schedule object.
+   *
+   * @param schedule - The task schedule to add.
    */
   add(schedule: TaskSchedule) {
     this.tasks.push(schedule)
@@ -56,6 +60,8 @@ export class SchedulerManager {
 
   /**
    * Get all registered task definitions.
+   *
+   * @returns An array of scheduled tasks.
    */
   getTasks(): ScheduledTask[] {
     return this.tasks.map((t) => t.getTask())
@@ -66,6 +72,7 @@ export class SchedulerManager {
    * This is typically called every minute by a system cron or worker loop.
    *
    * @param date - The current reference date (default: now)
+   * @returns A promise that resolves when the scheduler run is complete.
    */
   async run(date: Date = new Date()): Promise<void> {
     await this.hooks?.doAction('scheduler:run:start', { date })
@@ -97,6 +104,7 @@ export class SchedulerManager {
   /**
    * Execute a specific task with locking logic.
    *
+   * @param task - The task to execute.
    * @internal
    */
   async runTask(task: ScheduledTask): Promise<void> {
@@ -154,6 +162,11 @@ export class SchedulerManager {
     }
   }
 
+  /**
+   * Execute the task callback and handle hooks.
+   *
+   * @param task - The task to execute.
+   */
   private async executeTask(task: ScheduledTask) {
     const startTime = Date.now()
     await this.hooks?.doAction('scheduler:task:start', { name: task.name, startTime })

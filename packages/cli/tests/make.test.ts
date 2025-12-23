@@ -58,7 +58,7 @@ describe('MakeCommand', () => {
     expect(await fs.exists(file)).toBe(true)
 
     const content = await fs.readFile(file, 'utf-8')
-    expect(content).toContain('interface Product')
+    expect(content).toContain('class Product extends Model')
   })
 
   afterEach(async () => {

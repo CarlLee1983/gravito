@@ -382,7 +382,7 @@ Ensure your root template (e.g., `resources/views/app.edge`) has a slot in the `
   @vite(['src/main.tsx'])
 </head>
 <body>
-  <div id="app" data-page='\{{ page }}'></div>
+  <div id="app" data-page="{ { page } }"></div>
 </body>
 </html>
 ```

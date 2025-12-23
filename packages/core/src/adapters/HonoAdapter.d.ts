@@ -39,6 +39,7 @@ declare class HonoRequestWrapper implements GravitoRequest {
   text(): Promise<string>
   formData(): Promise<FormData>
   arrayBuffer(): Promise<ArrayBuffer>
+  parseBody<T = unknown>(): Promise<T>
   get raw(): Request
   valid<T = unknown>(target: string): T
 }

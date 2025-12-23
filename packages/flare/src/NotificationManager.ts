@@ -31,8 +31,9 @@ export class NotificationManager {
 
   /**
    * Register a notification channel.
-   * @param name - Channel name
-   * @param channel - Channel instance
+   *
+   * @param name - The name of the channel.
+   * @param channel - The channel instance.
    */
   channel(name: string, channel: NotificationChannel): void {
     this.channels.set(name, channel)
@@ -40,6 +41,8 @@ export class NotificationManager {
 
   /**
    * Register the queue manager (called by `orbit-queue`).
+   *
+   * @param manager - The queue manager implementation.
    */
   setQueueManager(manager: NotificationManager['queueManager']): void {
     this.queueManager = manager
@@ -48,8 +51,9 @@ export class NotificationManager {
   /**
    * Send a notification.
    *
-   * @param notifiable - Recipient
-   * @param notification - Notification instance
+   * @param notifiable - The recipient of the notification.
+   * @param notification - The notification instance.
+   * @returns A promise that resolves when the notification is sent or queued.
    *
    * @example
    * ```typescript
@@ -91,6 +95,10 @@ export class NotificationManager {
 
   /**
    * Send immediately (without queue).
+   *
+   * @param notifiable - The recipient.
+   * @param notification - The notification.
+   * @param channels - The list of channels to send via.
    */
   private async sendNow(
     notifiable: Notifiable,
@@ -118,6 +126,9 @@ export class NotificationManager {
 
   /**
    * Serialize notification (for queuing).
+   *
+   * @param notification - The notification to serialize.
+   * @returns A plain object representation of the notification.
    */
   private serializeNotification(notification: Notification): Record<string, unknown> {
     const data: Record<string, unknown> = {}

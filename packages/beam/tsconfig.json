@@ -1,0 +1,30 @@
+{
+    "extends": "../../tsconfig.json",
+    "compilerOptions": {
+        "outDir": "./dist",
+        "baseUrl": ".",
+        "allowImportingTsExtensions": true,
+        "noEmit": true,
+        "composite": true,
+        "paths": {
+            "gravito-core": [
+                "../../packages/core/src/index.ts"
+            ],
+            "@gravito/*": [
+                "../../packages/*/src/index.ts"
+            ],
+            "@gravito/beam": [
+                "./src/index.ts"
+            ]
+        }
+    },
+    "include": [
+        "src/**/*",
+        "tests/**/*"
+    ],
+    "exclude": [
+        "node_modules",
+        "dist",
+        "**/*.test.ts"
+    ]
+}

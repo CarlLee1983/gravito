@@ -402,8 +402,31 @@ export class Router {
     return new RouteGroup(this, { middleware: handlers.flat() })
   }
 
-  // Standard HTTP Methods with FormRequest support
+  /**
+   * Register a GET route.
+   *
+   * @param path - The URL path for the route.
+   * @param handler - The handler function or controller method.
+   * @returns The registered Route instance for chaining.
+   *
+   * @example
+   * ```typescript
+   * router.get('/users', [UserController, 'index']);
+   * ```
+   */
   get(path: string, handler: RouteHandler): Route
+  /**
+   * Register a GET route with a FormRequest for validation.
+   *
+   * @param path - The URL path.
+   * @param request - The FormRequest class for validation.
+   * @param handler - The handler function or controller method.
+   *
+   * @example
+   * ```typescript
+   * router.get('/search', SearchRequest, [Controller, 'search']);
+   * ```
+   */
   get(path: string, request: FormRequestClass, handler: RouteHandler): Route
   get(
     path: string,
@@ -413,7 +436,31 @@ export class Router {
     return this.req('get', path, requestOrHandler, handler)
   }
 
+  /**
+   * Register a POST route.
+   *
+   * @param path - The URL path.
+   * @param handler - The handler function or controller method.
+   * @returns The registered Route instance.
+   *
+   * @example
+   * ```typescript
+   * router.post('/users', [UserController, 'store']);
+   * ```
+   */
   post(path: string, handler: RouteHandler): Route
+  /**
+   * Register a POST route with validation.
+   *
+   * @param path - The URL path.
+   * @param request - The FormRequest class.
+   * @param handler - The handler.
+   *
+   * @example
+   * ```typescript
+   * router.post('/users', StoreUserRequest, [UserController, 'store']);
+   * ```
+   */
   post(path: string, request: FormRequestClass, handler: RouteHandler): Route
   post(
     path: string,
@@ -423,6 +470,13 @@ export class Router {
     return this.req('post', path, requestOrHandler, handler)
   }
 
+  /**
+   * Register a PUT route.
+   *
+   * @param path - The URL path.
+   * @param handler - The handler function.
+   * @returns The registered Route instance.
+   */
   put(path: string, handler: RouteHandler): Route
   put(path: string, request: FormRequestClass, handler: RouteHandler): Route
   put(
@@ -433,6 +487,13 @@ export class Router {
     return this.req('put', path, requestOrHandler, handler)
   }
 
+  /**
+   * Register a DELETE route.
+   *
+   * @param path - The URL path.
+   * @param handler - The handler function.
+   * @returns The registered Route instance.
+   */
   delete(path: string, handler: RouteHandler): Route
   delete(path: string, request: FormRequestClass, handler: RouteHandler): Route
   delete(
@@ -443,6 +504,13 @@ export class Router {
     return this.req('delete', path, requestOrHandler, handler)
   }
 
+  /**
+   * Register a PATCH route.
+   *
+   * @param path - The URL path.
+   * @param handler - The handler function.
+   * @returns The registered Route instance.
+   */
   patch(path: string, handler: RouteHandler): Route
   patch(path: string, request: FormRequestClass, handler: RouteHandler): Route
   patch(

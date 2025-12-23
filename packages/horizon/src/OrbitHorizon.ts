@@ -4,6 +4,11 @@ import { LockManager } from './locks'
 import { SchedulerManager } from './SchedulerManager'
 
 export class OrbitHorizon implements GravitoOrbit {
+  /**
+   * Install the Horizon Orbit into PlanetCore.
+   *
+   * @param core - The PlanetCore instance.
+   */
   install(core: PlanetCore): void {
     const config = core.config.get<{
       lock?: { driver: 'memory' | 'cache' }

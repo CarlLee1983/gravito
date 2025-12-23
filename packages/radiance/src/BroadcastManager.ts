@@ -23,6 +23,8 @@ export class BroadcastManager {
 
   /**
    * Set the broadcast driver.
+   *
+   * @param driver - The broadcast driver to use.
    */
   setDriver(driver: BroadcastDriver): void {
     this.driver = driver
@@ -30,6 +32,8 @@ export class BroadcastManager {
 
   /**
    * Set the channel authorization callback.
+   *
+   * @param callback - The callback function for channel authorization.
    */
   setAuthCallback(callback: ChannelAuthorizationCallback): void {
     this.authCallback = callback
@@ -38,10 +42,11 @@ export class BroadcastManager {
   /**
    * Broadcast an event.
    *
-   * @param event - Event instance
-   * @param channel - Channel object
-   * @param data - Event payload
-   * @param eventName - Event name
+   * @param _event - Event instance (unused in current implementation, but kept for signature compatibility).
+   * @param channel - Channel object containing name and type.
+   * @param data - Event payload.
+   * @param eventName - Event name.
+   * @returns A promise that resolves when the event is broadcast.
    */
   async broadcast(
     _event: unknown,
@@ -65,10 +70,10 @@ export class BroadcastManager {
   /**
    * Authorize channel access.
    *
-   * @param channel - Channel name
-   * @param socketId - Socket ID
-   * @param userId - User ID (optional)
-   * @returns Authorization payload
+   * @param channel - Channel name.
+   * @param socketId - Socket ID.
+   * @param userId - User ID (optional).
+   * @returns A promise resolving to the authorization payload or null if unauthorized.
    */
   async authorizeChannel(
     channel: string,

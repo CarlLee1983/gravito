@@ -1,6 +1,6 @@
 export default {
   site: {
-    title: 'Gravito Framework - 為工匠打造的高效能後端生態系統',
+    title: 'Gravito Framework - 為創造者打造的高效能後端生態系統',
     description:
       '極致開發框架。具備原生企業級系統（消息隊列、排程、微服務架構）與 AI 優化的型別契約，專為大規模系統擴展而生。',
     keywords: 'Bun 框架, Gravito 核心, Inertia.js 橋接器, 企業級 TS 框架, 微內核架構, AI 友善開發',
@@ -25,8 +25,8 @@ export default {
     subtitle: '為未來而建',
     bun_title: 'Bun Runtime',
     bun_desc: '疾速運行時，原生支援編譯與測試。',
-    hono_title: 'Gravito Core',
-    hono_desc: '自研極致高效能核心，Nano-overhead I/O 與強大的專屬請求生命週期管理。',
+    engine_title: 'Gravito Core',
+    engine_desc: '自主開發的高效能核心，具備 Nano-overhead I/O 與精確的請求生命週期管理。',
     ts_title: 'TypeScript',
     ts_desc: '全架構型別安全，從第一行程式開始。',
   },
@@ -37,7 +37,7 @@ export default {
     sectionDesc: 'Gravito 採用微內核設計，首波 1.0 版本將釋出最穩定且強大的基礎模組。',
     kernel_title: 'PlanetCore',
     kernel_subtitle: '核心靈魂',
-    kernel_desc: '極致輕量化核心，只負責 I/O 協調與生命週期。',
+    kernel_desc: '自主開發的高效能微內核，負責極速 I/O 協調與生命週期管理，是所有模組的引力中心。',
     inertia_title: 'Ion',
     inertia_subtitle: '全棧橋接 (Inertia)',
     inertia_desc: '讓後端完全掌控前端 UI，打造如 SPA 般的流暢體驗。',
@@ -56,11 +56,45 @@ export default {
     i18n_desc: '原生多語系偵測與路徑路由，具備強大的型別安全翻譯機制，輕鬆擴展全球市場。',
     getStarted: '開始使用',
   },
+  features_page: {
+    hero_title: '突破極限的自主架構',
+    hero_subtitle: 'Gravito Core (PlanetCore) 是我們一切創新的起源。',
+    core_deep_dive_title: '為何堅持自主研發核心？',
+    core_deep_dive_desc:
+      '在現有的開發生態中，我們發現大多數框架雖然功能強大，但往往伴隨著沈重的運行時負擔與不可控的外部依賴。Gravito Core 的誕生是為了重新奪回對性能的絕對掌控。',
+    adv_title: 'Core 強大之處',
+    adv1_title: '毫秒級路由預解析',
+    adv1_desc:
+      '不同於其他框架在運行時進行動態正則匹配，Gravito Core 在啟動階段就將路由樹優化為最簡跳轉路徑，實現真正的零損耗轉發。',
+    adv2_title: '引擎無關 (Engine Agnostic)',
+    adv2_desc:
+      '核心與底層 HTTP 引擎完全解耦。您可以隨時在 Hono、Bun Native 或 Express 間切換，而無需修改任何業務邏輯。',
+    adv3_title: 'AI 代理人友好 (AI-First)',
+    adv3_desc:
+      '深度的型別推導與可預測的代碼契約，這不是巧合，而是專為讓 Cursor、Windsurf 等 AI 助手能「理解」您的系統而設計的架構。',
+    adv4_title: '極致輕量與零依賴',
+    adv4_desc:
+      '核心體積保持在極低水平，且不強加任何外部依賴。您只需為實際啟用的模組消耗性能，絕無多餘的運行負擔。',
+    perf_title: '極致性能範式',
+    perf_desc:
+      '每一微秒都至關重要。PlanetCore 消除了不必要的抽象層，為您的應用提供最原始、最直接的性能表現。',
+    perf_latency: '回應延遲',
+    perf_boot: '啟動時間',
+    perf_deps: '外部依賴',
+    ready_title: '準備好感受引力了嗎？',
+    choices_title: '為什麼是這些技術？',
+    bun_title: '為什麼選擇 Bun 而非 Node.js？',
+    bun_desc:
+      'Bun 不僅是一個運行時，更是為了現代 Web 打造的全能引擎。它提供了 Node.js 無法比擬的啟動速度、原生高性能 HTTP server 以及內建的打包工具。在 Gravito 中，Bun 讓我們的冷啟動時間縮短了 10 倍以上，且免去了繁瑣的配置。',
+    ts_title: '為什麼堅持 TypeScript？',
+    ts_desc:
+      '我們相信「型別即文檔」。TypeScript 提供的靜態檢查與型別推導是構建大型系統的基石。更重要的是，在 AI 協作開發的時代，清晰的型別定義能讓 AI 代理人提供更精準的代碼建議，極大地提升開發效率。',
+  },
   benchmarks: {
     sectionBadge: '性能實驗室',
     sectionTitle: '超越極限的',
     sectionTitleHighlight: '效率',
-    sectionDesc: '基於自研核心與 Bun 的強大基礎，Gravito 將性能損耗降至接近零。',
+    sectionDesc: '基於原生核心與 Bun 的強大基礎，Gravito 將性能損耗降至極低水平。',
     rps_title: '每秒請求數 (RPS)',
     rps_desc: '相較於傳統 Node.js 框架，我們提供數倍的吞吐量。',
     latency_title: '平均延遲 (Latency)',
@@ -75,7 +109,7 @@ export default {
     integrity: '架構完整性',
   },
   footer: {
-    desc: '為工匠打造的高效能框架。基於自研高效能核心 & Bun 建構，追求極致速度與簡潔。',
+    desc: '為創造者打造的高效能框架。基於自主研發核心與 Bun 驅動，追求極致速度與簡約架構。',
     links: '連結',
     home: '首頁',
     connect: '社群',
@@ -88,7 +122,7 @@ export default {
     missionDesc: '為開發者提供一個既尊重開發時間、又尊重機器資源的框架。',
     pillarsTitle: '奇點三大支柱',
     pillar1_title: '無與倫比的速度',
-    pillar1_desc: '透過自研核心與 Bun 的深度整合，我們徹底消除了傳統 Node.js 堆棧的臃腫。',
+    pillar1_desc: '透過原生核心與 Bun 的深度整合，我們徹底消除了傳統開發堆棧的肥厚與臃腫。',
     pillar2_title: '架構師的禪意',
     pillar2_desc:
       '融合經典 MVC 的優雅與現代 Node.js 生態（如 Next.js）的靈活性。Gravito 既能微縮至純粹的內容網站，也能擴展為高密度的企業級核心應用。',
@@ -139,7 +173,7 @@ export default {
     dnaLaravelGaps:
       'Laravel 雖然完整度高，但在 Bun 時代其擁腫的內核與性能瓶頸，已無法滿足新一代高併發應用的需求。',
     dnaGravitoAdv:
-      'Gravito 在 Bun 與自研核心的極速基礎上，原生整合了排程與隊列機制，以精簡的內核提供最高等級的基礎架構支援。',
+      'Gravito 在 Bun 與原創核心的極速基礎上，原生整合了排程與隊列機制，提供最高等級的基礎架構支援。',
     featDecouplingTitle: '微服務無痛抽離',
     featDecouplingDesc:
       '從消息消費者 (Consumer) 到解耦服務。Gravito 的架構允許您在擴展時直接抽離功能模組成為獨立微服務，無需任何重新開發。',

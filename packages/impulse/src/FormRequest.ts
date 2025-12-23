@@ -264,7 +264,10 @@ export abstract class FormRequest<T = unknown> {
   redirect?(): string
 
   /**
-   * Get raw data from context based on source
+   * Get raw data from context based on source.
+   *
+   * @param ctx - The request context.
+   * @returns A promise that resolves to the raw data object.
    */
   public async getData(ctx: Context): Promise<unknown> {
     switch (this.source) {
@@ -301,7 +304,12 @@ export abstract class FormRequest<T = unknown> {
   }
 
   /**
-   * Get localized/custom message for a validation error
+   * Get localized/custom message for a validation error.
+   *
+   * @param field - The field name.
+   * @param code - The error code.
+   * @param defaultMessage - The default error message.
+   * @returns The resolved error message.
    */
   protected getErrorMessage(
     field: string,
@@ -331,7 +339,10 @@ export abstract class FormRequest<T = unknown> {
   }
 
   /**
-   * Validate request data
+   * Validate request data.
+   *
+   * @param ctx - The request context.
+   * @returns A promise resolving to a success object with data or an error object.
    */
   async validate(
     ctx: Context
@@ -429,7 +440,10 @@ export abstract class FormRequest<T = unknown> {
 }
 
 /**
- * Create a Hono middleware from a FormRequest class
+ * Create a Hono middleware from a FormRequest class.
+ *
+ * @param RequestClass - The FormRequest class constructor.
+ * @returns A Hono middleware handler.
  */
 export function validateRequest<T>(RequestClass: new () => FormRequest<T>): MiddlewareHandler {
   return async (ctx, next) => {
@@ -474,13 +488,6 @@ export function validateRequest<T>(RequestClass: new () => FormRequest<T>): Midd
     // Store validated data in context
     ctx.set('validated', result.data)
     return next()
-  }
-}
-
-// Type augmentation for Hono context (backward compatibility)
-declare module 'hono' {
-  interface ContextVariableMap {
-    validated: unknown
   }
 }
 

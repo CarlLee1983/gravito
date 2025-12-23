@@ -33,7 +33,11 @@ export class RedisClient implements RedisClientContract {
   // ============================================================================
 
   /**
-   * Connect to Redis
+   * Connect to the Redis server.
+   *
+   * Initializes the ioredis client and establishes a connection.
+   *
+   * @returns A promise that resolves when connected.
    */
   async connect(): Promise<void> {
     if (this.connected) {
@@ -75,7 +79,11 @@ export class RedisClient implements RedisClientContract {
   }
 
   /**
-   * Disconnect from Redis
+   * Disconnect from the Redis server.
+   *
+   * Closes the connection and resets the client state.
+   *
+   * @returns A promise that resolves when disconnected.
    */
   async disconnect(): Promise<void> {
     if (this.subscriber) {
@@ -93,21 +101,28 @@ export class RedisClient implements RedisClientContract {
   }
 
   /**
-   * Check if connected
+   * Check if the client is connected.
+   *
+   * @returns True if connected, false otherwise.
    */
   isConnected(): boolean {
     return this.connected && this.client !== null
   }
 
   /**
-   * Ping Redis server
+   * Ping the Redis server.
+   *
+   * @returns A promise resolving to 'PONG'.
    */
   async ping(): Promise<string> {
     return await this.getClient().ping()
   }
 
   /**
-   * Load ioredis module dynamically
+   * Load ioredis module dynamically.
+   *
+   * @returns A promise resolving to the ioredis module.
+   * @throws {Error} If ioredis is not installed.
    */
   private async loadIORedis(): Promise<IORedisModule> {
     try {
@@ -121,7 +136,10 @@ export class RedisClient implements RedisClientContract {
   }
 
   /**
-   * Get the Redis client, throw if not connected
+   * Get the Redis client, throw if not connected.
+   *
+   * @returns The IORedisClient instance.
+   * @throws {Error} If not connected.
    */
   private getClient(): IORedisClient {
     if (!this.client) {
@@ -134,10 +152,24 @@ export class RedisClient implements RedisClientContract {
   // String Operations
   // ============================================================================
 
+  /**
+   * Get a key's value.
+   *
+   * @param key - The key to retrieve.
+   * @returns A promise resolving to the value string or null if not found.
+   */
   async get(key: string): Promise<string | null> {
     return await this.getClient().get(key)
   }
 
+  /**
+   * Set a key's value.
+   *
+   * @param key - The key to set.
+   * @param value - The value to set.
+   * @param options - Optional SET arguments (EX, PX, NX, XX).
+   * @returns A promise resolving to 'OK' or null (if condition not met).
+   */
   async set(key: string, value: string, options?: SetOptions): Promise<'OK' | null> {
     const client = this.getClient()
     const args: unknown[] = [key, value]
@@ -161,46 +193,116 @@ export class RedisClient implements RedisClientContract {
     return (await (client as IORedisClientWithCall).call('SET', ...args)) as 'OK' | null
   }
 
+  /**
+   * Delete keys.
+   *
+   * @param keys - The keys to delete.
+   * @returns A promise resolving to the number of keys deleted.
+   */
   async del(...keys: string[]): Promise<number> {
     return await this.getClient().del(...keys)
   }
 
+  /**
+   * Check if keys exist.
+   *
+   * @param keys - The keys to check.
+   * @returns A promise resolving to the number of keys that exist.
+   */
   async exists(...keys: string[]): Promise<number> {
     return await this.getClient().exists(...keys)
   }
 
+  /**
+   * Increment a key.
+   *
+   * @param key - The key to increment.
+   * @returns A promise resolving to the new value.
+   */
   async incr(key: string): Promise<number> {
     return await this.getClient().incr(key)
   }
 
+  /**
+   * Increment a key by amount.
+   *
+   * @param key - The key to increment.
+   * @param increment - The amount to increment by.
+   * @returns A promise resolving to the new value.
+   */
   async incrby(key: string, increment: number): Promise<number> {
     return await this.getClient().incrby(key, increment)
   }
 
+  /**
+   * Decrement a key.
+   *
+   * @param key - The key to decrement.
+   * @returns A promise resolving to the new value.
+   */
   async decr(key: string): Promise<number> {
     return await this.getClient().decr(key)
   }
 
+  /**
+   * Decrement a key by amount.
+   *
+   * @param key - The key to decrement.
+   * @param decrement - The amount to decrement by.
+   * @returns A promise resolving to the new value.
+   */
   async decrby(key: string, decrement: number): Promise<number> {
     return await this.getClient().decrby(key, decrement)
   }
 
+  /**
+   * Append value to a key.
+   *
+   * @param key - The key to append to.
+   * @param value - The value to append.
+   * @returns A promise resolving to the new length.
+   */
   async append(key: string, value: string): Promise<number> {
     return await this.getClient().append(key, value)
   }
 
+  /**
+   * Get the length of the value of a key.
+   *
+   * @param key - The key.
+   * @returns A promise resolving to the string length.
+   */
   async strlen(key: string): Promise<number> {
     return await this.getClient().strlen(key)
   }
 
+  /**
+   * Set key value and return old value.
+   *
+   * @param key - The key.
+   * @param value - The new value.
+   * @returns A promise resolving to the old value or null.
+   */
   async getset(key: string, value: string): Promise<string | null> {
     return await this.getClient().getset(key, value)
   }
 
+  /**
+   * Get multiple keys.
+   *
+   * @param keys - The keys to retrieve.
+   * @returns A promise resolving to an array of values (or nulls).
+   */
   async mget(...keys: string[]): Promise<(string | null)[]> {
     return await this.getClient().mget(...keys)
   }
 
+  /**
+   * Set multiple keys.
+   *
+   * @param pairs - An object of key-value pairs to set.
+   * @returns A promise resolving to 'OK'.
+   */
   async mset(pairs: Record<string, string>): Promise<'OK'> {
     const args = Object.entries(pairs).flat()
     return await this.getClient().mset(...args)
@@ -515,6 +617,13 @@ export class RedisClient implements RedisClientContract {
     return await this.getClient().publish(channel, message)
   }
 
+  /**
+   * Subscribe to a channel.
+   *
+   * @param channel - The channel name.
+   * @param callback - The callback function.
+   * @returns A promise resolving when subscribed.
+   */
   async subscribe(
     channel: string,
     callback: (message: string, channel: string) => void

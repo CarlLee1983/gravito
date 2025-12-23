@@ -81,7 +81,9 @@ export class QueueManager {
         this.drivers.set(
           name,
           new DatabaseDriver({
+            // biome-ignore lint/suspicious/noExplicitAny: Dynamic driver loading requires type assertion
             dbService: dbService as any,
+            // biome-ignore lint/suspicious/noExplicitAny: Dynamic driver config type
             table: (config as any).table,
           })
         )
@@ -100,7 +102,9 @@ export class QueueManager {
         this.drivers.set(
           name,
           new RedisDriver({
+            // biome-ignore lint/suspicious/noExplicitAny: Dynamic driver loading requires type assertion
             client: client as any,
+            // biome-ignore lint/suspicious/noExplicitAny: Dynamic driver config type
             prefix: (config as any).prefix,
           })
         )
@@ -119,7 +123,9 @@ export class QueueManager {
         this.drivers.set(
           name,
           new KafkaDriver({
+            // biome-ignore lint/suspicious/noExplicitAny: Dynamic driver loading requires type assertion
             client: client as any,
+            // biome-ignore lint/suspicious/noExplicitAny: Dynamic driver config type
             consumerGroupId: (config as any).consumerGroupId,
           })
         )
@@ -138,9 +144,13 @@ export class QueueManager {
         this.drivers.set(
           name,
           new SQSDriver({
+            // biome-ignore lint/suspicious/noExplicitAny: Dynamic driver loading requires type assertion
             client: client as any,
+            // biome-ignore lint/suspicious/noExplicitAny: Dynamic driver config type
             queueUrlPrefix: (config as any).queueUrlPrefix,
+            // biome-ignore lint/suspicious/noExplicitAny: Dynamic driver config type
             visibilityTimeout: (config as any).visibilityTimeout,
+            // biome-ignore lint/suspicious/noExplicitAny: Dynamic driver config type
             waitTimeSeconds: (config as any).waitTimeSeconds,
           })
         )
@@ -195,8 +205,15 @@ export class QueueManager {
 
   /**
    * Push a Job to the queue.
-   * @param job - Job instance
-   * @returns The same job instance (for fluent chaining)
+   *
+   * @template T - The type of the job.
+   * @param job - Job instance to push.
+   * @returns The same job instance (for fluent chaining).
+   *
+   * @example
+   * ```typescript
+   * await manager.push(new SendEmailJob('user@example.com'));
+   * ```
    */
   async push<T extends Job & Queueable>(job: T): Promise<T> {
     const connection = job.connectionName ?? this.defaultConnection
@@ -214,8 +231,15 @@ export class QueueManager {
   }
 
   /**
-   * Push multiple jobs.
-   * @param jobs - Job array
+   * Push multiple jobs to the queue.
+   *
+   * @template T - The type of the jobs.
+   * @param jobs - Array of job instances.
+   *
+   * @example
+   * ```typescript
+   * await manager.pushMany([new JobA(), new JobB()]);
+   * ```
    */
   async pushMany<T extends Job & Queueable>(jobs: T[]): Promise<void> {
     if (jobs.length === 0) {
@@ -259,9 +283,16 @@ export class QueueManager {
 
   /**
    * Pop a job from the queue.
-   * @param queue - Queue name
-   * @param connection - Connection name
-   * @returns Job instance or null
+   *
+   * @param queue - Queue name (default: 'default').
+   * @param connection - Connection name (optional).
+   * @returns Job instance or null if queue is empty.
+   *
+   * @example
+   * ```typescript
+   * const job = await manager.pop('emails');
+   * if (job) await job.handle();
+   * ```
    */
   async pop(queue = 'default', connection: string = this.defaultConnection): Promise<Job | null> {
     const driver = this.getDriver(connection)
@@ -283,9 +314,10 @@ export class QueueManager {
 
   /**
    * Get queue size.
-   * @param queue - Queue name
-   * @param connection - Connection name
-   * @returns Number of jobs in the queue
+   *
+   * @param queue - Queue name (default: 'default').
+   * @param connection - Connection name (optional).
+   * @returns Number of jobs in the queue.
    */
   async size(queue = 'default', connection: string = this.defaultConnection): Promise<number> {
     const driver = this.getDriver(connection)
@@ -293,9 +325,10 @@ export class QueueManager {
   }
 
   /**
-   * Clear a queue.
-   * @param queue - Queue name
-   * @param connection - Connection name
+   * Clear all jobs from a queue.
+   *
+   * @param queue - Queue name (default: 'default').
+   * @param connection - Connection name (optional).
    */
   async clear(queue = 'default', connection: string = this.defaultConnection): Promise<void> {
     const driver = this.getDriver(connection)

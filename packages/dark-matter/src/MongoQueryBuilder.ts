@@ -38,6 +38,14 @@ export class MongoQueryBuilder<T = Document> implements MongoCollectionContract<
   // WHERE Clauses
   // ============================================================================
 
+  /**
+   * Add a basic where clause.
+   *
+   * @param field - The field to filter on.
+   * @param operatorOrValue - The operator (e.g., '>', '=', 'in') or the value for equality check.
+   * @param value - The value if an operator was provided.
+   * @returns The query builder instance.
+   */
   where(field: string, operatorOrValue: FilterOperator | unknown, value?: unknown): this {
     if (value === undefined) {
       // Simple equality: where('name', 'John')
@@ -50,6 +58,14 @@ export class MongoQueryBuilder<T = Document> implements MongoCollectionContract<
     return this
   }
 
+  /**
+   * Add an OR where clause.
+   *
+   * @param field - The field to filter on.
+   * @param operatorOrValue - The operator or value.
+   * @param value - The value if an operator was provided.
+   * @returns The query builder instance.
+   */
   orWhere(field: string, operatorOrValue: FilterOperator | unknown, value?: unknown): this {
     const filter: FilterDocument = {}
     if (value === undefined) {
@@ -62,31 +78,71 @@ export class MongoQueryBuilder<T = Document> implements MongoCollectionContract<
     return this
   }
 
+  /**
+   * Add a where in clause.
+   *
+   * @param field - The field to filter on.
+   * @param values - The array of values.
+   * @returns The query builder instance.
+   */
   whereIn(field: string, values: unknown[]): this {
     this.filters[field] = { $in: values }
     return this
   }
 
+  /**
+   * Add a where not in clause.
+   *
+   * @param field - The field to filter on.
+   * @param values - The array of values.
+   * @returns The query builder instance.
+   */
   whereNotIn(field: string, values: unknown[]): this {
     this.filters[field] = { $nin: values }
     return this
   }
 
+  /**
+   * Add a where null clause.
+   *
+   * @param field - The field to check for null.
+   * @returns The query builder instance.
+   */
   whereNull(field: string): this {
     this.filters[field] = null
     return this
   }
 
+  /**
+   * Add a where not null clause.
+   *
+   * @param field - The field to check for non-null.
+   * @returns The query builder instance.
+   */
   whereNotNull(field: string): this {
     this.filters[field] = { $ne: null }
     return this
   }
 
+  /**
+   * Add a where exists clause.
+   *
+   * @param field - The field to check existence.
+   * @param exists - Whether the field should exist (default: true).
+   * @returns The query builder instance.
+   */
   whereExists(field: string, exists = true): this {
     this.filters[field] = { $exists: exists }
     return this
   }
 
+  /**
+   * Add a where regex clause.
+   *
+   * @param field - The field to match.
+   * @param pattern - The regex pattern.
+   * @returns The query builder instance.
+   */
   whereRegex(field: string, pattern: string | RegExp): this {
     this.filters[field] = { $regex: pattern }
     return this
@@ -96,6 +152,12 @@ export class MongoQueryBuilder<T = Document> implements MongoCollectionContract<
   // Projection
   // ============================================================================
 
+  /**
+   * Select specific fields to include in the result.
+   *
+   * @param fields - The fields to include.
+   * @returns The query builder instance.
+   */
   select(...fields: string[]): this {
     for (const field of fields) {
       this.projection[field] = 1
@@ -103,6 +165,12 @@ export class MongoQueryBuilder<T = Document> implements MongoCollectionContract<
     return this
   }
 
+  /**
+   * Exclude specific fields from the result.
+   *
+   * @param fields - The fields to exclude.
+   * @returns The query builder instance.
+   */
   exclude(...fields: string[]): this {
     for (const field of fields) {
       this.projection[field] = 0
@@ -114,15 +182,34 @@ export class MongoQueryBuilder<T = Document> implements MongoCollectionContract<
   // Sorting
   // ============================================================================
 
+  /**
+   * Order the results by a field.
+   *
+   * @param field - The field to sort by.
+   * @param direction - The sort direction ('asc', 'desc', 1, -1).
+   * @returns The query builder instance.
+   */
   orderBy(field: string, direction: SortDirection = 'asc'): this {
     this.sortSpec[field] = direction === 'asc' || direction === 1 ? 1 : -1
     return this
   }
 
+  /**
+   * Order by latest (descending date).
+   *
+   * @param field - The date field (default: 'createdAt').
+   * @returns The query builder instance.
+   */
   latest(field = 'createdAt'): this {
     return this.orderBy(field, 'desc')
   }
 
+  /**
+   * Order by oldest (ascending date).
+   *
+   * @param field - The date field (default: 'createdAt').
+   * @returns The query builder instance.
+   */
   oldest(field = 'createdAt'): this {
     return this.orderBy(field, 'asc')
   }
@@ -131,16 +218,34 @@ export class MongoQueryBuilder<T = Document> implements MongoCollectionContract<
   // Pagination
   // ============================================================================
 
+  /**
+   * Limit the number of results.
+   *
+   * @param count - The maximum number of documents to return.
+   * @returns The query builder instance.
+   */
   limit(count: number): this {
     this.limitCount = count
     return this
   }
 
+  /**
+   * Skip a number of results.
+   *
+   * @param count - The number of documents to skip.
+   * @returns The query builder instance.
+   */
   skip(count: number): this {
     this.skipCount = count
     return this
   }
 
+  /**
+   * Alias for skip.
+   *
+   * @param count - The number of documents to skip.
+   * @returns The query builder instance.
+   */
   offset(count: number): this {
     return this.skip(count)
   }
@@ -149,6 +254,11 @@ export class MongoQueryBuilder<T = Document> implements MongoCollectionContract<
   // Read Operations
   // ============================================================================
 
+  /**
+   * Execute the query and get all matching documents.
+   *
+   * @returns A promise resolving to an array of documents.
+   */
   async get(): Promise<T[]> {
     const cursor = this.nativeCollection.find(this.toFilter(), {
       projection: Object.keys(this.projection).length > 0 ? this.projection : undefined,
@@ -159,6 +269,11 @@ export class MongoQueryBuilder<T = Document> implements MongoCollectionContract<
     return (await cursor.toArray()) as T[]
   }
 
+  /**
+   * Execute the query and get the first matching document.
+   *
+   * @returns A promise resolving to the document or null if not found.
+   */
   async first(): Promise<T | null> {
     const result = await this.nativeCollection.findOne(this.toFilter(), {
       projection: Object.keys(this.projection).length > 0 ? this.projection : undefined,
@@ -167,6 +282,12 @@ export class MongoQueryBuilder<T = Document> implements MongoCollectionContract<
     return result as T | null
   }
 
+  /**
+   * Find a document by its ID.
+   *
+   * @param id - The document ID string.
+   * @returns A promise resolving to the document or null if not found.
+   */
   async find(id: string): Promise<T | null> {
     const { ObjectId } = await this.loadObjectId()
     const result = await this.nativeCollection.findOne(
@@ -176,15 +297,31 @@ export class MongoQueryBuilder<T = Document> implements MongoCollectionContract<
     return result as T | null
   }
 
+  /**
+   * Count the number of matching documents.
+   *
+   * @returns A promise resolving to the count.
+   */
   async count(): Promise<number> {
     return await this.nativeCollection.countDocuments(this.toFilter())
   }
 
+  /**
+   * Check if any document matches the query.
+   *
+   * @returns A promise resolving to true if any document exists.
+   */
   async exists(): Promise<boolean> {
     const count = await this.nativeCollection.countDocuments(this.toFilter(), { limit: 1 })
     return count > 0
   }
 
+  /**
+   * Get distinct values for a field.
+   *
+   * @param field - The field name.
+   * @returns A promise resolving to an array of distinct values.
+   */
   async distinct(field: string): Promise<unknown[]> {
     return await this.nativeCollection.distinct(field, this.toFilter())
   }
@@ -193,6 +330,12 @@ export class MongoQueryBuilder<T = Document> implements MongoCollectionContract<
   // Write Operations
   // ============================================================================
 
+  /**
+   * Insert a new document.
+   *
+   * @param document - The document to insert.
+   * @returns A promise resolving to the insert result.
+   */
   async insert(document: Partial<T>): Promise<InsertResult> {
     const result = await this.nativeCollection.insertOne(document as MongoDocument)
     return {
@@ -201,6 +344,12 @@ export class MongoQueryBuilder<T = Document> implements MongoCollectionContract<
     }
   }
 
+  /**
+   * Insert multiple documents.
+   *
+   * @param documents - The documents to insert.
+   * @returns A promise resolving to the insert many result.
+   */
   async insertMany(documents: Partial<T>[]): Promise<InsertManyResult> {
     const result = await this.nativeCollection.insertMany(documents as MongoDocument[])
     return {
@@ -210,6 +359,12 @@ export class MongoQueryBuilder<T = Document> implements MongoCollectionContract<
     }
   }
 
+  /**
+   * Update matching documents.
+   *
+   * @param update - The update operations (e.g. { $set: { ... } } or just { field: value }).
+   * @returns A promise resolving to the update result.
+   */
   async update(update: UpdateDocument): Promise<UpdateResult> {
     const updateDoc = this.normalizeUpdate(update)
     const result = await this.nativeCollection.updateOne(this.toFilter(), updateDoc)
@@ -221,6 +376,12 @@ export class MongoQueryBuilder<T = Document> implements MongoCollectionContract<
     }
   }
 
+  /**
+   * Update many matching documents.
+   *
+   * @param update - The update operations.
+   * @returns A promise resolving to the update result.
+   */
   async updateMany(update: UpdateDocument): Promise<UpdateResult> {
     const updateDoc = this.normalizeUpdate(update)
     const result = await this.nativeCollection.updateMany(this.toFilter(), updateDoc)
@@ -232,6 +393,11 @@ export class MongoQueryBuilder<T = Document> implements MongoCollectionContract<
     }
   }
 
+  /**
+   * Delete matching documents.
+   *
+   * @returns A promise resolving to the delete result.
+   */
   async delete(): Promise<DeleteResult> {
     const result = await this.nativeCollection.deleteOne(this.toFilter())
     return {
@@ -240,6 +406,11 @@ export class MongoQueryBuilder<T = Document> implements MongoCollectionContract<
     }
   }
 
+  /**
+   * Delete many matching documents.
+   *
+   * @returns A promise resolving to the delete result.
+   */
   async deleteMany(): Promise<DeleteResult> {
     const result = await this.nativeCollection.deleteMany(this.toFilter())
     return {
@@ -252,6 +423,11 @@ export class MongoQueryBuilder<T = Document> implements MongoCollectionContract<
   // Aggregation
   // ============================================================================
 
+  /**
+   * Start an aggregation pipeline.
+   *
+   * @returns A MongoAggregateContract instance initialized with the current filters.
+   */
   aggregate(): MongoAggregateContract<T> {
     return new MongoAggregateBuilder<T>(this.nativeCollection, this.toFilter())
   }
@@ -260,6 +436,11 @@ export class MongoQueryBuilder<T = Document> implements MongoCollectionContract<
   // Utilities
   // ============================================================================
 
+  /**
+   * Get the current filter document.
+   *
+   * @returns The MongoDB filter document.
+   */
   toFilter(): FilterDocument {
     if (this.orFilters.length === 0) {
       return { ...this.filters }
@@ -270,6 +451,11 @@ export class MongoQueryBuilder<T = Document> implements MongoCollectionContract<
     }
   }
 
+  /**
+   * Clone the query builder.
+   *
+   * @returns A new independent instance of the query builder.
+   */
   clone(): MongoCollectionContract<T> {
     const cloned = new MongoQueryBuilder<T>(this.nativeCollection, this.collectionName)
     cloned.filters = { ...this.filters }

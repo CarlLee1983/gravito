@@ -138,17 +138,6 @@ export class OrbitSentinel implements GravitoOrbit {
   }
 }
 
-// Module augmentation for Hono (backward compatibility)
-declare module 'hono' {
-  interface ContextVariableMap {
-    auth: AuthManager
-    gate: Gate
-    hash: HashManager
-    passwords?: PasswordBroker
-    emailVerification?: EmailVerificationService
-  }
-}
-
 // Module augmentation for GravitoVariables (new abstraction)
 declare module 'gravito-core' {
   interface GravitoVariables {

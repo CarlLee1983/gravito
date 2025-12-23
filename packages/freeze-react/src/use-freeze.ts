@@ -26,14 +26,19 @@ export interface UseFreezeReturn {
 }
 
 /**
- * Hook for accessing SSG utilities in React components
+ * Hook for accessing SSG utilities in React components.
+ *
+ * Provides functions for path localization, locale switching, and
+ * environment detection.
+ *
+ * @returns An object containing SSG utilities.
  *
  * @example
  * ```tsx
  * import { useFreeze } from '@gravito/freeze-react'
  *
  * function Navigation() {
- *   const { isStatic, locale, getLocalizedPath, switchLocale } = useFreeze()
+ *   const { isStatic, locale, getLocalizedPath, navigateToLocale } = useFreeze()
  *
  *   return (
  *     <nav>

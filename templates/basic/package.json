@@ -8,7 +8,7 @@
     },
     "dependencies": {
         "gravito-core": "workspace:*",
-        "@gravito/client": "workspace:*",
+        "@gravito/beam": "workspace:*",
         "@gravito/stasis": "workspace:*",
         "@gravito/prism": "workspace:*",
         "hono": "^4.0.0"

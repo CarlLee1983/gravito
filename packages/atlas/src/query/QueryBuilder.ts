@@ -91,9 +91,14 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   /**
    * Add a raw SELECT expression
    */
-  selectRaw(sql: string, bindings: unknown[] = []): this {
-    this.columns.push(new Expression(sql, bindings).getValue())
-    this.bindingsList.push(...bindings)
+  selectRaw(sql: string | Expression, bindings: unknown[] = []): this {
+    if (sql instanceof Expression) {
+      this.columns.push(sql.getValue())
+      this.bindingsList.push(...sql.getBindings())
+    } else {
+      this.columns.push(new Expression(sql, bindings).getValue())
+      this.bindingsList.push(...bindings)
+    }
     return this
   }
 
@@ -346,28 +351,48 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   /**
    * Add a raw WHERE clause
    */
-  whereRaw(sql: string, bindings: unknown[] = []): this {
-    this.wheres.push({
-      type: 'raw',
-      sql,
-      bindings,
-      boolean: 'and',
-    })
-    this.bindingsList.push(...bindings)
+  whereRaw(sql: string | Expression, bindings: unknown[] = []): this {
+    if (sql instanceof Expression) {
+      this.wheres.push({
+        type: 'raw',
+        sql: sql.getValue(),
+        bindings: sql.getBindings(),
+        boolean: 'and',
+      })
+      this.bindingsList.push(...sql.getBindings())
+    } else {
+      this.wheres.push({
+        type: 'raw',
+        sql,
+        bindings,
+        boolean: 'and',
+      })
+      this.bindingsList.push(...bindings)
+    }
     return this
   }
 
   /**
    * Add a raw OR WHERE clause
    */
-  orWhereRaw(sql: string, bindings: unknown[] = []): this {
-    this.wheres.push({
-      type: 'raw',
-      sql,
-      bindings,
-      boolean: 'or',
-    })
-    this.bindingsList.push(...bindings)
+  orWhereRaw(sql: string | Expression, bindings: unknown[] = []): this {
+    if (sql instanceof Expression) {
+      this.wheres.push({
+        type: 'raw',
+        sql: sql.getValue(),
+        bindings: sql.getBindings(),
+        boolean: 'or',
+      })
+      this.bindingsList.push(...sql.getBindings())
+    } else {
+      this.wheres.push({
+        type: 'raw',
+        sql,
+        bindings,
+        boolean: 'or',
+      })
+      this.bindingsList.push(...bindings)
+    }
     return this
   }
 
@@ -496,14 +521,24 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   /**
    * Add a raw HAVING clause
    */
-  havingRaw(sql: string, bindings: unknown[] = []): this {
-    this.havings.push({
-      type: 'raw',
-      sql,
-      bindings,
-      boolean: 'and',
-    })
-    this.bindingsList.push(...bindings)
+  havingRaw(sql: string | Expression, bindings: unknown[] = []): this {
+    if (sql instanceof Expression) {
+      this.havings.push({
+        type: 'raw',
+        sql: sql.getValue(),
+        bindings: sql.getBindings(),
+        boolean: 'and',
+      })
+      this.bindingsList.push(...sql.getBindings())
+    } else {
+      this.havings.push({
+        type: 'raw',
+        sql,
+        bindings,
+        boolean: 'and',
+      })
+      this.bindingsList.push(...bindings)
+    }
     return this
   }
 
@@ -529,9 +564,14 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   /**
    * Add a raw ORDER BY clause
    */
-  orderByRaw(sql: string, bindings: unknown[] = []): this {
-    this.orders.push({ column: new Expression(sql, bindings).getValue(), direction: 'asc' })
-    this.bindingsList.push(...bindings)
+  orderByRaw(sql: string | Expression, bindings: unknown[] = []): this {
+    if (sql instanceof Expression) {
+      this.orders.push({ column: sql.getValue(), direction: 'asc' })
+      this.bindingsList.push(...sql.getBindings())
+    } else {
+      this.orders.push({ column: new Expression(sql, bindings).getValue(), direction: 'asc' })
+      this.bindingsList.push(...bindings)
+    }
     return this
   }
 

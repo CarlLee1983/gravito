@@ -43,7 +43,7 @@ export declare function hasApp(): boolean
 export declare function app(): PlanetCore
 export declare function config<T = unknown>(key: string): T
 export declare function config<T>(key: string, defaultValue: T): T
-export declare function logger(): import('./Logger').Logger
+export declare function logger(): import('gravito-core').Logger
 export declare function router(): Router
 export declare function abort(status: ContentfulStatusCode, message?: string): never
 export declare function abortIf(

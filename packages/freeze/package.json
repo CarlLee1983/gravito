@@ -1,42 +1,42 @@
 {
-    "name": "@gravito/freeze",
-    "version": "0.1.0-beta.1",
-    "description": "Static Site Generation (SSG) core module for Gravito Framework",
-    "type": "module",
-    "main": "./dist/index.js",
-    "module": "./dist/index.js",
-    "types": "./dist/index.d.ts",
-    "exports": {
-        ".": {
-            "types": "./dist/index.d.ts",
-            "import": "./dist/index.js"
-        }
-    },
-    "files": [
-        "dist"
-    ],
-    "scripts": {
-        "build": "tsup",
-        "dev": "tsup --watch",
-        "typecheck": "tsc --noEmit",
-        "test": "bun test"
-    },
-    "keywords": [
-        "gravito",
-        "ssg",
-        "static-site",
-        "static-site-generation",
-        "jamstack"
-    ],
-    "author": "Carl Lee",
-    "license": "MIT",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/gravito-framework/gravito.git",
-        "directory": "packages/freeze"
-    },
-    "devDependencies": {
-        "tsup": "^8.0.0",
-        "typescript": "^5.7.0"
+  "name": "@gravito/freeze",
+  "version": "1.0.0-alpha.2",
+  "description": "Static Site Generation (SSG) core module for Gravito Framework",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "keywords": [
+    "gravito",
+    "ssg",
+    "static-site",
+    "static-site-generation",
+    "jamstack"
+  ],
+  "author": "Carl Lee",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gravito-framework/gravito.git",
+    "directory": "packages/freeze"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5.7.0"
+  }
 }

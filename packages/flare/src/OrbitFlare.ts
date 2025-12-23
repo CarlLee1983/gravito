@@ -62,11 +62,19 @@ export class OrbitFlare implements GravitoOrbit {
 
   /**
    * Configure OrbitFlare.
+   *
+   * @param options - The OrbitFlare configuration options.
+   * @returns A new OrbitFlare instance.
    */
   static configure(options: OrbitFlareOptions = {}): OrbitFlare {
     return new OrbitFlare(options)
   }
 
+  /**
+   * Install OrbitFlare into PlanetCore.
+   *
+   * @param core - The PlanetCore instance.
+   */
   async install(core: PlanetCore): Promise<void> {
     const manager = new NotificationManager(core)
 

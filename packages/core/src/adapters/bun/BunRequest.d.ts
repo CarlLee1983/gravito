@@ -20,6 +20,7 @@ export declare class BunRequest implements GravitoRequest {
   text(): Promise<string>
   formData(): Promise<FormData>
   arrayBuffer(): Promise<ArrayBuffer>
+  parseBody<T = unknown>(): Promise<T>
   setValidated(target: ValidationTarget, data: unknown): void
   valid<T = unknown>(target: ValidationTarget): T
   private parseQuery

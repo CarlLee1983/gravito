@@ -9,15 +9,30 @@ export interface StorageProvider {
   getUrl(key: string): string
 }
 
+/**
+ * Local storage provider implementation.
+ */
 export class LocalStorageProvider implements StorageProvider {
   private rootDir: string
   private baseUrl: string
 
+  /**
+   * Create a new LocalStorageProvider.
+   *
+   * @param rootDir - The root directory for storage.
+   * @param baseUrl - The base URL for accessing stored files.
+   */
   constructor(rootDir: string, baseUrl = '/storage') {
     this.rootDir = rootDir
     this.baseUrl = baseUrl
   }
 
+  /**
+   * Store data in a file.
+   *
+   * @param key - The storage key (path).
+   * @param data - The data to store.
+   */
   async put(key: string, data: Blob | Buffer | string): Promise<void> {
     const path = join(this.rootDir, key)
     // Ensure dir exists
@@ -28,6 +43,12 @@ export class LocalStorageProvider implements StorageProvider {
     await Bun.write(path, data)
   }
 
+  /**
+   * Retrieve a file.
+   *
+   * @param key - The storage key.
+   * @returns A promise resolving to the file Blob or null if not found.
+   */
   async get(key: string): Promise<Blob | null> {
     const file = Bun.file(join(this.rootDir, key))
     if (!(await file.exists())) {
@@ -36,6 +57,11 @@ export class LocalStorageProvider implements StorageProvider {
     return file
   }
 
+  /**
+   * Delete a file.
+   *
+   * @param key - The storage key.
+   */
   async delete(key: string): Promise<void> {
     // Bun currently lacks a direct 'unlink' API in Bun.file, using fs/promises is safer for checking
     // But actually, Node COMPAT layer is preferred.
@@ -49,6 +75,12 @@ export class LocalStorageProvider implements StorageProvider {
     }
   }
 
+  /**
+   * Get the public URL for a file.
+   *
+   * @param key - The storage key.
+   * @returns The public URL string.
+   */
   getUrl(key: string): string {
     return `${this.baseUrl}/${key}`
   }
@@ -63,9 +95,18 @@ export interface OrbitStorageOptions {
   }
 }
 
+/**
+ * OrbitStorage service.
+ */
 export class OrbitStorage implements GravitoOrbit {
   constructor(private options?: OrbitStorageOptions) {}
 
+  /**
+   * Install storage service into PlanetCore.
+   *
+   * @param core - The PlanetCore instance.
+   * @throws {Error} If configuration or provider is missing.
+   */
   install(core: PlanetCore): void {
     const config = this.options || core.config.get('storage')
 
@@ -118,6 +159,14 @@ export class OrbitStorage implements GravitoOrbit {
   }
 }
 
+/**
+ * Functional API for installing OrbitStorage.
+ *
+ * @param core - The PlanetCore instance.
+ * @param options - Storage options.
+ * @returns The configured storage provider wrapper.
+ * @throws {Error} If provider is not configured.
+ */
 export default function orbitStorage(core: PlanetCore, options: OrbitStorageOptions) {
   const orbit = new OrbitStorage(options)
   orbit.install(core)

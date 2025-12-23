@@ -53,18 +53,21 @@ export class InertiaService {
   constructor(
     private context: GravitoContext<GravitoVariables>,
     private config: InertiaConfig = {}
-  ) { }
+  ) {}
 
   /**
    * Escape a string for safe use in HTML attributes
-   * 
+   *
    * Strategy: JSON.stringify already escapes special characters including
    * quotes as \". We need to escape these for HTML attributes, but we must
    * be careful not to break JSON escape sequences.
-   * 
+   *
    * The solution: Escape backslash-quote sequences (\" from JSON.stringify)
    * as \\&quot; so they become \\&quot; in HTML, which the browser decodes
    * to \\" (valid JSON), not \&quot; (invalid JSON).
+   *
+   * @param value - The string to escape.
+   * @returns The escaped string.
    */
   private escapeForSingleQuotedHtmlAttribute(value: string): string {
     // First escape ampersands to prevent breaking existing HTML entities
@@ -76,8 +79,8 @@ export class InertiaService {
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/'/g, '&#039;')
-      // Note: We don't escape standalone " because JSON.stringify already
-      // escaped all quotes as \", so any remaining " would be invalid JSON anyway
+    // Note: We don't escape standalone " because JSON.stringify already
+    // escaped all quotes as \", so any remaining " would be invalid JSON anyway
   }
 
   /**
@@ -190,6 +193,8 @@ export class InertiaService {
 
   /**
    * Get all shared props
+   *
+   * @returns A shallow copy of the shared props object.
    */
   public getSharedProps(): Record<string, unknown> {
     return { ...this.sharedProps }

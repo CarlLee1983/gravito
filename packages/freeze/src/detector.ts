@@ -17,14 +17,16 @@ export class FreezeDetector {
   constructor(private config: FreezeConfig) {}
 
   /**
-   * Check if running in a static site environment
+   * Check if running in a static site environment.
    *
    * Detection rules:
-   * 1. Server-side rendering: always returns false
-   * 2. Local preview server (port 4173): returns true
-   * 3. Development server (localhost): returns false
-   * 4. Configured static domains: returns true
-   * 5. Common static hosting patterns (github.io, vercel.app, etc.): returns true
+   * 1. Server-side rendering: always returns false.
+   * 2. Local preview server (port 4173): returns true.
+   * 3. Development server (localhost): returns false.
+   * 4. Configured static domains: returns true.
+   * 5. Common static hosting patterns (github.io, vercel.app, etc.): returns true.
+   *
+   * @returns True if the environment is a static site.
    */
   isStaticSite(): boolean {
     // Server-side: not static
@@ -67,7 +69,10 @@ export class FreezeDetector {
   }
 
   /**
-   * Extract locale from URL path
+   * Extract locale from URL path.
+   *
+   * @param path - The URL pathname.
+   * @returns The extracted locale string, or the default locale if not found.
    *
    * @example
    * getLocaleFromPath('/en/docs/guide') // 'en'
@@ -84,7 +89,11 @@ export class FreezeDetector {
   }
 
   /**
-   * Get localized path for a given path and locale
+   * Get localized path for a given path and locale.
+   *
+   * @param path - The base path.
+   * @param locale - The target locale code.
+   * @returns The path prefixed with the locale.
    *
    * @example
    * getLocalizedPath('/about', 'en') // '/en/about'
@@ -112,7 +121,11 @@ export class FreezeDetector {
   }
 
   /**
-   * Switch locale while preserving current path
+   * Switch locale while preserving current path.
+   *
+   * @param currentPath - The current URL pathname.
+   * @param newLocale - The locale to switch to.
+   * @returns The new path with the updated locale prefix.
    *
    * @example
    * switchLocale('/en/docs/guide', 'zh') // '/zh/docs/guide'
@@ -140,7 +153,10 @@ export class FreezeDetector {
   }
 
   /**
-   * Check if a path needs a redirect (abstract route without static file)
+   * Check if a path needs a redirect (abstract route without static file).
+   *
+   * @param path - The URL pathname to check.
+   * @returns RedirectInfo object if a redirect is needed, null otherwise.
    */
   needsRedirect(path: string): RedirectInfo | null {
     for (const rule of this.config.redirects) {
@@ -155,7 +171,9 @@ export class FreezeDetector {
   }
 
   /**
-   * Get the current locale from browser URL
+   * Get the current locale from browser URL.
+   *
+   * @returns The current locale string.
    */
   getCurrentLocale(): string {
     if (typeof window === 'undefined') {
@@ -166,15 +184,20 @@ export class FreezeDetector {
 }
 
 /**
- * Redirect information
+ * Redirect information.
  */
 export interface RedirectInfo {
+  /** Original abstract path */
   from: string
+  /** Target localized path */
   to: string
 }
 
 /**
- * Create a new FreezeDetector instance
+ * Create a new FreezeDetector instance.
+ *
+ * @param config - The Freeze configuration.
+ * @returns A new FreezeDetector instance.
  */
 export function createDetector(config: FreezeConfig): FreezeDetector {
   return new FreezeDetector(config)

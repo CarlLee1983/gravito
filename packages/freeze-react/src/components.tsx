@@ -44,10 +44,17 @@ export interface StaticLinkProps {
 }
 
 /**
- * Smart link component for SSG sites
+ * Smart link component for SSG sites.
  *
- * In static mode: Uses native <a> tags for full page navigation
- * In SSR mode: Uses Inertia Link for SPA navigation
+ * Automatically detects the environment:
+ * - In static mode: Uses native `<a>` tags for full page navigation.
+ * - In SSR mode: Uses Inertia `Link` for SPA navigation (if available).
+ *
+ * It also automatically localizes the `href` based on the current locale
+ * unless `skipLocalization` is set to true.
+ *
+ * @param props - Component properties.
+ * @returns A React element (either `<a>` or Inertia `Link`).
  *
  * @example
  * ```tsx
@@ -93,21 +100,27 @@ export function StaticLink({
 }
 
 /**
- * Props for LocaleSwitcher component
+ * Props for LocaleSwitcher component.
  */
 export interface LocaleSwitcherProps {
-  /** Locale to switch to */
+  /** Locale to switch to (e.g., 'en', 'zh') */
   locale: string
   /** CSS class name */
   className?: string
-  /** Optional custom content, defaults to locale code */
+  /** Optional custom content, defaults to uppercase locale code */
   children?: ReactNode
-  /** Additional props */
+  /** Additional props passed to the anchor tag */
   [key: string]: unknown
 }
 
 /**
- * Locale switcher link component
+ * Locale switcher link component.
+ *
+ * Renders an `<a>` tag that switches the site's locale while preserving
+ * the current path.
+ *
+ * @param props - Component properties.
+ * @returns A React element (`<a>`).
  *
  * @example
  * ```tsx

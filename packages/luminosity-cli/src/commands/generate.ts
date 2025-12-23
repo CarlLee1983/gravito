@@ -13,8 +13,10 @@ export interface GenerateCommandOptions {
 }
 
 /**
- * 改進的 generate 命令
- * 支援背景模式、串流處理、增量生成
+ * Improved generate command.
+ * Supports background mode, streaming processing, and incremental generation.
+ *
+ * @param options - Generation options.
  */
 export async function generateCommand(options: GenerateCommandOptions) {
   try {
@@ -28,11 +30,11 @@ export async function generateCommand(options: GenerateCommandOptions) {
         ? join(config.output.path, config.output.filename || 'sitemap.xml')
         : 'sitemap.xml'
 
-    // 背景模式處理
+    // Background mode processing
     if (options.background || options.async) {
       console.log(pc.yellow('⚠️  Background mode is not yet fully implemented in seo-cli'))
       console.log(pc.dim('   Consider using OrbitSitemap.generateAsync() in your application'))
-      // 這裡可以整合 queue 系統
+      // This can be integrated with a queue system
     }
 
     console.log(pc.dim('Loading engine...'))
@@ -42,14 +44,14 @@ export async function generateCommand(options: GenerateCommandOptions) {
     console.log(pc.dim('Fetching entries...'))
     const strategy = engine.getStrategy()
 
-    // 支援串流處理
+    // Support streaming processing
     const entries = await strategy.getEntries()
 
-    // 如果是 AsyncIterable，使用串流處理
+    // If it's an AsyncIterable, use streaming processing
     if (entries && typeof (entries as any)[Symbol.asyncIterator] === 'function') {
       await generateFromStream(entries as unknown as AsyncIterable<any>, config, outputPath)
     } else {
-      // 陣列處理（現有邏輯）
+      // Array processing (existing logic)
       const entriesArray = Array.isArray(entries) ? entries : []
 
       console.log(pc.dim(`Generating XML for ${entriesArray.length} URLs...`))

@@ -1,5 +1,5 @@
 import type { InertiaService } from '@gravito/ion'
-import type { Context } from 'hono'
+import type { Context } from 'gravito-core/compat'
 import { DocsService } from '../services/DocsService'
 import { getTranslation } from '../services/I18nService'
 

@@ -103,6 +103,7 @@ export default function Layout({ children, noPadding = false }: LayoutProps) {
 
           <nav className="hidden md:flex items-center gap-2 p-1.5 backdrop-blur-md bg-white/5 rounded-2xl border border-white/5 relative z-10">
             {[
+              { label: trans('nav.features', 'Features'), path: '/features' },
               { label: trans('nav.docs', 'Docs'), path: '/docs' },
               { label: trans('nav.about', 'About'), path: '/about' },
             ].map((item) => {

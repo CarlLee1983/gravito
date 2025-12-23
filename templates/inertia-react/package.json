@@ -9,13 +9,13 @@
     },
     "dependencies": {
         "gravito-core": "workspace:*",
-        "@gravito/client": "workspace:*",
+        "@gravito/beam": "workspace:*",
         "@gravito/stasis": "workspace:*",
         "@gravito/prism": "workspace:*",
         "@gravito/ion": "workspace:*",
         "@inertiajs/react": "^1.0.0",
-        "react": "^18.2.0",
-        "react-dom": "^18.2.0",
+        "react": "^19.0.0",
+        "react-dom": "^19.0.0",
         "hono": "^4.0.0"
     },
     "devDependencies": {

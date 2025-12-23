@@ -74,7 +74,12 @@ export const defaultConfig: Partial<FreezeConfig> = {
 }
 
 /**
- * Define SSG configuration with defaults
+ * Define SSG configuration with defaults.
+ *
+ * Merges the provided partial configuration with the internal default values.
+ *
+ * @param config - Partial configuration options.
+ * @returns A complete FreezeConfig object.
  */
 export function defineConfig(config: Partial<FreezeConfig>): FreezeConfig {
   return {

@@ -16,7 +16,9 @@ export class RedisManager {
   private configs = new Map<string, RedisConfig>()
 
   /**
-   * Configure the Redis manager
+   * Configure the Redis manager.
+   *
+   * @param config - The Redis manager configuration.
    */
   configure(config: RedisManagerConfig): void {
     this.defaultConnection = config.default ?? 'default'
@@ -27,14 +29,21 @@ export class RedisManager {
   }
 
   /**
-   * Add a connection configuration
+   * Add a connection configuration.
+   *
+   * @param name - The name of the connection.
+   * @param config - The connection configuration.
    */
   addConnection(name: string, config: RedisConfig): void {
     this.configs.set(name, config)
   }
 
   /**
-   * Get a connection by name
+   * Get a connection by name.
+   *
+   * @param name - The name of the connection (optional). Defaults to the configured default connection.
+   * @returns The RedisClientContract instance.
+   * @throws {Error} If the connection is not configured.
    */
   connection(name?: string): RedisClientContract {
     const connectionName = name ?? this.defaultConnection
@@ -51,14 +60,18 @@ export class RedisManager {
   }
 
   /**
-   * Get the default connection
+   * Get the default connection.
+   *
+   * @returns The default RedisClientContract instance.
    */
   getDefault(): RedisClientContract {
     return this.connection(this.defaultConnection)
   }
 
   /**
-   * Connect all configured connections
+   * Connect all configured connections.
+   *
+   * @returns A promise that resolves when all connections are established.
    */
   async connectAll(): Promise<void> {
     for (const [name] of this.configs) {
@@ -68,7 +81,9 @@ export class RedisManager {
   }
 
   /**
-   * Disconnect all connections
+   * Disconnect all connections.
+   *
+   * @returns A promise that resolves when all connections are closed.
    */
   async disconnectAll(): Promise<void> {
     for (const client of this.connections.values()) {
@@ -78,14 +93,21 @@ export class RedisManager {
   }
 
   /**
-   * Check if a connection exists
+   * Check if a connection exists.
+   *
+   * @param name - The name of the connection.
+   * @returns True if configured, false otherwise.
    */
   hasConnection(name: string): boolean {
     return this.configs.has(name)
   }
 
   /**
-   * Remove a connection
+   * Remove a connection.
+   *
+   * Disconnects the connection if active and removes its configuration.
+   *
+   * @param name - The name of the connection.
    */
   async removeConnection(name: string): Promise<void> {
     const client = this.connections.get(name)

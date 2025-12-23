@@ -27,11 +27,17 @@ import {
 import React, { useRef, useState } from 'react'
 import { GravitoImage as Image } from '../components/GravitoImage'
 import Layout from '../components/Layout'
+import { StaticLink } from '../components/StaticLink'
+
+// Dynamic Import for WebGL component to avoid SSG/Hydration issues
+const HeroGL = React.lazy(() =>
+  import('../components/HeroGL').then((mod) => ({ default: mod.HeroGL }))
+)
 
 type Translation = Record<string, Record<string, string>>
 
 // 強化版 Hero 組件（Star Shuttle Effect）
-const AdvancedHero = ({ t }: { t: Translation }) => {
+const AdvancedHero = ({ t, locale }: { t: Translation; locale: string }) => {
   const { scrollY } = useScroll()
   const y1 = useTransform(scrollY, [0, 500], [0, 200])
   const opacity = useTransform(scrollY, [0, 300], [1, 0])
@@ -55,22 +61,22 @@ const AdvancedHero = ({ t }: { t: Translation }) => {
     char,
   }))
 
+  // 避免 SSG/Hydration 不匹配，只在客戶端渲染 WebGL
+  const [isClient, setIsClient] = useState(false)
+  React.useEffect(() => {
+    setIsClient(true)
+  }, [])
+
   return (
     <section className="relative h-[120vh] flex items-center justify-center overflow-hidden bg-void">
-      {/* 0. Hero 背景圖片 (Parallax) */}
-      <motion.div style={{ y: y1, opacity }} className="absolute inset-0 z-0">
-        <Image
-          src="/static/image/hero.jpg"
-          alt="Gravito Universe"
-          className="w-full h-full object-cover opacity-60 scale-110"
-          width={1920}
-          height={1080}
-          loading="eager"
-          fetchpriority="high"
-          srcset={[768, 1280, 2560]}
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-void/60 via-transparent to-void" />
-        <div className="absolute inset-0 bg-radial-[circle_at_center,_transparent_0%,_var(--color-void)_120%] opacity-80" />
+      {/* 0. Hero Background (WebGL) */}
+      <motion.div style={{ opacity }} className="absolute inset-0 z-0">
+        {isClient && (
+          <React.Suspense fallback={null}>
+            <HeroGL />
+          </React.Suspense>
+        )}
+        <div className="absolute inset-0 bg-gradient-to-b from-void/20 via-transparent to-void" />
       </motion.div>
 
       {/* 1. Star Shuttle Effect */}
@@ -154,18 +160,18 @@ const AdvancedHero = ({ t }: { t: Translation }) => {
           transition={{ delay: 3, duration: 0.8 }}
           className="mt-12 flex flex-col md:flex-row gap-6 items-center"
         >
-          <Link
-            href="/docs/guide/getting-started"
+          <StaticLink
+            href={`/${locale}/docs/guide/getting-started`}
             className="group relative px-8 py-4 bg-white text-void font-bold rounded-full overflow-hidden transition-all hover:scale-110 active:scale-95 shadow-[0_0_30px_rgba(255,255,255,0.3)]"
           >
             <span className="relative z-10 flex items-center gap-2">
               <Rocket className="w-5 h-5 group-hover:animate-bounce" />
               {t.hero.startBtn}
             </span>
-          </Link>
+          </StaticLink>
 
           <a
-            href="https://github.com/GravitoFramework/gravito"
+            href="https://github.com/gravito-framework/gravito"
             target="_blank"
             rel="noopener noreferrer"
             className="group px-8 py-4 bg-void/40 backdrop-blur-xl border border-white/10 text-white font-bold rounded-full hover:bg-white/10 transition-all hover:border-white/30 flex items-center gap-2"
@@ -195,7 +201,7 @@ const GravitoLanding = ({ t, locale }: HomeProps) => {
         <meta name="keywords" content={t.site.keywords} />
       </Head>
       {/* Hero Section - 強化版引力透鏡效果 */}
-      <AdvancedHero t={t} />
+      <AdvancedHero t={t} locale={locale} />
 
       {/* Tech Stack Section */}
       <StackSection t={t} />
@@ -326,7 +332,7 @@ const TechIcon = ({ type }: { type: string }) => {
         </defs>
         {/* Shadow */}
         <path
-          d="M71.09,20.74c-.16-.17-.33-.34-.5-.5s-.33-.34-.5-.5-.33-.34-.5-.5-.33-.34-.5-.5-.33-.34-.5-.5-.33-.34-.5-.5-.33-.34-.5-.5A26.46,26.46,0,0,1,75.5,35.7c0,16.57-16.82,30.05-37.5,30.05-11.58,0-21.94-4.23-28.83-10.86l.5.5.5.5.5.5.5.5.5.5.5.5.5.5C19.55,65.3,30.14,69.75,42,69.75c20.68,0,37.5-13.48,37.5-30C79.5,32.69,76.46,26,71.09,20.74Z"
+          d="M71.09,20.74c-.16-.17-.33-.34-.5-.5s-.33-.34-.5-.5-.33-.34-.5-.5-.33-.34-.5-.5-.33-.34-.5-.5-.33-.34-.5-.5A26.46,26.46,0,0,1,75.5,35.7c0,16.57-16.82,30.05-37.5,30.05-11.58,0-21.94-4.23-28.83-10.86l.5.5.5.5.5.5.5.5.5.5.5.5.5.5C19.55,65.3,30.14,69.75,42,69.75c20.68,0,37.5-13.48,37.5-30C79.5,32.69,76.46,26,71.09,20.74Z"
           fill="#CCBEA7"
           opacity="0.3"
         />
@@ -393,7 +399,12 @@ const TechIcon = ({ type }: { type: string }) => {
 const StackSection = ({ t }: { t: Translation }) => {
   const stack = [
     { type: 'bun', title: t.stack.bun_title, desc: t.stack.bun_desc, color: 'text-orange-400' },
-    { type: 'gravito', title: t.stack.hono_title, desc: t.stack.hono_desc, color: 'text-cyan-500' },
+    {
+      type: 'gravito',
+      title: t.stack.engine_title,
+      desc: t.stack.engine_desc,
+      color: 'text-cyan-500',
+    },
     { type: 'ts', title: t.stack.ts_title, desc: t.stack.ts_desc, color: 'text-blue-400' },
   ]
 

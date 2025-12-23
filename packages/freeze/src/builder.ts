@@ -30,7 +30,13 @@ export function generateRedirectHtml(targetUrl: string): string {
 }
 
 /**
- * Generate all redirect HTML files for configured routes
+ * Generate all redirect HTML files for configured routes.
+ *
+ * Creates a map where keys are output file paths (e.g., 'about/index.html')
+ * and values are the HTML content for redirection.
+ *
+ * @param config - The Freeze configuration.
+ * @returns A Map of relative output paths to redirect HTML content.
  */
 export function generateRedirects(config: FreezeConfig): Map<string, string> {
   const redirects = new Map<string, string>()
@@ -46,7 +52,13 @@ export function generateRedirects(config: FreezeConfig): Map<string, string> {
 }
 
 /**
- * Generate localized routes from abstract routes
+ * Generate localized routes from abstract routes.
+ *
+ * Takes a list of base routes and expands them for each supported locale.
+ *
+ * @param abstractRoutes - List of base routes (e.g., ['/', '/about']).
+ * @param locales - List of supported locale codes (e.g., ['en', 'zh']).
+ * @returns An array of localized routes (e.g., ['/en', '/zh', '/en/about', '/zh/about']).
  *
  * @example
  * generateLocalizedRoutes(['/docs', '/about'], ['en', 'zh'])
@@ -71,7 +83,14 @@ export function generateLocalizedRoutes(abstractRoutes: string[], locales: strin
 }
 
 /**
- * Infer redirects from locales and common routes
+ * Infer redirects from locales and common routes.
+ *
+ * Automatically creates redirect rules from base routes to their default locale counterparts.
+ *
+ * @param _locales - List of supported locales (currently unused).
+ * @param defaultLocale - The default locale code.
+ * @param commonRoutes - List of routes to create redirects for.
+ * @returns An array of RedirectRule objects.
  *
  * @example
  * inferRedirects(['en', 'zh'], 'en', ['/docs', '/about'])
@@ -89,18 +108,30 @@ export function inferRedirects(
 }
 
 /**
- * Sitemap entry for localized URLs
+ * Sitemap entry for localized URLs.
  */
 export interface SitemapEntry {
+  /** Full URL of the page */
   url: string
+  /** Last modification date (ISO 8601) */
   lastmod?: string
+  /** Change frequency hint for crawlers */
   changefreq?: 'always' | 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'never'
+  /** Priority of this URL relative to other URLs on your site (0.0 to 1.0) */
   priority?: number
+  /** Alternate language versions of the page */
   alternates?: Array<{ hreflang: string; href: string }>
 }
 
 /**
- * Generate sitemap entries with alternates for i18n
+ * Generate sitemap entries with alternates for i18n.
+ *
+ * Creates entries for each route, including hreflang tags for all available translations
+ * and an x-default entry pointing to the default locale.
+ *
+ * @param routes - List of all generated localized routes.
+ * @param config - The Freeze configuration.
+ * @returns An array of SitemapEntry objects ready for XML generation.
  */
 export function generateSitemapEntries(routes: string[], config: FreezeConfig): SitemapEntry[] {
   const entries: SitemapEntry[] = []

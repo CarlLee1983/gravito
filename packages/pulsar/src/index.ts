@@ -29,14 +29,6 @@ export { RedisSessionStore } from './stores/RedisSessionStore'
 export { SqliteSessionStore } from './stores/SqliteSessionStore'
 export * from './types'
 
-// Module augmentation for Hono (backward compatibility)
-declare module 'hono' {
-  interface ContextVariableMap {
-    session: SessionService
-    csrf: CsrfService
-  }
-}
-
 // Module augmentation for GravitoVariables (new abstraction)
 declare module 'gravito-core' {
   interface GravitoVariables {
@@ -114,8 +106,18 @@ function safeEquals(a: string, b: string): boolean {
 }
 
 export class OrbitPulsar implements GravitoOrbit {
+  /**
+   * Create a new OrbitPulsar instance.
+   *
+   * @param options - The session configuration options.
+   */
   constructor(private options: OrbitPulsarOptions = {}) {}
 
+  /**
+   * Install the session management orbit into PlanetCore.
+   *
+   * @param core - The PlanetCore instance.
+   */
   install(core: PlanetCore): void {
     const configFromCore = core.config.has('session')
       ? (core.config.get<OrbitPulsarOptions>('session') ?? {})

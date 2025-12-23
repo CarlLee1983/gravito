@@ -10,10 +10,17 @@ import { defineComponent, h, type PropType } from 'vue'
 import { useFreeze } from './composables'
 
 /**
- * StaticLink Component
+ * StaticLink Component.
  *
- * Smart link component that uses native <a> for static sites
+ * Smart link component that uses native `<a>` for static sites
  * and Inertia Link for dynamic SSR mode.
+ *
+ * It automatically handles path localization based on the current locale.
+ *
+ * @param props - Component properties.
+ * @param props.href - Target URL path.
+ * @param props.skipLocalization - Whether to skip automatic localization (default: false).
+ * @returns A Vue VNode.
  *
  * @example
  * ```vue
@@ -66,7 +73,14 @@ export const StaticLink = defineComponent({
 })
 
 /**
- * LocaleSwitcher Component
+ * LocaleSwitcher Component.
+ *
+ * Renders an `<a>` tag that switches the site's locale while preserving
+ * the current path.
+ *
+ * @param props - Component properties.
+ * @param props.locale - The locale code to switch to (e.g., 'en', 'zh').
+ * @returns A Vue VNode.
  *
  * @example
  * ```vue

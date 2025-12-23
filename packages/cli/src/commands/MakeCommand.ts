@@ -6,6 +6,11 @@ import pc from 'picocolors'
 export class MakeCommand {
   private stubsPath: string
 
+  /**
+   * Create a new MakeCommand instance.
+   *
+   * Resolves the path to the stubs directory.
+   */
   constructor() {
     // Resolve stubs relative to the compiled CLI executable or source
     // In dev: src/commands/MakeCommand.ts -> ../../stubs
@@ -16,9 +21,11 @@ export class MakeCommand {
   }
 
   /**
-   * Run the generator
-   * @param type - The type of artifact (controller, model, etc)
-   * @param name - The user input name
+   * Run the generator.
+   *
+   * @param type - The type of artifact to create (e.g., 'controller', 'model').
+   * @param name - The user-provided name for the artifact.
+   * @returns A promise that resolves when the file is created.
    */
   async run(type: string, name: string) {
     try {
@@ -48,6 +55,12 @@ export class MakeCommand {
     }
   }
 
+  /**
+   * Read a stub file.
+   *
+   * @param filename - The name of the stub file.
+   * @returns The content of the stub file, or null if not found.
+   */
   private async readStub(filename: string): Promise<string | null> {
     try {
       const filePath = path.join(this.stubsPath, filename)
@@ -57,10 +70,26 @@ export class MakeCommand {
     }
   }
 
+  /**
+   * Replace variables in the stub content.
+   *
+   * @param content - The stub content.
+   * @param pascal - The PascalCase name.
+   * @param camel - The camelCase name.
+   * @returns The processed content with variables replaced.
+   */
   private replaceVariables(content: string, pascal: string, camel: string): string {
     return content.replace(/\{\{ Name \}\}/g, pascal).replace(/\{\{ name \}\}/g, camel)
   }
 
+  /**
+   * Resolve the target file path based on type and name.
+   *
+   * @param type - The artifact type.
+   * @param name - The normalized name object.
+   * @returns The absolute path to the target file.
+   * @throws {Error} If the type is unknown.
+   */
   private resolveTargetPath(type: string, name: NormalizedName): string {
     const cwd = process.cwd()
 
@@ -79,6 +108,13 @@ export class MakeCommand {
     return path.join(cwd, map[type])
   }
 
+  /**
+   * Normalize the input name.
+   *
+   * @param type - The artifact type.
+   * @param rawName - The raw input name.
+   * @returns An object containing PascalCase and camelCase versions of the name.
+   */
   private normalizeName(type: string, rawName: string): NormalizedName {
     const pascalRaw = this.toPascalCase(rawName)
 

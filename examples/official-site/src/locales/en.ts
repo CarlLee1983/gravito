@@ -1,6 +1,6 @@
 export default {
   site: {
-    title: 'Gravito Framework - The High-Performance Backend Ecosystem for Artisans',
+    title: 'Gravito Framework - The High-Performance Backend Ecosystem for Builders',
     description:
       'Superior development framework. Designed for enterprise scalability with native queuing, scheduling, and AI-optimized type contracts.',
     keywords:
@@ -26,8 +26,8 @@ export default {
     subtitle: 'Built for the Future',
     bun_title: 'Bun Runtime',
     bun_desc: 'Lightning fast runtime with native testing and bundling.',
-    hono_title: 'Gravito Core',
-    hono_desc:
+    engine_title: 'Gravito Core',
+    engine_desc:
       'Self-developed high-performance core with nano-overhead I/O and lifecycle management.',
     ts_title: 'TypeScript',
     ts_desc: 'First-class type safety across the entire framework.',
@@ -39,8 +39,9 @@ export default {
     sectionDesc:
       'Gravito uses a micro-kernel design. The initial 1.0 release features our most stable and powerful base modules.',
     kernel_title: 'PlanetCore',
-    kernel_subtitle: 'The Soul',
-    kernel_desc: 'Ultra-minimal core handling I/O coordination and lifecycle.',
+    kernel_subtitle: 'The Soul of Gravito',
+    kernel_desc:
+      'Our self-developed high-performance micro-kernel. Precision-engineered for rapid I/O coordination and lifecycle management.',
     inertia_title: 'Ion',
     inertia_subtitle: 'Full-stack Bridge (Inertia)',
     inertia_desc: 'Let the backend fully control UI, creating a seamless SPA-like experience.',
@@ -59,6 +60,40 @@ export default {
     i18n_desc:
       'Native locale detection and prefixed routing with type-safe translations, ready for global scaling.',
     getStarted: 'Get Started',
+  },
+  features_page: {
+    hero_title: 'Unleashing the Self-Developed Core',
+    hero_subtitle: 'Gravito Core (PlanetCore) is the genesis of all our innovation.',
+    core_deep_dive_title: 'Why Self-Developed?',
+    core_deep_dive_desc:
+      'Modern frameworks are powerful, but they often come with heavy runtime overhead and unpredictable external dependencies. Gravito Core was built to reclaim absolute control over performance.',
+    adv_title: 'Why It Matters',
+    adv1_title: 'Zero-Overhead Pre-compiled Routing',
+    adv1_desc:
+      'Unlike frameworks that perform dynamic regex matching at runtime, Gravito Core optimizes the routing tree into the simplest jump paths during boot.',
+    adv2_title: 'Engine Agnostic (Adapter Pattern)',
+    adv2_desc:
+      'The core is completely decoupled from the underlying HTTP engine. Swap Hono, Express, or Bun native modes without changing business logic.',
+    adv3_title: 'AI-First Contracts',
+    adv3_desc:
+      'Deep type inference and predictable code patterns aren’t accidents. They are architectural designs that help AI agents like Cursor or Windsurf "understand" your system.',
+    adv4_title: 'Supreme Lean & Zero Bloat',
+    adv4_desc:
+      'Maintain a tiny core footprint with zero forced dependencies. Experience true performance-on-demand: only the modules you ignite will consume resources.',
+    perf_title: 'Extreme Efficiency Paradigm',
+    perf_desc:
+      'Every microsecond matters. PlanetCore eliminates unnecessary abstraction layers, delivering raw performance to your application.',
+    perf_latency: 'Latency',
+    perf_boot: 'Boot Time',
+    perf_deps: 'External Deps',
+    ready_title: 'Ready to experience the gravity?',
+    choices_title: 'Our Technology DNA',
+    bun_title: 'Why Bun over Node.js?',
+    bun_desc:
+      'Bun is more than just a runtime; it’s an all-in-one engine built for the modern web. It offers startup speeds that Node.js simply can’t match, along with a native high-performance HTTP server. In Gravito, Bun reduces cold starts by over 10x while eliminating boilerplate configuration.',
+    ts_title: 'Why First-Class TypeScript?',
+    ts_desc:
+      'We believe "types are documentation." Static analysis and type inference are the cornerstones of scalable systems. In the era of AI-native development, clear type definitions allow AI agents to provide significantly more accurate assistance and code generation.',
   },
   benchmarks: {
     sectionBadge: 'Bio-Lab Benchmarks',
@@ -79,7 +114,7 @@ export default {
     integrity: 'Architectural Integrity',
   },
   footer: {
-    desc: 'The High-Performance Framework for Artisans. Powered by Gravito Core & Bun for extreme speed and simplicity.',
+    desc: 'The High-Performance Framework for Builders. Powered by Gravito Core & Bun for extreme speed and simplicity.',
     links: 'Links',
     home: 'Home',
     connect: 'Connect',

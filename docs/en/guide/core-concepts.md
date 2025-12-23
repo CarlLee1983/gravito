@@ -4,8 +4,8 @@ title: Gravito Core Concepts
 
 # Gravito Core Concepts
 
-> **"The High-Performance Framework for Artisans."**  
-> 為工匠打造的高效能框架
+> **"The High-Performance Framework for Builders."**  
+
 
 <div class="not-prose my-5 flex flex-wrap items-center gap-2">
   <a href="https://www.npmjs.com/package/gravito-core" target="_blank" rel="noreferrer">

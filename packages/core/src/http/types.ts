@@ -200,6 +200,11 @@ export interface GravitoRequest {
   arrayBuffer(): Promise<ArrayBuffer>
 
   /**
+   * Parse form data (urlencoded or multipart)
+   */
+  parseBody<T = unknown>(): Promise<T>
+
+  /**
    * Get the raw Request object
    */
   readonly raw: Request
@@ -406,7 +411,7 @@ export type GravitoHandler<V extends GravitoVariables = GravitoVariables> = (
 export type GravitoMiddleware<V extends GravitoVariables = GravitoVariables> = (
   ctx: GravitoContext<V>,
   next: GravitoNext
-) => Response | Promise<Response | undefined | undefined>
+) => Response | void | Promise<Response | void | undefined>
 
 /**
  * Error handler type

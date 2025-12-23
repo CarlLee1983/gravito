@@ -1,3 +1,5 @@
+import './augmentation'
+
 export type { Queueable } from '@gravito/stream'
 export { DevMailbox, type MailboxEntry } from './dev/DevMailbox'
 export { Mailable } from './Mailable'

@@ -1,6 +1,27 @@
 import { RobotsBuilder, type SeoConfig, SeoEngine, SeoRenderer } from '@gravito/luminosity'
 import type { Context, MiddlewareHandler } from 'hono'
 
+/**
+ * Create a Gravito SEO middleware for Hono.
+ *
+ * This middleware handles requests for `sitemap.xml` and `robots.txt`.
+ * It automatically initializes the SEO engine and renders the appropriate content
+ * based on the request path.
+ *
+ * @param config - The SEO configuration object.
+ * @returns A Hono middleware handler.
+ *
+ * @example
+ * ```typescript
+ * import { gravitoSeo } from '@gravito/luminosity-adapter-hono'
+ *
+ * app.use('*', gravitoSeo({
+ *   baseUrl: 'https://example.com',
+ *   mode: 'dynamic',
+ *   // ... other config
+ * }))
+ * ```
+ */
 export function gravitoSeo(config: SeoConfig): MiddlewareHandler {
   const engine = new SeoEngine(config)
 

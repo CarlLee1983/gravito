@@ -22,7 +22,9 @@ export interface FreezeContext {
 export const FREEZE_KEY: InjectionKey<FreezeContext> = Symbol('freeze')
 
 /**
- * Vue Plugin for SSG functionality
+ * Vue Plugin for SSG functionality.
+ *
+ * Configures the Freeze detector and provides it globally to your Vue application.
  *
  * @example
  * ```typescript
@@ -43,6 +45,12 @@ export const FREEZE_KEY: InjectionKey<FreezeContext> = Symbol('freeze')
  * ```
  */
 export const FreezePlugin = {
+  /**
+   * Plugin installation function.
+   *
+   * @param app - The Vue application instance.
+   * @param config - The Freeze configuration.
+   */
   install(app: App, config: FreezeConfig) {
     const detector = createDetector(config)
 
@@ -64,25 +72,50 @@ export const FreezePlugin = {
 }
 
 /**
- * Composable return type
+ * Composable return type.
  */
 export interface UseFreezeReturn {
   /** Whether currently in static site mode */
   isStatic: ComputedRef<boolean>
-  /** Current locale */
+  /** Current locale code */
   locale: ComputedRef<string>
-  /** Get localized path */
+  /**
+   * Get localized path for a given path and locale.
+   *
+   * @param path - The base path.
+   * @param locale - The target locale (defaults to current locale).
+   * @returns The localized path.
+   */
   getLocalizedPath: (path: string, locale?: string) => string
-  /** Switch locale while preserving path */
+  /**
+   * Switch locale while preserving the current URL path.
+   *
+   * @param newLocale - The locale to switch to.
+   * @returns The new localized path.
+   */
   switchLocale: (newLocale: string) => string
-  /** Get current path locale */
+  /**
+   * Extract locale from a URL path.
+   *
+   * @param path - The URL pathname.
+   * @returns The locale code.
+   */
   getLocaleFromPath: (path: string) => string
-  /** Navigate to a different locale */
+  /**
+   * Navigate to a different locale.
+   *
+   * @param newLocale - The locale to switch to.
+   */
   navigateToLocale: (newLocale: string) => void
 }
 
 /**
- * Composable for accessing SSG utilities
+ * Composable for accessing SSG utilities.
+ *
+ * Provides reactive access to environment status and locale-aware navigation functions.
+ *
+ * @returns An object containing SSG utilities.
+ * @throws {Error} If used outside of a Vue app with `FreezePlugin` installed.
  *
  * @example
  * ```vue
@@ -141,7 +174,12 @@ export function useFreeze(): UseFreezeReturn {
 }
 
 /**
- * Provide freeze context manually (for SSR or custom setups)
+ * Provide freeze context manually.
+ *
+ * Useful for SSR, testing, or custom setup scenarios where the plugin isn't used.
+ *
+ * @param config - The Freeze configuration.
+ * @returns The created `FreezeContext`.
  */
 export function provideFreeze(config: FreezeConfig): FreezeContext {
   const detector = createDetector(config)

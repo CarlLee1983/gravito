@@ -227,7 +227,19 @@ export abstract class Model<TAttributes = any> {
   }
 
   /**
-   * Find by ID (similar to Laravel's `find`).
+   * Find a model instance by its primary key.
+   *
+   * @template T - The model type.
+   * @param id - The primary key value to look up.
+   * @returns The model instance if found, or null.
+   *
+   * @example
+   * ```typescript
+   * const user = await User.find(1);
+   * if (user) {
+   *   console.log(user.name);
+   * }
+   * ```
    */
   static async find<T extends Model>(this: ModelStatic<T>, id: unknown): Promise<T | null> {
     const modelClass = this as unknown as typeof Model
@@ -242,7 +254,18 @@ export abstract class Model<TAttributes = any> {
   }
 
   /**
-   * Find a single record (similar to `where()->first()`).
+   * Find a single model instance matching a column-value pair.
+   * Equivalent to `query().where(column, value).first()`.
+   *
+   * @template T - The model type.
+   * @param column - The column name to filter by.
+   * @param value - The value to match.
+   * @returns The first matching model instance, or null.
+   *
+   * @example
+   * ```typescript
+   * const user = await User.where('email', 'john@example.com');
+   * ```
    */
   static async where<T extends Model>(
     this: ModelStatic<T>,

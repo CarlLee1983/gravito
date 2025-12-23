@@ -14,17 +14,28 @@ export interface I18nService {
   getLocale(): string
   t(key: string, replacements?: Record<string, string | number>): string
   has(key: string): boolean
+  // Create a request-scoped instance
+  clone(locale?: string): I18nService
 }
 
-export class I18nManager implements I18nService {
+/**
+ * Request-scoped I18n Instance
+ * Holds the state (locale) for a single request, but shares the heavy resources (translations)
+ */
+export class I18nInstance implements I18nService {
   private _locale: string
-  private translations: Record<string, Record<string, string>> = {}
 
-  constructor(private config: I18nConfig) {
-    this._locale = config.defaultLocale
-    if (config.translations) {
-      this.translations = config.translations
-    }
+  /**
+   * Create a new I18nInstance.
+   *
+   * @param manager - The I18nManager instance.
+   * @param initialLocale - The initial locale for this instance.
+   */
+  constructor(
+    private manager: I18nManager,
+    initialLocale: string
+  ) {
+    this._locale = initialLocale
   }
 
   get locale(): string {
@@ -35,18 +46,154 @@ export class I18nManager implements I18nService {
     this.setLocale(value)
   }
 
+  /**
+   * Set the current locale.
+   *
+   * @param locale - The locale to set.
+   */
   setLocale(locale: string) {
-    if (this.config.supportedLocales.includes(locale)) {
+    if (this.manager.getConfig().supportedLocales.includes(locale)) {
       this._locale = locale
     }
   }
 
+  /**
+   * Get the current locale.
+   *
+   * @returns The current locale string.
+   */
   getLocale(): string {
     return this._locale
   }
 
   /**
-   * Add translations for a locale
+   * Translate a key.
+   *
+   * @param key - The translation key (e.g., 'messages.welcome').
+   * @param replacements - Optional replacements for parameters in the translation string.
+   * @returns The translated string, or the key if not found.
+   */
+  t(key: string, replacements?: Record<string, string | number>): string {
+    return this.manager.translate(this._locale, key, replacements)
+  }
+
+  /**
+   * Check if a translation key exists.
+   *
+   * @param key - The translation key to check.
+   * @returns True if the key exists, false otherwise.
+   */
+  has(key: string): boolean {
+    return this.t(key) !== key
+  }
+
+  /**
+   * Clone the current instance with a potentially new locale.
+   *
+   * @param locale - Optional new locale for the cloned instance.
+   * @returns A new I18nInstance.
+   */
+  clone(locale?: string): I18nService {
+    return new I18nInstance(this.manager, locale || this._locale)
+  }
+}
+
+/**
+ * Global I18n Manager
+ * Holds shared configuration and translation resources
+ */
+export class I18nManager implements I18nService {
+  private translations: Record<string, Record<string, string>> = {}
+  // Default instance for global usage (e.g. CLI or background jobs)
+  private globalInstance: I18nInstance
+
+  /**
+   * Create a new I18nManager.
+   *
+   * @param config - The I18n configuration.
+   */
+  constructor(private config: I18nConfig) {
+    if (config.translations) {
+      this.translations = config.translations
+    }
+    this.globalInstance = new I18nInstance(this, config.defaultLocale)
+  }
+
+  // --- I18nService Implementation (Delegates to global instance) ---
+
+  get locale(): string {
+    return this.globalInstance.locale
+  }
+
+  set locale(value: string) {
+    this.globalInstance.locale = value
+  }
+
+  /**
+   * Set the global locale.
+   *
+   * @param locale - The locale to set.
+   */
+  setLocale(locale: string): void {
+    this.globalInstance.setLocale(locale)
+  }
+
+  /**
+   * Get the global locale.
+   *
+   * @returns The global locale string.
+   */
+  getLocale(): string {
+    return this.globalInstance.getLocale()
+  }
+
+  /**
+   * Translate a key using the global locale.
+   *
+   * @param key - The translation key.
+   * @param replacements - Optional replacements.
+   * @returns The translated string.
+   */
+  t(key: string, replacements?: Record<string, string | number>): string {
+    return this.globalInstance.t(key, replacements)
+  }
+
+  /**
+   * Check if a translation key exists in the global locale.
+   *
+   * @param key - The translation key.
+   * @returns True if found.
+   */
+  has(key: string): boolean {
+    return this.globalInstance.has(key)
+  }
+
+  /**
+   * Clone the global instance.
+   *
+   * @param locale - Optional locale for the clone.
+   * @returns A new I18nInstance.
+   */
+  clone(locale?: string): I18nService {
+    return new I18nInstance(this, locale || this.config.defaultLocale)
+  }
+
+  // --- Manager Internal API ---
+
+  /**
+   * Get the I18n configuration.
+   *
+   * @returns The configuration object.
+   */
+  getConfig(): I18nConfig {
+    return this.config
+  }
+
+  /**
+   * Add a resource bundle for a specific locale.
+   *
+   * @param locale - The locale string.
+   * @param translations - The translations object.
    */
   addResource(locale: string, translations: Record<string, string>) {
     this.translations[locale] = {
@@ -56,16 +203,11 @@ export class I18nManager implements I18nService {
   }
 
   /**
-   * Translation helper
-   * t('messages.welcome', { name: 'Carl' })
-   * Supports nested keys via dot notation: t('auth.errors.invalid')
+   * Internal translation logic used by instances
    */
-  t(key: string, replacements?: Record<string, string | number>): string {
+  translate(locale: string, key: string, replacements?: Record<string, string | number>): string {
     const keys = key.split('.')
-    let value: any = this.translations[this._locale]
-
-    // Fallback to default locale if not found in current locale?
-    // Implementation: Try current locale, then fallback.
+    let value: any = this.translations[locale]
 
     // 1. Try current locale
     for (const k of keys) {
@@ -78,7 +220,7 @@ export class I18nManager implements I18nService {
     }
 
     // 2. If not found, try fallback (defaultLocale)
-    if (value === undefined && this._locale !== this.config.defaultLocale) {
+    if (value === undefined && locale !== this.config.defaultLocale) {
       let fallbackValue: any = this.translations[this.config.defaultLocale]
       for (const k of keys) {
         if (fallbackValue && typeof fallbackValue === 'object' && k in fallbackValue) {
@@ -104,11 +246,6 @@ export class I18nManager implements I18nService {
 
     return value
   }
-
-  has(key: string): boolean {
-    // Simplistic check
-    return this.t(key) !== key
-  }
 }
 
 /**
@@ -118,21 +255,25 @@ export class I18nManager implements I18nService {
  * 1. Route Parameter (e.g. /:locale/foo) - Recommended for SEO
  * 2. Header (Accept-Language) - Recommended for APIs
  */
-export const localeMiddleware = (i18n: I18nService): MiddlewareHandler => {
+export const localeMiddleware = (i18nManager: I18nService): MiddlewareHandler => {
   return async (c, next) => {
-    // 1. Check for route param 'locale'
-    const paramLocale = c.req.param('locale')
-    if (paramLocale) {
-      i18n.setLocale(paramLocale)
+    // Determine initial locale
+    // Priority: 1. Route Param 2. Query ?lang= 3. Header 4. Default
+    let locale = c.req.param('locale') || c.req.query('lang')
+
+    if (!locale) {
+      const acceptLang = c.req.header('Accept-Language')
+      if (acceptLang) {
+        // Simple extraction: 'en-US,en;q=0.9' -> 'en-US'
+        locale = acceptLang.split(',')[0]?.trim()
+      }
     }
 
-    // 2. Inject into context (using 'any' for now, or augment PlanetCore variables later)
-    c.set('i18n', i18n)
+    // Clone a request-scoped instance
+    const i18n = i18nManager.clone(locale)
 
-    // 3. Share with View layer (if Orbit View is present)
-    // Assuming 'view' service might look at context variables or we explicitly pass it
-    // For Inertia, we might want to share it as a prop.
-    // This part depends on how the user sets up their detailed pipeline, but setting it in 'c' is the start.
+    // Inject into context
+    c.set('i18n', i18n)
 
     await next()
   }

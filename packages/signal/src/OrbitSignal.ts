@@ -18,6 +18,9 @@ export class OrbitSignal implements GravitoOrbit {
 
   /**
    * Get the singleton instance of OrbitSignal
+   *
+   * @returns The singleton instance of OrbitSignal.
+   * @throws {Error} If OrbitSignal has not been initialized.
    */
   static getInstance(): OrbitSignal {
     if (!OrbitSignal.instance) {
@@ -28,6 +31,9 @@ export class OrbitSignal implements GravitoOrbit {
 
   /**
    * Configure the OrbitSignal instance
+   *
+   * @param config - The mail configuration object.
+   * @returns A new instance of OrbitSignal.
    */
   static configure(config: MailConfig): OrbitSignal {
     // Basic validation
@@ -40,6 +46,8 @@ export class OrbitSignal implements GravitoOrbit {
 
   /**
    * Install the orbit into PlanetCore
+   *
+   * @param core - The PlanetCore instance.
    */
   install(core: PlanetCore): void {
     core.logger.info('[OrbitSignal] Initializing Mail Service (Exposed as: mail)')
@@ -72,6 +80,10 @@ export class OrbitSignal implements GravitoOrbit {
 
   /**
    * Send a mailable instance
+   *
+   * @param mailable - The mailable object to send.
+   * @returns A promise that resolves when the email is sent.
+   * @throws {Error} If the message is missing "from" or "to" addresses, or if no transport is configured.
    */
   async send(mailable: Mailable): Promise<void> {
     // 1. Build envelope and get configuration
@@ -116,6 +128,9 @@ export class OrbitSignal implements GravitoOrbit {
    *
    * Push a mailable into the queue for execution.
    * Requires OrbitStream to be installed and available in the context.
+   *
+   * @param mailable - The mailable object to queue.
+   * @returns A promise that resolves when the job is pushed to the queue or sent immediately if no queue service is found.
    */
   async queue(mailable: Mailable): Promise<void> {
     // Try to get queue service from context.
@@ -133,27 +148,6 @@ export class OrbitSignal implements GravitoOrbit {
         '[OrbitSignal] Queue service not available, sending immediately. Install OrbitStream to enable queuing.'
       )
       await this.send(mailable)
-    }
-  }
-}
-
-// Module augmentation for Hono (backward compatibility)
-declare module 'hono' {
-  interface ContextVariableMap {
-    mail: {
-      send: (mailable: Mailable) => Promise<void>
-      queue: (mailable: Mailable) => Promise<void>
-    }
-  }
-}
-
-// Module augmentation for GravitoVariables (new abstraction)
-declare module 'gravito-core' {
-  interface GravitoVariables {
-    /** Mail service for sending emails */
-    mail?: {
-      send: (mailable: Mailable) => Promise<void>
-      queue: (mailable: Mailable) => Promise<void>
     }
   }
 }

@@ -86,6 +86,10 @@ class HonoRequestWrapper implements GravitoRequest {
     return this.honoCtx.req.arrayBuffer()
   }
 
+  async parseBody<T = unknown>(): Promise<T> {
+    return this.honoCtx.req.parseBody() as Promise<T>
+  }
+
   get raw(): Request {
     return this.honoCtx.req.raw
   }

@@ -34,7 +34,13 @@ export interface FreezeProviderProps {
 }
 
 /**
- * Provider component for SSG functionality
+ * Provider component for SSG functionality.
+ *
+ * Wraps your application to provide Freeze configuration and detector
+ * instances through context.
+ *
+ * @param props - Component properties.
+ * @returns A React element provider.
  *
  * @example
  * ```tsx
@@ -66,8 +72,12 @@ export function FreezeProvider({ config, locale, children }: FreezeProviderProps
 }
 
 /**
- * Internal hook to get context value
- * Throws if used outside FreezeProvider
+ * Internal hook to get context value.
+ *
+ * Throws an error if used outside of a `FreezeProvider`.
+ *
+ * @returns The current `FreezeContextValue`.
+ * @throws {Error} If used outside of a `FreezeProvider`.
  */
 export function useFreezeContext(): FreezeContextValue {
   const context = useContext(FreezeContext)

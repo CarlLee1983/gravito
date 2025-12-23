@@ -146,14 +146,37 @@ export class DB {
   // ============================================================================
 
   /**
-   * Create a query builder for a table
+   * Begin a fluent query against a database table.
+   *
+   * @template T - The type of the record (defaults to Record<string, unknown>).
+   * @param tableName - The name of the table to query.
+   * @returns A new QueryBuilder instance for the specified table.
+   *
+   * @example
+   * ```typescript
+   * const users = await DB.table('users')
+   *   .where('status', 'active')
+   *   .orderBy('created_at', 'desc')
+   *   .get();
+   * ```
    */
   static table<T = Record<string, unknown>>(tableName: string): QueryBuilderContract<T> {
     return DB.connection().table<T>(tableName)
   }
 
   /**
-   * Execute raw SQL
+   * Execute a raw SQL query against the database.
+   *
+   * @template T - The expected return type of the rows.
+   * @param sql - The raw SQL string (can contain placeholders like $1 or ?).
+   * @param bindings - Array of values to bind to the placeholders.
+   * @returns The raw query result containing rows and metadata.
+   *
+   * @example
+   * ```typescript
+   * const result = await DB.raw('SELECT * FROM users WHERE id = ?', [1]);
+   * const user = result.rows[0];
+   * ```
    */
   static async raw<T = Record<string, unknown>>(
     sql: string,
@@ -163,7 +186,8 @@ export class DB {
   }
 
   /**
-   * Create a raw expression
+   * Create a raw SQL expression that will not be escaped.
+   * Useful for complex `where` clauses or updates.
    */
   static raw_expr = raw
 
@@ -172,7 +196,23 @@ export class DB {
   // ============================================================================
 
   /**
-   * Run a callback within a transaction
+   * Execute a callback within a database transaction.
+   *
+   * If the callback throws an exception, the transaction is automatically rolled back.
+   * If the callback returns successfully, the transaction is committed.
+   *
+   * @template T - The return type of the callback.
+   * @param callback - The function to execute within the transaction. Receives a transaction-scoped connection.
+   * @param connectionName - Optional connection name to use.
+   * @returns The value returned by the callback.
+   *
+   * @example
+   * ```typescript
+   * await DB.transaction(async (trx) => {
+   *   await trx.table('accounts').where('id', 1).decrement('balance', 100);
+   *   await trx.table('accounts').where('id', 2).increment('balance', 100);
+   * });
+   * ```
    */
   static async transaction<T>(
     callback: (connection: ConnectionContract) => Promise<T>,

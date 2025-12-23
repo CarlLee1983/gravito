@@ -24,8 +24,9 @@ export class DevServer {
     // 2. Single Email Preview
     router.get(`${prefix}/:id`, (ctx) => {
       const id = ctx.req.param('id')
-      const entry = this.mailbox.get(id)
+      if (!id) return ctx.text('Bad Request', 400)
 
+      const entry = this.mailbox.get(id)
       if (!entry) {
         return ctx.text('Email not found', 404)
       }
@@ -35,6 +36,8 @@ export class DevServer {
     // 3. Iframe Content: HTML
     router.get(`${prefix}/:id/html`, (ctx) => {
       const id = ctx.req.param('id')
+      if (!id) return ctx.text('Bad Request', 400)
+
       const entry = this.mailbox.get(id)
       if (!entry) {
         return ctx.text('Not found', 404)
@@ -45,18 +48,22 @@ export class DevServer {
     // 4. Iframe Content: Text
     router.get(`${prefix}/:id/text`, (ctx) => {
       const id = ctx.req.param('id')
+      if (!id) return ctx.text('Bad Request', 400)
+
       const entry = this.mailbox.get(id)
       if (!entry) {
         return ctx.text('Not found', 404)
       }
-      return ctx.text(entry.text || 'No text content', 200, {
-        'Content-Type': 'text/plain; charset=utf-8',
-      })
+
+      ctx.header('Content-Type', 'text/plain; charset=utf-8')
+      return ctx.text(entry.text || 'No text content', 200)
     })
 
     // 5. Raw JSON
     router.get(`${prefix}/:id/raw`, (ctx) => {
       const id = ctx.req.param('id')
+      if (!id) return ctx.json({ error: 'Bad Request' }, 400)
+
       const entry = this.mailbox.get(id)
       if (!entry) {
         return ctx.json({ error: 'Not found' }, 404)
@@ -66,12 +73,14 @@ export class DevServer {
 
     // 6. API: Delete Single
     router.get(`${prefix}/:id/delete`, (ctx) => {
-      // Using GET for simple links/redirects without JS fetch if needed, but better use fetch from UI
-      // Actually let's accept POST or DELETE
       return ctx.text('Method not allowed', 405)
     })
+
     router.delete(`${prefix}/:id`, (ctx) => {
-      const success = this.mailbox.delete(ctx.req.param('id'))
+      const id = ctx.req.param('id')
+      if (!id) return ctx.json({ success: false, error: 'Bad Request' }, 400)
+
+      const success = this.mailbox.delete(id)
       return ctx.json({ success })
     })
 
@@ -80,9 +89,6 @@ export class DevServer {
       this.mailbox.clear()
       return ctx.json({ success: true })
     })
-
-    // Redirect /__mail/ to /__mail
-    // core.router.get(prefix + '/', (c) => c.redirect(prefix));
 
     core.logger.info(`[OrbitSignal] Dev Mailbox available at ${prefix}`)
   }

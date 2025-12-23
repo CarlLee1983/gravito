@@ -1,0 +1,68 @@
+{
+    "name": "@gravito/flux",
+    "version": "1.0.0-alpha.1",
+    "description": "Platform-agnostic workflow engine for Gravito",
+    "type": "module",
+    "main": "./dist/node/index.cjs",
+    "module": "./dist/node/index.mjs",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "bun": {
+                "import": "./dist/index.js",
+                "types": "./dist/index.d.ts"
+            },
+            "node": {
+                "import": "./dist/node/index.mjs",
+                "require": "./dist/node/index.cjs",
+                "types": "./dist/index.node.d.ts"
+            },
+            "import": "./dist/node/index.mjs",
+            "require": "./dist/node/index.cjs",
+            "types": "./dist/index.d.ts"
+        },
+        "./bun": {
+            "bun": {
+                "import": "./dist/bun.js",
+                "types": "./dist/bun.d.ts"
+            }
+        }
+    },
+    "files": [
+        "dist",
+        "README.md"
+    ],
+    "scripts": {
+        "build": "bun run build.ts",
+        "typecheck": "tsc --noEmit",
+        "test": "bun test"
+    },
+    "peerDependencies": {
+        "gravito-core": "^1.0.0-beta.1"
+    },
+    "peerDependenciesMeta": {
+        "gravito-core": {
+            "optional": true
+        }
+    },
+    "devDependencies": {
+        "bun-types": "latest",
+        "gravito-core": "workspace:*",
+        "typescript": "^5.0.0"
+    },
+    "keywords": [
+        "gravito",
+        "workflow",
+        "state-machine",
+        "pipeline",
+        "bun",
+        "node"
+    ],
+    "author": "Gravito Team",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/gravito-framework/gravito.git",
+        "directory": "packages/flux"
+    }
+}

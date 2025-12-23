@@ -36,3 +36,19 @@ export class Expression {
 export function raw(sql: string, bindings: unknown[] = []): Expression {
   return new Expression(sql, bindings)
 }
+
+/**
+ * Tagged template literal for safe raw SQL
+ * @example sql`SELECT * FROM users WHERE id = ${userId}`
+ */
+export function sql(strings: TemplateStringsArray, ...values: unknown[]): Expression {
+  let sqlString = strings[0] ?? ''
+  const bindings: unknown[] = []
+
+  for (let i = 0; i < values.length; i++) {
+    sqlString += `?${strings[i + 1] ?? ''}`
+    bindings.push(values[i])
+  }
+
+  return new Expression(sqlString, bindings)
+}

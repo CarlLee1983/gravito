@@ -29,7 +29,11 @@ export class MongoClient implements MongoClientContract {
   // ============================================================================
 
   /**
-   * Connect to MongoDB
+   * Connect to the MongoDB server.
+   *
+   * Initializes the MongoDB client and establishes a connection.
+   *
+   * @returns A promise that resolves when connected.
    */
   async connect(): Promise<void> {
     if (this.connected) {
@@ -60,7 +64,11 @@ export class MongoClient implements MongoClientContract {
   }
 
   /**
-   * Disconnect from MongoDB
+   * Disconnect from the MongoDB server.
+   *
+   * Closes the connection and resets the client state.
+   *
+   * @returns A promise that resolves when disconnected.
    */
   async disconnect(): Promise<void> {
     if (this.client) {
@@ -72,14 +80,19 @@ export class MongoClient implements MongoClientContract {
   }
 
   /**
-   * Check if connected
+   * Check if the client is connected.
+   *
+   * @returns True if connected, false otherwise.
    */
   isConnected(): boolean {
     return this.connected && this.client !== null
   }
 
   /**
-   * Get a database instance
+   * Get a database instance.
+   *
+   * @param name - The name of the database (optional). Defaults to the connected database.
+   * @returns The MongoDatabaseContract instance.
    */
   database(name?: string): MongoDatabaseContract {
     const client = this.getClient()
@@ -88,7 +101,10 @@ export class MongoClient implements MongoClientContract {
   }
 
   /**
-   * Get a collection with query builder
+   * Get a collection with query builder.
+   *
+   * @param name - The name of the collection.
+   * @returns A MongoCollectionContract instance.
    */
   collection<T = Document>(name: string): MongoCollectionContract<T> {
     const db = this.getDatabase()

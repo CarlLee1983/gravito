@@ -39,4 +39,4 @@ dist-static/
 test-create-app/
 
 # Build artifacts
-**/ion/
+

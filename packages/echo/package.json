@@ -1,0 +1,51 @@
+{
+  "name": "@gravito/echo",
+  "version": "1.0.0-alpha.2",
+  "description": "Enterprise-grade webhook handling for Gravito. Secure receiving and reliable sending.",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "bun run build.ts",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "gravito",
+    "webhook",
+    "stripe",
+    "github",
+    "hmac",
+    "signature"
+  ],
+  "author": "Carl Lee <carllee0520@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gravito-framework/gravito.git",
+    "directory": "packages/echo"
+  },
+  "homepage": "https://github.com/gravito-framework/gravito#readme",
+  "peerDependencies": {
+    "gravito-core": "1.0.0-beta.2"
+  },
+  "devDependencies": {
+    "bun-types": "latest",
+    "typescript": "^5.9.3"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

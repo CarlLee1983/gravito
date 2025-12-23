@@ -8,7 +8,7 @@
     "start": "bun run src/index.ts"
   },
   "dependencies": {
-    "@gravito/client": "workspace:*",
+    "@gravito/beam": "workspace:*",
     "@gravito/stasis": "workspace:*",
     "@gravito/db": "workspace:*",
     "@gravito/ion": "workspace:*",
@@ -22,8 +22,8 @@
     "drizzle-orm": "^0.45.1",
     "gravito-core": "workspace:*",
     "hono": "^4.0.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@types/react": "^19.2.7",

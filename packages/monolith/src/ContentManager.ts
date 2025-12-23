@@ -21,20 +21,31 @@ export class ContentManager {
   // Simple memory cache: collection:locale:slug -> ContentItem
   private cache = new Map<string, ContentItem>()
 
+  /**
+   * Create a new ContentManager instance.
+   *
+   * @param rootDir - The root directory of the application.
+   */
   constructor(private rootDir: string) {}
 
   /**
-   * Register a new content collection
+   * Register a new content collection.
+   *
+   * @param name - The name of the collection.
+   * @param config - The collection configuration.
    */
   defineCollection(name: string, config: CollectionConfig) {
     this.collections.set(name, config)
   }
 
   /**
-   * Find a single content item
-   * @param collectionName The collection name (e.g. 'docs')
-   * @param slug The file slug (e.g. 'installation')
-   * @param locale The locale (e.g. 'en')
+   * Find a single content item.
+   *
+   * @param collectionName - The collection name (e.g. 'docs').
+   * @param slug - The file slug (e.g. 'installation').
+   * @param locale - The locale (e.g. 'en'). Defaults to 'en'.
+   * @returns A promise resolving to the ContentItem or null if not found.
+   * @throws {Error} If the collection is not defined.
    */
   async find(collectionName: string, slug: string, locale = 'en'): Promise<ContentItem | null> {
     const config = this.collections.get(collectionName)
@@ -81,8 +92,13 @@ export class ContentManager {
   }
 
   /**
-   * List all items in a collection for a locale
-   * Useful for generating sitemaps or index pages
+   * List all items in a collection for a locale.
+   * Useful for generating sitemaps or index pages.
+   *
+   * @param collectionName - The collection name.
+   * @param locale - The locale. Defaults to 'en'.
+   * @returns A promise resolving to an array of ContentItems.
+   * @throws {Error} If the collection is not defined.
    */
   async list(collectionName: string, locale = 'en'): Promise<ContentItem[]> {
     const config = this.collections.get(collectionName)

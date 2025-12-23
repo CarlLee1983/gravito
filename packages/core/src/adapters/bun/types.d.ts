@@ -2,7 +2,7 @@
  * Route Handler type (simplified for internal use)
  * In the full framework this will align with GravitoHandler
  */
-export type RouteHandler = Function
+export type RouteHandler = (...args: never[]) => unknown
 /**
  * Route Match Result
  */

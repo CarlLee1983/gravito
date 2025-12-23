@@ -10,9 +10,11 @@ export type ValidationSource = 'json' | 'query' | 'param' | 'form'
 /**
  * Create a validation middleware.
  *
+ * Validates the request data against the provided TypeBox schema.
+ *
  * @param source - Validation source (json, query, param, form)
  * @param schema - TypeBox Schema
- * @returns Hono middleware
+ * @returns Hono middleware handler that validates the request.
  */
 export function validate<
   T extends TSchema,

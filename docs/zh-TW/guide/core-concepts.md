@@ -4,8 +4,7 @@ title: Gravito 核心概念
 
 # Gravito 核心概念
 
-> **"The High-Performance Framework for Artisans."**
-> 為工匠打造的高效能框架
+> **"為創造者打造的高效能框架"**
 
 <div class="not-prose my-5 flex flex-wrap items-center gap-2">
   <a href="https://www.npmjs.com/package/gravito-core" target="_blank" rel="noreferrer">

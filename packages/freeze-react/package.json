@@ -1,56 +1,56 @@
 {
-    "name": "@gravito/freeze-react",
-    "version": "0.1.0-beta.1",
-    "description": "React adapter for @gravito/freeze SSG module",
-    "type": "module",
-    "main": "./dist/index.js",
-    "module": "./dist/index.js",
-    "types": "./dist/index.d.ts",
-    "exports": {
-        ".": {
-            "types": "./dist/index.d.ts",
-            "import": "./dist/index.js"
-        }
-    },
-    "files": [
-        "dist"
-    ],
-    "scripts": {
-        "build": "tsup",
-        "dev": "tsup --watch",
-        "typecheck": "tsc --noEmit",
-        "test": "bun test"
-    },
-    "keywords": [
-        "gravito",
-        "ssg",
-        "react",
-        "static-site",
-        "inertia"
-    ],
-    "author": "Carl Lee",
-    "license": "MIT",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/gravito-framework/gravito.git",
-        "directory": "packages/freeze-react"
-    },
-    "peerDependencies": {
-        "react": ">=18.0.0",
-        "@inertiajs/react": ">=1.0.0"
-    },
-    "peerDependenciesMeta": {
-        "@inertiajs/react": {
-            "optional": true
-        }
-    },
-    "dependencies": {
-        "@gravito/freeze": "workspace:*"
-    },
-    "devDependencies": {
-        "@types/react": "^18.0.0",
-        "react": "^18.0.0",
-        "tsup": "^8.0.0",
-        "typescript": "^5.7.0"
+  "name": "@gravito/freeze-react",
+  "version": "1.0.0-alpha.2",
+  "description": "React adapter for @gravito/freeze SSG module",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "keywords": [
+    "gravito",
+    "ssg",
+    "react",
+    "static-site",
+    "inertia"
+  ],
+  "author": "Carl Lee",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gravito-framework/gravito.git",
+    "directory": "packages/freeze-react"
+  },
+  "peerDependencies": {
+    "react": ">=19.0.0",
+    "@inertiajs/react": ">=1.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@inertiajs/react": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "@gravito/freeze": "1.0.0-alpha.2"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "react": "^19.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.7.0"
+  }
 }

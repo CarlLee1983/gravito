@@ -15,10 +15,10 @@ import { InertiaService } from './InertiaService'
 export * from './InertiaService'
 
 // Module augmentation for type-safe context injection
-// This extends Hono's ContextVariableMap for backward compat
-declare module 'hono' {
-  interface ContextVariableMap {
-    inertia: InertiaService
+declare module 'gravito-core' {
+  interface GravitoVariables {
+    /** Inertia.js service for SPA rendering */
+    inertia?: InertiaService
   }
 }
 

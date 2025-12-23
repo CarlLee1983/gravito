@@ -76,8 +76,8 @@ export class BunNativeAdapter implements HttpAdapter {
 
       const res = await subAdapter.fetch(newReq)
       // Ensure response is stored in context for middleware chain
-      if (ctx instanceof BunContext) {
-        ctx.res = res
+      if ('res' in ctx) {
+        ;(ctx as any).res = res
       }
       return res
     })
@@ -164,8 +164,8 @@ export class BunNativeAdapter implements HttpAdapter {
       const result = await fn(ctx, async () => {
         const res = await dispatch(i + 1)
         // If next() returned a response, attach it to context so subsequent c.header() calls work
-        if (res && (ctx as BunContext).res !== res) {
-          ;(ctx as BunContext).res = res
+        if (res && (ctx as any).res !== res) {
+          ;(ctx as any).res = res
         }
         return res
       })
@@ -183,8 +183,8 @@ export class BunNativeAdapter implements HttpAdapter {
     }
 
     // Check if context has stored response (from middleware/handler calls to ctx.json() etc)
-    if ((ctx as BunContext).res) {
-      return (ctx as BunContext).res!
+    if ((ctx as any).res) {
+      return (ctx as any).res!
     }
 
     // If no response returned and no notFoundHandler handled it:
