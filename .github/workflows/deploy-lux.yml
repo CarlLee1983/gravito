@@ -1,0 +1,60 @@
+name: Deploy Luminosity Site (lux.gravito.dev)
+
+on:
+  push:
+    branches:
+      - feature/sitemap-site # 暫時設為您的 feature branch，合併後請改為 main
+    paths:
+      - 'examples/luminosity-site/**'
+      - 'packages/luminosity/**'
+      - '.github/workflows/deploy-lux.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install Dependencies
+        run: bun install
+        env:
+          SKIP_INSTALL_SIMPLE_GIT_HOOKS: 1
+
+      - name: Build All Packages
+        run: bun run build
+
+      - name: Build Luminosity Site
+        working-directory: examples/luminosity-site
+        env:
+          NODE_ENV: production
+        run: |
+          echo "📦 Building client assets..."
+          bun run build:client
+          echo "📦 Building static site..."
+          bun run build:static
+          
+          # Create CNAME file for custom domain
+          echo "lux.gravito.dev" > dist-static/CNAME
+          echo "✅ CNAME created"
+
+      - name: Deploy to External Repository
+        uses: cpina/github-action-push-to-another-repository@main
+        env:
+          API_TOKEN_GITHUB: ${{ secrets.DEPLOY_TOKEN }}
+        with:
+          source-directory: 'examples/luminosity-site/dist-static'
+          destination-github-username: 'gravito-framework'
+          destination-repository-name: 'luminosity-site-dist'
+          user-email: 'carllee0520@gmail.com'
+          target-branch: 'main'
+          commit-message: 'deploy: update lux site from gravito-core'

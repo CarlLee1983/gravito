@@ -92,5 +92,31 @@ export async function bootstrap(options: { port?: number } = {}) {
       defineRoutes(zh)
     })
 
+  // SEO Routes (Serve from dist-static if available)
+  core.router.get('/sitemap.xml', async (c: any) => {
+    try {
+      // Lazy load fs/path to allow bootstrapping in various envs
+      const { readFile } = await import('node:fs/promises')
+      const { join } = await import('node:path')
+      const content = await readFile(join(process.cwd(), 'dist-static', 'sitemap.xml'), 'utf-8')
+      c.header('Content-Type', 'application/xml')
+      return c.body(content)
+    } catch (e) {
+      return c.text('Sitemap not found. Please run "bun run build:static" first.', 404)
+    }
+  })
+
+  core.router.get('/robots.txt', async (c: any) => {
+    try {
+      const { readFile } = await import('node:fs/promises')
+      const { join } = await import('node:path')
+      const content = await readFile(join(process.cwd(), 'dist-static', 'robots.txt'), 'utf-8')
+      c.header('Content-Type', 'text/plain')
+      return c.body(content)
+    } catch (e) {
+      return c.text('Robots.txt not found. Please run "bun run build:static" first.', 404)
+    }
+  })
+
   return core
 }

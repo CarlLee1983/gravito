@@ -1,21 +1,27 @@
 # Introduction
 
-Luminosity is the high-performance LSM-Tree engine designed for the next generation of data-intensive applications. Built on top of the Gravito ecosystem, it provides unparalleled speed, reliability, and developer experience.
+Luminosity is the intelligent **SmartMap Engine** for modern, data-intensive web applications. It automates your SEO strategy by managing sitemaps, robots.txt, and search engine pings with unparalleled precision.
 
 ## Why Luminosity?
 
-Luminosity was born out of the need for a storage engine that could handle massive write throughput while maintaining low-latency read performance. Traditional B-Trees often struggle with heavy write workloads due to fragmentation and random I/O. 
+Sitemaps are often an afterthought in web development. As your site grows to thousands or millions of pages, traditional sitemap generation becomes a bottleneck—slow, resource-heavy, and often stale.
 
-Luminosity uses a Log-Structured Merge-Tree (LSM) architecture to ensure all writes are sequential, which is significantly faster on modern SSDs and NVMe drives.
+Luminosity solves this with a revolutionary approach: **Incremental Management**.
+
+Instead of regenerating your entire sitemap from scratch every time, Luminosity treats your sitemap as a database of URLs. It tracks changes, handles priorities, and "compacts" updates efficiently, ensuring your sitemap is always fresh without killing your server.
 
 ## Key Features
 
-- **Sequential Writes**: Maximize disk throughput with log-structured storage.
-- **Background Compaction**: Automatically optimize storage layout without blocking operations.
-- **Bloom Filters**: Fast membership tests to avoid unnecessary disk I/O.
-- **Tiered Compaction Strategy**: Balance between write amplification and read performance.
-- **Enterprise Ready**: Full ACID compliance and snapshot isolation.
+- **Streaming Architecture**: Handles millions of URLs with minimal memory footprint.
+- **Smart Governance**: Built-in lifecycle management (Create, Update, Delete, Warm).
+- **LSM-Tree Inspired**: Utilizes Log-Structured Merge patterns for high-throughput URL ingestion.
+- **Automated Compliance**: Automatic `robots.txt` generation and sitemap index splitting (50k limit).
+- **Framework Agnostic**: Works perfectly with Gravito, Hono, Express, or any Node.js/Bun framework.
 
-## Architectural Strength
+## CLI First
 
-Luminosity is not just a library; it's a piece of high-precision engineering. By leveraging Bun's native performance and the Gravito framework's modularity, we've created a storage solution that is both incredibly fast and remarkably easy to use.
+Luminosity is designed to be controlled via its powerful CLI, `lux`. You can inspect your sitemap stats, trigger compaction, or warm up your cache directly from your terminal.
+
+```bash
+bun lux stats
+```

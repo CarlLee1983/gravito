@@ -6,6 +6,13 @@
     "isEntry": true,
     "css": [
       "assets/app.css"
+    ],
+    "assets": [
+      "assets/hero-graphic.png"
     ]
+  },
+  "assets/hero-graphic.png": {
+    "file": "assets/hero-graphic.png",
+    "src": "assets/hero-graphic.png"
   }
 }

@@ -10,7 +10,7 @@ export default defineConfig({
     emptyOutDir: true,
     manifest: true,
     rollupOptions: {
-      input: 'app.ts',
+      input: path.resolve(__dirname, 'src/client/app.ts'),
       output: {
         entryFileNames: 'assets/[name].js',
         chunkFileNames: 'assets/[name].js',

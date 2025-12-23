@@ -50,7 +50,88 @@ async function build() {
     }
   }
 
-  // 4. Copy static assets
+  // 4. Generate SEO Assets (Luminosity)
+  console.log('🌟 Generating Sitemap & Robots via Luminosity...')
+
+  // Dynamic import to avoid earlier execution issues if any
+  const { SeoEngine, SeoRenderer, RobotsBuilder } = await import('@gravito/luminosity')
+  const { DocsService } = await import('./src/services/DocsService')
+
+  const baseUrl = 'https://lux.gravito.dev'
+
+  // Initialize Engine
+  const engine = new SeoEngine({
+    mode: 'incremental',
+    baseUrl,
+    resolvers: [],
+    branding: { enabled: true, watermark: 'Powered by Gravito Luminosity' },
+    incremental: {
+      logDir: join(process.cwd(), '.luminosity'),
+      compactInterval: 0, // Disable auto compaction for build script
+    },
+  })
+
+  await engine.init()
+  const strategy = engine.getStrategy()
+
+  // Add Static Routes
+  const staticRoutes = ['/', '/features']
+  for (const r of staticRoutes) {
+    await strategy.add({
+      url: baseUrl + r,
+      lastmod: new Date(),
+      changefreq: 'daily',
+      priority: r === '/' ? 1.0 : 0.8,
+    })
+  }
+
+  // Add Docs Routes
+  const locales = ['en', 'zh']
+  for (const locale of locales) {
+    const sections = await DocsService.getSidebar(locale)
+    for (const section of sections) {
+      for (const item of section.items) {
+        const fullUrl = baseUrl + item.href
+        await strategy.add({
+          url: fullUrl,
+          lastmod: new Date(),
+          changefreq: 'weekly',
+          priority: 0.7,
+        })
+      }
+    }
+  }
+
+  // Get Entries & Render
+  const entries = await strategy.getEntries()
+  const renderer = new SeoRenderer({
+    baseUrl,
+    branding: { enabled: true },
+    resolvers: [],
+    mode: 'incremental',
+  })
+  const sitemapXml = renderer.render(entries, baseUrl + '/sitemap.xml')
+
+  await writeFile(join(outputDir, 'sitemap.xml'), sitemapXml)
+  console.log('✅ Generated sitemap.xml')
+
+  // Generate Robots.txt
+  const robotsConfig = {
+    rules: [
+      {
+        userAgent: '*',
+        allow: ['/'],
+        disallow: [],
+      },
+    ],
+  }
+
+  const robots = new RobotsBuilder(robotsConfig, baseUrl).build()
+
+  await writeFile(join(outputDir, 'robots.txt'), robots)
+  console.log('✅ Generated robots.txt')
+
+  // 5. Copy static assets
   console.log('📦 Copying static assets...')
   try {
     const staticDir = join(process.cwd(), 'static')

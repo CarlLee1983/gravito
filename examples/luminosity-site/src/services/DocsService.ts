@@ -1,4 +1,4 @@
-import { readFile } from 'node:fs/promises'
+import { readdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import matter from 'gray-matter'
 import { marked } from 'marked'
@@ -71,16 +71,41 @@ class DocsServiceImpl {
     }
   }
 
-  static getSidebar(): SidebarItem[] {
-    return [
-      {
-        title: 'Guide',
-        path: '#',
-        children: [
-          { title: 'Introduction', path: '/docs/introduction' },
-          { title: 'Getting Started', path: '/docs/getting-started' },
-        ],
-      },
-    ]
+  async getSidebar(locale = 'en'): Promise<SidebarSection[]> {
+    const docsDir = join(DOCS_ROOT, locale)
+
+    try {
+      const entries = await readdir(docsDir, { withFileTypes: true })
+      const pages: { title: string; href: string; order: number }[] = []
+
+      for (const entry of entries) {
+        if (entry.isFile() && entry.name.endsWith('.md')) {
+          const filePath = join(docsDir, entry.name)
+          const content = await readFile(filePath, 'utf-8')
+          const { data } = matter(content)
+          const slug = entry.name.replace('.md', '')
+
+          pages.push({
+            title: (data.title as string) || slug,
+            href: `/${locale === 'en' ? '' : locale + '/'}docs/${slug}`,
+            order: (data.order as number) || 999,
+          })
+        }
+      }
+
+      pages.sort((a, b) => a.order - b.order)
+
+      return [
+        {
+          title: locale === 'zh' ? '指南' : 'Guide',
+          items: pages.map(({ title, href }) => ({ title, href })),
+        },
+      ]
+    } catch (e) {
+      console.error(`Error generating sidebar for ${locale}:`, e)
+      return []
+    }
   }
 }
+
+export const DocsService = new DocsServiceImpl()

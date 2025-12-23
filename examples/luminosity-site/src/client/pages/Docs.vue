@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3'
+import { Head, Link } from '@inertiajs/vue3'
 import { ChevronRight, Clock, Clock3, Edit2, Github, MapPin } from 'lucide-vue-next'
 import Layout from '../components/Layout.vue'
 
 interface SidebarItem {
   title: string
-  path: string
+  href: string
   children?: SidebarItem[]
 }
 
@@ -53,9 +53,9 @@ defineProps<{
               {{ section.title }}
             </h3>
             <ul class="space-y-1 ml-1">
-              <li v-for="item in section.children" :key="item.path">
-                <a
-                  :href="item.path"
+              <li v-for="item in section.items" :key="item.href">
+                <Link
+                  :href="item.href"
                   :class="[
                     'block text-sm py-3 px-6 transition-all duration-300 relative group font-medium rounded-xl border border-transparent',
                     currentPath === item.path
@@ -69,7 +69,7 @@ defineProps<{
                       {{ item.title }}
                     </span>
                   </div>
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
