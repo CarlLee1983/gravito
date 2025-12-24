@@ -1,0 +1,64 @@
+services:
+  benchmark-runner:
+    build: 
+      context: ../..
+      dockerfile: examples/atlas-benchmark/Dockerfile
+    volumes:
+      - ../..:/app
+    working_dir: /app/examples/atlas-benchmark
+    command: bun run src/index.ts
+    environment:
+      - DB_HOST_PG=postgres
+      - DB_HOST_MYSQL=mysql
+      - DB_HOST_MARIA=mariadb
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+      mariadb:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: gravito
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: atlas_bench
+    ports:
+      - "54320:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gravito"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: atlas_bench
+      MYSQL_USER: gravito
+      MYSQL_PASSWORD: password
+    ports:
+      - "33060:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  mariadb:
+    image: mariadb:latest
+    environment:
+      MARIADB_ROOT_PASSWORD: password
+      MARIADB_DATABASE: atlas_bench
+      MARIADB_USER: gravito
+      MARIADB_PASSWORD: password
+    ports:
+      - "33061:3306"
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 10

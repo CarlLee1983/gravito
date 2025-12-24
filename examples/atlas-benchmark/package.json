@@ -1,0 +1,21 @@
+{
+  "name": "atlas-benchmark",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "bun run src/index.ts",
+    "test:memory": "bun run src/scenarios/memory.ts",
+    "test:features": "bun run src/scenarios/features.ts"
+  },
+  "dependencies": {
+    "@gravito/atlas": "workspace:*",
+    "pg": "^8.11.0",
+    "mysql2": "^3.9.0",
+    "better-sqlite3": "^11.0.0"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.11.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+}
