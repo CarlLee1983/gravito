@@ -45,7 +45,7 @@ const { t, locale } = useI18n()
         <!-- Overlays for Readability & Mood -->
         <div class="absolute inset-0 bg-void/60 mix-blend-multiply"></div>
         <div class="absolute inset-0 bg-gradient-to-b from-void/80 via-transparent to-void"></div>
-        <div class="absolute inset-0 bg-[url('/grid.svg')] opacity-10 mix-blend-overlay"></div>
+        <div class="absolute inset-0 bg-[url('/static/grid.svg')] opacity-10 mix-blend-overlay"></div>
       </div>
       
       <!-- Content -->
