@@ -26,4 +26,4 @@ Gravito Atlas 是基於 [MIT 授權](https://opensource.org/licenses/MIT) 的開
 ### Disclaimer (免責聲明)
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-本軟體按「原樣」提供，不提供丹和明示或默示的保證，包括但不限於適銷性、特定用途適用性和不侵權的保證。在任何情況下，作者或版權持有人均不對因本軟體或本軟體的使用或其他交易而產生、引起或與之相關的任何索賠、損害或其他責任負責，無論是合約行為、侵權行為還是其他行為。
+本軟體按「原樣」提供，不提供任何明示或默示的保證，包括但不限於適銷性、特定用途適用性和不侵權的保證。在任何情況下，作者或版權持有人均不對因本軟體或本軟體的使用或其他交易而產生、引起或與之相關的任何索賠、損害或其他責任負責，無論是合約行為、侵權行為還是其他行為。
