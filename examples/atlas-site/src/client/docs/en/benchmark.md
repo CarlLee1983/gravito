@@ -110,6 +110,106 @@ Model Hydration
 </div>
 </div>
 </div>
+
+<!-- Metric Group: Result Caching (Bulk Insert) -->
+<div class="bg-white/[0.03] border border-white/10 rounded-xl p-6 hover:border-yellow-500/30 transition-colors">
+<h3 class="text-lg font-bold text-white mb-6 flex items-center gap-3">
+<span class="w-1 h-6 bg-yellow-500 rounded-full shadow-[0_0_10px_orange]"></span>
+Bulk Insert
+</h3>
+<div class="space-y-5">
+<!-- SQLite -->
+<div class="relative">
+<div class="flex justify-between text-xs font-mono mb-1.5 align-bottom">
+<span class="text-gray-400">SQLite</span>
+<span class="text-white">415,000 <span class="text-[9px] opacity-60 font-normal text-gray-500">rows/sec</span></span>
+</div>
+<div class="h-1.5 bg-gray-800/50 rounded-full overflow-hidden">
+<div class="h-full bg-yellow-500 shadow-[0_0_10px_orange]" style="width: 100%"></div>
+</div>
+</div>
+<!-- MariaDB -->
+<div class="relative">
+<div class="flex justify-between text-xs font-mono mb-1.5 align-bottom">
+<span class="text-gray-400">MariaDB</span>
+<span class="text-white">49,000 <span class="text-[9px] opacity-60 font-normal text-gray-500">rows/sec</span></span>
+</div>
+<div class="h-1.5 bg-gray-800/50 rounded-full overflow-hidden">
+<div class="h-full bg-yellow-500/70" style="width: 11.8%"></div>
+</div>
+</div>
+<!-- PostgreSQL -->
+<div class="relative">
+<div class="flex justify-between text-xs font-mono mb-1.5 align-bottom">
+<span class="text-gray-400">PostgreSQL</span>
+<span class="text-white">44,000 <span class="text-[9px] opacity-60 font-normal text-gray-500">rows/sec</span></span>
+</div>
+<div class="h-1.5 bg-gray-800/50 rounded-full overflow-hidden">
+<div class="h-full bg-yellow-500/60" style="width: 10.6%"></div>
+</div>
+</div>
+<!-- MySQL -->
+<div class="relative">
+<div class="flex justify-between text-xs font-mono mb-1.5 align-bottom">
+<span class="text-gray-400">MySQL 8.0</span>
+<span class="text-white">26,000 <span class="text-[9px] opacity-60 font-normal text-gray-500">rows/sec</span></span>
+</div>
+<div class="h-1.5 bg-gray-800/50 rounded-full overflow-hidden">
+<div class="h-full bg-yellow-500/40" style="width: 6.2%"></div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Metric Group: Data Streaming -->
+<div class="bg-white/[0.03] border border-white/10 rounded-xl p-6 hover:border-blue-500/30 transition-colors">
+<h3 class="text-lg font-bold text-white mb-6 flex items-center gap-3">
+<span class="w-1 h-6 bg-blue-500 rounded-full shadow-[0_0_10px_blue]"></span>
+Stream (Cursor)
+</h3>
+<div class="space-y-5">
+<!-- SQLite -->
+<div class="relative">
+<div class="flex justify-between text-xs font-mono mb-1.5 align-bottom">
+<span class="text-gray-400">SQLite</span>
+<span class="text-white">197,000 <span class="text-[9px] opacity-60 font-normal text-gray-500">rows/sec</span></span>
+</div>
+<div class="h-1.5 bg-gray-800/50 rounded-full overflow-hidden">
+<div class="h-full bg-blue-500 shadow-[0_0_10px_blue]" style="width: 100%"></div>
+</div>
+</div>
+<!-- MariaDB -->
+<div class="relative">
+<div class="flex justify-between text-xs font-mono mb-1.5 align-bottom">
+<span class="text-gray-400">MariaDB</span>
+<span class="text-white">135,000 <span class="text-[9px] opacity-60 font-normal text-gray-500">rows/sec</span></span>
+</div>
+<div class="h-1.5 bg-gray-800/50 rounded-full overflow-hidden">
+<div class="h-full bg-blue-500/80" style="width: 68.5%"></div>
+</div>
+</div>
+<!-- MySQL -->
+<div class="relative">
+<div class="flex justify-between text-xs font-mono mb-1.5 align-bottom">
+<span class="text-gray-400">MySQL 8.0</span>
+<span class="text-white">132,000 <span class="text-[9px] opacity-60 font-normal text-gray-500">rows/sec</span></span>
+</div>
+<div class="h-1.5 bg-gray-800/50 rounded-full overflow-hidden">
+<div class="h-full bg-blue-500/70" style="width: 67.0%"></div>
+</div>
+</div>
+<!-- PostgreSQL -->
+<div class="relative">
+<div class="flex justify-between text-xs font-mono mb-1.5 align-bottom">
+<span class="text-gray-400">PostgreSQL</span>
+<span class="text-white">129,000 <span class="text-[9px] opacity-60 font-normal text-gray-500">rows/sec</span></span>
+</div>
+<div class="h-1.5 bg-gray-800/50 rounded-full overflow-hidden">
+<div class="h-full bg-blue-500/60" style="width: 65.5%"></div>
+</div>
+</div>
+</div>
+</div>
 </div>
 
 ---
