@@ -24,7 +24,7 @@ export default {
       hydration: '模型水合',
       hydration_sub: '完整物件映射轉換',
       context: '測試環境：Docker (Linux arm64) + Bun Runtime。您可以自行驗證測試結果：',
-      view_source: '查看測試套件',
+      view_source: '閱讀完整報告',
     },
     console_output: '主控台輸出:',
     rerun: '重新執行',

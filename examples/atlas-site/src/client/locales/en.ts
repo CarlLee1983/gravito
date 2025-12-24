@@ -24,7 +24,7 @@ export default {
       hydration: 'Model Hydration',
       hydration_sub: 'Full Object Mapping',
       context: 'Measured on Docker (Linux arm64) + Bun Runtime. Verify these results yourself:',
-      view_source: 'View Benchmark Suite',
+      view_source: 'Read Full Report',
     },
     console_output: 'Console Output:',
     rerun: 'Re-run',
