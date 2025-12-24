@@ -19,7 +19,7 @@
   "author": "Carl Lee <carllee0520@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "@gravito/pulse": "workspace:*",
+    "@gravito/pulse": "workspace:*"
   },
   "publishConfig": {
     "access": "public"

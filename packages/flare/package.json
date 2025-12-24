@@ -47,6 +47,7 @@
   },
   "devDependencies": {
     "bun-types": "latest",
+    "tsup": "^8.5.1",
     "typescript": "^5.9.3"
   },
   "homepage": "https://github.com/gravito-framework/gravito#readme",

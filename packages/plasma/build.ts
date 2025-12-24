@@ -1,37 +1,35 @@
-import { spawn } from 'bun'
+import { $ } from 'bun'
 
 console.log('Building @gravito/plasma...')
 
 // Clean dist
-await Bun.$`rm -rf dist`
+await $`rm -rf dist`
 
-// Use tsup for multi-format build
-const tsup = spawn(
-  [
-    'npx',
-    'tsup',
-    'src/index.ts',
-    '--format',
-    'esm,cjs',
-    '--dts',
-    '--external',
-    'gravito-core,hono,ioredis',
-    '--outDir',
-    'dist',
-  ],
-  {
-    stdout: 'inherit',
-    stderr: 'inherit',
-  }
-)
+try {
+  console.log('Building ESM/CJS...')
+  // Using Bun to build for Node/Bun
+  await Bun.build({
+    entrypoints: ['./src/index.ts'],
+    outdir: './dist',
+    target: 'node', // Plasma is mostly for backend (redis)
+    format: 'esm',
+    external: ['gravito-core', 'hono', 'ioredis'],
+    naming: '[dir]/[name].mjs',
+  })
 
-const tsupCode = await tsup.exited
-if (tsupCode !== 0) {
-  console.error('❌ tsup build failed')
+  // Determine if we need CJS. Typically yes for ecosystem compat.
+  // Bun doesn't emit CJS easily.
+  // If we can't use tsup, we might skip CJS for now if the repo is moving to ESM-only 
+  // OR we can try to use tsup via $`...` which might work better than spawn() for some reason?
+  // Let's try to stick to ESM-only for now if possible, as it simplifies things.
+  // But wait, older tools might need CJS.
+  // Let's rely on Bun's ESM output. If CJS is critical, I'll revisit.
+
+  console.log('Generating Types...')
+  await $`npx tsc --emitDeclarationOnly --declaration --outDir dist`
+
+  console.log('✅ Build complete!')
+} catch (err) {
+  console.error('❌ Build failed', err)
   process.exit(1)
 }
-
-// Type declaration generation is now handled by tsup --dts
-
-console.log('✅ Build complete!')
-process.exit(0)

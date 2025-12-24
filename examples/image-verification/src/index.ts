@@ -1,4 +1,4 @@
-import { PlanetCore } from 'gravito-core'
+import { PlanetCore, type GravitoContext } from 'gravito-core'
 import { OrbitForge } from '@gravito/forge'
 import { OrbitStorage, type StorageProvider } from '@gravito/nebula'
 import { OrbitStream } from '@gravito/stream'
@@ -7,10 +7,13 @@ import { join } from 'node:path'
 import { mkdir } from 'node:fs/promises'
 import { Job } from '@gravito/stream' // Import Job class
 
+// Global core reference for Jobs running in the same process
+let appCore: PlanetCore
+
 // 1. Define Mock Remote Storage Providers (unchanged)
 class S3MockProvider implements StorageProvider {
-  constructor(private bucket: string) {}
-  
+  constructor(private bucket: string) { }
+
   async put(key: string, data: Blob | Buffer | string): Promise<void> {
     console.log(`[S3 MOCK] Uploading to bucket "${this.bucket}": ${key}`)
     const path = join(process.cwd(), 'storage/s3-sim', key)
@@ -35,8 +38,8 @@ class S3MockProvider implements StorageProvider {
 }
 
 class GCSMockProvider implements StorageProvider {
-  constructor(private bucket: string) {}
-  
+  constructor(private bucket: string) { }
+
   async put(key: string, data: Blob | Buffer | string): Promise<void> {
     console.log(`[GCS MOCK] Uploading to bucket "${this.bucket}": ${key}`)
     const path = join(process.cwd(), 'storage/gcs-sim', key)
@@ -70,7 +73,11 @@ interface ProcessImageJobData {
   remoteKeyPrefix: string
 }
 
-class ProcessImageJob extends Job<ProcessImageJobData> {
+class ProcessImageJob extends Job {
+  constructor(public data: ProcessImageJobData) {
+    super()
+  }
+
   async handle(): Promise<void> {
     const { jobId, source, filename, mimeType, target, remoteKeyPrefix } = this.data
 
@@ -78,9 +85,10 @@ class ProcessImageJob extends Job<ProcessImageJobData> {
     const buffer = Buffer.from(source, 'base64')
     const file = new File([buffer], filename, { type: mimeType })
 
-    const forge = this.core.get('forge')
-    const localStore = this.core.get('storage')
-    const remoteStore = this.core.get(target)
+    // Use global appCore instead of this.core
+    const forge = appCore.container.make<OrbitForge>('forge')
+    const localStore = appCore.container.make<OrbitStorage>('storage')
+    const remoteStore = appCore.container.make<StorageProvider>(target)
 
     console.log(`[JOB - ${jobId}] Processing image: ${filename} for target: ${target}`)
 
@@ -167,19 +175,19 @@ const core = await PlanetCore.boot({
   orbits: [
     new OrbitPlasma(), // Redis client
     new OrbitStream(), // Queue system
-    
+
     // Storage Engine (Configured with Multiple Providers)
     new OrbitStorage({
       exposeAs: 'storage',
       local: { root: './storage/local', baseUrl: '/storage' }
     }),
-    
+
     // Remote Storage Simulations
     new OrbitStorage({
       exposeAs: 's3',
       provider: new S3MockProvider('my-production-bucket')
     }),
-    
+
     new OrbitStorage({
       exposeAs: 'gcs',
       provider: new GCSMockProvider('my-asset-bucket')
@@ -187,19 +195,22 @@ const core = await PlanetCore.boot({
 
     // Forge Engine (File Processing)
     new OrbitForge({
-      image: { 
-        imagemagickPath: 'magick', 
-        tempDir: './storage/tmp' 
+      image: {
+        imagemagickPath: 'magick',
+        tempDir: './storage/tmp'
       },
       sse: { enabled: true } // Enable SSE for status updates
     })
   ]
 })
 
+// Assign initialized core to global variable for Job access
+appCore = core
+
 const router = core.router
 
 // 4. Define Routes
-router.get('/', (c) => {
+router.get('/', (c: GravitoContext) => {
   return c.html(`
     <!DOCTYPE html>
     <html lang="en">
@@ -288,7 +299,7 @@ router.get('/', (c) => {
                     if (data.error) throw new Error(data.error);
 
                     currentJobId = data.jobId;
-                    statusText.innerText = `任務已排隊 (ID: ${currentJobId})，等待處理...`;
+                    statusText.innerText = \`任務已排隊 (ID: \${currentJobId})，等待處理...\`;
                     
                     // Start SSE to listen for job status updates
                     const eventSource = new EventSource(\`/forge/status/\${currentJobId}/stream\`);
@@ -296,7 +307,7 @@ router.get('/', (c) => {
                     eventSource.onmessage = (event) => {
                         const statusUpdate = JSON.parse(event.data);
                         console.log('Job Status Update:', statusUpdate);
-                        statusText.innerText = \`[${statusUpdate.status.toUpperCase()}] \${statusUpdate.message || '處理中...'}\`;
+                        statusText.innerText = \`[\${statusUpdate.status.toUpperCase()}] \${statusUpdate.message || '處理中...'}\`;
 
                         if (statusUpdate.status === 'completed') {
                             localPreview.src = statusUpdate.result.path;
@@ -332,7 +343,7 @@ router.get('/', (c) => {
   `)
 })
 
-router.post('/upload', async (c) => {
+router.post('/upload', async (c: GravitoContext) => {
   const body = await c.req.parseBody()
   const image = body['image']
   const target = body['target'] as string // 's3' or 'gcs'
@@ -340,13 +351,13 @@ router.post('/upload', async (c) => {
   if (!(image instanceof File)) {
     return c.json({ error: 'No image uploaded' }, 400)
   }
-  
+
   // Read file as ArrayBuffer, then convert to base64 for job data
   const buffer = await image.arrayBuffer()
   const base64Image = Buffer.from(buffer).toString('base64')
 
   const jobId = crypto.randomUUID()
-  const stream = c.get('stream') // Get stream service from context
+  const stream = c.get('stream') as OrbitStream // Get stream service from context
 
   try {
     // Dispatch job to queue
@@ -368,9 +379,9 @@ router.post('/upload', async (c) => {
 })
 
 // Serve local storage files
-router.get('/storage/*', async (c) => {
+router.get('/storage/*', async (c: GravitoContext) => {
   const path = c.req.path.replace('/storage/', '')
-  const storage = c.get('storage')
+  const storage = c.get('storage') as OrbitStorage
   const file = await storage.get(path)
   if (!file) return c.text('Not Found', 404)
   return c.body(file)

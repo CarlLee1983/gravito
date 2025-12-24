@@ -50,7 +50,9 @@
   "author": "Carl Lee <carllee0520@gmail.com>",
   "license": "MIT",
   "peerDependencies": {
-    "gravito-core": "1.0.0-beta.5"
+    "gravito-core": "1.0.0-beta.5",
+    "@gravito/nebula": "1.0.0-alpha.6",
+    "@gravito/stream": "1.0.0-alpha.6"
   },
   "peerDependenciesMeta": {
     "react": {
@@ -61,16 +63,25 @@
     },
     "vue": {
       "optional": true
+    },
+    "@gravito/nebula": {
+      "optional": true
+    },
+    "@gravito/stream": {
+      "optional": true
     }
   },
   "devDependencies": {
+    "@gravito/nebula": "1.0.0-alpha.6",
+    "@gravito/stream": "1.0.0-alpha.6",
+    "@types/react": "^18.0.0",
+    "bun-types": "latest",
     "gravito-core": "1.0.0-beta.5",
     "hono": "^4.11.1",
-    "bun-types": "latest",
-    "typescript": "^5.9.3",
-    "@types/react": "^18.0.0",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3",
     "vue": "^3.5.26"
   },
   "homepage": "https://github.com/gravito-framework/gravito#readme",

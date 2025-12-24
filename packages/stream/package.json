@@ -45,6 +45,7 @@
   "devDependencies": {
     "@gravito/db": "1.0.0-alpha.6",
     "bun-types": "latest",
+    "tsup": "^8.5.1",
     "typescript": "^5.9.3"
   },
   "homepage": "https://github.com/gravito-framework/gravito#readme",

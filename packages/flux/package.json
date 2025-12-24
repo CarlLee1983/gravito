@@ -48,6 +48,7 @@
   "devDependencies": {
     "bun-types": "latest",
     "gravito-core": "1.0.0-beta.5",
+    "tsup": "^8.5.1",
     "typescript": "^5.0.0"
   },
   "keywords": [

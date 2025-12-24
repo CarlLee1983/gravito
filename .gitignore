@@ -39,7 +39,9 @@ dist-static/
 test-create-app/
 
 # Build artifacts
-
+.turbo/
+packages/*/src/**/*.d.ts
+packages/*/src/**/*.d.ts.map
 
 # Luminosity Artifacts
 .luminosity/

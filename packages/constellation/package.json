@@ -26,9 +26,10 @@
     "hono": "^4.11.1"
   },
   "devDependencies": {
-    "bun-types": "latest",
     "bun-plugin-dts": "^0.3.0",
+    "bun-types": "latest",
     "gravito-core": "1.0.0-beta.5",
+    "tsup": "^8.5.1",
     "typescript": "^5.9.3"
   },
   "publishConfig": {
