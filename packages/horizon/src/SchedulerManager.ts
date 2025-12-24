@@ -93,7 +93,7 @@ export class SchedulerManager {
     for (const task of dueTasks) {
       // Fire and forget individual tasks so they run in parallel
       // But we must catch errors to not crash the loop (which is already inside async void but good practice)
-      this.runTask(task).catch((err) => {
+      this.runTask(task, date).catch((err) => {
         this.logger?.error(`[Scheduler] Unexpected error running task ${task.name}`, err)
       })
     }
@@ -107,7 +107,7 @@ export class SchedulerManager {
    * @param task - The task to execute.
    * @internal
    */
-  async runTask(task: ScheduledTask): Promise<void> {
+  async runTask(task: ScheduledTask, date: Date = new Date()): Promise<void> {
     // Mode A & B: Node Role Check
     if (task.nodeRole && this.currentNodeRole && task.nodeRole !== this.currentNodeRole) {
       // This node doesn't match the required role, skip
@@ -115,51 +115,38 @@ export class SchedulerManager {
     }
 
     let acquiredLock = false
-    const lockKey = `task:${task.name}`
+    // Make lock key specific to the current minute to prevent re-runs within the same window
+    const timestamp = `${date.getFullYear()}${(date.getMonth() + 1).toString().padStart(2, '0')}${date.getDate().toString().padStart(2, '0')}${date.getHours().toString().padStart(2, '0')}${date.getMinutes().toString().padStart(2, '0')}`
+    const lockKey = `task:${task.name}:${timestamp}`
 
     // Mode B: Single-point (Locking)
     if (task.shouldRunOnOneServer) {
       acquiredLock = await this.lockManager.acquire(lockKey, task.lockTtl)
 
       if (!acquiredLock) {
-        // Task running on another server or locked
+        // Task running on another server or already completed for this window
         return
       }
     }
 
     try {
       if (task.background) {
-        // If background, we don't await execution, but we MUST await to release lock?
-        // If we release lock immediately, another server can pick it up.
-        // So for background tasks, "onOneServer" is tricky.
-        // Usually background means "detach from CLI process".
-        // But if running in `schedule:run`, we are already in a CLI process.
-        // "background" usually assumes spawning a completely separate process.
-
-        // For now, let's treat background as "don't block the loop".
-        // BUT if we don't await, we release lock immediately in finally block.
-        // So if we start background task, we must NOT release lock in finally block?
-        // But then who releases it? TTL.
-
         this.executeTask(task).catch((err) => {
           this.logger?.error(`Background task ${task.name} failed`, err)
         })
-        // If background, we might theoretically hold the lock until TTL expires?
-        // Or we return immediately.
-
-        // Let's stick to synchronous await for MVP unless user specifically requests "fire and forget".
-        // If "background" is true, we assume user accepts that lock might be released early OR we rely on TTL.
-        // Actually, `run` loop fires `runTask` without await. So tasks are already parallelized in the node process.
-        // `background` in Laravel means `run in background process (&)`.
-        // I'll ignore `background` flag for now or treat it same as foreground but maybe logging diff.
       } else {
         await this.executeTask(task)
       }
-    } finally {
+    } catch (err) {
+      // If execution failed before reaching executeTask's internal try-catch
+      // We might want to release the lock to allow retry, but executeTask handles most cases.
       if (acquiredLock) {
         await this.lockManager.release(lockKey)
       }
+      throw err
     }
+    // Note: We DO NOT release the lock here if successful. 
+    // It will expire based on lockTtl, preventing other nodes from running it in the same minute window.
   }
 
   /**
