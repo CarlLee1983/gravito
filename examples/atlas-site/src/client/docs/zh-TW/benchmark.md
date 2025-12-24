@@ -126,12 +126,57 @@ Atlas 達到了菁英級別的水合速度，在不同驅動程式間平均達�
 
 我們透過每個驅動程式處理 50,000 筆紀錄（約 50MB 負載）來驗證 `Model.cursor()` API。
 
-| 驅動程式 | 堆疊 (Heap) 變化 | 狀態 |
-| :--- | :--- | :--- |
-| **SQLite** | +19.27 MB | 穩定 |
-| **PostgreSQL** | -8.55 MB* | 已回收 |
-| **MySQL** | +2.62 MB | 穩定 |
-| **MariaDB** | +19.87 MB | 穩定 |
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 not-prose my-8">
+<!-- SQLite -->
+<div class="bg-gray-800/30 border border-white/10 rounded-lg p-4 flex items-center justify-between">
+<div>
+<div class="text-xs text-gray-400 font-mono mb-1">SQLite</div>
+<div class="text-xl font-bold text-white tabular-nums">+19.27 <span class="text-sm font-normal text-gray-500">MB</span></div>
+</div>
+<div class="text-right">
+<div class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-400 border border-green-500/20">
+穩定 (Stable)
+</div>
+</div>
+</div>
+<!-- PostgreSQL -->
+<div class="bg-gray-800/30 border border-green-500/30 rounded-lg p-4 flex items-center justify-between relative overflow-hidden group">
+<div class="absolute inset-0 bg-green-500/5 group-hover:bg-green-500/10 transition-colors"></div>
+<div class="relative">
+<div class="text-xs text-green-400/80 font-mono mb-1">PostgreSQL</div>
+<div class="text-xl font-bold text-green-400 tabular-nums">-8.55 <span class="text-sm font-normal text-green-500/70">MB</span></div>
+</div>
+<div class="relative text-right">
+<div class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-500/20 text-green-300 border border-green-500/30 shadow-[0_0_10px_rgba(34,197,94,0.2)]">
+已回收 (Recycled)
+</div>
+</div>
+</div>
+<!-- MySQL -->
+<div class="bg-gray-800/30 border border-white/10 rounded-lg p-4 flex items-center justify-between">
+<div>
+<div class="text-xs text-gray-400 font-mono mb-1">MySQL 8.0</div>
+<div class="text-xl font-bold text-white tabular-nums">+2.62 <span class="text-sm font-normal text-gray-500">MB</span></div>
+</div>
+<div class="text-right">
+<div class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-400 border border-green-500/20">
+穩定 (Stable)
+</div>
+</div>
+</div>
+<!-- MariaDB -->
+<div class="bg-gray-800/30 border border-white/10 rounded-lg p-4 flex items-center justify-between">
+<div>
+<div class="text-xs text-gray-400 font-mono mb-1">MariaDB</div>
+<div class="text-xl font-bold text-white tabular-nums">+19.87 <span class="text-sm font-normal text-gray-500">MB</span></div>
+</div>
+<div class="text-right">
+<div class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-400 border border-green-500/20">
+穩定 (Stable)
+</div>
+</div>
+</div>
+</div>
 
 *\*負值表示在串流過程中進行了積極的 GC 回收，證明已處理的物件零殘留。*
 

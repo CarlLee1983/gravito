@@ -126,12 +126,57 @@ Atlas achieves elite-level hydration speeds, averaging **over 200,000 models per
 
 We validated the `Model.cursor()` API by processing 50,000 records (approx. 50MB payload) per driver.
 
-| Driver | Heap Delta | Status |
-| :--- | :--- | :--- |
-| **SQLite** | +19.27 MB | Stable |
-| **PostgreSQL** | -8.55 MB* | Recycled |
-| **MySQL** | +2.62 MB | Stable |
-| **MariaDB** | +19.87 MB | Stable |
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 not-prose my-8">
+<!-- SQLite -->
+<div class="bg-gray-800/30 border border-white/10 rounded-lg p-4 flex items-center justify-between">
+<div>
+<div class="text-xs text-gray-400 font-mono mb-1">SQLite</div>
+<div class="text-xl font-bold text-white tabular-nums">+19.27 <span class="text-sm font-normal text-gray-500">MB</span></div>
+</div>
+<div class="text-right">
+<div class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-400 border border-green-500/20">
+Stable
+</div>
+</div>
+</div>
+<!-- PostgreSQL -->
+<div class="bg-gray-800/30 border border-green-500/30 rounded-lg p-4 flex items-center justify-between relative overflow-hidden group">
+<div class="absolute inset-0 bg-green-500/5 group-hover:bg-green-500/10 transition-colors"></div>
+<div class="relative">
+<div class="text-xs text-green-400/80 font-mono mb-1">PostgreSQL</div>
+<div class="text-xl font-bold text-green-400 tabular-nums">-8.55 <span class="text-sm font-normal text-green-500/70">MB</span></div>
+</div>
+<div class="relative text-right">
+<div class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-500/20 text-green-300 border border-green-500/30 shadow-[0_0_10px_rgba(34,197,94,0.2)]">
+Recycled
+</div>
+</div>
+</div>
+<!-- MySQL -->
+<div class="bg-gray-800/30 border border-white/10 rounded-lg p-4 flex items-center justify-between">
+<div>
+<div class="text-xs text-gray-400 font-mono mb-1">MySQL 8.0</div>
+<div class="text-xl font-bold text-white tabular-nums">+2.62 <span class="text-sm font-normal text-gray-500">MB</span></div>
+</div>
+<div class="text-right">
+<div class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-400 border border-green-500/20">
+Stable
+</div>
+</div>
+</div>
+<!-- MariaDB -->
+<div class="bg-gray-800/30 border border-white/10 rounded-lg p-4 flex items-center justify-between">
+<div>
+<div class="text-xs text-gray-400 font-mono mb-1">MariaDB</div>
+<div class="text-xl font-bold text-white tabular-nums">+19.87 <span class="text-sm font-normal text-gray-500">MB</span></div>
+</div>
+<div class="text-right">
+<div class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-400 border border-green-500/20">
+Stable
+</div>
+</div>
+</div>
+</div>
 
 *\*Negative delta indicates aggressive GC collection during the stream, proving zero retention of processed objects.*
 
