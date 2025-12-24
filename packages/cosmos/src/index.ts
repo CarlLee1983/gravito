@@ -13,7 +13,7 @@ declare module 'gravito-core' {
  * Provides i18n functionality for Gravito applications.
  */
 export class OrbitCosmos implements GravitoOrbit {
-  constructor(private config: I18nConfig) { }
+  constructor(private config: I18nConfig) {}
 
   install(core: PlanetCore): void {
     const i18nManager = new I18nManager(this.config)
@@ -34,4 +34,3 @@ export const I18nOrbit = OrbitCosmos
 
 export * from './I18nService'
 export * from './loader'
-

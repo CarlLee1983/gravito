@@ -180,7 +180,7 @@ function createStoreFactory(config: OrbitCacheOptions): (name: string) => CacheS
 export class OrbitStasis implements GravitoOrbit {
   private manager: CacheManager | undefined
 
-  constructor(private options?: OrbitCacheOptions) { }
+  constructor(private options?: OrbitCacheOptions) {}
 
   install(core: PlanetCore): void {
     const resolvedConfig = resolveStoreConfig(core, this.options)

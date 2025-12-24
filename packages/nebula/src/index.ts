@@ -104,7 +104,7 @@ export type OrbitStorageOptions = OrbitNebulaOptions
  * Provides file storage functionality for Gravito applications.
  */
 export class OrbitNebula implements GravitoOrbit {
-  constructor(private options?: OrbitNebulaOptions) { }
+  constructor(private options?: OrbitNebulaOptions) {}
 
   /**
    * Install storage service into PlanetCore.
@@ -215,4 +215,3 @@ export default function orbitStorage(core: PlanetCore, options: OrbitNebulaOptio
 
 /** @deprecated Use OrbitNebula instead */
 export const OrbitStorage = OrbitNebula
-
