@@ -1,6 +1,6 @@
 {
   "name": "@gravito/plasma",
-  "version": "1.0.0-alpha.5",
+  "version": "1.0.0-beta.5",
   "description": "Redis client for Gravito - Bun native, Laravel-style API",
   "type": "module",
   "main": "./dist/index.js",

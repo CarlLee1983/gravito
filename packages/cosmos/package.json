@@ -1,6 +1,6 @@
 {
   "name": "@gravito/cosmos",
-  "version": "1.0.0-alpha.5",
+  "version": "1.0.0-alpha.6",
   "description": "Internationalization orbit for Gravito framework",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -17,7 +17,7 @@
   "author": "Carl Lee <carllee0520@gmail.com>",
   "license": "MIT",
   "peerDependencies": {
-    "gravito-core": "1.0.0-beta.4",
+    "gravito-core": "1.0.0-beta.5",
     "hono": "^4.0.0"
   },
   "devDependencies": {

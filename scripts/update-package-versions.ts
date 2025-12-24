@@ -19,14 +19,24 @@ const OFFICIAL_SITE_PACKAGES = [
   '@gravito/prism',
   '@gravito/luminosity-adapter-hono',
   '@gravito/luminosity',
+  '@gravito/atlas',
+  '@gravito/plasma',
+  '@gravito/pulse',
+  'create-gravito-app',
+  '@gravito/freeze',
+  '@gravito/freeze-react',
+  '@gravito/freeze-vue',
+  '@gravito/luminosity-adapter-express',
+  '@gravito/luminosity-cli',
+  '@gravito/horizon',
 ];
 
 // 版本配置
 const VERSION_CONFIG = {
-  // 官網使用的套件：beta 版本
-  officialSite: '1.0.0-beta.4',
-  // 其他套件：alpha 版本
-  others: '1.0.0-alpha.5',
+  // 官網與核心工具：beta 版本
+  officialSite: '1.0.0-beta.5',
+  // 其他實驗性套件：alpha 版本
+  others: '1.0.0-alpha.6',
 };
 
 interface PackageInfo {

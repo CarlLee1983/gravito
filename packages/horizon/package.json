@@ -1,6 +1,6 @@
 {
   "name": "@gravito/horizon",
-  "version": "1.0.0-alpha.5",
+  "version": "1.0.0-beta.5",
   "description": "Distributed task scheduler for Gravito framework",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
@@ -38,12 +38,12 @@
     "cron-parser": "^4.9.0"
   },
   "peerDependencies": {
-    "gravito-core": "1.0.0-beta.4",
-    "@gravito/stasis": "1.0.0-beta.4"
+    "gravito-core": "1.0.0-beta.5",
+    "@gravito/stasis": "1.0.0-beta.5"
   },
   "devDependencies": {
-    "gravito-core": "1.0.0-beta.4",
-    "@gravito/stasis": "1.0.0-beta.4",
+    "gravito-core": "1.0.0-beta.5",
+    "@gravito/stasis": "1.0.0-beta.5",
     "bun-types": "latest",
     "typescript": "^5.9.3"
   },

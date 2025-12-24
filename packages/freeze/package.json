@@ -1,6 +1,6 @@
 {
   "name": "@gravito/freeze",
-  "version": "1.0.0-alpha.5",
+  "version": "1.0.0-beta.5",
   "description": "Static Site Generation (SSG) core module for Gravito Framework",
   "type": "module",
   "main": "./dist/index.js",

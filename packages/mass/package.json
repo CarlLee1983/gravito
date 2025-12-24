@@ -1,6 +1,6 @@
 {
   "name": "@gravito/mass",
-  "version": "1.0.0-alpha.5",
+  "version": "1.0.0-alpha.6",
   "description": "TypeBox-based validation for Gravito - High-performance schema validation with full TypeScript support",
   "type": "module",
   "main": "./dist/index.js",
@@ -28,7 +28,7 @@
     "@sinclair/typebox": "^0.34.0"
   },
   "peerDependencies": {
-    "gravito-core": "1.0.0-beta.4"
+    "gravito-core": "1.0.0-beta.5"
   },
   "devDependencies": {
     "bun-types": "^1.1.0",

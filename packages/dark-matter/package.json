@@ -1,6 +1,6 @@
 {
   "name": "@gravito/dark-matter",
-  "version": "1.0.0-alpha.5",
+  "version": "1.0.0-alpha.6",
   "description": "MongoDB client for Gravito - Bun native, Laravel-style API",
   "type": "module",
   "main": "./dist/index.js",

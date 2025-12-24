@@ -1,6 +1,6 @@
 {
   "name": "@gravito/freeze-vue",
-  "version": "1.0.0-alpha.5",
+  "version": "1.0.0-beta.5",
   "description": "Vue adapter for @gravito/freeze SSG module",
   "type": "module",
   "main": "./dist/index.js",
@@ -45,7 +45,7 @@
     }
   },
   "dependencies": {
-    "@gravito/freeze": "1.0.0-alpha.5"
+    "@gravito/freeze": "1.0.0-beta.5"
   },
   "devDependencies": {
     "vue": "^3.0.0",

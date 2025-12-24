@@ -1,6 +1,6 @@
 {
   "name": "@gravito/radiance",
-  "version": "1.0.0-alpha.5",
+  "version": "1.0.0-alpha.6",
   "publishConfig": {
     "access": "public"
   },
@@ -39,7 +39,7 @@
   "author": "Carl Lee <carllee0520@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "gravito-core": "1.0.0-beta.4"
+    "gravito-core": "1.0.0-beta.5"
   },
   "devDependencies": {
     "bun-types": "latest",

@@ -1,6 +1,6 @@
 {
   "name": "@gravito/forge",
-  "version": "1.0.0-alpha.5",
+  "version": "1.0.0-alpha.6",
   "publishConfig": {
     "access": "public"
   },
@@ -50,7 +50,7 @@
   "author": "Carl Lee <carllee0520@gmail.com>",
   "license": "MIT",
   "peerDependencies": {
-    "gravito-core": "1.0.0-beta.4"
+    "gravito-core": "1.0.0-beta.5"
   },
   "peerDependenciesMeta": {
     "react": {
@@ -64,7 +64,7 @@
     }
   },
   "devDependencies": {
-    "gravito-core": "1.0.0-beta.4",
+    "gravito-core": "1.0.0-beta.5",
     "hono": "^4.11.1",
     "bun-types": "latest",
     "typescript": "^5.9.3",
