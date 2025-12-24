@@ -28,11 +28,11 @@ export const CONFIG = {
   sqlite: {
     driver: 'sqlite' as const,
     database: ':memory:',
-  }
+  },
 }
 
 export function setupDB(driver: keyof typeof CONFIG) {
-  // @ts-ignore
+  // @ts-expect-error
   DB.addConnection('default', CONFIG[driver])
   DB.setDefaultConnection('default')
 }
