@@ -110,5 +110,8 @@ export default {
     core: 'Gravito Core',
     cli: 'CLI Tool',
     plugins: 'Plugins',
+    legal: 'Legal',
+    privacy: 'Privacy Policy',
+    terms: 'Terms of Service',
   },
 }
