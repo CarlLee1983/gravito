@@ -1,1 +1,0 @@
-{"version":3,"file":"ThrottleRequests.d.ts","sourceRoot":"","sources":["ThrottleRequests.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAkB,iBAAiB,EAAe,MAAM,kBAAkB,CAAA;AACtF,OAAO,KAAK,EAAE,UAAU,EAAE,MAAM,kBAAkB,CAAA;AAclD,qBAAa,gBAAgB;IACf,OAAO,CAAC,IAAI;gBAAJ,IAAI,EAAE,UAAU;IAEpC;;;;OAIG;IACH,MAAM,CAAC,WAAW,SAAK,EAAE,YAAY,SAAK,GAAG,iBAAiB;CAkC/D"}

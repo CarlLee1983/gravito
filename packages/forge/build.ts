@@ -37,7 +37,16 @@ try {
   })
 
   console.log('Generating Types...')
-  await $`npx tsc --emitDeclarationOnly --declaration --outDir dist --rootDir src --noEmit false`
+  // Use tsup for main and react entries. Vue entry skipped for now due to .vue resolution issues in tsup dts
+  await $`npx tsup src/index.ts src/components/index.tsx --dts-only --format esm --outDir dist`
+
+  // Create a simple d.ts for vue index to satisfy exports
+  await $`mkdir -p dist/vue`
+  await Bun.write('dist/vue/index.d.ts', `
+export declare const ProcessingImage: any;
+export declare const ProcessingStatus: any;
+export declare const ProcessingVideo: any;
+`)
 
   console.log('✅ Build complete!')
 } catch (err) {
