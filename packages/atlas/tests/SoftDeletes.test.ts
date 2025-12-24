@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, jest, spyOn, test } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, jest, spyOn, test } from 'bun:test'
 import { DB } from '../src/DB'
 import { SoftDeletes } from '../src/orm/model/decorators'
 import { Model } from '../src/orm/model/Model'
@@ -6,7 +6,7 @@ import { Model } from '../src/orm/model/Model'
 // Mock Model for Soft Deletes
 @SoftDeletes()
 class SoftUser extends Model {
-  static table = 'users'
+  static override table = 'users'
   declare id: number
   declare name: string
   declare deleted_at: Date | null
@@ -15,6 +15,8 @@ class SoftUser extends Model {
 describe('SoftDeletes', () => {
   let mockConnection: any
   let mockGrammar: any
+  let connectionSpy: any
+  let registrySpy: any
 
   beforeEach(() => {
     // Reset DB
@@ -38,17 +40,18 @@ describe('SoftDeletes', () => {
       getDriver: () => ({
         getGrammar: () => mockGrammar,
         execute: jest.fn().mockResolvedValue({ affectedRows: 1, rows: [] }),
+        getDriverName: () => 'mock',
       }),
     }
 
     // Mock DB.connection
-    spyOn(DB, 'connection').mockReturnValue(mockConnection)
+    connectionSpy = spyOn(DB, 'connection').mockReturnValue(mockConnection)
     // @ts-expect-error
     DB.initialized = true
 
     // Mock SchemaRegistry to avoid real sniff
     const { SchemaRegistry } = require('../src/orm/schema/SchemaRegistry')
-    spyOn(SchemaRegistry.prototype, 'get').mockResolvedValue({
+    registrySpy = spyOn(SchemaRegistry.prototype, 'get').mockResolvedValue({
       table: 'users',
       primaryKey: 'id',
       columns: new Map(
@@ -59,6 +62,12 @@ describe('SoftDeletes', () => {
         })
       ),
     })
+  })
+
+  afterEach(async () => {
+    connectionSpy.mockRestore()
+    registrySpy.mockRestore()
+    await DB._reset()
   })
 
   test('it appends deleted_at IS NULL by default', async () => {

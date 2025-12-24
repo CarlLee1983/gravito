@@ -1,9 +1,9 @@
-import { beforeEach, describe, expect, jest, spyOn, test } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, jest, spyOn, test } from 'bun:test'
 import { DB } from '../src/DB'
 import { Model } from '../src/orm/model/Model'
 
 class EventUser extends Model {
-  static table = 'users'
+  static override table = 'users'
   declare id: number
   declare name: string
 
@@ -41,6 +41,8 @@ class EventUser extends Model {
 describe('ModelEvents', () => {
   let mockConnection: any
   let mockGrammar: any
+  let connectionSpy: any
+  let registrySpy: any
 
   beforeEach(() => {
     // Reset DB
@@ -64,15 +66,16 @@ describe('ModelEvents', () => {
       getDriver: () => ({
         getGrammar: () => mockGrammar,
         execute: jest.fn().mockResolvedValue({ affectedRows: 1, rows: [1] }),
+        getDriverName: () => 'mock',
       }),
     }
 
-    spyOn(DB, 'connection').mockReturnValue(mockConnection)
+    connectionSpy = spyOn(DB, 'connection').mockReturnValue(mockConnection)
     // @ts-expect-error
     DB.initialized = true
 
     const { SchemaRegistry } = require('../src/orm/schema/SchemaRegistry')
-    spyOn(SchemaRegistry.prototype, 'get').mockResolvedValue({
+    registrySpy = spyOn(SchemaRegistry.prototype, 'get').mockResolvedValue({
       table: 'users',
       primaryKey: 'id',
       columns: new Map(
@@ -82,6 +85,12 @@ describe('ModelEvents', () => {
         })
       ),
     })
+  })
+
+  afterEach(async () => {
+    connectionSpy.mockRestore()
+    registrySpy.mockRestore()
+    await DB._reset()
   })
 
   test('it triggers creating and saving events on insert', async () => {

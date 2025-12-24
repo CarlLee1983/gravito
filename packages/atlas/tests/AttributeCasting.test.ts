@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, test } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
+import { DB } from '../src/DB'
 import { Model } from '../src/orm/model/Model'
 
 describe('Attribute Casting', () => {
@@ -40,6 +41,10 @@ describe('Attribute Casting', () => {
     }
     // spyOn(DB, 'connection').mockReturnValue(mockConnection)
     // We'll rely on unit tests for casting logic primarily, preventing full DB mock complexity unless needed
+  })
+
+  afterEach(async () => {
+    await DB._reset()
   })
 
   test('it casts boolean on set', () => {

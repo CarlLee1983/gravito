@@ -1,41 +1,41 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, jest, spyOn } from 'bun:test'
 import { DB } from '../src/DB'
 import { PostgresGrammar } from '../src/grammar/PostgresGrammar'
 import { Model } from '../src/orm/model/Model'
 import { HasMany } from '../src/orm/model/relationships'
 
-// Mock Connection
-const mockConnection = {
-  getName: () => 'postgres',
-  getDriver: () => ({ getDriverName: () => 'postgres' }),
-  getConfig: () => ({ driver: 'postgres' }),
-  getGrammar: () => new PostgresGrammar(),
-  raw: vi.fn(),
-  table: vi.fn(),
-  transaction: vi.fn(),
-  disconnect: vi.fn(),
-}
-
 describe('Lateral Eager Loading', () => {
+  let mockConnection: any
+
   class Post extends Model {
-    static table = 'posts'
-    id!: number
-    user_id!: number
-    title!: string
+    static override table = 'posts'
+    declare id: number
+    declare user_id: number
+    declare title: string
   }
 
   class User extends Model {
-    static table = 'users'
-    static connection = 'postgres'
-    id!: number
-    name!: string
+    static override table = 'users'
+    static override connection = 'postgres'
+    declare id: number
+    declare name: string
 
     @HasMany(() => Post, 'user_id')
-    posts!: Post[]
+    declare posts: Post[]
   }
 
   beforeEach(() => {
-    vi.clearAllMocks()
+    mockConnection = {
+      getName: () => 'postgres',
+      getDriver: () => ({ getDriverName: () => 'postgres' }),
+      getConfig: () => ({ driver: 'postgres' }),
+      getGrammar: () => new PostgresGrammar(),
+      raw: jest.fn(),
+      table: jest.fn(),
+      transaction: jest.fn(),
+      disconnect: jest.fn(),
+    }
+    jest.clearAllMocks()
 
     // Register the mock connection
     DB.addConnection('postgres', {
@@ -45,14 +45,14 @@ describe('Lateral Eager Loading', () => {
     } as any)
 
     // Spy on DB.connection to return our mock
-    vi.spyOn(DB, 'connection').mockReturnValue(mockConnection as any)
+    jest.spyOn(DB, 'connection').mockReturnValue(mockConnection as any)
 
     // Mock the table method to return a real QueryBuilder but we'll mock its execution
     const { QueryBuilder } = require('../src/query/QueryBuilder')
-    mockConnection.table = vi.fn().mockImplementation((table) => {
+    mockConnection.table = jest.fn().mockImplementation((table) => {
       const qb = new QueryBuilder(mockConnection, new PostgresGrammar(), table)
       // Spy on this specific qb's get method
-      vi.spyOn(qb, 'get').mockImplementation(async function (this: any) {
+      jest.spyOn(qb, 'get').mockImplementation(async function (this: any) {
         if (this.tableName === 'users') {
           return [{ id: 1, name: 'John' }]
         }
@@ -63,9 +63,13 @@ describe('Lateral Eager Loading', () => {
     })
   })
 
+  afterEach(() => {
+    jest.restoreAllMocks()
+  })
+
   it('should use LATERAL JOIN when limit is applied to eager loaded relationship', async () => {
     // Mock the lateral raw result
-    mockConnection.raw = vi.fn().mockResolvedValue({
+    mockConnection.raw = jest.fn().mockResolvedValue({
       rows: [
         { id: 1, user_id: 1, title: 'Post 1' },
         { id: 2, user_id: 1, title: 'Post 2' },

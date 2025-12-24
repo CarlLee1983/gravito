@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, spyOn, test } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, spyOn, test } from 'bun:test'
 import { DB } from '../src/DB'
 import { Model } from '../src/orm/model/Model'
 
@@ -16,6 +16,8 @@ describe('Model Observers', () => {
   }
 
   let mockConnection: any
+  let connectionSpy: any
+  let registrySpy: any
 
   beforeEach(() => {
     // Clear observers
@@ -32,19 +34,26 @@ describe('Model Observers', () => {
       }),
       getDriver: () => ({
         getGrammar: () => ({}),
+        getDriverName: () => 'mock',
       }),
       raw: () => Promise.resolve({ rows: [] }),
     }
-    spyOn(DB, 'connection').mockReturnValue(mockConnection)
+    connectionSpy = spyOn(DB, 'connection').mockReturnValue(mockConnection)
 
     // Mock SchemaRegistry to avoid sniffing
     const { SchemaRegistry } = require('../src/orm/schema/SchemaRegistry')
-    spyOn(SchemaRegistry.prototype, 'get').mockResolvedValue({
+    registrySpy = spyOn(SchemaRegistry.prototype, 'get').mockResolvedValue({
       columns: new Map([
         ['id', { type: 'integer' } as any],
         ['name', { type: 'string' } as any],
       ]),
     } as any)
+  })
+
+  afterEach(async () => {
+    connectionSpy.mockRestore()
+    registrySpy.mockRestore()
+    await DB._reset()
   })
 
   test('it registers observer', () => {

@@ -1,10 +1,10 @@
-import { beforeEach, describe, expect, jest, spyOn, test } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, jest, spyOn, test } from 'bun:test'
 import { DB } from '../src/DB'
 import { Model } from '../src/orm/model/Model'
 import type { QueryBuilderContract } from '../src/types'
 
 class ScopedUser extends Model {
-  static table = 'users'
+  static override table = 'users'
   declare id: number
   declare name: string
   declare active: boolean
@@ -45,6 +45,10 @@ describe('QueryScopes', () => {
     spyOn(DB, 'connection').mockReturnValue(mockConnection)
     // @ts-expect-error
     DB.initialized = true
+  })
+
+  afterEach(async () => {
+    await DB._reset()
   })
 
   test('local scope works via proxy', () => {

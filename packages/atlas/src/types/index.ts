@@ -222,7 +222,7 @@ export interface FieldInfo {
  */
 export interface ExecuteResult {
   affectedRows: number
-  insertId?: number | bigint | undefined
+  insertId?: number | bigint | string | undefined
   changedRows?: number | undefined
 }
 

@@ -18,7 +18,11 @@ describe('Caching Integration', () => {
       update: vi.fn(),
       delete: vi.fn(),
       table: vi.fn(),
-      getDriver: vi.fn(),
+      getDriver: vi.fn(() => ({
+        getDriverName: () => 'mock',
+        getGrammar: () => mockGrammar,
+      })),
+      getGrammar: () => mockGrammar,
     }
 
     // Mock Grammar

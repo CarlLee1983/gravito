@@ -478,9 +478,10 @@ export abstract class Model {
       const table = modelCtor.getTable()
 
       // Fast path for non-SQL drivers
+      const driver = connection.getDriver()
       if (
-        connection.getDriver().getDriverName() === 'mongodb' ||
-        connection.getDriver().getDriverName() === 'redis'
+        typeof driver.getDriverName === 'function' &&
+        (driver.getDriverName() === 'mongodb' || driver.getDriverName() === 'redis')
       ) {
         return {
           table: table,

@@ -8,7 +8,7 @@
   "type": "module",
   "scripts": {
     "build": "echo Skipping...",
-    "test": "echo \"Error: no test specified\" && exit 0"
+    "test": "echo \"No tests for create-gravito-app\" && exit 0"
   },
   "keywords": [
     "gravito",
