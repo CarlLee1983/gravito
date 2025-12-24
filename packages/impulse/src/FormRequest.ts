@@ -487,7 +487,8 @@ export function validateRequest<T>(RequestClass: new () => FormRequest<T>): Midd
 
     // Store validated data in context
     ctx.set('validated', result.data)
-    return next()
+    await next()
+    return undefined
   }
 }
 
