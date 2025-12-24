@@ -5,7 +5,7 @@ order: 3
 
 # Framework Integration Guide
 
-Luminosity is designed to be **Framework Agnostic**. Whether you are using Express, Hono, Fastify, or plain Node.js, you can easily integrate Luminosity to manage your sitemaps.
+Luminosity is designed to be **Framework-agnostic**. Whether you are using Express, Hono, Fastify, or plain Node.js, you can easily integrate Luminosity to manage your sitemaps.
 
 ## Express Integration
 
@@ -73,7 +73,7 @@ app.listen(port, () => {
 
 ## Hono Integration
 
-If you update strictly to modern standards using Hono (like within Gravito), integration is even simpler.
+If you're using Hono with modern standards (like within Gravito), integration is even simpler.
 
 ```typescript
 import { Hono } from 'hono'

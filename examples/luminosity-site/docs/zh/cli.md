@@ -1,11 +1,11 @@
 ---
-title: CLI 命令行工具
+title: CLI 命令列工具
 order: 4
 ---
 
-# CLI 命令行工具
+# CLI 命令列工具
 
-Luminosity 提供強大的命令行介面 (CLI)，讓您管理 Sitemap、檢查索引狀態，並在 CI/CD 流程中自動化任務。
+Luminosity 提供強大的命令列介面 (CLI)，讓您管理 Sitemap、檢查索引狀態，並在 CI/CD 流程中自動化任務。
 
 ## 使用方式
 
@@ -30,7 +30,7 @@ bun x lux <指令> [選項]
 
 ### `generate`
 
-透過 CLI 手動觸發 Sitemap 生成過程。這對於 Cron Jobs 或建置掛鉤 (Build Hooks) 非常有用。
+透過 CLI 手動觸發 Sitemap 產生過程。這對於 Cron Jobs 或建置掛鉤 (Build Hooks) 非常有用。
 
 ```bash
 bun x lux generate [options]
@@ -38,7 +38,7 @@ bun x lux generate [options]
 
 **選項:**
 - `-c, --config <path>`: 設定檔路徑 (預設: `luminosity.config.ts`)
-- `--dry-run`: 模擬生成而不寫入檔案。
+- `--dry-run`: 模擬產生而不寫入檔案。
 
 ### `stats`
 
@@ -75,7 +75,7 @@ bun x lux init
 
 ## CI/CD 整合
 
-Luminosity CLI 設計為遵循標準退出碼 (成功為 0，錯誤為 1)，非常適合 CI 管線。
+Luminosity CLI 設計為遵循標準結束碼 (成功為 0，錯誤為 1)，非常適合 CI 管線。
 
 **範例: GitHub Actions**
 
@@ -84,7 +84,7 @@ steps:
   - uses: actions/checkout@v4
   - name: 安裝依賴
     run: bun install
-  - name: 生成 Sitemaps
+  - name: 產生 Sitemaps
     run: bun x lux generate
   - name: 部署
     run: ./deploy.sh

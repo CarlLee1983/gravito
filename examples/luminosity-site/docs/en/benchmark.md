@@ -11,7 +11,7 @@ Using our unique **Streaming Architecture**, Luminosity can generate sitemaps fo
 ## The 1 Million URL Challenge
 
 Generating a sitemap for 1,000,000 pages is a common bottleneck for large applications.
-Traditional solutions often load all data into memory, causing Node.js processes to crash (Heap Out of Memory) or requiring expensive, high-memory servers.
+Traditional solutions often load all data into memory, causing Node.js processes to crash (JavaScript heap out of memory) or requiring expensive, high-memory servers.
 
 **Luminosity solves this with:**
 1. **Async Iterators**: Streaming data directly from the database to the XML writer.

@@ -40,7 +40,7 @@ const lux = new Luminosity({
   hostname: 'https://shop.com'
 })
 
-// Generator 函式逐行產出數據
+// Generator 函式逐行產出資料
 async function* getEntries() {
   const stream = db.select('slug', 'updated_at').from('products').stream()
   
@@ -69,7 +69,7 @@ import { serveStatic } from 'hono/bun'
 const app = new Hono()
 const lux = new Luminosity({ path: './dist' })
 
-// 1. 啟動時生成
+// 1. 啟動時產生
 await lux.generate(async function* () {
    // ... yield entries ...
 })

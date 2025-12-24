@@ -70,14 +70,14 @@ await lux.add('/products/awesome-shoe', {
 bun lux add /products/awesome-shoe --priority 0.9
 ```
 
-## 生成 Sitemap
+## 產生 Sitemap
 
-當您累積了一些 URL 後，您可以執行以下指令來生成最終的 Sitemap 檔案：
+當您累積了一些 URL 後，您可以執行以下指令來產生最終的 Sitemap 檔案：
 
 ```bash
 bun lux compact
 ```
 
-這將會讀取所有的變更紀錄，並生成優化過的 `sitemap.xml`。
+這將會讀取所有的變更紀錄，並產生優化過的 `sitemap.xml`。
 
 恭喜！您已經成功踏出了 SEO 優化的第一步。

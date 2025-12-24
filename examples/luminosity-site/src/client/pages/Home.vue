@@ -177,7 +177,7 @@ const { t, locale } = useI18n()
               <span class="text-xs font-mono uppercase tracking-wider">{{ t?.benchmark?.throughput }}</span>
             </div>
             <div class="text-5xl font-black text-white mb-2">70k<span class="text-xl text-gray-500 italic ml-1">/sec</span></div>
-            <div class="text-xs text-gray-500 uppercase tracking-widest">LSM Optimized</div>
+            <div class="text-xs text-gray-500 uppercase tracking-widest">LSM-Optimized</div>
           </div>
 
           <div class="p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-sm group hover:border-emerald-500/50 transition-colors">

@@ -16,7 +16,7 @@ Instead of regenerating your entire sitemap from scratch every time, Luminosity 
 - **Smart Governance**: Built-in lifecycle management (Create, Update, Delete, Warm).
 - **LSM-Tree Inspired**: Utilizes Log-Structured Merge patterns for high-throughput URL ingestion.
 - **Automated Compliance**: Automatic `robots.txt` generation and sitemap index splitting (50k limit).
-- **Framework Agnostic**: Works perfectly with Gravito, Hono, Express, or any Node.js/Bun framework.
+- **Framework-agnostic**: Works perfectly with Gravito, Hono, Express, or any Node.js/Bun framework.
 
 ## CLI First
 

@@ -6,7 +6,7 @@ export default {
     start: 'Get Started',
   },
   hero: {
-    tag: 'Luminosity Core v1.0 Alive',
+    tag: 'Luminosity Core v1.0 is Live',
     title: 'ATOMIC',
     subtitle: 'SITEMAPS',
     desc: 'The high-performance sitemap engine built for massive scale. Incremental indexing, zero-latency streaming, and intelligent SEO management.',
@@ -20,12 +20,12 @@ export default {
       desc: 'Inspired by modern databases. Appends new URLs to a log and merges them in the background, enabling millions of updates without downtime.',
     },
     enterprise: {
-      title: 'Enterprise Grade',
+      title: 'Enterprise-Grade',
       desc: 'Built-in mutex locking and stale-while-revalidate caching. Safe for high-traffic production environments.',
     },
     index: {
       title: 'Auto Sitemap Index',
-      desc: "Automatically handles Google's 50,000 URL limit by splitting sitemaps into a paginated Index.",
+      desc: "Automatically handles Google's 50,000 URL limit by splitting sitemaps into a paginated index.",
     },
     proxy: {
       title: 'Robots.txt Proxy',
@@ -59,7 +59,7 @@ export default {
       },
       zerocopy: {
         title: 'Zero-Copy Serialization',
-        desc: 'Leverages direct memory access for lightning fast data transfer.',
+        desc: 'Leverages direct memory access for lightning-fast data transfer.',
       },
       tiered: {
         title: 'Tiered Storage',
@@ -90,7 +90,7 @@ export default {
         },
         stale: {
           title: 'Stale-While-Revalidate',
-          desc: 'Serves slightly stale cache to bots during high load, ensuring 100% availability perception.',
+          desc: 'Serves slightly stale cache to bots during high load, ensuring 100% perceived availability.',
         },
       },
     },

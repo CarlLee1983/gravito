@@ -5,7 +5,7 @@ order: 4
 
 # CLI Reference
 
-Luminosity provides a powerful Command Line Interface (CLI) to manage your sitemaps, inspect indexes, and automate tasks in your CI/CD pipeline.
+Luminosity provides a powerful command-line interface (CLI) to manage your sitemaps, inspect indexes, and automate tasks in your CI/CD pipeline.
 
 ## Usage
 
@@ -75,7 +75,7 @@ bun x lux init
 
 ## CI/CD Integration
 
-Luminosity CLI is designed to exit with standard codes (0 for success, 1 for error), making it perfect for CI pipelines.
+Luminosity CLI is designed to exit with standard exit codes (0 for success, 1 for error), making it perfect for CI pipelines.
 
 **Example: GitHub Actions**
 
