@@ -3,6 +3,14 @@
  * @description Database driver for MySQL and MariaDB using mysql2 package
  */
 
+import {
+  ConnectionError,
+  DatabaseError,
+  ForeignKeyConstraintError,
+  NotNullConstraintError,
+  TableNotFoundError,
+  UniqueConstraintError,
+} from '../errors'
 import type {
   ConnectionConfig,
   DriverContract,
@@ -41,37 +49,42 @@ export class MySQLDriver implements DriverContract {
       return
     }
 
-    this.mysql = await this.loadMySQLModule()
+    try {
+      this.mysql = await this.loadMySQLModule()
+      const myConfig = this.config as any
 
-    const poolConfig: MySQLPoolConfig = {
-      host: this.config.host ?? 'localhost',
-      port: this.config.port ?? 3306,
-      database: this.config.database,
-      user: this.config.username,
-      password: this.config.password,
-      charset: this.config.charset ?? 'utf8mb4',
-      timezone: this.config.timezone ?? 'local',
-      connectionLimit: this.config.pool?.max ?? 10,
-      waitForConnections: true,
-      queueLimit: 0,
-    }
+      const poolConfig: MySQLPoolConfig = {
+        host: myConfig.host ?? 'localhost',
+        port: myConfig.port ?? 3306,
+        database: myConfig.database,
+        user: myConfig.username,
+        password: myConfig.password,
+        charset: myConfig.charset ?? 'utf8mb4',
+        timezone: myConfig.timezone ?? 'local',
+        connectionLimit: myConfig.pool?.max ?? 10,
+        waitForConnections: true,
+        queueLimit: 0,
+      }
 
-    // SSL configuration
-    if (this.config.ssl) {
-      if (typeof this.config.ssl === 'boolean') {
-        poolConfig.ssl = this.config.ssl ? {} : undefined
-      } else {
-        poolConfig.ssl = {
-          rejectUnauthorized: this.config.ssl.rejectUnauthorized,
-          ca: this.config.ssl.ca,
-          key: this.config.ssl.key,
-          cert: this.config.ssl.cert,
+      // SSL configuration
+      if (myConfig.ssl) {
+        if (typeof myConfig.ssl === 'boolean') {
+          poolConfig.ssl = myConfig.ssl ? {} : undefined
+        } else {
+          poolConfig.ssl = {
+            rejectUnauthorized: myConfig.ssl.rejectUnauthorized,
+            ca: myConfig.ssl.ca,
+            key: myConfig.ssl.key,
+            cert: myConfig.ssl.cert,
+          }
         }
       }
-    }
 
-    this.pool = this.mysql.createPool(poolConfig)
-    this.connected = true
+      this.pool = this.mysql.createPool(poolConfig)
+      this.connected = true
+    } catch (error) {
+      throw new ConnectionError('Could not connect to MySQL', error)
+    }
   }
 
   /**
@@ -79,12 +92,11 @@ export class MySQLDriver implements DriverContract {
    */
   private async loadMySQLModule(): Promise<MySQLModule> {
     try {
-      // @ts-expect-error - mysql2 is an optional peer dependency
       const mysql2 = await import('mysql2/promise')
       return mysql2 as unknown as MySQLModule
-    } catch {
+    } catch (e) {
       throw new Error(
-        'MySQL driver requires the "mysql2" package. Please install it: bun add mysql2'
+        `MySQL driver requires the "mysql2" package. Please install it: bun add mysql2. Original Error: ${e}`
       )
     }
   }
@@ -122,9 +134,25 @@ export class MySQLDriver implements DriverContract {
   ): Promise<QueryResult<T>> {
     const connection = this.transactionConnection ?? (await this.getConnection())
 
-    try {
-      const [rows, fields] = await connection.execute(sql, bindings)
+    const params = bindings.map(b => {
+        if (b === undefined) return null
+        return b instanceof Date ? b.toISOString().slice(0, 19).replace('T', ' ') : b
+    })
 
+    try {
+      const [result, fields] = await connection.execute(sql, params)
+
+      // If it's a write operation (no fields), return the header as a single row
+      if (!fields && result && typeof result === 'object' && 'insertId' in (result as any)) {
+          const header = result as any
+          const pseudoRow = { id: header.insertId, ...header }
+          return {
+              rows: [pseudoRow] as any,
+              rowCount: 1
+          }
+      }
+
+      const rows = Array.isArray(result) ? result as T[] : []
       const fieldInfo = fields?.map((f: MySQLFieldInfo) => ({
         name: f.name,
         dataType: f.type?.toString(),
@@ -132,10 +160,12 @@ export class MySQLDriver implements DriverContract {
       }))
 
       return {
-        rows: rows as T[],
-        rowCount: Array.isArray(rows) ? rows.length : 0,
+        rows,
+        rowCount: rows.length,
         ...(fieldInfo ? { fields: fieldInfo } : {}),
       }
+    } catch (error) {
+      throw this.normalizeError(error, sql, bindings)
     } finally {
       if (!this.transactionConnection && connection) {
         connection.release()
@@ -149,8 +179,13 @@ export class MySQLDriver implements DriverContract {
   async execute(sql: string, bindings: unknown[] = []): Promise<ExecuteResult> {
     const connection = this.transactionConnection ?? (await this.getConnection())
 
+    const params = bindings.map(b => {
+        if (b === undefined) return null
+        return b instanceof Date ? b.toISOString().slice(0, 19).replace('T', ' ') : b
+    })
+
     try {
-      const [result] = await connection.execute(sql, bindings)
+      const [result] = await connection.execute(sql, params)
       const resultInfo = result as MySQLResultSetHeader
 
       return {
@@ -160,6 +195,8 @@ export class MySQLDriver implements DriverContract {
           : {}),
         ...(resultInfo.changedRows !== undefined ? { changedRows: resultInfo.changedRows } : {}),
       }
+    } catch (error) {
+      throw this.normalizeError(error, sql, bindings)
     } finally {
       if (!this.transactionConnection && connection) {
         connection.release()
@@ -217,10 +254,36 @@ export class MySQLDriver implements DriverContract {
    */
   private async getConnection(): Promise<MySQLConnection> {
     if (!this.pool) {
-      throw new Error('Not connected to MySQL')
+      await this.connect()
+    }
+
+    if (!this.pool) {
+      throw new Error('MySQL pool is not initialized')
     }
 
     return await this.pool.getConnection()
+  }
+
+  /**
+   * Normalize MySQL/MariaDB errors
+   */
+  private normalizeError(error: any, sql: string, bindings: unknown[]): DatabaseError {
+    const code = error.errno || error.code
+
+    if (code === 1062) {
+      return new UniqueConstraintError(error.message, error, sql, bindings)
+    }
+    if (code === 1451 || code === 1452) {
+      return new ForeignKeyConstraintError(error.message, error, sql, bindings)
+    }
+    if (code === 1048) {
+      return new NotNullConstraintError(error.message, error, sql, bindings)
+    }
+    if (code === 1146) {
+      return new TableNotFoundError(error.message, error, sql, bindings)
+    }
+
+    return new DatabaseError(error.message, error, sql, bindings)
   }
 }
 

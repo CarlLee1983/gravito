@@ -7,4 +7,5 @@ export { MySQLGrammar } from './MySQLGrammar'
 export { PostgresGrammar } from './PostgresGrammar'
 
 // Future grammars
-// export { SQLiteGrammar } from './SQLiteGrammar'
+export { SQLiteGrammar } from './SQLiteGrammar'
+export { NullGrammar } from './NullGrammar'

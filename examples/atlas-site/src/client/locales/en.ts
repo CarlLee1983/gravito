@@ -40,7 +40,7 @@ export default {
       'Atlas brings the Active Record pattern to TypeScript. Define models with decorators, manage lifecycle hooks, and enjoy powerful relationship handling (HasMany, BelongsTo) that mirrors the best parts of Laravel Eloquent.',
     query_title: 'Fluent Orbit Builder',
     query_desc:
-      'Build complex queries with a chainable API. Support for eager loading (with), pagination, and database transactions comes built-in, designed for maximum readability for PHP artisans moving to the edge.',
+      'Build complex queries with a chainable API. Supports eager loading (with), pagination, and database transactions, with an API designed for maximum readability for PHP artisans moving to the edge.',
     migration_title: 'Versioning for Humans',
     migration_desc:
       'Database migrations that work like Git. Up and Down methods provide a safe, predictable way to evolve your schema across multiple environments with a familiar Laravel-style syntax.',
@@ -79,7 +79,7 @@ export default {
     security_protected: 'PROTECTED',
     cli_title: 'CLI Command Center',
     cli_desc:
-      'A powerful command line interface designed for automated task governance. Handle migrations, model generation, and seeding with zero friction, keeping your focus where it belongs—on building.',
+      'A powerful command-line interface designed for automated task governance. Handle migrations, model generation, and seeding with zero friction, keeping your focus where it belongs—on building.',
     cli_button: 'Explore CLI Guide →',
   },
   connection_hub: {
@@ -99,7 +99,7 @@ export default {
   },
   installation: {
     title: 'Initialize Gravity',
-    requires: 'Requires Gravito ecosystem or standalone standard usage.',
+    requires: 'Works within the Gravito ecosystem or as a standalone package.',
     transferred: 'System: Transferred',
     bun_optimized: 'Optimized for Bun Runtime',
     bun_desc:

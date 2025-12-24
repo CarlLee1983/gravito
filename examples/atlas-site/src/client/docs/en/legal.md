@@ -7,7 +7,7 @@ _Last Updated: January 1, 2025_
 ### Static Policy (靜態聲明)
 This website is generated statically and does not use cookies, trackers, or external analytics scripts by default. We respect your digital sovereignty.
 
-本網站為靜態生成的文檔站點，預設不使用任何 Cookies、追蹤器或外部分析腳本。我們尊重您的數位主權。
+本網站為靜態生成的文件站點，預設不使用任何 Cookies、追蹤器或外部分析腳本。我們尊重您的數位主權。
 
 ### Data Collection (資料收集)
 We do not collect, store, or process any personal data from visitors. Any interaction with the `Live Console` or playground runs entirely within your browser's local sandbox or connects directly to ephemeral demo instances that retain no logs.

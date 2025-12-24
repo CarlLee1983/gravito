@@ -28,6 +28,16 @@ export abstract class Grammar implements GrammarContract {
    */
   protected abstract wrapChar: string
 
+  /**
+   * Cache for pre-compiled SQL statements
+   */
+  protected compilationCache: Map<string, string> = new Map()
+
+  /**
+   * Toggle for compilation cache
+   */
+  public static useCache = true
+
   // ============================================================================
   // Abstract Methods (Must be implemented by subclasses)
   // ============================================================================
@@ -54,6 +64,14 @@ export abstract class Grammar implements GrammarContract {
    * Compile a SELECT statement
    */
   compileSelect(query: CompiledQuery): string {
+    // 1. Try to get from cache first
+    let cacheKey = ''
+    if (Grammar.useCache) {
+        cacheKey = this.getStructuralKey(query)
+        const cached = this.compilationCache.get(cacheKey)
+        if (cached) return cached
+    }
+
     const parts: string[] = []
 
     // SELECT [DISTINCT] columns
@@ -97,7 +115,43 @@ export abstract class Grammar implements GrammarContract {
       parts.push(this.compileOffset(query))
     }
 
-    return parts.filter(Boolean).join(' ')
+    const sql = parts.filter(Boolean).join(' ')
+
+    // 2. Store in cache
+    if (Grammar.useCache && cacheKey) {
+        this.compilationCache.set(cacheKey, sql)
+    }
+
+    return sql
+  }
+
+  /**
+   * Generate a unique structural key for a query (excluding values)
+   */
+  protected getStructuralKey(query: CompiledQuery): string {
+      const wheres = query.wheres.map(w => 
+          `${w.type}:${w.column}:${w.operator}:${w.boolean}:${w.not}:${w.sql}`
+      ).join('|')
+
+      const joins = query.joins.map(j => 
+          `${j.type}:${j.table}:${j.first}:${j.operator}:${j.second}`
+      ).join('|')
+
+      const orders = query.orders.map(o => `${o.column}:${o.direction}`).join('|')
+      const havings = query.havings.map(h => `${h.type}:${h.column}:${h.operator}:${h.boolean}`).join('|')
+
+      return [
+          query.table,
+          query.columns.join(','),
+          query.distinct ? '1' : '0',
+          wheres,
+          joins,
+          query.groups.join(','),
+          havings,
+          orders,
+          query.limit !== undefined ? 'L' : 'X',
+          query.offset !== undefined ? 'O' : 'X'
+      ].join('_')
   }
 
   /**
@@ -620,5 +674,31 @@ export abstract class Grammar implements GrammarContract {
     _query: CompiledQuery
   ): { sql: string; bindings: unknown[] } {
     throw new Error('LATERAL eager loading is not supported by this database driver.')
+  }
+
+  // ============================================================================
+  // JSON Compilation (Default - Override in drivers)
+  // ============================================================================
+
+  /**
+   * Compile a JSON path query
+   * Default implementation throws (not supported by all)
+   */
+  compileJsonPath(_column: string, _value: unknown): string {
+    throw new Error('JSON queries are not supported by this database driver.')
+  }
+
+  /**
+   * Compile a JSON contains query
+   */
+  compileJsonContains(_column: string, _value: unknown): string {
+    throw new Error('JSON contains queries are not supported by this database driver.')
+  }
+
+  /**
+   * Compile a JSON update query
+   */
+  compileUpdateJson(_query: CompiledQuery, _column: string, _value: unknown): string {
+      throw new Error('Partial JSON updates are not supported by this database driver.')
   }
 }

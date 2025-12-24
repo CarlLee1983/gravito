@@ -13,7 +13,7 @@ await Bun.build({
   target: 'node',
   minify: false,
   splitting: true,
-  external: ['pg', 'mysql2', 'better-sqlite3'],
+  external: ['pg', 'mysql2', 'better-sqlite3', 'mongodb', 'ioredis'],
 })
 
 console.log('📝 Generating type declarations...')

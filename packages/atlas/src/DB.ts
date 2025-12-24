@@ -189,7 +189,16 @@ export class DB {
    * Create a raw SQL expression that will not be escaped.
    * Useful for complex `where` clauses or updates.
    */
-  static raw_expr = raw
+  /**
+   * Execute a raw SQL query against the database.
+   * Alias for raw() to match Laravel Artisan/Eloquent style sometimes used in JS
+   */
+  static async rawQuery<T = Record<string, unknown>>(
+    sql: string,
+    bindings: unknown[] = []
+  ): Promise<QueryResult<T>> {
+    return DB.raw<T>(sql, bindings)
+  }
 
   // ============================================================================
   // Transactions

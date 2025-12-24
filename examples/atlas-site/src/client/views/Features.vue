@@ -32,7 +32,7 @@
                           <ul class="text-xs space-y-2 text-gray-500">
                               <li>• Intuitive Model Definition</li>
                               <li>• Strong Structural Integrity</li>
-                              <li>• Rich Ecosystem feeling</li>
+                              <li>• Rich ecosystem feel</li>
                               <li class="text-red-400/50 line-through">× Heavy Rust Binary</li>
                               <li class="text-red-400/50 line-through">× Custom Schema Language</li>
                           </ul>
@@ -44,7 +44,7 @@
                              Drizzle's Performance
                           </div>
                           <ul class="text-xs space-y-2 text-gray-500">
-                              <li>• Zero Dependencies (No binary)</li>
+                              <li>• No binaries</li>
                               <li>• Raw SQL Power</li>
                               <li>• Direct TS-first approach</li>
                               <li class="text-red-400/50 line-through">× Verbose Query API</li>
@@ -199,7 +199,7 @@
 <span class="text-purple-400">for await</span> (<span class="text-purple-400">const</span> <span class="text-blue-300">users</span> <span class="text-purple-400">of</span> <span class="text-yellow-400">User</span>.<span class="text-blue-300">cursor</span>(<span class="text-orange-300">500</span>)) {
   <span class="text-purple-400">for</span> (<span class="text-purple-400">const</span> <span class="text-blue-300">user</span> <span class="text-purple-400">of</span> <span class="text-blue-300">users</span>) {
     <span class="text-purple-400">await</span> <span class="text-blue-300">user</span>.<span class="text-blue-300">syncToSearchEngine</span>()
-    <span class="text-gray-500">// System handles memory garbage collection </span>
+    <span class="text-gray-500">// System handles garbage collection </span>
   }
 }
 

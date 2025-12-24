@@ -10,16 +10,16 @@
 /**
  * Supported database driver types
  */
-export type DriverType = 'postgres' | 'mysql' | 'mariadb' | 'sqlite'
+export type DriverType = 'postgres' | 'mysql' | 'mariadb' | 'sqlite' | 'mongodb' | 'redis'
 
 /**
- * Base connection configuration
+ * Base connection interface
  */
-export interface ConnectionConfig {
+export interface BaseConnectionConfig {
   driver: DriverType
   host?: string
   port?: number
-  database: string
+  database?: string
   username?: string
   password?: string
   charset?: string
@@ -29,9 +29,20 @@ export interface ConnectionConfig {
 }
 
 /**
+ * Union type for all connection configurations
+ */
+export type ConnectionConfig =
+  | PostgresConfig
+  | MySQLConfig
+  | SQLiteConfig
+  | MongoDBConfig
+  | RedisConfig
+  | BaseConnectionConfig
+
+/**
  * PostgreSQL specific configuration
  */
-export interface PostgresConfig extends ConnectionConfig {
+export interface PostgresConfig extends BaseConnectionConfig {
   driver: 'postgres'
   schema?: string
   applicationName?: string
@@ -40,7 +51,7 @@ export interface PostgresConfig extends ConnectionConfig {
 /**
  * MySQL/MariaDB specific configuration
  */
-export interface MySQLConfig extends ConnectionConfig {
+export interface MySQLConfig extends BaseConnectionConfig {
   driver: 'mysql' | 'mariadb'
   socketPath?: string
   multipleStatements?: boolean
@@ -53,6 +64,26 @@ export interface SQLiteConfig {
   driver: 'sqlite'
   database: string // file path or ':memory:'
   readonly?: boolean
+}
+
+/**
+ * MongoDB specific configuration
+ */
+export interface MongoDBConfig extends BaseConnectionConfig {
+  driver: 'mongodb'
+  uri: string
+  options?: any
+}
+
+/**
+ * Redis specific configuration
+ */
+export interface RedisConfig extends BaseConnectionConfig {
+  driver: 'redis'
+  host: string
+  port?: number
+  password?: string
+  db?: number
 }
 
 /**
@@ -345,6 +376,12 @@ export interface QueryBuilderContract<T = Record<string, unknown>> {
   orWhereRaw(sql: string, bindings?: unknown[]): this
   whereColumn(first: string, operator: Operator, second: string): this
 
+  // JSON
+  whereJson(column: string, value: unknown): this
+  orWhereJson(column: string, value: unknown): this
+  whereJsonContains(column: string, value: unknown): this
+  orWhereJsonContains(column: string, value: unknown): this
+
   // JOIN
   join(table: string, first: string, operator: string, second: string): this
   leftJoin(table: string, first: string, operator: string, second: string): this
@@ -391,6 +428,7 @@ export interface QueryBuilderContract<T = Record<string, unknown>> {
   insert(data: Partial<T> | Partial<T>[]): Promise<T[]>
   insertGetId(data: Partial<T>, primaryKey?: string): Promise<number | bigint>
   update(data: Partial<T>): Promise<number>
+  updateJson(column: string, value: unknown): Promise<number>
   delete(): Promise<number>
   truncate(): Promise<void>
 
@@ -416,6 +454,11 @@ export interface QueryBuilderContract<T = Record<string, unknown>> {
 
   // CLONING
   clone(): QueryBuilderContract<T>
+
+  /**
+   * Set the query to read-only mode to skip Model hydration overhead.
+   */
+  readonly(value?: boolean): this
 
   // INTERNAL/ADVANCED
   getCompiledQuery(): CompiledQuery
@@ -530,6 +573,20 @@ export interface GrammarContract {
     parentKeys: unknown[],
     query: CompiledQuery
   ): { sql: string; bindings: unknown[] }
+
+  /**
+   * Compile a JSON path query
+   */
+  compileJsonPath(column: string, value: unknown): string
+
+  /**
+   * Compile a JSON contains query
+   */
+  compileJsonContains(column: string, value: unknown): string
+  /**
+   * Compile a JSON update statement
+   */
+  compileUpdateJson(query: CompiledQuery, column: string, value: unknown): string
 }
 
 /**

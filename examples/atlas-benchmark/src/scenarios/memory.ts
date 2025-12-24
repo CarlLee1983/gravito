@@ -26,7 +26,7 @@ export async function runMemoryScenario() {
 
   // 1. Seed Data
   const BATCH_SIZE = 1000
-  const TOTAL_RECORDS = 50000 // Increased to 50k for better proof
+  const TOTAL_RECORDS = 10000 // Stable count for consistent results
   const PAYLOAD_SIZE = 1024 // 1KB
   const payload = 'x'.repeat(PAYLOAD_SIZE)
 

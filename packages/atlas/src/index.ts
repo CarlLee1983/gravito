@@ -50,6 +50,16 @@ export { DB } from './DB'
 // Drivers
 export { PostgresDriver } from './drivers/PostgresDriver'
 export { SQLiteDriver } from './drivers/SQLiteDriver'
+// Errors
+export {
+  ConnectionError,
+  ConstraintViolationError,
+  DatabaseError,
+  ForeignKeyConstraintError,
+  NotNullConstraintError,
+  TableNotFoundError,
+  UniqueConstraintError,
+} from './errors'
 // Grammar
 export { Grammar } from './grammar/Grammar'
 export { PostgresGrammar } from './grammar/PostgresGrammar'
@@ -74,13 +84,19 @@ export type {
 } from './orm'
 // ORM
 export {
+  BelongsTo,
+  BelongsToMany,
+  column,
   ColumnNotFoundError,
   DirtyTracker,
+  HasMany,
+  HasOne,
   Model,
   ModelNotFoundError,
   NullableConstraintError,
   SchemaRegistry,
   SchemaSniffer,
+  SoftDeletes,
   TypeMismatchError,
 } from './orm'
 export { Expression, raw } from './query/Expression'

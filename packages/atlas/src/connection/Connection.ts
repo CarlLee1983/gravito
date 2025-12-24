@@ -3,10 +3,16 @@
  * @description Represents a database connection
  */
 
-import { PostgresDriver } from '../drivers/PostgresDriver'
-import { SQLiteDriver } from '../drivers/SQLiteDriver'
+import { MongoGrammar } from '../grammar/MongoGrammar'
+import { MySQLGrammar } from '../grammar/MySQLGrammar'
 import { PostgresGrammar } from '../grammar/PostgresGrammar'
 import { SQLiteGrammar } from '../grammar/SQLiteGrammar'
+import { NullGrammar } from '../grammar/NullGrammar'
+import { MySQLDriver } from '../drivers/MySQLDriver'
+import { PostgresDriver } from '../drivers/PostgresDriver'
+import { SQLiteDriver } from '../drivers/SQLiteDriver'
+import { MongoDBDriver } from '../drivers/MongoDBDriver'
+import { RedisDriver } from '../drivers/RedisDriver'
 import { QueryBuilder } from '../query/QueryBuilder'
 import type {
   ConnectionConfig,
@@ -33,6 +39,20 @@ export class Connection implements ConnectionContract {
   ) {
     this.driver = this.createDriver()
     this.grammar = this.createGrammar()
+
+    // Proxy driver methods (e.g. redis.set, mongodb.collection)
+    return new Proxy(this, {
+      get(target: any, prop: string | symbol) {
+        if (prop in target) {
+          return target[prop]
+        }
+        // Fallback to driver if method exists there
+        if (typeof prop === 'string' && target.driver && typeof (target.driver as any)[prop] === 'function') {
+          return (target.driver as any)[prop].bind(target.driver)
+        }
+        return undefined
+      }
+    })
   }
 
   /**
@@ -68,6 +88,13 @@ export class Connection implements ConnectionContract {
    */
   table<T = Record<string, unknown>>(tableName: string): QueryBuilderContract<T> {
     return new QueryBuilder<T>(this, this.grammar, tableName)
+  }
+
+  /**
+   * Alias for table() for NoSQL connections
+   */
+  collection<T = Record<string, unknown>>(name: string): QueryBuilderContract<T> {
+    return this.table<T>(name)
   }
 
   /**
@@ -136,11 +163,15 @@ export class Connection implements ConnectionContract {
         return new PostgresDriver(this.config as PostgresConfig)
       case 'mysql':
       case 'mariadb':
-        throw new Error(`Driver "${this.config.driver}" is not yet implemented`)
+        return new MySQLDriver(this.config, this.config.driver)
       case 'sqlite':
         return new SQLiteDriver(this.config)
+      case 'mongodb':
+        return new MongoDBDriver(this.config)
+      case 'redis':
+        return new RedisDriver(this.config)
       default:
-        throw new Error(`Unknown driver: ${this.config.driver}`)
+        throw new Error(`Unknown driver: ${(this.config as any).driver}`)
     }
   }
 
@@ -153,11 +184,15 @@ export class Connection implements ConnectionContract {
         return new PostgresGrammar()
       case 'mysql':
       case 'mariadb':
-        throw new Error(`Grammar for "${this.config.driver}" is not yet implemented`)
+        return new MySQLGrammar()
       case 'sqlite':
         return new SQLiteGrammar()
+      case 'mongodb':
+        return new MongoGrammar()
+      case 'redis':
+        return new NullGrammar()
       default:
-        throw new Error(`Unknown grammar: ${this.config.driver}`)
+        throw new Error(`Unknown grammar: ${(this.config as any).driver}`)
     }
   }
 }

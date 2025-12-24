@@ -28,8 +28,8 @@ export interface RelationshipOptions {
 export interface RelationshipMeta {
   type: RelationType
   related: () => ModelConstructor<Model> & typeof Model
-  foreignKey: string
-  localKey: string
+  foreignKey?: string
+  localKey?: string
   pivotTable?: string | undefined
   relatedKey?: string | undefined
   pivotColumns?: string[] | undefined
@@ -101,8 +101,8 @@ export function HasOne(
     defineRelationship(model, String(propertyKey), {
       type: 'hasOne',
       related,
-      foreignKey: options.foreignKey ?? `${model.table.replace(/s$/, '')}_id`,
-      localKey: options.localKey ?? model.primaryKey,
+      foreignKey: options.foreignKey,
+      localKey: options.localKey,
     })
   }
 }
@@ -127,8 +127,8 @@ export function HasMany(
     defineRelationship(model, String(propertyKey), {
       type: 'hasMany',
       related,
-      foreignKey: options.foreignKey ?? `${model.table.replace(/s$/, '')}_id`,
-      localKey: options.localKey ?? model.primaryKey,
+      foreignKey: options.foreignKey,
+      localKey: options.localKey,
     })
   }
 }
@@ -149,13 +149,12 @@ export function BelongsTo(
 ): PropertyDecorator {
   return (target: object, propertyKey: string | symbol) => {
     const model = target.constructor as typeof Model
-    const relatedModel = related()
 
     defineRelationship(model, String(propertyKey), {
       type: 'belongsTo',
       related,
-      foreignKey: options.foreignKey ?? `${relatedModel.table.replace(/s$/, '')}_id`,
-      localKey: options.localKey ?? relatedModel.primaryKey,
+      foreignKey: options.foreignKey,
+      localKey: options.localKey,
     })
   }
 }
@@ -176,19 +175,14 @@ export function BelongsToMany(
 ): PropertyDecorator {
   return (target: object, propertyKey: string | symbol) => {
     const model = target.constructor as typeof Model
-    const relatedModel = related()
-
-    // Auto-generate pivot table name (alphabetical order)
-    const tables = [model.table, relatedModel.table].sort()
-    const pivotTable = options.pivotTable ?? `${tables[0]}_${tables[1]}`
 
     defineRelationship(model, String(propertyKey), {
       type: 'belongsToMany',
       related,
-      foreignKey: options.foreignKey ?? `${model.table.replace(/s$/, '')}_id`,
-      localKey: options.localKey ?? model.primaryKey,
-      pivotTable,
-      relatedKey: options.relatedKey ?? `${relatedModel.table.replace(/s$/, '')}_id`,
+      foreignKey: options.foreignKey,
+      localKey: options.localKey,
+      pivotTable: options.pivotTable,
+      relatedKey: options.relatedKey,
       pivotColumns: options.pivotColumns,
     })
   }
@@ -230,7 +224,32 @@ export async function eagerLoad<T extends Model>(
   }
 
   const Related = relationMeta.related()
-  const { type, foreignKey, localKey } = relationMeta
+  let { type, foreignKey, localKey } = relationMeta
+
+  const relatedTable = (Related as any).getTable()
+  const parentTable = (parentModel as any).getTable()
+
+  // Resolve defaults if missing
+  if (!foreignKey) {
+      if (type === 'belongsTo') {
+          foreignKey = `${relatedTable.replace(/s$/, '')}_id`
+      } else if (type === 'hasMany' || type === 'hasOne') {
+          foreignKey = `${parentTable.replace(/s$/, '')}_id`
+      } else if (type === 'belongsToMany') {
+          foreignKey = `${parentTable.replace(/s$/, '')}_id`
+      }
+  }
+
+  if (!localKey) {
+      if (type === 'belongsTo') {
+          localKey = Related.primaryKey
+      } else {
+          localKey = parentModel.primaryKey
+      }
+  }
+
+  // Ensure they are strings now
+  if (!foreignKey || !localKey) throw new Error("Could not resolve keys")
 
   // Get parent keys
   const parentKeys = parents.map((p) => (p as any)[localKey])
@@ -294,7 +313,10 @@ export async function eagerLoad<T extends Model>(
       // Assign to parents
       for (const parent of parents) {
         const pk = (parent as any)[localKey]
-        const items = relatedByFk.get(pk) ?? []
+        // Handle MongoDB _id vs id mapping in results
+        const items = relatedByFk.get(pk) ?? 
+                     (typeof pk === 'string' ? relatedByFk.get(pk) : undefined) ?? 
+                     []
 
         if (type === 'hasOne') {
           ;(parent as any)[currentRelation] = items[0] ?? null
@@ -343,7 +365,20 @@ export async function eagerLoad<T extends Model>(
     }
 
     case 'belongsToMany': {
-      const { pivotTable, relatedKey } = relationMeta
+      let { pivotTable, relatedKey } = relationMeta
+      
+      const relatedTable = (Related as any).getTable()
+      const parentTable = (parentModel as any).getTable()
+
+      // Resolve pivot defaults
+      if (!pivotTable) {
+          const tables = [parentTable, relatedTable].sort()
+          pivotTable = `${tables[0]}_${tables[1]}`
+      }
+      if (!relatedKey) {
+          relatedKey = `${relatedTable.replace(/s$/, '')}_id`
+      }
+
       if (!pivotTable || !relatedKey) {
         return
       }
@@ -357,7 +392,7 @@ export async function eagerLoad<T extends Model>(
         .get()
 
       // 2. Get related models
-      const relatedIds = [...new Set(pivots.map((p) => p[relatedKey]))]
+      const relatedIds = [...new Set(pivots.map((p) => p[relatedKey!]))]
       if (relatedIds.length === 0) {
         return
       }
@@ -387,12 +422,12 @@ export async function eagerLoad<T extends Model>(
         if (!pivotsByParent.has(pk)) {
           pivotsByParent.set(pk, [])
         }
-        pivotsByParent.get(pk)?.push(pivot[relatedKey])
+        pivotsByParent.get(pk)?.push(pivot[relatedKey!])
       }
 
       // Assign to parents
       for (const parent of parents) {
-        const pk = (parent as any)[relationMeta.localKey]
+        const pk = (parent as any)[localKey]
         const relatedPks = pivotsByParent.get(pk) ?? []
         const relatedModels = relatedPks
           .map((rpk) => relatedByPk.get(rpk))

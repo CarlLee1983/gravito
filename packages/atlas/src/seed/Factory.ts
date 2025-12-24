@@ -53,6 +53,35 @@ export class Factory<T extends Record<string, unknown>> {
   }
 
   /**
+   * Define a factory for a model
+   */
+  static define<T extends Record<string, unknown>>(
+    modelOrTable: (typeof Model) | string,
+    definition: FactoryDefinition<T>
+  ): Factory<T> {
+    const options: FactoryOptions = typeof modelOrTable === 'string' 
+        ? { table: modelOrTable } 
+        : { model: modelOrTable }
+    return new Factory(definition, options)
+  }
+
+  /**
+   * Create a factory for a specific model
+   */
+  static model(model: typeof Model): Factory<any> {
+      // In a real app, this would look up the defined factory for this model
+      // For this implementation, we return a generic factory
+      return new Factory(() => ({}), { model })
+  }
+
+  /**
+   * Create and insert multiple records
+   */
+  async createMany(n: number, attributes: FactoryState<T> = {}): Promise<T[]> {
+      return this.count(n).create(attributes)
+  }
+
+  /**
    * Set the number of records to generate
    */
   count(n: number): this {

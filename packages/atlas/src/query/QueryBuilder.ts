@@ -48,6 +48,7 @@ export class RecordNotFoundError extends Error {
 export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderContract<T> {
   // Query state
   protected tableName: string
+  protected modelClass?: any
   protected columns: string[] = ['*']
   protected distinctValue = false
   protected wheres: WhereClause[] = []
@@ -58,6 +59,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   protected limitValue: number | undefined = undefined
   protected offsetValue: number | undefined = undefined
   protected bindingsList: unknown[] = []
+  protected isReadOnly = false
   // biome-ignore lint/suspicious/noExplicitAny: Eager loads need any for flexibility
   protected eagerLoads = new Map<string, (query: QueryBuilderContract<any>) => void>()
   protected _cache?: { ttl: number; key?: string }
@@ -74,6 +76,21 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
     table: string
   ) {
     this.tableName = table
+  }
+
+  /**
+   * Set the model class for this query
+   */
+  setModel(model: any): this {
+      this.modelClass = model
+      return this
+  }
+
+  /**
+   * Get the model class
+   */
+  getModel(): any {
+      return this.modelClass
   }
 
   // ============================================================================
@@ -407,6 +424,39 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
       boolean: 'and',
     })
     return this
+  }
+
+  // ============================================================================
+  // JSON Methods
+  // ============================================================================
+
+  /**
+   * Add a WHERE JSON clause
+   * @example .whereJson('data->user->id', 1)
+   */
+  whereJson(column: string, value: unknown): this {
+    return this.whereRaw(this.grammar.compileJsonPath(column, value), [value])
+  }
+
+  /**
+   * Add an OR WHERE JSON clause
+   */
+  orWhereJson(column: string, value: unknown): this {
+    return this.orWhereRaw(this.grammar.compileJsonPath(column, value), [value])
+  }
+
+  /**
+   * Add a WHERE JSON CONTAINS clause
+   */
+  whereJsonContains(column: string, value: unknown): this {
+    return this.whereRaw(this.grammar.compileJsonContains(column, value), [JSON.stringify(value)])
+  }
+
+  /**
+   * Add an OR WHERE JSON CONTAINS clause
+   */
+  orWhereJsonContains(column: string, value: unknown): this {
+    return this.orWhereRaw(this.grammar.compileJsonContains(column, value), [JSON.stringify(value)])
   }
 
   /**
@@ -791,7 +841,24 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
       return []
     }
 
-    // Collect bindings from values
+    // Determine chunk size based on driver or default to 1000
+    // To be perfectly safe, we use a conservative 1000 to avoid parameter limits (e.g. 65535 in some DBs)
+    const chunkSize = 1000
+    const results: T[] = []
+
+    if (values.length > chunkSize) {
+        // Run in a transaction if we are doing multiple chunks to ensure atomicity
+        return await this.connection.transaction(async (trx) => {
+            for (let i = 0; i < values.length; i += chunkSize) {
+                const chunk = values.slice(i, i + chunkSize)
+                const chunkResult = await trx.table<T>(this.tableName).insert(chunk)
+                results.push(...chunkResult)
+            }
+            return results
+        })
+    }
+
+    // Original single-batch logic
     const allBindings: unknown[] = []
     for (const row of values) {
       allBindings.push(...Object.values(row as Record<string, unknown>))
@@ -836,6 +903,21 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
     const sql = this.grammar.compileUpdate(compiled, data as Record<string, unknown>)
     const result = await this.connection.getDriver().execute(sql, allBindings)
     return result.affectedRows
+  }
+
+  /**
+   * Update JSON column partially
+   * @example .updateJson('settings->theme', 'dark')
+   */
+  async updateJson(column: string, value: unknown): Promise<number> {
+      const sql = this.grammar.compileUpdateJson(
+          this.getCompiledQuery(),
+          column,
+          value
+      )
+      // For JSON updates, the value is often embedded in SQL or passed as a single binding
+      const result = await this.connection.getDriver().execute(sql, [value, ...this.bindingsList])
+      return result.affectedRows
   }
 
   /**
@@ -904,6 +986,55 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
       }
     }
     return this
+  }
+
+  /**
+   * Add a WHERE HAS relationship existence clause
+   */
+  whereHas(relation: string, callback?: (query: QueryBuilderContract<any>) => void): this {
+    if (!this.modelClass) {
+        throw new Error(`whereHas() requires a model context. Ensure you are calling it from User.query().`)
+    }
+
+    const { getRelationships } = require('../orm/model/relationships')
+    const relations = getRelationships(this.modelClass)
+    const meta = relations.get(relation)
+
+    if (!meta) {
+        throw new Error(`Relationship '${relation}' not found on model '${this.modelClass.name}'`)
+    }
+
+    const Related = meta.related()
+    const relatedTable = Related.getTable ? Related.getTable() : Related.table
+    const subQuery = Related.query()
+
+    // Resolve keys
+    let foreignKey = meta.foreignKey
+    let localKey = meta.localKey
+
+    if (!foreignKey) {
+        foreignKey = meta.type === 'belongsTo' 
+            ? `${relatedTable.replace(/s$/, '')}_id`
+            : `${this.tableName.replace(/s$/, '')}_id`
+    }
+    if (!localKey) {
+        localKey = meta.type === 'belongsTo' ? Related.primaryKey : 'id'
+    }
+
+    // Link subquery to parent: EXISTS (SELECT 1 FROM related WHERE related.fk = parent.pk)
+    if (meta.type === 'belongsTo') {
+        // For BelongsTo, the FK is on OUR table
+        subQuery.whereColumn(`${relatedTable}.${localKey}`, '=', `${this.tableName}.${foreignKey}`)
+    } else {
+        // For HasMany/HasOne, the FK is on THEIR table
+        subQuery.whereColumn(`${relatedTable}.${foreignKey}`, '=', `${this.tableName}.${localKey}`)
+    }
+
+    if (callback) {
+        callback(subQuery)
+    }
+
+    return this.whereRaw(`EXISTS (${subQuery.selectRaw('1').toSql()})`, subQuery.getBindings())
   }
 
   /**
@@ -1062,6 +1193,21 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   // ============================================================================
 
   /**
+   * Set the query to read-only mode
+   */
+  readonly(value = true): this {
+      this.isReadOnly = value
+      return this
+  }
+
+  /**
+   * Check if query is in read-only mode
+   */
+  getIsReadOnly(): boolean {
+      return this.isReadOnly
+  }
+
+  /**
    * Clone the query builder
    */
   clone(): QueryBuilderContract<T> {
@@ -1076,6 +1222,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
     cloned.limitValue = this.limitValue
     cloned.offsetValue = this.offsetValue
     cloned.bindingsList = [...this.bindingsList]
+    cloned.isReadOnly = this.isReadOnly
     cloned.globalScopes = new Map(this.globalScopes)
     cloned.removedScopes = new Set(this.removedScopes)
     return cloned

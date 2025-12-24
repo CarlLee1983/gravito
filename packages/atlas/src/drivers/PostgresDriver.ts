@@ -3,6 +3,14 @@
  * @description Database driver implementation for PostgreSQL using node-pg
  */
 
+import {
+  ConnectionError,
+  DatabaseError,
+  ForeignKeyConstraintError,
+  NotNullConstraintError,
+  TableNotFoundError,
+  UniqueConstraintError,
+} from '../errors'
 import type {
   DriverContract,
   DriverType,
@@ -38,30 +46,34 @@ export class PostgresDriver implements DriverContract {
       return
     }
 
-    // Dynamic import of pg to avoid bundling issues
-    const pg = await this.loadPgModule()
+    try {
+      // Dynamic import of pg to avoid bundling issues
+      const pg = await this.loadPgModule()
 
-    // Build connection config
-    const poolConfig: PgPoolConfig = {
-      host: this.config.host ?? 'localhost',
-      port: this.config.port ?? 5432,
-      database: this.config.database,
-      user: this.config.username,
-      password: this.config.password,
-      ssl: this.config.ssl,
-      // Pool settings
-      min: this.config.pool?.min ?? 2,
-      max: this.config.pool?.max ?? 10,
-      idleTimeoutMillis: this.config.pool?.idleTimeout ?? 30000,
-      connectionTimeoutMillis: this.config.pool?.acquireTimeout ?? 5000,
+      // Build connection config
+      const poolConfig: PgPoolConfig = {
+        host: this.config.host ?? 'localhost',
+        port: this.config.port ?? 5432,
+        database: this.config.database,
+        user: this.config.username,
+        password: this.config.password,
+        ssl: this.config.ssl,
+        // Pool settings
+        min: this.config.pool?.min ?? 2,
+        max: this.config.pool?.max ?? 10,
+        idleTimeoutMillis: this.config.pool?.idleTimeout ?? 30000,
+        connectionTimeoutMillis: this.config.pool?.acquireTimeout ?? 5000,
+      }
+
+      if (this.config.applicationName) {
+        poolConfig.application_name = this.config.applicationName
+      }
+
+      this.pool = new pg.Pool(poolConfig)
+      this.connected = true
+    } catch (error) {
+      throw new ConnectionError('Could not connect to PostgreSQL', error)
     }
-
-    if (this.config.applicationName) {
-      poolConfig.application_name = this.config.applicationName
-    }
-
-    this.pool = new pg.Pool(poolConfig)
-    this.connected = true
   }
 
   /**
@@ -97,9 +109,10 @@ export class PostgresDriver implements DriverContract {
     bindings: unknown[] = []
   ): Promise<QueryResult<T>> {
     const client = await this.getClient()
+    const params = bindings.map(b => b === undefined ? null : b)
 
     try {
-      const result = await client.query(sql, bindings)
+      const result = await client.query(sql, params)
 
       const fields = result.fields?.map((f: PgFieldInfo) => ({
         name: f.name,
@@ -112,6 +125,8 @@ export class PostgresDriver implements DriverContract {
         rowCount: result.rowCount ?? 0,
         ...(fields ? { fields } : {}),
       }
+    } catch (error) {
+      throw this.normalizeError(error, sql, bindings)
     } finally {
       // Release client if not in transaction
       if (!this.transactionActive && client !== this.transactionClient) {
@@ -125,9 +140,10 @@ export class PostgresDriver implements DriverContract {
    */
   async execute(sql: string, bindings: unknown[] = []): Promise<ExecuteResult> {
     const client = await this.getClient()
+    const params = bindings.map(b => b === undefined ? null : b)
 
     try {
-      const result = await client.query(sql, bindings)
+      const result = await client.query(sql, params)
 
       // Try to extract insert ID from RETURNING clause
       let insertId: number | bigint | undefined
@@ -144,6 +160,8 @@ export class PostgresDriver implements DriverContract {
         affectedRows: result.rowCount ?? 0,
         ...(insertId !== undefined ? { insertId } : {}),
       }
+    } catch (error) {
+      throw this.normalizeError(error, sql, bindings)
     } finally {
       if (!this.transactionActive && client !== this.transactionClient) {
         ;(client as PgPoolClient).release?.()
@@ -224,14 +242,37 @@ export class PostgresDriver implements DriverContract {
   }
 
   /**
+   * Normalize PostgreSQL errors
+   */
+  private normalizeError(error: any, sql: string, bindings: unknown[]): DatabaseError {
+    // Postgres error codes: https://www.postgresql.org/docs/current/errcodes-appendix.html
+    const code = error.code
+
+    if (code === '23505') {
+      return new UniqueConstraintError(error.message, error, sql, bindings)
+    }
+    if (code === '23503') {
+      return new ForeignKeyConstraintError(error.message, error, sql, bindings)
+    }
+    if (code === '23502') {
+      return new NotNullConstraintError(error.message, error, sql, bindings)
+    }
+    if (code === '42P01') {
+      return new TableNotFoundError(error.message, error, sql, bindings)
+    }
+
+    return new DatabaseError(error.message, error, sql, bindings)
+  }
+
+  /**
    * Dynamically load the pg module
    */
   private async loadPgModule(): Promise<PgModule> {
     try {
       const pg = await import('pg')
       return pg as unknown as PgModule
-    } catch {
-      throw new Error('PostgreSQL driver requires the "pg" package. Please install it: bun add pg')
+    } catch (e) {
+      throw new Error(`PostgreSQL driver requires the "pg" package. Please install it: bun add pg. Original Error: ${e}`)
     }
   }
 }

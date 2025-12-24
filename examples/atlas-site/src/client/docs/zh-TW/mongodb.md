@@ -52,7 +52,7 @@ Atlas 將其 ORM 功能擴展到了 MongoDB。您可以定義直接與 MongoDB �
 import { Model } from '@gravito/atlas'
 
 export default class Log extends Model {
-    static override connection = 'mongodb'
+    static connection = 'mongodb'
     static tableName = 'logs'
 }
 ```

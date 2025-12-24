@@ -46,4 +46,23 @@ export class SQLiteGrammar extends Grammar {
   override compileTruncate(query: CompiledQuery): string {
     return `DELETE FROM ${this.wrapTable(query.table)}`
   }
+
+  // ============================================================================
+  // JSON Compilation
+  // ============================================================================
+
+  override compileJsonPath(column: string, _value: unknown): string {
+    const [field, ...path] = column.split('->')
+    const jsonPath = path.length > 0 ? `$.${path.join('.')}` : '$'
+    
+    // settings->theme => json_extract("settings", '$.theme')
+    return `json_extract(${this.wrapColumn(field ?? '')}, '${jsonPath}') = ?`
+  }
+
+  override compileJsonContains(column: string, _value: unknown): string {
+    // SQLite doesn't have native JSON_CONTAINS like MySQL
+    // We can simulate it with EXISTS (SELECT 1 FROM json_each(col) WHERE value = ?)
+    // But for simplicity/MVP we might just error or use a basic check
+    throw new Error('JSON contains queries are not natively supported in SQLite without extensions.')
+  }
 }

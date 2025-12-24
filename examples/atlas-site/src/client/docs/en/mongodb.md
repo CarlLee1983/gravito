@@ -53,7 +53,7 @@ import { Model } from '@gravito/atlas'
 
 export default class Log extends Model {
     static connection = 'mongodb'
-    static table = 'logs'
+    static tableName = 'logs'
 }
 ```
 
@@ -124,4 +124,4 @@ Atlas wraps the native MongoDB driver in a **Laravel-inspired Proxy**. You get a
 
 - **Unified Error Handling:** Catch database exceptions with a single pattern.
 - **Connection Resilience:** Automatic reconnection and pooling.
-- **Bson-to-Json Precision:** Built-in serialization for edge delivery.
+- **BSON-to-JSON Precision:** Built-in serialization for edge delivery.

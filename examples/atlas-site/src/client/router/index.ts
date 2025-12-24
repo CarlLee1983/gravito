@@ -17,4 +17,16 @@ const router = createRouter({
   },
 })
 
+router.afterEach((to) => {
+  const baseTitle = 'Gravito Atlas'
+  if (to.name === 'Docs' && to.params.id) {
+    const docName = (to.params.id as string).charAt(0).toUpperCase() + (to.params.id as string).slice(1)
+    document.title = `${docName} | ${baseTitle}`
+  } else if (to.name && to.name !== 'Home') {
+    document.title = `${to.name.toString()} | ${baseTitle}`
+  } else {
+    document.title = baseTitle + ' - Structuring Chaos'
+  }
+})
+
 export default router

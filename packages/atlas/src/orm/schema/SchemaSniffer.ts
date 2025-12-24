@@ -30,8 +30,70 @@ export class SchemaSniffer {
       case 'mysql':
       case 'mariadb':
         return await this.sniffMySQL(table)
+      case 'sqlite':
+        return await this.sniffSQLite(table)
       default:
         throw new Error(`Unsupported driver for schema sniffing: ${driver}`)
+    }
+  }
+
+  /**
+   * Sniff SQLite table schema
+   */
+  private async sniffSQLite(table: string): Promise<TableSchema> {
+    const connection = DB.connection(this.connectionName)
+
+    // Get columns
+    const columnsResult = await connection.raw(`PRAGMA table_info('${table}')`)
+
+    const columns = new Map<string, ColumnSchema>()
+    const primaryKey: string[] = []
+
+    for (const row of columnsResult.rows as any[]) {
+      const column: ColumnSchema = {
+        name: row.name,
+        type: this.mapSQLiteType(row.type),
+        nullable: row.notnull === 0,
+        default: row.dflt_value,
+        primary: row.pk > 0,
+        unique: false, // Check indexes below
+        autoIncrement: false,
+      }
+
+      // SQLite INTEGER PRIMARY KEY is auto-increment alias for ROWID
+      if (column.primary && column.type === 'integer') {
+        column.autoIncrement = true
+      }
+
+      columns.set(column.name, column)
+
+      if (column.primary) {
+        primaryKey.push(column.name)
+      }
+    }
+
+    // Check indexes for UNIQUE
+    try {
+        const indexesResult = await connection.raw(`PRAGMA index_list('${table}')`)
+        for (const idx of indexesResult.rows as any[]) {
+            if (idx.unique === 1 && idx.origin === 'u') {
+                const info = await connection.raw(`PRAGMA index_info('${idx.name}')`)
+                if (info.rows.length === 1) {
+                    const colName = (info.rows[0] as any).name
+                    const col = columns.get(colName)
+                    if (col) col.unique = true
+                }
+            }
+        }
+    } catch {
+        // Ignore index errors
+    }
+
+    return {
+      table,
+      columns,
+      primaryKey,
+      capturedAt: Date.now(),
     }
   }
 
@@ -230,6 +292,16 @@ export class SchemaSniffer {
     }
 
     return typeMap[base] ?? 'unknown'
+  }
+
+  private mapSQLiteType(type: string): ColumnType {
+    const t = type.toLowerCase()
+    if (t.includes('int')) return 'integer'
+    if (t.includes('char') || t.includes('clob') || t.includes('text')) return 'string'
+    if (t.includes('blob')) return 'binary'
+    if (t.includes('real') || t.includes('floa') || t.includes('doub')) return 'float'
+    if (t.includes('date') || t.includes('time')) return 'timestamp'
+    return 'string'
   }
 
   /**

@@ -43,16 +43,37 @@ export class Schema {
    * Get the grammar instance for the current connection
    */
   private static getGrammar(): SchemaGrammar {
+    const driver = Schema.getDriverName()
+    
+    // If grammar exists but doesn't match current driver, reset it
+    if (Schema.grammar && !Schema.isGrammarMatch(Schema.grammar, driver)) {
+        Schema.grammar = null
+    }
+
     if (!Schema.grammar) {
-      const driver = Schema.getDriverName()
       Schema.grammar = Schema.createGrammar(driver)
     }
     return Schema.grammar
   }
 
+  /**
+   * Check if grammar instance matches driver
+   */
+  private static isGrammarMatch(grammar: SchemaGrammar, driver: string): boolean {
+      if (driver === 'postgres' || driver === 'postgresql') return grammar instanceof PostgresSchemaGrammar
+      if (driver === 'mysql' || driver === 'mariadb') return grammar instanceof MySQLSchemaGrammar
+      if (driver === 'sqlite') return grammar instanceof SQLiteSchemaGrammar
+      return false
+  }
+
   private static getDriverName(): string {
     // Get driver from DB configuration
     const config = DB.getConnectionConfig(Schema.connectionName)
+    // Fallback to default connection if Schema.connectionName is not set
+    if (!config && !Schema.connectionName) {
+        const defaultConfig = DB.getConnectionConfig()
+        return defaultConfig?.driver ?? 'postgres'
+    }
     return config?.driver ?? 'postgres'
   }
 

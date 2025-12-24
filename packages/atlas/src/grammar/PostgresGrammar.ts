@@ -157,4 +157,45 @@ export class PostgresGrammar extends Grammar {
     }
     return 'text'
   }
+
+  // ============================================================================
+  // JSON Compilation
+  // ============================================================================
+
+  override compileJsonPath(column: string, _value: unknown): string {
+    const [field, ...path] = column.split('->')
+    const jsonPath = path.map(p => `'${p}'`).join('->')
+    const operator = path.length > 0 ? '->>' : ''
+    
+    // settings->theme => "settings"->>'theme'
+    // data->user->id => "data"->'user'->>'id'
+    
+    if (path.length === 0) {
+        return `${this.wrapColumn(field ?? '')} = ?` // Placeholder will be replaced
+    }
+
+    const last = path.pop()
+    const arrowPath = path.map(p => `->'${p}'`).join('')
+    
+    return `${this.wrapColumn(field ?? '')}${arrowPath}->>'${last}' = ?`
+  }
+
+  override compileJsonContains(column: string, _value: unknown): string {
+    return `${this.wrapColumn(column)} @> ?`
+  }
+
+  override compileUpdateJson(query: CompiledQuery, column: string, _value: unknown): string {
+      const [field, ...path] = column.split('->')
+      const jsonPath = `{${path.join(',')}}`
+      const wrappedField = this.wrapColumn(field ?? '')
+      
+      // UPDATE users SET settings = jsonb_set(settings, '{theme}', '"dark"') WHERE ...
+      const setClause = `${wrappedField} = jsonb_set(${wrappedField}, '${jsonPath}', ?::jsonb)`
+      
+      let sql = `UPDATE ${this.wrapTable(query.table)} SET ${setClause}`
+      if (query.wheres.length > 0) {
+          sql += ` ${this.compileWheres(query, 1)}` // Offset by 1 for the JSON value
+      }
+      return sql
+  }
 }

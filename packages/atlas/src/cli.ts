@@ -8,6 +8,7 @@
 import { resolve } from 'node:path'
 import { MakeMigrationCommand } from './commands/MakeMigrationCommand'
 import { MakeModelCommand } from './commands/MakeModelCommand'
+import { TinkerCommand } from './commands/TinkerCommand'
 import { Migrator } from './migration/Migrator'
 import { SeederRunner } from './seed/SeederRunner'
 
@@ -121,7 +122,11 @@ async function main() {
           console.error('Error: Model name required')
           process.exit(1)
         }
-        await new MakeModelCommand().handle({ name, path: flags.path as string })
+        await new MakeModelCommand().handle({ 
+            name, 
+            path: flags.path as string,
+            migration: flags.migration || flags.m
+        })
         break
       }
 
@@ -133,6 +138,11 @@ async function main() {
         }
         await new MakeMigrationCommand().handle({ name, path: flags.path as string })
         break
+      }
+
+      case 'tinker': {
+          await new TinkerCommand().handle({})
+          break
       }
 
       default:

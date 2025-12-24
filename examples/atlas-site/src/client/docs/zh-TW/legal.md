@@ -5,7 +5,7 @@ _最後更新：2025 年 1 月 1 日_
 ## 隱私權政策 (Privacy Policy)
 
 ### 靜態聲明 (Static Policy)
-本網站為靜態生成的文檔站點，預設不使用任何 Cookies、追蹤器或外部分析腳本。我們尊重您的數位主權。
+本網站為靜態生成的文件站點，預設不使用任何 Cookies、追蹤器或外部分析腳本。我們尊重您的數位主權。
 
 This website is generated statically and does not use cookies, trackers, or external analytics scripts by default. We respect your digital sovereignty.
 
