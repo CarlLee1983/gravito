@@ -18,6 +18,7 @@ export default {
     loading: 'Running query on cosmic stream...',
   },
   features: {
+    core_architecture: 'Core Architecture',
     title: 'Command the Data Cosmos',
     subtitle:
       "Atlas isn't just an ORM. It's a precise instrument for navigating the gravity well of your data.",
@@ -98,8 +99,19 @@ export default {
     },
   },
   footer: {
-    rights: '© 2025 Gravito Framework. MIT License.',
+    rights: '© 2025 Gravito Framework. MIT Licensed.',
     part_of: 'Part of the Gravito Ecosystem',
-    return_home: 'Return to Main Site',
+    return_home: 'Return to Gravito HQ',
+    resources: 'Resources',
+    guide: 'Guide',
+    api: 'API Reference',
+    examples: 'Examples',
+    ecosystem: 'Ecosystem',
+    core: 'Gravito Core',
+    cli: 'CLI Tool',
+    plugins: 'Plugins',
+    legal: 'Legal',
+    privacy: 'Privacy Policy',
+    terms: 'Terms of Service',
   },
 }

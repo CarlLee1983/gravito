@@ -2,7 +2,7 @@
   <section class="py-24 relative z-10">
     <div class="max-w-7xl mx-auto px-8 relative">
         <h2 class="text-3xl md:text-5xl font-bold mb-16 text-center">
-            <span class="text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-500">Core Architecture</span>
+            <span class="text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-500">{{ t('features.core_architecture') }}</span>
         </h2>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -87,4 +87,7 @@
 
 <script setup lang="ts">
 import DataSortingGrid from './DataSortingGrid.vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 </script>

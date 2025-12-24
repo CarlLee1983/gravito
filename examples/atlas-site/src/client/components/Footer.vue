@@ -4,21 +4,49 @@ const { t } = useI18n()
 </script>
 
 <template>
-  <footer class="py-12 relative z-10 border-t border-white/10 bg-black text-sm">
-    <div class="max-w-7xl mx-auto px-8 flex flex-col md:flex-row justify-between items-center opacity-60 hover:opacity-100 transition-opacity gap-4 md:gap-0">
-        <div class="flex flex-col md:flex-row items-center gap-4">
+  <footer class="py-16 relative z-10 border-t border-white/5 bg-[#050505] text-sm">
+    <div class="max-w-7xl mx-auto px-8 grid grid-cols-1 md:grid-cols-4 gap-12">
+        <!-- Brand Column -->
+        <div class="flex flex-col gap-4">
             <div class="flex items-center gap-2">
                 <span class="text-xl font-bold font-mono text-white">@gravito/<span class="text-atlas-cyan">atlas</span></span>
-                <span class="text-xs text-gray-500 ml-2">v0.0.1</span>
+                <span class="px-1.5 py-0.5 rounded text-[10px] bg-white/10 text-gray-400 border border-white/5">v0.0.1</span>
             </div>
-            <div class="hidden md:block w-px h-4 bg-gray-800"></div>
-            <a href="https://gravito.dev" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-atlas-cyan transition-colors flex items-center group">
-                <span class="mr-2">{{ t('footer.part_of') }}</span>
-                <svg class="w-3 h-3 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
-            </a>
+            <p class="text-gray-500 text-xs leading-relaxed max-w-xs">
+                {{ t('hero.desc') }}
+            </p>
+            <div class="text-gray-600 text-[10px] font-mono mt-4">
+                {{ t('footer.rights') }}
+            </div>
         </div>
-        <div class="text-gray-500">
-            {{ t('footer.rights') }}
+
+        <!-- Resources -->
+        <div class="flex flex-col gap-4">
+            <h4 class="text-white font-bold uppercase tracking-widest text-[10px]">{{ t('footer.resources') }}</h4>
+            <ul class="flex flex-col gap-2 text-gray-500 text-xs font-mono">
+                <li><a href="#" class="hover:text-atlas-cyan transition-colors">{{ t('footer.guide') }}</a></li>
+                <li><a href="#" class="hover:text-atlas-cyan transition-colors">{{ t('footer.api') }}</a></li>
+                <li><a href="#" class="hover:text-atlas-cyan transition-colors">{{ t('footer.examples') }}</a></li>
+            </ul>
+        </div>
+
+        <!-- Ecosystem -->
+        <div class="flex flex-col gap-4">
+            <h4 class="text-white font-bold uppercase tracking-widest text-[10px]">{{ t('footer.ecosystem') }}</h4>
+            <ul class="flex flex-col gap-2 text-gray-500 text-xs font-mono">
+                <li><a href="https://gravito.dev" target="_blank" class="hover:text-atlas-cyan transition-colors">{{ t('footer.core') }}</a></li>
+                <li><a href="#" class="hover:text-atlas-cyan transition-colors">{{ t('footer.cli') }}</a></li>
+                <li><a href="#" class="hover:text-atlas-cyan transition-colors">{{ t('footer.plugins') }}</a></li>
+            </ul>
+        </div>
+
+        <!-- Legal -->
+        <div class="flex flex-col gap-4">
+            <h4 class="text-white font-bold uppercase tracking-widest text-[10px]">{{ t('footer.legal') }}</h4>
+            <ul class="flex flex-col gap-2 text-gray-500 text-xs font-mono">
+                <li><a href="#" class="hover:text-atlas-cyan transition-colors">{{ t('footer.privacy') }}</a></li>
+                <li><a href="#" class="hover:text-atlas-cyan transition-colors">{{ t('footer.terms') }}</a></li>
+            </ul>
         </div>
     </div>
   </footer>
