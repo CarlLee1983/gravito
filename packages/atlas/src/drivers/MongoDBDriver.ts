@@ -72,7 +72,8 @@ export class MongoDBDriver implements DriverContract {
 
     try {
       const protocol = JSON.parse(protocolJson) as MongoQueryProtocol
-      const collection = this.db?.collection(protocol.collection)
+      if (!this.db) throw new ConnectionError('MongoDB not connected')
+      const collection = this.db.collection(protocol.collection)
 
       if (protocol.operation === 'find') {
         const rows = await collection.find(protocol.filter || {}, protocol.options).toArray()
@@ -93,7 +94,7 @@ export class MongoDBDriver implements DriverContract {
         }
       }
 
-      throw new Error(`Unsupported read operation: \${protocol.operation}`)
+      throw new Error(`Unsupported read operation: ${protocol.operation}`)
     } catch (error) {
       if (error instanceof SyntaxError) {
         throw new DatabaseError(`Invalid MongoDB Protocol: ${protocolJson}`)
@@ -112,7 +113,8 @@ export class MongoDBDriver implements DriverContract {
 
     try {
       const protocol = JSON.parse(protocolJson) as MongoQueryProtocol
-      const collection = this.db?.collection(protocol.collection)
+      if (!this.db) throw new ConnectionError('MongoDB not connected')
+      const collection = this.db.collection(protocol.collection)
 
       if (protocol.operation === 'insert') {
         // Handle array or single
@@ -139,7 +141,7 @@ export class MongoDBDriver implements DriverContract {
         }
       }
 
-      throw new Error(`Unsupported write operation: \${protocol.operation}`)
+      throw new Error(`Unsupported write operation: ${protocol.operation}`)
     } catch (error) {
       throw new DatabaseError('MongoDB Execute Failed', error)
     }

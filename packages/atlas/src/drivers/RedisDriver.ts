@@ -87,28 +87,28 @@ export class RedisDriver implements DriverContract {
     if (!this.client) {
       await this.connect()
     }
-    return this.client?.get(key)
+    return this.client!.get(key)
   }
 
   async set(key: string, value: string | number): Promise<'OK'> {
     if (!this.client) {
       await this.connect()
     }
-    return this.client?.set(key, value)
+    return this.client!.set(key, value)
   }
 
   async setex(key: string, seconds: number, value: string | number): Promise<'OK'> {
     if (!this.client) {
       await this.connect()
     }
-    return this.client?.setex(key, seconds, value)
+    return this.client!.setex(key, seconds, value)
   }
 
   async del(key: string): Promise<number> {
     if (!this.client) {
       await this.connect()
     }
-    return this.client?.del(key)
+    return this.client!.del(key)
   }
 
   /**
