@@ -106,7 +106,6 @@ export default {
     ecosystem: '生態系',
     core: 'Gravito Core',
     cli: 'CLI 工具',
-    plugins: '外掛程式',
     legal: '法律資訊',
     privacy: '隱私權政策',
     terms: '使用條款',

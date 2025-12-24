@@ -36,8 +36,7 @@ const { t } = useI18n()
             <h4 class="text-white font-bold uppercase tracking-widest text-[10px]">{{ t('footer.ecosystem') }}</h4>
             <ul class="flex flex-col gap-2 text-gray-500 text-xs font-mono">
                 <li><a href="https://gravito.dev" target="_blank" class="hover:text-atlas-cyan transition-colors">{{ t('footer.core') }}</a></li>
-                <li><a href="#" class="hover:text-atlas-cyan transition-colors">{{ t('footer.cli') }}</a></li>
-                <li><a href="#" class="hover:text-atlas-cyan transition-colors">{{ t('footer.plugins') }}</a></li>
+                <li><StaticLink to="/docs/cli" class="hover:text-atlas-cyan transition-colors">{{ t('footer.cli') }}</StaticLink></li>
             </ul>
         </div>
 
