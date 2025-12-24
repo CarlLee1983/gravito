@@ -86,7 +86,7 @@ export class LocalStorageProvider implements StorageProvider {
   }
 }
 
-export interface OrbitStorageOptions {
+export interface OrbitNebulaOptions {
   provider?: StorageProvider
   exposeAs?: string // Default: 'storage'
   local?: {
@@ -95,11 +95,16 @@ export interface OrbitStorageOptions {
   }
 }
 
+/** @deprecated Use OrbitNebulaOptions instead */
+export type OrbitStorageOptions = OrbitNebulaOptions
+
 /**
- * OrbitStorage service.
+ * OrbitNebula - Storage Orbit
+ *
+ * Provides file storage functionality for Gravito applications.
  */
-export class OrbitStorage implements GravitoOrbit {
-  constructor(private options?: OrbitStorageOptions) {}
+export class OrbitNebula implements GravitoOrbit {
+  constructor(private options?: OrbitNebulaOptions) { }
 
   /**
    * Install storage service into PlanetCore.
@@ -112,26 +117,26 @@ export class OrbitStorage implements GravitoOrbit {
 
     if (!config) {
       throw new Error(
-        '[OrbitStorage] Configuration is required. Please provide options or set "storage" in core config.'
+        '[OrbitNebula] Configuration is required. Please provide options or set "storage" in core config.'
       )
     }
 
     const { exposeAs = 'storage' } = config
     const logger = core.logger
 
-    logger.info(`[OrbitStorage] Initializing Storage (Exposed as: ${exposeAs})`)
+    logger.info(`[OrbitNebula] Initializing Storage (Exposed as: ${exposeAs})`)
 
     let provider = config.provider
 
     // Default to LocalStorage if not provided and local options are present
     if (!provider && config.local) {
-      logger.info(`[OrbitStorage] Using LocalStorageProvider at ${config.local.root}`)
+      logger.info(`[OrbitNebula] Using LocalStorageProvider at ${config.local.root}`)
       provider = new LocalStorageProvider(config.local.root, config.local.baseUrl)
     }
 
     if (!provider) {
       throw new Error(
-        '[OrbitStorage] No provider configured. Please provide a provider instance or local configuration.'
+        '[OrbitNebula] No provider configured. Please provide a provider instance or local configuration.'
       )
     }
 
@@ -161,15 +166,15 @@ export class OrbitStorage implements GravitoOrbit {
 }
 
 /**
- * Functional API for installing OrbitStorage.
+ * Functional API for installing OrbitNebula.
  *
  * @param core - The PlanetCore instance.
  * @param options - Storage options.
  * @returns The configured storage provider wrapper.
  * @throws {Error} If provider is not configured.
  */
-export default function orbitStorage(core: PlanetCore, options: OrbitStorageOptions) {
-  const orbit = new OrbitStorage(options)
+export default function orbitStorage(core: PlanetCore, options: OrbitNebulaOptions) {
+  const orbit = new OrbitNebula(options)
   orbit.install(core)
 
   // NOTE: Functional wrapper requires specific return implementation which can't be easily extracted from void install()
@@ -193,7 +198,7 @@ export default function orbitStorage(core: PlanetCore, options: OrbitStorageOpti
   // We duplicate the wrapper logic here for safety.
 
   if (!provider) {
-    throw new Error('[OrbitStorage] No provider configured.')
+    throw new Error('[OrbitNebula] No provider configured.')
   }
 
   return {
@@ -207,3 +212,7 @@ export default function orbitStorage(core: PlanetCore, options: OrbitStorageOpti
     getUrl: (key: string) => provider?.getUrl(key),
   }
 }
+
+/** @deprecated Use OrbitNebula instead */
+export const OrbitStorage = OrbitNebula
+

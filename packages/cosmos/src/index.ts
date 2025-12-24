@@ -7,8 +7,13 @@ declare module 'gravito-core' {
   }
 }
 
-export class I18nOrbit implements GravitoOrbit {
-  constructor(private config: I18nConfig) {}
+/**
+ * OrbitCosmos - Internationalization Orbit
+ *
+ * Provides i18n functionality for Gravito applications.
+ */
+export class OrbitCosmos implements GravitoOrbit {
+  constructor(private config: I18nConfig) { }
 
   install(core: PlanetCore): void {
     const i18nManager = new I18nManager(this.config)
@@ -20,9 +25,13 @@ export class I18nOrbit implements GravitoOrbit {
     // This middleware handles cloning the i18n instance per request
     core.adapter.use('*', localeMiddleware(i18nManager) as any)
 
-    core.logger.info(`I18n Orbit initialized with locale: ${this.config.defaultLocale}`)
+    core.logger.info(`[OrbitCosmos] I18n initialized with locale: ${this.config.defaultLocale}`)
   }
 }
 
+/** @deprecated Use OrbitCosmos instead */
+export const I18nOrbit = OrbitCosmos
+
 export * from './I18nService'
 export * from './loader'
+

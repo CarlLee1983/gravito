@@ -172,10 +172,15 @@ function createStoreFactory(config: OrbitCacheOptions): (name: string) => CacheS
   }
 }
 
-export class OrbitCache implements GravitoOrbit {
+/**
+ * OrbitStasis - Cache Orbit
+ *
+ * Provides caching functionality for Gravito applications.
+ */
+export class OrbitStasis implements GravitoOrbit {
   private manager: CacheManager | undefined
 
-  constructor(private options?: OrbitCacheOptions) {}
+  constructor(private options?: OrbitCacheOptions) { }
 
   install(core: PlanetCore): void {
     const resolvedConfig = resolveStoreConfig(core, this.options)
@@ -250,10 +255,13 @@ export default function orbitCache(
   core: PlanetCore,
   options: OrbitCacheOptions = {}
 ): CacheManager {
-  const orbit = new OrbitCache(options)
+  const orbit = new OrbitStasis(options)
   orbit.install(core)
   return orbit.getCache()
 }
+
+/** @deprecated Use OrbitStasis instead */
+export const OrbitCache = OrbitStasis
 
 // Module augmentation for GravitoVariables (abstraction layer)
 declare module 'gravito-core' {
