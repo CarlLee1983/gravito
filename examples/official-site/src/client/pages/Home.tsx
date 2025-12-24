@@ -290,15 +290,13 @@ const GravitoLanding = ({ t, locale }: HomeProps) => {
             transition={{ duration: 0.6, delay: 0.3 }}
             className="text-center"
           >
-            <motion.a
+            <StaticLink
               href={locale === 'zh' ? '/zh/docs' : '/docs'}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
               className="inline-flex items-center gap-3 px-8 py-4 bg-singularity/10 border border-singularity/30 rounded-xl text-singularity font-semibold hover:bg-singularity/20 transition-all duration-300 group"
             >
               {t.features.getStarted}
               <ArrowRight className="group-hover:translate-x-1 transition-transform" size={20} />
-            </motion.a>
+            </StaticLink>
           </motion.div>
         </div>
       </section>

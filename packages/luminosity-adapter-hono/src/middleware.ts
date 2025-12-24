@@ -1,4 +1,4 @@
-import { RobotsBuilder, type SeoConfig, SeoEngine, SeoRenderer } from '@gravito/luminosity'
+import { type SeoConfig, SeoEngine } from '@gravito/luminosity'
 import type { Context, MiddlewareHandler } from 'hono'
 
 /**
@@ -10,59 +10,21 @@ import type { Context, MiddlewareHandler } from 'hono'
  *
  * @param config - The SEO configuration object.
  * @returns A Hono middleware handler.
- *
- * @example
- * ```typescript
- * import { gravitoSeo } from '@gravito/luminosity-adapter-hono'
- *
- * app.use('*', gravitoSeo({
- *   baseUrl: 'https://example.com',
- *   mode: 'dynamic',
- *   // ... other config
- * }))
- * ```
  */
 export function gravitoSeo(config: SeoConfig): MiddlewareHandler {
   const engine = new SeoEngine(config)
-
-  // Lazy init on first request or immediate?
-  // Let's do lazy to avoid startup blocking, but we could add an option.
   let initialized = false
 
-  return async (c: Context, _next) => {
-    // Check if request is for sitemap
-    // We assume this middleware is mounted on a specific path OR the user uses a wildcard mount.
-    // If wildcard, we need to check path.
-    // BUT typically user mounts it like: app.get('/sitemap.xml', gravitoSeo(c))
-    // To support robots.txt, we should probably check the path if it's not explicitly matched?
-    // Let's SUPPORT both explicit mount and "smart" mount.
-
+  return async (c: Context, next) => {
     const path = c.req.path
-
     const isRobots = path.endsWith('/robots.txt')
-    const isSitemap = path.endsWith('/sitemap.xml') || path.includes('sitemap_page_')
+    const isSitemap =
+      path.endsWith('/sitemap.xml') || path.includes('sitemap_page_') || path.includes('sitemap')
 
     if (!isRobots && !isSitemap) {
-      return await _next()
+      return await next()
     }
 
-    // Robots.txt Handler
-    if (isRobots) {
-      if (config.robots) {
-        const robotsBuilder = new RobotsBuilder(config.robots, config.baseUrl)
-        const content = robotsBuilder.build()
-        return c.text(content)
-      }
-      const defaultBuilder = new RobotsBuilder(
-        {
-          rules: [{ userAgent: '*', allow: ['/'] }],
-        },
-        config.baseUrl
-      )
-      return c.text(defaultBuilder.build())
-    }
-
-    // Sitemap Handler
     if (!initialized) {
       try {
         await engine.init()
@@ -74,18 +36,20 @@ export function gravitoSeo(config: SeoConfig): MiddlewareHandler {
     }
 
     try {
-      const strategy = engine.getStrategy()
-      const entries = await strategy.getEntries()
+      // Use the unified engine.render method
+      const result = await engine.render(path)
 
-      const renderer = new SeoRenderer(config)
-      const pageQuery = c.req.query('page')
-      const page = pageQuery ? Number.parseInt(pageQuery, 10) : undefined
-      const fullUrl = `${config.baseUrl}${path}`
+      if (!result) {
+        return await next()
+      }
 
-      const xml = renderer.render(entries, fullUrl, page)
+      if (path.endsWith('.xml') || path.includes('sitemap')) {
+        c.header('Content-Type', 'application/xml')
+      } else {
+        c.header('Content-Type', 'text/plain')
+      }
 
-      c.header('Content-Type', 'application/xml')
-      return c.body(xml)
+      return c.body(result)
     } catch (e) {
       console.error('[GravitoSeo] Middleware Error:', e)
       return c.text('Internal Server Error', 500)

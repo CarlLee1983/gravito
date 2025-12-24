@@ -1,11 +1,14 @@
+import { RobotsBuilder } from '../robots/RobotsBuilder'
 import type { SeoConfig } from '../types'
 import type { SeoStrategy } from './interfaces'
+import { SeoRenderer } from './SeoRenderer'
 import { CachedStrategy } from './strategies/CachedStrategy'
 import { DynamicStrategy } from './strategies/DynamicStrategy'
 import { IncrementalStrategy } from './strategies/IncrementalStrategy'
 
 export class SeoEngine {
   private strategy: SeoStrategy
+  private renderer: SeoRenderer
 
   /**
    * Create a new SeoEngine instance.
@@ -13,7 +16,8 @@ export class SeoEngine {
    * @param config - The SEO configuration object.
    * @throws {Error} If the mode specified in config is unknown.
    */
-  constructor(config: SeoConfig) {
+  constructor(private config: SeoConfig) {
+    this.renderer = new SeoRenderer(this.config)
     switch (config.mode) {
       case 'dynamic':
         this.strategy = new DynamicStrategy(config)
@@ -38,6 +42,33 @@ export class SeoEngine {
    */
   async init(): Promise<void> {
     await this.strategy.init()
+  }
+
+  /**
+   * Render the requested SEO path (robots.txt or sitemap.xml).
+   *
+   * @param path - The requested URL path.
+   * @returns A promise that resolves to the rendered content, or null if not an SEO path.
+   */
+  async render(path: string): Promise<string | null> {
+    // 1. Handle Robots.txt
+    if (path.endsWith('/robots.txt')) {
+      const robotsConfig = this.config.robots || { rules: [{ userAgent: '*', allow: ['/'] }] }
+      const builder = new RobotsBuilder(robotsConfig, this.config.baseUrl)
+      return builder.build()
+    }
+
+    // 2. Handle Sitemap.xml (including pagination)
+    if (path.endsWith('/sitemap.xml') || path.includes('sitemap')) {
+      // Extract page number if present (e.g. ?page=2 or sitemap_page_1)
+      const pageMatch = path.match(/page[=_](\d+)/)
+      const page = pageMatch ? parseInt(pageMatch[1]!, 10) : undefined
+
+      const entries = await this.strategy.getEntries()
+      return this.renderer.render(entries, path, page)
+    }
+
+    return null
   }
 
   /**
