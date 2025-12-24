@@ -75,7 +75,7 @@ export class QueueManager {
         const dbService = (config as { dbService?: unknown }).dbService
         if (!dbService) {
           throw new Error(
-            '[QueueManager] DatabaseDriver requires dbService. Please provide dbService in connection config or ensure @gravito/db is installed.'
+            '[QueueManager] DatabaseDriver requires dbService. Please provide a database service that implements DatabaseService interface.'
           )
         }
         this.drivers.set(

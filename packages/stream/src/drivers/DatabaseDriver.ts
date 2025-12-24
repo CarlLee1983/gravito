@@ -1,6 +1,24 @@
-import type { DBService } from '@gravito/db'
 import type { SerializedJob } from '../types'
 import type { QueueDriver } from './QueueDriver'
+
+/**
+ * Generic database service interface.
+ * Users should implement this interface with their preferred ORM/database client.
+ */
+export interface DatabaseService {
+  /**
+   * Execute a raw SQL query.
+   * @param sql - The SQL query string with placeholders ($1, $2, etc.)
+   * @param bindings - The values to bind to placeholders
+   */
+  execute<T = unknown>(sql: string, bindings?: unknown[]): Promise<T[] | T>
+
+  /**
+   * Execute multiple queries within a transaction.
+   * @param callback - The callback to execute within the transaction
+   */
+  transaction<T>(callback: (tx: DatabaseService) => Promise<T>): Promise<T>
+}
 
 /**
  * Database driver configuration.
@@ -12,32 +30,32 @@ export interface DatabaseDriverConfig {
   table?: string
 
   /**
-   * DBService instance (from `orbit-db`).
-   * If not provided, it can be resolved from Context in OrbitStream.
+   * Database service instance that implements DatabaseService interface.
    */
-  dbService?: DBService
+  dbService?: DatabaseService
 }
 
 /**
  * Database Driver
  *
  * Uses a database as the queue backend.
- * Reuses the `orbit-db` connection instead of creating a new connection.
- *
- * Requires `@gravito/db` to be installed and configured.
+ * Works with any database service that implements the DatabaseService interface.
  *
  * @example
  * ```typescript
- * // Get DBService from Context
- * const dbService = c.get('db')
- * const driver = new DatabaseDriver({ dbService, table: 'jobs' })
+ * // Create a database service adapter
+ * const dbService = {
+ *   execute: async (sql, bindings) => yourDbClient.query(sql, bindings),
+ *   transaction: async (callback) => yourDbClient.transaction(callback),
+ * }
  *
+ * const driver = new DatabaseDriver({ dbService, table: 'jobs' })
  * await driver.push('default', serializedJob)
  * ```
  */
 export class DatabaseDriver implements QueueDriver {
   private tableName: string
-  private dbService: DBService
+  private dbService: DatabaseService
 
   constructor(config: DatabaseDriverConfig) {
     this.tableName = config.table ?? 'jobs'
@@ -45,7 +63,7 @@ export class DatabaseDriver implements QueueDriver {
 
     if (!this.dbService) {
       throw new Error(
-        '[DatabaseDriver] DBService is required. Please provide dbService in config or ensure @gravito/db is installed.'
+        '[DatabaseDriver] dbService is required. Please provide a database service that implements DatabaseService interface.'
       )
     }
   }
@@ -58,7 +76,7 @@ export class DatabaseDriver implements QueueDriver {
       ? new Date(Date.now() + job.delaySeconds * 1000)
       : new Date()
 
-    // Use DBService.execute() to run raw SQL
+    // Use dbService.execute() to run raw SQL
     await this.dbService.execute(
       `INSERT INTO ${this.tableName} (queue, payload, attempts, available_at, created_at)
        VALUES ($1, $2, $3, $4, $5)`,
@@ -112,11 +130,19 @@ export class DatabaseDriver implements QueueDriver {
         )
       })
 
-    if (!result || result.length === 0) {
+    const rows = result as {
+      id: string
+      payload: string
+      attempts: number
+      created_at: Date
+      available_at: Date
+    }[]
+
+    if (!rows || rows.length === 0) {
       return null
     }
 
-    const row = result[0]!
+    const row = rows[0]!
 
     // Mark as reserved
     await this.dbService.execute(
@@ -146,14 +172,14 @@ export class DatabaseDriver implements QueueDriver {
    * Get queue size.
    */
   async size(queue: string): Promise<number> {
-    const result = await this.dbService.execute<{ count: number }>(
+    const result = (await this.dbService.execute<{ count: number }>(
       `SELECT COUNT(*) as count
        FROM ${this.tableName}
        WHERE queue = $1
          AND available_at <= NOW()
          AND (reserved_at IS NULL OR reserved_at < NOW() - INTERVAL '5 minutes')`,
       [queue]
-    )
+    )) as { count: number }[]
 
     return result?.[0]?.count ?? 0
   }
@@ -174,7 +200,7 @@ export class DatabaseDriver implements QueueDriver {
     }
 
     // Batch insert within a transaction
-    await this.dbService.transaction(async (tx: any) => {
+    await this.dbService.transaction(async (tx: DatabaseService) => {
       for (const job of jobs) {
         const availableAt = job.delaySeconds
           ? new Date(Date.now() + job.delaySeconds * 1000)

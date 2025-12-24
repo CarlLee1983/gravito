@@ -3,7 +3,7 @@
     "private": true,
     "scripts": {
         "dev": "bun run src/index.ts",
-        "build": "echo 'Skip build for example project'",
+        "build": "tsc --noEmit",
         "start": "bun run src/index.ts"
     },
     "dependencies": {
@@ -11,7 +11,6 @@
         "@gravito/forge": "workspace:*",
         "@gravito/nebula": "workspace:*",
         "@gravito/stream": "workspace:*",
-        "@gravito/plasma": "workspace:*",
         "hono": "^4.0.0"
     },
     "devDependencies": {
