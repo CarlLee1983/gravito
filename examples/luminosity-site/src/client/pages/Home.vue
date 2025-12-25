@@ -2,6 +2,7 @@
 import { Head } from '@inertiajs/vue3';
 import { Activity, Zap, HardDrive, FileText, ChevronRight, Share2, Shield, Search } from 'lucide-vue-next';
 import { StaticLink } from '@gravito/freeze-vue';
+import { Image } from '@gravito/prism/vue';
 import Layout from '../components/Layout.vue';
 import Logo from '../components/Logo.vue';
 import { useI18n } from '../composables/useI18n';
@@ -42,7 +43,13 @@ const { t, locale } = useI18n()
       <div class="absolute inset-0 z-0">
         <!-- Main Hero Graphic (Full Screen) -->
         <div class="absolute inset-0 opacity-50 pointer-events-none select-none">
-          <img :src="heroGraphic" alt="Luminosity Core" class="w-full h-full object-cover animate-pulse-slow" />
+          <Image 
+            :src="heroGraphic" 
+            alt="Luminosity Core" 
+            class="w-full h-full object-cover animate-pulse-slow"
+            loading="eager"
+            fetchpriority="high"
+          />
         </div>
         
         <!-- Overlays for Readability & Mood -->

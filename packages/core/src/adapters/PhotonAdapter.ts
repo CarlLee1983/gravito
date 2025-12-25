@@ -8,7 +8,7 @@
  * @since 2.0.0
  */
 
-import type { Context, Handler, MiddlewareHandler, Next, Photon } from '@gravito/photon'
+import type { Context, Handler, MiddlewareHandler, Next, Hono as Photon } from 'hono'
 import type {
   GravitoContext,
   GravitoErrorHandler,
@@ -341,7 +341,7 @@ export class PhotonAdapter<V extends GravitoVariables = GravitoVariables>
       // Lazy import to avoid circular dependency issues
       // In practice, PlanetCore will provide the Photon instance
       // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const { Photon: PhotonClass } = require('@gravito/photon')
+      const { Hono: PhotonClass } = require('hono')
       this.app = new PhotonClass()
     }
   }

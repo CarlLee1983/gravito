@@ -5,19 +5,19 @@
     "access": "public"
   },
   "description": "Standard View Orbit for Gravito - Template Engine with Image Optimization",
-  "module": "./dist/index.mjs",
+  "module": "./dist/index.js",
   "main": "./dist/index.cjs",
   "type": "module",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
+      "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     },
     "./vue": {
       "types": "./dist/vue.d.ts",
-      "import": "./dist/vue.mjs",
+      "import": "./dist/vue.js",
       "require": "./dist/vue.cjs"
     }
   },
@@ -46,7 +46,7 @@
   "license": "MIT",
   "peerDependencies": {
     "gravito-core": "1.0.0-beta.5",
-    "hono": "^4.0.0",
+    "@gravito/photon": "^4.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "vue": "^3.0.0"
@@ -66,7 +66,7 @@
     "@types/react": "^19.0.0",
     "bun-types": "latest",
     "gravito-core": "1.0.0-beta.5",
-    "hono": "^4.0.0",
+    "@gravito/photon": "^4.0.0",
     "tsup": "^8.5.1",
     "typescript": "latest",
     "vue": "^3.5.26"
