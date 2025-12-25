@@ -7,11 +7,11 @@ export class MakeMigrationCommand extends Command {
   description = 'Create a new migration file'
 
   async handle(args: Record<string, unknown>): Promise<void> {
-    const name = args.name
-    const path = args.path || 'database/migrations'
+    const name = args.name as string
+    const path = (args.path as string) || 'database/migrations'
 
-    if (!existsSync(path)) {
-      mkdirSync(path, { recursive: true })
+    if (!existsSync(path as string)) {
+      mkdirSync(path as string, { recursive: true })
     }
 
     const timestamp = new Date()
