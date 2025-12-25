@@ -379,8 +379,9 @@ export class DocsService {
 
             security: '安全機制',
             image_opt: '圖片優化',
-            seo_engine: 'Luminosity 引擎',
-            sitemap: 'Sitemap 系統指南',
+            seo_overview: 'SEO 引擎概覽',
+            route_scanner: '路由掃描器',
+            sitemap_basic: 'Sitemap 基礎',
             inertia_react: 'Inertia (React)',
             inertia_vue: 'Inertia (Vue)',
             view_engine: 'Orbit View 引擎',
@@ -446,8 +447,9 @@ export class DocsService {
 
             security: 'Security',
             image_opt: 'Image Optimization',
-            seo_engine: 'Luminosity Engine',
-            sitemap: 'Sitemap System Guide',
+            seo_overview: 'SEO Engine Overview',
+            route_scanner: 'RouteScanner',
+            sitemap_basic: 'Sitemap Basics',
             inertia_react: 'Inertia (React)',
             inertia_vue: 'Inertia (Vue)',
             view_engine: 'Orbit View Engine',
@@ -539,8 +541,9 @@ export class DocsService {
         title: trans.seo,
         path: '#',
         children: [
-          { title: trans.seo_engine, path: `${prefix}/guide/seo-engine` },
-          { title: trans.sitemap, path: `${prefix}/guide/sitemap-guide` },
+          { title: trans.seo_overview, path: `${prefix}/guide/seo-engine` },
+          { title: trans.route_scanner, path: `${prefix}/guide/seo-route-scanner` },
+          { title: trans.sitemap_basic, path: `${prefix}/guide/sitemap-guide` },
         ],
       },
       {
