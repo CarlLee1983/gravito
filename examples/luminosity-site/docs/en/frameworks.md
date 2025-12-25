@@ -111,3 +111,115 @@ export default app
 
 - Learn about [Configuration](/docs/configuration)
 - Explore [CLI Tools](/docs/cli)
+
+---
+
+## RouteScanner (Automatic Route Discovery)
+
+Luminosity now includes a powerful **RouteScanner** system that automatically discovers routes from various frameworks, eliminating the need to manually define resolvers for static routes.
+
+### Supported Frameworks
+
+| Framework | Scanner | Route Discovery Method |
+|-----------|---------|----------------------|
+| **Gravito** | `GravitoScanner` | `core.router.routes` |
+| **Hono** | `HonoScanner` | `app.routes` |
+| **Express** | `ExpressScanner` | `app._router.stack` |
+| **Next.js** | `NextScanner` | File system (`app/`, `pages/`) |
+| **Nuxt** | `NuxtScanner` | File system (`pages/`) |
+
+### Usage with Hono
+
+```typescript
+import { Hono } from 'hono'
+import { SitemapBuilder, HonoScanner } from '@gravito/luminosity'
+
+const app = new Hono()
+app.get('/hello', (c) => c.text('Hello'))
+app.get('/blog/:slug', (c) => c.text('Blog'))
+
+const builder = new SitemapBuilder({
+  scanner: new HonoScanner(app),
+  hostname: 'https://example.com',
+  dynamicResolvers: [
+    {
+      pattern: '/blog/:slug',
+      resolve: async () => {
+        const posts = await getPosts()
+        return posts.map(p => ({ slug: p.slug }))
+      }
+    }
+  ]
+})
+
+// Generate sitemap entries
+const entries = await builder.build()
+```
+
+### Usage with Next.js
+
+For Next.js App Router, create a `sitemap.ts` file:
+
+```typescript
+// app/sitemap.ts
+import { SitemapBuilder, NextScanner } from '@gravito/luminosity'
+
+export default async function sitemap() {
+  const builder = new SitemapBuilder({
+    scanner: new NextScanner({ appDir: './app' }),
+    hostname: 'https://example.com',
+    dynamicResolvers: [
+      {
+        pattern: '/blog/:slug',
+        resolve: async () => {
+          const posts = await getPosts()
+          return posts.map(p => ({ slug: p.slug }))
+        }
+      }
+    ]
+  })
+
+  return builder.build()
+}
+```
+
+### Usage with Nuxt
+
+```typescript
+// server/routes/sitemap.xml.ts
+import { SitemapBuilder, NuxtScanner } from '@gravito/luminosity'
+
+export default defineEventHandler(async () => {
+  const builder = new SitemapBuilder({
+    scanner: new NuxtScanner({ pagesDir: './pages' }),
+    hostname: 'https://example.com'
+  })
+
+  const entries = await builder.build()
+  
+  // Convert to XML and return
+  return new Response(renderSitemapXml(entries), {
+    headers: { 'Content-Type': 'application/xml' }
+  })
+})
+```
+
+### Creating Custom Scanners
+
+You can create scanners for any framework by implementing the `RouteScanner` interface:
+
+```typescript
+import type { RouteScanner, ScannedRoute } from '@gravito/luminosity'
+
+class MyFrameworkScanner implements RouteScanner {
+  readonly framework = 'my-framework'
+
+  async scan(): Promise<ScannedRoute[]> {
+    // Your route discovery logic here
+    return [
+      { path: '/', method: 'GET', isDynamic: false },
+      { path: '/blog/:slug', method: 'GET', isDynamic: true, params: ['slug'] }
+    ]
+  }
+}
+```

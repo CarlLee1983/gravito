@@ -111,3 +111,115 @@ export default app
 
 - 了解 [配置選項](/zh/docs/configuration)
 - 探索 [CLI 工具](/zh/docs/cli)
+
+---
+
+## 路由掃描器 (自動路由發現)
+
+Luminosity 現在內建強大的 **RouteScanner** 系統，可以自動發現來自各種框架的路由，無需手動定義靜態路由的 resolver。
+
+### 支援的框架
+
+| 框架 | 掃描器 | 路由發現方式 |
+|------|--------|-------------|
+| **Gravito** | `GravitoScanner` | `core.router.routes` |
+| **Hono** | `HonoScanner` | `app.routes` |
+| **Express** | `ExpressScanner` | `app._router.stack` |
+| **Next.js** | `NextScanner` | 檔案系統 (`app/`, `pages/`) |
+| **Nuxt** | `NuxtScanner` | 檔案系統 (`pages/`) |
+
+### 搭配 Hono 使用
+
+```typescript
+import { Hono } from 'hono'
+import { SitemapBuilder, HonoScanner } from '@gravito/luminosity'
+
+const app = new Hono()
+app.get('/hello', (c) => c.text('Hello'))
+app.get('/blog/:slug', (c) => c.text('Blog'))
+
+const builder = new SitemapBuilder({
+  scanner: new HonoScanner(app),
+  hostname: 'https://example.com',
+  dynamicResolvers: [
+    {
+      pattern: '/blog/:slug',
+      resolve: async () => {
+        const posts = await getPosts()
+        return posts.map(p => ({ slug: p.slug }))
+      }
+    }
+  ]
+})
+
+// 生成 sitemap 條目
+const entries = await builder.build()
+```
+
+### 搭配 Next.js 使用
+
+對於 Next.js App Router，建立一個 `sitemap.ts` 檔案：
+
+```typescript
+// app/sitemap.ts
+import { SitemapBuilder, NextScanner } from '@gravito/luminosity'
+
+export default async function sitemap() {
+  const builder = new SitemapBuilder({
+    scanner: new NextScanner({ appDir: './app' }),
+    hostname: 'https://example.com',
+    dynamicResolvers: [
+      {
+        pattern: '/blog/:slug',
+        resolve: async () => {
+          const posts = await getPosts()
+          return posts.map(p => ({ slug: p.slug }))
+        }
+      }
+    ]
+  })
+
+  return builder.build()
+}
+```
+
+### 搭配 Nuxt 使用
+
+```typescript
+// server/routes/sitemap.xml.ts
+import { SitemapBuilder, NuxtScanner } from '@gravito/luminosity'
+
+export default defineEventHandler(async () => {
+  const builder = new SitemapBuilder({
+    scanner: new NuxtScanner({ pagesDir: './pages' }),
+    hostname: 'https://example.com'
+  })
+
+  const entries = await builder.build()
+  
+  // 轉換為 XML 並回傳
+  return new Response(renderSitemapXml(entries), {
+    headers: { 'Content-Type': 'application/xml' }
+  })
+})
+```
+
+### 建立自訂掃描器
+
+您可以透過實作 `RouteScanner` 介面，為任何框架建立掃描器：
+
+```typescript
+import type { RouteScanner, ScannedRoute } from '@gravito/luminosity'
+
+class MyFrameworkScanner implements RouteScanner {
+  readonly framework = 'my-framework'
+
+  async scan(): Promise<ScannedRoute[]> {
+    // 您的路由發現邏輯
+    return [
+      { path: '/', method: 'GET', isDynamic: false },
+      { path: '/blog/:slug', method: 'GET', isDynamic: true, params: ['slug'] }
+    ]
+  }
+}
+```
