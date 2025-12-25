@@ -1,6 +1,6 @@
 # Constellation
 
-> Gravito 的 Sitemap 產生器，支援動態輸出與靜態生成。
+> Gravito 的 Sitemap 產生器，支援動態輸出與靜態生成，可被 Luminosity 作為 sitemap 與路由掃描的工具層使用。
 
 ## 特色
 

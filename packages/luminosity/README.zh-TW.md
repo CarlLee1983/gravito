@@ -1,6 +1,6 @@
 # @gravito/luminosity
 
-> Gravito SmartMap Engine™ 的核心，提供 sitemap、robots.txt 與 meta 標籤產生。
+> Gravito SmartMap Engine™ 的核心，提供 sitemap、robots.txt 與 meta 標籤產生；其中 sitemap 生成底層由 Constellation 提供。
 
 ## 安裝
 

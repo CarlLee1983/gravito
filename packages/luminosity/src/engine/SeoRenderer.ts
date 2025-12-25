@@ -16,13 +16,15 @@ export class SeoRenderer {
    * @param page The requested page number (1-based), or undefined for index/main
    */
   render(entries: SitemapEntry[], url: string, page?: number): string {
+    const maxEntries = this.config.output?.maxEntriesPerSitemap || SeoRenderer.MAX_ENTRIES
+
     // Case 1: Small sitemap, render everything normally
-    if (entries.length <= SeoRenderer.MAX_ENTRIES) {
+    if (entries.length <= maxEntries) {
       return this.renderSitemap(entries)
     }
 
     // Case 2: Large sitemap, requires pagination/index
-    const totalPages = Math.ceil(entries.length / SeoRenderer.MAX_ENTRIES)
+    const totalPages = Math.ceil(entries.length / maxEntries)
 
     // If a specific page is requested
     if (page && page > 0) {
@@ -32,8 +34,8 @@ export class SeoRenderer {
         return this.renderSitemap([])
       }
 
-      const start = (page - 1) * SeoRenderer.MAX_ENTRIES
-      const end = start + SeoRenderer.MAX_ENTRIES
+      const start = (page - 1) * maxEntries
+      const end = start + maxEntries
       const slice = entries.slice(start, end)
       return this.renderSitemap(slice)
     }
@@ -51,6 +53,7 @@ export class SeoRenderer {
   }
 
   private renderIndex(currentUrl: string, totalPages: number, allEntries: SitemapEntry[]): string {
+    const maxEntries = this.config.output?.maxEntriesPerSitemap || SeoRenderer.MAX_ENTRIES
     const builder = new SitemapIndexBuilder({
       branding: this.config.branding?.enabled,
     })
@@ -63,8 +66,8 @@ export class SeoRenderer {
 
     for (let i = 1; i <= totalPages; i++) {
       // Find latest lastmod in this chunk
-      const start = (i - 1) * SeoRenderer.MAX_ENTRIES
-      const end = start + SeoRenderer.MAX_ENTRIES
+      const start = (i - 1) * maxEntries
+      const end = start + maxEntries
 
       // This is safe even if end > length
       // We only need the lastmod, checking 50k items might be slow?

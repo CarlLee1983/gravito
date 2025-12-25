@@ -59,7 +59,11 @@ export class SeoEngine {
     }
 
     // 2. Handle Sitemap.xml (including pagination)
-    if (path.endsWith('/sitemap.xml') || path.includes('sitemap')) {
+    if (
+      path.endsWith('/sitemap.xml') ||
+      path.includes('sitemap_page_') ||
+      (path.includes('sitemap') && path.endsWith('.xml'))
+    ) {
       // Extract page number if present (e.g. ?page=2 or sitemap_page_1)
       const pageMatch = path.match(/page[=_](\d+)/)
       const page = pageMatch ? parseInt(pageMatch[1]!, 10) : undefined

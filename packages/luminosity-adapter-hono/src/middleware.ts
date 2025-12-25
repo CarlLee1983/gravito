@@ -17,11 +17,19 @@ export function gravitoSeo(config: SeoConfig): MiddlewareHandler {
 
   return async (c: Context, next) => {
     const path = c.req.path
-    const isRobots = path.endsWith('/robots.txt')
+    const isRobots = path === '/robots.txt' || path.endsWith('/robots.txt')
     const isSitemap =
-      path.endsWith('/sitemap.xml') || path.includes('sitemap_page_') || path.includes('sitemap')
+      path === '/sitemap.xml' ||
+      path.endsWith('/sitemap.xml') ||
+      /sitemap_page_\d+/.test(path) ||
+      (path.includes('sitemap') && (path.endsWith('.xml') || c.req.query('page')))
 
     if (!isRobots && !isSitemap) {
+      return await next()
+    }
+
+    // Explicitly ignore doc pages even if they contain the keyword
+    if (path.includes('/docs/')) {
       return await next()
     }
 

@@ -1,6 +1,6 @@
 # @gravito/luminosity
 
-The intelligent core of the Gravito SmartMap Engine™. Provides incremental sitemap generation, robots.txt management, and dynamic meta tag building.
+The intelligent core of the Gravito SmartMap Engine™. Provides incremental sitemap generation, robots.txt management, and dynamic meta tag building. Sitemap generation is powered by Constellation under the hood.
 
 ## Features
 

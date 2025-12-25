@@ -225,6 +225,9 @@ export class RouteGroup {
  * - FormRequest validation: router.post('/users', StoreUserRequest, [UserController, 'store'])
  */
 export class Router {
+  // Internal list of all registered routes (for scanning and debugging)
+  public routes: Array<{ method: string; path: string }> = []
+
   // Singleton cache for controllers
   private controllers = new Map<ControllerClass, Record<string, unknown>>()
 
@@ -716,6 +719,7 @@ export class Router {
     // We should cast them to `any` or update `HttpAdapter` signature to `...handlers: (GravitoHandler | GravitoMiddleware)[]`.
     // For now, I will use `any` cast when calling `this.core.adapter.route` because checking interface would derail me.
 
+    this.routes.push({ method, path: fullPath })
     this.core.adapter.route(method, fullPath, ...(handlers as any[]))
 
     return new Route(this, method, fullPath, options)

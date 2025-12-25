@@ -34,8 +34,8 @@ export class RouteScanner implements SitemapProvider {
   getEntries(): SitemapEntry[] {
     const entries: SitemapEntry[] = []
 
-    // Accsess internal routes structure of Hono router
-    // This is Hono/Gravito specific implementation assumption
+    // Access internal routes structure of the Gravito router
+    // This is Gravito router specific implementation assumption
     const routes = this.extractRoutes(this.router)
 
     for (const route of routes) {
@@ -64,13 +64,13 @@ export class RouteScanner implements SitemapProvider {
   private extractRoutes(router: any): Array<{ method: string; path: string }> {
     const routes: Array<{ method: string; path: string }> = []
 
-    // If it's a Gravito Router, it exposes the underlying Hono routes via routes property
+    // If it's a Gravito Router, it exposes the underlying routes via routes property
     if (router.routes) {
       return router.routes
     }
 
-    // Attempt to access Hono v4 router routes
-    // Note: Hono's internal router structure might vary.
+    // Attempt to access router routes for compatible adapters
+    // Note: Internal router structure might vary.
     // For now we assume a standard route list is available or we scan registration history if available.
     // In Gravito Core Router, we might need to expose registered routes more publicly.
 

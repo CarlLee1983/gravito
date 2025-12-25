@@ -4,7 +4,7 @@ title: Constellation
 
 # Constellation
 
-Dynamic and static sitemap generation for Gravito applications.
+Dynamic and static sitemap generation for Gravito applications. Constellation can be used standalone or as the sitemap and route-scanning engine for Luminosity.
 
 **Constellation** provides a flexible way to generate XML sitemaps for your Gravito application, supporting both dynamic generation (via routes) and static generation (for build time). It includes support for Google Sitemap extensions like Images, Videos, News, and i18n alternates.
 

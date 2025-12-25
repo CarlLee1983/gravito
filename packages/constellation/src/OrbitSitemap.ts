@@ -171,7 +171,7 @@ export class OrbitSitemap {
 
     // Register Shard Route (e.g., sitemap-1.xml)
     // We assume shards are in same directory and follow pattern {basename}-*.xml
-    // Hono pattern: /path/basename-:shard.xml
+    // Route param pattern: /path/basename-:shard.xml
     const basename = indexFilename.replace('.xml', '')
     const shardRoute = `${baseDir}/${basename}-:shard.xml`
     core.router.get(shardRoute, handler)
