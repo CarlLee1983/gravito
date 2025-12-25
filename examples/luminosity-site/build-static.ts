@@ -2,7 +2,7 @@ import { exec } from 'node:child_process'
 import { cp, mkdir, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { promisify } from 'node:util'
-import type { Hono } from 'hono'
+import type { Photon } from '@gravito/photon'
 import { bootstrap } from './src/bootstrap'
 
 console.log('🏗️  Starting SSG Build for Luminosity site...')
@@ -123,7 +123,7 @@ async function build() {
   for (const task of routes) {
     console.log(`Render: ${task.path}`)
     try {
-      const res = await (core.app as Hono).request(task.path)
+      const res = await (core.app as Photon).request(task.path)
       if (res.status !== 200) {
         console.error(`❌ Failed ${res.status}: ${task.path}`)
         continue

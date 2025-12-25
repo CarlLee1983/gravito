@@ -9,7 +9,7 @@ export function setupViteProxy(core: PlanetCore): void {
     try {
       const url = new URL(c.req.url)
 
-      // Fix: When proxying, we might need to adjust the path if Hono's router captured differently
+      // Fix: When proxying, we might need to adjust the path if Photon's router captured differently
       // But for global middleware or wildcard, url.pathname is correct.
 
       const viteUrl = `http://127.0.0.1:5173${url.pathname}${url.search}`
@@ -82,7 +82,7 @@ export function setupViteProxy(core: PlanetCore): void {
         responseHeaders.set('Content-Type', 'application/javascript')
       }
 
-      // Return a RAW Web Response to bypass any Hono/Adapter body-shaping that defaults to octet-stream
+      // Return a RAW Web Response to bypass any Photon/Adapter body-shaping that defaults to octet-stream
       return new Response(buffer, {
         status: response.status,
         headers: responseHeaders,
@@ -95,7 +95,7 @@ export function setupViteProxy(core: PlanetCore): void {
 
   // Intercept all requests that look like Vite assets
   // We use a global middleware pattern but conditionally execute to avoid interfering with API/HTML routes if possible.
-  // However, Hono's order matters. This is installed AFTER static files but BEFORE other routes in bootstrap.
+  // However, Photon's order matters. This is installed AFTER static files but BEFORE other routes in bootstrap.
 
   core.adapter.use('*', async (c: GravitoContext, next: GravitoNext) => {
     const url = new URL(c.req.url)

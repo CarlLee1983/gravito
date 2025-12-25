@@ -1,20 +1,20 @@
 import { describe, expect, test } from 'bun:test'
-import { Hono } from 'hono'
+import { Photon } from '@gravito/photon'
 import { createBeam, createGravitoClient } from '../src/index'
 
 // Simulate AppType pattern (simple scenario)
-const app = new Hono()
+const app = new Photon()
   .get('/hello', (c) => c.json({ message: 'world' }))
   .post('/data', (c) => c.json({ id: 1 }))
 
 type TestAppType = typeof app
 
 // Simulate AppRoutes pattern (recommended, matches template usage)
-const userRoute = new Hono().get('/profile', (c) => c.json({ name: 'User' }))
-const apiRoute = new Hono().get('/health', (c) => c.json({ status: 'ok' }))
+const userRoute = new Photon().get('/profile', (c) => c.json({ name: 'User' }))
+const apiRoute = new Photon().get('/health', (c) => c.json({ status: 'ok' }))
 
 function _createTypeOnlyApp() {
-  const app = new Hono()
+  const app = new Photon()
   const routes = app.route('/api/users', userRoute).route('/api', apiRoute)
   return routes
 }

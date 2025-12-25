@@ -13,7 +13,7 @@ This website demonstrates the full power of the Gravito ecosystem, specifically 
 
 ### 1. **Core Architecture** (`@gravito/core`)
 - **Micro-Kernel**: Built on `gravito-core`, leveraging the lifecycle hook system for modularity.
-- **Hono Adapter**: Utilizing `hono` as the high-performance HTTP layer running on **Bun**.
+- **Photon Adapter**: Utilizing `@gravito/photon` as the high-performance HTTP layer running on **Bun**.
 - **Kinetic Modules**:
     - **@gravito/ion**: Seamless server-side routing with modern SPA user experience.
     - **@gravito/prism**: Server-side template rendering for critical SEO paths.
@@ -32,7 +32,7 @@ This website demonstrates the full power of the Gravito ecosystem, specifically 
 
 ### 4. **SEO & Performance**
 - **Gravito SEO Engine**:
-    - Dynamic **Robots.txt** & **Sitemap.xml** generation via `@gravito/seo-adapter-hono`.
+    - Dynamic **Robots.txt** & **Sitemap.xml** generation via `@gravito/luminosity-adapter-photon`.
     - No static files to maintain; routing rules are defined in code (`src/config/seo.ts`).
 - **Image Optimization**:
     - Responsive WebP handling (`GravitoImage` component).
@@ -105,7 +105,7 @@ bun run build:static
 ## 🎨 Asset Optimization
 
 ### Tech Stack Icons
-Gravito uses **Pure SVG Paths** for technology logos (Bun, Hono, TS) to ensure pixel-perfect rendering at any scale without external network requests.
+Gravito uses **Pure SVG Paths** for technology logos (Bun, Photon, TS) to ensure pixel-perfect rendering at any scale without external network requests.
 See `TechIcon` component in `src/client/pages/Home.tsx`.
 
 ### Hero Images

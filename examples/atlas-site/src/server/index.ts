@@ -1,8 +1,8 @@
-import { Hono } from 'hono'
+import { Photon } from '@gravito/photon'
 import { DB } from './db.js' // Ensure .js extension for local imports in ESM/Bun
 import User from './models/User.js'
 
-const app = new Hono()
+const app = new Photon()
 
 app.get('/api/demo', async (c) => {
   try {

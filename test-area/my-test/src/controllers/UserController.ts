@@ -1,5 +1,5 @@
 import { PlanetCore } from 'gravito-core'
-import type { Context } from 'hono'
+import type { Context } from '@gravito/photon'
 
 export class UserController {
   constructor(private core: PlanetCore) {}

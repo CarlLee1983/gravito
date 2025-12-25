@@ -5,6 +5,6 @@
     "dependencies": {
         "gravito-core": "workspace:*",
         "@gravito/stasis": "workspace:*",
-        "hono": "^4.0.0"
+        "@gravito/photon": "workspace:*"
     }
 }

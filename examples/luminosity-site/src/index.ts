@@ -1,4 +1,4 @@
-import { serveStatic } from 'hono/bun'
+import { serveStatic } from '@gravito/photon/bun'
 import { bootstrap } from './bootstrap'
 
 const core = await bootstrap()

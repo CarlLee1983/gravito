@@ -85,7 +85,7 @@ core.hooks.addAction('request:start', (args) => {
 ## Learn More
 
 - [Gravito Documentation](https://github.com/gravito-framework/gravito#readme)
-- [Hono Documentation](https://hono.dev)
+- [Photon Documentation](https://gravito.dev/photon)
 - [Bun Documentation](https://bun.sh)
 
 ## License

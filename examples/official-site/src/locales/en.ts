@@ -74,7 +74,7 @@ export default {
       'Unlike frameworks that perform dynamic regex matching at runtime, Gravito Core optimizes the routing tree into the simplest jump paths during boot.',
     adv2_title: 'Engine Agnostic (Adapter Pattern)',
     adv2_desc:
-      'The core is completely decoupled from the underlying HTTP engine. Swap Hono, Express, or Bun native modes without changing business logic.',
+      'The core is completely decoupled from the underlying HTTP engine. Swap Photon, Express, or Bun native modes without changing business logic.',
     adv3_title: 'AI-First Contracts',
     adv3_desc:
       'Deep type inference and predictable code patterns aren’t accidents. They are architectural designs that help AI agents like Cursor or Windsurf "understand" your system.',

@@ -1,5 +1,5 @@
 import type { PlanetCore } from 'gravito-core'
-import type { Context, Next } from 'hono'
+import type { Context, Next } from '@gravito/photon'
 import { ApiController } from '../controllers/ApiController'
 import { HomeController } from '../controllers/HomeController'
 

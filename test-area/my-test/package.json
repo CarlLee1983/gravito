@@ -11,7 +11,7 @@
     "@gravito/client": "^1.0.0-beta.1",
     "@gravito/stasis": "^1.0.0-beta.1",
     "@gravito/orbit-view": "^1.0.0-beta.1",
-    "hono": "^4.0.0"
+    "@gravito/photon": "workspace:*"
   },
   "devDependencies": {
     "bun-types": "latest",

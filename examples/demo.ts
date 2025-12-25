@@ -1,4 +1,4 @@
-import { serveStatic } from 'hono/bun'
+import { serveStatic } from '@gravito/photon/bun'
 import { defineConfig, PlanetCore } from '../packages/core/src/index.ts'
 import { OrbitCache } from '../packages/stasis/src/index.ts'
 
@@ -92,7 +92,7 @@ core.app.get('/', async (c) => {
           </div>
           <div class="feature-card">
             <span class="icon">⚡</span>
-            <h3>Bun + Hono</h3>
+            <h3>Bun + Photon</h3>
             <p>Lightning-fast performance</p>
           </div>
         </div>

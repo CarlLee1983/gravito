@@ -16,7 +16,7 @@
         "@inertiajs/react": "^1.0.0",
         "react": "^19.0.0",
         "react-dom": "^19.0.0",
-        "hono": "^4.0.0"
+        "@gravito/photon": "workspace:*"
     },
     "devDependencies": {
         "@types/react": "^19.2.7",

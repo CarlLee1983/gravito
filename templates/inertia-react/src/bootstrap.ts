@@ -1,8 +1,8 @@
 import { OrbitIon } from '@gravito/ion'
+import { serveStatic } from '@gravito/photon/bun'
 import { OrbitPrism } from '@gravito/prism'
 import { OrbitCache } from '@gravito/stasis'
 import { defineConfig, PlanetCore } from 'gravito-core'
-import { serveStatic } from 'hono/bun'
 import { registerHooks } from './hooks'
 import { registerRoutes } from './routes'
 

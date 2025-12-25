@@ -69,7 +69,7 @@ export default {
       '不同於其他框架在運行時進行動態正則匹配，Gravito Core 在啟動階段就將路由樹優化為最簡跳轉路徑，實現真正的零損耗轉發。',
     adv2_title: '引擎無關 (Engine Agnostic)',
     adv2_desc:
-      '核心與底層 HTTP 引擎完全解耦。您可以隨時在 Hono、Bun Native 或 Express 間切換，而無需修改任何業務邏輯。',
+      '核心與底層 HTTP 引擎完全解耦。您可以隨時在 Photon、Bun Native 或 Express 間切換，而無需修改任何業務邏輯。',
     adv3_title: 'AI 代理人友好 (AI-First)',
     adv3_desc:
       '深度的型別推導與可預測的代碼契約，這不是巧合，而是專為讓 Cursor、Windsurf 等 AI 助手能「理解」您的系統而設計的架構。',

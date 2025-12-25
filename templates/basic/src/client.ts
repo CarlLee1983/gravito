@@ -4,12 +4,12 @@ import type { AppRoutes } from './types'
 /**
  * Create a type-safe API client (Orbit Beam).
  *
- * This function uses `@gravito/beam` to create a Hono Client instance with full TypeScript
+ * This function uses `@gravito/beam` to create a Photon Client instance with full TypeScript
  * inference. Frontend projects can call APIs via this client and get end-to-end type safety.
  *
  * @param baseUrl - API base URL
  * @param options - Optional fetch options (headers, credentials, etc.)
- * @returns Type-safe Hono Client instance
+ * @returns Type-safe Photon Client instance
  *
  * @example
  * ```typescript

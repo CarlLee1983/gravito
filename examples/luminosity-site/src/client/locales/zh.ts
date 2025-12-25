@@ -29,7 +29,7 @@ export default {
     },
     proxy: {
       title: 'Robots.txt 代理',
-      desc: '可程式化控制搜尋引擎爬蟲，直接整合至 Hono 與 Express。',
+      desc: '可程式化控制搜尋引擎爬蟲，直接整合至 Photon 與 Express。',
     },
     meta: {
       title: 'Meta 標籤管理器',

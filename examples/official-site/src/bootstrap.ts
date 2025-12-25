@@ -1,10 +1,10 @@
 import { join } from 'node:path'
 import { OrbitIon } from '@gravito/ion'
+import type { Photon } from '@gravito/photon'
+import { serveStatic } from '@gravito/photon/bun'
 import { OrbitPrism } from '@gravito/prism'
 import { OrbitCache } from '@gravito/stasis'
 import { defineConfig, GravitoAdapter, PlanetCore } from 'gravito-core'
-import type { Hono } from 'hono'
-import { serveStatic } from 'hono/bun'
 import { registerHooks } from './hooks'
 import { registerRoutes } from './routes'
 import { setupViteProxy } from './utils/vite'
@@ -36,13 +36,13 @@ export async function bootstrap(options: AppConfig = {}): Promise<PlanetCore> {
   core.registerGlobalErrorHandlers()
 
   // 3. Static files
-  const app = core.app as Hono
+  const app = core.app as Photon
   const staticPath = join(import.meta.dirname, '../static/favicon.ico')
   app.get('/favicon.ico', serveStatic({ path: staticPath }))
   app.use('/static/*', serveStatic({ root: './' }))
 
   // 3.1 SEO Middleware (Eat our own dog food)
-  const { gravitoSeo } = await import('@gravito/luminosity-adapter-hono')
+  const { gravitoSeo } = await import('@gravito/luminosity-adapter-photon')
   const { seoConfig } = await import('./config/seo')
 
   // Mounted at root to catch /sitemap.xml and /robots.txt

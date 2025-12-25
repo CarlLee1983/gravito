@@ -1,13 +1,13 @@
-import { Hono } from 'hono'
-import { logger } from 'hono/logger'
+import { Photon } from '@gravito/photon'
+import { logger } from '@gravito/photon/logger'
 
 /**
  * API route module.
  *
- * Important: use Hono's `.route()` to compose modules. This is required to preserve full
+ * Important: use Photon's `.route()` to compose modules. This is required to preserve full
  * TypeScript type inference.
  */
-const apiRoute = new Hono()
+const apiRoute = new Photon()
 
 // API logging middleware
 apiRoute.use('*', logger())

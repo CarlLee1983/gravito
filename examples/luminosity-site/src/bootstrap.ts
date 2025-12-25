@@ -42,7 +42,7 @@ export async function bootstrap(options: { port?: number } = {}) {
   const docsController = new DocsController()
 
   // Define routes for a specific group
-  // biome-ignore lint/suspicious/noExplicitAny: Hono Group Type
+  // biome-ignore lint/suspicious/noExplicitAny: Photon Group Type
   const defineRoutes = (group: any) => {
     const homeHandler = (c: GravitoContext) => {
       const inertia = c.get('inertia')

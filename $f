@@ -13,7 +13,7 @@ await Bun.build({
   target: 'node',
   minify: false,
   naming: '[dir]/[name].mjs',
-  external: ['gravito-core', 'hono'],
+  external: ['gravito-core', '@gravito/photon'],
 })
 
 // Build CJS
@@ -24,7 +24,7 @@ await Bun.build({
   target: 'node',
   minify: false,
   naming: '[dir]/[name].cjs',
-  external: ['gravito-core', 'hono'],
+  external: ['gravito-core', '@gravito/photon'],
 })
 
 console.log('📝 Generating type declarations...')

@@ -1,7 +1,7 @@
+import { Photon } from '@gravito/photon'
+import { serveStatic } from '@gravito/photon/bun'
+import { logger } from '@gravito/photon/logger'
 import type { PlanetCore } from 'gravito-core'
-import { Hono } from 'hono'
-import { serveStatic } from 'hono/bun'
-import { logger } from 'hono/logger'
 import { apiRoute } from './routes/api'
 import { createPagesRoute } from './routes/pages'
 import { userRoute } from './routes/user'
@@ -9,7 +9,7 @@ import { userRoute } from './routes/user'
 /**
  * Create the main application.
  *
- * Important: you must use `app.route()` to compose route modules so that Hono can infer a complete
+ * Important: you must use `app.route()` to compose route modules so that Photon can infer a complete
  * API tree type for the frontend.
  *
  * @param core - PlanetCore instance (pages routes may need access to core dependencies)
@@ -25,7 +25,7 @@ import { userRoute } from './routes/user'
  * ```
  */
 export function createApp(core: PlanetCore) {
-  const app = new Hono()
+  const app = new Photon()
 
   // Global middleware
   app.use('*', logger())
@@ -52,7 +52,7 @@ export function createApp(core: PlanetCore) {
  * frontend usage.
  */
 function _createTypeOnlyApp() {
-  const app = new Hono()
+  const app = new Photon()
   const routes = app.route('/api/users', userRoute).route('/api', apiRoute)
   return routes
 }

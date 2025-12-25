@@ -1,16 +1,16 @@
 import type { InertiaService } from '@gravito/ion'
+import type { Context } from '@gravito/photon'
+import { Photon } from '@gravito/photon'
 import type { PlanetCore } from 'gravito-core'
-import type { Context } from 'hono'
-import { Hono } from 'hono'
 
 /**
  * Pages route module.
  *
- * Important: use Hono's `.route()` to compose modules. This is required to preserve full
+ * Important: use Photon's `.route()` to compose modules. This is required to preserve full
  * TypeScript type inference.
  */
 export function createPagesRoute(core: PlanetCore) {
-  const pagesRoute = new Hono()
+  const pagesRoute = new Photon()
 
   /**
    * Home page

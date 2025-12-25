@@ -29,7 +29,7 @@ export default {
     },
     proxy: {
       title: 'Robots.txt Proxy',
-      desc: 'Programmable control over search engine crawlers with direct integration into Hono and Express.',
+      desc: 'Programmable control over search engine crawlers with direct integration into Photon and Express.',
     },
     meta: {
       title: 'Meta Tag Builder',

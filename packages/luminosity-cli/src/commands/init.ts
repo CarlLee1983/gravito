@@ -76,7 +76,7 @@ export async function initCommand() {
   console.log(pc.dim(`   BaseURL: ${cleanUrl}`))
   console.log(`\nNext steps:`)
   console.log(`  1. Edit ${pc.cyan('gravito.seo.config.ts')} to add real resolvers.`)
-  console.log(`  2. Mount middleware in your Hono/Express app.\n`)
+  console.log(`  2. Mount middleware in your Photon/Express app.\n`)
 
   rl.close()
 }

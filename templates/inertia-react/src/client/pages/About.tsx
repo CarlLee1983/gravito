@@ -15,7 +15,7 @@ export default function About() {
             <div className="feature-card">
               <span className="icon">⚡️</span>
               <h3>Super Fast</h3>
-              <p>Powered by Bun and Hono for extreme performance.</p>
+              <p>Powered by Bun and Photon for extreme performance.</p>
             </div>
             <div className="feature-card">
               <span className="icon">⚛️</span>

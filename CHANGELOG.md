@@ -64,7 +64,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * commit bundled ion distribution for cli, cosmos, monolith, and site ([e881b62](https://github.com/gravito-framework/gravito/commit/e881b62857ec9ef757f83507389a6d789c589b57))
 * **core:** add adapter pattern to PlanetCore ([3b7025b](https://github.com/gravito-framework/gravito/commit/3b7025bd0254e9ba5d11b343775d22b367231f7d))
 * **core:** add HTTP abstraction layer for adapter pattern ([a4c30f4](https://github.com/gravito-framework/gravito/commit/a4c30f4acc4808b103d80e68d1c03d188c875d7c))
-* **core:** add parseBody to GravitoRequest and implement in Hono/Bun adapters ([8260887](https://github.com/gravito-framework/gravito/commit/8260887bd3afe00d85cfaf4f2680951fb3771c97))
+* **core:** add parseBody to GravitoRequest and implement in Photon/Bun adapters ([8260887](https://github.com/gravito-framework/gravito/commit/8260887bd3afe00d85cfaf4f2680951fb3771c97))
 * **core:** add process-level global error handlers ([19d1484](https://github.com/gravito-framework/gravito/commit/19d1484ed06500a76bdfce49215fddb5647e3309))
 * **core:** finalize BunNativeAdapter implementation and fix tests ([f6564fe](https://github.com/gravito-framework/gravito/commit/f6564fe0fee2f49403ee1ec91909f1d4f77dade9))
 * **core:** implement IoC Container and Service Providers ([0109e42](https://github.com/gravito-framework/gravito/commit/0109e42197bb640845e1633aac617bf5ad30d1b3))
@@ -145,7 +145,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * return undefined from all middleware functions ([76c8624](https://github.com/gravito-framework/gravito/commit/76c862451c2688ba5ba10cbe11424f9ced53cb0c))
 * return undefined from middleware in OrbitSignal ([53e9d25](https://github.com/gravito-framework/gravito/commit/53e9d2584c300e9048336b31c820f4fc9ed36b44))
 * return undefined from remaining middleware functions ([8244ec3](https://github.com/gravito-framework/gravito/commit/8244ec38d396a2b63bad588978e2832d05f01228))
-* **signal:** remove missing 'hono' module augmentation to fix build ([989365c](https://github.com/gravito-framework/gravito/commit/989365c8b9f04cba516e9ddba0097f5da3d45e30))
+* **signal:** remove missing 'photon' module augmentation to fix build ([989365c](https://github.com/gravito-framework/gravito/commit/989365c8b9f04cba516e9ddba0097f5da3d45e30))
 * **signal:** resolve dts build error and fix DevServer type errors ([45926d4](https://github.com/gravito-framework/gravito/commit/45926d44be6c133e19cfced30ee34341b247e87d))
 * **signal:** update @gravito/prism dependency to ^0.1.0 ([0544ec8](https://github.com/gravito-framework/gravito/commit/0544ec88532b42a80ccb43b1f6a78ad9abf372d8))
 * **site:** resolve docs 404, improve routing, and add frontmatter ([59bba57](https://github.com/gravito-framework/gravito/commit/59bba571e57e4ddef55cc7039a81fbbfdb0306bc))
@@ -197,7 +197,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - OrbitCache config resolution when no config provided
-- Hono Context type safety with custom Variables
+- Photon Context type safety with custom Variables
 
 ### Technical
 
@@ -210,7 +210,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial release with basic PlanetCore
-- Hono integration
+- Photon integration
 - ConfigManager
 - HookManager
 - ConsoleLogger

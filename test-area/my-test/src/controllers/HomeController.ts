@@ -1,5 +1,5 @@
 import type { CacheService, PlanetCore, ViewService } from 'gravito-core'
-import type { Context } from 'hono'
+import type { Context } from '@gravito/photon'
 
 /**
  * HomeController

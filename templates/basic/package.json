@@ -11,7 +11,7 @@
         "@gravito/beam": "workspace:*",
         "@gravito/stasis": "workspace:*",
         "@gravito/prism": "workspace:*",
-        "hono": "^4.0.0"
+        "@gravito/photon": "workspace:*"
     },
     "devDependencies": {
         "bun-types": "latest",
