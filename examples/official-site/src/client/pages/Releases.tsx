@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import Layout from '../components/Layout'
 import { isStaticSite, StaticLink } from '../components/StaticLink'
+import { ReleaseCanvas } from '../components/ReleaseCanvas'
 
 interface ReleaseEntry {
     id: string
@@ -25,6 +26,7 @@ interface ReleaseEntry {
     featured?: boolean
 }
 
+// Release data - can be moved to a separate data file or CMS later
 // Release data - can be moved to a separate data file or CMS later
 const releases: ReleaseEntry[] = [
     {
@@ -57,29 +59,13 @@ const releases: ReleaseEntry[] = [
             'gravito-core: 核心框架穩定',
             '@gravito/atlas: ORM 功能完善',
             '@gravito/sentinel: 認證授權系統',
-            '@gravito/monitor: 可觀測性模組',
+            '@gravito/fortify: 安全防護增強',
         ],
         links: [
             { label: 'NPM', url: 'https://www.npmjs.com/org/gravito' },
             { label: 'GitHub', url: 'https://github.com/gravito-framework/gravito' },
         ],
         featured: true,
-    },
-    {
-        id: 'monitor-module',
-        date: '2025-12-25',
-        type: 'feature',
-        title: '@gravito/monitor 可觀測性模組',
-        description:
-            '新增企業級可觀測性模組，支援 Kubernetes 健康檢查、Prometheus 指標、OpenTelemetry 分散式追蹤。',
-        highlights: [
-            '/health, /ready, /live K8s 探針',
-            'Prometheus 格式 /metrics 端點',
-            'OpenTelemetry OTLP 追蹤整合',
-        ],
-        links: [
-            { label: '文檔', url: '/en/docs/guide/observability' },
-        ],
     },
     {
         id: 'atlas-orm',
@@ -140,100 +126,154 @@ function ReleaseCard({
 
     return (
         <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, x: index % 2 === 0 ? -30 : 30 }}
+            whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true, margin: '-50px' }}
-            transition={{ duration: 0.5, delay: index * 0.1 }}
-            className={`relative ${entry.featured ? 'md:-mx-4' : ''}`}
+            transition={{ duration: 0.8, delay: index * 0.1, ease: [0.22, 1, 0.36, 1] }}
+            className="relative group"
         >
-            {/* Timeline dot */}
-            <div
-                className={`absolute -left-[41px] top-6 w-4 h-4 rounded-full border-2 ${config.border} ${config.bg}`}
-            >
-                <div
-                    className={`absolute inset-1 rounded-full ${entry.featured ? 'bg-singularity animate-pulse' : 'bg-white/20'
-                        }`}
-                />
-            </div>
-
-            {/* Card */}
+            {/* Timeline dot with Brand Pulse */}
             <div
                 className={`
-          rounded-2xl border backdrop-blur-sm p-6
-          ${entry.featured
-                        ? 'bg-gradient-to-br from-singularity/5 to-purple-500/5 border-singularity/20 shadow-lg shadow-singularity/5'
-                        : 'bg-white/5 border-white/10 hover:border-white/20'
+                    absolute top-8 w-5 h-5 rounded-full border-2 z-20 transition-all duration-700
+                    ${index % 2 === 0
+                        ? 'md:-right-[50px] -left-[51px] md:left-auto'
+                        : 'md:-left-[50px] -left-[51px]'
                     }
-          transition-all duration-300
-        `}
+                    ${entry.featured ? 'border-singularity bg-singularity/20 scale-125' : 'border-white/20 bg-void'}
+                `}
             >
-                {/* Header */}
-                <div className="flex flex-wrap items-center gap-3 mb-4">
-                    {/* Type badge */}
-                    <span
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${config.bg} ${config.color} ${config.border} border`}
-                    >
-                        <Icon size={12} />
-                        {config.label}
-                    </span>
+                {entry.featured && (
+                    <div className="absolute inset-0 rounded-full bg-singularity animate-ping opacity-40" />
+                )}
+                <div className={`absolute inset-1.5 rounded-full ${entry.featured ? 'bg-singularity' : 'bg-white/40'}`} />
+            </div>
 
-                    {/* Version */}
-                    {entry.version && (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-white/10 text-white border border-white/20">
-                            <Tag size={12} />
-                            v{entry.version}
-                        </span>
-                    )}
+            {/* Card Content with Brand Accents */}
+            <div
+                className={`
+                    relative rounded-[2rem] border backdrop-blur-2xl p-8 overflow-hidden transition-all duration-500
+                    ${entry.featured
+                        ? 'bg-gradient-to-br from-[#0F1218]/90 to-void/95 border-singularity/30 shadow-[0_40px_80px_-15px_rgba(0,0,0,0.8),0_0_20px_rgba(0,240,255,0.1)]'
+                        : 'bg-white/5 border-white/10 hover:border-singularity/30 hover:bg-white/8 shadow-2xl'
+                    }
+                `}
+            >
+                {/* Brand Side Accent Line */}
+                <div className="absolute top-0 bottom-0 left-0 w-1 bg-gradient-to-b from-singularity via-purple-500 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
 
-                    {/* Date */}
-                    <span className="ml-auto text-xs text-gray-500 font-medium">
-                        {new Date(entry.date).toLocaleDateString('zh-TW', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric',
-                        })}
-                    </span>
-                </div>
-
-                {/* Title */}
-                <h3 className="text-xl font-black text-white mb-3">{entry.title}</h3>
-
-                {/* Description */}
-                <p className="text-gray-400 leading-relaxed mb-4">{entry.description}</p>
-
-                {/* Highlights */}
-                {entry.highlights && entry.highlights.length > 0 && (
-                    <ul className="space-y-2 mb-4">
-                        {entry.highlights.map((highlight, i) => (
-                            <li key={i} className="flex items-start gap-2 text-sm text-gray-300">
-                                <Rocket size={14} className="mt-0.5 text-singularity shrink-0" />
-                                {highlight}
-                            </li>
-                        ))}
-                    </ul>
+                {/* Shine effect for featured */}
+                {entry.featured && (
+                    <motion.div
+                        initial={{ left: '-100%' }}
+                        animate={{ left: '200%' }}
+                        transition={{ duration: 4, repeat: Infinity, repeatDelay: 3, ease: 'easeInOut' }}
+                        className="absolute top-0 bottom-0 w-1/2 bg-gradient-to-r from-transparent via-singularity/5 to-transparent skew-x-[-25deg] pointer-events-none"
+                    />
                 )}
 
-                {/* Links */}
-                {entry.links && entry.links.length > 0 && (
-                    <div className="flex flex-wrap gap-3 pt-4 border-t border-white/5">
-                        {entry.links.map((link, i) => {
-                            const isExternal = link.url.startsWith('http')
-                            const LinkComponent = isStaticSite() || isExternal ? 'a' : StaticLink
+                {/* Header Area */}
+                <div className="flex flex-wrap items-center gap-4 mb-6 relative z-10">
+                    <div className="flex items-center gap-3">
+                        <span
+                            className={`
+                                inline-flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black tracking-[0.2em] uppercase border transition-all duration-500
+                                ${entry.featured
+                                    ? 'bg-singularity text-black border-transparent shadow-[0_0_15px_rgba(0,240,255,0.4)]'
+                                    : `${config.bg} ${config.color} ${config.border} group-hover:border-singularity/50`
+                                }
+                            `}
+                        >
+                            <Icon size={14} />
+                            {config.label}
+                        </span>
 
-                            return (
-                                <LinkComponent
-                                    key={i}
-                                    href={link.url}
-                                    {...(isExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-                                    className="inline-flex items-center gap-1.5 text-sm font-semibold text-singularity hover:text-cyan-300 transition-colors"
-                                >
-                                    {isExternal ? <ExternalLink size={14} /> : <BookOpen size={14} />}
-                                    {link.label}
-                                </LinkComponent>
-                            )
+                        {entry.version && (
+                            <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-mono font-black bg-white/5 text-white/60 border border-white/5 group-hover:border-white/20 transition-colors">
+                                <Tag size={13} />
+                                v{entry.version}
+                            </span>
+                        )}
+                    </div>
+
+                    <div className="ml-auto text-[10px] font-black tracking-widest text-gray-500 uppercase bg-white/5 px-3 py-1.5 rounded-lg border border-white/5">
+                        {new Date(entry.date).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
                         })}
                     </div>
-                )}
+                </div>
+
+                {/* Content Body */}
+                <div className="relative z-10">
+                    <h3
+                        className={`
+                            font-black tracking-tighter mb-4 transition-all duration-500
+                            ${entry.featured
+                                ? 'text-3xl md:text-4xl text-white group-hover:text-singularity'
+                                : 'text-2xl text-white group-hover:text-singularity'
+                            }
+                        `}
+                    >
+                        {entry.title}
+                    </h3>
+
+                    <p className="text-gray-400 text-lg leading-relaxed mb-8 max-w-2xl font-medium">
+                        {entry.description}
+                    </p>
+
+                    {/* Highlights Grid with Brand Icons */}
+                    {entry.highlights && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-10">
+                            {entry.highlights.map((highlight, i) => (
+                                <div
+                                    key={i}
+                                    className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/5 group/item hover:border-singularity/40 hover:bg-singularity/[0.03] transition-all duration-300"
+                                >
+                                    <div className="p-2.5 rounded-xl bg-singularity/10 text-singularity group-hover/item:bg-singularity group-hover/item:text-black shadow-[0_0_10px_rgba(0,240,255,0.1)] transition-all">
+                                        <Rocket size={14} />
+                                    </div>
+                                    <span className="text-sm font-bold text-gray-300 group-hover/item:text-white transition-colors">
+                                        {highlight}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Action Links with Premium Buttons */}
+                    {entry.links && entry.links.length > 0 && (
+                        <div className="flex flex-wrap gap-4 pt-8 border-t border-white/5">
+                            {entry.links.map((link, i) => {
+                                const isExternal = link.url.startsWith('http')
+                                const LinkComponent = isStaticSite() || isExternal ? 'a' : StaticLink
+
+                                return (
+                                    <LinkComponent
+                                        key={i}
+                                        href={link.url}
+                                        {...(isExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                                        className={`
+                                            inline-flex items-center gap-2 px-6 py-3 rounded-2xl font-black text-xs tracking-widest uppercase transition-all duration-300 relative overflow-hidden group/btn
+                                            ${entry.featured
+                                                ? 'bg-white text-black hover:bg-singularity hover:shadow-[0_0_30px_rgba(0,240,255,0.4)]'
+                                                : 'bg-white/5 text-white/50 border border-white/5 hover:border-singularity hover:text-white'
+                                            }
+                                        `}
+                                    >
+                                        <span className="relative z-10 flex items-center gap-2">
+                                            {isExternal ? <ExternalLink size={14} /> : <BookOpen size={14} />}
+                                            {link.label}
+                                        </span>
+                                    </LinkComponent>
+                                )
+                            })}
+                        </div>
+                    )}
+                </div>
+
+                {/* Decorative Bottom Glow */}
+                <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-singularity/10 blur-[60px] rounded-full pointer-events-none group-hover:bg-singularity/20 transition-all duration-700" />
             </div>
         </motion.div>
     )
@@ -247,54 +287,85 @@ export default function Releases() {
         <Layout>
             <Head title={isZh ? '更新日誌 | Gravito' : 'Releases | Gravito'} />
 
+            {/* Dynamic Canvas Atmosphere */}
+            <ReleaseCanvas />
+
+            {/* Brand Atmosphere Background */}
+            <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+                <div className="absolute top-[10%] right-[-5%] w-[600px] h-[600px] bg-singularity/10 rounded-full blur-[150px]" />
+                <div className="absolute bottom-[20%] left-[-10%] w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[130px]" />
+            </div>
+
             {/* Hero */}
-            <section className="relative pt-32 pb-16 px-6">
-                <div className="max-w-4xl mx-auto text-center">
+            <section className="relative pt-40 pb-20 px-6 overflow-hidden">
+                {/* Decorative Orbital Ring */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] border border-singularity/5 rounded-full pointer-events-none" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] border border-white/5 rounded-full pointer-events-none" />
+
+                <div className="max-w-4xl mx-auto text-center relative z-10">
                     <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6 }}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
                     >
-                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-singularity/10 border border-singularity/20 text-singularity text-sm font-bold mb-6">
-                            <Rocket size={16} />
-                            {isZh ? '持續進化中' : 'Evolving'}
+                        <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-gradient-to-r from-singularity/20 to-purple-500/20 border border-singularity/30 text-singularity text-xs font-black tracking-[0.2em] uppercase mb-8 shadow-[0_0_20px_rgba(0,240,255,0.2)]">
+                            <Rocket size={14} className="animate-pulse" />
+                            {isZh ? '持續進化中' : 'Evolutionary Roadmap'}
                         </div>
 
-                        <h1 className="text-4xl md:text-5xl font-black text-white mb-6 tracking-tight">
-                            {isZh ? '更新日誌' : 'Releases & Updates'}
+                        <h1 className="text-5xl md:text-7xl font-black text-white mb-8 tracking-tighter flex flex-wrap justify-center gap-x-2">
+                            {('ReleaseLog').split('').map((char, i) => (
+                                <motion.span
+                                    key={i}
+                                    initial={{ opacity: 0, y: 20, rotateX: -90 }}
+                                    animate={{ opacity: 1, y: 0, rotateX: 0 }}
+                                    transition={{
+                                        duration: 0.8,
+                                        delay: 0.5 + i * 0.05,
+                                        ease: [0.22, 1, 0.36, 1]
+                                    }}
+                                    className={char === 'L' || char === 'o' || char === 'g' ? 'bg-gradient-to-r from-singularity to-cyan-400 bg-clip-text text-transparent' : 'text-white'}
+                                >
+                                    {char}
+                                </motion.span>
+                            ))}
                         </h1>
 
-                        <p className="text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
+                        <p className="text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed font-medium">
                             {isZh
-                                ? '追蹤 Gravito 框架的最新發展、功能更新與重要里程碑。'
-                                : 'Follow the latest developments, feature updates, and milestones of the Gravito framework.'}
+                                ? '追蹤 Gravito 框架的最新發展、核心發布與品牌進化里程碑。'
+                                : 'Tracking the meta-progression, core deployments, and brand evolution of the Gravito ecosystem.'}
                         </p>
                     </motion.div>
                 </div>
             </section>
 
             {/* Timeline */}
-            <section className="relative pb-32 px-6">
-                <div className="max-w-3xl mx-auto">
-                    {/* Timeline line */}
-                    <div className="absolute left-6 md:left-1/2 md:-translate-x-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-singularity/50 via-white/10 to-transparent" />
+            <section className="relative pb-40 px-6">
+                <div className="max-w-4xl mx-auto">
+                    {/* Timeline rail with brand gradient */}
+                    <div className="absolute left-6 md:left-1/2 md:-translate-x-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-singularity/80 via-white/10 to-transparent shadow-[0_0_15px_rgba(0,240,255,0.3)]" />
 
                     {/* Entries */}
-                    <div className="relative pl-12 md:pl-10 space-y-8">
+                    <div className="relative pl-12 md:pl-0 space-y-24">
                         {releases.map((entry, index) => (
-                            <ReleaseCard key={entry.id} entry={entry} index={index} />
+                            <div key={entry.id} className={`flex flex-col ${index % 2 === 0 ? 'md:items-start' : 'md:items-end'}`}>
+                                <div className="w-full md:w-[calc(50%-40px)]">
+                                    <ReleaseCard entry={entry} index={index} />
+                                </div>
+                            </div>
                         ))}
                     </div>
 
                     {/* End marker */}
-                    <div className="relative pl-12 md:pl-10 pt-8">
-                        <div className="absolute -left-[41px] top-8 w-4 h-4 rounded-full bg-white/10 border-2 border-white/20" />
-                        <p className="text-gray-500 text-sm italic">
-                            {isZh ? '更多精彩即將到來...' : 'More coming soon...'}
-                        </p>
+                    <div className="relative flex justify-center pt-20">
+                        <div className="bg-void px-6 py-2 border border-white/10 rounded-full text-gray-500 text-xs font-mono tracking-widest uppercase">
+                            {isZh ? '更多精彩即將到來...' : 'Awaiting Next Ignition...'}
+                        </div>
                     </div>
                 </div>
             </section>
         </Layout>
     )
 }
+
