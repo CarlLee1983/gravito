@@ -44,7 +44,7 @@ const core = await PlanetCore.boot(config)
 ### 2. Render a template
 
 ```typescript
-import { Context } from 'hono'
+import { Context } from '@gravito/photon'
 
 export class HomeController {
   index = async (c: Context) => {

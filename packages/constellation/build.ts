@@ -7,7 +7,7 @@ await Bun.$`rm -rf dist`
 
 const external = [
   'gravito-core',
-  'hono',
+  '@gravito/photon',
   '@aws-sdk/client-s3',
   '@google-cloud/storage',
   '@gravito/stream',

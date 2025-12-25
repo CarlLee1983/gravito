@@ -77,12 +77,12 @@ const config: SeoConfig = {
 };
 ```
 
-When using `gravito-seo` middleware (in Hono/Express), requests to `/robots.txt` will automatically serve this generated content.
+When using `gravito-seo` middleware (in Photon/Express), requests to `/robots.txt` will automatically serve this generated content.
 
 ## usage
 
 ### 1. Sitemap Engine
-Typically used via `@gravito/luminosity-adapter-hono` or `@gravito/luminosity-adapter-express`.
+Typically used via `@gravito/luminosity-adapter-photon` or `@gravito/luminosity-adapter-express`.
 
 ### 2. Meta Tags (SeoMetadata)
 Use `SeoMetadata` in your controllers or views to generate HTML head tags dynamically.

@@ -32,7 +32,7 @@
   },
   "devDependencies": {
     "bun-types": "^1.1.0",
-    "hono": "^4.0.0",
+    "@gravito/photon": "workspace:*",
     "typescript": "^5.0.0"
   },
   "author": "Carl Lee <carllee0520@gmail.com>",

@@ -20,7 +20,7 @@ const config = defineConfig({
 ```
 
 ```typescript
-import { Context } from 'hono'
+import { Context } from '@gravito/photon'
 import { InertiaService } from '@gravito/ion'
 
 export class HomeController {

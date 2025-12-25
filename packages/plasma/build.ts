@@ -13,7 +13,7 @@ try {
     outdir: './dist',
     target: 'node', // Plasma is mostly for backend (redis)
     format: 'esm',
-    external: ['gravito-core', 'hono', 'ioredis'],
+    external: ['gravito-core', '@gravito/photon', 'ioredis'],
     naming: '[dir]/[name].mjs',
   })
 

@@ -134,8 +134,8 @@
       },
       "@gravito/seo-adapter-hono": {
         "old": "@gravito/seo-adapter-hono",
-        "new": "@gravito/luminosity-adapter-hono",
-        "description": "Hono SEO 適配器"
+        "new": "@gravito/luminosity-adapter-photon",
+        "description": "Photon SEO 適配器"
       },
       "@gravito/seo-adapter-express": {
         "old": "@gravito/seo-adapter-express",
@@ -279,4 +279,3 @@
     "未來模組": "標記為 future 的模組目前不存在，計劃在未來實現"
   }
 }
-

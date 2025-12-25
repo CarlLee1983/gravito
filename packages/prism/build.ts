@@ -7,7 +7,7 @@ await Bun.$`rm -rf dist`
 
 const external = [
   'gravito-core',
-  'hono',
+  '@gravito/photon',
   'react',
   'react-dom',
   'react/jsx-dev-runtime',

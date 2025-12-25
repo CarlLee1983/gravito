@@ -2,7 +2,7 @@
 
 > Inertia.js adapter for Gravito. Build modern monoliths with React/Vue.
 
-**Orbit Inertia** allows you to build single-page apps using classic server-side routing and controllers. It acts as the glue between Gravito (Hono) and your frontend framework.
+**Orbit Inertia** allows you to build single-page apps using classic server-side routing and controllers. It acts as the glue between Gravito (Photon) and your frontend framework.
 
 ## ✨ Features
 
@@ -58,7 +58,7 @@ By default, Inertia looks for `src/views/app.html`. This is the "shell" of your 
 In your controllers, simply use `inertia.render()`:
 
 ```typescript
-import { Context } from 'hono';
+import { Context } from '@gravito/photon';
 import { InertiaService } from '@gravito/ion';
 
 export class HomeController {

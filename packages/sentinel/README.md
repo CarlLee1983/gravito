@@ -20,7 +20,7 @@ bun add @gravito/sentinel
 Peer dependencies:
 
 - `gravito-core`
-- `hono` (^4.0.0)
+- `@gravito/photon` (^4.0.0)
 
 If you use the Session guard, install `@gravito/pulsar`:
 

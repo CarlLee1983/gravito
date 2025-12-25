@@ -17,7 +17,7 @@ const OFFICIAL_SITE_PACKAGES = [
   '@gravito/stasis',
   '@gravito/ion',
   '@gravito/prism',
-  '@gravito/luminosity-adapter-hono',
+  '@gravito/luminosity-adapter-photon',
   '@gravito/luminosity',
   '@gravito/atlas',
   '@gravito/plasma',
@@ -158,4 +158,3 @@ main().catch((error) => {
   console.error('❌ 發生錯誤:', error);
   process.exit(1);
 });
-

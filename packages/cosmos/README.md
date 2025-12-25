@@ -2,7 +2,7 @@
 
 > Lightweight Internationalization (i18n) Orbit for Gravito.
 
-Provides simple JSON-based localization support for your Gravito application, with seamless integration into Hono context.
+Provides simple JSON-based localization support for your Gravito application, with seamless integration into Photon context.
 
 ## 📦 Installation
 
@@ -50,7 +50,7 @@ bun add @gravito/cosmos
 
 ## ✨ Features
 
--   **Context Injection**: Automatically injects `t()` helper into Hono context.
+-   **Context Injection**: Automatically injects `t()` helper into Photon context.
 -   **Parameter Replacement**: Supports `{key}` style parameter replacement.
 -   **Locale Detection**: Automatically detects locale from `Accept-Language` header or query parameter `?lang=`.
 -   **Fallback**: gracefully falls back to default locale if key is missing.

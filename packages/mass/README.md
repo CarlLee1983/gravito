@@ -6,7 +6,7 @@ TypeBox-based validation for Gravito. High-performance schema validation with fu
 
 - **Fast validation**: TypeBox-powered validators with strong runtime performance
 - **Full TypeScript support**: Type inference without manual typings
-- **Hono integration**: Works seamlessly with Hono validation middleware
+- **Photon integration**: Works seamlessly with Photon validation middleware
 - **Multiple sources**: Validate JSON, query, params, and form data
 
 ## Installation
@@ -20,10 +20,10 @@ bun add @gravito/mass
 ### JSON validation
 
 ```typescript
-import { Hono } from 'hono'
+import { Photon } from '@gravito/photon'
 import { Schema, validate } from '@gravito/mass'
 
-const app = new Hono()
+const app = new Photon()
 
 app.post('/login',
   validate('json', Schema.Object({
@@ -90,16 +90,16 @@ Schema.Number({ minimum: 0, maximum: 100 })
 Schema.String({ format: 'email' })
 ```
 
-## Hono Client Integration
+## Beam Client Integration
 
 When you compose routes with `app.route()`, you get full type inference for the client:
 
 ```typescript
 // app.ts
-import { Hono } from 'hono'
+import { Photon } from '@gravito/photon'
 import { userRoute } from './routes/user'
 
-const app = new Hono()
+const app = new Photon()
 const routes = app.route('/api/users', userRoute)
 
 export default app
@@ -108,11 +108,11 @@ export type AppRoutes = typeof routes
 
 ```typescript
 // client.ts
-import { hc } from 'hono/client'
+import { createBeam } from '@gravito/beam'
 import type { AppRoutes } from './types'
 
 export const createClient = (baseUrl: string) => {
-  return hc<AppRoutes>(baseUrl)
+  return createBeam<AppRoutes>(baseUrl)
 }
 
 const client = createClient('http://localhost:3000')

@@ -23,15 +23,15 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "hono": "^4.0.0"
+    "@gravito/photon": "workspace:*"
   },
   "devDependencies": {
     "bun-types": "latest",
-    "hono": "^4.0.0",
+    "@gravito/photon": "workspace:*",
     "typescript": "^5.9.3"
   },
   "peerDependencies": {
-    "hono": "^4.0.0"
+    "@gravito/photon": "workspace:*"
   },
   "publishConfig": {
     "access": "public"

@@ -5,10 +5,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
 }
 
-type HonoRouteLike = { method: string; path: string; name?: string }
-type HonoAppLike = { routes: HonoRouteLike[] }
+type PhotonRouteLike = { method: string; path: string; name?: string }
+type PhotonAppLike = { routes: PhotonRouteLike[] }
 
-function isHonoAppLike(value: unknown): value is HonoAppLike {
+function isPhotonAppLike(value: unknown): value is PhotonAppLike {
   return (
     isRecord(value) &&
     Array.isArray(value.routes) &&
@@ -29,9 +29,9 @@ export async function routeList(options: { entry: string }) {
 
     // Import the app
     const module = await import(entryPath)
-    // Try to find the Hono app instance
+    // Try to find the Photon app instance
     // Standard pattern: import { app } from './index' or default export
-    // Gravito Core usually wraps it. core.app is the Hono instance.
+    // Gravito Core usually wraps it. core.app is the Photon instance.
 
     const mod = isRecord(module) ? module : {}
     const defaultExport = isRecord(mod.default) ? mod.default : undefined
@@ -55,10 +55,10 @@ export async function routeList(options: { entry: string }) {
     }
 
     const appCandidate = core?.app ?? defaultExport ?? mod.app
-    const honoApp: HonoAppLike | null = isHonoAppLike(appCandidate) ? appCandidate : null
+    const photonApp: PhotonAppLike | null = isPhotonAppLike(appCandidate) ? appCandidate : null
 
-    if (!honoApp) {
-      throw new Error('Could not look up Hono app instance in entry file.')
+    if (!photonApp) {
+      throw new Error('Could not look up Photon app instance in entry file.')
     }
 
     console.log(pc.bold(`\n📍 Registered Routes`))
@@ -70,9 +70,9 @@ export async function routeList(options: { entry: string }) {
       pc.gray('--------------------------------------------------------------------------------')
     )
 
-    // Hono .routes is an array of objects
+    // Photon .routes is an array of objects
     // route structure: { method: string, path: string, handler: Function, name?: string }
-    for (const route of honoApp.routes) {
+    for (const route of photonApp.routes) {
       const method = route.method
       const pathStr = route.path
       const name = route.name || nameBySignature.get(`${method} ${pathStr}`) || '-'

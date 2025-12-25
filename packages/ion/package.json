@@ -25,12 +25,12 @@
   },
   "peerDependencies": {
     "gravito-core": "1.0.0-beta.5",
-    "hono": "^4.0.0"
+    "@gravito/photon": "workspace:*"
   },
   "devDependencies": {
     "bun-types": "latest",
     "gravito-core": "1.0.0-beta.5",
-    "hono": "^4.0.0",
+    "@gravito/photon": "workspace:*",
     "tsup": "^8.5.1",
     "typescript": "latest"
   },

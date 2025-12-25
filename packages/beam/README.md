@@ -1,13 +1,13 @@
 # @gravito/beam (Orbit Beam)
 
-A lightweight, type-safe HTTP client wrapper for Gravito framework applications. It provides an experience similar to tRPC but uses standard Hono app types with **zero runtime overhead**.
+A lightweight, type-safe HTTP client wrapper for Gravito framework applications. It provides an experience similar to tRPC but uses standard Photon app types with **zero runtime overhead**.
 
 ## Features
 
-- **Zero Runtime Overhead**: Pure type wrapper that directly delegates to `hc<T>`, no additional abstraction layers
+- **Zero Runtime Overhead**: Pure type wrapper that directly delegates to the Beam client, no additional abstraction layers
 - **Zero-Config Type Safety**: Automatically infers types from your backend `AppType` or `AppRoutes`
 - **IntelliSense Support**: Full autocomplete for routes, methods, request bodies, and response data
-- **Lightweight**: A thin wrapper around `hono/client` (< 1kb), minimal dependencies
+- **Lightweight**: A thin wrapper around `@gravito/photon/client` (< 1kb), minimal dependencies
 - **AI-Friendly**: Clear JSDoc annotations and examples for reliable code generation
 
 ## Installation
@@ -24,15 +24,15 @@ bun add @gravito/beam
 
 #### 1. In your Backend (Server)
 
-Export the type of your Hono app instance directly.
+Export the type of your Photon app instance directly.
 
 ```typescript
 // server/app.ts
-import { Hono } from 'hono'
+import { Photon } from '@gravito/photon'
 import { validate } from '@gravito/mass'
 import { Schema } from '@gravito/mass'
 
-const app = new Hono()
+const app = new Photon()
   .get('/hello', (c) => c.json({ message: 'Hello World' }))
   .post(
     '/post',
@@ -83,12 +83,12 @@ Use `app.route()` to compose routes and export the `AppRoutes` type.
 
 ```typescript
 // server/app.ts
-import { Hono } from 'hono'
+import { Photon } from '@gravito/photon'
 import { userRoute } from './routes/user'
 import { apiRoute } from './routes/api'
 
 export function createApp() {
-  const app = new Hono()
+  const app = new Photon()
   
   // Use app.route() to compose routes (required for type inference)
   const routes = app
@@ -100,7 +100,7 @@ export function createApp() {
 
 // For type inference only (no runtime dependency)
 function _createTypeOnlyApp() {
-  const app = new Hono()
+  const app = new Photon()
   const routes = app
     .route('/api/users', userRoute)
     .route('/api', apiRoute)
@@ -156,18 +156,18 @@ Both patterns provide identical type safety and performance. Choose based on you
 
 ### `createBeam<T>(baseUrl, options?)`
 
-Creates a type-safe API client that directly delegates to Hono's `hc<T>` function with zero runtime overhead.
+Creates a type-safe API client that directly delegates to the Beam client with zero runtime overhead.
 
 **Parameters:**
-- **T**: The generic type parameter representing your Hono app. Can be either:
-  - `AppType`: `typeof app` - Direct type from Hono instance
+- **T**: The generic type parameter representing your Photon app. Can be either:
+  - `AppType`: `typeof app` - Direct type from Photon instance
   - `AppRoutes`: `ReturnType<typeof _createTypeOnlyApp>` - Type from `app.route()` chain
 - **baseUrl**: The root URL of your API server (e.g., `'http://localhost:3000'`)
 - **options**: Optional `BeamOptions` (extends `RequestInit`) for headers, credentials, etc.
 
-**Returns:** A fully typed Hono client instance with IntelliSense support for all routes.
+**Returns:** A fully typed Beam client instance with IntelliSense support for all routes.
 
-**Performance:** Zero runtime overhead - this is a pure type wrapper that directly calls `hc<T>`.
+**Performance:** Zero runtime overhead - this is a pure type wrapper that directly calls the Beam client.
 
 ```typescript
 // Basic usage
@@ -187,7 +187,7 @@ const client = createBeam<AppRoutes>('https://api.example.com', {
 
 This package follows Gravito's core values:
 
-- **High Performance**: Zero runtime overhead, direct delegation to `hc<T>`
+- **High Performance**: Zero runtime overhead, direct delegation to the Beam client
 - **Low Overhead**: No abstraction layers or middleware, minimal bundle size
-- **Lightweight**: Single function, < 1kb, minimal dependencies (only `hono/client`)
+- **Lightweight**: Single function, < 1kb, minimal dependencies (only `@gravito/photon/client`)
 - **AI-Friendly**: Clear JSDoc annotations, complete type inference, intuitive API

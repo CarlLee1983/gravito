@@ -11,7 +11,7 @@ await Bun.build({
   outdir: './dist',
   target: 'bun',
   format: 'esm',
-  external: ['hono', '@sinclair/typebox', '@hono/typebox-validator'],
+  external: ['@gravito/photon', '@sinclair/typebox', '@hono/typebox-validator'],
 })
 
 console.log('📝 Generating type declarations...')

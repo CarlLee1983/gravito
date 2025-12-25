@@ -27,7 +27,7 @@
     "gravito-core": "1.0.0-beta.5"
   },
   "peerDependencies": {
-    "hono": "^4.0.0"
+    "@gravito/photon": "workspace:*"
   },
   "devDependencies": {
     "bun-types": "^1.1.0",
@@ -46,7 +46,7 @@
     "validation",
     "form-request",
     "zod",
-    "hono",
+    "@gravito/photon",
     "middleware"
   ],
   "homepage": "https://github.com/gravito-framework/gravito#readme"

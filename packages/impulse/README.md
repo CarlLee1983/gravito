@@ -77,7 +77,7 @@ Add authorization logic to restrict access:
 
 ```typescript
 import { FormRequest, z } from '@gravito/impulse'
-import type { Context } from 'hono'
+import type { Context } from '@gravito/photon'
 
 export class AdminRequest extends FormRequest {
   schema = z.object({

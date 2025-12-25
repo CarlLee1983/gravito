@@ -43,7 +43,7 @@
     "@gravito/plasma": "1.0.0-beta.5",
     "bun-types": "latest",
     "gravito-core": "1.0.0-beta.5",
-    "hono": "^4.11.1",
+    "@gravito/photon": "workspace:*",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3"
   },

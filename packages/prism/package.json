@@ -46,7 +46,7 @@
   "license": "MIT",
   "peerDependencies": {
     "gravito-core": "1.0.0-beta.5",
-    "@gravito/photon": "^4.0.0",
+    "@gravito/photon": "workspace:*",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "vue": "^3.0.0"
@@ -66,7 +66,7 @@
     "@types/react": "^19.0.0",
     "bun-types": "latest",
     "gravito-core": "1.0.0-beta.5",
-    "@gravito/photon": "^4.0.0",
+    "@gravito/photon": "workspace:*",
     "tsup": "^8.5.1",
     "typescript": "latest",
     "vue": "^3.5.26"

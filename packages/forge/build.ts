@@ -12,7 +12,7 @@ try {
     outdir: './dist',
     target: 'bun',
     format: 'esm',
-    external: ['gravito-core', 'hono', '@gravito/nebula', '@gravito/stream'],
+    external: ['gravito-core', '@gravito/photon', '@gravito/nebula', '@gravito/stream'],
     naming: '[dir]/[name].mjs', // Use .mjs for clear ESM distinction
   })
 

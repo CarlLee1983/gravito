@@ -1,12 +1,12 @@
 # @gravito/beam
 
-> Gravito 的型別安全 HTTP 用戶端封裝，基於 Hono 類型，零執行期開銷。
+> Gravito 的型別安全 HTTP 用戶端封裝，基於 Photon 類型，零執行期開銷。
 
 ## 特色
 
-- **零執行期開銷**：純型別包裝，直接委派給 `hc<T>`
+- **零執行期開銷**：純型別包裝，直接委派給 Beam client
 - **自動型別推導**：從後端 `AppType` 或 `AppRoutes` 推導 API 類型
-- **輕量依賴**：薄型封裝 `hono/client`
+- **輕量依賴**：薄型封裝 `@gravito/photon/client`
 
 ## 安裝
 
@@ -19,9 +19,9 @@ bun add @gravito/beam
 ### 後端輸出型別
 
 ```typescript
-import { Hono } from 'hono'
+import { Photon } from '@gravito/photon'
 
-const app = new Hono()
+const app = new Photon()
   .get('/hello', (c) => c.json({ message: 'Hello World' }))
 
 export type AppType = typeof app

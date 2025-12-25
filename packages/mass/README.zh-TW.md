@@ -11,10 +11,10 @@ bun add @gravito/mass
 ## 快速開始
 
 ```typescript
-import { Hono } from 'hono'
+import { Photon } from '@gravito/photon'
 import { Schema, validate } from '@gravito/mass'
 
-const app = new Hono()
+const app = new Photon()
 
 app.post('/login',
   validate('json', Schema.Object({

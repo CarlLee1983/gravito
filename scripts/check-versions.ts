@@ -15,7 +15,7 @@ const OFFICIAL_SITE_PACKAGES = [
   '@gravito/stasis',
   '@gravito/orbit-inertia',
   '@gravito/orbit-view',
-  '@gravito/luminosity-adapter-hono',
+  '@gravito/luminosity-adapter-photon',
   '@gravito/luminosity',
 ];
 
@@ -114,4 +114,3 @@ async function main() {
 }
 
 main().catch(console.error);
-

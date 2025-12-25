@@ -28,9 +28,10 @@
         "@changesets/cli": "^2.29.8",
         "@types/node": "latest",
         "bun-types": "latest",
+        "hono": "^4.0.0",
         "simple-git-hooks": "^2.13.1",
-        "typescript": "^5.9.3",
-        "turbo": "latest"
+        "turbo": "latest",
+        "typescript": "^5.9.3"
     },
     "simple-git-hooks": {
         "pre-commit": "export PATH=\"$HOME/.bun/bin:$PATH\" && bunx lint-staged",
