@@ -5,6 +5,8 @@ import { StaticLink } from '@gravito/freeze-vue';
 import Layout from '../components/Layout.vue';
 import Logo from '../components/Logo.vue';
 import { useI18n } from '../composables/useI18n';
+import heroGraphic from '../assets/hero-graphic.png';
+import gridSvg from '../assets/grid.svg';
 
 defineProps<{
   message?: string
@@ -40,13 +42,13 @@ const { t, locale } = useI18n()
       <div class="absolute inset-0 z-0">
         <!-- Main Hero Graphic (Full Screen) -->
         <div class="absolute inset-0 opacity-50 pointer-events-none select-none">
-          <img src="../assets/hero-graphic.png" alt="Luminosity Core" class="w-full h-full object-cover animate-pulse-slow" />
+          <img :src="heroGraphic" alt="Luminosity Core" class="w-full h-full object-cover animate-pulse-slow" />
         </div>
         
         <!-- Overlays for Readability & Mood -->
         <div class="absolute inset-0 bg-void/60 mix-blend-multiply"></div>
         <div class="absolute inset-0 bg-gradient-to-b from-void/80 via-transparent to-void"></div>
-        <div class="absolute inset-0 bg-[url('/static/grid.svg')] opacity-10 mix-blend-overlay"></div>
+        <div class="absolute inset-0 opacity-10 mix-blend-overlay" :style="{ backgroundImage: `url(${gridSvg})` }"></div>
       </div>
       
       <!-- Content -->
