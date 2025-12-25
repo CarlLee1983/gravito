@@ -41,6 +41,17 @@ export default function Docs() {
   const [activeId, setActiveId] = useState<string | null>(null)
   const [tocVisible, setTocVisible] = useState(true)
 
+  // Handle TOC anchor click with smooth scrolling
+  const scrollToAnchor = (e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
+    e.preventDefault()
+    const element = document.getElementById(id)
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      // Update URL hash without triggering navigation
+      window.history.pushState(null, '', `#${id}`)
+    }
+  }
+
   // Scroll Progress
   const { scrollYProgress } = useScroll()
   const _scaleX = useSpring(scrollYProgress, {
@@ -417,6 +428,7 @@ export default function Docs() {
                         <li key={item.id} className={indent}>
                           <a
                             href={`#${item.id}`}
+                            onClick={(e) => scrollToAnchor(e, item.id)}
                             className="block rounded-md px-2 py-1.5 leading-snug text-gray-700 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-900/50 dark:hover:text-gray-100"
                           >
                             {item.text}
@@ -533,6 +545,7 @@ export default function Docs() {
                           <li key={item.id} className={`${indent} relative`}>
                             <a
                               href={`#${item.id}`}
+                              onClick={(e) => scrollToAnchor(e, item.id)}
                               className={`block text-[13px] leading-relaxed transition-all duration-300 ${isActive
                                 ? 'text-singularity font-black tracking-tight translate-x-1'
                                 : 'text-gray-400 hover:text-white'

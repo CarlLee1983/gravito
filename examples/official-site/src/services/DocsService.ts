@@ -361,6 +361,7 @@ export class DocsService {
           orm_serialization: '序列化 (Serialization)',
           orm_factories: '模型工廠 (Factories)',
           orm_collections: '集合 (Collections)',
+          orm_resources: 'API 資源 (Resources)',
 
           security: '安全機制',
           image_opt: '圖片優化',
@@ -419,6 +420,7 @@ export class DocsService {
           orm_serialization: 'Serialization',
           orm_factories: 'Factories',
           orm_collections: 'Collections',
+          orm_resources: 'API Resources',
 
           security: 'Security',
           image_opt: 'Image Optimization',
