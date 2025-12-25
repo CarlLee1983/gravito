@@ -1,93 +1,59 @@
 ---
-title: Template Engine
-description: Learn how to use Gravito's native template engine for server-side rendering.
+title: Template Engine (Prism)
+description: Learn how to use Gravito's native template engine for elegant server-side rendering.
 ---
 
-# 🎨 Template Engine (Orbit View)
+# Template Engine (Prism)
 
-While Gravito excels at building modern SPAs with Inertia.js, it also includes a powerful, lightweight native template engine for traditional server-side rendering (MPA). This is perfect for simple landing pages, emails, or applications requiring maximum SEO performance with zero client-side JavaScript overhead.
+Prism is the high-performance template engine built into Gravito. While inspired by Handlebars for simple data binding, it also supports a powerful directive system similar to **Laravel Blade**, including layout inheritance, components, and stacks.
 
-## 🚀 Overview
+This is perfect for scenarios requiring peak SEO performance, Landing Pages, or email templates.
 
-The Gravito View Engine is inspired by Mustache and Handlebars, providing a logic-less syntax that encourages separation of concerns. It supports:
+## Displaying Data
 
-- **Variables**: `{{ name }}`
-- **Conditionals**: `{{#if isAdmin}} ... {{/if}}`
-- **Loops**: `{{#each users}} ... {{/each}}`
-- **Partials/Includes**: `{{ include 'partials/footer' }}`
-- **Security**: Automatic HTML escaping to prevent XSS.
-
-## 📦 Usage
-
-To render a view from your controller, retrieve the `view` service from the context.
-
-```typescript
-import type { Context } from 'hono'
-import type { PlanetCore } from 'gravito-core'
-
-export class HomeController {
-  constructor(private core: PlanetCore) {}
-
-  index = (c: Context) => {
-    // 1. Get the View Service
-    const view = c.get('view')
-
-    // 2. Render a template
-    // The first argument is the path relative to `src/views`
-    // The second argument is the data to pass to the view
-    return c.html(view.render('home', {
-      title: 'Welcome Home',
-      visitors: 1024,
-      features: ['Fast', 'Simple', 'Secure']
-    }))
-  }
-}
-```
-
-## 📂 Directory Structure
-
-By convention, all view templates are stored in the `src/views` directory.
-
-```bash
-src/
-  views/
-    layouts/
-      main.html
-    partials/
-      header.html
-      footer.html
-    home.html
-    about.html
-```
-
-## 📝 Syntax Guide
-
-### Variables
-
-Display data passed from the controller.
+You can use double curly braces to display variables passed from your controller:
 
 ```html
-<h1>Hello, {{ name }}!</h1>
-<p>Visits: {{ visitors }}</p>
+<h1>Hello, {{ name }}</h1>
 ```
 
-### Conditionals (`#if`)
+### Displaying Unescaped Data
 
-Render content only if a value is truthy.
+By default, `{{ }}` automatically performs HTML escaping to prevent XSS attacks. If you need to display raw HTML, use triple curly braces:
 
 ```html
-{{#if showBanner}}
-  <div class="banner">Special Offer!</div>
-{{/if}}
-
-{{#if user}}
-  <p>Welcome back, {{ user.name }}</p>
-{{/if}}
+<div class="content">
+  {{{ rawHtmlContent }}}
+</div>
 ```
 
-### Loops (`#each`)
+## Directives
 
-Iterate over arrays.
+Prism provides fluent directives for handling logic.
+
+### If Statements
+
+You can use `@if`, `@else`, and `@endif` directives:
+
+```html
+@if (isAdmin)
+  <p>Welcome back, Admin!</p>
+@else
+  <p>Hello, User.</p>
+@endif
+```
+
+And the `@unless` directive (renders unless the condition is true):
+
+```html
+@unless (isGuest)
+  <p>You are logged in.</p>
+@endunless
+```
+
+### Loops
+
+Currently, loops use the `{{#each}}` syntax:
 
 ```html
 <ul>
@@ -96,89 +62,152 @@ Iterate over arrays.
   {{/each}}
 </ul>
 
-<table>
-  {{#each users}}
-    <tr>
-      <td>{{ name }}</td>
-      <td>{{ email }}</td>
-    </tr>
-  {{/each}}
-</table>
+{{#each users}}
+  <p>User: {{ name }} ({{ email }})</p>
+{{/each}}
 ```
 
-### Includes (Partials)
+## Components
 
-Reuse common components like headers and footers. The included file path is relative to `src/views`.
+Components allow you to create reusable UI blocks.
+
+### Defining Components
+
+Store components in the `src/views/components` directory. For example, `src/views/components/alert.html`:
 
 ```html
-<!-- src/views/home.html -->
-{{ include 'partials/header' }}
-
-<main>
-  <h1>Page Content</h1>
-</main>
-
-{{ include 'partials/footer' }}
+<div class="alert alert-{{ type }}">
+  <div class="icon">{{ icon }}</div>
+  <div class="content">
+    {{ slot }}
+  </div>
+</div>
 ```
 
-## 🧩 Layout Pattern
+### Using Components
 
-Gravito views support composition through "Content Injection". You render the inner content first, then pass it to a layout template.
+Use the `<x-` prefix in any template:
 
-### 1. Create a Layout (`src/views/layouts/main.html`)
+```html
+<x-alert type="danger" icon="⚠️">
+  This is a critical error!
+</x-alert>
+```
+
+### Named Slots
+
+Components support multiple slots. Define them using `<x-slot:name>`:
+
+```html
+<!-- Component: src/views/components/modal.html -->
+<div class="modal">
+  <div class="header">{{ title }}</div>
+  <div class="body">{{ slot }}</div>
+  <div class="footer">{{ footer }}</div>
+</div>
+
+<!-- Usage -->
+<x-modal>
+  <x-slot:title>Confirm Delete</x-slot:title>
+  
+  Are you sure you want to delete this item?
+  
+  <x-slot:footer>
+    <button>Cancel</button>
+    <button>Confirm</button>
+  </x-slot:footer>
+</x-modal>
+```
+
+## Layouts
+
+Prism supports a full layout inheritance pattern, very similar to Laravel Blade.
+
+### 1. Defining a Layout (`src/views/layouts/app.html`)
+
+Use `@yield` to reserve content sections, and `@stack` for script or style sections:
 
 ```html
 <!DOCTYPE html>
 <html>
 <head>
-  <title>{{ title }}</title>
+  <title>@yield('title', 'Default Title')</title>
+  @stack('styles')
 </head>
 <body>
-  {{ include 'partials/header' }}
+  <nav>Navbar</nav>
 
-  <div class="container">
-    <!-- The content will be injected here -->
-    {{ content }}
-  </div>
+  <main>
+    @yield('content')
+  </main>
 
-  {{ include 'partials/footer' }}
+  @stack('scripts')
 </body>
 </html>
 ```
 
-### 2. Create a Page (`src/views/home.html`)
+### 2. Using a Layout (`src/views/home.html`)
+
+Use `@extends` to specify the layout and `@section` to fill content:
 
 ```html
-<div class="hero">
-  <h1>{{ headline }}</h1>
-  <p>{{ description }}</p>
+@extends('layouts/app')
+
+@section('title', 'Home')
+
+@section('content')
+  <h1>Welcome to Gravito</h1>
+  <p>This is the home page content.</p>
+@endsection
+
+@push('scripts')
+  <script src="/js/home.js"></script>
+@endpush
+```
+
+## Stacks
+
+Stacks allow you to "push" content into specific sections defined in your layout. This is especially useful for adding specific JavaScript files from subviews.
+
+```html
+<!-- Push in a subview -->
+@push('scripts')
+  <script>console.log('Sub-view script loaded');</script>
+@endpush
+
+<!-- Output in layout -->
+@stack('scripts')
+```
+
+## Including Subviews
+
+You can use `@include` to include other template fragments:
+
+```html
+@include('partials/header')
+
+<div class="content">
+  Main content
 </div>
+
+@include('partials/footer')
 ```
-
-### 3. Render in Controller
-
-```typescript
-export class HomeController {
-  index = (c: Context) => {
-    const view = c.get('view')
-
-    // 1. Render the inner page first
-    const content = view.render('home', {
-      headline: 'Welcome to Gravito',
-      description: 'The future of backend development.'
-    })
-
-    // 2. Render the layout, passing the inner content
-    return c.html(view.render('layouts/main', {
-      title: 'Home Page',
-      content: content
-    }))
-  }
-}
-```
-
-This pattern gives you complete control over how pages are composed without complex inheritance logic.
 
 ---
 
-> **Tip**: For more complex UI requirements, consider using **Inertia.js** (React/Vue) which is fully supported by Gravito. The native View Engine is best suited for static content, emails, and simple pages.
+## Controller Usage
+
+Rendering views in your controller is straightforward:
+
+```typescript
+export class HomeController {
+  async index(c: Context) {
+    const view = c.get('view');
+    
+    return c.html(view.render('home', {
+      name: 'Carl',
+      isAdmin: true
+    }));
+  }
+}
+```

@@ -3,11 +3,11 @@ title: Core Kernel
 description: The micro-kernel architecture of the Gravito framework.
 ---
 
-# ☄️ Core Kernel (PlanetCore)
+# ☄ Core Kernel (PlanetCore)
 
 The `@gravito/core` package is the heart of the Gravito ecosystem. It implements a micro-kernel architecture where functionalities are added via **Kinetic Modules** (Infrastructure) and **Satellites** (Features).
 
-## 🪐 PlanetCore
+## PlanetCore
 
 `PlanetCore` is the main class that orchestrates the application lifecycle.
 
@@ -24,7 +24,7 @@ const core = new PlanetCore()
 - **`orbit(ModuleClass)`**: Programmatically registers an infrastructure module.
 - **`use(SatelliteClass)`**: Programmatically registers a feature module.
 
-## 🛠️ Adapters
+## Adapters
 
 Gravito's high-performance engine is powered by the **Gravito Core Engine**, providing native support for modern runtimes like Bun and Deno.
 
@@ -37,7 +37,7 @@ core.liftoff({
 })
 ```
 
-## 🏗️ Building Kinetic Modules
+## Building Kinetic Modules
 
 A Kinetic Module is a class that integrates a specific infrastructure service into the core.
 
@@ -54,7 +54,7 @@ export class MyKineticModule {
 }
 ```
 
-## 🛰️ Building Satellites
+## Building Satellites
 
 Satellites are lightweight feature modules that consume services provided by Kinetic Modules.
 

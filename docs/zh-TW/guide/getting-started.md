@@ -43,9 +43,9 @@ bun install
 bun dev
 ```
 
-您的應用程式現在執行於 **[http://localhost:3000](http://localhost:3000)**！🚀
+您的應用程式現在執行於 **[http://localhost:3000](http://localhost:3000)**！
 
-## 🛠 生產力 CLI 工具
+## 生產力 CLI 工具
 
 Gravito 內建了「工匠級」的 CLI 工具，能為您代勞繁重的工程任務。進入專案後，即可使用 `gravito` 指令：
 

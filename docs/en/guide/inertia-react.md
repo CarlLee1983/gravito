@@ -1,10 +1,10 @@
-# 🛰️ Inertia (Inertia-React)
+# Inertia (Inertia-React)
 
 Gravito leverages **Inertia.js** to bridge the gap between your powerful Gravito Core backend and modern React frontend. It allows you to build single-page apps (SPAs) without the complexity of client-side routing or building a Rest/GraphQL API.
 
-> 💡 **Using Vue?** Check out the [Inertia-Vue Guide](/docs/guide/inertia-vue) for complete Vue 3 examples.
+>  **Using Vue?** Check out the [Inertia-Vue Guide](/docs/guide/inertia-vue) for complete Vue 3 examples.
 
-## 💡 The "No-API" Data Flow
+## The "No-API" Data Flow
 
 In a traditional SPA, you'd build an API and fetch data with `useEffect`. With Gravito + Inertia, after you `bun add @gravito/ion @gravito/prism`, your Controller **is** your Data Fetcher.
 
@@ -42,7 +42,7 @@ export default function Docs({ title, content }) {
 
 ---
 
-## 🌍 Shared Data
+## Shared Data
 
 Sometimes you want data to be available on **every** page (like the current user or site-wide navigation). You can use `inertia.share()` in a middleware. Gravito supports **Lazy Props** (closures), so data is only evaluated when rendering.
 
@@ -62,7 +62,7 @@ Now, every React component can access `appName` in its props!
 
 ---
 
-## 🚦 SPA Navigation
+## SPA Navigation
 
 To maintain the Single Page Application experience, you should never use standard `<a>` tags. Use the `<Link />` component provided by `@inertiajs/react`.
 
@@ -82,7 +82,7 @@ function Navbar() {
 
 ---
 
-## 🎨 Persistent Layouts
+## Persistent Layouts
 
 One of Inertia's most powerful features. To keep your sidebar from re-rendering (and losing its scroll position) during navigation, wrap your pages in a common Layout.
 
@@ -109,7 +109,7 @@ export default function About() {
 }
 ```
 
-## 🛠️ Performance Features
+## Performance Features
 
 ### Partial Reloading
 

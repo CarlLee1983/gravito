@@ -57,7 +57,7 @@ export class UserController {
 }
 ```
 
-由於大多數現代框架 (包括 Gravito/Hono) 在序列化 JSON 時會自動呼叫物件的 `toJSON()` 方法，因此上述程式碼會自動輸出轉換後的結構。
+由於大多數現代框架 (包括 Gravito) 在序列化 JSON 時會自動呼叫物件的 `toJSON()` 方法，因此上述程式碼會自動輸出轉換後的結構。
 
 ## 資源集合 (Resource Collections)
 

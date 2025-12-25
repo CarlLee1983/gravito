@@ -11,7 +11,7 @@
 Gravito Core 是專為 **Bun Runtime** 設計的微內核架構。它不直接綁定特定的 HTTP Server 實現，而是透過 **Adapter Pattern (適配器模式)** 來驅動底層引擎。
 
 其核心職責為：
-1.  **抽象化**: 抹平不同 Runtime (Bun, Node/Hono) 的差異。
+1.  **抽象化**: 抹平不同 Runtime (Bun, Node/Photon) 的差異。
 2.  **生命週期管理**: 管理 Service Providers 的註冊與啟動。
 3.  **依賴注入**: 提供輕量級的 IoC 容器。
 4.  **請求分發**: 將 HTTP 請求路由至對應的控制器。
@@ -195,7 +195,7 @@ const contextProxy = new Proxy(contextInstance, {
 | 框架/環境 | 架構 | 預估 RPS (Hello World) | 性能倍數 |
 | :--- | :--- | :--- | :--- |
 | **Gravito Core** | **Bun Native + Radix** | **~100,000 - 150,000+** | **1x (Baseline)** |
-| Hono (Bun) | Bun Native + RegExp | ~120,000 - 180,000 | ~1.1x |
+| Photon (Bun) | Bun Native + RegExp | ~120,000 - 180,000 | ~1.1x |
 | Express (Node) | Node HTTP + Regex Loop | ~10,000 - 15,000 | ~0.1x |
 | NestJS (Fastify) | Node/Fastify | ~30,000 - 40,000 | ~0.3x |
 

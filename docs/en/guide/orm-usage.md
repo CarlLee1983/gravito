@@ -1500,7 +1500,7 @@ for (const user of users) {
   const posts = await db.findAll(posts, { userId: user.id }); // Query each time
 }
 
-// ✅ Good practice (use relation queries)
+// [Complete] Good practice (use relation queries)
 const users = await db.findAllWith('users', { posts: true }); // Single query
 ```
 
@@ -1661,24 +1661,24 @@ core.liftoff();
 
 Atlas provides complete ORM functionality, inspired by Laravel Eloquent while maintaining Drizzle ORM performance:
 
-- ✅ **Complete CRUD Operations** - All basic database operations
-- ✅ **Relation Queries** - Support for nested relation queries (hasMany, belongsTo, hasOne, belongsToMany)
-- ✅ **Polymorphic Relations** - Flexible polymorphic associations (morphTo, morphMany, morphOne)
-- ✅ **Query Builder** - Fluent query builder with chainable methods
-- ✅ **Soft Deletes** - Soft delete support with restore capability
-- ✅ **Fillable/Guarded** - Mass assignment protection
-- ✅ **Automatic Timestamps** - Automatic created_at and updated_at management
-- ✅ **Query Scopes** - Local and global scopes for reusable query constraints
-- ✅ **Model Events** - Complete lifecycle event support
-- ✅ **Type Casting** - Automatic attribute type conversion
-- ✅ **Accessors & Mutators** - Custom getters and setters for attributes
-- ✅ **Collections** - Laravel-like collection operations
-- ✅ **Batch Processing** - Chunk and Cursor for efficient large dataset processing
-- ✅ **With Count** - Eager loading relation counts
-- ✅ **Transaction Support** - Complete transaction handling
-- ✅ **Bulk Operations** - Efficient batch processing
-- ✅ **Migration and Seeder** - Database version management
-- ✅ **Deployment Support** - Automated deployment workflow
-- ✅ **PostgreSQL Optimized** - Performance optimizations for PostgreSQL
+- [Complete] **Complete CRUD Operations** - All basic database operations
+- [Complete] **Relation Queries** - Support for nested relation queries (hasMany, belongsTo, hasOne, belongsToMany)
+- [Complete] **Polymorphic Relations** - Flexible polymorphic associations (morphTo, morphMany, morphOne)
+- [Complete] **Query Builder** - Fluent query builder with chainable methods
+- [Complete] **Soft Deletes** - Soft delete support with restore capability
+- [Complete] **Fillable/Guarded** - Mass assignment protection
+- [Complete] **Automatic Timestamps** - Automatic created_at and updated_at management
+- [Complete] **Query Scopes** - Local and global scopes for reusable query constraints
+- [Complete] **Model Events** - Complete lifecycle event support
+- [Complete] **Type Casting** - Automatic attribute type conversion
+- [Complete] **Accessors & Mutators** - Custom getters and setters for attributes
+- [Complete] **Collections** - Laravel-like collection operations
+- [Complete] **Batch Processing** - Chunk and Cursor for efficient large dataset processing
+- [Complete] **With Count** - Eager loading relation counts
+- [Complete] **Transaction Support** - Complete transaction handling
+- [Complete] **Bulk Operations** - Efficient batch processing
+- [Complete] **Migration and Seeder** - Database version management
+- [Complete] **Deployment Support** - Automated deployment workflow
+- [Complete] **PostgreSQL Optimized** - Performance optimizations for PostgreSQL
 
 Access the full power of Drizzle ORM through `db.raw` for flexibility and extensibility.

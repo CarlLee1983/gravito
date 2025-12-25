@@ -2,7 +2,7 @@
 
 Atlas is Gravito's native Object-Relational Mapper (ORM), designed to provide an elegant ActiveRecord implementation for modern TypeScript applications. It draws heavy inspiration from Laravel's Eloquent but is rebuilt from the ground up to leverage TypeScript's static analysis and Bun's performance.
 
-::: info 🚀 **Release Candidate Status**
+::: info  **Release Candidate Status**
 Atlas is currently in **Release Candidate**. Core features including Models, Relationships, Query Builder, and Migrations are stable. It supports PostgreSQL, MySQL, SQLite, MongoDB, and Redis with high-performance native drivers.
 :::
 

@@ -1,15 +1,15 @@
-# ✅ Static Site Development Checklist
+# [Complete] Static Site Development Checklist
 
 Use this checklist when building static websites with Gravito + `@gravito/freeze`.
 
-## 📋 Pre-Development
+## Pre-Development
 
 - [ ] Install `@gravito/freeze` (or `freeze-react`/`freeze-vue`)
 - [ ] Read [Static Site Development Guide](./en/guide/static-site-development.md)
 - [ ] Understand the difference between dynamic and static navigation
 - [ ] Know your production domain(s) for configuration
 
-## 🔧 Development Phase
+## Development Phase
 
 ### Configuration Setup
 
@@ -67,7 +67,7 @@ export const freezeConfig = defineConfig({
 - [ ] `404.html` generated with SPA routing script
 - [ ] GitHub Pages files created (CNAME, .nojekyll)
 
-## 🏗️ Build Phase
+## Build Phase
 
 ### Build Execution
 
@@ -92,7 +92,7 @@ bun run build:preview  # or: bun run preview
 - [ ] `CNAME` file exists (if using custom domain)
 - [ ] `.nojekyll` file exists (for GitHub Pages)
 
-## 🧪 Testing Phase
+## Testing Phase
 
 ### Local Testing (Port 4173)
 
@@ -121,14 +121,14 @@ bun run build:preview
 - [ ] Sitemap accessible
 - [ ] Test on mobile devices
 
-## 📚 Documentation
+## Documentation
 
 - [ ] `freeze.config.ts` documented
 - [ ] Build process documented
 - [ ] Deployment steps documented
 - [ ] Team members informed about `@gravito/freeze` usage
 
-## 🚀 Deployment
+## Deployment
 
 ### GitHub Pages
 
@@ -156,7 +156,7 @@ publish = "dist-static"
 - [ ] Custom domain configured (if applicable)
 - [ ] SSL certificate active
 
-## 🔄 Maintenance
+## Maintenance
 
 - [ ] Update `freeze.config.ts` when adding new domains
 - [ ] Update `redirects` when adding new abstract routes
@@ -165,32 +165,32 @@ publish = "dist-static"
 
 ---
 
-## 🆘 Troubleshooting
+## Troubleshooting
 
 ### Links don't navigate properly
 
-1. ✅ Check: Using `StaticLink` from `@gravito/freeze-react` or `@gravito/freeze-vue`?
-2. ✅ Check: App wrapped with `FreezeProvider` or `FreezePlugin` installed?
-3. ✅ Check: Production domain in `staticDomains` config?
+1. [Complete] Check: Using `StaticLink` from `@gravito/freeze-react` or `@gravito/freeze-vue`?
+2. [Complete] Check: App wrapped with `FreezeProvider` or `FreezePlugin` installed?
+3. [Complete] Check: Production domain in `staticDomains` config?
 
 ### Black overlay on navigation
 
-1. ✅ Check: Using Inertia's `Link` instead of `StaticLink`?
-2. ✅ Check: Preview on port 4173?
+1. [Complete] Check: Using Inertia's `Link` instead of `StaticLink`?
+2. [Complete] Check: Preview on port 4173?
 
 ### Locale not detected
 
-1. ✅ Check: Path has locale prefix (`/en/`, `/zh/`)?
-2. ✅ Check: Using `getLocalizedPath()` for all links?
+1. [Complete] Check: Path has locale prefix (`/en/`, `/zh/`)?
+2. [Complete] Check: Using `getLocalizedPath()` for all links?
 
 ### 404 on abstract routes
 
-1. ✅ Check: Route added to `redirects` in config?
-2. ✅ Check: Redirect HTML generated?
+1. [Complete] Check: Route added to `redirects` in config?
+2. [Complete] Check: Redirect HTML generated?
 
 ---
 
-## 🎯 Golden Rules
+## Golden Rules
 
 1. **Always use `StaticLink`** - Never use Inertia's `Link` directly
 2. **Always localize paths** - Use `getLocalizedPath()` 
@@ -199,4 +199,4 @@ publish = "dist-static"
 
 ---
 
-> **Remember**: Use `@gravito/freeze` packages for a consistent SSG experience! 🧊
+> **Remember**: Use `@gravito/freeze` packages for a consistent SSG experience!

@@ -2,13 +2,13 @@
 
 本指南展示如何將 Turborepo 整合到 Gravito monorepo 中以加速構建和測試。
 
-## 📦 安裝
+## 安裝
 
 ```bash
 bun add -D turbo
 ```
 
-## ⚙️ 初始化
+## ⚙ 初始化
 
 ```bash
 bunx turbo init
@@ -16,7 +16,7 @@ bunx turbo init
 
 這會創建 `turbo.json` 配置檔案。
 
-## 🔧 配置
+## 配置
 
 編輯 `turbo.json`：
 
@@ -56,7 +56,7 @@ bunx turbo init
 - `outputs`：指定構建產物目錄
 - `cache: false`：dev 任務不緩存（持續運行）
 
-## 🚀 使用
+## 使用
 
 ### 基本命令
 
@@ -93,7 +93,7 @@ bunx turbo build --filter=gravito-core...
 bunx turbo build --filter='!@gravito/site'
 ```
 
-## 📝 更新 package.json Scripts
+## 更新 package.json Scripts
 
 更新根目錄的 `package.json`：
 
@@ -109,7 +109,7 @@ bunx turbo build --filter='!@gravito/site'
 }
 ```
 
-## 🔄 整合到 CI/CD
+## 整合到 CI/CD
 
 ### GitHub Actions Workflow
 
@@ -151,7 +151,7 @@ jobs:
         run: bunx turbo lint
 ```
 
-## 💾 遠端快取（可選）
+## 遠端快取（可選）
 
 ### 使用 Vercel Remote Cache（免費）
 
@@ -191,7 +191,7 @@ export TURBO_REMOTE_CACHE_SIGNATURE_KEY=your-key
 bunx turbo build
 ```
 
-## 📊 效能監控
+## 效能監控
 
 ### 分析構建時間
 
@@ -214,7 +214,7 @@ bunx turbo build --summarize
 # Time:     2.345s (2.123s cached)
 ```
 
-## 🎯 實際範例
+## 實際範例
 
 ### 場景：只修改了 `orbit-inertia`
 
@@ -238,7 +238,7 @@ bunx turbo build --summarize
 - 構建所有依賴它的套件（並行）
 - 時間：~2 分鐘（並行加速）
 
-## 🔍 進階配置
+## 進階配置
 
 ### 任務管道
 
@@ -294,7 +294,7 @@ bunx turbo build --summarize
 }
 ```
 
-## 🚨 注意事項
+## 注意事項
 
 1. **首次構建**：
    - 第一次使用 Turborepo 不會有快取
@@ -308,7 +308,7 @@ bunx turbo build --summarize
    - 預設無限制並行
    - 可以設定 `concurrency` 限制
 
-## 🔄 與 Changesets 整合
+## 與 Changesets 整合
 
 Turborepo 和 Changesets 可以完美並用：
 
@@ -342,7 +342,7 @@ Turborepo 和 Changesets 可以完美並用：
 }
 ```
 
-## 📚 參考資源
+## 參考資源
 
 - [Turborepo 官方文檔](https://turbo.build/repo/docs)
 - [Turborepo 範例](https://github.com/vercel/turbo/tree/main/examples)

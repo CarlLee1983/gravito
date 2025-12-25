@@ -2,13 +2,13 @@
 
 本指南展示如何將 Changesets 整合到 Gravito monorepo 中。
 
-## 📦 安裝
+## 安裝
 
 ```bash
 bun add -D @changesets/cli
 ```
 
-## ⚙️ 初始化
+## ⚙ 初始化
 
 ```bash
 bunx changeset init
@@ -16,7 +16,7 @@ bunx changeset init
 
 這會創建 `.changeset` 目錄和 `config.json`。
 
-## 🔧 配置
+## 配置
 
 編輯 `.changeset/config.json`：
 
@@ -43,7 +43,7 @@ bunx changeset init
 - `updateInternalDependencies: "patch"`：內部依賴自動更新 patch 版本
 - `ignore`：忽略私有套件（不需要發布）
 
-## 📝 使用流程
+## 使用流程
 
 ### 1. 開發時標記變更
 
@@ -60,13 +60,13 @@ bunx changeset
 
 **範例**：
 ```
-🦋  Which packages would you like to include?
+  Which packages would you like to include?
  · gravito-core, @gravito/ion
 
-🦋  Which packages should have a major bump?
+  Which packages should have a major bump?
  · gravito-core
 
-🦋  Please enter a summary for this change:
+  Please enter a summary for this change:
  · Add new hook system for better extensibility
 ```
 
@@ -105,7 +105,7 @@ bunx changeset publish
 - 創建 git tags
 - 推送變更
 
-## 🔄 整合到 CI/CD
+## 整合到 CI/CD
 
 ### GitHub Actions Workflow
 
@@ -152,7 +152,7 @@ jobs:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 ```
 
-## 📋 與現有流程整合
+## 與現有流程整合
 
 ### 選項 A：完全替換 Release Please
 
@@ -166,7 +166,7 @@ jobs:
 2. Release Please 只處理 GitHub Release 創建
 3. 逐步遷移到 Changesets
 
-## 🎯 實際範例
+## 實際範例
 
 ### 場景：更新 `orbit-inertia` 套件
 
@@ -196,7 +196,7 @@ jobs:
    - 生成 CHANGELOG
    - 發布到 npm
 
-## 📊 版本策略
+## 版本策略
 
 ### 獨立版本化（推薦）
 
@@ -229,7 +229,7 @@ jobs:
 }
 ```
 
-## 🚨 注意事項
+## 注意事項
 
 1. **內部依賴**：
    - Changesets 會自動更新 `workspace:*` 依賴
@@ -243,7 +243,7 @@ jobs:
    - Changesets 會為每個套件創建 tag
    - 格式：`@gravito/ion@1.1.0`
 
-## 🔍 進階配置
+## 進階配置
 
 ### 自訂 CHANGELOG 格式
 
@@ -274,7 +274,7 @@ module.exports = {
 }
 ```
 
-## 📚 參考資源
+## 參考資源
 
 - [Changesets 官方文檔](https://github.com/changesets/changesets)
 - [Changesets GitHub Action](https://github.com/changesets/action)

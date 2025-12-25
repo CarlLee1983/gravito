@@ -3,13 +3,13 @@ title: Image Optimization
 description: Automated image optimization for high-performance Gravito applications.
 ---
 
-# 🖼️ Image Optimization
+# Image Optimization
 
 **Orbit Prism** includes a powerful Image Optimization feature. It ensures your application meets the highest performance standards, inspired by the best practices of Next.js but with **Zero Client-side Runtime**.
 
 ---
 
-## 🚀 Why Use Gravito Image?
+## Why Use Gravito Image?
 
 Unlike standard `<img>` tags, the Gravito `Image` component automatically handles complex performance optimizations:
 
@@ -21,7 +21,7 @@ Unlike standard `<img>` tags, the Gravito `Image` component automatically handle
 
 ---
 
-## 🛠️ Usage in React (Inertia)
+## Usage in React (Inertia)
 
 If you are using React with Inertia, simply import the `Image` component.
 
@@ -64,7 +64,7 @@ export default function Hero() {
 
 ---
 
-## 🛠️ Usage in Vue
+## Usage in Vue
 
 For Vue 3 applications, import the component from the specialized subpath.
 
@@ -98,7 +98,7 @@ import { Image } from '@gravito/prism/vue'
 
 ---
 
-## 🛠️ Usage in HTML Templates
+## Usage in HTML Templates
 
 If you are using our built-in template engine, use the `image` helper.
 
@@ -115,7 +115,7 @@ If you are using our built-in template engine, use the `image` helper.
 
 ---
 
-## 🎯 Core Web Vitals Checklist
+## Core Web Vitals Checklist
 
 The Image module is designed to help you score 100 on Google PageSpeed Insights:
 
@@ -127,7 +127,7 @@ The Image module is designed to help you score 100 on Google PageSpeed Insights:
 
 ---
 
-## 💡 Pro Tips
+## Pro Tips
 
 1.  **Requirement**: The `alt` attribute is **mandatory**. Gravito enforces accessibility by throwing an error if it's missing.
 2.  **Pathing**: If you use `srcset`, Gravito assumes your build process generates width-versioned images (e.g., `hero-800w.jpg`). If you use an external image service (like Cloudinary or Imgix), you can customize the `ImageService` path logic.

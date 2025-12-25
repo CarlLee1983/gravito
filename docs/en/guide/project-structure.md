@@ -3,11 +3,11 @@ title: Project Structure
 description: Understanding the directory layout and architecture of a Gravito app.
 ---
 
-# 🏗 Project Structure
+# Project Structure
 
 Gravito follows a predictive, clean directory structure that feels familiar to MVC developers but is optimized for the Gravito Ecosystem.
 
-## 📂 Directory Layout
+## Directory Layout
 
 Here is a look at a standard Gravito project (using the Inertia-React template):
 
@@ -31,7 +31,7 @@ my-gravito-app/
 
 ---
 
-## 🚀 The Core Philosophy: Planets & Kinetic Modules
+## The Core Philosophy: Planets & Kinetic Modules
 
 To understand how Gravito works, you need to understand two concepts:
 
@@ -50,7 +50,7 @@ This "Pay only for what you use" approach ensures your application remains light
 
 ---
 
-## ⚡ The Lifecycle
+## The Lifecycle
 
 When you run `bun dev` or `bun run src/index.ts`, the following happens:
 
@@ -63,7 +63,7 @@ When you run `bun dev` or `bun run src/index.ts`, the following happens:
 3. **Booting**: The kernel calls `boot()` on every Gravito, preparing services like the View engine or DB connections.
 4. **Liftoff**: The HTTP engine starts listening for requests.
 
-## 🗺 Where to find code?
+## Where to find code?
 
 - **Routing**: Look in `src/routes/index.ts`. This is where you map URLs to Controllers.
 - **Logic**: Look in `src/controllers/`. This is where the "Brain" of your app lives.

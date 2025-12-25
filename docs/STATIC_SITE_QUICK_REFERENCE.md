@@ -1,8 +1,8 @@
-# 🚀 Static Site Quick Reference
+# Static Site Quick Reference
 
 Quick reference for building static sites with Gravito + `@gravito/freeze`.
 
-## ⚡ TL;DR
+## TL;DR
 
 ```bash
 # Install
@@ -22,7 +22,7 @@ bun run build:preview
 # Visit http://localhost:4173
 ```
 
-## 📦 Package Usage
+## Package Usage
 
 ### React
 
@@ -64,7 +64,7 @@ const { isStatic, locale, getLocalizedPath } = useFreeze()
 </template>
 ```
 
-## ✅ Quick Checklist
+## [Complete] Quick Checklist
 
 - [ ] `@gravito/freeze-*` installed
 - [ ] `freeze.config.ts` created
@@ -72,7 +72,7 @@ const { isStatic, locale, getLocalizedPath } = useFreeze()
 - [ ] All `Link` → `StaticLink`
 - [ ] Tested at http://localhost:4173
 
-## 🆘 Common Issues
+## Common Issues
 
 | Issue | Solution |
 |-------|----------|
@@ -81,13 +81,13 @@ const { isStatic, locale, getLocalizedPath } = useFreeze()
 | Locale not detected | Use `getLocalizedPath()` |
 | Wrong static mode | Check `staticDomains` config |
 
-## 📚 Full Documentation
+## Full Documentation
 
 - [SSG Development Guide](./en/guide/static-site-development.md)
 - [Full Checklist](./STATIC_SITE_CHECKLIST.md)
 - [Standardization](./STATIC_SITE_STANDARDIZATION.md)
 
-## 🎯 Golden Rules
+## Golden Rules
 
 1. **StaticLink** for all internal links
 2. **getLocalizedPath()** for all paths
@@ -96,4 +96,4 @@ const { isStatic, locale, getLocalizedPath } = useFreeze()
 
 ---
 
-> 🧊 `@gravito/freeze` = Freeze your dynamic app into static files!
+>  `@gravito/freeze` = Freeze your dynamic app into static files!

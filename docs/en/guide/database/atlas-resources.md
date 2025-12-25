@@ -57,7 +57,7 @@ export class UserController {
 }
 ```
 
-Since most modern frameworks (including Gravito/Hono) automatically call the `toJSON()` method when serializing JSON, the code above will automatically output the transformed structure.
+Since most modern frameworks (including Gravito) automatically call the `toJSON()` method when serializing JSON, the code above will automatically output the transformed structure.
 
 ## Resource Collections
 

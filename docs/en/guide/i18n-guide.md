@@ -3,13 +3,13 @@ title: Internationalization (I18n)
 description: Scalable multilingual support for Gravito applications.
 ---
 
-# 🌐 Internationalization (I18n)
+# Internationalization (I18n)
 
 Gravito makes building global applications easy. Our I18n system is designed to be type-safe, performant, and "developer-centric."
 
 ---
 
-## 🛠️ How to Add a New Language
+## How to Add a New Language
 
 Expanding your application's reach is a 3-step process. Let's add Japanese (`ja`) support as an example.
 
@@ -36,12 +36,12 @@ Open `src/services/I18nService.ts` and add your new locale to the map.
 ```typescript
 import en from '../locales/en'
 import zh from '../locales/zh'
-import ja from '../locales/ja' // 👈 Import new file
+import ja from '../locales/ja' //  Import new file
 
-export type Locale = 'en' | 'zh' | 'ja' // 👈 Add to Type
+export type Locale = 'en' | 'zh' | 'ja' //  Add to Type
 export type Translation = typeof en
 
-const locales: Record<Locale, Translation> = { en, zh, ja } // 👈 Register here
+const locales: Record<Locale, Translation> = { en, zh, ja } //  Register here
 
 export const getTranslation = (locale: string): Translation => {
   return locales[locale as Locale] || locales.en
@@ -61,7 +61,7 @@ router.prefix('/:locale(en|zh|ja)').group((r) => {
 
 ---
 
-## 🚀 Usage in Controllers
+## Usage in Controllers
 
 **Gravito Core middleware** automatically handles the locale detection. You just need to fetch the right strings.
 
@@ -83,7 +83,7 @@ export class HomeController {
 
 ---
 
-## ⚛️ Usage in React Components
+## ⚛ Usage in React Components
 
 When using Inertia, you can pass the translations directly as props. For easier access, you can use a custom hook.
 
@@ -118,7 +118,7 @@ export function LanguageSwitcher({ currentLocale }) {
 
 ---
 
-## 💡 Pro Tips
+## Pro Tips
 
 - **Fallback Strategy**: If a key is missing in your new language file, TypeScript will alert you (if you use `typeof en`).
 - **SEO Integration**: Remember to update your `seoConfig` to include the new language in your sitemap resolvers if you want Google to index all versions.

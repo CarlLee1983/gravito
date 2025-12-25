@@ -2,7 +2,7 @@
 
 本指南說明如何將 Gravito monorepo 中的所有套件發布到 NPM。
 
-## 📋 發布前準備
+## 發布前準備
 
 ### 1. 確認 NPM 帳號
 
@@ -44,7 +44,7 @@ bun run build
 bun run test
 ```
 
-## 🚀 發布方式
+## 發布方式
 
 ### 方式一：使用發布腳本（推薦）
 
@@ -88,7 +88,7 @@ bun run build
 bun run --filter '*' publish
 ```
 
-## 📦 版本策略
+## 版本策略
 
 ### Beta 版本（核心穩定套件）
 
@@ -97,7 +97,7 @@ bun run --filter '*' publish
 - `gravito-core` - 核心框架
 - `@gravito/horizon` - 路由系統
 - `@gravito/luminosity` - SEO 核心模組
-- `@gravito/luminosity-adapter-hono` - SEO Hono 適配器
+- `@gravito/luminosity-adapter-hono` - SEO HTTP 適配器
 - `@gravito/stasis` - 靜態快取系統
 
 ### Alpha 版本（功能模組）
@@ -134,7 +134,7 @@ bun run --filter '*' publish
 - `@gravito/stream` - 串流處理
 - `@gravito/flare` - 錯誤追蹤與通知
 
-## 📦 需要發布的套件
+## 需要發布的套件
 
 所有位於 `packages/` 目錄下且 `package.json` 中 `private` 不為 `true` 的套件都會被發布。
 
@@ -142,7 +142,7 @@ bun run --filter '*' publish
 - `@gravito/site` - 內部網站套件
 - `create-gravito-app` - 獨立發布的脚手架工具
 
-## 🔄 更新版本號
+## 更新版本號
 
 在發布前，使用版本更新腳本：
 
@@ -156,7 +156,7 @@ bun run version:update
 - 將其他套件設為 `1.0.0-alpha.1`
 - 自動更新內部依賴版本
 
-## ⚙️ 發布配置
+## ⚙ 發布配置
 
 每個套件的 `package.json` 都包含以下配置：
 
@@ -169,7 +169,7 @@ bun run version:update
 }
 ```
 
-## 🔍 發布前檢查清單
+## 發布前檢查清單
 
 - [ ] 所有套件版本已更新
 - [ ] 所有套件已構建（`dist/` 目錄存在）
@@ -178,7 +178,7 @@ bun run version:update
 - [ ] Registry 設定正確
 - [ ] 已確認要發布的套件清單
 
-## 🐛 常見問題
+## 常見問題
 
 ### 套件已存在
 
@@ -213,7 +213,7 @@ npm install @gravito/sentinel@alpha
 - 依賴是否正確安裝
 - `build.ts` 腳本是否正常執行
 
-## 🔄 CI/CD 自動發布
+## CI/CD 自動發布
 
 目前 `.github/workflows/release-please.yml` 包含發布步驟，但需要完善：
 
@@ -233,7 +233,7 @@ npm install @gravito/sentinel@alpha
        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
    ```
 
-## 📝 發布後步驟
+## 發布後步驟
 
 1. **驗證發布**：
    ```bash
@@ -249,7 +249,7 @@ npm install @gravito/sentinel@alpha
    - 如果使用 Release Please，會自動創建
    - 或手動創建 Release 標籤
 
-## 🎯 最佳實踐
+## 最佳實踐
 
 1. **使用 dry-run 先測試**：
    ```bash
@@ -269,9 +269,8 @@ npm install @gravito/sentinel@alpha
    - 記錄發布的套件和版本
    - 記錄任何問題和解決方式
 
-## 📚 相關資源
+## 相關資源
 
 - [NPM 發布文檔](https://docs.npmjs.com/packages-and-modules/contributing-packages-to-the-registry)
 - [Semantic Versioning](https://semver.org/)
 - [Changesets 文檔](../CHANGESETS_INTEGRATION_GUIDE.md)
-

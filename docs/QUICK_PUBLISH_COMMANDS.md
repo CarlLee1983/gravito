@@ -1,6 +1,6 @@
 # 快速發布命令參考
 
-## 🚀 一鍵發布命令（複製即用）
+## 一鍵發布命令（複製即用）
 
 ### Beta 版本套件（官網使用）
 
@@ -82,7 +82,7 @@ cd packages/client && npm publish --access public --tag alpha && cd ../..
 cd packages/cli && npm publish --access public --tag alpha && cd ../..
 ```
 
-## ⚠️ 重要提醒
+## ⚠ 重要提醒
 
 1. **必須在套件目錄內執行**：
    ```bash
@@ -90,7 +90,7 @@ cd packages/cli && npm publish --access public --tag alpha && cd ../..
    cd packages
    npm publish --access public --tag beta
    
-   # ✅ 正確：在具體套件目錄下
+   # [Complete] 正確：在具體套件目錄下
    cd packages/core
    npm publish --access public --tag beta
    ```
@@ -114,7 +114,7 @@ cd packages/cli && npm publish --access public --tag alpha && cd ../..
    ls dist/
    ```
 
-## 🔍 快速檢查
+## 快速檢查
 
 使用版本檢查工具：
 

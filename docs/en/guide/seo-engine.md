@@ -3,13 +3,16 @@ title: Luminosity SEO Engine
 description: The advanced SEO engine for Gravito, featuring sitemap generation and meta tag management.
 ---
 
-# 🛰️ Luminosity SEO Engine
+# Luminosity SEO Engine
 
-Traditional Single-Page Applications (SPAs) are often "invisible" to search engines because they rely heavily on client-side rendering. Gravito's **Luminosity SEO Engine** solves this by managing Meta tags, Sitemaps, and Analytics centrally on the server.
+Traditional Single-Page Applications (SPAs) are often "invisible" to search engines because they rely heavily on client-side rendering. Gravito provides two complementary systems to solve this:
+
+1.  **Luminosity Engine** (this page): Manages the "Front Door" of your pages, handling Meta tags, OpenGraph, and JSON-LD.
+2.  **Sitemap System**: Manages the "Map" of your galaxy, declaring all available URLs to crawlers. See the [Sitemap System Guide](./sitemap-guide).
 
 ---
 
-## 🚀 The Three Illumination Modes
+## The Three Illumination Modes
 
 The Luminosity SEO engine can be configured in three "illumination" modes depending on your scale and traffic, ensuring search engines can clearly "see" your content.
 
@@ -21,7 +24,7 @@ The Luminosity SEO engine can be configured in three "illumination" modes depend
 
 ---
 
-## 🛠️ Step-by-Step Integration
+## Step-by-Step Integration
 
 ### 1. Define Your Configuration
 The core of the Luminosity SEO engine is organized into `resolvers`. We support three "babysitter-level" ways to find your URLs:
@@ -123,7 +126,7 @@ export class PostController {
 
 ---
 
-## 🏛️ 10M+ URLs: Stellar Scale Architecture
+## 10M+ URLs: Stellar Scale Architecture
 
 Handling tens of millions of URLs requires more than just a sitemap generator—it requires a **"Sitemap Lifecycle Management System"**. Luminosity provides an architecture that ensures stellar performance from day one to year ten.
 
@@ -145,7 +148,7 @@ Once the initial footprint is established, Luminosity shifts to **Incremental Mo
 3.  **Physical Emission**: Recalculates the pagination layout for all URLs and generates static `sitemap-index.xml` and `sitemap-N.xml` (Gzip) files. This allows your Web Server (Nginx/CDN) to serve static files directly with **Zero CPU Usage**.
 4.  **Shadow Write & Atomic Swap**: To prevent read-concurrency issues, files are first written to a `.shadow` directory. Once verification passes, the system performs an OS-level **Atomic Rename**, instantly replacing the old files. Users will **never** encounter partially written or corrupted sitemaps.
 
-### 🚀 Massive Scale Example
+### Massive Scale Example
 
 ```typescript
 // src/config/seo.ts
@@ -193,7 +196,7 @@ export const seoConfig: SeoConfig = {
 
 ---
 
-## 🔍 Storage & Hydration Details
+## Storage & Hydration Details
 
 Understanding the underlying behavior of the Stellar architecture provides peace of mind when handling massive datasets:
 
@@ -214,7 +217,7 @@ You don't need to manually delete files. Simply call `seo.add()` or `seo.remove(
 
 ---
 
-## ☁️ Cloud & Container Native
+## ☁ Cloud & Container Native
 
 If you are deploying with Docker/Kubernetes and utilizing **Auto-scaling**, the ephemeral nature of container storage requires a strategic approach:
 
@@ -248,7 +251,7 @@ Theoretically, Luminosity supports mounting S3/GCS buckets as local directories 
 
 ---
 
-## 🛡️ Fault Tolerance
+## Fault Tolerance
 
 Luminosity uses a **Parallel Isolation** strategy when executing resolvers:
 
@@ -272,7 +275,7 @@ resolvers: [
 
 ---
 
-## 🎨 Advanced Features: Images, i18n & Robots
+## Advanced Features: Images, i18n & Robots
 
 Luminosity supports the full SEO protocol stack, not just basic URLs:
 
@@ -328,7 +331,7 @@ const config: SeoConfig = {
 
 ---
 
-## 🎭 Unified Meta Management
+## Unified Meta Management
 
 Beyond Sitemaps, Luminosity provides a powerful `SeoMetadata` utility specifically designed to solve the "Blank Link Preview" issue common in SPAs.
 
@@ -396,7 +399,7 @@ Ensure your root template (e.g., `resources/views/app.edge`) has a slot in the `
 
 ---
 
-## 📟 Command Line Interface (CLI)
+## Command Line Interface (CLI)
 
 Beyond running as an API middleware, Luminosity is also a robust CLI tool, perfect for CI/CD pipelines or manual maintenance.
 
@@ -428,7 +431,7 @@ npx luminosity compact
 
 ---
 
-## 🛠️ Ultimate Simplicity: From Deployment to Maintenance
+## Ultimate Simplicity: From Deployment to Maintenance
 
 Many developers associate "millions of URLs" or "incremental architectures" with complex distributed systems. In Luminosity, this is simplified to the point of being "invisible":
 
@@ -438,7 +441,7 @@ Many developers associate "millions of URLs" or "incremental architectures" with
 
 ---
 
-## 💎 Why Luminosity is the Strongest SEO Engine?
+## Why Luminosity is the Strongest SEO Engine?
 
 Luminosity isn't just a sitemap generator; it's a comprehensive solution for business success:
 

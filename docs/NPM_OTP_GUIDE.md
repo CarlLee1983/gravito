@@ -1,10 +1,10 @@
 # NPM OTP 驗證指南
 
-## 🔐 什麼是 OTP？
+## 什麼是 OTP？
 
 OTP（One-Time Password，一次性密碼）是 NPM 2FA（雙因素認證）的安全驗證碼。當你的 NPM 帳號啟用了 2FA 時，發布套件需要提供這個驗證碼。
 
-## 📱 如何獲取 OTP
+## 如何獲取 OTP
 
 ### 方式一：使用認證器 App（推薦）
 
@@ -30,7 +30,7 @@ OTP（One-Time Password，一次性密碼）是 NPM 2FA（雙因素認證）的�
 1. **使用其中一個備用代碼**
 2. **注意：備用代碼只能使用一次**
 
-## 🚀 使用驗證發布套件
+## 使用驗證發布套件
 
 ### 方法 1：瀏覽器 Key 驗證（WebAuthn）
 
@@ -75,7 +75,7 @@ bun run publish:all
 # 當提示時，輸入 OTP
 ```
 
-## ⚠️ 重要注意事項
+## ⚠ 重要注意事項
 
 ### OTP 時效性
 
@@ -106,7 +106,7 @@ bun run publish:all
 - **使用同一個 OTP**（如果發布速度夠快）
 - **或準備多個 OTP**（如果發布時間較長）
 
-## 🔧 檢查 2FA 狀態
+## 檢查 2FA 狀態
 
 ### 查看當前 2FA 設定
 
@@ -124,7 +124,7 @@ npm profile enable-2fa auth-and-writes
 npm profile get
 ```
 
-## 💡 最佳實踐
+## 最佳實踐
 
 ### 1. 準備發布流程
 
@@ -178,7 +178,7 @@ export NPM_OTP=123456
 bun run publish:all
 ```
 
-## 🆘 常見問題
+## 常見問題
 
 ### Q: OTP 一直過期怎麼辦？
 
@@ -199,7 +199,7 @@ A:
 - 使用備用代碼（如果有的話）
 - 或聯繫 NPM 支援恢復帳號
 
-## 📚 相關資源
+## 相關資源
 
 - [NPM 2FA 文檔](https://docs.npmjs.com/configuring-two-factor-authentication)
 - [NPM 帳號管理](https://docs.npmjs.com/managing-your-account)

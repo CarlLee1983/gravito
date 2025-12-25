@@ -1,6 +1,6 @@
 # 版本策略說明
 
-## 📋 版本分類
+## 版本分類
 
 ### Beta 版本 (`1.0.0-beta.*`)
 
@@ -21,7 +21,7 @@
 - 視圖層：`@gravito/freeze` 系列, `@gravito/prism`
 - 工具：`@gravito/cli`, `@gravito/client`, `@gravito/atlas`, `@gravito/constellation`
 
-## 🔄 版本更新流程
+## 版本更新流程
 
 ### 1. 更新版本號
 
@@ -53,7 +53,7 @@ bun run build
 bun run publish:all
 ```
 
-## 📦 NPM 標籤
+## NPM 標籤
 
 發布時會自動使用對應的 tag：
 
@@ -61,7 +61,7 @@ bun run publish:all
 - **Alpha 版本** → `npm publish --tag alpha`
 - **穩定版本** → `npm publish` (使用 `latest` tag)
 
-## 🔄 版本升級路徑
+## 版本升級路徑
 
 ### Alpha → Beta
 
@@ -80,7 +80,7 @@ bun run publish:all
 3. 執行 `bun run version:update`
 4. 重新發布
 
-## 📝 版本號格式
+## 版本號格式
 
 遵循 [Semantic Versioning](https://semver.org/)：
 
@@ -88,7 +88,7 @@ bun run publish:all
 - **Beta**: `1.0.0-beta.1`, `1.0.0-beta.2`, ...
 - **Alpha**: `1.0.0-alpha.1`, `1.0.0-alpha.2`, ...
 
-## 🎯 安裝方式
+## 安裝方式
 
 ### 安裝 Beta 版本
 
@@ -112,7 +112,7 @@ npm install gravito-core
 npm install gravito-core@latest
 ```
 
-## 🔍 檢查已發布的版本
+## 檢查已發布的版本
 
 ```bash
 # 查看所有版本

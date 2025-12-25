@@ -3,11 +3,11 @@ title: Getting Started
 description: Start your journey with Gravito in less than 5 minutes.
 ---
 
-# 🚀 Getting Started
+# Getting Started
 
 Welcome to Gravito! This guide will help you set up your development environment and create your first high-performance fullstack application.
 
-## 🛠 Prerequisites
+## Prerequisites
 
 Gravito is built for the modern age. You only need one thing:
 - **[Bun](https://bun.sh/) 1.1.0 or higher**: The incredibly fast JavaScript runtime.
@@ -17,7 +17,7 @@ To check your version, run:
 bun --version
 ```
 
-## 📦 Create Your Project
+## Create Your Project
 
 The fastest way to start is using our professional CLI. You can initialize a project interactively:
 
@@ -35,7 +35,7 @@ cd my-gravito-app
 bun install
 ```
 
-## ⚡️ Launch Development Server
+## Launch Development Server
 
 Start the development engine with a single command:
 
@@ -43,9 +43,9 @@ Start the development engine with a single command:
 bun dev
 ```
 
-Your app is now running at **[http://localhost:3000](http://localhost:3000)**! 🚀
+Your app is now running at **[http://localhost:3000](http://localhost:3000)**!
 
-## 🛠 Productivity CLI
+## Productivity CLI
 
 Gravito comes with a built-in "Artisan" style CLI that handles the heavy lifting for you. Once inside your project, use the `gravito` command:
 
@@ -66,7 +66,7 @@ Gravito started two synchronized engines:
 1. **Gravito Core Engine**: Handling your routes, controllers, and logic.
 2. **Vite Frontend**: Powering the React/Inertia interface with blazing-fast Hot Module Replacement (HMR).
 
-## 🎨 Make Your First Change
+## Make Your First Change
 
 Gravito is **Engine Agnostic**. You can choose your preferred way to build the UI. open `src/controllers/HomeController.ts` and try these three paths:
 
@@ -108,10 +108,10 @@ export class HomeController {
 }
 ```
 
-### 🖖 What about Vue?
-Yes! Gravito supports **Inertia-Vue** seamlessly. Simply swap the `@gravito/ion` adapter settings to target Vue components instead of React.
+### What about Vue?
+Yes!Gravito supports **Inertia-Vue** seamlessly. Simply swap the `@gravito/ion` adapter settings to target Vue components instead of React.
 
-## 🗺 What's Next?
+## What's Next?
 
 You've just taken your first step into a larger world. Here is where to go next:
 

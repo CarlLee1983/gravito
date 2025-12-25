@@ -1,6 +1,6 @@
 # NPM 發布快速開始
 
-## 🚀 快速發布步驟
+## 快速發布步驟
 
 ### 1. 準備工作（首次發布）
 
@@ -75,7 +75,7 @@ bun test
 npm publish --access public --otp=<你的OTP代碼>
 ```
 
-## ⚠️ 重要注意事項
+## ⚠ 重要注意事項
 
 1. **2FA 驗證**：
    - 如果 NPM 帳號啟用了 2FA，發布時需要提供 OTP
@@ -92,7 +92,7 @@ npm publish --access public --otp=<你的OTP代碼>
    npm view @gravito/sentinel@alpha
    ```
 
-## 📋 發布檢查清單
+## 發布檢查清單
 
 - [ ] NPM 已登入
 - [ ] Registry 設定正確
@@ -102,7 +102,7 @@ npm publish --access public --otp=<你的OTP代碼>
 - [ ] 已準備 OTP（如果啟用了 2FA）
 - [ ] 已執行 dry-run 測試
 
-## 🎯 版本策略
+## 版本策略
 
 ### Beta 版本（核心穩定）
 
@@ -120,7 +120,7 @@ npm publish --access public --otp=<你的OTP代碼>
 - 視圖：`freeze`, `freeze-react`, `freeze-vue`, `prism`
 - 系統：`sentinel`, `impulse`, `ion`, `pulsar`, `signal` 等
 
-## 🔍 安裝方式
+## 安裝方式
 
 ```bash
 # 安裝 beta 版本
@@ -130,6 +130,6 @@ npm install gravito-core@beta
 npm install @gravito/sentinel@alpha
 ```
 
-## 🐛 遇到問題？
+## 遇到問題？
 
 查看完整指南：`docs/NPM_PUBLISHING_GUIDE.md`

@@ -2,11 +2,11 @@
 title: Static Site Development Guide
 ---
 
-# 📦 Static Site Generation with Orbit Freeze
+# Static Site Generation with Orbit Freeze
 
 Build blazing-fast static sites from your Gravito applications using **Orbit Freeze (`@gravito/freeze`)**.
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Option 1: Use CLI Template (Recommended)
 
@@ -117,7 +117,7 @@ bun run build:preview
 
 ---
 
-## 📐 How It Works
+## How It Works
 
 Gravito SSG follows a three-stage process from dynamic development to static deployment:
 
@@ -173,7 +173,7 @@ Development (Dynamic)  →  Build SSG (Freeze)  →  Deploy (Static)
 
 ---
 
-## 🔧 Configuration Reference
+## Configuration Reference
 
 ### FreezeConfig Options
 
@@ -204,7 +204,7 @@ The `FreezeDetector` automatically detects static environments:
 
 ---
 
-## 🌍 Internationalization (i18n)
+## Internationalization (i18n)
 
 ### Locale-Aware Paths
 
@@ -247,7 +247,7 @@ function LocaleSwitcher() {
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 Recommended structure for SSG projects:
 
@@ -284,7 +284,7 @@ my-site/
 
 ---
 
-## ✅ Development Checklist
+## [Complete] Development Checklist
 
 Before deploying your static site:
 
@@ -313,7 +313,7 @@ Before deploying your static site:
 
 ---
 
-## 🛠️ Build Script Example
+## Build Script Example
 
 A complete build script using `@gravito/freeze`:
 
@@ -332,7 +332,7 @@ async function build() {
   const outputDir = freezeConfig.outputDir
   
   // 1. Build client assets
-  console.log('⚡ Building client assets...')
+  console.log(' Building client assets...')
   await Bun.spawn(['bun', 'run', 'build:client']).exited
   
   // 2. Generate all localized routes
@@ -346,7 +346,7 @@ async function build() {
   }
   
   // 4. Generate redirects
-  console.log('🔄 Generating redirects...')
+  console.log(' Generating redirects...')
   const redirects = generateRedirects(freezeConfig)
   for (const [path, html] of redirects) {
     const filePath = join(outputDir, path)
@@ -355,11 +355,11 @@ async function build() {
   }
   
   // 5. Generate sitemap
-  console.log('🗺️ Generating sitemap...')
+  console.log(' Generating sitemap...')
   const sitemapEntries = generateSitemapEntries(routes, freezeConfig)
   // ... render sitemap XML
   
-  console.log('✅ SSG Build Complete!')
+  console.log('[Complete] SSG Build Complete!')
 }
 
 build()
@@ -367,7 +367,7 @@ build()
 
 ---
 
-## 🎯 Best Practices
+## Best Practices
 
 ### 1. Always Use StaticLink
 ```tsx
@@ -375,7 +375,7 @@ build()
 import { Link } from '@inertiajs/react'
 <Link href="/about">About</Link>
 
-// ✅ Use StaticLink wrapper
+// [Complete] Use StaticLink wrapper
 import { StaticLink } from './components/StaticLink'
 <StaticLink href="/about">About</StaticLink>
 ```
@@ -385,7 +385,7 @@ import { StaticLink } from './components/StaticLink'
 // ❌ Don't use unprefixed paths
 const path = '/docs/guide'
 
-// ✅ Always localize paths
+// [Complete] Always localize paths
 const path = detector.getLocalizedPath('/docs/guide', currentLocale)
 ```
 
@@ -394,7 +394,7 @@ const path = detector.getLocalizedPath('/docs/guide', currentLocale)
 // ❌ Don't leave abstract routes without redirects
 // /about will 404
 
-// ✅ Add redirects in config
+// [Complete] Add redirects in config
 redirects: [
   { from: '/about', to: '/en/about' },
 ]
@@ -411,7 +411,7 @@ bun run build:preview
 
 ---
 
-## 📚 API Reference
+## API Reference
 
 ### `defineConfig(options)`
 Create a validated configuration object.
@@ -440,7 +440,7 @@ Create a detector instance for runtime checks.
 
 ---
 
-## 🚀 Deployment Guides
+## Deployment Guides
 
 ### GitHub Pages
 ```yaml
@@ -474,4 +474,4 @@ Create a detector instance for runtime checks.
 
 ---
 
-Following this guide ensures your Gravito application can be seamlessly deployed as a high-performance static site! 🎉
+Following this guide ensures your Gravito application can be seamlessly deployed as a high-performance static site!

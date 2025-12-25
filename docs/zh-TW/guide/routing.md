@@ -1,115 +1,184 @@
----
-title: 路由與控制器
-description: 以優雅且精確的方式處理每一位使用者的請求。
----
+# 路由 (Routing)
 
-# 路由與控制器 (Routing & Controllers)
+Gravito 路由器提供了優雅且流暢的 API，讓您可以將 URL 請求對應到特定的動作或控制器。
 
-Gravito 結合了極致的核心效能與 **MVC** (Model-View-Controller) 的架構化開發。這種設計確保了當您的應用程式規模擴大時，程式碼依然保持井然有序。
+## 基礎路由
 
-## 路由器 (The Router)
-
-路由定義在 `src/routes/index.ts`。Gravito 提供了一套流暢的 API 來將網址對應到特定的動作。
-
-### 基礎路由
+最基本的路由接受一個 URI 和一個閉包 (Closure)：
 
 ```typescript
 // src/routes/index.ts
-import { HomeController } from '../controllers/HomeController'
+export default function(routes: Router) {
+  routes.get('/greeting', (c) => {
+    return c.text('Hello World');
+  });
+}
+```
+
+### 支援的路由方法
+
+路由器允許您註冊支援任何 HTTP 動作的路由：
+
+```typescript
+routes.get(uri, handler);
+routes.post(uri, handler);
+routes.put(uri, handler);
+routes.patch(uri, handler);
+routes.delete(uri, handler);
+```
+
+## 路由參數
+
+### 必填參數
+
+有時您需要擷取 URL 中的片段。例如，擷取使用者的 ID：
+
+```typescript
+routes.get('/user/:id', (c) => {
+  const id = c.req.param('id');
+  return c.text(`User ID: ${id}`);
+});
+```
+
+您可以根據需要定義多個參數：
+
+```typescript
+routes.get('/posts/:post/comments/:comment', (c) => {
+  const { post, comment } = c.req.params();
+  // ...
+});
+```
+
+### 可選參數
+
+若要定義可選參數，請在參數名稱後加上 `?`：
+
+```typescript
+routes.get('/user/:name?', (c) => {
+  const name = c.req.param('name') || 'Guest';
+  return c.text(`Hello ${name}`);
+});
+```
+
+## 命名路由
+
+命名路由讓您能方便地為特定路由產生 URL。您可以在定義路由後使用 `name` 方法鏈：
+
+```typescript
+routes.get('/user/profile', [UserController, 'show']).name('profile');
+```
+
+### 產生命名路由的 URL
+
+一旦您為路由命名，就可以透過 `c.route()` 輔助函式來產生 URL：
+
+```typescript
+// 在控制器中
+const url = c.route('profile');
+
+// 帶有參數的路由
+routes.get('/user/:id/profile', [UserController, 'show']).name('user.profile');
+
+const urlWithParam = c.route('user.profile', { id: 1 }); 
+// 輸出: /user/1/profile
+```
+
+## 路由群組 (Route Groups)
+
+路由群組允許您跨多個路由共享路由屬性（如中間件或前綴），而不需要在每個路由上重複定義。
+
+### 前綴 (Prefixes)
+
+`prefix` 方法可用於為群組中的每個路由加上前綴 URI：
+
+```typescript
+routes.prefix('/admin').group((group) => {
+  group.get('/users', [AdminController, 'users']); // 網址為 /admin/users
+});
+```
+
+### 中間件 (Middleware)
+
+若要為群組內的所有路由分配中間件，請使用 `middleware` 方法：
+
+```typescript
+routes.middleware(auth()).group((group) => {
+  group.get('/dashboard', [DashboardController, 'index']);
+  group.get('/profile', [UserController, 'profile']);
+});
+```
+
+### 子網域路由 (Domain Routing)
+
+Gravito 路由也可以處理子網域：
+
+```typescript
+routes.domain('api.example.com').group((group) => {
+  group.get('/', () => {
+    // 僅在 api.example.com 下觸發
+  });
+});
+```
+
+## 資源路由 (Resource Routes)
+
+如果您遵循 RESTful 慣例，可以使用 `resource` 方法快速定義一組路由：
+
+```typescript
+routes.resource('photos', PhotoController);
+```
+
+這單行代碼將建立以下路由：
+
+| 動作 | 方式 | URI | 方法名稱 | 路由名稱 |
+| --- | --- | --- | --- | --- |
+| GET | `index` | `/photos` | `index` | `photos.index` |
+| GET | `create` | `/photos/create` | `create` | `photos.create` |
+| POST | `store` | `/photos` | `store` | `photos.store` |
+| GET | `show` | `/photos/:id` | `show` | `photos.show` |
+| GET | `edit` | `/photos/:id/edit` | `edit` | `photos.edit` |
+| PUT/PATCH | `update` | `/photos/:id` | `update` | `photos.update` |
+| DELETE | `destroy` | `/photos/:id` | `destroy` | `photos.destroy` |
+
+### 限定資源路由
+
+您可以使用 `only` 或 `except` 來限定生成的動作：
+
+```typescript
+routes.resource('photos', PhotoController, {
+  only: ['index', 'show']
+});
+```
+
+## 路由模型綁定 (Route Model Binding)
+
+Gravito 支援自動將模型實例注入到您的路由中。
+
+### 顯式綁定
+
+在您的路由定義中，使用 `model` 方法將參數與特定的模型類別關聯：
+
+```typescript
+import { User } from '../models/User';
 
 export default function(routes: Router) {
-  // 簡單的匿名函式
-  routes.get('/hello', (c) => c.text('Hello World'))
+  // 註冊綁定
+  routes.model('user', User);
 
-  // 對應到控制器 (Controller)
-  routes.get('/', [HomeController, 'index'])
+  routes.get('/users/:user', (c) => {
+    // 自動從資料庫查找 User，找不到會拋出 404
+    const user = c.get('routeModels').user;
+    return c.json(user);
+  });
 }
 ```
 
-### 路由分組 (Route Groups)
-您可以將相關的路由編組，以便統一套用前綴 (Prefix) 或中間件 (Middleware)。
+## 回退路由 (Fallback Routes)
+
+當沒有其他路由匹配傳入的請求時，您可以定義回退邏輯（通常在所有路由定義之後）：
 
 ```typescript
-routes.group({ prefix: '/api' }, (group) => {
-  group.get('/users', [UserController, 'list'])
-  group.get('/posts', [PostController, 'list'])
-})
+routes.get('*', (c) => {
+  return c.notFound('客官，您走錯路了');
+});
 ```
-
----
-
-## 控制器 (Controllers)
-
-控制器是應用程式的「大腦」。與其將所有邏輯寫在一個巨大的路由檔案中，我們將它們封裝在類別 (Class) 裡。
-
-### 控制器結構剖析
-
-```typescript
-// src/controllers/UserController.ts
-import { GravitoContext as Context } from 'gravito-core'
-
-export class UserController {
-  /**
-   * 取得使用者列表
-   * @param c Gravito Context
-   */
-  async list(c: Context) {
-    // 1. 從容器中取得服務
-    const userService = c.get('userService')
-
-    // 2. 執行業務邏輯
-    const users = await userService.all()
-
-    // 3. 回傳回應
-    return c.json({ data: users })
-  }
-}
-```
-
-### ⚡️ 現代化解構語法 (工匠風格)
-
-為了追求極致開發效率，Gravito 支援直接從 `Context` 中進行物件解構。這得益於我們底層基於 Proxy 的注入系統，您可以省略 `get()` 呼叫，直接以更簡潔的方式開發：
-
-```typescript
-// 更加簡潔的寫法！
-async list({ userService, inertia }: Context) {
-  const users = await userService.all()
-  return inertia.render('Users/Index', { users })
-}
-```
-```
-
-### 存取服務 (Accessing Services)
-Gravito 的 `Context` 物件是您進入 Gravito 生態系統的入口。使用 `c.get()` 來存取各種動力模組與服務：
-- `c.get('inertia')`：**Ion** 全端橋接器。
-- `c.get('view')`：**Prism** 樣板引擎。
-- `c.get('seo')`：**Luminosity** 標籤管理器。
-
----
-
-## 處理回應 (Handling Responses)
-
-控制器的每個方法都必須回傳一個標準的 `Response`。透過 Gravito，這變得非常簡單：
-
-| 回傳類型 | 方法 | 描述 |
-|------|--------|-------------|
-| **JSON** | `c.json(data)` | 適用於 API 開發。 |
-| **HTML** | `c.html(string)` | 回傳原始 HTML 字串。 |
-| **Inertia** | `inertia.render(name, props)` | 回傳 **Ion** 全端 React 視圖頁面。 |
-| **View** | `view.render(name, data)` | 回傳 **Prism** 後端渲染的樣板頁面。 |
-| **重新導向**| `c.redirect(url)` | 將使用者導向其他網址。 |
-
----
-
-## 中間件 (Middleware)
-
-中間件允許您在請求到達控制器之前進行攔截（例如：日誌記錄或身分驗證）。
-
-```typescript
-// 為整個路由群組套用中間件
-routes.group({ middleware: [logger()] }, (group) => {
-  group.get('/dashboard', [DashboardController, 'index'])
-})
-```
-
-> **下一步**：在 [Inertia 全端開發指南](/zh/docs/guide/inertia-react) 中學習如何橋接後端邏輯與現代前端介面。

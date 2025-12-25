@@ -1,4 +1,4 @@
-# 🌌 Gravito Atlas: Performance Whitepaper (v1.0)
+# Gravito Atlas: Performance Whitepaper (v1.0)
 
 > **Abstract:** This document details the performance characteristics of the `@gravito/atlas` Object-Relational Mapper (ORM). Benchmarks were conducted in a containerized environment to measure throughput, latency overhead, and memory stability under load.
 

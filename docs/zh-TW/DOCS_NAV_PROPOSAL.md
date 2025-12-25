@@ -69,7 +69,7 @@
 - Luminosity Overview
 - Sitemap Generation
 - Robots / Meta
-- Adapters（Hono / Express）
+- Adapters（HTTP / Express）
 
 ### 10) Frontend Integration
 - Inertia / Ion

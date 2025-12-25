@@ -2,7 +2,7 @@
 
 Atlas 是 Gravito 原生的物件關聯對映系統 (ORM)，旨在為現代 TypeScript 應用提供優雅的 ActiveRecord 實作。它深受 Laravel Eloquent 的啟發，但完全針對 TypeScript 的靜態分析與 Bun 的高效能進行了重構。
 
-::: info 🚀 **Release Candidate 狀態**
+::: info  **Release Candidate 狀態**
 Atlas 目前處於 **Release Candidate** 階段。核心功能（模型、關聯、查詢建構器、遷移）已趨於穩定。目前已完整支援 PostgreSQL, MySQL, SQLite, MongoDB 與 Redis。
 :::
 

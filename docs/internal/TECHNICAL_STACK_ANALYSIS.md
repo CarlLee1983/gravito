@@ -7,13 +7,13 @@ This document serves as an index for the deep-dive technical architecture docume
 
 ---
 
-## 📚 Core Modules
+## Core Modules
 
 ### 1. [The Micro-kernel (Gravito Core)](./technical/CORE_ARCHITECTURE.md)
 **Scope**: `@gravito/core`
 *   **Architecture**: Bun Native Adapter, IoC Container, Lifecycle Management.
 *   **Key Tech**: Zero-Copy Request handling, Custom Radix Router with Regex constraints.
-*   **Highlights**: Explains how Gravito achieves high performance on Bun without relying on Hono's core logic directly.
+*   **Highlights**: Explains how Gravito achieves high performance on Bun without relying on Photon core logic directly.
 
 ### 2. [The SEO Engine (Luminosity)](./technical/LUMINOSITY_ENGINE.md)
 **Scope**: `@gravito/luminosity`
@@ -38,17 +38,17 @@ This document serves as an index for the deep-dive technical architecture docume
 **Scope**: `@gravito/cosmos`
 *   **Architecture**: Context-injected Orbit, Fallback Pipeline.
 *   **Key Tech**: Dot-notation Lookup, Parameter Interpolation.
-*   **Highlights**: Standardized i18n solution deeply integrated with Hono context.
+*   **Highlights**: Standardized i18n solution deeply integrated with PhotonContext.
 
 ### 6. [The Type-Safe RPC Orbit (Beam)](./technical/BEAM_RPC.md)
 **Scope**: `@gravito/beam`
 *   **Architecture**: Shared Type Inference, Zero-Runtime Wrapper.
-*   **Key Tech**: Hono Client `hc<T>`, TypeScript `import type`.
+*   **Key Tech**: Beam client, TypeScript `import type`.
 *   **Highlights**: Provides tRPC-like experience with zero runtime overhead, perfect for Gravito Monorepos.
 
 ---
 
-## 🛠 Architectural Summary
+## Architectural Summary
 
 Gravito is built on a **"Native-First"** philosophy. Unlike generic Node.js frameworks that add layers of abstraction for compatibility, Gravito strips away these layers when running on **Bun**, utilizing native APIs (like `Bun.serve`, `Bun.password`, `ReadableStream`) to their fullest potential.
 

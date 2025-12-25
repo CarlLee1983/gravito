@@ -1,4 +1,4 @@
-# 📄 Technical Specification: Atlas ORM Benchmark Suite (v1.0)
+# Technical Specification: Atlas ORM Benchmark Suite (v1.0)
 
 > **Document Status:** Official Reference  
 > **Date:** December 24, 2025  
@@ -38,16 +38,16 @@ Four distinct scenarios are executed for every driver:
 
 ## 3. Data Interpretations (The Metrics)
 
-### 🚀 Operations per Second (OPS)
+### Operations per Second (OPS)
 This is the primary unit of throughput. A higher OPS indicates a more efficient kernel.
 *   **Significance:** If the "Hydration" OPS is close to the "Raw Read" OPS, it proves our ORM abstraction is highly optimized.
 
-### 🧠 Heap Delta (MB)
+### Heap Delta (MB)
 The difference in memory usage before and after a 50,000-record stream.
 *   **Ideal Result:** A value near zero (or negative if Garbage Collection was aggressive).
 *   **Significance:** Proves that Atlas does not "hoard" data in RAM, making it suitable for low-memory edge environments.
 
-### ℹ️ ORM Overhead (%)
+### ℹ ORM Overhead (%)
 Calculated as: `((Hydration Time - Raw Read Time) / Raw Read Time) * 100`.
 *   **Significance:** Quantifies the "tax" paid for using developer-friendly Model features. Atlas aims to keep this under 1000% (Industry average for heavy ORMs like TypeORM or Prisma is often 5000%+).
 
@@ -71,7 +71,7 @@ The data gathered confirms that `@gravito/atlas` is among the fastest ORMs in th
 
 ---
 
-## 🏗️ Reproduction Instructions
+## Reproduction Instructions
 
 To execute the technical suite:
 1. Ensure Docker Desktop or OrbStack is running.

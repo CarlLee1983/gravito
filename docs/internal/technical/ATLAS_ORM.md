@@ -138,7 +138,7 @@ await DB.transaction(async (trx) => {
     // ❌ 危險 (不建議)
     .whereRaw(`id = ${inputId}`) 
     
-    // ✅ 推薦 (自動參數化)
+    // [Complete] 推薦 (自動參數化)
     // 編譯為: WHERE id = $1, Bindings: [inputId]
     .whereRaw(sql`id = ${inputId}`)
     ```

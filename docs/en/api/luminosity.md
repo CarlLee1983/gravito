@@ -3,7 +3,7 @@ title: Luminosity
 description: API reference for Gravito's SEO and Sitemap integration.
 ---
 
-# 🛰️ Luminosity
+# Luminosity
 
 The `@gravito/luminosity-adapter-hono` (or simply `OrbitLuminosity`) provides a seamless integration between Gravito's core and the SEO engine.
 

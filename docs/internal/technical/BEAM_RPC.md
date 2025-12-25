@@ -13,7 +13,7 @@
 Beam 選擇了一種更輕量、更適合 TypeScript Monorepo 的路徑：**Shared Type Inference (共享類型推斷)**。
 
 *   **Zero-Overhead**: 不引入額外的 Runtime (如 GraphQL 的 Resolver 或 tRPC 的 Adapter)。
-*   **Native Hono Integration**: 直接利用 Hono 強大的泛型推斷能力，將後端的路由類型 "Teleport" 到前端。
+*   **Native Photon Integration**: 直接利用 Photon 的泛型推斷能力，將後端的路由類型 "Teleport" 到前端。
 
 ---
 
@@ -24,7 +24,7 @@ Beam 的核心在於利用 TypeScript 的 `import type` 語法，僅導入類型
 ```mermaid
 graph LR
     subgraph Server [Backend / Orbit]
-        Routes[Hono Routes] --> TypeDef[AppType / AppRoutes]
+        Routes[GravitoRouter Routes] --> TypeDef[AppType / AppRoutes]
         TypeDef -.->|Compile Time Only| Client
     end
 
@@ -36,14 +36,14 @@ graph LR
     Request --> Routes
 ```
 
-### 關鍵技術：`hc<T>` Wrapper
-Beam 並非重新發明 RPC 客戶端，而是對 Hono 官方的 `hc<T>` 進行了極致簡化的封裝。
+### 關鍵技術：Beam Client
+Beam 提供零成本的型別安全客戶端，用於把路由型別安全地投射到前端呼叫。
 
 ```typescript
 // 內部實作概念
 export function createBeam<T>(baseUrl: string, options?: ClientOptions) {
-  // 直接委派給 Hono Client，但在類型層面提供了更友好的介面
-  return hc<T>(baseUrl, options);
+  // 直接使用 Beam 的型別安全客戶端
+  return Beam.create<T>(baseUrl, options);
 }
 ```
 
@@ -62,7 +62,7 @@ Beam 支援兩種主要的類型導出模式，以適應不同的專案規模。
 
 ```typescript
 // Server
-const app = new Hono().get('/hello', ...);
+const app = new GravitoRouter().get('/hello', ...);
 export type AppType = typeof app;
 
 // Client
@@ -76,7 +76,7 @@ await client.hello.$get();
 ```typescript
 // Server
 function createApp() {
-  return new Hono()
+  return new GravitoRouter()
     .route('/api', apiRoute)
     .route('/auth', authRoute);
 }
@@ -94,7 +94,7 @@ await client.api.users.$get();
 
 | 特性 | REST (Axios) | GraphQL (Apollo) | tRPC | **Beam (Gravito)** |
 | :--- | :--- | :--- | :--- | :--- |
-| **類型安全** | ❌ (需手動定義) | ✅ (Codegen) | ✅ (Native) | **✅ (Native)** |
+| **類型安全** | ❌ (需手動定義) | [Complete] (Codegen) | [Complete] (Native) | **[Complete] (Native)** |
 | **Runtime 開銷** | 低 | 高 (Parsing) | 中 (Adapter) | **極低 (Zero)** |
 | **前後端耦合** | 低 | 中 | 高 | **高 (Type-level)** |
 | **適用場景** | 公共 API | 複雜查詢 | Next.js 全棧 | **Gravito 全棧** |

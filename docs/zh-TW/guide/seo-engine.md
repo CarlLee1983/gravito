@@ -1,6 +1,9 @@
 # Luminosity SEO 引擎
 
-傳統的單頁應用程式 (SPA) 對搜尋引擎而言往往是「隱形」的，因為它們過度依賴客戶端渲染。Gravito 的 **Luminosity SEO 引擎** 透過後端統一管理 Meta 標籤、Sitemap 與分析工具，完美解決了這個痛點。
+傳統的單頁應用程式 (SPA) 對搜尋引擎而言往往是「隱形」的，因為它們過度依賴客戶端渲染。Gravito 提供了兩套互補的系統來解決這個問題：
+
+1.  **Luminosity 引擎** (本頁面)：負責各頁面的「門面」，管理 Meta 標籤、OpenGraph 與 JSON-LD。
+2.  **Sitemap 系統**：負責繪製網站「地圖」，向機器宣告所有可用網址。請參閱 [Sitemap 系統指南](./sitemap-guide)。
 
 ---
 
@@ -118,7 +121,7 @@ export class PostController {
 
 ---
 
-## 🏛️ 千萬級 URL：恆星級效能架構 (Stellar Scale)
+## 千萬級 URL：恆星級效能架構 (Stellar Scale)
 
 當您需要處理數千萬個網址時，Luminosity 不僅僅是生成一個檔案，而是建立了一套完整的 **「Sitemap 生命週期管理系統」**。這套架構確保了從網站啟動到日後的每一天，都能維持恆星級的效能。
 
@@ -140,7 +143,7 @@ export class PostController {
 3.  **物理檔案發佈 (Physical Emission)**：重新計算所有網址的分頁佈局，並生成靜態的 `sitemap-index.xml` 與 `sitemap-N.xml` (Gzip)。這意味著您的 Web Server (Nginx/CDN) 可以直接提供靜態檔案，**完全消耗零 CPU 資源**。
 4.  **影子寫入與原子交換 (Shadow Swap)**：為了防止在寫入大檔案時發生並發讀取衝突，所有檔案會先寫入 `.shadow` 暫存區。生成完畢後，系統執行作業系統層級的 **原子重命名 (Atomic Rename)**，瞬間替換舊檔。這確保了訪客永遠不會讀取到「寫入中」或「損毀」的半成品。
 
-### 🚀 千萬級抓取範例
+### 千萬級抓取範例
 
 ```typescript
 // src/config/seo.ts
@@ -187,7 +190,7 @@ export const seoConfig: SeoConfig = {
 
 ---
 
-## 🔍 運作細節：存儲與水合 (Storage & Hydration)
+## 運作細節：存儲與水合 (Storage & Hydration)
 
 了解恆星級架構的底層行為，能讓您更安心地處理千萬級資料：
 
@@ -208,7 +211,7 @@ export const seoConfig: SeoConfig = {
 
 ---
 
-## 🛠️ 極致簡單：從部署到維運的「無感」體驗
+## 極致簡單：從部署到維運的「無感」體驗
 
 很多開發者聽到「千萬級」或「增量架構」會聯想到複雜的分散式系統。但在 Luminosity 中，這一切都被簡化到了極致：
 
@@ -218,7 +221,7 @@ export const seoConfig: SeoConfig = {
 
 ---
 
-## ☁️ 雲端與容器化部署 (Cloud & Container Native)
+## ☁ 雲端與容器化部署 (Cloud & Container Native)
 
 如果您使用 Docker/Kubernetes 進行佈署並啟動了 **Auto-scaling (自動擴展)**，由於容器的檔案系統是暫時性的 (Ephemeral)，我們建議採取以下策略：
 
@@ -252,7 +255,7 @@ export const seoConfig: SeoConfig = {
 
 ---
 
-## 🛡️ 容錯機制 (Fault Tolerance)
+## 容錯機制 (Fault Tolerance)
 
 在執行 `fetch` 過程中，Luminosity 採用 **並行隔離 (Parallel Isolation)** 策略：
 
@@ -276,7 +279,7 @@ resolvers: [
 
 ---
 
-## 🎨 進階功能：圖像、多語系與機器人
+## 進階功能：圖像、多語系與機器人
 
 Luminosity 支援完整的 SEO 協議，而不僅僅是基本的網址：
 
@@ -332,7 +335,7 @@ const config: SeoConfig = {
 
 ---
 
-## 🎭 全方位 Meta 標籤管理 (Unified Meta Management)
+## 全方位 Meta 標籤管理 (Unified Meta Management)
 
 除了 Sitemap，Luminosity 還提供了強大的 `SeoMetadata` 工具，專門解決 SPA (單頁應用) 在社交分享預覽 (Link Preview) 空白的問題。
 
@@ -400,7 +403,7 @@ export class ProductController {
 
 ---
 
-## 📟 命令列工具 (CLI)
+## 命令列工具 (CLI)
 
 除了以 API 模式運行，Luminosity 也是一個強大的 CLI 工具，適合用於 CI/CD 流程或手動維護。
 
@@ -432,7 +435,7 @@ npx luminosity compact
 
 ---
 
-## 💎 為什麽 Luminosity 是最強大的 SEO 引擎？
+## 為什麽 Luminosity 是最強大的 SEO 引擎？
 
 Luminosity 不僅僅是一個 Sitemap 生成器，它是 Gravito 為了極致開發體驗與商業成功而打造的全方位解決方案：
 

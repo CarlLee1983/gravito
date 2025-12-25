@@ -1,36 +1,49 @@
-# 🚢 Deployment Guide
+---
+title: Production Deployment
+---
 
-Shipping your application is the final step of the journey. Gravito, being powered by **Bun**, offers extreme performance and multiple ways to reach your users—whether you want a full-stack dynamic app, a static site, or an edge function.
+# Deployment Guide: From Launchpad to Orbit
 
-## 🛠 Preparation
+Shipping your application is the final milestone of the Gravito journey. Powered by **Bun's** cross-platform performance, Gravito supports multiple deployment paths—whether you need a full-stack dynamic container, a lightning-fast static site (SSG), or serverless edge functions.
 
-Before deploying, ensure you have your production environment variables set up. Create a `.env.production` file:
+---
+
+## Pre-Launch Prep: Environment Configuration
+
+Before deploying, ensure your production environment variable system is properly configured.
+
+### 1. Environment Variables (`.env.production`)
+Create a `.env.production` file. This will be automatically loaded by Bun or bundled into your container:
 
 ```bash
 # .env.production
 NODE_ENV=production
-BASE_URL=https://your-app.com
-GA_MEASUREMENT_ID=G-XXXXXXXX
+BASE_URL=https://your-domain.com
+API_KEY=********
+SESSION_SECRET=********
 ```
+
+### 2. Production Optimizations
+Ensure your build command includes `NODE_ENV=production`. This triggers essential production optimizations in Vite, React, and Vue, stripping out development-only code and minifying assets.
 
 ---
 
-## 📦 Option 1: Full-stack Docker (Recommended)
+## Route A: Full-stack Orbit (Docker Containerization)
 
-Docker ensures your app runs exactly the same on your server as it does on your laptop.
+This is the recommended deployment method, ensuring 100% consistency between your local development environment and the cloud production environment.
 
-### 1. The Multi-stage Dockerfile
-Use this optimized Dockerfile to keep your production image small and fast.
+### Optimized Multi-stage Build
+Use this Dockerfile to minimize image size and maximize startup speed:
 
 ```dockerfile
-# Build Stage
+# Stage 1: Build Environment
 FROM oven/bun:latest as builder
 WORKDIR /app
 COPY . .
 RUN bun install --frozen-lockfile
-RUN bun run build # Compiles React/Vite assets
+RUN bun run build # Compile frontend assets
 
-# Production Stage
+# Stage 2: Runtime Environment
 FROM oven/bun:slim
 WORKDIR /app
 COPY --from=builder /app .
@@ -38,69 +51,62 @@ EXPOSE 3000
 CMD ["bun", "run", "src/index.ts"]
 ```
 
-### 2. Build and Run
-```bash
-docker build -t my-gravito-app .
-docker run -p 3000:3000 --env-file .env.production my-gravito-app
-```
+### Cloud Providers
+You can push the generated Docker Image to various platforms:
+- **Google Cloud Run** (Highly Recommended)
+- **AWS App Runner / ECS**
+- **DigitalOcean App Platform**
 
 ---
 
-## ⚡ Option 2: Static Site Generation (SSG)
+## Route B: Frozen Path (Static Site Generation)
 
-If you are building a documentation site or a blog, SSG is the fastest and cheapest option. It generates pure HTML files that you can host on **GitHub Pages**, **Vercel**, or **Netlify**.
+Ideal for documentation, blogs, or websites that don't require real-time backend logic.
 
-### ⚠️ Important: Static Site Navigation
-
-**Critical**: When building static sites with Inertia.js, you **must** use `StaticLink` component instead of Inertia's `Link` component for navigation. This ensures proper navigation in static environments where no backend server exists.
-
-See [Static Site Development Guide](./static-site-development.md) for complete details.
-
-### 1. Run the Build
+### 1. Execute Static Build
 ```bash
 bun run build:static
 ```
 
-### 2. The Output
-Your static files will be generated in the `dist-static/` directory (or `dist/` depending on your configuration). Simply upload this folder to any static hosting provider.
+### 2. Deployment Targets
+The generated `dist-static/` directory can be deployed to any static storage service:
+- **Cloudflare Pages** (Fastest edge distribution)
+- **GitHub Pages** (Free and easy via GitHub Actions)
+- **Vercel**
 
-### 3. Pre-deployment Checklist
-
-Before deploying, ensure:
-
-- ✅ All navigation links use `StaticLink` (not Inertia's `Link`)
-- ✅ `404.html` is generated with SPA routing support
-- ✅ All routes generate valid HTML files
-- ✅ Static assets are copied correctly
-- ✅ Test navigation locally before deploying
-
-### 4. Platform-Specific Notes
-
-#### GitHub Pages
-- Requires `404.html` for SPA routing
-- Requires `.nojekyll` file
-- Requires `CNAME` file for custom domains
-
-#### Vercel/Netlify
-- Automatically handles SPA routing
-- Still use `StaticLink` for consistency
+> 💡 **Developer Note**: Internal navigation in SSG projects must use the `StaticLink` component. For detailed configuration, refer to the [Static Site Development Guide](./static-site-development.md).
 
 ---
 
-## ☁️ Option 3: Edge & Serverless
+## Route C: Edge Jump (Edge / Serverless)
 
-Because Gravito is built with a powerful cross-platform engine, it can run "on the edge" (closer to your users).
+Gravito's core engine is lightweight by design, making it a perfect fit for restricted edge environments.
 
-- **Cloudflare Workers**: Use our Cloudflare adapter.
-- **Vercel Functions**: Deploy directly using the Vercel CLI.
-- **AWS Lambda**: High-speed cold starts thanks to Bun's efficiency.
-
-## ⚙️ CI/CD Best Practices
-
-1. **Frozen Lockfile**: Always use `bun install --frozen-lockfile` in your pipeline to prevent version drift.
-2. **Build Verification**: Run `bun test` before building to ensure zero regressions.
-3. **Health Checks**: Implement a `/health` route to allow your load balancer to monitor the app.
+- **Cloudflare Workers**: Leverage `@gravito/adapter-hono` or our dedicated adapters.
+- **AWS Lambda**: Benefit from Bun's millisecond-range cold start times.
 
 ---
 
-> **Congratulations!** You've completed the Gravito "Babysitting" Guide. You are now ready to build high-performance, AI-friendly applications that scale to infinity. ☄️
+## CI/CD Best Practices: Automation Map
+
+A mature project should have an automated deployment pipeline:
+
+1.  **Dependency Locking**: Always use `bun install --frozen-lockfile` in pipelines to prevent version drift.
+2.  **Quality Gates**: Run `bun test` and `bun run typecheck` as mandatory steps before the `build` phase.
+3.  **Health Tracking**: Implement a `/health` or `/status` route for load balancers and monitoring services.
+
+---
+
+## Post-Launch Checklist: SEO & Indexing
+
+Once deployed, make sure to complete the final tasks to ensure search engines can find you:
+
+1.  **Verify Sitemap**: Check if your `BASE_URL/sitemap.xml` is accessible and valid.
+2.  **Submit to Console**: Submit your sitemap URL to Google Search Console or Bing Webmaster Tools.
+3.  **Meta Validation**: Use the Luminosity Engine to verify OpenGraph data for social sharing.
+
+For more information on configuring automated sitemap generation, see the [Sitemap System Guide](./sitemap-guide.md).
+
+---
+
+> **Congratulations!** Your Gravito project is now in stable orbit. You can now focus on creating content and iterating on features, while Gravito handles the heavy lifting.

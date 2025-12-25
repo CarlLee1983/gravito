@@ -61,7 +61,7 @@ export default {
 }
 ```
 
-That's it! Visit `/login` to see your authentication pages.
+That's it!Visit `/login` to see your authentication pages.
 
 ## Generated Files
 

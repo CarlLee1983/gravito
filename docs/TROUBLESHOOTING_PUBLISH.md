@@ -112,14 +112,14 @@ bun run publish:validate <套件名稱>
 
 ### 手動檢查清單
 
-1. ✅ package.json 存在且正確
-2. ✅ 版本號格式正確
-3. ✅ dist 目錄存在
-4. ✅ main/module 文件存在
-5. ✅ bin 文件存在（如果有）
-6. ✅ prepublishOnly 腳本通過
-7. ✅ NPM 已登入
-8. ✅ 版本未重複發布
+1. [Complete] package.json 存在且正確
+2. [Complete] 版本號格式正確
+3. [Complete] dist 目錄存在
+4. [Complete] main/module 文件存在
+5. [Complete] bin 文件存在（如果有）
+6. [Complete] prepublishOnly 腳本通過
+7. [Complete] NPM 已登入
+8. [Complete] 版本未重複發布
 
 ## 快速修復流程
 

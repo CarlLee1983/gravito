@@ -1,6 +1,6 @@
 # Gravito HTTP Abstraction - Migration Guide
 
-> A step-by-step guide to migrating from Hono types to Gravito abstractions.
+> A step-by-step guide to migrating from Photon types to Gravito abstractions.
 
 ## Overview
 
@@ -8,12 +8,12 @@ Gravito 2.0 introduces an HTTP abstraction layer that decouples your code from t
 
 ## Quick Reference
 
-| Before (Hono) | After (Gravito) |
+| Before (Photon) | After (Gravito) |
 |---------------|-----------------|
-| `import type { Context } from 'hono'` | `import type { GravitoContext } from 'gravito-core'` |
-| `import type { Handler } from 'hono'` | `import type { GravitoHandler } from 'gravito-core'` |
-| `import type { MiddlewareHandler } from 'hono'` | `import type { GravitoMiddleware } from 'gravito-core'` |
-| `import type { Next } from 'hono'` | `import type { GravitoNext } from 'gravito-core'` |
+| `import type { Context } from '@gravito/photon'` | `import type { GravitoContext } from 'gravito-core'` |
+| `import type { Handler } from '@gravito/photon'` | `import type { GravitoHandler } from 'gravito-core'` |
+| `import type { MiddlewareHandler } from '@gravito/photon'` | `import type { GravitoMiddleware } from 'gravito-core'` |
+| `import type { Next } from '@gravito/photon'` | `import type { GravitoNext } from 'gravito-core'` |
 | `c.req.param('id')` | `ctx.req.param('id')` (same API!) |
 | `c.json({ data })` | `ctx.json({ data })` (same API!) |
 
@@ -23,7 +23,7 @@ Gravito 2.0 introduces an HTTP abstraction layer that decouples your code from t
 
 ```typescript
 // Before
-import type { Context, MiddlewareHandler } from 'hono'
+import type { Context, MiddlewareHandler } from '@gravito/photon'
 
 // After
 import type { GravitoContext, GravitoMiddleware } from 'gravito-core'
@@ -33,7 +33,7 @@ import type { GravitoContext, GravitoMiddleware } from 'gravito-core'
 
 ```typescript
 // Before
-import type { Context } from 'hono'
+import type { Context } from '@gravito/photon'
 
 export class UserController {
   async index(c: Context) {
@@ -55,7 +55,7 @@ export class UserController {
 
 ```typescript
 // Before
-import type { MiddlewareHandler, Next } from 'hono'
+import type { MiddlewareHandler, Next } from '@gravito/photon'
 
 const logger: MiddlewareHandler = async (c, next) => {
   console.log(`${c.req.method} ${c.req.path}`)
@@ -76,7 +76,7 @@ const logger: GravitoMiddleware = async (ctx, next) => {
 For gradual migration, use the compatibility layer:
 
 ```typescript
-// During migration, you can use Hono-style aliases:
+// During migration, you can use Photon-style aliases:
 import type { Context, MiddlewareHandler, Next } from 'gravito-core/compat'
 
 // Your existing code works unchanged!
@@ -87,18 +87,18 @@ export async function myMiddleware(c: Context, next: Next) {
 
 ## Native Access (Escape Hatch)
 
-When you need Hono-specific features not yet abstracted:
+When you need Photon-specific features not yet abstracted:
 
 ```typescript
 import type { GravitoContext } from 'gravito-core'
-import type { Context as HonoContext } from 'hono'
+import type { Context as PhotonContext } from '@gravito/photon'
 
 async function advancedHandler(ctx: GravitoContext) {
-  // Access the underlying Hono context
-  const honoCtx = ctx.native as HonoContext
+  // Access the underlying Photon context
+  const photonCtx = ctx.native as PhotonContext
   
-  // Use Hono-specific features
-  honoCtx.executionCtx.waitUntil(...)
+  // Use Photon-specific features
+  photonCtx.executionCtx.waitUntil(...)
   
   return ctx.json({ ok: true })
 }
@@ -106,23 +106,23 @@ async function advancedHandler(ctx: GravitoContext) {
 
 ## API Compatibility
 
-The `GravitoContext` API is designed to match Hono's `Context`:
+The `GravitoContext` API is designed to match Photon's `Context`:
 
 | Method | Compatibility |
 |--------|---------------|
-| `ctx.req.param(name)` | ✅ Identical |
-| `ctx.req.query(name)` | ✅ Identical |
-| `ctx.req.header(name)` | ✅ Identical |
-| `ctx.req.json()` | ✅ Identical |
-| `ctx.req.text()` | ✅ Identical |
-| `ctx.req.formData()` | ✅ Identical |
-| `ctx.json(data, status?)` | ✅ Identical |
-| `ctx.text(text, status?)` | ✅ Identical |
-| `ctx.html(html, status?)` | ✅ Identical |
-| `ctx.redirect(url, status?)` | ✅ Identical |
-| `ctx.header(name, value)` | ✅ Identical |
-| `ctx.get(key)` | ✅ Identical |
-| `ctx.set(key, value)` | ✅ Identical |
+| `ctx.req.param(name)` | [Complete] Identical |
+| `ctx.req.query(name)` | [Complete] Identical |
+| `ctx.req.header(name)` | [Complete] Identical |
+| `ctx.req.json()` | [Complete] Identical |
+| `ctx.req.text()` | [Complete] Identical |
+| `ctx.req.formData()` | [Complete] Identical |
+| `ctx.json(data, status?)` | [Complete] Identical |
+| `ctx.text(text, status?)` | [Complete] Identical |
+| `ctx.html(html, status?)` | [Complete] Identical |
+| `ctx.redirect(url, status?)` | [Complete] Identical |
+| `ctx.header(name, value)` | [Complete] Identical |
+| `ctx.get(key)` | [Complete] Identical |
+| `ctx.set(key, value)` | [Complete] Identical |
 
 ## Extending Variables
 
@@ -149,13 +149,13 @@ declare module 'gravito-core' {
 ## FAQ
 
 ### Q: Will my existing code break?
-A: No! The migration is optional and backward compatible.
+A: No!The migration is optional and backward compatible.
 
-### Q: When will Hono support be deprecated?
-A: No plans to deprecate. You can continue using Hono types.
+### Q: When will Photon support be deprecated?
+A: No plans to deprecate. You can continue using Photon types.
 
-### Q: How do I use Hono middleware?
-A: Hono middleware continues to work via `core.app.use()`.
+### Q: How do I use Photon middleware?
+A: Photon middleware continues to work via `core.app.use()`.
 
 ---
 

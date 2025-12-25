@@ -2,11 +2,11 @@
 title: 靜態網站開發指南
 ---
 
-# 📦 使用 Orbit Freeze 建立靜態網站 (SSG)
+# 使用 Orbit Freeze 建立靜態網站 (SSG)
 
 使用 **Orbit Freeze (`@gravito/freeze`)** 將您的 Gravito 應用程式建置為極速靜態網站。
 
-## 🚀 快速開始
+## 快速開始
 
 ### 選項 1：使用 CLI 模板（推薦）
 
@@ -117,7 +117,7 @@ bun run build:preview
 
 ---
 
-## 📐 運作原理
+## 運作原理
 
 Gravito SSG 採用三階段流程，從動態開發到靜態部署：
 
@@ -173,7 +173,7 @@ Gravito SSG 採用三階段流程，從動態開發到靜態部署：
 
 ---
 
-## 🔧 設定參考
+## 設定參考
 
 ### FreezeConfig 選項
 
@@ -204,7 +204,7 @@ Gravito SSG 採用三階段流程，從動態開發到靜態部署：
 
 ---
 
-## 🌍 國際化 (i18n)
+## 國際化 (i18n)
 
 ### 語系感知路徑
 
@@ -247,7 +247,7 @@ function LocaleSwitcher() {
 
 ---
 
-## 📁 專案結構
+## 專案結構
 
 SSG 專案的建議結構：
 
@@ -284,7 +284,7 @@ my-site/
 
 ---
 
-## ✅ 開發檢查清單
+## [Complete] 開發檢查清單
 
 部署靜態網站之前：
 
@@ -313,7 +313,7 @@ my-site/
 
 ---
 
-## 🛠️ 建置腳本範例
+## 建置腳本範例
 
 使用 `@gravito/freeze` 的完整建置腳本：
 
@@ -332,7 +332,7 @@ async function build() {
   const outputDir = freezeConfig.outputDir
   
   // 1. 建置客戶端資源
-  console.log('⚡ 建置客戶端資源...')
+  console.log(' 建置客戶端資源...')
   await Bun.spawn(['bun', 'run', 'build:client']).exited
   
   // 2. 生成所有本地化路由
@@ -346,7 +346,7 @@ async function build() {
   }
   
   // 4. 生成重導向
-  console.log('🔄 生成重導向...')
+  console.log(' 生成重導向...')
   const redirects = generateRedirects(freezeConfig)
   for (const [path, html] of redirects) {
     const filePath = join(outputDir, path)
@@ -355,11 +355,11 @@ async function build() {
   }
   
   // 5. 生成 Sitemap
-  console.log('🗺️ 生成 Sitemap...')
+  console.log(' 生成 Sitemap...')
   const sitemapEntries = generateSitemapEntries(routes, freezeConfig)
   // ... 渲染 sitemap XML
   
-  console.log('✅ SSG 建置完成！')
+  console.log('[Complete] SSG 建置完成！')
 }
 
 build()
@@ -367,7 +367,7 @@ build()
 
 ---
 
-## 🎯 最佳實踐
+## 最佳實踐
 
 ### 1. 永遠使用 StaticLink
 ```tsx
@@ -375,7 +375,7 @@ build()
 import { Link } from '@inertiajs/react'
 <Link href="/about">關於</Link>
 
-// ✅ 使用 StaticLink 包裝器
+// [Complete] 使用 StaticLink 包裝器
 import { StaticLink } from './components/StaticLink'
 <StaticLink href="/about">關於</StaticLink>
 ```
@@ -385,7 +385,7 @@ import { StaticLink } from './components/StaticLink'
 // ❌ 不要使用無前綴的路徑
 const path = '/docs/guide'
 
-// ✅ 永遠本地化路徑
+// [Complete] 永遠本地化路徑
 const path = detector.getLocalizedPath('/docs/guide', currentLocale)
 ```
 
@@ -394,7 +394,7 @@ const path = detector.getLocalizedPath('/docs/guide', currentLocale)
 // ❌ 不要讓抽象路由沒有重導向
 // /about 會 404
 
-// ✅ 在設定中加入重導向
+// [Complete] 在設定中加入重導向
 redirects: [
   { from: '/about', to: '/en/about' },
 ]
@@ -411,7 +411,7 @@ bun run build:preview
 
 ---
 
-## 📚 API 參考
+## API 參考
 
 ### `defineConfig(options)`
 建立經過驗證的設定物件。
@@ -440,7 +440,7 @@ bun run build:preview
 
 ---
 
-## 🚀 部署指南
+## 部署指南
 
 ### GitHub Pages
 ```yaml
@@ -474,4 +474,4 @@ bun run build:preview
 
 ---
 
-遵循此指南，您的 Gravito 應用程式可以無縫部署為高效能靜態網站！🎉
+遵循此指南，您的 Gravito 應用程式可以無縫部署為高效能靜態網站！

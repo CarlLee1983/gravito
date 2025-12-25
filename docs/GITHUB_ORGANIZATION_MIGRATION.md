@@ -2,14 +2,14 @@
 
 本指南協助您將 Gravito 專案從個人 GitHub 帳號移轉到組織（Organization）。
 
-## 📋 移轉前準備
+## 移轉前準備
 
 ### 1. 確認組織資訊
 
 在開始之前，請確認：
-- ✅ 組織名稱（例如：`gravito-org` 或 `gravito-framework`）
-- ✅ 組織已建立並有適當權限
-- ✅ 您有組織的管理員權限
+- [Complete] 組織名稱（例如：`gravito-org` 或 `gravito-framework`）
+- [Complete] 組織已建立並有適當權限
+- [Complete] 您有組織的管理員權限
 
 ### 2. 備份重要資料
 
@@ -22,7 +22,7 @@ git checkout -b backup-before-migration
 git push origin backup-before-migration
 ```
 
-## 🔄 GitHub 移轉步驟
+## GitHub 移轉步驟
 
 ### 步驟 1：在 GitHub 上移轉 Repository
 
@@ -39,9 +39,9 @@ git push origin backup-before-migration
    - 輸入 repository 完整名稱確認
 
 **注意事項**：
-- ⚠️ 移轉後，所有 GitHub URL 會自動重定向（但建議更新）
-- ⚠️ 需要更新所有 package.json 中的 repository URL
-- ⚠️ CI/CD 可能需要重新授權
+- ⚠ 移轉後，所有 GitHub URL 會自動重定向（但建議更新）
+- ⚠ 需要更新所有 package.json 中的 repository URL
+- ⚠ CI/CD 可能需要重新授權
 
 ### 步驟 2：更新本地 Git Remote
 
@@ -63,7 +63,7 @@ git remote -v
 
 使用提供的腳本自動更新，或手動更新以下檔案：
 
-## 📝 需要更新的檔案清單
+## 需要更新的檔案清單
 
 ### Package.json 檔案（約 30+ 個）
 
@@ -91,7 +91,7 @@ git remote -v
 
 - `templates/*/src/views/partials/*.html` - GitHub 連結
 
-## 🚀 自動化更新腳本
+## 自動化更新腳本
 
 執行以下腳本來批量更新所有檔案：
 
@@ -110,7 +110,7 @@ find . -type f \( -name "*.json" -o -name "*.ts" -o -name "*.tsx" -o -name "*.md
   -exec sed -i '' 's/github\.com\/CarlLee1983\/gravito/github.com\/YOUR_ORG\/gravito-core/g' {} +
 ```
 
-## ✅ 驗證清單
+## [Complete] 驗證清單
 
 移轉完成後，請驗證以下項目：
 
@@ -147,16 +147,16 @@ grep -r "github.com/CarlLee1983" docs/ --include="*.md"
 
 ### 5. CI/CD 設定
 
-- ✅ 檢查 GitHub Actions 是否正常運作
-- ✅ 確認 secrets 和 permissions 設定正確
-- ✅ 測試自動發布流程
+- [Complete] 檢查 GitHub Actions 是否正常運作
+- [Complete] 確認 secrets 和 permissions 設定正確
+- [Complete] 測試自動發布流程
 
 ### 6. NPM 發布
 
-- ✅ 確認 npm 套件的 repository URL 正確
-- ✅ 測試發布流程
+- [Complete] 確認 npm 套件的 repository URL 正確
+- [Complete] 測試發布流程
 
-## 🔧 手動更新範例
+## 手動更新範例
 
 ### Package.json 更新
 
@@ -200,25 +200,25 @@ const editUrl = `https://github.com/gravito-framework/gravito-core/blob/main/doc
 const editUrl = `https://github.com/gravito-org/gravito-core/blob/main/docs/${slug}.md`
 ```
 
-## 🎯 組織設定建議
+## 組織設定建議
 
 ### 1. Repository 設定
 
-- ✅ 啟用 Issues 和 Pull Requests
-- ✅ 設定適當的 branch protection rules
-- ✅ 配置 GitHub Pages（如果需要）
+- [Complete] 啟用 Issues 和 Pull Requests
+- [Complete] 設定適當的 branch protection rules
+- [Complete] 配置 GitHub Pages（如果需要）
 
 ### 2. 團隊權限
 
-- ✅ 設定團隊成員和權限
-- ✅ 配置 code owners（如果需要）
+- [Complete] 設定團隊成員和權限
+- [Complete] 配置 code owners（如果需要）
 
 ### 3. Secrets 和 Variables
 
-- ✅ 更新 GitHub Actions secrets
-- ✅ 確認 NPM_TOKEN 等 secrets 正確設定
+- [Complete] 更新 GitHub Actions secrets
+- [Complete] 確認 NPM_TOKEN 等 secrets 正確設定
 
-## 🚨 常見問題
+## 常見問題
 
 ### Q: 移轉後舊的 URL 還能用嗎？
 
@@ -238,7 +238,7 @@ A: 不需要，但建議更新 package.json 中的 repository URL。
 
 A: 已發布的套件不受影響，但新版本會使用新的 repository URL。
 
-## 📚 參考資源
+## 參考資源
 
 - [GitHub 移轉 Repository 文檔](https://docs.github.com/en/repositories/creating-and-managing-repositories/transferring-a-repository)
 - [GitHub 組織管理](https://docs.github.com/en/organizations)

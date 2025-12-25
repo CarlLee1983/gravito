@@ -1,10 +1,11 @@
 # Gravito HTTP Abstraction Layer - Implementation Plan
 
-> **Status**: Phase 1 Complete ✅ | Phase 2 Complete ✅ | Phase 3 Complete ✅
+> **Status**: Phase 1 Complete [Complete] | Phase 2 Complete [Complete] | Phase 3 Complete [Complete]
+> **Legacy Note**: This plan predates Photon becoming the default engine and is kept for historical context.
 
 ## Overview
 
-This document outlines the plan to decouple Gravito from Hono, enabling future replacement with a custom Bun-native HTTP engine for maximum performance.
+This document outlines the plan to decouple Gravito from any concrete HTTP engine (now Photon), enabling future replacement with a custom Bun-native HTTP engine for maximum performance.
 
 ## Goals
 
@@ -16,7 +17,7 @@ This document outlines the plan to decouple Gravito from Hono, enabling future r
 
 ---
 
-## Phase 1: Create Abstraction Layer ✅
+## Phase 1: Create Abstraction Layer [Complete]
 
 **Status**: Complete (2025-12-21)
 
@@ -27,13 +28,13 @@ This document outlines the plan to decouple Gravito from Hono, enabling future r
 | `src/http/types.ts` | Core HTTP types: `GravitoContext`, `GravitoRequest`, `GravitoHandler`, `GravitoMiddleware` |
 | `src/http/index.ts` | HTTP module exports |
 | `src/adapters/types.ts` | `HttpAdapter` interface that all engines must implement |
-| `src/adapters/HonoAdapter.ts` | Default adapter wrapping Hono |
+| `src/adapters/PhotonAdapter.ts` | Default adapter wrapping Photon |
 | `src/adapters/index.ts` | Adapter module exports |
 | `src/compat.ts` | Backward-compatible type aliases |
 
 ### Type Mapping
 
-| Hono Type | Gravito Type | Notes |
+| Photon Type | Gravito Type | Notes |
 |-----------|--------------|-------|
 | `Context` | `GravitoContext` | Full feature parity |
 | `Handler` | `GravitoHandler` | Simplified (no `next`) |
@@ -44,16 +45,16 @@ This document outlines the plan to decouple Gravito from Hono, enabling future r
 
 - `GravitoContext`, `GravitoRequest`, `GravitoHandler`, `GravitoMiddleware`
 - `GravitoVariables`, `GravitoNext`, `GravitoErrorHandler`, `GravitoNotFoundHandler`
-- `HttpAdapter`, `HonoAdapter`, `HonoContextWrapper`, `HonoRequestWrapper`
+- `HttpAdapter`, `PhotonAdapter`, `PhotonContextWrapper`, `PhotonRequestWrapper`
 - `HttpMethod`, `StatusCode`, `ContentfulStatusCode`, `ValidationTarget`
 
 ---
 
-## Phase 2: Internal Migration ✅
+## Phase 2: Internal Migration [Complete]
 
 **Status**: Complete (2025-12-21)
 
-### Completed Tasks ✅
+### Completed Tasks [Complete]
 
 - [x] **2.1** Update `PlanetCore.ts` to use `HttpAdapter` interface
   - Added `_adapter` private property with public getter
@@ -71,17 +72,17 @@ This document outlines the plan to decouple Gravito from Hono, enabling future r
 
 ### Deferred Tasks (Low Priority)
 
-- [ ] **2.2** Update `Router.ts` to use `GravitoHandler` types (optional, works as-is)
-- [ ] **2.3** Update `CookieJar.ts` to work with `GravitoContext` (optional, Hono-coupled for now)
+- [ ] **2.2** Update `GravitoRouter.ts` to use `GravitoHandler` types (optional, works as-is)
+- [ ] **2.3** Update `CookieJar.ts` to work with `GravitoContext` (optional, Photon-coupled for now)
 - [ ] **2.5** Update helper functions in `helpers/response.ts` (optional)
 
 ---
 
-## Phase 3: Documentation & User Migration ✅
+## Phase 3: Documentation & User Migration [Complete]
 
 **Status**: Complete (2025-12-21)
 
-### Completed Tasks ✅
+### Completed Tasks [Complete]
 
 - [x] **3.1** Update official documentation
   - `core-concepts.md` - Added HTTP abstraction pillar, updated examples
@@ -95,7 +96,7 @@ This document outlines the plan to decouple Gravito from Hono, enabling future r
 
 ### Deferred Tasks
 
-- [ ] **3.3** Add deprecation warnings for direct Hono imports (optional)
+- [ ] **3.3** Add deprecation warnings for direct Photon imports (optional)
 - [ ] **3.4** Create codemod tool for automatic migration (future)
 - [ ] **3.5** Update all example projects (1.5-example needs review)
 
@@ -107,7 +108,7 @@ This document outlines the plan to decouple Gravito from Hono, enabling future r
 
 ### Goals
 
-- Eliminate Hono overhead completely
+- Eliminate Photon adapter overhead completely
 - Leverage Bun's native `Bun.serve()` directly
 - Implement trie-based router optimized for Bun
 - Maximum performance with minimal abstraction
@@ -115,26 +116,26 @@ This document outlines the plan to decouple Gravito from Hono, enabling future r
 ### Proposed Architecture
 
 ```
-BunNativeAdapter
-├── BunRouter (custom trie router)
-├── BunContext (direct Request/Response)
-└── BunMiddlewarePipeline
+PhotonAdapter
+├── PhotonRouter (custom trie router)
+├── PhotonContext (direct Request/Response)
+└── PhotonMiddlewarePipeline
 ```
 
 ---
 
 ## Usage Examples
 
-### Current (Hono-coupled)
+### Current (Photon-coupled)
 
 ```typescript
 // Controller
-import type { Context } from 'hono'
+import type { PhotonContext } from '@gravito/photon'
 
 export class UserController {
-  async show(c: Context) {
-    const id = c.req.param('id')
-    return c.json({ user: await User.find(id) })
+  async show(ctx: PhotonContext) {
+    const id = ctx.req.param('id')
+    return ctx.json({ user: await User.find(id) })
   }
 }
 ```
@@ -168,7 +169,7 @@ import type { GravitoContext } from 'gravito-core'
 
 1. **Unit Tests** - Test each wrapper class independently
 2. **Integration Tests** - Verify adapter works with PlanetCore
-3. **E2E Tests** - Run existing test suite with HonoAdapter
+3. **E2E Tests** - Run existing test suite with PhotonAdapter
 4. **Benchmark Tests** - Compare performance before/after
 
 ---
@@ -179,7 +180,7 @@ import type { GravitoContext } from 'gravito-core'
 |------|------------|
 | Breaking changes | Maintain backward compat aliases |
 | Performance regression | Benchmark before/after |
-| Missing Hono features | Document escape hatches via `ctx.native` |
+| Missing Photon features | Document escape hatches via `ctx.native` |
 | Orbit module compatibility | Update each orbit incrementally |
 
 ---
@@ -188,7 +189,7 @@ import type { GravitoContext } from 'gravito-core'
 
 | Phase | Estimated Duration | Dependencies |
 |-------|-------------------|--------------|
-| Phase 1 | ✅ Complete | None |
+| Phase 1 | [Complete] Complete | None |
 | Phase 2 | 2-3 days | Phase 1 |
 | Phase 3 | 1-2 days | Phase 2 |
 | Phase 4 | TBD | Phases 1-3, Bun research |
@@ -207,5 +208,3 @@ import type { GravitoContext } from 'gravito-core'
   - All Kinetic modules have GravitoVariables augmentation
   - Migration guide created at `docs/en/guide/migration-http-abstraction.md`
 - **2025-12-21**: Phase 1 complete - Created abstraction layer
-
-
