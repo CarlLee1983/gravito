@@ -93,6 +93,8 @@ await connection.transaction(async (session) => {
 });
 ```
 
+Note: `Model.create()` is async and persists immediately. Use `Model.make()` if you need an in-memory instance before calling `save()`.
+
 ## Advanced Indexing
 
 You can define complex indexes using Atlas migrations:

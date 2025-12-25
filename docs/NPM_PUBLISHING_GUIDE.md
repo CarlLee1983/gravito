@@ -97,7 +97,7 @@ bun run --filter '*' publish
 - `gravito-core` - 核心框架
 - `@gravito/horizon` - 路由系統
 - `@gravito/luminosity` - SEO 核心模組
-- `@gravito/luminosity-adapter-hono` - SEO HTTP 適配器
+- `@gravito/luminosity-adapter-photon` - SEO HTTP 適配器
 - `@gravito/stasis` - 靜態快取系統
 
 ### Alpha 版本（功能模組）

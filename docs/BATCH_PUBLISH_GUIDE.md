@@ -89,18 +89,18 @@ bun run publish:dry-run
 
 ⏳ 等待 3 秒後開始發布...
 
- 構建 @gravito/seo-adapter-hono...
-  [Complete] @gravito/seo-adapter-hono 構建成功
+ 構建 @gravito/luminosity-adapter-photon...
+  [Complete] @gravito/luminosity-adapter-photon 構建成功
 
- 發布 @gravito/seo-adapter-hono@1.0.0-beta.1 (tag: beta)...
-  [Complete] @gravito/seo-adapter-hono@1.0.0-beta.1 發布成功 (tag: beta)
+ 發布 @gravito/luminosity-adapter-photon@1.0.0-beta.1 (tag: beta)...
+  [Complete] @gravito/luminosity-adapter-photon@1.0.0-beta.1 發布成功 (tag: beta)
 
  發布結果總結:
   ⏭  已存在（跳過）: 20
      - gravito-core@1.0.0-beta.1
      ...
   [Complete] 成功發布: 4
-     - @gravito/seo-adapter-hono@1.0.0-beta.1
+     - @gravito/luminosity-adapter-photon@1.0.0-beta.1
      ...
 
  所有套件處理完成！

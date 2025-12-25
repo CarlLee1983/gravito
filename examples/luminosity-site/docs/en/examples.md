@@ -57,16 +57,16 @@ async function* getEntries() {
 await lux.generate(getEntries())
 ```
 
-## 3. Integration with Hono
+## 3. Integration with Photon
 
-Luminosity works perfectly with modern edge frameworks like Hono.
+Luminosity works perfectly with modern edge frameworks like Photon.
 
 ```typescript
-import { Hono } from 'hono'
+import { Photon } from '@gravito/photon'
 import { Luminosity } from '@gravito/luminosity'
-import { serveStatic } from 'hono/bun'
+import { serveStatic } from '@gravito/photon/bun'
 
-const app = new Hono()
+const app = new Photon()
 const lux = new Luminosity({ path: './dist' })
 
 // 1. Generate on startup

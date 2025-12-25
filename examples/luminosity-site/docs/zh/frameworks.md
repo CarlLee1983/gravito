@@ -71,19 +71,19 @@ app.listen(port, () => {
 })
 ```
 
-## Hono 整合
+## Photon 整合
 
-如果您使用 Hono (如 Gravito 內部)，整合會更簡單且效能更好。
+如果您使用 Photon (如 Gravito 內部)，整合會更簡單且效能更好。
 
 ```typescript
-import { Hono } from 'hono'
+import { Photon } from '@gravito/photon'
 import { SeoEngine, SeoRenderer } from '@gravito/luminosity'
 
-const app = new Hono()
+const app = new Photon()
 
 const seo = new SeoEngine({
     mode: 'cached', // 對於 Serverless 環境推薦 cached 模式
-    baseUrl: 'https://my-hono-app.com',
+    baseUrl: 'https://my-photon-app.com',
     resolvers: [] // 必須提供
 })
 
@@ -92,7 +92,7 @@ await seo.init()
 app.get('/sitemap.xml', async (c) => {
     const entries = await seo.getStrategy().getEntries()
     const renderer = new SeoRenderer({ 
-        baseUrl: 'https://my-hono-app.com',
+        baseUrl: 'https://my-photon-app.com',
         mode: 'cached',
         resolvers: []
     })

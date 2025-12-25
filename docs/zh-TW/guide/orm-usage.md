@@ -242,6 +242,9 @@ const user = await User.create({
   email: 'john@example.com'
 });
 
+// 注意：create() 會立即寫入資料庫。若只需要記憶體中的實例，請使用 make()。
+const draft = User.make({ name: 'Draft User' });
+
 // 使用實例方法
 const user = new User();
 user.set('name', 'John');

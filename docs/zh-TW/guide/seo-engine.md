@@ -82,7 +82,7 @@ export const seoConfig: SeoConfig = {
 
 ```typescript
 // src/index.ts
-import { gravitoSeo } from '@gravito/luminosity-adapter-hono'
+import { gravitoSeo } from '@gravito/luminosity-adapter-photon'
 import { seoConfig } from './config/seo'
 
 app.use('*', gravitoSeo(seoConfig))

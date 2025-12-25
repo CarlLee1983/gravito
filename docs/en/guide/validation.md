@@ -47,3 +47,5 @@ async store(c: Context) {
   return c.json(user, 201);
 }
 ```
+
+Note: `Model.create()` is async and persists immediately. Use `Model.make()` if you need an in-memory instance before calling `save()`.

@@ -57,16 +57,16 @@ async function* getEntries() {
 await lux.generate(getEntries())
 ```
 
-## 3. 與 Hono 整合
+## 3. 與 Photon 整合
 
-Luminosity 與 Hono 等現代邊緣框架完美結合。
+Luminosity 與 Photon 等現代邊緣框架完美結合。
 
 ```typescript
-import { Hono } from 'hono'
+import { Photon } from '@gravito/photon'
 import { Luminosity } from '@gravito/luminosity'
-import { serveStatic } from 'hono/bun'
+import { serveStatic } from '@gravito/photon/bun'
 
-const app = new Hono()
+const app = new Photon()
 const lux = new Luminosity({ path: './dist' })
 
 // 1. 啟動時產生

@@ -5,12 +5,12 @@ description: Gravito SEO 與 Sitemap 整合的 API 參考。
 
 # Luminosity
 
-`@gravito/luminosity-adapter-hono` (簡稱為 `OrbitLuminosity`) 提供了 Gravito 核心與 SEO 引擎之間的無縫整合。
+`@gravito/luminosity-adapter-photon` (簡稱為 `OrbitLuminosity`) 提供了 Gravito 核心與 SEO 引擎之間的無縫整合。
 
 ## 安裝
 
 ```bash
-bun add @gravito/luminosity @gravito/luminosity-adapter-hono
+bun add @gravito/luminosity @gravito/luminosity-adapter-photon
 ```
 
 ## 基礎用法
@@ -18,7 +18,7 @@ bun add @gravito/luminosity @gravito/luminosity-adapter-hono
 SEO 動力模組會註冊一個中間件，自動處理 `/sitemap.xml` 與 `/robots.txt`。
 
 ```typescript
-import { gravitoSeo } from '@gravito/luminosity-adapter-hono'
+import { gravitoSeo } from '@gravito/luminosity-adapter-photon'
 import { seoConfig } from './config/seo'
 
 // 在 bootstrap 或 index 中使用

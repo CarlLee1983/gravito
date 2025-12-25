@@ -17,8 +17,8 @@ cd packages/orbit-inertia && npm publish --access public --tag beta && cd ../..
 # @gravito/prism
 cd packages/orbit-view && npm publish --access public --tag beta && cd ../..
 
-# @gravito/seo-adapter-hono
-cd packages/seo-adapter-hono && npm publish --access public --tag beta && cd ../..
+# @gravito/luminosity-adapter-photon
+cd packages/luminosity-adapter-photon && npm publish --access public --tag beta && cd ../..
 
 # @gravito/seo-core
 cd packages/seo-core && npm publish --access public --tag beta && cd ../..

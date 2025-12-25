@@ -5,12 +5,12 @@ description: API reference for Gravito's SEO and Sitemap integration.
 
 # Luminosity
 
-The `@gravito/luminosity-adapter-hono` (or simply `OrbitLuminosity`) provides a seamless integration between Gravito's core and the SEO engine.
+The `@gravito/luminosity-adapter-photon` (or simply `OrbitLuminosity`) provides a seamless integration between Gravito's core and the SEO engine.
 
 ## Installation
 
 ```bash
-bun add @gravito/luminosity @gravito/luminosity-adapter-hono
+bun add @gravito/luminosity @gravito/luminosity-adapter-photon
 ```
 
 ## Basic Usage
@@ -18,7 +18,7 @@ bun add @gravito/luminosity @gravito/luminosity-adapter-hono
 The Luminosity module registers a middleware that handles `/sitemap.xml` and `/robots.txt` automatically.
 
 ```typescript
-import { gravitoSeo } from '@gravito/luminosity-adapter-hono'
+import { gravitoSeo } from '@gravito/luminosity-adapter-photon'
 import { seoConfig } from './config/seo'
 
 // In your bootstrap or index

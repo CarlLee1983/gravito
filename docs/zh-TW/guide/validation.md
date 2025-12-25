@@ -48,6 +48,8 @@ async store(c: Context) {
 }
 ```
 
+注意：`Model.create()` 是非同步且會立即寫入資料庫。若只需要記憶體中的實例，請使用 `Model.make()`，再自行呼叫 `save()`。
+
 ## 自定義驗證行為
 
 您可以在 Form Request 類別中定義 `authorize` 方法（如果已實作此功能）或自定義錯誤訊息邏輯。

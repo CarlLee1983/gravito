@@ -153,6 +153,8 @@ const flight = await Flight.create({
 });
 ```
 
+注意：`Model.create()` 是非同步且會立即寫入資料庫。若只需要記憶體中的實例，請使用 `Model.make()`，再自行呼叫 `save()`。
+
 ### 更新模型
 
 獲取模型後，修改屬性並再次呼叫 `save`：

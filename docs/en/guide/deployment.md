@@ -82,7 +82,7 @@ The generated `dist-static/` directory can be deployed to any static storage ser
 
 Gravito's core engine is lightweight by design, making it a perfect fit for restricted edge environments.
 
-- **Cloudflare Workers**: Leverage `@gravito/adapter-hono` or our dedicated adapters.
+- **Cloudflare Workers**: Leverage `PhotonAdapter` or our dedicated adapters.
 - **AWS Lambda**: Benefit from Bun's millisecond-range cold start times.
 
 ---

@@ -5,7 +5,7 @@ order: 3
 
 # Framework Integration Guide
 
-Luminosity is designed to be **Framework-agnostic**. Whether you are using Express, Hono, Fastify, or plain Node.js, you can easily integrate Luminosity to manage your sitemaps.
+Luminosity is designed to be **Framework-agnostic**. Whether you are using Express, Photon, Fastify, or plain Node.js, you can easily integrate Luminosity to manage your sitemaps.
 
 ## Express Integration
 
@@ -71,19 +71,19 @@ app.listen(port, () => {
 })
 ```
 
-## Hono Integration
+## Photon Integration
 
-If you're using Hono with modern standards (like within Gravito), integration is even simpler.
+If you're using Photon with modern standards (like within Gravito), integration is even simpler.
 
 ```typescript
-import { Hono } from 'hono'
+import { Photon } from '@gravito/photon'
 import { SeoEngine, SeoRenderer } from '@gravito/luminosity'
 
-const app = new Hono()
+const app = new Photon()
 
 const seo = new SeoEngine({
     mode: 'cached', // Recommended for Serverless
-    baseUrl: 'https://my-hono-app.com',
+    baseUrl: 'https://my-photon-app.com',
     resolvers: [] // Required
 })
 
@@ -92,7 +92,7 @@ await seo.init()
 app.get('/sitemap.xml', async (c) => {
     const entries = await seo.getStrategy().getEntries()
     const renderer = new SeoRenderer({ 
-        baseUrl: 'https://my-hono-app.com',
+        baseUrl: 'https://my-photon-app.com',
         mode: 'cached',
         resolvers: []
     })

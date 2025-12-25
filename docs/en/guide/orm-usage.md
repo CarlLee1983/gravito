@@ -242,6 +242,9 @@ const user = await User.create({
   email: 'john@example.com'
 });
 
+// Note: create() persists immediately. Use make() for an in-memory instance.
+const draft = User.make({ name: 'Draft User' });
+
 // Using instance methods
 const user = new User();
 user.set('name', 'John');

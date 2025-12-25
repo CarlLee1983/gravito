@@ -110,7 +110,7 @@ npm publish --access public --otp=<你的OTP代碼>
 - `gravito-core`
 - `@gravito/horizon`
 - `@gravito/luminosity`
-- `@gravito/luminosity-adapter-hono`
+- `@gravito/luminosity-adapter-photon`
 - `@gravito/stasis`
 
 ### Alpha 版本（功能模組）

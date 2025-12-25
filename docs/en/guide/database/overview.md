@@ -23,6 +23,8 @@ post.title = 'Hello Gravito';
 await post.save();
 ```
 
+Note: `Model.create()` is async and persists immediately. Use `Model.make()` if you need an in-memory instance and call `save()` later.
+
 ## Core Features
 
 ### 1. ActiveRecord Pattern

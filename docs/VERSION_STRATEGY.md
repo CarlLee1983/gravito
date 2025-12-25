@@ -9,7 +9,7 @@
 - `gravito-core`
 - `@gravito/horizon`
 - `@gravito/luminosity`
-- `@gravito/luminosity-adapter-hono`
+- `@gravito/luminosity-adapter-photon`
 - `@gravito/stasis`
 
 ### Alpha 版本 (`1.0.0-alpha.*`)

@@ -95,6 +95,8 @@ await connection.transaction(async (session) => {
 });
 ```
 
+注意：`Model.create()` 是非同步且會立即寫入資料庫。若只需要記憶體中的實例，請使用 `Model.make()`，再自行呼叫 `save()`。
+
 ## 進階索引
 
 您可以使用 Atlas 遷移定義複雜的索引：

@@ -82,7 +82,7 @@ bun run build:static
 
 Gravito 的核心引擎體積輕量，非常適合執行在受限的邊緣環境。
 
-- **Cloudflare Workers**：利用 `@gravito/adapter-hono` 或專屬適配器。
+- **Cloudflare Workers**：利用 `PhotonAdapter` 或專屬適配器。
 - **AWS Lambda**：利用 Bun 僅需幾毫秒的冷啟動時間。
 
 ---

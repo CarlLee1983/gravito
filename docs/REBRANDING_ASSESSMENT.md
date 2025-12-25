@@ -39,7 +39,7 @@
 
 1. **SEO 相關模組**（獨立性高）
    - `@gravito/seo-core` → `@gravito/luminosity`
-   - `@gravito/seo-adapter-hono` → `@gravito/luminosity-adapter-hono`
+   - `@gravito/seo-adapter-hono` → `@gravito/luminosity-adapter-photon`
    - `@gravito/seo-adapter-express` → `@gravito/luminosity-adapter-express`
    - `@gravito/seo-cli` → `@gravito/luminosity-cli`
    - **理由**：SEO 模組相對獨立，主要依賴外部框架（如 Express 等 HTTP adapter）

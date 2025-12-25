@@ -153,6 +153,8 @@ const flight = await Flight.create({
 });
 ```
 
+Note: `Model.create()` is async and persists immediately. Use `Model.make()` if you need an in-memory instance before calling `save()`.
+
 ### Updating Models
 
 Retrieve a model, modify attributes, and call `save` again:
