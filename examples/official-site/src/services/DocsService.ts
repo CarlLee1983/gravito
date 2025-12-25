@@ -488,6 +488,7 @@ export class DocsService {
           { title: trans.orm_serialization, path: `${prefix}/guide/database/atlas-serialization` },
           { title: trans.orm_factories, path: `${prefix}/guide/database/atlas-factories` },
           { title: trans.orm_collections, path: `${prefix}/guide/database/atlas-collections` },
+          { title: trans.orm_resources, path: `${prefix}/guide/database/atlas-resources` },
         ],
       },
       {
