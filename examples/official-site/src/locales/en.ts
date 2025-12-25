@@ -95,6 +95,27 @@ export default {
     ts_title: 'Why First-Class TypeScript?',
     ts_desc:
       'We believe "types are documentation." Static analysis and type inference are the cornerstones of scalable systems. In the era of AI-native development, clear type definitions allow AI agents to provide significantly more accurate assistance and code generation.',
+    // Galaxy Architecture Comparison
+    compare_title: 'Galaxy Architecture vs Traditional Frameworks',
+    compare_subtitle: 'Why Gravito outperforms Hono, Express, and beyond',
+    vs_arch_title: 'Micro-Kernel + Orbits',
+    vs_arch_desc:
+      'Unlike single-layer HTTP frameworks, Gravito uses a Galaxy Architecture—a micro-kernel (PlanetCore) with pluggable Orbits. Add only what you need: Auth (Sentinel), Cache (Stasis), ORM (Atlas), and more.',
+    vs_adapter_title: 'HTTP Adapter Pattern',
+    vs_adapter_desc:
+      'Transparently switch between Photon, Bun Native, or Express without changing a single line of business logic. True engine-agnostic design.',
+    vs_hooks_title: 'WordPress-Style Hook System',
+    vs_hooks_desc:
+      'Powerful Filters and Actions let you intercept and modify any part of the request lifecycle. Customize error handling, logging, and responses with surgical precision.',
+    vs_router_title: 'Laravel-Style Fluent Router',
+    vs_router_desc:
+      'Controller-based routing, FormRequest validation, Resource Routes, Route Model Binding, and Named Routes with URL generation—all built-in.',
+    vs_ioc_title: 'IoC Container',
+    vs_ioc_desc:
+      'Enterprise-grade dependency injection with singleton management, service providers, and a register/boot lifecycle—missing from Hono entirely.',
+    vs_native_title: 'Bun Native Adapter',
+    vs_native_desc:
+      'When running on Bun, Gravito automatically uses our custom RadixRouter for O(log n) route matching with zero abstraction overhead.',
   },
   benchmarks: {
     sectionBadge: 'Bio-Lab Benchmarks',

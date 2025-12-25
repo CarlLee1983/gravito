@@ -90,6 +90,27 @@ export default {
     ts_title: '為什麼堅持 TypeScript？',
     ts_desc:
       '我們相信「型別即文檔」。TypeScript 提供的靜態檢查與型別推導是構建大型系統的基石。更重要的是，在 AI 協作開發的時代，清晰的型別定義能讓 AI 代理人提供更精準的代碼建議，極大地提升開發效率。',
+    // Galaxy Architecture 對比
+    compare_title: 'Galaxy 架構 vs 傳統框架',
+    compare_subtitle: '為什麼 Gravito 優於 Hono、Express 及其他框架',
+    vs_arch_title: '微內核 + Orbits 可插拔模組',
+    vs_arch_desc:
+      '不同於單層 HTTP 框架，Gravito 採用 Galaxy 架構——微內核 (PlanetCore) 搭配可插拔 Orbits。按需加載：認證 (Sentinel)、快取 (Stasis)、ORM (Atlas) 等。',
+    vs_adapter_title: 'HTTP Adapter 抽象層',
+    vs_adapter_desc:
+      '透明切換 Photon、Bun Native 或 Express 模式，無需修改任何業務邏輯。實現真正的引擎無關設計。',
+    vs_hooks_title: 'WordPress 風格 Hook 系統',
+    vs_hooks_desc:
+      '強大的 Filters 和 Actions 讓您攔截和修改請求生命週期的任何部分。精確自定義錯誤處理、日誌和回應。',
+    vs_router_title: 'Laravel 風格流暢路由',
+    vs_router_desc:
+      'Controller 路由、FormRequest 驗證、Resource Routes、Route Model Binding、命名路由與 URL 生成——全部內建。',
+    vs_ioc_title: 'IoC 依賴注入容器',
+    vs_ioc_desc:
+      '企業級依賴注入，支援單例管理、Service Providers 和 register/boot 生命週期——Hono 完全缺乏這些功能。',
+    vs_native_title: 'Bun Native Adapter',
+    vs_native_desc:
+      '在 Bun 環境運行時，Gravito 自動使用自研 RadixRouter，實現 O(log n) 路由匹配，零抽象開銷。',
   },
   benchmarks: {
     sectionBadge: '性能實驗室',

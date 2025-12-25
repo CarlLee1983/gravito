@@ -1,6 +1,17 @@
 import { Head } from '@inertiajs/react'
 import { motion } from 'framer-motion'
-import { Activity, Cpu, Layers, Share2, Terminal, Zap } from 'lucide-react'
+import {
+  Activity,
+  Box,
+  Cpu,
+  GitBranch,
+  Layers,
+  Route,
+  Share2,
+  Shuffle,
+  Terminal,
+  Zap,
+} from 'lucide-react'
 import Layout from '../components/Layout'
 
 type Translation = Record<string, Record<string, string>>
@@ -255,6 +266,167 @@ const TechChoicesSection = ({ t }: { t: Translation }) => {
   )
 }
 
+const GalaxyComparisonSection = ({ t }: { t: Translation }) => {
+  const comparisons = [
+    {
+      icon: Layers,
+      title: t.features_page.vs_arch_title,
+      desc: t.features_page.vs_arch_desc,
+      color: 'from-purple-500 to-pink-500',
+    },
+    {
+      icon: Shuffle,
+      title: t.features_page.vs_adapter_title,
+      desc: t.features_page.vs_adapter_desc,
+      color: 'from-cyan-500 to-blue-500',
+    },
+    {
+      icon: GitBranch,
+      title: t.features_page.vs_hooks_title,
+      desc: t.features_page.vs_hooks_desc,
+      color: 'from-orange-500 to-red-500',
+    },
+    {
+      icon: Route,
+      title: t.features_page.vs_router_title,
+      desc: t.features_page.vs_router_desc,
+      color: 'from-emerald-500 to-teal-500',
+    },
+    {
+      icon: Box,
+      title: t.features_page.vs_ioc_title,
+      desc: t.features_page.vs_ioc_desc,
+      color: 'from-yellow-500 to-orange-500',
+    },
+    {
+      icon: Zap,
+      title: t.features_page.vs_native_title,
+      desc: t.features_page.vs_native_desc,
+      color: 'from-singularity to-purple-500',
+    },
+  ]
+
+  return (
+    <section className="relative py-32 px-6 bg-void border-t border-white/5">
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1200px] h-[600px] bg-singularity/5 rounded-full blur-[200px]" />
+      </div>
+
+      <div className="max-w-6xl mx-auto relative z-10">
+        <div className="text-center mb-20">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <span className="px-4 py-2 rounded-full bg-singularity/10 border border-singularity/30 text-singularity text-xs font-black uppercase tracking-widest">
+              Architecture Comparison
+            </span>
+          </motion.div>
+
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
+            className="text-4xl md:text-5xl font-black italic tracking-tighter text-white mt-8 mb-4 uppercase"
+          >
+            {t.features_page.compare_title}
+          </motion.h2>
+
+          <motion.p
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+            className="text-gray-400 text-lg max-w-2xl mx-auto"
+          >
+            {t.features_page.compare_subtitle}
+          </motion.p>
+
+          <motion.div
+            initial={{ scaleX: 0 }}
+            whileInView={{ scaleX: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.3 }}
+            className="w-24 h-1 bg-gradient-to-r from-singularity to-purple-500 mx-auto rounded-full mt-6"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {comparisons.map((item, index) => (
+            <motion.div
+              key={item.title}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: index * 0.1, duration: 0.6 }}
+              className="group relative p-8 rounded-[28px] bg-white/[0.02] border border-white/10 hover:border-white/20 transition-all hover:bg-white/[0.04] overflow-hidden"
+            >
+              {/* Gradient overlay on hover */}
+              <div
+                className={`absolute inset-0 bg-gradient-to-br ${item.color} opacity-0 group-hover:opacity-5 transition-opacity duration-500`}
+              />
+
+              <div className="relative z-10">
+                <div
+                  className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${item.color} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-lg`}
+                >
+                  <item.icon size={28} className="text-white" />
+                </div>
+
+                <h3 className="text-xl font-bold text-white mb-3">{item.title}</h3>
+                <p className="text-gray-400 text-sm leading-relaxed">{item.desc}</p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Comparison Matrix */}
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.5 }}
+          className="mt-20 p-1 rounded-[32px] bg-gradient-to-tr from-white/10 via-transparent to-white/10"
+        >
+          <div className="bg-[#0a0a0a] rounded-[30px] p-8 md:p-12 overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-gray-500 uppercase tracking-wider text-xs">
+                  <th className="text-left pb-6 font-bold">Feature</th>
+                  <th className="text-center pb-6 font-bold">Express</th>
+                  <th className="text-center pb-6 font-bold">Hono</th>
+                  <th className="text-center pb-6 font-bold text-singularity">Gravito</th>
+                </tr>
+              </thead>
+              <tbody className="text-gray-300">
+                {[
+                  ['Hook System', '❌', '❌', '✅'],
+                  ['IoC Container', '❌', '❌', '✅'],
+                  ['Controller Routing', 'Plugin', '❌', '✅'],
+                  ['Route Model Binding', '❌', '❌', '✅'],
+                  ['FormRequest Validation', '❌', '❌', '✅'],
+                  ['Adapter Pattern', '❌', '❌', '✅'],
+                  ['Bun Native Support', '❌', '✅', '✅'],
+                  ['TypeScript First', 'Plugin', '✅', '✅'],
+                ].map(([feature, express, hono, gravito]) => (
+                  <tr key={feature} className="border-t border-white/5">
+                    <td className="py-4 font-medium text-white">{feature}</td>
+                    <td className="py-4 text-center">{express}</td>
+                    <td className="py-4 text-center">{hono}</td>
+                    <td className="py-4 text-center text-singularity font-bold">{gravito}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </motion.div>
+      </div>
+    </section>
+  )
+}
+
 export default function Features({ t, locale }: { t: Translation; locale: string }) {
   return (
     <Layout>
@@ -264,6 +436,7 @@ export default function Features({ t, locale }: { t: Translation; locale: string
       <FeatureHero t={t} />
       <CoreDetailSection t={t} />
       <TechChoicesSection t={t} />
+      <GalaxyComparisonSection t={t} />
 
       {/* 底部導引 */}
       <section className="py-32 px-6 text-center bg-void border-t border-white/5">
