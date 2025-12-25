@@ -41,6 +41,17 @@ export class HomeController {
     return inertia.render('Features', { t, locale }, { seoHtml })
   }
 
+  releases = async (c: Context) => {
+    const inertia = c.get('inertia') as InertiaService
+    const locale = (c.get('locale') as string) || 'en'
+    const t = getTranslation(locale)
+    const { generateSeoHtml } = await import('../utils/seo')
+    const title = locale === 'zh' ? '更新日誌' : 'Releases'
+    const seoHtml = generateSeoHtml(locale, `${title} | ${t.site.title}`)
+
+    return inertia.render('Releases', { t, locale }, { seoHtml })
+  }
+
   subscribe = async (c: Context) => {
     const body = (await c.req.json().catch(() => c.req.parseBody())) as { email?: string }
     const email = body.email

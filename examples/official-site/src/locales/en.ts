@@ -10,6 +10,7 @@ export default {
     features: 'Features',
     benchmarks: 'Benchmarks',
     docs: 'Docs',
+    releases: 'Releases',
     about: 'About',
     github: 'GitHub',
   },

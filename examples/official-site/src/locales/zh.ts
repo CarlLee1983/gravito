@@ -9,6 +9,7 @@ export default {
     features: '核心功能',
     benchmarks: '效能測試',
     docs: '文件',
+    releases: '更新日誌',
     about: '關於',
     github: 'GitHub',
   },

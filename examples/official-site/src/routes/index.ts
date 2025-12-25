@@ -23,6 +23,7 @@ export function registerRoutes(core: PlanetCore): void {
     root.get('/docs/*', [DocsController, 'show'])
     root.get('/about', [HomeController, 'about'])
     root.get('/features', [HomeController, 'features'])
+    root.get('/releases', [HomeController, 'releases'])
   })
 
   // ─────────────────────────────────────────────
@@ -38,6 +39,7 @@ export function registerRoutes(core: PlanetCore): void {
       en.get('/docs/*', [DocsController, 'show'])
       en.get('/about', [HomeController, 'about'])
       en.get('/features', [HomeController, 'features'])
+      en.get('/releases', [HomeController, 'releases'])
     })
 
   // ─────────────────────────────────────────────
@@ -53,6 +55,7 @@ export function registerRoutes(core: PlanetCore): void {
       zh.get('/docs/*', [DocsController, 'show'])
       zh.get('/about', [HomeController, 'about'])
       zh.get('/features', [HomeController, 'features'])
+      zh.get('/releases', [HomeController, 'releases'])
     })
 
   // Newsletter
