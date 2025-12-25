@@ -134,6 +134,30 @@ export default function Docs() {
       wrapper.appendChild(button)
     }
 
+    // Add anchor links to headings
+    const headings = Array.from(root.querySelectorAll('h2, h3, h4'))
+    for (const h of headings as HTMLElement[]) {
+      if (h.querySelector('.anchor-link')) continue
+
+      const id = h.id
+      if (!id) continue
+
+      const anchor = document.createElement('a')
+      anchor.href = `#${id}`
+      anchor.className =
+        'anchor-link ml-2 opacity-0 group-hover/h:opacity-100 transition-opacity text-singularity/40 hover:text-singularity'
+      anchor.innerHTML = '#'
+      anchor.onclick = (e) => {
+        e.preventDefault()
+        const element = document.getElementById(id)
+        element?.scrollIntoView({ behavior: 'smooth' })
+        window.history.pushState(null, '', `#${id}`)
+      }
+
+      h.classList.add('group/h', 'relative')
+      h.appendChild(anchor)
+    }
+
     // Wrap tables for horizontal scrolling on small screens
     const tables = Array.from(root.querySelectorAll('table'))
     for (const table of tables) {
@@ -144,7 +168,8 @@ export default function Docs() {
 
       const wrapper = document.createElement('div')
       wrapper.dataset.tableWrapper = 'true'
-      wrapper.className = 'not-prose docs-table-wrapper overflow-x-auto h-scrollbar'
+      wrapper.className =
+        'not-prose docs-table-wrapper overflow-x-auto h-scrollbar my-12 rounded-2xl border border-white/5 bg-white/[0.02]'
 
       parent?.insertBefore(wrapper, table)
       wrapper.appendChild(table)
@@ -347,7 +372,13 @@ export default function Docs() {
           </div>
         </aside>
 
-        <main className="min-w-0 flex-1">
+        <main className="min-w-0 flex-1 relative">
+          {/* Reading Progress Bar - Move outside transformed container for true fixed positioning */}
+          <motion.div
+            className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-singularity via-cyan-400 to-purple-500 origin-left z-[9999] shadow-[0_0_15px_rgba(0,240,255,0.5)]"
+            style={{ scaleX: _scaleX }}
+          />
+
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -357,10 +388,6 @@ export default function Docs() {
             {/* Internal Panel Details */}
             <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover/panel:opacity-100 transition-opacity duration-700" />
             <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none" />
-
-            {/* Singularity background glow */}
-            <div className="absolute -top-64 -right-64 w-[500px] h-[500px] bg-singularity/5 blur-[120px] rounded-full pointer-events-none transition-all duration-1000 group-hover/panel:bg-singularity/10" />
-            <div className="absolute -bottom-64 -left-64 w-[500px] h-[500px] bg-blue-500/5 blur-[120px] rounded-full pointer-events-none" />
 
             <header className="mb-14 relative z-10">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
@@ -381,12 +408,12 @@ export default function Docs() {
 
               <div className="flex items-end justify-between gap-4">
                 <div className="flex-1">
-                  <h1 className="text-5xl md:text-7xl font-black italic tracking-tighter text-white leading-[0.9] mb-6">
+                  <h1 className="text-5xl md:text-7xl font-black italic tracking-tighter text-white leading-[0.9] mb-8">
                     {title}
                   </h1>
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-1 bg-singularity" />
-                    <div className="w-2 h-1 bg-singularity/30" />
+                    <div className="w-16 h-1 bg-gradient-to-r from-singularity to-transparent" />
+                    <div className="w-4 h-1 bg-singularity/20" />
                     <div className="w-1 h-1 bg-singularity/10" />
                   </div>
                 </div>
@@ -395,11 +422,11 @@ export default function Docs() {
                   <button
                     type="button"
                     onClick={() => setTocVisible((v) => !v)}
-                    className="hidden xl:flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-6 py-3 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:bg-white/10 hover:text-white transition-all backdrop-blur-md active:scale-95 group"
+                    className="hidden xl:flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-6 py-3.5 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:bg-white/10 hover:text-white transition-all backdrop-blur-md active:scale-95 group shadow-lg"
                     aria-expanded={tocVisible}
                   >
                     <div
-                      className={`w-1.5 h-1.5 rounded-full transition-all duration-500 ${tocVisible ? 'bg-singularity shadow-[0_0_12px_rgba(0,240,255,1)]' : 'bg-white/20'}`}
+                      className={`w-2 h-2 rounded-full transition-all duration-500 ${tocVisible ? 'bg-singularity shadow-[0_0_15px_rgba(0,240,255,1)] scale-110' : 'bg-white/20'}`}
                     />
                     <span>
                       {tocVisible
@@ -416,20 +443,20 @@ export default function Docs() {
             </header>
 
             {tocItems.length > 0 && (
-              <details className="not-prose mb-10 rounded-xl border border-gray-200 bg-white/50 p-4 text-sm shadow-sm dark:border-gray-800 dark:bg-gray-950/30 xl:hidden">
-                <summary className="cursor-pointer select-none font-semibold text-gray-900 dark:text-gray-100">
-                  {isZh ? '本頁目錄' : 'On this page'}
+              <details className="not-prose mb-12 rounded-2xl border border-white/5 bg-white/[0.03] p-6 text-sm backdrop-blur-xl xl:hidden group/mobile-toc">
+                <summary className="cursor-pointer select-none font-black italic uppercase tracking-widest text-white/60 group-open/mobile-toc:text-singularity transition-colors">
+                  {isZh ? '本頁目錄 / CONTENT' : 'ON THIS PAGE'}
                 </summary>
-                <nav aria-label="Table of contents" className="mt-3">
-                  <ul className="space-y-2">
+                <nav aria-label="Table of contents" className="mt-6">
+                  <ul className="space-y-3">
                     {tocItems.map((item) => {
-                      const indent = item.level === 3 ? 'pl-3' : item.level === 4 ? 'pl-6' : ''
+                      const indent = item.level === 3 ? 'pl-4 border-l border-white/5 ml-1' : item.level === 4 ? 'pl-8 border-l border-white/5 ml-1' : ''
                       return (
                         <li key={item.id} className={indent}>
                           <a
                             href={`#${item.id}`}
                             onClick={(e) => scrollToAnchor(e, item.id)}
-                            className="block rounded-md px-2 py-1.5 leading-snug text-gray-700 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-900/50 dark:hover:text-gray-100"
+                            className="block rounded-lg px-3 py-2 leading-snug text-gray-400 hover:bg-singularity/10 hover:text-singularity transition-all"
                           >
                             {item.text}
                           </a>
@@ -447,14 +474,16 @@ export default function Docs() {
                                 prose prose-invert prose-lg max-w-none
                                 prose-headings:italic prose-headings:tracking-tighter prose-headings:font-black
                                 prose-h1:text-white
-                                prose-h2:text-white prose-h2:border-b prose-h2:border-white/5 prose-h2:pb-4 prose-h2:mt-16
-                                prose-h3:text-white/90
+                                prose-h2:text-4xl prose-h2:text-white prose-h2:border-l-4 prose-h2:border-singularity prose-h2:pl-6 prose-h2:mt-24 prose-h2:mb-10 prose-h2:bg-gradient-to-r prose-h2:from-singularity/5 prose-h2:to-transparent prose-h2:py-4 prose-h2:rounded-r-2xl
+                                prose-h3:text-2xl prose-h3:text-white/90 prose-h3:mt-16 prose-h3:mb-6 prose-h3:flex prose-h3:items-center prose-h3:gap-3
                                 prose-a:font-bold prose-a:text-singularity hover:prose-a:text-cyan-300 transition-colors
+                                prose-p:text-gray-300 prose-p:leading-relaxed prose-p:mb-8 prose-p:font-medium
                                 prose-pre:bg-transparent prose-pre:border-0 prose-pre:rounded-2xl prose-pre:shadow-none
                                 prose-strong:text-white prose-strong:font-black
-                                prose-hr:border-white/5
-                                prose-blockquote:border-singularity prose-blockquote:bg-singularity/5 prose-blockquote:py-1 prose-blockquote:px-6 prose-blockquote:rounded-r-xl
-                                prose-li:text-gray-300
+                                prose-hr:border-white/5 prose-hr:my-20
+                                prose-blockquote:border-singularity prose-blockquote:bg-singularity/5 prose-blockquote:py-2 prose-blockquote:px-8 prose-blockquote:rounded-r-2xl prose-blockquote:italic prose-blockquote:text-gray-300
+                                prose-li:text-gray-300 prose-li:mb-2
+                                prose-img:rounded-[2rem] prose-img:border prose-img:border-white/10 prose-img:shadow-2xl
                                "
               // biome-ignore lint/security/noDangerouslySetInnerHtml: docs markdown is treated as trusted content in this example site
               dangerouslySetInnerHTML={{ __html: content }}
@@ -529,26 +558,30 @@ export default function Docs() {
         </main>
 
         {tocVisible && (
-          <aside className="hidden xl:block xl:w-64 xl:shrink-0">
+          <aside className="hidden xl:block xl:w-72 xl:shrink-0">
             <div className="sticky top-32">
               {tocItems.length > 0 && (
-                <div className="p-6 rounded-3xl bg-white/5 border border-white/5 backdrop-blur-md">
-                  <div className="mb-4 text-xs font-bold uppercase tracking-[0.1em] text-white/60">
-                    {isZh ? '本頁目錄' : 'On this page'}
+                <div className="p-8 rounded-[2rem] bg-white/[0.03] border border-white/5 backdrop-blur-xl shadow-2xl relative overflow-hidden group/toc">
+                  <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-singularity via-transparent to-transparent opacity-20" />
+
+                  <div className="mb-8 text-[10px] font-black uppercase tracking-[0.2em] text-white/40 flex items-center gap-3">
+                    <div className="w-8 h-[1px] bg-white/10" />
+                    {isZh ? '本頁內容' : 'CONTENTS'}
                   </div>
+
                   <nav aria-label="Table of contents">
-                    <ul className="space-y-4">
+                    <ul className="space-y-1">
                       {tocItems.map((item) => {
                         const isActive = activeId === item.id
                         const indent = item.level === 3 ? 'pl-4' : item.level === 4 ? 'pl-8' : ''
                         return (
-                          <li key={item.id} className={`${indent} relative`}>
+                          <li key={item.id} className={`${indent} relative group/toc-item`}>
                             <a
                               href={`#${item.id}`}
                               onClick={(e) => scrollToAnchor(e, item.id)}
-                              className={`block text-[13px] leading-relaxed transition-all duration-300 ${isActive
-                                ? 'text-singularity font-black tracking-tight translate-x-1'
-                                : 'text-gray-400 hover:text-white'
+                              className={`block py-2 text-[13px] transition-all duration-500 rounded-lg px-3 ${isActive
+                                ? 'text-singularity font-black bg-singularity/5'
+                                : 'text-gray-500 hover:text-white hover:bg-white/5'
                                 }`}
                             >
                               {item.text}
@@ -556,7 +589,7 @@ export default function Docs() {
                             {isActive && (
                               <motion.div
                                 layoutId="toc-active"
-                                className="absolute -left-4 top-1/2 -translate-y-1/2 w-2 h-2 bg-singularity rounded-full shadow-[0_0_15px_rgba(0,240,255,1)]"
+                                className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-4 bg-singularity rounded-full shadow-[0_0_15px_rgba(0,240,255,1)]"
                                 transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                               />
                             )}
