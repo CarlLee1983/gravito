@@ -62,20 +62,11 @@ const core = await PlanetCore.boot({
 export default core.liftoff() // 點火升空
 ```
 
-### 2. 動力模組 (1.0 Kinetic Modules)
+### 2. 動力模組 (Kinetic Modules)
 
-目前 1.0 版本提供以下穩定動力模組：
+這些模組以外掛化方式擴展核心功能。為了解耦與效能，核心不包含任何業務邏輯，所有的功能（如資料庫、身份驗證、前端橋接）都由動力模組提供。
 
-- **`@gravito/ion`**：全棧橋接器，實現「後端 MVC，前端 SPA」的極致開發體驗。
-- **`@gravito/luminosity`**：智慧型 SmartMap 引擎與 Meta 標籤自動化管理。
-- **`@gravito/sentinel`**：提供安全穩固的身份驗證與授權系統。
-- **`@gravito/prism`**：極致影像優化的樣板渲染引擎。
-- **`@gravito/cosmos`**：企業級國際化解決方案。
-- **`@gravito/constellation`**：自動化 Sitemap 與搜尋引擎優化工具。
-- **`@gravito/pulse`**：自動化骨架生成與生產力工具。
-
-> **Roadmap (v1.5 預計發佈)**: 
-> `資料庫` (@gravito/atlas), `Mail` (@gravito/signal), `Queue` (@gravito/kinetic), `Scheduler` (@gravito/chronon).
+> 了解更多：[動力生態系 (Kinetic Ecosystem)](./ecosystem.md)
 
 ### 3. Satellites (業務衛星)
 

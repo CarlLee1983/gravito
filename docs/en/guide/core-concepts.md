@@ -64,20 +64,11 @@ const core = await PlanetCore.boot({
 export default core.liftoff() // Ignition for liftoff
 ```
 
-### 2. Kinetic Modules (v1.0)
+### 2. Kinetic Modules
 
-The initial v1.0 release focuses on these stable modules:
+These modules extend the core functionalities in a plug-in manner. For decoupling and performance, the core does not contain any business logic; all functionalities (such as database, authentication, full-stack bridging) are provided by kinetic modules.
 
-- **`@gravito/ion`**: The full-stack bridge, enabling "Backend MVC, Frontend SPA" productivity.
-- **`@gravito/luminosity`**: SmartMap indexing engine and automated Meta tag management.
-- **`@gravito/sentinel`**: Secure and robust authentication and authorization system.
-- **`@gravito/prism`**: Template rendering engine with extreme image optimization.
-- **`@gravito/cosmos`**: Enterprise-grade internationalization solution.
-- **`@gravito/constellation`**: Automated sitemap and search engine optimization tools.
-- **`@gravito/pulse`**: Automated scaffolding and productivity commands.
-
-> **Roadmap (Scheduled for v1.5 Release)**: 
-> `Database` (@gravito/atlas), `Mail` (@gravito/signal), `Queue` (@gravito/kinetic), `Scheduler` (@gravito/chronon).
+> Learn more: [Kinetic Ecosystem](./ecosystem.md)
 
 ### 3. Satellites (Business Logic)
 
