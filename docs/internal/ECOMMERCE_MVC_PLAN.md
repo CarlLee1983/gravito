@@ -178,3 +178,66 @@
 - Vue Email 模板使用方式（render pipeline）
 - SPA 路由對應 MVC 控制器邊界
 - 購物車資料要存 DB 或 Cache（或混合）
+
+---
+
+## 10) 自家 Queue API 介面假想（Draft）
+
+> 以下為規劃中的 API 方向，用於對齊使用方式與責任邊界，實作時可調整。
+
+### Queue Producer（App 端）
+- `queue.publish(topic, payload, options?)`
+- `queue.delay(ms)`（optional）
+- `queue.retry(count)`（optional）
+
+### Queue Consumer（Worker 端）
+- `queue.subscribe(topic, handler)`
+- `queue.ack(job)` / `queue.nack(job)`
+- `queue.concurrency(n)`
+
+### 範例流程（概念）
+1. 訂單建立後 `publish('mail.order.created', payload)`
+2. Worker 透過 `subscribe` 消費並寄信
+3. 成功 `ack`，失敗 `retry` 或 `nack`
+
+---
+
+## 11) Vue Email Render 流程草案（Draft）
+
+### 目標
+- 以 Vue 組件作為 Email Template
+- 在 Worker 端產出 HTML 字串並寄送
+
+### 流程概念
+1. 建立 `OrderEmail.vue` 組件（接收 `order` 資料）
+2. Worker 取得訂單資料後，將組件 render 成 HTML
+3. 交給 `@gravito/flare` 寄送
+
+### 示意（非實作）
+- `renderEmail(Component, props) -> html`
+- `mailer.send({ to, subject, html })`
+
+---
+
+## 12) 訪客購物車合併策略（建議）
+
+### 方案 A：全走 DB（簡單一致）
+- 訪客以 `sessionId` 建立 Cart 記錄（DB）
+- 登入後把 `sessionId` 的 Cart 合併到 `userId` Cart
+- 優點：一致性高、可追蹤、易除錯
+- 缺點：訪客流量大時 DB 負擔增加
+
+### 方案 B：訪客走 Cache，登入才進 DB（效能優先）
+- 訪客以 `sessionId` 存在 Cache（Redis）
+- 登入後讀取 Cache → 合併到 DB → 清除 Cache
+- 優點：訪客流量大時效能佳
+- 缺點：需要 Cache 失效/續期策略
+
+### 方案 C：混合（建議）
+- 訪客優先 Cache，達到條件才落 DB
+- 例如：加入商品數量達門檻或即將結帳時落 DB
+
+### 合併規則（建議）
+- 同商品 + 同規格 → 累加數量
+- 不同規格 → 新增項目
+- 合併後以「登入購物車」為主，訪客購物車清除

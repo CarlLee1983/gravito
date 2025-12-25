@@ -39,7 +39,7 @@ class SharedSimulatedCache implements CacheProvider {
     }
   }
 
-  async set(key: string, value: any, ttlSeconds?: number): Promise<void> {
+  async set(key: string, value: unknown, ttlSeconds?: number): Promise<void> {
     const expires = Date.now() + (ttlSeconds || 3600) * 1000
     const path = this.getPath(key)
     writeFileSync(path, JSON.stringify({ value, expires }))

@@ -1,30 +1,4 @@
-/**
- * Seeder Interface
- * @description Contract for database seeder classes
- */
-
-/**
- * Seeder Interface
- * All seeder classes must implement this interface
- *
- * @example
- * ```typescript
- * export default class UserSeeder implements Seeder {
- *   async run(): Promise<void> {
- *     await DB.table('users').insert([
- *       { name: 'Admin', email: 'admin@example.com' },
- *       { name: 'User', email: 'user@example.com' },
- *     ])
- *   }
- * }
- * ```
- */
-export interface Seeder {
-  /**
-   * Run the seeder
-   */
-  run(): Promise<void>
-}
+import type { Model } from '../orm/model/Model'
 
 /**
  * Seeder constructor type
@@ -39,4 +13,27 @@ export interface SeederFile {
   name: string
   /** Full file path */
   path: string
+}
+
+/**
+ * Base Seeder Class
+ * @description All database seeders should extend this class
+ */
+export abstract class Seeder {
+  /**
+   * Run the seeder logic
+   */
+  abstract run(): Promise<void>
+
+  /**
+   * Run other seeders from within this seeder
+   * @example await this.call([UserSeeder, PostSeeder])
+   */
+  async call(seeders: SeederConstructor | SeederConstructor[]): Promise<void> {
+    const list = Array.isArray(seeders) ? seeders : [seeders]
+    for (const SeederClass of list) {
+      const instance = new SeederClass()
+      await instance.run()
+    }
+  }
 }

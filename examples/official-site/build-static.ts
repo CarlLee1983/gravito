@@ -4,6 +4,7 @@ import { dirname, join, resolve } from 'node:path'
 import { promisify } from 'node:util'
 import { generateI18nEntries, SitemapStream } from '@gravito/constellation'
 import { Glob } from 'bun'
+import type { Hono } from 'hono'
 import { bootstrap } from './src/bootstrap.ts'
 
 console.log('🏗️  Starting SSG Build for gravito.dev...')
@@ -50,6 +51,9 @@ async function build() {
   const glob = new Glob('en/**/*.md')
   for await (const file of glob.scan(docsRoot)) {
     const slug = file.replace(/^en\//, '').replace(/\.md$/, '')
+    if (slug === 'guide/laravel-12-mvc-parity') {
+      continue
+    }
     routes.add(`/docs/${slug}`)
   }
 
@@ -61,22 +65,22 @@ async function build() {
   console.log(`Render: / (Root Default)`)
   console.log('🌐 Making request to root path...')
   try {
-    const res = await (core.app as any).request('/')
+    const res = await (core.app as Hono).request('/')
     console.log(`📡 Response status: ${res.status}`)
     if (res.status === 200) {
       const gaId = process.env.VITE_GA_ID
       const html = await res.text()
       const finalHtml = gaId
         ? html.replace(
-            '<!-- Google Analytics Placeholder -->',
-            `<script async src="https://www.googletagmanager.com/gtag/js?id=${gaId}"></script>
+          '<!-- Google Analytics Placeholder -->',
+          `<script async src="https://www.googletagmanager.com/gtag/js?id=${gaId}"></script>
              <script>
                window.dataLayer = window.dataLayer || [];
                function gtag(){dataLayer.push(arguments);}
                gtag('js', new Date());
                gtag('config', '${gaId}');
              </script>`
-          )
+        )
         : html
 
       const indexPath = join(outputDir, 'index.html')
@@ -118,7 +122,7 @@ async function build() {
       console.log(`Render: ${pathname}`)
 
       try {
-        const res = await (core.app as any).request(pathname)
+        const res = await (core.app as Hono).request(pathname)
         if (res.status !== 200) {
           if (res.status === 302 || res.status === 301) {
             const location = res.headers.get('Location')
@@ -137,15 +141,15 @@ async function build() {
         const html = await res.text()
         const finalHtml = gaId
           ? html.replace(
-              '<!-- Google Analytics Placeholder -->',
-              `<script async src="https://www.googletagmanager.com/gtag/js?id=${gaId}"></script>
+            '<!-- Google Analytics Placeholder -->',
+            `<script async src="https://www.googletagmanager.com/gtag/js?id=${gaId}"></script>
              <script>
                window.dataLayer = window.dataLayer || [];
                function gtag(){dataLayer.push(arguments);}
                gtag('js', new Date());
                gtag('config', '${gaId}');
              </script>`
-            )
+          )
           : html
 
         // For paths like /en/docs/foo, we save to en/docs/foo/index.html
@@ -184,7 +188,7 @@ async function build() {
   // 4. Fetch dynamic robots.txt
   console.log('🤖 Fetching robots.txt...')
   try {
-    const res = await (core.app as any).request('/robots.txt')
+    const res = await (core.app as Hono).request('/robots.txt')
     if (res.status === 200) {
       const content = await res.text()
       await writeFile(join(outputDir, 'robots.txt'), content)
@@ -202,7 +206,7 @@ async function build() {
   console.log('🚫 Generating 404.html...')
   try {
     // Request a known non-existent route to trigger the 404 hook
-    const res = await (core.app as any).request(`/__force_404_generation_${Date.now()}__`)
+    const res = await (core.app as Hono).request(`/__force_404_generation_${Date.now()}__`)
     let html = await res.text()
 
     // For GitHub Pages SPA support, we need to add a script that:

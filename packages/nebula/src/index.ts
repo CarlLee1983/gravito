@@ -1,6 +1,6 @@
 import { mkdir } from 'node:fs/promises'
 import { join } from 'node:path'
-import type { GravitoOrbit, PlanetCore } from 'gravito-core'
+import type { GravitoContext, GravitoNext, GravitoOrbit, PlanetCore } from 'gravito-core'
 
 export interface StorageProvider {
   put(key: string, data: Blob | Buffer | string): Promise<void>
@@ -154,7 +154,7 @@ export class OrbitNebula implements GravitoOrbit {
     }
 
     // Inject helper into context
-    core.adapter.use('*', async (c: any, next: any) => {
+    core.adapter.use('*', async (c: GravitoContext, next: GravitoNext) => {
       c.set(exposeAs, storageService)
       await next()
       return undefined

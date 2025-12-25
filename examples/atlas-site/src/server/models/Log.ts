@@ -6,7 +6,7 @@ export default class Log extends Model {
   static override primaryKey = '_id'
 
   @column({ isPrimary: true })
-  declare _id: any
+  declare _id: string | number
 
   @column()
   declare level: string
@@ -15,7 +15,7 @@ export default class Log extends Model {
   declare message: string
 
   @column()
-  declare context?: any
+  declare context?: Record<string, unknown> | null
 
   @column()
   declare created_at?: Date

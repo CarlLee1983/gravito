@@ -6,7 +6,7 @@ export class TinkerCommand extends Command {
   signature = 'tinker'
   description = 'Interactive shell to experiment with your database'
 
-  async handle(_args: Record<string, any>): Promise<void> {
+  async handle(_args: Record<string, unknown>): Promise<void> {
     console.log('🌌 Orbit Tinker - Interactive Database Shell')
     console.log('Type "exit" to quit. All @gravito/atlas exports are pre-loaded.\n')
 
@@ -37,8 +37,9 @@ export class TinkerCommand extends Command {
         if (result !== undefined) {
           console.log(result)
         }
-      } catch (e: any) {
-        console.error('Error:', e.message)
+      } catch (e: unknown) {
+        const error = e as Error
+        console.error('Error:', error.message)
       }
       rl.prompt()
     }

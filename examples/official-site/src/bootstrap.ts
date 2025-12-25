@@ -3,6 +3,7 @@ import { OrbitIon } from '@gravito/ion'
 import { OrbitPrism } from '@gravito/prism'
 import { OrbitCache } from '@gravito/stasis'
 import { defineConfig, GravitoAdapter, PlanetCore } from 'gravito-core'
+import type { Hono } from 'hono'
 import { serveStatic } from 'hono/bun'
 import { registerHooks } from './hooks'
 import { registerRoutes } from './routes'
@@ -35,7 +36,7 @@ export async function bootstrap(options: AppConfig = {}): Promise<PlanetCore> {
   core.registerGlobalErrorHandlers()
 
   // 3. Static files
-  const app = core.app as any
+  const app = core.app as Hono
   const staticPath = join(import.meta.dirname, '../static/favicon.ico')
   app.get('/favicon.ico', serveStatic({ path: staticPath }))
   app.use('/static/*', serveStatic({ root: './' }))

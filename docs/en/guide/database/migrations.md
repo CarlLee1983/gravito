@@ -1,79 +1,92 @@
 # Database Migrations
 
-Migrations are like version control for your database, allowing your team to define and share the application's database schema definition. If you have ever had to tell a teammate to manually add a column to their local database schema, you've faced the problem that database migrations solve.
-
-## Introduction
-
-Gravito provides a robust migration system via its `Pulse` CLI and `Atlas` ORM. Migrations are typically stored in the `database/migrations` directory.
+Migrations are like version control for your database, allowing your team to modify and share the application's database schema.
 
 ## Generating Migrations
 
-To create a new migration, use the `make:migration` command using Pulse.
+Use the `orbit` CLI to create a new migration:
 
 ```bash
-bun pulse make:migration create_users_table
+bun orbit make:migration create_users_table
 ```
 
-This will create a new file in `database/migrations` with a timestamp prefix, ensuring they run in the correct order.
+The new migration will be placed in your `database/migrations` directory.
 
 ## Migration Structure
 
-A migration class contains two methods: `up` and `down`. The `up` method is used to add new tables, columns, or indexes to your database, while the `down` method should reverse the operations performed by the `up` method.
+A migration contains a `Blueprint` that defines the table structure:
 
 ```typescript
-import { Migration, Schema, Blueprint } from '@gravito/atlas';
+import { Migration, Blueprint, Schema } from '@gravito/atlas';
 
 export default class CreateUsersTable extends Migration {
-  /**
-   * Run the migrations.
-   */
-  public async up(): Promise<void> {
+  async up() {
     await Schema.create('users', (table: Blueprint) => {
       table.id();
       table.string('name');
       table.string('email').unique();
+      table.timestamp('email_verified_at').nullable();
       table.string('password');
-      table.timestamps(); // Creates createdAt and updatedAt
+      table.timestamps();
     });
   }
 
-  /**
-   * Reverse the migrations.
-   */
-  public async down(): Promise<void> {
+  async down() {
     await Schema.dropIfExists('users');
   }
 }
 ```
 
-::: warning MongoDB Note
-Since MongoDB is schema-less, migrations are often used for data transformation or creating indexes, rather than defining rigid table structures. However, `Schema.create` is still useful for setting up initial validation rules or indexes if the driver supports it.
-:::
+## Available Column Types
+
+The database blueprint offers a wide variety of column types:
+
+| Method | Description |
+| --- | --- |
+| `table.id()` | Alias for `bigIncrements('id')`. |
+| `table.string('name', 255)` | VARCHAR equivalent. |
+| `table.text('description')` | TEXT equivalent. |
+| `table.integer('age')` | INTEGER equivalent. |
+| `table.boolean('is_active')` | BOOLEAN equivalent. |
+| `table.decimal('price', 8, 2)` | DECIMAL with precision and scale. |
+| `table.json('options')` | JSON column. |
+| `table.uuid('uid')` | UUID column. |
+| `table.timestamps()` | Adds `created_at` and `updated_at`. |
+
+## Column Modifiers
+
+You can chain modifiers to columns:
+
+```typescript
+table.string('email').nullable();
+table.string('role').default('user');
+table.string('username').unique();
+```
+
+## Indexes & Foreign Keys
+
+### Creating Indexes
+```typescript
+table.index(['email', 'status']);
+table.unique('slug');
+```
+
+### Foreign Key Constraints
+```typescript
+table.bigInteger('user_id').unsigned();
+table.foreign('user_id').references('id').on('users').onDelete('cascade');
+```
 
 ## Running Migrations
 
-To run all of your outstanding migrations, execute the `migrate` command:
+To run all pending migrations, use the `migrate` command:
 
 ```bash
-bun pulse migrate
+bun orbit migrate
 ```
 
-## Rolling Back Migrations
-
-To rollback the latest migration operation:
+To rollback the last batch of migrations:
 
 ```bash
-bun pulse migrate:rollback
-```
-
-To reset the database (rollback all migrations):
-
-```bash
-bun pulse migrate:reset
-```
-
-To refresh the database (rollback all and re-run, useful for development):
-
-```bash
-bun pulse migrate:refresh
+bun orbit migrate:rollback
 ```

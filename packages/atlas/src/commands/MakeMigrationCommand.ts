@@ -6,7 +6,7 @@ export class MakeMigrationCommand extends Command {
   signature = 'make:migration <name>'
   description = 'Create a new migration file'
 
-  async handle(args: Record<string, any>): Promise<void> {
+  async handle(args: Record<string, unknown>): Promise<void> {
     const name = args.name
     const path = args.path || 'database/migrations'
 

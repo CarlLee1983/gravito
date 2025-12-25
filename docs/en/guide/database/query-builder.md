@@ -1,113 +1,201 @@
 # Query Builder
 
-Atlas provides a fluent query builder that allows you to construct complex database queries without writing raw SQL or Mongo query objects. It provides a unified interface across different drivers.
-
-## Basic Where Clauses
-
-### `where`
-
-The most basic call is `where`. It accepts a field, an operator (optional), and a value.
-
-```typescript
-// Implicit '=' operator
-const users = await User.where('role', 'admin').get();
-
-// Explicit operator
-const activeUsers = await User.where('logins', '>=', 5).get();
-
-// Nested keys (Driver permitting)
-const users = await User.where('meta.is_subscribed', true).get();
-```
-
-### `orWhere`
-
-To add an `OR` condition, use `orWhere`.
-
-```typescript
-// role = 'admin' OR role = 'moderator'
-const staff = await User.where('role', 'admin')
-                        .orWhere('role', 'moderator')
-                        .get();
-```
-
-### `whereIn` / `whereNotIn`
-
-Check if a column's value is contained within a given array.
-
-```typescript
-const users = await User.whereIn('id', [1, 2, 3]).get();
-```
-
-## Ordering and Pagination
-
-### `orderBy`
-
-Sort the results by a given column. The second argument controls direction (`asc` or `desc`).
-
-```typescript
-const newestUsers = await User.orderBy('createdAt', 'desc').get();
-```
-
-### `skip` and `take` (Offset / Limit)
-
-```typescript
-// Get 10 users, skipping the first 5
-const users = await User.skip(5).take(10).get();
-```
+Atlas provides a fluent, driver-agnostic query builder that allows you to construct complex database queries with ease. It supports SQL (PostgreSQL, MySQL, SQLite) and NoSQL (MongoDB) through a unified interface.
 
 ## Retrieving Results
 
 ### `get()`
-
-Executes the query and returns an array of model instances.
-
+The `get` method returns an array of results. When used on a model, it returns an array of model instances.
 ```typescript
-const users = await User.where('active', true).get();
+const users = await User
+  .where('active', true)
+  .get();
 ```
 
 ### `first()`
-
-Executes the query and returns the first matching model instance, or `null`.
-
+If you only need a single row, use `first`.
 ```typescript
-const user = await User.where('email', 'foo@bar.com').first();
+const user = await User
+  .where('email', 'alice@example.com')
+  .first();
 ```
 
-### `count()`
+### `pluck()`
+If you want to retrieve an array containing the values of a single column:
+```typescript
+const titles = await Post.pluck('title'); // ['Hello World', 'Atlas Guide', ...]
+```
 
-Returns the integer count of matching records.
+### `count()` / `max()` / `min()` / `avg()` / `sum()`
+```typescript
+const count = await User.count();
+const maxPrice = await Product.max('price');
+```
+
+## Select Clauses
+
+### `select()`
+Specify which columns to retrieve:
+```typescript
+const users = await User
+  .select('name', 'email as user_email')
+  .get();
+```
+
+### `distinct()`
+```typescript
+const roles = await User.distinct().pluck('role');
+```
+
+## Joins (SQL Drivers)
+
+Atlas supports various join types for SQL databases.
+
+### Inner Join
+```typescript
+const users = await User.query()
+  .join('contacts', 'users.id', '=', 'contacts.user_id')
+  .select('users.*', 'contacts.phone')
+  .get();
+```
+
+### Left / Right Join
+```typescript
+const users = await User
+  .leftJoin('posts', 'users.id', '=', 'posts.author_id')
+  .get();
+```
+
+## Advanced Where Clauses
+
+### Basic Wheres
+```typescript
+// Implicit '='
+const users = await User.where('votes', 100).get();
+
+// Explicit operator
+const users = await User.where('votes', '>=', 100).get();
+```
+
+### Logical Groups (Or Statements)
+```typescript
+const users = await User
+  .where('votes', '>', 100)
+  .orWhere('name', 'John')
+  .get();
+```
+
+### JSON Where Clauses
+If your database supports JSON (PostgreSQL, MySQL, MongoDB), you can query nested properties:
+```typescript
+const users = await User.where('options.language', 'en').get();
+```
+
+### `whereIn` / `whereNull` / `whereBetween`
+```typescript
+const users = await User.whereIn('id', [1, 2, 3]).get();
+const pending = await Task.whereNull('completed_at').get();
+const range = await User
+  .whereBetween('votes', [1, 100])
+  .get();
+```
+
+## Ordering, Grouping, Limit & Offset
+
+### `orderBy()`
+```typescript
+const users = await User
+  .orderBy('name', 'desc')
+  .get();
+```
+
+### `latest()` / `oldest()`
+Convenience methods for `orderBy('created_at', 'desc')`:
+```typescript
+const user = await User.latest().first();
+```
+
+### `groupBy()` / `having()`
+```typescript
+const stats = await User
+  .groupBy('account_id')
+  .having('count', '>', 5)
+  .get();
+```
+
+### `skip()` / `take()`
+```typescript
+const users = await User
+  .skip(10)
+  .take(5)
+  .get();
+```
+
+## Aggregates
+
+The query builder also provides a variety of methods for retrieving aggregate values:
 
 ```typescript
 const count = await User.where('active', true).count();
+const price = await DB.table('orders').max('price');
+const average = await DB.table('users').avg('age');
 ```
 
-### `exists()`
+## Raw Expressions
 
-Returns `true` if any records match the query.
+Sometimes you may need to use a raw expression in a query. These expressions will be injected into the query as strings, so be careful not to create any SQL injection vulnerabilities:
 
 ```typescript
-if (await User.where('email', email).exists()) {
-    // ...
-}
+const users = await User
+    .select(DB.raw('count(*) as user_count, status'))
+    .where('status', '<>', 1)
+    .groupBy('status')
+    .get();
 ```
 
-## Advanced Clauses
+## Chunking Results
 
-### `whereNull` / `whereNotNull`
+If you need to work with thousands of database records, consider using the `chunk` method. This method retrieves a small chunk of results at a time and feeds each chunk into a closure for processing:
 
 ```typescript
-const incomplete = await Task.whereNull('completedAt').get();
+await User.query().chunk(100, async (users) => {
+    for (const user of users) {
+        // Process user...
+    }
+});
 ```
 
-### `whereDate` (Coming Soon)
-
-Driver-specificdate comparisons.
-
-## Raw Queries
-
-If you need to bypass the builder, you can often access the underlying driver instance, though this breaks driver agnosticism.
+You may stop further chunks from being processed by returning `false` from the closure:
 
 ```typescript
-// Specific to MongoDB driver usage if exposed
-await User.collection.aggregate([...]); 
+await User.query().chunk(100, async (users) => {
+  // Process records...
+  return false; // Stop processing
+});
+```
+
+## Inserts, Updates & Deletes
+
+### `insert()`
+```typescript
+await DB.table('users').insert([
+  { email: 'kayla@example.com', votes: 0 },
+  { email: 'taylor@example.com', votes: 0 }
+]);
+```
+
+### `update()`
+```typescript
+await User.where('id', 1).update({ votes: 1 });
+```
+
+### `increment` & `decrement`
+```typescript
+await User.where('id', 1).increment('votes');
+await User.where('id', 1).decrement('votes', 5);
+```
+
+### `delete()`
+```typescript
+await User.where('votes', '<', 50).delete();
 ```

@@ -7,8 +7,7 @@ import type {
 import { BunRequest } from './BunRequest'
 
 export class BunContext<V extends GravitoVariables = GravitoVariables>
-  implements GravitoContext<V>
-{
+  implements GravitoContext<V> {
   // Request wrapper
   public readonly req: BunRequest
 
@@ -123,6 +122,22 @@ export class BunContext<V extends GravitoVariables = GravitoVariables>
       headers: this._headers,
     })
     return this.res
+  }
+
+  notFound(message?: string): Response {
+    return this.text(message ?? 'Not Found', 404 as 200)
+  }
+
+  forbidden(message?: string): Response {
+    return this.text(message ?? 'Forbidden', 403 as 200)
+  }
+
+  unauthorized(message?: string): Response {
+    return this.text(message ?? 'Unauthorized', 401 as 200)
+  }
+
+  badRequest(message?: string): Response {
+    return this.text(message ?? 'Bad Request', 400 as 200)
   }
 
   // Headers

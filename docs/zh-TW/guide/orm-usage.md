@@ -13,7 +13,7 @@ title: ORM 使用指南
 3. [使用 Model 類別（優雅方式）](#使用-model-類別優雅方式)
 4. [CRUD 操作](#crud-操作)
 5. [關聯查詢](#關聯查詢)
-6. [交易操作](#交易操作)
+6. [事務操作](#事務操作)
 7. [批量操作](#批量操作)
 8. [遷移和 Seeder](#遷移和-seeder)
 9. [部署](#部署)
@@ -907,13 +907,13 @@ const user = await db.raw.query.users.findFirst({
 });
 ```
 
-## 交易操作
+## 事務操作
 
-### 基本交易
+### 基本事務
 
 ```typescript
 const result = await db.transaction(async (tx) => {
-  // 在交易中執行多個操作
+  // 在事務中執行多個操作
   const user = await tx.insert(users).values({
     name: 'John',
     email: 'john@example.com',
@@ -928,19 +928,62 @@ const result = await db.transaction(async (tx) => {
 });
 ```
 
-### 交易中的錯誤處理
+### 事務中的錯誤處理
 
 ```typescript
 try {
   const result = await db.transaction(async (tx) => {
-    // 如果任何操作失敗，整個交易會自動回滾
+    // 如果任何操作失敗，整個事務會自動回滾
     await tx.insert(users).values({ name: 'John' });
     await tx.insert(posts).values({ userId: 1, title: 'Post' });
   });
 } catch (error) {
-  // 處理錯誤，交易已自動回滾
+  // 處理錯誤，事務已自動回滾
   console.error('Transaction failed:', error);
 }
+```
+
+### 原子性與一致性（為何需要事務）
+
+事務可以確保多筆操作要嘛全部成功、要嘛全部回滾，避免資料出現不一致。適用情境例如：
+
+- 訂單建立 + 付款狀態更新
+- 庫存扣減 + 訂單明細建立
+- 使用者 + 個人資料建立
+
+### 隔離性與併發（現代 RDBMS 實務）
+
+降低死結與競爭風險的做法：
+
+- **事務越短越好**，避免在事務內做外部呼叫（HTTP、寄信）。
+- **固定寫入順序**（多表寫入時順序一致）以降低鎖衝突。
+- 針對高併發資料可用**樂觀鎖**（例如 version 欄位）。
+- 重要扣庫存或餘額更新，可使用**列級鎖**（如 `FOR UPDATE`），視驅動支援度而定。
+
+### 針對暫時性錯誤的重試策略
+
+高隔離層級在高併發下可能出現死結或序列化衝突，建議對關鍵事務加入重試與退避。
+
+### 關聯式完整性與約束
+
+用資料庫約束在底層把關資料正確性：
+
+- **外鍵**與 `onDelete`/`onUpdate` 規則
+- **唯一約束**（例如訂單編號）
+- **檢查約束**（限制欄位範圍）
+
+範例（Schema 層約束）：
+
+```typescript
+import { pgTable, serial, text, integer } from 'drizzle-orm/pg-core';
+
+export const orders = pgTable('orders', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  orderNo: text('order_no').notNull().unique(),
+});
 ```
 
 ## 批量操作
@@ -958,7 +1001,7 @@ const newUsers = await db.bulkInsert(users, [
 ### 批量更新
 
 ```typescript
-// 批量更新（在交易中執行）
+// 批量更新（在事務中執行）
 const updatedUsers = await db.bulkUpdate(users, [
   { where: { id: 1 }, data: { name: 'User 1 Updated' } },
   { where: { id: 2 }, data: { name: 'User 2 Updated' } },
@@ -968,7 +1011,7 @@ const updatedUsers = await db.bulkUpdate(users, [
 ### 批量刪除
 
 ```typescript
-// 批量刪除（在交易中執行）
+// 批量刪除（在事務中執行）
 await db.bulkDelete(users, [
   { id: 1 },
   { id: 2 },
@@ -1081,10 +1124,10 @@ try {
 }
 ```
 
-### 3. 使用交易處理複雜操作
+### 3. 使用事務處理複雜操作
 
 ```typescript
-// 複雜操作應該在交易中執行
+// 複雜操作應該在事務中執行
 const result = await db.transaction(async (tx) => {
   const user = await tx.insert(users).values({ name: 'John' }).returning();
   const profile = await tx.insert(profiles).values({ userId: user[0].id }).returning();
@@ -1144,7 +1187,7 @@ core.hooks.addAction('db:query', ({ query, duration, timestamp }) => {
   }
 });
 
-// 監控交易
+// 監控事務
 core.hooks.addAction('db:transaction:start', ({ transactionId }) => {
   console.log(`Transaction started: ${transactionId}`);
 });
@@ -1269,7 +1312,7 @@ Atlas 提供了完整的 ORM 功能：
 
 -  **完整的 CRUD 操作** - 所有基本資料庫操作
 -  **關聯查詢** - 支援巢狀關聯查詢
--  **交易支援** - 完整的事務處理
+-  **事務支援** - 完整的事務處理
 -  **批量操作** - 高效的批量處理
 -  **遷移和 Seeder** - 資料庫版本管理
 -  **部署支援** - 自動化部署流程

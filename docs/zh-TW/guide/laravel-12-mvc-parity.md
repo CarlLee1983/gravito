@@ -74,9 +74,9 @@ title: Laravel 12 MVC 對齊程度
 
 | 功能 | 狀態 | 說明 |
 |------|------|------|
-| FormRequest 風格驗證 | 已實作 | 支援 Zod + Valibot |
+| FormRequest 風格驗證 | 已實作 | `@gravito/mass` 提供高效能的 TypeBox 驗證。 |
 | FormRequest 內建授權檢查 | 已實作 | 會回傳 403 或透過 middleware helper 丟出 `AuthorizationException` |
-| 自訂訊息與 i18n 擴充點 | 部分 | Message provider 已具備；仍需更完整的整合文件與範例 |
+| 自訂訊息與 i18n 擴充點 | 已實作 | 已整合 `@gravito/cosmos` 與 `@gravito/mass`。 |
 | Laravel rule 生態（Rules） | 缺少 | 需要共用 rule contract 與 registry |
 
 ### Views / 前端整合
@@ -94,11 +94,11 @@ title: Laravel 12 MVC 對齊程度
 |------|------|------|
 | Migrations（apply/status/fresh） | 已實作 | `gravito migrate` (基於 `drizzle-kit migrate`) |
 | Seeder 執行 | 已實作 | `gravito db:seed` |
-| Active Record 風格 Model | 部分 | `Model` 具備 CRUD、關聯、Scopes |
-| 關聯 (Relations) | 部分 | 支援常見關聯 |
-| Model factories | 缺少 | 尚無標準化 factory 系統 |
+| Active Record 風格 Model | 已實作 | `Model` 具備 CRUD、關聯、Scopes 與 Proxy-based Smart Guard |
+| 關聯 (Relations) | 已實作 | 支援 HasOne, HasMany, BelongsTo, BelongsToMany 與多型關聯 |
+| Model factories | 已實作 | 透過 `@gravito/atlas` 的 `Factory` 提供強大的測試數據生成。 |
 | Soft deletes | 已實作 | `withTrashed()`, `onlyTrashed()`, `restore()` |
-| 多型關聯 (Polymorphic relations) | 已實作 | `morphTo`, `morphMany`, `morphOne` |
+| 多型關聯 (Polymorphic relations) | 已實作 | `@MorphTo()`, `@MorphOne()`, `@MorphMany()` 支援彈性的數據結構 |
 | 分頁 helpers | 已實作 | `Paginator` 類別 + `Model.paginate()` |
 
 ### 認證 / 授權
@@ -109,9 +109,8 @@ title: Laravel 12 MVC 對齊程度
 | Auth middleware（`auth`、`guest`） | 已實作 | |
 | Gates / abilities | 已實作 | `Gate.define()` + `authorize()` |
 | Policies | 部分 | 支援手動 mapping |
-| 密碼重設 / 信箱驗證 | 缺少 | 需要設計 |
-| 密碼雜湊（bcrypt/argon）服務 | 已實作 | `core.hasher` (透過 `Bun.password`) |
 | 密碼重設 / 信箱驗證 | 部分 | 提供 primitives（`PasswordBroker`、`EmailVerificationService`） |
+| 密碼雜湊（bcrypt/argon）服務 | 已實作 | `core.hasher` (透過 `Bun.password`) |
 
 ### 佇列 / 排程
 
@@ -153,7 +152,7 @@ title: Laravel 12 MVC 對齊程度
 |------|------|------|
 | CLI（Artisan-like） | 部分 | `route:list`、`tinker`、migrations；scaffolding 較少 |
 | App skeleton/templates | 已實作 | `templates/*` |
-| HTTP 測試 helper | 缺少 | 尚無 Laravel `TestResponse` 類似工具 |
+| HTTP 測試 helper | 已實作 | 提供 `HttpTester` 與 `TestResponse` (Laravel 風格) |
 | Mail/Notification fakes | 缺少 | 需要 test doubles + contracts |
 
 ## Roadmap 建議（往 Laravel 風格完整度前進）
@@ -161,7 +160,8 @@ title: Laravel 12 MVC 對齊程度
 ### P1（補齊 Eloquent/Laravel 的常用體驗）
 
 - Resource routes 與 route model binding 已實作；route cache 以命名路由清單（manifest）形式提供。
-- Pagination helpers 與 soft deletes 已實作；剩餘缺口主要在 factories、polymorphic relations，以及更完整的 Eloquent-like 體驗。
+- Pagination helpers、Soft Deletes 與多型關聯（Polymorphic Relations）已實作。
+- HTTP 測試工具（TestResponse）已實作。
 - Auth hashing 已實作；密碼重設/信箱驗證仍需端到端 app 工作流程（mail + persistence + 預設 controllers）。
 
 ### P2（生態與可觀測性）

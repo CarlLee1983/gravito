@@ -72,7 +72,7 @@ export interface SQLiteConfig {
 export interface MongoDBConfig extends BaseConnectionConfig {
   driver: 'mongodb'
   uri: string
-  options?: any
+  options?: Record<string, unknown>
 }
 
 /**
@@ -445,6 +445,10 @@ export interface QueryBuilderContract<T = Record<string, unknown>> {
 
   // PAGINATION
   paginate(perPage?: number, page?: number): Promise<PaginateResult<T>>
+  simplePaginate(perPage?: number, page?: number): Promise<PaginateResult<T>>
+
+  // CHUNKING
+  chunk(size: number, callback: (results: T[]) => Promise<void | boolean>): Promise<void>
 
   // DEBUGGING
   toSql(): string
@@ -490,8 +494,8 @@ export interface QueryBuilderContract<T = Record<string, unknown>> {
  * Cache Interface
  */
 export interface CacheInterface {
-  get<T = any>(key: string): Promise<T | null>
-  set(key: string, value: any, ttl?: number): Promise<void>
+  get<T = unknown>(key: string): Promise<T | null>
+  set(key: string, value: unknown, ttl?: number): Promise<void>
   delete(key: string): Promise<void>
   clear(): Promise<void>
 }

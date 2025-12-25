@@ -1,138 +1,128 @@
-# Atlas 快速上手
+# 資料庫快速入門 (Database)
 
-本指南將帶您完成資料庫連線設定、定義模型以及執行基本 CRUD 操作的流程。
+本指南將引領您完成資料庫連線設定以及使用查詢建構器執行基本的 CRUD 操作。
+
+::: info 想使用 ORM？
+如果您想使用物件導向的模型 (Models) 進行開發，請參考 [Atlas ORM 快速上手](./orm-quick-start)。
+:::
 
 ## 1. 安裝
 
-Atlas 運行於 `@gravito/atlas` 套件之上。如果您使用 `create-gravito-app` 建立專案，通常已經內建安裝。
+Atlas 運行在 `@gravito/atlas` 套件之上。
 
 ```bash
-bun add @gravito/atlas typescript
+bun add @gravito/atlas
 ```
 
-根據您選擇的資料庫，您還需要安裝對應的驅動程式：
+根據您使用的資料庫，您還需要安裝對應的驅動程式：
 
 ```bash
-# For MongoDB
+# PostgreSQL
+bun add pg
+
+# MySQL / MariaDB
+bun add mysql2
+
+# SQLite
+bun add better-sqlite3 # 或使用內建的 bun:sqlite
+
+# MongoDB
 bun add mongodb
 
-# For Redis
+# Redis
 bun add ioredis
 ```
 
-## 2. 設定
+## 2. 配置
 
-在 `src/config/database.ts` 中設定您的資料庫連線。Atlas 支援多重連線設定。
+配置您的資料庫連線。Atlas 支援同時開啟多個連線。
 
 ```typescript
-import { Env } from '@gravito/core';
+import { DB } from '@gravito/atlas';
 
-export default {
-  default: Env.get('DB_CONNECTION', 'mongodb'),
+DB.configure({
+  default: 'postgres',
 
   connections: {
-    mongodb: {
-      driver: 'mongodb',
-      url: Env.get('DB_URI', 'mongodb://localhost:27017/gravito'),
-      database: Env.get('DB_DATABASE', 'gravito'),
+    postgres: {
+      driver: 'postgres',
+      host: 'localhost',
+      database: 'gravito_app',
+      username: 'postgres',
+      password: 'password',
     },
     
-    redis: {
-      driver: 'redis',
-      host: Env.get('REDIS_HOST', '127.0.0.1'),
-      port: Env.get('REDIS_PORT', 6379),
+    sqlite: {
+      driver: 'sqlite',
+      database: 'database.sqlite',
+    },
+
+    mongodb: {
+      driver: 'mongodb',
+      url: 'mongodb://localhost:27017/gravito',
+      database: 'gravito',
     }
   }
-}
+});
 ```
 
-## 3. 定義模型 (Model)
+## 3. 基本用法 (查詢建構器)
 
-模型通常位於 `src/models` 目錄。一個模型需繼承 `Model` 類別並定義其結構。
+配置完成後，您可以使用 `DB.table()` 進行流暢的資料庫操作。
 
-```typescript
-import { Model } from '@gravito/atlas';
-
-export interface UserAttributes {
-  _id?: string;
-  name: string;
-  email: string;
-  role: 'admin' | 'user';
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-
-export class User extends Model<UserAttributes> {
-  // 集合名稱（可選，預設依類別名稱推斷）
-  static collection = 'users';
-
-  // 預設屬性值
-  protected attributes: Partial<UserAttributes> = {
-    role: 'user'
-  };
-
-  // 在 JSON 輸出時隱藏的欄位
-  protected hidden = ['password'];
-
-  // 型別轉換設定
-  protected casts = {
-    email: 'string',
-    role: 'string',
-    createdAt: 'date'
-  };
-}
-```
-
-## 4. 基本用法
-
-一旦與定義好模型，您就可以開始與資料庫互動。
-
-### 建立記錄 (Create)
+### 插入資料 (Insert)
 
 ```typescript
-const user = await User.create({
+// 插入單筆
+await DB.table('users').insert({
   name: 'Alice',
-  email: 'alice@example.com'
+  email: 'alice@example.com',
+  created_at: new Date()
 });
 
-console.log(user._id); // 自動生成的 ID
+// 插入多筆
+await DB.table('users').insert([
+  { name: 'Bob', email: 'bob@example.com' },
+  { name: 'Charlie', email: 'charlie@example.com' }
+]);
 ```
 
-### 讀取記錄 (Retrieve)
+### 查詢資料 (Select)
 
 ```typescript
-// 透過 ID 查找
-const user = await User.find('65a...');
-
-// 透過條件查找
-const admin = await User.where('role', 'admin').first();
-
 // 獲取所有記錄
-const allUsers = await User.all();
+const users = await DB.table('users').get();
+
+// 條件查詢
+const admin = await DB.table('users')
+  .where('role', 'admin')
+  .first();
+
+// 選擇特定欄位
+const emails = await DB.table('users')
+  .select('email')
+  .where('active', true)
+  .get();
 ```
 
-### 更新記錄 (Update)
+### 更新資料 (Update)
 
 ```typescript
-const user = await User.find('...');
-user.name = 'Alice Wonderland';
-await user.save();
-
-// 或者批次更新
-await User.where('role', 'user').update({ active: true });
+await DB.table('users')
+  .where('id', 1)
+  .update({ name: 'Alice Wonderland' });
 ```
 
-### 刪除記錄 (Delete)
+### 刪除資料 (Delete)
 
 ```typescript
-const user = await User.find('...');
-await user.delete();
-
-// 或者批次刪除
-await User.destroy('...'); // 透過 ID
+await DB.table('users')
+  .where('active', false)
+  .delete();
 ```
 
 ## 下一步
 
-- 探索 [查詢建構器](./query-builder) 學習複雜查詢。
-- 學習 [關聯 (Relationships)](./relationships) 來連結多個模型。
+- 深入探索 [查詢建構器 (Query Builder)](./query-builder) 的強大功能。
+- 學習如何使用 [Atlas ORM](./orm-quick-start) 進行物件導向開發。
+- 了解 [資料庫遷移 (Migrations)](./migrations) 以管理資料庫結構。

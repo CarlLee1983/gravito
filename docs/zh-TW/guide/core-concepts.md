@@ -127,7 +127,6 @@ export default app.liftoff()
 
 ## 延伸閱讀
 
-- [與 Laravel 12 的對齊程度](./laravel-12-mvc-parity.md)
 - [佈署指南 (Deployment Guide)](./deployment.md)
 - [路由系統 (Routing)](./routing.md)
 - [ORM 實踐 (Drizzle)](./orm-usage.md)

@@ -1,18 +1,31 @@
-# Quick Start with Atlas
+# Database Getting Started
 
-This guide will walk you through setting up a database connection, defining a model, and performing basic CRUD operations.
+This guide will walk you through setting up a database connection and performing basic CRUD operations using the Query Builder.
+
+::: info Looking for ORM?
+If you want to use object-oriented Models, please refer to the [Atlas ORM Quick Start](./orm-quick-start).
+:::
 
 ## 1. Installation
 
-Atlas runs on top of the `@gravito/atlas` package. If you are using `create-gravito-app`, it is likely already installed.
+Atlas runs on top of the `@gravito/atlas` package.
 
 ```bash
-bun add @gravito/atlas typescript
+bun add @gravito/atlas
 ```
 
 Depending on your database, you also need the underlying driver:
 
 ```bash
+# For PostgreSQL
+bun add pg
+
+# For MySQL / MariaDB
+bun add mysql2
+
+# For SQLite
+bun add better-sqlite3 # or use bun:sqlite (built-in)
+
 # For MongoDB
 bun add mongodb
 
@@ -22,117 +35,94 @@ bun add ioredis
 
 ## 2. Configuration
 
-Configure your database connections in `src/config/database.ts`. Atlas supports multiple connections.
+Configure your database connections. Atlas supports multiple concurrent connections.
 
 ```typescript
-import { Env } from '@gravito/core';
+import { DB } from '@gravito/atlas';
 
-export default {
-  default: Env.get('DB_CONNECTION', 'mongodb'),
+DB.configure({
+  default: 'postgres',
 
   connections: {
-    mongodb: {
-      driver: 'mongodb',
-      url: Env.get('DB_URI', 'mongodb://localhost:27017/gravito'),
-      database: Env.get('DB_DATABASE', 'gravito'),
+    postgres: {
+      driver: 'postgres',
+      host: 'localhost',
+      database: 'gravito_app',
+      username: 'postgres',
+      password: 'password',
     },
     
-    redis: {
-      driver: 'redis',
-      host: Env.get('REDIS_HOST', '127.0.0.1'),
-      port: Env.get('REDIS_PORT', 6379),
+    sqlite: {
+      driver: 'sqlite',
+      database: 'database.sqlite',
+    },
+
+    mongodb: {
+      driver: 'mongodb',
+      url: 'mongodb://localhost:27017/gravito',
+      database: 'gravito',
     }
   }
-}
+});
 ```
 
-## 3. Define a Model
+## 3. Basic Usage (Query Builder)
 
-Models typically live in `src/models`. A model extends the `Model` class and defines its structure.
+Once configured, you can use `DB.table()` for fluent database interactions.
 
-```typescript
-import { Model } from '@gravito/atlas';
-
-export interface UserAttributes {
-  _id?: string;
-  name: string;
-  email: string;
-  role: 'admin' | 'user';
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-
-export class User extends Model<UserAttributes> {
-  // Collection name (optional, auto-inferred from class name)
-  static collection = 'users';
-
-  // Default attribute values
-  protected attributes: Partial<UserAttributes> = {
-    role: 'user'
-  };
-
-  // Hidden fields in JSON output
-  protected hidden = ['password'];
-
-  // Type Casting
-  protected casts = {
-    email: 'string',
-    role: 'string',
-    createdAt: 'date'
-  };
-}
-```
-
-## 4. Basic Usage
-
-Once your model is defined, you can start interacting with the database.
-
-### Creating Records
+### Inserting Data
 
 ```typescript
-const user = await User.create({
+// Insert single record
+await DB.table('users').insert({
   name: 'Alice',
-  email: 'alice@example.com'
+  email: 'alice@example.com',
+  created_at: new Date()
 });
 
-console.log(user._id); // Auto-generated ID
+// Insert multiple records
+await DB.table('users').insert([
+  { name: 'Bob', email: 'bob@example.com' },
+  { name: 'Charlie', email: 'charlie@example.com' }
+]);
 ```
 
-### Retrieving Records
+### Selecting Data
 
 ```typescript
-// Find by ID
-const user = await User.find('65a...');
+// Get all records
+const users = await DB.table('users').get();
 
-// Find by Condition
-const admin = await User.where('role', 'admin').first();
+// Conditional query
+const admin = await DB.table('users')
+  .where('role', 'admin')
+  .first();
 
-// Get All
-const allUsers = await User.all();
+// Select specific columns
+const emails = await DB.table('users')
+  .select('email')
+  .where('active', true)
+  .get();
 ```
 
-### Updating Records
+### Updating Data
 
 ```typescript
-const user = await User.find('...');
-user.name = 'Alice Wonderland';
-await user.save();
-
-// Or bulk update
-await User.where('role', 'user').update({ active: true });
+await DB.table('users')
+  .where('id', 1)
+  .update({ name: 'Alice Wonderland' });
 ```
 
-### Deleting Records
+### Deleting Data
 
 ```typescript
-const user = await User.find('...');
-await user.delete();
-
-// Or bulk delete
-await User.destroy('...'); // by ID
+await DB.table('users')
+  .where('active', false)
+  .delete();
 ```
 
 ## Next Steps
 
-- Explore the [Query Builder](./query-builder) for complex queries.
-- Learn about [Relationships](./relationships) to link models.
+- Explore the powerful [Query Builder](./query-builder).
+- Learn how to use [Atlas ORM](./orm-quick-start) for object-oriented development.
+- Understand [Migrations](./migrations) to manage your database schema.

@@ -34,9 +34,11 @@ export interface SidebarItem {
   children?: SidebarItem[]
 }
 
+import type { Highlighter } from 'shiki'
+
 // biome-ignore lint/complexity/noStaticOnlyClass: Utility namespace for docs processing
 export class DocsService {
-  private static highlighter: any = null
+  private static highlighter: Highlighter | null = null
 
   private static async getHighlighter() {
     if (!DocsService.highlighter) {
@@ -248,6 +250,41 @@ export class DocsService {
       }
 
       renderer.code = ({ text, lang }: { text: string; lang?: string }) => {
+        if (lang === 'mermaid') {
+          // Wrap in custom Singularity theme config
+          const configHeader = `%%{init: { 
+            'theme': 'base', 
+            'themeVariables': {
+              'primaryColor': '#14f195',
+              'primaryTextColor': '#000000',
+              'primaryBorderColor': '#14f195',
+              'lineColor': '#14f195',
+              'secondaryColor': '#a855f7',
+              'tertiaryColor': '#ffffff',
+              'mainBkg': '#14f195',
+              'nodeBorder': '#14f195',
+              'clusterBkg': '#1e1e2e',
+              'titleColor': '#ffffff',
+              'edgeLabelBackground':'#1e1e2e',
+              'nodeTextColor': '#000000'
+            }
+          }}%%`
+          const config = `${configHeader}\n${text.trim()}`
+
+          const encoded = Buffer.from(config).toString('base64')
+          return `<div class="mermaid-container my-16 flex flex-col items-center group not-prose">
+            <div class="relative p-12 rounded-[3rem] bg-void/80 border border-white/10 shadow-[0_0_80px_-20px_rgba(20,241,149,0.15)] transition-all duration-700 hover:border-singularity/40 hover:shadow-singularity/20 overflow-hidden">
+              <div class="absolute inset-0 bg-gradient-to-br from-singularity/5 to-transparent pointer-events-none"></div>
+              <img src="https://mermaid.ink/svg/${encoded}" alt="Architecture Diagram" class="relative z-10 max-w-full h-auto opacity-95 group-hover:opacity-100 transition-opacity" />
+            </div>
+            <div class="mt-8 flex items-center gap-4 opacity-20 group-hover:opacity-50 transition-all duration-1000">
+               <div class="w-12 h-px bg-gradient-to-r from-transparent to-white"></div>
+               <span class="text-[10px] font-black uppercase tracking-[0.4em] text-white italic">Gravito Architecture Engine_</span>
+               <div class="w-12 h-px bg-gradient-to-l from-transparent to-white"></div>
+            </div>
+          </div>`
+        }
+
         // Use simple pre/code structure without external wrapper
         const escapedText = escapeHtml(text)
         const langClass = lang ? `language-${lang}` : ''
@@ -280,85 +317,119 @@ export class DocsService {
     const trans =
       locale === 'zh'
         ? {
-            // Sections
-            getting_started: '入門指南',
-            core_concepts: '核心概念',
-            first_build: '第一個專案',
-            modules: '模組總覽',
-            database: '資料庫 / ORM',
-            auth: '驗證與安全',
-            storage: '儲存與檔案',
-            cache_queue: '快取與排程',
-            seo: 'SEO 與 Sitemap',
-            frontend: '前端整合',
-            advanced: '進階與維運',
-            reference: '參考資料',
+          // Sections
+          getting_started: '入門指南',
+          core_concepts: '核心概念',
+          first_build: '第一個專案',
+          modules: '模組總覽',
+          database: '資料庫基礎 (Database)',
+          orm: 'Atlas ORM',
+          auth: '驗證與安全',
+          auth_fortify: '認證 (Fortify)',
+          storage: '儲存與檔案',
+          cache_queue: '快取與排程',
+          seo: 'SEO 與 Sitemap',
+          frontend: '前端整合',
+          advanced: '進階與維運',
+          testing: '測試指南',
+          reference: '參考資料',
 
-            // Pages
-            intro: '簡介',
-            quick_start: '快速上手',
-            structure: '專案結構',
-            architecture: 'Galaxy 架構',
-            lifecycle: '生命週期',
-            routing: '基礎路由',
-            static_site: '靜態網站生成',
-            db_overview: '概覽',
-            db_quickstart: '快速連線',
-            db_query: '查詢建構器',
-            db_migrations: '遷移 (Migrations)',
-            db_seeding: '填充 (Seeding)',
-            security: '安全機制',
-            image_opt: '圖片優化',
-            seo_engine: 'Luminosity 引擎',
-            sitemap: 'Sitemap 生成',
-            inertia_react: 'Inertia (React)',
-            inertia_vue: 'Inertia (Vue)',
-            view_engine: 'Orbit View 引擎',
-            i18n: '國際化 (I18n)',
-            deployment: '部署指南',
-            cli: 'CLI 指令',
-            plugins: '插件開發',
-          }
+          // Pages
+          intro: '簡介',
+          quick_start: '快速上手',
+          structure: '專案結構',
+          architecture: 'Galaxy 架構',
+          lifecycle: '生命週期',
+          routing: '基礎路由',
+          testing_harness: 'HTTP 測試',
+          static_site: '靜態網站生成',
+
+          // Database Pages
+          db_overview: '概覽',
+          db_quickstart: '快速入門 (Getting Started)',
+          db_query: '查詢建構器 (Query Builder)',
+          db_pagination: '資料分頁 (Pagination)',
+          db_migrations: '資料庫遷移 (Migrations)',
+          db_seeding: '數據填充 (Seeding)',
+          db_redis: 'Redis 整合',
+          db_mongodb: 'MongoDB 整合',
+
+          // ORM Pages
+          orm_getting_started: '快速上手',
+          orm_relationships: '模型關聯 (Relationships)',
+          orm_mutators: '修改器與轉換 (Mutators)',
+          orm_serialization: '序列化 (Serialization)',
+          orm_factories: '模型工廠 (Factories)',
+
+          security: '安全機制',
+          image_opt: '圖片優化',
+          seo_engine: 'Luminosity 引擎',
+          sitemap: 'Sitemap 生成',
+          inertia_react: 'Inertia (React)',
+          inertia_vue: 'Inertia (Vue)',
+          view_engine: 'Orbit View 引擎',
+          i18n: '國際化 (I18n)',
+          deployment: '部署指南',
+          cli: 'CLI 指令',
+          plugins: '插件開發',
+        }
         : {
-            // Sections
-            getting_started: 'Getting Started',
-            core_concepts: 'Core Concepts',
-            first_build: 'First Build',
-            modules: 'Modules',
-            database: 'Database / ORM',
-            auth: 'Auth & Security',
-            storage: 'Storage & Files',
-            cache_queue: 'Cache & Queue',
-            seo: 'SEO & Sitemap',
-            frontend: 'Frontend Integration',
-            advanced: 'Advanced / Operations',
-            reference: 'Reference',
+          // Sections
+          getting_started: 'Getting Started',
+          core_concepts: 'Core Concepts',
+          first_build: 'First Build',
+          modules: 'Modules',
+          database: 'Database',
+          orm: 'Atlas ORM',
+          auth: 'Auth & Security',
+          auth_fortify: 'Authentication (Fortify)',
+          storage: 'Storage & Files',
+          cache_queue: 'Cache & Queue',
+          seo: 'SEO & Sitemap',
+          frontend: 'Frontend Integration',
+          advanced: 'Advanced / Operations',
+          testing: 'Testing',
+          reference: 'Reference',
 
-            // Pages
-            intro: 'Introduction',
-            quick_start: 'Quick Start',
-            structure: 'Project Structure',
-            architecture: 'Galaxy Architecture',
-            lifecycle: 'Lifecycle',
-            routing: 'Routing Basics',
-            static_site: 'Static Site Gen',
-            db_overview: 'Overview',
-            db_quickstart: 'Quick Start',
-            db_query: 'Query Builder',
-            db_migrations: 'Migrations',
-            db_seeding: 'Seeding',
-            security: 'Security',
-            image_opt: 'Image Optimization',
-            seo_engine: 'Luminosity Engine',
-            sitemap: 'Sitemap Generation',
-            inertia_react: 'Inertia (React)',
-            inertia_vue: 'Inertia (Vue)',
-            view_engine: 'Orbit View Engine',
-            i18n: 'Internationalization',
-            deployment: 'Deployment',
-            cli: 'CLI Commands',
-            plugins: 'Plugin Development',
-          }
+          // Pages
+          intro: 'Introduction',
+          quick_start: 'Quick Start',
+          structure: 'Project Structure',
+          architecture: 'Galaxy Architecture',
+          lifecycle: 'Lifecycle',
+          routing: 'Routing Basics',
+          testing_harness: 'HTTP Testing',
+          static_site: 'Static Site Gen',
+
+          // Database Pages
+          db_overview: 'Overview',
+          db_quickstart: 'Getting Started',
+          db_query: 'Query Builder',
+          db_pagination: 'Pagination',
+          db_migrations: 'Migrations',
+          db_seeding: 'Seeding & Factories',
+          db_redis: 'Redis',
+          db_mongodb: 'MongoDB',
+
+          // ORM Pages
+          orm_getting_started: 'Getting Started',
+          orm_relationships: 'Relationships',
+          orm_mutators: 'Mutators & Casting',
+          orm_serialization: 'Serialization',
+          orm_factories: 'Factories',
+
+          security: 'Security',
+          image_opt: 'Image Optimization',
+          seo_engine: 'Luminosity Engine',
+          sitemap: 'Sitemap Generation',
+          inertia_react: 'Inertia (React)',
+          inertia_vue: 'Inertia (Vue)',
+          view_engine: 'Orbit View Engine',
+          i18n: 'Internationalization',
+          deployment: 'Deployment',
+          cli: 'CLI Commands',
+          plugins: 'Plugin Development',
+        }
 
     return [
       {
@@ -398,14 +469,31 @@ export class DocsService {
           { title: trans.db_overview, path: `${prefix}/guide/database/overview` },
           { title: trans.db_quickstart, path: `${prefix}/guide/database/quick-start` },
           { title: trans.db_query, path: `${prefix}/guide/database/query-builder` },
+          { title: trans.db_pagination, path: `${prefix}/guide/database/pagination` },
           { title: trans.db_migrations, path: `${prefix}/guide/database/migrations` },
-          // { title: trans.db_seeding, path: `${prefix}/guide/database/seeding` },
+          { title: trans.db_seeding, path: `${prefix}/guide/database/seeding` },
+          { title: trans.db_redis, path: `${prefix}/guide/database/redis` },
+          { title: trans.db_mongodb, path: `${prefix}/guide/database/mongodb` },
+        ],
+      },
+      {
+        title: trans.orm,
+        path: '#',
+        children: [
+          { title: trans.orm_getting_started, path: `${prefix}/guide/database/orm-quick-start` },
+          { title: trans.orm_relationships, path: `${prefix}/guide/database/atlas-relationships` },
+          { title: trans.orm_mutators, path: `${prefix}/guide/database/atlas-mutators` },
+          { title: trans.orm_serialization, path: `${prefix}/guide/database/atlas-serialization` },
+          { title: trans.orm_factories, path: `${prefix}/guide/database/seeding` },
         ],
       },
       {
         title: trans.auth,
         path: '#',
-        children: [{ title: trans.security, path: `${prefix}/guide/security` }],
+        children: [
+          { title: trans.auth_fortify, path: `${prefix}/guide/authentication` },
+          { title: trans.security, path: `${prefix}/guide/security` },
+        ],
       },
       {
         title: trans.storage,
@@ -434,6 +522,11 @@ export class DocsService {
         title: trans.advanced,
         path: '#',
         children: [{ title: trans.deployment, path: `${prefix}/guide/deployment` }],
+      },
+      {
+        title: trans.testing,
+        path: '#',
+        children: [{ title: trans.testing_harness, path: `${prefix}/guide/testing` }],
       },
     ]
   }

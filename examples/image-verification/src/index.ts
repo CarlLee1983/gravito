@@ -10,7 +10,7 @@ let appCore: PlanetCore
 
 // 1. Define Mock Remote Storage Providers (unchanged)
 class S3MockProvider implements StorageProvider {
-  constructor(private bucket: string) {}
+  constructor(private bucket: string) { }
 
   async put(key: string, data: Blob | Buffer | string): Promise<void> {
     console.log(`[S3 MOCK] Uploading to bucket "${this.bucket}": ${key}`)
@@ -36,7 +36,7 @@ class S3MockProvider implements StorageProvider {
 }
 
 class GCSMockProvider implements StorageProvider {
-  constructor(private bucket: string) {}
+  constructor(private bucket: string) { }
 
   async put(key: string, data: Blob | Buffer | string): Promise<void> {
     console.log(`[GCS MOCK] Uploading to bucket "${this.bucket}": ${key}`)
@@ -86,9 +86,16 @@ class ProcessImageJob extends Job {
     // Use global appCore instead of this.core
     // Note: We can't easily access context variables from container in a Job
     // This is a simplified demo - in production, you'd pass the processed data differently
-    const forge = (appCore as any)._forgeService as ForgeService
-    const localStore = (appCore as any)._localStorage as StorageProvider
-    const remoteStore = (appCore as any)._remoteStorages?.[target] as StorageProvider
+    interface CoreWithInternals extends PlanetCore {
+      _forgeService: ForgeService
+      _localStorage: StorageProvider
+      _remoteStorages: Record<string, StorageProvider>
+    }
+
+    const internals = appCore as unknown as CoreWithInternals
+    const forge = internals._forgeService
+    const localStore = internals._localStorage
+    const remoteStore = internals._remoteStorages?.[target]
 
     if (!forge || !localStore || !remoteStore) {
       throw new Error('Services not initialized')
@@ -112,10 +119,13 @@ class ProcessImageJob extends Job {
 
       // 2. Upload to Local Storage (for preview)
       const localKey = `processed/${Date.now()}-${filename}.webp`
-      const processedFile = processed.path ? Bun.file(processed.path) : (processed as any).buffer
+      const processedFile = processed.path
+        ? Bun.file(processed.path)
+        : (processed as unknown as { buffer: Blob }).buffer
       if (!processedFile) {
         throw new Error('Processed file path is missing')
       }
+
 
       await localStore.put(localKey, processedFile)
       const localUrl = localStore.getUrl(localKey)
@@ -136,22 +146,23 @@ class ProcessImageJob extends Job {
           result: {
             url: remoteUrl,
             path: localUrl, // Using localUrl for path for demo purposes
-            size: await processedFile.size, // Assuming Bun.file has size, or use processed.size
+            size: await (processedFile as Blob).size,
             mimeType: 'image/webp',
           },
           createdAt: Date.now(),
           updatedAt: Date.now(),
         })
       }
-    } catch (err: any) {
-      console.error(`[JOB - ${jobId}] ❌ Processing failed:`, err)
+    } catch (err: unknown) {
+      const error = err as Error
+      console.error(`[JOB - ${jobId}] ❌ Processing failed:`, error)
       const statusStore = forge.getStatusStore()
       if (statusStore) {
         await statusStore.set({
           jobId,
           status: 'failed',
           progress: 0,
-          error: err.message,
+          error: error.message,
           createdAt: Date.now(),
           updatedAt: Date.now(),
         })
@@ -376,9 +387,10 @@ router.post('/upload', async (c: GravitoContext) => {
 
     // Immediately return job ID for status tracking
     return c.json({ jobId, message: 'Image processing job dispatched.' })
-  } catch (err: any) {
-    console.error('Job dispatch failed:', err)
-    return c.json({ error: `Failed to dispatch image processing job: ${err.message}` }, 500)
+  } catch (err: unknown) {
+    const error = err as Error
+    console.error('Job dispatch failed:', error)
+    return c.json({ error: `Failed to dispatch image processing job: ${error.message}` }, 500)
   }
 })
 

@@ -1,4 +1,4 @@
-import type { PlanetCore } from 'gravito-core'
+import type { GravitoContext, GravitoNext, PlanetCore } from 'gravito-core'
 import { ApiController } from '../controllers/ApiController'
 import { DocsController } from '../controllers/DocsController'
 import { HomeController } from '../controllers/HomeController'
@@ -7,7 +7,7 @@ export function registerRoutes(core: PlanetCore): void {
   const router = core.router
 
   // Middleware to set locale
-  const setLocale = (locale: string) => async (c: any, next: any) => {
+  const setLocale = (locale: string) => async (c: GravitoContext, next: GravitoNext) => {
     c.set('locale', locale)
     return await next()
   }
@@ -61,7 +61,7 @@ export function registerRoutes(core: PlanetCore): void {
   // ─────────────────────────────────────────────
   // API Routes
   // ─────────────────────────────────────────────
-  const apiLogger = async (c: any, next: any) => {
+  const apiLogger = async (c: GravitoContext, next: GravitoNext) => {
     console.log(`[API] ${c.req.method} ${c.req.url}`)
     return await next()
   }

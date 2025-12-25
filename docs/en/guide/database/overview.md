@@ -2,13 +2,13 @@
 
 Atlas is Gravito's native Object-Relational Mapper (ORM), designed to provide an elegant ActiveRecord implementation for modern TypeScript applications. It draws heavy inspiration from Laravel's Eloquent but is rebuilt from the ground up to leverage TypeScript's static analysis and Bun's performance.
 
-::: info 🚧 **Alpha Status**
-Atlas is currently in **Active Alpha**. While the core features (Models, Relationships, Query Builder) are functional, the API may undergo changes before the 1.0 stable release. The current focus is on MongoDB support, with Redis and SQL drivers in development.
+::: info 🚀 **Release Candidate Status**
+Atlas is currently in **Release Candidate**. Core features including Models, Relationships, Query Builder, and Migrations are stable. It supports PostgreSQL, MySQL, SQLite, MongoDB, and Redis with high-performance native drivers.
 :::
 
 ## Why Atlas?
 
-Interacting with databases should be intuitive and expressive. Atlas removes the boilerplate of manual query construction, allowing you to interact with your data using clear, object-oriented syntax.
+Interacting with databases should be intuitive and expressive. Atlas removes the boilerplate of manual query construction, allowing you to interact with your data using clear, object-oriented syntax. It is engineered for the edge, achieving **1.1M+ raw reads/sec** and **40k+ hydrations/sec**.
 
 ```typescript
 // Create a new user
@@ -29,17 +29,19 @@ await post.save();
 Each database table (or collection) has a corresponding "Model" that is used to interact with that table. You can query for data in your tables, as well as insert new records into the table.
 
 ### 2. Multi-Driver Support
-Atlas is designed to be database-agnostic.
-- **MongoDB**: First-class support with a fluent query builder that mimics SQL-like syntax.
-- **Redis**: Native support for high-performance key-value storage and caching.
-- **SQL (Coming Soon)**: Planned support for PostgreSQL, MySQL, and SQLite.
+Atlas is truly database-agnostic, supporting both SQL and NoSQL targets:
+- **PostgreSQL**: Native `pg` support with advanced features like Jsonb.
+- **MySQL / MariaDB**: Powered by `mysql2`.
+- **SQLite**: Lightning fast via `bun:sqlite` or `better-sqlite3`.
+- **MongoDB**: First-class support with a fluent query builder.
+- **Redis**: High-performance key-value storage and caching.
 
 ### 3. Rich Relationships
-Define relationships between models using expressive methods:
-- One to One
-- One to Many
-- Many to Many (Coming Soon)
-- Polymorphic Relations (Coming Soon)
+Define complex data relations using declarative decorators:
+- **One to One**: `@HasOne`, `@BelongsTo`
+- **One to Many**: `@HasMany`, `@BelongsTo`
+- **Many to Many**: `@BelongsToMany` with custom pivot tables.
+- **Eager Loading**: Prevent N+1 issues using `.with()`.
 
 ### 4. Advanced Features
 - **Observers**: Hook into model lifecycle events (creating, updated, deleted).
@@ -52,16 +54,23 @@ Atlas is built on top of the `@gravito/atlas` package. It sits independently of 
 
 ```mermaid
 graph TD
-    A[Application Code] --> B[Atlas Model]
-    B --> C[Query Builder]
-    C --> D[Driver Adapter (Mongo/Redis/SQL)]
-    D --> E[Database]
+    A["Application Code"] --> B["Atlas Model"]
+    B --> C["Query Builder"]
+    C --> D["Driver Adapter (Mongo/Redis/SQL)"]
+    D --> E["Database"]
 ```
 
 ## Next Steps
 
-Ready to dive in? Start by configuring your database connection.
-
-- [Quick Start](./quick-start)
+- [Getting Started](./quick-start)
 - [Query Builder](./query-builder)
+- [Pagination](./pagination)
 - [Migrations](./migrations)
+- [Seeding & Factories](./seeding)
+- [Redis](./redis)
+- [MongoDB](./mongodb)
+
+### Atlas ORM
+- [Relationships](./atlas-relationships)
+- [Mutators & Casting](./atlas-mutators)
+- [Serialization](./atlas-serialization)

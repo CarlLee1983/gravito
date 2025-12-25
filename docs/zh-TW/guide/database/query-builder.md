@@ -1,109 +1,201 @@
 # 查詢建構器 (Query Builder)
 
-Atlas 提供了一套流暢的查詢建構器，讓您無需撰寫原生 SQL 或 Mongo 查詢物件，即可構建複雜的資料庫查詢。它跨驅動程式提供了統一的開發介面。
+Atlas 提供了一個流暢、與驅動程式無關的查詢建構器，讓您能輕鬆構建複雜的資料庫查詢。它透過統一的介面同時支援 SQL (PostgreSQL, MySQL, SQLite) 與 NoSQL (MongoDB)。
 
-## 基礎 Where 子句
-
-### `where`
-
-最基本的查詢是 `where`。它接收欄位名稱、運算符（可選）以及數值。
-
-```typescript
-// 隱含 '=' 運算符
-const users = await User.where('role', 'admin').get();
-
-// 顯式指定運算符
-const activeUsers = await User.where('logins', '>=', 5).get();
-
-// 巢狀鍵值（視驅動程式支援而定）
-const users = await User.where('meta.is_subscribed', true).get();
-```
-
-### `orWhere`
-
-要加入 `OR` 條件，請使用 `orWhere`。
-
-```typescript
-// role = 'admin' OR role = 'moderator'
-const staff = await User.where('role', 'admin')
-                        .orWhere('role', 'moderator')
-                        .get();
-```
-
-### `whereIn` / `whereNotIn`
-
-檢查欄位值是否包含在指定的陣列中。
-
-```typescript
-const users = await User.whereIn('id', [1, 2, 3]).get();
-```
-
-## 排序與分頁
-
-### `orderBy`
-
-根據指定欄位排序結果。第二個參數控制方向（`asc` 或 `desc`）。
-
-```typescript
-const newestUsers = await User.orderBy('createdAt', 'desc').get();
-```
-
-### `skip` 與 `take` (Offset / Limit)
-
-```typescript
-// 取得 10 位用戶，跳過前 5 位
-const users = await User.skip(5).take(10).get();
-```
-
-## 取得結果
+## 獲取結果
 
 ### `get()`
-
-執行查詢並回傳模型實例的陣列。
-
+`get` 方法會返回一個結果陣列。當用於模型時，它返回模型實例陣列。
 ```typescript
-const users = await User.where('active', true).get();
+const users = await User
+  .where('active', true)
+  .get();
 ```
 
 ### `first()`
-
-執行查詢並回傳第一個匹配的模型實例，若無結果則回傳 `null`。
-
+如果您只需要單一資料列，請使用 `first`。
 ```typescript
-const user = await User.where('email', 'foo@bar.com').first();
+const user = await User
+  .where('email', 'alice@example.com')
+  .first();
 ```
 
-### `count()`
+### `pluck()`
+如果您想獲取包含單一欄位值的陣列：
+```typescript
+const titles = await Post.pluck('title'); // ['Hello World', 'Atlas Guide', ...]
+```
 
-回傳符合查詢條件的記錄數量（整數）。
+### `count()` / `max()` / `min()` / `avg()` / `sum()`
+```typescript
+const count = await User.count();
+const maxPrice = await Product.max('price');
+```
+
+## Select 子句
+
+### `select()`
+指定要獲取的欄位：
+```typescript
+const users = await User
+  .select('name', 'email as user_email')
+  .get();
+```
+
+### `distinct()`
+```typescript
+const roles = await User.distinct().pluck('role');
+```
+
+## 關聯查詢 (Joins - 僅限 SQL 驅動)
+
+Atlas 支援 SQL 資料庫的各種連接類型。
+
+### 內連接 (Inner Join)
+```typescript
+const users = await User.query()
+  .join('contacts', 'users.id', '=', 'contacts.user_id')
+  .select('users.*', 'contacts.phone')
+  .get();
+```
+
+### 左/右連接 (Left / Right Join)
+```typescript
+const users = await User
+  .leftJoin('posts', 'users.id', '=', 'posts.author_id')
+  .get();
+```
+
+## 進階 Where 子句
+
+### 基礎查詢
+```typescript
+// 隱含 '='
+const users = await User.where('votes', 100).get();
+
+// 顯式運算子
+const users = await User.where('votes', '>=', 100).get();
+```
+
+### 邏輯分組 (Or 語句)
+```typescript
+const users = await User
+  .where('votes', '>', 100)
+  .orWhere('name', 'John')
+  .get();
+```
+
+### JSON 查詢子句
+如果您的資料庫支援 JSON (PostgreSQL, MySQL, MongoDB)，您可以查詢巢狀屬性：
+```typescript
+const users = await User.where('options.language', 'en').get();
+```
+
+### `whereIn` / `whereNull` / `whereBetween`
+```typescript
+const users = await User.whereIn('id', [1, 2, 3]).get();
+const pending = await Task.whereNull('completed_at').get();
+const range = await User
+  .whereBetween('votes', [1, 100])
+  .get();
+```
+
+## 排序、分組、限制與偏移
+
+### `orderBy()`
+```typescript
+const users = await User
+  .orderBy('name', 'desc')
+  .get();
+```
+
+### `latest()` / `oldest()`
+`orderBy('created_at', 'desc')` 的便捷方法：
+```typescript
+const user = await User.latest().first();
+```
+
+### `groupBy()` / `having()`
+```typescript
+const stats = await User
+  .groupBy('account_id')
+  .having('count', '>', 5)
+  .get();
+```
+
+### `skip()` / `take()`
+```typescript
+const users = await User
+  .skip(10)
+  .take(5)
+  .get();
+```
+
+## 聚合函數 (Aggregates)
+
+查詢建構器還提供了一系列獲取聚合值的方法：
 
 ```typescript
 const count = await User.where('active', true).count();
+const price = await DB.table('orders').max('price');
+const average = await DB.table('users').avg('age');
 ```
 
-### `exists()`
+## 原始表達式 (Raw Expressions)
 
-若有任何記錄符合查詢條件，回傳 `true`。
+有時您可能需要在查詢中使用原始表達式。這些表達式將作為字串直接注入查詢中，因此請務必小心，避免造成 SQL 注入漏洞：
 
 ```typescript
-if (await User.where('email', email).exists()) {
-    // ...
-}
+const users = await User
+    .select(DB.raw('count(*) as user_count, status'))
+    .where('status', '<>', 1)
+    .groupBy('status')
+    .get();
 ```
 
-## 進階子句
+## 分塊結果 (Chunking Results)
 
-### `whereNull` / `whereNotNull`
+如果您需要處理數千條資料庫記錄，請考慮使用 `chunk` 方法。該方法一次檢索一小塊結果，並將每個區塊傳入閉包 (closure) 進行處理：
 
 ```typescript
-const incomplete = await Task.whereNull('completedAt').get();
+await User.query().chunk(100, async (users) => {
+    for (const user of users) {
+        // 處理使用者...
+    }
+});
 ```
 
-## 原生查詢
-
-如果您需要繞過建構器，通常可以存取底層的驅動程式實例，但請注意這會破壞驅動程式的無關性（Driver Agnosticism）。
+您可以從閉包中返回 `false` 來停止後續區塊的處理：
 
 ```typescript
-// 針對 MongoDB 驅動的特定用法
-await User.collection.aggregate([...]); 
+await User.query().chunk(100, async (users) => {
+  // 處理記錄...
+  return false; // 停止處理
+});
+```
+
+## 寫入、更新與刪除
+
+### `insert()`
+```typescript
+await DB.table('users').insert([
+  { email: 'kayla@example.com', votes: 0 },
+  { email: 'taylor@example.com', votes: 0 }
+]);
+```
+
+### `update()`
+```typescript
+await User.where('id', 1).update({ votes: 1 });
+```
+
+### `increment` 與 `decrement`
+```typescript
+await User.where('id', 1).increment('votes');
+await User.where('id', 1).decrement('votes', 5);
+```
+
+### `delete()`
+```typescript
+await User.where('votes', '<', 50).delete();
 ```

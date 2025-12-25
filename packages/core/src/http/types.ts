@@ -296,6 +296,26 @@ export interface GravitoContext<V extends GravitoVariables = GravitoVariables> {
    */
   stream(stream: ReadableStream, status?: ContentfulStatusCode): Response
 
+  /**
+   * Send a 404 Not Found response
+   */
+  notFound(message?: string): Response
+
+  /**
+   * Send a 403 Forbidden response
+   */
+  forbidden(message?: string): Response
+
+  /**
+   * Send a 401 Unauthorized response
+   */
+  unauthorized(message?: string): Response
+
+  /**
+   * Send a 400 Bad Request response
+   */
+  badRequest(message?: string): Response
+
   // ─────────────────────────────────────────────
   // Headers
   // ─────────────────────────────────────────────

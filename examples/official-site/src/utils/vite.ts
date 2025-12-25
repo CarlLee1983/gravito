@@ -86,7 +86,7 @@ export function setupViteProxy(core: PlanetCore): void {
       return new Response(buffer, {
         status: response.status,
         headers: responseHeaders,
-      }) as any
+      })
     } catch (error) {
       core.logger.error(`[Vite Proxy] Failed: ${error}`)
       return c.text('Vite dev server not available', 503)

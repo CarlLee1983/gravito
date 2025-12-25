@@ -1279,6 +1279,49 @@ try {
 }
 ```
 
+### Atomicity and Consistency (Why Transactions Matter)
+
+Transactions protect critical writes so they either **all succeed** or **all roll back**. Use them when you must keep data consistent:
+
+- Order + payment status updates
+- Inventory deduction + order item creation
+- User + profile creation
+
+### Isolation and Concurrency (Modern RDBMS Practices)
+
+To keep concurrency safe and avoid deadlocks:
+
+- **Keep transactions short** and avoid external calls (HTTP, email) inside a transaction.
+- **Write in a consistent order** when touching multiple tables to reduce lock conflicts.
+- Consider **optimistic concurrency** (e.g., version columns) for high‑traffic records.
+- For critical stock or balance updates, use **row-level locks** (e.g., `FOR UPDATE`) if your driver supports it.
+
+### Retry Strategy for Transient Failures
+
+High‑isolation levels can occasionally fail due to deadlocks or serialization conflicts. Wrap critical transactions in a retry loop with small backoff for transient errors.
+
+### Relational Integrity and Constraints
+
+Use database constraints to enforce correctness at the lowest layer:
+
+- **Foreign keys** with `onDelete`/`onUpdate` rules
+- **Unique constraints** for identifiers and business rules
+- **Check constraints** for domain validation
+
+Example (schema-level constraints):
+
+```typescript
+import { pgTable, serial, text, integer } from 'drizzle-orm/pg-core';
+
+export const orders = pgTable('orders', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  orderNo: text('order_no').notNull().unique(),
+});
+```
+
 ## Bulk Operations
 
 ### Bulk Insert

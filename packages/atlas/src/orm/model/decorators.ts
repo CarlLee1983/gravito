@@ -1,6 +1,7 @@
 /**
  * Relationship and Model Decorators
  */
+import { ModelRegistry } from './ModelRegistry'
 
 /**
  * Soft Deletes Decorator Options
@@ -57,9 +58,12 @@ export function column(options: ColumnOptions = {}): PropertyDecorator {
       ctor[COLUMN_KEY] = {}
     }
     ctor[COLUMN_KEY][propertyKey] = options
+
+    // Auto-register in global registry
+    ModelRegistry.register(ctor)
   }
 }
 // Add type-specific helpers (chaining/static methods style)
-;(column as any).dateTime = (options: ColumnOptions = {}) => {
+; (column as any).dateTime = (options: ColumnOptions = {}) => {
   return column(options)
 }

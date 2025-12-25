@@ -29,8 +29,11 @@ interface SidebarSection {
   items: SidebarItem[]
 }
 
+import type { Highlighter } from 'shiki'
+
+// ...
 class DocsServiceImpl {
-  private highlighter: any = null
+  private highlighter: Highlighter | null = null
 
   async getHighlighter() {
     if (!this.highlighter) {

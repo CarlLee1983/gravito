@@ -31,7 +31,7 @@ import type { AdapterConfig, HttpAdapter, RouteDefinition } from './types'
  * Wraps Hono's request object to implement GravitoRequest
  */
 class HonoRequestWrapper implements GravitoRequest {
-  constructor(private honoCtx: Context) {}
+  constructor(private honoCtx: Context) { }
 
   get url(): string {
     return this.honoCtx.req.url
@@ -109,8 +109,7 @@ class HonoRequestWrapper implements GravitoRequest {
  * Wraps Hono's context to implement GravitoContext
  */
 class HonoContextWrapper<V extends GravitoVariables = GravitoVariables>
-  implements GravitoContext<V>
-{
+  implements GravitoContext<V> {
   private _req: HonoRequestWrapper
 
   constructor(private honoCtx: Context) {
@@ -193,6 +192,22 @@ class HonoContextWrapper<V extends GravitoVariables = GravitoVariables>
         'Content-Type': 'application/octet-stream',
       },
     })
+  }
+
+  notFound(message?: string): Response {
+    return this.honoCtx.text(message ?? 'Not Found', 404)
+  }
+
+  forbidden(message?: string): Response {
+    return this.honoCtx.text(message ?? 'Forbidden', 403)
+  }
+
+  unauthorized(message?: string): Response {
+    return this.honoCtx.text(message ?? 'Unauthorized', 401)
+  }
+
+  badRequest(message?: string): Response {
+    return this.honoCtx.text(message ?? 'Bad Request', 400)
   }
 
   // Implement header as separate methods internally
@@ -423,7 +438,7 @@ export class HonoAdapter<V extends GravitoVariables = GravitoVariables> implemen
     // In practice, this is called through the Hono routing pipeline
     throw new Error(
       'HonoAdapter.createContext() should not be called directly. ' +
-        'Use the router pipeline instead.'
+      'Use the router pipeline instead.'
     )
   }
 

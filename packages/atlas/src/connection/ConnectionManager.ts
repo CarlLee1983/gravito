@@ -23,8 +23,9 @@ export class ConnectionManager {
     const connectionName = name ?? this.defaultConnectionName
 
     // Return existing connection if available
-    if (this.connections.has(connectionName)) {
-      return this.connections.get(connectionName)!
+    const existing = this.connections.get(connectionName)
+    if (existing) {
+      return existing
     }
 
     // Create new connection

@@ -96,7 +96,7 @@ export default function Docs() {
       parent.insertBefore(wrapper, pre)
       wrapper.appendChild(pre)
 
-      pre.classList.add('pr-14', '!bg-transparent', '!m-0', '!p-6')
+      pre.classList.add('pr-14', '!bg-transparent', '!m-0', '!p-6', 'overflow-x-auto', 'h-scrollbar')
 
       const button = document.createElement('button')
       button.type = 'button'
@@ -284,11 +284,10 @@ export default function Docs() {
                       <li key={item.path}>
                         <StaticLink
                           href={item.path}
-                          className={`block text-sm py-3 px-6 transition-all duration-300 relative group font-medium rounded-xl border border-transparent ${
-                            isActive
-                              ? 'text-singularity font-bold border-white/5 bg-white/[0.03] shadow-[0_0_20px_rgba(20,241,149,0.05)]'
-                              : 'text-gray-400 hover:text-white hover:bg-white/[0.02]'
-                          }`}
+                          className={`block text-sm py-3 px-6 transition-all duration-300 relative group font-medium rounded-xl border border-transparent ${isActive
+                            ? 'text-singularity font-bold border-white/5 bg-white/[0.03] shadow-[0_0_20px_rgba(20,241,149,0.05)]'
+                            : 'text-gray-400 hover:text-white hover:bg-white/[0.02]'
+                            }`}
                         >
                           <div className="flex items-center gap-3">
                             {isActive && (
@@ -463,17 +462,6 @@ export default function Docs() {
                   </div>
                 </div>
               </div>
-
-              <a
-                href={editUrl || 'https://github.com/gravito-framework/gravito/tree/main/docs'}
-                target="_blank"
-                rel="noreferrer"
-                className="group inline-flex items-center gap-3 rounded-2xl bg-white/5 px-6 py-3 text-sm font-bold text-gray-300 transition-all hover:bg-white hover:text-black border border-white/5"
-              >
-                <Edit2 size={16} className="transition-transform group-hover:scale-110" />
-                {locale === 'zh' ? '在 GitHub 編輯此頁' : 'Edit this page on GitHub'}
-                <Github size={16} className="ml-2 opacity-50" />
-              </a>
             </div>
 
             {/* Next/Prev Navigation */}
@@ -545,11 +533,10 @@ export default function Docs() {
                           <li key={item.id} className={`${indent} relative`}>
                             <a
                               href={`#${item.id}`}
-                              className={`block text-[13px] leading-relaxed transition-all duration-300 ${
-                                isActive
-                                  ? 'text-singularity font-black tracking-tight translate-x-1'
-                                  : 'text-gray-400 hover:text-white'
-                              }`}
+                              className={`block text-[13px] leading-relaxed transition-all duration-300 ${isActive
+                                ? 'text-singularity font-black tracking-tight translate-x-1'
+                                : 'text-gray-400 hover:text-white'
+                                }`}
                             >
                               {item.text}
                             </a>

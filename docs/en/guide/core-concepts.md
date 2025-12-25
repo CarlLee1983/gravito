@@ -132,7 +132,6 @@ export default app.liftoff()
 
 ## Further Reading
 
-- [Laravel 12 Parity](./laravel-12-mvc-parity.md)
 - [HTTP Abstraction Migration](./migration-http-abstraction.md)
 - [Deployment Guide](./deployment.md)
 - [Routing System](./routing.md)

@@ -45,7 +45,7 @@
      * 2. Fix line-background fragments in shiki/highlighted blocks
      */
     .prose pre {
-        @apply !bg-transparent !p-0 !m-0 overflow-visible;
+        @apply !bg-transparent !p-0 !m-0 overflow-x-auto scroll-smooth;
     }
 
     .prose pre code {

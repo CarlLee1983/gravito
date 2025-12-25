@@ -7,6 +7,7 @@ import { DB } from '../../DB'
 import type { QueryBuilderContract } from '../../types'
 import { SchemaRegistry } from '../schema/SchemaRegistry'
 import type { ColumnType, TableSchema } from '../schema/types'
+import { Factory } from '../../seed/Factory'
 import { DirtyTracker } from './DirtyTracker'
 import { COLUMN_KEY, SOFT_DELETES_KEY } from './decorators'
 import {
@@ -15,6 +16,8 @@ import {
   NullableConstraintError,
   TypeMismatchError,
 } from './errors'
+import { getRelationships } from './relationships'
+import { ModelRegistry } from './ModelRegistry'
 
 /**
  * Model attributes type
@@ -30,7 +33,7 @@ export type ModelConstructor<T extends Model> = new () => T
  * Model static interface
  */
 export interface ModelStatic<T extends Model> {
-  new (): T
+  new(): T
   table: string
   primaryKey: string
   connection?: string
@@ -121,14 +124,26 @@ export abstract class Model {
   // ============================================================================
 
   /**
-   * Create a new model instance with Proxy
+   * Instantiate a new model instance (non-saving)
    */
-  static create<T extends Model>(
+  static make<T extends Model>(
     this: ModelConstructor<T>,
     attributes: Partial<ModelAttributes> = {}
   ): T {
     const instance = new this()
-    return instance._createProxy(attributes, false)
+    return (instance as any)._createProxy(attributes, false)
+  }
+
+  /**
+   * Create a new model and save it to the database
+   */
+  static async create<T extends Model>(
+    this: ModelConstructor<T>,
+    attributes: Partial<ModelAttributes> = {}
+  ): Promise<T> {
+    const model = (this as any).make(attributes)
+    await model.save()
+    return model
   }
 
   /**
@@ -217,7 +232,49 @@ export abstract class Model {
           return model._attributes[prop]
         }
 
-        // 6. Return instance values (for properties declared in the class body that aren't attributes)
+        const relations = getRelationships(modelCtor)
+        if (typeof prop === 'string' && relations.has(prop)) {
+          const builderFn = (...args: any[]) => {
+            const meta = relations.get(prop)!
+            const type = meta.type
+
+            if (type === 'morphTo') {
+              return (receiver as any).morphTo(
+                meta.morphName,
+                meta.morphTypeField,
+                meta.morphIdField
+              )
+            }
+
+            if (type === 'morphOne' || type === 'morphMany') {
+              const Related = meta.related!()
+              return (receiver as any)[type](
+                Related,
+                meta.morphName,
+                meta.foreignKey,
+                meta.localKey
+              )
+            }
+
+            const Related = meta.related!()
+            // Call hasOne, hasMany, belongsTo, or belongsToMany
+            return (receiver as any)[type](Related, meta.foreignKey, meta.localKey)
+          }
+
+            // Make it thenable for property-style lazy loading: await user.posts
+            ; (builderFn as any).then = async (resolve: any, reject: any) => {
+              try {
+                await (receiver as any).load(prop)
+                resolve((receiver as any)._attributes[prop])
+              } catch (err) {
+                reject(err)
+              }
+            }
+
+          return builderFn
+        }
+
+        // 6. Return instance values
         if (Object.hasOwn(target, prop)) {
           const value = Reflect.get(target, prop)
           if (typeof value === 'function') {
@@ -249,7 +306,7 @@ export abstract class Model {
           const studly = prop.replace(/(?:^|_|(?=[A-Z]))(.)/g, (_, c) => c.toUpperCase())
           const mutator = `set${studly}Attribute`
           if (typeof (target as any)[mutator] === 'function') {
-            ;(target as any)[mutator].call(receiver, value)
+            ; (target as any)[mutator].call(receiver, value)
             return true
           }
         }
@@ -570,10 +627,10 @@ export abstract class Model {
 
     // Wrap get to hydrate
     const originalGet = builder.get.bind(builder)
-    ;(builder as unknown as { get: () => Promise<R[]> }).get = async (): Promise<R[]> => {
-      const rows = await originalGet()
-      return rows.map((row) => related.hydrate<R>(row)) as R[]
-    }
+      ; (builder as unknown as { get: () => Promise<R[]> }).get = async (): Promise<R[]> => {
+        const rows = await originalGet()
+        return rows.map((row) => related.hydrate<R>(row)) as R[]
+      }
 
     return builder
   }
@@ -709,6 +766,69 @@ export abstract class Model {
       }
       offset += chunkSize
     }
+  }
+
+  /**
+   * Define a polymorphic hasOne relationship
+     */
+  morphOne<R extends Model>(
+    related: ModelConstructor<R> & typeof Model,
+    name: string,
+    foreignKey?: string,
+    localKey?: string
+  ) {
+    const fk = foreignKey ?? `${name}_id`
+    const typeField = `${name}_type`
+    const modelCtor = this.constructor as typeof Model
+
+    return this.hasMany(related, fk, localKey).where(typeField, modelCtor.name).limit(1)
+  }
+
+  /**
+   * Define a polymorphic hasMany relationship
+   */
+  morphMany<R extends Model>(
+    related: ModelConstructor<R> & typeof Model,
+    name: string,
+    foreignKey?: string,
+    localKey?: string
+  ) {
+    const fk = foreignKey ?? `${name}_id`
+    const typeField = `${name}_type`
+    const modelCtor = this.constructor as typeof Model
+
+    return this.hasMany(related, fk, localKey).where(typeField, modelCtor.name)
+  }
+
+  /**
+   * Define a polymorphic belongsTo relationship
+   */
+  morphTo<R extends Model>(name: string, typeField?: string, idField?: string) {
+    const tf = typeField ?? `${name}_type`
+    const ifld = idField ?? `${name}_id`
+
+    const typeValue = (this as any)[tf]
+    const idValue = (this as any)[ifld]
+
+    if (!typeValue || !idValue) {
+      return null
+    }
+
+    const RelatedModel = ModelRegistry.get(typeValue)
+    if (!RelatedModel) {
+      return null
+    }
+
+    const builder = (RelatedModel as any).query().where(RelatedModel.primaryKey, idValue)
+
+    // Wrap first to hydrate (similar to belongsTo)
+    const originalFirst = builder.first.bind(builder)
+    builder.first = (async (): Promise<R | null> => {
+      const row = await originalFirst()
+      return row ? (RelatedModel as any).hydrate(row) : null
+    }) as any
+
+    return builder
   }
 
   // ============================================================================
@@ -910,6 +1030,17 @@ export abstract class Model {
   }
 
   /**
+   * Lazy load relationships for the current model
+   * @example await user.load('posts')
+   */
+  async load(relation: string | string[]): Promise<this> {
+    const { eagerLoadMany } = await import('./relationships')
+    const relations = Array.isArray(relation) ? relation : [relation]
+    await eagerLoadMany([this], relations)
+    return this
+  }
+
+  /**
    * Register a model observer
    */
   static observe(observer: any) {
@@ -1027,15 +1158,13 @@ export abstract class Model {
   }
 
   /**
-   * Create a new model and save
+   * Alias for create()
    */
   static async createAndSave<T extends Model>(
     this: ModelConstructor<T> & typeof Model,
     attributes: Partial<ModelAttributes>
   ): Promise<T> {
-    const model = this.create<T>(attributes)
-    await model.save()
-    return model
+    return this.create<T>(attributes)
   }
 
   /**
@@ -1152,8 +1281,8 @@ export abstract class Model {
     const connection = DB.connection(this.connection)
     const builder = connection.table<ModelAttributes>(this.getTable())
 
-    // Attach model context
-    ;(builder as any).setModel(this)
+      // Attach model context
+      ; (builder as any).setModel(this)
 
     // Check for Soft Deletes
     const softDeletes = (this as any)[SOFT_DELETES_KEY]
@@ -1165,51 +1294,51 @@ export abstract class Model {
 
     // Wrap get() to hydrate results and handle eager loading
     const originalGet = builder.get.bind(builder)
-    ;(builder as unknown as { get: () => Promise<T[]> }).get = async (): Promise<T[]> => {
-      const rows = await originalGet()
-
-      // Fast Path: Skip hydration if read-only
-      if ((builder as any).getIsReadOnly?.()) {
-        return rows as unknown as T[]
-      }
-
-      const models = rows.map((row) => this.hydrate<T>(row)) as unknown as T[]
-
-      // Handle eager loading
-      const eagerLoads = (builder as any).getEagerLoads?.()
-      if (eagerLoads && eagerLoads.size > 0 && models.length > 0) {
-        const { eagerLoadMany } = await import('./relationships')
-        await eagerLoadMany(models, eagerLoads)
-      }
-
-      return models
-    }
-
-    // Wrap first() to hydrate result and handle eager loading
-    const originalFirst = builder.first.bind(builder)
-    ;(builder as unknown as { first: () => Promise<T | null> }).first =
-      async (): Promise<T | null> => {
-        const row = await originalFirst()
-        if (!row) {
-          return null
-        }
+      ; (builder as unknown as { get: () => Promise<T[]> }).get = async (): Promise<T[]> => {
+        const rows = await originalGet()
 
         // Fast Path: Skip hydration if read-only
         if ((builder as any).getIsReadOnly?.()) {
-          return row as unknown as T
+          return rows as unknown as T[]
         }
 
-        const model = this.hydrate<T>(row)
+        const models = rows.map((row) => this.hydrate<T>(row)) as unknown as T[]
 
-        // Handle eager loading for a single model
+        // Handle eager loading
         const eagerLoads = (builder as any).getEagerLoads?.()
-        if (eagerLoads && eagerLoads.size > 0) {
+        if (eagerLoads && eagerLoads.size > 0 && models.length > 0) {
           const { eagerLoadMany } = await import('./relationships')
-          await eagerLoadMany([model], eagerLoads)
+          await eagerLoadMany(models, eagerLoads)
         }
 
-        return model
+        return models
       }
+
+    // Wrap first() to hydrate result and handle eager loading
+    const originalFirst = builder.first.bind(builder)
+      ; (builder as unknown as { first: () => Promise<T | null> }).first =
+        async (): Promise<T | null> => {
+          const row = await originalFirst()
+          if (!row) {
+            return null
+          }
+
+          // Fast Path: Skip hydration if read-only
+          if ((builder as any).getIsReadOnly?.()) {
+            return row as unknown as T
+          }
+
+          const model = this.hydrate<T>(row)
+
+          // Handle eager loading for a single model
+          const eagerLoads = (builder as any).getEagerLoads?.()
+          if (eagerLoads && eagerLoads.size > 0) {
+            const { eagerLoadMany } = await import('./relationships')
+            await eagerLoadMany([model], eagerLoads)
+          }
+
+          return model
+        }
 
     // Support Local Scopes via Proxy
     const modelClass = this
@@ -1220,7 +1349,7 @@ export abstract class Model {
           const scopeMethod = `scope${prop.charAt(0).toUpperCase()}${prop.slice(1)}`
           if (typeof (modelClass as any)[scopeMethod] === 'function') {
             return (...args: any[]) => {
-              ;(modelClass as any)[scopeMethod](target, ...args)
+              ; (modelClass as any)[scopeMethod](target, ...args)
               return proxy
             }
           }
@@ -1238,13 +1367,127 @@ export abstract class Model {
   }
 
   /**
+   * Start a query with a where clause
+   */
+  static where<T extends Model>(
+    this: ModelConstructor<T> & typeof Model,
+    column: string | Record<string, unknown>,
+    operatorOrValue?: any,
+    value?: unknown
+  ): QueryBuilderContract<T> {
+    return (this.query() as any).where(column, operatorOrValue, value) as unknown as QueryBuilderContract<T>
+  }
+
+  /**
+   * Start a query with a whereIn clause
+   */
+  static whereIn<T extends Model>(
+    this: ModelConstructor<T> & typeof Model,
+    column: string,
+    values: unknown[]
+  ): QueryBuilderContract<T> {
+    return this.query().whereIn(column, values) as unknown as QueryBuilderContract<T>
+  }
+
+  /**
+   * Start a query with a whereNull clause
+   */
+  static whereNull<T extends Model>(
+    this: ModelConstructor<T> & typeof Model,
+    column: string
+  ): QueryBuilderContract<T> {
+    return this.query().whereNull(column) as unknown as QueryBuilderContract<T>
+  }
+
+  /**
+   * Start a query with a whereNotNull clause
+   */
+  static whereNotNull<T extends Model>(
+    this: ModelConstructor<T> & typeof Model,
+    column: string
+  ): QueryBuilderContract<T> {
+    return this.query().whereNotNull(column) as unknown as QueryBuilderContract<T>
+  }
+
+  /**
+   * Start a query with an orderBy clause
+   */
+  static orderBy<T extends Model>(
+    this: ModelConstructor<T> & typeof Model,
+    column: string,
+    direction: 'asc' | 'desc' = 'asc'
+  ): QueryBuilderContract<T> {
+    return this.query().orderBy(column, direction) as unknown as QueryBuilderContract<T>
+  }
+
+  /**
+   * Start a query with a limit
+   */
+  static limit<T extends Model>(
+    this: ModelConstructor<T> & typeof Model,
+    value: number
+  ): QueryBuilderContract<T> {
+    return this.query().limit(value) as unknown as QueryBuilderContract<T>
+  }
+
+  /**
+   * Start a query with an offset
+   */
+  static offset<T extends Model>(
+    this: ModelConstructor<T> & typeof Model,
+    value: number
+  ): QueryBuilderContract<T> {
+    return this.query().offset(value) as unknown as QueryBuilderContract<T>
+  }
+
+  /**
+   * Start a query with selected columns
+   */
+  static select<T extends Model>(
+    this: ModelConstructor<T> & typeof Model,
+    ...columns: string[]
+  ): QueryBuilderContract<T> {
+    return this.query().select(...columns) as unknown as QueryBuilderContract<T>
+  }
+
+  /**
    * Start a query with eager loading
    */
   static with<T extends Model>(
     this: ModelConstructor<T> & typeof Model,
     relation: string | string[] | Record<string, (query: QueryBuilderContract<any>) => void>
-  ): QueryBuilderContract<ModelAttributes> {
-    return this.query().with(relation) as unknown as QueryBuilderContract<ModelAttributes>
+  ): QueryBuilderContract<T> {
+    return this.query().with(relation) as unknown as QueryBuilderContract<T>
+  }
+
+  /**
+   * Start a query ordered by created_at desc
+   */
+  static latest<T extends Model>(
+    this: ModelConstructor<T> & typeof Model,
+    column = 'created_at'
+  ): QueryBuilderContract<T> {
+    return this.query().orderBy(column, 'desc') as unknown as QueryBuilderContract<T>
+  }
+
+  /**
+   * Start a query ordered by created_at asc
+   */
+  static oldest<T extends Model>(
+    this: ModelConstructor<T> & typeof Model,
+    column = 'created_at'
+  ): QueryBuilderContract<T> {
+    return this.query().orderBy(column, 'asc') as unknown as QueryBuilderContract<T>
+  }
+
+  /**
+   * Get a factory instance for this model
+   */
+  static factory<T extends Model>(
+    this: ModelConstructor<T> & typeof Model,
+    count = 1
+  ): Factory<any> {
+    return Factory.model(this).count(count)
   }
 
   /**
@@ -1252,7 +1495,7 @@ export abstract class Model {
    */
   static async count(this: ModelConstructor<Model> & typeof Model): Promise<number> {
     const connection = DB.connection(this.connection)
-    const table = this.tableName || this.table
+    const table = this.getTable()
     const result = await connection.table(table).count()
     return typeof result === 'number' ? result : 0
   }

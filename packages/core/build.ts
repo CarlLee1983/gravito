@@ -16,9 +16,12 @@ const tsup = spawn(
     '--dts',
     '--external',
     'hono', // Hono is a peer dependency
+    '--external',
+    'bun:test', // Bun test module
     '--outDir',
     'dist',
   ],
+
   {
     stdout: 'inherit',
     stderr: 'inherit',

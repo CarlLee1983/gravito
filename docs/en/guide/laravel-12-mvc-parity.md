@@ -74,9 +74,9 @@ This page compares Gravito (core + Kinetic Modules) with Laravel 12’s “full-
 
 | Feature | Status | Notes |
 |--------|--------|------|
-| FormRequest-style validation | Implemented | Zod + Valibot supported |
+| FormRequest-style validation | Implemented | High-performance TypeBox validation via `@gravito/mass` |
 | Authorization inside FormRequest | Implemented | Returns 403 or throws `AuthorizationException` via middleware helper |
-| Custom messages + i18n hook points | Partial | Message provider exists; needs first-class integration docs/examples |
+| Custom messages + i18n hook points | Implemented | Integrated with `@gravito/cosmos` and `@gravito/mass` |
 | Rule object ecosystem (Laravel “rules”) | Missing | Would require a shared rule contract and registry |
 
 ### Views / Frontend
@@ -94,11 +94,11 @@ This page compares Gravito (core + Kinetic Modules) with Laravel 12’s “full-
 |--------|--------|------|
 | Migrations (apply/status/fresh) | Implemented | `gravito migrate` via `drizzle-kit migrate` |
 | Seed runner | Implemented | `gravito db:seed` |
-| Active Record-style models | Partial | `Model` with CRUD, relations, scopes |
-| Relations | Partial | Common relations are supported |
-| Model factories | Missing | No standard factory system |
+| Active Record-style models | Implemented | `Model` with CRUD, relations, scopes and Proxy-based Smart Guard |
+| Relations | Implemented | HasOne, HasMany, BelongsTo, BelongsToMany, and Polymorphic relations |
+| Model factories | Implemented | Powerful test-data generation via `@gravito/atlas` |
 | Soft deletes | Implemented | `withTrashed()`, `onlyTrashed()`, `restore()` |
-| Polymorphic relations | Implemented | `morphTo`, `morphMany`, `morphOne` |
+| Polymorphic relations | Implemented | `@MorphTo()`, `@MorphOne()`, `@MorphMany()` for flexible data structures |
 | Pagination helpers | Implemented | `Paginator` class + `Model.paginate()` |
 
 ### Authentication / Authorization
@@ -152,7 +152,7 @@ This page compares Gravito (core + Kinetic Modules) with Laravel 12’s “full-
 |--------|--------|------|
 | CLI (Artisan-like) | Partial | `route:list`, `tinker`, migrations; limited scaffolding |
 | App skeleton/templates | Implemented | `templates/*` |
-| First-class HTTP testing helpers | Missing | No test harness like Laravel’s `TestResponse` |
+| First-class HTTP testing helpers | Implemented | `HttpTester` & `TestResponse` (Laravel style) |
 | Mail/Notification fakes | Missing | Needs test doubles + contracts |
 
 ## Roadmap Suggestions (Laravel-Style Completeness)
@@ -160,7 +160,8 @@ This page compares Gravito (core + Kinetic Modules) with Laravel 12’s “full-
 ### P1 (Eloquent/Laravel ergonomics)
 
 - Resource routes + route model binding are implemented; route cache is available as a named-routes manifest.
-- Pagination helpers and soft deletes are implemented; remaining gaps are factories, polymorphic relations, and fuller Eloquent-like ergonomics.
+- Pagination helpers, soft deletes, and polymorphic relations are implemented.
+- HTTP Testing Harness (`TestResponse`) is implemented.
 - Auth hashing is implemented; password reset/email verification still needs end-to-end app workflows (mail + persistence + default controllers).
 
 ### P2 (Ecosystem and observability)

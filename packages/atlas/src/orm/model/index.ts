@@ -11,6 +11,7 @@ export {
   TypeMismatchError,
 } from './errors'
 export { Model, type ModelAttributes, type ModelConstructor, type ModelStatic } from './Model'
+export { ModelRegistry } from './ModelRegistry'
 export {
   BelongsTo,
   BelongsToMany,
@@ -19,6 +20,9 @@ export {
   getRelationships,
   HasMany,
   HasOne,
+  MorphMany,
+  MorphOne,
+  MorphTo,
   type RelationshipMeta,
   type RelationshipOptions,
   type RelationType,

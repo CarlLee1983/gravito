@@ -42,11 +42,14 @@ try {
 
   // Create a simple d.ts for vue index to satisfy exports
   await $`mkdir -p dist/vue`
-  await Bun.write('dist/vue/index.d.ts', `
+  await Bun.write(
+    'dist/vue/index.d.ts',
+    `
 export declare const ProcessingImage: any;
 export declare const ProcessingStatus: any;
 export declare const ProcessingVideo: any;
-`)
+`
+  )
 
   console.log('✅ Build complete!')
 } catch (err) {

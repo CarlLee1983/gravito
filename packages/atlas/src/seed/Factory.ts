@@ -52,6 +52,8 @@ export class Factory<T extends Record<string, unknown>> {
     }
   }
 
+  private static registry = new Map<string | typeof Model, Factory<any>>()
+
   /**
    * Define a factory for a model
    */
@@ -61,16 +63,21 @@ export class Factory<T extends Record<string, unknown>> {
   ): Factory<T> {
     const options: FactoryOptions =
       typeof modelOrTable === 'string' ? { table: modelOrTable } : { model: modelOrTable }
-    return new Factory(definition, options)
+    const instance = new Factory(definition, options)
+    this.registry.set(modelOrTable, instance)
+    return instance
   }
 
   /**
    * Create a factory for a specific model
    */
-  static model(model: typeof Model): Factory<any> {
-    // In a real app, this would look up the defined factory for this model
-    // For this implementation, we return a generic factory
-    return new Factory(() => ({}), { model })
+  static model<T extends Record<string, unknown>>(model: typeof Model): Factory<T> {
+    const instance = this.registry.get(model)
+    if (!instance) {
+      throw new Error(`No factory defined for model ${model.name}. Use Factory.define(${model.name}, ...) first.`)
+    }
+    // Return a clone to avoid polluting the registered template
+    return new Factory<T>(instance.definition, { model: instance.model, table: instance.tableName })
   }
 
   /**

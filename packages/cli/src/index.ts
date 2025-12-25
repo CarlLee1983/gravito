@@ -508,7 +508,27 @@ cli
   .option('--entry <file>', 'Entry file (default: src/index.ts)', { default: 'src/index.ts' })
   .action((options) => schemaRefresh(options))
 
+// --- Fortify Commands ---
+import { installFortify, type FortifyStack } from './commands/fortify'
+
+cli
+  .command('fortify:install', 'Install Fortify authentication scaffolding')
+  .option('--stack <stack>', 'View stack: html, react, vue (default: html)', { default: 'html' })
+  .option('--force', 'Overwrite existing files')
+  .action(async (options) => {
+    const validStacks = ['html', 'react', 'vue']
+    if (!validStacks.includes(options.stack)) {
+      console.error(pc.red(`Invalid stack: ${options.stack}. Valid options: ${validStacks.join(', ')}`))
+      process.exit(1)
+    }
+    await installFortify({
+      stack: options.stack as FortifyStack,
+      force: options.force ?? false,
+    })
+  })
+
 cli.help()
+
 cli.version('1.0.0-beta.4')
 
 try {

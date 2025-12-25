@@ -1102,8 +1102,42 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   // ============================================================================
 
   /**
-   * Paginate results
-   * Automatically ensures deterministic ordering by appending primary key
+   * Paginate the results of the query
+   */
+  /**
+   * Alias for paginate
+   */
+  async simplePaginate(perPage = 15, page = 1, primaryKey = 'id'): Promise<PaginateResult<T>> {
+    return this.paginate(perPage, page, primaryKey)
+  }
+
+  /**
+   * Chunk the results of the query
+   */
+  async chunk(size: number, callback: (results: T[]) => Promise<void | boolean>): Promise<void> {
+    let page = 1
+    let count: number
+
+    do {
+      const results = await this.clone().paginate(size, page)
+      count = results.data.length
+
+      if (count === 0) {
+        break
+      }
+
+      const result = await callback(results.data)
+
+      if (result === false) {
+        break
+      }
+
+      page++
+    } while (count === size)
+  }
+
+  /**
+   * Paginate the results of the query
    */
   async paginate(perPage = 15, page = 1, primaryKey = 'id'): Promise<PaginateResult<T>> {
     // Ensure deterministic ordering for stable pagination

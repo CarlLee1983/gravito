@@ -15,6 +15,7 @@ import { PostgresGrammar } from '../grammar/PostgresGrammar'
 import { SQLiteGrammar } from '../grammar/SQLiteGrammar'
 import { QueryBuilder } from '../query/QueryBuilder'
 import type {
+  BaseConnectionConfig,
   ConnectionConfig,
   ConnectionContract,
   DriverContract,
@@ -43,17 +44,17 @@ export class Connection implements ConnectionContract {
     // Proxy driver methods (e.g. redis.set, mongodb.collection)
     // biome-ignore lint/correctness/noConstructorReturn: This proxy is intentional for dynamic driver method access
     return new Proxy(this, {
-      get(target: any, prop: string | symbol) {
+      get(target: Connection, prop: string | symbol) {
         if (prop in target) {
-          return target[prop]
+          return (target as any)[prop]
         }
         // Fallback to driver if method exists there
         if (
           typeof prop === 'string' &&
           target.driver &&
-          typeof (target.driver as any)[prop] === 'function'
+          typeof (target.driver as unknown as Record<string, unknown>)[prop] === 'function'
         ) {
-          return (target.driver as any)[prop].bind(target.driver)
+          return (target.driver as unknown as Record<string, any>)[prop].bind(target.driver)
         }
         return undefined
       },
@@ -176,7 +177,7 @@ export class Connection implements ConnectionContract {
       case 'redis':
         return new RedisDriver(this.config)
       default:
-        throw new Error(`Unknown driver: ${(this.config as any).driver}`)
+        throw new Error(`Unknown driver: ${(this.config as BaseConnectionConfig).driver}`)
     }
   }
 
@@ -197,7 +198,7 @@ export class Connection implements ConnectionContract {
       case 'redis':
         return new NullGrammar()
       default:
-        throw new Error(`Unknown grammar: ${(this.config as any).driver}`)
+        throw new Error(`Unknown grammar: ${(this.config as BaseConnectionConfig).driver}`)
     }
   }
 }

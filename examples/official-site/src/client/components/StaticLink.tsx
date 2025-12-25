@@ -86,11 +86,8 @@ export function StaticLink({ href, children, className, onClick, ...props }: Sta
     )
   }
 
-  const inertiaHref = finalHref as any
-  const inertiaOnClick = onClick as any
-
   return (
-    <Link href={inertiaHref} className={className} onClick={inertiaOnClick} {...props}>
+    <Link href={finalHref || ''} className={className} onClick={onClick as any} {...props}>
       {children}
     </Link>
   )
