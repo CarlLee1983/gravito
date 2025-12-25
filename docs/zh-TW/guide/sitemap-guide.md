@@ -1,23 +1,33 @@
-# 🗺️ Sitemap 完整使用指南
+# Sitemap 系統指南：技術 SEO 的地圖繪製
 
-從基礎使用到企業級功能的完整指南，支援上百萬 URL 的 sitemap 生成。
+在搜尋引擎優化的世界裡，**Sitemap (網址清單)** 是網站最重要的「導航地圖」。雖然 [Luminosity 引擎](./seo-engine) 負責讓各頁面更有吸引力（Meta 標籤），但 **Sitemap** 才是真正決定搜尋引擎爬蟲能否找到並抓取你網站中所有「隱藏寶藏」的關鍵。
+
+Gravito 的 Sitemap 系統專為 **恆星級 (Enterprise SCALE)** 網站設計，能夠輕鬆處理數百萬個 URL，並支援分片、增量更新與雲端自動同步。
 
 ---
 
-## 📚 目錄
+## 為什麼需要 Sitemap 系統？
+
+1.  **解決 SPA 抓取困難**：單頁應用程式 (React/Vue) 的內容往往對爬蟲不夠友好，Sitemap 確保每一條動態路由都能被發現。
+2.  **恆星級擴展性**：當你的 URL 超過 5 萬個時，Google 要求必須進行 **「Sitemap 分片 (Sharding)」**，本系統會自動為你處理 Index 文件與分路。
+3.  **自動化轉址同步**：如果網址發生 301 變更，Sitemap 會自動同步，避免爬蟲抓到死連結。
+
+---
+
+## 目錄
 
 1. [快速開始](#快速開始)
-2. [Node.js 執行環境示範](#nodejs-執行環境示範)
-3. [基礎使用](#基礎使用)
-4. [企業級功能](#企業級功能)
-5. [增量生成](#增量生成)
-6. [301 轉址處理](#301-轉址處理)
+2. [基礎使用：動態與靜態](#基礎使用)
+3. [企業級功能：S3 與雲端儲存](#企業級功能)
+4. [原子化影子生成 (Shadow Swap)](#影子處理shadow-processing)
+5. [增量生成 (Incremental Build)](#增量生成)
+6. [301 轉址自動處理](#301-轉址處理)
 7. [最佳實踐](#最佳實踐)
-8. [故障排除](#故障排除)
+
 
 ---
 
-## 🚀 快速開始
+## 快速開始
 
 ### 安裝
 
@@ -28,9 +38,9 @@ bun add @gravito/constellation
 ### 最簡單範例
 
 ```typescript
-import { LuminositySitemap, routeScanner } from '@gravito/constellation'
+import { OrbitSitemap, routeScanner } from '@gravito/constellation'
 
-const sitemap = LuminositySitemap.static({
+const sitemap = OrbitSitemap.static({
   baseUrl: 'https://example.com',
   outDir: './dist',
   providers: [
@@ -45,7 +55,7 @@ await sitemap.generate()
 
 ---
 
-## 🧰 Node.js 執行環境示範
+## Node.js 執行環境示範
 
 如果你想驗證 sitemap 在純 Node runtime 的表現，可以使用 Express adapter 範例：
 
@@ -55,16 +65,16 @@ await sitemap.generate()
 
 ---
 
-## 📖 基礎使用
+## 基礎使用
 
 ### 1. 動態 Sitemap（運行時生成）
 
 從應用程式直接提供 sitemap：
 
 ```typescript
-import { LuminositySitemap, routeScanner } from '@gravito/constellation'
+import { OrbitSitemap, routeScanner } from '@gravito/constellation'
 
-LuminositySitemap.dynamic({
+OrbitSitemap.dynamic({
   baseUrl: 'https://example.com',
   providers: [
     // 自動掃描路由
@@ -97,9 +107,9 @@ LuminositySitemap.dynamic({
 在建置過程中生成 sitemap 檔案：
 
 ```typescript
-import { LuminositySitemap, routeScanner } from '@gravito/constellation'
+import { OrbitSitemap, routeScanner } from '@gravito/constellation'
 
-const sitemap = LuminositySitemap.static({
+const sitemap = OrbitSitemap.static({
   baseUrl: 'https://example.com',
   outDir: './dist',
   filename: 'sitemap.xml',
@@ -226,7 +236,7 @@ Providers 可以回傳：
 
 ---
 
-## 🏢 企業級功能
+## 企業級功能
 
 ### 雲端儲存（S3 / GCP）
 
@@ -240,9 +250,9 @@ bun add @aws-sdk/client-s3
 ```
 
 ```typescript
-import { LuminositySitemap, S3SitemapStorage } from '@gravito/constellation'
+import { OrbitSitemap, S3SitemapStorage } from '@gravito/constellation'
 
-const sitemap = LuminositySitemap.static({
+const sitemap = OrbitSitemap.static({
   baseUrl: 'https://example.com',
   storage: new S3SitemapStorage({
     bucket: 'my-sitemap-bucket',
@@ -275,9 +285,9 @@ bun add @google-cloud/storage
 ```
 
 ```typescript
-import { LuminositySitemap, GCPSitemapStorage } from '@gravito/constellation'
+import { OrbitSitemap, GCPSitemapStorage } from '@gravito/constellation'
 
-const sitemap = LuminositySitemap.static({
+const sitemap = OrbitSitemap.static({
   baseUrl: 'https://example.com',
   storage: new GCPSitemapStorage({
     bucket: 'my-sitemap-bucket',
@@ -305,7 +315,7 @@ await sitemap.generate()
 生成到臨時位置，然後原子性切換：
 
 ```typescript
-const sitemap = LuminositySitemap.static({
+const sitemap = OrbitSitemap.static({
   // ...
   shadow: {
     enabled: true,
@@ -324,7 +334,7 @@ const sitemap = LuminositySitemap.static({
 保留舊版本，準備好時再切換：
 
 ```typescript
-const sitemap = LuminositySitemap.static({
+const sitemap = OrbitSitemap.static({
   // ...
   shadow: {
     enabled: true,
@@ -349,9 +359,9 @@ await storage.switchVersion('sitemap.xml', 'version-id')
 非同步生成 sitemap，不阻塞主流程：
 
 ```typescript
-import { LuminositySitemap, MemoryProgressStorage } from '@gravito/constellation'
+import { OrbitSitemap, MemoryProgressStorage } from '@gravito/constellation'
 
-const sitemap = LuminositySitemap.static({
+const sitemap = OrbitSitemap.static({
   baseUrl: 'https://example.com',
   outDir: './dist',
   providers: [...],
@@ -364,7 +374,7 @@ const jobId = await sitemap.generateAsync({
     console.log(`進度: ${progress.percentage}% (${progress.processed}/${progress.total})`)
   },
   onComplete: () => {
-    console.log('✅ 生成完成！')
+    console.log('[Complete] 生成完成！')
   },
   onError: (error) => {
     console.error('❌ 生成失敗:', error)
@@ -542,7 +552,7 @@ import Redis from 'ioredis'
 
 const redis = new Redis(process.env.REDIS_URL)
 
-const sitemap = LuminositySitemap.static({
+const sitemap = OrbitSitemap.static({
   // ...
   progressStorage: new RedisProgressStorage({
     client: redis,
@@ -557,7 +567,7 @@ const sitemap = LuminositySitemap.static({
 自動將大型 sitemap 分割成多個檔案：
 
 ```typescript
-const sitemap = LuminositySitemap.static({
+const sitemap = OrbitSitemap.static({
   // ...
   maxEntriesPerFile: 50000 // 預設：50000（Google 的限制）
 })
@@ -571,16 +581,16 @@ const sitemap = LuminositySitemap.static({
 
 ---
 
-## 🔄 增量生成
+## 增量生成
 
 只更新變更的 URL，而不是重新生成整個 sitemap：
 
 ### 設定
 
 ```typescript
-import { LuminositySitemap, MemoryChangeTracker } from '@gravito/constellation'
+import { OrbitSitemap, MemoryChangeTracker } from '@gravito/constellation'
 
-const sitemap = LuminositySitemap.static({
+const sitemap = OrbitSitemap.static({
   baseUrl: 'https://example.com',
   outDir: './dist',
   providers: [...],
@@ -652,7 +662,7 @@ import Redis from 'ioredis'
 
 const redis = new Redis(process.env.REDIS_URL)
 
-const sitemap = LuminositySitemap.static({
+const sitemap = OrbitSitemap.static({
   // ...
   incremental: {
     enabled: true,
@@ -667,7 +677,7 @@ const sitemap = LuminositySitemap.static({
 
 ---
 
-## 🔀 301 轉址處理
+## 301 轉址處理
 
 自動處理 sitemap 中的 URL 轉址：
 
@@ -675,14 +685,14 @@ const sitemap = LuminositySitemap.static({
 
 ```typescript
 import { 
-  LuminositySitemap, 
+  OrbitSitemap, 
   MemoryRedirectManager,
   RedirectDetector 
 } from '@gravito/constellation'
 
 const redirectManager = new MemoryRedirectManager()
 
-const sitemap = LuminositySitemap.static({
+const sitemap = OrbitSitemap.static({
   baseUrl: 'https://example.com',
   outDir: './dist',
   providers: [...],
@@ -856,7 +866,7 @@ const redirectManager = new RedisRedirectManager({
 
 ---
 
-## 💡 最佳實踐
+## 最佳實踐
 
 ### 1. 對大型資料集使用 AsyncIterable
 
@@ -930,7 +940,7 @@ storage: new S3SitemapStorage({
 
 ---
 
-## 🔧 故障排除
+## 故障排除
 
 ### 問題：Sitemap 生成太慢
 
@@ -974,13 +984,13 @@ storage: new S3SitemapStorage({
 
 ---
 
-## 📚 完整範例
+## 完整範例
 
 以下是完整的企業級設定範例：
 
 ```typescript
 import { 
-  LuminositySitemap,
+  OrbitSitemap,
   S3SitemapStorage,
   RedisChangeTracker,
   RedisRedirectManager,
@@ -1015,7 +1025,7 @@ for (const [from, rule] of redirects) {
 }
 
 // 建立包含所有企業級功能的 sitemap
-const sitemap = LuminositySitemap.static({
+const sitemap = OrbitSitemap.static({
   baseUrl: 'https://example.com',
   storage: new S3SitemapStorage({
     bucket: 'my-sitemap-bucket',
@@ -1086,11 +1096,11 @@ const jobId = await sitemap.generateAsync({
 
 ---
 
-## 🎯 下一步
+## 下一步
 
-- 查看 [SEO 引擎指南](/zh-TW/docs/guide/seo-engine) 了解 meta tags 和 analytics
-- 參閱 [部署指南](/zh-TW/docs/guide/deployment) 了解生產環境設定
-- 檢視 [企業整合](/zh-TW/docs/guide/enterprise-integration) 了解進階模式
+- 查看 [SEO 引擎指南](./seo-engine) 了解 meta tags 和 analytics
+- 參閱 [部署指南](./deployment) 了解生產環境設定
+- 檢視 [企業整合](./enterprise-integration) 了解進階模式
 
 ---
 

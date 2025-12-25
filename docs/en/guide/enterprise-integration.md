@@ -9,7 +9,7 @@ Gravito is designed with "Enterprise DNA" at its core. Beyond simple scripting, 
 
 ---
 
-## 🏗️ Architectural Foundations
+## Architectural Foundations
 
 ### Native System Sovereignty
 Unlike lightweight frameworks that rely on a fragmented ecosystem of community packages, Gravito provides a unified, native system for core enterprise needs:
@@ -25,7 +25,7 @@ As your application grows, Gravito allows you to decouple logic into independent
 
 ---
 
-## 📡 Universal Kinetic Queue
+## Universal Kinetic Queue
 
 The Universal Kinetic Queue is Gravito's solution for infrastructure-agnostic background processing.
 
@@ -50,7 +50,7 @@ Changing from Redis to SQS is as simple as updating your `.env` file.
 
 ---
 
-## 🔌 Plugin Sovereignty
+## Plugin Sovereignty
 
 Gravito plugins are not just "extensions"; they are sovereign entities that can act as independent mini-Gravito instances.
 
@@ -63,7 +63,7 @@ Plugins can recursively override routes, logic, and UI layers, allowing for powe
 
 ---
 
-## 🤖 AI-Optimized Types
+## AI-Optimized Types
 
 For enterprise teams, code consistency is paramount. Gravito leverages TypeScript to create rock-solid contracts that AI agents (Cursor, Copilot) can understand with zero ambiguity.
 

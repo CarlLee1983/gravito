@@ -1,23 +1,33 @@
-# 🗺️ Complete Sitemap Guide
+# Sitemap System Guide: Cartography for Technical SEO
 
-A comprehensive guide to using Sitemap for generating XML sitemaps, from basic usage to enterprise-level features supporting millions of URLs.
+In the world of Search Engine Optimization, a **Sitemap** is your website's primary nautical chart. While the [Luminosity Engine](./seo-engine) makes individual pages more attractive (Meta tags), the **Sitemap** determines whether search engine crawlers can even find and index the "hidden gems" within your galaxy.
+
+Gravito's Sitemap system is designed for **Enterprise SCALE**, capable of handling millions of URLs with built-in support for sharding, incremental updates, and automated cloud synchronization.
 
 ---
 
-## 📚 Table of Contents
+## Why a Dedicated Sitemap System?
+
+1.  **Solving SPA Crawling**: Content in Single Page Applications (React/Vue) can be elusive to crawlers. Sitemaps ensure every dynamic route is explicitly declared.
+2.  **Stellar Scalability**: When your URL count exceeds 50,000, Google requires **"Sitemap Sharding"**. This system automatically generates Index files and shards for you.
+3.  **Sync-with-Redirects**: If a URL changes (301 redirect), the Sitemap updates automatically, preventing crawlers from hitting dead ends.
+
+---
+
+## Table of Contents
 
 1. [Quick Start](#quick-start)
-2. [Node.js Runtime Demo](#nodejs-runtime-demo)
-3. [Basic Usage](#basic-usage)
-4. [Enterprise Features](#enterprise-features)
-5. [Incremental Generation](#incremental-generation)
-6. [301 Redirect Handling](#301-redirect-handling)
+2. [Basic Usage: Dynamic & Static](#basic-usage)
+3. [Enterprise Features: S3 & Cloud Storage](#enterprise-features)
+4. [Atomic Shadow Processing (Shadow Swap)](#shadow-processing-shadow-swap)
+5. [Incremental Build](#incremental-generation)
+6. [Automated 301 Redirect Handling](#301-redirect-handling)
 7. [Best Practices](#best-practices)
-8. [Troubleshooting](#troubleshooting)
+
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Installation
 
@@ -28,9 +38,9 @@ bun add @gravito/constellation
 ### Minimal Example
 
 ```typescript
-import { LuminositySitemap, routeScanner } from '@gravito/constellation'
+import { OrbitSitemap, routeScanner } from '@gravito/constellation'
 
-const sitemap = LuminositySitemap.static({
+const sitemap = OrbitSitemap.static({
   baseUrl: 'https://example.com',
   outDir: './dist',
   providers: [
@@ -41,11 +51,11 @@ const sitemap = LuminositySitemap.static({
 await sitemap.generate()
 ```
 
-That's it! Your sitemap is generated at `./dist/sitemap.xml`.
+That's it!Your sitemap is generated at `./dist/sitemap.xml`.
 
 ---
 
-## 🧰 Node.js Runtime Demo
+## Node.js Runtime Demo
 
 If you want to validate sitemap rendering on a pure Node runtime, use the Express adapter example:
 
@@ -55,16 +65,16 @@ Note: Some features are only supported when running on Gravito core.
 
 ---
 
-## 📖 Basic Usage
+## Basic Usage
 
 ### 1. Dynamic Sitemap (Runtime)
 
 Serve sitemap directly from your application:
 
 ```typescript
-import { LuminositySitemap, routeScanner } from '@gravito/constellation'
+import { OrbitSitemap, routeScanner } from '@gravito/constellation'
 
-LuminositySitemap.dynamic({
+OrbitSitemap.dynamic({
   baseUrl: 'https://example.com',
   providers: [
     // Automatically scan routes
@@ -97,9 +107,9 @@ LuminositySitemap.dynamic({
 Generate sitemap files during build process:
 
 ```typescript
-import { LuminositySitemap, routeScanner } from '@gravito/constellation'
+import { OrbitSitemap, routeScanner } from '@gravito/constellation'
 
-const sitemap = LuminositySitemap.static({
+const sitemap = OrbitSitemap.static({
   baseUrl: 'https://example.com',
   outDir: './dist',
   filename: 'sitemap.xml',
@@ -226,7 +236,7 @@ Providers can return:
 
 ---
 
-## 🏢 Enterprise Features
+## Enterprise Features
 
 ### Cloud Storage (S3 / GCP)
 
@@ -240,9 +250,9 @@ bun add @aws-sdk/client-s3
 ```
 
 ```typescript
-import { LuminositySitemap, S3SitemapStorage } from '@gravito/constellation'
+import { OrbitSitemap, S3SitemapStorage } from '@gravito/constellation'
 
-const sitemap = LuminositySitemap.static({
+const sitemap = OrbitSitemap.static({
   baseUrl: 'https://example.com',
   storage: new S3SitemapStorage({
     bucket: 'my-sitemap-bucket',
@@ -275,9 +285,9 @@ bun add @google-cloud/storage
 ```
 
 ```typescript
-import { LuminositySitemap, GCPSitemapStorage } from '@gravito/constellation'
+import { OrbitSitemap, GCPSitemapStorage } from '@gravito/constellation'
 
-const sitemap = LuminositySitemap.static({
+const sitemap = OrbitSitemap.static({
   baseUrl: 'https://example.com',
   storage: new GCPSitemapStorage({
     bucket: 'my-sitemap-bucket',
@@ -305,7 +315,7 @@ Shadow processing ensures safe deployments by generating sitemaps to temporary l
 Generate to temporary location, then atomically swap:
 
 ```typescript
-const sitemap = LuminositySitemap.static({
+const sitemap = OrbitSitemap.static({
   // ...
   shadow: {
     enabled: true,
@@ -324,7 +334,7 @@ const sitemap = LuminositySitemap.static({
 Keep old versions, switch when ready:
 
 ```typescript
-const sitemap = LuminositySitemap.static({
+const sitemap = OrbitSitemap.static({
   // ...
   shadow: {
     enabled: true,
@@ -349,9 +359,9 @@ await storage.switchVersion('sitemap.xml', 'version-id')
 Generate sitemaps asynchronously without blocking:
 
 ```typescript
-import { LuminositySitemap, MemoryProgressStorage } from '@gravito/constellation'
+import { OrbitSitemap, MemoryProgressStorage } from '@gravito/constellation'
 
-const sitemap = LuminositySitemap.static({
+const sitemap = OrbitSitemap.static({
   baseUrl: 'https://example.com',
   outDir: './dist',
   providers: [...],
@@ -364,7 +374,7 @@ const jobId = await sitemap.generateAsync({
     console.log(`Progress: ${progress.percentage}% (${progress.processed}/${progress.total})`)
   },
   onComplete: () => {
-    console.log('✅ Generation completed!')
+    console.log('[Complete] Generation completed!')
   },
   onError: (error) => {
     console.error('❌ Generation failed:', error)
@@ -542,7 +552,7 @@ import Redis from 'ioredis'
 
 const redis = new Redis(process.env.REDIS_URL)
 
-const sitemap = LuminositySitemap.static({
+const sitemap = OrbitSitemap.static({
   // ...
   progressStorage: new RedisProgressStorage({
     client: redis,
@@ -557,7 +567,7 @@ const sitemap = LuminositySitemap.static({
 Automatically splits large sitemaps into multiple files:
 
 ```typescript
-const sitemap = LuminositySitemap.static({
+const sitemap = OrbitSitemap.static({
   // ...
   maxEntriesPerFile: 50000 // Default: 50000 (Google's limit)
 })
@@ -571,16 +581,16 @@ const sitemap = LuminositySitemap.static({
 
 ---
 
-## 🔄 Incremental Generation
+## Incremental Generation
 
 Only update changed URLs instead of regenerating the entire sitemap:
 
 ### Setup
 
 ```typescript
-import { LuminositySitemap, MemoryChangeTracker } from '@gravito/constellation'
+import { OrbitSitemap, MemoryChangeTracker } from '@gravito/constellation'
 
-const sitemap = LuminositySitemap.static({
+const sitemap = OrbitSitemap.static({
   baseUrl: 'https://example.com',
   outDir: './dist',
   providers: [...],
@@ -652,7 +662,7 @@ import Redis from 'ioredis'
 
 const redis = new Redis(process.env.REDIS_URL)
 
-const sitemap = LuminositySitemap.static({
+const sitemap = OrbitSitemap.static({
   // ...
   incremental: {
     enabled: true,
@@ -667,7 +677,7 @@ const sitemap = LuminositySitemap.static({
 
 ---
 
-## 🔀 301 Redirect Handling
+## 301 Redirect Handling
 
 Automatically handle URL redirects in your sitemap:
 
@@ -675,14 +685,14 @@ Automatically handle URL redirects in your sitemap:
 
 ```typescript
 import { 
-  LuminositySitemap, 
+  OrbitSitemap, 
   MemoryRedirectManager,
   RedirectDetector 
 } from '@gravito/constellation'
 
 const redirectManager = new MemoryRedirectManager()
 
-const sitemap = LuminositySitemap.static({
+const sitemap = OrbitSitemap.static({
   baseUrl: 'https://example.com',
   outDir: './dist',
   providers: [...],
@@ -856,7 +866,7 @@ const redirectManager = new RedisRedirectManager({
 
 ---
 
-## 💡 Best Practices
+## Best Practices
 
 ### 1. Use AsyncIterable for Large Datasets
 
@@ -930,7 +940,7 @@ storage: new S3SitemapStorage({
 
 ---
 
-## 🔧 Troubleshooting
+## Troubleshooting
 
 ### Problem: Sitemap generation is too slow
 
@@ -974,13 +984,13 @@ storage: new S3SitemapStorage({
 
 ---
 
-## 📚 Complete Example
+## Complete Example
 
 Here's a complete enterprise setup:
 
 ```typescript
 import { 
-  LuminositySitemap,
+  OrbitSitemap,
   S3SitemapStorage,
   RedisChangeTracker,
   RedisRedirectManager,
@@ -1015,7 +1025,7 @@ for (const [from, rule] of redirects) {
 }
 
 // Create sitemap with all enterprise features
-const sitemap = LuminositySitemap.static({
+const sitemap = OrbitSitemap.static({
   baseUrl: 'https://example.com',
   storage: new S3SitemapStorage({
     bucket: 'my-sitemap-bucket',
@@ -1086,7 +1096,7 @@ const jobId = await sitemap.generateAsync({
 
 ---
 
-## 🎯 Next Steps
+## Next Steps
 
 - Check out [SEO Engine Guide](/en/docs/guide/seo-engine) for meta tags and analytics
 - See [Deployment Guide](/en/docs/guide/deployment) for production setup

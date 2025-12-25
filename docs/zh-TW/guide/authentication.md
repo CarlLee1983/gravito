@@ -267,6 +267,6 @@ router.post('/login', rateLimiter({ max: 5, window: '15m' }), loginHandler)
 
 ## 下一步
 
-- 了解 [授權](/zh-TW/guide/authorization) 以控制使用者權限
-- 設置 [Session 管理](/zh-TW/guide/sessions) 以持久化登入
-- 配置 [電子郵件通知](/zh-TW/guide/mail) 以發送交易郵件
+- 了解 [授權](./authorization) 以控制使用者權限
+- 設置 [Session 管理](./sessions) 以持久化登入
+- 配置 [電子郵件通知](./mail) 以發送交易郵件
