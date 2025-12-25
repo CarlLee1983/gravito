@@ -15,7 +15,7 @@ const tsup = spawn(
     'esm,cjs',
     '--dts',
     '--external',
-    'hono', // Hono is a peer dependency
+    '@gravito/photon', // Photon is a peer dependency
     '--external',
     'bun:test', // Bun test module
     '--outDir',

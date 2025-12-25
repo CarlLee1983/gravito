@@ -440,10 +440,10 @@ export abstract class FormRequest<T = unknown> {
 }
 
 /**
- * Create a Hono middleware from a FormRequest class.
+ * Create a Photon middleware from a FormRequest class.
  *
  * @param RequestClass - The FormRequest class constructor.
- * @returns A Hono middleware handler.
+ * @returns A Photon middleware handler.
  */
 export function validateRequest<T>(RequestClass: new () => FormRequest<T>): MiddlewareHandler {
   return async (ctx, next) => {

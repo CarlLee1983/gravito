@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import { BunNativeAdapter } from '../src/adapters/bun/BunNativeAdapter'
-import { HonoAdapter } from '../src/adapters/HonoAdapter'
+import { PhotonAdapter } from '../src/adapters/PhotonAdapter'
 import { PlanetCore } from '../src/PlanetCore'
 
 describe('PlanetCore Default Adapter', () => {
@@ -11,9 +11,9 @@ describe('PlanetCore Default Adapter', () => {
   })
 
   it('should allow overriding adapter via constructor', () => {
-    const honoAdapter = new HonoAdapter()
-    const core = new PlanetCore({ adapter: honoAdapter })
-    expect(core.adapter).toBeInstanceOf(HonoAdapter)
-    expect(core.adapter).toBe(honoAdapter)
+    const photonAdapter = new PhotonAdapter()
+    const core = new PlanetCore({ adapter: photonAdapter })
+    expect(core.adapter).toBeInstanceOf(PhotonAdapter)
+    expect(core.adapter).toBe(photonAdapter)
   })
 })

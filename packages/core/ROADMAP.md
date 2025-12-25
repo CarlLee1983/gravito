@@ -4,7 +4,7 @@
 The foundation of the universe.
 - [x] **Micro-kernel**: Lightweight `PlanetCore`.
 - [x] **Gravity System**: Async `HookManager` (Filters/Actions).
-- [x] **Orbit System**: Mounting mechanism for Hono apps.
+- [x] **Orbit System**: Mounting mechanism for Photon apps.
 
 ## 🪐 Phase 2: Atmosphere & Life Support (Current: v0.2.0)
 Essential utilities for building real-world applications.

@@ -1,6 +1,6 @@
 # gravito-core
 
-> Galaxy 架構的微核心，基於 Hono 與 Bun 的輕量可擴充框架核心。
+> Galaxy 架構的微核心，基於 Photon 與 Bun 的輕量可擴充框架核心。
 
 ## 安裝
 

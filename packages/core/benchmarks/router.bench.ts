@@ -1,5 +1,5 @@
-import { RegExpRouter } from 'hono/router/reg-exp-router'
-import { TrieRouter } from 'hono/router/trie-router'
+import { RegExpRouter } from '@gravito/photon/router/reg-exp-router'
+import { TrieRouter } from '@gravito/photon/router/trie-router'
 import { RadixRouter } from '../src/adapters/bun/RadixRouter'
 
 // Simple placeholder handler since functions aren't serialized
@@ -48,7 +48,7 @@ async function benchmarkRouter(name: string, routerImpl: any, routes: string[], 
 }
 
 async function runBenchmarks() {
-  console.log('--- Gravito RadixRouter vs Hono Benchmarks ---\n')
+  console.log('--- Gravito RadixRouter vs Photon Benchmarks ---\n')
 
   const counts = [50, 500, 5000]
 
@@ -58,15 +58,15 @@ async function runBenchmarks() {
 
     await benchmarkRouter('RadixRouter', RadixRouter, routes)
     try {
-      await benchmarkRouter('Hono(RegExp)', RegExpRouter, routes)
+      await benchmarkRouter('Photon(RegExp)', RegExpRouter, routes)
     } catch (_e) {
       // RegExpRouter might fail with too many routes due to regex size limits
-      console.log('  Hono(RegExp)    | Failed (Likely route limit)')
+      console.log('  Photon(RegExp)  | Failed (Likely route limit)')
     }
     try {
-      await benchmarkRouter('Hono(Trie)', TrieRouter, routes)
+      await benchmarkRouter('Photon(Trie)', TrieRouter, routes)
     } catch (_e) {
-      console.log('  Hono(Trie)      | Failed')
+      console.log('  Photon(Trie)    | Failed')
     }
   }
 
@@ -74,14 +74,14 @@ async function runBenchmarks() {
   const dynamicRoutes = generateRoutes(1000, 'dynamic')
   await benchmarkRouter('RadixRouter', RadixRouter, dynamicRoutes)
   try {
-    await benchmarkRouter('Hono(RegExp)', RegExpRouter, dynamicRoutes)
+    await benchmarkRouter('Photon(RegExp)', RegExpRouter, dynamicRoutes)
   } catch (_e) {
-    console.log('  Hono(RegExp)    | Failed')
+    console.log('  Photon(RegExp)  | Failed')
   }
   try {
-    await benchmarkRouter('Hono(Trie)', TrieRouter, dynamicRoutes)
+    await benchmarkRouter('Photon(Trie)', TrieRouter, dynamicRoutes)
   } catch (_e) {
-    console.log('  Hono(Trie)      | Failed')
+    console.log('  Photon(Trie)    | Failed')
   }
 
   // Serialization Check

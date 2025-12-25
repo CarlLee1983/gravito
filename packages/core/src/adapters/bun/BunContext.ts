@@ -7,7 +7,8 @@ import type {
 import { BunRequest } from './BunRequest'
 
 export class BunContext<V extends GravitoVariables = GravitoVariables>
-  implements GravitoContext<V> {
+  implements GravitoContext<V>
+{
   // Request wrapper
   public readonly req: BunRequest
 
@@ -19,7 +20,7 @@ export class BunContext<V extends GravitoVariables = GravitoVariables>
   private _headers: Headers = new Headers()
   private _executionCtx?: ExecutionContext
 
-  // Stored response (Hono-like behavior)
+  // Stored response (Photon-like behavior)
   public res: Response | undefined
 
   public readonly native: unknown

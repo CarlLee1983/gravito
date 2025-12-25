@@ -19,7 +19,7 @@ describe('Router Integration (BunNativeAdapter)', () => {
     adapter = new BunNativeAdapter()
 
     // Mock PlanetCore minimal interface required by Router
-    // Router needs `core.adapter` and `core.app` (for Hono fallback, but we are testing Bun)
+    // Router needs `core.adapter` and `core.app` (for Photon fallback, but we are testing Bun)
     // Router constructor uses `core.adapter.useGlobal`
 
     core = {

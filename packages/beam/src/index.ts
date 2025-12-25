@@ -1,32 +1,32 @@
-import type { Env, Hono, Schema } from 'hono'
-import { hc } from 'hono/client'
+import type { Env, Photon, Schema } from '@gravito/photon'
+import { hc as beamClient } from '@gravito/photon/client'
 import type { BeamOptions } from './types'
 
 /**
  * Orbit Beam - Lightweight type-safe RPC client for Gravito applications.
  *
- * This function wraps the Hono client (`hc`) to provide a seamless, type-safe development experience
- * similar to tRPC but with zero runtime overhead. It directly delegates to Hono's client, maintaining
+ * This function wraps the Beam client to provide a seamless, type-safe development experience
+ * similar to tRPC but with zero runtime overhead. It directly delegates to the Photon client, maintaining
  * maximum performance and minimal bundle size.
  *
- * **Zero Runtime Overhead**: This is a pure type wrapper that delegates directly to `hc<T>`.
+ * **Zero Runtime Overhead**: This is a pure type wrapper that delegates directly to the Beam client.
  * No additional abstraction layers or middleware are added.
  *
- * **Type Support**: Supports both `AppType` (simple Hono instance) and `AppRoutes` (from `app.route()`).
- * Both are Hono instances and work seamlessly with this function.
+ * **Type Support**: Supports both `AppType` (simple Photon instance) and `AppRoutes` (from `app.route()`).
+ * Both are Photon instances and work seamlessly with this function.
  *
- * @template T - The type of your Hono app. Can be either:
- *   - `AppType`: `typeof app` - Direct type from Hono instance (simple scenarios)
+ * @template T - The type of your Photon app. Can be either:
+ *   - `AppType`: `typeof app` - Direct type from Photon instance (simple scenarios)
  *   - `AppRoutes`: `ReturnType<typeof _createTypeOnlyApp>` - Type from `app.route()` chain (recommended, matches template usage)
  * @param baseUrl - The base URL of your API server (e.g., 'http://localhost:3000')
  * @param options - Optional configuration including fetch options (headers, etc.)
- * @returns A fully typed Hono client instance that provides IntelliSense for all routes
+ * @returns A fully typed Beam client instance that provides IntelliSense for all routes
  *
  * @example
  * **Using AppType (simple scenario):**
  * ```typescript
  * // server/app.ts
- * const app = new Hono()
+ * const app = new Photon()
  *   .post('/post', validate('json', PostSchema), (c) => {
  *     return c.json({ id: 1, title: 'Hello' })
  *   })
@@ -67,13 +67,13 @@ import type { BeamOptions } from './types'
  * })
  * ```
  */
-export function createBeam<T extends Hono<Env, Schema, string>>(
+export function createBeam<T extends Photon<Env, Schema, string>>(
   baseUrl: string,
   options?: BeamOptions
-): ReturnType<typeof hc<T>> {
-  // We explicitly cast the return type to match what hc<T> provides.
-  // The 'hc' function from Hono returns a proxy that provides typed access based on T.
-  return hc<T>(baseUrl, options)
+): ReturnType<typeof beamClient<T>> {
+  // We explicitly cast the return type to match what the Beam client provides.
+  // The Photon client returns a proxy that provides typed access based on T.
+  return beamClient<T>(baseUrl, options)
 }
 
 /**

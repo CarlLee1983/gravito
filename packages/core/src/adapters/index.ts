@@ -10,11 +10,11 @@
 export * from './bun'
 // Implementations
 export {
-  createHonoAdapter,
-  HonoAdapter,
-  HonoContextWrapper,
-  HonoRequestWrapper,
-} from './HonoAdapter'
+  createPhotonAdapter,
+  PhotonAdapter,
+  PhotonContextWrapper,
+  PhotonRequestWrapper,
+} from './PhotonAdapter'
 // Types
 export type {
   AdapterConfig,

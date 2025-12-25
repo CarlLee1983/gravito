@@ -19,12 +19,12 @@ export const VERSION = packageJson.version
 
 export {
   createGravitoAdapter,
-  createHonoAdapter,
+  createPhotonAdapter,
   GravitoAdapter,
-  HonoAdapter,
-  HonoContextWrapper,
-  HonoRequestWrapper,
-} from './adapters/HonoAdapter'
+  PhotonAdapter,
+  PhotonContextWrapper,
+  PhotonRequestWrapper,
+} from './adapters/PhotonAdapter'
 
 // Adapters
 export type { AdapterConfig, AdapterFactory, HttpAdapter, RouteDefinition } from './adapters/types'

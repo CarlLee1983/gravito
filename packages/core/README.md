@@ -1,6 +1,6 @@
 # gravito-core
 
-> The Micro-kernel for Galaxy Architecture. Lightweight, extensible, and built on Hono & Bun.
+> The Micro-kernel for Galaxy Architecture. Lightweight, extensible, and built on Photon & Bun.
 
 [![npm version](https://img.shields.io/npm/v/gravito-core.svg)](https://www.npmjs.com/package/gravito-core)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -11,16 +11,16 @@
 
 ## ✨ Features
 
-- 🪐 **PlanetCore** - A centralized Hono-based kernel to manage your application lifecycle.
+- 🪐 **PlanetCore** - A centralized Photon-based kernel to manage your application lifecycle.
 - 📦 **IoC Container** - A lightweight dependency injection container with binding and singleton support.
 - 🧩 **Service Providers** - Modular service registration and booting lifecycle.
 - 🪝 **Hook System** - WordPress-style async **Filters** and **Actions** for powerful extensibility.
-- 🛰️ **Orbit Mounting** - Easily mount external Hono applications (Orbits) to specific paths.
+- 🛰️ **Orbit Mounting** - Easily mount external Photon applications (Orbits) to specific paths.
 - 📝 **Logger System** - PSR-3 style logger interface with default standard output implementation.
 - ⚙️ **Config Manager** - Unified configuration management supporting environment variables (`Bun.env`) and runtime injection.
 - 🛡️ **Error Handling** - Built-in standardized JSON error responses and 404 handling.
 - 🚀 **Modern** - Built for **Bun** runtime with native TypeScript support.
-- 🪶 **Lightweight** - Zero external dependencies (except `hono`).
+- 🪶 **Lightweight** - Zero external dependencies (except `@gravito/photon`).
 
 ## 📦 Installation
 
@@ -100,12 +100,12 @@ await core.hooks.doAction('user_registered', 'user_123');
 
 ### 4. Mount an Orbit
 
-Orbits are just standard Hono applications that plug into the core.
+Orbits are just standard Photon applications that plug into the core.
 
 ```typescript
-import { Hono } from 'hono';
+import { Photon } from '@gravito/photon';
 
-const blogOrbit = new Hono();
+const blogOrbit = new Photon();
 blogOrbit.get('/posts', (c) => c.json({ posts: [] }));
 
 // Mount the orbit to /api/blog
@@ -141,10 +141,10 @@ core.hooks.addAction('processError:report', async (ctx) => {
 - **`constructor(options?)`**: Initialize the core with optional Logger and Config.
 - **`register(provider: ServiceProvider)`**: Register a service provider.
 - **`bootstrap()`**: Boot all registered providers.
-- **`mountOrbit(path: string, app: Hono)`**: Mount a Hono app to a sub-path.
+- **`mountOrbit(path: string, app: Photon)`**: Mount a Photon app to a sub-path.
 - **`liftoff(port?: number)`**: Returns the configuration object for `Bun.serve`.
 - **`container`**: Access the IoC Container.
-- **`app`**: Access the internal Hono instance.
+- **`app`**: Access the internal Photon instance.
 - **`hooks`**: Access the HookManager.
 - **`logger`**: Access the Logger instance.
 - **`config`**: Access the ConfigManager.

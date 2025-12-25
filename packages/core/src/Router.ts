@@ -622,13 +622,13 @@ export class Router {
     // If domain constraint exists, we wrap everything in a check
     if (options.domain) {
       const _wrappedHandler: GravitoHandler = async (c) => {
-        // Warning: This domain check is basic and doesn't handle multiple domains cleanly like Hono's vhost
+        // Warning: This domain check is basic and doesn't handle multiple domains cleanly like Photon's vhost
         // But for parity with existing code:
         if (c.req.header('host') !== options.domain) {
           // If domain doesn't match, we should probably not have matched this route?
           // The adapter should arguably handle domain routing if supported.
           // For now, if domain doesn't match, we return 404 or pass? (Adapter execution chain vs Route matching)
-          // Hono implementation just called `next()` which bypassed the handler.
+          // Photon implementation just called `next()` which bypassed the handler.
           // Here, we are the handler.
           // If we are here, the router matched the path.
           // If we return, we stop.
@@ -636,9 +636,9 @@ export class Router {
           // Gravito structure assumes route is final.
           // If we want next(), we need to register as middleware?
           // The adapter implementation of `route` expects handlers.
-          // If we want to simulate Hono behavior:
+          // If we want to simulate Photon behavior:
 
-          // Actually, Hono's router (RegExpRouter, TrieRouter) doesn't handle host matching by default in `app.get()`.
+          // Actually, Photon's router (RegExpRouter, TrieRouter) doesn't handle host matching by default in `app.get()`.
           // The previous implementation used a manual check and called `next()`.
           // But `GravitoHandler` signature is `(ctx) => Response`. It doesn't take `next`.
           // The adapter architecture separates Middleware `(ctx, next)` from Handler `(ctx)`.
@@ -679,7 +679,7 @@ export class Router {
     // It says `route(method, path, ...handlers: GravitoHandler[]): void`
     // But `GravitoHandler` returns Response.
     // Middleware returns Promise<Response|void>.
-    // Hono mixes them. Gravito types seem to distinguish?
+    // Photon mixes them. Gravito types seem to distinguish?
 
     // Let's re-read `http/types.ts`.
     // GravitoHandler = (ctx) => Response
@@ -707,7 +707,7 @@ export class Router {
 
     // In `Router.ts` (previous version):
     // `const wrappedHandler: Handler = async (c, next) => ...`
-    // Hono `Handler` includes `next`.
+    // Photon `Handler` includes `next`.
 
     // In Gravito, we separated them.
     // The *final* handler is `GravitoHandler`.

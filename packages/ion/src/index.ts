@@ -9,7 +9,6 @@
  */
 
 import type { GravitoContext, GravitoOrbit, GravitoVariables, PlanetCore } from 'gravito-core'
-import { HonoContextWrapper } from 'gravito-core'
 import { InertiaService } from './InertiaService'
 
 export * from './InertiaService'
@@ -49,9 +48,8 @@ export class OrbitIon implements GravitoOrbit {
 
     // Register middleware to inject Inertia helper
     core.adapter.use('*', async (c: any, next: any) => {
-      // Create GravitoContext wrapper for InertiaService
-      // This allows InertiaService to use the abstraction layer
-      const gravitoCtx = new HonoContextWrapper(c) as GravitoContext<GravitoVariables>
+      // The adapter passes a GravitoContext to middleware
+      const gravitoCtx = c as GravitoContext<GravitoVariables>
 
       // Initialize with config
       const inertia = new InertiaService(gravitoCtx, {

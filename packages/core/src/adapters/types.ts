@@ -67,18 +67,18 @@ export interface RouteDefinition {
 /**
  * HttpAdapter - The core interface for HTTP engine abstraction
  *
- * Any HTTP engine (Hono, Express, Fastify, custom Bun implementation)
+ * Any HTTP engine (Photon, Express, Fastify, custom Bun implementation)
  * must implement this interface to be usable with Gravito.
  *
  * @typeParam V - Context variables type
  *
  * @example
  * ```typescript
- * // Using the default Hono adapter
- * import { HonoAdapter } from '@gravito/core/adapters'
+ * // Using the default Photon adapter
+ * import { PhotonAdapter } from '@gravito/core/adapters'
  *
  * const core = new PlanetCore({
- *   adapter: new HonoAdapter()
+ *   adapter: new PhotonAdapter()
  * })
  *
  * // Using a custom adapter
@@ -116,8 +116,8 @@ export interface HttpAdapter<V extends GravitoVariables = GravitoVariables> {
    *
    * @example
    * ```typescript
-   * // For Hono adapter
-   * const honoApp = adapter.native as Hono
+   * // For Photon adapter
+   * const photonApp = adapter.native as Photon
    *
    * // For custom Bun adapter
    * const bunApp = adapter.native as BunApp

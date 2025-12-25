@@ -2,7 +2,7 @@
  * @fileoverview Type Compatibility Layer
  *
  * This module provides type aliases for backward compatibility with
- * code that directly imports from 'hono'. Users can gradually migrate
+ * code that directly imports from Photon. Users can gradually migrate
  * to the Gravito abstractions.
  *
  * @module @gravito/core/compat
@@ -10,8 +10,8 @@
  *
  * @example
  * ```typescript
- * // Before (Hono-coupled):
- * import type { Context, MiddlewareHandler } from 'hono'
+ * // Before (Photon-coupled):
+ * import type { Context, MiddlewareHandler } from '@gravito/photon'
  *
  * // After (Gravito abstraction):
  * import type { GravitoContext, GravitoMiddleware } from 'gravito-core'
@@ -21,7 +21,7 @@
  * ```
  */
 
-// Re-export Gravito types with Hono-style aliases for migration
+// Re-export Gravito types with Photon-style aliases for migration
 // Also export Gravito types with their proper names for those who want to use both
 export type {
   ContentfulStatusCode,

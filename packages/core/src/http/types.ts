@@ -2,7 +2,7 @@
  * @fileoverview Core HTTP Types for Gravito Framework
  *
  * These types provide a unified abstraction layer that decouples the framework
- * from any specific HTTP engine (Hono, Express, custom, etc.).
+ * from any specific HTTP engine (Photon, Express, custom, etc.).
  *
  * @module @gravito/core/http
  * @since 2.0.0
@@ -384,7 +384,7 @@ export interface GravitoContext<V extends GravitoVariables = GravitoVariables> {
    * @example
    * ```typescript
    * // Only when absolutely necessary
-   * const honoCtx = ctx.native as Context // Hono Context
+   * const photonCtx = ctx.native as Context // Photon Context
    * ```
    */
   readonly native: unknown

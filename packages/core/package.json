@@ -62,6 +62,6 @@
     "registry": "https://registry.npmjs.org/"
   },
   "dependencies": {
-    "hono": "^4.11.1"
+    "@gravito/photon": "workspace:*"
   }
 }

@@ -1,4 +1,4 @@
-// Basic options interface for Hono client
+// Basic options interface for Beam client
 export interface BeamOptions {
   headers?:
     | Record<string, string>

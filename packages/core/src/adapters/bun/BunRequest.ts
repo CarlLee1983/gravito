@@ -114,11 +114,11 @@ export class BunRequest implements GravitoRequest {
   valid<T = unknown>(target: ValidationTarget): T {
     const data = this._validated[target]
     if (data === undefined) {
-      // In Hono, valid() throws or returns specific type?
+      // In Photon, valid() throws or returns specific type?
       // Gravito types definition says allows undefined?
       // "valid<T = unknown>(target: ValidationTarget): T"
       // Usually framework-agnostic means we should throw if not found or return T.
-      // Hono definition: valid<T>(target: keyof ValidationTargets): T
+      // Photon definition: valid<T>(target: keyof ValidationTargets): T
       // If not validated, likely undefined or error.
       // Let's return undefined as "unknown" implicitly.
       // Or throw to match semantics?

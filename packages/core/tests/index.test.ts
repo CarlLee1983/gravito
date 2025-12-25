@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { Hono } from 'hono'
+import { Photon } from '@gravito/photon'
 import packageJson from '../package.json'
 import { PlanetCore, VERSION } from '../src/index'
 
@@ -38,7 +38,7 @@ describe('gravito-core', () => {
 
     it('should mount orbits and serve requests', async () => {
       const core = new PlanetCore()
-      const orbit = new Hono()
+      const orbit = new Photon()
       orbit.use('*', async (c, next) => {
         console.log('[DEBUG] Orbit Request:', c.req.method, c.req.url, c.req.path)
         console.log('[DEBUG] Headers:', c.req.header())
@@ -57,12 +57,12 @@ describe('gravito-core', () => {
       console.log('Standalone Orbit Response:', standaloneText)
       expect(standaloneText).toBe('pong')
 
-      // Test HonoAdapter directly
-      const { HonoAdapter } = await import('../src/adapters/HonoAdapter')
-      const adapter = new HonoAdapter({}, orbit)
+      // Test PhotonAdapter directly
+      const { PhotonAdapter } = await import('../src/adapters/PhotonAdapter')
+      const adapter = new PhotonAdapter({}, orbit)
       const adapterRes = await adapter.fetch(new Request('http://localhost/ping'))
       const adapterText = await adapterRes.text()
-      console.log('HonoAdapter Response:', adapterText)
+      console.log('PhotonAdapter Response:', adapterText)
       expect(adapterText).toBe('pong')
 
       // Simulate BunNativeAdapter request rewriting logic
@@ -79,7 +79,7 @@ describe('gravito-core', () => {
       expect(simText).toBe('pong')
 
       // Use a fresh instance to rule out state issues
-      const freshOrbit = new Hono()
+      const freshOrbit = new Photon()
       freshOrbit.get('/ping', (c) => c.text('pong'))
 
       core.mountOrbit('/fresh', freshOrbit)

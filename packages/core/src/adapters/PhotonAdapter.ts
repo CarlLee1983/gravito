@@ -1,14 +1,14 @@
 /**
- * @fileoverview Hono Adapter Implementation
+ * @fileoverview Photon Adapter Implementation
  *
- * This adapter wraps Hono to implement the Gravito HttpAdapter interface.
+ * This adapter wraps Photon to implement the Gravito HttpAdapter interface.
  * It serves as the default adapter and reference implementation for others.
  *
- * @module @gravito/core/adapters/hono
+ * @module @gravito/core/adapters/photon
  * @since 2.0.0
  */
 
-import type { Context, Handler, Hono, MiddlewareHandler, Next } from 'hono'
+import type { Context, Handler, MiddlewareHandler, Next, Photon } from '@gravito/photon'
 import type {
   GravitoContext,
   GravitoErrorHandler,
@@ -24,96 +24,97 @@ import type {
 import type { AdapterConfig, HttpAdapter, RouteDefinition } from './types'
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Hono Request Wrapper
+// Photon Request Wrapper
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Wraps Hono's request object to implement GravitoRequest
+ * Wraps Photon's request object to implement GravitoRequest
  */
-class HonoRequestWrapper implements GravitoRequest {
-  constructor(private honoCtx: Context) { }
+class PhotonRequestWrapper implements GravitoRequest {
+  constructor(private photonCtx: Context) {}
 
   get url(): string {
-    return this.honoCtx.req.url
+    return this.photonCtx.req.url
   }
 
   get method(): string {
-    return this.honoCtx.req.method
+    return this.photonCtx.req.method
   }
 
   get path(): string {
-    return this.honoCtx.req.path
+    return this.photonCtx.req.path
   }
 
   param(name: string): string | undefined {
-    return this.honoCtx.req.param(name)
+    return this.photonCtx.req.param(name)
   }
 
   params(): Record<string, string> {
-    return this.honoCtx.req.param() as Record<string, string>
+    return this.photonCtx.req.param() as Record<string, string>
   }
 
   query(name: string): string | undefined {
-    return this.honoCtx.req.query(name)
+    return this.photonCtx.req.query(name)
   }
 
   queries(): Record<string, string | string[]> {
-    return this.honoCtx.req.queries() as Record<string, string | string[]>
+    return this.photonCtx.req.queries() as Record<string, string | string[]>
   }
 
   header(name: string): string | undefined
   header(): Record<string, string>
   header(name?: string): string | undefined | Record<string, string> {
     if (name) {
-      return this.honoCtx.req.header(name)
+      return this.photonCtx.req.header(name)
     }
-    return this.honoCtx.req.header()
+    return this.photonCtx.req.header()
   }
 
   async json<T = unknown>(): Promise<T> {
-    return this.honoCtx.req.json<T>()
+    return this.photonCtx.req.json<T>()
   }
 
   async text(): Promise<string> {
-    return this.honoCtx.req.text()
+    return this.photonCtx.req.text()
   }
 
   async formData(): Promise<FormData> {
-    return this.honoCtx.req.formData()
+    return this.photonCtx.req.formData()
   }
 
   async arrayBuffer(): Promise<ArrayBuffer> {
-    return this.honoCtx.req.arrayBuffer()
+    return this.photonCtx.req.arrayBuffer()
   }
 
   async parseBody<T = unknown>(): Promise<T> {
-    return this.honoCtx.req.parseBody() as Promise<T>
+    return this.photonCtx.req.parseBody() as Promise<T>
   }
 
   get raw(): Request {
-    return this.honoCtx.req.raw
+    return this.photonCtx.req.raw
   }
 
   valid<T = unknown>(target: string): T {
-    // Use 'any' to bypass Hono's strict valid() typing
+    // Use 'any' to bypass Photon's strict valid() typing
     // The actual validation is handled by the validator middleware
-    return (this.honoCtx.req as unknown as { valid(t: string): T }).valid(target)
+    return (this.photonCtx.req as unknown as { valid(t: string): T }).valid(target)
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Hono Context Wrapper
+// Photon Context Wrapper
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Wraps Hono's context to implement GravitoContext
+ * Wraps Photon's context to implement GravitoContext
  */
-class HonoContextWrapper<V extends GravitoVariables = GravitoVariables>
-  implements GravitoContext<V> {
-  private _req: HonoRequestWrapper
+class PhotonContextWrapper<V extends GravitoVariables = GravitoVariables>
+  implements GravitoContext<V>
+{
+  private _req: PhotonRequestWrapper
 
-  constructor(private honoCtx: Context) {
-    this._req = new HonoRequestWrapper(honoCtx)
+  constructor(private photonCtx: Context) {
+    this._req = new PhotonRequestWrapper(photonCtx)
   }
 
   /**
@@ -121,9 +122,9 @@ class HonoContextWrapper<V extends GravitoVariables = GravitoVariables>
    * This allows: async list({ userService }: Context)
    */
   static create<V extends GravitoVariables = GravitoVariables>(
-    honoCtx: Context
+    photonCtx: Context
   ): GravitoContext<V> {
-    const instance = new HonoContextWrapper<V>(honoCtx)
+    const instance = new PhotonContextWrapper<V>(photonCtx)
     return new Proxy(instance, {
       get(target, prop, receiver) {
         // 1. If property exists on the instance (method, property), return it
@@ -135,7 +136,7 @@ class HonoContextWrapper<V extends GravitoVariables = GravitoVariables>
           return value
         }
 
-        // 2. If not, try to fetch from Hono context variables
+        // 2. If not, try to fetch from Photon context variables
         if (typeof prop === 'string') {
           return target.get(prop as any)
         }
@@ -151,32 +152,32 @@ class HonoContextWrapper<V extends GravitoVariables = GravitoVariables>
 
   json<T>(data: T, status?: number): Response {
     if (status !== undefined) {
-      return this.honoCtx.json(data as object, status as 200)
+      return this.photonCtx.json(data as object, status as 200)
     }
-    return this.honoCtx.json(data as object)
+    return this.photonCtx.json(data as object)
   }
 
   text(text: string, status?: number): Response {
     if (status !== undefined) {
-      return this.honoCtx.text(text, status as 200)
+      return this.photonCtx.text(text, status as 200)
     }
-    return this.honoCtx.text(text)
+    return this.photonCtx.text(text)
   }
 
   html(html: string, status?: number): Response {
     if (status !== undefined) {
-      return this.honoCtx.html(html, status as 200)
+      return this.photonCtx.html(html, status as 200)
     }
-    return this.honoCtx.html(html)
+    return this.photonCtx.html(html)
   }
 
   redirect(url: string, status: 301 | 302 | 303 | 307 | 308 = 302): Response {
-    return this.honoCtx.redirect(url, status)
+    return this.photonCtx.redirect(url, status)
   }
 
   body(data: BodyInit | null, status?: number): Response {
     if (data === null) {
-      return this.honoCtx.body(null, status as 200)
+      return this.photonCtx.body(null, status as 200)
     }
     // For non-null body, create Response directly
     return new Response(data, {
@@ -195,19 +196,19 @@ class HonoContextWrapper<V extends GravitoVariables = GravitoVariables>
   }
 
   notFound(message?: string): Response {
-    return this.honoCtx.text(message ?? 'Not Found', 404)
+    return this.photonCtx.text(message ?? 'Not Found', 404)
   }
 
   forbidden(message?: string): Response {
-    return this.honoCtx.text(message ?? 'Forbidden', 403)
+    return this.photonCtx.text(message ?? 'Forbidden', 403)
   }
 
   unauthorized(message?: string): Response {
-    return this.honoCtx.text(message ?? 'Unauthorized', 401)
+    return this.photonCtx.text(message ?? 'Unauthorized', 401)
   }
 
   badRequest(message?: string): Response {
-    return this.honoCtx.text(message ?? 'Bad Request', 400)
+    return this.photonCtx.text(message ?? 'Bad Request', 400)
   }
 
   // Implement header as separate methods internally
@@ -220,39 +221,39 @@ class HonoContextWrapper<V extends GravitoVariables = GravitoVariables>
   ): string | undefined | undefined {
     if (value !== undefined) {
       if (options?.append) {
-        // console.log('[HonoAdapter] Appending header:', name, value)
-        this.honoCtx.header(name, value, { append: true })
+        // console.log('[PhotonAdapter] Appending header:', name, value)
+        this.photonCtx.header(name, value, { append: true })
       } else {
-        // console.log('[HonoAdapter] Setting header:', name, value)
-        this.honoCtx.header(name, value)
+        // console.log('[PhotonAdapter] Setting header:', name, value)
+        this.photonCtx.header(name, value)
       }
       return undefined // Return undefined for setter to match type
     }
-    return this.honoCtx.req.header(name)
+    return this.photonCtx.req.header(name)
   }
 
   status(code: StatusCode): void {
-    this.honoCtx.status(code as 200)
+    this.photonCtx.status(code as 200)
   }
 
   get<K extends keyof V>(key: K): V[K] {
-    return this.honoCtx.get(key as string) as V[K]
+    return this.photonCtx.get(key as string) as V[K]
   }
 
   set<K extends keyof V>(key: K, value: V[K]): void {
-    this.honoCtx.set(key as string, value)
+    this.photonCtx.set(key as string, value)
   }
 
   get executionCtx(): ExecutionContext | undefined {
-    return this.honoCtx.executionCtx
+    return this.photonCtx.executionCtx
   }
 
   get env(): Record<string, unknown> | undefined {
-    return this.honoCtx.env as Record<string, unknown> | undefined
+    return this.photonCtx.env as Record<string, unknown> | undefined
   }
 
   get native(): Context {
-    return this.honoCtx
+    return this.photonCtx
   }
 }
 
@@ -261,24 +262,24 @@ class HonoContextWrapper<V extends GravitoVariables = GravitoVariables>
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Convert a GravitoHandler to a Hono Handler
+ * Convert a GravitoHandler to a Photon Handler
  */
-function toHonoHandler<V extends GravitoVariables>(handler: GravitoHandler<V>): Handler {
+function toPhotonHandler<V extends GravitoVariables>(handler: GravitoHandler<V>): Handler {
   return async (c: Context): Promise<Response> => {
-    const ctx = HonoContextWrapper.create<V>(c)
+    const ctx = PhotonContextWrapper.create<V>(c)
     return handler(ctx)
   }
 }
 
 /**
- * Convert a GravitoMiddleware to a Hono MiddlewareHandler
+ * Convert a GravitoMiddleware to a Photon MiddlewareHandler
  */
-function toHonoMiddleware<V extends GravitoVariables>(
+function toPhotonMiddleware<V extends GravitoVariables>(
   middleware: GravitoMiddleware<V>
 ): MiddlewareHandler {
   return async (c: Context, next: Next): Promise<Response | undefined> => {
-    // console.log('[HonoAdapter] Wrapping context')
-    const ctx = HonoContextWrapper.create<V>(c)
+    // console.log('[PhotonAdapter] Wrapping context')
+    const ctx = PhotonContextWrapper.create<V>(c)
     const gravitoNext: GravitoNext = async () => {
       await next()
     }
@@ -287,19 +288,19 @@ function toHonoMiddleware<V extends GravitoVariables>(
 }
 
 /**
- * Convert a GravitoErrorHandler to Hono's error handler signature
+ * Convert a GravitoErrorHandler to Photon's error handler signature
  */
-function toHonoErrorHandler<V extends GravitoVariables>(
+function toPhotonErrorHandler<V extends GravitoVariables>(
   handler: GravitoErrorHandler<V>
 ): (err: Error, c: Context) => Response | Promise<Response> {
   return async (err: Error, c: Context): Promise<Response> => {
-    const ctx = HonoContextWrapper.create<V>(c)
+    const ctx = PhotonContextWrapper.create<V>(c)
     return handler(err, ctx)
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Hono Adapter Implementation
+// Photon Adapter Implementation
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
@@ -320,41 +321,43 @@ function toHonoErrorHandler<V extends GravitoVariables>(
  * })
  * ```
  */
-export class HonoAdapter<V extends GravitoVariables = GravitoVariables> implements HttpAdapter<V> {
-  readonly name = 'hono'
+export class PhotonAdapter<V extends GravitoVariables = GravitoVariables>
+  implements HttpAdapter<V>
+{
+  readonly name = 'photon'
   readonly version = '1.0.0'
 
-  private app: Hono
+  private app: Photon
 
   constructor(
     private config: AdapterConfig = {},
-    honoInstance?: unknown
+    photonInstance?: unknown
   ) {
-    // Allow injecting an existing Hono instance for backwards compatibility
-    if (honoInstance) {
-      // Cast to Hono - the caller is responsible for providing a valid instance
-      this.app = honoInstance as Hono
+    // Allow injecting an existing Photon instance for backwards compatibility
+    if (photonInstance) {
+      // Cast to Photon - the caller is responsible for providing a valid instance
+      this.app = photonInstance as Photon
     } else {
       // Lazy import to avoid circular dependency issues
-      // In practice, PlanetCore will provide the Hono instance
+      // In practice, PlanetCore will provide the Photon instance
       // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const { Hono: HonoClass } = require('hono')
-      this.app = new HonoClass()
+      const { Photon: PhotonClass } = require('@gravito/photon')
+      this.app = new PhotonClass()
     }
   }
 
   /**
-   * Get the underlying Hono app instance
+   * Get the underlying Photon app instance
    */
-  get native(): Hono {
+  get native(): Photon {
     return this.app
   }
 
   /**
-   * Set the underlying Hono app instance
+   * Set the underlying Photon app instance
    * Used by PlanetCore during initialization
    */
-  setNative(app: Hono): void {
+  setNative(app: Photon): void {
     this.app = app
   }
 
@@ -365,7 +368,7 @@ export class HonoAdapter<V extends GravitoVariables = GravitoVariables> implemen
   ): void {
     const fullPath = (this.config.basePath || '') + path
     // We treat all handlers as potential middleware (accepting next)
-    const honoHandlers = handlers.map((h) => toHonoMiddleware<V>(h as GravitoMiddleware<V>))
+    const photonHandlers = handlers.map((h) => toPhotonMiddleware<V>(h as GravitoMiddleware<V>))
 
     // Use bracket notation to dynamically call the method
     const methodFn = (this.app as unknown as Record<string, (...args: unknown[]) => unknown>)[
@@ -375,7 +378,7 @@ export class HonoAdapter<V extends GravitoVariables = GravitoVariables> implemen
       throw new Error(`Unsupported HTTP method: ${method}`)
     }
 
-    methodFn.call(this.app, fullPath, ...honoHandlers)
+    methodFn.call(this.app, fullPath, ...photonHandlers)
   }
 
   routes(routes: RouteDefinition[]): void {
@@ -394,9 +397,9 @@ export class HonoAdapter<V extends GravitoVariables = GravitoVariables> implemen
 
   use(path: string, ...middleware: GravitoMiddleware<V>[]): void {
     const fullPath = (this.config.basePath || '') + path
-    const honoMiddleware = middleware.map((m) => toHonoMiddleware<V>(m))
+    const photonMiddleware = middleware.map((m) => toPhotonMiddleware<V>(m))
 
-    for (const m of honoMiddleware) {
+    for (const m of photonMiddleware) {
       this.app.use(fullPath, m)
     }
   }
@@ -406,9 +409,9 @@ export class HonoAdapter<V extends GravitoVariables = GravitoVariables> implemen
   }
 
   mount(path: string, subAdapter: HttpAdapter<V>): void {
-    if (subAdapter.name === 'hono') {
-      // Optimized path for Hono sub-adapters
-      this.app.route(path, subAdapter.native as Hono)
+    if (subAdapter.name === 'photon') {
+      // Optimized path for Photon sub-adapters
+      this.app.route(path, subAdapter.native as Photon)
     } else {
       // Generic fallback: relay all requests to sub-adapter
       this.use(`${path}/*`, async (ctx) => {
@@ -419,12 +422,12 @@ export class HonoAdapter<V extends GravitoVariables = GravitoVariables> implemen
   }
 
   onError(handler: GravitoErrorHandler<V>): void {
-    this.app.onError(toHonoErrorHandler<V>(handler))
+    this.app.onError(toPhotonErrorHandler<V>(handler))
   }
 
   onNotFound(handler: GravitoNotFoundHandler<V>): void {
     this.app.notFound(async (c: Context) => {
-      const ctx = HonoContextWrapper.create<V>(c)
+      const ctx = PhotonContextWrapper.create<V>(c)
       return handler(ctx)
     })
   }
@@ -435,19 +438,19 @@ export class HonoAdapter<V extends GravitoVariables = GravitoVariables> implemen
 
   createContext(_request: Request): GravitoContext<V> {
     // Create a minimal context for testing
-    // In practice, this is called through the Hono routing pipeline
+    // In practice, this is called through the Photon routing pipeline
     throw new Error(
-      'HonoAdapter.createContext() should not be called directly. ' +
-      'Use the router pipeline instead.'
+      'PhotonAdapter.createContext() should not be called directly. ' +
+        'Use the router pipeline instead.'
     )
   }
 
   async init(): Promise<void> {
-    // No-op for Hono
+    // No-op for Photon
   }
 
   async shutdown(): Promise<void> {
-    // No-op for Hono
+    // No-op for Photon
   }
 }
 
@@ -456,33 +459,33 @@ export class HonoAdapter<V extends GravitoVariables = GravitoVariables> implemen
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Create a new HonoAdapter instance
+ * Create a new PhotonAdapter instance
  */
-export function createHonoAdapter<V extends GravitoVariables = GravitoVariables>(
+export function createPhotonAdapter<V extends GravitoVariables = GravitoVariables>(
   config?: AdapterConfig
-): HonoAdapter<V> {
-  return new HonoAdapter<V>(config)
+): PhotonAdapter<V> {
+  return new PhotonAdapter<V>(config)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Utility Exports
 // ─────────────────────────────────────────────────────────────────────────────
 
-export { HonoContextWrapper, HonoRequestWrapper, toHonoHandler, toHonoMiddleware }
+export { PhotonContextWrapper, PhotonRequestWrapper, toPhotonHandler, toPhotonMiddleware }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Rebranded Aliases (Gravito Core)
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Rebranded alias for HonoAdapter.
+ * Rebranded alias for PhotonAdapter.
  * @category Rebranding
  */
-export const GravitoAdapter = HonoAdapter
-export type GravitoAdapter<V extends GravitoVariables = GravitoVariables> = HonoAdapter<V>
+export const GravitoAdapter = PhotonAdapter
+export type GravitoAdapter<V extends GravitoVariables = GravitoVariables> = PhotonAdapter<V>
 
 /**
- * Rebranded alias for createHonoAdapter.
+ * Rebranded alias for createPhotonAdapter.
  * @category Rebranding
  */
-export const createGravitoAdapter = createHonoAdapter
+export const createGravitoAdapter = createPhotonAdapter

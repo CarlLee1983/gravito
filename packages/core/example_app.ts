@@ -1,4 +1,4 @@
-import { Hono } from 'hono'
+import { Photon } from '@gravito/photon'
 import { PlanetCore } from './src/PlanetCore'
 
 // 1. Instantiate core
@@ -16,8 +16,8 @@ core.hooks.addAction<{ path: string }>('log_access', async ({ path }) => {
   console.log(`[Action] Access logged for: ${path}`)
 })
 
-// 4. Create an Orbit (mini Hono app)
-const myOrbit = new Hono()
+// 4. Create an Orbit (mini Photon app)
+const myOrbit = new Photon()
 
 myOrbit.get('/test', async (c) => {
   // Trigger action

@@ -8,13 +8,13 @@
  * @since 1.0.0
  */
 
-import { HonoAdapter } from './adapters/HonoAdapter'
+import { PhotonAdapter } from './adapters/PhotonAdapter'
 import type { HttpAdapter } from './adapters/types'
 import { ConfigManager } from './ConfigManager'
 import { Container } from './Container'
 import { EventManager } from './EventManager'
 import { GravitoException } from './exceptions/GravitoException'
-// import { Hono } from 'hono' - Decoupled
+// import { Photon } from '@gravito/photon' - Decoupled
 // import { HTTPException } from 'hono/http-exception' - Decoupled
 import { HttpException } from './exceptions/HttpException'
 import { ValidationException } from './exceptions/ValidationException'
@@ -61,7 +61,7 @@ export type ErrorHandlerContext = {
   }
 }
 
-// Hono Variables Type for Context Injection
+// Photon Variables Type for Context Injection
 type RouteParams = Record<string, string | number>
 type RouteQuery = Record<string, string | number | boolean | null | undefined>
 
@@ -88,7 +88,7 @@ export type GravitoConfig = {
   config?: Record<string, unknown>
   orbits?: (new () => GravitoOrbit)[] | GravitoOrbit[]
   /**
-   * HTTP Adapter to use. Defaults to HonoAdapter.
+   * HTTP Adapter to use. Defaults to PhotonAdapter.
    * @since 2.0.0
    */
   adapter?: HttpAdapter
@@ -108,7 +108,7 @@ export class PlanetCore {
   private _adapter!: HttpAdapter
 
   /**
-   * Access the underlying Hono app instance.
+   * Access the underlying Photon app instance.
    * @deprecated Use adapter methods for new code. This property is kept for backward compatibility.
    */
   public get app(): unknown {
@@ -205,13 +205,13 @@ export class PlanetCore {
     // Priority:
     // 1. Config 'adapter' option (explicit)
     // 2. BunNativeAdapter (if Bun is detected)
-    // 3. HonoAdapter (fallback for Node/others)
+    // 3. PhotonAdapter (fallback for Node/others)
     if (options.adapter) {
       this._adapter = options.adapter
     } else if (typeof Bun !== 'undefined') {
       this._adapter = new BunNativeAdapter()
     } else {
-      this._adapter = new HonoAdapter()
+      this._adapter = new PhotonAdapter()
     }
 
     // Core Middleware for Context Injection
@@ -356,7 +356,7 @@ export class PlanetCore {
         'status' in err &&
         typeof (err as any).status === 'number'
       ) {
-        // Handle Hono or other framework exceptions via duck typing
+        // Handle Photon or other framework exceptions via duck typing
         status = (err as any).status as ContentfulStatusCode
         message = err.message
         code = codeFromStatus(status)
@@ -619,32 +619,32 @@ export class PlanetCore {
   }
 
   /**
-   * Mount an Orbit (a Hono app) to a path.
+   * Mount an Orbit (a Photon app) to a path.
    *
    * @param path - The URL path to mount the orbit at.
-   * @param orbitApp - The Hono application instance.
+   * @param orbitApp - The Photon application instance.
    */
   mountOrbit(path: string, orbitApp: unknown): void {
     this.logger.info(`Mounting orbit at path: ${path}`)
     // Should reuse this.adapter.mount logic if possible, or fallback.
-    // HonoAdapter has special mount. BunNativeAdapter might not fully support mounting Hono apps yet.
-    // For now, assume orbitApp is Hono and we are likely in an environment where Hono might be used.
+    // PhotonAdapter has special mount. BunNativeAdapter might not fully support mounting Photon apps yet.
+    // For now, assume orbitApp is Photon and we are likely in an environment where Photon might be used.
     // BUT if we are in BunNativeAdapter, this.app is BunNativeAdapter.
     // BunNativeAdapter.mount() implementation warned it's not fully implemented.
     // If we want to support Orbits, we need to fix mount in BunNativeAdapter.
     // For now, let's just call adapter.mount.
-    // But adapter.mount signature expects HttpAdapter, not Hono.
-    // The current code expects a Hono instance.
+    // But adapter.mount signature expects HttpAdapter, not Photon.
+    // The current code expects a Photon instance.
     // This is a break.
     // Temporary fix: Check adapter type or wrap orbitApp.
-    if (this.adapter.name === 'hono') {
+    if (this.adapter.name === 'photon') {
       ;(this.adapter.native as any).route(path, orbitApp)
     } else {
       // Warn or try to mount if adapter supports it?
       // BunNativeAdapter "mount" takes HttpAdapter.
-      // orbitApp is Hono. We can wrap orbitApp in HonoAdapter!
-      // NOTE: We assume 'orbitApp' is a Hono instance compatible with HonoAdapter
-      const subAdapter = new HonoAdapter({}, orbitApp as any)
+      // orbitApp is Photon. We can wrap orbitApp in PhotonAdapter!
+      // NOTE: We assume 'orbitApp' is a Photon instance compatible with PhotonAdapter
+      const subAdapter = new PhotonAdapter({}, orbitApp as any)
       this.adapter.mount(path, subAdapter)
     }
   }

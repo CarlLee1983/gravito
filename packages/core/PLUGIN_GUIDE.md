@@ -38,16 +38,16 @@ profanityFilterPlugin(core);
 
 ## 🛰️ How to Create an Orbit (Route Plugin)
 
-Orbits are Hono instances that are mounted onto the Core's main router.
+Orbits are Photon instances that are mounted onto the Core's main router.
 
 ### Scenario: A "Blog" Module
 
 ```typescript
-import { Hono } from 'hono';
+import { Photon } from '@gravito/photon';
 import { PlanetCore } from 'gravito-core';
 
 export default function blogOrbit(core: PlanetCore) {
-  const app = new Hono();
+  const app = new Photon();
 
   // Define routes
   app.get('/posts', (c) => c.json({ posts: ['Hello World'] }));
@@ -79,4 +79,4 @@ export default function blogOrbit(core: PlanetCore) {
 
 3.  **Dependencies**:
     *   Keep plugins lightweight.
-    *   Re-use `hono` from the peer dependencies if possible.
+    *   Re-use `@gravito/photon` from the peer dependencies if possible.
