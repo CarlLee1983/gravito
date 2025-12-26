@@ -1,0 +1,7 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Optimized for 16x16 recognizability -->
+  <rect x="0" y="0" width="32" height="32" rx="6" fill="#10B981"/>
+  <circle cx="16" cy="16" r="8" fill="#050505"/>
+  <!-- Optional: High-light dot (only visible at 32x32+) -->
+  <circle cx="16" cy="16" r="3" fill="#34D399" fill-opacity="0.8"/>
+</svg>
