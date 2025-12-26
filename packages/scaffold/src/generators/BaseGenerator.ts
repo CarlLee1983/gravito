@@ -232,7 +232,7 @@ export abstract class BaseGenerator {
         typecheck: 'tsc --noEmit',
       },
       dependencies: {
-        '@gravito/core': '^1.0.0-beta.5',
+        'gravito-core': '^1.0.0-beta.5',
       },
       devDependencies: {
         '@types/bun': 'latest',

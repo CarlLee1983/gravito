@@ -417,25 +417,16 @@ export function registerEvents(dispatcher: EventDispatcher): void {
  * Register all module routes here.
  */
 
-import type { Router } from 'gravito-core'
-
-export function registerRoutes(router: Router): void {
+export function registerRoutes(router: any): void {
     // Health check
-    router.get('/health', (c) => c.json({ status: 'healthy' }))
+    router.get('/health', (c: any) => c.json({ status: 'healthy' }))
 
-    // API routes
-    router.group({ prefix: '/api' }, () => {
-        // Ordering module
-        router.group({ prefix: '/orders' }, () => {
-            router.get('/', (c) => c.json({ message: 'Order list' }))
-            router.post('/', (c) => c.json({ message: 'Order created' }, 201))
-        })
+    // Ordering module
+    router.get('/api/orders', (c: any) => c.json({ message: 'Order list' }))
+    router.post('/api/orders', (c: any) => c.json({ message: 'Order created' }, 201))
 
-        // Catalog module
-        router.group({ prefix: '/products' }, () => {
-            router.get('/', (c) => c.json({ message: 'Product list' }))
-        })
-    })
+    // Catalog module
+    router.get('/api/products', (c: any) => c.json({ message: 'Product list' }))
 }
 `
   }
@@ -502,6 +493,33 @@ export class ${name}ServiceProvider extends ServiceProvider {
     }
 }
 `
+  }
+
+  /**
+   * Override package.json for DDD architecture (uses main.ts instead of bootstrap.ts)
+   */
+  protected override generatePackageJson(context: GeneratorContext): string {
+    const pkg = {
+      name: context.nameKebabCase,
+      version: '0.1.0',
+      type: 'module',
+      scripts: {
+        dev: 'bun run --watch src/main.ts',
+        build: 'bun build ./src/main.ts --outdir ./dist --target bun',
+        start: 'bun run dist/main.js',
+        test: 'bun test',
+        typecheck: 'tsc --noEmit',
+      },
+      dependencies: {
+        'gravito-core': '^1.0.0-beta.5',
+      },
+      devDependencies: {
+        '@types/bun': 'latest',
+        typescript: '^5.0.0',
+      },
+    }
+
+    return JSON.stringify(pkg, null, 2)
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -789,9 +807,9 @@ export class EventDispatcher {
  * ${name} Aggregate Root
  */
 
-import { AggregateRoot } from '../../SharedKernel/Domain/Primitives/AggregateRoot'
-import { Id } from '../../SharedKernel/Domain/ValueObjects/Id'
-import { ${name}Created } from '../Events/${name}Created'
+import { AggregateRoot } from '../../../../../Shared/Domain/Primitives/AggregateRoot'
+import { Id } from '../../../../../Shared/Domain/ValueObjects/Id'
+import { ${name}Created } from '../../Events/${name}Created'
 import { ${name}Status } from './${name}Status'
 
 export interface ${name}Props {
@@ -847,7 +865,7 @@ export enum ${name}Status {
  * ${name} Created Event
  */
 
-import { DomainEvent } from '../../SharedKernel/Domain/Events/DomainEvent'
+import { DomainEvent } from '../../../../Shared/Domain/Events/DomainEvent'
 
 export class ${name}Created extends DomainEvent {
   constructor(public readonly ${name.toLowerCase()}Id: string) {
@@ -899,9 +917,9 @@ export class Create${name}Command {
  * Create ${name} Handler
  */
 
-import type { I${name}Repository } from '../../Domain/Repositories/I${name}Repository'
-import { ${name} } from '../../Domain/Aggregates/${name}/${name}'
-import { Id } from '../../../SharedKernel/Domain/ValueObjects/Id'
+import type { I${name}Repository } from '../../../Domain/Repositories/I${name}Repository'
+import { ${name} } from '../../../Domain/Aggregates/${name}/${name}'
+import { Id } from '../../../../../Shared/Domain/ValueObjects/Id'
 import type { Create${name}Command } from './Create${name}Command'
 
 export class Create${name}Handler {
@@ -935,8 +953,8 @@ export class Get${name}ByIdQuery {
  * Get ${name} By Id Handler
  */
 
-import type { I${name}Repository } from '../../Domain/Repositories/I${name}Repository'
-import type { ${name}DTO } from '../DTOs/${name}DTO'
+import type { I${name}Repository } from '../../../Domain/Repositories/I${name}Repository'
+import type { ${name}DTO } from '../../DTOs/${name}DTO'
 import type { Get${name}ByIdQuery } from './Get${name}ByIdQuery'
 
 export class Get${name}ByIdHandler {
