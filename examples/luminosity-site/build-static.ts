@@ -44,29 +44,76 @@ async function build() {
   }
   const routes: RouteTask[] = []
 
-  // Add Home (English)
-  routes.push({
-    path: '/',
-    meta: {
-      title: 'Luminosity - Atomic Sitemap Engine',
-      description: 'High-performance, intelligent sitemap generation for modern web applications.',
-      url: baseUrl,
-    },
-  })
+  // Locales
+  const locales = ['en', 'zh']
 
-  // Add Features (English)
-  routes.push({
-    path: '/features',
-    meta: {
-      title: 'Features - Luminosity',
-      description:
-        'Explore the powerful features of Luminosity: LSM Tree storage, Incremental Updates, and more.',
-      url: `${baseUrl}/features`,
+  const pageMeta: Record<string, any> = {
+    '/': {
+      en: {
+        title: 'Luminosity - Atomic Sitemap Engine',
+        description:
+          'High-performance, intelligent sitemap generation for modern web applications.',
+      },
+      zh: {
+        title: 'Luminosity - 向量原子級 Sitemap 引擎',
+        description: '針對現代 Web 應用程式的高效能、智慧型 Sitemap 生成方案。',
+      },
     },
-  })
+    '/features': {
+      en: {
+        title: 'Features - Luminosity',
+        description:
+          'Explore the powerful features of Luminosity: LSM Tree storage, Incremental Updates, and more.',
+      },
+      zh: {
+        title: '功能特性 - Luminosity',
+        description: '探索 Luminosity 的強大功能：LSM 樹儲存、增量更新等。',
+      },
+    },
+  }
+
+  // Add Static Routes for each locale
+  for (const locale of locales) {
+    const prefix = locale === 'en' ? '' : `/${locale}`
+    const enPrefix = locale === 'en' ? '/en' : '' // Support explicit /en as well
+
+    for (const [abstractPath, translations] of Object.entries(pageMeta)) {
+      const trans = translations[locale]
+
+      // Standard path (either / or /zh/...)
+      routes.push({
+        path: abstractPath === '/' ? prefix || '/' : `${prefix}${abstractPath}`,
+        meta: {
+          title: trans.title,
+          description: trans.description,
+          url: `${baseUrl}${prefix}${abstractPath === '/' ? '' : abstractPath}`,
+        },
+      })
+
+      // Add explicit /en paths if locale is en
+      if (locale === 'en' && abstractPath === '/') {
+        routes.push({
+          path: '/en',
+          meta: {
+            title: trans.title,
+            description: trans.description,
+            url: `${baseUrl}/en`,
+          },
+        })
+      } else if (locale === 'en') {
+        routes.push({
+          path: `/en${abstractPath}`,
+          meta: {
+            title: trans.title,
+            description: trans.description,
+            url: `${baseUrl}/en${abstractPath}`,
+          },
+        })
+      }
+    }
+  }
 
   // Add Docs Routes
-  const locales = ['en', 'zh']
   for (const locale of locales) {
     const sections = await DocsService.getSidebar(locale)
     for (const section of sections) {
@@ -79,6 +126,18 @@ async function build() {
             url: baseUrl + item.href,
           },
         })
+
+        // Also generate explicit /en route for English docs
+        if (locale === 'en' && item.href?.startsWith('/docs')) {
+          routes.push({
+            path: `/en${item.href}`,
+            meta: {
+              title: `${item.title} - Luminosity Docs`,
+              description: `Documentation for ${item.title} in Luminosity SEO Engine.`,
+              url: baseUrl + `/en${item.href}`,
+            },
+          })
+        }
       }
     }
   }
@@ -198,13 +257,59 @@ async function build() {
   await writeFile(join(outputDir, 'robots.txt'), robots)
   console.log('✅ Generated robots.txt')
 
-  // 5. Copy static assets
+  // 5. Generate 404.html for GitHub Pages support
+  console.log('🚫 Generating 404.html...')
+  try {
+    const res = await (core.app as Photon).request('/__404_gen__')
+    let html = await res.text()
+
+    const spaScript = `
+    <script>
+      (function() {
+        const path = window.location.pathname;
+        if (path === '/404.html' || path.endsWith('/404.html')) return;
+        
+        function tryLoad(p, cb) {
+          const h = p.endsWith('/') ? p + 'index.html' : p + '/index.html';
+          fetch(h).then(r => r.ok ? r.text() : Promise.reject()).then(t => cb(null, t))
+            .catch(() => {
+              const a = p + '.html';
+              fetch(a).then(r => r.ok ? r.text() : Promise.reject()).then(t => cb(null, t)).catch(e => cb(e));
+            });
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+          tryLoad(path, (err, t) => {
+            if (err) return;
+            window.history.replaceState(null, '', path + window.location.search + window.location.hash);
+            document.open(); document.write(t); document.close();
+          });
+        });
+      })();
+    </script>`
+
+    html = html.replace('</head>', `${spaScript}\n</head>`)
+    await writeFile(join(outputDir, '404.html'), html)
+    console.log('✅ 404.html generated')
+  } catch (e) {
+    console.warn('⚠️  404.html generation failed', e)
+  }
+
+  // CNAME
+  await writeFile(join(outputDir, 'CNAME'), 'lux.gravito.dev')
+  // .nojekyll
+  await writeFile(join(outputDir, '.nojekyll'), '')
+
+  // 6. Copy static assets
   console.log('📦 Copying static assets...')
   try {
     const staticDir = join(process.cwd(), 'static')
     await cp(staticDir, join(outputDir, 'static'), { recursive: true })
-    // Also copy favicon to root
-    await cp(join(staticDir, 'favicon.ico'), join(outputDir, 'favicon.ico'))
+    // Also copy favicon to root if exists
+    try {
+      await cp(join(staticDir, 'favicon.ico'), join(outputDir, 'favicon.ico'))
+      await cp(join(staticDir, 'favicon.svg'), join(outputDir, 'favicon.svg'))
+    } catch {}
   } catch (_e) {
     console.warn('⚠️  No static directory found or failed to copy.')
   }

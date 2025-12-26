@@ -120,5 +120,24 @@ export async function bootstrap(options: { port?: number } = {}) {
     }
   })
 
+  // 404 Handler - Used by SSG to generate 404.html
+  const notFoundHandler = (c: GravitoContext) => {
+    const inertia = c.get('inertia')
+    // Detect locale from path or default to 'en'
+    const path = c.req.path
+    const locale = path.startsWith('/zh') ? 'zh' : 'en'
+    c.set('locale', locale)
+    if (inertia) {
+      ;(inertia as any).share({ locale })
+    }
+    return (inertia as any)?.render('NotFound', { locale })
+  }
+
+  // SSG 404 generation route
+  core.router.get('/__404_gen__', notFoundHandler)
+
+  // Catch-all for unknown routes at runtime
+  core.router.get('*', notFoundHandler)
+
   return core
 }
