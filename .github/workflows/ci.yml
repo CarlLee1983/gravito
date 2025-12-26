@@ -39,7 +39,7 @@ jobs:
 
       - name: Verify build output
         run: |
-          test -f packages/core/dist/index.mjs || (echo "Missing ESM bundle" && exit 1)
+          test -f packages/core/dist/index.js || (echo "Missing ESM bundle" && exit 1)
           test -f packages/core/dist/index.cjs || (echo "Missing CJS bundle" && exit 1)
           test -f packages/core/dist/index.d.ts || (echo "Missing type declarations" && exit 1)
           echo "✅ All build outputs verified"

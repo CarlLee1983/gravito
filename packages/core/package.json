@@ -2,19 +2,19 @@
   "name": "gravito-core",
   "version": "1.0.0-beta.5",
   "description": "",
-  "module": "./dist/index.mjs",
+  "module": "./dist/index.js",
   "main": "./dist/index.cjs",
   "type": "module",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
+      "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     },
     "./compat": {
       "types": "./dist/compat.d.ts",
-      "import": "./dist/compat.mjs",
+      "import": "./dist/compat.js",
       "require": "./dist/compat.cjs"
     }
   },

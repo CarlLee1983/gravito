@@ -11,6 +11,7 @@ const tsup = spawn(
     'npx',
     'tsup',
     'src/index.ts',
+    'src/compat.ts',
     '--format',
     'esm,cjs',
     '--dts',
