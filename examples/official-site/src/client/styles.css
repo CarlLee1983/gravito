@@ -307,6 +307,16 @@
         @apply bg-white/5 rounded-full hover:bg-singularity/30 transition-all border-2 border-transparent bg-clip-padding;
     }
 
+    /* Scrollbar Hide Utility */
+    .scrollbar-hide {
+        -ms-overflow-style: none;
+        /* IE and Edge */
+        scrollbar-width: none;
+        /* Firefox */
+    }
 
-
+    .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+        /* Chrome, Safari and Opera */
+    }
 }

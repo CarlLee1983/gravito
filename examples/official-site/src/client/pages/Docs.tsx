@@ -293,8 +293,8 @@ export default function Docs() {
       </div>
 
       <div className="mx-auto w-full max-w-screen-2xl px-6 py-10 lg:flex lg:gap-14 relative z-10">
-        <aside className="hidden lg:block lg:w-72 lg:shrink-0">
-          <div className="sticky top-32 space-y-12">
+        <aside className="hidden lg:block lg:w-72 lg:shrink-0 relative">
+          <div className="sticky top-28 h-[calc(100vh-10rem)] overflow-y-auto scrollbar-hide pr-4 -mr-4 space-y-12">
             {/* Search Mockup - Architectural Console Style */}
             <div className="relative group">
               <div className="absolute -inset-1 bg-gradient-to-r from-singularity/20 to-purple-500/20 rounded-2xl blur opacity-0 group-hover:opacity-100 transition duration-500" />
@@ -328,11 +328,10 @@ export default function Docs() {
                       <li key={item.path}>
                         <StaticLink
                           href={item.path}
-                          className={`block text-sm py-3 px-6 transition-all duration-300 relative group font-medium rounded-xl border border-transparent ${
-                            isActive
+                          className={`block text-sm py-3 px-6 transition-all duration-300 relative group font-medium rounded-xl border border-transparent ${isActive
                               ? 'text-singularity font-bold border-white/5 bg-white/[0.03] shadow-[0_0_20px_rgba(20,241,149,0.05)]'
                               : 'text-gray-400 hover:text-white hover:bg-white/[0.02]'
-                          }`}
+                            }`}
                         >
                           <div className="flex items-center gap-3">
                             {isActive && (
@@ -572,8 +571,8 @@ export default function Docs() {
         </main>
 
         {tocVisible && (
-          <aside className="hidden xl:block xl:w-72 xl:shrink-0">
-            <div className="sticky top-32">
+          <aside className="hidden xl:block xl:w-72 xl:shrink-0 relative">
+            <div className="sticky top-28 h-[calc(100vh-10rem)] overflow-y-auto scrollbar-hide pr-4 -mr-4">
               {tocItems.length > 0 && (
                 <div className="p-8 rounded-[2rem] bg-white/[0.03] border border-white/5 backdrop-blur-xl shadow-2xl relative overflow-hidden group/toc">
                   <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-singularity via-transparent to-transparent opacity-20" />
@@ -593,11 +592,10 @@ export default function Docs() {
                             <a
                               href={`#${item.id}`}
                               onClick={(e) => scrollToAnchor(e, item.id)}
-                              className={`block py-2 text-[13px] transition-all duration-500 rounded-lg px-3 ${
-                                isActive
+                              className={`block py-2 text-[13px] transition-all duration-500 rounded-lg px-3 ${isActive
                                   ? 'text-singularity font-black bg-singularity/5'
                                   : 'text-gray-500 hover:text-white hover:bg-white/5'
-                              }`}
+                                }`}
                             >
                               {item.text}
                             </a>
