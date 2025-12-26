@@ -2,9 +2,10 @@ import path from 'node:path'
 import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vite'
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   plugins: [vue()],
-  base: '/static/build/',
+  // In development, we want the root path. In production, we serve from /static/build/
+  base: command === 'serve' ? '/' : '/static/build/',
   root: './src/client',
   build: {
     outDir: '../../static/build',
@@ -30,4 +31,4 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src/client'),
     },
   },
-})
+}))

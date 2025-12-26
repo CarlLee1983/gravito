@@ -2,7 +2,8 @@
 import Logo from './Logo.vue'
 import { StaticLink, useFreeze } from '@gravito/freeze-vue'
 import { ref, onMounted, onUnmounted } from 'vue'
-import { Globe, ChevronDown, Menu, X } from 'lucide-vue-next'
+import { Globe, ChevronDown, Menu, X, ArrowUpRight } from 'lucide-vue-next'
+import { useI18n } from '../composables/useI18n'
 
 const isMobileMenuOpen = ref(false)
 
@@ -23,6 +24,7 @@ onUnmounted(() => {
 
 // Use @gravito/freeze-vue for locale management
 const { locale, navigateToLocale } = useFreeze()
+const { t } = useI18n()
 
 const navLinks = [
   { label: 'Features', path: '/features' },
@@ -95,12 +97,12 @@ const switchLang = (lang: string) => {
           </div>
         </div>
 
-        <a 
-          href="https://github.com/gravito-framework/gravito" 
+        <StaticLink 
+          href="/docs/getting-started" 
           class="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-singularity text-void text-sm font-bold rounded-xl hover:scale-105 hover:shadow-[0_0_20px_rgba(0,240,255,0.4)] transition-all"
         >
-          Get Started
-        </a>
+          {{ t.nav.start }}
+        </StaticLink>
 
         <!-- Mobile Menu Toggle -->
         <button 
@@ -148,13 +150,13 @@ const switchLang = (lang: string) => {
         
         <div class="w-full h-px bg-white/5 my-4"></div>
         
-        <a 
-          href="https://github.com/gravito-framework/gravito" 
+        <StaticLink 
+          href="/docs/getting-started" 
           class="w-full py-4 bg-singularity text-void font-bold rounded-2xl flex items-center justify-center gap-2"
           @click="isMobileMenuOpen = false"
         >
-          Get Started
-        </a>
+          {{ t.nav.start }}
+        </StaticLink>
       </div>
     </transition>
   </header>

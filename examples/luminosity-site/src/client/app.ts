@@ -6,8 +6,15 @@ import { defineConfig, FreezePlugin } from '@gravito/freeze-vue'
 
 createInertiaApp({
   resolve: (name) => {
-    const pages = import.meta.glob('./pages/**/*.vue', { eager: true })
-    return pages[`./pages/${name}.vue`] as DefineComponent
+    // biome-ignore lint/suspicious/noExplicitAny: Vite glob type
+    const pages = import.meta.glob('./pages/**/*.vue')
+    const page = pages[`./pages/${name}.vue`]
+    if (!page) {
+      console.error(`Page not found: ${name}. Available pages:`, Object.keys(pages))
+      throw new Error(`Page not found: ${name}`)
+    }
+    // biome-ignore lint/suspicious/noExplicitAny: Inertia resolve type
+    return page() as any
   },
   setup({ el, App, props, plugin }) {
     const freezeConfig = defineConfig({

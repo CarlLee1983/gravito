@@ -55,12 +55,46 @@ class DocsServiceImpl {
 
       const highlighter = await this.getHighlighter()
 
-      const html = await marked.parse(content, {
-        // @ts-expect-error
-        highlight: (code, lang) => {
-          return highlighter.codeToHtml(code, { lang, theme: 'github-dark' })
-        },
-      })
+      const renderer = new marked.Renderer()
+      // marked 17.x passes an object { text, lang, escaped } to renderer.code
+      renderer.code = ({ text, lang }: { text: string; lang?: string; escaped?: boolean }) => {
+        const language = lang || 'text'
+        const highlighted = highlighter.codeToHtml(text, { lang: language, theme: 'github-dark' })
+
+        return `
+<div class="not-prose my-14 group/code relative">
+  <!-- Ambient Shadow/Glow Background -->
+  <div class="absolute -inset-3 bg-gradient-to-tr from-emerald-500/5 via-transparent to-blue-500/5 rounded-[2.5rem] blur-3xl opacity-50 group-hover/code:opacity-100 transition-opacity duration-1000"></div>
+  
+  <!-- Terminal Window Container -->
+  <div class="relative overflow-hidden rounded-2xl border border-white/10 bg-[#080A0F] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.8)] ring-1 ring-white/5">
+    <!-- Terminal Header -->
+    <div class="flex items-center justify-between border-b border-white/5 bg-white/[0.03] px-5 py-3.5 select-none">
+      <div class="flex items-center gap-2">
+        <div class="flex gap-1.5">
+          <div class="h-3 w-3 rounded-full bg-[#ff5f56] shadow-[0_0_12px_rgba(255,95,86,0.4)]"></div>
+          <div class="h-3 w-3 rounded-full bg-[#ffbd2e] shadow-[0_0_12px_rgba(255,189,46,0.4)]"></div>
+          <div class="h-3 w-3 rounded-full bg-[#27c93f] shadow-[0_0_12px_rgba(39,201,63,0.4)]"></div>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="text-[10px] font-black uppercase tracking-[0.25em] text-white/20 group-hover/code:text-emerald-400 transition-colors duration-500">
+          ${language}
+        </span>
+      </div>
+    </div>
+
+    <!-- Code Content -->
+    <div class="overflow-x-auto p-3 scrollbar-thin scrollbar-track-white/5 scrollbar-thumb-white/10">
+      <div class="[&_pre]:!m-0 [&_pre]:!bg-transparent [&_pre]:!p-4 [&_code]:!text-[13px] [&_code]:leading-relaxed font-mono selection:bg-emerald-500/20">
+        ${highlighted}
+      </div>
+    </div>
+  </div>
+</div>`
+      }
+
+      const html = await marked.parse(content, { renderer })
 
       return {
         meta: data,

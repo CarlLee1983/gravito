@@ -12,7 +12,7 @@ description: 在 5 分鐘內完成您的第一個路由與控制器。
 在 Gravito 中，路由定義在 `src/routes/web.ts` (或 `api.ts`)。打開該檔案，您會看到一個直觀的鏈式 API。
 
 ```typescript
-import { Route } from '@gravito/orbit-router'
+import { Route } from 'gravito-core'
 
 // 加上一個簡單的閉包路由
 Route.get('/hello', () => 'Hello Gravito!')
@@ -29,7 +29,7 @@ bun gravito make:controller UserController
 然後在 `src/controllers/UserController.ts` 中定義方法：
 
 ```typescript
-import { Context } from 'hono'
+import { Context } from 'gravito-core'
 
 export class UserController {
   async index(c: Context) {

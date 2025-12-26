@@ -2,7 +2,9 @@
 export default {
     content: [
         "./src/client/**/*.{js,ts,jsx,tsx,vue}",
+        "./src/services/**/*.{js,ts}",
         "./src/views/**/*.html",
+        "./docs/**/*.{md,mdx}",
     ],
     theme: {
         extend: {

@@ -95,6 +95,7 @@ export type GravitoConfig = {
 }
 
 import { BunNativeAdapter } from './adapters/bun/BunNativeAdapter'
+import { setApp } from './helpers'
 import { CookieJar } from './http/CookieJar'
 import { Router } from './Router'
 import { Encrypter } from './security/Encrypter'
@@ -266,6 +267,9 @@ export class PlanetCore {
     this.events = new EventManager(this)
 
     this.hasher = new BunHasher()
+
+    // Bind this instance to the global app helper
+    setApp(this)
 
     // Initialize Encrypter if APP_KEY is present
     const appKey =

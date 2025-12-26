@@ -54,12 +54,14 @@ Gravito comes with a built-in "Artisan" style CLI that handles the heavy lifting
 bun gravito make:controller UserController
 bun gravito make:middleware EnsureAdmin
 
+# Database (Requires @gravito/atlas)
+bun gravito migrate
+bun gravito db:seed
+
 # Development Utilities
 bun gravito route:list
 bun gravito tinker # Enter the interactive REPL
 ```
-
-> **Note**: Database management commands (`make:migration`, `migrate`, etc.) are not available in v1.0. These features will be introduced in future releases.
 
 ### What just happened?
 Gravito started two synchronized engines:

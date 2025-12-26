@@ -2,17 +2,30 @@ import { Head } from '@inertiajs/react'
 import { motion } from 'framer-motion'
 import {
   Activity,
+  ArrowRight,
   Box,
+  CheckCircle2,
   Cpu,
+  Database,
   GitBranch,
+  Globe,
   Layers,
   Route,
+  Search,
   Share2,
+  Shield,
   Shuffle,
   Terminal,
   Zap,
 } from 'lucide-react'
+import { StaticLink } from '@gravito/freeze-react'
 import Layout from '../components/Layout'
+
+const getLocalizedPath = (path: string) => {
+  const locale = typeof window !== 'undefined' ? window.location.pathname.split('/')[1] : 'en'
+  const currentLocale = ['en', 'zh'].includes(locale) ? locale : 'en'
+  return `/${currentLocale}${path}`
+}
 
 type Translation = Record<string, Record<string, string>>
 
@@ -149,7 +162,14 @@ const CoreDetailSection = ({ t }: { t: Translation }) => {
                   </div>
                   <div>
                     <h3 className="text-xl font-bold text-white mb-2">{point.title}</h3>
-                    <p className="text-gray-400 text-sm leading-relaxed">{point.desc}</p>
+                    <p className="text-gray-400 text-sm leading-relaxed mb-4">{point.desc}</p>
+                    <StaticLink
+                      href={getLocalizedPath('/docs')}
+                      className="text-[10px] font-black uppercase tracking-widest text-singularity hover:text-white flex items-center gap-1 group/btn"
+                    >
+                      Learn More
+                      <ArrowRight size={10} className="group-hover/btn:translate-x-1 transition-transform" />
+                    </StaticLink>
                   </div>
                 </div>
               </motion.div>
@@ -441,12 +461,12 @@ export default function Features({ t, locale }: { t: Translation; locale: string
       {/* 底部導引 */}
       <section className="py-32 px-6 text-center bg-void border-t border-white/5">
         <h2 className="text-3xl font-bold text-white mb-8">{t.features_page.ready_title}</h2>
-        <a
-          href={locale === 'zh' ? '/zh/docs' : '/docs'}
+        <StaticLink
+          href={getLocalizedPath('/docs')}
           className="px-10 py-4 bg-white text-black font-black italic rounded-full hover:scale-105 active:scale-95 transition-all inline-block"
         >
           {t.features.getStarted}
-        </a>
+        </StaticLink>
       </section>
     </Layout>
   )

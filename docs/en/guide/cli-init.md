@@ -1,6 +1,10 @@
-# CLI Init Command
+---
+title: Architectural Patterns
+description: Learn how to scaffold Gravito projects using different architectural patterns like MVC, Clean Architecture, and DDD.
+---
 
-The `gravito init` command scaffolds a new Gravito project with your chosen architecture pattern.
+# Architectural Patterns
+
 
 ## Quick Start
 
@@ -22,6 +26,34 @@ npx gravito init my-app --architecture ddd --pm bun
 | `--skip-git` | Skip git initialization | false |
 
 ## Architecture Patterns
+
+### Luminosity (Static / Light)
+
+The most lightweight architecture, designed for static sites, blogs, or frontend-heavy applications. It bypasses backend controllers entirely, focusing on high-speed Static Site Generation (SSG).
+
+```bash
+gravito init my-site --architecture luminosity
+```
+
+**Structure:**
+```
+src/
+├── client/                 # Frontend core
+│   ├── components/        # Shared components (React/Vue)
+│   └── pages/             # Page content
+├── routes/                 # Route definitions
+│   └── index.ts           # URL mapping
+├── bootstrap.ts            # Lightweight bootstrapper
+├── freeze.config.ts        # SSG configuration
+└── build-static.ts         # Static build script
+```
+
+**Best for:**
+- Documentation sites, blogs
+- Marketing landing pages
+- SPA with minimal backend requirements
+
+---
 
 ### Enterprise MVC
 

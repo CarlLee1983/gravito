@@ -23,10 +23,10 @@ Gravito is a vast galaxy composed of numerous **Kinetic Modules**. These modules
   
   <div class="module-card group">
     <div class="card-accent"></div>
-    <span class="module-code">HORIZON</span>
-    <h3 class="module-title">Horizon Router</h3>
-    <code class="module-pkg">@gravito/horizon</code>
-    <p class="module-desc">The Event Horizon. A high-performance Radix Tree router that directs external requests to the correct coordinates in microseconds.</p>
+    <span class="module-code">PHOTON</span>
+    <h3 class="module-title">Photon HTTP</h3>
+    <code class="module-pkg">@gravito/photon</code>
+    <p class="module-desc">High-speed HTTP engine based on Hono and Bun, providing ultra-low latency request handling architecture.</p>
   </div>
 
   <div class="module-card group">
@@ -101,10 +101,10 @@ Gravito is a vast galaxy composed of numerous **Kinetic Modules**. These modules
 
   <div class="module-card frontend group">
     <div class="card-accent"></div>
-    <span class="module-code">PHOTON</span>
+    <span class="module-code">PRISM</span>
     <h3 class="module-title">Prism View</h3>
     <code class="module-pkg">@gravito/prism</code>
-    <p class="module-desc">Photon rendering. Built-in image optimization and modern template engine ensuring every pixel is precisely calculated.</p>
+    <p class="module-desc">High-performance template rendering engine with built-in image optimization and modern SSR support.</p>
   </div>
 
   <div class="module-card frontend group">
@@ -120,18 +120,18 @@ Gravito is a vast galaxy composed of numerous **Kinetic Modules**. These modules
 <div class="ecosystem-grid">
   <div class="module-card security group">
     <div class="card-accent"></div>
-    <span class="module-code">ISOTOPE</span>
+    <span class="module-code">SENTINEL</span>
     <h3 class="module-title">Sentinel Auth</h3>
     <code class="module-pkg">@gravito/sentinel</code>
-    <p class="module-desc">Isotope tagging. An intelligent identity system that precisely guards every API endpoint and user resource.</p>
+    <p class="module-desc">Core authentication system providing JWT, Session, and robust Guard mechanisms for endpoints.</p>
   </div>
 
   <div class="module-card security group">
     <div class="card-accent"></div>
     <span class="module-code">FORTIFY</span>
-    <h3 class="module-title">Fortify</h3>
+    <h3 class="module-title">Fortify UI</h3>
     <code class="module-pkg">@gravito/fortify</code>
-    <p class="module-desc">Reinforcement. Application-level firewall and security hardening tools to defend against common web attacks.</p>
+    <p class="module-desc">End-to-end authentication workflows including login, registration, and password reset scaffolding.</p>
   </div>
 
   <div class="module-card security group">
@@ -198,18 +198,18 @@ Gravito is a vast galaxy composed of numerous **Kinetic Modules**. These modules
 
   <div class="module-card env group">
     <div class="card-accent"></div>
-    <span class="module-code">MONITOR</span>
-    <h3 class="module-title">Monitor</h3>
-    <code class="module-pkg">@gravito/monitor</code>
-    <p class="module-desc">Monitoring. Real-time health check and performance observation tool to ensure the galaxy runs smoothly.</p>
+    <span class="module-code">HORIZON</span>
+    <h3 class="module-title">Horizon Scheduler</h3>
+    <code class="module-pkg">@gravito/horizon</code>
+    <p class="module-desc">Distributed task scheduling system supporting precision Cron expressions and cluster-wide locking.</p>
   </div>
 
   <div class="module-card env group">
     <div class="card-accent"></div>
     <span class="module-code">ECHO</span>
-    <h3 class="module-title">Echo Logic</h3>
+    <h3 class="module-title">Echo Webhooks</h3>
     <code class="module-pkg">@gravito/echo</code>
-    <p class="module-desc">The Echo. Intelligent logging and diagnostic system, capturing every subtle vibration in the system.</p>
+    <p class="module-desc">Intelligent Webhook reception and dispatching system for real-time integration with 3rd-party services.</p>
   </div>
 </div>
 

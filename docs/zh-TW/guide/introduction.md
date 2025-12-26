@@ -11,11 +11,7 @@ description: 了解 Gravito 的核心理念、架構設計以及為什麼選擇�
 
 Gravito 不僅僅是一個 Web 框架，它是您的 **全端開發引力場**。在 JavaScript/TypeScript 領域中，開發者往往面臨著過於零散的工具鏈選擇。Gravito 的目標是提供一個類似 **Laravel** 的「一切就緒 (Batteries Included)」體驗，同時利用 **Bun** 帶來的秒級啟動與原生高效能。
 
-### 核心設計哲學：行星與軌道 (Planets & Orbits)
-
-Gravito 採用了一套獨特的「天文學式」架構：
-- **PlanetCore (核心)**：微小、穩定的核心，負責請求生命週期、插件加載與基本的 Context 管理。
-- **Orbits (模組)**：圍繞核心運行的官方模組（如 Atlas 為資料庫軌道、Sentinal 為安全性軌道）。您可以根據需要動態地「捕捉 (Attach)」或「釋放 (Detach)」這些軌道。
+- **Orbits (模組)**：圍繞核心運行的官方模組（如 Atlas 為資料庫軌道、Sentinel 為安全性軌道）。您可以根據需要動態地「捕捉 (Attach)」或「釋放 (Detach)」這些軌道。
 
 ## 為什麼選擇 Gravito？
 

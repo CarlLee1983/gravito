@@ -1,6 +1,10 @@
-# CLI Init 命令
+---
+title: 架構模式 (Architectural Patterns)
+description: 學習如何使用 Gravito CLI 建立不同架構風格的專案模板。
+---
 
-`gravito init` 命令可以根據您選擇的架構模式建立新的 Gravito 專案。
+# 架構模式 (Architectural Patterns)
+
 
 ## 快速開始
 
@@ -22,6 +26,34 @@ npx gravito init my-app --architecture ddd --pm bun
 | `--skip-git` | 跳過 git 初始化 | false |
 
 ## 架構模式
+
+### Luminosity (Static / Light)
+
+這是最輕量化的架構，專為靜態網站、個人部落格或純前端導向的應用程式設計。它完全跳過了伺服器端的 Controller 層級，專注於極速的靜態生成 (SSG)。
+
+```bash
+gravito init my-site --architecture luminosity
+```
+
+**目錄結構：**
+```
+src/
+├── client/                 # 前端核心
+│   ├── components/        # 共享元件 (React/Vue)
+│   └── pages/             # 實質頁面內容
+├── routes/                 # 路由定義
+│   └── index.ts           # URL 映射器
+├── bootstrap.ts            # 輕量級點火器
+├── freeze.config.ts        # SSG 靜態生存設定
+└── build-static.ts         # 靜態建置腳本
+```
+
+**適用於：**
+- 靜態文件站、部落格
+- 行銷活動頁面
+- 不需要複雜後端邏輯的 SPA
+
+---
 
 ### Enterprise MVC
 

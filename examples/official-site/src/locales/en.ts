@@ -161,9 +161,9 @@ export default {
     pillar3_title: 'Pain-Point Driven',
     pillar3_desc:
       'We focus on the solutions other frameworks miss. By addressing real-world enterprise bottlenecks, we provide a friction-less experience for both developers and AI agents.',
-    teamTitle: 'The Architects',
+    teamTitle: 'The Builders',
     teamDesc:
-      'Gravito is built by craftsmen who believe that a framework should be more than a tool—it should be a partner that solves the gaps left by traditional stacks.',
+      'Gravito is built by builders who believe that a framework should be more than a tool—it should be a partner that solves the gaps left by traditional stacks.',
     architectureTitle: 'The Celestial Architecture',
     architectureSubtitle: 'Micro-Kernel & Kinetic Modules',
     kernelTitle: 'PlanetCore (The Micro-Kernel)',

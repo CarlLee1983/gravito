@@ -2,7 +2,7 @@ import { readFile, stat } from 'node:fs/promises'
 import { join } from 'node:path'
 import { serve } from 'bun'
 
-const PORT = 4173
+const PORT = 4174
 const DIST_DIR = join(process.cwd(), 'dist-static')
 
 console.log(`🚀 Starting local preview server for static build...`)

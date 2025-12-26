@@ -15,6 +15,7 @@
     },
     "dependencies": {
         "@gravito/constellation": "workspace:*",
+        "@gravito/freeze-react": "workspace:*",
         "@gravito/ion": "workspace:*",
         "@gravito/luminosity": "workspace:*",
         "@gravito/luminosity-adapter-photon": "workspace:*",

@@ -109,11 +109,10 @@ export default function Layout({ children, noPadding = false }: LayoutProps) {
         <div className="max-w-7xl mx-auto flex items-center justify-between relative">
           {/* Navbar Background Capsule */}
           <div
-            className={`absolute inset-y-[-8px] inset-x-[-20px] rounded-[32px] transition-all duration-700 -z-10 ${
-              isScrolled
-                ? 'bg-void/60 backdrop-blur-2xl border border-white/10 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.7)] opacity-100 scale-100'
-                : 'bg-transparent opacity-0 scale-95'
-            }`}
+            className={`absolute inset-y-[-8px] inset-x-[-20px] rounded-[32px] transition-all duration-700 -z-10 ${isScrolled
+              ? 'bg-void/60 backdrop-blur-2xl border border-white/10 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.7)] opacity-100 scale-100'
+              : 'bg-transparent opacity-0 scale-95'
+              }`}
           />
 
           <Logo isZh={currentLang === 'zh'} />
@@ -130,9 +129,8 @@ export default function Layout({ children, noPadding = false }: LayoutProps) {
                 <StaticLink
                   key={item.path}
                   href={getLocalizedPath(item.path)}
-                  className={`relative px-6 py-2.5 rounded-xl text-sm font-bold tracking-tight transition-all duration-300 group ${
-                    active ? 'text-white' : 'text-gray-400 hover:text-white'
-                  }`}
+                  className={`relative px-6 py-2.5 rounded-xl text-sm font-bold tracking-tight transition-all duration-300 group ${active ? 'text-white' : 'text-gray-400 hover:text-white'
+                    }`}
                 >
                   {active && (
                     <motion.div
@@ -170,9 +168,8 @@ export default function Layout({ children, noPadding = false }: LayoutProps) {
             <div className="flex items-center p-1 bg-white/5 rounded-xl border border-white/5 backdrop-blur-md relative overflow-hidden">
               <StaticLink
                 href={switchLocale('en')}
-                className={`relative z-10 px-3 py-1.5 rounded-lg text-[10px] font-black tracking-widest transition-colors duration-500 ${
-                  currentLang === 'en' ? 'text-black' : 'text-white/40 hover:text-white'
-                }`}
+                className={`relative z-10 px-3 py-1.5 rounded-lg text-[10px] font-black tracking-widest transition-colors duration-500 ${currentLang === 'en' ? 'text-black' : 'text-white/40 hover:text-white'
+                  }`}
               >
                 {currentLang === 'en' && (
                   <motion.div
@@ -185,9 +182,8 @@ export default function Layout({ children, noPadding = false }: LayoutProps) {
               </StaticLink>
               <StaticLink
                 href={switchLocale('zh')}
-                className={`relative z-10 px-3 py-1.5 rounded-lg text-[10px] font-black tracking-widest transition-colors duration-500 ${
-                  currentLang === 'zh' ? 'text-black' : 'text-white/40 hover:text-white'
-                }`}
+                className={`relative z-10 px-3 py-1.5 rounded-lg text-[10px] font-black tracking-widest transition-colors duration-500 ${currentLang === 'zh' ? 'text-black' : 'text-white/40 hover:text-white'
+                  }`}
               >
                 {currentLang === 'zh' && (
                   <motion.div
@@ -274,6 +270,12 @@ export default function Layout({ children, noPadding = false }: LayoutProps) {
                         icon: Book,
                       },
                       {
+                        label: trans('nav.features', 'Features'),
+                        sub: 'Core Capabilities',
+                        path: '/features',
+                        icon: Zap,
+                      },
+                      {
                         label: trans('nav.about', 'About'),
                         sub: 'Mission & Vision',
                         path: '/about',
@@ -296,11 +298,10 @@ export default function Layout({ children, noPadding = false }: LayoutProps) {
                         <StaticLink
                           href={getLocalizedPath(item.path)}
                           onClick={() => setIsMobileMenuOpen(false)}
-                          className={`flex items-center gap-4 p-4 rounded-2xl border transition-all duration-300 group ${
-                            isPathActive(item.path)
-                              ? 'bg-white/10 border-white/20'
-                              : 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/10'
-                          }`}
+                          className={`flex items-center gap-4 p-4 rounded-2xl border transition-all duration-300 group ${isPathActive(item.path)
+                            ? 'bg-white/10 border-white/20'
+                            : 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/10'
+                            }`}
                         >
                           <div
                             className={`p-3 rounded-xl ${isPathActive(item.path) ? 'bg-singularity text-black' : 'bg-black/40 text-gray-400 group-hover:text-white group-hover:bg-black/60'} transition-colors`}
@@ -401,7 +402,7 @@ export default function Layout({ children, noPadding = false }: LayoutProps) {
               <span className="text-white font-black text-xl tracking-tight">Gravito</span>
             </div>
             <p className="text-gray-400 max-w-sm leading-relaxed">
-              {trans('footer.desc', 'The High-Performance Framework for Artisans.')}
+              {trans('footer.desc', 'The High-Performance Framework for Builders.')}
             </p>
           </div>
           <div>

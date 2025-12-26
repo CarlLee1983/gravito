@@ -286,13 +286,35 @@ export class DocsService {
         }
 
         try {
-          // Use Shiki for actual syntax highlighting
-          return highlighter.codeToHtml(text, {
-            lang: lang || 'text',
+          const language = lang || 'text'
+          const highlighted = highlighter.codeToHtml(text, {
+            lang: language,
             theme: 'rose-pine-moon',
           })
+
+          return `
+<div class="not-prose my-10 overflow-hidden rounded-2xl border border-white/10 bg-[#1e1e2e]/80 backdrop-blur-xl shadow-2xl group/code relative">
+  <div class="flex items-center justify-between border-b border-white/5 bg-white/5 px-5 py-3 select-none">
+    <div class="flex items-center gap-2">
+      <div class="flex gap-1.5">
+        <div class="h-3 w-3 rounded-full bg-[#ff5f56] shadow-[0_0_10px_rgba(255,95,86,0.2)]"></div>
+        <div class="h-3 w-3 rounded-full bg-[#ffbd2e] shadow-[0_0_10px_rgba(255,189,46,0.2)]"></div>
+        <div class="h-3 w-3 rounded-full bg-[#27c93f] shadow-[0_0_10px_rgba(39,201,63,0.2)]"></div>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <span class="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 group-hover/code:text-singularity/50 transition-colors duration-500">
+        ${language}
+      </span>
+    </div>
+  </div>
+  <div class="overflow-x-auto p-2 scrollbar-thin scrollbar-track-white/5 scrollbar-thumb-white/10">
+    <div class="[&_pre]:!m-0 [&_pre]:!bg-transparent [&_pre]:!p-4 [&_code]:!text-[13px] [&_code]:leading-relaxed font-mono">
+      ${highlighted}
+    </div>
+  </div>
+</div>`
         } catch (e) {
-          // Fallback if language is not supported
           const escapedText = escapeHtml(text)
           const langClass = lang ? `language-${lang}` : ''
           return `<pre class="${langClass}"><code class="${langClass}">${escapedText}</code></pre>`
@@ -344,6 +366,7 @@ export class DocsService {
             // Pages
             intro: '簡介',
             quick_start: '快速上手',
+            architectural_patterns: '架構模式 (Patterns)',
             structure: '專案結構',
             architecture: '銀河架構',
             lifecycle: '生命週期',
@@ -412,6 +435,7 @@ export class DocsService {
             // Pages
             intro: 'Introduction',
             quick_start: 'Quick Start',
+            architectural_patterns: 'Architectural Patterns',
             structure: 'Project Structure',
             architecture: 'Galaxy Architecture',
             lifecycle: 'Lifecycle',
@@ -466,6 +490,7 @@ export class DocsService {
         path: '#',
         children: [
           { title: trans.quick_start, path: `${prefix}/guide/getting-started` },
+          { title: trans.architectural_patterns, path: `${prefix}/guide/cli-init` },
           { title: trans.structure, path: `${prefix}/guide/project-structure` },
         ],
       },

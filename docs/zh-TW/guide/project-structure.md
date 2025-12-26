@@ -7,9 +7,9 @@ description: 深入瞭解 Gravito 應用程式的目錄佈局與架構設計。
 
 Gravito 遵循一種可預測且整潔的目錄結構。對於熟悉 MVC (如 Laravel) 的開發者來說會感到非常親切，同時它也針對效能與模組化進行了極致優化。
 
-## 目錄佈局
+## 目錄佈局 (Enterprise MVC)
 
-以下是一個標準 Gravito 專案（使用 Enterprise MVC 模式）的結構：
+Gravito 預設生成的專案採用 **Enterprise MVC** 佈局，這最適合大多數的 Web 應用程序：
 
 ```text
 my-gravito-app/
@@ -83,4 +83,12 @@ Gravito 採用「微核心 + 動力軌道」的設計模式：
 3.  **引導提供者**: 執行所有 Service Providers 的 `boot()` 方法，此時所有服務皆已就緒。
 4.  **路由匹配**: HTTP 請求進入 `Http/Kernel`，經過中介層後到達指定的 Controller。
 
-> **下一步**：深入瞭解 [路由系統](./routing.md) 如何運作。
+## 多樣化的架構選擇
+
+Gravito 的強大之處在於它不強迫您使用單一的開發範式。雖然上述的 MVC 結構是預設推薦的，但您隨時可以根據專案複雜度切換：
+
+- **Clean Architecture**: 嚴格的依賴規則，將業務邏輯與框架完全解耦。
+- **Domain-Driven Design (DDD)**: 適合超大型、複雜領域邏輯的模組化開發。
+
+> **下一步**：如果您需要不同的架構，請查看 [架構模式與腳手架](./cli-init.md) 了解更多。
+

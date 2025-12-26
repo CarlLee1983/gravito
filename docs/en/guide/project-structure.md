@@ -7,9 +7,9 @@ description: Understanding the directory layout and architecture of a Gravito ap
 
 Gravito follows a predictable, clean directory structure. Developers familiar with MVC frameworks like Laravel will feel right at home, while also benefiting from optimizations for performance and modularity.
 
-## Directory Layout
+## Directory Layout (Enterprise MVC)
 
-Here is a look at a standard Gravito project using the **Enterprise MVC** layout:
+By default, Gravito scaffolds projects using the **Enterprise MVC** layout, which is suitable for most web applications:
 
 ```text
 my-gravito-app/
@@ -83,4 +83,12 @@ When you run `gravito dev` or start the server:
 3.  **Boot Providers**: Every Service Provider's `boot()` method is executed once all services are registered and ready.
 4.  **Routing**: HTTP requests hit the `Http/Kernel`, pass through middleware, and finally reach the designated Controller.
 
-> **Next Step**: Learn how to handle requests in the [Routing System](./routing.md).
+## Diverse Architectural Choices
+
+The strength of Gravito lies in its flexibility. While the Enterprise MVC structure is the default recommendation, you can switch patterns based on your project's complexity:
+
+- **Clean Architecture**: Strict dependency rules that decouple business logic from the framework.
+- **Domain-Driven Design (DDD)**: Modular development suited for hyper-scale or complex domain logic.
+
+> **Next Step**: If you need a different structure, check out the [Architectural Patterns & Scaffolding](./cli-init.md) guide.
+

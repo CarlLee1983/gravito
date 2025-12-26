@@ -23,7 +23,11 @@ export class DocsController {
     const sidebar = await DocsService.getSidebar(_locale)
 
     if (!page) {
-      return inertia.render('Error', { status: 404, message: 'Document not found' })
+      return inertia.render('NotFound', {
+        status: 404,
+        message: 'Document not found',
+        locale: _locale,
+      })
     }
 
     return inertia.render('Docs', {

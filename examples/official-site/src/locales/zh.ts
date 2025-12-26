@@ -154,9 +154,9 @@ export default {
     pillar3_title: '精準解決痛點',
     pillar3_desc:
       '我們博採眾長，並針對企業級開發中發現的框架缺口提供獨家解決方案，解決傳統框架難以處理的效能與擴展性瓶頸。',
-    teamTitle: '架構師與匠人',
+    teamTitle: '架構師與創造者',
     teamDesc:
-      'Gravito 由一群相信框架應是解決方案、而非負擔的匠人打造。我們專注於填補現有技術堆棧中的空白，為開發者與 AI 代理人提供最精確的開發路徑處理。',
+      'Gravito 由一群相信框架應是解決方案、而非負擔的創造者打造。我們專注於填補現有技術堆棧中的空白，為開發者與 AI 代理人提供最精確的開發路徑處理。',
     architectureTitle: '天體級架構設計',
     architectureSubtitle: '微內核與動力模組 (Micro-Kernel & Kinetic Modules)',
     kernelTitle: 'PlanetCore (微內核)',

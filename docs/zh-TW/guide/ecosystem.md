@@ -23,10 +23,10 @@ Gravito 是一個由眾多 **動力模組 (Kinetic Modules)** 組成的龐大銀
   
   <div class="module-card group">
     <div class="card-accent"></div>
-    <span class="module-code">HORIZON</span>
-    <h3 class="module-title">Horizon Router</h3>
-    <code class="module-pkg">@gravito/horizon</code>
-    <p class="module-desc">事象地平線。超高性能路由引擎，支持微秒級的請求分發與導航。</p>
+    <span class="module-code">PHOTON</span>
+    <h3 class="module-title">Photon HTTP</h3>
+    <code class="module-pkg">@gravito/photon</code>
+    <p class="module-desc">光子。高性能 HTTP 引擎，基於 Hono 與 Bun，提供超低延遲的請求處理架構。</p>
   </div>
 
   <div class="module-card group">
@@ -101,10 +101,10 @@ Gravito 是一個由眾多 **動力模組 (Kinetic Modules)** 組成的龐大銀
 
   <div class="module-card frontend group">
     <div class="card-accent"></div>
-    <span class="module-code">PHOTON</span>
+    <span class="module-code">PRISM</span>
     <h3 class="module-title">Prism View</h3>
     <code class="module-pkg">@gravito/prism</code>
-    <p class="module-desc">光子。高性能樣板渲染引擎，內建圖片優化與現代渲染技術。</p>
+    <p class="module-desc">稜鏡。高性能樣板渲染引擎，內建圖片優化與現代 SSR 渲染技術。</p>
   </div>
 
   <div class="module-card frontend group">
@@ -120,18 +120,18 @@ Gravito 是一個由眾多 **動力模組 (Kinetic Modules)** 組成的龐大銀
 <div class="ecosystem-grid">
   <div class="module-card security group">
     <div class="card-accent"></div>
-    <span class="module-code">ISOTOPE</span>
+    <span class="module-code">SENTINEL</span>
     <h3 class="module-title">Sentinel Auth</h3>
     <code class="module-pkg">@gravito/sentinel</code>
-    <p class="module-desc">同位素。智慧身份認證系統，支持多種策略與安全驗證。</p>
+    <p class="module-desc">哨兵。核心身份認證系統，提供 JWT、Session 與強大的 Guard 守衛機制。</p>
   </div>
 
   <div class="module-card security group">
     <div class="card-accent"></div>
     <span class="module-code">FORTIFY</span>
-    <h3 class="module-title">Fortify</h3>
+    <h3 class="module-title">Fortify UI</h3>
     <code class="module-pkg">@gravito/fortify</code>
-    <p class="module-desc">強化。應用級防火牆與安全加固工具，防禦常見的網路攻擊。</p>
+    <p class="module-desc">強化。端到端的身分驗證工作流，包含登入、註冊、密碼重置等完整 Scaffolding。</p>
   </div>
 
   <div class="module-card security group">
@@ -198,18 +198,18 @@ Gravito 是一個由眾多 **動力模組 (Kinetic Modules)** 組成的龐大銀
 
   <div class="module-card env group">
     <div class="card-accent"></div>
-    <span class="module-code">MONITOR</span>
-    <h3 class="module-title">Monitor</h3>
-    <code class="module-pkg">@gravito/monitor</code>
-    <p class="module-desc">監控。實時系統狀態監測與性能指標觀測，確保銀河系穩定運行。</p>
+    <span class="module-code">HORIZON</span>
+    <h3 class="module-title">Horizon Scheduler</h3>
+    <code class="module-pkg">@gravito/horizon</code>
+    <p class="module-desc">事象地平線。分散式任務排程系統，支持精密的 Cron 表達式與集群鎖定。</p>
   </div>
 
   <div class="module-card env group">
     <div class="card-accent"></div>
     <span class="module-code">ECHO</span>
-    <h3 class="module-title">Echo Logic</h3>
+    <h3 class="module-title">Echo Webhooks</h3>
     <code class="module-pkg">@gravito/echo</code>
-    <p class="module-desc">回聲。智慧日誌與診斷系統，捕捉並分析系統中的每一個細微震動。</p>
+    <p class="module-desc">回聲。智慧 Webhook 接收與派遣系統，輕鬆整合第三方服務的實時通知。</p>
   </div>
 </div>
 

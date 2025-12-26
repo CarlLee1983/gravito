@@ -78,7 +78,7 @@ const { t, locale } = useI18n()
         
         <div class="flex flex-col sm:flex-row gap-6 justify-center items-center">
           <StaticLink 
-            href="/features"
+            href="/docs/getting-started"
             class="w-full sm:w-auto px-10 py-5 bg-white text-black font-black rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-[0_0_30px_rgba(255,255,255,0.2)] flex items-center justify-center gap-2"
           >
             {{ t?.hero?.ctaPro }} <ChevronRight :size="20" />
