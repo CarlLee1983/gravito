@@ -1,6 +1,6 @@
 {
   "name": "@gravito/pulse",
-  "version": "1.0.0-beta.5",
+  "version": "1.0.0-beta.6",
   "description": "The official CLI for Gravito Galaxy Architecture. Scaffold projects and manage your universe.",
   "bin": {
     "gravito": "bin/gravito.mjs"
@@ -21,14 +21,14 @@
   },
   "dependencies": {
     "@clack/prompts": "^0.7.0",
-    "@gravito/scaffold": "workspace:*",
+    "@gravito/scaffold": "1.0.0-beta.1",
     "cac": "^6.7.14",
     "giget": "^1.2.5",
     "node-fetch-native": "^1.6.7",
     "picocolors": "^1.0.0"
   },
   "peerDependencies": {
-    "gravito-core": "1.0.0-beta.5"
+    "gravito-core": "1.0.0-beta.6"
   },
   "author": "Carl Lee <carllee0520@gmail.com>",
   "license": "MIT",

@@ -1,6 +1,6 @@
 {
   "name": "@gravito/echo",
-  "version": "1.0.0-alpha.6",
+  "version": "1.0.0-beta.1",
   "description": "Enterprise-grade webhook handling for Gravito. Secure receiving and reliable sending.",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -39,7 +39,7 @@
   },
   "homepage": "https://github.com/gravito-framework/gravito#readme",
   "peerDependencies": {
-    "gravito-core": "1.0.0-beta.5"
+    "gravito-core": "1.0.0-beta.6"
   },
   "devDependencies": {
     "bun-types": "latest",

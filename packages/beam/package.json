@@ -1,6 +1,6 @@
 {
   "name": "@gravito/beam",
-  "version": "1.0.0-alpha.6",
+  "version": "1.0.0-beta.1",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -23,15 +23,15 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@gravito/photon": "workspace:*"
+    "@gravito/photon": "1.0.0-beta.1"
   },
   "devDependencies": {
     "bun-types": "latest",
-    "@gravito/photon": "workspace:*",
+    "@gravito/photon": "1.0.0-beta.1",
     "typescript": "^5.9.3"
   },
   "peerDependencies": {
-    "@gravito/photon": "workspace:*"
+    "@gravito/photon": "1.0.0-beta.1"
   },
   "publishConfig": {
     "access": "public"

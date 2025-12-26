@@ -1,6 +1,6 @@
 {
   "name": "@gravito/flux",
-  "version": "1.0.0-alpha.6",
+  "version": "1.0.0-beta.1",
   "description": "Platform-agnostic workflow engine for Gravito",
   "type": "module",
   "main": "./dist/node/index.cjs",
@@ -38,7 +38,7 @@
     "test": "bun test"
   },
   "peerDependencies": {
-    "gravito-core": "1.0.0-beta.5"
+    "gravito-core": "1.0.0-beta.6"
   },
   "peerDependenciesMeta": {
     "gravito-core": {
@@ -47,7 +47,7 @@
   },
   "devDependencies": {
     "bun-types": "latest",
-    "gravito-core": "1.0.0-beta.5",
+    "gravito-core": "1.0.0-beta.6",
     "tsup": "^8.5.1",
     "typescript": "^5.0.0"
   },

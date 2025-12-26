@@ -1,6 +1,6 @@
 {
   "name": "@gravito/luminosity-adapter-photon",
-  "version": "1.0.0-beta.5",
+  "version": "1.0.0-beta.6",
   "description": "Luminosity adapter for Photon-based environments",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -22,10 +22,10 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@gravito/luminosity": "1.0.0-beta.5"
+    "@gravito/luminosity": "1.0.0-beta.6"
   },
   "peerDependencies": {
-    "@gravito/photon": "workspace:*"
+    "@gravito/photon": "1.0.0-beta.1"
   },
   "devDependencies": {
     "bun-types": "latest",

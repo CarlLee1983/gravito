@@ -1,60 +1,60 @@
 {
-    "name": "@gravito/fortify",
-    "version": "1.0.0-alpha.1",
-    "publishConfig": {
-        "access": "public"
-    },
-    "description": "End-to-End Authentication Workflows for Gravito (Login, Register, Password Reset, Email Verification)",
-    "module": "./dist/index.mjs",
-    "main": "./dist/index.cjs",
-    "type": "module",
-    "types": "./dist/index.d.ts",
-    "exports": {
-        ".": {
-            "types": "./dist/index.d.ts",
-            "import": "./dist/index.mjs",
-            "require": "./dist/index.cjs"
-        }
-    },
-    "files": [
-        "dist",
-        "README.md",
-        "LICENSE"
-    ],
-    "scripts": {
-        "build": "bun run build.ts",
-        "test": "bun test",
-        "typecheck": "tsc --noEmit"
-    },
-    "keywords": [
-        "gravito",
-        "orbit",
-        "auth",
-        "fortify",
-        "login",
-        "register",
-        "password-reset",
-        "email-verification"
-    ],
-    "author": "Carl Lee <carllee0520@gmail.com>",
-    "license": "MIT",
-    "peerDependencies": {
-        "@gravito/sentinel": "1.0.0-alpha.6",
-        "gravito-core": "1.0.0-beta.5",
-        "@gravito/photon": "workspace:*"
-    },
-    "devDependencies": {
-        "@gravito/sentinel": "1.0.0-alpha.6",
-        "bun-types": "latest",
-        "gravito-core": "1.0.0-beta.5",
-        "@gravito/photon": "workspace:*",
-        "tsup": "^8.5.1",
-        "typescript": "^5.9.3"
-    },
-    "homepage": "https://github.com/gravito-framework/gravito#readme",
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/gravito-framework/gravito.git",
-        "directory": "packages/fortify"
+  "name": "@gravito/fortify",
+  "version": "1.0.0-beta.1",
+  "publishConfig": {
+    "access": "public"
+  },
+  "description": "End-to-End Authentication Workflows for Gravito (Login, Register, Password Reset, Email Verification)",
+  "module": "./dist/index.mjs",
+  "main": "./dist/index.cjs",
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
     }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "bun run build.ts",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "gravito",
+    "orbit",
+    "auth",
+    "fortify",
+    "login",
+    "register",
+    "password-reset",
+    "email-verification"
+  ],
+  "author": "Carl Lee <carllee0520@gmail.com>",
+  "license": "MIT",
+  "peerDependencies": {
+    "@gravito/sentinel": "1.0.0-beta.1",
+    "gravito-core": "1.0.0-beta.6",
+    "@gravito/photon": "1.0.0-beta.1"
+  },
+  "devDependencies": {
+    "@gravito/sentinel": "1.0.0-beta.1",
+    "bun-types": "latest",
+    "gravito-core": "1.0.0-beta.6",
+    "@gravito/photon": "1.0.0-beta.1",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3"
+  },
+  "homepage": "https://github.com/gravito-framework/gravito#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gravito-framework/gravito.git",
+    "directory": "packages/fortify"
+  }
 }

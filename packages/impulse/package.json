@@ -1,6 +1,6 @@
 {
   "name": "@gravito/impulse",
-  "version": "1.0.0-alpha.6",
+  "version": "1.0.0-beta.1",
   "description": "Form Request validation for Gravito - Laravel-style request validation with Zod",
   "type": "module",
   "main": "./dist/index.js",
@@ -24,10 +24,10 @@
   },
   "dependencies": {
     "zod": "^3.23.0",
-    "gravito-core": "1.0.0-beta.5"
+    "gravito-core": "1.0.0-beta.6"
   },
   "peerDependencies": {
-    "@gravito/photon": "workspace:*"
+    "@gravito/photon": "1.0.0-beta.1"
   },
   "devDependencies": {
     "bun-types": "^1.1.0",

@@ -1,6 +1,6 @@
 {
   "name": "@gravito/constellation",
-  "version": "1.0.0-alpha.6",
+  "version": "1.0.0-beta.1",
   "description": "Powerful sitemap generation for Gravito applications with dynamic/static support, sharding, and caching.",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -17,18 +17,18 @@
     "test": "bun test"
   },
   "peerDependencies": {
-    "gravito-core": "1.0.0-beta.5"
+    "gravito-core": "1.0.0-beta.6"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.956.0",
     "@google-cloud/storage": "^7.18.0",
-    "@gravito/stream": "1.0.0-alpha.6",
-    "@gravito/photon": "workspace:*"
+    "@gravito/stream": "1.0.0-beta.1",
+    "@gravito/photon": "1.0.0-beta.1"
   },
   "devDependencies": {
     "bun-plugin-dts": "^0.3.0",
     "bun-types": "latest",
-    "gravito-core": "1.0.0-beta.5",
+    "gravito-core": "1.0.0-beta.6",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3"
   },

@@ -1,6 +1,6 @@
 {
   "name": "gravito-core",
-  "version": "1.0.0-beta.5",
+  "version": "1.0.0-beta.6",
   "description": "",
   "module": "./dist/index.js",
   "main": "./dist/index.cjs",
@@ -62,6 +62,6 @@
     "registry": "https://registry.npmjs.org/"
   },
   "dependencies": {
-    "@gravito/photon": "workspace:*"
+    "@gravito/photon": "1.0.0-beta.1"
   }
 }

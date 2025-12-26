@@ -32,11 +32,12 @@ const OFFICIAL_SITE_PACKAGES = [
 ];
 
 // 版本配置
+// 版本配置
 const VERSION_CONFIG = {
   // 官網與核心工具：beta 版本
-  officialSite: '1.0.0-beta.5',
-  // 其他實驗性套件：alpha 版本
-  others: '1.0.0-alpha.6',
+  officialSite: '1.0.0-beta.6',
+  // 其他實驗性套件：alpha 版本 -> 改為 beta
+  others: '1.0.0-beta.1',
 };
 
 interface PackageInfo {

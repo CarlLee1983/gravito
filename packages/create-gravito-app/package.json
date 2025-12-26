@@ -1,6 +1,6 @@
 {
   "name": "create-gravito-app",
-  "version": "1.0.0-beta.5",
+  "version": "1.0.0-beta.6",
   "description": "Scaffold a new Gravito project in seconds",
   "bin": {
     "create-gravito-app": "index.js"
@@ -19,7 +19,7 @@
   "author": "Carl Lee <carllee0520@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "@gravito/pulse": "workspace:*"
+    "@gravito/pulse": "1.0.0-beta.6"
   },
   "publishConfig": {
     "access": "public"

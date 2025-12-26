@@ -1,6 +1,6 @@
 {
   "name": "@gravito/stasis",
-  "version": "1.0.0-beta.5",
+  "version": "1.0.0-beta.6",
   "publishConfig": {
     "access": "public"
   },
@@ -36,14 +36,14 @@
   "author": "Carl Lee <carllee0520@gmail.com>",
   "license": "MIT",
   "peerDependencies": {
-    "gravito-core": "1.0.0-beta.5",
-    "@gravito/plasma": "1.0.0-beta.5"
+    "gravito-core": "1.0.0-beta.6",
+    "@gravito/plasma": "1.0.0-beta.6"
   },
   "devDependencies": {
-    "@gravito/plasma": "1.0.0-beta.5",
+    "@gravito/plasma": "1.0.0-beta.6",
     "bun-types": "latest",
-    "gravito-core": "1.0.0-beta.5",
-    "@gravito/photon": "workspace:*",
+    "gravito-core": "1.0.0-beta.6",
+    "@gravito/photon": "1.0.0-beta.1",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3"
   },

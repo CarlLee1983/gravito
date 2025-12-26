@@ -1,6 +1,6 @@
 {
   "name": "@gravito/ion",
-  "version": "1.0.0-beta.5",
+  "version": "1.0.0-beta.6",
   "description": "Inertia.js adapter for Gravito",
   "module": "./dist/index.mjs",
   "main": "./dist/index.cjs",
@@ -24,13 +24,13 @@
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
-    "gravito-core": "1.0.0-beta.5",
-    "@gravito/photon": "workspace:*"
+    "gravito-core": "1.0.0-beta.6",
+    "@gravito/photon": "1.0.0-beta.1"
   },
   "devDependencies": {
     "bun-types": "latest",
-    "gravito-core": "1.0.0-beta.5",
-    "@gravito/photon": "workspace:*",
+    "gravito-core": "1.0.0-beta.6",
+    "@gravito/photon": "1.0.0-beta.1",
     "tsup": "^8.5.1",
     "typescript": "latest"
   },

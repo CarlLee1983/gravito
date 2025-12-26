@@ -1,6 +1,6 @@
 {
   "name": "@gravito/forge",
-  "version": "1.0.0-alpha.6",
+  "version": "1.0.0-beta.1",
   "publishConfig": {
     "access": "public"
   },
@@ -50,9 +50,9 @@
   "author": "Carl Lee <carllee0520@gmail.com>",
   "license": "MIT",
   "peerDependencies": {
-    "gravito-core": "1.0.0-beta.5",
-    "@gravito/nebula": "1.0.0-alpha.6",
-    "@gravito/stream": "1.0.0-alpha.6"
+    "gravito-core": "1.0.0-beta.6",
+    "@gravito/nebula": "1.0.0-beta.1",
+    "@gravito/stream": "1.0.0-beta.1"
   },
   "peerDependenciesMeta": {
     "react": {
@@ -72,12 +72,12 @@
     }
   },
   "devDependencies": {
-    "@gravito/nebula": "1.0.0-alpha.6",
-    "@gravito/stream": "1.0.0-alpha.6",
+    "@gravito/nebula": "1.0.0-beta.1",
+    "@gravito/stream": "1.0.0-beta.1",
     "@types/react": "^18.0.0",
     "bun-types": "latest",
-    "gravito-core": "1.0.0-beta.5",
-    "@gravito/photon": "workspace:*",
+    "gravito-core": "1.0.0-beta.6",
+    "@gravito/photon": "1.0.0-beta.1",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
     "tsup": "^8.5.1",
