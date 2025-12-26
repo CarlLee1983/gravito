@@ -113,12 +113,6 @@ const { t, locale } = useI18n()
               <p class="text-gray-400 text-lg max-w-lg mb-6">
                 {{ t?.features?.lsm?.desc }}
               </p>
-              <StaticLink 
-                href="/docs/benchmark"
-                class="inline-flex items-center gap-2 text-emerald-400 font-bold hover:text-emerald-300 transition-colors uppercase tracking-widest text-xs"
-              >
-                View Docs <ChevronRight :size="16" />
-              </StaticLink>
             </div>
           </div>
           
@@ -130,12 +124,6 @@ const { t, locale } = useI18n()
                 <p class="text-emerald-100/70 mb-6">
                   {{ t?.features?.enterprise?.desc }}
                 </p>
-                <StaticLink 
-                  href="/docs/introduction"
-                  class="inline-flex items-center gap-2 text-white font-bold hover:text-emerald-100 transition-colors uppercase tracking-widest text-xs"
-                >
-                  Learn More <ChevronRight :size="16" />
-                </StaticLink>
               </div>
               <div class="pt-8 flex justify-end">
                 <Logo size="lg" class="opacity-20 translate-x-12 translate-y-12 rotate-[-15deg] grayscale brightness-200" />
@@ -149,12 +137,6 @@ const { t, locale } = useI18n()
             <p class="text-gray-500 text-sm mb-4">
               {{ t?.features?.index?.desc }}
             </p>
-            <StaticLink 
-              href="/docs/getting-started"
-              class="inline-flex items-center gap-2 text-emerald-500 font-bold hover:text-emerald-400 transition-colors text-xs uppercase tracking-widest mt-4"
-            >
-              Docs <ChevronRight :size="14" />
-            </StaticLink>
           </div>
 
           <div class="p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-md group">
@@ -163,12 +145,6 @@ const { t, locale } = useI18n()
             <p class="text-gray-500 text-sm mb-4">
                {{ t?.features?.proxy?.desc }}
             </p>
-             <StaticLink 
-              href="/docs/frameworks"
-              class="inline-flex items-center gap-2 text-emerald-500 font-bold hover:text-emerald-400 transition-colors text-xs uppercase tracking-widest mt-4"
-            >
-              Docs <ChevronRight :size="14" />
-            </StaticLink>
           </div>
 
           <div class="p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-md group">
@@ -177,12 +153,6 @@ const { t, locale } = useI18n()
             <p class="text-gray-500 text-sm mb-4">
               {{ t?.features?.meta?.desc }}
             </p>
-             <StaticLink 
-              href="/docs/cli"
-              class="inline-flex items-center gap-2 text-emerald-500 font-bold hover:text-emerald-400 transition-colors text-xs uppercase tracking-widest mt-4"
-            >
-              Docs <ChevronRight :size="14" />
-            </StaticLink>
           </div>
         </div>
       </div>

@@ -25,6 +25,28 @@ Instead of regenerating your entire sitemap from scratch every time, Luminosity 
 - **Automated Compliance**: Automatic `robots.txt` generation and sitemap index splitting (50k limit).
 - **Framework-agnostic**: Works perfectly with Gravito, Photon, Express, or any Node.js/Bun framework.
 
+## Feature Highlights
+
+<h3 id="incremental-lsm-tree-engine">Incremental LSM-Tree Engine</h3>
+
+Luminosity appends new URLs as immutable operations and compacts them in the background. This keeps writes sequential and avoids the lock contention of rewrite-heavy sitemap generators.
+
+<h3 id="enterprise-grade">Enterprise-Grade</h3>
+
+Built-in locking primitives and stale-while-revalidate caching keep sitemaps stable under load. You can ingest updates while serving traffic without blocking reads.
+
+<h3 id="auto-sitemap-index">Auto Sitemap Index</h3>
+
+Once you exceed 50,000 URLs, Luminosity automatically splits sitemaps and publishes a sitemap index. No manual pagination or index management required.
+
+<h3 id="robots-txt-proxy">Robots.txt Proxy</h3>
+
+Serve a programmable `robots.txt` through the same Luminosity pipeline, so crawler rules ship alongside your sitemap updates and stay consistent across environments.
+
+<h3 id="meta-tag-builder">Meta Tag Builder</h3>
+
+Generate Meta, OpenGraph, Twitter Card, and JSON-LD tags from structured metadata. Luminosity keeps output consistent and type-safe across pages.
+
 ## CLI First
 
 Luminosity is designed to be controlled via its powerful CLI, `lux`. You can inspect your sitemap stats, trigger compaction, or warm up your cache directly from your terminal.
