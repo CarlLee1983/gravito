@@ -33,7 +33,7 @@ Gravito 是一個由眾多 **動力模組 (Kinetic Modules)** 組成的龐大銀
     <div class="card-accent"></div>
     <span class="module-code">PULSE</span>
     <h3 class="module-title">Pulse CLI</h3>
-    <code class="module-pkg">@gravito/cli</code>
+    <code class="module-pkg">@gravito/pulse</code>
     <p class="module-desc">開發者的脈搏。結合 Bun 性能的高效能指令工具，處理腳手架生成與自動化任務。</p>
   </div>
 
@@ -141,6 +141,22 @@ Gravito 是一個由眾多 **動力模組 (Kinetic Modules)** 組成的龐大銀
     <code class="module-pkg">@gravito/mass</code>
     <p class="module-desc">質量。高性能資料驗證引擎，確保流入系統的資料符合嚴格的類型規範。</p>
   </div>
+
+  <div class="module-card security group">
+    <div class="card-accent"></div>
+    <span class="module-code">IMPULSE</span>
+    <h3 class="module-title">Impulse Request</h3>
+    <code class="module-pkg">@gravito/impulse</code>
+    <p class="module-desc">表單請求驗證，支援 Zod 與 Valibot，並提供授權 Hook 與型別安全的驗證資料。</p>
+  </div>
+
+  <div class="module-card security group">
+    <div class="card-accent"></div>
+    <span class="module-code">PULSAR</span>
+    <h3 class="module-title">Pulsar Session</h3>
+    <code class="module-pkg">@gravito/pulsar</code>
+    <p class="module-desc">Session 與 CSRF 管理，支援快取、Redis、檔案與 SQLite 等多種驅動。</p>
+  </div>
 </div>
 
 ## 通訊與廣播 (Comm & Signals)
@@ -167,6 +183,22 @@ Gravito 是一個由眾多 **動力模組 (Kinetic Modules)** 組成的龐大銀
     <h3 class="module-title">Flare Notify</h3>
     <code class="module-pkg">@gravito/flare</code>
     <p class="module-desc">耀斑。多渠道通知中心，處理 Web Push、簡訊與即時訊息通知。</p>
+  </div>
+
+  <div class="module-card comm group">
+    <div class="card-accent"></div>
+    <span class="module-code">RADIANCE</span>
+    <h3 class="module-title">Radiance Broadcast</h3>
+    <code class="module-pkg">@gravito/radiance</code>
+    <p class="module-desc">多驅動廣播模組，支援 Pusher、Ably、Redis 與 WebSocket 整合。</p>
+  </div>
+
+  <div class="module-card comm group">
+    <div class="card-accent"></div>
+    <span class="module-code">RIPPLE CLIENT</span>
+    <h3 class="module-title">Ripple Client</h3>
+    <code class="module-pkg">@gravito/ripple-client</code>
+    <p class="module-desc">前端 WebSocket 客戶端，提供 React Hooks 與 Vue Composables 介面。</p>
   </div>
 </div>
 
@@ -210,6 +242,122 @@ Gravito 是一個由眾多 **動力模組 (Kinetic Modules)** 組成的龐大銀
     <h3 class="module-title">Echo Webhooks</h3>
     <code class="module-pkg">@gravito/echo</code>
     <p class="module-desc">回聲。智慧 Webhook 接收與派遣系統，輕鬆整合第三方服務的實時通知。</p>
+  </div>
+
+  <div class="module-card env group">
+    <div class="card-accent"></div>
+    <span class="module-code">MONITOR</span>
+    <h3 class="module-title">Monitor Observability</h3>
+    <code class="module-pkg">@gravito/monitor</code>
+    <p class="module-desc">健康檢查、Prometheus 指標與 OpenTelemetry 追蹤，提供完整可觀測性。</p>
+  </div>
+</div>
+
+## 流程與自動化 (Workflow & Automation)
+<div class="ecosystem-grid">
+  <div class="module-card env group">
+    <div class="card-accent"></div>
+    <span class="module-code">FLUX</span>
+    <h3 class="module-title">Flux Workflow</h3>
+    <code class="module-pkg">@gravito/flux</code>
+    <p class="module-desc">狀態機工作流程引擎，支援重試、逾時與可插拔的儲存介面。</p>
+  </div>
+
+  <div class="module-card env group">
+    <div class="card-accent"></div>
+    <span class="module-code">STREAM</span>
+    <h3 class="module-title">Stream Queue</h3>
+    <code class="module-pkg">@gravito/stream</code>
+    <p class="module-desc">高效能工作佇列，支援多驅動與內嵌或獨立 worker。</p>
+  </div>
+</div>
+
+## 內容與媒體 (Content & Media)
+<div class="ecosystem-grid">
+  <div class="module-card frontend group">
+    <div class="card-accent"></div>
+    <span class="module-code">MONOLITH</span>
+    <h3 class="module-title">Monolith CMS</h3>
+    <code class="module-pkg">@gravito/monolith</code>
+    <p class="module-desc">檔案式 CMS，將 Markdown 集合轉換成可查詢的內容 API。</p>
+  </div>
+
+  <div class="module-card frontend group">
+    <div class="card-accent"></div>
+    <span class="module-code">FORGE</span>
+    <h3 class="module-title">Forge Media</h3>
+    <code class="module-pkg">@gravito/forge</code>
+    <p class="module-desc">影像與影片處理管線，支援狀態追蹤與儲存整合。</p>
+  </div>
+
+  <div class="module-card frontend group">
+    <div class="card-accent"></div>
+    <span class="module-code">SITE</span>
+    <h3 class="module-title">Site Toolkit</h3>
+    <code class="module-pkg">@gravito/site</code>
+    <p class="module-desc">以 Monolith、Cosmos、Constellation 組成的靜態內容工具。</p>
+  </div>
+</div>
+
+## 工具與開發體驗 (Tooling & DX)
+<div class="ecosystem-grid">
+  <div class="module-card group">
+    <div class="card-accent"></div>
+    <span class="module-code">SCAFFOLD</span>
+    <h3 class="module-title">Scaffold Generator</h3>
+    <code class="module-pkg">@gravito/scaffold</code>
+    <p class="module-desc">提供 MVC、DDD 與 Clean Architecture 等專案生成器。</p>
+  </div>
+
+  <div class="module-card group">
+    <div class="card-accent"></div>
+    <span class="module-code">CREATE</span>
+    <h3 class="module-title">Create Gravito App</h3>
+    <code class="module-pkg">create-gravito-app</code>
+    <p class="module-desc">快速建立新專案的啟動工具，內建多種範本。</p>
+  </div>
+</div>
+
+## 整合與客戶端 (Adapters & Clients)
+<div class="ecosystem-grid">
+  <div class="module-card frontend group">
+    <div class="card-accent"></div>
+    <span class="module-code">FREEZE REACT</span>
+    <h3 class="module-title">Freeze React</h3>
+    <code class="module-pkg">@gravito/freeze-react</code>
+    <p class="module-desc">Freeze 的 React 綁定，提供 StaticLink 與語系工具。</p>
+  </div>
+
+  <div class="module-card frontend group">
+    <div class="card-accent"></div>
+    <span class="module-code">FREEZE VUE</span>
+    <h3 class="module-title">Freeze Vue</h3>
+    <code class="module-pkg">@gravito/freeze-vue</code>
+    <p class="module-desc">Freeze 的 Vue 綁定，提供 StaticLink 與語系工具。</p>
+  </div>
+
+  <div class="module-card env group">
+    <div class="card-accent"></div>
+    <span class="module-code">LUX CLI</span>
+    <h3 class="module-title">Luminosity CLI</h3>
+    <code class="module-pkg">@gravito/luminosity-cli</code>
+    <p class="module-desc">提供 Sitemap 統計、壓實與快取預熱的 CLI 工具。</p>
+  </div>
+
+  <div class="module-card env group">
+    <div class="card-accent"></div>
+    <span class="module-code">LUX PHOTON</span>
+    <h3 class="module-title">Luminosity Photon Adapter</h3>
+    <code class="module-pkg">@gravito/luminosity-adapter-photon</code>
+    <p class="module-desc">Luminosity 在 Photon 的中介層整合。</p>
+  </div>
+
+  <div class="module-card env group">
+    <div class="card-accent"></div>
+    <span class="module-code">LUX EXPRESS</span>
+    <h3 class="module-title">Luminosity Express Adapter</h3>
+    <code class="module-pkg">@gravito/luminosity-adapter-express</code>
+    <p class="module-desc">Luminosity 在 Express 的中介層整合。</p>
   </div>
 </div>
 
