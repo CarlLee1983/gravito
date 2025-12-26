@@ -1,3 +1,4 @@
+import { StaticLink } from '@gravito/freeze-react'
 import { Head } from '@inertiajs/react'
 import { motion } from 'framer-motion'
 import {
@@ -18,7 +19,6 @@ import {
   Terminal,
   Zap,
 } from 'lucide-react'
-import { StaticLink } from '@gravito/freeze-react'
 import Layout from '../components/Layout'
 
 const getLocalizedPath = (path: string) => {
@@ -168,7 +168,10 @@ const CoreDetailSection = ({ t }: { t: Translation }) => {
                       className="text-[10px] font-black uppercase tracking-widest text-singularity hover:text-white flex items-center gap-1 group/btn"
                     >
                       Learn More
-                      <ArrowRight size={10} className="group-hover/btn:translate-x-1 transition-transform" />
+                      <ArrowRight
+                        size={10}
+                        className="group-hover/btn:translate-x-1 transition-transform"
+                      />
                     </StaticLink>
                   </div>
                 </div>
