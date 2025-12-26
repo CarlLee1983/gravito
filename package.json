@@ -35,7 +35,7 @@
     },
     "simple-git-hooks": {
         "pre-commit": "export PATH=\"$HOME/.bun/bin:$PATH\" && bunx lint-staged",
-        "pre-push": "export PATH=\"$HOME/.bun/bin:$PATH\" && bun run typecheck && bun run test"
+        "pre-push": "export PATH=\"$HOME/.bun/bin:$PATH\" && bun run check && bun run typecheck && bun run test"
     },
     "lint-staged": {
         "*.{js,ts,cjs,mjs}": [
