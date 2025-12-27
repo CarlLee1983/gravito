@@ -37,7 +37,57 @@ const cache = orbitCache(core, {
   stores: {
     memory: { driver: 'memory', maxItems: 10_000 },
     file: { driver: 'file', directory: './tmp/cache' },
+    redis: { driver: 'redis', connection: 'default' },
     null: { driver: 'null' },
+  },
+})
+```
+
+## Redis 搭配（Plasma）
+
+若要使用 Redis 作為快取 store，請搭配 `@gravito/plasma` 建立連線：
+
+```ts
+import { OrbitRedis } from '@gravito/plasma'
+
+const core = new PlanetCore()
+
+new OrbitRedis({
+  connections: {
+    default: {
+      host: '127.0.0.1',
+      port: 6379,
+      password: process.env.REDIS_PASSWORD,
+      tls: { enabled: true },
+    },
+  },
+}).install(core)
+```
+
+叢集範例（Cluster）：
+
+```ts
+new OrbitRedis({
+  connections: {
+    cluster: {
+      driver: 'cluster',
+      nodes: [
+        { host: '10.0.0.1', port: 6379 },
+        { host: '10.0.0.2', port: 6379 },
+      ],
+      password: process.env.REDIS_PASSWORD,
+    },
+  },
+}).install(core)
+```
+
+之後在 Stasis 設定中使用 `redis` store：
+
+```ts
+orbitCache(core, {
+  default: 'redis',
+  stores: {
+    redis: { driver: 'redis', connection: 'default' },
   },
 })
 ```
