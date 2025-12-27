@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from 'bun:test'
 import { Photon } from '@gravito/photon'
-import { Controller, FormRequest, Route, Schema } from '../src'
+import { Controller, FormRequest, Schema } from '../src'
 
 // --- 模擬電商控制器與請求 ---
 

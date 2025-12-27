@@ -1,4 +1,4 @@
-import { Schema, type TSchema, validate } from '@gravito/mass'
+import { type TSchema, validate } from '@gravito/mass'
 import type { Context } from 'gravito-core'
 import { Sanitizer } from './Sanitizer'
 
@@ -76,7 +76,9 @@ export abstract class FormRequest {
               // StandardSchema 'path' is array, TypeBox 'path' is string
               const path = Array.isArray(issue.path) ? issue.path.join('.') : issue.path || ''
               const key = path.replace(/^\//, '').replace(/\//g, '.') || 'root'
-              if (!errors[key]) errors[key] = []
+              if (!errors[key]) {
+                errors[key] = []
+              }
               errors[key].push(issue.message || 'Validation failed')
             }
           }

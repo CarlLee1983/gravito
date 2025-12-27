@@ -51,7 +51,10 @@ export abstract class Controller {
    * Validate the request against a schema.
    * Throws an exception or returns the validated data.
    */
-  protected async validate<T>(schema: any, source: 'json' | 'query' | 'form' = 'json'): Promise<T> {
+  protected async validate<T>(
+    _schema: any,
+    source: 'json' | 'query' | 'form' = 'json'
+  ): Promise<T> {
     // In our framework, manual validation inside controller is an alternative
     // but we prefer FormRequest middleware for cleaner DX.
     // This is a placeholder for future internal validation logic.

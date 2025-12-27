@@ -4,36 +4,55 @@ Enterprise architecture primitives for Gravito framework. This package provides 
 
 ## Features
 
-- **Base Entity**: Includes identity management and domain event recording.
-- **Value Object**: Immutable value types with structural equality.
-- **Domain Events**: Standard structure for domain events.
-- **Generic Repository**: Standard interface for persistence.
-- **Use Case**: Base class for application business rules.
+### Domain-Driven Design (DDD)
+- **AggregateRoot**: Aggregate root entity with domain event management.
+- **Entity**: Base entity class with identity equality.
+- **ValueObject**: Immutable value types with structural equality.
+- **DomainEvent**: Standard structure for domain events including ID and occurrence time.
+- **Repository**: Generic repository interface definition.
+
+### CQRS & Application
+- **Command**: Base class for write operations.
+- **Query**: Base class for read operations.
+- **CommandHandler**: Interface for command handlers.
+- **QueryHandler**: Interface for query handlers.
+- **UseCase**: Simple clean architecture use case base class.
 
 ## Usage
 
+### Defining an Aggregate Root
+
 ```typescript
-import { Entity, ValueObject, UseCase, Repository } from '@gravito/enterprise'
+import { AggregateRoot, DomainEvent, ValueObject } from '@gravito/enterprise'
 
-// Define an Entity
-class User extends Entity<string> {
+class UserCreated extends DomainEvent {
   // ...
 }
 
-// Define a Value Object
-class Email extends ValueObject<{ value: string }> {
-  // ...
+class UserId extends ValueObject<{ value: string }> {}
+
+class User extends AggregateRoot<UserId> {
+  static create(id: UserId, name: string): User {
+    const user = new User(id)
+    user.addDomainEvent(new UserCreated())
+    return user
+  }
+}
+```
+
+### Implementing CQRS
+
+```typescript
+import { Command, CommandHandler } from '@gravito/enterprise'
+
+class CreateUserCommand extends Command {
+  constructor(public readonly name: string) { super() }
 }
 
-// Define a Repository Interface
-interface UserRepository extends Repository<User, string> {
-  findByEmail(email: string): Promise<User | null>
-}
-
-// Define a Use Case
-class CreateUser extends UseCase<CreateUserInput, UserDTO> {
-  async execute(input: CreateUserInput): Promise<UserDTO> {
-    // ...
+class CreateUserHandler implements CommandHandler<CreateUserCommand, string> {
+  async handle(command: CreateUserCommand): Promise<string> {
+    // Logic here
+    return 'new-id'
   }
 }
 ```

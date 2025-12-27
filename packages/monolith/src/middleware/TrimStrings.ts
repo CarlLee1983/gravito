@@ -25,7 +25,9 @@ export const trimStrings = (): MiddlewareHandler => {
 }
 
 function clean(obj: any, transform: (val: any) => any) {
-  if (!obj || typeof obj !== 'object') return
+  if (!obj || typeof obj !== 'object') {
+    return
+  }
 
   for (const key in obj) {
     if (typeof obj[key] === 'object') {

@@ -1,5 +1,4 @@
 import type { Hono } from 'hono'
-import { Controller } from './Controller'
 
 export class RouterHelper {
   /**

@@ -371,12 +371,10 @@ export async function eagerLoad<T extends Model>(
   switch (type) {
     case 'hasOne':
     case 'hasMany': {
-      const query = Related!
-        .query()
-        .whereIn(
-          foreignKey!,
-          validParentKeys
-        ) as unknown as import('../../types').QueryBuilderContract<any>
+      const query = Related?.query().whereIn(
+        foreignKey!,
+        validParentKeys
+      ) as unknown as import('../../types').QueryBuilderContract<any>
 
       // Apply constraint callback if provided
       if (callback) {
@@ -442,8 +440,7 @@ export async function eagerLoad<T extends Model>(
     case 'morphOne':
 
     case 'morphMany': {
-      const query = Related!
-        .query()
+      const query = Related?.query()
 
         .whereIn(foreignKey!, validParentKeys)
 
@@ -553,9 +550,10 @@ export async function eagerLoad<T extends Model>(
         return
       }
 
-      const query = Related!
-        .query()
-        .whereIn(localKey!, fks) as unknown as import('../../types').QueryBuilderContract<any>
+      const query = Related?.query().whereIn(
+        localKey!,
+        fks
+      ) as unknown as import('../../types').QueryBuilderContract<any>
 
       if (callback) {
         callback(query)
@@ -615,12 +613,10 @@ export async function eagerLoad<T extends Model>(
         return
       }
 
-      const query = Related!
-        .query()
-        .whereIn(
-          localKey!,
-          relatedIds
-        ) as unknown as import('../../types').QueryBuilderContract<any>
+      const query = Related?.query().whereIn(
+        localKey!,
+        relatedIds
+      ) as unknown as import('../../types').QueryBuilderContract<any>
 
       if (callback) {
         callback(query)

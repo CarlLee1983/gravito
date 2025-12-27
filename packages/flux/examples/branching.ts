@@ -18,14 +18,14 @@ const workflow = createWorkflow('branching-demo')
   })
   .step(
     'send-email',
-    async (ctx) => {
+    async (_ctx) => {
       console.log('✉️  Send email')
     },
     { when: (ctx) => ctx.data.route === 'email' || ctx.data.route === 'both' }
   )
   .step(
     'send-slack',
-    async (ctx) => {
+    async (_ctx) => {
       console.log('💬 Send slack')
     },
     { when: (ctx) => ctx.data.route === 'slack' || ctx.data.route === 'both' }
