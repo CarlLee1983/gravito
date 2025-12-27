@@ -302,44 +302,6 @@ export class CleanArchitectureGenerator extends BaseGenerator {
 `
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // Domain Layer
-  // ─────────────────────────────────────────────────────────────
-
-  private generateBaseEntity(): string {
-    return `/**
- * Base Entity
- *
- * All domain entities extend this base class.
- * Entities have identity and lifecycle.
- *
- * IMPORTANT: This layer must have NO external dependencies.
- */
-
-export abstract class Entity<T> {
-  protected readonly _id: T
-
-  constructor(id: T) {
-    this._id = id
-  }
-
-  get id(): T {
-    return this._id
-  }
-
-  equals(other: Entity<T>): boolean {
-    if (other === null || other === undefined) {
-      return false
-    }
-    if (!(other instanceof Entity)) {
-      return false
-    }
-    return this._id === other._id
-  }
-}
-`
-  }
-
   private generateUserEntity(): string {
     return `/**
  * User Entity
@@ -401,31 +363,6 @@ export class User extends Entity<string> {
 `
   }
 
-  private generateBaseValueObject(): string {
-    return `/**
- * Base Value Object
- *
- * Value objects are immutable and compared by value.
- * They have no identity of their own.
- */
-
-export abstract class ValueObject<T> {
-  protected readonly props: T
-
-  constructor(props: T) {
-    this.props = Object.freeze(props)
-  }
-
-  equals(other: ValueObject<T>): boolean {
-    if (other === null || other === undefined) {
-      return false
-    }
-    return JSON.stringify(this.props) === JSON.stringify(other.props)
-  }
-}
-`
-  }
-
   private generateEmailValueObject(): string {
     return `/**
  * Email Value Object
@@ -480,36 +417,6 @@ import type { User } from '../Entities/User'
 
 export interface IUserRepository extends Repository<User, string> {
   findByEmail(email: string): Promise<User | null>
-}
-`
-  }
-
-  private generateDomainException(): string {
-    return `/**
- * Domain Exception
- *
- * Base exception for domain-level errors.
- */
-
-export class DomainException extends Error {
-  constructor(message: string) {
-    super(message)
-    this.name = 'DomainException'
-  }
-}
-
-export class EntityNotFoundException extends DomainException {
-  constructor(entity: string, id: string) {
-    super(\`\${entity} with id \${id} not found\`)
-    this.name = 'EntityNotFoundException'
-  }
-}
-
-export class InvalidValueException extends DomainException {
-  constructor(message: string) {
-    super(message)
-    this.name = 'InvalidValueException'
-  }
 }
 `
   }

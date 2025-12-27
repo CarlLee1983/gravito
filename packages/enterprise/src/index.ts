@@ -1,4 +1,7 @@
+export * from './Application/Command'
+export * from './Application/Query'
 export * from './Application/UseCase'
+export * from './Domain/AggregateRoot'
 export * from './Domain/DomainEvent'
 export * from './Domain/Entity'
 export * from './Domain/Repository'

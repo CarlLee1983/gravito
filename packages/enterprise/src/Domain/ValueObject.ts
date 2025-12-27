@@ -1,9 +1,3 @@
-/**
- * Base Value Object
- *
- * Value objects are immutable and compared by structural equality (properties),
- * not by identity.
- */
 export abstract class ValueObject<T> {
   protected readonly props: T
 
@@ -11,9 +5,6 @@ export abstract class ValueObject<T> {
     this.props = Object.freeze({ ...props })
   }
 
-  /**
-   * Check equality by comparing properties.
-   */
   public equals(other: ValueObject<T>): boolean {
     if (other === null || other === undefined) {
       return false

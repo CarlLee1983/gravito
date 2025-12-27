@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { DomainEvent, Entity, Repository, UseCase, ValueObject } from '../src'
+import { Entity, UseCase, ValueObject } from '../src'
 
 describe('@gravito/enterprise', () => {
   describe('Entity', () => {
@@ -41,7 +41,7 @@ describe('@gravito/enterprise', () => {
 
   describe('UseCase', () => {
     class CreateUser extends UseCase<{ name: string }, { id: string }> {
-      execute(input: { name: string }): { id: string } {
+      execute(_input: { name: string }): { id: string } {
         return { id: '123' }
       }
     }

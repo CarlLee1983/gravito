@@ -22,7 +22,9 @@ describe('CleanArchitectureGenerator', () => {
         }
         if (node.children) {
           const found = findFile(node.children, name)
-          if (found) return found
+          if (found) {
+            return found
+          }
         }
       }
       return undefined
