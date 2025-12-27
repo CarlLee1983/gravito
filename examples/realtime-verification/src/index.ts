@@ -3,7 +3,7 @@ import { startServer } from './server'
 
 const role = process.env.NODE_ROLE
 const name = process.env.INSTANCE_NAME || 'Unknown'
-const port = parseInt(process.env.PORT || '3000')
+const port = parseInt(process.env.PORT || '3000', 10)
 
 console.log(`Starting ${name} as ${role} on port ${port}`)
 

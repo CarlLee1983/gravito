@@ -1,0 +1,2 @@
+{"id":"398ea644-db2c-498c-a133-59093ef27bdd","method":"GET","path":"/hello","url":"http://localhost/hello","status":200,"duration":2.2012919999999667,"startTime":1766802115400,"ip":"127.0.0.1","requestHeaders":{},"responseHeaders":{"content-type":"application/json"}}
+{"id":"247fb7d1-e840-41b8-b56d-c5c4836c7b6f","method":"GET","path":"/hello","url":"http://localhost/hello","status":200,"duration":0.41112499999997,"startTime":1766802115407,"ip":"127.0.0.1","requestHeaders":{},"responseHeaders":{"content-type":"application/json"}}

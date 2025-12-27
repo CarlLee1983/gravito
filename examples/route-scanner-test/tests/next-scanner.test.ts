@@ -32,14 +32,14 @@ describe('NextScanner', () => {
       // Should find blog/[slug] as /blog/:slug
       const blogRoute = routes.find((r) => r.path.includes('blog') && r.path.includes(':slug'))
       expect(blogRoute).toBeDefined()
-      expect(blogRoute!.isDynamic).toBe(true)
-      expect(blogRoute!.params).toContain('slug')
+      expect(blogRoute?.isDynamic).toBe(true)
+      expect(blogRoute?.params).toContain('slug')
 
       // Should find products/[category]/[id]
       const productRoute = routes.find((r) => r.path.includes('products') && r.isDynamic)
       expect(productRoute).toBeDefined()
-      expect(productRoute!.params).toContain('category')
-      expect(productRoute!.params).toContain('id')
+      expect(productRoute?.params).toContain('category')
+      expect(productRoute?.params).toContain('id')
     })
 
     it('should handle route groups (parentheses)', async () => {
@@ -53,7 +53,7 @@ describe('NextScanner', () => {
       const dashboardRoute = routes.find((r) => r.path.includes('dashboard'))
       expect(dashboardRoute).toBeDefined()
       // The path should be /dashboard, not /(admin)/dashboard
-      expect(dashboardRoute!.path).toBe('/dashboard')
+      expect(dashboardRoute?.path).toBe('/dashboard')
     })
 
     it('should apply exclude patterns', async () => {

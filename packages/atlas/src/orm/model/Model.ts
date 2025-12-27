@@ -234,7 +234,7 @@ export abstract class Model {
 
         const relations = getRelationships(modelCtor)
         if (typeof prop === 'string' && relations.has(prop)) {
-          const builderFn = (...args: any[]) => {
+          const builderFn = (..._args: any[]) => {
             const meta = relations.get(prop)!
             const type = meta.type
 
@@ -247,7 +247,7 @@ export abstract class Model {
             }
 
             if (type === 'morphOne' || type === 'morphMany') {
-              const Related = meta.related!()
+              const Related = meta.related?.()
               return (receiver as any)[type](
                 Related,
                 meta.morphName,
@@ -256,7 +256,7 @@ export abstract class Model {
               )
             }
 
-            const Related = meta.related!()
+            const Related = meta.related?.()
             // Call hasOne, hasMany, belongsTo, or belongsToMany
             return (receiver as any)[type](Related, meta.foreignKey, meta.localKey)
           }

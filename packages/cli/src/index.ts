@@ -422,6 +422,7 @@ async function group<T extends Record<string, unknown>>(
   return results as T
 }
 
+import { addSpectrumCommand } from './commands/add'
 import { registerInitCommand } from './commands/init'
 import { MakeCommand } from './commands/MakeCommand'
 import { routeCache, routeClear } from './commands/routeCache'
@@ -432,6 +433,11 @@ import { tinker } from './commands/tinker'
 
 // --- Init Command (Enterprise Framework) ---
 registerInitCommand(cli)
+
+// --- Add-on Commands ---
+cli
+  .command('add:spectrum', 'Add Spectrum debug dashboard to current project')
+  .action(() => addSpectrumCommand())
 
 // --- Make Commands ---
 const make = new MakeCommand()

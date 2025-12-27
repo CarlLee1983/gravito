@@ -78,7 +78,7 @@ export async function startServer(port: number) {
     },
     bindings: {
       providers: {
-        users: (config) => new CallbackUserProvider(async (id) => await User.findBy('id', id)),
+        users: (_config) => new CallbackUserProvider(async (id) => await User.findBy('id', id)),
       },
     },
   })

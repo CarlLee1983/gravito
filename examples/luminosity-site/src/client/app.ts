@@ -1,5 +1,5 @@
 import { createInertiaApp } from '@inertiajs/vue3'
-import { createApp, type DefineComponent, h } from 'vue'
+import { createApp, h } from 'vue'
 import './app.css'
 
 import { defineConfig, FreezePlugin } from '@gravito/freeze-vue'

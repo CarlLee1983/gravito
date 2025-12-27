@@ -93,7 +93,7 @@ export class ExpressScanner implements RouteScanner {
           continue
         }
 
-        const methods = Object.keys(layer.route.methods).filter((m) => layer.route!.methods[m])
+        const methods = Object.keys(layer.route.methods).filter((m) => layer.route?.methods[m])
 
         for (const method of methods) {
           routes.push({
@@ -120,7 +120,7 @@ export class ExpressScanner implements RouteScanner {
   private extractPathFromRegexp(regexp: RegExp): string {
     const match = regexp.source.match(/^\^\\\/([^?\\]+)/)
     if (match?.[1]) {
-      return '/' + match[1].replace(/\\\//g, '/')
+      return `/${match[1].replace(/\\\//g, '/')}`
     }
     return ''
   }

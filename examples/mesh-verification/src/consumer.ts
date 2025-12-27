@@ -9,7 +9,7 @@ const ALERT_LOG = join(process.cwd(), 'storage/alerts.log')
 
 // Mock Notification Channel
 class FileAlertChannel {
-  async send(notification: any, notifiable: any) {
+  async send(notification: any, _notifiable: any) {
     const data = JSON.stringify(notification.toJSON())
     await appendFile(ALERT_LOG, `[ALERT] ${data}\n`)
     console.log(`[Consumer] Alert written to file: ${data}`)
@@ -56,7 +56,7 @@ export async function startConsumer(port: number, providerPort: number) {
           new SystemDownNotification('Service-B')
         )
       }
-    } catch (e) {
+    } catch (_e) {
       // Service B might be down (no response)
       console.log('[Consumer] Service B unreachable!')
       await flare.send(
@@ -68,8 +68,8 @@ export async function startConsumer(port: number, providerPort: number) {
 
   // 4. API to trigger RPC
   core.router.get('/trigger-rpc', async (c) => {
-    const a = parseInt(c.req.query('a') || '5')
-    const b = parseInt(c.req.query('b') || '10')
+    const a = parseInt(c.req.query('a') || '5', 10)
+    const b = parseInt(c.req.query('b') || '10', 10)
 
     console.log(`[Consumer] Calling Service B /calculate with ${a}, ${b}`)
     const res = await client.calculate.$get({ query: { a: String(a), b: String(b) } })

@@ -1,0 +1,17 @@
+{
+  "name": "example-spectrum-verification",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "verify": "bun run verify.ts"
+  },
+  "dependencies": {
+    "gravito-core": "workspace:*",
+    "@gravito/spectrum": "workspace:*",
+    "@gravito/atlas": "workspace:*"
+  },
+  "devDependencies": {
+    "bun-types": "latest"
+  }
+}

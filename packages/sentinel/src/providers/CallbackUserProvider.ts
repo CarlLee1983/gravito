@@ -45,7 +45,9 @@ export class CallbackUserProvider<T extends Authenticatable = Authenticatable>
     if (credentials.email) {
       const users = (global as any).MOCK_USERS || []
       const raw = users.find((u: any) => u.email === credentials.email)
-      if (raw) return this.retrieveById(raw.id)
+      if (raw) {
+        return this.retrieveById(raw.id)
+      }
     }
     return null
   }

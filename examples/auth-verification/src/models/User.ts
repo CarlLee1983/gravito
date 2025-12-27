@@ -15,7 +15,9 @@ export class User extends Model {
   static async findBy(field: string, value: any): Promise<User | null> {
     const users = (global as any).MOCK_USERS || []
     const raw = users.find((u: any) => u[field] === value)
-    if (!raw) return null
+    if (!raw) {
+      return null
+    }
     const user = new User(raw)
     ;(user as any)._attributes = raw
     return user
@@ -24,7 +26,9 @@ export class User extends Model {
   static async create(data: any): Promise<User> {
     const id = Date.now()
     const attributes = { ...data, id }
-    if (!(global as any).MOCK_USERS) (global as any).MOCK_USERS = []
+    if (!(global as any).MOCK_USERS) {
+      ;(global as any).MOCK_USERS = []
+    }
     ;(global as any).MOCK_USERS.push(attributes)
     console.log(`[User Model] Created user: ${id} (${data.email})`)
     const user = new User(attributes)

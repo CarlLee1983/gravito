@@ -1,5 +1,3 @@
-import type { Model } from '../orm/model/Model'
-
 /**
  * Seeder constructor type
  */

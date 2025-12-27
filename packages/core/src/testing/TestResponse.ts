@@ -145,7 +145,9 @@ export class TestResponse {
    * Get the JSON content
    */
   async getJson(): Promise<any> {
-    if (this._jsonData) return this._jsonData
+    if (this._jsonData) {
+      return this._jsonData
+    }
     this._jsonData = await this.response.json()
     return this._jsonData
   }
@@ -154,7 +156,9 @@ export class TestResponse {
    * Get the text content
    */
   async getText(): Promise<string> {
-    if (this._textData !== null) return this._textData
+    if (this._textData !== null) {
+      return this._textData
+    }
     this._textData = await this.response.text()
     return this._textData
   }

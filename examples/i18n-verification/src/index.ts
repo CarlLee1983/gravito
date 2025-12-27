@@ -1,8 +1,7 @@
-import { join } from 'node:path'
 import { type I18nService, OrbitCosmos } from '@gravito/cosmos'
 import { PlanetCore } from 'gravito-core'
 
-const port = parseInt(process.env.PORT || '3007')
+const port = parseInt(process.env.PORT || '3007', 10)
 const core = new PlanetCore()
 
 await core.orbit(

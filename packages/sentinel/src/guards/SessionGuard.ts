@@ -75,7 +75,7 @@ export class SessionGuard<User extends Authenticatable = Authenticatable>
     return true
   }
 
-  public async login(user: User, remember = false): Promise<void> {
+  public async login(user: User, _remember = false): Promise<void> {
     const id =
       typeof user.getAuthIdentifier === 'function' ? user.getAuthIdentifier() : (user as any).id
 

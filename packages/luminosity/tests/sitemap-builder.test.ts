@@ -29,9 +29,9 @@ describe('SitemapBuilder', () => {
     const entries = await builder.build()
 
     expect(entries).toHaveLength(3)
-    expect(entries[0]!.url).toBe('https://example.com/')
-    expect(entries[1]!.url).toBe('https://example.com/about')
-    expect(entries[2]!.url).toBe('https://example.com/contact')
+    expect(entries[0]?.url).toBe('https://example.com/')
+    expect(entries[1]?.url).toBe('https://example.com/about')
+    expect(entries[2]?.url).toBe('https://example.com/contact')
   })
 
   it('should skip non-GET routes', async () => {
@@ -49,7 +49,7 @@ describe('SitemapBuilder', () => {
     const entries = await builder.build()
 
     expect(entries).toHaveLength(1)
-    expect(entries[0]!.url).toBe('https://example.com/')
+    expect(entries[0]?.url).toBe('https://example.com/')
   })
 
   it('should resolve dynamic routes with resolver', async () => {
@@ -72,9 +72,9 @@ describe('SitemapBuilder', () => {
     const entries = await builder.build()
 
     expect(entries).toHaveLength(3)
-    expect(entries[0]!.url).toBe('https://example.com/')
-    expect(entries[1]!.url).toBe('https://example.com/blog/hello-world')
-    expect(entries[2]!.url).toBe('https://example.com/blog/another-post')
+    expect(entries[0]?.url).toBe('https://example.com/')
+    expect(entries[1]?.url).toBe('https://example.com/blog/hello-world')
+    expect(entries[2]?.url).toBe('https://example.com/blog/another-post')
   })
 
   it('should apply exclude patterns', async () => {
@@ -108,8 +108,8 @@ describe('SitemapBuilder', () => {
 
     const entries = await builder.build()
 
-    expect(entries[0]!.priority).toBe(0.8)
-    expect(entries[0]!.changefreq).toBe('weekly')
+    expect(entries[0]?.priority).toBe(0.8)
+    expect(entries[0]?.changefreq).toBe('weekly')
   })
 
   it('should skip routes with meta.exclude', async () => {
@@ -126,6 +126,6 @@ describe('SitemapBuilder', () => {
     const entries = await builder.build()
 
     expect(entries).toHaveLength(1)
-    expect(entries[0]!.url).toBe('https://example.com/')
+    expect(entries[0]?.url).toBe('https://example.com/')
   })
 })

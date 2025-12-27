@@ -31,13 +31,13 @@ describe('HonoScanner', () => {
 
       const blogRoute = routes.find((r) => r.path === '/blog/:slug')
       expect(blogRoute).toBeDefined()
-      expect(blogRoute!.isDynamic).toBe(true)
-      expect(blogRoute!.params).toEqual(['slug'])
+      expect(blogRoute?.isDynamic).toBe(true)
+      expect(blogRoute?.params).toEqual(['slug'])
 
       const productRoute = routes.find((r) => r.path === '/products/:category/:id')
       expect(productRoute).toBeDefined()
-      expect(productRoute!.isDynamic).toBe(true)
-      expect(productRoute!.params).toEqual(['category', 'id'])
+      expect(productRoute?.isDynamic).toBe(true)
+      expect(productRoute?.params).toEqual(['category', 'id'])
     })
 
     it('should filter out non-GET methods by default', async () => {
@@ -56,7 +56,7 @@ describe('HonoScanner', () => {
       // GET routes
       const getRoutes = routes.filter((r) => r.method === 'GET')
       expect(getRoutes.length).toBe(1)
-      expect(getRoutes[0]!.path).toBe('/users')
+      expect(getRoutes[0]?.path).toBe('/users')
     })
 
     it('should apply exclude patterns', async () => {

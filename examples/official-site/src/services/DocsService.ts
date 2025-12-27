@@ -314,7 +314,7 @@ export class DocsService {
     </div>
   </div>
 </div>`
-        } catch (e) {
+        } catch (_e) {
           const escapedText = escapeHtml(text)
           const langClass = lang ? `language-${lang}` : ''
           return `<pre class="${langClass}"><code class="${langClass}">${escapedText}</code></pre>`

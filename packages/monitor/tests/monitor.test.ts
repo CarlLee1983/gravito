@@ -9,7 +9,7 @@ describe('MonitorOrbit', () => {
     const core = new PlanetCore()
     core.orbit(new MonitorOrbit())
 
-    const server = await core.liftoff()
+    const _server = await core.liftoff()
 
     expect(core.services.get('monitor')).toBeDefined()
     expect(core.services.get('health')).toBeDefined()

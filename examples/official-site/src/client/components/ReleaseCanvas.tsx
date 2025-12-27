@@ -6,10 +6,14 @@ export const ReleaseCanvas: React.FC = () => {
 
   useEffect(() => {
     const canvas = canvasRef.current
-    if (!canvas) return
+    if (!canvas) {
+      return
+    }
 
     const ctx = canvas.getContext('2d')
-    if (!ctx) return
+    if (!ctx) {
+      return
+    }
 
     let width: number
     let height: number
@@ -17,8 +21,8 @@ export const ReleaseCanvas: React.FC = () => {
     let particles: Particle[] = []
 
     const particleCount = 60
-    const brandColor = 'rgba(0, 240, 255, 0.4)'
-    const secondaryColor = 'rgba(147, 51, 234, 0.3)'
+    const _brandColor = 'rgba(0, 240, 255, 0.4)'
+    const _secondaryColor = 'rgba(147, 51, 234, 0.3)'
 
     const mouse = { x: 0, y: 0, active: false }
 
@@ -64,14 +68,22 @@ export const ReleaseCanvas: React.FC = () => {
         this.x += this.speedX
         this.y += this.speedY
 
-        if (this.x > width) this.x = 0
-        else if (this.x < 0) this.x = width
-        if (this.y > height) this.y = 0
-        else if (this.y < 0) this.y = height
+        if (this.x > width) {
+          this.x = 0
+        } else if (this.x < 0) {
+          this.x = width
+        }
+        if (this.y > height) {
+          this.y = 0
+        } else if (this.y < 0) {
+          this.y = height
+        }
       }
 
       draw() {
-        if (!ctx) return
+        if (!ctx) {
+          return
+        }
         ctx.beginPath()
         ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2)
         ctx.fillStyle = `rgba(0, 240, 255, ${this.opacity})`
