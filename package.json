@@ -14,14 +14,12 @@
         "format": "biome format --write .",
         "check": "biome check . --diagnostic-level=error",
         "typecheck": "bun run --filter './packages/*' typecheck",
-        "version:update": "bun run scripts/update-package-versions.ts",
         "version:check": "bun run scripts/check-versions.ts",
-        "publish:validate": "bun run scripts/validate-before-publish.ts",
-        "publish:all": "bun run scripts/publish-all.ts",
-        "publish:dry-run": "bun run scripts/publish-all.ts --dry-run",
         "changeset": "changeset",
-        "changeset:version": "changeset version",
-        "changeset:publish": "changeset publish"
+        "ci:version": "changeset version",
+        "ci:publish": "changeset publish",
+        "pub:beta": "changeset publish --tag beta",
+        "pub:snapshot": "changeset publish --tag snapshot"
     },
     "devDependencies": {
         "@biomejs/biome": "^2.3.10",
