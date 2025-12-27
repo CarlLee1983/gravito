@@ -2,7 +2,7 @@ import { OrbitIon } from '@gravito/ion'
 import { serveStatic } from '@gravito/photon/bun'
 import { OrbitPrism } from '@gravito/prism'
 import { OrbitCache } from '@gravito/stasis'
-import { defineConfig, PlanetCore } from 'gravito-core'
+import { defineConfig, type GravitoMiddleware, PlanetCore } from 'gravito-core'
 import { registerHooks } from './hooks'
 import { registerRoutes } from './routes'
 
@@ -32,8 +32,11 @@ export async function bootstrap(options: AppConfig = {}) {
   core.registerGlobalErrorHandlers()
 
   // 3. Static files
-  core.app.use('/static/*', serveStatic({ root: './' }))
-  core.app.get('/favicon.ico', serveStatic({ path: './static/favicon.ico' }))
+  const staticAssets = serveStatic({ root: './' }) as unknown as GravitoMiddleware
+  const favicon = serveStatic({ path: './static/favicon.ico' }) as unknown as GravitoMiddleware
+
+  core.adapter.use('/static/*', staticAssets)
+  core.adapter.route('get', '/favicon.ico', favicon)
 
   // 4. Hooks
   registerHooks(core)

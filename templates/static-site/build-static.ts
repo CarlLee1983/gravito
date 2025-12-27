@@ -4,7 +4,7 @@ import { dirname, join } from 'node:path'
 import { promisify } from 'node:util'
 import { SitemapStream } from '@gravito/constellation'
 import type { PlanetCore } from 'gravito-core'
-import { bootstrap } from './src/bootstrap.ts'
+import { bootstrap } from './src/bootstrap'
 
 console.log('🏗️  Starting Static Site Generation...')
 
@@ -82,7 +82,7 @@ async function build() {
   // Render root first
   console.log(`Render: / (Root)`)
   try {
-    const res = await core.app.request('/')
+    const res = await core.adapter.fetch(new Request('http://localhost/'))
     if (res.status === 200) {
       const html = await res.text()
       const indexPath = join(outputDir, 'index.html')
@@ -107,7 +107,7 @@ async function build() {
     console.log(`Render: ${route}`)
 
     try {
-      const res = await core.app.request(route)
+      const res = await core.adapter.fetch(new Request(`http://localhost${route}`))
       if (res.status !== 200) {
         if (res.status === 302 || res.status === 301) {
           const location = res.headers.get('Location')
@@ -152,7 +152,9 @@ async function build() {
   console.log('🚫 Generating 404.html...')
   try {
     // Request a known non-existent route to trigger the 404 hook
-    const res = await core.app.request(`/__force_404_generation_${Date.now()}__`)
+    const res = await core.adapter.fetch(
+      new Request(`http://localhost/__force_404_generation_${Date.now()}__`)
+    )
     let html = await res.text()
 
     // Insert SPA routing script

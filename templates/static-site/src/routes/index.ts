@@ -1,4 +1,4 @@
-import type { GravitoContext, GravitoNext, PlanetCore } from 'gravito-core'
+import type { GravitoContext, GravitoMiddleware, PlanetCore } from 'gravito-core'
 import { ApiController } from '../controllers/ApiController'
 import { HomeController } from '../controllers/HomeController'
 
@@ -21,9 +21,10 @@ export function registerRoutes(core: PlanetCore): void {
   // API Routes
   // ─────────────────────────────────────────────
   // Example inline middleware for API logging
-  const apiLogger = async (ctx: GravitoContext, next: GravitoNext) => {
+  const apiLogger: GravitoMiddleware = async (ctx, next) => {
     console.log(`[API] ${ctx.req.method} ${ctx.req.url}`)
     await next()
+    return undefined
   }
 
   router

@@ -1,6 +1,5 @@
 import { Link } from '@inertiajs/react'
-import type React from 'react'
-import type { ComponentProps } from 'react'
+import type { AnchorHTMLAttributes, ComponentProps, MouseEvent } from 'react'
 
 type InertiaLinkProps = ComponentProps<typeof Link>
 
@@ -41,8 +40,10 @@ function isStaticSite(): boolean {
   return staticDomains.includes(hostname)
 }
 
-interface StaticLinkProps extends InertiaLinkProps {
-  children: React.ReactNode
+type LinkChildren = ComponentProps<typeof Link>['children']
+
+type StaticLinkProps = Omit<InertiaLinkProps, 'children'> & {
+  children?: LinkChildren
   className?: string
 }
 
@@ -62,10 +63,10 @@ export function StaticLink({ href, children, className, onClick, ...props }: Sta
   if (isStatic) {
     // 在靜態環境中，使用普通的 <a> 標籤進行完整頁面導航
     // 這樣可以避免 Inertia 的 AJAX 請求在沒有後端的情況下失敗
-    const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    const handleClick = (e: MouseEvent<HTMLAnchorElement>) => {
       // 如果提供了 onClick 處理器，先執行它
       if (onClick) {
-        ;(onClick as (e: React.MouseEvent<HTMLAnchorElement>) => void)(e)
+        ;(onClick as (e: MouseEvent<HTMLAnchorElement>) => void)(e)
       }
       // 在靜態環境中，讓瀏覽器處理導航（不阻止默認行為）
     }
@@ -75,10 +76,7 @@ export function StaticLink({ href, children, className, onClick, ...props }: Sta
         href={href as string}
         className={className}
         onClick={handleClick}
-        {...(props as Omit<
-          React.AnchorHTMLAttributes<HTMLAnchorElement>,
-          'href' | 'className' | 'onClick'
-        >)}
+        {...(props as Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'href' | 'className' | 'onClick'>)}
       >
         {children}
       </a>

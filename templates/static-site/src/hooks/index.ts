@@ -12,11 +12,14 @@ export function registerHooks(core: PlanetCore): void {
   })
 
   // Add metadata to all API responses
-  core.hooks.addFilter('api:response', async (data) => ({
-    ...data,
-    _meta: {
-      timestamp: new Date().toISOString(),
-      poweredBy: 'Gravito',
-    },
-  }))
+  core.hooks.addFilter('api:response', async (data) => {
+    const payload = (data ?? {}) as Record<string, unknown>
+    return {
+      ...payload,
+      _meta: {
+        timestamp: new Date().toISOString(),
+        poweredBy: 'Gravito',
+      },
+    }
+  })
 }
