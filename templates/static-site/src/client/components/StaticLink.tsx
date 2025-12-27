@@ -76,7 +76,10 @@ export function StaticLink({ href, children, className, onClick, ...props }: Sta
         href={href as string}
         className={className}
         onClick={handleClick}
-        {...(props as Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'href' | 'className' | 'onClick'>)}
+        {...(props as Omit<
+          AnchorHTMLAttributes<HTMLAnchorElement>,
+          'href' | 'className' | 'onClick'
+        >)}
       >
         {children}
       </a>
