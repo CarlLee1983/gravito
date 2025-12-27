@@ -33,9 +33,10 @@ import { SpectrumOrbit } from '@gravito/spectrum'
 
 const core = new PlanetCore()
 
-// Initialize Spectrum
-// Default path: /gravito/spectrum
-await core.orbit(new SpectrumOrbit())
+// Initialize Spectrum (Development only recommended)
+if (process.env.NODE_ENV !== 'production') {
+  await core.orbit(new SpectrumOrbit())
+}
 
 await core.liftoff()
 ```
@@ -44,18 +45,19 @@ Visit **http://localhost:3000/gravito/spectrum** to see your dashboard.
 
 ## ⚙️ Configuration
 
-You can customize Spectrum by passing a configuration object to the constructor.
+You can customize Spectrum by passing a configuration object.
 
 ```typescript
 await core.orbit(new SpectrumOrbit({
   // Change the dashboard path
   path: '/_debug',
   
-  // Enable/Disable spectrum (useful for conditional loading)
-  enabled: process.env.NODE_ENV !== 'production',
-  
   // Storage Strategy (Memory or File)
-  storage: new MemoryStorage(), // Default
+  storage: new MemoryStorage(), 
+  
+  // Sample Rate (0.0 to 1.0)
+  // Useful for high-traffic environments to prevent flooding
+  sampleRate: 1.0, 
   
   // Security Gate (Authorization)
   gate: async (c) => {
@@ -65,33 +67,22 @@ await core.orbit(new SpectrumOrbit({
 }))
 ```
 
-### Persistence (File Storage)
+## 🛡️ Production Safety
 
-By default, Spectrum stores data in memory, which is lost when the server restarts. To persist debug data (e.g., to analyze a crash after restart), use `FileStorage`.
+Spectrum is designed primarily for **local development**. If you enable it in production, you **MUST** follow these rules:
 
-```typescript
-import { SpectrumOrbit, FileStorage } from '@gravito/spectrum'
-import { join } from 'node:path'
-
-await core.orbit(new SpectrumOrbit({
-  storage: new FileStorage({
-    directory: join(process.cwd(), 'storage/spectrum')
-  })
-}))
-```
-
-### Security Gates (Production Use)
-
-Spectrum is designed primarily for local development. If you must enable it in a production-like environment, **you must configure a Gate**.
+1.  **Configure a Gate**: Never leave the dashboard open to the public.
+2.  **Enable Persistence**: Use `FileStorage` so data isn't lost on restart, or stick to `MemoryStorage` to avoid filling up disk space.
+3.  **Set Sample Rate**: Set `sampleRate: 0.1` (10%) or lower to avoid performance impact on high-traffic sites.
 
 ```typescript
-await core.orbit(new SpectrumOrbit({
-  gate: async (c) => {
-    // Example: Only allow if a specific secret header is present
-    // or if the user is an admin (via c.get('user'))
-    return c.req.header('x-spectrum-secret') === process.env.SPECTRUM_SECRET
-  }
-}))
+if (process.env.NODE_ENV === 'production') {
+  await core.orbit(new SpectrumOrbit({
+    storage: new FileStorage({ directory: './storage/spectrum' }),
+    sampleRate: 0.05, // Capture only 5% of requests
+    gate: async (c) => c.req.header('x-admin-token') === process.env.ADMIN_TOKEN
+  }))
+}
 ```
 
 ## 🔌 Integrations
@@ -104,24 +95,17 @@ If `@gravito/atlas` is installed and loaded in your application, Spectrum automa
 
 Spectrum automatically wraps the core logger. Any call to `core.logger.info()`, `debug()`, `warn()`, or `error()` is captured and displayed in the dashboard alongside the request context.
 
-## 🛠️ Architecture
-
-Spectrum operates as a **Gravito Orbit**, which allows it to inject itself deeply into the framework lifecycle:
-
-1.  **Middleware**: A global middleware intercepts every HTTP request to measure duration and capture metadata.
-2.  **Hooks**: It attaches to Atlas query listeners to profile database performance.
-3.  **Storage Driver**: Data is piped into a storage driver (Memory/File).
-4.  **Event Bus**: New events are broadcasted via SSE to the connected UI clients.
-
 ## ❓ Spectrum vs Monitor
 
 | Feature | `@gravito/spectrum` | `@gravito/monitor` |
 |---------|---------------------|--------------------|
-| **Goal** | Development Debugging | Production Observability |
+| **Goal** | **Local Debugging** | **Cluster Observability** |
 | **Interface** | Built-in UI Dashboard | JSON / Prometheus / OTLP |
+| **Scope** | Single Node (Stateful) | Distributed (Stateless) |
 | **Data Retention** | Short-term (Recent 100) | Long-term (TSDB) |
-| **Usage** | Inspecting payload/SQL | Health checks & Metrics |
 | **Best For** | Developers fixing bugs | DevOps monitoring uptime |
+
+If you are running in Kubernetes or Serverless and need aggregated logs from multiple instances, use **@gravito/monitor** with an external backend like Grafana or Datadog.
 
 ## License
 

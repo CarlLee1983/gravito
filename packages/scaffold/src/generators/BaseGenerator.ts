@@ -233,6 +233,7 @@ export abstract class BaseGenerator {
       },
       dependencies: {
         'gravito-core': '^1.0.0-beta.5',
+        ...(context.withSpectrum ? { '@gravito/spectrum': '^1.0.0-beta.1' } : {}),
       },
       devDependencies: {
         '@types/bun': 'latest',

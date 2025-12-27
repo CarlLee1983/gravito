@@ -59,7 +59,10 @@ export class Scaffold {
       options.targetDir,
       options.architecture,
       options.packageManager ?? 'bun',
-      options.context ?? {}
+      {
+        ...options.context,
+        withSpectrum: options.withSpectrum ?? false,
+      }
     )
 
     try {

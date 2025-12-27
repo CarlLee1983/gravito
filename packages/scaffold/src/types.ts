@@ -41,6 +41,12 @@ export interface ScaffoldOptions {
   installDeps?: boolean
 
   /**
+   * Whether to include Spectrum debug dashboard
+   * @default false
+   */
+  withSpectrum?: boolean
+
+  /**
    * Additional context variables for templates
    */
   context?: Record<string, unknown>

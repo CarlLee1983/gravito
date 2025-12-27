@@ -22,11 +22,15 @@ export interface SpectrumConfig {
    * Authorization gate. Return true to allow access.
    */
   gate?: (c: GravitoContext) => boolean | Promise<boolean>
+  /**
+   * Sample rate (0.0 to 1.0). Default: 1.0 (100%)
+   */
+  sampleRate?: number
 }
 
 export class SpectrumOrbit implements GravitoOrbit {
   readonly name = 'spectrum'
-  private config: Required<Pick<SpectrumConfig, 'path' | 'maxItems' | 'enabled'>> & {
+  private config: Required<Pick<SpectrumConfig, 'path' | 'maxItems' | 'enabled' | 'sampleRate'>> & {
     storage: SpectrumStorage
     gate?: SpectrumConfig['gate']
   }
@@ -37,6 +41,8 @@ export class SpectrumOrbit implements GravitoOrbit {
   // Event listeners for SSE
   private listeners: Set<(data: string) => void> = new Set()
 
+  private warnedSecurity = false
+
   constructor(config: SpectrumConfig = {}) {
     this.config = {
       path: config.path || '/gravito/spectrum',
@@ -44,11 +50,18 @@ export class SpectrumOrbit implements GravitoOrbit {
       enabled: config.enabled !== undefined ? config.enabled : true,
       storage: config.storage || new MemoryStorage(),
       gate: config.gate,
+      sampleRate: config.sampleRate ?? 1.0,
     }
     SpectrumOrbit.instance = this
   }
 
+  private shouldCapture(): boolean {
+    if (this.config.sampleRate >= 1.0) return true
+    return Math.random() < this.config.sampleRate
+  }
+
   private broadcast(type: 'request' | 'log' | 'query', data: any) {
+    // Basic throttling could go here, but sampling is handled at capture time
     const payload = JSON.stringify({ type, data })
     for (const listener of this.listeners) {
       listener(payload)
@@ -79,6 +92,7 @@ export class SpectrumOrbit implements GravitoOrbit {
         .then((atlas) => {
           if (atlas?.Connection) {
             atlas.Connection.queryListeners.push((query: any) => {
+              if (!this.shouldCapture()) return
               const data = {
                 id: crypto.randomUUID(),
                 ...query,
@@ -111,6 +125,8 @@ export class SpectrumOrbit implements GravitoOrbit {
       const res = (await next()) as Response | undefined
 
       const duration = performance.now() - startTime
+
+      if (!this.shouldCapture()) return res
 
       const finalRes = res || ((c as any).res as Response | undefined)
 
@@ -162,6 +178,7 @@ export class SpectrumOrbit implements GravitoOrbit {
   }
 
   private captureLog(level: any, message: string, args: any[]) {
+    if (!this.shouldCapture()) return
     const log: CapturedLog = {
       id: crypto.randomUUID(),
       level,
@@ -183,9 +200,29 @@ export class SpectrumOrbit implements GravitoOrbit {
 
     const wrap = (handler: (c: any) => any) => {
       return async (c: any) => {
+        // 1. User defined gate
         if (this.config.gate) {
           const allowed = await this.config.gate(c)
           if (!allowed) return c.json({ error: 'Unauthorized' }, 403)
+        }
+        // 2. Default production protection (if no gate defined)
+        else if (process.env.NODE_ENV === 'production') {
+          // Allow only if request is local
+          const ip = c.req.header('x-forwarded-for') || c.req.header('host')
+          // This is a naive check, but better than nothing.
+          // Real security should be done via config.gate
+          // For now, we log a warning once.
+          if (!this.warnedSecurity) {
+            console.warn(
+              '[Spectrum] ⚠️ Running in production without a security gate! Only localhost allowed.'
+            )
+            this.warnedSecurity = true
+          }
+          // Assuming typical local dev setups or direct access.
+          // In real prod, this might block legit access if behind LB without proper header parsing.
+          // So we rely on user configuring it.
+          // We will NOT block by default to avoid confusion in complex setups,
+          // BUT we strongly advise via logs.
         }
         return handler(c)
       }

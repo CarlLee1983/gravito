@@ -627,6 +627,18 @@ export const dontReport: string[] = [
   }
 
   private generateBootstrap(context: GeneratorContext): string {
+    const spectrumImport = context.withSpectrum
+      ? "import { SpectrumOrbit } from '@gravito/spectrum'\n"
+      : ''
+    const spectrumOrbit = context.withSpectrum
+      ? `
+// Enable Debug Dashboard
+if (process.env.APP_DEBUG === 'true') {
+  await core.orbit(new SpectrumOrbit())
+}
+`
+      : ''
+
     return `/**
  * Application Bootstrap
  *
@@ -635,7 +647,7 @@ export const dontReport: string[] = [
  */
 
 import { PlanetCore } from 'gravito-core'
-import { AppServiceProvider } from './Providers/AppServiceProvider'
+${spectrumImport}import { AppServiceProvider } from './Providers/AppServiceProvider'
 import { RouteServiceProvider } from './Providers/RouteServiceProvider'
 
 // Load environment variables
@@ -644,10 +656,10 @@ import { RouteServiceProvider } from './Providers/RouteServiceProvider'
 // Create application core
 const core = new PlanetCore({
   config: {
-    APP_NAME: '${context.name}',
+    APP_NAME: '\${process.env.APP_NAME ?? '${context.name}'}',
   },
 })
-
+${spectrumOrbit}
 // Register service providers
 core.register(new AppServiceProvider())
 core.register(new RouteServiceProvider())

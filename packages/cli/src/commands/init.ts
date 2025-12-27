@@ -102,7 +102,21 @@ export async function initCommand(options: InitOptions = {}) {
     packageManager = pmResult as 'bun' | 'npm' | 'yarn' | 'pnpm'
   }
 
-  // Step 4: Generate project
+  // Step 4: Add-ons (Spectrum)
+  const withSpectrum = await select({
+    message: '是否安裝 Spectrum Debug Dashboard? (Enable debug dashboard?):',
+    options: [
+      { value: true, label: '✅ Yes', hint: '強烈推薦 - 即時監控請求與資料庫 (Recommended)' },
+      { value: false, label: '❌ No', hint: '保持極簡 (Minimalist)' },
+    ],
+  })
+
+  if (isCancel(withSpectrum)) {
+    cancel('操作已取消')
+    process.exit(0)
+  }
+
+  // Step 5: Generate project
   const s = spinner()
   s.start('正在建立專案結構...')
 
@@ -132,6 +146,7 @@ export async function initCommand(options: InitOptions = {}) {
       targetDir,
       architecture,
       packageManager,
+      withSpectrum: withSpectrum as boolean,
       installDeps: !options.skipInstall,
       initGit: !options.skipGit,
     })
