@@ -360,10 +360,10 @@ export async function eagerLoad<T extends Model>(
   }
 
   // Get parent keys
-  const parentKeys = parents.map((p) => (p as any)[localKey])
+  const parentKeys = localKey ? parents.map((p) => (p as any)[localKey!]) : []
   const validParentKeys = parentKeys.filter((k) => k !== undefined && k !== null)
 
-  if (validParentKeys.length === 0) {
+  if (type !== 'morphTo' && validParentKeys.length === 0) {
     return
   }
 
@@ -371,10 +371,12 @@ export async function eagerLoad<T extends Model>(
   switch (type) {
     case 'hasOne':
     case 'hasMany': {
-      const query = Related.query().whereIn(
-        foreignKey!,
-        validParentKeys
-      ) as unknown as import('../../types').QueryBuilderContract<any>
+      const query = Related!
+        .query()
+        .whereIn(
+          foreignKey!,
+          validParentKeys
+        ) as unknown as import('../../types').QueryBuilderContract<any>
 
       // Apply constraint callback if provided
       if (callback) {
@@ -438,9 +440,13 @@ export async function eagerLoad<T extends Model>(
     }
 
     case 'morphOne':
+
     case 'morphMany': {
-      const query = Related.query()
+      const query = Related!
+        .query()
+
         .whereIn(foreignKey!, validParentKeys)
+
         .where(
           morphTypeField!,
           parentModel.name
@@ -547,10 +553,9 @@ export async function eagerLoad<T extends Model>(
         return
       }
 
-      const query = Related.query().whereIn(
-        localKey!,
-        fks
-      ) as unknown as import('../../types').QueryBuilderContract<any>
+      const query = Related!
+        .query()
+        .whereIn(localKey!, fks) as unknown as import('../../types').QueryBuilderContract<any>
 
       if (callback) {
         callback(query)
@@ -610,10 +615,12 @@ export async function eagerLoad<T extends Model>(
         return
       }
 
-      const query = Related.query().whereIn(
-        localKey!,
-        relatedIds
-      ) as unknown as import('../../types').QueryBuilderContract<any>
+      const query = Related!
+        .query()
+        .whereIn(
+          localKey!,
+          relatedIds
+        ) as unknown as import('../../types').QueryBuilderContract<any>
 
       if (callback) {
         callback(query)
