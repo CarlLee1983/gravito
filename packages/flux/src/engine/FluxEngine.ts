@@ -81,7 +81,7 @@ export class FluxEngine {
     input: TInput
   ): Promise<FluxResult<TData>> {
     const startTime = Date.now()
-    const definition = workflow instanceof WorkflowBuilder ? workflow.build() : workflow
+    const definition = this.resolveDefinition(workflow)
 
     // Validate input if validator provided
     if (definition.validateInput && !definition.validateInput(input)) {
@@ -101,6 +101,159 @@ export class FluxEngine {
     // Save initial state
     await this.storage.save(this.contextManager.toState(ctx))
 
+    return this.runFrom(definition, ctx, stateMachine, startTime, 0)
+  }
+
+  /**
+   * Resume a paused or failed workflow
+   *
+   * @param workflowId - Workflow instance ID
+   * @returns Execution result or null if not found
+   */
+  async resume<TInput, TData = Record<string, unknown>>(
+    workflow: WorkflowBuilder<TInput> | WorkflowDefinition<TInput>,
+    workflowId: string,
+    options?: { fromStep?: number | string }
+  ): Promise<FluxResult<TData> | null> {
+    const definition = this.resolveDefinition(workflow)
+    const state = await this.storage.load(workflowId)
+    if (!state) {
+      return null
+    }
+    if (state.name !== definition.name) {
+      throw new Error(`Workflow name mismatch: ${state.name} !== ${definition.name}`)
+    }
+    if (state.history.length !== definition.steps.length) {
+      throw new Error('Workflow definition changed; resume is not safe')
+    }
+
+    const ctx = this.contextManager.restore<TInput>(state)
+    const stateMachine = new StateMachine()
+    stateMachine.forceStatus('pending')
+
+    const startIndex = this.resolveStartIndex(definition, options?.fromStep, ctx.currentStep)
+    this.resetHistoryFrom(ctx, startIndex)
+    Object.assign(ctx, { status: 'pending', currentStep: startIndex })
+
+    await this.storage.save(this.contextManager.toState(ctx))
+
+    return this.runFrom(definition, ctx, stateMachine, Date.now(), startIndex, {
+      resume: true,
+      fromStep: startIndex,
+    })
+  }
+
+  /**
+   * Retry a specific step (replays from that step onward)
+   */
+  async retryStep<TInput, TData = Record<string, unknown>>(
+    workflow: WorkflowBuilder<TInput> | WorkflowDefinition<TInput>,
+    workflowId: string,
+    stepName: string
+  ): Promise<FluxResult<TData> | null> {
+    const definition = this.resolveDefinition(workflow)
+    const state = await this.storage.load(workflowId)
+    if (!state) {
+      return null
+    }
+    if (state.name !== definition.name) {
+      throw new Error(`Workflow name mismatch: ${state.name} !== ${definition.name}`)
+    }
+    if (state.history.length !== definition.steps.length) {
+      throw new Error('Workflow definition changed; retry is not safe')
+    }
+
+    const ctx = this.contextManager.restore<TInput>(state)
+    const stateMachine = new StateMachine()
+    stateMachine.forceStatus('pending')
+
+    const startIndex = this.resolveStartIndex(definition, stepName, ctx.currentStep)
+    this.resetHistoryFrom(ctx, startIndex)
+    Object.assign(ctx, { status: 'pending', currentStep: startIndex })
+
+    await this.storage.save(this.contextManager.toState(ctx))
+
+    return this.runFrom(definition, ctx, stateMachine, Date.now(), startIndex, {
+      retry: true,
+      fromStep: startIndex,
+    })
+  }
+
+  /**
+   * Get workflow state by ID
+   */
+  async get(workflowId: string) {
+    return this.storage.load(workflowId)
+  }
+
+  /**
+   * List workflows
+   */
+  async list(filter?: Parameters<WorkflowStorage['list']>[0]) {
+    return this.storage.list(filter)
+  }
+
+  /**
+   * Initialize engine (init storage)
+   */
+  async init(): Promise<void> {
+    await this.storage.init?.()
+  }
+
+  /**
+   * Shutdown engine (cleanup)
+   */
+  async close(): Promise<void> {
+    await this.storage.close?.()
+  }
+
+  private resolveDefinition<TInput>(
+    workflow: WorkflowBuilder<TInput> | WorkflowDefinition<TInput>
+  ): WorkflowDefinition<TInput> {
+    return workflow instanceof WorkflowBuilder ? workflow.build() : workflow
+  }
+
+  private resolveStartIndex<TInput>(
+    definition: WorkflowDefinition<TInput>,
+    fromStep: number | string | undefined,
+    fallback: number
+  ): number {
+    if (typeof fromStep === 'number') {
+      if (fromStep < 0 || fromStep >= definition.steps.length) {
+        throw new Error(`Invalid step index: ${fromStep}`)
+      }
+      return fromStep
+    }
+    if (typeof fromStep === 'string') {
+      const index = definition.steps.findIndex((step) => step.name === fromStep)
+      if (index === -1) {
+        throw new Error(`Step not found: ${fromStep}`)
+      }
+      return index
+    }
+    return Math.max(0, Math.min(fallback, definition.steps.length - 1))
+  }
+
+  private resetHistoryFrom(ctx: WorkflowContext, startIndex: number): void {
+    for (let i = startIndex; i < ctx.history.length; i++) {
+      const entry = ctx.history[i]
+      entry.status = 'pending'
+      entry.startedAt = undefined
+      entry.completedAt = undefined
+      entry.duration = undefined
+      entry.error = undefined
+      entry.retries = 0
+    }
+  }
+
+  private async runFrom<TInput, TData = Record<string, unknown>>(
+    definition: WorkflowDefinition<TInput>,
+    ctx: WorkflowContext<TInput>,
+    stateMachine: StateMachine,
+    startTime: number,
+    startIndex: number,
+    meta?: { resume?: boolean; retry?: boolean; fromStep?: number }
+  ): Promise<FluxResult<TData>> {
     try {
       // Transition to running
       stateMachine.transition('running')
@@ -111,10 +264,11 @@ export class FluxEngine {
         workflowId: ctx.id,
         workflowName: ctx.name,
         status: ctx.status,
+        meta,
       })
 
       // Execute steps
-      for (let i = 0; i < definition.steps.length; i++) {
+      for (let i = startIndex; i < definition.steps.length; i++) {
         const step = definition.steps[i]!
         const execution = ctx.history[i]!
 
@@ -134,6 +288,7 @@ export class FluxEngine {
           commit: Boolean(step.commit),
           retries: execution.retries,
           status: execution.status,
+          meta,
         })
 
         // Execute step
@@ -154,6 +309,7 @@ export class FluxEngine {
               retries: execution.retries,
               duration: result.duration,
               status: execution.status,
+              meta,
             })
           } else {
             await this.emitTrace({
@@ -167,6 +323,7 @@ export class FluxEngine {
               retries: execution.retries,
               duration: result.duration,
               status: execution.status,
+              meta,
             })
           }
         } else {
@@ -184,6 +341,7 @@ export class FluxEngine {
             duration: result.duration,
             error: result.error?.message,
             status: execution.status,
+            meta,
           })
 
           // Fail workflow
@@ -227,6 +385,7 @@ export class FluxEngine {
         workflowName: ctx.name,
         status: ctx.status,
         duration: Date.now() - startTime,
+        meta,
       })
 
       return {
@@ -249,6 +408,7 @@ export class FluxEngine {
         status: 'failed',
         duration: Date.now() - startTime,
         error: err.message,
+        meta,
       })
 
       stateMachine.forceStatus('failed')
@@ -268,52 +428,6 @@ export class FluxEngine {
         error: err,
       }
     }
-  }
-
-  /**
-   * Resume a paused or failed workflow
-   *
-   * @param workflowId - Workflow instance ID
-   * @returns Execution result or null if not found
-   */
-  async resume<TData = Record<string, unknown>>(
-    workflowId: string
-  ): Promise<FluxResult<TData> | null> {
-    const state = await this.storage.load(workflowId)
-    if (!state) {
-      return null
-    }
-
-    // TODO: Implement resume logic
-    throw new Error('Resume not yet implemented')
-  }
-
-  /**
-   * Get workflow state by ID
-   */
-  async get(workflowId: string) {
-    return this.storage.load(workflowId)
-  }
-
-  /**
-   * List workflows
-   */
-  async list(filter?: Parameters<WorkflowStorage['list']>[0]) {
-    return this.storage.list(filter)
-  }
-
-  /**
-   * Initialize engine (init storage)
-   */
-  async init(): Promise<void> {
-    await this.storage.init?.()
-  }
-
-  /**
-   * Shutdown engine (cleanup)
-   */
-  async close(): Promise<void> {
-    await this.storage.close?.()
   }
 
   private async emitTrace(event: FluxTraceEvent): Promise<void> {

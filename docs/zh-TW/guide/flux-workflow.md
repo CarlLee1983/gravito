@@ -5,7 +5,7 @@ description: 具備重試與儲存介面的狀態機工作流程引擎。
 
 # Flux 工作流程
 
-Flux 是平台無關的工作流程引擎，以「狀態機」為核心，將每一步的狀態與轉移都明確化。這讓流程可追蹤、可重播，並能以一致方式處理錯誤與恢復。它同時支援同步/非同步執行、工作流程化編排、逾時重試、事件 hooks 與儲存介面，特別適合長流程與高可靠性需求的場景。
+Flux 不是「只是一段流程」，而是 Gravito 內的工作流標準：以「狀態機」為核心，將每一步的狀態與轉移明確化，讓流程可追蹤、可重播，並能以一致方式處理錯誤與恢復。它同時支援同步/非同步執行、工作流程化編排、逾時重試、事件 hooks 與儲存介面，特別適合長流程與高可靠性需求的場景。
 
 ## 適用情境
 
@@ -43,6 +43,12 @@ await engine.execute(onboarding, { userId: 'u_123' })
 - 儲存介面可保存流程狀態，支援流程重播與失敗恢復。
 - 狀態機模型讓每一步狀態清晰可控，重試機制可自動處理不穩定的外部依賴。
 - 事件 hooks 可在 stepStart/stepError 等時機掛載監控與告警。
+
+## 定位與價值
+
+- **工作流標準化**：在框架內用同一套模型描述流程，而不是每個服務自行手寫流程。
+- **可靠性與可觀測**：狀態機 + 重試 + trace sink，讓流程可追蹤、可審計、可恢復。
+- **可抽離與可複用**：Flux 可獨立於框架使用，讓 workflow 本身成為可移植的 workflow as code。
 
 ## 進階範例
 
@@ -129,6 +135,16 @@ import { BunSQLiteStorage } from '@gravito/flux/bun'
 const engine = new FluxEngine({
   storage: new BunSQLiteStorage({ path: './data/workflows.db' }),
 })
+```
+
+## 重跑指定步驟
+
+若需要在流程失敗後重跑某個 step，可使用 `retryStep` 直接從指定步驟重新開始，後續步驟會依序再執行。
+
+```ts
+const first = await engine.execute(flow, { orderId: 'ORD-001' })
+// 修復外部依賴後重跑
+await engine.retryStep(flow, first.id, 'charge')
 ```
 
 ## 事件 Hooks

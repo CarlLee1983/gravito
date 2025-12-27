@@ -2,6 +2,12 @@
 
 > Gravito 的高效能工作流程引擎，跨平台、型別安全的狀態機，強調可追蹤、可重播與可靠重試。
 
+## 定位與價值
+
+- **工作流標準化**：在框架內用同一套模型描述流程，而不是每個服務自行手寫流程。
+- **可靠性與可觀測**：狀態機 + 重試 + trace sink，讓流程可追蹤、可審計、可恢復。
+- **可抽離與可複用**：Flux 可獨立於框架使用，讓 workflow 本身成為可移植的 workflow as code。
+
 ## 核心特色
 
 - **純狀態機模型** - 以明確狀態描述流程，讓每一步清晰可控
@@ -140,6 +146,13 @@ const engine = new FluxEngine({
   timeout: 60_000,
   when: (ctx) => ctx.data.x > 0,
 })
+```
+
+## 重跑指定步驟
+
+```typescript
+const first = await engine.execute(flow, { orderId: 'ORD-001' })
+await engine.retryStep(flow, first.id, 'charge')
 ```
 
 ## 分支流程（多支點）
