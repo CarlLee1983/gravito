@@ -559,6 +559,7 @@ export class DocsService {
         title: trans.modules,
         path: '#',
         children: [
+          { title: trans.plasma_redis, path: `${prefix}/guide/plasma-redis` },
           { title: trans.plugins, path: `${prefix}/guide/plugin-development` },
           { title: trans.beam_client, path: `${prefix}/guide/beam-client` },
           { title: trans.flux_workflow, path: `${prefix}/guide/flux-workflow` },
@@ -621,7 +622,6 @@ export class DocsService {
         title: trans.cache_queue,
         path: '#',
         children: [
-          { title: trans.plasma_redis, path: `${prefix}/guide/plasma-redis` },
           { title: trans.stasis_cache, path: `${prefix}/guide/stasis-cache` },
           { title: trans.queues, path: `${prefix}/guide/queues` },
         ],

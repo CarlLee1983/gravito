@@ -58,6 +58,80 @@ await cache.set('cache:ping', 'ok')
 await analytics.incr('metrics:pageviews')
 ```
 
+## 常用 Redis 操作
+
+```ts
+const redis = Redis.connection()
+
+// 字串 (String)
+await redis.set('status', 'ok', { ex: 60 })
+const status = await redis.get('status')
+
+// 哈希 (Hash)
+await redis.hset('user:1', { name: 'Nova', role: 'admin' })
+const user = await redis.hgetall('user:1')
+
+// 列表 (List)
+await redis.lpush('jobs', 'job:1', 'job:2')
+const jobs = await redis.lrange('jobs', 0, -1)
+
+// 集合 (Set)
+await redis.sadd('tags', 'gravito', 'plasma')
+const tags = await redis.smembers('tags')
+
+// 有序集合 (Sorted Set)
+await redis.zadd('leaderboard', { score: 120, member: 'user:1' })
+const top = await redis.zrevrange('leaderboard', 0, 10)
+
+// TTL 與過期控制
+await redis.expire('status', 120)
+const ttl = await redis.ttl('status')
+```
+
+## Pipeline（批次指令）
+
+```ts
+const pipeline = redis.pipeline()
+pipeline.set('a', '1').incr('counter').hset('user:1', 'name', 'Nova')
+const results = await pipeline.exec()
+```
+
+## Redis Lock（簡易分散式鎖）
+
+Plasma 可利用 Redis `SET NX PX` 建立簡單鎖機制。以下為常見用法：
+
+```ts
+const redis = Redis.connection()
+const lockKey = 'lock:billing:sync'
+const lockTtl = 10_000
+const lockToken = crypto.randomUUID()
+
+const acquired = await redis.set(lockKey, lockToken, { nx: true, px: lockTtl })
+
+if (!acquired) {
+  throw new Error('Lock already held')
+}
+
+try {
+  // Critical section
+} finally {
+  const current = await redis.get(lockKey)
+  if (current === lockToken) {
+    await redis.del(lockKey)
+  }
+}
+```
+
+## Pub/Sub
+
+```ts
+await redis.subscribe('events', (message) => {
+  console.log('[event]', message)
+})
+
+await redis.publish('events', 'workflow:done')
+```
+
 ## 以 Orbit 注入（應用內使用）
 
 ```ts
@@ -101,6 +175,54 @@ app.get('/health/redis', async (c) => {
 - `tls`
 - `keyPrefix`
 - `maxRetries` / `retryDelay`
+
+## 完整設定範例
+
+```ts
+import { Redis } from '@gravito/plasma'
+
+Redis.configure({
+  default: 'primary',
+  connections: {
+    primary: {
+      host: 'redis.internal',
+      port: 6379,
+      password: process.env.REDIS_PASSWORD,
+      db: 0,
+      keyPrefix: 'gravito:',
+      connectTimeout: 10_000,
+      commandTimeout: 5_000,
+      maxRetries: 3,
+      retryDelay: 500,
+      tls: {
+        rejectUnauthorized: false,
+      },
+    },
+    cache: {
+      host: 'redis-cache.internal',
+      port: 6380,
+      db: 1,
+    },
+  },
+})
+```
+
+## 多環境設定（示意）
+
+```ts
+const redisHost = process.env.NODE_ENV === 'production' ? 'redis.prod' : '127.0.0.1'
+
+Redis.configure({
+  default: 'default',
+  connections: {
+    default: {
+      host: redisHost,
+      port: 6379,
+      password: process.env.REDIS_PASSWORD,
+    },
+  },
+})
+```
 
 ## 與其他模組整合
 
