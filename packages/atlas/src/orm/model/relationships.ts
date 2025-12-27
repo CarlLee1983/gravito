@@ -344,7 +344,7 @@ export async function eagerLoad<T extends Model>(
 
   if (!localKey) {
     if (type === 'belongsTo') {
-      localKey = Related!.primaryKey
+      localKey = Related?.primaryKey
     } else {
       localKey = parentModel.primaryKey
     }
@@ -367,7 +367,7 @@ export async function eagerLoad<T extends Model>(
   switch (type) {
     case 'hasOne':
     case 'hasMany': {
-      const query = Related!.query().whereIn(foreignKey!, validParentKeys)
+      const query = Related?.query().whereIn(foreignKey!, validParentKeys)
 
       // Apply constraint callback if provided
       if (callback) {
@@ -375,7 +375,7 @@ export async function eagerLoad<T extends Model>(
       }
 
       // Check if we should use LATERAL optimization (PostgreSQL + limit/offset)
-      const connection = DB.connection(Related!.connection)
+      const connection = DB.connection(Related?.connection)
       const grammar = (connection as any).getGrammar?.()
 
       const useLateral =
@@ -386,13 +386,13 @@ export async function eagerLoad<T extends Model>(
       if (useLateral) {
         const compiled = query.getCompiledQuery()
         const { sql, bindings } = grammar.compileLateralEagerLoad(
-          Related!.table,
+          Related?.table,
           foreignKey!,
           validParentKeys,
           compiled
         )
         const result = await (connection as any).raw(sql, bindings)
-        models = result.rows.map((row: any) => Related!.hydrate(row))
+        models = result.rows.map((row: any) => Related?.hydrate(row))
       } else {
         // Fallback to whereIn
         query.whereIn(foreignKey!, validParentKeys)
@@ -432,8 +432,7 @@ export async function eagerLoad<T extends Model>(
 
     case 'morphOne':
     case 'morphMany': {
-      const query = Related!
-        .query()
+      const query = Related?.query()
         .whereIn(foreignKey!, validParentKeys)
         .where(morphTypeField!, parentModel.name)
 
@@ -493,7 +492,9 @@ export async function eagerLoad<T extends Model>(
 
         const ids = typeParents.map((p) => (p as any)[morphIdField!]).filter((id) => id !== null)
 
-        if (ids.length === 0) continue
+        if (ids.length === 0) {
+          continue
+        }
 
         const query = (CurrentModel as any).query().whereIn(CurrentModel.primaryKey, ids)
 
@@ -531,7 +532,7 @@ export async function eagerLoad<T extends Model>(
         return
       }
 
-      const query = Related!.query().whereIn(localKey!, fks)
+      const query = Related?.query().whereIn(localKey!, fks)
 
       if (callback) {
         callback(query)
@@ -577,7 +578,7 @@ export async function eagerLoad<T extends Model>(
         return
       }
 
-      const connection = DB.connection(Related!.connection)
+      const connection = DB.connection(Related?.connection)
 
       // 1. Get pivot records
       const pivots = await connection
@@ -591,7 +592,7 @@ export async function eagerLoad<T extends Model>(
         return
       }
 
-      const query = Related!.query().whereIn(localKey!, relatedIds)
+      const query = Related?.query().whereIn(localKey!, relatedIds)
 
       if (callback) {
         callback(query)

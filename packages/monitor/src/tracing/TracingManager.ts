@@ -72,7 +72,9 @@ export class TracingManager {
    * Initialize OpenTelemetry SDK if available
    */
   async initialize(): Promise<void> {
-    if (this.isInitialized) return
+    if (this.isInitialized) {
+      return
+    }
 
     try {
       // Try to dynamically import OpenTelemetry
@@ -193,10 +195,14 @@ export class TracingManager {
   extractContext(headers: Headers): SpanContext | null {
     // W3C Trace Context format
     const traceparent = headers.get('traceparent')
-    if (!traceparent) return null
+    if (!traceparent) {
+      return null
+    }
 
     const parts = traceparent.split('-')
-    if (parts.length !== 4) return null
+    if (parts.length !== 4) {
+      return null
+    }
 
     return {
       traceId: parts[1] ?? '',

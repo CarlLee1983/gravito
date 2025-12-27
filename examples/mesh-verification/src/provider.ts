@@ -5,8 +5,8 @@ import { PlanetCore } from 'gravito-core'
 export function createProviderApp() {
   const app = new Photon()
     .get('/calculate', (c) => {
-      const a = parseInt(c.req.query('a') || '0')
-      const b = parseInt(c.req.query('b') || '0')
+      const a = parseInt(c.req.query('a') || '0', 10)
+      const b = parseInt(c.req.query('b') || '0', 10)
       return c.json({ result: a + b })
     })
     .get('/toggle-health', (c) => {

@@ -9,7 +9,9 @@ const ALERT_LOG = join(process.cwd(), 'examples/mesh-verification/storage/alerts
 
 async function setup() {
   const dir = join(process.cwd(), 'examples/mesh-verification/storage')
-  if (!existsSync(dir)) await mkdir(dir, { recursive: true })
+  if (!existsSync(dir)) {
+    await mkdir(dir, { recursive: true })
+  }
   try {
     await unlink(ALERT_LOG)
   } catch {}

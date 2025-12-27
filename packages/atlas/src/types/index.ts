@@ -448,7 +448,7 @@ export interface QueryBuilderContract<T = Record<string, unknown>> {
   simplePaginate(perPage?: number, page?: number): Promise<PaginateResult<T>>
 
   // CHUNKING
-  chunk(size: number, callback: (results: T[]) => Promise<void | boolean>): Promise<void>
+  chunk(size: number, callback: (results: T[]) => Promise<undefined | boolean>): Promise<void>
 
   // DEBUGGING
   toSql(): string

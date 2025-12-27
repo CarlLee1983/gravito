@@ -85,7 +85,7 @@ export async function startServer(port: number, name: string) {
           }
         }
       }
-    } catch (e) {
+    } catch (_e) {
       // ignore file not found errors initially
     }
   }, 100)
@@ -95,7 +95,9 @@ export async function startServer(port: number, name: string) {
     port,
     fetch: (req, server) => {
       // Upgrade to WebSocket
-      if (rippleServer.upgrade(req, server)) return undefined
+      if (rippleServer.upgrade(req, server)) {
+        return undefined
+      }
 
       // Simple HTTP endpoint to trigger broadcast via Echo/Radiance
       const url = new URL(req.url)

@@ -18,13 +18,13 @@ export class FileSystemDriver implements BroadcastDriver {
       timestamp: Date.now(),
     })
 
-    await appendFile(STORAGE_PATH, payload + '\n')
+    await appendFile(STORAGE_PATH, `${payload}\n`)
   }
 
   async authorizeChannel(
-    channel: string,
-    socketId: string,
-    userId?: string | number
+    _channel: string,
+    _socketId: string,
+    _userId?: string | number
   ): Promise<{ auth: string; channel_data?: string }> {
     return { auth: 'mock-auth-token' }
   }

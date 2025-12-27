@@ -75,7 +75,7 @@ async function build() {
   // Add Static Routes for each locale
   for (const locale of locales) {
     const prefix = locale === 'en' ? '' : `/${locale}`
-    const enPrefix = locale === 'en' ? '/en' : '' // Support explicit /en as well
+    const _enPrefix = locale === 'en' ? '/en' : '' // Support explicit /en as well
 
     for (const [abstractPath, translations] of Object.entries(pageMeta)) {
       const trans = translations[locale]
@@ -134,7 +134,7 @@ async function build() {
             meta: {
               title: `${item.title} - Luminosity Docs`,
               description: `Documentation for ${item.title} in Luminosity SEO Engine.`,
-              url: baseUrl + `/en${item.href}`,
+              url: `${baseUrl}/en${item.href}`,
             },
           })
         }

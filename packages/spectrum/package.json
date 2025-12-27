@@ -1,0 +1,71 @@
+{
+  "name": "@gravito/spectrum",
+  "version": "1.0.0-beta.1",
+  "publishConfig": {
+    "access": "public"
+  },
+  "description": "Debug Dashboard and Observability UI for Gravito framework.",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "bun run build.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "peerDependencies": {
+    "gravito-core": "1.0.0-beta.6",
+    "@gravito/photon": "1.0.0-beta.1"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/sdk-node": "^0.57.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.57.0",
+    "@opentelemetry/resources": "^1.29.0",
+    "@opentelemetry/semantic-conventions": "^1.28.0",
+    "gravito-core": "1.0.0-beta.6",
+    "tsup": "^8.2.4",
+    "typescript": "^5.9.3"
+  },
+  "optionalDependencies": {
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/sdk-node": "^0.57.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.57.0",
+    "@opentelemetry/resources": "^1.29.0",
+    "@opentelemetry/semantic-conventions": "^1.28.0"
+  },
+  "keywords": [
+    "gravito",
+    "observability",
+    "health-check",
+    "metrics",
+    "tracing",
+    "opentelemetry",
+    "prometheus"
+  ],
+  "author": "Gravito Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gravito-framework/gravito.git",
+    "directory": "packages/monitor"
+  }
+}

@@ -32,8 +32,8 @@ describe('NuxtScanner', () => {
       // Should find blog/[slug] as /blog/:slug
       const blogRoute = routes.find((r) => r.path.includes('blog') && r.isDynamic)
       expect(blogRoute).toBeDefined()
-      expect(blogRoute!.isDynamic).toBe(true)
-      expect(blogRoute!.params).toContain('slug')
+      expect(blogRoute?.isDynamic).toBe(true)
+      expect(blogRoute?.params).toContain('slug')
     })
 
     it('should discover Nuxt 2 dynamic routes with _param syntax', async () => {
@@ -46,8 +46,8 @@ describe('NuxtScanner', () => {
       // Should find users/_id as /users/:id
       const userRoute = routes.find((r) => r.path.includes('users') && r.isDynamic)
       expect(userRoute).toBeDefined()
-      expect(userRoute!.isDynamic).toBe(true)
-      expect(userRoute!.params).toContain('id')
+      expect(userRoute?.isDynamic).toBe(true)
+      expect(userRoute?.params).toContain('id')
     })
 
     it('should apply exclude patterns', async () => {

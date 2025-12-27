@@ -34,6 +34,6 @@ export const OrderWorkflow = createWorkflow<OrderInput, OrderData>('order-proces
   })
   .commit('fulfill', async (ctx) => {
     console.log(`[Workflow] Fulfilling order for ${ctx.input.email}...`)
-    ctx.data.trackingNumber = 'TRK-' + Math.random().toString(36).substring(7).toUpperCase()
+    ctx.data.trackingNumber = `TRK-${Math.random().toString(36).substring(7).toUpperCase()}`
     ctx.data.status = 'SHIPPED'
   })

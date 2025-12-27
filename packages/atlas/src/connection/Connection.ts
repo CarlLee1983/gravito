@@ -34,6 +34,19 @@ export class Connection implements ConnectionContract {
   protected grammar: GrammarContract
   protected connected = false
 
+  /**
+   * Static query listeners for global observation (e.g. debugging)
+   */
+  public static queryListeners: Array<
+    (query: {
+      connection: string
+      sql: string
+      bindings: any[]
+      duration: number
+      timestamp: number
+    }) => void
+  > = []
+
   constructor(
     protected readonly name: string,
     protected readonly config: ConnectionConfig
@@ -111,7 +124,28 @@ export class Connection implements ConnectionContract {
     bindings: unknown[] = []
   ): Promise<QueryResult<T>> {
     await this.ensureConnected()
-    return this.driver.query<T>(sql, bindings)
+
+    const startTime = performance.now()
+    const timestamp = Date.now()
+    const result = await this.driver.query<T>(sql, bindings)
+
+    const duration = performance.now() - startTime
+
+    // Fire listeners
+    if (Connection.queryListeners.length > 0) {
+      const queryData = {
+        connection: this.name,
+        sql,
+        bindings,
+        duration,
+        timestamp,
+      }
+      for (const listener of Connection.queryListeners) {
+        listener(queryData)
+      }
+    }
+
+    return result
   }
 
   /**

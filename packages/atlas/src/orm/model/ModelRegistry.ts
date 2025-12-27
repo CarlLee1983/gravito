@@ -11,7 +11,9 @@ export class ModelRegistry {
    * Register a model class
    */
   static register(model: typeof Model): void {
-    if (!model.name) return
+    if (!model.name) {
+      return
+    }
 
     // Register by class name
     this.models.set(model.name, model)

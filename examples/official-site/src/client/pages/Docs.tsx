@@ -1,6 +1,6 @@
 import { Head, router, usePage } from '@inertiajs/react'
 import { motion, useScroll, useSpring } from 'framer-motion'
-import { ChevronRight, Clock, Edit2, Github, MapPin } from 'lucide-react'
+import { ChevronRight, Clock, MapPin } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Layout from '../components/Layout'
 import { isStaticSite, StaticLink } from '../components/StaticLink'
@@ -144,10 +144,14 @@ export default function Docs() {
     // Add anchor links to headings
     const headings = Array.from(root.querySelectorAll('h2, h3, h4'))
     for (const h of headings as HTMLElement[]) {
-      if (h.querySelector('.anchor-link')) continue
+      if (h.querySelector('.anchor-link')) {
+        continue
+      }
 
       const id = h.id
-      if (!id) continue
+      if (!id) {
+        continue
+      }
 
       const anchor = document.createElement('a')
       anchor.href = `#${id}`

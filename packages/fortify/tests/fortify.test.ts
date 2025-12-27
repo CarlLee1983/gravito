@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
-import { type GravitoContext, PlanetCore, Router } from 'gravito-core'
+import { PlanetCore } from 'gravito-core'
 import { type FortifyConfig, FortifyOrbit } from '../src/index'
 
 // Mock User Model for testing

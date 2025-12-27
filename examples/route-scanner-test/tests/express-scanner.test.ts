@@ -32,13 +32,13 @@ describe('ExpressScanner', () => {
 
       const blogRoute = routes.find((r) => r.path === '/blog/:slug')
       expect(blogRoute).toBeDefined()
-      expect(blogRoute!.isDynamic).toBe(true)
-      expect(blogRoute!.params).toEqual(['slug'])
+      expect(blogRoute?.isDynamic).toBe(true)
+      expect(blogRoute?.params).toEqual(['slug'])
 
       const productRoute = routes.find((r) => r.path === '/products/:category/:id')
       expect(productRoute).toBeDefined()
-      expect(productRoute!.isDynamic).toBe(true)
-      expect(productRoute!.params).toEqual(['category', 'id'])
+      expect(productRoute?.isDynamic).toBe(true)
+      expect(productRoute?.params).toEqual(['category', 'id'])
     })
 
     it('should discover all HTTP methods', async () => {
@@ -155,7 +155,7 @@ describe('ExpressScanner', () => {
 
       // Only GET routes should be in sitemap
       expect(entries).toHaveLength(1)
-      expect(entries[0]!.url).toBe('https://example.com/')
+      expect(entries[0]?.url).toBe('https://example.com/')
     })
   })
 })

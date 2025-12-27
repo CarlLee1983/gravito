@@ -27,7 +27,9 @@ function startProcess(name: string, role: string, port: number): ChildProcess {
   p.stdout?.on('data', (data) => {
     const lines = data.toString().split('\n')
     for (const line of lines) {
-      if (line.trim()) process.stdout.write(`[${name}] ${line}\n`)
+      if (line.trim()) {
+        process.stdout.write(`[${name}] ${line}\n`)
+      }
       if (line.includes('VERIFIED_RECEIPT')) {
         // We can emit events here if we wrap this in a promise or event emitter
         // For now just logging is fine, we will manually verify or parse logs later?

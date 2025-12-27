@@ -61,16 +61,22 @@ export class Counter {
   }
 
   private labelsToKey(labels: Record<string, string>): string {
-    if (this.labelNames.length === 0) return '__default__'
+    if (this.labelNames.length === 0) {
+      return '__default__'
+    }
     return this.labelNames.map((name) => `${name}=${labels[name] ?? ''}`).join(',')
   }
 
   private keyToLabels(key: string): Record<string, string> {
-    if (key === '__default__') return {}
+    if (key === '__default__') {
+      return {}
+    }
     const labels: Record<string, string> = {}
     for (const part of key.split(',')) {
       const [name, value] = part.split('=')
-      if (name) labels[name] = value ?? ''
+      if (name) {
+        labels[name] = value ?? ''
+      }
     }
     return labels
   }
@@ -127,16 +133,22 @@ export class Gauge {
   }
 
   private labelsToKey(labels: Record<string, string>): string {
-    if (this.labelNames.length === 0) return '__default__'
+    if (this.labelNames.length === 0) {
+      return '__default__'
+    }
     return this.labelNames.map((name) => `${name}=${labels[name] ?? ''}`).join(',')
   }
 
   private keyToLabels(key: string): Record<string, string> {
-    if (key === '__default__') return {}
+    if (key === '__default__') {
+      return {}
+    }
     const labels: Record<string, string> = {}
     for (const part of key.split(',')) {
       const [name, value] = part.split('=')
-      if (name) labels[name] = value ?? ''
+      if (name) {
+        labels[name] = value ?? ''
+      }
     }
     return labels
   }
@@ -212,7 +224,9 @@ export class Histogram {
   }
 
   private labelsToKey(labels: Record<string, string>): string {
-    if (this.labelNames.length === 0) return '__default__'
+    if (this.labelNames.length === 0) {
+      return '__default__'
+    }
     return this.labelNames.map((name) => `${name}=${labels[name] ?? ''}`).join(',')
   }
 }
@@ -323,15 +337,17 @@ export class MetricsRegistry {
    * Update default metrics with current values
    */
   private updateDefaultMetrics(): void {
-    if (!this.collectDefaultMetrics) return
+    if (!this.collectDefaultMetrics) {
+      return
+    }
 
     const uptime = (Date.now() - this.startTime) / 1000
-    this.gauges.get(this.prefix + 'process_uptime_seconds')?.set(uptime)
+    this.gauges.get(`${this.prefix}process_uptime_seconds`)?.set(uptime)
 
     const memory = process.memoryUsage()
-    this.gauges.get(this.prefix + 'nodejs_heap_size_used_bytes')?.set(memory.heapUsed)
-    this.gauges.get(this.prefix + 'nodejs_heap_size_total_bytes')?.set(memory.heapTotal)
-    this.gauges.get(this.prefix + 'nodejs_external_memory_bytes')?.set(memory.external)
+    this.gauges.get(`${this.prefix}nodejs_heap_size_used_bytes`)?.set(memory.heapUsed)
+    this.gauges.get(`${this.prefix}nodejs_heap_size_total_bytes`)?.set(memory.heapTotal)
+    this.gauges.get(`${this.prefix}nodejs_external_memory_bytes`)?.set(memory.external)
   }
 
   /**
@@ -401,16 +417,22 @@ export class MetricsRegistry {
 
   private formatLabels(labels: Record<string, string>): string {
     const entries = Object.entries(labels)
-    if (entries.length === 0) return ''
+    if (entries.length === 0) {
+      return ''
+    }
     return `{${entries.map(([k, v]) => `${k}="${v}"`).join(',')}}`
   }
 
   private keyToLabels(key: string): Record<string, string> {
-    if (key === '__default__') return {}
+    if (key === '__default__') {
+      return {}
+    }
     const labels: Record<string, string> = {}
     for (const part of key.split(',')) {
       const [name, value] = part.split('=')
-      if (name) labels[name] = value ?? ''
+      if (name) {
+        labels[name] = value ?? ''
+      }
     }
     return labels
   }

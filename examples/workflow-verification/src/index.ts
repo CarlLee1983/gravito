@@ -4,7 +4,7 @@ import { PlanetCore } from 'gravito-core'
 import { StoreOrderRequest } from './requests/StoreOrderRequest'
 import { OrderWorkflow } from './workflows/OrderWorkflow'
 
-const port = parseInt(process.env.PORT || '3006')
+const port = parseInt(process.env.PORT || '3006', 10)
 const core = new PlanetCore()
 const engine = new FluxEngine()
 

@@ -1114,7 +1114,10 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   /**
    * Chunk the results of the query
    */
-  async chunk(size: number, callback: (results: T[]) => Promise<void | boolean>): Promise<void> {
+  async chunk(
+    size: number,
+    callback: (results: T[]) => Promise<undefined | boolean>
+  ): Promise<void> {
     let page = 1
     let count: number
 

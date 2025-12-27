@@ -14,7 +14,7 @@ export class MetricsController {
   /**
    * GET /metrics - Prometheus metrics endpoint
    */
-  async metrics(c: GravitoContext): Promise<Response> {
+  async metrics(_c: GravitoContext): Promise<Response> {
     const prometheusFormat = this.registry.toPrometheus()
 
     return new Response(prometheusFormat, {
