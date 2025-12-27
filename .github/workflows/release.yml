@@ -35,6 +35,8 @@ jobs:
 
       - name: Install Dependencies
         run: bun install --frozen-lockfile
+        env:
+          SKIP_INSTALL_SIMPLE_GIT_HOOKS: 1
 
       - name: Build Packages
         run: bun run build

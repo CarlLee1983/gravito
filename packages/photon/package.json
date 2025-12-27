@@ -6,14 +6,38 @@
   "types": "./dist/index.d.ts",
   "module": "./dist/index.js",
   "exports": {
-    ".": "./dist/index.js",
-    "./client": "./dist/client.js",
-    "./logger": "./dist/logger.js",
-    "./bun": "./dist/bun.js",
-    "./jwt": "./dist/jwt.js",
-    "./http-exception": "./dist/http-exception.js",
-    "./router/reg-exp-router": "./dist/router/reg-exp-router.js",
-    "./router/trie-router": "./dist/router/trie-router.js"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "default": "./dist/client.js"
+    },
+    "./logger": {
+      "types": "./dist/logger.d.ts",
+      "default": "./dist/logger.js"
+    },
+    "./bun": {
+      "types": "./dist/bun.d.ts",
+      "default": "./dist/bun.js"
+    },
+    "./jwt": {
+      "types": "./dist/jwt.d.ts",
+      "default": "./dist/jwt.js"
+    },
+    "./http-exception": {
+      "types": "./dist/http-exception.d.ts",
+      "default": "./dist/http-exception.js"
+    },
+    "./router/reg-exp-router": {
+      "types": "./dist/router/reg-exp-router.d.ts",
+      "default": "./dist/router/reg-exp-router.js"
+    },
+    "./router/trie-router": {
+      "types": "./dist/router/trie-router.d.ts",
+      "default": "./dist/router/trie-router.js"
+    }
   },
   "scripts": {
     "build": "bun run build.ts"
