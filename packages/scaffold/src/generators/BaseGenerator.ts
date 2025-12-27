@@ -193,6 +193,10 @@ export abstract class BaseGenerator {
     // tsconfig.json
     await this.writeFile(context.targetDir, 'tsconfig.json', this.generateTsConfig())
 
+    // Docker files
+    await this.writeFile(context.targetDir, 'Dockerfile', this.generateDockerfile(context))
+    await this.writeFile(context.targetDir, '.dockerignore', this.generateDockerIgnore())
+
     // ARCHITECTURE.md
     await this.writeFile(
       context.targetDir,
@@ -230,6 +234,8 @@ export abstract class BaseGenerator {
         start: 'bun run dist/bootstrap.js',
         test: 'bun test',
         typecheck: 'tsc --noEmit',
+        'docker:build': `docker build -t ${context.nameKebabCase} .`,
+        'docker:run': `docker run -it -p 3000:3000 ${context.nameKebabCase}`,
       },
       dependencies: {
         'gravito-core': '^1.0.0-beta.5',
@@ -242,6 +248,55 @@ export abstract class BaseGenerator {
     }
 
     return JSON.stringify(pkg, null, 2)
+  }
+
+  /**
+   * Generate Dockerfile content.
+   */
+  protected generateDockerfile(context: GeneratorContext): string {
+    const entrypoint = context.architecture === 'ddd' ? 'dist/main.js' : 'dist/bootstrap.js'
+
+    return `FROM oven/bun:1.0 AS base
+WORKDIR /usr/src/app
+
+# Install dependencies
+FROM base AS install
+RUN mkdir -p /temp/dev
+COPY package.json bun.lockb /temp/dev/
+RUN cd /temp/dev && bun install --frozen-lockfile
+
+# Build application
+FROM base AS build
+COPY --from=install /temp/dev/node_modules node_modules
+COPY . .
+ENV NODE_ENV=production
+RUN bun run build
+
+# Final production image
+FROM base AS release
+COPY --from=build /usr/src/app/${entrypoint} index.js
+COPY --from=build /usr/src/app/package.json .
+
+# Create a non-root user for security
+USER bun
+EXPOSE 3000/tcp
+ENTRYPOINT [ "bun", "run", "index.js" ]
+`
+  }
+
+  /**
+   * Generate .dockerignore content.
+   */
+  protected generateDockerIgnore(): string {
+    return `node_modules
+dist
+.git
+.env
+*.log
+.vscode
+.idea
+tests
+`
   }
 
   /**

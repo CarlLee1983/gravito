@@ -22,7 +22,9 @@ describe('CleanArchitectureGenerator', () => {
         }
         if (node.children) {
           const found = findFile(node.children, name)
-          if (found) return found
+          if (found) {
+            return found
+          }
         }
       }
       return undefined
@@ -49,5 +51,22 @@ describe('CleanArchitectureGenerator', () => {
     expect(createUser).toBeDefined()
     expect(createUser).toContain("import { UseCase } from '@gravito/enterprise'")
     expect(createUser).toContain('extends UseCase<CreateUserInput, CreateUserOutput>')
+  })
+
+  it('should generate docker files and scripts', async () => {
+    // We need to use internal methods to check common files generation
+    // since getDirectoryStructure only returns architecture-specific files
+    const pkgJson = (generator as any).generatePackageJson(context)
+    expect(pkgJson).toContain('"docker:build": "docker build -t test-app ."')
+    expect(pkgJson).toContain('"docker:run": "docker run -it -p 3000:3000 test-app"')
+
+    const dockerfile = (generator as any).generateDockerfile(context)
+    expect(dockerfile).toContain('FROM oven/bun:1.0 AS base')
+    expect(dockerfile).toContain('RUN bun run build')
+    expect(dockerfile).toContain('ENTRYPOINT [ "bun", "run", "index.js" ]')
+
+    const dockerignore = (generator as any).generateDockerIgnore()
+    expect(dockerignore).toContain('node_modules')
+    expect(dockerignore).toContain('dist')
   })
 })

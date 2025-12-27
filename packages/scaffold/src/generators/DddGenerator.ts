@@ -509,6 +509,8 @@ export class ${name}ServiceProvider extends ServiceProvider {
         start: 'bun run dist/main.js',
         test: 'bun test',
         typecheck: 'tsc --noEmit',
+        'docker:build': `docker build -t ${context.nameKebabCase} .`,
+        'docker:run': `docker run -it -p 3000:3000 ${context.nameKebabCase}`,
       },
       dependencies: {
         'gravito-core': '^1.0.0-beta.5',
