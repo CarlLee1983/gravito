@@ -1,7 +1,6 @@
 # @gravito/spectrum
 
-> **The Gravito Debug Dashboard.**
-> Real-time observability, request replay, and deep insights for your local development workflow.
+> **Your telescope into the Gravito universe — real-time insights, zero configuration.**
 
 `@gravito/spectrum` is a powerful, zero-config debug dashboard designed specifically for the Gravito ecosystem. It acts as a telescope for your application, capturing HTTP requests, database queries, logs, and exceptions in real-time.
 
