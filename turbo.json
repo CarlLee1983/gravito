@@ -5,6 +5,7 @@
             "dependsOn": [
                 "^build"
             ],
+            "inputs": ["src/**", "package.json", "tsconfig.json"],
             "outputs": [
                 "dist/**",
                 ".next/**",
@@ -12,15 +13,15 @@
             ]
         },
         "test": {
-            "dependsOn": [
-                "build"
-            ],
+            "dependsOn": [],
+            "inputs": ["src/**", "tests/**", "package.json", "tsconfig.json", "bunfig.toml"],
             "outputs": []
         },
         "lint": {
             "outputs": []
         },
         "typecheck": {
+            "inputs": ["src/**", "tests/**", "package.json", "tsconfig.json"],
             "outputs": []
         },
         "dev": {

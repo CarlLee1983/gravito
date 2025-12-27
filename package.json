@@ -7,13 +7,13 @@
         "examples/*"
     ],
     "scripts": {
-        "build": "npx turbo run build",
-        "test": "bun run --filter './packages/*' test",
-        "test:ci": "bun run --filter './packages/*' test",
+        "build": "turbo run build",
+        "test": "turbo run test",
+        "test:ci": "turbo run test",
         "lint": "biome lint .",
         "format": "biome format --write .",
         "check": "biome check . --diagnostic-level=error",
-        "typecheck": "bun run --filter './packages/*' typecheck",
+        "typecheck": "turbo run typecheck",
         "version:check": "bun run scripts/check-versions.ts",
         "changeset": "changeset",
         "ci:version": "changeset version",
@@ -32,8 +32,8 @@
         "typescript": "^5.9.3"
     },
     "simple-git-hooks": {
-        "pre-commit": "export PATH=\"$HOME/.bun/bin:$PATH\" && bunx lint-staged",
-        "pre-push": "export PATH=\"$HOME/.bun/bin:$PATH\" && bun run check && bun run typecheck && bun run test"
+        "pre-commit": "export PATH=\"~/.bun/bin:$PATH\" && bunx lint-staged",
+        "pre-push": "export PATH=\"~/.bun/bin:$PATH\" && bun run check && turbo run typecheck test --filter=[HEAD^1]"
     },
     "lint-staged": {
         "*.{js,ts,cjs,mjs}": [
