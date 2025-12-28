@@ -33,6 +33,7 @@ export class MissionControl {
       this.router.register(domain, `http://localhost:${publicPort}`)
     }
 
+    // 5. 啟動即時遙測
     this.docker.streamLogs(rocket.containerId, (log) => {
       onTelemetry('log', { rocketId: rocket.id, text: log })
     })
