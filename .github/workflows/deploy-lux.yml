@@ -38,6 +38,7 @@ jobs:
         working-directory: examples/luminosity-site
         env:
           NODE_ENV: production
+          GA_MEASUREMENT_ID: ${{ secrets.GA_MEASUREMENT_ID }}
         run: |
           echo "📦 Building client assets..."
           bun run build:client
