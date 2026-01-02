@@ -1,4 +1,5 @@
 import react from '@vitejs/plugin-react'
+import { resolve } from 'path'
 import { defineConfig } from 'vite'
 
 export default defineConfig({
@@ -9,7 +10,7 @@ export default defineConfig({
     emptyOutDir: true,
     manifest: true, // Generate manifest.json for backend mapping
     rollupOptions: {
-      input: './src/client/app.tsx',
+      input: resolve(process.cwd(), 'src/client/app.tsx'),
       output: {
         entryFileNames: 'assets/[name].js',
         chunkFileNames: 'assets/[name].js',
@@ -27,11 +28,11 @@ export default defineConfig({
     // Proxy backend API requests
     proxy: {
       '/api': {
-        target: 'http://localhost:3000',
+        target: 'http://localhost:3001',
         changeOrigin: true,
       },
       '/static': {
-        target: 'http://localhost:3000',
+        target: 'http://localhost:3001',
         changeOrigin: true,
       },
     },
