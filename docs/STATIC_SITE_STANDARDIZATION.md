@@ -42,7 +42,6 @@ We've established a standardized SSG (Static Site Generation) workflow to ensure
 |----------|-------------|
 | [SSG Guide (English)](./en/guide/static-site-development.md) | Complete development guide |
 | [SSG Guide (中文)](./zh-TW/guide/static-site-development.md) | 完整開發指南 |
-| [Checklist](./STATIC_SITE_CHECKLIST.md) | Step-by-step checklist |
 | [Quick Reference](./STATIC_SITE_QUICK_REFERENCE.md) | TL;DR guide |
 
 ## Key Principles

@@ -5,7 +5,7 @@
 **@gravito/atlas** is a high-performance, developer-centric database toolkit for the Gravito ecosystem. It provides a fluent Query Builder, a robust Active Record ORM, and database versioning tools inspired by the best patterns of Laravel and Drizzle.
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Performance](https://img.shields.io/badge/performance-40k--models/sec-brightgreen)](docs/ATLAS_PERFORMANCE_WHITEPAPER.md)
+[![Performance](https://img.shields.io/badge/performance-40k--models/sec-brightgreen)](../../docs/ATLAS_PERFORMANCE_WHITEPAPER.md)
 
 ## 📦 Installation
 
