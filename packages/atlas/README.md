@@ -48,12 +48,18 @@ const users = await DB.table('users')
   .orderBy('created_at', 'desc')
   .limit(10)
   .get()
+
+// Raw expressions
+const stats = await DB.table('orders')
+  .select(DB.raw('count(*) as total, sum(amount) as revenue'))
+  .groupBy('status')
+  .get()
 ```
 
 ### 3. Using Active Record ORM
 
 ```typescript
-import { Model, column, HasMany } from '@gravito/atlas'
+import { Model, column, HasMany, BelongsTo } from '@gravito/atlas'
 
 class User extends Model {
   static table = 'users'
@@ -64,8 +70,14 @@ class User extends Model {
   @column()
   declare email: string
 
+  // Relationships
   @HasMany(() => Post)
   declare posts: Post[]
+}
+
+class Post extends Model {
+  @BelongsTo(() => User)
+  declare user: User
 }
 
 // Find and Update
@@ -75,12 +87,38 @@ await user.save()
 
 // Eager Loading
 const usersWithPosts = await User.with('posts').get()
+
+// Soft Deletes (if enabled via trait)
+await user.delete() // soft delete
+await user.forceDelete() // hard delete
 ```
 
 ## ✨ Core Features
 
 ### 🛡️ Secure by Default
 Built-in protection against SQL injection via **Auto-Parameterization**. All user inputs are treated as bindings, never interpolated.
+
+### 🔗 Rich Relationships
+Atlas supports a comprehensive set of relationships:
+- **HasOne** / **BelongsTo**: One-to-one connections.
+- **HasMany** / **BelongsTo**: One-to-many lists.
+- **BelongsToMany**: Many-to-many with pivot tables.
+- **MorphOne** / **MorphMany** / **MorphTo**: Polymorphic associations.
+
+### 🌱 Seeding & Factories
+Generate dummy data for testing with ease.
+
+```typescript
+import { Factory } from '@gravito/atlas'
+
+const userFactory = Factory.define(User, ({ faker }) => ({
+  name: faker.person.fullName(),
+  email: faker.internet.email(),
+}))
+
+// Create 10 users
+await userFactory.createMany(10)
+```
 
 ### 🧠 Memory Safe Streams
 Handle millions of records without heap overflows using our cursor-based streaming API.
@@ -101,6 +139,7 @@ await Schema.create('users', (table) => {
   table.id()
   table.string('email').unique()
   table.json('settings').nullable()
+  table.softDeletes() // Adds deleted_at
   table.timestamps()
 })
 ```

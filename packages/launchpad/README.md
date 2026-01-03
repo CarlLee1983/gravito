@@ -1,44 +1,102 @@
 # @gravito/launchpad
 
-> 🚀 Bun 火箭回收系統：專為 Bun 打造的秒級容器部署與生命週期管理系統。
+> 🚀 Instant Deployment System for Bun. Container lifecycle management and zero-downtime deployment.
 
-## 核心特性
+**Gravito Launchpad** is a specialized orchestration system built for the Bun runtime. It uses a unique "Rocket Pool" architecture to pre-warm containers, enabling sub-second deployments by injecting code into already running instances instead of building images from scratch.
 
-- **Rocket Pool**: 預熱容器池，消除啟動冷啟動。
-- **Payload Injection**: 跳過 Docker Build，透過 `docker cp` 秒級注入代碼。
-- **DDD 架構**: 基於 `@gravito/enterprise` 實作，具備嚴謹的狀態機管理。
-- **可回收性**: 任務結束後自動翻新容器，資源零浪費。
+## ✨ Core Features
 
-## 架構概覽
+- **🔥 Rocket Pool**: Pre-warmed container pool eliminates cold start times.
+- **💉 Payload Injection**: Skip `docker build`. Code is injected via `docker cp` in milliseconds.
+- **🏗️ DDD Architecture**: Built on `@gravito/enterprise` with rigorous state machine management.
+- **♻️ Auto-Recycling**: Containers are automatically refurbished and returned to the pool after missions.
+- **🤖 GitHub Integration**: Built-in webhook handler for PR previews and automated comments.
+- **🛡️ Secure Isolation**: Each deployment runs in an isolated container environment.
 
-本套件遵循 **Clean Architecture** 與 **DDD**:
+## 🏗️ Architecture Overview
 
-- **Domain**: 定義 `Rocket` 狀態機與 `Mission` 邏輯。
-- **Application**: `PoolManager` (調度) 與 `PayloadInjector` (部署)。
-- **Infrastructure**: 底層 Docker 與 Git 操作實作。
+Launchpad follows **Clean Architecture** principles:
 
-## 快速開始
+### Domain Layer
+- **Rocket**: The aggregate root representing a container instance.
+- **Mission**: Represents a deployment task (repo, commit, branch).
+- **Status Machine**: Strictly manages transitions (Idle -> Assigned -> Deployed -> Recycling).
 
-```typescript
-import { PoolManager, PayloadInjector } from '@gravito/launchpad'
-import { DockerAdapter, ShellGitAdapter, InMemoryRocketRepository } from '@gravito/launchpad/infra'
+### Application Layer
+- **PoolManager**: Orchestrates the lifecycle of Rockets (warmup, assignment, recycling).
+- **PayloadInjector**: Handles the git clone and code injection process.
+- **MissionControl**: High-level facade for launching missions.
+- **RefurbishUnit**: Cleans up used containers for reuse.
 
-const manager = new PoolManager(new DockerAdapter(), new InMemoryRocketRepository())
-const injector = new PayloadInjector(new DockerAdapter(), new ShellGitAdapter())
+### Infrastructure Layer
+- **DockerAdapter**: Low-level communication with Docker daemon.
+- **ShellGitAdapter**: Git operations via shell commands.
+- **BunProxyAdapter**: Manages reverse proxying to active containers.
 
-// 1. 預熱池子
-await manager.warmup(3)
+## 🚀 Quick Start
 
-// 2. 指派任務
-const mission = Mission.create({ ... })
-const rocket = await manager.assignMission(mission)
+### Installation
 
-// 3. 秒級部署
-await injector.deploy(rocket)
+```bash
+bun add @gravito/launchpad
 ```
 
-## 測試
+### Basic Usage
+
+```typescript
+import { PoolManager, PayloadInjector, Mission } from '@gravito/launchpad'
+import { DockerAdapter, ShellGitAdapter, InMemoryRocketRepository } from '@gravito/launchpad/infra'
+
+// Initialize adapters
+const docker = new DockerAdapter()
+const repo = new InMemoryRocketRepository()
+const manager = new PoolManager(docker, repo)
+
+// 1. Warmup the pool (Create 3 idle containers)
+await manager.warmup(3)
+
+// 2. Create a mission
+const mission = Mission.create({
+  id: 'mission-1',
+  repoUrl: 'https://github.com/user/repo.git',
+  commitSha: 'latest'
+})
+
+// 3. Launch! (Assigns a rocket and injects code)
+const rocket = await manager.assignMission(mission)
+const injector = new PayloadInjector(docker, new ShellGitAdapter())
+await injector.deploy(rocket)
+
+console.log(`Mission deployed to http://localhost:${rocket.port}`)
+```
+
+### Running as a Service (Orbit)
+
+Launchpad can run as a Gravito Orbit, providing a REST API and Webhook support.
+
+```typescript
+import { bootstrapLaunchpad } from '@gravito/launchpad'
+
+const { port } = await bootstrapLaunchpad()
+console.log(`Launchpad Server running on port ${port}`)
+```
+
+## ⚙️ Configuration
+
+Launchpad relies on Docker. Ensure Docker is installed and running.
+
+| Environment Variable | Description | Default |
+|----------------------|-------------|---------|
+| `GITHUB_TOKEN` | Token for GitHub API access | (Required for PR comments) |
+| `GITHUB_WEBHOOK_SECRET` | Secret for verifying webhooks | (Optional) |
+| `POOL_SIZE` | Target number of pre-warmed containers | `3` |
+
+## 🧪 Testing
 
 ```bash
 bun test
 ```
+
+## 📄 License
+
+MIT © Gravito Framework

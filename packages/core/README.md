@@ -18,6 +18,8 @@
 - 🛰️ **Orbit Mounting** - Easily mount external Photon applications (Orbits) to specific paths.
 - 📝 **Logger System** - PSR-3 style logger interface with default standard output implementation.
 - ⚙️ **Config Manager** - Unified configuration management supporting environment variables (`Bun.env`) and runtime injection.
+- 🛡️ **Security Middleware** - Built-in protection including CSRF, CORS, HSTS, and request throttling.
+- 🔌 **Runtime Adapters** - Abstraction layer for underlying runtimes (Bun, Node.js) and HTTP engines.
 - 🛡️ **Error Handling** - Built-in standardized JSON error responses and 404 handling.
 - 🚀 **Modern** - Built for **Bun** runtime with native TypeScript support.
 - 🪶 **Lightweight** - Zero external dependencies (except `@gravito/photon`).
