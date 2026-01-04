@@ -1,4 +1,5 @@
-import { Link, usePage } from '@inertiajs/react'
+import { usePage } from '@inertiajs/react'
+import { StaticLink } from '../components/StaticLink'
 import { motion } from 'framer-motion'
 import {
   Activity,
@@ -39,21 +40,21 @@ export default function Home() {
               <span className="text-xl font-bold tracking-wider">ZENITH</span>
             </div>
             <div className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-400">
-              <Link href={locale === 'zh-TW' ? '/zh-TW' : '/'} className="hover:text-white transition-colors">
+              <StaticLink href={locale === 'zh-TW' ? '/zh-TW' : '/'} className="hover:text-white transition-colors">
                 {trans('nav.features')}
-              </Link>
-              <Link href={locale === 'zh-TW' ? '/zh-TW' : '/'} className="hover:text-white transition-colors">
+              </StaticLink>
+              <StaticLink href={locale === 'zh-TW' ? '/zh-TW' : '/'} className="hover:text-white transition-colors">
                 {trans('nav.integration')}
-              </Link>
-              <Link href={locale === 'zh-TW' ? '/zh-TW' : '/'} className="hover:text-white transition-colors">
+              </StaticLink>
+              <StaticLink href={locale === 'zh-TW' ? '/zh-TW' : '/'} className="hover:text-white transition-colors">
                 {trans('nav.docs')}
-              </Link>
-              <Link
+              </StaticLink>
+              <StaticLink
                 href={locale === 'zh-TW' ? '/zh-TW/about' : '/about'}
                 className="hover:text-white transition-colors"
               >
                 {trans('nav.about')}
-              </Link>
+              </StaticLink>
             </div>
             <div className="flex items-center gap-4">
               {/* Language Switcher */}
@@ -66,18 +67,18 @@ export default function Home() {
                   <span className="text-xs font-mono">{locale === 'zh-TW' ? '繁中' : 'EN'}</span>
                 </button>
                 <div className="absolute right-0 top-full mt-2 w-32 bg-zenith-800 border border-white/10 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
-                  <Link
+                  <StaticLink
                     href={locale === 'zh-TW' ? '/' : '/zh-TW'}
                     className="block px-4 py-2 text-sm hover:bg-white/10 transition-colors text-left"
                   >
                     {locale === 'zh-TW' ? 'English' : '繁體中文'}
-                  </Link>
-                  <Link
+                  </StaticLink>
+                  <StaticLink
                     href={locale === 'zh-TW' ? '/about' : '/zh-TW/about'}
                     className="block px-4 py-2 text-sm hover:bg-white/10 transition-colors text-left border-t border-white/5"
                   >
                     {locale === 'zh-TW' ? 'About (EN)' : '關於 (繁中)'}
-                  </Link>
+                  </StaticLink>
                 </div>
               </div>
               <a
@@ -351,15 +352,15 @@ export default function Home() {
             <span>{trans('footer.copyright')}</span>
           </div>
           <div className="flex gap-6 text-gray-400 text-sm">
-            <Link href={locale === 'zh-TW' ? '/zh-TW' : '/'} className="hover:text-white transition-colors">
+            <StaticLink href={locale === 'zh-TW' ? '/zh-TW' : '/'} className="hover:text-white transition-colors">
               {trans('footer.privacy')}
-            </Link>
-            <Link href={locale === 'zh-TW' ? '/zh-TW' : '/'} className="hover:text-white transition-colors">
+            </StaticLink>
+            <StaticLink href={locale === 'zh-TW' ? '/zh-TW' : '/'} className="hover:text-white transition-colors">
               {trans('footer.terms')}
-            </Link>
-            <Link href={locale === 'zh-TW' ? '/zh-TW' : '/'} className="hover:text-white transition-colors">
+            </StaticLink>
+            <StaticLink href={locale === 'zh-TW' ? '/zh-TW' : '/'} className="hover:text-white transition-colors">
               {trans('footer.contact')}
-            </Link>
+            </StaticLink>
           </div>
         </div>
       </footer>

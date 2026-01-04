@@ -1,5 +1,5 @@
 import { Head, usePage } from '@inertiajs/react'
-import { Activity, AlertCircle, Clock, Database, Search, Server } from 'lucide-react'
+import { Activity, AlertCircle, Clock, Database, Globe, Search, Server } from 'lucide-react'
 import Layout from '../components/Layout'
 import { useTrans } from '../hooks/useTrans'
 import { StaticLink } from '../components/StaticLink'
@@ -30,18 +30,18 @@ export default function About() {
               <span className="text-xs font-mono">{locale === 'zh-TW' ? '繁中' : 'EN'}</span>
             </button>
             <div className="absolute right-0 top-full mt-2 w-32 bg-zenith-800 border border-white/10 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
-              <Link
+              <StaticLink
                 href={locale === 'zh-TW' ? '/' : '/zh-TW'}
                 className="block px-4 py-2 text-sm hover:bg-white/10 transition-colors text-left"
               >
                 {locale === 'zh-TW' ? 'English' : '繁體中文'}
-              </Link>
-              <Link
+              </StaticLink>
+              <StaticLink
                 href={locale === 'zh-TW' ? '/about' : '/zh-TW/about'}
                 className="block px-4 py-2 text-sm hover:bg-white/10 transition-colors text-left border-t border-white/5"
               >
                 {locale === 'zh-TW' ? 'About (EN)' : '關於 (繁中)'}
-              </Link>
+              </StaticLink>
             </div>
           </div>
         </div>

@@ -1,83 +1,83 @@
 import { Link } from '@inertiajs/react'
-import type { AnchorHTMLAttributes, ComponentProps, MouseEvent } from 'react'
-
-type InertiaLinkProps = ComponentProps<typeof Link>
+import type React from 'react'
 
 /**
  * 檢測是否在靜態網站環境中（GitHub Pages、Vercel、Netlify 等）
  * 在靜態環境中，沒有後端伺服器處理 Inertia 的 AJAX 請求，
  * 因此需要使用普通的 <a> 標籤進行完整頁面導航
  *
- * 從環境變數 STATIC_SITE_DOMAINS 讀取生產環境域名列表
+ * 注意：請根據您的實際生產環境域名更新 staticDomains 陣列
  */
-function isStaticSite(): boolean {
+/**
+ * 檢測是否在靜態網站環境中
+ */
+export function isStaticSite(): boolean {
   if (typeof window === 'undefined') {
     return false
   }
 
   const hostname = window.location.hostname
+  const port = window.location.port
 
-  // 從環境變數讀取靜態網站域名列表
-  // 在 Vite 中，環境變數需要以 VITE_ 開頭才能在客戶端訪問
-  // 但我們可以在建置時注入，或使用 import.meta.env
-  const staticDomainsEnv = import.meta.env.VITE_STATIC_SITE_DOMAINS || ''
-  const staticDomains = staticDomainsEnv
-    .split(',')
-    .map((d: string) => d.trim())
-    .filter((d: string) => d.length > 0)
-
-  // 如果沒有配置環境變數，檢查常見的靜態託管域名模式
-  if (staticDomains.length === 0) {
-    // 常見的靜態託管平台域名模式
-    return (
-      hostname.includes('github.io') ||
-      hostname.includes('vercel.app') ||
-      hostname.includes('netlify.app') ||
-      hostname.includes('pages.dev')
-    )
+  if ((hostname === 'localhost' || hostname === '127.0.0.1') && port === '4173') {
+    return true
   }
 
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return false
+  }
+
+  const staticDomains = ['gravito.dev', 'gravito-framework.github.io']
   return staticDomains.includes(hostname)
 }
 
-type LinkChildren = ComponentProps<typeof Link>['children']
+/**
+ * 獲取基礎路徑（用於 GitHub Pages 子目錄等環境）
+ */
+export function getBasePath(): string {
+  if (typeof window === 'undefined') {
+    return ''
+  }
 
-type StaticLinkProps = Omit<InertiaLinkProps, 'children'> & {
-  children?: LinkChildren
-  className?: string
+  const pathname = window.location.pathname
+  // 如果在 GitHub Pages 子路徑中
+  if (pathname.startsWith('/gravito/')) {
+    return '/gravito'
+  }
+
+  return ''
 }
 
-/**
- * 自定義 Link 組件，在靜態網站環境中使用普通的 <a> 標籤
- * 在開發環境或動態環境中使用 Inertia 的 Link 組件
- *
- * 使用方式：
- * ```tsx
- * import { StaticLink } from '@/components/StaticLink'
- * <StaticLink href="/about">About</StaticLink>
- * ```
- */
+interface StaticLinkProps {
+  href: string | undefined | null
+  children: React.ReactNode
+  className?: string
+  onClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void
+  [key: string]: unknown
+}
+
 export function StaticLink({ href, children, className, onClick, ...props }: StaticLinkProps) {
   const isStatic = isStaticSite()
+  const basePath = getBasePath()
+
+  // 處理路徑前綴
+  const finalHref =
+    href?.startsWith('/') && !href.startsWith(`${basePath}/`) ? `${basePath}${href}` : href
 
   if (isStatic) {
-    // 在靜態環境中，使用普通的 <a> 標籤進行完整頁面導航
-    // 這樣可以避免 Inertia 的 AJAX 請求在沒有後端的情況下失敗
-    const handleClick = (e: MouseEvent<HTMLAnchorElement>) => {
-      // 如果提供了 onClick 處理器，先執行它
+    const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
       if (onClick) {
-        ;(onClick as (e: MouseEvent<HTMLAnchorElement>) => void)(e)
+        onClick(e)
       }
-      // 在靜態環境中，讓瀏覽器處理導航（不阻止默認行為）
     }
 
     return (
       <a
-        href={href as string}
+        href={finalHref as string}
         className={className}
         onClick={handleClick}
         {...(props as Omit<
-          AnchorHTMLAttributes<HTMLAnchorElement>,
+          React.AnchorHTMLAttributes<HTMLAnchorElement>,
           'href' | 'className' | 'onClick'
         >)}
       >
@@ -86,10 +86,9 @@ export function StaticLink({ href, children, className, onClick, ...props }: Sta
     )
   }
 
-  // 在動態環境中，使用 Inertia 的 Link 組件
   return (
-    <Link href={href} className={className} onClick={onClick} {...props}>
-      {children}
+    <Link href={finalHref || ''} className={className} onClick={onClick as any} {...props}>
+      {children as any}
     </Link>
   )
 }
