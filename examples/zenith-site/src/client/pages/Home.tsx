@@ -1,6 +1,15 @@
-import React from 'react'
 import { motion } from 'framer-motion'
-import { Activity, Server, Zap, Shield, Search, Terminal, Github, BookOpen, ArrowRight, LayoutDashboard, Database, Radio } from 'lucide-react'
+import {
+  Activity,
+  ArrowRight,
+  BookOpen,
+  Database,
+  Github,
+  LayoutDashboard,
+  Server,
+  Zap,
+} from 'lucide-react'
+import React from 'react'
 
 export default function Home() {
   return (
@@ -16,15 +25,29 @@ export default function Home() {
               <span className="text-xl font-bold tracking-wider">ZENITH</span>
             </div>
             <div className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-400">
-              <a href="#" className="hover:text-white transition-colors">Features</a>
-              <a href="#" className="hover:text-white transition-colors">Integration</a>
-              <a href="#" className="hover:text-white transition-colors">Docs</a>
+              <a href="/" className="hover:text-white transition-colors">
+                Features
+              </a>
+              <a href="/" className="hover:text-white transition-colors">
+                Integration
+              </a>
+              <a href="/" className="hover:text-white transition-colors">
+                Docs
+              </a>
             </div>
             <div className="flex items-center gap-4">
-              <a href="https://github.com/gravito-work/gravito" target="_blank" rel="noopener noreferrer" className="p-2 hover:bg-white/10 rounded-full transition-colors">
+              <a
+                href="https://github.com/gravito-work/gravito"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 hover:bg-white/10 rounded-full transition-colors"
+              >
                 <Github className="w-5 h-5" />
               </a>
-              <button className="hidden md:flex items-center gap-2 bg-white/10 hover:bg-white/20 px-4 py-2 rounded text-sm font-medium transition-colors border border-white/10">
+              <button
+                type="button"
+                className="hidden md:flex items-center gap-2 bg-white/10 hover:bg-white/20 px-4 py-2 rounded text-sm font-medium transition-colors border border-white/10"
+              >
                 <span>v0.1.0</span>
               </button>
             </div>
@@ -42,7 +65,6 @@ export default function Home() {
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="flex flex-col lg:flex-row items-center gap-16">
-            
             {/* Hero Content */}
             <div className="flex-1 text-center lg:text-left">
               <motion.div
@@ -59,17 +81,27 @@ export default function Home() {
                 </div>
                 <h1 className="text-5xl lg:text-7xl font-bold tracking-tight mb-6 leading-tight">
                   Control Plane for <br />
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-zenith-400 to-zenith-accent">Flux & Stream</span>
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-zenith-400 to-zenith-accent">
+                    Flux & Stream
+                  </span>
                 </h1>
                 <p className="text-lg text-gray-400 mb-8 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
-                  Real-time visibility, queue management, and dead-letter inspection for your asynchronous infrastructure. Zero configuration required.
+                  Real-time visibility, queue management, and dead-letter inspection for your
+                  asynchronous infrastructure. Zero configuration required.
                 </p>
-                
+
                 <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
-                  <button className="w-full sm:w-auto px-8 py-3 bg-zenith-500 hover:bg-zenith-400 text-white rounded font-medium transition-all shadow-lg shadow-zenith-500/25 flex items-center justify-center gap-2 group">
-                    Get Started <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  <button
+                    type="button"
+                    className="w-full sm:w-auto px-8 py-3 bg-zenith-500 hover:bg-zenith-400 text-white rounded font-medium transition-all shadow-lg shadow-zenith-500/25 flex items-center justify-center gap-2 group"
+                  >
+                    Get Started{' '}
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </button>
-                  <button className="w-full sm:w-auto px-8 py-3 bg-transparent border border-white/20 hover:bg-white/5 text-white rounded font-medium transition-colors flex items-center justify-center gap-2">
+                  <button
+                    type="button"
+                    className="w-full sm:w-auto px-8 py-3 bg-transparent border border-white/20 hover:bg-white/5 text-white rounded font-medium transition-colors flex items-center justify-center gap-2"
+                  >
                     <BookOpen className="w-4 h-4" /> Documentation
                   </button>
                 </div>
@@ -98,7 +130,9 @@ export default function Home() {
                 <div className="grid grid-cols-2 gap-4">
                   {/* Stat Card 1 */}
                   <div className="bg-white/5 p-4 rounded border border-white/5">
-                    <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">Throughput</div>
+                    <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">
+                      Throughput
+                    </div>
                     <div className="text-2xl font-mono font-bold text-zenith-accent flex items-baseline gap-2">
                       12,450 <span className="text-xs text-gray-500 font-sans">ops/sec</span>
                     </div>
@@ -109,12 +143,14 @@ export default function Home() {
 
                   {/* Stat Card 2 */}
                   <div className="bg-white/5 p-4 rounded border border-white/5">
-                    <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">Active Workers</div>
+                    <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">
+                      Active Workers
+                    </div>
                     <div className="text-2xl font-mono font-bold text-green-400 flex items-baseline gap-2">
                       48 <span className="text-xs text-gray-500 font-sans">nodes</span>
                     </div>
                     <div className="flex gap-1 mt-3">
-                      {[1,2,3,4,5,6].map(i => (
+                      {[1, 2, 3, 4, 5, 6].map((i) => (
                         <div key={i} className="h-2 w-2 rounded-full bg-green-400 opacity-80" />
                       ))}
                     </div>
@@ -123,17 +159,26 @@ export default function Home() {
                   {/* Queue List */}
                   <div className="col-span-2 bg-white/5 p-4 rounded border border-white/5">
                     <div className="flex items-center justify-between mb-3">
-                      <div className="text-xs text-gray-400 uppercase tracking-wider">Active Queues</div>
+                      <div className="text-xs text-gray-400 uppercase tracking-wider">
+                        Active Queues
+                      </div>
                       <div className="text-xs text-zenith-500">View All</div>
                     </div>
                     <div className="space-y-2">
                       {['emails.transactional', 'images.process', 'analytics.batch'].map((q, i) => (
-                        <div key={q} className="flex items-center justify-between p-2 bg-black/20 rounded">
+                        <div
+                          key={q}
+                          className="flex items-center justify-between p-2 bg-black/20 rounded"
+                        >
                           <div className="flex items-center gap-2">
-                            <div className={`w-1.5 h-1.5 rounded-full ${i === 0 ? 'bg-green-400' : 'bg-zenith-accent'}`} />
+                            <div
+                              className={`w-1.5 h-1.5 rounded-full ${i === 0 ? 'bg-green-400' : 'bg-zenith-accent'}`}
+                            />
                             <span className="text-sm font-mono text-gray-300">{q}</span>
                           </div>
-                          <span className="text-xs text-gray-500 font-mono">{Math.floor(Math.random() * 1000)} jobs</span>
+                          <span className="text-xs text-gray-500 font-mono">
+                            {Math.floor(Math.random() * 1000)} jobs
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -149,17 +194,17 @@ export default function Home() {
       <section className="py-24 bg-black/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-3 gap-8">
-            <FeatureCard 
+            <FeatureCard
               icon={<Activity />}
               title="Real-time Insights"
               description="Visualize job throughput, worker saturation, and error rates with millisecond latency updates."
             />
-            <FeatureCard 
+            <FeatureCard
               icon={<Server />}
               title="Worker Management"
               description="Gracefully stop, restart, or scale your worker nodes directly from the control plane interface."
             />
-            <FeatureCard 
+            <FeatureCard
               icon={<Database />}
               title="Dead Letter Inspection"
               description="Review failed jobs, inspect stack traces, and replay specific events with a single click."
@@ -175,9 +220,10 @@ export default function Home() {
             <div className="flex-1">
               <h2 className="text-3xl font-bold mb-6">Drop-in Integration</h2>
               <p className="text-gray-400 mb-8 text-lg">
-                Zenith automatically discovers your Flux queues and Stream topics. Just mount the dashboard middleware and you're ready to launch.
+                Zenith automatically discovers your Flux queues and Stream topics. Just mount the
+                dashboard middleware and you're ready to launch.
               </p>
-              
+
               <ul className="space-y-4">
                 <ListItem text="Auto-discovery of queues and topics" />
                 <ListItem text="Role-based access control built-in" />
@@ -185,7 +231,7 @@ export default function Home() {
                 <ListItem text="Customizable alert thresholds" />
               </ul>
             </div>
-            
+
             <div className="flex-1 w-full">
               <div className="bg-[#0d1117] rounded-lg border border-white/10 p-6 font-mono text-sm overflow-x-auto">
                 <div className="flex gap-2 mb-4">
@@ -195,17 +241,38 @@ export default function Home() {
                 </div>
                 <pre className="text-gray-300">
                   <code>
-                    <div className="line"><span className="text-purple-400">import</span> {'{'} Zenith {'}'} <span className="text-purple-400">from</span> <span className="text-green-400">'@gravito/zenith'</span></div>
-                    <div className="line"><span className="text-purple-400">import</span> {'{'} App {'}'} <span className="text-purple-400">from</span> <span className="text-green-400">'./app'</span></div>
+                    <div className="line">
+                      <span className="text-purple-400">import</span> {'{'} Zenith {'}'}{' '}
+                      <span className="text-purple-400">from</span>{' '}
+                      <span className="text-green-400">'@gravito/zenith'</span>
+                    </div>
+                    <div className="line">
+                      <span className="text-purple-400">import</span> {'{'} App {'}'}{' '}
+                      <span className="text-purple-400">from</span>{' '}
+                      <span className="text-green-400">'./app'</span>
+                    </div>
                     <div className="line h-4"></div>
-                    <div className="line"><span className="text-gray-500">// Initialize Zenith with your app</span></div>
-                    <div className="line"><span className="text-blue-400">const</span> zenith = <span className="text-purple-400">new</span> Zenith(App)</div>
+                    <div className="line">
+                      <span className="text-gray-500">{'// Initialize Zenith with your app'}</span>
+                    </div>
+                    <div className="line">
+                      <span className="text-blue-400">const</span> zenith ={' '}
+                      <span className="text-purple-400">new</span> Zenith(App)
+                    </div>
                     <div className="line h-4"></div>
-                    <div className="line"><span className="text-gray-500">// Mount the dashboard</span></div>
-                    <div className="line">zenith.mount(<span className="text-green-400">"/admin/zenith"</span>)</div>
+                    <div className="line">
+                      <span className="text-gray-500">{'// Mount the dashboard'}</span>
+                    </div>
+                    <div className="line">
+                      zenith.mount(<span className="text-green-400">"/admin/zenith"</span>)
+                    </div>
                     <div className="line h-4"></div>
-                    <div className="line"><span className="text-gray-500">// Start the control plane</span></div>
-                    <div className="line"><span className="text-purple-400">await</span> zenith.start()</div>
+                    <div className="line">
+                      <span className="text-gray-500">{'// Start the control plane'}</span>
+                    </div>
+                    <div className="line">
+                      <span className="text-purple-400">await</span> zenith.start()
+                    </div>
                   </code>
                 </pre>
               </div>
@@ -223,9 +290,15 @@ export default function Home() {
             <span>&copy; 2026 Gravito. All rights reserved.</span>
           </div>
           <div className="flex gap-6 text-gray-400 text-sm">
-            <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
-            <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
-            <a href="#" className="hover:text-white transition-colors">Contact</a>
+            <a href="/" className="hover:text-white transition-colors">
+              Privacy Policy
+            </a>
+            <a href="/" className="hover:text-white transition-colors">
+              Terms of Service
+            </a>
+            <a href="/" className="hover:text-white transition-colors">
+              Contact
+            </a>
           </div>
         </div>
       </footer>
@@ -233,11 +306,21 @@ export default function Home() {
   )
 }
 
-function FeatureCard({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) {
+function FeatureCard({
+  icon,
+  title,
+  description,
+}: {
+  icon: React.ReactNode
+  title: string
+  description: string
+}) {
   return (
     <div className="p-6 rounded-lg bg-white/5 border border-white/5 hover:border-zenith-500/50 hover:bg-white/10 transition-all group">
       <div className="w-12 h-12 rounded bg-zenith-500/20 flex items-center justify-center text-zenith-400 mb-4 group-hover:text-zenith-accent group-hover:scale-110 transition-all">
-        {React.cloneElement(icon as React.ReactElement, { className: "w-6 h-6" })}
+        {React.cloneElement(icon as React.ReactElement<{ className?: string }>, {
+          className: 'w-6 h-6',
+        })}
       </div>
       <h3 className="text-xl font-bold mb-2">{title}</h3>
       <p className="text-gray-400 leading-relaxed">{description}</p>

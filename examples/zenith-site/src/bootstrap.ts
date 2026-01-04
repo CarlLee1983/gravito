@@ -38,11 +38,15 @@ export async function bootstrap(options: AppConfig = {}) {
   core.registerGlobalErrorHandlers()
 
   // 2.1 Security middleware
+  const isDev = process.env.NODE_ENV !== 'production'
+  const devCsp = isDev ? ' http://localhost:5173 ws://localhost:5173' : ''
+
   const defaultCsp = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline'",
-    "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data:",
+    `script-src 'self' 'unsafe-inline'${devCsp}`,
+    `style-src 'self' 'unsafe-inline'${devCsp}`,
+    `img-src 'self' data:${devCsp}`,
+    `connect-src 'self'${devCsp}`,
     "object-src 'none'",
     "base-uri 'self'",
     "frame-ancestors 'none'",
