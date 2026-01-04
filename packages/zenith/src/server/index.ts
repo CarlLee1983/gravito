@@ -82,10 +82,88 @@ queueService
 
     console.log(`[FluxConsole] Connected to Redis at ${REDIS_URL}`)
     // Start background metrics recording (Reduced from 5s to 2s for better real-time feel)
-    setInterval(async () => {
-      const nodes = await pulseService.getNodes()
-      queueService.recordStatusMetrics(nodes).catch(console.error)
-    }, 2000)
+    const updateMetrics = async () => {
+      try {
+        const [pulseNodes, legacyWorkers] = await Promise.all([
+          pulseService.getNodes(),
+          queueService.listWorkers(),
+        ])
+
+        const pulseWorkers = Object.values(pulseNodes)
+          .flat()
+          .flatMap((node) => {
+            const mainNode = {
+              id: node.id,
+              service: node.service,
+              status: node.runtime.status || 'online',
+              pid: node.pid,
+              uptime: node.runtime.uptime,
+              metrics: {
+                cpu: node.cpu.process,
+                cores: node.cpu.cores,
+                ram: {
+                  rss: node.memory.process.rss,
+                  heapUsed: node.memory.process.heapUsed,
+                  total: node.memory.system.total,
+                },
+              },
+              queues: node.queues,
+              meta: node.meta,
+            }
+
+            const subWorkers: any[] = []
+            if (node.meta?.laravel?.workers && Array.isArray(node.meta.laravel.workers)) {
+              node.meta.laravel.workers.forEach((w: any) => {
+                subWorkers.push({
+                  id: `${node.id}-php-${w.pid}`,
+                  service: `${node.service} / LARAVEL`,
+                  status: w.status === 'running' || w.status === 'sleep' ? 'online' : 'idle',
+                  pid: w.pid,
+                  uptime: node.runtime.uptime,
+                  metrics: {
+                    cpu: w.cpu,
+                    cores: 1,
+                    ram: {
+                      rss: w.memory,
+                      heapUsed: w.memory,
+                      total: node.memory.system.total,
+                    },
+                  },
+                  meta: { isVirtual: true, cmdline: w.cmdline },
+                })
+              })
+            }
+            return [mainNode, ...subWorkers]
+          })
+
+        const formattedLegacy = legacyWorkers.map((w) => ({
+          id: w.id,
+          status: 'online',
+          pid: w.pid,
+          uptime: w.uptime,
+          metrics: {
+            cpu: (w.loadAvg[0] || 0) * 100,
+            cores: 0,
+            ram: {
+              rss: parseInt(w.memory.rss || '0', 10),
+              heapUsed: parseInt(w.memory.heapUsed || '0', 10),
+              total: 0,
+            },
+          },
+          queues: w.queues.map((q) => ({
+            name: q,
+            size: { waiting: 0, active: 0, failed: 0, delayed: 0 },
+          })),
+          meta: {},
+        }))
+
+        await queueService.recordStatusMetrics(pulseNodes, [...pulseWorkers, ...formattedLegacy])
+      } catch (err) {
+        console.error('[FluxConsole] Metrics Update Error:', err)
+      }
+    }
+
+    setInterval(updateMetrics, 2000)
 
     // Start Scheduler Tick (Reduced from 10s to 5s)
     setInterval(() => {
@@ -93,10 +171,7 @@ queueService
     }, 5000)
 
     // Record initial snapshot
-    pulseService
-      .getNodes()
-      .then((nodes) => queueService.recordStatusMetrics(nodes))
-      .catch(console.error)
+    updateMetrics()
   })
   .catch((err) => {
     console.error('[FluxConsole] Failed to connect to Redis', err)
@@ -324,9 +399,91 @@ api.get('/throughput', async (c) => {
 
 api.get('/workers', async (c) => {
   try {
-    const workers = await queueService.listWorkers()
-    return c.json({ workers })
+    const [legacyWorkers, pulseNodes] = await Promise.all([
+      queueService.listWorkers(),
+      pulseService.getNodes(),
+    ])
+
+    // Transform PulseNodes to match the frontend Worker interface
+    const pulseWorkers = Object.values(pulseNodes)
+      .flat()
+      .flatMap((node) => {
+        // 1. The Main Agent Node
+        const mainNode = {
+          id: node.id,
+          service: node.service,
+          status: node.runtime.status || 'online',
+          pid: node.pid,
+          uptime: node.runtime.uptime,
+          metrics: {
+            cpu: node.cpu.process,
+            cores: node.cpu.cores,
+            ram: {
+              rss: node.memory.process.rss,
+              heapUsed: node.memory.process.heapUsed,
+              total: node.memory.system.total,
+            },
+          },
+          queues: node.queues,
+          meta: node.meta,
+        }
+
+        // 2. Virtual Child Workers (e.g. Laravel)
+        const subWorkers: any[] = []
+        if (node.meta?.laravel?.workers && Array.isArray(node.meta.laravel.workers)) {
+          node.meta.laravel.workers.forEach((w: any) => {
+            subWorkers.push({
+              id: `${node.id}-php-${w.pid}`,
+              service: `${node.service} / LARAVEL`, // Distinct service name
+              status: w.status === 'running' || w.status === 'sleep' ? 'online' : 'idle',
+              pid: w.pid,
+              uptime: node.runtime.uptime, // Inherit uptime for now, or 0
+              metrics: {
+                cpu: w.cpu, // Per-process CPU
+                cores: 1, // Single threaded PHP
+                ram: {
+                  rss: w.memory,
+                  heapUsed: w.memory,
+                  total: node.memory.system.total,
+                },
+              },
+              meta: {
+                // Tag it so UI can maybe style it differently?
+                isVirtual: true,
+                cmdline: w.cmdline,
+              },
+            })
+          })
+        }
+
+        return [mainNode, ...subWorkers]
+      })
+
+    // Transform Legacy Workers to match interface (best effort)
+    const formattedLegacy = legacyWorkers.map((w) => ({
+      id: w.id,
+      status: 'online',
+      pid: w.pid,
+      uptime: w.uptime,
+      metrics: {
+        cpu: (w.loadAvg[0] || 0) * 100, // Rough estimate
+        cores: 0,
+        ram: {
+          rss: parseInt(w.memory.rss || '0', 10),
+          heapUsed: parseInt(w.memory.heapUsed || '0', 10),
+          total: 0,
+        },
+      },
+      queues: w.queues.map((q) => ({
+        name: q,
+        size: { waiting: 0, active: 0, failed: 0, delayed: 0 },
+      })),
+      meta: {},
+    }))
+
+    return c.json({ workers: [...pulseWorkers, ...formattedLegacy] })
   } catch (_err) {
+    console.error(_err)
     return c.json({ error: 'Failed to fetch workers' }, 500)
   }
 })

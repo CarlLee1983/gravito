@@ -344,7 +344,10 @@ export class QueueService {
   /**
    * Records a snapshot of current global statistics for sparklines.
    */
-  async recordStatusMetrics(nodes: Record<string, any> = {}): Promise<void> {
+  async recordStatusMetrics(
+    nodes: Record<string, any> = {},
+    injectedWorkers?: any[]
+  ): Promise<void> {
     const stats = await this.listQueues()
     const totals = stats.reduce(
       (acc, q) => {
@@ -365,7 +368,7 @@ export class QueueService {
     pipe.set(`flux_console:metrics:failed:${now}`, totals.failed, 'EX', 3600)
 
     // Also record worker count
-    const workers = await this.listWorkers()
+    const workers = injectedWorkers || (await this.listWorkers())
     pipe.set(`flux_console:metrics:workers:${now}`, workers.length, 'EX', 3600)
 
     await pipe.exec()
@@ -382,7 +385,7 @@ export class QueueService {
       .check({
         queues: stats,
         nodes: nodes as any,
-        workers,
+        workers: workers as any,
         totals,
       })
       .catch((err) => console.error('[AlertService] Rule Evaluation Error:', err))
