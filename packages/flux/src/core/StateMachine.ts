@@ -13,9 +13,11 @@ import type { WorkflowStatus } from '../types'
  */
 const TRANSITIONS: Record<WorkflowStatus, WorkflowStatus[]> = {
   pending: ['running', 'failed'],
-  running: ['paused', 'completed', 'failed', 'suspended'],
+  running: ['paused', 'completed', 'failed', 'suspended', 'rolling_back'],
   paused: ['running', 'failed'],
   suspended: ['running', 'failed'],
+  rolling_back: ['rolled_back', 'failed'],
+  rolled_back: ['pending'], // allow retry from scratch
   completed: [], // terminal state
   failed: ['pending'], // allow retry
 }
@@ -74,7 +76,9 @@ export class StateMachine extends EventTarget {
    * Check if workflow is in terminal state
    */
   isTerminal(): boolean {
-    return this._status === 'completed' || this._status === 'failed'
+    return (
+      this._status === 'completed' || this._status === 'failed' || this._status === 'rolled_back'
+    )
   }
 
   /**

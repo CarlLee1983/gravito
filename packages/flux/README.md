@@ -195,6 +195,38 @@ const result = await engine.execute(workflow, input)
 })
 ```
 
+### Suspension & Signals
+
+Workflows can be suspended to wait for external events (e.g., manual approval, webhooks).
+
+```typescript
+.step('wait-approval', async () => {
+    // Suspend workflow, state becomes 'suspended', resources released
+    return Flux.wait('approval-signal')
+})
+
+// Resume workflow
+await engine.signal(workflow, id, 'approval-signal', { approved: true })
+```
+
+### Saga Pattern (Compensation)
+
+Supports eventual consistency for distributed transactions. If a workflow fails, the engine automatically executes defined `compensate` handlers in reverse order.
+
+```typescript
+.step('reserve-flight', 
+  async (ctx) => {
+    ctx.data.flightId = await api.bookFlight()
+  },
+  { 
+    // If subsequent steps fail, this rollback logic runs automatically
+    compensate: async (ctx) => {
+      await api.cancelFlight(ctx.data.flightId)
+    }
+  }
+)
+```
+
 ### Commit Steps
 
 Commit steps are marked to always execute, even on workflow replay:

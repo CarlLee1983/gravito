@@ -7,6 +7,7 @@
  */
 
 import type {
+  FluxWaitResult,
   StepDefinition,
   StepDescriptor,
   WorkflowContext,
@@ -17,10 +18,11 @@ import type {
 /**
  * Step options
  */
-interface StepOptions {
+interface StepOptions<TInput = any, TData = any> {
   retries?: number
   timeout?: number
-  when?: (ctx: WorkflowContext) => boolean
+  when?: (ctx: WorkflowContext<TInput, TData>) => boolean
+  compensate?: (ctx: WorkflowContext<TInput, TData>) => Promise<void> | void
 }
 
 /**
@@ -37,6 +39,10 @@ interface StepOptions {
  *   })
  *   .step('process', async (ctx) => {
  *     await processOrder(ctx.data.order)
+ *   }, {
+ *     compensate: async (ctx) => {
+ *       await cancelOrder(ctx.data.order.id)
+ *     }
  *   })
  *   .commit('notify', async (ctx) => {
  *     await sendEmail(ctx.data.order.email)
@@ -83,15 +89,22 @@ export class WorkflowBuilder<TInput = unknown, TData = Record<string, unknown>> 
    */
   step(
     name: string,
-    handler: (ctx: WorkflowContext<TInput, TData>) => Promise<void> | void,
-    options?: StepOptions
+    handler: (
+      ctx: WorkflowContext<TInput, TData>
+    ) => Promise<void | FluxWaitResult> | void | FluxWaitResult,
+    options?: StepOptions<TInput, TData>
   ): this {
     this._steps.push({
       name,
-      handler: handler as (ctx: WorkflowContext) => Promise<void> | void,
+      handler: handler as (
+        ctx: WorkflowContext
+      ) => Promise<void | FluxWaitResult> | void | FluxWaitResult,
       retries: options?.retries,
       timeout: options?.timeout,
       when: options?.when as ((ctx: WorkflowContext) => boolean) | undefined,
+      compensate: options?.compensate as
+        | ((ctx: WorkflowContext) => Promise<void> | void)
+        | undefined,
       commit: false,
     })
     return this
@@ -106,7 +119,7 @@ export class WorkflowBuilder<TInput = unknown, TData = Record<string, unknown>> 
   commit(
     name: string,
     handler: (ctx: WorkflowContext<TInput, TData>) => Promise<void> | void,
-    options?: StepOptions
+    options?: Omit<StepOptions<TInput, TData>, 'compensate'>
   ): this {
     this._steps.push({
       name,
