@@ -1,4 +1,4 @@
-import type { GravitoMiddleware, PlanetCore } from '@gravito/core'
+import type { GravitoContext, GravitoMiddleware, GravitoNext, PlanetCore } from '@gravito/core'
 import { ApiController } from '../controllers/ApiController'
 import { HomeController } from '../controllers/HomeController'
 
@@ -11,11 +11,51 @@ import { HomeController } from '../controllers/HomeController'
 export function registerRoutes(core: PlanetCore): void {
   const router = core.router
 
+  // Middleware to set locale
+  const setLocale = (locale: string) => async (c: GravitoContext, next: GravitoNext) => {
+    c.set('locale', locale)
+    const inertia = c.get('inertia')
+    if (inertia) {
+      ;(inertia as any).share({
+        locale,
+      })
+    }
+    return (await next()) as any
+  }
+
+  // Helper to register routes for a locale
+  const registerRoutesForLocale = (group: any, locale: string) => {
+    group.get('', [HomeController, 'index'])
+    group.get('/', [HomeController, 'index'])
+    group.get('/about', [HomeController, 'about'])
+  }
+
   // ─────────────────────────────────────────────
-  // Pages
+  // Default Routes (English)
   // ─────────────────────────────────────────────
-  router.get('/', [HomeController, 'index'])
-  router.get('/about', [HomeController, 'about'])
+  router.middleware(setLocale('en')).group((root: any) => {
+    registerRoutesForLocale(root, 'en')
+  })
+
+  // ─────────────────────────────────────────────
+  // Explicit English Routes (/en)
+  // ─────────────────────────────────────────────
+  router
+    .prefix('/en')
+    .middleware(setLocale('en'))
+    .group((en: any) => {
+      registerRoutesForLocale(en, 'en')
+    })
+
+  // ─────────────────────────────────────────────
+  // Traditional Chinese Routes (/zh-TW)
+  // ─────────────────────────────────────────────
+  router
+    .prefix('/zh-TW')
+    .middleware(setLocale('zh-TW'))
+    .group((zhTW: any) => {
+      registerRoutesForLocale(zhTW, 'zh-TW')
+    })
 
   // ─────────────────────────────────────────────
   // API Routes
