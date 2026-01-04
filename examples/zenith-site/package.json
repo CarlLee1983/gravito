@@ -4,6 +4,7 @@
     "type": "module",
     "scripts": {
         "dev": "bun run dev:vite & bun run dev:server",
+        "dev:clean": "bun run scripts/clean-ports.ts && bun run dev",
         "dev:server": "NODE_ENV=development PORT=${PORT:-3001} bun run --watch src/index.ts",
         "dev:vite": "vite",
         "build:client": "vite build",

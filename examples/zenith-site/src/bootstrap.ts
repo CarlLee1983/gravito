@@ -1,7 +1,9 @@
 import {
   bodySizeLimit,
   defineConfig,
+  type GravitoContext,
   type GravitoMiddleware,
+  type GravitoNext,
   PlanetCore,
   securityHeaders,
 } from '@gravito/core'
@@ -11,6 +13,7 @@ import { OrbitPrism } from '@gravito/prism'
 import { OrbitCache } from '@gravito/stasis'
 import { registerHooks } from './hooks'
 import { registerRoutes } from './routes'
+import { setupViteProxy } from './utils/vite'
 
 export interface AppConfig {
   port?: number
@@ -78,12 +81,22 @@ export async function bootstrap(options: AppConfig = {}) {
   core.adapter.use('/static/*', staticAssets)
   core.adapter.route('get', '/favicon.ico', favicon)
 
-  // 4. Hooks
+  // 4. Vite Proxy (開發模式) - 必須在路由之前
+  if (process.env.NODE_ENV !== 'production') {
+    setupViteProxy(core)
+    // 注入 isDev 變數供模板使用
+    core.adapter.use('*', async (c: GravitoContext, next: GravitoNext) => {
+      c.set('isDev', true)
+      await next()
+    })
+  }
+
+  // 5. Hooks
   registerHooks(core)
 
-  // 5. Routes
+  // 6. Routes
   registerRoutes(core)
 
-  // 6. Ready (but not liftoff - for static site generation)
+  // 7. Ready (but not liftoff - for static site generation)
   return core
 }
