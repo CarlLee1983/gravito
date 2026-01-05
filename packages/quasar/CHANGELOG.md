@@ -2,7 +2,7 @@
 
 All notable changes to `@gravito/quasar` will be documented in this file.
 
-## [Unreleased]
+## [1.1.0] - 2026-01-05
 
 ### Added - Queue Probes & Bridges (2026-01-05)
 
