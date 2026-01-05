@@ -1,14 +1,6 @@
 import { Head } from '@inertiajs/react'
 import { motion } from 'framer-motion'
-import {
-  Code,
-  Compass,
-  Cpu,
-  Layers,
-  Rocket,
-  ShieldCheck,
-  Zap,
-} from 'lucide-react'
+import { Code, Compass, Cpu, Layers, Rocket, ShieldCheck, Zap } from 'lucide-react'
 import React from 'react'
 import { Footer } from '../components/Footer'
 import { Navbar } from '../components/Navbar'
@@ -32,7 +24,10 @@ export default function About() {
 
           {/* Mesh Grid & Static Noise */}
           <div className="absolute inset-0 bg-grid-zenith opacity-20" />
-          <div className="absolute inset-0 opacity-[0.02] pointer-events-none" style={{ backgroundImage: 'url("https://grainy-gradients.vercel.app/noise.svg")' }} />
+          <div
+            className="absolute inset-0 opacity-[0.02] pointer-events-none"
+            style={{ backgroundImage: 'url("https://grainy-gradients.vercel.app/noise.svg")' }}
+          />
 
           {/* HUD Scanline */}
           <div className="absolute inset-x-0 h-[500px] bg-gradient-to-b from-transparent via-zenith-accent/5 to-transparent opacity-20 animate-scanline pointer-events-none" />
@@ -42,7 +37,7 @@ export default function About() {
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1.2, ease: "easeOut" }}
+            transition={{ duration: 1.2, ease: 'easeOut' }}
           >
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-zenith-accent/10 border border-zenith-accent/20 text-zenith-accent text-xs font-mono mb-8 tracking-[0.2em] uppercase">
               <span className="relative flex h-2 w-2">
@@ -117,7 +112,7 @@ export default function About() {
               items={[
                 { label: locale === 'zh-TW' ? '運行時' : 'Runtime', value: 'Bun / Node.js' },
                 { label: 'Framework', value: '@gravito/photon' },
-                { label: 'Data Engine', value: '@gravito/stream' }
+                { label: 'Data Engine', value: '@gravito/stream' },
               ]}
             />
             <SpecCard
@@ -125,7 +120,7 @@ export default function About() {
               items={[
                 { label: 'Engine', value: 'React / Vite' },
                 { label: 'Protocol', value: 'Inertia.js' },
-                { label: 'Styling', value: 'Tailwind CSS' }
+                { label: 'Styling', value: 'Tailwind CSS' },
               ]}
             />
             <SpecCard
@@ -133,7 +128,7 @@ export default function About() {
               items={[
                 { label: 'Native', value: 'Docker / K8s' },
                 { label: 'Strategy', value: 'Zero-Config' },
-                { label: 'CI/CD', value: 'GitHub Actions' }
+                { label: 'CI/CD', value: 'GitHub Actions' },
               ]}
             />
           </div>
@@ -145,10 +140,24 @@ export default function About() {
   )
 }
 
-function AboutSection({ tag, title, content, icon, reverse }: { tag: string, title: string, content: string, icon: React.ReactNode, reverse?: boolean }) {
+function AboutSection({
+  tag,
+  title,
+  content,
+  icon,
+  reverse,
+}: {
+  tag: string
+  title: string
+  content: string
+  icon: React.ReactNode
+  reverse?: boolean
+}) {
   return (
     <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className={`flex flex-col ${reverse ? 'md:flex-row-reverse' : 'md:flex-row'} items-center gap-20`}>
+      <div
+        className={`flex flex-col ${reverse ? 'md:flex-row-reverse' : 'md:flex-row'} items-center gap-20`}
+      >
         <motion.div
           initial={{ opacity: 0, x: reverse ? 40 : -40 }}
           whileInView={{ opacity: 1, x: 0 }}
@@ -160,12 +169,12 @@ function AboutSection({ tag, title, content, icon, reverse }: { tag: string, tit
             <div className="w-12 h-12 rounded-2xl bg-zenith-accent/10 flex items-center justify-center text-zenith-accent zenith-glass">
               {icon}
             </div>
-            <span className="text-xs font-mono text-white/30 tracking-[0.3em] uppercase">{tag}</span>
+            <span className="text-xs font-mono text-white/30 tracking-[0.3em] uppercase">
+              {tag}
+            </span>
           </div>
           <h2 className="text-4xl lg:text-5xl font-bold leading-tight">{title}</h2>
-          <p className="text-gray-300 text-lg leading-relaxed font-light">
-            {content}
-          </p>
+          <p className="text-gray-300 text-lg leading-relaxed font-light">{content}</p>
         </motion.div>
         <div className="flex-1 w-full flex justify-center">
           <motion.div
@@ -180,7 +189,9 @@ function AboutSection({ tag, title, content, icon, reverse }: { tag: string, tit
             <div className="absolute inset-10 border border-zenith-accent/20 rounded-full animate-[spin_15s_linear_infinite_reverse] opacity-10" />
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="w-48 h-48 rounded-3xl zenith-glass-strong flex items-center justify-center transform rotate-12 hover:rotate-0 transition-transform duration-700">
-                {React.cloneElement(icon as React.ReactElement<any>, { className: "w-24 h-24 text-zenith-accent opacity-50" })}
+                {React.cloneElement(icon as React.ReactElement<any>, {
+                  className: 'w-24 h-24 text-zenith-accent opacity-50',
+                })}
               </div>
             </div>
           </motion.div>
@@ -190,7 +201,7 @@ function AboutSection({ tag, title, content, icon, reverse }: { tag: string, tit
   )
 }
 
-function SpecCard({ title, items }: { title: string, items: { label: string, value: string }[] }) {
+function SpecCard({ title, items }: { title: string; items: { label: string; value: string }[] }) {
   return (
     <motion.div
       whileHover={{ y: -5 }}
@@ -198,9 +209,14 @@ function SpecCard({ title, items }: { title: string, items: { label: string, val
     >
       <h3 className="text-xl font-bold mb-6 text-white/90">{title}</h3>
       <div className="space-y-4">
-        {items.map(item => (
-          <div key={item.label} className="flex justify-between items-center pb-2 border-b border-white/5">
-            <span className="text-xs text-gray-500 uppercase font-mono tracking-widest">{item.label}</span>
+        {items.map((item) => (
+          <div
+            key={item.label}
+            className="flex justify-between items-center pb-2 border-b border-white/5"
+          >
+            <span className="text-xs text-gray-500 uppercase font-mono tracking-widest">
+              {item.label}
+            </span>
             <span className="text-sm text-gray-200 font-bold">{item.value}</span>
           </div>
         ))}

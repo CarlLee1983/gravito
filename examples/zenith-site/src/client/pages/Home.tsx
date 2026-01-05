@@ -1,5 +1,4 @@
 import { usePage } from '@inertiajs/react'
-import { StaticLink } from '../components/StaticLink'
 import { motion } from 'framer-motion'
 import {
   Activity,
@@ -18,9 +17,10 @@ import {
   Zap,
 } from 'lucide-react'
 import React from 'react'
-import { useTrans } from '../hooks/useTrans'
-import { Navbar } from '../components/Navbar'
 import { Footer } from '../components/Footer'
+import { Navbar } from '../components/Navbar'
+import { StaticLink } from '../components/StaticLink'
+import { useTrans } from '../hooks/useTrans'
 
 interface HomeProps {
   [key: string]: unknown
@@ -138,7 +138,8 @@ export default function Home() {
                 <motion.div
                   className="absolute inset-[1px] rounded-2xl"
                   style={{
-                    background: 'linear-gradient(135deg, transparent 40%, rgba(0,240,255,0.1) 50%, transparent 60%)',
+                    background:
+                      'linear-gradient(135deg, transparent 40%, rgba(0,240,255,0.1) 50%, transparent 60%)',
                     backgroundSize: '300% 300%',
                   }}
                   animate={{
@@ -175,10 +176,11 @@ export default function Home() {
                         return (
                           <div
                             key={i}
-                            className={`w-10 h-10 rounded-lg flex items-center justify-center ${item.active
-                              ? 'bg-zenith-500/30 border border-zenith-500/50 text-zenith-accent'
-                              : 'bg-white/5 hover:bg-white/10 text-gray-400'
-                              } transition-all`}
+                            className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                              item.active
+                                ? 'bg-zenith-500/30 border border-zenith-500/50 text-zenith-accent'
+                                : 'bg-white/5 hover:bg-white/10 text-gray-400'
+                            } transition-all`}
                           >
                             <IconComponent size={18} />
                           </div>
@@ -190,17 +192,23 @@ export default function Home() {
                   <div className="flex-1 space-y-4">
                     <div className="grid grid-cols-3 gap-3">
                       <div className="bg-white/5 p-3 rounded-lg border border-white/10">
-                        <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Throughput</div>
+                        <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">
+                          Throughput
+                        </div>
                         <div className="text-lg font-mono font-bold text-zenith-accent">12.4K</div>
                         <div className="text-[9px] text-gray-500">ops/sec</div>
                       </div>
                       <div className="bg-white/5 p-3 rounded-lg border border-white/10">
-                        <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Workers</div>
+                        <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">
+                          Workers
+                        </div>
                         <div className="text-lg font-mono font-bold text-green-400">48</div>
                         <div className="text-[9px] text-gray-500">online</div>
                       </div>
                       <div className="bg-white/5 p-3 rounded-lg border border-white/10">
-                        <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Queues</div>
+                        <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">
+                          Queues
+                        </div>
                         <div className="text-lg font-mono font-bold text-blue-400">24</div>
                         <div className="text-[9px] text-gray-500">active</div>
                       </div>
@@ -208,10 +216,16 @@ export default function Home() {
 
                     <div className="bg-white/5 p-3 rounded-lg border border-white/10">
                       <div className="flex items-center justify-between mb-2">
-                        <div className="text-[10px] text-gray-400 uppercase tracking-wider">Pipeline Load</div>
+                        <div className="text-[10px] text-gray-400 uppercase tracking-wider">
+                          Pipeline Load
+                        </div>
                         <div className="flex gap-1">
                           {[0.3, 0.6, 0.9, 1].map((o, i) => (
-                            <div key={i} className="w-1.5 h-1.5 rounded-sm bg-zenith-accent" style={{ opacity: o }} />
+                            <div
+                              key={i}
+                              className="w-1.5 h-1.5 rounded-sm bg-zenith-accent"
+                              style={{ opacity: o }}
+                            />
                           ))}
                         </div>
                       </div>
@@ -222,7 +236,8 @@ export default function Home() {
                             className="aspect-square rounded-sm bg-zenith-accent/20 border border-zenith-accent/30"
                             style={{
                               backgroundColor: `rgba(59, 130, 246, ${0.1 + load * 0.9})`,
-                              boxShadow: load > 0.7 ? `0 0 8px rgba(59, 130, 246, ${load})` : 'none',
+                              boxShadow:
+                                load > 0.7 ? `0 0 8px rgba(59, 130, 246, ${load})` : 'none',
                             }}
                           />
                         ))}
@@ -231,7 +246,9 @@ export default function Home() {
 
                     <div className="bg-white/5 p-3 rounded-lg border border-white/10">
                       <div className="flex items-center justify-between mb-2">
-                        <div className="text-[10px] text-gray-400 uppercase tracking-wider">Active Queues</div>
+                        <div className="text-[10px] text-gray-400 uppercase tracking-wider">
+                          Active Queues
+                        </div>
                         <div className="text-[9px] text-zenith-500">View All →</div>
                       </div>
                       <div className="space-y-1.5">
@@ -239,11 +256,17 @@ export default function Home() {
                           { name: 'emails.transactional', jobs: 1247, status: 'active' },
                           { name: 'images.process', jobs: 892, status: 'active' },
                         ].map((q) => (
-                          <div key={q.name} className="flex items-center justify-between p-1.5 bg-black/30 rounded text-xs">
+                          <div
+                            key={q.name}
+                            className="flex items-center justify-between p-1.5 bg-black/30 rounded text-xs"
+                          >
                             <div className="flex items-center gap-2">
                               <div
-                                className={`w-1.5 h-1.5 rounded-full ${q.status === 'active' ? 'bg-green-400 animate-pulse' : 'bg-gray-500'
-                                  }`}
+                                className={`w-1.5 h-1.5 rounded-full ${
+                                  q.status === 'active'
+                                    ? 'bg-green-400 animate-pulse'
+                                    : 'bg-gray-500'
+                                }`}
                               />
                               <span className="font-mono text-gray-300 text-[10px]">{q.name}</span>
                             </div>
@@ -366,7 +389,10 @@ export default function Home() {
                         </span>
                       </div>
                     </div>
-                    <button className="px-4 py-2 bg-zenith-pulse/10 hover:bg-zenith-pulse/20 rounded-lg text-xs font-bold text-zenith-pulse border border-zenith-pulse/20 transition-all">
+                    <button
+                      type="button"
+                      className="px-4 py-2 bg-zenith-pulse/10 hover:bg-zenith-pulse/20 rounded-lg text-xs font-bold text-zenith-pulse border border-zenith-pulse/20 transition-all"
+                    >
                       {locale === 'zh-TW' ? '查看' : 'Inspect'}
                     </button>
                   </div>
@@ -451,7 +477,9 @@ export default function Home() {
             >
               <div className="flex items-center gap-3 mb-3">
                 <Clock className="w-6 h-6 text-zenith-accent" />
-                <h4 className="font-bold">{locale === 'zh-TW' ? '排程管理' : 'Schedule Management'}</h4>
+                <h4 className="font-bold">
+                  {locale === 'zh-TW' ? '排程管理' : 'Schedule Management'}
+                </h4>
               </div>
               <p className="text-gray-400 text-sm mb-4">
                 {locale === 'zh-TW'
@@ -505,7 +533,9 @@ export default function Home() {
             >
               <div className="flex items-center gap-3 mb-3">
                 <AlertCircle className="w-6 h-6 text-yellow-500" />
-                <h4 className="font-bold">{locale === 'zh-TW' ? '自動化警報' : 'Automated Alerting'}</h4>
+                <h4 className="font-bold">
+                  {locale === 'zh-TW' ? '自動化警報' : 'Automated Alerting'}
+                </h4>
               </div>
               <p className="text-gray-400 text-sm mb-4">
                 {locale === 'zh-TW'
@@ -534,8 +564,12 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="flex flex-col lg:flex-row items-center gap-16">
             <div className="flex-1">
-              <h2 className="text-4xl font-bold mb-6 tracking-tight">{trans('integration.title')}</h2>
-              <p className="text-gray-300 mb-8 text-lg leading-relaxed">{trans('integration.description')}</p>
+              <h2 className="text-4xl font-bold mb-6 tracking-tight">
+                {trans('integration.title')}
+              </h2>
+              <p className="text-gray-300 mb-8 text-lg leading-relaxed">
+                {trans('integration.description')}
+              </p>
 
               <ul className="grid sm:grid-cols-2 gap-4">
                 <ListItem text={trans('integration.features.autoDiscovery')} />
@@ -558,11 +592,13 @@ export default function Home() {
                 <pre className="text-gray-300">
                   <code>
                     <div className="line">
-                      <span className="text-purple-400">import</span> {'{'} Zenith {'}'} <span className="text-purple-400">from</span>{' '}
+                      <span className="text-purple-400">import</span> {'{'} Zenith {'}'}{' '}
+                      <span className="text-purple-400">from</span>{' '}
                       <span className="text-green-400">'@gravito/zenith'</span>
                     </div>
                     <div className="line">
-                      <span className="text-purple-400">import</span> {'{'} App {'}'} <span className="text-purple-400">from</span>{' '}
+                      <span className="text-purple-400">import</span> {'{'} App {'}'}{' '}
+                      <span className="text-purple-400">from</span>{' '}
                       <span className="text-green-400">'./app'</span>
                     </div>
                     <div className="line h-4"></div>
@@ -570,7 +606,8 @@ export default function Home() {
                       <span className="text-gray-500">{'// Initialize Zenith with your app'}</span>
                     </div>
                     <div className="line">
-                      <span className="text-blue-400">const</span> zenith = <span className="text-purple-400">new</span> Zenith(App)
+                      <span className="text-blue-400">const</span> zenith ={' '}
+                      <span className="text-purple-400">new</span> Zenith(App)
                     </div>
                     <div className="line h-4"></div>
                     <div className="line">
@@ -599,7 +636,15 @@ export default function Home() {
   )
 }
 
-function FeatureCard({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
+function FeatureCard({
+  icon,
+  title,
+  description,
+}: {
+  icon: React.ReactNode
+  title: string
+  description: string
+}) {
   return (
     <motion.div
       whileHover={{ y: -5 }}
@@ -612,7 +657,9 @@ function FeatureCard({ icon, title, description }: { icon: React.ReactNode; titl
           className: 'w-7 h-7',
         })}
       </div>
-      <h3 className="text-xl font-bold mb-3 text-white/90 group-hover:text-white transition-colors">{title}</h3>
+      <h3 className="text-xl font-bold mb-3 text-white/90 group-hover:text-white transition-colors">
+        {title}
+      </h3>
       <p className="text-gray-300 leading-relaxed text-sm">{description}</p>
     </motion.div>
   )
