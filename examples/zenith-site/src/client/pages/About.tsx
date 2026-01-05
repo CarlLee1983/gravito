@@ -57,7 +57,7 @@ export default function About() {
                 {trans('about.titleHighlight')}
               </span>
             </h1>
-            <p className="text-xl text-gray-400 max-w-3xl mx-auto leading-relaxed font-light">
+            <p className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed font-light">
               {trans('about.whatIsDescription1')}
             </p>
           </motion.div>
@@ -163,7 +163,7 @@ function AboutSection({ tag, title, content, icon, reverse }: { tag: string, tit
             <span className="text-xs font-mono text-white/30 tracking-[0.3em] uppercase">{tag}</span>
           </div>
           <h2 className="text-4xl lg:text-5xl font-bold leading-tight">{title}</h2>
-          <p className="text-gray-400 text-lg leading-relaxed font-light">
+          <p className="text-gray-300 text-lg leading-relaxed font-light">
             {content}
           </p>
         </motion.div>

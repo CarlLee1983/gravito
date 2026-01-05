@@ -48,7 +48,7 @@ export default function Integrations() {
                                 {trans('integrations.titleHighlight')}
                             </span>
                         </h1>
-                        <p className="text-2xl text-gray-400 max-w-3xl mx-auto leading-relaxed font-light">
+                        <p className="text-2xl text-gray-300 max-w-3xl mx-auto leading-relaxed font-light">
                             {trans('integrations.subtitle')}
                         </p>
                     </motion.div>
@@ -69,7 +69,7 @@ export default function Integrations() {
                             <div>
                                 <div className="text-xs font-mono text-zenith-accent/60 tracking-[0.3em] uppercase mb-4">Phase_01: In-App_Insight</div>
                                 <h2 className="text-5xl font-bold tracking-tight mb-6 leading-tight">{trans('integrations.laravel.title')}</h2>
-                                <p className="text-gray-400 text-xl font-light leading-relaxed">
+                                <p className="text-gray-300 text-xl font-light leading-relaxed">
                                     {trans('integrations.laravel.description')}
                                 </p>
                             </div>
@@ -133,7 +133,7 @@ export default function Integrations() {
                             <div>
                                 <div className="text-xs font-mono text-zenith-stellar/60 tracking-[0.3em] uppercase mb-4">Phase_02: Orbital_Control</div>
                                 <h2 className="text-5xl font-bold tracking-tight mb-6 leading-tight">{trans('integrations.quasar.title')}</h2>
-                                <p className="text-gray-400 text-xl font-light leading-relaxed">
+                                <p className="text-gray-300 text-xl font-light leading-relaxed">
                                     {trans('integrations.quasar.description')}
                                 </p>
                             </div>

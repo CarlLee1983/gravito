@@ -35,6 +35,26 @@ export default defineConfig({
         target: 'http://localhost:3001',
         changeOrigin: true,
       },
+      // Proxy all page routes to backend
+      '/zh-TW': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/en': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      // Root path
+      '/': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+        bypass(req) {
+          // Don't proxy Vite's own requests
+          if (req.url?.startsWith('/@') || req.url?.includes('.')) {
+            return req.url
+          }
+        },
+      },
     },
   },
 })

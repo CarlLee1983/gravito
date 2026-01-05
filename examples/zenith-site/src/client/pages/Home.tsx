@@ -100,7 +100,7 @@ export default function Home() {
                     {trans('hero.titleHighlight')}
                   </span>
                 </h1>
-                <p className="text-lg text-gray-400 mb-8 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
+                <p className="text-lg text-gray-300 mb-8 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
                   {trans('hero.description')}
                 </p>
 
@@ -270,7 +270,7 @@ export default function Home() {
                 {trans('features.title')}
               </span>
             </h2>
-            <p className="text-gray-400 text-lg max-w-2xl mx-auto">{trans('features.subtitle')}</p>
+            <p className="text-gray-300 text-lg max-w-2xl mx-auto">{trans('features.subtitle')}</p>
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             <FeatureCard
@@ -314,7 +314,7 @@ export default function Home() {
             <h2 className="text-3xl lg:text-4xl font-bold mb-4">
               {locale === 'zh-TW' ? '實際介面展示' : 'See It In Action'}
             </h2>
-            <p className="text-gray-400 text-lg max-w-2xl mx-auto">
+            <p className="text-gray-300 text-lg max-w-2xl mx-auto">
               {locale === 'zh-TW'
                 ? '探索 Zenith 的實際控制面板，體驗零配置的隊列管理'
                 : "Explore Zenith's actual control plane and experience zero-config queue management"}
@@ -338,7 +338,7 @@ export default function Home() {
                   {locale === 'zh-TW' ? '隊列管理' : 'Queue Management'}
                 </h3>
               </div>
-              <p className="text-gray-400 text-base mb-8 relative z-10 leading-relaxed">
+              <p className="text-gray-300 text-base mb-8 relative z-10 leading-relaxed">
                 {locale === 'zh-TW'
                   ? '即時查看所有隊列狀態，暫停/恢復隊列，檢查等待、延遲和失敗的任務'
                   : 'View all queue statuses in real-time, pause/resume queues, and inspect waiting, delayed, and failed jobs'}
@@ -390,7 +390,7 @@ export default function Home() {
                   {locale === 'zh-TW' ? 'Worker 監控' : 'Worker Monitoring'}
                 </h3>
               </div>
-              <p className="text-gray-400 text-base mb-8 relative z-10 leading-relaxed">
+              <p className="text-gray-300 text-base mb-8 relative z-10 leading-relaxed">
                 {locale === 'zh-TW'
                   ? '即時監控 Worker 節點的 CPU、RAM 使用率和健康狀態'
                   : 'Monitor worker nodes in real-time with live CPU, RAM metrics, and health status'}
@@ -535,7 +535,7 @@ export default function Home() {
           <div className="flex flex-col lg:flex-row items-center gap-16">
             <div className="flex-1">
               <h2 className="text-4xl font-bold mb-6 tracking-tight">{trans('integration.title')}</h2>
-              <p className="text-gray-400 mb-8 text-lg leading-relaxed">{trans('integration.description')}</p>
+              <p className="text-gray-300 mb-8 text-lg leading-relaxed">{trans('integration.description')}</p>
 
               <ul className="grid sm:grid-cols-2 gap-4">
                 <ListItem text={trans('integration.features.autoDiscovery')} />
@@ -613,7 +613,7 @@ function FeatureCard({ icon, title, description }: { icon: React.ReactNode; titl
         })}
       </div>
       <h3 className="text-xl font-bold mb-3 text-white/90 group-hover:text-white transition-colors">{title}</h3>
-      <p className="text-gray-400 leading-relaxed text-sm">{description}</p>
+      <p className="text-gray-300 leading-relaxed text-sm">{description}</p>
     </motion.div>
   )
 }

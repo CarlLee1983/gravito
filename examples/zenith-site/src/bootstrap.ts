@@ -11,8 +11,8 @@ import { OrbitIon } from '@gravito/ion'
 import { serveStatic } from '@gravito/photon/bun'
 import { OrbitPrism } from '@gravito/prism'
 import { OrbitCache } from '@gravito/stasis'
-import { registerHooks } from './hooks'
-import { registerRoutes } from './routes'
+import { registerHooks } from './hooks/index'
+import { registerRoutes } from './routes/index'
 import { setupViteProxy } from './utils/vite'
 
 export interface AppConfig {

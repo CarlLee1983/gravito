@@ -48,7 +48,7 @@ export default function Features() {
                                 {trans('features_deep.titleHighlight')}
                             </span>
                         </h1>
-                        <p className="text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed font-light">
+                        <p className="text-xl text-gray-300 max-w-2xl mx-auto leading-relaxed font-light">
                             {trans('features_deep.subtitle')}
                         </p>
                     </motion.div>
@@ -61,7 +61,7 @@ export default function Features() {
                     <div className="flex flex-col md:flex-row items-center gap-12 mb-20">
                         <div className="flex-1">
                             <h2 className="text-4xl font-bold mb-6 tracking-tight">{trans('features_deep.persistence.title')}</h2>
-                            <p className="text-gray-400 text-lg font-light leading-relaxed">
+                            <p className="text-gray-300 text-lg font-light leading-relaxed">
                                 {trans('features_deep.persistence.description')}
                             </p>
                         </div>
@@ -85,7 +85,7 @@ export default function Features() {
                                 <Layers size={32} />
                             </div>
                             <h3 className="text-2xl font-bold mb-4">{trans('features_deep.persistence.redis.title')}</h3>
-                            <p className="text-gray-400 leading-relaxed font-light text-lg">
+                            <p className="text-gray-300 leading-relaxed font-light text-lg">
                                 {trans('features_deep.persistence.redis.content')}
                             </p>
                             <div className="mt-10 flex items-center gap-6">
@@ -110,7 +110,7 @@ export default function Features() {
                                 <Database size={32} />
                             </div>
                             <h3 className="text-2xl font-bold mb-4">{trans('features_deep.persistence.sql.title')}</h3>
-                            <p className="text-gray-400 leading-relaxed font-light text-lg">
+                            <p className="text-gray-300 leading-relaxed font-light text-lg">
                                 {trans('features_deep.persistence.sql.content')}
                             </p>
                             <div className="mt-10 flex items-center gap-6">
@@ -139,7 +139,7 @@ export default function Features() {
                                 <Zap size={40} className="animate-pulse" />
                             </div>
                             <h2 className="text-4xl font-bold tracking-tight">{trans('features_deep.protocol.title')}</h2>
-                            <p className="text-gray-400 text-lg font-light leading-relaxed">
+                            <p className="text-gray-300 text-lg font-light leading-relaxed">
                                 {trans('features_deep.protocol.description')}
                             </p>
 
@@ -250,7 +250,7 @@ function ProtocolFeature({ icon, title, content }: { icon: React.ReactNode, titl
                 {icon}
             </div>
             <h4 className="text-xl font-bold mb-3 tracking-tight">{title}</h4>
-            <p className="text-sm text-gray-400 leading-relaxed font-light">
+            <p className="text-sm text-gray-300 leading-relaxed font-light">
                 {content}
             </p>
         </motion.div>
