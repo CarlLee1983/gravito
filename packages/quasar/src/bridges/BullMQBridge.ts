@@ -1,4 +1,3 @@
-import type { Redis } from 'ioredis'
 import { BaseZenithBridge } from './BaseZenithBridge'
 
 /**
