@@ -1,3 +1,5 @@
+// Bridges (for advanced usage)
+export * as bridges from './bridges'
 export * from './CommandListener'
 export * from './executors'
 export * from './probes/BeeQueueProbe'

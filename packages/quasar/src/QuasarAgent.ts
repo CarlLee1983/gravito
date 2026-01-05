@@ -1,4 +1,7 @@
 import { Redis } from 'ioredis'
+import { BeeQueueBridge } from './bridges/BeeQueueBridge'
+import { BullMQBridge } from './bridges/BullMQBridge'
+import type { QueueBridge } from './bridges/types'
 import { CommandListener } from './CommandListener'
 import { BeeQueueProbe } from './probes/BeeQueueProbe'
 import { BullMQProbe } from './probes/BullMQProbe'
@@ -40,6 +43,7 @@ export class QuasarAgent {
   private interval: number
   private probe: Probe
   private queueProbes: QueueProbe[] = []
+  private bridges: QueueBridge[] = []
   private timer: Timer | null = null
   private prefix = 'gravito:quasar:node:'
 
@@ -155,6 +159,44 @@ export class QuasarAgent {
     } else if (type === 'bee-queue') {
       this.queueProbes.push(new BeeQueueProbe(this.monitorRedis, name))
     }
+  }
+
+  /**
+   * Attach a bridge to monitor job lifecycle events.
+   * This enables real-time job execution logs and error tracking.
+   *
+   * @param worker - BullMQ Worker or Bee-Queue instance
+   * @param type - Queue type ('bullmq' or 'bee-queue')
+   *
+   * @example
+   * ```typescript
+   * import { Worker } from 'bullmq'
+   *
+   * const worker = new Worker('emails', async (job) => { ... })
+   * agent.attachBridge(worker, 'bullmq')
+   * ```
+   */
+  attachBridge(worker: any, type: 'bullmq' | 'bee-queue'): void {
+    if (!this.transportRedis) {
+      console.warn('[Quasar] Cannot attach bridge: transport connection required')
+      return
+    }
+
+    const workerId = this.nodeId || `${this.service}-${process.pid}`
+
+    let bridge: QueueBridge
+    if (type === 'bullmq') {
+      bridge = new BullMQBridge(this.transportRedis, 'flux_console:', workerId)
+    } else if (type === 'bee-queue') {
+      bridge = new BeeQueueBridge(this.transportRedis, 'flux_console:', workerId)
+    } else {
+      console.warn(`[Quasar] Unknown bridge type: ${type}`)
+      return
+    }
+
+    bridge.attach(worker)
+    this.bridges.push(bridge)
+    console.log(`[Quasar] 🔗 Attached ${type} bridge to worker`)
   }
 
   /**
