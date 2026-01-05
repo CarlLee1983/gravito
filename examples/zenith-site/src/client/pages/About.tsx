@@ -20,98 +20,97 @@ export default function About() {
   return (
     <div className="min-h-screen bg-zenith-void text-white selection:bg-zenith-accent selection:text-zenith-void overflow-x-hidden font-sans">
       <Head title={`${trans('about.title')} ${trans('about.titleHighlight')} - Gravito Zenith`} />
-
       <Navbar />
 
-      {/* Hero Section - The Nebula Origin */}
-      <section className="relative pt-32 pb-20 overflow-hidden">
+      {/* Immersive Hero Section */}
+      <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
+        {/* Multi-layered Background Visuals */}
         <div className="absolute inset-0 z-0">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1200px] h-[800px] bg-zenith-stellar/10 rounded-full blur-[150px] opacity-50" />
-          <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-zenith-pulse/5 rounded-full blur-[120px]" />
-          <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+          {/* Nebula Glows */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1400px] h-[1000px] bg-zenith-500/10 rounded-full blur-[180px] opacity-60 animate-pulse" />
+          <div className="absolute top-1/4 left-1/4 w-[800px] h-[800px] bg-zenith-pulse/5 rounded-full blur-[140px]" />
+
+          {/* Mesh Grid & Static Noise */}
+          <div className="absolute inset-0 bg-grid-zenith opacity-20" />
+          <div className="absolute inset-0 opacity-[0.02] pointer-events-none" style={{ backgroundImage: 'url("https://grainy-gradients.vercel.app/noise.svg")' }} />
+
+          {/* HUD Scanline */}
+          <div className="absolute inset-x-0 h-[500px] bg-gradient-to-b from-transparent via-zenith-accent/5 to-transparent opacity-20 animate-scanline pointer-events-none" />
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
+            transition={{ duration: 1.2, ease: "easeOut" }}
           >
-            <h1 className="text-5xl lg:text-7xl font-bold tracking-tight mb-8">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-zenith-accent/10 border border-zenith-accent/20 text-zenith-accent text-xs font-mono mb-8 tracking-[0.2em] uppercase">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-zenith-accent opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-zenith-accent"></span>
+              </span>
+              MISSION_DIRECTIVE: OBSERVABILITY
+            </div>
+            <h1 className="text-6xl lg:text-8xl font-bold tracking-tighter mb-8 leading-tight">
               {trans('about.title')}{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-zenith-400 to-zenith-accent">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-zenith-400 via-zenith-accent to-zenith-stellar text-glow">
                 {trans('about.titleHighlight')}
               </span>
             </h1>
-            <p className="text-xl text-gray-400 max-w-3xl mx-auto leading-relaxed mb-12">
+            <p className="text-xl text-gray-400 max-w-3xl mx-auto leading-relaxed font-light">
               {trans('about.whatIsDescription1')}
             </p>
           </motion.div>
         </div>
-      </section>
 
-      {/* Origin Story Section */}
-      <section className="py-24 relative">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
-            <motion.div
-              initial={{ opacity: 0, x: -30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              className="space-y-6"
-            >
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zenith-stellar/10 border border-zenith-stellar/20 text-zenith-stellar text-xs font-mono">
-                <Rocket className="w-3 h-3" /> THE ORIGIN
-              </div>
-              <h2 className="text-4xl font-bold tracking-tight text-white">{trans('about.story.title')}</h2>
-              <p className="text-gray-400 text-lg leading-relaxed">
-                {trans('about.story.content')}
-              </p>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              className="relative aspect-square lg:aspect-video rounded-3xl border border-white/5 bg-white/[0.02] overflow-hidden flex items-center justify-center p-8 shadow-2xl"
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-zenith-stellar/10 to-transparent" />
-              <div className="relative z-10 grid grid-cols-2 gap-4 w-full">
-                <div className="aspect-square rounded-2xl bg-black/40 border border-white/10 p-4 flex flex-col justify-between group hover:border-zenith-stellar/40 transition-colors">
-                  <Layers className="text-zenith-stellar w-8 h-8" />
-                  <span className="text-xs font-mono text-gray-500">Cross-Language</span>
-                </div>
-                <div className="aspect-square rounded-2xl bg-black/40 border border-white/10 p-4 flex flex-col justify-between group hover:border-zenith-accent/40 transition-colors">
-                  <Cpu className="text-zenith-accent w-8 h-8" />
-                  <span className="text-xs font-mono text-gray-500">GPP Protocol</span>
-                </div>
-                <div className="aspect-square rounded-2xl bg-black/40 border border-white/10 p-4 flex flex-col justify-between group hover:border-blue-400/40 transition-colors">
-                  <ShieldCheck className="text-blue-400 w-8 h-8" />
-                  <span className="text-xs font-mono text-gray-500">Zero Leak</span>
-                </div>
-                <div className="aspect-square rounded-2xl bg-black/40 border border-white/10 p-4 flex flex-col justify-between group hover:border-green-400/40 transition-colors">
-                  <Zap className="text-green-400 w-8 h-8" />
-                  <span className="text-xs font-mono text-gray-500">Real-time</span>
-                </div>
-              </div>
-            </motion.div>
+        {/* Bottom HUD Detail */}
+        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-20 text-[10px] font-mono text-white/20 tracking-widest uppercase pointer-events-none">
+          <div className="flex flex-col gap-1">
+            <span>ALT_REF: CELESTIAL_PEAK</span>
+            <div className="w-32 h-px bg-current" />
+          </div>
+          <div className="flex flex-col gap-1 text-center">
+            <span>STABLE_RECON: 100%</span>
+            <div className="w-32 h-px bg-current" />
+          </div>
+          <div className="flex flex-col gap-1 text-right">
+            <span>OS_INT: ZENITH_CORE</span>
+            <div className="w-32 h-px bg-current" />
           </div>
         </div>
       </section>
 
-      {/* Philosophy Section */}
-      <section className="py-24 bg-white/[0.01] border-y border-white/5 relative">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-20">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zenith-accent/10 border border-zenith-accent/20 text-zenith-accent text-xs font-mono mb-6">
-              <Compass className="w-3 h-3" /> PHILOSOPHY
-            </div>
-            <h2 className="text-4xl lg:text-5xl font-bold mb-8">{trans('about.philosophy.title')}</h2>
-            <p className="text-gray-400 text-lg max-w-4xl mx-auto leading-relaxed">
-              {trans('about.philosophy.content')}
-            </p>
-          </div>
+      {/* Narrative Sections with Depth */}
+      <div className="relative z-10 space-y-32 py-32">
+        <AboutSection
+          tag="THE_STORY"
+          title={trans('about.story.title')}
+          content={trans('about.story.content')}
+          icon={<Rocket className="w-6 h-6" />}
+          reverse={false}
+        />
 
+        <AboutSection
+          tag="THE_PHILOSOPHY"
+          title={trans('about.philosophy.title')}
+          content={trans('about.philosophy.content')}
+          icon={<Compass className="w-6 h-6" />}
+          reverse={true}
+        />
+
+        <AboutSection
+          tag="THE_BLUEPRINT"
+          title={trans('about.roadmap.title')}
+          content={trans('about.roadmap.content')}
+          icon={<Code className="w-6 h-6" />}
+          reverse={false}
+        />
+      </div>
+
+      {/* Technical Specification Section */}
+      <section className="py-32 relative overflow-hidden">
+        <div className="absolute inset-0 bg-white/[0.01] border-y border-white/5" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="grid md:grid-cols-3 gap-8">
             <SpecCard
               title={trans('about.backend')}
@@ -124,48 +123,19 @@ export default function About() {
             <SpecCard
               title={trans('about.frontend')}
               items={[
-                { label: 'Standard', value: 'React 19 / Vite' },
-                { label: 'Styling', value: 'TailwindCSS' },
-                { label: 'State', value: 'TanStack Query' }
+                { label: 'Engine', value: 'React / Vite' },
+                { label: 'Protocol', value: 'Inertia.js' },
+                { label: 'Styling', value: 'Tailwind CSS' }
               ]}
             />
             <SpecCard
               title={trans('about.deployment')}
               items={[
-                { label: 'Architecture', value: 'Stateless / Redis' },
-                { label: 'Audit DB', value: 'SQLite / MySQL' },
-                { label: 'Transport', value: 'GPP Protocol' }
+                { label: 'Native', value: 'Docker / K8s' },
+                { label: 'Strategy', value: 'Zero-Config' },
+                { label: 'CI/CD', value: 'GitHub Actions' }
               ]}
             />
-          </div>
-        </div>
-      </section>
-
-      {/* Roadmap Section */}
-      <section className="py-24 relative overflow-hidden">
-        <div className="absolute bottom-0 right-0 w-[800px] h-[400px] bg-zenith-stellar/5 blur-[120px] rounded-full translate-x-1/2 translate-y-1/2" />
-
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-gradient-to-br from-white/[0.03] to-transparent rounded-3xl border border-white/10 p-12 relative overflow-hidden group">
-            <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-zenith-stellar to-zenith-accent" />
-
-            <div className="relative z-10">
-              <h2 className="text-3xl font-bold mb-6 flex items-center gap-3">
-                <Code className="text-zenith-stellar" />
-                {trans('about.roadmap.title')}
-              </h2>
-              <p className="text-gray-400 text-lg leading-relaxed mb-8">
-                {trans('about.roadmap.content')}
-              </p>
-
-              <div className="flex flex-wrap gap-4">
-                {['Hyper-Scaling', 'AI-Diagnostics', 'Cross-Cloud', 'Unified Control'].map(tag => (
-                  <span key={tag} className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-sm font-mono text-gray-300">
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            </div>
           </div>
         </div>
       </section>
@@ -175,11 +145,56 @@ export default function About() {
   )
 }
 
+function AboutSection({ tag, title, content, icon, reverse }: { tag: string, title: string, content: string, icon: React.ReactNode, reverse?: boolean }) {
+  return (
+    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className={`flex flex-col ${reverse ? 'md:flex-row-reverse' : 'md:flex-row'} items-center gap-20`}>
+        <motion.div
+          initial={{ opacity: 0, x: reverse ? 40 : -40 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8 }}
+          className="flex-1 space-y-8"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-zenith-accent/10 flex items-center justify-center text-zenith-accent zenith-glass">
+              {icon}
+            </div>
+            <span className="text-xs font-mono text-white/30 tracking-[0.3em] uppercase">{tag}</span>
+          </div>
+          <h2 className="text-4xl lg:text-5xl font-bold leading-tight">{title}</h2>
+          <p className="text-gray-400 text-lg leading-relaxed font-light">
+            {content}
+          </p>
+        </motion.div>
+        <div className="flex-1 w-full flex justify-center">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 1 }}
+            className="relative w-full aspect-square max-w-md"
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-zenith-accent/20 to-transparent rounded-full blur-[80px]" />
+            <div className="absolute inset-0 border border-white/5 rounded-full animate-[spin_20s_linear_infinite] opacity-20" />
+            <div className="absolute inset-10 border border-zenith-accent/20 rounded-full animate-[spin_15s_linear_infinite_reverse] opacity-10" />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-48 h-48 rounded-3xl zenith-glass-strong flex items-center justify-center transform rotate-12 hover:rotate-0 transition-transform duration-700">
+                {React.cloneElement(icon as React.ReactElement<any>, { className: "w-24 h-24 text-zenith-accent opacity-50" })}
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 function SpecCard({ title, items }: { title: string, items: { label: string, value: string }[] }) {
   return (
     <motion.div
       whileHover={{ y: -5 }}
-      className="p-8 rounded-3xl bg-white/[0.02] border border-white/5 hover:border-white/10 transition-all"
+      className="p-8 rounded-3xl zenith-glass hover:border-zenith-accent/30 transition-all"
     >
       <h3 className="text-xl font-bold mb-6 text-white/90">{title}</h3>
       <div className="space-y-4">
