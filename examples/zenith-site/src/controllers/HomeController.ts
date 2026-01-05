@@ -30,4 +30,28 @@ export class HomeController {
       version: this.core.config.get('APP_VERSION'),
     })
   }
+
+  features = async (ctx: GravitoContext) => {
+    const inertia = ctx.get('inertia') as InertiaService
+    const locale = (ctx.get('locale') as string) || 'en'
+    const t = getTranslation(locale)
+
+    return inertia.render('Features', {
+      t,
+      locale,
+      version: this.core.config.get('APP_VERSION'),
+    })
+  }
+
+  integrations = async (ctx: GravitoContext) => {
+    const inertia = ctx.get('inertia') as InertiaService
+    const locale = (ctx.get('locale') as string) || 'en'
+    const t = getTranslation(locale)
+
+    return inertia.render('Integrations', {
+      t,
+      locale,
+      version: this.core.config.get('APP_VERSION'),
+    })
+  }
 }

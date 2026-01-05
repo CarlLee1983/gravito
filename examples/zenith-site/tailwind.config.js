@@ -18,6 +18,9 @@ export default {
           foreground: "hsl(var(--secondary-foreground))",
         },
         zenith: {
+          void: '#05070A', // Ultra deep background
+          stellar: '#9B51E0', // Celestial purple
+          pulse: '#2D9CDB', // Tech blue
           900: '#0a0a1f', // Deep space
           800: '#14143a',
           500: '#6366f1', // Indigo

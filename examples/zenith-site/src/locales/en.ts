@@ -67,15 +67,30 @@ export default {
     titleHighlight: 'Zenith',
     whatIs: 'What is Zenith?',
     whatIsDescription1:
-      'Gravito Zenith is a zero-config control plane for Gravito Flux & Stream. It provides comprehensive monitoring, queue management, and operational insights for your asynchronous infrastructure—all without requiring a single configuration file.',
+      'Gravito Zenith is a premium control plane built for elite performance. As the command center of the Gravito ecosystem, it monitors modern asynchronous architectures with millisecond precision, capturing every heartbeat of your system.',
     whatIsDescription2:
-      "Built with dogfooding principles, Zenith uses @gravito/photon for HTTP serving and @gravito/stream for queue interaction, ensuring it's battle-tested and production-ready.",
+      'We believe in simplicity and zero-interference. Built on our own @gravito/photon and @gravito/stream, Zenith provides an intuitive yet powerful experience, ensuring your codebase stays pure while your visibility remains absolute.',
+    story: {
+      title: 'Origin: Precision Born from Pain',
+      content:
+        'When managing large-scale distributed systems, developers often face a trade-off: high latency in monitoring tools or superficial data visibility. While tools like Laravel Horizon set the standard, their limits become clear under cross-language and high-audit requirements. Zenith was born to shatter these boundaries.',
+    },
+    philosophy: {
+      title: 'Vision: Introspection without Interference',
+      content:
+        'Monitoring should never be a system bottleneck. Using the Gravito Pulse Protocol, we implement "Introspection without Interference"—keeping your performance intact while giving you God-like control over your entire lifecycle.',
+    },
+    roadmap: {
+      title: 'Blueprint: From Queues to Orchestration',
+      content:
+        'Today, Zenith is a top-tier queue controller. Tomorrow, we are bringing multi-cloud auto-scaling, AI-driven anomaly diagnostics, and a unified control plane for cross-language microservice architectures.',
+    },
     coreFeatures: 'Core Features',
-    technicalSpecs: 'Technical Specifications',
-    backend: 'Backend',
-    frontend: 'Frontend',
-    deployment: 'Deployment',
-    additionalCapabilities: 'Additional Capabilities',
+    technicalSpecs: 'Technical Architecture',
+    backend: 'Backend Engine',
+    frontend: 'Frontend Interface',
+    deployment: 'Deployment Philosophy',
+    additionalCapabilities: 'Deep Capabilities',
     dlqOperations: 'DLQ Operations:',
     dlqOperationsDesc: 'Batch retry or clear failed jobs directly from the UI',
     logArchiving: 'Operational Log Archiving:',
@@ -85,7 +100,87 @@ export default {
     batchActionsDesc: 'Flush delayed jobs, purge queues, and bulk operations',
     retentionManagement: 'Retention Management:',
     retentionManagementDesc: 'Configurable auto-cleanup for historical data',
-    backToHome: '← Back to Home',
+    backToHome: '← Back to Zenith',
+  },
+  features_deep: {
+    title: 'The Core of',
+    titleHighlight: 'Observability',
+    subtitle:
+      'Deep dive into the architecture that powers the next generation of mission-critical monitoring.',
+
+    persistence: {
+      title: 'Hybrid Persistence Strategy',
+      description:
+        'Why settle for just real-time or just historical? Zenith uses a dual-engine approach to ensure you never lose a heartbeat.',
+      redis: {
+        title: 'Transient Engine (Redis)',
+        content:
+          'Captures the raw intensity of your systems. Real-time queue depths, worker status, and millisecond throughput tracking. No disk lag, just pure memory performance.',
+      },
+      sql: {
+        title: 'Audit Engine (SQLite/MySQL)',
+        content:
+          'Zenith automatically offloads completed and failed job data to SQL persistence. This provides a permanent, searchable audit trail that survives Redis reboots and memory purges.',
+      },
+    },
+
+    protocol: {
+      title: 'Gravito Pulse Protocol (GPP)',
+      description:
+        'GPP is our lightweight telemetry protocol designed for massive scale and zero-interference.',
+      feature1: {
+        title: 'Loss-Tolerant UDP/Redis',
+        content:
+          'Optimized for high-volume transport where accuracy is key but performance is non-negotiable.',
+      },
+      feature2: {
+        title: 'Cross-Language Native',
+        content:
+          'Native support for PHP (Zenith), Go (Quasar), and Node.js. Speak the same language across your entire microservice galaxy.',
+      },
+      feature3: {
+        title: 'Zero Configuration',
+        content:
+          'Automatic service discovery via Redis pattern matching. No more manual endpoint mapping.',
+      },
+    },
+
+    performance: {
+      title: 'Elite Performance',
+      latency: 'Lower than 0.1ms overhead per job report',
+      throughput: 'Supports up to 50k OPS on standard hardware',
+      reliability: '99.99% Reliability in production loads',
+    },
+  },
+  integrations: {
+    title: 'Interstellar',
+    titleHighlight: 'Connectivity',
+    subtitle: 'Zenith bridges the gap between different stacks, languages, and infrastructures.',
+
+    laravel: {
+      title: 'Laravel Zenith',
+      description:
+        'The native PHP inspector. Just one line to ignite absolute visibility in your Laravel applications.',
+      feature1: 'Auto-discovery of jobs',
+      feature2: 'Exception capturing',
+      feature3: 'Remote worker control',
+    },
+
+    quasar: {
+      title: 'Quasar Agents',
+      description:
+        'Distributed agents for multi-node monitoring. Written in Go for raw speed and low footprint.',
+      feature1: 'Cross-cloud orchestration',
+      feature2: 'Live resource monitoring',
+      feature3: 'Low-latency heartbeats',
+    },
+
+    ecosystem: {
+      title: 'The Ecosystem',
+      redis: 'Redis 6.0+ Sharded/Cluster support',
+      sql: 'Persistent audit via MySQL/PostgreSQL/SQLite',
+      cloud: 'Native Docker & K8s deployment patterns',
+    },
   },
   footer: {
     copyright: '© 2026 Gravito. All rights reserved.',

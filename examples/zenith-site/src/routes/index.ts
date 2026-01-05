@@ -28,6 +28,8 @@ export function registerRoutes(core: PlanetCore): void {
     group.get('', [HomeController, 'index'])
     group.get('/', [HomeController, 'index'])
     group.get('/about', [HomeController, 'about'])
+    group.get('/features', [HomeController, 'features'])
+    group.get('/integrations', [HomeController, 'integrations'])
   }
 
   // ─────────────────────────────────────────────
