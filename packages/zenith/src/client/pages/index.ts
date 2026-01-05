@@ -1,6 +1,7 @@
 export { LoginPage } from './LoginPage'
 export { MetricsPage } from './MetricsPage'
 export { OverviewPage } from './OverviewPage'
+export { PulsePage } from './PulsePage'
 export { QueuesPage } from './QueuesPage'
 export { SchedulesPage } from './SchedulesPage'
 export { SettingsPage } from './SettingsPage'

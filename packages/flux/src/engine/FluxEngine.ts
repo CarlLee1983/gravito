@@ -145,6 +145,66 @@ export class FluxEngine {
   }
 
   /**
+   * Send a signal to a suspended workflow
+   */
+  async signal<TInput, TData = any>(
+    workflow: WorkflowBuilder<TInput, TData> | WorkflowDefinition<TInput, TData>,
+    workflowId: string,
+    signalName: string,
+    payload?: any
+  ): Promise<FluxResult<TData>> {
+    const definition = this.resolveDefinition(workflow)
+    const state = await this.storage.load(workflowId)
+    if (!state) {
+      throw new Error('Workflow not found')
+    }
+    if (state.status !== 'suspended') {
+      throw new Error(`Workflow is not suspended (status: ${state.status})`)
+    }
+
+    const ctx = this.contextManager.restore<TInput, TData>(state)
+    const currentStep = ctx.history[ctx.currentStep]
+
+    if (!currentStep || currentStep.status !== 'suspended') {
+      throw new Error('Workflow state invalid: no suspended step found')
+    }
+    if (currentStep.waitingFor !== signalName) {
+      throw new Error(
+        `Workflow waiting for signal "${currentStep.waitingFor}", received "${signalName}"`
+      )
+    }
+
+    // Complete the suspended step
+    currentStep.status = 'completed'
+    currentStep.completedAt = new Date()
+    currentStep.output = payload
+    // If payload contains data, we might want to merge it?
+    // For now, allow next step to access it via history or we need a cleaner way.
+    // Let's assume user grabs it from history for now or we build a helper later.
+
+    const stateMachine = new StateMachine()
+    stateMachine.forceStatus('suspended')
+    // ctx status will be updated to 'running' in runFrom
+
+    await this.emitTrace({
+      type: 'signal:received',
+      timestamp: Date.now(),
+      workflowId: ctx.id,
+      workflowName: ctx.name,
+      status: 'suspended',
+      input: payload,
+    })
+
+    // Resume from NEXT step
+    const nextStepIndex = ctx.currentStep + 1
+
+    return this.runFrom(definition, ctx, stateMachine, Date.now(), nextStepIndex, {
+      resume: true,
+      fromStep: nextStepIndex,
+    })
+  }
+
+  /**
    * Retry a specific step (replays from that step onward)
    */
   async retryStep<TInput, TData = any>(
@@ -262,6 +322,91 @@ export class FluxEngine {
     }
   }
 
+  /**
+   * Rollback workflow by executing compensation handlers in reverse order
+   */
+  private async rollback<TInput, TData>(
+    definition: WorkflowDefinition<TInput, TData>,
+    ctx: WorkflowContext<TInput, TData>,
+    failedAtIndex: number,
+    originalError: Error
+  ): Promise<void> {
+    Object.assign(ctx, { status: 'rolling_back' })
+
+    await this.emitTrace({
+      type: 'workflow:rollback_start',
+      timestamp: Date.now(),
+      workflowId: ctx.id,
+      workflowName: ctx.name,
+      status: 'rolling_back',
+      error: originalError.message,
+    })
+
+    let compensatedCount = 0
+
+    // Iterate backwards from the step BEFORE the failed one
+    for (let i = failedAtIndex - 1; i >= 0; i--) {
+      const step = definition.steps[i]
+      const execution = ctx.history[i]
+
+      // Only compensate completed steps with compensation handler
+      if (!step || !step.compensate || !execution || execution.status !== 'completed') {
+        continue
+      }
+
+      try {
+        execution.status = 'compensating'
+        await this.storage.save(this.contextManager.toState<TInput, TData>(ctx))
+
+        await step.compensate(ctx)
+
+        execution.status = 'compensated'
+        execution.compensatedAt = new Date()
+        compensatedCount++
+
+        await this.emitTrace({
+          type: 'step:compensate',
+          timestamp: Date.now(),
+          workflowId: ctx.id,
+          workflowName: ctx.name,
+          stepName: step.name,
+          stepIndex: i,
+          status: 'compensated',
+        })
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error(String(err))
+        // Compensation failed - this is bad. Mark workflow as failed (not rolled_back)
+        Object.assign(ctx, { status: 'failed' })
+
+        await this.emitTrace({
+          type: 'workflow:error',
+          timestamp: Date.now(),
+          workflowId: ctx.id,
+          workflowName: ctx.name,
+          status: 'failed',
+          error: `Compensation failed at step "${step.name}": ${error.message}`,
+        })
+        return // Stop rollback
+      }
+
+      await this.storage.save(this.contextManager.toState<TInput, TData>(ctx))
+    }
+
+    if (compensatedCount > 0) {
+      Object.assign(ctx, { status: 'rolled_back' })
+      await this.emitTrace({
+        type: 'workflow:rollback_complete',
+        timestamp: Date.now(),
+        workflowId: ctx.id,
+        workflowName: ctx.name,
+        status: 'rolled_back',
+      })
+    } else {
+      // No compensation occurred, revert to failed status
+      Object.assign(ctx, { status: 'failed' })
+    }
+  }
+
   private async runFrom<TInput, TData = any>(
     definition: WorkflowDefinition<TInput, TData>,
     ctx: WorkflowContext<TInput, TData>,
@@ -274,15 +419,17 @@ export class FluxEngine {
       // Transition to running
       stateMachine.transition('running')
       Object.assign(ctx, { status: 'running' })
-      await this.emitTrace({
-        type: 'workflow:start',
-        timestamp: Date.now(),
-        workflowId: ctx.id,
-        workflowName: ctx.name,
-        status: ctx.status,
-        input: ctx.input,
-        meta,
-      })
+      if (!meta?.resume) {
+        await this.emitTrace({
+          type: 'workflow:start',
+          timestamp: Date.now(),
+          workflowId: ctx.id,
+          workflowName: ctx.name,
+          status: ctx.status,
+          input: ctx.input,
+          meta,
+        })
+      }
 
       // Execute steps
       for (let i = startIndex; i < definition.steps.length; i++) {
@@ -312,6 +459,32 @@ export class FluxEngine {
         const result = await this.executor.execute(step, ctx, execution)
 
         if (result.success) {
+          if (result.suspended) {
+            // Handle suspension
+            stateMachine.transition('suspended')
+            Object.assign(ctx, { status: 'suspended' })
+
+            await this.emitTrace({
+              type: 'step:suspend',
+              timestamp: Date.now(),
+              workflowId: ctx.id,
+              workflowName: ctx.name,
+              stepName: step.name,
+              stepIndex: i,
+              meta: { signal: result.waitingFor },
+            })
+
+            await this.storage.save(this.contextManager.toState<TInput, TData>(ctx))
+
+            return {
+              id: ctx.id,
+              status: 'suspended',
+              data: ctx.data as TData,
+              history: ctx.history,
+              duration: Date.now() - startTime,
+            }
+          }
+
           // Emit step complete event
           this.config.on?.stepComplete?.(step.name, ctx as any, result)
           if (execution.status === 'skipped') {
@@ -361,9 +534,11 @@ export class FluxEngine {
             meta,
           })
 
-          // Fail workflow
-          stateMachine.transition('failed')
-          Object.assign(ctx, { status: 'failed' })
+          // Fail workflow with potential rollback
+          await this.rollback<TInput, TData>(definition, ctx, i, result.error!)
+
+          const finalStatus = ctx.status
+          stateMachine.forceStatus(finalStatus)
 
           await this.storage.save({
             ...this.contextManager.toState<TInput, TData>(ctx),
@@ -372,7 +547,7 @@ export class FluxEngine {
 
           return {
             id: ctx.id,
-            status: 'failed',
+            status: finalStatus,
             data: ctx.data as TData,
             history: ctx.history,
             duration: Date.now() - startTime,

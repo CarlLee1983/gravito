@@ -80,6 +80,24 @@ async function build() {
   const rootHtml = `<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=/en/" /></head></html>`
   await writeFile(join(outputDir, 'index.html'), rootHtml)
 
+  // 8. Installer Scripts (for curl | bash)
+  const scriptUrl =
+    'https://raw.githubusercontent.com/gravito-framework/quasar-go/main/scripts/install.sh'
+  try {
+    console.log('📥 Fetching installer script for static export...')
+    const scriptRes = await fetch(scriptUrl)
+    if (scriptRes.ok) {
+      const scriptBody = await scriptRes.text()
+      await writeFile(join(outputDir, 'quasar-go'), scriptBody)
+      await writeFile(join(outputDir, 'quasar'), scriptBody)
+      console.log('✅ Installer scripts exported to root.')
+    } else {
+      console.warn('⚠️  Could not fetch installer script from GitHub. Skipping.')
+    }
+  } catch (e) {
+    console.warn('⚠️  Error fetching installer script:', e)
+  }
+
   console.log('✅ SSG Build Complete! Output: dist-static')
   process.exit(0)
 }

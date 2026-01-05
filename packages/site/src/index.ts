@@ -167,6 +167,12 @@ app.router.prefix('/:locale').group((router) => {
         `)
   })
 })
+// Installer Scripts (Redirect to GitHub Raw or serve directly)
+const INSTALL_SCRIPT_URL =
+  'https://raw.githubusercontent.com/gravito-framework/quasar-go/main/scripts/install.sh'
+
+app.router.get('/quasar-go', (c) => c.redirect(INSTALL_SCRIPT_URL))
+app.router.get('/quasar', (c) => c.redirect(INSTALL_SCRIPT_URL)) // Backward compatibility
 
 // Root redirect
 app.router.get('/', (c) => c.redirect('/en'))

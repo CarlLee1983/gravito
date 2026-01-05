@@ -83,14 +83,18 @@ export function JobInspector({ queueName, onClose }: JobInspectorProps) {
   }
 
   const toggleSelectAll = React.useCallback(() => {
-    if (!data?.jobs) return
+    if (!data?.jobs) {
+      return
+    }
     const availableCount = data.jobs.filter((j) => j._raw && !j._archived).length
     if (selectedIndices.size === availableCount && availableCount > 0) {
       setSelectedIndices(new Set())
     } else {
       const indices = new Set<number>()
       data.jobs.forEach((j, i) => {
-        if (j._raw && !j._archived) indices.add(i)
+        if (j._raw && !j._archived) {
+          indices.add(i)
+        }
       })
       setSelectedIndices(indices)
     }
@@ -134,10 +138,14 @@ export function JobInspector({ queueName, onClose }: JobInspectorProps) {
   }, [])
 
   const handleAction = async (action: 'delete' | 'retry', job: Job) => {
-    if (!job._raw) return
+    if (!job._raw) {
+      return
+    }
     const endpoint = action === 'delete' ? 'delete' : 'retry'
     const body: any = { raw: job._raw }
-    if (action === 'delete') body.type = view
+    if (action === 'delete') {
+      body.type = view
+    }
 
     await fetch(`/api/queues/${queueName}/jobs/${endpoint}`, {
       method: 'POST',
@@ -150,7 +158,9 @@ export function JobInspector({ queueName, onClose }: JobInspectorProps) {
   }
 
   const handleBulkAction = async (action: 'delete' | 'retry') => {
-    if (selectedIndices.size === 0 || !data?.jobs) return
+    if (selectedIndices.size === 0 || !data?.jobs) {
+      return
+    }
 
     const count = selectedIndices.size
     setConfirmDialog({
@@ -186,7 +196,9 @@ export function JobInspector({ queueName, onClose }: JobInspectorProps) {
   }
 
   const handleBulkActionAll = async (action: 'delete' | 'retry') => {
-    if (view === 'archive') return
+    if (view === 'archive') {
+      return
+    }
 
     setConfirmDialog({
       open: true,

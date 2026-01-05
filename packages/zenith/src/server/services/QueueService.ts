@@ -51,7 +51,7 @@ export class QueueService {
   private logThrottleReset = Date.now()
   private readonly MAX_LOGS_PER_SEC = 50
   private manager: QueueManager
-  public alerts = new AlertService()
+  public alerts: AlertService
 
   constructor(
     redisUrl: string,
@@ -84,10 +84,11 @@ export class QueueService {
       },
       persistence,
     })
+    this.alerts = new AlertService(redisUrl)
   }
 
   async connect() {
-    await Promise.all([this.redis.connect(), this.subRedis.connect()])
+    await Promise.all([this.redis.connect(), this.subRedis.connect(), this.alerts.connect()])
 
     // Setup single Redis subscription
     await this.subRedis.subscribe('flux_console:logs')
@@ -123,6 +124,58 @@ export class QueueService {
         }
       }
     })
+
+    // Start Maintenance Loop
+    this.runMaintenanceLoop()
+  }
+
+  private async runMaintenanceLoop() {
+    // Initial delay to avoid startup congestion
+    setTimeout(() => {
+      const loop = async () => {
+        try {
+          await this.checkMaintenance()
+        } catch (err) {
+          console.error('[Maintenance] Task Error:', err)
+        }
+        // Check every hour (3600000 ms)
+        setTimeout(loop, 3600000)
+      }
+      loop()
+    }, 1000 * 30) // 30 seconds after boot
+  }
+
+  private async checkMaintenance() {
+    const config = await this.getMaintenanceConfig()
+    if (!config.autoCleanup) return
+
+    const now = Date.now()
+    const lastRun = config.lastRun || 0
+    const ONE_DAY = 24 * 60 * 60 * 1000
+
+    if (now - lastRun >= ONE_DAY) {
+      console.log(
+        `[Maintenance] Starting Auto-Cleanup (Retention: ${config.retentionDays} days)...`
+      )
+      const deleted = await this.cleanupArchive(config.retentionDays)
+      console.log(`[Maintenance] Cleanup Complete. Removed ${deleted} records.`)
+
+      // Update Last Run
+      await this.saveMaintenanceConfig({
+        ...config,
+        lastRun: now,
+      })
+    }
+  }
+
+  async getMaintenanceConfig(): Promise<any> {
+    const data = await this.redis.get('gravito:zenith:maintenance:config')
+    if (data) return JSON.parse(data)
+    return { autoCleanup: false, retentionDays: 30 }
+  }
+
+  async saveMaintenanceConfig(config: any): Promise<void> {
+    await this.redis.set('gravito:zenith:maintenance:config', JSON.stringify(config))
   }
 
   /**
@@ -291,7 +344,10 @@ export class QueueService {
   /**
    * Records a snapshot of current global statistics for sparklines.
    */
-  async recordStatusMetrics(): Promise<void> {
+  async recordStatusMetrics(
+    nodes: Record<string, any> = {},
+    injectedWorkers?: any[]
+  ): Promise<void> {
     const stats = await this.listQueues()
     const totals = stats.reduce(
       (acc, q) => {
@@ -312,7 +368,7 @@ export class QueueService {
     pipe.set(`flux_console:metrics:failed:${now}`, totals.failed, 'EX', 3600)
 
     // Also record worker count
-    const workers = await this.listWorkers()
+    const workers = injectedWorkers || (await this.listWorkers())
     pipe.set(`flux_console:metrics:workers:${now}`, workers.length, 'EX', 3600)
 
     await pipe.exec()
@@ -328,7 +384,8 @@ export class QueueService {
     this.alerts
       .check({
         queues: stats,
-        workers,
+        nodes: nodes as any,
+        workers: workers as any,
         totals,
       })
       .catch((err) => console.error('[AlertService] Rule Evaluation Error:', err))
@@ -403,7 +460,7 @@ export class QueueService {
       }
     } while (cursor !== '0')
 
-    return workers
+    return workers.sort((a, b) => a.id.localeCompare(b.id))
   }
 
   /**

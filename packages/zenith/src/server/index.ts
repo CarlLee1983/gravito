@@ -1,9 +1,14 @@
 import { DB } from '@gravito/atlas'
 import { Photon } from '@gravito/photon'
+import { QuasarAgent } from '@gravito/quasar'
 import { MySQLPersistence, SQLitePersistence } from '@gravito/stream'
+import fs from 'fs'
 import { serveStatic } from 'hono/bun'
 import { getCookie } from 'hono/cookie'
 import { streamSSE } from 'hono/streaming'
+import os from 'os'
+import path from 'path'
+import { fileURLToPath } from 'url'
 import {
   authMiddleware,
   createSession,
@@ -11,6 +16,8 @@ import {
   isAuthEnabled,
   verifyPassword,
 } from './middleware/auth'
+import { CommandService } from './services/CommandService'
+import { PulseService } from './services/PulseService'
 import { QueueService } from './services/QueueService'
 
 const app = new Photon()
@@ -58,15 +65,105 @@ if (dbDriver === 'sqlite' || process.env.DB_HOST) {
 
 // Service Initialization
 const queueService = new QueueService(REDIS_URL, QUEUE_PREFIX, persistence)
+const pulseService = new PulseService(REDIS_URL)
+const commandService = new CommandService(REDIS_URL)
 
 queueService
   .connect()
+  .then(() => pulseService.connect())
+  .then(() => commandService.connect())
   .then(() => {
+    // Start Self-Monitoring (Quasar)
+    const agent = new QuasarAgent({
+      service: 'flux-console',
+      redisUrl: REDIS_URL,
+    })
+    agent.start().catch((err) => console.error('[FluxConsole] Quasar Agent Error:', err))
+
     console.log(`[FluxConsole] Connected to Redis at ${REDIS_URL}`)
     // Start background metrics recording (Reduced from 5s to 2s for better real-time feel)
-    setInterval(() => {
-      queueService.recordStatusMetrics().catch(console.error)
-    }, 2000)
+    const updateMetrics = async () => {
+      try {
+        const [pulseNodes, legacyWorkers] = await Promise.all([
+          pulseService.getNodes(),
+          queueService.listWorkers(),
+        ])
+
+        const pulseWorkers = Object.values(pulseNodes)
+          .flat()
+          .flatMap((node) => {
+            const mainNode = {
+              id: node.id,
+              service: node.service,
+              status: node.runtime.status || 'online',
+              pid: node.pid,
+              uptime: node.runtime.uptime,
+              metrics: {
+                cpu: node.cpu.process,
+                cores: node.cpu.cores,
+                ram: {
+                  rss: node.memory.process.rss,
+                  heapUsed: node.memory.process.heapUsed,
+                  total: node.memory.system.total,
+                },
+              },
+              queues: node.queues,
+              meta: node.meta,
+            }
+
+            const subWorkers: any[] = []
+            if (node.meta?.laravel?.workers && Array.isArray(node.meta.laravel.workers)) {
+              node.meta.laravel.workers.forEach((w: any) => {
+                subWorkers.push({
+                  id: `${node.id}-php-${w.pid}`,
+                  service: `${node.service} / LARAVEL`,
+                  status: w.status === 'running' || w.status === 'sleep' ? 'online' : 'idle',
+                  pid: w.pid,
+                  uptime: node.runtime.uptime,
+                  metrics: {
+                    cpu: w.cpu,
+                    cores: 1,
+                    ram: {
+                      rss: w.memory,
+                      heapUsed: w.memory,
+                      total: node.memory.system.total,
+                    },
+                  },
+                  meta: { isVirtual: true, cmdline: w.cmdline },
+                })
+              })
+            }
+            return [mainNode, ...subWorkers]
+          })
+
+        const formattedLegacy = legacyWorkers.map((w) => ({
+          id: w.id,
+          status: 'online',
+          pid: w.pid,
+          uptime: w.uptime,
+          metrics: {
+            cpu: (w.loadAvg[0] || 0) * 100,
+            cores: 0,
+            ram: {
+              rss: parseInt(w.memory.rss || '0', 10),
+              heapUsed: parseInt(w.memory.heapUsed || '0', 10),
+              total: 0,
+            },
+          },
+          queues: w.queues.map((q) => ({
+            name: q,
+            size: { waiting: 0, active: 0, failed: 0, delayed: 0 },
+          })),
+          meta: {},
+        }))
+
+        await queueService.recordStatusMetrics(pulseNodes, [...pulseWorkers, ...formattedLegacy])
+      } catch (err) {
+        console.error('[FluxConsole] Metrics Update Error:', err)
+      }
+    }
+
+    setInterval(updateMetrics, 2000)
 
     // Start Scheduler Tick (Reduced from 10s to 5s)
     setInterval(() => {
@@ -74,7 +171,7 @@ queueService
     }, 5000)
 
     // Record initial snapshot
-    queueService.recordStatusMetrics().catch(console.error)
+    updateMetrics()
   })
   .catch((err) => {
     console.error('[FluxConsole] Failed to connect to Redis', err)
@@ -302,9 +399,91 @@ api.get('/throughput', async (c) => {
 
 api.get('/workers', async (c) => {
   try {
-    const workers = await queueService.listWorkers()
-    return c.json({ workers })
+    const [legacyWorkers, pulseNodes] = await Promise.all([
+      queueService.listWorkers(),
+      pulseService.getNodes(),
+    ])
+
+    // Transform PulseNodes to match the frontend Worker interface
+    const pulseWorkers = Object.values(pulseNodes)
+      .flat()
+      .flatMap((node) => {
+        // 1. The Main Agent Node
+        const mainNode = {
+          id: node.id,
+          service: node.service,
+          status: node.runtime.status || 'online',
+          pid: node.pid,
+          uptime: node.runtime.uptime,
+          metrics: {
+            cpu: node.cpu.process,
+            cores: node.cpu.cores,
+            ram: {
+              rss: node.memory.process.rss,
+              heapUsed: node.memory.process.heapUsed,
+              total: node.memory.system.total,
+            },
+          },
+          queues: node.queues,
+          meta: node.meta,
+        }
+
+        // 2. Virtual Child Workers (e.g. Laravel)
+        const subWorkers: any[] = []
+        if (node.meta?.laravel?.workers && Array.isArray(node.meta.laravel.workers)) {
+          node.meta.laravel.workers.forEach((w: any) => {
+            subWorkers.push({
+              id: `${node.id}-php-${w.pid}`,
+              service: `${node.service} / LARAVEL`, // Distinct service name
+              status: w.status === 'running' || w.status === 'sleep' ? 'online' : 'idle',
+              pid: w.pid,
+              uptime: node.runtime.uptime, // Inherit uptime for now, or 0
+              metrics: {
+                cpu: w.cpu, // Per-process CPU
+                cores: 1, // Single threaded PHP
+                ram: {
+                  rss: w.memory,
+                  heapUsed: w.memory,
+                  total: node.memory.system.total,
+                },
+              },
+              meta: {
+                // Tag it so UI can maybe style it differently?
+                isVirtual: true,
+                cmdline: w.cmdline,
+              },
+            })
+          })
+        }
+
+        return [mainNode, ...subWorkers]
+      })
+
+    // Transform Legacy Workers to match interface (best effort)
+    const formattedLegacy = legacyWorkers.map((w) => ({
+      id: w.id,
+      status: 'online',
+      pid: w.pid,
+      uptime: w.uptime,
+      metrics: {
+        cpu: (w.loadAvg[0] || 0) * 100, // Rough estimate
+        cores: 0,
+        ram: {
+          rss: parseInt(w.memory.rss || '0', 10),
+          heapUsed: parseInt(w.memory.heapUsed || '0', 10),
+          total: 0,
+        },
+      },
+      queues: w.queues.map((q) => ({
+        name: q,
+        size: { waiting: 0, active: 0, failed: 0, delayed: 0 },
+      })),
+      meta: {},
+    }))
+
+    return c.json({ workers: [...pulseWorkers, ...formattedLegacy] })
   } catch (_err) {
+    console.error(_err)
     return c.json({ error: 'Failed to fetch workers' }, 500)
   }
 })
@@ -328,17 +507,81 @@ api.get('/metrics/history', async (c) => {
 
 api.get('/system/status', (c) => {
   const mem = process.memoryUsage()
+  const totalMem = os.totalmem()
+
+  // Find package.json (relative to this file in src/server/index.ts)
+  const __dirname = path.dirname(fileURLToPath(import.meta.url))
+  const pkgPath = path.resolve(__dirname, '../../package.json')
+  let pkg = { version: '0.1.0-unknown', name: '@gravito/zenith' }
+  try {
+    pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'))
+  } catch (_e) {
+    // fallback
+  }
+
   return c.json({
     node: process.version,
     memory: {
       rss: `${(mem.rss / 1024 / 1024).toFixed(2)} MB`,
       heapUsed: `${(mem.heapUsed / 1024 / 1024).toFixed(2)} MB`,
-      total: '4.00 GB', // Hardcoded limit for demo aesthetic
+      total: `${(totalMem / 1024 / 1024 / 1024).toFixed(2)} GB`,
     },
-    engine: 'v0.1.0-beta.1',
+    version: pkg.version,
+    package: pkg.name,
+    engine: `Zenith ${pkg.version}`,
     uptime: process.uptime(),
-    env: process.env.NODE_ENV || 'production-east-1',
+    env:
+      process.env.NODE_ENV === 'production'
+        ? `production (${os.hostname()})`
+        : `development (${os.hostname()})`,
+    redisUrl: process.env.REDIS_URL || 'redis://localhost:6379',
   })
+})
+
+// --- Pulse Monitoring ---
+api.get('/pulse/nodes', async (c) => {
+  try {
+    const nodes = await pulseService.getNodes()
+    return c.json({ nodes })
+  } catch (_err) {
+    return c.json({ error: 'Failed to fetch pulse nodes' }, 500)
+  }
+})
+
+// --- Pulse Remote Control (Phase 3) ---
+api.post('/pulse/command', async (c) => {
+  try {
+    const { service, nodeId, type, queue, jobKey, driver, action } = await c.req.json()
+
+    // Validate required fields
+    if (!service || !nodeId || !type || !queue || !jobKey) {
+      return c.json({ error: 'Missing required fields: service, nodeId, type, queue, jobKey' }, 400)
+    }
+
+    // Validate command type
+    if (type !== 'RETRY_JOB' && type !== 'DELETE_JOB' && type !== 'LARAVEL_ACTION') {
+      return c.json(
+        { error: 'Invalid command type. Allowed: RETRY_JOB, DELETE_JOB, LARAVEL_ACTION' },
+        400
+      )
+    }
+
+    const commandId = await commandService.sendCommand(service, nodeId, type, {
+      queue,
+      jobKey,
+      driver: driver || 'redis',
+      action,
+    })
+
+    return c.json({
+      success: true,
+      commandId,
+      message: `Command ${type} sent to ${nodeId}. Observe job state for result.`,
+    })
+  } catch (err) {
+    console.error('[CommandService] Error:', err)
+    return c.json({ error: 'Failed to send command' }, 500)
+  }
 })
 
 api.post('/queues/:name/jobs/delete', async (c) => {
@@ -454,9 +697,23 @@ api.get('/logs/stream', async (c) => {
       })
     })
 
+    // 4. Poll Pulse Nodes per client (simple polling for now)
+    const pulseInterval = setInterval(async () => {
+      try {
+        const nodes = await pulseService.getNodes()
+        await stream.writeSSE({
+          data: JSON.stringify({ nodes }),
+          event: 'pulse',
+        })
+      } catch (err) {
+        // ignore errors
+      }
+    }, 2000)
+
     stream.onAbort(() => {
       unsubscribeLogs()
       unsubscribeStats()
+      clearInterval(pulseInterval)
     })
 
     // Keep alive
@@ -508,17 +765,60 @@ api.delete('/schedules/:id', async (c) => {
 })
 
 // --- Alerting ---
-api.get('/alerts/config', (c) => {
+api.get('/alerts/config', async (c) => {
   return c.json({
     rules: queueService.alerts.getRules(),
-    webhookEnabled: !!process.env.SLACK_WEBHOOK_URL,
+    config: queueService.alerts.getConfig(),
+    maintenance: await queueService.getMaintenanceConfig(),
   })
+})
+
+api.post('/maintenance/config', async (c) => {
+  const config = await c.req.json()
+  try {
+    await queueService.saveMaintenanceConfig(config)
+    return c.json({ success: true })
+  } catch (err) {
+    return c.json({ error: 'Failed to save maintenance config' }, 500)
+  }
+})
+
+api.post('/alerts/config', async (c) => {
+  const config = await c.req.json()
+  try {
+    await queueService.alerts.saveConfig(config)
+    return c.json({ success: true })
+  } catch (err) {
+    return c.json({ error: 'Failed to save alert config' }, 500)
+  }
+})
+
+api.post('/alerts/rules', async (c) => {
+  const rule = await c.req.json()
+  try {
+    await queueService.alerts.addRule(rule)
+    return c.json({ success: true })
+  } catch (err) {
+    return c.json({ error: 'Failed to add rule' }, 500)
+  }
+})
+
+api.delete('/alerts/rules/:id', async (c) => {
+  const id = c.req.param('id')
+  try {
+    await queueService.alerts.deleteRule(id)
+    return c.json({ success: true })
+  } catch (err) {
+    return c.json({ error: 'Failed to delete rule' }, 500)
+  }
 })
 
 api.post('/alerts/test', async (c) => {
   try {
+    const nodes = await pulseService.getNodes()
     queueService.alerts.check({
       queues: [],
+      nodes,
       workers: [
         {
           id: 'test-node',

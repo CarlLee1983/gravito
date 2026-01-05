@@ -23,10 +23,11 @@ export function Sidebar({ className, collapsed, toggleCollapse }: SidebarProps) 
 
   const navItems = [
     { icon: LayoutDashboard, label: 'Overview', path: '/' },
+    { icon: Activity, label: 'Pulse', path: '/pulse' },
     { icon: ListTree, label: 'Queues', path: '/queues' },
     { icon: Clock, label: 'Schedules', path: '/schedules' },
     { icon: HardDrive, label: 'Workers', path: '/workers' },
-    { icon: Activity, label: 'Metrics', path: '/metrics' },
+    // { icon: Activity, label: 'Metrics', path: '/metrics' },
     { icon: Settings, label: 'Settings', path: '/settings' },
   ]
 

@@ -13,11 +13,27 @@
 /**
  * Workflow execution status
  */
-export type WorkflowStatus = 'pending' | 'running' | 'paused' | 'completed' | 'failed'
+export type WorkflowStatus =
+  | 'pending'
+  | 'running'
+  | 'paused'
+  | 'completed'
+  | 'failed'
+  | 'suspended'
+  | 'rolling_back'
+  | 'rolled_back'
 
 // ─────────────────────────────────────────────────────────────
 // Step Definitions
 // ─────────────────────────────────────────────────────────────
+
+/**
+ * Result of Flux.wait()
+ */
+export interface FluxWaitResult {
+  __kind: 'flux_wait'
+  signal: string
+}
 
 /**
  * Step execution result
@@ -27,6 +43,8 @@ export interface StepResult<T = unknown> {
   data?: T
   error?: Error
   duration: number
+  suspended?: boolean
+  waitingFor?: string
 }
 
 /**
@@ -34,10 +52,22 @@ export interface StepResult<T = unknown> {
  */
 export interface StepExecution {
   name: string
-  status: 'pending' | 'running' | 'completed' | 'failed' | 'skipped'
+  status:
+    | 'pending'
+    | 'running'
+    | 'completed'
+    | 'failed'
+    | 'skipped'
+    | 'suspended'
+    | 'compensated'
+    | 'compensating'
   startedAt?: Date
   completedAt?: Date
+  suspendedAt?: Date
+  compensatedAt?: Date
+  waitingFor?: string
   duration?: number
+  output?: any
   error?: string
   retries: number
 }
@@ -50,7 +80,12 @@ export interface StepDefinition<TInput = any, TData = any> {
   name: string
 
   /** Step handler function */
-  handler: (ctx: WorkflowContext<TInput, TData>) => Promise<void> | void
+  handler: (
+    ctx: WorkflowContext<TInput, TData>
+  ) => Promise<void | FluxWaitResult> | void | FluxWaitResult
+
+  /** Compensation handler to undo effects */
+  compensate?: (ctx: WorkflowContext<TInput, TData>) => Promise<void> | void
 
   /** Number of retries on failure */
   retries?: number
@@ -235,11 +270,16 @@ export type FluxTraceEventType =
   | 'workflow:start'
   | 'workflow:complete'
   | 'workflow:error'
+  | 'workflow:rollback_start'
+  | 'workflow:rollback_complete'
   | 'step:start'
   | 'step:complete'
   | 'step:error'
   | 'step:skipped'
   | 'step:retry'
+  | 'step:suspend'
+  | 'step:compensate'
+  | 'signal:received'
 
 export interface FluxTraceEvent {
   type: FluxTraceEventType

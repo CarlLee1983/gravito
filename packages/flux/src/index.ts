@@ -61,6 +61,8 @@ export type {
   FluxTraceEvent,
   FluxTraceEventType,
   FluxTraceSink,
+  // Helper
+  FluxWaitResult,
   // Step types
   StepDefinition,
   StepDescriptor,
@@ -76,3 +78,18 @@ export type {
   // Storage
   WorkflowStorage,
 } from './types'
+
+/**
+ * Flux helper utilities
+ */
+export const Flux = {
+  /**
+   * Suspend workflow execution and wait for a signal
+   *
+   * @param signal - Signal name to wait for
+   */
+  wait: (signal: string): import('./types').FluxWaitResult => ({
+    __kind: 'flux_wait',
+    signal,
+  }),
+}

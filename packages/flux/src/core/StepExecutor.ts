@@ -6,7 +6,13 @@
  * @module @gravito/flux/core
  */
 
-import type { StepDefinition, StepExecution, StepResult, WorkflowContext } from '../types'
+import type {
+  FluxWaitResult,
+  StepDefinition,
+  StepExecution,
+  StepResult,
+  WorkflowContext,
+} from '../types'
 
 /**
  * Step Executor
@@ -73,7 +79,26 @@ export class StepExecutor {
 
       try {
         // Execute with timeout
-        await this.executeWithTimeout(step.handler, ctx, timeout)
+        const result = await this.executeWithTimeout(step.handler, ctx, timeout)
+
+        if (
+          result &&
+          typeof result === 'object' &&
+          '__kind' in result &&
+          result.__kind === 'flux_wait'
+        ) {
+          execution.status = 'suspended'
+          execution.waitingFor = result.signal
+          execution.suspendedAt = new Date()
+          execution.duration = Date.now() - startTime
+
+          return {
+            success: true,
+            suspended: true,
+            waitingFor: result.signal,
+            duration: execution.duration,
+          }
+        }
 
         execution.status = 'completed'
         execution.completedAt = new Date()
@@ -112,17 +137,19 @@ export class StepExecutor {
    * Execute handler with timeout
    */
   private async executeWithTimeout<TInput, TData>(
-    handler: (ctx: WorkflowContext<TInput, TData>) => Promise<void> | void,
+    handler: (
+      ctx: WorkflowContext<TInput, TData>
+    ) => Promise<void | FluxWaitResult> | void | FluxWaitResult,
     ctx: WorkflowContext<TInput, TData>,
     timeout: number
-  ): Promise<void> {
+  ): Promise<void | FluxWaitResult> {
     let timer: ReturnType<typeof setTimeout> | null = null
     try {
       const timeoutPromise = new Promise<never>((_, reject) => {
         timer = setTimeout(() => reject(new Error('Step timeout')), timeout)
       })
 
-      await Promise.race([Promise.resolve(handler(ctx)), timeoutPromise])
+      return await Promise.race([Promise.resolve(handler(ctx)), timeoutPromise])
     } finally {
       if (timer) {
         clearTimeout(timer)

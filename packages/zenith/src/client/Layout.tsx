@@ -90,6 +90,15 @@ export function Layout({ children }: LayoutProps) {
       }
     })
 
+    ev.addEventListener('pulse', (e) => {
+      try {
+        const data = JSON.parse(e.data)
+        window.dispatchEvent(new CustomEvent('flux-pulse-update', { detail: data }))
+      } catch (err) {
+        console.error('SSE Pulse Error', err)
+      }
+    })
+
     ev.onerror = (err) => {
       console.error('[Zenith] SSE Connection Error', err)
       ev.close()
@@ -339,6 +348,14 @@ export function Layout({ children }: LayoutProps) {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
 
+  // Auto-scroll to selected item
+  useEffect(() => {
+    const el = document.getElementById(`command-item-${selectedIndex}`)
+    if (el) {
+      el.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+    }
+  }, [selectedIndex])
+
   const handleSelect = (cmd: CommandItem) => {
     cmd.action()
     setIsCommandPaletteOpen(false)
@@ -559,6 +576,7 @@ export function Layout({ children }: LayoutProps) {
                     {filteredCommands.map((cmd, i) => (
                       <button
                         type="button"
+                        id={`command-item-${i}`}
                         key={cmd.id}
                         className={cn(
                           'w-full flex items-center justify-between p-4 rounded-2xl transition-all cursor-pointer group/cmd outline-none',

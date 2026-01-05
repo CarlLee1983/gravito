@@ -35,7 +35,6 @@ export function ConfirmDialog({
           onClick={(e) => e.stopPropagation()}
           onKeyDown={(e) => e.stopPropagation()}
         >
-          {/* biome-ignore lint/a11y/noStaticElementInteractions: Modal content needs to stop propagation */}
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}

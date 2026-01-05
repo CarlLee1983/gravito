@@ -64,7 +64,7 @@ function LiveLogs({
   }, [logs])
 
   return (
-    <div className="card-premium h-full flex flex-col overflow-hidden group">
+    <div className="absolute inset-0 card-premium flex flex-col overflow-hidden group">
       <div className="p-4 border-b bg-muted/5 flex justify-between items-center">
         <div className="flex items-center gap-2">
           <Terminal size={14} className="text-primary" />
@@ -89,7 +89,7 @@ function LiveLogs({
       </div>
       <ul
         ref={scrollRef}
-        className="flex-1 overflow-y-auto p-4 font-mono text-[11px] space-y-2.5 scrollbar-thin scroll-smooth"
+        className="flex-1 min-h-0 overflow-y-auto p-4 font-mono text-[11px] space-y-2.5 scrollbar-thin scroll-smooth"
       >
         {logs.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-muted-foreground/30 gap-2 opacity-50">
@@ -486,17 +486,21 @@ export function OverviewPage() {
 
       <QueueHeatmap queues={queues} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 h-[600px]">
-        <div className="lg:col-span-1 h-full">
+      <div className="flex flex-col lg:grid lg:grid-cols-3 gap-8 lg:h-[600px]">
+        <div className="lg:col-span-1 h-[400px] lg:h-full">
           <WorkerStatus highlightedWorkerId={hoveredWorkerId} workers={workers} />
         </div>
-        <div className="lg:col-span-2 grid grid-rows-2 gap-6 h-full">
-          <LiveLogs
-            logs={logs}
-            onSearchArchive={() => setIsLogArchiveOpen(true)}
-            onWorkerHover={setHoveredWorkerId}
-          />
-          <QueueList queues={queues} setSelectedQueue={setSelectedQueue} />
+        <div className="lg:col-span-2 flex flex-col lg:grid lg:grid-rows-2 gap-6 lg:h-full">
+          <div className="relative h-[300px] lg:h-full min-h-0 overflow-hidden bg-card rounded-xl border border-border/50">
+            <LiveLogs
+              logs={logs}
+              onSearchArchive={() => setIsLogArchiveOpen(true)}
+              onWorkerHover={setHoveredWorkerId}
+            />
+          </div>
+          <div className="h-[300px] lg:h-full min-h-0 overflow-hidden bg-card rounded-xl border border-border/50">
+            <QueueList queues={queues} setSelectedQueue={setSelectedQueue} />
+          </div>
         </div>
       </div>
     </div>
