@@ -733,7 +733,7 @@
     },
     "packages/flux": {
       "name": "@gravito/flux",
-      "version": "1.0.0-beta.4",
+      "version": "1.0.0-beta.7",
       "bin": {
         "flux": "bin/flux.js",
       },
@@ -810,7 +810,6 @@
       },
       "devDependencies": {
         "@types/react": "^19.0.0",
-        "bun-types": "latest",
         "react": "^19.0.0",
         "tsup": "^8.0.0",
         "typescript": "^5.9.3",
@@ -830,7 +829,6 @@
         "@gravito/freeze": "workspace:*",
       },
       "devDependencies": {
-        "bun-types": "latest",
         "tsup": "^8.0.0",
         "typescript": "^5.9.3",
         "vue": "^3.0.0",
@@ -1136,7 +1134,7 @@
     },
     "packages/quasar": {
       "name": "@gravito/quasar",
-      "version": "0.1.0",
+      "version": "1.0.0",
       "dependencies": {
         "ioredis": "^5.4.2",
       },
@@ -1172,7 +1170,6 @@
       "version": "1.0.0-beta.1",
       "devDependencies": {
         "@types/react": "^19.0.0",
-        "bun-types": "latest",
         "typescript": "^5.9.3",
         "vue": "^3.5.0",
       },
@@ -1341,7 +1338,7 @@
     },
     "packages/zenith": {
       "name": "@gravito/zenith",
-      "version": "0.1.0-beta.1",
+      "version": "1.0.0-beta.1",
       "bin": {
         "zenith": "dist/bin.js",
         "flux-console": "dist/bin.js",
