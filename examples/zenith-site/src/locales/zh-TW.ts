@@ -175,4 +175,53 @@ export default {
     terms: '服務條款',
     contact: '聯絡我們',
   },
+  privacy: {
+    title: '隱私政策',
+    lastUpdated: '最後更新：2026年1月',
+    section1: {
+      title: '數據立場',
+      content:
+        '在 Gravito，我們深信數據屬於您。Zenith 的設計初衷是為了「內省 (Introspection)」，而非「提取 (Extraction)」。我們絕不向任何第三方出售、交易或共享您的應用程序指標。',
+    },
+    section2: {
+      title: '我們收集的數據',
+      content:
+        '我們僅收集匿名使用數據以改善平台體驗，這包括 Zenith 控制面板內的導航模式和功能使用情況。除您的本地環境外，我們不會訪問您的 Redis 或 SQL 數據存儲內容。',
+    },
+    section3: {
+      title: 'Cookie 與分析',
+      content:
+        '我們使用最少量的 Cookie 進行會話管理和基礎性能分析（例如 Vercel Analytics），以確保 Web 服務的穩定性。',
+    },
+  },
+  terms: {
+    title: '服務條款',
+    lastUpdated: '最後更新：2026年1月',
+    section1: {
+      title: '軟體使用',
+      content:
+        'Zenith 是根據 MIT 許可證提供的開源工具。雖然我們致力於極致的可靠性，但軟體是「按原樣 (As-Is)」提供的，不提供任何形式的保證。',
+    },
+    section2: {
+      title: '用戶責任',
+      content:
+        '用戶需自行負責其 Redis 與 SQL 實例的安全。對於因配置錯誤或不當使用 Zenith 控制平面而導致的數據丟失或服務中斷，Gravito 不承擔任何責任。',
+    },
+    section3: {
+      title: '合規使用',
+      content:
+        'Zenith 旨在用於系統監控和合法的開發用途。嚴禁將其用於任何惡意活動或未經授權的監視行為。',
+    },
+  },
+  contact: {
+    title: '聯絡我們',
+    subtitle: '與架構師連線',
+    description: '有關於整合、定製解決方案的問題，或者只是想打個招呼？我們的團隊隨時待命。',
+    email: 'hello@gravito.dev',
+    socials: {
+      github: 'GitHub 社群',
+      twitter: '追蹤我們的旅程',
+      discord: '加入 Discord',
+    },
+  },
 }

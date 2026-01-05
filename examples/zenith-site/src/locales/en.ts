@@ -188,4 +188,54 @@ export default {
     terms: 'Terms of Service',
     contact: 'Contact',
   },
+  privacy: {
+    title: 'Privacy Policy',
+    lastUpdated: 'Last updated: January 2026',
+    section1: {
+      title: 'Our Stance on Data',
+      content:
+        'At Gravito, we believe your data belongs to you. Zenith is a tool designed for introspection, not extraction. We do not sell, trade, or share your application metrics with any third parties.',
+    },
+    section2: {
+      title: 'Data we Collect',
+      content:
+        'We only collect anonymous usage data to improve the platform experience. This includes navigation patterns and feature usage within the Zenith dashboard. We do not access the content of your Redis or SQL data stores outside of your local environment.',
+    },
+    section3: {
+      title: 'Cookies & Analytics',
+      content:
+        'We use minimal cookies for session management and basic performance analytics (e.g., Vercel Analytics) to ensure the stability of our web services.',
+    },
+  },
+  terms: {
+    title: 'Terms of Service',
+    lastUpdated: 'Last updated: January 2026',
+    section1: {
+      title: 'Software Usage',
+      content:
+        'Zenith is provided as an open-source tool under the MIT license. While we strive for absolute reliability, it is provided "as is" without warranty of any kind.',
+    },
+    section2: {
+      title: 'Responsibility',
+      content:
+        'Users are responsible for the security of their own Redis and SQL instances. Gravito is not liable for data loss or service interruptions caused by misconfiguration or improper use of the Zenith control plane.',
+    },
+    section3: {
+      title: 'Ethical Use',
+      content:
+        'Zenith is intended for system monitoring and legitimate development purposes. Any use involved in malicious activities or unauthorized surveillance is strictly prohibited.',
+    },
+  },
+  contact: {
+    title: 'Contact',
+    subtitle: 'Connect with the Architects',
+    description:
+      'Have questions about integration, custom solutions, or just want to say hi? Our team is standing by.',
+    email: 'hello@gravito.dev',
+    socials: {
+      github: 'GitHub Community',
+      twitter: 'Follow our Journey',
+      discord: 'Join Discord',
+    },
+  },
 }

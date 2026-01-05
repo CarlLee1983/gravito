@@ -22,13 +22,13 @@ export function Footer() {
                         </div>
                     </div>
                     <div className="flex gap-8 text-gray-400 text-sm font-medium">
-                        <StaticLink href={locale === 'zh-TW' ? '/zh-TW' : '/'} className="hover:text-zenith-accent transition-colors">
+                        <StaticLink href={locale === 'zh-TW' ? '/zh-TW/privacy' : '/privacy'} className="hover:text-zenith-accent transition-colors">
                             {trans('footer.privacy')}
                         </StaticLink>
-                        <StaticLink href={locale === 'zh-TW' ? '/zh-TW' : '/'} className="hover:text-zenith-accent transition-colors">
+                        <StaticLink href={locale === 'zh-TW' ? '/zh-TW/terms' : '/terms'} className="hover:text-zenith-accent transition-colors">
                             {trans('footer.terms')}
                         </StaticLink>
-                        <StaticLink href={locale === 'zh-TW' ? '/zh-TW' : '/'} className="hover:text-zenith-accent transition-colors">
+                        <StaticLink href={locale === 'zh-TW' ? '/zh-TW/contact' : '/contact'} className="hover:text-zenith-accent transition-colors">
                             {trans('footer.contact')}
                         </StaticLink>
                     </div>

@@ -23,19 +23,19 @@ export function Navbar() {
                     <div className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-400">
                         <StaticLink
                             href={locale === 'zh-TW' ? '/zh-TW/features' : '/features'}
-                            className="hover:text-white transition-colors"
+                            className={`transition-colors ${usePage().url.includes('features') ? 'text-white border-b-2 border-zenith-accent pb-1' : 'hover:text-white'}`}
                         >
                             {trans('nav.features')}
                         </StaticLink>
                         <StaticLink
                             href={locale === 'zh-TW' ? '/zh-TW/integrations' : '/integrations'}
-                            className="hover:text-white transition-colors"
+                            className={`transition-colors ${usePage().url.includes('integrations') ? 'text-white border-b-2 border-zenith-accent pb-1' : 'hover:text-white'}`}
                         >
                             {trans('nav.integration')}
                         </StaticLink>
                         <StaticLink
                             href={locale === 'zh-TW' ? '/zh-TW/about' : '/about'}
-                            className="text-white border-b-2 border-zenith-accent pb-1"
+                            className={`transition-colors ${usePage().url.includes('about') ? 'text-white border-b-2 border-zenith-accent pb-1' : 'hover:text-white'}`}
                         >
                             {trans('nav.about')}
                         </StaticLink>
