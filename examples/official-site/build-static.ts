@@ -44,6 +44,8 @@ async function build() {
   routes.add('/about')
   routes.add('/features')
   routes.add('/releases')
+  routes.add('/privacy')
+  routes.add('/terms')
   routes.add('/docs') // This will generate a redirect to /docs/guide/core-concepts
 
   // 2. Discover Docs
@@ -345,6 +347,20 @@ async function build() {
   await mkdir(join(outputDir, 'releases'), { recursive: true })
   await writeFile(join(outputDir, 'releases', 'index.html'), releasesRedirectHtml)
   console.log('✅ /releases redirect created')
+
+  // Create redirect for /privacy to /en/privacy
+  console.log('🔄 Creating /privacy redirect...')
+  const privacyRedirectHtml = `<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=/en/privacy" /><script>window.location.href='/en/privacy';</script></head><body>Redirecting to <a href="/en/privacy">/en/privacy</a>...</body></html>`
+  await mkdir(join(outputDir, 'privacy'), { recursive: true })
+  await writeFile(join(outputDir, 'privacy', 'index.html'), privacyRedirectHtml)
+  console.log('✅ /privacy redirect created')
+
+  // Create redirect for /terms to /en/terms
+  console.log('🔄 Creating /terms redirect...')
+  const termsRedirectHtml = `<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=/en/terms" /><script>window.location.href='/en/terms';</script></head><body>Redirecting to <a href="/en/terms">/en/terms</a>...</body></html>`
+  await mkdir(join(outputDir, 'terms'), { recursive: true })
+  await writeFile(join(outputDir, 'terms', 'index.html'), termsRedirectHtml)
+  console.log('✅ /terms redirect created')
 
   // Copy root assets (favicon, manifest) from static to root
   const rootAssets = [

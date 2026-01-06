@@ -192,9 +192,9 @@ export default {
     title: 'Privacy Policy',
     lastUpdated: 'Last updated: January 2026',
     section1: {
-      title: 'Our Stance on Data',
+      title: 'Our Data Philosophy',
       content:
-        'At Gravito, we believe your data belongs to you. Zenith is a tool designed for introspection, not extraction. We do not sell, trade, or share your application metrics with any third parties.',
+        'At Gravito, we believe your data belongs to you. Zenith is a control plane designed for absolute introspection, not extraction. We do not sell, trade, or share your application metrics with any third parties—your heartbeats stay within your galaxy.',
     },
     section2: {
       title: 'Data we Collect',

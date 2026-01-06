@@ -24,7 +24,16 @@ function discoverRoutes(core: PlanetCore): string[] {
   // Try to get routes from router's internal registry
   // This is a simplified approach - in production you might want to
   // maintain a routes manifest or use a route scanner
-  const knownRoutes = ['/', '/about']
+  const knownRoutes = [
+    '/',
+    '/about',
+    '/privacy',
+    '/terms',
+    '/zh-TW',
+    '/zh-TW/about',
+    '/zh-TW/privacy',
+    '/zh-TW/terms',
+  ]
 
   // Add known routes
   for (const route of knownRoutes) {

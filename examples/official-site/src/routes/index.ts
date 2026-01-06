@@ -24,6 +24,8 @@ export function registerRoutes(core: PlanetCore): void {
     root.get('/about', [HomeController, 'about'])
     root.get('/features', [HomeController, 'features'])
     root.get('/releases', [HomeController, 'releases'])
+    root.get('/privacy', [HomeController, 'privacy'])
+    root.get('/terms', [HomeController, 'terms'])
   })
 
   // ─────────────────────────────────────────────
@@ -40,6 +42,8 @@ export function registerRoutes(core: PlanetCore): void {
       en.get('/about', [HomeController, 'about'])
       en.get('/features', [HomeController, 'features'])
       en.get('/releases', [HomeController, 'releases'])
+      en.get('/privacy', [HomeController, 'privacy'])
+      en.get('/terms', [HomeController, 'terms'])
     })
 
   // ─────────────────────────────────────────────
@@ -53,6 +57,8 @@ export function registerRoutes(core: PlanetCore): void {
     group.get('/about', [HomeController, 'about'])
     group.get('/features', [HomeController, 'features'])
     group.get('/releases', [HomeController, 'releases'])
+    group.get('/privacy', [HomeController, 'privacy'])
+    group.get('/terms', [HomeController, 'terms'])
   }
 
   router.prefix('/zh').middleware(setLocale('zh')).group(registerChineseRoutes)

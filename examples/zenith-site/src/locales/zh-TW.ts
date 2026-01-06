@@ -179,9 +179,9 @@ export default {
     title: '隱私政策',
     lastUpdated: '最後更新：2026年1月',
     section1: {
-      title: '數據立場',
+      title: '數據哲學',
       content:
-        '在 Gravito，我們深信數據屬於您。Zenith 的設計初衷是為了「內省 (Introspection)」，而非「提取 (Extraction)」。我們絕不向任何第三方出售、交易或共享您的應用程序指標。',
+        '在 Gravito，我們深信數據屬於您。Zenith 的設計初衷是為了「內省 (Introspection)」，而非「提取 (Extraction)」。我們絕不向任何第三方出售、交易或共享您的應用程序指標—您的系統心跳將永遠留在您的星系中。',
     },
     section2: {
       title: '我們收集的數據',

@@ -65,8 +65,8 @@ const getPath = (path: string) => {
           &copy; {{ new Date().getFullYear() }} Gravito Framework. Built for Builders.
         </p>
         <div class="flex gap-6">
-          <a href="#" class="text-gray-600 hover:text-white text-sm">Privacy</a>
-          <a href="#" class="text-gray-600 hover:text-white text-sm">Terms</a>
+          <StaticLink :href="getPath('/privacy')" class="text-gray-600 hover:text-white text-sm">Privacy</StaticLink>
+          <StaticLink :href="getPath('/terms')" class="text-gray-600 hover:text-white text-sm">Terms</StaticLink>
         </div>
       </div>
     </div>
