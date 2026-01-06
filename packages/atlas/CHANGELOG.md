@@ -1,5 +1,11 @@
 # @gravito/atlas
 
+## 1.0.1
+
+### Patch Changes
+
+- Improve database grammar, core runtime types, and scaffolding generators.
+
 ## 1.0.0
 
 ### Patch Changes

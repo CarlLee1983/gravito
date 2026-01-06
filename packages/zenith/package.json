@@ -1,6 +1,6 @@
 {
   "name": "@gravito/zenith",
-  "version": "1.0.0-beta.1",
+  "version": "1.0.0",
   "description": "Gravito Zenith: Zero-config control plane for Gravito Flux & Stream",
   "type": "module",
   "bin": {
