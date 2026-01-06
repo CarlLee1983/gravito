@@ -452,7 +452,7 @@ export default core.liftoff()
         '@gravito/atlas': 'workspace:*', // Usually needed for repositories
       },
       devDependencies: {
-        '@types/bun': 'latest',
+        'bun-types': 'latest',
         typescript: '^5.0.0',
       },
     }

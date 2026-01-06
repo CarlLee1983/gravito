@@ -530,7 +530,7 @@ export class ${name}ServiceProvider extends ServiceProvider {
         '@gravito/enterprise': 'workspace:*',
       },
       devDependencies: {
-        '@types/bun': 'latest',
+        'bun-types': 'latest',
         typescript: '^5.0.0',
       },
     }

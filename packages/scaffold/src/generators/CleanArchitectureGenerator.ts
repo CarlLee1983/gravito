@@ -921,7 +921,7 @@ Created with ❤️ using Gravito Framework
         ...(context.withSpectrum ? { '@gravito/spectrum': 'workspace:*' } : {}),
       },
       devDependencies: {
-        '@types/bun': 'latest',
+        'bun-types': 'latest',
         typescript: '^5.0.0',
       },
     }
