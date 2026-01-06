@@ -31,6 +31,8 @@ import type { AdapterConfig, HttpAdapter, RouteDefinition } from './types'
  * Wraps Photon's request object to implement GravitoRequest
  */
 class PhotonRequestWrapper implements GravitoRequest {
+  private _cachedJson: unknown = null
+
   constructor(private photonCtx: Context) {}
 
   get url(): string {
@@ -71,7 +73,13 @@ class PhotonRequestWrapper implements GravitoRequest {
   }
 
   async json<T = unknown>(): Promise<T> {
-    return this.photonCtx.req.json<T>()
+    const ctx = this.photonCtx as any
+    if (ctx._cachedJsonBody !== undefined) {
+      return ctx._cachedJsonBody as T
+    }
+    const body = await this.photonCtx.req.json<T>()
+    ctx._cachedJsonBody = body
+    return body as T
   }
 
   async text(): Promise<string> {

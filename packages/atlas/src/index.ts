@@ -72,6 +72,8 @@ export type {
 } from './migration'
 // Migration
 export { MigrationRepository, Migrator } from './migration'
+// Orbit
+export { OrbitAtlas } from './OrbitAtlas'
 export type {
   ColumnSchema as OrmColumnSchema,
   ModelAttributes,

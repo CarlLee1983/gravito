@@ -85,8 +85,12 @@ export abstract class Model {
   static appends: string[] = []
   static observers: any[] = []
 
-  /** Enable automatic timestamps */
-  static timestamps = true
+  /** Enable automatic timestamps
+   * - `true`: Automatically manage both `created_at` and `updated_at`
+   * - `false`: Disable automatic timestamps
+   * - `'created_only'`: Only automatically manage `created_at` (no `updated_at`)
+   */
+  static timestamps: boolean | 'created_only' = true
   static createdAtColumn = 'created_at'
   static updatedAtColumn = 'updated_at'
 
@@ -876,7 +880,8 @@ export abstract class Model {
       if (!this._attributes[modelCtor.createdAtColumn]) {
         this._setAttribute(modelCtor.createdAtColumn, now)
       }
-      if (!this._attributes[modelCtor.updatedAtColumn]) {
+      // Only set updated_at if timestamps is not 'created_only'
+      if (modelCtor.timestamps !== 'created_only' && !this._attributes[modelCtor.updatedAtColumn]) {
         this._setAttribute(modelCtor.updatedAtColumn, now)
       }
     }
@@ -927,7 +932,8 @@ export abstract class Model {
     await this.emit('updating')
 
     // Handle Timestamps
-    if (modelCtor.timestamps) {
+    // Only update updated_at if timestamps is enabled and not 'created_only'
+    if (modelCtor.timestamps && modelCtor.timestamps !== 'created_only') {
       this._setAttribute(modelCtor.updatedAtColumn, new Date())
     }
 

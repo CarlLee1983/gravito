@@ -519,6 +519,7 @@ export async function Authenticate(c: GravitoContext, next: GravitoNext) {
   // }
 
   await next()
+  return undefined
 }
 `
   }
@@ -647,6 +648,8 @@ if (process.env.APP_DEBUG === 'true') {
  */
 
 import { bodySizeLimit, PlanetCore, securityHeaders } from '@gravito/core'
+import { OrbitAtlas } from '@gravito/atlas'
+import databaseConfig from '../config/database'
 ${spectrumImport}import { AppServiceProvider } from './Providers/AppServiceProvider'
 import { RouteServiceProvider } from './Providers/RouteServiceProvider'
 
@@ -656,7 +659,8 @@ import { RouteServiceProvider } from './Providers/RouteServiceProvider'
 // Create application core
 const core = new PlanetCore({
   config: {
-    APP_NAME: '\${process.env.APP_NAME ?? '${context.name}'}',
+    APP_NAME: process.env.APP_NAME ?? '${context.name}',
+    database: databaseConfig,
   },
 })
 const defaultCsp = [
@@ -687,6 +691,8 @@ core.adapter.use(
 if (!Number.isNaN(bodyLimit) && bodyLimit > 0) {
   core.adapter.use('*', bodySizeLimit(bodyLimit, { requireContentLength: requireLength }))
 }
+
+await core.orbit(new OrbitAtlas())
 ${spectrumOrbit}
 // Register service providers
 core.register(new AppServiceProvider())

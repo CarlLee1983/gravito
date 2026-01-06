@@ -39,6 +39,11 @@ export class CleanArchitectureGenerator extends BaseGenerator {
       },
       {
         type: 'directory',
+        name: 'database',
+        children: [{ type: 'file', name: '.gitkeep', content: '' }],
+      },
+      {
+        type: 'directory',
         name: 'src',
         children: [
           // Domain Layer (innermost - no dependencies)
@@ -771,12 +776,17 @@ export class UserPresenter {
  */
 
 import { bodySizeLimit, PlanetCore, securityHeaders } from '@gravito/core'
+import { OrbitAtlas } from '@gravito/atlas'
+import databaseConfig from '../config/database'
 import { AppServiceProvider } from './Infrastructure/Providers/AppServiceProvider'
 import { RepositoryServiceProvider } from './Infrastructure/Providers/RepositoryServiceProvider'
 import { registerApiRoutes } from './Interface/Http/Routes/api'
 
 const core = new PlanetCore({
-  config: { APP_NAME: '${context.name}' },
+  config: {
+    APP_NAME: '${context.name}',
+    database: databaseConfig,
+  },
 })
 
 const defaultCsp = [
@@ -807,6 +817,8 @@ core.adapter.use(
 if (!Number.isNaN(bodyLimit) && bodyLimit > 0) {
   core.adapter.use('*', bodySizeLimit(bodyLimit, { requireContentLength: requireLength }))
 }
+
+await core.orbit(new OrbitAtlas())
 
 core.register(new RepositoryServiceProvider())
 core.register(new AppServiceProvider())

@@ -320,6 +320,27 @@ export abstract class BaseGenerator {
    * Generate package.json content.
    */
   protected generatePackageJson(context: GeneratorContext): string {
+    const profile = (context.profile as string) || 'core'
+
+    // Base dependencies for all profiles
+    const baseDependencies: Record<string, string> = {
+      '@gravito/core': '^1.0.0-beta.5',
+      '@gravito/atlas': '^1.0.0-beta.5',
+      '@gravito/plasma': '^1.0.0-beta.5',
+      '@gravito/stream': '^1.0.0-beta.5',
+    }
+
+    // Profile-specific dependencies
+    if (profile === 'enterprise' || profile === 'scale') {
+      baseDependencies['@gravito/quasar'] = '^1.0.0-beta.5'
+      baseDependencies['@gravito/horizon'] = '^1.0.0-beta.5'
+    }
+
+    // Additional optional dependencies
+    if (context.withSpectrum) {
+      baseDependencies['@gravito/spectrum'] = '^1.0.0-beta.1'
+    }
+
     const pkg = {
       name: context.nameKebabCase,
       version: '0.1.0',
@@ -333,12 +354,9 @@ export abstract class BaseGenerator {
         'docker:build': `docker build -t ${context.nameKebabCase} .`,
         'docker:run': `docker run -it -p 3000:3000 ${context.nameKebabCase}`,
       },
-      dependencies: {
-        '@gravito/core': '^1.0.0-beta.5',
-        ...(context.withSpectrum ? { '@gravito/spectrum': '^1.0.0-beta.1' } : {}),
-      },
+      dependencies: baseDependencies,
       devDependencies: {
-        '@types/bun': 'latest',
+        'bun-types': 'latest',
         typescript: '^5.0.0',
       },
     }
@@ -399,26 +417,142 @@ tests
    * Generate .env.example content.
    */
   protected generateEnvExample(context: GeneratorContext): string {
-    return `# Application
-APP_NAME="${context.name}"
+    const profile = (context.profile as string) || 'core'
+
+    // Base configuration for all profiles
+    let envContent = `# ============================================================================
+# Application Configuration
+# ============================================================================
+
+APP_NAME=${context.name}
 APP_ENV=development
-APP_KEY=
 APP_DEBUG=true
 APP_URL=http://localhost:3000
+APP_KEY=
 
-# Server
-PORT=3000
+# ============================================================================
+# Database Configuration
+# ============================================================================
 
-# Database
-DB_CONNECTION=sqlite
+# Database Connection (sqlite, postgres, mysql)
+DB_CONNECTION=${profile === 'core' ? 'sqlite' : 'postgres'}
+
+# SQLite Configuration (when DB_CONNECTION=sqlite)
 DB_DATABASE=database/database.sqlite
 
-# Cache
-CACHE_DRIVER=memory
+# PostgreSQL Configuration (when DB_CONNECTION=postgres)
+${
+  profile !== 'core'
+    ? `DB_HOST=127.0.0.1
+DB_PORT=5432
+DB_DATABASE=${context.name}
+DB_USERNAME=postgres
+DB_PASSWORD=
+DB_SSLMODE=prefer`
+    : `# DB_HOST=127.0.0.1
+# DB_PORT=5432
+# DB_DATABASE=${context.name}
+# DB_USERNAME=postgres
+# DB_PASSWORD=
+# DB_SSLMODE=prefer`
+}
 
-# Logging
+# MySQL Configuration (when DB_CONNECTION=mysql)
+# DB_HOST=127.0.0.1
+# DB_PORT=3306
+# DB_DATABASE=${context.name}
+# DB_USERNAME=root
+# DB_PASSWORD=
+
+# ============================================================================
+# Redis Configuration (@gravito/plasma)
+# ============================================================================
+
+# Default Redis Connection
+REDIS_CONNECTION=default
+REDIS_HOST=127.0.0.1
+REDIS_PORT=6379
+REDIS_PASSWORD=
+REDIS_DB=0
+
+# Redis Connection Options
+REDIS_CONNECT_TIMEOUT=10000
+REDIS_COMMAND_TIMEOUT=5000
+REDIS_KEY_PREFIX=
+REDIS_MAX_RETRIES=3
+REDIS_RETRY_DELAY=1000
+
+# Cache-specific Redis Connection (optional, falls back to default)
+# REDIS_CACHE_HOST=127.0.0.1
+# REDIS_CACHE_PORT=6379
+# REDIS_CACHE_PASSWORD=
+REDIS_CACHE_DB=1
+
+# Queue-specific Redis Connection (optional, falls back to default)
+# REDIS_QUEUE_HOST=127.0.0.1
+# REDIS_QUEUE_PORT=6379
+# REDIS_QUEUE_PASSWORD=
+REDIS_QUEUE_DB=2
+
+# ============================================================================
+# Cache Configuration (@gravito/stasis)
+# ============================================================================
+
+# Cache Driver (memory, file, redis)
+CACHE_DRIVER=${profile === 'core' ? 'memory' : 'redis'}
+
+# File Cache Path (when CACHE_DRIVER=file)
+CACHE_PATH=storage/framework/cache
+
+# Redis Cache Configuration (when CACHE_DRIVER=redis)
+REDIS_CACHE_CONNECTION=cache
+REDIS_CACHE_PREFIX=cache:
+
+# ============================================================================
+# Queue Configuration (@gravito/stream)
+# ============================================================================
+
+# Queue Connection (sync, memory, database, redis, kafka, sqs, rabbitmq)
+QUEUE_CONNECTION=${profile === 'core' ? 'sync' : 'redis'}
+
+# Database Queue Configuration (when QUEUE_CONNECTION=database)
+QUEUE_TABLE=jobs
+
+# Redis Queue Configuration (when QUEUE_CONNECTION=redis)
+REDIS_PREFIX=queue:
+
+`
+
+    // Add profile-specific configurations
+    if (profile === 'enterprise' || profile === 'scale') {
+      envContent += `# Kafka Queue Configuration (when QUEUE_CONNECTION=kafka)
+# KAFKA_BROKERS=localhost:9092
+# KAFKA_CONSUMER_GROUP_ID=gravito-workers
+# KAFKA_CLIENT_ID=${context.name}
+
+# AWS SQS Queue Configuration (when QUEUE_CONNECTION=sqs)
+# AWS_REGION=us-east-1
+# SQS_QUEUE_URL_PREFIX=
+# SQS_VISIBILITY_TIMEOUT=30
+# SQS_WAIT_TIME_SECONDS=20
+
+# RabbitMQ Queue Configuration (when QUEUE_CONNECTION=rabbitmq)
+# RABBITMQ_URL=amqp://localhost
+# RABBITMQ_EXCHANGE=gravito.events
+# RABBITMQ_EXCHANGE_TYPE=fanout
+
+`
+    }
+
+    // Add logging configuration
+    envContent += `# ============================================================================
+# Logging Configuration
+# ============================================================================
+
 LOG_LEVEL=debug
 `
+
+    return envContent
   }
 
   /**
@@ -472,6 +606,9 @@ coverage/
         strict: true,
         skipLibCheck: true,
         declaration: true,
+        experimentalDecorators: true,
+        emitDecoratorMetadata: true,
+        types: ['bun-types'],
         outDir: './dist',
         rootDir: './src',
         baseUrl: '.',

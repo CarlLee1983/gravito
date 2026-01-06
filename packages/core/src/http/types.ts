@@ -425,6 +425,7 @@ export type GravitoHandler<V extends GravitoVariables = GravitoVariables> = (
  * const logger: GravitoMiddleware = async (ctx, next) => {
  *   console.log(`${ctx.req.method} ${ctx.req.path}`)
  *   await next()
+ *   return undefined
  * }
  * ```
  */
