@@ -31,8 +31,6 @@ import type { AdapterConfig, HttpAdapter, RouteDefinition } from './types'
  * Wraps Photon's request object to implement GravitoRequest
  */
 class PhotonRequestWrapper implements GravitoRequest {
-  private _cachedJson: unknown = null
-
   constructor(private photonCtx: Context) {}
 
   get url(): string {
