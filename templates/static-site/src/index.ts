@@ -10,7 +10,8 @@ async function main() {
   // For static site, we typically don't start the server
   // But we can start it for development/testing
   if (process.env.NODE_ENV !== 'production') {
-    await core.liftoff()
+    const serverConfig = core.liftoff()
+    Bun.serve(serverConfig)
   }
 }
 
