@@ -445,6 +445,10 @@ export default core.liftoff()
         start: 'bun run dist/bootstrap.js',
         test: 'bun test',
         typecheck: 'tsc --noEmit',
+        check: 'bun run typecheck && bun run test',
+        'check:deps': 'bun run scripts/check-dependencies.ts',
+        validate: 'bun run check && bun run check:deps',
+        precommit: 'bun run validate',
       },
       dependencies: {
         '@gravito/core': 'workspace:*',
