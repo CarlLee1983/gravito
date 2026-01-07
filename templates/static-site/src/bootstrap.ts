@@ -46,7 +46,8 @@ export async function bootstrap(options: AppConfig = {}) {
   const defaultCsp = [
     `default-src 'self'${devSources}`,
     `script-src 'self' 'unsafe-inline' 'unsafe-eval'${devSources}`,
-    `style-src 'self' 'unsafe-inline'${devSources}`,
+    `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com${devSources}`,
+    `font-src 'self' https://fonts.gstatic.com${devSources}`,
     `connect-src 'self'${devSources}`,
     `img-src 'self' data:${devSources}`,
     "object-src 'none'",
@@ -74,8 +75,10 @@ export async function bootstrap(options: AppConfig = {}) {
   }
 
   // 3. Static files
+  // serveStatic root: './' maps URL /static/foo.png to ./static/foo.png on disk.
   const staticAssets = serveStatic({ root: './' }) as unknown as GravitoMiddleware
-  const favicon = serveStatic({ path: './static/favicon.ico' }) as unknown as GravitoMiddleware
+  const faviconPath = './static/favicon.ico'
+  const favicon = serveStatic({ path: faviconPath }) as unknown as GravitoMiddleware
 
   core.adapter.use('/static/*', staticAssets)
   core.adapter.route('get', '/favicon.ico', favicon)
