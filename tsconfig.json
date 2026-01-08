@@ -4,6 +4,8 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "strict": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
     "declaration": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
@@ -12,15 +14,34 @@
     "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
     "paths": {
-      "@gravito/core": ["packages/core/src/index.ts"],
-      "@gravito/core/*": ["packages/core/src/*"],
-      "@gravito/monolith": ["packages/monolith/src/index.ts"],
-      "@gravito/atlas": ["packages/atlas/src/index.ts"],
-      "@gravito/mass": ["packages/mass/src/index.ts"],
-      "@gravito/enterprise": ["packages/enterprise/src/index.ts"],
-      "@gravito/stasis": ["packages/stasis/src/index.ts"],
-      "@gravito/stream": ["packages/stream/src/index.ts"]
+      "@gravito/core": [
+        "packages/core/src/index.ts"
+      ],
+      "@gravito/core/*": [
+        "packages/core/src/*"
+      ],
+      "@gravito/monolith": [
+        "packages/monolith/src/index.ts"
+      ],
+      "@gravito/atlas": [
+        "packages/atlas/src/index.ts"
+      ],
+      "@gravito/mass": [
+        "packages/mass/src/index.ts"
+      ],
+      "@gravito/enterprise": [
+        "packages/enterprise/src/index.ts"
+      ],
+      "@gravito/stasis": [
+        "packages/stasis/src/index.ts"
+      ],
+      "@gravito/stream": [
+        "packages/stream/src/index.ts"
+      ]
     }
   },
-  "exclude": ["node_modules", "**/dist/**"]
+  "exclude": [
+    "node_modules",
+    "**/dist/**"
+  ]
 }
