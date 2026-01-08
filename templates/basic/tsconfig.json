@@ -10,6 +10,8 @@
             "bun-types"
         ],
         "strict": true,
+        "experimentalDecorators": true,
+        "emitDecoratorMetadata": true,
         "skipLibCheck": true,
         "esModuleInterop": true,
         "allowSyntheticDefaultImports": true,
