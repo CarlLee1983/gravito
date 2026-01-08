@@ -15,6 +15,7 @@ import { promisify } from 'node:util'
 const execAsync = promisify(exec)
 
 const PACKAGES_DIR = join(process.cwd(), 'packages')
+const SATELLITES_DIR = join(process.cwd(), 'satellites')
 const DRY_RUN = process.argv.includes('--dry-run')
 const SKIP_BUILD = process.argv.includes('--skip-build')
 const SKIP_TEST = process.argv.includes('--skip-test')
@@ -42,28 +43,41 @@ interface PackageInfo {
   private: boolean
 }
 
-async function getPackages(): Promise<PackageInfo[]> {
+async function getPackagesInDir(dirPath: string): Promise<PackageInfo[]> {
   const packages: PackageInfo[] = []
-  const dirs = await readdir(PACKAGES_DIR)
+  let dirs: string[] = []
+
+  try {
+    dirs = await readdir(dirPath)
+  } catch (e) {
+    return []
+  }
 
   for (const dir of dirs) {
-    const pkgPath = join(PACKAGES_DIR, dir, 'package.json')
+    const pkgPath = join(dirPath, dir, 'package.json')
     try {
       const content = await readFile(pkgPath, 'utf-8')
       const json = JSON.parse(content)
 
       packages.push({
         name: json.name,
-        path: join(PACKAGES_DIR, dir),
+        path: join(dirPath, dir),
         version: json.version,
         private: json.private === true,
       })
     } catch (e: any) {
-      console.warn(`⚠️  無法讀取 ${dir}/package.json:`, e.message)
+      // 忽略沒有 package.json 的目錄
     }
   }
 
   return packages.filter((pkg) => !pkg.private)
+}
+
+async function getAllPackages(): Promise<PackageInfo[]> {
+  const corePackages = await getPackagesInDir(PACKAGES_DIR)
+  const satellitePackages = await getPackagesInDir(SATELLITES_DIR)
+
+  return [...corePackages, ...satellitePackages]
 }
 
 async function checkNpmAuth(): Promise<boolean> {
@@ -253,7 +267,7 @@ async function main() {
   await checkNpmRegistry()
 
   // 獲取所有需要發布的套件
-  const packages = await getPackages()
+  const packages = await getAllPackages()
   console.log(`\n📋 找到 ${packages.length} 個套件:`)
   packages.forEach((pkg) => {
     console.log(`  - ${pkg.name}@${pkg.version}`)
