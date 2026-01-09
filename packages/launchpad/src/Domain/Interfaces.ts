@@ -27,6 +27,26 @@ export interface IDockerAdapter {
 }
 
 /**
+ * 負責動態反向代理與域名路由的轉接器
+ */
+export interface IRouterAdapter {
+  /**
+   * 註冊一個域名映射到指定的目標 (URL)
+   */
+  register(domain: string, targetUrl: string): void
+
+  /**
+   * 註銷域名
+   */
+  unregister(domain: string): void
+
+  /**
+   * 啟動代理伺服器
+   */
+  start(port: number): void
+}
+
+/**
  * 負責代碼獲取
  */
 export interface IGitAdapter {
