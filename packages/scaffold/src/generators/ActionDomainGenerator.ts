@@ -151,8 +151,23 @@ export class ActionDomainGenerator extends BaseGenerator {
             children: [
               {
                 type: 'file',
+                name: 'index.ts',
+                content: this.generateProvidersIndex(),
+              },
+              {
+                type: 'file',
                 name: 'AppServiceProvider.ts',
                 content: this.generateAppServiceProvider(context),
+              },
+              {
+                type: 'file',
+                name: 'MiddlewareProvider.ts',
+                content: this.generateMiddlewareProvider(),
+              },
+              {
+                type: 'file',
+                name: 'RouteProvider.ts',
+                content: this.generateRouteProvider(),
               },
             ],
           },
@@ -345,7 +360,7 @@ export function registerApiRoutes(router: Router) {
 import { ServiceProvider, type Container, type PlanetCore } from '@gravito/core'
 
 export class AppServiceProvider extends ServiceProvider {
-  register(container: Container): void {
+  register(_container: Container): void {
     // Register global services here
   }
 
@@ -356,42 +371,96 @@ export class AppServiceProvider extends ServiceProvider {
 `
   }
 
-  private generateBootstrap(context: GeneratorContext): string {
+  private generateProvidersIndex(): string {
     return `/**
- * Application Entry Point
+ * Application Service Providers
  */
 
-import { PlanetCore, securityHeaders, bodySizeLimit } from '@gravito/core'
+export { AppServiceProvider } from './AppServiceProvider'
+export { MiddlewareProvider } from './MiddlewareProvider'
+export { RouteProvider } from './RouteProvider'
+`
+  }
+
+  private generateMiddlewareProvider(): string {
+    return `/**
+ * Middleware Service Provider
+ */
+
+import {
+  ServiceProvider,
+  type Container,
+  type PlanetCore,
+  bodySizeLimit,
+  securityHeaders,
+} from '@gravito/core'
+
+export class MiddlewareProvider extends ServiceProvider {
+  register(_container: Container): void {}
+
+  boot(core: PlanetCore): void {
+    core.adapter.use('*', securityHeaders())
+    core.adapter.use('*', bodySizeLimit(1024 * 1024))
+    core.logger.info('🛡️ Middleware registered')
+  }
+}
+`
+  }
+
+  private generateRouteProvider(): string {
+    return `/**
+ * Route Service Provider
+ */
+
+import { ServiceProvider, type Container, type PlanetCore } from '@gravito/core'
+import { registerApiRoutes } from '../routes/api'
+
+export class RouteProvider extends ServiceProvider {
+  register(_container: Container): void {}
+
+  boot(core: PlanetCore): void {
+    registerApiRoutes(core.router)
+    core.logger.info('🛤️ Routes registered')
+  }
+}
+`
+  }
+
+  private generateBootstrap(_context: GeneratorContext): string {
+    return `/**
+ * Application Bootstrap
+ *
+ * Uses the ServiceProvider pattern for modular initialization.
+ */
+
+import { defineConfig, PlanetCore } from '@gravito/core'
 import { OrbitAtlas } from '@gravito/atlas'
-import databaseConfig from '../config/database'
-import { AppServiceProvider } from './providers/AppServiceProvider'
-import { registerApiRoutes } from './routes/api'
+import appConfig from '../config/app'
+import {
+  AppServiceProvider,
+  MiddlewareProvider,
+  RouteProvider,
+} from './providers'
 
-// Initialize Core
-const core = new PlanetCore({
-  config: { 
-    APP_NAME: '${context.name}',
-    database: databaseConfig
-  },
-})
+export async function bootstrap() {
+  const config = defineConfig({
+    config: appConfig,
+    orbits: [new OrbitAtlas()],
+  })
 
-// Middleware
-core.adapter.use('*', securityHeaders())
-core.adapter.use('*', bodySizeLimit(1024 * 1024)) // 1MB
+  const core = await PlanetCore.boot(config)
+  core.registerGlobalErrorHandlers()
 
-// Install Orbits
-await core.orbit(new OrbitAtlas())
+  core.register(new AppServiceProvider())
+  core.register(new MiddlewareProvider())
+  core.register(new RouteProvider())
 
-// Service Providers
-core.register(new AppServiceProvider())
+  await core.bootstrap()
 
-// Bootstrap
-await core.bootstrap()
+  return core
+}
 
-// Routes
-registerApiRoutes(core.router)
-
-// Liftoff
+const core = await bootstrap()
 export default core.liftoff()
 `
   }
