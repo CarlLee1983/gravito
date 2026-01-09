@@ -1002,6 +1002,16 @@ export function report(error: unknown): void {
 
 This project follows **Domain-Driven Design (DDD)** with strategic and tactical patterns.
 
+## Service Providers
+
+Service providers are the central place to configure your application and modules. They follow the ServiceProvider pattern with \`register()\` and \`boot()\` lifecycle methods.
+
+### Internal Bootstrapping
+
+1. **Bootstrap/app.ts**: Orchestrates the 4-step lifecycle (Configure, Boot, Register, Bootstrap).
+2. **Bootstrap/providers.ts**: Central registry for all global and module-specific providers.
+3. **Infrastructure/Providers/[Module]ServiceProvider.ts**: Module-specific service registration.
+
 ## Bounded Contexts
 
 \`\`\`

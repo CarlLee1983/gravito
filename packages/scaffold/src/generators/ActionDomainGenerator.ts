@@ -466,41 +466,49 @@ export default core.liftoff()
   }
 
   protected generateArchitectureDoc(context: GeneratorContext): string {
-    return (
-      '# ' +
-      context.name +
-      ' - Action Domain Architecture\n\n' +
-      '## Overview\n\n' +
-      'This project uses the **Action Domain** pattern, designed for high-clarity API implementations.\n\n' +
-      '## Directory Structure\n\n' +
-      '```\n' +
-      'src/\n' +
-      '├── actions/           # Single Responsibility Business Logic\n' +
-      '│   ├── Action.ts      # Base Action class\n' +
-      '│   └── [Domain]/      # Domain-specific actions\n' +
-      '├── controllers/       # HTTP Request Handlers\n' +
-      '│   └── api/v1/        # API Controllers\n' +
-      '├── types/             # TypeScript Definitions\n' +
-      '│   ├── requests/      # Request Payloads\n' +
-      '│   └── responses/     # Response Structures\n' +
-      '├── repositories/      # Data Access Layer\n' +
-      '├── routes/            # Route Definitions\n' +
-      '└── config/            # Configuration\n' +
-      '```\n\n' +
-      '## Core Concepts\n\n' +
-      '### Actions\n' +
-      'Every business operation is an "Action". An action:\n' +
-      '- Does ONE thing.\n' +
-      '- Takes specific input.\n' +
-      '- Returns specific output.\n' +
-      '- Is framework-agnostic (ideally).\n\n' +
-      '### Controllers\n' +
-      'Controllers are thin. They:\n' +
-      '1. Parse the request.\n' +
-      '2. Instantiate/Call the Action.\n' +
-      '3. Return the response.\n\n' +
-      'Created with ❤️ using Gravito Framework\n'
-    )
+    return `# ${context.name} - Action Domain Architecture
+
+## Overview
+
+This project uses the **Action Domain** pattern, designed for high-clarity API implementations.
+
+## Service Providers
+
+Service providers are the central place to configure your application. They follow the ServiceProvider pattern with \`register()\` and \`boot()\` lifecycle methods.
+
+## Directory Structure
+
+\`\`\`
+src/
+├── actions/           # Single Responsibility Business Logic
+│   ├── Action.ts      # Base Action class
+│   └── [Domain]/      # Domain-specific actions
+├── controllers/       # HTTP Request Handlers
+│   └── api/v1/        # API Controllers
+├── types/             # TypeScript Definitions
+├── repositories/      # Data Access Layer
+├── routes/            # Route Definitions
+├── providers/         # Service Providers
+└── config/            # Configuration
+\`\`\`
+
+## Core Concepts
+
+### Actions
+Every business operation is an "Action". An action:
+- Does ONE thing.
+- Takes specific input.
+- Returns specific output.
+- Is framework-agnostic (ideally).
+
+### Controllers
+Controllers are thin. They:
+1. Parse the request.
+2. Instantiate/Call the Action.
+3. Return the response.
+
+Created with ❤️ using Gravito Framework
+`
   }
 
   protected override generatePackageJson(context: GeneratorContext): string {
