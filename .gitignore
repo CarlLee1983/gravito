@@ -6,6 +6,7 @@ dist/
 
 # Bun
 *.lockb
+bun.lock
 
 # IDE
 .idea/
@@ -58,6 +59,7 @@ examples/*/dist/
 *.sqlite-shm
 *.sqlite-wal
 
-
-# Test temp artifacts
+# Test Artifacts
+**/.tmp-*/
+**/tests/**/*.bin
 packages/*/tests/.tmp-*
