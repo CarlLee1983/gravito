@@ -1,5 +1,14 @@
 # @gravito/example-commerce-fullstack
 
+## 1.0.2
+
+### Patch Changes
+
+- Updated dependencies
+  - @gravito/signal@1.0.1
+  - @gravito/satellite-catalog@0.1.2
+  - @gravito/satellite-membership@0.1.2
+
 ## 1.0.1
 
 ### Patch Changes

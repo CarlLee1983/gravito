@@ -1,4 +1,4 @@
-import { onMounted, ref, watch } from 'vue'
+import { onMounted, ref } from 'vue'
 
 export function useTheme() {
   const isDark = ref(localStorage.getItem('theme') !== 'light')

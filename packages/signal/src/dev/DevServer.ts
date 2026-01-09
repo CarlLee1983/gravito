@@ -55,6 +55,7 @@ export class DevServer {
       prefix,
       wrap((ctx) => {
         const entries = this.mailbox.list()
+        ctx.header('Content-Type', 'text/html; charset=utf-8')
         return ctx.html(getMailboxHtml(entries, prefix))
       })
     )
@@ -72,6 +73,7 @@ export class DevServer {
         if (!entry) {
           return ctx.text('Email not found', 404)
         }
+        ctx.header('Content-Type', 'text/html; charset=utf-8')
         return ctx.html(getPreviewHtml(entry, prefix))
       })
     )
@@ -89,6 +91,7 @@ export class DevServer {
         if (!entry) {
           return ctx.text('Not found', 404)
         }
+        ctx.header('Content-Type', 'text/html; charset=utf-8')
         return ctx.html(entry.html)
       })
     )

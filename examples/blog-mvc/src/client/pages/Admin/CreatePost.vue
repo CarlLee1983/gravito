@@ -29,7 +29,8 @@ const form = useForm({
   content: '',
   author: props.auth.user?.name || 'Antigravity',
   status: 'published',
-  feature_image: ''
+  feature_image: '',
+  feature_image_file: null as File | null
 })
 
 const submit = () => {
@@ -54,6 +55,18 @@ const generateSlug = () => {
       .replace(/[^\w\s-]/g, '')
       .replace(/[\s_-]+/g, '-')
       .replace(/^-+|-+$/g, '')
+  }
+}
+
+
+const previewImage = ref('')
+
+const handleFileChange = (e: Event) => {
+  const target = e.target as HTMLInputElement
+  if (target.files && target.files.length > 0) {
+    const file = target.files[0]
+    form.feature_image_file = file
+    previewImage.value = URL.createObjectURL(file)
   }
 }
 </script>
@@ -125,13 +138,25 @@ const generateSlug = () => {
 
             <!-- Feature Image -->
             <div class="space-y-2">
-              <label class="text-sm font-medium text-gray-300 uppercase tracking-wider">Feature Image URL</label>
-              <input 
-                v-model="form.feature_image" 
-                type="text" 
-                placeholder="https://images.unsplash.com/..."
-                class="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-primary/50 transition-all text-white"
-              />
+              <label class="text-sm font-medium text-gray-300 uppercase tracking-wider">Feature Image</label>
+              <div class="space-y-3">
+                 <input 
+                  type="file" 
+                  @change="handleFileChange"
+                  accept="image/*"
+                  class="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-primary/50 transition-all text-white file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-primary/80"
+                />
+                 <div v-if="previewImage" class="mt-2">
+                    <img :src="previewImage" alt="Preview" class="h-48 w-full object-cover rounded-xl border border-white/10" />
+                 </div>
+                 <input 
+                  v-if="!form.feature_image_file"
+                  v-model="form.feature_image" 
+                  type="text" 
+                  placeholder="Or enter image URL..."
+                  class="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-primary/50 transition-all text-white text-sm"
+                />
+              </div>
             </div>
           </div>
 

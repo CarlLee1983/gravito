@@ -151,8 +151,23 @@ export class ActionDomainGenerator extends BaseGenerator {
             children: [
               {
                 type: 'file',
+                name: 'index.ts',
+                content: this.generateProvidersIndex(),
+              },
+              {
+                type: 'file',
                 name: 'AppServiceProvider.ts',
                 content: this.generateAppServiceProvider(context),
+              },
+              {
+                type: 'file',
+                name: 'MiddlewareProvider.ts',
+                content: this.generateMiddlewareProvider(),
+              },
+              {
+                type: 'file',
+                name: 'RouteProvider.ts',
+                content: this.generateRouteProvider(),
               },
             ],
           },
@@ -345,7 +360,7 @@ export function registerApiRoutes(router: Router) {
 import { ServiceProvider, type Container, type PlanetCore } from '@gravito/core'
 
 export class AppServiceProvider extends ServiceProvider {
-  register(container: Container): void {
+  register(_container: Container): void {
     // Register global services here
   }
 
@@ -356,82 +371,144 @@ export class AppServiceProvider extends ServiceProvider {
 `
   }
 
-  private generateBootstrap(context: GeneratorContext): string {
+  private generateProvidersIndex(): string {
     return `/**
- * Application Entry Point
+ * Application Service Providers
  */
 
-import { PlanetCore, securityHeaders, bodySizeLimit } from '@gravito/core'
+export { AppServiceProvider } from './AppServiceProvider'
+export { MiddlewareProvider } from './MiddlewareProvider'
+export { RouteProvider } from './RouteProvider'
+`
+  }
+
+  private generateMiddlewareProvider(): string {
+    return `/**
+ * Middleware Service Provider
+ */
+
+import {
+  ServiceProvider,
+  type Container,
+  type PlanetCore,
+  bodySizeLimit,
+  securityHeaders,
+} from '@gravito/core'
+
+export class MiddlewareProvider extends ServiceProvider {
+  register(_container: Container): void {}
+
+  boot(core: PlanetCore): void {
+    core.adapter.use('*', securityHeaders())
+    core.adapter.use('*', bodySizeLimit(1024 * 1024))
+    core.logger.info('🛡️ Middleware registered')
+  }
+}
+`
+  }
+
+  private generateRouteProvider(): string {
+    return `/**
+ * Route Service Provider
+ */
+
+import { ServiceProvider, type Container, type PlanetCore } from '@gravito/core'
+import { registerApiRoutes } from '../routes/api'
+
+export class RouteProvider extends ServiceProvider {
+  register(_container: Container): void {}
+
+  boot(core: PlanetCore): void {
+    registerApiRoutes(core.router)
+    core.logger.info('🛤️ Routes registered')
+  }
+}
+`
+  }
+
+  private generateBootstrap(_context: GeneratorContext): string {
+    return `/**
+ * Application Bootstrap
+ *
+ * Uses the ServiceProvider pattern for modular initialization.
+ */
+
+import { defineConfig, PlanetCore } from '@gravito/core'
 import { OrbitAtlas } from '@gravito/atlas'
-import databaseConfig from '../config/database'
-import { AppServiceProvider } from './providers/AppServiceProvider'
-import { registerApiRoutes } from './routes/api'
+import appConfig from '../config/app'
+import {
+  AppServiceProvider,
+  MiddlewareProvider,
+  RouteProvider,
+} from './providers'
 
-// Initialize Core
-const core = new PlanetCore({
-  config: { 
-    APP_NAME: '${context.name}',
-    database: databaseConfig
-  },
-})
+export async function bootstrap() {
+  const config = defineConfig({
+    config: appConfig,
+    orbits: [new OrbitAtlas()],
+  })
 
-// Middleware
-core.adapter.use('*', securityHeaders())
-core.adapter.use('*', bodySizeLimit(1024 * 1024)) // 1MB
+  const core = await PlanetCore.boot(config)
+  core.registerGlobalErrorHandlers()
 
-// Install Orbits
-await core.orbit(new OrbitAtlas())
+  core.register(new AppServiceProvider())
+  core.register(new MiddlewareProvider())
+  core.register(new RouteProvider())
 
-// Service Providers
-core.register(new AppServiceProvider())
+  await core.bootstrap()
 
-// Bootstrap
-await core.bootstrap()
+  return core
+}
 
-// Routes
-registerApiRoutes(core.router)
-
-// Liftoff
+const core = await bootstrap()
 export default core.liftoff()
 `
   }
 
   protected generateArchitectureDoc(context: GeneratorContext): string {
-    return (
-      '# ' +
-      context.name +
-      ' - Action Domain Architecture\n\n' +
-      '## Overview\n\n' +
-      'This project uses the **Action Domain** pattern, designed for high-clarity API implementations.\n\n' +
-      '## Directory Structure\n\n' +
-      '```\n' +
-      'src/\n' +
-      '├── actions/           # Single Responsibility Business Logic\n' +
-      '│   ├── Action.ts      # Base Action class\n' +
-      '│   └── [Domain]/      # Domain-specific actions\n' +
-      '├── controllers/       # HTTP Request Handlers\n' +
-      '│   └── api/v1/        # API Controllers\n' +
-      '├── types/             # TypeScript Definitions\n' +
-      '│   ├── requests/      # Request Payloads\n' +
-      '│   └── responses/     # Response Structures\n' +
-      '├── repositories/      # Data Access Layer\n' +
-      '├── routes/            # Route Definitions\n' +
-      '└── config/            # Configuration\n' +
-      '```\n\n' +
-      '## Core Concepts\n\n' +
-      '### Actions\n' +
-      'Every business operation is an "Action". An action:\n' +
-      '- Does ONE thing.\n' +
-      '- Takes specific input.\n' +
-      '- Returns specific output.\n' +
-      '- Is framework-agnostic (ideally).\n\n' +
-      '### Controllers\n' +
-      'Controllers are thin. They:\n' +
-      '1. Parse the request.\n' +
-      '2. Instantiate/Call the Action.\n' +
-      '3. Return the response.\n\n' +
-      'Created with ❤️ using Gravito Framework\n'
-    )
+    return `# ${context.name} - Action Domain Architecture
+
+## Overview
+
+This project uses the **Action Domain** pattern, designed for high-clarity API implementations.
+
+## Service Providers
+
+Service providers are the central place to configure your application. They follow the ServiceProvider pattern with \`register()\` and \`boot()\` lifecycle methods.
+
+## Directory Structure
+
+\`\`\`
+src/
+├── actions/           # Single Responsibility Business Logic
+│   ├── Action.ts      # Base Action class
+│   └── [Domain]/      # Domain-specific actions
+├── controllers/       # HTTP Request Handlers
+│   └── api/v1/        # API Controllers
+├── types/             # TypeScript Definitions
+├── repositories/      # Data Access Layer
+├── routes/            # Route Definitions
+├── providers/         # Service Providers
+└── config/            # Configuration
+\`\`\`
+
+## Core Concepts
+
+### Actions
+Every business operation is an "Action". An action:
+- Does ONE thing.
+- Takes specific input.
+- Returns specific output.
+- Is framework-agnostic (ideally).
+
+### Controllers
+Controllers are thin. They:
+1. Parse the request.
+2. Instantiate/Call the Action.
+3. Return the response.
+
+Created with ❤️ using Gravito Framework
+`
   }
 
   protected override generatePackageJson(context: GeneratorContext): string {

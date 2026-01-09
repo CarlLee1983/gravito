@@ -231,6 +231,42 @@ export abstract class BaseGenerator {
 
     // Generate check scripts
     await this.generateCheckScripts(context)
+
+    // Generate AI Skills
+    await this.generateSkills(context)
+  }
+
+  /**
+   * Copy AI Skills to the project
+   */
+  protected async generateSkills(context: GeneratorContext): Promise<void> {
+    const skillsDir = path.resolve(this.config.templatesDir, 'skills')
+    const targetSkillsDir = path.join('.skills')
+
+    try {
+      await fs.access(skillsDir)
+    } catch {
+      // Skills directory does not exist in templates, skip
+      return
+    }
+
+    const files = await walk(skillsDir)
+    for (const filePath of files) {
+      const relativePath = path.relative(skillsDir, filePath)
+      const targetPath = path.join(targetSkillsDir, relativePath)
+
+      // Read source content
+      let content = await fs.readFile(filePath, 'utf-8')
+
+      // Process as template (for SKILL.md and others)
+      try {
+        content = this.stubGenerator.render(content, context as unknown as StubVariables)
+      } catch {
+        // Skip if not renderable
+      }
+
+      await this.writeFile(context.targetDir, targetPath, content)
+    }
   }
 
   /**

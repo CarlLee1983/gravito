@@ -1,6 +1,6 @@
 {
   "name": "create-gravito-app",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Scaffold a new Gravito project in seconds",
   "bin": {
     "create-gravito-app": "index.js"

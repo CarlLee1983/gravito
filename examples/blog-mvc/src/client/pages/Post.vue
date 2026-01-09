@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3'
-import { ArrowLeft, User, Calendar, Share2, MessageSquare, Tag } from 'lucide-vue-next'
+import { ArrowLeft, User, Calendar, Share2, MessageSquare, Tag as TagIcon, Hash, ArrowRight } from 'lucide-vue-next'
 import { computed } from 'vue'
 import { marked } from 'marked'
-
 const props = defineProps<{
   post: {
     title: string
@@ -14,8 +13,21 @@ const props = defineProps<{
       id: number
       name: string
       slug: string
-    } | null
-  }
+    } | null,
+    tags: Array<{
+      id: number
+      name: string
+      slug: string
+    }>
+  },
+  relatedPosts: Array<{
+    title: string
+    slug: string
+    excerpt: string
+    published_at: string
+    feature_image: string | null
+    category: { name: string } | null
+  }>
 }>()
 
 const postHtml = computed(() => {
@@ -63,10 +75,17 @@ const formatDate = (date: string) => {
             </div>
 
             <div v-if="post.category" class="flex items-center gap-2">
-              <Tag class="text-primary" :size="20" />
+              <TagIcon class="text-primary" :size="20" />
               <span class="bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded font-bold text-xs">
                 {{ post.category.name }}
               </span>
+            </div>
+
+            <!-- Tags Display -->
+            <div v-if="post.tags && post.tags.length > 0" class="flex flex-wrap items-center gap-2 ml-4 pl-4 border-l border-white/10">
+               <div v-for="tag in post.tags" :key="tag.id" class="flex items-center text-xs text-gray-400 bg-white/5 px-2 py-1 rounded-full hover:bg-primary/20 hover:text-primary transition-colors cursor-pointer">
+                  <Hash :size="12" class="mr-1 opacity-50"/> {{ tag.name }}
+               </div>
             </div>
           </div>
         </header>
@@ -82,7 +101,38 @@ const formatDate = (date: string) => {
               <Share2 :size="18" /> Share
             </button>
           </div>
-        </div>
+          </div>
+
+
+        <!-- Related Posts Section -->
+        <section v-if="relatedPosts.length > 0" class="border-t border-white/10 pt-16 mt-16">
+           <h3 class="text-3xl font-bold mb-8 text-white flex items-center gap-3">
+              <span class="text-primary">///</span> Related Signals
+           </h3>
+           <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <Link v-for="related in relatedPosts" :key="related.slug" :href="`/posts/${related.slug}`" class="group block bg-black/40 border border-white/5 hover:border-primary/50 transition-all p-6 rounded-xl relative overflow-hidden">
+                 <div class="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/5 to-primary/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+                 
+                 <div class="flex items-center gap-2 mb-3">
+                    <span v-if="related.category" class="text-xs font-bold text-primary uppercase tracking-wider">{{ related.category.name }}</span>
+                    <span class="text-xs text-gray-500">•</span>
+                    <span class="text-xs text-gray-500">{{ formatDate(related.published_at) }}</span>
+                 </div>
+                 
+                 <h4 class="text-xl font-bold text-white mb-3 group-hover:text-primary transition-colors line-clamp-2">
+                    {{ related.title }}
+                 </h4>
+                 
+                 <p class="text-gray-400 text-sm line-clamp-2 mb-4">
+                    {{ related.excerpt }}
+                 </p>
+                 
+                 <div class="flex items-center text-primary text-sm font-medium group-hover:translate-x-2 transition-transform">
+                    Read Stream <ArrowRight :size="16" class="ml-1" />
+                 </div>
+              </Link>
+           </div>
+        </section>
       </article>
     </div>
   </div>
