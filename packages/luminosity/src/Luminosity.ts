@@ -50,10 +50,12 @@ export class Luminosity {
     let currentStream: any = null // fs.WriteStream
     const sitemapFiles: string[] = []
 
-    const closeCurrentFile = () => {
+    const closeCurrentFile = async () => {
       if (currentStream) {
-        currentStream.write(builder.end())
-        currentStream.end()
+        await new Promise<void>((resolve, reject) => {
+          currentStream.once('error', reject)
+          currentStream.end(builder.end(), () => resolve())
+        })
         currentStream = null
       }
     }
@@ -87,14 +89,14 @@ export class Luminosity {
 
     for await (const entry of iterator) {
       if (count > 0 && count % limit === 0) {
-        closeCurrentFile()
+        await closeCurrentFile()
         openNextFile()
       }
       currentStream.write(builder.entry(entry))
       count++
     }
 
-    closeCurrentFile()
+    await closeCurrentFile()
 
     // Always generate index for consistency
     const indexBuilder = new SitemapIndexBuilder({ branding: true })

@@ -1,10 +1,11 @@
-import { describe, expect, it } from 'bun:test'
+import { afterEach, describe, expect, it } from 'bun:test'
 import {
   createDetector,
   defineConfig,
   generateLocalizedRoutes,
   generateRedirectHtml,
   generateRedirects,
+  generateSitemapEntries,
   inferRedirects,
 } from '../src'
 
@@ -103,6 +104,66 @@ describe('@gravito/freeze', () => {
         expect(detector.needsRedirect('/random')).toBeNull()
       })
     })
+
+    describe('isStaticSite', () => {
+      const originalWindow = globalThis.window
+
+      afterEach(() => {
+        globalThis.window = originalWindow
+      })
+
+      it('returns true for preview server', () => {
+        globalThis.window = {
+          location: {
+            hostname: 'localhost',
+            port: '4173',
+            pathname: '/en/docs',
+          },
+        } as any
+
+        expect(detector.isStaticSite()).toBe(true)
+      })
+
+      it('returns true for configured static domain', () => {
+        globalThis.window = {
+          location: {
+            hostname: 'example.com',
+            port: '',
+            pathname: '/en',
+          },
+        } as any
+
+        expect(detector.isStaticSite()).toBe(true)
+      })
+
+      it('returns false for local dev server', () => {
+        globalThis.window = {
+          location: {
+            hostname: 'localhost',
+            port: '3000',
+            pathname: '/en',
+          },
+        } as any
+
+        expect(detector.isStaticSite()).toBe(false)
+      })
+    })
+
+    describe('getCurrentLocale', () => {
+      const originalWindow = globalThis.window
+
+      afterEach(() => {
+        globalThis.window = originalWindow
+      })
+
+      it('returns locale from window path when available', () => {
+        globalThis.window = {
+          location: { pathname: '/zh/docs' },
+        } as any
+
+        expect(detector.getCurrentLocale()).toBe('zh')
+      })
+    })
   })
 
   describe('generateRedirectHtml', () => {
@@ -162,6 +223,24 @@ describe('@gravito/freeze', () => {
         { from: '/docs', to: '/en/docs' },
         { from: '/about', to: '/en/about' },
       ])
+    })
+  })
+
+  describe('generateSitemapEntries', () => {
+    it('should include alternates and x-default', () => {
+      const config = defineConfig({
+        staticDomains: ['example.com'],
+        baseUrl: 'https://example.com',
+        locales: ['en', 'zh'],
+        defaultLocale: 'en',
+      })
+
+      const routes = ['/en', '/zh', '/en/about', '/zh/about']
+      const entries = generateSitemapEntries(routes, config)
+
+      const aboutEntry = entries.find((e) => e.url === 'https://example.com/en/about')
+      expect(aboutEntry?.alternates?.length).toBe(3)
+      expect(aboutEntry?.alternates?.some((alt) => alt.hreflang === 'x-default')).toBe(true)
     })
   })
 })

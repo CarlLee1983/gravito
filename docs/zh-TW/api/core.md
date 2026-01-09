@@ -29,7 +29,7 @@ const core = new PlanetCore()
 Gravito 搭載了高效能的 **Gravito Core 引擎**，原生支援 Bun 與 Deno 等現代化執行環境。
 
 ```typescript
-import { GravitoAdapter } from 'gravito-core'
+import { GravitoAdapter } from '@gravito/core'
 
 core.liftoff({
   adapter: new GravitoAdapter(),

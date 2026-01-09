@@ -2,6 +2,7 @@
  * @fileoverview Process file job for async processing
  */
 
+import { getRuntimeAdapter } from '@gravito/core'
 import type { StorageProvider } from '@gravito/nebula'
 import { Job } from '@gravito/stream'
 import type { ForgeService } from '../ForgeService'
@@ -51,6 +52,7 @@ export interface ProcessFileJobData {
  */
 export class ProcessFileJob extends Job {
   private data: ProcessFileJobData
+  private runtime = getRuntimeAdapter()
 
   constructor(data: ProcessFileJobData) {
     super()
@@ -98,14 +100,14 @@ export class ProcessFileJob extends Job {
         status = ProcessingStatusManager.processing(status, 90, 'Uploading to storage')
         await statusStore.set(status)
 
-        const file = Bun.file(output.path)
+        const file = await this.runtime.readFileAsBlob(output.path)
         const storageKey = this.generateStorageKey(input.filename || 'processed')
         await storage.put(storageKey, file)
         output.url = storage.getUrl(storageKey)
 
         // Clean up temp file
         try {
-          await Bun.write('/dev/null', file) // Trigger file read to ensure it's closed
+          await this.runtime.deleteFile(output.path)
         } catch {
           // Ignore cleanup errors
         }

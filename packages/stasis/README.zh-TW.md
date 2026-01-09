@@ -11,7 +11,7 @@ bun add @gravito/stasis
 ## 快速開始
 
 ```typescript
-import { PlanetCore } from 'gravito-core'
+import { PlanetCore } from '@gravito/core'
 import orbitCache from '@gravito/stasis'
 
 const core = new PlanetCore()

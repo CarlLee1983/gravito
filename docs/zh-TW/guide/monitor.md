@@ -7,12 +7,16 @@ description: 了解如何使用 Gravito Monitor 進行健康檢查、計量與�
 
 > `@gravito/monitor` 為您的應用程式提供全方位的觀察力，支援 Prometheus、OpenTelemetry 與 Kubernetes 健康檢查。
 
+## Beta 說明
+
+1.0.0-beta 以 Bun 原生效能為核心，監控功能採可選開啟，維持啟動速度與執行成本的平衡。健康檢查、指標與追蹤可依需求逐步啟用。
+
 ## 健康檢查 (Health Checks)
 
 內建 `/healthz` 與 `/readyz` 端點，適合雲端原生環境。
 
 ```typescript
-import { PlanetCore } from 'gravito-core'
+import { PlanetCore } from '@gravito/core'
 import { OrbitMonitor } from '@gravito/monitor'
 
 export default PlanetCore.configure({

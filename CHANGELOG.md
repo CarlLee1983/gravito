@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+* enforce per-package coverage (>= 80%) in CI and pre-push checks
+* scope site coverage to `packages/site/src` with a dedicated lcov parser
+* expand tests across packages to meet coverage targets (core, atlas, monolith, and others)
+
 ## [0.5.0-alpha](https://github.com/gravito-framework/gravito/compare/v0.4.0-alpha...v0.5.0-alpha) (2025-12-23)
 
 
@@ -118,7 +126,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * [create-gravito-app] fix package.json bin field format ([0d2483f](https://github.com/gravito-framework/gravito/commit/0d2483f9ffc243dc8ebc3b9a8f7c7f862c379233))
 * [deploy] 修復 GitHub Pages 部署問題 ([1112825](https://github.com/gravito-framework/gravito/commit/1112825f990dc27d6845a9fa5d7afaa185e954ef))
-* add gravito-core/compat path mapping in pulsar tsconfig ([f1942da](https://github.com/gravito-framework/gravito/commit/f1942da45f342bb9c837343bf3e14f1229fe4eb0))
+* add @gravito/core/compat path mapping in pulsar tsconfig ([f1942da](https://github.com/gravito-framework/gravito/commit/f1942da45f342bb9c837343bf3e14f1229fe4eb0))
 * add NODE_ENV=production to SSG build and include /about page ([0a79131](https://github.com/gravito-framework/gravito/commit/0a79131d7d5a3c1cb60677cd0602514d06d08b6b))
 * add ripple-client tests and fix forge build format ([7e9fe8a](https://github.com/gravito-framework/gravito/commit/7e9fe8a6c2d83fe246672a7000de75f7bdd75c66))
 * **ci:** fix check, typecheck errors and enhance pre-commit hook ([735fac4](https://github.com/gravito-framework/gravito/commit/735fac484013fab01da56d8253970390ed0a0812))

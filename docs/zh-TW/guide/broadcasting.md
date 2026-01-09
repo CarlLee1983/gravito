@@ -16,7 +16,7 @@ description: 了解如何將伺服器端事件即時推播到前端瀏覽器。
 ## 定義廣播事件
 
 ```typescript
-import { Event } from 'gravito-core'
+import { Event } from '@gravito/core'
 import { ShouldBroadcast, PrivateChannel } from '@gravito/radiance'
 
 export class MessageSent extends Event implements ShouldBroadcast {

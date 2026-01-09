@@ -99,6 +99,33 @@ describe('ChannelManager', () => {
     expect(stats.totalClients).toBe(0)
     expect(stats.totalChannels).toBe(0)
   })
+
+  it('manages subscriptions and presence members', () => {
+    const ws = {
+      data: {
+        id: 'client-1',
+        channels: new Set<string>(),
+      },
+    } as any
+
+    manager.addClient(ws)
+    expect(manager.getAllClients().length).toBe(1)
+
+    manager.subscribe('client-1', 'public-room')
+    expect(manager.isSubscribed('client-1', 'public-room')).toBe(true)
+    expect(manager.getSubscribers('public-room').length).toBe(1)
+
+    manager.subscribe('client-1', 'presence-room', { id: 'user-1', info: { name: 'Ada' } })
+    expect(manager.getPresenceMembers('presence-room').length).toBe(1)
+    expect(manager.getMemberCount('presence-room')).toBe(1)
+
+    manager.unsubscribe('client-1', 'presence-room')
+    expect(manager.getPresenceMembers('presence-room').length).toBe(0)
+
+    const left = manager.removeClient('client-1')
+    expect(left).toContain('public-room')
+    expect(manager.getClient('client-1')).toBeUndefined()
+  })
 })
 
 // ─────────────────────────────────────────────────────────────
@@ -183,6 +210,115 @@ describe('RippleServer', () => {
 
     expect(stats.totalClients).toBe(0)
     expect(stats.totalChannels).toBe(0)
+  })
+
+  it('handles subscribe, whisper, ping, and invalid messages', async () => {
+    const server = new RippleServer({
+      authorizer: async () => true,
+    })
+    const handler = server.getHandler()
+
+    const messages: Record<string, any[]> = { one: [], two: [] }
+    const ws = {
+      data: { id: 'ws-1', channels: new Set<string>() },
+      send: (data: string) => {
+        messages.one.push(JSON.parse(data))
+      },
+    } as any
+    const ws2 = {
+      data: { id: 'ws-2', channels: new Set<string>() },
+      send: (data: string) => {
+        messages.two.push(JSON.parse(data))
+      },
+    } as any
+
+    handler.open(ws)
+    handler.open(ws2)
+
+    await handler.message(ws, JSON.stringify({ type: 'subscribe', channel: 'public-room' }))
+    await handler.message(ws2, JSON.stringify({ type: 'subscribe', channel: 'public-room' }))
+
+    await handler.message(
+      ws,
+      JSON.stringify({ type: 'whisper', channel: 'public-room', event: 'notice', data: { ok: 1 } })
+    )
+
+    await handler.message(ws, JSON.stringify({ type: 'ping' }))
+
+    await handler.message(ws, '{not-json')
+
+    const types = messages.one.map((m) => m.type)
+    expect(types).toContain('connected')
+    expect(types).toContain('subscribed')
+    expect(types).toContain('pong')
+    expect(types).toContain('error')
+
+    const peerTypes = messages.two.map((m) => m.type)
+    expect(peerTypes).toContain('event')
+  })
+
+  it('handles presence channels and close events', async () => {
+    const server = new RippleServer({
+      authorizer: async (_channel, _userId, socketId) => {
+        return { id: socketId, info: { name: socketId } }
+      },
+    })
+    const handler = server.getHandler()
+
+    const messages: Record<string, any[]> = { a: [], b: [] }
+    const createWs = (id: string) =>
+      ({
+        data: { id, channels: new Set<string>() },
+        send: (data: string) => {
+          messages[id].push(JSON.parse(data))
+        },
+      }) as any
+
+    const wsA = createWs('a')
+    const wsB = createWs('b')
+
+    handler.open(wsA)
+    handler.open(wsB)
+
+    await handler.message(wsA, JSON.stringify({ type: 'subscribe', channel: 'presence-room' }))
+    await handler.message(wsB, JSON.stringify({ type: 'subscribe', channel: 'presence-room' }))
+
+    handler.close(wsA, 1000, 'bye')
+
+    const aTypes = messages.a.map((m) => m.type)
+    const bTypes = messages.b.map((m) => m.type)
+    expect(aTypes).toContain('presence')
+    expect(bTypes).toContain('presence')
+  })
+
+  it('rejects private channels without authorizer', async () => {
+    const server = new RippleServer()
+    const handler = server.getHandler()
+    const responses: any[] = []
+    const ws = {
+      data: { id: 'ws-2', channels: new Set<string>() },
+      send: (data: string) => responses.push(JSON.parse(data)),
+    } as any
+
+    handler.open(ws)
+    await handler.message(ws, JSON.stringify({ type: 'subscribe', channel: 'private-room' }))
+
+    expect(
+      responses.some((m) => m.message === 'No authorizer configured for private channels')
+    ).toBe(true)
+  })
+
+  it('upgrades only matching paths', () => {
+    const server = new RippleServer({ path: '/ws' })
+    const fakeServer = {
+      upgrade: (_req: Request, _opts: unknown) => true,
+    }
+
+    const ok = server.upgrade(new Request('http://localhost/ws'), fakeServer as any)
+    const bad = server.upgrade(new Request('http://localhost/other'), fakeServer as any)
+
+    expect(ok).toBe(true)
+    expect(bad).toBe(false)
   })
 })
 

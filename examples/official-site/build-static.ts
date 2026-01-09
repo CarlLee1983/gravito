@@ -27,7 +27,7 @@ async function build() {
 
   const outputDir = join(process.cwd(), 'dist-static')
   const domain = 'https://gravito.dev'
-  const locales = ['en', 'zh']
+  const locales = ['en', 'zh', 'zh-TW']
 
   // Debug: Log working directory and output directory
   console.log('📂 Current working directory:', process.cwd())
@@ -44,15 +44,17 @@ async function build() {
   routes.add('/about')
   routes.add('/features')
   routes.add('/releases')
+  routes.add('/privacy')
+  routes.add('/terms')
   routes.add('/docs') // This will generate a redirect to /docs/guide/core-concepts
 
   // 2. Discover Docs
   const docsRoot = resolve(process.cwd(), '../../docs')
-  // Scan 'en' as the source of truth for slugs
-  const glob = new Glob('en/**/*.md')
+  const glob = new Glob('**/[a-z]*.md') // Avoid hidden files and internal dirs
   for await (const file of glob.scan(docsRoot)) {
-    const slug = file.replace(/^en\//, '').replace(/\.md$/, '')
-    if (slug === 'guide/laravel-12-mvc-parity') {
+    // Strip locale prefix (e.g. 'en/', 'zh-TW/')
+    const slug = file.replace(/^[a-z-]+\//i, '').replace(/\.md$/, '')
+    if (slug === 'guide/laravel-12-mvc-parity' || slug.includes('node_modules')) {
       continue
     }
     routes.add(`/docs/${slug}`)
@@ -87,7 +89,15 @@ async function build() {
       const indexPath = join(outputDir, 'index.html')
       console.log('📝 Writing index.html to:', indexPath)
       await writeFile(indexPath, finalHtml)
-      smStream.add({ url: `${domain}/`, priority: 1.0 })
+      const rootEntry = {
+        url: `${domain}/`,
+        priority: 1.0,
+        alternates: [
+          ...locales.map((l) => ({ lang: l, url: `${domain}/${l}/` })),
+          { lang: 'x-default', url: `${domain}/` },
+        ],
+      }
+      smStream.add(rootEntry)
       console.log('✅ Root index.html generated at:', indexPath)
 
       // Verify file was written
@@ -109,9 +119,14 @@ async function build() {
     // /docs/foo -> /en/docs/foo, /zh/docs/foo
     const entries = generateI18nEntries(abstractPath, locales, domain)
 
-    for (const entry of entries) {
-      smStream.add(entry)
+    // Add bare root as x-default alternate for the home page versions
+    if (abstractPath === '/') {
+      for (const entry of entries) {
+        entry.alternates?.push({ lang: 'x-default', url: `${domain}/` })
+      }
+    }
 
+    for (const entry of entries) {
       const urlObj = new URL(entry.url)
       const pathname = urlObj.pathname.replace(/\/$/, '') || '/'
 
@@ -132,11 +147,15 @@ async function build() {
             const filePath = join(outputDir, pathname, 'index.html')
             await mkdir(dirname(filePath), { recursive: true })
             await writeFile(filePath, html)
+            // Still add to sitemap? Usually not for redirects, but let's follow standard
             continue
           }
           console.error(`❌ Failed ${res.status}: ${pathname}`)
           continue
         }
+
+        // Successfully rendered, add to sitemap
+        smStream.add(entry)
 
         const gaId = process.env.VITE_GA_ID
         const html = await res.text()
@@ -345,6 +364,20 @@ async function build() {
   await mkdir(join(outputDir, 'releases'), { recursive: true })
   await writeFile(join(outputDir, 'releases', 'index.html'), releasesRedirectHtml)
   console.log('✅ /releases redirect created')
+
+  // Create redirect for /privacy to /en/privacy
+  console.log('🔄 Creating /privacy redirect...')
+  const privacyRedirectHtml = `<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=/en/privacy" /><script>window.location.href='/en/privacy';</script></head><body>Redirecting to <a href="/en/privacy">/en/privacy</a>...</body></html>`
+  await mkdir(join(outputDir, 'privacy'), { recursive: true })
+  await writeFile(join(outputDir, 'privacy', 'index.html'), privacyRedirectHtml)
+  console.log('✅ /privacy redirect created')
+
+  // Create redirect for /terms to /en/terms
+  console.log('🔄 Creating /terms redirect...')
+  const termsRedirectHtml = `<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=/en/terms" /><script>window.location.href='/en/terms';</script></head><body>Redirecting to <a href="/en/terms">/en/terms</a>...</body></html>`
+  await mkdir(join(outputDir, 'terms'), { recursive: true })
+  await writeFile(join(outputDir, 'terms', 'index.html'), termsRedirectHtml)
+  console.log('✅ /terms redirect created')
 
   // Copy root assets (favicon, manifest) from static to root
   const rootAssets = [

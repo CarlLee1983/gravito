@@ -1,29 +1,12 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# Ignore all node_modules
+**/node_modules
+**/dist
 
-# dependencies
-node_modules
-.pnp
-.pnp.js
+# Ignore templates and examples to speed up COPY
+templates/
+examples/
 
-# testing
-coverage
-
-# production
-build
-dist
-
-# misc
-.DS_Store
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# docker
-Dockerfile
-.dockerignore
+# Ignore git and logs
+.git
+*.log
+.gemini

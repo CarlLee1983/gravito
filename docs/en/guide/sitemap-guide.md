@@ -421,7 +421,7 @@ sitemap.installApiEndpoints(core, '/admin/sitemap')
 Simple API token authentication:
 
 ```typescript
-import type { GravitoContext, Next } from 'gravito-core'
+import type { GravitoContext, Next } from '@gravito/core'
 
 const apiTokenAuth = async (c: GravitoContext, next: Next) => {
   const token = c.req.header('Authorization')?.replace('Bearer ', '')
@@ -459,7 +459,7 @@ curl -X POST http://localhost:3000/admin/sitemap/generate \
 Restrict access to specific IPs:
 
 ```typescript
-import type { GravitoContext, Next } from 'gravito-core'
+import type { GravitoContext, Next } from '@gravito/core'
 import { ipRangeCheck } from 'ip-range-check' // requires package installation
 
 const adminOnly = async (c: GravitoContext, next: Next) => {
@@ -501,7 +501,7 @@ Combine multiple protection methods for enhanced security:
 
 ```typescript
 import { auth } from '@gravito/sentinel'
-import type { GravitoContext, Next } from 'gravito-core'
+import type { GravitoContext, Next } from '@gravito/core'
 
 // 1. Check authentication
 const requireAuth = auth()

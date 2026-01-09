@@ -8,13 +8,13 @@
  * @since 1.0.0
  */
 
-import type { GravitoContext, GravitoOrbit, GravitoVariables, PlanetCore } from 'gravito-core'
+import type { GravitoContext, GravitoOrbit, GravitoVariables, PlanetCore } from '@gravito/core'
 import { InertiaService } from './InertiaService'
 
 export * from './InertiaService'
 
 // Module augmentation for type-safe context injection
-declare module 'gravito-core' {
+declare module '@gravito/core' {
   interface GravitoVariables {
     /** Inertia.js service for SPA rendering */
     inertia?: InertiaService
@@ -29,7 +29,7 @@ declare module 'gravito-core' {
  *
  * @example
  * ```typescript
- * import { PlanetCore, defineConfig } from 'gravito-core'
+ * import { PlanetCore, defineConfig } from '@gravito/core'
  * import { OrbitIon } from '@gravito/ion'
  *
  * const core = await PlanetCore.boot(defineConfig({

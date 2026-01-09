@@ -16,7 +16,7 @@ import type { RippleConfig } from './types'
 interface PlanetCore {
   logger: { info: (msg: string) => void }
   adapter: {
-    use: (path: string, handler: (ctx: any, next: () => Promise<void>) => Promise<void>) => void
+    use: (path: string, handler: (ctx: any, next: () => Promise<void>) => Promise<any>) => void
   }
   hooks: {
     addAction: (hook: string, callback: (args: unknown) => Promise<void>) => void

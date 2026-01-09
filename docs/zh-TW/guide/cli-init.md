@@ -20,12 +20,14 @@ npx gravito init my-app --architecture ddd --pm bun
 
 | 選項 | 說明 | 預設值 |
 |------|------|--------|
-| `--architecture`, `-a` | 架構模式 | (互動選擇) |
+| `--architecture`, `-a` | 架構模式 (`enterprise-mvc`, `clean`, `ddd`，目前 CLI 僅支援這三種) | (互動選擇) |
 | `--pm` | 套件管理器 (bun, npm, pnpm, yarn) | bun |
 | `--skip-install` | 跳過依賴安裝 | false |
 | `--skip-git` | 跳過 git 初始化 | false |
 
 ## 架構模式
+
+> **注意**：目前 `gravito init` CLI 只支援 `enterprise-mvc`、`clean`、`ddd` 三種架構；文件中的 Luminosity 範例尚未由 CLI 建置。若要使用 Luminosity 模式，請手動建立對應結構或等待 CLI 後續支援。
 
 ### Luminosity (Static / Light)
 

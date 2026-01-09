@@ -9,7 +9,7 @@
  */
 
 import { randomBytes } from 'node:crypto'
-import type { CacheService, GravitoOrbit, PlanetCore } from 'gravito-core'
+import type { CacheService, GravitoOrbit, PlanetCore } from '@gravito/core'
 import { FileSessionStore } from './stores/FileSessionStore'
 import { MemorySessionStore } from './stores/MemorySessionStore'
 import { RedisSessionStore } from './stores/RedisSessionStore'
@@ -30,7 +30,7 @@ export { SqliteSessionStore } from './stores/SqliteSessionStore'
 export * from './types'
 
 // Module augmentation for GravitoVariables (new abstraction)
-declare module 'gravito-core' {
+declare module '@gravito/core' {
   interface GravitoVariables {
     /** Session service for managing user sessions */
     session?: SessionService

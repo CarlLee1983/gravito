@@ -1,7 +1,7 @@
+import type { PlanetCore } from '@gravito/core'
 import { Photon } from '@gravito/photon'
 import { serveStatic } from '@gravito/photon/bun'
 import { logger } from '@gravito/photon/logger'
-import type { PlanetCore } from 'gravito-core'
 import { apiRoute } from './routes/api'
 import { createPagesRoute } from './routes/pages'
 import { userRoute } from './routes/user'

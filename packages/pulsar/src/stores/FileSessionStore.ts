@@ -1,9 +1,11 @@
 import { mkdirSync } from 'node:fs'
-import { unlink } from 'node:fs/promises'
 import { join } from 'node:path'
+import { getRuntimeAdapter } from '@gravito/core'
 import type { SessionId, SessionRecord, SessionStore } from '../types'
 
 export class FileSessionStore implements SessionStore {
+  private runtime = getRuntimeAdapter()
+
   constructor(private path: string) {
     mkdirSync(this.path, { recursive: true })
   }
@@ -15,28 +17,23 @@ export class FileSessionStore implements SessionStore {
   }
 
   async get(id: SessionId): Promise<SessionRecord | null> {
-    const file = Bun.file(this.getFilePath(id))
-    if (!(await file.exists())) {
+    const path = this.getFilePath(id)
+    if (!(await this.runtime.exists(path))) {
       return null
     }
     try {
-      const content = await file.text()
-      return JSON.parse(content) as SessionRecord
+      const content = await this.runtime.readFile(path)
+      return JSON.parse(new TextDecoder().decode(content)) as SessionRecord
     } catch {
       return null
     }
   }
 
   async set(id: SessionId, record: SessionRecord, _ttlSeconds: number): Promise<void> {
-    const file = Bun.file(this.getFilePath(id))
-    await Bun.write(file, JSON.stringify(record))
+    await this.runtime.writeFile(this.getFilePath(id), JSON.stringify(record))
   }
 
   async delete(id: SessionId): Promise<void> {
-    try {
-      await unlink(this.getFilePath(id))
-    } catch {
-      // Ignore if not found
-    }
+    await this.runtime.deleteFile(this.getFilePath(id))
   }
 }

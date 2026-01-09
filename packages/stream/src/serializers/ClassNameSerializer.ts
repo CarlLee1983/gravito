@@ -48,7 +48,7 @@ export class ClassNameSerializer implements JobSerializer {
    * Serialize a Job.
    */
   serialize(job: Job): SerializedJob {
-    const id = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
+    const id = job.id || `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
     const className = job.constructor.name
 
     // Extract properties (exclude methods)
@@ -74,6 +74,10 @@ export class ClassNameSerializer implements JobSerializer {
       ...(job.delaySeconds !== undefined ? { delaySeconds: job.delaySeconds } : {}),
       attempts: job.attempts ?? 0,
       ...(job.maxAttempts !== undefined ? { maxAttempts: job.maxAttempts } : {}),
+      ...(job.groupId ? { groupId: job.groupId } : {}),
+      ...(job.retryAfterSeconds !== undefined ? { retryAfterSeconds: job.retryAfterSeconds } : {}),
+      ...(job.retryMultiplier !== undefined ? { retryMultiplier: job.retryMultiplier } : {}),
+      ...(job.priority !== undefined ? { priority: job.priority } : {}),
     }
   }
 
@@ -104,6 +108,9 @@ export class ClassNameSerializer implements JobSerializer {
       Object.assign(job, parsed.properties)
     }
 
+    // Restore metadata
+    job.id = serialized.id
+
     // Restore Queueable fields
     if (serialized.delaySeconds !== undefined) {
       job.delaySeconds = serialized.delaySeconds
@@ -113,6 +120,18 @@ export class ClassNameSerializer implements JobSerializer {
     }
     if (serialized.maxAttempts !== undefined) {
       job.maxAttempts = serialized.maxAttempts
+    }
+    if (serialized.groupId !== undefined) {
+      job.groupId = serialized.groupId
+    }
+    if (serialized.retryAfterSeconds !== undefined) {
+      job.retryAfterSeconds = serialized.retryAfterSeconds
+    }
+    if (serialized.retryMultiplier !== undefined) {
+      job.retryMultiplier = serialized.retryMultiplier
+    }
+    if (serialized.priority !== undefined) {
+      job.priority = serialized.priority
     }
 
     return job

@@ -3,6 +3,8 @@
  *
  * Unifies environment variables and application configuration access.
  */
+import { getRuntimeEnv } from './runtime'
+
 export class ConfigManager {
   private config: Map<string, unknown> = new Map()
 
@@ -12,15 +14,15 @@ export class ConfigManager {
       this.config.set(key, value)
     }
 
-    // 2. Auto-load Bun environment variables
+    // 2. Auto-load runtime environment variables
     this.loadEnv()
   }
 
   /**
-   * Load all environment variables from `Bun.env`.
+   * Load all environment variables from the active runtime.
    */
   private loadEnv() {
-    const env = Bun.env
+    const env = getRuntimeEnv()
     for (const key of Object.keys(env)) {
       if (env[key] !== undefined) {
         this.config.set(key, env[key])

@@ -14,7 +14,7 @@ Gravito 是一個微核心框架，其威力來自於生態系。本指南將協
 
 | 術語 | 概念 | 用途 | 範例 |
 |------|------|------|------|
-| **PlanetCore** | 微核心 | 生命週期、Hooks、設定 | `gravito-core` |
+| **PlanetCore** | 微核心 | 生命週期、Hooks、設定 | `@gravito/core` |
 | **Gravito** | 基礎設施模組 | 資料庫、驗證、儲存 | `@gravito/atlas` |
 | **Satellite** | 業務邏輯外掛 | 使用 Gravito 的功能 | `user-plugin`, `blog-plugin` |
 
@@ -30,7 +30,7 @@ Satellite 通常是一個接收 `core` 實例的函式：
 
 ```typescript
 // my-satellite.ts
-import { PlanetCore } from 'gravito-core'
+import { PlanetCore } from '@gravito/core'
 
 export default function mySatellite(core: PlanetCore) {
   // 1. 讀取設定 (選配)
@@ -54,7 +54,7 @@ Satellites 通常需要存取資料庫或驗證。這些功能由 Orbits 提供�
 
 ```typescript
 // user-satellite.ts
-import { PlanetCore } from 'gravito-core'
+import { PlanetCore } from '@gravito/core'
 
 export default function userSatellite(core: PlanetCore) {
   router.post('/users', async (c) => {
@@ -86,7 +86,7 @@ Gravito 是更底層的擴充，負責提供基礎設施服務。在 v0.3+ 中�
 ### GravitoOrbit 介面
 
 ```typescript
-import type { GravitoOrbit, PlanetCore } from 'gravito-core'
+import type { GravitoOrbit, PlanetCore } from '@gravito/core'
 
 export interface GravitoOrbit {
   install(core: PlanetCore): void | Promise<void>
@@ -97,8 +97,8 @@ export interface GravitoOrbit {
 
 ```typescript
 // orbit-custom.ts
-import { PlanetCore, GravitoOrbit } from 'gravito-core'
-import type { GravitoContext as Context, Next } from 'gravito-core'
+import { PlanetCore, GravitoOrbit } from '@gravito/core'
+import type { GravitoContext as Context, Next } from '@gravito/core'
 
 export interface CustomGravitoConfig {
   apiKey: string
@@ -138,7 +138,7 @@ export function orbitCustom(core: PlanetCore, config: CustomGravitoConfig) {
 
 ```typescript
 // gravito.config.ts
-import { PlanetCore, defineConfig } from 'gravito-core'
+import { PlanetCore, defineConfig } from '@gravito/core'
 import { GravitoCustom } from './orbit-custom'
 
 const config = defineConfig({
@@ -183,7 +183,7 @@ export default core.liftoff()
 // types.ts
 import { CustomService } from './custom-service'
 
-declare module 'gravito-core' {
+declare module '@gravito/core' {
   interface GravitoVariables {
     custom: CustomService
   }
@@ -195,7 +195,7 @@ declare module 'gravito-core' {
 ```typescript
 // orbit-custom.test.ts
 import { describe, it, expect } from 'bun:test'
-import { PlanetCore } from 'gravito-core'
+import { PlanetCore } from '@gravito/core'
 import { GravitoCustom } from './orbit-custom'
 
 describe('GravitoCustom', () => {
@@ -234,7 +234,7 @@ describe('GravitoCustom', () => {
      "main": "dist/index.js",
      "types": "dist/index.d.ts",
      "peerDependencies": {
-       "gravito-core": "^1.0.0"
+       "@gravito/core": "^1.0.0"
      }
    }
    ```

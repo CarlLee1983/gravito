@@ -4,6 +4,7 @@
 
 import type { Processor } from '../processors/Processor'
 import type { FileInput, FileOutput, ProcessOptions } from '../types'
+import { sniffMimeType } from '../utils/mime'
 import type { Pipeline, PipelineStep } from './Pipeline'
 
 /**
@@ -38,7 +39,7 @@ export class BasePipeline implements Pipeline {
 
     for (const step of this.steps) {
       // Check if processor supports the current file type
-      const mimeType = this.getMimeType(currentInput)
+      const mimeType = await this.getMimeType(currentInput)
       if (!step.processor.supports(mimeType)) {
         throw new Error(`Processor does not support MIME type: ${mimeType}`)
       }
@@ -75,9 +76,14 @@ export class BasePipeline implements Pipeline {
    * @param input - File input
    * @returns MIME type
    */
-  protected getMimeType(input: FileInput): string {
+  protected async getMimeType(input: FileInput): Promise<string> {
     if (input.mimeType) {
       return input.mimeType
+    }
+
+    const sniffed = await sniffMimeType(input.source)
+    if (sniffed) {
+      return sniffed
     }
 
     if (input.filename) {

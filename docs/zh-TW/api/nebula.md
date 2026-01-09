@@ -19,7 +19,7 @@ bun add @gravito/nebula
 ## 用法
 
 ```typescript
-import { PlanetCore } from 'gravito-core';
+import { PlanetCore } from '@gravito/core';
 import { OrbitStorage } from '@gravito/nebula';
 
 const core = await PlanetCore.boot({

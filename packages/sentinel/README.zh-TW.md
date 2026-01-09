@@ -17,7 +17,7 @@ bun add @gravito/pulsar
 ## 快速開始
 
 ```typescript
-import { PlanetCore } from 'gravito-core'
+import { PlanetCore } from '@gravito/core'
 import { OrbitSentinel, type AuthConfig, CallbackUserProvider } from '@gravito/sentinel'
 import { OrbitPulsar } from '@gravito/pulsar'
 

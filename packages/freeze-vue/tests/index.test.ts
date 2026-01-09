@@ -1,57 +1,126 @@
-import { describe, expect, it } from 'bun:test'
+import { afterAll, beforeAll, describe, expect, it, mock } from 'bun:test'
 
-// Note: Full Vue component tests require jsdom or similar
-// These are basic module-level tests
+const injectionStore = new Map<unknown, unknown>()
+
+mock.module('vue', () => ({
+  defineComponent: (component: any) => component,
+  h: (type: any, props: any, children?: any) => ({ type, props, children }),
+  computed: (getter: () => unknown) => ({ value: getter() }),
+  inject: (key: unknown) => injectionStore.get(key),
+  provide: (key: unknown, value: unknown) => {
+    injectionStore.set(key, value)
+  },
+}))
+
+mock.module('@gravito/freeze', () => ({
+  defineConfig: (config: Record<string, unknown>) => ({
+    previewPort: 4173,
+    locales: ['en', 'zh'],
+    defaultLocale: 'en',
+    ...config,
+  }),
+  createDetector: () => ({
+    isStaticSite: () => true,
+    getLocalizedPath: (path: string, locale: string) => `/${locale}${path === '/' ? '' : path}`,
+    switchLocale: (path: string, locale: string) => `/${locale}${path === '/' ? '/' : path}`,
+    getLocaleFromPath: (path: string) => (path.startsWith('/zh') ? 'zh' : 'en'),
+  }),
+  generateRedirectHtml: (target: string) => `redirect:${target}`,
+  generateRedirects: () => new Map(),
+  generateLocalizedRoutes: () => [],
+  inferRedirects: () => [],
+  generateSitemapEntries: () => [],
+}))
+
+let defineConfig: typeof import('../src').defineConfig
+let FreezePlugin: typeof import('../src').FreezePlugin
+let provideFreeze: typeof import('../src').provideFreeze
+let useFreeze: typeof import('../src').useFreeze
+let FREEZE_KEY: typeof import('../src').FREEZE_KEY
+let StaticLink: typeof import('../src').StaticLink
+let LocaleSwitcher: typeof import('../src').LocaleSwitcher
+
+beforeAll(async () => {
+  const module = await import('../src')
+  defineConfig = module.defineConfig
+  FreezePlugin = module.FreezePlugin
+  provideFreeze = module.provideFreeze
+  useFreeze = module.useFreeze
+  FREEZE_KEY = module.FREEZE_KEY
+  StaticLink = module.StaticLink
+  LocaleSwitcher = module.LocaleSwitcher
+})
+
+afterAll(() => {
+  mock.restore()
+})
 
 describe('@gravito/freeze-vue', () => {
-  it('should export all expected functions', async () => {
-    const module = await import('../src')
-
-    // Core re-exports
-    expect(typeof module.defineConfig).toBe('function')
-    expect(typeof module.createDetector).toBe('function')
-    expect(typeof module.generateRedirectHtml).toBe('function')
-    expect(typeof module.generateRedirects).toBe('function')
-    expect(typeof module.generateLocalizedRoutes).toBe('function')
-    expect(typeof module.inferRedirects).toBe('function')
-    expect(typeof module.generateSitemapEntries).toBe('function')
-
-    // Vue components
-    expect(module.StaticLink).toBeDefined()
-    expect(module.LocaleSwitcher).toBeDefined()
-
-    // Vue plugin
-    expect(module.FreezePlugin).toBeDefined()
-    expect(typeof module.FreezePlugin.install).toBe('function')
-
-    // Vue composables
-    expect(typeof module.useFreeze).toBe('function')
-    expect(typeof module.provideFreeze).toBe('function')
-
-    // Injection key
-    expect(module.FREEZE_KEY).toBeDefined()
-  })
-
-  it('should re-export defineConfig correctly', async () => {
-    const { defineConfig } = await import('../src')
-
+  it('installs plugin and provides context', () => {
     const config = defineConfig({
       staticDomains: ['example.com'],
-      locales: ['en', 'zh'],
-      defaultLocale: 'en',
       baseUrl: 'https://example.com',
     })
 
-    expect(config.staticDomains).toEqual(['example.com'])
-    expect(config.locales).toEqual(['en', 'zh'])
-    expect(config.defaultLocale).toBe('en')
-    expect(config.previewPort).toBe(4173) // default
+    const app = { provide: (key: unknown, value: unknown) => injectionStore.set(key, value) }
+    FreezePlugin.install(app as any, config as any)
+
+    const context = injectionStore.get(FREEZE_KEY) as any
+    expect(context.config.baseUrl).toBe('https://example.com')
+    expect(context.currentLocale.value).toBe('en')
   })
 
-  it('should have FreezePlugin with install method', async () => {
-    const { FreezePlugin, defineConfig } = await import('../src')
+  it('useFreeze exposes localized helpers', () => {
+    const config = defineConfig({
+      staticDomains: ['example.com'],
+      baseUrl: 'https://example.com',
+    })
 
-    expect(FreezePlugin).toHaveProperty('install')
-    expect(typeof FreezePlugin.install).toBe('function')
+    provideFreeze(config as any)
+    const freeze = useFreeze()
+
+    expect(freeze.isStatic.value).toBe(true)
+    expect(freeze.getLocalizedPath('/about')).toBe('/en/about')
+    expect(freeze.switchLocale('zh')).toBe('/zh')
+  })
+
+  it('StaticLink renders localized href', () => {
+    const config = defineConfig({
+      staticDomains: ['example.com'],
+      baseUrl: 'https://example.com',
+    })
+    provideFreeze(config as any)
+
+    const render = StaticLink.setup?.(
+      { href: '/about', skipLocalization: false },
+      {
+        slots: { default: () => ['About'] },
+        attrs: {},
+      }
+    )
+    const vnode = render?.()
+
+    expect(vnode.props.href).toBe('/en/about')
+    expect(vnode.children).toEqual(['About'])
+  })
+
+  it('LocaleSwitcher marks active locale', () => {
+    const config = defineConfig({
+      staticDomains: ['example.com'],
+      baseUrl: 'https://example.com',
+    })
+    provideFreeze(config as any)
+
+    const render = LocaleSwitcher.setup?.(
+      { locale: 'en' },
+      {
+        slots: { default: () => ['English'] },
+        attrs: {},
+      }
+    )
+    const vnode = render?.()
+
+    expect(vnode.props['aria-current']).toBe('page')
+    expect(vnode.props.href).toBe('/en')
   })
 })

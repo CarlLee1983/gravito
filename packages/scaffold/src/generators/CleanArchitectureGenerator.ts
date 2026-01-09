@@ -39,6 +39,11 @@ export class CleanArchitectureGenerator extends BaseGenerator {
       },
       {
         type: 'directory',
+        name: 'database',
+        children: [{ type: 'file', name: '.gitkeep', content: '' }],
+      },
+      {
+        type: 'directory',
         name: 'src',
         children: [
           // Domain Layer (innermost - no dependencies)
@@ -49,16 +54,12 @@ export class CleanArchitectureGenerator extends BaseGenerator {
               {
                 type: 'directory',
                 name: 'Entities',
-                children: [
-                  { type: 'file', name: 'Entity.ts', content: this.generateBaseEntity() },
-                  { type: 'file', name: 'User.ts', content: this.generateUserEntity() },
-                ],
+                children: [{ type: 'file', name: 'User.ts', content: this.generateUserEntity() }],
               },
               {
                 type: 'directory',
                 name: 'ValueObjects',
                 children: [
-                  { type: 'file', name: 'ValueObject.ts', content: this.generateBaseValueObject() },
                   { type: 'file', name: 'Email.ts', content: this.generateEmailValueObject() },
                 ],
               },
@@ -76,13 +77,7 @@ export class CleanArchitectureGenerator extends BaseGenerator {
               {
                 type: 'directory',
                 name: 'Exceptions',
-                children: [
-                  {
-                    type: 'file',
-                    name: 'DomainException.ts',
-                    content: this.generateDomainException(),
-                  },
-                ],
+                children: [{ type: 'file', name: '.gitkeep', content: '' }],
               },
             ],
           },
@@ -167,6 +162,11 @@ export class CleanArchitectureGenerator extends BaseGenerator {
                 children: [
                   {
                     type: 'file',
+                    name: 'index.ts',
+                    content: this.generateProvidersIndex(),
+                  },
+                  {
+                    type: 'file',
                     name: 'AppServiceProvider.ts',
                     content: this.generateAppServiceProvider(context),
                   },
@@ -174,6 +174,16 @@ export class CleanArchitectureGenerator extends BaseGenerator {
                     type: 'file',
                     name: 'RepositoryServiceProvider.ts',
                     content: this.generateRepositoryServiceProvider(),
+                  },
+                  {
+                    type: 'file',
+                    name: 'MiddlewareProvider.ts',
+                    content: this.generateMiddlewareProvider(),
+                  },
+                  {
+                    type: 'file',
+                    name: 'RouteProvider.ts',
+                    content: this.generateRouteProvider(),
                   },
                 ],
               },
@@ -312,44 +322,6 @@ export class CleanArchitectureGenerator extends BaseGenerator {
 `
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // Domain Layer
-  // ─────────────────────────────────────────────────────────────
-
-  private generateBaseEntity(): string {
-    return `/**
- * Base Entity
- *
- * All domain entities extend this base class.
- * Entities have identity and lifecycle.
- *
- * IMPORTANT: This layer must have NO external dependencies.
- */
-
-export abstract class Entity<T> {
-  protected readonly _id: T
-
-  constructor(id: T) {
-    this._id = id
-  }
-
-  get id(): T {
-    return this._id
-  }
-
-  equals(other: Entity<T>): boolean {
-    if (other === null || other === undefined) {
-      return false
-    }
-    if (!(other instanceof Entity)) {
-      return false
-    }
-    return this._id === other._id
-  }
-}
-`
-  }
-
   private generateUserEntity(): string {
     return `/**
  * User Entity
@@ -358,7 +330,7 @@ export abstract class Entity<T> {
  * Contains business logic related to users.
  */
 
-import { Entity } from './Entity'
+import { Entity } from '@gravito/enterprise'
 import { Email } from '../ValueObjects/Email'
 
 export interface UserProps {
@@ -411,31 +383,6 @@ export class User extends Entity<string> {
 `
   }
 
-  private generateBaseValueObject(): string {
-    return `/**
- * Base Value Object
- *
- * Value objects are immutable and compared by value.
- * They have no identity of their own.
- */
-
-export abstract class ValueObject<T> {
-  protected readonly props: T
-
-  constructor(props: T) {
-    this.props = Object.freeze(props)
-  }
-
-  equals(other: ValueObject<T>): boolean {
-    if (other === null || other === undefined) {
-      return false
-    }
-    return JSON.stringify(this.props) === JSON.stringify(other.props)
-  }
-}
-`
-  }
-
   private generateEmailValueObject(): string {
     return `/**
  * Email Value Object
@@ -443,7 +390,7 @@ export abstract class ValueObject<T> {
  * Encapsulates email validation and comparison.
  */
 
-import { ValueObject } from './ValueObject'
+import { ValueObject } from '@gravito/enterprise'
 
 interface EmailProps {
   value: string
@@ -485,44 +432,11 @@ export class Email extends ValueObject<EmailProps> {
  * Implementations are in Infrastructure layer.
  */
 
+import type { Repository } from '@gravito/enterprise'
 import type { User } from '../Entities/User'
 
-export interface IUserRepository {
-  findById(id: string): Promise<User | null>
+export interface IUserRepository extends Repository<User, string> {
   findByEmail(email: string): Promise<User | null>
-  save(user: User): Promise<void>
-  delete(id: string): Promise<void>
-  findAll(): Promise<User[]>
-}
-`
-  }
-
-  private generateDomainException(): string {
-    return `/**
- * Domain Exception
- *
- * Base exception for domain-level errors.
- */
-
-export class DomainException extends Error {
-  constructor(message: string) {
-    super(message)
-    this.name = 'DomainException'
-  }
-}
-
-export class EntityNotFoundException extends DomainException {
-  constructor(entity: string, id: string) {
-    super(\`\${entity} with id \${id} not found\`)
-    this.name = 'EntityNotFoundException'
-  }
-}
-
-export class InvalidValueException extends DomainException {
-  constructor(message: string) {
-    super(message)
-    this.name = 'InvalidValueException'
-  }
 }
 `
   }
@@ -538,6 +452,7 @@ export class InvalidValueException extends DomainException {
  * Application service for creating new users.
  */
 
+import { UseCase } from '@gravito/enterprise'
 import { User } from '../../../Domain/Entities/User'
 import type { IUserRepository } from '../../../Domain/Interfaces/IUserRepository'
 import type { UserDTO } from '../../DTOs/UserDTO'
@@ -551,8 +466,10 @@ export interface CreateUserOutput {
   user: UserDTO
 }
 
-export class CreateUserUseCase {
-  constructor(private userRepository: IUserRepository) {}
+export class CreateUserUseCase extends UseCase<CreateUserInput, CreateUserOutput> {
+  constructor(private userRepository: IUserRepository) {
+    super()
+  }
 
   async execute(input: CreateUserInput): Promise<CreateUserOutput> {
     // Check if email already exists
@@ -590,8 +507,8 @@ export class CreateUserUseCase {
  * Get User Use Case
  */
 
+import { UseCase } from '@gravito/enterprise'
 import type { IUserRepository } from '../../../Domain/Interfaces/IUserRepository'
-import { EntityNotFoundException } from '../../../Domain/Exceptions/DomainException'
 import type { UserDTO } from '../../DTOs/UserDTO'
 
 export interface GetUserInput {
@@ -602,14 +519,16 @@ export interface GetUserOutput {
   user: UserDTO
 }
 
-export class GetUserUseCase {
-  constructor(private userRepository: IUserRepository) {}
+export class GetUserUseCase extends UseCase<GetUserInput, GetUserOutput> {
+  constructor(private userRepository: IUserRepository) {
+    super()
+  }
 
   async execute(input: GetUserInput): Promise<GetUserOutput> {
     const user = await this.userRepository.findById(input.id)
 
     if (!user) {
-      throw new EntityNotFoundException('User', input.id)
+      throw new Error(\`User with id \${input.id} not found\`)
     }
 
     return {
@@ -714,6 +633,10 @@ export class UserRepository implements IUserRepository {
   async findAll(): Promise<User[]> {
     return Array.from(users.values())
   }
+
+  async exists(id: string): Promise<boolean> {
+    return users.has(id)
+  }
 }
 `
   }
@@ -739,7 +662,7 @@ export class MailService implements IMailService {
  * App Service Provider
  */
 
-import { ServiceProvider, type Container, type PlanetCore } from 'gravito-core'
+import { ServiceProvider, type Container, type PlanetCore } from '@gravito/core'
 
 export class AppServiceProvider extends ServiceProvider {
   register(_container: Container): void {
@@ -760,7 +683,7 @@ export class AppServiceProvider extends ServiceProvider {
  * Binds repository interfaces to implementations.
  */
 
-import { ServiceProvider, type Container } from 'gravito-core'
+import { ServiceProvider, type Container } from '@gravito/core'
 import { UserRepository } from '../Persistence/Repositories/UserRepository'
 import { MailService } from '../ExternalServices/MailService'
 
@@ -776,6 +699,68 @@ export class RepositoryServiceProvider extends ServiceProvider {
 `
   }
 
+  private generateProvidersIndex(): string {
+    return `/**
+ * Application Service Providers
+ */
+
+export { AppServiceProvider } from './AppServiceProvider'
+export { RepositoryServiceProvider } from './RepositoryServiceProvider'
+export { MiddlewareProvider } from './MiddlewareProvider'
+export { RouteProvider } from './RouteProvider'
+`
+  }
+
+  private generateMiddlewareProvider(): string {
+    return `/**
+ * Middleware Service Provider
+ */
+
+import {
+  ServiceProvider,
+  type Container,
+  type PlanetCore,
+  bodySizeLimit,
+  securityHeaders,
+} from '@gravito/core'
+
+export class MiddlewareProvider extends ServiceProvider {
+  register(_container: Container): void {}
+
+  boot(core: PlanetCore): void {
+    const isDev = process.env.NODE_ENV !== 'production'
+
+    core.adapter.use('*', securityHeaders({
+      contentSecurityPolicy: isDev ? false : undefined,
+    }))
+
+    core.adapter.use('*', bodySizeLimit(10 * 1024 * 1024))
+
+    core.logger.info('🛡️ Middleware registered')
+  }
+}
+`
+  }
+
+  private generateRouteProvider(): string {
+    return `/**
+ * Route Service Provider
+ */
+
+import { ServiceProvider, type Container, type PlanetCore } from '@gravito/core'
+import { registerApiRoutes } from '../../Interface/Http/Routes/api'
+
+export class RouteProvider extends ServiceProvider {
+  register(_container: Container): void {}
+
+  boot(core: PlanetCore): void {
+    registerApiRoutes(core.router)
+    core.logger.info('🛤️ Routes registered')
+  }
+}
+`
+  }
+
   // ─────────────────────────────────────────────────────────────
   // Interface Layer
   // ─────────────────────────────────────────────────────────────
@@ -785,7 +770,7 @@ export class RepositoryServiceProvider extends ServiceProvider {
  * User Controller
  */
 
-import type { GravitoContext } from 'gravito-core'
+import type { GravitoContext } from '@gravito/core'
 import { CreateUserUseCase } from '../../../Application/UseCases/User/CreateUser'
 import { GetUserUseCase } from '../../../Application/UseCases/User/GetUser'
 import { UserRepository } from '../../../Infrastructure/Persistence/Repositories/UserRepository'
@@ -862,28 +847,55 @@ export class UserPresenter {
 `
   }
 
-  private generateBootstrap(context: GeneratorContext): string {
+  private generateBootstrap(_context: GeneratorContext): string {
     return `/**
  * Application Bootstrap
+ *
+ * The entry point for your Clean Architecture application.
+ * Uses the ServiceProvider pattern for modular initialization.
+ *
+ * Lifecycle:
+ * 1. Configure: Load app config and orbits
+ * 2. Boot: Initialize PlanetCore
+ * 3. Register Providers: Bind services to container
+ * 4. Bootstrap: Boot all providers
  */
 
-import { PlanetCore } from 'gravito-core'
-import { AppServiceProvider } from './Infrastructure/Providers/AppServiceProvider'
-import { RepositoryServiceProvider } from './Infrastructure/Providers/RepositoryServiceProvider'
-import { registerApiRoutes } from './Interface/Http/Routes/api'
+import { defineConfig, PlanetCore } from '@gravito/core'
+import { OrbitAtlas } from '@gravito/atlas'
+import appConfig from '../config/app'
+import {
+  AppServiceProvider,
+  RepositoryServiceProvider,
+  MiddlewareProvider,
+  RouteProvider,
+} from './Infrastructure/Providers'
 
-const core = new PlanetCore({
-  config: { APP_NAME: '${context.name}' },
-})
+export async function bootstrap() {
+  // 1. Configure
+  const config = defineConfig({
+    config: appConfig,
+    orbits: [new OrbitAtlas()],
+  })
 
-core.register(new RepositoryServiceProvider())
-core.register(new AppServiceProvider())
+  // 2. Boot Core
+  const core = await PlanetCore.boot(config)
+  core.registerGlobalErrorHandlers()
 
-await core.bootstrap()
+  // 3. Register Providers
+  core.register(new RepositoryServiceProvider())
+  core.register(new AppServiceProvider())
+  core.register(new MiddlewareProvider())
+  core.register(new RouteProvider())
 
-// Register routes
-registerApiRoutes(core.router)
+  // 4. Bootstrap All Providers
+  await core.bootstrap()
 
+  return core
+}
+
+// Application Entry Point
+const core = await bootstrap()
 export default core.liftoff()
 `
   }
@@ -895,6 +907,15 @@ export default core.liftoff()
 
 This project follows **Clean Architecture** (by Robert C. Martin).
 The key principle is the **Dependency Rule**: dependencies point inward.
+
+## Service Providers
+
+Service providers are the central place to configure your application. They follow the ServiceProvider pattern with \`register()\` and \`boot()\` lifecycle methods.
+
+### Provider Lifecycle
+
+1. **register()**: Bind services to the container (sync or async).
+2. **boot()**: Called after ALL providers have registered. Safe to use other services.
 
 ## Layer Structure
 
@@ -955,5 +976,37 @@ src/
 
 Created with ❤️ using Gravito Framework
 `
+  }
+
+  protected override generatePackageJson(context: GeneratorContext): string {
+    const pkg = {
+      name: context.nameKebabCase,
+      version: '0.1.0',
+      type: 'module',
+      scripts: {
+        dev: 'bun run --watch src/bootstrap.ts',
+        build: 'bun build ./src/bootstrap.ts --outdir ./dist --target bun',
+        start: 'bun run dist/bootstrap.js',
+        test: 'bun test',
+        typecheck: 'tsc --noEmit',
+        check: 'bun run typecheck && bun run test',
+        'check:deps': 'bun run scripts/check-dependencies.ts',
+        validate: 'bun run check && bun run check:deps',
+        precommit: 'bun run validate',
+        'docker:build': `docker build -t ${context.nameKebabCase} .`,
+        'docker:run': `docker run -it -p 3000:3000 ${context.nameKebabCase}`,
+      },
+      dependencies: {
+        '@gravito/core': 'workspace:*',
+        '@gravito/enterprise': 'workspace:*',
+        ...(context.withSpectrum ? { '@gravito/spectrum': 'workspace:*' } : {}),
+      },
+      devDependencies: {
+        'bun-types': 'latest',
+        typescript: '^5.0.0',
+      },
+    }
+
+    return JSON.stringify(pkg, null, 2)
   }
 }

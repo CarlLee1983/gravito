@@ -1,15 +1,15 @@
 {
   "name": "@gravito/ion",
-  "version": "1.0.0-beta.6",
+  "version": "1.0.0",
   "description": "Inertia.js adapter for Gravito",
-  "module": "./dist/index.mjs",
   "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
   "type": "module",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
+      "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     }
   },
@@ -21,18 +21,20 @@
   "scripts": {
     "build": "bun run build.ts",
     "test": "bun test",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
+    "test:coverage": "bun test --coverage --coverage-threshold=80",
+    "test:ci": "bun test --coverage --coverage-threshold=80"
   },
   "peerDependencies": {
-    "gravito-core": "1.0.0-beta.6",
-    "@gravito/photon": "1.0.0-beta.1"
+    "@gravito/core": "workspace:*",
+    "@gravito/photon": "workspace:*"
   },
   "devDependencies": {
     "bun-types": "latest",
-    "gravito-core": "1.0.0-beta.6",
-    "@gravito/photon": "1.0.0-beta.1",
+    "@gravito/core": "workspace:*",
+    "@gravito/photon": "workspace:*",
     "tsup": "^8.5.1",
-    "typescript": "latest"
+    "typescript": "^5.9.3"
   },
   "keywords": [
     "gravito",

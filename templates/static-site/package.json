@@ -1,6 +1,6 @@
 {
     "name": "my-gravito-static-site",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "type": "module",
     "scripts": {
         "dev": "bun run dev:vite & bun run dev:server",
@@ -13,7 +13,7 @@
         "start": "bun run src/index.ts"
     },
     "dependencies": {
-        "gravito-core": "workspace:*",
+        "@gravito/core": "workspace:*",
         "@gravito/stasis": "workspace:*",
         "@gravito/prism": "workspace:*",
         "@gravito/ion": "workspace:*",
@@ -32,6 +32,6 @@
         "@vitejs/plugin-vue": "^5.0.0",
         "bun-types": "latest",
         "typescript": "^5.0.0",
-        "vite": "^5.0.0"
+        "vite": "^6.4.1"
     }
 }

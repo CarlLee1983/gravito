@@ -59,7 +59,7 @@ class InvoicePaid extends Notification {
 ### 2. Configure OrbitFlare
 
 ```typescript
-import { PlanetCore } from 'gravito-core'
+import { PlanetCore } from '@gravito/core'
 import { OrbitFlare } from '@gravito/flare'
 import { OrbitSignal } from '@gravito/signal'
 import { OrbitStream } from '@gravito/stream'

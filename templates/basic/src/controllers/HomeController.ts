@@ -1,4 +1,4 @@
-import type { CacheService, GravitoContext, PlanetCore, ViewService } from 'gravito-core'
+import type { CacheService, GravitoContext, PlanetCore, ViewService } from '@gravito/core'
 
 /**
  * HomeController

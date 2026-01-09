@@ -18,7 +18,7 @@
     <!-- Console Body -->
     <div class="p-8 font-mono text-xs md:text-sm leading-[1.8] min-h-[300px] relative">
       <!-- Background HUD Elements -->
-      <div class="absolute top-4 right-4 text-[40px] font-bold text-white/[0.02] select-none pointer-events-none">ATLAS_v1.5</div>
+      <div class="absolute top-4 right-4 text-[40px] font-bold text-white/[0.02] select-none pointer-events-none">ATLAS_v1.0-beta</div>
       
       <!-- Code Input -->
       <div class="mb-6 opacity-80">

@@ -13,7 +13,7 @@ export class ProgressTracker {
   private storage: SitemapProgressStorage
   private updateInterval: number
   private currentProgress: SitemapProgress | null = null
-  private updateTimer: Timer | null = null
+  private updateTimer: ReturnType<typeof setInterval> | null = null
 
   constructor(options: ProgressTrackerOptions) {
     this.storage = options.storage

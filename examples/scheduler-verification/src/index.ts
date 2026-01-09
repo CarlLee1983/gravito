@@ -1,8 +1,8 @@
 import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { PlanetCore } from '@gravito/core'
 import { OrbitHorizon } from '@gravito/horizon'
 import { type CacheProvider, OrbitCache } from '@gravito/stasis'
-import { PlanetCore } from 'gravito-core'
 
 /**
  * 模擬一個分散式快取（例如 Redis），用於鎖定任務。

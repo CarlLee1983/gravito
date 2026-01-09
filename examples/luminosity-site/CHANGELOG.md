@@ -1,0 +1,19 @@
+# luminosity-marketing-site
+
+## 1.0.2
+
+### Patch Changes
+
+- Updated dependencies
+  - @gravito/core@1.0.0
+  - @gravito/ion@1.0.0
+  - @gravito/prism@1.0.0
+  - @gravito/stasis@1.0.0
+
+## 1.0.1
+
+### Patch Changes
+
+- Updated dependencies [71c0fa6]
+  - @gravito/luminosity@1.0.0
+  - @gravito/luminosity-adapter-photon@1.0.0

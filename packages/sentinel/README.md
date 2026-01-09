@@ -19,7 +19,7 @@ bun add @gravito/sentinel
 
 Peer dependencies:
 
-- `gravito-core`
+- `@gravito/core`
 - `@gravito/photon` (^4.0.0)
 
 If you use the Session guard, install `@gravito/pulsar`:
@@ -33,7 +33,7 @@ bun add @gravito/pulsar
 ### 1. Configure OrbitSentinel
 
 ```typescript
-import { PlanetCore } from 'gravito-core'
+import { PlanetCore } from '@gravito/core'
 import { OrbitSentinel, type AuthConfig, CallbackUserProvider } from '@gravito/sentinel'
 import { OrbitPulsar } from '@gravito/pulsar'
 

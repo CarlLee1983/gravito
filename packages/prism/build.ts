@@ -6,7 +6,7 @@ console.log('Building @gravito/prism...')
 await Bun.$`rm -rf dist`
 
 const external = [
-  'gravito-core',
+  '@gravito/core',
   '@gravito/photon',
   'react',
   'react-dom',

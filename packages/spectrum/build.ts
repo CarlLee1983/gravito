@@ -15,7 +15,7 @@ const tsup = spawn(
     'esm,cjs',
     '--dts',
     '--external',
-    'gravito-core',
+    '@gravito/core',
     '--external',
     '@gravito/atlas',
     '--external',

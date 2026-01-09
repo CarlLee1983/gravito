@@ -41,7 +41,7 @@ title: 外掛市集標準 (GPS-001)
   "version": "1.0.0",
   "keywords": ["gravito-plugin", "blog"],
   "peerDependencies": {
-    "gravito-core": "^0.3.0"
+    "@gravito/core": "^0.3.0"
   },
   "gravito": {
     "type": "satellite",
@@ -67,7 +67,7 @@ title: 外掛市集標準 (GPS-001)
 您的主要進入點 (Main Entry Point) 必須以 `default export` 匯出一個符合 Gravito 簽名的函式。
 
 ```typescript
-import { PlanetCore } from 'gravito-core';
+import { PlanetCore } from '@gravito/core';
 
 export default function myPlugin(core: PlanetCore, options?: any) {
   // 實作內容

@@ -18,12 +18,14 @@ export class MongoDBDriver implements DriverContract {
   private config: MongoDBConfig
   private client: MongoClient | null = null
   private db: Db | null = null
+  private MongoClientCtor: typeof MongoClient
 
-  constructor(config: ConnectionConfig) {
+  constructor(config: ConnectionConfig, deps: { MongoClient?: typeof MongoClient } = {}) {
     if (config.driver !== 'mongodb') {
       throw new Error(`Invalid driver type '\${config.driver}' for MongoDBDriver`)
     }
     this.config = config as MongoDBConfig
+    this.MongoClientCtor = deps.MongoClient ?? MongoClient
   }
 
   getDriverName(): DriverType {
@@ -36,7 +38,7 @@ export class MongoDBDriver implements DriverContract {
     }
 
     try {
-      this.client = new MongoClient(
+      this.client = new this.MongoClientCtor(
         this.config.uri ??
           `mongodb://\${this.config.host}:\${this.config.port}/\${this.config.database}`
       )

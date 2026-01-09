@@ -12,7 +12,7 @@ This project serves as both the **production-ready official site** and the **fla
 This website demonstrates the full power of the Gravito ecosystem, specifically the **Micro-Monolith** pattern:
 
 ### 1. **Core Architecture** (`@gravito/core`)
-- **Micro-Kernel**: Built on `gravito-core`, leveraging the lifecycle hook system for modularity.
+- **Micro-Kernel**: Built on `@gravito/core`, leveraging the lifecycle hook system for modularity.
 - **Photon Adapter**: Utilizing `@gravito/photon` as the high-performance HTTP layer running on **Bun**.
 - **Kinetic Modules**:
     - **@gravito/ion**: Seamless server-side routing with modern SPA user experience.

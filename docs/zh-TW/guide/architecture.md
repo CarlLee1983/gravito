@@ -47,7 +47,7 @@ const cache = container.make('cache');
 ### 定義提供者
 
 ```typescript
-import { ServiceProvider, Container } from 'gravito-core';
+import { ServiceProvider, Container } from '@gravito/core';
 
 export class AppServiceProvider extends ServiceProvider {
   /**

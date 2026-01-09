@@ -109,4 +109,44 @@ export default {
     memory: 'Memory Peak',
     build: 'Final Build',
   },
+  legal: {
+    privacy: {
+      title: 'Privacy Policy',
+      lastUpdated: 'Last updated: January 2026',
+      section1: {
+        title: 'Our Data Philosophy',
+        content:
+          'Luminosity is an SEO engine designed for structural analysis, not user surveillance. We do not track visitors to the sites you manage with our tools, nor do we collect personal data from your infrastructure.',
+      },
+      section2: {
+        title: 'Structural Intelligence',
+        content:
+          'We only process metadata necessary for sitemap generation and crawl governance. This includes URL sets, priority weights, and change frequencies. This data stays within your controlled environment.',
+      },
+      section3: {
+        title: 'Cookies & Assets',
+        content:
+          'This official site uses minimal cookies for core functionality and basic performance analytics via Vercel. We do not use third-party tracking pixels.',
+      },
+    },
+    terms: {
+      title: 'Terms of Service',
+      lastUpdated: 'Last updated: January 2026',
+      section1: {
+        title: 'Open Source Heritage',
+        content:
+          'Luminosity is licensed under the MIT License. It is enterprise-ready software provided "as is", built for precision and scale.',
+      },
+      section2: {
+        title: 'System Integrity',
+        content:
+          'Users are responsible for ensuring their robots.txt and sitemap configurations comply with search engine guidelines. Gravito is not liable for SEO fluctuations resulting from improper configuration.',
+      },
+      section3: {
+        title: 'Ethical Governance',
+        content:
+          'Luminosity must not be used to facilitate malicious crawling, DoS attacks via sitemap bombing, or any activity that violates the integrity of the web ecosystem.',
+      },
+    },
+  },
 }

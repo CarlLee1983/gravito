@@ -18,10 +18,10 @@ title: Laravel 12 MVC 對齊程度
 
 | Laravel | Gravito |
 |--------|---------|
-| Service Container、Service Providers | `gravito-core`（`Container`、`ServiceProvider`） |
-| HTTP Kernel / Middleware | `gravito-core` Router + Native middleware；以及 Gravito 提供的 middleware（Auth/Session/…） |
-| Exception Handler | `gravito-core` `PlanetCore` 的 error + notFound handler 與 hooks |
-| Events / Listeners | `gravito-core` `EventManager` / `Listener` |
+| Service Container、Service Providers | `@gravito/core`（`Container`、`ServiceProvider`） |
+| HTTP Kernel / Middleware | `@gravito/core` Router + Native middleware；以及 Gravito 提供的 middleware（Auth/Session/…） |
+| Exception Handler | `@gravito/core` `PlanetCore` 的 error + notFound handler 與 hooks |
+| Events / Listeners | `@gravito/core` `EventManager` / `Listener` |
 | Validation（FormRequest） | `@gravito/mass`（`FormRequest`） |
 | Views / Blade | `@gravito/prism`（TSX 樣板引擎）/ `@gravito/ion`（Inertia 橋接） |
 | Database / Eloquent | `@gravito/atlas`（基於 Drizzle 的 DB layer） |

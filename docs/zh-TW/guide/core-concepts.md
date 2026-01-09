@@ -7,8 +7,8 @@ title: Gravito 核心概念
 > **"為創造者打造的高效能框架"**
 
 <div class="not-prose my-5 flex flex-wrap items-center gap-2">
-  <a href="https://www.npmjs.com/package/gravito-core" target="_blank" rel="noreferrer">
-    <img alt="npm 版本" src="https://img.shields.io/npm/v/gravito-core.svg" class="h-5" loading="lazy" />
+  <a href="https://www.npmjs.com/package/@gravito/core" target="_blank" rel="noreferrer">
+    <img alt="npm 版本" src="https://img.shields.io/npm/v/@gravito/core.svg" class="h-5" loading="lazy" />
   </a>
   <a href="https://opensource.org/licenses/MIT" target="_blank" rel="noreferrer">
     <img alt="授權：MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg" class="h-5" loading="lazy" />
@@ -53,7 +53,7 @@ title: Gravito 核心概念
 - **依賴注入**：輕量級的 IoC 容器。
 
 ```typescript
-import { PlanetCore } from 'gravito-core'
+import { PlanetCore } from '@gravito/core'
 
 const core = await PlanetCore.boot({
   modules: [Ion, Luminosity], // 僅加載 1.0 穩定模組

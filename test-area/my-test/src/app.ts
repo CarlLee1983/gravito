@@ -1,4 +1,4 @@
-import type { PlanetCore } from 'gravito-core'
+import type { PlanetCore } from '@gravito/core'
 import { Photon } from '@gravito/photon'
 import { serveStatic } from '@gravito/photon/bun'
 import { logger } from '@gravito/photon/logger'

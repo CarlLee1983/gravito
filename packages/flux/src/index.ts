@@ -38,9 +38,17 @@ export { FluxEngine } from './engine/FluxEngine'
 export { FluxConsoleLogger, FluxSilentLogger } from './logger/FluxLogger'
 // Gravito Integration
 export { OrbitFlux, type OrbitFluxOptions } from './orbit/OrbitFlux'
+// Profiler
+export {
+  type ProfileMetrics,
+  type ProfileRecommendation,
+  WorkflowProfiler,
+} from './profiler/WorkflowProfiler'
 export { BunSQLiteStorage, type BunSQLiteStorageOptions } from './storage/BunSQLiteStorage'
 // Storage
 export { MemoryStorage } from './storage/MemoryStorage'
+// Trace
+export { JsonFileTraceSink } from './trace/JsonFileTraceSink'
 
 // Types
 export type {
@@ -49,12 +57,20 @@ export type {
   // Logger
   FluxLogger,
   FluxResult,
+  // Trace
+  FluxTraceEvent,
+  FluxTraceEventType,
+  FluxTraceSink,
+  // Helper
+  FluxWaitResult,
   // Step types
   StepDefinition,
+  StepDescriptor,
   StepExecution,
   StepResult,
   WorkflowContext,
   WorkflowDefinition,
+  WorkflowDescriptor,
   WorkflowFilter,
   WorkflowState,
   // Core types
@@ -62,3 +78,18 @@ export type {
   // Storage
   WorkflowStorage,
 } from './types'
+
+/**
+ * Flux helper utilities
+ */
+export const Flux = {
+  /**
+   * Suspend workflow execution and wait for a signal
+   *
+   * @param signal - Signal name to wait for
+   */
+  wait: (signal: string): import('./types').FluxWaitResult => ({
+    __kind: 'flux_wait',
+    signal,
+  }),
+}

@@ -9,13 +9,14 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs"
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
     }
   },
   "scripts": {
-    "build": "bun run build.ts",
+    "build": "node_modules/.bin/tsup src/index.ts --format esm,cjs --dts || bunx tsup src/index.ts --format esm,cjs --dts",
     "test": "bun test",
-    "typecheck": "bunx tsc --noEmit"
+    "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck"
   },
   "files": [
     "dist",
@@ -41,6 +42,15 @@
   "devDependencies": {
     "@types/ioredis": "^5.0.0",
     "tsup": "^8.5.1",
-    "typescript": "^5.0.0"
+    "typescript": "^5.9.3",
+    "bun-types": "latest"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gravito-framework/gravito.git",
+    "directory": "packages/plasma"
   }
 }

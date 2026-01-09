@@ -1,5 +1,5 @@
+import type { GravitoContext, GravitoMiddleware, GravitoNext } from '@gravito/core'
 import type { AuthManager } from '@gravito/sentinel'
-import type { GravitoContext, GravitoMiddleware, GravitoNext } from 'gravito-core'
 
 /**
  * Middleware to ensure user has verified their email

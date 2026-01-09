@@ -1,19 +1,21 @@
 {
   "name": "@gravito/signal",
-  "version": "1.0.0-beta.1",
+  "version": "1.0.1",
   "description": "Powerful email framework for Gravito applications with Dev UI and multi-renderer support.",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsup src/index.ts --format cjs,esm --dts",
-    "test": "bun test"
+    "build": "tsup src/index.ts --format cjs,esm --dts --external @gravito/core --external @gravito/stream --external @gravito/prism",
+    "test": "bun test",
+    "test:coverage": "bun test --coverage --coverage-threshold=80",
+    "test:ci": "bun test --coverage --coverage-threshold=80",
+    "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck"
   },
   "keywords": [
     "gravito",
     "mail",
     "smtp",
-    "mjml",
     "email",
     "react-email",
     "vue-email"
@@ -22,13 +24,12 @@
   "license": "MIT",
   "dependencies": {
     "@aws-sdk/client-ses": "^3.953.0",
-    "mjml": "^4.14.1",
-    "nodemailer": "^6.9.1"
+    "nodemailer": "^7.0.11"
   },
   "peerDependencies": {
-    "gravito-core": "1.0.0-beta.6",
-    "@gravito/stream": "1.0.0-beta.1",
-    "@gravito/prism": "1.0.0-beta.6",
+    "@gravito/core": "workspace:*",
+    "@gravito/stream": "workspace:*",
+    "@gravito/prism": "workspace:*",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "vue": "^3.0.0"
@@ -48,17 +49,17 @@
     }
   },
   "devDependencies": {
-    "@gravito/prism": "1.0.0-beta.6",
-    "@gravito/stream": "1.0.0-beta.1",
-    "@types/mjml": "^4.7.4",
+    "@gravito/prism": "workspace:*",
+    "@gravito/stream": "workspace:*",
     "@types/nodemailer": "^6.4.14",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vue/server-renderer": "^3.0.0",
-    "gravito-core": "1.0.0-beta.6",
+    "@gravito/core": "workspace:*",
     "tsup": "8.5.1",
-    "typescript": "^5.0.0",
-    "vue": "^3.0.0"
+    "typescript": "^5.9.3",
+    "vue": "^3.0.0",
+    "bun-types": "latest"
   },
   "publishConfig": {
     "access": "public"

@@ -18,8 +18,10 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "typecheck": "tsc --noEmit",
-    "test": "bun test"
+    "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
+    "test": "bun test",
+    "test:coverage": "bun test --coverage --coverage-threshold=80",
+    "test:ci": "bun test --coverage --coverage-threshold=80"
   },
   "keywords": [
     "gravito",
@@ -45,11 +47,14 @@
     }
   },
   "dependencies": {
-    "@gravito/freeze": "1.0.0-beta.6"
+    "@gravito/freeze": "workspace:*"
   },
   "devDependencies": {
     "vue": "^3.0.0",
     "tsup": "^8.0.0",
-    "typescript": "^5.7.0"
+    "typescript": "^5.9.3"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

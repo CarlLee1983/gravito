@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
+import { computed } from 'vue'
 import StaticLink from './StaticLink.vue'
-const { t } = useI18n()
+const { t, locale } = useI18n()
+
+const apiLink = computed(() => {
+  const lang = locale.value === 'zh-TW' ? 'zh-TW' : 'en'
+  return `https://gravito.dev/${lang}/docs/guide/database/overview`
+})
 </script>
 
 <template>
@@ -11,7 +17,7 @@ const { t } = useI18n()
         <div class="flex flex-col gap-4">
             <div class="flex items-center gap-2">
                 <span class="text-xl font-bold font-mono text-white">@gravito/<span class="text-atlas-cyan">atlas</span></span>
-                <span class="px-1.5 py-0.5 rounded text-[10px] bg-white/10 text-gray-400 border border-white/5">v0.0.1</span>
+                <span class="px-1.5 py-0.5 rounded text-[10px] bg-white/10 text-gray-400 border border-white/5">v1.0.0-beta.1</span>
             </div>
             <p class="text-gray-500 text-xs leading-relaxed max-w-xs">
                 {{ t('hero.desc') }}
@@ -25,9 +31,9 @@ const { t } = useI18n()
         <div class="flex flex-col gap-4">
             <h4 class="text-white font-bold uppercase tracking-widest text-[10px]">{{ t('footer.resources') }}</h4>
             <ul class="flex flex-col gap-2 text-gray-500 text-xs font-mono">
-                <li><a href="#" class="hover:text-atlas-cyan transition-colors">{{ t('footer.guide') }}</a></li>
-                <li><a href="#" class="hover:text-atlas-cyan transition-colors">{{ t('footer.api') }}</a></li>
-                <li><a href="#" class="hover:text-atlas-cyan transition-colors">{{ t('footer.examples') }}</a></li>
+                <li><StaticLink to="/docs/cli" class="hover:text-atlas-cyan transition-colors">{{ t('footer.guide') }}</StaticLink></li>
+                <li><a :href="apiLink" target="_blank" rel="noopener noreferrer" class="hover:text-atlas-cyan transition-colors">{{ t('footer.api') }}</a></li>
+                <li><a href="https://github.com/gravito-framework/gravito/tree/main/packages/atlas" target="_blank" rel="noopener noreferrer" class="hover:text-atlas-cyan transition-colors">{{ t('footer.examples') }}</a></li>
             </ul>
         </div>
 

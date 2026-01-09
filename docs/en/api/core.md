@@ -29,7 +29,7 @@ const core = new PlanetCore()
 Gravito's high-performance engine is powered by the **Gravito Core Engine**, providing native support for modern runtimes like Bun and Deno.
 
 ```typescript
-import { GravitoAdapter } from 'gravito-core'
+import { GravitoAdapter } from '@gravito/core'
 
 core.liftoff({
   adapter: new GravitoAdapter(),

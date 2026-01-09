@@ -19,7 +19,7 @@ interface ReleaseEntry {
 
 // Release data - can be moved to a separate data file or CMS later
 // Release data - can be moved to a separate data file or CMS later
-const releases: ReleaseEntry[] = [
+const releasesZh: ReleaseEntry[] = [
   {
     id: 'lux-launch',
     date: '2025-12-25',
@@ -30,7 +30,7 @@ const releases: ReleaseEntry[] = [
     highlights: ['全新「引力核心」視覺主題', '完整的中英文雙語文檔', 'SSG 靜態網站生成支援'],
     links: [
       { label: '訪問官網', url: 'https://lux.gravito.dev' },
-      { label: '查看文檔', url: '/docs' },
+      { label: '查看文檔', url: '/zh/docs' },
     ],
     featured: true,
   },
@@ -41,9 +41,9 @@ const releases: ReleaseEntry[] = [
     version: '1.0.0-rc.1',
     title: 'Gravito v1.0.0 Release Candidate',
     description:
-      '所有核心模組進入 RC 階段！包含 gravito-core、@gravito/atlas、@gravito/sentinel、@gravito/fortify 等套件。',
+      '所有核心模組進入 RC 階段！包含 @gravito/core、@gravito/atlas、@gravito/sentinel、@gravito/fortify 等套件。',
     highlights: [
-      'gravito-core: 核心框架穩定',
+      '@gravito/core: 核心框架穩定',
       '@gravito/atlas: ORM 功能完善',
       '@gravito/sentinel: 認證授權系統',
       '@gravito/fortify: 安全防護增強',
@@ -70,7 +70,93 @@ const releases: ReleaseEntry[] = [
   },
 ]
 
+const releasesEn: ReleaseEntry[] = [
+  {
+    id: 'lux-launch',
+    date: '2025-12-25',
+    type: 'announcement',
+    title: 'Lux Site Officially Launched',
+    description:
+      'The Gravito Lux site (lux.gravito.dev) is live, showcasing Gravito’s core vision and the new visual language.',
+    highlights: [
+      'New “Gravity Core” visual theme',
+      'Complete bilingual documentation',
+      'SSG-ready static site support',
+    ],
+    links: [
+      { label: 'Visit Website', url: 'https://lux.gravito.dev' },
+      { label: 'View Docs', url: '/docs' },
+    ],
+    featured: true,
+  },
+  {
+    id: 'v1-rc-1',
+    date: '2025-12-25',
+    type: 'release',
+    version: '1.0.0-rc.1',
+    title: 'Gravito v1.0.0 Release Candidate',
+    description:
+      'All core modules enter RC: @gravito/core, @gravito/atlas, @gravito/sentinel, @gravito/fortify, and more.',
+    highlights: [
+      '@gravito/core: core stability milestone',
+      '@gravito/atlas: ORM feature complete',
+      '@gravito/sentinel: authentication and authorization',
+      '@gravito/fortify: hardened security layer',
+    ],
+    links: [
+      { label: 'NPM', url: 'https://www.npmjs.com/org/gravito' },
+      { label: 'GitHub', url: 'https://github.com/gravito-framework/gravito' },
+    ],
+    featured: true,
+  },
+  {
+    id: 'atlas-orm',
+    date: '2025-12-20',
+    type: 'milestone',
+    title: 'Atlas ORM Reaches 90% Laravel Eloquent Compatibility',
+    description:
+      'After months of development, Atlas ORM now covers 90%+ of Eloquent APIs, including relations, collections, serialization, and factories.',
+    highlights: [
+      'Comprehensive relations (HasOne, HasMany, BelongsTo, etc.)',
+      'Collection operations',
+      'Model factories & seeders',
+      'JSON serialization and API resources',
+    ],
+  },
+]
+
 const typeConfig = {
+  release: {
+    icon: Package,
+    color: 'text-singularity',
+    bg: 'bg-singularity/10',
+    border: 'border-singularity/30',
+    label: '發布',
+  },
+  feature: {
+    icon: Sparkles,
+    color: 'text-purple-400',
+    bg: 'bg-purple-500/10',
+    border: 'border-purple-500/30',
+    label: '功能',
+  },
+  announcement: {
+    icon: Globe,
+    color: 'text-amber-400',
+    bg: 'bg-amber-500/10',
+    border: 'border-amber-500/30',
+    label: 'Announcement',
+  },
+  milestone: {
+    icon: Star,
+    color: 'text-emerald-400',
+    bg: 'bg-emerald-500/10',
+    border: 'border-emerald-500/30',
+    label: 'Milestone',
+  },
+}
+
+const typeConfigZh = {
   release: {
     icon: Package,
     color: 'text-singularity',
@@ -90,19 +176,29 @@ const typeConfig = {
     color: 'text-amber-400',
     bg: 'bg-amber-500/10',
     border: 'border-amber-500/30',
-    label: 'Announcement',
+    label: '公告',
   },
   milestone: {
     icon: Star,
     color: 'text-emerald-400',
     bg: 'bg-emerald-500/10',
     border: 'border-emerald-500/30',
-    label: 'Milestone',
+    label: '里程碑',
   },
-}
+} satisfies typeof typeConfig
 
-function ReleaseCard({ entry, index }: { entry: ReleaseEntry; index: number }) {
-  const config = typeConfig[entry.type]
+function ReleaseCard({
+  entry,
+  index,
+  configMap,
+  isZh,
+}: {
+  entry: ReleaseEntry
+  index: number
+  configMap: typeof typeConfig
+  isZh: boolean
+}) {
+  const config = configMap[entry.type]
   const Icon = config.icon
 
   return (
@@ -182,7 +278,7 @@ function ReleaseCard({ entry, index }: { entry: ReleaseEntry; index: number }) {
           </div>
 
           <div className="ml-auto text-[10px] font-black tracking-widest text-gray-500 uppercase bg-white/5 px-3 py-1.5 rounded-lg border border-white/5">
-            {new Date(entry.date).toLocaleDateString('en-US', {
+            {new Date(entry.date).toLocaleDateString(isZh ? 'zh-TW' : 'en-US', {
               year: 'numeric',
               month: 'short',
             })}
@@ -269,6 +365,8 @@ function ReleaseCard({ entry, index }: { entry: ReleaseEntry; index: number }) {
 export default function Releases() {
   const { props } = usePage<{ locale?: string }>()
   const isZh = props.locale === 'zh'
+  const entries = isZh ? releasesZh : releasesEn
+  const configMap = isZh ? typeConfigZh : typeConfig
 
   return (
     <Layout>
@@ -339,13 +437,13 @@ export default function Releases() {
 
           {/* Entries */}
           <div className="relative pl-12 md:pl-0 space-y-24">
-            {releases.map((entry, index) => (
+            {entries.map((entry, index) => (
               <div
                 key={entry.id}
                 className={`flex flex-col ${index % 2 === 0 ? 'md:items-start' : 'md:items-end'}`}
               >
                 <div className="w-full md:w-[calc(50%-40px)]">
-                  <ReleaseCard entry={entry} index={index} />
+                  <ReleaseCard entry={entry} index={index} configMap={configMap} isZh={isZh} />
                 </div>
               </div>
             ))}

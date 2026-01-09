@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test'
+import type Redis from 'ioredis'
 import { RedisDriver } from '../src/drivers/RedisDriver'
 
 // Mock ioredis
@@ -12,23 +13,24 @@ const mockRedisClient = {
   del: mock(() => Promise.resolve(1)),
 }
 
-mock.module('ioredis', () => ({
-  default: class {
-    constructor() {
-      Object.assign(this, mockRedisClient)
-    }
-  },
-}))
+class MockRedis {
+  constructor() {
+    Object.assign(this, mockRedisClient)
+  }
+}
 
 describe('RedisDriver', () => {
   let driver: RedisDriver
 
   beforeEach(() => {
-    driver = new RedisDriver({
-      driver: 'redis',
-      host: 'localhost',
-      port: 6379,
-    })
+    driver = new RedisDriver(
+      {
+        driver: 'redis',
+        host: 'localhost',
+        port: 6379,
+      },
+      { Redis: MockRedis as unknown as typeof Redis }
+    )
   })
 
   afterEach(async () => {

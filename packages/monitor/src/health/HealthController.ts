@@ -4,7 +4,7 @@
  * HTTP handlers for health check endpoints
  */
 
-import type { GravitoContext } from 'gravito-core'
+import type { GravitoContext } from '@gravito/core'
 import type { HealthRegistry } from './HealthRegistry'
 
 /**

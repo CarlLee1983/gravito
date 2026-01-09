@@ -6,7 +6,7 @@
 
 **核心穩定套件**，主要用於核心框架和基礎設施：
 
-- `gravito-core`
+- `@gravito/core`
 - `@gravito/horizon`
 - `@gravito/luminosity`
 - `@gravito/luminosity-adapter-photon`
@@ -93,7 +93,7 @@ bun run publish:all
 ### 安裝 Beta 版本
 
 ```bash
-npm install gravito-core@beta
+npm install @gravito/core@beta
 npm install @gravito/horizon@beta
 ```
 
@@ -107,21 +107,21 @@ npm install @gravito/pulsar@alpha
 ### 安裝穩定版本
 
 ```bash
-npm install gravito-core
+npm install @gravito/core
 # 或明確指定
-npm install gravito-core@latest
+npm install @gravito/core@latest
 ```
 
 ## 檢查已發布的版本
 
 ```bash
 # 查看所有版本
-npm view gravito-core versions
+npm view @gravito/core versions
 
 # 查看特定 tag 的版本
-npm view gravito-core dist-tags
+npm view @gravito/core dist-tags
 
 # 查看 beta 版本
-npm view gravito-core@beta version
+npm view @gravito/core@beta version
 ```
 

@@ -4,7 +4,7 @@
  * The micro-kernel that orchestrates the entire Galaxy Architecture.
  * Manages HTTP routing, middleware, error handling, and orbit integration.
  *
- * @module gravito-core
+ * @module @gravito/core
  * @since 1.0.0
  */
 
@@ -64,20 +64,6 @@ export type ErrorHandlerContext = {
 // Photon Variables Type for Context Injection
 type RouteParams = Record<string, string | number>
 type RouteQuery = Record<string, string | number | boolean | null | undefined>
-
-type Variables = {
-  core: PlanetCore
-  logger: Logger
-  config: ConfigManager
-  cookieJar: CookieJar
-  route: (name: string, params?: RouteParams, query?: RouteQuery) => string
-  // Optional orbit-injected variables
-  cache?: CacheService
-  view?: ViewService
-  i18n?: unknown
-  session?: unknown
-  routeModels?: Record<string, unknown>
-}
 
 export interface GravitoOrbit {
   install(core: PlanetCore): void | Promise<void>

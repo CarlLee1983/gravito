@@ -41,7 +41,7 @@ You **SHOULD** include a `gravito` property in your `package.json` to define int
   "version": "1.0.0",
   "keywords": ["gravito-plugin", "blog"],
   "peerDependencies": {
-    "gravito-core": "^0.3.0"
+    "@gravito/core": "^0.3.0"
   },
   "gravito": {
     "type": "satellite",
@@ -67,7 +67,7 @@ You **SHOULD** include a `gravito` property in your `package.json` to define int
 Your main entry point must export a default function matching the Gravito signature.
 
 ```typescript
-import { PlanetCore } from 'gravito-core';
+import { PlanetCore } from '@gravito/core';
 
 export default function myPlugin(core: PlanetCore, options?: any) {
   // Implementation

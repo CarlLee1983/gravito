@@ -1,0 +1,21 @@
+{
+  "name": "example-ecommerce-mvc",
+  "version": "1.0.2",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run src/index.ts",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@gravito/core": "workspace:*",
+    "@gravito/photon": "workspace:*",
+    "@gravito/monolith": "workspace:*",
+    "@gravito/atlas": "workspace:*",
+    "@gravito/sentinel": "workspace:*",
+    "@gravito/mass": "workspace:*",
+    "@gravito/prism": "workspace:*"
+  },
+  "devDependencies": {
+    "picocolors": "^1.0.0"
+  }
+}

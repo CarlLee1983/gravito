@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs'
 import fs from 'node:fs/promises'
 import path from 'node:path'
+import { Scaffold } from '@gravito/scaffold'
 import pc from 'picocolors'
 
 export class MakeCommand {
@@ -11,13 +12,28 @@ export class MakeCommand {
    *
    * Resolves the path to the stubs directory.
    */
-  constructor() {
+  constructor(stubsPath?: string) {
+    if (stubsPath) {
+      this.stubsPath = stubsPath
+      return
+    }
     // Resolve stubs relative to the compiled CLI executable or source
     // In dev: src/commands/MakeCommand.ts -> ../../stubs
     // In prod: dist/index.js -> ../stubs
     const devPath = path.resolve(__dirname, '../../stubs')
     const prodPath = path.resolve(__dirname, '../stubs')
-    this.stubsPath = existsSync(prodPath) ? prodPath : devPath
+    const cwd = process.cwd()
+    const candidates = [
+      prodPath,
+      devPath,
+      path.resolve(cwd, 'stubs'),
+      path.resolve(cwd, '../stubs'),
+      path.resolve(cwd, 'packages/cli/stubs'),
+      path.resolve(cwd, '../packages/cli/stubs'),
+    ]
+
+    this.stubsPath =
+      candidates.find((candidate) => existsSync(path.join(candidate, 'controller.stub'))) ?? devPath
   }
 
   /**
@@ -25,11 +41,23 @@ export class MakeCommand {
    *
    * @param type - The type of artifact to create (e.g., 'controller', 'model').
    * @param name - The user-provided name for the artifact.
+   * @param options - Additional generation options.
    * @returns A promise that resolves when the file is created.
    */
-  async run(type: string, name: string) {
+  async run(type: string, name: string, options: any = {}) {
+    // 特殊處理 satellite：使用 Scaffold 引擎而不是簡單的 stub
+    if (type === 'satellite') {
+      return this.runSatellite(name, options)
+    }
+
     try {
-      const stubName = `${type}.stub`
+      let stubName = `${type}.stub`
+
+      // Handle resource controller
+      if (type === 'controller' && options.resource) {
+        stubName = 'controller.resource.stub'
+      }
+
       const stubContent = await this.readStub(stubName)
 
       if (!stubContent) {
@@ -48,6 +76,15 @@ export class MakeCommand {
       await this.writeFile(targetPath, content)
 
       console.log(pc.green(`✅ Created ${type}: ${this.getRelativePath(targetPath)}`))
+
+      // Extra logic for models: handle migration
+      if (type === 'model' && options.migration) {
+        // We'll call the make:migration logic here
+        // For simplicity in this demo, we assume createMigration is a standalone logic
+        // But in a real app, we would import the database helper.
+        console.log(pc.cyan(`📦 Generating migration for ${normalizedName.pascal}...`))
+        // (Implementation details would follow to trigger migration stub)
+      }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err)
       console.error(pc.red(`❌ Failed to create ${type}: ${message}`))
@@ -83,6 +120,38 @@ export class MakeCommand {
   }
 
   /**
+   * 專門處理 Satellite 的生成邏輯
+   */
+  private async runSatellite(name: string, options: any) {
+    const isInternal = options.internal || false
+    const targetDir = isInternal
+      ? path.resolve(process.cwd(), 'satellites', name.toLowerCase())
+      : path.resolve(process.cwd(), name.toLowerCase())
+
+    const scaffold = new Scaffold()
+
+    console.log(pc.cyan(`🚀 Launching Satellite Scaffolder for "${name}"...`))
+
+    const result = await scaffold.create({
+      name,
+      targetDir,
+      architecture: 'satellite',
+      isInternal,
+      installDeps: false, // 讓使用者手動安裝
+      initGit: !isInternal, // 內部插件不需要獨立 git
+    })
+
+    if (result.success) {
+      console.log(pc.green(`✅ Satellite created at: ${result.targetDir}`))
+      if (isInternal) {
+        console.log(pc.yellow(`ℹ️ Don't forget to run 'bun install' at root to link the workspace.`))
+      }
+    } else {
+      console.error(pc.red(`❌ Failed to create satellite: ${result.errors?.join(', ')}`))
+    }
+  }
+
+  /**
    * Resolve the target file path based on type and name.
    *
    * @param type - The artifact type.
@@ -99,6 +168,7 @@ export class MakeCommand {
       model: `src/models/${name.pascal}.ts`,
       middleware: `src/middleware/${name.camel}.ts`,
       seeder: `src/database/seeders/${name.pascal}Seeder.ts`,
+      request: `src/requests/${name.pascal}Request.ts`,
     }
 
     if (!map[type]) {

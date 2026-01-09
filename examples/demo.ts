@@ -1,5 +1,10 @@
 import { serveStatic } from '@gravito/photon/bun'
-import { defineConfig, PlanetCore } from '../packages/core/src/index.ts'
+import {
+  bodySizeLimit,
+  defineConfig,
+  PlanetCore,
+  securityHeaders,
+} from '../packages/core/src/index.ts'
 import { OrbitCache } from '../packages/stasis/src/index.ts'
 
 // 1. Define Configuration (IoC Style)
@@ -18,6 +23,35 @@ const config = defineConfig({
 // 2. Boot the Planet
 const core = await PlanetCore.boot(config)
 
+const defaultCsp = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data:",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "frame-ancestors 'none'",
+].join('; ')
+const cspValue = process.env.APP_CSP
+const csp = cspValue === 'false' ? false : (cspValue ?? defaultCsp)
+const hstsMaxAge = Number.parseInt(process.env.APP_HSTS_MAX_AGE ?? '15552000', 10)
+const bodyLimit = Number.parseInt(process.env.APP_BODY_LIMIT ?? '1048576', 10)
+const requireLength = process.env.APP_BODY_REQUIRE_LENGTH === 'true'
+
+core.adapter.use(
+  '*',
+  securityHeaders({
+    contentSecurityPolicy: csp,
+    hsts:
+      process.env.NODE_ENV === 'production'
+        ? { maxAge: Number.isNaN(hstsMaxAge) ? 15552000 : hstsMaxAge, includeSubDomains: true }
+        : false,
+  })
+)
+if (!Number.isNaN(bodyLimit) && bodyLimit > 0) {
+  core.adapter.use('*', bodySizeLimit(bodyLimit, { requireContentLength: requireLength }))
+}
+
 // 3. Add hooks to demonstrate the hook system
 core.hooks.addAction('app:liftoff', ({ port }) => {
   core.logger.info(`🌌 ${core.config.get('APP_NAME')} is ready at http://localhost:${port}`)
@@ -35,11 +69,12 @@ core.hooks.addFilter('api:response', async (data) => {
 })
 
 // 4. Static file serving
-core.app.use('/static/*', serveStatic({ root: './templates/basic/' }))
-core.app.get('/favicon.ico', serveStatic({ path: './templates/basic/static/favicon.ico' }))
+// Fix applied: use core.adapter.use instead of core.router.use
+core.adapter.use('/static/*', serveStatic({ root: './templates/basic/' }))
+core.router.get('/favicon.ico', serveStatic({ path: './templates/basic/static/favicon.ico' }))
 
 // 5. HTML Page Routes
-core.app.get('/', async (c) => {
+core.router.get('/', async (c) => {
   // Increment visitor counter using cache
   const cache = c.get('cache')
   const count = ((await cache.get<number>('visitor:count')) ?? 0) + 1
@@ -130,7 +165,7 @@ core.app.get('/', async (c) => {
 // 6. API Routes
 const startTime = Date.now()
 
-core.app.get('/api/health', async (c) => {
+core.router.get('/api/health', async (c) => {
   const response = await core.hooks.applyFilters('api:response', {
     status: 'healthy',
     service: core.config.get('APP_NAME'),
@@ -138,7 +173,7 @@ core.app.get('/api/health', async (c) => {
   return c.json(response)
 })
 
-core.app.get('/api/config', async (c) => {
+core.router.get('/api/config', async (c) => {
   const response = await core.hooks.applyFilters('api:response', {
     app: {
       name: core.config.get('APP_NAME'),
@@ -152,7 +187,7 @@ core.app.get('/api/config', async (c) => {
   return c.json(response)
 })
 
-core.app.get('/api/stats', async (c) => {
+core.router.get('/api/stats', async (c) => {
   const cache = c.get('cache')
   const uptimeMs = Date.now() - startTime
   const uptimeSeconds = Math.floor(uptimeMs / 1000)

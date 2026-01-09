@@ -1,17 +1,51 @@
 import { open, stat } from 'node:fs/promises'
 import { join } from 'node:path'
+import { PlanetCore } from '@gravito/core'
 import { OrbitEcho } from '@gravito/echo'
 import { type BroadcastManager, OrbitRadiance } from '@gravito/radiance'
 import { OrbitRipple } from '@gravito/ripple'
-import { PlanetCore } from 'gravito-core'
 import { FileSystemDriver } from './broadcaster'
 
 const STORAGE_PATH = join(process.cwd(), 'storage/broadcast_log.jsonl')
+
+function buildSecurityHeaders(): Headers {
+  const headers = new Headers()
+  const defaultCsp = [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline'",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data:",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "frame-ancestors 'none'",
+  ].join('; ')
+  const cspValue = process.env.APP_CSP
+  const csp = cspValue === 'false' ? false : (cspValue ?? defaultCsp)
+  const hstsMaxAge = Number.parseInt(process.env.APP_HSTS_MAX_AGE ?? '15552000', 10)
+
+  if (csp) {
+    headers.set('Content-Security-Policy', csp)
+  }
+  headers.set('X-Content-Type-Options', 'nosniff')
+  headers.set('X-Frame-Options', 'DENY')
+  headers.set('Referrer-Policy', 'no-referrer')
+  headers.set('Cross-Origin-Opener-Policy', 'same-origin')
+  headers.set('Cross-Origin-Resource-Policy', 'same-site')
+  if (process.env.NODE_ENV === 'production') {
+    headers.set(
+      'Strict-Transport-Security',
+      `max-age=${Number.isNaN(hstsMaxAge) ? 15552000 : hstsMaxAge}; includeSubDomains`
+    )
+  }
+
+  return headers
+}
 
 export async function startServer(port: number, name: string) {
   console.log(`[${name}] Starting server on port ${port}...`)
 
   const core = new PlanetCore()
+  const baseHeaders = buildSecurityHeaders()
 
   // Install Echo for event system
   const echo = new OrbitEcho()
@@ -114,10 +148,10 @@ export async function startServer(port: number, name: string) {
           'emergency-alert'
         )
 
-        return new Response('Broadcast triggered')
+        return new Response('Broadcast triggered', { headers: baseHeaders })
       }
 
-      return new Response('Gravito Verification Server', { status: 200 })
+      return new Response('Gravito Verification Server', { status: 200, headers: baseHeaders })
     },
     websocket: rippleServer.getHandler(),
   })

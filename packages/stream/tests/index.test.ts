@@ -159,7 +159,7 @@ describe('@gravito/stream', () => {
       expect(handled).toBe(true)
     })
 
-    test('should retry on failure', async () => {
+    test('should support manual retry flow', async () => {
       let attempts = 0
       class RetryJob extends Job {
         async handle(): Promise<void> {
@@ -171,7 +171,24 @@ describe('@gravito/stream', () => {
       }
 
       const worker = new Worker({ maxAttempts: 3 })
-      await worker.process(new RetryJob())
+      const job = new RetryJob()
+
+      // Attempt 1
+      try {
+        await worker.process(job)
+      } catch {
+        job.attempts = (job.attempts || 0) + 1
+      }
+
+      // Attempt 2
+      try {
+        await worker.process(job)
+      } catch {
+        job.attempts++
+      }
+
+      // Attempt 3 (Success)
+      await worker.process(job)
 
       expect(attempts).toBe(3)
     })

@@ -4,7 +4,11 @@ title: ORM 使用指南
 
 # ORM 使用指南
 
-> 完整的 Atlas ORM 使用說明，涵蓋所有功能和使用場景。Atlas 提供了類似 Laravel Eloquent 的體驗，底層整合了高效能的資料庫驅動。
+> 完整的 Atlas ORM 使用說明，涵蓋所有功能和使用場景。Atlas 提供了類似 Laravel Eloquent 的體驗，Bun 原生效能，底層驅動靈感來自 Prisma 與 Drizzle。
+
+## Beta 說明
+
+Atlas 為 Gravito 1.0.0-beta 設計，建議使用 Bun 1.3.4+。CLI 的 migration 流程封裝 `drizzle-kit`，並在上層維持熟悉的 Active Record 操作體驗。
 
 ## 目錄
 
@@ -1102,7 +1106,7 @@ const result = await db.raw
 ## 完整範例
 
 ```typescript
-import { PlanetCore } from 'gravito-core';
+import { PlanetCore } from '@gravito/core';
 import orbitDB from '@gravito/atlas';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';

@@ -1,15 +1,15 @@
 {
   "name": "@gravito/horizon",
-  "version": "1.0.0-beta.6",
+  "version": "1.0.0",
   "description": "Distributed task scheduler for Gravito framework",
   "main": "./dist/index.cjs",
-  "module": "./dist/index.mjs",
-  "types": "./dist/index.d.ts",
+  "module": "./dist/index.js",
   "type": "module",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
+      "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     }
   },
@@ -22,7 +22,9 @@
     "build": "bun run build.ts",
     "test": "bun test",
     "lint": "biome lint ./src",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
+    "test:coverage": "bun test --coverage --coverage-threshold=80",
+    "test:ci": "bun test --coverage --coverage-threshold=80"
   },
   "keywords": [
     "gravito",
@@ -38,13 +40,13 @@
     "cron-parser": "^4.9.0"
   },
   "peerDependencies": {
-    "gravito-core": "1.0.0-beta.6",
-    "@gravito/stasis": "1.0.0-beta.6"
+    "@gravito/core": "workspace:*",
+    "@gravito/stasis": "workspace:*"
   },
   "devDependencies": {
-    "@gravito/stasis": "1.0.0-beta.6",
+    "@gravito/stasis": "workspace:*",
     "bun-types": "latest",
-    "gravito-core": "1.0.0-beta.6",
+    "@gravito/core": "workspace:*",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3"
   },

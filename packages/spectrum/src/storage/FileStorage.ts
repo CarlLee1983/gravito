@@ -44,7 +44,9 @@ export class FileStorage implements SpectrumStorage {
   }
 
   private loadCache(path: string, target: any[]) {
-    if (!existsSync(path)) return
+    if (!existsSync(path)) {
+      return
+    }
 
     try {
       const content = readFileSync(path, 'utf-8')
@@ -66,7 +68,7 @@ export class FileStorage implements SpectrumStorage {
 
     // Add to file
     try {
-      appendFileSync(path, JSON.stringify(data) + '\n')
+      appendFileSync(path, `${JSON.stringify(data)}\n`)
     } catch (e) {
       console.error(`[Spectrum] Failed to write to ${path}`, e)
     }
@@ -121,12 +123,11 @@ export class FileStorage implements SpectrumStorage {
   }
 
   private rewrite(path: string, data: any[]) {
-    const content =
-      data
-        .slice()
-        .reverse()
-        .map((d) => JSON.stringify(d))
-        .join('\n') + '\n'
+    const content = `${data
+      .slice()
+      .reverse()
+      .map((d) => JSON.stringify(d))
+      .join('\n')}\n`
     writeFileSync(path, content)
   }
 }

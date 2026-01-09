@@ -2,7 +2,7 @@
  * @fileoverview Tests for @gravito/ripple-client
  */
 
-import { describe, expect, it } from 'bun:test'
+import { afterAll, beforeAll, describe, expect, it, mock } from 'bun:test'
 import { Channel, PresenceChannel, PrivateChannel } from '../src/Channel'
 import { createRippleClient, RippleClient } from '../src/RippleClient'
 
@@ -163,6 +163,50 @@ describe('PresenceChannel', () => {
 // ─────────────────────────────────────────────────────────────
 
 describe('RippleClient', () => {
+  class MockWebSocket {
+    static instances: MockWebSocket[] = []
+    static OPEN = 1
+    static CLOSED = 3
+
+    readyState = MockWebSocket.OPEN
+    onopen?: () => void
+    onmessage?: (event: { data: string }) => void
+    onclose?: () => void
+    onerror?: (error: unknown) => void
+    sent: string[] = []
+
+    constructor(public url: string) {
+      MockWebSocket.instances.push(this)
+    }
+
+    send(data: string) {
+      this.sent.push(data)
+    }
+
+    close() {
+      this.readyState = MockWebSocket.CLOSED
+      this.onclose?.()
+    }
+
+    emitOpen() {
+      this.onopen?.()
+    }
+
+    emitMessage(data: string) {
+      this.onmessage?.({ data })
+    }
+  }
+
+  const originalWebSocket = globalThis.WebSocket
+
+  beforeAll(() => {
+    globalThis.WebSocket = MockWebSocket as any
+  })
+
+  afterAll(() => {
+    globalThis.WebSocket = originalWebSocket
+  })
+
   it('should create with default config', () => {
     const client = new RippleClient({ host: 'ws://localhost:3000/ws' })
     expect(client.config.host).toBe('ws://localhost:3000/ws')
@@ -190,6 +234,131 @@ describe('RippleClient', () => {
 
   it('should have null socketId initially', () => {
     const client = new RippleClient({ host: 'ws://localhost:3000/ws' })
+    expect(client.getSocketId()).toBeNull()
+  })
+
+  it('connects and processes pending subscriptions', async () => {
+    const client = new RippleClient({ host: 'ws://localhost', autoReconnect: false })
+    client.channel('news')
+
+    const connectPromise = client.connect()
+    const ws = MockWebSocket.instances.at(-1)!
+
+    ws.emitOpen()
+    ws.emitMessage(JSON.stringify({ type: 'connected', socketId: 'socket-1' }))
+
+    await connectPromise
+
+    expect(client.getState()).toBe('connected')
+    expect(client.getSocketId()).toBe('socket-1')
+    expect(ws.sent.some((msg) => msg.includes('"subscribe"') && msg.includes('news'))).toBe(true)
+  })
+
+  it('authenticates private and presence channels', async () => {
+    const originalFetch = globalThis.fetch
+    globalThis.fetch = mock(
+      async () => new Response(JSON.stringify({ auth: 'sig' }), { status: 200 })
+    )
+
+    const client = new RippleClient({ host: 'ws://localhost', autoReconnect: false })
+    client.private('orders')
+    client.join('room')
+
+    const connectPromise = client.connect()
+    const ws = MockWebSocket.instances.at(-1)!
+    ws.emitOpen()
+    ws.emitMessage(JSON.stringify({ type: 'connected', socketId: 'socket-2' }))
+    await connectPromise
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    const sent = ws.sent.join('\n')
+    expect(sent).toContain('private-orders')
+    expect(sent).toContain('presence-room')
+    expect(sent).toContain('"signature":"sig"')
+
+    globalThis.fetch = originalFetch
+  })
+
+  it('dispatches event and presence messages', async () => {
+    const originalFetch = globalThis.fetch
+    globalThis.fetch = mock(
+      async () => new Response(JSON.stringify({ auth: 'sig' }), { status: 200 })
+    )
+
+    const client = new RippleClient({
+      host: 'ws://localhost',
+      autoReconnect: false,
+      authEndpoint: 'http://localhost/auth',
+    })
+    const channel = client.channel('news')
+    let received: unknown = null
+    channel.listen('Update', (data) => {
+      received = data
+    })
+
+    const presence = client.join('room')
+    let hereCalled = false
+    presence.here((users) => {
+      hereCalled = users.length === 1
+    })
+
+    const connectPromise = client.connect()
+    const ws = MockWebSocket.instances.at(-1)!
+    ws.emitOpen()
+    ws.emitMessage(JSON.stringify({ type: 'connected', socketId: 'socket-3' }))
+    await connectPromise
+
+    ws.emitMessage(
+      JSON.stringify({ type: 'event', channel: 'news', event: 'Update', data: { ok: true } })
+    )
+    ws.emitMessage(
+      JSON.stringify({
+        type: 'presence',
+        channel: 'presence-room',
+        event: 'members',
+        data: [{ id: 1 }],
+      })
+    )
+
+    expect(received).toEqual({ ok: true })
+    expect(hereCalled).toBe(true)
+
+    globalThis.fetch = originalFetch
+  })
+
+  it('schedules reconnect on disconnect', async () => {
+    const client = new RippleClient({
+      host: 'ws://localhost',
+      reconnectDelay: 1,
+      maxReconnectAttempts: 1,
+    })
+
+    const originalSetTimeout = globalThis.setTimeout
+    globalThis.setTimeout = ((fn: () => void) => {
+      fn()
+      return 1 as any
+    }) as any
+
+    const connectPromise = client.connect()
+    const ws = MockWebSocket.instances.at(-1)!
+    ws.emitOpen()
+    ws.emitMessage(JSON.stringify({ type: 'connected', socketId: 'socket-4' }))
+    await connectPromise
+
+    client.connect = mock(async () => {}) as any
+    ws.close()
+
+    expect(client.getState()).toBe('reconnecting')
+    expect((client.connect as any).mock.calls.length).toBe(1)
+
+    globalThis.setTimeout = originalSetTimeout
+  })
+
+  it('disconnects and clears state', () => {
+    const client = new RippleClient({ host: 'ws://localhost', autoReconnect: false })
+    client.disconnect()
+
+    expect(client.getState()).toBe('disconnected')
     expect(client.getSocketId()).toBeNull()
   })
 })

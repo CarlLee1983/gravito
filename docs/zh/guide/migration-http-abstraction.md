@@ -10,10 +10,10 @@ Gravito 2.0 引入了 HTTP 抽象層，將您的程式碼與底層 HTTP 引擎�
 
 | 之前 (Photon) | 之後 (Gravito) |
 |-------------|----------------|
-| `import type { Context } from '@gravito/photon'` | `import type { GravitoContext } from 'gravito-core'` |
-| `import type { Handler } from '@gravito/photon'` | `import type { GravitoHandler } from 'gravito-core'` |
-| `import type { MiddlewareHandler } from '@gravito/photon'` | `import type { GravitoMiddleware } from 'gravito-core'` |
-| `import type { Next } from '@gravito/photon'` | `import type { GravitoNext } from 'gravito-core'` |
+| `import type { Context } from '@gravito/photon'` | `import type { GravitoContext } from '@gravito/core'` |
+| `import type { Handler } from '@gravito/photon'` | `import type { GravitoHandler } from '@gravito/core'` |
+| `import type { MiddlewareHandler } from '@gravito/photon'` | `import type { GravitoMiddleware } from '@gravito/core'` |
+| `import type { Next } from '@gravito/photon'` | `import type { GravitoNext } from '@gravito/core'` |
 | `c.req.param('id')` | `ctx.req.param('id')` (相同 API!) |
 | `c.json({ data })` | `ctx.json({ data })` (相同 API!) |
 
@@ -26,7 +26,7 @@ Gravito 2.0 引入了 HTTP 抽象層，將您的程式碼與底層 HTTP 引擎�
 import type { Context, MiddlewareHandler } from '@gravito/photon'
 
 // 之後
-import type { GravitoContext, GravitoMiddleware } from 'gravito-core'
+import type { GravitoContext, GravitoMiddleware } from '@gravito/core'
 ```
 
 ### 步驟 2: 更新控制器類型
@@ -42,7 +42,7 @@ export class UserController {
 }
 
 // 之後
-import type { GravitoContext } from 'gravito-core'
+import type { GravitoContext } from '@gravito/core'
 
 export class UserController {
   async index(ctx: GravitoContext) {
@@ -63,7 +63,7 @@ const logger: MiddlewareHandler = async (c, next) => {
 }
 
 // 之後
-import type { GravitoMiddleware, GravitoNext } from 'gravito-core'
+import type { GravitoMiddleware, GravitoNext } from '@gravito/core'
 
 const logger: GravitoMiddleware = async (ctx, next) => {
   console.log(`${ctx.req.method} ${ctx.req.path}`)
@@ -77,7 +77,7 @@ const logger: GravitoMiddleware = async (ctx, next) => {
 
 ```typescript
 // 遷移期間，您可以使用 Photon 風格的別名：
-import type { Context, MiddlewareHandler, Next } from 'gravito-core/compat'
+import type { Context, MiddlewareHandler, Next } from '@gravito/core/compat'
 
 // 您現有的程式碼無需修改即可使用！
 export async function myMiddleware(c: Context, next: Next) {
@@ -90,7 +90,7 @@ export async function myMiddleware(c: Context, next: Next) {
 當您需要尚未抽象的 Photon 特定功能時：
 
 ```typescript
-import type { GravitoContext } from 'gravito-core'
+import type { GravitoContext } from '@gravito/core'
 import type { Context as PhotonContext } from '@gravito/photon'
 
 async function advancedHandler(ctx: GravitoContext) {
@@ -130,7 +130,7 @@ async function advancedHandler(ctx: GravitoContext) {
 
 ```typescript
 // 在您的 orbit 模組中
-declare module 'gravito-core' {
+declare module '@gravito/core' {
   interface GravitoVariables {
     myService: MyService
   }

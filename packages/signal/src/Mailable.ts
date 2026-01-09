@@ -13,6 +13,7 @@ export abstract class Mailable implements Queueable {
   protected renderer?: Renderer
   private rendererResolver?: () => Promise<Renderer>
   protected renderData: Record<string, unknown> = {}
+  protected config?: MailConfig
 
   // ===== Fluent API (Envelope Construction) =====
 
@@ -46,7 +47,7 @@ export abstract class Mailable implements Queueable {
     return this
   }
 
-  priority(level: 'high' | 'normal' | 'low'): this {
+  emailPriority(level: 'high' | 'normal' | 'low'): this {
     this.envelope.priority = level
     return this
   }
@@ -82,10 +83,17 @@ export abstract class Mailable implements Queueable {
    * Set the content using a React component.
    * Dynamically imports ReactRenderer to avoid hard dependency errors if React is not installed.
    */
-  react<P extends object>(component: ComponentType, props?: P): this {
+  react<P extends object>(
+    component: ComponentType,
+    props?: P,
+    deps?: {
+      createElement?: (...args: any[]) => any
+      renderToStaticMarkup?: (element: any) => string
+    }
+  ): this {
     this.rendererResolver = async () => {
       const { ReactRenderer } = await import('./renderers/ReactRenderer')
-      return new ReactRenderer(component, props)
+      return new ReactRenderer(component, props, deps)
     }
     return this
   }
@@ -94,10 +102,18 @@ export abstract class Mailable implements Queueable {
    * Set the content using a Vue component.
    * Dynamically imports VueRenderer to avoid hard dependency errors if Vue is not installed.
    */
-  vue<P extends object>(component: ComponentType, props?: P): this {
+  vue<P extends object>(
+    component: ComponentType,
+    props?: P,
+    deps?: {
+      createSSRApp?: (...args: any[]) => any
+      h?: (...args: any[]) => any
+      renderToString?: (app: any) => Promise<string>
+    }
+  ): this {
     this.rendererResolver = async () => {
       const { VueRenderer } = await import('./renderers/VueRenderer')
-      return new VueRenderer(component, props as any)
+      return new VueRenderer(component, props as any, deps)
     }
     return this
   }
@@ -114,6 +130,7 @@ export abstract class Mailable implements Queueable {
   queueName?: string
   connectionName?: string
   delaySeconds?: number
+  priority?: number | string
 
   onQueue(queue: string): this {
     this.queueName = queue
@@ -130,13 +147,29 @@ export abstract class Mailable implements Queueable {
     return this
   }
 
+  withPriority(priority: string | number): this {
+    this.priority = priority
+    return this
+  }
+
   /**
    * Queue the mailable for sending.
    */
   async queue(): Promise<void> {
-    // Avoid circular dependency by dynamically importing OrbitSignal
-    const { OrbitSignal } = await import('./OrbitSignal')
-    return OrbitSignal.getInstance().queue(this)
+    // We should ideally use the container to get the mail service
+    // But since Mailable might be used outside a core context, we'll try a safe approach.
+    try {
+      // biome-ignore lint/suspicious/noTsIgnore: Global access to app() helper from core
+      // @ts-ignore
+      const { app } = await import('@gravito/core')
+      const mail = app().container.make<any>('mail')
+      if (mail) {
+        return mail.queue(this)
+      }
+    } catch (_e) {
+      // Fallback if core is not available
+      console.warn('[Mailable] Could not auto-resolve mail service for queuing.')
+    }
   }
 
   // ===== I18n Support =====
@@ -178,6 +211,7 @@ export abstract class Mailable implements Queueable {
    */
   async buildEnvelope(configPromise: MailConfig | Promise<MailConfig>): Promise<Envelope> {
     const config = await Promise.resolve(configPromise)
+    this.config = config
 
     // Inject translator from config if available
     if (config.translator) {
@@ -188,8 +222,8 @@ export abstract class Mailable implements Queueable {
 
     // Ensure Renderer is initialized if using TemplateRenderer with config path
     if (this.renderer instanceof TemplateRenderer && config.viewsDir) {
-      // Here we could re-initialize TemplateRenderer if we had a setter for viewsDir
-      // For now, it defaults to process.cwd()/src/emails which is standard
+      // Re-initialize or update TemplateRenderer with the correct directory
+      this.renderer = new TemplateRenderer((this.renderer as any).template, config.viewsDir)
     }
 
     const envelope: Envelope = {

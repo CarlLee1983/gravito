@@ -84,6 +84,9 @@ export class SessionGuard<User extends Authenticatable = Authenticatable>
 
     const session = this.ctx.get('session' as any) as any
     if (session) {
+      if (typeof session.regenerate === 'function') {
+        await session.regenerate()
+      }
       session.put(this.getName(), id)
     }
 

@@ -1,18 +1,18 @@
 {
   "name": "@gravito/radiance",
-  "version": "1.0.0-beta.1",
+  "version": "1.0.0",
   "publishConfig": {
     "access": "public"
   },
   "description": "Lightweight, high-performance broadcasting system for Gravito framework. Supports multiple drivers (Pusher, Ably, Redis, WebSocket) with zero runtime overhead.",
-  "module": "./dist/index.mjs",
   "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
   "type": "module",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
+      "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     }
   },
@@ -24,7 +24,9 @@
   "scripts": {
     "build": "bun run build.ts",
     "test": "bun test",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
+    "test:coverage": "bun test --coverage --coverage-threshold=80",
+    "test:ci": "bun test --coverage --coverage-threshold=80"
   },
   "keywords": [
     "gravito",
@@ -39,7 +41,7 @@
   "author": "Carl Lee <carllee0520@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "gravito-core": "1.0.0-beta.6"
+    "@gravito/core": "workspace:*"
   },
   "devDependencies": {
     "bun-types": "latest",

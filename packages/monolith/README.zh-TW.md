@@ -11,7 +11,7 @@ bun add @gravito/monolith
 ## 快速開始
 
 ```typescript
-import { PlanetCore } from 'gravito-core'
+import { PlanetCore } from '@gravito/core'
 import { OrbitContent } from '@gravito/monolith'
 
 const core = new PlanetCore()

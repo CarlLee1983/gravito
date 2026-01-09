@@ -1,5 +1,5 @@
+import type { GravitoContext, PlanetCore } from '@gravito/core'
 import type { InertiaService } from '@gravito/ion'
-import type { GravitoContext, PlanetCore } from 'gravito-core'
 
 export class HomeController {
   constructor(private core: PlanetCore) {}

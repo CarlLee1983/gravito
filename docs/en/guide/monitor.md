@@ -7,12 +7,16 @@ description: Learn how to perform health checks, metrics collection, and tracing
 
 > `@gravito/monitor` provides comprehensive observability for your application, supporting Prometheus, OpenTelemetry, and Kubernetes-style health checks.
 
+## Beta Notes
+
+For 1.0.0-beta, observability focuses on fast startup and low-overhead runtime metrics in Bun. Health checks, metrics, and tracing are enabled as opt-in features so production setups can stay lean.
+
 ## Health Checks
 
 Built-in `/healthz` and `/readyz` endpoints, perfect for cloud-native environments.
 
 ```typescript
-import { PlanetCore } from 'gravito-core'
+import { PlanetCore } from '@gravito/core'
 import { OrbitMonitor } from '@gravito/monitor'
 
 export default PlanetCore.configure({

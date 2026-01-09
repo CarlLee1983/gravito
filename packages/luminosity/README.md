@@ -166,7 +166,7 @@ Luminosity now includes a powerful **RouteScanner** system that automatically di
 ### Usage with Gravito
 
 ```typescript
-import { PlanetCore } from 'gravito-core'
+import { PlanetCore } from '@gravito/core'
 import { SitemapBuilder, GravitoScanner } from '@gravito/luminosity'
 
 const core = await PlanetCore.boot({ ... })

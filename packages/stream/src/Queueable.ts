@@ -45,6 +45,11 @@ export interface Queueable {
   delaySeconds?: number
 
   /**
+   * Job priority.
+   */
+  priority?: string | number
+
+  /**
    * Set target queue.
    * @param queue - Queue name
    * @returns Self for fluent chaining
@@ -57,6 +62,13 @@ export interface Queueable {
    * @returns Self for fluent chaining
    */
   onConnection(connection: string): this
+
+  /**
+   * Set job priority.
+   * @param priority - Priority level
+   * @returns Self for fluent chaining
+   */
+  withPriority(priority: string | number): this
 
   /**
    * Set delay (seconds).

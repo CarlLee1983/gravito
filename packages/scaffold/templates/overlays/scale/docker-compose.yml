@@ -1,0 +1,32 @@
+services:
+  gravito.db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-gravito}
+      POSTGRES_USER: ${DB_USERNAME:-gravito}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-secret}
+    ports:
+      - '${DB_PORT:-5432}:5432'
+    volumes:
+      - gravito-db:/var/lib/postgresql/data
+    networks:
+      - gravito
+
+  gravito.redis:
+    image: redis:alpine
+    ports:
+      - '${REDIS_PORT:-6379}:6379'
+    volumes:
+      - gravito-redis:/data
+    networks:
+      - gravito
+
+networks:
+  gravito:
+    driver: bridge
+
+volumes:
+  gravito-db:
+    driver: local
+  gravito-redis:
+    driver: local

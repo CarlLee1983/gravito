@@ -1,90 +1,98 @@
-# Gravito Galaxy Architecture
+# Gravito Framework 🌌
 
-Gravito is a micro-kernel framework for building scalable, modular backend systems in TypeScript. 
-It leverages the **Galaxy Architecture**—a unique approach inspired by celestial mechanics to manage lifecycle, extensions (Orbits), and lightweight plugins (Satellites).
+Gravito is a modular, high-performance TypeScript framework built for the modern web. It leverages the **Galaxy Architecture**—a unique approach inspired by celestial mechanics to manage lifecycle, extensions (Orbits), and domain-specific plugins (Satellites).
 
-## 🌟 Key Features
+> **Version 1.0 is here!** Build complex e-commerce systems by simply composing modules.
 
-- **Micro-Kernel (PlanetCore)**: A tiny, high-performance core (Self-developed) that only handles lifecycle and hooks.
-- **Orbits (Modules)**: Feature-rich extensions (Database, Auth, Storage) that "orbit" the core completely decoupled.
-- **Satellites (Plugins)**: Lightweight business logic that hooks into Core or Orbits.
-- **Performance**: Optimized for Bun runtime, offering blazing fast startup and request handling.
-- **Developer Experience**: Heavy focus on TypeScript, intelligent defaults, and standardization.
+---
 
-## 🚀 Quick Start
+## 🌟 The Galaxy Architecture
+
+Gravito is built on the principle of **"Rigorous Core, Flexible Perimeter."** It strictly enforces **DDD (Domain-Driven Design)** and **Clean Architecture** internally while providing a minimalist experience for developers.
+
+- **Micro-Kernel (PlanetCore)**: A self-developed, ultra-lightweight engine that manages hooks and lifecycle events.
+- **Orbits (Infrastructure)**: Strategic extensions (Database, Auth, Messaging) that "orbit" the core, providing essential resources.
+- **Satellites (Domain Plugins)**: Self-contained business units (Catalog, Cart, Payment) that implement specific domains using Clean Architecture.
+
+---
+
+## 🚀 E-Commerce 1.0: Manifest-Driven Assembly
+
+The 1.0 release introduces **"MDD" (Manifest-Driven Development)**. You can now assemble a full-featured e-commerce site by simply declaring what you need.
+
+### The "Three-File" Rule
+1. **`package.json`**: Add your satellites.
+2. **`gravito.config.ts`**: Declare your features.
+3. **`entry-server.ts`**: One line to ignite the entire ecosystem.
+
+### Example Configuration
+```typescript
+// gravito.config.ts
+export default {
+  name: 'Flagship Store',
+  modules: [
+    'catalog',    // Products & Variants
+    'membership', // Auth & User Profiles
+    'analytics',  // Data & Charts
+    'support',    // Real-time Chat
+    'cms'         // News & Announcements
+  ]
+};
+```
+
+---
+
+## 📦 Core Ecosystem
+
+Gravito provides a rich set of official modules designed to work together seamlessly:
+
+### Foundation Layer
+| Package | Module | Description |
+|---|---|---|
+| `@gravito/core` | **PlanetCore** | The micro-kernel with Hooks & IoC Container. |
+| `@gravito/photon` | **Photon** | High-performance HTTP engine (Hono-based). |
+| `@gravito/atlas` | **Atlas** | Advanced ORM with migrations & Active Record. |
+| `@gravito/signal` | **Signal** | The central Event Bus for cross-module events. |
+
+### Domain Satellites (Business Logic)
+| Package | Domain | Feature |
+|---|---|---|
+| `@gravito/satellite-catalog` | **Catalog** | Product management, categories, and inventory. |
+| `@gravito/satellite-membership`| **Membership**| Multi-guard Auth, Roles, and CRM. |
+| `@gravito/satellite-commerce` | **Order** | Order processing and lifecycle. |
+| `@gravito/satellite-analytics` | **Analytics** | Pluggable dashboard widgets & data resolvers. |
+| `@gravito/satellite-support` | **Support** | Real-time WebSocket customer service. |
+
+### Frontend & UI
+| Package | Component | Description |
+|---|---|---|
+| `@gravito/admin-shell-react` | **Admin Shell**| A pluggable React dashboard that auto-mounts modules. |
+| `@gravito/support-chat-widget`| **Chat Widget** | A drop-in client widget for customer support. |
+| `@gravito/prism` | **Prism** | Edge-optimized View Engine & Image Optimization. |
+
+---
+
+## 🛠️ Getting Started
 
 ### Installation
-
 ```bash
-bun add gravito-core
+# In your monorepo or project
+bun add @gravito/core @gravito/photon @gravito/monolith
 ```
 
-### Basic Usage
+### Development
+For a full-stack integrated example, check out:
+- [Commerce Fullstack Example](./examples/commerce-fullstack)
+- [1.0 Integration Guide](./docs/GUIDE_1.0_INTEGRATION.md)
 
-```typescript
-import { PlanetCore } from 'gravito-core';
+---
 
-const core = new PlanetCore();
+## 🤝 Community & Support
 
-// Add a simple hook
-core.hooks.addAction('app:ready', () => {
-  console.log('We have liftoff! 🚀');
-});
+- **Documentation**: [docs/README.md](./docs/README.md)
+- **Contributing**: [CONTRIBUTING.md](./CONTRIBUTING.md)
+- **License**: MIT © Carl Lee
 
-// Start the server
-core.liftoff();
-```
+---
 
-## 📚 Documentation
-
-Detailed documentation is available in the [docs](./docs) directory.
-
-- [Core Concepts & Usage](./docs/en/guide/core-concepts.md)
-- [Plugin Development Guide](./docs/en/guide/plugin-development.md)
-- [中文文檔](./README.zh-TW.md)
-
-## 🧪 Examples
-
-- `examples/luminosity-benchmark`: Bun benchmark for high-volume sitemap performance.
-- `examples/luminosity-node`: Node.js + Express runtime demo using the official adapter.
-
-Note: Some features are only available when running on Gravito core.
-
-## 📦 Ecosystem (Orbits & Core)
-
-Gravito provides a rich set of official packages, all designed to be completely pluggable:
-
-### Core Layer
-
-| Package | Name | Description | Status |
-|---|---|---|---|
-| `gravito-core` | **PlanetCore** | Ultra-lightweight micro-kernel with Hooks & Lifecycle management. | ✅ Stable |
-| `@gravito/photon` | **Photon** | High-performance HTTP engine powering the framework. | ✅ Stable |
-| `@gravito/beam` | **Beam** | Type-safe RPC client for frontend-backend communication. | ✅ Stable |
-| `@gravito/constellation` | **Constellation** | High-performance Radix Tree Router. | ✅ Stable |
-
-### Orbit Modules
-
-| Package | Name | Description | Status |
-|---|---|---|---|
-| `@gravito/atlas` | **Atlas** | Database ORM with Active Record pattern, migrations, and seeding. | ✅ Stable |
-| `@gravito/sentinel` | **Sentinel** | Modern Authentication Orbit (JWT/Session/Guards). | ✅ Alpha |
-| `@gravito/fortify` | **Fortify** | Complete Auth UI scaffolding (Login/Register/Reset). | ✅ Alpha |
-| `@gravito/nebula` | **Nebula** | File Storage & CDN Integration (Local/S3/R2). | ✅ Beta |
-| `@gravito/spectrum` | **Spectrum** | Real-time debug dashboard for monitoring SQL, logs, and HTTP. | ✅ Beta |
-| `@gravito/stasis` | **Stasis** | Multi-layer Cache System (Memory/Redis). | ✅ Stable |
-| `@gravito/prism` | **Prism** | View Engine with Image Optimization & Edge Templates. | ✅ Stable |
-| `@gravito/luminosity` | **Luminosity** | Enterprise SEO Engine (Sitemaps/Meta/Robots). | ✅ Stable |
-| `@gravito/flare` | **Flare** | Notification & Mail Queue System (SMTP/Resend). | ✅ Alpha |
-| `@gravito/ion` | **Ion** | Inertia.js Protocol Adapter for React/Vue. | ✅ Stable |
-| `@gravito/mass` | **Mass** | Request validation with TypeBox schemas. | ✅ Stable |
-| `@gravito/stream` | **Stream** | Background job queue with workers. | ✅ Beta |
-| `@gravito/monitor` | **Monitor** | Health checks, metrics, and tracing. | ✅ Beta |
-
-## 🤝 Contributing
-
-Contributions are welcome! Please read [CONTRIBUTING.md](./CONTRIBUTING.md) first.
-
-## 📄 License
-
-MIT © Carl Lee
+*(繁體中文說明已整合至各模組文件與 [整合指南](./docs/GUIDE_1.0_INTEGRATION.md))*

@@ -109,4 +109,43 @@ export default {
     memory: '記憶體峰值',
     build: '最終建置',
   },
+  legal: {
+    privacy: {
+      title: '隱私權政策',
+      lastUpdated: '最後更新：2026年1月',
+      section1: {
+        title: '我們的數據哲學',
+        content:
+          'Luminosity 是專為結構分析而設計的 SEO 引擎，而非用戶監視工具。我們不會追蹤您使用我們工具管理的站點訪客，也不會從您的基礎設施中收集個人資料。',
+      },
+      section2: {
+        title: '結構化情報',
+        content:
+          '我們僅處理網站地圖生成和爬蟲治理所需的元數據。這包括 URL 集合、優先級權重和更改頻率。這些數據保留在您受控的環境中。',
+      },
+      section3: {
+        title: 'Cookies 與資產',
+        content:
+          '本官網站點使用極少量的 Cookies 來實現核心功能，並透過 Vercel 進行基礎效能分析。我們不使用第三方追蹤像素。',
+      },
+    },
+    terms: {
+      title: '服務條款',
+      lastUpdated: '最後更新：2026年1月',
+      section1: {
+        title: '開源傳承',
+        content: 'Luminosity 基於 MIT 授權。它是按「原樣」提供的企業級軟體，專為精準與規模而生。',
+      },
+      section2: {
+        title: '系統完整性',
+        content:
+          '用戶有責任確保其 robots.txt 和 sitemap 配置符合搜尋引擎指南。Gravito 不對因配置不當導致的 SEO 波動負責。',
+      },
+      section3: {
+        title: '倫理治理',
+        content:
+          '不得利用 Luminosity 進行惡意爬取、透過網站地圖轟炸進行 DoS 攻擊，或任何違反網路生態系統完整性的活動。',
+      },
+    },
+  },
 }

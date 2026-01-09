@@ -11,7 +11,7 @@ bun add @gravito/cosmos
 ## 快速開始
 
 ```typescript
-import { PlanetCore } from 'gravito-core'
+import { PlanetCore } from '@gravito/core'
 import { OrbitI18n } from '@gravito/cosmos'
 
 const core = new PlanetCore()

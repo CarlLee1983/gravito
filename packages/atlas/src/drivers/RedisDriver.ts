@@ -21,12 +21,14 @@ import type {
 export class RedisDriver implements DriverContract {
   private config: RedisConfig
   private client: Redis | null = null
+  private RedisCtor: typeof Redis
 
-  constructor(config: ConnectionConfig) {
+  constructor(config: ConnectionConfig, deps: { Redis?: typeof Redis } = {}) {
     if (config.driver !== 'redis') {
       throw new Error(`Invalid driver type '${config.driver}' for RedisDriver`)
     }
     this.config = config as RedisConfig
+    this.RedisCtor = deps.Redis ?? Redis
   }
 
   getDriverName(): DriverType {
@@ -39,7 +41,7 @@ export class RedisDriver implements DriverContract {
     }
 
     try {
-      this.client = new Redis({
+      this.client = new this.RedisCtor({
         host: this.config.host,
         port: this.config.port ?? 6379,
         password: this.config.password,
@@ -87,28 +89,40 @@ export class RedisDriver implements DriverContract {
     if (!this.client) {
       await this.connect()
     }
-    return this.client!.get(key)
+    if (!this.client) {
+      throw new ConnectionError('Redis client not available')
+    }
+    return this.client.get(key)
   }
 
   async set(key: string, value: string | number): Promise<'OK'> {
     if (!this.client) {
       await this.connect()
     }
-    return this.client!.set(key, value)
+    if (!this.client) {
+      throw new ConnectionError('Redis client not available')
+    }
+    return this.client.set(key, value)
   }
 
   async setex(key: string, seconds: number, value: string | number): Promise<'OK'> {
     if (!this.client) {
       await this.connect()
     }
-    return this.client!.setex(key, seconds, value)
+    if (!this.client) {
+      throw new ConnectionError('Redis client not available')
+    }
+    return this.client.setex(key, seconds, value)
   }
 
   async del(key: string): Promise<number> {
     if (!this.client) {
       await this.connect()
     }
-    return this.client!.del(key)
+    if (!this.client) {
+      throw new ConnectionError('Redis client not available')
+    }
+    return this.client.del(key)
   }
 
   /**

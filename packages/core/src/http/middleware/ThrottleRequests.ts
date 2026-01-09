@@ -32,7 +32,10 @@ export class ThrottleRequests {
       }
 
       // Resolve IP
-      const ip = c.req.header('x-forwarded-for') || '127.0.0.1'
+      const trustProxy = this.core.config.get<boolean>('TRUST_PROXY', false)
+      const forwardedFor = c.req.header('x-forwarded-for') || ''
+      const forwardedIp = forwardedFor.split(',')[0]?.trim()
+      const ip = trustProxy ? forwardedIp || '127.0.0.1' : '127.0.0.1'
       const key = `throttle:${ip}:${c.req.path}`
 
       const limiter = cache.limiter()

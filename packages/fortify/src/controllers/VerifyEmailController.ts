@@ -1,6 +1,7 @@
+import type { GravitoContext } from '@gravito/core'
 import { type AuthManager, EmailVerificationService } from '@gravito/sentinel'
-import type { GravitoContext } from 'gravito-core'
 import type { FortifyConfig } from '../config'
+import { ensureCsrfToken } from '../csrf'
 import type { ViewService } from '../types'
 
 /**
@@ -35,12 +36,13 @@ export class VerifyEmailController {
       })
     }
 
+    const csrfToken = ensureCsrfToken(c, this.config)
     const view = c.get('view') as ViewService | undefined
     if (view?.render && this.config.views?.verifyEmail) {
-      return c.html(view.render(this.config.views.verifyEmail, { user }))
+      return c.html(view.render(this.config.views.verifyEmail, { user, csrfToken }))
     }
 
-    return c.html(this.defaultVerifyEmailHtml())
+    return c.html(this.defaultVerifyEmailHtml(csrfToken ?? undefined))
   }
 
   /**
@@ -150,7 +152,8 @@ export class VerifyEmailController {
     }
   }
 
-  private defaultVerifyEmailHtml(): string {
+  private defaultVerifyEmailHtml(csrfToken?: string): string {
+    const csrfField = csrfToken ? `<input type="hidden" name="_token" value="${csrfToken}">` : ''
     return `
 <!DOCTYPE html>
 <html lang="en">
@@ -173,6 +176,7 @@ export class VerifyEmailController {
     <h1>Verify Your Email</h1>
     <p>Please click the button below to resend the verification email.</p>
     <form method="POST" action="/email/verification-notification">
+      ${csrfField}
       <button type="submit">Resend Verification Email</button>
     </form>
   </div>

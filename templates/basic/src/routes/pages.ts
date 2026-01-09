@@ -1,6 +1,6 @@
+import type { CacheService, PlanetCore, ViewService } from '@gravito/core'
 import type { Context } from '@gravito/photon'
 import { Photon } from '@gravito/photon'
-import type { CacheService, PlanetCore, ViewService } from 'gravito-core'
 
 /**
  * Pages route module.

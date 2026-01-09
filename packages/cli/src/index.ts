@@ -1,6 +1,12 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { cancel, intro, isCancel, note, outro, select, spinner, text } from '@clack/prompts'
+import {
+  EnvironmentDetector,
+  LockGenerator,
+  ProfileResolver,
+  type ProfileType,
+} from '@gravito/scaffold'
 import cac from 'cac'
 import { downloadTemplate } from 'giget'
 import pc from 'picocolors'
@@ -146,10 +152,68 @@ cli
 cli
   .command('create [name]', 'Create a new Gravito project')
   .option('--template <template>', 'Template to use (basic, inertia-react)')
+  .option('--profile <profile>', 'Profile preset (core, scale, enterprise)', { default: 'core' })
+  .option('--with <features>', 'Feature add-ons (comma-separated, e.g. redis,queue)', {
+    default: '',
+  })
+  .option('--recommend', 'Auto-detect profile based on environment')
+  .option('--framework <framework>', 'Frontend framework (react, vue) for static-site template')
   .action(async (name, options) => {
     console.clear()
 
     intro(pc.bgBlack(pc.white(' 🌌 Gravito CLI ')))
+
+    // -1. Environment Detection
+    if (options.recommend) {
+      const detector = new EnvironmentDetector()
+      const detection = detector.detect()
+
+      if (detection.confidence !== 'low') {
+        note(
+          `Detected Environment: ${pc.cyan(detection.platform)}\nReason: ${detection.reason}\nConfidence: ${detection.confidence}`,
+          'Environment Detection'
+        )
+
+        const confirmed = await select({
+          message: `Recommended Profile: ${pc.green(detection.suggestedProfile)}. Use this?`,
+          options: [
+            { value: 'yes', label: `Yes, use ${detection.suggestedProfile}` },
+            { value: 'no', label: 'No, let me choose manually' },
+          ],
+        })
+
+        if (isCancel(confirmed)) {
+          cancel('Operation cancelled.')
+          process.exit(0)
+        }
+
+        if (confirmed === 'yes') {
+          options.profile = detection.suggestedProfile
+          console.log(pc.green(`✅ Using profile: ${options.profile}`))
+        }
+      } else {
+        console.log(
+          pc.yellow('⚠️ No specific environment detected. Proceeding with manual selection.')
+        )
+      }
+    }
+
+    const profileResolver = new ProfileResolver()
+
+    // 0. Validate Inputs
+    if (options.profile && !profileResolver.isValidProfile(options.profile)) {
+      console.error(pc.red(`❌ Invalid profile: ${options.profile}`))
+      console.log(pc.gray(`Available profiles: core, scale, enterprise`))
+      process.exit(1)
+    }
+
+    const featureList = options.with ? options.with.split(',') : []
+    const invalidFeatures = featureList.filter((f: string) => !profileResolver.isValidFeature(f))
+    if (invalidFeatures.length > 0) {
+      console.error(pc.red(`❌ Invalid features: ${invalidFeatures.join(', ')}`))
+      console.log(pc.gray(`Available features: redis, postgres, mysql, s3, queue, monitor...`))
+      process.exit(1)
+    }
 
     const project = await group<ProjectConfig>({
       name: () => {
@@ -206,27 +270,31 @@ cli
     // Ask for framework if static-site template is selected
     let framework: string | null = null
     if (project.template === 'static-site') {
-      const frameworkResult = await select({
-        message: 'Choose your frontend framework:',
-        options: [
-          {
-            value: 'react',
-            label: '⚛️ React',
-            hint: 'Recommended for most projects',
-          },
-          {
-            value: 'vue',
-            label: '🟢 Vue 3',
-            hint: 'Composition API with TypeScript',
-          },
-        ],
-      })
+      if (options.framework) {
+        framework = options.framework
+      } else {
+        const frameworkResult = await select({
+          message: 'Choose your frontend framework:',
+          options: [
+            {
+              value: 'react',
+              label: '⚛️ React',
+              hint: 'Recommended for most projects',
+            },
+            {
+              value: 'vue',
+              label: '🟢 Vue 3',
+              hint: 'Composition API with TypeScript',
+            },
+          ],
+        })
 
-      if (isCancel(frameworkResult)) {
-        cancel('Operation cancelled.')
-        process.exit(0)
+        if (isCancel(frameworkResult)) {
+          cancel('Operation cancelled.')
+          process.exit(0)
+        }
+        framework = frameworkResult as string
       }
-      framework = frameworkResult as string
     }
 
     const s = spinner()
@@ -240,6 +308,7 @@ cli
     try {
       // Use giget to download from GitHub
       const templateSource = `github:gravito-framework/gravito/templates/${project.template}#main`
+      // const templateSource = `/Users/carl/Dev/Carl/gravito-core/templates/${project.template}`
 
       await downloadTemplate(templateSource, {
         dir: targetDir,
@@ -345,7 +414,7 @@ cli
 
       // Replace workspace:* with actual versions
       const versionMap: Record<string, string> = {
-        'gravito-core': '^1.0.0-beta.1',
+        '@gravito/core': '^1.0.0-beta.1',
         '@gravito/beam': '^1.0.0-alpha.1',
         '@gravito/prism': '^1.0.0-beta.1',
         '@gravito/stasis': '^1.0.0-beta.1',
@@ -362,7 +431,6 @@ cli
 
       await fs.writeFile(pkgPath, JSON.stringify(pkg, null, 2))
 
-      // Create .env file from env.example for static-site template
       if (project.template === 'static-site') {
         const envExamplePath = path.join(process.cwd(), targetDir, 'env.example')
         const envPath = path.join(process.cwd(), targetDir, '.env')
@@ -375,13 +443,36 @@ cli
         }
       }
 
+      // Generate gravito.lock.json
+      try {
+        const features = options.with ? options.with.split(',') : []
+        const profileConfig = profileResolver.resolve(options.profile as ProfileType, features)
+
+        const lockGenerator = new LockGenerator()
+        const lockContent = lockGenerator.generate(
+          options.profile as ProfileType,
+          profileConfig,
+          project.template as string,
+          pkg.version || '1.0.0'
+        )
+
+        const lockPath = path.join(process.cwd(), targetDir, 'gravito.lock.json')
+        await fs.writeFile(lockPath, lockContent)
+        console.log(pc.green('✅ Generated gravito.lock.json'))
+      } catch (err) {
+        console.warn(pc.yellow('⚠️ Failed to generate lock file'), err)
+      }
+
       const frameworkNote =
         project.template === 'static-site' && framework
           ? `\nFramework: ${framework === 'react' ? '⚛️ React' : '🟢 Vue 3'}`
           : ''
 
+      const profileNote = `\nProfile: ${options.profile}`
+      const featuresNote = options.with ? `\nFeatures: ${options.with}` : ''
+
       note(
-        `Project: ${project.name}\nTemplate: ${project.template}${frameworkNote}`,
+        `Project: ${project.name}\nTemplate: ${project.template}${frameworkNote}${profileNote}${featuresNote}`,
         'Mission Successful'
       )
 
@@ -423,6 +514,7 @@ async function group<T extends Record<string, unknown>>(
 }
 
 import { addSpectrumCommand } from './commands/add'
+import { doctor } from './commands/doctor'
 import { registerInitCommand } from './commands/init'
 import { MakeCommand } from './commands/MakeCommand'
 import { routeCache, routeClear } from './commands/routeCache'
@@ -444,16 +536,54 @@ const make = new MakeCommand()
 
 cli
   .command('make:controller <name>', 'Create a new controller')
-  .action((name) => make.run('controller', name))
+  .option('--resource', 'Generate a resource controller')
+  .action((name, options) => make.run('controller', name, options))
 
-cli.command('make:model <name>', 'Create a new model').action((name) => make.run('model', name))
+cli
+  .command('make:model <name>', 'Create a new model')
+  .option('-m, --migration', 'Create a new migration file for the model')
+  .option('-c, --controller', 'Create a new controller for the model')
+  .option('-r, --request', 'Create a new form request for the model')
+  .option('-a, --all', 'Create a migration, controller, and form request for the model')
+  .action(async (name, options) => {
+    // 1. Make the model
+    await make.run('model', name, options)
+
+    // 2. Handle linked generation
+    if (options.all || options.migration) {
+      await makeMigration(`create_${name.toLowerCase()}s_table`)
+    }
+
+    if (options.all || options.controller) {
+      await make.run('controller', name, { resource: true })
+    }
+
+    if (options.all || options.request) {
+      await make.run('request', `${name}Store`)
+    }
+  })
 
 cli
   .command('make:middleware <name>', 'Create a new middleware')
   .action((name) => make.run('middleware', name))
 
+cli
+  .command('make:request <name>', 'Create a new form request class')
+  .action((name) => make.run('request', name))
+
+cli
+  .command('make:satellite <name>', 'Create a new Gravito Satellite (Plugin)')
+  .option('--internal', 'Create as an internal official satellite in satellites/ directory')
+  .action((name, options) => make.run('satellite', name, options))
+
 // --- Tinker ---
 cli.command('tinker', 'Interact with your application').action(() => tinker())
+
+// --- Doctor/Health ---
+cli
+  .command('doctor', 'Run Gravito health checks and diagnostics')
+  .option('--fix', 'Attempt to automatically repair detected issues')
+  .action((options) => doctor({ fix: Boolean(options.fix) }))
 
 // --- Route List ---
 cli
@@ -539,9 +669,55 @@ cli
     })
   })
 
+import { UpgradeCommand } from './commands/upgrade'
+
+cli
+  .command('upgrade', 'Upgrade project to a different profile')
+  .option('--to <profile>', 'Target profile (core, scale, enterprise)')
+  .action(async (options) => {
+    if (!options.to) {
+      console.error(pc.red('Missing required argument: --to <profile>'))
+      process.exit(1)
+    }
+    const cmd = new UpgradeCommand()
+    await cmd.run(options.to as ProfileType)
+  })
+
+import { MaintenanceCommand } from './commands/maintenance'
+
+cli.command('doctor', 'Diagnose project issues').action(async () => {
+  const cmd = new MaintenanceCommand()
+  await cmd.doctor()
+})
+
+cli.command('add <feature>', 'Add a feature to the project').action(async (feature) => {
+  const cmd = new MaintenanceCommand()
+  await cmd.addFeature(feature)
+})
+
+cli.command('dev', 'Start development server with health checks').action(async () => {
+  // 1. Run Doctor Check
+  const maintenance = new MaintenanceCommand()
+  // We suppress the output of doctor unless it fails
+  // Actually, doctor exits process if it fails, so this is safe.
+  await maintenance.doctor()
+
+  // 2. Start Vite
+  const { spawn } = await import('node:child_process')
+  const devProcess = spawn('bun', ['run', 'vite'], {
+    stdio: 'inherit',
+    shell: true,
+    env: { ...process.env, FORCE_COLOR: '1' }, // Ensure colors
+  })
+
+  devProcess.on('error', (err) => {
+    console.error(pc.red('Failed to start dev server:'), err)
+  })
+})
+
 cli.help()
 
-cli.version('1.0.0-beta.4')
+cli.version('1.0.0-beta.6')
 
 try {
   cli.parse()

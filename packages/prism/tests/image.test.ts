@@ -240,6 +240,51 @@ describe('Image Helper', () => {
     expect(result).toContain('sizes="(max-width: 768px) 100vw, 50vw"')
   })
 
+  it('should parse srcset widths from a string', () => {
+    const result = imageHelper(
+      {
+        src: '/static/hero.jpg',
+        alt: 'Hero',
+        width: 800,
+        srcset: '400, 800, 1200',
+      },
+      {}
+    )
+
+    expect(result).toContain('srcset=')
+    expect(result).toContain('400w')
+    expect(result).toContain('1200w')
+  })
+
+  it('should allow boolean srcset values', () => {
+    const result = imageHelper(
+      {
+        src: '/static/hero.jpg',
+        alt: 'Hero',
+        width: 800,
+        srcset: false,
+      },
+      {}
+    )
+
+    expect(result).not.toContain('srcset=')
+  })
+
+  it('should handle decoding and fetchpriority parameters', () => {
+    const result = imageHelper(
+      {
+        src: '/static/hero.jpg',
+        alt: 'Hero',
+        decoding: 'sync',
+        fetchpriority: 'low',
+      },
+      {}
+    )
+
+    expect(result).toContain('decoding="sync"')
+    expect(result).toContain('fetchpriority="low"')
+  })
+
   it('should handle the class parameter', () => {
     const result = imageHelper(
       {

@@ -28,7 +28,7 @@ bun add @gravito/pulsar
 1. In `src/bootstrap.ts`, add the Session config (beginners can start with `memory`):
 
 ```ts
-import { defineConfig, PlanetCore } from 'gravito-core'
+import { defineConfig, PlanetCore } from '@gravito/core'
 import { GravitoPulsar } from '@gravito/pulsar'
 
 const config = defineConfig({
@@ -59,7 +59,7 @@ export default core.liftoff()
 1. Create `src/controllers/SessionDemoController.ts`:
 
 ```ts
-import type { GravitoContext } from 'gravito-core'
+import type { GravitoContext } from '@gravito/core'
 
 export class SessionDemoController {
   index(c: GravitoContext) {
@@ -87,7 +87,7 @@ export class SessionDemoController {
 2. Register routes in `src/routes/index.ts`:
 
 ```ts
-import type { Router } from 'gravito-core'
+import type { Router } from '@gravito/core'
 import { SessionDemoController } from '../controllers/SessionDemoController'
 
 export default function(routes: Router) {
@@ -102,7 +102,7 @@ export default function(routes: Router) {
 1. Read one-time flash data on the next request:
 
 ```ts
-import type { GravitoContext } from 'gravito-core'
+import type { GravitoContext } from '@gravito/core'
 
 export class FlashController {
   index(c: GravitoContext) {
@@ -122,7 +122,7 @@ Session generates the CSRF token automatically and writes it to the `XSRF-TOKEN`
 1. **This endpoint is optional.** As soon as a response starts a session, Session writes the `XSRF-TOKEN` cookie automatically. The endpoint below is only for debugging or if you want to fetch the token on demand:
 
 ```ts
-import type { GravitoContext } from 'gravito-core'
+import type { GravitoContext } from '@gravito/core'
 
 export class CsrfController {
   token(c: GravitoContext) {

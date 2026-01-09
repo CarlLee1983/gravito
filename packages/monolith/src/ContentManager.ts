@@ -20,6 +20,19 @@ export class ContentManager {
   private collections = new Map<string, CollectionConfig>()
   // Simple memory cache: collection:locale:slug -> ContentItem
   private cache = new Map<string, ContentItem>()
+  private renderer = (() => {
+    const renderer = new marked.Renderer()
+    renderer.html = (html: string) => this.escapeHtml(html)
+    renderer.link = (href: string | null, title: string | null, text: string) => {
+      if (!href || !this.isSafeUrl(href)) {
+        return text
+      }
+      const safeHref = this.escapeHtml(href)
+      const titleAttr = title ? ` title="${this.escapeHtml(title)}"` : ''
+      return `<a href="${safeHref}"${titleAttr}>${text}</a>`
+    }
+    return renderer
+  })()
 
   /**
    * Create a new ContentManager instance.
@@ -53,6 +66,12 @@ export class ContentManager {
       throw new Error(`Collection '${collectionName}' not defined`)
     }
 
+    const safeSlug = this.sanitizeSegment(slug)
+    const safeLocale = this.sanitizeSegment(locale)
+    if (!safeSlug || !safeLocale) {
+      return null
+    }
+
     const cacheKey = `${collectionName}:${locale}:${slug}`
     if (this.cache.has(cacheKey)) {
       return this.cache.get(cacheKey)!
@@ -60,7 +79,7 @@ export class ContentManager {
 
     // Determine path strategy
     // Strategy: {root}/{path}/{locale}/{slug}.md
-    const filePath = join(this.rootDir, config.path, locale, `${slug}.md`)
+    const filePath = join(this.rootDir, config.path, safeLocale, `${safeSlug}.md`)
 
     try {
       const exists = await stat(filePath)
@@ -71,16 +90,16 @@ export class ContentManager {
       }
 
       const fileContent = await readFile(filePath, 'utf-8')
-      const { data, content, exemption } = matter(fileContent)
+      const { data, content, excerpt } = matter(fileContent)
 
-      const html = await marked.parse(content)
+      const html = await marked.parse(content, { renderer: this.renderer })
 
       const item: ContentItem = {
         slug,
         body: html,
         meta: data,
         raw: content,
-        excerpt: exemption,
+        excerpt: excerpt,
       }
 
       this.cache.set(cacheKey, item)
@@ -106,7 +125,12 @@ export class ContentManager {
       throw new Error(`Collection '${collectionName}' not defined`)
     }
 
-    const dirPath = join(this.rootDir, config.path, locale)
+    const safeLocale = this.sanitizeSegment(locale)
+    if (!safeLocale) {
+      return []
+    }
+
+    const dirPath = join(this.rootDir, config.path, safeLocale)
 
     try {
       const files = await readdir(dirPath)
@@ -117,7 +141,7 @@ export class ContentManager {
           continue
         }
         const slug = parse(file).name
-        const item = await this.find(collectionName, slug, locale)
+        const item = await this.find(collectionName, slug, safeLocale)
         if (item) {
           items.push(item)
         }
@@ -128,5 +152,51 @@ export class ContentManager {
       // Directory likely doesn't exist for this locale
       return []
     }
+  }
+
+  private sanitizeSegment(value: string): string | null {
+    if (!value) {
+      return null
+    }
+    if (value.includes('\0')) {
+      return null
+    }
+    if (value.includes('/') || value.includes('\\')) {
+      return null
+    }
+    if (value.includes('..')) {
+      return null
+    }
+    return value
+  }
+
+  private escapeHtml(value: string): string {
+    return value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;')
+  }
+
+  private isSafeUrl(href: string): boolean {
+    const trimmed = href.trim()
+    if (!trimmed) {
+      return false
+    }
+    const lower = trimmed.toLowerCase()
+    if (
+      lower.startsWith('javascript:') ||
+      lower.startsWith('vbscript:') ||
+      lower.startsWith('data:')
+    ) {
+      return false
+    }
+    const schemeMatch = lower.match(/^[a-z][a-z0-9+.-]*:/)
+    if (!schemeMatch) {
+      return true
+    }
+    const scheme = schemeMatch[0]
+    return scheme === 'http:' || scheme === 'https:' || scheme === 'mailto:'
   }
 }

@@ -1,5 +1,5 @@
 import { resolve } from 'node:path'
-import type { GravitoOrbit, PlanetCore, ViewService } from 'gravito-core'
+import type { GravitoOrbit, PlanetCore, ViewService } from '@gravito/core'
 import { createImageHelper } from './helpers/image'
 import { TemplateEngine } from './TemplateEngine'
 

@@ -70,6 +70,27 @@ async function build() {
         description: '探索 Luminosity 的強大功能：LSM 樹儲存、增量更新等。',
       },
     },
+    '/privacy': {
+      en: {
+        title: 'Privacy Policy - Luminosity',
+        description:
+          'Read our privacy policy and how we handle data with respect to digital sovereignty.',
+      },
+      zh: {
+        title: '隱私權政策 - Luminosity',
+        description: '了解我們的隱私權政策，以及我們如何尊重數位主權。',
+      },
+    },
+    '/terms': {
+      en: {
+        title: 'Terms of Service - Luminosity',
+        description: 'Understand the terms of service and open source heritage of Luminosity.',
+      },
+      zh: {
+        title: '服務條款 - Luminosity',
+        description: '了解 Luminosity 的服務條款與開源傳承。',
+      },
+    },
   }
 
   // Add Static Routes for each locale

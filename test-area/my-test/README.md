@@ -41,7 +41,7 @@ Create a new file in `src/routes/`:
 
 ```typescript
 // src/routes/users.ts
-import type { PlanetCore } from 'gravito-core'
+import type { PlanetCore } from '@gravito/core'
 
 export function registerUserRoutes(core: PlanetCore): void {
   core.app.get('/api/users', (c) => {

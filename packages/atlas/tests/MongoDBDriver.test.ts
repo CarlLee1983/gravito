@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test'
+import type { MongoClient } from 'mongodb'
 import { MongoDBDriver } from '../src/drivers/MongoDBDriver'
 
 // Mock mongodb
@@ -22,25 +23,25 @@ const mockClient = {
   close: mock(() => Promise.resolve()),
 }
 
-// Mock the MongoClient constructor
-mock.module('mongodb', () => ({
-  MongoClient: class {
-    constructor() {
-      Object.assign(this, mockClient)
-    }
-  },
-}))
+class MockMongoClient {
+  constructor() {
+    Object.assign(this, mockClient)
+  }
+}
 
 describe('MongoDBDriver', () => {
   let driver: MongoDBDriver
 
   beforeEach(() => {
-    driver = new MongoDBDriver({
-      driver: 'mongodb',
-      host: 'localhost',
-      port: 27017,
-      database: 'test_db',
-    })
+    driver = new MongoDBDriver(
+      {
+        driver: 'mongodb',
+        host: 'localhost',
+        port: 27017,
+        database: 'test_db',
+      },
+      { MongoClient: MockMongoClient as unknown as typeof MongoClient }
+    )
   })
 
   afterEach(async () => {

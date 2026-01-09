@@ -7,7 +7,7 @@
         "outDir": "./dist",
         "rootDir": "./src",
         "paths": {
-            "gravito-core": [
+            "@gravito/core": [
                 "../../packages/core/dist/index.d.ts"
             ],
             "@gravito/photon/client": [

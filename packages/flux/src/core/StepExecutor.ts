@@ -6,7 +6,13 @@
  * @module @gravito/flux/core
  */
 
-import type { StepDefinition, StepExecution, StepResult, WorkflowContext } from '../types'
+import type {
+  FluxWaitResult,
+  StepDefinition,
+  StepExecution,
+  StepResult,
+  WorkflowContext,
+} from '../types'
 
 /**
  * Step Executor
@@ -16,18 +22,38 @@ import type { StepDefinition, StepExecution, StepResult, WorkflowContext } from 
 export class StepExecutor {
   private defaultRetries: number
   private defaultTimeout: number
+  private onRetry?: (
+    step: StepDefinition<any, any>,
+    ctx: WorkflowContext<any, any>,
+    error: Error,
+    attempt: number,
+    maxRetries: number
+  ) => void | Promise<void>
 
-  constructor(options: { defaultRetries?: number; defaultTimeout?: number } = {}) {
+  constructor(
+    options: {
+      defaultRetries?: number
+      defaultTimeout?: number
+      onRetry?: (
+        step: StepDefinition<any, any>,
+        ctx: WorkflowContext<any, any>,
+        error: Error,
+        attempt: number,
+        maxRetries: number
+      ) => void | Promise<void>
+    } = {}
+  ) {
     this.defaultRetries = options.defaultRetries ?? 3
     this.defaultTimeout = options.defaultTimeout ?? 30000
+    this.onRetry = options.onRetry
   }
 
   /**
    * Execute a step with retry and timeout
    */
-  async execute(
-    step: StepDefinition,
-    ctx: WorkflowContext,
+  async execute<TInput, TData>(
+    step: StepDefinition<TInput, TData>,
+    ctx: WorkflowContext<TInput, TData>,
     execution: StepExecution
   ): Promise<StepResult> {
     const maxRetries = step.retries ?? this.defaultRetries
@@ -53,7 +79,26 @@ export class StepExecutor {
 
       try {
         // Execute with timeout
-        await this.executeWithTimeout(step.handler, ctx, timeout)
+        const result = await this.executeWithTimeout(step.handler, ctx, timeout)
+
+        if (
+          result &&
+          typeof result === 'object' &&
+          '__kind' in result &&
+          result.__kind === 'flux_wait'
+        ) {
+          execution.status = 'suspended'
+          execution.waitingFor = result.signal
+          execution.suspendedAt = new Date()
+          execution.duration = Date.now() - startTime
+
+          return {
+            success: true,
+            suspended: true,
+            waitingFor: result.signal,
+            duration: execution.duration,
+          }
+        }
 
         execution.status = 'completed'
         execution.completedAt = new Date()
@@ -68,6 +113,7 @@ export class StepExecutor {
 
         // If not last retry, continue
         if (attempt < maxRetries) {
+          await this.onRetry?.(step, ctx, lastError, attempt + 1, maxRetries)
           // Exponential backoff
           await this.sleep(Math.min(1000 * 2 ** attempt, 10000))
         }
@@ -90,16 +136,25 @@ export class StepExecutor {
   /**
    * Execute handler with timeout
    */
-  private async executeWithTimeout(
-    handler: (ctx: WorkflowContext) => Promise<void> | void,
-    ctx: WorkflowContext,
+  private async executeWithTimeout<TInput, TData>(
+    handler: (
+      ctx: WorkflowContext<TInput, TData>
+    ) => Promise<void | FluxWaitResult> | void | FluxWaitResult,
+    ctx: WorkflowContext<TInput, TData>,
     timeout: number
-  ): Promise<void> {
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => reject(new Error('Step timeout')), timeout)
-    })
+  ): Promise<void | FluxWaitResult> {
+    let timer: ReturnType<typeof setTimeout> | null = null
+    try {
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error('Step timeout')), timeout)
+      })
 
-    await Promise.race([Promise.resolve(handler(ctx)), timeoutPromise])
+      return await Promise.race([Promise.resolve(handler(ctx)), timeoutPromise])
+    } finally {
+      if (timer) {
+        clearTimeout(timer)
+      }
+    }
   }
 
   /**

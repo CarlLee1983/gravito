@@ -1,3 +1,5 @@
+import { getRuntimeAdapter } from '@gravito/core'
+
 export interface ProcessResult {
   exitCode: number
   stdout: string
@@ -6,14 +8,15 @@ export interface ProcessResult {
 }
 
 export async function runProcess(command: string): Promise<ProcessResult> {
-  const proc = Bun.spawn(['sh', '-c', command], {
+  const runtime = getRuntimeAdapter()
+  const proc = runtime.spawn(['sh', '-c', command], {
     stdout: 'pipe',
     stderr: 'pipe',
   })
 
   const [stdout, stderr] = await Promise.all([
-    new Response(proc.stdout).text(),
-    new Response(proc.stderr).text(),
+    new Response(proc.stdout ?? null).text(),
+    new Response(proc.stderr ?? null).text(),
   ])
 
   const exitCode = await proc.exited

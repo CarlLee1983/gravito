@@ -9,6 +9,7 @@
         "declaration": true,
         "emitDeclarationOnly": true,
         "skipLibCheck": true,
+        "types": ["bun-types"],
         "paths": {
             "hono/*": [
                 "../../node_modules/hono/dist/types/*"

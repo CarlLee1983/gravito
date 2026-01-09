@@ -162,22 +162,8 @@ export class PostgresGrammar extends Grammar {
   // JSON Compilation
   // ============================================================================
 
-  override compileJsonPath(column: string, _value: unknown): string {
-    const [field, ...path] = column.split('->')
-    const _jsonPath = path.map((p) => `'${p}'`).join('->')
-    const _operator = path.length > 0 ? '->>' : ''
-
-    // settings->theme => "settings"->>'theme'
-    // data->user->id => "data"->'user'->>'id'
-
-    if (path.length === 0) {
-      return `${this.wrapColumn(field ?? '')} = ?` // Placeholder will be replaced
-    }
-
-    const last = path.pop()
-    const arrowPath = path.map((p) => `->'${p}'`).join('')
-
-    return `${this.wrapColumn(field ?? '')}${arrowPath}->>'${last}' = ?`
+  override compileJsonPath(column: string, path: string[]): string {
+    return `${this.wrapColumn(column)}->>${path.map((p) => `'${p}'`).join('->')}`
   }
 
   override compileJsonContains(column: string, _value: unknown): string {

@@ -1,3 +1,5 @@
+import { getPasswordAdapter } from '@gravito/core'
+
 export type HashAlgorithm = 'bcrypt' | 'argon2id'
 
 export interface HashConfig {
@@ -17,17 +19,18 @@ export class HashManager {
 
   async make(value: string): Promise<string> {
     const algorithm = this.config.algorithm ?? 'bcrypt'
+    const password = getPasswordAdapter()
 
     if (algorithm === 'bcrypt') {
       const cost = this.config.bcrypt?.cost ?? 12
-      return await Bun.password.hash(value, { algorithm: 'bcrypt', cost })
+      return await password.hash(value, { algorithm: 'bcrypt', cost })
     }
 
     const memoryCost = this.config.argon2id?.memoryCost
     const timeCost = this.config.argon2id?.timeCost
     const parallelism = this.config.argon2id?.parallelism
 
-    return await Bun.password.hash(value, {
+    return await password.hash(value, {
       algorithm: 'argon2id',
       ...(memoryCost !== undefined ? { memoryCost } : {}),
       ...(timeCost !== undefined ? { timeCost } : {}),
@@ -36,7 +39,8 @@ export class HashManager {
   }
 
   async check(value: string, hashed: string): Promise<boolean> {
-    return await Bun.password.verify(value, hashed)
+    const password = getPasswordAdapter()
+    return await password.verify(value, hashed)
   }
 
   needsRehash(hashed: string): boolean {

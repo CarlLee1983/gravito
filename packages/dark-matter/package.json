@@ -15,7 +15,9 @@
   "scripts": {
     "build": "bun run build.ts",
     "test": "bun test",
-    "typecheck": "bunx tsc --noEmit"
+    "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
+    "test:coverage": "bun test --coverage --coverage-threshold=80",
+    "test:ci": "bun test --coverage --coverage-threshold=80"
   },
   "files": [
     "dist",
@@ -40,6 +42,15 @@
   },
   "devDependencies": {
     "tsup": "^8.5.1",
-    "typescript": "^5.0.0"
+    "typescript": "^5.9.3",
+    "bun-types": "latest"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gravito-framework/gravito.git",
+    "directory": "packages/dark-matter"
   }
 }

@@ -14,7 +14,7 @@ bun add @gravito/monolith
 
 1.  **Register the Orbit**:
     ```typescript
-    import { PlanetCore } from 'gravito-core';
+    import { PlanetCore } from '@gravito/core';
     import { OrbitContent } from '@gravito/monolith';
 
     const core = new PlanetCore();

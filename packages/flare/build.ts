@@ -5,7 +5,7 @@ console.log('Building @gravito/flare...')
 // Clean dist
 await Bun.$`rm -rf dist`
 
-const external = ['gravito-core', '@gravito/stream', '@gravito/signal', '@gravito/radiance']
+const external = ['@gravito/core', '@gravito/stream', '@gravito/signal', '@gravito/radiance']
 
 // Use tsup for multi-format build
 const tsup = spawn(

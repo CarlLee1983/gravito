@@ -17,6 +17,7 @@ Gravito 不僅僅是一個 Web 框架，它是您的 **全端開發引力場**�
 
 ### 1. 進化版的開發體驗 (DX)
 如果您喜愛 Laravel、Ruby on Rails 或 Django，您會發現 Gravito 的 API 極其親切。無論是路由定義、控制器的注入，還是強大的資料庫查詢構造器，我們都力求簡潔與優雅。
+想了解更具體的差異化，請參閱 [Better than Laravel 的 5 個 DX 核心](./dx-pillars.md)。
 
 ### 2. 生生不息的高效能
 基於 [Bun](https://bun.sh/) 執行環境，Gravito 擁有極低的內存占用與驚人的請求處理速度。這意味著您的伺服器可以處理更多的併發，同時大幅降低雲端運算成本。

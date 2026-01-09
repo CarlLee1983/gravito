@@ -1,10 +1,11 @@
+import type { GravitoContext } from '@gravito/core'
 import {
   HashManager,
   InMemoryPasswordResetTokenRepository,
   PasswordBroker,
 } from '@gravito/sentinel'
-import type { GravitoContext } from 'gravito-core'
 import type { FortifyConfig } from '../config'
+import { ensureCsrfToken } from '../csrf'
 import type { ViewService } from '../types'
 
 /**
@@ -32,12 +33,14 @@ export class ResetPasswordController {
       return c.json({ view: 'reset-password', token, email })
     }
 
+    const csrfToken = ensureCsrfToken(c, this.config)
+
     const view = c.get('view') as ViewService | undefined
     if (view?.render && this.config.views?.resetPassword) {
-      return c.html(view.render(this.config.views.resetPassword, { token, email }))
+      return c.html(view.render(this.config.views.resetPassword, { token, email, csrfToken }))
     }
 
-    return c.html(this.defaultResetPasswordHtml(token ?? '', email ?? ''))
+    return c.html(this.defaultResetPasswordHtml(token ?? '', email ?? '', csrfToken ?? undefined))
   }
 
   /**
@@ -113,7 +116,12 @@ export class ResetPasswordController {
     }
   }
 
-  private defaultResetPasswordHtml(token: string, email: string): string {
+  private defaultResetPasswordHtml(token: string, email: string, csrfToken?: string): string {
+    const safeToken = this.escapeAttribute(token)
+    const safeEmail = this.escapeAttribute(email)
+    const csrfField = csrfToken
+      ? `<input type="hidden" name="_token" value="${this.escapeAttribute(csrfToken)}">`
+      : ''
     return `
 <!DOCTYPE html>
 <html lang="en">
@@ -139,10 +147,11 @@ export class ResetPasswordController {
   <div class="container">
     <h1>Reset Password</h1>
     <form method="POST" action="/reset-password">
-      <input type="hidden" name="token" value="${token}">
+      ${csrfField}
+      <input type="hidden" name="token" value="${safeToken}">
       <div class="form-group">
         <label for="email">Email</label>
-        <input type="email" id="email" name="email" value="${email}" readonly>
+        <input type="email" id="email" name="email" value="${safeEmail}" readonly>
       </div>
       <div class="form-group">
         <label for="password">New Password</label>
@@ -158,5 +167,14 @@ export class ResetPasswordController {
 </body>
 </html>
     `.trim()
+  }
+
+  private escapeAttribute(value: string): string {
+    return value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;')
   }
 }

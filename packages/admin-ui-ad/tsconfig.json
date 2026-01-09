@@ -1,0 +1,26 @@
+{
+  "extends": "../../tsconfig.frontend.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ],
+      "@gravito/admin-shell-react": [
+        "../admin-shell-react/src/index.ts"
+      ],
+      "@gravito/admin-sdk": [
+        "../admin-sdk/src/index.ts"
+      ]
+    }
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "src/**/*.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+}

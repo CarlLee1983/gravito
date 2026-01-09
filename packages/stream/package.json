@@ -1,18 +1,18 @@
 {
   "name": "@gravito/stream",
-  "version": "1.0.0-beta.1",
+  "version": "1.0.0",
   "publishConfig": {
     "access": "public"
   },
   "description": "Lightweight, high-performance queue system for Gravito framework. Supports multiple brokers (Database, Redis, Kafka, SQS) with zero runtime overhead.",
-  "module": "./dist/index.mjs",
+  "module": "./dist/index.js",
   "main": "./dist/index.cjs",
   "type": "module",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
+      "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     }
   },
@@ -24,7 +24,9 @@
   "scripts": {
     "build": "bun run build.ts",
     "test": "bun test",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
+    "test:coverage": "bun test --coverage --coverage-threshold=80",
+    "test:ci": "bun test --coverage --coverage-threshold=80"
   },
   "keywords": [
     "gravito",
@@ -40,7 +42,9 @@
   "license": "MIT",
   "dependencies": {
     "@aws-sdk/client-sqs": "^3.955.0",
-    "gravito-core": "1.0.0-beta.6"
+    "@gravito/atlas": "workspace:*",
+    "@gravito/core": "workspace:*",
+    "cron-parser": "^5.4.0"
   },
   "devDependencies": {
     "bun-types": "latest",

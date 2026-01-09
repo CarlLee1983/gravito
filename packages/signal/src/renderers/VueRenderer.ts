@@ -3,13 +3,20 @@ import type { Renderer, RenderResult } from './Renderer'
 export class VueRenderer<P extends object = object> implements Renderer {
   constructor(
     private component: any, // Use any to avoid hard Vue dependency in types
-    private props?: P
+    private props?: P,
+    private deps: {
+      createSSRApp?: (...args: any[]) => any
+      h?: (...args: any[]) => any
+      renderToString?: (app: any) => Promise<string>
+    } = {}
   ) {}
 
   async render(data: Record<string, unknown>): Promise<RenderResult> {
     // Dynamic imports to avoid hard dependencies on vue/@vue/server-renderer
-    const { createSSRApp, h } = await import('vue')
-    const { renderToString } = await import('@vue/server-renderer')
+    const createSSRApp = this.deps.createSSRApp ?? (await import('vue')).createSSRApp
+    const h = this.deps.h ?? (await import('vue')).h
+    const renderToString =
+      this.deps.renderToString ?? (await import('@vue/server-renderer')).renderToString
 
     const mergedProps = { ...this.props, ...data }
 

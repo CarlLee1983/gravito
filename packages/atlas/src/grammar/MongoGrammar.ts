@@ -3,7 +3,7 @@
  * @description Translates generic CompiledQuery into a MongoDB Query Protocol (JSON)
  */
 
-import { ObjectId } from 'mongodb'
+import * as mongodb from 'mongodb'
 import type { CompiledQuery, WhereClause } from '../types'
 import { Grammar } from './Grammar'
 
@@ -188,7 +188,7 @@ export class MongoGrammar extends Grammar {
   private normalizeValue(column: string, value: any): any {
     if ((column === '_id' || column === 'id') && typeof value === 'string' && value.length === 24) {
       try {
-        return new ObjectId(value)
+        return new mongodb.ObjectId(value)
       } catch {
         return value
       }

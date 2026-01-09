@@ -477,11 +477,13 @@ export abstract class Grammar implements GrammarContract {
    * Compile an UPDATE statement
    */
   compileUpdate(query: CompiledQuery, values: Record<string, unknown>): string {
-    const columns = Object.keys(values)
     let bindingIndex = 0
 
-    const setClause = columns
-      .map((col) => {
+    const setClause = Object.entries(values)
+      .map(([col, value]) => {
+        if (value instanceof Expression) {
+          return `${this.wrapColumn(col)} = ${value.getValue()}`
+        }
         const placeholder = this.getPlaceholder(bindingIndex)
         bindingIndex++
         return `${this.wrapColumn(col)} = ${placeholder}`
@@ -492,11 +494,8 @@ export abstract class Grammar implements GrammarContract {
 
     // Compile WHEREs with offset bindings
     if (query.wheres.length > 0) {
-      const whereBindingsOffset = columns.length
-      const offsetQuery = { ...query, bindings: query.bindings.slice(whereBindingsOffset) }
-      const wheres = this.compileWheres(offsetQuery)
-      // Fix placeholders to account for SET values
-      sql += ` ${this.offsetPlaceholders(wheres, whereBindingsOffset)}`
+      const wheres = this.compileWheres(query, bindingIndex)
+      sql += ` ${wheres}`
     }
 
     return sql

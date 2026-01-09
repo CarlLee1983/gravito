@@ -14,7 +14,7 @@ bun add @gravito/cosmos
 
 1.  **Register the Orbit**:
     ```typescript
-    import { PlanetCore } from 'gravito-core';
+    import { PlanetCore } from '@gravito/core';
     import { OrbitI18n } from '@gravito/cosmos';
 
     const core = new PlanetCore();

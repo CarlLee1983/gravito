@@ -8,7 +8,7 @@
  * @since 1.0.0
  */
 
-import type { GravitoOrbit, PlanetCore } from 'gravito-core'
+import type { GravitoOrbit, PlanetCore } from '@gravito/core'
 import { type AuthConfig, AuthManager, type UserProviderResolver } from './AuthManager'
 import { type EmailVerificationOptions, EmailVerificationService } from './EmailVerification'
 import { Gate } from './Gate'
@@ -139,7 +139,7 @@ export class OrbitSentinel implements GravitoOrbit {
 }
 
 // Module augmentation for GravitoVariables (new abstraction)
-declare module 'gravito-core' {
+declare module '@gravito/core' {
   interface GravitoVariables {
     /** Authentication manager for user authentication */
     auth?: AuthManager

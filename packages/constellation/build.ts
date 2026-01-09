@@ -6,7 +6,7 @@ console.log('Building @gravito/constellation...')
 await Bun.$`rm -rf dist`
 
 const external = [
-  'gravito-core',
+  '@gravito/core',
   '@gravito/photon',
   '@aws-sdk/client-s3',
   '@google-cloud/storage',

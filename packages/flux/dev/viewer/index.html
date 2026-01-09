@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Flux Dev Viewer</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <h1>Flux Dev Viewer</h1>
+        <p class="subtitle">Local workflow trace explorer</p>
+      </div>
+      <div class="meta">
+        <div id="tracePath">Trace: -</div>
+        <div id="lastUpdate">Updated: -</div>
+      </div>
+    </header>
+
+    <main class="grid">
+      <section class="card">
+        <h2>Execution Path</h2>
+        <div id="path" class="path"></div>
+      </section>
+
+      <section class="card">
+        <h2>Status</h2>
+        <div id="status" class="status"></div>
+      </section>
+
+      <section class="card full">
+        <h2>Timeline</h2>
+        <table class="timeline">
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Event</th>
+              <th>Step</th>
+              <th>Retry</th>
+              <th>Duration</th>
+              <th>Message</th>
+            </tr>
+          </thead>
+          <tbody id="events"></tbody>
+        </table>
+      </section>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

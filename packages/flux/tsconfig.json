@@ -3,11 +3,17 @@
     "compilerOptions": {
         "outDir": "./dist",
         "rootDir": "./src",
+        "baseUrl": ".",
+        "paths": {
+            "@gravito/core": ["../../packages/core/src/index.ts"],
+            "@gravito/*": ["../../packages/*/src/index.ts"]
+        },
         "declaration": true,
         "declarationMap": true,
         "declarationDir": "./dist",
         "skipLibCheck": true,
-        "noEmit": false
+        "noEmit": false,
+        "types": ["bun-types"]
     },
     "include": [
         "src/**/*"

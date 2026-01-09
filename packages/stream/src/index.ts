@@ -30,6 +30,8 @@ export { KafkaDriver } from './drivers/KafkaDriver'
 export { MemoryDriver } from './drivers/MemoryDriver'
 // Drivers
 export type { QueueDriver } from './drivers/QueueDriver'
+export type { RabbitMQDriverConfig } from './drivers/RabbitMQDriver'
+export { RabbitMQDriver } from './drivers/RabbitMQDriver'
 export type { RedisDriverConfig } from './drivers/RedisDriver'
 export { RedisDriver } from './drivers/RedisDriver'
 export type { SQSDriverConfig } from './drivers/SQSDriver'
@@ -39,14 +41,18 @@ export { SQSDriver } from './drivers/SQSDriver'
 export { Job } from './Job'
 export type { OrbitStreamOptions } from './OrbitStream'
 export { OrbitStream } from './OrbitStream'
+export { MySQLPersistence } from './persistence/MySQLPersistence'
+export { SQLitePersistence } from './persistence/SQLitePersistence'
 // Core interfaces & types
 export type { Queueable } from './Queueable'
 export { QueueManager } from './QueueManager'
+export { Scheduler } from './Scheduler'
 export { ClassNameSerializer } from './serializers/ClassNameSerializer'
 // Serializers
 export type { JobSerializer } from './serializers/JobSerializer'
 export { JsonSerializer } from './serializers/JsonSerializer'
 export type {
+  PersistenceAdapter,
   QueueConfig,
   QueueConnectionConfig,
   SerializedJob,

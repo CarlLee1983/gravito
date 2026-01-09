@@ -1,0 +1,25 @@
+{
+  "profile": {
+    "name": "enterprise",
+    "version": "1.0.0"
+  },
+  "features": [
+    "stream",
+    "nebula",
+    "monitor",
+    "sentinel",
+    "fortify"
+  ],
+  "drivers": {
+    "database": "postgresql",
+    "cache": "redis",
+    "queue": "rabbitmq",
+    "storage": "s3",
+    "session": "redis"
+  },
+  "manifest": {
+    "template": "flux-enterprise",
+    "version": "0.1.0"
+  },
+  "createdAt": "2025-01-01T00:00:00.000Z"
+}

@@ -39,7 +39,7 @@ bun add @gravito/atlas
 See [Getting Started](./atlas/getting-started.md) for full examples.
 
 ```ts
-import { PlanetCore } from 'gravito-core'
+import { PlanetCore } from '@gravito/core'
 import { DB } from '@gravito/atlas'
 
 // Configure Database

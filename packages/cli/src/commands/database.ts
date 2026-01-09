@@ -1,13 +1,25 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import pc from 'picocolors'
-import { DrizzleMigrationDriver, type MigrationResult } from './DrizzleMigrationDriver'
+import { AtlasMigrationDriver } from './AtlasMigrationDriver'
+import { DrizzleMigrationDriver } from './DrizzleMigrationDriver'
+import type { MigrationDriver, MigrationResult } from './MigrationDriver'
+
+async function getMigrationDriver(): Promise<MigrationDriver> {
+  const configPath = path.join(process.cwd(), 'drizzle.config.ts')
+  try {
+    await fs.access(configPath)
+    return new DrizzleMigrationDriver()
+  } catch {
+    return new AtlasMigrationDriver()
+  }
+}
 
 /**
  * Generate a new migration file
  */
 export async function makeMigration(name: string) {
-  const driver = new DrizzleMigrationDriver()
+  const driver = await getMigrationDriver()
   const result = await driver.generate(name)
 
   if (result.success) {
@@ -24,7 +36,7 @@ export async function makeMigration(name: string) {
 export async function migrate(options: { fresh?: boolean }) {
   console.log(pc.cyan('🔄 Running migrations...'))
 
-  const driver = new DrizzleMigrationDriver()
+  const driver = await getMigrationDriver()
 
   let result: MigrationResult
   if (options.fresh) {
@@ -49,7 +61,7 @@ export async function migrate(options: { fresh?: boolean }) {
  * Show migration status
  */
 export async function migrateStatus() {
-  const driver = new DrizzleMigrationDriver()
+  const driver = await getMigrationDriver()
   const status = await driver.status()
 
   console.log(pc.bold('\n📋 Migration Status'))

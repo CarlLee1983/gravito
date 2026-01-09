@@ -49,7 +49,7 @@ const entries = await builder.build()
 ## Usage with Gravito
 
 ```typescript
-import { PlanetCore } from 'gravito-core'
+import { PlanetCore } from '@gravito/core'
 import { SitemapBuilder, GravitoScanner } from '@gravito/luminosity'
 
 const core = await PlanetCore.boot({ ... })

@@ -6,15 +6,23 @@
  * @module @gravito/flux/builder
  */
 
-import type { StepDefinition, WorkflowContext, WorkflowDefinition } from '../types'
+import type {
+  FluxWaitResult,
+  StepDefinition,
+  StepDescriptor,
+  WorkflowContext,
+  WorkflowDefinition,
+  WorkflowDescriptor,
+} from '../types'
 
 /**
  * Step options
  */
-interface StepOptions {
+interface StepOptions<TInput = any, TData = any> {
   retries?: number
   timeout?: number
-  when?: (ctx: WorkflowContext) => boolean
+  when?: (ctx: WorkflowContext<TInput, TData>) => boolean
+  compensate?: (ctx: WorkflowContext<TInput, TData>) => Promise<void> | void
 }
 
 /**
@@ -31,13 +39,17 @@ interface StepOptions {
  *   })
  *   .step('process', async (ctx) => {
  *     await processOrder(ctx.data.order)
+ *   }, {
+ *     compensate: async (ctx) => {
+ *       await cancelOrder(ctx.data.order.id)
+ *     }
  *   })
  *   .commit('notify', async (ctx) => {
  *     await sendEmail(ctx.data.order.email)
  *   })
  * ```
  */
-export class WorkflowBuilder<TInput = unknown> {
+export class WorkflowBuilder<TInput = unknown, TData = Record<string, unknown>> {
   private _name: string
   private _steps: StepDefinition[] = []
   private _validateInput?: (input: unknown) => input is TInput
@@ -51,8 +63,17 @@ export class WorkflowBuilder<TInput = unknown> {
    *
    * This method is used for TypeScript type inference.
    */
-  input<T>(): WorkflowBuilder<T> {
-    return this as unknown as WorkflowBuilder<T>
+  input<T>(): WorkflowBuilder<T, TData> {
+    return this as unknown as WorkflowBuilder<T, TData>
+  }
+
+  /**
+   * Define workflow data (state) type
+   *
+   * This method is used for TypeScript type inference.
+   */
+  data<T>(): WorkflowBuilder<TInput, T> {
+    return this as unknown as WorkflowBuilder<TInput, T>
   }
 
   /**
@@ -68,15 +89,22 @@ export class WorkflowBuilder<TInput = unknown> {
    */
   step(
     name: string,
-    handler: (ctx: WorkflowContext<TInput>) => Promise<void> | void,
-    options?: StepOptions
+    handler: (
+      ctx: WorkflowContext<TInput, TData>
+    ) => Promise<void | FluxWaitResult> | void | FluxWaitResult,
+    options?: StepOptions<TInput, TData>
   ): this {
     this._steps.push({
       name,
-      handler: handler as (ctx: WorkflowContext) => Promise<void> | void,
+      handler: handler as (
+        ctx: WorkflowContext
+      ) => Promise<void | FluxWaitResult> | void | FluxWaitResult,
       retries: options?.retries,
       timeout: options?.timeout,
       when: options?.when as ((ctx: WorkflowContext) => boolean) | undefined,
+      compensate: options?.compensate as
+        | ((ctx: WorkflowContext) => Promise<void> | void)
+        | undefined,
       commit: false,
     })
     return this
@@ -90,8 +118,8 @@ export class WorkflowBuilder<TInput = unknown> {
    */
   commit(
     name: string,
-    handler: (ctx: WorkflowContext<TInput>) => Promise<void> | void,
-    options?: StepOptions
+    handler: (ctx: WorkflowContext<TInput, TData>) => Promise<void> | void,
+    options?: Omit<StepOptions<TInput, TData>, 'compensate'>
   ): this {
     this._steps.push({
       name,
@@ -107,7 +135,7 @@ export class WorkflowBuilder<TInput = unknown> {
   /**
    * Build the workflow definition
    */
-  build(): WorkflowDefinition<TInput> {
+  build(): WorkflowDefinition<TInput, TData> {
     if (this._steps.length === 0) {
       throw new Error(`Workflow "${this._name}" has no steps`)
     }
@@ -116,6 +144,24 @@ export class WorkflowBuilder<TInput = unknown> {
       name: this._name,
       steps: [...this._steps],
       validateInput: this._validateInput,
+    }
+  }
+
+  /**
+   * Describe workflow (serializable metadata)
+   */
+  describe(): WorkflowDescriptor {
+    const steps: StepDescriptor[] = this._steps.map((step) => ({
+      name: step.name,
+      commit: Boolean(step.commit),
+      retries: step.retries,
+      timeout: step.timeout,
+      hasCondition: Boolean(step.when),
+    }))
+
+    return {
+      name: this._name,
+      steps,
     }
   }
 

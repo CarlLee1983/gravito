@@ -1,6 +1,6 @@
 {
   "name": "@gravito/monitor",
-  "version": "1.0.0-beta.1",
+  "version": "1.0.0",
   "description": "Observability module for Gravito - Health checks, Metrics, and Tracing",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -24,12 +24,14 @@
   ],
   "scripts": {
     "build": "bun run build.ts",
-    "typecheck": "tsc --noEmit",
-    "test": "bun test"
+    "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
+    "test": "bun test",
+    "test:coverage": "bun test --coverage --coverage-threshold=80",
+    "test:ci": "bun test --coverage --coverage-threshold=80"
   },
   "peerDependencies": {
-    "gravito-core": "1.0.0-beta.6",
-    "@gravito/photon": "1.0.0-beta.1"
+    "@gravito/core": "workspace:*",
+    "@gravito/photon": "workspace:*"
   },
   "devDependencies": {
     "@types/bun": "latest",
@@ -38,7 +40,7 @@
     "@opentelemetry/exporter-trace-otlp-http": "^0.57.0",
     "@opentelemetry/resources": "^1.29.0",
     "@opentelemetry/semantic-conventions": "^1.28.0",
-    "gravito-core": "1.0.0-beta.6",
+    "@gravito/core": "workspace:*",
     "tsup": "^8.2.4",
     "typescript": "^5.9.3"
   },
@@ -64,5 +66,8 @@
     "type": "git",
     "url": "https://github.com/gravito-framework/gravito.git",
     "directory": "packages/monitor"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

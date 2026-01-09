@@ -1,17 +1,33 @@
-import { Database } from 'bun:sqlite'
+import { createSqliteDatabase, type RuntimeSqliteDatabase } from '@gravito/core'
 import type { SessionId, SessionRecord, SessionStore } from '../types'
 
 export class SqliteSessionStore implements SessionStore {
-  private db: Database
+  private db: RuntimeSqliteDatabase | null = null
   private tableName: string
+  private initPromise: Promise<void> | null = null
 
   constructor(path: string, tableName = 'sessions') {
-    this.db = new Database(path, { create: true })
+    this.initPromise = this.initDb(path, tableName)
+    this.tableName = tableName
+  }
+
+  private async initDb(path: string, tableName: string) {
+    this.db = await createSqliteDatabase(path)
     this.tableName = tableName
     this.init()
   }
 
+  private ensureReady = async () => {
+    if (this.initPromise) {
+      await this.initPromise
+      this.initPromise = null
+    }
+  }
+
   private init() {
+    if (!this.db) {
+      throw new Error('[SqliteSessionStore] Database not initialized')
+    }
     this.db.run(`
       CREATE TABLE IF NOT EXISTS "${this.tableName}" (
         id TEXT PRIMARY KEY,
@@ -26,6 +42,10 @@ export class SqliteSessionStore implements SessionStore {
   }
 
   async get(id: SessionId): Promise<SessionRecord | null> {
+    await this.ensureReady()
+    if (!this.db) {
+      return null
+    }
     const query = this.db.query(
       `SELECT payload, expires_at FROM "${this.tableName}" WHERE id = $id`
     )
@@ -48,6 +68,10 @@ export class SqliteSessionStore implements SessionStore {
   }
 
   async set(id: SessionId, record: SessionRecord, ttlSeconds: number): Promise<void> {
+    await this.ensureReady()
+    if (!this.db) {
+      return
+    }
     const expiresAt = Math.floor(Date.now() / 1000) + ttlSeconds
     const query = this.db.query(`
       INSERT OR REPLACE INTO "${this.tableName}" (id, payload, last_activity, expires_at)
@@ -62,6 +86,10 @@ export class SqliteSessionStore implements SessionStore {
   }
 
   async delete(id: SessionId): Promise<void> {
+    await this.ensureReady()
+    if (!this.db) {
+      return
+    }
     const query = this.db.query(`DELETE FROM "${this.tableName}" WHERE id = $id`)
     query.run({ $id: id })
   }

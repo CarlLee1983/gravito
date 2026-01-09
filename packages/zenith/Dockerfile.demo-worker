@@ -1,0 +1,29 @@
+# Use Bun official image
+FROM oven/bun:1.1.26 AS base
+WORKDIR /usr/src/app
+
+# ---- 1. Install Dependencies ----
+FROM base AS install
+COPY package.json bun.lock ./
+COPY packages/photon/package.json ./packages/photon/
+COPY packages/stream/package.json ./packages/stream/
+COPY packages/flux-console/package.json ./packages/flux-console/
+RUN bun install --frozen-lockfile
+
+# ---- 2. Copy Source ----
+FROM base AS build
+COPY --from=install /usr/src/app/node_modules ./node_modules
+COPY --from=install /usr/src/app/packages ./packages
+COPY . .
+
+# ---- 3. Runner ----
+FROM base AS release
+WORKDIR /usr/src/app
+COPY --from=build /usr/src/app ./
+
+# Env defaults
+ENV NODE_ENV=production
+
+# Start the demo worker
+# It uses the local packages/dist if available, but Bun can run TS directly
+CMD ["bun", "run", "packages/flux-console/scripts/demo-worker.ts"]

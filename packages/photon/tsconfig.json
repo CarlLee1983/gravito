@@ -7,9 +7,15 @@
         "allowImportingTsExtensions": true,
         "noEmit": true,
         "composite": true,
+        "types": [
+            "bun-types"
+        ],
         "paths": {
-            "hono/*": [
-                "../../node_modules/hono/dist/types/*"
+            "@gravito/core": [
+                "../../packages/core/src/index.ts"
+            ],
+            "@gravito/*": [
+                "../../packages/*/src/index.ts"
             ]
         }
     },

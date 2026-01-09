@@ -1,6 +1,6 @@
 import { OrbitCache } from '@gravito/stasis'
 import { OrbitView } from '@gravito/orbit-view'
-import { defineConfig, PlanetCore } from 'gravito-core'
+import { defineConfig, PlanetCore } from '@gravito/core'
 import { serveStatic } from '@gravito/photon/bun'
 import { registerHooks } from './hooks'
 import { registerRoutes } from './routes'

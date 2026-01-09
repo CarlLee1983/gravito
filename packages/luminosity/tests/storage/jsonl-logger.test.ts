@@ -11,7 +11,7 @@ describe('JsonlLogger', () => {
   beforeEach(async () => {
     // Clean up before each test
     if (existsSync(TEST_DIR)) {
-      rmSync(TEST_DIR, { recursive: true })
+      rmSync(TEST_DIR, { recursive: true, force: true })
     }
     await mkdir(TEST_DIR, { recursive: true })
   })
@@ -19,7 +19,7 @@ describe('JsonlLogger', () => {
   afterEach(() => {
     // Clean up after each test
     if (existsSync(TEST_DIR)) {
-      rmSync(TEST_DIR, { recursive: true })
+      rmSync(TEST_DIR, { recursive: true, force: true })
     }
   })
 

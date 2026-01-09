@@ -1,18 +1,18 @@
 {
   "name": "@gravito/flare",
-  "version": "1.0.0-beta.1",
+  "version": "1.0.1",
   "publishConfig": {
     "access": "public"
   },
   "description": "Lightweight, high-performance notification system for Gravito framework. Supports multiple channels (mail, database, broadcast, slack, sms) with zero runtime overhead.",
-  "module": "./dist/index.mjs",
   "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
   "type": "module",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
+      "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     }
   },
@@ -24,7 +24,9 @@
   "scripts": {
     "build": "bun run build.ts",
     "test": "bun test",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
+    "test:coverage": "bun test --coverage --coverage-threshold=80",
+    "test:ci": "bun test --coverage --coverage-threshold=80"
   },
   "keywords": [
     "gravito",
@@ -38,12 +40,12 @@
   "author": "Carl Lee <carllee0520@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "gravito-core": "1.0.0-beta.6"
+    "@gravito/core": "workspace:*"
   },
   "peerDependencies": {
-    "@gravito/stream": "1.0.0-beta.1",
-    "@gravito/signal": "1.0.0-beta.1",
-    "@gravito/radiance": "1.0.0-beta.1"
+    "@gravito/stream": "workspace:*",
+    "@gravito/signal": "workspace:*",
+    "@gravito/radiance": "workspace:*"
   },
   "devDependencies": {
     "bun-types": "latest",

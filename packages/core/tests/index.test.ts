@@ -3,7 +3,7 @@ import { Photon } from '@gravito/photon'
 import packageJson from '../package.json'
 import { PlanetCore, VERSION } from '../src/index'
 
-describe('gravito-core', () => {
+describe('@gravito/core', () => {
   describe('VERSION', () => {
     it('should export the correct version from package.json', () => {
       expect(VERSION).toBe(packageJson.version)

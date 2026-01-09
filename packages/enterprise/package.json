@@ -1,0 +1,43 @@
+{
+  "name": "@gravito/enterprise",
+  "version": "1.0.0",
+  "description": "Enterprise architecture primitives for Gravito framework (DDD/Clean Architecture)",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gravito-framework/gravito.git",
+    "directory": "packages/enterprise"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "test": "bun test",
+    "lint": "biome check .",
+    "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
+    "test:coverage": "bun test --coverage --coverage-threshold=80",
+    "test:ci": "bun test --coverage --coverage-threshold=80"
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "gravito",
+    "ddd",
+    "clean-architecture",
+    "enterprise"
+  ],
+  "author": "Gravito Team",
+  "license": "MIT",
+  "dependencies": {
+    "@gravito/core": "workspace:*"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5.9.3",
+    "bun-types": "latest"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

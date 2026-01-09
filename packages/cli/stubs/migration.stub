@@ -1,19 +1,16 @@
 import { sql } from 'drizzle-orm'
-import type { DBService } from '@gravito/db'
+import type { AtlasOrbit } from '@gravito/atlas'
 
-export async function up(db: DBService): Promise<void> {
-  // TODO: Implement migration
-  // Example:
-  // await db.raw.execute(sql`
-  //   CREATE TABLE {{ name }} (
-  //     id SERIAL PRIMARY KEY,
-  //     created_at TIMESTAMP DEFAULT NOW()
-  //   )
-  // `)
+export async function up(db: AtlasOrbit): Promise<void> {
+  await db.connection.execute(sql`
+    CREATE TABLE {{ name }}s (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `)
 }
 
-export async function down(db: DBService): Promise<void> {
-  // TODO: Implement rollback
-  // Example:
-  // await db.raw.execute(sql`DROP TABLE {{ name }}`)
+export async function down(db: AtlasOrbit): Promise<void> {
+  await db.connection.execute(sql`DROP TABLE {{ name }}s`)
 }

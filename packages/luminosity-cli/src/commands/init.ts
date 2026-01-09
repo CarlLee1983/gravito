@@ -29,8 +29,19 @@ const config: SeoConfig = {
 export default config
 `
 
-export async function initCommand() {
-  const rl = readline.createInterface({ input, output })
+export interface InitCommandDeps {
+  createInterface?: typeof readline.createInterface
+  writeFile?: typeof writeFile
+  existsSync?: typeof existsSync
+  cwd?: () => string
+}
+
+export async function initCommand(deps: InitCommandDeps = {}) {
+  const createInterface = deps.createInterface ?? readline.createInterface
+  const writeFileImpl = deps.writeFile ?? writeFile
+  const existsSyncImpl = deps.existsSync ?? existsSync
+  const cwd = deps.cwd ?? process.cwd
+  const rl = createInterface({ input, output })
 
   console.log(pc.bold('\n🚀 Initialize Gravito SEO\n'))
 
@@ -61,15 +72,15 @@ export async function initCommand() {
     mode
   )
 
-  const targetFile = join(process.cwd(), 'gravito.seo.config.ts')
+  const targetFile = join(cwd(), 'gravito.seo.config.ts')
 
-  if (existsSync(targetFile)) {
+  if (existsSyncImpl(targetFile)) {
     console.log(pc.red(`\n❌ Config file already exists at ${targetFile}`))
     rl.close()
     process.exit(1)
   }
 
-  await writeFile(targetFile, configContent)
+  await writeFileImpl(targetFile, configContent)
 
   console.log(pc.green(`\n✅ Generated gravito.seo.config.ts`))
   console.log(pc.dim(`   Mode: ${mode}`))

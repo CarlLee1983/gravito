@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
+import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'bun:test'
 import { BelongsTo, column, DB, HasMany, Model, Schema, UniqueConstraintError } from '../src/index'
 
 // 1. Define Test Models
@@ -23,13 +23,23 @@ class Post extends Model {
 }
 
 describe('Atlas Exhaustive Integration Test', () => {
+  const ensureSqlite = () => {
+    if (!DB.getConnectionConfig('sqlite')) {
+      DB.configure({
+        default: 'sqlite',
+        connections: {
+          sqlite: { driver: 'sqlite', database: ':memory:' },
+        },
+      })
+    }
+    if (DB.getDefaultConnection() !== 'sqlite') {
+      DB.setDefaultConnection('sqlite')
+    }
+    Schema.connection('sqlite')
+  }
+
   beforeAll(async () => {
-    DB.configure({
-      default: 'sqlite',
-      connections: {
-        sqlite: { driver: 'sqlite', database: ':memory:' },
-      },
-    })
+    ensureSqlite()
 
     await Schema.create('users', (t) => {
       t.id()
@@ -46,6 +56,10 @@ describe('Atlas Exhaustive Integration Test', () => {
       t.integer('user_id').unsigned()
       t.timestamps()
     })
+  })
+
+  beforeEach(() => {
+    ensureSqlite()
   })
 
   afterAll(async () => {

@@ -1,11 +1,18 @@
 {
   "name": "@gravito/constellation",
-  "version": "1.0.0-beta.1",
+  "version": "1.0.0",
   "description": "Powerful sitemap generation for Gravito applications with dynamic/static support, sharding, and caching.",
-  "type": "module",
   "main": "./dist/index.cjs",
-  "module": "./dist/index.mjs",
+  "module": "./dist/index.js",
+  "type": "module",
   "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
   "files": [
     "dist",
     "README.md",
@@ -13,22 +20,24 @@
   ],
   "scripts": {
     "build": "bun run build.ts",
-    "typecheck": "tsc --noEmit",
-    "test": "bun test"
+    "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
+    "test": "bun test",
+    "test:coverage": "bun test --coverage --coverage-threshold=80",
+    "test:ci": "bun test --coverage --coverage-threshold=80"
   },
   "peerDependencies": {
-    "gravito-core": "1.0.0-beta.6"
+    "@gravito/core": "workspace:*"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.956.0",
     "@google-cloud/storage": "^7.18.0",
-    "@gravito/stream": "1.0.0-beta.1",
-    "@gravito/photon": "1.0.0-beta.1"
+    "@gravito/stream": "workspace:*",
+    "@gravito/photon": "workspace:*"
   },
   "devDependencies": {
     "bun-plugin-dts": "^0.3.0",
     "bun-types": "latest",
-    "gravito-core": "1.0.0-beta.6",
+    "@gravito/core": "workspace:*",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3"
   },

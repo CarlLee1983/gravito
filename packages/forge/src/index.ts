@@ -2,8 +2,8 @@
  * @fileoverview @gravito/forge - File Processing Orbit
  */
 
+import type { GravitoOrbit, PlanetCore } from '@gravito/core'
 import type { StorageProvider } from '@gravito/nebula'
-import type { GravitoOrbit, PlanetCore } from 'gravito-core'
 import type { ForgeServiceConfig } from './ForgeService'
 import { ForgeService } from './ForgeService'
 import { SSEHandler } from './status/SSEHandler'
@@ -139,7 +139,7 @@ export type {
 } from './types'
 
 // Module augmentation for GravitoVariables
-declare module 'gravito-core' {
+declare module '@gravito/core' {
   interface GravitoVariables {
     /** Forge service for file processing */
     forge?: ForgeService

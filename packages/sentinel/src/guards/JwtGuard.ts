@@ -6,13 +6,18 @@ import type { UserProvider } from '../contracts/UserProvider'
 
 export class JwtGuard<User extends Authenticatable = Authenticatable> implements Guard<User> {
   protected userInstance: User | null = null
+  private verifyToken: typeof verify
 
   constructor(
     protected provider: UserProvider<User>,
     protected ctx: Context,
     protected secret: string,
-    protected algo = 'HS256'
-  ) {}
+    protected algo = 'HS256',
+    protected allowQueryToken = false,
+    deps: { verify?: typeof verify } = {}
+  ) {
+    this.verifyToken = deps.verify ?? verify
+  }
 
   async check(): Promise<boolean> {
     return (await this.user()) !== null
@@ -33,7 +38,11 @@ export class JwtGuard<User extends Authenticatable = Authenticatable> implements
     }
 
     try {
-      const payload = await verify(token, this.secret, this.algo as Parameters<typeof verify>[2])
+      const payload = await this.verifyToken(
+        token,
+        this.secret,
+        this.algo as Parameters<typeof verify>[2]
+      )
       if (payload?.sub) {
         this.userInstance = await this.provider.retrieveById(payload.sub as string)
       }
@@ -71,7 +80,7 @@ export class JwtGuard<User extends Authenticatable = Authenticatable> implements
   protected getTokenForRequest(): string | null {
     const header = this.ctx.req.header('Authorization')
     if (!header || !header.startsWith('Bearer ')) {
-      return this.ctx.req.query('token') || null
+      return this.allowQueryToken ? this.ctx.req.query('token') || null : null
     }
     return header.substring(7)
   }

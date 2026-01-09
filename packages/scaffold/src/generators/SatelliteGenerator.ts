@@ -1,0 +1,229 @@
+/**
+ * SatelliteGenerator - Scaffolds Gravito Satellites (Plugins)
+ *
+ * Implements DDD + Clean Architecture for plugins with built-in
+ * Dogfooding support (pre-configured with Gravito modules).
+ */
+
+import type { DirectoryNode } from '../types'
+import { BaseGenerator, type GeneratorContext } from './BaseGenerator'
+
+export class SatelliteGenerator extends BaseGenerator {
+  get architectureType() {
+    return 'satellite' as const
+  }
+
+  get displayName(): string {
+    return 'Gravito Satellite'
+  }
+
+  get description(): string {
+    return 'A modular plugin for Gravito following DDD and Clean Architecture'
+  }
+
+  getDirectoryStructure(context: GeneratorContext): DirectoryNode[] {
+    const name = context.namePascalCase
+
+    return [
+      {
+        type: 'directory',
+        name: 'src',
+        children: [
+          // Domain Layer
+          {
+            type: 'directory',
+            name: 'Domain',
+            children: [
+              {
+                type: 'directory',
+                name: 'Entities',
+                children: [
+                  { type: 'file', name: `${name}.ts`, content: this.generateEntity(name) },
+                ],
+              },
+              {
+                type: 'directory',
+                name: 'Contracts',
+                children: [
+                  {
+                    type: 'file',
+                    name: `I${name}Repository.ts`,
+                    content: this.generateRepositoryInterface(name),
+                  },
+                ],
+              },
+              { type: 'directory', name: 'ValueObjects', children: [] },
+              { type: 'directory', name: 'Events', children: [] },
+            ],
+          },
+          // Application Layer
+          {
+            type: 'directory',
+            name: 'Application',
+            children: [
+              {
+                type: 'directory',
+                name: 'UseCases',
+                children: [
+                  {
+                    type: 'file',
+                    name: `Create${name}.ts`,
+                    content: this.generateUseCase(name),
+                  },
+                ],
+              },
+              { type: 'directory', name: 'DTOs', children: [] },
+            ],
+          },
+          // Infrastructure Layer
+          {
+            type: 'directory',
+            name: 'Infrastructure',
+            children: [
+              {
+                type: 'directory',
+                name: 'Persistence',
+                children: [
+                  {
+                    type: 'file',
+                    name: `Atlas${name}Repository.ts`,
+                    content: this.generateAtlasRepository(name),
+                  },
+                  { type: 'directory', name: 'Migrations', children: [] },
+                ],
+              },
+            ],
+          },
+          // Entry Point
+          { type: 'file', name: 'index.ts', content: this.generateEntryPoint(name) },
+          {
+            type: 'file',
+            name: 'env.d.ts',
+            content: 'interface ImportMeta {\n  readonly dir: string\n  readonly path: string\n}\n',
+          },
+          { type: 'file', name: 'manifest.json', content: this.generateManifest(context) },
+        ],
+      },
+      {
+        type: 'directory',
+        name: 'tests',
+        children: [
+          {
+            type: 'file',
+            name: 'unit.test.ts',
+            content: `import { describe, it, expect } from "bun:test";\n\ndescribe("${name}", () => {\n  it("should work", () => {\n    expect(true).toBe(true);\n  });\n});`,
+          },
+        ],
+      },
+    ]
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Domain Templates
+  // ─────────────────────────────────────────────────────────────
+
+  private generateEntity(name: string): string {
+    return `import { Entity } from '@gravito/enterprise'\n\nexport interface ${name}Props {\n  name: string\n  createdAt: Date\n}\n\nexport class ${name} extends Entity<string> {\n  constructor(id: string, private props: ${name}Props) {\n    super(id)\n  }\n\n  static create(id: string, name: string): ${name} {\n    return new ${name}(id, {\n      name,\n      createdAt: new Date()\n    })\n  }\n\n  get name() { return this.props.name }\n}\n`
+  }
+
+  private generateRepositoryInterface(name: string): string {
+    return `import { Repository } from '@gravito/enterprise'\nimport { ${name} } from '../Entities/${name}'\n\nexport interface I${name}Repository extends Repository<${name}, string> {\n  // Add custom methods here\n}\n`
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Application Templates
+  // ─────────────────────────────────────────────────────────────
+
+  private generateUseCase(name: string): string {
+    return `import { UseCase } from '@gravito/enterprise'\nimport { I${name}Repository } from '../../Domain/Contracts/I${name}Repository'\nimport { ${name} } from '../../Domain/Entities/${name}'\n\nexport interface Create${name}Input {\n  name: string\n}\n\nexport class Create${name} extends UseCase<Create${name}Input, string> {\n  constructor(private repository: I${name}Repository) {\n    super()\n  }\n\n  async execute(input: Create${name}Input): Promise<string> {\n    const id = crypto.randomUUID()\n    const entity = ${name}.create(id, input.name)\n    \n    await this.repository.save(entity)\n    \n    return id\n  }\n}\n`
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Infrastructure Templates (Dogfooding Atlas)
+  // ─────────────────────────────────────────────────────────────
+
+  private generateAtlasRepository(name: string): string {
+    return `import { I${name}Repository } from '../../Domain/Contracts/I${name}Repository'\nimport { ${name} } from '../../Domain/Entities/${name}'\nimport { DB } from '@gravito/atlas'\n\nexport class Atlas${name}Repository implements I${name}Repository {\n  async save(entity: ${name}): Promise<void> {\n    // Dogfooding: Use @gravito/atlas for persistence\n    console.log('[Atlas] Saving entity:', entity.id)\n    // await DB.table('${name.toLowerCase()}s').insert({ ... })\n  }\n\n  async findById(id: string): Promise<${name} | null> {\n    return null\n  }\n\n  async findAll(): Promise<${name}[]> {\n    return []\n  }\n\n  async delete(id: string): Promise<void> {}\n\n  async exists(id: string): Promise<boolean> {\n    return false\n  }\n}\n`
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Entry Point & Manifest
+  // ─────────────────────────────────────────────────────────────
+
+  private generateEntryPoint(name: string): string {
+    return `import { ServiceProvider, type Container } from '@gravito/core'\nimport { Atlas${name}Repository } from './Infrastructure/Persistence/Atlas${name}Repository'\n\nexport class ${name}ServiceProvider extends ServiceProvider {\n  register(container: Container): void {\n    // Bind Repository\n    container.singleton('${name.toLowerCase()}.repo', () => new Atlas${name}Repository())\n    \n    // Bind UseCases\n    container.singleton('${name.toLowerCase()}.create', () => {\n        return new (require('./Application/UseCases/Create${name}').Create${name})(\n            container.make('${name.toLowerCase()}.repo')\n        )\n    })\n  }\n\n  boot(): void {\n    this.core?.logger.info('🛰️ Satellite ${name} is operational')\n  }\n}\n`
+  }
+
+  private generateManifest(context: GeneratorContext): string {
+    return JSON.stringify(
+      {
+        name: context.name,
+        id: context.nameKebabCase,
+        version: '0.1.0',
+        description: context.description || 'A Gravito Satellite',
+        capabilities: [`create-${context.nameKebabCase}`],
+        requirements: [
+          'cache', // Example requirement
+        ],
+        hooks: [`${context.nameKebabCase}:created`],
+      },
+      null,
+      2
+    )
+  }
+
+  protected override generatePackageJson(context: GeneratorContext): string {
+    const isInternal = context.isInternal || false
+
+    // 官方插件使用 workspace 依賴，外部插件使用 npm 版本
+    const depVersion = isInternal ? 'workspace:*' : '^1.0.0-beta.1'
+
+    const pkg = {
+      name: isInternal
+        ? `@gravito/satellite-${context.nameKebabCase}`
+        : `gravito-satellite-${context.nameKebabCase}`,
+      version: '0.1.0',
+      type: 'module',
+      main: 'dist/index.js',
+      module: 'dist/index.mjs',
+      types: 'dist/index.d.ts',
+      scripts: {
+        build: 'tsup src/index.ts --format cjs,esm --dts',
+        test: 'bun test',
+        typecheck: 'tsc --noEmit',
+        check: 'bun run typecheck && bun run test',
+        validate: 'bun run check',
+      },
+      dependencies: {
+        '@gravito/core': depVersion,
+        '@gravito/enterprise': depVersion,
+        '@gravito/atlas': depVersion,
+        '@gravito/stasis': depVersion,
+      },
+      devDependencies: {
+        tsup: '^8.0.0',
+        typescript: '^5.0.0',
+      },
+    }
+
+    return JSON.stringify(pkg, null, 2)
+  }
+
+  protected generateArchitectureDoc(context: GeneratorContext): string {
+    return `# ${context.name} Satellite Architecture
+
+This satellite follows the Gravito Satellite Specification v1.0.
+
+## Design
+- **DDD**: Domain logic is separated from framework concerns.
+- **Dogfooding**: Uses official Gravito modules (@gravito/atlas, @gravito/stasis).
+- **Decoupled**: Inter-satellite communication happens via Contracts and Events.
+
+## Layers
+- **Domain**: Pure business rules.
+- **Application**: Orchestration of domain tasks.
+- **Infrastructure**: Implementation of persistence and external services.
+- **Interface**: HTTP and Event entry points.
+`
+  }
+}

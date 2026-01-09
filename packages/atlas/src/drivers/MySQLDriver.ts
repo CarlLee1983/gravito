@@ -3,6 +3,13 @@
  * @description Database driver for MySQL and MariaDB using mysql2 package
  */
 
+import type {
+  FieldPacket,
+  Pool,
+  PoolConnection,
+  PoolOptions,
+  ResultSetHeader,
+} from 'mysql2/promise'
 import {
   ConnectionError,
   DatabaseError,
@@ -24,10 +31,10 @@ import type {
  * Implements connection pooling and query execution for MySQL/MariaDB
  */
 export class MySQLDriver implements DriverContract {
-  private pool: MySQLPool | null = null
-  private transactionConnection: MySQLConnection | null = null
+  private pool: Pool | null = null
+  private transactionConnection: PoolConnection | null = null
   private connected = false
-  private mysql: MySQLModule | null = null
+  private mysql: any | null = null
 
   constructor(
     private readonly config: ConnectionConfig,
@@ -53,7 +60,7 @@ export class MySQLDriver implements DriverContract {
       this.mysql = await this.loadMySQLModule()
       const myConfig = this.config as any
 
-      const poolConfig: MySQLPoolConfig = {
+      const poolConfig: PoolOptions = {
         host: myConfig.host ?? 'localhost',
         port: myConfig.port ?? 3306,
         database: myConfig.database,
@@ -90,10 +97,10 @@ export class MySQLDriver implements DriverContract {
   /**
    * Dynamically load mysql2 module
    */
-  private async loadMySQLModule(): Promise<MySQLModule> {
+  private async loadMySQLModule(): Promise<any> {
     try {
       const mysql2 = await import('mysql2/promise')
-      return mysql2 as unknown as MySQLModule
+      return mysql2
     } catch (e) {
       throw new Error(
         `MySQL driver requires the "mysql2" package. Please install it: bun add mysql2. Original Error: ${e}`
@@ -155,7 +162,7 @@ export class MySQLDriver implements DriverContract {
       }
 
       const rows = Array.isArray(result) ? (result as T[]) : []
-      const fieldInfo = fields?.map((f: MySQLFieldInfo) => ({
+      const fieldInfo = fields?.map((f: FieldPacket) => ({
         name: f.name,
         dataType: f.type?.toString(),
         tableId: undefined,
@@ -190,7 +197,7 @@ export class MySQLDriver implements DriverContract {
 
     try {
       const [result] = await connection.execute(sql, params)
-      const resultInfo = result as MySQLResultSetHeader
+      const resultInfo = result as ResultSetHeader
 
       return {
         affectedRows: resultInfo.affectedRows ?? 0,
@@ -256,7 +263,7 @@ export class MySQLDriver implements DriverContract {
   /**
    * Get a connection from the pool
    */
-  private async getConnection(): Promise<MySQLConnection> {
+  private async getConnection(): Promise<PoolConnection> {
     if (!this.pool) {
       await this.connect()
     }
@@ -289,57 +296,4 @@ export class MySQLDriver implements DriverContract {
 
     return new DatabaseError(error.message, error, sql, bindings)
   }
-}
-
-// ============================================================================
-// Internal Types for mysql2 module
-// ============================================================================
-
-interface MySQLModule {
-  createPool(config: MySQLPoolConfig): MySQLPool
-}
-
-interface MySQLPoolConfig {
-  host?: string | undefined
-  port?: number | undefined
-  database?: string | undefined
-  user?: string | undefined
-  password?: string | undefined
-  charset?: string | undefined
-  timezone?: string | undefined
-  connectionLimit?: number | undefined
-  waitForConnections?: boolean | undefined
-  queueLimit?: number | undefined
-  ssl?: MySQLSSLConfig | undefined
-}
-
-interface MySQLSSLConfig {
-  rejectUnauthorized?: boolean | undefined
-  ca?: string | undefined
-  key?: string | undefined
-  cert?: string | undefined
-}
-
-interface MySQLPool {
-  getConnection(): Promise<MySQLConnection>
-  end(): Promise<void>
-}
-
-interface MySQLConnection {
-  execute(sql: string, bindings?: unknown[]): Promise<[unknown, MySQLFieldInfo[] | undefined]>
-  beginTransaction(): Promise<void>
-  commit(): Promise<void>
-  rollback(): Promise<void>
-  release(): void
-}
-
-interface MySQLFieldInfo {
-  name: string
-  type?: number | undefined
-}
-
-interface MySQLResultSetHeader {
-  affectedRows?: number | undefined
-  insertId?: number | bigint | undefined
-  changedRows?: number | undefined
 }

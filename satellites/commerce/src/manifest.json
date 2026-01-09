@@ -1,0 +1,12 @@
+{
+  "id": "satellite-commerce",
+  "name": "Commerce Engine",
+  "version": "0.1.0",
+  "description": "High-performance transaction & order engine with Turbo support.",
+  "author": "Gravito Team",
+  "type": "satellite",
+  "hooks": {
+    "actions": ["commerce:order-placed", "rewards:assigned"],
+    "filters": ["commerce:order:adjustments"]
+  }
+}

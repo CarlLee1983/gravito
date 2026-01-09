@@ -14,12 +14,13 @@ import {
   Box,
   Check,
   Code,
+  Database,
   Github,
-  Image as ImageIcon,
-  Languages,
   Layout as LayoutIcon,
   type LucideIcon,
   Rocket,
+  Server,
+  Shield,
   ShieldAlert,
   Terminal,
   Zap,
@@ -230,56 +231,94 @@ const GravitoLanding = ({ t, locale }: HomeProps) => {
             <p className="text-gray-400 text-lg max-w-2xl mx-auto">{t.features.sectionDesc}</p>
           </motion.div>
 
-          {/* Feature Cards Grid - 6 Modules matrix (1.0 Focus) */}
-          {/* Feature Cards Grid - 1.0 Release Modules (6 Core Modules) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-20">
-            <FeatureCard3D
-              icon={Box}
-              title={t.features.kernel_title}
-              subtitle={t.features.kernel_subtitle}
-              description={t.features.kernel_desc}
-              delay={0}
-            />
-
-            <FeatureCard3D
-              icon={LayoutIcon}
-              title={t.features.inertia_title}
-              subtitle={t.features.inertia_subtitle}
-              description={t.features.inertia_desc}
-              delay={0.1}
-            />
-
-            <FeatureCard3D
-              icon={Code}
-              title={t.features.cli_title}
-              subtitle={t.features.cli_subtitle}
-              description={t.features.cli_desc}
-              delay={0.2}
-            />
-
-            <FeatureCard3D
-              icon={Zap}
-              title={t.features.seo_title}
-              subtitle={t.features.seo_subtitle}
-              description={t.features.seo_desc}
-              delay={0.3}
-            />
-
-            <FeatureCard3D
-              icon={ImageIcon} // Optimized Image icon
-              title={t.features.image_title}
-              subtitle={t.features.image_subtitle}
-              description={t.features.image_desc}
-              delay={0.4}
-            />
-
-            <FeatureCard3D
-              icon={Languages} // I18n Global icon
-              title={t.features.i18n_title}
-              subtitle={t.features.i18n_subtitle}
-              description={t.features.i18n_desc}
-              delay={0.5}
-            />
+          {/* Feature Cards Grid - Grouped Modules */}
+          <div className="space-y-16 mb-20">
+            {[
+              {
+                title: t.features.group_core,
+                items: [
+                  {
+                    icon: Box,
+                    title: t.features.kernel_title,
+                    subtitle: t.features.kernel_subtitle,
+                    description: t.features.kernel_desc,
+                  },
+                  {
+                    icon: LayoutIcon,
+                    title: t.features.inertia_title,
+                    subtitle: t.features.inertia_subtitle,
+                    description: t.features.inertia_desc,
+                  },
+                  {
+                    icon: Code,
+                    title: t.features.cli_title,
+                    subtitle: t.features.cli_subtitle,
+                    description: t.features.cli_desc,
+                  },
+                ],
+              },
+              {
+                title: t.features.group_data,
+                items: [
+                  {
+                    icon: Database,
+                    title: t.features.atlas_title,
+                    subtitle: t.features.atlas_subtitle,
+                    description: t.features.atlas_desc,
+                  },
+                  {
+                    icon: Zap,
+                    title: t.features.seo_title,
+                    subtitle: t.features.seo_subtitle,
+                    description: t.features.seo_desc,
+                  },
+                ],
+              },
+              {
+                title: t.features.group_ops,
+                items: [
+                  {
+                    icon: Activity,
+                    title: t.features.monitor_title,
+                    subtitle: t.features.monitor_subtitle,
+                    description: t.features.monitor_desc,
+                  },
+                  {
+                    icon: Server,
+                    title: t.features.stream_title,
+                    subtitle: t.features.stream_subtitle,
+                    description: t.features.stream_desc,
+                  },
+                  {
+                    icon: Shield,
+                    title: t.features.stasis_title,
+                    subtitle: t.features.stasis_subtitle,
+                    description: t.features.stasis_desc,
+                  },
+                ],
+              },
+            ].map((group, groupIndex) => (
+              <div key={group.title}>
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-[1px] bg-gradient-to-r from-singularity to-transparent" />
+                  <h3 className="text-sm font-mono uppercase tracking-[0.3em] text-singularity/70">
+                    {group.title}
+                  </h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {group.items.map((item, index) => (
+                    <FeatureCard3D
+                      key={item.title}
+                      icon={item.icon}
+                      title={item.title}
+                      subtitle={item.subtitle}
+                      description={item.description}
+                      delay={groupIndex * 0.2 + index * 0.1}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
 
           {/* CTA Section */}

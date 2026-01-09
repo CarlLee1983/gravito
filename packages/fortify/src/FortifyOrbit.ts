@@ -1,4 +1,4 @@
-import type { GravitoOrbit, PlanetCore } from 'gravito-core'
+import type { GravitoOrbit, PlanetCore } from '@gravito/core'
 import { defaultFortifyConfig, type FortifyConfig } from './config'
 import { registerAuthRoutes } from './routes/auth'
 

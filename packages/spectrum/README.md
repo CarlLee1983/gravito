@@ -27,7 +27,7 @@ bun add @gravito/spectrum
 Simply register the `SpectrumOrbit` in your application entry point:
 
 ```typescript
-import { PlanetCore } from 'gravito-core'
+import { PlanetCore } from '@gravito/core'
 import { SpectrumOrbit } from '@gravito/spectrum'
 
 const core = new PlanetCore()

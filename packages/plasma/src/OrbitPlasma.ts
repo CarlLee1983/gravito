@@ -3,7 +3,7 @@
  * @description Integrates Redis client with PlanetCore
  */
 
-import type { GravitoOrbit, PlanetCore } from 'gravito-core'
+import type { GravitoOrbit, PlanetCore } from '@gravito/core'
 import { Redis } from './Redis'
 import type { RedisClient } from './RedisClient'
 import type { RedisConfig, RedisManagerConfig } from './types'
@@ -96,7 +96,7 @@ export class OrbitPlasma implements GravitoOrbit {
     this.client = Redis.connection() as RedisClient
 
     // Connect lazily on first use (or immediately if autoConnect is true)
-    const autoConnect = (this.options as RedisManagerConfig & { autoConnect?: boolean }).autoConnect
+    const autoConnect = this.options.autoConnect
 
     if (autoConnect) {
       Redis.connect().catch((err) => {
@@ -158,7 +158,7 @@ export class OrbitPlasma implements GravitoOrbit {
 }
 
 // Module augmentation for GravitoVariables
-declare module 'gravito-core' {
+declare module '@gravito/core' {
   interface GravitoVariables {
     /** Redis client from OrbitPlasma */
     redis?: RedisClient

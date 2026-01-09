@@ -76,11 +76,13 @@ export class DatabaseDriver implements QueueDriver {
       ? new Date(Date.now() + job.delaySeconds * 1000)
       : new Date()
 
-    // Use dbService.execute() to run raw SQL
+    // Save the WHOLE job as JSON in payload column for zero-loss metadata
+    const payload = JSON.stringify(job)
+
     await this.dbService.execute(
       `INSERT INTO ${this.tableName} (queue, payload, attempts, available_at, created_at)
        VALUES ($1, $2, $3, $4, $5)`,
-      [queue, job.data, job.attempts ?? 0, availableAt.toISOString(), new Date().toISOString()]
+      [queue, payload, job.attempts ?? 0, availableAt.toISOString(), new Date().toISOString()]
     )
   }
 
@@ -158,14 +160,35 @@ export class DatabaseDriver implements QueueDriver {
       ? Math.max(0, Math.floor((new Date(row.available_at).getTime() - createdAt) / 1000))
       : undefined
 
-    return {
-      id: row.id,
-      type: 'class', // Default; should be inferred from payload in a full implementation
-      data: row.payload,
-      createdAt,
-      attempts: row.attempts,
-      ...(delaySeconds !== undefined ? { delaySeconds } : {}),
+    // Parse payload and restore metadata
+    let job: SerializedJob
+    try {
+      const parsed = JSON.parse(row.payload)
+      if (parsed && typeof parsed === 'object' && parsed.type && parsed.data) {
+        job = {
+          ...parsed,
+          id: row.id, // DB ID is the source of truth for deletion
+          attempts: row.attempts,
+        }
+      } else {
+        throw new Error('Fallback')
+      }
+    } catch (_e) {
+      // Fallback for old format
+      job = {
+        id: row.id,
+        type: 'class',
+        data: row.payload,
+        createdAt,
+        attempts: row.attempts,
+      }
     }
+
+    if (delaySeconds !== undefined) {
+      job.delaySeconds = delaySeconds
+    }
+
+    return job
   }
 
   /**
@@ -213,5 +236,29 @@ export class DatabaseDriver implements QueueDriver {
         )
       }
     })
+  }
+
+  /**
+   * Mark a job as failed (DLQ).
+   */
+  async fail(queue: string, job: SerializedJob): Promise<void> {
+    const failedQueue = `failed:${queue}`
+    const payload = JSON.stringify(job)
+
+    await this.dbService.execute(
+      `INSERT INTO ${this.tableName} (queue, payload, attempts, available_at, created_at)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [failedQueue, payload, job.attempts, new Date().toISOString(), new Date().toISOString()]
+    )
+  }
+
+  /**
+   * Acknowledge/Complete a job.
+   */
+  async complete(_queue: string, job: SerializedJob): Promise<void> {
+    if (!job.id) {
+      return
+    }
+    await this.dbService.execute(`DELETE FROM ${this.tableName} WHERE id = $1`, [job.id])
   }
 }

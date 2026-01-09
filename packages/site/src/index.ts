@@ -1,11 +1,11 @@
-import { I18nOrbit, localeMiddleware } from '@gravito/cosmos'
+import { bodySizeLimit, type GravitoConfig, PlanetCore, securityHeaders } from '@gravito/core'
+import { I18nOrbit } from '@gravito/cosmos'
 import { OrbitMonolith } from '@gravito/monolith'
-import { type GravitoConfig, PlanetCore } from 'gravito-core'
 
 // Load Translations (Mock for now)
 const translations = {
-  en: { 'hero.title': 'Gravito Framework', 'nav.switch': '中文' },
-  zh: { 'hero.title': 'Gravito 框架', 'nav.switch': 'English' },
+  en: { hero: { title: 'Gravito Framework' }, nav: { switch: '中文' } },
+  zh: { hero: { title: 'Gravito 框架' }, nav: { switch: 'English' } },
 }
 
 // Dynamic Content Path Logic (Dev vs Docker vs Root)
@@ -30,17 +30,53 @@ const config: GravitoConfig = {
 
 export const app = await PlanetCore.boot(config)
 
-// SEO & I18n Routing
-app.router
-  .prefix('/:locale')
-  .middleware(localeMiddleware)
-  .group((router) => {
-    // Landing Page
-    router.get('/', async (c) => {
-      const i18n = c.get('i18n')
-      const lang = i18n.locale
+const defaultCsp = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com",
+  "connect-src 'self' https://www.googletagmanager.com https://www.google-analytics.com",
+  "img-src 'self' https: data:",
+  "style-src 'self' 'unsafe-inline'",
+  "base-uri 'self'",
+  "frame-ancestors 'none'",
+].join('; ')
+const cspValue = process.env.APP_CSP
+const csp = cspValue === 'false' ? false : (cspValue ?? defaultCsp)
+const hstsMaxAge = Number.parseInt(process.env.APP_HSTS_MAX_AGE ?? '15552000', 10)
+const bodyLimit = Number.parseInt(process.env.APP_BODY_LIMIT ?? '1048576', 10)
+const requireLength = process.env.APP_BODY_REQUIRE_LENGTH === 'true'
 
-      return c.html(`
+app.adapter.use(
+  '*',
+  securityHeaders({
+    contentSecurityPolicy: csp,
+    hsts:
+      process.env.NODE_ENV === 'production'
+        ? { maxAge: Number.isNaN(hstsMaxAge) ? 15552000 : hstsMaxAge, includeSubDomains: true }
+        : false,
+  })
+)
+if (!Number.isNaN(bodyLimit) && bodyLimit > 0) {
+  app.adapter.use('*', bodySizeLimit(bodyLimit, { requireContentLength: requireLength }))
+}
+
+const escapeHtml = (value: string): string =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+
+// SEO & I18n Routing
+app.router.prefix('/:locale').group((router) => {
+  // Landing Page
+  router.get('/', async (c) => {
+    const i18n = c.get('i18n') as any
+    const lang = i18n.locale
+    const heroTitle = escapeHtml(String(i18n.t('hero.title')))
+    const switchLabel = escapeHtml(String(i18n.t('nav.switch')))
+
+    return c.html(`
             <!DOCTYPE html>
             <html lang="${lang}">
             <head>
@@ -48,35 +84,38 @@ app.router
                 <meta name="description" content="The future of web development.">
             </head>
             <body>
-                <h1>${i18n.t('hero.title')}</h1>
+                <h1>${heroTitle}</h1>
                 <nav>
                     <a href="/${lang}/docs/intro">Documentation</a> | 
-                    <a href="/${lang === 'en' ? 'zh' : 'en'}">${i18n.t('nav.switch')}</a>
+                    <a href="/${lang === 'en' ? 'zh' : 'en'}">${switchLabel}</a>
                 </nav>
             </body>
             </html>
         `)
-    })
+  })
 
-    // Docs Page with Full SEO
-    router.get('/docs/:slug', async (c) => {
-      const content = c.get('content')
-      const i18n = c.get('i18n')
-      const slug = c.req.param('slug')
-      const locale = i18n.locale
+  // Docs Page with Full SEO
+  router.get('/docs/:slug', async (c) => {
+    const content = c.get('content') as any
+    const i18n = c.get('i18n') as any
+    const slug = c.req.param('slug')
+    const locale = i18n.locale
 
-      const doc = await content.find('docs', slug, locale)
+    const doc = await content.find('docs', slug, locale)
 
-      if (!doc) {
-        return c.text('Not Found', 404)
-      }
+    if (!doc) {
+      return c.text('Not Found', 404)
+    }
 
-      const gaId = process.env.GA_MEASUREMENT_ID || 'G-XXXXXXXXXX'
-      const baseUrl = 'https://gravito.dev'
-      const url = `${baseUrl}/${locale}/docs/${slug}`
-      const imageUrl = `${baseUrl}/og-image.jpg` // Placeholder
+    const gaId = process.env.GA_MEASUREMENT_ID || 'G-XXXXXXXXXX'
+    const baseUrl = 'https://gravito.dev'
+    const safeSlug = encodeURIComponent(String(slug))
+    const url = `${baseUrl}/${locale}/docs/${safeSlug}`
+    const imageUrl = `${baseUrl}/og-image.jpg` // Placeholder
+    const title = escapeHtml(String(doc.meta.title ?? 'Gravito'))
+    const description = escapeHtml(String(doc.meta.description ?? ''))
 
-      return c.html(`
+    return c.html(`
             <!DOCTYPE html>
             <html lang="${locale}">
             <head>
@@ -84,16 +123,16 @@ app.router
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 
                 <!-- Primary Meta Tags -->
-                <title>${doc.meta.title} | Gravito</title>
-                <meta name="title" content="${doc.meta.title} | Gravito">
-                <meta name="description" content="${doc.meta.description}">
+                <title>${title} | Gravito</title>
+                <meta name="title" content="${title} | Gravito">
+                <meta name="description" content="${description}">
                 <link rel="canonical" href="${url}">
 
                 <!-- Open Graph / Facebook -->
                 <meta property="og:type" content="article">
                 <meta property="og:url" content="${url}">
-                <meta property="og:title" content="${doc.meta.title} | Gravito">
-                <meta property="og:description" content="${doc.meta.description}">
+                <meta property="og:title" content="${title} | Gravito">
+                <meta property="og:description" content="${description}">
                 <meta property="og:image" content="${imageUrl}">
                 <meta property="og:site_name" content="Gravito">
                 <meta property="og:locale" content="${locale === 'en' ? 'en_US' : 'zh_TW'}">
@@ -101,8 +140,8 @@ app.router
                 <!-- Twitter -->
                 <meta property="twitter:card" content="summary_large_image">
                 <meta property="twitter:url" content="${url}">
-                <meta property="twitter:title" content="${doc.meta.title} | Gravito">
-                <meta property="twitter:description" content="${doc.meta.description}">
+                <meta property="twitter:title" content="${title} | Gravito">
+                <meta property="twitter:description" content="${description}">
                 <meta property="twitter:image" content="${imageUrl}">
 
                 <!-- Google Analytics -->
@@ -126,14 +165,20 @@ app.router
             </body>
             </html>
         `)
-    })
   })
+})
+// Installer Scripts (Redirect to GitHub Raw or serve directly)
+const INSTALL_SCRIPT_URL =
+  'https://raw.githubusercontent.com/gravito-framework/quasar-go/main/scripts/install.sh'
+
+app.router.get('/quasar-go', (c) => c.redirect(INSTALL_SCRIPT_URL))
+app.router.get('/quasar', (c) => c.redirect(INSTALL_SCRIPT_URL)) // Backward compatibility
 
 // Root redirect
-app.app.get('/', (c) => c.redirect('/en'))
+app.router.get('/', (c) => c.redirect('/en'))
 
 // Liveness Probe
-app.app.get('/health', (c) => c.text('OK'))
+app.router.get('/health', (c) => c.text('OK'))
 
 // Conditional Start (Only if run directly via bun run)
 if (import.meta.main) {
@@ -143,5 +188,5 @@ if (import.meta.main) {
 // Default export for testing or library usage
 export default {
   port: 3000,
-  fetch: app.app.fetch,
+  fetch: app.adapter.fetch.bind(app.adapter),
 }

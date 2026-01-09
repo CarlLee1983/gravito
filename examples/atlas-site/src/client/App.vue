@@ -3,7 +3,7 @@
   <div class="min-h-screen bg-atlas-void bg-grid-pattern relative overflow-hidden flex flex-col">
     <!-- Background Image Layer -->
     <div class="absolute inset-0 z-0 select-none pointer-events-none">
-        <img src="/hero-bg.png" class="w-full h-full object-cover opacity-60 mix-blend-lighten filter contrast-125 saturate-150" alt="Cosmic Background" />
+        <img :src="`${assetBase}hero-bg.png`" class="w-full h-full object-cover opacity-60 mix-blend-lighten filter contrast-125 saturate-150" alt="Cosmic Background" />
         <div class="absolute inset-0 bg-gradient-to-t from-atlas-void via-atlas-void/50 to-transparent"></div>
         <div class="absolute inset-0 bg-gradient-to-r from-atlas-void via-transparent to-transparent"></div>
     </div>
@@ -43,7 +43,7 @@
             <StaticLink v-if="link.external" :href="link.path" target="_blank" class="hover:text-atlas-cyan transition-colors">{{ t(link.name) }}</StaticLink>
             <StaticLink v-else :to="link.path" class="hover:text-atlas-cyan transition-colors" active-class="text-atlas-cyan">{{ t(link.name) }}</StaticLink>
         </template>
-        <StaticLink href="https://gravito.dev/docs" target="_blank" class="hover:text-atlas-cyan transition-colors">{{ t('nav.docs') }}</StaticLink>
+        <StaticLink href="https://gravito.dev/en/docs/guide/orm-usage" target="_blank" class="hover:text-atlas-cyan transition-colors">{{ t('nav.docs') }}</StaticLink>
       </div>
       <div class="flex items-center gap-6">
           <button @click="toggleLang" class="text-gray-400 hover:text-white font-mono text-xs border border-white/20 px-3 py-1 rounded transition-colors uppercase">
@@ -282,6 +282,7 @@ import Footer from './components/Footer.vue'
 import StaticLink from './components/StaticLink.vue'
 
 const { t, locale } = useI18n()
+const assetBase = import.meta.env.BASE_URL
 
 const navLinks: { name: string, path: string, external?: boolean }[] = [
   { name: 'nav.home', path: '/' },

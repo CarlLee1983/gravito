@@ -5,7 +5,7 @@ import type { Queueable } from './Queueable'
 import { ClassNameSerializer } from './serializers/ClassNameSerializer'
 import type { JobSerializer } from './serializers/JobSerializer'
 import { JsonSerializer } from './serializers/JsonSerializer'
-import type { QueueConfig, SerializedJob } from './types'
+import type { JobPushOptions, QueueConfig, SerializedJob } from './types'
 
 /**
  * Queue Manager
@@ -31,8 +31,11 @@ export class QueueManager {
   private serializers = new Map<string, JobSerializer>()
   private defaultConnection: string
   private defaultSerializer: JobSerializer
+  private persistence?: QueueConfig['persistence']
+  private scheduler?: any // Using any to avoid circular dependency or import issues for now
 
   constructor(config: QueueConfig = {}) {
+    this.persistence = config.persistence
     this.defaultConnection = config.default ?? 'default'
 
     // Initialize default serializer
@@ -157,9 +160,32 @@ export class QueueManager {
         break
       }
 
+      case 'rabbitmq': {
+        // Lazy-load RabbitMQDriver
+        const { RabbitMQDriver } = require('./drivers/RabbitMQDriver')
+        const client = (config as { client?: unknown }).client
+        if (!client) {
+          throw new Error(
+            '[QueueManager] RabbitMQDriver requires client. Please provide RabbitMQ connection/channel in connection config.'
+          )
+        }
+        this.drivers.set(
+          name,
+          new RabbitMQDriver({
+            // biome-ignore lint/suspicious/noExplicitAny: Dynamic driver loading requires type assertion
+            client: client as any,
+            // biome-ignore lint/suspicious/noExplicitAny: Dynamic driver config type
+            exchange: (config as any).exchange,
+            // biome-ignore lint/suspicious/noExplicitAny: Dynamic driver config type
+            exchangeType: (config as any).exchangeType,
+          })
+        )
+        break
+      }
+
       default:
         throw new Error(
-          `Driver "${driverType}" is not supported. Supported drivers: memory, database, redis, kafka, sqs`
+          `Driver "${driverType}" is not supported. Supported drivers: memory, database, redis, kafka, sqs, rabbitmq`
         )
     }
   }
@@ -175,6 +201,14 @@ export class QueueManager {
       throw new Error(`Connection "${connection}" not found`)
     }
     return driver
+  }
+
+  /**
+   * Get the default connection name.
+   * @returns Default connection name
+   */
+  getDefaultConnection(): string {
+    return this.defaultConnection
   }
 
   /**
@@ -208,6 +242,7 @@ export class QueueManager {
    *
    * @template T - The type of the job.
    * @param job - Job instance to push.
+   * @param options - Push options.
    * @returns The same job instance (for fluent chaining).
    *
    * @example
@@ -215,7 +250,7 @@ export class QueueManager {
    * await manager.push(new SendEmailJob('user@example.com'));
    * ```
    */
-  async push<T extends Job & Queueable>(job: T): Promise<T> {
+  async push<T extends Job & Queueable>(job: T, options?: JobPushOptions): Promise<T> {
     const connection = job.connectionName ?? this.defaultConnection
     const queue = job.queueName ?? 'default'
     const driver = this.getDriver(connection)
@@ -225,7 +260,18 @@ export class QueueManager {
     const serialized = serializer.serialize(job)
 
     // Push to queue
-    await driver.push(queue, serialized)
+    const pushOptions = { ...options }
+    if (job.priority) {
+      pushOptions.priority = job.priority
+    }
+    await driver.push(queue, serialized, pushOptions)
+
+    // Auto-archive (Audit Mode) - Fire and forget
+    if (this.persistence?.archiveEnqueued) {
+      this.persistence.adapter.archive(queue, serialized, 'waiting').catch((err) => {
+        console.error('[QueueManager] Persistence archive failed (waiting):', err)
+      })
+    }
 
     return job
   }
@@ -333,5 +379,113 @@ export class QueueManager {
   async clear(queue = 'default', connection: string = this.defaultConnection): Promise<void> {
     const driver = this.getDriver(connection)
     await driver.clear(queue)
+  }
+
+  /**
+   * Mark a job as completed.
+   * @param job - Job instance
+   */
+  async complete<T extends Job & Queueable>(job: T): Promise<void> {
+    const connection = job.connectionName ?? this.defaultConnection
+    const queue = job.queueName ?? 'default'
+    const driver = this.getDriver(connection)
+    const serializer = this.getSerializer()
+
+    if (driver.complete) {
+      const serialized = serializer.serialize(job)
+      await driver.complete(queue, serialized)
+
+      // Auto-archive
+      if (this.persistence?.archiveCompleted) {
+        await this.persistence.adapter.archive(queue, serialized, 'completed').catch((err) => {
+          console.error('[QueueManager] Persistence archive failed (completed):', err)
+        })
+      }
+    }
+  }
+
+  /**
+   * Mark a job as permanently failed.
+   * @param job - Job instance
+   * @param error - Error object
+   */
+  async fail<T extends Job & Queueable>(job: T, error: Error): Promise<void> {
+    const connection = job.connectionName ?? this.defaultConnection
+    const queue = job.queueName ?? 'default'
+    const driver = this.getDriver(connection)
+    const serializer = this.getSerializer()
+
+    if (driver.fail) {
+      const serialized = serializer.serialize(job)
+      serialized.error = error.message
+      serialized.failedAt = Date.now()
+      await driver.fail(queue, serialized)
+
+      // Auto-archive
+      if (this.persistence?.archiveFailed) {
+        await this.persistence.adapter.archive(queue, serialized, 'failed').catch((err) => {
+          console.error('[QueueManager] Persistence archive failed (failed):', err)
+        })
+      }
+    }
+  }
+
+  /**
+   * Get the persistence adapter if configured.
+   */
+  getPersistence(): any {
+    return this.persistence?.adapter
+  }
+
+  /**
+   * Get the scheduler if configured.
+   */
+  getScheduler(): any {
+    if (!this.scheduler) {
+      const { Scheduler } = require('./Scheduler')
+      this.scheduler = new Scheduler(this)
+    }
+    return this.scheduler
+  }
+
+  /**
+   * Get failed jobs from DLQ (if driver supports it).
+   */
+  async getFailed(
+    queue: string,
+    start = 0,
+    end = -1,
+    connection: string = this.defaultConnection
+  ): Promise<SerializedJob[]> {
+    const driver = this.getDriver(connection)
+    if (driver.getFailed) {
+      return driver.getFailed(queue, start, end)
+    }
+    return []
+  }
+
+  /**
+   * Retry failed jobs from DLQ (if driver supports it).
+   */
+  async retryFailed(
+    queue: string,
+    count = 1,
+    connection: string = this.defaultConnection
+  ): Promise<number> {
+    const driver = this.getDriver(connection)
+    if (driver.retryFailed) {
+      return driver.retryFailed(queue, count)
+    }
+    return 0
+  }
+
+  /**
+   * Clear failed jobs from DLQ (if driver supports it).
+   */
+  async clearFailed(queue: string, connection: string = this.defaultConnection): Promise<void> {
+    const driver = this.getDriver(connection)
+    if (driver.clearFailed) {
+      await driver.clearFailed(queue)
+    }
   }
 }

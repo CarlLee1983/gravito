@@ -7,10 +7,10 @@
     "start": "bun run src/index.ts"
   },
   "dependencies": {
-    "gravito-core": "^1.0.0-beta.1",
-    "@gravito/client": "^1.0.0-beta.1",
-    "@gravito/stasis": "^1.0.0-beta.1",
-    "@gravito/orbit-view": "^1.0.0-beta.1",
+    "@gravito/core": "workspace:*",
+    "@gravito/client": "workspace:*",
+    "@gravito/stasis": "workspace:*",
+    "@gravito/orbit-view": "workspace:*",
     "@gravito/photon": "workspace:*"
   },
   "devDependencies": {

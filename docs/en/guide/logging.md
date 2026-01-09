@@ -7,7 +7,7 @@ To help you learn more about what's happening within your application, Gravito p
 You may write information to the logs using `c.logger` (in controllers) or `core.logger` (in global services).
 
 ```typescript
-import { GravitoContext } from 'gravito-core';
+import { GravitoContext } from '@gravito/core';
 
 export class UserController {
   async show(c: GravitoContext) {

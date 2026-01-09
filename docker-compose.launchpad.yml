@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  launchpad-server:
+    build:
+      context: .
+      dockerfile: packages/launchpad/Dockerfile
+    container_name: gravito-launchpad-server
+    restart: always
+    environment:
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - GITHUB_WEBHOOK_SECRET=${GITHUB_WEBHOOK_SECRET}
+      - HOME=/root # 修正容器內部的 HOME 路徑
+    volumes:
+      # 關鍵：讓 Launchpad 控制宿主機的 Docker
+      - /var/run/docker.sock:/var/run/docker.sock
+      # 持久化快取
+      - launchpad-data:/usr/src/app/packages/launchpad/storage
+    ports:
+      - "4000:4000"
+      - "8080:8080"
+    networks:
+      - launchpad-net
+
+  launchpad-dashboard:
+    build:
+      context: .
+      dockerfile: packages/launchpad-dashboard/Dockerfile
+    container_name: gravito-launchpad-ui
+    restart: always
+    ports:
+      - "5173:80"
+    networks:
+      - launchpad-net
+
+networks:
+  launchpad-net:
+    driver: bridge
+
+volumes:
+  launchpad-data:

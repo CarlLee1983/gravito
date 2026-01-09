@@ -1,0 +1,15 @@
+{
+  "name": "logistics",
+  "id": "logistics",
+  "version": "0.1.0",
+  "description": "A Gravito Satellite",
+  "capabilities": [
+    "create-logistics"
+  ],
+  "requirements": [
+    "cache"
+  ],
+  "hooks": [
+    "logistics:created"
+  ]
+}

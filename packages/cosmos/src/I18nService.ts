@@ -1,11 +1,15 @@
 import type { MiddlewareHandler } from '@gravito/photon'
 
+export type TranslationMap = {
+  [key: string]: string | TranslationMap
+}
+
 export interface I18nConfig {
   defaultLocale: string
   supportedLocales: string[]
   // Path to translation files, or a Record of translations
   // If undefined, it will look into `resources/lang` by default (conceptually, handled by loader)
-  translations?: Record<string, Record<string, string>>
+  translations?: Record<string, TranslationMap>
 }
 
 export interface I18nService {
@@ -103,7 +107,7 @@ export class I18nInstance implements I18nService {
  * Holds shared configuration and translation resources
  */
 export class I18nManager implements I18nService {
-  private translations: Record<string, Record<string, string>> = {}
+  private translations: Record<string, TranslationMap> = {}
   // Default instance for global usage (e.g. CLI or background jobs)
   private globalInstance: I18nInstance
 
@@ -195,7 +199,7 @@ export class I18nManager implements I18nService {
    * @param locale - The locale string.
    * @param translations - The translations object.
    */
-  addResource(locale: string, translations: Record<string, string>) {
+  addResource(locale: string, translations: TranslationMap) {
     this.translations[locale] = {
       ...(this.translations[locale] || {}),
       ...translations,

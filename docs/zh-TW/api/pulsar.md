@@ -32,7 +32,7 @@ bun add @gravito/pulsar
 多機部署建議把 Session 存在共享快取（例如 Redis），並搭配 `@gravito/stasis`：
 
 ```ts
-import { PlanetCore, defineConfig } from 'gravito-core'
+import { PlanetCore, defineConfig } from '@gravito/core'
 import { OrbitCache } from '@gravito/stasis'
 import { OrbitPulsar } from '@gravito/pulsar'
 

@@ -1,10 +1,10 @@
-import { PlanetCore } from 'gravito-core'
-import type { Context } from '@gravito/photon'
+import { Controller } from '@gravito/monolith'
 
-export class {{ Name }}Controller {
-  constructor(private core: PlanetCore) {}
-
-  async index(c: Context) {
-    return c.json({ message: '{{ Name }} index' })
+export class {{ Name }}Controller extends Controller {
+  /**
+   * Display a listing of the resource.
+   */
+  async index() {
+    return this.json({ message: 'Hello from {{ Name }}' })
   }
 }

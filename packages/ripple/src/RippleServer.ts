@@ -48,7 +48,8 @@ export class RippleServer {
   private channels: ChannelManager
   private driver: RippleDriver
   private authorizer?: ChannelAuthorizer
-  private pingInterval?: Timer
+  private pingInterval?: ReturnType<typeof setInterval>
+  private eventListeners: Map<string, ((socket: RippleWebSocket, data: any) => void)[]> = new Map()
 
   readonly config: Required<Pick<RippleConfig, 'path' | 'authEndpoint' | 'pingInterval'>> &
     RippleConfig
@@ -64,6 +65,30 @@ export class RippleServer {
     this.channels = new ChannelManager()
     this.driver = config.driver === 'redis' ? new LocalDriver() : new LocalDriver() // TODO: RedisDriver
     this.authorizer = config.authorizer
+  }
+
+  /**
+   * Register an event listener for client messages.
+   *
+   * @param event - The event name to listen for.
+   * @param handler - The callback function.
+   */
+  on(event: string, handler: (socket: RippleWebSocket, data: any) => void): void {
+    if (!this.eventListeners.has(event)) {
+      this.eventListeners.set(event, [])
+    }
+    this.eventListeners.get(event)!.push(handler)
+  }
+
+  /**
+   * Fluent API for broadcasting to a channel.
+   *
+   * @param channel - The channel name.
+   */
+  to(channel: string) {
+    return {
+      emit: (event: string, data: unknown) => this.broadcast(channel, event, data),
+    }
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -258,6 +283,14 @@ export class RippleServer {
   }
 
   private handleWhisper(ws: RippleWebSocket, channel: string, event: string, data: unknown): void {
+    // Trigger server-side listeners
+    const listeners = this.eventListeners.get(event)
+    if (listeners && listeners.length > 0) {
+      listeners.forEach((handler) => {
+        handler(ws, data)
+      })
+    }
+
     // Whispers are client-to-client messages, excluding sender
     if (!this.channels.isSubscribed(ws.data.id, channel)) {
       this.send(ws, {

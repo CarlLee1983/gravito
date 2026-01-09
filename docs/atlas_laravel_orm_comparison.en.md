@@ -215,4 +215,4 @@ This document should be directly used to guide the development of a comprehensiv
 6.  **CLI Tool Testing:** Test all `orbit` commands to ensure they perform their intended actions (migrations, seeding, model generation) correctly and provide appropriate feedback.
 7.  **Documentation Cross-Referencing:** As tests are written and features are implemented, update the `atlas` documentation to reflect the available functionality, making it easy for developers to understand and use.
 
-By systematically addressing each point in this comparison document, `gravito-core` can ensure that its `atlas` module is a robust, feature-rich, and high-performance ORM that truly stands as a TypeScript equivalent to Laravel's Eloquent.
+By systematically addressing each point in this comparison document, `@gravito/core` can ensure that its `atlas` module is a robust, feature-rich, and high-performance ORM that truly stands as a TypeScript equivalent to Laravel's Eloquent.

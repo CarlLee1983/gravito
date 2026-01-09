@@ -8,7 +8,7 @@
  * @since 1.0.0
  */
 
-import type { GravitoContext, GravitoVariables, ViewService } from 'gravito-core'
+import type { GravitoContext, GravitoVariables, ViewService } from '@gravito/core'
 
 /**
  * Configuration options for InertiaService

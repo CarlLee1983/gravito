@@ -14,7 +14,7 @@ Gravito is a micro-kernel framework, and its power comes from the ecosystem. Thi
 
 | Term | Concept | Purpose | Example |
 |------|---------|---------|---------|
-| **PlanetCore** | Micro-kernel | Lifecycle, Hooks, Config | `gravito-core` |
+| **PlanetCore** | Micro-kernel | Lifecycle, Hooks, Config | `@gravito/core` |
 | **Gravito** | Infrastructure Module | Database, Auth, Storage | `@gravito/atlas` |
 | **Satellite** | Business Logic Plugin | Uses Gravito features | `user-plugin`, `blog-plugin` |
 
@@ -30,7 +30,7 @@ A Satellite is typically a function that receives the `core` instance:
 
 ```typescript
 // my-satellite.ts
-import { PlanetCore } from 'gravito-core'
+import { PlanetCore } from '@gravito/core'
 
 export default function mySatellite(core: PlanetCore) {
   // 1. Read config (optional)
@@ -54,7 +54,7 @@ Satellites often need access to database or authentication. These are provided b
 
 ```typescript
 // user-satellite.ts
-import { PlanetCore } from 'gravito-core'
+import { PlanetCore } from '@gravito/core'
 
 export default function userSatellite(core: PlanetCore) {
   router.post('/users', async (ctx) => {
@@ -86,7 +86,7 @@ Kinetic Modules are lower-level extensions that provide infrastructure services.
 ### The GravitoOrbit Interface
 
 ```typescript
-import type { GravitoOrbit, PlanetCore } from 'gravito-core'
+import type { GravitoOrbit, PlanetCore } from '@gravito/core'
 
 export interface GravitoOrbit {
   install(core: PlanetCore): void | Promise<void>
@@ -97,8 +97,8 @@ export interface GravitoOrbit {
 
 ```typescript
 // orbit-custom.ts
-import { PlanetCore, GravitoOrbit } from 'gravito-core'
-import type { GravitoContext as Context, Next } from 'gravito-core'
+import { PlanetCore, GravitoOrbit } from '@gravito/core'
+import type { GravitoContext as Context, Next } from '@gravito/core'
 
 export interface CustomGravitoConfig {
   apiKey: string
@@ -138,7 +138,7 @@ export function orbitCustom(core: PlanetCore, config: CustomGravitoConfig) {
 
 ```typescript
 // gravito.config.ts
-import { PlanetCore, defineConfig } from 'gravito-core'
+import { PlanetCore, defineConfig } from '@gravito/core'
 import { GravitoCustom } from './orbit-custom'
 
 const config = defineConfig({
@@ -183,7 +183,7 @@ Always provide TypeScript definitions. Extend Gravito's `Variables` interface fo
 // types.ts
 import { CustomService } from './custom-service'
 
-declare module 'gravito-core' {
+declare module '@gravito/core' {
   interface GravitoVariables {
     custom: CustomService
   }
@@ -195,7 +195,7 @@ declare module 'gravito-core' {
 ```typescript
 // orbit-custom.test.ts
 import { describe, it, expect } from 'bun:test'
-import { PlanetCore } from 'gravito-core'
+import { PlanetCore } from '@gravito/core'
 import { GravitoCustom } from './orbit-custom'
 
 describe('GravitoCustom', () => {
@@ -234,7 +234,7 @@ describe('GravitoCustom', () => {
      "main": "dist/index.js",
      "types": "dist/index.d.ts",
      "peerDependencies": {
-       "gravito-core": "^1.0.0"
+       "@gravito/core": "^1.0.0"
      }
    }
    ```

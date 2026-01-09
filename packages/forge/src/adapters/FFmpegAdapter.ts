@@ -2,17 +2,18 @@
  * @fileoverview FFmpeg adapter for video processing
  */
 
-import { spawn } from 'bun'
+import { getRuntimeAdapter } from '@gravito/core'
 import type { ProcessingProgress } from '../types'
 import type { AdapterOptions, ProcessorAdapter } from './ProcessorAdapter'
 
 /**
  * FFmpeg adapter
  *
- * Uses Bun.spawn to execute FFmpeg commands.
+ * Uses the runtime adapter to execute FFmpeg commands.
  */
 export class FFmpegAdapter implements ProcessorAdapter {
   private ffmpegPath: string
+  private runtime = getRuntimeAdapter()
 
   constructor(ffmpegPath = 'ffmpeg') {
     this.ffmpegPath = ffmpegPath
@@ -33,7 +34,7 @@ export class FFmpegAdapter implements ProcessorAdapter {
     }
 
     return new Promise((resolve, reject) => {
-      const process = spawn([this.ffmpegPath, ...args], {
+      const process = this.runtime.spawn([this.ffmpegPath, ...args], {
         stdout: 'pipe',
         stderr: 'pipe',
         env: options.env,
@@ -76,7 +77,7 @@ export class FFmpegAdapter implements ProcessorAdapter {
       // Set timeout
       const timeoutId = timeout
         ? setTimeout(() => {
-            process.kill()
+            process.kill?.()
             reject(new Error(`FFmpeg timeout after ${timeout}ms`))
           }, timeout)
         : null

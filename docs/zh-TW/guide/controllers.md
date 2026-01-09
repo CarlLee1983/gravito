@@ -7,7 +7,7 @@
 控制器存放在 `src/controllers` 目錄中。一個基礎控制器的結構如下：
 
 ```typescript
-import { GravitoContext as Context } from 'gravito-core';
+import { GravitoContext as Context } from '@gravito/core';
 
 export class UserController {
   /**

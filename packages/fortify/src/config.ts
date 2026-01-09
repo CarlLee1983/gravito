@@ -73,6 +73,11 @@ export interface FortifyConfig {
    * Use JSON responses instead of redirects (for SPA/API mode)
    */
   jsonMode?: boolean
+
+  /**
+   * Enable CSRF protection for HTML form flows (default: true)
+   */
+  csrf?: boolean | import('@gravito/core').CsrfOptions
 }
 
 /**
@@ -98,6 +103,7 @@ export const defaultFortifyConfig: Partial<FortifyConfig> = {
   password: 'password',
   prefix: '',
   jsonMode: false,
+  csrf: true,
 }
 
 /**

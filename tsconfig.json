@@ -1,56 +1,47 @@
 {
-    "compilerOptions": {
-        "target": "ESNext",
-        "module": "ESNext",
-        "moduleResolution": "bundler",
-        "experimentalDecorators": true,
-        "emitDecoratorMetadata": true,
-        "jsx": "react-jsx",
-        "lib": [
-            "ESNext",
-            "DOM"
-        ],
-        "strict": true,
-        "verbatimModuleSyntax": true,
-        "noUncheckedIndexedAccess": true,
-        "exactOptionalPropertyTypes": false,
-        "noImplicitOverride": true,
-        "noImplicitReturns": true,
-        "noFallthroughCasesInSwitch": true,
-        "noUnusedLocals": false,
-        "noUnusedParameters": false,
-        "forceConsistentCasingInFileNames": true,
-        "declaration": true,
-        "declarationMap": true,
-        "sourceMap": true,
-        "noEmit": true,
-        "esModuleInterop": true,
-        "allowSyntheticDefaultImports": true,
-        "resolveJsonModule": true,
-        "isolatedModules": true,
-        "skipLibCheck": true,
-        "types": [
-            "bun-types",
-            "node"
-        ],
-        "baseUrl": ".",
-        "paths": {
-            "gravito-core": [
-                "packages/core/src/index.ts"
-            ],
-            "gravito-core/*": [
-                "packages/core/src/*.ts"
-            ],
-            "@gravito/*": [
-                "packages/*/src/index.ts"
-            ],
-            "@gravito/photon/*": [
-                "packages/photon/src/*"
-            ]
-        }
-    },
-    "exclude": [
-        "node_modules",
-        "dist"
-    ]
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "declaration": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "jsx": "react-jsx",
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": ".",
+    "paths": {
+      "@gravito/core": [
+        "packages/core/src/index.ts"
+      ],
+      "@gravito/core/*": [
+        "packages/core/src/*"
+      ],
+      "@gravito/monolith": [
+        "packages/monolith/src/index.ts"
+      ],
+      "@gravito/atlas": [
+        "packages/atlas/src/index.ts"
+      ],
+      "@gravito/mass": [
+        "packages/mass/src/index.ts"
+      ],
+      "@gravito/enterprise": [
+        "packages/enterprise/src/index.ts"
+      ],
+      "@gravito/stasis": [
+        "packages/stasis/src/index.ts"
+      ],
+      "@gravito/stream": [
+        "packages/stream/src/index.ts"
+      ]
+    }
+  },
+  "exclude": [
+    "node_modules",
+    "**/dist/**"
+  ]
 }

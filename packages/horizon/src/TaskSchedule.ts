@@ -1,4 +1,4 @@
-import type { ActionCallback } from 'gravito-core'
+import type { ActionCallback } from '@gravito/core'
 
 export interface ScheduledTask {
   name: string

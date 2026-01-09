@@ -14,10 +14,10 @@
  * import type { Context, MiddlewareHandler } from '@gravito/photon'
  *
  * // After (Gravito abstraction):
- * import type { GravitoContext, GravitoMiddleware } from 'gravito-core'
+ * import type { GravitoContext, GravitoMiddleware } from '@gravito/core'
  *
  * // Or using compat aliases during migration:
- * import type { Context, MiddlewareHandler } from 'gravito-core/compat'
+ * import type { Context, MiddlewareHandler } from '@gravito/core/compat'
  * ```
  */
 

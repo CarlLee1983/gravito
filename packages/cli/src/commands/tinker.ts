@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { spawn } from 'bun'
+import { getRuntimeAdapter } from '@gravito/core'
 
 export async function tinker() {
   const bootstrapPath = path.resolve(__dirname, '../../stubs/tinker-bootstrap.ts')
@@ -9,7 +9,8 @@ export async function tinker() {
 
   console.log('Loading Tinker environment...')
 
-  const proc = spawn(['bun', 'repl', '--preload', bootstrapPath], {
+  const runtime = getRuntimeAdapter()
+  const proc = runtime.spawn(['bun', 'repl', '--preload', bootstrapPath], {
     stdin: 'inherit',
     stdout: 'inherit',
     stderr: 'inherit',

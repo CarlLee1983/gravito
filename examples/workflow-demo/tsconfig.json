@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "module": "esnext",
+    "target": "esnext",
+    "moduleResolution": "node",
+    "strict": true
+  },
+  "include": ["src", "tests", "workflow-demo.ts"]
+}

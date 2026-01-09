@@ -9,17 +9,32 @@ import type { SeoResolver } from '../../src/interfaces'
 
 const TEST_DIR = join(import.meta.dir, '.tmp-strategy-test')
 
+const waitFor = async (
+  condition: () => boolean,
+  timeoutMs = 1000,
+  intervalMs = 25
+): Promise<boolean> => {
+  const start = Date.now()
+  while (Date.now() - start < timeoutMs) {
+    if (condition()) {
+      return true
+    }
+    await new Promise((resolve) => setTimeout(resolve, intervalMs))
+  }
+  return false
+}
+
 describe('Strategies', () => {
   beforeEach(async () => {
     if (existsSync(TEST_DIR)) {
-      rmSync(TEST_DIR, { recursive: true })
+      rmSync(TEST_DIR, { recursive: true, force: true })
     }
     await mkdir(TEST_DIR, { recursive: true })
   })
 
   afterEach(() => {
     if (existsSync(TEST_DIR)) {
-      rmSync(TEST_DIR, { recursive: true })
+      rmSync(TEST_DIR, { recursive: true, force: true })
     }
   })
 
@@ -351,7 +366,7 @@ describe('Strategies', () => {
       expect(existsSync(logPath)).toBe(true)
 
       // Wait for interval + some buffer
-      await new Promise((resolve) => setTimeout(resolve, 150))
+      await waitFor(() => !existsSync(logPath))
 
       // Compact should have run -> log file deleted
       expect(existsSync(logPath)).toBe(false)

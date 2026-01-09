@@ -1,6 +1,10 @@
 import { type SeoConfig, SeoEngine } from '@gravito/luminosity'
 import type { Context, MiddlewareHandler } from '@gravito/photon'
 
+export interface GravitoSeoDeps {
+  SeoEngine?: typeof SeoEngine
+}
+
 /**
  * Create a Gravito SEO middleware for Photon.
  *
@@ -11,8 +15,9 @@ import type { Context, MiddlewareHandler } from '@gravito/photon'
  * @param config - The SEO configuration object.
  * @returns A Photon middleware handler.
  */
-export function gravitoSeo(config: SeoConfig): MiddlewareHandler {
-  const engine = new SeoEngine(config)
+export function gravitoSeo(config: SeoConfig, deps: GravitoSeoDeps = {}): MiddlewareHandler {
+  const SeoEngineImpl = deps.SeoEngine ?? SeoEngine
+  const engine = new SeoEngineImpl(config)
   let initialized = false
 
   return async (c: Context, next) => {

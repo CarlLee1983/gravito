@@ -7,7 +7,7 @@ Middleware provides a convenient mechanism for inspecting and filtering HTTP req
 A middleware is a function that receives the `Context` and a `next` function.
 
 ```typescript
-import { GravitoMiddleware } from 'gravito-core';
+import { GravitoMiddleware } from '@gravito/core';
 
 export const logger: GravitoMiddleware = async (c, next) => {
   const start = Date.now();

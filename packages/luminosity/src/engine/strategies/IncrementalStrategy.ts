@@ -14,7 +14,7 @@ export class IncrementalStrategy implements SeoStrategy {
   private dynamic: DynamicStrategy
   private snapshotPath: string
 
-  private compactTimer: Timer | null = null
+  private compactTimer: ReturnType<typeof setInterval> | null = null
   private compactInterval: number | undefined
 
   constructor(config: SeoConfig) {

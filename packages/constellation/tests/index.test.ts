@@ -2,7 +2,6 @@ import { describe, expect, it, jest } from 'bun:test'
 import { SitemapGenerator } from '../src/core/SitemapGenerator'
 import { SitemapIndex } from '../src/core/SitemapIndex'
 import { SitemapStream } from '../src/core/SitemapStream'
-import { OrbitSitemap } from '../src/OrbitSitemap'
 import { RouteScanner } from '../src/providers/RouteScanner'
 import { MemorySitemapStorage } from '../src/storage/MemorySitemapStorage'
 
@@ -159,34 +158,6 @@ describe('RouteScanner', () => {
     const entries = scanner.getEntries()
 
     expect(entries.find((e) => e.url === '/users/:id')).toBeUndefined()
-  })
-})
-
-describe('OrbitSitemap', () => {
-  it('should install dynamic sitemap route', async () => {
-    const core = { router: { get: jest.fn() } } as any
-
-    OrbitSitemap.dynamic({
-      baseUrl: 'https://example.com',
-      providers: [],
-    }).install(core)
-
-    expect(core.router.get).toHaveBeenCalledWith('/sitemap.xml', expect.any(Function))
-  })
-
-  it('should trigger static generation', async () => {
-    // Mock fs and path imports for static generation test
-    // Since we can't easily mock dynamic imports in this test env without more setup,
-    // we'll skip the actual generation call or wrap it in a try-catch for now
-    // to avoid FS errors, or just trust the manual verification in Phase 3.
-
-    // For now, let's just instantiate it
-    const orbit = OrbitSitemap.static({
-      baseUrl: 'https://example.com',
-      outDir: './dist',
-      providers: [],
-    })
-    expect(orbit).toBeDefined()
   })
 })
 

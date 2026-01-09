@@ -121,7 +121,7 @@ const CoreDetailSection = ({ t }: { t: Translation }) => {
               <div className="font-mono text-sm space-y-2 text-gray-300">
                 <div className="flex gap-4">
                   <span className="text-singularity opacity-50">01</span>
-                  <span>import {'{ PlanetCore }'} from 'gravito-core'</span>
+                  <span>import {'{ PlanetCore }'} from '@gravito/core'</span>
                 </div>
                 <div className="flex gap-4">
                   <span className="text-singularity opacity-50">02</span>

@@ -1,4 +1,4 @@
-import type { GravitoContext, GravitoNext, PlanetCore } from 'gravito-core'
+import type { GravitoContext, GravitoNext, PlanetCore } from '@gravito/core'
 import { ApiController } from '../controllers/ApiController'
 import { HomeController } from '../controllers/HomeController'
 

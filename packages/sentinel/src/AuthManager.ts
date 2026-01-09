@@ -1,5 +1,5 @@
+import { AuthenticationException } from '@gravito/core'
 import type { Context } from '@gravito/photon'
-import { AuthenticationException } from 'gravito-core'
 import type { Authenticatable } from './contracts/Authenticatable'
 import type { Guard, StatefulGuard } from './contracts/Guard'
 import type { UserProvider } from './contracts/UserProvider'
@@ -17,6 +17,7 @@ export interface AuthConfig {
     {
       driver: 'session' | 'jwt' | 'token' | string
       provider?: string
+      allowQueryToken?: boolean
       [key: string]: unknown
     }
   >
@@ -220,6 +221,7 @@ export class AuthManager {
       provider?: string
       secret?: string
       algo?: string
+      allowQueryToken?: boolean
       [key: string]: unknown
     }
   ): JwtGuard {
@@ -228,7 +230,8 @@ export class AuthManager {
       provider,
       this.ctx,
       config.secret as string,
-      config.algo as 'HS256' | 'RS256'
+      config.algo as 'HS256' | 'RS256',
+      config.allowQueryToken ?? false
     )
   }
 
@@ -239,11 +242,19 @@ export class AuthManager {
       inputKey?: string
       storageKey?: string
       hash?: boolean
+      allowQueryToken?: boolean
       [key: string]: unknown
     }
   ): TokenGuard {
     const provider = this.createUserProvider(config.provider)
-    return new TokenGuard(provider, this.ctx, config.inputKey, config.storageKey, config.hash)
+    return new TokenGuard(
+      provider,
+      this.ctx,
+      config.inputKey,
+      config.storageKey,
+      config.hash,
+      config.allowQueryToken ?? false
+    )
   }
 
   /**

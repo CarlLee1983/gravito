@@ -7,7 +7,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
 [![Bun](https://img.shields.io/badge/Bun-1.0+-black.svg)](https://bun.sh/)
 
-**@gravito/photon** is the core HTTP engine of the Gravito framework. It provides the foundational routing, middleware, and request/response handling used by `gravito-core` and all Orbit modules.
+**@gravito/photon** is the core HTTP engine of the Gravito framework. It provides the foundational routing, middleware, and request/response handling used by `@gravito/core` and all Orbit modules.
 
 ## ✨ Features
 
@@ -24,7 +24,7 @@
 bun add @gravito/photon
 ```
 
-> **Note**: This package is automatically included as a dependency of `gravito-core`. You typically don't need to install it separately unless building custom adapters.
+> **Note**: This package is automatically included as a dependency of `@gravito/core`. You typically don't need to install it separately unless building custom adapters.
 
 ## 🚀 Quick Start
 
@@ -50,7 +50,7 @@ export default app
 ### With Gravito Core (Recommended)
 
 ```typescript
-import { PlanetCore, defineConfig, GravitoAdapter } from 'gravito-core'
+import { PlanetCore, defineConfig, GravitoAdapter } from '@gravito/core'
 
 const config = defineConfig({
   config: {
@@ -147,7 +147,7 @@ const decoded = decode(token)
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│                   gravito-core                       │
+│                   @gravito/core                       │
 │       (PlanetCore, Orbits, Hooks, Container)        │
 └───────────────────────┬─────────────────────────────┘
                         │ powered by

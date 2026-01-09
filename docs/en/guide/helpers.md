@@ -12,7 +12,7 @@ description: Learn about Gravito's Arr, Str, and data path utilities.
 `Str` provides a rich set of methods for string manipulation.
 
 ```typescript
-import { Str } from 'gravito-core'
+import { Str } from '@gravito/core'
 
 // Convert to snake_case
 Str.snake('FooBar') // 'foo_bar'
@@ -41,7 +41,7 @@ Str.uuid()
 `Arr` provides a set of methods for handling plain arrays and arrays of objects.
 
 ```typescript
-import { Arr } from 'gravito-core'
+import { Arr } from '@gravito/core'
 
 // Get nested property
 const user = { name: { first: 'Alice' } }
@@ -66,7 +66,7 @@ Arr.except({ a: 1, b: 2, c: 3 }, ['a', 'c']) // { b: 2 }
 Low-level path resolution utilities supporting dot notation (`.`) access.
 
 ```typescript
-import { dataGet, dataSet } from 'gravito-core'
+import { dataGet, dataSet } from '@gravito/core'
 
 const data = { posts: [{ title: 'Hello' }] }
 const title = dataGet(data, 'posts.0.title') // 'Hello'

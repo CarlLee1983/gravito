@@ -2,7 +2,7 @@ import { execSync } from 'node:child_process'
 
 // Build main entry
 await Bun.build({
-  entrypoints: ['./src/index.ts'],
+  entrypoints: ['./src/index.ts', './src/react.tsx', './src/vue.ts'],
   outdir: './dist',
   format: 'esm',
   target: 'browser',

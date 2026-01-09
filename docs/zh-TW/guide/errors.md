@@ -23,7 +23,7 @@ const core = new PlanetCore({
 您可以在代碼的任何地方拋出 `HttpException` 或一般的 `Error`，Gravito 會負責後續的流程：
 
 ```typescript
-import { HttpException } from 'gravito-core';
+import { HttpException } from '@gravito/core';
 
 export class PostController {
   async show(c: Context) {

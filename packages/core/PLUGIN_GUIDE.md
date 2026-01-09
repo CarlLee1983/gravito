@@ -14,7 +14,7 @@ Satellites interact with the core primarily through the `HookManager`.
 ### Scenario: A "Profanity Filter" Plugin
 
 ```typescript
-import { PlanetCore } from 'gravito-core';
+import { PlanetCore } from '@gravito/core';
 
 export default function profanityFilterPlugin(core: PlanetCore) {
   // Register a filter on the 'content_save' hook
@@ -44,7 +44,7 @@ Orbits are Photon instances that are mounted onto the Core's main router.
 
 ```typescript
 import { Photon } from '@gravito/photon';
-import { PlanetCore } from 'gravito-core';
+import { PlanetCore } from '@gravito/core';
 
 export default function blogOrbit(core: PlanetCore) {
   const app = new Photon();

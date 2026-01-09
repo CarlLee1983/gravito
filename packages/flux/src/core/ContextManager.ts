@@ -24,7 +24,11 @@ export class ContextManager {
   /**
    * Create a new workflow context
    */
-  create<TInput>(name: string, input: TInput, stepCount: number): WorkflowContext<TInput> {
+  create<TInput, TData = any>(
+    name: string,
+    input: TInput,
+    stepCount: number
+  ): WorkflowContext<TInput, TData> {
     const history: StepExecution[] = Array.from({ length: stepCount }, (_, _i) => ({
       name: '',
       status: 'pending',
@@ -35,7 +39,7 @@ export class ContextManager {
       id: generateId(),
       name,
       input,
-      data: {} as Record<string, unknown>,
+      data: {} as TData,
       status: 'pending',
       currentStep: 0,
       history,
@@ -45,12 +49,14 @@ export class ContextManager {
   /**
    * Restore context from saved state
    */
-  restore<TInput>(state: WorkflowState): WorkflowContext<TInput> {
+  restore<TInput, TData = any>(
+    state: WorkflowState<TInput, TData>
+  ): WorkflowContext<TInput, TData> {
     return {
       id: state.id,
       name: state.name,
       input: state.input as TInput,
-      data: { ...state.data },
+      data: { ...state.data } as unknown as TData,
       status: state.status,
       currentStep: state.currentStep,
       history: state.history.map((h) => ({ ...h })),
@@ -60,13 +66,13 @@ export class ContextManager {
   /**
    * Convert context to serializable state
    */
-  toState(ctx: WorkflowContext): WorkflowState {
+  toState<TInput, TData>(ctx: WorkflowContext<TInput, TData>): WorkflowState<TInput, TData> {
     return {
       id: ctx.id,
       name: ctx.name,
       status: ctx.status,
       input: ctx.input,
-      data: { ...ctx.data },
+      data: { ...(ctx.data as any) },
       currentStep: ctx.currentStep,
       history: ctx.history.map((h) => ({ ...h })),
       createdAt: new Date(),
@@ -77,7 +83,10 @@ export class ContextManager {
   /**
    * Update context status (returns new context for immutability)
    */
-  updateStatus(ctx: WorkflowContext, status: WorkflowStatus): WorkflowContext {
+  updateStatus<TInput, TData>(
+    ctx: WorkflowContext<TInput, TData>,
+    status: WorkflowStatus
+  ): WorkflowContext<TInput, TData> {
     return {
       ...ctx,
       status,
@@ -87,7 +96,7 @@ export class ContextManager {
   /**
    * Advance to next step
    */
-  advanceStep(ctx: WorkflowContext): WorkflowContext {
+  advanceStep<TInput, TData>(ctx: WorkflowContext<TInput, TData>): WorkflowContext<TInput, TData> {
     return {
       ...ctx,
       currentStep: ctx.currentStep + 1,
@@ -97,7 +106,11 @@ export class ContextManager {
   /**
    * Update step name in history
    */
-  setStepName(ctx: WorkflowContext, index: number, name: string): void {
+  setStepName<TInput, TData>(
+    ctx: WorkflowContext<TInput, TData>,
+    index: number,
+    name: string
+  ): void {
     if (ctx.history[index]) {
       ctx.history[index].name = name
     }

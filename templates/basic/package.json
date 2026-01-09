@@ -1,13 +1,13 @@
 {
     "name": "my-gravito-app",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "type": "module",
     "scripts": {
         "dev": "bun run --watch src/index.ts",
         "start": "bun run src/index.ts"
     },
     "dependencies": {
-        "gravito-core": "workspace:*",
+        "@gravito/core": "workspace:*",
         "@gravito/beam": "workspace:*",
         "@gravito/stasis": "workspace:*",
         "@gravito/prism": "workspace:*",

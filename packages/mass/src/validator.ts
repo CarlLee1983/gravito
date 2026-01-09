@@ -14,6 +14,7 @@ export type ValidationSource = 'json' | 'query' | 'param' | 'form'
  *
  * @param source - Validation source (json, query, param, form)
  * @param schema - TypeBox Schema
+ * @param hook - Optional callback to handle validation results
  * @returns Photon middleware handler that validates the request.
  */
 export function validate<
@@ -23,7 +24,8 @@ export function validate<
   P extends string = any,
 >(
   source: S,
-  schema: T
+  schema: T,
+  hook?: (result: any, c: any) => any
 ): MiddlewareHandler<
   E,
   P,
@@ -32,5 +34,5 @@ export function validate<
     out: { [K in S]: Static<T> }
   }
 > {
-  return tbValidator(source as any, schema) as any
+  return tbValidator(source as any, schema, hook) as any
 }

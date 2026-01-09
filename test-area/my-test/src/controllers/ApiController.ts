@@ -1,4 +1,4 @@
-import type { CacheService, PlanetCore } from 'gravito-core'
+import type { CacheService, PlanetCore } from '@gravito/core'
 import type { Context } from '@gravito/photon'
 
 const startTime = Date.now()

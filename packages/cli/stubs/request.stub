@@ -1,0 +1,21 @@
+import { FormRequest, Schema } from '@gravito/monolith'
+
+export class {{ Name }}Request extends FormRequest {
+  /**
+   * Determine if the user is authorized to make this request.
+   */
+  authorize(): boolean {
+    return true
+  }
+
+  /**
+   * Get the validation rules that apply to the request.
+   */
+  schema() {
+    return Schema.Object({
+      // Define your validation rules here
+      // title: Schema.String(),
+      // body: Schema.String({ minLength: 10 }),
+    })
+  }
+}

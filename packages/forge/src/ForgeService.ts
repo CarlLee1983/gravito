@@ -3,6 +3,7 @@
  */
 
 import { randomUUID } from 'node:crypto'
+import { getRuntimeAdapter } from '@gravito/core'
 import type { StorageProvider } from '@gravito/nebula'
 import { ImagePipeline } from './pipelines/ImagePipeline'
 import { VideoPipeline } from './pipelines/VideoPipeline'
@@ -12,6 +13,7 @@ import { VideoProcessor } from './processors/VideoProcessor'
 import { ProcessingStatusManager } from './status/ProcessingStatus'
 import type { StatusStore } from './status/StatusStore'
 import type { FileInput, FileOutput, ProcessingStatus, ProcessOptions } from './types'
+import { sniffMimeType } from './utils/mime'
 
 /**
  * Forge service configuration
@@ -69,6 +71,7 @@ export class ForgeService {
   private imageProcessor: ImageProcessor
   private storage?: StorageProvider
   private statusStore?: StatusStore
+  private runtime = getRuntimeAdapter()
 
   /**
    * Create a new ForgeService instance.
@@ -93,12 +96,12 @@ export class ForgeService {
     input: FileInput,
     options: ProcessOptions & { sync?: boolean } = {}
   ): Promise<FileOutput> {
-    const processor = this.getProcessor(input)
+    const processor = await this.getProcessor(input)
     const output = await processor.process(input, options)
 
     // Upload to storage if configured
     if (this.storage && output.path) {
-      const file = Bun.file(output.path)
+      const file = await this.runtime.readFileAsBlob(output.path)
       const storageKey = this.generateStorageKey(input.filename || 'processed')
       await this.storage.put(storageKey, file)
       output.url = this.storage.getUrl(storageKey)
@@ -158,8 +161,8 @@ export class ForgeService {
    * @returns The appropriate Processor instance.
    * @throws {Error} If the file type is not supported.
    */
-  private getProcessor(input: FileInput): Processor {
-    const mimeType = this.getMimeType(input)
+  private async getProcessor(input: FileInput): Promise<Processor> {
+    const mimeType = await this.getMimeType(input)
 
     if (this.videoProcessor.supports(mimeType)) {
       return this.videoProcessor
@@ -178,9 +181,14 @@ export class ForgeService {
    * @param input - The file input.
    * @returns The MIME type string.
    */
-  private getMimeType(input: FileInput): string {
+  private async getMimeType(input: FileInput): Promise<string> {
     if (input.mimeType) {
       return input.mimeType
+    }
+
+    const sniffed = await sniffMimeType(input.source)
+    if (sniffed) {
+      return sniffed
     }
 
     if (input.filename) {

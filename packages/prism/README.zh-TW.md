@@ -11,7 +11,7 @@ bun add @gravito/prism
 ## 快速開始
 
 ```typescript
-import { defineConfig, PlanetCore } from 'gravito-core'
+import { defineConfig, PlanetCore } from '@gravito/core'
 import { OrbitPrism } from '@gravito/prism'
 
 const config = defineConfig({

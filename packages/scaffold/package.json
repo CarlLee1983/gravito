@@ -1,6 +1,6 @@
 {
   "name": "@gravito/scaffold",
-  "version": "1.0.0-beta.1",
+  "version": "1.1.0",
   "description": "Project scaffolding engine for Gravito - Generate enterprise-grade architecture templates",
   "type": "module",
   "main": "dist/index.js",
@@ -17,7 +17,9 @@
     "build": "bun run build.ts",
     "dev": "bun run --watch src/index.ts",
     "test": "bun test",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
+    "test:coverage": "bun test --coverage --coverage-threshold=80",
+    "test:ci": "bun test --coverage --coverage-threshold=80"
   },
   "files": [
     "dist",
@@ -32,10 +34,11 @@
   },
   "devDependencies": {
     "tsup": "^8.5.1",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "bun-types": "latest"
   },
   "peerDependencies": {
-    "gravito-core": "1.0.0-beta.6"
+    "@gravito/core": "workspace:*"
   },
   "author": "Carl Lee <carllee0520@gmail.com>",
   "license": "MIT",

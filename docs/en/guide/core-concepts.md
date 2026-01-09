@@ -8,8 +8,8 @@ title: Gravito Core Concepts
 
 
 <div class="not-prose my-5 flex flex-wrap items-center gap-2">
-  <a href="https://www.npmjs.com/package/gravito-core" target="_blank" rel="noreferrer">
-    <img alt="npm version" src="https://img.shields.io/npm/v/gravito-core.svg" class="h-5" loading="lazy" />
+  <a href="https://www.npmjs.com/package/@gravito/core" target="_blank" rel="noreferrer">
+    <img alt="npm version" src="https://img.shields.io/npm/v/@gravito/core.svg" class="h-5" loading="lazy" />
   </a>
   <a href="https://opensource.org/licenses/MIT" target="_blank" rel="noreferrer">
     <img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg" class="h-5" loading="lazy" />
@@ -55,7 +55,7 @@ The gravitational center. A minimal, high-efficiency foundation responsible for:
 - **Dependency Injection**: A lightweight, high-performance IoC container.
 
 ```typescript
-import { PlanetCore } from 'gravito-core'
+import { PlanetCore } from '@gravito/core'
 
 const core = await PlanetCore.boot({
   modules: [Ion, Luminosity], // Load only v1.0 stable modules
@@ -83,7 +83,7 @@ This is your territory. All Controllers, Services, and business logic are encaps
 Gravito features built-in smart negotiation, allowing a single Controller to automatically switch response types:
 
 ```typescript
-import type { GravitoContext } from 'gravito-core'
+import type { GravitoContext } from '@gravito/core'
 
 export class UserController {
   index(ctx: GravitoContext) {
@@ -104,13 +104,13 @@ We advocate for "Single File" deployment. Leveraging Bun's compilation, you can 
 
 ### Installation
 ```bash
-bun add gravito-core
+bun add @gravito/core
 ```
 
 ### Your First App
 ```typescript
-import { PlanetCore } from 'gravito-core'
-import type { GravitoContext } from 'gravito-core'
+import { PlanetCore } from '@gravito/core'
+import type { GravitoContext } from '@gravito/core'
 
 const app = new PlanetCore()
 

@@ -7,7 +7,7 @@
 中間件是一個函式，接收 `Context` 和一個 `next` 函式。
 
 ```typescript
-import { GravitoMiddleware } from 'gravito-core';
+import { GravitoMiddleware } from '@gravito/core';
 
 export const logger: GravitoMiddleware = async (c, next) => {
   const start = Date.now();

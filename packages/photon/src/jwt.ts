@@ -2,13 +2,22 @@ import type { MiddlewareHandler } from 'hono'
 import type * as HonoJwt from 'hono/jwt'
 
 // Bun can require hono/jwt but ESM import may fail; proxy via require for runtime.
-const honoJwt = require('hono/jwt') as typeof HonoJwt
+const honoJwt = require('hono/jwt') as Partial<typeof HonoJwt>
 
-export const jwt = honoJwt.jwt
-export const verify = honoJwt.verify
-export const decode = honoJwt.decode
-export const sign = honoJwt.sign
-export const verifyWithJwks = honoJwt.verifyWithJwks
+const ensure =
+  <T extends (...args: any[]) => any>(fn: T | undefined, _name: string) =>
+  (...args: Parameters<T>): ReturnType<T> => {
+    if (!fn) {
+      throw new Error(`hono/jwt helper '\${name}' is not available`)
+    }
+    return fn(...args)
+  }
+
+export const jwt = ensure(honoJwt.jwt, 'jwt')
+export const verify = ensure(honoJwt.verify, 'verify')
+export const decode = ensure(honoJwt.decode, 'decode')
+export const sign = ensure(honoJwt.sign, 'sign')
+export const verifyWithJwks = ensure(honoJwt.verifyWithJwks, 'verifyWithJwks')
 
 /**
  * Compatibility types for Hono v4

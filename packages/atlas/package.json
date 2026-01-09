@@ -1,6 +1,6 @@
 {
   "name": "@gravito/atlas",
-  "version": "1.0.0-beta.6",
+  "version": "1.0.1",
   "description": "The Standard Database Orbit - Custom Query Builder & ORM for Gravito",
   "type": "module",
   "main": "./dist/index.js",
@@ -13,12 +13,14 @@
     }
   },
   "bin": {
-    "orbit": "./src/cli.ts"
+    "orbit": "src/cli.ts"
   },
   "scripts": {
     "build": "bun run build.ts",
     "test": "bun test",
-    "typecheck": "bunx tsc --noEmit"
+    "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
+    "test:coverage": "bun test --coverage --coverage-threshold=80",
+    "test:ci": "bun test --coverage --coverage-threshold=80"
   },
   "files": [
     "dist",
@@ -49,6 +51,15 @@
     "@types/node": "^20.0.0",
     "@types/pg": "^8.11.0",
     "tsup": "^8.5.1",
-    "typescript": "^5.0.0"
+    "typescript": "^5.9.3",
+    "bun-types": "latest"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gravito-framework/gravito.git",
+    "directory": "packages/atlas"
   }
 }

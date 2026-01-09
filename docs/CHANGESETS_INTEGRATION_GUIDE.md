@@ -61,10 +61,10 @@ bunx changeset
 **範例**：
 ```
   Which packages would you like to include?
- · gravito-core, @gravito/ion
+ · @gravito/core, @gravito/ion
 
   Which packages should have a major bump?
- · gravito-core
+ · @gravito/core
 
   Please enter a summary for this change:
  · Add new hook system for better extensibility
@@ -201,7 +201,7 @@ jobs:
 ### 獨立版本化（推薦）
 
 每個套件獨立版本：
-- `gravito-core`: 1.0.0
+- `@gravito/core`: 1.0.0
 - `@gravito/ion`: 1.1.0
 - `@gravito/atlas`: 1.0.0
 
@@ -212,7 +212,7 @@ jobs:
 ### 統一版本化（目前方式）
 
 所有套件統一版本：
-- `gravito-core`: 1.0.0
+- `@gravito/core`: 1.0.0
 - `@gravito/ion`: 1.0.0
 - `@gravito/atlas`: 1.0.0
 
@@ -224,7 +224,7 @@ jobs:
 ```json
 {
   "linked": [
-    ["gravito-core", "@gravito/orbit-*"]
+    ["@gravito/core", "@gravito/orbit-*"]
   ]
 }
 ```

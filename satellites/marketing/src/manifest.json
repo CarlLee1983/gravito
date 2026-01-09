@@ -1,0 +1,12 @@
+{
+  "id": "satellite-marketing",
+  "name": "Marketing & Promotions",
+  "version": "0.1.0",
+  "description": "Flexible rule engine for promotions, coupons, and discounts.",
+  "author": "Gravito Team",
+  "type": "satellite",
+  "hooks": {
+    "actions": ["commerce:order-placed"],
+    "filters": ["commerce:order:adjustments"]
+  }
+}

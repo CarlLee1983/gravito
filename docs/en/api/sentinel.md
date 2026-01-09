@@ -21,7 +21,7 @@ bun add @gravito/sentinel
 Sentinel is configured via the `auth` configuration object in `PlanetCore`.
 
 ```typescript
-import { PlanetCore } from 'gravito-core';
+import { PlanetCore } from '@gravito/core';
 import { OrbitSentinel } from '@gravito/sentinel';
 import { OrbitPulsar } from '@gravito/pulsar';
 

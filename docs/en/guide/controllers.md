@@ -7,7 +7,7 @@ Instead of defining all of your request handling logic as closures in your route
 Controllers are stored in the `src/controllers` directory. A basic controller structure looks like this:
 
 ```typescript
-import { GravitoContext as Context } from 'gravito-core';
+import { GravitoContext as Context } from '@gravito/core';
 
 export class UserController {
   /**

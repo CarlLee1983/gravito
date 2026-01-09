@@ -2,26 +2,34 @@
     "name": "gravito-monorepo",
     "private": true,
     "workspaces": [
+        "satellites/*",
         "packages/*",
         "templates/*",
         "examples/*"
     ],
     "scripts": {
-        "build": "npx turbo run build",
-        "test": "bun run --filter './packages/*' test",
-        "test:ci": "bun run --filter './packages/*' test",
+        "build": "turbo run build --filter='./packages/*' --filter='./satellites/*'",
+        "test": "turbo run test --filter='./packages/*' --filter='./satellites/*'",
+        "test:coverage": "turbo run test:coverage --filter='./packages/*' --filter='./satellites/*'",
+        "test:ci": "turbo run test:coverage --filter='./packages/*' --filter='./satellites/*'",
         "lint": "biome lint .",
         "format": "biome format --write .",
         "check": "biome check . --diagnostic-level=error",
-        "typecheck": "bun run --filter './packages/*' typecheck",
-        "version:update": "bun run scripts/update-package-versions.ts",
+        "typecheck": "turbo run typecheck --filter='./packages/*' --filter='./satellites/*'",
+        "typecheck:full": "find . -name '*.tsbuildinfo' -delete && turbo run typecheck --filter='./packages/*' --filter='./satellites/*'",
+        "typecheck:validate": "bun run scripts/check-typecheck-config.ts",
+        "typecheck:verify": "bun run scripts/verify-bunx-typecheck.ts",
         "version:check": "bun run scripts/check-versions.ts",
-        "publish:validate": "bun run scripts/validate-before-publish.ts",
-        "publish:all": "bun run scripts/publish-all.ts",
-        "publish:dry-run": "bun run scripts/publish-all.ts --dry-run",
         "changeset": "changeset",
-        "changeset:version": "changeset version",
-        "changeset:publish": "changeset publish"
+        "ci:version": "changeset version",
+        "ci:publish": "bun scripts/ci-publish.js",
+        "pub:beta": "bun scripts/ci-publish.js --tag beta",
+        "pub:snapshot": "bun scripts/ci-publish.js --tag snapshot",
+        "launchpad:up": "bun scripts/start-launchpad.ts",
+        "launchpad:compose": "docker-compose -f docker-compose.launchpad.yml up --build -d",
+        "ci:simulate": "bash scripts/ci-simulation.sh",
+        "ci:test": "bash scripts/test-ci-local-direct.sh",
+        "ci:test:act": "bash scripts/test-ci-local.sh"
     },
     "devDependencies": {
         "@biomejs/biome": "^2.3.10",
@@ -34,12 +42,12 @@
         "typescript": "^5.9.3"
     },
     "simple-git-hooks": {
-        "pre-commit": "export PATH=\"$HOME/.bun/bin:$PATH\" && bunx lint-staged",
-        "pre-push": "export PATH=\"$HOME/.bun/bin:$PATH\" && bun run check && bun run typecheck && bun run test"
+        "pre-commit": "export PATH=\"~/.bun/bin:$PATH\" && bunx lint-staged",
+        "pre-push": "export PATH=\"~/.bun/bin:$PATH\" && bun run check && bun run typecheck:validate && bun run typecheck:verify && bun run typecheck:full && turbo run test --filter=[HEAD^1]"
     },
     "lint-staged": {
         "*.{js,ts,cjs,mjs}": [
-            "biome check --write"
+            "biome check --write --diagnostic-level=error"
         ]
     },
     "version": "0.5.0-alpha",

@@ -1,4 +1,4 @@
-import type { GravitoOrbit, PlanetCore } from 'gravito-core'
+import type { GravitoOrbit, PlanetCore } from '@gravito/core'
 import { CacheManager } from './CacheManager'
 import type { CacheEventMode, CacheEvents } from './CacheRepository'
 import type { CacheStore } from './store'
@@ -264,7 +264,7 @@ export default function orbitCache(
 export const OrbitCache = OrbitStasis
 
 // Module augmentation for GravitoVariables (abstraction layer)
-declare module 'gravito-core' {
+declare module '@gravito/core' {
   interface GravitoVariables {
     /** Cache manager for caching operations */
     cache?: CacheManager

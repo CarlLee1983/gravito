@@ -6,6 +6,9 @@ interface Props {
   to?: string
   href?: string
   class?: string
+  activeClass?: string
+  target?: string
+  rel?: string
 }
 
 const props = defineProps<Props>()
@@ -37,22 +40,43 @@ const isStatic = computed(() => isStaticSite())
 const isExternal = computed(() => {
   return target.value.startsWith('http') || target.value.startsWith('//')
 })
+
+const basePath = computed(() => import.meta.env.BASE_URL || '/')
+
+const staticTarget = computed(() => {
+  if (isExternal.value || target.value.startsWith('#')) {
+    return target.value
+  }
+  if (target.value.startsWith('/')) {
+    const base = basePath.value.endsWith('/') ? basePath.value.slice(0, -1) : basePath.value
+    return `${base}${target.value}`
+  }
+  return target.value
+})
+
+const isActive = computed(() => route.path === target.value)
+const staticClass = computed(() => {
+  if (!props.activeClass) {
+    return props.class
+  }
+  return isActive.value ? `${props.class || ''} ${props.activeClass}`.trim() : props.class
+})
 </script>
 
 <template>
   <!-- 如果是外部連結，永遠使用 <a> -->
-  <a v-if="isExternal" :href="target" :class="props.class" target="_blank" rel="noopener noreferrer">
+  <a v-if="isExternal" :href="target" :class="props.class" :target="props.target || '_blank'" :rel="props.rel || 'noopener noreferrer'">
     <slot />
   </a>
 
   <!-- 在靜態環境中，強制使用 <a> 標籤，並確保路徑以 .html 結尾（視靜態化配置而定） -->
   <!-- 這裡我們保留原始路徑，但使用 <a> 標籤來觸發硬跳轉，避免 SPA 路由在靜態化後失效 -->
-  <a v-else-if="isStatic" :href="target" :class="props.class">
+  <a v-else-if="isStatic" :href="staticTarget" :class="staticClass">
     <slot />
   </a>
 
   <!-- 在開發環境或 SPA 環境中，使用 router-link -->
-  <router-link v-else :to="target" :class="props.class">
+  <router-link v-else :to="target" :class="props.class" :active-class="props.activeClass">
     <slot />
   </router-link>
 </template>

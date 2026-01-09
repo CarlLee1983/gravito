@@ -141,22 +141,6 @@ export class DddGenerator extends BaseGenerator {
                 { type: 'file', name: 'Email.ts', content: this.generateEmailValueObject() },
               ],
             },
-            {
-              type: 'directory',
-              name: 'Events',
-              children: [
-                { type: 'file', name: 'DomainEvent.ts', content: this.generateDomainEvent() },
-              ],
-            },
-            {
-              type: 'directory',
-              name: 'Primitives',
-              children: [
-                { type: 'file', name: 'AggregateRoot.ts', content: this.generateAggregateRoot() },
-                { type: 'file', name: 'Entity.ts', content: this.generateEntity() },
-                { type: 'file', name: 'ValueObject.ts', content: this.generateValueObject() },
-              ],
-            },
           ],
         },
         {
@@ -341,34 +325,46 @@ export class DddGenerator extends BaseGenerator {
   // Bootstrap File Generators
   // ─────────────────────────────────────────────────────────────
 
-  private generateBootstrapApp(context: GeneratorContext): string {
+  private generateBootstrapApp(_context: GeneratorContext): string {
     return `/**
  * Application Bootstrap
  *
- * Central configuration and initialization of the application.
+ * Central configuration and initialization using the ServiceProvider pattern.
+ *
+ * Lifecycle:
+ * 1. Configure: Load app config and orbits
+ * 2. Boot: Initialize PlanetCore
+ * 3. Register Providers: Bind services to container
+ * 4. Bootstrap: Boot all providers
  */
 
-import { PlanetCore } from 'gravito-core'
+import { defineConfig, PlanetCore } from '@gravito/core'
+import { OrbitAtlas } from '@gravito/atlas'
+import appConfig from '../../config/app'
 import { registerProviders } from './providers'
 import { registerRoutes } from './routes'
 
 export async function createApp(): Promise<PlanetCore> {
-    const core = new PlanetCore({
-        config: {
-            APP_NAME: '${context.name}',
-        },
-    })
+  // 1. Configure
+  const config = defineConfig({
+    config: appConfig,
+    orbits: [new OrbitAtlas()],
+  })
 
-    // Register all service providers
-    await registerProviders(core)
+  // 2. Boot Core
+  const core = await PlanetCore.boot(config)
+  core.registerGlobalErrorHandlers()
 
-    // Bootstrap the application
-    await core.bootstrap()
+  // 3. Register Providers
+  await registerProviders(core)
 
-    // Register routes
-    registerRoutes(core.router)
+  // 4. Bootstrap All Providers
+  await core.bootstrap()
 
-    return core
+  // Register routes after bootstrap
+  registerRoutes(core.router)
+
+  return core
 }
 `
   }
@@ -377,19 +373,48 @@ export async function createApp(): Promise<PlanetCore> {
     return `/**
  * Service Providers Registry
  *
- * Register all module service providers here.
+ * Register all service providers here.
+ * Include both global and module-specific providers.
  */
 
-import type { PlanetCore } from 'gravito-core'
+import {
+  ServiceProvider,
+  type Container,
+  type PlanetCore,
+  bodySizeLimit,
+  securityHeaders,
+} from '@gravito/core'
 import { OrderingServiceProvider } from '../Modules/Ordering/Infrastructure/Providers/OrderingServiceProvider'
 import { CatalogServiceProvider } from '../Modules/Catalog/Infrastructure/Providers/CatalogServiceProvider'
 
-export async function registerProviders(core: PlanetCore): Promise<void> {
-    // Register module providers
-    core.register(new OrderingServiceProvider())
-    core.register(new CatalogServiceProvider())
+/**
+ * Middleware Provider - Global middleware registration
+ */
+export class MiddlewareProvider extends ServiceProvider {
+  register(_container: Container): void {}
 
-    // Add more providers as needed
+  boot(core: PlanetCore): void {
+    const isDev = process.env.NODE_ENV !== 'production'
+
+    core.adapter.use('*', securityHeaders({
+      contentSecurityPolicy: isDev ? false : undefined,
+    }))
+
+    core.adapter.use('*', bodySizeLimit(10 * 1024 * 1024))
+
+    core.logger.info('🛡️ Global middleware registered')
+  }
+}
+
+export async function registerProviders(core: PlanetCore): Promise<void> {
+  // Global Providers
+  core.register(new MiddlewareProvider())
+
+  // Module Providers
+  core.register(new OrderingServiceProvider())
+  core.register(new CatalogServiceProvider())
+
+  // Add more providers as needed
 }
 `
   }
@@ -480,7 +505,7 @@ export default {
  * ${name} Service Provider
  */
 
-import { ServiceProvider, type Container, type PlanetCore } from 'gravito-core'
+import { ServiceProvider, type Container, type PlanetCore } from '@gravito/core'
 import { ${name}Repository } from '../Persistence/${name}Repository'
 
 export class ${name}ServiceProvider extends ServiceProvider {
@@ -509,12 +534,19 @@ export class ${name}ServiceProvider extends ServiceProvider {
         start: 'bun run dist/main.js',
         test: 'bun test',
         typecheck: 'tsc --noEmit',
+        check: 'bun run typecheck && bun run test',
+        'check:deps': 'bun run scripts/check-dependencies.ts',
+        validate: 'bun run check && bun run check:deps',
+        precommit: 'bun run validate',
+        'docker:build': `docker build -t ${context.nameKebabCase} .`,
+        'docker:run': `docker run -it -p 3000:3000 ${context.nameKebabCase}`,
       },
       dependencies: {
-        'gravito-core': '^1.0.0-beta.5',
+        '@gravito/core': '^1.0.0-beta.5',
+        '@gravito/enterprise': 'workspace:*',
       },
       devDependencies: {
-        '@types/bun': 'latest',
+        'bun-types': 'latest',
         typescript: '^5.0.0',
       },
     }
@@ -573,11 +605,15 @@ export class ${name}ServiceProvider extends ServiceProvider {
  * Shared identifier across all contexts.
  */
 
-export class Id {
-  private readonly _value: string
+import { ValueObject } from '@gravito/enterprise'
 
+interface IdProps {
+    value: string
+}
+
+export class Id extends ValueObject<IdProps> {
   private constructor(value: string) {
-    this._value = value
+    super({ value })
   }
 
   static create(): Id {
@@ -590,15 +626,11 @@ export class Id {
   }
 
   get value(): string {
-    return this._value
-  }
-
-  equals(other: Id): boolean {
-    return this._value === other._value
+    return this.props.value
   }
 
   toString(): string {
-    return this._value
+    return this.props.value
   }
 }
 `
@@ -609,12 +641,25 @@ export class Id {
  * Money Value Object
  */
 
-export class Money {
-  constructor(
-    public readonly amount: number,
-    public readonly currency: string = 'USD'
-  ) {
+import { ValueObject } from '@gravito/enterprise'
+
+interface MoneyProps {
+    amount: number
+    currency: string
+}
+
+export class Money extends ValueObject<MoneyProps> {
+  constructor(amount: number, currency: string = 'USD') {
     if (amount < 0) throw new Error('Amount cannot be negative')
+    super({ amount, currency })
+  }
+
+  get amount(): number {
+    return this.props.amount
+  }
+
+  get currency(): string {
+    return this.props.currency
   }
 
   add(other: Money): Money {
@@ -632,10 +677,6 @@ export class Money {
       throw new Error('Cannot operate on different currencies')
     }
   }
-
-  equals(other: Money): boolean {
-    return this.amount === other.amount && this.currency === other.currency
-  }
 }
 `
   }
@@ -645,11 +686,15 @@ export class Money {
  * Email Value Object
  */
 
-export class Email {
-  private readonly _value: string
+import { ValueObject } from '@gravito/enterprise'
 
+interface EmailProps {
+    value: string
+}
+
+export class Email extends ValueObject<EmailProps> {
   private constructor(value: string) {
-    this._value = value.toLowerCase().trim()
+    super({ value: value.toLowerCase().trim() })
   }
 
   static create(email: string): Email {
@@ -664,101 +709,7 @@ export class Email {
   }
 
   get value(): string {
-    return this._value
-  }
-}
-`
-  }
-
-  private generateDomainEvent(): string {
-    return `/**
- * Domain Event Base
- */
-
-export abstract class DomainEvent {
-  readonly occurredOn: Date
-  readonly eventId: string
-
-  constructor() {
-    this.occurredOn = new Date()
-    this.eventId = crypto.randomUUID()
-  }
-
-  abstract get eventName(): string
-  abstract get aggregateId(): string
-}
-`
-  }
-
-  private generateAggregateRoot(): string {
-    return `/**
- * Aggregate Root Base
- */
-
-import type { DomainEvent } from '../Events/DomainEvent'
-import type { Id } from '../ValueObjects/Id'
-
-export abstract class AggregateRoot<T extends Id = Id> {
-  private _domainEvents: DomainEvent[] = []
-
-  protected constructor(protected readonly _id: T) {}
-
-  get id(): T {
-    return this._id
-  }
-
-  get domainEvents(): DomainEvent[] {
-    return [...this._domainEvents]
-  }
-
-  protected addDomainEvent(event: DomainEvent): void {
-    this._domainEvents.push(event)
-  }
-
-  clearDomainEvents(): DomainEvent[] {
-    const events = [...this._domainEvents]
-    this._domainEvents = []
-    return events
-  }
-}
-`
-  }
-
-  private generateEntity(): string {
-    return `/**
- * Entity Base
- */
-
-import type { Id } from '../ValueObjects/Id'
-
-export abstract class Entity<T extends Id = Id> {
-  protected constructor(protected readonly _id: T) {}
-
-  get id(): T {
-    return this._id
-  }
-
-  equals(other: Entity<T>): boolean {
-    return this._id.equals(other._id)
-  }
-}
-`
-  }
-
-  private generateValueObject(): string {
-    return `/**
- * Value Object Base
- */
-
-export abstract class ValueObject<T> {
-  protected readonly props: T
-
-  constructor(props: T) {
-    this.props = Object.freeze(props)
-  }
-
-  equals(other: ValueObject<T>): boolean {
-    return JSON.stringify(this.props) === JSON.stringify(other.props)
+    return this.props.value
   }
 }
 `
@@ -769,7 +720,7 @@ export abstract class ValueObject<T> {
  * Event Dispatcher
  */
 
-import type { DomainEvent } from '../../Domain/Events/DomainEvent'
+import type { DomainEvent } from '@gravito/enterprise'
 
 type EventHandler = (event: DomainEvent) => void | Promise<void>
 
@@ -807,7 +758,7 @@ export class EventDispatcher {
  * ${name} Aggregate Root
  */
 
-import { AggregateRoot } from '../../../../../Shared/Domain/Primitives/AggregateRoot'
+import { AggregateRoot } from '@gravito/enterprise'
 import { Id } from '../../../../../Shared/Domain/ValueObjects/Id'
 import { ${name}Created } from '../../Events/${name}Created'
 import { ${name}Status } from './${name}Status'
@@ -818,7 +769,7 @@ export interface ${name}Props {
   createdAt: Date
 }
 
-export class ${name} extends AggregateRoot {
+export class ${name} extends AggregateRoot<Id> {
   private props: ${name}Props
 
   private constructor(id: Id, props: ${name}Props) {
@@ -865,14 +816,14 @@ export enum ${name}Status {
  * ${name} Created Event
  */
 
-import { DomainEvent } from '../../../../Shared/Domain/Events/DomainEvent'
+import { DomainEvent } from '@gravito/enterprise'
 
 export class ${name}Created extends DomainEvent {
   constructor(public readonly ${name.toLowerCase()}Id: string) {
     super()
   }
 
-  get eventName(): string {
+  override get eventName(): string {
     return '${name.toLowerCase()}.created'
   }
 
@@ -888,12 +839,12 @@ export class ${name}Created extends DomainEvent {
  * ${name} Repository Interface
  */
 
+import { Repository } from '@gravito/enterprise'
 import type { ${name} } from '../Aggregates/${name}/${name}'
+import { Id } from '../../../../../Shared/Domain/ValueObjects/Id'
 
-export interface I${name}Repository {
-  findById(id: string): Promise<${name} | null>
-  save(aggregate: ${name}): Promise<void>
-  delete(id: string): Promise<void>
+export interface I${name}Repository extends Repository<${name}, Id> {
+    // Add specific methods for this repository if needed
 }
 `
   }
@@ -903,11 +854,15 @@ export interface I${name}Repository {
  * Create ${name} Command
  */
 
-export class Create${name}Command {
+import { Command } from '@gravito/enterprise'
+
+export class Create${name}Command extends Command {
   constructor(
     // Add command properties
     public readonly id?: string
-  ) {}
+  ) {
+    super()
+  }
 }
 `
   }
@@ -917,12 +872,13 @@ export class Create${name}Command {
  * Create ${name} Handler
  */
 
+import { CommandHandler } from '@gravito/enterprise'
 import type { I${name}Repository } from '../../../Domain/Repositories/I${name}Repository'
 import { ${name} } from '../../../Domain/Aggregates/${name}/${name}'
 import { Id } from '../../../../../Shared/Domain/ValueObjects/Id'
 import type { Create${name}Command } from './Create${name}Command'
 
-export class Create${name}Handler {
+export class Create${name}Handler implements CommandHandler<Create${name}Command, string> {
   constructor(private repository: I${name}Repository) {}
 
   async handle(command: Create${name}Command): Promise<string> {
@@ -942,8 +898,12 @@ export class Create${name}Handler {
  * Get ${name} By Id Query
  */
 
-export class Get${name}ByIdQuery {
-  constructor(public readonly id: string) {}
+import { Query } from '@gravito/enterprise'
+
+export class Get${name}ByIdQuery extends Query {
+  constructor(public readonly id: string) {
+    super()
+  }
 }
 `
   }
@@ -953,15 +913,16 @@ export class Get${name}ByIdQuery {
  * Get ${name} By Id Handler
  */
 
+import { QueryHandler } from '@gravito/enterprise'
 import type { I${name}Repository } from '../../../Domain/Repositories/I${name}Repository'
 import type { ${name}DTO } from '../../DTOs/${name}DTO'
 import type { Get${name}ByIdQuery } from './Get${name}ByIdQuery'
 
-export class Get${name}ByIdHandler {
+export class Get${name}ByIdHandler implements QueryHandler<Get${name}ByIdQuery, ${name}DTO | null> {
   constructor(private repository: I${name}Repository) {}
 
   async handle(query: Get${name}ByIdQuery): Promise<${name}DTO | null> {
-    const aggregate = await this.repository.findById(query.id)
+    const aggregate = await this.repository.findById(query.id as any) // Simplified for demo
     if (!aggregate) return null
 
     return {
@@ -995,20 +956,29 @@ export interface ${name}DTO {
 
 import type { ${name} } from '../../Domain/Aggregates/${name}/${name}'
 import type { I${name}Repository } from '../../Domain/Repositories/I${name}Repository'
+import type { Id } from '../../../../../Shared/Domain/ValueObjects/Id'
 
 const store = new Map<string, ${name}>()
 
 export class ${name}Repository implements I${name}Repository {
-  async findById(id: string): Promise<${name} | null> {
-    return store.get(id) ?? null
+  async findById(id: Id): Promise<${name} | null> {
+    return store.get(id.value) ?? null
   }
 
   async save(aggregate: ${name}): Promise<void> {
     store.set(aggregate.id.value, aggregate)
   }
 
-  async delete(id: string): Promise<void> {
-    store.delete(id)
+  async delete(id: Id): Promise<void> {
+    store.delete(id.value)
+  }
+
+  async findAll(): Promise<${name}[]> {
+    return Array.from(store.values())
+  }
+
+  async exists(id: Id): Promise<boolean> {
+    return store.has(id.value)
   }
 }
 `
@@ -1031,6 +1001,16 @@ export function report(error: unknown): void {
 ## Overview
 
 This project follows **Domain-Driven Design (DDD)** with strategic and tactical patterns.
+
+## Service Providers
+
+Service providers are the central place to configure your application and modules. They follow the ServiceProvider pattern with \`register()\` and \`boot()\` lifecycle methods.
+
+### Internal Bootstrapping
+
+1. **Bootstrap/app.ts**: Orchestrates the 4-step lifecycle (Configure, Boot, Register, Bootstrap).
+2. **Bootstrap/providers.ts**: Central registry for all global and module-specific providers.
+3. **Infrastructure/Providers/[Module]ServiceProvider.ts**: Module-specific service registration.
 
 ## Bounded Contexts
 

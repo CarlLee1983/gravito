@@ -1,55 +1,63 @@
 {
   "name": "@gravito/flux",
-  "version": "1.0.0-beta.1",
+  "version": "1.0.0",
   "description": "Platform-agnostic workflow engine for Gravito",
   "type": "module",
-  "main": "./dist/node/index.cjs",
-  "module": "./dist/node/index.mjs",
+  "main": "./dist/index.node.cjs",
+  "module": "./dist/index.node.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "bun": {
-        "import": "./dist/index.js",
-        "types": "./dist/index.d.ts"
+        "import": "./dist/index.js"
       },
       "node": {
-        "import": "./dist/node/index.mjs",
-        "require": "./dist/node/index.cjs",
+        "import": "./dist/index.node.js",
+        "require": "./dist/index.node.cjs",
         "types": "./dist/index.node.d.ts"
       },
-      "import": "./dist/node/index.mjs",
-      "require": "./dist/node/index.cjs",
-      "types": "./dist/index.d.ts"
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
     },
     "./bun": {
+      "types": "./dist/bun.d.ts",
       "bun": {
-        "import": "./dist/bun.js",
-        "types": "./dist/bun.d.ts"
+        "import": "./dist/bun.js"
       }
     }
   },
+  "bin": {
+    "flux": "bin/flux.js"
+  },
   "files": [
     "dist",
-    "README.md"
+    "README.md",
+    "bin",
+    "dev",
+    "assets"
   ],
   "scripts": {
-    "build": "bun run build.ts",
-    "typecheck": "tsc --noEmit",
-    "test": "bun test"
+    "build": "tsup",
+    "dev:viewer": "node ./bin/flux.js dev --trace ./.flux/trace.ndjson --port 4280",
+    "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
+    "test": "bun test",
+    "test:coverage": "bun test --coverage --coverage-threshold=80",
+    "test:ci": "bun test --coverage --coverage-threshold=80"
   },
   "peerDependencies": {
-    "gravito-core": "1.0.0-beta.6"
+    "@gravito/core": "workspace:*"
   },
   "peerDependenciesMeta": {
-    "gravito-core": {
+    "@gravito/core": {
       "optional": true
     }
   },
   "devDependencies": {
     "bun-types": "latest",
-    "gravito-core": "1.0.0-beta.6",
+    "@gravito/core": "workspace:*",
     "tsup": "^8.5.1",
-    "typescript": "^5.0.0"
+    "typescript": "^5.9.3"
   },
   "keywords": [
     "gravito",
@@ -65,5 +73,8 @@
     "type": "git",
     "url": "https://github.com/gravito-framework/gravito.git",
     "directory": "packages/flux"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

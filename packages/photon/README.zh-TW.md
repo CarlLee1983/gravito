@@ -7,7 +7,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
 [![Bun](https://img.shields.io/badge/Bun-1.0+-black.svg)](https://bun.sh/)
 
-**@gravito/photon** 是 Gravito 框架的核心 HTTP 引擎。它提供了 `gravito-core` 和所有 Orbit 模組所使用的基礎路由、中介軟體和請求/回應處理功能。
+**@gravito/photon** 是 Gravito 框架的核心 HTTP 引擎。它提供了 `@gravito/core` 和所有 Orbit 模組所使用的基礎路由、中介軟體和請求/回應處理功能。
 
 ## ✨ 特色
 
@@ -24,7 +24,7 @@
 bun add @gravito/photon
 ```
 
-> **注意**：此套件會自動作為 `gravito-core` 的依賴項安裝。除非您正在建構自訂適配器，否則通常不需要單獨安裝。
+> **注意**：此套件會自動作為 `@gravito/core` 的依賴項安裝。除非您正在建構自訂適配器，否則通常不需要單獨安裝。
 
 ## 🚀 快速開始
 
@@ -50,7 +50,7 @@ export default app
 ### 搭配 Gravito Core 使用（推薦）
 
 ```typescript
-import { PlanetCore, defineConfig, GravitoAdapter } from 'gravito-core'
+import { PlanetCore, defineConfig, GravitoAdapter } from '@gravito/core'
 
 const config = defineConfig({
   config: {
@@ -147,7 +147,7 @@ const decoded = decode(token)
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│                   gravito-core                       │
+│                   @gravito/core                       │
 │       (PlanetCore, Orbits, Hooks, Container)        │
 └───────────────────────┬─────────────────────────────┘
                         │ 驅動

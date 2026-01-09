@@ -1,13 +1,116 @@
-import { describe, expect, it } from 'bun:test'
+import { beforeAll, describe, expect, it, mock } from 'bun:test'
 import { Photon } from '@gravito/photon'
-import { AuthorizationException, GravitoException, ValidationException } from 'gravito-core'
 import { z } from 'zod'
-import {
-  DefaultMessageProvider,
-  FormRequest,
-  type MessageProvider,
-  validateRequest,
-} from '../src/FormRequest'
+
+class GravitoException extends Error {
+  public readonly status: number
+  public readonly code: string
+
+  constructor(status: number, code: string, message: string) {
+    super(message)
+    this.status = status
+    this.code = code
+  }
+}
+
+class AuthorizationException extends GravitoException {
+  constructor(message = 'This action is unauthorized.') {
+    super(403, 'FORBIDDEN', message)
+  }
+}
+
+class ValidationException extends GravitoException {
+  public readonly errors: Array<{ field: string; message: string; code?: string }>
+  public redirectTo?: string
+  public input?: unknown
+
+  constructor(errors: Array<{ field: string; message: string; code?: string }>, message?: string) {
+    super(422, 'VALIDATION_ERROR', message ?? 'Validation failed')
+    this.errors = errors
+  }
+
+  withRedirect(url: string): this {
+    this.redirectTo = url
+    return this
+  }
+
+  withInput(input: unknown): this {
+    this.input = input
+    return this
+  }
+}
+
+mock.module('@gravito/core', () => ({
+  AuthorizationException,
+  GravitoException,
+  ValidationException,
+}))
+
+let DefaultMessageProvider: typeof import('../src/FormRequest').DefaultMessageProvider
+let FormRequest: typeof import('../src/FormRequest').FormRequest
+let validateRequest: typeof import('../src/FormRequest').validateRequest
+type MessageProvider = import('../src/FormRequest').MessageProvider
+
+beforeAll(async () => {
+  const module = await import('../src/FormRequest')
+  DefaultMessageProvider = module.DefaultMessageProvider
+  FormRequest = module.FormRequest
+  validateRequest = module.validateRequest
+
+  StoreUserRequest = class extends FormRequest {
+    schema = z.object({
+      name: z.string().min(2, 'Name must be at least 2 characters'),
+      email: z.string().email('Invalid email format'),
+      age: z.number().min(18).optional(),
+    })
+  }
+
+  QuerySearchRequest = class extends FormRequest {
+    source = 'query' as const
+    schema = z.object({
+      q: z.string().min(1),
+      page: z.coerce.number().default(1),
+    })
+  }
+
+  AuthorizedRequest = class extends FormRequest {
+    schema = z.object({
+      data: z.string(),
+    })
+
+    authorize(ctx: any) {
+      return ctx.req.header('X-Admin') === 'true'
+    }
+  }
+
+  CustomAuthMessageRequest = class extends FormRequest {
+    schema = z.object({
+      data: z.string(),
+    })
+
+    authorize(ctx: any) {
+      return ctx.req.header('X-Token') === 'secret'
+    }
+
+    authorizationMessage() {
+      return 'Access denied. Please provide a valid token.'
+    }
+  }
+
+  CustomMessagesRequest = class extends FormRequest {
+    schema = z.object({
+      email: z.string().email(),
+      name: z.string().min(2),
+    })
+
+    messages() {
+      return {
+        'email.invalid_string': '請輸入有效的 Email 地址',
+        'name.too_small': '名稱至少需要 2 個字元',
+      }
+    }
+  }
+})
 
 const createApp = () => {
   const app = new Photon()
@@ -53,59 +156,11 @@ const createApp = () => {
 // Test Request Classes
 // =============================================================================
 
-class StoreUserRequest extends FormRequest {
-  schema = z.object({
-    name: z.string().min(2, 'Name must be at least 2 characters'),
-    email: z.string().email('Invalid email format'),
-    age: z.number().min(18).optional(),
-  })
-}
-
-class QuerySearchRequest extends FormRequest {
-  source = 'query' as const
-  schema = z.object({
-    q: z.string().min(1),
-    page: z.coerce.number().default(1),
-  })
-}
-
-class AuthorizedRequest extends FormRequest {
-  schema = z.object({
-    data: z.string(),
-  })
-
-  authorize(ctx: any) {
-    return ctx.req.header('X-Admin') === 'true'
-  }
-}
-
-class CustomAuthMessageRequest extends FormRequest {
-  schema = z.object({
-    data: z.string(),
-  })
-
-  authorize(ctx: any) {
-    return ctx.req.header('X-Token') === 'secret'
-  }
-
-  authorizationMessage() {
-    return 'Access denied. Please provide a valid token.'
-  }
-}
-
-class CustomMessagesRequest extends FormRequest {
-  schema = z.object({
-    email: z.string().email(),
-    name: z.string().min(2),
-  })
-
-  messages() {
-    return {
-      'email.invalid_string': '請輸入有效的 Email 地址',
-      'name.too_small': '名稱至少需要 2 個字元',
-    }
-  }
-}
+let StoreUserRequest: new () => InstanceType<typeof FormRequest>
+let QuerySearchRequest: new () => InstanceType<typeof FormRequest>
+let AuthorizedRequest: new () => InstanceType<typeof FormRequest>
+let CustomAuthMessageRequest: new () => InstanceType<typeof FormRequest>
+let CustomMessagesRequest: new () => InstanceType<typeof FormRequest>
 
 // i18n Message Provider for testing
 class ChineseMessageProvider implements MessageProvider {

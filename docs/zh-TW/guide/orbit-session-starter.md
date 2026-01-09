@@ -28,7 +28,7 @@ bun add @gravito/pulsar
 1. 在 `src/bootstrap.ts` 內加入 Session 設定（新手建議先用 `memory`）：
 
 ```ts
-import { defineConfig, PlanetCore } from 'gravito-core'
+import { defineConfig, PlanetCore } from '@gravito/core'
 import { GravitoPulsar } from '@gravito/pulsar'
 
 const config = defineConfig({
@@ -59,7 +59,7 @@ export default core.liftoff()
 1. 新增控制器 `src/controllers/SessionDemoController.ts`：
 
 ```ts
-import type { GravitoContext } from 'gravito-core'
+import type { GravitoContext } from '@gravito/core'
 
 export class SessionDemoController {
   index(c: GravitoContext) {
@@ -87,7 +87,7 @@ export class SessionDemoController {
 2. 註冊路由 `src/routes/index.ts`：
 
 ```ts
-import type { Router } from 'gravito-core'
+import type { Router } from '@gravito/core'
 import { SessionDemoController } from '../controllers/SessionDemoController'
 
 export default function(routes: Router) {
@@ -102,7 +102,7 @@ export default function(routes: Router) {
 1. 在下一個請求中讀取一次性訊息：
 
 ```ts
-import type { GravitoContext } from 'gravito-core'
+import type { GravitoContext } from '@gravito/core'
 
 export class FlashController {
   index(c: GravitoContext) {
@@ -122,7 +122,7 @@ Session 會自動產生 CSRF token，並在回應時寫入 `XSRF-TOKEN` cookie�
 1. **不一定需要**建立 token 端點。只要有任何回應啟動了 session，Session 就會自動寫入 `XSRF-TOKEN` cookie。以下端點僅用於除錯或想主動取得 token 的情境：
 
 ```ts
-import type { GravitoContext } from 'gravito-core'
+import type { GravitoContext } from '@gravito/core'
 
 export class CsrfController {
   token(c: GravitoContext) {

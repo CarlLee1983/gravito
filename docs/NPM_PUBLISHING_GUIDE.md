@@ -67,6 +67,25 @@ bun run scripts/publish-all.ts --skip-test
 bun run scripts/publish-all.ts --dry-run --skip-test
 ```
 
+#### 瀏覽器驗證流程
+
+當執行 `bun run scripts/publish-all.ts` 時，腳本支援智能驗證：
+
+1. **第一個套件發布時**，NPM 會自動：
+   - 顯示一個驗證 URL
+   - 自動打開瀏覽器（或提示手動複製 URL）
+   - 等待你在瀏覽器中完成驗證（使用 WebAuthn、指紋、Face ID 等）
+
+2. **完成驗證後**：
+   - 第一個套件會自動發布
+   - 後續套件會自動繼續發布（無需再次驗證）
+
+#### 腳本功能
+
+- **自動版本檢查**：發布前自動檢查版本是否已存在，已存在則跳過
+- **智能跳過**：已發布的版本不會重複發布
+- **詳細統計**：顯示成功、跳過、失敗的套件數量
+
 ### 方式二：手動發布單一套件
 
 如果需要單獨發布某個套件：
@@ -94,7 +113,7 @@ bun run --filter '*' publish
 
 以下套件已進入 Beta 階段，主要用於核心框架和基礎設施 (`1.0.0-beta.*`)：
 
-- `gravito-core` - 核心框架
+- `@gravito/core` - 核心框架
 - `@gravito/horizon` - 路由系統
 - `@gravito/luminosity` - SEO 核心模組
 - `@gravito/luminosity-adapter-photon` - SEO HTTP 適配器
@@ -178,40 +197,114 @@ bun run version:update
 - [ ] Registry 設定正確
 - [ ] 已確認要發布的套件清單
 
-## 常見問題
+## 發布問題排查指南
 
-### 套件已存在
+### 1. 版本已存在
 
-如果套件版本已存在於 NPM，發布會失敗。解決方式：
+如果套件版本已經發布過，NPM 會拒絕重複發布。
 
-1. 更新版本號（使用 `version:update` 腳本）
-2. 或使用 `--force`（不推薦，除非是修復問題）
-
-### Alpha/Beta 版本標籤
-
-- Alpha 版本會自動使用 `--tag alpha`
-- Beta 版本會自動使用 `--tag beta`
-- 穩定版本使用 `latest` tag（預設）
-
-安裝時可以指定 tag：
+**檢查方法**：
 ```bash
-npm install gravito-core@beta
-npm install @gravito/sentinel@alpha
+npm view <套件名稱>@<版本號> version
 ```
 
-### 權限錯誤
+**解決方案**：
+- 更新版本號後再發布（使用 `version:update` 腳本）
+- 或使用 `npm publish --force`（不建議，除非是修復關鍵問題）
 
-確保：
-- NPM 帳號有發布權限
-- 套件名稱未被其他人使用
-- 使用正確的組織範圍（`@gravito/`）
+### 2. NPM 認證問題
 
-### 構建失敗
+**症狀**：
+- `Access token expired or revoked`
+- `You must be logged in to publish packages`
 
-檢查：
-- TypeScript 編譯是否成功
-- 依賴是否正確安裝
-- `build.ts` 腳本是否正常執行
+**解決方案**：
+```bash
+# 檢查登入狀態
+npm whoami
+
+# 重新登入
+npm login
+
+# 或使用瀏覽器驗證（WebAuthn），發布腳本會自動處理
+```
+
+### 3. prepublishOnly 腳本失敗
+
+**症狀**：
+- `npm error command failed`
+- `npm error command sh -c ...`
+
+**解決方案**：
+```bash
+# 手動執行 prepublishOnly 腳本
+cd packages/<套件名稱>
+bun run prepublishOnly
+
+# 如果失敗，檢查：
+# 1. 類型檢查：bun run typecheck
+# 2. 測試：bun run test
+# 3. 構建：bun run build
+```
+
+### 4. 缺少 dist 文件
+
+**症狀**：
+- `ENOENT: no such file or directory`
+- `Cannot find module`
+
+**解決方案**：
+```bash
+# 確保已構建
+cd packages/<套件名稱>
+bun run build
+
+# 檢查 dist 目錄
+ls -la dist/
+```
+
+### 5. bin 路徑錯誤
+
+**症狀**：
+- `bin[xxx] script name was invalid`
+- `ENOENT: no such file or directory`
+
+**解決方案**：
+```bash
+# 修復 package.json
+cd packages/<套件名稱>
+npm pkg fix
+
+# 確認 bin 文件存在且有執行權限
+ls -la dist/bin/
+chmod +x dist/bin/<執行文件名>
+```
+
+### 6. Alpha/Beta 版本標籤問題
+
+**症狀**：
+- `You must specify a tag using --tag when publishing a prerelease version`
+
+**解決方案**：
+```bash
+# Beta 版本
+npm publish --access public --tag beta
+
+# Alpha 版本
+npm publish --access public --tag alpha
+```
+
+## 診斷工具
+
+### 使用診斷腳本
+
+```bash
+# 診斷特定套件
+bun run scripts/check-failed-packages.ts
+
+# 驗證套件準備狀態
+bun run publish:validate <套件名稱>
+```
 
 ## CI/CD 自動發布
 
@@ -237,7 +330,7 @@ npm install @gravito/sentinel@alpha
 
 1. **驗證發布**：
    ```bash
-   npm view gravito-core
+   npm view @gravito/core
    npm view @gravito/sentinel
    ```
 
@@ -257,17 +350,13 @@ npm install @gravito/sentinel@alpha
    ```
 
 2. **分批發布**（如果套件很多）：
-   - 先發布核心套件（`gravito-core`）
+   - 先發布核心套件（`@gravito/core`）
    - 再發布依賴它的套件
 
 3. **監控發布狀態**：
    - 檢查 NPM 上的套件頁面
    - 確認版本號正確
    - 確認檔案已上傳
-
-4. **記錄發布日誌**：
-   - 記錄發布的套件和版本
-   - 記錄任何問題和解決方式
 
 ## 相關資源
 

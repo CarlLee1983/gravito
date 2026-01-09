@@ -7,6 +7,10 @@ description: Building large-scale systems with Gravito's enterprise DNA.
 
 Gravito is designed with "Enterprise DNA" at its core. Beyond simple scripting, it provides the architectural foundation needed to build, scale, and maintain complex enterprise systems.
 
+## Beta Notes
+
+The 1.0.0-beta release focuses on Bun-native performance and a consistent enterprise architecture story. Gravito favors explicit boundaries, predictable modules, and clear runtime contracts so teams can scale safely.
+
 ---
 
 ## Architectural Foundations
@@ -33,7 +37,7 @@ The Universal Kinetic Queue is Gravito's solution for infrastructure-agnostic ba
 Gravito aims to support all major message queue drivers out of the box:
 - **Redis & BullMQ**: For high-speed, local processing.
 - **Amazon SQS**: For cloud-native scalability.
-- **RabbitMQ**: For complex routing and enterprise messaging.
+- **RabbitMQ**: (Supported) For complex routing and enterprise messaging.
 - **Apache Kafka**: For massive data streams.
 
 ### Switch Without Friction
@@ -70,3 +74,14 @@ For enterprise teams, code consistency is paramount. Gravito leverages TypeScrip
 - **Strict Schema Definitions**: No more guessing payloads.
 - **Automated Documentation**: Open API specs generated from your types.
 - **Reduced Hallucinations**: AI reads your types and generates correct logic, first time.
+
+---
+
+## Enterprise Application Design
+
+Gravito encourages a clean, layered architecture so business rules remain stable as infrastructure evolves.
+
+- **Domain-first modeling**: Aggregate entities, value objects, and domain services that reflect business intent.
+- **Use-case boundaries**: Commands and Queries that isolate application flows for testing and auditing.
+- **Explicit dependencies**: Infrastructure adapters (DB, queue, mail) stay at the edges, not inside the domain.
+- **Service composition**: Modules can be split into services without reworking core business logic.

@@ -1,20 +1,56 @@
-import { beforeAll, describe, expect, test } from 'bun:test'
-import { PlanetCore } from '../../core/src/index'
+import { describe, expect, mock, test } from 'bun:test'
+import { defaultConfig, defineMonitorConfig, resolveConfig } from '../src/config'
+import {
+  createDatabaseCheck,
+  createDiskCheck,
+  createHttpCheck,
+  createMemoryCheck,
+  createRedisCheck,
+} from '../src/health'
+import { HealthController } from '../src/health/HealthController'
 import { HealthRegistry } from '../src/health/HealthRegistry'
 import { MonitorOrbit } from '../src/index'
+import { createHttpMetricsMiddleware } from '../src/metrics'
+import { MetricsController } from '../src/metrics/MetricsController'
 import { MetricsRegistry } from '../src/metrics/MetricsRegistry'
+import { createTracingMiddleware, TracingManager } from '../src/tracing'
+
+const createJsonContext = () => ({
+  json: (data: unknown, status: number) =>
+    new Response(JSON.stringify(data), {
+      status,
+      headers: { 'content-type': 'application/json' },
+    }),
+})
 
 describe('MonitorOrbit', () => {
-  test('registers health, metrics, and tracing services', async () => {
-    const core = new PlanetCore()
-    core.orbit(new MonitorOrbit())
+  test('registers services and routes', async () => {
+    const routes = new Map<string, (c: unknown) => Promise<Response> | Response>()
+    const core = {
+      services: new Map<string, unknown>(),
+      router: {
+        get: (path: string, handler: (c: unknown) => Promise<Response> | Response) => {
+          routes.set(path, handler)
+        },
+      },
+    }
 
-    const _server = await core.liftoff()
+    const orbit = new MonitorOrbit({
+      health: { enabled: true },
+      metrics: { enabled: true },
+      tracing: { enabled: false },
+    })
+
+    await orbit.install(core as any)
 
     expect(core.services.get('monitor')).toBeDefined()
     expect(core.services.get('health')).toBeDefined()
     expect(core.services.get('metrics')).toBeDefined()
     expect(core.services.get('tracing')).toBeDefined()
+    expect(routes.has('/health')).toBe(true)
+    expect(routes.has('/ready')).toBe(true)
+    expect(routes.has('/live')).toBe(true)
+    expect(routes.has('/metrics')).toBe(true)
   })
 })
 
@@ -29,7 +65,6 @@ describe('HealthRegistry', () => {
       cacheTtl: 0,
     })
 
-    // Register a simple check
     registry.register('database', async () => ({
       status: 'healthy',
       message: 'Connected',
@@ -195,58 +230,324 @@ describe('MetricsRegistry', () => {
   })
 })
 
-describe('Health Endpoints', () => {
-  let fetch: (req: Request) => Promise<Response>
+describe('Controllers', () => {
+  test('HealthController returns health report', async () => {
+    const registry = new HealthRegistry({ cacheTtl: 0 })
+    registry.register('db', () => ({ status: 'healthy', message: 'ok' }))
+    const controller = new HealthController(registry)
 
-  beforeAll(async () => {
-    const core = new PlanetCore()
-    core.orbit(
-      new MonitorOrbit({
-        health: { enabled: true },
-        metrics: { enabled: true },
-        tracing: { enabled: false },
-      })
-    )
-
-    const server = await core.liftoff()
-    fetch = server.fetch as (req: Request) => Promise<Response>
-  })
-
-  test('GET /health returns health report', async () => {
-    const response = await fetch(new Request('http://localhost/health'))
-    expect(response.status).toBe(200)
-
+    const response = await controller.health(createJsonContext() as any)
     const data = await response.json()
+
+    expect(response.status).toBe(200)
     expect(data.status).toBe('healthy')
     expect(data.uptime).toBeDefined()
-    expect(data.timestamp).toBeDefined()
   })
 
-  test('GET /ready returns readiness status', async () => {
-    const response = await fetch(new Request('http://localhost/ready'))
-    expect(response.status).toBe(200)
+  test('HealthController returns readiness status', async () => {
+    const registry = new HealthRegistry({ cacheTtl: 0 })
+    registry.register('db', () => ({ status: 'unhealthy', message: 'down' }))
+    const controller = new HealthController(registry)
 
+    const response = await controller.ready(createJsonContext() as any)
     const data = await response.json()
-    expect(data.status).toBe('ready')
+
+    expect(response.status).toBe(503)
+    expect(data.status).toBe('not_ready')
+    expect(data.reason).toContain('db')
   })
 
-  test('GET /live returns liveness status', async () => {
-    const response = await fetch(new Request('http://localhost/live'))
-    expect(response.status).toBe(200)
+  test('HealthController returns liveness status', async () => {
+    const registry = new HealthRegistry({ cacheTtl: 0 })
+    const controller = new HealthController(registry)
 
+    const response = await controller.live(createJsonContext() as any)
     const data = await response.json()
+
+    expect(response.status).toBe(200)
     expect(data.status).toBe('alive')
   })
 
-  test('GET /metrics returns Prometheus format', async () => {
-    const response = await fetch(new Request('http://localhost/metrics'))
-    expect(response.status).toBe(200)
+  test('MetricsController returns Prometheus format', async () => {
+    const registry = new MetricsRegistry({
+      enabled: true,
+      path: '/metrics',
+      defaultMetrics: false,
+      prefix: 'app_',
+      defaultLabels: {},
+    })
+    registry.counter({ name: 'requests', help: 'Request count' }).inc()
+    const controller = new MetricsController(registry)
 
+    const response = await controller.metrics({} as any)
     const contentType = response.headers.get('content-type')
-    expect(contentType).toContain('text/plain')
+    const body = await response.text()
 
-    const text = await response.text()
-    expect(text).toContain('# HELP')
-    expect(text).toContain('# TYPE')
+    expect(response.status).toBe(200)
+    expect(contentType).toContain('text/plain')
+    expect(body).toContain('# HELP')
+    expect(body).toContain('# TYPE')
+  })
+})
+
+describe('Config helpers', () => {
+  test('resolveConfig merges defaults with overrides', () => {
+    const resolved = resolveConfig({
+      health: { path: '/status' },
+      metrics: { enabled: false },
+      tracing: { enabled: true, serviceName: 'api' },
+    })
+
+    expect(resolved.health.path).toBe('/status')
+    expect(resolved.health.readyPath).toBe(defaultConfig.health.readyPath)
+    expect(resolved.metrics.enabled).toBe(false)
+    expect(resolved.metrics.prefix).toBe(defaultConfig.metrics.prefix)
+    expect(resolved.tracing.enabled).toBe(true)
+    expect(resolved.tracing.serviceName).toBe('api')
+  })
+
+  test('defineMonitorConfig returns the input config', () => {
+    const config = { health: { enabled: false } }
+    expect(defineMonitorConfig(config)).toBe(config)
+  })
+})
+
+describe('Health helpers', () => {
+  test('createDatabaseCheck handles success and failure', async () => {
+    const healthyCheck = createDatabaseCheck(() => true)
+    const healthy = await healthyCheck()
+    expect(healthy.status).toBe('healthy')
+
+    const failedCheck = createDatabaseCheck(() => {
+      throw new Error('db down')
+    })
+    const failed = await failedCheck()
+    expect(failed.status).toBe('unhealthy')
+    expect(failed.message).toBe('db down')
+  })
+
+  test('createRedisCheck handles ping responses', async () => {
+    const healthyCheck = createRedisCheck(() => 'PONG')
+    const healthy = await healthyCheck()
+    expect(healthy.status).toBe('healthy')
+
+    const unexpectedCheck = createRedisCheck(() => 'NO')
+    const unexpected = await unexpectedCheck()
+    expect(unexpected.status).toBe('unhealthy')
+    expect(unexpected.message).toContain('Unexpected response')
+  })
+
+  test('createMemoryCheck reports degradation', () => {
+    const original = process.memoryUsage
+    process.memoryUsage = () =>
+      ({
+        heapUsed: 95,
+        heapTotal: 100,
+        rss: 200,
+        external: 0,
+        arrayBuffers: 0,
+      }) as NodeJS.MemoryUsage
+
+    const check = createMemoryCheck({ maxHeapUsedPercent: 10 })
+    const result = check()
+
+    expect(result.status).toBe('degraded')
+    expect(result.message).toContain('Heap usage')
+
+    process.memoryUsage = original
+  })
+
+  test('createMemoryCheck reports healthy usage', () => {
+    const original = process.memoryUsage
+    process.memoryUsage = () =>
+      ({
+        heapUsed: 50,
+        heapTotal: 200,
+        rss: 300,
+        external: 0,
+        arrayBuffers: 0,
+      }) as NodeJS.MemoryUsage
+
+    const check = createMemoryCheck()
+    const result = check()
+
+    expect(result.status).toBe('healthy')
+    expect(result.message).toBe('Memory usage normal')
+
+    process.memoryUsage = original
+  })
+
+  test('createHttpCheck reports status', async () => {
+    const originalFetch = globalThis.fetch
+    globalThis.fetch = async () => new Response('ok', { status: 200 })
+
+    const check = createHttpCheck('https://example.com')
+    const result = await check()
+
+    expect(result.status).toBe('healthy')
+
+    globalThis.fetch = originalFetch
+  })
+
+  test('createHttpCheck reports failures', async () => {
+    const originalFetch = globalThis.fetch
+    globalThis.fetch = async () => {
+      throw new Error('network down')
+    }
+
+    const check = createHttpCheck('https://example.com')
+    const result = await check()
+
+    expect(result.status).toBe('unhealthy')
+    expect(result.message).toBe('network down')
+
+    globalThis.fetch = originalFetch
+  })
+
+  test('createDiskCheck returns healthy result', async () => {
+    const check = createDiskCheck({ minFreePercent: 15 })
+    const result = await check()
+
+    expect(result.status).toBe('healthy')
+    expect(result.details?.minFreePercent).toBe(15)
+  })
+})
+
+describe('Metrics middleware', () => {
+  test('records normalized paths', async () => {
+    const registry = new MetricsRegistry({
+      defaultMetrics: false,
+      prefix: '',
+    })
+    const middleware = createHttpMetricsMiddleware(registry)
+
+    await middleware(
+      { req: { method: 'GET', path: '/users/123', url: 'http://example.com/users/123' } } as any,
+      async () => {}
+    )
+
+    const output = registry.toPrometheus()
+    expect(output).toContain('http_requests_total')
+    expect(output).toContain('path="/users/:id"')
+  })
+})
+
+describe('Tracing', () => {
+  test('tracing manager tracks spans and context', () => {
+    const tracer = new TracingManager()
+    const span = tracer.startSpan('work')
+
+    tracer.setAttribute(span, 'key', 'value')
+    tracer.addEvent(span, 'event')
+    expect(tracer.getActiveSpan()).toBe(span)
+
+    tracer.endSpan(span, 'ok')
+    expect(span.status).toBe('ok')
+    expect(tracer.getActiveSpan()).toBe(null)
+
+    const headers = new Headers()
+    tracer.injectContext(headers, span)
+    const context = tracer.extractContext(headers)
+    expect(context?.traceId).toBe(span.traceId)
+
+    expect(tracer.getSpans().length).toBe(1)
+    tracer.clearSpans()
+    expect(tracer.getSpans().length).toBe(0)
+  })
+
+  test('createTracingMiddleware records errors', async () => {
+    const tracer = new TracingManager()
+    tracer.clearSpans()
+    const middleware = createTracingMiddleware(tracer)
+
+    const stored: Record<string, unknown> = {}
+    await middleware(
+      {
+        req: {
+          method: 'GET',
+          path: '/ping',
+          url: 'http://localhost/ping',
+          raw: { headers: new Headers() },
+        },
+        set: (key: string, value: unknown) => {
+          stored[key] = value
+        },
+      } as any,
+      async () => {}
+    )
+
+    expect(stored.span).toBe(tracer.getSpans()[0])
+
+    await expect(
+      middleware(
+        {
+          req: {
+            method: 'POST',
+            path: '/fail',
+            url: 'http://localhost/fail',
+            raw: { headers: new Headers() },
+          },
+          set: () => {},
+        } as any,
+        async () => {
+          throw new Error('boom')
+        }
+      )
+    ).rejects.toThrow('boom')
+
+    const span = tracer.getSpans()[1]
+    expect(span.status).toBe('error')
+    expect(span.attributes.error).toBe(true)
+  })
+
+  test('initialize and shutdown with opentelemetry available', async () => {
+    let startCalled = false
+    let shutdownCalled = false
+    let exporterUrl = ''
+    let resourceAttrs: Record<string, string> = {}
+
+    mock.module('@opentelemetry/sdk-node', () => ({
+      NodeSDK: class {
+        async start() {
+          startCalled = true
+        }
+        async shutdown() {
+          shutdownCalled = true
+        }
+      },
+    }))
+    mock.module('@opentelemetry/exporter-trace-otlp-http', () => ({
+      OTLPTraceExporter: class {
+        constructor(options: { url: string }) {
+          exporterUrl = options.url
+        }
+      },
+    }))
+    mock.module('@opentelemetry/resources', () => ({
+      Resource: class {
+        constructor(attrs: Record<string, string>) {
+          resourceAttrs = attrs
+        }
+      },
+    }))
+    mock.module('@opentelemetry/semantic-conventions', () => ({
+      ATTR_SERVICE_NAME: 'service.name',
+      ATTR_SERVICE_VERSION: 'service.version',
+    }))
+
+    const tracer = new TracingManager({
+      serviceName: 'api',
+      serviceVersion: '2.0.0',
+      endpoint: 'http://example.com',
+    })
+
+    await tracer.initialize()
+    await tracer.shutdown()
+
+    expect(startCalled).toBe(true)
+    expect(shutdownCalled).toBe(true)
+    expect(exporterUrl).toBe('http://example.com')
+    expect(resourceAttrs['service.name']).toBe('api')
+    expect(resourceAttrs['service.version']).toBe('2.0.0')
   })
 })

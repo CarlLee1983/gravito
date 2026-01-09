@@ -1,5 +1,5 @@
 /**
- * gravito-core
+ * @gravito/core
  *
  * The core micro-kernel for the Galaxy Architecture.
  *
@@ -65,6 +65,7 @@ export {
   type RegisterGlobalErrorHandlersOptions,
   registerGlobalErrorHandlers,
 } from './GlobalErrorHandlers'
+export { type GravitoManifest, GravitoServer } from './GravitoServer'
 // Hooks
 export type { ActionCallback, FilterCallback } from './HookManager'
 export { HookManager } from './HookManager'
@@ -72,6 +73,20 @@ export { HookManager } from './HookManager'
 export * from './helpers'
 // HTTP / Security utilities
 export { CookieJar, type CookieOptions } from './http/CookieJar'
+export { type BodySizeLimitOptions, bodySizeLimit } from './http/middleware/BodySizeLimit'
+export { type CorsOptions, type CorsOrigin, cors } from './http/middleware/Cors'
+export { type CsrfOptions, csrfProtection, getCsrfToken } from './http/middleware/Csrf'
+export {
+  createHeaderGate,
+  type HeaderTokenGateOptions,
+  type RequireHeaderTokenOptions,
+  requireHeaderToken,
+} from './http/middleware/HeaderTokenGate'
+export {
+  type HstsOptions,
+  type SecurityHeadersOptions,
+  securityHeaders,
+} from './http/middleware/SecurityHeaders'
 export { ThrottleRequests } from './http/middleware/ThrottleRequests'
 // Listeners
 export type { Listener, ShouldQueue } from './Listener'
@@ -114,6 +129,27 @@ export { Event } from './types/events'
 export * from './testing'
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Runtime Adapters
+// ─────────────────────────────────────────────────────────────────────────────
+
+export {
+  createSqliteDatabase,
+  getPasswordAdapter,
+  getRuntimeAdapter,
+  getRuntimeEnv,
+  type RuntimeAdapter,
+  type RuntimeFileStat,
+  type RuntimeKind,
+  type RuntimePasswordAdapter,
+  type RuntimeProcess,
+  type RuntimeServeConfig,
+  type RuntimeServer,
+  type RuntimeSpawnOptions,
+  type RuntimeSqliteDatabase,
+  type RuntimeSqliteStatement,
+} from './runtime'
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Configuration Helper
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -127,7 +163,7 @@ export * from './testing'
  *     APP_NAME: 'My App',
  *     PORT: 3000,
  *   },
- *   orbits: [OrbitCache, OrbitPulsar],
+ *   orbits: [], // Add your orbits here
  * })
  *
  * const core = await PlanetCore.boot(config)

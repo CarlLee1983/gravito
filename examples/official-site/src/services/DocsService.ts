@@ -11,8 +11,8 @@ import { createHighlighter } from 'shiki'
 // -> /src (1)
 // -> /official-site (2)
 // -> /examples (3)
-// -> /gravito-core (4)
-// -> /gravito-core/docs (Target)
+// -> /@gravito/core (4)
+// -> /@gravito/core/docs (Target)
 const DOCS_ROOT = path.resolve(import.meta.dirname, '../../../../docs')
 
 export interface DocPage {
@@ -44,7 +44,18 @@ export class DocsService {
     if (!DocsService.highlighter) {
       DocsService.highlighter = await createHighlighter({
         themes: ['rose-pine-moon', 'github-dark'],
-        langs: ['ts', 'js', 'bash', 'json', 'yaml', 'markdown', 'typescript', 'html', 'css'],
+        langs: [
+          'ts',
+          'js',
+          'bash',
+          'json',
+          'yaml',
+          'markdown',
+          'typescript',
+          'html',
+          'css',
+          'dockerfile',
+        ],
       })
     }
     return DocsService.highlighter
@@ -355,13 +366,18 @@ export class DocsService {
             orm: 'Atlas ORM',
             auth: '驗證與安全',
             auth_fortify: '認證 (Fortify)',
+            auth_sentinel: 'Sentinel Auth',
             storage: '儲存與檔案',
+            nebula_storage: 'Nebula Storage',
             cache_queue: '快取與排程',
+            plasma_redis: 'Plasma Redis',
+            stasis_cache: 'Stasis Cache',
             seo: 'SEO 與 Sitemap',
             frontend: '前端整合',
             advanced: '進階與維運',
             testing: '測試指南',
             reference: '參考資料',
+            queues: '佇列系統',
 
             // Pages
             intro: '簡介',
@@ -374,12 +390,14 @@ export class DocsService {
             routing: '基礎路由',
             testing_harness: 'HTTP 測試',
             static_site: '靜態網站生成',
+            photon_core: 'Photon Core',
 
             middleware: '中間件 (Middleware)',
             controllers: '控制器 (Controllers)',
             requests: '請求 (Requests)',
             responses: '回應 (Responses)',
             validation: '驗證 (Validation)',
+            helpers: '輔助函式',
 
             // Database Pages
             db_overview: '概覽',
@@ -399,6 +417,7 @@ export class DocsService {
             orm_factories: '模型工廠 (Factories)',
             orm_collections: '集合 (Collections)',
             orm_resources: 'API 資源 (Resources)',
+            orm_usage: 'ORM 使用指南',
 
             security: '安全機制',
             image_opt: '圖片優化',
@@ -411,8 +430,20 @@ export class DocsService {
             i18n: '國際化 (I18n)',
             deployment: '正式環境部署',
             enterprise_integration: '企業級整合',
+            monitor: '觀察者系統 (Monitor)',
             cli: 'CLI 指令',
             plugins: '插件開發',
+            beam_client: 'Beam 客戶端',
+            flux_workflow: 'Flux 工作流程',
+            forge_media: 'Forge 媒體處理',
+            monolith_cms: 'Monolith CMS',
+            scaffold_generator: 'Scaffold 專案生成器',
+            site_toolkit: 'Site Toolkit',
+            ripple_broadcasting: 'Ripple Broadcasting',
+            freeze_react: 'Freeze React',
+            freeze_vue: 'Freeze Vue',
+            luminosity_cli: 'Luminosity CLI',
+            create_app: 'Create Gravito App',
           }
         : {
             // Sections
@@ -424,13 +455,18 @@ export class DocsService {
             orm: 'Atlas ORM',
             auth: 'Auth & Security',
             auth_fortify: 'Authentication (Fortify)',
+            auth_sentinel: 'Sentinel Auth',
             storage: 'Storage & Files',
+            nebula_storage: 'Nebula Storage',
             cache_queue: 'Cache & Queue',
+            plasma_redis: 'Plasma Redis',
+            stasis_cache: 'Stasis Cache',
             seo: 'SEO & Sitemap',
             frontend: 'Frontend Integration',
             advanced: 'Advanced / Operations',
             testing: 'Testing',
             reference: 'Reference',
+            queues: 'Queues',
 
             // Pages
             intro: 'Introduction',
@@ -443,12 +479,14 @@ export class DocsService {
             routing: 'Routing Basics',
             testing_harness: 'HTTP Testing',
             static_site: 'Static Site Gen',
+            photon_core: 'Photon Core',
 
             middleware: 'Middleware',
             controllers: 'Controllers',
             requests: 'Requests',
             responses: 'Responses',
             validation: 'Validation',
+            helpers: 'Helpers',
 
             // Database Pages
             db_overview: 'Overview',
@@ -468,6 +506,7 @@ export class DocsService {
             orm_factories: 'Factories',
             orm_collections: 'Collections',
             orm_resources: 'API Resources',
+            orm_usage: 'ORM Usage Guide',
 
             security: 'Security',
             image_opt: 'Image Optimization',
@@ -480,8 +519,20 @@ export class DocsService {
             i18n: 'Internationalization',
             deployment: 'Production Deployment',
             enterprise_integration: 'Enterprise Integration',
+            monitor: 'Monitoring (Monitor)',
             cli: 'CLI Commands',
             plugins: 'Plugin Development',
+            beam_client: 'Beam Client',
+            flux_workflow: 'Flux Workflow',
+            forge_media: 'Forge Media',
+            monolith_cms: 'Monolith CMS',
+            scaffold_generator: 'Scaffold Generator',
+            site_toolkit: 'Site Toolkit',
+            ripple_broadcasting: 'Ripple Broadcasting',
+            freeze_react: 'Freeze React',
+            freeze_vue: 'Freeze Vue',
+            luminosity_cli: 'Luminosity CLI',
+            create_app: 'Create Gravito App',
           }
 
     return [
@@ -508,19 +559,35 @@ export class DocsService {
         title: trans.first_build,
         path: '#',
         children: [
+          { title: trans.photon_core, path: `${prefix}/guide/photon-core` },
           { title: trans.routing, path: `${prefix}/guide/routing` },
           { title: trans.middleware, path: `${prefix}/guide/middleware` },
           { title: trans.controllers, path: `${prefix}/guide/controllers` },
           { title: trans.requests, path: `${prefix}/guide/requests` },
           { title: trans.responses, path: `${prefix}/guide/responses` },
           { title: trans.validation, path: `${prefix}/guide/validation` },
+          { title: trans.helpers, path: `${prefix}/guide/helpers` },
           { title: trans.static_site, path: `${prefix}/guide/static-site-development` },
         ],
       },
       {
         title: trans.modules,
         path: '#',
-        children: [{ title: trans.plugins, path: `${prefix}/guide/plugin-development` }],
+        children: [
+          { title: trans.plasma_redis, path: `${prefix}/guide/plasma-redis` },
+          { title: trans.plugins, path: `${prefix}/guide/plugin-development` },
+          { title: trans.beam_client, path: `${prefix}/guide/beam-client` },
+          { title: trans.flux_workflow, path: `${prefix}/guide/flux-workflow` },
+          { title: trans.forge_media, path: `${prefix}/guide/forge-media` },
+          { title: trans.monolith_cms, path: `${prefix}/guide/monolith-cms` },
+          { title: trans.scaffold_generator, path: `${prefix}/guide/scaffold-generator` },
+          { title: trans.site_toolkit, path: `${prefix}/guide/site-toolkit` },
+          { title: trans.ripple_broadcasting, path: `${prefix}/guide/ripple-broadcasting` },
+          { title: trans.freeze_react, path: `${prefix}/guide/freeze-react` },
+          { title: trans.freeze_vue, path: `${prefix}/guide/freeze-vue` },
+          { title: trans.luminosity_cli, path: `${prefix}/guide/luminosity-cli` },
+          { title: trans.create_app, path: `${prefix}/guide/create-gravito-app` },
+        ],
       },
       {
         title: trans.database,
@@ -540,6 +607,7 @@ export class DocsService {
         title: trans.orm,
         path: '#',
         children: [
+          { title: trans.orm_usage, path: `${prefix}/guide/orm-usage` },
           { title: trans.orm_getting_started, path: `${prefix}/guide/database/orm-quick-start` },
           { title: trans.orm_relationships, path: `${prefix}/guide/database/atlas-relationships` },
           { title: trans.orm_collections, path: `${prefix}/guide/database/atlas-collections` },
@@ -554,13 +622,25 @@ export class DocsService {
         path: '#',
         children: [
           { title: trans.auth_fortify, path: `${prefix}/guide/authentication` },
+          { title: trans.auth_sentinel, path: `${prefix}/guide/sentinel-auth` },
           { title: trans.security, path: `${prefix}/guide/security` },
         ],
       },
       {
         title: trans.storage,
         path: '#',
-        children: [{ title: trans.image_opt, path: `${prefix}/guide/image-optimization` }],
+        children: [
+          { title: trans.nebula_storage, path: `${prefix}/guide/nebula-storage` },
+          { title: trans.image_opt, path: `${prefix}/guide/image-optimization` },
+        ],
+      },
+      {
+        title: trans.cache_queue,
+        path: '#',
+        children: [
+          { title: trans.stasis_cache, path: `${prefix}/guide/stasis-cache` },
+          { title: trans.queues, path: `${prefix}/guide/queues` },
+        ],
       },
       {
         title: trans.seo,
@@ -587,6 +667,7 @@ export class DocsService {
         children: [
           { title: trans.deployment, path: `${prefix}/guide/deployment` },
           { title: trans.enterprise_integration, path: `${prefix}/guide/enterprise-integration` },
+          { title: trans.monitor, path: `${prefix}/guide/monitor` },
         ],
       },
       {

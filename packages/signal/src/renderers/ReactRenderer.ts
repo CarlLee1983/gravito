@@ -3,13 +3,18 @@ import type { Renderer, RenderResult } from './Renderer'
 export class ReactRenderer<P extends object = object> implements Renderer {
   constructor(
     private component: any, // Use any to avoid hard React dependency in types
-    private props?: P
+    private props?: P,
+    private deps: {
+      createElement?: (...args: any[]) => any
+      renderToStaticMarkup?: (element: any) => string
+    } = {}
   ) {}
 
   async render(data: Record<string, unknown>): Promise<RenderResult> {
     // Dynamic imports to avoid hard dependencies on react/react-dom
-    const { createElement } = await import('react')
-    const { renderToStaticMarkup } = await import('react-dom/server')
+    const createElement = this.deps.createElement ?? (await import('react')).createElement
+    const renderToStaticMarkup =
+      this.deps.renderToStaticMarkup ?? (await import('react-dom/server')).renderToStaticMarkup
 
     const mergedProps = { ...this.props, ...data } as P
 

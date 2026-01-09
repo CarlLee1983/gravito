@@ -1,0 +1,30 @@
+{
+  "errors": {
+    "member_exists": "使用此電子郵件的會員已存在",
+    "invalid_credentials": "認證資料無效",
+    "account_suspended": "帳號已被停權",
+    "member_not_found": "找不到會員",
+    "current_password_required": "設定新密碼需要輸入目前密碼",
+    "invalid_current_password": "目前密碼錯誤",
+    "invalid_token": "無效或已過期的權杖",
+    "session_expired_other_device": "您的帳號已在其他裝置登入，目前的連線已失效。"
+  },
+  "notifications": {
+    "operational": "會員衛星模組已啟動"
+  },
+  "emails": {
+    "welcome_subject": "歡迎加入 Gravito！",
+    "welcome_title": "歡迎您的加入",
+    "welcome_body": "請點擊下方按鈕驗證您的電子郵件地址：",
+    "verify_button": "驗證電子郵件",
+    "reset_password_subject": "重設您的密碼",
+    "reset_password_title": "重設密碼請求",
+    "reset_password_body": "我們收到了重設您密碼的請求。如果您沒有提出此請求，請忽略此郵件。",
+    "reset_password_button": "重設密碼",
+    "reset_password_warning": "如果您沒有要求重設密碼，請忽略此封郵件。",
+    "level_changed_subject": "您的會員等級已更新！",
+    "level_changed_badge": "晉級通知",
+    "level_changed_title": "恭喜晉級！",
+    "level_changed_body": "您的會員帳號已成功升級。現在您可以享受更多專屬權益與服務。"
+  }
+}

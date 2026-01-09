@@ -81,13 +81,13 @@ bunx turbo build test lint
 
 ```bash
 # 只構建 core 套件
-bunx turbo build --filter=gravito-core
+bunx turbo build --filter=@gravito/core
 
 # 構建 core 和所有依賴它的套件
-bunx turbo build --filter=...gravito-core
+bunx turbo build --filter=...@gravito/core
 
 # 構建 core 和所有它依賴的套件
-bunx turbo build --filter=gravito-core...
+bunx turbo build --filter=@gravito/core...
 
 # 排除特定套件
 bunx turbo build --filter='!@gravito/site'
@@ -227,14 +227,14 @@ bunx turbo build --summarize
 - 其他套件使用快取
 - 時間：~30 秒
 
-### 場景：修改了 `gravito-core`
+### 場景：修改了 `@gravito/core`
 
 **沒有 Turborepo**：
 - 構建所有套件（因為 core 是基礎依賴）
 - 時間：~5 分鐘
 
 **使用 Turborepo**：
-- 構建 `gravito-core`
+- 構建 `@gravito/core`
 - 構建所有依賴它的套件（並行）
 - 時間：~2 分鐘（並行加速）
 

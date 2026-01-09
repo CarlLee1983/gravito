@@ -2,7 +2,7 @@ import { createRequire } from "node:module";
 var __require = /* @__PURE__ */ createRequire(import.meta.url);
 
 // ../ion/src/index.ts
-import { HonoContextWrapper } from "gravito-core";
+import { HonoContextWrapper } from "@gravito/core";
 
 // ../ion/src/InertiaService.ts
 class InertiaService {

@@ -1,0 +1,17 @@
+services:
+  gravito.redis:
+    image: redis:alpine
+    ports:
+      - '${REDIS_PORT:-6379}:6379'
+    volumes:
+      - gravito-redis:/data
+    networks:
+      - gravito
+
+networks:
+  gravito:
+    driver: bridge
+
+volumes:
+  gravito-redis:
+    driver: local

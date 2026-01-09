@@ -2,7 +2,7 @@
  * @gravito/monitor - Metrics Controller
  */
 
-import type { GravitoContext } from 'gravito-core'
+import type { GravitoContext } from '@gravito/core'
 import type { MetricsRegistry } from './MetricsRegistry'
 
 /**

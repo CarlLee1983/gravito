@@ -18,10 +18,10 @@ This page compares Gravito (core + Kinetic Modules) with Laravel 12’s “full-
 
 | Laravel | Gravito |
 |--------|---------|
-| Service Container, Service Providers | `gravito-core` (`Container`, `ServiceProvider`) |
-| HTTP Kernel / Middleware | `gravito-core` Router + Native middleware; Gravito-provided middleware (Auth/Session/…) |
-| Exception Handler | `gravito-core` `PlanetCore` error + notFound handlers and hooks |
-| Events / Listeners | `gravito-core` `EventManager` / `Listener` |
+| Service Container, Service Providers | `@gravito/core` (`Container`, `ServiceProvider`) |
+| HTTP Kernel / Middleware | `@gravito/core` Router + Native middleware; Gravito-provided middleware (Auth/Session/…) |
+| Exception Handler | `@gravito/core` `PlanetCore` error + notFound handlers and hooks |
+| Events / Listeners | `@gravito/core` `EventManager` / `Listener` |
 | Validation (FormRequest) | `@gravito/mass` (`FormRequest`) |
 | Views / Blade | `@gravito/prism` (TSX template engine) / `@gravito/ion` (Inertia bridge) |
 | Database / Eloquent | `@gravito/atlas` (Drizzle-based DB layer) |

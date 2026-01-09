@@ -238,7 +238,7 @@ CMD ["/app/server"]
 ## 7. 專案結構 (Project Structure)
 
 ```
-gravito-core/
+@gravito/core/
 ├── packages/                 # 核心模組 (Monorepo)
 │   ├── pulse/                # 命令列工具 (Orbit Pulse)
 │   ├── core/                 # PlanetCore (核心 IoC 容器 + 生命週期)

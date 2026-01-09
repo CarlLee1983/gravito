@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; line-height: 1.6; color: #1a1a1a; margin: 0; padding: 0; background-color: #f9fafb; }
+        .container { max-width: 600px; margin: 40px auto; padding: 32px; background: #ffffff; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); border-top: 8px solid {{ branding.color }}; }
+        .logo { font-size: 24px; font-weight: 800; color: {{ branding.color }}; margin-bottom: 24px; text-align: center; }
+        .badge { display: inline-block; padding: 4px 12px; background: #fef3c7; color: #92400e; border-radius: 9999px; font-size: 14px; font-weight: 600; margin-bottom: 16px; }
+        h1 { font-size: 24px; font-weight: 700; color: #111827; margin-bottom: 16px; text-align: center; }
+        p { margin-bottom: 24px; color: #4b5563; text-align: center; }
+        .level-up { font-size: 32px; margin: 24px 0; text-align: center; }
+        .footer { margin-top: 32px; font-size: 14px; color: #9ca3af; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">{{ branding.name }}</div>
+        <div style="text-align: center;"><span class="badge">{{ lang.badge_text }}</span></div>
+        <h1>{{ lang.title }}</h1>
+        <p>{{ lang.body }}</p>
+        
+        <div class="level-up">
+            <span style="color: #9ca3af; text-decoration: line-through; font-size: 20px;">{{ oldLevel }}</span>
+            <span style="margin: 0 16px;">→</span>
+            <span style="color: {{ branding.color }}; font-weight: 800;">{{ newLevel }}</span>
+        </div>
+
+        <div class="footer">
+            &copy; {{ currentYear }} {{ branding.name }}. All rights reserved.
+        </div>
+    </div>
+</body>
+</html>

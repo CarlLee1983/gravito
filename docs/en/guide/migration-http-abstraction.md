@@ -10,10 +10,10 @@ Gravito 2.0 introduces an HTTP abstraction layer that decouples your code from t
 
 | Before (Photon) | After (Gravito) |
 |---------------|-----------------|
-| `import type { Context } from '@gravito/photon'` | `import type { GravitoContext } from 'gravito-core'` |
-| `import type { Handler } from '@gravito/photon'` | `import type { GravitoHandler } from 'gravito-core'` |
-| `import type { MiddlewareHandler } from '@gravito/photon'` | `import type { GravitoMiddleware } from 'gravito-core'` |
-| `import type { Next } from '@gravito/photon'` | `import type { GravitoNext } from 'gravito-core'` |
+| `import type { Context } from '@gravito/photon'` | `import type { GravitoContext } from '@gravito/core'` |
+| `import type { Handler } from '@gravito/photon'` | `import type { GravitoHandler } from '@gravito/core'` |
+| `import type { MiddlewareHandler } from '@gravito/photon'` | `import type { GravitoMiddleware } from '@gravito/core'` |
+| `import type { Next } from '@gravito/photon'` | `import type { GravitoNext } from '@gravito/core'` |
 | `c.req.param('id')` | `ctx.req.param('id')` (same API!) |
 | `c.json({ data })` | `ctx.json({ data })` (same API!) |
 
@@ -26,7 +26,7 @@ Gravito 2.0 introduces an HTTP abstraction layer that decouples your code from t
 import type { Context, MiddlewareHandler } from '@gravito/photon'
 
 // After
-import type { GravitoContext, GravitoMiddleware } from 'gravito-core'
+import type { GravitoContext, GravitoMiddleware } from '@gravito/core'
 ```
 
 ### Step 2: Update Controller Types
@@ -42,7 +42,7 @@ export class UserController {
 }
 
 // After
-import type { GravitoContext } from 'gravito-core'
+import type { GravitoContext } from '@gravito/core'
 
 export class UserController {
   async index(ctx: GravitoContext) {
@@ -63,7 +63,7 @@ const logger: MiddlewareHandler = async (c, next) => {
 }
 
 // After
-import type { GravitoMiddleware, GravitoNext } from 'gravito-core'
+import type { GravitoMiddleware, GravitoNext } from '@gravito/core'
 
 const logger: GravitoMiddleware = async (ctx, next) => {
   console.log(`${ctx.req.method} ${ctx.req.path}`)
@@ -77,7 +77,7 @@ For gradual migration, use the compatibility layer:
 
 ```typescript
 // During migration, you can use Photon-style aliases:
-import type { Context, MiddlewareHandler, Next } from 'gravito-core/compat'
+import type { Context, MiddlewareHandler, Next } from '@gravito/core/compat'
 
 // Your existing code works unchanged!
 export async function myMiddleware(c: Context, next: Next) {
@@ -90,7 +90,7 @@ export async function myMiddleware(c: Context, next: Next) {
 When you need Photon-specific features not yet abstracted:
 
 ```typescript
-import type { GravitoContext } from 'gravito-core'
+import type { GravitoContext } from '@gravito/core'
 import type { Context as PhotonContext } from '@gravito/photon'
 
 async function advancedHandler(ctx: GravitoContext) {
@@ -130,7 +130,7 @@ To add custom context variables in your Gravito:
 
 ```typescript
 // In your Kinetic module
-declare module 'gravito-core' {
+declare module '@gravito/core' {
   interface GravitoVariables {
     myService: MyService
   }

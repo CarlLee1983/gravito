@@ -1,4 +1,4 @@
-import { PlanetCore } from 'gravito-core'
+import { PlanetCore } from '@gravito/core'
 import type { Context } from '@gravito/photon'
 
 export class UserController {

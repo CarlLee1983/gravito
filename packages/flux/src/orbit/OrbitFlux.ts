@@ -13,7 +13,7 @@ import type { FluxConfig, FluxLogger, WorkflowStorage } from '../types'
 
 /**
  * Minimal PlanetCore interface for type compatibility
- * (Avoids importing gravito-core sources which causes rootDir issues)
+ * (Avoids importing @gravito/core sources which causes rootDir issues)
  */
 interface PlanetCore {
   logger: {

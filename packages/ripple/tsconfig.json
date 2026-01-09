@@ -6,14 +6,18 @@
         "declaration": true,
         "declarationMap": true,
         "skipLibCheck": true,
+        "types": [
+            "bun-types"
+        ],
         "paths": {
-            "gravito-core": [
-                "../core/src/index.ts"
+            "@gravito/core": [
+                "../../packages/core/src/index.ts"
             ],
-            "gravito-core/*": [
-                "../core/src/*"
+            "@gravito/*": [
+                "../../packages/*/src/index.ts"
             ]
-        }
+        },
+        "baseUrl": "."
     },
     "include": [
         "src/**/*"

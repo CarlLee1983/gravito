@@ -15,7 +15,7 @@ describe('Compactor', () => {
 
   beforeEach(async () => {
     if (existsSync(TEST_DIR)) {
-      rmSync(TEST_DIR, { recursive: true })
+      rmSync(TEST_DIR, { recursive: true, force: true })
     }
     await mkdir(TEST_DIR, { recursive: true })
 
@@ -25,7 +25,7 @@ describe('Compactor', () => {
 
   afterEach(() => {
     if (existsSync(TEST_DIR)) {
-      rmSync(TEST_DIR, { recursive: true })
+      rmSync(TEST_DIR, { recursive: true, force: true })
     }
   })
 

@@ -1,4 +1,4 @@
-import { AuthorizationException } from 'gravito-core'
+import { AuthorizationException } from '@gravito/core'
 import type { Authenticatable } from './contracts/Authenticatable'
 
 export type Constructor<T = unknown> = new (...args: unknown[]) => T

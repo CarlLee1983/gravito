@@ -399,7 +399,7 @@ export default function Layout({ children, noPadding = false }: LayoutProps) {
       {/* Footer */}
       <footer className="relative z-10 border-t border-white/5 bg-void/80 backdrop-blur-md py-12 px-6">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
-          <div className="col-span-1 md:col-span-2">
+          <div className="col-span-1">
             <div className="flex items-center gap-2 mb-6">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-500 to-purple-600 flex items-center justify-center shadow-[0_0_15px_rgba(0,240,255,0.3)]">
                 <div className="w-3 h-3 rounded-full bg-void shadow-inner" />
@@ -436,6 +436,49 @@ export default function Layout({ children, noPadding = false }: LayoutProps) {
                     </span>
                   </div>
                 </a>
+              </li>
+              <li>
+                <a
+                  href="https://atlas.gravito.dev"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="group flex items-center gap-3 p-3 -mx-3 rounded-2xl transition-all duration-300 hover:bg-white/5 border border-transparent hover:border-white/5"
+                >
+                  <div className="relative w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-400 flex items-center justify-center overflow-hidden border border-white/20 shadow-[0_0_20px_rgba(6,182,212,0.3)] transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3">
+                    <div className="w-1/2 h-1/2 rounded-full bg-void shadow-inner flex items-center justify-center">
+                      <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                    </div>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-bold text-gray-300 group-hover:text-white transition-colors">
+                      {trans('footer.atlas', 'Atlas')}
+                    </span>
+                    <span className="text-[10px] text-gray-600 group-hover:text-gray-500 font-mono uppercase tracking-widest mt-0.5">
+                      High-Performance ORM
+                    </span>
+                  </div>
+                </a>
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="text-white font-bold mb-6 italic">{trans('footer.legal', 'Legal')}</h4>
+            <ul className="space-y-4 text-sm text-gray-400">
+              <li>
+                <StaticLink
+                  href={getLocalizedPath('/privacy')}
+                  className="hover:text-singularity transition-colors"
+                >
+                  {trans('footer.privacy', 'Privacy')}
+                </StaticLink>
+              </li>
+              <li>
+                <StaticLink
+                  href={getLocalizedPath('/terms')}
+                  className="hover:text-singularity transition-colors"
+                >
+                  {trans('footer.terms', 'Terms')}
+                </StaticLink>
               </li>
             </ul>
           </div>

@@ -34,7 +34,7 @@ describe('TokenGuard', () => {
       },
     } as unknown as Context
 
-    const guard = new TokenGuard(provider, ctx)
+    const guard = new TokenGuard(provider, ctx, 'api_token', 'api_token', false, true)
 
     expect(await guard.check()).toBe(true)
     expect((await guard.user())?.getAuthIdentifier()).toBe('1')

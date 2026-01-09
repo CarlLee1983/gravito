@@ -2,7 +2,7 @@
  * @gravito/monitor - Tracing Middleware
  */
 
-import type { GravitoContext } from 'gravito-core'
+import type { GravitoContext } from '@gravito/core'
 import type { TracingManager } from './TracingManager'
 
 /**

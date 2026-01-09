@@ -32,7 +32,7 @@ bun add @gravito/pulsar
 For multi-machine deployments, store sessions in a shared cache (e.g. Redis) via `@gravito/stasis`:
 
 ```ts
-import { PlanetCore, defineConfig } from 'gravito-core'
+import { PlanetCore, defineConfig } from '@gravito/core'
 import { OrbitCache } from '@gravito/stasis'
 import { OrbitPulsar } from '@gravito/pulsar'
 

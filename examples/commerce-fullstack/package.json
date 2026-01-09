@@ -1,0 +1,32 @@
+{
+  "name": "@gravito/example-commerce-fullstack",
+  "version": "1.0.2",
+  "private": true,
+  "scripts": {
+    "dev": "bun run src/entry-server.ts",
+    "build": "bun build ./src/entry-server.ts --outdir ./dist --target node",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@gravito/core": "workspace:*",
+    "@gravito/photon": "workspace:*",
+    "@gravito/atlas": "workspace:*",
+    "@gravito/monolith": "workspace:*",
+    "@gravito/signal": "workspace:*",
+    "@gravito/stasis": "workspace:*",
+    "@gravito/admin-shell-react": "workspace:*",
+    "@gravito/admin-ui-catalog": "workspace:*",
+    "@gravito/admin-ui-analytics": "workspace:*",
+    "@gravito/admin-ui-announcement": "workspace:*",
+    "@gravito/satellite-catalog": "workspace:*",
+    "@gravito/satellite-cart": "workspace:*",
+    "@gravito/satellite-commerce": "workspace:*",
+    "@gravito/satellite-membership": "workspace:*",
+    "@gravito/satellite-payment": "workspace:*",
+    "@gravito/satellite-analytics": "workspace:*",
+    "@gravito/satellite-support": "workspace:*",
+    "@gravito/satellite-announcement": "workspace:*",
+    "@gravito/satellite-news": "workspace:*",
+    "@gravito/satellite-ad": "workspace:*"
+  }
+}

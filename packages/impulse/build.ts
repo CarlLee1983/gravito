@@ -15,7 +15,7 @@ const tsup = spawn(
     'esm,cjs',
     '--dts',
     '--external',
-    '@gravito/photon,zod,gravito-core',
+    '@gravito/photon,zod,@gravito/core',
     '--outDir',
     'dist',
   ],

@@ -4,7 +4,7 @@
  * Gravito Orbit plugin for observability (Health, Metrics, Tracing)
  */
 
-import type { GravitoOrbit, PlanetCore } from 'gravito-core'
+import type { GravitoOrbit, PlanetCore } from '@gravito/core'
 import type { MonitorConfig } from './config'
 import { HealthController, HealthRegistry } from './health'
 import { MetricsController, MetricsRegistry } from './metrics'

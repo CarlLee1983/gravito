@@ -7,7 +7,7 @@
         "start": "bun run src/index.ts"
     },
     "dependencies": {
-        "gravito-core": "workspace:*",
+        "@gravito/core": "workspace:*",
         "@gravito/forge": "workspace:*",
         "@gravito/nebula": "workspace:*",
         "@gravito/stream": "workspace:*",
@@ -29,5 +29,5 @@
             "biome check --write"
         ]
     },
-    "version": "0.5.0-alpha"
+    "version": "0.5.0"
 }

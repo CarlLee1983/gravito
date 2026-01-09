@@ -11,7 +11,7 @@ bun add @gravito/ripple
 ## 快速開始
 
 ```typescript
-import { PlanetCore } from 'gravito-core'
+import { PlanetCore } from '@gravito/core'
 import { OrbitRipple } from '@gravito/ripple'
 
 const core = new PlanetCore()

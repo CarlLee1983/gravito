@@ -46,6 +46,7 @@ export default function Docs() {
     e.preventDefault()
     const element = document.getElementById(id)
     if (element) {
+      setActiveId(id)
       element.scrollIntoView({ behavior: 'smooth', block: 'start' })
       // Update URL hash without triggering navigation
       window.history.pushState(null, '', `#${id}`)
@@ -71,74 +72,6 @@ export default function Docs() {
     }
     if (!content) {
       return
-    }
-
-    // Enhance code blocks with copy button and window controls (Mac terminal style)
-    const pres = Array.from(root.querySelectorAll('pre'))
-    for (const pre of pres) {
-      const existingWrapper = pre.closest('[data-pre-wrapper="true"]')
-      if (existingWrapper) {
-        continue
-      }
-
-      const wrapper = document.createElement('div')
-      wrapper.dataset.preWrapper = 'true'
-      wrapper.className =
-        'relative group my-10 overflow-hidden rounded-2xl border border-white/20 bg-gray-900/80 backdrop-blur shadow-2xl transition-all hover:border-singularity/40'
-
-      // Add "Console" Header (Mac terminal style)
-      const header = document.createElement('div')
-      header.className = 'flex items-center gap-2 px-4 py-3 border-b border-white/10 bg-white/10'
-      header.innerHTML = `
-        <div class="flex gap-1.5">
-          <div class="w-2.5 h-2.5 rounded-full bg-red-500/20 border border-red-500/40"></div>
-          <div class="w-2.5 h-2.5 rounded-full bg-amber-500/20 border border-amber-500/40"></div>
-          <div class="w-2.5 h-2.5 rounded-full bg-emerald-500/20 border border-emerald-500/40"></div>
-        </div>
-        <div class="ml-4 text-[9px] font-black uppercase tracking-[0.2em] text-gray-500 italic">Gravito Console</div>
-      `
-      wrapper.appendChild(header)
-
-      const parent = pre.parentNode
-      if (!parent) {
-        continue
-      }
-
-      parent.insertBefore(wrapper, pre)
-      wrapper.appendChild(pre)
-
-      pre.classList.add(
-        'pr-14',
-        '!bg-transparent',
-        '!m-0',
-        '!p-6',
-        'overflow-x-auto',
-        'h-scrollbar'
-      )
-
-      const button = document.createElement('button')
-      button.type = 'button'
-      button.className =
-        'absolute top-2.5 right-3 rounded-md border border-gray-700/60 bg-gray-900/60 px-2.5 py-1.5 text-[10px] font-black uppercase tracking-widest text-gray-300 opacity-0 backdrop-blur transition-all hover:bg-singularity hover:text-black focus:opacity-100 group-hover:opacity-100 z-20'
-      button.textContent = 'Copy'
-
-      button.addEventListener('click', async () => {
-        const code = pre.querySelector('code')?.textContent ?? pre.textContent ?? ''
-        try {
-          await navigator.clipboard.writeText(code)
-          button.textContent = 'Copied'
-          window.setTimeout(() => {
-            button.textContent = 'Copy'
-          }, 1200)
-        } catch {
-          button.textContent = 'Failed'
-          window.setTimeout(() => {
-            button.textContent = 'Copy'
-          }, 1200)
-        }
-      })
-
-      wrapper.appendChild(button)
     }
 
     // Add anchor links to headings
@@ -236,6 +169,37 @@ export default function Docs() {
     }
     return () => observer.disconnect()
   }, [tocItems, content])
+
+  useEffect(() => {
+    let raf = 0
+    const syncFromHash = (behavior: ScrollBehavior = 'auto') => {
+      if (typeof window === 'undefined') {
+        return
+      }
+      const rawHash = window.location.hash.replace(/^#/, '')
+      const hash = rawHash ? decodeURIComponent(rawHash) : ''
+      if (!hash) {
+        return
+      }
+      const match = tocItems.find((item) => item.id === hash)
+      if (!match) {
+        return
+      }
+      setActiveId(match.id)
+      const element = document.getElementById(match.id)
+      if (element) {
+        element.scrollIntoView({ behavior, block: 'start' })
+      }
+    }
+
+    raf = window.requestAnimationFrame(() => syncFromHash('auto'))
+    const handleHashChange = () => syncFromHash('smooth')
+    window.addEventListener('hashchange', handleHashChange)
+    return () => {
+      window.cancelAnimationFrame(raf)
+      window.removeEventListener('hashchange', handleHashChange)
+    }
+  }, [tocItems])
 
   // SPA Link Interceptor: Prevent full page reload for internal docs links
   useEffect(() => {
@@ -496,7 +460,7 @@ export default function Docs() {
                                 prose-h3:text-2xl prose-h3:text-white/90 prose-h3:mt-16 prose-h3:mb-6 prose-h3:flex prose-h3:items-center prose-h3:gap-3
                                 prose-a:font-bold prose-a:text-singularity hover:prose-a:text-cyan-300 transition-colors
                                 prose-p:text-gray-300 prose-p:leading-relaxed prose-p:mb-8 prose-p:font-medium
-                                prose-pre:bg-transparent prose-pre:border-0 prose-pre:rounded-2xl prose-pre:shadow-none
+                                prose-pre:bg-white/5 prose-pre:border prose-pre:border-white/10 prose-pre:rounded-2xl prose-pre:shadow-lg prose-pre:p-6
                                 prose-strong:text-white prose-strong:font-black
                                 prose-hr:border-white/5 prose-hr:my-20
                                 prose-blockquote:border-singularity prose-blockquote:bg-singularity/5 prose-blockquote:py-2 prose-blockquote:px-8 prose-blockquote:rounded-r-2xl prose-blockquote:italic prose-blockquote:text-gray-300

@@ -1,0 +1,32 @@
+{
+  "name": "@gravito/satellite-catalog",
+  "version": "0.1.2",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --clean --external @gravito/atlas --external @gravito/enterprise --external @gravito/signal --external @gravito/stasis --external @gravito/core",
+    "test": "bun test",
+    "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck"
+  },
+  "dependencies": {
+    "@gravito/atlas": "workspace:*",
+    "@gravito/enterprise": "workspace:*",
+    "@gravito/signal": "workspace:*",
+    "@gravito/stasis": "workspace:*",
+    "@gravito/core": "workspace:*"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5.9.3"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gravito-framework/gravito.git",
+    "directory": "satellites/catalog"
+  }
+}

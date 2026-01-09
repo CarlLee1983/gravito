@@ -6,7 +6,6 @@ dist/
 
 # Bun
 *.lockb
-bun.lock
 
 # IDE
 .idea/
@@ -48,3 +47,17 @@ packages/*/src/**/*.d.ts.map
 .luminosity/
 examples/*/static/build/
 examples/*/dist/
+
+# Flux Dev Viewer
+.flux/
+.flux*/
+
+# Databases
+*.db
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+
+
+# Test temp artifacts
+packages/*/tests/.tmp-*

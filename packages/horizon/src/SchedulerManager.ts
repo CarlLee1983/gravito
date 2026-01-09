@@ -1,4 +1,4 @@
-import type { HookManager, Logger } from 'gravito-core'
+import type { HookManager, Logger } from '@gravito/core'
 import { CronParser } from './CronParser'
 import type { LockManager } from './locks'
 import { Process } from './process'

@@ -43,7 +43,7 @@ bun add @gravito/atlas
 完整示例請見：[快速上手](./atlas/getting-started.md)。
 
 ```ts
-import { PlanetCore } from 'gravito-core'
+import { PlanetCore } from '@gravito/core'
 import { DB } from '@gravito/atlas'
 
 // 配置資料庫

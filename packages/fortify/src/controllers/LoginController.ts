@@ -1,6 +1,7 @@
+import type { GravitoContext } from '@gravito/core'
 import type { AuthManager } from '@gravito/sentinel'
-import type { GravitoContext } from 'gravito-core'
 import type { FortifyConfig } from '../config'
+import { ensureCsrfToken } from '../csrf'
 import type { ViewService } from '../types'
 
 /**
@@ -25,14 +26,16 @@ export class LoginController {
       return c.json({ view: 'login' })
     }
 
+    const csrfToken = ensureCsrfToken(c, this.config)
+
     // Render view if view service is available
     const view = c.get('view') as ViewService | undefined
     if (view?.render && this.config.views?.login) {
-      return c.html(view.render(this.config.views.login))
+      return c.html(view.render(this.config.views.login, { csrfToken }))
     }
 
     // Default: return basic HTML form
-    return c.html(this.defaultLoginHtml())
+    return c.html(this.defaultLoginHtml(csrfToken ?? undefined))
   }
 
   /**
@@ -91,7 +94,8 @@ export class LoginController {
     }
   }
 
-  private defaultLoginHtml(): string {
+  private defaultLoginHtml(csrfToken?: string): string {
+    const csrfField = csrfToken ? `<input type="hidden" name="_token" value="${csrfToken}">` : ''
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -118,6 +122,7 @@ export class LoginController {
   <div class="container">
     <h1>Sign In</h1>
     <form method="POST" action="/login">
+      ${csrfField}
       <div class="form-group">
         <label for="email">Email</label>
         <input type="email" id="email" name="email" required>

@@ -5,6 +5,7 @@
 import { randomUUID } from 'node:crypto'
 import { mkdir } from 'node:fs/promises'
 import { join } from 'node:path'
+import { getRuntimeAdapter } from '@gravito/core'
 import { FFmpegAdapter } from '../adapters/FFmpegAdapter'
 import type { FileInput, FileOutput, ProcessingProgress, ProcessOptions } from '../types'
 import { BaseProcessor } from './BaseProcessor'
@@ -32,6 +33,7 @@ export interface VideoProcessorOptions {
 export class VideoProcessor extends BaseProcessor {
   private adapter: FFmpegAdapter
   private tempDir: string
+  private runtime = getRuntimeAdapter()
 
   constructor(options: VideoProcessorOptions = {}) {
     super()
@@ -80,8 +82,7 @@ export class VideoProcessor extends BaseProcessor {
     })
 
     // Get output file info
-    const outputFile = Bun.file(outputPath)
-    const stats = await outputFile.stat()
+    const stats = await this.runtime.stat(outputPath)
 
     return {
       url: outputPath, // Will be replaced by storage URL after upload
@@ -111,7 +112,7 @@ export class VideoProcessor extends BaseProcessor {
     // Write Blob/File to temp directory
     const inputFilename = input.filename || `${randomUUID()}.tmp`
     const inputPath = join(this.tempDir, inputFilename)
-    await Bun.write(inputPath, input.source)
+    await this.runtime.writeFile(inputPath, input.source)
     return inputPath
   }
 

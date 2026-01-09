@@ -3,28 +3,29 @@
 
 <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/svg+xml" href="%BASE_URL%favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <title>Gravito Atlas - Structuring Chaos</title>
+    <!-- Trigger Deploy: 2026-01-01 v4 (Fix Sitemap & Robots) -->
     <meta name="description"
         content="Atlas is a Bun-native, high-performance ORM for high-availability systems. Structure your database chaos with sub-millisecond execution." />
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://gravito.dev/atlas" />
+    <meta property="og:url" content="https://gravito-framework.github.io/atlas-site-dist/" />
     <meta property="og:title" content="Gravito Atlas - Structuring Chaos" />
     <meta property="og:description"
         content="High-performance ORM optimized for Bun. Sub-millisecond queries, type-safe migrations, and cosmic DX." />
-    <meta property="og:image" content="/hero-bg.png" />
+    <meta property="og:image" content="https://gravito-framework.github.io/atlas-site-dist/hero-bg.png" />
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image" />
-    <meta property="twitter:url" content="https://gravito.dev/atlas" />
+    <meta property="twitter:url" content="https://gravito-framework.github.io/atlas-site-dist/" />
     <meta property="twitter:title" content="Gravito Atlas - Structuring Chaos" />
     <meta property="twitter:description"
         content="High-performance ORM optimized for Bun. Sub-millisecond queries, type-safe migrations, and cosmic DX." />
-    <meta property="twitter:image" content="/hero-bg.png" />
+    <meta property="twitter:image" content="https://gravito-framework.github.io/atlas-site-dist/hero-bg.png" />
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -32,6 +33,42 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@400;500&display=swap"
         rel="stylesheet">
+    <script>
+        (function () {
+            var params = new URLSearchParams(window.location.search);
+            var path = params.get('p');
+            var query = params.get('q');
+            var hash = params.get('h');
+            if (path) {
+                var base = '%BASE_URL%';
+                var next = base + path.replace(/^\//, '');
+                if (query && query !== '?') {
+                    next += query;
+                }
+                if (hash && hash !== '#') {
+                    next += hash;
+                }
+                window.history.replaceState(null, '', next);
+            }
+        })();
+    </script>
+    <!-- Google Analytics -->
+    <script>
+        (function() {
+            var gaId = '%VITE_GA_MEASUREMENT_ID%';
+            if (gaId && gaId !== '' && gaId !== '%' + 'VITE_GA_MEASUREMENT_ID' + '%') {
+                var script = document.createElement('script');
+                script.async = true;
+                script.src = 'https://www.googletagmanager.com/gtag/js?id=' + gaId;
+                document.head.appendChild(script);
+
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', gaId);
+            }
+        })();
+    </script>
 </head>
 
 <body

@@ -22,7 +22,7 @@ bun add @gravito/pulsar
 ## Usage
 
 ```ts
-import { PlanetCore, defineConfig } from 'gravito-core'
+import { PlanetCore, defineConfig } from '@gravito/core'
 import { OrbitCache } from '@gravito/stasis'
 import { OrbitPulsar } from '@gravito/pulsar'
 

@@ -1,3 +1,4 @@
+import type { GravitoContext } from '@gravito/core'
 import type { Transport } from './transports/Transport'
 export type { Transport }
 
@@ -61,6 +62,16 @@ export interface MailConfig {
    * Default: /__mail
    */
   devUiPrefix?: string | undefined
+
+  /**
+   * Allow Dev UI in production. Default: false.
+   */
+  devUiAllowInProduction?: boolean | undefined
+
+  /**
+   * Gate access to Dev UI (required in production unless allowInProduction is true).
+   */
+  devUiGate?: ((ctx: GravitoContext) => boolean | Promise<boolean>) | undefined
 
   /**
    * Translation function for i18n support

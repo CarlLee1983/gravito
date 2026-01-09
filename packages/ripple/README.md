@@ -21,7 +21,7 @@ bun add @gravito/ripple
 ### Server Setup
 
 ```typescript
-import { PlanetCore } from 'gravito-core'
+import { PlanetCore } from '@gravito/core'
 import { OrbitRipple, RippleServer } from '@gravito/ripple'
 
 const core = new PlanetCore()

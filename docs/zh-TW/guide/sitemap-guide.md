@@ -421,7 +421,7 @@ sitemap.installApiEndpoints(core, '/admin/sitemap')
 使用簡單的 API Token 驗證：
 
 ```typescript
-import type { GravitoContext, Next } from 'gravito-core'
+import type { GravitoContext, Next } from '@gravito/core'
 
 const apiTokenAuth = async (c: GravitoContext, next: Next) => {
   const token = c.req.header('Authorization')?.replace('Bearer ', '')
@@ -459,7 +459,7 @@ curl -X POST http://localhost:3000/admin/sitemap/generate \
 限制只有特定 IP 可以存取：
 
 ```typescript
-import type { GravitoContext, Next } from 'gravito-core'
+import type { GravitoContext, Next } from '@gravito/core'
 import { ipRangeCheck } from 'ip-range-check' // 需要安裝套件
 
 const adminOnly = async (c: GravitoContext, next: Next) => {
@@ -501,7 +501,7 @@ sitemap.installApiEndpoints(core, '/admin/sitemap')
 
 ```typescript
 import { auth } from '@gravito/sentinel'
-import type { GravitoContext, Next } from 'gravito-core'
+import type { GravitoContext, Next } from '@gravito/core'
 
 // 1. 檢查認證
 const requireAuth = auth()

@@ -1,9 +1,18 @@
 import { ConfigLoader, IncrementalStrategy, SeoEngine } from '@gravito/luminosity'
 import pc from 'picocolors'
 
-export async function compactCommand(options: { config?: string }) {
+export interface CompactCommandDeps {
+  ConfigLoader?: typeof ConfigLoader
+  SeoEngine?: typeof SeoEngine
+  IncrementalStrategy?: typeof IncrementalStrategy
+}
+
+export async function compactCommand(options: { config?: string }, deps: CompactCommandDeps = {}) {
   try {
-    const loader = new ConfigLoader()
+    const ConfigLoaderImpl = deps.ConfigLoader ?? ConfigLoader
+    const SeoEngineImpl = deps.SeoEngine ?? SeoEngine
+    const IncrementalStrategyImpl = deps.IncrementalStrategy ?? IncrementalStrategy
+    const loader = new ConfigLoaderImpl()
     const config = await loader.load(options.config)
 
     if (config.mode !== 'incremental') {
@@ -12,7 +21,7 @@ export async function compactCommand(options: { config?: string }) {
     }
 
     console.log(pc.dim('Initializing engine...'))
-    const engine = new SeoEngine(config)
+    const engine = new SeoEngineImpl(config)
     // Cast to access specific method not in generic interface, or we should add extra methods to facade?
     // Strong typing suggests we check instance.
 
@@ -26,7 +35,7 @@ export async function compactCommand(options: { config?: string }) {
     // Let's assume getStrategy returns the specialized one if mode matches.
     const strategy = engine.getStrategy()
 
-    if (strategy instanceof IncrementalStrategy) {
+    if (strategy instanceof IncrementalStrategyImpl) {
       console.log(pc.cyan('Compacting logs...'))
       await strategy.compact()
       console.log(pc.green('✅ Compaction complete.'))

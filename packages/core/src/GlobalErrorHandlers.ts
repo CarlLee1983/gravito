@@ -163,7 +163,7 @@ async function handleProcessError(kind: GlobalProcessErrorKind, error: unknown):
       })
     )
   } catch (e) {
-    console.error('[gravito-core] Failed to handle process-level error:', e)
+    console.error('[@gravito/core] Failed to handle process-level error:', e)
   } finally {
     if (shouldExit) {
       clearTimeout(exitTimer)

@@ -1,4 +1,4 @@
-import type { GravitoOrbit, PlanetCore } from 'gravito-core'
+import type { GravitoOrbit, PlanetCore } from '@gravito/core'
 import type { ConsumerOptions } from './Consumer'
 import { Consumer } from './Consumer'
 import { QueueManager } from './QueueManager'
@@ -149,7 +149,7 @@ export class OrbitStream implements GravitoOrbit {
 }
 
 // Module augmentation for GravitoVariables (new abstraction)
-declare module 'gravito-core' {
+declare module '@gravito/core' {
   interface GravitoVariables {
     /** Queue manager for job processing */
     queue?: QueueManager

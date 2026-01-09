@@ -1,10 +1,11 @@
+import type { GravitoContext } from '@gravito/core'
 import {
   HashManager,
   InMemoryPasswordResetTokenRepository,
   PasswordBroker,
 } from '@gravito/sentinel'
-import type { GravitoContext } from 'gravito-core'
 import type { FortifyConfig } from '../config'
+import { ensureCsrfToken } from '../csrf'
 import type { ViewService } from '../types'
 
 /**
@@ -27,12 +28,14 @@ export class ForgotPasswordController {
       return c.json({ view: 'forgot-password' })
     }
 
+    const csrfToken = ensureCsrfToken(c, this.config)
+
     const view = c.get('view') as ViewService | undefined
     if (view?.render && this.config.views?.forgotPassword) {
-      return c.html(view.render(this.config.views.forgotPassword))
+      return c.html(view.render(this.config.views.forgotPassword, { csrfToken }))
     }
 
-    return c.html(this.defaultForgotPasswordHtml())
+    return c.html(this.defaultForgotPasswordHtml(csrfToken ?? undefined))
   }
 
   /**
@@ -84,7 +87,8 @@ export class ForgotPasswordController {
     }
   }
 
-  private defaultForgotPasswordHtml(): string {
+  private defaultForgotPasswordHtml(csrfToken?: string): string {
+    const csrfField = csrfToken ? `<input type="hidden" name="_token" value="${csrfToken}">` : ''
     return `
 <!DOCTYPE html>
 <html lang="en">
@@ -114,6 +118,7 @@ export class ForgotPasswordController {
     <h1>Forgot Password</h1>
     <p class="subtitle">Enter your email and we'll send you a reset link.</p>
     <form method="POST" action="/forgot-password">
+      ${csrfField}
       <div class="form-group">
         <label for="email">Email</label>
         <input type="email" id="email" name="email" required>

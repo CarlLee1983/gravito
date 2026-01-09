@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "esModuleInterop": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "types": ["bun-types"],
+    "paths": {
+      "@gravito/core": ["../../packages/core/src/index.ts"],
+      "@gravito/*": ["../../packages/*/src/index.ts", "../../satellites/*/src/index.ts"]
+    }
+  },
+  "include": ["src/**/*"]
+}

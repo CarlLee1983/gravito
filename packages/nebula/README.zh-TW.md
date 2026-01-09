@@ -11,7 +11,7 @@ bun add @gravito/nebula
 ## 快速開始
 
 ```typescript
-import { PlanetCore } from 'gravito-core'
+import { PlanetCore } from '@gravito/core'
 import orbitStorage from '@gravito/nebula'
 
 const core = new PlanetCore()

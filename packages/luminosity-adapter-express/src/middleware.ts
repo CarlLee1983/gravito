@@ -1,6 +1,12 @@
 import { RobotsBuilder, type SeoConfig, SeoEngine, SeoRenderer } from '@gravito/luminosity'
 import type { NextFunction, Request, Response } from 'express'
 
+export interface GravitoSeoDeps {
+  RobotsBuilder?: typeof RobotsBuilder
+  SeoEngine?: typeof SeoEngine
+  SeoRenderer?: typeof SeoRenderer
+}
+
 /**
  * Create a Gravito SEO middleware for Express.
  *
@@ -22,22 +28,25 @@ import type { NextFunction, Request, Response } from 'express'
  * }))
  * ```
  */
-export function gravitoSeo(config: SeoConfig) {
-  const engine = new SeoEngine(config)
+export function gravitoSeo(config: SeoConfig, deps: GravitoSeoDeps = {}) {
+  const RobotsBuilderImpl = deps.RobotsBuilder ?? RobotsBuilder
+  const SeoEngineImpl = deps.SeoEngine ?? SeoEngine
+  const SeoRendererImpl = deps.SeoRenderer ?? SeoRenderer
+  const engine = new SeoEngineImpl(config)
   let initialized = false
 
   return async (req: Request, res: Response, next: NextFunction) => {
     // Robots.txt Handler
     if (req.path.endsWith('/robots.txt')) {
       if (config.robots) {
-        const robotsBuilder = new RobotsBuilder(config.robots, config.baseUrl)
+        const robotsBuilder = new RobotsBuilderImpl(config.robots, config.baseUrl)
         const content = robotsBuilder.build()
         res.setHeader('Content-Type', 'text/plain')
         res.send(content)
         return
       }
       // Default fallthrough
-      const defaultBuilder = new RobotsBuilder(
+      const defaultBuilder = new RobotsBuilderImpl(
         {
           rules: [{ userAgent: '*', allow: ['/'] }],
         },
@@ -63,7 +72,7 @@ export function gravitoSeo(config: SeoConfig) {
       const strategy = engine.getStrategy()
       const entries = await strategy.getEntries()
 
-      const renderer = new SeoRenderer(config)
+      const renderer = new SeoRendererImpl(config)
       const page = req.query.page ? Number.parseInt(String(req.query.page), 10) : undefined
 
       const fullUrl = `${config.baseUrl}${req.path}`

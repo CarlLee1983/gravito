@@ -1,5 +1,5 @@
+import type { GravitoContext } from '@gravito/core'
 import type { AuthManager } from '@gravito/sentinel'
-import type { GravitoContext } from 'gravito-core'
 import type { FortifyConfig } from '../config'
 
 /**

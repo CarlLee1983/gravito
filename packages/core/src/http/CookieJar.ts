@@ -21,21 +21,28 @@ export class CookieJar {
    * Queue a cookie to be sent with the response
    */
   queue(name: string, value: string, minutes = 60, options: CookieOptions = {}) {
+    const resolved: CookieOptions = {
+      path: options.path ?? '/',
+      httpOnly: options.httpOnly ?? true,
+      sameSite: options.sameSite ?? 'Lax',
+      secure: options.secure ?? process.env.NODE_ENV === 'production',
+      ...options,
+    }
     // Convert minutes to maxAge (seconds)
-    if (minutes && !options.maxAge) {
-      options.maxAge = minutes * 60
+    if (minutes && !resolved.maxAge) {
+      resolved.maxAge = minutes * 60
     }
 
     let finalValue = value
 
-    if (options.encrypt) {
+    if (resolved.encrypt) {
       if (!this.encrypter) {
         throw new Error('Encryption is not available. Ensure APP_KEY is set.')
       }
       finalValue = this.encrypter.encrypt(value)
     }
 
-    this.queued.set(name, { value: finalValue, options })
+    this.queued.set(name, { value: finalValue, options: resolved })
   }
 
   /**

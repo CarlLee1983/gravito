@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 240" role="img" aria-label="Flux branching diagram">
+  <defs>
+    <linearGradient id="fluxNode" x1="0" x2="1">
+      <stop offset="0%" stop-color="#141c2b" />
+      <stop offset="100%" stop-color="#0b1220" />
+    </linearGradient>
+    <linearGradient id="glow-blue" x1="0" x2="1">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#60a5fa" />
+    </linearGradient>
+    <linearGradient id="glow-violet" x1="0" x2="1">
+      <stop offset="0%" stop-color="#a78bfa" />
+      <stop offset="100%" stop-color="#8b5cf6" />
+    </linearGradient>
+    <linearGradient id="glow-amber" x1="0" x2="1">
+      <stop offset="0%" stop-color="#fbbf24" />
+      <stop offset="100%" stop-color="#f59e0b" />
+    </linearGradient>
+    <linearGradient id="glow-emerald" x1="0" x2="1">
+      <stop offset="0%" stop-color="#34d399" />
+      <stop offset="100%" stop-color="#10b981" />
+    </linearGradient>
+    <linearGradient id="glow-rose" x1="0" x2="1">
+      <stop offset="0%" stop-color="#fb7185" />
+      <stop offset="100%" stop-color="#f43f5e" />
+    </linearGradient>
+    <filter id="nodeShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#0b1120" flood-opacity="0.6" />
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#60a5fa" />
+    </marker>
+  </defs>
+
+  <!-- classify -->
+  <g filter="url(#nodeShadow)">
+    <rect x="30" y="100" width="160" height="50" rx="14" fill="url(#fluxNode)" stroke="#1f2937" />
+    <rect x="42" y="112" width="26" height="26" rx="8" fill="url(#glow-blue)" />
+    <path d="M52 119h6l4 6-4 6h-6l-4-6z" fill="#0f172a" />
+    <text x="120" y="130" fill="#e2e8f0" font-size="12" text-anchor="middle">classify</text>
+  </g>
+
+  <!-- send-email -->
+  <g filter="url(#nodeShadow)">
+    <rect x="250" y="20" width="180" height="46" rx="14" fill="url(#fluxNode)" stroke="#1f2937" />
+    <rect x="262" y="32" width="26" height="26" rx="8" fill="url(#glow-amber)" />
+    <path d="M268 38h14l-7 6z" fill="#0f172a" />
+    <rect x="268" y="40" width="14" height="10" rx="2" fill="none" stroke="#0f172a" stroke-width="1.6" />
+    <text x="350" y="48" fill="#e2e8f0" font-size="12" text-anchor="middle">send-email</text>
+  </g>
+
+  <!-- send-slack -->
+  <g filter="url(#nodeShadow)">
+    <rect x="250" y="96" width="180" height="46" rx="14" fill="url(#fluxNode)" stroke="#1f2937" />
+    <rect x="262" y="108" width="26" height="26" rx="8" fill="url(#glow-violet)" />
+    <path d="M269 115h10a4 4 0 0 1 4 4v6l-5-3h-9a4 4 0 0 1-4-4v-3a4 4 0 0 1 4-4z" fill="#0f172a" />
+    <text x="350" y="124" fill="#e2e8f0" font-size="12" text-anchor="middle">send-slack</text>
+  </g>
+
+  <!-- call-webhook -->
+  <g filter="url(#nodeShadow)">
+    <rect x="250" y="172" width="180" height="46" rx="14" fill="url(#fluxNode)" stroke="#1f2937" />
+    <rect x="262" y="184" width="26" height="26" rx="8" fill="url(#glow-emerald)" />
+    <path d="M268 198h14m-7-6v12" stroke="#0f172a" stroke-width="2" stroke-linecap="round" />
+    <text x="350" y="200" fill="#e2e8f0" font-size="12" text-anchor="middle">call-webhook</text>
+  </g>
+
+  <!-- audit -->
+  <g filter="url(#nodeShadow)">
+    <rect x="520" y="100" width="160" height="50" rx="14" fill="url(#fluxNode)" stroke="#1f2937" />
+    <rect x="532" y="112" width="26" height="26" rx="8" fill="url(#glow-rose)" />
+    <path d="M538 118h14v12h-14z" fill="none" stroke="#0f172a" stroke-width="1.6" />
+    <path d="M541 122h8M541 126h8M541 130h6" stroke="#0f172a" stroke-width="1.6" stroke-linecap="round" />
+    <text x="610" y="130" fill="#e2e8f0" font-size="12" text-anchor="middle">audit</text>
+  </g>
+
+  <line x1="190" y1="125" x2="250" y2="43" stroke="#60a5fa" stroke-width="2" marker-end="url(#arrow)" />
+  <line x1="190" y1="125" x2="250" y2="119" stroke="#60a5fa" stroke-width="2" marker-end="url(#arrow)" />
+  <line x1="190" y1="125" x2="250" y2="195" stroke="#60a5fa" stroke-width="2" marker-end="url(#arrow)" />
+
+  <line x1="430" y1="43" x2="520" y2="125" stroke="#38bdf8" stroke-width="2" marker-end="url(#arrow)" />
+  <line x1="430" y1="119" x2="520" y2="125" stroke="#38bdf8" stroke-width="2" marker-end="url(#arrow)" />
+  <line x1="430" y1="195" x2="520" y2="125" stroke="#38bdf8" stroke-width="2" marker-end="url(#arrow)" />
+</svg>

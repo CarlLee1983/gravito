@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gravito Atlas</title>
+    <script>
+      (function() {
+        var base = '/atlas-site-dist/';
+        var path = window.location.pathname.replace(base, '/');
+        var search = window.location.search;
+        var hash = window.location.hash;
+        var target = base + '?p=' + encodeURIComponent(path) + '&q=' + encodeURIComponent(search) + '&h=' + encodeURIComponent(hash);
+        window.location.replace(target);
+      })();
+    </script>
+  </head>
+  <body></body>
+</html>

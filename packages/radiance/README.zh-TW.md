@@ -11,7 +11,7 @@ bun add @gravito/radiance
 ## 快速開始
 
 ```typescript
-import { PlanetCore } from 'gravito-core'
+import { PlanetCore } from '@gravito/core'
 import { OrbitRadiance } from '@gravito/radiance'
 
 const core = await PlanetCore.boot({

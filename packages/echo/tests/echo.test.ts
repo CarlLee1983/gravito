@@ -2,12 +2,13 @@
  * @fileoverview Tests for @gravito/echo
  */
 
-import { describe, expect, it } from 'bun:test'
+import { describe, expect, it, jest } from 'bun:test'
 import { OrbitEcho } from '../src/OrbitEcho'
 import { GenericProvider } from '../src/providers/GenericProvider'
 import { GitHubProvider } from '../src/providers/GitHubProvider'
 import { StripeProvider } from '../src/providers/StripeProvider'
 import {
+  computeHmacSha1,
   computeHmacSha256,
   parseStripeSignature,
   timingSafeEqual,
@@ -53,6 +54,17 @@ describe('SignatureValidator', () => {
 
     it('should return false for different length strings', () => {
       expect(timingSafeEqual('abc', 'abcd')).toBe(false)
+    })
+  })
+
+  describe('computeHmacSha1', () => {
+    it('should compute correct HMAC-SHA1', async () => {
+      const payload = 'legacy payload'
+      const secret = 'legacy-secret'
+      const signature = await computeHmacSha1(payload, secret)
+
+      expect(signature).toHaveLength(40) // SHA1 hex = 40 chars
+      expect(signature).toMatch(/^[a-f0-9]+$/)
     })
   })
 
@@ -207,6 +219,47 @@ describe('WebhookReceiver', () => {
 
     expect(handlerCalled).toBe(true)
   })
+
+  it('should call global handlers', async () => {
+    const receiver = new WebhookReceiver()
+    receiver.registerProvider('test', 'secret', { type: 'generic' })
+
+    let handlerCalled = false
+    receiver.onAll('test', () => {
+      handlerCalled = true
+    })
+
+    const payload = JSON.stringify({ type: 'test.event', data: 'hello' })
+    const signature = await computeHmacSha256(payload, 'secret')
+
+    await receiver.handle('test', payload, {
+      'x-webhook-signature': signature,
+    })
+
+    expect(handlerCalled).toBe(true)
+  })
+
+  it('should throw for unknown provider type', () => {
+    const receiver = new WebhookReceiver()
+    expect(() => receiver.registerProvider('test', 'secret', { type: 'missing' })).toThrow(
+      'Unknown provider type'
+    )
+  })
+
+  it('should verify without handling', async () => {
+    const receiver = new WebhookReceiver()
+    receiver.registerProvider('test', 'secret', { type: 'generic' })
+
+    const payload = JSON.stringify({ type: 'test.event', data: 'hello' })
+    const signature = await computeHmacSha256(payload, 'secret')
+
+    const result = await receiver.verify('test', payload, {
+      'x-webhook-signature': signature,
+    })
+
+    expect(result.valid).toBe(true)
+    expect(result.eventType).toBe('test.event')
+  })
 })
 
 // ─────────────────────────────────────────────────────────────
@@ -221,6 +274,88 @@ describe('WebhookDispatcher', () => {
     })
 
     expect(dispatcher).toBeDefined()
+  })
+
+  it('should dispatch a webhook successfully', async () => {
+    const originalFetch = globalThis.fetch
+    const fetchMock = jest.fn(async () => new Response('ok', { status: 200 }))
+    globalThis.fetch = fetchMock as unknown as typeof fetch
+
+    try {
+      const dispatcher = new WebhookDispatcher({
+        secret: 'test-secret',
+        retry: { maxAttempts: 1 },
+      })
+
+      const result = await dispatcher.dispatch({
+        url: 'https://example.com/webhook',
+        event: 'order.created',
+        data: { orderId: 123 },
+      })
+
+      expect(fetchMock).toHaveBeenCalledTimes(1)
+      expect(result.success).toBe(true)
+      expect(result.statusCode).toBe(200)
+      expect(result.body).toBe('ok')
+    } finally {
+      globalThis.fetch = originalFetch
+    }
+  })
+
+  it('should not retry on non-retryable status', async () => {
+    const originalFetch = globalThis.fetch
+    const fetchMock = jest.fn(async () => new Response('bad', { status: 400 }))
+    globalThis.fetch = fetchMock as unknown as typeof fetch
+
+    try {
+      const dispatcher = new WebhookDispatcher({
+        secret: 'test-secret',
+        retry: { maxAttempts: 2, initialDelay: 0 },
+      })
+
+      const result = await dispatcher.dispatch({
+        url: 'https://example.com/webhook',
+        event: 'order.failed',
+        data: { orderId: 456 },
+      })
+
+      expect(fetchMock).toHaveBeenCalledTimes(1)
+      expect(result.success).toBe(false)
+      expect(result.statusCode).toBe(400)
+    } finally {
+      globalThis.fetch = originalFetch
+    }
+  })
+
+  it('should retry on network error and then succeed', async () => {
+    const originalFetch = globalThis.fetch
+    let callCount = 0
+    const fetchMock = jest.fn(async () => {
+      callCount++
+      if (callCount === 1) {
+        throw new Error('network down')
+      }
+      return new Response('ok', { status: 200 })
+    })
+    globalThis.fetch = fetchMock as unknown as typeof fetch
+
+    try {
+      const dispatcher = new WebhookDispatcher({
+        secret: 'test-secret',
+        retry: { maxAttempts: 2, initialDelay: 0 },
+      })
+
+      const result = await dispatcher.dispatch({
+        url: 'https://example.com/webhook',
+        event: 'order.retry',
+        data: { orderId: 789 },
+      })
+
+      expect(fetchMock).toHaveBeenCalledTimes(2)
+      expect(result.success).toBe(true)
+    } finally {
+      globalThis.fetch = originalFetch
+    }
   })
 })
 
@@ -252,5 +387,22 @@ describe('OrbitEcho', () => {
 
     const receiver = echo.getReceiver()
     expect(receiver).toBeDefined()
+  })
+
+  it('should bind instances on install', () => {
+    const echo = new OrbitEcho({
+      dispatcher: { secret: 'test' },
+    })
+    const core = {
+      container: {
+        instance: jest.fn(),
+      },
+    }
+
+    echo.install(core as any)
+
+    expect(core.container.instance).toHaveBeenCalledWith('echo', echo)
+    expect(core.container.instance).toHaveBeenCalledWith('echo.receiver', echo.getReceiver())
+    expect(core.container.instance).toHaveBeenCalledWith('echo.dispatcher', echo.getDispatcher())
   })
 })

@@ -12,15 +12,31 @@ export interface GenerateCommandOptions {
   since?: string
 }
 
+export interface GenerateCommandDeps {
+  ConfigLoader?: typeof ConfigLoader
+  SeoEngine?: typeof SeoEngine
+  XmlStreamBuilder?: typeof XmlStreamBuilder
+  mkdir?: typeof mkdir
+  writeFile?: typeof writeFile
+}
+
 /**
  * Improved generate command.
  * Supports background mode, streaming processing, and incremental generation.
  *
  * @param options - Generation options.
  */
-export async function generateCommand(options: GenerateCommandOptions) {
+export async function generateCommand(
+  options: GenerateCommandOptions,
+  deps: GenerateCommandDeps = {}
+) {
   try {
-    const loader = new ConfigLoader()
+    const ConfigLoaderImpl = deps.ConfigLoader ?? ConfigLoader
+    const SeoEngineImpl = deps.SeoEngine ?? SeoEngine
+    const XmlStreamBuilderImpl = deps.XmlStreamBuilder ?? XmlStreamBuilder
+    const mkdirImpl = deps.mkdir ?? mkdir
+    const writeFileImpl = deps.writeFile ?? writeFile
+    const loader = new ConfigLoaderImpl()
     const config = await loader.load(options.config)
 
     // Override output path if CLI arg provided
@@ -38,7 +54,7 @@ export async function generateCommand(options: GenerateCommandOptions) {
     }
 
     console.log(pc.dim('Loading engine...'))
-    const engine = new SeoEngine(config)
+    const engine = new SeoEngineImpl(config)
     await engine.init()
 
     console.log(pc.dim('Fetching entries...'))
@@ -49,13 +65,20 @@ export async function generateCommand(options: GenerateCommandOptions) {
 
     // If it's an AsyncIterable, use streaming processing
     if (entries && typeof (entries as any)[Symbol.asyncIterator] === 'function') {
-      await generateFromStream(entries as unknown as AsyncIterable<any>, config, outputPath)
+      await generateFromStream(
+        entries as unknown as AsyncIterable<any>,
+        config,
+        outputPath,
+        XmlStreamBuilderImpl,
+        mkdirImpl,
+        writeFileImpl
+      )
     } else {
       // Array processing (existing logic)
       const entriesArray = Array.isArray(entries) ? entries : []
 
       console.log(pc.dim(`Generating XML for ${entriesArray.length} URLs...`))
-      const builder = new XmlStreamBuilder({
+      const builder = new XmlStreamBuilderImpl({
         baseUrl: config.baseUrl,
         branding: config.branding?.enabled,
       })
@@ -63,9 +86,9 @@ export async function generateCommand(options: GenerateCommandOptions) {
 
       // Ensure directory exists
       const dir = dirname(outputPath)
-      await mkdir(dir, { recursive: true })
+      await mkdirImpl(dir, { recursive: true })
 
-      await writeFile(outputPath, xml)
+      await writeFileImpl(outputPath, xml)
 
       console.log(pc.green(`\n✅ Sitemap generated at: ${outputPath}`))
       console.log(pc.dim(`   Total URLs: ${entriesArray.length}`))
@@ -83,9 +106,12 @@ export async function generateCommand(options: GenerateCommandOptions) {
 async function generateFromStream(
   entries: AsyncIterable<any>,
   config: any,
-  outputPath: string
+  outputPath: string,
+  XmlStreamBuilderImpl: typeof XmlStreamBuilder,
+  mkdirImpl: typeof mkdir,
+  writeFileImpl: typeof writeFile
 ): Promise<void> {
-  const builder = new XmlStreamBuilder({
+  const builder = new XmlStreamBuilderImpl({
     baseUrl: config.baseUrl,
     branding: config.branding?.enabled,
   })
@@ -123,9 +149,9 @@ async function generateFromStream(
 
   // Ensure directory exists
   const dir = dirname(outputPath)
-  await mkdir(dir, { recursive: true })
+  await mkdirImpl(dir, { recursive: true })
 
-  await writeFile(outputPath, xml)
+  await writeFileImpl(outputPath, xml)
 
   console.log(pc.green(`\n✅ Sitemap generated at: ${outputPath}`))
   console.log(pc.dim(`   Total URLs: ${count}`))

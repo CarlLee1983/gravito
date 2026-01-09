@@ -47,7 +47,7 @@ Service providers are the central place for bootstrapping a Gravito application.
 ### Defining a Provider
 
 ```typescript
-import { ServiceProvider, Container } from 'gravito-core';
+import { ServiceProvider, Container } from '@gravito/core';
 
 export class AppServiceProvider extends ServiceProvider {
   /**

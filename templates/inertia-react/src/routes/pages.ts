@@ -1,7 +1,7 @@
+import type { PlanetCore } from '@gravito/core'
 import type { InertiaService } from '@gravito/ion'
 import type { Context } from '@gravito/photon'
 import { Photon } from '@gravito/photon'
-import type { PlanetCore } from 'gravito-core'
 
 /**
  * Pages route module.

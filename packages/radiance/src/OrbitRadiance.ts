@@ -1,4 +1,4 @@
-import type { GravitoOrbit, PlanetCore } from 'gravito-core'
+import type { GravitoOrbit, PlanetCore } from '@gravito/core'
 import { BroadcastManager } from './BroadcastManager'
 import type { AblyDriverConfig } from './drivers/AblyDriver'
 import { AblyDriver } from './drivers/AblyDriver'

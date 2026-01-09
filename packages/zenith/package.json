@@ -1,0 +1,54 @@
+{
+  "name": "@gravito/zenith",
+  "version": "1.0.0",
+  "description": "Gravito Zenith: Zero-config control plane for Gravito Flux & Stream",
+  "type": "module",
+  "bin": {
+    "zenith": "dist/bin.js",
+    "flux-console": "dist/bin.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "dev:server": "bun run --watch src/server/index.ts",
+    "dev:client": "vite",
+    "build": "vite build && bun build ./src/server/index.ts ./src/bin.ts --outdir ./dist --target bun",
+    "start": "bun ./dist/bin.js",
+    "test": "bun test",
+    "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
+    "seed": "bun scripts/seed.ts",
+    "worker": "bun scripts/worker.ts"
+  },
+  "dependencies": {
+    "@gravito/atlas": "workspace:*",
+    "@gravito/photon": "workspace:*",
+    "@gravito/quasar": "workspace:*",
+    "@gravito/stream": "workspace:*",
+    "@tanstack/react-query": "^5.0.0",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
+    "framer-motion": "^12.23.26",
+    "ioredis": "^5.0.0",
+    "lucide-react": "^0.562.0",
+    "nodemailer": "^7.0.12",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-router-dom": "^7.11.0",
+    "recharts": "^3.6.0",
+    "tailwind-merge": "^3.4.0"
+  },
+  "devDependencies": {
+    "@types/nodemailer": "^7.0.4",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^5.1.2",
+    "autoprefixer": "^10.4.0",
+    "postcss": "^8.4.0",
+    "tailwindcss": "^3.4.0",
+    "typescript": "^5.9.3",
+    "vite": "^6.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

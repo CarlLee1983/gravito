@@ -10,10 +10,14 @@
   - ✅ MemoryDriver（開發用）
   - ✅ DatabaseDriver（PostgreSQL、MySQL、SQLite）
   - ✅ RedisDriver
-- ✅ 企業級 Broker 驅動：
   - ✅ KafkaDriver
   - ✅ SQSDriver
-- ✅ Orbit 整合（OrbitStream）
+  - ✅ RabbitMQDriver
+    - ✅ 支援 Exchange 和 Queue 管理
+    - ✅ 支援多種 Exchange 類型
+    - ✅ 支援持久化隊列
+    - ✅ 支援進階確認機制 (ACK/NACK/Reject)
+- ✅ Orbit 整合 (OrbitStream)
 - ✅ CLI 工具（獨立 Consumer）
 - ✅ 測試覆蓋
 
@@ -21,14 +25,8 @@
 
 ### v0.2.0 - 額外 Broker 驅動
 
-#### RabbitMQDriver
-- [ ] 實作 RabbitMQ 驅動
-- [ ] 支援 Exchange 和 Queue 管理
-- [ ] 支援多種 Exchange 類型
-- [ ] 支援持久化隊列
-- [ ] 支援確認機制
-
 #### NATSDriver
+- [ ] 實作 NATS 驅動
 - [ ] 實作 NATS 驅動
 - [ ] 支援 JetStream（持久化消息）
 - [ ] 支援訂閱模式

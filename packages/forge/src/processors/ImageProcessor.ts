@@ -5,6 +5,7 @@
 import { randomUUID } from 'node:crypto'
 import { mkdir } from 'node:fs/promises'
 import { join } from 'node:path'
+import { getRuntimeAdapter } from '@gravito/core'
 import { ImageMagickAdapter } from '../adapters/ImageMagickAdapter'
 import type { FileInput, FileOutput, ProcessingProgress, ProcessOptions } from '../types'
 import { BaseProcessor } from './BaseProcessor'
@@ -33,6 +34,7 @@ export interface ImageProcessorOptions {
 export class ImageProcessor extends BaseProcessor {
   private adapter: ImageMagickAdapter
   private tempDir: string
+  private runtime = getRuntimeAdapter()
 
   constructor(options: ImageProcessorOptions = {}) {
     super()
@@ -82,8 +84,7 @@ export class ImageProcessor extends BaseProcessor {
     })
 
     // Get output file info
-    const outputFile = Bun.file(outputPath)
-    const stats = await outputFile.stat()
+    const stats = await this.runtime.stat(outputPath)
 
     return {
       url: outputPath, // Will be replaced by storage URL after upload
@@ -113,7 +114,7 @@ export class ImageProcessor extends BaseProcessor {
     // Write Blob/File to temp directory
     const inputFilename = input.filename || `${randomUUID()}.tmp`
     const inputPath = join(this.tempDir, inputFilename)
-    await Bun.write(inputPath, input.source)
+    await this.runtime.writeFile(inputPath, input.source)
     return inputPath
   }
 

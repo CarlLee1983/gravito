@@ -621,43 +621,7 @@ export class Router {
     // 5. Register with Adapter
     // If domain constraint exists, we wrap everything in a check
     if (options.domain) {
-      const _wrappedHandler: GravitoHandler = async (c) => {
-        // Warning: This domain check is basic and doesn't handle multiple domains cleanly like Photon's vhost
-        // But for parity with existing code:
-        if (c.req.header('host') !== options.domain) {
-          // If domain doesn't match, we should probably not have matched this route?
-          // The adapter should arguably handle domain routing if supported.
-          // For now, if domain doesn't match, we return 404 or pass? (Adapter execution chain vs Route matching)
-          // Photon implementation just called `next()` which bypassed the handler.
-          // Here, we are the handler.
-          // If we are here, the router matched the path.
-          // If we return, we stop.
-          // But how to "skip" to next match?
-          // Gravito structure assumes route is final.
-          // If we want next(), we need to register as middleware?
-          // The adapter implementation of `route` expects handlers.
-          // If we want to simulate Photon behavior:
-
-          // Actually, Photon's router (RegExpRouter, TrieRouter) doesn't handle host matching by default in `app.get()`.
-          // The previous implementation used a manual check and called `next()`.
-          // But `GravitoHandler` signature is `(ctx) => Response`. It doesn't take `next`.
-          // The adapter architecture separates Middleware `(ctx, next)` from Handler `(ctx)`.
-
-          // IMPORTANT: If we are in a Handler, we are the end of the line.
-          // To support domain matching as a "guard", we should register it as middleware?
-          // But `core.adapter.route` registers handlers. Use `handlers` array.
-
-          return new Response('Not Found', { status: 404 })
-        }
-
-        // Execute the actual chain manually?
-        // Reuse execute helper? We don't have access to it easily.
-        // But `handlers` (from step 4) includes middleware and final handler.
-        // We can register them all with `this.core.adapter.route(method, fullPath, ...handlers)`
-        // If we inject the domain check as the FIRST middleware.
-        return undefined as any // Unreachable if we restructure
-      }
-
+      // Prepend domain check
       const domainCheck: GravitoMiddleware = async (c, next) => {
         if (c.req.header('host') !== options.domain) {
           // If domain mismatch, return 404 immediately.

@@ -41,7 +41,7 @@ This document outlines the plan to decouple Gravito from any concrete HTTP engin
 | `MiddlewareHandler` | `GravitoMiddleware` | With `GravitoNext` |
 | `Next` | `GravitoNext` | Async function |
 
-### Exported from `gravito-core`
+### Exported from `@gravito/core`
 
 - `GravitoContext`, `GravitoRequest`, `GravitoHandler`, `GravitoMiddleware`
 - `GravitoVariables`, `GravitoNext`, `GravitoErrorHandler`, `GravitoNotFoundHandler`
@@ -144,7 +144,7 @@ export class UserController {
 
 ```typescript
 // Controller
-import type { GravitoContext } from 'gravito-core'
+import type { GravitoContext } from '@gravito/core'
 
 export class UserController {
   async show(ctx: GravitoContext) {
@@ -158,9 +158,9 @@ export class UserController {
 
 ```typescript
 // During migration, both work:
-import type { Context } from 'gravito-core/compat'
+import type { Context } from '@gravito/core/compat'
 // or
-import type { GravitoContext } from 'gravito-core'
+import type { GravitoContext } from '@gravito/core'
 ```
 
 ---

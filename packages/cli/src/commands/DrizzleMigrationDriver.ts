@@ -1,22 +1,13 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import { spawn } from 'bun'
-
-/**
- * Migration result interface
- */
-export interface MigrationResult {
-  success: boolean
-  message: string
-  migrations?: string[]
-  error?: string
-}
+import { getRuntimeAdapter } from '@gravito/core'
+import type { MigrationDriver, MigrationResult } from './MigrationDriver'
 
 /**
  * Drizzle Kit Migration Driver
  * Wraps drizzle-kit CLI commands
  */
-export class DrizzleMigrationDriver {
+export class DrizzleMigrationDriver implements MigrationDriver {
   constructor(
     private configPath = 'drizzle.config.ts',
     private migrationsDir = 'src/database/migrations'
@@ -29,18 +20,17 @@ export class DrizzleMigrationDriver {
 
     await fs.mkdir(path.dirname(filepath), { recursive: true })
 
-    const content = `import { sql } from 'drizzle-orm'
-
-export async function up(db: any): Promise<void> {
-  // TODO: Implement migration
-  // await db.execute(sql\`CREATE TABLE ...\`)
-}
-
-export async function down(db: any): Promise<void> {
-  // TODO: Implement rollback
-  // await db.execute(sql\`DROP TABLE ...\`)
-}
-`
+    // Use string concatenation to avoid nested backtick escape issues
+    const content =
+      "import { sql } from 'drizzle-orm'\n\n" +
+      'export async function up(db: any): Promise<void> {\n' +
+      '  // TODO: Implement migration\n' +
+      '  // await db.execute(sql`CREATE TABLE ...`)\n' +
+      '}\n\n' +
+      'export async function down(db: any): Promise<void> {\n' +
+      '  // TODO: Implement rollback\n' +
+      '  // await db.execute(sql`DROP TABLE ...`)\n' +
+      '}\n'
 
     await fs.writeFile(filepath, content, 'utf-8')
 
@@ -53,22 +43,19 @@ export async function down(db: any): Promise<void> {
 
   async migrate(): Promise<MigrationResult> {
     try {
+      const runtime = getRuntimeAdapter()
       // Use drizzle-kit migrate for applying migration files
-      const proc = spawn(['bunx', 'drizzle-kit', 'migrate', '--config', this.configPath], {
+      const proc = runtime.spawn(['bunx', 'drizzle-kit', 'migrate', '--config', this.configPath], {
         cwd: process.cwd(),
         stdout: 'pipe',
         stderr: 'pipe',
       })
 
-      const output = await new Response(proc.stdout).text()
+      const output = await new Response(proc.stdout ?? null).text()
       const exitCode = await proc.exited
 
       if (exitCode !== 0) {
-        const error = await new Response(proc.stderr).text()
-        // If migration fails, it might be because migrations folder is empty or not initialized.
-        // Fallback or explicit error?
-        // Standard behavior: migrate fails if something is wrong.
-
+        const error = await new Response(proc.stderr ?? null).text()
         return {
           success: false,
           message: 'Migration failed',
@@ -91,7 +78,8 @@ export async function down(db: any): Promise<void> {
 
   async fresh(): Promise<MigrationResult> {
     try {
-      const dropProc = spawn(['bunx', 'drizzle-kit', 'drop', '--config', this.configPath], {
+      const runtime = getRuntimeAdapter()
+      const dropProc = runtime.spawn(['bunx', 'drizzle-kit', 'drop', '--config', this.configPath], {
         cwd: process.cwd(),
         stdout: 'pipe',
         stderr: 'pipe',

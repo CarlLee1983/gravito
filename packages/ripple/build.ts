@@ -1,7 +1,14 @@
 import { execSync } from 'node:child_process'
+import { existsSync, mkdirSync, rmSync } from 'node:fs'
+
+// Clean dist directory
+if (existsSync('./dist')) {
+  rmSync('./dist', { recursive: true, force: true })
+}
+mkdirSync('./dist', { recursive: true })
 
 // Build with Bun
-await Bun.build({
+const result = await Bun.build({
   entrypoints: ['./src/index.ts'],
   outdir: './dist',
   format: 'esm',
@@ -9,18 +16,31 @@ await Bun.build({
   splitting: false,
   sourcemap: 'external',
   minify: false,
-  external: ['gravito-core'],
+  external: ['@gravito/core'],
 })
+
+if (!result.success) {
+  console.error('❌ Bun build failed')
+  for (const log of result.logs) {
+    console.error(log)
+  }
+  process.exit(1)
+}
 
 // Generate .cjs version
 const cjsCode = `"use strict";
-module.exports = require("./index.mjs");
+module.exports = require("./index.js");
 `
 await Bun.write('./dist/index.cjs', cjsCode)
 
 // Generate type declarations
-execSync('bunx tsc --emitDeclarationOnly --declaration --outDir ./dist', {
-  stdio: 'inherit',
-})
+try {
+  execSync('bunx tsc --project tsconfig.json --emitDeclarationOnly --declaration --outDir ./dist', {
+    stdio: 'inherit',
+  })
+} catch (error) {
+  console.error('❌ TypeScript declaration generation failed')
+  process.exit(1)
+}
 
 console.log('✅ @gravito/ripple built successfully')

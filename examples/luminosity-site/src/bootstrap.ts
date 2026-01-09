@@ -1,6 +1,13 @@
+import {
+  bodySizeLimit,
+  defineConfig,
+  GravitoAdapter,
+  type GravitoContext,
+  PlanetCore,
+  securityHeaders,
+} from '@gravito/core'
 import { OrbitIon } from '@gravito/ion'
 import { OrbitPrism } from '@gravito/prism'
-import { defineConfig, GravitoAdapter, type GravitoContext, PlanetCore } from 'gravito-core'
 import { setupViteProxy } from './utils/vite'
 
 export async function bootstrap(options: { port?: number } = {}) {
@@ -15,6 +22,35 @@ export async function bootstrap(options: { port?: number } = {}) {
   })
 
   const core = await PlanetCore.boot(config)
+
+  const defaultCsp = [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline'",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data:",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "frame-ancestors 'none'",
+  ].join('; ')
+  const cspValue = process.env.APP_CSP
+  const csp = cspValue === 'false' ? false : (cspValue ?? defaultCsp)
+  const hstsMaxAge = Number.parseInt(process.env.APP_HSTS_MAX_AGE ?? '15552000', 10)
+  const bodyLimit = Number.parseInt(process.env.APP_BODY_LIMIT ?? '1048576', 10)
+  const requireLength = process.env.APP_BODY_REQUIRE_LENGTH === 'true'
+
+  core.adapter.use(
+    '*',
+    securityHeaders({
+      contentSecurityPolicy: csp,
+      hsts:
+        process.env.NODE_ENV === 'production'
+          ? { maxAge: Number.isNaN(hstsMaxAge) ? 15552000 : hstsMaxAge, includeSubDomains: true }
+          : false,
+    })
+  )
+  if (!Number.isNaN(bodyLimit) && bodyLimit > 0) {
+    core.adapter.use('*', bodySizeLimit(bodyLimit, { requireContentLength: requireLength }))
+  }
 
   if (process.env.NODE_ENV !== 'production') {
     setupViteProxy(core)
@@ -32,7 +68,10 @@ export async function bootstrap(options: { port?: number } = {}) {
     c.set('locale', locale)
     const inertia = c.get('inertia')
     if (inertia) {
-      ;(inertia as any).share({ locale })
+      ;(inertia as any).share({
+        locale,
+        gaId: process.env.GA_MEASUREMENT_ID,
+      })
     }
     return await next()
   }
@@ -68,6 +107,18 @@ export async function bootstrap(options: { port?: number } = {}) {
     group.get('/docs', (c: GravitoContext) => {
       const locale = c.get('locale')
       return c.redirect(locale === 'zh' ? '/zh/docs/introduction' : '/docs/introduction')
+    })
+
+    group.get('/privacy', (c: GravitoContext) => {
+      const inertia = c.get('inertia')
+      const locale = c.get('locale') || 'en'
+      return (inertia as any)?.render('Privacy', { locale })
+    })
+
+    group.get('/terms', (c: GravitoContext) => {
+      const inertia = c.get('inertia')
+      const locale = c.get('locale') || 'en'
+      return (inertia as any)?.render('Terms', { locale })
     })
 
     group.get('/docs/*', docsController.show)

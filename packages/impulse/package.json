@@ -1,6 +1,6 @@
 {
   "name": "@gravito/impulse",
-  "version": "1.0.0-beta.1",
+  "version": "1.0.0",
   "description": "Form Request validation for Gravito - Laravel-style request validation with Zod",
   "type": "module",
   "main": "./dist/index.js",
@@ -17,22 +17,25 @@
   "scripts": {
     "build": "bun run build.ts",
     "test": "bun test",
-    "prepublishOnly": "bun run build"
+    "prepublishOnly": "bun run build",
+    "test:coverage": "bun test --coverage --coverage-threshold=80",
+    "test:ci": "bun test --coverage --coverage-threshold=80",
+    "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck"
   },
   "publishConfig": {
     "access": "public"
   },
   "dependencies": {
     "zod": "^3.23.0",
-    "gravito-core": "1.0.0-beta.6"
+    "@gravito/core": "workspace:*"
   },
   "peerDependencies": {
-    "@gravito/photon": "1.0.0-beta.1"
+    "@gravito/photon": "workspace:*"
   },
   "devDependencies": {
     "bun-types": "^1.1.0",
     "tsup": "^8.5.1",
-    "typescript": "^5.0.0"
+    "typescript": "^5.9.3"
   },
   "author": "Carl Lee <carllee0520@gmail.com>",
   "license": "MIT",

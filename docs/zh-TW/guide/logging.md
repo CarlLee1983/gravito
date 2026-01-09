@@ -36,7 +36,7 @@ Gravito 支援以下標準日誌等級（由低到高）：
 預設情況下，Gravito 使用 `ConsoleLogger` 將日誌輸出到終端機。您可以實作 `Logger` 介面來將日誌傳送到 Loki、Datadog 或儲存到檔案：
 
 ```typescript
-import { Logger } from 'gravito-core';
+import { Logger } from '@gravito/core';
 
 class CloudWatchLogger implements Logger {
   info(message: string, context?: any) {

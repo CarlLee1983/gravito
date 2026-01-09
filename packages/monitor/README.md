@@ -23,7 +23,7 @@ bun add @opentelemetry/sdk-node @opentelemetry/exporter-trace-otlp-http
 ## Quick Start
 
 ```typescript
-import { PlanetCore } from 'gravito-core'
+import { PlanetCore } from '@gravito/core'
 import { MonitorOrbit } from '@gravito/monitor'
 
 const core = new PlanetCore()

@@ -27,7 +27,7 @@ describe('OrbitSignal Core', () => {
   it('should send a simple email via transport', async () => {
     const transport = new MockTransport()
 
-    const mailer = OrbitSignal.configure({
+    const mailer = new OrbitSignal({
       from: { name: 'System', address: 'system@example.com' },
       transport: transport,
     })
@@ -49,7 +49,7 @@ describe('OrbitSignal Core', () => {
     const mail = new WelcomeMail('Carl')
       .to(['a@b.com', { address: 'c@d.com', name: 'C' }])
       .cc('cc@example.com')
-      .priority('high')
+      .emailPriority('high')
 
     const config = {
       from: { address: 'default@example.com' },

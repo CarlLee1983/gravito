@@ -14,6 +14,8 @@ export { FluxEngine } from './engine/FluxEngine'
 
 // Storage (Node-compatible only)
 export { MemoryStorage } from './storage/MemoryStorage'
+// Trace
+export { JsonFileTraceSink } from './trace/JsonFileTraceSink'
 
 // Note: BunSQLiteStorage is NOT exported here (Bun-only)
 
@@ -33,12 +35,18 @@ export type {
   // Logger
   FluxLogger,
   FluxResult,
+  // Trace
+  FluxTraceEvent,
+  FluxTraceEventType,
+  FluxTraceSink,
   // Step types
   StepDefinition,
+  StepDescriptor,
   StepExecution,
   StepResult,
   WorkflowContext,
   WorkflowDefinition,
+  WorkflowDescriptor,
   WorkflowFilter,
   WorkflowState,
   // Core types

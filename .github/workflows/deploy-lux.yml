@@ -38,6 +38,7 @@ jobs:
         working-directory: examples/luminosity-site
         env:
           NODE_ENV: production
+          GA_MEASUREMENT_ID: ${{ vars.GA_MEASUREMENT_ID }}
         run: |
           echo "📦 Building client assets..."
           bun run build:client
@@ -58,7 +59,7 @@ jobs:
           destination-repository-name: 'luminosity-site-dist'
           user-email: 'carllee0520@gmail.com'
           target-branch: 'main'
-          commit-message: 'deploy: update lux site from gravito-core'
+          commit-message: 'deploy: update lux site from @gravito/core'
 
       - name: Purge Cloudflare Cache
         run: |

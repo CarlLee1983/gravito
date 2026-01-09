@@ -22,10 +22,10 @@
         "allowImportingTsExtensions": true,
         "baseUrl": ".",
         "paths": {
-            "gravito-core": [
+            "@gravito/core": [
                 "../../packages/core/src/index.ts"
             ],
-            "gravito-core/compat": [
+            "@gravito/core/compat": [
                 "../../packages/core/src/compat.ts"
             ],
             "@gravito/photon/client": [

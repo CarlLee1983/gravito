@@ -6,10 +6,14 @@
  */
 
 import path from 'node:path'
+import { ActionDomainGenerator } from './generators/ActionDomainGenerator'
 import { BaseGenerator } from './generators/BaseGenerator'
 import { CleanArchitectureGenerator } from './generators/CleanArchitectureGenerator'
 import { DddGenerator } from './generators/DddGenerator'
 import { EnterpriseMvcGenerator } from './generators/EnterpriseMvcGenerator'
+import { SatelliteGenerator } from './generators/SatelliteGenerator'
+import { LockGenerator } from './LockGenerator'
+import { ProfileResolver } from './ProfileResolver'
 import type { ArchitectureType, ScaffoldOptions, ScaffoldResult } from './types'
 
 export class Scaffold {
@@ -45,6 +49,16 @@ export class Scaffold {
         name: 'Domain-Driven Design',
         description: 'Full DDD with Bounded Contexts and CQRS',
       },
+      {
+        type: 'action-domain',
+        name: 'Action Domain',
+        description: 'Single Action Controllers pattern for high-clarity APIs',
+      },
+      {
+        type: 'satellite',
+        name: 'Gravito Satellite',
+        description: 'Plug-and-play module for the Gravito ecosystem',
+      },
     ]
   }
 
@@ -53,6 +67,11 @@ export class Scaffold {
    */
   async create(options: ScaffoldOptions): Promise<ScaffoldResult> {
     const generator = this.createGenerator(options.architecture)
+    const fs = await import('node:fs/promises')
+
+    // 1. Resolve Profile
+    const profileResolver = new ProfileResolver()
+    const profileConfig = profileResolver.resolve(options.profile, options.features)
 
     const context = BaseGenerator.createContext(
       options.name,
@@ -62,11 +81,27 @@ export class Scaffold {
       {
         ...options.context,
         withSpectrum: options.withSpectrum ?? false,
+        isInternal: options.isInternal ?? false,
+        profile: options.profile ?? 'core',
+        features: options.features ?? [],
+        profileConfig,
       }
     )
 
     try {
       const filesCreated = await generator.generate(context)
+
+      // 2. Generate Lock File
+      const lockGenerator = new LockGenerator()
+      const lockContent = lockGenerator.generate(
+        options.profile ?? 'core',
+        profileConfig,
+        'basic', // Default template for now, should come from options if applicable
+        '1.0.0'
+      )
+      const lockPath = path.resolve(options.targetDir, 'gravito.lock.json')
+      await fs.writeFile(lockPath, lockContent, 'utf-8')
+      filesCreated.push(lockPath)
 
       return {
         success: true,
@@ -99,6 +134,10 @@ export class Scaffold {
         return new CleanArchitectureGenerator(config)
       case 'ddd':
         return new DddGenerator(config)
+      case 'action-domain':
+        return new ActionDomainGenerator(config)
+      case 'satellite':
+        return new SatelliteGenerator(config)
       default:
         throw new Error(`Unknown architecture type: ${type}`)
     }

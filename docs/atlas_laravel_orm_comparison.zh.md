@@ -154,7 +154,7 @@ Laravel 作為一個流行的 PHP 框架，透過以下幾個關鍵元件提供�
     *   `TestCase` 基類。
     *   `TestResponse` 提供的流暢斷言（`assertStatus`、`assertJson` 等）。
     *   強大的 Mocking（`Event::fake()`、`Mail::fake()`、`Queue::fake()`）。
-*   **`atlas` (gravito-core)：**
+*   **`atlas` (@gravito/core)：**
     *   **已確認：** `HttpTester` 與 `TestResponse` 流暢斷言（Laravel 風格）。
     *   **待確認/實作：** `Event::fake()` 等 Mocking 系統。
 

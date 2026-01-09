@@ -24,7 +24,7 @@ bun add @gravito/radiance
 ### 1. Configure OrbitRadiance
 
 ```typescript
-import { PlanetCore } from 'gravito-core'
+import { PlanetCore } from '@gravito/core'
 import { OrbitRadiance } from '@gravito/radiance'
 
 const core = await PlanetCore.boot({
@@ -49,7 +49,7 @@ const core = await PlanetCore.boot({
 ### 2. Create a broadcastable event
 
 ```typescript
-import { Event, ShouldBroadcast } from 'gravito-core'
+import { Event, ShouldBroadcast } from '@gravito/core'
 import { PrivateChannel } from '@gravito/radiance'
 
 class OrderShipped extends Event implements ShouldBroadcast {

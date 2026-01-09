@@ -1,38 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://gravito.dev/atlas/</loc>
-    <priority>1.0</priority>
-    <changefreq>daily</changefreq>
+    <loc>https://atlas.gravito.dev/</loc>
   </url>
   <url>
-    <loc>https://gravito.dev/atlas/features</loc>
-    <priority>0.8</priority>
-    <changefreq>weekly</changefreq>
+    <loc>https://atlas.gravito.dev/features</loc>
   </url>
   <url>
-    <loc>https://gravito.dev/atlas/docs/benchmark</loc>
-    <priority>0.9</priority>
-    <changefreq>weekly</changefreq>
+    <loc>https://atlas.gravito.dev/docs/benchmark</loc>
   </url>
   <url>
-    <loc>https://gravito.dev/atlas/docs/mongodb</loc>
-    <priority>0.8</priority>
-    <changefreq>weekly</changefreq>
+    <loc>https://atlas.gravito.dev/docs/mongodb</loc>
   </url>
   <url>
-    <loc>https://gravito.dev/atlas/docs/cli</loc>
-    <priority>0.7</priority>
-    <changefreq>monthly</changefreq>
+    <loc>https://atlas.gravito.dev/docs/cli</loc>
   </url>
   <url>
-    <loc>https://gravito.dev/atlas/docs/redis</loc>
-    <priority>0.7</priority>
-    <changefreq>monthly</changefreq>
+    <loc>https://atlas.gravito.dev/docs/redis</loc>
   </url>
   <url>
-    <loc>https://gravito.dev/atlas/docs/legal</loc>
-    <priority>0.3</priority>
-    <changefreq>yearly</changefreq>
+    <loc>https://atlas.gravito.dev/docs/legal</loc>
   </url>
 </urlset>

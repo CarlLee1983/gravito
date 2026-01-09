@@ -1,7 +1,7 @@
 export {}
 
 // Module augmentation for GravitoVariables (new abstraction)
-declare module 'gravito-core' {
+declare module '@gravito/core' {
   interface GravitoVariables {
     /** Mail service for sending emails */
     mail?: {

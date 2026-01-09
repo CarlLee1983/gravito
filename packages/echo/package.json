@@ -1,15 +1,15 @@
 {
   "name": "@gravito/echo",
-  "version": "1.0.0-beta.1",
+  "version": "1.0.0",
   "description": "Enterprise-grade webhook handling for Gravito. Secure receiving and reliable sending.",
   "type": "module",
   "main": "./dist/index.cjs",
-  "module": "./dist/index.mjs",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
+      "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     }
   },
@@ -20,7 +20,9 @@
   "scripts": {
     "build": "bun run build.ts",
     "test": "bun test",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
+    "test:coverage": "bun test --coverage --coverage-threshold=80",
+    "test:ci": "bun test --coverage --coverage-threshold=80"
   },
   "keywords": [
     "gravito",
@@ -39,7 +41,7 @@
   },
   "homepage": "https://github.com/gravito-framework/gravito#readme",
   "peerDependencies": {
-    "gravito-core": "1.0.0-beta.6"
+    "@gravito/core": "workspace:*"
   },
   "devDependencies": {
     "bun-types": "latest",

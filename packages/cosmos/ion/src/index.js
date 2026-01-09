@@ -2,7 +2,7 @@ import { createRequire } from "node:module";
 var __require = /* @__PURE__ */ createRequire(import.meta.url);
 // ../core/package.json
 var package_default = {
-  name: "gravito-core",
+  name: "@gravito/core",
   version: "1.0.0-beta.2",
   description: "",
   module: "./dist/index.mjs",
@@ -700,7 +700,7 @@ async function handleProcessError(kind, error) {
       }
     }));
   } catch (e) {
-    console.error("[gravito-core] Failed to handle process-level error:", e);
+    console.error("[@gravito/core] Failed to handle process-level error:", e);
   } finally {
     if (shouldExit) {
       clearTimeout(exitTimer);

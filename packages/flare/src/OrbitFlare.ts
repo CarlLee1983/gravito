@@ -1,4 +1,4 @@
-import type { GravitoOrbit, PlanetCore } from 'gravito-core'
+import type { GravitoOrbit, PlanetCore } from '@gravito/core'
 import { BroadcastChannel } from './channels/BroadcastChannel'
 import { DatabaseChannel } from './channels/DatabaseChannel'
 import { MailChannel } from './channels/MailChannel'

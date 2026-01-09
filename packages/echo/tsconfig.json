@@ -5,7 +5,19 @@
         "rootDir": "./src",
         "declaration": true,
         "declarationMap": true,
-        "skipLibCheck": true
+        "skipLibCheck": true,
+        "types": [
+            "bun-types"
+        ],
+        "baseUrl": ".",
+        "paths": {
+            "@gravito/core": [
+                "../../packages/core/src/index.ts"
+            ],
+            "@gravito/*": [
+                "../../packages/*/src/index.ts"
+            ]
+        }
     },
     "include": [
         "src/**/*"

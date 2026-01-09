@@ -11,7 +11,7 @@ bun add @gravito/pulsar
 ## 快速開始
 
 ```ts
-import { PlanetCore, defineConfig } from 'gravito-core'
+import { PlanetCore, defineConfig } from '@gravito/core'
 import { OrbitCache } from '@gravito/stasis'
 import { OrbitPulsar } from '@gravito/pulsar'
 

@@ -1,4 +1,4 @@
-import type { GravitoContext, GravitoNext, PlanetCore } from 'gravito-core'
+import type { GravitoContext, GravitoNext, PlanetCore } from '@gravito/core'
 
 /**
  * Configure Vite proxy middleware for development mode

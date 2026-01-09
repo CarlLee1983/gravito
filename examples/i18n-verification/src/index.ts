@@ -1,8 +1,37 @@
+import { bodySizeLimit, PlanetCore, securityHeaders } from '@gravito/core'
 import { type I18nService, OrbitCosmos } from '@gravito/cosmos'
-import { PlanetCore } from 'gravito-core'
 
 const port = parseInt(process.env.PORT || '3007', 10)
 const core = new PlanetCore()
+
+const defaultCsp = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data:",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "frame-ancestors 'none'",
+].join('; ')
+const cspValue = process.env.APP_CSP
+const csp = cspValue === 'false' ? false : (cspValue ?? defaultCsp)
+const hstsMaxAge = Number.parseInt(process.env.APP_HSTS_MAX_AGE ?? '15552000', 10)
+const bodyLimit = Number.parseInt(process.env.APP_BODY_LIMIT ?? '1048576', 10)
+const requireLength = process.env.APP_BODY_REQUIRE_LENGTH === 'true'
+
+core.adapter.use(
+  '*',
+  securityHeaders({
+    contentSecurityPolicy: csp,
+    hsts:
+      process.env.NODE_ENV === 'production'
+        ? { maxAge: Number.isNaN(hstsMaxAge) ? 15552000 : hstsMaxAge, includeSubDomains: true }
+        : false,
+  })
+)
+if (!Number.isNaN(bodyLimit) && bodyLimit > 0) {
+  core.adapter.use('*', bodySizeLimit(bodyLimit, { requireContentLength: requireLength }))
+}
 
 await core.orbit(
   new OrbitCosmos({

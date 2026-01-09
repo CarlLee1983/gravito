@@ -1,4 +1,4 @@
-import type { PlanetCore } from 'gravito-core'
+import type { PlanetCore } from '@gravito/core'
 import type { BroadcastDriver } from './drivers/BroadcastDriver'
 
 /**

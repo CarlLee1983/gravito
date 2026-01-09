@@ -16,7 +16,7 @@ description: Learn how to broadcast server-side events in real-time to the brows
 ## Defining a Broadcast Event
 
 ```typescript
-import { Event } from 'gravito-core'
+import { Event } from '@gravito/core'
 import { ShouldBroadcast, PrivateChannel } from '@gravito/radiance'
 
 export class MessageSent extends Event implements ShouldBroadcast {

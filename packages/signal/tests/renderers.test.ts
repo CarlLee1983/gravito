@@ -1,6 +1,4 @@
 import { describe, expect, it } from 'bun:test'
-import { createElement } from 'react'
-import { defineComponent, h } from 'vue'
 import { Mailable } from '../src/Mailable'
 import { LogTransport } from '../src/transports/LogTransport'
 
@@ -11,27 +9,31 @@ const mockConfig = {
 }
 
 // React Component
-const ReactTestComponent = ({ name }: { name: string }) => {
-  return createElement('div', {}, createElement('h1', {}, `Hello ${name}`))
+const ReactTestComponent = ({ name }: { name: string }) => `<h1>Hello ${name}</h1>`
+
+const reactDeps = {
+  createElement: (component: (props: any) => string, props: any) => component(props),
+  renderToStaticMarkup: (element: string) => element,
 }
 
 // Vue Component
-const VueTestComponent = defineComponent({
-  props: ['name'],
-  render() {
-    return h('div', [h('h1', `Hello ${this.name}`)])
-  },
-})
+const VueTestComponent = ({ name }: { name: string }) => `<h1>Hello ${name}</h1>`
+
+const vueDeps = {
+  createSSRApp: ({ render }: { render: () => string }) => ({ render }),
+  h: (component: (props: any) => string, props: any) => component(props),
+  renderToString: async (app: { render: () => string }) => app.render(),
+}
 
 class TestReactMail extends Mailable {
   build() {
-    return this.react(ReactTestComponent, { name: 'World' }).subject('React Test')
+    return this.react(ReactTestComponent, { name: 'World' }, reactDeps).subject('React Test')
   }
 }
 
 class TestVueMail extends Mailable {
   build() {
-    return this.vue(VueTestComponent, { name: 'World' }).subject('Vue Test')
+    return this.vue(VueTestComponent, { name: 'World' }, vueDeps).subject('Vue Test')
   }
 }
 

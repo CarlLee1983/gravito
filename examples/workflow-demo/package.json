@@ -1,0 +1,21 @@
+{
+  "name": "workflow-demo",
+  "version": "0.1.2",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "bun run src/index.ts",
+    "doctor": "bun gravito doctor",
+    "test": "bun test",
+    "workflow": "bun run workflow-demo.ts"
+  },
+  "dependencies": {
+    "@gravito/atlas": "workspace:*",
+    "@gravito/pulse": "workspace:*",
+    "@gravito/core": "workspace:*"
+  },
+  "devDependencies": {
+    "bun-types": "latest",
+    "typescript": "^5.9.3"
+  }
+}

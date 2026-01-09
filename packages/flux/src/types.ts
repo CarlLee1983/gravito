@@ -13,11 +13,27 @@
 /**
  * Workflow execution status
  */
-export type WorkflowStatus = 'pending' | 'running' | 'paused' | 'completed' | 'failed'
+export type WorkflowStatus =
+  | 'pending'
+  | 'running'
+  | 'paused'
+  | 'completed'
+  | 'failed'
+  | 'suspended'
+  | 'rolling_back'
+  | 'rolled_back'
 
 // ─────────────────────────────────────────────────────────────
 // Step Definitions
 // ─────────────────────────────────────────────────────────────
+
+/**
+ * Result of Flux.wait()
+ */
+export interface FluxWaitResult {
+  __kind: 'flux_wait'
+  signal: string
+}
 
 /**
  * Step execution result
@@ -27,6 +43,8 @@ export interface StepResult<T = unknown> {
   data?: T
   error?: Error
   duration: number
+  suspended?: boolean
+  waitingFor?: string
 }
 
 /**
@@ -34,10 +52,22 @@ export interface StepResult<T = unknown> {
  */
 export interface StepExecution {
   name: string
-  status: 'pending' | 'running' | 'completed' | 'failed' | 'skipped'
+  status:
+    | 'pending'
+    | 'running'
+    | 'completed'
+    | 'failed'
+    | 'skipped'
+    | 'suspended'
+    | 'compensated'
+    | 'compensating'
   startedAt?: Date
   completedAt?: Date
+  suspendedAt?: Date
+  compensatedAt?: Date
+  waitingFor?: string
   duration?: number
+  output?: any
   error?: string
   retries: number
 }
@@ -45,12 +75,17 @@ export interface StepExecution {
 /**
  * Step definition
  */
-export interface StepDefinition<TContext = WorkflowContext> {
+export interface StepDefinition<TInput = any, TData = any> {
   /** Step name (unique within workflow) */
   name: string
 
   /** Step handler function */
-  handler: (ctx: TContext) => Promise<void> | void
+  handler: (
+    ctx: WorkflowContext<TInput, TData>
+  ) => Promise<void | FluxWaitResult> | void | FluxWaitResult
+
+  /** Compensation handler to undo effects */
+  compensate?: (ctx: WorkflowContext<TInput, TData>) => Promise<void> | void
 
   /** Number of retries on failure */
   retries?: number
@@ -59,7 +94,7 @@ export interface StepDefinition<TContext = WorkflowContext> {
   timeout?: number
 
   /** Condition to skip this step */
-  when?: (ctx: TContext) => boolean
+  when?: (ctx: WorkflowContext<TInput, TData>) => boolean
 
   /** Mark as commit step (always executes even on replay) */
   commit?: boolean
@@ -104,12 +139,12 @@ export interface WorkflowContext<TInput = unknown, TData = Record<string, unknow
 /**
  * Serializable workflow state for persistence
  */
-export interface WorkflowState {
+export interface WorkflowState<TInput = any, TData = any> {
   id: string
   name: string
   status: WorkflowStatus
-  input: unknown
-  data: Record<string, unknown>
+  input: TInput
+  data: TData
   currentStep: number
   history: StepExecution[]
   createdAt: Date
@@ -125,15 +160,34 @@ export interface WorkflowState {
 /**
  * Workflow definition (immutable blueprint)
  */
-export interface WorkflowDefinition<TInput = unknown> {
+export interface WorkflowDefinition<TInput = unknown, TData = Record<string, unknown>> {
   /** Workflow name */
   name: string
 
   /** Step definitions in order */
-  steps: StepDefinition[]
+  steps: StepDefinition<TInput, TData>[]
 
   /** Input schema validator (optional) */
   validateInput?: (input: unknown) => input is TInput
+}
+
+/**
+ * Workflow descriptor (serializable metadata)
+ */
+export interface WorkflowDescriptor {
+  name: string
+  steps: StepDescriptor[]
+}
+
+/**
+ * Step descriptor (serializable metadata)
+ */
+export interface StepDescriptor {
+  name: string
+  commit: boolean
+  retries?: number
+  timeout?: number
+  hasCondition: boolean
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -209,6 +263,47 @@ export interface FluxLogger {
 }
 
 // ─────────────────────────────────────────────────────────────
+// Trace Types
+// ─────────────────────────────────────────────────────────────
+
+export type FluxTraceEventType =
+  | 'workflow:start'
+  | 'workflow:complete'
+  | 'workflow:error'
+  | 'workflow:rollback_start'
+  | 'workflow:rollback_complete'
+  | 'step:start'
+  | 'step:complete'
+  | 'step:error'
+  | 'step:skipped'
+  | 'step:retry'
+  | 'step:suspend'
+  | 'step:compensate'
+  | 'signal:received'
+
+export interface FluxTraceEvent {
+  type: FluxTraceEventType
+  timestamp: number
+  workflowId: string
+  workflowName: string
+  stepName?: string
+  stepIndex?: number
+  commit?: boolean
+  retries?: number
+  maxRetries?: number
+  duration?: number
+  error?: string
+  status?: WorkflowStatus | StepExecution['status']
+  input?: unknown
+  data?: Record<string, unknown>
+  meta?: Record<string, unknown>
+}
+
+export interface FluxTraceSink {
+  emit(event: FluxTraceEvent): void | Promise<void>
+}
+
+// ─────────────────────────────────────────────────────────────
 // Engine Configuration
 // ─────────────────────────────────────────────────────────────
 
@@ -221,6 +316,9 @@ export interface FluxConfig {
 
   /** Logger instance */
   logger?: FluxLogger
+
+  /** Trace sink for workflow events */
+  trace?: FluxTraceSink
 
   /** Default retry count for steps */
   defaultRetries?: number

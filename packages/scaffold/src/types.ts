@@ -1,7 +1,7 @@
 /**
  * Architecture types supported by the scaffolding system.
  */
-export type ArchitectureType = 'enterprise-mvc' | 'clean' | 'ddd'
+export type ArchitectureType = 'enterprise-mvc' | 'clean' | 'ddd' | 'satellite' | 'action-domain'
 
 /**
  * Options for scaffolding a new project.
@@ -45,6 +45,23 @@ export interface ScaffoldOptions {
    * @default false
    */
   withSpectrum?: boolean
+
+  /**
+   * Whether this is an internal official satellite
+   * @default false
+   */
+  isInternal?: boolean
+
+  /**
+   * Profile preset (Core, Scale, Enterprise)
+   * @default 'core'
+   */
+  profile?: 'core' | 'scale' | 'enterprise'
+
+  /**
+   * Feature add-ons (e.g. 'redis', 'queue', 'otel')
+   */
+  features?: string[]
 
   /**
    * Additional context variables for templates

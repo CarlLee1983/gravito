@@ -1,4 +1,4 @@
-import type { GravitoContext } from 'gravito-core'
+import type { GravitoContext } from '@gravito/core'
 import { DocsService } from '../services/DocsService'
 
 export class DocsController {

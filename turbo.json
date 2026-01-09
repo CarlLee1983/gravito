@@ -5,6 +5,7 @@
             "dependsOn": [
                 "^build"
             ],
+            "inputs": ["src/**", "package.json", "tsconfig.json"],
             "outputs": [
                 "dist/**",
                 ".next/**",
@@ -12,15 +13,27 @@
             ]
         },
         "test": {
-            "dependsOn": [
-                "build"
-            ],
+            "dependsOn": [],
+            "inputs": ["src/**", "tests/**", "package.json", "tsconfig.json", "bunfig.toml"],
             "outputs": []
         },
-        "lint": {
+        "test:ci": {
+            "dependsOn": [],
+            "inputs": ["src/**", "tests/**", "package.json", "tsconfig.json", "bunfig.toml"],
+            "outputs": []
+        },
+        "test:coverage": {
+            "dependsOn": [],
+            "inputs": ["src/**", "tests/**", "package.json", "tsconfig.json", "bunfig.toml"],
             "outputs": []
         },
         "typecheck": {
+            "dependsOn": ["^build"],
+            "inputs": ["src/**", "tests/**", "package.json", "tsconfig.json"],
+            "outputs": []
+        },
+        "lint": {
+            "inputs": ["src/**", "tests/**", "package.json", "biome.json"],
             "outputs": []
         },
         "dev": {

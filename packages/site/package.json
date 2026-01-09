@@ -4,13 +4,17 @@
   "private": true,
   "scripts": {
     "dev": "bun run --watch src/index.ts",
-    "build": "bun build ./src/index.ts --outdir ./dist --target node --external gravito-core --external @gravito/monolith --external @gravito/cosmos --external @gravito/constellation --external @gravito/photon",
+    "build": "bun build ./src/index.ts --outdir ./dist --target node --external @gravito/core --external @gravito/monolith --external @gravito/cosmos --external @gravito/constellation --external @gravito/photon",
     "generate": "bun run ./build-static.ts",
     "deploy": "bun run generate && gh-pages -d dist-static --dotfiles",
-    "start": "bun run ./dist/index.js"
+    "start": "bun run ./dist/index.js",
+    "test": "bun test",
+    "test:coverage": "bun test --coverage --coverage-reporter=lcov --coverage-dir coverage && bun ./scripts/check-coverage.ts",
+    "test:ci": "bun test --coverage --coverage-reporter=lcov --coverage-dir coverage && bun ./scripts/check-coverage.ts",
+    "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck"
   },
   "dependencies": {
-    "gravito-core": "workspace:*",
+    "@gravito/core": "workspace:*",
     "@gravito/monolith": "workspace:*",
     "@gravito/cosmos": "workspace:*",
     "@gravito/constellation": "workspace:*",

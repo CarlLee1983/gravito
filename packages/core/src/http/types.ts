@@ -47,7 +47,7 @@ export type ContentfulStatusCode = Exclude<StatusCode, 100 | 101 | 102 | 103 | 2
  * @example
  * ```typescript
  * // Extending variables in your orbit:
- * declare module 'gravito-core' {
+ * declare module '@gravito/core' {
  *   interface GravitoVariables {
  *     myService: MyService
  *   }
@@ -91,7 +91,7 @@ export interface GravitoVariables {
   // Optional orbit-injected services
   // Each orbit extends this interface via module augmentation:
   //
-  // declare module 'gravito-core' {
+  // declare module '@gravito/core' {
   //   interface GravitoVariables {
   //     myService: MyService
   //   }
@@ -425,6 +425,7 @@ export type GravitoHandler<V extends GravitoVariables = GravitoVariables> = (
  * const logger: GravitoMiddleware = async (ctx, next) => {
  *   console.log(`${ctx.req.method} ${ctx.req.path}`)
  *   await next()
+ *   return undefined
  * }
  * ```
  */

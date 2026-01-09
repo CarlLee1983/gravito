@@ -19,7 +19,7 @@ bun add @gravito/stasis
 ## Usage
 
 ```typescript
-import { PlanetCore } from 'gravito-core';
+import { PlanetCore } from '@gravito/core';
 import orbitCache from '@gravito/stasis';
 
 const core = new PlanetCore();

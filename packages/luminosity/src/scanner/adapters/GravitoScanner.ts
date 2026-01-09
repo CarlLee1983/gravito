@@ -36,7 +36,7 @@ interface GravitoCoreLike {
  *
  * @example
  * ```typescript
- * import { PlanetCore } from 'gravito-core'
+ * import { PlanetCore } from '@gravito/core'
  * import { GravitoScanner, SitemapBuilder } from '@gravito/luminosity'
  *
  * const core = await PlanetCore.boot({ ... })

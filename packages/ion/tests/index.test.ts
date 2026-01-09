@@ -49,6 +49,27 @@ describe('InertiaService', () => {
     })
   })
 
+  it('should share multiple props and expose them', () => {
+    const req = {
+      url: '/test',
+      header: () => 'true',
+    }
+
+    const ctx = {
+      req,
+      header: mock(),
+      json: mock((data: any) => data),
+    } as any
+
+    const service = new InertiaService(ctx, { version: '1.0' })
+    service.shareAll({ locale: 'en', feature: true })
+
+    expect(service.getSharedProps()).toEqual({ locale: 'en', feature: true })
+
+    const result = service.render('Dashboard')
+    expect((result as any).props).toEqual({ locale: 'en', feature: true })
+  })
+
   it('should escape page JSON for single-quoted data-page attribute', () => {
     const view = {
       render: mock((_viewName: string, data: any) => {

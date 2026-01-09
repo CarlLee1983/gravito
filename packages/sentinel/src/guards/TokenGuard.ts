@@ -11,7 +11,8 @@ export class TokenGuard<User extends Authenticatable = Authenticatable> implemen
     protected ctx: Context,
     protected inputKey = 'api_token',
     protected storageKey = 'api_token',
-    protected hash = false
+    protected hash = false,
+    protected allowQueryToken = false
   ) {}
 
   async check(): Promise<boolean> {
@@ -71,15 +72,15 @@ export class TokenGuard<User extends Authenticatable = Authenticatable> implemen
   }
 
   protected getTokenForRequest(): string | null {
-    let token = this.ctx.req.query(this.inputKey)
-
-    if (!token) {
-      const header = this.ctx.req.header('Authorization')
-      if (header?.startsWith('Bearer ')) {
-        token = header.substring(7)
-      }
+    const header = this.ctx.req.header('Authorization')
+    if (header?.startsWith('Bearer ')) {
+      return header.substring(7)
     }
 
-    return (token as string) || null
+    if (this.allowQueryToken) {
+      return this.ctx.req.query(this.inputKey) || null
+    }
+
+    return null
   }
 }

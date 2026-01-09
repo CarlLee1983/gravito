@@ -7,6 +7,7 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { cancel, intro, isCancel, note, outro, select, spinner, text } from '@clack/prompts'
+import { getRuntimeAdapter } from '@gravito/core'
 import { type ArchitectureType, Scaffold } from '@gravito/scaffold'
 import pc from 'picocolors'
 
@@ -69,6 +70,11 @@ export async function initCommand(options: InitOptions = {}) {
           value: 'ddd',
           label: '🏛️ Domain-Driven Design (DDD)',
           hint: '完整的 DDD 架構，包含 Modules、Bounded Contexts',
+        },
+        {
+          value: 'action-domain',
+          label: '⚡ Action-Domain-Responder (ADR)',
+          hint: 'Web 特化的設計模式，關注 Actions 與 Domain 邏輯的分離',
         },
       ],
     })
@@ -168,10 +174,11 @@ export async function initCommand(options: InitOptions = {}) {
       gitSpinner.start('初始化 Git 倉庫...')
 
       try {
-        const proc = Bun.spawn(['git', 'init'], { cwd: targetDir })
-        await proc.exited
+        const runtime = getRuntimeAdapter()
+        const proc = runtime.spawn(['git', 'init'], { cwd: targetDir })
+        const exitCode = await proc.exited
 
-        if (proc.exitCode === 0) {
+        if (exitCode === 0) {
           gitSpinner.stop('Git 倉庫已初始化!')
         } else {
           gitSpinner.stop('Git 初始化跳過 (可能未安裝 git)')
@@ -189,10 +196,11 @@ export async function initCommand(options: InitOptions = {}) {
       try {
         const installCmd =
           packageManager === 'npm' ? ['npm', 'install'] : [packageManager, 'install']
-        const proc = Bun.spawn(installCmd, { cwd: targetDir })
-        await proc.exited
+        const runtime = getRuntimeAdapter()
+        const proc = runtime.spawn(installCmd, { cwd: targetDir })
+        const exitCode = await proc.exited
 
-        if (proc.exitCode === 0) {
+        if (exitCode === 0) {
           installSpinner.stop('依賴安裝完成!')
         } else {
           installSpinner.stop('依賴安裝失敗，請手動執行 install')
@@ -207,6 +215,8 @@ export async function initCommand(options: InitOptions = {}) {
       'enterprise-mvc': '📦 Enterprise MVC',
       clean: '🧅 Clean Architecture',
       ddd: '🏛️ Domain-Driven Design',
+      satellite: '🛰️ Satellite Service',
+      'action-domain': '⚡ Action-Domain-Responder',
     }
 
     note(

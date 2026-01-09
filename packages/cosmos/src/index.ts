@@ -1,7 +1,7 @@
-import type { GravitoMiddleware, GravitoOrbit, PlanetCore } from 'gravito-core'
+import type { GravitoMiddleware, GravitoOrbit, PlanetCore } from '@gravito/core'
 import { type I18nConfig, I18nManager, type I18nService, localeMiddleware } from './I18nService'
 
-declare module 'gravito-core' {
+declare module '@gravito/core' {
   interface Variables {
     i18n: I18nService
   }
@@ -23,7 +23,7 @@ export class OrbitCosmos implements GravitoOrbit {
 
     // Inject locale middleware into every request
     // This middleware handles cloning the i18n instance per request
-    core.adapter.use('*', localeMiddleware(i18nManager) as GravitoMiddleware)
+    core.adapter.use('*', localeMiddleware(i18nManager) as unknown as GravitoMiddleware)
 
     core.logger.info(`[OrbitCosmos] I18n initialized with locale: ${this.config.defaultLocale}`)
   }

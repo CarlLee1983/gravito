@@ -1,4 +1,4 @@
-import type { CacheService, GravitoContext, PlanetCore } from 'gravito-core'
+import type { CacheService, GravitoContext, PlanetCore } from '@gravito/core'
 
 const startTime = Date.now()
 

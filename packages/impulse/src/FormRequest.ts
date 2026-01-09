@@ -1,6 +1,6 @@
-import type { ContentfulStatusCode } from 'gravito-core'
-import { AuthorizationException, ValidationException } from 'gravito-core'
-import type { Context, MiddlewareHandler } from 'gravito-core/compat'
+import type { ContentfulStatusCode } from '@gravito/core'
+import { AuthorizationException, ValidationException } from '@gravito/core'
+import type { Context, MiddlewareHandler } from '@gravito/core/compat'
 import type { z } from 'zod'
 
 /**
@@ -493,7 +493,7 @@ export function validateRequest<T>(RequestClass: new () => FormRequest<T>): Midd
 }
 
 // Module augmentation for GravitoVariables (new abstraction)
-declare module 'gravito-core' {
+declare module '@gravito/core' {
   interface GravitoVariables {
     /** Validated request data from FormRequest */
     validated?: unknown

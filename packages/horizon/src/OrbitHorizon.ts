@@ -1,5 +1,5 @@
+import type { GravitoOrbit, PlanetCore } from '@gravito/core'
 import type { CacheManager } from '@gravito/stasis'
-import type { GravitoOrbit, PlanetCore } from 'gravito-core'
 import { LockManager } from './locks'
 import { SchedulerManager } from './SchedulerManager'
 

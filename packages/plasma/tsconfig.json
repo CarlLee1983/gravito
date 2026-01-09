@@ -6,9 +6,10 @@
         "noEmit": false,
         "declaration": true,
         "declarationMap": true,
-        "emitDeclarationOnly": true,
+        "skipLibCheck": true,
+        "types": ["bun-types"],
         "paths": {
-            "gravito-core": [
+            "@gravito/core": [
                 "../../packages/core/src/index.ts"
             ],
             "@gravito/*": [

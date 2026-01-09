@@ -1,18 +1,18 @@
 {
   "name": "@gravito/fortify",
-  "version": "1.0.0-beta.1",
+  "version": "1.0.0",
   "publishConfig": {
     "access": "public"
   },
   "description": "End-to-End Authentication Workflows for Gravito (Login, Register, Password Reset, Email Verification)",
-  "module": "./dist/index.mjs",
   "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
   "type": "module",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
+      "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     }
   },
@@ -24,7 +24,9 @@
   "scripts": {
     "build": "bun run build.ts",
     "test": "bun test",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
+    "test:coverage": "bun test --coverage --coverage-threshold=80",
+    "test:ci": "bun test --coverage --coverage-threshold=80"
   },
   "keywords": [
     "gravito",
@@ -39,15 +41,15 @@
   "author": "Carl Lee <carllee0520@gmail.com>",
   "license": "MIT",
   "peerDependencies": {
-    "@gravito/sentinel": "1.0.0-beta.1",
-    "gravito-core": "1.0.0-beta.6",
-    "@gravito/photon": "1.0.0-beta.1"
+    "@gravito/sentinel": "workspace:*",
+    "@gravito/core": "workspace:*",
+    "@gravito/photon": "workspace:*"
   },
   "devDependencies": {
-    "@gravito/sentinel": "1.0.0-beta.1",
+    "@gravito/sentinel": "workspace:*",
     "bun-types": "latest",
-    "gravito-core": "1.0.0-beta.6",
-    "@gravito/photon": "1.0.0-beta.1",
+    "@gravito/core": "workspace:*",
+    "@gravito/photon": "workspace:*",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3"
   },

@@ -1,15 +1,39 @@
-import { describe, expect, it } from 'bun:test'
-import { PlanetCore } from 'gravito-core'
-import { OrbitPrism } from '../src/index'
-import { TemplateEngine } from '../src/TemplateEngine'
+import { describe, expect, it, mock } from 'bun:test'
+import { OrbitPrism, TemplateEngine } from '../src/index'
 
 describe('OrbitPrism', () => {
   it('should register view engine', async () => {
-    new PlanetCore()
-    new OrbitPrism()
+    let middleware: ((c: any, next: () => Promise<void>) => Promise<undefined | undefined>) | null =
+      null
+    const core = {
+      logger: { info: mock(() => {}) },
+      config: {
+        get: (_key: string, fallback?: string) => fallback,
+      },
+      adapter: {
+        use: mock((_path: string, handler: typeof middleware) => {
+          middleware = handler
+        }),
+      },
+      hooks: {
+        doAction: mock(() => {}),
+      },
+    }
 
-    // Mock config
-    expect(true).toBe(true)
+    const orbit = new OrbitPrism()
+    orbit.install(core as any)
+
+    expect(core.adapter.use).toHaveBeenCalled()
+    expect(core.hooks.doAction).toHaveBeenCalledWith('view:helpers:register', expect.any(Object))
+
+    const context: Record<string, unknown> = {
+      set: (key: string, value: unknown) => {
+        context[key] = value
+      },
+    }
+
+    await middleware?.(context, async () => {})
+    expect(context.view).toBeInstanceOf(TemplateEngine)
   })
 })
 

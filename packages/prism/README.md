@@ -28,7 +28,7 @@ bun add react react-dom
 ### 1. Register the orbit
 
 ```typescript
-import { defineConfig, PlanetCore } from 'gravito-core'
+import { defineConfig, PlanetCore } from '@gravito/core'
 import { OrbitPrism } from '@gravito/prism'
 
 const config = defineConfig({
