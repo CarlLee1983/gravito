@@ -1,5 +1,12 @@
 # @gravito/flare
 
+## 1.0.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @gravito/signal@1.0.1
+
 ## 1.0.0
 
 ### Patch Changes
