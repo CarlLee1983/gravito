@@ -1,5 +1,6 @@
 import { type Blueprint, DB, Schema } from '@gravito/atlas'
 import type { PlanetCore } from '@gravito/core'
+import { seedHighVolumeData } from './seeder'
 
 export async function initializeDatabase(core: PlanetCore) {
   // 1. Categories Table
@@ -95,6 +96,27 @@ export async function initializeDatabase(core: PlanetCore) {
     })
   }
 
+  // 6. Tags Table
+  if (!(await Schema.hasTable('tags'))) {
+    await Schema.create('tags', (table) => {
+      table.id()
+      table.string('name')
+      table.string('slug').unique()
+      table.timestamps()
+    })
+    console.log('🏷️ Tags table created')
+  }
+
+  // 7. Post_Tags Pivot Table
+  if (!(await Schema.hasTable('post_tags'))) {
+    await Schema.create('post_tags', (table) => {
+      table.id()
+      table.integer('post_id')
+      table.integer('tag_id')
+    })
+    console.log('🔗 Post_Tags table created')
+  }
+
   // Seed Posts if empty
   const postCount = await DB.table('posts').count()
   if (postCount === 0) {
@@ -143,4 +165,7 @@ export async function initializeDatabase(core: PlanetCore) {
     })
     console.log('👤 Admin user seeded! (admin@gravito.dev / admin123)')
   }
+
+  // 6. High Volume Data Seeding (for Stress Testing)
+  await seedHighVolumeData()
 }

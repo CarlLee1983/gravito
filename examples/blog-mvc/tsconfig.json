@@ -13,6 +13,7 @@
         "strict": true,
         "experimentalDecorators": true,
         "emitDecoratorMetadata": true,
+        "useDefineForClassFields": false,
         "noEmit": true,
         "esModuleInterop": true,
         "skipLibCheck": true,
@@ -51,6 +52,12 @@
             ],
             "@gravito/pulsar": [
                 "../../packages/pulsar/src/index.ts"
+            ],
+            "@gravito/signal": [
+                "../../packages/signal/src/index.ts"
+            ],
+            "@gravito/stream": [
+                "../../packages/stream/src/index.ts"
             ]
         }
     },

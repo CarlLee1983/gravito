@@ -1,6 +1,5 @@
-import { app, type GravitoContext } from '@gravito/core'
+import type { GravitoContext } from '@gravito/core'
 import type { InertiaService } from '@gravito/ion'
-import { Category } from '../models/Category'
 import { Post } from '../models/Post'
 
 export class BlogController {
@@ -52,38 +51,94 @@ export class BlogController {
     const inertia = ctx.get('inertia') as InertiaService
     const slug = ctx.req.param('slug')
 
-    const post = await Post.query().where('slug', slug).with('category').first()
+    const post = await Post.query().where('slug', slug).with('category').with('tags').first()
 
     if (!post) {
       return ctx.text('Not Found', 404)
     }
 
+    const relatedPosts = await post.getRelatedPosts(3)
+
     return inertia.render('Post', {
       post,
+      relatedPosts,
     })
+  }
+
+  /**
+   * Helper to extract body data (JSON or FormData)
+   */
+  private async getBody(
+    ctx: GravitoContext
+  ): Promise<{ body: any; isMultipart: boolean; formData?: FormData }> {
+    const contentType = ctx.req.header('content-type') || ''
+
+    if (contentType.includes('multipart/form-data')) {
+      const formData = await ctx.req.formData()
+      const body: Record<string, any> = {}
+
+      formData.forEach((value, key) => {
+        // If it's a file but empty/invalid, ignore or handle specifically.
+        // For now, key collisions (arrays) aren't handled but suffice for this simple form
+        body[key] = value
+      })
+      return { body, isMultipart: true, formData }
+    }
+
+    return { body: await ctx.req.json(), isMultipart: false }
+  }
+
+  /**
+   * Helper to handle file upload
+   */
+  private async handleUpload(
+    file: File | string | null,
+    ctx: GravitoContext
+  ): Promise<string | null> {
+    if (file && file instanceof File && file.size > 0 && file.name) {
+      const ext = file.name.split('.').pop()?.toLowerCase() || 'bin'
+      const fileName = `${crypto.randomUUID()}.${ext}`
+
+      const storage = ctx.get('storage') as any // Type assertion for now or import StorageManager type
+      const disk = storage.disk() // Uses default driver which is currently s3-mock
+
+      return await disk.put(file, fileName)
+    }
+    return null
   }
 
   /**
    * Store new post
    */
   async store(ctx: GravitoContext) {
-    const body = (await ctx.req.json()) as any
+    const { body, isMultipart } = await this.getBody(ctx)
 
     const post = new Post()
-    post.category_id = body.category_id
-    post.title = body.title
-    post.slug = body.slug
-    post.excerpt = body.excerpt
-    post.content = body.content
-    post.author = body.author
-    post.status = body.status || 'published'
-    post.feature_image = body.feature_image
+    post.category_id = Number(body.category_id)
+    post.title = body.title as string
+    post.slug = body.slug as string
+    post.excerpt = body.excerpt as string
+    post.content = body.content as string
+    post.author = body.author as string
+    post.status = (body.status as string) || 'published'
+
+    // Handle image
+    let featureImageUrl = body.feature_image as string
+    if (isMultipart) {
+      const uploadedUrl = await this.handleUpload(body.feature_image_file, ctx)
+      if (uploadedUrl) {
+        featureImageUrl = uploadedUrl
+      }
+    }
+    post.feature_image = featureImageUrl || ''
+
     post.published_at = post.status === 'published' ? new Date() : null
 
     try {
       await post.save()
       return ctx.redirect('/admin/dashboard')
     } catch (e: any) {
+      console.error(e)
       const session = ctx.get('session') as any
       session.flash('errors', { title: 'Failed to save post. Possible duplicate slug.' })
       return ctx.redirect('/admin/posts/create')
@@ -101,17 +156,27 @@ export class BlogController {
       return ctx.text('Post Not Found', 404)
     }
 
-    const body = (await ctx.req.json()) as any
+    const { body, isMultipart } = await this.getBody(ctx)
 
     // Update attributes
-    post.category_id = body.category_id
-    post.title = body.title
-    post.slug = body.slug
-    post.excerpt = body.excerpt
-    post.content = body.content
-    post.author = body.author
-    post.status = body.status || post.status
-    post.feature_image = body.feature_image || post.feature_image
+    post.category_id = Number(body.category_id)
+    post.title = body.title as string
+    post.slug = body.slug as string
+    post.excerpt = body.excerpt as string
+    post.content = body.content as string
+    post.author = body.author as string
+    post.status = (body.status as string) || post.status
+
+    let featureImageUrl = body.feature_image as string
+
+    if (isMultipart) {
+      const uploadedUrl = await this.handleUpload(body.feature_image_file, ctx)
+      if (uploadedUrl) {
+        featureImageUrl = uploadedUrl
+      }
+    }
+
+    post.feature_image = featureImageUrl || post.feature_image || ''
 
     if (post.status === 'published' && !post.published_at) {
       post.published_at = new Date()

@@ -93,13 +93,28 @@ export class EnterpriseMvcGenerator extends BaseGenerator {
             children: [
               {
                 type: 'file',
+                name: 'index.ts',
+                content: this.generateProvidersIndex(),
+              },
+              {
+                type: 'file',
                 name: 'AppServiceProvider.ts',
                 content: this.generateAppServiceProvider(context),
               },
               {
                 type: 'file',
-                name: 'RouteServiceProvider.ts',
-                content: this.generateRouteServiceProvider(context),
+                name: 'DatabaseProvider.ts',
+                content: this.generateDatabaseProvider(),
+              },
+              {
+                type: 'file',
+                name: 'MiddlewareProvider.ts',
+                content: this.generateMiddlewareProvider(),
+              },
+              {
+                type: 'file',
+                name: 'RouteProvider.ts',
+                content: this.generateRouteProvider(),
               },
             ],
           },
@@ -582,6 +597,140 @@ export class RouteServiceProvider extends ServiceProvider {
 `
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // Modern Provider Generators (ServiceProvider Pattern)
+  // ─────────────────────────────────────────────────────────────
+
+  private generateProvidersIndex(): string {
+    return `/**
+ * Application Service Providers
+ *
+ * Export all providers for easy importing in bootstrap.
+ * Providers are registered in the order they are listed.
+ */
+
+export { AppServiceProvider } from './AppServiceProvider'
+export { DatabaseProvider } from './DatabaseProvider'
+export { MiddlewareProvider } from './MiddlewareProvider'
+export { RouteProvider } from './RouteProvider'
+`
+  }
+
+  private generateDatabaseProvider(): string {
+    return `/**
+ * Database Service Provider
+ *
+ * Handles database initialization and migrations.
+ *
+ * Lifecycle:
+ * - register(): Bind database config to container
+ * - boot(): Run migrations and seeders
+ */
+
+import { ServiceProvider, type Container, type PlanetCore } from '@gravito/core'
+import databaseConfig from '../../config/database'
+
+export class DatabaseProvider extends ServiceProvider {
+  /**
+   * Register database configuration.
+   */
+  register(_container: Container): void {
+    this.mergeConfig(this.core!.config, 'database', databaseConfig)
+  }
+
+  /**
+   * Initialize database connections.
+   */
+  async boot(core: PlanetCore): Promise<void> {
+    // Database initialization will be handled by Atlas orbit
+    core.logger.info('📦 Database provider booted')
+  }
+}
+`
+  }
+
+  private generateMiddlewareProvider(): string {
+    return `/**
+ * Middleware Service Provider
+ *
+ * Registers global middleware stack.
+ * Provides a centralized location for middleware configuration.
+ *
+ * Lifecycle:
+ * - register(): N/A (no container bindings)
+ * - boot(): Register global middleware
+ */
+
+import {
+  ServiceProvider,
+  type Container,
+  type PlanetCore,
+  bodySizeLimit,
+  securityHeaders,
+} from '@gravito/core'
+
+export class MiddlewareProvider extends ServiceProvider {
+  /**
+   * No container bindings needed.
+   */
+  register(_container: Container): void {
+    // Middleware doesn't require container bindings
+  }
+
+  /**
+   * Register global middleware stack.
+   */
+  boot(core: PlanetCore): void {
+    const isDev = process.env.NODE_ENV !== 'production'
+
+    // Security Headers
+    core.adapter.use('*', securityHeaders({
+      contentSecurityPolicy: isDev ? false : undefined,
+    }))
+
+    // Body Parser Limits
+    core.adapter.use('*', bodySizeLimit(10 * 1024 * 1024)) // 10MB limit
+
+    core.logger.info('🛡️ Middleware registered')
+  }
+}
+`
+  }
+
+  private generateRouteProvider(): string {
+    return `/**
+ * Route Service Provider
+ *
+ * Registers application routes.
+ * Routes are registered in the boot phase after all services are available.
+ *
+ * Lifecycle:
+ * - register(): N/A
+ * - boot(): Register routes
+ */
+
+import { ServiceProvider, type Container, type PlanetCore } from '@gravito/core'
+import { registerRoutes } from '../routes'
+
+export class RouteProvider extends ServiceProvider {
+  /**
+   * No container bindings needed.
+   */
+  register(_container: Container): void {
+    // Routes don't require container bindings
+  }
+
+  /**
+   * Register application routes.
+   */
+  boot(core: PlanetCore): void {
+    registerRoutes(core.router)
+    core.logger.info('🛤️ Routes registered')
+  }
+}
+`
+  }
+
   private generateExceptionHandler(): string {
     return `/**
  * Exception Handler
@@ -631,77 +780,76 @@ export const dontReport: string[] = [
     const spectrumImport = context.withSpectrum
       ? "import { SpectrumOrbit } from '@gravito/spectrum'\n"
       : ''
-    const spectrumOrbit = context.withSpectrum
-      ? `
-// Enable Debug Dashboard
-if (process.env.APP_DEBUG === 'true') {
-  await core.orbit(new SpectrumOrbit())
-}
-`
-      : ''
+    const spectrumOrbit = context.withSpectrum ? '      new SpectrumOrbit(),' : ''
 
     return `/**
  * Application Bootstrap
  *
- * This is the entry point for your application.
- * It initializes the core and registers all providers.
+ * The entry point for your Gravito application.
+ * Uses the ServiceProvider pattern for modular, maintainable initialization.
+ *
+ * Lifecycle:
+ * 1. Configure: Load app config and orbits
+ * 2. Boot: Initialize PlanetCore
+ * 3. Register Providers: Bind services to container
+ * 4. Bootstrap: Boot all providers
+ *
+ * @module bootstrap
  */
 
-import { bodySizeLimit, PlanetCore, securityHeaders } from '@gravito/core'
+import { defineConfig, PlanetCore } from '@gravito/core'
 import { OrbitAtlas } from '@gravito/atlas'
-import databaseConfig from '../config/database'
-${spectrumImport}import { AppServiceProvider } from './Providers/AppServiceProvider'
-import { RouteServiceProvider } from './Providers/RouteServiceProvider'
+import appConfig from '../config/app'
+${spectrumImport}import {
+  AppServiceProvider,
+  DatabaseProvider,
+  MiddlewareProvider,
+  RouteProvider,
+} from './Providers'
 
-// Load environment variables
-// Bun automatically loads .env
-
-// Create application core
-const core = new PlanetCore({
-  config: {
-    APP_NAME: process.env.APP_NAME ?? '${context.name}',
-    database: databaseConfig,
-  },
-})
-const defaultCsp = [
-  "default-src 'self'",
-  "script-src 'self' 'unsafe-inline'",
-  "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data:",
-  "object-src 'none'",
-  "base-uri 'self'",
-  "frame-ancestors 'none'",
-].join('; ')
-const cspValue = process.env.APP_CSP
-const csp = cspValue === 'false' ? false : (cspValue ?? defaultCsp)
-const hstsMaxAge = Number.parseInt(process.env.APP_HSTS_MAX_AGE ?? '15552000', 10)
-const bodyLimit = Number.parseInt(process.env.APP_BODY_LIMIT ?? '1048576', 10)
-const requireLength = process.env.APP_BODY_REQUIRE_LENGTH === 'true'
-
-core.adapter.use(
-  '*',
-  securityHeaders({
-    contentSecurityPolicy: csp,
-    hsts:
-      process.env.NODE_ENV === 'production'
-        ? { maxAge: Number.isNaN(hstsMaxAge) ? 15552000 : hstsMaxAge, includeSubDomains: true }
-        : false,
+/**
+ * Bootstrap the application with service providers.
+ *
+ * @returns The booted PlanetCore instance
+ */
+export async function bootstrap() {
+  // ─────────────────────────────────────────────────────────────
+  // 1. Configure
+  // ─────────────────────────────────────────────────────────────
+  const config = defineConfig({
+    config: appConfig,
+    orbits: [
+      new OrbitAtlas(),
+${spectrumOrbit}
+    ],
   })
-)
-if (!Number.isNaN(bodyLimit) && bodyLimit > 0) {
-  core.adapter.use('*', bodySizeLimit(bodyLimit, { requireContentLength: requireLength }))
+
+  // ─────────────────────────────────────────────────────────────
+  // 2. Boot Core
+  // ─────────────────────────────────────────────────────────────
+  const core = await PlanetCore.boot(config)
+  core.registerGlobalErrorHandlers()
+
+  // ─────────────────────────────────────────────────────────────
+  // 3. Register Providers
+  // ─────────────────────────────────────────────────────────────
+  core.register(new AppServiceProvider())
+  core.register(new DatabaseProvider())
+  core.register(new MiddlewareProvider())
+  core.register(new RouteProvider())
+
+  // ─────────────────────────────────────────────────────────────
+  // 4. Bootstrap All Providers
+  // ─────────────────────────────────────────────────────────────
+  await core.bootstrap()
+
+  return core
 }
 
-await core.orbit(new OrbitAtlas())
-${spectrumOrbit}
-// Register service providers
-core.register(new AppServiceProvider())
-core.register(new RouteServiceProvider())
-
-// Bootstrap the application
-await core.bootstrap()
-
-// Export for Bun.serve()
+// ─────────────────────────────────────────────────────────────
+// Application Entry Point
+// ─────────────────────────────────────────────────────────────
+const core = await bootstrap()
 export default core.liftoff()
 `
   }

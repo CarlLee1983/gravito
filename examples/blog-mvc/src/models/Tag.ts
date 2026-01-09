@@ -1,7 +1,8 @@
-import { column, Model } from '@gravito/atlas'
+import { BelongsToMany, column, Model } from '@gravito/atlas'
+import { Post } from './Post'
 
-export class Subscriber extends Model {
-  static table = 'subscribers'
+export class Tag extends Model {
+  static table = 'tags'
 
   @column({ isPrimary: true })
   get id(): number {
@@ -12,11 +13,19 @@ export class Subscriber extends Model {
   }
 
   @column()
-  get email(): string {
-    return this._attributes.email as string
+  get name(): string {
+    return this._attributes.name as string
   }
-  set email(value: string) {
-    this._setAttribute('email', value)
+  set name(value: string) {
+    this._setAttribute('name', value)
+  }
+
+  @column()
+  get slug(): string {
+    return this._attributes.slug as string
+  }
+  set slug(value: string) {
+    this._setAttribute('slug', value)
   }
 
   @column()
@@ -34,4 +43,7 @@ export class Subscriber extends Model {
   set updated_at(value: Date | string) {
     this._setAttribute('updated_at', value instanceof Date ? value.toISOString() : value)
   }
+
+  @BelongsToMany(() => Post, { pivotTable: 'post_tags' })
+  posts!: Post[]
 }

@@ -20,7 +20,42 @@ export function getPreviewHtml(entry: MailboxEntry, prefix: string): string {
       <div style="font-size: 18px; font-weight: bold; margin-bottom: 10px;">${entry.envelope.subject || '(No Subject)'}</div>
       <div class="meta" style="margin-bottom: 5px;">From: ${from}</div>
       <div class="meta" style="margin-bottom: 5px;">To: ${to}</div>
+      ${
+        entry.envelope.cc
+          ? `<div class="meta" style="margin-bottom: 5px;">CC: ${entry.envelope.cc.map((t) => t.address).join(', ')}</div>`
+          : ''
+      }
+      ${
+        entry.envelope.bcc
+          ? `<div class="meta" style="margin-bottom: 5px;">BCC: ${entry.envelope.bcc.map((t) => t.address).join(', ')}</div>`
+          : ''
+      }
+      ${entry.envelope.priority ? `<div class="meta" style="margin-bottom: 5px;">Priority: ${entry.envelope.priority}</div>` : ''}
       <div class="meta">Date: ${entry.sentAt.toLocaleString()}</div>
+      ${
+        entry.envelope.attachments && entry.envelope.attachments.length > 0
+          ? `
+        <div style="margin-top: 15px; border-top: 1px solid var(--border); padding-top: 10px;">
+          <div style="font-size: 14px; font-weight: bold; margin-bottom: 5px; color: var(--text-muted);">Attachments (${entry.envelope.attachments.length})</div>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            ${entry.envelope.attachments
+              .map(
+                (att) => `
+              <div style="background: var(--bg-dark); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border); display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 20px;">📎</span>
+                <div>
+                  <div style="font-size: 14px; font-weight: 500;">${att.filename || 'untitled'}</div>
+                  <div style="font-size: 12px; color: var(--text-muted);">${att.contentType || 'application/octet-stream'}</div>
+                </div>
+              </div>
+            `
+              )
+              .join('')}
+          </div>
+        </div>
+      `
+          : ''
+      }
     </div>
 
     <div style="margin-bottom: 10px;">

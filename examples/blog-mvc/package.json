@@ -18,6 +18,7 @@
         "@gravito/prism": "workspace:*",
         "@gravito/pulsar": "workspace:*",
         "@gravito/sentinel": "workspace:*",
+        "@gravito/signal": "workspace:*",
         "@gravito/stasis": "workspace:*",
         "@inertiajs/vue3": "^1.0.0",
         "clsx": "^2.1.0",

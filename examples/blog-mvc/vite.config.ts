@@ -1,5 +1,5 @@
+import { resolve } from 'node:path'
 import vue from '@vitejs/plugin-vue'
-import { resolve } from 'path'
 import { defineConfig } from 'vite'
 
 export default defineConfig({
@@ -35,6 +35,9 @@ export default defineConfig({
         target: 'http://localhost:3001',
         changeOrigin: true,
         bypass(req) {
+          if (req.url?.startsWith('/uploads/')) {
+            return undefined
+          }
           if (req.url?.startsWith('/@') || req.url?.includes('.')) {
             return req.url
           }

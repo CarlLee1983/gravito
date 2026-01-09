@@ -23,7 +23,9 @@ export function setupViteProxy(core: PlanetCore): void {
           break
         } catch (e) {
           retries++
-          if (retries > 3) throw e
+          if (retries > 3) {
+            throw e
+          }
           await new Promise((resolve) => setTimeout(resolve, 100))
         }
       }
@@ -82,8 +84,9 @@ export function setupViteProxy(core: PlanetCore): void {
     const isNodeModules = p.startsWith('/node_modules')
     const isClientSource = p.startsWith('/src/client') || p.startsWith('/src')
     const hasExtension = /\.(ts|tsx|js|jsx|vue|css|json|wasm|png|jpg|jpeg|gif|svg|ico)$/.test(p)
+    const isUpload = p.startsWith('/uploads/')
 
-    if (isViteSpecial || isNodeModules || isClientSource || hasExtension) {
+    if ((isViteSpecial || isNodeModules || isClientSource || hasExtension) && !isUpload) {
       return proxyToVite(c)
     }
 
