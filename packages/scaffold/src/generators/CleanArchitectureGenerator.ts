@@ -39,6 +39,11 @@ export class CleanArchitectureGenerator extends BaseGenerator {
       },
       {
         type: 'directory',
+        name: 'database',
+        children: [{ type: 'file', name: '.gitkeep', content: '' }],
+      },
+      {
+        type: 'directory',
         name: 'src',
         children: [
           // Domain Layer (innermost - no dependencies)
@@ -157,6 +162,11 @@ export class CleanArchitectureGenerator extends BaseGenerator {
                 children: [
                   {
                     type: 'file',
+                    name: 'index.ts',
+                    content: this.generateProvidersIndex(),
+                  },
+                  {
+                    type: 'file',
                     name: 'AppServiceProvider.ts',
                     content: this.generateAppServiceProvider(context),
                   },
@@ -164,6 +174,16 @@ export class CleanArchitectureGenerator extends BaseGenerator {
                     type: 'file',
                     name: 'RepositoryServiceProvider.ts',
                     content: this.generateRepositoryServiceProvider(),
+                  },
+                  {
+                    type: 'file',
+                    name: 'MiddlewareProvider.ts',
+                    content: this.generateMiddlewareProvider(),
+                  },
+                  {
+                    type: 'file',
+                    name: 'RouteProvider.ts',
+                    content: this.generateRouteProvider(),
                   },
                 ],
               },
@@ -679,6 +699,68 @@ export class RepositoryServiceProvider extends ServiceProvider {
 `
   }
 
+  private generateProvidersIndex(): string {
+    return `/**
+ * Application Service Providers
+ */
+
+export { AppServiceProvider } from './AppServiceProvider'
+export { RepositoryServiceProvider } from './RepositoryServiceProvider'
+export { MiddlewareProvider } from './MiddlewareProvider'
+export { RouteProvider } from './RouteProvider'
+`
+  }
+
+  private generateMiddlewareProvider(): string {
+    return `/**
+ * Middleware Service Provider
+ */
+
+import {
+  ServiceProvider,
+  type Container,
+  type PlanetCore,
+  bodySizeLimit,
+  securityHeaders,
+} from '@gravito/core'
+
+export class MiddlewareProvider extends ServiceProvider {
+  register(_container: Container): void {}
+
+  boot(core: PlanetCore): void {
+    const isDev = process.env.NODE_ENV !== 'production'
+
+    core.adapter.use('*', securityHeaders({
+      contentSecurityPolicy: isDev ? false : undefined,
+    }))
+
+    core.adapter.use('*', bodySizeLimit(10 * 1024 * 1024))
+
+    core.logger.info('🛡️ Middleware registered')
+  }
+}
+`
+  }
+
+  private generateRouteProvider(): string {
+    return `/**
+ * Route Service Provider
+ */
+
+import { ServiceProvider, type Container, type PlanetCore } from '@gravito/core'
+import { registerApiRoutes } from '../../Interface/Http/Routes/api'
+
+export class RouteProvider extends ServiceProvider {
+  register(_container: Container): void {}
+
+  boot(core: PlanetCore): void {
+    registerApiRoutes(core.router)
+    core.logger.info('🛤️ Routes registered')
+  }
+}
+`
+  }
+
   // ─────────────────────────────────────────────────────────────
   // Interface Layer
   // ─────────────────────────────────────────────────────────────
@@ -765,57 +847,55 @@ export class UserPresenter {
 `
   }
 
-  private generateBootstrap(context: GeneratorContext): string {
+  private generateBootstrap(_context: GeneratorContext): string {
     return `/**
  * Application Bootstrap
+ *
+ * The entry point for your Clean Architecture application.
+ * Uses the ServiceProvider pattern for modular initialization.
+ *
+ * Lifecycle:
+ * 1. Configure: Load app config and orbits
+ * 2. Boot: Initialize PlanetCore
+ * 3. Register Providers: Bind services to container
+ * 4. Bootstrap: Boot all providers
  */
 
-import { bodySizeLimit, PlanetCore, securityHeaders } from '@gravito/core'
-import { AppServiceProvider } from './Infrastructure/Providers/AppServiceProvider'
-import { RepositoryServiceProvider } from './Infrastructure/Providers/RepositoryServiceProvider'
-import { registerApiRoutes } from './Interface/Http/Routes/api'
+import { defineConfig, PlanetCore } from '@gravito/core'
+import { OrbitAtlas } from '@gravito/atlas'
+import appConfig from '../config/app'
+import {
+  AppServiceProvider,
+  RepositoryServiceProvider,
+  MiddlewareProvider,
+  RouteProvider,
+} from './Infrastructure/Providers'
 
-const core = new PlanetCore({
-  config: { APP_NAME: '${context.name}' },
-})
-
-const defaultCsp = [
-  "default-src 'self'",
-  "script-src 'self' 'unsafe-inline'",
-  "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data:",
-  "object-src 'none'",
-  "base-uri 'self'",
-  "frame-ancestors 'none'",
-].join('; ')
-const cspValue = process.env.APP_CSP
-const csp = cspValue === 'false' ? false : (cspValue ?? defaultCsp)
-const hstsMaxAge = Number.parseInt(process.env.APP_HSTS_MAX_AGE ?? '15552000', 10)
-const bodyLimit = Number.parseInt(process.env.APP_BODY_LIMIT ?? '1048576', 10)
-const requireLength = process.env.APP_BODY_REQUIRE_LENGTH === 'true'
-
-core.adapter.use(
-  '*',
-  securityHeaders({
-    contentSecurityPolicy: csp,
-    hsts:
-      process.env.NODE_ENV === 'production'
-        ? { maxAge: Number.isNaN(hstsMaxAge) ? 15552000 : hstsMaxAge, includeSubDomains: true }
-        : false,
+export async function bootstrap() {
+  // 1. Configure
+  const config = defineConfig({
+    config: appConfig,
+    orbits: [new OrbitAtlas()],
   })
-)
-if (!Number.isNaN(bodyLimit) && bodyLimit > 0) {
-  core.adapter.use('*', bodySizeLimit(bodyLimit, { requireContentLength: requireLength }))
+
+  // 2. Boot Core
+  const core = await PlanetCore.boot(config)
+  core.registerGlobalErrorHandlers()
+
+  // 3. Register Providers
+  core.register(new RepositoryServiceProvider())
+  core.register(new AppServiceProvider())
+  core.register(new MiddlewareProvider())
+  core.register(new RouteProvider())
+
+  // 4. Bootstrap All Providers
+  await core.bootstrap()
+
+  return core
 }
 
-core.register(new RepositoryServiceProvider())
-core.register(new AppServiceProvider())
-
-await core.bootstrap()
-
-// Register routes
-registerApiRoutes(core.router)
-
+// Application Entry Point
+const core = await bootstrap()
 export default core.liftoff()
 `
   }
@@ -827,6 +907,15 @@ export default core.liftoff()
 
 This project follows **Clean Architecture** (by Robert C. Martin).
 The key principle is the **Dependency Rule**: dependencies point inward.
+
+## Service Providers
+
+Service providers are the central place to configure your application. They follow the ServiceProvider pattern with \`register()\` and \`boot()\` lifecycle methods.
+
+### Provider Lifecycle
+
+1. **register()**: Bind services to the container (sync or async).
+2. **boot()**: Called after ALL providers have registered. Safe to use other services.
 
 ## Layer Structure
 
@@ -900,6 +989,10 @@ Created with ❤️ using Gravito Framework
         start: 'bun run dist/bootstrap.js',
         test: 'bun test',
         typecheck: 'tsc --noEmit',
+        check: 'bun run typecheck && bun run test',
+        'check:deps': 'bun run scripts/check-dependencies.ts',
+        validate: 'bun run check && bun run check:deps',
+        precommit: 'bun run validate',
         'docker:build': `docker build -t ${context.nameKebabCase} .`,
         'docker:run': `docker run -it -p 3000:3000 ${context.nameKebabCase}`,
       },
@@ -909,7 +1002,7 @@ Created with ❤️ using Gravito Framework
         ...(context.withSpectrum ? { '@gravito/spectrum': 'workspace:*' } : {}),
       },
       devDependencies: {
-        '@types/bun': 'latest',
+        'bun-types': 'latest',
         typescript: '^5.0.0',
       },
     }

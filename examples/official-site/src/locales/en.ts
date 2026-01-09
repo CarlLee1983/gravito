@@ -161,6 +161,9 @@ export default {
     atlas: 'Atlas (ORM)',
     atlas_note: 'Atlas (ORM) — High-Performance Bun-Native ORM.',
     connect: 'Connect',
+    legal: 'Legal',
+    privacy: 'Privacy',
+    terms: 'Terms',
     copyright: 'Gravito Framework. MIT License.',
   },
   about: {
@@ -244,5 +247,50 @@ export default {
     ctaTitle: 'Ready to Enter the Singularity?',
     ctaSubtitle: 'Join the next generation of enterprise development.',
     ctaButton: 'Get Started',
+  },
+  legal: {
+    privacy: {
+      title: 'Privacy Policy',
+      lastUpdated: 'Last updated: January 2026',
+      section1: {
+        title: 'Our Data Philosophy',
+        content:
+          'At Gravito, we believe your data belongs to you. Our framework is designed for absolute introspection, not extraction. We do not sell, trade, or share your application metrics with any third parties—your heartbeats stay within your galaxy.',
+      },
+      section2: {
+        title: 'Digital Sovereignty',
+        content:
+          'The Gravito Official Site is statically generated for maximum performance and privacy. We do not use tracking cookies, analytics scripts, or any third-party marketing tools that compromise your digital identity.',
+      },
+      section3: {
+        title: 'Zero Telemetry',
+        content:
+          'Our core framework and modules (PlanetCore, Ion, Atlas, etc.) contain zero telemetry. We do not collect "anonymous usage data" or phone-home to any central servers. Your infrastructure remains completely private and under your control.',
+      },
+      section4: {
+        title: 'Ethical Engineering',
+        content:
+          'We prioritize security and privacy by design. Our codebase is open-source and auditable, ensuring that the "trust but verify" principle is upheld across our entire ecosystem.',
+      },
+    },
+    terms: {
+      title: 'Terms of Service',
+      lastUpdated: 'Last updated: January 2026',
+      section1: {
+        title: 'Open Source Heritage',
+        content:
+          'The Gravito Framework and its core modules are licensed under the MIT License. This software is provided "as is", without warranty of any kind.',
+      },
+      section2: {
+        title: 'Enterprise Readiness',
+        content:
+          'While Gravito is designed for high-density enterprise applications, users are responsible for their own implementation, security configurations, and data management practices.',
+      },
+      section3: {
+        title: 'Community Standards',
+        content:
+          'We promote a community of builders focused on high-performance, ethical engineering. Contribution and usage of the Gravito ecosystem should align with these core values of transparency and respect for user sovereignty.',
+      },
+    },
   },
 }

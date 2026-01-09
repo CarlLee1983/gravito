@@ -157,6 +157,7 @@ cli
     default: '',
   })
   .option('--recommend', 'Auto-detect profile based on environment')
+  .option('--framework <framework>', 'Frontend framework (react, vue) for static-site template')
   .action(async (name, options) => {
     console.clear()
 
@@ -269,27 +270,31 @@ cli
     // Ask for framework if static-site template is selected
     let framework: string | null = null
     if (project.template === 'static-site') {
-      const frameworkResult = await select({
-        message: 'Choose your frontend framework:',
-        options: [
-          {
-            value: 'react',
-            label: '⚛️ React',
-            hint: 'Recommended for most projects',
-          },
-          {
-            value: 'vue',
-            label: '🟢 Vue 3',
-            hint: 'Composition API with TypeScript',
-          },
-        ],
-      })
+      if (options.framework) {
+        framework = options.framework
+      } else {
+        const frameworkResult = await select({
+          message: 'Choose your frontend framework:',
+          options: [
+            {
+              value: 'react',
+              label: '⚛️ React',
+              hint: 'Recommended for most projects',
+            },
+            {
+              value: 'vue',
+              label: '🟢 Vue 3',
+              hint: 'Composition API with TypeScript',
+            },
+          ],
+        })
 
-      if (isCancel(frameworkResult)) {
-        cancel('Operation cancelled.')
-        process.exit(0)
+        if (isCancel(frameworkResult)) {
+          cancel('Operation cancelled.')
+          process.exit(0)
+        }
+        framework = frameworkResult as string
       }
-      framework = frameworkResult as string
     }
 
     const s = spinner()
@@ -303,6 +308,7 @@ cli
     try {
       // Use giget to download from GitHub
       const templateSource = `github:gravito-framework/gravito/templates/${project.template}#main`
+      // const templateSource = `/Users/carl/Dev/Carl/gravito-core/templates/${project.template}`
 
       await downloadTemplate(templateSource, {
         dir: targetDir,

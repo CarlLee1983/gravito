@@ -34,6 +34,7 @@ export const layout = (title: string, content: string) => `
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="utf-8">
   <title>${title} - Gravito Mailbox</title>
   <style>${styles}</style>
 </head>

@@ -32,11 +32,18 @@ export async function bootstrap(options: AppConfig = {}) {
   core.registerGlobalErrorHandlers()
 
   // 2.1 Security middleware
+  const isDev = process.env.NODE_ENV !== 'production'
+  const devSources = isDev
+    ? ' http://localhost:5173 ws://localhost:5173 http://127.0.0.1:5173 ws://127.0.0.1:5173'
+    : ''
+
   const defaultCsp = [
-    "default-src 'self'",
-    "script-src 'self' 'unsafe-inline'",
-    "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data:",
+    `default-src 'self'${devSources}`,
+    `script-src 'self' 'unsafe-inline' 'unsafe-eval'${devSources}`,
+    `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com${devSources}`,
+    `font-src 'self' https://fonts.gstatic.com${devSources}`,
+    `connect-src 'self'${devSources}`,
+    `img-src 'self' data:${devSources}`,
     "object-src 'none'",
     "base-uri 'self'",
     "frame-ancestors 'none'",
@@ -62,8 +69,9 @@ export async function bootstrap(options: AppConfig = {}) {
   }
 
   // 3. Static files
-  core.app.use('/static/*', serveStatic({ root: './' }))
-  core.app.get('/favicon.ico', serveStatic({ path: './static/favicon.ico' }))
+  // serveStatic root: './' maps URL /static/foo.png to ./static/foo.png on disk.
+  core.adapter.use('/static/*', serveStatic({ root: './' }) as any)
+  core.adapter.route('get', '/favicon.ico', serveStatic({ path: './static/favicon.ico' }) as any)
 
   // 4. Hooks
   registerHooks(core)

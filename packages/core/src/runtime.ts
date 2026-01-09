@@ -227,7 +227,7 @@ const createNodeAdapter = (): RuntimeAdapter => ({
       if (typeof (maybeWeb as any).getReader === 'function') {
         return maybeWeb
       }
-      return stream.Readable.toWeb(streamReadable) as unknown as ReadableStream<Uint8Array>
+      return stream.Readable.toWeb(streamReadable as any) as unknown as ReadableStream<Uint8Array>
     }
 
     const exited = new Promise<number>((resolve, reject) => {

@@ -20,6 +20,13 @@
       "_Layout.vue_vue_type_script_setup_true_lang.js"
     ]
   },
+  "_shield.js": {
+    "file": "assets/shield.js",
+    "name": "shield",
+    "imports": [
+      "_Layout.vue_vue_type_script_setup_true_lang.js"
+    ]
+  },
   "_zap.js": {
     "file": "assets/zap.js",
     "name": "zap",
@@ -36,7 +43,9 @@
       "pages/Docs.vue",
       "pages/Features.vue",
       "pages/Home.vue",
-      "pages/NotFound.vue"
+      "pages/NotFound.vue",
+      "pages/Privacy.vue",
+      "pages/Terms.vue"
     ],
     "css": [
       "assets/app.css"
@@ -66,7 +75,8 @@
       "app.ts",
       "_Layout.vue_vue_type_script_setup_true_lang.js",
       "_zap.js",
-      "_chevron-right.js"
+      "_chevron-right.js",
+      "_shield.js"
     ]
   },
   "pages/Home.vue": {
@@ -79,6 +89,7 @@
       "_Layout.vue_vue_type_script_setup_true_lang.js",
       "_chevron-right.js",
       "_zap.js",
+      "_shield.js",
       "_search.js"
     ],
     "css": [
@@ -100,6 +111,27 @@
     ],
     "css": [
       "assets/NotFound.css"
+    ]
+  },
+  "pages/Privacy.vue": {
+    "file": "assets/Privacy.js",
+    "name": "Privacy",
+    "src": "pages/Privacy.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "app.ts",
+      "_Layout.vue_vue_type_script_setup_true_lang.js",
+      "_shield.js"
+    ]
+  },
+  "pages/Terms.vue": {
+    "file": "assets/Terms.js",
+    "name": "Terms",
+    "src": "pages/Terms.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "app.ts",
+      "_Layout.vue_vue_type_script_setup_true_lang.js"
     ]
   }
 }

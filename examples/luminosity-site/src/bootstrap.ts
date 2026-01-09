@@ -109,6 +109,18 @@ export async function bootstrap(options: { port?: number } = {}) {
       return c.redirect(locale === 'zh' ? '/zh/docs/introduction' : '/docs/introduction')
     })
 
+    group.get('/privacy', (c: GravitoContext) => {
+      const inertia = c.get('inertia')
+      const locale = c.get('locale') || 'en'
+      return (inertia as any)?.render('Privacy', { locale })
+    })
+
+    group.get('/terms', (c: GravitoContext) => {
+      const inertia = c.get('inertia')
+      const locale = c.get('locale') || 'en'
+      return (inertia as any)?.render('Terms', { locale })
+    })
+
     group.get('/docs/*', docsController.show)
   }
 

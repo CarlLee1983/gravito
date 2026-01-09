@@ -894,7 +894,15 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * Update records
    */
   async update(data: Partial<T>): Promise<number> {
-    const values = Object.values(data as Record<string, unknown>)
+    const values: unknown[] = []
+    for (const value of Object.values(data as Record<string, unknown>)) {
+      if (value instanceof Expression) {
+        values.push(...value.getBindings())
+      } else {
+        values.push(value)
+      }
+    }
+
     const allBindings = [...values, ...this.bindingsList]
 
     const compiled = this.getCompiledQuery()

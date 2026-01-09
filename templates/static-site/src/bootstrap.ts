@@ -38,11 +38,18 @@ export async function bootstrap(options: AppConfig = {}) {
   core.registerGlobalErrorHandlers()
 
   // 2.1 Security middleware
+  const isDev = process.env.NODE_ENV !== 'production'
+  const devSources = isDev
+    ? ' http://localhost:5173 ws://localhost:5173 http://127.0.0.1:5173 ws://127.0.0.1:5173'
+    : ''
+
   const defaultCsp = [
-    "default-src 'self'",
-    "script-src 'self' 'unsafe-inline'",
-    "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data:",
+    `default-src 'self'${devSources}`,
+    `script-src 'self' 'unsafe-inline' 'unsafe-eval'${devSources}`,
+    `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com${devSources}`,
+    `font-src 'self' https://fonts.gstatic.com${devSources}`,
+    `connect-src 'self'${devSources}`,
+    `img-src 'self' data:${devSources}`,
     "object-src 'none'",
     "base-uri 'self'",
     "frame-ancestors 'none'",
@@ -68,8 +75,10 @@ export async function bootstrap(options: AppConfig = {}) {
   }
 
   // 3. Static files
+  // serveStatic root: './' maps URL /static/foo.png to ./static/foo.png on disk.
   const staticAssets = serveStatic({ root: './' }) as unknown as GravitoMiddleware
-  const favicon = serveStatic({ path: './static/favicon.ico' }) as unknown as GravitoMiddleware
+  const faviconPath = './static/favicon.ico'
+  const favicon = serveStatic({ path: faviconPath }) as unknown as GravitoMiddleware
 
   core.adapter.use('/static/*', staticAssets)
   core.adapter.route('get', '/favicon.ico', favicon)

@@ -325,63 +325,46 @@ export class DddGenerator extends BaseGenerator {
   // Bootstrap File Generators
   // ─────────────────────────────────────────────────────────────
 
-  private generateBootstrapApp(context: GeneratorContext): string {
+  private generateBootstrapApp(_context: GeneratorContext): string {
     return `/**
  * Application Bootstrap
  *
- * Central configuration and initialization of the application.
+ * Central configuration and initialization using the ServiceProvider pattern.
+ *
+ * Lifecycle:
+ * 1. Configure: Load app config and orbits
+ * 2. Boot: Initialize PlanetCore
+ * 3. Register Providers: Bind services to container
+ * 4. Bootstrap: Boot all providers
  */
 
-import { bodySizeLimit, PlanetCore, securityHeaders } from '@gravito/core'
+import { defineConfig, PlanetCore } from '@gravito/core'
+import { OrbitAtlas } from '@gravito/atlas'
+import appConfig from '../../config/app'
 import { registerProviders } from './providers'
 import { registerRoutes } from './routes'
 
 export async function createApp(): Promise<PlanetCore> {
-    const core = new PlanetCore({
-        config: {
-            APP_NAME: '${context.name}',
-        },
-    })
+  // 1. Configure
+  const config = defineConfig({
+    config: appConfig,
+    orbits: [new OrbitAtlas()],
+  })
 
-    const defaultCsp = [
-        "default-src 'self'",
-        "script-src 'self' 'unsafe-inline'",
-        "style-src 'self' 'unsafe-inline'",
-        "img-src 'self' data:",
-        "object-src 'none'",
-        "base-uri 'self'",
-        "frame-ancestors 'none'",
-    ].join('; ')
-    const cspValue = process.env.APP_CSP
-    const csp = cspValue === 'false' ? false : (cspValue ?? defaultCsp)
-    const hstsMaxAge = Number.parseInt(process.env.APP_HSTS_MAX_AGE ?? '15552000', 10)
-    const bodyLimit = Number.parseInt(process.env.APP_BODY_LIMIT ?? '1048576', 10)
-    const requireLength = process.env.APP_BODY_REQUIRE_LENGTH === 'true'
+  // 2. Boot Core
+  const core = await PlanetCore.boot(config)
+  core.registerGlobalErrorHandlers()
 
-    core.adapter.use(
-        '*',
-        securityHeaders({
-            contentSecurityPolicy: csp,
-            hsts:
-                process.env.NODE_ENV === 'production'
-                    ? { maxAge: Number.isNaN(hstsMaxAge) ? 15552000 : hstsMaxAge, includeSubDomains: true }
-                    : false,
-        })
-    )
-    if (!Number.isNaN(bodyLimit) && bodyLimit > 0) {
-        core.adapter.use('*', bodySizeLimit(bodyLimit, { requireContentLength: requireLength }))
-    }
+  // 3. Register Providers
+  await registerProviders(core)
 
-    // Register all service providers
-    await registerProviders(core)
+  // 4. Bootstrap All Providers
+  await core.bootstrap()
 
-    // Bootstrap the application
-    await core.bootstrap()
+  // Register routes after bootstrap
+  registerRoutes(core.router)
 
-    // Register routes
-    registerRoutes(core.router)
-
-    return core
+  return core
 }
 `
   }
@@ -390,19 +373,48 @@ export async function createApp(): Promise<PlanetCore> {
     return `/**
  * Service Providers Registry
  *
- * Register all module service providers here.
+ * Register all service providers here.
+ * Include both global and module-specific providers.
  */
 
-import type { PlanetCore } from '@gravito/core'
+import {
+  ServiceProvider,
+  type Container,
+  type PlanetCore,
+  bodySizeLimit,
+  securityHeaders,
+} from '@gravito/core'
 import { OrderingServiceProvider } from '../Modules/Ordering/Infrastructure/Providers/OrderingServiceProvider'
 import { CatalogServiceProvider } from '../Modules/Catalog/Infrastructure/Providers/CatalogServiceProvider'
 
-export async function registerProviders(core: PlanetCore): Promise<void> {
-    // Register module providers
-    core.register(new OrderingServiceProvider())
-    core.register(new CatalogServiceProvider())
+/**
+ * Middleware Provider - Global middleware registration
+ */
+export class MiddlewareProvider extends ServiceProvider {
+  register(_container: Container): void {}
 
-    // Add more providers as needed
+  boot(core: PlanetCore): void {
+    const isDev = process.env.NODE_ENV !== 'production'
+
+    core.adapter.use('*', securityHeaders({
+      contentSecurityPolicy: isDev ? false : undefined,
+    }))
+
+    core.adapter.use('*', bodySizeLimit(10 * 1024 * 1024))
+
+    core.logger.info('🛡️ Global middleware registered')
+  }
+}
+
+export async function registerProviders(core: PlanetCore): Promise<void> {
+  // Global Providers
+  core.register(new MiddlewareProvider())
+
+  // Module Providers
+  core.register(new OrderingServiceProvider())
+  core.register(new CatalogServiceProvider())
+
+  // Add more providers as needed
 }
 `
   }
@@ -522,6 +534,10 @@ export class ${name}ServiceProvider extends ServiceProvider {
         start: 'bun run dist/main.js',
         test: 'bun test',
         typecheck: 'tsc --noEmit',
+        check: 'bun run typecheck && bun run test',
+        'check:deps': 'bun run scripts/check-dependencies.ts',
+        validate: 'bun run check && bun run check:deps',
+        precommit: 'bun run validate',
         'docker:build': `docker build -t ${context.nameKebabCase} .`,
         'docker:run': `docker run -it -p 3000:3000 ${context.nameKebabCase}`,
       },
@@ -530,7 +546,7 @@ export class ${name}ServiceProvider extends ServiceProvider {
         '@gravito/enterprise': 'workspace:*',
       },
       devDependencies: {
-        '@types/bun': 'latest',
+        'bun-types': 'latest',
         typescript: '^5.0.0',
       },
     }
@@ -985,6 +1001,16 @@ export function report(error: unknown): void {
 ## Overview
 
 This project follows **Domain-Driven Design (DDD)** with strategic and tactical patterns.
+
+## Service Providers
+
+Service providers are the central place to configure your application and modules. They follow the ServiceProvider pattern with \`register()\` and \`boot()\` lifecycle methods.
+
+### Internal Bootstrapping
+
+1. **Bootstrap/app.ts**: Orchestrates the 4-step lifecycle (Configure, Boot, Register, Bootstrap).
+2. **Bootstrap/providers.ts**: Central registry for all global and module-specific providers.
+3. **Infrastructure/Providers/[Module]ServiceProvider.ts**: Module-specific service registration.
 
 ## Bounded Contexts
 

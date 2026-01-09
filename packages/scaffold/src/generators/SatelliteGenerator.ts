@@ -191,6 +191,8 @@ export class SatelliteGenerator extends BaseGenerator {
         build: 'tsup src/index.ts --format cjs,esm --dts',
         test: 'bun test',
         typecheck: 'tsc --noEmit',
+        check: 'bun run typecheck && bun run test',
+        validate: 'bun run check',
       },
       dependencies: {
         '@gravito/core': depVersion,

@@ -20,6 +20,8 @@ export interface PulseMemory {
 export interface PulseRuntime {
   uptime: number // seconds
   framework: string // e.g. "Node 20.1", "Laravel 10.0"
+  status?: string
+  errors?: string[]
 }
 
 export interface QueueSnapshot {

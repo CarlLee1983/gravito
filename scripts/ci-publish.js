@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 const { spawn } = require('node:child_process')
 
-const child = spawn('bun', ['run', 'changeset', 'publish'], {
+const args = process.argv.slice(2)
+const child = spawn('bun', ['run', 'changeset', 'publish', ...args], {
   stdio: ['inherit', 'pipe', 'pipe'],
 })
 

@@ -6,6 +6,7 @@
  */
 
 import path from 'node:path'
+import { ActionDomainGenerator } from './generators/ActionDomainGenerator'
 import { BaseGenerator } from './generators/BaseGenerator'
 import { CleanArchitectureGenerator } from './generators/CleanArchitectureGenerator'
 import { DddGenerator } from './generators/DddGenerator'
@@ -47,6 +48,11 @@ export class Scaffold {
         type: 'ddd',
         name: 'Domain-Driven Design',
         description: 'Full DDD with Bounded Contexts and CQRS',
+      },
+      {
+        type: 'action-domain',
+        name: 'Action Domain',
+        description: 'Single Action Controllers pattern for high-clarity APIs',
       },
       {
         type: 'satellite',
@@ -128,6 +134,8 @@ export class Scaffold {
         return new CleanArchitectureGenerator(config)
       case 'ddd':
         return new DddGenerator(config)
+      case 'action-domain':
+        return new ActionDomainGenerator(config)
       case 'satellite':
         return new SatelliteGenerator(config)
       default:

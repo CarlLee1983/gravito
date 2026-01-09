@@ -399,7 +399,7 @@ export default function Layout({ children, noPadding = false }: LayoutProps) {
       {/* Footer */}
       <footer className="relative z-10 border-t border-white/5 bg-void/80 backdrop-blur-md py-12 px-6">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
-          <div className="col-span-1 md:col-span-2">
+          <div className="col-span-1">
             <div className="flex items-center gap-2 mb-6">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-500 to-purple-600 flex items-center justify-center shadow-[0_0_15px_rgba(0,240,255,0.3)]">
                 <div className="w-3 h-3 rounded-full bg-void shadow-inner" />
@@ -458,6 +458,27 @@ export default function Layout({ children, noPadding = false }: LayoutProps) {
                     </span>
                   </div>
                 </a>
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="text-white font-bold mb-6 italic">{trans('footer.legal', 'Legal')}</h4>
+            <ul className="space-y-4 text-sm text-gray-400">
+              <li>
+                <StaticLink
+                  href={getLocalizedPath('/privacy')}
+                  className="hover:text-singularity transition-colors"
+                >
+                  {trans('footer.privacy', 'Privacy')}
+                </StaticLink>
+              </li>
+              <li>
+                <StaticLink
+                  href={getLocalizedPath('/terms')}
+                  className="hover:text-singularity transition-colors"
+                >
+                  {trans('footer.terms', 'Terms')}
+                </StaticLink>
               </li>
             </ul>
           </div>

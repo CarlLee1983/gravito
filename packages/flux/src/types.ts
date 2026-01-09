@@ -13,7 +13,15 @@
 /**
  * Workflow execution status
  */
-export type WorkflowStatus = 'pending' | 'running' | 'paused' | 'completed' | 'failed' | 'suspended'
+export type WorkflowStatus =
+  | 'pending'
+  | 'running'
+  | 'paused'
+  | 'completed'
+  | 'failed'
+  | 'suspended'
+  | 'rolling_back'
+  | 'rolled_back'
 
 // ─────────────────────────────────────────────────────────────
 // Step Definitions
@@ -44,10 +52,19 @@ export interface StepResult<T = unknown> {
  */
 export interface StepExecution {
   name: string
-  status: 'pending' | 'running' | 'completed' | 'failed' | 'skipped' | 'suspended'
+  status:
+    | 'pending'
+    | 'running'
+    | 'completed'
+    | 'failed'
+    | 'skipped'
+    | 'suspended'
+    | 'compensated'
+    | 'compensating'
   startedAt?: Date
   completedAt?: Date
   suspendedAt?: Date
+  compensatedAt?: Date
   waitingFor?: string
   duration?: number
   output?: any
@@ -66,6 +83,9 @@ export interface StepDefinition<TInput = any, TData = any> {
   handler: (
     ctx: WorkflowContext<TInput, TData>
   ) => Promise<void | FluxWaitResult> | void | FluxWaitResult
+
+  /** Compensation handler to undo effects */
+  compensate?: (ctx: WorkflowContext<TInput, TData>) => Promise<void> | void
 
   /** Number of retries on failure */
   retries?: number
@@ -250,12 +270,15 @@ export type FluxTraceEventType =
   | 'workflow:start'
   | 'workflow:complete'
   | 'workflow:error'
+  | 'workflow:rollback_start'
+  | 'workflow:rollback_complete'
   | 'step:start'
   | 'step:complete'
   | 'step:error'
   | 'step:skipped'
   | 'step:retry'
   | 'step:suspend'
+  | 'step:compensate'
   | 'signal:received'
 
 export interface FluxTraceEvent {

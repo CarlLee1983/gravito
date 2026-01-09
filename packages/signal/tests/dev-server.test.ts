@@ -34,6 +34,7 @@ describe('DevServer', () => {
 
     const list = await core.routes.get('/__mail')?.({
       html: (body: string) => body,
+      header: () => {},
     })
     expect(list).toContain('Hello')
 
@@ -41,6 +42,7 @@ describe('DevServer', () => {
       req: { param: () => entry.id },
       html: (body: string) => body,
       text: () => '',
+      header: () => {},
     })
     expect(preview).toContain('Email Preview')
 

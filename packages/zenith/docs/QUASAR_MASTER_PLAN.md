@@ -22,6 +22,7 @@ We employ a "Right Tool for the Job" strategy for deployment:
 | :--- | :--- | :--- | :--- |
 | **Node.js / Bun** | **SDK** | `@gravito/quasar` | **In-App Integration**. Directly imports into the app. Captures Event Loop, Heap, and Queues. |
 | **Legacy / Polyglot** | **Agent** | `gravito/quasar-agent` | **Sidecar / Daemon**. Standalone Go binary. Captures OS-level metrics and external Queue states via Redis/API. |
+| **PHP / Laravel** | **Package** | `gravito/laravel-zenith` | **Native Integration**. Laravel Service Provider. Captures Jobs, Logs, and Exceptions. |
 
 ### 🚀 Deployment Methods (Zero Friction)
 1.  **NPM**: `npm install @gravito/quasar` (For Node developers)
@@ -125,6 +126,8 @@ To support advanced features like **Queue Insights** (Phase 2) and **Remote Cont
     *   [x] **Laravel Deep Integration**:
         *   [x] `LARAVEL_ACTION` Executor (runs `artisan` safely).
         *   [x] Auto-discovery of Laravel project root via process inspection.
+        *   [x] **Advanced Process Introspection**: Captures real-time CPU/RAM usage per Laravel Worker process.
+        *   [x] **Virtual Node Mapping**: Visualizes individual Laravel Workers as distinct nodes in Zenith UI.
         *   [x] Support for `retry-all`, `retry {id}`, and `restart` (graceful worker reload).
 *   [x] Docker & Makefile setup.
 *   [x] Binary Release pipeline (GitHub Actions).

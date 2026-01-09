@@ -1,0 +1,241 @@
+<script setup lang="ts">
+import { Head, useForm, Link } from '@inertiajs/vue3'
+import { ArrowLeft, Save, Loader2, AlertCircle, Eye, Edit3, Trash2, User, Tag } from 'lucide-vue-next'
+import { computed, ref } from 'vue'
+import { marked } from 'marked'
+
+const props = defineProps<{
+  post: {
+    id: number
+    category_id: number
+    title: string
+    slug: string
+    excerpt: string
+    content: string
+    author: string
+    status: string
+    feature_image: string | null
+  }
+  categories: Array<{
+    id: number
+    name: string
+  }>
+}>()
+
+const showPreview = ref(false)
+
+const form = useForm({
+  category_id: props.post.category_id,
+  title: props.post.title,
+  slug: props.post.slug,
+  excerpt: props.post.excerpt,
+  content: props.post.content,
+  author: props.post.author,
+  status: props.post.status || 'published',
+  feature_image: props.post.feature_image || ''
+})
+
+const submit = () => {
+  form.put(`/admin/posts/${props.post.id}`)
+}
+
+const deletePost = () => {
+  if (confirm('Are you sure you want to redact this transmission?')) {
+    form.delete(`/admin/posts/${props.post.id}`)
+  }
+}
+
+const previewHtml = computed(() => {
+  return marked.parse(form.content || '')
+})
+
+const currentCategory = computed(() => {
+  return props.categories.find(c => c.id === form.category_id)?.name || 'Uncategorized'
+})
+
+const generateSlug = () => {
+  if (!form.slug) {
+    form.slug = form.title
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/[\s_-]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+  }
+}
+</script>
+
+<template>
+  <Head :title="`Edit: ${post.title}`" />
+
+  <div class="min-h-screen cyber-grid py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-4xl mx-auto">
+      <Link href="/" class="inline-flex items-center text-gray-400 hover:text-white mb-8 transition-colors gap-2">
+        <ArrowLeft :size="20" /> Cancel and back
+      </Link>
+
+      <div class="glass-card p-8 border-white/10 bg-black/40 mb-8 flex justify-between items-center">
+        <div>
+          <h1 class="text-3xl font-bold mb-2 neon-glow">Edit Transmission</h1>
+          <p class="text-gray-400 font-mono text-sm uppercase tracking-tighter">ID: {{ post.id }} // SLUG: {{ post.slug }}</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <button 
+            @click="showPreview = !showPreview"
+            type="button"
+            class="flex items-center gap-2 px-4 py-2 rounded-lg border border-white/10 hover:bg-white/5 transition-all text-sm font-medium"
+            :class="{ 'text-primary border-primary/50 bg-primary/5': showPreview }"
+          >
+            <Eye v-if="!showPreview" :size="18" />
+            <Edit3 v-else :size="18" />
+            Preview
+          </button>
+          <button 
+            @click="deletePost"
+            type="button"
+            class="flex items-center gap-2 px-4 py-2 rounded-lg border border-red-500/20 text-red-400 hover:bg-red-500/10 transition-all text-sm font-medium"
+          >
+            <Trash2 :size="18" />
+            Redact
+          </button>
+        </div>
+      </div>
+
+      <form @submit.prevent="submit" class="space-y-6">
+        <div v-if="!showPreview" class="grid gap-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Category -->
+            <div class="space-y-2">
+              <label class="text-sm font-medium text-gray-300 uppercase tracking-wider">Category</label>
+              <select 
+                v-model="form.category_id"
+                class="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-primary/50 transition-all text-white appearance-none"
+              >
+                <option v-for="cat in categories" :key="cat.id" :value="cat.id">
+                  {{ cat.name }}
+                </option>
+              </select>
+            </div>
+
+            <!-- Author -->
+            <div class="space-y-2">
+              <label class="text-sm font-medium text-gray-300 uppercase tracking-wider">Author</label>
+              <input 
+                v-model="form.author" 
+                type="text" 
+                class="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-primary/50 transition-all text-white"
+                required
+              />
+            </div>
+
+            <!-- Status -->
+            <div class="space-y-2">
+              <label class="text-sm font-medium text-gray-300 uppercase tracking-wider">Status</label>
+              <select 
+                v-model="form.status"
+                class="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-primary/50 transition-all text-white appearance-none"
+              >
+                <option value="published">Published</option>
+                <option value="draft">Draft</option>
+              </select>
+            </div>
+
+            <!-- Feature Image -->
+            <div class="space-y-2">
+              <label class="text-sm font-medium text-gray-300 uppercase tracking-wider">Feature Image URL</label>
+              <input 
+                v-model="form.feature_image" 
+                type="text" 
+                placeholder="https://images.unsplash.com/..."
+                class="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-primary/50 transition-all text-white"
+              />
+            </div>
+          </div>
+
+          <!-- Title -->
+          <div class="space-y-2">
+            <label class="text-sm font-medium text-gray-300 uppercase tracking-wider">Title</label>
+            <input 
+              v-model="form.title" 
+              @blur="generateSlug"
+              type="text" 
+              class="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-primary/50 transition-all text-white"
+              required
+            />
+            <div v-if="form.errors.title" class="text-red-400 text-xs flex items-center gap-1">
+              <AlertCircle :size="12" /> {{ form.errors.title }}
+            </div>
+          </div>
+
+          <!-- Slug -->
+          <div class="space-y-2">
+            <label class="text-sm font-medium text-gray-300 uppercase tracking-wider">URL Slug</label>
+            <input 
+              v-model="form.slug" 
+              type="text" 
+              class="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-primary/50 transition-all text-white font-mono text-sm"
+              required
+            />
+          </div>
+
+          <!-- Excerpt -->
+          <div class="space-y-2">
+            <label class="text-sm font-medium text-gray-300 uppercase tracking-wider">Excerpt</label>
+            <textarea 
+              v-model="form.excerpt" 
+              rows="2"
+              class="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-primary/50 transition-all text-white"
+            ></textarea>
+          </div>
+
+          <!-- Content -->
+          <div class="space-y-2">
+            <label class="text-sm font-medium text-gray-300 uppercase tracking-wider">Content (Markdown)</label>
+            <textarea 
+              v-model="form.content" 
+              rows="12"
+              class="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-primary/50 transition-all text-white font-mono text-sm"
+              required
+            ></textarea>
+          </div>
+        </div>
+
+        <!-- Preview Mode -->
+        <div v-else class="glass-card p-8 border-white/10 bg-black/40 min-h-[500px]">
+          <h2 class="text-4xl font-bold mb-4">{{ form.title }}</h2>
+          <div class="flex items-center gap-4 text-gray-400 text-sm mb-8 border-b border-white/5 pb-4">
+            <span class="flex items-center gap-1"><User :size="14" /> {{ form.author }}</span>
+            <span class="flex items-center gap-1"><Tag :size="14" /> {{ currentCategory }}</span>
+          </div>
+          <div class="prose prose-invert max-w-none" v-html="previewHtml"></div>
+        </div>
+
+        <div class="flex items-center justify-end pt-4 gap-4">
+          <Link href="/" class="text-gray-400 hover:text-white text-sm font-medium">Discard changes</Link>
+          <button 
+            type="submit" 
+            :disabled="form.processing"
+            class="flex items-center gap-2 bg-primary hover:bg-primary/80 disabled:opacity-50 text-white font-bold py-3 px-8 rounded-xl transition-all shadow-lg shadow-primary/20"
+          >
+            <Loader2 v-if="form.processing" class="animate-spin" :size="20" />
+            <Save v-else :size="20" />
+            Update Transmission
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.prose :deep(h1) { @apply text-3xl font-bold mb-4 text-white; }
+.prose :deep(h2) { @apply text-2xl font-bold mt-8 mb-4 text-white border-b border-white/10 pb-2; }
+.prose :deep(h3) { @apply text-xl font-bold mt-6 mb-3 text-white; }
+.prose :deep(p) { @apply mb-4 text-gray-300 leading-relaxed; }
+.prose :deep(ul) { @apply list-disc list-inside mb-4 text-gray-300; }
+.prose :deep(ol) { @apply list-decimal list-inside mb-4 text-gray-300; }
+.prose :deep(code) { @apply bg-white/10 px-1.5 py-0.5 rounded text-primary text-sm; }
+.prose :deep(pre) { @apply bg-black/60 p-4 rounded-xl border border-white/10 mb-4 overflow-x-auto; }
+.prose :deep(pre code) { @apply bg-transparent p-0 text-gray-300 block; }
+.prose :deep(blockquote) { @apply border-l-4 border-primary/50 pl-4 italic text-gray-400 mb-4; }
+.prose :deep(img) { @apply rounded-xl border border-white/10 max-w-full h-auto mb-4; }
+</style>

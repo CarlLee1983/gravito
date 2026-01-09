@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{{ title }}}</title>
+    {{#if isDev}}
+    <!-- Development mode: Load from Vite dev server (proxied through backend) -->
+    <script type="module">
+        import RefreshRuntime from "/@react-refresh"
+        RefreshRuntime.injectIntoGlobalHook(window)
+        window.$RefreshReg$ = () => { }
+        window.$RefreshSig$ = () => (type) => type
+        window.__vite_plugin_react_preamble_installed__ = true
+    </script>
+    <script type="module" src="/@vite/client"></script>
+    <script type="module" src="/app.tsx"></script>
+    {{else}}
+    <!-- Production mode: Load from built assets -->
+    <script type="module" src="/static/build/assets/app.js"></script>
+    <link rel="stylesheet" href="/static/build/assets/app.css">
+    {{/if}}
+
+    <!-- Google Analytics -->
+    <script>
+        (function() {
+            var gaId = '%VITE_GA_MEASUREMENT_ID%';
+            if (gaId && gaId !== '' && gaId !== '%' + 'VITE_GA_MEASUREMENT_ID' + '%') {
+                var script = document.createElement('script');
+                script.async = true;
+                script.src = 'https://www.googletagmanager.com/gtag/js?id=' + gaId;
+                document.head.appendChild(script);
+
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', gaId);
+            }
+        })();
+    </script>
+</head>
+
+<body>
+    <div id="app" data-page='{{{ page }}}'></div>
+</body>
+
+</html>
+

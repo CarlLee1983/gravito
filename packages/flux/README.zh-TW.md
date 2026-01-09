@@ -161,6 +161,38 @@ const engine = new FluxEngine({
 })
 ```
 
+## 暫停與信號 (Async Signals)
+
+流程可以暫停並等待外部事件（如人工審核、Webhook 回調）。
+
+```typescript
+.step('wait-approval', async () => {
+    // 掛起流程，狀態轉為 suspended，釋放資源
+    return Flux.wait('approval-signal')
+})
+
+// 喚醒流程
+await engine.signal(workflow, id, 'approval-signal', { approved: true })
+```
+
+## Saga Pattern (自動補償)
+
+支援分散式事務的最終一致性。當流程失敗時，引擎會自動反向執行已定義的 `compensate` 邏輯。
+
+```typescript
+.step('reserve-flight', 
+  async (ctx) => {
+    ctx.data.flightId = await api.bookFlight()
+  },
+  { 
+    // 若後續步驟失敗，會自動執行此回滾邏輯
+    compensate: async (ctx) => {
+      await api.cancelFlight(ctx.data.flightId)
+    }
+  }
+)
+```
+
 ## 重跑指定步驟
 
 ```typescript

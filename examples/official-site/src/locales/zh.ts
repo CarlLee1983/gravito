@@ -155,6 +155,9 @@ export default {
     atlas: 'Atlas (ORM)',
     atlas_note: 'Atlas (ORM) — 高性能 Bun 原生 ORM。',
     connect: '社群',
+    legal: '法律',
+    privacy: '隱私政策',
+    terms: '服務條款',
     copyright: 'Gravito Framework. 採用 MIT 授權。',
   },
   about: {
@@ -231,5 +234,50 @@ export default {
     ctaTitle: '準備好進入奇點了嗎？',
     ctaSubtitle: '加入下一代企業級開發者的行列。',
     ctaButton: '立即開始',
+  },
+  legal: {
+    privacy: {
+      title: '隱私權政策',
+      lastUpdated: '最後更新：2026年1月',
+      section1: {
+        title: '數據哲學',
+        content:
+          '在 Gravito，我們深信數據屬於您自己。我們的框架旨在提供絕對的洞察力，而非用於數據攝取。我們不會出售、交易或與任何第三方分享您的應用指標——您的系統心跳將永遠留在您的星系中。',
+      },
+      section2: {
+        title: '數位主權',
+        content:
+          'Gravito 官方網站採用靜態生成，以確保最高效能與隱私保護。我們不使用追蹤性 Cookies、分析腳本或任何會損害您數位身份的第三方營銷工具。',
+      },
+      section3: {
+        title: '零遠端追蹤',
+        content:
+          '我們的核心框架與模組（PlanetCore, Ion, Atlas 等）具備「零遠端追蹤」特性。我們不收集匿名使用數據，也不會向中央伺服器發送任何報告訊息。您的基礎設施完全保持私密並受您控管。',
+      },
+      section4: {
+        title: '倫理工程',
+        content:
+          '我們在設計之初就將安全與隱私放在首位。我們的程式碼完全開源且可被審查，確保整個生態系統貫徹「信任但驗證」的原則。',
+      },
+    },
+    terms: {
+      title: '服務條款',
+      lastUpdated: '最後更新：2026年1月',
+      section1: {
+        title: '開源傳承',
+        content:
+          'Gravito 框架及其核心模組採用 MIT 授權協議提供。本軟體按「原樣」提供，不附帶任何形式的保證。',
+      },
+      section2: {
+        title: '企業級適用性',
+        content:
+          '雖然 Gravito 專為高密度企業級應用設計，但使用者仍需對其具體實作、安全配置與數據管理實務負責。',
+      },
+      section3: {
+        title: '社群標準',
+        content:
+          '我們致力於建立一個專注於高效能與倫理工程的開發者社群。對 Gravito 生態系統的貢獻與使用應符合透明度與尊重使用者主權的核心價值。',
+      },
+    },
   },
 }

@@ -71,6 +71,11 @@ export async function initCommand(options: InitOptions = {}) {
           label: '🏛️ Domain-Driven Design (DDD)',
           hint: '完整的 DDD 架構，包含 Modules、Bounded Contexts',
         },
+        {
+          value: 'action-domain',
+          label: '⚡ Action-Domain-Responder (ADR)',
+          hint: 'Web 特化的設計模式，關注 Actions 與 Domain 邏輯的分離',
+        },
       ],
     })
 
@@ -211,6 +216,7 @@ export async function initCommand(options: InitOptions = {}) {
       clean: '🧅 Clean Architecture',
       ddd: '🏛️ Domain-Driven Design',
       satellite: '🛰️ Satellite Service',
+      'action-domain': '⚡ Action-Domain-Responder',
     }
 
     note(

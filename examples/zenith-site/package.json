@@ -1,0 +1,42 @@
+{
+    "name": "@examples/zenith-site",
+    "version": "0.1.1",
+    "type": "module",
+    "scripts": {
+        "dev": "bun run dev:vite & bun run dev:server",
+        "dev:clean": "bun run scripts/clean-ports.ts && bun run dev",
+        "dev:server": "NODE_ENV=development PORT=${PORT:-3001} bun run --watch src/index.ts",
+        "dev:vite": "vite",
+        "build:client": "vite build",
+        "build:static": "NODE_ENV=production bun build-static.ts",
+        "preview:static": "cd dist-static && npx serve .",
+        "typecheck": "tsc --noEmit",
+        "start": "bun run src/index.ts"
+    },
+    "dependencies": {
+        "@gravito/core": "workspace:*",
+        "@gravito/stasis": "workspace:*",
+        "@gravito/prism": "workspace:*",
+        "@gravito/ion": "workspace:*",
+        "@gravito/constellation": "workspace:*",
+        "@inertiajs/react": "^1.0.0",
+        "react": "^19.0.0",
+        "react-dom": "^19.0.0",
+        "@gravito/photon": "workspace:*",
+        "framer-motion": "^11.0.0",
+        "clsx": "^2.1.0",
+        "tailwind-merge": "^2.2.0",
+        "lucide-react": "^0.300.0"
+    },
+    "devDependencies": {
+        "@types/react": "^19.2.7",
+        "@types/react-dom": "^19.2.3",
+        "@vitejs/plugin-react": "^4.2.0",
+        "bun-types": "latest",
+        "typescript": "^5.0.0",
+        "vite": "^6.4.1",
+        "tailwindcss": "^3.4.0",
+        "postcss": "^8.4.0",
+        "autoprefixer": "^10.4.0"
+    }
+}

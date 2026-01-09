@@ -18,7 +18,21 @@ interface Worker {
       total?: number
     }
   }
-  queues?: string[]
+  queues?: {
+    name: string
+    size: {
+      waiting: number
+      active: number
+      failed: number
+      delayed: number
+    }
+  }[]
+  meta?: {
+    laravel?: {
+      workerCount: number
+      roots: string[]
+    }
+  }
 }
 
 export function WorkersPage() {
@@ -288,8 +302,62 @@ export function WorkersPage() {
               </div>
             )}
 
+            {/* Laravel & Queue Info (New) */}
+            <div className="mt-6 space-y-3">
+              {/* Monitored Queues */}
+              {worker.queues && worker.queues.length > 0 && (
+                <div className="bg-muted/10 p-3 rounded-xl border border-border/50">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-1.5 h-1.5 bg-orange-500 rounded-full" />
+                    <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">
+                      Monitored Queues
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {worker.queues.map((q, i) => (
+                      <div
+                        key={i}
+                        className="flex items-center gap-1.5 text-xs font-bold text-foreground/80 bg-background/80 px-2 py-1 rounded-md shadow-sm border border-border/50"
+                      >
+                        <span className="opacity-70">{q.name}</span>
+                        {(q.size.waiting > 0 || q.size.failed > 0) && (
+                          <span
+                            className={cn(
+                              'px-1 rounded bg-muted text-[9px]',
+                              q.size.failed > 0
+                                ? 'text-red-500 bg-red-500/10'
+                                : 'text-amber-500 bg-amber-500/10'
+                            )}
+                          >
+                            {q.size.failed > 0
+                              ? `${q.size.failed} failed`
+                              : `${q.size.waiting} wait`}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Laravel Workers Info */}
+              {worker.meta?.laravel && (
+                <div className="flex items-center justify-between p-3 bg-red-500/5 border border-red-500/10 rounded-xl">
+                  <div className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-red-500/80">
+                      Laravel Workers
+                    </span>
+                  </div>
+                  <span className="font-mono text-sm font-black text-red-500">
+                    {worker.meta.laravel.workerCount || 0}
+                  </span>
+                </div>
+              )}
+            </div>
+
             {/* Uptime */}
-            <div className="mt-6 pt-4 border-t border-border/30 flex items-center justify-between">
+            <div className="mt-4 pt-4 border-t border-border/30 flex items-center justify-between">
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Clock size={14} />
                 <span className="text-[10px] font-bold uppercase tracking-widest">Uptime</span>

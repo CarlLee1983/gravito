@@ -1,7 +1,7 @@
 /**
  * Architecture types supported by the scaffolding system.
  */
-export type ArchitectureType = 'enterprise-mvc' | 'clean' | 'ddd' | 'satellite'
+export type ArchitectureType = 'enterprise-mvc' | 'clean' | 'ddd' | 'satellite' | 'action-domain'
 
 /**
  * Options for scaffolding a new project.
