@@ -3,13 +3,6 @@
  * @description Database driver for MySQL and MariaDB using mysql2 package
  */
 
-import type {
-  FieldPacket,
-  Pool,
-  PoolConnection,
-  PoolOptions,
-  ResultSetHeader,
-} from 'mysql2/promise'
 import {
   ConnectionError,
   DatabaseError,
@@ -31,8 +24,8 @@ import type {
  * Implements connection pooling and query execution for MySQL/MariaDB
  */
 export class MySQLDriver implements DriverContract {
-  private pool: Pool | null = null
-  private transactionConnection: PoolConnection | null = null
+  private pool: any | null = null
+  private transactionConnection: any | null = null
   private connected = false
   private mysql: any | null = null
 
@@ -60,7 +53,7 @@ export class MySQLDriver implements DriverContract {
       this.mysql = await this.loadMySQLModule()
       const myConfig = this.config as any
 
-      const poolConfig: PoolOptions = {
+      const poolConfig: any = {
         host: myConfig.host ?? 'localhost',
         port: myConfig.port ?? 3306,
         database: myConfig.database,
@@ -162,7 +155,7 @@ export class MySQLDriver implements DriverContract {
       }
 
       const rows = Array.isArray(result) ? (result as T[]) : []
-      const fieldInfo = fields?.map((f: FieldPacket) => ({
+      const fieldInfo = fields?.map((f: any) => ({
         name: f.name,
         dataType: f.type?.toString(),
         tableId: undefined,
@@ -197,7 +190,7 @@ export class MySQLDriver implements DriverContract {
 
     try {
       const [result] = await connection.execute(sql, params)
-      const resultInfo = result as ResultSetHeader
+      const resultInfo = result as any
 
       return {
         affectedRows: resultInfo.affectedRows ?? 0,
@@ -263,7 +256,7 @@ export class MySQLDriver implements DriverContract {
   /**
    * Get a connection from the pool
    */
-  private async getConnection(): Promise<PoolConnection> {
+  private async getConnection(): Promise<any> {
     if (!this.pool) {
       await this.connect()
     }

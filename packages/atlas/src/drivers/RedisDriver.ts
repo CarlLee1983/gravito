@@ -3,7 +3,6 @@
  * @description Driver implementation for Redis using ioredis
  */
 
-import Redis from 'ioredis'
 import { ConnectionError } from '../errors'
 import type {
   ConnectionConfig,
@@ -20,15 +19,13 @@ import type {
  */
 export class RedisDriver implements DriverContract {
   private config: RedisConfig
-  private client: Redis | null = null
-  private RedisCtor: typeof Redis
+  private client: any | null = null
 
-  constructor(config: ConnectionConfig, deps: { Redis?: typeof Redis } = {}) {
+  constructor(config: ConnectionConfig) {
     if (config.driver !== 'redis') {
       throw new Error(`Invalid driver type '${config.driver}' for RedisDriver`)
     }
     this.config = config as RedisConfig
-    this.RedisCtor = deps.Redis ?? Redis
   }
 
   getDriverName(): DriverType {
@@ -41,7 +38,8 @@ export class RedisDriver implements DriverContract {
     }
 
     try {
-      this.client = new this.RedisCtor({
+      const { default: Redis } = await this.loadRedisModule()
+      this.client = new Redis({
         host: this.config.host,
         port: this.config.port ?? 6379,
         password: this.config.password,
@@ -51,6 +49,20 @@ export class RedisDriver implements DriverContract {
       await this.client.connect()
     } catch (error) {
       throw new ConnectionError('Could not connect to Redis host', error)
+    }
+  }
+
+  /**
+   * Dynamically load ioredis module
+   */
+  private async loadRedisModule(): Promise<any> {
+    try {
+      const ioredis = await import('ioredis')
+      return ioredis
+    } catch (e) {
+      throw new Error(
+        `Redis driver requires the "ioredis" package. Please install it: bun add ioredis. Original Error: ${e}`
+      )
     }
   }
 
@@ -128,7 +140,7 @@ export class RedisDriver implements DriverContract {
   /**
    * Get the raw ioredis client for advanced operations
    */
-  getRawClient(): Redis {
+  getRawClient(): any {
     if (!this.client) {
       throw new Error('Redis client not connected')
     }

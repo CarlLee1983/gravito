@@ -7,7 +7,12 @@ export class MakeModelCommand extends Command {
   signature = 'make:model <name>'
   description = 'Create a new Eloquent model class'
 
-  async handle(args: Record<string, any>): Promise<void> {
+  async handle(
+    args: { name: string; path?: string; migration?: boolean; migrationPath?: string } & Record<
+      string,
+      unknown
+    >
+  ): Promise<void> {
     const name = args.name
     const path = args.path || 'src/models'
 
