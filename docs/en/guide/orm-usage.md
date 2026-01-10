@@ -28,6 +28,26 @@ Atlas targets Gravito 1.0.0-beta and Bun 1.3.4+. The CLI wraps `drizzle-kit` for
 
 ```bash
 bun add @gravito/atlas
+
+# ⚠️ Important: You must install the driver for your database manually
+# Atlas 1.1+ does not bundle drivers to keep installation size small.
+
+# PostgreSQL
+bun add pg
+
+# MySQL / MariaDB
+bun add mysql2
+
+# SQLite
+# No install needed if using Bun runtime!
+# For Node.js:
+bun add better-sqlite3
+
+# MongoDB
+bun add mongodb
+
+# Redis
+bun add ioredis
 ```
 
 ### 2. Initialize Database Connection
