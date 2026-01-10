@@ -240,7 +240,7 @@ export class AOTRouter {
    * @param path - Matched path
    * @returns Route key or null
    */
-  private findDynamicRouteKey(method: HttpMethod, path: string): string | null {
+  private findDynamicRouteKey(method: HttpMethod, _path: string): string | null {
     // This is a simple implementation
     // In production, we might want to store a reverse mapping
     for (const key of this.pathMiddleware.keys()) {

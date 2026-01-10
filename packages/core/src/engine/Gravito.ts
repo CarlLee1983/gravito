@@ -205,10 +205,11 @@ export class Gravito {
    * // Now accessible at /api/users
    * ```
    */
-  route(path: string, app: Gravito): this {
+  route(_path: string, _app: Gravito): this {
     // This is a simplified implementation
     // In production, we'd need to merge routers properly
     // For now, we'll just note this as a TODO
+    // console.warn('route() method is not yet fully implemented', path, app)
     console.warn('route() method is not yet fully implemented')
     return this
   }
@@ -516,16 +517,17 @@ export class Gravito {
     return await handler(ctx)
   }
 
-  /**
+  /*
    * Handle 404 Not Found (Async version for dynamic/middleware paths)
+   * Note: Currently unused as we handle 404s via handleNotFoundSync or inline
    */
-  private async handleNotFound(ctx: FastContext): Promise<Response> {
-    if (this.notFoundHandler) {
-      return await this.notFoundHandler(ctx)
-    }
+  // private async handleNotFound(ctx: FastContext): Promise<Response> {
+  //   if (this.notFoundHandler) {
+  //     return await this.notFoundHandler(ctx)
+  //   }
 
-    return ctx.json({ error: 'Not Found' }, 404)
-  }
+  //   return ctx.json({ error: 'Not Found' }, 404)
+  // }
 
   /**
    * Handle errors (Async version for dynamic/middleware paths)

@@ -119,7 +119,7 @@ class FastRequestImpl implements FastRequest {
  */
 export class FastContext implements IFastContext {
   private _req: FastRequestImpl = new FastRequestImpl()
-  private _statusCode = 200
+  // private _statusCode = 200
   private _headers = new Headers() // Reuse this object
 
   /**
@@ -130,7 +130,7 @@ export class FastContext implements IFastContext {
    */
   reset(request: Request, params: Record<string, string> = {}): this {
     this._req.reset(request, params)
-    this._statusCode = 200
+    // this._statusCode = 200
     // Optimization: Creating new Headers is faster than iterating to delete
     this._headers = new Headers()
     return this
@@ -191,7 +191,7 @@ export class FastContext implements IFastContext {
     this._headers.set(name, value)
   }
 
-  status(code: number): void {
-    this._statusCode = code
+  status(_code: number): void {
+    // this._statusCode = code
   }
 }
