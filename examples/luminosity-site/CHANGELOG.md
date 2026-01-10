@@ -1,5 +1,13 @@
 # luminosity-marketing-site
 
+## 1.0.3
+
+### Patch Changes
+
+- Updated dependencies [73d01db]
+  - @gravito/luminosity@2.0.0
+  - @gravito/luminosity-adapter-photon@1.0.1
+
 ## 1.0.2
 
 ### Patch Changes
