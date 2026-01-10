@@ -1,5 +1,6 @@
 import { createWriteStream, mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { createGzip } from 'node:zlib'
 import type { SitemapEntry } from './interfaces'
 import { RobotsTxtBuilder } from './robots/RobotsTxtBuilder'
 import { SitemapIndexBuilder } from './xml/SitemapIndexBuilder'
@@ -12,7 +13,7 @@ export interface LuminosityOptions {
   hostname?: string
   /** Max URLs per sitemap file (default: 50000) */
   maxEntriesPerFile?: number
-  /** Enable gzip compression (TODO) */
+  /** Enable gzip compression */
   gzip?: boolean
 }
 
@@ -38,6 +39,7 @@ export class Luminosity {
     const outDir = this.config.path || './public'
     const hostname = this.config.hostname || 'http://localhost'
     const limit = this.config.maxEntriesPerFile || 50000
+    const useGzip = this.config.gzip === true
 
     // Ensure output dir exists
     mkdirSync(outDir, { recursive: true })
@@ -47,24 +49,51 @@ export class Luminosity {
     // Stream State
     let count = 0
     let fileIndex = 1
-    let currentStream: any = null // fs.WriteStream
+    let currentFileStream: any = null
+    let currentGzip: any = null
+    let currentWriter: any = null // The stream we write strings to
     const sitemapFiles: string[] = []
 
     const closeCurrentFile = async () => {
-      if (currentStream) {
+      if (currentWriter) {
+        // Write footer
+        currentWriter.write(builder.end())
+
         await new Promise<void>((resolve, reject) => {
-          currentStream.once('error', reject)
-          currentStream.end(builder.end(), () => resolve())
+          if (useGzip) {
+            currentWriter.end() // End Gzip
+            // Wait for file stream to finish
+            currentFileStream.once('finish', resolve)
+            currentFileStream.once('error', reject)
+          } else {
+            currentWriter.end(() => resolve())
+            currentWriter.once('error', reject)
+          }
         })
-        currentStream = null
+
+        currentWriter = null
+        currentGzip = null
+        currentFileStream = null
       }
     }
 
     const openNextFile = () => {
-      const filename = `sitemap-${fileIndex}.xml`
+      const extension = useGzip ? 'xml.gz' : 'xml'
+      const filename = `sitemap-${fileIndex}.${extension}`
       sitemapFiles.push(filename)
-      currentStream = createWriteStream(join(outDir, filename))
-      currentStream.write(builder.start())
+
+      const filePath = join(outDir, filename)
+      currentFileStream = createWriteStream(filePath)
+
+      if (useGzip) {
+        currentGzip = createGzip()
+        currentGzip.pipe(currentFileStream)
+        currentWriter = currentGzip
+      } else {
+        currentWriter = currentFileStream
+      }
+
+      currentWriter.write(builder.start())
       fileIndex++
     }
 
@@ -92,7 +121,7 @@ export class Luminosity {
         await closeCurrentFile()
         openNextFile()
       }
-      currentStream.write(builder.entry(entry))
+      currentWriter.write(builder.entry(entry))
       count++
     }
 
@@ -107,6 +136,8 @@ export class Luminosity {
       }))
     )
 
+    // Index is usually not gzipped by default but can be.
+    // Standard: sitemap-index.xml pointing to .gz files
     writeFileSync(join(outDir, 'sitemap-index.xml'), indexXml)
 
     console.log(`✅ Generated ${count} URLs across ${sitemapFiles.length} files in ${outDir}`)
