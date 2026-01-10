@@ -1,5 +1,11 @@
 # @gravito/scaffold
 
+## 2.1.0
+
+### Minor Changes
+
+- feat: add standalone-engine scaffolding template and cli option
+
 ## 2.0.0
 
 ### Patch Changes

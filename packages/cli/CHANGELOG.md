@@ -1,5 +1,16 @@
 # @gravito/pulse
 
+## 2.1.0
+
+### Minor Changes
+
+- feat: add standalone-engine scaffolding template and cli option
+
+### Patch Changes
+
+- Updated dependencies
+  - @gravito/scaffold@2.1.0
+
 ## 2.0.0
 
 ### Patch Changes
