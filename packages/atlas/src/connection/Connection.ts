@@ -41,7 +41,7 @@ export class Connection implements ConnectionContract {
     (query: {
       connection: string
       sql: string
-      bindings: any[]
+      bindings: unknown[]
       duration: number
       timestamp: number
     }) => void
@@ -59,7 +59,7 @@ export class Connection implements ConnectionContract {
     return new Proxy(this, {
       get(target: Connection, prop: string | symbol) {
         if (prop in target) {
-          return (target as any)[prop]
+          return Reflect.get(target, prop)
         }
         // Fallback to driver if method exists there
         if (
@@ -67,7 +67,10 @@ export class Connection implements ConnectionContract {
           target.driver &&
           typeof (target.driver as unknown as Record<string, unknown>)[prop] === 'function'
         ) {
-          return (target.driver as unknown as Record<string, any>)[prop].bind(target.driver)
+          // biome-ignore lint/complexity/noBannedTypes: We need to bind a generic function
+          return ((target.driver as unknown as Record<string, unknown>)[prop] as Function).bind(
+            target.driver
+          )
         }
         return undefined
       },

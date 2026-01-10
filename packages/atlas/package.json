@@ -1,6 +1,6 @@
 {
   "name": "@gravito/atlas",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "The Standard Database Orbit - Custom Query Builder & ORM for Gravito",
   "type": "module",
   "main": "./dist/index.js",
@@ -38,21 +38,45 @@
   ],
   "author": "Gravito Team",
   "license": "MIT",
-  "dependencies": {
-    "@types/ioredis": "^5.0.0",
+  "dependencies": {},
+  "peerDependencies": {
     "better-sqlite3": "^11.0.0",
     "ioredis": "^5.8.2",
     "mongodb": "^6.0.0",
     "mysql2": "^3.9.0",
     "pg": "^8.11.0"
   },
+  "peerDependenciesMeta": {
+    "better-sqlite3": {
+      "optional": true
+    },
+    "ioredis": {
+      "optional": true
+    },
+    "mongodb": {
+      "optional": true
+    },
+    "mysql2": {
+      "optional": true
+    },
+    "pg": {
+      "optional": true
+    }
+  },
   "devDependencies": {
+    "@swc/core": "^1.15.8",
     "@types/better-sqlite3": "^7.6.0",
+    "@types/ioredis": "^5.0.0",
     "@types/node": "^20.0.0",
     "@types/pg": "^8.11.0",
+    "better-sqlite3": "^11.0.0",
+    "bun-types": "latest",
+    "ioredis": "^5.8.2",
+    "mongodb": "^6.0.0",
+    "mysql2": "^3.9.0",
+    "pg": "^8.11.0",
     "tsup": "^8.5.1",
-    "typescript": "^5.9.3",
-    "bun-types": "latest"
+    "typescript": "^5.9.3"
   },
   "publishConfig": {
     "access": "public"

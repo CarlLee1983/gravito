@@ -28,6 +28,26 @@ Atlas 為 Gravito 1.0.0-beta 設計，建議使用 Bun 1.3.4+。CLI 的 migratio
 
 ```bash
 bun add @gravito/atlas
+
+# ⚠️ 重要：您必須手動安裝資料庫驅動
+# Atlas 1.1+ 不再綑綁驅動程式，以保持安裝體積輕量。
+
+# PostgreSQL
+bun add pg
+
+# MySQL / MariaDB
+bun add mysql2
+
+# SQLite
+# 如果使用 Bun runtime 則無需安裝！
+# 若是 Node.js 環境：
+bun add better-sqlite3
+
+# MongoDB
+bun add mongodb
+
+# Redis
+bun add ioredis
 ```
 
 ### 2. 初始化資料庫連接

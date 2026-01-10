@@ -65,13 +65,19 @@ export class SQLiteDriver implements DriverContract {
 
         this.client.exec('PRAGMA journal_mode = WAL;')
       } else {
-        const { default: Database } = await import('better-sqlite3')
+        try {
+          const { default: Database } = await import('better-sqlite3')
 
-        this.client = new Database(this.config.database, {
-          readonly: this.config.readonly ?? false,
-        })
+          this.client = new Database(this.config.database, {
+            readonly: this.config.readonly ?? false,
+          })
 
-        this.client.pragma('journal_mode = WAL')
+          this.client.pragma('journal_mode = WAL')
+        } catch (e) {
+          throw new Error(
+            `SQLite driver requires "better-sqlite3" when running in Node.js. Please install it: bun add better-sqlite3. Original Error: ${e}`
+          )
+        }
       }
     } catch (error) {
       throw new ConnectionError('Could not connect to SQLite database', error)

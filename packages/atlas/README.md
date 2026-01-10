@@ -12,10 +12,25 @@
 ```bash
 bun add @gravito/atlas
 
-# Install the driver for your database
-bun add pg              # PostgreSQL
-bun add mysql2          # MySQL / MariaDB
-bun add better-sqlite3  # SQLite (for non-Bun environments)
+# ⚠️ Important: You must install the driver for your database manually
+# Atlas 1.1+ does not bundle drivers to keep installation size small.
+
+# PostgreSQL
+bun add pg
+
+# MySQL / MariaDB
+bun add mysql2
+
+# SQLite
+# No install needed if using Bun runtime!
+# For Node.js:
+bun add better-sqlite3
+
+# MongoDB
+bun add mongodb
+
+# Redis
+bun add ioredis
 ```
 
 ## 🚀 Quick Start

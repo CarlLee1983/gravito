@@ -1,4 +1,3 @@
-import { type Db, MongoClient } from 'mongodb'
 import { ConnectionError, DatabaseError } from '../errors'
 import type { MongoQueryProtocol } from '../grammar/MongoGrammar'
 import type {
@@ -16,16 +15,18 @@ import type {
  */
 export class MongoDBDriver implements DriverContract {
   private config: MongoDBConfig
-  private client: MongoClient | null = null
-  private db: Db | null = null
-  private MongoClientCtor: typeof MongoClient
+  private client: any | null = null
+  private db: any | null = null
+  private MongoClientCtor: any
 
-  constructor(config: ConnectionConfig, deps: { MongoClient?: typeof MongoClient } = {}) {
+  constructor(config: ConnectionConfig, deps?: { MongoClient?: any }) {
     if (config.driver !== 'mongodb') {
-      throw new Error(`Invalid driver type '\${config.driver}' for MongoDBDriver`)
+      throw new Error(`Invalid driver type '${config.driver}' for MongoDBDriver`)
     }
     this.config = config as MongoDBConfig
-    this.MongoClientCtor = deps.MongoClient ?? MongoClient
+    if (deps?.MongoClient) {
+      this.MongoClientCtor = deps.MongoClient
+    }
   }
 
   getDriverName(): DriverType {
@@ -38,14 +39,29 @@ export class MongoDBDriver implements DriverContract {
     }
 
     try {
-      this.client = new this.MongoClientCtor(
+      const Ctor = this.MongoClientCtor || (await this.loadMongoModule()).MongoClient
+      this.client = new Ctor(
         this.config.uri ??
-          `mongodb://\${this.config.host}:\${this.config.port}/\${this.config.database}`
+          `mongodb://${this.config.host}:${this.config.port}/${this.config.database}`
       )
       await this.client.connect()
       this.db = this.client.db(this.config.database)
     } catch (error) {
       throw new ConnectionError('Could not connect to MongoDB cluster', error)
+    }
+  }
+
+  /**
+   * Dynamically load mongodb module
+   */
+  private async loadMongoModule(): Promise<any> {
+    try {
+      const mongodb = await import('mongodb')
+      return mongodb
+    } catch (e) {
+      throw new Error(
+        `MongoDB driver requires the "mongodb" package. Please install it: bun add mongodb. Original Error: ${e}`
+      )
     }
   }
 

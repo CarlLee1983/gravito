@@ -125,7 +125,7 @@ async function main() {
         await new MakeModelCommand().handle({
           name,
           path: flags.path as string,
-          migration: flags.migration || flags.m,
+          migration: Boolean(flags.migration || flags.m),
         })
         break
       }
