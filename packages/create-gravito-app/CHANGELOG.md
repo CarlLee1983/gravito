@@ -1,5 +1,12 @@
 # create-gravito-app
 
+## 1.0.3
+
+### Patch Changes
+
+- Updated dependencies
+  - @gravito/pulse@2.1.0
+
 ## 1.0.2
 
 ### Patch Changes
