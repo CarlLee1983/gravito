@@ -1,0 +1,20 @@
+{
+    "name": "example-engine-atlas-microservice",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "bun run --watch src/index.ts",
+        "start": "bun run src/index.ts",
+        "test": "bun test",
+        "bench": "oha -n 10000 -c 100 http://localhost:3000/users"
+    },
+    "dependencies": {
+        "@gravito/core": "workspace:*",
+        "@gravito/atlas": "workspace:*"
+    },
+    "devDependencies": {
+        "bun-types": "latest",
+        "typescript": "^5.0.0"
+    }
+}
