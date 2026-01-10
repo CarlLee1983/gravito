@@ -10,6 +10,9 @@
   - @gravito/ion@2.0.0
   - @gravito/prism@2.0.0
   - @gravito/stasis@2.0.0
+- Updated dependencies [73d01db]
+  - @gravito/luminosity@2.0.0
+  - @gravito/luminosity-adapter-photon@1.0.1
 
 ## 1.0.2
 
