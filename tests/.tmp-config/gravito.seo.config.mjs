@@ -1,1 +1,0 @@
-export default { mode: 'dynamic', baseUrl: 'https://example.com', resolvers: [] }
