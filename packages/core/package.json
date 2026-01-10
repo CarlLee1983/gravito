@@ -16,6 +16,11 @@
       "types": "./dist/compat.d.ts",
       "import": "./dist/compat.js",
       "require": "./dist/compat.cjs"
+    },
+    "./engine": {
+      "types": "./dist/engine/index.d.ts",
+      "import": "./dist/engine/index.js",
+      "require": "./dist/engine/index.cjs"
     }
   },
   "files": [
