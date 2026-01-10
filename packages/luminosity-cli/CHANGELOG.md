@@ -1,5 +1,12 @@
 # @gravito/luminosity-cli
 
+## 1.0.1
+
+### Patch Changes
+
+- Updated dependencies [73d01db]
+  - @gravito/luminosity@2.0.0
+
 ## 1.0.0
 
 ### Patch Changes
