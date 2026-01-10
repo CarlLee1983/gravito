@@ -20,12 +20,16 @@ import type {
 export class RedisDriver implements DriverContract {
   private config: RedisConfig
   private client: any | null = null
+  private RedisCtor: any
 
-  constructor(config: ConnectionConfig) {
+  constructor(config: ConnectionConfig, deps?: { Redis?: any }) {
     if (config.driver !== 'redis') {
       throw new Error(`Invalid driver type '${config.driver}' for RedisDriver`)
     }
     this.config = config as RedisConfig
+    if (deps?.Redis) {
+      this.RedisCtor = deps.Redis
+    }
   }
 
   getDriverName(): DriverType {
@@ -38,8 +42,8 @@ export class RedisDriver implements DriverContract {
     }
 
     try {
-      const { default: Redis } = await this.loadRedisModule()
-      this.client = new Redis({
+      const Ctor = this.RedisCtor || (await this.loadRedisModule()).default
+      this.client = new Ctor({
         host: this.config.host,
         port: this.config.port ?? 6379,
         password: this.config.password,
