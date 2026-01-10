@@ -1,0 +1,38 @@
+[
+  {
+    "name": "Bun Native",
+    "requestsPerSec": 93054.68688554733,
+    "latencyP50": 0.000964458,
+    "latencyP95": 0.001792375,
+    "latencyP99": 0.002364417,
+    "totalRequests": 2792434,
+    "errors": 96
+  },
+  {
+    "name": "Gravito Engine",
+    "requestsPerSec": 91428.47659617351,
+    "latencyP50": 0.000979791,
+    "latencyP95": 0.001849833,
+    "latencyP99": 0.0025415,
+    "totalRequests": 2743473,
+    "errors": 97
+  },
+  {
+    "name": "Hono",
+    "requestsPerSec": 80485.54978784567,
+    "latencyP50": 0.001140208,
+    "latencyP95": 0.002034875,
+    "latencyP99": 0.002768958,
+    "totalRequests": 2415100,
+    "errors": 98
+  },
+  {
+    "name": "Elysia",
+    "requestsPerSec": 89458.71670270682,
+    "latencyP50": 0.001000334,
+    "latencyP95": 0.001949667,
+    "latencyP99": 0.002723,
+    "totalRequests": 2684207,
+    "errors": 98
+  }
+]

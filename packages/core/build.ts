@@ -37,7 +37,35 @@ if (tsupCode !== 0) {
   process.exit(1)
 }
 
-// Type declaration generation is now handled by tsup --dts
+console.log('Building @gravito/core/engine...')
+
+// Build Standalone Engine
+const tsupEngine = spawn(
+  [
+    'npx',
+    'tsup',
+    'src/engine/index.ts',
+    '--format',
+    'esm,cjs',
+    '--dts',
+    '--external',
+    '@gravito/photon',
+    '--external',
+    'bun:test',
+    '--outDir',
+    'dist/engine',
+  ],
+  {
+    stdout: 'inherit',
+    stderr: 'inherit',
+  }
+)
+
+const tsupEngineCode = await tsupEngine.exited
+if (tsupEngineCode !== 0) {
+  console.error('❌ tsup engine build failed')
+  process.exit(1)
+}
 
 console.log('✅ Build complete!')
 process.exit(0)

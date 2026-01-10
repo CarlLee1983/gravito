@@ -1,6 +1,6 @@
 # gravito-official-site
 
-## 0.1.3 (Planned)
+## 0.1.3
 
 ### Major Changes
 
@@ -9,6 +9,16 @@
   - Enabled Image and Video sitemaps.
   - Gzip compression support for sitemap.xml.gz.
   - New CLI tools: `lux inspect` and `lux repair`.
+
+### Patch Changes
+
+- Updated dependencies
+- Updated dependencies
+  - @gravito/core@1.1.0
+  - @gravito/constellation@2.0.0
+  - @gravito/ion@2.0.0
+  - @gravito/prism@2.0.0
+  - @gravito/stasis@2.0.0
 
 ## 0.1.2
 

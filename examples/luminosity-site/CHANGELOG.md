@@ -1,5 +1,16 @@
 # luminosity-marketing-site
 
+## 1.0.3
+
+### Patch Changes
+
+- Updated dependencies
+- Updated dependencies
+  - @gravito/core@1.1.0
+  - @gravito/ion@2.0.0
+  - @gravito/prism@2.0.0
+  - @gravito/stasis@2.0.0
+
 ## 1.0.2
 
 ### Patch Changes

@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.1.0
+
+### Minor Changes
+
+- Launch standalone high-performance engine and core optimizations.
+
+### Patch Changes
+
+- q
+
 ## 1.0.0
 
 ### Patch Changes

@@ -1,5 +1,14 @@
 # @gravito/monolith
 
+## 2.0.0
+
+### Patch Changes
+
+- Updated dependencies
+- Updated dependencies
+  - @gravito/core@1.1.0
+  - @gravito/mass@2.0.0
+
 ## 1.0.0
 
 ### Patch Changes

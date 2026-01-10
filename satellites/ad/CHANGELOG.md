@@ -1,5 +1,14 @@
 # @gravito/satellite-ad
 
+## 0.1.2
+
+### Patch Changes
+
+- Updated dependencies
+- Updated dependencies
+  - @gravito/core@1.1.0
+  - @gravito/enterprise@1.0.1
+
 ## 0.1.1
 
 ### Patch Changes

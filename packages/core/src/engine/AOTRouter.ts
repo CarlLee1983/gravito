@@ -1,0 +1,271 @@
+/**
+ * @fileoverview AOT (Ahead-of-Time) Router
+ *
+ * Hybrid routing strategy:
+ * - Static routes: O(1) Map lookup
+ * - Dynamic routes: Optimized Radix Tree
+ *
+ * The key optimization is separating static from dynamic routes at registration time,
+ * not at match time. This eliminates unnecessary tree traversal for static paths.
+ *
+ * @module @gravito/core/engine
+ */
+
+import { RadixRouter } from '../adapters/bun/RadixRouter'
+import type { HttpMethod } from '../http/types'
+import type { Handler, Middleware, RouteMatch } from './types'
+
+/**
+ * Route metadata for middleware management
+ */
+interface RouteMetadata {
+  handler: Handler
+  middleware: Middleware[]
+}
+
+/**
+ * AOT Router - Optimized for Bun
+ *
+ * Performance characteristics:
+ * - Static routes: O(1) lookup via Map
+ * - Dynamic routes: O(log n) via Radix Tree
+ * - Middleware: O(m) where m = number of matching middleware
+ */
+export class AOTRouter {
+  // Static route cache: "METHOD:PATH" -> RouteMetadata
+  private staticRoutes = new Map<string, RouteMetadata>()
+
+  // Dynamic route handler (Radix Tree)
+  private dynamicRouter = new RadixRouter()
+
+  // Global middleware (applies to all routes)
+  private globalMiddleware: Middleware[] = []
+
+  // Path-based middleware: pattern -> middleware[]
+  private pathMiddleware = new Map<string, Middleware[]>()
+
+  /**
+   * Register a route
+   *
+   * Automatically determines if route is static or dynamic.
+   * Static routes are stored in a Map for O(1) lookup.
+   * Dynamic routes use the Radix Tree.
+   *
+   * @param method - HTTP method
+   * @param path - Route path
+   * @param handler - Route handler
+   * @param middleware - Route-specific middleware
+   */
+  add(method: HttpMethod, path: string, handler: Handler, middleware: Middleware[] = []): void {
+    const normalizedMethod = method.toLowerCase() as HttpMethod
+
+    if (this.isStaticPath(path)) {
+      // Static route - use Map
+      const key = `${normalizedMethod}:${path}`
+      this.staticRoutes.set(key, { handler, middleware })
+    } else {
+      // Dynamic route - use Radix Tree
+      // Wrap handler to match our Handler type
+      const wrappedHandler = handler as unknown as Function
+      this.dynamicRouter.add(normalizedMethod, path, [wrappedHandler])
+
+      // Store middleware separately
+      if (middleware.length > 0) {
+        this.pathMiddleware.set(`${normalizedMethod}:${path}`, middleware)
+      }
+    }
+  }
+
+  /**
+   * Add global middleware
+   *
+   * These run for every request, before route-specific middleware.
+   *
+   * @param middleware - Middleware functions
+   */
+  use(...middleware: Middleware[]): void {
+    this.globalMiddleware.push(...middleware)
+  }
+
+  /**
+   * Add path-based middleware
+   *
+   * Supports wildcard patterns like '/api/*'
+   *
+   * @param pattern - Path pattern
+   * @param middleware - Middleware functions
+   */
+  usePattern(pattern: string, ...middleware: Middleware[]): void {
+    const existing = this.pathMiddleware.get(pattern) ?? []
+    this.pathMiddleware.set(pattern, [...existing, ...middleware])
+  }
+
+  /**
+   * Match a request to a route
+   *
+   * Returns the handler, params, and all applicable middleware.
+   *
+   * @param method - HTTP method
+   * @param path - Request path
+   * @returns Route match or null if not found
+   */
+  match(method: string, path: string): RouteMatch {
+    const normalizedMethod = method.toLowerCase() as HttpMethod
+
+    // Try static route first (O(1))
+    const staticKey = `${normalizedMethod}:${path}`
+    const staticRoute = this.staticRoutes.get(staticKey)
+
+    if (staticRoute) {
+      return {
+        handler: staticRoute.handler,
+        params: {},
+        middleware: this.collectMiddleware(path, staticRoute.middleware),
+      }
+    }
+
+    // Try dynamic route (Radix Tree)
+    const match = this.dynamicRouter.match(normalizedMethod, path)
+
+    if (match && match.handlers.length > 0) {
+      const handler = match.handlers[0] as unknown as Handler
+      const routeKey = this.findDynamicRouteKey(normalizedMethod, path)
+      const routeMiddleware = routeKey ? (this.pathMiddleware.get(routeKey) ?? []) : []
+
+      return {
+        handler,
+        params: match.params,
+        middleware: this.collectMiddleware(path, routeMiddleware),
+      }
+    }
+
+    // No match
+    return {
+      handler: null,
+      params: {},
+      middleware: [],
+    }
+  }
+
+  /**
+   * Public wrapper for collectMiddleware (used by Gravito for optimization)
+   */
+  collectMiddlewarePublic(path: string, routeMiddleware: Middleware[]): Middleware[] {
+    return this.collectMiddleware(path, routeMiddleware)
+  }
+
+  /**
+   * Collect all applicable middleware for a path
+   *
+   * Order: global -> pattern-based -> route-specific
+   *
+   * @param path - Request path
+   * @param routeMiddleware - Route-specific middleware
+   * @returns Combined middleware array
+   */
+  private collectMiddleware(path: string, routeMiddleware: Middleware[]): Middleware[] {
+    // Fast path: no middleware at all
+    if (
+      this.globalMiddleware.length === 0 &&
+      this.pathMiddleware.size === 0 &&
+      routeMiddleware.length === 0
+    ) {
+      return []
+    }
+
+    const middleware: Middleware[] = []
+
+    // 1. Global middleware
+    if (this.globalMiddleware.length > 0) {
+      middleware.push(...this.globalMiddleware)
+    }
+
+    // 2. Pattern-based middleware
+    if (this.pathMiddleware.size > 0) {
+      for (const [pattern, mw] of this.pathMiddleware) {
+        // Skip route-specific entries (they have method prefix)
+        if (pattern.includes(':')) continue
+
+        if (this.matchPattern(pattern, path)) {
+          middleware.push(...mw)
+        }
+      }
+    }
+
+    // 3. Route-specific middleware
+    if (routeMiddleware.length > 0) {
+      middleware.push(...routeMiddleware)
+    }
+
+    return middleware
+  }
+
+  /**
+   * Check if a path is static (no parameters or wildcards)
+   */
+  private isStaticPath(path: string): boolean {
+    return !path.includes(':') && !path.includes('*')
+  }
+
+  /**
+   * Match a pattern against a path
+   *
+   * Supports:
+   * - Exact match: '/api/users'
+   * - Wildcard suffix: '/api/*'
+   *
+   * @param pattern - Pattern to match
+   * @param path - Path to test
+   * @returns True if pattern matches
+   */
+  private matchPattern(pattern: string, path: string): boolean {
+    if (pattern === '*') return true
+    if (pattern === path) return true
+
+    if (pattern.endsWith('/*')) {
+      const prefix = pattern.slice(0, -2)
+      return path.startsWith(prefix)
+    }
+
+    return false
+  }
+
+  /**
+   * Find the original route key for a matched dynamic route
+   *
+   * This is needed to look up route-specific middleware.
+   * It's a bit of a hack, but avoids storing duplicate data.
+   *
+   * @param method - HTTP method
+   * @param path - Matched path
+   * @returns Route key or null
+   */
+  private findDynamicRouteKey(method: HttpMethod, _path: string): string | null {
+    // This is a simple implementation
+    // In production, we might want to store a reverse mapping
+    for (const key of this.pathMiddleware.keys()) {
+      if (key.startsWith(`${method}:`)) {
+        return key
+      }
+    }
+    return null
+  }
+
+  /**
+   * Get all registered routes (for debugging)
+   */
+  getRoutes(): Array<{ method: string; path: string; type: 'static' | 'dynamic' }> {
+    const routes: Array<{ method: string; path: string; type: 'static' | 'dynamic' }> = []
+
+    // Static routes
+    for (const key of this.staticRoutes.keys()) {
+      const [method, path] = key.split(':')
+      routes.push({ method: method!, path: path!, type: 'static' })
+    }
+
+    // Dynamic routes (harder to enumerate from Radix Tree)
+    // For now, we'll skip this - it's mainly for debugging anyway
+
+    return routes
+  }
+}

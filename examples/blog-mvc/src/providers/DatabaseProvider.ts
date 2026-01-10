@@ -18,7 +18,9 @@ export class DatabaseProvider extends ServiceProvider {
    * Register database configuration.
    */
   register(_container: Container): void {
-    this.mergeConfig(this.core?.config, 'database', databaseConfig)
+    if (this.core?.config) {
+      this.mergeConfig(this.core.config, 'database', databaseConfig)
+    }
   }
 
   /**
