@@ -24,9 +24,66 @@ async function main() {
     case 'repair':
       await repairStorage()
       break
+    case 'inspect':
+      if (!args[1]) {
+        console.error('Usage: lux inspect <url>')
+        process.exit(1)
+      }
+      await inspectUrl(args[1])
+      break
     default:
       console.log('Usage: lux <command> [options]')
-      console.log('Commands: generate, stats, warm, init, repair')
+      console.log('Commands: generate, stats, warm, init, repair, inspect')
+  }
+}
+
+async function inspectUrl(url: string) {
+  const { MetaInspector } = await import('./meta/Inspector')
+  const inspector = new MetaInspector()
+
+  console.log(`🔍 Inspecting ${url}...\n`)
+  try {
+    const preview = await inspector.inspect(url)
+
+    // Google Search Preview
+    console.log('\x1b[1m=== Google Search Preview ===\x1b[0m')
+    console.log(`\x1b[34m${preview.title || 'No Title'}\x1b[0m`) // Blue title
+    console.log(`\x1b[32m${preview.url}\x1b[0m`) // Green URL
+    console.log(`${preview.description || 'No description available.'}`)
+    console.log('')
+
+    // OpenGraph Preview
+    console.log('\x1b[1m=== Social Media (OpenGraph) ===\x1b[0m')
+    if (preview.og?.image) {
+      console.log(`🖼  [Image: ${preview.og.image}]`)
+    }
+    console.log(`\x1b[1m${preview.og?.title || preview.title || 'No Title'}\x1b[0m`)
+    console.log(`${preview.og?.description || preview.description || 'No description'}`)
+    console.log(`\x1b[90m${preview.url?.replace(/^https?:\/\//, '')}\x1b[0m`) // Grey domain
+    console.log('')
+
+    // Analysis / Warnings
+    console.log('\x1b[1m=== Analysis ===\x1b[0m')
+    const warnings: string[] = []
+    if (!preview.title) warnings.push('❌ Missing <title>')
+    else if (preview.title.length > 60) warnings.push('⚠️  Title > 60 chars (might truncate)')
+
+    if (!preview.description) warnings.push('❌ Missing meta description')
+    else if (preview.description.length > 160)
+      warnings.push('⚠️  Description > 160 chars (might truncate)')
+
+    if (!preview.og?.image) warnings.push('⚠️  Missing OpenGraph Image')
+
+    if (warnings.length > 0) {
+      for (const w of warnings) {
+        console.log(w)
+      }
+    } else {
+      console.log('✅ Basic meta tags look good!')
+    }
+  } catch (e: any) {
+    console.error(`\x1b[31mError: ${e.message}\x1b[0m`)
+    process.exit(1)
   }
 }
 
