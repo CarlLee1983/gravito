@@ -32,4 +32,11 @@ export class Compactor {
     // Convert map to array
     return Array.from(map.values()).sort((a, b) => a.url.localeCompare(b.url))
   }
+
+  /**
+   * Repair corrupted log entries
+   */
+  async repairLogs(): Promise<number> {
+    return this.logger.repairWAL()
+  }
 }

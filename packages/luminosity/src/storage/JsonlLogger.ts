@@ -68,4 +68,39 @@ export class JsonlLogger {
       await unlink(this.logPath)
     }
   }
+
+  /**
+   * Filter out corrupted lines and rewrite the log file
+   * @returns number of corrupted lines removed
+   */
+  async repairWAL(): Promise<number> {
+    if (!existsSync(this.logPath)) {
+      return 0
+    }
+
+    const content = await readFile(this.logPath, 'utf-8')
+    const lines = content.split('\n')
+    const validLines: string[] = []
+    let corruptedCount = 0
+
+    for (const line of lines) {
+      if (line.trim().length === 0) continue
+      try {
+        JSON.parse(line)
+        validLines.push(line)
+      } catch {
+        corruptedCount++
+      }
+    }
+
+    if (corruptedCount > 0) {
+      const newContent = validLines.length > 0 ? `${validLines.join('\n')}\n` : ''
+      await appendFile(`${this.logPath}.fixed`, newContent, 'utf-8')
+      await unlink(this.logPath)
+      const { rename } = await import('node:fs/promises')
+      await rename(`${this.logPath}.fixed`, this.logPath)
+    }
+
+    return corruptedCount
+  }
 }

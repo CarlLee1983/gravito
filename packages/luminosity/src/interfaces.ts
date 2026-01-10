@@ -8,6 +8,21 @@ export interface SitemapImage {
   geo_location?: string
 }
 
+export interface SitemapVideo {
+  thumbnail_loc: string
+  title: string
+  description: string
+  content_loc?: string
+  player_loc?: string
+  duration?: number
+  expiration_date?: string | Date
+  rating?: number
+  view_count?: number
+  publication_date?: string | Date
+  family_friendly?: 'yes' | 'no'
+  live?: 'yes' | 'no'
+}
+
 export interface AlternateUrl {
   lang: string
   url: string
@@ -19,6 +34,7 @@ export interface SitemapEntry {
   changefreq?: ChangeFreq
   priority?: number
   images?: SitemapImage[]
+  videos?: SitemapVideo[]
   alternates?: AlternateUrl[] // For i18n
 }
 

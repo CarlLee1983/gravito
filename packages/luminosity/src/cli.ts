@@ -21,9 +21,35 @@ async function main() {
     case 'init':
       console.log('📝 Creating luminosity.config.ts... (Not implemented yet)')
       break
+    case 'repair':
+      await repairStorage()
+      break
     default:
       console.log('Usage: lux <command> [options]')
-      console.log('Commands: generate, stats, warm, init')
+      console.log('Commands: generate, stats, warm, init, repair')
+  }
+}
+
+async function repairStorage() {
+  const { JsonlLogger } = await import('./storage/JsonlLogger')
+  const { Compactor } = await import('./storage/Compactor')
+
+  // Search for storage in common places or from config
+  // For now, look for sitemap.ops.jsonl in ./storage/seo (default)
+  const logPath = join(process.cwd(), 'storage', 'seo', 'sitemap.ops.jsonl')
+  if (existsSync(logPath)) {
+    console.log(`🛠️  Repairing WAL at ${logPath}...`)
+    const logger = new JsonlLogger(logPath)
+    const compactor = new Compactor(logger)
+    const corruptedCount = await compactor.repairLogs()
+
+    if (corruptedCount > 0) {
+      console.log(`✅ Fixed! Removed ${corruptedCount} corrupted entries.`)
+    } else {
+      console.log('✨ No corruption detected in WAL.')
+    }
+  } else {
+    console.log('No WAL found at ./storage/seo/sitemap.ops.jsonl')
   }
 }
 
