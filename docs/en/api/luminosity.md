@@ -25,6 +25,14 @@ import { seoConfig } from './config/seo'
 app.use('*', gravitoSeo(seoConfig))
 ```
 
+## CLI Tools
+
+```bash
+lux generate # Generate static sitemap files
+lux inspect <url> # Preview meta tags like Google/Facebook
+lux repair # Fix corrupted LSM logs
+```
+
 ## `SeoConfig` Interface
 
 | Property | Type | Description |
@@ -34,10 +42,11 @@ app.use('*', gravitoSeo(seoConfig))
 | `resolvers` | `SeoResolver[]` | Dynamic URL generators. |
 | `robots` | `RobotsConfig` | Rules for robots.txt. |
 | `analytics` | `AnalyticsConfig` | Config for GA, Pixel, etc. |
+| `gzip` | `boolean` | Enable Gzip compression (.xml.gz). |
 
-## Dynamic Resolvers
+## Dynamic Resolvers & Rich Media
 
-Resolvers are the most powerful part of Luminosity. They allow you to fetch URLs from any source (DB, FS, etc.)
+Resolvers are the most powerful part of Luminosity. They allow you to fetch URLs from any source (DB, FS, etc.) and now support **Images** and **Videos**.
 
 ```typescript
 const postsResolver = {
@@ -47,7 +56,16 @@ const postsResolver = {
     return posts.map(p => ({
       url: `/post/${p.slug}`,
       lastmod: p.updatedAt,
-      priority: 0.8
+      priority: 0.8,
+      images: p.images.map(img => ({
+        url: img.url,
+        title: img.title
+      })),
+      videos: p.video ? [{
+        thumbnail_loc: p.video.thumb,
+        title: p.video.title,
+        description: p.video.desc
+      }] : undefined
     }))
   }
 }
@@ -64,77 +82,47 @@ These are injected via the `SeoMetadata` utility used in your controllers.
 
 ## RouteScanner (Cross-Framework Support)
 
-Luminosity includes a powerful **RouteScanner** system that automatically discovers routes from various frameworks. This means you can use Luminosity even if you're not using Gravito!
+Luminosity includes a powerful **RouteScanner** system that automatically discovers routes from various frameworks.
 
 ### Supported Frameworks
 
-| Framework | Scanner | Route Discovery |
-|-----------|---------|-----------------|
-| **Gravito** | `GravitoScanner` | `core.router.routes` |
-| **Hono** | `HonoScanner` | `app.routes` |
-| **Express** | `ExpressScanner` | `app._router.stack` |
-| **Next.js** | `NextScanner` | File system (`app/`, `pages/`) |
-| **Nuxt** | `NuxtScanner` | File system (`pages/`) |
+| Framework | Scanner | Usage |
+|-----------|---------|-------|
+| **Gravito** | `GravitoScanner` | `new GravitoScanner(core)` |
+| **Hono** | `HonoScanner` | `new HonoScanner(app)` |
+| **Express** | `ExpressScanner` | `new ExpressScanner(app)` |
+| **Fastify** | `FastifyScanner` | `app.addHook('onRoute', scanner.collect)` |
+| **Next.js** | `NextScanner` | `new NextScanner({ appDir: './app' })` |
+| **Nuxt** | `NuxtScanner` | `new NuxtScanner({ pagesDir: './pages' })` |
+| **Remix** | `RemixScanner` | `new RemixScanner({ routesDir: './app/routes' })` |
+| **SvelteKit** | `SvelteKitScanner` | `new SvelteKitScanner({ routesDir: './src/routes' })` |
+| **Astro** | `AstroScanner` | `new AstroScanner({ pagesDir: './src/pages' })` |
 
-### Usage with Hono
+### Usage with Remix
 
 ```typescript
-import { Hono } from 'hono'
-import { SitemapBuilder, HonoScanner } from '@gravito/luminosity'
-
-const app = new Hono()
-app.get('/hello', (c) => c.text('Hello'))
-app.get('/blog/:slug', (c) => c.text('Blog'))
+import { SitemapBuilder, RemixScanner } from '@gravito/luminosity'
 
 const builder = new SitemapBuilder({
-  scanner: new HonoScanner(app),
-  hostname: 'https://example.com',
-  dynamicResolvers: [
-    {
-      pattern: '/blog/:slug',
-      resolve: async () => {
-        const posts = await getPosts()
-        return posts.map(p => ({ slug: p.slug }))
-      }
-    }
-  ]
+  scanner: new RemixScanner({ routesDir: './app/routes' }),
+  hostname: 'https://example.com'
 })
 
 const entries = await builder.build()
 ```
 
-### Usage with Next.js
+## Cloud Storage (S3)
+
+For serverless deployments (like Vercel, AWS Lambda), you can swap the file system storage for S3.
 
 ```typescript
-// app/sitemap.ts
-import { SitemapBuilder, NextScanner } from '@gravito/luminosity'
+import { S3Adapter } from '@gravito/luminosity';
+import { S3Client } from '@aws-sdk/client-s3';
 
-export default async function sitemap() {
-  const builder = new SitemapBuilder({
-    scanner: new NextScanner({ appDir: './app' }),
-    hostname: 'https://example.com'
-  })
-
-  return builder.build()
-}
-```
-
-### Creating Custom Scanners
-
-You can create scanners for any framework by implementing the `RouteScanner` interface:
-
-```typescript
-import type { RouteScanner, ScannedRoute } from '@gravito/luminosity'
-
-class MyFrameworkScanner implements RouteScanner {
-  readonly framework = 'my-framework'
-
-  async scan(): Promise<ScannedRoute[]> {
-    // Your route discovery logic here
-    return [
-      { path: '/', method: 'GET', isDynamic: false },
-      { path: '/blog/:slug', method: 'GET', isDynamic: true, params: ['slug'] }
-    ]
-  }
-}
+// ... in your incremental config:
+storage: new S3Adapter({
+  bucket: 'my-seo-bucket',
+  client: new S3Client({...}),
+  commands: { ... } // Pass AWS SDK commands
+})
 ```
