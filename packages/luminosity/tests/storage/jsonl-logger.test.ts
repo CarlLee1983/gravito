@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import { existsSync, rmSync } from 'node:fs'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
+import { FileSystemAdapter } from '../../src/storage/FileSystemAdapter'
 import { JsonlLogger } from '../../src/storage/JsonlLogger'
 
 const TEST_DIR = join(import.meta.dir, '.tmp-jsonl-test')
@@ -21,6 +22,17 @@ describe('JsonlLogger', () => {
     if (existsSync(TEST_DIR)) {
       rmSync(TEST_DIR, { recursive: true, force: true })
     }
+  })
+
+  it('should work with explicit FileSystemAdapter', async () => {
+    const adapter = new FileSystemAdapter()
+    const logger = new JsonlLogger(LOG_PATH, adapter)
+
+    await logger.append({ op: 'add', timestamp: 1000, entry: { url: '/adapter' } })
+
+    expect(existsSync(LOG_PATH)).toBe(true)
+    const entries = await logger.readAll()
+    expect(entries[0].entry?.url).toBe('/adapter')
   })
 
   describe('append()', () => {
