@@ -1,8 +1,8 @@
-import { existsSync, mkdirSync } from 'node:fs'
-import { readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { SitemapEntry } from '../../interfaces'
+import type { StorageAdapter } from '../../storage/adapter'
 import { Compactor } from '../../storage/Compactor'
+import { FileSystemAdapter } from '../../storage/FileSystemAdapter'
 import { JsonlLogger } from '../../storage/JsonlLogger'
 import type { SeoConfig } from '../../types'
 import type { SeoStrategy } from '../interfaces'
@@ -13,6 +13,7 @@ export class IncrementalStrategy implements SeoStrategy {
   private compactor: Compactor
   private dynamic: DynamicStrategy
   private snapshotPath: string
+  private adapter: StorageAdapter
 
   private compactTimer: ReturnType<typeof setInterval> | null = null
   private compactInterval: number | undefined
@@ -23,12 +24,13 @@ export class IncrementalStrategy implements SeoStrategy {
     }
 
     const logDir = config.incremental.logDir
-    // Ensure logDir exists synchronous is safer for init phase path construction
-    if (!existsSync(logDir)) {
-      mkdirSync(logDir, { recursive: true })
-    }
+    this.adapter = config.incremental.storage || new FileSystemAdapter()
 
-    this.logger = new JsonlLogger(join(logDir, 'sitemap.ops.jsonl'))
+    // Ensure logDir exists if using FS adapter
+    // Note: S3 adapters might not need directory creation
+    this.adapter.ensureDir(logDir).catch(() => {})
+
+    this.logger = new JsonlLogger(join(logDir, 'sitemap.ops.jsonl'), this.adapter)
     this.snapshotPath = join(logDir, 'sitemap.snapshot.json')
     this.compactor = new Compactor(this.logger)
     this.dynamic = new DynamicStrategy(config)
@@ -37,7 +39,7 @@ export class IncrementalStrategy implements SeoStrategy {
 
   async init(): Promise<void> {
     // Check if snapshot exists
-    if (!existsSync(this.snapshotPath)) {
+    if (!(await this.adapter.exists(this.snapshotPath))) {
       console.log('[GravitoSeo] No snapshot found. Initializing from resolvers...')
       // Initial Population from Resolvers
       const entries = await this.dynamic.getEntries()
@@ -116,10 +118,10 @@ export class IncrementalStrategy implements SeoStrategy {
   }
 
   private async loadSnapshot(): Promise<SitemapEntry[]> {
-    if (!existsSync(this.snapshotPath)) {
+    if (!(await this.adapter.exists(this.snapshotPath))) {
       return []
     }
-    const data = await readFile(this.snapshotPath, 'utf-8')
+    const data = await this.adapter.read(this.snapshotPath)
     try {
       return JSON.parse(data)
     } catch {
@@ -128,6 +130,6 @@ export class IncrementalStrategy implements SeoStrategy {
   }
 
   private async saveSnapshot(entries: SitemapEntry[]): Promise<void> {
-    await writeFile(this.snapshotPath, JSON.stringify(entries), 'utf-8')
+    await this.adapter.write(this.snapshotPath, JSON.stringify(entries))
   }
 }

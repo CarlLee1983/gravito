@@ -25,6 +25,29 @@ describe('Luminosity', () => {
     expect(sitemap1).toContain('/one')
   })
 
+  it('generates gzipped sitemap files', async () => {
+    const outDir = join(process.cwd(), 'tests', '.tmp-luminosity-gzip')
+    await rm(outDir, { recursive: true, force: true })
+
+    const engine = new Luminosity({
+      path: outDir,
+      hostname: 'https://example.com',
+      gzip: true,
+    })
+
+    await engine.generate([{ url: '/compressed' }])
+
+    // Check index points to .gz
+    const indexXml = await readFile(join(outDir, 'sitemap-index.xml'), 'utf8')
+    expect(indexXml).toContain('sitemap-1.xml.gz')
+
+    // Check file exists (checking content requires gunzip, but existence proves logic)
+    const stats = await import('node:fs/promises').then((fs) =>
+      fs.stat(join(outDir, 'sitemap-1.xml.gz'))
+    )
+    expect(stats.size).toBeGreaterThan(0)
+  })
+
   it('returns a robots builder', () => {
     const engine = new Luminosity()
     const robots = engine.robots().build()

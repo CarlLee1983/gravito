@@ -5,16 +5,33 @@ The intelligent core of the Gravito SmartMap Engine™. Provides incremental sit
 ## Features
 
 - **Tri-Mode Architecture**: Dynamic, Cached (Mutex), and Incremental (LSM) modes.
-- **RouteScanner**: Automatic route discovery for Gravito, Hono, Express, Next.js, and Nuxt.
-- **Sitemap Generation**: High-performance XML stream builder.
+- **RouteScanner**: Automatic route discovery for modern frameworks.
+- **Sitemap Generation**: High-performance XML stream builder with **Gzip support**.
 - **Robots.txt**: Programmable crawler directives.
 - **Meta Tags**: Builder for Meta, OpenGraph, Twitter Cards, and JSON-LD.
 - **Framework Agnostic**: Core logic decoupled from HTTP layers.
+- **Rich Media**: Support for **Image** and **Video** sitemaps.
+- **Cloud Ready**: S3 storage adapter support for serverless environments.
 
 ## Installation
 
 ```bash
 bun add @gravito/luminosity
+```
+
+## CLI Tools
+
+Luminosity comes with a powerful CLI for managing your SEO infrastructure.
+
+```bash
+# Generate sitemaps manually
+lux generate
+
+# Repair corrupted LSM logs
+lux repair
+
+# Inspect a URL for SEO meta tags (Preview Google/OG results)
+lux inspect https://example.com/blog/my-post
 ```
 
 ## Configuration
@@ -34,6 +51,96 @@ const config: SeoConfig = {
   incremental: {
     logDir: './storage/seo', // Directory to store LSM logs and snapshots
     compactInterval: 3600000 // Autosave/Compact every 1 hour (in ms)
+  },
+  
+  // Enable Gzip compression (sitemap.xml.gz)
+  gzip: true
+};
+```
+
+## RouteScanner (Automatic Route Discovery)
+
+Luminosity includes a powerful **RouteScanner** system that automatically discovers routes from various frameworks.
+
+### Supported Frameworks
+
+| Framework | Scanner | Usage |
+|-----------|---------|-------|
+| **Gravito** | `GravitoScanner` | `new GravitoScanner(core)` |
+| **Hono** | `HonoScanner` | `new HonoScanner(app)` |
+| **Express** | `ExpressScanner` | `new ExpressScanner(app)` |
+| **Fastify** | `FastifyScanner` | `app.addHook('onRoute', scanner.collect)` |
+| **Next.js** | `NextScanner` | `new NextScanner({ appDir: './app' })` |
+| **Nuxt** | `NuxtScanner` | `new NuxtScanner({ pagesDir: './pages' })` |
+| **Remix** | `RemixScanner` | `new RemixScanner({ routesDir: './app/routes' })` |
+| **SvelteKit** | `SvelteKitScanner` | `new SvelteKitScanner({ routesDir: './src/routes' })` |
+| **Astro** | `AstroScanner` | `new AstroScanner({ pagesDir: './src/pages' })` |
+
+### Usage Example (Remix)
+
+```typescript
+import { SitemapBuilder, RemixScanner } from '@gravito/luminosity'
+
+const builder = new SitemapBuilder({
+  scanner: new RemixScanner({ routesDir: './app/routes' }),
+  hostname: 'https://example.com'
+})
+
+const entries = await builder.build()
+```
+
+## Rich Media Sitemaps
+
+Luminosity supports Google's Image and Video extensions.
+
+```typescript
+const entry: SitemapEntry = {
+  url: '/gallery/summer-vacation',
+  images: [
+    {
+      url: 'https://example.com/img/summer.jpg',
+      title: 'Summer Fun',
+      caption: 'Best vacation ever',
+      license: 'https://creativecommons.org/licenses/by/4.0/'
+    }
+  ],
+  videos: [
+    {
+      thumbnail_loc: 'https://example.com/thumbs/v1.jpg',
+      title: 'Surfing Lesson',
+      description: 'Learn to surf in 5 minutes',
+      player_loc: 'https://example.com/embed/v1',
+      duration: 300,
+      publication_date: new Date('2023-06-01')
+    }
+  ]
+}
+```
+
+## Cloud Storage (S3)
+
+For serverless deployments (like Vercel, AWS Lambda), you can swap the file system storage for S3.
+
+```typescript
+import { S3Adapter } from '@gravito/luminosity';
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
+
+const s3Client = new S3Client({ region: 'us-east-1' });
+
+const config: SeoConfig = {
+  mode: 'incremental',
+  incremental: {
+    logDir: 'seo-logs', // S3 Key prefix
+    storage: new S3Adapter({
+      bucket: 'my-seo-bucket',
+      client: s3Client,
+      commands: {
+        PutObjectCommand,
+        GetObjectCommand,
+        DeleteObjectCommand,
+        HeadObjectCommand
+      }
+    })
   }
 };
 ```
@@ -52,225 +159,3 @@ Gravito automatically handles the Google/Sitemap protocol limit of **50,000 URLs
 - If your sitemap exceeds 50k URLs, the engine automatically renders a **Sitemap Index** (`<sitemapindex>`).
 - It paginates the actual entries into sub-sitemaps (e.g., `sitemap.xml?page=1`, `sitemap.xml?page=2`).
 - This happens transparently—no extra configuration needed.
-
-### Robots.txt Configuration
-You can define `robots.txt` rules directly in your config:
-
-```typescript
-const config: SeoConfig = {
-  // ...
-  robots: {
-    rules: [
-      {
-        userAgent: '*',
-        allow: ['/'],
-        disallow: ['/admin', '/private']
-      },
-      {
-        userAgent: 'GPTBot',
-        disallow: ['/']
-      }
-    ],
-    // Optional: Defaults to sitemap.xml
-    sitemapUrls: ['https://example.com/sitemap.xml'],
-    host: 'example.com'
-  }
-};
-```
-
-When using `gravito-seo` middleware (in Photon/Express), requests to `/robots.txt` will automatically serve this generated content.
-
-## usage
-
-### 1. Sitemap Engine
-Typically used via `@gravito/luminosity-adapter-photon` or `@gravito/luminosity-adapter-express`.
-
-### 2. Meta Tags (SeoMetadata)
-Use `SeoMetadata` in your controllers or views to generate HTML head tags dynamically.
-
-```typescript
-import { SeoMetadata } from '@gravito/luminosity';
-
-// In your controller/route
-const post = { title: "Hello World", summary: "..." };
-
-const seo = new SeoMetadata({
-  meta: {
-    title: post.title,
-    description: post.summary,
-    canonical: 'https://example.com/post/hello-world',
-    keywords: ['gravito', 'seo']
-  },
-  og: {
-    title: post.title, // Fallback to meta.title if omitted
-    type: 'article',
-    image: 'https://example.com/cover.jpg'
-  },
-  twitter: {
-    card: 'summary_large_image'
-  },
-  jsonLd: {
-    type: 'Article',
-    data: {
-      headline: post.title,
-      author: {
-        '@type': 'Person',
-        name: 'Carl Lee'
-      }
-    }
-  }
-});
-
-// Inject into template
-const headHtml = seo.toString();
-```
-
-**Output:**
-```html
-<title>Hello World</title>
-<meta name="description" content="...">
-<link rel="canonical" href="...">
-<meta property="og:title" content="Hello World">
-<meta property="og:type" content="article">
-<meta name="twitter:card" content="summary_large_image">
-<script type="application/ld+json">{"@context":"...","@type":"Article",...}</script>
-```
-
-### 3. RobotsBuilder (Direct Usage)
-If you need to generate robots.txt manually:
-
-```typescript
-import { RobotsBuilder } from '@gravito/luminosity';
-
-const builder = new RobotsBuilder({
-  rules: [{ userAgent: '*', disallow: ['/'] }]
-}, 'https://example.com');
-
-console.log(builder.build());
-```
-
-## RouteScanner (Automatic Route Discovery)
-
-Luminosity now includes a powerful **RouteScanner** system that automatically discovers routes from various frameworks and generates sitemap entries.
-
-### Supported Frameworks
-
-| Framework | Scanner | Route Discovery Method |
-|-----------|---------|----------------------|
-| **Gravito** | `GravitoScanner` | `core.router.routes` |
-| **Hono** | `HonoScanner` | `app.routes` |
-| **Express** | `ExpressScanner` | `app._router.stack` |
-| **Next.js** | `NextScanner` | File system (`app/`, `pages/`) |
-| **Nuxt** | `NuxtScanner` | File system (`pages/`) |
-
-### Usage with Gravito
-
-```typescript
-import { PlanetCore } from '@gravito/core'
-import { SitemapBuilder, GravitoScanner } from '@gravito/luminosity'
-
-const core = await PlanetCore.boot({ ... })
-
-const builder = new SitemapBuilder({
-  scanner: new GravitoScanner(core),
-  hostname: 'https://example.com',
-  dynamicResolvers: [
-    {
-      pattern: '/blog/:slug',
-      resolve: async () => {
-        const posts = await Post.all()
-        return posts.map(p => ({ slug: p.slug }))
-      }
-    }
-  ]
-})
-
-const entries = await builder.build()
-```
-
-### Usage with Hono
-
-```typescript
-import { Hono } from 'hono'
-import { SitemapBuilder, HonoScanner } from '@gravito/luminosity'
-
-const app = new Hono()
-app.get('/hello', (c) => c.text('Hello'))
-app.get('/blog/:slug', (c) => c.text('Blog'))
-
-const builder = new SitemapBuilder({
-  scanner: new HonoScanner(app),
-  hostname: 'https://example.com'
-})
-
-const entries = await builder.build()
-```
-
-### Usage with Next.js
-
-```typescript
-// app/sitemap.ts
-import { SitemapBuilder, NextScanner } from '@gravito/luminosity'
-
-export default async function sitemap() {
-  const builder = new SitemapBuilder({
-    scanner: new NextScanner({ appDir: './app' }),
-    hostname: 'https://example.com',
-    dynamicResolvers: [
-      {
-        pattern: '/blog/:slug',
-        resolve: async () => {
-          const posts = await getPosts()
-          return posts.map(p => ({ slug: p.slug }))
-        }
-      }
-    ]
-  })
-
-  return builder.build()
-}
-```
-
-### Usage with Nuxt
-
-```typescript
-// server/routes/sitemap.xml.ts
-import { SitemapBuilder, NuxtScanner } from '@gravito/luminosity'
-
-export default defineEventHandler(async () => {
-  const builder = new SitemapBuilder({
-    scanner: new NuxtScanner({ pagesDir: './pages' }),
-    hostname: 'https://example.com'
-  })
-
-  const entries = await builder.build()
-  // Convert to XML...
-})
-```
-
-### Dynamic Route Resolvers
-
-For routes with parameters (e.g., `/blog/:slug`), you must provide a resolver:
-
-```typescript
-const builder = new SitemapBuilder({
-  scanner: new GravitoScanner(core),
-  hostname: 'https://example.com',
-  dynamicResolvers: [
-    {
-      pattern: '/products/:category/:id',
-      resolve: async () => {
-        const products = await Product.all()
-        return products.map(p => ({
-          category: p.category.slug,
-          id: p.id
-        }))
-      },
-      meta: {
-        priority: 0.8,
-        changefreq: 'weekly'
-      }
-    }
-  ]
-})
-```

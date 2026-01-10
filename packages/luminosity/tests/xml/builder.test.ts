@@ -18,6 +18,8 @@ describe('XmlStreamBuilder', () => {
       expect(header).toContain('<urlset')
       expect(header).toContain('xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"')
       expect(header).toContain('xmlns:xhtml="http://www.w3.org/1999/xhtml"')
+      expect(header).toContain('xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"')
+      expect(header).toContain('xmlns:video="http://www.google.com/schemas/sitemap-video/1.1"')
     })
 
     it('should omit branding when disabled', () => {
@@ -151,6 +153,51 @@ describe('XmlStreamBuilder', () => {
       expect(xml).toContain('<changefreq>daily</changefreq>')
       expect(xml).toContain('<priority>0.9</priority>')
       expect(xml).toContain('xhtml:link')
+    })
+
+    it('should include images', () => {
+      const builder = new XmlStreamBuilder(defaultOptions)
+      const entry: SitemapEntry = {
+        url: '/gallery',
+        images: [
+          { url: 'https://example.com/img1.jpg', title: 'Image 1' },
+          { url: 'https://example.com/img2.jpg', caption: 'Caption 2' },
+        ],
+      }
+      const xml = builder.entry(entry)
+
+      expect(xml).toContain('<image:image>')
+      expect(xml).toContain('<image:loc>https://example.com/img1.jpg</image:loc>')
+      expect(xml).toContain('<image:title>Image 1</image:title>')
+      expect(xml).toContain('<image:image>')
+      expect(xml).toContain('<image:loc>https://example.com/img2.jpg</image:loc>')
+      expect(xml).toContain('<image:caption>Caption 2</image:caption>')
+    })
+
+    it('should include videos', () => {
+      const builder = new XmlStreamBuilder(defaultOptions)
+      const entry: SitemapEntry = {
+        url: '/video-page',
+        videos: [
+          {
+            thumbnail_loc: 'https://example.com/thumb.jpg',
+            title: 'Video Title',
+            description: 'Video Description',
+            duration: 120,
+            family_friendly: 'yes',
+          },
+        ],
+      }
+      const xml = builder.entry(entry)
+
+      expect(xml).toContain('<video:video>')
+      expect(xml).toContain(
+        '<video:thumbnail_loc>https://example.com/thumb.jpg</video:thumbnail_loc>'
+      )
+      expect(xml).toContain('<video:title>Video Title</video:title>')
+      expect(xml).toContain('<video:description>Video Description</video:description>')
+      expect(xml).toContain('<video:duration>120</video:duration>')
+      expect(xml).toContain('<video:family_friendly>yes</video:family_friendly>')
     })
   })
 

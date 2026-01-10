@@ -35,6 +35,7 @@ export interface SeoConfig {
     logDir: string // Path to .jsonl logs
     compactInterval?: number // Auto-compact interval (ms)
     maxLogSize?: number // Max log file size before rotation
+    storage?: any // Optional: StorageAdapter instance
   }
 
   /** Output settings */

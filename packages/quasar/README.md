@@ -200,23 +200,6 @@ Supported commands:
 
 ## Advanced Usage
 
-### Direct Bridge Usage
-
-```typescript
-import { bridges } from '@gravito/quasar'
-import { Redis } from 'ioredis'
-import { Worker } from 'bullmq'
-
-const redis = new Redis('redis://zenith-server:6379')
-const worker = new Worker('emails', async (job) => { /* ... */ })
-
-const bridge = new bridges.BullMQBridge(redis, 'flux_console:', 'worker-1')
-bridge.attach(worker)
-
-// Later, cleanup
-bridge.detach()
-```
-
 ### Custom System Probe
 
 ```typescript
@@ -258,9 +241,76 @@ const agent = new QuasarAgent({
 
 **Recommendation**: Use both for complete visibility.
 
-## Examples
+## Bridge Examples
 
-See [BRIDGES.md](./BRIDGES.md) for detailed bridge usage examples.
+### BullMQ Bridge
+
+```typescript
+import { QuasarAgent } from '@gravito/quasar'
+import { Worker } from 'bullmq'
+
+// Create Quasar agent
+const agent = new QuasarAgent({
+  service: 'my-app',
+  transport: { url: 'redis://zenith-server:6379' },
+  monitor: { url: 'redis://localhost:6379' },
+})
+
+// Create BullMQ worker
+const worker = new Worker('emails', async (job) => {
+  console.log(`Processing email to ${job.data.to}`)
+  // ... your job logic
+})
+
+// Attach bridge for real-time monitoring
+agent.attachBridge(worker, 'bullmq')
+
+// Start agent
+await agent.start()
+```
+
+### Bee-Queue Bridge
+
+```typescript
+import { QuasarAgent } from '@gravito/quasar'
+import Queue from 'bee-queue'
+
+const agent = new QuasarAgent({
+  service: 'my-app',
+  transport: { url: 'redis://zenith-server:6379' },
+})
+
+const queue = new Queue('emails')
+
+// Attach bridge
+agent.attachBridge(queue, 'bee-queue')
+
+// Process jobs
+queue.process(async (job) => {
+  // ... your job logic
+})
+
+await agent.start()
+```
+
+### Direct Bridge Usage (Advanced)
+
+You can also use bridges directly without QuasarAgent:
+
+```typescript
+import { bridges } from '@gravito/quasar'
+import { Redis } from 'ioredis'
+import { Worker } from 'bullmq'
+
+const redis = new Redis('redis://zenith-server:6379')
+const worker = new Worker('emails', async (job) => { ... })
+
+const bridge = new bridges.BullMQBridge(redis, 'flux_console:', 'worker-1')
+bridge.attach(worker)
+
+// Later, to cleanup:
+bridge.detach()
+```
 
 ## TypeScript Support
 

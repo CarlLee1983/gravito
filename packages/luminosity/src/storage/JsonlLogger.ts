@@ -1,7 +1,6 @@
-import { existsSync } from 'node:fs'
-import { appendFile, mkdir, readFile, stat, unlink } from 'node:fs/promises'
-import { dirname } from 'node:path'
 import type { SitemapEntry } from '../interfaces'
+import type { StorageAdapter } from './adapter'
+import { FileSystemAdapter } from './FileSystemAdapter'
 
 export interface LogEntry {
   op: 'add' | 'remove'
@@ -11,36 +10,32 @@ export interface LogEntry {
 }
 
 export class JsonlLogger {
-  private dirEnsured = false
+  private adapter: StorageAdapter
 
-  constructor(private logPath: string) {}
-
-  private async ensureDir(): Promise<void> {
-    if (this.dirEnsured) {
-      return
-    }
-    await mkdir(dirname(this.logPath), { recursive: true })
-    this.dirEnsured = true
+  constructor(
+    private logPath: string,
+    adapter?: StorageAdapter
+  ) {
+    this.adapter = adapter || new FileSystemAdapter()
   }
 
   /**
    * Append a single operation to the log
    */
   async append(entry: LogEntry): Promise<void> {
-    await this.ensureDir()
     const line = `${JSON.stringify(entry)}\n`
-    await appendFile(this.logPath, line, 'utf-8')
+    await this.adapter.append(this.logPath, line)
   }
 
   /**
    * Read all entries from log
    */
   async readAll(): Promise<LogEntry[]> {
-    if (!existsSync(this.logPath)) {
+    if (!(await this.adapter.exists(this.logPath))) {
       return []
     }
 
-    const content = await readFile(this.logPath, 'utf-8')
+    const content = await this.adapter.read(this.logPath)
     const lines = content.split('\n').filter((line) => line.trim().length > 0)
 
     return lines
@@ -55,17 +50,49 @@ export class JsonlLogger {
   }
 
   async getSize(): Promise<number> {
-    try {
-      const stats = await stat(this.logPath)
-      return stats.size
-    } catch {
-      return 0
-    }
+    return this.adapter.size(this.logPath)
   }
 
   async delete(): Promise<void> {
-    if (existsSync(this.logPath)) {
-      await unlink(this.logPath)
+    await this.adapter.delete(this.logPath)
+  }
+
+  /**
+   * Filter out corrupted lines and rewrite the log file
+   * @returns number of corrupted lines removed
+   */
+  async repairWAL(): Promise<number> {
+    if (!(await this.adapter.exists(this.logPath))) {
+      return 0
     }
+
+    const content = await this.adapter.read(this.logPath)
+    const lines = content.split('\n')
+    const validLines: string[] = []
+    let corruptedCount = 0
+
+    for (const line of lines) {
+      if (line.trim().length === 0) continue
+      try {
+        JSON.parse(line)
+        validLines.push(line)
+      } catch {
+        corruptedCount++
+      }
+    }
+
+    if (corruptedCount > 0) {
+      const newContent = validLines.length > 0 ? `${validLines.join('\n')}\n` : ''
+      const tempPath = `${this.logPath}.fixed`
+
+      // Use write to create the fixed file (append might not be clean if we want full replace)
+      // Actually repairWAL Logic: rewrite content.
+      await this.adapter.write(tempPath, newContent)
+
+      // Atomic rename
+      await this.adapter.rename(tempPath, this.logPath)
+    }
+
+    return corruptedCount
   }
 }
