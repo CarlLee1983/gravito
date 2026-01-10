@@ -148,6 +148,13 @@ export class AOTRouter {
   }
 
   /**
+   * Public wrapper for collectMiddleware (used by Gravito for optimization)
+   */
+  collectMiddlewarePublic(path: string, routeMiddleware: Middleware[]): Middleware[] {
+    return this.collectMiddleware(path, routeMiddleware)
+  }
+
+  /**
    * Collect all applicable middleware for a path
    *
    * Order: global -> pattern-based -> route-specific

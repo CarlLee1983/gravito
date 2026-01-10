@@ -131,10 +131,8 @@ export class FastContext implements IFastContext {
   reset(request: Request, params: Record<string, string> = {}): this {
     this._req.reset(request, params)
     this._statusCode = 200
-    // Clear headers instead of creating new object
-    for (const key of this._headers.keys()) {
-      this._headers.delete(key)
-    }
+    // Optimization: Creating new Headers is faster than iterating to delete
+    this._headers = new Headers()
     return this
   }
 

@@ -45,4 +45,6 @@ export type {
 
 export { AOTRouter } from './AOTRouter'
 export { FastContext as FastContextImpl } from './FastContext'
+export { MinimalContext } from './MinimalContext'
+export { extractPath } from './path'
 export { ObjectPool } from './pool'
