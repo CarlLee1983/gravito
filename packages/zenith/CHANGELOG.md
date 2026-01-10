@@ -1,5 +1,11 @@
 # @gravito/zenith
 
+## 1.0.1
+
+### Patch Changes
+
+- @gravito/stream@1.0.1
+
 ## 1.0.0
 
 ### Patch Changes
