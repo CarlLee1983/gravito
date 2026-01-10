@@ -72,6 +72,11 @@ export async function initCommand(options: InitOptions = {}) {
           hint: '完整的 DDD 架構，包含 Modules、Bounded Contexts',
         },
         {
+          value: 'standalone-engine',
+          label: '🚀 Standalone Engine',
+          hint: '純淨的高性能引擎，無框架依賴 (Pure High-Performance Engine)',
+        },
+        {
           value: 'action-domain',
           label: '⚡ Action-Domain-Responder (ADR)',
           hint: 'Web 特化的設計模式，關注 Actions 與 Domain 邏輯的分離',
@@ -217,6 +222,7 @@ export async function initCommand(options: InitOptions = {}) {
       ddd: '🏛️ Domain-Driven Design',
       satellite: '🛰️ Satellite Service',
       'action-domain': '⚡ Action-Domain-Responder',
+      'standalone-engine': '🚀 Standalone Engine',
     }
 
     note(

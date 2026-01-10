@@ -12,6 +12,7 @@ import { CleanArchitectureGenerator } from './generators/CleanArchitectureGenera
 import { DddGenerator } from './generators/DddGenerator'
 import { EnterpriseMvcGenerator } from './generators/EnterpriseMvcGenerator'
 import { SatelliteGenerator } from './generators/SatelliteGenerator'
+import { StandaloneEngineGenerator } from './generators/StandaloneEngineGenerator'
 import { LockGenerator } from './LockGenerator'
 import { ProfileResolver } from './ProfileResolver'
 import type { ArchitectureType, ScaffoldOptions, ScaffoldResult } from './types'
@@ -53,6 +54,11 @@ export class Scaffold {
         type: 'action-domain',
         name: 'Action Domain',
         description: 'Single Action Controllers pattern for high-clarity APIs',
+      },
+      {
+        type: 'standalone-engine',
+        name: 'Standalone Engine',
+        description: 'High-performance pure Gravito Engine (minimal)',
       },
       {
         type: 'satellite',
@@ -138,6 +144,8 @@ export class Scaffold {
         return new ActionDomainGenerator(config)
       case 'satellite':
         return new SatelliteGenerator(config)
+      case 'standalone-engine':
+        return new StandaloneEngineGenerator(config)
       default:
         throw new Error(`Unknown architecture type: ${type}`)
     }
