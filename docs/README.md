@@ -23,5 +23,4 @@ Welcome to the Gravito documentation hub.
 
 - `en/` - English documentation (under migration).
 - `zh-TW/` - Traditional Chinese documentation.
-- `flux/` - Specific docs for the Flux state management system.
 - `launchpad/` - Specific docs for the Launchpad deployment system.
