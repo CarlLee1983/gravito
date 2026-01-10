@@ -1,4 +1,5 @@
 // Adapters
+export * from './adapters/AstroScanner'
 export * from './adapters/ExpressScanner'
 export * from './adapters/FastifyScanner'
 export * from './adapters/GravitoScanner'
