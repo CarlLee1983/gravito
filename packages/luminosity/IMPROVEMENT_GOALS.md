@@ -12,7 +12,7 @@ Increase adoption by supporting more modern web frameworks.
 
 - [x] **Remix Scanner**: Create `RemixScanner` to detect routes from `app/routes/*`.
 - [x] **SvelteKit Scanner**: Create `SvelteKitScanner` (investigate `import.meta.glob` usage).
-- [ ] **Fastify Scanner**: Create `FastifyScanner` (if feasible via plugin API).
+- [x] **Fastify Scanner**: Create `FastifyScanner` (if feasible via plugin API).
 
 ## 3. Reliability & Maintenance (High Priority)
 Enhance the robustness of the LSM-Tree storage engine.
@@ -27,5 +27,7 @@ Ensure global sites are first-class citizens.
 - [x] **Meta Tag Validation**: Ensure `SeoMetadata` correctly outputs `<link rel="alternate" hreflang="..." />` in the HTML head.
 
 ## 5. Documentation & Benchmarks (Low Priority)
+
 - [x] **Translation**: specific technical docs (`LUMINOSITY_ENGINE.md`) to English.
-- [ ] **Benchmark**: Create a specific benchmark script (1M pages) to verify `Compactor` memory usage.
+
+- [x] **Benchmark**: Create a specific benchmark script (1M pages) to verify `Compactor` memory usage.

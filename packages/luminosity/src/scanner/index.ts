@@ -1,5 +1,6 @@
 // Adapters
 export * from './adapters/ExpressScanner'
+export * from './adapters/FastifyScanner'
 export * from './adapters/GravitoScanner'
 export * from './adapters/HonoScanner'
 export * from './adapters/NextScanner'
