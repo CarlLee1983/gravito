@@ -251,14 +251,24 @@ packages/core/src/
 
 | 任務 | 描述 | 狀態 |
 |------|------|------|
-| API 設計 | 定義 `Gravito` 類 API 表面 | 🔲 |
-| FastContext | 實作池化 Context | 🔲 |
-| AOTRouter | 實作預編譯路由器 | 🔲 |
-| 基礎路由 | GET/POST/PUT/DELETE/PATCH | 🔲 |
-| 中間件支援 | use() 全域與路徑中間件 | 🔲 |
+| API 設計 | 定義 `Gravito` 類 API 表面 | ✅ |
+| FastContext | 實作池化 Context | ✅ |
+| AOTRouter | 實作預編譯路由器 | ✅ |
+| 基礎路由 | GET/POST/PUT/DELETE/PATCH | ✅ |
+| 中間件支援 | use() 全域與路徑中間件 | ✅ |
 | Benchmark | 對比 Hono 的基準測試 | 🔲 |
 
 **目標**: RPS 高於 Hono 20%+
+
+**實作完成**:
+- ✅ 完整的 HTTP 方法支援 (GET/POST/PUT/DELETE/PATCH/OPTIONS/HEAD/ALL)
+- ✅ 物件池實作 (固定池 + 溢出策略)
+- ✅ AOT Router (靜態路由 O(1) + 動態路由 Radix Tree)
+- ✅ 延遲解析 (Lazy Parsing) 策略
+- ✅ 全域與路徑中間件支援
+- ✅ 錯誤處理與 404 處理
+- ✅ 完整的測試套件 (13 個測試全部通過)
+- ✅ 範例程式與文件
 
 ### 第二階段：開發者體驗 (DX) - Week 3
 
