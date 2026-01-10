@@ -18,7 +18,7 @@ import type { FastRequest, FastContext as IFastContext } from './types'
 class FastRequestImpl implements FastRequest {
   private _request!: Request
   private _params!: Record<string, string>
-  private _url!: URL
+  private _url: URL = new URL('http://localhost') // Reuse this object
   private _query: URLSearchParams | null = null
   private _headers: Record<string, string> | null = null
 
@@ -28,7 +28,8 @@ class FastRequestImpl implements FastRequest {
   reset(request: Request, params: Record<string, string> = {}): void {
     this._request = request
     this._params = params
-    this._url = new URL(request.url)
+    // Reuse URL object instead of creating new one
+    this._url.href = request.url
     this._query = null
     this._headers = null
   }
@@ -119,7 +120,7 @@ class FastRequestImpl implements FastRequest {
 export class FastContext implements IFastContext {
   private _req: FastRequestImpl = new FastRequestImpl()
   private _statusCode = 200
-  private _headers = new Headers()
+  private _headers = new Headers() // Reuse this object
 
   /**
    * Reset context for pooling
@@ -130,7 +131,10 @@ export class FastContext implements IFastContext {
   reset(request: Request, params: Record<string, string> = {}): this {
     this._req.reset(request, params)
     this._statusCode = 200
-    this._headers = new Headers()
+    // Clear headers instead of creating new object
+    for (const key of this._headers.keys()) {
+      this._headers.delete(key)
+    }
     return this
   }
 

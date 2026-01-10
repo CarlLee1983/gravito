@@ -157,23 +157,38 @@ export class AOTRouter {
    * @returns Combined middleware array
    */
   private collectMiddleware(path: string, routeMiddleware: Middleware[]): Middleware[] {
+    // Fast path: no middleware at all
+    if (
+      this.globalMiddleware.length === 0 &&
+      this.pathMiddleware.size === 0 &&
+      routeMiddleware.length === 0
+    ) {
+      return []
+    }
+
     const middleware: Middleware[] = []
 
     // 1. Global middleware
-    middleware.push(...this.globalMiddleware)
+    if (this.globalMiddleware.length > 0) {
+      middleware.push(...this.globalMiddleware)
+    }
 
     // 2. Pattern-based middleware
-    for (const [pattern, mw] of this.pathMiddleware) {
-      // Skip route-specific entries (they have method prefix)
-      if (pattern.includes(':')) continue
+    if (this.pathMiddleware.size > 0) {
+      for (const [pattern, mw] of this.pathMiddleware) {
+        // Skip route-specific entries (they have method prefix)
+        if (pattern.includes(':')) continue
 
-      if (this.matchPattern(pattern, path)) {
-        middleware.push(...mw)
+        if (this.matchPattern(pattern, path)) {
+          middleware.push(...mw)
+        }
       }
     }
 
     // 3. Route-specific middleware
-    middleware.push(...routeMiddleware)
+    if (routeMiddleware.length > 0) {
+      middleware.push(...routeMiddleware)
+    }
 
     return middleware
   }

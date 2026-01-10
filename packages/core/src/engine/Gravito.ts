@@ -247,6 +247,7 @@ export class Gravito {
    * @returns Response object
    */
   fetch = async (request: Request): Promise<Response> => {
+    // Parse URL once
     const url = new URL(request.url)
     const method = request.method
     const path = url.pathname
@@ -259,11 +260,18 @@ export class Gravito {
       const match = this.router.match(method, path)
 
       if (!match.handler) {
+        // Reset context for 404 handler
+        ctx.reset(request, {})
         return await this.handleNotFound(ctx)
       }
 
       // Reset context with request and params
       ctx.reset(request, match.params)
+
+      // Fast path: no middleware
+      if (match.middleware.length === 0) {
+        return await match.handler(ctx)
+      }
 
       // Execute middleware chain + handler
       const response = await this.executeMiddleware(ctx, match.middleware, match.handler)
