@@ -18,6 +18,11 @@ Welcome to the Gravito documentation hub.
 - [Atlas Performance Whitepaper](./ATLAS_PERFORMANCE_WHITEPAPER.md) - Performance benchmarks for the Atlas ORM.
 - [Satellite Specification](./SATELLITE_SPEC.md) - Standard specification for domain satellites.
 - [Static Site Standardization](./STATIC_SITE_STANDARDIZATION.md) - Standards for building static sites with `@gravito/freeze`.
+ 
+ ### Engine (Core)
+ - [Standalone Engine RFC](./STANDALONE_ENGINE_RFC.md) - Architecture and vision for the high-performance engine.
+ - [Migration from Hono](./MIGRATION_FROM_HONO.md) - **New!** Guide for migrating from Hono to Gravito.
+ - [Benchmark Status](./BENCHMARK_STATUS.md) - Performance benchmarks and optimization records.
 
 ## 📂 Sub-directories
 
