@@ -118,7 +118,7 @@ export default function Home() {
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </StaticLink>
                   <StaticLink
-                    href={getLink('/about')}
+                    href={getLink('/integrations')}
                     className="w-full sm:w-auto px-8 py-3 bg-transparent border border-white/20 hover:bg-white/5 text-white rounded font-medium transition-colors flex items-center justify-center gap-2"
                   >
                     <BookOpen className="w-4 h-4" /> {trans('hero.documentation')}
