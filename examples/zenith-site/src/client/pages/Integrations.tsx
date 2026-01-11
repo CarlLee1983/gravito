@@ -303,295 +303,191 @@ export default function Integrations() {
         </div>
       </section>
 
-            {/* Standalone Agent: Quasar-Go */}
-
-            <section className="py-32 relative">
-
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-
-                <div className="grid lg:grid-cols-2 gap-24 items-center">
-
-                  <div className="space-y-10">
-
-                    <div>
-
-                      <div className="text-xs font-mono text-green-400/60 tracking-[0.3em] uppercase mb-4">
-
-                        Phase_03: Standalone_Agent
-
-                      </div>
-
-                      <h2 className="text-5xl font-bold tracking-tight mb-6 leading-tight">
-
-                        {trans('integrations.quasar_go.title')}
-
-                      </h2>
-
-                      <p className="text-gray-300 text-xl font-light leading-relaxed">
-
-                        {trans('integrations.quasar_go.description')}
-
-                      </p>
-
-                    </div>
-
-                    <div className="grid grid-cols-1 gap-6">
-
-                      <IntegrationFeature
-
-                        icon={<Cpu />}
-
-                        text={trans('integrations.quasar_go.feature1')}
-
-                      />
-
-                      <IntegrationFeature
-
-                        icon={<Database />}
-
-                        text={trans('integrations.quasar_go.feature2')}
-
-                      />
-
-                      <IntegrationFeature
-
-                        icon={<Network />}
-
-                        text={trans('integrations.quasar_go.feature3')}
-
-                      />
-
-                    </div>
-
-                  </div>
-
-      
-
-                  <div className="relative group">
-
-                    <div className="absolute -inset-8 bg-green-500/5 blur-[100px] rounded-full group-hover:bg-green-500/10 transition-all duration-1000" />
-
-                    <div className="relative zenith-glass-strong rounded-[2.5rem] p-1 border border-white/10 overflow-hidden">
-
-                      <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-
-                      <div className="bg-black/60 p-10 font-mono text-sm space-y-4">
-
-                        <div className="flex items-center gap-2 mb-6">
-
-                          <div className="w-3 h-3 rounded-full bg-green-500/50" />
-
-                          <div className="ml-4 text-[10px] text-white/20 uppercase tracking-widest">
-
-                            Binary_Deployment
-
-                          </div>
-
-                        </div>
-
-                        <div className="text-gray-500">{'// Deploy via Docker'}</div>
-
-                        <div className="text-green-400 break-all">
-
-                          docker run -d \<br />
-
-                          <span className="pl-4 text-white">
-
-                            -e QUASAR_SERVICE=app-node \<br />
-
-                          </span>
-
-                          <span className="pl-4">carllee/quasar-go-agent</span>
-
-                        </div>
-
-                        <div className="h-2" />
-
-                        <div className="text-gray-500">{'// Or download binary'}</div>
-
-                        <div className="text-green-400">
-
-                          curl -sL <span className="text-white">https://get.gravito.dev/quasar-go</span> |
-
-                          bash
-
-                        </div>
-
-                        <div className="h-6" />
-
-                        <div className="pt-4 border-t border-white/5 flex justify-between items-center">
-
-                          <span className="text-[10px] text-white/30 tracking-widest">OS: LINUX/MAC/WIN</span>
-
-                          <div className="flex items-center gap-2">
-
-                            <span className="text-[10px] text-green-400">DAEMON ACTIVE</span>
-
-                            <div className="w-2 h-2 rounded-full bg-green-400" />
-
-                          </div>
-
-                        </div>
-
-                      </div>
-
-                    </div>
-
-                  </div>
-
+      {/* Standalone Agent: Quasar-Go */}
+
+      <section className="py-32 relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="grid lg:grid-cols-2 gap-24 items-center">
+            <div className="space-y-10">
+              <div>
+                <div className="text-xs font-mono text-green-400/60 tracking-[0.3em] uppercase mb-4">
+                  Phase_03: Standalone_Agent
                 </div>
 
+                <h2 className="text-5xl font-bold tracking-tight mb-6 leading-tight">
+                  {trans('integrations.quasar_go.title')}
+                </h2>
+
+                <p className="text-gray-300 text-xl font-light leading-relaxed">
+                  {trans('integrations.quasar_go.description')}
+                </p>
               </div>
 
-            </section>
+              <div className="grid grid-cols-1 gap-6">
+                <IntegrationFeature
+                  icon={<Cpu />}
+                  text={trans('integrations.quasar_go.feature1')}
+                />
 
-      
+                <IntegrationFeature
+                  icon={<Database />}
+                  text={trans('integrations.quasar_go.feature2')}
+                />
 
-            {/* Astral OpenAPI: Schema-Driven Docs */}
+                <IntegrationFeature
+                  icon={<Network />}
+                  text={trans('integrations.quasar_go.feature3')}
+                />
+              </div>
+            </div>
 
-            <section className="py-32 relative overflow-hidden">
+            <div className="relative group">
+              <div className="absolute -inset-8 bg-green-500/5 blur-[100px] rounded-full group-hover:bg-green-500/10 transition-all duration-1000" />
 
-              <div className="absolute inset-0 bg-white/[0.01] border-y border-white/5" />
+              <div className="relative zenith-glass-strong rounded-[2.5rem] p-1 border border-white/10 overflow-hidden">
+                <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
 
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                <div className="bg-black/60 p-10 font-mono text-sm space-y-4">
+                  <div className="flex items-center gap-2 mb-6">
+                    <div className="w-3 h-3 rounded-full bg-green-500/50" />
 
-                <div className="grid lg:grid-cols-2 gap-24 items-center">
-
-                  <div className="lg:order-2 space-y-10">
-
-                    <div>
-
-                      <div className="text-xs font-mono text-orange-400/60 tracking-[0.3em] uppercase mb-4">
-
-                        Phase_04: Astral_OpenAPI
-
-                      </div>
-
-                      <h2 className="text-5xl font-bold tracking-tight mb-6 leading-tight">
-
-                        {trans('integrations.astral.title')}
-
-                      </h2>
-
-                      <p className="text-gray-300 text-xl font-light leading-relaxed">
-
-                        {trans('integrations.astral.description')}
-
-                      </p>
-
+                    <div className="ml-4 text-[10px] text-white/20 uppercase tracking-widest">
+                      Binary_Deployment
                     </div>
-
-                    <div className="grid grid-cols-1 gap-6">
-
-                      <IntegrationFeature icon={<Link />} text={trans('integrations.astral.feature1')} />
-
-                      <IntegrationFeature icon={<Zap />} text={trans('integrations.astral.feature2')} />
-
-                      <IntegrationFeature
-
-                        icon={<Database />}
-
-                        text={trans('integrations.astral.feature3')}
-
-                      />
-
-                    </div>
-
                   </div>
 
-      
+                  <div className="text-gray-500">{'// Deploy via Docker'}</div>
 
-                  <div className="lg:order-1 relative group">
-
-                    <div className="absolute -inset-8 bg-orange-500/5 blur-[100px] rounded-full group-hover:bg-orange-500/10 transition-all duration-1000" />
-
-                    <div className="relative zenith-glass-strong rounded-[2.5rem] p-1 border border-white/10 overflow-hidden">
-
-                      <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-
-                      <div className="bg-black/60 p-10 font-mono text-sm space-y-4">
-
-                        <div className="flex items-center gap-2 mb-6">
-
-                          <div className="w-3 h-3 rounded-full bg-orange-500/50" />
-
-                          <div className="ml-4 text-[10px] text-white/20 uppercase tracking-widest">
-
-                            Documentation_Engine
-
-                          </div>
-
-                        </div>
-
-                        <div className="text-gray-500">{'// Map routes to DTOs'}</div>
-
-                        <div className="text-orange-400">
-
-                          astral.<span className="text-white">resource</span>(
-
-                          <span className="text-yellow-200">'/users'</span>, {'{'}...{'}'})
-
-                        </div>
-
-                        <div className="h-2" />
-
-                        <div className="text-gray-500">{'// Built-in Swagger UI'}</div>
-
-                        <div className="text-white flex items-center gap-2">
-
-                          <span className="text-purple-400">orbits</span>: [
-
-                          <span className="text-orange-400">OrbitAstral</span>.configure({'{}'}) ]
-
-                        </div>
-
-                        <div className="h-6" />
-
-                        <div className="pt-4 border-t border-white/5 flex justify-between items-center">
-
-                          <span className="text-[10px] text-white/30 tracking-widest">
-
-                            UI: READY AT /DOCS
-
-                          </span>
-
-                          <div className="w-2 h-2 rounded-full bg-orange-400 animate-pulse shadow-[0_0_10px_rgba(251,146,60,0.5)]" />
-
-                        </div>
-
-                      </div>
-
-                    </div>
-
+                  <div className="text-green-400 break-all">
+                    docker run -d \<br />
+                    <span className="pl-4 text-white">
+                      -e QUASAR_SERVICE=app-node \<br />
+                    </span>
+                    <span className="pl-4">carllee/quasar-go-agent</span>
                   </div>
 
+                  <div className="h-2" />
+
+                  <div className="text-gray-500">{'// Or download binary'}</div>
+
+                  <div className="text-green-400">
+                    curl -sL <span className="text-white">https://get.gravito.dev/quasar-go</span> |
+                    bash
+                  </div>
+
+                  <div className="h-6" />
+
+                  <div className="pt-4 border-t border-white/5 flex justify-between items-center">
+                    <span className="text-[10px] text-white/30 tracking-widest">
+                      OS: LINUX/MAC/WIN
+                    </span>
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-green-400">DAEMON ACTIVE</span>
+
+                      <div className="w-2 h-2 rounded-full bg-green-400" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Astral OpenAPI: Schema-Driven Docs */}
+
+      <section className="py-32 relative overflow-hidden">
+        <div className="absolute inset-0 bg-white/[0.01] border-y border-white/5" />
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="grid lg:grid-cols-2 gap-24 items-center">
+            <div className="lg:order-2 space-y-10">
+              <div>
+                <div className="text-xs font-mono text-orange-400/60 tracking-[0.3em] uppercase mb-4">
+                  Phase_04: Astral_OpenAPI
                 </div>
 
+                <h2 className="text-5xl font-bold tracking-tight mb-6 leading-tight">
+                  {trans('integrations.astral.title')}
+                </h2>
+
+                <p className="text-gray-300 text-xl font-light leading-relaxed">
+                  {trans('integrations.astral.description')}
+                </p>
               </div>
 
-            </section>
+              <div className="grid grid-cols-1 gap-6">
+                <IntegrationFeature icon={<Link />} text={trans('integrations.astral.feature1')} />
 
-      
+                <IntegrationFeature icon={<Zap />} text={trans('integrations.astral.feature2')} />
 
-            {/* Global Ecosystem Infrastructure */}
+                <IntegrationFeature
+                  icon={<Database />}
+                  text={trans('integrations.astral.feature3')}
+                />
+              </div>
+            </div>
 
-            <section className="py-32 relative">
+            <div className="lg:order-1 relative group">
+              <div className="absolute -inset-8 bg-orange-500/5 blur-[100px] rounded-full group-hover:bg-orange-500/10 transition-all duration-1000" />
 
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="relative zenith-glass-strong rounded-[2.5rem] p-1 border border-white/10 overflow-hidden">
+                <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
 
-                <div className="text-center mb-24">
+                <div className="bg-black/60 p-10 font-mono text-sm space-y-4">
+                  <div className="flex items-center gap-2 mb-6">
+                    <div className="w-3 h-3 rounded-full bg-orange-500/50" />
 
-                  <div className="text-xs font-mono text-white/30 tracking-[0.3em] uppercase mb-4">
-
-                    Phase_05: Global_Ecosystem
-
+                    <div className="ml-4 text-[10px] text-white/20 uppercase tracking-widest">
+                      Documentation_Engine
+                    </div>
                   </div>
 
-                  <h2 className="text-4xl lg:text-5xl font-bold tracking-tight mb-6">
+                  <div className="text-gray-500">{'// Map routes to DTOs'}</div>
 
-                    {trans('integrations.ecosystem.title')}
+                  <div className="text-orange-400">
+                    astral.<span className="text-white">resource</span>(
+                    <span className="text-yellow-200">'/users'</span>, {'{'}...{'}'})
+                  </div>
 
-                  </h2>
+                  <div className="h-2" />
+
+                  <div className="text-gray-500">{'// Built-in Swagger UI'}</div>
+
+                  <div className="text-white flex items-center gap-2">
+                    <span className="text-purple-400">orbits</span>: [
+                    <span className="text-orange-400">OrbitAstral</span>.configure({'{}'}) ]
+                  </div>
+
+                  <div className="h-6" />
+
+                  <div className="pt-4 border-t border-white/5 flex justify-between items-center">
+                    <span className="text-[10px] text-white/30 tracking-widest">
+                      UI: READY AT /DOCS
+                    </span>
+
+                    <div className="w-2 h-2 rounded-full bg-orange-400 animate-pulse shadow-[0_0_10px_rgba(251,146,60,0.5)]" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Global Ecosystem Infrastructure */}
+
+      <section className="py-32 relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-24">
+            <div className="text-xs font-mono text-white/30 tracking-[0.3em] uppercase mb-4">
+              Phase_05: Global_Ecosystem
+            </div>
+
+            <h2 className="text-4xl lg:text-5xl font-bold tracking-tight mb-6">
+              {trans('integrations.ecosystem.title')}
+            </h2>
             <div className="w-24 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent mx-auto" />
           </div>
 
