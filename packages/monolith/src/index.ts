@@ -32,8 +32,7 @@ export class OrbitMonolith implements GravitoOrbit {
     // Inject into request context
     core.adapter.use('*', async (c, next) => {
       c.set('content', manager)
-      await next()
-      return undefined
+      return await next()
     })
 
     core.logger.info('Orbit Monolith installed ⬛️')

@@ -152,8 +152,7 @@ export class SpectrumOrbit implements GravitoOrbit {
     const middleware: GravitoMiddleware = async (c, next) => {
       // Skip spectrum's own API calls
       if (c.req.path.startsWith(this.config.path)) {
-        await next()
-        return undefined
+        return await next()
       }
 
       const startTime = performance.now()

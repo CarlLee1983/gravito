@@ -94,12 +94,23 @@ app.router.prefix('/:locale').group((router) => {
         `)
   })
 
+  // Docs Root Redirect
+  router.get('/docs', (c) => {
+    const locale = (c.get('i18n') as any).locale
+    return c.redirect(`/${locale}/docs/intro`)
+  })
+
   // Docs Page with Full SEO
   router.get('/docs/:slug', async (c) => {
     const content = c.get('content') as any
     const i18n = c.get('i18n') as any
     const slug = c.req.param('slug')
     const locale = i18n.locale
+
+    // Fallback for empty slug if router matched incorrectly
+    if (!slug || slug === 'undefined') {
+      return c.redirect(`/${locale}/docs/intro`)
+    }
 
     const doc = await content.find('docs', slug, locale)
 
@@ -176,6 +187,8 @@ app.router.get('/quasar', (c) => c.redirect(INSTALL_SCRIPT_URL)) // Backward com
 
 // Root redirect
 app.router.get('/', (c) => c.redirect('/en'))
+app.router.get('/docs', (c) => c.redirect('/en/docs/intro'))
+app.router.get('/docs/:slug', (c) => c.redirect(`/en/docs/${c.req.param('slug')}`))
 
 // Liveness Probe
 app.router.get('/health', (c) => c.text('OK'))

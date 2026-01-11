@@ -120,8 +120,7 @@ export class OrbitPlasma implements GravitoOrbit {
       }
 
       c.set(exposeAs, this.client)
-      await next()
-      return undefined
+      return await next()
     })
 
     core.logger.info(`[OrbitPlasma] Installed (Exposed as: ${exposeAs})`)

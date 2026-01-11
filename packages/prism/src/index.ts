@@ -24,8 +24,7 @@ export class OrbitPrism implements GravitoOrbit {
     // 4. Inject into Context via Middleware
     core.adapter.use('*', async (c, next) => {
       c.set('view', engine)
-      await next()
-      return undefined
+      return await next()
     })
 
     // 5. Trigger hook for additional helper registration

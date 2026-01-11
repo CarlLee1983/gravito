@@ -86,8 +86,7 @@ export class OrbitForge implements GravitoOrbit {
       }
 
       c.set(exposeAs, forgeService)
-      await next()
-      return undefined
+      return await next()
     })
 
     // Register SSE endpoint if enabled

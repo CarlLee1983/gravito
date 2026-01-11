@@ -287,7 +287,7 @@ function toPhotonMiddleware<V extends GravitoVariables>(
     // console.log('[PhotonAdapter] Wrapping context')
     const ctx = PhotonContextWrapper.create<V>(c)
     const gravitoNext: GravitoNext = async () => {
-      await next()
+      return (await next()) as unknown as Response | undefined
     }
     return middleware(ctx, gravitoNext) as any
   }

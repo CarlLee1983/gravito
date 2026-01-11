@@ -97,8 +97,7 @@ export class OrbitStream implements GravitoOrbit {
       }
 
       c.set('queue', this.queueManager!)
-      await next()
-      return undefined
+      return await next()
     })
 
     core.logger.info('[OrbitStream] Installed')

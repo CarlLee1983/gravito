@@ -503,17 +503,21 @@ export class Gravito {
   ): Promise<Response> {
     let index = 0
 
-    const next = async (): Promise<void> => {
+    const next = async (): Promise<Response | undefined> => {
       if (index < middleware.length) {
         const mw = middleware[index++]!
-        await mw(ctx, next)
+        return await mw(ctx, next)
       }
+      return undefined
     }
 
-    // Execute all middleware
-    await next()
+    // Execute all middleware and get the response if a middleware returns one
+    const result = await next()
+    if (result instanceof Response) {
+      return result
+    }
 
-    // Execute final handler
+    // Execute final handler if no middleware returned a response
     return await handler(ctx)
   }
 

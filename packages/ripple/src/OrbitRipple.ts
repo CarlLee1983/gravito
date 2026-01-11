@@ -16,7 +16,10 @@ import type { RippleConfig } from './types'
 interface PlanetCore {
   logger: { info: (msg: string) => void }
   adapter: {
-    use: (path: string, handler: (ctx: any, next: () => Promise<void>) => Promise<any>) => void
+    use: (
+      path: string,
+      handler: (ctx: any, next: () => Promise<Response | undefined>) => Promise<any>
+    ) => void
   }
   hooks: {
     addAction: (hook: string, callback: (args: unknown) => Promise<void>) => void
@@ -66,7 +69,7 @@ export class OrbitRipple {
     // Expose Ripple server via context variable
     core.adapter.use('*', async (ctx, next) => {
       ctx.set('ripple' as any, this.server)
-      await next()
+      return await next()
     })
 
     // Initialize server immediately

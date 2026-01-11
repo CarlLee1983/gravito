@@ -296,8 +296,7 @@ export class PlanetCore {
       c.route = (name: string, params?: RouteParams, query?: RouteQuery) =>
         this.router.url(name, params, query)
 
-      await next()
-      return undefined
+      return await next()
     })
     // Router depends on `core.app` for route registration and optional global middleware.
     this.router = new Router(this)

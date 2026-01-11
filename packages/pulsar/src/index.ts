@@ -388,7 +388,7 @@ export class OrbitPulsar implements GravitoOrbit {
         }
       }
 
-      await next()
+      const res = await next()
 
       const finishedAt = now()
       const shouldTouch =
@@ -458,7 +458,7 @@ export class OrbitPulsar implements GravitoOrbit {
           { append: true }
         )
       }
-      return
+      return res
     })
   }
 }

@@ -279,6 +279,6 @@ export const localeMiddleware = (i18nManager: I18nService): MiddlewareHandler =>
     // Inject into context
     c.set('i18n', i18n)
 
-    await next()
+    return await next()
   }
 }

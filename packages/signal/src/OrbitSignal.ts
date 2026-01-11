@@ -46,10 +46,9 @@ export class OrbitSignal implements GravitoOrbit {
     core.container.singleton('mail', () => this)
 
     // 4. Inject mail service into context for easy access in routes
-    core.adapter.use('*', async (c, next) => {
+    core.adapter.use('*', async (c: any, next) => {
       c.set('mail', this)
-      await next()
-      return undefined
+      return await next()
     })
   }
 

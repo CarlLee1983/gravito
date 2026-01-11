@@ -91,7 +91,10 @@ export type Handler = (ctx: FastContext) => Response | Promise<Response>
 /**
  * Middleware function
  */
-export type Middleware = (ctx: FastContext, next: () => Promise<void>) => void | Promise<void>
+export type Middleware = (
+  ctx: FastContext,
+  next: () => Promise<Response | undefined>
+) => Response | undefined | Promise<Response | undefined>
 
 /**
  * Error handler function

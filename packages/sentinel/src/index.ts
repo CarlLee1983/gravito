@@ -131,9 +131,7 @@ export class OrbitSentinel implements GravitoOrbit {
       if (emailVerification) {
         c.set(exposeEmailVerificationAs, emailVerification)
       }
-
-      await next()
-      return undefined
+      return await next()
     })
   }
 }

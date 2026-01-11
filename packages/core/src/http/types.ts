@@ -397,7 +397,7 @@ export interface GravitoContext<V extends GravitoVariables = GravitoVariables> {
 /**
  * Next function for middleware chain
  */
-export type GravitoNext = () => Promise<void>
+export type GravitoNext = () => Promise<Response | undefined>
 
 /**
  * GravitoHandler - Standard route handler type
