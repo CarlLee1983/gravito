@@ -76,30 +76,25 @@ export async function bootstrap(options: AppConfig = {}) {
   }
 
   // 3. Static files
-  // Ensure we use absolute paths relative to this file to support monorepo execution
-  const staticRoot = new URL('../', import.meta.url).pathname
-  console.log(`[DEBUG] Static Root: ${staticRoot}`)
-  console.log(`[DEBUG] Favicon Path: ${staticRoot}static/favicon.ico`)
+  const staticAssets = serveStatic({ root: './' }) as unknown as GravitoMiddleware
 
-  const staticAssets = serveStatic({ root: staticRoot }) as unknown as GravitoMiddleware
-  const favicon = serveStatic({
-    path: `${staticRoot}static/favicon.ico`,
-  }) as unknown as GravitoMiddleware
+  // Priority handler for favicons using direct path
+  core.adapter.use('*', async (c, next) => {
+    if (c.req.path === '/static/favicon.png' || c.req.path === '/favicon.ico') {
+      const fileName = c.req.path === '/favicon.ico' ? 'favicon.ico' : 'favicon.png'
+      // Get absolute path to the static directory within the example site
+      const filePath = new URL(`../static/${fileName}`, import.meta.url).pathname
+      return c.body(Bun.file(filePath), 200, {
+        'Content-Type': fileName.endsWith('.png') ? 'image/png' : 'image/x-icon',
+      })
+    }
+    await next()
+    return undefined
+  })
 
-  // Mount at /static/* - will now correctly map to examples/zenith-site/static/
+  // General static files
   core.adapter.use('/static/*', async (c, next) => {
     return await staticAssets(c, next)
-  })
-
-  // Fallback for direct favicon.png request if serveStatic fails
-  core.adapter.route('get', '/static/favicon.png', async (ctx) => {
-    const path = new URL('../static/favicon.png', import.meta.url).pathname
-    return ctx.body(Bun.file(path), 200, { 'Content-Type': 'image/png' })
-  })
-
-  core.adapter.route('get', '/favicon.ico', async (ctx) => {
-    const path = new URL('../static/favicon.ico', import.meta.url).pathname
-    return ctx.body(Bun.file(path), 200, { 'Content-Type': 'image/x-icon' })
   })
 
   // 4. Vite Proxy (開發模式) - 必須在路由之前
