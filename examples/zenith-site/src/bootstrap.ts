@@ -78,6 +78,9 @@ export async function bootstrap(options: AppConfig = {}) {
   // 3. Static files
   // Ensure we use absolute paths relative to this file to support monorepo execution
   const staticRoot = new URL('../', import.meta.url).pathname
+  console.log(`[DEBUG] Static Root: ${staticRoot}`)
+  console.log(`[DEBUG] Favicon Path: ${staticRoot}static/favicon.ico`)
+
   const staticAssets = serveStatic({ root: staticRoot }) as unknown as GravitoMiddleware
   const favicon = serveStatic({
     path: `${staticRoot}static/favicon.ico`,
@@ -88,7 +91,16 @@ export async function bootstrap(options: AppConfig = {}) {
     return await staticAssets(c, next)
   })
 
-  core.adapter.route('get', '/favicon.ico', favicon)
+  // Fallback for direct favicon.png request if serveStatic fails
+  core.adapter.route('get', '/static/favicon.png', async (ctx) => {
+    const path = new URL('../static/favicon.png', import.meta.url).pathname
+    return ctx.body(Bun.file(path), 200, { 'Content-Type': 'image/png' })
+  })
+
+  core.adapter.route('get', '/favicon.ico', async (ctx) => {
+    const path = new URL('../static/favicon.ico', import.meta.url).pathname
+    return ctx.body(Bun.file(path), 200, { 'Content-Type': 'image/x-icon' })
+  })
 
   // 4. Vite Proxy (開發模式) - 必須在路由之前
   if (process.env.NODE_ENV !== 'production') {
