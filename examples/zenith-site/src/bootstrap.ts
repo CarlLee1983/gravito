@@ -76,10 +76,13 @@ export async function bootstrap(options: AppConfig = {}) {
   }
 
   // 3. Static files
-  const staticAssets = serveStatic({ root: './' }) as unknown as GravitoMiddleware
+  // Note: root is relative to the process CWD (usually examples/zenith-site)
+  const staticAssets = serveStatic({ root: './static' }) as unknown as GravitoMiddleware
   const favicon = serveStatic({ path: './static/favicon.ico' }) as unknown as GravitoMiddleware
 
+  // Mount at /static/* - will look for files inside ./static/
   core.adapter.use('/static/*', staticAssets)
+  // Specific route for root favicon
   core.adapter.route('get', '/favicon.ico', favicon)
 
   // 4. Vite Proxy (開發模式) - 必須在路由之前
