@@ -84,7 +84,7 @@ const { t, locale } = useI18n()
             {{ t?.hero?.ctaPro }} <ChevronRight :size="20" />
           </StaticLink>
           <StaticLink 
-            href="/docs"
+            href="/docs/introduction"
             class="w-full sm:w-auto px-10 py-5 border border-white/10 text-white font-bold rounded-2xl hover:bg-white/5 transition-all backdrop-blur-sm"
           >
             {{ t?.hero?.ctaDocs }}
