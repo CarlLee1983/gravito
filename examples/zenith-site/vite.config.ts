@@ -40,9 +40,9 @@ export default defineConfig({
           if (req.url?.startsWith('/@') || req.url?.includes('node_modules')) {
             return req.url
           }
-          // 2. Don't proxy static assets or specific metadata files
+          // 2. Don't proxy static assets or source files that Vite should handle
           if (
-            req.url?.match(/\.(png|jpg|jpeg|gif|svg|ico|webp|js|css|json|txt)$/) ||
+            req.url?.match(/\.(png|jpg|jpeg|gif|svg|ico|webp|js|css|json|txt|tsx|ts|jsx)$/) ||
             req.url?.includes('/.well-known/')
           ) {
             return req.url
