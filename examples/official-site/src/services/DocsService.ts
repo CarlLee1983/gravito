@@ -444,6 +444,7 @@ export class DocsService {
             freeze_vue: 'Freeze Vue',
             luminosity_cli: 'Luminosity CLI',
             create_app: 'Create Gravito App',
+            graphql: 'GraphQL API',
           }
         : {
             // Sections
@@ -533,6 +534,7 @@ export class DocsService {
             freeze_vue: 'Freeze Vue',
             luminosity_cli: 'Luminosity CLI',
             create_app: 'Create Gravito App',
+            graphql: 'GraphQL API',
           }
 
     return [
@@ -587,6 +589,7 @@ export class DocsService {
           { title: trans.freeze_vue, path: `${prefix}/guide/freeze-vue` },
           { title: trans.luminosity_cli, path: `${prefix}/guide/luminosity-cli` },
           { title: trans.create_app, path: `${prefix}/guide/create-gravito-app` },
+          { title: trans.graphql, path: `${prefix}/guide/graphql` },
         ],
       },
       {
