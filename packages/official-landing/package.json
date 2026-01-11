@@ -14,10 +14,10 @@
         "@gravito/core": "workspace:*"
     },
     "devDependencies": {
-        "@vitejs/plugin-vue": "^5.0.0",
-        "typescript": "^5.3.0",
-        "vite": "^5.0.0",
-        "vue-tsc": "^1.8.0",
-        "@types/node": "^20.10.0"
+        "@vitejs/plugin-vue": "^5.2.1",
+        "typescript": "^5.9.3",
+        "vite": "^5.4.14",
+        "vue-tsc": "^2.2.0",
+        "@types/node": "^22.10.5"
     }
 }
