@@ -1,12 +1,13 @@
-import type { Container, GravitoContext, Orbit } from '@gravito/core'
+import type { Container, GravitoContext, GravitoOrbit } from '@gravito/core'
 import { createSchema, createYoga, type YogaServerInstance } from 'graphql-yoga'
 
 export interface GraphQLConfig {
+  // biome-ignore lint/suspicious/noExplicitAny: Generic Schema
   schema?: any // Allow passing a pre-built schema
   path?: string
 }
 
-export class OrbitGraphQL implements Orbit {
+export class OrbitGraphQL implements GravitoOrbit {
   name = 'graphql'
 
   // biome-ignore lint/suspicious/noExplicitAny: Yoga type
@@ -22,7 +23,7 @@ export class OrbitGraphQL implements Orbit {
     // If not, try to resolve from container (GRAPHQL_SCHEMA)
     if (!schema) {
       try {
-        schema = container.resolve('GRAPHQL_SCHEMA')
+        schema = container.make('GRAPHQL_SCHEMA')
       } catch {
         // No schema provided, use default Hello World schema
         schema = createSchema({
@@ -56,11 +57,12 @@ export class OrbitGraphQL implements Orbit {
     })
 
     // Register yoga instance in container for advanced usage
-    container.bind('graphql', this.yoga)
+    // Using instance() to bind the existing object
+    container.instance('graphql', this.yoga)
   }
 
   async boot(container: Container) {
-    const core = container.resolve<any>('app') // Resolve PlanetCore application
+    const core = container.make<any>('app') // Resolve PlanetCore application
     const endpoint = this.config.path || '/graphql'
 
     if (!this.yoga) {
@@ -70,9 +72,6 @@ export class OrbitGraphQL implements Orbit {
     // 3. Mount Routes
     // Hono/Gravito router integration
     // We bind to both GET and POST for the GraphQL endpoint
-
-    // Using a wildcard to capture all GraphQL related paths (like /graphql/stream) if needed,
-    // but typically just /graphql is enough for standard usage.
 
     const handler = async (c: GravitoContext) => {
       // Convert Hono/Gravito request to standard Request
