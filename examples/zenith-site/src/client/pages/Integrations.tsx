@@ -100,19 +100,18 @@ export default function Integrations() {
                   <div className="text-gray-500">{'// Require via composer'}</div>
                   <div className="text-zenith-accent">
                     composer require{' '}
-                    <span className="text-white">gravito-framework/laravel-zenith</span>
+                    <span className="text-white">gravito/laravel-zenith</span>
                   </div>
                   <div className="h-2" />
-                  <div className="text-gray-500">{'// Ignite the portal'}</div>
+                  <div className="text-gray-500">{'// Ignite the portal (via CLI)'}</div>
                   <div className="flex items-center gap-2">
-                    <span className="text-zenith-stellar">Zenith</span>
-                    <span className="text-white">::</span>
-                    <span className="text-zenith-accent">ignite</span>
-                    <span className="text-white">();</span>
+                    <span className="text-white">php</span>
+                    <span className="text-zenith-stellar">artisan</span>
+                    <span className="text-zenith-accent">zenith:heartbeat</span>
                   </div>
                   <div className="h-6" />
                   <div className="pt-4 border-t border-white/5 flex justify-between items-center">
-                    <span className="text-[10px] text-white/30 tracking-widest">STATUS: READY</span>
+                    <span className="text-[10px] text-white/30 tracking-widest">DAEMON: ACTIVE</span>
                     <div className="flex gap-1">
                       {[...Array(8)].map((_, i) => (
                         <div key={i} className="w-1 h-3 bg-zenith-accent/20 rounded-full" />
@@ -181,8 +180,15 @@ export default function Integrations() {
                     <div>
                       <span className="text-blue-400">const</span> agent ={' '}
                       <span className="text-purple-400">new</span>{' '}
-                      <span className="text-yellow-200">QuasarAgent</span>({'{}'})
+                      <span className="text-yellow-200">QuasarAgent</span>({'{'}
                     </div>
+                    <div className="pl-4">
+                      service: <span className="text-green-400">'worker-01'</span>,
+                    </div>
+                    <div className="pl-4">
+                      transport: {'{'} url: <span className="text-white">process.env.REDIS_URL</span> {'}'}
+                    </div>
+                    <div>{'}'})</div>
                     <div>
                       <span className="text-purple-400">await</span> agent.
                       <span className="text-blue-400">start</span>()
@@ -243,15 +249,19 @@ export default function Integrations() {
                       Binary_Deployment
                     </div>
                   </div>
-                  <div className="text-gray-500">{'// Deploy agent in seconds'}</div>
+                  <div className="text-gray-500">{'// Deploy via Docker'}</div>
+                  <div className="text-green-400 break-all">
+                    docker run -d \<br />
+                    <span className="pl-4 text-white">
+                      -e QUASAR_SERVICE=app-node \<br />
+                    </span>
+                    <span className="pl-4">carllee/quasar-go-agent</span>
+                  </div>
+                  <div className="h-2" />
+                  <div className="text-gray-500">{'// Or download binary'}</div>
                   <div className="text-green-400">
                     curl -sL <span className="text-white">https://get.gravito.dev/quasar-go</span> |
                     bash
-                  </div>
-                  <div className="h-2" />
-                  <div className="text-gray-500">{'// Or run via Docker'}</div>
-                  <div className="text-green-400 break-all">
-                    docker run -d <span className="text-white">gravito/quasar-go</span>
                   </div>
                   <div className="h-6" />
                   <div className="pt-4 border-t border-white/5 flex justify-between items-center">
