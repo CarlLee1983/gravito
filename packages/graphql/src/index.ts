@@ -22,26 +22,30 @@ export class OrbitGraphQL implements GravitoOrbit {
     // Check if schema is passed in constructor config
     let schema = this.config.schema
 
-    // If not, try to resolve from container (GRAPHQL_SCHEMA)
+    // If not, try to resolve from core config or container
     if (!schema) {
-      try {
-        schema = container.make('GRAPHQL_SCHEMA')
-      } catch {
-        // No schema provided, use default Hello World schema
-        schema = createSchema({
-          typeDefs: /* GraphQL */ `
-            type Query {
-              hello: String
-              gravito: String
-            }
-          `,
-          resolvers: {
-            Query: {
-              hello: () => 'Hello World from Gravito GraphQL!',
-              gravito: () => 'Is awesome 🚀',
+      if (core.config.has('GRAPHQL_SCHEMA')) {
+        schema = core.config.get('GRAPHQL_SCHEMA')
+      } else {
+        try {
+          schema = container.make('GRAPHQL_SCHEMA')
+        } catch {
+          // No schema provided, use default Hello World schema
+          schema = createSchema({
+            typeDefs: /* GraphQL */ `
+              type Query {
+                hello: String
+                gravito: String
+              }
+            `,
+            resolvers: {
+              Query: {
+                hello: () => 'Hello World from Gravito GraphQL!',
+                gravito: () => 'Is awesome 🚀',
+              },
             },
-          },
-        })
+          })
+        }
       }
     }
 
