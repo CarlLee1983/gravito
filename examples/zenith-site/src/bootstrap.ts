@@ -76,11 +76,14 @@ export async function bootstrap(options: AppConfig = {}) {
   }
 
   // 3. Static files
-  // Note: We set root to './' because the incoming request path already includes '/static'
-  const staticAssets = serveStatic({ root: './' }) as unknown as GravitoMiddleware
-  const favicon = serveStatic({ path: './static/favicon.ico' }) as unknown as GravitoMiddleware
+  // Ensure we use absolute paths relative to this file to support monorepo execution
+  const staticRoot = new URL('../', import.meta.url).pathname
+  const staticAssets = serveStatic({ root: staticRoot }) as unknown as GravitoMiddleware
+  const favicon = serveStatic({
+    path: `${staticRoot}static/favicon.ico`,
+  }) as unknown as GravitoMiddleware
 
-  // Mount at /static/* - this will now correctly map /static/favicon.png to ./static/favicon.png
+  // Mount at /static/* - will now correctly map to examples/zenith-site/static/
   core.adapter.use('/static/*', async (c, next) => {
     return await staticAssets(c, next)
   })
