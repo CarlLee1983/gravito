@@ -78,6 +78,15 @@ const copyCommand = () => {
             </button>
         </div>
         <p class="mt-6 text-center text-gray-600 text-[10px] font-mono tracking-wider uppercase opacity-50">{{ t('installation.requires') }}</p>
+        
+        <div class="mt-8 p-4 rounded-lg bg-yellow-500/5 border border-yellow-500/10 text-center">
+            <p class="text-yellow-500/80 text-[11px] font-mono mb-2">⚠ DRIVER_REQUIRED: Install your database driver manually</p>
+            <div class="flex flex-wrap justify-center gap-2 text-[10px] text-gray-500 font-mono">
+                <span class="px-2 py-1 bg-white/5 rounded border border-white/5">bun add pg</span>
+                <span class="px-2 py-1 bg-white/5 rounded border border-white/5">bun add mysql2</span>
+                <span class="px-2 py-1 bg-white/5 rounded border border-white/5">bun add mongodb</span>
+            </div>
+        </div>
       </div>
     </div>
   </section>

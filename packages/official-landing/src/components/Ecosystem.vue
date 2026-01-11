@@ -3,7 +3,7 @@ const modules = [
   {
     id: 'ATLAS',
     name: 'Atlas Engine',
-    desc: 'The gravitational bedrock for data. A high-performance, type-safe ORM supporting PostgreSQL, MySQL, and SQLite.',
+    desc: 'The gravitational bedrock for data. A high-performance, type-safe ORM supporting PostgreSQL, MySQL, SQLite, and MongoDB.',
     tag: 'PERSISTENCE',
     color: '#10b981',
     features: ['Schema Inference', 'Automated Migrations', 'AOT Query Builder']
