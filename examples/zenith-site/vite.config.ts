@@ -40,8 +40,11 @@ export default defineConfig({
           if (req.url?.startsWith('/@') || req.url?.includes('node_modules')) {
             return req.url
           }
-          // 2. Don't proxy static assets if they exist in public or build
-          if (req.url?.match(/\.(png|jpg|jpeg|gif|svg|ico|webp|js|css)$/)) {
+          // 2. Don't proxy static assets or specific metadata files
+          if (
+            req.url?.match(/\.(png|jpg|jpeg|gif|svg|ico|webp|js|css|json|txt)$/) ||
+            req.url?.includes('/.well-known/')
+          ) {
             return req.url
           }
         },
