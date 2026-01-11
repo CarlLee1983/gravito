@@ -38,7 +38,10 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-zenith-void text-white selection:bg-zenith-accent selection:text-zenith-900 overflow-x-hidden font-sans">
-      <Head title={`${trans('hero.title')} ${trans('hero.titleHighlight')} - Gravito Zenith`} />
+      <Head>
+        <title>{`${trans('hero.title')} ${trans('hero.titleHighlight')} - Gravito Zenith`}</title>
+        <meta name="description" content={trans('hero.description')} />
+      </Head>
       <Navbar />
 
       {/* Hero Section */}

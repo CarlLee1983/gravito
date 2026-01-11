@@ -11,7 +11,10 @@ export default function Terms() {
 
   return (
     <div className="min-h-screen bg-zenith-void text-white selection:bg-zenith-accent selection:text-zenith-void overflow-x-hidden font-sans">
-      <Head title={`${trans('terms.title')} - Gravito Zenith`} />
+      <Head>
+        <title>{`${trans('terms.title')} - Gravito Zenith`}</title>
+        <meta name="description" content="Terms of Service for Gravito Zenith. Reliable monitoring tools for modern infrastructure." />
+      </Head>
       <Navbar />
 
       <section className="relative pt-32 pb-20 overflow-hidden">

@@ -7,11 +7,14 @@ import { Navbar } from '../components/Navbar'
 import { useTrans } from '../hooks/useTrans'
 
 export default function Features() {
-  const { trans, locale } = useTrans()
+  const { trans } = useTrans()
 
   return (
     <div className="min-h-screen bg-zenith-void text-white selection:bg-zenith-accent selection:text-zenith-void overflow-x-hidden font-sans">
-      <Head title={`${trans('nav.features')} - Gravito Zenith`} />
+      <Head>
+        <title>{`${trans('nav.features')} - Gravito Zenith`}</title>
+        <meta name="description" content={trans('features.subtitle')} />
+      </Head>
       <Navbar />
 
       {/* Immersive Hero Section */}

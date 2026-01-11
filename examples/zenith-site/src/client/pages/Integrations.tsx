@@ -11,7 +11,10 @@ export default function Integrations() {
 
   return (
     <div className="min-h-screen bg-zenith-void text-white selection:bg-zenith-accent selection:text-zenith-void overflow-x-hidden font-sans">
-      <Head title={`${trans('nav.integration')} - Gravito Zenith`} />
+      <Head>
+        <title>{`${trans('nav.integration')} - Gravito Zenith`}</title>
+        <meta name="description" content={trans('integrations.subtitle')} />
+      </Head>
       <Navbar />
 
       {/* Immersive connectivity Hero */}
