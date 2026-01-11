@@ -63,6 +63,9 @@ export default {
     stasis_title: 'Stasis',
     stasis_subtitle: '快取與鎖',
     stasis_desc: '快取、限流與分散式鎖定，穩定支撐高併發。',
+    astral_title: 'Astral',
+    astral_subtitle: '影子契約 (OpenAPI)',
+    astral_desc: '無污染的 API 文檔引擎。自動從 DTO 與路由中提取規格，並提供整合式 Swagger UI。',
     image_title: 'Prism',
     image_subtitle: '性能奇點 (Image)',
     image_desc:

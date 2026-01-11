@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@gravito/astral": ["../../packages/astral/src/index.ts"],
+      "@gravito/core": ["../../packages/core/src/index.ts"],
+      "@gravito/impulse": ["../../packages/impulse/src/index.ts"]
+    },
+    "types": ["bun-types"]
+  },
+  "include": ["src/**/*"]
+}

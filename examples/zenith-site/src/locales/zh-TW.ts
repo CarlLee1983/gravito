@@ -181,6 +181,15 @@ export default {
       feature3: '具備遠端控制能力',
     },
 
+    astral: {
+      title: 'Astral OpenAPI',
+      description:
+        '影子契約文檔引擎。在不向代碼添加任何裝飾器的情況下，生成 OpenAPI 規格與 Swagger UI。',
+      feature1: '影子契約 (Shadow-Contract) 架構',
+      feature2: '無代碼污染設計',
+      feature3: '自動 DTO 類型推斷',
+    },
+
     ecosystem: {
       title: '生態體系',
       redis: 'Redis 6.0+ 分片/集群支援',

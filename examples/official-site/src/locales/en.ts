@@ -68,6 +68,10 @@ export default {
     stasis_title: 'Stasis',
     stasis_subtitle: 'Cache & Locks',
     stasis_desc: 'Flexible caching, rate limiting, and distributed locks for scale.',
+    astral_title: 'Astral',
+    astral_subtitle: 'Shadow Contracts (OpenAPI)',
+    astral_desc:
+      'Zero-pollution documentation engine. Automatically extracts specs from DTOs and routes with integrated Swagger UI.',
     image_title: 'Prism',
     image_subtitle: 'Performance Focus (Image)',
     image_desc:

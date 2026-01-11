@@ -193,6 +193,15 @@ export default {
       feature3: 'Remote control capabilities',
     },
 
+    astral: {
+      title: 'Astral OpenAPI',
+      description:
+        'The Shadow-Contract documentation engine. Generate OpenAPI specs and Swagger UI without adding a single decorator to your code.',
+      feature1: 'Shadow-Contract architecture',
+      feature2: 'Zero-purity loss design',
+      feature3: 'Automatic DTO inference',
+    },
+
     ecosystem: {
       title: 'The Ecosystem',
       redis: 'Redis 6.0+ Sharded/Cluster support',
