@@ -47,7 +47,7 @@ class DocsServiceImpl {
   }
 
   async getDoc(slug: string, locale = 'en') {
-    const filePath = join(process.cwd(), 'docs', locale, `${slug}.md`)
+    const filePath = join(DOCS_ROOT, locale, `${slug}.md`)
 
     try {
       const fileContent = await readFile(filePath, 'utf-8')
