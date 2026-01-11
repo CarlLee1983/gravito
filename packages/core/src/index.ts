@@ -108,6 +108,7 @@ export {
   type ControllerClass,
   type FormRequestClass,
   type FormRequestLike,
+  RouteGroup,
   type RouteHandler,
   type RouteOptions,
   Router,

@@ -87,7 +87,8 @@ export async function bootstrap(options: AppConfig = {}) {
     // 注入 isDev 變數供模板使用
     core.adapter.use('*', async (c: GravitoContext, next: GravitoNext) => {
       c.set('isDev', true)
-      return (await next()) as any
+      await next()
+      return undefined
     })
   }
 

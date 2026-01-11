@@ -1,6 +1,6 @@
 import { Head } from '@inertiajs/react'
 import { motion } from 'framer-motion'
-import { Cloud, Code2, Cpu, Database, Link, Milestone, Network, Share2, Zap } from 'lucide-react'
+import { Cloud, Code2, Cpu, Database, Link, Network, Share2, Zap } from 'lucide-react'
 import React from 'react'
 import { Footer } from '../components/Footer'
 import { Navbar } from '../components/Navbar'

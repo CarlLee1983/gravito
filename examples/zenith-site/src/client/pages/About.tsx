@@ -1,6 +1,6 @@
 import { Head } from '@inertiajs/react'
 import { motion } from 'framer-motion'
-import { Code, Compass, Cpu, Layers, Rocket, ShieldCheck, Zap } from 'lucide-react'
+import { Code, Compass, Rocket } from 'lucide-react'
 import React from 'react'
 import { Footer } from '../components/Footer'
 import { Navbar } from '../components/Navbar'
