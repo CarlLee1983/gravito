@@ -1,4 +1,4 @@
-import type { Container, GravitoContext, GravitoOrbit } from '@gravito/core'
+import type { Container, GravitoContext, GravitoOrbit, PlanetCore } from '@gravito/core'
 import { createSchema, createYoga, type YogaServerInstance } from 'graphql-yoga'
 
 export interface GraphQLConfig {
@@ -15,7 +15,9 @@ export class OrbitGraphQL implements GravitoOrbit {
 
   constructor(private config: GraphQLConfig = {}) {}
 
-  async install(container: Container) {
+  async install(core: PlanetCore) {
+    const container = core.container
+
     // 1. Resolve Schema
     // Check if schema is passed in constructor config
     let schema = this.config.schema
@@ -59,19 +61,9 @@ export class OrbitGraphQL implements GravitoOrbit {
     // Register yoga instance in container for advanced usage
     // Using instance() to bind the existing object
     container.instance('graphql', this.yoga)
-  }
-
-  async boot(container: Container) {
-    const core = container.make<any>('app') // Resolve PlanetCore application
-    const endpoint = this.config.path || '/graphql'
-
-    if (!this.yoga) {
-      throw new Error('GraphQL Orbit not installed correctly')
-    }
 
     // 3. Mount Routes
-    // Hono/Gravito router integration
-    // We bind to both GET and POST for the GraphQL endpoint
+    const endpoint = this.config.path || '/graphql'
 
     const handler = async (c: GravitoContext) => {
       // Convert Hono/Gravito request to standard Request
@@ -85,6 +77,7 @@ export class OrbitGraphQL implements GravitoOrbit {
     core.router.get(endpoint, handler)
     core.router.post(endpoint, handler)
 
-    console.log(`[OrbitGraphQL] 🚀 Mounted at ${endpoint}`)
+    // Optional: Log mounting (maybe rely on core logger)
+    // console.log(`[OrbitGraphQL] 🚀 Mounted at ${endpoint}`)
   }
 }
