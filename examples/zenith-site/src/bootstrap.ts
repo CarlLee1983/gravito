@@ -76,14 +76,20 @@ export async function bootstrap(options: AppConfig = {}) {
   }
 
   // 3. Static files
-  // Note: root is relative to the process CWD (usually examples/zenith-site)
+  // In development, Vite handles assets. In production/SSG, we need these routes.
   const staticAssets = serveStatic({ root: './static' }) as unknown as GravitoMiddleware
   const favicon = serveStatic({ path: './static/favicon.ico' }) as unknown as GravitoMiddleware
 
-  // Mount at /static/* - will look for files inside ./static/
-  core.adapter.use('/static/*', staticAssets)
-  // Specific route for root favicon
+  // Using use('*') with path check is often more stable across adapters
+  core.adapter.use('/static/*', async (c, next) => {
+    return await staticAssets(c, next)
+  })
+
   core.adapter.route('get', '/favicon.ico', favicon)
+  core.adapter.route('get', '/static/favicon.png', async (c) => {
+    const png = serveStatic({ path: './static/favicon.png' }) as unknown as GravitoMiddleware
+    return await png(c, async () => {})
+  })
 
   // 4. Vite Proxy (開發模式) - 必須在路由之前
   if (process.env.NODE_ENV !== 'production') {

@@ -31,26 +31,17 @@ export default defineConfig({
         target: 'http://localhost:3001',
         changeOrigin: true,
       },
-      '/static': {
-        target: 'http://localhost:3001',
-        changeOrigin: true,
-      },
-      // Proxy all page routes to backend
-      '/zh-TW': {
-        target: 'http://localhost:3001',
-        changeOrigin: true,
-      },
-      '/en': {
-        target: 'http://localhost:3001',
-        changeOrigin: true,
-      },
-      // Root path
+      // Root and general routes
       '/': {
         target: 'http://localhost:3001',
         changeOrigin: true,
         bypass(req) {
-          // Don't proxy Vite's own requests
-          if (req.url?.startsWith('/@') || req.url?.includes('.')) {
+          // 1. Don't proxy Vite internal requests
+          if (req.url?.startsWith('/@') || req.url?.includes('node_modules')) {
+            return req.url
+          }
+          // 2. Don't proxy static assets if they exist in public or build
+          if (req.url?.match(/\.(png|jpg|jpeg|gif|svg|ico|webp|js|css)$/)) {
             return req.url
           }
         },
