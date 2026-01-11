@@ -1,4 +1,4 @@
-import type { PlanetCore } from '@gravito/core'
+import type { GravitoContext, GravitoOrbit, PlanetCore } from '@gravito/core'
 import { OpenApiGenerator } from './OpenApiGenerator'
 import type { AstralConfig, AstralResource } from './types'
 
@@ -49,14 +49,14 @@ export class OrbitAstral implements GravitoOrbit {
     const router = core.router
 
     // 1. Serve OpenAPI JSON
-    router.get(this.config.jsonPath || '/openapi.json', (ctx: any) => {
+    router.get(this.config.jsonPath || '/openapi.json', (ctx: GravitoContext) => {
       const routes = router.compile()
       const spec = this.generator.generate(routes)
       return ctx.json(spec)
     })
 
     // 2. Serve Swagger UI
-    router.get(this.config.uiPath || '/docs', (ctx: any) => {
+    router.get(this.config.uiPath || '/docs', (ctx: GravitoContext) => {
       const jsonUrl = this.config.jsonPath
       return ctx.html(`
         <!DOCTYPE html>

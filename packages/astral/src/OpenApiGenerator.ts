@@ -2,13 +2,20 @@ import type { ZodSchema } from 'zod'
 import { zodToJsonSchema } from 'zod-to-json-schema'
 import type { AstralConfig, AstralOperation, AstralResource } from './types'
 
+export interface AstralRoute {
+  method: string
+  path: string
+  name?: string
+  domain?: string
+}
+
 export class OpenApiGenerator {
   constructor(private config: AstralConfig) {}
 
   /**
    * Generate OpenAPI Specification object
    */
-  generate(routes: any[]): any {
+  generate(routes: AstralRoute[]): any {
     const spec: any = {
       openapi: '3.1.0',
       info: {
@@ -30,7 +37,7 @@ export class OpenApiGenerator {
     return spec
   }
 
-  private processResource(spec: any, resource: AstralResource, routes: any[]) {
+  private processResource(spec: any, resource: AstralResource, routes: AstralRoute[]) {
     // Find matching routes in the framework
     const matchingRoutes = routes.filter(
       (r) => r.path === resource.path || r.path.startsWith(resource.path + '/')
@@ -90,13 +97,13 @@ export class OpenApiGenerator {
     // If it's a FormRequest class, try to instantiate and get schema
     if (typeof input === 'function' && input.prototype?.validate) {
       try {
-        const instance = new input()
+        const instance = new (input as any)()
         return instance.schema
       } catch {
-        return input // Fallback
+        return input as ZodSchema // Fallback
       }
     }
-    return input
+    return input as ZodSchema
   }
 
   private zodToSchema(zod: any) {
@@ -114,7 +121,7 @@ export class OpenApiGenerator {
     return path.replace(/:([a-zA-Z0-9_]+)/g, '{$1}')
   }
 
-  private inferOperationKey(route: any, resource: AstralResource): string {
+  private inferOperationKey(route: AstralRoute, resource: AstralResource): string {
     const relPath = route.path.replace(resource.path, '').replace(/^\//, '')
     const method = route.method.toLowerCase()
 
