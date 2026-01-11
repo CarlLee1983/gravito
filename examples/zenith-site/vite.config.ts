@@ -31,26 +31,19 @@ export default defineConfig({
         target: 'http://localhost:3001',
         changeOrigin: true,
       },
-      '/static': {
-        target: 'http://localhost:3001',
-        changeOrigin: true,
-      },
-      // Proxy all page routes to backend
-      '/zh-TW': {
-        target: 'http://localhost:3001',
-        changeOrigin: true,
-      },
-      '/en': {
-        target: 'http://localhost:3001',
-        changeOrigin: true,
-      },
-      // Root path
+      // Root and general routes
       '/': {
         target: 'http://localhost:3001',
         changeOrigin: true,
         bypass(req) {
-          // Don't proxy Vite's own requests
-          if (req.url?.startsWith('/@') || req.url?.includes('.')) {
+          // 1. Don't proxy Vite internal requests
+          if (req.url?.startsWith('/@') || req.url?.includes('node_modules')) {
+            return req.url
+          }
+          // 2. Don't proxy static assets or source files that Vite should handle
+          // Simplified regex to match extension followed by optional query string
+          const assetRegex = /\.(png|jpg|jpeg|gif|svg|ico|webp|js|css|json|txt|tsx|ts|jsx)(\?.*)?$/
+          if (req.url?.match(assetRegex) || req.url?.includes('/.well-known/')) {
             return req.url
           }
         },

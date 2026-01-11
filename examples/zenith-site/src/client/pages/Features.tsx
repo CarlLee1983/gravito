@@ -1,6 +1,6 @@
 import { Head } from '@inertiajs/react'
 import { motion } from 'framer-motion'
-import { Activity, Cpu, Database, Globe, HardDrive, Layers, Shield, Zap } from 'lucide-react'
+import { Cpu, Database, Globe, HardDrive, Layers, Zap } from 'lucide-react'
 import type React from 'react'
 import { Footer } from '../components/Footer'
 import { Navbar } from '../components/Navbar'
@@ -11,7 +11,10 @@ export default function Features() {
 
   return (
     <div className="min-h-screen bg-zenith-void text-white selection:bg-zenith-accent selection:text-zenith-void overflow-x-hidden font-sans">
-      <Head title={`${trans('nav.features')} - Gravito Zenith`} />
+      <Head>
+        <title>{`${trans('nav.features')} - Gravito Zenith`}</title>
+        <meta name="description" content={trans('features.subtitle')} />
+      </Head>
       <Navbar />
 
       {/* Immersive Hero Section */}

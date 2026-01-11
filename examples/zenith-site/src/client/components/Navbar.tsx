@@ -1,6 +1,5 @@
 import { usePage } from '@inertiajs/react'
 import { Github, Globe, LayoutDashboard } from 'lucide-react'
-import React from 'react'
 import { useTrans } from '../hooks/useTrans'
 import { StaticLink } from './StaticLink'
 

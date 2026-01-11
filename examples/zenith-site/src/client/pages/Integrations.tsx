@@ -1,17 +1,20 @@
 import { Head } from '@inertiajs/react'
 import { motion } from 'framer-motion'
-import { Cloud, Code2, Cpu, Database, Link, Milestone, Network, Share2, Zap } from 'lucide-react'
+import { Cloud, Code2, Cpu, Database, Link, Network, Share2, Zap } from 'lucide-react'
 import React from 'react'
 import { Footer } from '../components/Footer'
 import { Navbar } from '../components/Navbar'
 import { useTrans } from '../hooks/useTrans'
 
 export default function Integrations() {
-  const { trans, locale } = useTrans()
+  const { trans } = useTrans()
 
   return (
     <div className="min-h-screen bg-zenith-void text-white selection:bg-zenith-accent selection:text-zenith-void overflow-x-hidden font-sans">
-      <Head title={`${trans('nav.integration')} - Gravito Zenith`} />
+      <Head>
+        <title>{`${trans('nav.integration')} - Gravito Zenith`}</title>
+        <meta name="description" content={trans('integrations.subtitle')} />
+      </Head>
       <Navbar />
 
       {/* Immersive connectivity Hero */}
@@ -42,6 +45,88 @@ export default function Integrations() {
               {trans('integrations.subtitle')}
             </p>
           </motion.div>
+        </div>
+      </section>
+
+      {/* Core: Control Plane Deployment */}
+      <section className="py-32 relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid lg:grid-cols-2 gap-24 items-center">
+            <div className="space-y-10">
+              <div>
+                <div className="text-xs font-mono text-zenith-accent/60 tracking-[0.3em] uppercase mb-4">
+                  Phase_00: The_Core
+                </div>
+                <h2 className="text-5xl font-bold tracking-tight mb-6 leading-tight">
+                  {trans('integrations.core.title')}
+                </h2>
+                <p className="text-gray-300 text-xl font-light leading-relaxed">
+                  {trans('integrations.core.description')}
+                </p>
+              </div>
+              <div className="grid grid-cols-1 gap-6">
+                <IntegrationFeature
+                  icon={<Cloud />}
+                  text={trans('integrations.core.docker_feature')}
+                />
+                <IntegrationFeature
+                  icon={<Code2 />}
+                  text={trans('integrations.core.node_feature')}
+                />
+                <IntegrationFeature
+                  icon={<Database />}
+                  text={trans('integrations.core.db_feature')}
+                />
+              </div>
+            </div>
+
+            <div className="relative group">
+              <div className="absolute -inset-8 bg-zenith-accent/5 blur-[100px] rounded-full group-hover:bg-zenith-accent/10 transition-all duration-1000" />
+              <div className="relative zenith-glass-strong rounded-[2.5rem] p-1 border border-white/10 overflow-hidden">
+                <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+                <div className="bg-black/60 p-10 font-mono text-sm space-y-4">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-zenith-accent/50" />
+                      <div className="ml-2 text-[10px] text-white/20 uppercase tracking-widest">
+                        docker-compose.yml
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-purple-400">services:</span>
+                  </div>
+                  <div className="pl-4">
+                    <span className="text-blue-400">zenith:</span>
+                  </div>
+                  <div className="pl-8">
+                    <span className="text-purple-400">image:</span>{' '}
+                    <span className="text-green-400">gravito/zenith:latest</span>
+                  </div>
+                  <div className="pl-8">
+                    <span className="text-purple-400">ports:</span>
+                  </div>
+                  <div className="pl-12">
+                    <span className="text-white">-</span>{' '}
+                    <span className="text-yellow-200">"3000:3000"</span>
+                  </div>
+                  <div className="pl-8">
+                    <span className="text-purple-400">environment:</span>
+                  </div>
+                  <div className="pl-12">
+                    <span className="text-white">-</span> REDIS_URL=redis://redis:6379
+                  </div>
+                  <div className="h-4" />
+                  <div className="pt-4 border-t border-white/5 flex justify-between items-center">
+                    <span className="text-[10px] text-white/30 tracking-widest">
+                      PORT: 3000 ACTIVE
+                    </span>
+                    <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse shadow-[0_0_10px_rgba(74,222,128,0.5)]" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -99,20 +184,20 @@ export default function Integrations() {
                   </div>
                   <div className="text-gray-500">{'// Require via composer'}</div>
                   <div className="text-zenith-accent">
-                    composer require{' '}
-                    <span className="text-white">gravito-framework/laravel-zenith</span>
+                    composer require <span className="text-white">gravito/laravel-zenith</span>
                   </div>
                   <div className="h-2" />
-                  <div className="text-gray-500">{'// Ignite the portal'}</div>
+                  <div className="text-gray-500">{'// Ignite the portal (via CLI)'}</div>
                   <div className="flex items-center gap-2">
-                    <span className="text-zenith-stellar">Zenith</span>
-                    <span className="text-white">::</span>
-                    <span className="text-zenith-accent">ignite</span>
-                    <span className="text-white">();</span>
+                    <span className="text-white">php</span>
+                    <span className="text-zenith-stellar">artisan</span>
+                    <span className="text-zenith-accent">zenith:heartbeat</span>
                   </div>
                   <div className="h-6" />
                   <div className="pt-4 border-t border-white/5 flex justify-between items-center">
-                    <span className="text-[10px] text-white/30 tracking-widest">STATUS: READY</span>
+                    <span className="text-[10px] text-white/30 tracking-widest">
+                      DAEMON: ACTIVE
+                    </span>
                     <div className="flex gap-1">
                       {[...Array(8)].map((_, i) => (
                         <div key={i} className="w-1 h-3 bg-zenith-accent/20 rounded-full" />
@@ -126,7 +211,7 @@ export default function Integrations() {
         </div>
       </section>
 
-      {/* Distributed Grid: Quasar Agents */}
+      {/* Universal Runtime: Quasar (Node/Bun) */}
       <section className="py-32 relative overflow-hidden">
         <div className="absolute inset-0 bg-white/[0.01] border-y border-white/5" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -134,66 +219,159 @@ export default function Integrations() {
             <div className="lg:order-2 space-y-10">
               <div>
                 <div className="text-xs font-mono text-zenith-stellar/60 tracking-[0.3em] uppercase mb-4">
-                  Phase_02: Orbital_Control
+                  Phase_02: Universal_Runtime
                 </div>
                 <h2 className="text-5xl font-bold tracking-tight mb-6 leading-tight">
-                  {trans('integrations.quasar.title')}
+                  {trans('integrations.quasar_lib.title')}
                 </h2>
                 <p className="text-gray-300 text-xl font-light leading-relaxed">
-                  {trans('integrations.quasar.description')}
+                  {trans('integrations.quasar_lib.description')}
                 </p>
               </div>
               <div className="grid grid-cols-1 gap-6">
                 <IntegrationFeature
-                  icon={<Network />}
-                  text={trans('integrations.quasar.feature1')}
+                  icon={<Code2 />}
+                  text={trans('integrations.quasar_lib.feature1')}
                 />
-                <IntegrationFeature icon={<Cpu />} text={trans('integrations.quasar.feature2')} />
-                <IntegrationFeature icon={<Zap />} text={trans('integrations.quasar.feature3')} />
+                <IntegrationFeature
+                  icon={<Zap />}
+                  text={trans('integrations.quasar_lib.feature2')}
+                />
+                <IntegrationFeature
+                  icon={<Cloud />}
+                  text={trans('integrations.quasar_lib.feature3')}
+                />
               </div>
             </div>
 
-            <div className="lg:order-1 relative">
-              <div className="grid grid-cols-2 gap-6 p-4">
-                {[1, 2, 3, 4].map((i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    whileInView={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: i * 0.1 }}
-                    viewport={{ once: true }}
-                    whileHover={{ y: -5, borderColor: 'rgba(168, 85, 247, 0.3)' }}
-                    className="p-8 rounded-[2rem] zenith-glass flex flex-col items-center justify-center gap-6 group transition-all"
-                  >
-                    <div className="relative">
-                      <div className="absolute inset-0 bg-zenith-stellar/20 rounded-full blur-xl animate-pulse" />
-                      <div className="relative w-14 h-14 rounded-2xl bg-zenith-stellar/10 border border-zenith-stellar/20 flex items-center justify-center text-zenith-stellar group-hover:scale-110 transition-transform">
-                        <Cloud size={28} />
-                      </div>
+            <div className="lg:order-1 relative group">
+              <div className="absolute -inset-8 bg-zenith-stellar/5 blur-[100px] rounded-full group-hover:bg-zenith-stellar/10 transition-all duration-1000" />
+              <div className="relative zenith-glass-strong rounded-[2.5rem] p-1 border border-white/10 overflow-hidden">
+                <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+                <div className="bg-black/60 p-10 font-mono text-sm space-y-4">
+                  <div className="flex items-center gap-2 mb-6">
+                    <div className="w-3 h-3 rounded-full bg-zenith-stellar/50" />
+                    <div className="w-3 h-3 rounded-full bg-blue-500/50" />
+                    <div className="ml-4 text-[10px] text-white/20 uppercase tracking-widest">
+                      Library_Integration
                     </div>
-                    <div className="text-center space-y-1">
-                      <span className="block text-xs font-mono text-white/40 tracking-widest uppercase">
-                        Node_Alpha_{i}02
-                      </span>
-                      <span className="block text-[10px] text-green-400 font-bold uppercase tracking-tighter">
-                        Heartbeat Stable
-                      </span>
+                  </div>
+                  <div className="text-gray-500">{'// Install the universal library'}</div>
+                  <div className="text-zenith-stellar">
+                    npm install <span className="text-white">@gravito/quasar</span>
+                  </div>
+                  <div className="h-2" />
+                  <div className="text-gray-500">{'// Embed in your worker'}</div>
+                  <div className="flex flex-col gap-1">
+                    <div>
+                      <span className="text-blue-400">const</span> agent ={' '}
+                      <span className="text-purple-400">new</span>{' '}
+                      <span className="text-yellow-200">QuasarAgent</span>({'{'}
                     </div>
-                    <div className="w-full flex items-center gap-2">
-                      <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden">
-                        <motion.div
-                          initial={{ width: 0 }}
-                          whileInView={{ width: '65%' }}
-                          className="h-full bg-zenith-stellar"
-                        />
-                      </div>
-                      <span className="text-[10px] font-mono text-white/20">65%</span>
+                    <div className="pl-4">
+                      service: <span className="text-green-400">'worker-01'</span>,
                     </div>
-                  </motion.div>
-                ))}
+                    <div className="pl-4">
+                      transport: {'{'} url:{' '}
+                      <span className="text-white">process.env.REDIS_URL</span> {'}'}
+                    </div>
+                    <div>{'}'})</div>
+                    <div className="h-1" />
+                    <div className="text-gray-500">{'// Monitor a specific queue'}</div>
+                    <div>
+                      agent.<span className="text-blue-400">monitorQueue</span>(
+                      <span className="text-green-400">'mail'</span>,{' '}
+                      <span className="text-green-400">'bullmq'</span>)
+                    </div>
+                    <div className="h-1" />
+                    <div>
+                      <span className="text-purple-400">await</span> agent.
+                      <span className="text-blue-400">start</span>()
+                    </div>
+                  </div>
+                  <div className="h-6" />
+                  <div className="pt-4 border-t border-white/5 flex justify-between items-center">
+                    <span className="text-[10px] text-white/30 tracking-widest">
+                      RUNTIME: NODE/BUN
+                    </span>
+                    <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse shadow-[0_0_10px_rgba(74,222,128,0.5)]" />
+                  </div>
+                </div>
               </div>
-              {/* Connector visual effects */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-zenith-stellar/5 blur-[120px] -z-10" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Standalone Agent: Quasar-Go */}
+      <section className="py-32 relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="grid lg:grid-cols-2 gap-24 items-center">
+            <div className="space-y-10">
+              <div>
+                <div className="text-xs font-mono text-green-400/60 tracking-[0.3em] uppercase mb-4">
+                  Phase_03: Standalone_Agent
+                </div>
+                <h2 className="text-5xl font-bold tracking-tight mb-6 leading-tight">
+                  {trans('integrations.quasar_go.title')}
+                </h2>
+                <p className="text-gray-300 text-xl font-light leading-relaxed">
+                  {trans('integrations.quasar_go.description')}
+                </p>
+              </div>
+              <div className="grid grid-cols-1 gap-6">
+                <IntegrationFeature
+                  icon={<Cpu />}
+                  text={trans('integrations.quasar_go.feature1')}
+                />
+                <IntegrationFeature
+                  icon={<Database />}
+                  text={trans('integrations.quasar_go.feature2')}
+                />
+                <IntegrationFeature
+                  icon={<Network />}
+                  text={trans('integrations.quasar_go.feature3')}
+                />
+              </div>
+            </div>
+
+            <div className="relative group">
+              <div className="absolute -inset-8 bg-green-500/5 blur-[100px] rounded-full group-hover:bg-green-500/10 transition-all duration-1000" />
+              <div className="relative zenith-glass-strong rounded-[2.5rem] p-1 border border-white/10 overflow-hidden">
+                <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+                <div className="bg-black/60 p-10 font-mono text-sm space-y-4">
+                  <div className="flex items-center gap-2 mb-6">
+                    <div className="w-3 h-3 rounded-full bg-green-500/50" />
+                    <div className="ml-4 text-[10px] text-white/20 uppercase tracking-widest">
+                      Binary_Deployment
+                    </div>
+                  </div>
+                  <div className="text-gray-500">{'// Deploy via Docker'}</div>
+                  <div className="text-green-400 break-all">
+                    docker run -d \<br />
+                    <span className="pl-4 text-white">
+                      -e QUASAR_SERVICE=app-node \<br />
+                    </span>
+                    <span className="pl-4">carllee/quasar-go-agent</span>
+                  </div>
+                  <div className="h-2" />
+                  <div className="text-gray-500">{'// Or download binary'}</div>
+                  <div className="text-green-400">
+                    curl -sL <span className="text-white">https://get.gravito.dev/quasar-go</span> |
+                    bash
+                  </div>
+                  <div className="h-6" />
+                  <div className="pt-4 border-t border-white/5 flex justify-between items-center">
+                    <span className="text-[10px] text-white/30 tracking-widest">
+                      OS: LINUX/MAC/WIN
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-green-400">DAEMON ACTIVE</span>
+                      <div className="w-2 h-2 rounded-full bg-green-400" />
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

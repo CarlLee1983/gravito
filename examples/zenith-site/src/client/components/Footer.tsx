@@ -1,5 +1,4 @@
 import { LayoutDashboard } from 'lucide-react'
-import React from 'react'
 import { useTrans } from '../hooks/useTrans'
 import { StaticLink } from './StaticLink'
 

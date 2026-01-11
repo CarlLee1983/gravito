@@ -4,7 +4,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{{ title }}}</title>
+    <title>{{#if title}}{{{ title }}}{{else}}Gravito Zenith - Zero-Config Control Plane{{/if}}</title>
+    
+    <!-- SEO Meta Tags -->
+    {{#if description}}
+    <meta name="description" content="{{{ description }}}">
+    {{else}}
+    <meta name="description" content="Zero-config control plane for Gravito Flux & Stream. Real-time monitoring, queue management, and automated alerting.">
+    {{/if}}
+    <meta name="keywords" content="gravito, zenith, monitoring, queue, redis, laravel, bullmq, stream, dashboard">
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="alternate icon" type="image/png" href="/static/favicon.png">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="{{#if title}}{{{ title }}}{{else}}Gravito Zenith{{/if}}">
+    <meta property="og:description" content="{{#if description}}{{{ description }}}{{else}}Zero-config control plane for Gravito Flux & Stream.{{/if}}">
+    <meta property="og:image" content="/static/build/images/hero_bg.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:title" content="{{#if title}}{{{ title }}}{{else}}Gravito Zenith{{/if}}">
+    <meta property="twitter:description" content="{{#if description}}{{{ description }}}{{else}}Zero-config control plane for Gravito Flux & Stream.{{/if}}">
+    <meta property="twitter:image" content="/static/build/images/hero_bg.png">
+
     {{#if isDev}}
     <!-- Development mode: Load from Vite dev server (proxied through backend) -->
     <script type="module">
@@ -23,22 +46,22 @@
     {{/if}}
 
     <!-- Google Analytics -->
+    {{#if ga_id}}
     <script>
         (function() {
-            var gaId = '%VITE_GA_MEASUREMENT_ID%';
-            if (gaId && gaId !== '' && gaId !== '%' + 'VITE_GA_MEASUREMENT_ID' + '%') {
-                var script = document.createElement('script');
-                script.async = true;
-                script.src = 'https://www.googletagmanager.com/gtag/js?id=' + gaId;
-                document.head.appendChild(script);
+            var gaId = '{{{ ga_id }}}';
+            var script = document.createElement('script');
+            script.async = true;
+            script.src = 'https://www.googletagmanager.com/gtag/js?id=' + gaId;
+            document.head.appendChild(script);
 
-                window.dataLayer = window.dataLayer || [];
-                function gtag(){dataLayer.push(arguments);}
-                gtag('js', new Date());
-                gtag('config', gaId);
-            }
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', gaId);
         })();
     </script>
+    {{/if}}
 </head>
 
 <body>
