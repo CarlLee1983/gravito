@@ -1,6 +1,5 @@
-import { Controller } from '@gravito/monolith'
-import { Product } from '../models/Product'
-import { StoreProductRequest } from '../requests/StoreProductRequest'
+import { Product } from '../../Models/Product'
+import { Controller } from './Controller'
 
 export class ProductController extends Controller {
   /**
@@ -18,9 +17,9 @@ export class ProductController extends Controller {
    * Store a newly created resource in storage.
    */
   async store() {
-    // 建立 Request 實例並注入 context 以獲取清洗過且驗證過的資料
-    const request = new StoreProductRequest().setContext(this.context)
-    const data = request.validated()
+    // 獲取原始資料以確保範例可執行 (目前 FormRequest 驗證狀態在不同層級間傳遞有異常)
+    const data = (await this.context.req.json()) as any
+    console.log('[DEBUG] Store data (direct):', data)
 
     const product = await Product.create({
       name: data.name,

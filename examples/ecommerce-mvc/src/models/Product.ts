@@ -1,19 +1,21 @@
-import { Column, Model, PrimaryKey } from '@gravito/atlas'
+import { column, Model } from '@gravito/atlas'
 
 export class Product extends Model {
-  @PrimaryKey()
+  static table = 'products'
+
+  @column({ isPrimary: true })
   id!: number
 
-  @Column()
+  @column()
   name!: string
 
-  @Column()
+  @column()
   price!: number
 
-  @Column()
+  @column()
   category?: string
 
   // 自動處理 timestamps (如果在遷移中有定義)
-  @Column()
+  @column()
   createdAt!: Date
 }

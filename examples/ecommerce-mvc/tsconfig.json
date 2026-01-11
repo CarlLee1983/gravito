@@ -1,12 +1,12 @@
 {
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "target": "ESNext",
-    "module": "ESNext",
     "moduleResolution": "bundler",
-    "strict": true,
-    "skipLibCheck": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "esModuleInterop": true
-  }
+    "skipLibCheck": true
+  },
+  "include": [
+    "src/**/*"
+  ]
 }
