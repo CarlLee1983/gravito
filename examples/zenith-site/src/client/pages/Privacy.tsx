@@ -13,7 +13,10 @@ export default function Privacy() {
     <div className="min-h-screen bg-zenith-void text-white selection:bg-zenith-accent selection:text-zenith-void overflow-x-hidden font-sans">
       <Head>
         <title>{`${trans('privacy.title')} - Gravito Zenith`}</title>
-        <meta name="description" content="Privacy Policy for Gravito Zenith. We believe your data belongs to you." />
+        <meta
+          name="description"
+          content="Privacy Policy for Gravito Zenith. We believe your data belongs to you."
+        />
       </Head>
       <Navbar />
 

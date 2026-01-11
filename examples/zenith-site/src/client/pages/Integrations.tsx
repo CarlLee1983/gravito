@@ -7,7 +7,7 @@ import { Navbar } from '../components/Navbar'
 import { useTrans } from '../hooks/useTrans'
 
 export default function Integrations() {
-  const { trans, locale } = useTrans()
+  const { trans } = useTrans()
 
   return (
     <div className="min-h-screen bg-zenith-void text-white selection:bg-zenith-accent selection:text-zenith-void overflow-x-hidden font-sans">
@@ -184,8 +184,7 @@ export default function Integrations() {
                   </div>
                   <div className="text-gray-500">{'// Require via composer'}</div>
                   <div className="text-zenith-accent">
-                    composer require{' '}
-                    <span className="text-white">gravito/laravel-zenith</span>
+                    composer require <span className="text-white">gravito/laravel-zenith</span>
                   </div>
                   <div className="h-2" />
                   <div className="text-gray-500">{'// Ignite the portal (via CLI)'}</div>
@@ -196,7 +195,9 @@ export default function Integrations() {
                   </div>
                   <div className="h-6" />
                   <div className="pt-4 border-t border-white/5 flex justify-between items-center">
-                    <span className="text-[10px] text-white/30 tracking-widest">DAEMON: ACTIVE</span>
+                    <span className="text-[10px] text-white/30 tracking-widest">
+                      DAEMON: ACTIVE
+                    </span>
                     <div className="flex gap-1">
                       {[...Array(8)].map((_, i) => (
                         <div key={i} className="w-1 h-3 bg-zenith-accent/20 rounded-full" />
@@ -271,7 +272,8 @@ export default function Integrations() {
                       service: <span className="text-green-400">'worker-01'</span>,
                     </div>
                     <div className="pl-4">
-                      transport: {'{'} url: <span className="text-white">process.env.REDIS_URL</span> {'}'}
+                      transport: {'{'} url:{' '}
+                      <span className="text-white">process.env.REDIS_URL</span> {'}'}
                     </div>
                     <div>{'}'})</div>
                     <div className="h-1" />
@@ -289,7 +291,9 @@ export default function Integrations() {
                   </div>
                   <div className="h-6" />
                   <div className="pt-4 border-t border-white/5 flex justify-between items-center">
-                    <span className="text-[10px] text-white/30 tracking-widest">RUNTIME: NODE/BUN</span>
+                    <span className="text-[10px] text-white/30 tracking-widest">
+                      RUNTIME: NODE/BUN
+                    </span>
                     <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse shadow-[0_0_10px_rgba(74,222,128,0.5)]" />
                   </div>
                 </div>
@@ -358,7 +362,9 @@ export default function Integrations() {
                   </div>
                   <div className="h-6" />
                   <div className="pt-4 border-t border-white/5 flex justify-between items-center">
-                    <span className="text-[10px] text-white/30 tracking-widest">OS: LINUX/MAC/WIN</span>
+                    <span className="text-[10px] text-white/30 tracking-widest">
+                      OS: LINUX/MAC/WIN
+                    </span>
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] text-green-400">DAEMON ACTIVE</span>
                       <div className="w-2 h-2 rounded-full bg-green-400" />

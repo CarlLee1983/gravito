@@ -7,7 +7,7 @@ import { Navbar } from '../components/Navbar'
 import { useTrans } from '../hooks/useTrans'
 
 export default function Features() {
-  const { trans } = useTrans()
+  const { trans, locale } = useTrans()
 
   return (
     <div className="min-h-screen bg-zenith-void text-white selection:bg-zenith-accent selection:text-zenith-void overflow-x-hidden font-sans">

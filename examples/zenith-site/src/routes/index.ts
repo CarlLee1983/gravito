@@ -1,11 +1,4 @@
-import type {
-  GravitoContext,
-  GravitoMiddleware,
-  GravitoNext,
-  PlanetCore,
-  RouteGroup,
-  Router,
-} from '@gravito/core'
+import type { GravitoMiddleware, PlanetCore, RouteGroup, Router } from '@gravito/core'
 import type { InertiaService } from '@gravito/ion'
 import { ApiController } from '../controllers/ApiController'
 import { HomeController } from '../controllers/HomeController'
