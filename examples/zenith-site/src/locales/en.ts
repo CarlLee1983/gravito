@@ -160,19 +160,28 @@ export default {
     laravel: {
       title: 'Laravel Zenith',
       description:
-        'The native PHP inspector. Just one line to ignite absolute visibility in your Laravel applications.',
-      feature1: 'Auto-discovery of jobs',
-      feature2: 'Exception capturing',
-      feature3: 'Remote worker control',
+        'The native In-App reporter. Deeply integrated into Laravel to capture logs, HTTP metrics, and queue events.',
+      feature1: 'In-App event reporting',
+      feature2: 'Live log streaming',
+      feature3: 'Native Artisan integration',
     },
 
-    quasar: {
-      title: 'Quasar Agents',
+    quasar_lib: {
+      title: 'Quasar (Node/Bun)',
       description:
-        'Distributed agents for multi-node monitoring. Written in Go for raw speed and low footprint.',
-      feature1: 'Cross-cloud orchestration',
-      feature2: 'Live resource monitoring',
-      feature3: 'Low-latency heartbeats',
+        'Universal runtime library for Node.js, Bun, and Deno. Embed monitoring directly into your workers for granular job tracking.',
+      feature1: 'Granular job lifecycle tracking',
+      feature2: 'Zero-overhead bridge architecture',
+      feature3: 'Support for BullMQ & Bee-Queue',
+    },
+
+    quasar_go: {
+      title: 'Quasar-Go Agent',
+      description:
+        'Standalone binary agent. Deploy on any host to monitor system resources and external queues without code changes.',
+      feature1: 'Zero-dependency binary',
+      feature2: 'System-level metrics (CPU/RAM)',
+      feature3: 'Remote control capabilities',
     },
 
     ecosystem: {
