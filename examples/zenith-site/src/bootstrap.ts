@@ -47,7 +47,8 @@ export async function bootstrap(options: AppConfig = {}) {
   const defaultCsp = [
     "default-src 'self'",
     `script-src 'self' 'unsafe-inline'${devCsp}`,
-    `style-src 'self' 'unsafe-inline'${devCsp}`,
+    `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com${devCsp}`,
+    `font-src 'self' data: https://fonts.gstatic.com`,
     `img-src 'self' data:${devCsp}`,
     `connect-src 'self'${devCsp}`,
     "object-src 'none'",
