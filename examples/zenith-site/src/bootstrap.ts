@@ -80,13 +80,24 @@ export async function bootstrap(options: AppConfig = {}) {
 
   // Priority handler for favicons using direct path
   core.adapter.use('*', async (c, next) => {
-    if (c.req.path === '/static/favicon.png' || c.req.path === '/favicon.ico') {
-      const fileName = c.req.path === '/favicon.ico' ? 'favicon.ico' : 'favicon.png'
-      // Get absolute path to the static directory within the example site
+    const isIcon =
+      c.req.path === '/static/favicon.png' ||
+      c.req.path === '/favicon.ico' ||
+      c.req.path === '/static/favicon.svg'
+
+    if (isIcon) {
+      let fileName = 'favicon.png'
+      if (c.req.path === '/favicon.ico') fileName = 'favicon.ico'
+      if (c.req.path === '/static/favicon.svg') fileName = 'favicon.svg'
+
       const filePath = new URL(`../static/${fileName}`, import.meta.url).pathname
-      return c.body(Bun.file(filePath), 200, {
-        'Content-Type': fileName.endsWith('.png') ? 'image/png' : 'image/x-icon',
-      })
+      const contentType = fileName.endsWith('.svg')
+        ? 'image/svg+xml'
+        : fileName.endsWith('.png')
+          ? 'image/png'
+          : 'image/x-icon'
+
+      return c.body(Bun.file(filePath), 200, { 'Content-Type': contentType })
     }
     await next()
     return undefined
