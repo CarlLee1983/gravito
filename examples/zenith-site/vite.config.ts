@@ -41,10 +41,9 @@ export default defineConfig({
             return req.url
           }
           // 2. Don't proxy static assets or source files that Vite should handle
-          if (
-            req.url?.match(/\.(png|jpg|jpeg|gif|svg|ico|webp|js|css|json|txt|tsx|ts|jsx)$/) ||
-            req.url?.includes('/.well-known/')
-          ) {
+          // Simplified regex to match extension followed by optional query string
+          const assetRegex = /\.(png|jpg|jpeg|gif|svg|ico|webp|js|css|json|txt|tsx|ts|jsx)(\?.*)?$/
+          if (req.url?.match(assetRegex) || req.url?.includes('/.well-known/')) {
             return req.url
           }
         },
