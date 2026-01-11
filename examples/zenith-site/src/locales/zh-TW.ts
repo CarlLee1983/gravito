@@ -146,6 +146,15 @@ export default {
     titleHighlight: '技術共鳴',
     subtitle: 'Zenith 橫跨不同技術棧、語言與基礎設施，實現全域數據同步。',
 
+    core: {
+      title: '控制平面核心',
+      description:
+        '以您的方式部署中央儀表板。將其作為獨立微服務運行，或直接嵌入您現有的基礎架構中。',
+      docker_feature: '生產級 Docker 映像檔',
+      node_feature: 'Express/Gravito 中間件',
+      db_feature: '支援 MySQL/PostgreSQL/SQLite',
+    },
+
     laravel: {
       title: 'Laravel Zenith',
       description:

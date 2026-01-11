@@ -45,6 +45,88 @@ export default function Integrations() {
         </div>
       </section>
 
+      {/* Core: Control Plane Deployment */}
+      <section className="py-32 relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid lg:grid-cols-2 gap-24 items-center">
+            <div className="space-y-10">
+              <div>
+                <div className="text-xs font-mono text-zenith-accent/60 tracking-[0.3em] uppercase mb-4">
+                  Phase_00: The_Core
+                </div>
+                <h2 className="text-5xl font-bold tracking-tight mb-6 leading-tight">
+                  {trans('integrations.core.title')}
+                </h2>
+                <p className="text-gray-300 text-xl font-light leading-relaxed">
+                  {trans('integrations.core.description')}
+                </p>
+              </div>
+              <div className="grid grid-cols-1 gap-6">
+                <IntegrationFeature
+                  icon={<Cloud />}
+                  text={trans('integrations.core.docker_feature')}
+                />
+                <IntegrationFeature
+                  icon={<Code2 />}
+                  text={trans('integrations.core.node_feature')}
+                />
+                <IntegrationFeature
+                  icon={<Database />}
+                  text={trans('integrations.core.db_feature')}
+                />
+              </div>
+            </div>
+
+            <div className="relative group">
+              <div className="absolute -inset-8 bg-zenith-accent/5 blur-[100px] rounded-full group-hover:bg-zenith-accent/10 transition-all duration-1000" />
+              <div className="relative zenith-glass-strong rounded-[2.5rem] p-1 border border-white/10 overflow-hidden">
+                <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+                <div className="bg-black/60 p-10 font-mono text-sm space-y-4">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-zenith-accent/50" />
+                      <div className="ml-2 text-[10px] text-white/20 uppercase tracking-widest">
+                        docker-compose.yml
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-purple-400">services:</span>
+                  </div>
+                  <div className="pl-4">
+                    <span className="text-blue-400">zenith:</span>
+                  </div>
+                  <div className="pl-8">
+                    <span className="text-purple-400">image:</span>{' '}
+                    <span className="text-green-400">gravito/zenith:latest</span>
+                  </div>
+                  <div className="pl-8">
+                    <span className="text-purple-400">ports:</span>
+                  </div>
+                  <div className="pl-12">
+                    <span className="text-white">-</span>{' '}
+                    <span className="text-yellow-200">"3000:3000"</span>
+                  </div>
+                  <div className="pl-8">
+                    <span className="text-purple-400">environment:</span>
+                  </div>
+                  <div className="pl-12">
+                    <span className="text-white">-</span> REDIS_URL=redis://redis:6379
+                  </div>
+                  <div className="h-4" />
+                  <div className="pt-4 border-t border-white/5 flex justify-between items-center">
+                    <span className="text-[10px] text-white/30 tracking-widest">
+                      PORT: 3000 ACTIVE
+                    </span>
+                    <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse shadow-[0_0_10px_rgba(74,222,128,0.5)]" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Native Expansion: Laravel Zenith */}
       <section className="py-32 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -189,6 +271,14 @@ export default function Integrations() {
                       transport: {'{'} url: <span className="text-white">process.env.REDIS_URL</span> {'}'}
                     </div>
                     <div>{'}'})</div>
+                    <div className="h-1" />
+                    <div className="text-gray-500">{'// Monitor a specific queue'}</div>
+                    <div>
+                      agent.<span className="text-blue-400">monitorQueue</span>(
+                      <span className="text-green-400">'mail'</span>,{' '}
+                      <span className="text-green-400">'bullmq'</span>)
+                    </div>
+                    <div className="h-1" />
                     <div>
                       <span className="text-purple-400">await</span> agent.
                       <span className="text-blue-400">start</span>()

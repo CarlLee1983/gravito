@@ -157,6 +157,15 @@ export default {
     titleHighlight: 'Connectivity',
     subtitle: 'Zenith bridges the gap between different stacks, languages, and infrastructures.',
 
+    core: {
+      title: 'The Control Plane',
+      description:
+        'Deploy the central dashboard your way. Run it as a standalone microservice or embed it directly into your existing infrastructure.',
+      docker_feature: 'Production-ready Docker image',
+      node_feature: 'Middleware for Express/Gravito',
+      db_feature: 'MySQL/PostgreSQL/SQLite support',
+    },
+
     laravel: {
       title: 'Laravel Zenith',
       description:
