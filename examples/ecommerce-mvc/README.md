@@ -6,6 +6,33 @@ A high-performance, full-featured e-commerce MVC demonstration built on the **Gr
 
 [繁體中文版本 (Traditional Chinese Version)](./README.zh-TW.md)
 
+## Local Database Setup
+
+### Using SQLite (Default)
+The application defaults to SQLite in-memory mode, which requires no setup. Data is reset on every server restart.
+
+### Using PostgreSQL (Docker)
+1. Start the database container:
+   ```bash
+   docker-compose up -d
+   ```
+2. Create and configure your `.env` file:
+   ```bash
+   cp .env.example .env
+   ```
+3. Update `.env` to use PostgreSQL:
+   ```env
+   DB_CONNECTION=postgres
+   DB_PASSWORD=password
+   ```
+4. Restart the development server.
+
+### Removal
+To stop and remove the database and all its data:
+```bash
+docker-compose down -v
+```
+
 ## 🚀 Quick Start
 
 ### 1. Install Dependencies

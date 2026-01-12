@@ -4,6 +4,33 @@
 
 這是一個基於 **Gravito Framework** 打造的高效能電子商務 MVC 示範專案。展示了如何結合 **OrbitAtlas (ORM)**, **OrbitIon (Inertia.js)**, **OrbitSentinel (Auth)**, **OrbitPulsar (Sessions)** 以及 **OrbitPrism (Vite/Views)** 構建現代化的 Web 應用。
 
+## 🗄️ 本地資料庫設置
+
+### 使用 SQLite (預設)
+應用程序預設使用 SQLite 記憶體模式 (`:memory:`)，無需任何設置。資料會在每次伺服器重啟時重置。
+
+### 使用 PostgreSQL (Docker)
+1. 啟動資料庫容器：
+   ```bash
+   docker-compose up -d
+   ```
+2. 建立並配置 `.env` 檔案：
+   ```bash
+   cp .env.example .env
+   ```
+3. 更新 `.env` 以使用 PostgreSQL：
+   ```env
+   DB_CONNECTION=postgres
+   DB_PASSWORD=password
+   ```
+4. 重啟開發伺服器。
+
+### 移除環境
+若要停止並移除資料庫及其所有資料：
+```bash
+docker-compose down -v
+```
+
 ## 🚀 快速開始
 
 ### 1. 安裝依賴
