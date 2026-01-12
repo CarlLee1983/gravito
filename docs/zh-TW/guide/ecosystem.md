@@ -44,6 +44,14 @@ Gravito 是一個由眾多 **動力模組 (Kinetic Modules)** 組成的龐大銀
     <code class="module-pkg">@gravito/beam</code>
     <p class="module-desc">粒子束。輕量級客戶端通訊工具，為前端提供類型安全的 API 調用介面。</p>
   </div>
+
+  <div class="module-card group">
+    <div class="card-accent"></div>
+    <span class="module-code">ORBIT</span>
+    <h3 class="module-title">GraphQL</h3>
+    <code class="module-pkg">@gravito/graphql</code>
+    <p class="module-desc">軌道。由 Yoga 驅動的零配置 GraphQL 整合，為您的銀河系帶來現代化的 API 能力。</p>
+  </div>
 </div>
 
 ## 數據與存儲 (Data & Storage)
@@ -315,6 +323,14 @@ Gravito 是一個由眾多 **動力模組 (Kinetic Modules)** 組成的龐大銀
     <h3 class="module-title">Create Gravito App</h3>
     <code class="module-pkg">create-gravito-app</code>
     <p class="module-desc">快速建立新專案的啟動工具，內建多種範本。</p>
+  </div>
+
+  <div class="module-card group">
+    <div class="card-accent"></div>
+    <span class="module-code">ASTRAL</span>
+    <h3 class="module-title">Astral OpenAPI</h3>
+    <code class="module-pkg">@gravito/astral</code>
+    <p class="module-desc">投影。自動化 OpenAPI (Swagger) 文檔生成器，從您的 Zod Schema 與路由中提取定義。</p>
   </div>
 </div>
 
