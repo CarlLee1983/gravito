@@ -12,6 +12,7 @@ defineProps<{
   featuredProducts: any[]
   latestProducts: any[]
   categories: any[]
+  latestNews?: any[]
 }>()
 
 const formatPrice = (price: number) => `NT$ ${(price / 100).toLocaleString()}`
@@ -35,10 +36,14 @@ const formatPrice = (price: number) => `NT$ ${(price / 100).toLocaleString()}`
     <div class="absolute bottom-0 left-0 -ml-20 -mb-20 w-[500px] h-[500px] bg-secondary-500/20 rounded-full blur-3xl z-0"></div>
 
     <div class="container relative z-20 text-center max-w-4xl mx-auto px-4">
-      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-sm font-medium mb-6 backdrop-blur-sm animate-fade-in-up">
+      <Link 
+        href="/pages/news" 
+        class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-sm font-medium mb-6 backdrop-blur-sm animate-fade-in-up hover:bg-white/20 transition-colors group"
+      >
         <span class="w-2 h-2 rounded-full bg-accent-500 animate-pulse"></span>
         {{ t('home.hero_badge') }}
-      </div>
+        <span class="i-heroicons-chevron-right text-xs opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all"></span>
+      </Link>
       <h1 class="text-5xl md:text-7xl font-bold mb-6 tracking-tight leading-tight gradient-text bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400 font-display">
         <template v-if="t('home.hero_title').includes('，')">
           {{ t('home.hero_title').split('，')[0] }}，<br class="hidden md:block" />{{ t('home.hero_title').split('，')[1] }}
@@ -55,10 +60,35 @@ const formatPrice = (price: number) => `NT$ ${(price / 100).toLocaleString()}`
           {{ t('home.start_shopping') }}
           <span class="i-heroicons-shopping-bag ml-2 text-xl"></span>
         </Link>
-        <a href="#featured" class="btn btn-lg bg-gray-800/50 text-white border border-gray-700 hover:bg-gray-800 hover:border-gray-600 backdrop-blur-sm">
+        <Link href="/pages/news" class="btn btn-lg bg-gray-800/50 text-white border border-gray-700 hover:bg-gray-800 hover:border-gray-600 backdrop-blur-sm">
           {{ t('home.learn_more') }}
-          <span class="i-heroicons-arrow-down ml-2"></span>
-        </a>
+          <span class="i-heroicons-newspaper ml-2"></span>
+        </Link>
+      </div>
+    </div>
+  </section>
+
+  <!-- Latest News Highlight -->
+  <section v-if="latestNews && latestNews.length > 0" class="bg-primary-50 dark:bg-gray-800/50 py-10 border-b border-gray-100 dark:border-gray-700">
+    <div class="container">
+      <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 rounded-xl bg-primary text-white flex items-center justify-center shadow-lg shadow-primary/20">
+            <span class="i-heroicons-megaphone text-2xl"></span>
+          </div>
+          <div>
+            <span class="text-xs font-bold text-primary uppercase tracking-wider">{{ t('news.categories.promotion') }}</span>
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white">{{ latestNews[0].title }}</h3>
+          </div>
+        </div>
+        <div class="flex items-center gap-6">
+          <p class="hidden lg:block text-gray-600 dark:text-gray-400 text-sm max-w-md">
+            {{ latestNews[0].excerpt }}
+          </p>
+          <Link href="/pages/news" class="btn btn-sm bg-white dark:bg-gray-800 text-primary border border-primary/20 hover:bg-primary hover:text-white transition-all whitespace-nowrap">
+            {{ t('news.read_more') }}
+          </Link>
+        </div>
       </div>
     </div>
   </section>

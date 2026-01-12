@@ -62,6 +62,7 @@ const currentLanguageName = computed(() => {
           <nav class="hidden md:flex items-center gap-6">
             <Link href="/" class="nav-link">{{ t('nav.home') }}</Link>
             <Link href="/products" class="nav-link">{{ t('nav.products') }}</Link>
+            <Link href="/pages/news" class="nav-link">{{ t('news.title') }}</Link>
             <div v-for="category in categories.slice(0, 5)" :key="category.id">
               <Link :href="`/category/${category.slug}`" class="nav-link">
                 {{ category.name }}
@@ -163,6 +164,7 @@ const currentLanguageName = computed(() => {
         <nav v-if="isMenuOpen" class="md:hidden pb-4 border-t border-gray-200 dark:border-gray-700 pt-4">
           <Link href="/" class="block py-2">{{ t('nav.home') }}</Link>
           <Link href="/products" class="block py-2">{{ t('nav.products') }}</Link>
+          <Link href="/pages/news" class="block py-2">{{ t('news.title') }}</Link>
           <div v-for="category in categories" :key="category.id">
             <Link :href="`/category/${category.slug}`" class="block py-2">{{ category.name }}</Link>
           </div>
@@ -188,6 +190,7 @@ const currentLanguageName = computed(() => {
             <ul class="space-y-2 text-sm">
               <li><Link href="/" class="hover:text-white">{{ t('nav.home') }}</Link></li>
               <li><Link href="/products" class="hover:text-white">{{ t('nav.products') }}</Link></li>
+              <li><Link href="/pages/news" class="hover:text-white">{{ t('news.title') }}</Link></li>
               <li><Link href="/cart" class="hover:text-white">{{ t('nav.cart') }}</Link></li>
             </ul>
           </div>

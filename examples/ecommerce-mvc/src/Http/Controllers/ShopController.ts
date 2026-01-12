@@ -44,10 +44,34 @@ export class ShopController {
       ORDER BY c.sort_order
     `)
 
+    // Latest news for home page (mock)
+    const i18n = ctx.get('i18n') as any
+    const locale = i18n?.getLocale() || 'zh-TW'
+    const latestNews = [
+      {
+        id: 1,
+        title:
+          locale === 'zh-TW'
+            ? '夏季大促：全館 8 折起！'
+            : locale === 'ja'
+              ? 'サマーセール：全品20%OFFから！'
+              : 'Summer Sale: Up to 20% OFF!',
+        date: '2026-01-12',
+        category: 'promotion',
+        excerpt:
+          locale === 'zh-TW'
+            ? '迎接夏日，Gravito Shop 推出限時優惠...'
+            : locale === 'ja'
+              ? '夏を迎え、Gravito Shopでは期間限定キャンペーンを...'
+              : 'Celebrate summer with Gravito Shop! Limited time offers...',
+      },
+    ]
+
     return inertia.render('Home', {
       featuredProducts: featuredResult.rows,
       latestProducts: latestResult.rows,
       categories: categoriesResult.rows,
+      latestNews: latestNews,
     })
   }
 

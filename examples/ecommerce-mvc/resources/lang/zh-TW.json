@@ -21,7 +21,8 @@
         "faq": "常見問題",
         "shipping": "運送政策",
         "returns": "退換貨說明",
-        "powered_by": "Powered by Gravito Framework."
+        "powered_by": "Powered by Gravito Framework.",
+        "news": "最新消息"
     },
     "home": {
         "title": "首頁",
@@ -144,6 +145,19 @@
         "placeholder_message": "請詳細描述您的問題...",
         "thank_you": "感謝您的來訊！我們會儘快回覆您。",
         "demo_notice": "(此為示範頁面，實際上未發送郵件)"
+    },
+    "news": {
+        "title": "最新消息",
+        "subtitle": "獲取 Gravito Shop 的最新促銷活動、新品上市與官方公告。",
+        "read_more": "閱讀更多",
+        "back_to_news": "回到最新消息",
+        "no_news": "目前沒有相關消息。",
+        "categories": {
+            "all": "全部",
+            "promotion": "促銷活動",
+            "new_arrival": "新品上市",
+            "announcement": "官方公告"
+        }
     },
     "auth": {
         "email": "電子郵件",

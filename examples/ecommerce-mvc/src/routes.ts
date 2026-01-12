@@ -41,6 +41,7 @@ export function registerRoutes(router: Router) {
   router.get('/pages/shipping', PageController.shipping)
   router.get('/pages/returns', PageController.returns)
   router.get('/pages/contact', PageController.contact)
+  router.get('/pages/news', PageController.news)
 
   // ─────────────────────────────────────────────────────────────
   // Auth Routes (Guest Only)

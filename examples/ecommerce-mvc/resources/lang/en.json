@@ -21,7 +21,8 @@
         "faq": "FAQ",
         "shipping": "Shipping Policy",
         "returns": "Returns & Refunds",
-        "powered_by": "Powered by Gravito Framework."
+        "powered_by": "Powered by Gravito Framework.",
+        "news": "Latest News"
     },
     "home": {
         "title": "Home",
@@ -144,6 +145,19 @@
         "placeholder_message": "Please describe your question in detail...",
         "thank_you": "Thank you for your message! We will get back to you soon.",
         "demo_notice": "(This is a demo page, no actual email sent)"
+    },
+    "news": {
+        "title": "Latest News",
+        "subtitle": "Stay updated with Gravito Shop's latest promotions, new products, and official announcements.",
+        "read_more": "Read More",
+        "back_to_news": "Back to News",
+        "no_news": "Currently there are no news items.",
+        "categories": {
+            "all": "All",
+            "promotion": "Promotion",
+            "new_arrival": "New Arrival",
+            "announcement": "Official Announcement"
+        }
     },
     "auth": {
         "email": "Email",
