@@ -31,7 +31,45 @@ import type { AdapterConfig, HttpAdapter, RouteDefinition } from './types'
  * Wraps Photon's request object to implement GravitoRequest
  */
 class PhotonRequestWrapper implements GravitoRequest {
-  constructor(private photonCtx: Context) {}
+  constructor(public readonly photonCtx: Context) {}
+
+  /**
+   * Create a proxied instance to delegate to Photon's request
+   */
+  static create(photonCtx: Context): PhotonRequestWrapper {
+    const instance = new PhotonRequestWrapper(photonCtx)
+    return new Proxy(instance, {
+      get(target, prop, receiver) {
+        if (prop in target) {
+          const value = Reflect.get(target, prop, receiver)
+          if (typeof value === 'function') {
+            return value.bind(target)
+          }
+          return value
+        }
+
+        // Delegate to Photon's native request
+        const nativeReq = target.photonCtx.req as any
+        if (prop in nativeReq) {
+          const value = nativeReq[prop]
+          if (typeof value === 'function') {
+            return value.bind(nativeReq)
+          }
+          return value
+        }
+
+        return undefined
+      },
+      // Allow setting properties (for addValidated etc.)
+      set(target, prop, value) {
+        if (prop in target) {
+          return Reflect.set(target, prop, value)
+        }
+        ;(target.photonCtx.req as any)[prop] = value
+        return true
+      },
+    }) as any
+  }
 
   get url(): string {
     return this.photonCtx.req.url
@@ -101,9 +139,7 @@ class PhotonRequestWrapper implements GravitoRequest {
   }
 
   valid<T = unknown>(target: string): T {
-    // Use 'any' to bypass Photon's strict valid() typing
-    // The actual validation is handled by the validator middleware
-    return (this.photonCtx.req as unknown as { valid(t: string): T }).valid(target)
+    return (this.photonCtx.req as any).valid(target)
   }
 }
 
@@ -120,7 +156,7 @@ class PhotonContextWrapper<V extends GravitoVariables = GravitoVariables>
   private _req: PhotonRequestWrapper
 
   constructor(private photonCtx: Context) {
-    this._req = new PhotonRequestWrapper(photonCtx)
+    this._req = PhotonRequestWrapper.create(photonCtx)
   }
 
   /**

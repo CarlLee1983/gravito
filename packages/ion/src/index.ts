@@ -37,14 +37,22 @@ declare module '@gravito/core' {
  * }))
  * ```
  */
+export interface OrbitIonOptions {
+  version?: string
+  rootView?: string
+}
+
 export class OrbitIon implements GravitoOrbit {
+  constructor(private options: OrbitIonOptions = {}) {}
+
   /**
    * Install the Inertia orbit into PlanetCore
    */
   install(core: PlanetCore): void {
     core.logger.info('🛰️ Orbit Inertia installed')
 
-    const appVersion = core.config.get('APP_VERSION', '1.0.0')
+    const appVersion = this.options.version ?? core.config.get('APP_VERSION', '1.0.0')
+    const rootView = this.options.rootView ?? 'app'
 
     // Register middleware to inject Inertia helper
     core.adapter.use('*', async (c: any, next: any) => {
@@ -54,7 +62,7 @@ export class OrbitIon implements GravitoOrbit {
       // Initialize with config
       const inertia = new InertiaService(gravitoCtx, {
         version: String(appVersion),
-        rootView: 'app', // Default to src/views/app.html
+        rootView,
       })
 
       c.set('inertia', inertia)
