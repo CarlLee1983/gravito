@@ -4,8 +4,9 @@
  * Handles database initialization and schema setup.
  */
 
-import { type Blueprint, Schema } from '@gravito/atlas'
 import { ServiceProvider } from '@gravito/core'
+import { runMigrations } from '../../database/migrations'
+import { runSeeders } from '../../database/seeders'
 
 export class DatabaseProvider extends ServiceProvider {
   register() {
@@ -13,19 +14,12 @@ export class DatabaseProvider extends ServiceProvider {
   }
 
   async boot() {
-    await this.initializeSchema()
-  }
+    // Run migrations
+    await runMigrations()
 
-  private async initializeSchema() {
-    // Create products table if not exists
-    if (!(await Schema.hasTable('products'))) {
-      await Schema.create('products', (table: Blueprint) => {
-        table.id()
-        table.string('name')
-        table.decimal('price')
-        table.string('category').nullable()
-        table.timestamps()
-      })
+    // Run seeders (development only)
+    if (process.env.NODE_ENV !== 'production') {
+      await runSeeders()
     }
   }
 }

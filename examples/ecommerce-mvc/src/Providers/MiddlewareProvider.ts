@@ -6,6 +6,7 @@
 
 import { bodySizeLimit, ServiceProvider, securityHeaders } from '@gravito/core'
 import { securityConfig } from '../../config/security'
+import { HandleInertiaRequests } from '../Http/Middleware'
 
 export class MiddlewareProvider extends ServiceProvider {
   register() {
@@ -15,6 +16,7 @@ export class MiddlewareProvider extends ServiceProvider {
   boot() {
     this.registerSecurityMiddleware()
     this.registerBodyLimitMiddleware()
+    this.registerInertiaMiddleware()
   }
 
   private registerSecurityMiddleware() {
@@ -37,5 +39,10 @@ export class MiddlewareProvider extends ServiceProvider {
     if (!Number.isNaN(maxSize) && maxSize > 0) {
       this.core!.adapter.use('*', bodySizeLimit(maxSize, { requireContentLength }))
     }
+  }
+
+  private registerInertiaMiddleware() {
+    // Register Inertia shared data middleware
+    this.core!.adapter.use('*', HandleInertiaRequests)
   }
 }
