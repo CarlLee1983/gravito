@@ -53,29 +53,31 @@ const currentLanguageName = computed(() => {
   <div class="min-h-screen flex flex-col">
     <SeoHead v-if="seo" :seo="seo" />
     <!-- Header -->
-    <header class="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-200/50 dark:border-gray-800/50 transition-colors duration-300">
+    <header class="bg-white/70 dark:bg-dark-surface/70 backdrop-blur-xl sticky top-0 z-50 border-b border-gray-200/50 dark:border-white/5 transition-all duration-300 supports-[backdrop-filter]:bg-white/60">
       <div class="container">
-        <div class="flex items-center justify-between h-16">
+        <div class="flex items-center justify-between h-20">
           <!-- Logo -->
-          <Link href="/" class="flex items-center gap-2 text-xl font-bold text-primary">
-            <span class="i-heroicons-shopping-bag text-2xl"></span>
-            <span>Gravito Shop</span>
+          <Link href="/" class="flex items-center gap-2.5 text-2xl font-display font-bold text-gray-900 dark:text-white hover:opacity-80 transition-opacity">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 text-white flex items-center justify-center shadow-lg shadow-primary/20">
+              <span class="i-heroicons-shopping-bag text-xl"></span>
+            </div>
+            <span class="tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400">Gravito Shop</span>
           </Link>
 
           <!-- Desktop Navigation -->
-          <nav class="hidden lg:flex items-center gap-4 xl:gap-8 mx-4">
-            <Link href="/" class="nav-link whitespace-nowrap">{{ t('nav.home') }}</Link>
-            <Link href="/products" class="nav-link whitespace-nowrap">{{ t('nav.products') }}</Link>
-            <Link href="/pages/news" class="nav-link whitespace-nowrap">{{ t('news.title') }}</Link>
-            <div v-for="category in categories.slice(0, 4)" :key="category.id" class="hidden xl:block">
-              <Link :href="`/category/${category.slug}`" class="nav-link whitespace-nowrap">
+          <nav class="hidden lg:flex items-center gap-8 mx-8 bg-white/50 dark:bg-white/5 px-6 py-2 rounded-full border border-gray-100 dark:border-white/5 backdrop-blur-md">
+            <Link href="/" class="nav-link whitespace-nowrap text-sm font-medium">{{ t('nav.home') }}</Link>
+            <Link href="/products" class="nav-link whitespace-nowrap text-sm font-medium">{{ t('nav.products') }}</Link>
+            <Link href="/pages/news" class="nav-link whitespace-nowrap text-sm font-medium">{{ t('news.title') }}</Link>
+            <div v-for="category in categories.slice(0, 3)" :key="category.id" class="hidden xl:block">
+              <Link :href="`/category/${category.slug}`" class="nav-link whitespace-nowrap text-sm font-medium">
                 {{ category.name }}
               </Link>
             </div>
           </nav>
 
           <!-- Right Actions -->
-          <div class="flex items-center gap-1 sm:gap-4">
+          <div class="flex items-center gap-2 sm:gap-4">
             <!-- Language Switcher -->
             <div class="relative">
               <button

@@ -20,64 +20,79 @@ export default defineConfig({
   theme: {
     colors: {
       primary: {
-        50: '#f0fdfa',
-        100: '#ccfbf1',
-        200: '#99f6e4',
-        300: '#5eead4',
-        400: '#2dd4bf',
-        500: '#14b8a6',
-        600: '#0d9488',
-        700: '#0f766e',
-        800: '#115e59',
-        900: '#134e4a',
-        DEFAULT: '#0d9488', // Teal-600 baseline
+        50: '#eff6ff',
+        100: '#dbeafe',
+        200: '#bfdbfe',
+        300: '#93c5fd',
+        400: '#60a5fa',
+        500: '#3b82f6',
+        600: '#2563eb',
+        700: '#1d4ed8',
+        800: '#1e40af',
+        900: '#1e3a8a',
+        950: '#172554',
+        DEFAULT: '#2563eb', // Royal Blue
       },
       secondary: {
-        DEFAULT: '#6366f1',
-        dark: '#4f46e5',
+        DEFAULT: '#8b5cf6', // Violet
+        dark: '#7c3aed',
       },
       dark: {
-        bg: '#0f172a',
-        surface: '#1e293b',
+        bg: '#020617', // Slate 950
+        surface: '#0f172a', // Slate 900
+        surfaceHighlight: '#1e293b', // Slate 800
       },
       accent: {
         DEFAULT: '#f43f5e',
         dark: '#e11d48',
       },
+      success: '#10b981',
+      warning: '#f59e0b',
+      danger: '#ef4444',
+      info: '#3b82f6',
     },
   },
   shortcuts: {
     // Buttons
-    btn: 'px-4 py-2 rounded-lg font-medium transition-all duration-200 cursor-pointer inline-flex items-center justify-center gap-2',
-    'btn-primary': 'btn bg-primary text-white hover:bg-primary-600 active:bg-primary-700',
-    'btn-secondary': 'btn bg-secondary text-white hover:bg-secondary-dark',
-    'btn-accent': 'btn bg-accent text-white hover:bg-accent-dark',
-    'btn-outline': 'btn border-2 border-primary text-primary hover:bg-primary hover:text-white',
-    'btn-ghost': 'btn text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800',
-    'btn-danger': 'btn bg-red-500 text-white hover:bg-red-600',
-    'btn-sm': 'px-3 py-1.5 text-sm',
-    'btn-lg': 'px-6 py-3 text-lg',
+    btn: 'px-5 py-2.5 rounded-xl font-medium transition-all duration-300 cursor-pointer inline-flex items-center justify-center gap-2 active:scale-[0.98] shadow-sm',
+    'btn-primary':
+      'btn bg-primary text-white hover:bg-primary-500 hover:shadow-lg hover:shadow-primary/30 active:bg-primary-700',
+    'btn-secondary':
+      'btn bg-secondary text-white hover:bg-secondary-dark hover:shadow-lg hover:shadow-secondary/30',
+    'btn-accent':
+      'btn bg-accent text-white hover:bg-accent-dark hover:shadow-lg hover:shadow-accent/30',
+    'btn-outline':
+      'btn border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:border-primary hover:text-primary dark:hover:border-primary dark:hover:text-primary bg-transparent',
+    'btn-ghost':
+      'btn text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-dark-surfaceHighlight shadow-none',
+    'btn-danger':
+      'btn bg-danger text-white hover:bg-red-600 hover:shadow-lg hover:shadow-red-500/30',
+    'btn-sm': 'px-3.5 py-1.5 text-sm rounded-lg',
+    'btn-lg': 'px-8 py-3.5 text-lg rounded-2xl',
 
     // Cards
-    card: 'bg-white dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 overflow-hidden',
+    card: 'bg-white dark:bg-dark-surface/90 backdrop-blur-md rounded-2xl shadow-sm border border-gray-100 dark:border-white/5 overflow-hidden transition-all duration-300',
     'card-hover':
-      'card transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/5 hover:border-primary/20 dark:hover:border-primary/20',
+      'card hover:-translate-y-1 hover:shadow-xl hover:shadow-gray-200/50 dark:hover:shadow-black/50 hover:border-primary/20 dark:hover:border-primary/30',
     'card-body': 'p-6',
 
     // Forms
     input:
-      'w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all placeholder:text-gray-400 dark:text-white',
-    label: 'block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1.5 ml-1',
-    'form-group': 'mb-5',
+      'w-full px-4 py-3 bg-white dark:bg-dark-surfaceHighlight/50 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all placeholder:text-gray-400 dark:text-white',
+    label: 'block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 ml-1',
+    'form-group': 'mb-6',
 
     // Layout
     container: 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8',
-    section: 'py-12 md:py-16',
+    section: 'py-16 md:py-24',
 
     // Typography
-    'heading-1': 'text-4xl md:text-5xl font-bold text-gray-900 dark:text-white',
-    'heading-2': 'text-3xl md:text-4xl font-bold text-gray-900 dark:text-white',
-    'heading-3': 'text-2xl font-semibold text-gray-900 dark:text-white',
+    'heading-1':
+      'text-4xl md:text-6xl font-display font-bold text-gray-900 dark:text-white leading-tight tracking-tight',
+    'heading-2':
+      'text-3xl md:text-4xl font-display font-bold text-gray-900 dark:text-white leading-tight tracking-tight',
+    'heading-3': 'text-2xl font-display font-semibold text-gray-900 dark:text-white',
+    'text-body': 'text-gray-600 dark:text-gray-400 leading-relaxed',
 
     // Badges
     badge: 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
