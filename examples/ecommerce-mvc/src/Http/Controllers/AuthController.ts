@@ -11,6 +11,7 @@ import type { SessionService } from '@gravito/pulsar'
 import type { AuthManager } from '@gravito/sentinel'
 import { User } from '../../Models'
 import { CartService } from '../../Services'
+import { sql } from '../../utils/db'
 
 export class AuthController {
   /**
@@ -101,9 +102,10 @@ export class AuthController {
       errors.email = ['請輸入有效的電子郵件']
     } else {
       // Check if email exists
-      const existingResult = await DB.raw<{ id: number }>('SELECT id FROM users WHERE email = ?', [
-        email,
-      ])
+      const existingResult = await DB.raw<{ id: number }>(
+        sql('SELECT id FROM users WHERE email = ?'),
+        [email]
+      )
       if (existingResult.rows[0]) {
         errors.email = ['此電子郵件已被註冊']
       }
@@ -126,7 +128,7 @@ export class AuthController {
     // Create user
     const hashedPassword = await Bun.password.hash(password, { algorithm: 'bcrypt' })
     const result = await DB.raw<{ id: number }>(
-      'INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?) RETURNING id',
+      sql('INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?) RETURNING id'),
       [name, email, hashedPassword, 'customer']
     )
 

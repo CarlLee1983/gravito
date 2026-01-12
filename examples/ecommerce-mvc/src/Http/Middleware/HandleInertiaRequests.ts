@@ -11,6 +11,7 @@ import type { InertiaService } from '@gravito/ion'
 import type { CsrfService, SessionService } from '@gravito/pulsar'
 import type { AuthManager } from '@gravito/sentinel'
 import { CartService } from '../../Services'
+import { sql, TRUE } from '../../utils/db'
 
 export async function HandleInertiaRequests(ctx: GravitoContext, next: GravitoNext) {
   const inertia = ctx.get('inertia') as InertiaService
@@ -32,7 +33,7 @@ export async function HandleInertiaRequests(ctx: GravitoContext, next: GravitoNe
     if (user) {
       const userId = user.getAuthIdentifier() as number
       const result = await DB.raw<{ id: number; name: string; email: string; role: string }>(
-        'SELECT id, name, email, role FROM users WHERE id = ?',
+        sql('SELECT id, name, email, role FROM users WHERE id = ?'),
         [userId]
       )
       userData = result.rows[0] || null
@@ -50,12 +51,14 @@ export async function HandleInertiaRequests(ctx: GravitoContext, next: GravitoNe
   }
 
   // Get categories for navigation
-  const categoriesResult = await DB.raw<{ id: number; name: string; slug: string }>(`
+  const categoriesResult = await DB.raw<{ id: number; name: string; slug: string }>(
+    sql(`
     SELECT id, name, slug FROM categories
-    WHERE is_active = 1
+    WHERE is_active = ${TRUE}
     ORDER BY sort_order, name
     LIMIT 10
   `)
+  )
 
   // Share data with Inertia
   inertia.shareAll({

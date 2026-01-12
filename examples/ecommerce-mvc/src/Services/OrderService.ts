@@ -8,6 +8,7 @@ import type { OrbitAtlas } from '@gravito/atlas'
 import { DB } from '@gravito/atlas'
 import type { ShippingAddress } from '../Models'
 import { Order, OrderItem, OrderStatus } from '../Models'
+import { sql } from '../utils/db'
 
 export interface CreateOrderInput {
   userId: number
@@ -24,12 +25,12 @@ export class OrderService {
   async createOrder(input: CreateOrderInput): Promise<Order> {
     // Get cart items
     const cartItemsResult = await DB.raw(
-      `
+      sql(`
       SELECT ci.*, p.name as product_name, p.stock as product_stock
       FROM cart_items ci
       JOIN products p ON ci.product_id = p.id
       WHERE ci.cart_id = ?
-    `,
+    `),
       [input.cartId]
     )
 
@@ -60,11 +61,11 @@ export class OrderService {
 
     // Create order
     const orderResult = await DB.raw<{ id: number }>(
-      `
+      sql(`
       INSERT INTO orders (user_id, order_number, status, subtotal, tax, shipping, total, shipping_address, notes)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       RETURNING id
-    `,
+    `),
       [
         input.userId,
         orderNumber,
@@ -83,10 +84,10 @@ export class OrderService {
     // Create order items
     for (const item of cartItems) {
       await DB.raw(
-        `
+        sql(`
         INSERT INTO order_items (order_id, product_id, product_name, quantity, price)
         VALUES (?, ?, ?, ?, ?)
-      `,
+      `),
         [
           orderId,
           (item as any).product_id,
@@ -97,14 +98,14 @@ export class OrderService {
       )
 
       // Deduct stock
-      await DB.raw('UPDATE products SET stock = stock - ? WHERE id = ?', [
+      await DB.raw(sql('UPDATE products SET stock = stock - ? WHERE id = ?'), [
         (item as any).quantity,
         (item as any).product_id,
       ])
     }
 
     // Clear cart
-    await DB.raw('DELETE FROM cart_items WHERE cart_id = ?', [input.cartId])
+    await DB.raw(sql('DELETE FROM cart_items WHERE cart_id = ?'), [input.cartId])
 
     // Return order
     return this.getOrder(orderId)
@@ -114,7 +115,7 @@ export class OrderService {
    * Get order by ID
    */
   async getOrder(orderId: number): Promise<Order> {
-    const orderResult = await DB.raw('SELECT * FROM orders WHERE id = ?', [orderId])
+    const orderResult = await DB.raw(sql('SELECT * FROM orders WHERE id = ?'), [orderId])
     const orderRow = orderResult.rows[0]
     if (!orderRow) {
       throw new Error('Order not found')
@@ -123,7 +124,7 @@ export class OrderService {
     const order = Order.hydrate(orderRow)
 
     // Get order items
-    const itemsResult = await DB.raw('SELECT * FROM order_items WHERE order_id = ?', [orderId])
+    const itemsResult = await DB.raw(sql('SELECT * FROM order_items WHERE order_id = ?'), [orderId])
     order.items = itemsResult.rows.map((row: any) => {
       return OrderItem.hydrate(row)
     })
@@ -135,9 +136,10 @@ export class OrderService {
    * Get order by order number
    */
   async getOrderByNumber(orderNumber: string): Promise<Order | null> {
-    const result = await DB.raw<{ id: number }>('SELECT id FROM orders WHERE order_number = ?', [
-      orderNumber,
-    ])
+    const result = await DB.raw<{ id: number }>(
+      sql('SELECT id FROM orders WHERE order_number = ?'),
+      [orderNumber]
+    )
     const row = result.rows[0]
     if (!row) return null
     return this.getOrder(row.id)
@@ -148,7 +150,7 @@ export class OrderService {
    */
   async getOrderByStripeSession(sessionId: string): Promise<Order | null> {
     const result = await DB.raw<{ id: number }>(
-      'SELECT id FROM orders WHERE stripe_session_id = ?',
+      sql('SELECT id FROM orders WHERE stripe_session_id = ?'),
       [sessionId]
     )
     const row = result.rows[0]
@@ -171,16 +173,16 @@ export class OrderService {
     const offset = (page - 1) * perPage
 
     const ordersResult = await DB.raw(
-      `
+      sql(`
       SELECT * FROM orders WHERE user_id = ?
       ORDER BY created_at DESC
       LIMIT ? OFFSET ?
-    `,
+    `),
       [userId, perPage, offset]
     )
 
     const countResult = await DB.raw<{ count: number }>(
-      'SELECT COUNT(*) as count FROM orders WHERE user_id = ?',
+      sql('SELECT COUNT(*) as count FROM orders WHERE user_id = ?'),
       [userId]
     )
     const total = countResult.rows[0]?.count || 0
@@ -198,7 +200,7 @@ export class OrderService {
    * Update order status
    */
   async updateStatus(orderId: number, status: OrderStatus): Promise<void> {
-    await DB.raw('UPDATE orders SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [
+    await DB.raw(sql('UPDATE orders SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'), [
       status,
       orderId,
     ])
@@ -208,7 +210,7 @@ export class OrderService {
    * Update Stripe session ID
    */
   async updateStripeSession(orderId: number, sessionId: string): Promise<void> {
-    await DB.raw('UPDATE orders SET stripe_session_id = ? WHERE id = ?', [sessionId, orderId])
+    await DB.raw(sql('UPDATE orders SET stripe_session_id = ? WHERE id = ?'), [sessionId, orderId])
   }
 
   /**
@@ -216,13 +218,13 @@ export class OrderService {
    */
   async markAsPaid(orderId: number, paymentIntentId: string): Promise<void> {
     await DB.raw(
-      `
+      sql(`
       UPDATE orders SET 
         status = ?,
         stripe_payment_intent_id = ?,
         updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
-    `,
+    `),
       [OrderStatus.PAID, paymentIntentId, orderId]
     )
   }
@@ -239,7 +241,7 @@ export class OrderService {
     // Restore stock
     if (order.items) {
       for (const item of order.items) {
-        await DB.raw('UPDATE products SET stock = stock + ? WHERE id = ?', [
+        await DB.raw(sql('UPDATE products SET stock = stock + ? WHERE id = ?'), [
           item.quantity,
           item.product_id,
         ])

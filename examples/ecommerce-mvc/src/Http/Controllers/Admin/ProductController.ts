@@ -9,6 +9,7 @@ import type { GravitoContext } from '@gravito/core'
 import type { InertiaService } from '@gravito/ion'
 import type { SessionService } from '@gravito/pulsar'
 import { Product } from '../../../Models'
+import { FALSE, sql, TRUE } from '../../../utils/db'
 
 export class AdminProductController {
   /**
@@ -31,21 +32,21 @@ export class AdminProductController {
     }
 
     const productsResult = await DB.raw(
-      `
+      sql(`
       SELECT p.*, c.name as category_name
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.id
       ${whereClause}
       ORDER BY p.created_at DESC
       LIMIT ? OFFSET ?
-    `,
+    `),
       [...params, perPage, offset]
     )
 
     const countResult = await DB.raw<{ count: number }>(
-      `
+      sql(`
       SELECT COUNT(*) as count FROM products p ${whereClause}
-    `,
+    `),
       params
     )
 
@@ -66,7 +67,7 @@ export class AdminProductController {
     const inertia = ctx.get('inertia') as InertiaService
 
     const categoriesResult = await DB.raw(
-      'SELECT id, name FROM categories WHERE is_active = 1 ORDER BY name'
+      sql(`SELECT id, name FROM categories WHERE is_active = ${TRUE} ORDER BY name`)
     )
 
     return inertia.render('Admin/Products/Create', { categories: categoriesResult.rows })
@@ -113,10 +114,10 @@ export class AdminProductController {
     const compareAtPrice = body.compare_at_price ? Math.round(body.compare_at_price * 100) : null
 
     await DB.raw(
-      `
+      sql(`
       INSERT INTO products (name, slug, category_id, description, price, compare_at_price, stock, image_url, is_active, is_featured)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `,
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ${body.is_active ? TRUE : FALSE}, ${body.is_featured ? TRUE : FALSE})
+    `),
       [
         body.name,
         slug,
@@ -126,8 +127,7 @@ export class AdminProductController {
         compareAtPrice,
         body.stock,
         body.image_url || null,
-        body.is_active ? 1 : 0,
-        body.is_featured ? 1 : 0,
+        // is_active, is_featured handled via literal
       ]
     )
 
@@ -141,8 +141,8 @@ export class AdminProductController {
   static async edit(ctx: GravitoContext) {
     const inertia = ctx.get('inertia') as InertiaService
 
-    const id = parseInt(ctx.req.param('id'), 10)
-    const productResult = await DB.raw('SELECT * FROM products WHERE id = ?', [id])
+    const id = parseInt(ctx.req.param('id') || '0', 10)
+    const productResult = await DB.raw(sql('SELECT * FROM products WHERE id = ?'), [id])
     const product = productResult.rows[0]
 
     if (!product) {
@@ -150,7 +150,7 @@ export class AdminProductController {
     }
 
     const categoriesResult = await DB.raw(
-      'SELECT id, name FROM categories WHERE is_active = 1 ORDER BY name'
+      sql(`SELECT id, name FROM categories WHERE is_active = ${TRUE} ORDER BY name`)
     )
 
     return inertia.render('Admin/Products/Edit', {
@@ -172,7 +172,7 @@ export class AdminProductController {
   static async update(ctx: GravitoContext) {
     const session = ctx.get('session') as SessionService
 
-    const id = parseInt(ctx.req.param('id'), 10)
+    const id = parseInt(ctx.req.param('id') || '0', 10)
     const body = (await ctx.req.json()) as {
       name: string
       category_id?: number
@@ -204,13 +204,13 @@ export class AdminProductController {
     const compareAtPrice = body.compare_at_price ? Math.round(body.compare_at_price * 100) : null
 
     await DB.raw(
-      `
+      sql(`
       UPDATE products SET
         name = ?, slug = ?, category_id = ?, description = ?,
         price = ?, compare_at_price = ?, stock = ?, image_url = ?,
-        is_active = ?, is_featured = ?, updated_at = CURRENT_TIMESTAMP
+        is_active = ${body.is_active ? TRUE : FALSE}, is_featured = ${body.is_featured ? TRUE : FALSE}, updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
-    `,
+    `),
       [
         body.name,
         slug,
@@ -220,8 +220,7 @@ export class AdminProductController {
         compareAtPrice,
         body.stock,
         body.image_url || null,
-        body.is_active ? 1 : 0,
-        body.is_featured ? 1 : 0,
+        // is_active, is_featured handled via literal
         id,
       ]
     )
@@ -234,8 +233,8 @@ export class AdminProductController {
    * Delete product
    */
   static async destroy(ctx: GravitoContext) {
-    const id = parseInt(ctx.req.param('id'), 10)
-    await DB.raw('DELETE FROM products WHERE id = ?', [id])
+    const id = parseInt(ctx.req.param('id') || '0', 10)
+    await DB.raw(sql('DELETE FROM products WHERE id = ?'), [id])
 
     return ctx.json({ success: true })
   }

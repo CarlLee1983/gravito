@@ -9,6 +9,7 @@ import type { GravitoContext } from '@gravito/core'
 import type { InertiaService } from '@gravito/ion'
 import type { SessionService } from '@gravito/pulsar'
 import type { AuthManager } from '@gravito/sentinel'
+import { sql } from '../../utils/db'
 
 export class ProfileController {
   /**
@@ -29,7 +30,7 @@ export class ProfileController {
       name: string
       email: string
       created_at: string
-    }>('SELECT id, name, email, created_at FROM users WHERE id = ?', [userId])
+    }>(sql('SELECT id, name, email, created_at FROM users WHERE id = ?'), [userId])
 
     return inertia.render('Account/Profile', {
       user: userResult.rows[0],
@@ -63,7 +64,7 @@ export class ProfileController {
     } else {
       // Check if email exists (for other users)
       const existingResult = await DB.raw<{ id: number }>(
-        'SELECT id FROM users WHERE email = ? AND id != ?',
+        sql('SELECT id FROM users WHERE email = ? AND id != ?'),
         [body.email, userId]
       )
       if (existingResult.rows[0]) {
@@ -76,7 +77,7 @@ export class ProfileController {
     }
 
     await DB.raw(
-      'UPDATE users SET name = ?, email = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      sql('UPDATE users SET name = ?, email = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'),
       [body.name, body.email, userId]
     )
 
@@ -108,7 +109,7 @@ export class ProfileController {
 
     // Get current password
     const userResult = await DB.raw<{ password: string }>(
-      'SELECT password FROM users WHERE id = ?',
+      sql('SELECT password FROM users WHERE id = ?'),
       [userId]
     )
     const userData = userResult.rows[0]
@@ -132,10 +133,10 @@ export class ProfileController {
     }
 
     const hashedPassword = await Bun.password.hash(body.new_password, { algorithm: 'bcrypt' })
-    await DB.raw('UPDATE users SET password = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [
-      hashedPassword,
-      userId,
-    ])
+    await DB.raw(
+      sql('UPDATE users SET password = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'),
+      [hashedPassword, userId]
+    )
 
     session.flash('success', '密碼已更新')
     session.flash('success', '密碼已更新')

@@ -7,6 +7,7 @@
 import type { OrbitAtlas } from '@gravito/atlas'
 import { DB } from '@gravito/atlas'
 import { Cart, CartItem } from '../Models'
+import { sql, TRUE } from '../utils/db'
 
 export class CartService {
   constructor(private atlas?: OrbitAtlas) {}
@@ -18,10 +19,10 @@ export class CartService {
     let cartRow: any = null
 
     if (userId) {
-      const result = await DB.raw('SELECT * FROM carts WHERE user_id = ?', [userId])
+      const result = await DB.raw(sql('SELECT * FROM carts WHERE user_id = ?'), [userId])
       cartRow = result.rows[0]
     } else if (sessionId) {
-      const result = await DB.raw('SELECT * FROM carts WHERE session_id = ?', [sessionId])
+      const result = await DB.raw(sql('SELECT * FROM carts WHERE session_id = ?'), [sessionId])
       cartRow = result.rows[0]
     }
 
@@ -33,7 +34,7 @@ export class CartService {
 
     // Create new cart
     const insertResult = await DB.raw<{ id: number }>(
-      'INSERT INTO carts (user_id, session_id) VALUES (?, ?) RETURNING id',
+      sql('INSERT INTO carts (user_id, session_id) VALUES (?, ?) RETURNING id'),
       [userId || null, sessionId || null]
     )
 
@@ -51,13 +52,13 @@ export class CartService {
    */
   async getCartItems(cartId: number): Promise<CartItem[]> {
     const result = await DB.raw(
-      `
+      sql(`
       SELECT ci.*, p.name as product_name, p.slug as product_slug, 
              p.image_url as product_image, p.stock as product_stock
       FROM cart_items ci
       JOIN products p ON ci.product_id = p.id
       WHERE ci.cart_id = ?
-    `,
+    `),
       [cartId]
     )
 
@@ -79,9 +80,10 @@ export class CartService {
    */
   async addItem(cartId: number, productId: number, quantity = 1): Promise<CartItem> {
     // Get product and validate
-    const productResult = await DB.raw('SELECT * FROM products WHERE id = ? AND is_active = 1', [
-      productId,
-    ])
+    const productResult = await DB.raw(
+      sql(`SELECT * FROM products WHERE id = ? AND is_active = ${TRUE}`),
+      [productId]
+    )
     const product = productResult.rows[0] as
       | { id: number; stock: number; price: number }
       | undefined
@@ -94,7 +96,7 @@ export class CartService {
 
     // Check if item already in cart
     const existingResult = await DB.raw(
-      'SELECT * FROM cart_items WHERE cart_id = ? AND product_id = ?',
+      sql('SELECT * FROM cart_items WHERE cart_id = ? AND product_id = ?'),
       [cartId, productId]
     )
     const existingItem = existingResult.rows[0] as { id: number; quantity: number } | undefined
@@ -105,14 +107,19 @@ export class CartService {
       if (product.stock < newQty) {
         throw new Error('Insufficient stock')
       }
-      await DB.raw('UPDATE cart_items SET quantity = ? WHERE id = ?', [newQty, existingItem.id])
+      await DB.raw(sql('UPDATE cart_items SET quantity = ? WHERE id = ?'), [
+        newQty,
+        existingItem.id,
+      ])
       const item = CartItem.hydrate({ ...existingItem, quantity: newQty })
       return item
     }
 
     // Add new item
     const insertResult = await DB.raw<{ id: number }>(
-      'INSERT INTO cart_items (cart_id, product_id, quantity, price) VALUES (?, ?, ?, ?) RETURNING id',
+      sql(
+        'INSERT INTO cart_items (cart_id, product_id, quantity, price) VALUES (?, ?, ?, ?) RETURNING id'
+      ),
       [cartId, productId, quantity, product.price]
     )
 
@@ -124,7 +131,7 @@ export class CartService {
     item.price = product.price
 
     // Update cart timestamp
-    await DB.raw('UPDATE carts SET updated_at = CURRENT_TIMESTAMP WHERE id = ?', [cartId])
+    await DB.raw(sql('UPDATE carts SET updated_at = CURRENT_TIMESTAMP WHERE id = ?'), [cartId])
 
     return item
   }
@@ -138,7 +145,7 @@ export class CartService {
       return
     }
 
-    const itemResult = await DB.raw('SELECT * FROM cart_items WHERE id = ?', [itemId])
+    const itemResult = await DB.raw(sql('SELECT * FROM cart_items WHERE id = ?'), [itemId])
     const item = itemResult.rows[0] as
       | { id: number; product_id: number; cart_id: number }
       | undefined
@@ -146,25 +153,31 @@ export class CartService {
       throw new Error('Cart item not found')
     }
 
-    const productResult = await DB.raw('SELECT stock FROM products WHERE id = ?', [item.product_id])
+    const productResult = await DB.raw(sql('SELECT stock FROM products WHERE id = ?'), [
+      item.product_id,
+    ])
     const product = productResult.rows[0] as { stock: number } | undefined
     if (!product || product.stock < quantity) {
       throw new Error('Insufficient stock')
     }
 
-    await DB.raw('UPDATE cart_items SET quantity = ? WHERE id = ?', [quantity, itemId])
-    await DB.raw('UPDATE carts SET updated_at = CURRENT_TIMESTAMP WHERE id = ?', [item.cart_id])
+    await DB.raw(sql('UPDATE cart_items SET quantity = ? WHERE id = ?'), [quantity, itemId])
+    await DB.raw(sql('UPDATE carts SET updated_at = CURRENT_TIMESTAMP WHERE id = ?'), [
+      item.cart_id,
+    ])
   }
 
   /**
    * Remove item from cart
    */
   async removeItem(itemId: number): Promise<void> {
-    const itemResult = await DB.raw('SELECT cart_id FROM cart_items WHERE id = ?', [itemId])
+    const itemResult = await DB.raw(sql('SELECT cart_id FROM cart_items WHERE id = ?'), [itemId])
     const item = itemResult.rows[0]
-    await DB.raw('DELETE FROM cart_items WHERE id = ?', [itemId])
+    await DB.raw(sql('DELETE FROM cart_items WHERE id = ?'), [itemId])
     if (item) {
-      await DB.raw('UPDATE carts SET updated_at = CURRENT_TIMESTAMP WHERE id = ?', [item.cart_id])
+      await DB.raw(sql('UPDATE carts SET updated_at = CURRENT_TIMESTAMP WHERE id = ?'), [
+        item.cart_id,
+      ])
     }
   }
 
@@ -172,15 +185,17 @@ export class CartService {
    * Clear cart
    */
   async clearCart(cartId: number): Promise<void> {
-    await DB.raw('DELETE FROM cart_items WHERE cart_id = ?', [cartId])
-    await DB.raw('UPDATE carts SET updated_at = CURRENT_TIMESTAMP WHERE id = ?', [cartId])
+    await DB.raw(sql('DELETE FROM cart_items WHERE cart_id = ?'), [cartId])
+    await DB.raw(sql('UPDATE carts SET updated_at = CURRENT_TIMESTAMP WHERE id = ?'), [cartId])
   }
 
   /**
    * Merge guest cart with user cart after login
    */
   async mergeCarts(guestSessionId: string, userId: number): Promise<Cart> {
-    const guestResult = await DB.raw('SELECT * FROM carts WHERE session_id = ?', [guestSessionId])
+    const guestResult = await DB.raw(sql('SELECT * FROM carts WHERE session_id = ?'), [
+      guestSessionId,
+    ])
     const guestCart = guestResult.rows[0]
     const userCart = await this.getOrCreateCart(userId)
 
@@ -189,7 +204,7 @@ export class CartService {
     }
 
     // Get guest cart items
-    const guestItemsResult = await DB.raw('SELECT * FROM cart_items WHERE cart_id = ?', [
+    const guestItemsResult = await DB.raw(sql('SELECT * FROM cart_items WHERE cart_id = ?'), [
       guestCart.id,
     ])
 
@@ -203,8 +218,8 @@ export class CartService {
     }
 
     // Delete guest cart and items
-    await DB.raw('DELETE FROM cart_items WHERE cart_id = ?', [guestCart.id])
-    await DB.raw('DELETE FROM carts WHERE id = ?', [guestCart.id])
+    await DB.raw(sql('DELETE FROM cart_items WHERE cart_id = ?'), [guestCart.id])
+    await DB.raw(sql('DELETE FROM carts WHERE id = ?'), [guestCart.id])
 
     // Return updated user cart
     return this.getOrCreateCart(userId)

@@ -9,6 +9,7 @@ import type { GravitoContext } from '@gravito/core'
 import type { InertiaService } from '@gravito/ion'
 import { OrderStatus } from '../../../Models'
 import { OrderService } from '../../../Services'
+import { sql } from '../../../utils/db'
 
 export class AdminOrderController {
   /**
@@ -31,21 +32,21 @@ export class AdminOrderController {
     }
 
     const ordersResult = await DB.raw(
-      `
+      sql(`
       SELECT o.*, u.name as user_name, u.email as user_email
       FROM orders o
       JOIN users u ON o.user_id = u.id
       ${whereClause}
       ORDER BY o.created_at DESC
       LIMIT ? OFFSET ?
-    `,
+    `),
       [...params, perPage, offset]
     )
 
     const countResult = await DB.raw<{ count: number }>(
-      `
+      sql(`
       SELECT COUNT(*) as count FROM orders o ${whereClause}
-    `,
+    `),
       params
     )
 
@@ -72,7 +73,7 @@ export class AdminOrderController {
   static async show(ctx: GravitoContext) {
     const inertia = ctx.get('inertia') as InertiaService
 
-    const orderId = parseInt(ctx.req.param('id'), 10)
+    const orderId = parseInt(ctx.req.param('id') || '0', 10)
     const orderService = new OrderService()
 
     try {
@@ -80,7 +81,7 @@ export class AdminOrderController {
 
       // Get user info
       const userResult = await DB.raw<{ id: number; name: string; email: string }>(
-        'SELECT id, name, email FROM users WHERE id = ?',
+        sql('SELECT id, name, email FROM users WHERE id = ?'),
         [order.user_id]
       )
 
@@ -121,14 +122,14 @@ export class AdminOrderController {
    * Update order status
    */
   static async updateStatus(ctx: GravitoContext) {
-    const orderId = parseInt(ctx.req.param('id'), 10)
+    const orderId = parseInt(ctx.req.param('id') || '0', 10)
     const body = (await ctx.req.json()) as { status: OrderStatus }
 
     if (!Object.values(OrderStatus).includes(body.status)) {
       return ctx.json({ error: '無效的訂單狀態' }, 400)
     }
 
-    await DB.raw('UPDATE orders SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [
+    await DB.raw(sql('UPDATE orders SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'), [
       body.status,
       orderId,
     ])

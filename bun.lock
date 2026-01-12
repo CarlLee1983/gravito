@@ -130,6 +130,7 @@
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",
+        "@gravito/cosmos": "workspace:*",
         "@gravito/ion": "workspace:*",
         "@gravito/mass": "workspace:*",
         "@gravito/monolith": "workspace:*",
@@ -138,10 +139,12 @@
         "@gravito/pulsar": "workspace:*",
         "@gravito/sentinel": "workspace:*",
         "@gravito/stasis": "workspace:*",
+        "pg": "^8.16.3",
         "stripe": "^14.0.0",
       },
       "devDependencies": {
         "@inertiajs/vue3": "^1.0.0",
+        "@types/pg": "^8.16.0",
         "@unocss/reset": "^0.58.0",
         "@vitejs/plugin-vue": "^5.0.0",
         "picocolors": "^1.0.0",

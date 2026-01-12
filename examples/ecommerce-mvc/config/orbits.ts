@@ -1,9 +1,3 @@
-/**
- * Orbits Configuration
- *
- * Register all Gravito orbits here.
- */
-
 import { DB, OrbitAtlas } from '@gravito/atlas'
 import { loadTranslations, OrbitCosmos } from '@gravito/cosmos'
 import { OrbitIon } from '@gravito/ion'
@@ -13,6 +7,7 @@ import { OrbitPulsar } from '@gravito/pulsar'
 import { CallbackUserProvider, OrbitSentinel } from '@gravito/sentinel'
 import { OrbitStasis } from '@gravito/stasis'
 import { User } from '../src/Models'
+import { sql } from '../src/utils/db'
 
 export const orbits = [
   // Internationalization
@@ -68,7 +63,7 @@ export const orbits = [
           new CallbackUserProvider<User>(
             // retrieveById
             async (id) => {
-              const result = await DB.raw<any>('SELECT * FROM users WHERE id = ?', [id])
+              const result = await DB.raw<any>(sql('SELECT * FROM users WHERE id = ?'), [id])
               const row = result.rows[0]
               if (!row) return null
               return User.hydrate(row)
@@ -82,7 +77,7 @@ export const orbits = [
             undefined,
             // retrieveByCredentials
             async (credentials) => {
-              const result = await DB.raw<any>('SELECT * FROM users WHERE email = ?', [
+              const result = await DB.raw<any>(sql('SELECT * FROM users WHERE email = ?'), [
                 credentials.email,
               ])
               const row = result.rows[0]

@@ -7,6 +7,7 @@
 import { DB } from '@gravito/atlas'
 import type { GravitoContext } from '@gravito/core'
 import type { InertiaService } from '@gravito/ion'
+import { FALSE, sql, TRUE } from '../../utils/db'
 
 export class ShopController {
   /**
@@ -16,33 +17,39 @@ export class ShopController {
     const inertia = ctx.get('inertia') as InertiaService
 
     // Get featured products
-    const featuredResult = await DB.raw(`
+    const featuredResult = await DB.raw(
+      sql(`
       SELECT p.*, c.name as category_name, c.slug as category_slug
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.id
-      WHERE p.is_active = 1 AND p.is_featured = 1
+      WHERE p.is_active = ${TRUE} AND p.is_featured = ${TRUE}
       LIMIT 8
     `)
+    )
 
     // Get latest products
-    const latestResult = await DB.raw(`
+    const latestResult = await DB.raw(
+      sql(`
       SELECT p.*, c.name as category_name, c.slug as category_slug
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.id
-      WHERE p.is_active = 1
+      WHERE p.is_active = ${TRUE}
       ORDER BY p.created_at DESC
       LIMIT 8
     `)
+    )
 
     // Get all active categories
-    const categoriesResult = await DB.raw(`
+    const categoriesResult = await DB.raw(
+      sql(`
       SELECT c.*, COUNT(p.id) as product_count
       FROM categories c
-      LEFT JOIN products p ON c.id = p.category_id AND p.is_active = 1
-      WHERE c.is_active = 1
+      LEFT JOIN products p ON c.id = p.category_id AND p.is_active = ${TRUE}
+      WHERE c.is_active = ${TRUE}
       GROUP BY c.id
       ORDER BY c.sort_order
     `)
+    )
 
     // Latest news for home page (mock)
     const i18n = ctx.get('i18n') as any
@@ -87,7 +94,7 @@ export class ShopController {
     const page = parseInt(ctx.req.query('page') || '1', 10)
     const perPage = 12
 
-    let whereClause = 'WHERE p.is_active = 1'
+    let whereClause = `WHERE p.is_active = ${TRUE}`
     const params: any[] = []
 
     if (search) {
@@ -108,33 +115,35 @@ export class ShopController {
     const offset = (page - 1) * perPage
 
     const productsResult = await DB.raw(
-      `
+      sql(`
       SELECT p.*, c.name as category_name, c.slug as category_slug
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.id
       ${whereClause}
       ${orderClause}
       LIMIT ? OFFSET ?
-    `,
+    `),
       [...params, perPage, offset]
     )
 
     const countResult = await DB.raw<{ count: number }>(
-      `
+      sql(`
       SELECT COUNT(*) as count
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.id
       ${whereClause}
-    `,
+    `),
       params
     )
 
     const total = countResult.rows[0]?.count || 0
     const totalPages = Math.ceil(total / perPage)
 
-    const categoriesResult = await DB.raw(`
-      SELECT * FROM categories WHERE is_active = 1 ORDER BY sort_order
+    const categoriesResult = await DB.raw(
+      sql(`
+      SELECT * FROM categories WHERE is_active = ${TRUE} ORDER BY sort_order
     `)
+    )
 
     return inertia.render('Shop/Products', {
       products: productsResult.rows,
@@ -153,12 +162,12 @@ export class ShopController {
     const slug = ctx.req.param('slug')
 
     const productResult = await DB.raw(
-      `
+      sql(`
       SELECT p.*, c.name as category_name, c.slug as category_slug
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.id
-      WHERE p.slug = ? AND p.is_active = 1
-    `,
+      WHERE p.slug = ? AND p.is_active = ${TRUE}
+    `),
       [slug]
     )
 
@@ -170,13 +179,13 @@ export class ShopController {
 
     // Related products (same category)
     const relatedResult = await DB.raw(
-      `
+      sql(`
       SELECT p.*, c.name as category_name
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.id
-      WHERE p.category_id = ? AND p.id != ? AND p.is_active = 1
+      WHERE p.category_id = ? AND p.id != ? AND p.is_active = ${TRUE}
       LIMIT 4
-    `,
+    `),
       [(product as any).category_id, (product as any).id]
     )
 
@@ -184,7 +193,7 @@ export class ShopController {
     let wishlistId = null
     if (ctx.auth?.user) {
       const wishlistResult = await DB.raw(
-        'SELECT id FROM wishlists WHERE user_id = ? AND product_id = ?',
+        sql('SELECT id FROM wishlists WHERE user_id = ? AND product_id = ?'),
         [ctx.auth.user.id, (product as any).id]
       )
       if (wishlistResult.rows.length > 0) {
@@ -211,7 +220,7 @@ export class ShopController {
     const perPage = 12
 
     const categoryResult = await DB.raw(
-      'SELECT * FROM categories WHERE slug = ? AND is_active = 1',
+      sql(`SELECT * FROM categories WHERE slug = ? AND is_active = ${TRUE}`),
       [slug]
     )
     const category = categoryResult.rows[0]
@@ -228,18 +237,18 @@ export class ShopController {
     const offset = (page - 1) * perPage
 
     const productsResult = await DB.raw(
-      `
+      sql(`
       SELECT p.*
       FROM products p
-      WHERE p.category_id = ? AND p.is_active = 1
+      WHERE p.category_id = ? AND p.is_active = ${TRUE}
       ${orderClause}
       LIMIT ? OFFSET ?
-    `,
+    `),
       [(category as any).id, perPage, offset]
     )
 
     const countResult = await DB.raw<{ count: number }>(
-      'SELECT COUNT(*) as count FROM products WHERE category_id = ? AND is_active = 1',
+      sql(`SELECT COUNT(*) as count FROM products WHERE category_id = ? AND is_active = ${TRUE}`),
       [(category as any).id]
     )
 
@@ -270,25 +279,25 @@ export class ShopController {
 
     if (query.length >= 2) {
       const productsResult = await DB.raw(
-        `
+        sql(`
         SELECT p.*, c.name as category_name, c.slug as category_slug
         FROM products p
         LEFT JOIN categories c ON p.category_id = c.id
-        WHERE p.is_active = 1 AND (p.name LIKE ? OR p.description LIKE ?)
+        WHERE p.is_active = ${TRUE} AND (p.name LIKE ? OR p.description LIKE ?)
         ORDER BY p.name
         LIMIT ? OFFSET ?
-      `,
+      `),
         [`%${query}%`, `%${query}%`, perPage, offset]
       )
 
       products = productsResult.rows
 
       const countResult = await DB.raw<{ count: number }>(
-        `
+        sql(`
         SELECT COUNT(*) as count
         FROM products
-        WHERE is_active = 1 AND (name LIKE ? OR description LIKE ?)
-      `,
+        WHERE is_active = ${TRUE} AND (name LIKE ? OR description LIKE ?)
+      `),
         [`%${query}%`, `%${query}%`]
       )
 

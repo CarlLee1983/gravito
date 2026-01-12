@@ -7,6 +7,7 @@
 import { DB } from '@gravito/atlas'
 import type { GravitoContext } from '@gravito/core'
 import type { InertiaService } from '@gravito/ion'
+import { sql, TRUE } from '../../../utils/db'
 
 export class DashboardController {
   /**
@@ -24,31 +25,39 @@ export class DashboardController {
       recentOrdersResult,
       ordersByStatusResult,
     ] = await Promise.all([
-      DB.raw<{ count: number }>('SELECT COUNT(*) as count FROM products WHERE is_active = 1'),
-      DB.raw<{ count: number }>('SELECT COUNT(*) as count FROM orders'),
-      DB.raw<{ count: number }>('SELECT COUNT(*) as count FROM users WHERE role = ?', ['customer']),
+      DB.raw<{ count: number }>(
+        sql(`SELECT COUNT(*) as count FROM products WHERE is_active = ${TRUE}`)
+      ),
+      DB.raw<{ count: number }>(sql('SELECT COUNT(*) as count FROM orders')),
+      DB.raw<{ count: number }>(sql('SELECT COUNT(*) as count FROM users WHERE role = ?'), [
+        'customer',
+      ]),
       DB.raw<{ total: number }>(
-        'SELECT SUM(total) as total FROM orders WHERE status IN (?, ?, ?, ?)',
+        sql('SELECT SUM(total) as total FROM orders WHERE status IN (?, ?, ?, ?)'),
         ['paid', 'processing', 'shipped', 'delivered']
       ),
-      DB.raw(`
+      DB.raw(
+        sql(`
         SELECT o.*, u.name as user_name, u.email as user_email
         FROM orders o
         JOIN users u ON o.user_id = u.id
         ORDER BY o.created_at DESC
         LIMIT 5
-      `),
-      DB.raw<{ status: string; count: number }>(`
+      `)
+      ),
+      DB.raw<{ status: string; count: number }>(
+        sql(`
         SELECT status, COUNT(*) as count
         FROM orders
         GROUP BY status
-      `),
+      `)
+      ),
     ])
 
     // Today's orders
     const today = new Date().toISOString().split('T')[0]
     const todayOrdersResult = await DB.raw<{ count: number; revenue: number }>(
-      'SELECT COUNT(*) as count, SUM(total) as revenue FROM orders WHERE date(created_at) = ?',
+      sql('SELECT COUNT(*) as count, SUM(total) as revenue FROM orders WHERE date(created_at) = ?'),
       [today]
     )
 
