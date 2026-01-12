@@ -22,7 +22,7 @@ const toggleUserMenu = () => {
 <template>
   <div class="min-h-screen flex flex-col">
     <!-- Header -->
-    <header class="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-50">
+    <header class="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-200/50 dark:border-gray-800/50 transition-colors duration-300">
       <div class="container">
         <div class="flex items-center justify-between h-16">
           <!-- Logo -->
@@ -75,6 +75,12 @@ const toggleUserMenu = () => {
                 </Link>
                 <Link href="/account/orders" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700">
                   訂單紀錄
+                </Link>
+                <Link href="/account/wishlist" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700">
+                  收藏清單
+                </Link>
+                <Link href="/account/addresses" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700">
+                  收件地址
                 </Link>
                 <template v-if="auth.user?.role === 'admin'">
                   <hr class="my-2 border-gray-200 dark:border-gray-700">
