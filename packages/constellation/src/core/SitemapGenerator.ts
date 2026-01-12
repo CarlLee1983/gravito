@@ -50,10 +50,11 @@ export class SitemapGenerator {
       pretty: this.options.pretty,
     })
 
+    // 用於標記是否已進入多分片模式
+    let isMultiFile = false
+
     const flushShard = async () => {
-      if (currentCount === 0) {
-        return
-      }
+      isMultiFile = true
 
       const baseName = this.options.filename?.replace(/\.xml$/, '')
       const filename = `${baseName}-${shardIndex}.xml`
@@ -67,8 +68,6 @@ export class SitemapGenerator {
       }
 
       const url = this.options.storage.getUrl(filename)
-      // Extract public URL path if possible, or just use absolute URL
-      // SitemapIndex usually expects absolute URLs.
       index.add({
         url: url,
         lastmod: new Date(),
@@ -108,19 +107,36 @@ export class SitemapGenerator {
       }
     }
 
-    // Flush remaining
-    await flushShard()
+    // 判斷是否需要生成索引文件
+    if (!isMultiFile) {
+      // 單文件模式：直接將當前流寫入目標文件 (sitemap.xml)
+      const xml = currentStream.toXML()
+
+      if (this.shadowProcessor) {
+        await this.shadowProcessor.addOperation({
+          filename: this.options.filename!,
+          content: xml,
+        })
+        await this.shadowProcessor.commit()
+      } else {
+        await this.options.storage.write(this.options.filename!, xml)
+      }
+      return
+    }
+
+    // 多文件模式：處理剩餘項目並生成索引
+    if (currentCount > 0) {
+      await flushShard()
+    }
 
     // Write Index
     const indexXml = index.toXML()
 
-    // 使用影子處理器（如果啟用）
     if (this.shadowProcessor) {
       await this.shadowProcessor.addOperation({
         filename: this.options.filename!,
         content: indexXml,
       })
-      // 提交所有影子操作
       await this.shadowProcessor.commit()
     } else {
       await this.options.storage.write(this.options.filename!, indexXml)
