@@ -6,6 +6,7 @@
 
 import type { Router } from '@gravito/core'
 import {
+  AddressController,
   AdminCategoryController,
   AdminOrderController,
   AdminProductController,
@@ -18,6 +19,7 @@ import {
   PageController,
   ProfileController,
   ShopController,
+  WishlistController,
 } from './Http/Controllers'
 import { AdminMiddleware, AuthMiddleware, GuestMiddleware } from './Http/Middleware'
 
@@ -84,9 +86,21 @@ export function registerRoutes(router: Router) {
   router.get('/account/orders/:id', AuthMiddleware, OrderController.show)
   router.post('/account/orders/:id/pay', AuthMiddleware, OrderController.pay)
   router.post('/account/orders/:id/cancel', AuthMiddleware, OrderController.cancel)
+
   router.get('/account/profile', AuthMiddleware, ProfileController.show)
   router.put('/account/profile', AuthMiddleware, ProfileController.update)
   router.put('/account/password', AuthMiddleware, ProfileController.updatePassword)
+
+  // Wishlist
+  router.get('/account/wishlist', AuthMiddleware, WishlistController.index)
+  router.post('/account/wishlist', AuthMiddleware, WishlistController.store)
+  router.delete('/account/wishlist/:id', AuthMiddleware, WishlistController.destroy)
+
+  // Addresses
+  router.get('/account/addresses', AuthMiddleware, AddressController.index)
+  router.post('/account/addresses', AuthMiddleware, AddressController.store)
+  router.put('/account/addresses/:id/default', AuthMiddleware, AddressController.setDefault)
+  router.delete('/account/addresses/:id', AuthMiddleware, AddressController.destroy)
 
   // ─────────────────────────────────────────────────────────────
   // Admin Routes

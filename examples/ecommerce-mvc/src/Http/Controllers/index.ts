@@ -4,6 +4,7 @@
  * Export all controllers from a single entry point.
  */
 
+export { AddressController } from './AddressController'
 // Admin Controllers
 export {
   AdminCategoryController,
@@ -19,3 +20,4 @@ export { OrderController } from './OrderController'
 export { PageController } from './PageController'
 export { ProfileController } from './ProfileController'
 export { ShopController } from './ShopController'
+export { WishlistController } from './WishlistController'

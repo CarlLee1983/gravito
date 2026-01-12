@@ -9,10 +9,14 @@ defineOptions({ layout: Layout })
 const props = defineProps<{
   product: any
   relatedProducts: any[]
+  wishlistId: number | null
 }>()
 
 const quantity = ref(1)
 const isAddingToCart = ref(false)
+// Local state to track wishlist status immediately
+const currentWishlistId = ref(props.wishlistId)
+const isInWishlist = computed(() => !!currentWishlistId.value)
 
 const formatPrice = (price: number) => `NT$ ${(price / 100).toLocaleString()}`
 
@@ -35,6 +39,42 @@ const addToCart = async () => {
     isAddingToCart.value = false
   }
 }
+
+const toggleWishlist = async () => {
+    if (currentWishlistId.value) {
+        // Remove from wishlist
+        router.delete(`/account/wishlist/${currentWishlistId.value}`, {
+            preserveScroll: true,
+            onSuccess: () => {
+                currentWishlistId.value = null
+            }
+        })
+    } else {
+        // Add to wishlist
+        router.post('/account/wishlist', { product_id: props.product.id }, {
+            preserveScroll: true,
+            onSuccess: (page) => {
+                 // We need to get the new wishlist ID. 
+                 // Since standard Inertia reload might be tricky if we don't pass it back in props instantly,
+                 // simpler is to just reload the page props or trust the reload.
+                 // Ideally, the controller store response should handle this, but Inertia form submission follows redirects.
+                 // let's just create a full reload or assume success and wait for reactive update if we used a form.
+                 // For now, let's force a partial reload to get updated props
+                 router.reload({ only: ['wishlistId'], onSuccess: () => {
+                     // Update local state from new props if needed, but the watcher/computed handles it if structured right.
+                     // Actually, router.post automatically reloads props. 
+                     // But we need to update currentWishlistId from the new prop value.
+                 }})
+            }
+        })
+    }
+}
+
+// Watch for prop changes to update local state (in case of reloads)
+import { computed, watch } from 'vue'
+watch(() => props.wishlistId, (newId) => {
+    currentWishlistId.value = newId
+})
 
 const discountPercent = () => {
   if (!props.product.compare_at_price) return 0
@@ -102,7 +142,7 @@ const discountPercent = () => {
 
         <!-- Add to Cart -->
         <div class="flex items-center gap-4">
-          <div class="flex items-center border border-gray-300 rounded-lg">
+          <div class="flex items-center border border-gray-300 rounded-lg dark:border-gray-600">
             <button
               @click="quantity = Math.max(1, quantity - 1)"
               class="p-3 hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -115,7 +155,7 @@ const discountPercent = () => {
               type="number"
               min="1"
               :max="product.stock"
-              class="w-16 text-center border-0 focus:ring-0"
+              class="w-16 text-center border-0 focus:ring-0 bg-transparent text-gray-900 dark:text-white"
             />
             <button
               @click="quantity = Math.min(product.stock, quantity + 1)"
@@ -131,9 +171,17 @@ const discountPercent = () => {
             :disabled="product.stock === 0 || isAddingToCart"
             class="btn btn-primary btn-lg flex-1"
           >
-            <span v-if="isAddingToCart" class="spinner"></span>
-            <span class="i-heroicons-shopping-cart"></span>
+            <span v-if="isAddingToCart" class="i-heroicons-arrow-path animate-spin mr-2"></span>
+            <span v-else class="i-heroicons-shopping-cart text-xl mr-2"></span>
             {{ product.stock === 0 ? '缺貨中' : '加入購物車' }}
+          </button>
+          
+          <button 
+             @click="toggleWishlist" 
+             class="btn btn-outline btn-lg w-14 flex items-center justify-center !p-0"
+             :class="{ 'text-red-500 border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-900': isInWishlist }"
+          >
+             <span :class="isInWishlist ? 'i-heroicons-heart-solid' : 'i-heroicons-heart'" class="text-2xl transition-transform active:scale-75"></span>
           </button>
         </div>
       </div>

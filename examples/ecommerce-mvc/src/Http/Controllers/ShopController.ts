@@ -156,9 +156,22 @@ export class ShopController {
       [(product as any).category_id, (product as any).id]
     )
 
+    // Check if product is in wishlist
+    let wishlistId = null
+    if (ctx.auth?.user) {
+      const wishlistResult = await DB.raw(
+        'SELECT id FROM wishlists WHERE user_id = ? AND product_id = ?',
+        [ctx.auth.user.id, (product as any).id]
+      )
+      if (wishlistResult.rows.length > 0) {
+        wishlistId = wishlistResult.rows[0].id
+      }
+    }
+
     return inertia.render('Shop/Product', {
       product,
       relatedProducts: relatedResult.rows,
+      wishlistId: wishlistId,
     })
   }
 
