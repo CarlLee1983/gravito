@@ -150,6 +150,7 @@ export class InertiaService {
     // Detect development mode
     const isDev = process.env.NODE_ENV !== 'production'
 
+    // ... (no changes to lines 1-153)
     return this.context.html(
       view.render(
         rootView,
@@ -162,6 +163,7 @@ export class InertiaService {
       )
     )
   }
+  // ...
 
   /**
    * Share data with all Inertia responses

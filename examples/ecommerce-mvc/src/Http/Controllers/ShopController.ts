@@ -7,6 +7,7 @@
 import { DB } from '@gravito/atlas'
 import type { GravitoContext } from '@gravito/core'
 import type { InertiaService } from '@gravito/ion'
+import { SeoMetadata } from '@gravito/luminosity'
 import { FALSE, sql, TRUE } from '../../utils/db'
 
 export class ShopController {
@@ -100,13 +101,19 @@ export class ShopController {
       },
     }
 
-    return inertia.render('Home', {
-      featuredProducts: featuredResult.rows,
-      latestProducts: latestResult.rows,
-      categories: categoriesResult.rows,
-      latestNews: latestNews,
-      seo,
-    })
+    return inertia.render(
+      'Home',
+      {
+        featuredProducts: featuredResult.rows,
+        latestProducts: latestResult.rows,
+        categories: categoriesResult.rows,
+        latestNews: latestNews,
+        seo,
+      },
+      {
+        seoTags: new SeoMetadata(seo).toString(),
+      }
+    )
   }
 
   /**
@@ -265,12 +272,18 @@ export class ShopController {
       },
     }
 
-    return inertia.render('Shop/Product', {
-      product,
-      relatedProducts: relatedResult.rows,
-      wishlistId: wishlistId,
-      seo,
-    })
+    return inertia.render(
+      'Shop/Product',
+      {
+        product,
+        relatedProducts: relatedResult.rows,
+        wishlistId: wishlistId,
+        seo,
+      },
+      {
+        seoTags: new SeoMetadata(seo as any).toString(),
+      }
+    )
   }
 
   /**
@@ -336,13 +349,19 @@ export class ShopController {
       },
     }
 
-    return inertia.render('Shop/Category', {
-      category,
-      products: productsResult.rows,
-      filters: { sort },
-      pagination: { page, perPage, total, totalPages },
-      seo,
-    })
+    return inertia.render(
+      'Shop/Category',
+      {
+        category,
+        products: productsResult.rows,
+        filters: { sort },
+        pagination: { page, perPage, total, totalPages },
+        seo,
+      },
+      {
+        seoTags: new SeoMetadata(seo as any).toString(),
+      }
+    )
   }
 
   /**
