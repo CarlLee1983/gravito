@@ -1,89 +1,122 @@
 <template>
-  <div class="relative z-10 pb-20">
-    <!-- Hero Content -->
-    <!-- Hero Content -->
-    <!-- Hero Content -->
-    <main class="relative z-20 flex flex-col lg:flex-row items-center justify-between px-8 md:px-20 max-w-7xl mx-auto w-full min-h-[90vh] pt-32 md:pt-10 gap-12">
-      <!-- Left side: Minimalist HUD & Intros -->
-      <div class="flex-1 flex flex-col items-start text-left">
-          <div class="flex flex-col gap-2 font-mono text-[10px] tracking-[0.3em] text-atlas-cyan/60 animate-pulse uppercase mb-8">
-            <span class="flex items-center gap-2"><div class="w-1.5 h-1.5 rounded-full bg-atlas-cyan shadow-[0_0_8px_cyan]"></div> System Orbit: Active</span>
-            <span>Data Flux: Stable</span>
-            <span>Gravitational Metric: 9.81 G_CORE</span>
-          </div>
-
-          <h1 class="text-3xl md:text-5xl font-bold text-white mb-6 leading-tight tracking-tight max-w-md">
-             {{ t('hero.title_line1') }}
-          </h1>
-          
-          <p class="text-gray-300 max-w-lg text-base leading-relaxed animate-slide-in-up border-l-2 border-atlas-cyan/50 pl-6 mb-10 shadow-black drop-shadow-md">
-            {{ t('hero.desc') }}
-          </p>
-
-          <!-- CTA Buttons (Restored & Refined) -->
-          <div class="flex gap-4 animate-slide-in-up">
-            <StaticLink href="#installation" class="px-5 py-2.5 bg-atlas-cyan/10 border border-atlas-cyan/40 text-atlas-cyan text-[10px] font-bold tracking-[0.2em] uppercase hover:bg-atlas-cyan hover:text-black transition-all">
-                {{ t('nav.install') }}
-            </StaticLink>
-            <StaticLink to="/features" class="px-5 py-2.5 bg-white/5 border border-white/10 text-gray-500 text-[10px] font-bold tracking-[0.2em] uppercase hover:border-white hover:text-white transition-all">
-                {{ t('nav.features') }}
-            </StaticLink>
-          </div>
+  <div class="relative z-10 pb-32">
+    <!-- Hero Section -->
+    <main class="relative z-20 flex flex-col items-center justify-center px-6 md:px-20 max-w-7xl mx-auto w-full min-h-[85vh] pt-24 md:pt-32 text-center">
+      
+      <!-- Announcement Badge -->
+      <div class="mb-8 animate-slide-in-up" style="animation-delay: 0.1s">
+        <a href="https://github.com/gravito-framework/gravito" target="_blank" class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-medium text-primary-glow hover:bg-white/10 hover:border-primary/30 transition-all cursor-pointer group backdrop-blur-md">
+          <span class="relative flex h-2 w-2">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+          </span>
+          Atlas v1.0 is now available
+          <span class="group-hover:translate-x-0.5 transition-transform">→</span>
+        </a>
       </div>
 
-      <!-- Right side: Floating Live Console -->
-      <div class="flex-1 w-full lg:max-w-xl animate-float-slow">
-          <LiveConsole />
+      <!-- Main Heading -->
+      <h1 class="text-5xl md:text-7xl lg:text-8xl font-display font-bold text-white mb-8 leading-[1.1] tracking-tight max-w-5xl mx-auto animate-slide-in-up" style="animation-delay: 0.2s">
+        The <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary-glow to-primary">Universal</span><br class="hidden md:block" /> Database Interface
+      </h1>
+      
+      <!-- Subheading -->
+      <p class="text-xl text-gray-400 max-w-2xl mx-auto mb-12 leading-relaxed animate-slide-in-up" style="animation-delay: 0.3s">
+        {{ t('hero.desc') }}
+      </p>
+
+      <!-- CTA Buttons -->
+      <div class="flex flex-col sm:flex-row gap-4 items-center justify-center animate-slide-in-up" style="animation-delay: 0.4s">
+        <StaticLink href="#installation" class="h-12 px-8 rounded-full bg-white text-atlas-void font-bold text-base hover:bg-gray-100 transition-colors flex items-center justify-center shadow-lg hover:shadow-xl hover:-translate-y-0.5 transform duration-200">
+            {{ t('nav.install') }}
+            <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
+        </StaticLink>
+        <StaticLink href="https://gravito.dev/en/docs/guide/orm-usage" class="h-12 px-8 rounded-full bg-white/5 border border-white/10 text-white font-medium text-base hover:bg-white/10 hover:border-white/20 transition-all flex items-center justify-center backdrop-blur-md">
+            {{ t('nav.docs') }}
+        </StaticLink>
+        
+        <div class="sm:ml-4 flex items-center gap-2 text-sm text-gray-500 font-mono bg-white/5 px-3 py-1 rounded border border-white/5">
+            <span class="text-primary">$</span> bun add @gravito/atlas
+            <button class="hover:text-white transition-colors" title="Copy">
+               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+            </button>
+        </div>
+      </div>
+
+      <!-- Floating Terminal Preview -->
+      <div class="mt-20 w-full max-w-5xl mx-auto perspective-1000 animate-slide-in-up" style="animation-delay: 0.6s">
+          <div class="relative bg-atlas-surface border border-white/10 rounded-xl overflow-hidden shadow-2xl shadow-primary/10 transform rotate-x-12 hover:rotate-x-0 transition-transform duration-700 ease-out group">
+              <!-- Window Controls -->
+              <div class="px-4 py-3 bg-white/5 border-b border-white/5 flex items-center gap-2">
+                  <div class="w-3 h-3 rounded-full bg-red-500/80"></div>
+                  <div class="w-3 h-3 rounded-full bg-yellow-500/80"></div>
+                  <div class="w-3 h-3 rounded-full bg-green-500/80"></div>
+                  <div class="ml-4 text-xs text-gray-500 font-mono">atlas-demo.ts</div>
+              </div>
+              <div class="p-0">
+                  <LiveConsole />
+              </div>
+              
+              <!-- Glow effect behind -->
+              <div class="absolute -inset-1 bg-gradient-to-r from-primary to-purple-600 opacity-20 blur-xl -z-10 group-hover:opacity-30 transition-opacity"></div>
+          </div>
       </div>
     </main>
 
-    <!-- Benchmark Statistics Bar -->
-    <div class="relative z-20 max-w-7xl mx-auto px-8 mb-20">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 p-6 rounded-2xl bg-white/[0.02] border border-white/5 backdrop-blur-sm">
-            <!-- Stat 1: Raw Read -->
-            <div class="flex flex-col items-center justify-center p-4 border-b md:border-b-0 md:border-r border-white/5">
-                <div class="text-gray-500 font-mono text-[10px] uppercase tracking-widest mb-2">{{ t('benchmark.raw_read') }}</div>
-                <div class="text-3xl md:text-4xl font-bold text-white tabular-nums tracking-tight">
-                    1.1M+ <span class="text-sm font-normal text-atlas-cyan/70">{{ t('benchmark.ops_sec') }}</span>
-                </div>
-                <div class="text-[9px] text-gray-600 mt-1 uppercase tracking-wider">{{ t('benchmark.raw_read_sub') }}</div>
-            </div>
-            
-             <!-- Stat 2: Hydration -->
-            <div class="flex flex-col items-center justify-center p-4 border-b md:border-b-0 md:border-r border-white/5">
-                <div class="text-gray-500 font-mono text-[10px] uppercase tracking-widest mb-2">{{ t('benchmark.hydration') }}</div>
-                <div class="text-3xl md:text-4xl font-bold text-white tabular-nums tracking-tight">
-                    42k+ <span class="text-sm font-normal text-purple-400/70">{{ t('benchmark.ops_sec') }}</span>
-                </div>
-                <div class="text-[9px] text-gray-600 mt-1 uppercase tracking-wider">{{ t('benchmark.hydration_sub') }}</div>
-            </div>
-
-             <!-- Stat 3: Throughput -->
-            <div class="flex flex-col items-center justify-center p-4">
-                <div class="text-gray-500 font-mono text-[10px] uppercase tracking-widest mb-2">{{ t('benchmark.throughput') }}</div>
-                <div class="text-3xl md:text-4xl font-bold text-white tabular-nums tracking-tight">
-                    70k+ <span class="text-sm font-normal text-green-400/70">{{ t('benchmark.records') }}</span>
-                </div>
-                <div class="text-[9px] text-gray-600 mt-1 uppercase tracking-wider">{{ t('benchmark.throughput_sub') }}</div>
-            </div>
+    <!-- Benchmark Statistics (Bento Grid Style) -->
+    <div class="relative z-20 max-w-7xl mx-auto px-6 mb-32">
+        <div class="text-center mb-10">
+            <h2 class="text-sm font-bold tracking-widest text-primary uppercase mb-2">Performance</h2>
+            <h3 class="text-3xl font-display font-bold text-white">Engineered for Speed</h3>
         </div>
         
-        <!-- Benchmark Footer Info -->
-        <div class="mt-4 flex flex-col md:flex-row items-center justify-center gap-2 text-[10px] text-gray-500 font-mono tracking-wide opacity-60">
-            <span>{{ t('benchmark.context') }}</span>
-            <StaticLink to="/docs/benchmark" class="flex items-center gap-1 text-atlas-cyan hover:text-white transition-colors border-b border-atlas-cyan/30 hover:border-atlas-cyan">
-               {{ t('benchmark.view_source') }}
-               <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
-            </StaticLink>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Stat 1 -->
+            <div class="group p-8 rounded-3xl bg-white/5 border border-white/5 hover:border-primary/30 transition-all hover:bg-white/[0.07] backdrop-blur-sm relative overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div class="relative z-10">
+                    <div class="text-gray-400 font-medium text-sm mb-2">{{ t('benchmark.raw_read') }}</div>
+                    <div class="text-5xl font-bold text-white mb-2 tracking-tight">1.1M<span class="text-2xl text-primary">+</span></div>
+                    <div class="text-sm text-gray-500">Operations per second</div>
+                </div>
+            </div>
+            
+             <!-- Stat 2 -->
+            <div class="group p-8 rounded-3xl bg-white/5 border border-white/5 hover:border-purple-500/30 transition-all hover:bg-white/[0.07] backdrop-blur-sm relative overflow-hidden">
+                 <div class="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                 <div class="relative z-10">
+                    <div class="text-gray-400 font-medium text-sm mb-2">{{ t('benchmark.hydration') }}</div>
+                    <div class="text-5xl font-bold text-white mb-2 tracking-tight">42k<span class="text-2xl text-purple-400">+</span></div>
+                    <div class="text-sm text-gray-500">Hydrated entities/sec</div>
+                </div>
+            </div>
+
+             <!-- Stat 3 -->
+            <div class="group p-8 rounded-3xl bg-white/5 border border-white/5 hover:border-green-500/30 transition-all hover:bg-white/[0.07] backdrop-blur-sm relative overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-br from-green-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div class="relative z-10">
+                    <div class="text-gray-400 font-medium text-sm mb-2">{{ t('benchmark.throughput') }}</div>
+                    <div class="text-5xl font-bold text-white mb-2 tracking-tight">70k<span class="text-2xl text-green-400">+</span></div>
+                    <div class="text-sm text-gray-500">Batch insert throughput</div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Enhanced Features Section (Moved up visually to connect) -->
     <Features id="features" class="relative z-20" />
     <Installation id="installation" class="relative z-20" />
   </div>
 </template>
 
+<style scoped>
+/* 3D Transform utility */
+.rotate-x-12 {
+    transform: perspective(1000px) rotateX(12deg);
+}
+.rotate-x-0 {
+    transform: perspective(1000px) rotateX(0deg);
+}
+</style>
 
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
