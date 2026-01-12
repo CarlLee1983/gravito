@@ -32,8 +32,8 @@ const getCategoryBadgeClass = (category: string) => {
   <Layout>
     <Head :title="item.title" />
     
-    <div class="bg-gray-50 dark:bg-gray-900 min-h-screen py-12 px-4 sm:px-6 lg:px-8">
-      <div class="max-w-4xl mx-auto">
+    <div class="bg-gray-50 dark:bg-gray-900 min-h-screen py-6 md:py-12 px-0 sm:px-6 lg:px-8">
+      <div class="max-w-4xl mx-auto px-4 sm:px-0">
         <!-- Breadcrumbs -->
         <nav class="flex mb-8 text-sm font-medium" aria-label="Breadcrumb">
           <ol class="inline-flex items-center space-x-1 md:space-x-3">
@@ -63,34 +63,34 @@ const getCategoryBadgeClass = (category: string) => {
 
         <article class="bg-white dark:bg-gray-800 rounded-3xl shadow-xl overflow-hidden border border-gray-100 dark:border-gray-700">
           <!-- Featured Image -->
-          <div class="aspect-video relative overflow-hidden">
+          <div class="aspect-video sm:aspect-auto sm:h-[400px] relative overflow-hidden">
             <img :src="item.image" :alt="item.title" class="w-full h-full object-cover" />
-            <div class="absolute top-6 left-6">
-              <span :class="['px-4 py-1.5 rounded-full text-sm font-bold shadow-lg', getCategoryBadgeClass(item.category)]">
+            <div class="absolute top-4 left-4 md:top-6 md:left-6">
+              <span :class="['px-3 py-1 md:px-4 md:py-1.5 rounded-full text-xs md:text-sm font-bold shadow-lg', getCategoryBadgeClass(item.category)]">
                 {{ t(`news.categories.${item.category}`) }}
               </span>
             </div>
           </div>
 
           <!-- Content -->
-          <div class="p-8 md:p-12">
-            <div class="flex items-center text-gray-500 dark:text-gray-400 mb-6 font-medium">
-              <span class="i-heroicons-calendar mr-2 text-primary text-xl"></span>
+          <div class="p-5 md:p-12">
+            <div class="flex items-center text-gray-500 dark:text-gray-400 mb-4 md:mb-6 font-medium text-sm md:text-base">
+              <span class="i-heroicons-calendar mr-2 text-primary text-lg md:text-xl"></span>
               {{ item.date }}
             </div>
             
-            <h1 class="text-3xl md:text-4xl font-black text-gray-900 dark:text-white mb-8 leading-tight">
+            <h1 class="text-2xl md:text-4xl font-black text-gray-900 dark:text-white mb-6 md:mb-8 leading-tight">
               {{ item.title }}
             </h1>
 
-            <div class="prose prose-lg dark:prose-invert max-w-none text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-line">
+            <div class="prose prose-sm md:prose-lg dark:prose-invert max-w-none text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-line">
               {{ item.content }}
             </div>
 
-            <div class="mt-16 pt-8 border-t border-gray-100 dark:border-gray-700 flex justify-between items-center">
+            <div class="mt-10 md:mt-16 pt-6 md:pt-8 border-t border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row justify-between items-center gap-6">
                <Link 
                 href="/pages/news" 
-                class="inline-flex items-center font-bold text-primary hover:text-primary-dark transition-all group"
+                class="inline-flex items-center font-bold text-primary hover:text-primary-dark transition-all group w-full sm:w-auto justify-center sm:justify-start"
               >
                 <span class="i-heroicons-arrow-left mr-2 group-hover:-translate-x-1 transition-transform"></span>
                 {{ t('news.back_to_news') }}

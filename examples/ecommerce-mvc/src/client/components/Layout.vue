@@ -59,19 +59,19 @@ const currentLanguageName = computed(() => {
           </Link>
 
           <!-- Desktop Navigation -->
-          <nav class="hidden md:flex items-center gap-6">
-            <Link href="/" class="nav-link">{{ t('nav.home') }}</Link>
-            <Link href="/products" class="nav-link">{{ t('nav.products') }}</Link>
-            <Link href="/pages/news" class="nav-link">{{ t('news.title') }}</Link>
-            <div v-for="category in categories.slice(0, 5)" :key="category.id">
-              <Link :href="`/category/${category.slug}`" class="nav-link">
+          <nav class="hidden lg:flex items-center gap-4 xl:gap-8 mx-4">
+            <Link href="/" class="nav-link whitespace-nowrap">{{ t('nav.home') }}</Link>
+            <Link href="/products" class="nav-link whitespace-nowrap">{{ t('nav.products') }}</Link>
+            <Link href="/pages/news" class="nav-link whitespace-nowrap">{{ t('news.title') }}</Link>
+            <div v-for="category in categories.slice(0, 4)" :key="category.id" class="hidden xl:block">
+              <Link :href="`/category/${category.slug}`" class="nav-link whitespace-nowrap">
                 {{ category.name }}
               </Link>
             </div>
           </nav>
 
           <!-- Right Actions -->
-          <div class="flex items-center gap-4">
+          <div class="flex items-center gap-1 sm:gap-4">
             <!-- Language Switcher -->
             <div class="relative">
               <button
@@ -149,24 +149,37 @@ const currentLanguageName = computed(() => {
               </div>
             </div>
             <template v-else>
-              <Link href="/login" class="btn btn-sm btn-ghost">{{ t('nav.login') }}</Link>
-              <Link href="/register" class="btn btn-sm btn-primary hidden md:inline-flex">{{ t('nav.register') }}</Link>
+              <Link href="/login" class="btn btn-sm btn-ghost px-2 sm:px-4">{{ t('nav.login') }}</Link>
+              <Link href="/register" class="btn btn-sm btn-primary hidden sm:inline-flex">{{ t('nav.register') }}</Link>
             </template>
 
             <!-- Mobile Menu Toggle -->
-            <button @click="toggleMenu" class="md:hidden p-2">
-              <span :class="isMenuOpen ? 'i-heroicons-x-mark' : 'i-heroicons-bars-3'" class="text-xl"></span>
+            <button 
+              @click="toggleMenu" 
+              class="lg:hidden flex items-center justify-center p-2 text-gray-500 hover:text-primary transition-colors focus:outline-none"
+              aria-label="Toggle menu"
+            >
+              <span v-if="!isMenuOpen" class="i-heroicons-bars-3 text-2xl block"></span>
+              <span v-else class="i-heroicons-x-mark text-2xl block"></span>
             </button>
           </div>
         </div>
 
         <!-- Mobile Menu -->
-        <nav v-if="isMenuOpen" class="md:hidden pb-4 border-t border-gray-200 dark:border-gray-700 pt-4">
-          <Link href="/" class="block py-2">{{ t('nav.home') }}</Link>
-          <Link href="/products" class="block py-2">{{ t('nav.products') }}</Link>
-          <Link href="/pages/news" class="block py-2">{{ t('news.title') }}</Link>
+        <nav v-if="isMenuOpen" class="lg:hidden py-4 border-t border-gray-100 dark:border-gray-800 space-y-1">
+          <Link href="/" class="block px-4 py-2 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl transition-colors" @click="isMenuOpen = false">
+            {{ t('nav.home') }}
+          </Link>
+          <Link href="/products" class="block px-4 py-2 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl transition-colors" @click="isMenuOpen = false">
+            {{ t('nav.products') }}
+          </Link>
+          <Link href="/pages/news" class="block px-4 py-2 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl transition-colors" @click="isMenuOpen = false">
+            {{ t('news.title') }}
+          </Link>
           <div v-for="category in categories" :key="category.id">
-            <Link :href="`/category/${category.slug}`" class="block py-2">{{ category.name }}</Link>
+            <Link :href="`/category/${category.slug}`" class="block px-4 py-2 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl transition-colors" @click="isMenuOpen = false">
+              {{ category.name }}
+            </Link>
           </div>
         </nav>
       </div>

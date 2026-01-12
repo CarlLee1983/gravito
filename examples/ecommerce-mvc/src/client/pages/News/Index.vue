@@ -32,14 +32,14 @@ const getCategoryBadgeClass = (category: string) => {
   <Layout>
     <Head :title="t('news.title')" />
     
-    <div class="bg-gray-50 dark:bg-gray-900 min-h-screen py-12 px-4 sm:px-6 lg:px-8">
-      <div class="max-w-7xl mx-auto">
+    <div class="bg-gray-50 dark:bg-gray-900 min-h-screen py-6 md:py-12 px-0 sm:px-6 lg:px-8">
+      <div class="max-w-7xl mx-auto px-4 sm:px-0">
         <!-- Header -->
-        <div class="text-center mb-16">
-          <h1 class="text-4xl font-extrabold text-gray-900 dark:text-white mb-4">
+        <div class="text-center mb-10 md:mb-16">
+          <h1 class="text-2xl md:text-4xl font-extrabold text-gray-900 dark:text-white mb-2 md:mb-4">
             {{ t('news.title') }}
           </h1>
-          <p class="text-xl text-gray-500 dark:text-gray-400 max-w-2xl mx-auto">
+          <p class="text-base md:text-xl text-gray-500 dark:text-gray-400 max-w-2xl mx-auto px-2">
             {{ t('news.subtitle') }}
           </p>
         </div>

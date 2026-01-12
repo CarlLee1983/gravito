@@ -69,23 +69,23 @@ const formatPrice = (price: number) => `NT$ ${(price / 100).toLocaleString()}`
   </section>
 
   <!-- Latest News Highlight -->
-  <section v-if="latestNews && latestNews.length > 0" class="bg-primary-50 dark:bg-gray-800/50 py-10 border-b border-gray-100 dark:border-gray-700">
-    <div class="container">
-      <div class="flex flex-col md:flex-row items-center justify-between gap-6">
-        <div class="flex items-center gap-4">
-          <div class="w-12 h-12 rounded-xl bg-primary text-white flex items-center justify-center shadow-lg shadow-primary/20">
-            <span class="i-heroicons-megaphone text-2xl"></span>
+  <section v-if="latestNews && latestNews.length > 0" class="bg-primary-50 dark:bg-gray-800/50 py-8 md:py-10 border-b border-gray-100 dark:border-gray-700">
+    <div class="container px-4 sm:px-6">
+      <div class="flex flex-col md:flex-row items-center justify-between gap-6 md:gap-10">
+        <div class="flex items-center gap-4 w-full md:w-auto">
+          <div class="w-10 h-10 md:w-12 md:h-12 flex-shrink-0 rounded-xl bg-primary text-white flex items-center justify-center shadow-lg shadow-primary/20">
+            <span class="i-heroicons-megaphone text-xl md:text-2xl"></span>
           </div>
           <div>
-            <span class="text-xs font-bold text-primary uppercase tracking-wider">{{ t('news.categories.promotion') }}</span>
-            <h3 class="text-lg font-bold text-gray-900 dark:text-white">{{ latestNews[0].title }}</h3>
+            <span class="text-[10px] md:text-xs font-bold text-primary uppercase tracking-wider">{{ t('news.categories.promotion') }}</span>
+            <h3 class="text-base md:text-lg font-bold text-gray-900 dark:text-white line-clamp-1">{{ latestNews[0].title }}</h3>
           </div>
         </div>
-        <div class="flex items-center gap-6">
+        <div class="flex flex-col sm:flex-row items-center gap-4 md:gap-6 w-full md:w-auto">
           <p class="hidden lg:block text-gray-600 dark:text-gray-400 text-sm max-w-md">
             {{ latestNews[0].excerpt }}
           </p>
-          <Link href="/pages/news" class="btn btn-sm bg-white dark:bg-gray-800 text-primary border border-primary/20 hover:bg-primary hover:text-white transition-all whitespace-nowrap">
+          <Link href="/pages/news" class="btn btn-sm bg-white dark:bg-gray-800 text-primary border border-primary/20 hover:bg-primary hover:text-white transition-all whitespace-nowrap w-full sm:w-auto justify-center">
             {{ t('news.read_more') }}
           </Link>
         </div>
