@@ -1,0 +1,17 @@
+{
+  "name": "@gravito/example-rest-api",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "bun run src/index.ts",
+    "start": "bun run src/index.ts"
+  },
+  "dependencies": {
+    "@gravito/core": "workspace:*",
+    "@gravito/atlas": "workspace:*",
+    "@gravito/impulse": "workspace:*",
+    "@gravito/astral": "workspace:*",
+    "@gravito/photon": "workspace:*",
+    "zod": "^3.22.4"
+  }
+}
