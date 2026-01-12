@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { Head, Link, router } from '@inertiajs/vue3'
 import AdminLayout from '../../../components/AdminLayout.vue'
+import GImage from '../../../components/GImage.vue'
 
 defineOptions({ layout: AdminLayout })
 
@@ -69,7 +70,12 @@ const deleteProduct = async (id: number) => {
             <td class="px-6 py-4">
               <div class="flex items-center gap-3">
                 <div class="w-10 h-10 bg-gray-100 rounded-lg overflow-hidden">
-                  <img v-if="product.image_url" :src="product.image_url" class="w-full h-full object-cover" />
+                  <GImage
+                    v-if="product.image_url"
+                    :src="product.image_url"
+                    :alt="product.name"
+                    class="w-full h-full object-cover"
+                  />
                 </div>
                 <span class="font-medium">{{ product.name }}</span>
               </div>

@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { Head, router } from '@inertiajs/vue3'
 import Layout from '../../components/Layout.vue'
+import GImage from '../../components/GImage.vue'
 
 defineOptions({ layout: Layout })
 
@@ -54,16 +55,13 @@ const doSearch = () => {
           :href="`/products/${product.slug}`"
           class="card card-hover product-card"
         >
-          <div class="aspect-square bg-gray-100 dark:bg-gray-700 overflow-hidden">
-            <img
-              v-if="product.image_url"
-              :src="product.image_url"
-              :alt="product.name"
-              class="w-full h-full object-cover"
-            />
-            <div v-else class="w-full h-full flex items-center justify-center text-gray-400">
-              <span class="i-heroicons-photo text-4xl"></span>
-            </div>
+          <GImage
+            v-if="product.image_url"
+            :src="product.image_url"
+            :alt="product.name"
+          />
+          <div v-else class="aspect-square bg-gray-100 dark:bg-gray-700 overflow-hidden w-full h-full flex items-center justify-center text-gray-400">
+             <span class="i-heroicons-photo text-4xl"></span>
           </div>
           <div class="p-4">
             <p class="text-sm text-gray-500 mb-1">{{ product.category_name }}</p>

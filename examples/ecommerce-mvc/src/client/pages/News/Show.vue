@@ -2,6 +2,7 @@
 import Layout from '../../components/Layout.vue'
 import { Head, Link } from '@inertiajs/vue3'
 import { useI18n } from '../../composables/useI18n'
+import GImage from '../../components/GImage.vue'
 
 const { t } = useI18n()
 
@@ -63,8 +64,13 @@ const getCategoryBadgeClass = (category: string) => {
 
         <article class="bg-white dark:bg-gray-800 rounded-3xl shadow-xl overflow-hidden border border-gray-100 dark:border-gray-700">
           <!-- Featured Image -->
-          <div class="aspect-video sm:aspect-auto sm:h-[400px] relative overflow-hidden">
-            <img :src="item.image" :alt="item.title" class="w-full h-full object-cover" />
+          <div class="relative">
+            <GImage
+              :src="item.image"
+              :alt="item.title"
+              aspectRatio="16/9"
+              wrapperClass="sm:!aspect-auto sm:h-[400px]"
+            />
             <div class="absolute top-4 left-4 md:top-6 md:left-6">
               <span :class="['px-3 py-1 md:px-4 md:py-1.5 rounded-full text-xs md:text-sm font-bold shadow-lg', getCategoryBadgeClass(item.category)]">
                 {{ t(`news.categories.${item.category}`) }}

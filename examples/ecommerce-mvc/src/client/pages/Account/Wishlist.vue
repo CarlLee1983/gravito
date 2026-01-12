@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3'
 import Layout from '../../components/Layout.vue'
+import GImage from '../../components/GImage.vue'
 
 defineOptions({ layout: Layout })
 
@@ -69,16 +70,15 @@ const remove = (id: number) => {
                 </button>
 
                 <Link :href="`/products/${item.product.slug}`" class="block h-full flex flex-col">
-                    <div class="aspect-square bg-gray-100 dark:bg-gray-700 rounded-xl overflow-hidden mb-4 relative">
-                        <img 
-                            v-if="item.product.image_url" 
-                            :src="item.product.image_url" 
-                            :alt="item.product.name" 
-                            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        />
-                        <div v-else class="w-full h-full flex items-center justify-center text-gray-400">
-                           <span class="i-heroicons-photo text-4xl"></span>
-                        </div>
+                    <GImage
+                        v-if="item.product.image_url"
+                        :src="item.product.image_url"
+                        :alt="item.product.name"
+                        wrapperClass="rounded-xl mb-4"
+                        class="group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div v-else class="aspect-square bg-gray-100 dark:bg-gray-700 rounded-xl overflow-hidden mb-4 relative flex items-center justify-center text-gray-400">
+                        <span class="i-heroicons-photo text-4xl"></span>
                     </div>
                     
                     <div class="flex-1 flex flex-col">

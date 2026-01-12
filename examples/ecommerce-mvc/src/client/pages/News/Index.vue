@@ -2,6 +2,7 @@
 import Layout from '../../components/Layout.vue'
 import { Head, Link } from '@inertiajs/vue3'
 import { useI18n } from '../../composables/useI18n'
+import GImage from '../../components/GImage.vue'
 
 const { t } = useI18n()
 
@@ -52,9 +53,15 @@ const getCategoryBadgeClass = (category: string) => {
             class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden hover:shadow-lg transition-all duration-300 group"
           >
             <!-- Image Spacer / Placeholder -->
-            <div class="aspect-video bg-gray-200 dark:bg-gray-700 relative overflow-hidden">
-               <img v-if="item.image" :src="item.image" :alt="item.title" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-               <div v-else class="w-full h-full flex items-center justify-center text-gray-400">
+            <div class="relative">
+               <GImage
+                 v-if="item.image"
+                 :src="item.image"
+                 :alt="item.title"
+                 aspectRatio="16/9"
+                 class="group-hover:scale-105 transition-transform duration-500"
+               />
+               <div v-else class="aspect-video bg-gray-200 dark:bg-gray-700 w-full h-full flex items-center justify-center text-gray-400">
                  <span class="i-heroicons-photo text-4xl"></span>
                </div>
                <div class="absolute top-4 left-4">

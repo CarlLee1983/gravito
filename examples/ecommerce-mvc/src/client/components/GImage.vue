@@ -5,6 +5,7 @@ const props = defineProps<{
   src: string
   alt: string
   class?: string
+  wrapperClass?: string
   aspectRatio?: string
 }>()
 
@@ -25,6 +26,7 @@ onMounted(() => {
 <template>
   <div 
     class="relative overflow-hidden bg-gray-100 dark:bg-gray-800 transition-all duration-500"
+    :class="wrapperClass"
     :style="{ aspectRatio: aspectRatio || '1/1' }"
   >
     <!-- Placeholder / Skeleton -->
@@ -41,7 +43,7 @@ onMounted(() => {
       :src="src"
       :alt="alt"
       loading="lazy"
-      class="w-full h-full object-cover transition-opacity duration-700 ease-in-out"
+      class="w-full h-full object-cover transition-all duration-700 ease-in-out"
       :class="[
         props.class,
         isLoaded ? 'opacity-100' : 'opacity-0'

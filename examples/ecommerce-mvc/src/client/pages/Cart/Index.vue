@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { Head, Link, router } from '@inertiajs/vue3'
 import Layout from '../../components/Layout.vue'
+import GImage from '../../components/GImage.vue'
 
 defineOptions({ layout: Layout })
 
@@ -66,7 +67,7 @@ const clearCart = async () => {
           >
             <!-- Product Image -->
             <div class="w-24 h-24 bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden flex-shrink-0">
-              <img
+              <GImage
                 v-if="item.product?.image_url"
                 :src="item.product.image_url"
                 :alt="item.product?.name"

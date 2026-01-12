@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { Head, router } from '@inertiajs/vue3'
 import Layout from '../../components/Layout.vue'
+import GImage from '../../components/GImage.vue'
 
 defineOptions({ layout: Layout })
 
@@ -137,9 +138,10 @@ const submit = async () => {
           <div class="space-y-4 mb-6">
             <div v-for="item in cart.items" :key="item.id" class="flex gap-3">
               <div class="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-                <img
+                <GImage
                   v-if="item.product?.image_url"
                   :src="item.product.image_url"
+                  :alt="item.product?.name"
                   class="w-full h-full object-cover"
                 />
               </div>
