@@ -340,6 +340,18 @@
         "bun-types": "latest",
       },
     },
+    "examples/rest-api-demo": {
+      "name": "@gravito/example-rest-api",
+      "version": "0.0.0",
+      "dependencies": {
+        "@gravito/astral": "workspace:*",
+        "@gravito/atlas": "workspace:*",
+        "@gravito/core": "workspace:*",
+        "@gravito/impulse": "workspace:*",
+        "@gravito/photon": "workspace:*",
+        "zod": "^3.22.4",
+      },
+    },
     "examples/route-scanner-test": {
       "name": "route-scanner-test",
       "version": "0.1.2",
@@ -2111,6 +2123,8 @@
     "@gravito/enterprise": ["@gravito/enterprise@workspace:packages/enterprise"],
 
     "@gravito/example-commerce-fullstack": ["@gravito/example-commerce-fullstack@workspace:examples/commerce-fullstack"],
+
+    "@gravito/example-rest-api": ["@gravito/example-rest-api@workspace:examples/rest-api-demo"],
 
     "@gravito/flare": ["@gravito/flare@workspace:packages/flare"],
 

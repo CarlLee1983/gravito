@@ -6,7 +6,6 @@ dist/
 
 # Bun
 *.lockb
-bun.lock
 
 # IDE
 .idea/

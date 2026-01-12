@@ -391,6 +391,7 @@ export class DocsService {
             testing_harness: 'HTTP 測試',
             static_site: '靜態網站生成',
             photon_core: 'Photon Core',
+            rest_api: 'REST API 開發',
 
             middleware: '中間件 (Middleware)',
             controllers: '控制器 (Controllers)',
@@ -482,6 +483,7 @@ export class DocsService {
             testing_harness: 'HTTP Testing',
             static_site: 'Static Site Gen',
             photon_core: 'Photon Core',
+            rest_api: 'REST API Guide',
 
             middleware: 'Middleware',
             controllers: 'Controllers',
@@ -565,6 +567,7 @@ export class DocsService {
         children: [
           { title: trans.photon_core, path: `${prefix}/guide/photon-core` },
           { title: trans.routing, path: `${prefix}/guide/routing` },
+          { title: trans.rest_api, path: `${prefix}/guide/rest-api` },
           { title: trans.middleware, path: `${prefix}/guide/middleware` },
           { title: trans.controllers, path: `${prefix}/guide/controllers` },
           { title: trans.requests, path: `${prefix}/guide/requests` },
