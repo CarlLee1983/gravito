@@ -1,34 +1,37 @@
 <script setup lang="ts">
 import Layout from '../../components/Layout.vue'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { Head } from '@inertiajs/vue3'
+import { useI18n } from '../../composables/useI18n'
 
-const faqs = [
+const { t } = useI18n()
+
+const faqs = computed(() => [
   {
-    question: '請問運費如何計算？',
-    answer: '我們的運費標準如下：全館消費滿 NT$1,000 即享免運優惠。未滿 NT$1,000 之訂單，宅配運費為 NT$100，超商取貨運費為 NT$60。'
+    question: t('faq.q1'),
+    answer: t('faq.a1')
   },
   {
-    question: '下單後多久會出貨？',
-    answer: '現貨商品將於下單後 1-2 個工作天內出貨。預購商品則需等待 7-14 個工作天（不含假日）。出貨後，宅配約 1-2 天送達，超商取貨約 2-3 天送達。'
+    question: t('faq.q2'),
+    answer: t('faq.a2')
   },
   {
-    question: '可以更改訂單內容或取消訂單嗎？',
-    answer: '若訂單狀態為「處理中」，您可以聯繫客服協助修改或取消。若訂單顯示「已出貨」，則無法進行修改。請在收到商品後辦理退換貨程序。'
+    question: t('faq.q3'),
+    answer: t('faq.a3')
   },
   {
-    question: '收到商品有瑕疵怎麼辦？',
-    answer: '非常抱歉！若您收到瑕疵或錯誤商品，請於 7 日鑑賞期內聯繫我們，並提供照片或影片。我們將會由專人為您安排免費退換貨服務。'
+    question: t('faq.q4'),
+    answer: t('faq.a4')
   },
   {
-    question: '提供哪些付款方式？',
-    answer: '我們目前接受信用卡（Visa, MasterCard, JCB）、LINE Pay、街口支付以及 ATM 轉帳。所有交易皆透過加密連線進行，確保您的資訊安全。'
+    question: t('faq.q5'),
+    answer: t('faq.a5')
   },
   {
-    question: '是否有實體店面？',
-    answer: '目前我們專注於線上銷售，以提供最優惠的價格給顧客。未來若有開設實體店面或快閃店的計畫，將會第一時間在官網與社群媒體公告。'
+    question: t('faq.q6'),
+    answer: t('faq.a6')
   }
-]
+])
 
 const activeIndex = ref<number | null>(0)
 
@@ -39,16 +42,16 @@ const toggle = (index: number) => {
 
 <template>
   <Layout>
-    <Head title="常見問題" />
+    <Head :title="t('faq.title')" />
     
     <div class="bg-gray-50 dark:bg-gray-900 min-h-screen py-12 px-4 sm:px-6 lg:px-8">
       <div class="max-w-3xl mx-auto">
         <div class="text-center mb-12">
           <h1 class="text-3xl font-extrabold text-gray-900 dark:text-white sm:text-4xl">
-            常見問題
+            {{ t('faq.title') }}
           </h1>
           <p class="mt-4 text-xl text-gray-500 dark:text-gray-400">
-            這裡整理了顧客最常詢問的問題，希望能協助您解決疑惑。
+            {{ t('faq.subtitle') }}
           </p>
         </div>
 
@@ -90,17 +93,17 @@ const toggle = (index: number) => {
         
         <div class="mt-12 bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 text-center">
           <h3 class="text-lg font-medium text-gray-900 dark:text-white">
-            找不到您要的答案嗎？
+            {{ t('faq.no_answer') }}
           </h3>
           <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
-            請隨時聯繫我們的客戶服務團隊，我們將竭誠為您服務。
+            {{ t('faq.contact_team') }}
           </p>
           <div class="mt-6">
             <a
               href="/pages/contact"
               class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
             >
-              聯絡我們
+              {{ t('footer.contact_us') }}
             </a>
           </div>
         </div>

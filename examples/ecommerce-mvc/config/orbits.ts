@@ -5,6 +5,7 @@
  */
 
 import { DB, OrbitAtlas } from '@gravito/atlas'
+import { loadTranslations, OrbitCosmos } from '@gravito/cosmos'
 import { OrbitIon } from '@gravito/ion'
 import { OrbitMonolith } from '@gravito/monolith'
 import { OrbitPrism } from '@gravito/prism'
@@ -14,6 +15,13 @@ import { OrbitStasis } from '@gravito/stasis'
 import { User } from '../src/Models'
 
 export const orbits = [
+  // Internationalization
+  new OrbitCosmos({
+    defaultLocale: 'zh-TW',
+    supportedLocales: ['zh-TW', 'en', 'ja'],
+    translations: await loadTranslations('resources/lang'),
+  }),
+
   // Database ORM
   new OrbitAtlas(),
 

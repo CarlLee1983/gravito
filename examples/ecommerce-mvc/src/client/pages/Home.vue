@@ -2,6 +2,9 @@
 import { Head } from '@inertiajs/vue3'
 import Layout from '../components/Layout.vue'
 import GImage from '../components/GImage.vue'
+import { useI18n } from '../composables/useI18n'
+
+const { t } = useI18n()
 
 defineOptions({ layout: Layout })
 
@@ -15,7 +18,7 @@ const formatPrice = (price: number) => `NT$ ${(price / 100).toLocaleString()}`
 </script>
 
 <template>
-  <Head title="首頁" />
+  <Head :title="t('home.title')" />
 
   <!-- Hero Section -->
   <!-- Hero Section -->
@@ -34,21 +37,26 @@ const formatPrice = (price: number) => `NT$ ${(price / 100).toLocaleString()}`
     <div class="container relative z-20 text-center max-w-4xl mx-auto px-4">
       <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-sm font-medium mb-6 backdrop-blur-sm animate-fade-in-up">
         <span class="w-2 h-2 rounded-full bg-accent-500 animate-pulse"></span>
-        全新 V1.1 版本發布
+        {{ t('home.hero_badge') }}
       </div>
       <h1 class="text-5xl md:text-7xl font-bold mb-6 tracking-tight leading-tight gradient-text bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400 font-display">
-        未來電商，<br class="hidden md:block" />由此開始
+        <template v-if="t('home.hero_title').includes('，')">
+          {{ t('home.hero_title').split('，')[0] }}，<br class="hidden md:block" />{{ t('home.hero_title').split('，')[1] }}
+        </template>
+        <template v-else>
+          {{ t('home.hero_title') }}
+        </template>
       </h1>
       <p class="text-xl md:text-2xl mb-10 text-gray-300 font-light max-w-2xl mx-auto">
-        以 Gravito Framework 驅動的極速購物體驗，結合現代美學與強大效能。
+        {{ t('home.hero_subtitle') }}
       </p>
       <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
-        <a href="/products" class="btn btn-lg bg-white text-gray-900 hover:bg-gray-100 hover:scale-105 active:scale-95 shadow-xl shadow-white/10 border-0 font-bold px-8">
-          開始購
+        <Link href="/products" class="btn btn-lg bg-white text-gray-900 hover:bg-gray-100 hover:scale-105 active:scale-95 shadow-xl shadow-white/10 border-0 font-bold px-8">
+          {{ t('home.start_shopping') }}
           <span class="i-heroicons-shopping-bag ml-2 text-xl"></span>
-        </a>
+        </Link>
         <a href="#featured" class="btn btn-lg bg-gray-800/50 text-white border border-gray-700 hover:bg-gray-800 hover:border-gray-600 backdrop-blur-sm">
-          了解更多
+          {{ t('home.learn_more') }}
           <span class="i-heroicons-arrow-down ml-2"></span>
         </a>
       </div>
@@ -58,7 +66,7 @@ const formatPrice = (price: number) => `NT$ ${(price / 100).toLocaleString()}`
   <!-- Categories -->
   <section class="section bg-white dark:bg-gray-800">
     <div class="container">
-      <h2 class="heading-2 text-center mb-8">商品分類</h2>
+      <h2 class="heading-2 text-center mb-8">{{ t('home.categories') }}</h2>
       <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         <a
           v-for="category in categories"
@@ -79,7 +87,7 @@ const formatPrice = (price: number) => `NT$ ${(price / 100).toLocaleString()}`
           </div>
           <div class="p-4">
             <h3 class="font-semibold">{{ category.name }}</h3>
-            <p class="text-sm text-gray-500">{{ category.product_count || 0 }} 件商品</p>
+            <p class="text-sm text-gray-500">{{ t('home.items_count', { count: category.product_count || 0 }) }}</p>
           </div>
         </a>
       </div>
@@ -87,9 +95,9 @@ const formatPrice = (price: number) => `NT$ ${(price / 100).toLocaleString()}`
   </section>
 
   <!-- Featured Products -->
-  <section v-if="featuredProducts.length > 0" class="section">
+  <section v-if="featuredProducts.length > 0" id="featured" class="section">
     <div class="container">
-      <h2 class="heading-2 text-center mb-8">精選商品</h2>
+      <h2 class="heading-2 text-center mb-8">{{ t('home.featured_products') }}</h2>
       <div class="product-grid">
         <a
           v-for="product in featuredProducts"
@@ -127,8 +135,8 @@ const formatPrice = (price: number) => `NT$ ${(price / 100).toLocaleString()}`
   <section class="section bg-gray-50 dark:bg-gray-800">
     <div class="container">
       <div class="flex items-center justify-between mb-8">
-        <h2 class="heading-2">最新商品</h2>
-        <a href="/products" class="text-primary hover:underline">查看全部 →</a>
+        <h2 class="heading-2">{{ t('home.latest_products') }}</h2>
+        <Link href="/products" class="text-primary hover:underline">{{ t('home.view_all') }} →</Link>
       </div>
       <div class="product-grid">
         <a

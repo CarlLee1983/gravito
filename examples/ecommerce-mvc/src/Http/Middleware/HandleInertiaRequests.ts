@@ -6,6 +6,7 @@
 
 import { DB } from '@gravito/atlas'
 import type { GravitoContext, GravitoNext } from '@gravito/core'
+import type { I18nService } from '@gravito/cosmos'
 import type { InertiaService } from '@gravito/ion'
 import type { CsrfService, SessionService } from '@gravito/pulsar'
 import type { AuthManager } from '@gravito/sentinel'
@@ -16,6 +17,7 @@ export async function HandleInertiaRequests(ctx: GravitoContext, next: GravitoNe
   const auth = ctx.get('auth') as AuthManager
   const session = ctx.get('session') as SessionService
   const csrf = ctx.get('csrf') as CsrfService
+  const i18n = ctx.get('i18n') as I18nService
 
   // Ensure CSRF token is generated and session is started
   const csrfToken = csrf.token()
@@ -57,6 +59,8 @@ export async function HandleInertiaRequests(ctx: GravitoContext, next: GravitoNe
 
   // Share data with Inertia
   inertia.shareAll({
+    locale: i18n.getLocale(),
+    translations: (i18n as any).manager.translations[i18n.getLocale()] || {},
     auth: {
       isAuthenticated,
       user: userData,

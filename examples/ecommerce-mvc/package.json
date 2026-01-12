@@ -9,15 +9,16 @@
     "test": "bun test"
   },
   "dependencies": {
-    "@gravito/core": "workspace:*",
-    "@gravito/photon": "workspace:*",
-    "@gravito/monolith": "workspace:*",
     "@gravito/atlas": "workspace:*",
-    "@gravito/sentinel": "workspace:*",
-    "@gravito/mass": "workspace:*",
-    "@gravito/prism": "workspace:*",
+    "@gravito/cosmos": "workspace:*",
+    "@gravito/core": "workspace:*",
     "@gravito/ion": "workspace:*",
+    "@gravito/mass": "workspace:*",
+    "@gravito/monolith": "workspace:*",
+    "@gravito/photon": "workspace:*",
+    "@gravito/prism": "workspace:*",
     "@gravito/pulsar": "workspace:*",
+    "@gravito/sentinel": "workspace:*",
     "@gravito/stasis": "workspace:*",
     "stripe": "^14.0.0"
   },
