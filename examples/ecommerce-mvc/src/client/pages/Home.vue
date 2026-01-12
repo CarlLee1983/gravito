@@ -18,14 +18,40 @@ const formatPrice = (price: number) => `NT$ ${(price / 100).toLocaleString()}`
   <Head title="首頁" />
 
   <!-- Hero Section -->
-  <section class="bg-gradient-to-r from-primary-600 to-secondary text-white py-20">
-    <div class="container text-center">
-      <h1 class="heading-1 mb-4">歡迎來到 Gravito Shop</h1>
-      <p class="text-xl mb-8 opacity-90">使用 Gravito Framework 打造的現代化電商平台</p>
-      <a href="/products" class="btn btn-lg bg-white text-primary hover:bg-gray-100">
-        探索商品
-        <span class="i-heroicons-arrow-right"></span>
-      </a>
+  <!-- Hero Section -->
+  <section class="relative bg-gray-900 text-white overflow-hidden py-24 sm:py-32">
+    <!-- Abstract Background Pattern -->
+    <div class="absolute inset-0 z-0 opacity-30">
+        <svg class="h-full w-full text-primary-900" fill="none" viewBox="0 0 100 100" preserveAspectRatio="none">
+            <path d="M0 100 C 20 0 50 0 100 100 Z" fill="currentColor" />
+        </svg>
+    </div>
+    <div class="absolute inset-0 bg-gradient-to-br from-gray-900 to-gray-800 z-0"></div>
+    <div class="absolute inset-0 bg-grid-white/[0.05] bg-[length:32px_32px] z-10"></div>
+    <div class="absolute top-0 right-0 -mr-20 -mt-20 w-[600px] h-[600px] bg-primary-500/30 rounded-full blur-3xl z-0"></div>
+    <div class="absolute bottom-0 left-0 -ml-20 -mb-20 w-[500px] h-[500px] bg-secondary-500/20 rounded-full blur-3xl z-0"></div>
+
+    <div class="container relative z-20 text-center max-w-4xl mx-auto px-4">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-sm font-medium mb-6 backdrop-blur-sm animate-fade-in-up">
+        <span class="w-2 h-2 rounded-full bg-accent-500 animate-pulse"></span>
+        全新 V1.1 版本發布
+      </div>
+      <h1 class="text-5xl md:text-7xl font-bold mb-6 tracking-tight leading-tight gradient-text bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400 font-display">
+        未來電商，<br class="hidden md:block" />由此開始
+      </h1>
+      <p class="text-xl md:text-2xl mb-10 text-gray-300 font-light max-w-2xl mx-auto">
+        以 Gravito Framework 驅動的極速購物體驗，結合現代美學與強大效能。
+      </p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+        <a href="/products" class="btn btn-lg bg-white text-gray-900 hover:bg-gray-100 hover:scale-105 active:scale-95 shadow-xl shadow-white/10 border-0 font-bold px-8">
+          開始購
+          <span class="i-heroicons-shopping-bag ml-2 text-xl"></span>
+        </a>
+        <a href="#featured" class="btn btn-lg bg-gray-800/50 text-white border border-gray-700 hover:bg-gray-800 hover:border-gray-600 backdrop-blur-sm">
+          了解更多
+          <span class="i-heroicons-arrow-down ml-2"></span>
+        </a>
+      </div>
     </div>
   </section>
 

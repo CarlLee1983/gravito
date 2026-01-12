@@ -131,5 +131,5 @@ export function registerRoutes(router: Router) {
   // Users
   router.get('/admin/users', AdminMiddleware, AdminUserController.index)
   router.get('/admin/users/:id', AdminMiddleware, AdminUserController.show)
-  router.put('/admin/users/:id/toggle', AdminMiddleware, AdminUserController.toggleActive)
+  router.post('/admin/users/:id/toggle-active', AdminMiddleware, AdminUserController.toggleActive)
 }

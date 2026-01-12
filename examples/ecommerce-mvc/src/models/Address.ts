@@ -69,10 +69,10 @@ export class Address extends Model {
 
   @column()
   get is_default(): boolean {
-    return (this._attributes.is_default as boolean) ?? false
+    return !!this._attributes.is_default
   }
-  set is_default(value: boolean) {
-    this._setAttribute('is_default', value)
+  set is_default(value: boolean | number) {
+    this._setAttribute('is_default', value ? 1 : 0)
   }
 
   @column()

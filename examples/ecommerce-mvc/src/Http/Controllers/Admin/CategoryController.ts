@@ -70,18 +70,7 @@ export class AdminCategoryController {
       ]
     )
 
-    return ctx.json({
-      success: true,
-      category: {
-        id: result.rows[0]?.id,
-        name: body.name,
-        slug,
-        description: body.description,
-        is_active: body.is_active,
-        sort_order: body.sort_order || 0,
-        product_count: 0,
-      },
-    })
+    return ctx.redirect('/admin/categories')
   }
 
   /**
@@ -130,7 +119,7 @@ export class AdminCategoryController {
       ]
     )
 
-    return ctx.json({ success: true })
+    return ctx.redirect('/admin/categories')
   }
 
   /**
@@ -157,6 +146,6 @@ export class AdminCategoryController {
 
     await DB.raw('DELETE FROM categories WHERE id = ?', [id])
 
-    return ctx.json({ success: true })
+    return ctx.redirect('/admin/categories')
   }
 }

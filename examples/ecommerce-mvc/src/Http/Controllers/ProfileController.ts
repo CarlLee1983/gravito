@@ -81,7 +81,8 @@ export class ProfileController {
     )
 
     session.flash('success', '個人資料已更新')
-    return ctx.json({ success: true })
+    session.flash('success', '個人資料已更新')
+    return ctx.redirect('/account/profile')
   }
 
   /**
@@ -137,6 +138,7 @@ export class ProfileController {
     ])
 
     session.flash('success', '密碼已更新')
-    return ctx.json({ success: true })
+    session.flash('success', '密碼已更新')
+    return ctx.redirect('/account/profile')
   }
 }

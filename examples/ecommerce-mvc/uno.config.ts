@@ -1,4 +1,4 @@
-import { defineConfig, presetIcons, presetTypography, presetWind } from 'unocss'
+import { defineConfig, presetIcons, presetTypography, presetWebFonts, presetWind } from 'unocss'
 
 export default defineConfig({
   presets: [
@@ -8,29 +8,41 @@ export default defineConfig({
       scale: 1.2,
       cdn: 'https://esm.sh/',
     }),
+    presetWebFonts({
+      provider: 'google',
+      fonts: {
+        sans: 'Inter:300,400,500,600,700',
+        display: 'Outfit:400,500,600,700',
+        mono: 'Fira Code',
+      },
+    }),
   ],
   theme: {
     colors: {
       primary: {
-        50: '#eef2ff',
-        100: '#e0e7ff',
-        200: '#c7d2fe',
-        300: '#a5b4fc',
-        400: '#818cf8',
-        500: '#6366f1',
-        600: '#4f46e5',
-        700: '#4338ca',
-        800: '#3730a3',
-        900: '#312e81',
-        DEFAULT: '#6366f1',
+        50: '#f0fdfa',
+        100: '#ccfbf1',
+        200: '#99f6e4',
+        300: '#5eead4',
+        400: '#2dd4bf',
+        500: '#14b8a6',
+        600: '#0d9488',
+        700: '#0f766e',
+        800: '#115e59',
+        900: '#134e4a',
+        DEFAULT: '#0d9488', // Teal-600 baseline
       },
       secondary: {
-        DEFAULT: '#8b5cf6',
-        dark: '#7c3aed',
+        DEFAULT: '#6366f1',
+        dark: '#4f46e5',
+      },
+      dark: {
+        bg: '#0f172a',
+        surface: '#1e293b',
       },
       accent: {
-        DEFAULT: '#f59e0b',
-        dark: '#d97706',
+        DEFAULT: '#f43f5e',
+        dark: '#e11d48',
       },
     },
   },
@@ -47,15 +59,16 @@ export default defineConfig({
     'btn-lg': 'px-6 py-3 text-lg',
 
     // Cards
-    card: 'bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden',
-    'card-hover': 'card transition-transform duration-300 hover:-translate-y-1 hover:shadow-xl',
+    card: 'bg-white dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 overflow-hidden',
+    'card-hover':
+      'card transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/5 hover:border-primary/20 dark:hover:border-primary/20',
     'card-body': 'p-6',
 
     // Forms
     input:
-      'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all dark:bg-gray-700 dark:border-gray-600 dark:text-white',
-    label: 'block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1',
-    'form-group': 'mb-4',
+      'w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all placeholder:text-gray-400 dark:text-white',
+    label: 'block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1.5 ml-1',
+    'form-group': 'mb-5',
 
     // Layout
     container: 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8',

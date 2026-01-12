@@ -132,7 +132,7 @@ export class AdminProductController {
     )
 
     session.flash('success', '商品已新增')
-    return ctx.json({ success: true, redirect: '/admin/products' })
+    return ctx.redirect('/admin/products', 303)
   }
 
   /**
@@ -156,6 +156,7 @@ export class AdminProductController {
     return inertia.render('Admin/Products/Edit', {
       product: {
         ...product,
+        id: (product as any).id, // Ensure ID is passed explicitly
         price: (product as any).price / 100, // Convert from cents
         compare_at_price: (product as any).compare_at_price
           ? (product as any).compare_at_price / 100
@@ -226,7 +227,7 @@ export class AdminProductController {
     )
 
     session.flash('success', '商品已更新')
-    return ctx.json({ success: true })
+    return ctx.redirect('/admin/products', 303)
   }
 
   /**
