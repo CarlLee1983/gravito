@@ -17,15 +17,18 @@ export async function runSeeders(): Promise<void> {
   console.log('🌱 Seeding database...')
 
   // ─────────────────────────────────────────────────────────────
-  // Seed Admin User
+  // Seed Users
   // ─────────────────────────────────────────────────────────────
-  const hashedPassword = await Bun.password.hash('admin123', { algorithm: 'bcrypt' })
+  const adminPassword = await Bun.password.hash('admin123', { algorithm: 'bcrypt' })
+  const userPassword = await Bun.password.hash('password123', { algorithm: 'bcrypt' })
+
   await DB.raw(
     `
     INSERT INTO users (name, email, password, role) VALUES
-    ('Admin', 'admin@example.com', ?, 'admin')
+    ('Admin', 'admin@example.com', ?, 'admin'),
+    ('Customer', 'user@example.com', ?, 'customer')
   `,
-    [hashedPassword]
+    [adminPassword, userPassword]
   )
 
   // ─────────────────────────────────────────────────────────────

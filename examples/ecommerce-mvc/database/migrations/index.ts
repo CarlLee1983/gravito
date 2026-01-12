@@ -132,6 +132,40 @@ export async function runMigrations(): Promise<void> {
   `)
 
   // ─────────────────────────────────────────────────────────────
+  // Wishlists Table
+  // ─────────────────────────────────────────────────────────────
+  await DB.raw(`
+    CREATE TABLE IF NOT EXISTS wishlists (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      product_id INTEGER NOT NULL,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+    )
+  `)
+
+  // ─────────────────────────────────────────────────────────────
+  // Addresses Table
+  // ─────────────────────────────────────────────────────────────
+  await DB.raw(`
+    CREATE TABLE IF NOT EXISTS addresses (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      name TEXT NOT NULL,
+      phone TEXT NOT NULL,
+      city TEXT NOT NULL,
+      district TEXT NOT NULL,
+      street TEXT NOT NULL,
+      zip_code TEXT,
+      is_default INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+  `)
+
+  // ─────────────────────────────────────────────────────────────
   // Indexes for Performance
   // ─────────────────────────────────────────────────────────────
   await DB.raw('CREATE INDEX IF NOT EXISTS idx_products_category ON products(category_id)')
@@ -143,6 +177,9 @@ export async function runMigrations(): Promise<void> {
   await DB.raw('CREATE INDEX IF NOT EXISTS idx_orders_user ON orders(user_id)')
   await DB.raw('CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status)')
   await DB.raw('CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id)')
+  await DB.raw('CREATE INDEX IF NOT EXISTS idx_wishlists_user ON wishlists(user_id)')
+  await DB.raw('CREATE INDEX IF NOT EXISTS idx_wishlists_product ON wishlists(product_id)')
+  await DB.raw('CREATE INDEX IF NOT EXISTS idx_addresses_user ON addresses(user_id)')
 
   console.log('✅ Database migrations completed')
 }

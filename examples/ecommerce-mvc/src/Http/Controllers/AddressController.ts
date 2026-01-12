@@ -2,12 +2,13 @@ import type { GravitoContext } from '@gravito/core'
 import type { InertiaService } from '@gravito/ion'
 import type { AuthManager } from '@gravito/sentinel'
 import { Address } from '../../Models/Address'
+import type { User } from '../../Models/User'
 
 export class AddressController {
   static async index(ctx: GravitoContext) {
     const inertia = ctx.get('inertia') as InertiaService
     const auth = ctx.get('auth') as AuthManager
-    const user = await auth.user()
+    const user = (await auth.user()) as User | null
     if (!user) return ctx.redirect('/login')
 
     const addresses = await Address.where('user_id', user.id).orderBy('is_default', 'desc').get()
@@ -22,7 +23,7 @@ export class AddressController {
 
   static async store(ctx: GravitoContext) {
     const auth = ctx.get('auth') as AuthManager
-    const user = await auth.user()
+    const user = (await auth.user()) as User | null
     if (!user) return ctx.redirect('/login')
 
     const body = await (ctx as any).req.json()
@@ -66,7 +67,7 @@ export class AddressController {
 
   static async destroy(ctx: GravitoContext) {
     const auth = ctx.get('auth') as AuthManager
-    const user = await auth.user()
+    const user = (await auth.user()) as User | null
     if (!user) return ctx.redirect('/login')
 
     const id = (ctx as any).req.param('id')
@@ -81,7 +82,7 @@ export class AddressController {
 
   static async setDefault(ctx: GravitoContext) {
     const auth = ctx.get('auth') as AuthManager
-    const user = await auth.user()
+    const user = (await auth.user()) as User | null
     if (!user) return ctx.redirect('/login')
 
     const id = (ctx as any).req.param('id')

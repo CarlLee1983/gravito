@@ -2,13 +2,14 @@ import type { GravitoContext } from '@gravito/core'
 import type { InertiaService } from '@gravito/ion'
 import type { AuthManager } from '@gravito/sentinel'
 import { Product } from '../../Models/Product'
+import type { User } from '../../Models/User'
 import { Wishlist } from '../../Models/Wishlist'
 
 export class WishlistController {
   static async index(ctx: GravitoContext) {
     const inertia = ctx.get('inertia') as InertiaService
     const auth = ctx.get('auth') as AuthManager
-    const user = await auth.user()
+    const user = (await auth.user()) as User | null
     if (!user) return ctx.redirect('/login')
 
     const wishlists = await Wishlist.where('user_id', user.id).get()
@@ -40,7 +41,7 @@ export class WishlistController {
 
   static async store(ctx: GravitoContext) {
     const auth = ctx.get('auth') as AuthManager
-    const user = await auth.user()
+    const user = (await auth.user()) as User | null
     if (!user) return ctx.redirect('/login')
 
     const body = await (ctx as any).req.json()
@@ -65,7 +66,7 @@ export class WishlistController {
 
   static async destroy(ctx: GravitoContext) {
     const auth = ctx.get('auth') as AuthManager
-    const user = await auth.user()
+    const user = (await auth.user()) as User | null
     if (!user) return ctx.redirect('/login')
 
     const id = (ctx as any).req.param('id')
