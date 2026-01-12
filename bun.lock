@@ -129,9 +129,11 @@
       "version": "1.1.0",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
+        "@gravito/constellation": "workspace:*",
         "@gravito/core": "workspace:*",
         "@gravito/cosmos": "workspace:*",
         "@gravito/ion": "workspace:*",
+        "@gravito/luminosity": "^1.0.0-beta.2",
         "@gravito/mass": "workspace:*",
         "@gravito/monolith": "workspace:*",
         "@gravito/photon": "workspace:*",
@@ -4179,6 +4181,8 @@
     "body-parser/iconv-lite": ["iconv-lite@0.4.24", "", { "dependencies": { "safer-buffer": ">= 2.1.2 < 3" } }, "sha512-v3MXnZAcvnywkTUEZomIActle7RXXeedOR31wwl7VlyoXO4Qi9arvSenNQWne1TcRwhCL1HwLI21bEqdpj8/rA=="],
 
     "chokidar/glob-parent": ["glob-parent@5.1.2", "", { "dependencies": { "is-glob": "^4.0.1" } }, "sha512-AOIgSQCepiJYwP3ARnGx+5VnTu2HBYdzbGP45eLw1vr3zB3vZLeyed1sC9hnbcOc9/SrMyM5RPQrkGz4aS9Zow=="],
+
+    "example-ecommerce-mvc/@gravito/luminosity": ["@gravito/luminosity@1.0.0-beta.2", "", { "peerDependencies": { "typescript": "^5.0.0" } }, "sha512-JXJKTCKkaBFqh1wnkLhpjryDqvlxOWc5RlrIh7U5gr2+JPFgvd38CbBsdxNhnV6Sobacvj/qukX4oEaYMHi0Cw=="],
 
     "example-ecommerce-mvc/stripe": ["stripe@14.25.0", "", { "dependencies": { "@types/node": ">=8.1.0", "qs": "^6.11.0" } }, "sha512-wQS3GNMofCXwH8TSje8E1SE8zr6ODiGtHQgPtO95p9Mb4FhKC9jvXR2NUTpZ9ZINlckJcFidCmaTFV4P6vsb9g=="],
 

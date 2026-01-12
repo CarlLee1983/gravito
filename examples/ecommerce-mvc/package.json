@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@gravito/atlas": "workspace:*",
-    "@gravito/constellation": "^2.0.0",
+    "@gravito/constellation": "workspace:*",
     "@gravito/core": "workspace:*",
     "@gravito/cosmos": "workspace:*",
     "@gravito/ion": "workspace:*",
