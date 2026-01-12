@@ -445,6 +445,7 @@ export class DocsService {
             luminosity_cli: 'Luminosity CLI',
             create_app: 'Create Gravito App',
             graphql: 'GraphQL API',
+            astral: 'Astral OpenAPI',
           }
         : {
             // Sections
@@ -535,6 +536,7 @@ export class DocsService {
             luminosity_cli: 'Luminosity CLI',
             create_app: 'Create Gravito App',
             graphql: 'GraphQL API',
+            astral: 'Astral OpenAPI',
           }
 
     return [
@@ -590,6 +592,7 @@ export class DocsService {
           { title: trans.luminosity_cli, path: `${prefix}/guide/luminosity-cli` },
           { title: trans.create_app, path: `${prefix}/guide/create-gravito-app` },
           { title: trans.graphql, path: `${prefix}/guide/graphql` },
+          { title: trans.astral, path: `${prefix}/guide/astral` },
         ],
       },
       {
