@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3'
+import { Head, Link } from '@inertiajs/vue3'
 import Layout from '../components/Layout.vue'
 import GImage from '../components/GImage.vue'
 import { useI18n } from '../composables/useI18n'

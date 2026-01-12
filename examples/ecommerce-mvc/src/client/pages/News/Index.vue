@@ -70,15 +70,17 @@ const getCategoryBadgeClass = (category: string) => {
                 <span class="i-heroicons-calendar mr-2 text-primary"></span>
                 {{ item.date }}
               </div>
-              <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-3 group-hover:text-primary transition-colors cursor-pointer">
-                {{ item.title }}
-              </h2>
+              <Link :href="`/pages/news/${item.id}`">
+                <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-3 group-hover:text-primary transition-colors cursor-pointer">
+                  {{ item.title }}
+                </h2>
+              </Link>
               <p class="text-gray-600 dark:text-gray-400 mb-6 line-clamp-3">
                 {{ item.excerpt }}
               </p>
               
               <Link 
-                href="#" 
+                :href="`/pages/news/${item.id}`" 
                 class="inline-flex items-center font-semibold text-primary hover:text-primary-dark transition-colors"
               >
                 {{ t('news.read_more') }}

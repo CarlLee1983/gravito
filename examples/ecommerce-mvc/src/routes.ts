@@ -42,6 +42,7 @@ export function registerRoutes(router: Router) {
   router.get('/pages/returns', PageController.returns)
   router.get('/pages/contact', PageController.contact)
   router.get('/pages/news', PageController.news)
+  router.get('/pages/news/:id', PageController.newsShow)
 
   // ─────────────────────────────────────────────────────────────
   // Auth Routes (Guest Only)

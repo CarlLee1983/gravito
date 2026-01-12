@@ -22,7 +22,7 @@
         "shipping": "運送政策",
         "returns": "退換貨說明",
         "powered_by": "Powered by Gravito Framework.",
-        "news": "最新消息"
+        "news": "最新消息與促銷"
     },
     "home": {
         "title": "首頁",
@@ -147,7 +147,7 @@
         "demo_notice": "(此為示範頁面，實際上未發送郵件)"
     },
     "news": {
-        "title": "最新消息",
+        "title": "最新消息與促銷",
         "subtitle": "獲取 Gravito Shop 的最新促銷活動、新品上市與官方公告。",
         "read_more": "閱讀更多",
         "back_to_news": "回到最新消息",
