@@ -17,7 +17,7 @@ import { defineConfig, PhotonAdapter, PlanetCore } from '@gravito/core'
 import { type AppConfig, appConfig } from '../config/app'
 import { databaseConfig } from '../config/database'
 import { orbits } from '../config/orbits'
-import { DatabaseProvider, MiddlewareProvider, RouteProvider } from './Providers'
+import { DatabaseProvider, MiddlewareProvider, RouteProvider, SeoProvider } from './Providers'
 
 export type { AppConfig }
 
@@ -58,6 +58,7 @@ export async function bootstrap(options: AppConfig = {}) {
   core.register(new DatabaseProvider())
   core.register(new MiddlewareProvider())
   core.register(new RouteProvider())
+  core.register(new SeoProvider())
 
   // ─────────────────────────────────────────────────────────────
   // 4. Bootstrap All Providers

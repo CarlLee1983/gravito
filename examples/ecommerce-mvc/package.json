@@ -10,9 +10,11 @@
   },
   "dependencies": {
     "@gravito/atlas": "workspace:*",
+    "@gravito/constellation": "^2.0.0",
     "@gravito/core": "workspace:*",
     "@gravito/cosmos": "workspace:*",
     "@gravito/ion": "workspace:*",
+    "@gravito/luminosity": "^1.0.0-beta.2",
     "@gravito/mass": "workspace:*",
     "@gravito/monolith": "workspace:*",
     "@gravito/photon": "workspace:*",
