@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue'
 import { Link, usePage, router } from '@inertiajs/vue3'
 import { useI18n } from '../composables/useI18n'
+import SeoHead from './SeoHead.vue'
 
 const { t, locale } = useI18n()
 const page = usePage()
@@ -11,6 +12,8 @@ const isUserMenuOpen = ref(false)
 const auth = computed(() => page.props.auth as any)
 const cart = computed(() => page.props.cart as any)
 const categories = computed(() => (page.props.categories || []) as any[])
+const seo = computed(() => page.props.seo as any)
+
 
 const toggleMenu = () => {
   isMenuOpen.value = !isMenuOpen.value
@@ -48,6 +51,7 @@ const currentLanguageName = computed(() => {
 
 <template>
   <div class="min-h-screen flex flex-col">
+    <SeoHead v-if="seo" :seo="seo" />
     <!-- Header -->
     <header class="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-200/50 dark:border-gray-800/50 transition-colors duration-300">
       <div class="container">

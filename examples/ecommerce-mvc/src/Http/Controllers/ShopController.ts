@@ -74,11 +74,38 @@ export class ShopController {
       },
     ]
 
+    const seo = {
+      meta: {
+        title: 'Gravito Shop - Premium Electronics & Gear',
+        description:
+          'Discover the latest in premium electronics, smart home devices, and developer gear.',
+        keywords: ['electronics', 'gadgets', 'developer gear', 'smart keyboard'],
+        canonical: `${process.env.APP_URL}/`,
+      },
+      og: {
+        title: 'Gravito Shop - Premium Electronics & Gear',
+        description: 'Discover the latest in premium electronics, smart home devices.',
+        type: 'website',
+        url: `${process.env.APP_URL}/`,
+        siteName: 'Gravito Shop',
+        image: {
+          url: `${process.env.APP_URL}/og-image.jpg`,
+          width: 1200,
+          height: 630,
+        },
+      },
+      twitter: {
+        card: 'summary_large_image',
+        site: '@gravito_dev',
+      },
+    }
+
     return inertia.render('Home', {
       featuredProducts: featuredResult.rows,
       latestProducts: latestResult.rows,
       categories: categoriesResult.rows,
       latestNews: latestNews,
+      seo,
     })
   }
 
@@ -201,10 +228,48 @@ export class ShopController {
       }
     }
 
+    // Prepare dynamic SEO
+    const p = product as any
+    const seo = {
+      meta: {
+        title: `${p.name} - Gravito Shop`,
+        description: p.description.substring(0, 160),
+        keywords: [p.category_name, p.name],
+        canonical: `${process.env.APP_URL}/products/${p.slug}`,
+      },
+      og: {
+        title: p.name,
+        description: p.description.substring(0, 200),
+        type: 'product',
+        url: `${process.env.APP_URL}/products/${p.slug}`,
+        image: {
+          url: p.image_url,
+          alt: p.name,
+        },
+        siteName: 'Gravito Shop',
+      },
+      jsonLd: {
+        '@context': 'https://schema.org/',
+        '@type': 'Product',
+        name: p.name,
+        image: p.image_url,
+        description: p.description,
+        sku: p.id,
+        offers: {
+          '@type': 'Offer',
+          priceCurrency: 'USD',
+          price: p.price,
+          availability: 'https://schema.org/InStock',
+          url: `${process.env.APP_URL}/products/${p.slug}`,
+        },
+      },
+    }
+
     return inertia.render('Shop/Product', {
       product,
       relatedProducts: relatedResult.rows,
       wishlistId: wishlistId,
+      seo,
     })
   }
 
@@ -255,11 +320,28 @@ export class ShopController {
     const total = countResult.rows[0]?.count || 0
     const totalPages = Math.ceil(total / perPage)
 
+    const c = category as any
+    const seo = {
+      meta: {
+        title: `${c.name} - Gravito Shop`,
+        description: `Browse our collection of ${c.name}. Premium quality guaranteed.`,
+        keywords: [c.name, c.slug, 'shop'],
+        canonical: `${process.env.APP_URL}/category/${c.slug}`,
+      },
+      og: {
+        title: c.name,
+        type: 'website',
+        url: `${process.env.APP_URL}/category/${c.slug}`,
+        siteName: 'Gravito Shop',
+      },
+    }
+
     return inertia.render('Shop/Category', {
       category,
       products: productsResult.rows,
       filters: { sort },
       pagination: { page, perPage, total, totalPages },
+      seo,
     })
   }
 
