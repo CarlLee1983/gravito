@@ -4,10 +4,10 @@
  * Protect routes that require admin role.
  */
 
-import type { GravitoContext, MiddlewareNext } from '@gravito/core'
+import type { GravitoContext, GravitoNext } from '@gravito/core'
 import type { AuthManager } from '@gravito/sentinel'
 
-export async function AdminMiddleware(ctx: GravitoContext, next: MiddlewareNext) {
+export async function AdminMiddleware(ctx: GravitoContext, next: GravitoNext) {
   const auth = ctx.get('auth') as AuthManager
 
   if (!(await auth.check())) {
