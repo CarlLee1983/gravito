@@ -1,5 +1,5 @@
 import { Head, usePage } from '@inertiajs/react'
-import { motion } from 'framer-motion'
+import { motion, useScroll, useTransform } from 'framer-motion'
 import {
   Activity,
   ArrowRight,
@@ -14,6 +14,8 @@ import {
 import React from 'react'
 import { BentoGrid, BentoGridItem } from '../components/BentoGrid'
 import { Footer } from '../components/Footer'
+import { LogTicker } from '../components/LogTicker'
+import { Magnetic } from '../components/Magnetic'
 import { Navbar } from '../components/Navbar'
 import { StaticLink } from '../components/StaticLink'
 import { useTrans } from '../hooks/useTrans'
@@ -25,9 +27,42 @@ interface HomeProps {
   version?: string
 }
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+    },
+  },
+}
+
+const itemVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: {
+      duration: 0.5,
+      ease: 'easeOut',
+    },
+  },
+}
+
 export default function Home() {
   const { trans, locale } = useTrans()
   const _props = usePage<HomeProps>().props
+  const { scrollYProgress } = useScroll()
+
+  const bgGradient = useTransform(
+    scrollYProgress,
+    [0, 0.5, 1],
+    [
+      'radial-gradient(circle at 50% 0%, rgba(0, 240, 255, 0.05) 0%, transparent 50%)',
+      'radial-gradient(circle at 0% 50%, rgba(155, 81, 224, 0.05) 0%, transparent 50%)',
+      'radial-gradient(circle at 100% 100%, rgba(59, 130, 246, 0.05) 0%, transparent 50%)',
+    ]
+  )
 
   const getLink = (path: string) => {
     if (locale === 'en') {
@@ -37,12 +72,18 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-zenith-void text-white selection:bg-zenith-accent selection:text-zenith-900 overflow-x-hidden font-sans bg-grid-pattern">
+    <div className="min-h-screen bg-zenith-void text-white selection:bg-zenith-accent selection:text-zenith-900 overflow-x-hidden font-sans bg-grid-pattern relative">
       <Head>
         <title>{`${trans('hero.title')} ${trans('hero.titleHighlight')} - Gravito Zenith`}</title>
         <meta name="description" content={trans('hero.description')} />
       </Head>
       <Navbar />
+      <LogTicker />
+
+      <motion.div
+        className="absolute inset-0 z-0 pointer-events-none"
+        style={{ background: bgGradient }}
+      />
 
       {/* Hero Section */}
       <section className="relative min-h-[110vh] flex items-center justify-center overflow-hidden pt-20 pb-20">
@@ -107,19 +148,23 @@ export default function Home() {
                 </p>
 
                 <div className="flex flex-col sm:flex-row items-center gap-6 justify-center lg:justify-start">
-                  <StaticLink
-                    href={getLink('/features')}
-                    className="w-full sm:w-auto px-10 py-4 bg-white text-black hover:bg-zenith-accent transition-all font-black text-xs tracking-widest uppercase rounded-xl flex items-center justify-center gap-2 group shadow-[0_20px_40px_-10px_rgba(255,255,255,0.2)] hover:shadow-zenith-accent/40"
-                  >
-                    {trans('hero.getStarted')}{' '}
-                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                  </StaticLink>
-                  <StaticLink
-                    href={getLink('/integrations')}
-                    className="w-full sm:w-auto px-10 py-4 bg-white/5 border border-white/10 hover:bg-white/10 text-white transition-all font-black text-xs tracking-widest uppercase rounded-xl flex items-center justify-center gap-2 backdrop-blur-md"
-                  >
-                    <BookOpen className="w-4 h-4" /> {trans('hero.documentation')}
-                  </StaticLink>
+                  <Magnetic>
+                    <StaticLink
+                      href={getLink('/features')}
+                      className="w-full sm:w-auto px-10 py-4 bg-white text-black hover:bg-zenith-accent transition-all font-black text-xs tracking-widest uppercase rounded-xl flex items-center justify-center gap-2 group shadow-[0_20px_40px_-10px_rgba(255,255,255,0.2)] hover:shadow-zenith-accent/40"
+                    >
+                      {trans('hero.getStarted')}{' '}
+                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    </StaticLink>
+                  </Magnetic>
+                  <Magnetic>
+                    <StaticLink
+                      href={getLink('/integrations')}
+                      className="w-full sm:w-auto px-10 py-4 bg-white/5 border border-white/10 hover:bg-white/10 text-white transition-all font-black text-xs tracking-widest uppercase rounded-xl flex items-center justify-center gap-2 backdrop-blur-md"
+                    >
+                      <BookOpen className="w-4 h-4" /> {trans('hero.documentation')}
+                    </StaticLink>
+                  </Magnetic>
                 </div>
               </motion.div>
             </div>
@@ -285,94 +330,104 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="grid lg:grid-cols-2 gap-12">
-            <CardPerspective>
-              <div className="bg-zenith-surface/60 rounded-3xl border border-white/5 p-10 backdrop-blur-3xl relative overflow-hidden h-full">
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-zenith-pulse to-transparent opacity-50" />
-                <div className="flex items-center gap-4 mb-8">
-                  <div className="p-3 rounded-2xl bg-zenith-pulse/10 text-zenith-pulse shadow-[0_0_15px_rgba(59,130,246,0.2)]">
-                    <ListTree size={24} />
-                  </div>
-                  <h3 className="text-3xl font-black tracking-tight">
-                    {locale === 'zh-TW' ? '智能隊列管理' : 'Intelligent Queues'}
-                  </h3>
-                </div>
-                <div className="space-y-4 bg-black/40 rounded-2xl p-8 border border-white/5">
-                  {[
-                    { name: 'emails.marketing', w: 421, f: 0, s: 'active' },
-                    { name: 'images.optimize', w: 12, f: 8, s: 'warning' },
-                  ].map((q) => (
-                    <div
-                      key={q.name}
-                      className="p-5 bg-white/[0.02] rounded-2xl border border-white/5 flex items-center justify-between hover:bg-white/[0.05] transition-all"
-                    >
-                      <div>
-                        <div className="flex items-center gap-3 mb-2">
-                          <div
-                            className={`w-2 h-2 rounded-full ${q.s === 'active' ? 'bg-green-400 animate-pulse' : 'bg-yellow-500'}`}
-                          />
-                          <span className="font-mono text-sm text-gray-200">{q.name}</span>
-                        </div>
-                        <div className="flex gap-6 text-[10px] text-gray-500 font-bold uppercase tracking-widest">
-                          <span>
-                            Wait: <span className="text-zenith-accent">{q.w}</span>
-                          </span>
-                          <span>
-                            Fail: <span className="text-red-400">{q.f}</span>
-                          </span>
-                        </div>
-                      </div>
-                      <div className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center text-gray-500 hover:text-zenith-accent hover:border-zenith-accent transition-all cursor-pointer">
-                        <ArrowRight size={16} />
-                      </div>
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.2 }}
+            className="grid lg:grid-cols-2 gap-12"
+          >
+            <motion.div variants={itemVariants}>
+              <CardPerspective>
+                <div className="bg-zenith-surface/60 rounded-3xl border border-white/5 p-10 backdrop-blur-3xl relative overflow-hidden h-full">
+                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-zenith-pulse to-transparent opacity-50" />
+                  <div className="flex items-center gap-4 mb-8">
+                    <div className="p-3 rounded-2xl bg-zenith-pulse/10 text-zenith-pulse shadow-[0_0_15px_rgba(59,130,246,0.2)]">
+                      <ListTree size={24} />
                     </div>
-                  ))}
+                    <h3 className="text-3xl font-black tracking-tight">
+                      {locale === 'zh-TW' ? '智能隊列管理' : 'Intelligent Queues'}
+                    </h3>
+                  </div>
+                  <div className="space-y-4 bg-black/40 rounded-2xl p-8 border border-white/5">
+                    {[
+                      { name: 'emails.marketing', w: 421, f: 0, s: 'active' },
+                      { name: 'images.optimize', w: 12, f: 8, s: 'warning' },
+                    ].map((q) => (
+                      <div
+                        key={q.name}
+                        className="p-5 bg-white/[0.02] rounded-2xl border border-white/5 flex items-center justify-between hover:bg-white/[0.05] transition-all"
+                      >
+                        <div>
+                          <div className="flex items-center gap-3 mb-2">
+                            <div
+                              className={`w-2 h-2 rounded-full ${q.s === 'active' ? 'bg-green-400 animate-pulse' : 'bg-yellow-500'}`}
+                            />
+                            <span className="font-mono text-sm text-gray-200">{q.name}</span>
+                          </div>
+                          <div className="flex gap-6 text-[10px] text-gray-500 font-bold uppercase tracking-widest">
+                            <span>
+                              Wait: <span className="text-zenith-accent">{q.w}</span>
+                            </span>
+                            <span>
+                              Fail: <span className="text-red-400">{q.f}</span>
+                            </span>
+                          </div>
+                        </div>
+                        <div className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center text-gray-500 hover:text-zenith-accent hover:border-zenith-accent transition-all cursor-pointer">
+                          <ArrowRight size={16} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            </CardPerspective>
+              </CardPerspective>
+            </motion.div>
 
-            <CardPerspective>
-              <div className="bg-zenith-surface/60 rounded-3xl border border-white/5 p-10 backdrop-blur-3xl relative overflow-hidden h-full">
-                <div className="absolute bottom-0 right-0 w-full h-1 bg-gradient-to-r from-transparent via-green-400 to-transparent opacity-50" />
-                <div className="flex items-center gap-4 mb-8">
-                  <div className="p-3 rounded-2xl bg-green-400/10 text-green-400 shadow-[0_0_15px_rgba(74,222,128,0.2)]">
-                    <Cpu size={24} />
-                  </div>
-                  <h3 className="text-3xl font-black tracking-tight">
-                    {locale === 'zh-TW' ? '節點健康監控' : 'Node Health'}
-                  </h3>
-                </div>
-                <div className="space-y-6 bg-black/40 rounded-2xl p-8 border border-white/5">
-                  <div className="p-5 bg-white/[0.02] rounded-2xl border border-white/5">
-                    <div className="flex justify-between items-center mb-6">
-                      <div className="text-xs font-mono text-gray-300">ZENITH_NODE_01</div>
-                      <span className="text-[10px] px-3 py-1 bg-green-400/10 text-green-400 rounded-full font-black uppercase border border-green-400/20">
-                        Operational
-                      </span>
+            <motion.div variants={itemVariants}>
+              <CardPerspective>
+                <div className="bg-zenith-surface/60 rounded-3xl border border-white/5 p-10 backdrop-blur-3xl relative overflow-hidden h-full">
+                  <div className="absolute bottom-0 right-0 w-full h-1 bg-gradient-to-r from-transparent via-green-400 to-transparent opacity-50" />
+                  <div className="flex items-center gap-4 mb-8">
+                    <div className="p-3 rounded-2xl bg-green-400/10 text-green-400 shadow-[0_0_15px_rgba(74,222,128,0.2)]">
+                      <Cpu size={24} />
                     </div>
-                    <div className="grid grid-cols-2 gap-8">
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-[9px] text-gray-500 uppercase font-black">
-                          CPU Load <span>45%</span>
+                    <h3 className="text-3xl font-black tracking-tight">
+                      {locale === 'zh-TW' ? '節點健康監控' : 'Node Health'}
+                    </h3>
+                  </div>
+                  <div className="space-y-6 bg-black/40 rounded-2xl p-8 border border-white/5">
+                    <div className="p-5 bg-white/[0.02] rounded-2xl border border-white/5">
+                      <div className="flex justify-between items-center mb-6">
+                        <div className="text-xs font-mono text-gray-300">ZENITH_NODE_01</div>
+                        <span className="text-[10px] px-3 py-1 bg-green-400/10 text-green-400 rounded-full font-black uppercase border border-green-400/20">
+                          Operational
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-8">
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-[9px] text-gray-500 uppercase font-black">
+                            CPU Load <span>45%</span>
+                          </div>
+                          <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                            <div className="h-full bg-zenith-accent" style={{ width: '45%' }} />
+                          </div>
                         </div>
-                        <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
-                          <div className="h-full bg-zenith-accent" style={{ width: '45%' }} />
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-[9px] text-gray-500 uppercase font-black">
+                            Memory <span>62%</span>
+                          </div>
+                          <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                            <div className="h-full bg-green-400" style={{ width: '62%' }} />
+                          </div>
                         </div>
                       </div>
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-[9px] text-gray-500 uppercase font-black">
-                          Memory <span>62%</span>
-                        </div>
-                        <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
-                          <div className="h-full bg-green-400" style={{ width: '62%' }} />
-                        </div>
-                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </CardPerspective>
-          </div>
+              </CardPerspective>
+            </motion.div>
+          </motion.div>
         </div>
       </section>
 
@@ -418,33 +473,36 @@ export default function Home() {
                   <pre className="text-gray-300">
                     <code>
                       <div className="line">
-                        <span className="text-purple-400">import</span> {'{'} Zenith {'}'}{' '}
+                        <span className="text-purple-400">import</span> {'{'} Photon {'}'}{' '}
                         <span className="text-purple-400">from</span>{' '}
-                        <span className="text-zenith-accent">'@gravito/zenith'</span>
+                        <span className="text-zenith-accent">'@gravito/photon'</span>
                       </div>
                       <div className="line">
-                        <span className="text-purple-400">import</span> {'{'} App {'}'}{' '}
+                        <span className="text-purple-400">import</span> zenith{' '}
                         <span className="text-purple-400">from</span>{' '}
-                        <span className="text-zenith-accent">'./app'</span>
+                        <span className="text-zenith-accent">'@gravito/zenith/server'</span>
                       </div>
                       <div className="line h-4"></div>
                       <div className="line">
-                        <span className="text-gray-600">{'// Initialize the Control Plane'}</span>
+                        <span className="text-gray-600">{'// Existing Photon application'}</span>
                       </div>
                       <div className="line">
-                        <span className="text-blue-400">const</span> zenith ={' '}
-                        <span className="text-purple-400">new</span> Zenith(App)
-                      </div>
-                      <div className="line h-4"></div>
-                      <div className="line">
-                        <span className="text-gray-600">{'// Attach to admin orbit'}</span>
-                      </div>
-                      <div className="line">
-                        zenith.mount(<span className="text-green-400">"/admin/zenith"</span>)
+                        <span className="text-blue-400">const</span> app ={' '}
+                        <span className="text-purple-400">new</span> Photon()
                       </div>
                       <div className="line h-4"></div>
                       <div className="line">
-                        <span className="text-purple-400">await</span> zenith.start()
+                        <span className="text-gray-600">{'// Mount Zenith as an API route'}</span>
+                      </div>
+                      <div className="line">
+                        app.route(<span className="text-green-400">"/admin/zenith"</span>, zenith)
+                      </div>
+                      <div className="line h-4"></div>
+                      <div className="line text-zenith-accent font-bold">
+                        <span className="text-gray-600 font-normal">
+                          {'// Or run standalone: '}
+                        </span>
+                        bun zenith start
                       </div>
                     </code>
                   </pre>
