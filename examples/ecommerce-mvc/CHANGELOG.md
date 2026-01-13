@@ -1,5 +1,22 @@
 # example-ecommerce-mvc
 
+## 1.1.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @gravito/core@1.2.0
+  - @gravito/atlas@1.2.0
+  - @gravito/sentinel@3.0.0
+  - @gravito/constellation@3.0.0
+  - @gravito/cosmos@3.0.0
+  - @gravito/ion@3.0.0
+  - @gravito/mass@3.0.0
+  - @gravito/monolith@3.0.0
+  - @gravito/prism@3.0.0
+  - @gravito/pulsar@3.0.0
+  - @gravito/stasis@3.0.0
+
 ## 1.1.0
 
 ### Minor Changes
@@ -14,7 +31,6 @@
   - Added `Services/` and `Repositories/` directories for future use
   - Simplified `index.ts` to only handle application launch
   - Added comprehensive `ARCHITECTURE.md` documentation
-
 
 ## 1.0.3
 

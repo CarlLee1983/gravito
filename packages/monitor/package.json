@@ -1,6 +1,6 @@
 {
   "name": "@gravito/monitor",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "Observability module for Gravito - Health checks, Metrics, and Tracing",
   "type": "module",
   "main": "./dist/index.cjs",

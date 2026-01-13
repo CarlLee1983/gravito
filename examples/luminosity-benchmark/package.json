@@ -1,6 +1,6 @@
 {
   "name": "luminosity-benchmark",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "private": true,
   "description": "Firepower showcase for Gravito Luminosity Sitemap Engine",
   "type": "module",

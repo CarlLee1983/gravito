@@ -1,6 +1,6 @@
 {
   "name": "@gravito/graphql",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Zero-config GraphQL Orbit for Gravito, powered by Yoga",
   "type": "module",
   "main": "./dist/index.js",

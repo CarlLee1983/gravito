@@ -1,5 +1,13 @@
 # @gravito/constellation
 
+## 3.0.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @gravito/core@1.2.0
+  - @gravito/stream@1.0.2
+
 ## 2.0.0
 
 ### Patch Changes

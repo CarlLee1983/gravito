@@ -1,6 +1,6 @@
 {
   "name": "@gravito/launchpad",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Container lifecycle management system for flash deployments",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
