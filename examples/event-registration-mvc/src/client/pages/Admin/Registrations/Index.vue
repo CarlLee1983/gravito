@@ -1,57 +1,57 @@
 <template>
   <AdminLayout>
-    <div class="mb-10">
-      <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Attendee Records</h1>
-      <p class="text-gray-500 mt-1">View and manage all event registrations.</p>
+    <div class="mb-12 text-left transition-colors duration-500">
+      <h1 class="text-3xl font-black text-gray-900 dark:text-white tracking-tighter leading-none">{{ t('admin.registrations.title') }}</h1>
+      <p class="text-gray-500 dark:text-slate-500 mt-2 font-medium">{{ t('admin.registrations.subtitle') }}</p>
     </div>
     
-    <div class="card bg-white border-none shadow-sm overflow-hidden p-0">
+    <div class="table-container border-none shadow-2xl dark:shadow-black/40">
       <div class="overflow-x-auto">
-        <table class="w-full text-left border-collapse">
+        <table class="table-base">
           <thead>
-            <tr class="bg-gray-50 text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100">
-              <th class="px-6 py-4">Attendee</th>
-              <th class="px-6 py-4">Event & Session</th>
-              <th class="px-6 py-4 text-center">Status</th>
-              <th class="px-6 py-4">Registered At</th>
-              <th class="px-6 py-4 text-right">Actions</th>
+            <tr>
+              <th class="th-premium">{{ t('admin.dashboard.identity') }}</th>
+              <th class="th-premium">{{ t('admin.dashboard.target_terminal') }}</th>
+              <th class="th-premium text-center">{{ t('admin.dashboard.status') }}</th>
+              <th class="th-premium">{{ t('admin.dashboard.timestamp') }}</th>
+              <th class="th-premium text-right">{{ t('admin.common.details') }}</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-100">
-            <tr v-for="reg in registrations" :key="reg.id" class="hover:bg-indigo-50/30 transition-colors group">
-              <td class="px-6 py-4">
-                <div class="flex items-center space-x-3">
-                  <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-[10px]">
+          <tbody class="divide-y divide-gray-100 dark:divide-white/5">
+            <tr v-for="reg in registrations" :key="reg.id" class="group">
+              <td class="td-premium">
+                <div class="flex items-center space-x-4">
+                  <div class="w-11 h-11 rounded-2xl bg-indigo-100 dark:bg-brand-900/30 flex items-center justify-center text-indigo-600 dark:text-brand-400 font-black text-xs shadow-inner">
                     {{ reg.user.name.substring(0, 2).toUpperCase() }}
                   </div>
                   <div>
-                    <p class="text-sm font-bold text-gray-900 leading-none group-hover:text-indigo-600 transition-colors">{{ reg.user.name }}</p>
-                    <p class="text-[10px] text-gray-400 mt-1">{{ reg.user.email }}</p>
+                    <p class="text-sm font-black text-gray-900 dark:text-white leading-none group-hover:text-brand-600 transition-colors">{{ reg.user.name }}</p>
+                    <p class="text-[10px] font-bold text-gray-400 dark:text-slate-600 mt-1.5 leading-none">{{ reg.user.email }}</p>
                   </div>
                 </div>
               </td>
-              <td class="px-6 py-4">
-                <p class="text-sm font-bold text-gray-900 leading-none">{{ reg.session.event.title }}</p>
-                <p class="text-[10px] text-indigo-600 mt-1 uppercase tracking-tight font-medium">{{ reg.session.title }}</p>
+              <td class="td-premium">
+                <p class="text-sm font-black text-gray-900 dark:text-white leading-none">{{ reg.session.event.title }}</p>
+                <p class="text-[10px] text-indigo-600 dark:text-indigo-400/60 mt-1.5 uppercase tracking-tighter font-black">{{ reg.session.title }}</p>
               </td>
-              <td class="px-6 py-4 text-center">
+              <td class="td-premium text-center">
                 <span 
-                  class="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-tighter"
+                  class="px-2.5 py-1 rounded text-[10px] font-black uppercase tracking-widest shadow-sm border-1 border-white/10"
                   :class="getStatusClasses(reg.status)"
                 >
-                  {{ reg.status }}
+                  {{ t(`profile.registration.status.${reg.status}`) }}
                 </span>
               </td>
-              <td class="px-6 py-4">
-                <p class="text-xs text-gray-500 font-medium">{{ formatDate(reg.registered_at) }}</p>
+              <td class="td-premium">
+                <p class="text-xs font-bold text-gray-400 dark:text-slate-600">{{ formatDate(reg.registered_at) }}</p>
               </td>
-              <td class="px-6 py-4 text-right">
+              <td class="td-premium text-right">
                 <Link 
                   :href="`/admin/registrations/${reg.id}`" 
-                  class="inline-flex items-center space-x-1 text-xs font-bold text-indigo-600 hover:text-indigo-500 uppercase tracking-widest"
+                  class="inline-flex items-center space-x-2 text-[10px] font-black text-indigo-600 dark:text-brand-400 hover:text-indigo-500 uppercase tracking-[0.2em] group/link"
                 >
-                  <span>Details</span>
-                  <div class="i-carbon-chevron-right" />
+                  <span>{{ t('admin.registrations.view_details') }}</span>
+                  <div class="i-carbon-chevron-right text-lg group-hover/link:translate-x-1 transition-transform" />
                 </Link>
               </td>
             </tr>
@@ -59,11 +59,11 @@
         </table>
       </div>
       
-      <div v-if="registrations.length === 0" class="text-center py-20">
-        <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-300">
-          <div class="i-carbon-user-identification" />
+      <div v-if="registrations.length === 0" class="text-center py-32 bg-gray-50/50 dark:bg-black/20 transition-colors">
+        <div class="w-20 h-20 bg-gray-100 dark:bg-white/5 rounded-3xl flex items-center justify-center mx-auto mb-6 text-gray-300 dark:text-gray-700">
+          <div class="i-carbon-user-identification text-4xl" />
         </div>
-        <p class="text-gray-500 font-medium">No registrations found yet.</p>
+        <p class="text-gray-500 dark:text-slate-500 font-black uppercase tracking-widest text-xs">{{ t('admin.common.no_records') }}</p>
       </div>
     </div>
   </AdminLayout>
@@ -72,6 +72,9 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
 import AdminLayout from '../../../components/AdminLayout.vue';
+import { useI18n } from '../../../composables/useI18n';
+
+const { t } = useI18n();
 
 defineProps<{
   registrations: any[];
@@ -79,22 +82,18 @@ defineProps<{
 
 const formatDate = (date: string) => {
   return new Date(date).toLocaleString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
+    month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
   });
 };
 
 const getStatusClasses = (status: string) => {
   const classes: Record<string, string> = {
-    confirmed: 'bg-green-100 text-green-700',
-    pending: 'bg-amber-100 text-amber-700',
-    cancelled: 'bg-red-100 text-red-700',
-    waitlist: 'bg-indigo-100 text-indigo-700',
-    checked_in: 'bg-cyan-100 text-cyan-700',
+    confirmed: 'bg-green-500 text-white',
+    pending: 'bg-amber-500 text-white',
+    cancelled: 'bg-red-500 text-white',
+    waitlist: 'bg-indigo-500 text-white',
+    checked_in: 'bg-cyan-500 text-white',
   };
-  return classes[status] || 'bg-gray-100 text-gray-700';
+  return classes[status] || 'bg-gray-500 text-white';
 };
 </script>

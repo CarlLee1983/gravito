@@ -13,7 +13,8 @@
         "build:vite": "vite build",
         "start": "bun run dist/index.js",
         "typecheck": "bun tsc --noEmit",
-        "db:seed": "bun run database/seeders/DatabaseSeeder.ts"
+        "db:seed": "bun run database/seeders/DatabaseSeeder.ts",
+        "test": "bun test"
     },
     "dependencies": {
         "@gravito/atlas": "workspace:*",
@@ -29,6 +30,7 @@
         "qrcode": "^1.5.4"
     },
     "devDependencies": {
+        "@inertiajs/core": "^2.3.8",
         "@types/bun": "latest",
         "@types/qrcode": "^1.5.5",
         "@unocss/preset-attributify": "^66.5.12",

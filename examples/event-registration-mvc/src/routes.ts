@@ -14,11 +14,21 @@ import { HomeController } from './Http/Controllers/HomeController'
 import { ProfileController } from './Http/Controllers/ProfileController'
 import { RegistrationController } from './Http/Controllers/RegistrationController'
 
+// Static Page Controller
+import { StaticPageController } from './Http/Controllers/StaticPageController'
+
 export function registerRoutes(router: Router): void {
   // Public routes
   router.get('/', [HomeController, 'index'])
   router.get('/events', [EventController, 'index'])
   router.get('/events/:id', [EventController, 'show'])
+
+  // Info routes
+  router.get('/docs', [StaticPageController, 'docs'])
+  router.get('/status', [StaticPageController, 'status'])
+  router.get('/help', [StaticPageController, 'help'])
+  router.get('/terms', [StaticPageController, 'terms'])
+  router.get('/privacy', [StaticPageController, 'privacy'])
 
   // Auth routes
   router.get('/login', [AuthController, 'showLogin'])

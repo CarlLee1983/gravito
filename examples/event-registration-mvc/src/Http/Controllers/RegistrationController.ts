@@ -10,10 +10,11 @@ export class RegistrationController extends Controller {
    */
   async store(ctx: any) {
     const userId = (ctx as any).session.get('user_id')
-    const { session_id, field_values, notes } = (ctx as any).body
+    const { session_id, field_values, notes } = (ctx as any).get('data')
 
     try {
-      const registrationService = (ctx.app.make as any)('registrationService')
+      const core = ctx.get('core') as any
+      const registrationService = core.container.make('registrationService')
       await registrationService.createRegistration({
         user_id: userId,
         session_id: parseInt(session_id),
@@ -21,9 +22,9 @@ export class RegistrationController extends Controller {
         notes,
       })
 
-      return (ctx as any).redirect('/profile').with('success', 'Registration successful!')
+      return ctx.redirect('/profile').with('success', 'Registration successful!')
     } catch (error: any) {
-      return (ctx as any).back().with('error', error.message)
+      return ctx.back().with('error', error.message)
     }
   }
 
@@ -31,8 +32,8 @@ export class RegistrationController extends Controller {
    * Cancel a registration
    */
   async destroy(ctx: any) {
-    const userId = (ctx as any).session.get('user_id')
-    const registrationId = parseInt((ctx as any).params.id)
+    const userId = ctx.session.get('user_id')
+    const registrationId = parseInt(ctx.params.id)
 
     try {
       const registration = await DB.table<Registration>('registrations')
@@ -41,15 +42,16 @@ export class RegistrationController extends Controller {
         .first()
 
       if (!registration) {
-        return (ctx as any).back().with('error', 'Registration not found')
+        return ctx.back().with('error', 'Registration not found')
       }
 
-      const registrationService = (ctx.app.make as any)('registrationService')
+      const core = ctx.get('core') as any
+      const registrationService = core.container.make('registrationService')
       await registrationService.cancelRegistration(registrationId)
 
-      return (ctx as any).back().with('success', 'Registration cancelled')
+      return ctx.back().with('success', 'Registration cancelled')
     } catch (error: any) {
-      return (ctx as any).back().with('error', error.message)
+      return ctx.back().with('error', error.message)
     }
   }
 }

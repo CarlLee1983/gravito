@@ -16,7 +16,7 @@ export class CheckinController extends Controller {
    * Verify QR code and return registration info
    */
   async verify(ctx: any) {
-    const { qr_code } = (ctx as any).body
+    const { qr_code } = (ctx as any).get('data')
 
     const registration = await DB.table<Registration>('registrations')
       .where('qr_code', qr_code)

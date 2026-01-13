@@ -1,7 +1,7 @@
 import { DB } from '@gravito/atlas'
-import { type Registration, RegistrationStatus } from '../Models/Registration'
+import { Registration, RegistrationStatus } from '../Models/Registration'
 import type { RegistrationValue } from '../Models/RegistrationValue'
-import type { Session } from '../Models/Session'
+import { Session } from '../Models/Session'
 import type { NotificationService } from './NotificationService'
 import type { QrCodeService } from './QrCodeService'
 
@@ -24,7 +24,7 @@ export class RegistrationService {
   async createRegistration(data: RegistrationData): Promise<Registration> {
     return await DB.transaction(async () => {
       // Get session and check capacity
-      const session = await DB.table<Session>('sessions').where('id', data.session_id).first()
+      const session = await Session.query().where('id', data.session_id).first()
 
       if (!session) {
         throw new Error('Session not found')
@@ -41,7 +41,7 @@ export class RegistrationService {
       const qrCode = this.qrCodeService.generateQrCodeString()
 
       // Create registration
-      const [registration] = await DB.table<Registration>('registrations').insert({
+      const registration = await Registration.create({
         user_id: data.user_id,
         session_id: data.session_id,
         status,
@@ -64,8 +64,11 @@ export class RegistrationService {
 
       // Update registered count if confirmed
       if (status === RegistrationStatus.CONFIRMED) {
-        await DB.table<Session>('sessions').where('id', session.id).increment('registered_count', 1)
+        await Session.query().where('id', session.id).increment('registered_count', 1)
       }
+
+      // Load relationships for notification
+      await registration.load(['user', 'session.event'])
 
       // Send confirmation email
       await this.notificationService.sendRegistrationConfirmation(registration)

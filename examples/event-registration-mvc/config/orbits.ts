@@ -12,18 +12,22 @@ import { en, zhTW } from './locales'
 export const orbits = [
   new OrbitAtlas(),
   new OrbitCosmos({
-    defaultLocale: 'zh-TW',
+    defaultLocale: 'en',
     supportedLocales: ['en', 'zh-TW'],
     translations: {
       en,
       'zh-TW': zhTW,
     },
   }),
+
   new OrbitMonolith(),
   new OrbitPrism(), // Required for initial page rendering
   new OrbitPulsar({
     // Required for session guard
     driver: 'memory',
+    csrf: {
+      enabled: process.env.NODE_ENV !== 'test',
+    },
   }),
   new OrbitSentinel({
     defaults: {

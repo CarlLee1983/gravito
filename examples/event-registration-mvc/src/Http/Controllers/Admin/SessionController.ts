@@ -17,7 +17,7 @@ export class SessionController extends Controller {
 
   async store(ctx: any) {
     const eventId = parseInt(ctx.params.eventId)
-    const data = ctx.body
+    const data = ctx.get('data') as any
 
     const session = await DB.table<Session>('sessions').insert({
       event_id: eventId,
@@ -33,7 +33,7 @@ export class SessionController extends Controller {
 
   async update(ctx: any) {
     const sessionId = parseInt(ctx.params.id)
-    const data = ctx.body
+    const data = ctx.get('data') as any
 
     await DB.table<Session>('sessions')
       .where('id', sessionId)

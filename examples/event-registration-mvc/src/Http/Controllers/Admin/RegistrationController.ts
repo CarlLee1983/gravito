@@ -48,7 +48,7 @@ export class RegistrationController extends Controller {
 
   async updateStatus(ctx: any) {
     const registrationId = parseInt(ctx.params.id)
-    const { status } = ctx.body
+    const { status } = ctx.get('data') as any
 
     await DB.table<Registration>('registrations').where('id', registrationId).update({ status })
 

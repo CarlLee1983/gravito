@@ -15,7 +15,7 @@ export class EventController extends Controller {
   }
 
   async store(ctx: any) {
-    const data = ctx.body
+    const data = ctx.get('data') as any
 
     const event = await DB.table<Event>('events').insert({
       title: data.title,
@@ -43,7 +43,7 @@ export class EventController extends Controller {
 
   async update(ctx: any) {
     const eventId = parseInt(ctx.params.id)
-    const data = ctx.body
+    const data = ctx.get('data') as any
 
     await DB.table<Event>('events')
       .where('id', eventId)

@@ -1,28 +1,29 @@
 <template>
   <Layout>
-    <div class="max-w-2xl mx-auto py-12 px-4">
-      <Link href="/profile" class="inline-flex items-center text-indigo-600 hover:text-indigo-500 font-medium mb-8 group">
+    <div class="max-w-3xl mx-auto py-20 px-4 transition-colors duration-500">
+      <Link href="/profile" class="inline-flex items-center text-brand-600 dark:text-brand-400 hover:text-brand-500 font-black text-xs uppercase tracking-widest mb-10 group">
         <div class="i-carbon-arrow-left mr-2 group-hover:-translate-x-1 transition-transform" />
-        Back to My Registrations
+        {{ t('profile_reg.back') }}
       </Link>
       
-      <div class="card shadow-2xl border-none p-0 overflow-hidden">
+      <div class="bg-card shadow-[0_50px_100px_-20px_rgba(0,0,0,0.15)] dark:shadow-black/50 border-none rounded-[3rem] overflow-hidden transition-all duration-500">
         <!-- Ticket Header -->
-        <div class="bg-indigo-600 p-8 text-white relative">
-          <div class="absolute top-0 right-0 p-4 opacity-10">
-            <div class="i-carbon-event text-9xl" />
+        <div class="bg-indigo-600 dark:bg-indigo-900 p-10 text-white relative">
+          <!-- Pattern -->
+          <div class="absolute inset-0 opacity-10 pointer-events-none">
+            <div class="absolute inset-0 bg-[radial-gradient(white_1px,transparent_1px)] [background-size:24px_24px]" />
           </div>
           
-          <div class="relative z-10 flex justify-between items-start">
-            <div class="space-y-2">
-              <div class="inline-flex px-2 py-1 rounded bg-white/20 text-[10px] font-bold uppercase tracking-widest">
-                Official Ticket
+          <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8 text-left">
+            <div class="space-y-3">
+              <div class="inline-flex px-2 py-0.5 rounded bg-white/20 text-[10px] font-black uppercase tracking-[0.2em] border-1 border-white/10">
+                {{ t('profile_reg.official_entry') }}
               </div>
-              <h1 class="text-3xl font-extrabold">{{ registration.session.event.title }}</h1>
-              <p class="text-indigo-100 text-lg font-medium">{{ registration.session.title }}</p>
+              <h1 class="text-3xl md:text-4xl font-black tracking-tighter leading-none">{{ registration.session.event.title }}</h1>
+              <p class="text-indigo-100 text-lg font-bold opacity-90">{{ registration.session.title }}</p>
             </div>
             <div 
-              class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider"
+              class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] shadow-xl border-1 border-white/10"
               :class="getStatusClasses(registration.status)"
             >
               {{ registration.status }}
@@ -31,70 +32,72 @@
         </div>
 
         <!-- Ticket Body -->
-        <div class="p-8 space-y-8 bg-white relative">
+        <div class="p-10 space-y-12 bg-card relative">
           <!-- Perforated Line Decoration -->
-          <div class="absolute top-0 left-0 w-full flex justify-between -translate-y-1/2 px-4 pointer-events-none">
-            <div class="w-6 h-6 rounded-full bg-gray-50 -ml-11" />
-            <div class="flex-1 border-t-2 border-dashed border-indigo-100 mt-3 mx-2" />
-            <div class="w-6 h-6 rounded-full bg-gray-50 -mr-11" />
+          <div class="absolute top-0 left-0 w-full flex justify-between -translate-y-1/2 px-6 pointer-events-none">
+            <div class="w-8 h-8 rounded-full bg-base -ml-14 border-r border-gray-100 dark:border-white/5" />
+            <div class="flex-1 border-t-2 border-dashed border-gray-100 dark:border-white/10 mt-4 mx-4" />
+            <div class="w-8 h-8 rounded-full bg-base -mr-14 border-l border-gray-100 dark:border-white/5" />
           </div>
 
-          <div class="grid grid-cols-2 gap-8">
-            <div class="space-y-1">
-              <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Date & Time</p>
-              <p class="text-sm font-bold text-gray-900">{{ formatDateTime(registration.session.start_time) }}</p>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-10 text-left">
+            <div class="space-y-2">
+              <p class="text-[10px] font-black text-gray-400 dark:text-slate-600 uppercase tracking-[0.3em]">{{ t('profile_reg.location') }}</p>
+              <p class="text-base font-black text-gray-900 dark:text-white leading-tight">{{ registration.session.event.location }}</p>
             </div>
-            <div class="space-y-1 text-right">
-              <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Location</p>
-              <p class="text-sm font-bold text-gray-900 line-clamp-1">{{ registration.session.event.location }}</p>
+            <div class="space-y-2 md:text-right">
+              <p class="text-[10px] font-black text-gray-400 dark:text-slate-600 uppercase tracking-[0.3em]">{{ t('profile_reg.date') }}</p>
+              <p class="text-base font-black text-gray-900 dark:text-white leading-tight">{{ formatDateTime(registration.session.start_time) }}</p>
             </div>
           </div>
 
           <!-- Info Details -->
-          <div v-if="registration.values && registration.values.length > 0" class="bg-gray-50 rounded-xl p-6">
-            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Attendee Details</h3>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div v-for="value in registration.values" :key="value.id">
-                <p class="text-[10px] text-gray-500 font-medium">{{ value.field.label }}</p>
-                <p class="text-sm font-bold text-gray-900">{{ value.value }}</p>
+          <div v-if="registration.values?.length" class="bg-soft rounded-[2rem] p-8 border-1 border-gray-100 dark:border-white/5">
+            <h3 class="text-[10px] font-black text-gray-400 dark:text-slate-600 uppercase tracking-[0.3em] mb-6">{{ t('profile_reg.attendee') }}</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-6 text-left">
+              <div v-for="value in registration.values" :key="value.id" class="group">
+                <p class="text-[10px] text-indigo-600 dark:text-indigo-400/60 font-black uppercase tracking-widest mb-1">{{ value.field.label }}</p>
+                <p class="text-sm font-black text-gray-900 dark:text-white group-hover:translate-x-1 transition-transform">{{ value.value }}</p>
               </div>
             </div>
           </div>
 
           <!-- QR Code Section -->
-          <div v-if="registration.status === 'confirmed' || registration.status === 'checked_in'" class="text-center pt-4">
-            <div class="inline-block p-4 bg-white ring-1 ring-gray-100 rounded-2xl shadow-sm mb-4">
+          <div v-if="registration.status === 'confirmed' || registration.status === 'checked_in'" class="text-center pt-6">
+            <div class="inline-block p-6 bg-white dark:bg-white rounded-[2.5rem] shadow-2xl shadow-indigo-900/10 mb-8 relative group">
               <QrCodeDisplay
                 :value="registration.qr_code"
-                :label="`QR Code for ${registration.session.event.title}`"
+                :label="`QR Code ID: ${registration.qr_code.substring(0,8).toUpperCase()}`"
                 :downloadable="true"
                 :filename="`registration-${registration.id}.png`"
               />
             </div>
-            <p class="text-sm font-bold text-gray-900 mb-1">Entry QR Code</p>
-            <p class="text-xs text-gray-500 max-w-xs mx-auto">
-              Please present this code to the event staff upon arrival for check-in.
+            <p class="text-sm font-black text-gray-900 dark:text-white mb-2 uppercase tracking-tighter">{{ t('profile_reg.verified_ticket') }}</p>
+            <p class="text-xs text-gray-500 dark:text-slate-500 font-medium max-w-xs mx-auto leading-relaxed">
+              {{ t('profile_reg.scan_instruction') }}
             </p>
           </div>
           
-          <div v-else class="text-center py-12 bg-amber-50 rounded-2xl border-1 border-amber-100">
-            <div class="i-carbon-warning text-3xl text-amber-500 mx-auto mb-3" />
-            <p class="text-amber-800 font-bold mb-1">Ticket Not Ready</p>
-            <p class="text-amber-600 text-xs px-6">
-              Your QR code will be generated once your registration status is confirmed.
+          <div v-else class="py-16 bg-amber-50 dark:bg-amber-950/20 rounded-[2.5rem] border-1 border-dashed border-amber-200 dark:border-amber-900/30 text-center">
+            <div class="w-16 h-16 bg-amber-100 dark:bg-amber-900/30 rounded-2xl flex items-center justify-center mx-auto mb-6 text-amber-600">
+              <div class="i-carbon-warning-alt text-3xl" />
+            </div>
+            <p class="text-amber-900 dark:text-amber-200 font-black text-lg tracking-tight mb-2">{{ t('profile_reg.pending') }}</p>
+            <p class="text-amber-700/70 dark:text-amber-400/50 text-xs font-medium px-12 leading-relaxed">
+              {{ t('profile_reg.pending_desc') }}
             </p>
           </div>
         </div>
 
         <!-- Ticket Footer -->
-        <div class="bg-gray-50 p-6 flex justify-between items-center border-t border-gray-100 border-dashed">
-          <div class="flex items-center space-x-2 opacity-30">
-            <div class="w-4 h-4 bg-indigo-600 rounded flex items-center justify-center">
-              <div class="i-carbon-event text-white text-[8px]" />
+        <div class="bg-gray-50 dark:bg-black/20 p-8 flex justify-between items-center border-t border-gray-100 dark:border-white/5">
+          <div class="flex items-center space-x-3 opacity-40">
+            <div class="w-6 h-6 bg-brand-600 rounded-lg flex items-center justify-center">
+              <div class="i-carbon-event text-white text-[10px]" />
             </div>
-            <span class="text-[10px] font-bold text-gray-900">GRAVITO EVENTS</span>
+            <span class="text-[10px] font-black text-gray-900 dark:text-white tracking-[0.2em]">{{ t('profile_reg.security') }}</span>
           </div>
-          <div class="text-[10px] font-mono text-gray-400">
+          <div class="text-[10px] font-mono font-bold text-gray-400 dark:text-slate-600 uppercase tracking-widest">
             ID: {{ registration.qr_code }}
           </div>
         </div>
@@ -107,6 +110,9 @@
 import { Link } from '@inertiajs/vue3';
 import Layout from '../../components/Layout.vue';
 import QrCodeDisplay from '../../components/QrCodeDisplay.vue';
+import { useI18n } from '../../composables/useI18n';
+
+const { t } = useI18n();
 
 defineProps<{
   registration: any;
@@ -114,22 +120,18 @@ defineProps<{
 
 const formatDateTime = (date: string) => {
   return new Date(date).toLocaleString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
+    month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit'
   });
 };
 
 const getStatusClasses = (status: string) => {
   const classes: Record<string, string> = {
-    confirmed: 'bg-green-100 text-green-700',
-    pending: 'bg-amber-100 text-amber-700',
-    cancelled: 'bg-red-100 text-red-700',
-    waitlist: 'bg-indigo-100 text-indigo-700',
-    checked_in: 'bg-cyan-100 text-cyan-700',
+    confirmed: 'bg-white/20 text-white',
+    pending: 'bg-amber-500/20 text-amber-200',
+    cancelled: 'bg-red-500/20 text-red-200',
+    waitlist: 'bg-indigo-500/20 text-indigo-200',
+    checked_in: 'bg-cyan-500/20 text-cyan-200',
   };
-  return classes[status] || 'bg-gray-100 text-gray-700';
+  return classes[status] || 'bg-white/10 text-white';
 };
 </script>

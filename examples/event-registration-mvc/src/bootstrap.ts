@@ -40,21 +40,23 @@ export async function bootstrap(): Promise<PlanetCore> {
     anyCtx.inertia = ctx.get('inertia')
     anyCtx.session = ctx.get('session')
     anyCtx.auth = ctx.get('auth')
-    anyCtx.params = ctx.req.params()
-    anyCtx.query = ctx.req.queries()
 
-    // Handle ctx.body compatibility
-    // In 2.0, ctx.body is a method. We'll attach the parsed body to ctx.requestBody
-    // and tell the user to use that or we can try to proxy it if we're brave.
-    // Actually, many controllers use ctx.body.title etc.
+    // Handle data compatibility
     if (ctx.req.method !== 'GET' && ctx.req.method !== 'HEAD') {
       try {
-        anyCtx.body = await ctx.req.parseBody()
+        const contentType = ctx.req.header('Content-Type') || ''
+        let body = {}
+        if (contentType.includes('application/json')) {
+          body = await ctx.req.json()
+        } else {
+          body = await ctx.req.parseBody()
+        }
+        anyCtx.data = body
       } catch (e) {
-        anyCtx.body = {}
+        anyCtx.data = {}
       }
     } else {
-      anyCtx.body = {}
+      anyCtx.data = {}
     }
 
     return await next()

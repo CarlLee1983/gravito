@@ -16,18 +16,23 @@ export class AuthController extends Controller {
    * Handle login
    */
   async login(ctx: any) {
-    const { email, password } = await ctx.req.json()
-    const hash = ctx.get('hash') as HashManager
+    const { email, password } = ctx.get('data') as any
+    const auth = ctx.get('auth') as any
+    const session = ctx.get('session') as any
 
-    const user = await DB.table<User>('users').where('email', email).first()
-
-    if (!user || !(await hash.check(password, user.password))) {
-      return ctx.json({ error: 'Invalid credentials' }, 401)
+    if (!(await auth.attempt({ email, password }))) {
+      session.flash('error', 'Invalid credentials')
+      return ctx.redirect('/login')
     }
 
-    const session = ctx.get('session')
-    session.set('user_id', user.id)
-    session.set('user_role', user.role)
+    // Get the authenticated user
+    const user = await auth.user()
+
+    // Set legacy session key for compatibility if needed (optional)
+    session.put('user_id', user.id)
+    session.put('user_role', user.role)
+
+    session.flash('success', 'Welcome back!')
 
     return ctx.redirect('/profile')
   }
@@ -43,14 +48,17 @@ export class AuthController extends Controller {
    * Handle registration
    */
   async register(ctx: any) {
-    const { name, email, password } = await ctx.req.json()
+    const { name, email, password } = ctx.get('data') as any
     const hash = ctx.get('hash') as HashManager
+    const auth = ctx.get('auth') as any
+    const session = ctx.get('session') as any
 
     // Check if email exists
     const exists = await DB.table<User>('users').where('email', email).exists()
 
     if (exists) {
-      return ctx.json({ error: 'Email already registered' }, 400)
+      session.flash('error', 'Email already registered')
+      return ctx.redirect('/register')
     }
 
     // Create user
@@ -61,10 +69,14 @@ export class AuthController extends Controller {
       role: UserRole.USER,
     })
 
-    // Auto login
-    const session = ctx.get('session')
-    session.set('user_id', user.id)
-    session.set('user_role', user.role)
+    // Auto login using Auth service
+    await auth.login(user)
+
+    // Set legacy session key for compatibility
+    session.put('user_id', user.id)
+    session.put('user_role', user.role)
+
+    session.flash('success', 'Registration successful! Welcome to the community.')
 
     return ctx.redirect('/profile')
   }
@@ -73,8 +85,12 @@ export class AuthController extends Controller {
    * Handle logout
    */
   async logout(ctx: any) {
-    const session = ctx.get('session')
-    session.destroy()
+    const auth = ctx.get('auth') as any
+    const session = ctx.get('session') as any
+
+    await auth.logout()
+    session.destroy() // Clear all session data
+
     return ctx.redirect('/')
   }
 }

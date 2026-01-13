@@ -1,100 +1,74 @@
 <template>
   <AdminLayout>
-    <div class="mb-10">
-      <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">System Overview</h1>
-      <p class="text-gray-500 mt-1">Real-time performance and registration metrics.</p>
+    <div class="mb-12 text-left">
+      <h1 class="text-3xl font-black text-gray-900 dark:text-white tracking-tighter leading-none">{{ t('admin.dashboard.title') }}</h1>
+      <p class="text-gray-500 dark:text-slate-500 mt-2 font-medium">{{ t('admin.dashboard.subtitle') }}</p>
     </div>
     
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
       <!-- Stats Cards -->
-      <div class="card bg-white border-none shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
-        <div class="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-          <div class="i-carbon-calendar text-7xl" />
+      <div v-for="stat in statCards" :key="stat.label" class="bg-card rounded-[2rem] p-8 border-none shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all relative overflow-hidden group">
+        <div class="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
+          <div :class="stat.icon" class="text-[6rem]" />
         </div>
-        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center">
-          <div class="i-carbon-calendar mr-2" /> Active Events
+        <h3 class="text-[10px] font-black text-gray-400 dark:text-slate-600 uppercase tracking-[0.2em] mb-6 flex items-center">
+          <div :class="stat.icon" class="mr-2 text-brand-500" /> {{ stat.label }}
         </h3>
-        <p class="text-4xl font-extrabold text-gray-900">{{ stats.total_events }}</p>
-        <div class="mt-4 flex items-center text-green-600 text-xs font-bold uppercase tracking-tighter">
-          <div class="i-carbon-arrow-up mr-1" /> 12% increase
-        </div>
-      </div>
-      
-      <div class="card bg-white border-none shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
-        <div class="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-          <div class="i-carbon-user-identification text-7xl" />
-        </div>
-        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center">
-          <div class="i-carbon-user-identification mr-2" /> Total Attendees
-        </h3>
-        <p class="text-4xl font-extrabold text-gray-900">{{ stats.total_registrations }}</p>
-        <div class="mt-4 flex items-center text-green-600 text-xs font-bold uppercase tracking-tighter">
-          <div class="i-carbon-arrow-up mr-1" /> 24% increase
-        </div>
-      </div>
-      
-      <div class="card bg-white border-none shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
-        <div class="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-          <div class="i-carbon-group text-7xl" />
-        </div>
-        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center">
-          <div class="i-carbon-group mr-2" /> Registered Users
-        </h3>
-        <p class="text-4xl font-extrabold text-gray-900">{{ stats.total_users }}</p>
-        <div class="mt-4 flex items-center text-indigo-600 text-xs font-bold uppercase tracking-tighter">
-          <div class="i-carbon-checkmark mr-1" /> Stable platform
+        <p class="text-5xl font-black text-gray-900 dark:text-white tracking-tighter leading-none">{{ stat.value }}</p>
+        <div class="mt-6 flex items-center text-green-600 dark:text-green-400 text-[10px] font-black uppercase tracking-widest bg-green-50 dark:bg-green-900/20 w-fit px-2 py-1 rounded">
+          <div class="i-carbon-arrow-up mr-1" /> {{ stat.trend }}
         </div>
       </div>
     </div>
     
-    <div class="card bg-white border-none shadow-sm overflow-hidden p-0">
-      <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+    <div class="table-container text-left border-none shadow-2xl dark:shadow-black/40">
+      <div class="p-8 border-b border-gray-100 dark:border-white/5 flex justify-between items-center bg-gray-50/50 dark:bg-black/20">
         <div>
-          <h2 class="text-lg font-bold text-gray-900 leading-none">Recent Activity</h2>
-          <p class="text-xs text-gray-500 mt-1">Latest attendee registrations across all events.</p>
+          <h2 class="text-xl font-black text-gray-900 dark:text-white leading-none tracking-tight">{{ t('admin.dashboard.recent_activity') }}</h2>
+          <p class="text-[10px] font-black text-gray-400 dark:text-slate-600 mt-2 uppercase tracking-widest">{{ t('admin.dashboard.activity_desc') }}</p>
         </div>
-        <Link href="/admin/registrations" class="text-xs font-bold text-indigo-600 hover:text-indigo-500 uppercase tracking-widest flex items-center">
-          View All <div class="i-carbon-arrow-right ml-1" />
+        <Link href="/admin/registrations" class="text-[10px] font-black text-brand-600 dark:text-brand-400 hover:text-brand-700 uppercase tracking-[0.2em] flex items-center group/link">
+          {{ t('admin.dashboard.full_registry') }} <div class="i-carbon-arrow-right ml-2 group-hover/link:translate-x-1 transition-transform" />
         </Link>
       </div>
       
       <div class="overflow-x-auto">
-        <table class="w-full text-left border-collapse">
+        <table class="table-base">
           <thead>
-            <tr class="bg-gray-50 text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100">
-              <th class="px-6 py-4">User</th>
-              <th class="px-6 py-4">Event & Session</th>
-              <th class="px-6 py-4 text-center">Status</th>
-              <th class="px-6 py-4 text-right">Date</th>
+            <tr>
+              <th class="th-premium">{{ t('admin.dashboard.identity') }}</th>
+              <th class="th-premium">{{ t('admin.dashboard.target_terminal') }}</th>
+              <th class="th-premium text-center">{{ t('admin.dashboard.status') }}</th>
+              <th class="th-premium text-right">{{ t('admin.dashboard.timestamp') }}</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-100">
-            <tr v-for="reg in stats.recent_registrations" :key="reg.id" class="hover:bg-indigo-50/30 transition-colors">
-              <td class="px-6 py-4">
-                <div class="flex items-center space-x-3">
-                  <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-[10px]">
+          <tbody class="divide-y divide-gray-100 dark:divide-white/5">
+            <tr v-for="reg in stats.recent_registrations" :key="reg.id" class="group">
+              <td class="td-premium">
+                <div class="flex items-center space-x-4">
+                  <div class="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-brand-900/30 flex items-center justify-center text-indigo-600 dark:text-brand-400 font-black text-xs shadow-inner">
                     {{ reg.user.name.substring(0, 2).toUpperCase() }}
                   </div>
                   <div>
-                    <p class="text-sm font-bold text-gray-900 leading-none">{{ reg.user.name }}</p>
-                    <p class="text-[10px] text-gray-400 mt-1">{{ reg.user.email }}</p>
+                    <p class="text-sm font-black text-gray-900 dark:text-white leading-none group-hover:text-brand-600 transition-colors">{{ reg.user.name }}</p>
+                    <p class="text-[10px] font-bold text-gray-400 dark:text-slate-600 mt-1.5">{{ reg.user.email }}</p>
                   </div>
                 </div>
               </td>
-              <td class="px-6 py-4">
-                <p class="text-sm font-bold text-gray-900 leading-none">{{ reg.session.event.title }}</p>
-                <p class="text-[10px] text-indigo-600 mt-1 uppercase tracking-tight font-medium">{{ reg.session.title }}</p>
+              <td class="td-premium">
+                <p class="text-sm font-black text-gray-900 dark:text-white leading-none">{{ reg.session.event.title }}</p>
+                <p class="text-[10px] text-indigo-600 dark:text-indigo-400/60 mt-1.5 uppercase tracking-tighter font-black">{{ reg.session.title }}</p>
               </td>
-              <td class="px-6 py-4 text-center">
+              <td class="td-premium text-center">
                 <span 
-                  class="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-tighter"
+                  class="px-2 py-1 rounded text-[10px] font-black uppercase tracking-tighter shadow-sm border-1 border-white/10"
                   :class="getStatusClasses(reg.status)"
                 >
                   {{ reg.status }}
                 </span>
               </td>
-              <td class="px-6 py-4 text-right">
-                <p class="text-sm text-gray-500">{{ formatDate(reg.created_at) }}</p>
+              <td class="td-premium text-right">
+                <p class="text-xs font-bold text-gray-400 dark:text-slate-600">{{ formatDate(reg.created_at) }}</p>
               </td>
             </tr>
           </tbody>
@@ -105,10 +79,14 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import AdminLayout from '../../components/AdminLayout.vue';
+import { useI18n } from '../../composables/useI18n';
 
-defineProps<{
+const { t } = useI18n();
+
+const props = defineProps<{
   stats: {
     total_events: number;
     total_registrations: number;
@@ -117,22 +95,26 @@ defineProps<{
   };
 }>();
 
+const statCards = computed(() => [
+  { label: t('admin.dashboard.active_events'), value: props.stats.total_events, trend: t('admin.dashboard.trend_up'), icon: 'i-carbon-calendar' },
+  { label: t('admin.dashboard.global_attendees'), value: props.stats.total_registrations, trend: '24%', icon: 'i-carbon-user-identification' },
+  { label: t('admin.dashboard.verified_users'), value: props.stats.total_users, trend: t('admin.dashboard.trend_stable'), icon: 'i-carbon-group' },
+]);
+
 const formatDate = (date: string) => {
   return new Date(date).toLocaleDateString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric'
+    month: 'short', day: 'numeric', year: 'numeric'
   });
 };
 
 const getStatusClasses = (status: string) => {
   const classes: Record<string, string> = {
-    confirmed: 'bg-green-100 text-green-700',
-    pending: 'bg-amber-100 text-amber-700',
-    cancelled: 'bg-red-100 text-red-700',
-    waitlist: 'bg-indigo-100 text-indigo-700',
-    checked_in: 'bg-cyan-100 text-cyan-700',
+    confirmed: 'bg-green-500 text-white',
+    pending: 'bg-amber-500 text-white',
+    cancelled: 'bg-red-500 text-white',
+    waitlist: 'bg-indigo-500 text-white',
+    checked_in: 'bg-cyan-500 text-white',
   };
-  return classes[status] || 'bg-gray-100 text-gray-700';
+  return classes[status] || 'bg-gray-500 text-white';
 };
 </script>

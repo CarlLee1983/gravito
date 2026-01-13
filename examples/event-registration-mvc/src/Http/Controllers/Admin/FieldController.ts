@@ -17,7 +17,7 @@ export class FieldController extends Controller {
 
   async store(ctx: any) {
     const eventId = parseInt(ctx.params.eventId)
-    const data = ctx.body
+    const data = ctx.get('data') as any
 
     // Get max sort order
     const maxOrder = await DB.table<RegistrationField>('registration_fields')
@@ -39,7 +39,7 @@ export class FieldController extends Controller {
 
   async update(ctx: any) {
     const fieldId = parseInt(ctx.params.id)
-    const data = ctx.body
+    const data = ctx.get('data') as any
 
     await DB.table<RegistrationField>('registration_fields')
       .where('id', fieldId)
@@ -62,7 +62,7 @@ export class FieldController extends Controller {
   }
 
   async reorder(ctx: any) {
-    const { field_orders } = ctx.body // Array of { id, sort_order }
+    const { field_orders } = ctx.get('data') as any // Array of { id, sort_order }
 
     for (const item of field_orders) {
       await DB.table<RegistrationField>('registration_fields')

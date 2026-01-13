@@ -3,7 +3,9 @@
         "target": "ESNext",
         "module": "ESNext",
         "lib": [
-            "ESNext"
+            "ESNext",
+            "DOM",
+            "DOM.Iterable"
         ],
         "moduleResolution": "bundler",
         "types": [
