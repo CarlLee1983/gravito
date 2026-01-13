@@ -5,7 +5,7 @@ import * as THREE from 'three'
 
 // --- Background Shader Component ---
 const BackgroundShader = () => {
-  const { viewport, size } = useThree()
+  const { size } = useThree()
   const meshRef = useRef<THREE.Mesh>(null)
 
   // Load texture using Suspense-ready hook
@@ -134,9 +134,9 @@ const StarField = ({ count = 400 }) => {
       const theta = 2 * Math.PI * Math.random()
       const phi = Math.acos(2 * Math.random() - 1)
 
-      positions[i * 3] = (Math.random() - 0.5) * 50 // x spread
-      positions[i * 3 + 1] = (Math.random() - 0.5) * 50 // y spread
-      positions[i * 3 + 2] = (Math.random() - 0.5) * 50 // z depth
+      positions[i * 3] = r * Math.sin(phi) * Math.cos(theta) // x
+      positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta) // y
+      positions[i * 3 + 2] = r * Math.cos(phi) // z
 
       randomness[i] = Math.random()
 
@@ -148,10 +148,13 @@ const StarField = ({ count = 400 }) => {
     return [positions, randomness, colors]
   }, [count])
 
-  const starUniforms = useMemo(() => ({
-    uTime: { value: 0 },
-    uSpeed: { value: 2.0 }, // Base speed
-  }), [])
+  const starUniforms = useMemo(
+    () => ({
+      uTime: { value: 0 },
+      uSpeed: { value: 2.0 }, // Base speed
+    }),
+    []
+  )
 
   useFrame((state) => {
     if (pointsRef.current) {
