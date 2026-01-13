@@ -18,7 +18,7 @@
     },
     "examples/astral-site": {
       "name": "@examples/astral-site",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "dependencies": {
         "@gravito/astral": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -45,7 +45,7 @@
     },
     "examples/atlas-site": {
       "name": "atlas-site",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/photon": "workspace:*",
@@ -60,14 +60,14 @@
         "better-sqlite3": "^12.5.0",
         "postcss": "^8.4.49",
         "tailwindcss": "^3.4.17",
-        "typescript": "^5.7.2",
+        "typescript": "^5.9.3",
         "vite": "^6.4.1",
         "vue-tsc": "^2.2.0",
       },
     },
     "examples/auth-verification": {
       "name": "example-auth-verification",
-      "version": "1.0.2",
+      "version": "1.0.3",
       "dependencies": {
         "@gravito/core": "workspace:*",
         "@gravito/fortify": "workspace:*",
@@ -82,7 +82,7 @@
     },
     "examples/blog-mvc": {
       "name": "@examples/blog-mvc",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -113,7 +113,7 @@
     },
     "examples/commerce-fullstack": {
       "name": "@gravito/example-commerce-fullstack",
-      "version": "1.0.3",
+      "version": "1.0.4",
       "dependencies": {
         "@gravito/admin-shell-react": "workspace:*",
         "@gravito/admin-ui-analytics": "workspace:*",
@@ -139,14 +139,14 @@
     },
     "examples/ecommerce-mvc": {
       "name": "example-ecommerce-mvc",
-      "version": "1.1.0",
+      "version": "1.1.1",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/constellation": "workspace:*",
         "@gravito/core": "workspace:*",
         "@gravito/cosmos": "workspace:*",
         "@gravito/ion": "workspace:*",
-        "@gravito/luminosity": "^1.0.0-beta.2",
+        "@gravito/luminosity": "workspace:*",
         "@gravito/mass": "workspace:*",
         "@gravito/monolith": "workspace:*",
         "@gravito/photon": "workspace:*",
@@ -171,7 +171,7 @@
     },
     "examples/engine-atlas-microservice": {
       "name": "example-engine-atlas-microservice",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -183,7 +183,7 @@
     },
     "examples/flux-enterprise": {
       "name": "flux-enterprise",
-      "version": "0.1.2",
+      "version": "0.1.3",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/flux": "workspace:*",
@@ -202,7 +202,7 @@
     },
     "examples/i18n-verification": {
       "name": "example-i18n-verification",
-      "version": "1.0.2",
+      "version": "1.0.3",
       "dependencies": {
         "@gravito/core": "workspace:*",
         "@gravito/cosmos": "workspace:*",
@@ -214,7 +214,7 @@
     },
     "examples/image-verification": {
       "name": "image-verification-example",
-      "version": "0.5.1",
+      "version": "0.5.2",
       "dependencies": {
         "@gravito/core": "workspace:*",
         "@gravito/forge": "workspace:*",
@@ -233,7 +233,7 @@
     },
     "examples/luminosity-benchmark": {
       "name": "luminosity-benchmark",
-      "version": "1.0.3",
+      "version": "1.0.4",
       "dependencies": {
         "@faker-js/faker": "^9.8.0",
         "@gravito/constellation": "workspace:*",
@@ -258,7 +258,7 @@
     },
     "examples/luminosity-site": {
       "name": "luminosity-marketing-site",
-      "version": "1.0.3",
+      "version": "1.0.4",
       "dependencies": {
         "@gravito/core": "workspace:*",
         "@gravito/freeze-vue": "workspace:*",
@@ -288,7 +288,7 @@
     },
     "examples/mesh-verification": {
       "name": "example-mesh-verification",
-      "version": "1.0.3",
+      "version": "1.0.4",
       "dependencies": {
         "@gravito/beam": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -302,7 +302,7 @@
     },
     "examples/official-site": {
       "name": "gravito-official-site",
-      "version": "0.1.3",
+      "version": "0.1.4",
       "dependencies": {
         "@gravito/constellation": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -335,16 +335,15 @@
         "@types/three": "^0.182.0",
         "@vitejs/plugin-react": "^4.2.0",
         "autoprefixer": "^10.4.23",
-        "bun-types": "latest",
         "postcss": "^8.5.6",
         "tailwindcss": "^4.1.18",
-        "typescript": "^5.0.0",
+        "typescript": "^5.9.3",
         "vite": "^6.4.1",
       },
     },
     "examples/realtime-verification": {
       "name": "example-realtime-verification",
-      "version": "1.0.2",
+      "version": "1.0.3",
       "dependencies": {
         "@gravito/core": "workspace:*",
         "@gravito/echo": "workspace:*",
@@ -358,7 +357,7 @@
     },
     "examples/rest-api-demo": {
       "name": "@gravito/example-rest-api",
-      "version": "0.0.0",
+      "version": "0.0.1",
       "dependencies": {
         "@gravito/astral": "workspace:*",
         "@gravito/atlas": "workspace:*",
@@ -383,7 +382,7 @@
     },
     "examples/scheduler-verification": {
       "name": "example-scheduler-verification",
-      "version": "1.0.2",
+      "version": "1.0.3",
       "dependencies": {
         "@gravito/core": "workspace:*",
         "@gravito/horizon": "workspace:*",
@@ -393,7 +392,7 @@
     },
     "examples/spectrum-verification": {
       "name": "example-spectrum-verification",
-      "version": "1.0.3",
+      "version": "1.0.4",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -405,7 +404,7 @@
     },
     "examples/workflow-demo": {
       "name": "workflow-demo",
-      "version": "0.1.4",
+      "version": "0.1.5",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -418,7 +417,7 @@
     },
     "examples/workflow-verification": {
       "name": "example-workflow-verification",
-      "version": "1.0.2",
+      "version": "1.0.3",
       "dependencies": {
         "@gravito/core": "workspace:*",
         "@gravito/flux": "workspace:*",
@@ -433,7 +432,7 @@
     },
     "examples/zenith-site": {
       "name": "@examples/zenith-site",
-      "version": "0.1.2",
+      "version": "0.1.3",
       "dependencies": {
         "@gravito/constellation": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -678,7 +677,7 @@
     },
     "packages/astral": {
       "name": "@gravito/astral",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "dependencies": {
         "@gravito/core": "workspace:*",
         "@gravito/impulse": "workspace:*",
@@ -693,7 +692,7 @@
     },
     "packages/atlas": {
       "name": "@gravito/atlas",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "bin": {
         "orbit": "src/cli.ts",
       },
@@ -744,7 +743,7 @@
     },
     "packages/cli": {
       "name": "@gravito/pulse",
-      "version": "2.1.0",
+      "version": "3.0.0",
       "bin": {
         "gravito": "bin/gravito.mjs",
       },
@@ -765,7 +764,7 @@
     },
     "packages/constellation": {
       "name": "@gravito/constellation",
-      "version": "2.0.0",
+      "version": "3.0.0",
       "dependencies": {
         "@aws-sdk/client-s3": "^3.956.0",
         "@google-cloud/storage": "^7.18.0",
@@ -785,7 +784,7 @@
     },
     "packages/core": {
       "name": "@gravito/core",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "dependencies": {
         "@gravito/photon": "workspace:*",
       },
@@ -797,7 +796,7 @@
     },
     "packages/cosmos": {
       "name": "@gravito/cosmos",
-      "version": "2.0.0",
+      "version": "3.0.0",
       "devDependencies": {
         "bun-types": "latest",
       },
@@ -808,7 +807,7 @@
     },
     "packages/create-gravito-app": {
       "name": "create-gravito-app",
-      "version": "1.0.3",
+      "version": "1.0.4",
       "bin": {
         "create-gravito-app": "index.js",
       },
@@ -836,7 +835,7 @@
     },
     "packages/echo": {
       "name": "@gravito/echo",
-      "version": "2.0.0",
+      "version": "3.0.0",
       "devDependencies": {
         "bun-types": "latest",
         "typescript": "^5.9.3",
@@ -847,7 +846,7 @@
     },
     "packages/enterprise": {
       "name": "@gravito/enterprise",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "dependencies": {
         "@gravito/core": "workspace:*",
       },
@@ -859,7 +858,7 @@
     },
     "packages/flare": {
       "name": "@gravito/flare",
-      "version": "2.0.0",
+      "version": "3.0.0",
       "dependencies": {
         "@gravito/core": "workspace:*",
       },
@@ -876,7 +875,7 @@
     },
     "packages/flux": {
       "name": "@gravito/flux",
-      "version": "2.0.0",
+      "version": "3.0.0",
       "bin": {
         "flux": "bin/flux.js",
       },
@@ -895,7 +894,7 @@
     },
     "packages/forge": {
       "name": "@gravito/forge",
-      "version": "2.0.0",
+      "version": "3.0.0",
       "devDependencies": {
         "@gravito/core": "workspace:*",
         "@gravito/nebula": "workspace:*",
@@ -921,7 +920,7 @@
     },
     "packages/fortify": {
       "name": "@gravito/fortify",
-      "version": "2.0.0",
+      "version": "3.0.0",
       "devDependencies": {
         "@gravito/core": "workspace:*",
         "@gravito/photon": "workspace:*",
@@ -986,7 +985,7 @@
     },
     "packages/graphql": {
       "name": "@gravito/graphql",
-      "version": "0.1.0",
+      "version": "1.0.0",
       "dependencies": {
         "graphql": "^16.8.1",
         "graphql-yoga": "^5.1.1",
@@ -1004,7 +1003,7 @@
     },
     "packages/horizon": {
       "name": "@gravito/horizon",
-      "version": "2.0.0",
+      "version": "3.0.0",
       "devDependencies": {
         "@gravito/core": "workspace:*",
         "@gravito/stasis": "workspace:*",
@@ -1022,7 +1021,7 @@
     },
     "packages/impulse": {
       "name": "@gravito/impulse",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "dependencies": {
         "@gravito/core": "workspace:*",
         "zod": "^3.23.0",
@@ -1038,7 +1037,7 @@
     },
     "packages/ion": {
       "name": "@gravito/ion",
-      "version": "2.0.0",
+      "version": "3.0.0",
       "devDependencies": {
         "@gravito/core": "workspace:*",
         "@gravito/photon": "workspace:*",
@@ -1053,7 +1052,7 @@
     },
     "packages/launchpad": {
       "name": "@gravito/launchpad",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "dependencies": {
         "@gravito/core": "workspace:*",
         "@gravito/enterprise": "workspace:*",
@@ -1095,7 +1094,7 @@
       "name": "@gravito/luminosity",
       "version": "2.0.0",
       "bin": {
-        "lux": "./dist/cli.js",
+        "lux": "dist/cli.js",
       },
       "devDependencies": {
         "@types/node": "^22.13.9",
@@ -1153,7 +1152,7 @@
     },
     "packages/mass": {
       "name": "@gravito/mass",
-      "version": "2.0.0",
+      "version": "3.0.0",
       "dependencies": {
         "@hono/typebox-validator": "^1.1.0",
         "@sinclair/typebox": "^0.34.0",
@@ -1169,7 +1168,7 @@
     },
     "packages/monitor": {
       "name": "@gravito/monitor",
-      "version": "2.0.0",
+      "version": "3.0.0",
       "devDependencies": {
         "@gravito/core": "workspace:*",
         "@opentelemetry/api": "^1.9.0",
@@ -1195,7 +1194,7 @@
     },
     "packages/monolith": {
       "name": "@gravito/monolith",
-      "version": "2.0.0",
+      "version": "3.0.0",
       "dependencies": {
         "@gravito/mass": "workspace:*",
         "gray-matter": "^4.0.3",
@@ -1214,7 +1213,7 @@
     },
     "packages/nebula": {
       "name": "@gravito/nebula",
-      "version": "2.0.0",
+      "version": "3.0.0",
       "devDependencies": {
         "@gravito/core": "workspace:*",
         "@gravito/photon": "workspace:*",
@@ -1228,7 +1227,7 @@
     },
     "packages/official-landing": {
       "name": "@gravito/official-landing",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "dependencies": {
         "@gravito/core": "workspace:*",
         "vue": "^3.4.0",
@@ -1253,7 +1252,7 @@
     },
     "packages/plasma": {
       "name": "@gravito/plasma",
-      "version": "1.0.0-beta.6",
+      "version": "1.0.0",
       "devDependencies": {
         "@types/ioredis": "^5.0.0",
         "bun-types": "latest",
@@ -1269,7 +1268,7 @@
     },
     "packages/prism": {
       "name": "@gravito/prism",
-      "version": "2.0.0",
+      "version": "3.0.0",
       "devDependencies": {
         "@gravito/core": "workspace:*",
         "@gravito/photon": "workspace:*",
@@ -1294,7 +1293,7 @@
     },
     "packages/pulsar": {
       "name": "@gravito/pulsar",
-      "version": "2.0.0",
+      "version": "3.0.0",
       "devDependencies": {
         "@gravito/core": "workspace:*",
         "@gravito/photon": "workspace:*",
@@ -1310,7 +1309,7 @@
     },
     "packages/quasar": {
       "name": "@gravito/quasar",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "dependencies": {
         "ioredis": "^5.4.2",
       },
@@ -1329,7 +1328,7 @@
     },
     "packages/radiance": {
       "name": "@gravito/radiance",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "dependencies": {
         "@gravito/core": "workspace:*",
       },
@@ -1340,7 +1339,7 @@
     },
     "packages/ripple": {
       "name": "@gravito/ripple",
-      "version": "2.0.0",
+      "version": "3.0.0",
       "devDependencies": {
         "bun-types": "latest",
         "typescript": "^5.9.3",
@@ -1368,7 +1367,7 @@
     },
     "packages/scaffold": {
       "name": "@gravito/scaffold",
-      "version": "2.1.0",
+      "version": "3.0.0",
       "dependencies": {
         "handlebars": "^4.7.8",
       },
@@ -1383,7 +1382,7 @@
     },
     "packages/sentinel": {
       "name": "@gravito/sentinel",
-      "version": "2.0.0",
+      "version": "3.0.0",
       "devDependencies": {
         "@gravito/core": "workspace:*",
         "@gravito/photon": "workspace:*",
@@ -1398,7 +1397,7 @@
     },
     "packages/signal": {
       "name": "@gravito/signal",
-      "version": "2.0.0",
+      "version": "3.0.0",
       "dependencies": {
         "@aws-sdk/client-ses": "^3.953.0",
         "nodemailer": "^7.0.11",
@@ -1447,7 +1446,7 @@
     },
     "packages/spectrum": {
       "name": "@gravito/spectrum",
-      "version": "2.0.0",
+      "version": "3.0.0",
       "devDependencies": {
         "@gravito/core": "workspace:*",
         "@opentelemetry/api": "^1.9.0",
@@ -1473,7 +1472,7 @@
     },
     "packages/stasis": {
       "name": "@gravito/stasis",
-      "version": "2.0.0",
+      "version": "3.0.0",
       "devDependencies": {
         "@gravito/core": "workspace:*",
         "@gravito/photon": "workspace:*",
@@ -1489,7 +1488,7 @@
     },
     "packages/stream": {
       "name": "@gravito/stream",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "dependencies": {
         "@aws-sdk/client-sqs": "^3.955.0",
         "@gravito/atlas": "workspace:*",
@@ -1522,7 +1521,7 @@
     },
     "packages/zenith": {
       "name": "@gravito/zenith",
-      "version": "1.0.1",
+      "version": "1.1.0",
       "bin": {
         "zenith": "dist/bin.js",
         "flux-console": "dist/bin.js",
@@ -1559,7 +1558,7 @@
     },
     "satellites/ad": {
       "name": "@gravito/satellite-ad",
-      "version": "0.1.2",
+      "version": "0.1.3",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -1572,7 +1571,7 @@
     },
     "satellites/analytics": {
       "name": "@gravito/satellite-analytics",
-      "version": "0.1.2",
+      "version": "0.1.3",
       "dependencies": {
         "@gravito/core": "workspace:*",
       },
@@ -1583,7 +1582,7 @@
     },
     "satellites/announcement": {
       "name": "@gravito/satellite-announcement",
-      "version": "0.1.2",
+      "version": "0.1.3",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -1596,7 +1595,7 @@
     },
     "satellites/cart": {
       "name": "@gravito/satellite-cart",
-      "version": "0.1.2",
+      "version": "0.1.3",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -1611,7 +1610,7 @@
     },
     "satellites/catalog": {
       "name": "@gravito/satellite-catalog",
-      "version": "0.1.3",
+      "version": "0.1.4",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -1626,7 +1625,7 @@
     },
     "satellites/commerce": {
       "name": "@gravito/satellite-commerce",
-      "version": "0.1.2",
+      "version": "0.1.3",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -1642,7 +1641,7 @@
     },
     "satellites/invoice": {
       "name": "@gravito/satellite-invoice",
-      "version": "0.1.2",
+      "version": "0.1.3",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -1655,7 +1654,7 @@
     },
     "satellites/logistics": {
       "name": "@gravito/satellite-logistics",
-      "version": "0.1.2",
+      "version": "0.1.3",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -1669,7 +1668,7 @@
     },
     "satellites/marketing": {
       "name": "@gravito/satellite-marketing",
-      "version": "0.1.2",
+      "version": "0.1.3",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -1684,7 +1683,7 @@
     },
     "satellites/membership": {
       "name": "@gravito/satellite-membership",
-      "version": "0.1.3",
+      "version": "0.1.4",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -1702,7 +1701,7 @@
     },
     "satellites/news": {
       "name": "@gravito/satellite-news",
-      "version": "0.1.2",
+      "version": "0.1.3",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -1715,7 +1714,7 @@
     },
     "satellites/payment": {
       "name": "@gravito/satellite-payment",
-      "version": "0.1.2",
+      "version": "0.1.3",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -1730,7 +1729,7 @@
     },
     "satellites/support": {
       "name": "@gravito/satellite-support",
-      "version": "0.1.2",
+      "version": "0.1.3",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -1744,7 +1743,7 @@
     },
     "templates/basic": {
       "name": "my-gravito-app",
-      "version": "0.1.2",
+      "version": "0.1.3",
       "dependencies": {
         "@gravito/beam": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -1759,7 +1758,7 @@
     },
     "templates/inertia-react": {
       "name": "my-gravito-inertia-app",
-      "version": "0.1.2",
+      "version": "0.1.3",
       "dependencies": {
         "@gravito/beam": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -1782,7 +1781,7 @@
     },
     "templates/static-site": {
       "name": "my-gravito-static-site",
-      "version": "0.1.2",
+      "version": "0.1.3",
       "dependencies": {
         "@gravito/constellation": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -4216,6 +4215,8 @@
 
     "@gravito/core/bun-types": ["bun-types@1.3.6", "", { "dependencies": { "@types/node": "*" } }, "sha512-OlFwHcnNV99r//9v5IIOgQ9Uk37gZqrNMCcqEaExdkVq3Avwqok1bJFmvGMCkCE0FqzdY8VMOZpfpR3lwI+CsQ=="],
 
+    "@gravito/cosmos/bun-types": ["bun-types@1.3.6", "", { "dependencies": { "@types/node": "*" } }, "sha512-OlFwHcnNV99r//9v5IIOgQ9Uk37gZqrNMCcqEaExdkVq3Avwqok1bJFmvGMCkCE0FqzdY8VMOZpfpR3lwI+CsQ=="],
+
     "@gravito/flux/bun-types": ["bun-types@1.3.6", "", { "dependencies": { "@types/node": "*" } }, "sha512-OlFwHcnNV99r//9v5IIOgQ9Uk37gZqrNMCcqEaExdkVq3Avwqok1bJFmvGMCkCE0FqzdY8VMOZpfpR3lwI+CsQ=="],
 
     "@gravito/forge/@types/react": ["@types/react@18.3.27", "", { "dependencies": { "@types/prop-types": "*", "csstype": "^3.2.2" } }, "sha512-cisd7gxkzjBKU2GgdYrTdtQx1SORymWyaAFhaxQPK9bYO9ot3Y5OikQRvY0VYQtvwjeQnizCINJAenh/V7MK2w=="],
@@ -4228,6 +4229,8 @@
 
     "@gravito/fortify/bun-types": ["bun-types@1.3.6", "", { "dependencies": { "@types/node": "*" } }, "sha512-OlFwHcnNV99r//9v5IIOgQ9Uk37gZqrNMCcqEaExdkVq3Avwqok1bJFmvGMCkCE0FqzdY8VMOZpfpR3lwI+CsQ=="],
 
+    "@gravito/freeze/bun-types": ["bun-types@1.3.6", "", { "dependencies": { "@types/node": "*" } }, "sha512-OlFwHcnNV99r//9v5IIOgQ9Uk37gZqrNMCcqEaExdkVq3Avwqok1bJFmvGMCkCE0FqzdY8VMOZpfpR3lwI+CsQ=="],
+
     "@gravito/graphql/@types/node": ["@types/node@20.19.27", "", { "dependencies": { "undici-types": "~6.21.0" } }, "sha512-N2clP5pJhB2YnZJ3PIHFk5RkygRX5WO/5f0WC08tp0wd+sv0rsJk3MqWn3CbNmT2J505a5336jaQj4ph1AdMug=="],
 
     "@gravito/horizon/bun-types": ["bun-types@1.3.6", "", { "dependencies": { "@types/node": "*" } }, "sha512-OlFwHcnNV99r//9v5IIOgQ9Uk37gZqrNMCcqEaExdkVq3Avwqok1bJFmvGMCkCE0FqzdY8VMOZpfpR3lwI+CsQ=="],
@@ -4235,6 +4238,10 @@
     "@gravito/ion/bun-types": ["bun-types@1.3.6", "", { "dependencies": { "@types/node": "*" } }, "sha512-OlFwHcnNV99r//9v5IIOgQ9Uk37gZqrNMCcqEaExdkVq3Avwqok1bJFmvGMCkCE0FqzdY8VMOZpfpR3lwI+CsQ=="],
 
     "@gravito/luminosity/@types/node": ["@types/node@22.19.3", "", { "dependencies": { "undici-types": "~6.21.0" } }, "sha512-1N9SBnWYOJTrNZCdh/yJE+t910Y128BoyY+zBLWhL3r0TYzlTmFdXrPwHL9DyFZmlEXNQQolTZh3KHV31QDhyA=="],
+
+    "@gravito/luminosity/bun-types": ["bun-types@1.3.6", "", { "dependencies": { "@types/node": "*" } }, "sha512-OlFwHcnNV99r//9v5IIOgQ9Uk37gZqrNMCcqEaExdkVq3Avwqok1bJFmvGMCkCE0FqzdY8VMOZpfpR3lwI+CsQ=="],
+
+    "@gravito/luminosity-adapter-photon/bun-types": ["bun-types@1.3.6", "", { "dependencies": { "@types/node": "*" } }, "sha512-OlFwHcnNV99r//9v5IIOgQ9Uk37gZqrNMCcqEaExdkVq3Avwqok1bJFmvGMCkCE0FqzdY8VMOZpfpR3lwI+CsQ=="],
 
     "@gravito/mass/bun-types": ["bun-types@1.3.6", "", { "dependencies": { "@types/node": "*" } }, "sha512-OlFwHcnNV99r//9v5IIOgQ9Uk37gZqrNMCcqEaExdkVq3Avwqok1bJFmvGMCkCE0FqzdY8VMOZpfpR3lwI+CsQ=="],
 
@@ -4348,8 +4355,6 @@
 
     "chokidar/glob-parent": ["glob-parent@5.1.2", "", { "dependencies": { "is-glob": "^4.0.1" } }, "sha512-AOIgSQCepiJYwP3ARnGx+5VnTu2HBYdzbGP45eLw1vr3zB3vZLeyed1sC9hnbcOc9/SrMyM5RPQrkGz4aS9Zow=="],
 
-    "example-ecommerce-mvc/@gravito/luminosity": ["@gravito/luminosity@1.0.0-beta.2", "", { "peerDependencies": { "typescript": "^5.0.0" } }, "sha512-JXJKTCKkaBFqh1wnkLhpjryDqvlxOWc5RlrIh7U5gr2+JPFgvd38CbBsdxNhnV6Sobacvj/qukX4oEaYMHi0Cw=="],
-
     "example-ecommerce-mvc/stripe": ["stripe@14.25.0", "", { "dependencies": { "@types/node": ">=8.1.0", "qs": "^6.11.0" } }, "sha512-wQS3GNMofCXwH8TSje8E1SE8zr6ODiGtHQgPtO95p9Mb4FhKC9jvXR2NUTpZ9ZINlckJcFidCmaTFV4P6vsb9g=="],
 
     "example-ecommerce-mvc/vite": ["vite@5.4.21", "", { "dependencies": { "esbuild": "^0.21.3", "postcss": "^8.4.43", "rollup": "^4.20.0" }, "optionalDependencies": { "fsevents": "~2.3.3" }, "peerDependencies": { "@types/node": "^18.0.0 || >=20.0.0", "less": "*", "lightningcss": "^1.21.0", "sass": "*", "sass-embedded": "*", "stylus": "*", "sugarss": "*", "terser": "^5.4.0" }, "optionalPeers": ["@types/node", "less", "lightningcss", "sass", "sass-embedded", "stylus", "sugarss", "terser"], "bin": { "vite": "bin/vite.js" } }, "sha512-o5a9xKjbtuhY6Bi5S3+HvbRERmouabWbyUcpXXUA1u+GNUKoROi9byOJ8M0nHbHYHkYICiMlqxkg1KkYmm25Sw=="],
@@ -4447,6 +4452,8 @@
     "@gravito/graphql/@types/node/undici-types": ["undici-types@6.21.0", "", {}, "sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ=="],
 
     "@gravito/luminosity/@types/node/undici-types": ["undici-types@6.21.0", "", {}, "sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ=="],
+
+    "@gravito/luminosity/bun-types/@types/node": ["@types/node@25.0.3", "", { "dependencies": { "undici-types": "~7.16.0" } }, "sha512-W609buLVRVmeW693xKfzHeIV6nJGGz98uCPfeXI1ELMLXVeKYZ9m15fAMSaUPBHYLGFsVRcMmSCksQOrZV9BYA=="],
 
     "@gravito/official-landing/@types/node/undici-types": ["undici-types@6.21.0", "", {}, "sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ=="],
 

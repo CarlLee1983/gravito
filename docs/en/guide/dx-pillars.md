@@ -1,5 +1,5 @@
 ---
-title: Better Than Laravel: Five DX Pillars
+title: "Better Than Laravel: Five DX Pillars"
 description: Five developer-experience pillars where Gravito can outpace Laravel by leaning into Bun.
 ---
 

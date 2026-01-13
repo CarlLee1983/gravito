@@ -1,3 +1,4 @@
+import path from 'node:path'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
@@ -9,7 +10,7 @@ export default defineConfig({
     emptyOutDir: true,
     manifest: true, // Generate manifest.json for backend mapping
     rollupOptions: {
-      input: 'app.tsx',
+      input: path.resolve(__dirname, 'src/client/app.tsx'),
       output: {
         entryFileNames: 'assets/[name].js',
         chunkFileNames: 'assets/[name].js',

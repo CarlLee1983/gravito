@@ -10,7 +10,7 @@
         "build:static": "NODE_ENV=production bun build-static.ts",
         "preview": "bun preview.ts",
         "build:preview": "bun run build:static && bun run preview",
-        "typecheck": "tsc --noEmit",
+        "typecheck": "bun tsc --noEmit",
         "start": "bun run src/index.ts"
     },
     "dependencies": {
@@ -45,10 +45,9 @@
         "@types/three": "^0.182.0",
         "@vitejs/plugin-react": "^4.2.0",
         "autoprefixer": "^10.4.23",
-        "bun-types": "latest",
         "postcss": "^8.5.6",
         "tailwindcss": "^4.1.18",
-        "typescript": "^5.0.0",
+        "typescript": "^5.9.3",
         "vite": "^6.4.1"
     }
 }

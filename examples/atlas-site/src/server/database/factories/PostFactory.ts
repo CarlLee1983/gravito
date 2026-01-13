@@ -4,6 +4,7 @@ import { Fake } from './Fake.js'
 
 export const PostFactory = factory(
   () => ({
+    user_id: 0,
     title: Fake.sentence(),
     content: Fake.paragraph(),
     is_published: Fake.boolean(),
