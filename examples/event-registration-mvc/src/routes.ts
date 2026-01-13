@@ -38,7 +38,6 @@ export function registerRoutes(router: Router): void {
   router.post('/logout', [AuthController, 'logout'])
 
   // User routes (authenticated)
-  // TODO: Add auth middleware when implemented
   router.get('/profile', [ProfileController, 'index'])
   router.get('/profile/registrations/:id', [ProfileController, 'showRegistration'])
   router.post('/registrations', [RegistrationController, 'store'])
@@ -50,10 +49,9 @@ export function registerRoutes(router: Router): void {
   router.post('/checkin/:qrCode', [CheckinController, 'checkin'])
 
   // Admin routes
-  // TODO: Add auth and admin middleware when implemented
   router.get('/admin', [DashboardController, 'index'])
 
-  // Events
+  // Admin Events
   router.get('/admin/events', [AdminEventController, 'index'])
   router.get('/admin/events/create', [AdminEventController, 'create'])
   router.post('/admin/events', [AdminEventController, 'store'])
@@ -61,26 +59,26 @@ export function registerRoutes(router: Router): void {
   router.put('/admin/events/:id', [AdminEventController, 'update'])
   router.delete('/admin/events/:id', [AdminEventController, 'destroy'])
 
-  // Sessions
+  // Admin Sessions
   router.get('/admin/events/:eventId/sessions', [SessionController, 'index'])
   router.post('/admin/events/:eventId/sessions', [SessionController, 'store'])
   router.put('/admin/sessions/:id', [SessionController, 'update'])
   router.delete('/admin/sessions/:id', [SessionController, 'destroy'])
 
-  // Custom Fields
+  // Admin Custom Fields
   router.get('/admin/events/:eventId/fields', [FieldController, 'index'])
   router.post('/admin/events/:eventId/fields', [FieldController, 'store'])
   router.put('/admin/fields/:id', [FieldController, 'update'])
   router.delete('/admin/fields/:id', [FieldController, 'destroy'])
   router.put('/admin/events/:eventId/fields/reorder', [FieldController, 'reorder'])
 
-  // Registrations
+  // Admin Registrations
   router.get('/admin/registrations', [AdminRegistrationController, 'index'])
   router.get('/admin/registrations/:id', [AdminRegistrationController, 'show'])
   router.put('/admin/registrations/:id/status', [AdminRegistrationController, 'updateStatus'])
   router.post('/admin/registrations/:id/resend', [AdminRegistrationController, 'resendEmail'])
   router.get('/admin/registrations/export', [AdminRegistrationController, 'export'])
 
-  // Users
+  // Admin Users
   router.get('/admin/users', [UserController, 'index'])
 }

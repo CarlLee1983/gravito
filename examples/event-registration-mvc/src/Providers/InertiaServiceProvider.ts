@@ -48,8 +48,10 @@ export class InertiaServiceProvider extends ServiceProvider {
 
         if (i18n) {
           const config = (i18n.manager || i18n).getConfig()
-          const translations = (i18n.manager || i18n).translations || config.translations || {}
-          inertia.share('translations', translations[locale] || {})
+          const allTranslations = (i18n.manager || i18n).translations || config.translations || {}
+          const currentTranslations = allTranslations[locale] || {}
+
+          inertia.share('translations', currentTranslations)
         }
       }
 
