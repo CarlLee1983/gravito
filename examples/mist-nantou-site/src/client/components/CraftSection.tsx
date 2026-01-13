@@ -1,5 +1,7 @@
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion, useScroll } from 'framer-motion';
+import { ArrowRight } from 'lucide-react';
 import React, { useRef } from 'react';
+import { Link } from 'react-router-dom';
 
 const steps = [
   {
@@ -100,6 +102,14 @@ const CraftSection = () => {
         {steps.map((step, i) => (
           <CraftStep key={step.id} step={step} index={i} isEven={i % 2 !== 0} />
         ))}
+
+        {/* CTA to About Page */}
+        <div className="flex justify-center mt-24">
+          <Link to="/about" className="group flex items-center gap-4 px-8 py-4 border border-ink-black/20 rounded-full hover:bg-ink-black hover:text-paper-white transition-all duration-500">
+            <span className="font-display text-lg tracking-widest">閱讀職人故事</span>
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          </Link>
+        </div>
       </div>
     </section>
   );
