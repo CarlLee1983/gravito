@@ -1,5 +1,6 @@
-import { motion } from 'framer-motion';
-import React from 'react';
+import { motion, useScroll, useTransform } from 'framer-motion';
+import { ArrowRight, ShoppingBag } from 'lucide-react';
+import React, { useRef } from 'react';
 import { Link } from 'react-router-dom';
 
 const products = [
@@ -8,85 +9,140 @@ const products = [
     name: '高山烏龍',
     en: 'High Mountain Oolong',
     price: 'NT$ 1,200',
-    color: 'shadow-amber-200/50', // Goldish
-    bg: 'bg-amber-50'
+    desc: '雲霧中的金色傳說，蘭花香氣與奶油質感的完美平衡。',
+    image: 'https://images.unsplash.com/photo-1597318181409-cf64d0b5d8a2?q=80&w=1200&auto=format&fit=crop',
+    theme: 'text-amber-900',
+    bg: 'bg-amber-50',
+    accent: 'text-amber-600'
   },
   {
     id: 2,
     name: '金萱',
     en: 'Jin Xuan',
     price: 'NT$ 980',
-    color: 'shadow-lime-200/50', // Milky Green
-    bg: 'bg-lime-50'
+    desc: '獨特的天然奶香，如晨間露水般的清甜順滑。',
+    image: 'https://images.unsplash.com/photo-1627435601361-ec25f5b1d0e5?q=80&w=1200&auto=format&fit=crop',
+    theme: 'text-lime-900',
+    bg: 'bg-lime-50',
+    accent: 'text-lime-600'
   },
   {
     id: 3,
     name: '紅玉',
     en: 'Ruby Black',
     price: 'NT$ 1,500',
-    color: 'shadow-rose-200/50', // Amber/Red
-    bg: 'bg-rose-50'
+    desc: '台灣山茶的野性，薄荷與肉桂交織的收斂感。',
+    image: 'https://images.unsplash.com/photo-1563911892437-1feda0179e1b?q=80&w=1200&auto=format&fit=crop',
+    theme: 'text-rose-900',
+    bg: 'bg-rose-50',
+    accent: 'text-rose-700'
   },
   {
     id: 4,
     name: '四季春',
     en: 'Four Seasons',
     price: 'NT$ 850',
-    color: 'shadow-emerald-200/50',
-    bg: 'bg-emerald-50'
+    desc: '生命力強韌的奔放香氣，梔子花香的直球對決。',
+    image: 'https://images.unsplash.com/photo-1606312619070-d48b706521bf?q=80&w=1200&auto=format&fit=crop',
+    theme: 'text-emerald-900',
+    bg: 'bg-emerald-50',
+    accent: 'text-emerald-600'
   }
 ];
 
-const ProductCard = ({ product }: { product: typeof products[0] }) => {
+const ProductStage = ({ product, index }: { product: typeof products[0], index: number }) => {
+  const isEven = index % 2 === 0;
+  const ref = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start end", "end start"]
+  });
+
+  const y = useTransform(scrollYProgress, [0, 1], [100, -100]);
+  const textY = useTransform(scrollYProgress, [0, 1], [50, -50]);
+  const imageScale = useTransform(scrollYProgress, [0, 0.5, 1], [0.8, 1, 1.1]);
+
   return (
-    <Link to={`/product/${product.id}`}>
-      <motion.div
-        whileHover={{ y: -10 }}
-        className="group relative cursor-pointer block"
-      >
-        {/* Tea Soup Glow (Hover) */}
-        <div className={`absolute inset-0 rounded-xl ${product.color} shadow-[0_0_100px_-20px] opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
+    <Link to={`/product/${product.id}`} className="block group">
+      <div ref={ref} className={`min-h-[90vh] flex flex-col md:flex-row items-center relative overflow-hidden ${isEven ? '' : 'md:flex-row-reverse'}`}>
+        
+        {/* Background Texture */}
+        <div className={`absolute inset-0 ${product.bg} opacity-30 transition-colors duration-700`} />
+        
+        {/* Giant Calligraphy Background (Parallax) */}
+        <motion.div 
+          style={{ y: textY }}
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-0 pointer-events-none w-full text-center"
+        >
+          <span className={`text-[25vw] font-display opacity-10 select-none ${product.theme} whitespace-nowrap`}>
+            {product.name}
+          </span>
+        </motion.div>
 
-        {/* Card Body */}
-        <div className="relative z-10 bg-white/50 backdrop-blur-md border border-white/20 p-8 aspect-[3/4] flex flex-col items-center justify-between transition-colors duration-300 group-hover:bg-white/80">
-          
-          {/* Placeholder for 3D Packaging */}
-          <div className={`w-32 h-48 ${product.bg} shadow-inner flex items-center justify-center relative transform transition-transform duration-500 group-hover:scale-105 group-hover:rotate-3`}>
-             <span className="text-ink-black/20 font-display writing-vertical-rl text-2xl tracking-widest">{product.name}</span>
-          </div>
-
-          <div className="text-center">
-            <h3 className="font-display text-2xl text-ink-black mb-1">{product.name}</h3>
-            <p className="font-sans text-xs tracking-widest text-ink-black/40 uppercase mb-3">{product.en}</p>
-            <p className="font-sans text-cinnabar font-medium">{product.price}</p>
-          </div>
+        {/* Image Section */}
+        <div className="w-full md:w-1/2 h-[50vh] md:h-full p-8 md:p-24 relative flex items-center justify-center z-10">
+          <motion.div 
+            style={{ scale: imageScale }}
+            className="relative w-full aspect-[3/4] md:aspect-square max-w-lg shadow-2xl overflow-hidden"
+          >
+            <div 
+              className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 group-hover:scale-110"
+              style={{ backgroundImage: `url(${product.image})` }}
+            />
+            {/* Overlay Gradient */}
+            <div className={`absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-60 group-hover:opacity-40 transition-opacity duration-500`} />
+            
+            {/* Floating Price Tag */}
+            <div className="absolute bottom-8 right-8 bg-white/90 backdrop-blur-md px-6 py-3 font-display text-2xl text-ink-black shadow-lg">
+              {product.price}
+            </div>
+          </motion.div>
         </div>
-      </motion.div>
+
+        {/* Info Section */}
+        <div className="w-full md:w-1/2 p-8 md:p-24 relative z-10 flex flex-col justify-center">
+          <motion.div style={{ y }}>
+            <span className={`font-sans tracking-[0.3em] uppercase text-sm mb-4 block ${product.accent}`}>
+              Single Origin
+            </span>
+            <h2 className="text-6xl md:text-8xl font-display text-ink-black mb-6 group-hover:text-cinnabar transition-colors duration-500">
+              {product.name}
+            </h2>
+            <p className="font-sans text-xs tracking-[0.2em] text-ink-black/40 uppercase mb-12">
+              {product.en}
+            </p>
+            
+            <p className="font-body text-xl text-ink-black/70 leading-loose max-w-md mb-12 text-justify">
+              {product.desc}
+            </p>
+
+            <div className="flex items-center gap-4 text-ink-black group-hover:gap-8 transition-all duration-300">
+              <span className="font-sans tracking-[0.2em] uppercase border-b border-ink-black pb-1">View Detail</span>
+              <ArrowRight className="w-5 h-5" />
+            </div>
+          </motion.div>
+        </div>
+      </div>
     </Link>
   );
 };
 
 const ShopSection = () => {
   return (
-    <section className="relative py-32 px-8 bg-stone-100">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row justify-between items-end mb-24 gap-8">
-          <div>
-            <h2 className="text-sm font-sans tracking-[0.5em] text-cinnabar mb-4">THE SAVOR</h2>
-            <h2 className="text-4xl md:text-6xl font-display text-ink-black">韻味商城</h2>
-          </div>
-          <p className="font-body text-ink-black/60 max-w-sm text-sm tracking-wide leading-loose">
-            精選南投海拔一千公尺以上的純淨茶葉，
-            <br />
-            帶給您最純粹的回甘體驗。
-          </p>
-        </div>
+    <section id="shop" className="relative bg-paper-white pt-32 pb-0">
+      <div className="text-center mb-32 px-8">
+        <h2 className="text-sm font-sans tracking-[0.5em] text-cinnabar mb-4">THE SAVOR</h2>
+        <h2 className="text-5xl md:text-7xl font-display text-ink-black">韻味長廊</h2>
+        <p className="font-body text-ink-black/40 mt-8 max-w-lg mx-auto leading-loose">
+          每一款茶，都是一片風景。<br/>
+          請放慢腳步，細細品味這份來自山林的饋贈。
+        </p>
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
-          {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
+      <div className="flex flex-col">
+        {products.map((product, i) => (
+          <ProductStage key={product.id} product={product} index={i} />
+        ))}
       </div>
     </section>
   );
