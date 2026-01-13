@@ -49,7 +49,7 @@ jobs:
           GA_ID="${{ vars.GA_ATLAS_MEASUREMENT_ID }}"
           if [ -n "$GA_ID" ]; then
             echo "💉 Injecting GA ID: ${GA_ID:0:4}***"
-            sed -i "s/@GA_ID@/$GA_ID/g" index.html
+            sed -i "s/@GA_ATLAS_MEASUREMENT_ID@/$GA_ID/g" index.html
           else
             echo "⚠️ GA_ATLAS_MEASUREMENT_ID is empty!"
           fi
