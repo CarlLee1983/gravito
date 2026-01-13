@@ -226,7 +226,7 @@ export class RouteGroup {
  */
 export class Router {
   // Internal list of all registered routes (for scanning and debugging)
-  public routes: Array<{ method: string; path: string }> = []
+  public routes: Array<{ method: string; path: string; domain?: string }> = []
 
   // Singleton cache for controllers
   private controllers = new Map<ControllerClass, Record<string, unknown>>()
@@ -241,23 +241,46 @@ export class Router {
    * Compile all registered routes into a flat array for caching or manifest generation.
    */
   compile() {
-    const routes: Array<{
+    const compiled: Array<{
       method: string
       path: string
       name?: string
       domain?: string | undefined
     }> = []
 
+    // Create a map of path+method to name for quick lookup
+    const nameMap = new Map<string, string>()
     for (const [name, info] of this.namedRoutes) {
-      routes.push({
-        name,
-        method: info.method,
-        path: info.path,
-        domain: info.domain,
+      nameMap.set(`${info.method.toUpperCase()}:${info.path}`, name)
+    }
+
+    for (const route of this.routes) {
+      const method = route.method.toUpperCase()
+      compiled.push({
+        method,
+        path: route.path,
+        domain: route.domain,
+        name: nameMap.get(`${method}:${route.path}`),
       })
     }
 
-    return routes
+    // Also include named routes that might not be in this.routes (e.g. from loaded manifest)
+    // but only if they are not already there
+    for (const [name, info] of this.namedRoutes) {
+      const exists = compiled.some(
+        (r) => r.method === info.method.toUpperCase() && r.path === info.path
+      )
+      if (!exists) {
+        compiled.push({
+          name,
+          method: info.method.toUpperCase(),
+          path: info.path,
+          domain: info.domain,
+        })
+      }
+    }
+
+    return compiled
   }
 
   /**
@@ -635,55 +658,7 @@ export class Router {
       handlers.unshift(domainCheck)
     }
 
-    // handlers array contains Middleware and then Handler at the end.
-    // TypeScript needs `GravitoHandler[]` for `.route()`.
-    // But `GravitoMiddleware` (ctx, next) is distinct from `GravitoHandler` (ctx).
-    // The `HttpAdapter.route` signature usually takes `...handlers: GravitoHandler[]`.
-    // Wait, let's check `HttpAdapter` signature in `packages/core/src/adapters/types.ts`.
-    // It says `route(method, path, ...handlers: GravitoHandler[]): void`
-    // But `GravitoHandler` returns Response.
-    // Middleware returns Promise<Response|void>.
-    // Photon mixes them. Gravito types seem to distinguish?
-
-    // Let's re-read `http/types.ts`.
-    // GravitoHandler = (ctx) => Response
-    // GravitoMiddleware = (ctx, next) => Response | void
-
-    // If we pass middleware to `.route()`, the adapter must handle them.
-    // Does `BunNativeAdapter.route` handle middleware?
-    // It calls `this.router.add`.
-    // `RadixRouter.add` takes `RouteHandler[]`.
-    // `BunNativeAdapter` executes them.
-    // `executeChain` function in `BunNativeAdapter` handles `next()`.
-    // So it treats everything as middleware-like `(ctx, next)`.
-
-    // So `GravitoHandler` in `HttpAdapter` interface might be misleading or loose?
-    // `HttpAdapter` interface: `route(method: HttpMethod, path: string, ...handlers: GravitoHandler<V>[]): void`
-    // `GravitoHandler` definition: `(ctx: GravitoContext<V>) => Response | Promise<Response>`
-    // It does NOT accept `next`.
-
-    // IF the adapter executes them in a chain, it needs to provide `next`.
-    // But `GravitoHandler` type doesn't have `next`.
-    // Only `GravitoMiddleware` has `next`.
-
-    // So, `handlers` passed to `route` must be cast?
-    // Or `HttpAdapter` should accept `(GravitoHandler | GravitoMiddleware)[]`.
-
-    // In `Router.ts` (previous version):
-    // `const wrappedHandler: Handler = async (c, next) => ...`
-    // Photon `Handler` includes `next`.
-
-    // In Gravito, we separated them.
-    // The *final* handler is `GravitoHandler`.
-    // The *intermediate* handlers are `GravitoMiddleware`.
-
-    // The `Router` class builds a stack of `[...middleware, finalHandler]`.
-    // This stack is mixed.
-
-    // We should cast them to `any` or update `HttpAdapter` signature to `...handlers: (GravitoHandler | GravitoMiddleware)[]`.
-    // For now, I will use `any` cast when calling `this.core.adapter.route` because checking interface would derail me.
-
-    this.routes.push({ method, path: fullPath })
+    this.routes.push({ method: method.toUpperCase(), path: fullPath, domain: options.domain })
     this.core.adapter.route(method, fullPath, ...(handlers as any[]))
 
     return new Route(this, method, fullPath, options)
