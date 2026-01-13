@@ -76,12 +76,22 @@ app.router.prefix('/:locale').group((router) => {
     const heroTitle = escapeHtml(String(i18n.t('hero.title')))
     const switchLabel = escapeHtml(String(i18n.t('nav.switch')))
 
+    const gaId = process.env.GA_MEASUREMENT_ID || 'G-XXXXXXXXXX'
+
     return c.html(`
             <!DOCTYPE html>
             <html lang="${lang}">
             <head>
                 <title>Gravito - Agentic AI Framework</title>
                 <meta name="description" content="The future of web development.">
+                <!-- Google Analytics -->
+                <script async src="https://www.googletagmanager.com/gtag/js?id=${gaId}"></script>
+                <script>
+                  window.dataLayer = window.dataLayer || [];
+                  function gtag(){dataLayer.push(arguments);}
+                  gtag('js', new Date());
+                  gtag('config', '${gaId}');
+                </script>
             </head>
             <body>
                 <h1>${heroTitle}</h1>
