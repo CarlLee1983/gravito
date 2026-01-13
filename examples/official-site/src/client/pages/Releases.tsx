@@ -21,6 +21,26 @@ interface ReleaseEntry {
 // Release data - can be moved to a separate data file or CMS later
 const releasesZh: ReleaseEntry[] = [
   {
+    id: 'zenith-launch',
+    date: '2026-01-13',
+    type: 'release',
+    version: '1.0.0',
+    title: 'Zenith 1.0 正式上線 - 零配置控制面板',
+    description:
+      'Gravito 生態系統的最後一塊拼圖：Zenith 正式發佈！專為 Flux 與 Stream 打造的全方位觀測與管理介面。',
+    highlights: [
+      '即時觀測：即時監控隊列健康狀況與系統負載',
+      '任務管理：視覺化操作任務重試、刪除與排程調整',
+      '多環境支援：一套面板切換生產、預發與開發環境',
+      '極致體驗：基於 Inertia.js 打造的流暢 SPA 管理介面',
+    ],
+    links: [
+      { label: '訪問 Zenith 官網', url: 'https://zenith.gravito.dev' },
+      { label: '查看原始碼', url: 'https://github.com/gravito-framework/gravito' },
+    ],
+    featured: true,
+  },
+  {
     id: 'atlas-v1-1',
     date: '2026-01-13',
     type: 'release',
@@ -110,6 +130,26 @@ const releasesZh: ReleaseEntry[] = [
 ]
 
 const releasesEn: ReleaseEntry[] = [
+  {
+    id: 'zenith-launch',
+    date: '2026-01-13',
+    type: 'release',
+    version: '1.0.0',
+    title: 'Zenith 1.0 Launched - Zero-Config Control Plane',
+    description:
+      'The final piece of the Gravito ecosystem is here! Zenith provides ultimate observability and management for Flux & Stream.',
+    highlights: [
+      'Real-time Monitoring: Track queue health and system load instantly',
+      'Task Management: Visual retry, delete, and schedule adjustments',
+      'Multi-environment: Seamlessly switch between Production and Dev',
+      'Premium DX: Fluid SPA admin interface powered by Inertia.js',
+    ],
+    links: [
+      { label: 'Visit Zenith Site', url: 'https://zenith.gravito.dev' },
+      { label: 'Source Code', url: 'https://github.com/gravito-framework/gravito' },
+    ],
+    featured: true,
+  },
   {
     id: 'atlas-v1-1',
     date: '2026-01-13',

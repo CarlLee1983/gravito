@@ -164,6 +164,8 @@ export default {
     lux_note: 'Luminosity (Lux) — The sitemap engine built on Gravito Core.',
     atlas: 'Atlas (ORM)',
     atlas_note: 'Atlas (ORM) — High-Performance Bun-Native ORM.',
+    zenith: 'Zenith',
+    zenith_note: 'Zenith — Zero-Config Control Plane.',
     connect: 'Connect',
     legal: 'Legal',
     privacy: 'Privacy',

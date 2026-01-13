@@ -26,7 +26,7 @@ Gravito 是一個由眾多 **動力模組 (Kinetic Modules)** 組成的龐大銀
     <span class="module-code">PHOTON</span>
     <h3 class="module-title">Photon HTTP</h3>
     <code class="module-pkg">@gravito/photon</code>
-    <p class="module-desc">光子。高性能 HTTP 引擎，基於 Hono 與 Bun，提供超低延遲的請求處理架構。</p>
+    <p class="module-desc">光子。自主研發的高效能原生 HTTP 引擎，專為零抽象開銷與超低延遲請求處理而設計。</p>
   </div>
 
   <div class="module-card group">
@@ -263,6 +263,14 @@ Gravito 是一個由眾多 **動力模組 (Kinetic Modules)** 組成的龐大銀
 
 ## 流程與自動化 (Workflow & Automation)
 <div class="ecosystem-grid">
+  <div class="module-card env group">
+    <div class="card-accent"></div>
+    <span class="module-code">ZENITH</span>
+    <h3 class="module-title">Zenith</h3>
+    <code class="module-pkg">@gravito/zenith</code>
+    <p class="module-desc">天頂。零配置控制面板，提供 Flux 工作流與 Stream 佇列的實時監控與視覺化管理。</p>
+  </div>
+
   <div class="module-card env group">
     <div class="card-accent"></div>
     <span class="module-code">FLUX</span>
