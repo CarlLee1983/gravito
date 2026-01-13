@@ -1,0 +1,94 @@
+@import "tailwindcss";
+
+@theme {
+  --color-photon-gold: #FFB800;
+  --color-obsidian: #020202;
+  --color-surface: #121214; /* 提升層次感的視窗表面色 */
+  --color-titanium: #F5F5F7;
+  --font-display: "Syncopate", "Inter", sans-serif;
+  --font-technical: "Fira Code", monospace;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-obsidian);
+    color: #D1D5DB;
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+/* --- PHOTON PROSE SYSTEM V6: LAYERED DEPTH --- */
+
+.photon-prose {
+  @apply max-w-none;
+}
+
+/* Paragraphs */
+.photon-prose p {
+  @apply text-[18px] leading-[1.9] text-gray-400 mb-12 font-normal pl-8 relative;
+  max-width: 72ch;
+}
+
+.photon-prose p::before {
+  content: '';
+  @apply absolute left-0 top-2 w-1 h-6 bg-white/5 transition-all duration-500 rounded-full;
+}
+
+.photon-prose p:hover::before {
+  @apply h-full bg-photon-gold/40;
+}
+
+/* Mac-style Terminal with Elevated Surface */
+.photon-prose pre {
+  @apply bg-surface border border-white/[0.08] my-24 overflow-hidden rounded-xl relative;
+  /* 複合式陰影：一層環境光陰影，一層硬物體陰影 */
+  box-shadow: 
+    0 40px 100px -20px rgba(0,0,0,0.9),
+    0 20px 40px -15px rgba(0,0,0,0.7),
+    inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+/* Mac Title Bar with Subtle Polish */
+.photon-prose pre::before {
+  content: '';
+  @apply block h-11 bg-white/[0.04] border-b border-white/[0.05] relative;
+}
+
+/* Red, Yellow, Green Mac Buttons */
+.photon-prose pre::after {
+  content: '';
+  position: absolute;
+  top: 16px;
+  left: 18px;
+  width: 52px;
+  height: 12px;
+  background-image: 
+    radial-gradient(circle, #FF5F56 5.5px, transparent 6px),
+    radial-gradient(circle, #FFBD2E 5.5px, transparent 6px),
+    radial-gradient(circle, #27C93F 5.5px, transparent 6px);
+  background-size: 12px 12px, 12px 12px, 12px 12px;
+  background-position: 0 0, 20px 0, 40px 0;
+  background-repeat: no-repeat;
+}
+
+/* Code Content with Sunken Inset Effect */
+.photon-prose code {
+  @apply font-mono text-[14px] md:text-[15px] leading-[1.8] p-10 block bg-[#080809]/50;
+  color: #E0E0E0;
+  box-shadow: inset 0 10px 20px rgba(0,0,0,0.3);
+}
+
+/* Strong Text Accents */
+.photon-prose strong {
+  @apply text-white font-bold bg-white/5 px-1.5 py-0.5 border-b border-photon-gold/30;
+}
+
+/* Technical h2 */
+.photon-prose h2 {
+  @apply text-3xl md:text-4xl font-black text-white uppercase tracking-tighter mt-40 mb-12 flex items-center gap-6;
+}
+.photon-prose h2::after {
+  content: '';
+  @apply h-px flex-1 bg-white/10;
+}

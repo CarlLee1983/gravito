@@ -1,0 +1,7 @@
+node_modules
+.env
+static/build
+server
+*.log
+.DS_Store
+temp_check.js
