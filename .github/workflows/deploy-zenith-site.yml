@@ -1,0 +1,57 @@
+name: Deploy Zenith Site
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'examples/zenith-site/**'
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+        env:
+          SKIP_INSTALL_SIMPLE_GIT_HOOKS: 1
+
+      - name: Build Dependencies
+        run: bunx turbo run build --filter=@gravito/core --filter=@gravito/stasis --filter=@gravito/prism --filter=@gravito/ion --filter=@gravito/constellation --filter=@gravito/photon
+
+      - name: Build Zenith site
+        working-directory: examples/zenith-site
+        run: |
+          set -e
+          bun run build:static
+        env:
+          NODE_ENV: production
+          VITE_GA_MEASUREMENT_ID: ${{ vars.GA_ZENITH_MEASUREMENT_ID }}
+
+      - name: Synchronize to zenith-site repo
+        run: |
+          set -euo pipefail
+          rm -rf zenith-site-dist
+          git clone https://x-access-token:${{ secrets.DEPLOY_TOKEN }}@github.com/gravito-framework/zenith-site.git zenith-site-dist
+          cd zenith-site-dist
+          git config user.name "Gravito Deploy Bot"
+          git config user.email "bot@gravito.dev"
+          find . -maxdepth 1 -mindepth 1 ! -name '.git' -exec rm -rf {} +
+          cp -R ../examples/zenith-site/dist-static/. .
+          if [ -n "$(git status --porcelain)" ]; then
+            git add .
+            git commit -m "chore: deploy zenith site ($(date -u +"%Y-%m-%d %H:%M UTC"))"
+            git push origin main
+          else
+            echo "No changes to deploy"
+          fi
