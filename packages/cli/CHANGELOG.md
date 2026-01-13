@@ -1,5 +1,13 @@
 # @gravito/pulse
 
+## 3.0.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @gravito/core@1.2.0
+  - @gravito/scaffold@3.0.0
+
 ## 2.1.0
 
 ### Minor Changes

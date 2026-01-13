@@ -1,5 +1,15 @@
 # example-scheduler-verification
 
+## 1.0.3
+
+### Patch Changes
+
+- Updated dependencies
+  - @gravito/core@1.2.0
+  - @gravito/horizon@3.0.0
+  - @gravito/mass@3.0.0
+  - @gravito/stasis@3.0.0
+
 ## 1.0.2
 
 ### Patch Changes

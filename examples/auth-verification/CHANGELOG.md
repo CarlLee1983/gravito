@@ -1,5 +1,17 @@
 # example-auth-verification
 
+## 1.0.3
+
+### Patch Changes
+
+- Updated dependencies
+  - @gravito/core@1.2.0
+  - @gravito/sentinel@3.0.0
+  - @gravito/plasma@1.0.0
+  - @gravito/fortify@3.0.0
+  - @gravito/mass@3.0.0
+  - @gravito/pulsar@3.0.0
+
 ## 1.0.2
 
 ### Patch Changes

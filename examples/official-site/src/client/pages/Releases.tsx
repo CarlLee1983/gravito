@@ -21,6 +21,65 @@ interface ReleaseEntry {
 // Release data - can be moved to a separate data file or CMS later
 const releasesZh: ReleaseEntry[] = [
   {
+    id: 'zenith-launch',
+    date: '2026-01-13',
+    type: 'release',
+    version: '1.0.0',
+    title: 'Zenith 1.0 正式上線 - 零配置控制面板',
+    description:
+      'Gravito 生態系統的最後一塊拼圖：Zenith 正式發佈！專為 Flux 與 Stream 打造的全方位觀測與管理介面。',
+    highlights: [
+      '即時觀測：即時監控隊列健康狀況與系統負載',
+      '任務管理：視覺化操作任務重試、刪除與排程調整',
+      '多環境支援：一套面板切換生產、預發與開發環境',
+      '極致體驗：基於 Inertia.js 打造的流暢 SPA 管理介面',
+    ],
+    links: [
+      { label: '訪問 Zenith 官網', url: 'https://zenith.gravito.dev' },
+      { label: '查看原始碼', url: 'https://github.com/gravito-framework/gravito' },
+    ],
+    featured: true,
+  },
+  {
+    id: 'atlas-v1-1',
+    date: '2026-01-13',
+    type: 'release',
+    version: '1.1.0',
+    title: 'Atlas ORM v1.1.0 正式發佈',
+    description:
+      'Atlas ORM 迎來重大更新！大幅提升了效能並優化了開發者體驗，同時導入了全新的「數據流」視覺呈現。',
+    highlights: [
+      '輕量化：驅動程式改為選配，大幅縮小安裝體積',
+      '高效能：導入 Canvas 渲染技術優化「數據流」背景動畫',
+      '穩定性：修正多項查詢邊界情況與類型推導問題',
+      '混合視覺：結合高品質靜態背景與動態 Canvas 疊加',
+    ],
+    links: [
+      { label: '訪問 Atlas 官網', url: 'https://atlas.gravito.dev' },
+      { label: '查看文檔', url: 'https://atlas.gravito.dev/docs' },
+    ],
+    featured: true,
+  },
+  {
+    id: 'atlas-site-launch',
+    date: '2026-01-13',
+    type: 'announcement',
+    title: 'Atlas 官網正式上線',
+    description:
+      'Gravito Atlas ORM 的官方文檔與展示網站現已上線！深入探索專為 Bun 打造的高性能 Cartesian Mapper，體驗極致的數據庫操作效率。',
+    highlights: [
+      '互動式架構圖表',
+      '效能評測 (vs TypeORM/Prisma)',
+      '完整的 API 參考手冊',
+      '從 Laravel/TypeORM 遷移指南',
+    ],
+    links: [
+      { label: '訪問 Atlas 官網', url: 'https://atlas.gravito.dev' },
+      { label: '閱讀文檔', url: 'https://atlas.gravito.dev/docs' },
+    ],
+    featured: true,
+  },
+  {
     id: 'lux-launch',
     date: '2025-12-25',
     type: 'announcement',
@@ -71,6 +130,65 @@ const releasesZh: ReleaseEntry[] = [
 ]
 
 const releasesEn: ReleaseEntry[] = [
+  {
+    id: 'zenith-launch',
+    date: '2026-01-13',
+    type: 'release',
+    version: '1.0.0',
+    title: 'Zenith 1.0 Launched - Zero-Config Control Plane',
+    description:
+      'The final piece of the Gravito ecosystem is here! Zenith provides ultimate observability and management for Flux & Stream.',
+    highlights: [
+      'Real-time Monitoring: Track queue health and system load instantly',
+      'Task Management: Visual retry, delete, and schedule adjustments',
+      'Multi-environment: Seamlessly switch between Production and Dev',
+      'Premium DX: Fluid SPA admin interface powered by Inertia.js',
+    ],
+    links: [
+      { label: 'Visit Zenith Site', url: 'https://zenith.gravito.dev' },
+      { label: 'Source Code', url: 'https://github.com/gravito-framework/gravito' },
+    ],
+    featured: true,
+  },
+  {
+    id: 'atlas-v1-1',
+    date: '2026-01-13',
+    type: 'release',
+    version: '1.1.0',
+    title: 'Atlas ORM v1.1.0 Released',
+    description:
+      'Major milestone for Atlas ORM! Massive performance gains, improved DX, and a brand-new high-performance "Data Flow" visualization.',
+    highlights: [
+      'Lightweight: Drivers are now optional peer dependencies',
+      'Performance: Canvas-based rendering for Hero visuals',
+      'Stability: Fixed edge cases in Query Builder & Type inference',
+      'Hybrid Visuals: Combined static hero background with dynamic data flow overlay',
+    ],
+    links: [
+      { label: 'Visit Atlas Site', url: 'https://atlas.gravito.dev' },
+      { label: 'View Docs', url: 'https://atlas.gravito.dev/docs' },
+    ],
+    featured: true,
+  },
+  {
+    id: 'atlas-site-launch',
+    date: '2026-01-13',
+    type: 'announcement',
+    title: 'Atlas Site Officially Launched',
+    description:
+      'The official documentation and showcase site for Orbit Atlas ORM is now live! Dive into the high-performance Cartesian Mapper built for Bun.',
+    highlights: [
+      'Interactive Architecture Diagrams',
+      'Benchmarks (vs TypeORM/Prisma)',
+      'Comprehensive API Reference',
+      'Migration Guides',
+    ],
+    links: [
+      { label: 'Visit Atlas Site', url: 'https://atlas.gravito.dev' },
+      { label: 'Read Docs', url: 'https://atlas.gravito.dev/docs' },
+    ],
+    featured: true,
+  },
   {
     id: 'lux-launch',
     date: '2025-12-25',

@@ -1,5 +1,15 @@
 # image-verification-example
 
+## 0.5.2
+
+### Patch Changes
+
+- Updated dependencies
+  - @gravito/core@1.2.0
+  - @gravito/forge@3.0.0
+  - @gravito/nebula@3.0.0
+  - @gravito/stream@1.0.2
+
 ## 0.5.1
 
 ### Patch Changes

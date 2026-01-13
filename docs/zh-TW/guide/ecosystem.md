@@ -26,7 +26,7 @@ Gravito 是一個由眾多 **動力模組 (Kinetic Modules)** 組成的龐大銀
     <span class="module-code">PHOTON</span>
     <h3 class="module-title">Photon HTTP</h3>
     <code class="module-pkg">@gravito/photon</code>
-    <p class="module-desc">光子。高性能 HTTP 引擎，基於 Hono 與 Bun，提供超低延遲的請求處理架構。</p>
+    <p class="module-desc">光子。自主研發的高效能原生 HTTP 引擎，專為零抽象開銷與超低延遲請求處理而設計。</p>
   </div>
 
   <div class="module-card group">
@@ -43,6 +43,14 @@ Gravito 是一個由眾多 **動力模組 (Kinetic Modules)** 組成的龐大銀
     <h3 class="module-title">Beam Client</h3>
     <code class="module-pkg">@gravito/beam</code>
     <p class="module-desc">粒子束。輕量級客戶端通訊工具，為前端提供類型安全的 API 調用介面。</p>
+  </div>
+
+  <div class="module-card group">
+    <div class="card-accent"></div>
+    <span class="module-code">ORBIT</span>
+    <h3 class="module-title">GraphQL</h3>
+    <code class="module-pkg">@gravito/graphql</code>
+    <p class="module-desc">軌道。由 Yoga 驅動的零配置 GraphQL 整合，為您的銀河系帶來現代化的 API 能力。</p>
   </div>
 </div>
 
@@ -257,6 +265,14 @@ Gravito 是一個由眾多 **動力模組 (Kinetic Modules)** 組成的龐大銀
 <div class="ecosystem-grid">
   <div class="module-card env group">
     <div class="card-accent"></div>
+    <span class="module-code">ZENITH</span>
+    <h3 class="module-title">Zenith</h3>
+    <code class="module-pkg">@gravito/zenith</code>
+    <p class="module-desc">天頂。零配置控制面板，提供 Flux 工作流與 Stream 佇列的實時監控與視覺化管理。</p>
+  </div>
+
+  <div class="module-card env group">
+    <div class="card-accent"></div>
     <span class="module-code">FLUX</span>
     <h3 class="module-title">Flux Workflow</h3>
     <code class="module-pkg">@gravito/flux</code>
@@ -315,6 +331,14 @@ Gravito 是一個由眾多 **動力模組 (Kinetic Modules)** 組成的龐大銀
     <h3 class="module-title">Create Gravito App</h3>
     <code class="module-pkg">create-gravito-app</code>
     <p class="module-desc">快速建立新專案的啟動工具，內建多種範本。</p>
+  </div>
+
+  <div class="module-card group">
+    <div class="card-accent"></div>
+    <span class="module-code">ASTRAL</span>
+    <h3 class="module-title">Astral OpenAPI</h3>
+    <code class="module-pkg">@gravito/astral</code>
+    <p class="module-desc">投影。自動化 OpenAPI (Swagger) 文檔生成器，從您的 Zod Schema 與路由中提取定義。</p>
   </div>
 </div>
 

@@ -10,7 +10,7 @@ export default {
     subtitle: 'ATLAS:',
     title_line1: '結構化混亂',
     title_line2: '在重力邊緣',
-    desc: 'Gravito 生態系的通用資料庫介面。以宇宙般的精確度查詢、遷移與建構您的資料。',
+    desc: 'Gravito 生態系的通用資料庫介面。統一 SQL 與 NoSQL 工作流程，為 PostgreSQL、MySQL、SQLite 與 MongoDB 提供精確且流暢的 API。',
     demo_label: '即時演示',
     demo_comment: '// 初始化 Atlas 連線與查詢',
     benchmark: {

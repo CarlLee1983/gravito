@@ -1,5 +1,20 @@
 # gravito-official-site
 
+## 0.1.4
+
+### Patch Changes
+
+- **Atlas 1.1.0 Integration**:
+  - Restored and enhanced Hero Data Flow visuals using high-performance Canvas.
+  - Synchronized Atlas site components with latest ORM architecture.
+  - Updated footer versioning.
+- Updated dependencies
+  - @gravito/core@1.2.0
+  - @gravito/constellation@3.0.0
+  - @gravito/ion@3.0.0
+  - @gravito/prism@3.0.0
+  - @gravito/stasis@3.0.0
+
 ## 0.1.3
 
 ### Major Changes

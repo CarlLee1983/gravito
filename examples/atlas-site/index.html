@@ -6,33 +6,31 @@
     <link rel="icon" type="image/svg+xml" href="%BASE_URL%favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title>Gravito Atlas - Structuring Chaos</title>
-    <!-- Trigger Deploy: 2026-01-01 v4 (Fix Sitemap & Robots) -->
+    <title>Gravito Atlas - Universal Database Interface</title>
     <meta name="description"
-        content="Atlas is a Bun-native, high-performance ORM for high-availability systems. Structure your database chaos with sub-millisecond execution." />
+        content="Atlas is a high-performance, universal database interface for modern TypeScript backends. Type-safe, intuitive, and built for speed." />
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://gravito-framework.github.io/atlas-site-dist/" />
-    <meta property="og:title" content="Gravito Atlas - Structuring Chaos" />
+    <meta property="og:title" content="Gravito Atlas - Universal Database Interface" />
     <meta property="og:description"
-        content="High-performance ORM optimized for Bun. Sub-millisecond queries, type-safe migrations, and cosmic DX." />
+        content="High-performance ORM optimized for modern backends. Sub-millisecond queries, type-safe migrations, and cosmic DX." />
     <meta property="og:image" content="https://gravito-framework.github.io/atlas-site-dist/hero-bg.png" />
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image" />
     <meta property="twitter:url" content="https://gravito-framework.github.io/atlas-site-dist/" />
-    <meta property="twitter:title" content="Gravito Atlas - Structuring Chaos" />
+    <meta property="twitter:title" content="Gravito Atlas - Universal Database Interface" />
     <meta property="twitter:description"
-        content="High-performance ORM optimized for Bun. Sub-millisecond queries, type-safe migrations, and cosmic DX." />
+        content="High-performance ORM optimized for modern backends. Sub-millisecond queries, type-safe migrations, and cosmic DX." />
     <meta property="twitter:image" content="https://gravito-framework.github.io/atlas-site-dist/hero-bg.png" />
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@400;500&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
     <script>
         (function () {
             var params = new URLSearchParams(window.location.search);
@@ -52,27 +50,26 @@
             }
         })();
     </script>
-    <!-- Google Analytics -->
+    
+    <!-- Google Analytics (Safe Injection) -->
     <script>
-        (function() {
-            var gaId = '%VITE_GA_MEASUREMENT_ID%';
-            if (gaId && gaId !== '' && gaId !== '%' + 'VITE_GA_MEASUREMENT_ID' + '%') {
-                var script = document.createElement('script');
-                script.async = true;
-                script.src = 'https://www.googletagmanager.com/gtag/js?id=' + gaId;
-                document.head.appendChild(script);
+        var gaId = '@GA_ATLAS_MEASUREMENT_ID@';
+        if (gaId && gaId.startsWith('G-')) {
+            var script = document.createElement('script');
+            script.async = true;
+            script.src = 'https://www.googletagmanager.com/gtag/js?id=' + gaId;
+            document.head.appendChild(script);
 
-                window.dataLayer = window.dataLayer || [];
-                function gtag(){dataLayer.push(arguments);}
-                gtag('js', new Date());
-                gtag('config', gaId);
-            }
-        })();
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', gaId);
+        }
     </script>
 </head>
 
 <body
-    class="bg-atlas-void text-white font-sans antialiased overflow-x-hidden selection:bg-atlas-cyan selection:text-black">
+    class="bg-atlas-void text-white font-sans antialiased overflow-x-hidden selection:bg-indigo-500 selection:text-white">
     <div id="app"></div>
     <script type="module" src="/src/client/main.ts"></script>
 </body>

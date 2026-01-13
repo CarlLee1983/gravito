@@ -184,6 +184,16 @@ export default {
   env: process.env.APP_ENV ?? 'development',
 
   /**
+   * Application port
+   */
+  port: Number.parseInt(process.env.PORT ?? '3000', 10),
+
+  /**
+   * View directory
+   */
+  VIEW_DIR: process.env.VIEW_DIR ?? 'src/views',
+
+  /**
    * Debug mode
    */
   debug: process.env.APP_DEBUG === 'true',
@@ -308,8 +318,7 @@ export default {
    */
   providers: {
     users: {
-      driver: 'database',
-      table: 'users',
+      driver: 'callback', // Custom callback provider
     },
   },
 }

@@ -211,8 +211,8 @@ describe('SitemapGenerator', () => {
 
     await generator.run()
 
-    expect(await storage.exists('sitemap-1.xml')).toBe(true)
-    const content = await storage.read('sitemap-1.xml')
+    expect(await storage.exists('sitemap.xml')).toBe(true)
+    const content = await storage.read('sitemap.xml')
     expect(content).toContain('/async-1')
     expect(content).toContain('/async-2')
   })

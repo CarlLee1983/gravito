@@ -12,7 +12,7 @@ export function setupViteProxy(core: PlanetCore): void {
       // Fix: When proxying, we might need to adjust the path if Photon's router captured differently
       // But for global middleware or wildcard, url.pathname is correct.
 
-      const viteUrl = `http://127.0.0.1:5173${url.pathname}${url.search}`
+      const viteUrl = `http://127.0.0.1:5174${url.pathname}${url.search}`
 
       // Pass original headers (important for Accept, etc.)
       const headers = new Headers(c.req.header())

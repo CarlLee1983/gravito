@@ -1,3 +1,4 @@
+import path from 'node:path'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
@@ -9,7 +10,7 @@ export default defineConfig({
     emptyOutDir: true,
     manifest: true, // Generate manifest.json for backend mapping
     rollupOptions: {
-      input: './src/client/app.tsx',
+      input: path.resolve(__dirname, 'src/client/app.tsx'),
       output: {
         entryFileNames: 'assets/[name].js',
         chunkFileNames: 'assets/[name].js',
@@ -19,10 +20,10 @@ export default defineConfig({
   },
   server: {
     host: '127.0.0.1',
-    port: 5173,
+    port: 5174,
     strictPort: true,
     hmr: {
-      port: 5173,
+      port: 5174,
     },
     // 代理後端 API 請求
     proxy: {

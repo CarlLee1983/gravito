@@ -2,6 +2,7 @@
     "extends": "../../tsconfig.json",
     "compilerOptions": {
         "baseUrl": ".",
+        "skipLibCheck": true,
         "paths": {
             "@/*": [
                 "src/*"
@@ -11,6 +12,7 @@
             ]
         },
         "types": [
+            "bun-types",
             "vite/client"
         ],
         "jsx": "preserve"

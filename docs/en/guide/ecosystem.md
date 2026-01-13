@@ -26,7 +26,7 @@ Gravito is a vast galaxy composed of numerous **Kinetic Modules**. These modules
     <span class="module-code">PHOTON</span>
     <h3 class="module-title">Photon HTTP</h3>
     <code class="module-pkg">@gravito/photon</code>
-    <p class="module-desc">High-speed HTTP engine based on Hono and Bun, providing ultra-low latency request handling architecture.</p>
+    <p class="module-desc">Our self-developed high-performance native HTTP engine. Precision-engineered for ultra-low latency request handling with zero abstraction overhead.</p>
   </div>
 
   <div class="module-card group">
@@ -43,6 +43,14 @@ Gravito is a vast galaxy composed of numerous **Kinetic Modules**. These modules
     <h3 class="module-title">Beam Client</h3>
     <code class="module-pkg">@gravito/beam</code>
     <p class="module-desc">The Particle Beam. A lightweight client communication tool providing type-safe API call interfaces for the frontend.</p>
+  </div>
+
+  <div class="module-card group">
+    <div class="card-accent"></div>
+    <span class="module-code">ORBIT</span>
+    <h3 class="module-title">GraphQL</h3>
+    <code class="module-pkg">@gravito/graphql</code>
+    <p class="module-desc">The Orbit. Zero-config GraphQL integration powered by Yoga, bringing modern API capabilities to your galaxy.</p>
   </div>
 </div>
 
@@ -257,6 +265,14 @@ Gravito is a vast galaxy composed of numerous **Kinetic Modules**. These modules
 <div class="ecosystem-grid">
   <div class="module-card env group">
     <div class="card-accent"></div>
+    <span class="module-code">ZENITH</span>
+    <h3 class="module-title">Zenith</h3>
+    <code class="module-pkg">@gravito/zenith</code>
+    <p class="module-desc">The Control Plane. Zero-config dashboard for monitoring and managing your Flux workflows and Stream queues in real-time.</p>
+  </div>
+
+  <div class="module-card env group">
+    <div class="card-accent"></div>
     <span class="module-code">FLUX</span>
     <h3 class="module-title">Flux Workflow</h3>
     <code class="module-pkg">@gravito/flux</code>
@@ -315,6 +331,14 @@ Gravito is a vast galaxy composed of numerous **Kinetic Modules**. These modules
     <h3 class="module-title">Create Gravito App</h3>
     <code class="module-pkg">create-gravito-app</code>
     <p class="module-desc">Starter bootstrapper that scaffolds new Gravito apps with curated templates.</p>
+  </div>
+
+  <div class="module-card group">
+    <div class="card-accent"></div>
+    <span class="module-code">ASTRAL</span>
+    <h3 class="module-title">Astral OpenAPI</h3>
+    <code class="module-pkg">@gravito/astral</code>
+    <p class="module-desc">The Projection. Automated OpenAPI (Swagger) documentation generator from your Zod schemas and routes.</p>
   </div>
 </div>
 

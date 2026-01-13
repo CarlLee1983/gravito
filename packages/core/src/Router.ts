@@ -120,50 +120,95 @@ export class RouteGroup {
   get(path: string, request: FormRequestClass, handler: RouteHandler): Route
   get(
     path: string,
-    requestOrHandler: FormRequestClass | RouteHandler,
+    middleware: GravitoMiddleware | GravitoMiddleware[],
+    handler: RouteHandler
+  ): Route
+  get(
+    path: string,
+    requestOrHandlerOrMiddleware:
+      | FormRequestClass
+      | RouteHandler
+      | GravitoMiddleware
+      | GravitoMiddleware[],
     handler?: RouteHandler
   ): Route {
-    return this.router.req('get', path, requestOrHandler, handler, this.options)
+    return this.router.req('get', path, requestOrHandlerOrMiddleware, handler, this.options)
   }
 
   post(path: string, handler: RouteHandler): Route
   post(path: string, request: FormRequestClass, handler: RouteHandler): Route
   post(
     path: string,
-    requestOrHandler: FormRequestClass | RouteHandler,
+    middleware: GravitoMiddleware | GravitoMiddleware[],
+    handler: RouteHandler
+  ): Route
+  post(
+    path: string,
+    requestOrHandlerOrMiddleware:
+      | FormRequestClass
+      | RouteHandler
+      | GravitoMiddleware
+      | GravitoMiddleware[],
     handler?: RouteHandler
   ): Route {
-    return this.router.req('post', path, requestOrHandler, handler, this.options)
+    return this.router.req('post', path, requestOrHandlerOrMiddleware, handler, this.options)
   }
 
   put(path: string, handler: RouteHandler): Route
   put(path: string, request: FormRequestClass, handler: RouteHandler): Route
   put(
     path: string,
-    requestOrHandler: FormRequestClass | RouteHandler,
+    middleware: GravitoMiddleware | GravitoMiddleware[],
+    handler: RouteHandler
+  ): Route
+  put(
+    path: string,
+    requestOrHandlerOrMiddleware:
+      | FormRequestClass
+      | RouteHandler
+      | GravitoMiddleware
+      | GravitoMiddleware[],
     handler?: RouteHandler
   ): Route {
-    return this.router.req('put', path, requestOrHandler, handler, this.options)
+    return this.router.req('put', path, requestOrHandlerOrMiddleware, handler, this.options)
   }
 
   delete(path: string, handler: RouteHandler): Route
   delete(path: string, request: FormRequestClass, handler: RouteHandler): Route
   delete(
     path: string,
-    requestOrHandler: FormRequestClass | RouteHandler,
+    middleware: GravitoMiddleware | GravitoMiddleware[],
+    handler: RouteHandler
+  ): Route
+  delete(
+    path: string,
+    requestOrHandlerOrMiddleware:
+      | FormRequestClass
+      | RouteHandler
+      | GravitoMiddleware
+      | GravitoMiddleware[],
     handler?: RouteHandler
   ): Route {
-    return this.router.req('delete', path, requestOrHandler, handler, this.options)
+    return this.router.req('delete', path, requestOrHandlerOrMiddleware, handler, this.options)
   }
 
   patch(path: string, handler: RouteHandler): Route
   patch(path: string, request: FormRequestClass, handler: RouteHandler): Route
   patch(
     path: string,
-    requestOrHandler: FormRequestClass | RouteHandler,
+    middleware: GravitoMiddleware | GravitoMiddleware[],
+    handler: RouteHandler
+  ): Route
+  patch(
+    path: string,
+    requestOrHandlerOrMiddleware:
+      | FormRequestClass
+      | RouteHandler
+      | GravitoMiddleware
+      | GravitoMiddleware[],
     handler?: RouteHandler
   ): Route {
-    return this.router.req('patch', path, requestOrHandler, handler, this.options)
+    return this.router.req('patch', path, requestOrHandlerOrMiddleware, handler, this.options)
   }
 
   resource(name: string, controller: ControllerClass, options: ResourceOptions = {}): void {
@@ -223,6 +268,7 @@ export class RouteGroup {
  * - Domain-based routing: router.domain('api.app').group(...)
  * - Middleware chaining: router.middleware(auth).group(...)
  * - FormRequest validation: router.post('/users', StoreUserRequest, [UserController, 'store'])
+ * - Inline Middleware: router.get('/users', authMiddleware, [UserController, 'index'])
  */
 export class Router {
   // Internal list of all registered routes (for scanning and debugging)
@@ -430,121 +476,112 @@ export class Router {
 
   /**
    * Register a GET route.
-   *
-   * @param path - The URL path for the route.
-   * @param handler - The handler function or controller method.
-   * @returns The registered Route instance for chaining.
-   *
-   * @example
-   * ```typescript
-   * router.get('/users', [UserController, 'index']);
-   * ```
    */
   get(path: string, handler: RouteHandler): Route
-  /**
-   * Register a GET route with a FormRequest for validation.
-   *
-   * @param path - The URL path.
-   * @param request - The FormRequest class for validation.
-   * @param handler - The handler function or controller method.
-   *
-   * @example
-   * ```typescript
-   * router.get('/search', SearchRequest, [Controller, 'search']);
-   * ```
-   */
   get(path: string, request: FormRequestClass, handler: RouteHandler): Route
   get(
     path: string,
-    requestOrHandler: FormRequestClass | RouteHandler,
+    middleware: GravitoMiddleware | GravitoMiddleware[],
+    handler: RouteHandler
+  ): Route
+  get(
+    path: string,
+    requestOrHandlerOrMiddleware:
+      | FormRequestClass
+      | RouteHandler
+      | GravitoMiddleware
+      | GravitoMiddleware[],
     handler?: RouteHandler
   ): Route {
-    return this.req('get', path, requestOrHandler, handler)
+    return this.req('get', path, requestOrHandlerOrMiddleware, handler)
   }
 
   /**
    * Register a POST route.
-   *
-   * @param path - The URL path.
-   * @param handler - The handler function or controller method.
-   * @returns The registered Route instance.
-   *
-   * @example
-   * ```typescript
-   * router.post('/users', [UserController, 'store']);
-   * ```
    */
   post(path: string, handler: RouteHandler): Route
-  /**
-   * Register a POST route with validation.
-   *
-   * @param path - The URL path.
-   * @param request - The FormRequest class.
-   * @param handler - The handler.
-   *
-   * @example
-   * ```typescript
-   * router.post('/users', StoreUserRequest, [UserController, 'store']);
-   * ```
-   */
   post(path: string, request: FormRequestClass, handler: RouteHandler): Route
   post(
     path: string,
-    requestOrHandler: FormRequestClass | RouteHandler,
+    middleware: GravitoMiddleware | GravitoMiddleware[],
+    handler: RouteHandler
+  ): Route
+  post(
+    path: string,
+    requestOrHandlerOrMiddleware:
+      | FormRequestClass
+      | RouteHandler
+      | GravitoMiddleware
+      | GravitoMiddleware[],
     handler?: RouteHandler
   ): Route {
-    return this.req('post', path, requestOrHandler, handler)
+    return this.req('post', path, requestOrHandlerOrMiddleware, handler)
   }
 
   /**
    * Register a PUT route.
-   *
-   * @param path - The URL path.
-   * @param handler - The handler function.
-   * @returns The registered Route instance.
    */
   put(path: string, handler: RouteHandler): Route
   put(path: string, request: FormRequestClass, handler: RouteHandler): Route
   put(
     path: string,
-    requestOrHandler: FormRequestClass | RouteHandler,
+    middleware: GravitoMiddleware | GravitoMiddleware[],
+    handler: RouteHandler
+  ): Route
+  put(
+    path: string,
+    requestOrHandlerOrMiddleware:
+      | FormRequestClass
+      | RouteHandler
+      | GravitoMiddleware
+      | GravitoMiddleware[],
     handler?: RouteHandler
   ): Route {
-    return this.req('put', path, requestOrHandler, handler)
+    return this.req('put', path, requestOrHandlerOrMiddleware, handler)
   }
 
   /**
    * Register a DELETE route.
-   *
-   * @param path - The URL path.
-   * @param handler - The handler function.
-   * @returns The registered Route instance.
    */
   delete(path: string, handler: RouteHandler): Route
   delete(path: string, request: FormRequestClass, handler: RouteHandler): Route
   delete(
     path: string,
-    requestOrHandler: FormRequestClass | RouteHandler,
+    middleware: GravitoMiddleware | GravitoMiddleware[],
+    handler: RouteHandler
+  ): Route
+  delete(
+    path: string,
+    requestOrHandlerOrMiddleware:
+      | FormRequestClass
+      | RouteHandler
+      | GravitoMiddleware
+      | GravitoMiddleware[],
     handler?: RouteHandler
   ): Route {
-    return this.req('delete', path, requestOrHandler, handler)
+    return this.req('delete', path, requestOrHandlerOrMiddleware, handler)
   }
 
   /**
    * Register a PATCH route.
-   *
-   * @param path - The URL path.
-   * @param handler - The handler function.
-   * @returns The registered Route instance.
    */
   patch(path: string, handler: RouteHandler): Route
   patch(path: string, request: FormRequestClass, handler: RouteHandler): Route
   patch(
     path: string,
-    requestOrHandler: FormRequestClass | RouteHandler,
+    middleware: GravitoMiddleware | GravitoMiddleware[],
+    handler: RouteHandler
+  ): Route
+  patch(
+    path: string,
+    requestOrHandlerOrMiddleware:
+      | FormRequestClass
+      | RouteHandler
+      | GravitoMiddleware
+      | GravitoMiddleware[],
     handler?: RouteHandler
   ): Route {
-    return this.req('patch', path, requestOrHandler, handler)
+    return this.req('patch', path, requestOrHandlerOrMiddleware, handler)
   }
 
   /**
@@ -598,26 +635,40 @@ export class Router {
   req(
     method: HttpMethod,
     path: string,
-    requestOrHandler: FormRequestClass | RouteHandler,
+    requestOrHandlerOrMiddleware:
+      | FormRequestClass
+      | RouteHandler
+      | GravitoMiddleware
+      | GravitoMiddleware[],
     handler?: RouteHandler,
     options: RouteOptions = {}
   ): Route {
     // 1. Resolve Path
     const fullPath = (options.prefix || '') + path
 
-    // 2. Determine if FormRequest is provided
+    // 2. Determine if FormRequest or Middleware is provided
     let formRequestMiddleware: GravitoMiddleware | null = null
+    let routeMiddleware: GravitoMiddleware[] = []
     let finalRouteHandler: RouteHandler
 
     if (handler !== undefined) {
-      // FormRequest + Handler pattern
-      if (isFormRequestClass(requestOrHandler)) {
-        formRequestMiddleware = formRequestToMiddleware(requestOrHandler)
+      // Three arguments: (path, middleware/request, handler)
+      if (isFormRequestClass(requestOrHandlerOrMiddleware)) {
+        formRequestMiddleware = formRequestToMiddleware(requestOrHandlerOrMiddleware)
+      } else {
+        // Assume middleware (single or array)
+        const middleware = requestOrHandlerOrMiddleware as GravitoMiddleware | GravitoMiddleware[]
+
+        if (Array.isArray(middleware)) {
+          routeMiddleware = middleware
+        } else {
+          routeMiddleware = [middleware]
+        }
       }
       finalRouteHandler = handler
     } else {
-      // Traditional pattern
-      finalRouteHandler = requestOrHandler as RouteHandler
+      // Two arguments: (path, handler)
+      finalRouteHandler = requestOrHandlerOrMiddleware as RouteHandler
     }
 
     // 3. Resolve Handler (Controller vs Function)
@@ -627,7 +678,7 @@ export class Router {
       const [CtrlClass, methodName] = finalRouteHandler
       resolvedHandler = this.resolveControllerHandler(CtrlClass, methodName)
     } else {
-      resolvedHandler = finalRouteHandler
+      resolvedHandler = finalRouteHandler as GravitoHandler
     }
 
     // 4. Prepare Handlers Stack
@@ -638,6 +689,9 @@ export class Router {
     }
     if (formRequestMiddleware) {
       handlers.push(formRequestMiddleware)
+    }
+    if (routeMiddleware.length > 0) {
+      handlers.push(...routeMiddleware)
     }
     handlers.push(resolvedHandler)
 

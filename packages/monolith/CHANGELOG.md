@@ -1,5 +1,13 @@
 # @gravito/monolith
 
+## 3.0.0
+
+### Patch Changes
+
+- Updated dependencies
+  - @gravito/core@1.2.0
+  - @gravito/mass@3.0.0
+
 ## 2.0.0
 
 ### Patch Changes
