@@ -19,7 +19,10 @@ const BackgroundShader = () => {
       uTexture: { value: texture },
       uResolution: { value: new THREE.Vector2(size.width, size.height) },
       uTextureResolution: {
-        value: new THREE.Vector2(texture.image?.width || 1920, texture.image?.height || 1080),
+        value: new THREE.Vector2(
+          (texture.image as HTMLImageElement)?.width || 1920,
+          (texture.image as HTMLImageElement)?.height || 1080
+        ),
       },
     }),
     [texture, size.width, size.height]
@@ -222,9 +225,27 @@ const StarField = ({ count = 400 }) => {
   return (
     <points ref={pointsRef}>
       <bufferGeometry>
-        <bufferAttribute attach="attributes-position" count={count} array={positions} itemSize={3} />
-        <bufferAttribute attach="attributes-aRandom" count={count} array={randomness} itemSize={1} />
-        <bufferAttribute attach="attributes-aColor" count={count} array={colors} itemSize={3} />
+        <bufferAttribute
+          attach="attributes-position"
+          count={count}
+          array={positions}
+          itemSize={3}
+          args={[positions, 3]}
+        />
+        <bufferAttribute
+          attach="attributes-aRandom"
+          count={count}
+          array={randomness}
+          itemSize={1}
+          args={[randomness, 1]}
+        />
+        <bufferAttribute
+          attach="attributes-aColor"
+          count={count}
+          array={colors}
+          itemSize={3}
+          args={[colors, 3]}
+        />
       </bufferGeometry>
       <shaderMaterial
         uniforms={starUniforms}
