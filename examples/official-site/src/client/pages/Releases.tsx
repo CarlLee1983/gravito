@@ -21,6 +21,20 @@ interface ReleaseEntry {
 // Release data - can be moved to a separate data file or CMS later
 const releasesZh: ReleaseEntry[] = [
   {
+    id: 'atlas-site-launch',
+    date: '2026-01-13',
+    type: 'announcement',
+    title: 'Atlas 官網正式上線',
+    description:
+      'Gravito Atlas ORM 的官方文檔與展示網站現已上線！深入探索專為 Bun 打造的高性能 Cartesian Mapper，體驗極致的數據庫操作效率。',
+    highlights: ['互動式架構圖表', '效能評測 (vs TypeORM/Prisma)', '完整的 API 參考手冊', '從 Laravel/TypeORM 遷移指南'],
+    links: [
+      { label: '訪問 Atlas 官網', url: 'https://atlas.gravito.dev' },
+      { label: '閱讀文檔', url: 'https://atlas.gravito.dev/docs' },
+    ],
+    featured: true,
+  },
+  {
     id: 'lux-launch',
     date: '2025-12-25',
     type: 'announcement',
@@ -71,6 +85,25 @@ const releasesZh: ReleaseEntry[] = [
 ]
 
 const releasesEn: ReleaseEntry[] = [
+  {
+    id: 'atlas-site-launch',
+    date: '2026-01-13',
+    type: 'announcement',
+    title: 'Atlas Site Officially Launched',
+    description:
+      'The official documentation and showcase site for Orbit Atlas ORM is now live! Dive into the high-performance Cartesian Mapper built for Bun.',
+    highlights: [
+      'Interactive Architecture Diagrams',
+      'Benchmarks (vs TypeORM/Prisma)',
+      'Comprehensive API Reference',
+      'Migration Guides',
+    ],
+    links: [
+      { label: 'Visit Atlas Site', url: 'https://atlas.gravito.dev' },
+      { label: 'Read Docs', url: 'https://atlas.gravito.dev/docs' },
+    ],
+    featured: true,
+  },
   {
     id: 'lux-launch',
     date: '2025-12-25',
@@ -213,11 +246,10 @@ function ReleaseCard({
       <div
         className={`
                     absolute top-8 w-5 h-5 rounded-full border-2 z-20 transition-all duration-700
-                    ${
-                      index % 2 === 0
-                        ? 'md:-right-[50px] -left-[51px] md:left-auto'
-                        : 'md:-left-[50px] -left-[51px]'
-                    }
+                    ${index % 2 === 0
+            ? 'md:-right-[50px] -left-[51px] md:left-auto'
+            : 'md:-left-[50px] -left-[51px]'
+          }
                     ${entry.featured ? 'border-singularity bg-singularity/20 scale-125' : 'border-white/20 bg-void'}
                 `}
       >
@@ -233,11 +265,10 @@ function ReleaseCard({
       <div
         className={`
                     relative rounded-[2rem] border backdrop-blur-2xl p-8 overflow-hidden transition-all duration-500
-                    ${
-                      entry.featured
-                        ? 'bg-gradient-to-br from-[#0F1218]/90 to-void/95 border-singularity/30 shadow-[0_40px_80px_-15px_rgba(0,0,0,0.8),0_0_20px_rgba(0,240,255,0.1)]'
-                        : 'bg-white/5 border-white/10 hover:border-singularity/30 hover:bg-white/8 shadow-2xl'
-                    }
+                    ${entry.featured
+            ? 'bg-gradient-to-br from-[#0F1218]/90 to-void/95 border-singularity/30 shadow-[0_40px_80px_-15px_rgba(0,0,0,0.8),0_0_20px_rgba(0,240,255,0.1)]'
+            : 'bg-white/5 border-white/10 hover:border-singularity/30 hover:bg-white/8 shadow-2xl'
+          }
                 `}
       >
         {/* Brand Side Accent Line */}
@@ -259,11 +290,10 @@ function ReleaseCard({
             <span
               className={`
                                 inline-flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black tracking-[0.2em] uppercase border transition-all duration-500
-                                ${
-                                  entry.featured
-                                    ? 'bg-singularity text-black border-transparent shadow-[0_0_15px_rgba(0,240,255,0.4)]'
-                                    : `${config.bg} ${config.color} ${config.border} group-hover:border-singularity/50`
-                                }
+                                ${entry.featured
+                  ? 'bg-singularity text-black border-transparent shadow-[0_0_15px_rgba(0,240,255,0.4)]'
+                  : `${config.bg} ${config.color} ${config.border} group-hover:border-singularity/50`
+                }
                             `}
             >
               <Icon size={14} />
@@ -290,11 +320,10 @@ function ReleaseCard({
           <h3
             className={`
                             font-black tracking-tighter mb-4 transition-all duration-500
-                            ${
-                              entry.featured
-                                ? 'text-3xl md:text-4xl text-white group-hover:text-singularity'
-                                : 'text-2xl text-white group-hover:text-singularity'
-                            }
+                            ${entry.featured
+                ? 'text-3xl md:text-4xl text-white group-hover:text-singularity'
+                : 'text-2xl text-white group-hover:text-singularity'
+              }
                         `}
           >
             {entry.title}
@@ -337,11 +366,10 @@ function ReleaseCard({
                     {...(isExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
                     className={`
                                             inline-flex items-center gap-2 px-6 py-3 rounded-2xl font-black text-xs tracking-widest uppercase transition-all duration-300 relative overflow-hidden group/btn
-                                            ${
-                                              entry.featured
-                                                ? 'bg-white text-black hover:bg-singularity hover:shadow-[0_0_30px_rgba(0,240,255,0.4)]'
-                                                : 'bg-white/5 text-white/50 border border-white/5 hover:border-singularity hover:text-white'
-                                            }
+                                            ${entry.featured
+                        ? 'bg-white text-black hover:bg-singularity hover:shadow-[0_0_30px_rgba(0,240,255,0.4)]'
+                        : 'bg-white/5 text-white/50 border border-white/5 hover:border-singularity hover:text-white'
+                      }
                                         `}
                   >
                     <span className="relative z-10 flex items-center gap-2">
