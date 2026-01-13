@@ -1,5 +1,4 @@
 import { motion, useScroll, useTransform } from 'framer-motion';
-import { ShoppingBag } from 'lucide-react';
 import React, { useRef } from 'react';
 
 const HeroSection = () => {
@@ -28,22 +27,6 @@ const HeroSection = () => {
         {/* Noise Texture Overlay */}
         <div className="absolute inset-0 opacity-[0.03] pointer-events-none mix-blend-multiply bg-[url('https://grainy-gradients.vercel.ai/noise.svg')]" />
       </motion.div>
-
-      {/* Navigation (Fixed) */}
-      <nav className="fixed top-0 left-0 right-0 z-50 p-8 flex justify-between items-center mix-blend-difference text-ink-black">
-        <div className="text-xs font-sans tracking-widest uppercase opacity-70">
-          EST. 1984
-        </div>
-        <div className="flex gap-6 items-center">
-          <button className="hover:text-cinnabar transition-colors duration-300">
-            <ShoppingBag className="w-5 h-5" />
-          </button>
-          <button className="group relative w-8 h-8 flex flex-col justify-center items-end gap-1.5 cursor-pointer">
-            <span className="w-full h-[1px] bg-current group-hover:w-2/3 transition-all duration-300" />
-            <span className="w-2/3 h-[1px] bg-current group-hover:w-full transition-all duration-300" />
-          </button>
-        </div>
-      </nav>
 
       {/* Main Content */}
       <div className="relative z-10 h-full flex flex-col justify-center items-center">
