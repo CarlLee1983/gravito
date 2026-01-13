@@ -21,6 +21,25 @@ interface ReleaseEntry {
 // Release data - can be moved to a separate data file or CMS later
 const releasesZh: ReleaseEntry[] = [
   {
+    id: 'atlas-site-launch',
+    date: '2026-01-13',
+    type: 'announcement',
+    title: 'Atlas 官網正式上線',
+    description:
+      'Gravito Atlas ORM 的官方文檔與展示網站現已上線！深入探索專為 Bun 打造的高性能 Cartesian Mapper，體驗極致的數據庫操作效率。',
+    highlights: [
+      '互動式架構圖表',
+      '效能評測 (vs TypeORM/Prisma)',
+      '完整的 API 參考手冊',
+      '從 Laravel/TypeORM 遷移指南',
+    ],
+    links: [
+      { label: '訪問 Atlas 官網', url: 'https://atlas.gravito.dev' },
+      { label: '閱讀文檔', url: 'https://atlas.gravito.dev/docs' },
+    ],
+    featured: true,
+  },
+  {
     id: 'lux-launch',
     date: '2025-12-25',
     type: 'announcement',
@@ -71,6 +90,25 @@ const releasesZh: ReleaseEntry[] = [
 ]
 
 const releasesEn: ReleaseEntry[] = [
+  {
+    id: 'atlas-site-launch',
+    date: '2026-01-13',
+    type: 'announcement',
+    title: 'Atlas Site Officially Launched',
+    description:
+      'The official documentation and showcase site for Orbit Atlas ORM is now live! Dive into the high-performance Cartesian Mapper built for Bun.',
+    highlights: [
+      'Interactive Architecture Diagrams',
+      'Benchmarks (vs TypeORM/Prisma)',
+      'Comprehensive API Reference',
+      'Migration Guides',
+    ],
+    links: [
+      { label: 'Visit Atlas Site', url: 'https://atlas.gravito.dev' },
+      { label: 'Read Docs', url: 'https://atlas.gravito.dev/docs' },
+    ],
+    featured: true,
+  },
   {
     id: 'lux-launch',
     date: '2025-12-25',

@@ -4,11 +4,11 @@
  * Protect routes that require authentication.
  */
 
-import type { GravitoContext, MiddlewareNext } from '@gravito/core'
+import type { GravitoContext, GravitoNext } from '@gravito/core'
 import type { InertiaService } from '@gravito/ion'
 import type { AuthManager } from '@gravito/sentinel'
 
-export async function AuthMiddleware(ctx: GravitoContext, next: MiddlewareNext) {
+export async function AuthMiddleware(ctx: GravitoContext, next: GravitoNext) {
   const auth = ctx.get('auth') as AuthManager
 
   if (!(await auth.check())) {

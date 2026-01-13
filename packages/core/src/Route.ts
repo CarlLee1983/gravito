@@ -1,4 +1,5 @@
 import { router } from './helpers'
+import type { GravitoMiddleware } from './http/types'
 import type {
   ControllerClass,
   FormRequestClass,
@@ -30,30 +31,55 @@ export class Route {
 
   static get(path: string, handler: RouteHandler): Route
   static get(path: string, request: FormRequestClass, handler: RouteHandler): Route
+  static get(
+    path: string,
+    middleware: GravitoMiddleware | GravitoMiddleware[],
+    handler: RouteHandler
+  ): Route
   static get(path: string, requestOrHandler: any, handler?: any): Route {
     return router().get(path, requestOrHandler, handler)
   }
 
   static post(path: string, handler: RouteHandler): Route
   static post(path: string, request: FormRequestClass, handler: RouteHandler): Route
+  static post(
+    path: string,
+    middleware: GravitoMiddleware | GravitoMiddleware[],
+    handler: RouteHandler
+  ): Route
   static post(path: string, requestOrHandler: any, handler?: any): Route {
     return router().post(path, requestOrHandler, handler)
   }
 
   static put(path: string, handler: RouteHandler): Route
   static put(path: string, request: FormRequestClass, handler: RouteHandler): Route
+  static put(
+    path: string,
+    middleware: GravitoMiddleware | GravitoMiddleware[],
+    handler: RouteHandler
+  ): Route
   static put(path: string, requestOrHandler: any, handler?: any): Route {
     return router().put(path, requestOrHandler, handler)
   }
 
   static delete(path: string, handler: RouteHandler): Route
   static delete(path: string, request: FormRequestClass, handler: RouteHandler): Route
+  static delete(
+    path: string,
+    middleware: GravitoMiddleware | GravitoMiddleware[],
+    handler: RouteHandler
+  ): Route
   static delete(path: string, requestOrHandler: any, handler?: any): Route {
     return router().delete(path, requestOrHandler, handler)
   }
 
   static patch(path: string, handler: RouteHandler): Route
   static patch(path: string, request: FormRequestClass, handler: RouteHandler): Route
+  static patch(
+    path: string,
+    middleware: GravitoMiddleware | GravitoMiddleware[],
+    handler: RouteHandler
+  ): Route
   static patch(path: string, requestOrHandler: any, handler?: any): Route {
     return router().patch(path, requestOrHandler, handler)
   }

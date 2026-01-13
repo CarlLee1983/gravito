@@ -5,7 +5,7 @@ import * as THREE from 'three'
 
 // --- Background Shader Component ---
 const BackgroundShader = () => {
-  const { viewport, size } = useThree()
+  const { size } = useThree()
   const meshRef = useRef<THREE.Mesh>(null)
 
   // Load texture using Suspense-ready hook
@@ -19,7 +19,10 @@ const BackgroundShader = () => {
       uTexture: { value: texture },
       uResolution: { value: new THREE.Vector2(size.width, size.height) },
       uTextureResolution: {
-        value: new THREE.Vector2(texture.image?.width || 1920, texture.image?.height || 1080),
+        value: new THREE.Vector2(
+          (texture.image as HTMLImageElement)?.width || 1920,
+          (texture.image as HTMLImageElement)?.height || 1080
+        ),
       },
     }),
     [texture, size.width, size.height]
@@ -108,36 +111,119 @@ const BackgroundShader = () => {
   )
 }
 
-// --- Warp Stars Component ---
-const WarpStars = ({ count = 200 }) => {
+// --- Star Field Component (Premium Organic Feel) ---
+const StarField = ({ count = 400 }) => {
   const pointsRef = useRef<THREE.Points>(null)
 
-  // Create random points
-  const [positions, sizes] = useMemo(() => {
+  // Generate attributes
+  const [positions, randomness, colors] = useMemo(() => {
     const positions = new Float32Array(count * 3)
-    const sizes = new Float32Array(count)
+    const randomness = new Float32Array(count)
+    const colors = new Float32Array(count * 3)
+
+    const colorPalette = [
+      new THREE.Color('#ffffff'), // White
+      new THREE.Color('#a5b4fc'), // Indigo-300
+      new THREE.Color('#c4b5fd'), // Violet-300
+      new THREE.Color('#67e8f9'), // Cyan-300
+    ]
+
     for (let i = 0; i < count; i++) {
-      positions[i * 3] = (Math.random() - 0.5) * 10 // x
-      positions[i * 3 + 1] = (Math.random() - 0.5) * 10 // y
-      positions[i * 3 + 2] = Math.random() * 10 // z
-      sizes[i] = Math.random()
+      // Spherical distribution for organic feel
+      const r = 10 + Math.random() * 30
+      const theta = 2 * Math.PI * Math.random()
+      const phi = Math.acos(2 * Math.random() - 1)
+
+      positions[i * 3] = r * Math.sin(phi) * Math.cos(theta) // x
+      positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta) // y
+      positions[i * 3 + 2] = r * Math.cos(phi) // z
+
+      randomness[i] = Math.random()
+
+      const color = colorPalette[Math.floor(Math.random() * colorPalette.length)]
+      colors[i * 3] = color.r
+      colors[i * 3 + 1] = color.g
+      colors[i * 3 + 2] = color.b
     }
-    return [positions, sizes]
+    return [positions, randomness, colors]
   }, [count])
 
+  const starUniforms = useMemo(
+    () => ({
+      uTime: { value: 0 },
+      uSpeed: { value: 2.0 }, // Base speed
+    }),
+    []
+  )
+
   useFrame((state) => {
-    if (!pointsRef.current) return
-    const time = state.clock.getElapsedTime()
-    // Move points towards camera
-    const positions = pointsRef.current.geometry.attributes.position.array as Float32Array
-    for (let i = 0; i < count; i++) {
-      let z = positions[i * 3 + 2]
-      z += 0.1 // Speed
-      if (z > 5) z = -5 // Reset loop
-      positions[i * 3 + 2] = z
+    if (pointsRef.current) {
+      // Pulse speed slightly for "breathing" effect
+      const material = pointsRef.current.material as THREE.ShaderMaterial
+      material.uniforms.uTime.value = state.clock.getElapsedTime()
+      material.uniforms.uSpeed.value = 2.0 + Math.sin(state.clock.getElapsedTime() * 0.5) * 0.5
+
+      // Subtle rotation for the whole field
+      pointsRef.current.rotation.z = state.clock.getElapsedTime() * 0.02
     }
-    pointsRef.current.geometry.attributes.position.needsUpdate = true
   })
+
+  // Vertex Shader: Handles movement and wrapping
+  const starVertexShader = `
+    uniform float uTime;
+    uniform float uSpeed;
+    attribute float aRandom;
+    attribute vec3 aColor;
+    varying vec3 vColor;
+    varying float vAlpha;
+
+    void main() {
+      vColor = aColor;
+      
+      vec3 pos = position;
+      
+      // Move Z towards camera
+      // Use randomness to make some stars faster
+      float speedCheck = uSpeed * (2.0 + aRandom); 
+      pos.z += uTime * speedCheck;
+      
+      // Wrap around Z for infinite loop (range -25 to 25)
+      pos.z = mod(pos.z, 50.0) - 25.0;
+      
+      vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+      gl_Position = projectionMatrix * mvPosition;
+      
+      // Size attenuation
+      // Make closer stars larger, further stars tiny
+      gl_PointSize = (30.0 * aRandom + 10.0) * (1.0 / -mvPosition.z);
+      
+      // Fade out as they get too close or too far to avoid popping
+      // Smoothstep for soft entry/exit
+      float dist = length(pos);
+      vAlpha = smoothstep(0.0, 5.0, abs(pos.z + 1.0)); // Fade near camera ?
+      vAlpha *= smoothstep(25.0, 10.0, abs(pos.z)); // Fade far
+    }
+  `
+
+  // Fragment Shader: Handles shape (soft glow) and color
+  const starFragmentShader = `
+    varying vec3 vColor;
+    varying float vAlpha;
+
+    void main() {
+      // Create soft circle
+      float r = distance(gl_PointCoord, vec2(0.5));
+      if (r > 0.5) discard;
+      
+      // Glow from center
+      float glow = 1.0 - (r * 2.0);
+      glow = pow(glow, 1.5); 
+      
+      vec3 finalColor = vColor + vec3(glow * 0.5); // Add white core
+      
+      gl_FragColor = vec4(finalColor, vAlpha * glow);
+    }
+  `
 
   return (
     <points ref={pointsRef}>
@@ -147,10 +233,31 @@ const WarpStars = ({ count = 200 }) => {
           count={count}
           array={positions}
           itemSize={3}
+          args={[positions, 3]}
         />
-        <bufferAttribute attach="attributes-size" count={count} array={sizes} itemSize={1} />
+        <bufferAttribute
+          attach="attributes-aRandom"
+          count={count}
+          array={randomness}
+          itemSize={1}
+          args={[randomness, 1]}
+        />
+        <bufferAttribute
+          attach="attributes-aColor"
+          count={count}
+          array={colors}
+          itemSize={3}
+          args={[colors, 3]}
+        />
       </bufferGeometry>
-      <pointsMaterial size={0.05} color="#ffffff" transparent opacity={0.8} sizeAttenuation />
+      <shaderMaterial
+        uniforms={starUniforms}
+        vertexShader={starVertexShader}
+        fragmentShader={starFragmentShader}
+        transparent={true}
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+      />
     </points>
   )
 }
@@ -166,7 +273,7 @@ export function HeroGL() {
       >
         <BackgroundShader />
         {/* Stars overlay - rendered on top due to render order or Z-placement */}
-        <WarpStars />
+        <StarField />
       </Canvas>
     </div>
   )
