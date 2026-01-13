@@ -9,21 +9,21 @@ const steps = [
     title: '萎凋',
     en: 'Wither',
     desc: '讓茶葉在陽光下呼吸，散發青草氣息，轉化為獨特的花果香。',
-    color: 'from-green-300 to-green-500' // Fresh
+    image: 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?q=80&w=1000&auto=format&fit=crop'
   },
   {
     id: '02',
     title: '殺青',
     en: 'Kill-Green',
     desc: '高溫炒製，停止發酵，鎖住茶葉最鮮活的瞬間。',
-    color: 'from-emerald-600 to-teal-800' // Heat/Darkening
+    image: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?q=80&w=1000&auto=format&fit=crop'
   },
   {
     id: '03',
     title: '揉捻',
     en: 'Roll',
     desc: '破壞葉脈，讓茶汁附著於表面，塑造茶葉的捲曲姿態。',
-    color: 'from-stone-700 to-ink-black' // Processed
+    image: 'https://images.unsplash.com/photo-1594631252845-29fc4cc8cde9?q=80&w=1000&auto=format&fit=crop'
   }
 ];
 
@@ -36,11 +36,22 @@ const CraftStep = ({ step, index, isEven }: { step: typeof steps[0], index: numb
         whileInView={{ opacity: 1, scale: 1 }}
         viewport={{ once: true, margin: "-20%" }}
         transition={{ duration: 0.8 }}
-        className="relative w-full md:w-1/2 aspect-square max-w-md"
+        className="relative w-full md:w-1/2 aspect-square max-w-md group"
       >
-        <div className={`absolute inset-0 rounded-full bg-gradient-to-br ${step.color} opacity-80 blur-2xl transform scale-90`} />
-        <div className="relative w-full h-full rounded-full border border-ink-black/10 bg-paper-white/50 backdrop-blur-sm overflow-hidden flex items-center justify-center">
-           <span className="text-9xl opacity-10 font-display">{step.id}</span>
+        {/* Blurred Background for Glow */}
+        <div 
+          className="absolute inset-0 rounded-full opacity-40 blur-3xl transform scale-90 group-hover:scale-100 transition-transform duration-700" 
+          style={{ backgroundImage: `url(${step.image})`, backgroundSize: 'cover' }}
+        />
+        
+        {/* Main Image Container */}
+        <div className="relative w-full h-full rounded-full border border-ink-black/10 overflow-hidden flex items-center justify-center">
+           <div 
+             className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 group-hover:scale-110"
+             style={{ backgroundImage: `url(${step.image})` }}
+           />
+           <div className="absolute inset-0 bg-ink-black/20 mix-blend-multiply" />
+           <span className="relative text-9xl opacity-30 font-display text-white z-10">{step.id}</span>
         </div>
       </motion.div>
 
@@ -77,7 +88,7 @@ const CraftSection = () => {
       <div className="absolute left-1/2 top-0 bottom-0 -translate-x-1/2 w-px h-full pointer-events-none">
         <svg className="h-full w-[200px] -translate-x-1/2 overflow-visible" preserveAspectRatio="none">
           <motion.path
-            d="M 100 0 Q 150 200 100 400 T 100 800 T 100 1200" // Simplified curve
+            d="M 100 0 Q 150 200 100 400 T 100 800 T 100 1200"
             fill="none"
             stroke="#D1D5DB"
             strokeWidth="1"

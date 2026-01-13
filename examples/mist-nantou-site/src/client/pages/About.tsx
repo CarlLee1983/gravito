@@ -6,8 +6,11 @@ const About = () => {
     <div className="min-h-screen bg-ink-black text-paper-white relative selection:bg-paper-white selection:text-ink-black">
       {/* Hero */}
       <section className="h-screen w-full flex items-center justify-center relative overflow-hidden">
-        {/* Background Video/Image Placeholder */}
-        <div className="absolute inset-0 opacity-20 bg-[url('https://images.unsplash.com/photo-1512418490979-92798cec1380?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center grayscale" />
+        {/* Background Image */}
+        <div 
+          className="absolute inset-0 opacity-40 bg-cover bg-center grayscale"
+          style={{ backgroundImage: "url('https://images.unsplash.com/photo-1512418490979-92798cec1380?q=80&w=2070&auto=format&fit=crop')" }}
+        />
         
         <motion.div 
           initial={{ opacity: 0, y: 50 }}
@@ -26,7 +29,7 @@ const About = () => {
         {/* Left Column: Vertical Text */}
         <div className="md:col-span-4 relative h-[200vh]">
           <div className="sticky top-32">
-            <h2 className="text-4xl font-display leading-relaxed writing-vertical-rl max-h-[80vh] ml-auto">
+            <h2 className="text-4xl font-display leading-relaxed writing-vertical-rl max-h-[80vh] ml-auto text-white/90">
               一輩子，只為做好<br/>
               這一杯茶。
             </h2>
@@ -38,10 +41,14 @@ const About = () => {
           {/* Story 1 */}
           <div className="flex flex-col gap-8">
             <div className="aspect-[4/3] w-full bg-stone-800 relative overflow-hidden group">
-               <div className="absolute inset-0 bg-stone-700/50 group-hover:scale-105 transition-transform duration-700 ease-out" />
-               <div className="absolute bottom-8 left-8 border border-white/20 px-4 py-2 font-display">製茶師 — 林阿公</div>
+               <div 
+                 className="absolute inset-0 bg-cover bg-center group-hover:scale-105 transition-transform duration-700 ease-out opacity-80"
+                 style={{ backgroundImage: "url('https://images.unsplash.com/photo-1594631252845-29fc4cc8cde9?q=80&w=1000&auto=format&fit=crop')" }}
+               />
+               <div className="absolute inset-0 bg-black/20" />
+               <div className="absolute bottom-8 left-8 border border-white/20 px-4 py-2 font-display bg-black/30 backdrop-blur-sm">製茶師 — 林阿公</div>
             </div>
-            <p className="font-body text-lg leading-loose text-white/80">
+            <p className="font-body text-lg leading-loose text-white/70">
               從十五歲開始採茶，林阿公的手指已經被茶汁染成了深褐色。他說，茶葉是有靈性的，你對它好，它就會回報你最好的香氣。每年的春茶採收季，他總是第一個到茶園，最後一個離開。
             </p>
           </div>
@@ -49,10 +56,14 @@ const About = () => {
           {/* Story 2 */}
           <div className="flex flex-col gap-8">
             <div className="aspect-[4/3] w-full bg-stone-800 relative overflow-hidden group">
-               <div className="absolute inset-0 bg-stone-600/50 group-hover:scale-105 transition-transform duration-700 ease-out" />
-               <div className="absolute bottom-8 left-8 border border-white/20 px-4 py-2 font-display">焙茶師 — 張師傅</div>
+               <div 
+                 className="absolute inset-0 bg-cover bg-center group-hover:scale-105 transition-transform duration-700 ease-out opacity-80"
+                 style={{ backgroundImage: "url('https://images.unsplash.com/photo-1576092768241-dec231879fc3?q=80&w=1000&auto=format&fit=crop')" }}
+               />
+               <div className="absolute inset-0 bg-black/20" />
+               <div className="absolute bottom-8 left-8 border border-white/20 px-4 py-2 font-display bg-black/30 backdrop-blur-sm">焙茶師 — 張師傅</div>
             </div>
-            <p className="font-body text-lg leading-loose text-white/80">
+            <p className="font-body text-lg leading-loose text-white/70">
               「火候，是茶的靈魂。」張師傅專注於炭焙工藝三十年。他堅持使用龍眼木炭，連續四十八小時不眠不休地看顧爐火，只為逼出烏龍茶深層的熟果香。
             </p>
           </div>
@@ -71,7 +82,7 @@ const About = () => {
           </p>
         </div>
         {/* Decor */}
-        <div className="absolute top-0 left-0 text-[30vw] font-display text-ink-black/5 leading-none -translate-y-1/2">對話</div>
+        <div className="absolute top-0 left-0 text-[30vw] font-display text-ink-black/5 leading-none -translate-y-1/2 select-none pointer-events-none">對話</div>
       </section>
     </div>
   );

@@ -11,7 +11,8 @@ const products = {
     desc: '來自海拔 2000 公尺的原始林區，雲霧繚繞孕育出的厚實果膠質感。',
     notes: '蘭花香 • 奶油感 • 甘甜',
     color: 'bg-amber-100',
-    accent: 'text-amber-800'
+    accent: 'text-amber-800',
+    image: 'https://images.unsplash.com/photo-1597318181409-cf64d0b5d8a2?q=80&w=1000&auto=format&fit=crop'
   },
   2: {
     name: '金萱',
@@ -20,7 +21,8 @@ const products = {
     desc: '獨特的天然奶香與桂花氣息，口感滑順，是入門台灣茶的最佳選擇。',
     notes: '奶香 • 桂花 • 清爽',
     color: 'bg-lime-100',
-    accent: 'text-lime-800'
+    accent: 'text-lime-800',
+    image: 'https://images.unsplash.com/photo-1627435601361-ec25f5b1d0e5?q=80&w=1000&auto=format&fit=crop'
   },
   3: {
     name: '紅玉',
@@ -29,7 +31,8 @@ const products = {
     desc: '台灣野生山茶與緬甸大葉種的完美結合，帶有薄荷與肉桂的獨特收斂性。',
     notes: '薄荷 • 肉桂 • 麥芽',
     color: 'bg-rose-100',
-    accent: 'text-rose-900'
+    accent: 'text-rose-900',
+    image: 'https://images.unsplash.com/photo-1563911892437-1feda0179e1b?q=80&w=1000&auto=format&fit=crop'
   },
   4: {
     name: '四季春',
@@ -38,7 +41,8 @@ const products = {
     desc: '生命力強韌的品種，香氣高揚奔放，帶有明顯的梔子花香。',
     notes: '梔子花 • 鮮爽 • 高揚',
     color: 'bg-emerald-100',
-    accent: 'text-emerald-800'
+    accent: 'text-emerald-800',
+    image: 'https://images.unsplash.com/photo-1606312619070-d48b706521bf?q=80&w=1000&auto=format&fit=crop'
   }
 };
 
@@ -60,14 +64,19 @@ const ProductDetail = () => {
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1 }}
-            className="relative z-10 text-center"
+            className="relative z-10 text-center w-full h-full flex items-center justify-center"
           >
             <div className="writing-vertical-rl text-[20vw] lg:text-[12vw] font-display text-ink-black/10 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none select-none">
               {product.name}
             </div>
-            {/* Placeholder for Product Image */}
-            <div className="w-64 h-80 bg-white/30 backdrop-blur-sm border border-white/40 shadow-2xl mx-auto relative transform rotate-[-5deg]">
-               <span className="absolute bottom-4 right-4 writing-vertical-rl font-display text-2xl text-ink-black/60">{product.name}</span>
+            
+            {/* Product Image Card */}
+            <div className="w-72 h-96 relative transform rotate-[-5deg] hover:rotate-0 transition-transform duration-700 ease-out shadow-2xl">
+               <div 
+                 className="absolute inset-0 bg-cover bg-center border-[8px] border-white"
+                 style={{ backgroundImage: `url(${product.image})` }}
+               />
+               <span className="absolute bottom-6 right-6 writing-vertical-rl font-display text-3xl text-white drop-shadow-md z-10">{product.name}</span>
             </div>
           </motion.div>
           
