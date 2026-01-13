@@ -1,5 +1,21 @@
 # example-ecommerce-mvc
 
+## 1.1.0
+
+### Minor Changes
+
+- **Architecture Refactoring**: Restructured project to follow Enterprise MVC pattern
+  - Added `config/` directory for centralized configuration
+  - Implemented Service Provider pattern with `Providers/`
+  - Created `bootstrap.ts` with 4-phase initialization lifecycle
+  - Reorganized HTTP layer: `Http/Controllers/`, `Http/Requests/`, `Http/Middleware/`
+  - Added `routes.ts` for centralized route definitions
+  - Created `database/migrations/` and `database/seeders/` structure
+  - Added `Services/` and `Repositories/` directories for future use
+  - Simplified `index.ts` to only handle application launch
+  - Added comprehensive `ARCHITECTURE.md` documentation
+
+
 ## 1.0.3
 
 ### Patch Changes

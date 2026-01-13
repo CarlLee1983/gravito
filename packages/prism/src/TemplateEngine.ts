@@ -327,6 +327,16 @@ export class TemplateEngine {
       .replace(/@endif/g, '{{/if}}')
       .replace(/@unless\s*\((.+?)\)/g, '{{#unless $1}}')
       .replace(/@endunless/g, '{{/unless}}')
+      .replace(/@inertia/g, '<div id="app" data-page=\'{{{ page }}}\'></div>')
+      .replace(/@vite\s*\(\s*\[\s*(['"])(.+?)\1\s*\]\s*\)/g, (_, quote, path) => {
+        return `{{#if isDev}}
+    <script type="module" src="http://localhost:5173/@vite/client"></script>
+    <script type="module" src="http://localhost:5173/${path}"></script>
+{{else}}
+    <script type="module" src="/build/${path}"></script>
+{{/if}}`
+      })
+      .replace(/@csrf/g, '<input type="hidden" name="_token" value="{{{ _token }}}">')
   }
 
   // --- Existing Methods (Preserved) ---

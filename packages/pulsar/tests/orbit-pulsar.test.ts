@@ -57,7 +57,8 @@ const createContext = ({
         if (name.toLowerCase() === 'cookie') {
           return cookie
         }
-        return headers[name] ?? headers[name.toLowerCase()]
+        const key = Object.keys(headers).find((k) => k.toLowerCase() === name.toLowerCase())
+        return key ? headers[key] : undefined
       },
     },
     set: (key: string, value: unknown) => {
