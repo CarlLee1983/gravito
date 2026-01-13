@@ -53,9 +53,8 @@
     
     <!-- Google Analytics (Safe Injection) -->
     <script>
-        // Check if env variable exists effectively during build/runtime
-        var gaId = '%VITE_GA_MEASUREMENT_ID%';
-        if (gaId && gaId.startsWith('G-') && gaId !== '%VITE_GA_MEASUREMENT_ID%') {
+        var gaId = '{{VITE_GA_MEASUREMENT_ID}}';
+        if (gaId && gaId.startsWith('G-')) {
             var script = document.createElement('script');
             script.async = true;
             script.src = 'https://www.googletagmanager.com/gtag/js?id=' + gaId;

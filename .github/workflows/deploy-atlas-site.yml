@@ -39,6 +39,11 @@ jobs:
         run: |
           set -e
           bun run build
+          # Manually inject GA ID into built index.html
+          if [ -n "$VITE_GA_MEASUREMENT_ID" ]; then
+            sed -i "s/{{VITE_GA_MEASUREMENT_ID}}/$VITE_GA_MEASUREMENT_ID/g" dist/index.html
+            echo "✅ GA ID injected into dist/index.html"
+          fi
         env:
           NODE_ENV: production
           VITE_GA_MEASUREMENT_ID: ${{ vars.GA_ATLAS_MEASUREMENT_ID }}
