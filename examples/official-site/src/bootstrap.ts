@@ -43,9 +43,10 @@ export async function bootstrap(options: AppConfig = {}): Promise<PlanetCore> {
 
   const defaultCsp = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline'",
-    "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data:",
+    "script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com https://www.googletagmanager.com",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "img-src 'self' data: https:",
+    "connect-src 'self' https://cloudflareinsights.com https://www.google-analytics.com ws: wss:",
     "object-src 'none'",
     "base-uri 'self'",
     "frame-ancestors 'none'",
