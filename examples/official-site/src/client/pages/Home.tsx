@@ -37,24 +37,10 @@ const HeroGL = React.lazy(() =>
 
 type Translation = Record<string, Record<string, string>>
 
-// 強化版 Hero 組件（Star Shuttle Effect）
+// 強化版 Hero 組件（Star Shuttle Effect via WebGL）
 const AdvancedHero = ({ t, locale }: { t: Translation; locale: string }) => {
   const { scrollY } = useScroll()
-  const _y1 = useTransform(scrollY, [0, 500], [0, 200])
   const opacity = useTransform(scrollY, [0, 300], [1, 0])
-  const _blur = useTransform(scrollY, [0, 300], [0, 10])
-
-  // 生成靜態的星星數據，避免 re-render
-  const stars = React.useMemo(() => {
-    return Array.from({ length: 150 }).map((_, i) => ({
-      id: i,
-      angle: Math.random() * 360 * (Math.PI / 180), // 隨機角度 (弧度)
-      distance: 800 + Math.random() * 1200, // 隨機飛行距離
-      duration: 1 + Math.random() * 2, // 隨機飛行時間
-      delay: Math.random() * 2, // 隨機延遲
-      size: Math.random() < 0.2 ? 2 : 1, // 隨機大小
-    }))
-  }, [])
 
   const titleCharItems = (t.hero.title || 'GRAVITO').split('').map((char, index) => ({
     id: `hero-char-${index}-${char}`,
@@ -70,7 +56,7 @@ const AdvancedHero = ({ t, locale }: { t: Translation; locale: string }) => {
 
   return (
     <section className="relative h-[120vh] flex items-center justify-center overflow-hidden bg-void">
-      {/* 0. Hero Background (WebGL) */}
+      {/* 0. Hero Background & Stars (WebGL) */}
       <motion.div style={{ opacity }} className="absolute inset-0 z-0">
         {isClient && (
           <React.Suspense fallback={null}>
@@ -80,45 +66,7 @@ const AdvancedHero = ({ t, locale }: { t: Translation; locale: string }) => {
         <div className="absolute inset-0 bg-gradient-to-b from-void/20 via-transparent to-void" />
       </motion.div>
 
-      {/* 1. Star Shuttle Effect */}
-      <motion.div
-        style={{ opacity }}
-        className="absolute inset-0 z-10 perspective-[500px] overflow-hidden"
-      >
-        {stars.map((star) => (
-          <motion.div
-            key={star.id}
-            initial={{
-              x: 0,
-              y: 0,
-              z: 0,
-              opacity: 0,
-              scale: 0,
-            }}
-            animate={{
-              x: Math.cos(star.angle) * star.distance,
-              y: Math.sin(star.angle) * star.distance,
-              z: 500, // 模擬向鏡頭衝來
-              scale: [0.1, star.size], // 由小變大
-              opacity: [0, 1, 0], // 進場顯現，接近邊緣消失
-            }}
-            transition={{
-              duration: star.duration,
-              repeat: Infinity,
-              delay: star.delay,
-              ease: 'easeIn', // 加速感
-            }}
-            className="absolute top-1/2 left-1/2 bg-white rounded-full shadow-[0_0_4px_white]"
-            style={{
-              width: star.size,
-              height: star.size * (star.size === 2 ? 8 : 4), // 較大的星星拉得更長，製造速度線感
-              rotate: (star.angle * 180) / Math.PI + 90, // 根據角度旋轉，讓線條指向中心
-            }}
-          />
-        ))}
-      </motion.div>
-
-      {/* 5. 浮動文字層 (Staggered Intro) */}
+      {/* 1. 浮動文字層 (Staggered Intro) */}
       <div className="relative z-30 flex flex-col items-center">
         <div className="flex flex-wrap justify-center overflow-hidden pb-2 px-4 gap-x-2 md:gap-x-0">
           {titleCharItems.map((item) => (
@@ -154,7 +102,7 @@ const AdvancedHero = ({ t, locale }: { t: Translation; locale: string }) => {
           {t.hero.tagline}
         </motion.p>
 
-        {/* 6. CTA Buttons */}
+        {/* 2. CTA Buttons */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -201,7 +149,7 @@ const GravitoLanding = ({ t, locale }: HomeProps) => {
         <meta name="description" content={t.site.description} />
         <meta name="keywords" content={t.site.keywords} />
       </Head>
-      {/* Hero Section - 強化版引力透鏡效果 */}
+      {/* Hero Section */}
       <AdvancedHero t={t} locale={locale} />
 
       {/* Tech Stack Section */}
@@ -375,7 +323,7 @@ const TechIcon = ({ type }: { type: string }) => {
         </defs>
         {/* Shadow */}
         <path
-          d="M71.09,20.74c-.16-.17-.33-.34-.5-.5s-.33-.34-.5-.5-.33-.34-.5-.5-.33-.34-.5-.5-.33-.34-.5-.5-.33-.34-.5-.5A26.46,26.46,0,0,1,75.5,35.7c0,16.57-16.82,30.05-37.5,30.05-11.58,0-21.94-4.23-28.83-10.86l.5.5.5.5.5.5.5.5.5.5.5.5.5.5C19.55,65.3,30.14,69.75,42,69.75c20.68,0,37.5-13.48,37.5-30C79.5,32.69,76.46,26,71.09,20.74Z"
+          d="M71.09,20.74c-.16-.17-.33-.34-.5-.5s-.33-.34-.5-.5-.33-.34-.5-.5-.33-.34-.5-.5-.33-.34-.5-.5A26.46,26.46,0,0,1,75.5,35.7c0,16.57-16.82,30.05-37.5,30.05-11.58,0-21.94-4.23-28.83-10.86l.5.5.5.5.5.5.5.5.5.5.5.5.5.5C19.55,65.3,30.14,69.75,42,69.75c20.68,0,37.5-13.48,37.5-30C79.5,32.69,76.46,26,71.09,20.74Z"
           fill="#CCBEA7"
           opacity="0.3"
         />
