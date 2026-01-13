@@ -1,9 +1,11 @@
 import { motion, useMotionValue, useSpring } from 'framer-motion'
 import { useEffect, useState } from 'react'
+import { useUiSound } from '../hooks/useUiSound'
 
 export const MagneticCursor = () => {
   const cursorX = useMotionValue(-100)
   const cursorY = useMotionValue(-100)
+  const { play } = useUiSound()
 
   const springConfig = { damping: 25, stiffness: 700 }
   const cursorXSpring = useSpring(cursorX, springConfig)
@@ -18,7 +20,10 @@ export const MagneticCursor = () => {
       cursorY.set(e.clientY - 16)
     }
 
-    const handleMouseDown = () => setIsClicking(true)
+    const handleMouseDown = () => {
+      setIsClicking(true)
+      play('click')
+    }
     const handleMouseUp = () => setIsClicking(false)
 
     const handleMouseOver = (e: MouseEvent) => {
@@ -30,6 +35,7 @@ export const MagneticCursor = () => {
         target.closest('button') ||
         target.classList.contains('cursor-magnetic')
       ) {
+        if (!isHovering) play('hover')
         setIsHovering(true)
       } else {
         setIsHovering(false)
@@ -47,8 +53,7 @@ export const MagneticCursor = () => {
       window.removeEventListener('mouseup', handleMouseUp)
       window.removeEventListener('mouseover', handleMouseOver)
     }
-  }, [cursorX, cursorY])
-
+  }, [cursorX, cursorY, isHovering, play])
   return (
     <>
       {/* Main Cursor Dot */}

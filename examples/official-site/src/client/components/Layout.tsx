@@ -1,16 +1,6 @@
 import { usePage } from '@inertiajs/react'
 import { AnimatePresence, motion } from 'framer-motion'
-import {
-  ArrowUpRight,
-  Book,
-  Cpu,
-  Github,
-  Home as HomeIcon,
-  Info,
-  Menu,
-  Rocket,
-  Zap,
-} from 'lucide-react'
+import { ArrowUpRight, Book, Github, Home as HomeIcon, Info, Menu, Rocket, Zap } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTrans } from '../hooks/useTrans'
 import Logo from './Logo'
@@ -29,7 +19,8 @@ interface PageProps {
 
 export default function Layout({ children, noPadding = false }: LayoutProps) {
   const { trans } = useTrans()
-  const { locale } = usePage<PageProps>().props
+  const { props, url } = usePage<PageProps>()
+  const { locale } = props
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
@@ -244,7 +235,19 @@ export default function Layout({ children, noPadding = false }: LayoutProps) {
       </header>
 
       {/* Main Content */}
-      <main className={`flex-1 relative z-10 ${noPadding ? 'pt-0' : 'pt-32'}`}>{children}</main>
+      <main className={`flex-1 relative z-10 ${noPadding ? 'pt-0' : 'pt-32'}`}>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={url}
+            initial={{ opacity: 0, y: 20, filter: 'blur(10px)' }}
+            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+            exit={{ opacity: 0, y: -20, filter: 'blur(10px)' }}
+            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+          >
+            {children}
+          </motion.div>
+        </AnimatePresence>
+      </main>
 
       {/* Footer */}
       <footer className="relative z-10 border-t border-white/5 bg-void/80 backdrop-blur-md py-12 px-6">
