@@ -14,12 +14,12 @@ export default {
         "mist-gray": "#D1D5DB",
       },
       fontFamily: {
-        display: ['"Ma Shan Zheng"', "cursive"],
+        display: ['"Long Cang"', "cursive"], // Switched to Long Cang
         body: ['"Noto Serif TC"', "serif"],
         sans: ['"Inter"', "sans-serif"],
       },
       backgroundImage: {
-        'paper-texture': "url('/noise.png')", // Placeholder for noise texture
+        'paper-texture': "url('/noise.png')",
       }
     },
   },
