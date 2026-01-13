@@ -123,6 +123,7 @@ export class OrbitPulsar implements GravitoOrbit {
           const parts = k.split('.')
           let curr: any = data
           for (const p of parts) {
+            if (p === '__proto__' || p === 'constructor' || p === 'prototype') return d
             if (curr == null || typeof curr !== 'object') return d
             curr = curr[p]
           }
@@ -132,10 +133,15 @@ export class OrbitPulsar implements GravitoOrbit {
           const parts = k.split('.')
           let curr = data
           for (let i = 0; i < parts.length - 1; i++) {
-            if (!(parts[i] in curr)) curr[parts[i]] = {}
-            curr = curr[parts[i]]
+            const part = parts[i]
+            if (part === '__proto__' || part === 'constructor' || part === 'prototype') return
+            if (!(part in curr)) curr[part] = {}
+            curr = curr[part]
           }
-          curr[parts[parts.length - 1]] = v
+          const lastPart = parts[parts.length - 1]
+          if (lastPart === '__proto__' || lastPart === 'constructor' || lastPart === 'prototype')
+            return
+          curr[lastPart] = v
           markDirty()
         },
         set: (k: string, v: any) => session.put(k, v),
@@ -143,10 +149,15 @@ export class OrbitPulsar implements GravitoOrbit {
           const parts = k.split('.')
           let curr = data
           for (let i = 0; i < parts.length - 1; i++) {
-            if (!(parts[i] in curr)) return
-            curr = curr[parts[i]]
+            const part = parts[i]
+            if (part === '__proto__' || part === 'constructor' || part === 'prototype') return
+            if (!(part in curr)) return
+            curr = curr[part]
           }
-          delete curr[parts[parts.length - 1]]
+          const lastPart = parts[parts.length - 1]
+          if (lastPart === '__proto__' || lastPart === 'constructor' || lastPart === 'prototype')
+            return
+          delete curr[lastPart]
           markDirty()
         },
         regenerate: () => {
