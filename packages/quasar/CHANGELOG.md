@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.2.0
+
+### Minor Changes
+
+- Implement several more examples and fix module issues, including:
+  - Support middleware in core route definitions.
+  - Improve Atlas driver loading and dependency injection.
+  - Add PostgreSQL support to Ecommerce MVC example.
+  - Fix internal type resolution issues across packages.
+
 All notable changes to `@gravito/quasar` will be documented in this file.
 
 ## [1.1.0] - 2026-01-05
@@ -7,6 +17,7 @@ All notable changes to `@gravito/quasar` will be documented in this file.
 ### Added - Queue Probes & Bridges (2026-01-05)
 
 #### Queue Probes (Statistics Monitoring)
+
 - **BullMQProbe**: Monitor BullMQ v5+ queue statistics
   - Tracks: `wait`, `active`, `delayed`, `failed` counts
   - Redis key structure: `{prefix}:{name}:{state}`
@@ -17,6 +28,7 @@ All notable changes to `@gravito/quasar` will be documented in this file.
 - Existing probes: `BullProbe` (Bull v3/v4), `LaravelProbe`, `RedisListProbe`
 
 #### Bridges (Real-time Job Tracking)
+
 - **BaseZenithBridge**: Abstract base class for all bridges
   - Handles Redis log publishing to `flux_console:logs`
   - Manages event listener lifecycle
@@ -33,6 +45,7 @@ All notable changes to `@gravito/quasar` will be documented in this file.
   - Lifecycle management
 
 #### Documentation
+
 - Added comprehensive `README.md` with:
   - Installation and quick start guides
   - Configuration reference
@@ -42,6 +55,7 @@ All notable changes to `@gravito/quasar` will be documented in this file.
 - Updated `package.json` description
 
 #### Testing
+
 - Added `BullMQProbe.test.ts` (3 tests, all passing)
 - Added `BeeQueueProbe.test.ts` (4 tests, all passing)
 - Added `BullMQBridge.test.ts` (4 tests, all passing)
@@ -50,6 +64,7 @@ All notable changes to `@gravito/quasar` will be documented in this file.
 ### Technical Details
 
 #### Dual Monitoring Architecture
+
 ```
 ┌─────────────────────────────────────────┐
 │ Application                             │
@@ -71,11 +86,13 @@ All notable changes to `@gravito/quasar` will be documented in this file.
 ```
 
 #### Breaking Changes
+
 None. All changes are additive and backward compatible.
 
 ## [1.0.0] - Previous Release
 
 Initial release with:
+
 - System metrics monitoring (CPU, memory, process)
 - Basic queue probes (Bull v3/v4, Laravel, Redis)
 - Remote control capabilities

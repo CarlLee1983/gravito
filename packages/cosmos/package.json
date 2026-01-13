@@ -1,6 +1,6 @@
 {
   "name": "@gravito/cosmos",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "Internationalization orbit for Gravito framework",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

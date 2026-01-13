@@ -1,5 +1,16 @@
 # my-gravito-static-site
 
+## 0.1.3
+
+### Patch Changes
+
+- Updated dependencies
+  - @gravito/core@1.2.0
+  - @gravito/constellation@3.0.0
+  - @gravito/ion@3.0.0
+  - @gravito/prism@3.0.0
+  - @gravito/stasis@3.0.0
+
 ## 0.1.2
 
 ### Patch Changes

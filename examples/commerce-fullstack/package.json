@@ -1,6 +1,6 @@
 {
   "name": "@gravito/example-commerce-fullstack",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "private": true,
   "scripts": {
     "dev": "bun run src/entry-server.ts",

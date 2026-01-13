@@ -1,5 +1,14 @@
 # workflow-demo
 
+## 0.1.5
+
+### Patch Changes
+
+- Updated dependencies
+  - @gravito/core@1.2.0
+  - @gravito/atlas@1.2.0
+  - @gravito/pulse@3.0.0
+
 ## 0.1.4
 
 ### Patch Changes

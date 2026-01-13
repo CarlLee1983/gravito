@@ -1,5 +1,14 @@
 # example-spectrum-verification
 
+## 1.0.4
+
+### Patch Changes
+
+- Updated dependencies
+  - @gravito/core@1.2.0
+  - @gravito/atlas@1.2.0
+  - @gravito/spectrum@3.0.0
+
 ## 1.0.3
 
 ### Patch Changes
