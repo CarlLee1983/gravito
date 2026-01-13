@@ -17,7 +17,7 @@ const apiLink = computed(() => {
         <div class="flex flex-col gap-4">
             <div class="flex items-center gap-2">
                 <span class="text-xl font-bold font-mono text-white">@gravito/<span class="text-atlas-cyan">atlas</span></span>
-                <span class="px-1.5 py-0.5 rounded text-[10px] bg-white/10 text-gray-400 border border-white/5">v1.0.0-beta.1</span>
+                <span class="px-1.5 py-0.5 rounded text-[10px] bg-white/10 text-gray-400 border border-white/5">v1.1.0</span>
             </div>
             <p class="text-gray-500 text-xs leading-relaxed max-w-xs">
                 {{ t('hero.desc') }}

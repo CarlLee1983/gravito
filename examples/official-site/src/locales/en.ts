@@ -195,8 +195,9 @@ export default {
     kernelDesc:
       'An ultra-minimalist core that handles only the most critical lifecycles and I/O coordination. It stays out of your way until you need it.',
     orbitTitle: 'Kinetic Modules',
-    orbitDesc:
-      'Want React? Add Ion. Want Vue? Add Ion. Want HTML? Add Prism. Want SEO? Add Luminosity. Need a Database? Add Atlas (not available in v1.0). Load only what you need, when you need it.',
+    galaxy_desc:
+      'Want React? Add Ion. Want Vue? Add Ion. Want HTML? Add Prism. Want SEO? Add Luminosity. Need a Database? Add Atlas. Load only what you need, when you need it.',
+    galaxy_atlas_stable: 'Atlas (ORM) — High-Performance Bun-Native ORM (v1.1.0 released).',
     scaleTitle: 'Infinite Scalability',
     scaleDesc:
       "From a single-file API to a global enterprise system, the architecture adapts dynamically to your project's gravity.",
