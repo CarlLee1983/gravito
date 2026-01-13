@@ -72,7 +72,10 @@ export default defineConfig({
       'date-icon-box',
       'w-10 h-10 rounded-xl bg-white dark:bg-gray-800 flex items-center justify-center text-brand-600 dark:text-brand-400 shadow-sm mr-4 group-hover:scale-110 transition-transform',
     ],
-    ['date-native-input', 'absolute inset-0 opacity-0 cursor-pointer z-10'],
+    [
+      'date-native-input',
+      'absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 block appearance-none',
+    ],
 
     // --- Layout ---
 
