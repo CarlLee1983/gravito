@@ -5,6 +5,7 @@ import Navigation from './components/Navigation';
 import About from './pages/About';
 import Home from './pages/Home';
 import ProductDetail from './pages/ProductDetail';
+import Shop from './pages/Shop';
 import Visit from './pages/Visit';
 
 // Scroll to top on route change
@@ -25,6 +26,7 @@ const App = () => {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
+        <Route path="/shop" element={<Shop />} />
         <Route path="/visit" element={<Visit />} />
         <Route path="/product/:id" element={<ProductDetail />} />
       </Routes>

@@ -2,9 +2,9 @@ import { motion } from 'framer-motion';
 import { ArrowRight, MapPin } from 'lucide-react';
 import React from 'react';
 import { Link } from 'react-router-dom';
+import CollectionTeaser from '../components/CollectionTeaser'; // Changed from ShopSection
 import CraftSection from '../components/CraftSection';
 import HeroSection from '../components/HeroSection';
-import ShopSection from '../components/ShopSection';
 
 const VisitTeaser = () => {
   return (
@@ -37,22 +37,22 @@ const Home = () => {
       {/* Section 2: The Craft */}
       <CraftSection />
       
-      {/* Section 3: The Shop */}
-      <ShopSection />
+      {/* Section 3: The Collection Teaser (Replaces Product List) */}
+      <CollectionTeaser />
 
-      {/* Section 4: Visit Teaser (New) */}
+      {/* Section 4: Visit Teaser */}
       <VisitTeaser />
 
       {/* Footer */}
       <footer className="bg-ink-black py-24 px-8 text-paper-white/60 text-center border-t border-white/10">
         <p className="font-display text-3xl mb-12 text-paper-white">雲霧南投</p>
         
-        {/* Site Map (New) */}
+        {/* Site Map */}
         <div className="flex flex-wrap justify-center gap-8 md:gap-16 text-sm font-sans tracking-widest uppercase mb-16">
           <Link to="/" className="hover:text-white transition-colors">首頁</Link>
+          <Link to="/shop" className="hover:text-white transition-colors">韻味長廊</Link>
           <Link to="/about" className="hover:text-white transition-colors">職人誌</Link>
           <Link to="/visit" className="hover:text-white transition-colors">預約品茗</Link>
-          <Link to="/#shop" className="hover:text-white transition-colors">線上商城</Link>
         </div>
 
         {/* Socials */}

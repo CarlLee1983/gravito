@@ -5,9 +5,9 @@ import { Link, useLocation } from 'react-router-dom';
 
 const navItems = [
   { path: '/', label: '首頁', en: 'Home' },
+  { path: '/shop', label: '韻味長廊', en: 'The Collection' }, // Updated Link and Label
   { path: '/about', label: '職人誌', en: 'Artisans' },
   { path: '/visit', label: '預約品茗', en: 'Visit' },
-  { path: '/#shop', label: '韻味商城', en: 'Shop' },
 ];
 
 const Navigation = () => {
