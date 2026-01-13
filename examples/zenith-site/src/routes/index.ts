@@ -1,4 +1,5 @@
-import type { GravitoContext, GravitoMiddleware, GravitoNext, PlanetCore } from '@gravito/core'
+import type { GravitoMiddleware, PlanetCore, RouteGroup, Router } from '@gravito/core'
+import type { InertiaService } from '@gravito/ion'
 import { ApiController } from '../controllers/ApiController'
 import { HomeController } from '../controllers/HomeController'
 
@@ -12,19 +13,21 @@ export function registerRoutes(core: PlanetCore): void {
   const router = core.router
 
   // Middleware to set locale
-  const setLocale = (locale: string) => async (c: GravitoContext, next: GravitoNext) => {
-    c.set('locale', locale)
-    const inertia = c.get('inertia')
-    if (inertia) {
-      ;(inertia as any).share({
-        locale,
-      })
+  const setLocale =
+    (locale: string): GravitoMiddleware =>
+    async (c, next) => {
+      c.set('locale', locale)
+      const inertia = c.get('inertia') as InertiaService | undefined
+      if (inertia) {
+        inertia.share('locale', locale)
+        inertia.share('ga_id', process.env.VITE_GA_MEASUREMENT_ID)
+      }
+      await next()
+      return undefined
     }
-    return (await next()) as any
-  }
 
   // Helper to register routes for a locale
-  const registerRoutesForLocale = (group: any, locale: string) => {
+  const registerRoutesForLocale = (group: Router | RouteGroup, _locale: string) => {
     group.get('', [HomeController, 'index'])
     group.get('/', [HomeController, 'index'])
     group.get('/about', [HomeController, 'about'])
@@ -38,7 +41,7 @@ export function registerRoutes(core: PlanetCore): void {
   // ─────────────────────────────────────────────
   // Default Routes (English)
   // ─────────────────────────────────────────────
-  router.middleware(setLocale('en')).group((root: any) => {
+  router.middleware(setLocale('en')).group((root: Router | RouteGroup) => {
     registerRoutesForLocale(root, 'en')
   })
 
@@ -48,7 +51,7 @@ export function registerRoutes(core: PlanetCore): void {
   router
     .prefix('/en')
     .middleware(setLocale('en'))
-    .group((en: any) => {
+    .group((en: Router | RouteGroup) => {
       registerRoutesForLocale(en, 'en')
     })
 
@@ -58,7 +61,7 @@ export function registerRoutes(core: PlanetCore): void {
   router
     .prefix('/zh-TW')
     .middleware(setLocale('zh-TW'))
-    .group((zhTW: any) => {
+    .group((zhTW: Router | RouteGroup) => {
       registerRoutesForLocale(zhTW, 'zh-TW')
     })
 

@@ -44,6 +44,14 @@ Gravito is a vast galaxy composed of numerous **Kinetic Modules**. These modules
     <code class="module-pkg">@gravito/beam</code>
     <p class="module-desc">The Particle Beam. A lightweight client communication tool providing type-safe API call interfaces for the frontend.</p>
   </div>
+
+  <div class="module-card group">
+    <div class="card-accent"></div>
+    <span class="module-code">ORBIT</span>
+    <h3 class="module-title">GraphQL</h3>
+    <code class="module-pkg">@gravito/graphql</code>
+    <p class="module-desc">The Orbit. Zero-config GraphQL integration powered by Yoga, bringing modern API capabilities to your galaxy.</p>
+  </div>
 </div>
 
 ## Data & Storage
@@ -315,6 +323,14 @@ Gravito is a vast galaxy composed of numerous **Kinetic Modules**. These modules
     <h3 class="module-title">Create Gravito App</h3>
     <code class="module-pkg">create-gravito-app</code>
     <p class="module-desc">Starter bootstrapper that scaffolds new Gravito apps with curated templates.</p>
+  </div>
+
+  <div class="module-card group">
+    <div class="card-accent"></div>
+    <span class="module-code">ASTRAL</span>
+    <h3 class="module-title">Astral OpenAPI</h3>
+    <code class="module-pkg">@gravito/astral</code>
+    <p class="module-desc">The Projection. Automated OpenAPI (Swagger) documentation generator from your Zod schemas and routes.</p>
   </div>
 </div>
 

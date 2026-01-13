@@ -16,7 +16,7 @@ export class DocsController {
       path = path.replace('/en', '')
     }
 
-    const slug = path.replace(/^\/docs\/?/, '') || 'introduction'
+    const slug = path.replace(/^\/docs\/?/, '').replace(/\/$/, '') || 'introduction'
 
     // Pass locale to DocsService
     const page = await DocsService.getDoc(slug, _locale)

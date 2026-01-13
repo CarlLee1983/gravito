@@ -10,7 +10,7 @@ export default {
     subtitle: 'ATLAS:',
     title_line1: 'STRUCTURING THE CHAOS',
     title_line2: 'AT THE EDGE OF GRAVITY.',
-    desc: 'The universal database interface for the Gravito ecosystem. Query, migrate, and structure your data with cosmic precision.',
+    desc: 'The universal database interface for the Gravito ecosystem. Unify SQL and NoSQL workflows with a precise, fluent API for PostgreSQL, MySQL, SQLite, and MongoDB.',
     demo_label: 'LIVE DEMO',
     demo_comment: '// Initialize Atlas Connection & Query',
     benchmark: {

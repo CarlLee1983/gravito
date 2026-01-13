@@ -146,20 +146,48 @@ export default {
     titleHighlight: '技術共鳴',
     subtitle: 'Zenith 橫跨不同技術棧、語言與基礎設施，實現全域數據同步。',
 
-    laravel: {
-      title: 'Laravel Zenith',
-      description: '原生 PHP 監視器。只需一行代碼，即可點燃 Laravel 應用的絕對可觀測性。',
-      feature1: '自動發現任務類型',
-      feature2: '全自動異常捕獲',
-      feature3: '遠端 Worker 協調',
+    core: {
+      title: '控制平面核心',
+      description:
+        '以您的方式部署中央儀表板。將其作為獨立微服務運行，或直接嵌入您現有的基礎架構中。',
+      docker_feature: '生產級 Docker 映像檔',
+      node_feature: 'Express/Gravito 中間件',
+      db_feature: '支援 MySQL/PostgreSQL/SQLite',
     },
 
-    quasar: {
-      title: 'Quasar 代理',
-      description: '為多節點監控打造的分佈式代理。使用 Go 語言編寫，具備極致速度與極低資源佔用。',
-      feature1: '跨雲節點編排',
-      feature2: '實時資源監控 (CPU/RAM)',
-      feature3: '低延遲心跳協議',
+    laravel: {
+      title: 'Laravel Zenith',
+      description:
+        '原生應用內 (In-App) 回報器。深度整合至 Laravel，精確捕捉日誌、HTTP 指標與隊列事件。',
+      feature1: '應用內事件即時回報',
+      feature2: '即時日誌串流',
+      feature3: '原生 Artisan 指令整合',
+    },
+
+    quasar_lib: {
+      title: 'Quasar (Node/Bun)',
+      description:
+        '適用於 Node.js、Bun 與 Deno 的通用運行時庫。直接嵌入 Worker 代碼，實現細粒度的任務追蹤。',
+      feature1: '細粒度任務生命週期追蹤',
+      feature2: '零開銷的橋接架構',
+      feature3: '支援 BullMQ 與 Bee-Queue',
+    },
+
+    quasar_go: {
+      title: 'Quasar-Go 代理',
+      description: '獨立二進制代理程式。部署於任何主機，無需修改代碼即可監控系統資源與外部隊列。',
+      feature1: '零依賴單一二進制檔',
+      feature2: '系統級指標監控 (CPU/RAM)',
+      feature3: '具備遠端控制能力',
+    },
+
+    astral: {
+      title: 'Astral OpenAPI',
+      description:
+        '影子契約文檔引擎。在不向代碼添加任何裝飾器的情況下，生成 OpenAPI 規格與 Swagger UI。',
+      feature1: '影子契約 (Shadow-Contract) 架構',
+      feature2: '無代碼污染設計',
+      feature3: '自動 DTO 類型推斷',
     },
 
     ecosystem: {

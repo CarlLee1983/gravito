@@ -1,4 +1,4 @@
-import { usePage } from '@inertiajs/react'
+import { Head, usePage } from '@inertiajs/react'
 import { motion } from 'framer-motion'
 import {
   Activity,
@@ -7,8 +7,6 @@ import {
   BookOpen,
   Clock,
   Database,
-  Github,
-  Globe,
   HardDrive,
   LayoutDashboard,
   ListTree,
@@ -31,9 +29,19 @@ interface HomeProps {
 
 export default function Home() {
   const { trans, locale } = useTrans()
-  const props = usePage<HomeProps>().props
+  const _props = usePage<HomeProps>().props
+
+  const getLink = (path: string) => {
+    if (locale === 'en') return path
+    return `/${locale}${path}`
+  }
+
   return (
     <div className="min-h-screen bg-zenith-void text-white selection:bg-zenith-accent selection:text-zenith-900 overflow-x-hidden font-sans">
+      <Head>
+        <title>{`${trans('hero.title')} ${trans('hero.titleHighlight')} - Gravito Zenith`}</title>
+        <meta name="description" content={trans('hero.description')} />
+      </Head>
       <Navbar />
 
       {/* Hero Section */}
@@ -105,19 +113,19 @@ export default function Home() {
                 </p>
 
                 <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
-                  <button
-                    type="button"
+                  <StaticLink
+                    href={getLink('/features')}
                     className="w-full sm:w-auto px-8 py-3 bg-zenith-500 hover:bg-zenith-400 text-white rounded font-medium transition-all shadow-lg shadow-zenith-500/25 flex items-center justify-center gap-2 group"
                   >
                     {trans('hero.getStarted')}{' '}
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                  </button>
-                  <button
-                    type="button"
+                  </StaticLink>
+                  <StaticLink
+                    href={getLink('/integrations')}
                     className="w-full sm:w-auto px-8 py-3 bg-transparent border border-white/20 hover:bg-white/5 text-white rounded font-medium transition-colors flex items-center justify-center gap-2"
                   >
                     <BookOpen className="w-4 h-4" /> {trans('hero.documentation')}
-                  </button>
+                  </StaticLink>
                 </div>
               </motion.div>
             </div>

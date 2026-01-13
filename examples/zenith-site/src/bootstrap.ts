@@ -47,7 +47,8 @@ export async function bootstrap(options: AppConfig = {}) {
   const defaultCsp = [
     "default-src 'self'",
     `script-src 'self' 'unsafe-inline'${devCsp}`,
-    `style-src 'self' 'unsafe-inline'${devCsp}`,
+    `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com${devCsp}`,
+    `font-src 'self' data: https://fonts.gstatic.com`,
     `img-src 'self' data:${devCsp}`,
     `connect-src 'self'${devCsp}`,
     "object-src 'none'",
@@ -76,10 +77,36 @@ export async function bootstrap(options: AppConfig = {}) {
 
   // 3. Static files
   const staticAssets = serveStatic({ root: './' }) as unknown as GravitoMiddleware
-  const favicon = serveStatic({ path: './static/favicon.ico' }) as unknown as GravitoMiddleware
 
-  core.adapter.use('/static/*', staticAssets)
-  core.adapter.route('get', '/favicon.ico', favicon)
+  // Priority handler for favicons using direct path
+  core.adapter.use('*', async (c, next) => {
+    const isIcon =
+      c.req.path === '/static/favicon.png' ||
+      c.req.path === '/favicon.ico' ||
+      c.req.path === '/static/favicon.svg'
+
+    if (isIcon) {
+      let fileName = 'favicon.png'
+      if (c.req.path === '/favicon.ico') fileName = 'favicon.ico'
+      if (c.req.path === '/static/favicon.svg') fileName = 'favicon.svg'
+
+      const filePath = new URL(`../static/${fileName}`, import.meta.url).pathname
+      const contentType = fileName.endsWith('.svg')
+        ? 'image/svg+xml'
+        : fileName.endsWith('.png')
+          ? 'image/png'
+          : 'image/x-icon'
+
+      return c.body(Bun.file(filePath), 200, { 'Content-Type': contentType })
+    }
+    await next()
+    return undefined
+  })
+
+  // General static files
+  core.adapter.use('/static/*', async (c, next) => {
+    return await staticAssets(c, next)
+  })
 
   // 4. Vite Proxy (開發模式) - 必須在路由之前
   if (process.env.NODE_ENV !== 'production') {
@@ -87,7 +114,8 @@ export async function bootstrap(options: AppConfig = {}) {
     // 注入 isDev 變數供模板使用
     core.adapter.use('*', async (c: GravitoContext, next: GravitoNext) => {
       c.set('isDev', true)
-      return (await next()) as any
+      await next()
+      return undefined
     })
   }
 

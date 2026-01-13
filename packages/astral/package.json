@@ -1,0 +1,40 @@
+{
+  "name": "@gravito/astral",
+  "version": "0.1.0",
+  "description": "Schema-driven OpenAPI generator for Gravito with Swagger UI support",
+  "module": "./dist/index.js",
+  "main": "./dist/index.cjs",
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "bun run build.ts",
+    "test": "bun test",
+    "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@gravito/core": "workspace:*",
+    "@gravito/impulse": "workspace:*",
+    "zod": "^3.23.0",
+    "zod-to-json-schema": "^3.23.0"
+  },
+  "devDependencies": {
+    "bun-types": "latest",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
