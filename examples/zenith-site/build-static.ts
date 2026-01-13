@@ -85,7 +85,21 @@ async function build() {
   try {
     const res = await core.adapter.fetch(new Request('http://localhost/'))
     if (res.status === 200) {
-      const html = await res.text()
+      let html = await res.text()
+      const gaId = process.env.VITE_GA_ID
+      if (gaId) {
+        console.log(`💉 Injecting GA Script: ${gaId.substring(0, 4)}***`)
+        html = html.replace(
+          '<!-- Google Analytics Placeholder -->',
+          `<script async src="https://www.googletagmanager.com/gtag/js?id=${gaId}"></script>
+           <script>
+             window.dataLayer = window.dataLayer || [];
+             function gtag(){dataLayer.push(arguments);}
+             gtag('js', new Date());
+             gtag('config', '${gaId}');
+           </script>`
+        )
+      }
       const indexPath = join(outputDir, 'index.html')
       await writeFile(indexPath, html)
       smStream.add({ url: `${baseUrl}/`, priority: 1.0 })
@@ -123,7 +137,20 @@ async function build() {
         continue
       }
 
-      const html = await res.text()
+      let html = await res.text()
+      const gaId = process.env.VITE_GA_ID
+      if (gaId) {
+        html = html.replace(
+          '<!-- Google Analytics Placeholder -->',
+          `<script async src="https://www.googletagmanager.com/gtag/js?id=${gaId}"></script>
+           <script>
+             window.dataLayer = window.dataLayer || [];
+             function gtag(){dataLayer.push(arguments);}
+             gtag('js', new Date());
+             gtag('config', '${gaId}');
+           </script>`
+        )
+      }
       const pathname = route.replace(/\/$/, '') || '/'
       const filePath = join(outputDir, pathname, 'index.html')
       await mkdir(dirname(filePath), { recursive: true })

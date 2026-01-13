@@ -84,6 +84,7 @@ app.router.prefix('/:locale').group((router) => {
             <head>
                 <title>Gravito - Agentic AI Framework</title>
                 <meta name="description" content="The future of web development.">
+                <!-- Google Analytics Placeholder -->
                 <!-- Google Analytics -->
                 <script async src="https://www.googletagmanager.com/gtag/js?id=${gaId}"></script>
                 <script>
@@ -165,6 +166,7 @@ app.router.prefix('/:locale').group((router) => {
                 <meta property="twitter:description" content="${description}">
                 <meta property="twitter:image" content="${imageUrl}">
 
+                <!-- Google Analytics Placeholder -->
                 <!-- Google Analytics -->
                 <script async src="https://www.googletagmanager.com/gtag/js?id=${gaId}"></script>
                 <script>

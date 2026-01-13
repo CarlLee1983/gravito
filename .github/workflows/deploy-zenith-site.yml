@@ -36,7 +36,7 @@ jobs:
           bun run build:static
         env:
           NODE_ENV: production
-          VITE_GA_MEASUREMENT_ID: ${{ vars.GA_ZENITH_SITE }}
+          VITE_GA_ID: ${{ vars.GA_ZENITH_SITE }}
 
       - name: Synchronize to zenith-site repo
         run: |
