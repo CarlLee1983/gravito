@@ -21,6 +21,26 @@ interface ReleaseEntry {
 // Release data - can be moved to a separate data file or CMS later
 const releasesZh: ReleaseEntry[] = [
   {
+    id: 'atlas-v1-1',
+    date: '2026-01-13',
+    type: 'release',
+    version: '1.1.0',
+    title: 'Atlas ORM v1.1.0 正式發佈',
+    description:
+      'Atlas ORM 迎來重大更新！大幅提升了效能並優化了開發者體驗，同時導入了全新的「數據流」視覺呈現。',
+    highlights: [
+      '輕量化：驅動程式改為選配，大幅縮小安裝體積',
+      '高效能：導入 Canvas 渲染技術優化「數據流」背景動畫',
+      '穩定性：修正多項查詢邊界情況與類型推導問題',
+      '混合視覺：結合高品質靜態背景與動態 Canvas 疊加',
+    ],
+    links: [
+      { label: '訪問 Atlas 官網', url: 'https://atlas.gravito.dev' },
+      { label: '查看文檔', url: 'https://atlas.gravito.dev/docs' },
+    ],
+    featured: true,
+  },
+  {
     id: 'atlas-site-launch',
     date: '2026-01-13',
     type: 'announcement',
@@ -90,6 +110,26 @@ const releasesZh: ReleaseEntry[] = [
 ]
 
 const releasesEn: ReleaseEntry[] = [
+  {
+    id: 'atlas-v1-1',
+    date: '2026-01-13',
+    type: 'release',
+    version: '1.1.0',
+    title: 'Atlas ORM v1.1.0 Released',
+    description:
+      'Major milestone for Atlas ORM! Massive performance gains, improved DX, and a brand-new high-performance "Data Flow" visualization.',
+    highlights: [
+      'Lightweight: Drivers are now optional peer dependencies',
+      'Performance: Canvas-based rendering for Hero visuals',
+      'Stability: Fixed edge cases in Query Builder & Type inference',
+      'Hybrid Visuals: Combined static hero background with dynamic data flow overlay',
+    ],
+    links: [
+      { label: 'Visit Atlas Site', url: 'https://atlas.gravito.dev' },
+      { label: 'View Docs', url: 'https://atlas.gravito.dev/docs' },
+    ],
+    featured: true,
+  },
   {
     id: 'atlas-site-launch',
     date: '2026-01-13',
