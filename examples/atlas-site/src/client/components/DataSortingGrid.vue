@@ -12,25 +12,30 @@ const canvasRef = ref<HTMLCanvasElement | null>(null)
 let animationFrameId: number
 
 // Configuration
-const GRID_SIZE = 40
-const PACKET_CHANCE = 0.05 // Slightly increased chance
-const MAX_PACKETS = 50
-const COLOR_CYAN = '0, 240, 255' // RGB
+const STAR_COUNT = 150
+const COLOR_CYAN = '0, 240, 255'
+const BASE_SPEED = 0.015
+const WARP_SPEED = 0.05
+const FLOW_FIELD_STRENGTH = 0.15
 
-interface Packet {
-  x: number
-  y: number
-  vx: number
-  vy: number
-  life: number
-  maxLife: number
-  path: {x: number, y: number}[]
-  speed: number
+interface Star {
+  x: number // -1 to 1 (normalized space)
+  y: number // -1 to 1
+  z: number // 0 to 1 (depth)
+  prevZ: number
+  size: number
+  color: string
+  speedOffset: number
 }
 
-let packets: Packet[] = []
+let stars: Star[] = []
 let width = 0
 let height = 0
+let centerX = 0
+let centerY = 0
+let mouseX = 0
+let mouseY = 0
+let currentSpeed = BASE_SPEED
 
 onMounted(() => {
   if (!canvasRef.value || !containerRef.value) return
@@ -41,149 +46,119 @@ onMounted(() => {
   const resize = () => {
     width = canvas.width = containerRef.value?.clientWidth || window.innerWidth
     height = canvas.height = containerRef.value?.clientHeight || window.innerHeight
+    centerX = width / 2
+    centerY = height / 2
   }
   
+  const handleMouseMove = (e: MouseEvent) => {
+    // Subtle parallax offset based on mouse position
+    mouseX = (e.clientX - centerX) / centerX * 50
+    mouseY = (e.clientY - centerY) / centerY * 50
+  }
+
   window.addEventListener('resize', resize)
+  window.addEventListener('mousemove', handleMouseMove)
   resize()
 
-  const spawnPacket = () => {
-    if (packets.length >= MAX_PACKETS) return
-
-    // Snap to grid
-    const axis = Math.random() > 0.5 ? 'h' : 'v'
-    let x, y, vx, vy
-    
-    // Calculate valid grid indices
-    const maxCols = Math.floor(width / GRID_SIZE)
-    const maxRows = Math.floor(height / GRID_SIZE)
-
-    if (axis === 'h') {
-        // Horizontal: spawn left or right
-        const fromLeft = Math.random() > 0.5
-        x = fromLeft ? -GRID_SIZE : width + GRID_SIZE
-        // Random row index
-        y = Math.floor(Math.random() * (maxRows + 1)) * GRID_SIZE
-        vx = fromLeft ? 1 : -1
-        vy = 0
-    } else {
-        // Vertical: spawn top or bottom
-        const fromTop = Math.random() > 0.5
-        // Random col index
-        x = Math.floor(Math.random() * (maxCols + 1)) * GRID_SIZE
-        y = fromTop ? -GRID_SIZE : height + GRID_SIZE
-        vx = 0
-        vy = fromTop ? 1 : -1
-    }
-
-    packets.push({
-      x,
-      y,
-      vx,
-      vy,
-      speed: 2 + Math.random() * 3, // Random speed
-      life: 0,
-      maxLife: 300 + Math.random() * 100, // Longer life to traverse screen
-      path: []
-    })
-  }
-
-  const drawGrid = () => {
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)'
-    ctx.lineWidth = 1
-    ctx.beginPath()
-
-    // Verticals
-    for (let x = 0; x <= width; x += GRID_SIZE) {
-      ctx.moveTo(x, 0)
-      ctx.lineTo(x, height)
-    }
-    // Horizontals
-    for (let y = 0; y <= height; y += GRID_SIZE) {
-      ctx.moveTo(0, y)
-      ctx.lineTo(width, y)
-    }
-    ctx.stroke()
-  }
-
-  const updateAndDrawPackets = () => {
-    for (let i = packets.length - 1; i >= 0; i--) {
-      const p = packets[i]
-      
-      // Move
-      p.x += p.vx * p.speed
-      p.y += p.vy * p.speed
-      p.life++
-
-      // Record path for trail
-      p.path.push({x: p.x, y: p.y})
-      if (p.path.length > 25) p.path.shift() // Longer trail
-
-      // Draw Trail
-      if (p.path.length > 1) {
-        ctx.beginPath()
-        ctx.moveTo(p.path[0].x, p.path[0].y)
-        for (let j = 1; j < p.path.length; j++) {
-            ctx.lineTo(p.path[j].x, p.path[j].y)
-        }
-        
-        // Gradient for trail
-        const gradient = ctx.createLinearGradient(
-            p.path[0].x, p.path[0].y, 
-            p.path[p.path.length-1].x, p.path[p.path.length-1].y
-        )
-        gradient.addColorStop(0, `rgba(${COLOR_CYAN}, 0)`)
-        gradient.addColorStop(1, `rgba(${COLOR_CYAN}, 0.8)`)
-        
-        ctx.strokeStyle = gradient
-        ctx.lineWidth = 2
-        ctx.stroke()
-      }
-
-      // Draw Head
-      ctx.fillStyle = `rgba(${COLOR_CYAN}, 1)`
-      ctx.shadowBlur = 10
-      ctx.shadowColor = `rgba(${COLOR_CYAN}, 0.8)`
-      ctx.beginPath()
-      ctx.arc(p.x, p.y, 2, 0, Math.PI * 2)
-      ctx.fill()
-      ctx.shadowBlur = 0
-
-      // Remove if out of bounds (extended margin) or dead
-      // Margin needs to be > GRID_SIZE to allow spawning and entering
-      const MARGIN = GRID_SIZE + 20
-      if (
-        p.x < -MARGIN || p.x > width + MARGIN || 
-        p.y < -MARGIN || p.y > height + MARGIN || 
-        p.life > p.maxLife
-      ) {
-        packets.splice(i, 1)
-      }
+  const initStars = () => {
+    stars = []
+    for (let i = 0; i < STAR_COUNT; i++) {
+      stars.push(createStar())
     }
   }
 
-  const animate = () => {
+  const createStar = (initial = false): Star => {
+    return {
+      x: (Math.random() - 0.5) * 2,
+      y: (Math.random() - 0.5) * 2,
+      z: initial ? Math.random() : 1, // Random depth if initial, else spawn at back
+      prevZ: 1,
+      size: 0.5 + Math.random() * 2,
+      color: Math.random() > 0.8 ? '255, 255, 255' : COLOR_CYAN,
+      speedOffset: Math.random() * 0.005 // Varied speed per star
+    }
+  }
+
+  initStars()
+
+  const draw = () => {
     ctx.clearRect(0, 0, width, height)
     
-    drawGrid()
-    
-    if (Math.random() < PACKET_CHANCE) {
-        spawnPacket()
+    // Smooth speed transition (could be hooked to scroll in future)
+    currentSpeed += (BASE_SPEED - currentSpeed) * 0.1
+
+    for (let i = 0; i < stars.length; i++) {
+      const s = stars[i]
+      s.prevZ = s.z
+      s.z -= (currentSpeed + s.speedOffset)
+
+      // Add a simple "flow field" effect by slightly shifting x/y based on time/position
+      const noise = Math.sin(Date.now() * 0.001 + s.x * 5) * FLOW_FIELD_STRENGTH
+      s.x += noise * 0.001
+      s.y += Math.cos(Date.now() * 0.001 + s.y * 5) * 0.0005
+
+      // Reset star if it passes the camera (z <= 0)
+      if (s.z <= 0) {
+        Object.assign(s, createStar())
+        s.prevZ = s.z
+      }
+
+      // Project 3D to 2D
+      const x = (s.x * width / s.z) + centerX + mouseX
+      const y = (s.y * height / s.z) + centerY + mouseY
+      
+      const px = (s.x * width / s.prevZ) + centerX + mouseX
+      const py = (s.y * height / s.prevZ) + centerY + mouseY
+
+      // Don't draw if outside screen
+      if (x < 0 || x > width || y < 0 || y > height) continue
+
+      // Calculate opacity and size based on depth
+      const opacity = Math.min(1, (1 - s.z) * 1.5)
+      const size = (1 - s.z) * s.size * 2
+
+      // Draw Streak (Motion Blur)
+      ctx.beginPath()
+      ctx.lineWidth = size
+      ctx.lineCap = 'round'
+      ctx.strokeStyle = `rgba(${s.color}, ${opacity * 0.5})`
+      ctx.moveTo(px, py)
+      ctx.lineTo(x, y)
+      ctx.stroke()
+
+      // Draw Head (Glow)
+      if (s.z < 0.5) {
+        ctx.beginPath()
+        ctx.fillStyle = `rgba(${s.color}, ${opacity})`
+        ctx.arc(x, y, size / 2, 0, Math.PI * 2)
+        ctx.fill()
+        
+        // Add subtle glow for closer particles
+        if (s.z < 0.2) {
+            ctx.shadowBlur = 15 * (1 - s.z)
+            ctx.shadowColor = `rgba(${s.color}, 0.8)`
+            ctx.fill()
+            ctx.shadowBlur = 0
+        }
+      }
     }
 
-    updateAndDrawPackets()
-    
-    animationFrameId = requestAnimationFrame(animate)
+    animationFrameId = requestAnimationFrame(draw)
   }
 
-  animate()
+  draw()
 
   onBeforeUnmount(() => {
     window.removeEventListener('resize', resize)
+    window.removeEventListener('mousemove', handleMouseMove)
     cancelAnimationFrame(animationFrameId)
   })
 })
 </script>
 
 <style scoped>
-/* No extra styles needed */
+/* Ensure the container is truly void-like */
+.bg-atlas-void {
+  background-color: #020617;
+}
 </style>
