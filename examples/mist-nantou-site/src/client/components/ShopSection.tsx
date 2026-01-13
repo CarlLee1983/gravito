@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 const products = [
   {
@@ -38,28 +39,30 @@ const products = [
 
 const ProductCard = ({ product }: { product: typeof products[0] }) => {
   return (
-    <motion.div
-      whileHover={{ y: -10 }}
-      className="group relative cursor-pointer"
-    >
-      {/* Tea Soup Glow (Hover) */}
-      <div className={`absolute inset-0 rounded-xl ${product.color} shadow-[0_0_100px_-20px] opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
+    <Link to={`/product/${product.id}`}>
+      <motion.div
+        whileHover={{ y: -10 }}
+        className="group relative cursor-pointer block"
+      >
+        {/* Tea Soup Glow (Hover) */}
+        <div className={`absolute inset-0 rounded-xl ${product.color} shadow-[0_0_100px_-20px] opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
 
-      {/* Card Body */}
-      <div className="relative z-10 bg-white/50 backdrop-blur-md border border-white/20 p-8 aspect-[3/4] flex flex-col items-center justify-between transition-colors duration-300 group-hover:bg-white/80">
-        
-        {/* Placeholder for 3D Packaging */}
-        <div className={`w-32 h-48 ${product.bg} shadow-inner flex items-center justify-center relative transform transition-transform duration-500 group-hover:scale-105 group-hover:rotate-3`}>
-           <span className="text-ink-black/20 font-display writing-vertical-rl text-2xl tracking-widest">{product.name}</span>
-        </div>
+        {/* Card Body */}
+        <div className="relative z-10 bg-white/50 backdrop-blur-md border border-white/20 p-8 aspect-[3/4] flex flex-col items-center justify-between transition-colors duration-300 group-hover:bg-white/80">
+          
+          {/* Placeholder for 3D Packaging */}
+          <div className={`w-32 h-48 ${product.bg} shadow-inner flex items-center justify-center relative transform transition-transform duration-500 group-hover:scale-105 group-hover:rotate-3`}>
+             <span className="text-ink-black/20 font-display writing-vertical-rl text-2xl tracking-widest">{product.name}</span>
+          </div>
 
-        <div className="text-center">
-          <h3 className="font-display text-2xl text-ink-black mb-1">{product.name}</h3>
-          <p className="font-sans text-xs tracking-widest text-ink-black/40 uppercase mb-3">{product.en}</p>
-          <p className="font-sans text-cinnabar font-medium">{product.price}</p>
+          <div className="text-center">
+            <h3 className="font-display text-2xl text-ink-black mb-1">{product.name}</h3>
+            <p className="font-sans text-xs tracking-widest text-ink-black/40 uppercase mb-3">{product.en}</p>
+            <p className="font-sans text-cinnabar font-medium">{product.price}</p>
+          </div>
         </div>
-      </div>
-    </motion.div>
+      </motion.div>
+    </Link>
   );
 };
 

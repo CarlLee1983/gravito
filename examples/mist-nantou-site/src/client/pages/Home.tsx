@@ -1,14 +1,11 @@
 import React from 'react';
 import CraftSection from '../components/CraftSection';
-import CustomCursor from '../components/CustomCursor';
 import HeroSection from '../components/HeroSection';
 import ShopSection from '../components/ShopSection';
 
 const Home = () => {
   return (
     <main className="bg-paper-white min-h-screen selection:bg-fir-green selection:text-paper-white cursor-none">
-      <CustomCursor />
-      
       {/* Section 1: The Origin */}
       <HeroSection />
       
