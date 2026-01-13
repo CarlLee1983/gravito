@@ -56,7 +56,7 @@ export function registerRoutes(router: Router): void {
   router.get('/admin/events/create', [AdminEventController, 'create'])
   router.post('/admin/events', [AdminEventController, 'store'])
   router.get('/admin/events/:id/edit', [AdminEventController, 'edit'])
-  router.put('/admin/events/:id', [AdminEventController, 'update'])
+  router.post('/admin/events/:id/update', [AdminEventController, 'update'])
   router.delete('/admin/events/:id', [AdminEventController, 'destroy'])
 
   // Admin Sessions

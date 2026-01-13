@@ -63,7 +63,19 @@ export default defineConfig({
       'px-6 py-5 text-sm font-medium border-b border-gray-50 dark:border-white/5 group-hover:bg-indigo-50/30 dark:group-hover:bg-indigo-500/5 transition-colors dark:text-gray-300',
     ],
 
+    // --- Premium Date Selector ---
+    [
+      'date-card',
+      'relative flex items-center px-5 py-4 rounded-2xl bg-gray-50 dark:bg-white/5 border-1 border-transparent hover:border-brand-500/30 transition-all duration-300 group cursor-pointer',
+    ],
+    [
+      'date-icon-box',
+      'w-10 h-10 rounded-xl bg-white dark:bg-gray-800 flex items-center justify-center text-brand-600 dark:text-brand-400 shadow-sm mr-4 group-hover:scale-110 transition-transform',
+    ],
+    ['date-native-input', 'absolute inset-0 opacity-0 cursor-pointer z-10'],
+
     // --- Layout ---
+
     ['container-wide', 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'],
   ],
   theme: {

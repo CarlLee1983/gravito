@@ -1,120 +1,157 @@
 <template>
   <AdminLayout>
-    <div class="max-w-4xl mx-auto pb-20">
-      <div class="mb-10">
-        <Link href="/admin/events" class="inline-flex items-center text-sm font-bold text-gray-400 hover:text-indigo-600 transition-colors mb-4 group">
+    <div class="max-w-5xl mx-auto pb-32 transition-colors duration-500 text-left">
+      <!-- Premium Header -->
+      <div class="mb-12">
+        <Link href="/admin/events" class="inline-flex items-center text-[10px] font-black text-gray-400 hover:text-brand-600 dark:text-gray-500 dark:hover:text-brand-400 transition-all uppercase tracking-[0.2em] mb-6 group">
           <div class="i-carbon-arrow-left mr-2 group-hover:-translate-x-1 transition-transform" />
-          {{ t('admin.common.back') }}
+          Protocol / Event Registry
         </Link>
-        <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">{{ t('admin.events.create_new') }}</h1>
-        <p class="text-gray-500 mt-1 font-medium text-sm">{{ t('admin.events.subtitle') }}</p>
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div>
+            <h1 class="text-4xl font-black text-gray-900 dark:text-white tracking-tighter leading-none">Create Event Terminal</h1>
+            <p class="text-gray-500 dark:text-slate-500 mt-2 font-medium">Initialize a new secure ingestion point for participants.</p>
+          </div>
+        </div>
       </div>
       
-      <div class="card bg-white border-none shadow-xl shadow-indigo-900/5 p-8 relative overflow-hidden">
-        <!-- Accent Decoration -->
-        <div class="absolute top-0 right-0 p-12 opacity-[0.03] pointer-events-none">
-          <div class="i-carbon-event text-[12rem]" />
-        </div>
-
-        <form @submit.prevent="submit" class="space-y-10 relative z-10">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <!-- Basic Info -->
-            <div class="space-y-6">
-              <h3 class="text-xs font-black text-indigo-600 uppercase tracking-[0.2em] flex items-center">
-                <div class="w-1.5 h-1.5 rounded-full bg-indigo-600 mr-2" />
-                {{ t('admin.common.details') }}
+      <form @submit.prevent="submit" class="space-y-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          <!-- Left Column: Core Configuration -->
+          <div class="lg:col-span-2 space-y-8">
+            <!-- Section: Identity -->
+            <div class="bg-card rounded-[2.5rem] p-10 border border-gray-100 dark:border-white/5 shadow-sm relative overflow-hidden">
+              <div class="absolute top-0 right-0 p-8 opacity-[0.02] pointer-events-none">
+                <div class="i-carbon-tag text-9xl" />
+              </div>
+              
+              <h3 class="label-premium mb-8 flex items-center">
+                <div class="w-1.5 h-1.5 rounded-full bg-brand-500 mr-3 shadow-[0_0_10px_rgba(124,58,237,0.5)]" />
+                Identity & Visuals
               </h3>
-              
-              <div>
-                <label class="label-base">{{ t('admin.events.fields.title') }}</label>
-                <input v-model="form.title" type="text" class="input-base" :placeholder="t('admin.events.fields.title')" required />
-              </div>
-              
-              <div>
-                <label class="label-base">{{ t('admin.events.fields.location') }}</label>
-                <div class="relative">
-                  <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400">
-                    <div class="i-carbon-location" />
-                  </div>
-                  <input v-model="form.location" type="text" class="input-base pl-11" :placeholder="t('admin.events.fields.location')" required />
-                </div>
-              </div>
 
-              <div>
-                <label class="label-base">{{ t('admin.events.fields.image_url') }}</label>
-                <div class="relative">
-                  <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400">
-                    <div class="i-carbon-image" />
+              <div class="space-y-8">
+                <div class="group">
+                  <label class="label-premium text-[9px]">Official Event Title</label>
+                  <input v-model="form.title" type="text" class="input-premium" placeholder="e.g. Quantum Computing Symposium 2026" required />
+                </div>
+
+                <div class="group">
+                  <label class="label-premium text-[9px]">Public Location / Platform</label>
+                  <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-gray-400 group-focus-within:text-brand-500">
+                      <div class="i-carbon-location text-xl" />
+                    </div>
+                    <input v-model="form.location" type="text" class="input-premium pl-14" placeholder="Virtual or Physical Address" required />
                   </div>
-                  <input v-model="form.image_url" type="url" class="input-base pl-11" placeholder="https://unsplash.com/..." />
+                </div>
+
+                <div class="group">
+                  <label class="label-premium text-[9px]">Cover Asset URL</label>
+                  <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-gray-400 group-focus-within:text-brand-500">
+                      <div class="i-carbon-image text-xl" />
+                    </div>
+                    <input v-model="form.image_url" type="url" class="input-premium pl-14" placeholder="https://assets.gravito.io/banners/event-01.jpg" />
+                  </div>
                 </div>
               </div>
             </div>
 
-            <!-- Configuration -->
-            <div class="space-y-6">
-              <h3 class="text-xs font-black text-indigo-600 uppercase tracking-[0.2em] flex items-center">
-                <div class="w-1.5 h-1.5 rounded-full bg-indigo-600 mr-2" />
-                {{ t('admin.common.status') }}
+            <!-- Section: Narrative -->
+            <div class="bg-card rounded-[2.5rem] p-10 border border-gray-100 dark:border-white/5 shadow-sm">
+              <h3 class="label-premium mb-8 flex items-center">
+                <div class="w-1.5 h-1.5 rounded-full bg-cyan-500 mr-3 shadow-[0_0_10px_rgba(6,182,212,0.5)]" />
+                Event Narrative
               </h3>
+              <textarea v-model="form.description" class="input-premium min-h-[240px] resize-none leading-relaxed" placeholder="Craft a compelling story for your attendees. Markdown support enabled." required />
+            </div>
+          </div>
 
-              <div class="grid grid-cols-2 gap-4">
-                <div>
-                  <label class="label-base text-[10px]">{{ t('admin.events.fields.registration_start') }}</label>
-                  <input v-model="form.registration_start" type="datetime-local" class="input-base !py-2.5 text-sm" required />
-                </div>
-                <div>
-                  <label class="label-base text-[10px]">{{ t('admin.events.fields.registration_end') }}</label>
-                  <input v-model="form.registration_end" type="datetime-local" class="input-base !py-2.5 text-sm" required />
-                </div>
-              </div>
-
-              <div>
-                <label class="label-base text-[10px]">{{ t('admin.events.fields.status') }}</label>
-                <div class="relative">
-                  <select v-model="form.status" class="input-base appearance-none pr-10" required>
-                    <option value="draft">{{ t('admin.events.status.draft') }}</option>
-                    <option value="published">{{ t('admin.events.status.published') }}</option>
-                    <option value="cancelled">{{ t('admin.events.status.cancelled') }}</option>
+          <!-- Right Column: Control & Metadata -->
+          <div class="space-y-8">
+            <!-- Lifecycle Control -->
+            <div class="bg-card rounded-[2.5rem] p-8 border border-gray-100 dark:border-white/5 shadow-sm relative overflow-hidden">
+              <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-brand-500 to-cyan-500" />
+              <h3 class="label-premium mb-6">Status & Visibility</h3>
+              
+              <div class="space-y-6">
+                <div class="relative group">
+                  <select v-model="form.status" class="input-premium appearance-none pr-12 font-bold" required>
+                    <option value="draft">System: DRAFT</option>
+                    <option value="published">System: PUBLISHED</option>
+                    <option value="cancelled">System: CANCELLED</option>
                   </select>
-                  <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-gray-400">
+                  <div class="absolute inset-y-0 right-0 flex items-center pr-5 pointer-events-none text-brand-500">
                     <div class="i-carbon-chevron-down" />
                   </div>
                 </div>
-              </div>
 
-              <!-- Preview Card (Real-time hint) -->
-              <div class="p-4 bg-gray-50 rounded-2xl border-1 border-gray-100 mt-2">
-                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">{{ t('admin.common.attention') }}</p>
-                <div class="flex items-center space-x-3">
-                  <div class="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center text-indigo-600">
-                    <div class="i-carbon-view" />
-                  </div>
-                  <div class="text-[10px] leading-tight text-gray-500 font-medium">
-                    {{ t('admin.events.subtitle') }}
+                <div class="p-4 bg-soft rounded-2xl border border-gray-100 dark:border-white/5">
+                  <p class="text-[9px] font-black text-gray-400 dark:text-gray-600 uppercase tracking-widest mb-3 text-center">Protocol Hint</p>
+                  <div class="flex items-start space-x-3">
+                    <div class="i-carbon-information text-brand-500 mt-0.5" />
+                    <p class="text-[10px] leading-relaxed text-gray-500 dark:text-slate-500">Events in <strong>DRAFT</strong> mode are only visible to the orchestration team.</p>
                   </div>
                 </div>
               </div>
             </div>
+
+            <!-- Ingestion Window -->
+            <div class="bg-card rounded-[2.5rem] p-8 border border-gray-100 dark:border-white/5 shadow-sm">
+              <h3 class="label-premium mb-6 flex items-center">
+                <div class="i-carbon-calendar mr-2 text-brand-500" /> Ingestion Window
+              </h3>
+              
+              <div class="space-y-4">
+                <!-- Start Date Card -->
+                <div class="date-card">
+                  <input v-model="form.registration_start" type="datetime-local" class="date-native-input" required />
+                  <div class="date-icon-box">
+                    <div class="i-carbon-event-schedule text-xl" />
+                  </div>
+                  <div class="flex-1 text-left">
+                    <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1.5">Opening Epoch</p>
+                    <p class="text-xs font-black text-gray-900 dark:text-white font-mono">
+                      {{ form.registration_start ? formatDisplayDate(form.registration_start) : 'Not Scheduled' }}
+                    </p>
+                  </div>
+                  <div class="i-carbon-chevron-sort text-gray-300 dark:text-gray-700" />
+                </div>
+
+                <!-- End Date Card -->
+                <div class="date-card">
+                  <input v-model="form.registration_end" type="datetime-local" class="date-native-input" required />
+                  <div class="date-icon-box">
+                    <div class="i-carbon-alarm-confirm text-xl" />
+                  </div>
+                  <div class="flex-1 text-left">
+                    <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1.5">Closing Epoch</p>
+                    <p class="text-xs font-black text-gray-900 dark:text-white font-mono">
+                      {{ form.registration_end ? formatDisplayDate(form.registration_end) : 'Not Scheduled' }}
+                    </p>
+                  </div>
+                  <div class="i-carbon-chevron-sort text-gray-300 dark:text-gray-700" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Deployment Trigger -->
+            <div class="pt-4">
+              <button type="submit" class="btn-primary w-full py-5 text-lg font-black shadow-2xl shadow-indigo-500/30 group" :disabled="processing">
+                <div v-if="processing" class="i-carbon-progress-bar animate-spin mr-3" />
+                <div v-else class="i-carbon-cloud-upload mr-3 group-hover:-translate-y-1 transition-transform" />
+                Initialize Event
+              </button>
+              <Link href="/admin/events" class="w-full mt-4 btn-secondary py-4 text-xs font-black uppercase tracking-[0.2em]">
+                Discard Terminal
+              </Link>
+            </div>
           </div>
 
-          <div>
-            <label class="label-base">{{ t('admin.events.fields.description') }}</label>
-            <textarea v-model="form.description" class="input-base min-h-[160px] resize-none" :placeholder="t('admin.events.fields.description')" required />
-          </div>
-          
-          <div class="pt-8 border-t border-gray-100 flex items-center justify-between">
-            <Link href="/admin/events" class="btn-ghost">
-              {{ t('admin.common.cancel') }}
-            </Link>
-            <button type="submit" class="btn-primary px-12 py-4 text-base shadow-xl" :disabled="processing">
-              <div v-if="processing" class="i-carbon-progress-bar animate-spin mr-3" />
-              <div v-else class="i-carbon-save mr-3" />
-              {{ t('admin.common.create') }}
-            </button>
-          </div>
-        </form>
-      </div>
+        </div>
+      </form>
     </div>
   </AdminLayout>
 </template>
@@ -123,9 +160,6 @@
 import { ref, reactive } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import AdminLayout from '../../../components/AdminLayout.vue';
-import { useI18n } from '../../../composables/useI18n';
-
-const { t } = useI18n();
 
 const processing = ref(false);
 const form = reactive({
@@ -143,5 +177,13 @@ const submit = () => {
   router.post('/admin/events', form, {
     onFinish: () => processing.value = false
   });
+};
+
+const formatDisplayDate = (val: string) => {
+  const d = new Date(val);
+  return d.toLocaleString(undefined, { 
+    month: 'short', day: 'numeric', year: 'numeric', 
+    hour: '2-digit', minute: '2-digit', hour12: false 
+  }).replace(',', '');
 };
 </script>
