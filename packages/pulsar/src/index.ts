@@ -156,11 +156,26 @@ export class OrbitPulsar implements GravitoOrbit {
           sessionId = generateToken()
           markDirty()
           isRegenerated = true
+          if (core.hooks?.doAction) {
+            core.hooks.doAction('session:regenerated', { sessionId })
+          }
+        },
+        invalidate: () => {
+          data = {}
+          sessionId = generateToken()
+          markDirty()
+          isRegenerated = true
         },
         flash: (k: string, v: any) => {
           if (!data._flash) data._flash = {}
           data._flash[k] = v
           markDirty()
+        },
+        getFlash: (k: string, d?: any) => {
+          return data._flash?.[k] ?? d
+        },
+        keep: (keys: string[]) => {
+          // TODO: Implement flash data persistence logic
         },
         all: () => data,
       }
