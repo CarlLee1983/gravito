@@ -1,15 +1,36 @@
 <template>
-  <div ref="containerRef" class="absolute inset-0 z-0 pointer-events-none overflow-hidden bg-atlas-void">
+  <div 
+    ref="containerRef" 
+    class="absolute inset-0 z-0 pointer-events-none overflow-hidden bg-atlas-void"
+    :style="containerStyle"
+  >
     <canvas ref="canvasRef" class="block w-full h-full opacity-60"></canvas>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
+
+const props = defineProps({
+  withBackground: {
+    type: Boolean,
+    default: false
+  }
+})
 
 const containerRef = ref<HTMLElement | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 let animationFrameId: number
+
+const containerStyle = computed(() => {
+  if (!props.withBackground) return {}
+  return {
+    backgroundImage: "url('/hero-bg.png')",
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundRepeat: 'no-repeat'
+  }
+})
 
 // Configuration
 const GRID_SIZE = 40

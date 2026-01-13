@@ -2,8 +2,8 @@
   <div class="relative z-10 pb-20 bg-atlas-void overflow-hidden min-h-screen">
     
     <!-- Visual Graph: Data Sorting Grid (Restored & Enhanced) -->
-    <div class="absolute inset-0 z-0 pointer-events-none opacity-40">
-        <DataSortingGrid />
+    <div class="absolute inset-0 z-0 pointer-events-none opacity-90">
+        <DataSortingGrid :with-background="true" />
         <div class="absolute inset-0 bg-gradient-to-b from-atlas-void/20 via-transparent to-atlas-void"></div>
     </div>
 
