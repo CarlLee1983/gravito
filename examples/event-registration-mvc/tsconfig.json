@@ -1,0 +1,41 @@
+{
+    "compilerOptions": {
+        "target": "ESNext",
+        "module": "ESNext",
+        "lib": [
+            "ESNext"
+        ],
+        "moduleResolution": "bundler",
+        "types": [
+            "bun-types",
+            "vite/client"
+        ],
+        "jsx": "preserve",
+        "strict": true,
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true,
+        "resolveJsonModule": true,
+        "allowSyntheticDefaultImports": true,
+        "experimentalDecorators": true,
+        "emitDecoratorMetadata": false,
+        "baseUrl": ".",
+        "paths": {
+            "@/*": [
+                "./src/*"
+            ],
+            "@config/*": [
+                "./config/*"
+            ]
+        }
+    },
+    "include": [
+        "src/**/*",
+        "config/**/*",
+        "database/**/*"
+    ],
+    "exclude": [
+        "node_modules",
+        "dist"
+    ]
+}

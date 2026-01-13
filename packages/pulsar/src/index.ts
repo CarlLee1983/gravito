@@ -177,6 +177,7 @@ export class OrbitPulsar implements GravitoOrbit {
           markDirty()
           isRegenerated = true
         },
+        destroy: () => session.invalidate(),
         flash: (k: string, v: any) => {
           if (!data._flash) data._flash = {}
           data._flash[k] = v
