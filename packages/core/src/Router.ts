@@ -272,7 +272,7 @@ export class RouteGroup {
  */
 export class Router {
   // Internal list of all registered routes (for scanning and debugging)
-  public routes: Array<{ method: string; path: string }> = []
+  public routes: Array<{ method: string; path: string; domain?: string }> = []
 
   // Singleton cache for controllers
   private controllers = new Map<ControllerClass, Record<string, unknown>>()
@@ -287,23 +287,46 @@ export class Router {
    * Compile all registered routes into a flat array for caching or manifest generation.
    */
   compile() {
-    const routes: Array<{
+    const compiled: Array<{
       method: string
       path: string
       name?: string
       domain?: string | undefined
     }> = []
 
+    // Create a map of path+method to name for quick lookup
+    const nameMap = new Map<string, string>()
     for (const [name, info] of this.namedRoutes) {
-      routes.push({
-        name,
-        method: info.method,
-        path: info.path,
-        domain: info.domain,
+      nameMap.set(`${info.method.toUpperCase()}:${info.path}`, name)
+    }
+
+    for (const route of this.routes) {
+      const method = route.method.toUpperCase()
+      compiled.push({
+        method,
+        path: route.path,
+        domain: route.domain,
+        name: nameMap.get(`${method}:${route.path}`),
       })
     }
 
-    return routes
+    // Also include named routes that might not be in this.routes (e.g. from loaded manifest)
+    // but only if they are not already there
+    for (const [name, info] of this.namedRoutes) {
+      const exists = compiled.some(
+        (r) => r.method === info.method.toUpperCase() && r.path === info.path
+      )
+      if (!exists) {
+        compiled.push({
+          name,
+          method: info.method.toUpperCase(),
+          path: info.path,
+          domain: info.domain,
+        })
+      }
+    }
+
+    return compiled
   }
 
   /**
@@ -689,7 +712,7 @@ export class Router {
       handlers.unshift(domainCheck)
     }
 
-    this.routes.push({ method, path: fullPath })
+    this.routes.push({ method: method.toUpperCase(), path: fullPath, domain: options.domain })
     this.core.adapter.route(method, fullPath, ...(handlers as any[]))
 
     return new Route(this, method, fullPath, options)

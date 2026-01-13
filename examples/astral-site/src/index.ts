@@ -35,8 +35,9 @@ async function main() {
     })
   })
 
-  await core.liftoff()
-  console.log('🚀 Astral Demo running at http://localhost:3005/docs')
+  const liftoff = core.liftoff()
+  Bun.serve(liftoff)
+  console.log(`🚀 Astral Demo running at http://localhost:${liftoff.port}/docs`)
 }
 
 main().catch(console.error)
