@@ -231,10 +231,11 @@ const closeModal = () => {
 const submit = () => {
   processing.value = true;
   const url = editingSession.value 
-    ? `/admin/sessions/${editingSession.value.id}` 
+    ? `/admin/sessions/${editingSession.value.id}/update` 
     : `/admin/events/${props.event.id}/sessions`;
   
-  const method = editingSession.value ? 'put' : 'post';
+  // Use POST for both create and update (with /update suffix)
+  const method = 'post';
   
   router[method](url, form, {
     onFinish: () => {

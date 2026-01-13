@@ -62,15 +62,15 @@ export function registerRoutes(router: Router): void {
   // Admin Sessions
   router.get('/admin/events/:eventId/sessions', [SessionController, 'index'])
   router.post('/admin/events/:eventId/sessions', [SessionController, 'store'])
-  router.put('/admin/sessions/:id', [SessionController, 'update'])
+  router.post('/admin/sessions/:id/update', [SessionController, 'update'])
   router.delete('/admin/sessions/:id', [SessionController, 'destroy'])
 
   // Admin Custom Fields
   router.get('/admin/events/:eventId/fields', [FieldController, 'index'])
   router.post('/admin/events/:eventId/fields', [FieldController, 'store'])
-  router.put('/admin/fields/:id', [FieldController, 'update'])
+  router.post('/admin/fields/:id/update', [FieldController, 'update'])
   router.delete('/admin/fields/:id', [FieldController, 'destroy'])
-  router.put('/admin/events/:eventId/fields/reorder', [FieldController, 'reorder'])
+  router.post('/admin/events/:eventId/fields/reorder', [FieldController, 'reorder'])
 
   // Admin Registrations
   router.get('/admin/registrations', [AdminRegistrationController, 'index'])

@@ -266,10 +266,11 @@ const closeModal = () => {
 const submit = () => {
   processing.value = true;
   const url = editingField.value 
-    ? `/admin/fields/${editingField.value.id}` 
+    ? `/admin/fields/${editingField.value.id}/update` 
     : `/admin/events/${props.event.id}/fields`;
   
-  const method = editingField.value ? 'put' : 'post';
+  // Use POST for both create and update (with /update suffix)
+  const method = 'post';
   
   // Send options as actual array (backend handles stringification if needed)
   const data = { ...form, options: form.options };

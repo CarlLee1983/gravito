@@ -6,13 +6,14 @@ import { Controller } from '../Controller'
 export class FieldController extends Controller {
   async index(ctx: any) {
     const eventId = parseInt(ctx.params.eventId)
+    const event = await DB.table<any>('events').where('id', eventId).first()
 
     const fields = await DB.table<RegistrationField>('registration_fields')
       .where('event_id', eventId)
       .orderBy('sort_order', 'asc')
       .get()
 
-    return ctx.json({ fields })
+    return ctx.inertia('Admin/Fields/Index', { event, fields })
   }
 
   async store(ctx: any) {
@@ -24,7 +25,7 @@ export class FieldController extends Controller {
       .where('event_id', eventId)
       .max('sort_order')
 
-    const field = await DB.table<RegistrationField>('registration_fields').insert({
+    await DB.table<RegistrationField>('registration_fields').insert({
       event_id: eventId,
       name: data.name,
       label: data.label,
@@ -34,12 +35,19 @@ export class FieldController extends Controller {
       sort_order: (maxOrder || 0) + 1,
     })
 
-    return ctx.json({ field })
+    return ctx
+      .redirect(`/admin/events/${eventId}/fields`)
+      .with('success', 'Field created successfully')
   }
 
   async update(ctx: any) {
     const fieldId = parseInt(ctx.params.id)
     const data = ctx.get('data') as any
+
+    const field = await DB.table<RegistrationField>('registration_fields')
+      .where('id', fieldId)
+      .first()
+    if (!field) return ctx.redirect('/admin').with('error', 'Field not found')
 
     await DB.table<RegistrationField>('registration_fields')
       .where('id', fieldId)
@@ -51,14 +59,25 @@ export class FieldController extends Controller {
         required: data.required,
       })
 
-    return ctx.json({ success: true })
+    return ctx
+      .redirect(`/admin/events/${field.event_id}/fields`)
+      .with('success', 'Field updated successfully')
   }
 
   async destroy(ctx: any) {
     const fieldId = parseInt(ctx.params.id)
-    await DB.table<RegistrationField>('registration_fields').where('id', fieldId).delete()
+    const field = await DB.table<RegistrationField>('registration_fields')
+      .where('id', fieldId)
+      .first()
 
-    return ctx.json({ success: true })
+    if (field) {
+      await DB.table<RegistrationField>('registration_fields').where('id', fieldId).delete()
+      return ctx
+        .redirect(`/admin/events/${field.event_id}/fields`)
+        .with('success', 'Field deleted successfully')
+    }
+
+    return ctx.redirect('/admin').with('error', 'Field not found')
   }
 
   async reorder(ctx: any) {
