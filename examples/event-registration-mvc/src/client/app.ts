@@ -1,7 +1,13 @@
 import { createInertiaApp } from '@inertiajs/vue3'
+import axios from 'axios'
 import { createApp, h } from 'vue'
 import 'virtual:uno.css'
 import './main.css'
+
+// Standard CSRF Configuration for Axios
+// This ensures all requests (including Inertia) automatically use XSRF-TOKEN from cookies
+axios.defaults.withCredentials = true
+axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest'
 
 createInertiaApp({
   resolve: (name) => {

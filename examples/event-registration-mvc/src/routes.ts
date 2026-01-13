@@ -17,6 +17,10 @@ import { RegistrationController } from './Http/Controllers/RegistrationControlle
 // Static Page Controller
 import { StaticPageController } from './Http/Controllers/StaticPageController'
 
+// Middleware
+import { AdminMiddleware } from './Http/Middleware/AdminMiddleware'
+import { AuthMiddleware } from './Http/Middleware/AuthMiddleware'
+
 export function registerRoutes(router: Router): void {
   // Public routes
   router.get('/', [HomeController, 'index'])
@@ -38,47 +42,55 @@ export function registerRoutes(router: Router): void {
   router.post('/logout', [AuthController, 'logout'])
 
   // User routes (authenticated)
-  router.get('/profile', [ProfileController, 'index'])
-  router.get('/profile/registrations/:id', [ProfileController, 'showRegistration'])
-  router.post('/registrations', [RegistrationController, 'store'])
-  router.delete('/registrations/:id', [RegistrationController, 'destroy'])
+  router.get('/profile', AuthMiddleware, [ProfileController, 'index'])
+  router.get('/profile/registrations/:id', AuthMiddleware, [ProfileController, 'showRegistration'])
+  router.post('/registrations', AuthMiddleware, [RegistrationController, 'store'])
+  router.delete('/registrations/:id', AuthMiddleware, [RegistrationController, 'destroy'])
 
   // Check-in routes
-  router.get('/checkin', [CheckinController, 'index'])
-  router.post('/checkin/verify', [CheckinController, 'verify'])
-  router.post('/checkin/:qrCode', [CheckinController, 'checkin'])
+  router.get('/checkin', AuthMiddleware, [CheckinController, 'index'])
+  router.post('/checkin/verify', AuthMiddleware, [CheckinController, 'verify'])
+  router.post('/checkin/:qrCode', AuthMiddleware, [CheckinController, 'checkin'])
 
   // Admin routes
-  router.get('/admin', [DashboardController, 'index'])
+  const adminAuth = [AuthMiddleware, AdminMiddleware]
+
+  router.get('/admin', adminAuth, [DashboardController, 'index'])
 
   // Admin Events
-  router.get('/admin/events', [AdminEventController, 'index'])
-  router.get('/admin/events/create', [AdminEventController, 'create'])
-  router.post('/admin/events', [AdminEventController, 'store'])
-  router.get('/admin/events/:id/edit', [AdminEventController, 'edit'])
-  router.post('/admin/events/:id/update', [AdminEventController, 'update'])
-  router.delete('/admin/events/:id', [AdminEventController, 'destroy'])
+  router.get('/admin/events', adminAuth, [AdminEventController, 'index'])
+  router.get('/admin/events/create', adminAuth, [AdminEventController, 'create'])
+  router.post('/admin/events', adminAuth, [AdminEventController, 'store'])
+  router.get('/admin/events/:id/edit', adminAuth, [AdminEventController, 'edit'])
+  router.post('/admin/events/:id/update', adminAuth, [AdminEventController, 'update'])
+  router.delete('/admin/events/:id', adminAuth, [AdminEventController, 'destroy'])
 
   // Admin Sessions
-  router.get('/admin/events/:eventId/sessions', [SessionController, 'index'])
-  router.post('/admin/events/:eventId/sessions', [SessionController, 'store'])
-  router.post('/admin/sessions/:id/update', [SessionController, 'update'])
-  router.delete('/admin/sessions/:id', [SessionController, 'destroy'])
+  router.get('/admin/events/:eventId/sessions', adminAuth, [SessionController, 'index'])
+  router.post('/admin/events/:eventId/sessions', adminAuth, [SessionController, 'store'])
+  router.post('/admin/sessions/:id/update', adminAuth, [SessionController, 'update'])
+  router.delete('/admin/sessions/:id', adminAuth, [SessionController, 'destroy'])
 
   // Admin Custom Fields
-  router.get('/admin/events/:eventId/fields', [FieldController, 'index'])
-  router.post('/admin/events/:eventId/fields', [FieldController, 'store'])
-  router.post('/admin/fields/:id/update', [FieldController, 'update'])
-  router.delete('/admin/fields/:id', [FieldController, 'destroy'])
-  router.post('/admin/events/:eventId/fields/reorder', [FieldController, 'reorder'])
+  router.get('/admin/events/:eventId/fields', adminAuth, [FieldController, 'index'])
+  router.post('/admin/events/:eventId/fields', adminAuth, [FieldController, 'store'])
+  router.post('/admin/fields/:id/update', adminAuth, [FieldController, 'update'])
+  router.delete('/admin/fields/:id', adminAuth, [FieldController, 'destroy'])
+  router.post('/admin/events/:eventId/fields/reorder', adminAuth, [FieldController, 'reorder'])
 
   // Admin Registrations
-  router.get('/admin/registrations', [AdminRegistrationController, 'index'])
-  router.get('/admin/registrations/:id', [AdminRegistrationController, 'show'])
-  router.put('/admin/registrations/:id/status', [AdminRegistrationController, 'updateStatus'])
-  router.post('/admin/registrations/:id/resend', [AdminRegistrationController, 'resendEmail'])
-  router.get('/admin/registrations/export', [AdminRegistrationController, 'export'])
+  router.get('/admin/registrations', adminAuth, [AdminRegistrationController, 'index'])
+  router.get('/admin/registrations/:id', adminAuth, [AdminRegistrationController, 'show'])
+  router.put('/admin/registrations/:id/status', adminAuth, [
+    AdminRegistrationController,
+    'updateStatus',
+  ])
+  router.post('/admin/registrations/:id/resend', adminAuth, [
+    AdminRegistrationController,
+    'resendEmail',
+  ])
+  router.get('/admin/registrations/export', adminAuth, [AdminRegistrationController, 'export'])
 
   // Admin Users
-  router.get('/admin/users', [UserController, 'index'])
+  router.get('/admin/users', adminAuth, [UserController, 'index'])
 }

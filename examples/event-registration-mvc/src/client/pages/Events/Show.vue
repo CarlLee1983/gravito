@@ -181,7 +181,7 @@ import Layout from '../../components/Layout.vue';
 import { useI18n } from '../../composables/useI18n';
 
 const page = usePage<PageProps>();
-const user = computed(() => page.props.auth.user);
+const user = computed(() => (page.props.auth as any)?.user);
 
 const { t } = useI18n();
 

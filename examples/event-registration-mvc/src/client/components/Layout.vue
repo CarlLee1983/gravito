@@ -64,7 +64,7 @@
               </Link>
             </div>
 
-            <template v-if="$page.props.auth.user">
+            <template v-if="$page.props.auth?.user">
               <div class="flex items-center space-x-3 ml-2">
                 <Link 
                   href="/profile" 
@@ -75,7 +75,7 @@
                 </Link>
                 
                 <Link
-                  v-if="$page.props.auth.user.role === 'admin'"
+                  v-if="$page.props.auth?.user?.role === 'admin'"
                   href="/admin"
                   class="btn-secondary text-sm !py-2"
                 >
@@ -267,8 +267,8 @@ const { t, getLocale } = useI18n();
 const isScrolled = ref(false);
 const isMobileMenuOpen = ref(false);
 const page = usePage();
-const successMessage = ref(page.props.flash?.success);
-const errorMessage = ref(page.props.flash?.error);
+const successMessage = ref<any>(page.props.flash?.success);
+const errorMessage = ref<any>(page.props.flash?.error);
 
 watch(() => page.props.flash?.success, (val) => {
   successMessage.value = val;

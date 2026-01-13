@@ -26,7 +26,7 @@ export const orbits = [
     // Required for session guard
     driver: 'memory',
     csrf: {
-      enabled: process.env.NODE_ENV !== 'test',
+      enabled: true,
     },
   }),
   new OrbitSentinel({

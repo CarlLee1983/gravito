@@ -27,10 +27,12 @@
         "@gravito/sentinel": "workspace:*",
         "@gravito/signal": "workspace:*",
         "@inertiajs/vue3": "^2.3.8",
+        "axios": "^1.13.2",
         "qrcode": "^1.5.4"
     },
     "devDependencies": {
         "@inertiajs/core": "^2.3.8",
+        "@types/axios": "^0.14.4",
         "@types/bun": "latest",
         "@types/qrcode": "^1.5.5",
         "@unocss/preset-attributify": "^66.5.12",

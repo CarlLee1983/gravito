@@ -3,7 +3,8 @@ const config = {
   connections: {
     sqlite: {
       driver: 'sqlite',
-      database: process.env.DB_DATABASE || './database/database.sqlite',
+      database:
+        process.env.DB_DATABASE || new URL('../database/database.sqlite', import.meta.url).pathname,
     },
     pgsql: {
       driver: 'pgsql',

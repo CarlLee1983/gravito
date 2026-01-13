@@ -1,127 +1,161 @@
 <template>
-  <div class="min-h-screen bg-base text-gray-900 dark:text-slate-200 flex font-sans transition-colors duration-500">
-    <!-- Sidebar -->
-    <aside class="w-64 bg-gray-900 dark:bg-[#0f172a] text-white flex flex-col sticky top-0 h-screen overflow-y-auto transition-all border-r dark:border-white/5">
-      <div class="p-6 text-left">
-        <Link href="/admin" class="flex items-center space-x-3 group text-left">
-          <div class="w-8 h-8 bg-brand-500 rounded-lg flex items-center justify-center group-hover:rotate-12 transition-transform shadow-lg shadow-brand-500/20">
-            <div class="i-carbon-settings text-white text-xl" />
+  <div class="min-h-screen bg-base text-gray-900 dark:text-slate-200 flex font-sans transition-colors duration-500 overflow-hidden">
+    
+    <!-- EXECUTIVE SIDEBAR -->
+    <aside class="w-72 bg-white dark:bg-[#020617] flex flex-col h-screen sticky top-0 border-r border-gray-100 dark:border-white/5 z-[60] transition-all duration-500">
+      
+      <!-- Brand Terminal Section -->
+      <div class="p-8 pb-10">
+        <Link href="/admin" class="flex items-center space-x-4 group text-left">
+          <div class="relative w-12 h-12 flex items-center justify-center">
+            <div class="absolute inset-0 bg-brand-600 rounded-2xl group-hover:rotate-180 transition-transform duration-700 shadow-xl shadow-brand-500/20" />
+            <div class="i-carbon-settings text-white text-2xl relative z-10" />
           </div>
-          <span class="text-xl font-black tracking-tighter leading-none">{{ t('common.admin_portal') }}</span>
+          <div class="flex flex-col">
+            <span class="text-xl font-black tracking-tighter leading-none text-gray-900 dark:text-white">PORTAL</span>
+            <span class="text-[10px] font-black text-brand-600 dark:text-brand-400 tracking-[0.2em] uppercase mt-1 leading-none">Gravito Admin</span>
+          </div>
         </Link>
       </div>
 
-      <nav class="flex-1 px-4 space-y-1 text-sm text-left">
-        <div class="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest px-4 mb-2 mt-6">{{ t('common.main_menu') }}</div>
-        <Link 
-          v-for="item in navItems"
-          :key="item.href"
-          :href="item.href" 
-          class="flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-300"
-          :class="$page.url.startsWith(item.href) && (item.href !== '/admin' || $page.url === '/admin') ? 'bg-brand-600 text-white shadow-lg shadow-brand-900/20' : 'text-gray-400 hover:bg-white/10 hover:text-white'"
-        >
-          <div :class="item.icon" class="text-xl" />
-          <span class="font-bold">{{ item.label }}</span>
-        </Link>
-
-        <div class="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest px-4 mb-2 mt-8">{{ t('common.system') }}</div>
-        
-        <!-- Language Switcher -->
-        <div class="flex items-center space-x-1 px-4 py-2 bg-black/20 rounded-xl mx-2 mb-2">
-          <Link 
-            v-for="l in ['en', 'zh-TW']"
-            :key="l"
-            :href="getLanguageLink(l)"
-            class="flex-1 text-center py-1.5 text-[10px] font-black rounded-lg transition-all"
-            :class="getLocale() === l ? 'bg-brand-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-300'"
-          >
-            {{ l === 'en' ? 'EN' : '繁中' }}
-          </Link>
+      <!-- Navigation Matrix -->
+      <nav class="flex-1 px-6 space-y-8 overflow-y-auto custom-scrollbar">
+        <!-- Main Ingestion Group -->
+        <div>
+          <h4 class="px-4 text-[10px] font-black text-gray-400 dark:text-gray-600 uppercase tracking-[0.3em] mb-4">{{ t('admin.nav.main_menu') }}</h4>
+          <div class="space-y-1">
+            <Link 
+              v-for="item in primaryNav"
+              :key="item.href"
+              :href="item.href" 
+              class="flex items-center space-x-4 px-4 py-3.5 rounded-[1.25rem] transition-all duration-300 relative group"
+              :class="isNavActive(item.href) ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400' : 'text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/5'"
+            >
+              <!-- Active Indicator Bar -->
+              <div 
+                v-if="isNavActive(item.href)"
+                class="absolute left-0 w-1 h-6 bg-brand-600 rounded-full -translate-x-1 shadow-[0_0_10px_rgba(124,58,237,0.8)]"
+              />
+              
+              <div class="w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-300 shadow-inner" :class="isNavActive(item.href) ? 'bg-white dark:bg-brand-900/40 shadow-brand-500/10' : 'bg-gray-100 dark:bg-white/5 group-hover:scale-110'">
+                <div :class="item.icon" class="text-lg" />
+              </div>
+              <span class="font-bold tracking-tight text-sm">{{ t(item.labelKey) }}</span>
+            </Link>
+          </div>
         </div>
 
-        <Link 
-          href="/" 
-          class="flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-400 hover:bg-white/10 hover:text-white transition-colors"
-        >
-          <div class="i-carbon-launch text-xl" />
-          <span class="font-bold">{{ t('common.view_live_site') }}</span>
-        </Link>
+        <!-- System Ops Group -->
+        <div>
+          <h4 class="px-4 text-[10px] font-black text-gray-400 dark:text-gray-600 uppercase tracking-[0.3em] mb-4">{{ t('admin.nav.system') }}</h4>
+          <div class="space-y-1">
+            <Link 
+              href="/" 
+              class="flex items-center space-x-4 px-4 py-3.5 rounded-[1.25rem] text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/5 transition-all duration-300 group"
+            >
+              <div class="w-8 h-8 rounded-xl bg-gray-100 dark:bg-white/5 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <div class="i-carbon-launch text-lg" />
+              </div>
+              <span class="font-bold tracking-tight text-sm">{{ t('admin.nav.view_site') }}</span>
+            </Link>
+
+            <!-- Language Rapid Switch (Integrated) -->
+            <div class="p-1.5 bg-gray-100/50 dark:bg-black/20 rounded-2xl flex items-center mt-4 border border-gray-100 dark:border-white/5">
+              <Link 
+                v-for="l in ['en', 'zh-TW']"
+                :key="l"
+                :href="getLanguageLink(l)"
+                class="flex-1 py-2 text-[10px] font-black rounded-xl transition-all"
+                :class="getLocale() === l ? 'bg-white dark:bg-gray-800 text-brand-600 dark:text-brand-400 shadow-xl' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-400'"
+              >
+                {{ l === 'en' ? 'EN' : '繁中' }}
+              </Link>
+            </div>
+          </div>
+        </div>
       </nav>
 
-      <div class="p-4 border-t border-gray-800 dark:border-white/5" v-if="$page.props.auth.user">
-        <div class="flex items-center space-x-3 px-4 py-3 mb-2 text-left">
-          <div class="w-8 h-8 rounded-full bg-brand-500/20 text-brand-400 flex items-center justify-center text-xs font-black uppercase border-1 border-brand-500/30">
-            {{ $page.props.auth.user.name?.substring(0, 2) }}
-          </div>
-          <div class="flex-1 min-w-0">
-            <p class="text-sm font-black text-white truncate leading-none">{{ $page.props.auth.user.name }}</p>
-            <p class="text-[10px] text-gray-500 truncate mt-1">{{ $page.props.auth.user.role }}</p>
+      <!-- Executive Footer -->
+      <div class="p-6 border-t border-gray-100 dark:border-white/5">
+        <div v-if="$page.props.auth?.user" class="bg-soft rounded-3xl p-4 mb-4 border border-gray-100 dark:border-white/5">
+          <div class="flex items-center space-x-3 mb-1">
+            <div class="w-8 h-8 rounded-xl bg-brand-600 flex items-center justify-center text-white font-black text-xs">
+              {{ $page.props.auth.user.name?.substring(0, 2).toUpperCase() || 'AD' }}
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-xs font-black text-gray-900 dark:text-white truncate">{{ $page.props.auth.user.name }}</p>
+              <p class="text-[9px] font-bold text-gray-400 dark:text-gray-600 uppercase tracking-widest">{{ $page.props.auth.user.role }}</p>
+            </div>
           </div>
         </div>
+        
         <Link 
           href="/logout" 
           method="post" 
           as="button"
-          class="w-full flex items-center justify-center space-x-2 px-4 py-2.5 rounded-xl bg-gray-800 hover:bg-red-900/30 hover:text-red-400 text-gray-400 transition-all text-xs font-black uppercase tracking-widest"
+          class="w-full flex items-center justify-center space-x-2 py-4 rounded-2xl bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:bg-brand-600 dark:hover:bg-brand-500 dark:hover:text-white transition-all shadow-xl shadow-gray-900/10 dark:shadow-none"
         >
-          <div class="i-carbon-logout" />
-          <span>{{ t('common.logout') }}</span>
+          <div class="i-carbon-logout text-lg" />
+          <span class="text-xs font-black uppercase tracking-widest">{{ t('admin.nav.sign_out') }}</span>
         </Link>
       </div>
     </aside>
 
-    <!-- Main Content -->
-    <main class="flex-1 flex flex-col overflow-hidden bg-gray-50 dark:bg-[#020617]">
-      <!-- Top Header -->
-      <header class="h-16 bg-white/80 dark:bg-[#0f172a]/80 backdrop-blur-md border-b border-gray-200 dark:border-white/5 flex items-center justify-between px-8 sticky top-0 z-10">
-        <h2 class="text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.3em]">
-          {{ getPageTitle() }}
-        </h2>
+    <!-- MAIN TERMINAL AREA -->
+    <main class="flex-1 flex flex-col overflow-hidden relative">
+      <!-- High-Precision Header -->
+      <header class="h-20 bg-white/80 dark:bg-[#020617]/80 backdrop-blur-md border-b border-gray-100 dark:border-white/5 flex items-center justify-between px-10 sticky top-0 z-50">
         <div class="flex items-center space-x-4">
-          <!-- Theme Toggle -->
+          <div class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
+          <h2 class="text-xs font-black text-gray-400 dark:text-indigo-300/40 uppercase tracking-[0.4em] leading-none">
+            {{ getPageTitle() }}
+          </h2>
+        </div>
+
+        <div class="flex items-center space-x-6">
+          <!-- Theme Driver -->
           <button 
             @click="toggleDark"
-            class="w-9 h-9 rounded-xl bg-gray-50 dark:bg-white/5 flex items-center justify-center text-gray-500 dark:text-gray-400 hover:text-brand-600 transition-all border border-gray-100 dark:border-white/5"
+            class="w-11 h-11 rounded-2xl bg-gray-50 dark:bg-white/5 flex items-center justify-center text-gray-500 dark:text-gray-400 hover:text-brand-600 transition-all border border-gray-100 dark:border-white/5 shadow-sm"
           >
-            <div :class="isDark ? 'i-carbon-moon' : 'i-carbon-sun'" class="text-lg" />
+            <div :class="isDark ? 'i-carbon-moon' : 'i-carbon-sun'" class="text-xl" />
           </button>
 
-          <button class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors relative">
-            <div class="i-carbon-notification text-xl" />
-            <div class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-[#020617]" />
-          </button>
-          <div class="h-6 w-px bg-gray-200 dark:bg-white/10 mx-2" />
-          <div class="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">
-            Gravito Enterprise
+          <div class="relative group">
+            <button class="w-11 h-11 rounded-2xl bg-gray-50 dark:bg-white/5 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-all border border-gray-100 dark:border-white/5">
+              <div class="i-carbon-notification text-xl" />
+              <div class="absolute top-3 right-3 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-[#020617]" />
+            </button>
+          </div>
+
+          <div class="h-8 w-px bg-gray-100 dark:bg-white/10" />
+          
+          <div class="flex items-center space-x-3 bg-brand-50 dark:bg-brand-900/20 px-4 py-2 rounded-xl border border-brand-100 dark:border-brand-500/20">
+            <div class="i-carbon-security text-brand-600 dark:text-brand-400" />
+            <span class="text-[10px] font-black text-brand-700 dark:text-brand-300 uppercase tracking-widest">{{ t('admin.meta.enterprise') }}</span>
           </div>
         </div>
       </header>
 
-      <div class="flex-1 overflow-y-auto p-8">
-        <!-- Flash Messages -->
+      <div class="flex-1 overflow-y-auto p-10 bg-soft transition-colors duration-500 custom-scrollbar">
+        <!-- System Ingest Notification -->
         <TransitionGroup
           enter-active-class="transition duration-500 cubic-bezier(0.175, 0.885, 0.32, 1.275)"
           enter-from-class="transform -translate-y-4 opacity-0 scale-95"
           enter-to-class="transform translate-y-0 opacity-100 scale-100"
         >
-          <div v-if="successMessage" key="success" class="alert-success shadow-xl dark:shadow-green-900/10 mb-8 py-4 px-6 rounded-2xl flex items-center border-none">
-            <div class="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center text-green-600 dark:text-green-400 mr-4 flex-shrink-0 shadow-inner">
-              <div class="i-carbon-checkmark-filled text-xl" />
+          <div v-if="$page.props.flash.success" key="success" class="bg-green-50 dark:bg-green-900/10 border-l-4 border-green-500 shadow-xl shadow-green-900/5 mb-10 py-5 px-8 rounded-2xl flex items-center">
+            <div class="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center text-green-600 dark:text-green-400 mr-5 flex-shrink-0">
+              <div class="i-carbon-checkmark-filled text-2xl" />
             </div>
-            <span class="text-sm font-bold dark:text-green-100 flex-1">{{ successMessage }}</span>
-            <button @click="successMessage = undefined" class="w-6 h-6 flex items-center justify-center text-green-700 dark:text-green-200 hover:bg-green-200 dark:hover:bg-green-800 rounded-full transition-colors">
-              <div class="i-carbon-close text-base" />
-            </button>
+            <span class="text-sm font-black text-green-900 dark:text-green-100">{{ $page.props.flash.success }}</span>
           </div>
           
-          <div v-if="errorMessage" key="error" class="alert-error shadow-xl dark:shadow-red-900/10 mb-8 py-4 px-6 rounded-2xl flex items-center border-none">
-            <div class="w-8 h-8 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center text-red-600 dark:text-red-400 mr-4 flex-shrink-0 shadow-inner">
-              <div class="i-carbon-error-filled text-xl" />
+          <div v-if="$page.props.flash.error" key="error" class="bg-red-50 dark:bg-red-900/10 border-l-4 border-red-500 shadow-xl shadow-red-900/5 mb-10 py-5 px-8 rounded-2xl flex items-center">
+            <div class="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-xl flex items-center justify-center text-red-600 dark:text-red-400 mr-5 flex-shrink-0">
+              <div class="i-carbon-error-filled text-2xl" />
             </div>
-            <span class="text-sm font-bold dark:text-red-100 flex-1">{{ errorMessage }}</span>
-            <button @click="errorMessage = undefined" class="w-6 h-6 flex items-center justify-center text-red-700 dark:text-red-200 hover:bg-red-200 dark:hover:bg-red-800 rounded-full transition-colors">
-              <div class="i-carbon-close text-base" />
-            </button>
+            <span class="text-sm font-black text-red-900 dark:text-red-100">{{ $page.props.flash.error }}</span>
           </div>
         </TransitionGroup>
 
@@ -132,27 +166,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watchEffect, computed, watch } from 'vue';
+import { ref, onMounted, watchEffect } from 'vue';
 import { Link, usePage } from '@inertiajs/vue3';
-import { PageProps } from '@inertiajs/core';
 import { useI18n } from '../composables/useI18n';
 
 const { t, getLocale } = useI18n();
-const page = usePage<PageProps>();
-const successMessage = ref(page.props.flash?.success);
-const errorMessage = ref(page.props.flash?.error);
+const page = usePage();
 
-watch(() => page.props.flash?.success, (val) => {
-  successMessage.value = val;
-  if (val) setTimeout(() => successMessage.value = undefined, 5000);
-});
-
-watch(() => page.props.flash?.error, (val) => {
-  errorMessage.value = val;
-  if (val) setTimeout(() => errorMessage.value = undefined, 5000);
-});
-
-// Theme Logic
+// THEME TERMINAL LOGIC
 const isDark = ref(false);
 const toggleDark = () => {
   isDark.value = !isDark.value;
@@ -165,20 +186,21 @@ watchEffect(() => {
   }
 });
 
-const navItems = computed(() => [
-  { label: t('common.dashboard'), href: '/admin', icon: 'i-carbon-dashboard' },
-  { label: t('common.explore'), href: '/admin/events', icon: 'i-carbon-calendar' },
-  { label: t('common.my_registrations'), href: '/admin/registrations', icon: 'i-carbon-user-identification' },
-  { label: t('auth.name'), href: '/admin/users', icon: 'i-carbon-group' },
-]);
+const primaryNav = [
+  { labelKey: 'admin.nav.overview', href: '/admin', icon: 'i-carbon-dashboard' },
+  { labelKey: 'admin.nav.events', href: '/admin/events', icon: 'i-carbon-calendar' },
+  { labelKey: 'admin.nav.registrations', href: '/admin/registrations', icon: 'i-carbon-user-identification' },
+  { labelKey: 'admin.nav.users', href: '/admin/users', icon: 'i-carbon-group' },
+];
+
+const isNavActive = (href: string) => {
+  if (href === '/admin') return page.url === '/admin';
+  return page.url.startsWith(href);
+};
 
 const getPageTitle = () => {
-  const url = page.url;
-  if (url === '/admin') return t('common.dashboard');
-  if (url.startsWith('/admin/events')) return t('common.event_management');
-  if (url.startsWith('/admin/registrations')) return t('common.registration_records');
-  if (url.startsWith('/admin/users')) return t('common.user_management');
-  return t('common.admin');
+  const item = primaryNav.find(i => isNavActive(i.href));
+  return item ? t(item.labelKey) : t('admin.nav.main_menu');
 };
 
 const getLanguageLink = (lang: string) => {
@@ -193,3 +215,10 @@ onMounted(() => {
     (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
 });
 </script>
+
+<style>
+.custom-scrollbar::-webkit-scrollbar { width: 4px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(124, 58, 237, 0.1); border-radius: 10px; }
+.dark .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.05); }
+</style>

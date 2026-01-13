@@ -1,7 +1,12 @@
 import { usePage } from '@inertiajs/vue3'
+import { computed } from 'vue'
 
 export function useI18n() {
   const page = usePage()
+
+  // Use computed to ensure reactivity when page.props changes
+  const translations = computed(() => (page.props.translations as any) || {})
+  const currentLocale = computed(() => (page.props.locale as string) || 'en')
 
   /**
    * Translate a key using the shared translations from the backend
@@ -9,10 +14,16 @@ export function useI18n() {
    * @param replacements - Optional replacements for parameters
    */
   const t = (key: string, replacements?: Record<string, string | number>): string => {
-    const translations = (page.props.translations as any) || {}
     const keys = key.split('.')
+    let value: any = translations.value
 
-    let value: any = translations
+    if (Object.keys(value).length === 0) {
+      // If we're missing '.' it might be a raw string, but if we have '.', it's likely a missing translation bundle
+      if (key.includes('.')) {
+        console.warn(`[useI18n] Translations not yet loaded or empty for key: ${key}`)
+      }
+    }
+
     for (const k of keys) {
       if (value && typeof value === 'object' && k in value) {
         value = value[k]
@@ -23,6 +34,7 @@ export function useI18n() {
     }
 
     if (value === undefined || typeof value !== 'string') {
+      // In development, this helps identify missing keys
       return key
     }
 
@@ -35,7 +47,7 @@ export function useI18n() {
     return value
   }
 
-  const getLocale = () => (page.props.locale as string) || 'en'
+  const getLocale = () => currentLocale.value
 
   return { t, getLocale }
 }

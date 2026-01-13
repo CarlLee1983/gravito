@@ -6,7 +6,7 @@ import { orbits } from '../config/orbits'
 import {
   AppServiceProvider,
   DatabaseProvider,
-  InertiaServiceProvider,
+  HandleInertiaRequests,
   RouteProvider,
 } from './Providers'
 
@@ -30,7 +30,7 @@ export async function bootstrap(): Promise<PlanetCore> {
   // Register Providers
   core.register(new DatabaseProvider())
   core.register(new AppServiceProvider())
-  core.register(new InertiaServiceProvider())
+  core.register(new HandleInertiaRequests())
   core.register(new RouteProvider())
 
   // Compatibility Middleware for Gravito 2.0+
@@ -40,6 +40,7 @@ export async function bootstrap(): Promise<PlanetCore> {
     anyCtx.inertia = ctx.get('inertia')
     anyCtx.session = ctx.get('session')
     anyCtx.auth = ctx.get('auth')
+    anyCtx.i18n = ctx.get('i18n')
 
     // Handle data compatibility
     if (ctx.req.method !== 'GET' && ctx.req.method !== 'HEAD') {

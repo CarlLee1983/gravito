@@ -34,6 +34,10 @@ export class AuthController extends Controller {
 
     session.flash('success', 'Welcome back!')
 
+    if (user.role === UserRole.ADMIN) {
+      return ctx.redirect('/admin')
+    }
+
     return ctx.redirect('/profile')
   }
 
