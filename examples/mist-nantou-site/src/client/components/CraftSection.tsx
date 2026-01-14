@@ -10,8 +10,8 @@ const steps = [
     en: 'Hand Picking',
     desc: '堅持人工手採，只取頂端最鮮嫩的一心二葉。清晨的露水未乾前不採，正午烈日當頭不採，唯有上午九點至十一點的陽光，能賦予茶葉最飽滿的生命力。',
     specs: { temp: '22-25°C', time: '09:00 AM', note: '一心二葉' },
-    // Image: A person works in a lush green tea field
-    image: 'https://images.unsplash.com/photo-1592318711310-606df600600c?q=80&w=1000&auto=format&fit=crop'
+    // Image: A person works in a lush green tea field (Verified)
+    image: 'https://images.unsplash.com/photo-1743402810466-29a840f2c053?q=80&w=1000&auto=format&fit=crop'
   },
   {
     id: '02',
