@@ -28,8 +28,8 @@ const steps = [
     en: 'Shaking',
     desc: '這是製茶師與茶葉的對話。透過雙手輕柔翻動，讓葉緣細胞摩擦破損，空氣進入葉片內部氧化，將原本的草氣轉化為迷人的花果香。',
     specs: { temp: 'Indoor 20°C', time: '8-12 Hours', note: '發酵關鍵' },
-    // Image: Fresh leaves texture/Bamboo basket
-    image: 'https://images.unsplash.com/photo-1585553616435-2dc0a54e271d?q=80&w=1000&auto=format&fit=crop'
+    // Image: Premium shaking photo (Verified)
+    image: 'https://plus.unsplash.com/premium_photo-1730833395411-91d46c1e6ab7?q=80&w=1000&auto=format&fit=crop'
   },
   {
     id: '04',
