@@ -55,8 +55,8 @@ const steps = [
     en: 'Roasting',
     desc: '利用炭火或電焙籠的慢火烘烤，降低水分至 3% 以下。烘焙能修飾茶葉的苦澀，轉化為醇厚的熟香，賦予茶葉長時間存放的穩定性。',
     specs: { temp: '90-120°C', time: 'Multiple', note: '熟成轉化' },
-    // Image: Charcoal Fire
-    image: 'https://images.unsplash.com/photo-1517502474097-f9b30659dadb?q=80&w=1000&auto=format&fit=crop'
+    // Image: Roasting process (Verified)
+    image: 'https://www.hanyitea.tw/wp-content/uploads/2024/06/%E5%A4%A7126EC9F4-36A4-422C-BAE0-00F4383B87BC.jpeg'
   }
 ];
 
