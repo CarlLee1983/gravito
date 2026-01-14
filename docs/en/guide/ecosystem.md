@@ -26,7 +26,7 @@ Gravito is a vast galaxy composed of numerous **Kinetic Modules**. These modules
     <span class="module-code">PHOTON</span>
     <h3 class="module-title">Photon HTTP</h3>
     <code class="module-pkg">@gravito/photon</code>
-    <p class="module-desc">High-speed HTTP engine based on Hono and Bun, providing ultra-low latency request handling architecture.</p>
+    <p class="module-desc">Our self-developed high-performance native HTTP engine. Precision-engineered for ultra-low latency request handling with zero abstraction overhead.</p>
   </div>
 
   <div class="module-card group">
@@ -263,6 +263,14 @@ Gravito is a vast galaxy composed of numerous **Kinetic Modules**. These modules
 
 ## Workflow & Automation
 <div class="ecosystem-grid">
+  <div class="module-card env group">
+    <div class="card-accent"></div>
+    <span class="module-code">ZENITH</span>
+    <h3 class="module-title">Zenith</h3>
+    <code class="module-pkg">@gravito/zenith</code>
+    <p class="module-desc">The Control Plane. Zero-config dashboard for monitoring and managing your Flux workflows and Stream queues in real-time.</p>
+  </div>
+
   <div class="module-card env group">
     <div class="card-accent"></div>
     <span class="module-code">FLUX</span>

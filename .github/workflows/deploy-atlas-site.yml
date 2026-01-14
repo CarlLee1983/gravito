@@ -34,15 +34,6 @@ jobs:
       - name: Build Core Dependencies
         run: bunx turbo run build --filter=@gravito/atlas --filter=@gravito/photon
 
-      - name: Build Atlas site
-        working-directory: examples/atlas-site
-        run: |
-          set -e
-          bun run build
-        env:
-          NODE_ENV: production
-          VITE_GA_MEASUREMENT_ID: ${{ vars.GA_ATLAS_MEASUREMENT_ID }}
-
       - name: Synchronize to atlas-site-dist repo
         run: |
           set -euo pipefail
@@ -51,11 +42,22 @@ jobs:
           cd atlas-site-dist
           git config user.name "Gravito Deploy Bot"
           git config user.email "bot@gravito.dev"
-          find . -maxdepth 1 -mindepth 1 ! -name '.git' -exec rm -rf {} +
+          find . -maxdepth 1 -mindepth 1 ! -name '.git' ! -name 'CNAME' -exec rm -rf {} +
           cp -R ../examples/atlas-site/dist/. .
+          
+          # Manually inject GA ID into index.html (Match Official Site Logic)
+          GA_ID="${{ vars.GA_ATLAS_MEASUREMENT_ID }}"
+          if [ -n "$GA_ID" ]; then
+            echo "💉 Injecting GA Script for: ${GA_ID:0:4}***"
+            GA_SCRIPT="<script async src=\"https://www.googletagmanager.com/gtag/js?id=${GA_ID}\"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${GA_ID}');</script>"
+            sed -i "s|<!-- Google Analytics Placeholder -->|$GA_SCRIPT|g" index.html
+          else
+            echo "⚠️ GA_ATLAS_MEASUREMENT_ID is empty! Skipping injection."
+          fi
+
           if [ -n "$(git status --porcelain)" ]; then
             git add .
-            git commit -m "chore: deploy atlas site ($(date -u +"%Y-%m-%d %H:%M UTC"))"
+            git commit -m "chore: deploy atlas site with GA ($(date -u +"%Y-%m-%d %H:%M UTC"))"
             git push origin main
           else
             echo "No changes to deploy"

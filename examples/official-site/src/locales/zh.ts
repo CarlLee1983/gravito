@@ -157,6 +157,8 @@ export default {
     lux_note: 'Luminosity (Lux) — 基於 Gravito Core 的 Sitemap 引擎。',
     atlas: 'Atlas (ORM)',
     atlas_note: 'Atlas (ORM) — 高性能 Bun 原生 ORM。',
+    zenith: 'Zenith',
+    zenith_note: 'Zenith — 零配置控制面板。',
     connect: '社群',
     legal: '法律',
     privacy: '隱私政策',

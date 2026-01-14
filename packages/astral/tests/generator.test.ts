@@ -63,4 +63,60 @@ describe('OpenApiGenerator', () => {
 
     expect(body.content['application/json'].schema.properties.email).toBeDefined()
   })
+
+  test('should handle error responses', () => {
+    const configWithErrors = {
+      contracts: [
+        astral.resource('/api/users', {
+          operations: {
+            index: {
+              summary: 'List',
+              output: [UserDTO],
+              errors: {
+                401: 'Unauthorized',
+                403: z.object({ message: z.string() }),
+              },
+            },
+          },
+        }),
+      ],
+    }
+    const gen = new OpenApiGenerator(configWithErrors)
+    const routes = [{ path: '/api/users', method: 'GET' }]
+    const spec = gen.generate(routes)
+
+    expect(spec.paths['/api/users'].get.responses['401']).toBeDefined()
+    expect(
+      spec.paths['/api/users'].get.responses['403'].content['application/json'].schema.properties
+        .message
+    ).toBeDefined()
+  })
+
+  test('should handle query parameters for GET', () => {
+    const FilterSchema = z.object({
+      q: z.string().optional(),
+      page: z.number().default(1),
+    })
+    const configWithQuery = {
+      contracts: [
+        astral.resource('/api/users', {
+          operations: {
+            index: {
+              summary: 'List',
+              input: FilterSchema,
+              output: [UserDTO],
+            },
+          },
+        }),
+      ],
+    }
+    const gen = new OpenApiGenerator(configWithQuery)
+    const routes = [{ path: '/api/users', method: 'GET' }]
+    const spec = gen.generate(routes)
+
+    const params = spec.paths['/api/users'].get.parameters
+    expect(params).toBeDefined()
+    expect(params.find((p: any) => p.name === 'q')).toBeDefined()
+    expect(params.find((p: any) => p.name === 'page')).toBeDefined()
+  })
 })

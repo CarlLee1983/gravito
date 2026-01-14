@@ -212,6 +212,21 @@ async function build() {
       let html = await res.text()
       html = injectMeta(html, task.meta)
 
+      // Inject GA (Official Site Style)
+      const gaId = process.env.GA_MEASUREMENT_ID
+      if (gaId) {
+        html = html.replace(
+          '<!-- Google Analytics Placeholder -->',
+          `<script async src="https://www.googletagmanager.com/gtag/js?id=${gaId}"></script>
+           <script>
+             window.dataLayer = window.dataLayer || [];
+             function gtag(){dataLayer.push(arguments);}
+             gtag('js', new Date());
+             gtag('config', '${gaId}');
+           </script>`
+        )
+      }
+
       const filePath = join(
         outputDir,
         task.path === '/' ? 'index.html' : `${task.path.replace(/^\//, '')}/index.html`
@@ -283,6 +298,21 @@ async function build() {
   try {
     const res = await (core.app as Photon).request('/__404_gen__')
     let html = await res.text()
+
+    // Inject GA (Official Site Style)
+    const gaId = process.env.GA_MEASUREMENT_ID
+    if (gaId) {
+      html = html.replace(
+        '<!-- Google Analytics Placeholder -->',
+        `<script async src="https://www.googletagmanager.com/gtag/js?id=${gaId}"></script>
+         <script>
+           window.dataLayer = window.dataLayer || [];
+           function gtag(){dataLayer.push(arguments);}
+           gtag('js', new Date());
+           gtag('config', '${gaId}');
+         </script>`
+      )
+    }
 
     const spaScript = `
     <script>

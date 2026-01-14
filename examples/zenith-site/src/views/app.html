@@ -45,23 +45,7 @@
     <link rel="stylesheet" href="/static/build/assets/app.css">
     {{/if}}
 
-    <!-- Google Analytics -->
-    {{#if ga_id}}
-    <script>
-        (function() {
-            var gaId = '{{{ ga_id }}}';
-            var script = document.createElement('script');
-            script.async = true;
-            script.src = 'https://www.googletagmanager.com/gtag/js?id=' + gaId;
-            document.head.appendChild(script);
-
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', gaId);
-        })();
-    </script>
-    {{/if}}
+    <!-- Google Analytics Placeholder -->
 </head>
 
 <body>

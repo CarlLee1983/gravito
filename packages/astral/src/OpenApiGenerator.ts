@@ -74,6 +74,20 @@ export class OpenApiGenerator {
       },
     }
 
+    // Handle Errors
+    if (op.errors) {
+      for (const [code, schema] of Object.entries(op.errors)) {
+        operation.responses[code] = {
+          description: typeof schema === 'string' ? schema : 'Error response',
+          content: {
+            'application/json': {
+              schema: typeof schema === 'string' ? { type: 'object' } : this.zodToSchema(schema),
+            },
+          },
+        }
+      }
+    }
+
     // Handle Input (Body or Query)
     if (op.input) {
       const inputSchema = this.extractZodSchema(op.input)
@@ -86,7 +100,19 @@ export class OpenApiGenerator {
           },
         }
       } else {
-        // TODO: Handle query params for GET
+        // Basic Query Params Support
+        const jsonSchema: any = zodToJsonSchema(inputSchema as ZodSchema, { target: 'openApi3' })
+        if (jsonSchema.properties) {
+          operation.parameters = operation.parameters || []
+          for (const [name, prop] of Object.entries(jsonSchema.properties)) {
+            operation.parameters.push({
+              name,
+              in: 'query',
+              required: jsonSchema.required?.includes(name),
+              schema: prop,
+            })
+          }
+        }
       }
     }
 

@@ -6,57 +6,49 @@ import { SitemapStream } from '@gravito/constellation'
 import type { PlanetCore } from '@gravito/core'
 import { bootstrap } from './src/bootstrap'
 
-console.log('🏗️  Starting Static Site Generation...')
+console.log('🏗️  Starting Static Site Generation for zenith.gravito.dev...')
 
 const execAsync = promisify(exec)
 
 /**
  * Discover all routes from the router
- * This scans the router's internal route registry
  */
-function discoverRoutes(core: PlanetCore): string[] {
+function discoverRoutes(_core: PlanetCore): string[] {
   const routes = new Set<string>()
 
-  // Get all registered routes from the router
-  // The router stores routes in its internal structure
-  const _router = core.router
-
-  // Try to get routes from router's internal registry
-  // This is a simplified approach - in production you might want to
-  // maintain a routes manifest or use a route scanner
   const knownRoutes = [
     '/',
     '/about',
+    '/features',
+    '/integrations',
+    '/contact',
     '/privacy',
     '/terms',
     '/zh-TW',
     '/zh-TW/about',
+    '/zh-TW/features',
+    '/zh-TW/integrations',
+    '/zh-TW/contact',
     '/zh-TW/privacy',
     '/zh-TW/terms',
   ]
 
-  // Add known routes
   for (const route of knownRoutes) {
     routes.add(route)
   }
-
-  // You can extend this to scan your route files or maintain a routes manifest
-  // For now, we'll use a simple approach and let users add routes manually
 
   return Array.from(routes)
 }
 
 async function build() {
   // Load environment variables
-  const baseUrl = process.env.STATIC_SITE_BASE_URL || 'https://yourdomain.com'
+  const baseUrl = process.env.STATIC_SITE_BASE_URL || 'https://zenith.gravito.dev'
   const domain = new URL(baseUrl).hostname
   const staticDomains = process.env.STATIC_SITE_DOMAINS || ''
 
   // 0. Build Client Assets
-  // Inject environment variables for Vite (VITE_ prefix required)
   console.log('⚡ Building client assets (Vite)...')
   try {
-    // Set Vite environment variables
     const viteEnv = {
       ...process.env,
       VITE_STATIC_SITE_DOMAINS: staticDomains,
@@ -93,7 +85,21 @@ async function build() {
   try {
     const res = await core.adapter.fetch(new Request('http://localhost/'))
     if (res.status === 200) {
-      const html = await res.text()
+      let html = await res.text()
+      const gaId = process.env.VITE_GA_ID
+      if (gaId) {
+        console.log(`💉 Injecting GA Script: ${gaId.substring(0, 4)}***`)
+        html = html.replace(
+          '<!-- Google Analytics Placeholder -->',
+          `<script async src="https://www.googletagmanager.com/gtag/js?id=${gaId}"></script>
+           <script>
+             window.dataLayer = window.dataLayer || [];
+             function gtag(){dataLayer.push(arguments);}
+             gtag('js', new Date());
+             gtag('config', '${gaId}');
+           </script>`
+        )
+      }
       const indexPath = join(outputDir, 'index.html')
       await writeFile(indexPath, html)
       smStream.add({ url: `${baseUrl}/`, priority: 1.0 })
@@ -110,7 +116,7 @@ async function build() {
   // Render other routes
   for (const route of routes) {
     if (route === '/') {
-      continue // Already handled
+      continue
     }
 
     console.log(`Render: ${route}`)
@@ -131,7 +137,20 @@ async function build() {
         continue
       }
 
-      const html = await res.text()
+      let html = await res.text()
+      const gaId = process.env.VITE_GA_ID
+      if (gaId) {
+        html = html.replace(
+          '<!-- Google Analytics Placeholder -->',
+          `<script async src="https://www.googletagmanager.com/gtag/js?id=${gaId}"></script>
+           <script>
+             window.dataLayer = window.dataLayer || [];
+             function gtag(){dataLayer.push(arguments);}
+             gtag('js', new Date());
+             gtag('config', '${gaId}');
+           </script>`
+        )
+      }
       const pathname = route.replace(/\/$/, '') || '/'
       const filePath = join(outputDir, pathname, 'index.html')
       await mkdir(dirname(filePath), { recursive: true })
@@ -147,12 +166,32 @@ async function build() {
   await writeFile(join(outputDir, 'sitemap.xml'), sitemapXml)
   console.log('🗺️  Sitemap generated.')
 
+  // Generate robots.txt
+  console.log('🤖 Generating robots.txt...')
+  const robotsTxt = `User-agent: *
+Allow: /
+Sitemap: ${baseUrl}/sitemap.xml
+`
+  await writeFile(join(outputDir, 'robots.txt'), robotsTxt)
+  console.log('✅ robots.txt generated.')
+
   // Copy static assets
   console.log('📦 Copying static assets...')
   const staticDir = join(process.cwd(), 'static')
   try {
     await cp(staticDir, join(outputDir, 'static'), { recursive: true })
-    console.log('✅ Static assets copied')
+    console.log('✅ Static assets copied to static/')
+
+    // Copy root assets from static to root
+    const rootAssets = ['favicon.ico', 'favicon.png', 'favicon.svg']
+    for (const asset of rootAssets) {
+      try {
+        await cp(join(staticDir, asset), join(outputDir, asset))
+        console.log(`✅ Asset ${asset} copied to root`)
+      } catch (_e) {
+        // Skip if missing
+      }
+    }
   } catch (_e) {
     console.warn('⚠️  No static directory found or failed to copy.')
   }
@@ -160,13 +199,11 @@ async function build() {
   // Generate 404.html for GitHub Pages
   console.log('🚫 Generating 404.html...')
   try {
-    // Request a known non-existent route to trigger the 404 hook
     const res = await core.adapter.fetch(
       new Request(`http://localhost/__force_404_generation_${Date.now()}__`)
     )
     let html = await res.text()
 
-    // Insert SPA routing script
     const spaScript = `
     <script>
       // GitHub Pages SPA routing handler for Inertia.js
@@ -212,12 +249,7 @@ async function build() {
               console.log('Route not found:', currentPath);
               return;
             }
-            
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-            
             window.history.replaceState(null, '', currentPath + currentSearch + currentHash);
-            
             document.open();
             document.write(html);
             document.close();
@@ -233,11 +265,26 @@ async function build() {
     </script>`
 
     if (html.includes('</body>')) {
-      html = html.replace('</body>', `${spaScript}\n</body>`)
+      html = html.replace(
+        '</body>',
+        `
+${spaScript}
+</body>`
+      )
     } else if (html.includes('</BODY>')) {
-      html = html.replace('</BODY>', `${spaScript}\n</BODY>`)
+      html = html.replace(
+        '</BODY>',
+        `
+${spaScript}
+</BODY>`
+      )
     } else {
-      html = html.replace('</html>', `${spaScript}\n</html>`)
+      html = html.replace(
+        '</html>',
+        `
+${spaScript}
+</html>`
+      )
     }
 
     await writeFile(join(outputDir, '404.html'), html)
@@ -246,18 +293,14 @@ async function build() {
     console.error('❌ Failed to generate 404.html:', e)
   }
 
-  // Generate GitHub Pages files
-  if (domain && domain !== 'yourdomain.com') {
-    await writeFile(join(outputDir, 'CNAME'), domain)
-    console.log('✅ CNAME file created')
-  }
+  // CNAME
+  await writeFile(join(outputDir, 'CNAME'), domain)
+  console.log(`✅ CNAME file created for: ${domain}`)
 
   await writeFile(join(outputDir, '.nojekyll'), '')
   console.log('✅ .nojekyll file created')
 
   console.log('✅ Static Site Build Complete!')
-  console.log(`📦 Output directory: ${outputDir}`)
-  console.log(`🚀 Preview with: cd dist-static && npx serve .`)
   process.exit(0)
 }
 
