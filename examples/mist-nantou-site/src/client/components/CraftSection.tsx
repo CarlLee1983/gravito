@@ -19,8 +19,8 @@ const steps = [
     en: 'Withering',
     desc: '將茶青平均攤灑於笳力上，讓陽光帶走部分水分。葉片因失水而變軟，細胞壁的通透性增加，潛藏的酶開始甦醒，散發出淡淡的青草香氣。',
     specs: { temp: 'Solar / Indoor', time: '2-4 Hours', note: '走水 15%' },
-    // Image: A pile of green leaves sitting on top of a table (Verified)
-    image: 'https://images.unsplash.com/photo-1762708650701-d86d2496f53e?q=80&w=1000&auto=format&fit=crop'
+    // Image: Premium withering photo (Verified)
+    image: 'https://plus.unsplash.com/premium_photo-1675011288741-f86047b7ef29?q=80&w=1000&auto=format&fit=crop'
   },
   {
     id: '03',
