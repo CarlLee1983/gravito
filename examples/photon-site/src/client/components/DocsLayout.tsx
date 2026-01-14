@@ -44,7 +44,7 @@ export const DocsLayout = ({ children, currentId }: { children: React.ReactNode,
       <div className="crt-overlay" />
 
       {/* Sidebar Navigation */}
-      <aside className="w-80 border-r border-white/5 bg-[#010101] flex flex-col sticky top-0 h-screen z-40">
+      <aside className="w-80 border-r border-white/5 bg-[#080809] flex flex-col sticky top-0 h-screen z-40">
         <div className="p-12 flex-1 overflow-y-auto custom-scrollbar">
           <Link href="/" className="text-2xl font-black text-white tracking-tighter uppercase mb-12 flex items-center gap-3 group">
             <div className="w-8 h-8 border border-photon-gold/30 flex items-center justify-center relative overflow-hidden group-hover:border-photon-gold transition-colors">
@@ -52,7 +52,7 @@ export const DocsLayout = ({ children, currentId }: { children: React.ReactNode,
               <div className="absolute inset-0 bg-photon-gold/5 group-hover:bg-photon-gold/20 transition-colors" />
             </div>
             <span className="group-hover:translate-x-1 transition-transform duration-500">
-              Pho<span className="opacity-50 italic">ton</span>
+              Pho<span className="text-zinc-500 italic">ton</span>
             </span>
           </Link>
 
@@ -61,46 +61,32 @@ export const DocsLayout = ({ children, currentId }: { children: React.ReactNode,
             className="w-full flex items-center justify-between bg-white/[0.02] border border-white/5 rounded-sm py-3 px-4 text-[10px] font-technical tracking-widest hover:border-photon-gold/30 transition-all mb-12 group text-left"
           >
             <div className="flex items-center gap-3">
-              <Search size={14} className="text-gray-600 group-hover:text-photon-gold" />
+              <Search size={14} className="text-zinc-600 group-hover:text-photon-gold" />
               <span className="opacity-30 group-hover:opacity-100 transition-opacity">COMMAND_PALETTE</span>
             </div>
-            <kbd className="flex items-center gap-1 bg-white/5 px-2 py-0.5 rounded text-[8px] text-gray-500 font-mono">
+            <kbd className="flex items-center gap-1 bg-white/5 px-2 py-0.5 rounded text-[8px] text-zinc-500 font-mono">
               <Command size={8} /> K
             </kbd>
           </button>
 
-          <nav className="space-y-12">
+          <nav className="space-y-10">
             {navGroups.map((group) => (
               <div key={group.category} className="space-y-4">
-                <div className="text-[8px] font-technical text-gray-700 tracking-[0.4em] uppercase px-4">
-                  // {group.category}
+                <div className="text-[9px] font-technical text-zinc-700 tracking-[0.4em] uppercase px-4">
+                  {group.category}
                 </div>
                 <div className="space-y-1">
                   {group.items.map((item) => (
                     <Link
                       key={item.id}
                       href={item.href}
-                      className={`flex items-center gap-4 px-4 py-2.5 rounded-sm group transition-all ${currentId === item.id ? 'bg-white/[0.03] border border-white/5' : 'hover:bg-white/[0.01]'
+                      className={`flex items-center gap-4 px-4 py-2.5 rounded-sm group transition-all ${currentId === item.id ? 'bg-white/[0.04] border border-white/5' : 'hover:bg-white/[0.02]'
                         }`}
                     >
                       <div className="relative w-4 h-4 flex items-center justify-center">
-                        {/* Circular Progress Indicator for current page */}
-                        <svg className="absolute inset-0 w-full h-full circular-progress" viewBox="0 0 24 24">
-                          <circle cx="12" cy="12" r="10" className="stroke-white/5" strokeWidth="2" fill="none" />
-                          {currentId === item.id && (
-                            <motion.circle
-                              cx="12" cy="12" r="10"
-                              className="stroke-photon-gold"
-                              strokeWidth="2"
-                              fill="none"
-                              strokeDasharray="62.8"
-                              animate={{ strokeDashoffset: 62.8 - (62.8 * progress) / 100 }}
-                            />
-                          )}
-                        </svg>
-                        <item.icon size={10} className={currentId === item.id ? 'text-photon-gold' : 'text-gray-700'} />
+                        <item.icon size={11} className={currentId === item.id ? 'text-photon-gold' : 'text-zinc-600 group-hover:text-zinc-400'} />
                       </div>
-                      <span className={`text-[10px] font-black tracking-[0.2em] uppercase ${currentId === item.id ? 'text-white' : 'text-gray-500 group-hover:text-gray-300'
+                      <span className={`text-[10px] font-bold tracking-[0.15em] uppercase transition-colors ${currentId === item.id ? 'text-zinc-50' : 'text-zinc-500 group-hover:text-zinc-300'
                         }`}>
                         {item.label}
                       </span>
@@ -112,34 +98,32 @@ export const DocsLayout = ({ children, currentId }: { children: React.ReactNode,
           </nav>
         </div>
 
-        <div className="p-12 border-t border-white/5 bg-[#020202]">
+        <div className="p-10 border-t border-white/5 bg-[#050506]">
           <div className="flex items-center gap-4">
-            <div className="relative">
-              <Activity size={16} className="text-photon-gold animate-pulse" />
-              <div className="absolute inset-0 bg-photon-gold blur-lg opacity-20" />
-            </div>
+            <Activity size={14} className="text-photon-gold/40" />
             <div className="flex flex-col">
-              <span className="text-[8px] font-technical text-gray-600 uppercase">Load_Buffer</span>
-              <span className="text-[10px] text-white font-bold font-technical tracking-widest leading-none">OPTIMIZED</span>
+              <span className="text-[8px] font-technical text-zinc-700 uppercase">Engine_Status</span>
+              <span className="text-[10px] text-zinc-400 font-bold font-technical tracking-widest leading-none uppercase">Optimized_V1</span>
             </div>
           </div>
         </div>
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 relative overflow-y-auto h-screen custom-scrollbar">
-        {/* HUD UI Elements */}
-        <div className="fixed top-0 right-0 p-8 pointer-events-none opacity-20 z-50 flex flex-col items-end">
-          <div className="flex items-center gap-4 mb-2">
-            <div className="h-px w-24 bg-white/20" />
-            <span className="text-[10px] font-technical text-white tracking-[0.3em]">SEC_LINK_0{currentId || '0'}</span>
-          </div>
-          <div className="text-[8px] font-technical text-photon-gold uppercase tracking-[0.5em] animate-pulse">
-            Receiving_Data_Packets...
+      <main className="flex-1 relative overflow-y-auto h-screen custom-scrollbar bg-[#0a0a0b]">
+        {/* Subdued HUD */}
+        <div className="fixed top-0 right-0 p-12 pointer-events-none opacity-10 z-50 flex flex-col items-end">
+          <div className="text-[9px] font-technical text-zinc-600 tracking-[0.4em] uppercase">
+            X-Photon-Trace: {currentId || 'INDEX'}
           </div>
         </div>
 
-        <div className="max-w-4xl p-24 mx-auto pb-4">
+        <div className="max-w-5xl py-24 px-12 md:px-24 mx-auto pb-4">
+          <div className="mb-12 flex items-center gap-2 text-[10px] font-technical text-zinc-700 tracking-widest uppercase">
+            <Link href="/" className="hover:text-photon-gold">HOME</Link>
+            <span>/</span>
+            <span className="text-zinc-500">{currentId || 'DOCS'}</span>
+          </div>
           {children}
         </div>
         <Footer />
