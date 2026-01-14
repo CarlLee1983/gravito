@@ -27,8 +27,8 @@ const About = () => {
         <motion.div 
           style={{ y }}
           className="absolute inset-0 opacity-40 bg-cover bg-center grayscale"
-          // Artisan hands image
-          style={{ backgroundImage: "url('https://images.unsplash.com/photo-1594631252845-29fc4cc8cde9?q=80&w=2000&auto=format&fit=crop')" }}
+          // Hero: Close up of weathered hands holding tea or soil
+          style={{ backgroundImage: "url('https://images.unsplash.com/photo-1589362372727-44c33745098e?q=80&w=2000&auto=format&fit=crop')" }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-ink-black via-transparent to-black/50" />
         
@@ -82,11 +82,13 @@ const About = () => {
         </div>
 
         <div className="md:col-span-8 flex flex-col gap-48">
+          {/* Grandpa Lin - Picker */}
           <div className="flex flex-col gap-8 group">
             <div className="aspect-[16/9] w-full bg-stone-800 relative overflow-hidden">
+               {/* Image: Worker in misty field */}
                <div 
                  className="absolute inset-0 bg-cover bg-center group-hover:scale-105 transition-transform duration-1000 ease-out opacity-80"
-                 style={{ backgroundImage: "url('https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1000&auto=format&fit=crop')" }}
+                 style={{ backgroundImage: "url('https://images.unsplash.com/photo-1523996767426-62da472d822d?q=80&w=1000&auto=format&fit=crop')" }}
                />
                <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors duration-500" />
                <div className="absolute bottom-8 left-8 border border-white/20 px-6 py-3 font-display text-xl bg-black/30 backdrop-blur-md">製茶師 — 林阿公</div>
@@ -96,11 +98,13 @@ const About = () => {
             </p>
           </div>
 
+          {/* Master Zhang - Roaster */}
           <div className="flex flex-col gap-8 group">
             <div className="aspect-[16/9] w-full bg-stone-800 relative overflow-hidden">
+               {/* Image: Charcoal/Fire texture */}
                <div 
                  className="absolute inset-0 bg-cover bg-center group-hover:scale-105 transition-transform duration-1000 ease-out opacity-80"
-                 style={{ backgroundImage: "url('https://images.unsplash.com/photo-1576092768241-dec231879fc3?q=80&w=1000&auto=format&fit=crop')" }}
+                 style={{ backgroundImage: "url('https://images.unsplash.com/photo-1543255006-d6395b6f1171?q=80&w=1000&auto=format&fit=crop')" }}
                />
                <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors duration-500" />
                <div className="absolute bottom-8 left-8 border border-white/20 px-6 py-3 font-display text-xl bg-black/30 backdrop-blur-md">焙茶師 — 張師傅</div>
