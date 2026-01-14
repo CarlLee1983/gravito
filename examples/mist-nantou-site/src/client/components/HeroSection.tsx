@@ -8,67 +8,72 @@ const HeroSection = () => {
     offset: ["start start", "end start"]
   });
 
-  const textY = useTransform(scrollYProgress, [0, 1], [0, 200]);
-  const textOpacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
-  const bgScale = useTransform(scrollYProgress, [0, 1], [1, 1.1]);
+  // Parallax: Text moves faster than bg
+  const textY = useTransform(scrollYProgress, [0, 1], [0, 400]);
+  const bgY = useTransform(scrollYProgress, [0, 1], [0, 100]);
+  const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
 
   return (
-    <section ref={containerRef} className="relative h-screen w-full overflow-hidden bg-paper-white">
-      {/* Background Layer: Real Imagery */}
+    <section ref={containerRef} className="relative h-screen w-full overflow-hidden bg-ink-black">
+      
+      {/* Background: Cinematic Parallax */}
       <motion.div 
-        style={{ scale: bgScale }}
+        style={{ y: bgY }}
         className="absolute inset-0 z-0"
       >
-        {/* Mountain/Mist Image */}
         <div 
-          className="absolute inset-0 bg-cover bg-center opacity-80"
-          style={{ backgroundImage: "url('https://images.unsplash.com/photo-1506459225022-777f43e81332?q=80&w=2000&auto=format&fit=crop')" }}
+          className="absolute inset-0 bg-cover bg-center opacity-60"
+          style={{ backgroundImage: "url('https://images.unsplash.com/photo-1506459225022-777f43e81332?q=80&w=2500&auto=format&fit=crop')" }}
         />
-        
-        {/* Gradient Overlay for Text Readability */}
-        <div className="absolute inset-0 bg-gradient-to-b from-paper-white/30 via-paper-white/10 to-paper-white/80" />
-        
-        {/* Noise Texture Overlay */}
-        <div className="absolute inset-0 opacity-[0.05] pointer-events-none mix-blend-multiply bg-[url('https://grainy-gradients.vercel.ai/noise.svg')]" />
+        {/* Vignette */}
+        <div className="absolute inset-0 bg-gradient-to-t from-ink-black via-transparent to-ink-black/50" />
       </motion.div>
 
       {/* Main Content */}
-      <div className="relative z-10 h-full flex flex-col justify-center items-center">
+      <div className="relative z-10 h-full w-full flex flex-col justify-center items-center">
         
-        {/* Vertical Title */}
+        {/* Giant Typography: The Soul */}
         <motion.div 
-          style={{ y: textY, opacity: textOpacity }}
-          initial={{ opacity: 0, filter: "blur(10px)" }}
-          animate={{ opacity: 1, filter: "blur(0px)" }}
-          transition={{ duration: 1.5, ease: "easeOut" }}
-          className="flex flex-row-reverse gap-8 items-start"
+          style={{ y: textY, opacity }}
+          className="relative mix-blend-overlay"
         >
-          <h1 className="text-[12vh] md:text-[18vh] font-display leading-none text-ink-black select-none vertical-rl drop-shadow-2xl">
-            雲霧
-          </h1>
-          <h1 className="text-[12vh] md:text-[18vh] font-display leading-none text-ink-black/80 select-none vertical-rl mt-32 drop-shadow-xl">
-            南投
-          </h1>
+          <div className="flex flex-row-reverse gap-8 md:gap-16">
+            <h1 
+              className="text-[25vw] leading-none font-display text-paper-white select-none vertical-rl opacity-90"
+              style={{ textShadow: "0 0 40px rgba(255,255,255,0.3)" }}
+            >
+              雲霧
+            </h1>
+            <h1 
+              className="text-[25vw] leading-none font-display text-paper-white select-none vertical-rl mt-48 opacity-80"
+              style={{ textShadow: "0 0 40px rgba(255,255,255,0.3)" }}
+            >
+              南投
+            </h1>
+          </div>
         </motion.div>
 
-        {/* Floating Stamp (Red Accent) */}
+        {/* Floating Stamp (Red Accent) - Absolute Position to break grid */}
         <motion.div 
           initial={{ scale: 0, rotate: -45 }}
           animate={{ scale: 1, rotate: 0 }}
-          transition={{ delay: 1, duration: 0.5, type: "spring" }}
-          className="absolute top-[20%] right-[15%] w-16 h-16 border-2 border-cinnabar text-cinnabar flex items-center justify-center font-display text-xl rounded-sm opacity-80 mix-blend-multiply bg-paper-white/50 backdrop-blur-sm"
+          transition={{ delay: 2.2, duration: 0.5, type: "spring" }}
+          className="absolute top-[15%] right-[10%] w-24 h-24 border-2 border-cinnabar/80 text-cinnabar flex items-center justify-center font-display text-3xl rounded-sm mix-blend-screen"
         >
-          極品
+          <div className="border border-cinnabar/50 w-[90%] h-[90%] flex items-center justify-center">
+            極品
+          </div>
         </motion.div>
 
-        {/* Bottom Description */}
+        {/* Bottom Description: The Anchor */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1.5, duration: 1 }}
-          className="absolute bottom-12 left-8 md:left-16 max-w-xs"
+          transition={{ delay: 2.5, duration: 1 }}
+          className="absolute bottom-12 left-8 md:left-16 max-w-md z-20 mix-blend-difference"
         >
-          <p className="font-body text-ink-black/80 font-medium text-sm md:text-base leading-relaxed tracking-widest drop-shadow-md">
+          <div className="w-12 h-[1px] bg-paper-white mb-6" />
+          <p className="font-body text-paper-white text-lg md:text-xl leading-loose tracking-widest font-light">
             海拔一千兩百公尺的堅持<br />
             雲霧繚繞間的職人手藝
           </p>
@@ -76,12 +81,12 @@ const HeroSection = () => {
 
         {/* Scroll Indicator */}
         <motion.div 
-          animate={{ y: [0, 10, 0] }}
-          transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-          className="absolute bottom-12 right-8 md:right-16 flex flex-col items-center gap-2"
+          animate={{ y: [0, 10, 0], opacity: [0.5, 1, 0.5] }}
+          transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
+          className="absolute bottom-12 right-8 md:right-16 flex flex-col items-center gap-4 z-20 mix-blend-difference"
         >
-          <div className="w-[1px] h-12 bg-gradient-to-b from-transparent via-ink-black/50 to-ink-black/80" />
-          <span className="text-[10px] font-sans tracking-widest text-ink-black/60 vertical-rl font-bold">SCROLL</span>
+          <span className="text-xs font-sans tracking-[0.3em] text-paper-white vertical-rl">SCROLL</span>
+          <div className="w-[1px] h-16 bg-gradient-to-b from-paper-white to-transparent" />
         </motion.div>
       </div>
     </section>
