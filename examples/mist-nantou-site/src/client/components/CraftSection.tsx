@@ -46,8 +46,8 @@ const steps = [
     en: 'Rolling',
     desc: '將茶葉放入揉捻機或手工團揉，破壞葉脈組織，讓茶汁附著於表面。這不僅塑造了茶葉緊結的外形，更決定了沖泡時滋味釋放的速度。',
     specs: { temp: 'Ambient', time: '20-40 Mins', note: '破壞細胞' },
-    // Image: Texture of rolled/darker leaves or hands working
-    image: 'https://images.unsplash.com/photo-1594631252845-29fc4cc8cde9?q=80&w=1000&auto=format&fit=crop'
+    // Image: Rolling process (Verified)
+    image: 'https://encrypted-tbn2.gstatic.com/images?q=tbn:ANd9GcQLb0oGh8icGHWtQkEckkR6Uu6o1h-45nmo0LUIx6NlsFcbkrbG'
   },
   {
     id: '06',
