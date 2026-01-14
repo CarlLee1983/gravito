@@ -6,6 +6,7 @@ import {
   Share2, Search, List, Layers, Play, X, Command
 } from 'lucide-react'
 import { navGroups, navItems } from '../constants/navigation'
+import { Footer } from './Footer'
 
 
 export const DocsLayout = ({ children, currentId }: { children: React.ReactNode, currentId?: string }) => {
@@ -138,9 +139,10 @@ export const DocsLayout = ({ children, currentId }: { children: React.ReactNode,
           </div>
         </div>
 
-        <div className="max-w-4xl p-24 mx-auto">
+        <div className="max-w-4xl p-24 mx-auto pb-4">
           {children}
         </div>
+        <Footer />
       </main>
 
       {/* Command Palette Modal */}

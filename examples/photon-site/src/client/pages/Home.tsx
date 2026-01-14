@@ -6,6 +6,7 @@ import {
   Layers, ShieldCheck, Microscope, Database, Workflow, BarChart3, BookOpen, ChevronRight
 } from 'lucide-react'
 import { PhotonHero } from '../components/PhotonHero'
+import { Footer } from '../components/Footer'
 
 const stats = [
   { id: 'LAB_DATA_01', icon: Activity, label: 'THROUGHPUT', value: '91,428', unit: 'req/s', status: 'optimal' },
@@ -215,10 +216,7 @@ export default function Home() {
         </div>
       </section>
 
-      <footer className="py-12 border-t border-white/5 px-12 flex justify-between items-center text-[8px] font-technical tracking-[0.5em] uppercase text-gray-700">
-        <span>PHOTON_ENGINE // LAB_VALIDATED_2026</span>
-        <span>PART_OF_GRAVITO_ECOSYSTEM</span>
-      </footer>
+      <Footer />
     </div>
   )
 }

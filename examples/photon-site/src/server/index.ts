@@ -1,7 +1,7 @@
+import path from 'node:path'
 import { Gravito } from '@gravito/core/engine'
 import { InertiaService } from '@gravito/ion'
 import { TemplateEngine } from '@gravito/prism'
-import path from 'node:path'
 
 const app = new Gravito()
 
@@ -25,19 +25,19 @@ const renderInertia = async (c: any, component: string, props: any) => {
   // Bridge FastContext to support Inertia requirements
   const bridge = Object.assign(c, {
     set: (key: string, val: any) => store.set(key, val),
-    get: (key: string) => store.get(key)
+    get: (key: string) => store.get(key),
   })
 
   const inertia = new InertiaService(bridge as any, {
     version: '1.1.0',
-    rootView: 'app'
+    rootView: 'app',
   })
 
   // The actual fix: InertiaService.render returns a Response object.
   // We need to return this response directly.
   const response = await inertia.render(component, {
     ...props,
-    isDev
+    isDev,
   })
 
   // Transfer headers from the Inertia response to our context if needed,
@@ -45,18 +45,9 @@ const renderInertia = async (c: any, component: string, props: any) => {
   return response
 }
 
-// Routes
-app.get('/', (c) => renderInertia(c, 'Home', { version: '1.1.0' }))
-
-app.get('/docs/:page', (c) => {
-  const pageParam = c.req.param('page') || 'intro'
-  const doc = docsContent[pageParam] || docsContent['intro']
-  return renderInertia(c, 'Docs', { ...doc, slug: pageParam })
-})
-
 // Technical Content Dictionary
 const docsContent: Record<string, any> = {
-  'intro': {
+  intro: {
     id: '01',
     title: 'Engine Manifesto',
     content: `
@@ -81,9 +72,9 @@ const docsContent: Record<string, any> = {
         <p>Telemetry: In recent lab tests, Photon handled 100,000 sustained parallel connections with 40% less memory utilization than its closest competitor.</p>
       </div>
     `,
-    meta: { lastUpdated: '2026-01-14', complexity: 'BASE_LEVEL', category: 'GETTING_STARTED' }
+    meta: { lastUpdated: '2026-01-14', complexity: 'BASE_LEVEL', category: 'GETTING_STARTED' },
   },
-  'quickstart': {
+  quickstart: {
     id: '02',
     title: 'Initialize Core',
     content: `
@@ -123,9 +114,9 @@ export default {
         <p>Note: When exporting the object with <code>fetch</code>, Bun handles the underlying HTTP server orchestration, allowing Photon to focus entirely on request routing and context management.</p>
       </div>
     `,
-    meta: { lastUpdated: '2026-01-14', complexity: 'BASE_LEVEL', category: 'GETTING_STARTED' }
+    meta: { lastUpdated: '2026-01-14', complexity: 'BASE_LEVEL', category: 'GETTING_STARTED' },
   },
-  'structure': {
+  structure: {
     id: '03',
     title: 'Project Structure',
     content: `
@@ -153,9 +144,9 @@ import { OrbitDB } from '@gravito/atlas'
 app.orbit(OrbitAuth)
 app.orbit(OrbitDB)</code></pre>
     `,
-    meta: { lastUpdated: '2026-01-14', complexity: 'BASE_LEVEL', category: 'GETTING_STARTED' }
+    meta: { lastUpdated: '2026-01-14', complexity: 'BASE_LEVEL', category: 'GETTING_STARTED' },
   },
-  'routing': {
+  routing: {
     id: '04',
     title: 'Routing Architecture',
     content: `
@@ -204,9 +195,9 @@ app.get('/users/:id', (c) => c.text('User ID: ' + c.req.param('id')))</code></pr
 api.use(authMiddleware)
 api.get('/status', (c) => c.json({ ok: true }))</code></pre>
     `,
-    meta: { lastUpdated: '2026-01-14', complexity: 'MID_LEVEL', category: 'CORE_ENGINE' }
+    meta: { lastUpdated: '2026-01-14', complexity: 'MID_LEVEL', category: 'CORE_ENGINE' },
   },
-  'context': {
+  context: {
     id: '05',
     title: 'Context Handling',
     content: `
@@ -252,9 +243,9 @@ app.post('/api/ingest', async (c) => {
   await next()
 })</code></pre>
     `,
-    meta: { lastUpdated: '2026-01-14', complexity: 'MID_LEVEL', category: 'CORE_ENGINE' }
+    meta: { lastUpdated: '2026-01-14', complexity: 'MID_LEVEL', category: 'CORE_ENGINE' },
   },
-  'middleware': {
+  middleware: {
     id: '06',
     title: 'Middleware Matrix',
     content: `
@@ -291,9 +282,9 @@ const api = app.basePath('/api')
 api.use(cors({ origin: 'https://photon.shell' }))
 api.use(secureHeaders())</code></pre>
     `,
-    meta: { lastUpdated: '2026-01-14', complexity: 'MID_LEVEL', category: 'CORE_ENGINE' }
+    meta: { lastUpdated: '2026-01-14', complexity: 'MID_LEVEL', category: 'CORE_ENGINE' },
   },
-  'exceptions': {
+  exceptions: {
     id: '07',
     title: 'Exception Handling',
     content: `
@@ -319,9 +310,9 @@ api.use(secureHeaders())</code></pre>
       <h3>Atomic Commits</h3>
       <p>In Photon, if an error happens mid-request, any headers set before the error are discarded, and the Error Handler gets a fresh state to ensure the client receives a valid error response.</p>
     `,
-    meta: { lastUpdated: '2026-01-14', complexity: 'MID_LEVEL', category: 'CORE_ENGINE' }
+    meta: { lastUpdated: '2026-01-14', complexity: 'MID_LEVEL', category: 'CORE_ENGINE' },
   },
-  'ilo': {
+  ilo: {
     id: '08',
     title: 'Instruction Level Opt',
     content: `
@@ -337,7 +328,7 @@ api.use(secureHeaders())</code></pre>
         <p>Lab Result: This approach results in a 15-20% decrease in "System Time" compared to frameworks that rely on generic high-level JS abstractions.</p>
       </div>
     `,
-    meta: { lastUpdated: '2026-01-14', complexity: 'HARD_LEVEL', category: 'PHYSICAL_LAYER' }
+    meta: { lastUpdated: '2026-01-14', complexity: 'HARD_LEVEL', category: 'PHYSICAL_LAYER' },
   },
   'zero-copy': {
     id: '09',
@@ -355,9 +346,9 @@ api.use(secureHeaders())</code></pre>
         <p>Efficiency: Serving a 1GB file with Photon uses the same amount of JS heap as serving a 1KB string.</p>
       </div>
     `,
-    meta: { lastUpdated: '2026-01-14', complexity: 'HARD_LEVEL', category: 'PHYSICAL_LAYER' }
+    meta: { lastUpdated: '2026-01-14', complexity: 'HARD_LEVEL', category: 'PHYSICAL_LAYER' },
   },
-  'memory': {
+  memory: {
     id: '10',
     title: 'Recycled Context',
     content: `
@@ -375,9 +366,9 @@ api.use(secureHeaders())</code></pre>
       <h3>Heap Stability</h3>
       <p>By keeping long-lived objects in memory and reusing them, we avoid the <strong>"Young Generation Allocation"</strong> churn. This means the GC doesn't have to run as often, leading to much smoother response time percentiles (P99, P99.9).</p>
     `,
-    meta: { lastUpdated: '2026-01-14', complexity: 'HARD_LEVEL', category: 'PHYSICAL_LAYER' }
+    meta: { lastUpdated: '2026-01-14', complexity: 'HARD_LEVEL', category: 'PHYSICAL_LAYER' },
   },
-  'prism': {
+  prism: {
     id: '11',
     title: 'Prism Templates',
     content: `
@@ -419,9 +410,9 @@ api.use(secureHeaders())</code></pre>
         <p>Image Optimization: Prism includes a built-in <code>&lt;x-image /&gt;</code> component that automatically handles WebP conversion and Core Web Vitals optimizations.</p>
       </div>
     `,
-    meta: { lastUpdated: '2026-01-14', complexity: 'MID_LEVEL', category: 'FULLSTACK_SUITE' }
+    meta: { lastUpdated: '2026-01-14', complexity: 'MID_LEVEL', category: 'FULLSTACK_SUITE' },
   },
-  'ion': {
+  ion: {
     id: '12',
     title: 'Ion SPA Bridge',
     content: `
@@ -446,9 +437,9 @@ api.use(secureHeaders())</code></pre>
         <p>Seamless Transitions: Because Ion utilizes the X-Inertia protocol, page transitions feel near-instant as only the data (and not the entire shell) is transmitted over the wire.</p>
       </div>
     `,
-    meta: { lastUpdated: '2026-01-14', complexity: 'MID_LEVEL', category: 'FULLSTACK_SUITE' }
+    meta: { lastUpdated: '2026-01-14', complexity: 'MID_LEVEL', category: 'FULLSTACK_SUITE' },
   },
-  'atlas': {
+  atlas: {
     id: '13',
     title: 'Atlas ORM',
     content: `
@@ -475,9 +466,9 @@ export class User extends Model {
       <h3>Optional Drivers</h3>
       <p>To keep the application footprint small, Atlas utilizes dynamic imports for database drivers. You only install and load the drivers required for your specific environment (e.g., <code>pg</code> or <code>mysql2</code>).</p>
     `,
-    meta: { lastUpdated: '2026-01-14', complexity: 'MID_LEVEL', category: 'FULLSTACK_SUITE' }
+    meta: { lastUpdated: '2026-01-14', complexity: 'MID_LEVEL', category: 'FULLSTACK_SUITE' },
   },
-  'testing': {
+  testing: {
     id: '14',
     title: 'Testing Suite',
     content: `
@@ -498,9 +489,9 @@ test('home handler returns 200', async () => {
       <h3>Integration Tests</h3>
       <p>Photon's <code>app.request()</code> method allows you to perform full end-to-end routing tests in-memory, ensuring your middleware matrix and route parameters are working as expected.</p>
     `,
-    meta: { lastUpdated: '2026-01-14', complexity: 'BASE_LEVEL', category: 'ADVANCED' }
+    meta: { lastUpdated: '2026-01-14', complexity: 'BASE_LEVEL', category: 'ADVANCED' },
   },
-  'deployment': {
+  deployment: {
     id: '15',
     title: 'Bun Deployment',
     content: `
@@ -523,9 +514,9 @@ EXPOSE 3333
 ENV NODE_ENV=production
 CMD ["bun", "src/server/index.ts"]</code></pre>
     `,
-    meta: { lastUpdated: '2026-01-14', complexity: 'MID_LEVEL', category: 'ADVANCED' }
+    meta: { lastUpdated: '2026-01-14', complexity: 'MID_LEVEL', category: 'ADVANCED' },
   },
-  'performance': {
+  performance: {
     id: '16',
     title: 'Perf Tuning',
     content: `
@@ -545,13 +536,68 @@ CMD ["bun", "src/server/index.ts"]</code></pre>
       <h3>Garbage Collection Management</h3>
       <p>In high-load scenarios, you can use <code>Bun.gc(true)</code> in a Photon middleware to manually trigger memory cleanup during "Silence periods" detected by the engine's telemetry.</p>
     `,
-    meta: { lastUpdated: '2026-01-14', complexity: 'HARD_LEVEL', category: 'ADVANCED' }
-  }
+    meta: { lastUpdated: '2026-01-14', complexity: 'HARD_LEVEL', category: 'ADVANCED' },
+  },
 }
+
+const legalContent: Record<string, any> = {
+  privacy: {
+    id: 'L01',
+    title: 'Privacy Policy',
+    lastUpdated: '2026-01-14',
+    content: `
+      <h3>1. Data Collection Protocol</h3>
+      <p>Photon Engine is designed with a "Local-First" data priority. We do not collect, store, or transmit any personal data by default. Any telemetry data collected through the <code>logger()</code> middleware session resides exclusively within your runtime environment.</p>
+
+      <h3>2. Local Session Data</h3>
+      <p>When using the documentation or experimentation labs, session state may be stored in your browser's <code>localStorage</code> purely for interface persistence. This data never leaves your terminal.</p>
+
+      <h3>3. External Interfaces</h3>
+      <p>The Photon site may link to third-party modules (e.g., GitHub, NPM). Interactions with these modules are governed by their respective privacy protocols. We advocate for the use of self-hosted alternatives where protocol security is mission-critical.</p>
+
+      <h3>4. Security Matrix</h3>
+      <p>We implement the <code>secureHeaders()</code> protocol globally. This includes strict Content Security Policy (CSP), HSTS enforcement, and XSS filtering to ensure your interaction with our infrastructure is protected at the kernel level.</p>
+    `,
+  },
+  terms: {
+    id: 'L02',
+    title: 'Terms of Use',
+    lastUpdated: '2026-01-14',
+    content: `
+      <h3>1. Protocol License</h3>
+      <p>Photon Engine and its documentation are licensed under the <strong>MIT License</strong>. You are free to use, copy, modify, and distribute the software for any purpose, provided the copyright notice and license are included.</p>
+
+      <h3>2. Acceptable Sequence</h3>
+      <p>Users are expected to interact with our documentation and experimentation labs in a non-destructive manner. Automated scraping or stress-testing against our host nodes is restricted by the <code>ShieldV6</code> firewall.</p>
+
+      <h3>3. Disclaimer of Liability</h3>
+      <p>The software is provided "as is", without warranty of any kind. Gravito Research Labs and the contributors shall not be liable for any claim, damages or other liability arising from the use of the engine in production environments.</p>
+
+      <h3>4. Ecosystem Governance</h3>
+      <p>By using the Photon Engine, you acknowledge that you are operating within the Gravito Framework Ecosystem. We reserve the right to update the technical specifications of these protocols without prior broadcast.</p>
+    `,
+  },
+}
+
+// Routes
+app.get('/', (c) => renderInertia(c, 'Home', { version: '1.1.0' }))
+
+app.get('/docs/:page', (c) => {
+  const pageParam = c.req.param('page') || 'intro'
+  const doc = docsContent[pageParam] || docsContent.intro
+  return renderInertia(c, 'Docs', { ...doc, slug: pageParam })
+})
+
+app.get('/legal/:page', (c) => {
+  const pageParam = c.req.param('page')
+  const content = (legalContent as any)[pageParam || '']
+  if (!content) return c.redirect('/')
+  return renderInertia(c, 'Legal', { ...content, slug: pageParam })
+})
 
 export default {
   port: 3333,
-  fetch: app.fetch.bind(app)
+  fetch: app.fetch.bind(app),
 }
 
 console.log('🚀 PHOTON_ENGINE // ACTIVE_ON: http://localhost:3333')
