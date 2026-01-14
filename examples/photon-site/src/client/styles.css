@@ -3,10 +3,39 @@
 @theme {
   --color-photon-gold: #FFB800;
   --color-obsidian: #020202;
-  --color-surface: #121214; /* 提升層次感的視窗表面色 */
+  --color-surface: #121214;
   --color-titanium: #F5F5F7;
   --font-display: "Syncopate", "Inter", sans-serif;
   --font-technical: "Fira Code", monospace;
+  --animate-text-glitch: glitch 3s infinite;
+}
+
+@keyframes glitch {
+  0% {
+    text-shadow: 2px 0 0 rgba(255, 184, 0, 0.3), -2px 0 0 rgba(0, 255, 255, 0.2);
+  }
+
+  2% {
+    text-shadow: -3px 0 0 rgba(255, 184, 0, 0.3), 3px 0 0 rgba(0, 255, 255, 0.2);
+  }
+
+  4% {
+    text-shadow: 0 0 0 rgba(255, 184, 0, 0.3), 0 0 0 rgba(0, 255, 255, 0.2);
+  }
+
+  100% {
+    text-shadow: 0 0 0 rgba(255, 184, 0, 0.3), 0 0 0 rgba(0, 255, 255, 0.2);
+  }
+}
+
+@keyframes scanline {
+  0% {
+    transform: translateY(-100%);
+  }
+
+  100% {
+    transform: translateY(100%);
+  }
 }
 
 @layer base {
@@ -15,80 +44,200 @@
     color: #D1D5DB;
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
   }
 }
 
-/* --- PHOTON PROSE SYSTEM V6: LAYERED DEPTH --- */
+/* --- HUD & ANIMATIONS --- */
 
-.photon-prose {
-  @apply max-w-none;
+.crt-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%),
+    linear-gradient(90deg, rgba(255, 0, 0, 0.015), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.015));
+  background-size: 100% 3px, 3px 100%;
+  pointer-events: none;
+  z-index: 100;
+  opacity: 0.4;
 }
 
-/* Paragraphs */
+/* --- THE PHOTON PROSE SYSTEM V6 (ULTRA STABLE) --- */
+
+.photon-prose {
+  @apply max-w-none text-gray-400;
+}
+
+.photon-prose h2 {
+  @apply text-4xl md:text-5xl font-black text-white uppercase tracking-tighter mt-24 mb-8 flex flex-col gap-4 leading-tight;
+}
+
+.photon-prose h2::after {
+  content: '';
+  @apply w-16 h-1 bg-photon-gold shadow-[0_0_10px_rgba(255, 184, 0, 0.3)];
+}
+
+.photon-prose h3 {
+  @apply text-xl md:text-2xl font-bold text-white uppercase tracking-[0.2em] mt-16 mb-6 flex items-center gap-4 leading-tight;
+}
+
+.photon-prose h3::before {
+  content: '';
+  @apply w-4 h-1 bg-photon-gold/40;
+}
+
 .photon-prose p {
-  @apply text-[18px] leading-[1.9] text-gray-400 mb-12 font-normal pl-8 relative;
+  @apply text-lg md:text-[18px] leading-[1.7] text-gray-400 mb-6 font-light pl-6 relative;
   max-width: 72ch;
 }
 
 .photon-prose p::before {
   content: '';
-  @apply absolute left-0 top-2 w-1 h-6 bg-white/5 transition-all duration-500 rounded-full;
+  @apply absolute left-0 top-2 w-1 h-6 bg-white/10 transition-all duration-500 rounded-full;
 }
 
 .photon-prose p:hover::before {
-  @apply h-full bg-photon-gold/40;
+  @apply h-full bg-photon-gold shadow-[0_0_10px_#FFB800];
 }
 
-/* Mac-style Terminal with Elevated Surface */
+.photon-prose strong {
+  @apply text-white font-black px-1.5 py-0.5 bg-white/5 border-b-2 border-photon-gold/50;
+}
+
+.photon-prose ul {
+  @apply space-y-6 my-12 list-none pl-6;
+}
+
+.photon-prose li {
+  @apply text-[17px] leading-relaxed text-gray-300 flex flex-col gap-2 p-5 bg-white/[0.01] border border-white/5 relative;
+}
+
+.photon-prose li::before {
+  content: 'SPEC_ID_' counter(list-item);
+  counter-increment: list-item;
+  @apply font-technical text-[8px] text-photon-gold font-black tracking-[0.4em] mb-1 opacity-60;
+}
+
+/* Mac-style Terminal Window */
 .photon-prose pre {
-  @apply bg-surface border border-white/[0.08] my-24 overflow-hidden rounded-xl relative;
-  /* 複合式陰影：一層環境光陰影，一層硬物體陰影 */
-  box-shadow: 
-    0 40px 100px -20px rgba(0,0,0,0.9),
-    0 20px 40px -15px rgba(0,0,0,0.7),
-    inset 0 1px 0 rgba(255,255,255,0.05);
+  @apply bg-[#0D0D0F] border border-white/10 my-10 overflow-hidden rounded-xl relative;
+  box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
-/* Mac Title Bar with Subtle Polish */
 .photon-prose pre::before {
   content: '';
-  @apply block h-11 bg-white/[0.04] border-b border-white/[0.05] relative;
+  @apply block h-9 bg-white/[0.04] border-b border-white/[0.05] relative;
 }
 
-/* Red, Yellow, Green Mac Buttons */
 .photon-prose pre::after {
   content: '';
   position: absolute;
-  top: 16px;
-  left: 18px;
-  width: 52px;
-  height: 12px;
-  background-image: 
-    radial-gradient(circle, #FF5F56 5.5px, transparent 6px),
-    radial-gradient(circle, #FFBD2E 5.5px, transparent 6px),
-    radial-gradient(circle, #27C93F 5.5px, transparent 6px);
-  background-size: 12px 12px, 12px 12px, 12px 12px;
-  background-position: 0 0, 20px 0, 40px 0;
+  top: 12px;
+  left: 14px;
+  width: 44px;
+  height: 10px;
+  background-image:
+    radial-gradient(circle, #FF5F56 4.5px, transparent 5px),
+    radial-gradient(circle, #FFBD2E 4.5px, transparent 5px),
+    radial-gradient(circle, #27C93F 4.5px, transparent 5px);
+  background-size: 10px 10px, 10px 10px, 10px 10px;
+  background-position: 0 0, 17px 0, 34px 0;
   background-repeat: no-repeat;
 }
 
-/* Code Content with Sunken Inset Effect */
 .photon-prose code {
-  @apply font-mono text-[14px] md:text-[15px] leading-[1.8] p-10 block bg-[#080809]/50;
-  color: #E0E0E0;
-  box-shadow: inset 0 10px 20px rgba(0,0,0,0.3);
+  @apply font-mono text-[0.9em] px-1.5 py-0.5 rounded bg-white/5 text-titanium border border-white/10;
 }
 
-/* Strong Text Accents */
-.photon-prose strong {
-  @apply text-white font-bold bg-white/5 px-1.5 py-0.5 border-b border-photon-gold/30;
+.photon-prose pre code {
+  @apply block p-6 bg-transparent border-none text-[14px] md:text-[15px] leading-[1.6];
+  box-shadow: none;
 }
 
-/* Technical h2 */
-.photon-prose h2 {
-  @apply text-3xl md:text-4xl font-black text-white uppercase tracking-tighter mt-40 mb-12 flex items-center gap-6;
+/* Syntax Highlighting */
+.photon-prose .keyword {
+  @apply text-red-400 font-bold;
 }
-.photon-prose h2::after {
-  content: '';
-  @apply h-px flex-1 bg-white/10;
+
+.photon-prose .string {
+  @apply text-blue-300;
+}
+
+.photon-prose .function {
+  @apply text-purple-400;
+}
+
+.photon-prose .titanium {
+  @apply text-gray-100 font-bold;
+}
+
+.photon-prose .comment {
+  @apply text-gray-600 italic;
+}
+
+/* Callout Box */
+.photon-prose .callout-tip {
+  @apply bg-photon-gold/[0.02] border-l-4 border-photon-gold p-8 my-16 relative overflow-hidden;
+}
+
+.photon-prose .callout-tip::before {
+  content: '[!] ADVISORY_CORE_INTEL';
+  @apply block text-[10px] font-black text-photon-gold mb-4 tracking-[0.5em];
+}
+
+.photon-prose .callout-tip p {
+  @apply mb-0 pl-0 border-none text-white italic font-medium text-lg leading-relaxed;
+}
+
+.photon-prose .callout-tip p::before {
+  @apply hidden;
+}
+
+/* --- OTHER UI --- */
+
+.grid-texture {
+  background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.05) 1px, transparent 0);
+  background-size: 40px 40px;
+}
+
+.lab-grid {
+  @apply border border-white/5 relative overflow-hidden bg-white/[0.01];
+  background-image: linear-gradient(rgba(255, 215, 0, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 215, 0, 0.05) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.command-palette {
+  @apply fixed inset-0 z-[100] flex items-start justify-center pt-40 px-4 backdrop-blur-sm bg-black/60;
+}
+
+.terminal-input {
+  @apply bg-[#0D0D0F] border border-photon-gold/30 p-6 w-full max-w-2xl text-photon-gold font-mono;
+  clip-path: polygon(0 0, 100% 0, 100% 90%, 98% 100%, 0 100%);
+}
+
+.scanline-overlay {
+  @apply absolute inset-0 pointer-events-none opacity-[0.03] overflow-hidden;
+}
+
+.scanline-overlay::after {
+  content: "";
+  @apply absolute inset-0 bg-gradient-to-b from-transparent via-white to-transparent h-1/2 w-full animate-[scanline_4s_linear_infinite];
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 184, 0, 0.2);
 }

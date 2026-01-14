@@ -22,7 +22,7 @@ class MinimalRequest implements FastRequest {
     private readonly _request: Request,
     private readonly _params: Record<string, string>,
     private readonly _path: string
-  ) {}
+  ) { }
 
   get url(): string {
     return this._request.url
@@ -106,6 +106,7 @@ class MinimalRequest implements FastRequest {
  */
 export class MinimalContext implements IFastContext {
   private readonly _req: MinimalRequest
+  private _resHeaders: Record<string, string> = {}
 
   constructor(request: Request, params: Record<string, string>, path: string) {
     this._req = new MinimalRequest(request, params, path)
@@ -115,48 +116,55 @@ export class MinimalContext implements IFastContext {
     return this._req
   }
 
-  // Response helpers - create headers inline (no reuse overhead)
+  // Response helpers - merge custom headers with defaults
+  private getHeaders(contentType: string): Record<string, string> {
+    return {
+      ...this._resHeaders,
+      'Content-Type': contentType,
+    }
+  }
 
   json<T>(data: T, status = 200): Response {
     return new Response(JSON.stringify(data), {
       status,
-      headers: { 'Content-Type': 'application/json; charset=utf-8' },
+      headers: this.getHeaders('application/json; charset=utf-8'),
     })
   }
 
   text(text: string, status = 200): Response {
     return new Response(text, {
       status,
-      headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+      headers: this.getHeaders('text/plain; charset=utf-8'),
     })
   }
 
   html(html: string, status = 200): Response {
     return new Response(html, {
       status,
-      headers: { 'Content-Type': 'text/html; charset=utf-8' },
+      headers: this.getHeaders('text/html; charset=utf-8'),
     })
   }
 
   redirect(url: string, status: 301 | 302 | 303 | 307 | 308 = 302): Response {
     return new Response(null, {
       status,
-      headers: { Location: url },
+      headers: { ...this._resHeaders, Location: url },
     })
   }
 
   body(data: BodyInit | null, status = 200): Response {
-    return new Response(data, { status })
+    return new Response(data, {
+      status,
+      headers: this._resHeaders,
+    })
   }
 
-  header(_name: string, _value: string): void {
-    // MinimalContext doesn't support custom headers
-    // Use FastContext for that use case
-    console.warn('MinimalContext.header() is a no-op. Use FastContext for custom headers.')
+  header(name: string, value: string): void {
+    this._resHeaders[name] = value
   }
 
   status(_code: number): void {
-    // Status is set per response, not on context
+    // Status is set per response helper call, not stored on context
   }
 
   // Required for interface compatibility
