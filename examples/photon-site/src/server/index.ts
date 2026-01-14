@@ -577,6 +577,115 @@ const legalContent: Record<string, any> = {
       <p>By using the Photon Engine, you acknowledge that you are operating within the Gravito Framework Ecosystem. We reserve the right to update the technical specifications of these protocols without prior broadcast.</p>
     `,
   },
+  'ex-hello-world': {
+    id: 'E01',
+    title: 'Ultra Hello World',
+    content: `
+      <p>This example demonstrates the absolute minimal footprint of Photon. By using <code>c.ultra()</code>, we disable non-essential context features for maximum raw speed.</p>
+      
+      <h3>Optimal Implementation</h3>
+      <pre><code>import { Gravito } from '@gravito/core/engine'
+
+const app = new Gravito()
+
+app.get('/ping', (c) => {
+  // Enter zero-allocation mode
+  c.ultra() 
+  return c.text('pong')
+})
+
+export default {
+  fetch: app.fetch.bind(app)
+}</code></pre>
+
+      <div class="callout-tip">
+        <p>Lab Note: Ultra mode is ideal for high-frequency health checks or simple proxy handlers where garbage collection pauses must be avoided.</p>
+      </div>
+    `,
+    meta: { lastUpdated: '2026-01-14', complexity: 'BASE_LEVEL', category: 'LAB_EXPERIMENTS' },
+  },
+  'ex-file-stream': {
+    id: 'E02',
+    title: 'Zero-Copy Stream',
+    content: `
+      <p>Leverage Bun's native <code>file()</code> descriptors within Photon to serve binary data without intermediate buffering in the JavaScript heap.</p>
+      
+      <h3>Implementation Strategy</h3>
+      <pre><code>app.get('/video/:id', async (c) => {
+  const id = c.req.param('id')
+  const file = Bun.file(\`./assets/\${id}.mp4\`)
+  
+  // Photon handles the transition from Bun.file to native Response
+  return c.res(file, 200, {
+    'Content-Type': 'video/mp4'
+  })
+})</code></pre>
+
+      <h3>Why it matters</h3>
+      <p>Standard Node.js approaches often "chunk" the data through streams, causing multiple context switches. Photon passes the file descriptor directly to Bun's underlying optimized C++ server, resulting in 0MB heap pressure regardless of file size.</p>
+    `,
+    meta: { lastUpdated: '2026-01-14', complexity: 'MID_LEVEL', category: 'LAB_EXPERIMENTS' },
+  },
+  'ex-middleware': {
+    id: 'E03',
+    title: 'Middleware Pulse',
+    content: `
+      <p>Learn how to orchestrate complex request life-cycles using Photon's non-blocking middleware architecture.</p>
+      
+      <h3>The Middleware Chain</h3>
+      <pre><code>// 1. Instrumentation Middleware
+app.use(async (c, next) => {
+  const start = performance.now()
+  await next()
+  const end = performance.now()
+  c.header('X-Engine-Pulse', \`\${end - start}ms\`)
+})
+
+// 2. Conditional Protection
+app.use('/admin/*', async (c, next) => {
+  const token = c.req.header('Authorization')
+  if (!token) return c.json({ error: 'UNAUTHORIZED' }, 401)
+  return await next()
+})
+
+app.get('/admin/stats', (c) => c.json({ status: 'ACTIVE' }))</code></pre>
+
+      <div class="callout-tip">
+        <p>Photon's middleware system uses AOT pre-sorting. This means even a complex chain of 20+ middleware units adds negligible overhead compared to dynamic execution engines.</p>
+      </div>
+    `,
+    meta: { lastUpdated: '2026-01-14', complexity: 'MID_LEVEL', category: 'LAB_EXPERIMENTS' },
+  },
+  'ex-crud-atlas': {
+    id: 'E04',
+    title: 'Atomic CRUD Atlas',
+    content: `
+      <p>Complete integration example using <strong>Atlas ORM</strong> for high-speed database orchestration within Photon routes.</p>
+      
+      <h3>Data Model & Controller</h3>
+      <pre><code>import { Model, column, hasMany } from '@gravito/atlas'
+
+class Project extends Model {
+  @column({ primary: true }) id: number
+  @column() title: string
+}
+
+// In your Photon Route:
+app.get('/projects', async (c) => {
+  const projects = await Project.query()
+    .where('active', true)
+    .orderBy('id', 'desc')
+    .limit(10)
+    .get()
+
+  return c.json({ projects })
+})</code></pre>
+
+      <h3>Performance Intel</h3>
+      <p>Atlas is built with the same "No-Shim" philosophy as Photon. It uses direct dynamic driver loading and pre-compiled query templates, making it significantly faster than Prisma or TypeORM in high-load scenarios.</p>
+    `,
+    meta: { lastUpdated: '2026-01-14', complexity: 'HARD_LEVEL', category: 'LAB_EXPERIMENTS' },
+  },
 }
 
 // Routes
