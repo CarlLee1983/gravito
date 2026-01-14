@@ -17,22 +17,22 @@ export default function Legal({ title, content, id, slug, lastUpdated }: LegalPr
         <DocsLayout currentId={slug}>
             <Head title={`${title} // LEGAL_PROTOCOL`} />
 
-            <div className="min-h-screen bg-obsidian">
+            <div className="bg-p-bg transition-colors duration-500">
                 <header className="max-w-4xl mx-auto mb-20 px-4 pt-16 relative z-10 text-center">
-                    <div className="inline-flex items-center gap-3 px-4 py-2 bg-white/5 border border-white/10 rounded-sm mb-8">
+                    <div className="inline-flex items-center gap-3 px-4 py-2 bg-surf-bg border border-s-brd rounded-sm mb-8">
                         <Shield size={14} className="text-photon-gold" />
-                        <span className="text-[10px] font-technical text-gray-400 tracking-[0.4em] uppercase">
+                        <span className="text-[10px] font-technical text-m-txt tracking-[0.4em] uppercase">
                             LEGAL_COMPLIANCE_v1.0
                         </span>
                     </div>
 
-                    <h1 className="text-4xl md:text-6xl font-black text-white uppercase tracking-tighter mb-8 leading-tight">
+                    <h1 className="text-4xl md:text-6xl font-black text-p-txt uppercase tracking-tighter mb-8 leading-tight">
                         {title}
                     </h1>
 
-                    <div className="flex justify-center items-center gap-6 text-[10px] font-technical text-gray-600 uppercase tracking-widest">
+                    <div className="flex justify-center items-center gap-6 text-[10px] font-technical text-m-txt uppercase tracking-widest">
                         <span>MOD_ID: {id}</span>
-                        <div className="w-1 h-1 bg-gray-800 rounded-full" />
+                        <div className="w-1 h-1 bg-s-brd rounded-full" />
                         <span>LAST_UPDATE: {lastUpdated}</span>
                     </div>
                 </header>
@@ -46,11 +46,11 @@ export default function Legal({ title, content, id, slug, lastUpdated }: LegalPr
                         dangerouslySetInnerHTML={{ __html: content }}
                     />
 
-                    <div className="mt-32 p-12 border border-white/5 bg-white/[0.01] flex items-start gap-8">
+                    <div className="mt-32 p-12 border border-s-brd bg-s-bg flex items-start gap-8">
                         <Scale size={24} className="text-photon-gold opacity-40 shrink-0" />
                         <div>
-                            <h5 className="text-white text-xs font-bold uppercase mb-2">Legal Disclaimer</h5>
-                            <p className="text-gray-500 text-[11px] leading-relaxed">
+                            <h5 className="text-p-txt text-xs font-bold uppercase mb-2">Legal Disclaimer</h5>
+                            <p className="text-s-txt text-[11px] leading-relaxed">
                                 This document is part of the Gravito Research Labs legal framework.
                                 Photon Engine is provided "as is" without warranty.
                                 For specific commercial licensing, please contact our enterprise relations module.

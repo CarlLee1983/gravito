@@ -10,10 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800;900&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     
-    <!-- Meta Tags -->
-    <meta name="description" content="Photon is a zero-overhead web engine native to Bun, outperforming Hono by 20%+. Built for extreme performance and low latency.">
-    
-    <!-- Vite React Preamble (Required for React Refresh) -->
+    <!-- Vite React Preamble -->
     <script type="module">
         import RefreshRuntime from 'http://localhost:5173/@react-refresh'
         RefreshRuntime.injectIntoGlobalHook(window)
@@ -22,10 +19,9 @@
         window.__vite_plugin_react_preamble_installed__ = true
     </script>
 
-    <!-- Styles & Client Entry -->
     @vite(['src/client/app.tsx'])
 </head>
-<body class="bg-[#050505] selection:bg-cyan-500/30 overflow-x-hidden antialiased">
+<body class="selection:bg-photon-gold/30 overflow-x-hidden antialiased">
     @inertia
 </body>
 </html>

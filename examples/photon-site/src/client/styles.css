@@ -2,283 +2,141 @@
 
 @theme {
   --color-photon-gold: #FFB800;
-  --color-obsidian: #0a0a0b;
-  --color-surface: #121214;
-  --color-titanium: #F5F5F7;
   --font-display: "Syncopate", "Inter", sans-serif;
   --font-technical: "Fira Code", monospace;
-  --animate-text-glitch: glitch 3s infinite;
 }
 
-@keyframes glitch {
-  0% {
-    text-shadow: 2px 0 0 rgba(255, 184, 0, 0.3), -2px 0 0 rgba(0, 255, 255, 0.2);
-  }
-
-  2% {
-    text-shadow: -3px 0 0 rgba(255, 184, 0, 0.3), 3px 0 0 rgba(0, 255, 255, 0.2);
-  }
-
-  4% {
-    text-shadow: 0 0 0 rgba(255, 184, 0, 0.3), 0 0 0 rgba(0, 255, 255, 0.2);
-  }
-
-  100% {
-    text-shadow: 0 0 0 rgba(255, 184, 0, 0.3), 0 0 0 rgba(0, 255, 255, 0.2);
-  }
+/* --- THE SOURCE OF TRUTH: ADAPTIVE COLOR SYSTEM --- */
+:root {
+  --bg-primary: #020202;
+  --surf-bg: #0A0A0B;
+  --text-main: #D1D5DB;
+  --text-heading: #FFFFFF;
+  --text-muted: #6B7280;
+  --border-subtle: rgba(255, 255, 255, 0.08);
 }
 
-@keyframes scanline {
-  0% {
-    transform: translateY(-100%);
-  }
-
-  100% {
-    transform: translateY(100%);
-  }
+.light, [data-theme='light'] {
+  --bg-primary: #F5F5F7;
+  --surf-bg: #FFFFFF;
+  --text-main: #2D3748;
+  --text-heading: #000000;
+  --text-muted: #718096;
+  --border-subtle: rgba(0, 0, 0, 0.08);
 }
 
 @layer base {
   body {
-    background-color: #0a0a0b;
-    color: #a1a1aa;
-    font-family: var(--font-sans);
-    line-height: 1.8;
-    -webkit-font-smoothing: antialiased;
-    overflow-x: hidden;
+    background-color: var(--bg-primary);
+    color: var(--text-main);
+    transition: background-color 0.3s ease, color 0.3s ease;
+    opacity: 1 !important; /* 確保主體透明度為 1 */
   }
 }
 
-/* --- HUD & ANIMATIONS --- */
+/* --- ADAPTIVE UTILITY CLASSES --- */
+.text-p-txt { color: var(--text-heading); }
+.text-s-txt { color: var(--text-main); }
+.text-m-txt { color: var(--text-muted); }
+.bg-surf-bg { background-color: var(--surf-bg); }
+.border-s-brd { border-color: var(--border-subtle); }
+.from-s-brd { --tw-gradient-from: var(--border-subtle); }
 
-.crt-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.05) 50%),
-    linear-gradient(90deg, rgba(255, 0, 0, 0.01), rgba(0, 255, 0, 0.005), rgba(0, 0, 255, 0.01));
-  background-size: 100% 4px, 4px 100%;
-  pointer-events: none;
-  z-index: 100;
-  opacity: 0.15;
-}
-
-/* --- THE PHOTON PROSE SYSTEM V7 (READABILITY-FIRST) --- */
+/* --- THE PHOTON PROSE SYSTEM V11 (OPACITY FIX) --- */
 
 .photon-prose {
-  @apply max-w-[72ch] mx-auto text-zinc-400;
+  @apply max-w-none text-left;
+  color: var(--text-main);
 }
 
 .photon-prose h2 {
-  @apply text-4xl md:text-5xl font-black text-zinc-50 uppercase tracking-tighter mt-32 mb-10 flex flex-col gap-4 leading-none;
+  @apply text-4xl font-black uppercase tracking-tighter mt-48 mb-16 flex flex-col gap-6;
+  color: var(--text-heading);
 }
 
 .photon-prose h2::after {
   content: '';
-  @apply w-12 h-0.5 bg-photon-gold/40;
+  @apply w-24 h-1.5 bg-photon-gold shadow-[0_0_15px_rgba(255,184,0,0.3)];
 }
 
 .photon-prose h3 {
-  @apply text-xl md:text-2xl font-bold text-zinc-100 uppercase tracking-widest mt-20 mb-8 flex items-center gap-4;
+  @apply text-xl font-bold uppercase tracking-[0.2em] mt-24 mb-10 flex items-center gap-6;
+  color: var(--text-heading);
 }
 
 .photon-prose h3::before {
   content: '';
-  @apply w-2 h-2 rounded-full bg-photon-gold;
+  @apply w-6 h-1 bg-photon-gold/40;
 }
 
 .photon-prose p {
-  @apply text-[17px] leading-[1.85] text-zinc-400 mb-8 font-normal relative;
+  @apply text-lg md:text-[20px] leading-[2.2] mb-16 font-light pl-10 relative block;
+  color: var(--text-main) !important;
 }
 
-.photon-prose p strong {
-  @apply text-zinc-50 font-bold bg-white/[0.03] px-1 py-0 rounded;
-}
-
-.photon-prose ul {
-  @apply space-y-4 my-12 list-none;
-}
-
-.photon-prose li {
-  @apply text-[16px] leading-[1.7] text-zinc-300 flex flex-col gap-2 p-6 bg-white/[0.02] border border-white/5 relative hover:border-photon-gold/20 transition-colors;
-}
-
-.photon-prose li::before {
-  content: '→';
-  @apply font-technical text-[10px] text-photon-gold/50 font-black absolute -left-8 top-7;
-}
-
-/* Premium Code Windows - Prominent & Neon */
-.photon-prose pre {
-  @apply bg-[#121214] border border-white/10 my-16 overflow-hidden rounded-xl relative;
-  box-shadow:
-    0 40px 100px -20px rgba(0, 0, 0, 0.8),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
-}
-
-.photon-prose pre::before {
-  content: '⚡ TERMINAL_SESSION';
-  @apply block h-11 bg-white/[0.04] border-b border-white/[0.05] px-16 flex items-center text-[10px] font-technical tracking-[0.4em] text-photon-gold/80;
-}
-
-.photon-prose pre::after {
+.photon-prose p::before {
   content: '';
-  position: absolute;
-  top: 16px;
-  left: 14px;
-  width: 36px;
-  height: 8px;
-  background-image:
-    radial-gradient(circle, #FF5F56 3.5px, transparent 4px),
-    radial-gradient(circle, #FFBD2E 3.5px, transparent 4px),
-    radial-gradient(circle, #27C93F 3.5px, transparent 4px);
-  background-size: 8px 8px, 8px 8px, 8px 8px;
-  background-position: 0 0, 14px 0, 28px 0;
-  background-repeat: no-repeat;
+  @apply absolute left-0 top-2 w-1 h-6 bg-current opacity-20 rounded-full;
+}
+
+.photon-prose p:hover::before {
+  @apply h-full bg-photon-gold opacity-100;
+}
+
+.photon-prose strong {
+  @apply font-black px-1.5 py-0.5 border-b-2 border-photon-gold/50;
+  color: var(--text-heading);
+  background-color: rgba(255, 184, 0, 0.05);
+}
+
+/* Mac-style Terminal */
+.photon-prose pre {
+  @apply bg-[#0D0D0F] border border-white/10 my-24 overflow-hidden rounded-xl relative;
+  box-shadow: 0 40px 100px -20px rgba(0,0,0,0.5);
+  opacity: 1 !important;
 }
 
 .photon-prose code {
-  @apply font-mono text-[0.85em] px-2 py-0.5 rounded bg-photon-gold/10 text-photon-gold border border-photon-gold/20;
+  @apply font-mono text-[14px] md:text-[15px] leading-[1.8] p-10 block bg-[#080809]/50;
+  color: #E0E0E0 !important;
 }
 
-.photon-prose pre code {
-  @apply block p-8 bg-transparent border-none text-[15px] leading-[1.7] text-zinc-50 font-medium;
-  box-shadow: none;
-}
+.photon-prose .keyword { color: #F97583; }
+.photon-prose .string { color: #9ECBFF; }
+.photon-prose .function { color: #B392F0; }
+.photon-prose .comment { color: #6A737D; font-style: italic; }
 
-/* Professional IDE Theme (One Dark Pro Inspired) - Balanced & Soft */
-.photon-prose .keyword {
-  @apply text-[#c678dd] font-medium;
-}
-
-/* Muted Violet: keywords */
-.photon-prose .string {
-  @apply text-[#98c379];
-}
-
-/* Sage Green: strings */
-.photon-prose .function {
-  @apply text-[#61afef];
-}
-
-/* Soft Blue: methods */
-.photon-prose .comment {
-  @apply text-[#5c6370] italic;
-}
-
-/* Slate Gray: comments */
-.photon-prose .number {
-  @apply text-[#d19a66];
-}
-
-/* Soft Orange: numbers/bools */
-.photon-prose .operator {
-  @apply text-[#56b6c2];
-}
-
-/* Teal: operators */
-.photon-prose .property {
-  @apply text-[#e06c75];
-}
-
-/* Coral: properties */
-.photon-prose .type {
-  @apply text-[#e5c07b];
-}
-
-/* Sandy: Types */
-.photon-prose .constant {
-  @apply text-[#d19a66] font-bold;
-}
-
-/* Orange: constants */
-.photon-prose .titanium {
-  @apply text-zinc-50 font-black;
-}
-
-/* Emphasis */
-
-.photon-prose .attr-name {
-  @apply text-[#d19a66];
-}
-
-.photon-prose .tag {
-  @apply text-[#e06c75];
-}
-
-/* Sky Blue */
-.photon-prose .comment {
-  @apply text-zinc-600 italic;
-}
-
-.photon-prose .titanium {
-  @apply text-zinc-50 font-black;
-}
-
-.photon-prose .number {
-  @apply text-[#BD93F9];
-}
-
-/* Purple */
-
-.photon-prose .comment {
-  @apply text-zinc-600 italic;
-}
-
-/* Callout Box - Modernized */
+/* Callout Box */
 .photon-prose .callout-tip {
-  @apply bg-photon-gold/[0.01] border-l-2 border-photon-gold/40 p-10 my-20 relative;
-}
-
-.photon-prose .callout-tip::before {
-  content: 'ADVISORY';
-  @apply block text-[10px] font-technical font-black text-photon-gold/60 mb-6 tracking-[0.4em];
+  @apply border-l-4 border-photon-gold p-12 my-32 relative overflow-hidden;
+  background-color: var(--surf-bg);
 }
 
 .photon-prose .callout-tip p {
-  @apply mb-0 pl-0 border-none text-zinc-200 font-normal text-[18px] leading-relaxed italic;
+  @apply mb-0 pl-0 border-none italic font-medium text-xl leading-relaxed;
+  color: var(--text-heading) !important;
 }
 
-/* --- OTHER UI --- */
-
+/* --- GRID TEXTURE FIX: Use Pseudo-element to avoid Child Opacity --- */
 .grid-texture {
-  background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.02) 1px, transparent 0);
-  background-size: 60px 60px;
+  position: relative;
 }
 
-.lab-grid {
-  @apply border border-white/5 relative overflow-hidden bg-white/[0.01];
-  background-image: linear-gradient(rgba(255, 215, 0, 0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 215, 0, 0.02) 1px, transparent 1px);
-  background-size: 20px 20px;
+.grid-texture::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0);
+  background-size: 40px 40px;
+  opacity: 0.03; /* 只有背景網格是透明的 */
+  pointer-events: none;
+  z-index: 0;
 }
 
-.command-palette {
-  @apply fixed inset-0 z-[100] flex items-start justify-center pt-40 px-4 backdrop-blur-sm bg-black/60;
-}
-
-.terminal-input {
-  @apply bg-[#0D0D0F] border border-photon-gold/30 p-6 w-full max-w-2xl text-photon-gold font-mono;
-  clip-path: polygon(0 0, 100% 0, 100% 90%, 98% 100%, 0 100%);
-}
-
-.scanline-overlay {
-  @apply absolute inset-0 pointer-events-none opacity-[0.01] overflow-hidden;
-}
-
-.custom-scrollbar::-webkit-scrollbar {
-  width: 4px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 184, 0, 0.2);
+.crt-overlay {
+  @apply fixed inset-0 pointer-events-none z-100;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), 
+              linear-gradient(90deg, rgba(255, 0, 0, 0.01), rgba(0, 255, 0, 0.005), rgba(0, 0, 255, 0.01));
+  background-size: 100% 3px, 3px 100%;
+  opacity: 0.3;
 }

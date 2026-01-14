@@ -1,116 +1,111 @@
-import React, { useRef } from 'react'
-import { Canvas, useFrame } from '@react-three/fiber'
-import { Float, Text, MeshDistortMaterial, Stars, Grid } from '@react-three/drei'
-import * as THREE from 'three'
-
-function CoreEngine() {
-  const mesh = useRef<THREE.Mesh>(null!)
-  const outerRef = useRef<THREE.Mesh>(null!)
-
-  useFrame((state) => {
-    const time = state.clock.getElapsedTime()
-    mesh.current.rotation.x = Math.cos(time / 4) * 0.2
-    mesh.current.rotation.y = Math.sin(time / 4) * 0.3
-    outerRef.current.rotation.y = -time * 0.1
-  })
-
-  return (
-    <group>
-      <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
-
-      <Float speed={2} rotationIntensity={0.5} floatIntensity={2}>
-        {/* Inner Octahedron */}
-        <mesh ref={mesh}>
-          <octahedronGeometry args={[2, 0]} />
-          <meshPhysicalMaterial
-            color="#ffffff"
-            transmission={1}
-            thickness={2}
-            roughness={0.1}
-            envMapIntensity={1}
-            clearcoat={1}
-          />
-        </mesh>
-
-        {/* Outer Wireframe Cage */}
-        <mesh ref={outerRef}>
-          <sphereGeometry args={[3.2, 16, 16]} />
-          <meshBasicMaterial color="#FFB800" wireframe transparent opacity={0.05} />
-        </mesh>
-      </Float>
-
-      {/* Grid Floor */}
-      <Grid
-        infiniteGrid
-        fadeDistance={50}
-        fadeStrength={5}
-        cellSize={1}
-        sectionSize={5}
-        sectionColor="#FFB800"
-        sectionThickness={1}
-        cellColor="#ffffff"
-        cellThickness={0.5}
-        position={[0, -5, 0]}
-      />
-
-      <pointLight position={[10, 10, 10]} intensity={2} color="#ffffff" />
-      <spotLight position={[-10, 10, 10]} angle={0.15} penumbra={1} intensity={2} />
-    </group>
-  )
-}
+import React, { useEffect, useRef } from 'react'
+import { motion, useScroll, useTransform } from 'framer-motion'
+import { Zap, Shield, Cpu, Activity } from 'lucide-react'
 
 export const PhotonHero = () => {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const { scrollY } = useScroll()
+
+  const y1 = useTransform(scrollY, [0, 500], [0, 200])
+  const opacity = useTransform(scrollY, [0, 300], [1, 0])
+
   return (
-    <div className="relative w-full h-screen bg-obsidian overflow-hidden">
-      <div className="absolute inset-0 z-0 opacity-60">
-        <Canvas camera={{ position: [0, 2, 10], fov: 45 }}>
-          <CoreEngine />
-        </Canvas>
+    <div ref={containerRef} className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
+      {/* Background Decorative Elements - Theme Aware */}
+      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] bg-photon-gold/[0.03] rounded-full blur-[120px] mix-blend-screen" />
+        <div className="absolute top-1/4 -left-20 w-[600px] h-[600px] bg-photon-gold/[0.02] rounded-full blur-[100px] mix-blend-screen animate-pulse" />
       </div>
 
-      {/* HUD Elements */}
-      <div className="absolute inset-0 pointer-events-none z-10">
-        <div className="absolute bottom-12 left-12 right-12 flex justify-between items-end">
-          <div className="text-[8px] font-technical tracking-[0.8em] uppercase text-white/20">
-            [ SCAN_MODE: DEEP_REFRACTION ]
+      <div className="relative z-10 max-w-7xl mx-auto px-12 text-center">
+        <motion.div
+          style={{ y: y1, opacity }}
+          className="space-y-8"
+        >
+          {/* HUD Badge */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8 }}
+            className="inline-flex items-center gap-4 px-6 py-2 border border-photon-gold/20 bg-photon-gold/5 backdrop-blur-sm mb-8"
+          >
+            <div className="w-2 h-2 rounded-full bg-photon-gold animate-pulse" />
+            <span className="text-[10px] font-technical tracking-[0.5em] text-photon-gold uppercase">
+              System_Alpha_Initialize // v1.2.0
+            </span>
+          </motion.div>
+
+          {/* Main Headline */}
+          <div className="relative">
+            <motion.h1
+              initial={{ y: 40, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 1, delay: 0.2 }}
+              className="text-8xl md:text-[12rem] font-black text-[var(--text-primary)] tracking-[-0.06em] leading-[0.85] uppercase transition-colors"
+            >
+              The Absolute <br />
+              <span className="text-photon-gold italic font-light opacity-90">Engine.</span>
+            </motion.h1>
+
+            {/* Sub-label HUD */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.1 }}
+              transition={{ delay: 1 }}
+              className="absolute -right-20 top-0 hidden lg:block"
+            >
+              <div className="text-right space-y-2">
+                <div className="text-[8px] font-mono text-[var(--text-primary)]">CORE_DISPATCH_ENABLED</div>
+                <div className="text-[8px] font-mono text-[var(--text-primary)]">AOT_OPTIMIZATION_ACTIVE</div>
+                <div className="text-[8px] font-mono text-[var(--text-primary)]">MEM_SAFETY_VERIFIED</div>
+              </div>
+            </motion.div>
           </div>
-          <div className="text-[8px] font-technical tracking-[0.8em] uppercase text-photon-gold">
-            ● ENGINE_ONLINE_STABLE
+
+          {/* Tagline */}
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1, delay: 0.5 }}
+            className="max-w-2xl mx-auto text-xl md:text-2xl text-[var(--text-secondary)] font-light leading-relaxed tracking-tight transition-colors"
+          >
+            A high-performance web kernel for Bun.
+            Built for raw speed, zero-copy safety, and sub-millisecond dispatch.
+          </motion.p>
+
+          {/* Technical HUD Labels - REPOSITIONED BOTTOM */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.8 }}
+            className="pt-16 flex flex-wrap justify-center gap-x-16 gap-y-8"
+          >
+            <div className="flex flex-col items-center">
+              <span className="text-[8px] font-technical text-zinc-600 tracking-[0.4em] uppercase mb-2">Build_Target</span>
+              <span className="text-xs font-black text-[var(--text-primary)] tracking-widest uppercase transition-colors">Native_M3_ARM</span>
+            </div>
+            <div className="flex flex-col items-center">
+              <span className="text-[8px] font-technical text-zinc-600 tracking-[0.4em] uppercase mb-2">Protocol</span>
+              <span className="text-xs font-black text-[var(--text-primary)] tracking-widest uppercase transition-colors">HTTP_3_QUIC</span>
+            </div>
+            <div className="flex flex-col items-center">
+              <span className="text-[8px] font-technical text-zinc-600 tracking-[0.4em] uppercase mb-2">Cluster_Mode</span>
+              <span className="text-xs font-black text-[var(--text-primary)] tracking-widest uppercase transition-colors">Balanced_AOT</span>
+            </div>
+          </motion.div>
+        </motion.div>
+      </div>
+
+      {/* Decorative HUD Elements */}
+      <div className="absolute bottom-20 left-20 hidden xl:block opacity-10 pointer-events-none">
+        <div className="flex items-center gap-6">
+          <Zap className="text-photon-gold" size={40} strokeWidth={0.5} />
+          <div className="space-y-1">
+            <div className="w-32 h-1 bg-[var(--text-primary)]" />
+            <div className="w-16 h-1 bg-photon-gold" />
           </div>
         </div>
-
-        {/* Corner Brackets */}
-        <div className="absolute top-8 left-8 w-16 h-16 border-t border-l border-white/10" />
-        <div className="absolute top-8 right-8 w-16 h-16 border-t border-r border-white/10" />
-        <div className="absolute bottom-8 left-8 w-16 h-16 border-b border-l border-white/10" />
-        <div className="absolute bottom-8 right-8 w-16 h-16 border-b border-r border-white/10" />
       </div>
-
-      <div className="relative z-20 flex flex-col items-center justify-center h-full max-w-7xl mx-auto px-12 text-center">
-        <h1 className="text-[12rem] md:text-[16rem] text-hero mb-0">
-          Pho<span className="italic font-thin opacity-50">ton</span>
-        </h1>
-
-        <div className="mt-[-2rem] max-w-xl">
-          <p className="text-[10px] font-technical tracking-[0.6em] text-gray-500 mb-16 uppercase leading-relaxed">
-            Unleashing the absolute potential of Bun. <br />
-            Zero-copy orchestration for the next generation.
-          </p>
-
-          <div className="flex justify-center gap-16">
-            <button className="text-[9px] font-black tracking-[0.5em] uppercase text-white hover:text-photon-gold transition-all flex items-center gap-4 group">
-              <span className="w-8 h-px bg-white/20 group-hover:w-12 group-hover:bg-photon-gold transition-all" />
-              Initialize_
-            </button>
-            <button className="text-[9px] font-black tracking-[0.5em] uppercase text-gray-500 hover:text-white transition-all flex items-center gap-4 group">
-              Docs_
-              <span className="w-8 h-px bg-white/10 group-hover:w-12 group-hover:bg-white transition-all" />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="scanline" />
     </div>
   )
 }

@@ -1,70 +1,85 @@
 import React, { useState, useEffect } from 'react'
-import { Link } from '@inertiajs/react'
+import { Head, Link } from '@inertiajs/react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  Cpu, Zap, Activity, Book, Terminal,
-  Share2, Search, List, Layers, Play, X, Command
+  ArrowUpRight, Zap, Cpu, Activity, Gauge, Terminal,
+  Layers, ShieldCheck, Microscope, Database, Workflow, BarChart3, BookOpen, ChevronRight,
+  Sun, Moon, Search, Command
 } from 'lucide-react'
 import { navGroups, navItems } from '../constants/navigation'
 import { Footer } from './Footer'
-
 
 export const DocsLayout = ({ children, currentId }: { children: React.ReactNode, currentId?: string }) => {
   const [searchOpen, setSearchOpen] = useState(false)
   const [progress, setProgress] = useState(0)
 
-  // Listen for Ctrl+K
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault()
-        setSearchOpen(prev => !prev)
-      }
-      if (e.key === 'Escape') setSearchOpen(false)
+  // --- Theme Management ---
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem('photon-theme') as 'dark' | 'light') || 'dark'
     }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [])
+    return 'dark'
+  })
 
-  // Calculate reading progress
   useEffect(() => {
-    const updateProgress = () => {
-      const scrollTotal = document.documentElement.scrollHeight - window.innerHeight
-      if (scrollTotal > 0) {
-        setProgress((window.scrollY / scrollTotal) * 100)
-      }
+    const root = window.document.documentElement
+    if (theme === 'light') {
+      root.classList.add('light')
+    } else {
+      root.classList.remove('light')
     }
-    window.addEventListener('scroll', updateProgress)
-    return () => window.removeEventListener('scroll', updateProgress)
-  }, [])
+    localStorage.setItem('photon-theme', theme)
+  }, [theme])
+
+  const toggleTheme = () => setTheme(prev => prev === 'dark' ? 'light' : 'dark')
 
   return (
-    <div className="bg-obsidian min-h-screen text-gray-400 font-sans selection:bg-photon-gold/20 grid-texture flex">
+    <div className="min-h-screen flex bg-p-bg text-s-txt transition-colors duration-500">
       {/* Global CRT Filter Overlay */}
-      <div className="crt-overlay" />
+      <div className="crt-overlay pointer-events-none" />
 
       {/* Sidebar Navigation */}
-      <aside className="w-80 border-r border-white/5 bg-[#080809] flex flex-col sticky top-0 h-screen z-40">
+      <aside className="w-80 border-r border-s-brd flex flex-col sticky top-0 h-screen z-40 bg-s-bg transition-colors duration-500">
         <div className="p-12 flex-1 overflow-y-auto custom-scrollbar">
-          <Link href="/" className="text-2xl font-black text-white tracking-tighter uppercase mb-12 flex items-center gap-3 group">
-            <div className="w-8 h-8 border border-photon-gold/30 flex items-center justify-center relative overflow-hidden group-hover:border-photon-gold transition-colors">
-              <Zap size={14} className="text-photon-gold group-hover:scale-125 transition-transform" />
-              <div className="absolute inset-0 bg-photon-gold/5 group-hover:bg-photon-gold/20 transition-colors" />
-            </div>
-            <span className="group-hover:translate-x-1 transition-transform duration-500">
-              Pho<span className="text-zinc-500 italic">ton</span>
-            </span>
-          </Link>
+          <div className="flex items-center justify-between mb-12">
+            <Link href="/" className="text-2xl font-black tracking-tighter uppercase flex items-center gap-3 group text-p-txt">
+              <div className="w-8 h-8 border border-photon-gold/30 flex items-center justify-center relative overflow-hidden group-hover:border-photon-gold transition-colors">
+                <Zap size={14} className="text-photon-gold group-hover:scale-125 transition-transform" />
+                <div className="absolute inset-0 bg-photon-gold/5 group-hover:bg-photon-gold/20 transition-colors" />
+              </div>
+              <span className="group-hover:translate-x-1 transition-transform duration-500">
+                Pho<span className="opacity-50 italic">ton</span>
+              </span>
+            </Link>
+
+            {/* THEME TOGGLE */}
+            <button
+              onClick={toggleTheme}
+              className="w-10 h-10 flex items-center justify-center rounded-sm border border-s-brd bg-surf-bg text-s-txt hover:text-photon-gold transition-all shadow-sm"
+            >
+              <AnimatePresence mode="wait">
+                {theme === 'dark' ? (
+                  <motion.div key="moon" initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.5 }}>
+                    <Moon size={16} />
+                  </motion.div>
+                ) : (
+                  <motion.div key="sun" initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.5 }}>
+                    <Sun size={16} />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </button>
+          </div>
 
           <button
             onClick={() => setSearchOpen(true)}
-            className="w-full flex items-center justify-between bg-white/[0.02] border border-white/5 rounded-sm py-3 px-4 text-[10px] font-technical tracking-widest hover:border-photon-gold/30 transition-all mb-12 group text-left"
+            className="w-full flex items-center justify-between border border-s-brd bg-surf-bg text-s-txt rounded-sm py-3 px-4 text-[10px] uppercase font-bold tracking-widest hover:border-photon-gold/30 transition-all mb-12 group text-left shadow-sm"
           >
             <div className="flex items-center gap-3">
-              <Search size={14} className="text-zinc-600 group-hover:text-photon-gold" />
+              <Search size={14} className="opacity-40 group-hover:text-photon-gold" />
               <span className="opacity-30 group-hover:opacity-100 transition-opacity">COMMAND_PALETTE</span>
             </div>
-            <kbd className="flex items-center gap-1 bg-white/5 px-2 py-0.5 rounded text-[8px] text-zinc-500 font-mono">
+            <kbd className="flex items-center gap-1 bg-white/5 px-2 py-0.5 rounded text-[8px] opacity-40">
               <Command size={8} /> K
             </kbd>
           </button>
@@ -72,7 +87,7 @@ export const DocsLayout = ({ children, currentId }: { children: React.ReactNode,
           <nav className="space-y-10">
             {navGroups.map((group) => (
               <div key={group.category} className="space-y-4">
-                <div className="text-[9px] font-technical text-zinc-700 tracking-[0.4em] uppercase px-4">
+                <div className="text-[9px] font-bold text-m-txt tracking-[0.4em] uppercase px-4 opacity-70">
                   {group.category}
                 </div>
                 <div className="space-y-1">
@@ -80,14 +95,10 @@ export const DocsLayout = ({ children, currentId }: { children: React.ReactNode,
                     <Link
                       key={item.id}
                       href={item.href}
-                      className={`flex items-center gap-4 px-4 py-2.5 rounded-sm group transition-all ${currentId === item.id ? 'bg-white/[0.04] border border-white/5' : 'hover:bg-white/[0.02]'
-                        }`}
+                      className={`flex items-center gap-4 px-4 py-2.5 rounded-sm group transition-all ${currentId === item.id ? 'bg-surf-bg border border-s-brd text-p-txt shadow-sm' : 'text-s-txt hover:text-p-txt'}`}
                     >
-                      <div className="relative w-4 h-4 flex items-center justify-center">
-                        <item.icon size={11} className={currentId === item.id ? 'text-photon-gold' : 'text-zinc-600 group-hover:text-zinc-400'} />
-                      </div>
-                      <span className={`text-[10px] font-bold tracking-[0.15em] uppercase transition-colors ${currentId === item.id ? 'text-zinc-50' : 'text-zinc-500 group-hover:text-zinc-300'
-                        }`}>
+                      <item.icon size={11} className={currentId === item.id ? 'text-photon-gold' : 'opacity-40 group-hover:opacity-100'} />
+                      <span className="text-[10px] font-bold tracking-[0.15em] uppercase">
                         {item.label}
                       </span>
                     </Link>
@@ -98,31 +109,24 @@ export const DocsLayout = ({ children, currentId }: { children: React.ReactNode,
           </nav>
         </div>
 
-        <div className="p-10 border-t border-white/5 bg-[#050506]">
+        <div className="p-10 border-t border-s-brd bg-surf-bg transition-colors duration-500">
           <div className="flex items-center gap-4">
             <Activity size={14} className="text-photon-gold/40" />
             <div className="flex flex-col">
-              <span className="text-[8px] font-technical text-zinc-700 uppercase">Engine_Status</span>
-              <span className="text-[10px] text-zinc-400 font-bold font-technical tracking-widest leading-none uppercase">Optimized_V1</span>
+              <span className="text-[8px] font-bold text-p-txt opacity-40 uppercase">Engine_Status</span>
+              <span className="text-[10px] text-s-txt font-bold tracking-widest uppercase">Optimized_V2</span>
             </div>
           </div>
         </div>
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 relative overflow-y-auto h-screen custom-scrollbar bg-[#0a0a0b]">
-        {/* Subdued HUD */}
-        <div className="fixed top-0 right-0 p-12 pointer-events-none opacity-10 z-50 flex flex-col items-end">
-          <div className="text-[9px] font-technical text-zinc-600 tracking-[0.4em] uppercase">
-            X-Photon-Trace: {currentId || 'INDEX'}
-          </div>
-        </div>
-
+      <main className="flex-1 relative overflow-y-auto h-screen custom-scrollbar transition-colors duration-500 grid-texture bg-p-bg">
         <div className="max-w-5xl py-24 px-12 md:px-24 mx-auto pb-4">
-          <div className="mb-12 flex items-center gap-2 text-[10px] font-technical text-zinc-700 tracking-widest uppercase">
-            <Link href="/" className="hover:text-photon-gold">HOME</Link>
+          <div className="mb-12 flex items-center gap-2 text-[10px] font-bold text-m-txt opacity-70 tracking-widest uppercase">
+            <Link href="/" className="hover:text-photon-gold transition-colors text-p-txt">HOME</Link>
             <span>/</span>
-            <span className="text-zinc-500">{currentId || 'DOCS'}</span>
+            <span className="text-p-txt">{currentId || 'DOCS'}</span>
           </div>
           {children}
         </div>
@@ -136,7 +140,7 @@ export const DocsLayout = ({ children, currentId }: { children: React.ReactNode,
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="command-palette"
+            className="fixed inset-0 z-[100] flex items-start justify-center pt-40 px-4 backdrop-blur-sm bg-black/60"
             onClick={() => setSearchOpen(false)}
           >
             <motion.div
@@ -144,9 +148,9 @@ export const DocsLayout = ({ children, currentId }: { children: React.ReactNode,
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: -20 }}
               onClick={(e) => e.stopPropagation()}
-              className="terminal-input"
+              className="w-full max-w-2xl p-8 border border-b-brd bg-surf-bg shadow-2xl"
             >
-              <div className="flex items-center gap-4 mb-6 text-[10px] text-gray-600 tracking-[0.4em]">
+              <div className="flex items-center gap-4 mb-6 text-[10px] text-p-txt opacity-40 tracking-[0.4em]">
                 <Terminal size={12} /> SEARCH_EXECUTE_COMMAND
               </div>
               <div className="flex items-center gap-4">
@@ -155,21 +159,8 @@ export const DocsLayout = ({ children, currentId }: { children: React.ReactNode,
                   autoFocus
                   type="text"
                   placeholder="QUERY_THE_ENGINE..."
-                  className="bg-transparent border-none outline-none text-white font-mono text-xl w-full placeholder:opacity-20"
+                  className="bg-transparent border-none outline-none font-mono text-xl w-full text-p-txt placeholder:opacity-20"
                 />
-              </div>
-              <div className="mt-8 grid grid-cols-1 gap-2">
-                {navItems.map(item => (
-                  <Link
-                    key={item.id}
-                    href={item.href}
-                    onClick={() => setSearchOpen(false)}
-                    className="flex items-center justify-between p-4 hover:bg-white/5 transition-colors border border-transparent hover:border-white/5"
-                  >
-                    <span className="text-xs text-gray-400 font-bold tracking-widest uppercase">{item.label}</span>
-                    <span className="text-[10px] font-technical text-gray-700">MOD_{item.id}</span>
-                  </Link>
-                ))}
               </div>
             </motion.div>
           </motion.div>
@@ -179,8 +170,8 @@ export const DocsLayout = ({ children, currentId }: { children: React.ReactNode,
       <style>{`
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.05); }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255, 184, 0, 0.2); }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,184,0,0.1); }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--color-photon-gold); }
       `}</style>
     </div>
   )
