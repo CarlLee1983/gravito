@@ -10,7 +10,8 @@ const steps = [
     en: 'Hand Picking',
     desc: '堅持人工手採，只取頂端最鮮嫩的一心二葉。清晨的露水未乾前不採，正午烈日當頭不採，唯有上午九點至十一點的陽光，能賦予茶葉最飽滿的生命力。',
     specs: { temp: '22-25°C', time: '09:00 AM', note: '一心二葉' },
-    image: 'https://images.unsplash.com/photo-1597318181409-cf64d0b5d8a2?q=80&w=1000&auto=format&fit=crop'
+    // Image: Tea picker in the field
+    image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1000&auto=format&fit=crop'
   },
   {
     id: '02',
@@ -18,6 +19,7 @@ const steps = [
     en: 'Withering',
     desc: '將茶青平均攤灑於笳力上，讓陽光帶走部分水分。葉片因失水而變軟，細胞壁的通透性增加，潛藏的酶開始甦醒，散發出淡淡的青草香氣。',
     specs: { temp: 'Solar / Indoor', time: '2-4 Hours', note: '走水 15%' },
+    // Image: Tea leaves drying on racks
     image: 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?q=80&w=1000&auto=format&fit=crop'
   },
   {
@@ -26,7 +28,8 @@ const steps = [
     en: 'Shaking',
     desc: '這是製茶師與茶葉的對話。透過雙手輕柔翻動，讓葉緣細胞摩擦破損，空氣進入葉片內部氧化，將原本的草氣轉化為迷人的花果香。',
     specs: { temp: 'Indoor 20°C', time: '8-12 Hours', note: '發酵關鍵' },
-    image: 'https://images.unsplash.com/photo-1571934811356-5cc55449d0f1?q=80&w=1000&auto=format&fit=crop'
+    // Image: Fresh leaves texture/Bamboo basket
+    image: 'https://images.unsplash.com/photo-1585553616435-2dc0a54e271d?q=80&w=1000&auto=format&fit=crop'
   },
   {
     id: '04',
@@ -34,7 +37,8 @@ const steps = [
     en: 'Kill-Green',
     desc: '以三百度高溫瞬間破壞酵素活性，停止發酵過程。這決定了茶湯的底色與香氣的定格，是保留茶葉鮮活口感的關鍵時刻。',
     specs: { temp: '280-320°C', time: '5-8 Mins', note: '高溫固定' },
-    image: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?q=80&w=1000&auto=format&fit=crop'
+    // Image: Steam/Heat/Wok (Metaphor for high heat)
+    image: 'https://images.unsplash.com/photo-1516919549054-e08258825f80?q=80&w=1000&auto=format&fit=crop'
   },
   {
     id: '05',
@@ -42,6 +46,7 @@ const steps = [
     en: 'Rolling',
     desc: '將茶葉放入揉捻機或手工團揉，破壞葉脈組織，讓茶汁附著於表面。這不僅塑造了茶葉緊結的外形，更決定了沖泡時滋味釋放的速度。',
     specs: { temp: 'Ambient', time: '20-40 Mins', note: '破壞細胞' },
+    // Image: Texture of rolled/darker leaves or hands working
     image: 'https://images.unsplash.com/photo-1594631252845-29fc4cc8cde9?q=80&w=1000&auto=format&fit=crop'
   },
   {
@@ -50,7 +55,8 @@ const steps = [
     en: 'Roasting',
     desc: '利用炭火或電焙籠的慢火烘烤，降低水分至 3% 以下。烘焙能修飾茶葉的苦澀，轉化為醇厚的熟香，賦予茶葉長時間存放的穩定性。',
     specs: { temp: '90-120°C', time: 'Multiple', note: '熟成轉化' },
-    image: 'https://images.unsplash.com/photo-1627435601361-ec25f5b1d0e5?q=80&w=1000&auto=format&fit=crop'
+    // Image: Charcoal Fire
+    image: 'https://images.unsplash.com/photo-1517502474097-f9b30659dadb?q=80&w=1000&auto=format&fit=crop'
   }
 ];
 
