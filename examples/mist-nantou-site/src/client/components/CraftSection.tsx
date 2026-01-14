@@ -37,8 +37,8 @@ const steps = [
     en: 'Kill-Green',
     desc: '以三百度高溫瞬間破壞酵素活性，停止發酵過程。這決定了茶湯的底色與香氣的定格，是保留茶葉鮮活口感的關鍵時刻。',
     specs: { temp: '280-320°C', time: '5-8 Mins', note: '高溫固定' },
-    // Image: Steam/Heat/Wok (Metaphor for high heat)
-    image: 'https://images.unsplash.com/photo-1516919549054-e08258825f80?q=80&w=1000&auto=format&fit=crop'
+    // Image: Steaming fixation (Verified)
+    image: 'https://cdn.b2b.yjzw.net/files/16/img/2021/08/25/steaming-fixation_yNe50Y.jpg'
   },
   {
     id: '05',
