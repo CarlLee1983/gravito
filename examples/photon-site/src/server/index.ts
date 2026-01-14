@@ -538,45 +538,6 @@ CMD ["bun", "src/server/index.ts"]</code></pre>
     `,
     meta: { lastUpdated: '2026-01-14', complexity: 'HARD_LEVEL', category: 'ADVANCED' },
   },
-}
-
-const legalContent: Record<string, any> = {
-  privacy: {
-    id: 'L01',
-    title: 'Privacy Policy',
-    lastUpdated: '2026-01-14',
-    content: `
-      <h3>1. Data Collection Protocol</h3>
-      <p>Photon Engine is designed with a "Local-First" data priority. We do not collect, store, or transmit any personal data by default. Any telemetry data collected through the <code>logger()</code> middleware session resides exclusively within your runtime environment.</p>
-
-      <h3>2. Local Session Data</h3>
-      <p>When using the documentation or experimentation labs, session state may be stored in your browser's <code>localStorage</code> purely for interface persistence. This data never leaves your terminal.</p>
-
-      <h3>3. External Interfaces</h3>
-      <p>The Photon site may link to third-party modules (e.g., GitHub, NPM). Interactions with these modules are governed by their respective privacy protocols. We advocate for the use of self-hosted alternatives where protocol security is mission-critical.</p>
-
-      <h3>4. Security Matrix</h3>
-      <p>We implement the <code>secureHeaders()</code> protocol globally. This includes strict Content Security Policy (CSP), HSTS enforcement, and XSS filtering to ensure your interaction with our infrastructure is protected at the kernel level.</p>
-    `,
-  },
-  terms: {
-    id: 'L02',
-    title: 'Terms of Use',
-    lastUpdated: '2026-01-14',
-    content: `
-      <h3>1. Protocol License</h3>
-      <p>Photon Engine and its documentation are licensed under the <strong>MIT License</strong>. You are free to use, copy, modify, and distribute the software for any purpose, provided the copyright notice and license are included.</p>
-
-      <h3>2. Acceptable Sequence</h3>
-      <p>Users are expected to interact with our documentation and experimentation labs in a non-destructive manner. Automated scraping or stress-testing against our host nodes is restricted by the <code>ShieldV6</code> firewall.</p>
-
-      <h3>3. Disclaimer of Liability</h3>
-      <p>The software is provided "as is", without warranty of any kind. Gravito Research Labs and the contributors shall not be liable for any claim, damages or other liability arising from the use of the engine in production environments.</p>
-
-      <h3>4. Ecosystem Governance</h3>
-      <p>By using the Photon Engine, you acknowledge that you are operating within the Gravito Framework Ecosystem. We reserve the right to update the technical specifications of these protocols without prior broadcast.</p>
-    `,
-  },
   'ex-hello-world': {
     id: 'E01',
     title: 'Ultra Hello World',
@@ -688,8 +649,51 @@ app.get('/projects', async (c) => {
   },
 }
 
+const legalContent: Record<string, any> = {
+  privacy: {
+    id: 'L01',
+    title: 'Privacy Policy',
+    lastUpdated: '2026-01-14',
+    content: `
+      <h3>1. Data Collection Protocol</h3>
+      <p>Photon Engine is designed with a "Local-First" data priority. We do not collect, store, or transmit any personal data by default. Any telemetry data collected through the <code>logger()</code> middleware session resides exclusively within your runtime environment.</p>
+
+      <h3>2. Local Session Data</h3>
+      <p>When using the documentation or experimentation labs, session state may be stored in your browser's <code>localStorage</code> purely for interface persistence. This data never leaves your terminal.</p>
+
+      <h3>3. External Interfaces</h3>
+      <p>The Photon site may link to third-party modules (e.g., GitHub, NPM). Interactions with these modules are governed by their respective privacy protocols. We advocate for the use of self-hosted alternatives where protocol security is mission-critical.</p>
+
+      <h3>4. Security Matrix</h3>
+      <p>We implement the <code>secureHeaders()</code> protocol globally. This includes strict Content Security Policy (CSP), HSTS enforcement, and XSS filtering to ensure your interaction with our infrastructure is protected at the kernel level.</p>
+    `,
+  },
+  terms: {
+    id: 'L02',
+    title: 'Terms of Use',
+    lastUpdated: '2026-01-14',
+    content: `
+      <h3>1. Protocol License</h3>
+      <p>Photon Engine and its documentation are licensed under the <strong>MIT License</strong>. You are free to use, copy, modify, and distribute the software for any purpose, provided the copyright notice and license are included.</p>
+
+      <h3>2. Acceptable Sequence</h3>
+      <p>Users are expected to interact with our documentation and experimentation labs in a non-destructive manner. Automated scraping or stress-testing against our host nodes is restricted by the <code>ShieldV6</code> firewall.</p>
+
+      <h3>3. Disclaimer of Liability</h3>
+      <p>The software is provided "as is", without warranty of any kind. Gravito Research Labs and the contributors shall not be liable for any claim, damages or other liability arising from the use of the engine in production environments.</p>
+
+      <h3>4. Ecosystem Governance</h3>
+      <p>By using the Photon Engine, you acknowledge that you are operating within the Gravito Framework Ecosystem. We reserve the right to update the technical specifications of these protocols without prior broadcast.</p>
+    `,
+  },
+}
+
 // Routes
 app.get('/', (c) => renderInertia(c, 'Home', { version: '1.1.0' }))
+
+app.get('/patterns', (c) => renderInertia(c, 'Patterns', {}))
+
+app.get('/ecosystem', (c) => renderInertia(c, 'Ecosystem', {}))
 
 app.get('/docs/:page', (c) => {
   const pageParam = c.req.param('page') || 'intro'

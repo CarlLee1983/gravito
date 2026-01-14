@@ -15,6 +15,8 @@ const footerLinks = [
         links: [
             { label: 'Privacy Policy', href: '/legal/privacy' },
             { label: 'Terms of Use', href: '/legal/terms' },
+            { label: 'Architecture Patterns', href: '/patterns' },
+            { label: 'Ecosystem Registry', href: '/ecosystem' },
             { label: 'Documentation', href: '/docs/intro' },
         ]
     },

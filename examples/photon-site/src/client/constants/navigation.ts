@@ -39,12 +39,19 @@ export const navGroups: NavGroup[] = [
     ],
   },
   {
-    category: 'CORE_ENGINE',
+    category: 'TECHNICAL_ARCHITECTURE',
     items: [
+      { id: 'patterns', label: 'PATTERN_GALLERY', icon: Layers, href: '/patterns' },
       { id: 'routing', label: 'ROUTING_SYSTEM', icon: Share2, href: '/docs/routing' },
       { id: 'context', label: 'CONTEXT_API', icon: Activity, href: '/docs/context' },
+    ],
+  },
+  {
+    category: 'CORE_LIFECYCLE',
+    items: [
       { id: 'middleware', label: 'MIDDLEWARE_MATRIX', icon: Layers, href: '/docs/middleware' },
       { id: 'exceptions', label: 'EXCEPTION_HANDLING', icon: Shield, href: '/docs/exceptions' },
+      { id: 'performance', label: 'PERF_TUNING', icon: Settings, href: '/docs/performance' },
     ],
   },
   {
@@ -56,19 +63,11 @@ export const navGroups: NavGroup[] = [
     ],
   },
   {
-    category: 'FULLSTACK_SUITE',
+    category: 'EXTENSIONS_ECO',
     items: [
-      { id: 'prism', label: 'PRISM_TEMPLATES', icon: Zap, href: '/docs/prism' },
-      { id: 'ion', label: 'ION_SPA_BRIDGE', icon: Terminal, href: '/docs/ion' },
-      { id: 'atlas', label: 'ATLAS_ORM', icon: Server, href: '/docs/atlas' },
-    ],
-  },
-  {
-    category: 'ADVANCED',
-    items: [
+      { id: 'ecosystem', label: 'ECOSYSTEM_REGISTRY', icon: Zap, href: '/ecosystem' },
       { id: 'testing', label: 'TESTING_SUITE', icon: TestTube, href: '/docs/testing' },
       { id: 'deployment', label: 'BUN_DEPLOYMENT', icon: Globe, href: '/docs/deployment' },
-      { id: 'performance', label: 'PERF_TUNING', icon: Settings, href: '/docs/performance' },
     ],
   },
   {
