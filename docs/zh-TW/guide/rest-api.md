@@ -15,18 +15,25 @@ Gravito 為構建現代化、高效能的 RESTful API 提供了一套統一的�
 
 ### 1. 定義模型 (Model)
 
-使用 **Atlas ORM** 定義數據庫模型。
+使用 **Atlas ORM** 定義數據庫模型。透過 `@column` 裝飾器，我們可以精確地標記哪些屬性映射到資料庫欄位。
 
 ```typescript
 // src/models/Product.ts
-import { Model } from '@gravito/atlas'
+import { Model, column } from '@gravito/atlas'
 
 export class Product extends Model {
   static table = 'products'
 
+  @column({ isPrimary: true })
   declare id: number
+
+  @column()
   declare name: string
+
+  @column()
   declare price: number
+
+  @column()
   declare stock: number
 }
 ```
@@ -86,11 +93,12 @@ export const ProductContract = astral.resource('/api/products', {
 
 ### 4. 實作控制器 (Controller)
 
-現在，我們實作業務邏輯。請注意 `req.input` 如何根據您的 Zod Schema 自動獲得型別。
+現在，我們實作業務邏輯。請注意我們如何從 `c.get('validated')` 獲取經過驗證的強型別數據。
 
 ```typescript
 // src/controllers/ProductController.ts
-import { Controller } from '@gravito/core'
+import { Controller } from '@gravito/monolith'
+import type { GravitoContext } from '@gravito/core'
 import { Product } from '../models/Product'
 import { CreateProductRequest } from '../requests/CreateProductRequest'
 
@@ -99,11 +107,13 @@ export class ProductController extends Controller {
     return Product.all()
   }
 
-  async store(req: CreateProductRequest) {
-    // req.input 已經是強型別：{ name: string, price: number, stock: number }
-    const product = await Product.create(req.input)
+  async store(c: GravitoContext) {
+    // 獲取經過 Impulse 驗證後的數據
+    const input = c.get('validated') as { name: string, price: number, stock: number }
     
-    return this.response.json(product, 201)
+    const product = await Product.create(input)
+    
+    return c.json(product, 201)
   }
 }
 ```

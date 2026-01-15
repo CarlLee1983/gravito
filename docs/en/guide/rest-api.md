@@ -15,18 +15,25 @@ Let's build a simple product management API.
 
 ### 1. Define the Model
 
-Using **Atlas ORM**, we define our database model.
+Using **Atlas ORM**, we define our database model. By using the `@column` decorator, we precisely mark which properties map to database fields.
 
 ```typescript
 // src/models/Product.ts
-import { Model } from '@gravito/atlas'
+import { Model, column } from '@gravito/atlas'
 
 export class Product extends Model {
   static table = 'products'
 
+  @column({ isPrimary: true })
   declare id: number
+
+  @column()
   declare name: string
+
+  @column()
   declare price: number
+
+  @column()
   declare stock: number
 }
 ```
@@ -86,11 +93,12 @@ export const ProductContract = astral.resource('/api/products', {
 
 ### 4. Implement the Controller
 
-Now, we implement the business logic. Notice how `req.input` is automatically typed based on your Zod schema.
+Now, we implement the business logic. Notice how we retrieve the validated data from `c.get('validated')`.
 
 ```typescript
 // src/controllers/ProductController.ts
-import { Controller } from '@gravito/core'
+import { Controller } from '@gravito/monolith'
+import type { GravitoContext } from '@gravito/core'
 import { Product } from '../models/Product'
 import { CreateProductRequest } from '../requests/CreateProductRequest'
 
@@ -99,11 +107,13 @@ export class ProductController extends Controller {
     return Product.all()
   }
 
-  async store(req: CreateProductRequest) {
-    // req.input is fully typed: { name: string, price: number, stock: number }
-    const product = await Product.create(req.input)
+  async store(c: GravitoContext) {
+    // Retrieve data validated by Impulse
+    const input = c.get('validated') as { name: string, price: number, stock: number }
     
-    return this.response.json(product, 201)
+    const product = await Product.create(input)
+    
+    return c.json(product, 201)
   }
 }
 ```

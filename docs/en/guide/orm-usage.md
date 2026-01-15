@@ -93,9 +93,16 @@ export class User extends Model {
   static table = 'users'
   static primaryKey = 'id'
 
+  @column({ isPrimary: true })
   declare id: number
+
+  @column()
   declare name: string
+
+  @column()
   declare email: string
+
+  @column()
   declare active: boolean
 }
 ```
