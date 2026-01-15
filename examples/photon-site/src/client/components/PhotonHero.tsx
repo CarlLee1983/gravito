@@ -21,8 +21,8 @@ export const PhotonHero = ({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) => {
       cluster_mode: 'Cluster_Mode'
     },
     'zh-TW': {
-      headline_1: '絕對的',
-      headline_2: '引擎。',
+      headline_1: 'The Absolute',
+      headline_2: 'Engine.',
       tagline: '專為 Bun 打造的高性能 Web 核心。',
       sub_tagline: '專注於極速、零拷貝安全性及亞毫秒級調度。',
       build_target: '構建目標',
