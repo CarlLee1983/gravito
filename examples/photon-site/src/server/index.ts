@@ -47,8 +47,32 @@ const renderInertia = async (c: any, component: string, props: any) => {
     isDev,
   })
 
-  // Transfer headers from the Inertia response to our context if needed,
-  // or simply return the response object which Photon (Gravito Engine) supports.
+  // Inject Google Analytics if configured
+  const gaId = process.env.GA_PHOTON_SITE
+  if (response.headers.get('content-type')?.includes('text/html')) {
+    let html = await response.text()
+
+    if (gaId) {
+      const gaScript = `
+        <script async src="https://www.googletagmanager.com/gtag/js?id=${gaId}"></script>
+        <script>
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', '${gaId}');
+        </script>
+      `
+      html = html.replace('<!-- @google_analytics -->', gaScript)
+    } else {
+      html = html.replace('<!-- @google_analytics -->', '')
+    }
+
+    return new Response(html, {
+      status: response.status,
+      headers: response.headers,
+    })
+  }
+
   return response
 }
 
