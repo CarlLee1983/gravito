@@ -4,7 +4,6 @@
  * Business logic for order processing.
  */
 
-import type { OrbitAtlas } from '@gravito/atlas'
 import { DB } from '@gravito/atlas'
 import type { ShippingAddress } from '../Models'
 import { Order, OrderItem, OrderStatus } from '../Models'
@@ -18,7 +17,6 @@ export interface CreateOrderInput {
 }
 
 export class OrderService {
-  constructor(_atlas?: OrbitAtlas) {}
   /**
    * Create order from cart
    */

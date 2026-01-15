@@ -4,13 +4,11 @@
  * Business logic for shopping cart operations.
  */
 
-import type { OrbitAtlas } from '@gravito/atlas'
 import { DB } from '@gravito/atlas'
 import { Cart, CartItem } from '../Models'
 import { sql, TRUE } from '../utils/db'
 
 export class CartService {
-  constructor(_atlas?: OrbitAtlas) {}
   /**
    * Get or create cart for user/session
    */

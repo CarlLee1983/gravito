@@ -5,8 +5,6 @@ import type { BrokerConfig, BrokerMessage, MessageBroker } from '../types'
 export class RabbitBroker implements MessageBroker {
   private driver?: RabbitMQDriver
 
-  constructor(_url: string) {}
-
   async connect() {
     const manager = await getQueueManager()
     // In our project setup, the connection name is 'rabbitmq'

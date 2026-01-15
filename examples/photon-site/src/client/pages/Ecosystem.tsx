@@ -168,9 +168,12 @@ export default function Ecosystem({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) {
               <div className="text-[9px] font-technical text-m-txt tracking-[0.2em] uppercase">
                 {t.typeLabel}: {t.orbitType[orbit.type]}
               </div>
-              <button className="flex items-center gap-2 text-[10px] font-technical text-photon-gold/60 hover:text-photon-gold transition-colors uppercase tracking-[0.2em]">
+              <button
+                type="button"
+                className="flex items-center gap-2 text-[10px] font-technical text-photon-gold/60 hover:text-photon-gold transition-colors uppercase tracking-[0.2em]"
+              >
                 <Download size={12} /> {t.install}
-              </button>
+              </button>{' '}
             </div>
           </motion.div>
         ))}

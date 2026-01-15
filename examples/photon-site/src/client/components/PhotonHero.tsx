@@ -1,6 +1,6 @@
-import React, { useEffect, useRef } from 'react'
 import { motion, useScroll, useTransform } from 'framer-motion'
-import { Zap, Shield, Cpu, Activity } from 'lucide-react'
+import { Activity, Cpu, Shield, Zap } from 'lucide-react'
+import React, { useEffect, useRef } from 'react'
 import { ConstellationCanvas } from './ConstellationCanvas'
 
 export const PhotonHero = ({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) => {
@@ -22,7 +22,7 @@ export const PhotonHero = ({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) => {
       badge: 'System_Alpha_Initialize',
       status_dispatch: 'CORE_DISPATCH_ENABLED',
       status_aot: 'AOT_OPTIMIZATION_ACTIVE',
-      status_mem: 'MEM_SAFETY_VERIFIED'
+      status_mem: 'MEM_SAFETY_VERIFIED',
     },
     'zh-TW': {
       headline_1: 'The Absolute',
@@ -35,12 +35,15 @@ export const PhotonHero = ({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) => {
       badge: '系統核心初始化',
       status_dispatch: '核心調度已啟用',
       status_aot: 'AOT_優化中',
-      status_mem: '記憶體安全性已驗證'
-    }
+      status_mem: '記憶體安全性已驗證',
+    },
   }[lang]
 
   return (
-    <div ref={containerRef} className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
+    <div
+      ref={containerRef}
+      className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20"
+    >
       {/* Background Decorative Elements - Theme Aware */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
         <ConstellationCanvas />
@@ -49,10 +52,7 @@ export const PhotonHero = ({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) => {
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-12 text-center">
-        <motion.div
-          style={{ y: y1, opacity }}
-          className="space-y-8"
-        >
+        <motion.div style={{ y: y1, opacity }} className="space-y-8">
           {/* HUD Badge */}
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
@@ -62,7 +62,7 @@ export const PhotonHero = ({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) => {
           >
             <div className="w-2 h-2 rounded-full bg-photon-gold animate-pulse" />
             <span className="text-[10px] font-technical tracking-[0.5em] text-photon-gold uppercase">
-              {t.badge} // v1.2.0
+              {t.badge} {/* v1.2.0 */}
             </span>
           </motion.div>
 
@@ -86,9 +86,15 @@ export const PhotonHero = ({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) => {
               className="absolute -right-20 top-0 hidden lg:block"
             >
               <div className="text-right space-y-2">
-                <div className="text-[8px] font-mono text-[var(--text-primary)]">{t.status_dispatch}</div>
-                <div className="text-[8px] font-mono text-[var(--text-primary)]">{t.status_aot}</div>
-                <div className="text-[8px] font-mono text-[var(--text-primary)]">{t.status_mem}</div>
+                <div className="text-[8px] font-mono text-[var(--text-primary)]">
+                  {t.status_dispatch}
+                </div>
+                <div className="text-[8px] font-mono text-[var(--text-primary)]">
+                  {t.status_aot}
+                </div>
+                <div className="text-[8px] font-mono text-[var(--text-primary)]">
+                  {t.status_mem}
+                </div>
               </div>
             </motion.div>
           </div>
@@ -112,16 +118,28 @@ export const PhotonHero = ({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) => {
             className="pt-16 flex flex-wrap justify-center gap-x-16 gap-y-8"
           >
             <div className="flex flex-col items-center">
-              <span className="text-[8px] font-technical text-zinc-600 tracking-[0.4em] uppercase mb-2">{t.build_target}</span>
-              <span className="text-xs font-black text-[var(--text-primary)] tracking-widest uppercase transition-colors">Native_M3_ARM</span>
+              <span className="text-[8px] font-technical text-zinc-600 tracking-[0.4em] uppercase mb-2">
+                {t.build_target}
+              </span>
+              <span className="text-xs font-black text-[var(--text-primary)] tracking-widest uppercase transition-colors">
+                Native_M3_ARM
+              </span>
             </div>
             <div className="flex flex-col items-center">
-              <span className="text-[8px] font-technical text-zinc-600 tracking-[0.4em] uppercase mb-2">{t.protocol}</span>
-              <span className="text-xs font-black text-[var(--text-primary)] tracking-widest uppercase transition-colors">HTTP_3_QUIC</span>
+              <span className="text-[8px] font-technical text-zinc-600 tracking-[0.4em] uppercase mb-2">
+                {t.protocol}
+              </span>
+              <span className="text-xs font-black text-[var(--text-primary)] tracking-widest uppercase transition-colors">
+                HTTP_3_QUIC
+              </span>
             </div>
             <div className="flex flex-col items-center">
-              <span className="text-[8px] font-technical text-zinc-600 tracking-[0.4em] uppercase mb-2">{t.cluster_mode}</span>
-              <span className="text-xs font-black text-[var(--text-primary)] tracking-widest uppercase transition-colors">Balanced_AOT</span>
+              <span className="text-[8px] font-technical text-zinc-600 tracking-[0.4em] uppercase mb-2">
+                {t.cluster_mode}
+              </span>
+              <span className="text-xs font-black text-[var(--text-primary)] tracking-widest uppercase transition-colors">
+                Balanced_AOT
+              </span>
             </div>
           </motion.div>
         </motion.div>

@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Activity, Zap, BarChart3, RotateCcw } from 'lucide-react'
+import { Activity, BarChart3, RotateCcw, Zap } from 'lucide-react'
+import React, { useEffect, useState } from 'react'
 
 export const BenchmarkLab = ({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) => {
   const [routes, setRoutes] = useState(100)
@@ -10,7 +10,8 @@ export const BenchmarkLab = ({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) => {
   const t = {
     en: {
       title: 'The Stress Lab',
-      subtitle: 'Adjust the complexity parameters to simulate how Photon maintains throughput under heavy architectural loads compared to generic frameworks.',
+      subtitle:
+        'Adjust the complexity parameters to simulate how Photon maintains throughput under heavy architectural loads compared to generic frameworks.',
       btn_active: 'SYSTEM_STRESS_ACTIVE',
       btn_start: 'START_SIMULATION',
       route_count: 'Route_Count',
@@ -19,7 +20,7 @@ export const BenchmarkLab = ({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) => {
       generic_engine: 'GENERIC_ENGINE',
       efficiency_prefix: '// PHOTON IS ',
       efficiency_suffix: '% MORE EFFICIENT AT THIS SCALE',
-      init: '// INITIALIZING_COMPARATIVE_STRESS_TEST'
+      init: '// INITIALIZING_COMPARATIVE_STRESS_TEST',
     },
     'zh-TW': {
       title: '效能壓力實驗室',
@@ -32,14 +33,14 @@ export const BenchmarkLab = ({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) => {
       generic_engine: '通用引擎',
       efficiency_prefix: '// PHOTON 在此規模下領跑 ',
       efficiency_suffix: '% 的效能效率',
-      init: '// 正在初始化比較壓力測試'
-    }
+      init: '// 正在初始化比較壓力測試',
+    },
   }[lang]
 
   // Simulation Algorithm: Photon is less affected by complexity than generic frameworks
   const calculateRPS = (base: number, r: number, m: number, factor: number) => {
     const routePenalty = (r / 1000) * factor
-    const middlewarePenalty = (m * 0.02) * factor
+    const middlewarePenalty = m * 0.02 * factor
     return Math.floor(base * (1 - routePenalty - middlewarePenalty))
   }
 
@@ -51,18 +52,17 @@ export const BenchmarkLab = ({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) => {
       <div className="flex flex-col md:flex-row justify-between items-start gap-12 mb-16">
         <div className="flex-1">
           <div className="text-technical text-photon-gold mb-4 flex items-center gap-4 uppercase">
-            <Activity size={14} /> // LIVE_PERFORMANCE_SIMULATOR
+            <Activity size={14} /> {/* LIVE_PERFORMANCE_SIMULATOR */}
           </div>
           <h3 className="text-3xl font-black text-white uppercase tracking-tighter">{t.title}</h3>
-          <p className="text-sm text-gray-500 mt-4 leading-relaxed">
-            {t.subtitle}
-          </p>
+          <p className="text-sm text-gray-500 mt-4 leading-relaxed">{t.subtitle}</p>
         </div>
         <button
           type="button"
           onClick={() => setActive(!active)}
-          className={`px-8 py-4 text-[10px] font-black tracking-widest uppercase transition-all flex items-center gap-4 ${active ? 'bg-photon-gold text-black' : 'bg-white/5 text-white border border-white/10'
-            }`}
+          className={`px-8 py-4 text-[10px] font-black tracking-widest uppercase transition-all flex items-center gap-4 ${
+            active ? 'bg-photon-gold text-black' : 'bg-white/5 text-white border border-white/10'
+          }`}
         >
           {active ? t.btn_active : t.btn_start}
           <RotateCcw size={12} className={active ? 'animate-spin' : ''} />
@@ -78,7 +78,10 @@ export const BenchmarkLab = ({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) => {
               <span className="text-white">{routes}</span>
             </div>
             <input
-              type="range" min="1" max="2000" value={routes}
+              type="range"
+              min="1"
+              max="2000"
+              value={routes}
               onChange={(e) => setRoutes(parseInt(e.target.value))}
               className="w-full h-1 bg-white/5 appearance-none cursor-pointer accent-photon-gold"
             />
@@ -89,7 +92,10 @@ export const BenchmarkLab = ({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) => {
               <span className="text-white">{middleware}</span>
             </div>
             <input
-              type="range" min="0" max="50" value={middleware}
+              type="range"
+              min="0"
+              max="50"
+              value={middleware}
               onChange={(e) => setMiddleware(parseInt(e.target.value))}
               className="w-full h-1 bg-white/5 appearance-none cursor-pointer accent-photon-gold"
             />
@@ -130,10 +136,9 @@ export const BenchmarkLab = ({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) => {
 
           <div className="pt-8 border-t border-white/5">
             <p className="text-[10px] font-technical text-photon-gold leading-relaxed uppercase">
-              {photonRPS > honoRPS ?
-                `${t.efficiency_prefix}${(((photonRPS / honoRPS) - 1) * 100).toFixed(1)}${t.efficiency_suffix}` :
-                t.init
-              }
+              {photonRPS > honoRPS
+                ? `${t.efficiency_prefix}${((photonRPS / honoRPS - 1) * 100).toFixed(1)}${t.efficiency_suffix}`
+                : t.init}
             </p>
           </div>
         </div>
