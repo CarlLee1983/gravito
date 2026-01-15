@@ -26,8 +26,6 @@ import type {
   QueryResult,
 } from '../types'
 
-declare const Bun: any
-
 /**
  * Database Connection
  * Wraps a driver and grammar for query building and execution
@@ -205,10 +203,13 @@ export class Connection implements ConnectionContract {
    */
   protected createDriver(): DriverContract {
     // Check for Bun Native Driver override
+    const g = globalThis as any
+    // biome-ignore lint/complexity/useLiteralKeys: Intentionally using bracket notation to hide 'Bun' symbol from tsc
+    const bunSql = g['Bun']?.sql
+
     if (
       this.config.useNativeDriver === true &&
-      typeof Bun !== 'undefined' &&
-      Bun.sql &&
+      bunSql &&
       ['postgres', 'mysql', 'mariadb', 'sqlite'].includes(this.config.driver)
     ) {
       return new BunSQLDriver(this.config)
