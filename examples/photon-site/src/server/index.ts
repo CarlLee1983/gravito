@@ -29,7 +29,7 @@ const renderInertia = async (c: any, component: string, props: any) => {
   })
 
   const inertia = new InertiaService(bridge as any, {
-    version: '1.1.0',
+    version: '1.2.0',
     rootView: 'app',
   })
 
@@ -56,8 +56,6 @@ import fileUploadDoc from './data/docs/ex-file-upload.json'
 import helloWorldDoc from './data/docs/ex-hello-world.json'
 import htmxDoc from './data/docs/htmx.json'
 import integrationsDoc from './data/docs/integrations.json'
-// Technical Content Dictionary
-// Technical Content JSON Data
 import introDoc from './data/docs/intro.json'
 import middlewareDoc from './data/docs/middleware.json'
 import poolingDoc from './data/docs/pooling.json'
@@ -368,7 +366,7 @@ const legalContent: Record<string, any> = {
 }
 
 // Routes
-app.get('/', (c) => renderInertia(c, 'Home', { version: '1.1.0' }))
+app.get('/', (c) => renderInertia(c, 'Home', { version: '1.2.0' }))
 
 app.get('/patterns', (c) => renderInertia(c, 'Patterns', {}))
 

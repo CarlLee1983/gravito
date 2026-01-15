@@ -1,6 +1,6 @@
 {
   "id": "07",
   "title": "API Reference",
-  "content": "<p>Photon Engine provides a high-performance, strictly-typed API surface. Below are the primary technical interfaces for building Bun-native applications.</p><h2>The Gravito Class</h2><pre><code>interface Gravito {\n  get(path: string, ...handlers: Handler[]): this;\n  post(path: string, ...handlers: Handler[]): this;\n  use(middleware: Middleware): this;\n  fetch(request: Request): Promise&lt;Response&gt;;\n}</code></pre><h3>Technical Constants</h3><ul><li><strong>ENGINE_VERSION:</strong> 1.1.0</li><li><strong>DEFAULT_PORT:</strong> 3000</li><li><strong>BUFFER_STRATEGY:</strong> Zero-Copy</li></ul>",
+  "content": "<p>Photon Engine provides a high-performance, strictly-typed API surface. Below are the primary technical interfaces for building Bun-native applications.</p><h2>The Gravito Class</h2><pre><code>interface Gravito {\n  get(path: string, ...handlers: Handler[]): this;\n  post(path: string, ...handlers: Handler[]): this;\n  use(middleware: Middleware): this;\n  fetch(request: Request): Promise&lt;Response&gt;;\n}</code></pre><h3>Technical Constants</h3><ul><li><strong>ENGINE_VERSION:</strong> 1.2.0</li><li><strong>DEFAULT_PORT:</strong> 3000</li><li><strong>BUFFER_STRATEGY:</strong> Zero-Copy</li></ul>",
   "meta": { "lastUpdated": "2026-01-13", "complexity": "ADVANCED", "category": "SPECIFICATIONS" }
 }

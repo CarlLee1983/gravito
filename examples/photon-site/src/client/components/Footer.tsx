@@ -54,7 +54,7 @@ export function Footer() {
                         </p>
                         <div className="flex items-center gap-4 text-[8px] font-technical tracking-[0.4em] text-[var(--text-muted)] uppercase transition-colors">
                             <span>Licensed_MIT</span>
-                            <span>v1.1.0_LATEST</span>
+                            <span>v1.2.0_LATEST</span>
                         </div>
                     </div>
 
