@@ -30,59 +30,32 @@
 
 ##### 嚴重程度: 高
 
-1. **PlanetCore.ts 違反單一職責原則 (SRP)**
-   - 📍 位置: `packages/core/src/PlanetCore.ts` (752 行)
-   - 💡 問題: 類別承擔過多職責：HTTP 適配器管理、錯誤處理、服務容器、Provider Bootstrap
-   - 🔧 建議: 將錯誤處理抽取到 `ErrorHandler` 類別
+1. **PlanetCore.ts 違反單一職責原則 (SRP)** ✅ **已修復**
+   - 📍 位置: `packages/core/src/PlanetCore.ts`
+   - 💡 解決方案: 成功將過於臃腫的錯誤處理邏輯抽取到獨立的 `ErrorHandler.ts`
+   - 🚀 效果: 提升了核心引擎的可維護性，解耦了 HTTP 適配器與錯誤渲染邏輯。
 
-   ```typescript
-   // 建議重構
-   // packages/core/src/ErrorHandler.ts
-   export class ErrorHandler {
-     constructor(private core: PlanetCore) {}
-     
-     handle(err: unknown, c: GravitoContext): Response | Promise<Response> {
-       // 移動 200+ 行錯誤處理邏輯到此
-     }
-   }
-   ```
-
-2. **Router.ts 中的 isFormRequestClass 效能問題**
-   - 📍 位置: `packages/core/src/Router.ts:30-46`
-   - 💡 問題: 每次路由註冊時實例化類別進行類型檢查
-   - 🔧 建議: 使用靜態屬性或 Symbol 進行類型識別
-
-   ```typescript
-   // 建議：使用 Symbol 標識
-   export const FORM_REQUEST_SYMBOL = Symbol('formRequest')
-   
-   function isFormRequestClass(value: unknown): value is FormRequestClass {
-     return typeof value === 'function' && 
-            (value as any)[FORM_REQUEST_SYMBOL] === true
-   }
-   ```
+2. **Router.ts 中的 isFormRequestClass 效能問題** ✅ **已修復**
+   - 📍 位置: `packages/core/src/Router.ts`
+   - 💡 解決方案: 使用 `FORM_REQUEST_SYMBOL` 取代類別實例化進行檢測，並輔以 `WeakMap` 快取。
+   - 🚀 效果: 路由註冊階段效能顯著提升，且代碼更為優雅。
 
 ##### 嚴重程度: 中
 
-3. **全域模型綁定中介軟體效能問題**
-   - 📍 位置: `packages/core/src/Router.ts:428-452`
-   - 💡 問題: 每個請求都遍歷所有綁定，即使路由不需要
-   - 🔧 建議: 實作按路由的綁定解析
-
-   ```typescript
-   // TODO 註解已存在，需要實作：
-   // TODO: Optimize by checking which params are actually in the current route match
-   ```
+3. **全域模型綁定中介軟體效能問題** ✅ **已修復**
+   - 📍 位置: `packages/core/src/Router.ts`
+   - 💡 解決方案: 實作了懶綁定機制，僅在當前路由匹配到綁定參數時才執行解析任務。
+   - 🚀 效果: 減少了不必要的 Service Provider 負擔和模型查詢。
 
 4. **mountOrbit 使用不安全的類型斷言**
    - 📍 位置: `packages/core/src/PlanetCore.ts:694-717`
    - 💡 問題: 大量使用 `as any` 繞過類型檢查
    - 🔧 建議: 定義正確的介面類型
 
-5. **已棄用的 `services` Map 仍在使用**
-   - 📍 位置: `packages/core/src/PlanetCore.ts:120`
-   - 💡 問題: 同時維護 `services` Map 和 `container`，增加認知負擔
-   - 🔧 建議: 完全遷移到 Container，移除已棄用代碼
+5. **已棄用的 `services` Map 仍在使用** ✅ **已修復**
+   - 📍 位置: `packages/core/src/PlanetCore.ts`
+   - 💡 解決方案: 正式從 `PlanetCore` 中移除該屬性，並清理了所有官方 Orbit (`sentinel`, `stasis`, `flux`) 中的舊版調用。
+   - 🚀 效果: 全面轉向 Container 模式，簡化核心內核。
 
 ##### 嚴重程度: 低
 
@@ -106,8 +79,9 @@
 |-----|------|------|
 | 路由匹配 | ✅ 良好 | 使用 Radix 樹 |
 | 控制器快取 | ✅ 良好 | 單例快取 |
-| 模型綁定 | ⚠️ 需優化 | 遍歷所有綁定 |
-| FormRequest 檢查 | ⚠️ 需優化 | 實例化檢測 |
+| 模型綁定 | ✅ 已優化 | 實作了按路由的懶綁定機制 |
+| FormRequest 檢查 | ✅ 已優化 | 採用 Symbol 標記查找，無實例化開銷 |
+| i18n 變數替換 | ✅ 已優化 | 改用預編譯正則與單一替換迴圈 (cosmos) |
 
 ---
 

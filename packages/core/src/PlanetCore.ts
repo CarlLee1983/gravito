@@ -112,8 +112,6 @@ export class PlanetCore {
   public events: EventManager
   public router: Router
   public container: Container = new Container()
-  /** @deprecated Use core.container instead */
-  public services: Map<string, unknown> = new Map()
 
   public encrypter?: Encrypter
   public hasher: BunHasher

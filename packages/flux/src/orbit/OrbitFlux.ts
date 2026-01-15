@@ -22,9 +22,9 @@ interface PlanetCore {
     warn(message: string, ...args: unknown[]): void
     error(message: string, ...args: unknown[]): void
   }
-  services: {
-    set(key: string, value: unknown): void
-    get<T>(key: string): T | undefined
+  container: {
+    instance(key: string, value: unknown): void
+    make<T>(key: string): T
   }
   hooks: {
     doAction(name: string, payload?: unknown): void
@@ -91,8 +91,8 @@ export interface OrbitFluxOptions {
  *   ]
  * })
  *
- * // Access via services
- * const flux = core.services.get<FluxEngine>('flux')
+ * // Access via container
+ * const flux = core.container.make<FluxEngine>('flux')
  * await flux.execute(myWorkflow, input)
  * ```
  */
@@ -176,8 +176,8 @@ export class OrbitFlux implements GravitoOrbit {
     // Create engine
     this.engine = new FluxEngine(engineConfig)
 
-    // Register in core services
-    core.services.set(exposeAs!, this.engine)
+    // Register in core container
+    core.container.instance(exposeAs!, this.engine)
 
     core.logger.info(
       `[OrbitFlux] Initialized (Storage: ${typeof storage === 'string' ? storage : 'custom'})`

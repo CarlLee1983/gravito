@@ -1,4 +1,4 @@
-import type { GravitoOrbit, PlanetCore } from '@gravito/core'
+import type { GravitoContext, GravitoNext, GravitoOrbit, PlanetCore } from '@gravito/core'
 import { CacheManager } from './CacheManager'
 import type { CacheEventMode, CacheEvents } from './CacheRepository'
 import type { CacheStore } from './store'
@@ -7,9 +7,6 @@ import { MemoryStore } from './stores/MemoryStore'
 import { NullStore } from './stores/NullStore'
 import { RedisStore } from './stores/RedisStore'
 import type { CacheTtl } from './types'
-
-type OrbitCacheContext = { set: (key: string, value: unknown) => void }
-type OrbitCacheNext = () => Promise<Response | undefined>
 
 export * from './CacheManager'
 export * from './CacheRepository'
@@ -233,12 +230,11 @@ export class OrbitStasis implements GravitoOrbit {
 
     this.manager = manager
 
-    core.adapter.use('*', async (c: OrbitCacheContext, next: OrbitCacheNext) => {
+    core.adapter.use('*', async (c: GravitoContext, next: GravitoNext) => {
       c.set(exposeAs, manager)
       return await next()
     })
 
-    core.services.set(exposeAs, manager)
     core.hooks.doAction('cache:init', manager)
   }
 

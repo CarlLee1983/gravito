@@ -256,10 +256,12 @@ export class I18nManager implements I18nService {
     }
 
     // 3. Replacements
-    if (replacements) {
-      for (const [search, replace] of Object.entries(replacements)) {
-        value = value.replace(new RegExp(`:${search}`, 'g'), String(replace))
-      }
+    if (replacements && Object.keys(replacements).length > 0) {
+      value = value.replace(/:([a-zA-Z0-9_]+)/g, (match, key) => {
+        return (replacements as Record<string, unknown>)[key] !== undefined
+          ? String((replacements as Record<string, unknown>)[key])
+          : match
+      })
     }
 
     return value
