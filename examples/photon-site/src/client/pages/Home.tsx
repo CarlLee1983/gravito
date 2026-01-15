@@ -44,7 +44,6 @@ export default function Home() {
     localStorage.setItem('photon-theme', newTheme)
   }
 
-  const { } = usePage() // Import usePage from @inertiajs/react
   // --- Language Management ---
   const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams()
   const currentLang = (searchParams.get('lang') === 'zh-TW' ? 'zh-TW' : 'en') as 'en' | 'zh-TW'
@@ -244,7 +243,7 @@ export default function Home() {
                 </div>
                 <div className="text-technical text-[8px] flex items-center gap-2">
                   <span className={`w-1 h-1 rounded-full ${item.status === 'optimal' ? 'bg-photon-gold' : 'bg-gray-600'}`} />
-                  {item.label} // VALIDATED_M3_SILICON
+                  {item.label}{/* VALIDATED_M3_SILICON */}
                 </div>
               </div>
             ))}
