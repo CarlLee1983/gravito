@@ -26,6 +26,45 @@ export const DocsLayout = ({ children, currentId }: { children: React.ReactNode,
   const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams()
   const currentLang = searchParams.get('lang') === 'zh-TW' ? 'zh-TW' : 'en'
 
+  const navTranslations: Record<string, string> = {
+    // Categories
+    'GETTING_STARTED': '入門指南',
+    'TECHNICAL_ARCHITECTURE': '技術架構',
+    'CORE_LIFECYCLE': '核心生命週期',
+    'PHYSICAL_LAYER': '物理層',
+    'EXTENSIONS_ECO': '擴充生態',
+    'LAB_EXPERIMENTS': '實驗室',
+    
+    // Items
+    'INTRODUCTION': '介紹',
+    'QUICKSTART': '快速開始',
+    'PROJECT_STRUCTURE': '專案結構',
+    'PATTERN_GALLERY': '設計模式',
+    'ROUTING_SYSTEM': '路由系統',
+    'CONTEXT_API': 'Context API',
+    'MIDDLEWARE_MATRIX': '中介軟體矩陣',
+    'EXCEPTION_HANDLING': '異常處理',
+    'DATA_VALIDATION': '資料驗證',
+    'PERF_TUNING': '效能調優',
+    'INSTRUCTION_LEVEL_OPT': '指令級優化',
+    'ZERO_COPY_BUFFERING': '零複製緩衝',
+    'RECYCLED_CONTEXT': 'Context 回收',
+    'ECOSYSTEM_REGISTRY': '生態系統註冊表',
+    'TESTING_SUITE': '測試套件',
+    'SENTINEL_AUTH': 'Sentinel 身份驗證',
+    'REALTIME_RIPPLE': '即時 Ripple',
+    'WEBHOOK_ECHO': 'Webhook Echo',
+    'BUN_DEPLOYMENT': 'Bun 部署',
+    '3RD_PARTY_INTEGRATIONS': '第三方整合',
+    'ULTRA_HELLO_WORLD': '極速 Hello World',
+    'ZERO_COPY_STREAM': '零複製串流',
+    'MIDDLEWARE_PULSE': '中介軟體脈衝',
+    'ATOMIC_CRUD_ATLAS': '原子化 CRUD',
+    'ZERO_COPY_UPLOADS': '零複製上傳'
+  }
+
+  const t = (key: string) => currentLang === 'zh-TW' ? (navTranslations[key] || key) : key
+
   const toggleLanguage = () => {
     const newLang = currentLang === 'en' ? 'zh-TW' : 'en'
     router.visit(window.location.pathname, {
@@ -115,7 +154,7 @@ export const DocsLayout = ({ children, currentId }: { children: React.ReactNode,
             {navGroups.map((group) => (
               <div key={group.category} className="space-y-4">
                 <div className="text-[9px] font-bold text-m-txt tracking-[0.4em] uppercase px-4 opacity-70">
-                  {group.category}
+                  {t(group.category)}
                 </div>
                 <div className="space-y-1">
                   {group.items.map((item) => (
@@ -126,7 +165,7 @@ export const DocsLayout = ({ children, currentId }: { children: React.ReactNode,
                     >
                       <item.icon size={11} className={currentId === item.id ? 'text-photon-gold' : 'opacity-40 group-hover:opacity-100'} />
                       <span className="text-[10px] font-bold tracking-[0.15em] uppercase">
-                        {item.label}
+                        {t(item.label)}
                       </span>
                     </Link>
                   ))}
