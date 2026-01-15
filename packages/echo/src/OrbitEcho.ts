@@ -1,77 +1,14 @@
-/**
- * @fileoverview OrbitEcho Module
- *
- * Gravito integration for webhook handling.
- *
- * @module @gravito/echo
- */
-
+import type { GravitoOrbit, PlanetCore } from '@gravito/core'
 import { WebhookReceiver } from './receive/WebhookReceiver'
 import { WebhookDispatcher } from './send/WebhookDispatcher'
 import type { EchoConfig } from './types'
 
 /**
- * Simple module interface for PlanetCore integration
- */
-interface ModuleConfig {
-  singleton?: boolean
-}
-
-/**
- * Minimal ServiceProvider interface
- */
-interface ServiceProvider {
-  register?(): void | Promise<void>
-  boot?(): void | Promise<void>
-}
-
-/**
- * Minimal PlanetCore interface
- */
-interface PlanetCore {
-  container: {
-    instance<T>(key: string, value: T): void
-  }
-  hooks: {
-    addAction(hook: string, callback: () => void | Promise<void>): void
-  }
-  adapter: {
-    use(middleware: unknown): void
-  }
-  router: {
-    post(path: string, handler: unknown): void
-  }
-}
-
-/**
  * OrbitEcho - Gravito Webhook Module
  *
  * Provides secure webhook receiving and reliable webhook sending.
- *
- * @example
- * ```typescript
- * const core = new PlanetCore()
- *
- * core.install(new OrbitEcho({
- *   providers: {
- *     stripe: { name: 'stripe', secret: process.env.STRIPE_WEBHOOK_SECRET! },
- *     github: { name: 'github', secret: process.env.GITHUB_WEBHOOK_SECRET! }
- *   },
- *   dispatcher: {
- *     secret: process.env.OUTGOING_WEBHOOK_SECRET!
- *   }
- * }))
- *
- * // Get receiver to add handlers
- * const receiver = core.container.make<WebhookReceiver>('echo.receiver')
- * receiver.on('stripe', 'payment_intent.succeeded', async (event) => {
- *   console.log('Payment received:', event.payload)
- * })
- * ```
  */
-export class OrbitEcho {
-  static config: ModuleConfig = { singleton: true }
-
+export class OrbitEcho implements GravitoOrbit {
   private receiver: WebhookReceiver
   private dispatcher?: WebhookDispatcher
   private echoConfig: EchoConfig
@@ -109,18 +46,24 @@ export class OrbitEcho {
    * @param core - The PlanetCore instance.
    */
   install(core: PlanetCore): void {
-    // Bind instances
+    // Bind instances to container
     core.container.instance('echo', this)
     core.container.instance('echo.receiver', this.receiver)
     if (this.dispatcher) {
       core.container.instance('echo.dispatcher', this.dispatcher)
     }
+
+    // Inject into context via middleware
+    core.adapter.use('*', async (c, next) => {
+      c.set('echo', this)
+      return await next()
+    })
+
+    core.logger.info('[OrbitEcho] Webhook receiver and dispatcher registered')
   }
 
   /**
    * Get webhook receiver
-   *
-   * @returns The WebhookReceiver instance.
    */
   getReceiver(): WebhookReceiver {
     return this.receiver
@@ -128,8 +71,6 @@ export class OrbitEcho {
 
   /**
    * Get webhook dispatcher
-   *
-   * @returns The WebhookDispatcher instance, or undefined if not configured.
    */
   getDispatcher(): WebhookDispatcher | undefined {
     return this.dispatcher
@@ -137,10 +78,16 @@ export class OrbitEcho {
 
   /**
    * Get configuration
-   *
-   * @returns The EchoConfig object.
    */
   getConfig(): EchoConfig {
     return this.echoConfig
+  }
+}
+
+// Module augmentation for GravitoVariables
+declare module '@gravito/core' {
+  interface GravitoVariables {
+    /** Webhook receiver and dispatcher */
+    echo?: OrbitEcho
   }
 }

@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import type { GravitoContext, PlanetCore } from '@gravito/core'
+import type { GravitoContext, GravitoNext, GravitoOrbit, PlanetCore } from '@gravito/core'
 import { IncrementalGenerator } from './core/IncrementalGenerator'
 import { ProgressTracker } from './core/ProgressTracker'
 import { SitemapGenerator } from './core/SitemapGenerator'
@@ -68,7 +68,7 @@ export interface StaticSitemapOptions extends SitemapStreamOptions {
   progressStorage?: SitemapProgressStorage
 }
 
-export class OrbitSitemap {
+export class OrbitSitemap implements GravitoOrbit {
   private options: DynamicSitemapOptions | StaticSitemapOptions
   private mode: 'dynamic' | 'static'
 
@@ -117,7 +117,7 @@ export class OrbitSitemap {
     } else {
       // Static generation is usually triggered via a build script,
       // but we can also expose a route to trigger it or just log usage.
-      console.log('[OrbitSitemap] Static mode configured. Use generate() to build sitemaps.')
+      core.logger.info('[OrbitSitemap] Static mode configured. Use generate() to build sitemaps.')
     }
   }
 

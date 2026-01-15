@@ -1,4 +1,4 @@
-import type { GravitoOrbit, PlanetCore } from '@gravito/core'
+import type { GravitoContext, GravitoNext, GravitoOrbit, PlanetCore } from '@gravito/core'
 import type { ConsumerOptions } from './Consumer'
 import { Consumer } from './Consumer'
 import { QueueManager } from './QueueManager'
@@ -23,25 +23,6 @@ export interface OrbitStreamOptions extends QueueConfig {
  * Orbit Queue
  *
  * Gravito Orbit implementation providing queue functionality.
- * Integrates with PlanetCore and injects a `queue` service into the Photon Context.
- *
- * @example
- * ```typescript
- * const core = await PlanetCore.boot({
- *   orbits: [
- *     OrbitStream.configure({
- *       default: 'database',
- *       connections: {
- *         database: { driver: 'database', table: 'jobs' }
- *       }
- *     })
- *   ]
- * })
- *
- * // Use in a controller/handler
- * const queue = c.get('queue')
- * await queue.push(new SendEmail('user@example.com'))
- * ```
  */
 export class OrbitStream implements GravitoOrbit {
   private queueManager?: QueueManager
@@ -61,12 +42,13 @@ export class OrbitStream implements GravitoOrbit {
    */
   install(core: PlanetCore): void {
     // Create QueueManager.
-    // Note: for the database driver, dbService can be resolved dynamically from Context on first request.
     this.queueManager = new QueueManager(this.options)
 
+    // Register in core container for global access (CLI, Jobs)
+    core.container.instance('queue', this.queueManager)
+
     // Inject queue service into Context.
-    // If a database connection is configured without dbService, it will be resolved from Context on first use.
-    core.adapter.use('*', async (c, next) => {
+    core.adapter.use('*', async (c: GravitoContext, next: GravitoNext) => {
       // Resolve dbService dynamically for database connections
       if (this.queueManager && this.options.connections) {
         for (const [name, config] of Object.entries(this.options.connections)) {

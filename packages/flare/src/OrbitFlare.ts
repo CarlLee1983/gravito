@@ -80,7 +80,7 @@ export class OrbitFlare implements GravitoOrbit {
 
     // Register default channels.
     if (this.options.enableMail) {
-      const mail = core.services.get('mail') as
+      const mail = core.container.make('mail') as
         | {
             send(message: import('./types').MailMessage): Promise<void>
           }
@@ -94,7 +94,7 @@ export class OrbitFlare implements GravitoOrbit {
     }
 
     if (this.options.enableDatabase) {
-      const db = core.services.get('db') as
+      const db = core.container.make('db') as
         | {
             insertNotification(data: {
               notifiableId: string | number
@@ -113,7 +113,7 @@ export class OrbitFlare implements GravitoOrbit {
     }
 
     if (this.options.enableBroadcast) {
-      const broadcast = core.services.get('broadcast') as
+      const broadcast = core.container.make('broadcast') as
         | {
             broadcast(channel: string, event: string, data: Record<string, unknown>): Promise<void>
           }
@@ -158,11 +158,11 @@ export class OrbitFlare implements GravitoOrbit {
       }
     }
 
-    // Register into core services.
-    core.services.set('notifications', manager)
+    // Register into core container
+    core.container.instance('notifications', manager)
 
     // Try to integrate with queue system.
-    const queue = core.services.get('queue') as
+    const queue = core.container.make('queue') as
       | {
           push(job: unknown, queue?: string, connection?: string, delay?: number): Promise<void>
         }
@@ -177,5 +177,13 @@ export class OrbitFlare implements GravitoOrbit {
     }
 
     core.logger.info('[OrbitFlare] Installed')
+  }
+}
+
+// Module augmentation for GravitoVariables
+declare module '@gravito/core' {
+  interface GravitoVariables {
+    /** Notification manager for multi-channel notifications */
+    notifications?: NotificationManager
   }
 }

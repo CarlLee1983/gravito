@@ -68,8 +68,8 @@ export class OrbitRadiance implements GravitoOrbit {
         break
       case 'redis': {
         driver = new RedisDriver(this.options.config as RedisDriverConfig)
-        // If a Redis client is provided via core services, set it.
-        const redisClient = core.services.get('redis') as
+        // If a Redis client is provided via core container, set it.
+        const redisClient = core.container.make('redis') as
           | { publish(channel: string, message: string): Promise<number> }
           | undefined
         if (redisClient) {
@@ -91,8 +91,8 @@ export class OrbitRadiance implements GravitoOrbit {
       manager.setAuthCallback(this.options.authorizeChannel)
     }
 
-    // Register into core services.
-    core.services.set('broadcast', manager)
+    // Register into core container
+    core.container.instance('broadcast', manager)
 
     // Integrate with EventManager.
     if (core.events) {
@@ -104,5 +104,13 @@ export class OrbitRadiance implements GravitoOrbit {
     }
 
     core.logger.info(`[OrbitRadiance] Installed with ${this.options.driver} driver`)
+  }
+}
+
+// Module augmentation for GravitoVariables
+declare module '@gravito/core' {
+  interface GravitoVariables {
+    /** Broadcaster manager for real-time events */
+    broadcast?: BroadcastManager
   }
 }

@@ -1,54 +1,12 @@
-/**
- * @fileoverview OrbitRipple - Gravito module wrapper for Ripple WebSocket
- *
- * Integrates RippleServer with Gravito's PlanetCore.
- *
- * @module @gravito/ripple
- */
-
+import type { GravitoContext, GravitoNext, GravitoOrbit, PlanetCore } from '@gravito/core'
 import { setRippleServer } from './events/Broadcaster'
 import { RippleServer } from './RippleServer'
 import type { RippleConfig } from './types'
 
 /**
- * PlanetCore interface for type safety without importing
- */
-interface PlanetCore {
-  logger: { info: (msg: string) => void }
-  adapter: {
-    use: (
-      path: string,
-      handler: (ctx: any, next: () => Promise<Response | undefined>) => Promise<any>
-    ) => void
-  }
-  hooks: {
-    addAction: (hook: string, callback: (args: unknown) => Promise<void>) => void
-  }
-}
-
-/**
  * OrbitRipple - Gravito module for real-time WebSocket communication
- *
- * @example
- * ```typescript
- * import { OrbitRipple } from '@gravito/ripple'
- *
- * const core = new PlanetCore()
- *
- * core.install(new OrbitRipple({
- *   path: '/ws',
- *   authorizer: async (channel, userId, socketId) => {
- *     // Return true for authorized, false for denied
- *     // For presence channels, return { id: userId, info: { name: '...' } }
- *     return true
- *   }
- * }))
- *
- * // The WebSocket is automatically integrated with Bun.serve
- * core.boot()
- * ```
  */
-export class OrbitRipple {
+export class OrbitRipple implements GravitoOrbit {
   private server: RippleServer
   private config: RippleConfig
 
@@ -66,8 +24,11 @@ export class OrbitRipple {
     // Store reference globally for broadcast() function
     setRippleServer(this.server)
 
+    // Register in core container for global access (CLI, Jobs)
+    core.container.instance('ripple', this.server)
+
     // Expose Ripple server via context variable
-    core.adapter.use('*', async (ctx, next) => {
+    core.adapter.use('*', async (ctx: GravitoContext, next: GravitoNext) => {
       ctx.set('ripple' as any, this.server)
       return await next()
     })
@@ -78,7 +39,7 @@ export class OrbitRipple {
     })
 
     // Register shutdown hook
-    core.hooks.addAction('shutdown', async () => {
+    core.hooks.doAction('core:shutdown', async () => {
       await this.server.shutdown()
     })
   }
@@ -92,24 +53,16 @@ export class OrbitRipple {
 
   /**
    * Get WebSocket handler for Bun.serve integration
-   *
-   * @example
-   * ```typescript
-   * const ripple = new OrbitRipple()
-   *
-   * Bun.serve({
-   *   fetch: (req, server) => {
-   *     // Let Ripple handle WebSocket upgrades
-   *     if (ripple.getServer().upgrade(req, server)) return
-   *
-   *     // Regular HTTP handling
-   *     return core.adapter.fetch(req, server)
-   *   },
-   *   websocket: ripple.getHandler()
-   * })
-   * ```
    */
   getHandler() {
     return this.server.getHandler()
+  }
+}
+
+// Module augmentation for GravitoVariables
+declare module '@gravito/core' {
+  interface GravitoVariables {
+    /** Ripple WebSocket server */
+    ripple?: RippleServer
   }
 }
