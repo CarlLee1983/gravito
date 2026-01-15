@@ -1,13 +1,13 @@
 import type { GravitoContext } from '@gravito/core'
-import type { InertiaService } from '@gravito/ion'
+import type { InertiaHelper } from '@gravito/ion'
 import type { AuthManager } from '@gravito/sentinel'
-import { Product } from '../../Models/Product'
-import type { User } from '../../Models/User'
-import { Wishlist } from '../../Models/Wishlist'
+import { Product } from '../../models/Product'
+import type { User } from '../../models/User'
+import { Wishlist } from '../../models/Wishlist'
 
 export class WishlistController {
   static async index(ctx: GravitoContext) {
-    const inertia = ctx.get('inertia') as InertiaService
+    const inertia = ctx.get('inertia') as unknown as InertiaHelper
     const auth = ctx.get('auth') as AuthManager
     const user = (await auth.user()) as User | null
     if (!user) return ctx.redirect('/login')

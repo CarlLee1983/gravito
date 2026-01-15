@@ -6,7 +6,7 @@
 
 import { DB } from '@gravito/atlas'
 import type { GravitoContext } from '@gravito/core'
-import type { InertiaService } from '@gravito/ion'
+import type { InertiaHelper } from '@gravito/ion'
 import { sql, TRUE } from '../../../utils/db'
 
 export class DashboardController {
@@ -14,7 +14,7 @@ export class DashboardController {
    * Admin dashboard
    */
   static async index(ctx: GravitoContext) {
-    const inertia = ctx.get('inertia') as InertiaService
+    const inertia = ctx.get('inertia') as unknown as InertiaHelper
 
     // Get stats
     const [

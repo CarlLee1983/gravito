@@ -7,14 +7,14 @@
 import { DB } from '@gravito/atlas'
 import type { GravitoContext, GravitoNext } from '@gravito/core'
 import type { I18nService } from '@gravito/cosmos'
-import type { InertiaService } from '@gravito/ion'
+import type { InertiaHelper } from '@gravito/ion'
 import type { CsrfService, SessionService } from '@gravito/pulsar'
 import type { AuthManager } from '@gravito/sentinel'
 import { CartService } from '../../Services'
 import { sql, TRUE } from '../../utils/db'
 
 export async function HandleInertiaRequests(ctx: GravitoContext, next: GravitoNext) {
-  const inertia = ctx.get('inertia') as InertiaService
+  const inertia = ctx.get('inertia') as unknown as InertiaHelper
   const auth = ctx.get('auth') as AuthManager
   const session = ctx.get('session') as SessionService
   const csrf = ctx.get('csrf') as CsrfService

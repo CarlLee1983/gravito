@@ -6,10 +6,10 @@
 
 import { DB } from '@gravito/atlas'
 import type { GravitoContext } from '@gravito/core'
-import type { InertiaService } from '@gravito/ion'
+import type { InertiaHelper } from '@gravito/ion'
 import type { SessionService } from '@gravito/pulsar'
 import type { AuthManager } from '@gravito/sentinel'
-import { User } from '../../Models'
+import { User } from '../../models'
 import { CartService } from '../../Services'
 import { sql } from '../../utils/db'
 
@@ -18,7 +18,7 @@ export class AuthController {
    * Show login page
    */
   static async showLogin(ctx: GravitoContext) {
-    const inertia = ctx.get('inertia') as InertiaService
+    const inertia = ctx.get('inertia') as unknown as InertiaHelper
     const auth = ctx.get('auth') as AuthManager
 
     if (await auth.check()) {
@@ -67,7 +67,7 @@ export class AuthController {
    * Show register page
    */
   static async showRegister(ctx: GravitoContext) {
-    const inertia = ctx.get('inertia') as InertiaService
+    const inertia = ctx.get('inertia') as unknown as InertiaHelper
     const auth = ctx.get('auth') as AuthManager
 
     if (await auth.check()) {

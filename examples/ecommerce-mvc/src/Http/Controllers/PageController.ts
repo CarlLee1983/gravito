@@ -5,14 +5,14 @@
  */
 
 import type { GravitoContext } from '@gravito/core'
-import type { InertiaService } from '@gravito/ion'
+import type { InertiaHelper } from '@gravito/ion'
 
 export class PageController {
   /**
    * FAQ Page
    */
   static async faq(ctx: GravitoContext) {
-    const inertia = ctx.get('inertia') as InertiaService
+    const inertia = ctx.get('inertia') as unknown as InertiaHelper
     return inertia.render('Support/FAQ')
   }
 
@@ -20,7 +20,7 @@ export class PageController {
    * Shipping Policy Page
    */
   static async shipping(ctx: GravitoContext) {
-    const inertia = ctx.get('inertia') as InertiaService
+    const inertia = ctx.get('inertia') as unknown as InertiaHelper
     return inertia.render('Support/Shipping')
   }
 
@@ -28,7 +28,7 @@ export class PageController {
    * Returns Policy Page
    */
   static async returns(ctx: GravitoContext) {
-    const inertia = ctx.get('inertia') as InertiaService
+    const inertia = ctx.get('inertia') as unknown as InertiaHelper
     return inertia.render('Support/Returns')
   }
 
@@ -36,7 +36,7 @@ export class PageController {
    * Contact/Support Page
    */
   static async contact(ctx: GravitoContext) {
-    const inertia = ctx.get('inertia') as InertiaService
+    const inertia = ctx.get('inertia') as unknown as InertiaHelper
     return inertia.render('Support/Contact')
   }
 
@@ -44,7 +44,7 @@ export class PageController {
    * Latest News Page
    */
   static async news(ctx: GravitoContext) {
-    const inertia = ctx.get('inertia') as InertiaService
+    const inertia = ctx.get('inertia') as unknown as InertiaHelper
     const i18n = ctx.get('i18n') as any
     const locale = i18n.getLocale()
 
@@ -116,7 +116,7 @@ export class PageController {
    * News Detail Page
    */
   static async newsShow(ctx: GravitoContext) {
-    const inertia = ctx.get('inertia') as InertiaService
+    const inertia = ctx.get('inertia') as unknown as InertiaHelper
     const i18n = ctx.get('i18n') as any
     const locale = i18n.getLocale()
     const id = Number(ctx.req.param('id'))

@@ -1,12 +1,12 @@
 import type { GravitoContext } from '@gravito/core'
-import type { InertiaService } from '@gravito/ion'
+import type { InertiaHelper } from '@gravito/ion'
 import type { AuthManager } from '@gravito/sentinel'
-import { Address } from '../../Models/Address'
-import type { User } from '../../Models/User'
+import { Address } from '../../models/Address'
+import type { User } from '../../models/User'
 
 export class AddressController {
   static async index(ctx: GravitoContext) {
-    const inertia = ctx.get('inertia') as InertiaService
+    const inertia = ctx.get('inertia') as unknown as InertiaHelper
     const auth = ctx.get('auth') as AuthManager
     const user = (await auth.user()) as User | null
     if (!user) return ctx.redirect('/login')

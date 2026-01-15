@@ -6,7 +6,7 @@
 
 import { DB } from '@gravito/atlas'
 import type { GravitoContext } from '@gravito/core'
-import type { InertiaService } from '@gravito/ion'
+import type { InertiaHelper } from '@gravito/ion'
 import type { SessionService } from '@gravito/pulsar'
 import type { AuthManager } from '@gravito/sentinel'
 import { sql } from '../../utils/db'
@@ -16,7 +16,7 @@ export class ProfileController {
    * Show profile
    */
   static async show(ctx: GravitoContext) {
-    const inertia = ctx.get('inertia') as InertiaService
+    const inertia = ctx.get('inertia') as unknown as InertiaHelper
     const auth = ctx.get('auth') as AuthManager
 
     const user = await auth.user()

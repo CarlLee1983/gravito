@@ -70,7 +70,7 @@ export function Image({
     <img
       className={className}
       srcSet={generatedSrcset}
-      fetchpriority={fetchpriority}
+      fetchPriority={fetchpriority}
       style={style as React.CSSProperties}
       {...coreAttrs}
       {...rest}

@@ -472,6 +472,27 @@ src/
 
 ---
 
+## 🏆 Phase 5: 範例項目驗證
+
+### 5.1 examples/ecommerce-mvc ✅ **已通過類型檢查**
+
+#### 📊 修復項目
+- **構建修復**: 修復了 `@gravito/cosmos` 的構建系統，確保正確生成 `.d.ts` 定義檔。
+- **路徑修正**: 修正了 `models` 目錄的大小寫不一致問題（`Models` -> `models`）。
+- **類型增強**: 
+  - 在 `tsconfig.json` 中加入了 `vite/client` 以支援 `ImportMeta.glob`。
+  - 在 `tsconfig.json` 中加入了 `bun-types` 以解決全域 `Bun` 命名空間問題。
+  - 統一了 `InertiaHelper` 的類型導入與斷言方式。
+- **邏輯完善**: 修復了 `ctx.req.query` 與 `ctx.req.param` 可能回傳 `undefined` 導致的類型不匹配問題。
+
+### 5.2 examples/event-registration-mvc ✅ **已通過類型檢查**
+
+#### 📊 修復項目
+- **類型衝突**: 移除了重複的 `OrbitSignal` 全域擴充。
+- **組件修正**: 修正了 `Image` 組件中 `fetchpriority` 解析錯誤。
+
+---
+
 ## 📊 完整審查統計
 
 | 指標 | 數值 |

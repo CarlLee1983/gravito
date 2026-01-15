@@ -6,8 +6,8 @@
 
 import { DB } from '@gravito/atlas'
 import type { GravitoContext } from '@gravito/core'
-import type { InertiaService } from '@gravito/ion'
-import { Category } from '../../../Models'
+import type { InertiaHelper } from '@gravito/ion'
+import { Category } from '../../../models'
 import { FALSE, sql, TRUE } from '../../../utils/db'
 
 export class AdminCategoryController {
@@ -15,7 +15,7 @@ export class AdminCategoryController {
    * Category list
    */
   static async index(ctx: GravitoContext) {
-    const inertia = ctx.get('inertia') as InertiaService
+    const inertia = ctx.get('inertia') as unknown as InertiaHelper
 
     const categoriesResult = await DB.raw(
       sql(`

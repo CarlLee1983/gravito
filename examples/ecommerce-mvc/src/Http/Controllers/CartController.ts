@@ -5,7 +5,7 @@
  */
 
 import type { GravitoContext } from '@gravito/core'
-import type { InertiaService } from '@gravito/ion'
+import type { InertiaHelper } from '@gravito/ion'
 import type { SessionService } from '@gravito/pulsar'
 import type { AuthManager } from '@gravito/sentinel'
 import { CartService } from '../../Services'
@@ -45,7 +45,7 @@ export class CartController {
    * View cart
    */
   static async index(ctx: GravitoContext) {
-    const inertia = ctx.get('inertia') as InertiaService
+    const inertia = ctx.get('inertia') as unknown as InertiaHelper
     const service = CartController.getService()
     const { userId, sessionId } = await CartController.getCartIdentifiers(ctx)
 
@@ -107,7 +107,7 @@ export class CartController {
    * Update item quantity
    */
   static async update(ctx: GravitoContext) {
-    const itemId = parseInt(ctx.req.param('itemId'), 10)
+    const itemId = parseInt(ctx.req.param('itemId') || '', 10)
     const body = (await ctx.req.json()) as { quantity: number }
     const service = CartController.getService()
     const { userId, sessionId } = await CartController.getCartIdentifiers(ctx)
@@ -139,7 +139,7 @@ export class CartController {
    * Remove item from cart
    */
   static async remove(ctx: GravitoContext) {
-    const itemId = parseInt(ctx.req.param('itemId'), 10)
+    const itemId = parseInt(ctx.req.param('itemId') || '', 10)
     const service = CartController.getService()
     const { userId, sessionId } = await CartController.getCartIdentifiers(ctx)
 
