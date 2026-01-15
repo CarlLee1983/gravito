@@ -3,7 +3,7 @@ import { Gravito } from '@gravito/core/engine'
 import { InertiaService } from '@gravito/ion'
 import { TemplateEngine } from '@gravito/prism'
 
-const app = new Gravito()
+export const app = new Gravito()
 
 // Add global middleware to ensure FastContext is used for all routes.
 // This is required for Inertia as it needs to set the X-Inertia header,
@@ -94,14 +94,13 @@ const docsContent: Record<string, any> = {
 └── package.json</code></pre>
 
       <h3>The Orbits System</h3>
-      <p>Photon is "Modular by Default". We use a plugin system called <strong>Orbits</strong>. Instead of shipping with a heavy database driver or SPA bridge pre-installed, you register only what you need.</p>
-      <pre><code>// Example Orbit Registration
-import { OrbitSentinel } from '@gravito/sentinel'
-import { OrbitAtlas } from '@gravito/atlas'
+      <p>Photon is "Modular by Default". While the full <strong>PlanetCore</strong> framework uses an <code>orbit()</code> system for automation, the standalone engine allows you to achieve the same result by registering middleware and services directly.</p>
+      <pre><code>// Example Standalone Integration
+import { auth } from '@gravito/sentinel'
+import { DB } from '@gravito/atlas'
 
-// Orbits extend the context and add global functionalities
-app.orbit(OrbitSentinel)
-app.orbit(OrbitAtlas)</code></pre>
+// Register features as standard middleware
+app.use('/api/*', auth())</code></pre>
     `,
     meta: { lastUpdated: '2026-01-14', complexity: 'BASE_LEVEL', category: 'GETTING_STARTED' },
   },
