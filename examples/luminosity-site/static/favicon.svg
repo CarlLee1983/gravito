@@ -1,7 +1,35 @@
 <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Optimized for 16x16 recognizability -->
-  <rect x="0" y="0" width="32" height="32" rx="6" fill="#10B981"/>
-  <circle cx="16" cy="16" r="8" fill="#050505"/>
-  <!-- Optional: High-light dot (only visible at 32x32+) -->
-  <circle cx="16" cy="16" r="3" fill="#34D399" fill-opacity="0.8"/>
+  <defs>
+    <!-- Core Glow Gradient -->
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+      <stop offset="0%" stop-color="#34D399" stop-opacity="1" />
+      <stop offset="40%" stop-color="#10B981" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#064E3B" stop-opacity="0" />
+    </radialGradient>
+    
+    <!-- Outer Rim Gradient -->
+    <linearGradient id="rim" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10B981" stop-opacity="0.2" />
+      <stop offset="100%" stop-color="#10B981" stop-opacity="0.05" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background Base -->
+  <rect x="0" y="0" width="32" height="32" rx="8" fill="#000000"/>
+  
+  <!-- Outer Decorative Rim -->
+  <rect x="1" y="1" width="30" height="30" rx="7" stroke="url(#rim)" stroke-width="1.5" />
+
+  <!-- The "L" Atomic Flux Core -->
+  <!-- Outer Glow -->
+  <circle cx="16" cy="16" r="12" fill="url(#glow)" fill-opacity="0.4" />
+  
+  <!-- Main Core -->
+  <circle cx="16" cy="16" r="5" fill="#10B981" shadow="0 0 10px #10B981">
+    <!-- Inner High Light -->
+    <circle cx="14.5" cy="14.5" r="1.5" fill="white" fill-opacity="0.6" />
+  </circle>
+
+  <!-- Atomic Orbit path (minimal) -->
+  <path d="M16 4C22.6274 4 28 9.37258 28 16C28 22.6274 22.6274 28 16 28" stroke="#10B981" stroke-width="0.5" stroke-opacity="0.3" stroke-linecap="round" />
 </svg>
