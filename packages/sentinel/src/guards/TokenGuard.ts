@@ -1,4 +1,4 @@
-import type { Context } from '@gravito/photon'
+import type { GravitoContext } from '@gravito/core'
 import type { Authenticatable } from '../contracts/Authenticatable'
 import type { Guard } from '../contracts/Guard'
 import type { UserProvider } from '../contracts/UserProvider'
@@ -8,7 +8,7 @@ export class TokenGuard<User extends Authenticatable = Authenticatable> implemen
 
   constructor(
     protected provider: UserProvider<User>,
-    protected ctx: Context,
+    protected ctx: GravitoContext,
     protected inputKey = 'api_token',
     protected storageKey = 'api_token',
     protected hash = false,
