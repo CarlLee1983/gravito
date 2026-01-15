@@ -84,7 +84,7 @@ defineProps<{
                   ]"
                 >
                   <div class="flex items-center gap-3">
-                    <div v-if="currentPath === item.href" class="w-1 h-1 rounded-full bg-singularity shadow-[0_0_8px_#38bdf8]" />
+                    <div v-if="currentPath === item.href" class="w-1 h-1 rounded-full bg-singularity shadow-[0_0_8px_#10b981]" />
                     <span :class="currentPath === item.href ? 'translate-x-0' : 'group-hover:translate-x-1 transition-transform'">
                       {{ item.title }}
                     </span>

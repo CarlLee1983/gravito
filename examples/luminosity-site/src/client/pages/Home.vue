@@ -64,30 +64,30 @@ onMounted(() => {
     <section class="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
       <!-- Background Effects -->
       <div class="absolute inset-0 z-0">
-        <!-- Main Hero Graphic (Full Screen) -->
-        <div class="absolute inset-0 opacity-40 pointer-events-none select-none mix-blend-screen">
+        <!-- Main Hero Graphic (RESTORED) -->
+        <div class="absolute inset-0 opacity-30 pointer-events-none select-none mix-blend-screen">
           <Image 
             :src="heroGraphic" 
             alt="Luminosity Core" 
-            class="w-full h-full object-cover animate-pulse-slow"
+            class="w-full h-full object-cover animate-pulse-slow scale-110"
             loading="eager"
             fetchpriority="high"
           />
         </div>
         
-        <!-- Overlays for Readability & Mood -->
-        <div class="absolute inset-0 bg-void/80 mix-blend-multiply"></div>
+        <!-- Premium Overlays -->
+        <div class="absolute inset-0 bg-void/60 mix-blend-multiply"></div>
         <div class="absolute inset-0 bg-gradient-to-b from-void/90 via-transparent to-void"></div>
         
         <!-- Hex Grid Background -->
-        <div class="absolute inset-0 opacity-20 mix-blend-overlay bg-hex-grid animate-fade-in"></div>
+        <div class="absolute inset-0 opacity-10 mix-blend-overlay bg-hex-grid animate-fade-in"></div>
       </div>
       
       <!-- Content -->
       <div class="relative z-10 text-center px-6 max-w-6xl mx-auto mt-20">
         <!-- Badge -->
         <div 
-          class="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-singularity/20 bg-singularity/5 text-singularity text-xs font-mono tracking-widest uppercase mb-8 backdrop-blur-md animate-fade-in shadow-[0_0_15px_rgba(0,240,255,0.1)]"
+          class="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-singularity/20 bg-singularity/5 text-singularity text-xs font-mono tracking-widest uppercase mb-8 backdrop-blur-md animate-fade-in shadow-[0_0_15px_rgba(16,185,129,0.1)]"
         >
           <span class="w-2 h-2 rounded-full bg-singularity animate-ping"></span>
           {{ t?.hero?.tag }}
