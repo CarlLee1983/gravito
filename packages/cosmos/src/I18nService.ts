@@ -258,7 +258,7 @@ export class I18nManager implements I18nService {
 
     // 3. Replacements
     if (replacements && Object.keys(replacements).length > 0) {
-      value = value.replace(/:([a-zA-Z0-9_]+)/g, (match, key) => {
+      value = value.replace(REPLACEMENT_REGEX, (match, key) => {
         return (replacements as Record<string, unknown>)[key] !== undefined
           ? String((replacements as Record<string, unknown>)[key])
           : match
@@ -268,6 +268,8 @@ export class I18nManager implements I18nService {
     return value
   }
 }
+
+const REPLACEMENT_REGEX = /:([a-zA-Z0-9_]+)/g
 
 /**
  * Locale Middleware
