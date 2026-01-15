@@ -76,8 +76,14 @@ onMounted(() => {
     mouseY = e.clientY - rect.top
   }
 
+  const handleMouseLeave = () => {
+    mouseX = -1000
+    mouseY = -1000
+  }
+
   window.addEventListener('resize', resize)
   window.addEventListener('mousemove', handleMouseMove)
+  window.addEventListener('mouseleave', handleMouseLeave)
   resize()
 
   function initParticles() {
@@ -102,7 +108,6 @@ onMounted(() => {
 
   const draw = () => {
     // 1. Motion Blur Effect (Trails)
-    // Darker, more persistent trails for high-end feel
     ctx.globalCompositeOperation = 'source-over'
     ctx.fillStyle = 'rgba(2, 6, 23, 0.08)' 
     ctx.fillRect(0, 0, width, height)
@@ -114,14 +119,13 @@ onMounted(() => {
       const p = particles[i]
       
       // 2. Flow Field Logic
-      // Particles move in a complex, organic wave pattern
       const noise = Math.sin(p.x * 0.005 + time) * Math.cos(p.y * 0.005 + time)
       p.angle = noise * Math.PI * 2
       
       p.x += Math.cos(p.angle) * p.speed
       p.y += Math.sin(p.angle) * p.speed
 
-      // Mouse Influence (Subtle "Wind" effect)
+      // Mouse Influence
       const dx = mouseX - p.x
       const dy = mouseY - p.y
       const dist = Math.sqrt(dx * dx + dy * dy)
@@ -144,7 +148,6 @@ onMounted(() => {
       ctx.fillStyle = `rgba(${p.color}, ${alpha})`
       ctx.fill()
 
-      // Bright core for foreground particles
       if (p.z > 0.8) {
         ctx.beginPath()
         ctx.arc(p.x, p.y, p.size * 0.5, 0, Math.PI * 2)
@@ -153,16 +156,8 @@ onMounted(() => {
       }
     }
 
-    requestAnimationFrame(draw)
+    animationFrameId = requestAnimationFrame(draw)
   }
-
-  draw()
-
-  onBeforeUnmount(() => {
-    window.removeEventListener('resize', resize)
-    window.removeEventListener('mousemove', handleMouseMove)
-  })
-})
 
   draw()
 
