@@ -71,6 +71,15 @@ export const navGroups: NavGroup[] = [
     ],
   },
   {
+    category: 'FULLSTACK_SUITE',
+    items: [
+      { id: 'prism', label: 'PRISM_TEMPLATES', icon: Layers, href: '/docs/prism' },
+      { id: 'ion', label: 'ION_SPA_BRIDGE', icon: Share2, href: '/docs/ion' },
+      { id: 'atlas', label: 'ATLAS_ORM', icon: Database, href: '/docs/atlas' },
+      { id: 'ssg', label: 'STATIC_SITE_GEN', icon: Globe, href: '/docs/ssg' },
+    ],
+  },
+  {
     category: 'EXTENSIONS_ECO',
     items: [
       { id: 'ecosystem', label: 'ECOSYSTEM_REGISTRY', icon: Zap, href: '/ecosystem' },

@@ -66,6 +66,7 @@ import quickstartDoc from './data/docs/quickstart.json'
 import realtimeDoc from './data/docs/realtime.json'
 import routingDoc from './data/docs/routing.json'
 import rpcBeamDoc from './data/docs/rpc-beam.json'
+import ssgDoc from './data/docs/ssg.json'
 import validationDoc from './data/docs/validation.json'
 import webhooksDoc from './data/docs/webhooks.json'
 import zeroCopyDoc from './data/docs/zero-copy.json'
@@ -75,6 +76,7 @@ const docsContent: Record<string, any> = {
   intro: introDoc,
   quickstart: quickstartDoc,
   integrations: integrationsDoc,
+  ssg: ssgDoc,
   structure: {
     id: '03',
     title: 'Project Structure',
