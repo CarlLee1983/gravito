@@ -33,30 +33,24 @@ const containerStyle = computed(() => {
 })
 
 // Configuration
-const STAR_COUNT = 150
-const COLOR_CYAN = '0, 240, 255'
-const BASE_SPEED = 0.015
-const WARP_SPEED = 0.05
-const FLOW_FIELD_STRENGTH = 0.15
+const PARTICLE_COUNT = 80
+const CONNECTION_DISTANCE = 150
+const MOUSE_RADIUS = 200
+const COLOR_PRIMARY = '16, 185, 129' // Emerald 500
 
-interface Star {
-  x: number // -1 to 1 (normalized space)
-  y: number // -1 to 1
-  z: number // 0 to 1 (depth)
-  prevZ: number
+interface Particle {
+  x: number
+  y: number
+  vx: number
+  vy: number
   size: number
-  color: string
-  speedOffset: number
 }
 
-let stars: Star[] = []
+let particles: Particle[] = []
 let width = 0
 let height = 0
-let centerX = 0
-let centerY = 0
-let mouseX = 0
-let mouseY = 0
-let currentSpeed = BASE_SPEED
+let mouseX = -1000
+let mouseY = -1000
 
 onMounted(() => {
   if (!canvasRef.value || !containerRef.value) return
@@ -67,99 +61,83 @@ onMounted(() => {
   const resize = () => {
     width = canvas.width = containerRef.value?.clientWidth || window.innerWidth
     height = canvas.height = containerRef.value?.clientHeight || window.innerHeight
-    centerX = width / 2
-    centerY = height / 2
+    initParticles()
   }
   
   const handleMouseMove = (e: MouseEvent) => {
-    // Subtle parallax offset based on mouse position
-    mouseX = (e.clientX - centerX) / centerX * 50
-    mouseY = (e.clientY - centerY) / centerY * 50
+    const rect = canvas.getBoundingClientRect()
+    mouseX = e.clientX - rect.left
+    mouseY = e.clientY - rect.top
+  }
+
+  const handleMouseLeave = () => {
+    mouseX = -1000
+    mouseY = -1000
   }
 
   window.addEventListener('resize', resize)
   window.addEventListener('mousemove', handleMouseMove)
+  window.addEventListener('mouseleave', handleMouseLeave)
   resize()
 
-  const initStars = () => {
-    stars = []
-    for (let i = 0; i < STAR_COUNT; i++) {
-      stars.push(createStar())
+  function initParticles() {
+    particles = []
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      particles.push({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        vx: (Math.random() - 0.5) * 0.5,
+        vy: (Math.random() - 0.5) * 0.5,
+        size: Math.random() * 2 + 1
+      })
     }
   }
-
-  const createStar = (initial = false): Star => {
-    return {
-      x: (Math.random() - 0.5) * 2,
-      y: (Math.random() - 0.5) * 2,
-      z: initial ? Math.random() : 1, // Random depth if initial, else spawn at back
-      prevZ: 1,
-      size: 0.5 + Math.random() * 2,
-      color: Math.random() > 0.8 ? '255, 255, 255' : COLOR_CYAN,
-      speedOffset: Math.random() * 0.005 // Varied speed per star
-    }
-  }
-
-  initStars()
 
   const draw = () => {
     ctx.clearRect(0, 0, width, height)
     
-    // Smooth speed transition (could be hooked to scroll in future)
-    currentSpeed += (BASE_SPEED - currentSpeed) * 0.1
+    // Update and draw particles
+    for (let i = 0; i < particles.length; i++) {
+      const p = particles[i]
+      
+      p.x += p.vx
+      p.y += p.vy
 
-    for (let i = 0; i < stars.length; i++) {
-      const s = stars[i]
-      s.prevZ = s.z
-      s.z -= (currentSpeed + s.speedOffset)
+      // Bounce off walls
+      if (p.x < 0 || p.x > width) p.vx *= -1
+      if (p.y < 0 || p.y > height) p.vy *= -1
 
-      // Add a simple "flow field" effect by slightly shifting x/y based on time/position
-      const noise = Math.sin(Date.now() * 0.001 + s.x * 5) * FLOW_FIELD_STRENGTH
-      s.x += noise * 0.001
-      s.y += Math.cos(Date.now() * 0.001 + s.y * 5) * 0.0005
-
-      // Reset star if it passes the camera (z <= 0)
-      if (s.z <= 0) {
-        Object.assign(s, createStar())
-        s.prevZ = s.z
+      // Mouse interaction (subtle push)
+      const dx = mouseX - p.x
+      const dy = mouseY - p.y
+      const dist = Math.sqrt(dx * dx + dy * dy)
+      if (dist < MOUSE_RADIUS) {
+        const force = (MOUSE_RADIUS - dist) / MOUSE_RADIUS
+        p.x -= dx * force * 0.02
+        p.y -= dy * force * 0.02
       }
 
-      // Project 3D to 2D
-      const x = (s.x * width / s.z) + centerX + mouseX
-      const y = (s.y * height / s.z) + centerY + mouseY
-      
-      const px = (s.x * width / s.prevZ) + centerX + mouseX
-      const py = (s.y * height / s.prevZ) + centerY + mouseY
-
-      // Don't draw if outside screen
-      if (x < 0 || x > width || y < 0 || y > height) continue
-
-      // Calculate opacity and size based on depth
-      const opacity = Math.min(1, (1 - s.z) * 1.5)
-      const size = (1 - s.z) * s.size * 2
-
-      // Draw Streak (Motion Blur)
+      // Draw particle
       ctx.beginPath()
-      ctx.lineWidth = size
-      ctx.lineCap = 'round'
-      ctx.strokeStyle = `rgba(${s.color}, ${opacity * 0.5})`
-      ctx.moveTo(px, py)
-      ctx.lineTo(x, y)
-      ctx.stroke()
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2)
+      ctx.fillStyle = `rgba(${COLOR_PRIMARY}, ${0.3 + (p.size / 3)})`
+      ctx.fill()
 
-      // Draw Head (Glow)
-      if (s.z < 0.5) {
-        ctx.beginPath()
-        ctx.fillStyle = `rgba(${s.color}, ${opacity})`
-        ctx.arc(x, y, size / 2, 0, Math.PI * 2)
-        ctx.fill()
-        
-        // Add subtle glow for closer particles
-        if (s.z < 0.2) {
-            ctx.shadowBlur = 15 * (1 - s.z)
-            ctx.shadowColor = `rgba(${s.color}, 0.8)`
-            ctx.fill()
-            ctx.shadowBlur = 0
+      // Draw connections
+      for (let j = i + 1; j < particles.length; j++) {
+        const p2 = particles[j]
+        const dx = p.x - p2.x
+        const dy = p.y - p2.y
+        const dist = Math.sqrt(dx * dx + dy * dy)
+
+        if (dist < CONNECTION_DISTANCE) {
+          const opacity = (1 - dist / CONNECTION_DISTANCE) * 0.2
+          ctx.beginPath()
+          ctx.lineWidth = 0.5
+          ctx.strokeStyle = `rgba(${COLOR_PRIMARY}, ${opacity})`
+          ctx.moveTo(p.x, p.y)
+          ctx.lineTo(p2.x, p2.y)
+          ctx.stroke()
         }
       }
     }
@@ -172,6 +150,7 @@ onMounted(() => {
   onBeforeUnmount(() => {
     window.removeEventListener('resize', resize)
     window.removeEventListener('mousemove', handleMouseMove)
+    window.removeEventListener('mouseleave', handleMouseLeave)
     cancelAnimationFrame(animationFrameId)
   })
 })
