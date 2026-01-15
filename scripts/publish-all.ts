@@ -49,7 +49,7 @@ async function getPackagesInDir(dirPath: string): Promise<PackageInfo[]> {
 
   try {
     dirs = await readdir(dirPath)
-  } catch (e) {
+  } catch (_e) {
     return []
   }
 
@@ -65,7 +65,7 @@ async function getPackagesInDir(dirPath: string): Promise<PackageInfo[]> {
         version: json.version,
         private: json.private === true,
       })
-    } catch (e: any) {
+    } catch (_e: any) {
       // 忽略沒有 package.json 的目錄
     }
   }
@@ -192,7 +192,7 @@ async function verifyNpmAuth(): Promise<boolean> {
     console.log('   驗證成功後，後續套件會自動發布\n')
 
     return true
-  } catch (e: any) {
+  } catch (_e: any) {
     console.error('❌ 未登入 NPM，請先執行: npm login')
     return false
   }

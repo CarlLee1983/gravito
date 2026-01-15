@@ -1,0 +1,10 @@
+{
+  "id": "18",
+  "title": "Webhook Echo",
+  "content": "<p>安全地處理 Webhook 非常複雜。您需要驗證簽名、處理重試和解析負載。<strong>Echo</strong> 透過為 Stripe、GitHub 和自定義 HMAC 來源等提供者提供標準化接收器來解決此問題。</p><h2>安裝</h2><pre><code>bun add @gravito/echo</code></pre><h2>Stripe 範例</h2><p>Echo 為 Stripe 提供了一個預建驅動程式，可自動處理簽名驗證。</p><pre><code>import { WebhookReceiver } from '@gravito/echo'\n\nconst receiver = new WebhookReceiver()\nreceiver.registerProvider('stripe', process.env.STRIPE_WEBHOOK_SECRET!)\n\napp.post('/webhooks/stripe', async (c) => {\n  const body = await c.req.text()\n  const headers = c.req.headers() \n  \n  // 驗證簽名\n  const result = await receiver.verify('stripe', body, headers)\n  \n  if (!result.valid) {\n     return c.json({ error: 'Invalid Signature' }, 400)\n  }\n  \n  if (result.eventType === 'payment_intent.succeeded') {\n    // 處理付款\n  }\n  \n  return c.json({ received: true })\n})</code></pre>",
+  "meta": {
+    "lastUpdated": "2026-01-15",
+    "complexity": "MID_LEVEL",
+    "category": "ECOSYSTEM"
+  }
+}

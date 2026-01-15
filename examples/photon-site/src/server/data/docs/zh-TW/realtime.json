@@ -1,0 +1,10 @@
+{
+  "id": "17",
+  "title": "即時 Ripple",
+  "content": "<p>Gravito 透過 <strong>Ripple</strong> Orbit 為 WebSocket 提供了一流的支持。與標準的 WebSocket 實現不同，Ripple 提供了一個開箱即用的基於頻道的廣播系統。</p><h2>安裝</h2><pre><code>bun add @gravito/ripple</code></pre><h2>用法</h2><p>Ripple 會附加到您的 Photon 伺服器並自動處理連接升級。</p><pre><code>import { RippleServer } from '@gravito/ripple'\n\n// 初始化 Ripple\nconst ripple = new RippleServer({\n  pingInterval: 30000\n})\n\n// 廣播至頻道\napp.post('/api/chat/send', async (c) => {\n  const body = await c.req.json()\n  ripple.to('chat-room-1').emit('message', body)\n  return c.json({ sent: true })\n})\n\n// 處理升級\nexport default {\n  fetch: app.fetch,\n  websocket: ripple.getHandler()\n}</code></pre><h3>客戶端</h3><p>使用輕量級的 <code>@gravito/ripple-client</code> 進行連接。</p><pre><code>import { useChannel } from '@gravito/ripple-client/react'\n\nuseChannel('chat-room-1', (event, data) => {\n  console.log('新訊息:', data)\n})</code></pre>",
+  "meta": {
+    "lastUpdated": "2026-01-15",
+    "complexity": "ADVANCED",
+    "category": "ECOSYSTEM"
+  }
+}

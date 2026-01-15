@@ -221,6 +221,20 @@ export interface GravitoRequest {
   valid<T = unknown>(target: ValidationTarget): T
 }
 
+/**
+ * Options for request forwarding (Proxy)
+ */
+export interface ProxyOptions {
+  /** Override or add request headers */
+  headers?: Record<string, string>
+  /** Whether to keep the original Host header (default: false) */
+  preserveHost?: boolean
+  /** Whether to add X-Forwarded-* headers (default: true) */
+  addForwardedHeaders?: boolean
+  /** Path rewriting logic */
+  rewritePath?: (path: string) => string
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Context Abstraction
 // ─────────────────────────────────────────────────────────────────────────────
@@ -315,6 +329,13 @@ export interface GravitoContext<V extends GravitoVariables = GravitoVariables> {
    * Send a 400 Bad Request response
    */
   badRequest(message?: string): Response
+
+  /**
+   * Forward the current request to another URL (Reverse Proxy)
+   * @param target - Target URL or base URL to forward to
+   * @param options - Optional proxy options
+   */
+  forward(target: string, options?: ProxyOptions): Promise<Response>
 
   // ─────────────────────────────────────────────
   // Headers

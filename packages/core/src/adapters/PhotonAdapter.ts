@@ -19,6 +19,7 @@ import type {
   GravitoRequest,
   GravitoVariables,
   HttpMethod,
+  ProxyOptions,
   StatusCode,
 } from '../http/types'
 import type { AdapterConfig, HttpAdapter, RouteDefinition } from './types'
@@ -192,6 +193,27 @@ class PhotonContextWrapper<V extends GravitoVariables = GravitoVariables>
     return this._req
   }
 
+  get params(): Record<string, string> {
+    return this._req.params()
+  }
+
+  get query(): Record<string, string | string[]> {
+    return this._req.queries()
+  }
+
+  get data(): any {
+    return this.get('data' as any)
+  }
+
+  set data(value: any) {
+    this.set('data' as any, value)
+  }
+
+  back(status: 301 | 302 | 303 | 307 | 308 = 302): Response {
+    const referer = this.header('Referer') || '/'
+    return this.redirect(referer, status)
+  }
+
   json<T>(data: T, status?: number): Response {
     if (status !== undefined) {
       return this.photonCtx.json(data as object, status as 200)
@@ -214,7 +236,17 @@ class PhotonContextWrapper<V extends GravitoVariables = GravitoVariables>
   }
 
   redirect(url: string, status: 301 | 302 | 303 | 307 | 308 = 302): Response {
-    return this.photonCtx.redirect(url, status)
+    const response = this.photonCtx.redirect(url, status)
+    // Add .with() helper for flash messages and compatibility
+    const anyRes = response as any
+    anyRes.with = (key: string, value: any) => {
+      const session = this.get('session' as any) as any
+      if (session) {
+        session.flash(key, value)
+      }
+      return anyRes
+    }
+    return response
   }
 
   body(data: BodyInit | null, status?: number): Response {
@@ -296,6 +328,74 @@ class PhotonContextWrapper<V extends GravitoVariables = GravitoVariables>
 
   get native(): Context {
     return this.photonCtx
+  }
+
+  async forward(target: string, options: ProxyOptions = {}): Promise<Response> {
+    const url = new URL(this.req.url)
+    let targetUrl: URL
+
+    if (target.startsWith('http')) {
+      targetUrl = new URL(target)
+      // If target is just a base URL (e.g. http://localhost:4000), append current path
+      // but only if path is not specifically overridden by rewritePath
+      if (targetUrl.pathname === '/' && !target.endsWith('/')) {
+        const newPath = options.rewritePath ? options.rewritePath(this.req.path) : this.req.path
+        targetUrl.pathname = newPath
+      }
+    } else {
+      // Treat as a hostname
+      targetUrl = new URL(
+        `${url.protocol}//${target}${options.rewritePath ? options.rewritePath(this.req.path) : this.req.path}`
+      )
+    }
+
+    // Merge search params
+    url.searchParams.forEach((value, key) => {
+      targetUrl.searchParams.set(key, value)
+    })
+
+    const headers = new Headers(this.req.header())
+
+    // Standard Proxy Header Cleaning (Hop-by-hop)
+    const hopByHop = [
+      'connection',
+      'keep-alive',
+      'proxy-authenticate',
+      'proxy-authorization',
+      'te',
+      'trailers',
+      'transfer-encoding',
+      'upgrade',
+    ]
+    hopByHop.forEach((h) => {
+      headers.delete(h)
+    })
+
+    if (!options.preserveHost) {
+      headers.set('host', targetUrl.host)
+    }
+
+    if (options.addForwardedHeaders !== false) {
+      const clientIp = this.photonCtx.req.header('x-forwarded-for') || '127.0.0.1'
+      headers.set('x-forwarded-for', clientIp)
+      headers.set('x-forwarded-proto', url.protocol.replace(':', ''))
+      headers.set('x-forwarded-host', url.host)
+    }
+
+    // Overwrite with custom headers
+    if (options.headers) {
+      Object.entries(options.headers).forEach(([k, v]) => {
+        headers.set(k, v)
+      })
+    }
+
+    return fetch(targetUrl.toString(), {
+      method: this.req.method,
+      headers,
+      body: this.req.method !== 'GET' && this.req.method !== 'HEAD' ? this.req.raw.body : null,
+      // @ts-expect-error - Bun/Fetch specific for streaming bodies
+      duplex: 'half',
+    })
   }
 }
 

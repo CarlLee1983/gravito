@@ -55,7 +55,9 @@ export class PulseService {
     // Sort nodes by service name, then by node id for stable UI positions
     nodes.sort((a, b) => {
       const sComp = a.service.localeCompare(b.service)
-      if (sComp !== 0) return sComp
+      if (sComp !== 0) {
+        return sComp
+      }
       return a.id.localeCompare(b.id)
     })
 

@@ -474,6 +474,11 @@ export interface QueryBuilderContract<T = Record<string, unknown>> {
     relation: string | string[] | Record<string, (query: QueryBuilderContract<any>) => void>
   ): this
 
+  /**
+   * Add a WHERE HAS relationship existence clause
+   */
+  whereHas(relation: string, callback?: (query: QueryBuilderContract<any>) => void): this
+
   // SOFT DELETES
   withTrashed(): this
   onlyTrashed(): this

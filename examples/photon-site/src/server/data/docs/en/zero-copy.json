@@ -1,0 +1,6 @@
+{
+  "id": "09",
+  "title": "Zero-Copy Bridge",
+  "content": "<p>Photon's most significant optimization is the <strong>Zero-Copy Bridge</strong>. In traditional frameworks, incoming requests are parsed and cloned into multiple objects before reaching your business logic. This consumes CPU cycles and increases memory pressure.</p><h2>How it works</h2><p>Photon communicates directly with the Bun runtime's internal buffers. When a request arrives, we map the memory address directly to the <code>FastContext</code>. No intermediate string cloning occurs unless your logic explicitly requests it.</p><div class=\"callout-tip\"><p>In baseline testing, Zero-Copy transfer reduces request dispatch latency by up to 18.4%.</p></div>",
+  "meta": { "lastUpdated": "2026-01-13", "complexity": "HARDCORE", "category": "ARCHITECTURE" }
+}

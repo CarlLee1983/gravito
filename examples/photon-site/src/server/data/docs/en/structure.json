@@ -1,0 +1,10 @@
+{
+  "id": "03",
+  "title": "Project Structure",
+  "content": "<p>Photon scales from simple microservices to complex enterprise clusters. While we don't enforce a strict folder layout, we recommend a structure that separates logic from infrastructure.</p><h3>Recommended Layout</h3><pre><code>├── src/\\n│   ├── server/       # Engine entry & route definitions\\n│   │   └── index.ts\\n│   ├── controllers/  # Business logic isolated from the engine\\n│   ├── middleware/   # Custom security & logging layers\\n│   ├── views/        # Prism root templates\\n│   └── client/       # React/Vue SPA components (Ion)\\n├── config/           # Application configuration\\n├── tests/            # Performance & Integration tests\\n└── package.json</code></pre><h3>The Orbits System</h3><p>Photon is \"Modular by Default\". While the full <strong>PlanetCore</strong> framework uses an <code>orbit()</code> system for automation, the standalone engine allows you to achieve the same result by registering middleware and services directly.</p><pre><code>// Example Standalone Integration\\nimport { auth } from '@gravito/sentinel'\\nimport { DB } from '@gravito/atlas'\\n\\n// Register features as standard middleware\\napp.use('/api/*', auth())</code></pre>",
+  "meta": {
+    "lastUpdated": "2026-01-14",
+    "complexity": "BASE_LEVEL",
+    "category": "GETTING_STARTED"
+  }
+}

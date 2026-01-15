@@ -1,0 +1,49 @@
+{
+    "name": "@gravito/example-event-registration-mvc",
+    "version": "1.0.0",
+    "private": true,
+    "description": "Event Registration System - Gravito Framework MVC Example",
+    "type": "module",
+    "scripts": {
+        "dev": "bun run dev:server & bun run dev:vite",
+        "dev:server": "bun run --watch src/index.ts",
+        "dev:vite": "vite",
+        "build": "bun run build:server && bun run build:vite",
+        "build:server": "bun build src/index.ts --outdir=dist --target=bun",
+        "build:vite": "vite build",
+        "start": "bun run dist/index.js",
+        "typecheck": "bun tsc --noEmit",
+        "db:seed": "bun run database/seeders/DatabaseSeeder.ts",
+        "test": "bun test"
+    },
+    "dependencies": {
+        "@gravito/atlas": "workspace:*",
+        "@gravito/core": "workspace:*",
+        "@gravito/cosmos": "workspace:*",
+        "@gravito/ion": "workspace:*",
+        "@gravito/monolith": "workspace:*",
+        "@gravito/prism": "workspace:*",
+        "@gravito/pulsar": "workspace:*",
+        "@gravito/sentinel": "workspace:*",
+        "@gravito/signal": "workspace:*",
+        "@inertiajs/vue3": "^2.3.8",
+        "axios": "^1.13.2",
+        "qrcode": "^1.5.4"
+    },
+    "devDependencies": {
+        "@inertiajs/core": "^2.3.8",
+        "@types/axios": "^0.14.4",
+        "@types/bun": "latest",
+        "@types/qrcode": "^1.5.5",
+        "@unocss/preset-attributify": "^66.5.12",
+        "@unocss/preset-icons": "^66.5.12",
+        "@unocss/preset-uno": "^66.5.12",
+        "@unocss/transformer-directives": "^66.5.12",
+        "@vitejs/plugin-vue": "^5.2.1",
+        "html5-qrcode": "^2.3.8",
+        "typescript": "^5.9.3",
+        "unocss": "^66.5.12",
+        "vite": "^6.0.7",
+        "vue": "^3.5.13"
+    }
+}

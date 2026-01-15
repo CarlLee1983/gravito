@@ -1,0 +1,10 @@
+{
+  "id": "21",
+  "title": "生態系統整合",
+  "content": "<p>Photon 的零墊片架構使其易於與更廣泛的 JavaScript 生態系統整合。我們為常見任務提供官方模組，並為第三方工具提供模式。</p><h2>GraphQL 整合</h2><p>對於 GraphQL，我們建議直接使用 <strong>GraphQL Yoga</strong>。它輕量級且與 Photon 的原生請求/回應處理無縫協作。</p><pre><code>import { createYoga } from 'graphql-yoga'\n\nconst yoga = createYoga({ schema })\n\napp.all('/graphql', (c) => yoga.fetch(c.req.raw))</code></pre><h2>工作隊列</h2><p><strong>@gravito/stream</strong> 是我們的高效能隊列系統。它作為一個獨立服務運作，您可以從 Photon 處理程序中調用它。</p><pre><code>import { OrbitStream, Job } from '@gravito/stream'\n\n// 初始化串流處理器\nconst stream = new OrbitStream({ /* config */ })\n\nclass EmailJob extends Job {\n  async handle() { /* ... */ }\n}\n\n// 從路由推送到隊列\napp.post('/api/notify', async (c) => {\n  await stream.push(new EmailJob(c.req.json()))\n  return c.json({ queued: true })\n})</code></pre><h2>OpenAPI / Swagger</h2><p>對於 API 文檔，我們建議使用 <strong>@asteasolutions/zod-to-openapi</strong>。由於 Photon 使用標準 Zod 架構，您可以註冊它們以自動生成規範。</p><pre><code>import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi'\n\nconst registry = new OpenAPIRegistry()\nregistry.registerPath({\n  method: 'get',\n  path: '/users',\n  responses: { 200: { description: 'User list' } }\n})</code></pre><h2>監控 (Sentry)</h2><p>您可以使用包裝執行上下文的全域中介軟體來整合 Sentry。</p><pre><code>import * as Sentry from '@sentry/bun'\n\napp.use(async (c, next) => {\n  try {\n    await next()\n  } catch (err) {\n    Sentry.captureException(err)\n    throw err\n  }\n})</code></pre>",
+  "meta": {
+    "lastUpdated": "2026-01-15",
+    "complexity": "ADVANCED",
+    "category": "ECOSYSTEM"
+  }
+}

@@ -6,6 +6,8 @@ import { TestResponse } from './TestResponse'
  * and returns a TestResponse for assertions.
  */
 export class HttpTester {
+  private cookies: Map<string, string> = new Map()
+
   constructor(private core: PlanetCore) {}
 
   /**
@@ -75,6 +77,14 @@ export class HttpTester {
     let body = null
     const requestHeaders = { ...headers }
 
+    // Add cookies to headers
+    if (this.cookies.size > 0) {
+      const cookieString = Array.from(this.cookies.entries())
+        .map(([name, value]) => `${name}=${value}`)
+        .join('; ')
+      requestHeaders.Cookie = cookieString
+    }
+
     if (data) {
       if (typeof data === 'object' && !(data instanceof FormData) && !(data instanceof Blob)) {
         body = JSON.stringify(data)
@@ -94,6 +104,21 @@ export class HttpTester {
 
     // Use the core adapter's fetch directly to avoid network overhead
     const response = await this.core.adapter.fetch(request)
+
+    // Capture cookies from response
+    const setCookie = response.headers.get('Set-Cookie')
+    if (setCookie) {
+      // Handle multiple Set-Cookie headers (often separated by commas in Fetch API's get())
+      const parts = setCookie.split(/,(?=[^;]+=[^;]+)/)
+      for (const part of parts) {
+        const cookiePair = part.split(';')[0].trim()
+        const [name, ...valueParts] = cookiePair.split('=')
+        if (name) {
+          this.cookies.set(name, valueParts.join('='))
+        }
+      }
+    }
+
     return new TestResponse(response)
   }
 }

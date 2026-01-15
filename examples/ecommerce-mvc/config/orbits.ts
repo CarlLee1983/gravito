@@ -65,12 +65,16 @@ export const orbits = [
             async (id) => {
               const result = await DB.raw<any>(sql('SELECT * FROM users WHERE id = ?'), [id])
               const row = result.rows[0]
-              if (!row) return null
+              if (!row) {
+                return null
+              }
               return User.hydrate(row)
             },
             // validateCredentials
             async (user, credentials) => {
-              if (!credentials.password || !user.password) return false
+              if (!credentials.password || !user.password) {
+                return false
+              }
               return Bun.password.verify(credentials.password as string, user.password)
             },
             // retrieveByToken (optional)
@@ -81,7 +85,9 @@ export const orbits = [
                 credentials.email,
               ])
               const row = result.rows[0]
-              if (!row) return null
+              if (!row) {
+                return null
+              }
               return User.hydrate(row)
             }
           ),

@@ -1,0 +1,10 @@
+{
+  "id": "03",
+  "title": "專案結構",
+  "content": "<p>Photon 可以從簡單的微服務擴展到複雜的企業級叢集。雖然我們不強制執行嚴格的文件夾佈局，但我們建議將邏輯與基礎設施分開的結構。</p><h3>推薦佈局</h3><pre><code>├── src/\\n│   ├── server/       # 引擎入口和路由定義\\n│   │   └── index.ts\\n│   ├── controllers/  # 與引擎隔離的業務邏輯\\n│   ├── middleware/   # 自定義安全和日誌層\\n│   ├── views/        # Prism 根模板\\n│   └── client/       # React/Vue SPA 組件 (Ion)\\n├── config/           # 應用程式配置\\n├── tests/            # 性能和整合測試\\n└── package.json</code></pre><h3>Orbits 系統</h3><p>Photon 是「預設模組化」的。雖然完整的 <strong>PlanetCore</strong> 框架使用 <code>orbit()</code> 系統進行自動化，但獨立引擎允許您通過直接註冊中介軟體和服務來實現相同的結果。</p><pre><code>// 獨立整合範例\\nimport { auth } from '@gravito/sentinel'\\nimport { DB } from '@gravito/atlas'\\n\\n// 像標準中介軟體一樣註冊功能\\napp.use('/api/*', auth())</code></pre>",
+  "meta": {
+    "lastUpdated": "2026-01-14",
+    "complexity": "BASE_LEVEL",
+    "category": "GETTING_STARTED"
+  }
+}

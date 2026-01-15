@@ -1,4 +1,3 @@
-import { FluxEngine } from '@gravito/flux'
 import { Job } from '@gravito/stream'
 
 export interface WorkflowJobPayload {

@@ -185,9 +185,15 @@ export class MySQLPersistence implements PersistenceAdapter {
   ): Promise<any[]> {
     let query = this.db.table(this.logsTable)
 
-    if (options.level) query = query.where('level', options.level)
-    if (options.workerId) query = query.where('worker_id', options.workerId)
-    if (options.queue) query = query.where('queue', options.queue)
+    if (options.level) {
+      query = query.where('level', options.level)
+    }
+    if (options.workerId) {
+      query = query.where('worker_id', options.workerId)
+    }
+    if (options.queue) {
+      query = query.where('queue', options.queue)
+    }
     if (options.search) {
       query = query.where('message', 'like', `%${options.search}%`)
     }
@@ -222,9 +228,15 @@ export class MySQLPersistence implements PersistenceAdapter {
   ): Promise<number> {
     let query = this.db.table(this.logsTable)
 
-    if (options.level) query = query.where('level', options.level)
-    if (options.workerId) query = query.where('worker_id', options.workerId)
-    if (options.queue) query = query.where('queue', options.queue)
+    if (options.level) {
+      query = query.where('level', options.level)
+    }
+    if (options.workerId) {
+      query = query.where('worker_id', options.workerId)
+    }
+    if (options.queue) {
+      query = query.where('queue', options.queue)
+    }
     if (options.search) {
       query = query.where('message', 'like', `%${options.search}%`)
     }
@@ -299,7 +311,9 @@ export class MySQLPersistence implements PersistenceAdapter {
 
   private async setupJobsTable(): Promise<void> {
     const exists = await Schema.hasTable(this.table)
-    if (exists) return
+    if (exists) {
+      return
+    }
 
     await Schema.create(this.table, (table) => {
       table.id()
@@ -321,7 +335,9 @@ export class MySQLPersistence implements PersistenceAdapter {
 
   private async setupLogsTable(): Promise<void> {
     const exists = await Schema.hasTable(this.logsTable)
-    if (exists) return
+    if (exists) {
+      return
+    }
 
     await Schema.create(this.logsTable, (table) => {
       table.id()

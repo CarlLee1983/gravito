@@ -1,0 +1,10 @@
+{
+    "id": "26",
+    "title": "Proxy & Gateway",
+    "content": "<p>Photon is highly optimized for building API Gateways and Reverse Proxies. By leveraging <code>fetch</code> and zero-copy streaming, header transformation is nearly instant.</p><h2>The Proxy Pattern</h2><p>In the standalone engine, you can easily create a reverse proxy using the native <code>fetch</code> API. Photon's minimal overhead ensures that your gateway remains efficient.</p><pre><code>// Simple Proxy Pattern\napp.all('/legacy-api/*', async (c) => {\n  const url = new URL(c.req.url)\n  const target = 'https://old-service.internal' + url.pathname\n  \n  return fetch(target, {\n    method: c.req.method,\n    headers: c.req.headers(),\n    body: c.req.raw.body\n  })\n})</code></pre><h2>Router-level Orchestration</h2><p>For high-performance API Gateways, combine Photon's AOT routing with service discovery to route requests to your internal microservices.</p><div class=\"callout-info\"><p>Performance Note: Gravito's AOT router makes proxy matching O(1), ensuring that even with thousands of gateway rules, the overhead remains sub-millisecond.</p></div>",
+    "meta": {
+        "lastUpdated": "2026-01-15",
+        "complexity": "ADVANCED",
+        "category": "TECHNICAL_ARCHITECTURE"
+    }
+}

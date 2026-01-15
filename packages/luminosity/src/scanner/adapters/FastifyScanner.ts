@@ -48,7 +48,9 @@ export class FastifyScanner implements RouteScanner {
     // Fastify routeOptions has { method, url, path, prefix, ... }
     // Usually 'url' is the full path.
     const rawPath = routeOptions.url || routeOptions.path
-    if (!rawPath) return
+    if (!rawPath) {
+      return
+    }
 
     // Skip internal routes or if method is HEAD/OPTIONS (unless we want them, but usually sitemap is GET)
     // We store all, let SitemapBuilder filter by GET.

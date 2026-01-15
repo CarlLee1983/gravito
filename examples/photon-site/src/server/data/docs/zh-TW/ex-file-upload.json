@@ -1,0 +1,10 @@
+{
+  "id": "E05",
+  "title": "零複製上傳",
+  "content": "<p>在 Photon 中處理文件上傳非常高效，因為我們利用 Bun 的原生 <code>FormData</code> 處理，將文件映射到磁碟或記憶體，而無需 V8 heap 分配。</p><h2>原生處理</h2><pre><code>app.post('/upload', async (c) => {\n  const form = await c.req.formData()\n  const file = form.get('profile_pic')\n  \n  if (file && file instanceof File) {\n    // 直接寫入磁碟 (Zero-Copy)\n    await Bun.write('uploads/' + file.name, file)\n    return c.json({ size: file.size })\n  }\n  \n  return c.json({ error: 'No file' }, 400)\n})</code></pre><div class=\"callout-tip\"><p>性能筆記：此方法比 Node.js 上的 Multer 快約 3 倍，因為文件二進位數據從未被序列化為 JS 緩衝區字串。</p></div>",
+  "meta": {
+    "lastUpdated": "2026-01-15",
+    "complexity": "MID_LEVEL",
+    "category": "LAB_EXPERIMENTS"
+  }
+}

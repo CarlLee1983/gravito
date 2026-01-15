@@ -1,0 +1,10 @@
+{
+  "id": "20",
+  "title": "資料驗證",
+  "content": "<p>Photon 不會隨附龐大的驗證函式庫。相反，我們建議直接在您的處理程序中使用 <strong>Zod</strong>。這種方法完全符合 Photon 的「無墊片」理念。</p><h2>模式：AOT 驗證</h2><p>為了獲得最大效能，請在請求循環之外定義您的架構。</p><pre><code>import { z } from 'zod'\n\nconst UserSchema = z.object({\n  email: z.string().email(),\n  age: z.number().min(18)\n})\n\napp.post('/users', async (c) => {\n  const body = await c.req.json()\n  \n  const result = UserSchema.safeParse(body)\n  if (!result.success) {\n    return c.json({ errors: result.error.format() }, 400)\n  }\n  \n  // 型別安全資料\n  const data = result.data\n  return c.json({ created: true })\n})</code></pre><h2>驗證器錯誤處理</h2><p>當使用共享驗證器或中介軟體時，您可以集中錯誤處理以維持一致的 API 回應：</p><pre><code>app.use('/api/*', async (c, next) => {\n  try {\n    await next()\n  } catch (err) {\n    if (err instanceof ZodError) {\n      return c.json({ \n        status: 'validation_failed', \n        issues: err.flatten() \n      }, 422)\n    }\n    throw err\n  }\n})</code></pre>",
+  "meta": {
+    "lastUpdated": "2026-01-15",
+    "complexity": "BASE_LEVEL",
+    "category": "PATTERNS"
+  }
+}

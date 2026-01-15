@@ -1,0 +1,36 @@
+{
+    "name": "@gravito/impulse-bridge",
+    "version": "1.0.0",
+    "publishConfig": {
+        "access": "public"
+    },
+    "description": "Validation bridge between Impulse and Frontend (Inertia/Prism)",
+    "main": "./dist/index.cjs",
+    "module": "./dist/index.js",
+    "type": "module",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js",
+            "require": "./dist/index.cjs"
+        }
+    },
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "build": "tsup src/index.ts --format cjs,esm --dts --clean",
+        "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck"
+    },
+    "peerDependencies": {
+        "@gravito/core": "workspace:*",
+        "@gravito/impulse": "workspace:*"
+    },
+    "devDependencies": {
+        "@gravito/core": "workspace:*",
+        "@gravito/impulse": "workspace:*",
+        "tsup": "^8.3.5",
+        "typescript": "^5.9.3"
+    }
+}

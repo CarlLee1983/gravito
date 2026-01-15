@@ -1,6 +1,8 @@
 console.log('🎧 Connecting to log stream...')
 const req = await fetch('http://localhost:3000/api/logs/stream')
-if (!req.body) throw new Error('No body')
+if (!req.body) {
+  throw new Error('No body')
+}
 
 const reader = req.body.getReader()
 const decoder = new TextDecoder()
@@ -16,7 +18,9 @@ console.log(`⏳ Measuring received logs for ${DURATION}ms...`)
 async function readStream() {
   while (true) {
     const { done, value } = await reader.read()
-    if (done) break
+    if (done) {
+      break
+    }
 
     const chunk = decoder.decode(value)
     // SSE format: event: log\ndata: ...\n\n

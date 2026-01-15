@@ -1,5 +1,5 @@
 import { ModelNotFoundException } from './exceptions/ModelNotFoundException'
-import type { GravitoHandler, GravitoMiddleware, HttpMethod } from './http/types'
+import type { GravitoHandler, GravitoMiddleware, HttpMethod, ProxyOptions } from './http/types'
 import type { PlanetCore } from './PlanetCore'
 import { Route } from './Route'
 
@@ -25,22 +25,52 @@ export interface FormRequestLike {
 export type FormRequestClass = new () => FormRequestLike
 
 /**
- * Check if a value is a FormRequest class
+ * Symbol to mark FormRequest classes for fast identification.
+ * FormRequest classes from @gravito/impulse should set this symbol.
+ */
+export const FORM_REQUEST_SYMBOL = Symbol.for('gravito.formRequest')
+
+/**
+ * WeakMap cache for FormRequest class detection results.
+ * Avoids re-instantiating classes on repeated checks.
+ */
+const formRequestCache = new WeakMap<Function, boolean>()
+
+/**
+ * Check if a value is a FormRequest class.
+ * Optimized with Symbol check and caching to avoid repeated instantiation.
  */
 function isFormRequestClass(value: unknown): value is FormRequestClass {
   if (typeof value !== 'function') {
     return false
   }
+
+  // Fast path: Check for Symbol marker (set by @gravito/impulse)
+  if ((value as { [FORM_REQUEST_SYMBOL]?: boolean })[FORM_REQUEST_SYMBOL] === true) {
+    return true
+  }
+
+  // Check cache to avoid re-instantiation
+  const cached = formRequestCache.get(value)
+  if (cached !== undefined) {
+    return cached
+  }
+
+  // Slow path: Duck-type check with instantiation
   try {
     const instance = new (value as new () => unknown)()
-    return (
+    const isFormRequest =
       instance !== null &&
       typeof instance === 'object' &&
       'schema' in instance &&
       'validate' in instance &&
       typeof (instance as FormRequestLike).validate === 'function'
-    )
+
+    // Cache the result
+    formRequestCache.set(value, isFormRequest)
+    return isFormRequest
   } catch {
+    formRequestCache.set(value, false)
     return false
   }
 }
@@ -256,6 +286,32 @@ export class RouteGroup {
       }
     }
   }
+
+  /**
+   * Register a route that forwards requests to another URL (Gateway Proxy).
+   * @param method - HTTP method or 'all'
+   * @param path - Local route path
+   * @param target - Remote URL or base URL to forward to
+   * @param options - Optional proxy options
+   */
+  forward(
+    method: HttpMethod | HttpMethod[] | 'all',
+    path: string,
+    target: string,
+    options?: ProxyOptions
+  ): void {
+    const handler: GravitoHandler = (ctx) => ctx.forward(target, options)
+    const methods =
+      method === 'all'
+        ? (['get', 'post', 'put', 'delete', 'patch', 'options', 'head'] as HttpMethod[])
+        : Array.isArray(method)
+          ? method
+          : [method]
+
+    for (const m of methods) {
+      this.router.req(m, path, handler, undefined, this.options)
+    }
+  }
 }
 
 /**
@@ -425,28 +481,44 @@ export class Router {
 
   constructor(private core: PlanetCore) {
     // Register global middleware for bindings
+    // Optimized: Only resolve bindings for params that exist in the current route
     this.core.adapter.useGlobal(async (c, next) => {
+      // Early exit if no bindings registered
+      if (this.bindings.size === 0) {
+        await next()
+        return undefined
+      }
+
       const routeModels = (c.get('routeModels') ?? {}) as Record<string, unknown>
+      let hasResolvedModels = false
 
       // Iterate over registered bindings
-      // TODO: Optimize by checking which params are actually in the current route match
+      // Optimization: Only resolve params that exist in the current route
       for (const [param, resolver] of this.bindings) {
         const value = c.req.param(param)
-        if (value) {
-          try {
-            const resolved = await resolver(value)
-            routeModels[param] = resolved
-          } catch (err: unknown) {
-            const message = err instanceof Error ? err.message : undefined
-            if (message === 'ModelNotFound') {
-              throw new ModelNotFoundException(param, value)
-            }
-            throw err
+        // Skip if param not present in this route
+        if (!value) {
+          continue
+        }
+
+        try {
+          const resolved = await resolver(value)
+          routeModels[param] = resolved
+          hasResolvedModels = true
+        } catch (err: unknown) {
+          const message = err instanceof Error ? err.message : undefined
+          if (message === 'ModelNotFound') {
+            throw new ModelNotFoundException(param, value)
           }
+          throw err
         }
       }
 
-      c.set('routeModels', routeModels)
+      // Only set routeModels if we actually resolved something
+      if (hasResolvedModels) {
+        c.set('routeModels', routeModels)
+      }
+
       await next()
       return undefined
     })
@@ -582,6 +654,32 @@ export class Router {
     handler?: RouteHandler
   ): Route {
     return this.req('patch', path, requestOrHandlerOrMiddleware, handler)
+  }
+
+  /**
+   * Register a route that forwards requests to another URL (Gateway Proxy).
+   * @param method - HTTP method or 'all'
+   * @param path - Local route path
+   * @param target - Remote URL or base URL to forward to
+   * @param options - Optional proxy options
+   */
+  forward(
+    method: HttpMethod | HttpMethod[] | 'all',
+    path: string,
+    target: string,
+    options?: ProxyOptions
+  ): void {
+    const handler: GravitoHandler = (ctx) => ctx.forward(target, options)
+    const methods =
+      method === 'all'
+        ? (['get', 'post', 'put', 'delete', 'patch', 'options', 'head'] as HttpMethod[])
+        : Array.isArray(method)
+          ? method
+          : [method]
+
+    for (const m of methods) {
+      this.req(m, path, handler)
+    }
   }
 
   /**

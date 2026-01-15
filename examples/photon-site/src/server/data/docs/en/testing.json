@@ -1,0 +1,6 @@
+{
+    "id": "14",
+    "title": "Testing Suite",
+    "content": "<p>Robust applications require robust tests. Photon provides a first-class testing experience using the <code>bun:test</code> runner, designed for millisecond-level execution.</p><h3>Unit Testing Handlers</h3><p>You can test your logic without starting a TCP server. Photon includes a <code>MockContext</code> to simulate request/response cycles.</p><pre><code>import { test, expect } from 'bun:test'\nimport { MockContext } from '@gravito/core/testing'\n\ntest('home handler returns 200', async () => {\n  const c = new MockContext()\n  const res = await homeHandler(c)\n  expect(res.status).toBe(200)\n  expect(await res.text()).toContain('System Online')\n})</code></pre><h3>Integration Tests</h3><p>Photon's <code>app.request()</code> method allows you to perform full end-to-end routing tests in-memory, ensuring your middleware matrix and route parameters are working as expected.</p>",
+    "meta": { "lastUpdated": "2026-01-14", "complexity": "BASE_LEVEL", "category": "ADVANCED" }
+}

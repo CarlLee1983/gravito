@@ -35,7 +35,9 @@ export const MagneticCursor = () => {
         target.closest('button') ||
         target.classList.contains('cursor-magnetic')
       ) {
-        if (!isHovering) play('hover')
+        if (!isHovering) {
+          play('hover')
+        }
         setIsHovering(true)
       } else {
         setIsHovering(false)

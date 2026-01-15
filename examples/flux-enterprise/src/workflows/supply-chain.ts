@@ -43,7 +43,7 @@ export interface SupplyChainData {
 /**
  * Mock External Services
  */
-const mockCustomsService = async (origin: string, dest: string) => {
+const mockCustomsService = async (origin: string, _dest: string) => {
   await new Promise((resolve) => setTimeout(resolve, 300))
   return {
     id: `CUSTOMS-${Math.random().toString(36).substring(7).toUpperCase()}`,

@@ -13,6 +13,6 @@ export class RouteProvider extends ServiceProvider {
   }
 
   boot() {
-    registerRoutes(this.core!.router)
+    registerRoutes(this.core?.router)
   }
 }

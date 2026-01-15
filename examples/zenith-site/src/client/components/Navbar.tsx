@@ -1,7 +1,6 @@
 import { usePage } from '@inertiajs/react'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { Github, Globe, LayoutDashboard } from 'lucide-react'
-import React from 'react'
 import { useTrans } from '../hooks/useTrans'
 import { StaticLink } from './StaticLink'
 

@@ -8,14 +8,8 @@
  * @since 1.0.0
  */
 
-import type {
-  CacheService,
-  GravitoContext,
-  GravitoNext,
-  GravitoOrbit,
-  PlanetCore,
-} from '@gravito/core'
-import { generateToken, parseCookieHeader, safeEquals, serializeCookie } from './helpers'
+import type { GravitoContext, GravitoNext, GravitoOrbit, PlanetCore } from '@gravito/core'
+import { generateToken, parseCookieHeader, safeEquals } from './helpers'
 import { FileSessionStore } from './stores/FileSessionStore'
 import { MemorySessionStore } from './stores/MemorySessionStore'
 import { RedisSessionStore } from './stores/RedisSessionStore'
@@ -60,12 +54,12 @@ export class OrbitPulsar implements GravitoOrbit {
 
     const exposeAs = (resolved.exposeAs as any) ?? 'session'
     const driver = resolved.driver ?? 'memory'
-    const cacheKey = resolved.cacheKey ?? 'cache'
+    const _cacheKey = resolved.cacheKey ?? 'cache'
     const keyPrefix = resolved.keyPrefix ?? 'session:'
     const cookieName = resolved.cookie?.name ?? 'gravito_session'
     const cookiePath = resolved.cookie?.path ?? '/'
     const cookieSameSite = resolved.cookie?.sameSite ?? 'Lax'
-    const cookieHttpOnly = resolved.cookie?.httpOnly ?? true
+    const _cookieHttpOnly = resolved.cookie?.httpOnly ?? true
     const cookieSecure = resolved.cookie?.secure ?? process.env.NODE_ENV === 'production'
     const idleTimeoutSeconds = resolved.idleTimeoutSeconds ?? 60 * 30
     const touchIntervalSeconds = resolved.touchIntervalSeconds ?? 60
@@ -73,9 +67,9 @@ export class OrbitPulsar implements GravitoOrbit {
     const csrfEnabled = resolved.csrf?.enabled ?? true
     const csrfHeaderNames = ['X-XSRF-TOKEN', 'X-CSRF-TOKEN']
     const csrfCookieName = resolved.csrf?.cookieName ?? 'XSRF-TOKEN'
-    const csrfCookiePath = resolved.csrf?.cookiePath ?? '/'
-    const csrfCookieSameSite = resolved.csrf?.cookieSameSite ?? 'Lax'
-    const csrfCookieSecure = resolved.csrf?.cookieSecure ?? process.env.NODE_ENV === 'production'
+    const _csrfCookiePath = resolved.csrf?.cookiePath ?? '/'
+    const _csrfCookieSameSite = resolved.csrf?.cookieSameSite ?? 'Lax'
+    const _csrfCookieSecure = resolved.csrf?.cookieSecure ?? process.env.NODE_ENV === 'production'
     const csrfIgnore = resolved.csrf?.ignore
 
     const now = resolved.now ?? (() => Date.now())
@@ -123,8 +117,12 @@ export class OrbitPulsar implements GravitoOrbit {
           const parts = k.split('.')
           let curr: any = data
           for (const p of parts) {
-            if (p === '__proto__' || p === 'constructor' || p === 'prototype') return d
-            if (curr == null || typeof curr !== 'object') return d
+            if (p === '__proto__' || p === 'constructor' || p === 'prototype') {
+              return d
+            }
+            if (curr == null || typeof curr !== 'object') {
+              return d
+            }
             curr = curr[p]
           }
           return curr ?? d
@@ -134,13 +132,18 @@ export class OrbitPulsar implements GravitoOrbit {
           let curr = data
           for (let i = 0; i < parts.length - 1; i++) {
             const part = parts[i]
-            if (part === '__proto__' || part === 'constructor' || part === 'prototype') return
-            if (!(part in curr)) curr[part] = {}
+            if (part === '__proto__' || part === 'constructor' || part === 'prototype') {
+              return
+            }
+            if (!(part in curr)) {
+              curr[part] = {}
+            }
             curr = curr[part]
           }
           const lastPart = parts[parts.length - 1]
-          if (lastPart === '__proto__' || lastPart === 'constructor' || lastPart === 'prototype')
+          if (lastPart === '__proto__' || lastPart === 'constructor' || lastPart === 'prototype') {
             return
+          }
           curr[lastPart] = v
           markDirty()
         },
@@ -150,13 +153,18 @@ export class OrbitPulsar implements GravitoOrbit {
           let curr = data
           for (let i = 0; i < parts.length - 1; i++) {
             const part = parts[i]
-            if (part === '__proto__' || part === 'constructor' || part === 'prototype') return
-            if (!(part in curr)) return
+            if (part === '__proto__' || part === 'constructor' || part === 'prototype') {
+              return
+            }
+            if (!(part in curr)) {
+              return
+            }
             curr = curr[part]
           }
           const lastPart = parts[parts.length - 1]
-          if (lastPart === '__proto__' || lastPart === 'constructor' || lastPart === 'prototype')
+          if (lastPart === '__proto__' || lastPart === 'constructor' || lastPart === 'prototype') {
             return
+          }
           delete curr[lastPart]
           markDirty()
         },
@@ -177,15 +185,18 @@ export class OrbitPulsar implements GravitoOrbit {
           markDirty()
           isRegenerated = true
         },
+        destroy: () => session.invalidate(),
         flash: (k: string, v: any) => {
-          if (!data._flash) data._flash = {}
+          if (!data._flash) {
+            data._flash = {}
+          }
           data._flash[k] = v
           markDirty()
         },
         getFlash: (k: string, d?: any) => {
           return data._flash?.[k] ?? d
         },
-        keep: (keys: string[]) => {
+        keep: (_keys: string[]) => {
           // TODO: Implement flash data persistence logic
         },
         all: () => data,
@@ -232,6 +243,38 @@ export class OrbitPulsar implements GravitoOrbit {
               console.error(
                 `[CSRF ERROR] Mismatch URL: ${c.req.url}, Expected: ${expected}, GOT: ${cleanIncoming || '(empty)'}`
               )
+
+              // Shared Save Logic Helper
+              const saveSession = async () => {
+                const currentToken = csrfService.token()
+                const shouldSave =
+                  dirty ||
+                  isRegenerated ||
+                  (record ? (now() - record.lastActivityAt) / 1000 >= touchIntervalSeconds : true)
+
+                if (shouldSave) {
+                  await store.set(
+                    sessionId,
+                    { data, createdAt: record?.createdAt ?? now(), lastActivityAt: now() },
+                    idleTimeoutSeconds
+                  )
+                }
+
+                // Cookie Delivery
+                const common = `; Path=${cookiePath}; SameSite=${cookieSameSite}; Max-Age=${60 * 60 * 24 * 7}${cookieSecure ? '; Secure' : ''}`
+                const sidStr = `${cookieName}=${sessionId}${common}; HttpOnly`
+                const csrfStr = `${csrfCookieName}=${encodeURIComponent(currentToken)}${common}`
+
+                c.header('Set-Cookie', sidStr, { append: true })
+                c.header('Set-Cookie', csrfStr, { append: true })
+              }
+
+              if (c.req.header('X-Inertia')) {
+                session.flash('error', 'Session expired. Please try again.')
+                await saveSession()
+                return c.redirect(c.req.header('Referer') || '/')
+              }
+
               return c.json(
                 { success: false, error: { code: 'CSRF_ERROR', message: 'CSRF token mismatch' } },
                 403
@@ -271,7 +314,7 @@ export class OrbitPulsar implements GravitoOrbit {
         try {
           resToMod.headers.append('Set-Cookie', sidStr)
           resToMod.headers.append('Set-Cookie', csrfStr)
-        } catch (e) {}
+        } catch (_e) {}
       }
 
       return res
