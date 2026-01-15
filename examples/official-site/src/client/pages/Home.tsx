@@ -68,24 +68,26 @@ const AdvancedHero = ({ t, locale }: { t: Translation; locale: string }) => {
   }, [])
 
   return (
-    <section 
+    <section
       ref={heroRef}
       className="relative h-[120vh] flex items-center justify-center overflow-hidden bg-void"
-      style={{ 
-        '--mx': `${mousePos.x}px`, 
-        '--my': `${mousePos.y}px` 
-      } as React.CSSProperties}
+      style={
+        {
+          '--mx': `${mousePos.x}px`,
+          '--my': `${mousePos.y}px`,
+        } as React.CSSProperties
+      }
     >
       {/* 0. Gravitational Warp Grid */}
       <div className="space-grid-warp">
-        <div 
-          className="grid-warp-inner" 
+        <div
+          className="grid-warp-inner"
           style={{ perspectiveOrigin: `${50 + mousePos.x * 0.2}% ${50 + mousePos.y * 0.2}%` }}
         />
       </div>
 
       {/* Event Horizon: A liquid glow that follows the mouse */}
-      <div 
+      <div
         className="absolute w-[600px] h-[600px] rounded-full pointer-events-none transition-all duration-1000 ease-out"
         style={{
           background: `radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%)`,
@@ -93,7 +95,7 @@ const AdvancedHero = ({ t, locale }: { t: Translation; locale: string }) => {
           top: `calc(50% + ${mousePos.y * 5}px)`,
           transform: 'translate(-50%, -50%)',
           filter: 'blur(60px)',
-          zIndex: 5
+          zIndex: 5,
         }}
       />
 
@@ -494,9 +496,12 @@ const StatsSection = ({ t }: { t: Translation }) => {
             >
               {/* Sensor Ring Ornament */}
               <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-1 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-              
-              <stat.icon className="text-white/20 group-hover:text-singularity mx-auto mb-8 transition-all duration-700 group-hover:scale-110" size={48} />
-              
+
+              <stat.icon
+                className="text-white/20 group-hover:text-singularity mx-auto mb-8 transition-all duration-700 group-hover:scale-110"
+                size={48}
+              />
+
               <div className="relative">
                 <motion.div
                   initial={{ y: 20, opacity: 0 }}
@@ -518,8 +523,12 @@ const StatsSection = ({ t }: { t: Translation }) => {
 
               {/* Decorative Sensor Bits */}
               <div className="mt-8 flex justify-center gap-2 opacity-20">
-                {[1, 2, 3].map(i => (
-                  <div key={i} className="w-1 h-1 rounded-full bg-white animate-bounce" style={{ animationDelay: `${i * 0.2}s` }} />
+                {[1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="w-1 h-1 rounded-full bg-white animate-bounce"
+                    style={{ animationDelay: `${i * 0.2}s` }}
+                  />
                 ))}
               </div>
             </motion.div>
@@ -554,7 +563,9 @@ const QuickStartSection = () => {
           <h2 className="text-6xl md:text-8xl font-black italic tracking-[calc(-0.05em)] text-white uppercase mb-6">
             Ignite the <span className="text-singularity">Core</span>
           </h2>
-          <p className="text-gray-500 font-mono text-xs uppercase tracking-[0.5em]">System_Status: Awaiting_Input</p>
+          <p className="text-gray-500 font-mono text-xs uppercase tracking-[0.5em]">
+            System_Status: Awaiting_Input
+          </p>
         </div>
 
         <motion.div
@@ -567,7 +578,6 @@ const QuickStartSection = () => {
           {/* Reactor Chassis */}
           <div className="relative bg-black border border-white/10 rounded-[4rem] p-2 overflow-hidden shadow-[0_0_100px_rgba(0,0,0,1)]">
             <div className="bg-[#050507] border border-white/5 rounded-[3.8rem] overflow-hidden">
-              
               {/* Header: Technical Telemetry */}
               <div className="flex items-center justify-between px-12 py-8 border-b border-white/5 bg-white/[0.01]">
                 <div className="flex gap-4">
@@ -575,7 +585,7 @@ const QuickStartSection = () => {
                   <div className="w-3 h-3 rounded-full bg-singularity/20 border border-singularity/50" />
                 </div>
                 <div className="font-mono text-[9px] text-gray-600 tracking-widest uppercase">
-                  Reactor_Model: G-2026 // Quantum_Encryption: ACTIVE
+                  Reactor_Model: G-2026 {/* Quantum_Encryption: ACTIVE */}
                 </div>
               </div>
 
@@ -591,7 +601,9 @@ const QuickStartSection = () => {
 
                   <div className="group/cmd relative p-8 bg-black/60 border border-white/5 rounded-3xl overflow-hidden transition-all hover:border-singularity/30">
                     <div className="flex items-center gap-6">
-                      <span className="text-singularity/40 font-mono text-2xl font-black">{'>'}</span>
+                      <span className="text-singularity/40 font-mono text-2xl font-black">
+                        {'>'}
+                      </span>
                       <code className="text-xl md:text-2xl font-mono text-white tracking-tight break-all selection:bg-singularity selection:text-black">
                         {command}
                       </code>
@@ -610,20 +622,24 @@ const QuickStartSection = () => {
                 >
                   {/* Button Aura */}
                   <div className="absolute -inset-4 bg-singularity/20 blur-2xl rounded-full opacity-0 group-hover/btn:opacity-100 transition-opacity duration-700" />
-                  
+
                   <div className="relative w-full h-full rounded-full bg-white flex flex-col items-center justify-center gap-2 overflow-hidden shadow-[0_0_50px_rgba(255,255,255,0.2)]">
                     <div className="absolute inset-0 bg-black translate-y-full group-hover/btn:translate-y-0 transition-transform duration-500 ease-[0.16,1,0.3,1]" />
-                    
+
                     <div className="relative z-10 flex flex-col items-center gap-2 transition-colors duration-500">
                       {copied ? (
                         <>
                           <Check className="text-singularity" size={40} />
-                          <span className="text-[10px] font-black uppercase text-singularity">Synchronized</span>
+                          <span className="text-[10px] font-black uppercase text-singularity">
+                            Synchronized
+                          </span>
                         </>
                       ) : (
                         <>
                           <Rocket className="text-black group-hover:text-white" size={40} />
-                          <span className="text-[10px] font-black uppercase text-black group-hover:text-white">Ignite</span>
+                          <span className="text-[10px] font-black uppercase text-black group-hover:text-white">
+                            Ignite
+                          </span>
                         </>
                       )}
                     </div>
@@ -640,7 +656,9 @@ const QuickStartSection = () => {
                   { label: 'Authority', val: 'ROOT_GALAXY' },
                 ].map((item) => (
                   <div key={item.label} className="space-y-1">
-                    <div className="text-[8px] font-black text-gray-700 uppercase tracking-[0.2em]">{item.label}</div>
+                    <div className="text-[8px] font-black text-gray-700 uppercase tracking-[0.2em]">
+                      {item.label}
+                    </div>
                     <div className="text-xs font-mono text-gray-400 font-bold">{item.val}</div>
                   </div>
                 ))}
@@ -704,11 +722,11 @@ const BenchmarkSection = ({ t }: { t: Translation }) => {
             >
               {/* Background Technical Noise */}
               <div className="absolute top-4 right-8 font-mono text-[8px] text-white/5 uppercase select-none">
-                TELEM_ID_{i} // STABLE_CORE
+                TELEM_ID_{i} {/* STABLE_CORE */}
               </div>
 
               <h3 className="text-xl font-bold text-white/90 italic">{item.label}</h3>
-              
+
               <div className="flex flex-col gap-6">
                 {/* Gravito Bar - The 'Oscilloscope' Style */}
                 <div className="space-y-3">
@@ -717,7 +735,8 @@ const BenchmarkSection = ({ t }: { t: Translation }) => {
                       Gravito Engine
                     </span>
                     <span className="font-mono text-2xl text-white font-black">
-                      {item.gravito}{item.unit}
+                      {item.gravito}
+                      {item.unit}
                     </span>
                   </div>
                   <div className="h-3 w-full bg-white/5 rounded-sm overflow-hidden relative">
@@ -728,7 +747,7 @@ const BenchmarkSection = ({ t }: { t: Translation }) => {
                       className="h-full bg-singularity relative"
                     >
                       {/* Speed Pulse */}
-                      <motion.div 
+                      <motion.div
                         animate={{ x: ['-100%', '200%'] }}
                         transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
                         className="absolute inset-0 w-1/2 bg-gradient-to-r from-transparent via-white/40 to-transparent"
@@ -741,12 +760,15 @@ const BenchmarkSection = ({ t }: { t: Translation }) => {
                 <div className="space-y-4 opacity-30 group-hover:opacity-50 transition-opacity">
                   {[
                     { name: 'NestJS', val: item.nest, w: item.inverse ? '40%' : '25%' },
-                    { name: 'Express', val: item.express, w: item.inverse ? '85%' : '15%' }
-                  ].map(other => (
+                    { name: 'Express', val: item.express, w: item.inverse ? '85%' : '15%' },
+                  ].map((other) => (
                     <div key={other.name} className="space-y-1">
                       <div className="flex justify-between text-[9px] font-mono uppercase text-gray-400">
                         <span>{other.name}</span>
-                        <span>{other.val}{item.unit}</span>
+                        <span>
+                          {other.val}
+                          {item.unit}
+                        </span>
                       </div>
                       <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
                         <motion.div
@@ -760,7 +782,7 @@ const BenchmarkSection = ({ t }: { t: Translation }) => {
                   ))}
                 </div>
               </div>
-              
+
               {/* Bottom Decorative Data */}
               <div className="mt-4 pt-4 border-t border-white/5 flex justify-between">
                 <span className="text-[8px] font-mono text-gray-600">OFFSET: 0.002ms</span>
@@ -825,7 +847,10 @@ const FeatureCard3D: React.FC<FeatureCard3DProps> = ({
       animate={isInView ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.6, delay }}
       onMouseMove={handleMouseMove}
-      onMouseLeave={() => { x.set(0); y.set(0); }}
+      onMouseLeave={() => {
+        x.set(0)
+        y.set(0)
+      }}
       style={{ rotateX, rotateY, transformStyle: 'preserve-3d', perspective: 1000 }}
       className="relative h-96 w-full rounded-[2.5rem] bg-void/40 border border-white/5 p-8 backdrop-blur-xl cursor-pointer group overflow-hidden"
     >
@@ -835,7 +860,10 @@ const FeatureCard3D: React.FC<FeatureCard3DProps> = ({
       <div style={{ transform: 'translateZ(60px)' }} className="flex flex-col h-full relative z-10">
         {/* Tech Icon with Glow */}
         <div className="mb-8 w-20 h-20 rounded-2xl bg-black/50 flex items-center justify-center border border-white/5 group-hover:border-singularity/50 shadow-[0_0_40px_rgba(0,0,0,0.5)] group-hover:shadow-singularity/20 transition-all duration-700">
-          <Icon className="text-gray-500 group-hover:text-singularity transition-colors duration-500" size={36} />
+          <Icon
+            className="text-gray-500 group-hover:text-singularity transition-colors duration-500"
+            size={36}
+          />
           {/* X-Ray Ring */}
           <div className="absolute inset-0 rounded-2xl border border-singularity/0 group-hover:border-singularity/30 group-hover:scale-125 transition-all duration-700 pointer-events-none" />
         </div>
@@ -853,10 +881,13 @@ const FeatureCard3D: React.FC<FeatureCard3DProps> = ({
         {/* Technical Data Bits */}
         <div className="mt-auto flex justify-between items-end">
           <div className="text-[9px] font-mono text-white/10 group-hover:text-singularity/40 transition-colors">
-            PROTOCOL_V1 // OPTIMIZED_STACK
+            PROTOCOL_V1 {/* OPTIMIZED_STACK */}
           </div>
           <div className="w-12 h-12 flex items-center justify-center">
-            <ArrowRight className="text-white/5 group-hover:text-singularity group-hover:translate-x-1 transition-all" size={20} />
+            <ArrowRight
+              className="text-white/5 group-hover:text-singularity group-hover:translate-x-1 transition-all"
+              size={20}
+            />
           </div>
         </div>
       </div>
@@ -868,7 +899,10 @@ const FeatureCard3D: React.FC<FeatureCard3DProps> = ({
       </div>
 
       {/* Floating Highlight */}
-      <motion.div style={{ background: highlightBackground }} className="absolute inset-0 pointer-events-none" />
+      <motion.div
+        style={{ background: highlightBackground }}
+        className="absolute inset-0 pointer-events-none"
+      />
     </motion.div>
   )
 }
