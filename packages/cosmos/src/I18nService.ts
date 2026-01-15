@@ -1,4 +1,4 @@
-import type { MiddlewareHandler } from '@gravito/photon'
+import type { GravitoMiddleware } from '@gravito/core'
 
 export type TranslationMap = {
   [key: string]: string | TranslationMap
@@ -276,7 +276,7 @@ export class I18nManager implements I18nService {
  * 1. Route Parameter (e.g. /:locale/foo) - Recommended for SEO
  * 2. Header (Accept-Language) - Recommended for APIs
  */
-export const localeMiddleware = (i18nManager: I18nService): MiddlewareHandler => {
+export const localeMiddleware = (i18nManager: I18nService): GravitoMiddleware => {
   return async (c, next) => {
     // Determine initial locale
     // Priority: 1. Route Param 2. Query ?lang= 3. Header 4. Default

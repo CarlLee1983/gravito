@@ -231,4 +231,13 @@ export class ForgeService {
   getStatusStore(): StatusStore | undefined {
     return this.statusStore
   }
+
+  /**
+   * Set the storage provider dynamically.
+   *
+   * @param storage - The StorageProvider instance.
+   */
+  public setStorage(storage: StorageProvider): void {
+    this.storage = storage
+  }
 }

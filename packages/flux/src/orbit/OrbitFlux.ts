@@ -1,42 +1,8 @@
-/**
- * @fileoverview OrbitFlux - Gravito PlanetCore Integration
- *
- * Integrates FluxEngine with Gravito's PlanetCore for seamless workflow management.
- *
- * @module @gravito/flux
- */
-
+import type { GravitoOrbit, PlanetCore } from '@gravito/core'
 import { FluxEngine } from '../engine/FluxEngine'
 import { BunSQLiteStorage } from '../storage/BunSQLiteStorage'
 import { MemoryStorage } from '../storage/MemoryStorage'
 import type { FluxConfig, FluxLogger, WorkflowStorage } from '../types'
-
-/**
- * Minimal PlanetCore interface for type compatibility
- * (Avoids importing @gravito/core sources which causes rootDir issues)
- */
-interface PlanetCore {
-  logger: {
-    debug(message: string, ...args: unknown[]): void
-    info(message: string, ...args: unknown[]): void
-    warn(message: string, ...args: unknown[]): void
-    error(message: string, ...args: unknown[]): void
-  }
-  container: {
-    instance(key: string, value: unknown): void
-    make<T>(key: string): T
-  }
-  hooks: {
-    doAction(name: string, payload?: unknown): void
-  }
-}
-
-/**
- * GravitoOrbit interface
- */
-export interface GravitoOrbit {
-  install(core: PlanetCore): void | Promise<void>
-}
 
 /**
  * OrbitFlux configuration options

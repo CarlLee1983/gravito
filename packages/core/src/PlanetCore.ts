@@ -9,7 +9,7 @@
  */
 
 import { PhotonAdapter } from './adapters/PhotonAdapter'
-import type { HttpAdapter } from './adapters/types'
+import { type HttpAdapter, isHttpAdapter } from './adapters/types'
 import { ConfigManager } from './ConfigManager'
 import { Container } from './Container'
 import { ErrorHandler } from './ErrorHandler'
@@ -388,34 +388,28 @@ export class PlanetCore {
   }
 
   /**
-   * Mount an Orbit (a Photon app) to a path.
+   * Mount an Orbit (a PlanetCore instance or native app) to a path.
    *
    * @param path - The URL path to mount the orbit at.
-   * @param orbitApp - The Photon application instance.
+   * @param orbitApp - The application instance (PlanetCore, HttpAdapter, or native app).
    */
   mountOrbit(path: string, orbitApp: unknown): void {
     this.logger.info(`Mounting orbit at path: ${path}`)
-    // Should reuse this.adapter.mount logic if possible, or fallback.
-    // PhotonAdapter has special mount. BunNativeAdapter might not fully support mounting Photon apps yet.
-    // For now, assume orbitApp is Photon and we are likely in an environment where Photon might be used.
-    // BUT if we are in BunNativeAdapter, this.app is BunNativeAdapter.
-    // BunNativeAdapter.mount() implementation warned it's not fully implemented.
-    // If we want to support Orbits, we need to fix mount in BunNativeAdapter.
-    // For now, let's just call adapter.mount.
-    // But adapter.mount signature expects HttpAdapter, not Photon.
-    // The current code expects a Photon instance.
-    // This is a break.
-    // Temporary fix: Check adapter type or wrap orbitApp.
-    if (this.adapter.name === 'photon') {
-      ;(this.adapter.native as any).route(path, orbitApp)
+
+    let subAdapter: HttpAdapter
+
+    if (orbitApp instanceof PlanetCore) {
+      subAdapter = orbitApp.adapter
+    } else if (isHttpAdapter(orbitApp)) {
+      subAdapter = orbitApp
     } else {
-      // Warn or try to mount if adapter supports it?
-      // BunNativeAdapter "mount" takes HttpAdapter.
-      // orbitApp is Photon. We can wrap orbitApp in PhotonAdapter!
-      // NOTE: We assume 'orbitApp' is a Photon instance compatible with PhotonAdapter
-      const subAdapter = new PhotonAdapter({}, orbitApp as any)
-      this.adapter.mount(path, subAdapter)
+      // It's likely a native app instance (e.g. Hono)
+      // Wrap it in PhotonAdapter to conform to HttpAdapter interface.
+      // PhotonAdapter.mount() will handle optimization if the parent is also Photon.
+      subAdapter = new PhotonAdapter({}, orbitApp)
     }
+
+    this.adapter.mount(path, subAdapter)
   }
 
   /**

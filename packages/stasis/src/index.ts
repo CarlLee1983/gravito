@@ -250,6 +250,7 @@ export class OrbitStasis implements GravitoOrbit {
       return await next()
     })
 
+    core.container.instance(exposeAs, manager)
     core.hooks.doAction('cache:init', manager)
   }
 

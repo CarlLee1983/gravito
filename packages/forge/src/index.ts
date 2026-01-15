@@ -79,7 +79,7 @@ export class OrbitForge implements GravitoOrbit {
         const storageProvider = c.get('storage') as StorageProvider | undefined
         if (storageProvider) {
           // Update forge service with storage
-          ;(forgeService as any).storage = storageProvider
+          forgeService.setStorage(storageProvider)
         }
       } catch {
         // Storage not available, continue without it
