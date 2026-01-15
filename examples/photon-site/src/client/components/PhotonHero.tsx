@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { Zap, Shield, Cpu, Activity } from 'lucide-react'
+import { ConstellationCanvas } from './ConstellationCanvas'
 
 export const PhotonHero = () => {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -13,6 +14,7 @@ export const PhotonHero = () => {
     <div ref={containerRef} className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
       {/* Background Decorative Elements - Theme Aware */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+        <ConstellationCanvas />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] bg-photon-gold/[0.03] rounded-full blur-[120px] mix-blend-screen" />
         <div className="absolute top-1/4 -left-20 w-[600px] h-[600px] bg-photon-gold/[0.02] rounded-full blur-[100px] mix-blend-screen animate-pulse" />
       </div>
