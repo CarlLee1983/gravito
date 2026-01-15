@@ -497,9 +497,9 @@ src/
 
 | # | 模組 | 行動 | 狀態 |
 |---|------|------|------|
-| 4 | core | 優化 isFormRequestClass | 📅 待辦 |
-| 5 | core | 完全移除已棄用的 services Map | ✅ 完成 |
-| 6 | cosmos | 優化正則表達式效能 | ✅ 完成 |
+| 4 | core | 優化 isFormRequestClass | Antigravity | ✅ 完成 |
+| 5 | core | 完全移除已棄用的 services Map | Antigravity | ✅ 完成 |
+| 6 | cosmos | 優化正則表達式效能 | Antigravity | ✅ 完成 |
 
 ### 長期規劃 (下季度)
 
