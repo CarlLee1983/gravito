@@ -171,6 +171,14 @@ export class PlanetCore {
     for (const provider of this.providers) {
       await this.bootProvider(provider)
     }
+
+    // Phase 4: Bind global error handler (swappable via container)
+    // We bind this late to allow ServiceProviders to override 'error.handler'
+    if (this.container.has('error.handler')) {
+      const errorHandler = this.container.make<ErrorHandler>('error.handler')
+      this.adapter.onError(errorHandler.handleError.bind(errorHandler))
+      this.adapter.onNotFound(errorHandler.handleNotFound.bind(errorHandler))
+    }
   }
 
   /**
@@ -293,15 +301,15 @@ export class PlanetCore {
     // Router depends on `core.app` for route registration and optional global middleware.
     this.router = new Router(this)
 
-    // Standard Error Handling - Delegated to ErrorHandler
-    const errorHandler = new ErrorHandler({
-      logger: this.logger,
-      hooks: this.hooks,
-      getCore: () => this,
+    // Register Default Error Handler
+    // Can be overridden by binding 'error.handler' in a ServiceProvider
+    this.container.singleton('error.handler', () => {
+      return new ErrorHandler({
+        logger: this.logger,
+        hooks: this.hooks,
+        getCore: () => this,
+      })
     })
-
-    this.adapter.onError(errorHandler.handleError.bind(errorHandler))
-    this.adapter.onNotFound(errorHandler.handleNotFound.bind(errorHandler))
   }
 
   /**
