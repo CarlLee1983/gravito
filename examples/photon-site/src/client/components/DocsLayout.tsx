@@ -233,7 +233,7 @@ export const DocsLayout = ({
           </div>
           {children}
         </div>
-        <Footer />
+        <Footer lang={currentLang} />
       </main>
 
       {/* Command Palette Modal */}

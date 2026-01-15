@@ -30,10 +30,7 @@ const getFooterLinks = (t: any, lang: string): { title: string, links: { label: 
     }
 ]
 
-export function Footer() {
-    const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams()
-    const lang = (searchParams.get('lang') === 'zh-TW' ? 'zh-TW' : 'en') as 'en' | 'zh-TW'
-
+export function Footer({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) {
     const t = {
         en: {
             desc_1: 'The high-performance, zero-copy orchestration engine.',

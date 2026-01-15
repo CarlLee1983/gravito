@@ -89,8 +89,16 @@ async function build() {
   console.log('📦 Copying public assets...')
   const publicDir = path.join(process.cwd(), 'public')
   try {
-    // Check if public dir exists before copying
-    const _publicStats = (await Bun.file(publicDir).exists()) || true // Bun.file on dir might behave differently, assume exists for now or use fs.stat
+    // SSG might have created a directory named 'favicon.svg' if it crawled it as a route
+    // We need to remove it so we can copy the actual file
+    const faviconDir = path.join(outputDir, 'favicon.svg')
+    const { rm } = await import('node:fs/promises')
+    try {
+      await rm(faviconDir, { recursive: true, force: true })
+    } catch (e) {
+      // Ignore if it doesn't exist
+    }
+
     // Using fs cp is safer recursive
     await cp(publicDir, outputDir, { recursive: true })
     console.log('✅ Public assets copied.')

@@ -69,7 +69,7 @@ function highlightCode(html: string) {
   })
 }
 
-export default function Docs({ title, content, id, slug, meta }: DocsProps) {
+export default function Docs({ title, content, id, slug, meta, lang = 'en' }: DocsProps & { lang?: 'en' | 'zh-TW' }) {
   const renderedContent = useMemo(() => {
     const highlightedContent = highlightCode(content || '')
     const parts = highlightedContent.split('[BENCHMARK_LAB]')
@@ -81,7 +81,7 @@ export default function Docs({ title, content, id, slug, meta }: DocsProps) {
         {parts.length > 1 && (
           <>
             <div className="my-24">
-              <BenchmarkLab />
+              <BenchmarkLab lang={lang} />
             </div>
             {/* biome-ignore lint/security/noDangerouslySetInnerHtml: trusted content */}
             <div className="photon-prose" dangerouslySetInnerHTML={{ __html: parts[1] }} />
@@ -89,7 +89,7 @@ export default function Docs({ title, content, id, slug, meta }: DocsProps) {
         )}
       </div>
     )
-  }, [content])
+  }, [content, lang])
 
   return (
     <DocsLayout currentId={slug}>

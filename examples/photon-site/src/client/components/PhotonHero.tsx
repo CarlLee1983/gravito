@@ -18,7 +18,11 @@ export const PhotonHero = ({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) => {
       sub_tagline: 'Built for raw speed, zero-copy safety, and sub-millisecond dispatch.',
       build_target: 'Build_Target',
       protocol: 'Protocol',
-      cluster_mode: 'Cluster_Mode'
+      cluster_mode: 'Cluster_Mode',
+      badge: 'System_Alpha_Initialize',
+      status_dispatch: 'CORE_DISPATCH_ENABLED',
+      status_aot: 'AOT_OPTIMIZATION_ACTIVE',
+      status_mem: 'MEM_SAFETY_VERIFIED'
     },
     'zh-TW': {
       headline_1: 'The Absolute',
@@ -27,7 +31,11 @@ export const PhotonHero = ({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) => {
       sub_tagline: '專注於極速、零拷貝安全性及亞毫秒級調度。',
       build_target: '構建目標',
       protocol: '協定',
-      cluster_mode: '叢集模式'
+      cluster_mode: '叢集模式',
+      badge: '系統核心初始化',
+      status_dispatch: '核心調度已啟用',
+      status_aot: 'AOT_優化中',
+      status_mem: '記憶體安全性已驗證'
     }
   }[lang]
 
@@ -54,7 +62,7 @@ export const PhotonHero = ({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) => {
           >
             <div className="w-2 h-2 rounded-full bg-photon-gold animate-pulse" />
             <span className="text-[10px] font-technical tracking-[0.5em] text-photon-gold uppercase">
-              System_Alpha_Initialize // v1.2.0
+              {t.badge} // v1.2.0
             </span>
           </motion.div>
 
@@ -78,9 +86,9 @@ export const PhotonHero = ({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) => {
               className="absolute -right-20 top-0 hidden lg:block"
             >
               <div className="text-right space-y-2">
-                <div className="text-[8px] font-mono text-[var(--text-primary)]">CORE_DISPATCH_ENABLED</div>
-                <div className="text-[8px] font-mono text-[var(--text-primary)]">AOT_OPTIMIZATION_ACTIVE</div>
-                <div className="text-[8px] font-mono text-[var(--text-primary)]">MEM_SAFETY_VERIFIED</div>
+                <div className="text-[8px] font-mono text-[var(--text-primary)]">{t.status_dispatch}</div>
+                <div className="text-[8px] font-mono text-[var(--text-primary)]">{t.status_aot}</div>
+                <div className="text-[8px] font-mono text-[var(--text-primary)]">{t.status_mem}</div>
               </div>
             </motion.div>
           </div>
