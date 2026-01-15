@@ -1,65 +1,70 @@
-import { motion, useMotionValue, useSpring } from 'framer-motion';
-import React, { useEffect, useState } from 'react';
+import { motion, useMotionValue, useSpring } from 'framer-motion'
+import { useEffect, useState } from 'react'
 
 const CustomCursor = () => {
-  const [isVisible, setIsVisible] = useState(false);
-  const [isHovering, setIsHovering] = useState(false);
-  
+  const [isVisible, setIsVisible] = useState(false)
+  const [isHovering, setIsHovering] = useState(false)
+
   // Mouse coordinates
-  const mouseX = useMotionValue(-100);
-  const mouseY = useMotionValue(-100);
-  
+  const mouseX = useMotionValue(-100)
+  const mouseY = useMotionValue(-100)
+
   // Physics for the main dot (fast)
-  const dotConfig = { damping: 25, stiffness: 700 };
-  const dotX = useSpring(mouseX, dotConfig);
-  const dotY = useSpring(mouseY, dotConfig);
+  const dotConfig = { damping: 25, stiffness: 700 }
+  const dotX = useSpring(mouseX, dotConfig)
+  const dotY = useSpring(mouseY, dotConfig)
 
   // Physics for the outer ring (slow/laggy)
-  const ringConfig = { damping: 20, stiffness: 300, mass: 0.5 };
-  const ringX = useSpring(mouseX, ringConfig);
-  const ringY = useSpring(mouseY, ringConfig);
+  const ringConfig = { damping: 20, stiffness: 300, mass: 0.5 }
+  const ringX = useSpring(mouseX, ringConfig)
+  const ringY = useSpring(mouseY, ringConfig)
 
   useEffect(() => {
     // Only run on desktop
-    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-    if (isTouchDevice) return;
+    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0
+    if (isTouchDevice) {
+      return
+    }
 
     const moveCursor = (e: MouseEvent) => {
-      mouseX.set(e.clientX);
-      mouseY.set(e.clientY);
-      if (!isVisible) setIsVisible(true);
-    };
+      mouseX.set(e.clientX)
+      mouseY.set(e.clientY)
+      if (!isVisible) {
+        setIsVisible(true)
+      }
+    }
 
-    const handleMouseEnter = () => setIsVisible(true);
-    const handleMouseLeave = () => setIsVisible(false);
+    const handleMouseEnter = () => setIsVisible(true)
+    const handleMouseLeave = () => setIsVisible(false)
 
     // Detect hoverable elements
     const handleMouseOver = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      const isClickable = target.tagName === 'A' || 
-                          target.tagName === 'BUTTON' || 
-                          target.closest('a') || 
-                          target.closest('button') ||
-                          target.classList.contains('cursor-pointer');
-      setIsHovering(!!isClickable);
-    };
+      const target = e.target as HTMLElement
+      const isClickable =
+        target.tagName === 'A' ||
+        target.tagName === 'BUTTON' ||
+        target.closest('a') ||
+        target.closest('button') ||
+        target.classList.contains('cursor-pointer')
+      setIsHovering(!!isClickable)
+    }
 
-    window.addEventListener('mousemove', moveCursor);
-    document.body.addEventListener('mouseenter', handleMouseEnter);
-    document.body.addEventListener('mouseleave', handleMouseLeave);
-    document.body.addEventListener('mouseover', handleMouseOver);
+    window.addEventListener('mousemove', moveCursor)
+    document.body.addEventListener('mouseenter', handleMouseEnter)
+    document.body.addEventListener('mouseleave', handleMouseLeave)
+    document.body.addEventListener('mouseover', handleMouseOver)
 
     return () => {
-      window.removeEventListener('mousemove', moveCursor);
-      document.body.removeEventListener('mouseenter', handleMouseEnter);
-      document.body.removeEventListener('mouseleave', handleMouseLeave);
-      document.body.removeEventListener('mouseover', handleMouseOver);
-    };
-  }, [mouseX, mouseY, isVisible]);
+      window.removeEventListener('mousemove', moveCursor)
+      document.body.removeEventListener('mouseenter', handleMouseEnter)
+      document.body.removeEventListener('mouseleave', handleMouseLeave)
+      document.body.removeEventListener('mouseover', handleMouseOver)
+    }
+  }, [mouseX, mouseY, isVisible])
 
   // Don't render on mobile/server
   if (typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0)) {
-    return null;
+    return null
   }
 
   return (
@@ -94,7 +99,7 @@ const CustomCursor = () => {
         }}
       />
     </>
-  );
-};
+  )
+}
 
-export default CustomCursor;
+export default CustomCursor

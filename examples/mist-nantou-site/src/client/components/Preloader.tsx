@@ -1,17 +1,19 @@
-import { motion } from 'framer-motion';
-import React, { useEffect, useState } from 'react';
+import { motion } from 'framer-motion'
+import { useEffect, useState } from 'react'
 
 const Preloader = () => {
-  const [isVisible, setIsVisible] = useState(true);
+  const [isVisible, setIsVisible] = useState(true)
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setIsVisible(false);
-    }, 2500); // 2.5s Intro
-    return () => clearTimeout(timer);
-  }, []);
+      setIsVisible(false)
+    }, 2500) // 2.5s Intro
+    return () => clearTimeout(timer)
+  }, [])
 
-  if (!isVisible) return null;
+  if (!isVisible) {
+    return null
+  }
 
   return (
     <motion.div
@@ -20,7 +22,7 @@ const Preloader = () => {
       className="fixed inset-0 z-[9999] flex items-center justify-center bg-transparent pointer-events-none"
     >
       {/* The Ink Curtain */}
-      <motion.div 
+      <motion.div
         initial={{ scaleY: 1 }}
         animate={{ scaleY: 0 }}
         transition={{ duration: 1.5, delay: 1.5, ease: [0.76, 0, 0.24, 1] }}
@@ -34,14 +36,14 @@ const Preloader = () => {
           initial={{ y: 100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: -100, opacity: 0 }}
-          transition={{ duration: 1, ease: "easeOut" }}
+          transition={{ duration: 1, ease: 'easeOut' }}
           className="text-paper-white font-display text-6xl md:text-9xl tracking-widest vertical-rl"
         >
           雲霧
         </motion.div>
       </div>
     </motion.div>
-  );
-};
+  )
+}
 
-export default Preloader;
+export default Preloader
