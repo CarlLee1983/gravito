@@ -50,7 +50,7 @@ const switchLang = (lang: string) => {
   >
     <div class="max-w-7xl mx-auto px-6 flex items-center justify-between">
       <div class="flex items-center gap-4">
-        <StaticLink href="/" @click="isMobileMenuOpen = false">
+        <StaticLink href="/" @click="isMobileMenuOpen = false" aria-label="Luminosity Home">
           <Logo size="sm" />
         </StaticLink>
       </div>

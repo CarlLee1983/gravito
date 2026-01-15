@@ -80,7 +80,7 @@ onMounted(() => {
         <div class="absolute inset-0 bg-gradient-to-b from-void/40 via-transparent to-void"></div>
         
         <!-- Hex Grid Background -->
-        <div class="absolute inset-0 opacity-20 mix-blend-overlay bg-hex-grid animate-fade-in"></div>
+        <div class="absolute inset-0 opacity-20 mix-blend-overlay bg-hex-grid animate-fade-in" aria-hidden="true"></div>
       </div>
       
       <!-- Content -->
