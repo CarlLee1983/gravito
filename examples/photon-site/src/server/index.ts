@@ -90,12 +90,12 @@ const docsContent: Record<string, any> = {
       <h3>The Orbits System</h3>
       <p>Photon is "Modular by Default". We use a plugin system called <strong>Orbits</strong>. Instead of shipping with a heavy database driver or SPA bridge pre-installed, you register only what you need.</p>
       <pre><code>// Example Orbit Registration
-import { OrbitAuth } from '@gravito/sentinel'
-import { OrbitDB } from '@gravito/atlas'
+import { OrbitSentinel } from '@gravito/sentinel'
+import { OrbitAtlas } from '@gravito/atlas'
 
 // Orbits extend the context and add global functionalities
-app.orbit(OrbitAuth)
-app.orbit(OrbitDB)</code></pre>
+app.orbit(OrbitSentinel)
+app.orbit(OrbitAtlas)</code></pre>
     `,
     meta: { lastUpdated: '2026-01-14', complexity: 'BASE_LEVEL', category: 'GETTING_STARTED' },
   },
