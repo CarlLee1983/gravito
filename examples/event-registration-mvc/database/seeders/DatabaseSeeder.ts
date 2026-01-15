@@ -125,7 +125,7 @@ async function seed() {
   console.log('✅ Created events')
 
   // Create sessions for event 1
-  const _session1 = await DB.table<Session>('sessions').insert({
+  const session1 = await DB.table<Session>('sessions').insert({
     event_id: event1.id,
     title: 'Morning Session',
     start_time: new Date('2026-03-15 09:00:00'),
@@ -134,7 +134,7 @@ async function seed() {
     is_active: true,
   })
 
-  const _session2 = await DB.table<Session>('sessions').insert({
+  const session2 = await DB.table<Session>('sessions').insert({
     event_id: event1.id,
     title: 'Afternoon Session',
     start_time: new Date('2026-03-15 14:00:00'),
@@ -144,7 +144,7 @@ async function seed() {
   })
 
   // Create sessions for event 2
-  const _session3 = await DB.table<Session>('sessions').insert({
+  const session3 = await DB.table<Session>('sessions').insert({
     event_id: event2.id,
     title: 'Day 1 - Fundamentals',
     start_time: new Date('2026-02-20 09:00:00'),
@@ -153,7 +153,7 @@ async function seed() {
     is_active: true,
   })
 
-  const _session4 = await DB.table<Session>('sessions').insert({
+  const session4 = await DB.table<Session>('sessions').insert({
     event_id: event2.id,
     title: 'Day 2 - Advanced Topics',
     start_time: new Date('2026-02-21 09:00:00'),

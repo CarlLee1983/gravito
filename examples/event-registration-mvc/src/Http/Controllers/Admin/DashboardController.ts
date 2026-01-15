@@ -1,4 +1,5 @@
 import { DB } from '@gravito/atlas'
+import type { GravitoContext } from '@gravito/core'
 import { Controller } from '../Controller'
 
 export class DashboardController extends Controller {

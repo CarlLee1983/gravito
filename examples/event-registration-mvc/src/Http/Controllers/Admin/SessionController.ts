@@ -1,10 +1,11 @@
 import { DB } from '@gravito/atlas'
+import type { GravitoContext } from '@gravito/core'
 import type { Session } from '../../../Models/Session'
 import { Controller } from '../Controller'
 
 export class SessionController extends Controller {
   async index(ctx: any) {
-    const eventId = parseInt(ctx.params.eventId, 10)
+    const eventId = parseInt(ctx.params.eventId)
     const event = await DB.table<any>('events').where('id', eventId).first()
 
     const sessions = await DB.table<Session>('sessions')
@@ -16,7 +17,7 @@ export class SessionController extends Controller {
   }
 
   async store(ctx: any) {
-    const eventId = parseInt(ctx.params.eventId, 10)
+    const eventId = parseInt(ctx.params.eventId)
     const data = ctx.get('data') as any
 
     await DB.table<Session>('sessions').insert({
@@ -24,7 +25,7 @@ export class SessionController extends Controller {
       title: data.title,
       start_time: new Date(data.start_time),
       end_time: new Date(data.end_time),
-      capacity: parseInt(data.capacity, 10),
+      capacity: parseInt(data.capacity),
       is_active: data.is_active !== false,
       registered_count: 0,
     })
@@ -35,13 +36,11 @@ export class SessionController extends Controller {
   }
 
   async update(ctx: any) {
-    const sessionId = parseInt(ctx.params.id, 10)
+    const sessionId = parseInt(ctx.params.id)
     const data = ctx.get('data') as any
 
     const session = await DB.table<Session>('sessions').where('id', sessionId).first()
-    if (!session) {
-      return ctx.redirect('/admin').with('error', 'Session not found')
-    }
+    if (!session) return ctx.redirect('/admin').with('error', 'Session not found')
 
     await DB.table<Session>('sessions')
       .where('id', sessionId)
@@ -49,7 +48,7 @@ export class SessionController extends Controller {
         title: data.title,
         start_time: new Date(data.start_time),
         end_time: new Date(data.end_time),
-        capacity: parseInt(data.capacity, 10),
+        capacity: parseInt(data.capacity),
         is_active: data.is_active,
       })
 
@@ -59,7 +58,7 @@ export class SessionController extends Controller {
   }
 
   async destroy(ctx: any) {
-    const sessionId = parseInt(ctx.params.id, 10)
+    const sessionId = parseInt(ctx.params.id)
     const session = await DB.table<Session>('sessions').where('id', sessionId).first()
 
     if (session) {
