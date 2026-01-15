@@ -123,7 +123,7 @@ export class WorkflowBuilder<TInput = unknown, TData = Record<string, unknown>> 
   ): this {
     this._steps.push({
       name,
-      handler: handler as (ctx: WorkflowContext) => Promise<void> | void,
+      handler: handler as unknown as StepDefinition['handler'],
       retries: options?.retries,
       timeout: options?.timeout,
       when: options?.when as ((ctx: WorkflowContext) => boolean) | undefined,

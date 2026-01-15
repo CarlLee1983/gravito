@@ -71,7 +71,7 @@ export class OrbitGraphQL implements GravitoOrbit {
 
     const handler = async (c: GravitoContext) => {
       // Convert Hono/Gravito request to standard Request
-      const response = await this.yoga?.fetch(c.req.raw, {
+      const response = await this.yoga!.fetch(c.req.raw, {
         gravito: c, // Pass Gravito Context into the GraphQL Context
       })
 

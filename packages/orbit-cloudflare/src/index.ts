@@ -48,7 +48,7 @@ export type CloudflareOptions = {}
  */
 export const handle = (app: Gravito, _options: CloudflareOptions = {}) => {
   return {
-    fetch: async (request: Request, _env: any, _executionCtx: ExecutionContext) => {
+    fetch: async (request: Request, env: any, _executionCtx: ExecutionContext) => {
       // In a real implementation, the adapter would handle env/executionCtx
       // For now, we assume Gravito.fetch is the entry point
       return app.fetch(request)

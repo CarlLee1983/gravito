@@ -353,7 +353,7 @@ export class Gravito {
 
         if (match.middleware.length === 0) {
           // match.handler is Handler | null according to match signature, but we checked !match.handler above
-          return await match.handler?.(ctx)
+          return await match.handler!(ctx)
         }
 
         return await this.executeMiddleware(ctx, match.middleware, match.handler!)
