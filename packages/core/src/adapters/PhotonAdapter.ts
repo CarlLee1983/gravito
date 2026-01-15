@@ -193,6 +193,27 @@ class PhotonContextWrapper<V extends GravitoVariables = GravitoVariables>
     return this._req
   }
 
+  get params(): Record<string, string> {
+    return this._req.params()
+  }
+
+  get query(): Record<string, string | string[]> {
+    return this._req.queries()
+  }
+
+  get data(): any {
+    return this.get('data' as any)
+  }
+
+  set data(value: any) {
+    this.set('data' as any, value)
+  }
+
+  back(status: 301 | 302 | 303 | 307 | 308 = 302): Response {
+    const referer = this.header('Referer') || '/'
+    return this.redirect(referer, status)
+  }
+
   json<T>(data: T, status?: number): Response {
     if (status !== undefined) {
       return this.photonCtx.json(data as object, status as 200)
@@ -215,7 +236,15 @@ class PhotonContextWrapper<V extends GravitoVariables = GravitoVariables>
   }
 
   redirect(url: string, status: 301 | 302 | 303 | 307 | 308 = 302): Response {
-    return this.photonCtx.redirect(url, status)
+    const response = this.photonCtx.redirect(url, status)
+    // Add .with() helper for flash messages and compatibility
+    const anyRes = response as any
+    anyRes.with = (key: string, value: any) => {
+      const session = this.get('session' as any) as any
+      if (session) session.flash(key, value)
+      return anyRes
+    }
+    return response
   }
 
   body(data: BodyInit | null, status?: number): Response {

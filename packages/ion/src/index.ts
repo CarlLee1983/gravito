@@ -16,26 +16,17 @@ export * from './InertiaService'
 // Module augmentation for type-safe context injection
 declare module '@gravito/core' {
   interface GravitoVariables {
-    /** Inertia.js service for SPA rendering */
-    inertia?: InertiaService
+    /** Inertia.js service helper */
+    inertia: (
+      component: string,
+      props?: Record<string, unknown>,
+      rootVars?: Record<string, unknown>
+    ) => Response
   }
 }
 
 /**
  * OrbitIon - Inertia.js integration orbit
- *
- * This orbit provides seamless Inertia.js integration, enabling
- * SPA-like navigation with server-side routing.
- *
- * @example
- * ```typescript
- * import { PlanetCore, defineConfig } from '@gravito/core'
- * import { OrbitIon } from '@gravito/ion'
- *
- * const core = await PlanetCore.boot(defineConfig({
- *   orbits: [OrbitIon]
- * }))
- * ```
  */
 export interface OrbitIonOptions {
   version?: string
@@ -46,28 +37,43 @@ export class OrbitIon implements GravitoOrbit {
   constructor(private options: OrbitIonOptions = {}) {}
 
   /**
-   * Install the Inertia orbit into PlanetCore
+   * Install the inertia orbit into PlanetCore
    */
   install(core: PlanetCore): void {
-    core.logger.info('🛰️ Orbit Inertia installed')
+    core.logger.info('🛰️ Orbit Inertia installed (Callable Interface)')
 
     const appVersion = this.options.version ?? core.config.get('APP_VERSION', '1.0.0')
     const rootView = this.options.rootView ?? 'app'
 
     // Register middleware to inject Inertia helper
     core.adapter.use('*', async (c: any, next: any) => {
-      // The adapter passes a GravitoContext to middleware
       const gravitoCtx = c as GravitoContext<GravitoVariables>
 
-      // Initialize with config
-      const inertia = new InertiaService(gravitoCtx, {
+      const service = new InertiaService(gravitoCtx, {
         version: String(appVersion),
         rootView,
       })
 
-      c.set('inertia', inertia)
-      await next()
-      return undefined
+      // Create a callable function that delegates to service.render
+      const inertiaProxy = (
+        component: string,
+        props: Record<string, unknown> = {},
+        rootVars: Record<string, unknown> = {}
+      ) => {
+        return service.render(component, props, rootVars)
+      }
+
+      // Attach methods to the function to allow advanced usage (share, etc.)
+      Object.assign(inertiaProxy, {
+        share: service.share.bind(service),
+        shareAll: service.shareAll.bind(service),
+        getSharedProps: service.getSharedProps.bind(service),
+        render: service.render.bind(service), // Also allow .render()
+        service, // Access to the raw service instance
+      })
+
+      c.set('inertia', inertiaProxy as any)
+      return await next()
     })
   }
 }
