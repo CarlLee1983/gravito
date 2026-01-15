@@ -490,7 +490,7 @@ src/
 | # | 模組 | 行動 | 負責人 | 狀態 |
 |---|------|------|--------|------|
 | 1 | core | 建立 Issue: 抽取 ErrorHandler | TBD | 📅 待辦 |
-| 2 | core | 建立 Issue: 優化模型綁定 | TBD | 📅 待辦 |
+| 2 | core | 優化模型綁定機制 (O(N) -> O(1)) | Antigravity | ✅ 完成 |
 | 3 | sentinel | 移除 `any` 類型 | Antigravity | ✅ 完成 |
 
 ### 短期改進 (本月)

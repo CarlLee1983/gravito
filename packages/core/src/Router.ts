@@ -466,12 +466,14 @@ export class Router {
       const routeModels = (c.get('routeModels') ?? {}) as Record<string, unknown>
       let hasResolvedModels = false
 
-      // Iterate over registered bindings
-      // Optimization: Only resolve params that exist in the current route
-      for (const [param, resolver] of this.bindings) {
-        const value = c.req.param(param)
-        // Skip if param not present in this route
-        if (!value) {
+      // Iterate over request params (O(P)) instead of bindings (O(B))
+      // This is significantly faster when there are many bindings but few params in current route
+      const params = c.req.params()
+
+      for (const [param, value] of Object.entries(params)) {
+        const resolver = this.bindings.get(param)
+
+        if (!resolver) {
           continue
         }
 
