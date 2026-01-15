@@ -96,16 +96,21 @@ onMounted(() => {
   }
 
   const draw = () => {
-    ctx.clearRect(0, 0, width, height)
+    // Subtle trail effect instead of clearRect
+    ctx.fillStyle = 'rgba(2, 6, 23, 0.15)'
+    ctx.fillRect(0, 0, width, height)
     
-    // 1. Draw Subtle Structural Background Grid
+    // Additive blending for neon glow
+    ctx.globalCompositeOperation = 'lighter'
+
+    // 1. Draw Structural Underlay
     ctx.beginPath()
-    ctx.setLineDash([2, 40])
-    ctx.strokeStyle = `rgba(${COLOR_PRIMARY}, 0.05)`
-    for(let x = 0; x < width; x += 50) {
+    ctx.setLineDash([1, 100])
+    ctx.strokeStyle = `rgba(${COLOR_PRIMARY}, 0.1)`
+    for(let x = 0; x < width; x += 100) {
       ctx.moveTo(x, 0); ctx.lineTo(x, height)
     }
-    for(let y = 0; y < height; y += 50) {
+    for(let y = 0; y < height; y += 100) {
       ctx.moveTo(0, y); ctx.lineTo(width, y)
     }
     ctx.stroke()
@@ -117,58 +122,63 @@ onMounted(() => {
       
       p.x += p.vx
       p.y += p.vy
-      p.pulse += 0.02
+      p.pulse += 0.03
 
-      // Bounce off walls
       if (p.x < 0 || p.x > width) p.vx *= -1
       if (p.y < 0 || p.y > height) p.vy *= -1
 
-      // Mouse interaction (Stronger push)
       const dx = mouseX - p.x
       const dy = mouseY - p.y
       const dist = Math.sqrt(dx * dx + dy * dy)
       if (dist < MOUSE_RADIUS) {
         const force = (MOUSE_RADIUS - dist) / MOUSE_RADIUS
-        p.x -= dx * force * 0.05
-        p.y -= dy * force * 0.05
+        p.vx -= dx * force * 0.001
+        p.vy -= dy * force * 0.001
       }
 
-      // Draw pulsing particle
-      const pulseSize = p.size + Math.sin(p.pulse) * 1.5
-      const opacity = 0.4 + (Math.sin(p.pulse) * 0.2)
-      
+      // Draw particle core
+      const pulseSize = p.size + Math.sin(p.pulse) * 2
       ctx.beginPath()
       ctx.arc(p.x, p.y, pulseSize, 0, Math.PI * 2)
-      ctx.fillStyle = `rgba(${COLOR_PRIMARY}, ${opacity})`
+      ctx.fillStyle = `rgba(${COLOR_PRIMARY}, 0.8)`
       ctx.fill()
       
-      // Add node glow
-      if (p.size > 3) {
-        ctx.shadowBlur = 15
-        ctx.shadowColor = `rgba(${COLOR_PRIMARY}, 0.5)`
-        ctx.fill()
-        ctx.shadowBlur = 0
-      }
+      // Draw particle outer glow
+      ctx.beginPath()
+      ctx.arc(p.x, p.y, pulseSize * 3, 0, Math.PI * 2)
+      ctx.fillStyle = `rgba(${COLOR_PRIMARY}, 0.1)`
+      ctx.fill()
 
-      // Draw connections
+      // 3. Draw high-tension connections
       for (let j = i + 1; j < particles.length; j++) {
         const p2 = particles[j]
-        const dx = p.x - p2.x
-        const dy = p.y - p2.y
-        const dist = Math.sqrt(dx * dx + dy * dy)
+        const cdx = p.x - p2.x
+        const cdy = p.y - p2.y
+        const cdist = Math.sqrt(cdx * cdx + cdy * cdy)
 
-        if (dist < CONNECTION_DISTANCE) {
-          const connOpacity = (1 - dist / CONNECTION_DISTANCE) * 0.4
+        if (cdist < CONNECTION_DISTANCE) {
+          const strength = 1 - cdist / CONNECTION_DISTANCE
           ctx.beginPath()
-          ctx.lineWidth = dist < 50 ? 1.5 : 0.8
-          ctx.strokeStyle = `rgba(${COLOR_PRIMARY}, ${connOpacity})`
+          ctx.lineWidth = strength * 2
+          // Pulse the line color
+          const alpha = strength * (0.3 + Math.sin(p.pulse) * 0.2)
+          ctx.strokeStyle = `rgba(${COLOR_PRIMARY}, ${alpha})`
           ctx.moveTo(p.x, p.y)
           ctx.lineTo(p2.x, p2.y)
           ctx.stroke()
+          
+          // Occasional "Data Sparks" on connections
+          if (strength > 0.8 && Math.random() > 0.98) {
+            ctx.beginPath()
+            ctx.arc(p.x + cdx * 0.5, p.y + cdy * 0.5, 2, 0, Math.PI * 2)
+            ctx.fillStyle = '#FFFFFF'
+            ctx.fill()
+          }
         }
       }
     }
-
+    
+    ctx.globalCompositeOperation = 'source-over'
     animationFrameId = requestAnimationFrame(draw)
   }
 

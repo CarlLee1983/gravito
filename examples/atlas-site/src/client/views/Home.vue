@@ -3,8 +3,8 @@
     
     <!-- Visual Graph: Data Sorting Grid -->
     <div class="absolute inset-0 z-0 pointer-events-none">
-        <DataSortingGrid :with-background="false" />
-        <div class="absolute inset-0 bg-gradient-to-b from-atlas-void/10 via-atlas-void/40 to-atlas-void"></div>
+        <DataSortingGrid :with-background="true" />
+        <div class="absolute inset-0 bg-gradient-to-b from-atlas-void/10 via-atlas-void/60 to-atlas-void"></div>
     </div>
 
     <!-- Hero Content -->
