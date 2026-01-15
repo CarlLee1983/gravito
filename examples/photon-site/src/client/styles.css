@@ -75,7 +75,8 @@
 
 .photon-prose h2::after {
   content: '';
-  @apply w-24 h-1.5 bg-photon-gold shadow-[0_0_15px_rgba(255, 184, 0, 0.3)];
+  @apply w-24 h-1.5 bg-photon-gold;
+  box-shadow: 0 0 15px rgba(255, 184, 0, 0.3);
 }
 
 .photon-prose h3 {
