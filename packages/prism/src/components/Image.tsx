@@ -70,7 +70,6 @@ export function Image({
     <img
       className={className}
       srcSet={generatedSrcset}
-      // @ts-expect-error: React doesn't fully support fetchpriority yet but it's valid HTML
       fetchpriority={fetchpriority}
       style={style as React.CSSProperties}
       {...coreAttrs}
