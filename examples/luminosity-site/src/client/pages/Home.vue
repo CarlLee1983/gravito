@@ -99,21 +99,21 @@ onMounted(() => {
           <span class="text-transparent bg-clip-text bg-gradient-to-r from-singularity via-white to-event animate-gradient-x bg-300%">{{ t?.hero?.subtitle }}</span>
         </h1>
         
-        <p class="text-xl md:text-2xl text-slate-400 max-w-3xl mx-auto mb-16 font-light leading-relaxed font-body">
+        <p class="text-xl md:text-2xl text-zinc-400 max-w-3xl mx-auto mb-16 font-light leading-relaxed font-body">
           {{ t?.hero?.desc }}
         </p>
         
         <div class="flex flex-col sm:flex-row gap-6 justify-center items-center">
           <StaticLink 
             href="/docs/getting-started"
-            class="group w-full sm:w-auto px-10 py-5 bg-accent text-white font-black rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-[0_0_40px_rgba(249,115,22,0.3)] flex items-center justify-center gap-2 hover:brightness-110"
+            class="group w-full sm:w-auto px-10 py-5 bg-accent text-white font-black rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-[0_0_40px_rgba(249,115,22,0.2)] flex items-center justify-center gap-2 hover:brightness-110"
           >
             {{ t?.hero?.ctaPro }} 
             <ChevronRight :size="20" class="group-hover:translate-x-1 transition-transform" />
           </StaticLink>
           <StaticLink 
             href="/docs/introduction"
-            class="w-full sm:w-auto px-10 py-5 border border-white/10 text-white font-bold rounded-2xl hover:bg-white/5 transition-all backdrop-blur-md hover:border-singularity/50"
+            class="w-full sm:w-auto px-10 py-5 border border-white/10 text-white font-bold rounded-2xl hover:bg-white/5 transition-all backdrop-blur-md hover:border-singularity/30"
           >
             {{ t?.hero?.ctaDocs }}
           </StaticLink>
@@ -145,7 +145,7 @@ onMounted(() => {
                   <h3 class="text-4xl lg:text-5xl font-black mb-6 text-white font-heading uppercase leading-tight italic">
                     {{ t?.features?.lsm?.title }}
                   </h3>
-                  <p class="text-slate-400 text-lg max-w-xl mb-6 leading-relaxed font-body">
+                  <p class="text-zinc-400 text-lg max-w-xl mb-6 leading-relaxed font-body">
                     {{ t?.features?.lsm?.desc }}
                   </p>
                 </div>
@@ -175,7 +175,7 @@ onMounted(() => {
               <Search :size="24" />
             </div>
             <h3 class="text-xl font-bold mb-3 text-white font-heading uppercase italic">{{ t?.features?.index?.title }}</h3>
-            <p class="text-slate-500 text-sm font-body leading-relaxed">
+            <p class="text-zinc-500 text-sm font-body leading-relaxed">
               {{ t?.features?.index?.desc }}
             </p>
           </SpotlightCard>
@@ -185,7 +185,7 @@ onMounted(() => {
               <Terminal :size="24" />
             </div>
             <h3 class="text-xl font-bold mb-3 text-white font-heading uppercase italic">{{ t?.features?.proxy?.title }}</h3>
-            <p class="text-slate-500 text-sm font-body leading-relaxed">
+            <p class="text-zinc-500 text-sm font-body leading-relaxed">
                {{ t?.features?.proxy?.desc }}
             </p>
           </SpotlightCard>
@@ -195,7 +195,7 @@ onMounted(() => {
               <FileText :size="24" />
             </div>
             <h3 class="text-xl font-bold mb-3 text-white font-heading uppercase italic">{{ t?.features?.meta?.title }}</h3>
-            <p class="text-slate-500 text-sm font-body leading-relaxed">
+            <p class="text-zinc-500 text-sm font-body leading-relaxed">
               {{ t?.features?.meta?.desc }}
             </p>
           </SpotlightCard>
@@ -215,7 +215,7 @@ onMounted(() => {
           <h2 class="text-5xl md:text-7xl font-black tracking-tighter mb-4 italic text-white font-heading uppercase">
             {{ t?.benchmark?.title }} <span class="text-singularity">{{ t?.benchmark?.subtitle }}</span>
           </h2>
-          <p class="text-slate-400 text-xl font-mono tracking-[0.3em] uppercase">{{ t?.benchmark?.metric }}</p>
+          <p class="text-zinc-400 text-xl font-mono tracking-[0.3em] uppercase">{{ t?.benchmark?.metric }}</p>
         </div>
 
         <!-- Metrics Grid -->
@@ -226,7 +226,7 @@ onMounted(() => {
               <span class="text-xs font-mono uppercase tracking-wider">{{ t?.benchmark?.urls }}</span>
             </div>
             <div class="text-5xl font-black text-white mb-2 font-heading tracking-tighter">1M+</div>
-            <div class="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Single Stream Scan</div>
+            <div class="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">Single Stream Scan</div>
           </div>
 
           <div class="p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-sm group hover:border-accent/50 transition-all duration-300">
@@ -234,8 +234,8 @@ onMounted(() => {
               <Zap :size="20" />
               <span class="text-xs font-mono uppercase tracking-wider">{{ t?.benchmark?.throughput }}</span>
             </div>
-            <div class="text-5xl font-black text-white mb-2 font-heading tracking-tighter">70k<span class="text-xl text-slate-500 italic ml-1 font-light">/sec</span></div>
-            <div class="text-[10px] text-slate-500 uppercase tracking-widest font-bold">LSM-Optimized</div>
+            <div class="text-5xl font-black text-white mb-2 font-heading tracking-tighter">70k<span class="text-xl text-zinc-500 italic ml-1 font-light">/sec</span></div>
+            <div class="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">LSM-Optimized</div>
           </div>
 
           <div class="p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-sm group hover:border-emerald-400/50 transition-all duration-300">
@@ -243,8 +243,8 @@ onMounted(() => {
               <HardDrive :size="20" />
               <span class="text-xs font-mono uppercase tracking-wider">{{ t?.benchmark?.memory }}</span>
             </div>
-            <div class="text-5xl font-black text-white mb-2 font-heading tracking-tighter">84<span class="text-xl text-slate-500 italic ml-1 font-light">MB</span></div>
-            <div class="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Constant Heap Usage</div>
+            <div class="text-5xl font-black text-white mb-2 font-heading tracking-tighter">84<span class="text-xl text-zinc-500 italic ml-1 font-light">MB</span></div>
+            <div class="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">Constant Heap Usage</div>
           </div>
 
           <div class="p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-sm group hover:border-event/50 transition-all duration-300">
@@ -252,8 +252,8 @@ onMounted(() => {
               <Activity :size="20" />
               <span class="text-xs font-mono uppercase tracking-wider">{{ t?.benchmark?.build }}</span>
             </div>
-            <div class="text-5xl font-black text-white mb-2 font-heading tracking-tighter">14.2<span class="text-xl text-slate-500 italic ml-1 font-light">s</span></div>
-            <div class="text-[10px] text-slate-500 uppercase tracking-widest font-bold">100% Success Rate</div>
+            <div class="text-5xl font-black text-white mb-2 font-heading tracking-tighter">14.2<span class="text-xl text-zinc-500 italic ml-1 font-light">s</span></div>
+            <div class="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">100% Success Rate</div>
           </div>
         </div>
 
@@ -267,7 +267,7 @@ onMounted(() => {
                 <div class="w-3 h-3 rounded-full bg-amber-500/50"></div>
                 <div class="w-3 h-3 rounded-full bg-green-500/50"></div>
               </div>
-              <div class="ml-4 text-xs font-mono text-slate-500 flex items-center gap-2">
+              <div class="ml-4 text-xs font-mono text-zinc-500 flex items-center gap-2">
                 <Terminal :size="12" />
                 luminosity-benchmark — bun run benchmark
               </div>
@@ -275,7 +275,7 @@ onMounted(() => {
             
             <!-- Terminal Body -->
             <div class="p-8 font-mono text-sm leading-relaxed overflow-x-auto min-h-[300px] bg-void/50 backdrop-blur-xl">
-              <div class="flex items-center gap-2 text-slate-300 mb-4">
+              <div class="flex items-center gap-2 text-zinc-300 mb-4">
                 <span class="text-event">➜</span> 
                 <span class="text-singularity font-bold">~</span> 
                 <span>$ {{ typedText }}<span v-if="showCursor" class="inline-block w-2 h-4 bg-singularity ml-1 animate-pulse"></span></span>
@@ -283,29 +283,29 @@ onMounted(() => {
 
               <div v-if="typedText.length >= fullCommand.length" class="animate-fade-in space-y-2">
                 <div class="text-singularity font-bold tracking-tight">🌌 [LUMINOSITY] Initializing Atomic Engine...</div>
-                <div class="text-slate-800">--------------------------------------------------</div>
-                <div class="flex justify-between items-center text-slate-400">
-                  <div class="flex items-center gap-2 font-light"><div class="w-1 h-1 bg-slate-600 rounded-full"></div> Loading Resolvers</div>
+                <div class="text-zinc-800">--------------------------------------------------</div>
+                <div class="flex justify-between items-center text-zinc-400">
+                  <div class="flex items-center gap-2 font-light"><div class="w-1 h-1 bg-zinc-600 rounded-full"></div> Loading Resolvers</div>
                   <div class="text-emerald-500 font-bold text-xs">[OK]</div>
                 </div>
-                <div class="flex justify-between items-center text-slate-400">
-                  <div class="flex items-center gap-2 font-light"><div class="w-1 h-1 bg-slate-600 rounded-full"></div> Booting Prism Views</div>
+                <div class="flex justify-between items-center text-zinc-400">
+                  <div class="flex items-center gap-2 font-light"><div class="w-1 h-1 bg-zinc-600 rounded-full"></div> Booting Prism Views</div>
                   <div class="text-emerald-500 font-bold text-xs">[OK]</div>
                 </div>
-                <div class="flex justify-between items-center text-slate-400">
-                  <div class="flex items-center gap-2 font-light"><div class="w-1 h-1 bg-slate-600 rounded-full"></div> Hydrating Cache</div>
+                <div class="flex justify-between items-center text-zinc-400">
+                  <div class="flex items-center gap-2 font-light"><div class="w-1 h-1 bg-zinc-600 rounded-full"></div> Hydrating Cache</div>
                   <div class="text-emerald-500 font-bold text-xs">[OK]</div>
                 </div>
                 
                 <br />
                 <div class="flex justify-between items-center">
-                  <div class="text-slate-300">🚀 Sequential Ops Log</div><div class="text-singularity font-bold">[COMPLETE]</div>
+                  <div class="text-zinc-300">🚀 Sequential Ops Log</div><div class="text-singularity font-bold">[COMPLETE]</div>
                 </div>
                 <div class="flex justify-between items-center">
-                  <div class="text-slate-300">🔥 Snapshot Merge</div><div class="text-singularity font-bold">[COMPLETE]</div>
+                  <div class="text-zinc-300">🔥 Snapshot Merge</div><div class="text-singularity font-bold">[COMPLETE]</div>
                 </div>
                 <div class="flex justify-between items-center mb-4">
-                  <div class="text-slate-300">📦 XML Paginator</div><div class="text-singularity font-bold">[20 FILES]</div>
+                  <div class="text-zinc-300">📦 XML Paginator</div><div class="text-singularity font-bold">[20 FILES]</div>
                 </div>
                 
                 <div class="mt-8 border border-singularity/20 p-6 rounded-xl bg-singularity/5 relative overflow-hidden">
@@ -313,7 +313,7 @@ onMounted(() => {
                     <Activity class="text-singularity" :size="48" />
                   </div>
                   <div class="text-singularity font-black mb-4 tracking-[0.2em] text-center text-[10px] uppercase">FINAL REPORT</div>
-                  <div class="grid grid-cols-2 gap-x-8 gap-y-2 text-slate-400 text-[10px] uppercase tracking-widest font-bold">
+                  <div class="grid grid-cols-2 gap-x-8 gap-y-2 text-zinc-400 text-[10px] uppercase tracking-widest font-bold">
                     <div>Telescope Range</div><div class="text-right text-white font-mono font-bold">1,000,000 URLs</div>
                     <div>Build Velocity</div><div class="text-right text-white font-mono font-bold">14.2s TOTAL</div>
                     <div>Energy Signature</div><div class="text-right text-singularity font-mono font-bold">84MB RAM</div>

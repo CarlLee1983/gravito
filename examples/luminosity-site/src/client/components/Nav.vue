@@ -61,14 +61,14 @@ const switchLang = (lang: string) => {
               v-if="link.path.startsWith('http')"
               :href="link.path"
               target="_blank"
-              class="px-4 py-2 text-sm font-medium text-gray-400 hover:text-singularity hover:bg-white/5 rounded-xl transition-all"
+              class="px-4 py-2 text-sm font-medium text-zinc-400 hover:text-singularity hover:bg-white/5 rounded-xl transition-all"
             >
               {{ link.label }}
             </a>
             <StaticLink 
               v-else
               :href="link.path"
-              class="px-4 py-2 text-sm font-medium text-gray-400 hover:text-singularity hover:bg-white/5 rounded-xl transition-all"
+              class="px-4 py-2 text-sm font-medium text-zinc-400 hover:text-singularity hover:bg-white/5 rounded-xl transition-all"
             >
               {{ link.label }}
             </StaticLink>
@@ -80,7 +80,7 @@ const switchLang = (lang: string) => {
         <div class="relative">
           <button 
             @click="toggleLang"
-            class="flex items-center gap-2 px-3 py-2 text-gray-400 hover:text-white transition-colors"
+            class="flex items-center gap-2 px-3 py-2 text-zinc-400 hover:text-white transition-colors"
           >
             <Globe :size="18" />
             <span class="text-xs font-bold uppercase">{{ locale }}</span>

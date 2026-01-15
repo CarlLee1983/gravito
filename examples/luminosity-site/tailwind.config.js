@@ -9,11 +9,12 @@ export default {
     theme: {
         extend: {
             colors: {
-                void: '#020617',
-                singularity: '#38BDF8',
+                void: '#000000', // OLED Black
+                singularity: '#00FBFF', // More vibrant Electric Cyan
                 event: '#8B5CF6',
                 accent: '#F97316',
-                panel: '#0F172A',
+                panel: '#09090B', // Zinc 950
+                surface: '#18181B', // Zinc 900
             },
             fontFamily: {
                 heading: ['Poppins', 'system-ui', 'sans-serif'],
