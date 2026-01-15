@@ -208,7 +208,7 @@ onUnmounted(() => {
           <div class="satellite-index glass-pane">
             <div class="index-item">
               <h4>◈ DATA PERSISTENCE</h4>
-              <p>Atlas Engine System</p>
+              <p>Atlas Engine (Bun.sql Optimized)</p>
             </div>
             <div class="index-item">
               <h4>⌘ FULLSTACK CORE</h4>

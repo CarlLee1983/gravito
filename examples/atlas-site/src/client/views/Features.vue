@@ -294,6 +294,45 @@ Factory.<span class="text-blue-300">define</span>(User, ({ <span class="text-ora
               </div>
           </div>
 
+          <!-- UNDER THE HOOD: Proxy & Dirty Tracking (NEW) -->
+          <div class="py-20 border-y border-white/5 relative overflow-hidden">
+              <div class="absolute inset-0 bg-noise-pattern opacity-[0.03]"></div>
+              <div class="text-center mb-16">
+                  <div class="text-primary font-mono text-[10px] tracking-[0.4em] uppercase mb-4">{{ t('features.under_the_hood') }}</div>
+                  <h2 class="text-4xl font-bold text-white">Engineering Excellence</h2>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <!-- Proxy Nexus -->
+                  <div class="bg-atlas-surface/40 border border-white/10 p-8 rounded-3xl group hover:border-primary/40 transition-all">
+                      <h3 class="text-xl font-bold text-white mb-4 flex items-center gap-3">
+                          <div class="w-2 h-2 rounded-full bg-primary shadow-neon-blue"></div>
+                          {{ t('features.proxy_nexus_title') }}
+                      </h3>
+                      <p class="text-gray-400 text-sm mb-6 leading-relaxed">{{ t('features.proxy_nexus_desc') }}</p>
+                      <div class="bg-black/40 p-5 rounded-2xl border border-white/5 font-mono text-xs">
+                          <span class="text-gray-500">// Zero-boilerplate native access</span><br/>
+                          <span class="text-purple-400">const</span> redis = <span class="text-yellow-400">DB</span>.<span class="text-blue-300">connection</span>(<span class="text-green-300">'redis'</span>)<br/>
+                          <span class="text-purple-400">await</span> redis.<span class="text-blue-300">setex</span>(<span class="text-green-300">'key'</span>, <span class="text-orange-300">3600</span>, <span class="text-green-300">'val'</span>)
+                      </div>
+                  </div>
+
+                  <!-- Dirty Tracking -->
+                  <div class="bg-atlas-surface/40 border border-white/10 p-8 rounded-3xl group hover:border-atlas-cyan/40 transition-all">
+                      <h3 class="text-xl font-bold text-white mb-4 flex items-center gap-3">
+                          <div class="w-2 h-2 rounded-full bg-atlas-cyan shadow-[0_0_10px_#00e5ff]"></div>
+                          {{ t('features.dirty_tracking_title') }}
+                      </h3>
+                      <p class="text-gray-400 text-sm mb-6 leading-relaxed">{{ t('features.dirty_tracking_desc') }}</p>
+                      <div class="bg-black/40 p-5 rounded-2xl border border-white/5 font-mono text-xs">
+                          <span class="text-purple-400">user</span>.<span class="text-blue-300">email</span> = <span class="text-green-300">'new@example.com'</span><br/>
+                          <span class="text-purple-400">await</span> <span class="text-purple-400">user</span>.<span class="text-blue-300">save</span>()<br/>
+                          <span class="text-gray-500">// SQL: UPDATE users SET email = ? WHERE id = ?</span>
+                      </div>
+                  </div>
+              </div>
+          </div>
+
           <!-- Section 7: CLI (Full Width HUD / Terminal) -->
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
               <div>
@@ -451,10 +490,10 @@ Factory.<span class="text-blue-300">define</span>(User, ({ <span class="text-ora
                               {{ t('connection_hub.switching_desc') }}
                           </p>
                           <div class="flex gap-2">
-                             <StaticLink to="/docs/mongodb" class="text-[10px] font-mono text-gray-400 border border-white/10 px-3 py-1.5 rounded-lg hover:bg-white/5 hover:text-white transition-all">
+                             <StaticLink to="https://gravito.dev/en/docs/guide/mongodb" class="text-[10px] font-mono text-gray-400 border border-white/10 px-3 py-1.5 rounded-lg hover:bg-white/5 hover:text-white transition-all">
                                 MongoDB →
                              </StaticLink>
-                             <StaticLink to="/docs/redis" class="text-[10px] font-mono text-gray-400 border border-white/10 px-3 py-1.5 rounded-lg hover:bg-white/5 hover:text-white transition-all">
+                             <StaticLink to="https://gravito.dev/en/docs/guide/redis" class="text-[10px] font-mono text-gray-400 border border-white/10 px-3 py-1.5 rounded-lg hover:bg-white/5 hover:text-white transition-all">
                                 Redis →
                              </StaticLink>
                           </div>
@@ -473,7 +512,7 @@ Factory.<span class="text-blue-300">define</span>(User, ({ <span class="text-ora
                           <p class="text-[10px] text-gray-600 font-mono mb-4">
                             {{ t('connection_hub.bun_engine_desc') }}
                           </p>
-                          <StaticLink to="/docs/mongodb" class="block w-full py-2 bg-orange-500/5 hover:bg-orange-500/10 text-[10px] font-center text-center font-mono text-orange-400 uppercase tracking-widest border border-orange-500/10 transition-all">
+                          <StaticLink href="https://gravito.dev/en/docs/guide/orm-usage#native-driver" target="_blank" class="block w-full py-2 bg-orange-500/5 hover:bg-orange-500/10 text-[10px] font-center text-center font-mono text-orange-400 uppercase tracking-widest border border-orange-500/10 transition-all">
                              Optimize with Bun →
                           </StaticLink>
                       </div>
