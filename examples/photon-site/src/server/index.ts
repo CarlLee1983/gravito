@@ -349,10 +349,17 @@ app.get('/ecosystem', (c) => renderInertia(c, 'Ecosystem', {}))
 
 app.get('/docs/:page', async (c) => {
   const pageParam = c.req.param('page') || 'intro'
-  const lang = 'en'
+  // Support ?lang=zh-TW
+  const queryLang = c.req.query('lang')
+  const lang = queryLang === 'zh-TW' ? 'zh-TW' : 'en'
 
   // Try dynamic first
   let doc = await getDocContent(lang, pageParam)
+
+  // If missing in requested language (e.g. zh-TW), fallback to English
+  if (!doc && lang !== 'en') {
+    doc = await getDocContent('en', pageParam)
+  }
 
   if (!doc) {
     doc = legacyDocs[pageParam]
@@ -366,7 +373,7 @@ app.get('/docs/:page', async (c) => {
 
   // Last resort
   if (!doc && pageParam !== 'intro') {
-    return c.redirect('/docs/intro')
+    return c.redirect(`/docs/intro?lang=${lang}`)
   }
 
   return await renderInertia(c, 'Docs', { ...doc, slug: pageParam, lang })
