@@ -91,7 +91,7 @@ Atlas 使用 Active Record 模式。定義模型時，只需繼承 `Model` 並�
 ### 定義 User Model
 
 ```typescript
-import { Model } from '@gravito/atlas';
+import { Model, column } from '@gravito/atlas';
 
 export class User extends Model {
   // 設定資料表名稱
@@ -100,10 +100,17 @@ export class User extends Model {
   // 主鍵（預設為 'id'）
   static primaryKey = 'id';
 
-  // 欄位型別標註（用於開發時的智慧提示）
+  // 使用 @column 裝飾器定義資料庫欄位
+  @column({ isPrimary: true })
   declare id: number;
+
+  @column()
   declare name: string;
+
+  @column()
   declare email: string;
+
+  @column()
   declare active: boolean;
 }
 ```
@@ -178,17 +185,19 @@ await user.delete()
 類似 Laravel Eloquent，可以在 Model 中定義關聯：
 
 ```typescript
-import { Model } from '@gravito/atlas';
+import { Model, column } from '@gravito/atlas';
 
 export class User extends Model {
-  static table = usersTable;
-  static tableName = 'users';
-  declare attributes: {
-    id?: number;
-    name: string;
-    email: string;
-  };
-}
+  static table = 'users';
+
+  @column({ isPrimary: true })
+  declare id: number;
+
+  @column()
+  declare name: string;
+
+  @column()
+  declare email: string;
 
 export class Post extends Model {
   static table = postsTable;

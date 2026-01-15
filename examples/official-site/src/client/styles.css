@@ -7,6 +7,14 @@
  */
 
 @layer base {
+    :root {
+        --core-glow: #6366f1;
+        --core-glow-rgb: 99, 102, 241;
+        --bg-deep: #020305;
+        --stellar-white: #f8fafc;
+        --stellar-muted: #94a3b8;
+    }
+
     body {
         @apply antialiased text-gray-900 bg-void;
         /* 
@@ -127,6 +135,41 @@
         font-size: inherit !important;
         font-weight: inherit !important;
         font-style: inherit !important;
+    }
+
+    /* 
+     * 🌌 Singularity Paradox: Aggressive Visual Effects
+     */
+    .glitch-text {
+        mix-blend-mode: difference;
+        letter-spacing: -0.06em;
+        position: relative;
+        text-shadow: 
+            calc(var(--mx, 0) * -0.1px) 0 #ff0000,
+            calc(var(--mx, 0) * 0.1px) 0 #00ffff;
+        transition: text-shadow 0.1s ease;
+    }
+
+    .space-grid-warp {
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        perspective: 1000px;
+        pointer-events: none;
+        background: var(--bg-deep);
+    }
+
+    .grid-warp-inner {
+        position: absolute;
+        inset: -100%;
+        background-image: 
+            linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+        background-size: 80px 80px;
+        transform: rotateX(20deg);
+        mask-image: radial-gradient(circle at center, black 0%, transparent 80%);
+        -webkit-mask-image: radial-gradient(circle at center, black 0%, transparent 80%);
+        transition: perspective-origin 0.2s ease;
     }
 
     /* 

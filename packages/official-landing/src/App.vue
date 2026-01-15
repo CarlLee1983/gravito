@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import BenchmarkArena from './components/BenchmarkArena.vue';
 import AiHub from './components/AiHub.vue';
 import Ecosystem from './components/Ecosystem.vue';
@@ -8,16 +8,34 @@ import QuickStart from './components/QuickStart.vue';
 const mouseX = ref(0);
 const mouseY = ref(0);
 
-const handleMouseMove = (e: MouseEvent) => {
-  mouseX.value = (e.clientX / window.innerWidth - 0.5) * 20;
-  mouseY.value = (e.clientY / window.innerHeight - 0.5) * 20;
+const handleGlobalMouseMove = (e: MouseEvent) => {
+  // Map mouse position to range [-50, 50] for smooth parallax/warping
+  mouseX.value = (e.clientX / window.innerWidth - 0.5) * 100;
+  mouseY.value = (e.clientY / window.innerHeight - 0.5) * 100;
 };
+
+onMounted(() => {
+  window.addEventListener('mousemove', handleGlobalMouseMove);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('mousemove', handleGlobalMouseMove);
+});
 </script>
 
 <template>
-  <div class="layout" @mousemove="handleMouseMove">
+  <div class="layout" :style="{ '--mx': `${mouseX}px`, '--my': `${mouseY}px` }">
     <!-- Background Grid -->
-    <div class="space-grid"></div>
+    <div class="space-grid" :style="{ perspectiveOrigin: `${50 + mouseX}% ${50 + mouseY}%` }">
+      <div class="grid-warp"></div>
+    </div>
+    
+    <!-- System Interference Overlay -->
+    <div class="system-glitch">
+      <div class="scanline"></div>
+      <div class="interference"></div>
+    </div>
+
     <div class="noise-overlay"></div>
     <div class="cosmic-haze">
       <div class="nebula-cloud nebula-1"></div>
@@ -25,6 +43,32 @@ const handleMouseMove = (e: MouseEvent) => {
       <div class="nebula-cloud nebula-3"></div>
     </div>
     <div class="ambient-light" :style="{ left: `${mouseX * 10 + 50}%`, top: `${mouseY * 10 + 50}%` }"></div>
+
+    <!-- SVG Filters for high-end effects -->
+    <svg style="position: absolute; width: 0; height: 0;" aria-hidden="true" focusable="false">
+      <defs>
+        <filter id="chromatic-glow">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur" />
+          <feOffset in="blur" dx="2" dy="0" result="offset-r" />
+          <feOffset in="blur" dx="-2" dy="0" result="offset-b" />
+          <feComponentTransfer in="offset-r" result="red">
+            <feFuncR type="linear" slope="1" intercept="0" />
+            <feFuncG type="linear" slope="0" intercept="0" />
+            <feFuncB type="linear" slope="0" intercept="0" />
+          </feComponentTransfer>
+          <feComponentTransfer in="offset-b" result="blue">
+            <feFuncR type="linear" slope="0" intercept="0" />
+            <feFuncG type="linear" slope="0" intercept="0" />
+            <feFuncB type="linear" slope="1" intercept="0" />
+          </feComponentTransfer>
+          <feMerge>
+            <feMergeNode in="red" />
+            <feMergeNode in="blue" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
+    </svg>
 
     <!-- Hero Section -->
     <header class="hero">
@@ -63,10 +107,30 @@ const handleMouseMove = (e: MouseEvent) => {
 
           <div class="singularity-universe">
             <div class="singularity-container" :style="{ transform: `rotateX(65deg) rotateY(${mouseX * 0.1}deg)` }">
-              <!-- No more simple circles, use the core as a focal point -->
+              <!-- The Core Focal Point - Singularity Paradox -->
               <div class="core-focal-point">
-                <div class="core-aura"></div>
+                <div class="core-lens"></div>
+                <div class="core-nucleus">
+                  <div class="nucleus-ring"></div>
+                  <div class="nucleus-center"></div>
+                </div>
+                
+                <!-- Dynamic Technical Callouts -->
+                <div class="core-callout c1">
+                  <div class="line"></div>
+                  <div class="data">THRUST_VE_01 // 100K</div>
+                </div>
+                <div class="core-callout c2">
+                  <div class="line"></div>
+                  <div class="data">STABILITY // 0.998</div>
+                </div>
+                <div class="core-callout c3">
+                  <div class="line"></div>
+                  <div class="data">BUN_RUNTIME // OPTIMIZED</div>
+                </div>
+
                 <div class="core-lightning"></div>
+                <div class="core-flare"></div>
               </div>
               
               <!-- Refined Elliptical Orbits -->
@@ -288,15 +352,23 @@ const handleMouseMove = (e: MouseEvent) => {
 
 .space-grid {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-image: 
-    radial-gradient(circle at 2px 2px, rgba(255, 255, 255, 0.05) 1px, transparent 0);
-  background-size: 40px 40px;
+  inset: 0;
   z-index: -1;
+  perspective: 1000px;
   pointer-events: none;
+  background: var(--bg-deep);
+}
+
+.grid-warp {
+  position: absolute;
+  inset: -100%;
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 80px 80px;
+  transform: rotateX(20deg);
+  mask-image: radial-gradient(circle at center, black 0%, transparent 80%);
+  -webkit-mask-image: radial-gradient(circle at center, black 0%, transparent 80%);
 }
 
 /* Nav */
@@ -373,10 +445,49 @@ const handleMouseMove = (e: MouseEvent) => {
 }
 
 h1 {
-  font-size: 4.5rem;
-  line-height: 1.1;
+  font-size: 6rem;
+  line-height: 0.9;
   margin-bottom: 2rem;
+  mix-blend-mode: difference;
+  letter-spacing: -0.06em;
+  position: relative;
+  text-shadow: 
+    calc(var(--mx) * -0.1px) 0 #ff0000,
+    calc(var(--mx) * 0.1px) 0 #00ffff;
+  transition: text-shadow 0.1s ease;
 }
+
+/* System Glitch Overlay */
+.system-glitch {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  pointer-events: none;
+  overflow: hidden;
+  opacity: 0.05;
+}
+
+.scanline {
+  width: 100%;
+  height: 10px;
+  background: linear-gradient(to bottom, transparent, var(--core-glow), transparent);
+  position: absolute;
+  top: -100px;
+  animation: scan-vertical 8s linear infinite;
+}
+
+@keyframes scan-vertical {
+  0% { top: -100px; }
+  100% { top: 110%; }
+}
+
+.interference {
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(0deg, rgba(255,255,255,0.03) 0px, transparent 1px, transparent 2px);
+  background-size: 100% 3px;
+}
+
 
 p {
   font-size: 1.25rem;
@@ -471,12 +582,107 @@ p {
   align-items: center;
 }
 
-.core-aura {
-  width: 100%;
-  height: 100%;
-  background: radial-gradient(circle, var(--core-glow) 0%, transparent 70%);
-  filter: blur(30px);
-  animation: aura-expand 4s ease-in-out infinite;
+.core-lens {
+  position: absolute;
+  inset: -100px;
+  background: radial-gradient(circle, rgba(var(--core-glow-rgb), 0.1) 0%, transparent 70%);
+  backdrop-filter: blur(4px) saturate(2);
+  mask-image: radial-gradient(circle, black 0%, transparent 70%);
+  -webkit-mask-image: radial-gradient(circle, black 0%, transparent 70%);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.core-callout {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  pointer-events: none;
+  z-index: 20;
+}
+
+.core-callout .line {
+  height: 1px;
+  background: linear-gradient(90deg, var(--core-glow), transparent);
+  width: 0;
+  transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.core-callout .data {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--core-glow);
+  opacity: 0;
+  white-space: nowrap;
+  letter-spacing: 0.1em;
+  transition: opacity 1s ease;
+}
+
+.core-callout.c1 { transform: rotate(-45deg) translate(140px); }
+.core-callout.c2 { transform: rotate(135deg) translate(140px); }
+.core-callout.c3 { transform: rotate(225deg) translate(140px); }
+
+.singularity-container:hover .core-callout .line { width: 100px; }
+.singularity-container:hover .core-callout .data { opacity: 0.8; }
+
+.core-nucleus {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  background: #fff;
+  border-radius: 50%;
+  filter: url(#chromatic-glow);
+  box-shadow: 0 0 40px var(--core-glow);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 5;
+}
+
+.nucleus-ring {
+  position: absolute;
+  width: 120%;
+  height: 120%;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
+  animation: spin-nucleus 3s linear infinite;
+}
+
+.nucleus-center {
+  width: 20px;
+  height: 20px;
+  background: var(--bg-deep);
+  border-radius: 50%;
+  box-shadow: inset 0 0 10px var(--core-glow);
+}
+
+.core-flare {
+  position: absolute;
+  width: 300px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #fff, transparent);
+  transform: rotate(45deg);
+  opacity: 0.3;
+  filter: blur(2px);
+  animation: flare-sweep 5s ease-in-out infinite;
+}
+
+@keyframes spin-nucleus {
+  from { transform: rotate(0deg) scale(0.9); }
+  50% { transform: rotate(180deg) scale(1.1); }
+  to { transform: rotate(360deg) scale(0.9); }
+}
+
+@keyframes flare-sweep {
+  0% { transform: rotate(45deg) translateX(-100%); opacity: 0; }
+  50% { opacity: 0.5; }
+  100% { transform: rotate(45deg) translateX(100%); opacity: 0; }
+}
+
+@keyframes aura-expand {
+  0%, 100% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.3); opacity: 0.8; }
 }
 
 /* Orbit Bundle */
@@ -1004,6 +1210,33 @@ p {
   border-radius: 12px;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0);
   transition: all 0.5s ease;
+  overflow: hidden;
+}
+
+.card-border-beam::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: conic-gradient(
+    transparent, 
+    rgba(var(--feat-color-rgb), 0.3), 
+    transparent 30%
+  );
+  animation: beam-rotate 4s linear infinite;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+.bento-card:hover .card-border-beam::after {
+  opacity: 1;
+}
+
+@keyframes beam-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .bento-card:hover .card-border-beam {
