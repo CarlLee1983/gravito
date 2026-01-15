@@ -48,6 +48,7 @@ const renderInertia = async (c: any, component: string, props: any) => {
 import aotDoc from './data/docs/aot.json'
 import authDoc from './data/docs/auth.json'
 import benchmarksDoc from './data/docs/benchmarks.json'
+import cborDoc from './data/docs/cbor.json'
 import contextDoc from './data/docs/context.json'
 import errorsDoc from './data/docs/errors.json'
 import crudAtlasDoc from './data/docs/ex-crud-atlas.json'
@@ -59,9 +60,11 @@ import integrationsDoc from './data/docs/integrations.json'
 import introDoc from './data/docs/intro.json'
 import middlewareDoc from './data/docs/middleware.json'
 import poolingDoc from './data/docs/pooling.json'
+import proxyDoc from './data/docs/proxy.json'
 import quickstartDoc from './data/docs/quickstart.json'
 import realtimeDoc from './data/docs/realtime.json'
 import routingDoc from './data/docs/routing.json'
+import rpcBeamDoc from './data/docs/rpc-beam.json'
 import validationDoc from './data/docs/validation.json'
 import webhooksDoc from './data/docs/webhooks.json'
 import zeroCopyDoc from './data/docs/zero-copy.json'
@@ -112,6 +115,9 @@ app.orbit(OrbitAtlas)</code></pre>
   webhooks: webhooksDoc,
   auth: authDoc,
   validation: validationDoc,
+  'rpc-beam': rpcBeamDoc,
+  proxy: proxyDoc,
+  cbor: cborDoc,
   prism: {
     id: '11',
     title: 'Prism Templates',

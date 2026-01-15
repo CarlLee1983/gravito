@@ -47,6 +47,8 @@ export const navGroups: NavGroup[] = [
     items: [
       { id: 'patterns', label: 'PATTERN_GALLERY', icon: Layers, href: '/patterns' },
       { id: 'routing', label: 'ROUTING_SYSTEM', icon: Share2, href: '/docs/routing' },
+      { id: 'proxy', label: 'PROXIES_GATEWAY', icon: Globe, href: '/docs/proxy' },
+      { id: 'cbor', label: 'CBOR_PROTOCOL', icon: Cpu, href: '/docs/cbor' },
       { id: 'context', label: 'CONTEXT_API', icon: Activity, href: '/docs/context' },
     ],
   },
@@ -71,6 +73,7 @@ export const navGroups: NavGroup[] = [
     category: 'EXTENSIONS_ECO',
     items: [
       { id: 'ecosystem', label: 'ECOSYSTEM_REGISTRY', icon: Zap, href: '/ecosystem' },
+      { id: 'rpc-beam', label: 'BEAM_RPC_CLIENT', icon: Zap, href: '/docs/rpc-beam' },
       { id: 'testing', label: 'TESTING_SUITE', icon: TestTube, href: '/docs/testing' },
       { id: 'auth', label: 'SENTINEL_AUTH', icon: Lock, href: '/docs/auth' },
       { id: 'realtime', label: 'REALTIME_RIPPLE', icon: Radio, href: '/docs/realtime' },

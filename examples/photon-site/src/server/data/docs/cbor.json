@@ -1,0 +1,10 @@
+{
+    "id": "27",
+    "title": "CBOR Protocol",
+    "content": "<p>For high-performance, binary-optimized APIs, Photon supports CBOR (Concise Binary Object Representation). This is ideal for IoT devices or microservices where payload size is critical.</p><h2>Using CBOR</h2><p>Photon can handle CBOR by utilizing standard JS Blob transformation or specialized middleware:</p><pre><code>import { cbor } from '@gravito/photon/cbor' // Optional optimization bundle\n\napp.get('/binary-api', (c) => {\n  const data = { id: 1, message: 'Lightweight binary data' }\n  // Automatically sets application/cbor header\n  return c.cbor(data)\n})</code></pre><h2>Manual Handling</h2><p>You can also handle it manually using any CBOR library (like <code>cbor-x</code>):</p><pre><code>import { encode } from 'cbor-x'\n\napp.get('/manual-cbor', (c) => {\n  const payload = encode({ status: 'AOK' })\n  return c.body(payload, 200, {\n    'Content-Type': 'application/cbor'\n  })\n})</code></pre>",
+    "meta": {
+        "lastUpdated": "2026-01-15",
+        "complexity": "ADVANCED",
+        "category": "TECHNICAL_ARCHITECTURE"
+    }
+}
