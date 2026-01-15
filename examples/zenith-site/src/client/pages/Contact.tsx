@@ -55,7 +55,7 @@ export default function Contact() {
             className="space-y-12"
           >
             <div className="max-w-2xl mx-auto">
-              <p className="text-gray-300 text-lg leading-relaxed mb-12">
+              <p className="text-zinc-300 text-lg leading-relaxed mb-12">
                 {trans('contact.description')}
               </p>
 
@@ -68,7 +68,7 @@ export default function Contact() {
                     <Mail className="w-8 h-8" />
                   </div>
                   <div className="text-left">
-                    <span className="text-xs text-gray-500 uppercase tracking-[0.2em] font-mono mb-1 block">
+                    <span className="text-xs text-zinc-500 uppercase tracking-[0.2em] font-mono mb-1 block">
                       Direct Signal Channel
                     </span>
                     <p className="text-2xl font-bold text-white tracking-tight">
@@ -111,10 +111,10 @@ function SocialLink({ icon, label, href }: { icon: React.ReactNode; label: strin
       href={href}
       className="flex flex-col items-center gap-4 p-6 rounded-3xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.08] hover:border-white/10 hover:y-[-4px] transition-all text-center group"
     >
-      <div className="text-gray-400 group-hover:text-zenith-accent transition-colors">
+      <div className="text-zinc-400 group-hover:text-zenith-accent transition-colors">
         {React.cloneElement(icon as React.ReactElement<any>, { className: 'w-8 h-8' })}
       </div>
-      <span className="text-[10px] text-gray-500 uppercase tracking-widest font-mono font-bold leading-tight">
+      <span className="text-[10px] text-zinc-500 uppercase tracking-widest font-mono font-bold leading-tight">
         {label}
       </span>
     </a>
