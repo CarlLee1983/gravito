@@ -13,16 +13,37 @@ export class StaticSiteGenerator {
   /**
    * Export all static routes to a target directory.
    */
-  async export(outputDir: string): Promise<void> {
+  async export(
+    outputDir: string,
+    baseUrl = 'https://gravito.dev',
+    extraPaths: string[] = []
+  ): Promise<void> {
     this.core.logger.info(`[SSG] Starting static export to: ${outputDir}`)
 
-    // We use the router.compile() to get all routes
-    const routes = this.core.router.routes
+    // Get routes from either PlanetCore Router or Gravito AOTRouter
+    let routes: any[] = []
+    const router = this.core.router as any
+
+    if (Array.isArray(router.routes)) {
+      routes = router.routes
+    } else if (typeof router.getRoutes === 'function') {
+      routes = router.getRoutes()
+    } else {
+      this.core.logger.warn('[SSG] Could not detect routes specific format. SSG might fail.')
+    }
+
     const staticRoutes = routes.filter(
-      (r) => r.method.toLowerCase() === 'get' && !r.path.includes(':') && !r.path.includes('*')
+      (r: any) => r.method.toLowerCase() === 'get' && !r.path.includes(':') && !r.path.includes('*')
     )
 
-    this.core.logger.info(`[SSG] Found ${staticRoutes.length} static routes for export.`)
+    // Append extra paths
+    for (const path of extraPaths) {
+      staticRoutes.push({ path, method: 'GET' })
+    }
+
+    this.core.logger.info(
+      `[SSG] Found ${staticRoutes.length} static routes (including manual paths) for export.`
+    )
 
     for (const route of staticRoutes) {
       try {
@@ -64,6 +85,40 @@ export class StaticSiteGenerator {
       }
     }
 
+    // Generate Sitemap
+    await this.generateSitemap(outputDir, staticRoutes, baseUrl)
+
+    // Generate Robots.txt
+    await this.generateRobotsTxt(outputDir, baseUrl)
+
     this.core.logger.info('[SSG] Static export completed successfully! ✨')
+  }
+
+  private async generateSitemap(outputDir: string, routes: any[], baseUrl: string) {
+    this.core.logger.info('[SSG] Generating sitemap.xml...')
+    const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${routes
+  .map((route) => {
+    return `  <url>
+    <loc>${baseUrl}${route.path === '/' ? '' : route.path}</loc>
+    <changefreq>weekly</changefreq>
+    <priority>${route.path === '/' ? '1.0' : '0.8'}</priority>
+  </url>`
+  })
+  .join('\n')}
+</urlset>`
+
+    await writeFile(join(outputDir, 'sitemap.xml'), sitemap, 'utf-8')
+  }
+
+  private async generateRobotsTxt(outputDir: string, baseUrl: string) {
+    this.core.logger.info('[SSG] Generating robots.txt...')
+    const robots = `User-agent: *
+Allow: /
+
+Sitemap: ${baseUrl}/sitemap.xml`
+
+    await writeFile(join(outputDir, 'robots.txt'), robots, 'utf-8')
   }
 }

@@ -1072,6 +1072,20 @@
         "@gravito/photon": "workspace:*",
       },
     },
+    "packages/impulse-bridge": {
+      "name": "@gravito/impulse-bridge",
+      "version": "1.0.0",
+      "devDependencies": {
+        "@gravito/core": "workspace:*",
+        "@gravito/impulse": "workspace:*",
+        "tsup": "^8.3.5",
+        "typescript": "^5.9.3",
+      },
+      "peerDependencies": {
+        "@gravito/core": "workspace:*",
+        "@gravito/impulse": "workspace:*",
+      },
+    },
     "packages/ion": {
       "name": "@gravito/ion",
       "version": "3.0.0",
@@ -1277,10 +1291,24 @@
         "vue-tsc": "^3.2.2",
       },
     },
+    "packages/orbit-cloudflare": {
+      "name": "@gravito/orbit-cloudflare",
+      "version": "1.0.0",
+      "devDependencies": {
+        "@cloudflare/workers-types": "^4.20250109.0",
+        "@gravito/core": "workspace:*",
+        "tsup": "^8.3.5",
+        "typescript": "^5.9.3",
+      },
+      "peerDependencies": {
+        "@gravito/core": "workspace:*",
+      },
+    },
     "packages/photon": {
       "name": "@gravito/photon",
       "version": "1.0.0-beta.1",
       "dependencies": {
+        "cborg": "^4.3.2",
         "hono": "^4.0.0",
       },
       "devDependencies": {
@@ -2062,6 +2090,8 @@
 
     "@clack/prompts": ["@clack/prompts@0.7.0", "", { "dependencies": { "@clack/core": "^0.3.3", "is-unicode-supported": "*", "picocolors": "^1.0.0", "sisteransi": "^1.0.5" } }, "sha512-0MhX9/B4iL6Re04jPrttDm+BsP8y6mS7byuv0BvXgdXhbV5PdlsHt55dvNsuBCPZ7xq1oTAOOuotR9NFbQyMSA=="],
 
+    "@cloudflare/workers-types": ["@cloudflare/workers-types@4.20260115.0", "", {}, "sha512-vi68ZODh6m9fH9wdBOzDsyWgrYRIZbzZEAGGkvFn4b1FQSukxaWS8NAtSd/h9mL4gVK9hG8FEYq/jipdOo4RJg=="],
+
     "@colors/colors": ["@colors/colors@1.5.0", "", {}, "sha512-ooWCrlZP11i8GImSjTHYHLkvFDP48nS4+204nGb1RiX/WXYHmJA2III9/e2DWVabCESdW7hBAEzHRqUn9OUVvQ=="],
 
     "@dimforge/rapier3d-compat": ["@dimforge/rapier3d-compat@0.12.0", "", {}, "sha512-uekIGetywIgopfD97oDL5PfeezkFpNhwlzlaEYNOA0N6ghdsOvh/HYjSMek5Q2O1PYvRSDFcqFVJl4r4ZBwOow=="],
@@ -2226,6 +2256,8 @@
 
     "@gravito/impulse": ["@gravito/impulse@workspace:packages/impulse"],
 
+    "@gravito/impulse-bridge": ["@gravito/impulse-bridge@workspace:packages/impulse-bridge"],
+
     "@gravito/ion": ["@gravito/ion@workspace:packages/ion"],
 
     "@gravito/launchpad": ["@gravito/launchpad@workspace:packages/launchpad"],
@@ -2249,6 +2281,8 @@
     "@gravito/nebula": ["@gravito/nebula@workspace:packages/nebula"],
 
     "@gravito/official-landing": ["@gravito/official-landing@workspace:packages/official-landing"],
+
+    "@gravito/orbit-cloudflare": ["@gravito/orbit-cloudflare@workspace:packages/orbit-cloudflare"],
 
     "@gravito/photon": ["@gravito/photon@workspace:packages/photon"],
 
@@ -3069,6 +3103,8 @@
     "camera-controls": ["camera-controls@3.1.2", "", { "peerDependencies": { "three": ">=0.126.1" } }, "sha512-xkxfpG2ECZ6Ww5/9+kf4mfg1VEYAoe9aDSY+IwF0UEs7qEzwy0aVRfs2grImIECs/PoBtWFrh7RXsQkwG922JA=="],
 
     "caniuse-lite": ["caniuse-lite@1.0.30001764", "", {}, "sha512-9JGuzl2M+vPL+pz70gtMF9sHdMFbY9FJaQBi186cHKH3pSzDvzoUJUPV6fqiKIMyXbud9ZLg4F3Yza1vJ1+93g=="],
+
+    "cborg": ["cborg@4.3.2", "", { "bin": { "cborg": "lib/bin.js" } }, "sha512-l+QzebEAG0vb09YKkaOrMi2zmm80UNjmbvocMIeW5hO7JOXWdrQ/H49yOKfYX0MBgrj/KWgatBnEgRXyNyKD+A=="],
 
     "ccount": ["ccount@2.0.1", "", {}, "sha512-eyrF0jiFpY+3drT6383f1qhkbGsLSifNAjA61IUjZjmLCWjItY6LB9ft9YhoDgwfmclB2zhu51Lc7+95b8NRAg=="],
 

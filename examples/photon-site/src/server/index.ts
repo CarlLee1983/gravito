@@ -104,7 +104,11 @@ app.get('/', (c) => renderInertia(c, 'Home', { version: '1.2.0' }))
 
 app.get('/patterns', (c) => renderInertia(c, 'Patterns', {}))
 
-app.get('/ecosystem', (c) => renderInertia(c, 'Ecosystem', {}))
+app.get('/ecosystem', (c) => {
+  const queryLang = c.req.query('lang')
+  const lang = queryLang === 'zh-TW' ? 'zh-TW' : 'en'
+  return renderInertia(c, 'Ecosystem', { lang })
+})
 
 app.get('/docs/:page', async (c) => {
   const pageParam = c.req.param('page') || 'intro'
