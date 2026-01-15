@@ -33,18 +33,22 @@ const containerStyle = computed(() => {
 })
 
 // Configuration
-const PARTICLE_COUNT = 120
-const CONNECTION_DISTANCE = 180
-const MOUSE_RADIUS = 250
-const COLOR_PRIMARY = '16, 185, 129' // Emerald 500
+const PARTICLE_COUNT = 150
+const COLOR_PALETTE = [
+  '16, 185, 129', // Emerald 500
+  '52, 211, 153', // Emerald 400
+  '209, 250, 229', // Mint (High Light)
+  '5, 150, 105',  // Dark Emerald
+]
 
 interface Particle {
   x: number
   y: number
-  vx: number
-  vy: number
+  z: number // Depth layer
+  speed: number
+  angle: number
+  color: string
   size: number
-  pulse: number
 }
 
 let particles: Particle[] = []
@@ -52,6 +56,7 @@ let width = 0
 let height = 0
 let mouseX = -1000
 let mouseY = -1000
+let time = 0
 
 onMounted(() => {
   if (!canvasRef.value || !containerRef.value) return
@@ -71,116 +76,93 @@ onMounted(() => {
     mouseY = e.clientY - rect.top
   }
 
-  const handleMouseLeave = () => {
-    mouseX = -1000
-    mouseY = -1000
-  }
-
   window.addEventListener('resize', resize)
   window.addEventListener('mousemove', handleMouseMove)
-  window.addEventListener('mouseleave', handleMouseLeave)
   resize()
 
   function initParticles() {
     particles = []
     for (let i = 0; i < PARTICLE_COUNT; i++) {
-      particles.push({
-        x: Math.random() * width,
-        y: Math.random() * height,
-        vx: (Math.random() - 0.5) * 0.8,
-        vy: (Math.random() - 0.5) * 0.8,
-        size: Math.random() * 3 + 1,
-        pulse: Math.random() * Math.PI
-      })
+      particles.push(createParticle())
+    }
+  }
+
+  function createParticle(): Particle {
+    const z = Math.random() // Depth: 0 (back) to 1 (front)
+    return {
+      x: Math.random() * width,
+      y: Math.random() * height,
+      z: z,
+      speed: 0.5 + z * 2.5, // Front particles move much faster
+      angle: Math.random() * Math.PI * 2,
+      color: COLOR_PALETTE[Math.floor(Math.random() * COLOR_PALETTE.length)],
+      size: 0.5 + z * 2
     }
   }
 
   const draw = () => {
-    // Subtle trail effect instead of clearRect
-    ctx.fillStyle = 'rgba(2, 6, 23, 0.15)'
+    // 1. Motion Blur Effect (Trails)
+    // Darker, more persistent trails for high-end feel
+    ctx.globalCompositeOperation = 'source-over'
+    ctx.fillStyle = 'rgba(2, 6, 23, 0.08)' 
     ctx.fillRect(0, 0, width, height)
     
-    // Additive blending for neon glow
     ctx.globalCompositeOperation = 'lighter'
+    time += 0.002
 
-    // 1. Draw Structural Underlay
-    ctx.beginPath()
-    ctx.setLineDash([1, 100])
-    ctx.strokeStyle = `rgba(${COLOR_PRIMARY}, 0.1)`
-    for(let x = 0; x < width; x += 100) {
-      ctx.moveTo(x, 0); ctx.lineTo(x, height)
-    }
-    for(let y = 0; y < height; y += 100) {
-      ctx.moveTo(0, y); ctx.lineTo(width, y)
-    }
-    ctx.stroke()
-    ctx.setLineDash([])
-
-    // 2. Update and draw particles
     for (let i = 0; i < particles.length; i++) {
       const p = particles[i]
       
-      p.x += p.vx
-      p.y += p.vy
-      p.pulse += 0.03
+      // 2. Flow Field Logic
+      // Particles move in a complex, organic wave pattern
+      const noise = Math.sin(p.x * 0.005 + time) * Math.cos(p.y * 0.005 + time)
+      p.angle = noise * Math.PI * 2
+      
+      p.x += Math.cos(p.angle) * p.speed
+      p.y += Math.sin(p.angle) * p.speed
 
-      if (p.x < 0 || p.x > width) p.vx *= -1
-      if (p.y < 0 || p.y > height) p.vy *= -1
-
+      // Mouse Influence (Subtle "Wind" effect)
       const dx = mouseX - p.x
       const dy = mouseY - p.y
       const dist = Math.sqrt(dx * dx + dy * dy)
-      if (dist < MOUSE_RADIUS) {
-        const force = (MOUSE_RADIUS - dist) / MOUSE_RADIUS
-        p.vx -= dx * force * 0.001
-        p.vy -= dy * force * 0.001
+      if (dist < 300) {
+        const force = (300 - dist) / 300
+        p.x += (dx / dist) * force * 2
+        p.y += (dy / dist) * force * 2
       }
 
-      // Draw particle core
-      const pulseSize = p.size + Math.sin(p.pulse) * 2
+      // Wrap around screen
+      if (p.x < -50) p.x = width + 50
+      if (p.x > width + 50) p.x = -50
+      if (p.y < -50) p.y = height + 50
+      if (p.y > height + 50) p.y = -50
+
+      // 3. Render High-Quality "Glow Stream"
+      const alpha = 0.1 + p.z * 0.6
       ctx.beginPath()
-      ctx.arc(p.x, p.y, pulseSize, 0, Math.PI * 2)
-      ctx.fillStyle = `rgba(${COLOR_PRIMARY}, 0.8)`
-      ctx.fill()
-      
-      // Draw particle outer glow
-      ctx.beginPath()
-      ctx.arc(p.x, p.y, pulseSize * 3, 0, Math.PI * 2)
-      ctx.fillStyle = `rgba(${COLOR_PRIMARY}, 0.1)`
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2)
+      ctx.fillStyle = `rgba(${p.color}, ${alpha})`
       ctx.fill()
 
-      // 3. Draw high-tension connections
-      for (let j = i + 1; j < particles.length; j++) {
-        const p2 = particles[j]
-        const cdx = p.x - p2.x
-        const cdy = p.y - p2.y
-        const cdist = Math.sqrt(cdx * cdx + cdy * cdy)
-
-        if (cdist < CONNECTION_DISTANCE) {
-          const strength = 1 - cdist / CONNECTION_DISTANCE
-          ctx.beginPath()
-          ctx.lineWidth = strength * 2
-          // Pulse the line color
-          const alpha = strength * (0.3 + Math.sin(p.pulse) * 0.2)
-          ctx.strokeStyle = `rgba(${COLOR_PRIMARY}, ${alpha})`
-          ctx.moveTo(p.x, p.y)
-          ctx.lineTo(p2.x, p2.y)
-          ctx.stroke()
-          
-          // Occasional "Data Sparks" on connections
-          if (strength > 0.8 && Math.random() > 0.98) {
-            ctx.beginPath()
-            ctx.arc(p.x + cdx * 0.5, p.y + cdy * 0.5, 2, 0, Math.PI * 2)
-            ctx.fillStyle = '#FFFFFF'
-            ctx.fill()
-          }
-        }
+      // Bright core for foreground particles
+      if (p.z > 0.8) {
+        ctx.beginPath()
+        ctx.arc(p.x, p.y, p.size * 0.5, 0, Math.PI * 2)
+        ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`
+        ctx.fill()
       }
     }
-    
-    ctx.globalCompositeOperation = 'source-over'
-    animationFrameId = requestAnimationFrame(draw)
+
+    requestAnimationFrame(draw)
   }
+
+  draw()
+
+  onBeforeUnmount(() => {
+    window.removeEventListener('resize', resize)
+    window.removeEventListener('mousemove', handleMouseMove)
+  })
+})
 
   draw()
 
