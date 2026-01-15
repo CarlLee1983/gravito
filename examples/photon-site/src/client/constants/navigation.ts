@@ -1,19 +1,23 @@
 import {
   Activity,
   Book,
+  CheckSquare,
   Cpu,
   Database,
   Globe,
   HardDrive,
   Layers,
   List,
+  Lock,
   Play,
+  Radio,
   Server,
   Settings,
   Share2,
   Shield,
   Terminal,
   TestTube,
+  Webhook,
   Zap,
 } from 'lucide-react'
 
@@ -51,6 +55,7 @@ export const navGroups: NavGroup[] = [
     items: [
       { id: 'middleware', label: 'MIDDLEWARE_MATRIX', icon: Layers, href: '/docs/middleware' },
       { id: 'exceptions', label: 'EXCEPTION_HANDLING', icon: Shield, href: '/docs/exceptions' },
+      { id: 'validation', label: 'DATA_VALIDATION', icon: CheckSquare, href: '/docs/validation' },
       { id: 'performance', label: 'PERF_TUNING', icon: Settings, href: '/docs/performance' },
     ],
   },
@@ -67,7 +72,16 @@ export const navGroups: NavGroup[] = [
     items: [
       { id: 'ecosystem', label: 'ECOSYSTEM_REGISTRY', icon: Zap, href: '/ecosystem' },
       { id: 'testing', label: 'TESTING_SUITE', icon: TestTube, href: '/docs/testing' },
+      { id: 'auth', label: 'SENTINEL_AUTH', icon: Lock, href: '/docs/auth' },
+      { id: 'realtime', label: 'REALTIME_RIPPLE', icon: Radio, href: '/docs/realtime' },
+      { id: 'webhooks', label: 'WEBHOOK_ECHO', icon: Webhook, href: '/docs/webhooks' },
       { id: 'deployment', label: 'BUN_DEPLOYMENT', icon: Globe, href: '/docs/deployment' },
+      {
+        id: 'integrations',
+        label: '3RD_PARTY_INTEGRATIONS',
+        icon: Layers,
+        href: '/docs/integrations',
+      },
     ],
   },
   {
@@ -96,6 +110,12 @@ export const navGroups: NavGroup[] = [
         label: 'ATOMIC_CRUD_ATLAS',
         icon: Database,
         href: '/docs/ex-crud-atlas',
+      },
+      {
+        id: 'ex-file-upload',
+        label: 'ZERO_COPY_UPLOADS',
+        icon: HardDrive,
+        href: '/docs/ex-file-upload',
       },
     ],
   },

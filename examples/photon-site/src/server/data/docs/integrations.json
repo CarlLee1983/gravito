@@ -1,0 +1,10 @@
+{
+  "id": "21",
+  "title": "Ecosystem Integrations",
+  "content": "<p>Photon's zero-shim architecture makes it easy to integrate with the broader JavaScript ecosystem. We provide official Orbits for common tasks and patterns for third-party tools.</p><h2>GraphQL Orbit</h2><p><strong>@gravito/graphql</strong> provides a zero-config GraphQL server powered by <strong>Yoga</strong>. It mounts directly into your Photon route tree.</p><pre><code>import { OrbitGraphQL } from '@gravito/graphql'\n\nconst graphQL = new OrbitGraphQL({\n  schema: mySchema,\n  path: '/graphql'\n})\n\napp.orbit(graphQL)</code></pre><h2>Job Queues</h2><p><strong>@gravito/stream</strong> is our high-performance queue system. It supports Redis, SQS, and Kafka with a unified API.</p><pre><code>import { OrbitStream, Job } from '@gravito/stream'\n\nclass EmailJob extends Job {\n  async handle() {\n    await sendEmail(this.payload)\n  }\n}\n\n// Push to queue\nawait queue.push(new EmailJob({ to: 'user@example.com' }))</code></pre><h2>OpenAPI / Swagger</h2><p>For API documentation, we recommend using <strong>@asteasolutions/zod-to-openapi</strong>. Since Photon uses standard Zod schemas, you can register them to generate specifications automatically.</p><pre><code>import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi'\n\nconst registry = new OpenAPIRegistry()\nregistry.registerPath({\n  method: 'get',\n  path: '/users',\n  responses: { 200: { description: 'User list' } }\n})</code></pre><h2>Monitoring (Sentry)</h2><p>You can integrate Sentry using a global middleware that wraps the execution context.</p><pre><code>import * as Sentry from '@sentry/bun'\n\napp.use(async (c, next) => {\n  try {\n    await next()\n  } catch (err) {\n    Sentry.captureException(err)\n    throw err\n  }\n})</code></pre>",
+  "meta": {
+    "lastUpdated": "2026-01-15",
+    "complexity": "ADVANCED",
+    "category": "ECOSYSTEM"
+  }
+}

@@ -46,22 +46,29 @@ const renderInertia = async (c: any, component: string, props: any) => {
 }
 
 import aotDoc from './data/docs/aot.json'
+import authDoc from './data/docs/auth.json'
 import benchmarksDoc from './data/docs/benchmarks.json'
 import contextDoc from './data/docs/context.json'
 import errorsDoc from './data/docs/errors.json'
+import fileUploadDoc from './data/docs/ex-file-upload.json'
+import integrationsDoc from './data/docs/integrations.json'
 // Technical Content Dictionary
 // Technical Content JSON Data
 import introDoc from './data/docs/intro.json'
 import middlewareDoc from './data/docs/middleware.json'
 import poolingDoc from './data/docs/pooling.json'
 import quickstartDoc from './data/docs/quickstart.json'
+import realtimeDoc from './data/docs/realtime.json'
 import routingDoc from './data/docs/routing.json'
+import validationDoc from './data/docs/validation.json'
+import webhooksDoc from './data/docs/webhooks.json'
 import zeroCopyDoc from './data/docs/zero-copy.json'
 
 // Technical Content Dictionary
 const docsContent: Record<string, any> = {
   intro: introDoc,
   quickstart: quickstartDoc,
+  integrations: integrationsDoc,
   structure: {
     id: '03',
     title: 'Project Structure',
@@ -99,6 +106,10 @@ app.orbit(OrbitDB)</code></pre>
   ilo: aotDoc,
   'zero-copy': zeroCopyDoc,
   memory: poolingDoc,
+  realtime: realtimeDoc,
+  webhooks: webhooksDoc,
+  auth: authDoc,
+  validation: validationDoc,
   prism: {
     id: '11',
     title: 'Prism Templates',
@@ -357,6 +368,7 @@ app.get('/projects', async (c) => {
     `,
     meta: { lastUpdated: '2026-01-14', complexity: 'HARD_LEVEL', category: 'LAB_EXPERIMENTS' },
   },
+  'ex-file-upload': fileUploadDoc,
 }
 
 const legalContent: Record<string, any> = {

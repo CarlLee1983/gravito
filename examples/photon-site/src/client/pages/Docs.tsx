@@ -28,14 +28,31 @@ function highlightCode(html: string) {
       .replace(/&gt;/g, '>')
       .replace(/&amp;/g, '&');
 
-    const highlighted = code
-      .replace(/("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')/g, '<span class="string">$1</span>')
-      .replace(/(\/\/.*)/g, '<span class="comment">$1</span>')
-      .replace(/\b(const|let|var|if|else|return|async|await|export|import|from|class|extends|new|try|catch|finally|throw|as|type|interface|enum|public|private|protected|static|readonly|case|switch|break|continue|default)\b/g, '<span class="keyword">$1</span>')
-      .replace(/\b(\d+)\b/g, '<span class="number">$1</span>')
-      .replace(/\b(true|false|null|undefined)\b/g, '<span class="boolean">$1</span>')
-      .replace(/\b([a-zA-Z_$][a-zA-Z0-9_$]*)(?=\s*\()/g, '<span class="function">$1</span>')
-      .replace(/\b([a-z_$][a-zA-Z0-9_$]*)(?=\s*:)/g, '<span class="property">$1</span>');
+    // Single-pass highlighting to prevent tag injection/overlap
+    const tokens = [
+      { name: 'string', regex: /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')/ },
+      { name: 'comment', regex: /(\/\/.*)/ },
+      { name: 'keyword', regex: /\b(const|let|var|if|else|return|async|await|export|import|from|class|extends|new|try|catch|finally|throw|as|type|interface|enum|public|private|protected|static|readonly|case|switch|break|continue|default)\b/ },
+      { name: 'number', regex: /\b(\d+)\b/ },
+      { name: 'boolean', regex: /\b(true|false|null|undefined)\b/ },
+      { name: 'function', regex: /\b([a-zA-Z_$][a-zA-Z0-9_$]*)(?=\s*\()/ },
+      { name: 'property', regex: /\b([a-z_$][a-zA-Z0-9_$]*)(?=\s*:)/ }
+    ];
+
+    const combinedRegex = new RegExp(
+      tokens.map(t => `(${t.regex.source})`).join('|'),
+      'g'
+    );
+
+    const highlighted = code.replace(combinedRegex, (...args: any[]) => {
+      // Find which group matched (args[1] to args[tokens.length])
+      for (let i = 0; i < tokens.length; i++) {
+        if (args[i + 1] !== undefined) {
+          return `<span class="${tokens[i].name}">${args[i + 1]}</span>`;
+        }
+      }
+      return args[0];
+    });
 
     return `
       <div class="terminal-window">

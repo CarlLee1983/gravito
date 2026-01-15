@@ -1,0 +1,10 @@
+{
+  "id": "18",
+  "title": "Webhook Echo",
+  "content": "<p>Handling webhooks securely is complex. You need to verify signatures, handle retries, and parse payloads. <strong>Echo</strong> solves this by providing a standardized receiver for providers like Stripe, GitHub, and custom HMAC sources.</p><h2>Installation</h2><pre><code>bun add @gravito/echo</code></pre><h2>Stripe Example</h2><p>Echo provides a pre-built driver for Stripe that handles signature verification automatically.</p><pre><code>import { Echo, StripeDriver } from '@gravito/echo'\n\nconst echo = new Echo({\n  drivers: {\n    stripe: new StripeDriver(process.env.STRIPE_WEBHOOK_SECRET)\n  }\n})\n\napp.post('/webhooks/stripe', async (c) => {\n  // Verify and parse in one step\n  const event = await echo.driver('stripe').verify(c.req)\n  \n  if (event.type === 'payment_intent.succeeded') {\n    // Handle payment\n  }\n  \n  return c.json({ received: true })\n})</code></pre>",
+  "meta": {
+    "lastUpdated": "2026-01-15",
+    "complexity": "MID_LEVEL",
+    "category": "ECOSYSTEM"
+  }
+}
