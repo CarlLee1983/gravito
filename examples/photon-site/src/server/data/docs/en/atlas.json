@@ -1,0 +1,6 @@
+{
+    "id": "13",
+    "title": "Atlas ORM",
+    "content": "<p>Atlas is a powerful, type-safe Data Mapper ORM built specifically for the Photon ecosystem. It supports PostgreSQL, MySQL, and SQLite with a unified, decorator-based syntax.</p><h3>Entity Definition</h3><pre><code>import { Model, column, hasMany } from '@gravito/atlas'\n\n@Table('users')\nexport class User extends Model {\n  @Column({ primary: true }) id: number\n  @Column() email: string\n  @Column({ type: 'json' }) metadata: any\n}</code></pre><h3>Fluent Query Builder</h3><p>Atlas provides a highly optimized query builder that produces clean, high-performance SQL under the hood.</p><pre><code>const activeUsers = await User.query()\n  .where('status', 'active')\n  .orderBy('created_at', 'desc')\n  .limit(10)\n  .execute()</code></pre><h3>Optional Drivers</h3><p>To keep the application footprint small, Atlas utilizes dynamic imports for database drivers. You only install and load the drivers required for your specific environment (e.g., <code>pg</code> or <code>mysql2</code>).</p>",
+    "meta": { "lastUpdated": "2026-01-14", "complexity": "MID_LEVEL", "category": "FULLSTACK_SUITE" }
+}

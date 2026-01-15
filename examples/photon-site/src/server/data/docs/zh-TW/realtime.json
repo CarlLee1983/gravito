@@ -1,0 +1,10 @@
+{
+  "id": "17",
+  "title": "即時 Ripple",
+  "content": "<p>Gravito provides first-class support for WebSockets via the <strong>Ripple</strong> orbit. Unlike standard WebSocket implementations, Ripple offers a channel-based broadcasting system out of the box.</p><h2>Installation</h2><pre><code>bun add @gravito/ripple</code></pre><h2>Usage</h2><p>Ripple attaches to your Photon server and handles connection upgrades automatically.</p><pre><code>import { RippleServer } from '@gravito/ripple'\n\n// Initialize Ripple\nconst ripple = new RippleServer({\n  pingInterval: 30000\n})\n\n// Broadcast to a channel\napp.post('/api/chat/send', async (c) => {\n  const body = await c.req.json()\n  ripple.to('chat-room-1').emit('message', body)\n  return c.json({ sent: true })\n})\n\n// Handle upgrades\nexport default {\n  fetch: app.fetch,\n  websocket: ripple.getHandler()\n}</code></pre><h3>Client-Side</h3><p>Use the lightweight <code>@gravito/ripple-client</code> to connect.</p><pre><code>import { useChannel } from '@gravito/ripple-client/react'\n\nuseChannel('chat-room-1', (event, data) => {\n  console.log('New message:', data)\n})</code></pre>",
+  "meta": {
+    "lastUpdated": "2026-01-15",
+    "complexity": "ADVANCED",
+    "category": "ECOSYSTEM"
+  }
+}

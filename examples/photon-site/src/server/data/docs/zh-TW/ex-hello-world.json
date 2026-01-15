@@ -1,0 +1,10 @@
+{
+  "id": "E01",
+  "title": "極速靜態路由",
+  "content": "<p>This example demonstrates the absolute minimal footprint of Photon. By defining a route without middleware or dynamic parameters, Photon engages its <strong>MinimalContext</strong> optimization automatically.</p><h2>Optimal Implementation</h2><pre><code>import { Gravito } from '@gravito/core/engine'\n\nconst app = new Gravito()\n\n// Pure static route uses MinimalContext for O(1) dispatch\napp.get('/ping', (c) => {\n  return c.text('pong')\n})\n\nexport default {\n  fetch: app.fetch.bind(app)\n}</code></pre><div class=\"callout-tip\"><p>Lab Note: The engine's Static Analyzer detects that this handler only uses <code>c.text()</code> and bypasses the expensive context pooling logic entirely.</p></div>",
+  "meta": {
+    "lastUpdated": "2026-01-15",
+    "complexity": "BASE_LEVEL",
+    "category": "LAB_EXPERIMENTS"
+  }
+}

@@ -1,0 +1,6 @@
+{
+    "id": "E02",
+    "title": "零複製串流",
+    "content": "<p>Leverage Bun's native <code>file()</code> descriptors within Photon to serve binary data without intermediate buffering in the JavaScript heap.</p><h3>Implementation Strategy</h3><pre><code>app.get('/video/:id', async (c) => {\n  const id = c.req.param('id')\n  const file = Bun.file(\`./assets/\\${id}.mp4\`)\n  \n  // Photon handles the transition from Bun.file to native Response\n  return c.res(file, 200, {\n    'Content-Type': 'video/mp4'\n  })\n})</code></pre><h3>Why it matters</h3><p>Standard Node.js approaches often \"chunk\" the data through streams, causing multiple context switches. Photon passes the file descriptor directly to Bun's underlying optimized C++ server, resulting in 0MB heap pressure regardless of file size.</p>",
+    "meta": { "lastUpdated": "2026-01-14", "complexity": "MID_LEVEL", "category": "LAB_EXPERIMENTS" }
+}

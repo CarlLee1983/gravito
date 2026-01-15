@@ -1,0 +1,10 @@
+{
+    "id": "ssg",
+    "title": "靜態網站生成 (SSG)",
+    "content": "<p>Prism provides a built-in <strong>Static Site Generator (SSG)</strong> that allows you to pre-render your Gravito application into static HTML files. This is ideal for blogs, documentation, and performance-critical landing pages.</p><h3>Why use SSG?</h3><ul><li><strong>🚀 Lightning Speed</strong>: Serve static files directly from a CDN or Nginx without any runtime overhead.</li><li><strong>🔍 Perfect SEO</strong>: Search engines receive fully rendered HTML instantly.</li><li><strong>💰 Cost Effective</strong>: Static hosting (GitHub Pages, Vercel, Cloudflare Pages) is often free or very cheap.</li></ul><h3>Basic Usage</h3><p>To export your site, you can create a simple script using the <code>StaticSiteGenerator</code> class:</p><pre><code>import { PlanetCore } from '@gravito/core'\nimport { OrbitPrism, StaticSiteGenerator } from '@gravito/prism'\n\n// 1. Boot the core\nconst core = await PlanetCore.boot(config)\n\n// 2. Initialize SSG\nconst ssg = new StaticSiteGenerator(core)\n\n// 3. Export to 'dist/static'\nawait ssg.export('./dist/static')</code></pre><h3>How it Works</h3><ol><li><strong>Route Crawling</strong>: The SSG crawls all registered <code>GET</code> routes in your application.</li><li><strong>In-Memory Rendering</strong>: For each route, it simulates a request, rendering the page in memory.</li><li><strong>File System Map</strong>: It maps URLs to a directory structure.</li></ol>",
+    "meta": {
+        "lastUpdated": "2026-01-15",
+        "complexity": "ADVANCED",
+        "category": "FULLSTACK_SUITE"
+    }
+}

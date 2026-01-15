@@ -1,0 +1,28 @@
+{
+    "id": "11",
+    "title": "Prism 模板",
+    "content": "<p>Prism is Photon's native view engine. Inspired by Laravel's Blade, it provides a high-performance, logic-driven approach to server-side HTML rendering.</p><h3>Template Compilation</h3><p>Prism templates are not interpreted at runtime. During the build phase (or first access in dev), they are compiled into <strong>Pure JavaScript Functions</strong>. This makes them significantly faster than string-replacement engines.</p><h3>Syntax Guide</h3><p>Prism uses a deterministic parser that generates high-speed JS functions from your template files.</p><pre><code>&lt;!-- Syntax Overview --&gt;
+&lt;div&gt;
+  @if(user.isAdmin)
+    &lt;h1&gt;Core Admin: {{ user.name }}&lt;/h1&gt;
+  @else
+    &lt;h1&gt;Guest Node: {{{ user.raw_html_label }}}&lt;/h1&gt;
+  @endif
+
+  &lt;ul&gt;
+    #each items as item
+      &lt;li&gt;System_Object: {{ item.id }}&lt;/li&gt;
+    @each
+  &lt;/ul&gt;
+&lt;/div&gt;</code></pre><h3>Layouts and Components</h3><pre><code>&lt;!-- layouts/app.prism --&gt;
+&lt;html&gt;
+  &lt;body&gt;@yield('content')&lt;/body&gt;
+&lt;/html&gt;
+
+&lt;!-- home.prism --&gt;
+@extends('layouts.app')
+@section('content')
+  &lt;h1&gt;Main Feed&lt;/h1&gt;
+@endsection</code></pre><div class="callout-tip"><p>Image Optimization: Prism includes a built-in <code>&lt;x-image /&gt;</code> component that automatically handles WebP conversion and Core Web Vitals optimizations.</p></div>",
+    "meta": { "lastUpdated": "2026-01-14", "complexity": "MID_LEVEL", "category": "FULLSTACK_SUITE" }
+}

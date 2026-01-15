@@ -1,0 +1,10 @@
+{
+    "id": "25",
+    "title": "Beam RPC",
+    "content": "<p>Gravito Beam is a lightweight, type-safe RPC client that enables seamless communication between your server and frontend with zero runtime overhead. It leverages Photon's internal routing types to provide full IntelliSense.</p><h2>Defining the API Type</h2><p>In your server-side entry point, export the type of your routes:</p><pre><code>const routes = app\n  .get('/api/users', (c) => c.json({ name: 'Gravito' }))\n  .post('/api/posts', async (c) => c.json({ ok: true }))\n\nexport type AppType = typeof routes</code></pre><h2>Grouping Routes for RPC</h2><p>For complex applications, use <code>app.route()</code> to group logic while maintaining type safety:</p><pre><code>// auth.ts\nconst auth = new Photon().post('/login', ...) \n\n// main.ts\nconst app = new Photon()\n  .route('/auth', auth)\n  .route('/api', api)</code></pre><h2>Using Beam Client</h2><pre><code>import { createBeam } from '@gravito/beam'\nimport type { AppType } from '../server'\n\nconst client = createBeam&lt;AppType&gt;('http://localhost:3000')\n\n// Fully typed! \nconst res = await client.api.users.$get()</code></pre><div class=\"callout-tip\"><p>Beam uses standard <code>fetch</code> under the hood, making it compatible with all modern environments while being 10x smaller than tRPC.</p></div>",
+    "meta": {
+        "lastUpdated": "2026-01-15",
+        "complexity": "ADVANCED",
+        "category": "EXTENSIONS_ECO"
+    }
+}
