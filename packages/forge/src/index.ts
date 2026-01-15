@@ -2,7 +2,7 @@
  * @fileoverview @gravito/forge - File Processing Orbit
  */
 
-import type { GravitoOrbit, PlanetCore } from '@gravito/core'
+import type { GravitoContext, GravitoNext, GravitoOrbit, PlanetCore } from '@gravito/core'
 import type { StorageProvider } from '@gravito/nebula'
 import type { ForgeServiceConfig } from './ForgeService'
 import { ForgeService } from './ForgeService'
@@ -55,46 +55,35 @@ export class OrbitForge implements GravitoOrbit {
     // Create status store
     const statusStore = config?.statusStore || new MemoryStatusStore()
 
-    // Get storage provider from context (Nebula)
-    let storage: StorageProvider | undefined
-    try {
-      // Try to get storage from context (will be available if Nebula is installed)
-      // We'll inject it dynamically in middleware
-    } catch {
-      // Storage not available, will be optional
-    }
-
     // Create forge service
     const forgeService = new ForgeService({
-      storage,
       statusStore,
       video: config?.video,
       image: config?.image,
     })
 
-    // Inject forge service into context
-    core.adapter.use('*', async (c, next) => {
+    // Inject forge service into context via middleware
+    core.adapter.use('*', async (c: GravitoContext, next: GravitoNext) => {
       // Try to get storage from context (Nebula)
-      try {
-        const storageProvider = c.get('storage') as StorageProvider | undefined
-        if (storageProvider) {
-          // Update forge service with storage
-          forgeService.setStorage(storageProvider)
-        }
-      } catch {
-        // Storage not available, continue without it
+      const storageProvider = c.get('storage') as StorageProvider | undefined
+      if (storageProvider) {
+        // Update forge service with storage
+        forgeService.setStorage(storageProvider)
       }
 
       c.set(exposeAs, forgeService)
       return await next()
     })
 
+    // Register in core container for global access (CLI, Jobs)
+    core.container.instance(exposeAs, forgeService)
+
     // Register SSE endpoint if enabled
     if (config?.sse?.enabled !== false) {
       const ssePath = config?.sse?.path || '/forge/status/:jobId/stream'
       const sseHandler = new SSEHandler(statusStore)
 
-      core.router.get(ssePath, async (c) => {
+      core.router.get(ssePath, async (c: GravitoContext) => {
         const jobId = c.req.param('jobId')
         if (!jobId) {
           return c.json({ error: 'Job ID is required' }, 400)

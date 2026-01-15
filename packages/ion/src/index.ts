@@ -8,7 +8,13 @@
  * @since 1.0.0
  */
 
-import type { GravitoContext, GravitoOrbit, GravitoVariables, PlanetCore } from '@gravito/core'
+import type {
+  GravitoContext,
+  GravitoNext,
+  GravitoOrbit,
+  GravitoVariables,
+  PlanetCore,
+} from '@gravito/core'
 import { InertiaService } from './InertiaService'
 
 export * from './InertiaService'
@@ -72,10 +78,8 @@ export class OrbitIon implements GravitoOrbit {
     const rootView = this.options.rootView ?? 'app'
 
     // Register middleware to inject Inertia helper
-    core.adapter.use('*', async (c: GravitoContext, next) => {
-      const gravitoCtx = c as GravitoContext<GravitoVariables>
-
-      const service = new InertiaService(gravitoCtx, {
+    core.adapter.use('*', async (c: GravitoContext, next: GravitoNext) => {
+      const service = new InertiaService(c, {
         version: String(appVersion),
         rootView,
       })
