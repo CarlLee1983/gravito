@@ -8,7 +8,7 @@
  * @since 1.0.0
  */
 
-import type { GravitoOrbit, PlanetCore } from '@gravito/core'
+import type { GravitoContext, GravitoNext, GravitoOrbit, PlanetCore } from '@gravito/core'
 import { type AuthConfig, AuthManager, type UserProviderResolver } from './AuthManager'
 import { type EmailVerificationOptions, EmailVerificationService } from './EmailVerification'
 import { Gate } from './Gate'
@@ -77,7 +77,6 @@ export class OrbitSentinel implements GravitoOrbit {
 
     const hash = new HashManager(this.options.hash)
     core.container.instance(exposeHashAs, hash)
-    core.services.set(exposeHashAs, hash)
 
     const passwordResetEnabled = this.options.passwordReset?.enabled ?? false
     const passwordBroker = passwordResetEnabled
@@ -90,7 +89,6 @@ export class OrbitSentinel implements GravitoOrbit {
 
     if (passwordBroker) {
       core.container.instance(exposePasswordBrokerAs, passwordBroker)
-      core.services.set(exposePasswordBrokerAs, passwordBroker)
     }
 
     const emailVerificationEnabled = this.options.emailVerification?.enabled ?? false
@@ -105,10 +103,9 @@ export class OrbitSentinel implements GravitoOrbit {
 
     if (emailVerification) {
       core.container.instance(exposeEmailVerificationAs, emailVerification)
-      core.services.set(exposeEmailVerificationAs, emailVerification)
     }
 
-    core.adapter.use('*', async (c: any, next: any) => {
+    core.adapter.use('*', async (c: GravitoContext, next: GravitoNext) => {
       // Create a map of resolvers from bindings
       const resolvers = new Map<string, UserProviderResolver>()
       if (bindings?.providers) {
