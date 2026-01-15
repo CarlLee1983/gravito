@@ -1,4 +1,5 @@
 import { DB } from '@gravito/atlas'
+import type { GravitoContext } from '@gravito/core'
 import { type Event, EventStatus } from '../../Models/Event'
 import { Controller } from './Controller'
 
@@ -21,7 +22,7 @@ export class EventController extends Controller {
    * Display event details with sessions
    */
   async show(ctx: any) {
-    const eventId = parseInt(ctx.params.id, 10)
+    const eventId = parseInt(ctx.params.id)
 
     const event = await DB.table<Event>('events')
       .where('id', eventId)

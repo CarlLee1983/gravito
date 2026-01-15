@@ -1,10 +1,11 @@
 import { DB } from '@gravito/atlas'
+import type { GravitoContext } from '@gravito/core'
 import type { RegistrationField } from '../../../Models/RegistrationField'
 import { Controller } from '../Controller'
 
 export class FieldController extends Controller {
   async index(ctx: any) {
-    const eventId = parseInt(ctx.params.eventId, 10)
+    const eventId = parseInt(ctx.params.eventId)
     const event = await DB.table<any>('events').where('id', eventId).first()
 
     const fields = await DB.table<RegistrationField>('registration_fields')
@@ -16,7 +17,7 @@ export class FieldController extends Controller {
   }
 
   async store(ctx: any) {
-    const eventId = parseInt(ctx.params.eventId, 10)
+    const eventId = parseInt(ctx.params.eventId)
     const data = ctx.get('data') as any
 
     // Get max sort order
@@ -40,15 +41,13 @@ export class FieldController extends Controller {
   }
 
   async update(ctx: any) {
-    const fieldId = parseInt(ctx.params.id, 10)
+    const fieldId = parseInt(ctx.params.id)
     const data = ctx.get('data') as any
 
     const field = await DB.table<RegistrationField>('registration_fields')
       .where('id', fieldId)
       .first()
-    if (!field) {
-      return ctx.redirect('/admin').with('error', 'Field not found')
-    }
+    if (!field) return ctx.redirect('/admin').with('error', 'Field not found')
 
     await DB.table<RegistrationField>('registration_fields')
       .where('id', fieldId)
@@ -66,7 +65,7 @@ export class FieldController extends Controller {
   }
 
   async destroy(ctx: any) {
-    const fieldId = parseInt(ctx.params.id, 10)
+    const fieldId = parseInt(ctx.params.id)
     const field = await DB.table<RegistrationField>('registration_fields')
       .where('id', fieldId)
       .first()
