@@ -3,6 +3,7 @@
  * @description Represents a database connection
  */
 
+import { BunSQLDriver } from '../drivers/BunSQLDriver'
 import { MongoDBDriver } from '../drivers/MongoDBDriver'
 import { MySQLDriver } from '../drivers/MySQLDriver'
 import { PostgresDriver } from '../drivers/PostgresDriver'
@@ -24,6 +25,8 @@ import type {
   QueryBuilderContract,
   QueryResult,
 } from '../types'
+
+declare const Bun: any
 
 /**
  * Database Connection
@@ -201,6 +204,16 @@ export class Connection implements ConnectionContract {
    * Create the driver instance based on config
    */
   protected createDriver(): DriverContract {
+    // Check for Bun Native Driver override
+    if (
+      this.config.useNativeDriver === true &&
+      typeof Bun !== 'undefined' &&
+      Bun.sql &&
+      ['postgres', 'mysql', 'mariadb', 'sqlite'].includes(this.config.driver)
+    ) {
+      return new BunSQLDriver(this.config)
+    }
+
     switch (this.config.driver) {
       case 'postgres':
         return new PostgresDriver(this.config as PostgresConfig)

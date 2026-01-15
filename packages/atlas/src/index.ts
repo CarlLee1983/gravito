@@ -47,6 +47,7 @@ export { Connection } from './connection/Connection'
 export { ConnectionManager } from './connection/ConnectionManager'
 // Main DB Facade
 export { DB } from './DB'
+export { BunSQLDriver } from './drivers/BunSQLDriver'
 // Drivers
 export { PostgresDriver } from './drivers/PostgresDriver'
 export { SQLiteDriver } from './drivers/SQLiteDriver'

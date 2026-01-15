@@ -26,6 +26,7 @@ export interface BaseConnectionConfig {
   timezone?: string
   pool?: PoolConfig
   ssl?: SSLConfig | boolean
+  useNativeDriver?: boolean
 }
 
 /**
@@ -64,6 +65,7 @@ export interface SQLiteConfig {
   driver: 'sqlite'
   database: string // file path or ':memory:'
   readonly?: boolean
+  useNativeDriver?: boolean
 }
 
 /**
