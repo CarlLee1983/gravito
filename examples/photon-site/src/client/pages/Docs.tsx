@@ -146,9 +146,14 @@ export default function Docs({ title, content, id, slug, meta }: DocsProps) {
               const nextItem = navItems[currentIndex + 1]
               if (!nextItem) return null
 
+              // --- Language Persistence Logic ---
+              // Ensure we carry over the ?lang=zh-TW param if it exists.
+              const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams()
+              const currentLang = searchParams.get('lang') === 'zh-TW' ? 'zh-TW' : 'en'
+
               return (
                 <Link
-                  href={nextItem.href}
+                  href={`${nextItem.href}?lang=${currentLang}`}
                   className="group relative block border border-s-brd p-12 transition-all bg-s-bg shadow-xl"
                 >
                   <div className="absolute top-0 left-0 w-1 h-full bg-photon-gold/40 scale-y-0 group-hover:scale-y-100 transition-transform origin-top z-20" />
