@@ -22,7 +22,7 @@ interface DocsProps {
 // --- Cyber Syntax Highlighter Engine V2 (Safe DOM-less parsing) ---
 function highlightCode(html: string) {
   if (!html) return '';
-  return html.replace(/<code>([\s\S]*?)<\/code>/g, (match, rawCode) => {
+  return html.replace(/<pre><code>([\s\S]*?)<\/code><\/pre>/g, (match, rawCode) => {
     let code = rawCode
       .replace(/&lt;/g, '<')
       .replace(/&gt;/g, '>')
@@ -32,11 +32,24 @@ function highlightCode(html: string) {
       .replace(/("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')/g, '<span class="string">$1</span>')
       .replace(/(\/\/.*)/g, '<span class="comment">$1</span>')
       .replace(/\b(const|let|var|if|else|return|async|await|export|import|from|class|extends|new|try|catch|finally|throw|as|type|interface|enum|public|private|protected|static|readonly|case|switch|break|continue|default)\b/g, '<span class="keyword">$1</span>')
-      .replace(/\b(\d+|true|false|null|undefined)\b/g, '<span class="number">$1</span>')
+      .replace(/\b(\d+)\b/g, '<span class="number">$1</span>')
+      .replace(/\b(true|false|null|undefined)\b/g, '<span class="boolean">$1</span>')
       .replace(/\b([a-zA-Z_$][a-zA-Z0-9_$]*)(?=\s*\()/g, '<span class="function">$1</span>')
       .replace(/\b([a-z_$][a-zA-Z0-9_$]*)(?=\s*:)/g, '<span class="property">$1</span>');
 
-    return `<code>${highlighted}</code>`;
+    return `
+      <div class="terminal-window">
+        <div class="terminal-header">
+          <div class="terminal-dots">
+            <span class="dot-red"></span>
+            <span class="dot-amber"></span>
+            <span class="dot-green"></span>
+          </div>
+          <div class="terminal-title">PHOTON_SESSION // EXE</div>
+        </div>
+        <pre><code>${highlighted}</code></pre>
+      </div>
+    `;
   });
 }
 

@@ -16,7 +16,8 @@
   --border-subtle: rgba(255, 255, 255, 0.08);
 }
 
-.light, [data-theme='light'] {
+.light,
+[data-theme='light'] {
   --bg-primary: #F5F5F7;
   --surf-bg: #FFFFFF;
   --text-main: #2D3748;
@@ -30,17 +31,35 @@
     background-color: var(--bg-primary);
     color: var(--text-main);
     transition: background-color 0.3s ease, color 0.3s ease;
-    opacity: 1 !important; /* 確保主體透明度為 1 */
+    opacity: 1 !important;
+    /* 確保主體透明度為 1 */
   }
 }
 
 /* --- ADAPTIVE UTILITY CLASSES --- */
-.text-p-txt { color: var(--text-heading); }
-.text-s-txt { color: var(--text-main); }
-.text-m-txt { color: var(--text-muted); }
-.bg-surf-bg { background-color: var(--surf-bg); }
-.border-s-brd { border-color: var(--border-subtle); }
-.from-s-brd { --tw-gradient-from: var(--border-subtle); }
+.text-p-txt {
+  color: var(--text-heading);
+}
+
+.text-s-txt {
+  color: var(--text-main);
+}
+
+.text-m-txt {
+  color: var(--text-muted);
+}
+
+.bg-surf-bg {
+  background-color: var(--surf-bg);
+}
+
+.border-s-brd {
+  border-color: var(--border-subtle);
+}
+
+.from-s-brd {
+  --tw-gradient-from: var(--border-subtle);
+}
 
 /* --- THE PHOTON PROSE SYSTEM V11 (OPACITY FIX) --- */
 
@@ -56,7 +75,7 @@
 
 .photon-prose h2::after {
   content: '';
-  @apply w-24 h-1.5 bg-photon-gold shadow-[0_0_15px_rgba(255,184,0,0.3)];
+  @apply w-24 h-1.5 bg-photon-gold shadow-[0_0_15px_rgba(255, 184, 0, 0.3)];
 }
 
 .photon-prose h3 {
@@ -89,22 +108,87 @@
   background-color: rgba(255, 184, 0, 0.05);
 }
 
-/* Mac-style Terminal */
-.photon-prose pre {
-  @apply bg-[#0D0D0F] border border-white/10 my-24 overflow-hidden rounded-xl relative;
-  box-shadow: 0 40px 100px -20px rgba(0,0,0,0.5);
-  opacity: 1 !important;
+/* --- PREMIUM TERMINAL SYSTEM --- */
+.terminal-window {
+  @apply bg-[#0D0D0F] border border-white/10 my-24 overflow-hidden rounded-xl shadow-2xl relative transition-all duration-500;
+  box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.5), 0 18px 36px -18px rgba(0, 0, 0, 0.5);
 }
 
-.photon-prose code {
-  @apply font-mono text-[14px] md:text-[15px] leading-[1.8] p-10 block bg-[#080809]/50;
+.terminal-header {
+  @apply flex items-center justify-between px-6 py-4 bg-white/[0.03] border-b border-white/[0.05];
+}
+
+.terminal-dots {
+  @apply flex items-center gap-2;
+}
+
+.terminal-dots span {
+  @apply w-3 h-3 rounded-full;
+}
+
+.dot-red {
+  @apply bg-[#FF5F56] border border-[#E0443E]/50;
+}
+
+.dot-amber {
+  @apply bg-[#FFBD2E] border border-[#DEA123]/50;
+}
+
+.dot-green {
+  @apply bg-[#27C93F] border border-[#1AAB29]/50;
+}
+
+.terminal-title {
+  @apply text-[10px] font-black text-white/20 uppercase tracking-[0.4em] font-technical;
+}
+
+.terminal-window pre {
+  @apply bg-transparent border-none m-0 shadow-none p-0 overflow-x-auto;
+}
+
+.terminal-window code {
+  @apply font-mono text-[14px] md:text-[15px] leading-[1.8] px-8 py-10 block;
   color: #E0E0E0 !important;
+  background-color: transparent;
 }
 
-.photon-prose .keyword { color: #F97583; }
-.photon-prose .string { color: #9ECBFF; }
-.photon-prose .function { color: #B392F0; }
-.photon-prose .comment { color: #6A737D; font-style: italic; }
+/* Syntax Color Palette (IDE-Grade) */
+.photon-prose .keyword {
+  color: #C678DD;
+}
+
+/* Purple */
+.photon-prose .function {
+  color: #61AFEF;
+}
+
+/* Blue */
+.photon-prose .string {
+  color: #98C379;
+}
+
+/* Green */
+.photon-prose .number {
+  color: #D19A66;
+}
+
+/* Orange */
+.photon-prose .boolean {
+  color: #D19A66;
+}
+
+/* Orange */
+.photon-prose .comment {
+  color: #5C6370;
+  font-style: italic;
+}
+
+/* Gray */
+.photon-prose .property {
+  color: #E06C75;
+}
+
+/* Redish */
 
 /* Callout Box */
 .photon-prose .callout-tip {
@@ -128,15 +212,16 @@
   inset: 0;
   background-image: radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0);
   background-size: 40px 40px;
-  opacity: 0.03; /* 只有背景網格是透明的 */
+  opacity: 0.03;
+  /* 只有背景網格是透明的 */
   pointer-events: none;
   z-index: 0;
 }
 
 .crt-overlay {
   @apply fixed inset-0 pointer-events-none z-100;
-  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), 
-              linear-gradient(90deg, rgba(255, 0, 0, 0.01), rgba(0, 255, 0, 0.005), rgba(0, 0, 255, 0.01));
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%),
+    linear-gradient(90deg, rgba(255, 0, 0, 0.01), rgba(0, 255, 0, 0.005), rgba(0, 0, 255, 0.01));
   background-size: 100% 3px, 3px 100%;
   opacity: 0.3;
 }
