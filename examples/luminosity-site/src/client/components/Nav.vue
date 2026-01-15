@@ -99,7 +99,7 @@ const switchLang = (lang: string) => {
 
         <StaticLink 
           href="/docs/getting-started" 
-          class="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-singularity text-void text-sm font-bold rounded-xl hover:scale-105 hover:shadow-[0_0_20px_rgba(0,240,255,0.4)] transition-all"
+          class="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-accent text-white text-sm font-bold rounded-xl hover:scale-105 hover:shadow-[0_0_20px_rgba(249,115,22,0.4)] transition-all"
         >
           {{ t.nav.start }}
         </StaticLink>
@@ -152,7 +152,7 @@ const switchLang = (lang: string) => {
         
         <StaticLink 
           href="/docs/getting-started" 
-          class="w-full py-4 bg-singularity text-void font-bold rounded-2xl flex items-center justify-center gap-2"
+          class="w-full py-4 bg-accent text-white font-bold rounded-2xl flex items-center justify-center gap-2"
           @click="isMobileMenuOpen = false"
         >
           {{ t.nav.start }}

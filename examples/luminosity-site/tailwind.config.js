@@ -9,13 +9,16 @@ export default {
     theme: {
         extend: {
             colors: {
-                void: '#030303',
-                singularity: '#00F0FF',
-                event: '#7000FF',
-                panel: '#1A1A1A',
+                void: '#020617',
+                singularity: '#38BDF8',
+                event: '#8B5CF6',
+                accent: '#F97316',
+                panel: '#0F172A',
             },
             fontFamily: {
-                sans: ['Inter', 'system-ui', 'sans-serif'],
+                heading: ['Poppins', 'system-ui', 'sans-serif'],
+                body: ['Open Sans', 'system-ui', 'sans-serif'],
+                mono: ['JetBrains Mono', 'monospace'],
             },
         },
     },
