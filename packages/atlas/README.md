@@ -110,6 +110,22 @@ await user.forceDelete() // hard delete
 
 ## ✨ Core Features
 
+### 🚀 Native Bun.sql Support (New!)
+Atlas now natively supports Bun 1.3's `Bun.sql` unified API. By leveraging the native driver, you can achieve even higher throughput and lower latency.
+
+Simply enable `useNativeDriver` in your configuration:
+```typescript
+DB.configure({
+  connections: {
+    postgres: {
+      driver: 'postgres',
+      useNativeDriver: true, // Enable native Bun.sql driver
+      // ...other config
+    }
+  }
+})
+```
+
 ### 🛡️ Secure by Default
 Built-in protection against SQL injection via **Auto-Parameterization**. All user inputs are treated as bindings, never interpolated.
 
@@ -176,10 +192,10 @@ bun orbit migrate
 
 | Database | Status | Driver |
 |----------|--------|--------|
-| **PostgreSQL** | ✅ Supported | `pg` |
-| **MySQL** | ✅ Supported | `mysql2` |
-| **MariaDB** | ✅ Supported | `mysql2` |
-| **SQLite** | ✅ Supported | `bun:sqlite` / `better-sqlite3` |
+| **PostgreSQL** | ✅ Supported | `pg` / `Bun.sql` (Native) |
+| **MySQL** | ✅ Supported | `mysql2` / `Bun.sql` (Native) |
+| **MariaDB** | ✅ Supported | `mysql2` / `Bun.sql` (Native) |
+| **SQLite** | ✅ Supported | `bun:sqlite` / `Bun.sql` |
 
 ## 📊 Performance
 

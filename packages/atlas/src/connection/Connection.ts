@@ -3,6 +3,7 @@
  * @description Represents a database connection
  */
 
+import { BunSQLDriver } from '../drivers/BunSQLDriver'
 import { MongoDBDriver } from '../drivers/MongoDBDriver'
 import { MySQLDriver } from '../drivers/MySQLDriver'
 import { PostgresDriver } from '../drivers/PostgresDriver'
@@ -201,6 +202,19 @@ export class Connection implements ConnectionContract {
    * Create the driver instance based on config
    */
   protected createDriver(): DriverContract {
+    // Check for Bun Native Driver override
+    const g = globalThis as any
+    // biome-ignore lint/complexity/useLiteralKeys: Intentionally using bracket notation to hide 'Bun' symbol from tsc
+    const bunSql = g['Bun']?.sql
+
+    if (
+      this.config.useNativeDriver === true &&
+      bunSql &&
+      ['postgres', 'mysql', 'mariadb', 'sqlite'].includes(this.config.driver)
+    ) {
+      return new BunSQLDriver(this.config)
+    }
+
     switch (this.config.driver) {
       case 'postgres':
         return new PostgresDriver(this.config as PostgresConfig)
