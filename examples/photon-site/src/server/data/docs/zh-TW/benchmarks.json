@@ -1,7 +1,7 @@
 {
   "id": "16",
   "title": "效能調優",
-  "content": "<p>For mission-critical applications where every microsecond counts, Photon provides deep-level performance tuning knobs.</p><h3>Pure Static Mode</h3><p>Photon automatically optimizes routes that do not use middleware or complex path parameters. These routes are compiled into an O(1) hash map lookup, bypassing the entire routing tree and context allocation logic.</p><pre><code>// Pure Static Route (No Context Allocation)\napp.get('/ping', (c) => {\n  return c.text('pong')\n})</code></pre><h3>Radix Cache Policies</h3><p>You can tune how the router caches dynamic segments. For routes with high-cardinality parameters (e.g., UUIDs), you can disable prefix-caching to preserve memory.</p><h3>Garbage Collection Management</h3><p>In high-load scenarios, you can use <code>Bun.gc(true)</code> in a Photon middleware to manually trigger memory cleanup during \"Silence periods\" detected by the engine's telemetry.</p>",
+  "content": "<p>對於每一微秒都至關重要的關鍵任務應用程式，Photon 提供了深層次的效能調優選項。</p><h3>純靜態模式 (Pure Static Mode)</h3><p>Photon 會自動優化不使用中介軟體或複雜路徑參數的路由。這些路由會被編譯成 O(1) 的 Hash Map 查找，繞過整個路由樹和 Context 分配邏輯。</p><pre><code>// 純靜態路由 (無 Context 分配)\napp.get('/ping', (c) => {\n  return c.text('pong')\n})</code></pre><h3>Radix 快取策略</h3><p>您可以調整路由器如何快取動態片段。對於具有高基數參數 (例如 UUID) 的路由，您可以禁用前綴快取以節省記憶體。</p><h3>垃圾回收 (GC) 管理</h3><p>在高負載場景下，您可以在 Photon 中介軟體中使用 <code>Bun.gc(true)</code>，在引擎遙測偵測到的「靜默期」期間手動觸發記憶體清理。</p>",
   "meta": {
     "lastUpdated": "2026-01-15",
     "complexity": "HARD_LEVEL",

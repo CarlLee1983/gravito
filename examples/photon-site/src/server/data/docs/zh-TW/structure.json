@@ -1,20 +1,6 @@
 {
   "id": "03",
   "title": "專案結構",
-  "content": "<p>Photon scales from simple microservices to complex enterprise clusters. While we don't enforce a strict folder layout, we recommend a structure that separates logic from infrastructure.</p><h3>Recommended Layout</h3><pre><code>├── src/
-│   ├── server/       # Engine entry & route definitions
-│   │   └── index.ts
-│   ├── controllers/  # Business logic isolated from the engine
-│   ├── middleware/   # Custom security & logging layers
-│   ├── views/        # Prism root templates
-│   └── client/       # React/Vue SPA components (Ion)
-├── config/           # Application configuration
-├── tests/            # Performance & Integration tests
-└── package.json</code></pre><h3>The Orbits System</h3><p>Photon is \"Modular by Default\". While the full <strong>PlanetCore</strong> framework uses an <code>orbit()</code> system for automation, the standalone engine allows you to achieve the same result by registering middleware and services directly.</p><pre><code>// Example Standalone Integration
-import { auth } from '@gravito/sentinel'
-import { DB } from '@gravito/atlas'
-
-// Register features as standard middleware
-app.use('/api/*', auth())</code></pre>",
-  "meta": { "lastUpdated": "2026-01-14", "complexity": "BASE_LEVEL", "category": "GETTING_STARTED" }
+  "content": "<p>Photon 可從簡單的微服務擴展到複雜的企業集群。雖然我們不強制執行嚴格的文件夾佈局，但我們建議採用將邏輯與基礎設施分離的結構。</p><h3>建議佈局</h3><pre><code>├── src/\n│   ├── server/       # 引擎入口與路由定義\n│   │   └── index.ts\n│   ├── controllers/  # 與引擎隔離的業務邏輯\n│   ├── middleware/   # 自定義安全與日誌層\n│   ├── views/        # Prism 根模板\n│   └── client/       # React/Vue SPA 元件 (Ion)\n├── config/           # 應用程式配置\n├── tests/            # 效能與整合測試\n└── package.json</code></pre><h3>Orbits 系統</h3><p>Photon 是「預設模組化」的。雖然完整的 <strong>PlanetCore</strong> 框架使用 <code>orbit()</code> 系統進行自動化，但獨立引擎允許您透過直接註冊中介軟體和服務來實現相同的結果。</p><pre><code>// 範例獨立整合\nimport { auth } from '@gravito/sentinel'\nimport { DB } from '@gravito/atlas'\n\n// 將功能註冊為標準中介軟體\napp.use('/api/*', auth())</code></pre>",
+  "meta": { "lastUpdated": "2026-01-15", "complexity": "BASE_LEVEL", "category": "GETTING_STARTED" }
 }
