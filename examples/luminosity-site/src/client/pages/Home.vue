@@ -64,23 +64,23 @@ onMounted(() => {
     <section class="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
       <!-- Background Effects -->
       <div class="absolute inset-0 z-0">
-        <!-- Main Hero Graphic (RESTORED) -->
-        <div class="absolute inset-0 opacity-30 pointer-events-none select-none mix-blend-screen">
+        <!-- Main Hero Graphic (RESTORED & ENHANCED) -->
+        <div class="absolute inset-0 opacity-60 pointer-events-none select-none mix-blend-screen overflow-hidden">
           <Image 
             :src="heroGraphic" 
             alt="Luminosity Core" 
-            class="w-full h-full object-cover animate-pulse-slow scale-110"
+            class="w-full h-full object-cover animate-pulse-slow scale-110 blur-[2px] sm:blur-none"
             loading="eager"
             fetchpriority="high"
+            style="mask-image: radial-gradient(circle at center, black 30%, transparent 80%);"
           />
         </div>
         
-        <!-- Premium Overlays -->
-        <div class="absolute inset-0 bg-void/60 mix-blend-multiply"></div>
-        <div class="absolute inset-0 bg-gradient-to-b from-void/90 via-transparent to-void"></div>
+        <!-- Subtle Gradient for text readability -->
+        <div class="absolute inset-0 bg-gradient-to-b from-void/40 via-transparent to-void"></div>
         
         <!-- Hex Grid Background -->
-        <div class="absolute inset-0 opacity-10 mix-blend-overlay bg-hex-grid animate-fade-in"></div>
+        <div class="absolute inset-0 opacity-20 mix-blend-overlay bg-hex-grid animate-fade-in"></div>
       </div>
       
       <!-- Content -->
