@@ -111,8 +111,8 @@
 
 /* --- PREMIUM TERMINAL SYSTEM --- */
 .terminal-window {
-  @apply bg-[#0D0D0F] border border-white/10 my-24 overflow-hidden rounded-xl shadow-2xl relative transition-all duration-500;
-  box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.5), 0 18px 36px -18px rgba(0, 0, 0, 0.5);
+  @apply bg-[#16161A] border border-white/10 my-24 overflow-hidden rounded-xl shadow-2xl relative transition-all duration-500;
+  box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.6), 0 18px 36px -18px rgba(0, 0, 0, 0.5);
 }
 
 .terminal-header {
