@@ -1,5 +1,3 @@
-import type { ScaffoldOptions } from './types'
-
 export type ProfileType = 'core' | 'scale' | 'enterprise'
 
 export interface ProfileConfig {

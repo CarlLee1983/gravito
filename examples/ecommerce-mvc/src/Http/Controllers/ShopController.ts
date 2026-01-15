@@ -8,7 +8,7 @@ import { DB } from '@gravito/atlas'
 import type { GravitoContext } from '@gravito/core'
 import type { InertiaService } from '@gravito/ion'
 import { SeoMetadata } from '@gravito/luminosity'
-import { FALSE, sql, TRUE } from '../../utils/db'
+import { sql, TRUE } from '../../utils/db'
 
 export class ShopController {
   /**
@@ -142,9 +142,13 @@ export class ShopController {
     }
 
     let orderClause = 'ORDER BY p.created_at DESC'
-    if (sort === 'price_asc') orderClause = 'ORDER BY p.price ASC'
-    else if (sort === 'price_desc') orderClause = 'ORDER BY p.price DESC'
-    else if (sort === 'name') orderClause = 'ORDER BY p.name ASC'
+    if (sort === 'price_asc') {
+      orderClause = 'ORDER BY p.price ASC'
+    } else if (sort === 'price_desc') {
+      orderClause = 'ORDER BY p.price DESC'
+    } else if (sort === 'name') {
+      orderClause = 'ORDER BY p.name ASC'
+    }
 
     const offset = (page - 1) * perPage
 
@@ -308,9 +312,13 @@ export class ShopController {
     }
 
     let orderClause = 'ORDER BY p.created_at DESC'
-    if (sort === 'price_asc') orderClause = 'ORDER BY p.price ASC'
-    else if (sort === 'price_desc') orderClause = 'ORDER BY p.price DESC'
-    else if (sort === 'name') orderClause = 'ORDER BY p.name ASC'
+    if (sort === 'price_asc') {
+      orderClause = 'ORDER BY p.price ASC'
+    } else if (sort === 'price_desc') {
+      orderClause = 'ORDER BY p.price DESC'
+    } else if (sort === 'name') {
+      orderClause = 'ORDER BY p.name ASC'
+    }
 
     const offset = (page - 1) * perPage
 

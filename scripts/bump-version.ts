@@ -66,20 +66,22 @@ function calculateNewVersion(currentVersion: string, type: string): string | nul
   }
 
   const versionParts = currentVersion.match(/^(\d+)\.(\d+)\.(\d+)(-(.+))?$/)
-  if (!versionParts) return null
+  if (!versionParts) {
+    return null
+  }
 
   const [_, major, minor, patch, __, preRelease] = versionParts
-  const maj = parseInt(major)
-  const min = parseInt(minor)
-  const pat = parseInt(patch)
+  const maj = parseInt(major, 10)
+  const min = parseInt(minor, 10)
+  const pat = parseInt(patch, 10)
 
   if (type === 'beta' || type === 'alpha') {
     // 處理 Pre-release
     if (preRelease?.startsWith(type)) {
       // 已經是 beta.x -> beta.(x+1)
       const preParts = preRelease.split('.')
-      if (preParts.length === 2 && !isNaN(parseInt(preParts[1]))) {
-        const nextNum = parseInt(preParts[1]) + 1
+      if (preParts.length === 2 && !Number.isNaN(parseInt(preParts[1], 10))) {
+        const nextNum = parseInt(preParts[1], 10) + 1
         return `${maj}.${min}.${pat}-${type}.${nextNum}`
       }
       // 只有 beta -> beta.1
@@ -98,13 +100,25 @@ function calculateNewVersion(currentVersion: string, type: string): string | nul
     // 例如 1.0.0-beta.1 + patch -> 1.0.0 (通常 pre-release 要轉正，直接升級到當前主版號)
     // 這裡採用簡單策略：去除 pre-release tag，並視 type 決定是否進位
     // 1.0.0-beta.1 -> patch -> 1.0.0
-    if (type === 'patch') return `${maj}.${min}.${pat}`
-    if (type === 'minor') return `${maj}.${min + 1}.0`
-    if (type === 'major') return `${maj + 1}.0.0`
+    if (type === 'patch') {
+      return `${maj}.${min}.${pat}`
+    }
+    if (type === 'minor') {
+      return `${maj}.${min + 1}.0`
+    }
+    if (type === 'major') {
+      return `${maj + 1}.0.0`
+    }
   } else {
-    if (type === 'patch') return `${maj}.${min}.${pat + 1}`
-    if (type === 'minor') return `${maj}.${min + 1}.0`
-    if (type === 'major') return `${maj + 1}.0.0`
+    if (type === 'patch') {
+      return `${maj}.${min}.${pat + 1}`
+    }
+    if (type === 'minor') {
+      return `${maj}.${min + 1}.0`
+    }
+    if (type === 'major') {
+      return `${maj + 1}.0.0`
+    }
   }
 
   return null
@@ -162,7 +176,7 @@ ${colors.bold}範例:${colors.reset}
   pkg.jsonContent.version = newVersion
   // 保持縮排格式 (通常是 2 或 4 空格，這裡簡單偵測或預設 2)
   // 為了安全，重新讀取原文來保留格式結尾換行比較好，但 JSON.stringify 夠用了
-  await writeFile(pkg.pkgJsonPath, JSON.stringify(pkg.jsonContent, null, 2) + '\n') // 預設使用 4 空格縮排可能比較常見，但 package.json 常見是 2
+  await writeFile(pkg.pkgJsonPath, `${JSON.stringify(pkg.jsonContent, null, 2)}\n`) // 預設使用 4 空格縮排可能比較常見，但 package.json 常見是 2
 
   console.log(`\n✅ ${pkg.name} 版本已更新！`)
   console.log(`   現在您可以執行 bun scripts/publish-all.ts 來發布了。`)

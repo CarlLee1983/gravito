@@ -1,0 +1,6 @@
+{
+    "id": "12",
+    "title": "Ion SPA Bridge",
+    "content": "<p>Ion is the definitive bridge for <strong>Inertia.js</strong>. It allows you to build modern Single Page Applications using classic server-side routing, eliminating the need for a separate API layer.</p><h3>The Monolith Developer Experience</h3><p>With Ion, you don't write <code>axios.get()</code>. You simply return a component from your controller, and Ion handles the protocol handshake to determine if it should send full HTML (initial load) or a JSON data packet (client-side navigation).</p><h3>Rendering Components</h3><pre><code>app.get('/dashboard', (c) => {\n  const stats = await db.stats.all()\n  return c.inertia('Dashboard', { \n    stats,\n    user: c.get('user')\n  })\n})</code></pre><h3>Shared State</h3><p>Ion allows you to share data globally across all components (like authenticated user, theme settings, or flash messages) via the <code>inertia.share()</code> API or dedicated middleware.</p><div class=\"callout-tip\"><p>Seamless Transitions: Because Ion utilizes the X-Inertia protocol, page transitions feel near-instant as only the data (and not the entire shell) is transmitted over the wire.</p></div>",
+    "meta": { "lastUpdated": "2026-01-14", "complexity": "MID_LEVEL", "category": "FULLSTACK_SUITE" }
+}

@@ -2,6 +2,7 @@ import type {
   ContentfulStatusCode,
   GravitoContext,
   GravitoVariables,
+  ProxyOptions,
   StatusCode,
 } from '../../http/types'
 import { BunRequest } from './BunRequest'
@@ -139,6 +140,38 @@ export class BunContext<V extends GravitoVariables = GravitoVariables>
 
   badRequest(message?: string): Response {
     return this.text(message ?? 'Bad Request', 400 as 200)
+  }
+
+  async forward(target: string, options?: ProxyOptions): Promise<Response> {
+    const url = new URL(target, this.req.url)
+    const headers = new Headers(this.req.raw.headers)
+
+    if (options?.headers) {
+      for (const [key, value] of Object.entries(options.headers)) {
+        headers.set(key, value)
+      }
+    }
+
+    if (!options?.preserveHost) {
+      headers.delete('Host')
+    }
+
+    if (options?.addForwardedHeaders !== false) {
+      const origin = new URL(this.req.url)
+      headers.append('X-Forwarded-Host', origin.host)
+      headers.append('X-Forwarded-Proto', origin.protocol.slice(0, -1))
+    }
+
+    if (options?.rewritePath) {
+      url.pathname = options.rewritePath(url.pathname)
+    }
+
+    return fetch(url, {
+      method: this.req.method,
+      headers,
+      body: this.req.raw.body,
+      redirect: 'manual',
+    })
   }
 
   // Headers

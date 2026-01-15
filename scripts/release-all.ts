@@ -3,7 +3,7 @@ import { readdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
 
-const execAsync = promisify(exec)
+const _execAsync = promisify(exec)
 
 const PACKAGES_DIR = join(process.cwd(), 'packages')
 const TARGET_VERSION = '1.0.0'
@@ -20,13 +20,17 @@ async function main() {
       const content = await readFile(pkgPath, 'utf-8')
       const json = JSON.parse(content)
 
-      if (json.private) continue
+      if (json.private) {
+        continue
+      }
 
       json.version = TARGET_VERSION
 
       // Update deps
       const processDeps = (deps: Record<string, string>) => {
-        if (!deps) return
+        if (!deps) {
+          return
+        }
         for (const key of Object.keys(deps)) {
           if (key.startsWith('@gravito/') || key === '@gravito/core') {
             deps[key] = TARGET_VERSION // Use exact version for internal deps
@@ -38,7 +42,7 @@ async function main() {
       processDeps(json.devDependencies)
       processDeps(json.peerDependencies)
 
-      await writeFile(pkgPath, JSON.stringify(json, null, 4) + '\n')
+      await writeFile(pkgPath, `${JSON.stringify(json, null, 4)}\n`)
       console.log(`  ✅ Updated ${json.name}`)
     } catch (e: any) {
       console.warn(`  ⚠️  Skipping ${pkg}:`, e.message)

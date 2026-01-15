@@ -14,7 +14,9 @@ async function fixPackageJson(pkgPath: string): Promise<boolean> {
     const content = await readFile(pkgPath, 'utf-8')
     const json = JSON.parse(content)
 
-    if (json.private) return false
+    if (json.private) {
+      return false
+    }
 
     let modified = false
 
@@ -58,7 +60,7 @@ async function fixPackageJson(pkgPath: string): Promise<boolean> {
     }
 
     if (modified) {
-      await writeFile(pkgPath, JSON.stringify(json, null, 2) + '\n')
+      await writeFile(pkgPath, `${JSON.stringify(json, null, 2)}\n`)
       return true
     }
 
@@ -83,7 +85,7 @@ async function main() {
         console.log(`  ✅ 修復 ${dir}`)
         fixedCount++
       }
-    } catch (e: any) {
+    } catch (_e: any) {
       // 忽略錯誤
     }
   }

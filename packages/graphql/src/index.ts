@@ -1,4 +1,4 @@
-import type { Container, GravitoContext, GravitoOrbit, PlanetCore } from '@gravito/core'
+import type { GravitoContext, GravitoOrbit, PlanetCore } from '@gravito/core'
 import { createSchema, createYoga, type YogaServerInstance } from 'graphql-yoga'
 
 export interface GraphQLConfig {

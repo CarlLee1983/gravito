@@ -1,5 +1,4 @@
 import { DB } from '@gravito/atlas'
-import type { GravitoContext } from '@gravito/core'
 import type { HashManager } from '@gravito/sentinel'
 import { type User, UserRole } from '../../Models/User'
 import { Controller } from './Controller'

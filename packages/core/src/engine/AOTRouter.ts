@@ -184,7 +184,9 @@ export class AOTRouter {
     if (this.pathMiddleware.size > 0) {
       for (const [pattern, mw] of this.pathMiddleware) {
         // Skip route-specific entries (they have method prefix)
-        if (pattern.includes(':')) continue
+        if (pattern.includes(':')) {
+          continue
+        }
 
         if (this.matchPattern(pattern, path)) {
           middleware.push(...mw)
@@ -219,8 +221,12 @@ export class AOTRouter {
    * @returns True if pattern matches
    */
   private matchPattern(pattern: string, path: string): boolean {
-    if (pattern === '*') return true
-    if (pattern === path) return true
+    if (pattern === '*') {
+      return true
+    }
+    if (pattern === path) {
+      return true
+    }
 
     if (pattern.endsWith('/*')) {
       const prefix = pattern.slice(0, -2)

@@ -1,0 +1,6 @@
+{
+  "id": "02",
+  "title": "初始化核心",
+  "content": "<p>啟動一個高並發節點只需不到 60 秒。Photon 的設計宗旨是精簡、強大且零配置。</p><h2>1. 編排 (Orchestration)</h2><p>透過 Bun 套件管理器安裝核心引擎：</p><pre><code>bun add @gravito/photon</code></pre><h2>2. 源碼入口</h2><p>建立一個 <code>index.ts</code> 檔案並定義您的應用邏輯：</p><pre><code>import { Gravito } from '@gravito/photon'\n\nconst app = new Gravito()'\n'\napp.get('/', (c) => {\n  return c.json({ \n    status: 'accelerating', \n    version: '1.2.0' \n  })\n})'\n'\nexport default {\n  port: 3000,\n  fetch: app.fetch.bind(app)\n}</code></pre>",
+  "meta": { "lastUpdated": "2026-01-15", "complexity": "BASE_LEVEL", "category": "DEPLOYMENT" }
+}

@@ -87,8 +87,12 @@ export async function bootstrap(options: AppConfig = {}) {
 
     if (isIcon) {
       let fileName = 'favicon.png'
-      if (c.req.path === '/favicon.ico') fileName = 'favicon.ico'
-      if (c.req.path === '/static/favicon.svg') fileName = 'favicon.svg'
+      if (c.req.path === '/favicon.ico') {
+        fileName = 'favicon.ico'
+      }
+      if (c.req.path === '/static/favicon.svg') {
+        fileName = 'favicon.svg'
+      }
 
       const filePath = new URL(`../static/${fileName}`, import.meta.url).pathname
       const contentType = fileName.endsWith('.svg')

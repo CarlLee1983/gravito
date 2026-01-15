@@ -578,34 +578,6 @@ export class AppServiceProvider extends ServiceProvider {
 `
   }
 
-  private generateRouteServiceProvider(_context: GeneratorContext): string {
-    return `/**
- * Route Service Provider
- *
- * Configures and registers application routes.
- */
-
-import { ServiceProvider, type Container, type PlanetCore } from '@gravito/core'
-import { registerRoutes } from '../routes'
-
-export class RouteServiceProvider extends ServiceProvider {
-  /**
-   * Register any application services.
-   */
-  register(_container: Container): void {
-    // Routes are registered in boot
-  }
-
-  /**
-   * Bootstrap any application services.
-   */
-  boot(core: PlanetCore): void {
-    registerRoutes(core.router)
-  }
-}
-`
-  }
-
   // ─────────────────────────────────────────────────────────────
   // Modern Provider Generators (ServiceProvider Pattern)
   // ─────────────────────────────────────────────────────────────

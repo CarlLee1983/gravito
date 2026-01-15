@@ -1,0 +1,6 @@
+{
+    "id": "12",
+    "title": "Ion SPA 橋接",
+    "content": "<p>Ion 是 <strong>Inertia.js</strong> 的權威橋樑。它允許您使用傳統的伺服器端路由來構建現代的單頁應用程式 (SPA)，從而消除了對獨立 API 層的需求。</p><h3>單體開發體驗</h3><p>使用 Ion，您不需要編寫 <code>axios.get()</code>。您只需從控制器返回一個元件，Ion 會處理協議握手，以確定它是應該發送完整的 HTML（初始加載）還是 JSON 數據包（客戶端導航）。</p><h3>渲染元件</h3><pre><code>app.get('/dashboard', (c) => {\n  const stats = await db.stats.all()\n  return c.inertia('Dashboard', {\n    stats,\n    user: c.get('user')\n  })\n})</code></pre><h3>共享狀態</h3><p>Ion 允許您透過 <code>inertia.share()</code> API 或專用中介軟體在所有元件之間全域共享數據（如經過身份驗證的用戶、主題設置或閃存消息）。</p><div class=\"callout-tip\"><p>無縫過渡：由於 Ion 利用了 X-Inertia 協議，頁面跳轉感覺幾乎是瞬間完成的，因為只有數據（而不是整個外殼）在網路上傳輸。</p></div>",
+    "meta": { "lastUpdated": "2026-01-15", "complexity": "MID_LEVEL", "category": "FULLSTACK_SUITE" }
+}

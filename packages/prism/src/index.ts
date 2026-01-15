@@ -37,3 +37,4 @@ export { TemplateEngine }
 export { Image, type ImageProps } from './components/Image'
 export { createImageHelper } from './helpers/image'
 export { type ImageOptions, ImageService } from './ImageService'
+export { StaticSiteGenerator } from './SSG'

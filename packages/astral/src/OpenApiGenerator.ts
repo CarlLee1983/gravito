@@ -40,14 +40,16 @@ export class OpenApiGenerator {
   private processResource(spec: any, resource: AstralResource, routes: AstralRoute[]) {
     // Find matching routes in the framework
     const matchingRoutes = routes.filter(
-      (r) => r.path === resource.path || r.path.startsWith(resource.path + '/')
+      (r) => r.path === resource.path || r.path.startsWith(`${resource.path}/`)
     )
 
     for (const route of matchingRoutes) {
       const path = this.normalizePath(route.path)
       const method = route.method.toLowerCase()
 
-      if (!spec.paths[path]) spec.paths[path] = {}
+      if (!spec.paths[path]) {
+        spec.paths[path] = {}
+      }
 
       // Find the operation metadata from contract
       const opKey = this.inferOperationKey(route, resource)
@@ -151,11 +153,21 @@ export class OpenApiGenerator {
     const relPath = route.path.replace(resource.path, '').replace(/^\//, '')
     const method = route.method.toLowerCase()
 
-    if (relPath === '' && method === 'get') return 'index'
-    if (relPath === '' && method === 'post') return 'store'
-    if (relPath.match(/^:[^/]+$/) && method === 'get') return 'show'
-    if (relPath.match(/^:[^/]+$/) && method === 'put') return 'update'
-    if (relPath.match(/^:[^/]+$/) && method === 'delete') return 'destroy'
+    if (relPath === '' && method === 'get') {
+      return 'index'
+    }
+    if (relPath === '' && method === 'post') {
+      return 'store'
+    }
+    if (relPath.match(/^:[^/]+$/) && method === 'get') {
+      return 'show'
+    }
+    if (relPath.match(/^:[^/]+$/) && method === 'put') {
+      return 'update'
+    }
+    if (relPath.match(/^:[^/]+$/) && method === 'delete') {
+      return 'destroy'
+    }
 
     return route.name || 'unknown'
   }

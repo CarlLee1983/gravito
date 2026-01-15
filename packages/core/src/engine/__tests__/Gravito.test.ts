@@ -69,7 +69,7 @@ describe('Gravito Engine', () => {
       const app = new Gravito()
       const calls: string[] = []
 
-      app.use(async (c, next) => {
+      app.use(async (_c, next) => {
         calls.push('middleware')
         await next()
       })
@@ -89,12 +89,12 @@ describe('Gravito Engine', () => {
       const app = new Gravito()
       const calls: number[] = []
 
-      app.use(async (c, next) => {
+      app.use(async (_c, next) => {
         calls.push(1)
         await next()
       })
 
-      app.use(async (c, next) => {
+      app.use(async (_c, next) => {
         calls.push(2)
         await next()
       })
@@ -116,7 +116,7 @@ describe('Gravito Engine', () => {
 
       app.get(
         '/protected',
-        async (c, next) => {
+        async (_c, next) => {
           calls.push('auth')
           await next()
         },

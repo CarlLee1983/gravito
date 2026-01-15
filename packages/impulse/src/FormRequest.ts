@@ -437,6 +437,103 @@ export abstract class FormRequest<T = unknown> {
 
     return { success: true, data: result.data }
   }
+
+  /**
+   * Extract validation metadata for frontend consumption (Blueprint).
+   * This allows the frontend to replicate validation logic without code duplication.
+   */
+  getBlueprint(): Record<string, any> {
+    const blueprint: Record<string, any> = {
+      source: this.source,
+      rules: {},
+    }
+
+    if (isZodSchema(this.schema)) {
+      const def = (this.schema as any)._def
+      if (def?.shape) {
+        const shape = def.shape()
+        for (const [key, field] of Object.entries(shape)) {
+          blueprint.rules[key] = this.parseZodField(field)
+        }
+      }
+    }
+
+    return blueprint
+  }
+
+  /**
+   * Lightweight Zod field parser to extract metadata for the bridge.
+   */
+  private parseZodField(field: any): any {
+    const metadata: any = { type: 'string', required: true }
+    let current = field
+
+    // Unwrap optional/nullable/default
+    while (current._def) {
+      const def = current._def
+      const typeName = def.typeName
+
+      if (typeName === 'ZodOptional') {
+        metadata.required = false
+        current = def.innerType
+      } else if (typeName === 'ZodNullable') {
+        metadata.nullable = true
+        current = def.innerType
+      } else if (typeName === 'ZodDefault') {
+        metadata.default = def.defaultValue()
+        current = def.innerType
+      } else if (typeName === 'ZodString') {
+        metadata.type = 'string'
+        def.checks?.forEach((check: any) => {
+          if (check.kind === 'min') {
+            metadata.min = check.value
+          }
+          if (check.kind === 'max') {
+            metadata.max = check.value
+          }
+          if (check.kind === 'email') {
+            metadata.format = 'email'
+          }
+          if (check.kind === 'url') {
+            metadata.format = 'url'
+          }
+          if (check.kind === 'regex') {
+            metadata.pattern = check.regex.source
+          }
+        })
+        break
+      } else if (typeName === 'ZodNumber') {
+        metadata.type = 'number'
+        def.checks?.forEach((check: any) => {
+          if (check.kind === 'min') {
+            metadata.min = check.value
+          }
+          if (check.kind === 'max') {
+            metadata.max = check.value
+          }
+          if (check.kind === 'int') {
+            metadata.integer = true
+          }
+        })
+        break
+      } else if (typeName === 'ZodBoolean') {
+        metadata.type = 'boolean'
+        break
+      } else if (typeName === 'ZodEnum') {
+        metadata.type = 'enum'
+        metadata.options = def.values
+        break
+      } else if (typeName === 'ZodArray') {
+        metadata.type = 'array'
+        metadata.items = this.parseZodField(def.type)
+        break
+      } else {
+        break
+      }
+    }
+
+    return metadata
+  }
 }
 
 /**

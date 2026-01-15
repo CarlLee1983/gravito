@@ -126,7 +126,9 @@ async function main() {
 
   // 排序：先列出有問題的 (EXISTS)，再列出正常的 (NEW)
   results.sort((a, b) => {
-    if (a.existsOnRemote === b.existsOnRemote) return a.name.localeCompare(b.name)
+    if (a.existsOnRemote === b.existsOnRemote) {
+      return a.name.localeCompare(b.name)
+    }
     return a.existsOnRemote ? -1 : 1 // Exists first
   })
 

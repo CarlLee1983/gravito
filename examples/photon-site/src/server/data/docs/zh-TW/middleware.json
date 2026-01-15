@@ -1,0 +1,6 @@
+{
+  "id": "05",
+  "title": "中介軟體矩陣",
+  "content": "<p>Photon 支援針對非同步迭代進行優化的高效能中介軟體鏈。</p><h2>全域攔截器</h2><pre><code>app.use(async (c, next) => {\n  const start = Date.now()\n  await next()\n  const ms = Date.now() - start\n  console.log('Request processed in ' + ms + 'ms')\n})</code></pre><div class=\"callout-tip\"><p>即使有複雜的嵌套中介軟體堆疊，Photon 仍能保持亞毫秒級的調度時間。</p></div>",
+  "meta": { "lastUpdated": "2026-01-15", "complexity": "MID_LEVEL", "category": "PIPELINE" }
+}

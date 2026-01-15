@@ -1,5 +1,3 @@
-import { PageProps } from '@inertiajs/core'
-
 declare module '@inertiajs/core' {
   interface PageProps {
     auth: {

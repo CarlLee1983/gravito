@@ -69,30 +69,4 @@ export class WaitlistPromoted extends Mailable {
       </html>
     `
   }
-
-  private getTextContent(): string {
-    return `
-Great News! You've Been Promoted from Waitlist!
-
-Dear ${this.registration.user?.name},
-
-A spot has opened up and your registration is now confirmed!
-
-Event: ${this.registration.session?.event?.title}
-Session: ${this.registration.session?.title}
-Date & Time: ${new Date(this.registration.session?.start_time || '').toLocaleString()}
-Location: ${this.registration.session?.event?.location}
-Registration ID: ${this.registration.id}
-
-Your QR code for check-in is now available.
-
-View your registration: ${process.env.APP_URL}/profile/registrations/${this.registration.id}
-
-We look forward to seeing you at the event!
-
----
-Event Registration System
-This is an automated email. Please do not reply.
-    `
-  }
 }

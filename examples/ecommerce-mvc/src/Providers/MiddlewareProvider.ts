@@ -22,7 +22,7 @@ export class MiddlewareProvider extends ServiceProvider {
   private registerSecurityMiddleware() {
     const { csp, hsts } = securityConfig
 
-    this.core!.adapter.use(
+    this.core?.adapter.use(
       '*',
       securityHeaders({
         contentSecurityPolicy: csp.enabled ? csp.default : false,
@@ -37,12 +37,12 @@ export class MiddlewareProvider extends ServiceProvider {
     const { maxSize, requireContentLength } = securityConfig.bodyLimit
 
     if (!Number.isNaN(maxSize) && maxSize > 0) {
-      this.core!.adapter.use('*', bodySizeLimit(maxSize, { requireContentLength }))
+      this.core?.adapter.use('*', bodySizeLimit(maxSize, { requireContentLength }))
     }
   }
 
   private registerInertiaMiddleware() {
     // Register Inertia shared data middleware
-    this.core!.adapter.use('*', HandleInertiaRequests)
+    this.core?.adapter.use('*', HandleInertiaRequests)
   }
 }

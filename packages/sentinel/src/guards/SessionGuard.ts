@@ -1,4 +1,4 @@
-import type { Context } from '@gravito/photon'
+import type { GravitoContext } from '@gravito/core'
 import type { Authenticatable } from '../contracts/Authenticatable'
 import type { StatefulGuard } from '../contracts/Guard'
 import type { UserProvider } from '../contracts/UserProvider'
@@ -12,7 +12,7 @@ export class SessionGuard<User extends Authenticatable = Authenticatable>
   constructor(
     protected name: string,
     protected provider: UserProvider<User>,
-    protected ctx: Context,
+    protected ctx: GravitoContext,
     protected sessionKey = 'auth_session'
   ) {}
 
@@ -50,7 +50,8 @@ export class SessionGuard<User extends Authenticatable = Authenticatable>
     if (this.loggedOut) {
       return null
     }
-    const id = this.ctx.get('session').get(this.getName())
+    const session = this.ctx.get('session' as any) as any
+    const id = session?.get(this.getName())
     return id ?? (this.userInstance ? this.userInstance.getAuthIdentifier() : null)
   }
 
@@ -79,7 +80,7 @@ export class SessionGuard<User extends Authenticatable = Authenticatable>
     const id =
       typeof user.getAuthIdentifier === 'function' ? user.getAuthIdentifier() : (user as any).id
 
-    this.ctx.set('auth', user)
+    this.ctx.set('auth' as any, user as any)
     this.userInstance = user
 
     const session = this.ctx.get('session' as any) as any
@@ -96,8 +97,13 @@ export class SessionGuard<User extends Authenticatable = Authenticatable>
   async logout(): Promise<void> {
     this.userInstance = null
     this.loggedOut = true
-    this.ctx.get('session').forget(this.getName())
-    this.ctx.get('session').regenerate()
+    const session = this.ctx.get('session' as any) as any
+    if (session) {
+      session.forget(this.getName())
+      if (typeof session.regenerate === 'function') {
+        await session.regenerate()
+      }
+    }
   }
 
   getProvider(): UserProvider<User> {

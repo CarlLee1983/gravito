@@ -1,0 +1,10 @@
+{
+    "id": "E03",
+    "title": "中介軟體脈搏",
+    "content": "<p>了解如何使用 Photon 的非阻塞中介軟體架構來編排複雜的請求生命週期。</p><h3>中介軟體鏈</h3><pre><code>// 1. Instrumentation Middleware\\napp.use(async (c, next) => {\\n  const start = performance.now()\\n  await next()\\n  const end = performance.now()\\n  c.header('X-Engine-Pulse', `${end - start}ms`)\\n})\\n\\n// 2. Conditional Protection\\napp.use('/admin/*', async (c, next) => {\\n  const token = c.req.header('Authorization')\\n  if (!token) return c.json({ error: 'UNAUTHORIZED' }, 401)\\n  return await next()\\n})\\n\\napp.get('/admin/stats', (c) => c.json({ status: 'ACTIVE' }))</code></pre><div class=\"callout-tip\"><p>Photon 的中介軟體系統使用 AOT 預排序。這意味著與動態執行引擎相比，即使是 20 多個中介軟體單元的複雜鏈條，其開銷也可以忽略不計。</p></div>",
+    "meta": {
+        "lastUpdated": "2026-01-14",
+        "complexity": "MID_LEVEL",
+        "category": "LAB_EXPERIMENTS"
+    }
+}

@@ -118,7 +118,7 @@ export class S3Adapter implements StorageAdapter {
     }
   }
 
-  async ensureDir(path: string): Promise<void> {
+  async ensureDir(_path: string): Promise<void> {
     // S3 is flat, no directories needed
   }
 }

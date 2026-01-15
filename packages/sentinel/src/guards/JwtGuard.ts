@@ -1,4 +1,4 @@
-import type { Context } from '@gravito/photon'
+import type { GravitoContext } from '@gravito/core'
 import { verify } from '@gravito/photon/jwt'
 import type { Authenticatable } from '../contracts/Authenticatable'
 import type { Guard } from '../contracts/Guard'
@@ -10,7 +10,7 @@ export class JwtGuard<User extends Authenticatable = Authenticatable> implements
 
   constructor(
     protected provider: UserProvider<User>,
-    protected ctx: Context,
+    protected ctx: GravitoContext,
     protected secret: string,
     protected algo = 'HS256',
     protected allowQueryToken = false,

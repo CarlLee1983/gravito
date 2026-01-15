@@ -30,7 +30,12 @@ async function checkFileExists(path: string): Promise<boolean> {
 }
 
 async function getPackageDir(pkgName: string): Promise<string | null> {
-  const dirs = ['core', 'luminosity-adapter-photon', 'luminosity-adapter-express', 'luminosity-cli']
+  const _dirs = [
+    'core',
+    'luminosity-adapter-photon',
+    'luminosity-adapter-express',
+    'luminosity-cli',
+  ]
   const nameMap: Record<string, string> = {
     '@gravito/core': 'core',
     '@gravito/luminosity-adapter-photon': 'luminosity-adapter-photon',
@@ -136,7 +141,7 @@ async function diagnosePackage(pkgName: string) {
       { cwd: pkgDir }
     )
 
-    if (stdout.includes('+ ' + pkg.name)) {
+    if (stdout.includes(`+ ${pkg.name}`)) {
       console.log(`✅ dry-run 成功`)
     } else {
       console.warn(`⚠️  dry-run 結果異常`)
@@ -156,7 +161,7 @@ async function main() {
     await diagnosePackage(pkgName)
   }
 
-  console.log('\n' + '='.repeat(50))
+  console.log(`\n${'='.repeat(50)}`)
   console.log('💡 建議：')
   console.log('1. 確認所有套件都已構建: bun run build')
   console.log('2. 確認 NPM 已登入: npm whoami')
