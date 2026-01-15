@@ -1,5 +1,3 @@
-import type { GravitoVariables } from '@gravito/core'
-
 /**
  * OrbitCloudflare
  *

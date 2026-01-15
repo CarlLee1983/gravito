@@ -1,4 +1,3 @@
-import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { Container, GravitoContext, PlanetCore } from '@gravito/core'
 import { ServiceProvider } from '@gravito/core'

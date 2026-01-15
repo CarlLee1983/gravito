@@ -91,14 +91,14 @@ export class WorkflowBuilder<TInput = unknown, TData = Record<string, unknown>> 
     name: string,
     handler: (
       ctx: WorkflowContext<TInput, TData>
-    ) => Promise<void | FluxWaitResult> | void | FluxWaitResult,
+    ) => Promise<undefined | FluxWaitResult> | undefined | FluxWaitResult,
     options?: StepOptions<TInput, TData>
   ): this {
     this._steps.push({
       name,
       handler: handler as (
         ctx: WorkflowContext
-      ) => Promise<void | FluxWaitResult> | void | FluxWaitResult,
+      ) => Promise<undefined | FluxWaitResult> | undefined | FluxWaitResult,
       retries: options?.retries,
       timeout: options?.timeout,
       when: options?.when as ((ctx: WorkflowContext) => boolean) | undefined,

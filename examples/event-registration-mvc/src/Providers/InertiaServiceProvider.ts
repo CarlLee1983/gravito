@@ -25,14 +25,20 @@ export class HandleInertiaRequests extends ServiceProvider {
 
       if (langParam) {
         locale = String(langParam)
-        if (session) session.put('app_locale', locale)
+        if (session) {
+          session.put('app_locale', locale)
+        }
       } else if (session) {
         const saved = session.get('app_locale')
-        if (saved) locale = String(saved)
+        if (saved) {
+          locale = String(saved)
+        }
       }
 
       // 2. Sync with i18n service
-      if (i18n) i18n.setLocale(locale)
+      if (i18n) {
+        i18n.setLocale(locale)
+      }
 
       if (inertia) {
         // Share Auth State

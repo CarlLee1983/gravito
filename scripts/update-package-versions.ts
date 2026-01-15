@@ -58,7 +58,9 @@ async function getPackages(): Promise<PackageInfo[]> {
       const content = await readFile(pkgPath, 'utf-8')
       const json = JSON.parse(content)
 
-      if (json.private) continue
+      if (json.private) {
+        continue
+      }
 
       const isOfficialSite = OFFICIAL_SITE_PACKAGES.includes(json.name)
       const newVersion = isOfficialSite ? VERSION_CONFIG.officialSite : VERSION_CONFIG.others
@@ -88,7 +90,9 @@ async function updatePackageVersion(pkg: PackageInfo): Promise<boolean> {
 
     // 更新內部依賴版本
     const processDeps = (deps: Record<string, string>) => {
-      if (!deps) return
+      if (!deps) {
+        return
+      }
       for (const key of Object.keys(deps)) {
         if (key.startsWith('@gravito/') || key === '@gravito/core') {
           // 查找對應套件的版本
@@ -104,7 +108,7 @@ async function updatePackageVersion(pkg: PackageInfo): Promise<boolean> {
     processDeps(json.devDependencies)
     processDeps(json.peerDependencies)
 
-    await writeFile(pkg.path, JSON.stringify(json, null, 2) + '\n')
+    await writeFile(pkg.path, `${JSON.stringify(json, null, 2)}\n`)
     return true
   } catch (e: any) {
     console.error(`❌ 更新 ${pkg.name} 失敗:`, e.message)

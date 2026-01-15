@@ -1,7 +1,3 @@
-import { GravitoContext, GravitoVariables } from '@gravito/core'
-import { AuthManager, HashManager } from '@gravito/sentinel'
-import { SessionService } from '@gravito/pulsar'
-
 declare module '@gravito/core' {
   interface GravitoContext {
     inertia?: any

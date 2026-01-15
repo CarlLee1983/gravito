@@ -172,7 +172,9 @@ export class Order extends Model {
    * Get parsed shipping address
    */
   getShippingAddress(): ShippingAddress | null {
-    if (!this.shipping_address) return null
+    if (!this.shipping_address) {
+      return null
+    }
     try {
       return JSON.parse(this.shipping_address)
     } catch {

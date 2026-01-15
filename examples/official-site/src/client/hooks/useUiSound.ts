@@ -32,7 +32,9 @@ export const useUiSound = () => {
   }, [initAudio])
 
   const play = useCallback((type: SoundType) => {
-    if (!audioContextRef.current || !masterGainRef.current) return
+    if (!audioContextRef.current || !masterGainRef.current) {
+      return
+    }
 
     const ctx = audioContextRef.current
     const osc = ctx.createOscillator()

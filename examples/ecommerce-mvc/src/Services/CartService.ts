@@ -10,7 +10,7 @@ import { Cart, CartItem } from '../Models'
 import { sql, TRUE } from '../utils/db'
 
 export class CartService {
-  constructor(private atlas?: OrbitAtlas) {}
+  constructor(_atlas?: OrbitAtlas) {}
   /**
    * Get or create cart for user/session
    */
@@ -212,7 +212,7 @@ export class CartService {
     for (const item of guestItemsResult.rows as any[]) {
       try {
         await this.addItem(userCart.id, item.product_id, item.quantity)
-      } catch (e) {
+      } catch (_e) {
         // Skip if product unavailable or out of stock
       }
     }

@@ -1,6 +1,5 @@
 import { cp, readdir } from 'node:fs/promises'
 import path from 'node:path'
-import { Gravito } from '@gravito/core/engine'
 import { StaticSiteGenerator } from '@gravito/prism'
 import { app } from './src/server/index'
 
@@ -91,7 +90,7 @@ async function build() {
   const publicDir = path.join(process.cwd(), 'public')
   try {
     // Check if public dir exists before copying
-    const publicStats = (await Bun.file(publicDir).exists()) || true // Bun.file on dir might behave differently, assume exists for now or use fs.stat
+    const _publicStats = (await Bun.file(publicDir).exists()) || true // Bun.file on dir might behave differently, assume exists for now or use fs.stat
     // Using fs cp is safer recursive
     await cp(publicDir, outputDir, { recursive: true })
     console.log('✅ Public assets copied.')

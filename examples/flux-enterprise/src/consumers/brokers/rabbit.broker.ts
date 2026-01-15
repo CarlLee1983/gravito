@@ -5,7 +5,7 @@ import type { BrokerConfig, BrokerMessage, MessageBroker } from '../types'
 export class RabbitBroker implements MessageBroker {
   private driver?: RabbitMQDriver
 
-  constructor(private url: string) {}
+  constructor(_url: string) {}
 
   async connect() {
     const manager = await getQueueManager()
@@ -15,7 +15,9 @@ export class RabbitBroker implements MessageBroker {
   }
 
   async subscribe(config: BrokerConfig, callback: (msg: BrokerMessage) => Promise<void>) {
-    if (!this.driver) throw new Error('Driver not initialized')
+    if (!this.driver) {
+      throw new Error('Driver not initialized')
+    }
 
     const channel = await this.driver.ensureChannel()
 
@@ -30,7 +32,9 @@ export class RabbitBroker implements MessageBroker {
     await channel.consume(
       config.queue,
       async (rawMsg: any) => {
-        if (!rawMsg) return
+        if (!rawMsg) {
+          return
+        }
 
         await callback({
           content: rawMsg.content.toString(),
@@ -42,17 +46,23 @@ export class RabbitBroker implements MessageBroker {
   }
 
   async ack(msg: BrokerMessage) {
-    if (!this.driver) return
+    if (!this.driver) {
+      return
+    }
     await this.driver.acknowledge(msg.raw)
   }
 
   async nack(msg: BrokerMessage, requeue: boolean) {
-    if (!this.driver) return
+    if (!this.driver) {
+      return
+    }
     await this.driver.nack(msg.raw, requeue)
   }
 
   async reject(msg: BrokerMessage, requeue: boolean) {
-    if (!this.driver) return
+    if (!this.driver) {
+      return
+    }
     await this.driver.reject(msg.raw, requeue)
   }
 

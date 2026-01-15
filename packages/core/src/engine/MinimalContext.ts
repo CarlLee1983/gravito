@@ -22,7 +22,7 @@ class MinimalRequest implements FastRequest {
     private readonly _request: Request,
     private readonly _params: Record<string, string>,
     private readonly _path: string
-  ) { }
+  ) {}
 
   get url(): string {
     return this._request.url

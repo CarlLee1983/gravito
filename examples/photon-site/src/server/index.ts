@@ -86,7 +86,7 @@ async function getDocContent(lang: string, page: string) {
     // We use a relative path from this file.
     const doc = await import(`./data/docs/${lang}/${page}.json`)
     return doc.default || doc
-  } catch (e) {
+  } catch (_e) {
     return null
   }
 }
@@ -195,7 +195,9 @@ app.get('/docs/:lang/:page', async (c) => {
 app.get('/legal/:page', (c) => {
   const pageParam = c.req.param('page')
   const content = (legalContent as any)[pageParam || '']
-  if (!content) return c.redirect('/')
+  if (!content) {
+    return c.redirect('/')
+  }
   return renderInertia(c, 'Legal', { ...content, slug: pageParam })
 })
 

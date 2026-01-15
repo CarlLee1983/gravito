@@ -59,15 +59,21 @@ let totalReplacements = 0
 
 async function shouldProcessFile(filePath: string): Promise<boolean> {
   const stats = await stat(filePath)
-  if (!stats.isFile()) return false
+  if (!stats.isFile()) {
+    return false
+  }
 
   const ext = filePath.substring(filePath.lastIndexOf('.'))
-  if (!FILE_EXTENSIONS.includes(ext)) return false
+  if (!FILE_EXTENSIONS.includes(ext)) {
+    return false
+  }
 
   // 檢查是否在排除目錄中
   const parts = filePath.split('/')
   for (const part of parts) {
-    if (EXCLUDE_DIRS.includes(part)) return false
+    if (EXCLUDE_DIRS.includes(part)) {
+      return false
+    }
   }
 
   return true

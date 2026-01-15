@@ -77,7 +77,7 @@ export class RippleServer {
     if (!this.eventListeners.has(event)) {
       this.eventListeners.set(event, [])
     }
-    this.eventListeners.get(event)!.push(handler)
+    this.eventListeners.get(event)?.push(handler)
   }
 
   /**

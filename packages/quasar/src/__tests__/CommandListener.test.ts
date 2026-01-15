@@ -88,7 +88,7 @@ describe('CommandListener', () => {
     }
 
     // This should be silently ignored (logged as warning)
-    await handler!('gravito:quasar:cmd:worker-orders:node-123', JSON.stringify(invalidCommand))
+    await handler?.('gravito:quasar:cmd:worker-orders:node-123', JSON.stringify(invalidCommand))
 
     // No error thrown - command is just ignored
     expect(true).toBe(true)
@@ -111,7 +111,7 @@ describe('CommandListener', () => {
     }
 
     // This should be silently ignored
-    await handler!('gravito:quasar:cmd:worker-orders:node-123', JSON.stringify(command))
+    await handler?.('gravito:quasar:cmd:worker-orders:node-123', JSON.stringify(command))
 
     // No error - just ignored
     expect(true).toBe(true)
@@ -124,7 +124,7 @@ describe('CommandListener', () => {
     const handler = messageHandlers.get('message')
 
     // Send invalid JSON - should not throw
-    await handler!('gravito:quasar:cmd:worker-orders:node-123', 'not-valid-json{')
+    await handler?.('gravito:quasar:cmd:worker-orders:node-123', 'not-valid-json{')
 
     // No crash
     expect(true).toBe(true)

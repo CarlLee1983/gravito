@@ -1,5 +1,4 @@
 import { DB } from '@gravito/atlas'
-import { Model } from '@gravito/atlas/orm'
 import { Gravito } from '@gravito/core/engine'
 
 // 1. Initialize DB manually (Standalone Mode)
@@ -77,7 +76,7 @@ app.post('/users', async (c) => {
       email: body.email,
     })
     return c.json(user, 201)
-  } catch (e) {
+  } catch (_e) {
     return c.json({ error: 'Failed to create user' }, 400)
   }
 })

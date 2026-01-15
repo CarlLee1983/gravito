@@ -14,8 +14,8 @@ describe('BullMQBridge', () => {
 
     // Mock BullMQ Worker
     mockWorker = {
-      on: mock((event: string, handler: Function) => {}),
-      off: mock((event: string, handler: Function) => {}),
+      on: mock((_event: string, _handler: Function) => {}),
+      off: mock((_event: string, _handler: Function) => {}),
     }
   })
 

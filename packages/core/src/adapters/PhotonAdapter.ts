@@ -241,7 +241,9 @@ class PhotonContextWrapper<V extends GravitoVariables = GravitoVariables>
     const anyRes = response as any
     anyRes.with = (key: string, value: any) => {
       const session = this.get('session' as any) as any
-      if (session) session.flash(key, value)
+      if (session) {
+        session.flash(key, value)
+      }
       return anyRes
     }
     return response

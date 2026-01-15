@@ -9,14 +9,14 @@
  *   bun run examples/benchmarks/baseline-runner.ts
  */
 
+import { join } from 'node:path'
 import { spawn } from 'bun'
-import { join } from 'path'
 
 // Benchmark configuration
 const WARMUP_DURATION = '5s'
 const TEST_DURATION = '30s'
 const CONNECTIONS = 100
-const REQUESTS_PER_SECOND = 0 // 0 = unlimited
+const _REQUESTS_PER_SECOND = 0 // 0 = unlimited
 
 interface BenchmarkTarget {
   name: string
@@ -174,7 +174,7 @@ function printResults(results: BenchmarkResult[]) {
   // Sort by RPS descending
   const sorted = [...results].sort((a, b) => b.requestsPerSec - a.requestsPerSec)
 
-  const baseline = sorted[0]!.requestsPerSec
+  const baseline = sorted[0]?.requestsPerSec
 
   console.log(
     `${'Framework'.padEnd(20)} ${'RPS'.padStart(12)} ${'vs Best'.padStart(10)} ${'p50 (ms)'.padStart(10)} ${'p95 (ms)'.padStart(10)} ${'p99 (ms)'.padStart(10)}`
@@ -201,7 +201,7 @@ function printResults(results: BenchmarkResult[]) {
     )
   }
 
-  console.log('\n' + '─'.repeat(82))
+  console.log(`\n${'─'.repeat(82)}`)
 
   // Calculate Gravito vs Hono
   const gravito = results.find((r) => r.name === 'Gravito Engine')

@@ -17,7 +17,9 @@ afterAll(() => {
 })
 
 function buildUrl(uri: string) {
-  if (uri.startsWith('http')) return uri
+  if (uri.startsWith('http')) {
+    return uri
+  }
   if (!uri.startsWith('/')) {
     return `http://localhost/${uri}`
   }

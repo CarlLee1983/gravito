@@ -30,7 +30,7 @@ async function main() {
         lastmod: new Date().toISOString(),
       },
     }
-    await appendFile(LOG_FILE, JSON.stringify(entry) + '\n')
+    await appendFile(LOG_FILE, `${JSON.stringify(entry)}\n`)
   }
   const endGen = performance.now()
   console.log(`Generation took ${(endGen - startGen).toFixed(2)}ms`)

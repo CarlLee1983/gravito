@@ -1,4 +1,3 @@
-import { formatBytes, WorkflowProfiler } from '../../../packages/flux/src/profiler/WorkflowProfiler'
 import { orderWorkflow } from '../src/workflows/order'
 
 // Quick helper since we didn't export formatBytes cleanly from package yet (it was internal logic)

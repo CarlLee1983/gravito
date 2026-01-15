@@ -1,7 +1,6 @@
 import { afterEach, beforeEach } from 'bun:test'
-import { DB, Schema } from '@gravito/atlas'
+import { Schema } from '@gravito/atlas'
 import { createHttpTester, type HttpTester, type PlanetCore } from '@gravito/core'
-import { HashManager } from '@gravito/sentinel'
 import { bootstrap } from '../src/bootstrap'
 import type { User } from '../src/Models/User'
 
@@ -44,7 +43,7 @@ export class TestCase {
   /**
    * Helper to act as a user
    */
-  async actingAs(user: User): Promise<this> {
+  async actingAs(_user: User): Promise<this> {
     // In Gravito Sentinel with session driver, we need to set the session
     // For now, we'll simulate it via headers or direct session injection if possible
     // Alternatively, we can use the login route in the test itself

@@ -42,7 +42,9 @@ const flightService = {
 
 const hotelService = {
   async book(city: string) {
-    if (city === 'FAIL_CITY') throw new Error('No hotels available in this region.')
+    if (city === 'FAIL_CITY') {
+      throw new Error('No hotels available in this region.')
+    }
     return `HOTEL-${city.toUpperCase()}-${Math.random().toString(36).substring(7).toUpperCase()}`
   },
   async cancel(id: string) {
@@ -51,7 +53,7 @@ const hotelService = {
 }
 
 const carService = {
-  async book(premium: boolean) {
+  async book(_premium: boolean) {
     // Simulate a failure to trigger the Saga compensation chain
     throw new Error('Car Rental System Outage')
   },
@@ -124,7 +126,7 @@ export const sagaTravelWorkflow = createWorkflow('saga-travel-reservation')
       when: (ctx) => ctx.data.triggerCompensation === true,
     }
   )
-  .commit('finalize-itinerary', (ctx) => {
+  .commit('finalize-itinerary', (_ctx) => {
     console.log('✅ Itinerary finalized!')
   })
   .build()

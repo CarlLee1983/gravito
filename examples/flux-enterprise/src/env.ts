@@ -7,7 +7,9 @@ config({ path: resolve(process.cwd(), '.env'), override: false })
 const getString = (key: string, fallback: string) => processEnv[key] ?? fallback
 const getNumber = (key: string, fallback: number) => {
   const value = processEnv[key]
-  if (!value) return fallback
+  if (!value) {
+    return fallback
+  }
   const parsed = Number(value)
   return Number.isNaN(parsed) ? fallback : parsed
 }

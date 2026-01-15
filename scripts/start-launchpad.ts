@@ -30,7 +30,9 @@ const pipeLog = (stream: ReadableStream, prefix: string, color: string) => {
   const read = async () => {
     while (true) {
       const { done, value } = await reader.read()
-      if (done) break
+      if (done) {
+        break
+      }
       const text = decoder.decode(value)
       // 簡單的行處理，加上前綴
       text.split('\n').forEach((line) => {

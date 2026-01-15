@@ -1,14 +1,14 @@
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { DB } from '@gravito/atlas'
 import { Photon } from '@gravito/photon'
 import { QuasarAgent } from '@gravito/quasar'
 import { MySQLPersistence, SQLitePersistence } from '@gravito/stream'
-import fs from 'fs'
 import { serveStatic } from 'hono/bun'
 import { getCookie } from 'hono/cookie'
 import { streamSSE } from 'hono/streaming'
-import os from 'os'
-import path from 'path'
-import { fileURLToPath } from 'url'
 import {
   authMiddleware,
   createSession,
@@ -705,7 +705,7 @@ api.get('/logs/stream', async (c) => {
           data: JSON.stringify({ nodes }),
           event: 'pulse',
         })
-      } catch (err) {
+      } catch (_err) {
         // ignore errors
       }
     }, 2000)
@@ -778,7 +778,7 @@ api.post('/maintenance/config', async (c) => {
   try {
     await queueService.saveMaintenanceConfig(config)
     return c.json({ success: true })
-  } catch (err) {
+  } catch (_err) {
     return c.json({ error: 'Failed to save maintenance config' }, 500)
   }
 })
@@ -788,7 +788,7 @@ api.post('/alerts/config', async (c) => {
   try {
     await queueService.alerts.saveConfig(config)
     return c.json({ success: true })
-  } catch (err) {
+  } catch (_err) {
     return c.json({ error: 'Failed to save alert config' }, 500)
   }
 })
@@ -798,7 +798,7 @@ api.post('/alerts/rules', async (c) => {
   try {
     await queueService.alerts.addRule(rule)
     return c.json({ success: true })
-  } catch (err) {
+  } catch (_err) {
     return c.json({ error: 'Failed to add rule' }, 500)
   }
 })
@@ -808,7 +808,7 @@ api.delete('/alerts/rules/:id', async (c) => {
   try {
     await queueService.alerts.deleteRule(id)
     return c.json({ success: true })
-  } catch (err) {
+  } catch (_err) {
     return c.json({ error: 'Failed to delete rule' }, 500)
   }
 })
