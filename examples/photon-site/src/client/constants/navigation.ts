@@ -49,6 +49,7 @@ export const navGroups: NavGroup[] = [
       { id: 'routing', label: 'ROUTING_SYSTEM', icon: Share2, href: '/docs/routing' },
       { id: 'proxy', label: 'PROXIES_GATEWAY', icon: Globe, href: '/docs/proxy' },
       { id: 'cbor', label: 'CBOR_PROTOCOL', icon: Cpu, href: '/docs/cbor' },
+      { id: 'htmx', label: 'HTMX_PRISM_HDA', icon: Layers, href: '/docs/htmx' },
       { id: 'context', label: 'CONTEXT_API', icon: Activity, href: '/docs/context' },
     ],
   },

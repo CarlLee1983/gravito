@@ -54,6 +54,7 @@ import errorsDoc from './data/docs/errors.json'
 import crudAtlasDoc from './data/docs/ex-crud-atlas.json'
 import fileUploadDoc from './data/docs/ex-file-upload.json'
 import helloWorldDoc from './data/docs/ex-hello-world.json'
+import htmxDoc from './data/docs/htmx.json'
 import integrationsDoc from './data/docs/integrations.json'
 // Technical Content Dictionary
 // Technical Content JSON Data
@@ -118,6 +119,7 @@ app.orbit(OrbitAtlas)</code></pre>
   'rpc-beam': rpcBeamDoc,
   proxy: proxyDoc,
   cbor: cborDoc,
+  htmx: htmxDoc,
   prism: {
     id: '11',
     title: 'Prism Templates',
