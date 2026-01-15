@@ -65,14 +65,21 @@ async function inspectUrl(url: string) {
     // Analysis / Warnings
     console.log('\x1b[1m=== Analysis ===\x1b[0m')
     const warnings: string[] = []
-    if (!preview.title) warnings.push('❌ Missing <title>')
-    else if (preview.title.length > 60) warnings.push('⚠️  Title > 60 chars (might truncate)')
+    if (!preview.title) {
+      warnings.push('❌ Missing <title>')
+    } else if (preview.title.length > 60) {
+      warnings.push('⚠️  Title > 60 chars (might truncate)')
+    }
 
-    if (!preview.description) warnings.push('❌ Missing meta description')
-    else if (preview.description.length > 160)
+    if (!preview.description) {
+      warnings.push('❌ Missing meta description')
+    } else if (preview.description.length > 160) {
       warnings.push('⚠️  Description > 160 chars (might truncate)')
+    }
 
-    if (!preview.og?.image) warnings.push('⚠️  Missing OpenGraph Image')
+    if (!preview.og?.image) {
+      warnings.push('⚠️  Missing OpenGraph Image')
+    }
 
     if (warnings.length > 0) {
       for (const w of warnings) {

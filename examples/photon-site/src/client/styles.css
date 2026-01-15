@@ -1,0 +1,228 @@
+@import "tailwindcss";
+
+@theme {
+  --color-photon-gold: #FFB800;
+  --font-display: "Syncopate", "Inter", sans-serif;
+  --font-technical: "Fira Code", monospace;
+}
+
+/* --- THE SOURCE OF TRUTH: ADAPTIVE COLOR SYSTEM --- */
+:root {
+  --bg-primary: #020202;
+  --surf-bg: #0A0A0B;
+  --text-main: #D1D5DB;
+  --text-heading: #FFFFFF;
+  --text-muted: #6B7280;
+  --border-subtle: rgba(255, 255, 255, 0.08);
+}
+
+.light,
+[data-theme='light'] {
+  --bg-primary: #F5F5F7;
+  --surf-bg: #FFFFFF;
+  --text-main: #2D3748;
+  --text-heading: #000000;
+  --text-muted: #718096;
+  --border-subtle: rgba(0, 0, 0, 0.08);
+}
+
+@layer base {
+  body {
+    background-color: var(--bg-primary);
+    color: var(--text-main);
+    transition: background-color 0.3s ease, color 0.3s ease;
+    opacity: 1 !important;
+    /* 確保主體透明度為 1 */
+  }
+}
+
+/* --- ADAPTIVE UTILITY CLASSES --- */
+.text-p-txt {
+  color: var(--text-heading);
+}
+
+.text-s-txt {
+  color: var(--text-main);
+}
+
+.text-m-txt {
+  color: var(--text-muted);
+}
+
+.bg-surf-bg {
+  background-color: var(--surf-bg);
+}
+
+.border-s-brd {
+  border-color: var(--border-subtle);
+}
+
+.from-s-brd {
+  --tw-gradient-from: var(--border-subtle);
+}
+
+/* --- THE PHOTON PROSE SYSTEM V11 (OPACITY FIX) --- */
+
+.photon-prose {
+  @apply max-w-none text-left;
+  color: var(--text-main);
+}
+
+.photon-prose h2 {
+  @apply text-4xl font-black uppercase tracking-tighter mt-48 mb-16 flex flex-col gap-6;
+  color: var(--text-heading);
+}
+
+.photon-prose h2::after {
+  content: '';
+  @apply w-24 h-1.5 bg-photon-gold;
+  box-shadow: 0 0 15px rgba(255, 184, 0, 0.3);
+}
+
+.photon-prose h3 {
+  @apply text-xl font-bold uppercase tracking-[0.2em] mt-24 mb-10 flex items-center gap-6;
+  color: var(--text-heading);
+}
+
+.photon-prose h3::before {
+  content: '';
+  @apply w-6 h-1 bg-photon-gold/40;
+}
+
+.photon-prose p {
+  @apply text-lg md:text-[20px] leading-[2.2] mb-16 font-light pl-10 relative block;
+  color: var(--text-main) !important;
+}
+
+.photon-prose p::before {
+  content: '';
+  @apply absolute left-0 top-2 w-1 h-6 bg-current opacity-20 rounded-full;
+}
+
+.photon-prose p:hover::before {
+  @apply h-full bg-photon-gold opacity-100;
+}
+
+.photon-prose strong {
+  @apply font-black px-1.5 py-0.5 border-b-2 border-photon-gold/50;
+  color: var(--text-heading);
+  background-color: rgba(255, 184, 0, 0.05);
+}
+
+/* --- PREMIUM TERMINAL SYSTEM --- */
+.terminal-window {
+  @apply bg-[#16161A] border border-white/10 my-24 overflow-hidden rounded-xl shadow-2xl relative transition-all duration-500;
+  box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.6), 0 18px 36px -18px rgba(0, 0, 0, 0.5);
+}
+
+.terminal-header {
+  @apply flex items-center justify-between px-6 py-4 bg-white/[0.03] border-b border-white/[0.05];
+}
+
+.terminal-dots {
+  @apply flex items-center gap-2;
+}
+
+.terminal-dots span {
+  @apply w-3 h-3 rounded-full;
+}
+
+.dot-red {
+  @apply bg-[#FF5F56] border border-[#E0443E]/50;
+}
+
+.dot-amber {
+  @apply bg-[#FFBD2E] border border-[#DEA123]/50;
+}
+
+.dot-green {
+  @apply bg-[#27C93F] border border-[#1AAB29]/50;
+}
+
+.terminal-title {
+  @apply text-[10px] font-black text-white/20 uppercase tracking-[0.4em] font-technical;
+}
+
+.terminal-window pre {
+  @apply bg-transparent border-none m-0 shadow-none p-0 overflow-x-auto;
+}
+
+.terminal-window code {
+  @apply font-mono text-[14px] md:text-[15px] leading-[1.8] px-8 py-10 block;
+  color: #E0E0E0 !important;
+  background-color: transparent;
+}
+
+/* Syntax Color Palette (IDE-Grade) */
+.photon-prose .keyword {
+  color: #C678DD;
+}
+
+/* Purple */
+.photon-prose .function {
+  color: #61AFEF;
+}
+
+/* Blue */
+.photon-prose .string {
+  color: #98C379;
+}
+
+/* Green */
+.photon-prose .number {
+  color: #D19A66;
+}
+
+/* Orange */
+.photon-prose .boolean {
+  color: #D19A66;
+}
+
+/* Orange */
+.photon-prose .comment {
+  color: #5C6370;
+  font-style: italic;
+}
+
+/* Gray */
+.photon-prose .property {
+  color: #E06C75;
+}
+
+/* Redish */
+
+/* Callout Box */
+.photon-prose .callout-tip {
+  @apply border-l-4 border-photon-gold p-12 my-32 relative overflow-hidden;
+  background-color: var(--surf-bg);
+}
+
+.photon-prose .callout-tip p {
+  @apply mb-0 pl-0 border-none italic font-medium text-xl leading-relaxed;
+  color: var(--text-heading) !important;
+}
+
+/* --- GRID TEXTURE FIX: Use Pseudo-element to avoid Child Opacity --- */
+.grid-texture {
+  position: relative;
+}
+
+.grid-texture::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0);
+  background-size: 40px 40px;
+  opacity: 0.03;
+  /* 只有背景網格是透明的 */
+  pointer-events: none;
+  z-index: 0;
+}
+
+.crt-overlay {
+  @apply fixed inset-0 pointer-events-none z-100;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%),
+    linear-gradient(90deg, rgba(255, 0, 0, 0.01), rgba(0, 255, 0, 0.005), rgba(0, 0, 255, 0.01));
+  background-size: 100% 3px, 3px 100%;
+  opacity: 0.3;
+}

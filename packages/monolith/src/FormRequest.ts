@@ -65,7 +65,9 @@ export abstract class FormRequest {
           for (const issue of issues) {
             const path = Array.isArray(issue.path) ? issue.path.join('.') : issue.path || 'root'
             const key = path.replace(/^\//, '').replace(/\//g, '.')
-            if (!errors[key]) errors[key] = []
+            if (!errors[key]) {
+              errors[key] = []
+            }
             errors[key].push(issue.message || 'Validation failed')
           }
 

@@ -147,7 +147,9 @@ export class Product extends Model {
    * Get discount percentage
    */
   getDiscountPercentage(): number {
-    if (!this.hasDiscount() || !this.compare_at_price) return 0
+    if (!this.hasDiscount() || !this.compare_at_price) {
+      return 0
+    }
     return Math.round((1 - this.price / this.compare_at_price) * 100)
   }
 

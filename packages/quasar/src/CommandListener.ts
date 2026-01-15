@@ -74,7 +74,9 @@ export class CommandListener {
 
     // Listen for messages
     this.subscriber.on('message', async (ch: string, message: string) => {
-      if (ch !== channel) return
+      if (ch !== channel) {
+        return
+      }
 
       try {
         const command = JSON.parse(message) as QuasarCommand
@@ -88,7 +90,9 @@ export class CommandListener {
     await this.subscriber.psubscribe(broadcastPattern)
     this.subscriber.on('pmessage', async (_pattern: string, ch: string, message: string) => {
       // Ignore if we already handled it on the specific channel
-      if (ch === channel) return
+      if (ch === channel) {
+        return
+      }
 
       try {
         const command = JSON.parse(message) as QuasarCommand
@@ -146,7 +150,9 @@ export class CommandListener {
    * Stop listening for commands.
    */
   async stop(): Promise<void> {
-    if (!this.isListening) return
+    if (!this.isListening) {
+      return
+    }
 
     try {
       await this.subscriber.unsubscribe()

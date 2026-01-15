@@ -147,7 +147,9 @@ export class QueueService {
 
   private async checkMaintenance() {
     const config = await this.getMaintenanceConfig()
-    if (!config.autoCleanup) return
+    if (!config.autoCleanup) {
+      return
+    }
 
     const now = Date.now()
     const lastRun = config.lastRun || 0
@@ -170,7 +172,9 @@ export class QueueService {
 
   async getMaintenanceConfig(): Promise<any> {
     const data = await this.redis.get('gravito:zenith:maintenance:config')
-    if (data) return JSON.parse(data)
+    if (data) {
+      return JSON.parse(data)
+    }
     return { autoCleanup: false, retentionDays: 30 }
   }
 

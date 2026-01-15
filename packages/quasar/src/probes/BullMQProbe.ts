@@ -41,7 +41,9 @@ export class BullMQProbe implements QueueProbe {
     pipeline.scard(key('failed'))
 
     const results = await pipeline.exec()
-    if (!results) throw new Error('Redis pipeline failed')
+    if (!results) {
+      throw new Error('Redis pipeline failed')
+    }
 
     // Parse results
     // Each result is [err, value]

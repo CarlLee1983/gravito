@@ -1,0 +1,6 @@
+{
+  "id": "03",
+  "title": "AOT Routing",
+  "content": "<p>Photon utilizes Ahead-of-Time compilation for route matching. This eliminates the need for expensive tree traversal at runtime.</p><h2>Dynamic Segments</h2><p>Define parameters with colons and retrieve them directly via the context:</p><pre><code>app.get('/user/:id', (c) => {\n  const id = c.req.param('id')\n  return c.text('Authorized access: ' + id)\n})</code></pre><h3>Route Priorities</h3><ul><li><strong>Static Paths:</strong> O(1) matching via Hash Map.</li><li><strong>Parametric Paths:</strong> Optimized Radix Tree matching.</li><li><strong>Wildcards:</strong> Fallback catch-all patterns.</li></ul>",
+  "meta": { "lastUpdated": "2026-01-13", "complexity": "MID_LEVEL", "category": "ARCHITECTURE" }
+}

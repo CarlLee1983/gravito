@@ -1,0 +1,7 @@
+{
+  "id": "05",
+  "title": "Middleware Matrix",
+  "content": "<p>Photon supports high-performance middleware chains optimized for asynchronous iteration.</p><h2>Global Interceptors</h2><pre><code>app.use(async (c, next) => {\n  const start = Date.now()\n  await next()\n  const ms = Date.now() - start\n  console.log('Request processed in ' + ms + 'ms')\n})</code></pre><div class=\"callout-tip\"><p>Photon maintains sub-millisecond dispatch times even with complex nested middleware stacks.</p></div>",
+  "meta": { "lastUpdated": "2026-01-13", "complexity": "MID_LEVEL", "category": "PIPELINE" }
+}
+

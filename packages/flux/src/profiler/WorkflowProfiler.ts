@@ -1,4 +1,4 @@
-import * as os from 'os'
+import * as os from 'node:os'
 import { FluxEngine } from '../engine/FluxEngine'
 import { FluxSilentLogger } from '../logger/FluxLogger'
 import type { WorkflowDefinition } from '../types'
@@ -44,7 +44,7 @@ export class WorkflowProfiler {
   ): Promise<ProfileMetrics> {
     // 1. Warmup (JIT)
     try {
-      await this.engine!.execute(workflow, input)
+      await this.engine?.execute(workflow, input)
     } catch {}
 
     // 2. Measure
@@ -56,7 +56,7 @@ export class WorkflowProfiler {
     const startMem = process.memoryUsage().heapUsed
     const startTime = process.hrtime.bigint()
 
-    await this.engine!.execute(workflow, input)
+    await this.engine?.execute(workflow, input)
 
     const endTime = process.hrtime.bigint()
     const endCpu = process.cpuUsage(startCpu)

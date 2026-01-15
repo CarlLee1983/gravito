@@ -11,7 +11,9 @@ export const isPostgres = process.env.DB_CONNECTION === 'postgres'
  * Specifically handles placeholder conversion (? -> $n) for PostgreSQL.
  */
 export function sql(query: string): string {
-  if (!isPostgres) return query
+  if (!isPostgres) {
+    return query
+  }
 
   let i = 1
   return query.replace(/\?/g, () => `$${i++}`)

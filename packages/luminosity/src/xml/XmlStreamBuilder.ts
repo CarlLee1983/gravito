@@ -62,11 +62,18 @@ export class XmlStreamBuilder {
       for (const img of item.images) {
         xml += `    <image:image>\n`
         xml += `      <image:loc>${img.url}</image:loc>\n`
-        if (img.title) xml += `      <image:title>${img.title}</image:title>\n`
-        if (img.caption) xml += `      <image:caption>${img.caption}</image:caption>\n`
-        if (img.license) xml += `      <image:license>${img.license}</image:license>\n`
-        if (img.geo_location)
+        if (img.title) {
+          xml += `      <image:title>${img.title}</image:title>\n`
+        }
+        if (img.caption) {
+          xml += `      <image:caption>${img.caption}</image:caption>\n`
+        }
+        if (img.license) {
+          xml += `      <image:license>${img.license}</image:license>\n`
+        }
+        if (img.geo_location) {
           xml += `      <image:geo_location>${img.geo_location}</image:geo_location>\n`
+        }
         xml += `    </image:image>\n`
       }
     }
@@ -78,10 +85,15 @@ export class XmlStreamBuilder {
         xml += `      <video:thumbnail_loc>${vid.thumbnail_loc}</video:thumbnail_loc>\n`
         xml += `      <video:title>${vid.title}</video:title>\n`
         xml += `      <video:description>${vid.description}</video:description>\n`
-        if (vid.content_loc)
+        if (vid.content_loc) {
           xml += `      <video:content_loc>${vid.content_loc}</video:content_loc>\n`
-        if (vid.player_loc) xml += `      <video:player_loc>${vid.player_loc}</video:player_loc>\n`
-        if (vid.duration) xml += `      <video:duration>${vid.duration}</video:duration>\n`
+        }
+        if (vid.player_loc) {
+          xml += `      <video:player_loc>${vid.player_loc}</video:player_loc>\n`
+        }
+        if (vid.duration) {
+          xml += `      <video:duration>${vid.duration}</video:duration>\n`
+        }
         if (vid.expiration_date) {
           const date =
             vid.expiration_date instanceof Date
@@ -89,8 +101,12 @@ export class XmlStreamBuilder {
               : vid.expiration_date
           xml += `      <video:expiration_date>${date}</video:expiration_date>\n`
         }
-        if (vid.rating) xml += `      <video:rating>${vid.rating.toFixed(1)}</video:rating>\n`
-        if (vid.view_count) xml += `      <video:view_count>${vid.view_count}</video:view_count>\n`
+        if (vid.rating) {
+          xml += `      <video:rating>${vid.rating.toFixed(1)}</video:rating>\n`
+        }
+        if (vid.view_count) {
+          xml += `      <video:view_count>${vid.view_count}</video:view_count>\n`
+        }
         if (vid.publication_date) {
           const date =
             vid.publication_date instanceof Date
@@ -98,9 +114,12 @@ export class XmlStreamBuilder {
               : vid.publication_date
           xml += `      <video:publication_date>${date}</video:publication_date>\n`
         }
-        if (vid.family_friendly)
+        if (vid.family_friendly) {
           xml += `      <video:family_friendly>${vid.family_friendly}</video:family_friendly>\n`
-        if (vid.live) xml += `      <video:live>${vid.live}</video:live>\n`
+        }
+        if (vid.live) {
+          xml += `      <video:live>${vid.live}</video:live>\n`
+        }
         xml += `    </video:video>\n`
       }
     }

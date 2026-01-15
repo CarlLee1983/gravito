@@ -10,7 +10,9 @@ export class WishlistController {
     const inertia = ctx.get('inertia') as InertiaService
     const auth = ctx.get('auth') as AuthManager
     const user = (await auth.user()) as User | null
-    if (!user) return ctx.redirect('/login')
+    if (!user) {
+      return ctx.redirect('/login')
+    }
 
     const wishlists = await Wishlist.where('user_id', user.id).get()
 
@@ -42,7 +44,9 @@ export class WishlistController {
   static async store(ctx: GravitoContext) {
     const auth = ctx.get('auth') as AuthManager
     const user = (await auth.user()) as User | null
-    if (!user) return ctx.redirect('/login')
+    if (!user) {
+      return ctx.redirect('/login')
+    }
 
     const body = await (ctx as any).req.json()
     const productId = body.product_id
@@ -67,7 +71,9 @@ export class WishlistController {
   static async destroy(ctx: GravitoContext) {
     const auth = ctx.get('auth') as AuthManager
     const user = (await auth.user()) as User | null
-    if (!user) return ctx.redirect('/login')
+    if (!user) {
+      return ctx.redirect('/login')
+    }
 
     const id = (ctx as any).req.param('id')
     const wishlist = await Wishlist.find(id)

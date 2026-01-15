@@ -3,7 +3,6 @@ import { AnalyticsAdminModule } from '@gravito/admin-ui-analytics'
 import { AnnouncementAdminModule } from '@gravito/admin-ui-announcement'
 // 引入各模組的 UI 定義
 import { CatalogAdminModule } from '@gravito/admin-ui-catalog'
-import React from 'react'
 import { createRoot } from 'react-dom/client'
 import config from './config/gravito.config'
 

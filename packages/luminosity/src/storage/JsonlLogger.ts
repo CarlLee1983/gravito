@@ -72,7 +72,9 @@ export class JsonlLogger {
     let corruptedCount = 0
 
     for (const line of lines) {
-      if (line.trim().length === 0) continue
+      if (line.trim().length === 0) {
+        continue
+      }
       try {
         JSON.parse(line)
         validLines.push(line)

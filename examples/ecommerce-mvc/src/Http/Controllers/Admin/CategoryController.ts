@@ -57,7 +57,7 @@ export class AdminCategoryController {
       return ctx.json({ errors: { name: ['此分類名稱已存在'] } }, 422)
     }
 
-    const result = await DB.raw<{ id: number }>(
+    const _result = await DB.raw<{ id: number }>(
       sql(`
       INSERT INTO categories (name, slug, description, image_url, is_active, sort_order)
       VALUES (?, ?, ?, ?, ${body.is_active ? TRUE : FALSE}, ?)

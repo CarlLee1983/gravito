@@ -274,7 +274,9 @@ export abstract class BaseGenerator {
    */
   protected async applyOverlays(context: GeneratorContext): Promise<void> {
     const profile = context.profile as string
-    if (!profile) return
+    if (!profile) {
+      return
+    }
 
     const overlayDir = path.resolve(this.config.templatesDir, 'overlays', profile)
     await this.copyOverlayDirectory(overlayDir, context)

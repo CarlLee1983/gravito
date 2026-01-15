@@ -53,6 +53,13 @@ export type {
 export { Application, type ApplicationConfig } from './Application'
 export { ConfigManager } from './ConfigManager'
 export { Container, type Factory } from './Container'
+// Error Handler (extracted from PlanetCore for SRP)
+export {
+  codeFromStatus,
+  ErrorHandler,
+  type ErrorHandlerDeps,
+  messageFromStatus,
+} from './ErrorHandler'
 // Events
 export { EventManager } from './EventManager'
 // Exceptions
@@ -106,6 +113,7 @@ export {
 export { Route } from './Route'
 export {
   type ControllerClass,
+  FORM_REQUEST_SYMBOL,
   type FormRequestClass,
   type FormRequestLike,
   RouteGroup,
