@@ -139,9 +139,10 @@ export class BunSQLDriver implements DriverContract {
    */
   async execute(sql: string, bindings: unknown[] = []): Promise<ExecuteResult> {
     const res = await this.query(sql, bindings)
+    const raw = (res as any)._raw || res
     return {
-      affectedRows: (res as any).rowCount ?? 0,
-      insertId: (res.rows?.[0] as any)?.id ?? (res as any).insertId,
+      affectedRows: res.rowCount ?? raw.count ?? raw.affectedRows ?? 0,
+      insertId: (res.rows?.[0] as any)?.id ?? raw.insertId ?? raw.lastInsertId,
     }
   }
 

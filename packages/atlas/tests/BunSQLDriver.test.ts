@@ -115,6 +115,8 @@ describe('BunSQLDriver', () => {
     const driver = new BunSQLDriver(config)
 
     mockQuery.mockResolvedValue({
+      rowCount: 1,
+      rows: [{ id: 100 }],
       affectedRows: 1,
       insertId: 100,
     })
@@ -133,16 +135,16 @@ describe('BunSQLDriver', () => {
     await driver.connect()
 
     await driver.beginTransaction()
-    expect(mockQuery).toHaveBeenCalledWith('BEGIN')
+    expect(mockQuery).toHaveBeenCalledWith('BEGIN', [])
     expect(driver.inTransaction()).toBe(true)
 
     await driver.commit()
-    expect(mockQuery).toHaveBeenCalledWith('COMMIT')
+    expect(mockQuery).toHaveBeenCalledWith('COMMIT', [])
     expect(driver.inTransaction()).toBe(false)
 
     await driver.beginTransaction()
     await driver.rollback()
-    expect(mockQuery).toHaveBeenCalledWith('ROLLBACK')
+    expect(mockQuery).toHaveBeenCalledWith('ROLLBACK', [])
     expect(driver.inTransaction()).toBe(false)
   })
 
