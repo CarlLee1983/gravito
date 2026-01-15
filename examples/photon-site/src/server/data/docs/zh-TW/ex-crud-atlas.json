@@ -1,7 +1,7 @@
 {
   "id": "E04",
-  "title": "原子化 CRUD Atlas",
-  "content": "<p>Complete integration example using <strong>Atlas ORM</strong> for high-speed database orchestration within Photon routes.</p><h3>Data Model & Controller</h3><pre><code>import { Model, column } from '@gravito/atlas'\n\n// Define Model\nclass Project extends Model {\n  static table = 'projects'\n\n  @column({ primary: true }) \n  id: number\n\n  @column() \n  title: string\n\n  @column()\n  active: boolean\n}\n\n// In your Photon Route:\napp.get('/projects', async (c) => {\n  const projects = await Project.query()\n    .where('active', true)\n    .orderBy('id', 'desc')\n    .limit(10)\n    .get()\n\n  return c.json({ projects })\n})</code></pre><h3>Performance Intel</h3><p>Atlas is built with the same \"No-Shim\" philosophy as Photon. It uses direct dynamic driver loading and pre-compiled query templates, making it significantly faster than Prisma or TypeORM in high-load scenarios.</p>",
+  "title": "原子 CRUD Atlas",
+  "content": "<p>使用 <strong>Atlas ORM</strong> 進行完整的整合範例，實現 Photon 路由內的高速資料庫編排。</p><h3>資料模型與控制器</h3><pre><code>import { Model, column } from '@gravito/atlas'\n\n// 定義模型\nclass Project extends Model {\n  static table = 'projects'\n\n  @column({ primary: true }) \n  id: number\n\n  @column() \n  title: string\n\n  @column()\n  active: boolean\n}\n\n// 在你的 Photon 路由中：\napp.get('/projects', async (c) => {\n  const projects = await Project.query()\n    .where('active', true)\n    .orderBy('id', 'desc')\n    .limit(10)\n    .get()\n\n  return c.json({ projects })\n})</code></pre><h3>性能情報</h3><p>Atlas 建立在與 Photon 相同的「無墊片（No-Shim）」理念之上。它使用直接動態驅動程式加載和預編譯查詢模板，使其在高負載場景下比 Prisma 或 TypeORM 快得多。</p>",
   "meta": {
     "lastUpdated": "2026-01-15",
     "complexity": "HARD_LEVEL",

@@ -1,6 +1,10 @@
 {
   "id": "12",
-  "title": "Hono Migration",
-  "content": "<p>Switching from Hono to Photon takes less than 5 minutes. We maintained 99% API compatibility while delivering significant performance gains.</p><h2>Drop-in Replacement</h2><p>Simply change your imports and initialization:</p><pre><code>// From Hono\nimport { Hono } from 'hono'\nconst app = new Hono()\n\n// To Photon\nimport { Gravito } from '@gravito/photon'\nconst app = new Gravito()</code></pre><h3>API Differences</h3><ul><li><strong>Context:</strong> <code>FastContext</code> is optimized for pooling.</li><li><strong>Middleware:</strong> Identical signature, faster execution.</li><li><strong>Native Fetch:</strong> Photon directly exports a <code>fetch</code> handler.</li></ul>",
-  "meta": { "lastUpdated": "2026-01-13", "complexity": "BASE_LEVEL", "category": "RESOURCES" }
+  "title": "Hono 遷移指南",
+  "content": "<p>從 Hono 切換到 Photon 只需不到 5 分鐘。我們保持了 99% 的 API 相容性，同時提供了顯著的性能提升。</p><h2>直接替換</h2><p>只需更改您的導入和初始化：</p><pre><code>// From Hono\nimport { Hono } from 'hono'\nconst app = new Hono()\n\n// To Photon\nimport { Gravito } from '@gravito/photon'\nconst app = new Gravito()</code></pre><h3>API 差異</h3><ul><li><strong>Context:</strong> <code>FastContext</code> 針對池化進行了優化。</li><li><strong>中介軟體:</strong> 相同的簽名，更快的執行速度。</li><li><strong>原生 Fetch:</strong> Photon 直接導出一個 <code>fetch</code> 處理程序。</li></ul>",
+  "meta": {
+    "lastUpdated": "2026-01-13",
+    "complexity": "BASE_LEVEL",
+    "category": "RESOURCES"
+  }
 }

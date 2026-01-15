@@ -1,28 +1,10 @@
 {
-    "id": "11",
-    "title": "Prism 模板",
-    "content": "<p>Prism 是 Photon 原生的視圖引擎。受 Laravel Blade 的啟發，它為伺服器端 HTML 渲染提供了一種高效能、邏輯驅動的方法。</p><h3>模板編譯</h3><p>Prism 模板不會在運行時進行解釋。在構建階段（或開發環境中的首次訪問），它們會被編譯成 <strong>純 JavaScript 函式</strong>。這使得它們明顯快於字串替換引擎。</p><h3>語法指南</h3><p>Prism 使用確定性解析器，從您的模板檔案生成高速 JS 函式。</p><pre><code><!-- 語法概覽 -->
-<div>
-  @if(user.isAdmin)
-    <h1>核心管理員: {{ user.name }}</h1>
-  @else
-    <h1>訪客節點: {{{ user.raw_html_label }}}</h1>
-  @endif
-
-  <ul>
-    #each items as item
-      <li>系統物件: {{ item.id }}</li>
-    @each
-  </ul>
-</div></code></pre><h3>佈局與元件</h3><pre><code><!-- layouts/app.prism -->
-<html>
-  <body>@yield('content')</body>
-</html>
-
-<!-- home.prism -->
-@extends('layouts.app')
-@section('content')
-  <h1>主饋送</h1>
-@endsection</code></pre><div class="callout-tip"><p>圖片優化：Prism 包含一個內建的 <code>&lt;x-image /&gt;</code> 元件，可自動處理 WebP 轉換和核心 Web 指標優化。</p></div>",
-    "meta": { "lastUpdated": "2026-01-15", "complexity": "MID_LEVEL", "category": "FULLSTACK_SUITE" }
+  "id": "11",
+  "title": "Prism 模板引擎",
+  "content": "<p>Prism 是 Photon 的原生視圖引擎。受 Laravel Blade 的啟發，它為伺服器端 HTML 渲染提供了一種高效能、邏輯驅動的方法。</p><h3>模板編譯</h3><p>Prism 模板不會在運行時解釋。在構建階段（或開發中的首次訪問），它們被編譯成 <strong>純 JavaScript 函數</strong>。這使得它們比字串替換引擎快得多。</p><h3>語法指南</h3><p>Prism 使用確定性解析器將您的模板文件生成高速 JS 函數。</p><pre><code>&lt;!-- 語法概覽 --&gt;\\n&lt;div&gt;\\n  @if(user.isAdmin)\\n    &lt;h1&gt;Core Admin: {{ user.name }}&lt;/h1&gt;\\n  @else\\n    &lt;h1&gt;Guest Node: {{{ user.raw_html_label }}}&lt;/h1&gt;\\n  @endif\\n\\n  &lt;ul&gt;\\n    #each items as item\\n      &lt;li&gt;System_Object: {{ item.id }}&lt;/li&gt;\\n    @each\\n  &lt;/ul&gt;\\n&lt;/div&gt;</code></pre><h3>佈局和組件</h3><pre><code>&lt;!-- layouts/app.prism --&gt;\\n&lt;html&gt;\\n  &lt;body&gt;@yield('content')&lt;/body&gt;\\n&lt;/html&gt;\\n\\n&lt;!-- home.prism --&gt;\\n@extends('layouts.app')\\n@section('content')\\n  &lt;h1&gt;Main Feed&lt;/h1&gt;\\n@endsection</code></pre><div class=\"callout-tip\"><p>圖片優化：Prism 包含一個內建的 <code>&lt;x-image /&gt;</code> 組件，可自動處理 WebP 轉換和 Core Web Vitals 優化。</p></div>",
+  "meta": {
+    "lastUpdated": "2026-01-14",
+    "complexity": "MID_LEVEL",
+    "category": "FULLSTACK_SUITE"
+  }
 }

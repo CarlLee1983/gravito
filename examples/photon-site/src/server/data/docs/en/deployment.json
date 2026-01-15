@@ -1,6 +1,10 @@
 {
     "id": "15",
     "title": "Bun Deployment",
-    "content": "<p>Photon applications are packaged as standard Bun scripts. This makes deployment to cloud providers or on-premise servers extremely straightforward.</p><h3>Production Checklist</h3><ul><li><strong>NODE_ENV:</strong> Set to <code>production</code> to enable AOT route caching and template pre-compilation.</li><li><strong>Memory Limits:</strong> Since Bun is efficient, you can run a Photon app on a 256MB micro-instance with ease.</li><li><strong>CPU Clustering:</strong> Use <code>bun run --workers auto</code> to utilize multiple CPU cores.</li></ul><h3>Docker Configuration</h3><p>We recommend using the official <code>oven/bun</code> base image for maximum compatibility and minimal image size.</p><pre><code>FROM oven/bun:latest\nWORKDIR /app\nCOPY . .\nRUN bun install\nEXPOSE 3333\nENV NODE_ENV=production\nCMD ["bun", "src/server/index.ts"]</code></pre>",
-    "meta": { "lastUpdated": "2026-01-14", "complexity": "MID_LEVEL", "category": "ADVANCED" }
+    "content": "<p>Photon applications are packaged as standard Bun scripts. This makes deployment to cloud providers or on-premise servers extremely straightforward.</p><h3>Production Checklist</h3><ul><li><strong>NODE_ENV:</strong> Set to <code>production</code> to enable AOT route caching and template pre-compilation.</li><li><strong>Memory Limits:</strong> Since Bun is efficient, you can run a Photon app on a 256MB micro-instance with ease.</li><li><strong>CPU Clustering:</strong> Use <code>bun run --workers auto</code> to utilize multiple CPU cores.</li></ul><h3>Docker Configuration</h3><p>We recommend using the official <code>oven/bun</code> base image for maximum compatibility and minimal image size.</p><pre><code>FROM oven/bun:latest\\nWORKDIR /app\\nCOPY . .\\nRUN bun install\\nEXPOSE 3333\\nENV NODE_ENV=production\\nCMD [\\\"bun\\\", \\\"src/server/index.ts\\\"]</code></pre>",
+    "meta": {
+        "lastUpdated": "2026-01-14",
+        "complexity": "MID_LEVEL",
+        "category": "ADVANCED"
+    }
 }
