@@ -36,7 +36,7 @@ export class I18nInstance implements I18nService {
    * @param initialLocale - The initial locale for this instance.
    */
   constructor(
-    private manager: I18nManager,
+    public readonly manager: I18nManager,
     initialLocale: string
   ) {
     this._locale = initialLocale
@@ -100,6 +100,20 @@ export class I18nInstance implements I18nService {
   clone(locale?: string): I18nService {
     return new I18nInstance(this.manager, locale || this._locale)
   }
+
+  /**
+   * Get the I18n configuration.
+   */
+  getConfig(): I18nConfig {
+    return this.manager.getConfig()
+  }
+
+  /**
+   * Get the translations.
+   */
+  get translations(): Record<string, TranslationMap> {
+    return this.manager.translations
+  }
 }
 
 /**
@@ -107,7 +121,7 @@ export class I18nInstance implements I18nService {
  * Holds shared configuration and translation resources
  */
 export class I18nManager implements I18nService {
-  private translations: Record<string, TranslationMap> = {}
+  public translations: Record<string, TranslationMap> = {}
   // Default instance for global usage (e.g. CLI or background jobs)
   private globalInstance: I18nInstance
 

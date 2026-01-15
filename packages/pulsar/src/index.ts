@@ -177,6 +177,7 @@ export class OrbitPulsar implements GravitoOrbit {
           markDirty()
           isRegenerated = true
         },
+        destroy: () => session.invalidate(),
         flash: (k: string, v: any) => {
           if (!data._flash) data._flash = {}
           data._flash[k] = v
@@ -232,6 +233,38 @@ export class OrbitPulsar implements GravitoOrbit {
               console.error(
                 `[CSRF ERROR] Mismatch URL: ${c.req.url}, Expected: ${expected}, GOT: ${cleanIncoming || '(empty)'}`
               )
+
+              // Shared Save Logic Helper
+              const saveSession = async () => {
+                const currentToken = csrfService.token()
+                const shouldSave =
+                  dirty ||
+                  isRegenerated ||
+                  (record ? (now() - record.lastActivityAt) / 1000 >= touchIntervalSeconds : true)
+
+                if (shouldSave) {
+                  await store.set(
+                    sessionId,
+                    { data, createdAt: record?.createdAt ?? now(), lastActivityAt: now() },
+                    idleTimeoutSeconds
+                  )
+                }
+
+                // Cookie Delivery
+                const common = `; Path=${cookiePath}; SameSite=${cookieSameSite}; Max-Age=${60 * 60 * 24 * 7}${cookieSecure ? '; Secure' : ''}`
+                const sidStr = `${cookieName}=${sessionId}${common}; HttpOnly`
+                const csrfStr = `${csrfCookieName}=${encodeURIComponent(currentToken)}${common}`
+
+                c.header('Set-Cookie', sidStr, { append: true })
+                c.header('Set-Cookie', csrfStr, { append: true })
+              }
+
+              if (c.req.header('X-Inertia')) {
+                session.flash('error', 'Session expired. Please try again.')
+                await saveSession()
+                return c.redirect(c.req.header('Referer') || '/')
+              }
+
               return c.json(
                 { success: false, error: { code: 'CSRF_ERROR', message: 'CSRF token mismatch' } },
                 403

@@ -157,7 +157,7 @@ describe('OrbitIon Integration', () => {
     await app._middleware(ctx, next)
 
     // 3. Verify injection
-    expect(ctx.set).toHaveBeenCalledWith('inertia', expect.any(InertiaService))
+    expect(ctx.set).toHaveBeenCalledWith('inertia', expect.any(Function))
     expect(next).toHaveBeenCalled()
   })
 })

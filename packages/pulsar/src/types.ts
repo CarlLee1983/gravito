@@ -66,6 +66,7 @@ export interface SessionService {
   get<T = unknown>(key: string, defaultValue?: T): T
   has(key: string): boolean
   put(key: string, value: unknown): void
+  set(key: string, value: unknown): void
   forget(key: string): void
   all(): Record<string, unknown>
   pull<T = unknown>(key: string, defaultValue?: T): T
@@ -77,6 +78,7 @@ export interface SessionService {
 
   regenerate(): void
   invalidate(): void
+  destroy(): void
 }
 
 export interface CsrfService {
