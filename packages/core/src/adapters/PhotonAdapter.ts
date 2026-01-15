@@ -155,6 +155,8 @@ class PhotonContextWrapper<V extends GravitoVariables = GravitoVariables>
 {
   private _req: PhotonRequestWrapper
 
+  public route!: (name: string, params?: Record<string, any>, query?: Record<string, any>) => string
+
   constructor(private photonCtx: Context) {
     this._req = PhotonRequestWrapper.create(photonCtx)
   }

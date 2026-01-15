@@ -79,14 +79,8 @@ export interface GravitoVariables {
    */
   cookieJar?: unknown // CookieJar
 
-  /**
-   * URL generator helper
-   */
-  route?: (
-    name: string,
-    params?: Record<string, unknown>,
-    query?: Record<string, unknown>
-  ) => string
+  /** @deprecated Use ctx.route() instead */
+  route?: unknown
 
   // Optional orbit-injected services
   // Each orbit extends this interface via module augmentation:
@@ -374,6 +368,12 @@ export interface GravitoContext<V extends GravitoVariables = GravitoVariables> {
   // ─────────────────────────────────────────────
   // Native Access (Escape Hatch)
   // ─────────────────────────────────────────────
+
+  /**
+   * URL generator helper.
+   * Generates a URL for a named route.
+   */
+  route: (name: string, params?: Record<string, any>, query?: Record<string, any>) => string
 
   /**
    * Access the native context object from the underlying HTTP engine.

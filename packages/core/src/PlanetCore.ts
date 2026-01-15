@@ -286,9 +286,7 @@ export class PlanetCore {
       c.set('cookieJar', cookieJar)
 
       // Add route helper
-      // @ts-expect-error
-      c.route = (name: string, params?: RouteParams, query?: RouteQuery) =>
-        this.router.url(name, params, query)
+      c.route = (name: string, params?: any, query?: any) => this.router.url(name, params, query)
 
       return await next()
     })

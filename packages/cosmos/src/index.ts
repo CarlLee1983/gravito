@@ -29,7 +29,9 @@ export class OrbitCosmos implements GravitoOrbit {
   }
 }
 
-/** @deprecated Use OrbitCosmos instead */
+/**
+ * @deprecated Use OrbitCosmos instead. Will be removed in v4.0.0.
+ */
 export const I18nOrbit = OrbitCosmos
 
 export * from './I18nService'

@@ -225,12 +225,12 @@ export class I18nManager implements I18nService {
    */
   translate(locale: string, key: string, replacements?: Record<string, string | number>): string {
     const keys = key.split('.')
-    let value: any = this.translations[locale]
+    let value: string | TranslationMap | undefined = this.translations[locale]
 
     // 1. Try current locale
     for (const k of keys) {
       if (value && typeof value === 'object' && k in value) {
-        value = value[k]
+        value = (value as TranslationMap)[k]
       } else {
         value = undefined
         break
@@ -239,10 +239,11 @@ export class I18nManager implements I18nService {
 
     // 2. If not found, try fallback (defaultLocale)
     if (value === undefined && locale !== this.config.defaultLocale) {
-      let fallbackValue: any = this.translations[this.config.defaultLocale]
+      let fallbackValue: string | TranslationMap | undefined =
+        this.translations[this.config.defaultLocale]
       for (const k of keys) {
         if (fallbackValue && typeof fallbackValue === 'object' && k in fallbackValue) {
-          fallbackValue = fallbackValue[k]
+          fallbackValue = (fallbackValue as TranslationMap)[k]
         } else {
           fallbackValue = undefined
           break
