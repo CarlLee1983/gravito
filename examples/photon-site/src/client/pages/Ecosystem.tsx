@@ -30,10 +30,10 @@ const orbits: Orbit[] = [
     {
         name: 'Atlas',
         package: '@gravito/atlas',
-        description: 'The heavyweight Data Mapper ORM for Photon. High-speed SQL orchestration.',
+        description: 'The heavyweight Data Mapper ORM for Photon. High-speed SQL orchestration for PostgreSQL, MySQL, MariaDB, and SQLite.',
         icon: Database,
         type: 'OFFICIAL',
-        features: ['AOT Queries', 'Hybrid Drivers', 'Entity Mapping']
+        features: ['AOT Queries', 'Multi-DB Support', 'Entity Mapping']
     },
     {
         name: 'Prism',
