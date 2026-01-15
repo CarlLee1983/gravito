@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react'
-import { Head, Link } from '@inertiajs/react'
+import { Head, Link, usePage, router } from '@inertiajs/react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowUpRight, Zap, Cpu, Activity, Gauge, Terminal,
   Layers, ShieldCheck, Microscope, Database, Workflow, BarChart3, BookOpen, ChevronRight,
-  Sun, Moon, Search, Command
+  Sun, Moon, Search, Command, Languages
 } from 'lucide-react'
 import { navGroups, navItems } from '../constants/navigation'
 import { Footer } from './Footer'
@@ -12,6 +12,7 @@ import { Footer } from './Footer'
 export const DocsLayout = ({ children, currentId }: { children: React.ReactNode, currentId?: string }) => {
   const [searchOpen, setSearchOpen] = useState(false)
   const [progress, setProgress] = useState(0)
+  const { url } = usePage() // Get current URL to preserve path
 
   // --- Theme Management ---
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
@@ -20,6 +21,19 @@ export const DocsLayout = ({ children, currentId }: { children: React.ReactNode,
     }
     return 'dark'
   })
+
+  // --- Language Management ---
+  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams()
+  const currentLang = searchParams.get('lang') === 'zh-TW' ? 'zh-TW' : 'en'
+
+  const toggleLanguage = () => {
+    const newLang = currentLang === 'en' ? 'zh-TW' : 'en'
+    router.visit(window.location.pathname, {
+      data: { lang: newLang },
+      preserveScroll: true,
+      preserveState: true
+    })
+  }
 
   useEffect(() => {
     const root = window.document.documentElement
@@ -41,34 +55,47 @@ export const DocsLayout = ({ children, currentId }: { children: React.ReactNode,
       {/* Sidebar Navigation */}
       <aside className="w-80 border-r border-s-brd flex flex-col sticky top-0 h-screen z-40 bg-s-bg transition-colors duration-500">
         <div className="p-12 flex-1 overflow-y-auto custom-scrollbar">
-          <div className="flex items-center justify-between mb-12">
+          <div className="flex items-center justify-between mb-12 gap-4">
             <Link href="/" className="text-2xl font-black tracking-tighter uppercase flex items-center gap-3 group text-p-txt">
               <div className="w-8 h-8 border border-photon-gold/30 flex items-center justify-center relative overflow-hidden group-hover:border-photon-gold transition-colors">
                 <Zap size={14} className="text-photon-gold group-hover:scale-125 transition-transform" />
                 <div className="absolute inset-0 bg-photon-gold/5 group-hover:bg-photon-gold/20 transition-colors" />
               </div>
-              <span className="group-hover:translate-x-1 transition-transform duration-500">
+              <span className="hidden xl:inline group-hover:translate-x-1 transition-transform duration-500">
                 Pho<span className="opacity-50 italic">ton</span>
               </span>
             </Link>
 
-            {/* THEME TOGGLE */}
-            <button
-              onClick={toggleTheme}
-              className="w-10 h-10 flex items-center justify-center rounded-sm border border-s-brd bg-surf-bg text-s-txt hover:text-photon-gold transition-all shadow-sm"
-            >
-              <AnimatePresence mode="wait">
-                {theme === 'dark' ? (
-                  <motion.div key="moon" initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.5 }}>
-                    <Moon size={16} />
-                  </motion.div>
-                ) : (
-                  <motion.div key="sun" initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.5 }}>
-                    <Sun size={16} />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </button>
+            <div className="flex items-center gap-3">
+              {/* LANG TOGGLE */}
+              <button
+                onClick={toggleLanguage}
+                className="w-8 h-8 flex items-center justify-center rounded-sm border border-s-brd bg-surf-bg text-s-txt hover:text-photon-gold transition-all shadow-sm group"
+                title={currentLang === 'en' ? 'Switch to Traditional Chinese' : 'Switch to English'}
+              >
+                <span className="text-[10px] font-bold font-technical">
+                  {currentLang === 'en' ? 'EN' : '繁'}
+                </span>
+              </button>
+
+              {/* THEME TOGGLE */}
+              <button
+                onClick={toggleTheme}
+                className="w-8 h-8 flex items-center justify-center rounded-sm border border-s-brd bg-surf-bg text-s-txt hover:text-photon-gold transition-all shadow-sm"
+              >
+                <AnimatePresence mode="wait">
+                  {theme === 'dark' ? (
+                    <motion.div key="moon" initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.5 }}>
+                      <Moon size={14} />
+                    </motion.div>
+                  ) : (
+                    <motion.div key="sun" initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.5 }}>
+                      <Sun size={14} />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </button>
+            </div>
           </div>
 
           <button
@@ -94,7 +121,7 @@ export const DocsLayout = ({ children, currentId }: { children: React.ReactNode,
                   {group.items.map((item) => (
                     <Link
                       key={item.id}
-                      href={item.href}
+                      href={`${item.href}?lang=${currentLang}`}
                       className={`flex items-center gap-4 px-4 py-2.5 rounded-sm group transition-all ${currentId === item.id ? 'bg-surf-bg border border-s-brd text-p-txt shadow-sm' : 'text-s-txt hover:text-p-txt'}`}
                     >
                       <item.icon size={11} className={currentId === item.id ? 'text-photon-gold' : 'opacity-40 group-hover:opacity-100'} />
