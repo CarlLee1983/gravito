@@ -1,5 +1,4 @@
-import { AuthenticationException } from '@gravito/core'
-import type { Context } from '@gravito/photon'
+import { AuthenticationException, type GravitoContext } from '@gravito/core'
 import type { Authenticatable } from './contracts/Authenticatable'
 import type { Guard, StatefulGuard } from './contracts/Guard'
 import type { UserProvider } from './contracts/UserProvider'
@@ -32,7 +31,7 @@ export interface AuthConfig {
 
 export type UserProviderResolver = (config: Record<string, unknown>) => UserProvider
 export type GuardResolver = (
-  ctx: Context,
+  ctx: GravitoContext,
   name: string,
   config: Record<string, unknown>,
   provider?: UserProvider
@@ -54,7 +53,7 @@ export class AuthManager {
    * @param providerResolvers - A map of custom provider resolvers.
    */
   constructor(
-    protected ctx: Context,
+    protected ctx: GravitoContext,
     protected config: AuthConfig,
     protected providerResolvers: Map<string, UserProviderResolver> = new Map()
   ) {}
