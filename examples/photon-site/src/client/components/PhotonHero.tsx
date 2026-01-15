@@ -31,7 +31,7 @@ export const PhotonHero = () => {
           >
             <div className="w-2 h-2 rounded-full bg-photon-gold animate-pulse" />
             <span className="text-[10px] font-technical tracking-[0.5em] text-photon-gold uppercase">
-              System_Alpha_Initialize // v1.2.0
+              System_Alpha_Initialize // v1.1.0
             </span>
           </motion.div>
 

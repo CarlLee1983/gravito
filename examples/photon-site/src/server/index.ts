@@ -117,7 +117,7 @@ app.orbit(OrbitDB)</code></pre>
       <p>Prism is Photon's native view engine. Inspired by Laravel's Blade, it provides a high-performance, logic-driven approach to server-side HTML rendering.</p>
       
       <h3>Template Compilation</h3>
-      <p>Prism templates are not interpreted at runtime. during the build phase (or first access in dev), they are compiled into <strong>Pure JavaScript Functions</strong>. This makes them significantly faster than string-replacement engines.</p>
+      <p>Prism templates are not interpreted at runtime. During the build phase (or first access in dev), they are compiled into <strong>Pure JavaScript Functions</strong>. This makes them significantly faster than string-replacement engines.</p>
 
       <h3>Syntax Guide</h3>
       <p>Prism uses a deterministic parser that generates high-speed JS functions from your template files.</p>
@@ -158,7 +158,7 @@ app.orbit(OrbitDB)</code></pre>
     id: '12',
     title: 'Ion SPA Bridge',
     content: `
-      <p>Ion is the definitive bridge for **Inertia.js**. It allows you to build modern Single Page Applications using classic server-side routing, eliminating the need for a separate API layer.</p>
+      <p>Ion is the definitive bridge for <strong>Inertia.js</strong>. It allows you to build modern Single Page Applications using classic server-side routing, eliminating the need for a separate API layer.</p>
       
       <h3>The Monolith Developer Experience</h3>
       <p>With Ion, you don't write <code>axios.get()</code>. You simply return a component from your controller, and Ion handles the protocol handshake to determine if it should send full HTML (initial load) or a JSON data packet (client-side navigation).</p>
@@ -217,7 +217,7 @@ export class User extends Model {
       <p>Robust applications require robust tests. Photon provides a first-class testing experience using the <code>bun:test</code> runner, designed for millisecond-level execution.</p>
       
       <h3>Unit Testing Handlers</h3>
-      <p>You can test your logic without starting a real TCP server. Photon includes a <code>MockContext</code> to simulate request/response cyles.</p>
+      <p>You can test your logic without starting a real TCP server. Photon includes a <code>MockContext</code> to simulate request/response cycles.</p>
       <pre><code>import { test, expect } from 'bun:test'
 import { MockContext } from '@gravito/core/testing'
 

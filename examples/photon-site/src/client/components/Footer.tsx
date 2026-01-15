@@ -3,7 +3,7 @@ import { Zap, Github, MessageSquare, ExternalLink, Activity } from 'lucide-react
 
 const footerLinks = [
     {
-        title: 'ECO_SYSTEM_NODES',
+        title: 'ECOSYSTEM_NODES',
         links: [
             { label: 'Gravito Core', href: 'https://gravito.dev' },
             { label: 'Atlas ORM', href: 'https://atlas.gravito.dev' },
@@ -11,7 +11,7 @@ const footerLinks = [
         ]
     },
     {
-        title: 'PROTOCOL_PROTOCOLS',
+        title: 'PROTOCOL_RESOURCES',
         links: [
             { label: 'Privacy Policy', href: '/legal/privacy' },
             { label: 'Terms of Use', href: '/legal/terms' },
