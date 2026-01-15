@@ -13,7 +13,7 @@ export class DocsController {
   }
 
   show = async (c: Context) => {
-    const inertia = c.get('inertia') as InertiaService
+    const inertia = c.get('inertia') as unknown as InertiaService
     const locale = (c.get('locale') as string) || 'en'
 
     let slug = c.req.path

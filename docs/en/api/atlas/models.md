@@ -11,19 +11,26 @@ title: Models
 Inherit from the `Model` class and specify the `table` name.
 
 ```ts
-import { Model } from '@gravito/atlas'
+import { Model, column } from '@gravito/atlas'
 
 export class User extends Model {
-  // Set table name
+  // Define table name
   static table = 'users'
   
-  // Primary key (default is 'id')
+  // Primary key (defaults to 'id')
   static primaryKey = 'id'
 
-  // Attribute type annotations (for IntelliSense)
+  // Mark database columns with @column()
+  @column({ isPrimary: true })
   declare id: number
+
+  @column()
   declare name: string
+
+  @column()
   declare email: string
+
+  @column()
   declare active: boolean
 }
 ```

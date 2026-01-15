@@ -89,7 +89,10 @@ export function setupViteProxy(core: PlanetCore): void {
     const hasExtension =
       /\.(ts|tsx|js|jsx|css|vue|json|wasm|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|otf|eot)$/.test(p)
 
-    if ((isViteSpecial || isNodeModules || isClientSource || isClientRoot || hasExtension) && !isFavicon) {
+    if (
+      (isViteSpecial || isNodeModules || isClientSource || isClientRoot || hasExtension) &&
+      !isFavicon
+    ) {
       return proxyToVite(c)
     }
 

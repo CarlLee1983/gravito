@@ -41,6 +41,19 @@ type Translation = Record<string, Record<string, string>>
 const AdvancedHero = ({ t, locale }: { t: Translation; locale: string }) => {
   const { scrollY } = useScroll()
   const opacity = useTransform(scrollY, [0, 300], [1, 0])
+  const heroRef = useRef<HTMLDivElement>(null)
+
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
+
+  React.useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      const x = (e.clientX / window.innerWidth - 0.5) * 100
+      const y = (e.clientY / window.innerHeight - 0.5) * 100
+      setMousePos({ x, y })
+    }
+    window.addEventListener('mousemove', handleMouseMove)
+    return () => window.removeEventListener('mousemove', handleMouseMove)
+  }, [])
 
   const titleCharItems = (t.hero.title || 'GRAVITO').split('').map((char, index) => ({
     id: `hero-char-${index}-${char}`,
@@ -55,8 +68,38 @@ const AdvancedHero = ({ t, locale }: { t: Translation; locale: string }) => {
   }, [])
 
   return (
-    <section className="relative h-[120vh] flex items-center justify-center overflow-hidden bg-void">
-      {/* 0. Hero Background & Stars (WebGL) */}
+    <section
+      ref={heroRef}
+      className="relative h-[120vh] flex items-center justify-center overflow-hidden bg-void"
+      style={
+        {
+          '--mx': `${mousePos.x}px`,
+          '--my': `${mousePos.y}px`,
+        } as React.CSSProperties
+      }
+    >
+      {/* 0. Gravitational Warp Grid */}
+      <div className="space-grid-warp">
+        <div
+          className="grid-warp-inner"
+          style={{ perspectiveOrigin: `${50 + mousePos.x * 0.2}% ${50 + mousePos.y * 0.2}%` }}
+        />
+      </div>
+
+      {/* Event Horizon: A liquid glow that follows the mouse */}
+      <div
+        className="absolute w-[600px] h-[600px] rounded-full pointer-events-none transition-all duration-1000 ease-out"
+        style={{
+          background: `radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%)`,
+          left: `calc(50% + ${mousePos.x * 5}px)`,
+          top: `calc(50% + ${mousePos.y * 5}px)`,
+          transform: 'translate(-50%, -50%)',
+          filter: 'blur(60px)',
+          zIndex: 5,
+        }}
+      />
+
+      {/* Hero Background & Stars (WebGL) */}
       <motion.div style={{ opacity }} className="absolute inset-0 z-0">
         {isClient && (
           <React.Suspense fallback={null}>
@@ -66,37 +109,29 @@ const AdvancedHero = ({ t, locale }: { t: Translation; locale: string }) => {
         <div className="absolute inset-0 bg-gradient-to-b from-void/20 via-transparent to-void" />
       </motion.div>
 
-      {/* 1. 浮動文字層 (Staggered Intro) */}
+      {/* 1. 浮動文字層 (Magnetic Title) */}
       <div className="relative z-30 flex flex-col items-center">
-        <div className="flex flex-wrap justify-center overflow-hidden pb-2 px-4 gap-x-2 md:gap-x-0">
-          {titleCharItems.map((item) => (
+        <div className="flex flex-wrap justify-center overflow-hidden pb-4 px-4">
+          {(t.hero.title || 'GRAVITO').split('').map((char, i) => (
             <motion.span
-              key={item.id}
-              initial={{ y: 100, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{
-                delay: 0.5 + item.index * 0.1,
-                duration: 0.8,
-                ease: [0.2, 0.65, 0.3, 0.9],
+              key={i}
+              className="glitch-text text-6xl sm:text-7xl md:text-[10rem] font-black italic tracking-tighter text-white uppercase inline-block cursor-default"
+              style={{
+                x: mousePos.x * (0.1 + i * 0.02),
+                y: mousePos.y * (0.1 + i * 0.02),
+                rotateX: mousePos.y * -0.1,
+                rotateY: mousePos.x * 0.1,
               }}
-              className="text-5xl sm:text-6xl md:text-9xl font-black italic tracking-tighter text-white drop-shadow-[0_0_30px_rgba(0,100,200,0.5)] inline-block"
+              transition={{ type: 'spring', stiffness: 150, damping: 15 }}
             >
-              {item.char}
+              {char}
             </motion.span>
           ))}
-          <motion.span
-            initial={{ x: 50, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ delay: 1.5, duration: 0.8 }}
-            className="text-5xl sm:text-6xl md:text-9xl font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500 ml-2 md:ml-4 pr-2 md:pr-12 inline-block select-none"
-          >
-            {t.hero.core}
-          </motion.span>
         </div>
         <motion.p
           initial={{ opacity: 0, letterSpacing: '1.5em' }}
           animate={{ opacity: 1, letterSpacing: '0.5em' }}
-          transition={{ delay: 2, duration: 1.5 }}
+          transition={{ delay: 1, duration: 1.5 }}
           className="mt-6 text-cyan-200/80 uppercase text-xs md:text-sm font-bold text-center w-full"
         >
           {t.hero.tagline}
@@ -431,40 +466,70 @@ const StackSection = ({ t }: { t: Translation }) => {
   )
 }
 
-// 統計數據區塊
+// 統計數據區塊 - Holographic Sensors
 const StatsSection = ({ t }: { t: Translation }) => {
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, margin: '-100px' })
 
   const stats = [
-    { value: '10x', label: t.stats.efficiency, icon: Zap },
-    { value: '0ms', label: t.stats.bottleneck, icon: Rocket },
-    { value: '100%', label: t.stats.integrity, icon: Code },
+    { value: '10x', label: t.stats.efficiency, icon: Zap, color: 'from-cyan-500' },
+    { value: '0ms', label: t.stats.bottleneck, icon: Rocket, color: 'from-purple-500' },
+    { value: '100%', label: t.stats.integrity, icon: Code, color: 'from-emerald-500' },
   ]
 
   return (
-    <section className="relative py-24 px-6 bg-gradient-to-b from-void via-panel/20 to-void">
-      <div className="max-w-6xl mx-auto">
-        <div ref={ref} className="grid grid-cols-1 md:grid-cols-3 gap-8">
+    <section className="relative py-32 px-6 overflow-hidden">
+      {/* Background Liquid Wave */}
+      <div className="absolute inset-0 z-0 opacity-20">
+        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,rgba(99,102,241,0.1),transparent_50%)] animate-pulse" />
+      </div>
+
+      <div className="max-w-6xl mx-auto relative z-10">
+        <div ref={ref} className="grid grid-cols-1 md:grid-cols-3 gap-12">
           {stats.map((stat, index) => (
             <motion.div
               key={stat.label}
-              initial={{ opacity: 0, y: 30 }}
-              animate={isInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.6, delay: index * 0.1 }}
-              className="text-center p-8 rounded-2xl bg-panel/30 border border-white/5 backdrop-blur-sm"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={isInView ? { opacity: 1, scale: 1 } : {}}
+              transition={{ duration: 0.8, delay: index * 0.1 }}
+              className="group relative p-12 rounded-[3rem] bg-white/[0.01] border border-white/5 backdrop-blur-3xl text-center overflow-hidden"
             >
-              <stat.icon className="text-singularity mx-auto mb-4" size={40} />
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={isInView ? { scale: 1 } : {}}
-                transition={{ duration: 0.5, delay: index * 0.1 + 0.3, type: 'spring' }}
-                className="text-5xl font-black text-white mb-2"
-              >
-                {stat.value}
-              </motion.div>
-              <div className="text-gray-400 font-mono tracking-wider uppercase text-sm">
+              {/* Sensor Ring Ornament */}
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-1 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+
+              <stat.icon
+                className="text-white/20 group-hover:text-singularity mx-auto mb-8 transition-all duration-700 group-hover:scale-110"
+                size={48}
+              />
+
+              <div className="relative">
+                <motion.div
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={isInView ? { y: 0, opacity: 1 } : {}}
+                  transition={{ duration: 0.5, delay: index * 0.1 + 0.3 }}
+                  className="text-7xl font-black text-white mb-4 tracking-tighter"
+                >
+                  {stat.value}
+                </motion.div>
+                {/* Number Glitch Overlay */}
+                <div className="absolute inset-0 text-7xl font-black text-singularity/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700 select-none">
+                  {stat.value}
+                </div>
+              </div>
+
+              <div className="text-gray-500 font-mono tracking-[0.3em] uppercase text-[10px] group-hover:text-gray-300 transition-colors">
                 {stat.label}
+              </div>
+
+              {/* Decorative Sensor Bits */}
+              <div className="mt-8 flex justify-center gap-2 opacity-20">
+                {[1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="w-1 h-1 rounded-full bg-white animate-bounce"
+                    style={{ animationDelay: `${i * 0.2}s` }}
+                  />
+                ))}
               </div>
             </motion.div>
           ))}
@@ -474,7 +539,7 @@ const StatsSection = ({ t }: { t: Translation }) => {
   )
 }
 
-// 🚀 星際感啟動控制台 (Quick Start Section)
+// 🚀 星際感啟動控制台 (Quick Start Section) - Reactor Ignition
 const QuickStartSection = () => {
   const [copied, setCopied] = useState(false)
   const command = 'bun create gravito-app@latest ./'
@@ -486,153 +551,120 @@ const QuickStartSection = () => {
   }
 
   return (
-    <section className="relative py-32 px-6 overflow-hidden bg-void">
-      {/* 🚀 背景曲率網格 (Hyperspace Grid) */}
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-singularity/30 to-transparent" />
-      <div
-        className="absolute inset-0 opacity-[0.03] pointer-events-none"
-        style={{
-          backgroundImage: `linear-gradient(rgba(0,240,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(0,240,255,0.1) 1px, transparent 1px)`,
-          backgroundSize: '100px 100px',
-          perspective: '1000px',
-          transform: 'rotateX(60deg) translateY(-200px) scale(2)',
-        }}
-      />
+    <section className="relative py-48 px-6 overflow-hidden bg-void">
+      {/* Hyper-tunnel Background */}
+      <div className="absolute inset-0 z-0 pointer-events-none opacity-10">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[200vw] h-[200vh] border-[1px] border-dashed border-singularity/30 rounded-full animate-[spin_60s_linear_infinite]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150vw] h-[150vh] border-[1px] border-dashed border-purple-500/20 rounded-full animate-[spin_40s_linear_reverse_infinite]" />
+      </div>
 
       <div className="max-w-6xl mx-auto relative z-10">
-        <div className="text-center mb-16">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="inline-flex items-center gap-2 px-3 py-1 bg-singularity/10 border border-singularity/20 rounded-md text-xs font-black text-singularity uppercase tracking-[0.1em] mb-4"
-          >
-            <Activity size={10} className="animate-pulse" />
-            <span>Deployment Ready</span>
-          </motion.div>
-          <h2 className="text-4xl md:text-5xl font-black italic tracking-tighter text-white uppercase mb-4">
-            Start Your <span className="text-singularity">Mission</span>
+        <div className="text-center mb-24">
+          <h2 className="text-6xl md:text-8xl font-black italic tracking-[calc(-0.05em)] text-white uppercase mb-6">
+            Ignite the <span className="text-singularity">Core</span>
           </h2>
-          <p className="text-gray-500 font-medium">Ignite your project with a single command.</p>
+          <p className="text-gray-500 font-mono text-xs uppercase tracking-[0.5em]">
+            System_Status: Awaiting_Input
+          </p>
         </div>
 
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          whileInView={{ opacity: 1, scale: 1 }}
+          initial={{ opacity: 0, y: 100 }}
+          whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.8 }}
-          className="relative group lg:max-w-4xl mx-auto"
+          transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+          className="relative lg:max-w-5xl mx-auto"
         >
-          {/* 外層光暈裝飾 (Console Glow) */}
-          <div className="absolute -inset-1 bg-gradient-to-r from-singularity/20 via-purple-500/20 to-singularity/20 rounded-[32px] blur-2xl opacity-50 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
-
-          {/* 終端機容器 (The Console) */}
-          <div className="relative bg-[#0a0a0c] border border-white/10 rounded-[30px] overflow-hidden backdrop-blur-3xl shadow-2xl">
-            {/* 終端機頂部儀表盤 (Console Header) */}
-            <div className="flex items-center justify-between px-8 py-5 border-b border-white/5 bg-white/[0.02]">
-              <div className="flex gap-2">
-                <div className="w-2 h-2 rounded-full bg-red-500/50 shadow-[0_0_8px_rgba(239,68,68,0.4)]" />
-                <div className="w-2 h-2 rounded-full bg-yellow-500/50 shadow-[0_0_8px_rgba(245,158,11,0.4)]" />
-                <div className="w-2 h-2 rounded-full bg-singularity/50 shadow-[0_0_8px_rgba(0,240,255,0.4)]" />
-              </div>
-              <div className="flex items-center gap-6 text-[11px] font-bold text-gray-400 tracking-[0.05em] uppercase">
-                <div className="flex items-center gap-1.5">
-                  <ShieldAlert size={12} className="text-singularity/80" /> <span>Core_Secure</span>
+          {/* Reactor Chassis */}
+          <div className="relative bg-black border border-white/10 rounded-[4rem] p-2 overflow-hidden shadow-[0_0_100px_rgba(0,0,0,1)]">
+            <div className="bg-[#050507] border border-white/5 rounded-[3.8rem] overflow-hidden">
+              {/* Header: Technical Telemetry */}
+              <div className="flex items-center justify-between px-12 py-8 border-b border-white/5 bg-white/[0.01]">
+                <div className="flex gap-4">
+                  <div className="w-3 h-3 rounded-full bg-red-500/20 border border-red-500/50 animate-pulse" />
+                  <div className="w-3 h-3 rounded-full bg-singularity/20 border border-singularity/50" />
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <Activity size={12} className="text-purple-400/80" /> <span>Latency: 0.08ms</span>
-                </div>
-                <div className="hidden sm:block">
-                  STATUS: <span className="text-singularity">Online</span>
+                <div className="font-mono text-[9px] text-gray-600 tracking-widest uppercase">
+                  Reactor_Model: G-2026 {/* Quantum_Encryption: ACTIVE */}
                 </div>
               </div>
-            </div>
 
-            {/* 控制台內容區 (Terminal Body) */}
-            <div className="p-8 md:p-12 relative">
-              {/* 掃描線效果 (Scanning line) */}
-              <motion.div
-                animate={{ top: ['0%', '100%'] }}
-                transition={{ duration: 5, repeat: Infinity, ease: 'linear' }}
-                className="absolute left-0 right-0 h-[30%] bg-gradient-to-b from-transparent via-singularity/5 to-transparent z-10 pointer-events-none"
-              />
-
-              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8 relative z-20">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-4">
-                    <Terminal size={18} className="text-singularity" />
-                    <span className="text-xs font-black text-gray-500 uppercase tracking-widest">
-                      Main Terminal Access
-                    </span>
+              {/* Main Interface */}
+              <div className="p-12 md:p-20 flex flex-col md:flex-row gap-12 items-center">
+                <div className="flex-1 w-full">
+                  <div className="mb-6 flex items-center gap-4">
+                    <div className="px-3 py-1 rounded bg-singularity/10 border border-singularity/20 text-singularity text-[9px] font-black uppercase tracking-tighter">
+                      Command_Input
+                    </div>
+                    <div className="h-px flex-1 bg-white/5" />
                   </div>
 
-                  <div className="flex items-center gap-4 bg-black/40 border border-white/5 p-5 md:p-6 rounded-2xl group/cmd relative overflow-hidden">
-                    <div className="absolute inset-0 bg-singularity/5 opacity-0 group-hover/cmd:opacity-100 transition-opacity" />
-                    <span className="text-singularity font-black shrink-0 font-mono text-lg">
-                      $
-                    </span>
-                    <code className="text-lg md:text-xl font-mono text-white tracking-tight break-all">
-                      {command}
-                    </code>
+                  <div className="group/cmd relative p-8 bg-black/60 border border-white/5 rounded-3xl overflow-hidden transition-all hover:border-singularity/30">
+                    <div className="flex items-center gap-6">
+                      <span className="text-singularity/40 font-mono text-2xl font-black">
+                        {'>'}
+                      </span>
+                      <code className="text-xl md:text-2xl font-mono text-white tracking-tight break-all selection:bg-singularity selection:text-black">
+                        {command}
+                      </code>
+                    </div>
+                    {/* Interior Scanline */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/[0.02] to-transparent h-1/2 animate-[scan-vertical_4s_linear_infinite] pointer-events-none" />
                   </div>
                 </div>
 
-                <button
-                  type="button"
+                {/* The Magnetic Ignition Button */}
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                   onClick={handleCopy}
-                  className="shrink-0 flex flex-col items-center justify-center p-8 md:w-32 md:h-32 rounded-[24px] bg-white group/btn relative overflow-hidden transition-all active:scale-95 shadow-[0_20px_40px_rgba(255,255,255,0.1)]"
+                  className="relative w-40 h-40 shrink-0 group/btn"
                 >
-                  <div className="absolute inset-0 bg-black translate-y-full group-hover/btn:translate-y-0 transition-transform duration-500" />
-                  <div className="relative z-10 flex flex-col items-center gap-2">
-                    {copied ? (
-                      <>
-                        <Check className="text-singularity" size={32} />
-                        <span className="text-[10px] font-black uppercase text-singularity">
-                          Success
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <Rocket
-                          className="text-black group-hover:text-white transition-colors"
-                          size={32}
-                        />
-                        <span className="text-[10px] font-black uppercase text-black group-hover:text-white transition-colors">
-                          Ignite
-                        </span>
-                      </>
-                    )}
-                  </div>
+                  {/* Button Aura */}
+                  <div className="absolute -inset-4 bg-singularity/20 blur-2xl rounded-full opacity-0 group-hover/btn:opacity-100 transition-opacity duration-700" />
 
-                  {/* 按鈕內部的流光效果 */}
-                  <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-0 group-hover/btn:opacity-100 animate-pulse" />
-                </button>
+                  <div className="relative w-full h-full rounded-full bg-white flex flex-col items-center justify-center gap-2 overflow-hidden shadow-[0_0_50px_rgba(255,255,255,0.2)]">
+                    <div className="absolute inset-0 bg-black translate-y-full group-hover/btn:translate-y-0 transition-transform duration-500 ease-[0.16,1,0.3,1]" />
+
+                    <div className="relative z-10 flex flex-col items-center gap-2 transition-colors duration-500">
+                      {copied ? (
+                        <>
+                          <Check className="text-singularity" size={40} />
+                          <span className="text-[10px] font-black uppercase text-singularity">
+                            Synchronized
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <Rocket className="text-black group-hover:text-white" size={40} />
+                          <span className="text-[10px] font-black uppercase text-black group-hover:text-white">
+                            Ignite
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </motion.button>
               </div>
 
-              {/* 底部裝飾資訊 (Analytics Microdata) */}
-              <div className="mt-12 pt-8 border-t border-white/5 grid grid-cols-2 md:grid-cols-4 gap-4">
+              {/* Footer Panel */}
+              <div className="px-12 py-10 border-t border-white/5 bg-black/40 grid grid-cols-2 md:grid-cols-4 gap-8">
                 {[
-                  { label: 'Kernel', val: 'v1.0.4-LIFTOFF' },
-                  { label: 'Engine', val: 'Singularity-V8' },
-                  { label: 'Memory', val: 'Allocated: 64MB' },
-                  { label: 'Security', val: 'Quantum_Shield' },
-                ].map((stat) => (
-                  <div key={stat.label} className="flex flex-col gap-1">
-                    <span className="text-[9px] font-bold text-gray-600 uppercase tracking-widest">
-                      {stat.label}
-                    </span>
-                    <span className="text-[11px] font-mono text-gray-400 font-bold">
-                      {stat.val}
-                    </span>
+                  { label: 'Uptime', val: '99.999%' },
+                  { label: 'Core_Temp', val: '0.002 K' },
+                  { label: 'Throughput', val: 'MAX_CAPACITY' },
+                  { label: 'Authority', val: 'ROOT_GALAXY' },
+                ].map((item) => (
+                  <div key={item.label} className="space-y-1">
+                    <div className="text-[8px] font-black text-gray-700 uppercase tracking-[0.2em]">
+                      {item.label}
+                    </div>
+                    <div className="text-xs font-mono text-gray-400 font-bold">{item.val}</div>
                   </div>
                 ))}
               </div>
             </div>
           </div>
-
-          {/* Corner Decors (Console Brackets) */}
-          <div className="absolute -top-4 -left-4 w-12 h-12 border-t-2 border-l-2 border-singularity/30 rounded-tl-xl pointer-events-none" />
-          <div className="absolute -bottom-4 -right-4 w-12 h-12 border-b-2 border-r-2 border-singularity/30 rounded-br-xl pointer-events-none" />
         </motion.div>
       </div>
     </section>
@@ -672,88 +704,99 @@ const BenchmarkSection = ({ t }: { t: Translation }) => {
           viewport={{ once: true }}
           className="text-center mb-20"
         >
-          <span className="text-xs font-mono tracking-[0.3em] text-cyan-500/60 uppercase mb-4 block">
+          <span className="text-xs font-mono tracking-[0.3em] text-singularity uppercase mb-4 block">
             {t.benchmarks.sectionBadge}
           </span>
-          <h2 className="text-5xl md:text-6xl font-black italic tracking-tighter mb-6">
+          <h2 className="text-5xl md:text-7xl font-black italic tracking-tighter mb-6 uppercase">
             {t.benchmarks.sectionTitle}{' '}
-            <span className="text-cyan-500">{t.benchmarks.sectionTitleHighlight}</span>
+            <span className="text-singularity">{t.benchmarks.sectionTitleHighlight}</span>
           </h2>
-          <p className="text-gray-400 text-lg max-w-2xl mx-auto">{t.benchmarks.sectionDesc}</p>
+          <p className="text-gray-500 text-lg max-w-2xl mx-auto">{t.benchmarks.sectionDesc}</p>
         </motion.div>
 
-        <div ref={ref} className="grid grid-cols-1 md:grid-cols-3 gap-12">
+        <div ref={ref} className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {data.map((item, i) => (
             <div
               key={item.label}
-              className="flex flex-col gap-6 p-8 rounded-2xl bg-white/5 border border-white/5 backdrop-blur-md"
+              className="flex flex-col gap-8 p-10 rounded-[2.5rem] bg-white/[0.02] border border-white/5 backdrop-blur-3xl group relative overflow-hidden"
             >
-              <h3 className="text-lg font-bold text-white/90">{item.label}</h3>
-              <div className="flex flex-col gap-4">
-                {/* Gravito Bar */}
-                <div className="space-y-1">
-                  <div className="flex justify-between text-[10px] font-mono uppercase tracking-widest text-cyan-500/60">
-                    <span>Gravito</span>
-                    <span>
+              {/* Background Technical Noise */}
+              <div className="absolute top-4 right-8 font-mono text-[8px] text-white/5 uppercase select-none">
+                TELEM_ID_{i} {/* STABLE_CORE */}
+              </div>
+
+              <h3 className="text-xl font-bold text-white/90 italic">{item.label}</h3>
+
+              <div className="flex flex-col gap-6">
+                {/* Gravito Bar - The 'Oscilloscope' Style */}
+                <div className="space-y-3">
+                  <div className="flex justify-between items-end">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-singularity">
+                      Gravito Engine
+                    </span>
+                    <span className="font-mono text-2xl text-white font-black">
                       {item.gravito}
                       {item.unit}
                     </span>
                   </div>
-                  <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+                  <div className="h-3 w-full bg-white/5 rounded-sm overflow-hidden relative">
                     <motion.div
                       initial={{ width: 0 }}
                       animate={isInView ? { width: item.inverse ? '5%' : '100%' } : {}}
-                      transition={{ duration: 1, delay: i * 0.2 }}
-                      className="h-full bg-gradient-to-r from-cyan-500 to-blue-600 shadow-[0_0_10px_rgba(0,240,255,0.4)]"
-                    />
+                      transition={{ duration: 1.5, delay: i * 0.2, ease: [0.16, 1, 0.3, 1] }}
+                      className="h-full bg-singularity relative"
+                    >
+                      {/* Speed Pulse */}
+                      <motion.div
+                        animate={{ x: ['-100%', '200%'] }}
+                        transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                        className="absolute inset-0 w-1/2 bg-gradient-to-r from-transparent via-white/40 to-transparent"
+                      />
+                    </motion.div>
                   </div>
                 </div>
 
-                {/* NestJS Bar */}
-                <div className="space-y-1 opacity-50">
-                  <div className="flex justify-between text-[10px] font-mono uppercase tracking-widest text-gray-400">
-                    <span>NestJS</span>
-                    <span>
-                      {item.nest}
-                      {item.unit}
-                    </span>
-                  </div>
-                  <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={isInView ? { width: item.inverse ? '40%' : '25%' } : {}}
-                      transition={{ duration: 1, delay: i * 0.2 + 0.1 }}
-                      className="h-full bg-gray-600"
-                    />
-                  </div>
+                {/* Others - Dimmed */}
+                <div className="space-y-4 opacity-30 group-hover:opacity-50 transition-opacity">
+                  {[
+                    { name: 'NestJS', val: item.nest, w: item.inverse ? '40%' : '25%' },
+                    { name: 'Express', val: item.express, w: item.inverse ? '85%' : '15%' },
+                  ].map((other) => (
+                    <div key={other.name} className="space-y-1">
+                      <div className="flex justify-between text-[9px] font-mono uppercase text-gray-400">
+                        <span>{other.name}</span>
+                        <span>
+                          {other.val}
+                          {item.unit}
+                        </span>
+                      </div>
+                      <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={isInView ? { width: other.w } : {}}
+                          transition={{ duration: 1, delay: i * 0.2 + 0.3 }}
+                          className="h-full bg-gray-600"
+                        />
+                      </div>
+                    </div>
+                  ))}
                 </div>
+              </div>
 
-                {/* Express Bar */}
-                <div className="space-y-1 opacity-30">
-                  <div className="flex justify-between text-[10px] font-mono uppercase tracking-widest text-gray-500">
-                    <span>Express</span>
-                    <span>
-                      {item.express}
-                      {item.unit}
-                    </span>
-                  </div>
-                  <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={isInView ? { width: item.inverse ? '85%' : '15%' } : {}}
-                      transition={{ duration: 1, delay: i * 0.2 + 0.2 }}
-                      className="h-full bg-gray-700"
-                    />
-                  </div>
-                </div>
+              {/* Bottom Decorative Data */}
+              <div className="mt-4 pt-4 border-t border-white/5 flex justify-between">
+                <span className="text-[8px] font-mono text-gray-600">OFFSET: 0.002ms</span>
+                <span className="text-[8px] font-mono text-gray-600">CPU_AFFINITY: CORE_0</span>
               </div>
             </div>
           ))}
         </div>
 
-        <p className="mt-12 text-center text-[10px] font-mono text-gray-600 uppercase tracking-widest">
-          {t.benchmarks.env_note}
-        </p>
+        <div className="mt-16 p-6 border border-white/5 rounded-2xl bg-void/50 text-center">
+          <p className="text-[10px] font-mono text-gray-600 uppercase tracking-[0.2em]">
+            {t.benchmarks.env_note}
+          </p>
+        </div>
       </div>
     </section>
   )
@@ -780,30 +823,21 @@ const FeatureCard3D: React.FC<FeatureCard3DProps> = ({
   const x = useMotionValue(0)
   const y = useMotionValue(0)
 
-  // 加上彈性數值，讓轉動更平滑
   const mouseX = useSpring(x, { stiffness: 150, damping: 20 })
   const mouseY = useSpring(y, { stiffness: 150, damping: 20 })
 
-  // 計算旋轉角度：當滑鼠在邊緣時，旋轉約 15 度
-  const rotateX = useTransform(mouseY, [-0.5, 0.5], [15, -15])
-  const rotateY = useTransform(mouseX, [-0.5, 0.5], [-15, 15])
+  const rotateX = useTransform(mouseY, [-0.5, 0.5], [10, -10])
+  const rotateY = useTransform(mouseX, [-0.5, 0.5], [-10, 10])
 
-  // 計算高光位置（轉換為百分比）
   const highlightXPercent = useTransform(mouseX, [-0.5, 0.5], [0, 100])
   const highlightYPercent = useTransform(mouseY, [-0.5, 0.5], [0, 100])
 
-  // 使用 useMotionTemplate 組合高光背景
-  const highlightBackground = useMotionTemplate`radial-gradient(circle at ${highlightXPercent}% ${highlightYPercent}%, rgba(255,255,255,0.05), transparent 70%)`
+  const highlightBackground = useMotionTemplate`radial-gradient(circle at ${highlightXPercent}% ${highlightYPercent}%, rgba(99, 102, 241, 0.15), transparent 80%)`
 
   function handleMouseMove(e: React.MouseEvent<HTMLDivElement>) {
     const rect = e.currentTarget.getBoundingClientRect()
-    const width = rect.width
-    const height = rect.height
-    const mouseXPos = e.clientX - rect.left
-    const mouseYPos = e.clientY - rect.top
-
-    x.set(mouseXPos / width - 0.5)
-    y.set(mouseYPos / height - 0.5)
+    x.set((e.clientX - rect.left) / rect.width - 0.5)
+    y.set((e.clientY - rect.top) / rect.height - 0.5)
   }
 
   return (
@@ -817,36 +851,57 @@ const FeatureCard3D: React.FC<FeatureCard3DProps> = ({
         x.set(0)
         y.set(0)
       }}
-      style={{
-        rotateX,
-        rotateY,
-        transformStyle: 'preserve-3d',
-        perspective: 1000,
-      }}
-      className="relative h-96 w-full rounded-2xl bg-panel/40 border border-white/10 p-8 backdrop-blur-md cursor-pointer group"
+      style={{ rotateX, rotateY, transformStyle: 'preserve-3d', perspective: 1000 }}
+      className="relative h-96 w-full rounded-[2.5rem] bg-void/40 border border-white/5 p-8 backdrop-blur-xl cursor-pointer group overflow-hidden"
     >
-      <div style={{ transform: 'translateZ(50px)' }} className="flex flex-col h-full relative z-10">
-        {/* 圖標發光背景 */}
-        <div className="mb-6 w-16 h-16 rounded-xl bg-black flex items-center justify-center border border-white/5 group-hover:border-cyan-500/50 shadow-[0_0_20px_rgba(0,240,255,0.05)] group-hover:shadow-cyan-500/20 transition-all duration-500">
-          <Icon className="text-cyan-400 group-hover:text-cyan-300 transition-colors" size={32} />
+      {/* Dynamic Grid Background inside card */}
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-700 bg-[radial-gradient(rgba(255,255,255,0.1)_1px,transparent_1px)] [background-size:20px_20px]" />
+
+      <div style={{ transform: 'translateZ(60px)' }} className="flex flex-col h-full relative z-10">
+        {/* Tech Icon with Glow */}
+        <div className="mb-8 w-20 h-20 rounded-2xl bg-black/50 flex items-center justify-center border border-white/5 group-hover:border-singularity/50 shadow-[0_0_40px_rgba(0,0,0,0.5)] group-hover:shadow-singularity/20 transition-all duration-700">
+          <Icon
+            className="text-gray-500 group-hover:text-singularity transition-colors duration-500"
+            size={36}
+          />
+          {/* X-Ray Ring */}
+          <div className="absolute inset-0 rounded-2xl border border-singularity/0 group-hover:border-singularity/30 group-hover:scale-125 transition-all duration-700 pointer-events-none" />
         </div>
 
-        <span className="text-[13px] font-bold tracking-[0.1em] text-cyan-400 mb-2 uppercase">
+        <span className="text-[10px] font-black tracking-[0.3em] text-gray-500 group-hover:text-singularity mb-3 uppercase transition-colors">
           {subtitle}
         </span>
-        <h3 className="text-2xl font-bold text-white mb-4 italic tracking-tight">{title}</h3>
-        <p className="text-gray-400 text-sm leading-relaxed">{description}</p>
+        <h3 className="text-3xl font-bold text-white mb-4 italic tracking-tighter transition-transform group-hover:translate-x-2">
+          {title}
+        </h3>
+        <p className="text-gray-500 group-hover:text-gray-300 text-sm leading-relaxed transition-colors">
+          {description}
+        </p>
 
-        {/* 底部裝飾線 */}
-        <div className="mt-auto h-[1px] w-full bg-gradient-to-r from-transparent via-white/5 group-hover:via-cyan-500/30 to-transparent transition-all duration-500" />
+        {/* Technical Data Bits */}
+        <div className="mt-auto flex justify-between items-end">
+          <div className="text-[9px] font-mono text-white/10 group-hover:text-singularity/40 transition-colors">
+            PROTOCOL_V1 {/* OPTIMIZED_STACK */}
+          </div>
+          <div className="w-12 h-12 flex items-center justify-center">
+            <ArrowRight
+              className="text-white/5 group-hover:text-singularity group-hover:translate-x-1 transition-all"
+              size={20}
+            />
+          </div>
+        </div>
       </div>
 
-      {/* 卡片高光（會跟著滑鼠跑的反射感） */}
+      {/* Edge Beam Effect */}
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700">
+        <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-singularity to-transparent" />
+        <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-singularity to-transparent" />
+      </div>
+
+      {/* Floating Highlight */}
       <motion.div
-        style={{
-          background: highlightBackground,
-        }}
-        className="absolute inset-0 rounded-2xl pointer-events-none"
+        style={{ background: highlightBackground }}
+        className="absolute inset-0 pointer-events-none"
       />
     </motion.div>
   )
