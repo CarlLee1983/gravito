@@ -200,7 +200,7 @@ export default function Home() {
       </nav>
 
       <div className="grid-texture">
-        <PhotonHero />
+        <PhotonHero lang={currentLang} />
 
         {/* Floating Action Hint */}
         <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-4 animate-bounce opacity-20">

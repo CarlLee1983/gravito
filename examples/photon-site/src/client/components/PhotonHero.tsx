@@ -3,12 +3,33 @@ import { motion, useScroll, useTransform } from 'framer-motion'
 import { Zap, Shield, Cpu, Activity } from 'lucide-react'
 import { ConstellationCanvas } from './ConstellationCanvas'
 
-export const PhotonHero = () => {
+export const PhotonHero = ({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) => {
   const containerRef = useRef<HTMLDivElement>(null)
   const { scrollY } = useScroll()
 
   const y1 = useTransform(scrollY, [0, 500], [0, 200])
   const opacity = useTransform(scrollY, [0, 300], [1, 0])
+
+  const t = {
+    en: {
+      headline_1: 'The Absolute',
+      headline_2: 'Engine.',
+      tagline: 'A high-performance web kernel for Bun.',
+      sub_tagline: 'Built for raw speed, zero-copy safety, and sub-millisecond dispatch.',
+      build_target: 'Build_Target',
+      protocol: 'Protocol',
+      cluster_mode: 'Cluster_Mode'
+    },
+    'zh-TW': {
+      headline_1: '絕對的',
+      headline_2: '引擎。',
+      tagline: '專為 Bun 打造的高性能 Web 核心。',
+      sub_tagline: '專注於極速、零拷貝安全性及亞毫秒級調度。',
+      build_target: '構建目標',
+      protocol: '協定',
+      cluster_mode: '叢集模式'
+    }
+  }[lang]
 
   return (
     <div ref={containerRef} className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
@@ -45,8 +66,8 @@ export const PhotonHero = () => {
               transition={{ duration: 1, delay: 0.2 }}
               className="text-8xl md:text-[12rem] font-black text-[var(--text-primary)] tracking-[-0.06em] leading-[0.85] uppercase transition-colors"
             >
-              The Absolute <br />
-              <span className="text-photon-gold italic font-light opacity-90">Engine.</span>
+              {t.headline_1} <br />
+              <span className="text-photon-gold italic font-light opacity-90">{t.headline_2}</span>
             </motion.h1>
 
             {/* Sub-label HUD */}
@@ -71,8 +92,8 @@ export const PhotonHero = () => {
             transition={{ duration: 1, delay: 0.5 }}
             className="max-w-2xl mx-auto text-xl md:text-2xl text-[var(--text-secondary)] font-light leading-relaxed tracking-tight transition-colors"
           >
-            A high-performance web kernel for Bun.
-            Built for raw speed, zero-copy safety, and sub-millisecond dispatch.
+            {t.tagline}
+            {t.sub_tagline}
           </motion.p>
 
           {/* Technical HUD Labels - REPOSITIONED BOTTOM */}
@@ -83,15 +104,15 @@ export const PhotonHero = () => {
             className="pt-16 flex flex-wrap justify-center gap-x-16 gap-y-8"
           >
             <div className="flex flex-col items-center">
-              <span className="text-[8px] font-technical text-zinc-600 tracking-[0.4em] uppercase mb-2">Build_Target</span>
+              <span className="text-[8px] font-technical text-zinc-600 tracking-[0.4em] uppercase mb-2">{t.build_target}</span>
               <span className="text-xs font-black text-[var(--text-primary)] tracking-widest uppercase transition-colors">Native_M3_ARM</span>
             </div>
             <div className="flex flex-col items-center">
-              <span className="text-[8px] font-technical text-zinc-600 tracking-[0.4em] uppercase mb-2">Protocol</span>
+              <span className="text-[8px] font-technical text-zinc-600 tracking-[0.4em] uppercase mb-2">{t.protocol}</span>
               <span className="text-xs font-black text-[var(--text-primary)] tracking-widest uppercase transition-colors">HTTP_3_QUIC</span>
             </div>
             <div className="flex flex-col items-center">
-              <span className="text-[8px] font-technical text-zinc-600 tracking-[0.4em] uppercase mb-2">Cluster_Mode</span>
+              <span className="text-[8px] font-technical text-zinc-600 tracking-[0.4em] uppercase mb-2">{t.cluster_mode}</span>
               <span className="text-xs font-black text-[var(--text-primary)] tracking-widest uppercase transition-colors">Balanced_AOT</span>
             </div>
           </motion.div>
