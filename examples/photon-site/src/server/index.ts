@@ -50,7 +50,9 @@ import authDoc from './data/docs/auth.json'
 import benchmarksDoc from './data/docs/benchmarks.json'
 import contextDoc from './data/docs/context.json'
 import errorsDoc from './data/docs/errors.json'
+import crudAtlasDoc from './data/docs/ex-crud-atlas.json'
 import fileUploadDoc from './data/docs/ex-file-upload.json'
+import helloWorldDoc from './data/docs/ex-hello-world.json'
 import integrationsDoc from './data/docs/integrations.json'
 // Technical Content Dictionary
 // Technical Content JSON Data
@@ -259,33 +261,7 @@ CMD ["bun", "src/server/index.ts"]</code></pre>
     meta: { lastUpdated: '2026-01-14', complexity: 'MID_LEVEL', category: 'ADVANCED' },
   },
   performance: benchmarksDoc,
-  'ex-hello-world': {
-    id: 'E01',
-    title: 'Ultra Hello World',
-    content: `
-      <p>This example demonstrates the absolute minimal footprint of Photon. By using <code>c.ultra()</code>, we disable non-essential context features for maximum raw speed.</p>
-      
-      <h3>Optimal Implementation</h3>
-      <pre><code>import { Gravito } from '@gravito/core/engine'
-
-const app = new Gravito()
-
-app.get('/ping', (c) => {
-  // Enter zero-allocation mode
-  c.ultra() 
-  return c.text('pong')
-})
-
-export default {
-  fetch: app.fetch.bind(app)
-}</code></pre>
-
-      <div class="callout-tip">
-        <p>Lab Note: Ultra mode is ideal for high-frequency health checks or simple proxy handlers where garbage collection pauses must be avoided.</p>
-      </div>
-    `,
-    meta: { lastUpdated: '2026-01-14', complexity: 'BASE_LEVEL', category: 'LAB_EXPERIMENTS' },
-  },
+  'ex-hello-world': helloWorldDoc,
   'ex-file-stream': {
     id: 'E02',
     title: 'Zero-Copy Stream',
@@ -338,36 +314,7 @@ app.get('/admin/stats', (c) => c.json({ status: 'ACTIVE' }))</code></pre>
     `,
     meta: { lastUpdated: '2026-01-14', complexity: 'MID_LEVEL', category: 'LAB_EXPERIMENTS' },
   },
-  'ex-crud-atlas': {
-    id: 'E04',
-    title: 'Atomic CRUD Atlas',
-    content: `
-      <p>Complete integration example using <strong>Atlas ORM</strong> for high-speed database orchestration within Photon routes.</p>
-      
-      <h3>Data Model & Controller</h3>
-      <pre><code>import { Model, column, hasMany } from '@gravito/atlas'
-
-class Project extends Model {
-  @column({ primary: true }) id: number
-  @column() title: string
-}
-
-// In your Photon Route:
-app.get('/projects', async (c) => {
-  const projects = await Project.query()
-    .where('active', true)
-    .orderBy('id', 'desc')
-    .limit(10)
-    .get()
-
-  return c.json({ projects })
-})</code></pre>
-
-      <h3>Performance Intel</h3>
-      <p>Atlas is built with the same "No-Shim" philosophy as Photon. It uses direct dynamic driver loading and pre-compiled query templates, making it significantly faster than Prisma or TypeORM in high-load scenarios.</p>
-    `,
-    meta: { lastUpdated: '2026-01-14', complexity: 'HARD_LEVEL', category: 'LAB_EXPERIMENTS' },
-  },
+  'ex-crud-atlas': crudAtlasDoc,
   'ex-file-upload': fileUploadDoc,
 }
 

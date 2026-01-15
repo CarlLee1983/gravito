@@ -1,0 +1,10 @@
+{
+  "id": "E04",
+  "title": "Atomic CRUD Atlas",
+  "content": "<p>Complete integration example using <strong>Atlas ORM</strong> for high-speed database orchestration within Photon routes.</p><h3>Data Model & Controller</h3><pre><code>import { Model, column } from '@gravito/atlas'\n\n// Define Model\nclass Project extends Model {\n  static table = 'projects'\n\n  @column({ primary: true }) \n  id: number\n\n  @column() \n  title: string\n\n  @column()\n  active: boolean\n}\n\n// In your Photon Route:\napp.get('/projects', async (c) => {\n  const projects = await Project.query()\n    .where('active', true)\n    .orderBy('id', 'desc')\n    .limit(10)\n    .get()\n\n  return c.json({ projects })\n})</code></pre><h3>Performance Intel</h3><p>Atlas is built with the same \"No-Shim\" philosophy as Photon. It uses direct dynamic driver loading and pre-compiled query templates, making it significantly faster than Prisma or TypeORM in high-load scenarios.</p>",
+  "meta": {
+    "lastUpdated": "2026-01-15",
+    "complexity": "HARD_LEVEL",
+    "category": "LAB_EXPERIMENTS"
+  }
+}
