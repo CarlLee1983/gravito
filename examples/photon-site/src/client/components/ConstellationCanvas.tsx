@@ -19,14 +19,22 @@ export const ConstellationCanvas: React.FC<Props> = ({ className }) => {
         let particles: Particle[] = []
 
         // Configuration
-        const particleCount = 100 // Density
+        // const particleCount = 100 // Density // Removed static config
         const connectionDistance = 150
         const mouseDistance = 200
 
-        // Colors - Dynamic based on computed styles later if needed, but hardcoded for performance/simplicity first
-        // We want a subtle, high-tech look.
-        const particleColor = 'rgba(255, 184, 0, 0.3)' // Photon Gold subtle
-        const lineColor = 'rgba(209, 213, 219, 0.1)' // Text Main subtle
+        // Dynamic Colors based on Theme
+        const getThemeColors = () => {
+            const isLight = document.documentElement.classList.contains('light')
+            return {
+                particle: isLight ? 'rgba(255, 184, 0, 0.6)' : 'rgba(255, 184, 0, 0.3)', // Higher opacity in light
+                line: isLight ? 'rgba(0, 0, 0, 0.15)' : 'rgba(209, 213, 219, 0.1)', // Darker lines in light
+                mouseLineBase: isLight ? 'rgba(255, 184, 0, ' : 'rgba(255, 184, 0, ',
+                nodeLineBase: isLight ? 'rgba(50, 50, 50, ' : 'rgba(150, 150, 150, '
+            }
+        }
+
+        let colors = getThemeColors()
 
         let w = canvas.width = canvas.parentElement?.clientWidth || window.innerWidth
         let h = canvas.height = canvas.parentElement?.clientHeight || window.innerHeight
@@ -59,12 +67,19 @@ export const ConstellationCanvas: React.FC<Props> = ({ className }) => {
                 if (!ctx) return
                 ctx.beginPath()
                 ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2)
-                ctx.fillStyle = particleColor
+                ctx.fillStyle = colors.particle
                 ctx.fill()
             }
         }
 
         const init = () => {
+            // Responsive particle count
+            // Desktop: 100, Tablet: 70, Mobile: 40
+            // This reduces calculation load from ~5000 checks to ~800 checks on mobile
+            let particleCount = 100
+            if (w < 768) particleCount = 40
+            else if (w < 1024) particleCount = 70
+
             particles = []
             for (let i = 0; i < particleCount; i++) {
                 particles.push(new Particle())
@@ -85,6 +100,12 @@ export const ConstellationCanvas: React.FC<Props> = ({ className }) => {
             h = canvas.height = canvas.parentElement?.clientHeight || window.innerHeight
             init()
         }
+
+        // Watch for class changes on HTML element to switch theme dynamically
+        const observer = new MutationObserver(() => {
+            colors = getThemeColors()
+        })
+        observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
 
         window.addEventListener('resize', handleResize)
         window.addEventListener('mousemove', handleMouseMove)
@@ -109,7 +130,9 @@ export const ConstellationCanvas: React.FC<Props> = ({ className }) => {
 
                 if (distMouse < mouseDistance) {
                     ctx.beginPath()
-                    ctx.strokeStyle = `rgba(255, 184, 0, ${0.2 * (1 - distMouse / mouseDistance)})` // Gold glow near mouse
+                    // Dynamic alpha
+                    const alpha = 0.4 * (1 - distMouse / mouseDistance)
+                    ctx.strokeStyle = `${colors.mouseLineBase}${alpha})`
                     ctx.lineWidth = 1
                     ctx.moveTo(p1.x, p1.y)
                     ctx.lineTo(mouse.x, mouse.y)
@@ -125,7 +148,9 @@ export const ConstellationCanvas: React.FC<Props> = ({ className }) => {
 
                     if (dist < connectionDistance) {
                         ctx.beginPath()
-                        ctx.strokeStyle = `rgba(150, 150, 150, ${0.1 * (1 - dist / connectionDistance)})`
+                        // Dynamic alpha for lines
+                        const alpha = (colors.line.includes('0.15') ? 0.3 : 0.1) * (1 - dist / connectionDistance)
+                        ctx.strokeStyle = `${colors.nodeLineBase}${alpha})`
                         ctx.lineWidth = 0.5
                         ctx.moveTo(p1.x, p1.y)
                         ctx.lineTo(p2.x, p2.y)
@@ -144,6 +169,7 @@ export const ConstellationCanvas: React.FC<Props> = ({ className }) => {
             cancelAnimationFrame(animationFrameId)
             window.removeEventListener('resize', handleResize)
             window.removeEventListener('mousemove', handleMouseMove)
+            observer.disconnect()
         }
     }, [])
 

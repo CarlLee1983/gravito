@@ -1,4 +1,4 @@
-import { readdir } from 'node:fs/promises'
+import { cp, readdir } from 'node:fs/promises'
 import path from 'node:path'
 import { Gravito } from '@gravito/core/engine'
 import { StaticSiteGenerator } from '@gravito/prism'
@@ -85,6 +85,20 @@ async function build() {
   await ssg.export(outputDir, 'https://photon.gravito.dev', extraPaths)
 
   console.log('✅ Build complete.')
+
+  // 3. Copy Public Assets
+  console.log('📦 Copying public assets...')
+  const publicDir = path.join(process.cwd(), 'public')
+  try {
+    // Check if public dir exists before copying
+    const publicStats = (await Bun.file(publicDir).exists()) || true // Bun.file on dir might behave differently, assume exists for now or use fs.stat
+    // Using fs cp is safer recursive
+    await cp(publicDir, outputDir, { recursive: true })
+    console.log('✅ Public assets copied.')
+  } catch (e) {
+    console.warn('⚠️ Could not copy public assets (directory might be empty or missing):', e)
+  }
+
   process.exit(0)
 }
 

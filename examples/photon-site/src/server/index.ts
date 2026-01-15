@@ -12,6 +12,13 @@ app.use(async (_, next) => {
   return await next()
 })
 
+// Explicit static routes for known assets
+app.get('/favicon.svg', () => {
+  return new Response(Bun.file(path.join(process.cwd(), 'public/favicon.svg')), {
+    headers: { 'Content-Type': 'image/svg+xml' },
+  })
+})
+
 const isDev = process.env.NODE_ENV === 'development'
 
 const viewsDir = path.join(process.cwd(), 'src/views')
