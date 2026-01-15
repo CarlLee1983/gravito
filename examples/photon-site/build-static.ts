@@ -95,7 +95,7 @@ async function build() {
     const { rm } = await import('node:fs/promises')
     try {
       await rm(faviconDir, { recursive: true, force: true })
-    } catch (e) {
+    } catch (_e) {
       // Ignore if it doesn't exist
     }
 

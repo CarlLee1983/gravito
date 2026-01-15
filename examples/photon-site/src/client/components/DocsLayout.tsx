@@ -120,6 +120,7 @@ export const DocsLayout = ({
             <div className="flex items-center gap-3">
               {/* LANG TOGGLE */}
               <button
+                type="button"
                 onClick={toggleLanguage}
                 className="w-8 h-8 flex items-center justify-center rounded-sm border border-s-brd bg-surf-bg text-s-txt hover:text-photon-gold transition-all shadow-sm group"
                 title={currentLang === 'en' ? 'Switch to Traditional Chinese' : 'Switch to English'}
@@ -131,6 +132,7 @@ export const DocsLayout = ({
 
               {/* THEME TOGGLE */}
               <button
+                type="button"
                 onClick={toggleTheme}
                 className="w-8 h-8 flex items-center justify-center rounded-sm border border-s-brd bg-surf-bg text-s-txt hover:text-photon-gold transition-all shadow-sm"
               >
@@ -160,6 +162,7 @@ export const DocsLayout = ({
           </div>
 
           <button
+            type="button"
             onClick={() => setSearchOpen(true)}
             className="w-full flex items-center justify-between border border-s-brd bg-surf-bg text-s-txt rounded-sm py-3 px-4 text-[10px] uppercase font-bold tracking-widest hover:border-photon-gold/30 transition-all mb-12 group text-left shadow-sm"
           >

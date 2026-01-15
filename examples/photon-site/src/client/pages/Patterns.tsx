@@ -8,28 +8,36 @@ const getPatterns = (lang: 'en' | 'zh-TW') => {
     {
       id: 'PTN_01',
       title: isZh ? '管道代理 (Pipeline Proxy)' : 'The Pipeline Proxy',
-      desc: isZh ? '使用零複製緩衝傳遞來鏈接超低延遲處理程序。' : 'Chain ultra-low latency handlers with zero-copy buffer passing.',
+      desc: isZh
+        ? '使用零複製緩衝傳遞來鏈接超低延遲處理程序。'
+        : 'Chain ultra-low latency handlers with zero-copy buffer passing.',
       icon: Zap,
       code: 'app.get("/*", proxy.pipe("upstream.node"))',
     },
     {
       id: 'PTN_02',
       title: isZh ? 'AOT 驗證器' : 'AOT Validator',
-      desc: isZh ? '將 Schema 檢查編譯到路由表中，實現 O(1) 等級的驗證。' : 'Compile schema checks into the routing table for O(1) validation.',
+      desc: isZh
+        ? '將 Schema 檢查編譯到路由表中，實現 O(1) 等級的驗證。'
+        : 'Compile schema checks into the routing table for O(1) validation.',
       icon: Shield,
       code: 'app.post("/data", { schema }, handler)',
     },
     {
       id: 'PTN_03',
       title: isZh ? '原子化 CRUD' : 'Atomic CRUD',
-      desc: isZh ? '透過 Atlas ORM 整合高度優化的資料庫操作。' : 'Highly optimized database operations with Atlas ORM integration.',
+      desc: isZh
+        ? '透過 Atlas ORM 整合高度優化的資料庫操作。'
+        : 'Highly optimized database operations with Atlas ORM integration.',
       icon: Database,
       code: 'const user = await User.find(id)',
     },
     {
       id: 'PTN_04',
       title: isZh ? '邊緣防護' : 'Edge Guard',
-      desc: isZh ? '在指令層級運行的安全中介軟體。' : 'Security middleware executing at the instruction level.',
+      desc: isZh
+        ? '在指令層級運行的安全中介軟體。'
+        : 'Security middleware executing at the instruction level.',
       icon: Lock,
       code: 'app.use(sentinel.shield())',
     },
@@ -51,7 +59,9 @@ export default function Patterns({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) {
           <span className="text-photon-gold">{isZh ? '模式' : 'Patterns'}</span>
         </h1>
         <p className="text-xl text-s-txt font-light max-w-2xl leading-relaxed">
-          {isZh ? '構建隱形、高效能協調層的成熟結構。' : 'Proven structures for building invisible, high-performance orchestration layers.'}
+          {isZh
+            ? '構建隱形、高效能協調層的成熟結構。'
+            : 'Proven structures for building invisible, high-performance orchestration layers.'}
         </p>
       </div>
 
@@ -88,10 +98,13 @@ export default function Patterns({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) {
           <Layers size={200} strokeWidth={0.5} />
         </div>
         <h2 className="text-3xl font-black text-p-txt uppercase tracking-tighter mb-6 relative z-10">
-          {isZh ? '部署您的' : 'Deploy Your'} <span className="text-photon-gold">{isZh ? '藍圖' : 'Blueprint'}</span>
+          {isZh ? '部署您的' : 'Deploy Your'}{' '}
+          <span className="text-photon-gold">{isZh ? '藍圖' : 'Blueprint'}</span>
         </h2>
         <p className="text-s-txt max-w-xl mb-10 relative z-10">
-          {isZh ? 'Photon 模式旨在可組合化。混合搭配這些建築區塊，打造終極協調核心。' : 'Photon patterns are designed to be composable. Mix and match these architectural blocks to create the ultimate orchestration kernel.'}
+          {isZh
+            ? 'Photon 模式旨在可組合化。混合搭配這些建築區塊，打造終極協調核心。'
+            : 'Photon patterns are designed to be composable. Mix and match these architectural blocks to create the ultimate orchestration kernel.'}
         </p>
         <Link
           href={`/docs/intro?lang=${lang}`}

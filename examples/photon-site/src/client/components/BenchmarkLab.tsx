@@ -59,6 +59,7 @@ export const BenchmarkLab = ({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) => {
           </p>
         </div>
         <button
+          type="button"
           onClick={() => setActive(!active)}
           className={`px-8 py-4 text-[10px] font-black tracking-widest uppercase transition-all flex items-center gap-4 ${active ? 'bg-photon-gold text-black' : 'bg-white/5 text-white border border-white/10'
             }`}

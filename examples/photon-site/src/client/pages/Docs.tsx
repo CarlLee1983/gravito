@@ -69,7 +69,14 @@ function highlightCode(html: string) {
   })
 }
 
-export default function Docs({ title, content, id, slug, meta, lang = 'en' }: DocsProps & { lang?: 'en' | 'zh-TW' }) {
+export default function Docs({
+  title,
+  content,
+  id,
+  slug,
+  meta,
+  lang = 'en',
+}: DocsProps & { lang?: 'en' | 'zh-TW' }) {
   const renderedContent = useMemo(() => {
     const highlightedContent = highlightCode(content || '')
     const parts = highlightedContent.split('[BENCHMARK_LAB]')
