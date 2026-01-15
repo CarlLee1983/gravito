@@ -2,9 +2,9 @@
   <div class="relative z-10 pb-20 bg-atlas-void overflow-hidden min-h-screen">
     
     <!-- Visual Graph: Data Sorting Grid -->
-    <div class="absolute inset-0 z-0 pointer-events-none opacity-40">
+    <div class="absolute inset-0 z-0 pointer-events-none">
         <DataSortingGrid :with-background="false" />
-        <div class="absolute inset-0 bg-gradient-to-b from-atlas-void/20 via-atlas-void/50 to-atlas-void"></div>
+        <div class="absolute inset-0 bg-gradient-to-b from-atlas-void/10 via-atlas-void/40 to-atlas-void"></div>
     </div>
 
     <!-- Hero Content -->

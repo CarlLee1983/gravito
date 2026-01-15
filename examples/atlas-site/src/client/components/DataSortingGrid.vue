@@ -4,7 +4,7 @@
     class="absolute inset-0 z-0 pointer-events-none overflow-hidden bg-atlas-void"
     :style="containerStyle"
   >
-    <canvas ref="canvasRef" class="block w-full h-full opacity-60"></canvas>
+    <canvas ref="canvasRef" class="block w-full h-full"></canvas>
   </div>
 </template>
 
