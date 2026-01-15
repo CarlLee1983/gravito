@@ -1,0 +1,10 @@
+{
+  "id": "16",
+  "title": "Perf Tuning",
+  "content": "<p>For mission-critical applications where every microsecond counts, Photon provides deep-level performance tuning knobs.</p><h3>Ultra Mode (ctx.ultra)</h3><p>By default, Photon provides a balanced context. By enabling <code>ultra()</code>, the engine switches to a <strong>MinimalContext</strong>, stripping away all non-essential features (like cookie parsing or complex query handling) for raw speed.</p><pre><code>app.get('/ping', (c) => {\n  // Enter minimal allocation mode for specialized performance\n  c.ultra() \n  return c.body(null, 204)\n})</code></pre><h3>Radix Cache Policies</h3><p>You can tune how the router caches dynamic segments. For routes with high-cardinality parameters (e.g., UUIDs), you can disable prefix-caching to preserve memory.</p><h3>Garbage Collection Management</h3><p>In high-load scenarios, you can use <code>Bun.gc(true)</code> in a Photon middleware to manually trigger memory cleanup during \"Silence periods\" detected by the engine's telemetry.</p>",
+  "meta": {
+    "lastUpdated": "2026-01-14",
+    "complexity": "HARD_LEVEL",
+    "category": "ADVANCED"
+  }
+}

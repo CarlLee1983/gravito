@@ -1,0 +1,6 @@
+{
+  "id": "02",
+  "title": "Initialize Core",
+  "content": "<p>Bootstrapping a high-concurrency node takes less than 60 seconds. Photon is designed to be lean, powerful, and zero-config.</p><h2>1. Orchestration</h2><p>Install the core engine via the Bun package manager:</p><pre><code>bun add @gravito/photon</code></pre><h2>2. Source Entry</h2><p>Create an <code>index.ts</code> file and define your application logic:</p><pre><code>import { Gravito } from '@gravito/photon'\n\nconst app = new Gravito()\n\napp.get('/', (c) => {\n  return c.json({ \n    status: 'accelerating', \n    version: '1.1.0' \n  })\n})\n\nexport default {\n  port: 3000,\n  fetch: app.fetch.bind(app)\n}</code></pre>",
+  "meta": { "lastUpdated": "2026-01-13", "complexity": "BASE_LEVEL", "category": "DEPLOYMENT" }
+}
