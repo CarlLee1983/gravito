@@ -482,7 +482,11 @@ describe('validateEmail', () => {
 - 導出符號數：623
 - JSDoc 覆蓋率：
   - Core: ✅ 100% (Completed)
-  - Other Packages: 待評估
+  - Atlas: ✅ 100% (Completed)
+  - Sentinel: ✅ 100% (Completed)
+  - Monolith: ✅ 100% (Completed)
+  - Photon: ✅ 100% (Partial/Key Exports)
+  - Other Packages: Pending
 - 目標：100% 公開 API 有完整文檔
 
 ### 14.3 文檔標準
@@ -664,9 +668,9 @@ bun scripts/check-docs.ts > docs/missing-docs.txt
 
 #### Step 14.4.2: 優先級排序
 1. **Core 核心 API** - Application, Router, Context ✅ (完成)
-2. **ORM** - Model, QueryBuilder
-3. **Authentication** - Auth, Sessions
-4. **其他** - 按使用頻率
+2. **ORM** - Model, QueryBuilder ✅ (完成)
+3. **Authentication** - Auth, Sessions ✅ (完成)
+4. **其他** - 按使用頻率 (Monolith ✅)
 
 #### Step 14.4.3: 添加文檔模板
 ```typescript

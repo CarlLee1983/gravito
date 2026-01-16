@@ -1,6 +1,10 @@
 import type { Authenticatable } from './Authenticatable'
 import type { UserProvider } from './UserProvider'
 
+/**
+ * Guard interface for handling authentication.
+ * @public
+ */
 export interface Guard<User extends Authenticatable = Authenticatable> {
   /**
    * Determine if the current user is authenticated.
@@ -43,6 +47,11 @@ export interface Guard<User extends Authenticatable = Authenticatable> {
   setProvider(provider: UserProvider<User>): void
 }
 
+/**
+ * Stateful Guard interface (e.g. Session).
+ * Supports logging in and logging out.
+ * @public
+ */
 export interface StatefulGuard<User extends Authenticatable = Authenticatable> extends Guard<User> {
   /**
    * Attempt to authenticate a user using the given credentials.

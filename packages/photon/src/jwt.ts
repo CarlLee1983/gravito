@@ -13,16 +13,54 @@ const ensure =
     return fn(...args)
   }
 
+/**
+ * JWT Middleware.
+ * @public
+ */
 export const jwt = ensure(honoJwt.jwt, 'jwt')
+
+/**
+ * Verify JWT token.
+ * @public
+ */
 export const verify = ensure(honoJwt.verify, 'verify')
+
+/**
+ * Decode JWT token without verification.
+ * @public
+ */
 export const decode = ensure(honoJwt.decode, 'decode')
+
+/**
+ * Sign payload to create JWT token.
+ * @public
+ */
 export const sign = ensure(honoJwt.sign, 'sign')
+
+/**
+ * Verify JWT token using JWKS.
+ * @public
+ */
 export const verifyWithJwks = ensure(honoJwt.verifyWithJwks, 'verifyWithJwks')
 
 /**
  * Compatibility types for Hono v4
  */
 export type JwtPayload = any // Fallback to any for now to avoid deep internal imports that might break
+/**
+ * JWT Header type compatibility.
+ * @public
+ */
 export type JwtHeader = any
+
+/**
+ * JWT Options type compatibility.
+ * @public
+ */
 export type JwtOptions = any
+
+/**
+ * JWT Middleware function type compatibility.
+ * @public
+ */
 export type JwtFunction = (options: any) => MiddlewareHandler

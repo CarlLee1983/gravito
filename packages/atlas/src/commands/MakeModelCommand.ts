@@ -3,6 +3,10 @@ import { join } from 'node:path'
 import { Command } from './Command'
 import { MakeMigrationCommand } from './MakeMigrationCommand'
 
+/**
+ * Command to scaffold a new Eloquent model.
+ * @internal
+ */
 export class MakeModelCommand extends Command {
   signature = 'make:model <name>'
   description = 'Create a new Eloquent model class'

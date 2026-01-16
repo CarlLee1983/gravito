@@ -2,6 +2,10 @@ import * as readline from 'node:readline'
 import * as Atlas from '../index'
 import { Command } from './Command'
 
+/**
+ * Interactive REPL command (Tinker) for interacting with the application.
+ * @internal
+ */
 export class TinkerCommand extends Command {
   signature = 'tinker'
   description = 'Interactive shell to experiment with your database'

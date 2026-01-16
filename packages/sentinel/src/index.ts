@@ -36,6 +36,10 @@ export * from './middleware/guest'
 export * from './PasswordBroker'
 export * from './providers/CallbackUserProvider'
 
+/**
+ * Options for configuring Orbit Sentinel (Auth).
+ * @public
+ */
 export interface OrbitSentinelOptions extends AuthConfig {
   exposeAs?: string
   exposeGateAs?: string
@@ -55,6 +59,11 @@ export interface OrbitSentinelOptions extends AuthConfig {
   }
 }
 
+/**
+ * Orbit Sentinel Service.
+ * Provides the main installation point for Sentinel into Gravito.
+ * @public
+ */
 export class OrbitSentinel implements GravitoOrbit {
   public readonly gate: Gate
 

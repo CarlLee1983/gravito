@@ -1,12 +1,26 @@
 import { AuthorizationException } from '@gravito/core'
 import type { Authenticatable } from './contracts/Authenticatable'
 
+/**
+ * Constructor type for classes (e.g., Models, Policies).
+ * @public
+ */
 export type Constructor<T = unknown> = new (...args: unknown[]) => T
+
+/**
+ * Authorization policy callback function.
+ * @public
+ */
 export type PolicyCallback = (
   user: Authenticatable | null,
   ...args: unknown[]
 ) => boolean | Promise<boolean>
 
+/**
+ * Authorization Gate.
+ * Manages abilities, policies, and access control checks.
+ * @public
+ */
 export class Gate {
   protected abilities = new Map<string, PolicyCallback>()
   protected policies = new Map<Constructor, Record<string, unknown>>()

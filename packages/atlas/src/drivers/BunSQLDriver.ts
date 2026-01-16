@@ -17,6 +17,11 @@ import type {
   QueryResult,
 } from '../types'
 
+/**
+ * Bun Native SQL Driver implementation.
+ * Uses Bun.sql (if available) for high-performance database interactions.
+ * @internal
+ */
 export class BunSQLDriver implements DriverContract {
   // biome-ignore lint/suspicious/noExplicitAny: Client type is dynamic
   private client: any | null = null

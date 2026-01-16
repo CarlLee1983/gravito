@@ -10,6 +10,10 @@ interface SessionContract {
   regenerate?(): Promise<void>
 }
 
+/**
+ * Guard implementation for session-based authentication.
+ * @public
+ */
 export class SessionGuard<User extends Authenticatable = Authenticatable>
   implements StatefulGuard<User>
 {

@@ -1,17 +1,30 @@
 import crypto from 'node:crypto'
 import type { HashManager } from './HashManager'
 
+/**
+ * Record of a password reset token.
+ * @public
+ */
 export interface PasswordResetTokenRecord {
   tokenHash: string
   expiresAt: number
 }
 
+/**
+ * Repository interface for storing password reset tokens.
+ * @public
+ */
 export interface PasswordResetTokenRepository {
   put(identifier: string, record: PasswordResetTokenRecord): Promise<void>
   get(identifier: string): Promise<PasswordResetTokenRecord | null>
   forget(identifier: string): Promise<void>
 }
 
+/**
+ * In-memory implementation of PasswordResetTokenRepository.
+ * Useful for testing or non-persistent environments.
+ * @public
+ */
 export class InMemoryPasswordResetTokenRepository implements PasswordResetTokenRepository {
   private store = new Map<string, PasswordResetTokenRecord>()
 
@@ -28,12 +41,20 @@ export class InMemoryPasswordResetTokenRepository implements PasswordResetTokenR
   }
 }
 
+/**
+ * Options for PasswordBroker configuration.
+ * @public
+ */
 export interface PasswordBrokerOptions {
   ttlSeconds?: number
   tokenBytes?: number
   invalidateOnSuccess?: boolean
 }
 
+/**
+ * Manages password reset tokens and verification.
+ * @public
+ */
 export class PasswordBroker {
   constructor(
     private readonly repository: PasswordResetTokenRepository,

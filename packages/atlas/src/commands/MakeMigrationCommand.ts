@@ -2,6 +2,10 @@ import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { Command } from './Command'
 
+/**
+ * Command to create a new database migration file.
+ * @internal
+ */
 export class MakeMigrationCommand extends Command {
   signature = 'make:migration <name>'
   description = 'Create a new migration file'

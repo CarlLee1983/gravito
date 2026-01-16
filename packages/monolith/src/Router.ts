@@ -1,5 +1,9 @@
 import type { Hono } from 'hono'
 
+/**
+ * Utility for registering resourceful routes.
+ * @public
+ */
 export class RouterHelper {
   /**
    * Register standard resource routes for a controller.

@@ -1,5 +1,9 @@
 import type { Authenticatable } from './Authenticatable'
 
+/**
+ * Interface for retrieving users.
+ * @public
+ */
 export interface UserProvider<T extends Authenticatable = Authenticatable> {
   retrieveById(identifier: string | number): Promise<T | null>
   retrieveByToken?(identifier: string | number, token: string): Promise<T | null>

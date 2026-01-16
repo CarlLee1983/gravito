@@ -1,3 +1,7 @@
+/**
+ * Interface for authenticatable entities (models).
+ * @public
+ */
 export interface Authenticatable {
   getAuthIdentifier(): string | number
   getAuthPassword?(): string

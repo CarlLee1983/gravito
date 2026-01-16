@@ -915,8 +915,16 @@ export class Router {
   }
 }
 
+/**
+ * Standard RESTful resource action names.
+ * @public
+ */
 export type ResourceAction = 'index' | 'create' | 'store' | 'show' | 'edit' | 'update' | 'destroy'
 
+/**
+ * Options for resource route registration.
+ * @public
+ */
 export interface ResourceOptions {
   only?: ResourceAction[]
   except?: ResourceAction[]
