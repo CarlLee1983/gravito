@@ -1,14 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test'
-import { Redis } from 'ioredis'
 import { BullMQBridge } from '../bridges/BullMQBridge'
+import { MockRedis } from './mock-redis'
 
 describe('BullMQBridge', () => {
-  let redis: Redis
+  let redis: any
   let mockWorker: any
   let publishSpy: any
 
   beforeEach(() => {
-    redis = new Redis('redis://localhost:6379')
+    redis = new MockRedis()
     publishSpy = mock(() => Promise.resolve(1))
     redis.publish = publishSpy
 
@@ -20,7 +20,7 @@ describe('BullMQBridge', () => {
   })
 
   afterEach(async () => {
-    await redis.quit()
+    // No cleanup needed
   })
 
   it('should attach to worker and register event listeners', () => {

@@ -21,7 +21,10 @@ async function run() {
       console.log('🧹 Cleaning up old containers...')
       await runtime.spawn(['docker', 'rm', '-f', ...containers.trim().split('\n')]).exited
     }
-  } catch (_e) {}
+  } catch {
+    // Intentionally ignored: Container cleanup is best-effort.
+    // Failure could mean containers don't exist or Docker is unavailable, which is acceptable.
+  }
 
   // 2. Start Server
   const config = await bootstrapLaunchpad()

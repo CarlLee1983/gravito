@@ -72,7 +72,10 @@ export async function addSpectrumCommand() {
         patched = true
         s.stop(`Successfully configured ${entry}!`)
         break
-      } catch (_e) {}
+      } catch {
+        // Intentionally ignored: Try next entry point if this one doesn't exist or fails to read.
+        // The loop will try all possible entry points.
+      }
     }
 
     if (!patched) {

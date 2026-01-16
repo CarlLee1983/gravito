@@ -1,7 +1,9 @@
 import type { GravitoContext } from '@gravito/core'
 import { type AuthManager, EmailVerificationService } from '@gravito/sentinel'
+import type { OrbitSignal } from '@gravito/signal'
 import type { FortifyConfig } from '../config'
 import { ensureCsrfToken } from '../csrf'
+import { VerifyEmailMail } from '../mail'
 import type { ViewService } from '../types'
 
 /**
@@ -133,10 +135,26 @@ export class VerifyEmailController {
         email: user.email,
       })
 
-      // TODO: Send email with verification link
-      // In production, integrate with @gravito/orbit-mail
-      console.log(`[Fortify] Verification token for ${user.email}: ${token}`)
-      console.log(`[Fortify] Verification URL: /verify-email/${user.id}/${token}`)
+      // Generate verification URL
+      const baseUrl = process.env.APP_URL ?? `${c.req.header('host') ?? 'localhost'}`
+      const protocol = baseUrl.startsWith('localhost') ? 'http' : 'https'
+      const verificationUrl = `${protocol}://${baseUrl}/verify-email/${user.id}/${token}`
+
+      // Send verification email
+      try {
+        const mailService = c.get('mail') as OrbitSignal | undefined
+        if (mailService) {
+          const mail = new VerifyEmailMail({ email: user.email, name: user.name }, verificationUrl)
+          await mailService.send(mail)
+        } else {
+          // Fallback: log to console if mail service not configured
+          console.log(`[Fortify] Verification email for ${user.email}`)
+          console.log(`[Fortify] Verification URL: ${verificationUrl}`)
+        }
+      } catch (mailError) {
+        console.error('[Fortify] Failed to send verification email:', mailError)
+        // Continue anyway - don't fail the request due to email issues
+      }
 
       if (this.config.jsonMode) {
         return c.json({ message: 'Verification email sent' })

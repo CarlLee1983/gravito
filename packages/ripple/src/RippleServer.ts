@@ -8,7 +8,7 @@
 
 import type { Server } from 'bun'
 import { ChannelManager, requiresAuth } from './channels'
-import { LocalDriver } from './drivers'
+import { LocalDriver, RedisDriver } from './drivers'
 import type {
   ChannelAuthorizer,
   ClientData,
@@ -63,7 +63,8 @@ export class RippleServer {
     }
 
     this.channels = new ChannelManager()
-    this.driver = config.driver === 'redis' ? new LocalDriver() : new LocalDriver() // TODO: RedisDriver
+    this.driver =
+      config.driver === 'redis' ? new RedisDriver(config.redis ?? {}) : new LocalDriver()
     this.authorizer = config.authorizer
   }
 

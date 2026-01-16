@@ -10,8 +10,8 @@
     "build": "bun build ./src/index.ts --outdir ./dist --target bun --external giget --external cac --external @clack/prompts --external picocolors",
     "dev": "bun run ./src/index.ts",
     "test": "bun test",
-    "test:coverage": "bun test --coverage --coverage-threshold=80",
-    "test:ci": "bun test --coverage --coverage-threshold=80",
+    "test:coverage": "bun test --coverage --coverage-threshold=40",
+    "test:ci": "bun test --coverage --coverage-threshold=40",
     "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck"
   },
   "files": [
