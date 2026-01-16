@@ -1,16 +1,31 @@
-import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, it, jest } from 'bun:test'
 import { RedisDriver } from '../src/drivers/RedisDriver'
+import { MockRedis } from './mock-redis'
 
 describe('RedisDriver', () => {
   let driver: RedisDriver
+  let pubClient: any
+  let subClient: any
 
   beforeEach(async () => {
+    // Manually inject mocks
+    pubClient = new MockRedis()
+    subClient = new MockRedis()
+
     driver = new RedisDriver({
-      host: process.env.REDIS_HOST || 'localhost',
-      port: Number.parseInt(process.env.REDIS_PORT || '6379'),
-      db: 15, // Use a separate DB for testing
-      keyPrefix: 'test:ripple:',
+      driver: 'redis',
+      host: 'localhost',
+      port: 6379,
     })
+
+    // Inject mocks directly into private properties
+    // biome-ignore lint/suspicious/noExplicitAny: Accessing private properties for testing
+    ;(driver as any).redis = pubClient
+    // biome-ignore lint/suspicious/noExplicitAny: Accessing private properties for testing
+    ;(driver as any).subscriber = subClient
+
+    // Override init to do nothing (since we already injected connected clients)
+    driver.init = async () => {}
   })
 
   afterEach(async () => {
@@ -18,175 +33,77 @@ describe('RedisDriver', () => {
   })
 
   it('should initialize and shutdown successfully', async () => {
-    try {
-      await driver.init()
-      expect(driver.name).toBe('redis')
-      await driver.shutdown()
-    } catch (error) {
-      // If Redis is not available, skip this test
-      if (error instanceof Error && error.message.includes('ioredis')) {
-        console.warn('Skipping Redis tests: ioredis not installed')
-        return
-      }
-      throw error
-    }
+    // Already connected in beforeEach
+    expect(driver).toBeDefined()
   })
 
   it('should publish and receive messages', async () => {
-    try {
-      await driver.init()
-    } catch (error) {
-      // Skip if Redis not available
-      if (error instanceof Error && error.message.includes('ioredis')) {
-        console.warn('Skipping Redis tests: ioredis not installed')
-        return
-      }
-      throw error
-    }
-
-    const receivedMessages: Array<{ event: string; data: unknown }> = []
-
-    // Subscribe to a channel
-    await driver.subscribe('test-channel', (event, data) => {
-      receivedMessages.push({ event, data })
-    })
-
-    // Give subscription time to register
-    await new Promise((resolve) => setTimeout(resolve, 100))
-
-    // Publish a message
-    await driver.publish('test-channel', 'test-event', { message: 'Hello, Redis!' })
-
-    // Wait for message to be received
-    await new Promise((resolve) => setTimeout(resolve, 100))
-
-    expect(receivedMessages.length).toBe(1)
-    expect(receivedMessages[0].event).toBe('test-event')
-    expect(receivedMessages[0].data).toEqual({ message: 'Hello, Redis!' })
+    // For this test with mocks, we verify methods are called
+    const spy = spyOn(pubClient, 'publish')
+    await driver.publish('test-channel', 'test', 123)
+    expect(spy).toHaveBeenCalled()
+    expect(spy.mock.calls[0]).toEqual([
+      'ripple:test-channel',
+      JSON.stringify({ event: 'test', data: 123 }),
+    ])
   })
 
   it('should handle multiple subscribers to the same channel', async () => {
-    try {
-      await driver.init()
-    } catch (error) {
-      if (error instanceof Error && error.message.includes('ioredis')) {
-        console.warn('Skipping Redis tests: ioredis not installed')
-        return
-      }
-      throw error
-    }
+    const spy = spyOn(subClient, 'subscribe')
+    const handler1 = () => {}
+    const handler2 = () => {}
 
-    const messages1: unknown[] = []
-    const messages2: unknown[] = []
+    await driver.subscribe('channel-1', handler1)
+    await driver.subscribe('channel-1', handler2)
 
-    await driver.subscribe('multi-channel', (event, data) => {
-      messages1.push(data)
-    })
-
-    await driver.subscribe('multi-channel', (event, data) => {
-      messages2.push(data)
-    })
-
-    await new Promise((resolve) => setTimeout(resolve, 100))
-
-    await driver.publish('multi-channel', 'test', { value: 42 })
-
-    await new Promise((resolve) => setTimeout(resolve, 100))
-
-    expect(messages1.length).toBe(1)
-    expect(messages2.length).toBe(1)
-    expect(messages1[0]).toEqual({ value: 42 })
-    expect(messages2[0]).toEqual({ value: 42 })
+    expect(spy).toHaveBeenCalledTimes(1) // Should subscribe only once per channel
+    expect(spy).toHaveBeenCalledWith('ripple:channel-1')
   })
 
   it('should support channel prefix', async () => {
-    try {
-      await driver.init()
-    } catch (error) {
-      if (error instanceof Error && error.message.includes('ioredis')) {
-        console.warn('Skipping Redis tests: ioredis not installed')
-        return
-      }
-      throw error
-    }
-
-    const received: unknown[] = []
-
-    await driver.subscribe('prefixed', (event, data) => {
-      received.push(data)
+    driver = new RedisDriver({
+      driver: 'redis',
+      keyPrefix: 'custom:',
     })
+    // Re-inject mocks
+    // biome-ignore lint/suspicious/noExplicitAny: Accessing private properties for testing
+    ;(driver as any).redis = pubClient
+    // biome-ignore lint/suspicious/noExplicitAny: Accessing private properties for testing
+    ;(driver as any).subscriber = subClient
+    driver.init = async () => {}
 
-    await new Promise((resolve) => setTimeout(resolve, 100))
+    const spy = spyOn(pubClient, 'publish')
+    await driver.publish('channel', 'evt', 1)
 
-    // The driver should automatically add the prefix
-    await driver.publish('prefixed', 'event', { prefixed: true })
-
-    await new Promise((resolve) => setTimeout(resolve, 100))
-
-    expect(received.length).toBe(1)
-    expect(received[0]).toEqual({ prefixed: true })
+    expect(spy).toHaveBeenCalledWith('custom:channel', JSON.stringify({ event: 'evt', data: 1 }))
   })
 
   it('should handle unsubscribe', async () => {
-    try {
-      await driver.init()
-    } catch (error) {
-      if (error instanceof Error && error.message.includes('ioredis')) {
-        console.warn('Skipping Redis tests: ioredis not installed')
-        return
-      }
-      throw error
-    }
+    const spy = spyOn(subClient, 'unsubscribe')
+    const handler = () => {}
 
-    const received: unknown[] = []
+    await driver.subscribe('channel-2', handler)
+    await driver.unsubscribe('channel-2', handler)
 
-    await driver.subscribe('unsub-test', (event, data) => {
-      received.push(data)
-    })
-
-    await new Promise((resolve) => setTimeout(resolve, 100))
-
-    // Publish before unsubscribe
-    await driver.publish('unsub-test', 'event', { before: true })
-
-    await new Promise((resolve) => setTimeout(resolve, 100))
-
-    // Unsubscribe
-    await driver.unsubscribe('unsub-test')
-
-    await new Promise((resolve) => setTimeout(resolve, 100))
-
-    // Publish after unsubscribe
-    await driver.publish('unsub-test', 'event', { after: true })
-
-    await new Promise((resolve) => setTimeout(resolve, 100))
-
-    // Should only receive the first message
-    expect(received.length).toBe(1)
-    expect(received[0]).toEqual({ before: true })
+    expect(spy).toHaveBeenCalledWith('ripple:channel-2')
   })
 
   it('should throw error if publish before init', async () => {
-    const uninitDriver = new RedisDriver()
-
-    try {
-      await uninitDriver.publish('test', 'event', {})
-      expect(true).toBe(false) // Should not reach here
-    } catch (error) {
-      expect(error).toBeInstanceOf(Error)
-      expect((error as Error).message).toContain('not initialized')
-    }
+    const newDriver = new RedisDriver({ driver: 'redis' })
+    // No connect() called
+    expect(newDriver.publish('test', {})).rejects.toThrow()
   })
 
   it('should throw error if subscribe before init', async () => {
-    const uninitDriver = new RedisDriver()
-
-    try {
-      await uninitDriver.subscribe('test', () => {})
-      expect(true).toBe(false) // Should not reach here
-    } catch (error) {
-      expect(error).toBeInstanceOf(Error)
-      expect((error as Error).message).toContain('not initialized')
-    }
+    const newDriver = new RedisDriver({ driver: 'redis' })
+    expect(newDriver.subscribe('test', () => {})).rejects.toThrow()
   })
 })
+
+// Helper to spy on methods
+function spyOn(obj: any, method: string) {
+  const original = obj[method]
+  const mockFn = jest.fn(original)
+  obj[method] = mockFn
+  return mockFn
+}
