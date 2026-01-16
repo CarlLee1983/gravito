@@ -1,5 +1,5 @@
 import type { GravitoMiddleware, PlanetCore, RouteGroup, Router } from '@gravito/core'
-import type { InertiaService } from '@gravito/ion'
+import type { InertiaHelper } from '@gravito/ion'
 import { ApiController } from '../controllers/ApiController'
 import { HomeController } from '../controllers/HomeController'
 
@@ -17,7 +17,7 @@ export function registerRoutes(core: PlanetCore): void {
     (locale: string): GravitoMiddleware =>
     async (c, next) => {
       c.set('locale', locale)
-      const inertia = c.get('inertia') as InertiaService | undefined
+      const inertia = c.get('inertia') as InertiaHelper | undefined
       if (inertia) {
         inertia.share('locale', locale)
         inertia.share('ga_id', process.env.VITE_GA_MEASUREMENT_ID)

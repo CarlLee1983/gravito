@@ -19,7 +19,7 @@ export class OrderController {
     const atlas = ctx.get('atlas') as OrbitAtlas
     const auth = ctx.get('auth') as AuthManager
     const stripeService = new StripeService()
-    const orderService = new OrderService(atlas)
+    const orderService = new OrderService()
 
     const user = await auth.user()
     if (!user) {
@@ -70,7 +70,7 @@ export class OrderController {
     const userId = user.getAuthIdentifier() as number
     const page = parseInt(ctx.req.query('page') || '1', 10)
 
-    const orderService = new OrderService(atlas)
+    const orderService = new OrderService()
     const { orders, total, totalPages } = await orderService.getUserOrders(userId, page)
 
     return inertia.render('Account/Orders', {
@@ -103,7 +103,7 @@ export class OrderController {
     const userId = user.getAuthIdentifier() as number
     const orderId = parseInt(ctx.req.param('id') || '', 10)
 
-    const orderService = new OrderService(atlas)
+    const orderService = new OrderService()
     const order = await orderService.getOrder(orderId)
 
     // Verify order belongs to user
@@ -151,7 +151,7 @@ export class OrderController {
     const userId = user.getAuthIdentifier() as number
     const orderId = parseInt(ctx.req.param('id') || '', 10)
 
-    const orderService = new OrderService(atlas)
+    const orderService = new OrderService()
     const order = await orderService.getOrder(orderId)
 
     // Verify order belongs to user

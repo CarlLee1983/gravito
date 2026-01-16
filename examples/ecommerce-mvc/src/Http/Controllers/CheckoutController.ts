@@ -27,7 +27,7 @@ export class CheckoutController {
     }
 
     const userId = user.getAuthIdentifier() as number
-    const cartService = new CartService(atlas)
+    const cartService = new CartService()
     const cart = await cartService.getOrCreateCart(userId)
 
     if (cart.getItemCount() === 0) {
@@ -69,8 +69,8 @@ export class CheckoutController {
     }
 
     const userId = user.getAuthIdentifier() as number
-    const cartService = new CartService(atlas)
-    const orderService = new OrderService(atlas)
+    const cartService = new CartService()
+    const orderService = new OrderService()
     const _stripeService = new StripeService()
 
     // Get cart
@@ -116,7 +116,7 @@ export class CheckoutController {
       return ctx.redirect('/')
     }
 
-    const orderService = new OrderService(atlas)
+    const orderService = new OrderService()
     const order = await orderService.getOrderByStripeSession(sessionId)
 
     if (!order) {
@@ -167,7 +167,7 @@ export class CheckoutController {
   static async handleWebhook(ctx: GravitoContext) {
     const atlas = ctx.get('atlas') as OrbitAtlas
     const stripeService = new StripeService()
-    const orderService = new OrderService(atlas)
+    const orderService = new OrderService()
 
     const signature = ctx.req.header('stripe-signature')
     if (!signature) {

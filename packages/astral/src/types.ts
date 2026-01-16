@@ -11,6 +11,10 @@ export interface AstralOperation {
   input?: FormRequestClass | ZodSchema
   output?: ZodSchema | ZodSchema[]
   errors?: Record<number, string | ZodSchema>
+  /** HTTP status code for successful response */
+  status?: number
+  /** Path parameters schema */
+  params?: Record<string, ZodSchema>
 }
 
 /**
@@ -39,4 +43,6 @@ export interface AstralConfig {
   contracts?: AstralResource[]
   uiPath?: string
   jsonPath?: string
+  /** Shorthand for uiPath */
+  path?: string
 }

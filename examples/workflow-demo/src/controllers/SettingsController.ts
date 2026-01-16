@@ -12,7 +12,7 @@ export class SettingsController {
   }
 
   update = async (ctx: GravitoContext) => {
-    const payload = await ctx.req.json()
+    const payload = (await ctx.req.json()) as Parameters<typeof settingsService.update>[1]
     const user = ctx.get('user') as DemoUser
     const settings = await settingsService.update(user.id, payload)
     return ctx.json({ settings })
