@@ -16,8 +16,8 @@ const apiLink = computed(() => {
         <!-- Brand Column -->
         <div class="flex flex-col gap-4">
             <div class="flex items-center gap-2">
-                <span class="text-xl font-bold font-mono text-white">@gravito/<span class="text-atlas-cyan">atlas</span></span>
-                <span class="px-1.5 py-0.5 rounded text-[10px] bg-white/10 text-gray-400 border border-white/5">v1.1.0</span>
+                <span class="text-xl font-black font-display text-white">GRAVITO <span class="text-primary">ATLAS</span></span>
+                <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-white/10 text-atlas-metallic border border-white/5">v1.3.0</span>
             </div>
             <p class="text-gray-500 text-xs leading-relaxed max-w-xs">
                 {{ t('hero.desc') }}
@@ -31,9 +31,9 @@ const apiLink = computed(() => {
         <div class="flex flex-col gap-4">
             <h4 class="text-white font-bold uppercase tracking-widest text-[10px]">{{ t('footer.resources') }}</h4>
             <ul class="flex flex-col gap-2 text-gray-500 text-xs font-mono">
-                <li><StaticLink to="/docs/cli" class="hover:text-atlas-cyan transition-colors">{{ t('footer.guide') }}</StaticLink></li>
-                <li><a :href="apiLink" target="_blank" rel="noopener noreferrer" class="hover:text-atlas-cyan transition-colors">{{ t('footer.api') }}</a></li>
-                <li><a href="https://github.com/gravito-framework/gravito/tree/main/packages/atlas" target="_blank" rel="noopener noreferrer" class="hover:text-atlas-cyan transition-colors">{{ t('footer.examples') }}</a></li>
+                <li><StaticLink to="/docs/cli" class="hover:text-primary transition-colors">{{ t('footer.guide') }}</StaticLink></li>
+                <li><a :href="apiLink" target="_blank" rel="noopener noreferrer" class="hover:text-primary transition-colors">{{ t('footer.api') }}</a></li>
+                <li><a href="https://github.com/gravito-framework/gravito/tree/main/packages/atlas" target="_blank" rel="noopener noreferrer" class="hover:text-primary transition-colors">{{ t('footer.examples') }}</a></li>
             </ul>
         </div>
 
@@ -41,8 +41,8 @@ const apiLink = computed(() => {
         <div class="flex flex-col gap-4">
             <h4 class="text-white font-bold uppercase tracking-widest text-[10px]">{{ t('footer.ecosystem') }}</h4>
             <ul class="flex flex-col gap-2 text-gray-500 text-xs font-mono">
-                <li><a href="https://gravito.dev" target="_blank" class="hover:text-atlas-cyan transition-colors">{{ t('footer.core') }}</a></li>
-                <li><StaticLink to="/docs/cli" class="hover:text-atlas-cyan transition-colors">{{ t('footer.cli') }}</StaticLink></li>
+                <li><a href="https://gravito.dev" target="_blank" class="hover:text-primary transition-colors">{{ t('footer.core') }}</a></li>
+                <li><StaticLink to="/docs/cli" class="hover:text-primary transition-colors">{{ t('footer.cli') }}</StaticLink></li>
             </ul>
         </div>
 
@@ -50,8 +50,8 @@ const apiLink = computed(() => {
         <div class="flex flex-col gap-4">
             <h4 class="text-white font-bold uppercase tracking-widest text-[10px]">{{ t('footer.legal') }}</h4>
             <ul class="flex flex-col gap-2 text-gray-500 text-xs font-mono">
-               <li><StaticLink to="/docs/legal#privacy" class="hover:text-atlas-cyan transition-colors">{{ t('footer.privacy') }}</StaticLink></li>
-               <li><StaticLink to="/docs/legal#terms" class="hover:text-atlas-cyan transition-colors">{{ t('footer.terms') }}</StaticLink></li>
+               <li><StaticLink to="/docs/legal#privacy" class="hover:text-primary transition-colors">{{ t('footer.privacy') }}</StaticLink></li>
+               <li><StaticLink to="/docs/legal#terms" class="hover:text-primary transition-colors">{{ t('footer.terms') }}</StaticLink></li>
             </ul>
         </div>
     </div>

@@ -1,0 +1,6 @@
+{
+  "id": "03",
+  "title": "AOT 路由",
+  "content": "<p>Photon 利用 Ahead-of-Time (AOT) 編譯進行路由匹配。這消除了運行時昂貴的樹遍歷。</p><h2>動態片段</h2><p>使用冒號定義參數，並直接透過 Context 獲取：</p><pre><code>app.get('/user/:id', (c) => {\n  const id = c.req.param('id')\n  return c.text('Authorized access: ' + id)\n})</code></pre><h3>路由優先級</h3><ul><li><strong>靜態路徑:</strong> 透過 Hash Map 進行 O(1) 匹配。</li><li><strong>參數路徑:</strong> 優化的 Radix Tree 匹配。</li><li><strong>萬用字元:</strong> 後備的 Catch-all 模式。</li></ul>",
+  "meta": { "lastUpdated": "2026-01-15", "complexity": "MID_LEVEL", "category": "ARCHITECTURE" }
+}

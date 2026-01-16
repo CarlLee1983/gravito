@@ -7,7 +7,9 @@ import { ProcessWorkflowJob } from './jobs/ProcessWorkflowJob'
 let manager: QueueManager | null = null
 
 export async function getQueueManager() {
-  if (manager) return manager
+  if (manager) {
+    return manager
+  }
 
   const driver = env.queueDriver
   const driverConfig: any = { default: driver }

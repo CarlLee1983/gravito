@@ -93,6 +93,7 @@ export class SessionGuard<User extends Authenticatable = Authenticatable>
   public async login(user: User, _remember = false): Promise<void> {
     const id = user.getAuthIdentifier()
 
+    this.ctx.set('auth' as any, user as any)
     this.userInstance = user
 
     const session = this.ctx.get(
@@ -116,7 +117,9 @@ export class SessionGuard<User extends Authenticatable = Authenticatable>
     ) as unknown as SessionContract | undefined
     if (session) {
       session.forget(this.getName())
-      session.regenerate?.()
+      if (typeof session.regenerate === 'function') {
+        await session.regenerate()
+      }
     }
   }
 

@@ -1,6 +1,6 @@
 import { usePage } from '@inertiajs/react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowUpRight, Book, Github, Home as HomeIcon, Info, Menu, Rocket, Zap } from 'lucide-react'
+import { ArrowUpRight, Book, Github, Home as HomeIcon, Menu, Rocket, Zap } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTrans } from '../hooks/useTrans'
 import Logo from './Logo'

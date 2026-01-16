@@ -71,7 +71,7 @@ export class CheckoutController {
     const userId = user.getAuthIdentifier() as number
     const cartService = new CartService(atlas)
     const orderService = new OrderService(atlas)
-    const stripeService = new StripeService()
+    const _stripeService = new StripeService()
 
     // Get cart
     const cart = await cartService.getOrCreateCart(userId)

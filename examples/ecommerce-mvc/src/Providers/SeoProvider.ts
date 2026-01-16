@@ -13,10 +13,10 @@ export class SeoProvider extends ServiceProvider {
   async boot(core: PlanetCore) {
     console.log('[SeoProvider] Booting SEO engine...')
     // 1. Initialize SEO Engine (Robots.txt)
-    const seo = new SeoEngine(seoConfig)
+    const _seo = new SeoEngine(seoConfig)
 
     // Serve robots.txt
-    core.router.get('/robots.txt', async (c: any) => {
+    core.router.get('/robots.txt', async (_c: any) => {
       const robots = seoConfig.robots as any
       let content = ''
 
@@ -41,7 +41,9 @@ export class SeoProvider extends ServiceProvider {
       } else if (robots) {
         // Fallback for simple object (if any)
         for (const [key, value] of Object.entries(robots)) {
-          if (key === 'rules') continue
+          if (key === 'rules') {
+            continue
+          }
           if (Array.isArray(value)) {
             value.forEach((v) => {
               content += `${key}: ${v}\n`

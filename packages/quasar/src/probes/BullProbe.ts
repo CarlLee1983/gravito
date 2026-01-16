@@ -33,7 +33,9 @@ export class BullProbe implements QueueProbe {
     // Let's stick to Bull classic for now.
 
     const results = await pipeline.exec()
-    if (!results) throw new Error('Redis pipeline failed')
+    if (!results) {
+      throw new Error('Redis pipeline failed')
+    }
 
     // Parse results
     // Each result is [err, value]

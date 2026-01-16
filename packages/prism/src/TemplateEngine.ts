@@ -328,7 +328,7 @@ export class TemplateEngine {
       .replace(/@unless\s*\((.+?)\)/g, '{{#unless $1}}')
       .replace(/@endunless/g, '{{/unless}}')
       .replace(/@inertia/g, '<div id="app" data-page=\'{{{ page }}}\'></div>')
-      .replace(/@vite\s*\(\s*\[\s*(['"])(.+?)\1\s*\]\s*\)/g, (_, quote, path) => {
+      .replace(/@vite\s*\(\s*\[\s*(['"])(.+?)\1\s*\]\s*\)/g, (_, _quote, path) => {
         return `{{#if isDev}}
     <script type="module" src="http://localhost:5173/@vite/client"></script>
     <script type="module" src="http://localhost:5173/${path}"></script>

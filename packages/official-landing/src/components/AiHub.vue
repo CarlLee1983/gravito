@@ -21,8 +21,13 @@ const aiContext = `Gravito Core (v1.1.0) Architecture Context:
 
 const copyToClipboard = (text: string) => {
   navigator.clipboard.writeText(text);
-  alert('Copied to clipboard!');
+  activePrompt.value = text;
+  showToast.value = true;
+  setTimeout(() => { showToast.value = false; }, 2000);
 };
+
+const activePrompt = ref('');
+const showToast = ref(false);
 </script>
 
 <template>
@@ -31,6 +36,14 @@ const copyToClipboard = (text: string) => {
       <img src="../assets/ai_dx.png" alt="" class="bg-image">
       <div class="bg-mask"></div>
     </div>
+
+    <!-- Toast Notification -->
+    <Transition name="slide-up">
+      <div v-if="showToast" class="toast glass-pane">
+        <span class="toast-icon">✓</span>
+        <span class="toast-msg">Copied to Galaxy Clipboard</span>
+      </div>
+    </Transition>
 
     <div class="container">
       <div class="header">
@@ -46,6 +59,7 @@ const copyToClipboard = (text: string) => {
             <div class="ai-orb">
               <div class="orb-core"></div>
               <div class="orb-ring"></div>
+              <div class="orb-particles"></div>
             </div>
             <h3>Copy AI Context</h3>
             <p>Ready to build? Give this context to Cursor or Windsurf to help it understand Gravito's core patterns.</p>
@@ -60,10 +74,15 @@ const copyToClipboard = (text: string) => {
             <div class="prompt-info">
               <div class="item-id">#GEN-{{ p.title.substring(0,3).toUpperCase() }}</div>
               <h4>{{ p.title }}</h4>
-              <code>{{ p.prompt }}</code>
+              <div class="code-wrap">
+                <code>{{ p.prompt }}</code>
+                <div class="type-cursor"></div>
+              </div>
             </div>
             <div class="copy-action">
-              <span class="copy-hint">PROMPT_CMD</span>
+              <div class="magic-btn">
+                <span class="copy-hint">PROMPT_CMD</span>
+              </div>
             </div>
           </div>
         </div>
@@ -73,6 +92,79 @@ const copyToClipboard = (text: string) => {
 </template>
 
 <style scoped>
+/* Toast Notification Styles */
+.toast {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 1rem 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  z-index: 1000;
+  border-color: rgba(99, 102, 241, 0.4);
+  background: rgba(10, 12, 16, 0.9);
+}
+
+.toast-icon {
+  color: #10b981;
+  font-weight: 800;
+}
+
+.toast-msg {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+}
+
+.slide-up-enter-active, .slide-up-leave-active {
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.slide-up-enter-from, .slide-up-leave-to {
+  transform: translate(-50%, 100%);
+  opacity: 0;
+}
+
+.code-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+.type-cursor {
+  position: absolute;
+  right: -5px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2px;
+  height: 1rem;
+  background: #6366f1;
+  animation: blink 1s infinite;
+  opacity: 0;
+}
+
+.prompt-item:hover .type-cursor {
+  opacity: 1;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 0; }
+  50% { opacity: 1; }
+}
+
+.magic-btn {
+  padding: 0.5rem 1rem;
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.prompt-item:hover .magic-btn {
+  background: rgba(99, 102, 241, 0.1);
+  border-color: #6366f1;
+  box-shadow: 0 0 15px rgba(99, 102, 241, 0.3);
+}
 .ai-hub {
   position: relative;
   padding: 12rem 2rem;

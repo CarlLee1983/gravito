@@ -153,8 +153,8 @@ export abstract class Grammar implements GrammarContract {
       query.groups.join(','),
       havings,
       orders,
-      query.limit !== undefined ? 'L' : 'X',
-      query.offset !== undefined ? 'O' : 'X',
+      query.limit !== undefined ? `L${query.limit}` : 'X',
+      query.offset !== undefined ? `O${query.offset}` : 'X',
     ].join('_')
   }
 

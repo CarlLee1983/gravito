@@ -1244,8 +1244,12 @@ export abstract class Model {
   ): AsyncGenerator<T[], void, unknown> {
     const connection = DB.connection(this.connection)
     let offset = 0
+    let safetyCounter = 0
+    const MAX_CHUNKS = 10000 // Safety limit: 10M records max for cursor
 
-    while (true) {
+    let lastFirstId: any = null
+
+    while (safetyCounter < MAX_CHUNKS) {
       const rows = await connection
         .table<ModelAttributes>(this.getTable())
         .orderBy(this.primaryKey) // Deterministic ordering
@@ -1257,10 +1261,13 @@ export abstract class Model {
         break
       }
 
-      // Log progress for large streams
-      if (offset > 0 && offset % 5000 === 0) {
-        process.stdout.write(` [${offset}...] `)
+      // Detect stuck cursor (offset ignored by driver)
+      const currentFirstId = rows[0][this.primaryKey]
+      if (lastFirstId !== null && currentFirstId === lastFirstId) {
+        // console.warn(`Cursor stuck at offset ${offset}. Offset might be ignored by driver.`)
+        break
       }
+      lastFirstId = currentFirstId
 
       yield rows.map((row) => this.hydrate<T>(row))
 
@@ -1268,6 +1275,7 @@ export abstract class Model {
         break
       }
       offset += chunkSize
+      safetyCounter++
     }
   }
 

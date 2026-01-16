@@ -4,7 +4,6 @@
  * Business logic for order processing.
  */
 
-import type { OrbitAtlas } from '@gravito/atlas'
 import { DB } from '@gravito/atlas'
 import type { ShippingAddress } from '../models'
 import { Order, OrderItem, OrderStatus } from '../models'
@@ -18,7 +17,6 @@ export interface CreateOrderInput {
 }
 
 export class OrderService {
-  constructor(private atlas?: OrbitAtlas) {}
   /**
    * Create order from cart
    */
@@ -141,7 +139,9 @@ export class OrderService {
       [orderNumber]
     )
     const row = result.rows[0]
-    if (!row) return null
+    if (!row) {
+      return null
+    }
     return this.getOrder(row.id)
   }
 
@@ -154,7 +154,9 @@ export class OrderService {
       [sessionId]
     )
     const row = result.rows[0]
-    if (!row) return null
+    if (!row) {
+      return null
+    }
     return this.getOrder(row.id)
   }
 

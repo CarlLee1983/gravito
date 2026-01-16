@@ -1,4 +1,4 @@
-import { EventEmitter } from 'events'
+import { EventEmitter } from 'node:events'
 import { Redis } from 'ioredis'
 import nodemailer from 'nodemailer'
 import type { AlertConfig, AlertEvent, AlertRule, PulseNode } from '../../shared/types'
@@ -185,7 +185,9 @@ export class AlertService {
                 break
               }
             }
-            if (fired) break
+            if (fired) {
+              break
+            }
           }
           break
 
@@ -200,7 +202,9 @@ export class AlertService {
                 break
               }
             }
-            if (fired) break
+            if (fired) {
+              break
+            }
           }
           break
       }

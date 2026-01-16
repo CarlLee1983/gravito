@@ -1,5 +1,5 @@
 import { ModelNotFoundException } from './exceptions/ModelNotFoundException'
-import type { GravitoHandler, GravitoMiddleware, HttpMethod } from './http/types'
+import type { GravitoHandler, GravitoMiddleware, HttpMethod, ProxyOptions } from './http/types'
 import type { PlanetCore } from './PlanetCore'
 import { Route } from './Route'
 
@@ -297,6 +297,32 @@ export class RouteGroup {
           .req(method, path, [controller, action], undefined, this.options)
           .name(`${name}.${action}`)
       }
+    }
+  }
+
+  /**
+   * Register a route that forwards requests to another URL (Gateway Proxy).
+   * @param method - HTTP method or 'all'
+   * @param path - Local route path
+   * @param target - Remote URL or base URL to forward to
+   * @param options - Optional proxy options
+   */
+  forward(
+    method: HttpMethod | HttpMethod[] | 'all',
+    path: string,
+    target: string,
+    options?: ProxyOptions
+  ): void {
+    const handler: GravitoHandler = (ctx) => ctx.forward(target, options)
+    const methods =
+      method === 'all'
+        ? (['get', 'post', 'put', 'delete', 'patch', 'options', 'head'] as HttpMethod[])
+        : Array.isArray(method)
+          ? method
+          : [method]
+
+    for (const m of methods) {
+      this.router.req(m, path, handler, undefined, this.options)
     }
   }
 }
@@ -643,6 +669,32 @@ export class Router {
     handler?: RouteHandler
   ): Route {
     return this.req('patch', path, requestOrHandlerOrMiddleware, handler)
+  }
+
+  /**
+   * Register a route that forwards requests to another URL (Gateway Proxy).
+   * @param method - HTTP method or 'all'
+   * @param path - Local route path
+   * @param target - Remote URL or base URL to forward to
+   * @param options - Optional proxy options
+   */
+  forward(
+    method: HttpMethod | HttpMethod[] | 'all',
+    path: string,
+    target: string,
+    options?: ProxyOptions
+  ): void {
+    const handler: GravitoHandler = (ctx) => ctx.forward(target, options)
+    const methods =
+      method === 'all'
+        ? (['get', 'post', 'put', 'delete', 'patch', 'options', 'head'] as HttpMethod[])
+        : Array.isArray(method)
+          ? method
+          : [method]
+
+    for (const m of methods) {
+      this.req(m, path, handler)
+    }
   }
 
   /**

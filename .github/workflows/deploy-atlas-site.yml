@@ -46,11 +46,14 @@ jobs:
           cp -R ../examples/atlas-site/dist/. .
           
           # Manually inject GA ID into index.html (Match Official Site Logic)
-          GA_ID="${{ vars.GA_ATLAS_MEASUREMENT_ID }}"
+          GA_ID="${{ secrets.GA_ATLAS_MEASUREMENT_ID }}"
           if [ -n "$GA_ID" ]; then
             echo "💉 Injecting GA Script for: ${GA_ID:0:4}***"
             GA_SCRIPT="<script async src=\"https://www.googletagmanager.com/gtag/js?id=${GA_ID}\"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${GA_ID}');</script>"
             sed -i "s|<!-- Google Analytics Placeholder -->|$GA_SCRIPT|g" index.html
+            
+            # Support legacy or alternate placeholder mentioned by user
+            sed -i "s|{{VITE_GA_MEASUREMENT_ID}}|$GA_ID|g" index.html
           else
             echo "⚠️ GA_ATLAS_MEASUREMENT_ID is empty! Skipping injection."
           fi

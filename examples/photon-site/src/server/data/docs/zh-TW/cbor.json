@@ -1,0 +1,10 @@
+{
+    "id": "27",
+    "title": "CBOR 協議",
+    "content": "<p>為了實現高效能、二進位優化的 API，Photon 支援 CBOR (簡潔二進位物件表示法)。這對於負載大小至關重要的 IoT 設備或微服務來說是理想選擇。</p><h2>二進位中介軟體</h2><p>您不需要手動編碼數據，可以使用 <code>binaryMiddleware</code>。如果客戶端指定 <code>Accept: application/cbor</code>，它會自動攔截 JSON 回應並將其編碼為 CBOR。</p><pre><code>import { binaryMiddleware } from '@gravito/photon/middleware/binary'\n\n// 全域應用或應用於特定路由\napp.use(binaryMiddleware())\n\napp.get('/api/data', (c) => {\n  // 如果客戶端需要 CBOR，這將自動變為二進位！\n  return c.json({ id: 101, status: 'operational' })\n})</code></pre><h2>為什麼選擇 CBOR？</h2><ul><li><strong>體積小</strong>：通常比 JSON 小 30-50%。</li><li><strong>無解析開銷</strong>：二進位結構比基於文本的 JSON 導航更快。</li><li><strong>標準化</strong>：IETF RFC 7049 標準的一部分。</li></ul>",
+    "meta": {
+        "lastUpdated": "2026-01-15",
+        "complexity": "ADVANCED",
+        "category": "TECHNICAL_ARCHITECTURE"
+    }
+}

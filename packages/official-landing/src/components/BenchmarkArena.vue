@@ -1,14 +1,31 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 
-const benchmarks = [
-  { name: 'Gravito Core', rps: 101240, color: '#10b981', current: true },
-  { name: 'Bun Native', rps: 98450, color: '#ffffff', current: false },
-  { name: 'Hono (Bun)', rps: 82140, color: '#e11d48', current: false },
-  { name: 'Elysia', rps: 79500, color: '#06b6d4', current: false },
-];
+const benchmarks = ref([
+  { name: 'Gravito Core', baseRps: 101240, rps: 101240, color: '#10b981', current: true },
+  { name: 'Bun Native', baseRps: 98450, rps: 98450, color: '#ffffff', current: false },
+  { name: 'Hono (Bun)', baseRps: 82140, rps: 82140, color: '#e11d48', current: false },
+  { name: 'Elysia', baseRps: 79500, rps: 79500, color: '#06b6d4', current: false },
+]);
 
-const maxRps = Math.max(...benchmarks.map(b => b.rps));
+const maxRps = Math.max(...benchmarks.value.map(b => b.baseRps));
+let telemetryInterval: any = null;
+
+const updateTelemetry = () => {
+  benchmarks.value.forEach(b => {
+    // Subtle fluctuation ±0.05%
+    const fluctuation = b.baseRps * (1 + (Math.random() - 0.5) * 0.001);
+    b.rps = Math.floor(fluctuation);
+  });
+};
+
+onMounted(() => {
+  telemetryInterval = setInterval(updateTelemetry, 150);
+});
+
+onUnmounted(() => {
+  if (telemetryInterval) clearInterval(telemetryInterval);
+});
 </script>
 
 <template>
@@ -27,15 +44,21 @@ const maxRps = Math.max(...benchmarks.map(b => b.rps));
 
       <div class="chart-container glass-pane">
         <div class="chart-header">
-          <div class="specimen-id">TELEM-992</div>
-          <div class="status-indicator">● LIVE_FEED</div>
+          <div class="specimen-id">TELEM-992 / KINETIC_MONITOR</div>
+          <div class="status-indicator">
+            <span class="pulse-dot"></span>
+            LIVE_FEED
+          </div>
         </div>
 
         <div class="chart-content">
-          <div v-for="b in benchmarks" :key="b.name" class="bar-row">
+          <div v-for="b in benchmarks" :key="b.name" class="bar-row" :class="{ 'optimized': b.current }">
             <div class="label">
-              <span class="name">{{ b.name }}</span>
-              <span class="metadata">{{ b.current ? '[ OPTIMIZED ]' : '[ RAW_BUN ]' }}</span>
+              <div class="name-group">
+                <span class="name">{{ b.name }}</span>
+                <span v-if="b.current" class="opt-badge">STABLE_CORE</span>
+              </div>
+              <span class="metadata">{{ b.current ? '[ OPTIMIZED_PATH ]' : '[ STANDARD_IO ]' }}</span>
             </div>
             <div class="track-wrap">
               <div class="track">
@@ -44,21 +67,36 @@ const maxRps = Math.max(...benchmarks.map(b => b.rps));
                   :style="{ 
                     width: `${(b.rps / maxRps) * 100}%`, 
                     backgroundColor: b.color,
-                    boxShadow: b.current ? `0 0 30px ${b.color}44` : 'none'
+                    boxShadow: b.current ? `0 0 40px ${b.color}33` : 'none'
                   }"
                 >
-                  <div v-if="b.current" class="glow-edge"></div>
+                  <div v-if="b.current" class="energy-pulse"></div>
+                  <div class="scan-line"></div>
                 </div>
               </div>
-              <div class="value">{{ b.rps.toLocaleString() }} <small>RPS</small></div>
+              <div class="value-container">
+                <span class="value">{{ b.rps.toLocaleString() }}</span>
+                <span class="unit">RPS</span>
+              </div>
             </div>
           </div>
         </div>
 
         <div class="chart-footer">
-          <div class="metric">LATENCY: 0.12ms</div>
-          <div class="metric">STABILITY: 100%</div>
-          <div class="metric">THROUGHPUT: PEAK</div>
+          <div class="metric-block">
+            <span class="label">LATENCY</span>
+            <span class="val">0.12ms</span>
+          </div>
+          <div class="divider"></div>
+          <div class="metric-block">
+            <span class="label">STABILITY</span>
+            <span class="val">100.0%</span>
+          </div>
+          <div class="divider"></div>
+          <div class="metric-block">
+            <span class="label">ENGINE</span>
+            <span class="val">V1.1_NOVA</span>
+          </div>
         </div>
       </div>
     </div>
@@ -129,14 +167,15 @@ const maxRps = Math.max(...benchmarks.map(b => b.rps));
 
 .chart-container {
   padding: 0;
-  border-radius: 8px;
+  border-radius: 4px;
   overflow: hidden;
   border: 1px solid rgba(255,255,255,0.05);
+  background: rgba(10, 12, 16, 0.4);
 }
 
 .chart-header {
-  background: rgba(255,255,255,0.03);
-  padding: 1rem 2rem;
+  background: rgba(255,255,255,0.02);
+  padding: 1.25rem 2.5rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -145,119 +184,195 @@ const maxRps = Math.max(...benchmarks.map(b => b.rps));
 
 .specimen-id {
   font-family: var(--font-mono);
-  font-size: 0.7rem;
-  color: rgba(255,255,255,0.4);
+  font-size: 0.65rem;
+  color: rgba(255,255,255,0.3);
+  letter-spacing: 0.1em;
 }
 
 .status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
   font-family: var(--font-mono);
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   color: #10b981;
-  animation: pulse 2s infinite;
+  letter-spacing: 0.1em;
+}
+
+.pulse-dot {
+  width: 6px;
+  height: 6px;
+  background: #10b981;
+  border-radius: 50%;
+  animation: pulse-ring 2s infinite;
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(1); opacity: 1; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+  70% { transform: scale(1.1); opacity: 0.8; box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+  100% { transform: scale(1); opacity: 1; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
 }
 
 .chart-content {
-  padding: 4rem;
+  padding: 4rem 5rem;
   display: flex;
   flex-direction: column;
-  gap: 3rem;
+  gap: 3.5rem;
 }
 
 .bar-row {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.25rem;
 }
 
 .label {
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
+  align-items: center;
+}
+
+.name-group {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
 .name {
   font-weight: 800;
-  font-size: 1.25rem;
+  font-size: 1.4rem;
   letter-spacing: -0.02em;
+}
+
+.opt-badge {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  padding: 2px 6px;
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-radius: 2px;
 }
 
 .metadata {
   font-family: var(--font-mono);
-  font-size: 0.6rem;
-  color: rgba(255,255,255,0.3);
+  font-size: 0.65rem;
+  color: rgba(255,255,255,0.2);
 }
 
 .track-wrap {
   display: flex;
   align-items: center;
-  gap: 2rem;
+  gap: 2.5rem;
 }
 
 .track {
   flex: 1;
-  height: 6px;
-  background: rgba(255,255,255,0.03);
-  border-radius: 3px;
+  height: 4px;
+  background: rgba(255,255,255,0.02);
+  border-radius: 2px;
   position: relative;
   overflow: hidden;
 }
 
 .fill {
   height: 100%;
-  border-radius: 3px;
-  transition: width 2s cubic-bezier(0.16, 1, 0.3, 1);
+  border-radius: 2px;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
 }
 
-.glow-edge {
+.optimized .fill {
+  background: linear-gradient(90deg, #065f46, #10b981);
+}
+
+.energy-pulse {
   position: absolute;
   top: 0;
   right: 0;
-  width: 40px;
+  width: 100px;
   height: 100%;
-  background: linear-gradient(to right, transparent, rgba(255,255,255,0.8));
-  filter: blur(4px);
-  animation: speed-scan 3s infinite;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  animation: energy-flow 2s infinite linear;
 }
 
-@keyframes speed-scan {
-  0% { transform: translateX(-100%); opacity: 0; }
-  20% { opacity: 0.8; }
-  80% { opacity: 0.8; }
-  100% { transform: translateX(100%); opacity: 0; }
+@keyframes energy-flow {
+  from { transform: translateX(-200%); }
+  to { transform: translateX(100%); }
+}
+
+.scan-line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05) 50%, transparent);
+  background-size: 200% 100%;
+  animation: scan-move 4s infinite linear;
+}
+
+@keyframes scan-move {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+.value-container {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  min-width: 160px;
+  justify-content: flex-end;
 }
 
 .value {
   font-family: var(--font-mono);
-  font-size: 1.25rem;
+  font-size: 1.5rem;
   font-weight: 700;
-  width: 140px;
-  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
 }
 
-.value small {
-  font-size: 0.6rem;
-  opacity: 0.4;
-  margin-left: 4px;
+.unit {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: rgba(255,255,255,0.3);
+  letter-spacing: 0.05em;
 }
 
 .chart-footer {
-  background: rgba(255,255,255,0.02);
-  padding: 1.5rem 4rem;
+  background: rgba(255,255,255,0.015);
+  padding: 1.5rem 5rem;
   display: flex;
-  gap: 4rem;
+  align-items: center;
+  gap: 3rem;
   border-top: 1px solid rgba(255,255,255,0.05);
 }
 
-.metric {
-  font-family: var(--font-mono);
-  font-size: 0.6rem;
-  color: rgba(255,255,255,0.4);
+.metric-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+.metric-block .label {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: rgba(255,255,255,0.2);
+  letter-spacing: 0.1em;
+}
+
+.metric-block .val {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.7);
+}
+
+.divider {
+  width: 1px;
+  height: 24px;
+  background: rgba(255,255,255,0.05);
 }
 </style>
 

@@ -138,7 +138,9 @@ export class RemixScanner implements RouteScanner {
       if (segment.startsWith('(') && segment.endsWith(')')) {
         // strip parens and $ if present inside
         let clean = segment.slice(1, -1)
-        if (clean.startsWith('$')) clean = clean.slice(1)
+        if (clean.startsWith('$')) {
+          clean = clean.slice(1)
+        }
         pathSegments.push(`:${clean}`)
         continue
       }
@@ -151,7 +153,7 @@ export class RemixScanner implements RouteScanner {
       return '/'
     }
 
-    return '/' + pathSegments.join('/')
+    return `/${pathSegments.join('/')}`
   }
 
   private dirExists(path: string): boolean {

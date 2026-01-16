@@ -1,0 +1,10 @@
+{
+  "id": "E01",
+  "title": "極致靜態路由",
+  "content": "<p>本範例展示了 Photon 的絕對最小佔用空間。通過定義一個沒有中介軟體或動態參數的路由，Photon 會自動啟用其 <strong>MinimalContext</strong> 優化。</p><h2>最佳實作</h2><pre><code>import { Gravito } from '@gravito/core/engine'\n\nconst app = new Gravito()\n\n// 純靜態路由使用 MinimalContext 進行 O(1) 調度\napp.get('/ping', (c) => {\n  return c.text('pong')\n})\n\nexport default {\n  fetch: app.fetch.bind(app)\n}</code></pre><div class=\"callout-tip\"><p>實驗室筆記：引擎的靜態分析器檢測到此處理程序僅使用 <code>c.text()</code>，因此完全繞過了昂貴的上下文池化邏輯。</p></div>",
+  "meta": {
+    "lastUpdated": "2026-01-15",
+    "complexity": "BASE_LEVEL",
+    "category": "LAB_EXPERIMENTS"
+  }
+}

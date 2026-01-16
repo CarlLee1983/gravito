@@ -53,7 +53,8 @@ if (queuesRaw === 'all') {
 
 const failRate = parseFloat(process.argv.find((a) => a.startsWith('--fail='))?.split('=')[1] || '0')
 const processDelay = parseInt(
-  process.argv.find((a) => a.startsWith('--delay='))?.split('=')[1] || '100'
+  process.argv.find((a) => a.startsWith('--delay='))?.split('=')[1] || '100',
+  10
 )
 
 // Simple Job class for testing

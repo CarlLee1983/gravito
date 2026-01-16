@@ -42,7 +42,9 @@ export class GravitoServer {
 
     for (const moduleId of manifest.modules) {
       const resolver = resolvers[moduleId]
-      if (!resolver) continue
+      if (!resolver) {
+        continue
+      }
 
       try {
         const exported = await resolver()

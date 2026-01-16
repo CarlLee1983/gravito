@@ -38,7 +38,7 @@ try {
   execSync('bunx tsc --project tsconfig.json --emitDeclarationOnly --declaration --outDir ./dist', {
     stdio: 'inherit',
   })
-} catch (error) {
+} catch (_error) {
   console.error('❌ TypeScript declaration generation failed')
   process.exit(1)
 }

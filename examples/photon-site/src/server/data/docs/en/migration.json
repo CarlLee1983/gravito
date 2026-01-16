@@ -1,0 +1,6 @@
+{
+  "id": "12",
+  "title": "Hono Migration",
+  "content": "<p>Switching from Hono to Photon takes less than 5 minutes. We maintained 99% API compatibility while delivering significant performance gains.</p><h2>Drop-in Replacement</h2><p>Simply change your imports and initialization:</p><pre><code>// From Hono\nimport { Hono } from 'hono'\nconst app = new Hono()\n\n// To Photon\nimport { Gravito } from '@gravito/photon'\nconst app = new Gravito()</code></pre><h3>API Differences</h3><ul><li><strong>Context:</strong> <code>FastContext</code> is optimized for pooling.</li><li><strong>Middleware:</strong> Identical signature, faster execution.</li><li><strong>Native Fetch:</strong> Photon directly exports a <code>fetch</code> handler.</li></ul>",
+  "meta": { "lastUpdated": "2026-01-13", "complexity": "BASE_LEVEL", "category": "RESOURCES" }
+}

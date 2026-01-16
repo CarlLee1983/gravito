@@ -1,0 +1,6 @@
+{
+  "id": "01",
+  "title": "引擎宣言",
+  "content": "<p>歡迎來到 Photon Core 文檔。本手冊詳細介紹了架構決策和指令級優化，這些優化使 Photon 成為 Bun 運行時最高效的 Web 引擎。</p><h2>直接原生訪問</h2><p>通用框架優先考慮兼容性墊片 (Shims)。<strong>Photon 優先考慮物理吞吐量。</strong> 通過直接構建在 Bun 的 C++ 後端之上，我們繞過了通用引擎中常見的物件複製開銷。</p><ul><li><strong>Bun-Native Bridge:</strong> 直接記憶體訪問請求流，無需中間映射。</li><li><strong>AOT 編譯:</strong> 在引擎啟動期間，路由被預編譯為機器高效的跳轉表。</li><li><strong>循環 Context:</strong> 高速物件池系統，減少堆壓力並消除 GC 峰值。</li></ul><div class=\"callout-tip\"><p>目前的基準測試數據證實，在標準 M3 工作站上可達到 91,428 RPS，保持了原生 Bun.serve 吞吐量限制的 98.2%。</p></div>",
+  "meta": { "lastUpdated": "2026-01-15", "complexity": "BASE_LEVEL", "category": "SYSTEM_CORE" }
+}

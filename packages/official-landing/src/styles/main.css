@@ -24,6 +24,10 @@
     box-sizing: border-box;
 }
 
+html {
+    scroll-behavior: smooth;
+}
+
 body {
     margin: 0;
     padding: 0;
@@ -33,6 +37,66 @@ body {
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
     line-height: 1.6;
+}
+
+::selection {
+    background: var(--core-glow);
+    color: white;
+}
+
+/* Scrollbar Optimization */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-deep);
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--core-glow);
+}
+
+/* Mobile Responsiveness Foundation */
+@media (max-width: 1024px) {
+    :root {
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 768px) {
+    .hero-content {
+        flex-direction: column !important;
+        text-align: center;
+        gap: 2rem !important;
+    }
+
+    .visual-side {
+        height: 400px !important;
+        flex: none !important;
+        width: 100%;
+    }
+
+    .singularity-universe {
+        width: 300px !important;
+        height: 300px !important;
+    }
+
+    .bento-grid {
+        grid-template-columns: 1fr !important;
+        grid-template-rows: auto !important;
+    }
+
+    .bento-card.wide, .bento-card.tall {
+        grid-column: span 1 !important;
+        grid-row: span 1 !important;
+        flex-direction: column !important;
+    }
 }
 
 #app {

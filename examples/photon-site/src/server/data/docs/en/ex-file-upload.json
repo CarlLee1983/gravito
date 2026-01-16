@@ -1,0 +1,10 @@
+{
+  "id": "E05",
+  "title": "Zero-Copy Uploads",
+  "content": "<p>Handling file uploads in Photon is incredibly efficient because we leverage Bun's native <code>FormData</code> handling which maps files to disk or memory without V8 heap allocation.</p><h2>Native Handling</h2><pre><code>app.post('/upload', async (c) => {\n  const form = await c.req.formData()\n  const file = form.get('profile_pic')\n  \n  if (file && file instanceof File) {\n    // Direct disk write (Zero-Copy)\n    await Bun.write('uploads/' + file.name, file)\n    return c.json({ size: file.size })\n  }\n  \n  return c.json({ error: 'No file' }, 400)\n})</code></pre><div class=\"callout-tip\"><p>Performance Note: This method is approximately 3x faster than Multer on Node.js because the file binary data is never serialized into a JS buffer string.</p></div>",
+  "meta": {
+    "lastUpdated": "2026-01-15",
+    "complexity": "MID_LEVEL",
+    "category": "LAB_EXPERIMENTS"
+  }
+}

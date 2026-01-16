@@ -25,7 +25,7 @@ for (const port of ports) {
         }
       }
     }
-  } catch (e) {
+  } catch (_e) {
     // 端口未被佔用，忽略錯誤
   }
 }

@@ -1,0 +1,6 @@
+{
+  "id": "11",
+  "title": "AOT Compilation",
+  "content": "<p>The AOT (Ahead-of-Time) compilation process occurs during the engine's boot sequence. Instead of matching routes dynamically at runtime, Photon pre-calculates the optimal execution path.</p><h2>The Compilation Pipeline</h2><p>When you start your server, Photon analyzes your route tree and converts static paths into a high-speed Hash Map. This guarantees O(1) time complexity for static route dispatching, regardless of how many thousands of routes you have.</p><pre><code>// Compilation Log Example\n[PHOTON] Compiling 42 routes...\n[PHOTON] Static Map generated: 28 nodes\n[PHOTON] Radix Tree generated: 14 dynamic nodes</code></pre>",
+  "meta": { "lastUpdated": "2026-01-13", "complexity": "HARDCORE", "category": "ARCHITECTURE" }
+}

@@ -14,7 +14,9 @@ await ripple.init()
 // File Watcher for Trace Logic
 let traceWatcherSetup = false
 function setupTraceWatcher() {
-  if (traceWatcherSetup) return
+  if (traceWatcherSetup) {
+    return
+  }
 
   // Poll until file exists, then watch
   const checkInterval = setInterval(() => {
@@ -45,7 +47,7 @@ function setupTraceWatcher() {
 
 setupTraceWatcher()
 
-const listener = Bun.serve({
+const _listener = Bun.serve({
   port: env.port,
   websocket: ripple.getHandler(),
   async fetch(request, server) {

@@ -4,7 +4,7 @@
     class="absolute inset-0 z-0 pointer-events-none overflow-hidden bg-atlas-void"
     :style="containerStyle"
   >
-    <canvas ref="canvasRef" class="block w-full h-full opacity-60"></canvas>
+    <canvas ref="canvasRef" class="block w-full h-full"></canvas>
   </div>
 </template>
 
@@ -33,30 +33,30 @@ const containerStyle = computed(() => {
 })
 
 // Configuration
-const STAR_COUNT = 150
-const COLOR_CYAN = '0, 240, 255'
-const BASE_SPEED = 0.015
-const WARP_SPEED = 0.05
-const FLOW_FIELD_STRENGTH = 0.15
+const PARTICLE_COUNT = 150
+const COLOR_PALETTE = [
+  '16, 185, 129', // Emerald 500
+  '52, 211, 153', // Emerald 400
+  '209, 250, 229', // Mint (High Light)
+  '5, 150, 105',  // Dark Emerald
+]
 
-interface Star {
-  x: number // -1 to 1 (normalized space)
-  y: number // -1 to 1
-  z: number // 0 to 1 (depth)
-  prevZ: number
-  size: number
+interface Particle {
+  x: number
+  y: number
+  z: number // Depth layer
+  speed: number
+  angle: number
   color: string
-  speedOffset: number
+  size: number
 }
 
-let stars: Star[] = []
+let particles: Particle[] = []
 let width = 0
 let height = 0
-let centerX = 0
-let centerY = 0
-let mouseX = 0
-let mouseY = 0
-let currentSpeed = BASE_SPEED
+let mouseX = -1000
+let mouseY = -1000
+let time = 0
 
 onMounted(() => {
   if (!canvasRef.value || !containerRef.value) return
@@ -67,100 +67,92 @@ onMounted(() => {
   const resize = () => {
     width = canvas.width = containerRef.value?.clientWidth || window.innerWidth
     height = canvas.height = containerRef.value?.clientHeight || window.innerHeight
-    centerX = width / 2
-    centerY = height / 2
+    initParticles()
   }
   
   const handleMouseMove = (e: MouseEvent) => {
-    // Subtle parallax offset based on mouse position
-    mouseX = (e.clientX - centerX) / centerX * 50
-    mouseY = (e.clientY - centerY) / centerY * 50
+    const rect = canvas.getBoundingClientRect()
+    mouseX = e.clientX - rect.left
+    mouseY = e.clientY - rect.top
+  }
+
+  const handleMouseLeave = () => {
+    mouseX = -1000
+    mouseY = -1000
   }
 
   window.addEventListener('resize', resize)
   window.addEventListener('mousemove', handleMouseMove)
+  window.addEventListener('mouseleave', handleMouseLeave)
   resize()
 
-  const initStars = () => {
-    stars = []
-    for (let i = 0; i < STAR_COUNT; i++) {
-      stars.push(createStar())
+  function initParticles() {
+    particles = []
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      particles.push(createParticle())
     }
   }
 
-  const createStar = (initial = false): Star => {
+  function createParticle(): Particle {
+    const z = Math.random() // Depth: 0 (back) to 1 (front)
     return {
-      x: (Math.random() - 0.5) * 2,
-      y: (Math.random() - 0.5) * 2,
-      z: initial ? Math.random() : 1, // Random depth if initial, else spawn at back
-      prevZ: 1,
-      size: 0.5 + Math.random() * 2,
-      color: Math.random() > 0.8 ? '255, 255, 255' : COLOR_CYAN,
-      speedOffset: Math.random() * 0.005 // Varied speed per star
+      x: Math.random() * width,
+      y: Math.random() * height,
+      z: z,
+      speed: 0.5 + z * 2.5, // Front particles move much faster
+      angle: Math.random() * Math.PI * 2,
+      color: COLOR_PALETTE[Math.floor(Math.random() * COLOR_PALETTE.length)],
+      size: 0.5 + z * 2
     }
   }
-
-  initStars()
 
   const draw = () => {
-    ctx.clearRect(0, 0, width, height)
+    // 1. Motion Blur Effect (Trails)
+    ctx.globalCompositeOperation = 'source-over'
+    ctx.fillStyle = 'rgba(2, 6, 23, 0.08)' 
+    ctx.fillRect(0, 0, width, height)
     
-    // Smooth speed transition (could be hooked to scroll in future)
-    currentSpeed += (BASE_SPEED - currentSpeed) * 0.1
+    ctx.globalCompositeOperation = 'lighter'
+    time += 0.002
 
-    for (let i = 0; i < stars.length; i++) {
-      const s = stars[i]
-      s.prevZ = s.z
-      s.z -= (currentSpeed + s.speedOffset)
+    for (let i = 0; i < particles.length; i++) {
+      const p = particles[i]
+      
+      // 2. Flow Field Logic
+      const noise = Math.sin(p.x * 0.005 + time) * Math.cos(p.y * 0.005 + time)
+      p.angle = noise * Math.PI * 2
+      
+      p.x += Math.cos(p.angle) * p.speed
+      p.y += Math.sin(p.angle) * p.speed
 
-      // Add a simple "flow field" effect by slightly shifting x/y based on time/position
-      const noise = Math.sin(Date.now() * 0.001 + s.x * 5) * FLOW_FIELD_STRENGTH
-      s.x += noise * 0.001
-      s.y += Math.cos(Date.now() * 0.001 + s.y * 5) * 0.0005
-
-      // Reset star if it passes the camera (z <= 0)
-      if (s.z <= 0) {
-        Object.assign(s, createStar())
-        s.prevZ = s.z
+      // Mouse Influence
+      const dx = mouseX - p.x
+      const dy = mouseY - p.y
+      const dist = Math.sqrt(dx * dx + dy * dy)
+      if (dist < 300) {
+        const force = (300 - dist) / 300
+        p.x += (dx / dist) * force * 2
+        p.y += (dy / dist) * force * 2
       }
 
-      // Project 3D to 2D
-      const x = (s.x * width / s.z) + centerX + mouseX
-      const y = (s.y * height / s.z) + centerY + mouseY
-      
-      const px = (s.x * width / s.prevZ) + centerX + mouseX
-      const py = (s.y * height / s.prevZ) + centerY + mouseY
+      // Wrap around screen
+      if (p.x < -50) p.x = width + 50
+      if (p.x > width + 50) p.x = -50
+      if (p.y < -50) p.y = height + 50
+      if (p.y > height + 50) p.y = -50
 
-      // Don't draw if outside screen
-      if (x < 0 || x > width || y < 0 || y > height) continue
-
-      // Calculate opacity and size based on depth
-      const opacity = Math.min(1, (1 - s.z) * 1.5)
-      const size = (1 - s.z) * s.size * 2
-
-      // Draw Streak (Motion Blur)
+      // 3. Render High-Quality "Glow Stream"
+      const alpha = 0.1 + p.z * 0.6
       ctx.beginPath()
-      ctx.lineWidth = size
-      ctx.lineCap = 'round'
-      ctx.strokeStyle = `rgba(${s.color}, ${opacity * 0.5})`
-      ctx.moveTo(px, py)
-      ctx.lineTo(x, y)
-      ctx.stroke()
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2)
+      ctx.fillStyle = `rgba(${p.color}, ${alpha})`
+      ctx.fill()
 
-      // Draw Head (Glow)
-      if (s.z < 0.5) {
+      if (p.z > 0.8) {
         ctx.beginPath()
-        ctx.fillStyle = `rgba(${s.color}, ${opacity})`
-        ctx.arc(x, y, size / 2, 0, Math.PI * 2)
+        ctx.arc(p.x, p.y, p.size * 0.5, 0, Math.PI * 2)
+        ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`
         ctx.fill()
-        
-        // Add subtle glow for closer particles
-        if (s.z < 0.2) {
-            ctx.shadowBlur = 15 * (1 - s.z)
-            ctx.shadowColor = `rgba(${s.color}, 0.8)`
-            ctx.fill()
-            ctx.shadowBlur = 0
-        }
       }
     }
 
@@ -172,6 +164,7 @@ onMounted(() => {
   onBeforeUnmount(() => {
     window.removeEventListener('resize', resize)
     window.removeEventListener('mousemove', handleMouseMove)
+    window.removeEventListener('mouseleave', handleMouseLeave)
     cancelAnimationFrame(animationFrameId)
   })
 })

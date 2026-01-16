@@ -79,6 +79,22 @@ const usersWithPosts = await User.with('posts').get()
 
 ## ✨ 核心特性
 
+### 🚀 Bun.sql 原生支援 (New!)
+Atlas 現在原生支援 Bun 1.3 的 `Bun.sql` 統一 API。透過使用原生驅動，您可以獲得更極致的效能表現與更低的通訊延遲。
+
+只需在設定中開啟 `useNativeDriver`：
+```typescript
+DB.configure({
+  connections: {
+    postgres: {
+      driver: 'postgres',
+      useNativeDriver: true, // 啟用 Bun.sql 原生驅動
+      // ...其他設定
+    }
+  }
+})
+```
+
 ### 🛡️ 預設安全
 內建 **自動參數化 (Auto-Parameterization)** 機制，徹底防禦 SQL 注入。所有使用者輸入皆視為綁定參數，絕不直接拼接 SQL 字串。
 
@@ -122,10 +138,10 @@ bun orbit migrate
 
 | 資料庫 | 狀態 | 驅動程式 |
 |----------|--------|--------|
-| **PostgreSQL** | ✅ 已支援 | `pg` |
-| **MySQL** | ✅ 已支援 | `mysql2` |
-| **MariaDB** | ✅ 已支援 | `mysql2` |
-| **SQLite** | ✅ 已支援 | `bun:sqlite` / `better-sqlite3` |
+| **PostgreSQL** | ✅ 已支援 | `pg` / `Bun.sql` (Native) |
+| **MySQL** | ✅ 已支援 | `mysql2` / `Bun.sql` (Native) |
+| **MariaDB** | ✅ 已支援 | `mysql2` / `Bun.sql` (Native) |
+| **SQLite** | ✅ 已支援 | `bun:sqlite` / `Bun.sql` |
 
 ## 📊 效能表現
 
