@@ -19,7 +19,7 @@ export class ResetPasswordMail extends Mailable {
     super()
   }
 
-  async build() {
+  build() {
     const userName = this.user.name ?? 'there'
 
     return this.to(this.user.email)
