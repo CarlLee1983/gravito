@@ -90,8 +90,12 @@ describe('localeMiddleware', () => {
 
 describe('OrbitCosmos', () => {
   it('installs locale middleware and logs initialization', () => {
+    const instances = new Map<string, unknown>()
     const core = {
       adapter: { use: jest.fn() },
+      container: {
+        instance: (key: string, value: unknown) => instances.set(key, value),
+      },
       logger: { info: jest.fn() },
     }
     const orbit = new OrbitCosmos({
@@ -104,6 +108,7 @@ describe('OrbitCosmos', () => {
 
     expect(core.adapter.use).toHaveBeenCalledWith('*', expect.any(Function))
     expect(core.logger.info).toHaveBeenCalledWith('[OrbitCosmos] I18n initialized with locale: en')
+    expect(instances.get('i18n')).toBeDefined()
     expect(I18nOrbit).toBe(OrbitCosmos)
   })
 })
