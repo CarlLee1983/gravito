@@ -1,8 +1,4 @@
 Scanning for missing JSDoc...
-packages/ripple-client/src/vue.ts:15 - Missing docs for: const RippleKey
-packages/monitor/src/metrics/MetricsRegistry.ts:9 - Missing docs for: interface MetricValue
-packages/monitor/src/tracing/TracingManager.ts:32 - Missing docs for: interface SpanEvent
-packages/monitor/src/health/HealthRegistry.ts:9 - Missing docs for: interface HealthReport
 packages/luminosity-cli/src/ui/logo.ts:3 - Missing docs for: const LOGO_ASCII
 packages/luminosity-cli/src/ui/logo.ts:14 - Missing docs for: function showLogo
 packages/luminosity-cli/src/commands/init.ts:32 - Missing docs for: interface InitCommandDeps
@@ -15,8 +11,6 @@ packages/core/src/helpers.ts:87 - Missing docs for: function value
 packages/core/src/helpers.ts:91 - Missing docs for: function value
 packages/core/src/helpers.ts:250 - Missing docs for: function config
 packages/core/src/helpers.ts:251 - Missing docs for: function config
-packages/core/src/Router.ts:918 - Missing docs for: type ResourceAction
-packages/core/src/Router.ts:920 - Missing docs for: interface ResourceOptions
 packages/fortify/src/csrf.ts:5 - Missing docs for: function resolveCsrfOptions
 packages/fortify/src/csrf.ts:15 - Missing docs for: function ensureCsrfToken
 packages/fortify/src/views/inertia-vue.ts:96 - Missing docs for: const RegisterPage

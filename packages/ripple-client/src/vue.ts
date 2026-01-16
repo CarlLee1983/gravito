@@ -12,6 +12,10 @@ import type { PresenceUser, RippleClientConfig } from './types'
 // Injection Key
 // ─────────────────────────────────────────────────────────────
 
+/**
+ * Vue injection key for RippleClient.
+ * @public
+ */
 export const RippleKey: InjectionKey<RippleClient> = Symbol('ripple')
 
 /**
