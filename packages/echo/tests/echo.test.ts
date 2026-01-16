@@ -397,6 +397,12 @@ describe('OrbitEcho', () => {
       container: {
         instance: jest.fn(),
       },
+      adapter: {
+        use: jest.fn(),
+      },
+      logger: {
+        info: jest.fn(),
+      },
     }
 
     echo.install(core as any)
