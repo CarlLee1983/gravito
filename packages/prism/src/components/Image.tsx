@@ -69,6 +69,7 @@ export function Image({
   return (
     <img
       className={className}
+      alt={alt}
       srcSet={generatedSrcset}
       fetchPriority={fetchpriority}
       style={style as React.CSSProperties}
