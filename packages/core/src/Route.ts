@@ -9,6 +9,11 @@ import type {
   Router,
 } from './Router'
 
+/**
+ * Route definition helper.
+ * Represents a registered route and allows method chaining for middleware/names.
+ * @public
+ */
 export class Route {
   constructor(
     private router: Router,

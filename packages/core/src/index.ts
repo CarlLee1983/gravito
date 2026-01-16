@@ -10,6 +10,10 @@
 import packageJson from '../package.json'
 import type { GravitoConfig } from './PlanetCore'
 
+/**
+ * Current version of @gravito/core.
+ * @public
+ */
 export const VERSION = packageJson.version
 
 // ─────────────────────────────────────────────────────────────────────────────

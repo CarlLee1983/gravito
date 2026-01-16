@@ -7,6 +7,10 @@ import type {
 } from '../../http/types'
 import { BunRequest } from './BunRequest'
 
+/**
+ * Bun-optimized implementation of GravitoContext.
+ * @internal
+ */
 export class BunContext<V extends GravitoVariables = GravitoVariables>
   implements GravitoContext<V>
 {

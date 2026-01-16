@@ -239,7 +239,7 @@ async function archiveLogs(options: ArchiveOptions): Promise<Blob> {
 
 ---
 
-## 🎯 Phase 13: 測試覆蓋率提升
+## 🎯 Phase 13: 測試覆蓋率提升 ✅
 
 ### 13.1 概述
 **優先級**: 🟡 P2 - Medium
@@ -470,7 +470,7 @@ describe('validateEmail', () => {
 
 ---
 
-## 🎯 Phase 14: 公開 API 文檔完善
+## 🎯 Phase 14: 公開 API 文檔完善 🔄
 
 ### 14.1 概述
 **優先級**: 🟡 P2 - Medium
@@ -480,7 +480,9 @@ describe('validateEmail', () => {
 ### 14.2 當前狀態
 
 - 導出符號數：623
-- JSDoc 覆蓋率：待評估
+- JSDoc 覆蓋率：
+  - Core: ✅ 100% (Completed)
+  - Other Packages: 待評估
 - 目標：100% 公開 API 有完整文檔
 
 ### 14.3 文檔標準
@@ -661,7 +663,7 @@ bun scripts/check-docs.ts > docs/missing-docs.txt
 ```
 
 #### Step 14.4.2: 優先級排序
-1. **Core 核心 API** - Application, Router, Context
+1. **Core 核心 API** - Application, Router, Context ✅ (完成)
 2. **ORM** - Model, QueryBuilder
 3. **Authentication** - Auth, Sessions
 4. **其他** - 按使用頻率

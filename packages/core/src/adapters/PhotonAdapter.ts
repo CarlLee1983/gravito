@@ -635,6 +635,10 @@ export { PhotonContextWrapper, PhotonRequestWrapper, toPhotonHandler, toPhotonMi
  * @category Rebranding
  */
 export const GravitoAdapter = PhotonAdapter
+/**
+ * Rebranded alias for PhotonAdapter type.
+ * @category Rebranding
+ */
 export type GravitoAdapter<V extends GravitoVariables = GravitoVariables> = PhotonAdapter<V>
 
 /**

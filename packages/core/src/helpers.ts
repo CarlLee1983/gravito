@@ -9,6 +9,10 @@ export * from './helpers/errors'
 export * from './helpers/response'
 export { Str } from './helpers/Str'
 
+/**
+ * Error subclass used for dump and die functionality.
+ * @internal
+ */
 export class DumpDieError extends Error {
   override name = 'DumpDieError'
 
@@ -17,6 +21,10 @@ export class DumpDieError extends Error {
   }
 }
 
+/**
+ * Options for dump output
+ * @public
+ */
 export type DumpOptions = {
   depth?: number | null
   colors?: boolean
@@ -27,6 +35,11 @@ const defaultDumpOptions: Required<DumpOptions> = {
   colors: true,
 }
 
+/**
+ * Dump data to console for debugging.
+ * @param values - Data to dump
+ * @public
+ */
 export function dump(...values: unknown[]): void {
   for (const value of values) {
     console.dir(value, {
@@ -36,16 +49,36 @@ export function dump(...values: unknown[]): void {
   }
 }
 
+/**
+ * Dump data to console and exit process (or throw in HTTP context).
+ * @param values - Data to dump
+ * @throws {DumpDieError}
+ * @public
+ */
 export function dd(...values: unknown[]): never {
   dump(...values)
   throw new DumpDieError(values)
 }
 
+/**
+ * Tap into a value, execute a callback, and return the value.
+ * @param value - The value to tap
+ * @param callback - The callback to execute with the value
+ * @returns The original value
+ * @public
+ */
 export function tap<T>(value: T, callback: (value: T) => unknown): T {
   callback(value)
   return value
 }
 
+/**
+ * Return the default value of the given value.
+ * @param valueOrFactory - The value or closure
+ * @param args - Arguments to pass to the closure
+ * @returns The resolved value
+ * @public
+ */
 export function value<TArgs extends readonly unknown[], TResult>(
   value: (...args: TArgs) => TResult,
   ...args: TArgs
@@ -73,6 +106,13 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return proto === Object.prototype || proto === null
 }
 
+/**
+ * Determine if the given value is "blank".
+ * Blank values: null, undefined, false, empty string, empty array, empty object, whitespace-only string.
+ * @param value - Value to check
+ * @returns True if blank
+ * @public
+ */
 export function blank(value: unknown): boolean {
   if (value === null || value === undefined) {
     return true
@@ -97,6 +137,12 @@ export function blank(value: unknown): boolean {
   return false
 }
 
+/**
+ * Determine if the given value is "filled" (not blank).
+ * @param value - Value to check
+ * @returns True if filled
+ * @public
+ */
 export function filled(value: unknown): boolean {
   return !blank(value)
 }
@@ -111,6 +157,12 @@ function toError(error: Error | string | (() => Error)): Error {
   return error
 }
 
+/**
+ * Throw an exception if the given condition is true.
+ * @param condition - Boolean condition
+ * @param error - Exception to throw (value or class constructor) or message string
+ * @public
+ */
 export function throwIf(
   condition: unknown,
   error: Error | string | (() => Error) = 'Error.'
@@ -120,6 +172,12 @@ export function throwIf(
   }
 }
 
+/**
+ * Throw an exception unless the given condition is true.
+ * @param condition - Boolean condition
+ * @param error - Exception to throw (value or class constructor) or message string
+ * @public
+ */
 export function throwUnless(
   condition: unknown,
   error: Error | string | (() => Error) = 'Error.'
@@ -135,6 +193,13 @@ type EnvShape = {
   }
 }
 
+/**
+ * Get an environment variable.
+ * @param key - Variable name
+ * @param defaultValue - Default value if not found
+ * @returns The environment variable value
+ * @public
+ */
 export function env<TDefault = string | undefined>(key: string, defaultValue?: TDefault) {
   const bunEnv = (globalThis as EnvShape).Bun?.env
   const value = bunEnv?.[key] ?? process.env[key]
@@ -143,14 +208,30 @@ export function env<TDefault = string | undefined>(key: string, defaultValue?: T
 
 let currentApp: PlanetCore | undefined
 
+/**
+ * Set the global application instance.
+ * @param core - The PlanetCore instance
+ * @internal
+ */
 export function setApp(core: PlanetCore | null): void {
   currentApp = core ?? undefined
 }
 
+/**
+ * Check if the global application instance is set.
+ * @returns True if set
+ * @public
+ */
 export function hasApp(): boolean {
   return currentApp !== undefined
 }
 
+/**
+ * Get the connection to the global application instance.
+ * @returns The application instance
+ * @throws {Error} If app is not initialized
+ * @public
+ */
 export function app(): PlanetCore {
   if (!currentApp) {
     throw new Error('No app is bound. Call setApp(core) once during bootstrap.')
@@ -158,6 +239,13 @@ export function app(): PlanetCore {
   return currentApp
 }
 
+/**
+ * Get a configuration value.
+ * @param key - Config key (dot notation)
+ * @param defaultValue - Default value
+ * @returns Config value
+ * @public
+ */
 export function config<T = unknown>(key: string): T
 export function config<T>(key: string, defaultValue: T): T
 export function config<T = unknown>(key: string, defaultValue?: T): T {
@@ -167,14 +255,29 @@ export function config<T = unknown>(key: string, defaultValue?: T): T {
   return app().config.get<T>(key, defaultValue)
 }
 
+/**
+ * Get the logger instance.
+ * @public
+ */
 export function logger() {
   return app().logger
 }
 
+/**
+ * Get the router instance.
+ * @public
+ */
 export function router(): Router {
   return app().router
 }
 
+/**
+ * Abort the request with an HTTP error.
+ * @param status - HTTP status code
+ * @param message - Error message
+ * @throws {HttpException}
+ * @public
+ */
 export function abort(status: ContentfulStatusCode, message?: string): never {
   if (message === undefined) {
     throw new HttpException(status)
@@ -182,12 +285,26 @@ export function abort(status: ContentfulStatusCode, message?: string): never {
   throw new HttpException(status, { message })
 }
 
+/**
+ * Abort if the condition is true.
+ * @param condition - Boolean condition
+ * @param status - HTTP status code
+ * @param message - Error message
+ * @public
+ */
 export function abortIf(condition: unknown, status: ContentfulStatusCode, message?: string): void {
   if (condition) {
     abort(status, message)
   }
 }
 
+/**
+ * Abort unless the condition is true.
+ * @param condition - Boolean condition
+ * @param status - HTTP status code
+ * @param message - Error message
+ * @public
+ */
 export function abortUnless(
   condition: unknown,
   status: ContentfulStatusCode,

@@ -1,7 +1,15 @@
 import { createRequire } from 'node:module'
 
+/**
+ * Detected Javascript Runtime Environment
+ * @public
+ */
 export type RuntimeKind = 'bun' | 'node' | 'deno' | 'unknown'
 
+/**
+ * Options for spawning subprocesses
+ * @public
+ */
 export interface RuntimeSpawnOptions {
   cwd?: string
   env?: Record<string, string | undefined>
@@ -10,6 +18,10 @@ export interface RuntimeSpawnOptions {
   stderr?: 'pipe' | 'inherit' | 'ignore'
 }
 
+/**
+ * Abstract subprocess interface
+ * @public
+ */
 export interface RuntimeProcess {
   exited: Promise<number>
   stdout?: ReadableStream<Uint8Array> | null
@@ -17,20 +29,36 @@ export interface RuntimeProcess {
   kill?: (signal?: string | number) => void
 }
 
+/**
+ * File statistics abstraction
+ * @public
+ */
 export interface RuntimeFileStat {
   size: number
 }
 
+/**
+ * HTTP Server configuration
+ * @public
+ */
 export interface RuntimeServeConfig {
   port?: number
   fetch: (req: Request, server?: unknown) => Response | Promise<Response>
   websocket?: unknown
 }
 
+/**
+ * HTTP Server interface
+ * @public
+ */
 export interface RuntimeServer {
   stop?: () => void
 }
 
+/**
+ * Abstraction layer for filesystem and process operations across runtimes.
+ * @public
+ */
 export interface RuntimeAdapter {
   kind: RuntimeKind
   spawn(command: string[], options?: RuntimeSpawnOptions): RuntimeProcess
@@ -43,6 +71,10 @@ export interface RuntimeAdapter {
   serve(config: RuntimeServeConfig): RuntimeServer
 }
 
+/**
+ * Abstraction layer for password hashing
+ * @public
+ */
 export interface RuntimePasswordAdapter {
   hash(
     value: string,
@@ -58,12 +90,20 @@ export interface RuntimePasswordAdapter {
   verify(value: string, hashed: string): Promise<boolean>
 }
 
+/**
+ * SQLite Statement abstraction
+ * @public
+ */
 export interface RuntimeSqliteStatement {
   run(params?: Record<string, unknown>): void
   get(params?: Record<string, unknown>): unknown
   all(params?: Record<string, unknown>): unknown[]
 }
 
+/**
+ * SQLite Database abstraction
+ * @public
+ */
 export interface RuntimeSqliteDatabase {
   run(sql: string): void
   prepare(sql: string): RuntimeSqliteStatement
@@ -71,6 +111,10 @@ export interface RuntimeSqliteDatabase {
   close(): void
 }
 
+/**
+ * Get environment variables from the current runtime.
+ * @public
+ */
 export const getRuntimeEnv = (): Record<string, string | undefined> => {
   const kind = getRuntimeKind()
   if (kind === 'bun' && typeof Bun !== 'undefined') {
@@ -408,6 +452,10 @@ const createUnknownAdapter = (): RuntimeAdapter => ({
 
 let runtimeAdapter: RuntimeAdapter | null = null
 
+/**
+ * Get the runtime abstraction adapter (Bun/Node/Deno).
+ * @public
+ */
 export const getRuntimeAdapter = (): RuntimeAdapter => {
   if (runtimeAdapter) {
     return runtimeAdapter
@@ -426,6 +474,10 @@ export const getRuntimeAdapter = (): RuntimeAdapter => {
 
 let passwordAdapter: RuntimePasswordAdapter | null = null
 
+/**
+ * Get the password hashing adapter using native optimized implementations if available.
+ * @public
+ */
 export const getPasswordAdapter = (): RuntimePasswordAdapter => {
   if (passwordAdapter) {
     return passwordAdapter
@@ -467,6 +519,10 @@ export const getPasswordAdapter = (): RuntimePasswordAdapter => {
   return passwordAdapter
 }
 
+/**
+ * Create a SQLite database connection using runtime-native drivers.
+ * @public
+ */
 export const createSqliteDatabase = async (path: string): Promise<RuntimeSqliteDatabase> => {
   const kind = getRuntimeKind()
   if (kind === 'bun') {

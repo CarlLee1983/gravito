@@ -77,6 +77,10 @@ export function messageFromStatus(status: number): string {
   }
 }
 
+/**
+ * Dependencies injected into ErrorHandler
+ * @public
+ */
 export interface ErrorHandlerDeps {
   logger: Logger
   hooks: HookManager
