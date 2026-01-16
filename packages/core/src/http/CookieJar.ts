@@ -18,6 +18,28 @@ export class CookieJar {
   constructor(private encrypter?: Encrypter) {}
 
   /**
+   * Parse cookies from a Cookie header string
+   * @param header - The Cookie header value
+   * @returns Parsed cookies as key-value pairs
+   */
+  static parseCookies(header: string): Record<string, string> {
+    const out: Record<string, string> = {}
+    if (!header) {
+      return out
+    }
+    for (const part of header.split(';')) {
+      const [rawKey, ...rest] = part.trim().split('=')
+      if (!rawKey) {
+        continue
+      }
+      const key = rawKey.trim()
+      const value = rest.join('=')
+      out[key] = decodeURIComponent(value)
+    }
+    return out
+  }
+
+  /**
    * Queue a cookie to be sent with the response
    */
   queue(name: string, value: string, minutes = 60, options: CookieOptions = {}) {
