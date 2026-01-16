@@ -145,15 +145,13 @@ export class Application {
     this.container = new Container()
     this.config = new ConfigManager(options.config ?? {})
 
-    // Initialize core with shared instances
+    // Initialize core with shared container
+    // Now PlanetCore uses the same container instance as Application
     this.core = new PlanetCore({
       logger: this.logger,
       config: options.config,
+      container: this.container,
     })
-
-    // Share container reference
-    // Note: PlanetCore creates its own container, so we need to use that
-    // In future, we might want to inject the container into PlanetCore
 
     this.events = this.core.events
 
@@ -321,7 +319,8 @@ export class Application {
    * @returns The resolved service
    */
   make<T>(key: string): T {
-    return this.core.container.make<T>(key)
+    // Now uses the shared container instance
+    return this.container.make<T>(key)
   }
 
   /**
@@ -331,7 +330,8 @@ export class Application {
    * @returns True if bound
    */
   has(key: string): boolean {
-    return this.core.container.has(key)
+    // Now uses the shared container instance
+    return this.container.has(key)
   }
 
   /**

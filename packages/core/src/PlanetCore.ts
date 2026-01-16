@@ -70,6 +70,13 @@ export type GravitoConfig = {
    * @since 2.0.0
    */
   adapter?: HttpAdapter
+  /**
+   * Dependency Injection Container. If provided, PlanetCore will use this
+   * container instead of creating a new one. This allows sharing a container
+   * between Application and PlanetCore.
+   * @since 2.0.0
+   */
+  container?: Container
 }
 
 import { BunNativeAdapter } from './adapters/bun/BunNativeAdapter'
@@ -107,7 +114,9 @@ export class PlanetCore {
   public hooks: HookManager
   public events: EventManager
   public router: Router
-  public container: Container = new Container()
+  public container: Container
+  /** @deprecated Use core.container instead */
+  public services: Map<string, unknown> = new Map()
 
   public encrypter?: Encrypter
   public hasher: BunHasher
@@ -243,12 +252,16 @@ export class PlanetCore {
       logger?: Logger
       config?: Record<string, unknown>
       adapter?: HttpAdapter
+      container?: Container
     } = {}
   ) {
     this.logger = options.logger ?? new ConsoleLogger()
     this.config = new ConfigManager(options.config ?? {})
     this.hooks = new HookManager()
     this.events = new EventManager(this)
+
+    // Use provided container or create a new one
+    this.container = options.container ?? new Container()
 
     this.hasher = new BunHasher()
 
@@ -377,6 +390,7 @@ export class PlanetCore {
       ...(config.logger && { logger: config.logger }),
       ...(config.config && { config: config.config }),
       ...(config.adapter && { adapter: config.adapter }),
+      ...(config.container && { container: config.container }),
     })
 
     if (config.orbits) {
