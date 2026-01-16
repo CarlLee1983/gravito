@@ -22,6 +22,7 @@
     ],
     "scripts": {
         "build": "tsup src/index.ts --format cjs,esm --dts --clean",
+        "test:ci": "echo \"No unit tests for orbit-cloudflare\" && exit 0",
         "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck"
     },
     "peerDependencies": {
