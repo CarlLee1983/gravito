@@ -41,10 +41,17 @@
   },
   "homepage": "https://github.com/gravito-framework/gravito#readme",
   "peerDependencies": {
-    "@gravito/core": "workspace:*"
+    "@gravito/core": "workspace:*",
+    "ioredis": "^5.0.0"
+  },
+  "peerDependenciesMeta": {
+    "ioredis": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "bun-types": "latest",
+    "ioredis": "^5.4.2",
     "typescript": "^5.9.3"
   },
   "publishConfig": {

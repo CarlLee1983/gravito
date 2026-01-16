@@ -43,10 +43,17 @@
   "peerDependencies": {
     "@gravito/sentinel": "workspace:*",
     "@gravito/core": "workspace:*",
-    "@gravito/photon": "workspace:*"
+    "@gravito/photon": "workspace:*",
+    "@gravito/signal": "workspace:*"
+  },
+  "peerDependenciesMeta": {
+    "@gravito/signal": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@gravito/sentinel": "workspace:*",
+    "@gravito/signal": "workspace:*",
     "bun-types": "latest",
     "@gravito/core": "workspace:*",
     "@gravito/photon": "workspace:*",

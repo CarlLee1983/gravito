@@ -60,8 +60,9 @@ export class GravitoServer {
 
         core.register(instance)
         console.log(`   ✅ 模組點火成功: [${moduleId}]`)
-      } catch (error: any) {
-        console.error(`   ❌ 模組 [${moduleId}] 點火失敗: ${error.message}`)
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : String(error)
+        console.error(`   ❌ 模組 [${moduleId}] 點火失敗: ${message}`)
       }
     }
 

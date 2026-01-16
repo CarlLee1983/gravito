@@ -111,6 +111,14 @@ export class OrbitPulsar implements GravitoOrbit {
         dirty = true
       }
 
+      // Flash data handling: Move current flash to old flash, clear current
+      const oldFlash: Record<string, any> = data._flash ?? {}
+      const flashReads = new Set<string>()
+      data._flash = {}
+      if (Object.keys(oldFlash).length > 0) {
+        markDirty()
+      }
+
       const session: any = {
         id: () => sessionId,
         get: (k: string, d?: any) => {
@@ -194,10 +202,20 @@ export class OrbitPulsar implements GravitoOrbit {
           markDirty()
         },
         getFlash: (k: string, d?: any) => {
-          return data._flash?.[k] ?? d
+          flashReads.add(k)
+          return oldFlash[k] ?? d
         },
-        keep: (_keys: string[]) => {
-          // TODO: Implement flash data persistence logic
+        keep: (keys: string[]) => {
+          for (const key of keys) {
+            if (key in oldFlash) {
+              if (!data._flash) {
+                data._flash = {}
+              }
+              data._flash[key] = oldFlash[key]
+              flashReads.delete(key)
+              markDirty()
+            }
+          }
         },
         all: () => data,
       }
@@ -314,7 +332,10 @@ export class OrbitPulsar implements GravitoOrbit {
         try {
           resToMod.headers.append('Set-Cookie', sidStr)
           resToMod.headers.append('Set-Cookie', csrfStr)
-        } catch (_e) {}
+        } catch {
+          // Intentionally ignored: Headers may already be immutable or response locked.
+          // Cookies are already set via c.header() above, this is just a fallback.
+        }
       }
 
       return res

@@ -1023,6 +1023,7 @@
         "@gravito/core": "workspace:*",
         "@gravito/photon": "workspace:*",
         "@gravito/sentinel": "workspace:*",
+        "@gravito/signal": "workspace:*",
         "bun-types": "latest",
         "tsup": "^8.5.1",
         "typescript": "^5.9.3",
@@ -1031,7 +1032,11 @@
         "@gravito/core": "workspace:*",
         "@gravito/photon": "workspace:*",
         "@gravito/sentinel": "workspace:*",
+        "@gravito/signal": "workspace:*",
       },
+      "optionalPeers": [
+        "@gravito/signal",
+      ],
     },
     "packages/freeze": {
       "name": "@gravito/freeze",
@@ -1468,11 +1473,16 @@
       "version": "3.0.0",
       "devDependencies": {
         "bun-types": "latest",
+        "ioredis": "^5.4.2",
         "typescript": "^5.9.3",
       },
       "peerDependencies": {
         "@gravito/core": "workspace:*",
+        "ioredis": "^5.0.0",
       },
+      "optionalPeers": [
+        "ioredis",
+      ],
     },
     "packages/ripple-client": {
       "name": "@gravito/ripple-client",
