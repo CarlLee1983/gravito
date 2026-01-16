@@ -38,6 +38,13 @@ export const FORM_REQUEST_SYMBOL = Symbol.for('gravito.formRequest')
 const formRequestCache = new WeakMap<Function, boolean>()
 
 /**
+ * WeakMap cache for FormRequest instances.
+ * Stores singleton instances to avoid re-instantiation on every request.
+ * Using WeakMap allows garbage collection when the class is no longer referenced.
+ */
+const formRequestInstances = new WeakMap<FormRequestClass, FormRequestLike>()
+
+/**
  * Check if a value is a FormRequest class.
  * Optimized with Symbol check, prototype check, and caching.
  */
@@ -82,22 +89,40 @@ function isFormRequestClass(value: unknown): value is FormRequestClass {
     // Cache the result
     formRequestCache.set(value, isFormRequest)
     return isFormRequest
-  } catch {
+  } catch (error) {
+    // Handle different error types for better diagnostics
+    if (error instanceof TypeError) {
+      // Constructor doesn't exist or has wrong signature
+      // This is expected for non-constructable values
+    } else if (error instanceof ReferenceError) {
+      // Missing dependencies - unlikely but possible
+      console.warn('[Router] FormRequest detection failed: Missing dependencies', error)
+    } else {
+      // Unexpected error - log for debugging
+      console.warn('[Router] Unexpected error during FormRequest detection:', error)
+    }
     formRequestCache.set(value, false)
     return false
   }
 }
 
 /**
- * Convert a FormRequest class to middleware
+ * Convert a FormRequest class to middleware.
+ * Uses instance caching to avoid re-instantiation on every request.
  */
 function formRequestToMiddleware(RequestClass: FormRequestClass): GravitoMiddleware {
-  return async (ctx, next) => {
-    const request = new RequestClass()
+  // Get or create cached instance
+  let request = formRequestInstances.get(RequestClass)
+  if (!request) {
+    request = new RequestClass()
     if (typeof request.validate !== 'function') {
       throw new Error('Invalid FormRequest: validate() is missing.')
     }
-    const result = await request.validate(ctx)
+    formRequestInstances.set(RequestClass, request)
+  }
+
+  return async (ctx, next) => {
+    const result = await request!.validate!(ctx)
 
     if (!result.success) {
       // Determine status code based on error type
@@ -354,6 +379,7 @@ export class Router {
 
   /**
    * Compile all registered routes into a flat array for caching or manifest generation.
+   * Optimized: O(n) complexity using Set for lookups instead of O(n²) with Array.some()
    */
   compile() {
     const compiled: Array<{
@@ -369,23 +395,29 @@ export class Router {
       nameMap.set(`${info.method.toUpperCase()}:${info.path}`, name)
     }
 
+    // Use Set to track compiled routes for O(1) lookup
+    const compiledKeys = new Set<string>()
+
+    // First pass: compile registered routes
     for (const route of this.routes) {
       const method = route.method.toUpperCase()
+      const key = `${method}:${route.path}`
+
+      compiledKeys.add(key)
       compiled.push({
         method,
         path: route.path,
         domain: route.domain,
-        name: nameMap.get(`${method}:${route.path}`),
+        name: nameMap.get(key),
       })
     }
 
-    // Also include named routes that might not be in this.routes (e.g. from loaded manifest)
-    // but only if they are not already there
+    // Second pass: include named routes that might not be in this.routes (e.g. from loaded manifest)
+    // Now using O(1) Set lookup instead of O(n) Array.some()
     for (const [name, info] of this.namedRoutes) {
-      const exists = compiled.some(
-        (r) => r.method === info.method.toUpperCase() && r.path === info.path
-      )
-      if (!exists) {
+      const key = `${info.method.toUpperCase()}:${info.path}`
+
+      if (!compiledKeys.has(key)) {
         compiled.push({
           name,
           method: info.method.toUpperCase(),

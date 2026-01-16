@@ -36,8 +36,8 @@ export class Route {
     middleware: GravitoMiddleware | GravitoMiddleware[],
     handler: RouteHandler
   ): Route
-  static get(path: string, requestOrHandler: any, handler?: any): Route {
-    return router().get(path, requestOrHandler, handler)
+  static get(path: string, requestOrHandlerOrMiddleware: any, handler?: any): Route {
+    return router().get(path, requestOrHandlerOrMiddleware as any, handler as any)
   }
 
   static post(path: string, handler: RouteHandler): Route
@@ -47,8 +47,8 @@ export class Route {
     middleware: GravitoMiddleware | GravitoMiddleware[],
     handler: RouteHandler
   ): Route
-  static post(path: string, requestOrHandler: any, handler?: any): Route {
-    return router().post(path, requestOrHandler, handler)
+  static post(path: string, requestOrHandlerOrMiddleware: any, handler?: any): Route {
+    return router().post(path, requestOrHandlerOrMiddleware as any, handler as any)
   }
 
   static put(path: string, handler: RouteHandler): Route
@@ -58,8 +58,8 @@ export class Route {
     middleware: GravitoMiddleware | GravitoMiddleware[],
     handler: RouteHandler
   ): Route
-  static put(path: string, requestOrHandler: any, handler?: any): Route {
-    return router().put(path, requestOrHandler, handler)
+  static put(path: string, requestOrHandlerOrMiddleware: any, handler?: any): Route {
+    return router().put(path, requestOrHandlerOrMiddleware as any, handler as any)
   }
 
   static delete(path: string, handler: RouteHandler): Route
@@ -69,8 +69,8 @@ export class Route {
     middleware: GravitoMiddleware | GravitoMiddleware[],
     handler: RouteHandler
   ): Route
-  static delete(path: string, requestOrHandler: any, handler?: any): Route {
-    return router().delete(path, requestOrHandler, handler)
+  static delete(path: string, requestOrHandlerOrMiddleware: any, handler?: any): Route {
+    return router().delete(path, requestOrHandlerOrMiddleware as any, handler as any)
   }
 
   static patch(path: string, handler: RouteHandler): Route
@@ -80,8 +80,8 @@ export class Route {
     middleware: GravitoMiddleware | GravitoMiddleware[],
     handler: RouteHandler
   ): Route
-  static patch(path: string, requestOrHandler: any, handler?: any): Route {
-    return router().patch(path, requestOrHandler, handler)
+  static patch(path: string, requestOrHandlerOrMiddleware: any, handler?: any): Route {
+    return router().patch(path, requestOrHandlerOrMiddleware as any, handler as any)
   }
 
   static resource(name: string, controller: ControllerClass, options: ResourceOptions = {}): void {
@@ -92,7 +92,7 @@ export class Route {
     return router().prefix(path)
   }
 
-  static middleware(...handlers: any[]) {
+  static middleware(...handlers: (GravitoMiddleware | GravitoMiddleware[])[]) {
     return router().middleware(...handlers)
   }
 }
