@@ -369,20 +369,20 @@ export function Layout({ children }: LayoutProps) {
         animate={{ width: isSidebarOpen ? 260 : 80 }}
         className="border-r border-border/40 bg-card/50 backdrop-blur-xl flex flex-col z-50 transition-all duration-300 ease-[0.22, 1, 0.36, 1]"
       >
-        <div className="h-16 flex items-center px-6 border-b border-border/40 bg-card/80">
+        <div className="h-16 flex items-center px-6 border-b border-white/5 bg-black/40">
           <div className="flex items-center gap-3 overflow-hidden">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0 shadow-lg shadow-primary/20">
-              <Zap className="text-primary-foreground fill-current" size={18} />
+            <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center shrink-0 shadow-[0_0_20px_rgba(0,240,255,0.3)]">
+              <Zap className="text-black fill-current" size={20} />
             </div>
             <motion.div
               animate={{ opacity: isSidebarOpen ? 1 : 0 }}
               className="flex flex-col min-w-[140px]"
             >
-              <span className="font-extrabold text-lg tracking-tight leading-none bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60">
+              <span className="font-black text-xl tracking-tighter leading-none text-white font-heading italic uppercase">
                 Zenith
               </span>
-              <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-[0.2em]">
-                Control Plane
+              <span className="text-[8px] font-black text-primary uppercase tracking-[0.3em] mt-0.5">
+                Quantum Control
               </span>
             </motion.div>
           </div>
@@ -420,17 +420,17 @@ export function Layout({ children }: LayoutProps) {
             </button>
 
             {/* System Integrity Indicator */}
-            <div className="hidden lg:flex items-center gap-3 px-4 py-1.5 rounded-full bg-primary/5 border border-primary/10 transition-all hover:bg-primary/10 hover:border-primary/20 cursor-default group">
+            <div className="hidden lg:flex items-center gap-3 px-4 py-2 rounded-xl bg-primary/5 border border-primary/20 transition-all hover:bg-primary/10 cursor-default group shadow-[inset_0_0_20px_rgba(0,240,255,0.02)]">
               <div className="relative flex items-center justify-center">
-                <ShieldCheck size={14} className="text-primary z-10" />
-                <div className="absolute w-3 h-3 bg-primary rounded-full glow-pulse"></div>
+                <ShieldCheck size={16} className="text-primary z-10" />
+                <div className="absolute w-4 h-4 bg-primary/20 rounded-full glow-pulse"></div>
               </div>
               <div className="flex flex-col">
-                <span className="text-[9px] font-black uppercase tracking-[0.1em] text-primary/60 leading-none">
-                  System Integrity
+                <span className="text-[8px] font-black uppercase tracking-[0.2em] text-primary/60 leading-none">
+                  Quantum Core
                 </span>
-                <span className="text-[11px] font-black tracking-tight leading-none">
-                  {health.toFixed(1)}% Nominal
+                <span className="text-[11px] font-black tracking-tight leading-none text-white mt-0.5 font-mono">
+                  {health.toFixed(2)}% NOMINAL
                 </span>
               </div>
             </div>
@@ -442,6 +442,7 @@ export function Layout({ children }: LayoutProps) {
               onClick={toggleTheme}
               className="p-2.5 hover:bg-muted rounded-xl text-muted-foreground hover:text-primary transition-all duration-300 active:scale-95 group relative"
               title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+              aria-label={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
             >
               {theme === 'light' ? (
                 <Moon size={20} className="group-hover:rotate-[15deg] transition-transform" />
@@ -473,45 +474,41 @@ export function Layout({ children }: LayoutProps) {
         </div>
 
         {/* Dynamic Status Bar (Ambient) */}
-        <footer className="h-7 border-t bg-card/80 backdrop-blur-md flex items-center justify-between px-6 z-10 transition-colors">
+        <footer className="h-8 border-t border-white/5 bg-black/60 backdrop-blur-xl flex items-center justify-between px-6 z-10 transition-colors">
           <div className="flex items-center gap-6 overflow-hidden">
-            <div className="flex items-center gap-2 border-r border-border/50 pr-4">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]"></span>
-              <span className="text-[10px] font-black text-muted-foreground/60 uppercase tracking-widest whitespace-nowrap">
-                Node: {systemStatus?.env || 'production-east-1'}
+            <div className="flex items-center gap-2 border-r border-white/10 pr-4">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_#10B981]"></span>
+              <span className="text-[9px] font-black text-white/40 uppercase tracking-[0.2em] whitespace-nowrap font-mono">
+                {systemStatus?.env || 'QUANTUM-1'}
               </span>
             </div>
-            <div className="flex items-center gap-4 text-[9px] font-black text-muted-foreground/40 uppercase tracking-[0.2em] animate-in fade-in slide-in-from-left duration-1000">
-              <span className="flex items-center gap-1.5">
-                <Activity size={10} className="text-primary/40" /> Latency: 4ms
+            <div className="flex items-center gap-4 text-[9px] font-black text-white/20 uppercase tracking-[0.3em] animate-in fade-in slide-in-from-left duration-1000">
+              <span className="flex items-center gap-1.5 text-primary/60">
+                <Activity size={10} className="text-primary" /> 4MS
               </span>
-              <span className="hidden sm:inline border-l border-border/30 pl-4 text-primary">
-                RAM: {systemStatus?.memory?.rss || '...'} /{' '}
-                {systemStatus?.memory?.total || '4.00 GB'}
+              <span className="hidden sm:inline border-l border-white/5 pl-4 text-white/40">
+                MEM: {systemStatus?.memory?.rss || '...'}
               </span>
-              <span className="hidden md:inline border-l border-border/30 pl-4 uppercase">
-                Engine: {systemStatus?.engine || 'v2.4.1-beta'}
-              </span>
-              <span className="hidden lg:inline border-l border-border/30 pl-4 lowercase">
-                v: {systemStatus?.node || '...'}
+              <span className="hidden md:inline border-l border-white/5 pl-4 text-white/40">
+                ENGINE: {systemStatus?.engine || 'V2.4.1'}
               </span>
             </div>
           </div>
-          <div className="flex items-center gap-4 pl-4 bg-gradient-to-l from-card via-card to-transparent text-right">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-1 bg-muted rounded-full overflow-hidden">
+          <div className="flex items-center gap-4 pl-4 bg-gradient-to-l from-black via-black to-transparent text-right">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-1 bg-white/5 rounded-full overflow-hidden">
                 <motion.div
-                  animate={{ x: [-20, 20] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-                  className="w-4 h-full bg-primary/40"
+                  animate={{ x: [-48, 48] }}
+                  transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
+                  className="w-6 h-full bg-primary/40 shadow-[0_0_10px_#00F0FF]"
                 />
               </div>
-              <span className="text-[9px] font-black text-primary/60 uppercase tracking-widest">
-                Bus Traffic
+              <span className="text-[8px] font-black text-primary uppercase tracking-[0.3em]">
+                SYNCING
               </span>
             </div>
-            <span className="font-mono text-[10px] text-muted-foreground/60 tabular-nums lowercase">
-              {new Date().toISOString().split('T')[1]?.split('.')[0] || ''} utc
+            <span className="font-mono text-[9px] text-white/30 tabular-nums uppercase">
+              {new Date().toISOString().split('T')[1]?.split('.')[0] || ''} Z
             </span>
           </div>
         </footer>

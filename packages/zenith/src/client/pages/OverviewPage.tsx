@@ -73,66 +73,67 @@ function LiveLogs({
           </h2>
         </div>
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={onSearchArchive}
-            className="flex items-center gap-1.5 px-2 py-1 hover:bg-muted rounded-md text-[10px] font-black uppercase tracking-tighter text-muted-foreground transition-all"
-          >
-            <Search size={12} />
-            Search Archive
-          </button>
-          <div className="flex gap-1">
-            <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
-            <div className="w-1.5 h-1.5 rounded-full bg-green-500/40"></div>
+            <button
+              type="button"
+              onClick={onSearchArchive}
+              aria-label="Search Logs Archive"
+              className="flex items-center gap-1.5 px-2 py-1 hover:bg-muted rounded-md text-[10px] font-black uppercase tracking-tighter text-muted-foreground transition-all"
+            >
+              <Search size={12} />
+              Search Archive
+            </button>
+            <div className="flex gap-1">
+              <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+              <div className="w-1.5 h-1.5 rounded-full bg-green-500/40"></div>
+            </div>
           </div>
         </div>
-      </div>
-      <ul
-        ref={scrollRef}
-        className="flex-1 min-h-0 overflow-y-auto p-4 font-mono text-[11px] space-y-2.5 scrollbar-thin scroll-smooth"
-      >
-        {logs.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-muted-foreground/30 gap-2 opacity-50">
-            <Activity size={24} className="animate-pulse" />
-            <p className="font-bold uppercase tracking-widest text-[9px]">Awaiting signals...</p>
-          </div>
-        ) : (
-          logs.map((log, i) => (
-            <li
-              key={i}
-              onMouseEnter={() => onWorkerHover?.(log.workerId)}
-              onMouseLeave={() => onWorkerHover?.(null)}
-              className="group flex gap-3 hover:bg-primary/[0.02] -mx-2 px-2 py-0.5 rounded transition-all animate-in fade-in slide-in-from-left-2 duration-300 cursor-default"
-            >
-              <span className="text-muted-foreground/40 shrink-0 tabular-nums select-none opacity-0 group-hover:opacity-100 transition-opacity">
-                {new Date(log.timestamp).toLocaleTimeString([], {
-                  hour12: false,
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  second: '2-digit',
-                })}
-              </span>
+        <ul
+          ref={scrollRef}
+          className="flex-1 min-h-0 overflow-y-auto p-4 font-mono text-[10px] space-y-2 scrollbar-thin scroll-smooth bg-black/20"
+        >
+          {logs.length === 0 ? (
+            <div className="h-full flex flex-col items-center justify-center text-muted-foreground/20 gap-2">
+              <Activity size={24} className="animate-pulse opacity-50" />
+              <p className="font-bold uppercase tracking-[0.3em] text-[8px]">Scanning spectrum...</p>
+            </div>
+          ) : (
+            logs.map((log, i) => (
+              <li
+                key={i}
+                onMouseEnter={() => onWorkerHover?.(log.workerId)}
+                onMouseLeave={() => onWorkerHover?.(null)}
+                className="group flex gap-3 hover:bg-white/[0.03] -mx-2 px-3 py-1 rounded transition-all animate-in fade-in slide-in-from-left-1 duration-200 cursor-default border-l-2 border-transparent hover:border-primary/40"
+              >
+                <span className="text-muted-foreground/60 shrink-0 tabular-nums select-none opacity-60 group-hover:opacity-100 transition-opacity">
+                  {new Date(log.timestamp).toLocaleTimeString([], {
+                    hour12: false,
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                  })}
+                </span>
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-0.5">
                   <span
                     className={cn(
-                      'text-[9px] font-black uppercase tracking-tighter',
+                      'text-[8px] font-black uppercase tracking-widest px-1 rounded',
                       log.level === 'error'
-                        ? 'text-red-500'
+                        ? 'bg-red-500/10 text-red-500'
                         : log.level === 'warn'
-                          ? 'text-amber-500'
+                          ? 'bg-amber-500/10 text-amber-500'
                           : log.level === 'success'
-                            ? 'text-green-500'
-                            : 'text-blue-500'
+                            ? 'bg-green-500/10 text-green-500'
+                            : 'bg-primary/10 text-primary'
                     )}
                   >
-                    [{log.level}]
+                    {log.level}
                   </span>
-                  <span className="text-[9px] font-black text-muted-foreground/40 uppercase opacity-0 group-hover:opacity-100 transition-all">
-                    {log.workerId}
+                  <span className="text-[8px] font-bold text-muted-foreground/40 uppercase tracking-tighter opacity-0 group-hover:opacity-100 transition-all">
+                    ID:{log.workerId}
                   </span>
                 </div>
-                <p className="text-foreground/80 leading-relaxed whitespace-pre-wrap break-all">
+                <p className="text-foreground/70 group-hover:text-foreground leading-relaxed whitespace-pre-wrap break-all">
                   {log.message}
                 </p>
               </div>
@@ -219,13 +220,13 @@ function MetricCard({ title, value, icon, color, trend, data }: MetricCardProps)
   const max = Math.max(...displayData, 10)
 
   return (
-    <div className="card-premium p-8 hover:shadow-2xl transform hover:-translate-y-2 group relative overflow-hidden">
+    <div className="card-premium p-6 hover:shadow-2xl transform hover:-translate-y-1 group relative overflow-hidden flex flex-col justify-between">
       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none scanline z-0"></div>
 
-      <div className="flex justify-between items-start mb-6 z-10 relative">
+      <div className="flex justify-between items-start mb-4 z-10 relative">
         <div
           className={cn(
-            'p-4 rounded-2xl bg-muted/30 transition-all group-hover:bg-primary/20 group-hover:text-primary group-hover:rotate-12 duration-500 border border-transparent group-hover:border-primary/20 shadow-inner',
+            'p-3 rounded-xl bg-muted/20 transition-all group-hover:scale-110 duration-500 border border-transparent group-hover:border-primary/20 shadow-inner',
             color
           )}
         >
@@ -233,14 +234,14 @@ function MetricCard({ title, value, icon, color, trend, data }: MetricCardProps)
         </div>
         {trend && (
           <div className="flex flex-col items-end">
-            <span className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-widest">
+            <span className={cn('text-[9px] font-black uppercase tracking-widest', color)}>
               {trend}
             </span>
-            <div className="w-8 h-1 bg-muted/50 rounded-full mt-1 overflow-hidden">
+            <div className="w-10 h-1 bg-muted/30 rounded-full mt-1 overflow-hidden">
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: '100%' }}
-                transition={{ duration: 1, repeat: Infinity, repeatType: 'reverse' }}
+                transition={{ duration: 1.5, repeat: Infinity, repeatType: 'reverse' }}
                 className={cn('h-full', color.replace('text-', 'bg-'))}
               />
             </div>
@@ -249,29 +250,29 @@ function MetricCard({ title, value, icon, color, trend, data }: MetricCardProps)
       </div>
 
       <div className="z-10 relative">
-        <p className="text-[11px] font-black text-muted-foreground/50 uppercase tracking-[0.2em] mb-2">
+        <p className="text-[10px] font-black text-muted-foreground/60 uppercase tracking-[0.2em] mb-1 font-heading">
           {title}
         </p>
-        <div className="text-4xl font-black tracking-tighter flex items-center gap-1">
+        <div className="text-3xl font-black tracking-tight flex items-baseline gap-1 font-mono">
           <AnimatedNumber value={value} />
           {title === 'Waiting Jobs' && value > 100 && (
-            <span className="text-red-500 animate-pulse text-xs">!</span>
+            <span className="text-red-500 animate-pulse text-sm ml-1">!</span>
           )}
         </div>
       </div>
 
-      <div className="mt-8 flex items-end gap-1.5 h-16 opacity-5 group-hover:opacity-20 transition-all duration-700 absolute bottom-0 left-0 right-0 p-1.5 pointer-events-none">
+      <div className="mt-6 flex items-end gap-1 h-12 opacity-10 group-hover:opacity-30 transition-all duration-700 absolute bottom-0 left-0 right-0 pointer-events-none">
         {displayData.map((v, i) => (
           <div
             key={i}
             className={cn(
-              'flex-1 rounded-t-lg transition-all duration-1000',
+              'flex-1 rounded-t-sm transition-all duration-1000',
               color.replace('text-', 'bg-')
             )}
             style={{
               height: `${(v / max) * 100}%`,
-              opacity: 0.1 + (i / displayData.length) * 0.9,
-              transitionDelay: `${i * 30}ms`,
+              opacity: 0.2 + (i / displayData.length) * 0.8,
+              transitionDelay: `${i * 20}ms`,
             }}
           ></div>
         ))}
@@ -333,6 +334,7 @@ function QueueList({
                       onClick={() => setSelectedQueue(queue.name)}
                       className="p-1.5 bg-muted hover:bg-primary/20 hover:text-primary rounded text-muted-foreground transition-all active:scale-90"
                       title="Inspect"
+                      aria-label={`Inspect ${queue.name} queue`}
                     >
                       <ArrowRight size={14} />
                     </button>
