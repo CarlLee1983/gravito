@@ -44,12 +44,12 @@ describe('Gravito Core Phase 2 Features', () => {
     it('should use configured port in liftoff', () => {
       const core = new PlanetCore({
         config: {
-          PORT: 0,
+          PORT: 12345,
         },
       })
 
       const { port } = core.liftoff()
-      expect(port).toBeGreaterThan(0)
+      expect(port).toBe(12345)
     })
   })
 
