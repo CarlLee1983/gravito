@@ -121,11 +121,17 @@ export class RedisDriver implements RippleDriver {
     this.subscriptions.clear()
 
     if (this.subscriber) {
-      await this.subscriber.quit()
+      try {
+        await this.subscriber.quit()
+      } catch (_e) {}
+      this.subscriber = null
     }
 
     if (this.redis) {
-      await this.redis.quit()
+      try {
+        await this.redis.quit()
+      } catch (_e) {}
+      this.redis = null
     }
   }
 
