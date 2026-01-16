@@ -62,3 +62,6 @@ examples/*/dist/
 **/.tmp-*/
 **/tests/**/*.bin
 packages/*/tests/.tmp-*
+
+# Claude CLI
+.claude/
