@@ -306,6 +306,11 @@ export class PlanetCore {
         getCore: () => this,
       })
     })
+
+    // Bind default handlers immediately so basic usage and tests work without explicit bootstrap()
+    const defaultHandler = this.container.make<ErrorHandler>('error.handler')
+    this.adapter.onError(defaultHandler.handleError.bind(defaultHandler))
+    this.adapter.onNotFound(defaultHandler.handleNotFound.bind(defaultHandler))
   }
 
   /**
