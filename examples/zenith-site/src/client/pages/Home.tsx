@@ -137,13 +137,13 @@ export default function Home() {
                   </span>
                   {trans('hero.status')}
                 </div>
-                <h1 className="text-6xl lg:text-8xl font-black tracking-tighter mb-8 leading-[0.9]">
+                <h1 className="text-6xl lg:text-8xl font-black tracking-tighter mb-8 leading-[0.9] font-heading uppercase italic">
                   {trans('hero.title')} <br />
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-zenith-accent to-zenith-pulse drop-shadow-[0_0_30px_rgba(0,240,255,0.3)]">
                     {trans('hero.titleHighlight')}
                   </span>
                 </h1>
-                <p className="text-xl text-gray-400 mb-12 max-w-2xl mx-auto lg:mx-0 leading-relaxed font-medium">
+                <p className="text-xl text-zinc-400 mb-12 max-w-2xl mx-auto lg:mx-0 leading-relaxed font-medium font-body">
                   {trans('hero.description')}
                 </p>
 
@@ -151,7 +151,7 @@ export default function Home() {
                   <Magnetic>
                     <StaticLink
                       href={getLink('/features')}
-                      className="w-full sm:w-auto px-10 py-4 bg-white text-black hover:bg-zenith-accent transition-all font-black text-xs tracking-widest uppercase rounded-xl flex items-center justify-center gap-2 group shadow-[0_20px_40px_-10px_rgba(255,255,255,0.2)] hover:shadow-zenith-accent/40"
+                      className="w-full sm:w-auto px-10 py-4 bg-zenith-orange text-white hover:brightness-110 transition-all font-black text-xs tracking-widest uppercase rounded-xl flex items-center justify-center gap-2 group shadow-[0_20px_40px_-10px_rgba(249,115,22,0.3)]"
                     >
                       {trans('hero.getStarted')}{' '}
                       <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -186,7 +186,7 @@ export default function Home() {
                 <div className="flex items-center justify-between mb-10 border-b border-white/5 pb-6">
                   <div className="flex items-center gap-3">
                     <div className="w-3 h-3 rounded-full bg-zenith-accent animate-pulse" />
-                    <div className="text-[10px] text-gray-500 font-mono tracking-widest uppercase">
+                    <div className="text-[10px] text-zinc-500 font-mono tracking-widest uppercase">
                       System Core :: Zenith_Active
                     </div>
                   </div>
@@ -199,11 +199,11 @@ export default function Home() {
                   <div className="space-y-6">
                     <div className="bg-white/5 p-5 rounded-2xl border border-white/5 hover:bg-white/[0.08] transition-all">
                       <div className="flex justify-between items-end mb-4">
-                        <div className="text-[10px] text-gray-500 font-black uppercase tracking-tighter">
+                        <div className="text-[10px] text-zinc-500 font-black uppercase tracking-tighter">
                           Throughput
                         </div>
                         <div className="text-2xl font-mono font-black text-zenith-accent">
-                          12.4K <span className="text-[10px] text-gray-600">req/s</span>
+                          12.4K <span className="text-[10px] text-zinc-600">req/s</span>
                         </div>
                       </div>
                       <div className="h-1.5 w-full bg-black/40 rounded-full overflow-hidden">
@@ -218,13 +218,13 @@ export default function Home() {
 
                     <div className="grid grid-cols-2 gap-4">
                       <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-                        <div className="text-[9px] text-gray-500 uppercase font-bold mb-1">
+                        <div className="text-[9px] text-zinc-500 uppercase font-bold mb-1">
                           Latency
                         </div>
                         <div className="text-xl font-mono font-bold text-white">4.2ms</div>
                       </div>
                       <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-                        <div className="text-[9px] text-gray-500 uppercase font-bold mb-1">
+                        <div className="text-[9px] text-zinc-500 uppercase font-bold mb-1">
                           Success
                         </div>
                         <div className="text-xl font-mono font-bold text-green-400">99.9%</div>
@@ -234,7 +234,7 @@ export default function Home() {
 
                   <div className="bg-black/40 p-6 rounded-2xl border border-white/5">
                     <div className="flex items-center justify-between mb-4">
-                      <div className="text-[10px] text-gray-500 font-black uppercase tracking-tighter">
+                      <div className="text-[10px] text-zinc-500 font-black uppercase tracking-tighter">
                         Active Channels
                       </div>
                       <Activity className="w-3 h-3 text-zenith-accent" />
@@ -246,7 +246,7 @@ export default function Home() {
                         { name: 'stream.raw', val: 91, color: 'bg-purple-500' },
                       ].map((c) => (
                         <div key={c.name} className="space-y-1">
-                          <div className="flex justify-between text-[9px] font-mono text-gray-400">
+                          <div className="flex justify-between text-[9px] font-mono text-zinc-400">
                             <span>{c.name}</span>
                             <span>{c.val}%</span>
                           </div>
@@ -272,14 +272,16 @@ export default function Home() {
               <div className="text-zenith-accent font-black text-[10px] tracking-[0.3em] uppercase mb-4">
                 Features_Overview
               </div>
-              <h2 className="text-5xl lg:text-6xl font-black mb-6 tracking-tighter leading-[0.9]">
+              <h2 className="text-5xl lg:text-6xl font-black mb-6 tracking-tighter leading-[0.9] font-heading uppercase italic">
                 {trans('features.title')}
               </h2>
-              <p className="text-gray-400 text-lg font-medium">{trans('features.subtitle')}</p>
+              <p className="text-zinc-400 text-lg font-medium font-body">
+                {trans('features.subtitle')}
+              </p>
             </div>
             <StaticLink
               href={getLink('/features')}
-              className="text-xs font-black tracking-widest uppercase border-b-2 border-zenith-accent pb-1 text-white hover:text-zenith-accent transition-colors"
+              className="text-xs font-black tracking-widest uppercase border-b-2 border-zenith-accent pb-1 text-white hover:text-zenith-accent transition-colors font-body"
             >
               View Feature Matrix →
             </StaticLink>
@@ -319,11 +321,11 @@ export default function Home() {
       {/* UI Showcase Section - Enhanced with 3D feel */}
       <section className="py-32 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-20">
+          <div className="text-center mb-20 font-heading uppercase italic">
             <h2 className="text-4xl lg:text-5xl font-black tracking-tighter mb-6">
               {locale === 'zh-TW' ? '控制平面視覺展示' : 'Control Plane Visualization'}
             </h2>
-            <p className="text-gray-400 text-lg max-w-2xl mx-auto font-medium">
+            <p className="text-zinc-400 text-lg max-w-2xl mx-auto font-medium font-body not-italic normal-case">
               {locale === 'zh-TW'
                 ? 'Zenith 提供全自動的隊列可視化，讓您的異步任務不再是黑盒。'
                 : 'Zenith provides fully automated queue visualization, making your async tasks transparent.'}
@@ -345,11 +347,11 @@ export default function Home() {
                     <div className="p-3 rounded-2xl bg-zenith-pulse/10 text-zenith-pulse shadow-[0_0_15px_rgba(59,130,246,0.2)]">
                       <ListTree size={24} />
                     </div>
-                    <h3 className="text-3xl font-black tracking-tight">
+                    <h3 className="text-3xl font-black tracking-tight font-heading uppercase italic">
                       {locale === 'zh-TW' ? '智能隊列管理' : 'Intelligent Queues'}
                     </h3>
                   </div>
-                  <div className="space-y-4 bg-black/40 rounded-2xl p-8 border border-white/5">
+                  <div className="space-y-4 bg-black/40 rounded-2xl p-8 border border-white/5 font-body">
                     {[
                       { name: 'emails.marketing', w: 421, f: 0, s: 'active' },
                       { name: 'images.optimize', w: 12, f: 8, s: 'warning' },
@@ -363,9 +365,9 @@ export default function Home() {
                             <div
                               className={`w-2 h-2 rounded-full ${q.s === 'active' ? 'bg-green-400 animate-pulse' : 'bg-yellow-500'}`}
                             />
-                            <span className="font-mono text-sm text-gray-200">{q.name}</span>
+                            <span className="font-mono text-sm text-zinc-200">{q.name}</span>
                           </div>
-                          <div className="flex gap-6 text-[10px] text-gray-500 font-bold uppercase tracking-widest">
+                          <div className="flex gap-6 text-[10px] text-zinc-500 font-bold uppercase tracking-widest">
                             <span>
                               Wait: <span className="text-zenith-accent">{q.w}</span>
                             </span>
@@ -374,7 +376,7 @@ export default function Home() {
                             </span>
                           </div>
                         </div>
-                        <div className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center text-gray-500 hover:text-zenith-accent hover:border-zenith-accent transition-all cursor-pointer">
+                        <div className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center text-zinc-500 hover:text-zenith-accent hover:border-zenith-accent transition-all cursor-pointer">
                           <ArrowRight size={16} />
                         </div>
                       </div>
@@ -392,21 +394,21 @@ export default function Home() {
                     <div className="p-3 rounded-2xl bg-green-400/10 text-green-400 shadow-[0_0_15px_rgba(74,222,128,0.2)]">
                       <Cpu size={24} />
                     </div>
-                    <h3 className="text-3xl font-black tracking-tight">
+                    <h3 className="text-3xl font-black tracking-tight font-heading uppercase italic">
                       {locale === 'zh-TW' ? '節點健康監控' : 'Node Health'}
                     </h3>
                   </div>
-                  <div className="space-y-6 bg-black/40 rounded-2xl p-8 border border-white/5">
+                  <div className="space-y-6 bg-black/40 rounded-2xl p-8 border border-white/5 font-body">
                     <div className="p-5 bg-white/[0.02] rounded-2xl border border-white/5">
                       <div className="flex justify-between items-center mb-6">
-                        <div className="text-xs font-mono text-gray-300">ZENITH_NODE_01</div>
+                        <div className="text-xs font-mono text-zinc-300">ZENITH_NODE_01</div>
                         <span className="text-[10px] px-3 py-1 bg-green-400/10 text-green-400 rounded-full font-black uppercase border border-green-400/20">
                           Operational
                         </span>
                       </div>
                       <div className="grid grid-cols-2 gap-8">
                         <div className="space-y-2">
-                          <div className="flex justify-between text-[9px] text-gray-500 uppercase font-black">
+                          <div className="flex justify-between text-[9px] text-zinc-500 uppercase font-black">
                             CPU Load <span>45%</span>
                           </div>
                           <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
@@ -414,7 +416,7 @@ export default function Home() {
                           </div>
                         </div>
                         <div className="space-y-2">
-                          <div className="flex justify-between text-[9px] text-gray-500 uppercase font-black">
+                          <div className="flex justify-between text-[9px] text-zinc-500 uppercase font-black">
                             Memory <span>62%</span>
                           </div>
                           <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
@@ -437,14 +439,14 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="flex flex-col lg:flex-row items-center gap-24">
             <div className="flex-1">
-              <h2 className="text-5xl font-black mb-8 tracking-tighter leading-[0.9]">
+              <h2 className="text-5xl font-black mb-8 tracking-tighter leading-[0.9] font-heading uppercase italic">
                 {trans('integration.title')}
               </h2>
-              <p className="text-gray-400 mb-12 text-lg leading-relaxed font-medium">
+              <p className="text-zinc-400 mb-12 text-lg leading-relaxed font-medium font-body">
                 {trans('integration.description')}
               </p>
 
-              <div className="grid sm:grid-cols-2 gap-y-6 gap-x-8">
+              <div className="grid sm:grid-cols-2 gap-y-6 gap-x-8 font-body">
                 <ListItem text={trans('integration.features.autoDiscovery')} />
                 <ListItem text={trans('integration.features.sqliteSupport')} />
                 <ListItem text={trans('integration.features.workerHealth')} />
@@ -464,13 +466,13 @@ export default function Home() {
                     <div className="w-3 h-3 rounded-full bg-yellow-500/20" />
                     <div className="w-3 h-3 rounded-full bg-green-500/20" />
                   </div>
-                  <div className="text-[10px] font-mono text-gray-500 tracking-widest uppercase">
+                  <div className="text-[10px] font-mono text-zinc-500 tracking-widest uppercase">
                     src/index.ts
                   </div>
                   <div className="w-10" />
                 </div>
                 <div className="p-10 font-mono text-sm md:text-base leading-loose overflow-x-auto">
-                  <pre className="text-gray-300">
+                  <pre className="text-zinc-300">
                     <code>
                       <div className="line">
                         <span className="text-purple-400">import</span> {'{'} Photon {'}'}{' '}
@@ -484,7 +486,7 @@ export default function Home() {
                       </div>
                       <div className="line h-4"></div>
                       <div className="line">
-                        <span className="text-gray-600">{'// Existing Photon application'}</span>
+                        <span className="text-zinc-600">{'// Existing Photon application'}</span>
                       </div>
                       <div className="line">
                         <span className="text-blue-400">const</span> app ={' '}
@@ -492,14 +494,14 @@ export default function Home() {
                       </div>
                       <div className="line h-4"></div>
                       <div className="line">
-                        <span className="text-gray-600">{'// Mount Zenith as an API route'}</span>
+                        <span className="text-zinc-600">{'// Mount Zenith as an API route'}</span>
                       </div>
                       <div className="line">
                         app.route(<span className="text-green-400">"/admin/zenith"</span>, zenith)
                       </div>
                       <div className="line h-4"></div>
                       <div className="line text-zenith-accent font-bold">
-                        <span className="text-gray-600 font-normal">
+                        <span className="text-zinc-600 font-normal">
                           {'// Or run standalone: '}
                         </span>
                         bun zenith start
@@ -584,8 +586,8 @@ function BentoSkeleton({ type }: { type: 'graph' | 'stats' | 'search' | 'nodes' 
     return (
       <div className="flex flex-1 w-full h-full min-h-[6rem] rounded-2xl bg-black/40 p-4 border border-white/5 flex-col gap-3 overflow-hidden group">
         <div className="flex items-center gap-2 px-3 py-2 bg-white/5 rounded-lg border border-white/10">
-          <Search size={12} className="text-gray-500" />
-          <div className="text-[10px] text-gray-500 font-mono">search: "failed_jobs"</div>
+          <Search size={12} className="text-zinc-500" />
+          <div className="text-[10px] text-zinc-500 font-mono">search: "failed_jobs"</div>
         </div>
         <div className="space-y-2">
           {[1, 2, 3].map((i) => (
@@ -671,7 +673,7 @@ function CardPerspective({ children }: { children: React.ReactNode }) {
 
 function ListItem({ text }: { text: string }) {
   return (
-    <div className="flex items-center gap-4 text-gray-400 group/list">
+    <div className="flex items-center gap-4 text-zinc-400 group/list">
       <div className="w-6 h-6 rounded-full bg-zenith-accent/10 flex items-center justify-center text-zenith-accent group-hover/list:bg-zenith-accent group-hover/list:text-black transition-all">
         <ShieldCheck size={12} />
       </div>

@@ -35,13 +35,13 @@ export default function Integrations() {
             <div className="inline-flex items-center gap-3 px-4 py-1 rounded-full bg-zenith-accent/5 border border-zenith-accent/20 text-zenith-accent text-[10px] font-mono mb-10 tracking-[0.4em] uppercase">
               <Network size={12} className="opacity-60" /> CONNECTIVITY_STABLE
             </div>
-            <h1 className="text-6xl lg:text-8xl font-bold tracking-tight mb-8 leading-[1.1]">
+            <h1 className="text-6xl lg:text-8xl font-black tracking-tight mb-8 leading-[1.1] font-heading uppercase italic">
               {trans('integrations.title')}{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-br from-zenith-400 via-zenith-accent to-zenith-stellar text-glow">
+              <span className="text-transparent bg-clip-text bg-gradient-to-br from-white via-zenith-accent to-zenith-stellar text-glow font-black">
                 {trans('integrations.titleHighlight')}
               </span>
             </h1>
-            <p className="text-2xl text-gray-300 max-w-3xl mx-auto leading-relaxed font-light">
+            <p className="text-2xl text-zinc-400 max-w-3xl mx-auto leading-relaxed font-medium font-body">
               {trans('integrations.subtitle')}
             </p>
           </motion.div>
@@ -51,16 +51,16 @@ export default function Integrations() {
       {/* Core: Control Plane Deployment */}
       <section className="py-32 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-24 items-center">
+          <div className="grid lg:grid-cols-2 gap-24 items-center font-body">
             <div className="space-y-10">
               <div>
                 <div className="text-xs font-mono text-zenith-accent/60 tracking-[0.3em] uppercase mb-4">
                   Phase_00: The_Core
                 </div>
-                <h2 className="text-5xl font-bold tracking-tight mb-6 leading-tight">
+                <h2 className="text-5xl font-black tracking-tight mb-6 leading-tight font-heading uppercase italic">
                   {trans('integrations.core.title')}
                 </h2>
-                <p className="text-gray-300 text-xl font-light leading-relaxed">
+                <p className="text-zinc-400 text-xl font-medium leading-relaxed">
                   {trans('integrations.core.description')}
                 </p>
               </div>
@@ -145,10 +145,10 @@ export default function Integrations() {
                 <div className="text-xs font-mono text-zenith-accent/60 tracking-[0.3em] uppercase mb-4">
                   Phase_01: In-App_Insight
                 </div>
-                <h2 className="text-5xl font-bold tracking-tight mb-6 leading-tight">
+                <h2 className="text-5xl font-black tracking-tight mb-6 leading-tight font-heading uppercase italic">
                   {trans('integrations.laravel.title')}
                 </h2>
-                <p className="text-gray-300 text-xl font-light leading-relaxed">
+                <p className="text-zinc-400 text-xl font-medium leading-relaxed">
                   {trans('integrations.laravel.description')}
                 </p>
               </div>
@@ -182,16 +182,16 @@ export default function Integrations() {
                       Setup_Protocol
                     </span>
                   </div>
-                  <div className="text-gray-500">{'// Require via composer'}</div>
-                  <div className="text-zenith-accent">
+                  <div className="text-zinc-500">{'// Require via composer'}</div>
+                  <div className="text-zenith-accent font-bold">
                     composer require <span className="text-white">gravito/laravel-zenith</span>
                   </div>
                   <div className="h-2" />
-                  <div className="text-gray-500">{'// Ignite the portal (via CLI)'}</div>
+                  <div className="text-zinc-500">{'// Ignite the portal (via CLI)'}</div>
                   <div className="flex items-center gap-2">
                     <span className="text-white">php</span>
-                    <span className="text-zenith-stellar">artisan</span>
-                    <span className="text-zenith-accent">zenith:heartbeat</span>
+                    <span className="text-zenith-stellar font-bold">artisan</span>
+                    <span className="text-zenith-accent font-bold">zenith:heartbeat</span>
                   </div>
                   <div className="h-6" />
                   <div className="pt-4 border-t border-white/5 flex justify-between items-center">
@@ -214,17 +214,17 @@ export default function Integrations() {
       {/* Universal Runtime: Quasar (Node/Bun) */}
       <section className="py-32 relative overflow-hidden">
         <div className="absolute inset-0 bg-white/[0.01] border-y border-white/5" />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 font-body">
           <div className="grid lg:grid-cols-2 gap-24 items-center">
             <div className="lg:order-2 space-y-10">
               <div>
                 <div className="text-xs font-mono text-zenith-stellar/60 tracking-[0.3em] uppercase mb-4">
                   Phase_02: Universal_Runtime
                 </div>
-                <h2 className="text-5xl font-bold tracking-tight mb-6 leading-tight">
+                <h2 className="text-5xl font-black tracking-tight mb-6 leading-tight font-heading uppercase italic">
                   {trans('integrations.quasar_lib.title')}
                 </h2>
-                <p className="text-gray-300 text-xl font-light leading-relaxed">
+                <p className="text-zinc-400 text-xl font-medium leading-relaxed">
                   {trans('integrations.quasar_lib.description')}
                 </p>
               </div>
@@ -256,35 +256,35 @@ export default function Integrations() {
                       Library_Integration
                     </div>
                   </div>
-                  <div className="text-gray-500">{'// Install the universal library'}</div>
-                  <div className="text-zenith-stellar">
+                  <div className="text-zinc-500">{'// Install the universal library'}</div>
+                  <div className="text-zenith-stellar font-bold">
                     npm install <span className="text-white">@gravito/quasar</span>
                   </div>
                   <div className="h-2" />
-                  <div className="text-gray-500">{'// Embed in your worker'}</div>
+                  <div className="text-zinc-500">{'// Embed in your worker'}</div>
                   <div className="flex flex-col gap-1">
                     <div>
                       <span className="text-blue-400">const</span> agent ={' '}
                       <span className="text-purple-400">new</span>{' '}
                       <span className="text-yellow-200">QuasarAgent</span>({'{'}
                     </div>
-                    <div className="pl-4">
-                      service: <span className="text-green-400">'worker-01'</span>,
+                    <div className="pl-4 text-white">
+                      service: <span className="text-emerald-400">'worker-01'</span>,
                     </div>
-                    <div className="pl-4">
+                    <div className="pl-4 text-white">
                       transport: {'{'} url:{' '}
                       <span className="text-white">process.env.REDIS_URL</span> {'}'}
                     </div>
-                    <div>{'}'})</div>
+                    <div className="text-white">{'}'})</div>
                     <div className="h-1" />
-                    <div className="text-gray-500">{'// Monitor a specific queue'}</div>
-                    <div>
+                    <div className="text-zinc-500">{'// Monitor a specific queue'}</div>
+                    <div className="text-white">
                       agent.<span className="text-blue-400">monitorQueue</span>(
-                      <span className="text-green-400">'mail'</span>,{' '}
-                      <span className="text-green-400">'bullmq'</span>)
+                      <span className="text-emerald-400">'mail'</span>,{' '}
+                      <span className="text-emerald-400">'bullmq'</span>)
                     </div>
                     <div className="h-1" />
-                    <div>
+                    <div className="text-white">
                       <span className="text-purple-400">await</span> agent.
                       <span className="text-blue-400">start</span>()
                     </div>
@@ -294,7 +294,7 @@ export default function Integrations() {
                     <span className="text-[10px] text-white/30 tracking-widest">
                       RUNTIME: NODE/BUN
                     </span>
-                    <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse shadow-[0_0_10px_rgba(74,222,128,0.5)]" />
+                    <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
                   </div>
                 </div>
               </div>
@@ -310,15 +310,15 @@ export default function Integrations() {
           <div className="grid lg:grid-cols-2 gap-24 items-center">
             <div className="space-y-10">
               <div>
-                <div className="text-xs font-mono text-green-400/60 tracking-[0.3em] uppercase mb-4">
+                <div className="text-xs font-mono text-emerald-400/60 tracking-[0.3em] uppercase mb-4">
                   Phase_03: Standalone_Agent
                 </div>
 
-                <h2 className="text-5xl font-bold tracking-tight mb-6 leading-tight">
+                <h2 className="text-5xl font-black tracking-tight mb-6 leading-tight font-heading uppercase italic">
                   {trans('integrations.quasar_go.title')}
                 </h2>
 
-                <p className="text-gray-300 text-xl font-light leading-relaxed">
+                <p className="text-zinc-400 text-xl font-medium leading-relaxed font-body">
                   {trans('integrations.quasar_go.description')}
                 </p>
               </div>
@@ -342,23 +342,23 @@ export default function Integrations() {
             </div>
 
             <div className="relative group">
-              <div className="absolute -inset-8 bg-green-500/5 blur-[100px] rounded-full group-hover:bg-green-500/10 transition-all duration-1000" />
+              <div className="absolute -inset-8 bg-emerald-500/5 blur-[100px] rounded-full group-hover:bg-emerald-500/10 transition-all duration-1000" />
 
               <div className="relative zenith-glass-strong rounded-[2.5rem] p-1 border border-white/10 overflow-hidden">
                 <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
 
                 <div className="bg-black/60 p-10 font-mono text-sm space-y-4">
                   <div className="flex items-center gap-2 mb-6">
-                    <div className="w-3 h-3 rounded-full bg-green-500/50" />
+                    <div className="w-3 h-3 rounded-full bg-emerald-500/50" />
 
                     <div className="ml-4 text-[10px] text-white/20 uppercase tracking-widest">
                       Binary_Deployment
                     </div>
                   </div>
 
-                  <div className="text-gray-500">{'// Deploy via Docker'}</div>
+                  <div className="text-zinc-500">{'// Deploy via Docker'}</div>
 
-                  <div className="text-green-400 break-all">
+                  <div className="text-emerald-400 break-all font-bold">
                     docker run -d \<br />
                     <span className="pl-4 text-white">
                       -e QUASAR_SERVICE=app-node \<br />
@@ -368,11 +368,14 @@ export default function Integrations() {
 
                   <div className="h-2" />
 
-                  <div className="text-gray-500">{'// Or download binary'}</div>
+                  <div className="text-zinc-500">{'// Or download binary'}</div>
 
-                  <div className="text-green-400">
-                    curl -sL <span className="text-white">https://get.gravito.dev/quasar-go</span> |
-                    bash
+                  <div className="text-emerald-400 font-bold">
+                    curl -sL{' '}
+                    <span className="text-white font-normal">
+                      https://get.gravito.dev/quasar-go
+                    </span>{' '}
+                    | bash
                   </div>
 
                   <div className="h-6" />
@@ -382,10 +385,10 @@ export default function Integrations() {
                       OS: LINUX/MAC/WIN
                     </span>
 
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] text-green-400">DAEMON ACTIVE</span>
+                    <div className="flex items-center gap-2 text-emerald-400 font-bold">
+                      <span className="text-[10px]">DAEMON ACTIVE</span>
 
-                      <div className="w-2 h-2 rounded-full bg-green-400" />
+                      <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
                     </div>
                   </div>
                 </div>
@@ -400,19 +403,19 @@ export default function Integrations() {
       <section className="py-32 relative overflow-hidden">
         <div className="absolute inset-0 bg-white/[0.01] border-y border-white/5" />
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 font-body">
           <div className="grid lg:grid-cols-2 gap-24 items-center">
             <div className="lg:order-2 space-y-10">
               <div>
-                <div className="text-xs font-mono text-orange-400/60 tracking-[0.3em] uppercase mb-4">
+                <div className="text-xs font-mono text-zenith-orange/60 tracking-[0.3em] uppercase mb-4">
                   Phase_04: Astral_OpenAPI
                 </div>
 
-                <h2 className="text-5xl font-bold tracking-tight mb-6 leading-tight">
+                <h2 className="text-5xl font-black tracking-tight mb-6 leading-tight font-heading uppercase italic">
                   {trans('integrations.astral.title')}
                 </h2>
 
-                <p className="text-gray-300 text-xl font-light leading-relaxed">
+                <p className="text-zinc-400 text-xl font-medium leading-relaxed">
                   {trans('integrations.astral.description')}
                 </p>
               </div>
@@ -430,34 +433,35 @@ export default function Integrations() {
             </div>
 
             <div className="lg:order-1 relative group">
-              <div className="absolute -inset-8 bg-orange-500/5 blur-[100px] rounded-full group-hover:bg-orange-500/10 transition-all duration-1000" />
+              <div className="absolute -inset-8 bg-zenith-orange/5 blur-[100px] rounded-full group-hover:bg-zenith-orange/10 transition-all duration-1000" />
 
               <div className="relative zenith-glass-strong rounded-[2.5rem] p-1 border border-white/10 overflow-hidden">
                 <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
 
                 <div className="bg-black/60 p-10 font-mono text-sm space-y-4">
                   <div className="flex items-center gap-2 mb-6">
-                    <div className="w-3 h-3 rounded-full bg-orange-500/50" />
+                    <div className="w-3 h-3 rounded-full bg-zenith-orange/50" />
 
                     <div className="ml-4 text-[10px] text-white/20 uppercase tracking-widest">
                       Documentation_Engine
                     </div>
                   </div>
 
-                  <div className="text-gray-500">{'// Map routes to DTOs'}</div>
+                  <div className="text-zinc-500">{'// Map routes to DTOs'}</div>
 
-                  <div className="text-orange-400">
-                    astral.<span className="text-white">resource</span>(
+                  <div className="text-zenith-orange font-bold">
+                    astral.<span className="text-white font-normal">resource</span>(
                     <span className="text-yellow-200">'/users'</span>, {'{'}...{'}'})
                   </div>
 
                   <div className="h-2" />
 
-                  <div className="text-gray-500">{'// Built-in Swagger UI'}</div>
+                  <div className="text-zinc-500">{'// Built-in Swagger UI'}</div>
 
                   <div className="text-white flex items-center gap-2">
                     <span className="text-purple-400">orbits</span>: [
-                    <span className="text-orange-400">OrbitAstral</span>.configure({'{}'}) ]
+                    <span className="text-zenith-orange font-bold font-mono">OrbitAstral</span>
+                    .configure({'{}'}) ]
                   </div>
 
                   <div className="h-6" />
@@ -467,7 +471,7 @@ export default function Integrations() {
                       UI: READY AT /DOCS
                     </span>
 
-                    <div className="w-2 h-2 rounded-full bg-orange-400 animate-pulse shadow-[0_0_10px_rgba(251,146,60,0.5)]" />
+                    <div className="w-2 h-2 rounded-full bg-zenith-orange animate-pulse shadow-[0_0_10px_rgba(249,115,22,0.5)]" />
                   </div>
                 </div>
               </div>
@@ -480,20 +484,20 @@ export default function Integrations() {
 
       <section className="py-32 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-24">
-            <div className="text-xs font-mono text-white/30 tracking-[0.3em] uppercase mb-4">
+          <div className="text-center mb-24 font-heading uppercase italic">
+            <div className="text-xs font-mono text-zinc-500 tracking-[0.3em] uppercase mb-4 not-italic normal-case">
               Phase_05: Global_Ecosystem
             </div>
 
-            <h2 className="text-4xl lg:text-5xl font-bold tracking-tight mb-6">
+            <h2 className="text-4xl lg:text-5xl font-black tracking-tight mb-6">
               {trans('integrations.ecosystem.title')}
             </h2>
             <div className="w-24 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent mx-auto" />
           </div>
 
-          <div className="grid md:grid-cols-3 gap-10">
+          <div className="grid md:grid-cols-3 gap-10 font-body">
             <EcosystemCard
-              icon={<Zap className="text-orange-400" />}
+              icon={<Zap className="text-zenith-orange" />}
               title="Redis"
               content={trans('integrations.ecosystem.redis')}
               tag="TRANSPORT"
@@ -521,7 +525,7 @@ export default function Integrations() {
 
 function IntegrationFeature({ icon, text }: { icon: React.ReactNode; text: string }) {
   return (
-    <div className="flex items-center gap-4 text-gray-400 group">
+    <div className="flex items-center gap-4 text-zinc-400 group">
       <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center text-zenith-accent group-hover:bg-zenith-accent/10 group-hover:border-zenith-accent/20 transition-all">
         {icon}
       </div>
@@ -555,7 +559,7 @@ function EcosystemCard({
         {React.cloneElement(icon as React.ReactElement<any>, { size: 32 })}
       </div>
       <h3 className="text-2xl font-bold mb-4 tracking-tight">{title}</h3>
-      <p className="text-gray-500 leading-relaxed font-light">{content}</p>
+      <p className="text-zinc-500 leading-relaxed font-light">{content}</p>
       <div className="mt-8 pt-8 border-t border-white/5 flex items-center gap-2 text-xs font-mono text-white/20">
         <Code2 size={12} /> INTERFACE_V2_ACTIVE
       </div>

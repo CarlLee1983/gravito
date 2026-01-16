@@ -36,7 +36,7 @@ export default function About() {
           <div className="absolute inset-x-0 h-[500px] bg-gradient-to-b from-transparent via-zenith-accent/5 to-transparent opacity-20 animate-scanline pointer-events-none" />
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center font-heading">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
@@ -49,13 +49,13 @@ export default function About() {
               </span>
               MISSION_DIRECTIVE: OBSERVABILITY
             </div>
-            <h1 className="text-6xl lg:text-8xl font-bold tracking-tighter mb-8 leading-tight">
+            <h1 className="text-6xl lg:text-8xl font-black tracking-tighter mb-8 leading-tight uppercase italic">
               {trans('about.title')}{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-zenith-400 via-zenith-accent to-zenith-stellar text-glow">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-zenith-accent to-zenith-stellar text-glow">
                 {trans('about.titleHighlight')}
               </span>
             </h1>
-            <p className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed font-light">
+            <p className="text-xl text-zinc-400 max-w-3xl mx-auto leading-relaxed font-medium font-body not-italic normal-case">
               {trans('about.whatIsDescription1')}
             </p>
           </motion.div>
@@ -166,18 +166,20 @@ function AboutSection({
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8 }}
-          className="flex-1 space-y-8"
+          className="flex-1 space-y-8 font-body"
         >
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-zenith-accent/10 flex items-center justify-center text-zenith-accent zenith-glass">
+            <div className="w-12 h-12 rounded-2xl bg-zenith-accent/10 flex items-center justify-center text-zenith-accent zenith-glass border border-zenith-accent/20">
               {icon}
             </div>
-            <span className="text-xs font-mono text-white/30 tracking-[0.3em] uppercase">
+            <span className="text-xs font-mono text-zinc-500 tracking-[0.3em] uppercase font-bold">
               {tag}
             </span>
           </div>
-          <h2 className="text-4xl lg:text-5xl font-bold leading-tight">{title}</h2>
-          <p className="text-gray-300 text-lg leading-relaxed font-light">{content}</p>
+          <h2 className="text-4xl lg:text-5xl font-black leading-tight font-heading uppercase italic tracking-tight">
+            {title}
+          </h2>
+          <p className="text-zinc-400 text-lg leading-relaxed font-medium">{content}</p>
         </motion.div>
         <div className="flex-1 w-full flex justify-center">
           <motion.div
@@ -208,19 +210,21 @@ function SpecCard({ title, items }: { title: string; items: { label: string; val
   return (
     <motion.div
       whileHover={{ y: -5 }}
-      className="p-8 rounded-3xl zenith-glass hover:border-zenith-accent/30 transition-all"
+      className="p-8 rounded-3xl zenith-glass hover:border-zenith-accent/30 transition-all font-body"
     >
-      <h3 className="text-xl font-bold mb-6 text-white/90">{title}</h3>
+      <h3 className="text-xl font-bold mb-6 text-white font-heading uppercase italic tracking-wider">
+        {title}
+      </h3>
       <div className="space-y-4">
         {items.map((item) => (
           <div
             key={item.label}
             className="flex justify-between items-center pb-2 border-b border-white/5"
           >
-            <span className="text-xs text-gray-500 uppercase font-mono tracking-widest">
+            <span className="text-xs text-zinc-500 uppercase font-mono tracking-widest font-bold">
               {item.label}
             </span>
-            <span className="text-sm text-gray-200 font-bold">{item.value}</span>
+            <span className="text-sm text-zinc-200 font-bold">{item.value}</span>
           </div>
         ))}
       </div>

@@ -36,16 +36,24 @@ routes.post('/user', StoreUserRequest, [UserController, 'store']);
 
 ## 取得驗證過的數據
 
-在控制器中，您可以安全地取得驗證後的數據：
+在控制器中，您可以透過 `c.get('validated')` 取得經過驗證的數據。這是最推薦的方式，因為它整合了 Impulse 的型別推斷：
 
 ```typescript
-async store(c: Context) {
-  // 取得驗證過且帶有正確型別的數據
-  const data = c.req.valid('json');
+import type { GravitoContext } from '@gravito/core';
+
+async store(c: GravitoContext) {
+  // 取得驗證過的數據
+  const data = c.get('validated') as { name: string; email: string };
   
   const user = await User.create(data);
   return c.json(user, 201);
 }
+```
+
+或者，您也可以直接從請求對象取得：
+
+```typescript
+const data = c.req.valid('json');
 ```
 
 注意：`Model.create()` 是非同步且會立即寫入資料庫。若只需要記憶體中的實例，請使用 `Model.make()`，再自行呼叫 `save()`。

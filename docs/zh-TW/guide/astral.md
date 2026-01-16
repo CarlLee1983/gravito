@@ -61,12 +61,6 @@ export const UserContract = astral.resource('/api/users', {
     store: {
       summary: '註冊新使用者',
       input: CreateUserRequest, // 從 FormRequest 提取 Schema
-      output: UserDTO,
-      status: 201
-    },
-    show: {
-      summary: '獲取使用者詳情',
-      params: { id: z.string().uuid() }, // 定義 URL 參數
       output: UserDTO
     }
   }
@@ -91,8 +85,8 @@ const config = defineConfig({
       version: '1.0.0',
       description: 'Galaxy API 服務的說明文件。',
       contracts: [UserContract],
-      path: '/docs', // UI 路徑
-      specPath: '/docs/json' // JSON 規格路徑
+      uiPath: '/docs', // UI 路徑
+      jsonPath: '/openapi.json' // JSON 規格路徑
     })
   ]
 })
