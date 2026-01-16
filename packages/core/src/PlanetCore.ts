@@ -57,10 +57,6 @@ export type ErrorHandlerContext = {
   }
 }
 
-// Photon Variables Type for Context Injection
-type RouteParams = Record<string, string | number>
-type RouteQuery = Record<string, string | number | boolean | null | undefined>
-
 export interface GravitoOrbit {
   install(core: PlanetCore): void | Promise<void>
 }
