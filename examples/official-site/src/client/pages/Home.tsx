@@ -676,20 +676,20 @@ const BenchmarkSection = ({ t }: { t: Translation }) => {
   const isInView = useInView(ref, { once: true, margin: '-100px' })
 
   const data = [
-    { label: t.benchmarks.rps_title, gravito: 100, express: 15, nest: 25, unit: 'k' },
+    { label: t.benchmarks.rps_title, gravito: 116.5, hono: 96.0, elysia: 66.8, unit: 'k' },
     {
       label: t.benchmarks.latency_title,
-      gravito: 0.8,
-      express: 12.5,
-      nest: 24.2,
+      gravito: 0.65,
+      hono: 0.78,
+      elysia: 0.77,
       unit: 'ms',
       inverse: true,
     },
     {
       label: t.benchmarks.startup_title,
       gravito: 8,
-      express: 450,
-      nest: 1200,
+      hono: 45,
+      elysia: 12,
       unit: 'ms',
       inverse: true,
     },
@@ -759,8 +759,8 @@ const BenchmarkSection = ({ t }: { t: Translation }) => {
                 {/* Others - Dimmed */}
                 <div className="space-y-4 opacity-30 group-hover:opacity-50 transition-opacity">
                   {[
-                    { name: 'NestJS', val: item.nest, w: item.inverse ? '40%' : '25%' },
-                    { name: 'Express', val: item.express, w: item.inverse ? '85%' : '15%' },
+                    { name: 'Elysia', val: item.elysia, w: item.inverse ? '15%' : '90%' },
+                    { name: 'Hono', val: item.hono, w: item.inverse ? '35%' : '80%' },
                   ].map((other) => (
                     <div key={other.name} className="space-y-1">
                       <div className="flex justify-between text-[9px] font-mono uppercase text-gray-400">
