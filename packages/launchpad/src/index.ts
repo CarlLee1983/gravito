@@ -26,10 +26,8 @@ export * from './Domain/RocketStatus'
 class LaunchpadServiceProvider extends ServiceProvider {
   register(container: Container): void {
     if (!container.has('cache')) {
-      const cacheFromServices = this.core?.services?.get('cache')
-      if (cacheFromServices) {
-        container.instance('cache', cacheFromServices)
-      }
+      // 在新的架構中，如果 core 有預設綁定，可以直接通過 container.make 獲取
+      // 這裡如果只是想從父容器繼承，通常不需要額外操作，除非是在不同的 instance 中。
     }
 
     container.singleton('launchpad.docker', () => new DockerAdapter())

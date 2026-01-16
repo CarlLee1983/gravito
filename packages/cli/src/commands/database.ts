@@ -152,7 +152,7 @@ export async function dbDeploy(options: {
       throw new Error('Could not find core instance')
     }
 
-    const db = core.services.get('db') || core.container.make('db')
+    const db = core.container.make('db')
     if (!db) {
       throw new Error('Database service not found')
     }
@@ -274,7 +274,7 @@ async function runSeeder(filepath: string) {
       throw new Error('Could not find core instance')
     }
 
-    const db = core.services.get('db') || core.container.make('db')
+    const db = core.container.make('db')
     if (!db) {
       throw new Error('Database service not found')
     }
