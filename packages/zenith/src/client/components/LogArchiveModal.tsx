@@ -329,9 +329,39 @@ export function LogArchiveModal({ isOpen, onClose }: LogArchiveModalProps) {
 
             {/* Footer / Pagination */}
             <div className="p-4 border-t bg-muted/5 flex flex-col sm:flex-row justify-between items-center gap-4 text-[10px] uppercase font-bold text-muted-foreground">
-              <div>
-                Scanning {total.toLocaleString()} events • Page {page} of {totalPages || 1}
+              <div className="flex items-center gap-4">
+                <span>
+                  Scanning {total.toLocaleString()} events • Page {page} of {totalPages || 1}
+                </span>
+
+                <div className="h-4 w-px bg-border/50 hidden sm:block"></div>
+
+                {/* Export Controls */}
+                <div className="flex items-center gap-2">
+                  <select
+                    className="bg-background border border-border/50 rounded-lg px-2 py-1 outline-none focus:ring-1 focus:ring-primary/30"
+                    onChange={(e) => {
+                      // Trigger export
+                      const format = e.target.value
+                      const url = new URL('/api/logs/export', window.location.href)
+                      if (search) url.searchParams.set('search', search)
+                      if (status !== 'all') url.searchParams.set('status', status)
+                      if (dateRange.start) url.searchParams.set('startTime', dateRange.start)
+                      if (dateRange.end) url.searchParams.set('endTime', dateRange.end)
+                      url.searchParams.set('format', format)
+
+                      // For now, just open in new tab to trigger download
+                      window.open(url.toString(), '_blank')
+                    }}
+                    defaultValue=""
+                  >
+                    <option value="" disabled>Export As...</option>
+                    <option value="json">JSON</option>
+                    <option value="csv">CSV</option>
+                  </select>
+                </div>
               </div>
+
               <div className="flex items-center gap-2">
                 <button
                   type="button"

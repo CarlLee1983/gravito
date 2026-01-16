@@ -76,6 +76,25 @@ export default class ${className} {
     }
   }
 
+  async rollback(steps = 1): Promise<MigrationResult> {
+    try {
+      this.ensureDatabaseConfigured()
+      const migrator = new Migrator({ path: this.migrationsDir })
+      const result = await migrator.rollback(steps)
+      const message =
+        result.migrations.length === 0
+          ? 'No migrations rolled back'
+          : `Rolled back ${result.migrations.length} migration(s)`
+      return { success: true, message }
+    } catch (err: unknown) {
+      return {
+        success: false,
+        message: 'Rollback failed',
+        error: err instanceof Error ? err.message : String(err),
+      }
+    }
+  }
+
   async status(): Promise<MigrationStatus> {
     this.ensureDatabaseConfigured()
     const migrator = new Migrator({ path: this.migrationsDir })
@@ -121,6 +140,9 @@ export default class ${className} {
       let driver = parsed.protocol.replace(':', '')
       if (driver === 'postgresql') {
         driver = 'postgres'
+      } else if (driver.startsWith('mongodb')) {
+        // Handle mongodb and mongodb+srv
+        driver = 'mongodb'
       }
 
       const database = parsed.pathname ? parsed.pathname.replace(/^\//, '') : undefined
@@ -144,7 +166,6 @@ export default class ${className} {
         config.password = decodeURIComponent(parsed.password)
       }
 
-      // TODO: Improve config typing for MongoDB
       return config as unknown as ConnectionConfig
     } catch {
       return {

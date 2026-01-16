@@ -14,5 +14,6 @@ export interface MigrationDriver {
   generate(name: string): Promise<MigrationResult>
   migrate(): Promise<MigrationResult>
   fresh(): Promise<MigrationResult>
+  rollback(steps?: number): Promise<MigrationResult>
   status(): Promise<MigrationStatus>
 }

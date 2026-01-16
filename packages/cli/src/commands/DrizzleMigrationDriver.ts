@@ -96,6 +96,14 @@ export class DrizzleMigrationDriver implements MigrationDriver {
     }
   }
 
+  async rollback(): Promise<MigrationResult> {
+    return {
+      success: false,
+      message:
+        'Rollback is not supported by the Drizzle driver. Please use manual SQL or snapshots.',
+    }
+  }
+
   async status(): Promise<{ pending: string[]; applied: string[] }> {
     try {
       const migrationsPath = path.join(process.cwd(), this.migrationsDir)

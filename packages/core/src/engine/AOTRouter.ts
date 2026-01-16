@@ -33,6 +33,19 @@ export interface RouteMetadata {
 /**
  * AOT Router - Optimized for Bun
  *
+/**
+ * Route definition for re-playing routes (mounting)
+ */
+interface RouteDefinition {
+  method: HttpMethod
+  path: string
+  handler: Handler
+  middleware: Middleware[]
+}
+
+/**
+ * AOT Router - Optimized for Bun
+ *
  * Performance characteristics:
  * - Static routes: O(1) lookup via Map
  * - Dynamic routes: O(log n) via Radix Tree
@@ -45,6 +58,10 @@ export class AOTRouter {
 
   // Dynamic route handler (Radix Tree)
   private dynamicRouter = new RadixRouter()
+
+  // Store all route definitions to support mounting/merging
+  /** @internal */
+  public readonly routeDefinitions: RouteDefinition[] = []
 
   // Global middleware (applies to all routes)
   /** @internal */
@@ -67,6 +84,9 @@ export class AOTRouter {
    * @param middleware - Route-specific middleware
    */
   add(method: HttpMethod, path: string, handler: Handler, middleware: Middleware[] = []): void {
+    // Store definition for mounting support
+    this.routeDefinitions.push({ method, path, handler, middleware })
+
     const normalizedMethod = method.toLowerCase() as HttpMethod
 
     if (this.isStaticPath(path)) {
@@ -83,6 +103,53 @@ export class AOTRouter {
       if (middleware.length > 0) {
         this.pathMiddleware.set(`${normalizedMethod}:${path}`, middleware)
       }
+    }
+  }
+
+  /**
+   * Mount another router at a prefix
+   */
+  mount(prefix: string, other: AOTRouter): void {
+    // 1. Convert other's global middleware to pattern middleware
+    if (other.globalMiddleware.length > 0) {
+      // Apply to both /prefix and /prefix/*
+      this.usePattern(prefix, ...other.globalMiddleware)
+
+      const wildcard = prefix === '/' ? '/*' : `${prefix}/*`
+      this.usePattern(wildcard, ...other.globalMiddleware)
+    }
+
+    // 2. Transfer pattern-based middleware
+    for (const [pattern, mws] of other.pathMiddleware) {
+      // Skip internal dynamic route entries (contain ':')
+      if (pattern.includes(':')) continue
+
+      // Normalize pattern
+      let newPattern: string
+      if (pattern === '*') {
+        newPattern = prefix === '/' ? '/*' : `${prefix}/*`
+      } else if (pattern.startsWith('/')) {
+        newPattern = prefix === '/' ? pattern : `${prefix}${pattern}`
+      } else {
+        newPattern = prefix === '/' ? `/${pattern}` : `${prefix}/${pattern}`
+      }
+
+      this.usePattern(newPattern, ...mws)
+    }
+
+    // 3. Transfer all routes
+    for (const def of other.routeDefinitions) {
+      // Calculate new path
+      let newPath: string
+      if (prefix === '/') {
+        newPath = def.path
+      } else if (def.path === '/') {
+        newPath = prefix
+      } else {
+        newPath = `${prefix}${def.path}`
+      }
+
+      this.add(def.method, newPath, def.handler, def.middleware)
     }
   }
 

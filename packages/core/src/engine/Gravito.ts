@@ -205,12 +205,13 @@ export class Gravito {
    * // Now accessible at /api/users
    * ```
    */
-  route(_path: string, _app: Gravito): this {
-    // This is a simplified implementation
-    // In production, we'd need to merge routers properly
-    // For now, we'll just note this as a TODO
-    // console.warn('route() method is not yet fully implemented', path, app)
-    console.warn('route() method is not yet fully implemented')
+  route(path: string, app: Gravito): this {
+    // Mount the sub-application's router using the AOTRouter optimization
+    this.router.mount(path, app.router)
+
+    // Re-compile routes to update the static route map and optimizations
+    this.compileRoutes()
+
     return this
   }
 
