@@ -30,7 +30,6 @@ describe('Orbit I18n Manager', () => {
       en: {
         title: 'Hello',
         auth: {
-          // @ts-expect-error
           failed: 'Failed Login',
         } as any,
       },

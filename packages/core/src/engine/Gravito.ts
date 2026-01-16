@@ -14,7 +14,7 @@
  */
 
 import type { HttpMethod } from '../http/types'
-import { AOTRouter } from './AOTRouter'
+import { AOTRouter, type RouteMetadata } from './AOTRouter'
 import { analyzeHandler, getOptimalContextType } from './analyzer'
 import { FastContext } from './FastContext'
 import { MinimalContext } from './MinimalContext'
@@ -48,7 +48,7 @@ export class Gravito {
 
   // Direct reference to static routes Map (O(1) access)
   // Optimization: Bypass getter/setter overhead
-  private staticRoutes!: Map<string, { handler: Handler; middleware: Middleware[] }>
+  private staticRoutes!: Map<string, RouteMetadata>
   // Flag: pure static app (no middleware at all) allows ultra-fast path
   private isPureStaticApp = true
 
@@ -276,7 +276,6 @@ export class Gravito {
       // 1. No global/path middleware (pure static app)
       // 2. No route middleware
       // 3. Handler doesn't use unsupported features (like .header())
-      // @ts-expect-error - Access custom property
       if (staticRoute.useMinimal) {
         // Ultra-fast path: no middleware, minimal context
         const ctx = new MinimalContext(request, {}, path)
@@ -422,13 +421,12 @@ export class Gravito {
    * (Simplified version - assumes we've already checked for pure static)
    */
   private collectMiddlewareForPath(path: string, routeMiddleware: Middleware[]): Middleware[] {
-    // @ts-expect-error - Access private property for optimization
     if (this.router.globalMiddleware.length === 0 && this.router.pathMiddleware.size === 0) {
       return routeMiddleware
     }
 
     // Delegate to router for full collection
-    // We can remove @ts-expect-error since we added public method
+
     return this.router.collectMiddlewarePublic(path, routeMiddleware)
   }
 
@@ -437,13 +435,10 @@ export class Gravito {
    * Called once during initialization and when routes change
    */
   private compileRoutes(): void {
-    // @ts-expect-error - Access private property
     this.staticRoutes = this.router.staticRoutes
 
     // Check if pure static app
-    // @ts-expect-error - Access private property
     const hasGlobalMiddleware = this.router.globalMiddleware.length > 0
-    // @ts-expect-error - Access private property
     const hasPathMiddleware = this.router.pathMiddleware.size > 0
 
     this.isPureStaticApp = !hasGlobalMiddleware && !hasPathMiddleware
@@ -457,7 +452,6 @@ export class Gravito {
       // 1. App is pure static (no middleware)
       // 2. No route middleware
       // 3. Analyzer suggests 'minimal' (no headers usage, etc.)
-      // @ts-expect-error - Adding custom property
       route.useMinimal =
         this.isPureStaticApp && route.middleware.length === 0 && optimalType === 'minimal'
     }

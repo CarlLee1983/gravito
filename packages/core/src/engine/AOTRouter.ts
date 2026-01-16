@@ -18,9 +18,16 @@ import type { Handler, Middleware, RouteMatch } from './types'
 /**
  * Route metadata for middleware management
  */
-interface RouteMetadata {
+/**
+ * Route metadata for middleware management
+ */
+export interface RouteMetadata {
   handler: Handler
   middleware: Middleware[]
+  /**
+   * Optimization flag: use minimal context for pure static routes
+   */
+  useMinimal?: boolean
 }
 
 /**
@@ -33,16 +40,19 @@ interface RouteMetadata {
  */
 export class AOTRouter {
   // Static route cache: "METHOD:PATH" -> RouteMetadata
-  private staticRoutes = new Map<string, RouteMetadata>()
+  /** @internal */
+  public readonly staticRoutes = new Map<string, RouteMetadata>()
 
   // Dynamic route handler (Radix Tree)
   private dynamicRouter = new RadixRouter()
 
   // Global middleware (applies to all routes)
-  private globalMiddleware: Middleware[] = []
+  /** @internal */
+  public readonly globalMiddleware: Middleware[] = []
 
   // Path-based middleware: pattern -> middleware[]
-  private pathMiddleware = new Map<string, Middleware[]>()
+  /** @internal */
+  public readonly pathMiddleware = new Map<string, Middleware[]>()
 
   /**
    * Register a route

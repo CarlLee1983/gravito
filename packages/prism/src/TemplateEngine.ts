@@ -481,8 +481,10 @@ export class TemplateEngine {
 
   private getNestedValue(obj: unknown, path: string): unknown {
     return path.split('.').reduce((prev, curr) => {
-      // @ts-expect-error: Dynamic access
-      return prev ? prev[curr] : undefined
+      if (prev && typeof prev === 'object') {
+        return (prev as Record<string, unknown>)[curr]
+      }
+      return undefined
     }, obj)
   }
 }
