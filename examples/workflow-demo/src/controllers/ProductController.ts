@@ -10,7 +10,12 @@ export class ProductController {
   }
 
   create = async (ctx: GravitoContext) => {
-    const payload = await ctx.req.json()
+    const payload = (await ctx.req.json()) as {
+      name?: string
+      sku?: string
+      price?: number
+      inventory?: number
+    }
     const { name, sku, price, inventory } = payload
     if (!name || !sku || typeof price !== 'number' || typeof inventory !== 'number') {
       return ctx.json({ error: 'Invalid product payload' }, 400)
@@ -21,7 +26,7 @@ export class ProductController {
 
   update = async (ctx: GravitoContext) => {
     const id = ctx.req.param('id')
-    const payload = await ctx.req.json()
+    const payload = (await ctx.req.json()) as Record<string, unknown>
     if (!id) {
       return ctx.json({ error: 'Product id missing' }, 400)
     }

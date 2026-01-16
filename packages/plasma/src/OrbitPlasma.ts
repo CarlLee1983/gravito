@@ -1,9 +1,4 @@
-/**
- * OrbitPlasma - Redis Orbit for Gravito
- * @description Integrates Redis client with PlanetCore
- */
-
-import type { GravitoOrbit, PlanetCore } from '@gravito/core'
+import type { GravitoContext, GravitoNext, GravitoOrbit, PlanetCore } from '@gravito/core'
 import { Redis } from './Redis'
 import type { RedisClient } from './RedisClient'
 import type { RedisConfig, RedisManagerConfig } from './types'
@@ -27,27 +22,6 @@ export interface OrbitPlasmaOptions extends Partial<RedisManagerConfig> {
  * OrbitPlasma - Redis Orbit
  *
  * Gravito Orbit implementation providing Redis functionality.
- * Integrates with PlanetCore and injects a `redis` service into the Photon Context.
- *
- * @example
- * ```typescript
- * const core = await PlanetCore.boot({
- *   config: {
- *     redis: {
- *       host: 'localhost',
- *       port: 6379,
- *     }
- *   },
- *   orbits: [
- *     new OrbitPlasma()
- *   ]
- * })
- *
- * // Use in a controller/handler
- * const redis = c.get('redis')
- * await redis.set('key', 'value')
- * const value = await redis.get('key')
- * ```
  */
 export class OrbitPlasma implements GravitoOrbit {
   private client?: RedisClient
@@ -106,7 +80,7 @@ export class OrbitPlasma implements GravitoOrbit {
     }
 
     // Inject redis service into Context
-    core.adapter.use('*', async (c, next) => {
+    core.adapter.use('*', async (c: GravitoContext, next: GravitoNext) => {
       // Ensure connected if not already
       if (!this.connected && this.client) {
         try {
@@ -122,6 +96,11 @@ export class OrbitPlasma implements GravitoOrbit {
       c.set(exposeAs, this.client)
       return await next()
     })
+
+    // Register in core container for global access (CLI, Jobs)
+    if (this.client) {
+      core.container.instance(exposeAs, this.client)
+    }
 
     core.logger.info(`[OrbitPlasma] Installed (Exposed as: ${exposeAs})`)
 

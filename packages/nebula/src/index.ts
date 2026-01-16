@@ -179,6 +179,9 @@ export class OrbitNebula implements GravitoOrbit {
       getUrl: (key: string) => provider?.getUrl(key),
     }
 
+    // Register in core container for global access (CLI/Jobs)
+    core.container.instance(exposeAs, storageService)
+
     // Inject helper into context
     core.adapter.use('*', async (c: GravitoContext, next: GravitoNext) => {
       c.set(exposeAs, storageService)
@@ -241,3 +244,10 @@ export default function orbitStorage(core: PlanetCore, options: OrbitNebulaOptio
 
 /** @deprecated Use OrbitNebula instead */
 export const OrbitStorage = OrbitNebula
+
+declare module '@gravito/core' {
+  interface GravitoVariables {
+    /** File storage service */
+    storage: StorageProvider
+  }
+}

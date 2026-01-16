@@ -6,7 +6,7 @@ import { OrbitPrism } from '@gravito/prism'
 import { OrbitPulsar } from '@gravito/pulsar'
 import { CallbackUserProvider, OrbitSentinel } from '@gravito/sentinel'
 import { OrbitStasis } from '@gravito/stasis'
-import { User } from '../src/Models'
+import { User } from '../src/models'
 import { sql } from '../src/utils/db'
 
 export const orbits = [

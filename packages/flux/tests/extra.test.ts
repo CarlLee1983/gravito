@@ -180,12 +180,12 @@ describe('FluxEngine extras', () => {
 })
 
 describe('OrbitFlux', () => {
-  it('installs and exposes engine via core services', async () => {
-    const services = new Map<string, unknown>()
+  it('installs and exposes engine via core container', async () => {
+    const instances = new Map<string, unknown>()
     const core = {
-      services: {
-        set: (key: string, value: unknown) => services.set(key, value),
-        get: <T>(key: string) => services.get(key) as T | undefined,
+      container: {
+        instance: (key: string, value: unknown) => instances.set(key, value),
+        make: <T>(key: string) => instances.get(key) as T | undefined,
       },
       hooks: { doAction: jest.fn() },
       logger: {
@@ -199,7 +199,7 @@ describe('OrbitFlux', () => {
     const orbit = OrbitFlux.configure({ exposeAs: 'flux' })
     await orbit.install(core as any)
 
-    const engine = services.get('flux')
+    const engine = instances.get('flux')
     expect(engine).toBeInstanceOf(FluxEngine)
     expect(orbit.getEngine()).toBe(engine)
   })

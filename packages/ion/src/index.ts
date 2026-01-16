@@ -8,20 +8,52 @@
  * @since 1.0.0
  */
 
-import type { GravitoContext, GravitoOrbit, GravitoVariables, PlanetCore } from '@gravito/core'
+import type {
+  GravitoContext,
+  GravitoNext,
+  GravitoOrbit,
+  GravitoVariables,
+  PlanetCore,
+} from '@gravito/core'
 import { InertiaService } from './InertiaService'
 
 export * from './InertiaService'
+
+/**
+ * Inertia Helper Type - A callable function that also has helper methods.
+ */
+export interface InertiaHelper {
+  /**
+   * Render an Inertia component
+   * Shortcut for context.get('inertia').render()
+   */
+  (component: string, props?: Record<string, unknown>, rootVars?: Record<string, unknown>): Response
+
+  /** Share data with all Inertia responses */
+  share(key: string, value: unknown): void
+
+  /** Share multiple props at once */
+  shareAll(props: Record<string, unknown>): void
+
+  /** Get all shared props */
+  getSharedProps(): Record<string, unknown>
+
+  /** Explicitly render an Inertia component */
+  render(
+    component: string,
+    props?: Record<string, unknown>,
+    rootVars?: Record<string, unknown>
+  ): Response
+
+  /** Direct access to the Inertia service instance */
+  service: InertiaService
+}
 
 // Module augmentation for type-safe context injection
 declare module '@gravito/core' {
   interface GravitoVariables {
     /** Inertia.js service helper */
-    inertia: (
-      component: string,
-      props?: Record<string, unknown>,
-      rootVars?: Record<string, unknown>
-    ) => Response
+    inertia: InertiaHelper
   }
 }
 
@@ -46,10 +78,8 @@ export class OrbitIon implements GravitoOrbit {
     const rootView = this.options.rootView ?? 'app'
 
     // Register middleware to inject Inertia helper
-    core.adapter.use('*', async (c: any, next: any) => {
-      const gravitoCtx = c as GravitoContext<GravitoVariables>
-
-      const service = new InertiaService(gravitoCtx, {
+    core.adapter.use('*', async (c: GravitoContext, next: GravitoNext) => {
+      const service = new InertiaService(c, {
         version: String(appVersion),
         rootView,
       })
@@ -72,7 +102,7 @@ export class OrbitIon implements GravitoOrbit {
         service, // Access to the raw service instance
       })
 
-      c.set('inertia', inertiaProxy as any)
+      c.set('inertia', inertiaProxy as InertiaHelper)
       return await next()
     })
   }

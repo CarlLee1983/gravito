@@ -1,10 +1,15 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "rootDir": "./src",
     "outDir": "./dist",
     "experimentalDecorators": true,
-    "emitDecoratorMetadata": true
+    "emitDecoratorMetadata": true,
+    "moduleResolution": "bundler",
+    "baseUrl": ".",
+    "paths": {
+      "@gravito/atlas": ["../../packages/atlas/src/index.ts"],
+      "@gravito/core": ["../../packages/core/src/index.ts"]
+    }
   },
   "include": ["src/**/*"]
 }

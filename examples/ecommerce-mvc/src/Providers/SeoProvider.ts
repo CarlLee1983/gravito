@@ -2,8 +2,8 @@ import { OrbitSitemap } from '@gravito/constellation'
 import { type PlanetCore, ServiceProvider } from '@gravito/core'
 import { SeoEngine } from '@gravito/luminosity'
 import { seoConfig } from '../../config/seo'
-import { Category } from '../Models/Category'
-import { Product } from '../Models/Product'
+import { Category } from '../models/Category'
+import { Product } from '../models/Product'
 
 export class SeoProvider extends ServiceProvider {
   register() {

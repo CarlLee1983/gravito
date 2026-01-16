@@ -2,7 +2,8 @@ import type { GravitoMiddleware, GravitoOrbit, PlanetCore } from '@gravito/core'
 import { type I18nConfig, I18nManager, type I18nService, localeMiddleware } from './I18nService'
 
 declare module '@gravito/core' {
-  interface Variables {
+  interface GravitoVariables {
+    /** I18n service for translations */
     i18n: I18nService
   }
 }
@@ -18,8 +19,8 @@ export class OrbitCosmos implements GravitoOrbit {
   install(core: PlanetCore): void {
     const i18nManager = new I18nManager(this.config)
 
-    // Register globally if needed (for CLI/Jobs)
-    // core.services.set('i18n', i18nManager);
+    // Register globally for CLI/Jobs using the container
+    core.container.instance('i18n', i18nManager)
 
     // Inject locale middleware into every request
     // This middleware handles cloning the i18n instance per request
@@ -29,7 +30,9 @@ export class OrbitCosmos implements GravitoOrbit {
   }
 }
 
-/** @deprecated Use OrbitCosmos instead */
+/**
+ * @deprecated Use OrbitCosmos instead. Will be removed in v4.0.0.
+ */
 export const I18nOrbit = OrbitCosmos
 
 export * from './I18nService'

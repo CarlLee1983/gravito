@@ -1,5 +1,5 @@
 import type { GravitoContext } from '@gravito/core'
-import type { InertiaService } from '@gravito/ion'
+import type { InertiaHelper } from '@gravito/ion'
 import type { SessionService } from '@gravito/pulsar'
 import type { AuthManager } from '@gravito/sentinel'
 
@@ -8,7 +8,7 @@ export class AuthController {
    * Show login page
    */
   async showLogin(ctx: GravitoContext) {
-    const inertia = ctx.get('inertia') as InertiaService
+    const inertia = ctx.get('inertia') as InertiaHelper
     const auth = ctx.get('auth') as AuthManager
 
     // If already logged in, redirect to home

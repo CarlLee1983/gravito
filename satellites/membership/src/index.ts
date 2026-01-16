@@ -33,12 +33,7 @@ export class MembershipServiceProvider extends ServiceProvider {
    * Register bindings in the container
    */
   register(container: Container): void {
-    if (!container.has('cache')) {
-      const cacheFromServices = this.core?.services.get('cache')
-      if (cacheFromServices) {
-        container.instance('cache', cacheFromServices)
-      }
-    }
+    // Cache binding is handled at core level or via OrbitCache
 
     // Bind Repository
     container.singleton('membership.repo', () => new AtlasMemberRepository())

@@ -82,7 +82,7 @@ export interface StepDefinition<TInput = any, TData = any> {
   /** Step handler function */
   handler: (
     ctx: WorkflowContext<TInput, TData>
-  ) => Promise<undefined | FluxWaitResult> | undefined | FluxWaitResult
+  ) => void | Promise<void | undefined | FluxWaitResult> | undefined | FluxWaitResult
 
   /** Compensation handler to undo effects */
   compensate?: (ctx: WorkflowContext<TInput, TData>) => Promise<void> | void

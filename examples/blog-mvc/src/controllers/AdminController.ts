@@ -1,5 +1,5 @@
 import type { GravitoContext } from '@gravito/core'
-import type { InertiaService } from '@gravito/ion'
+import type { InertiaHelper } from '@gravito/ion'
 import { Category } from '../models/Category'
 import { Comment } from '../models/Comment'
 import { Post } from '../models/Post'
@@ -10,7 +10,7 @@ export class AdminController {
    * Admin Dashboard - list all posts with management tools
    */
   async dashboard(ctx: GravitoContext) {
-    const inertia = ctx.get('inertia') as InertiaService
+    const inertia = ctx.get('inertia') as InertiaHelper
     const page = Number(ctx.req.query('page') || 1)
 
     const posts = await Post.query().with('category').orderBy('id', 'desc').paginate(10, page)
@@ -32,7 +32,7 @@ export class AdminController {
    * Create post page
    */
   async create(ctx: GravitoContext) {
-    const inertia = ctx.get('inertia') as InertiaService
+    const inertia = ctx.get('inertia') as InertiaHelper
     const categories = await Category.all()
 
     return inertia.render('Admin/CreatePost', {
@@ -44,7 +44,7 @@ export class AdminController {
    * Edit post page
    */
   async edit(ctx: GravitoContext) {
-    const inertia = ctx.get('inertia') as InertiaService
+    const inertia = ctx.get('inertia') as InertiaHelper
     const id = ctx.req.param('id')
     const post = await Post.find(id)
     const categories = await Category.all()

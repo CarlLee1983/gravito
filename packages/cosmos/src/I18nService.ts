@@ -1,4 +1,4 @@
-import type { MiddlewareHandler } from '@gravito/photon'
+import type { GravitoMiddleware } from '@gravito/core'
 
 export type TranslationMap = {
   [key: string]: string | TranslationMap
@@ -225,12 +225,12 @@ export class I18nManager implements I18nService {
    */
   translate(locale: string, key: string, replacements?: Record<string, string | number>): string {
     const keys = key.split('.')
-    let value: any = this.translations[locale]
+    let value: string | TranslationMap | undefined = this.translations[locale]
 
     // 1. Try current locale
     for (const k of keys) {
       if (value && typeof value === 'object' && k in value) {
-        value = value[k]
+        value = (value as TranslationMap)[k]
       } else {
         value = undefined
         break
@@ -239,10 +239,11 @@ export class I18nManager implements I18nService {
 
     // 2. If not found, try fallback (defaultLocale)
     if (value === undefined && locale !== this.config.defaultLocale) {
-      let fallbackValue: any = this.translations[this.config.defaultLocale]
+      let fallbackValue: string | TranslationMap | undefined =
+        this.translations[this.config.defaultLocale]
       for (const k of keys) {
         if (fallbackValue && typeof fallbackValue === 'object' && k in fallbackValue) {
-          fallbackValue = fallbackValue[k]
+          fallbackValue = (fallbackValue as TranslationMap)[k]
         } else {
           fallbackValue = undefined
           break
@@ -256,15 +257,19 @@ export class I18nManager implements I18nService {
     }
 
     // 3. Replacements
-    if (replacements) {
-      for (const [search, replace] of Object.entries(replacements)) {
-        value = value.replace(new RegExp(`:${search}`, 'g'), String(replace))
-      }
+    if (replacements && Object.keys(replacements).length > 0) {
+      value = value.replace(REPLACEMENT_REGEX, (match, key) => {
+        return (replacements as Record<string, unknown>)[key] !== undefined
+          ? String((replacements as Record<string, unknown>)[key])
+          : match
+      })
     }
 
     return value
   }
 }
+
+const REPLACEMENT_REGEX = /:([a-zA-Z0-9_]+)/g
 
 /**
  * Locale Middleware
@@ -273,7 +278,7 @@ export class I18nManager implements I18nService {
  * 1. Route Parameter (e.g. /:locale/foo) - Recommended for SEO
  * 2. Header (Accept-Language) - Recommended for APIs
  */
-export const localeMiddleware = (i18nManager: I18nService): MiddlewareHandler => {
+export const localeMiddleware = (i18nManager: I18nService): GravitoMiddleware => {
   return async (c, next) => {
     // Determine initial locale
     // Priority: 1. Route Param 2. Query ?lang= 3. Header 4. Default

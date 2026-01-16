@@ -34,23 +34,30 @@ export const FORM_REQUEST_SYMBOL = Symbol.for('gravito.formRequest')
  * WeakMap cache for FormRequest class detection results.
  * Avoids re-instantiating classes on repeated checks.
  */
+// biome-ignore lint/complexity/noBannedTypes: generic Function type needed here
 const formRequestCache = new WeakMap<Function, boolean>()
 
 /**
  * Check if a value is a FormRequest class.
- * Optimized with Symbol check and caching to avoid repeated instantiation.
+ * Optimized with Symbol check, prototype check, and caching.
  */
 function isFormRequestClass(value: unknown): value is FormRequestClass {
   if (typeof value !== 'function') {
     return false
   }
 
-  // Fast path: Check for Symbol marker (set by @gravito/impulse)
+  // Fast path 1: Check for Symbol marker (set by @gravito/impulse)
   if ((value as { [FORM_REQUEST_SYMBOL]?: boolean })[FORM_REQUEST_SYMBOL] === true) {
     return true
   }
 
-  // Check cache to avoid re-instantiation
+  // Fast path 2: Filter out arrow functions (middleware)
+  // Arrow functions do not have a prototype property
+  if (!value.prototype) {
+    return false
+  }
+
+  // Check cache to avoid re-computation
   const cached = formRequestCache.get(value)
   if (cached !== undefined) {
     return cached
@@ -58,6 +65,12 @@ function isFormRequestClass(value: unknown): value is FormRequestClass {
 
   // Slow path: Duck-type check with instantiation
   try {
+    // Check prototype first to avoid instantiation if possible
+    if ('validate' in value.prototype && typeof value.prototype.validate === 'function') {
+      formRequestCache.set(value, true)
+      return true
+    }
+
     const instance = new (value as new () => unknown)()
     const isFormRequest =
       instance !== null &&
@@ -492,12 +505,14 @@ export class Router {
       const routeModels = (c.get('routeModels') ?? {}) as Record<string, unknown>
       let hasResolvedModels = false
 
-      // Iterate over registered bindings
-      // Optimization: Only resolve params that exist in the current route
-      for (const [param, resolver] of this.bindings) {
-        const value = c.req.param(param)
-        // Skip if param not present in this route
-        if (!value) {
+      // Iterate over request params (O(P)) instead of bindings (O(B))
+      // This is significantly faster when there are many bindings but few params in current route
+      const params = c.req.params()
+
+      for (const [param, value] of Object.entries(params)) {
+        const resolver = this.bindings.get(param)
+
+        if (!resolver) {
           continue
         }
 

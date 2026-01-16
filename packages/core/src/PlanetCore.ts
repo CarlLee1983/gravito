@@ -9,7 +9,7 @@
  */
 
 import { PhotonAdapter } from './adapters/PhotonAdapter'
-import type { HttpAdapter } from './adapters/types'
+import { type HttpAdapter, isHttpAdapter } from './adapters/types'
 import { ConfigManager } from './ConfigManager'
 import { Container } from './Container'
 import { ErrorHandler } from './ErrorHandler'
@@ -56,10 +56,6 @@ export type ErrorHandlerContext = {
     data: Record<string, unknown>
   }
 }
-
-// Photon Variables Type for Context Injection
-type RouteParams = Record<string, string | number>
-type RouteQuery = Record<string, string | number | boolean | null | undefined>
 
 export interface GravitoOrbit {
   install(core: PlanetCore): void | Promise<void>
@@ -112,8 +108,6 @@ export class PlanetCore {
   public events: EventManager
   public router: Router
   public container: Container = new Container()
-  /** @deprecated Use core.container instead */
-  public services: Map<string, unknown> = new Map()
 
   public encrypter?: Encrypter
   public hasher: BunHasher
@@ -172,6 +166,14 @@ export class PlanetCore {
     // Phase 3: Boot all providers
     for (const provider of this.providers) {
       await this.bootProvider(provider)
+    }
+
+    // Phase 4: Bind global error handler (swappable via container)
+    // We bind this late to allow ServiceProviders to override 'error.handler'
+    if (this.container.has('error.handler')) {
+      const errorHandler = this.container.make<ErrorHandler>('error.handler')
+      this.adapter.onError(errorHandler.handleError.bind(errorHandler))
+      this.adapter.onNotFound(errorHandler.handleNotFound.bind(errorHandler))
     }
   }
 
@@ -288,24 +290,27 @@ export class PlanetCore {
       c.set('cookieJar', cookieJar)
 
       // Add route helper
-      // @ts-expect-error
-      c.route = (name: string, params?: RouteParams, query?: RouteQuery) =>
-        this.router.url(name, params, query)
+      c.route = (name: string, params?: any, query?: any) => this.router.url(name, params, query)
 
       return await next()
     })
     // Router depends on `core.app` for route registration and optional global middleware.
     this.router = new Router(this)
 
-    // Standard Error Handling - Delegated to ErrorHandler
-    const errorHandler = new ErrorHandler({
-      logger: this.logger,
-      hooks: this.hooks,
-      getCore: () => this,
+    // Register Default Error Handler
+    // Can be overridden by binding 'error.handler' in a ServiceProvider
+    this.container.singleton('error.handler', () => {
+      return new ErrorHandler({
+        logger: this.logger,
+        hooks: this.hooks,
+        getCore: () => this,
+      })
     })
 
-    this.adapter.onError(errorHandler.handleError.bind(errorHandler))
-    this.adapter.onNotFound(errorHandler.handleNotFound.bind(errorHandler))
+    // Bind default handlers immediately so basic usage and tests work without explicit bootstrap()
+    const defaultHandler = this.container.make<ErrorHandler>('error.handler')
+    this.adapter.onError(defaultHandler.handleError.bind(defaultHandler))
+    this.adapter.onNotFound(defaultHandler.handleNotFound.bind(defaultHandler))
   }
 
   /**
@@ -392,34 +397,28 @@ export class PlanetCore {
   }
 
   /**
-   * Mount an Orbit (a Photon app) to a path.
+   * Mount an Orbit (a PlanetCore instance or native app) to a path.
    *
    * @param path - The URL path to mount the orbit at.
-   * @param orbitApp - The Photon application instance.
+   * @param orbitApp - The application instance (PlanetCore, HttpAdapter, or native app).
    */
   mountOrbit(path: string, orbitApp: unknown): void {
     this.logger.info(`Mounting orbit at path: ${path}`)
-    // Should reuse this.adapter.mount logic if possible, or fallback.
-    // PhotonAdapter has special mount. BunNativeAdapter might not fully support mounting Photon apps yet.
-    // For now, assume orbitApp is Photon and we are likely in an environment where Photon might be used.
-    // BUT if we are in BunNativeAdapter, this.app is BunNativeAdapter.
-    // BunNativeAdapter.mount() implementation warned it's not fully implemented.
-    // If we want to support Orbits, we need to fix mount in BunNativeAdapter.
-    // For now, let's just call adapter.mount.
-    // But adapter.mount signature expects HttpAdapter, not Photon.
-    // The current code expects a Photon instance.
-    // This is a break.
-    // Temporary fix: Check adapter type or wrap orbitApp.
-    if (this.adapter.name === 'photon') {
-      ;(this.adapter.native as any).route(path, orbitApp)
+
+    let subAdapter: HttpAdapter
+
+    if (orbitApp instanceof PlanetCore) {
+      subAdapter = orbitApp.adapter
+    } else if (isHttpAdapter(orbitApp)) {
+      subAdapter = orbitApp
     } else {
-      // Warn or try to mount if adapter supports it?
-      // BunNativeAdapter "mount" takes HttpAdapter.
-      // orbitApp is Photon. We can wrap orbitApp in PhotonAdapter!
-      // NOTE: We assume 'orbitApp' is a Photon instance compatible with PhotonAdapter
-      const subAdapter = new PhotonAdapter({}, orbitApp as any)
-      this.adapter.mount(path, subAdapter)
+      // It's likely a native app instance (e.g. Hono)
+      // Wrap it in PhotonAdapter to conform to HttpAdapter interface.
+      // PhotonAdapter.mount() will handle optimization if the parent is also Photon.
+      subAdapter = new PhotonAdapter({}, orbitApp)
     }
+
+    this.adapter.mount(path, subAdapter)
   }
 
   /**

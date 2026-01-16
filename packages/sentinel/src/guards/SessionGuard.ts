@@ -3,6 +3,13 @@ import type { Authenticatable } from '../contracts/Authenticatable'
 import type { StatefulGuard } from '../contracts/Guard'
 import type { UserProvider } from '../contracts/UserProvider'
 
+interface SessionContract {
+  get(key: string): string | number | undefined
+  put(key: string, value: unknown): void
+  forget(key: string): void
+  regenerate?(): Promise<void>
+}
+
 export class SessionGuard<User extends Authenticatable = Authenticatable>
   implements StatefulGuard<User>
 {
@@ -33,7 +40,10 @@ export class SessionGuard<User extends Authenticatable = Authenticatable>
       return this.userInstance
     }
 
-    const session = this.ctx.get('session' as any) as any
+    // Access session via unknown cast to avoid depending on specific session implementation
+    const session = this.ctx.get(
+      'session' as keyof import('@gravito/core').GravitoVariables
+    ) as unknown as SessionContract | undefined
     const id = session?.get(this.getName())
 
     if (!id) {
@@ -50,9 +60,13 @@ export class SessionGuard<User extends Authenticatable = Authenticatable>
     if (this.loggedOut) {
       return null
     }
-    const session = this.ctx.get('session' as any) as any
+    const session = this.ctx.get(
+      'session' as keyof import('@gravito/core').GravitoVariables
+    ) as unknown as SessionContract | undefined
     const id = session?.get(this.getName())
-    return id ?? (this.userInstance ? this.userInstance.getAuthIdentifier() : null)
+    return (
+      (id as string | number) ?? (this.userInstance ? this.userInstance.getAuthIdentifier() : null)
+    )
   }
 
   async validate(credentials: Record<string, unknown>): Promise<boolean> {
@@ -77,13 +91,14 @@ export class SessionGuard<User extends Authenticatable = Authenticatable>
   }
 
   public async login(user: User, _remember = false): Promise<void> {
-    const id =
-      typeof user.getAuthIdentifier === 'function' ? user.getAuthIdentifier() : (user as any).id
+    const id = user.getAuthIdentifier()
 
     this.ctx.set('auth' as any, user as any)
     this.userInstance = user
 
-    const session = this.ctx.get('session' as any) as any
+    const session = this.ctx.get(
+      'session' as keyof import('@gravito/core').GravitoVariables
+    ) as unknown as SessionContract | undefined
     if (session) {
       if (typeof session.regenerate === 'function') {
         await session.regenerate()
@@ -97,7 +112,9 @@ export class SessionGuard<User extends Authenticatable = Authenticatable>
   async logout(): Promise<void> {
     this.userInstance = null
     this.loggedOut = true
-    const session = this.ctx.get('session' as any) as any
+    const session = this.ctx.get(
+      'session' as keyof import('@gravito/core').GravitoVariables
+    ) as unknown as SessionContract | undefined
     if (session) {
       session.forget(this.getName())
       if (typeof session.regenerate === 'function') {

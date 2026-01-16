@@ -1,4 +1,4 @@
-import type { GravitoOrbit, PlanetCore } from '@gravito/core'
+import type { GravitoContext, GravitoNext, GravitoOrbit, PlanetCore } from '@gravito/core'
 import { CacheManager } from './CacheManager'
 import type { CacheEventMode, CacheEvents } from './CacheRepository'
 import type { CacheStore } from './store'
@@ -7,9 +7,6 @@ import { MemoryStore } from './stores/MemoryStore'
 import { NullStore } from './stores/NullStore'
 import { RedisStore } from './stores/RedisStore'
 import type { CacheTtl } from './types'
-
-type OrbitCacheContext = { set: (key: string, value: unknown) => void }
-type OrbitCacheNext = () => Promise<Response | undefined>
 
 export * from './CacheManager'
 export * from './CacheRepository'
@@ -22,22 +19,37 @@ export * from './stores/NullStore'
 export * from './stores/RedisStore'
 export * from './types'
 
-export interface CacheProvider {
+/**
+ * CacheStorageProvider - Low-level storage adapter interface.
+ * Use this to implement custom storage backends that can be plugged into Stasis.
+ */
+export interface CacheStorageProvider {
   get<T = unknown>(key: string): Promise<T | null>
   set(key: string, value: unknown, ttl?: number): Promise<void>
   delete(key: string): Promise<void>
   clear(): Promise<void>
 }
 
+/** @deprecated Use CacheStorageProvider instead */
+export type CacheProvider = CacheStorageProvider
+
+/**
+ * CacheService - High-level application contract for caching.
+ * This is the public API exposed to the rest of the application.
+ */
 export interface CacheService {
   get<T = unknown>(key: string): Promise<T | null>
   set(key: string, value: unknown, ttl?: CacheTtl): Promise<void>
+  has(key: string): Promise<boolean>
+  add(key: string, value: unknown, ttl?: CacheTtl): Promise<boolean>
   delete(key: string): Promise<boolean>
-  clear(): Promise<void>
+  pull<T = unknown>(key: string, defaultValue?: T): Promise<T | null>
   remember<T>(key: string, ttl: CacheTtl, callback: () => Promise<T> | T): Promise<T>
+  rememberForever<T>(key: string, callback: () => Promise<T> | T): Promise<T>
+  clear(): Promise<void>
 }
 
-export class MemoryCacheProvider implements CacheProvider {
+export class MemoryCacheProvider implements CacheStorageProvider {
   private store = new MemoryStore()
 
   async get<T = unknown>(key: string): Promise<T | null> {
@@ -63,7 +75,7 @@ export type OrbitCacheStoreConfig =
   | { driver: 'redis'; connection?: string; prefix?: string }
   | { driver: 'null' }
   | { driver: 'custom'; store: CacheStore }
-  | { driver: 'provider'; provider: CacheProvider }
+  | { driver: 'provider'; provider: CacheStorageProvider }
 
 export interface OrbitCacheOptions {
   exposeAs?: string // Default: 'cache'
@@ -76,7 +88,7 @@ export interface OrbitCacheOptions {
   onEventError?: (error: unknown, event: keyof CacheEvents, payload: { key?: string }) => void
 
   // Legacy options
-  provider?: CacheProvider
+  provider?: CacheStorageProvider
   defaultTTL?: number
 }
 
@@ -233,12 +245,12 @@ export class OrbitStasis implements GravitoOrbit {
 
     this.manager = manager
 
-    core.adapter.use('*', async (c: OrbitCacheContext, next: OrbitCacheNext) => {
+    core.adapter.use('*', async (c: GravitoContext, next: GravitoNext) => {
       c.set(exposeAs, manager)
       return await next()
     })
 
-    core.services.set(exposeAs, manager)
+    core.container.instance(exposeAs, manager)
     core.hooks.doAction('cache:init', manager)
   }
 

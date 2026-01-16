@@ -4,7 +4,7 @@
  * Registers application routes.
  */
 
-import { ServiceProvider } from '@gravito/core'
+import { type PlanetCore, ServiceProvider } from '@gravito/core'
 import { registerRoutes } from '../routes'
 
 export class RouteProvider extends ServiceProvider {
@@ -12,7 +12,7 @@ export class RouteProvider extends ServiceProvider {
     // Routes are registered in boot phase
   }
 
-  boot() {
-    registerRoutes(this.core?.router)
+  boot(core: PlanetCore) {
+    registerRoutes(core.router)
   }
 }

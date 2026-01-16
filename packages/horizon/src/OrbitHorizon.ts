@@ -1,4 +1,4 @@
-import type { GravitoOrbit, PlanetCore } from '@gravito/core'
+import type { GravitoContext, GravitoNext, GravitoOrbit, PlanetCore } from '@gravito/core'
 import type { CacheManager } from '@gravito/stasis'
 import { LockManager } from './locks'
 import { SchedulerManager } from './SchedulerManager'
@@ -23,7 +23,7 @@ export class OrbitHorizon implements GravitoOrbit {
     let lockManager: LockManager
 
     if (lockDriver === 'cache') {
-      const cacheManager = core.services.get('cache') as CacheManager | undefined
+      const cacheManager = core.container.make('cache') as CacheManager | undefined
 
       if (!cacheManager) {
         core.logger.warn(
@@ -39,13 +39,22 @@ export class OrbitHorizon implements GravitoOrbit {
 
     const scheduler = new SchedulerManager(lockManager, core.logger, core.hooks, nodeRole)
 
-    core.services.set(exposeAs, scheduler)
+    // Register in core container for global access (CLI)
+    core.container.instance(exposeAs, scheduler)
 
-    core.adapter.use('*', async (c: any, next) => {
+    core.adapter.use('*', async (c: GravitoContext, next: GravitoNext) => {
       c.set('scheduler', scheduler)
       return await next()
     })
 
     core.logger.info(`[OrbitHorizon] Initialized (Driver: ${lockDriver})`)
+  }
+}
+
+// Module augmentation for GravitoVariables
+declare module '@gravito/core' {
+  interface GravitoVariables {
+    /** Scheduler manager for task scheduling */
+    scheduler?: SchedulerManager
   }
 }

@@ -1,4 +1,4 @@
-import type { GravitoOrbit, PlanetCore } from '@gravito/core'
+import type { GravitoContext, GravitoNext, GravitoOrbit, PlanetCore } from '@gravito/core'
 import { DevMailbox } from './dev/DevMailbox'
 import { DevServer } from './dev/DevServer'
 import type { Mailable } from './Mailable'
@@ -43,10 +43,10 @@ export class OrbitSignal implements GravitoOrbit {
     }
 
     // 3. Register in container
-    core.container.singleton('mail', () => this)
+    core.container.instance('mail', this)
 
     // 4. Inject mail service into context for easy access in routes
-    core.adapter.use('*', async (c: any, next) => {
+    core.adapter.use('*', async (c: GravitoContext, next: GravitoNext) => {
       c.set('mail', this)
       return await next()
     })
@@ -54,10 +54,6 @@ export class OrbitSignal implements GravitoOrbit {
 
   /**
    * Send a mailable instance
-   *
-   * @param mailable - The mailable object to send.
-   * @returns A promise that resolves when the email is sent.
-   * @throws {Error} If the message is missing "from" or "to" addresses, or if no transport is configured.
    */
   async send(mailable: Mailable): Promise<void> {
     // 1. Build envelope and get configuration
@@ -112,5 +108,13 @@ export class OrbitSignal implements GravitoOrbit {
 
     // Fallback: 直接發送
     await this.send(mailable)
+  }
+}
+
+// Module augmentation for GravitoVariables
+declare module '@gravito/core' {
+  interface GravitoVariables {
+    /** Mail service for sending emails */
+    mail?: OrbitSignal
   }
 }

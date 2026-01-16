@@ -1,4 +1,4 @@
-import type { GravitoContext, GravitoOrbit, PlanetCore } from '@gravito/core'
+import type { GravitoContext, GravitoNext, GravitoOrbit, PlanetCore } from '@gravito/core'
 import { createSchema, createYoga, type YogaServerInstance } from 'graphql-yoga'
 
 export interface GraphQLConfig {
@@ -57,13 +57,11 @@ export class OrbitGraphQL implements GravitoOrbit {
       context: (initialContext) => {
         return {
           ...initialContext,
-          // We can attach more Gravito specific stuff here if needed
         }
       },
     })
 
     // Register yoga instance in container for advanced usage
-    // Using instance() to bind the existing object
     container.instance('graphql', this.yoga)
 
     // 3. Mount Routes
@@ -81,7 +79,15 @@ export class OrbitGraphQL implements GravitoOrbit {
     core.router.get(endpoint, handler)
     core.router.post(endpoint, handler)
 
-    // Optional: Log mounting (maybe rely on core logger)
-    // console.log(`[OrbitGraphQL] 🚀 Mounted at ${endpoint}`)
+    core.logger.info(`[OrbitGraphQL] Mounted at ${endpoint}`)
+  }
+}
+
+// Module augmentation for GravitoVariables
+declare module '@gravito/core' {
+  interface GravitoVariables {
+    /** GraphQL Yoga server instance */
+    // biome-ignore lint/suspicious/noExplicitAny: Yoga generic type
+    graphql?: YogaServerInstance<any, any>
   }
 }

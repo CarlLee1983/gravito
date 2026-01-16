@@ -40,7 +40,7 @@ cli
         process.exit(1)
       }
 
-      const scheduler = core.services.get('scheduler')
+      const scheduler = core.container.make('scheduler')
       if (!scheduler) {
         console.error(pc.yellow('⚠️ Orbit Scheduler is not installed in this planet.'))
         process.exit(1)
@@ -69,7 +69,7 @@ cli
         process.exit(1)
       }
 
-      const scheduler = core.services.get('scheduler')
+      const scheduler = core.container.make('scheduler')
       if (!scheduler) {
         console.error(pc.yellow('⚠️ Orbit Scheduler is not installed.'))
         process.exit(1)
@@ -115,7 +115,7 @@ cli
         process.exit(1)
       }
 
-      const scheduler = core.services.get('scheduler')
+      const scheduler = core.container.make('scheduler')
       if (!scheduler) {
         console.error(pc.yellow('⚠️ Orbit Scheduler is not installed.'))
         process.exit(1)

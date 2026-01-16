@@ -896,6 +896,7 @@
       "version": "3.0.0",
       "devDependencies": {
         "bun-types": "latest",
+        "tsup": "^8.5.1",
       },
       "peerDependencies": {
         "@gravito/core": "workspace:*",

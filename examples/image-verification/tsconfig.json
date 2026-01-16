@@ -12,9 +12,10 @@
     ],
     "baseUrl": ".",
     "paths": {
-      "*": [
-        "./node_modules/*"
-      ]
+      "@gravito/forge": ["../../packages/forge/src/index.ts"],
+      "@gravito/stream": ["../../packages/stream/src/index.ts"],
+      "@gravito/core": ["../../packages/core/src/index.ts"],
+      "@gravito/*": ["../../packages/*/src/index.ts"]
     }
   },
   "include": [

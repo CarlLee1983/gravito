@@ -1,6 +1,6 @@
 import type { PlanetCore } from '@gravito/core'
 import type { Context } from '@gravito/core/compat'
-import type { InertiaService } from '@gravito/ion'
+import type { InertiaHelper } from '@gravito/ion'
 import { getTranslation } from '../services/I18nService'
 
 export class HomeController {
@@ -12,7 +12,7 @@ export class HomeController {
   }
 
   index = async (c: Context) => {
-    const inertia = c.get('inertia') as unknown as InertiaService
+    const inertia = c.get('inertia') as unknown as InertiaHelper
     const locale = (c.get('locale') as string) || 'en'
     const t = getTranslation(locale)
     const { generateSeoHtml } = await import('../utils/seo')
@@ -22,7 +22,7 @@ export class HomeController {
   }
 
   about = async (c: Context) => {
-    const inertia = c.get('inertia') as unknown as InertiaService
+    const inertia = c.get('inertia') as unknown as InertiaHelper
     const locale = (c.get('locale') as string) || 'en'
     const t = getTranslation(locale)
     const { generateSeoHtml } = await import('../utils/seo')
@@ -32,7 +32,7 @@ export class HomeController {
   }
 
   features = async (c: Context) => {
-    const inertia = c.get('inertia') as unknown as InertiaService
+    const inertia = c.get('inertia') as unknown as InertiaHelper
     const locale = (c.get('locale') as string) || 'en'
     const t = getTranslation(locale)
     const { generateSeoHtml } = await import('../utils/seo')
@@ -42,7 +42,7 @@ export class HomeController {
   }
 
   releases = async (c: Context) => {
-    const inertia = c.get('inertia') as unknown as InertiaService
+    const inertia = c.get('inertia') as unknown as InertiaHelper
     const locale = (c.get('locale') as string) || 'en'
     const t = getTranslation(locale)
     const { generateSeoHtml } = await import('../utils/seo')
@@ -53,7 +53,7 @@ export class HomeController {
   }
 
   privacy = async (c: Context) => {
-    const inertia = c.get('inertia') as unknown as InertiaService
+    const inertia = c.get('inertia') as unknown as InertiaHelper
     const locale = (c.get('locale') as string) || 'en'
     const t = getTranslation(locale)
     const { generateSeoHtml } = await import('../utils/seo')
@@ -64,7 +64,7 @@ export class HomeController {
   }
 
   terms = async (c: Context) => {
-    const inertia = c.get('inertia') as unknown as InertiaService
+    const inertia = c.get('inertia') as unknown as InertiaHelper
     const locale = (c.get('locale') as string) || 'en'
     const t = getTranslation(locale)
     const { generateSeoHtml } = await import('../utils/seo')

@@ -33,7 +33,6 @@ export const CONFIG = {
 
 export function setupDB(driver: keyof typeof CONFIG, useNative = false) {
   const config = { ...CONFIG[driver], useNativeDriver: useNative }
-  // @ts-expect-error
   DB.addConnection('default', config)
   DB.setDefaultConnection('default')
 }

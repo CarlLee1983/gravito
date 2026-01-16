@@ -4,8 +4,15 @@
     "outDir": "dist",
     "module": "esnext",
     "target": "esnext",
-    "moduleResolution": "node",
-    "strict": true
+    "moduleResolution": "bundler",
+    "strict": true,
+    "baseUrl": ".",
+    "paths": {
+      "@gravito/ripple": ["../../packages/ripple/src/index.ts"],
+      "@gravito/stream": ["../../packages/stream/src/index.ts"],
+      "@gravito/flux": ["../../packages/flux/src/index.ts"],
+      "@gravito/core": ["../../packages/core/src/index.ts"]
+    }
   },
   "include": [
     "src",

@@ -1,42 +1,8 @@
-/**
- * @fileoverview OrbitFlux - Gravito PlanetCore Integration
- *
- * Integrates FluxEngine with Gravito's PlanetCore for seamless workflow management.
- *
- * @module @gravito/flux
- */
-
+import type { GravitoOrbit, PlanetCore } from '@gravito/core'
 import { FluxEngine } from '../engine/FluxEngine'
 import { BunSQLiteStorage } from '../storage/BunSQLiteStorage'
 import { MemoryStorage } from '../storage/MemoryStorage'
 import type { FluxConfig, FluxLogger, WorkflowStorage } from '../types'
-
-/**
- * Minimal PlanetCore interface for type compatibility
- * (Avoids importing @gravito/core sources which causes rootDir issues)
- */
-interface PlanetCore {
-  logger: {
-    debug(message: string, ...args: unknown[]): void
-    info(message: string, ...args: unknown[]): void
-    warn(message: string, ...args: unknown[]): void
-    error(message: string, ...args: unknown[]): void
-  }
-  services: {
-    set(key: string, value: unknown): void
-    get<T>(key: string): T | undefined
-  }
-  hooks: {
-    doAction(name: string, payload?: unknown): void
-  }
-}
-
-/**
- * GravitoOrbit interface
- */
-export interface GravitoOrbit {
-  install(core: PlanetCore): void | Promise<void>
-}
 
 /**
  * OrbitFlux configuration options
@@ -91,8 +57,8 @@ export interface OrbitFluxOptions {
  *   ]
  * })
  *
- * // Access via services
- * const flux = core.services.get<FluxEngine>('flux')
+ * // Access via container
+ * const flux = core.container.make<FluxEngine>('flux')
  * await flux.execute(myWorkflow, input)
  * ```
  */
@@ -176,8 +142,8 @@ export class OrbitFlux implements GravitoOrbit {
     // Create engine
     this.engine = new FluxEngine(engineConfig)
 
-    // Register in core services
-    core.services.set(exposeAs!, this.engine)
+    // Register in core container
+    core.container.instance(exposeAs!, this.engine)
 
     core.logger.info(
       `[OrbitFlux] Initialized (Storage: ${typeof storage === 'string' ? storage : 'custom'})`

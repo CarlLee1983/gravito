@@ -96,6 +96,13 @@ export class OrbitSentinel implements GravitoOrbit {
       (core.config.has('APP_KEY') ? core.config.get<string>('APP_KEY') : undefined) ||
       process.env.APP_KEY
     const emailVerificationSecret = this.options.emailVerification?.secret ?? appKeyFromCore
+
+    if (emailVerificationEnabled && !emailVerificationSecret) {
+      logger.warn(
+        '[OrbitSentinel] Email verification is enabled but no secret was found. Verification will be DISABLED. Please set APP_KEY or emailVerification.secret.'
+      )
+    }
+
     const emailVerification =
       emailVerificationEnabled && emailVerificationSecret
         ? new EmailVerificationService(emailVerificationSecret, this.options.emailVerification)

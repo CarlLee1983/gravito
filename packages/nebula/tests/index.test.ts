@@ -24,6 +24,10 @@ const createCore = (config?: any) => {
     config: {
       get: (key: string) => (key === 'storage' ? config : undefined),
     },
+    container: {
+      instance: mock(() => {}),
+      make: mock(() => {}),
+    },
     logger: {
       info: mock(() => {}),
     },

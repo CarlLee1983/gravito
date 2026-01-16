@@ -148,8 +148,8 @@ describe('NotificationManager', () => {
     await manager.send(notifiable, new QueuedNotification())
 
     expect(queuePush).toHaveBeenCalledTimes(1)
-    const job = queuePush.mock.calls[0][0]
-    await job.handle()
+    const job = queuePush.mock.calls[0]?.[0] as any
+    if (job) await job.handle()
   })
 })
 
@@ -265,22 +265,25 @@ describe('Channels', () => {
 
 describe('OrbitFlare', () => {
   it('registers notification manager and queue integration', async () => {
-    const services = new Map<string, unknown>()
-    services.set('mail', { send: async () => {} })
-    services.set('db', { insertNotification: async () => {} })
-    services.set('broadcast', { broadcast: async () => {} })
+    const instances = new Map<string, unknown>()
+    instances.set('mail', { send: async () => {} })
+    instances.set('db', { insertNotification: async () => {} })
+    instances.set('broadcast', { broadcast: async () => {} })
     const queue = { push: jest.fn(async () => {}) }
-    services.set('queue', queue)
+    instances.set('queue', queue)
 
     const core = {
-      services,
+      container: {
+        make: (key: string) => instances.get(key),
+        instance: (key: string, instance: unknown) => instances.set(key, instance),
+      },
       logger: { warn: jest.fn(), info: jest.fn() },
     }
 
     const orbit = new OrbitFlare()
     await orbit.install(core as any)
 
-    const manager = services.get('notifications') as NotificationManager
+    const manager = instances.get('notifications') as NotificationManager
     expect(manager).toBeInstanceOf(NotificationManager)
 
     class QueuedNotification extends Notification {
@@ -301,8 +304,12 @@ describe('OrbitFlare', () => {
   })
 
   it('logs warnings when services are missing', async () => {
+    const instances = new Map<string, unknown>()
     const core = {
-      services: new Map(),
+      container: {
+        make: (key: string) => instances.get(key),
+        instance: (key: string, instance: unknown) => instances.set(key, instance),
+      },
       logger: { warn: jest.fn(), info: jest.fn() },
     }
 
