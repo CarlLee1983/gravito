@@ -22,6 +22,12 @@ import type {
   ProxyOptions,
   StatusCode,
 } from '../http/types'
+import type {
+  PhotonContextExtended,
+  PhotonRequestExtended,
+  ResponseWithFlash,
+  SessionWithFlash,
+} from './photon-types'
 import type { AdapterConfig, HttpAdapter, RouteDefinition } from './types'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -49,8 +55,8 @@ class PhotonRequestWrapper implements GravitoRequest {
           return value
         }
 
-        // Delegate to Photon's native request
-        const nativeReq = target.photonCtx.req as any
+        // Delegate to Photon's native request (with extended properties)
+        const nativeReq = target.photonCtx.req as Context['req'] & PhotonRequestExtended
         if (prop in nativeReq) {
           const value = nativeReq[prop]
           if (typeof value === 'function') {
@@ -66,10 +72,11 @@ class PhotonRequestWrapper implements GravitoRequest {
         if (prop in target) {
           return Reflect.set(target, prop, value)
         }
-        ;(target.photonCtx.req as any)[prop] = value
+        const extendedReq = target.photonCtx.req as Context['req'] & PhotonRequestExtended
+        extendedReq[prop as string] = value
         return true
       },
-    }) as any
+    }) as PhotonRequestWrapper
   }
 
   get url(): string {
@@ -110,7 +117,7 @@ class PhotonRequestWrapper implements GravitoRequest {
   }
 
   async json<T = unknown>(): Promise<T> {
-    const ctx = this.photonCtx as any
+    const ctx = this.photonCtx as PhotonContextExtended
     if (ctx._cachedJsonBody !== undefined) {
       return ctx._cachedJsonBody as T
     }
@@ -140,7 +147,8 @@ class PhotonRequestWrapper implements GravitoRequest {
   }
 
   valid<T = unknown>(target: string): T {
-    return (this.photonCtx.req as any).valid(target)
+    const extendedReq = this.photonCtx.req as Context['req'] & PhotonRequestExtended
+    return extendedReq.valid<T>(target)
   }
 }
 
@@ -183,12 +191,12 @@ class PhotonContextWrapper<V extends GravitoVariables = GravitoVariables>
 
         // 2. If not, try to fetch from Photon context variables
         if (typeof prop === 'string') {
-          return target.get(prop as any)
+          return target.get(prop as keyof V)
         }
 
         return undefined
       },
-    }) as any
+    }) as GravitoContext<V>
   }
 
   get req(): GravitoRequest {
@@ -203,12 +211,12 @@ class PhotonContextWrapper<V extends GravitoVariables = GravitoVariables>
     return this._req.queries()
   }
 
-  get data(): any {
-    return this.get('data' as any)
+  get data(): unknown {
+    return this.get('data' as keyof V)
   }
 
-  set data(value: any) {
-    this.set('data' as any, value)
+  set data(value: unknown) {
+    this.set('data' as keyof V, value as V[keyof V])
   }
 
   back(status: 301 | 302 | 303 | 307 | 308 = 302): Response {
@@ -240,13 +248,14 @@ class PhotonContextWrapper<V extends GravitoVariables = GravitoVariables>
   redirect(url: string, status: 301 | 302 | 303 | 307 | 308 = 302): Response {
     const response = this.photonCtx.redirect(url, status)
     // Add .with() helper for flash messages and compatibility
-    const anyRes = response as any
-    anyRes.with = (key: string, value: any) => {
-      const session = this.get('session' as any) as any
-      if (session) {
+    // We cast to unknown first, then to the extended type to avoid type errors
+    const extendedRes = response as unknown as ResponseWithFlash
+    extendedRes.with = (key: string, value: unknown) => {
+      const session = this.get('session' as keyof V) as SessionWithFlash | undefined
+      if (session && typeof session.flash === 'function') {
         session.flash(key, value)
       }
-      return anyRes
+      return extendedRes
     }
     return response
   }
@@ -427,7 +436,8 @@ function toPhotonMiddleware<V extends GravitoVariables>(
     const gravitoNext: GravitoNext = async () => {
       return (await next()) as unknown as Response | undefined
     }
-    return middleware(ctx, gravitoNext) as any
+    const result = await middleware(ctx, gravitoNext)
+    return result as Response | undefined
   }
 }
 
