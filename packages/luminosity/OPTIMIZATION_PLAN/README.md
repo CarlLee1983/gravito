@@ -45,6 +45,7 @@
 - **[06-memory-optimization/](./06-memory-optimization/README.md)** - 內存優化（低優先級）
 - **[07-build-optimization/](./07-build-optimization/README.md)** - 構建與打包優化（低優先級）
 - **[08-dx-optimization/](./08-dx-optimization/README.md)** - 開發者體驗（DX）優化
+- **[09-additional-optimizations/](./09-additional-optimizations/README.md)** - 額外優化領域（補充項目）
 
 ### 附錄
 
@@ -71,6 +72,10 @@
 | 13 | [03-strategy-optimization](./03-strategy-optimization/) | 日誌輪替 | 🟡 中 | 1 天 | 無 |
 | 14 | [04-renderer-optimization](./04-renderer-optimization/) | SeoRenderer 優化 | 🟡 中 | 1 天 | 無 |
 | 15 | [05-route-scanning](./05-route-scanning/) | 路由掃描快取 | 🟡 中 | 1-2 天 | 無 |
+| 16 | [09-additional-optimizations](./09-additional-optimizations/) | SitemapBuilder 並行處理 | 🟡 中 | 0.5-1 天 | 無 |
+| 17 | [09-additional-optimizations](./09-additional-optimizations/) | JsonlLogger 自動修復 | 🟡 中 | 0.5 天 | 無 |
+| 18 | [09-additional-optimizations](./09-additional-optimizations/) | 定時器資源清理 | 🟡 中 | 0.5 天 | 無 |
+| 19 | [09-additional-optimizations](./09-additional-optimizations/) | 內存洩漏檢查 | 🟡 中 | 1-2 天 | 無 |
 
 ---
 
@@ -157,6 +162,7 @@ Phase 0 (基準測試)
 ---
 
 **版本歷史**:
+- v2.1.0 (2026-01-17): 新增 Phase 9 - 額外優化領域（補充項目）
 - v2.0.0 (2026-01-17): 基於程式碼審查的完整修正版
 - v1.1.0 (2026-01-17): 新增 Phase 8 - 開發者體驗優化
 - v1.0.0 (2026-01-17): 初始版本
