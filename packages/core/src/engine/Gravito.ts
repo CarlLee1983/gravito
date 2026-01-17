@@ -97,7 +97,7 @@ export class Gravito {
     // Initialize context pool
     this.contextPool = new ObjectPool(
       () => new FastContext(),
-      (ctx) => ctx.reset(new Request('http://localhost')),
+      (ctx) => ctx.reset(),
       poolSize
     )
 
@@ -294,7 +294,7 @@ export class Gravito {
     const ctx = this.contextPool.acquire()
 
     try {
-      ctx.reset(request, {})
+      ctx.init(request, {})
 
       if (route.compiled) {
         return await route.compiled(ctx)
@@ -346,7 +346,7 @@ export class Gravito {
 
     const execute = async (): Promise<Response> => {
       try {
-        ctx.reset(request, match.params)
+        ctx.init(request, match.params)
         return await entry!.compiled(ctx)
       } catch (error) {
         return await this.handleError(error as Error, ctx)

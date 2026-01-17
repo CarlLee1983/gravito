@@ -18,6 +18,8 @@ import type { FastRequest, FastContext as IFastContext } from './types'
  * Minimal request wrapper
  */
 class MinimalRequest implements FastRequest {
+  private _searchParams: URLSearchParams | null = null
+
   constructor(
     private readonly _request: Request,
     private readonly _params: Record<string, string>,
@@ -44,16 +46,33 @@ class MinimalRequest implements FastRequest {
     return { ...this._params }
   }
 
+  /**
+   * Lazy-initialize searchParams, only parse once
+   */
+  private getSearchParams(): URLSearchParams {
+    if (this._searchParams === null) {
+      const url = this._request.url
+      const queryStart = url.indexOf('?')
+      if (queryStart === -1) {
+        this._searchParams = new URLSearchParams()
+      } else {
+        const hashStart = url.indexOf('#', queryStart)
+        const queryString =
+          hashStart === -1 ? url.slice(queryStart + 1) : url.slice(queryStart + 1, hashStart)
+        this._searchParams = new URLSearchParams(queryString)
+      }
+    }
+    return this._searchParams
+  }
+
   query(name: string): string | undefined {
-    // Lazy parse - only when accessed
-    const url = new URL(this._request.url)
-    return url.searchParams.get(name) ?? undefined
+    return this.getSearchParams().get(name) ?? undefined
   }
 
   queries(): Record<string, string | string[]> {
-    const url = new URL(this._request.url)
+    const params = this.getSearchParams()
     const result: Record<string, string | string[]> = {}
-    for (const [key, value] of url.searchParams.entries()) {
+    for (const [key, value] of params.entries()) {
       const existing = result[key]
       if (existing === undefined) {
         result[key] = value
@@ -168,7 +187,12 @@ export class MinimalContext implements IFastContext {
   }
 
   // Required for interface compatibility
-  reset(_request: Request, _params?: Record<string, string>): this {
-    throw new Error('MinimalContext does not support reset. Create a new instance instead.')
+  init(_request: Request, _params?: Record<string, string>): this {
+    throw new Error('MinimalContext does not support init. Create a new instance instead.')
+  }
+
+  // Required for interface compatibility
+  reset(): void {
+    // MinimalContext is not pooled, so no-op
   }
 }
