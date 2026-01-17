@@ -65,3 +65,10 @@ packages/*/tests/.tmp-*
 
 # Claude CLI
 .claude/examples/benchmarks/results/*.json
+
+# Benchmark results (auto-generated)
+examples/benchmarks/results/*.json
+
+# Temporary error files
+**/lint_error.txt
+**/*_error.txt
