@@ -35,6 +35,27 @@
 
 ---
 
+## 測試矩陣與環境記錄（新增）
+
+**測試矩陣**（每項都要跑一次）：
+
+- **URL 規模**：1K / 10K / 50K / 100K / 500K
+- **變更比例**：0% / 1% / 5% / 10% / 30% / 50%
+- **模式**：單檔 sitemap / 多 shard（預設 50K/檔）
+- **儲存後端**：本地檔案 / S3（如可用）
+- **執行條件**：冷啟動（首次）/ 熱啟動（快取後）
+
+**環境記錄**：
+
+- CPU / 記憶體 / Node 或 Bun 版本
+- 儲存位置（本地磁碟或 S3 region）
+- providers 來源與排序規則（如有）
+- baseUrl / pretty / 任何影響輸出格式的設定
+
+> 目的：讓後續 Phase 1/3 的瓶頸判定可重現且可比較
+
+---
+
 ## 預期產出
 
 - `bench/xml-stream.bench.ts` - XML 構建性能測試
@@ -42,6 +63,23 @@
 - `bench/incremental.bench.ts` - 增量生成性能測試
 - `bench/memory-profiler.ts` - 內存分析工具
 - `bench/BASELINE.md` - 基準測試結果文檔
+
+---
+
+## 決策輸出（新增）
+
+Phase 0 結果必須產出下列決策，供 Phase 3 使用：
+
+1. **changeRatio 閾值**：觸發完整重建的變更比例
+2. **affectedShardRatio 閾值**：受影響 shard 比例上限
+3. **建議值**：依測試結果填寫（不可空白）
+
+建議在 `bench/BASELINE.md` 中加入表格：
+
+| 指標 | 建議值 | 依據 |
+|-----|--------|------|
+| changeRatio | TBD | 以增量/全量交叉點決定 |
+| affectedShardRatio | TBD | 以 shard 重寫成本決定 |
 
 ---
 

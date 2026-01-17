@@ -110,6 +110,17 @@ export class MemoryChangeTracker implements ChangeTracker {
 
 ---
 
+## 實作注意事項（新增）
+
+1. **時間索引插入成本**：`changesByTime.splice()` 為 O(n)，若 `track()` 呼叫頻繁，可能成為新瓶頸  
+   - 若變更時間單調遞增，可直接 `push()` 並省略二分插入  
+   - 若無法保證單調，需明確 `maxChanges` 上限以控制成本
+2. **清理同步**：`cleanupOldChanges()` 必須同步清除 `changes`、`changesByUrl`、`changesByTime`  
+   - 建議以 URL→變更索引為主，避免遺漏或記憶體洩漏
+3. **可選優化**：可新增 `getChangesByUrlSince(url, since)` 以減少上層二次過濾
+
+---
+
 ## 預期提升
 
 | 操作 | 當前（O(n)） | 優化後（O(log n)） | 提升 |

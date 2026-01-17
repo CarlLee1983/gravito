@@ -1,48 +1,63 @@
 # Phase 2: 生成器分片優化
 
-> **依賴**: Phase 1（XML 構建優化）  
-> **優先級**: 🔴 高  
-> **預估時間**: 2-3 天
+> **依賴**: Phase 0（需要基準測試確認是否為瓶頸）  
+> **優先級**: ⚪ **待評估**（原為 🔴 高）  
+> **預估時間**: 1-2 天（如需實施）
 
 [← 返回總覽](../README.md)
 
 ---
 
-## 目標
+## ⚠️ 可行性評估校正
 
-優化 `SitemapGenerator` 的分片邏輯，避免每次 flushShard 都重新生成整個 XML。
+**原問題描述**:
+> "每次 flushShard 都重新生成整個 XML"
 
----
+**實際情況分析**:
 
-## 當前問題
-
-**發現位置**: `src/core/SitemapGenerator.ts:56-82`
-
-**問題分析**:
 ```typescript
+// src/core/SitemapGenerator.ts:56-82
 const flushShard = async () => {
   isMultiFile = true
   const filename = `${baseName}-${shardIndex}.xml`
-  const xml = currentStream.toXML()  // ❌ 每次重新生成整個 XML
+  const xml = currentStream.toXML()  // ← 這只是當前 shard 的 XML
   
   await this.options.storage.write(filename, xml)
   // ...
-  currentStream = new SitemapStream(...)  // 創建新 stream
+  currentStream = new SitemapStream(...)  // 創建新的空 stream
 }
 ```
 
-**性能問題**:
-- 每次 flushShard 都調用 `toXML()`，重新生成整個 XML
-- 對於 50K entries 的 shard，每次 flush 都要重新生成
-- 內存使用：所有 entries 保存在 stream 中直到 flush
+**校正結論**:
+- ✅ 每個 shard 是**獨立的 stream**
+- ✅ `toXML()` 只生成當前 shard 的 entries（最多 50K），不是整個 sitemap
+- ✅ 當前設計是正確的分片模式
+- ⚠️ **此階段可能不需要優化**
 
 ---
 
-## 優化方案
+## 建議
 
-### 方案：流式分片生成
+1. **等待 Phase 0 基準測試結果**
+2. 如果測試顯示分片過程是瓶頸，再實施優化
+3. 如果測試顯示不是瓶頸，**跳過此階段**
 
-使用流式生成，邊生成邊寫入，避免重新生成：
+---
+
+## 當前設計說明（供參考）
+
+**正確的理解**:
+- `SitemapGenerator` 會在 entries 達到 `maxEntriesPerFile`（預設 50K）時觸發 `flushShard()`
+- 每次 flush 只處理當前累積的 entries，然後創建新的空 stream
+- 這是標準的分片處理模式，效率合理
+
+---
+
+## 如果需要優化的方案（備選）
+
+### 方案：真正的流式分片生成
+
+如果 Phase 0 測試顯示分片過程是瓶頸，可考慮使用流式生成，邊生成邊寫入：
 
 ```typescript
 async run(): Promise<void> {
@@ -95,7 +110,8 @@ async run(): Promise<void> {
 
 ## 驗證清單
 
-- [ ] 流式分片生成實現
+- [ ] **Phase 0 基準測試確認此階段為瓶頸**
+- [ ] 如需優化：流式分片生成實現
 - [ ] 性能測試顯示預期提升
 - [ ] 所有現有測試通過
 - [ ] 向後相容性驗證通過
@@ -104,5 +120,5 @@ async run(): Promise<void> {
 
 ## 下一步
 
-完成 Phase 2 後，繼續進行：
-- [Phase 3: 增量生成優化](../03-incremental-optimization/README.md)
+- 如果 Phase 0 確認需要優化：實施上述方案
+- 如果 Phase 0 顯示不是瓶頸：**跳過此階段**，直接進行 [Phase 3: 增量生成優化](../03-incremental-optimization/README.md)

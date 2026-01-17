@@ -23,3 +23,10 @@
 ### 工具
 
 - `src/utils/performance.ts` - 性能監控工具
+
+### 文件
+
+- `bench/BASELINE.md` - Phase 0 基準測試結果
+- `packages/constellation/OPTIMIZATION_PLAN/appendices/shard-manifest-spec.md` - Shard Manifest 規格
+- `packages/constellation/OPTIMIZATION_PLAN/appendices/xml-parsing-writeback-strategy.md` - XML 解析/回寫策略
+- `packages/constellation/OPTIMIZATION_PLAN/appendices/consistency-locking-strategy.md` - 一致性與鎖定方案
