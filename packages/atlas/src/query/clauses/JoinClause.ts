@@ -12,7 +12,6 @@ export interface JoinCondition {
   first: string
   operator: string
   second: string
-  boolean?: 'and' | 'or'
 }
 
 export class JoinClauseBuilder {
@@ -26,23 +25,14 @@ export class JoinClauseBuilder {
    * @param first - First column
    * @param operator - Join operator (=, !=, >, <, etc.)
    * @param second - Second column
-   * @param boolean - AND or OR (for nested joins)
    */
-  add(
-    type: JoinType,
-    table: string,
-    first: string,
-    operator: string,
-    second: string,
-    boolean?: 'and' | 'or'
-  ): void {
+  add(type: JoinType, table: string, first: string, operator: string, second: string): void {
     this.joins.push({
       type,
       table,
       first,
       operator,
       second,
-      boolean,
     })
   }
 
@@ -124,23 +114,14 @@ export class JoinClause {
    * @param first - First column
    * @param operator - Join operator (=, !=, >, <, etc.)
    * @param second - Second column
-   * @param boolean - AND or OR (for nested joins)
    */
-  add(
-    type: JoinType,
-    table: string,
-    first: string,
-    operator: string,
-    second: string,
-    boolean?: 'and' | 'or'
-  ): void {
+  add(type: JoinType, table: string, first: string, operator: string, second: string): void {
     this.joins.push({
       type,
       table,
       first,
       operator,
       second,
-      boolean,
     })
   }
 
@@ -159,6 +140,13 @@ export class JoinClause {
   }
 
   /**
+   * Add a CROSS JOIN
+   */
+  cross(table: string, first: string, operator: string, second: string): void {
+    this.add('cross', table, first, operator, second)
+  }
+
+  /**
    * Add a LEFT OUTER JOIN (uses LEFT with condition handling)
    */
   leftOuter(table: string, first: string, operator: string, second: string): void {
@@ -173,18 +161,11 @@ export class JoinClause {
   }
 
   /**
-   * Add a CROSS JOIN
-   */
-  cross(table: string, first: string, operator: string, second: string): void {
-    this.add('cross', table, first, operator, second)
-  }
-
-  /**
    * Get all joins
    *
    * @returns Array of joins
    */
-  getJoins(): JoinClause[] {
+  getJoins(): JoinClauseType[] {
     return this.joins
   }
 
