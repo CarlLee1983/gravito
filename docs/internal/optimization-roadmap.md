@@ -1,9 +1,9 @@
 # Gravito 框架優化路線圖 (Optimization Roadmap)
 
 **創建日期**: 2026-01-16
-**最後更新**: 2026-01-17 23:00
+**最後更新**: 2026-01-18 01:00
 **分支建議**: `optimize/comprehensive-improvements`
-**狀態**: 🔄 Phase 11-17 已完成，Phase 18 進行中 (Phase 18.1 完成)
+**狀態**: 🔄 Phase 11-17 已完成，Phase 18 進行中 (Phase 18.1 完成)，Phase 20 進行中 (4/6 文件已完成)
 **預估總工時**: ~40-50 小時
 **實際完成**: Phase 11-14 (100%), Phase 15 (Scaffold 100%), Phase 16 (100%), Phase 17 (100%), Phase 18 (Concerns 創建 100%)
 
@@ -11,14 +11,22 @@
 
 ## 🚀 待執行的任務 (Focus Checklist)
 
-### Phase 15: 大型文件重構
-- [x] **Scaffold BaseGenerator**: 重構 `packages/scaffold/src/generators/BaseGenerator.ts` (~1,169 行)
-    - [x] 提取模板引擎邏輯至 `TemplateManager`
-    - [x] 提取文件操作至 `FileUtilities`
-    - [x] 保持核心 Generator 輕量化 (< 800 行)
-- [x] **Scaffold DddGenerator**: 重構 `packages/scaffold/src/generators/DddGenerator.ts` (~1,074 行)
-    - [x] 將繼承結構改為組合模式 (Composition over Inheritance)
-    - [x] 拆分實體、值對象、倉儲生成邏輯
+### Phase 20: 大型文件重構
+- [x] **Scaffold CleanArchitectureGenerator**: 重構 `packages/scaffold/src/generators/CleanArchitectureGenerator.ts` (1022 → 916 行)
+    - [x] 創建 ConfigGenerator (共享配置生成)
+    - [x] 創建 ServiceProviderGenerator (共享服務提供者生成)
+- [x] **Scaffold EnterpriseMvcGenerator**: 重構 `packages/scaffold/src/generators/EnterpriseMvcGenerator.ts` (1007 → 899 行)
+    - [x] 集成 ConfigGenerator
+    - [x] 移除重複配置生成邏輯
+- [x] **Zenith QueueService**: 重構 `packages/zenith/src/server/services/QueueService.ts` (945 → 631 行)
+    - [x] 創建 LogStreamProcessor (日誌流處理)
+    - [x] 創建 QueueMetricsCollector (隊列指標收集)
+    - [x] 創建 MaintenanceScheduler (維護排程)
+    - [x] 創建 ServerConfigManager (服務器配置管理)
+- [x] **Plasma RedisClient**: 重構 `packages/plasma/src/RedisClient.ts` (803 → 698 行)
+    - [x] 創建 RedisConnectionManager (Redis 連接管理)
+    - [x] 提取連接邏輯至專用類
+    - [x] 更新 pub/sub 使用連接管理器
 
 - [x] Phase 16: Performance Optimization
     - [x] Dependency audit and version unification
@@ -71,7 +79,7 @@
 | 功能完善 | 9 處 TODO/FIXME | 🟡 Medium | 6-8h | ✅ 已完成 |
 | 測試覆蓋率 | 待評估 | 🟡 Medium | 8-10h | ✅ 已完成 |
 | 文檔完善 | 623 個導出符號 | 🟢 Low | 10-12h | ✅ 已完成 |
-| 代碼重構 | 8+ 大型文件 | 🟢 Low | 12-15h | 🔄 進行中 (Phase 18.1 完成) |
+| 代碼重構 | 8+ 大型文件 | 🟢 Low | 12-15h | 🔄 進行中 (Phase 20: 4/6 完成) |
 | 性能優化 | Bundle & 依賴 | 🟢 Low | 4-6h | ✅ 已完成 |
 | CI/CD 自動化 | Hooks, workflows | 🟢 Low | 3-5h | ✅ 已完成 |
 
@@ -1576,42 +1584,44 @@ packages/atlas/src/query/clauses/
 | `zenith/.../QueueService.ts` | 631 | 🟡 Medium | 3-4h | ✅ 已完成 (減少 314 行，-33%) |
 | `core/src/Router.ts` | 932 | 🟡 Medium | 3-4h | ⏳ 複雜度較高，待重新評估 |
 | `zenith/.../server/index.ts` | 856 | 🟡 Medium | 3-4h | ⏳ 複雜度較高，待重新評估 |
-| `plasma/src/RedisClient.ts` | 802 | 🟡 Medium | 2-3h | ⏳ 待處理 |
+| `plasma/src/RedisClient.ts` | 698 | 🟡 Medium | 2-3h | ✅ 已完成 (減少 105 行，-13%) |
 
 **總計**: 19-23 小時
 
-**已完成**: 11-14 小時
-**剩餘**: 5-12 小時
+**已完成**: 13-16 小時
+**剩餘**: 3-7 小時
 
 **詳細進度**:
 - ✅ CleanArchitectureGenerator: 1022 → 916 行 (-10%)
 - ✅ EnterpriseMvcGenerator: 1007 → 899 行 (-11%)
 - ✅ QueueService: 945 → 631 行 (-33%)
+- ✅ RedisClient: 803 → 698 行 (-13%)
 - 📦 創建 ConfigGenerator (共享配置生成)
 - 📦 創建 ServiceProviderGenerator (共享服務提供者生成)
 - 📦 創建 LogStreamProcessor (日誌流處理)
 - 📦 創建 QueueMetricsCollector (隊列指標收集)
 - 📦 創建 MaintenanceScheduler (維護排程)
 - 📦 創建 ServerConfigManager (服務器配置管理)
+- 📦 創建 RedisConnectionManager (Redis 連接管理)
 
-**代碼減少總計**: ~528 行 (scaffold + QueueService)
+**代碼減少總計**: ~633 行
 
-**輔助類創建總計**: 6 個新類
+**輔助類創建總計**: 7 個新類
   - ConfigGenerator
   - ServiceProviderGenerator
   - LogStreamProcessor
   - QueueMetricsCollector
   - MaintenanceScheduler
   - ServerConfigManager
+  - RedisConnectionManager
 
 **複雜文件狀態**:
 - Router.ts 和 Zenith server/index.ts 重構嘗試遇到類型衝突和導入問題
 - 需要採用不同的重構策略（例如：直接修改而非提取輔助類）
-- RedisClient.ts 可繼續處理，相對簡單
 
 ---
 
 **文檔維護者**: @Carl
-**最後更新**: 2026-01-18 00:30
-**版本**: 1.7.0
-**狀態**: 🔄 Phase 20 部分完成 (3/6 文件已重構)
+**最後更新**: 2026-01-18 01:00
+**版本**: 1.8.0
+**狀態**: 🔄 Phase 20 部分完成 (4/6 文件已重構)
