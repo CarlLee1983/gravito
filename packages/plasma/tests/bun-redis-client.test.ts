@@ -135,11 +135,7 @@ describe('BunRedisClient', () => {
       const result = await client.append('key', 'value')
       expect(result).toBe(5)
       // Verify array argument
-      expect(mockRedisInstance.send).toHaveBeenCalled()
-      const args = mockRedisInstance.send.mock.lastCall
-      if (args) {
-        expect(args[0]).toEqual(['APPEND', 'key', 'value'])
-      }
+      expect(mockRedisInstance.send).toHaveBeenCalledWith('APPEND', ['key', 'value'])
     })
   })
 
@@ -172,11 +168,7 @@ describe('BunRedisClient', () => {
       mockRedisInstance.send.mockResolvedValueOnce(1)
       const result = await client.lpush('key', 'val')
       expect(result).toBe(1)
-      expect(mockRedisInstance.send).toHaveBeenCalled()
-      const args = mockRedisInstance.send.mock.lastCall
-      if (args) {
-        expect(args[0]).toEqual(['LPUSH', 'key', 'val'])
-      }
+      expect(mockRedisInstance.send).toHaveBeenCalledWith('LPUSH', ['key', 'val'])
     })
   })
 
@@ -204,7 +196,8 @@ describe('BunRedisClient', () => {
       expect(results[0]).toEqual([null, 'OK'])
       expect(results[1]).toEqual([null, 'v1'])
 
-      expect(mockRedisInstance.set).toHaveBeenCalledWith('k1', 'v1', expect.any(Object))
+      // Updated: set implementation with no options calls set(key, value)
+      expect(mockRedisInstance.set).toHaveBeenCalledWith('k1', 'v1')
       expect(mockRedisInstance.get).toHaveBeenCalledWith('k1')
     })
   })

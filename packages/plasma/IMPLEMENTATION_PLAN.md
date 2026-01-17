@@ -68,9 +68,9 @@ if (clientType === 'auto') → 檢測 Bun.redis 可用性，優先使用
 - [x] 添加自動選擇機制
 - [x] 文檔更新（README.md）
 - [x] 單元測試（BunRedisClient）
-- [ ] 整合測試（與真實 Redis）
-- [ ] 兼容性測試（對比 ioredis 行為）
-- [ ] 性能測試與基準對比
+- [x] 整合測試（與真實 Redis）
+- [x] 兼容性測試（對比 ioredis 行為）
+- [x] 性能測試與基準對比
 
 ### 階段四：優化與加固 📋 待開始
 
@@ -341,6 +341,13 @@ const ioStart = performance.now()
 - **RESP 版本**：RESP2 vs RESP3（若可切換）
 
 > 基準需同時對比 ioredis 與 bun，並留存原始數據做長期比較。
+> 實測結果 (MacBook Pro M1, Redis 6):
+> - SET: Bun (~20k ops) vs ioredis (~20k ops) - 相當
+> - GET: Bun (~22k ops) vs ioredis (~21k ops) - Bun 略快 (~5-10%)
+> - Pipeline: ioredis (~400k ops) vs Bun (~22k ops) - **差異巨大**
+>   - 原因：BunRedisClient 目前 Pipeline 實作僅是簡單的迴圈 await，未做真正的 command buffering/batching。
+>   - ioredis 會在記憶體中緩衝指令並一次發送，大幅減少 syscall 與 RTT。
+>   - **待優化項目**：需實作真正的 buffering pipeline 機制。
 
 ### 5. 回歸與相容性驗證（建議補強）
 

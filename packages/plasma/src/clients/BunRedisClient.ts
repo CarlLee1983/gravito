@@ -179,6 +179,15 @@ export class BunRedisClient implements RedisClientContract {
     return RedisClient
   }
 
+  /**
+   * Send a raw command to Redis
+   */
+  private async sendCommand(command: string, args: string[] = []): Promise<unknown> {
+    // biome-ignore lint/suspicious/noExplicitAny: Bun.redis type definition mismatch for send
+    const client = this.getClient() as any
+    return await client.send(command, args)
+  }
+
   // ============================================================================
   // String Operations
   // ============================================================================
@@ -198,22 +207,21 @@ export class BunRedisClient implements RedisClientContract {
     const prefixedKey = this.prefixKey(key)
     const client = this.getClient()
 
-    const setOptions: { ex?: number; px?: number; nx?: boolean; xx?: boolean } = {}
-
-    if (options?.ex) {
-      setOptions.ex = options.ex
-    }
-    if (options?.px) {
-      setOptions.px = options.px
-    }
-    if (options?.nx) {
-      setOptions.nx = options.nx
-    }
-    if (options?.xx) {
-      setOptions.xx = options.xx
+    const args: string[] = [value]
+    if (options) {
+      if (options.ex) args.push('EX', String(options.ex))
+      if (options.px) args.push('PX', String(options.px))
+      if (options.nx) args.push('NX')
+      if (options.xx) args.push('XX')
     }
 
-    const result = await client.set(prefixedKey, value, setOptions)
+    if (args.length > 1) {
+      // @ts-expect-error
+      const result = await client.set(prefixedKey, ...args)
+      return result === 'OK' ? 'OK' : null
+    }
+
+    const result = await client.set(prefixedKey, value)
     return result === 'OK' ? 'OK' : null
   }
 
@@ -277,7 +285,7 @@ export class BunRedisClient implements RedisClientContract {
   async append(key: string, value: string): Promise<number> {
     const prefixedKey = this.prefixKey(key)
     // Bun.redis 可能沒有 append，使用 send 命令
-    const result = await this.getClient().send(['APPEND', prefixedKey, value])
+    const result = await this.sendCommand('APPEND', [prefixedKey, value])
     return typeof result === 'number' ? result : Number(result)
   }
 
@@ -286,7 +294,7 @@ export class BunRedisClient implements RedisClientContract {
    */
   async strlen(key: string): Promise<number> {
     const prefixedKey = this.prefixKey(key)
-    const result = await this.getClient().send(['STRLEN', prefixedKey])
+    const result = await this.sendCommand('STRLEN', [prefixedKey])
     return typeof result === 'number' ? result : Number(result)
   }
 
@@ -295,7 +303,7 @@ export class BunRedisClient implements RedisClientContract {
    */
   async getset(key: string, value: string): Promise<string | null> {
     const prefixedKey = this.prefixKey(key)
-    const result = await this.getClient().send(['GETSET', prefixedKey, value])
+    const result = await this.sendCommand('GETSET', [prefixedKey, value])
     return result === null ? null : String(result)
   }
 
@@ -304,7 +312,7 @@ export class BunRedisClient implements RedisClientContract {
    */
   async mget(...keys: string[]): Promise<(string | null)[]> {
     const prefixedKeys = keys.map((k) => this.prefixKey(k))
-    const result = await this.getClient().send(['MGET', ...prefixedKeys])
+    const result = await this.sendCommand('MGET', prefixedKeys)
     return Array.isArray(result) ? result.map((v) => (v === null ? null : String(v))) : []
   }
 
@@ -316,7 +324,7 @@ export class BunRedisClient implements RedisClientContract {
     for (const [key, value] of Object.entries(pairs)) {
       args.push(this.prefixKey(key), value)
     }
-    const result = await this.getClient().send(['MSET', ...args])
+    const result = await this.sendCommand('MSET', args)
     return result === 'OK' ? 'OK' : 'OK'
   }
 
@@ -331,13 +339,13 @@ export class BunRedisClient implements RedisClientContract {
 
   async expireat(key: string, timestamp: number): Promise<number> {
     const prefixedKey = this.prefixKey(key)
-    const result = await this.getClient().send(['EXPIREAT', prefixedKey, String(timestamp)])
+    const result = await this.sendCommand('EXPIREAT', [prefixedKey, String(timestamp)])
     return typeof result === 'number' ? result : Number(result)
   }
 
   async pexpire(key: string, milliseconds: number): Promise<number> {
     const prefixedKey = this.prefixKey(key)
-    const result = await this.getClient().send(['PEXPIRE', prefixedKey, String(milliseconds)])
+    const result = await this.sendCommand('PEXPIRE', [prefixedKey, String(milliseconds)])
     return typeof result === 'number' ? result : Number(result)
   }
 
@@ -348,13 +356,13 @@ export class BunRedisClient implements RedisClientContract {
 
   async pttl(key: string): Promise<number> {
     const prefixedKey = this.prefixKey(key)
-    const result = await this.getClient().send(['PTTL', prefixedKey])
+    const result = await this.sendCommand('PTTL', [prefixedKey])
     return typeof result === 'number' ? result : Number(result)
   }
 
   async persist(key: string): Promise<number> {
     const prefixedKey = this.prefixKey(key)
-    const result = await this.getClient().send(['PERSIST', prefixedKey])
+    const result = await this.sendCommand('PERSIST', [prefixedKey])
     if (typeof result === 'boolean') {
       return this.existsToNumber(result)
     }
@@ -397,7 +405,7 @@ export class BunRedisClient implements RedisClientContract {
       for (const [field, val] of entries) {
         args.push(field, val)
       }
-      const result = await client.send(['HMSET', prefixedKey, ...args])
+      const result = await this.sendCommand('HMSET', [prefixedKey, ...args])
       return typeof result === 'number' ? result : Number(result)
     }
   }
@@ -409,7 +417,7 @@ export class BunRedisClient implements RedisClientContract {
 
   async hexists(key: string, field: string): Promise<number> {
     const prefixedKey = this.prefixKey(key)
-    const result = await this.getClient().send(['HEXISTS', prefixedKey, field])
+    const result = await this.sendCommand('HEXISTS', [prefixedKey, field])
     if (typeof result === 'boolean') {
       return this.existsToNumber(result)
     }
@@ -428,19 +436,19 @@ export class BunRedisClient implements RedisClientContract {
 
   async hkeys(key: string): Promise<string[]> {
     const prefixedKey = this.prefixKey(key)
-    const result = await this.getClient().send(['HKEYS', prefixedKey])
+    const result = await this.sendCommand('HKEYS', [prefixedKey])
     return Array.isArray(result) ? result.map(String) : []
   }
 
   async hvals(key: string): Promise<string[]> {
     const prefixedKey = this.prefixKey(key)
-    const result = await this.getClient().send(['HVALS', prefixedKey])
+    const result = await this.sendCommand('HVALS', [prefixedKey])
     return Array.isArray(result) ? result.map(String) : []
   }
 
   async hlen(key: string): Promise<number> {
     const prefixedKey = this.prefixKey(key)
-    const result = await this.getClient().send(['HLEN', prefixedKey])
+    const result = await this.sendCommand('HLEN', [prefixedKey])
     return typeof result === 'number' ? result : Number(result)
   }
 
@@ -455,7 +463,7 @@ export class BunRedisClient implements RedisClientContract {
     for (const [field, value] of Object.entries(data)) {
       args.push(field, value)
     }
-    const result = await this.getClient().send(['HMSET', prefixedKey, ...args])
+    const result = await this.sendCommand('HMSET', [prefixedKey, ...args])
     return result === 'OK' ? 'OK' : 'OK'
   }
 
@@ -465,61 +473,61 @@ export class BunRedisClient implements RedisClientContract {
 
   async lpush(key: string, ...values: string[]): Promise<number> {
     const prefixedKey = this.prefixKey(key)
-    const result = await this.getClient().send(['LPUSH', prefixedKey, ...values])
+    const result = await this.sendCommand('LPUSH', [prefixedKey, ...values])
     return typeof result === 'number' ? result : Number(result)
   }
 
   async rpush(key: string, ...values: string[]): Promise<number> {
     const prefixedKey = this.prefixKey(key)
-    const result = await this.getClient().send(['RPUSH', prefixedKey, ...values])
+    const result = await this.sendCommand('RPUSH', [prefixedKey, ...values])
     return typeof result === 'number' ? result : Number(result)
   }
 
   async lpop(key: string): Promise<string | null> {
     const prefixedKey = this.prefixKey(key)
-    const result = await this.getClient().send(['LPOP', prefixedKey])
+    const result = await this.sendCommand('LPOP', [prefixedKey])
     return result === null ? null : String(result)
   }
 
   async rpop(key: string): Promise<string | null> {
     const prefixedKey = this.prefixKey(key)
-    const result = await this.getClient().send(['RPOP', prefixedKey])
+    const result = await this.sendCommand('RPOP', [prefixedKey])
     return result === null ? null : String(result)
   }
 
   async lrange(key: string, start: number, stop: number): Promise<string[]> {
     const prefixedKey = this.prefixKey(key)
-    const result = await this.getClient().send(['LRANGE', prefixedKey, String(start), String(stop)])
+    const result = await this.sendCommand('LRANGE', [prefixedKey, String(start), String(stop)])
     return Array.isArray(result) ? result.map(String) : []
   }
 
   async llen(key: string): Promise<number> {
     const prefixedKey = this.prefixKey(key)
-    const result = await this.getClient().send(['LLEN', prefixedKey])
+    const result = await this.sendCommand('LLEN', [prefixedKey])
     return typeof result === 'number' ? result : Number(result)
   }
 
   async lindex(key: string, index: number): Promise<string | null> {
     const prefixedKey = this.prefixKey(key)
-    const result = await this.getClient().send(['LINDEX', prefixedKey, String(index)])
+    const result = await this.sendCommand('LINDEX', [prefixedKey, String(index)])
     return result === null ? null : String(result)
   }
 
   async lset(key: string, index: number, value: string): Promise<'OK'> {
     const prefixedKey = this.prefixKey(key)
-    const result = await this.getClient().send(['LSET', prefixedKey, String(index), value])
+    const result = await this.sendCommand('LSET', [prefixedKey, String(index), value])
     return result === 'OK' ? 'OK' : 'OK'
   }
 
   async lrem(key: string, count: number, value: string): Promise<number> {
     const prefixedKey = this.prefixKey(key)
-    const result = await this.getClient().send(['LREM', prefixedKey, String(count), value])
+    const result = await this.sendCommand('LREM', [prefixedKey, String(count), value])
     return typeof result === 'number' ? result : Number(result)
   }
 
   async ltrim(key: string, start: number, stop: number): Promise<'OK'> {
     const prefixedKey = this.prefixKey(key)
-    const result = await this.getClient().send(['LTRIM', prefixedKey, String(start), String(stop)])
+    const result = await this.sendCommand('LTRIM', [prefixedKey, String(start), String(stop)])
     return result === 'OK' ? 'OK' : 'OK'
   }
 
@@ -550,14 +558,14 @@ export class BunRedisClient implements RedisClientContract {
 
   async scard(key: string): Promise<number> {
     const prefixedKey = this.prefixKey(key)
-    const result = await this.getClient().send(['SCARD', prefixedKey])
+    const result = await this.sendCommand('SCARD', [prefixedKey])
     return typeof result === 'number' ? result : Number(result)
   }
 
   async spop(key: string, count?: number): Promise<string | string[] | null> {
     const prefixedKey = this.prefixKey(key)
     if (count !== undefined) {
-      const result = await this.getClient().send(['SPOP', prefixedKey, String(count)])
+      const result = await this.sendCommand('SPOP', [prefixedKey, String(count)])
       if (Array.isArray(result)) {
         return result.map(String)
       }
@@ -571,8 +579,8 @@ export class BunRedisClient implements RedisClientContract {
     const prefixedKey = this.prefixKey(key)
     const result =
       count !== undefined
-        ? await this.getClient().send(['SRANDMEMBER', prefixedKey, String(count)])
-        : await this.getClient().send(['SRANDMEMBER', prefixedKey])
+        ? await this.sendCommand('SRANDMEMBER', [prefixedKey, String(count)])
+        : await this.sendCommand('SRANDMEMBER', [prefixedKey])
 
     if (Array.isArray(result)) {
       return result.map(String)
@@ -582,19 +590,19 @@ export class BunRedisClient implements RedisClientContract {
 
   async sunion(...keys: string[]): Promise<string[]> {
     const prefixedKeys = keys.map((k) => this.prefixKey(k))
-    const result = await this.getClient().send(['SUNION', ...prefixedKeys])
+    const result = await this.sendCommand('SUNION', prefixedKeys)
     return Array.isArray(result) ? result.map(String) : []
   }
 
   async sinter(...keys: string[]): Promise<string[]> {
     const prefixedKeys = keys.map((k) => this.prefixKey(k))
-    const result = await this.getClient().send(['SINTER', ...prefixedKeys])
+    const result = await this.sendCommand('SINTER', prefixedKeys)
     return Array.isArray(result) ? result.map(String) : []
   }
 
   async sdiff(...keys: string[]): Promise<string[]> {
     const prefixedKeys = keys.map((k) => this.prefixKey(k))
-    const result = await this.getClient().send(['SDIFF', ...prefixedKeys])
+    const result = await this.sendCommand('SDIFF', prefixedKeys)
     return Array.isArray(result) ? result.map(String) : []
   }
 
@@ -604,35 +612,35 @@ export class BunRedisClient implements RedisClientContract {
 
   async zadd(key: string, ...items: ZAddOptions[]): Promise<number> {
     const prefixedKey = this.prefixKey(key)
-    const args: (string | number)[] = []
+    const args: string[] = []
     for (const item of items) {
-      args.push(item.score, item.member)
+      args.push(String(item.score), item.member)
     }
-    const result = await this.getClient().send(['ZADD', prefixedKey, ...args])
+    const result = await this.sendCommand('ZADD', [prefixedKey, ...args])
     return typeof result === 'number' ? result : Number(result)
   }
 
   async zrem(key: string, ...members: string[]): Promise<number> {
     const prefixedKey = this.prefixKey(key)
-    const result = await this.getClient().send(['ZREM', prefixedKey, ...members])
+    const result = await this.sendCommand('ZREM', [prefixedKey, ...members])
     return typeof result === 'number' ? result : Number(result)
   }
 
   async zscore(key: string, member: string): Promise<string | null> {
     const prefixedKey = this.prefixKey(key)
-    const result = await this.getClient().send(['ZSCORE', prefixedKey, member])
+    const result = await this.sendCommand('ZSCORE', [prefixedKey, member])
     return result === null ? null : String(result)
   }
 
   async zrank(key: string, member: string): Promise<number | null> {
     const prefixedKey = this.prefixKey(key)
-    const result = await this.getClient().send(['ZRANK', prefixedKey, member])
+    const result = await this.sendCommand('ZRANK', [prefixedKey, member])
     return result === null ? null : Number(result)
   }
 
   async zrevrank(key: string, member: string): Promise<number | null> {
     const prefixedKey = this.prefixKey(key)
-    const result = await this.getClient().send(['ZREVRANK', prefixedKey, member])
+    const result = await this.sendCommand('ZREVRANK', [prefixedKey, member])
     return result === null ? null : Number(result)
   }
 
@@ -643,14 +651,19 @@ export class BunRedisClient implements RedisClientContract {
     options?: ZRangeOptions
   ): Promise<string[]> {
     const prefixedKey = this.prefixKey(key)
-    const args: (string | number)[] = [prefixedKey, start, stop]
+    const args: string[] = [prefixedKey, String(start), String(stop)]
 
     if (options?.withScores) {
       args.push('WITHSCORES')
     }
 
-    const result = await this.getClient().send(['ZRANGE', ...args])
-    return Array.isArray(result) ? result : []
+    const result = await this.sendCommand('ZRANGE', args)
+
+    if (options?.withScores && Array.isArray(result)) {
+      return result.flat().map(String)
+    }
+
+    return Array.isArray(result) ? result.map(String) : []
   }
 
   async zrevrange(
@@ -660,31 +673,36 @@ export class BunRedisClient implements RedisClientContract {
     options?: ZRangeOptions
   ): Promise<string[]> {
     const prefixedKey = this.prefixKey(key)
-    const args: (string | number)[] = [prefixedKey, start, stop]
+    const args: string[] = [prefixedKey, String(start), String(stop)]
 
     if (options?.withScores) {
       args.push('WITHSCORES')
     }
 
-    const result = await this.getClient().send(['ZREVRANGE', ...args])
-    return Array.isArray(result) ? result : []
+    const result = await this.sendCommand('ZREVRANGE', args)
+
+    if (options?.withScores && Array.isArray(result)) {
+      return result.flat().map(String)
+    }
+
+    return Array.isArray(result) ? result.map(String) : []
   }
 
   async zcard(key: string): Promise<number> {
     const prefixedKey = this.prefixKey(key)
-    const result = await this.getClient().send(['ZCARD', prefixedKey])
+    const result = await this.sendCommand('ZCARD', [prefixedKey])
     return typeof result === 'number' ? result : Number(result)
   }
 
   async zcount(key: string, min: number | string, max: number | string): Promise<number> {
     const prefixedKey = this.prefixKey(key)
-    const result = await this.getClient().send(['ZCOUNT', prefixedKey, String(min), String(max)])
+    const result = await this.sendCommand('ZCOUNT', [prefixedKey, String(min), String(max)])
     return typeof result === 'number' ? result : Number(result)
   }
 
   async zincrby(key: string, increment: number, member: string): Promise<string> {
     const prefixedKey = this.prefixKey(key)
-    const result = await this.getClient().send(['ZINCRBY', prefixedKey, String(increment), member])
+    const result = await this.sendCommand('ZINCRBY', [prefixedKey, String(increment), member])
     return String(result)
   }
 
@@ -693,21 +711,21 @@ export class BunRedisClient implements RedisClientContract {
   // ============================================================================
 
   async keys(pattern: string): Promise<string[]> {
-    const result = await this.getClient().send(['KEYS', pattern])
+    const result = await this.sendCommand('KEYS', [pattern])
     return Array.isArray(result) ? result.map(String) : []
   }
 
   async scan(cursor: string, options?: ScanOptions): Promise<ScanResult> {
-    const args: (string | number)[] = [cursor]
+    const args: string[] = [cursor]
 
     if (options?.match) {
       args.push('MATCH', options.match)
     }
     if (options?.count) {
-      args.push('COUNT', options.count)
+      args.push('COUNT', String(options.count))
     }
 
-    const result = await this.getClient().send(['SCAN', ...args])
+    const result = await this.sendCommand('SCAN', args)
     // SCAN 返回 [cursor, [keys]]
     if (Array.isArray(result) && result.length === 2) {
       return {
@@ -720,21 +738,21 @@ export class BunRedisClient implements RedisClientContract {
 
   async type(key: string): Promise<string> {
     const prefixedKey = this.prefixKey(key)
-    const result = await this.getClient().send(['TYPE', prefixedKey])
+    const result = await this.sendCommand('TYPE', [prefixedKey])
     return String(result)
   }
 
   async rename(key: string, newKey: string): Promise<'OK'> {
     const prefixedKey = this.prefixKey(key)
     const prefixedNewKey = this.prefixKey(newKey)
-    const result = await this.getClient().send(['RENAME', prefixedKey, prefixedNewKey])
+    const result = await this.sendCommand('RENAME', [prefixedKey, prefixedNewKey])
     return result === 'OK' ? 'OK' : 'OK'
   }
 
   async renamenx(key: string, newKey: string): Promise<number> {
     const prefixedKey = this.prefixKey(key)
     const prefixedNewKey = this.prefixKey(newKey)
-    const result = await this.getClient().send(['RENAMENX', prefixedKey, prefixedNewKey])
+    const result = await this.sendCommand('RENAMENX', [prefixedKey, prefixedNewKey])
     return typeof result === 'number' ? result : Number(result)
   }
 
@@ -743,24 +761,24 @@ export class BunRedisClient implements RedisClientContract {
   // ============================================================================
 
   async flushdb(): Promise<'OK'> {
-    const result = await this.getClient().send(['FLUSHDB'])
+    const result = await this.sendCommand('FLUSHDB', [])
     return result === 'OK' ? 'OK' : 'OK'
   }
 
   async flushall(): Promise<'OK'> {
-    const result = await this.getClient().send(['FLUSHALL'])
+    const result = await this.sendCommand('FLUSHALL', [])
     return result === 'OK' ? 'OK' : 'OK'
   }
 
   async dbsize(): Promise<number> {
-    const result = await this.getClient().send(['DBSIZE'])
+    const result = await this.sendCommand('DBSIZE', [])
     return typeof result === 'number' ? result : Number(result)
   }
 
   async info(section?: string): Promise<string> {
     const result = section
-      ? await this.getClient().send(['INFO', section])
-      : await this.getClient().send(['INFO'])
+      ? await this.sendCommand('INFO', [section])
+      : await this.sendCommand('INFO', [])
     return String(result)
   }
 
