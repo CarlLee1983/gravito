@@ -1,17 +1,17 @@
 # Gravito 框架優化路線圖 (Optimization Roadmap)
 
 **創建日期**: 2026-01-16
-**最後更新**: 2026-01-17 17:00
+**最後更新**: 2026-01-17 23:00
 **分支建議**: `optimize/comprehensive-improvements`
-**狀態**: 🔄 Phase 11-14 已完成，Phase 15 進行中 (50% 完成)
+**狀態**: 🔄 Phase 11-17 已完成，Phase 18 進行中 (Phase 18.1 完成)
 **預估總工時**: ~40-50 小時
-**實際完成**: Phase 11-14 (100%), Phase 15 (Model & QueryBuilder 100%)
+**實際完成**: Phase 11-14 (100%), Phase 15 (Scaffold 100%), Phase 16 (100%), Phase 17 (100%), Phase 18 (Concerns 創建 100%)
 
 ---
 
 ## 🚀 待執行的任務 (Focus Checklist)
 
-### Phase 15: 大型文件重構 (剩餘項目)
+### Phase 15: 大型文件重構
 - [x] **Scaffold BaseGenerator**: 重構 `packages/scaffold/src/generators/BaseGenerator.ts` (~1,169 行)
     - [x] 提取模板引擎邏輯至 `TemplateManager`
     - [x] 提取文件操作至 `FileUtilities`
@@ -27,6 +27,38 @@
     - [x] Implementation of SQL Cache
     - [x] Performance Benchmarking suite
 
+### Phase 17: CI/CD 自動化
+- [x] **Pre-commit hooks**: simple-git-hooks 配置並啟用
+    - [x] pre-commit: lint-staged (Biome 格式化)
+    - [x] pre-push: typecheck + test 完整檢查
+- [x] **CI/CD workflow**: `.github/workflows/ci.yml` 增強
+    - [x] 大型文件監控 (>800 行)
+    - [x] TODO 檢查
+    - [x] @ts-expect-error 檢查
+    - [x] console.log 檢查
+    - [x] 未使用依賴檢查
+- [x] **每週審計腳本**: `scripts/weekly-audit.sh`
+    - [x] 新 TODO 追蹤
+    - [x] 新 @ts-expect-error 追蹤
+    - [x] 大型文件檢查
+    - [x] Bundle 大小變化
+    - [x] 依賴檢查
+
+### Phase 18: Atlas Model 重構 (進行中)
+- [x] **Model concerns 創建** (Phase 1)
+    - [x] HasAttributes (~280 行) - 屬性管理、類型轉換
+    - [x] HasRelationships (~200 行) - 關係定義、Eager loading
+    - [x] HasPersistence (~300 行) - CRUD 操作、軟刪除
+    - [x] HasEvents (~40 行) - 生命周期事件
+    - [x] HasSerialization (~90 行) - JSON/序列化
+    - [x] applyMixins (~25 行) - 組合工具
+    - [x] concerns/index 導出
+    - [x] Model/index 更新
+- [ ] **Model concerns 集成** (Phase 2 - 待處理)
+    - [ ] 簡化集成方法（不使用複雜 mixins）
+    - [ ] 保持向後兼容性
+    - [ ] 所有測試通過
+
 ---
 
 ## 📊 優化總覽
@@ -39,8 +71,9 @@
 | 功能完善 | 9 處 TODO/FIXME | 🟡 Medium | 6-8h | ✅ 已完成 |
 | 測試覆蓋率 | 待評估 | 🟡 Medium | 8-10h | ✅ 已完成 |
 | 文檔完善 | 623 個導出符號 | 🟢 Low | 10-12h | ✅ 已完成 |
-| 代碼重構 | 3+ 大型文件 | 🟢 Low | 8-10h | � 進行中 (2/4 已完成) |
-| 性能優化 | Bundle & 依賴 | 🟢 Low | 4-6h | 📋 待處理 |
+| 代碼重構 | 8+ 大型文件 | 🟢 Low | 12-15h | 🔄 進行中 (Phase 18.1 完成) |
+| 性能優化 | Bundle & 依賴 | 🟢 Low | 4-6h | ✅ 已完成 |
+| CI/CD 自動化 | Hooks, workflows | 🟢 Low | 3-5h | ✅ 已完成 |
 
 ---
 
@@ -1360,3 +1393,196 @@ Closes #
 2. 參考 MIGRATION.md 和 CONTRIBUTING.md
 3. 在團隊頻道詢問
 4. 創建 RFC (Request for Comments) 討論重大變更
+
+---
+
+## 🎯 Phase 18: Atlas Model 重構 (進行中)
+
+### 18.1 概述
+**優先級**: 🔴 P1 - High
+**預估工時**: 8-10 小時
+**實際工時**: ~3 小時 (Phase 18.1 完成)
+**狀態**: 🔄 進行中 (Phase 18.1: Concerns 創建 ✅, Phase 18.2: 集成 ⏳)
+**影響範圍**: `packages/atlas/src/orm/model/Model.ts` (1597 行)
+
+### 18.2 Phase 18.1: Concerns 創建 ✅
+
+#### 已創建的 Concerns
+
+| Concern | 行數 | 文件 | 職責 |
+|---------|------|------|------|
+| HasAttributes | ~280 | `concerns/HasAttributes.ts` | 屬性管理、類型轉換、Dirty tracking、驗證 |
+| HasRelationships | ~200 | `concerns/HasRelationships.ts` | 關係定義、Eager loading |
+| HasPersistence | ~300 | `concerns/HasPersistence.ts` | CRUD 操作、軟刪除、刷新 |
+| HasEvents | ~40 | `concerns/HasEvents.ts` | 生命周期事件、Observer 註冊 |
+| HasSerialization | ~90 | `concerns/HasSerialization.ts` | JSON/序列化、屬性隱藏/附加 |
+| applyMixins | ~25 | `concerns/applyMixins.ts` | 類組合工具 |
+| index | ~18 | `concerns/index.ts` | 導出所有 concerns |
+
+**總計**: ~953 行
+
+#### 文件結構
+```
+packages/atlas/src/orm/model/concerns/
+├── applyMixins.ts          # 類組合工具
+├── HasAttributes.ts        # 屬性管理
+├── HasEvents.ts          # 事件系統
+├── HasPersistence.ts      # 持久化
+├── HasRelationships.ts    # 關係管理
+├── HasSerialization.ts    # 序列化
+└── index.ts              # 導出
+```
+
+### 18.3 Phase 18.2: Concerns 集成 ⏳
+
+#### 當前問題
+
+使用 `applyMixins` 的複雜組合方式導致：
+- ❌ TypeScript 類型錯誤 (LSP 檢測到 12+ 錯誤)
+- ❌ 測試失敗 (48/310 tests fail)
+- ❌ 靜態方法繼承衝突
+
+#### 失敗原因分析
+
+1. **TypeScript 限制**: 對多繼承 (mixins) 的支持有限
+2. **類型推導複雜性**: 靜態方法與實例方法的組合導致類型衝突
+3. **Proxy Factory 依賴**: 核心代理需要訪問所有 concern 的方法
+
+#### 建議解決方案
+
+**方案 A: 直接繼承** (最簡單)
+```typescript
+abstract class Model extends 
+  HasAttributes, 
+  HasEvents, 
+  HasPersistence, 
+  HasRelationships, 
+  HasSerialization {}
+```
+- ✅ 優點: 簡單、穩定
+- ❌ 缺點: 可能有多重繼承限制
+
+**方案 B: 委託模式** (更清晰)
+```typescript
+class Model {
+  private attributes = new HasAttributes()
+  private persistence = new HasPersistence()
+  
+  save() { return this.persistence.save() }
+  getAttribute() { return this.attributes.getAttribute() }
+}
+```
+- ✅ 優點: 完全控制、易測試
+- ❌ 缺點: 需要重寫所有公共方法
+
+**方案 C: 保守方法** (當前推薦)
+- 保持 concerns 作為參考實現
+- 不強制集成
+- 手動提取需要的方法到 Model.ts
+- 確保所有測試通過
+
+### 18.4 驗收標準
+- [ ] 所有測試通過 (310/310)
+- [ ] 無 TypeScript 類型錯誤
+- [ ] Model.ts 行數減少到 < 1200 行
+- [ ] 向後兼容性保持
+- [ ] 文檔更新
+
+### 18.5 詳細計劃文檔
+- `docs/internal/model-refactoring-plan.md` - 完整重構計劃
+- `docs/internal/refactoring-progress-summary.md` - 進度總結
+
+---
+
+## 🎯 Phase 19: QueryBuilder 重構 (進行中)
+
+### 19.1 概述
+**優先級**: 🔴 P1 - High
+**預估工時**: 6-8 小時
+**實際工時**: ~2 小時 (Phase 19.1 完成)
+**狀態**: 🔄 進行中 (Phase 19.1: Clauses 創建 ✅, Phase 19.2: 集成 ⏳)
+**影響範圍**: `packages/atlas/src/query/QueryBuilder.ts` (1339 行)
+
+### 19.2 Phase 19.1: Clauses 創建 ✅
+
+#### 已創建的 Clauses
+
+| Clause | 行數 | 文件 | 職責 |
+|--------|------|------|------|
+| SelectClause | ~77 | `clauses/SelectClause.ts` | SELECT、DISTINCT、原始 SELECT |
+| WhereClause | ~163 | `clauses/WhereClause.ts` | WHERE 條件、AND/OR、嵌套、IN、NULL |
+| JoinClause | ~186 | `clauses/JoinClause.ts` | JOIN 操作（INNER、LEFT、RIGHT、CROSS）|
+| LimitClause | ~110 | `clauses/LimitClause.ts` | LIMIT、OFFSET、take、skip |
+
+**總計**: ~536 行 clauses
+
+#### 文件結構
+```
+packages/atlas/src/query/clauses/
+├── SelectClause.ts       # SELECT 和 DISTINCT 功能
+├── WhereClause.ts        # WHERE 條件（含 AND/OR、嵌套、IN、NULL）
+├── JoinClause.ts        # JOIN 操作
+├── LimitClause.ts       # LIMIT 和 OFFSET 功能
+└── index.ts             # 導出所有 clauses
+```
+
+### 19.3 Phase 19.2: Clauses 集成 ⏳
+
+#### 當前問題
+1. ⚠️ JoinClause 類型衝突（與 types/index.ts 的 JoinClause）
+2. ⏳ 需要將 clauses 集成到 QueryBuilder
+3. ⏳ 保持向後兼容性
+
+#### 建議方案
+
+**方案 A: 直接替換**（推薦）
+- 在 QueryBuilder 中使用 clauses
+- 重寫相關方法使用 clauses
+- 保持公共 API 不變
+
+**方案 B: 漸進集成**
+- 保留原有實現作為備份
+- 新增使用 clauses 的方法
+- 逐步遷移
+
+### 19.4 需要重構的部分
+
+| 部分 | 行數 | 狀態 |
+|------|------|------|
+| SELECT | ~60 | ✅ Clause 已創建 |
+| WHERE | ~150 | ✅ Clause 已創建 |
+| JOIN | ~120 | ✅ Clause 已創建（待修復類型）|
+| GROUP BY | ~50 | 📋 待處理 |
+| HAVING | ~50 | 📋 待處理 |
+| ORDER BY | ~60 | 📋 待處理 |
+| LIMIT/OFFSET | ~40 | ✅ Clause 已創建 |
+| 執行方法 | ~200 | 📋 待處理 |
+
+### 19.5 驗收標準
+- [ ] 所有 clauses 類型正確
+- [ ] clauses 集成到 QueryBuilder
+- [ ] 所有測試通過
+- [ ] API 保持向後兼容
+- [ ] QueryBuilder 行數減少 ~300-500 行
+
+---
+
+## 🎯 Phase 20: 其他大型文件重構 (待處理)
+
+| 文件 | 行數 | 優先級 | 預估工時 |
+|------|------|--------|----------|
+| `scaffold/.../CleanArchitectureGenerator.ts` | 1022 | 🟡 Medium | 4-5h |
+| `scaffold/.../EnterpriseMvcGenerator.ts` | 1007 | 🟡 Medium | 4-5h |
+| `zenith/.../QueueService.ts` | 945 | 🟡 Medium | 3-4h |
+| `core/src/Router.ts` | 931 | 🟡 Medium | 3-4h |
+| `zenith/.../server/index.ts` | 856 | 🟡 Medium | 3-4h |
+| `plasma/src/RedisClient.ts` | 802 | 🟡 Medium | 2-3h |
+
+**總計**: 19-23 小時
+
+---
+
+**文檔維護者**: @Carl
+**最後更新**: 2026-01-17 23:00
+**版本**: 1.3.0
+**狀態**: 🔄 Phase 18.1 完成，Phase 18.2 待處理
