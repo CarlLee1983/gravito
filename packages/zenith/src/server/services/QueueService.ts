@@ -2,6 +2,9 @@ import { EventEmitter } from 'node:events'
 import { type MySQLPersistence, QueueManager } from '@gravito/stream'
 import { Redis } from 'ioredis'
 import { AlertService } from './AlertService'
+import { LogStreamProcessor } from './LogStreamProcessor'
+import { MaintenanceScheduler } from './MaintenanceScheduler'
+import { QueueMetricsCollector } from './QueueMetricsCollector'
 
 /**
  * Statistics for a single message queue.

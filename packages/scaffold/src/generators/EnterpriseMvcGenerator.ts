@@ -9,6 +9,8 @@
  */
 
 import type { DirectoryNode } from '../types'
+import { ConfigGenerator } from '../utils/ConfigGenerator'
+import { ServiceProviderGenerator } from '../utils/ServiceProviderGenerator'
 import { BaseGenerator, type GeneratorContext } from './BaseGenerator'
 
 /**
@@ -175,125 +177,15 @@ export class EnterpriseMvcGenerator extends BaseGenerator {
   }
 
   // ─────────────────────────────────────────────────────────────
-  // Config Generators
+  // Config Generators (using shared ConfigGenerator)
   // ─────────────────────────────────────────────────────────────
 
   private generateAppConfig(context: GeneratorContext): string {
-    return `/**
- * Application Configuration
- */
-export default {
-  /**
-   * Application name
-   */
-  name: process.env.APP_NAME ?? '${context.name}',
-
-  /**
-   * Application environment
-   */
-  env: process.env.APP_ENV ?? 'development',
-
-  /**
-   * Application port
-   */
-  port: Number.parseInt(process.env.PORT ?? '3000', 10),
-
-  /**
-   * View directory
-   */
-  VIEW_DIR: process.env.VIEW_DIR ?? 'src/views',
-
-  /**
-   * Debug mode
-   */
-  debug: process.env.APP_DEBUG === 'true',
-
-  /**
-   * Application URL
-   */
-  url: process.env.APP_URL ?? 'http://localhost:3000',
-
-  /**
-   * Timezone
-   */
-  timezone: 'UTC',
-
-  /**
-   * Locale
-   */
-  locale: 'en',
-
-  /**
-   * Fallback locale
-   */
-  fallbackLocale: 'en',
-
-  /**
-   * Encryption key
-   */
-  key: process.env.APP_KEY,
-
-  /**
-   * Service providers to register
-   */
-  providers: [
-    // Framework providers
-    // 'RouteServiceProvider',
-
-    // Application providers
-    // 'AppServiceProvider',
-  ],
-}
-`
+    return ConfigGenerator.generateDetailedAppConfig(context)
   }
 
   private generateDatabaseConfig(): string {
-    return `/**
- * Database Configuration
- */
-export default {
-  /**
-   * Default connection
-   */
-  default: process.env.DB_CONNECTION ?? 'sqlite',
-
-  /**
-   * Database connections
-   */
-  connections: {
-    sqlite: {
-      driver: 'sqlite',
-      database: process.env.DB_DATABASE ?? 'database/database.sqlite',
-    },
-
-    mysql: {
-      driver: 'mysql',
-      host: process.env.DB_HOST ?? 'localhost',
-      port: Number(process.env.DB_PORT ?? 3306),
-      database: process.env.DB_DATABASE ?? 'forge',
-      username: process.env.DB_USERNAME ?? 'forge',
-      password: process.env.DB_PASSWORD ?? '',
-    },
-
-    postgres: {
-      driver: 'postgres',
-      host: process.env.DB_HOST ?? 'localhost',
-      port: Number(process.env.DB_PORT ?? 5432),
-      database: process.env.DB_DATABASE ?? 'forge',
-      username: process.env.DB_USERNAME ?? 'forge',
-      password: process.env.DB_PASSWORD ?? '',
-    },
-  },
-
-  /**
-   * Migration settings
-   */
-  migrations: {
-    table: 'migrations',
-    path: 'database/migrations',
-  },
-}
-`
+    return ConfigGenerator.generateDetailedDatabaseConfig()
   }
 
   private generateAuthConfig(): string {
