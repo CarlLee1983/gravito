@@ -1360,7 +1360,7 @@
       "version": "1.0.0-beta.1",
       "dependencies": {
         "cborg": "^4.3.2",
-        "hono": "^4.0.0",
+        "hono": "^4.11.0",
       },
       "devDependencies": {
         "bun-types": "latest",

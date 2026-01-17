@@ -19,8 +19,10 @@ await build({
   outdir: 'dist',
   format: 'esm',
   target: 'node',
-  splitting: true,
-  minify: false,
+  // Disabled: Small package (~120 LOC) doesn't benefit from code splitting
+  splitting: false,
+  // Enable minification in production builds
+  minify: process.env.NODE_ENV === 'production',
   sourcemap: 'external',
 })
 
