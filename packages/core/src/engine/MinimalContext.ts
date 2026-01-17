@@ -124,16 +124,16 @@ class MinimalRequest implements FastRequest {
  * - No custom headers needed
  */
 export class MinimalContext implements IFastContext {
-  private readonly _req: MinimalRequest
+  public readonly req: MinimalRequest
   private _resHeaders: Record<string, string> = {}
 
   constructor(request: Request, params: Record<string, string>, path: string) {
-    this._req = new MinimalRequest(request, params, path)
+    this.req = new MinimalRequest(request, params, path)
   }
 
-  get req(): FastRequest {
-    return this._req
-  }
+  // get req(): FastRequest {
+  //   return this._req
+  // }
 
   // Response helpers - merge custom headers with defaults
   private getHeaders(contentType: string): Record<string, string> {
@@ -187,7 +187,7 @@ export class MinimalContext implements IFastContext {
   }
 
   // Required for interface compatibility
-  init(_request: Request, _params?: Record<string, string>): this {
+  init(_request: Request, _params?: Record<string, string>, _path?: string): this {
     throw new Error('MinimalContext does not support init. Create a new instance instead.')
   }
 

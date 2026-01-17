@@ -16,6 +16,7 @@
 import type { HttpMethod } from '../http/types'
 import { AOTRouter } from './AOTRouter'
 import { analyzeHandler, getOptimalContextType } from './analyzer'
+import { CACHED_RESPONSES, HEADERS } from './constants'
 import { FastContext } from './FastContext'
 import { MinimalContext } from './MinimalContext'
 import { extractPath } from './path'
@@ -44,22 +45,7 @@ function compileMiddlewareChain(middleware: Middleware[], handler: Handler): Com
     const mw = middleware[i]!
     const nextHandler = compiled
     compiled = async (ctx) => {
-      let nextCalled = false
-      const result = await mw(ctx, async () => {
-        nextCalled = true
-        return undefined
-      })
-
-      if (result instanceof Response) {
-        return result
-      }
-
-      if (nextCalled) {
-        return await nextHandler(ctx)
-      }
-
-      // Default fallback if middleware didn't return response or call next
-      return await nextHandler(ctx)
+      return (await mw(ctx, () => nextHandler(ctx))) as Response
     }
   }
 
@@ -294,7 +280,7 @@ export class Gravito {
     const ctx = this.contextPool.acquire()
 
     try {
-      ctx.init(request, {})
+      ctx.init(request, {}, path)
 
       if (route.compiled) {
         return await route.compiled(ctx)
@@ -346,7 +332,7 @@ export class Gravito {
 
     const execute = async (): Promise<Response> => {
       try {
-        ctx.init(request, match.params)
+        ctx.init(request, match.params, path)
         return await entry!.compiled(ctx)
       } catch (error) {
         return await this.handleError(error as Error, ctx)
@@ -376,16 +362,10 @@ export class Gravito {
     }
 
     console.error('Unhandled error:', error)
-    return new Response(
-      JSON.stringify({
-        error: 'Internal Server Error',
-        message: error.message,
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    )
+    return new Response(CACHED_RESPONSES.INTERNAL_ERROR, {
+      status: 500,
+      headers: HEADERS.JSON,
+    })
   }
 
   /**
@@ -401,9 +381,9 @@ export class Gravito {
       return result as Promise<Response>
     }
 
-    return new Response(JSON.stringify({ error: 'Not Found' }), {
+    return new Response(CACHED_RESPONSES.NOT_FOUND, {
       status: 404,
-      headers: { 'Content-Type': 'application/json' },
+      headers: HEADERS.JSON,
     })
   }
 

@@ -18,24 +18,32 @@ import type { FastRequest, FastContext as IFastContext } from './types'
 class FastRequestImpl implements FastRequest {
   private _request!: Request
   private _params!: Record<string, string>
-  private _url: URL = new URL('http://localhost') // Reuse this object
+  private _path!: string
+  private _url: URL | null = null
   private _query: URLSearchParams | null = null
   private _headers: Record<string, string> | null = null
   private _cachedJson: unknown = undefined
   private _jsonParsed = false
+  // Back-reference for release check optimization
+  private _ctx: FastContext
+
+  constructor(ctx: FastContext) {
+    this._ctx = ctx
+  }
 
   /**
    * Initialize for new request
    */
-  init(request: Request, params: Record<string, string> = {}): void {
+  init(request: Request, params: Record<string, string> = {}, path = ''): this {
     this._request = request
     this._params = params
-    // Reuse URL object instead of creating new one
-    this._url.href = request.url
+    this._path = path
+    this._url = null
     this._query = null
     this._headers = null
     this._cachedJson = undefined
     this._jsonParsed = false
+    return this
   }
 
   /**
@@ -47,42 +55,66 @@ class FastRequestImpl implements FastRequest {
     this._request = undefined
     // @ts-expect-error
     this._params = undefined
+    this._url = null
     this._query = null
     this._headers = null
     this._cachedJson = undefined
     this._jsonParsed = false
   }
 
+  private checkReleased(): void {
+    // @ts-expect-error - Accessing private property via back-ref
+    if (this._ctx._isReleased) {
+      throw new Error(
+        'FastContext usage after release detected! (Object Pool Strict Lifecycle Guard)'
+      )
+    }
+  }
+
   get url(): string {
+    this.checkReleased()
     return this._request.url
   }
 
   get method(): string {
+    this.checkReleased()
     return this._request.method
   }
 
   get path(): string {
-    return this._url.pathname
+    this.checkReleased()
+    return this._path
   }
 
   param(name: string): string | undefined {
+    this.checkReleased()
     return this._params[name]
   }
 
   params(): Record<string, string> {
+    this.checkReleased()
     return { ...this._params }
   }
 
+  private getUrl(): URL {
+    if (!this._url) {
+      this._url = new URL(this._request.url)
+    }
+    return this._url
+  }
+
   query(name: string): string | undefined {
+    this.checkReleased()
     if (!this._query) {
-      this._query = this._url.searchParams
+      this._query = this.getUrl().searchParams
     }
     return this._query.get(name) ?? undefined
   }
 
   queries(): Record<string, string | string[]> {
+    this.checkReleased()
     if (!this._query) {
-      this._query = this._url.searchParams
+      this._query = this.getUrl().searchParams
     }
 
     const result: Record<string, string | string[]> = {}
@@ -100,10 +132,12 @@ class FastRequestImpl implements FastRequest {
   }
 
   header(name: string): string | undefined {
+    this.checkReleased()
     return this._request.headers.get(name) ?? undefined
   }
 
   headers(): Record<string, string> {
+    this.checkReleased()
     if (!this._headers) {
       this._headers = {}
       for (const [key, value] of this._request.headers.entries()) {
@@ -114,6 +148,7 @@ class FastRequestImpl implements FastRequest {
   }
 
   async json<T = unknown>(): Promise<T> {
+    this.checkReleased()
     if (!this._jsonParsed) {
       this._cachedJson = await this._request.json()
       this._jsonParsed = true
@@ -122,14 +157,17 @@ class FastRequestImpl implements FastRequest {
   }
 
   async text(): Promise<string> {
+    this.checkReleased()
     return this._request.text()
   }
 
   async formData(): Promise<FormData> {
+    this.checkReleased()
     return this._request.formData()
   }
 
   get raw(): Request {
+    this.checkReleased()
     return this._request
   }
 }
@@ -141,20 +179,20 @@ class FastRequestImpl implements FastRequest {
  * All response helpers create Response objects directly without intermediate wrappers.
  */
 export class FastContext implements IFastContext {
-  private _req: FastRequestImpl = new FastRequestImpl()
+  public readonly req: FastRequestImpl = new FastRequestImpl(this)
   // private _statusCode = 200
   private _headers = new Headers() // Reuse this object
 
-  private _isReleased = false
+  public _isReleased = false // Made public for internal check access
 
   /**
    * Initialize context for a new request
    *
    * This is called when acquiring from the pool.
    */
-  init(request: Request, params: Record<string, string> = {}): this {
+  init(request: Request, params: Record<string, string> = {}, path = ''): this {
     this._isReleased = false
-    this._req.init(request, params)
+    this.req.init(request, params, path)
     // Optimization: Creating new Headers is faster than iterating to delete in Bun
     // But for strict object pooling, we might want to reconsider.
     // For now, new Headers() is safe and fast enough.
@@ -170,7 +208,7 @@ export class FastContext implements IFastContext {
    */
   reset(): void {
     this._isReleased = true
-    this._req.reset()
+    this.req.reset()
     // We don't clear _headers here because init() will create a new one.
     // If we wanted to reuse, we would clear it here.
   }
@@ -184,11 +222,6 @@ export class FastContext implements IFastContext {
         'FastContext usage after release detected! (Object Pool Strict Lifecycle Guard)'
       )
     }
-  }
-
-  get req(): FastRequest {
-    this.checkReleased()
-    return this._req
   }
 
   // ─────────────────────────────────────────────────────────────────────────
