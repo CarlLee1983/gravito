@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import { BunRedisClient } from '../src/clients/BunRedisClient'
+import { isRedisAvailable } from './helpers'
 
 const REDIS_HOST = process.env.REDIS_HOST || 'localhost'
 const REDIS_PORT = Number(process.env.REDIS_PORT) || 6379
@@ -12,12 +13,16 @@ describe('BunRedisClient Integration', () => {
   })
 
   beforeAll(async () => {
+    if (!(await isRedisAvailable())) {
+      console.warn('Skipping integration tests: Redis not available')
+      return
+    }
+
     try {
       await client.connect()
       await client.flushall()
     } catch (error) {
-      console.warn('Skipping integration tests: Redis not available')
-      // potentially skip all tests if connection fails
+      console.warn('Skipping integration tests: Redis available but connection failed')
     }
   })
 

@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import { BunRedisClient } from '../src/clients/BunRedisClient'
 import { RedisClient } from '../src/RedisClient'
 import type { RedisClientContract, RedisConfig } from '../src/types'
+import { isRedisAvailable } from './helpers'
 
 const REDIS_HOST = process.env.REDIS_HOST || 'localhost'
 const REDIS_PORT = Number(process.env.REDIS_PORT) || 6379
@@ -27,11 +28,15 @@ describe('Compatibility Suite', () => {
 
     describe(name, () => {
       beforeAll(async () => {
+        if (!(await isRedisAvailable())) {
+          return
+        }
+
         try {
           await client.connect()
           await client.flushall()
         } catch {
-          // ignore connection errors if service not up
+          // ignore connection errors if service up but connect failed
         }
       })
 

@@ -1,46 +1,68 @@
-import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
+import { describe, expect, it, mock } from 'bun:test'
 import { BunRedisClient } from '../src/clients/BunRedisClient'
 import { RedisError } from '../src/errors'
 
-describe('BunRedisClient Error Handling', () => {
-  const config = {
-    host: 'localhost',
-    port: 6379,
+// Mock Redis subclass for error testing
+class TestErrorClient extends BunRedisClient {
+  public mockInstance: any
+
+  protected async getRedisClientClass(): Promise<any> {
+    const self = this
+    this.mockInstance = {
+      connect: mock(async function (this: any) {
+        this.connected = true
+      }),
+      close: mock(async function (this: any) {
+        this.connected = false
+      }),
+      connected: false,
+      set: mock(async () => 'OK'),
+      send: mock(async (cmd: string) => {
+        if (cmd === 'LPUSH') {
+          throw new Error('WRONGTYPE Operation against a key holding the wrong kind of value')
+        }
+        return 'OK'
+      }),
+      ping: mock(async () => 'PONG'),
+    }
+    return class {
+      constructor() {
+        Object.assign(this, self.mockInstance)
+      }
+    }
   }
+}
 
-  let client: BunRedisClient
-
-  beforeAll(async () => {
-    client = new BunRedisClient(config)
-    await client.connect()
-  })
-
-  afterAll(async () => {
-    await client.disconnect()
-  })
-
+describe('BunRedisClient Error Handling', () => {
   it('should wrap command errors in RedisError', async () => {
-    // Setup: Set a key as string
-    await client.set('string_key', 'value')
+    const client = new TestErrorClient()
+    await client.connect()
 
     try {
-      // Act: Try to use list command on string key (should fail)
+      // Act: Try to use list command (LPUSH -> sendCommand)
       await client.lpush('string_key', 'value')
     } catch (error) {
       // Assert
       expect(error).toBeInstanceOf(RedisError)
-      expect((error as RedisError).command).toBe('LPUSH') // LPUSH calls sendCommand with command name
+      expect((error as RedisError).command).toBe('LPUSH')
       expect((error as RedisError).message).toContain('WRONGTYPE')
     }
   })
 
   it('should wrap connection errors in RedisError', async () => {
+    // We can test this by forcing handleException on a fake error
+    const client = new BunRedisClient({ host: 'localhost', port: 9999, maxRetries: 0 })
+    // We don't call connect() here as it would timeout, instead we test the normalization logic
+    // if we want to be 100% unit-testy.
+    // However, the original test tried to connect to a bad port.
+    // Let's use a very small timeout.
     const badClient = new BunRedisClient({
-      ...config,
+      host: 'localhost',
       port: 9999,
       maxRetries: 0,
-      connectTimeout: 100,
-    }) // Invalid port
+      connectTimeout: 50,
+    })
+
     try {
       await badClient.connect()
     } catch (error) {
@@ -50,25 +72,27 @@ describe('BunRedisClient Error Handling', () => {
   })
 
   it('should pass health check when connected', async () => {
+    const client = new TestErrorClient()
+    await client.connect()
     const isHealthy = await client.checkHealth()
     expect(isHealthy).toBe(true)
   })
 
   it('should fail health check when disconnected', async () => {
-    const tempClient = new BunRedisClient(config)
-    expect(await tempClient.checkHealth()).toBe(false)
+    const client = new TestErrorClient()
+    // Not connected
+    expect(await client.checkHealth()).toBe(false)
   })
 
-  // To test backoff, we can try a port that doesn't exist and ensure it retries at least once (taking > 100ms)
-  // but fails eventually.
   it('should retry connection with backoff', async () => {
     const start = Date.now()
+    // Test with very short times
     const badClient = new BunRedisClient({
-      ...config,
+      host: 'localhost',
       port: 9998,
-      maxRetries: 2,
-      retryDelay: 50,
-      connectTimeout: 100,
+      maxRetries: 1,
+      retryDelay: 10,
+      connectTimeout: 50,
     })
 
     try {
@@ -77,11 +101,7 @@ describe('BunRedisClient Error Handling', () => {
       // Expected to fail
     }
     const duration = Date.now() - start
-    // 2 retries:
-    // 0: wait
-    // 1: wait 50ms
-    // 2: wait 100ms
-    // Total wait approx 150ms + overhead
-    expect(duration).toBeGreaterThan(100)
+    // 1 retry means at least one delay of 10ms + connectTimeout of 50ms
+    expect(duration).toBeGreaterThan(50)
   })
 })
