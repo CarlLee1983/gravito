@@ -42,7 +42,7 @@ export class OrbitStream implements GravitoOrbit {
   private queueManager?: QueueManager
   private consumer?: Consumer
 
-  constructor(private options: OrbitStreamOptions = {}) { }
+  constructor(private options: OrbitStreamOptions = {}) {}
 
   /**
    * Static configuration helper.

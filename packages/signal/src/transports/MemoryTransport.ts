@@ -18,7 +18,7 @@ import type { Message, Transport } from '../types'
  * @public
  */
 export class MemoryTransport implements Transport {
-  constructor(private mailbox: DevMailbox) { }
+  constructor(private mailbox: DevMailbox) {}
 
   async send(message: Message): Promise<void> {
     this.mailbox.add(message)

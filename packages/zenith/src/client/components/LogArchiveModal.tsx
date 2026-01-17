@@ -364,7 +364,9 @@ export function LogArchiveModal({ isOpen, onClose }: LogArchiveModalProps) {
                     }}
                     defaultValue=""
                   >
-                    <option value="" disabled>Export As...</option>
+                    <option value="" disabled>
+                      Export As...
+                    </option>
                     <option value="json">JSON</option>
                     <option value="csv">CSV</option>
                   </select>

@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync, statSync } from 'fs'
+import { readdirSync, readFileSync, statSync } from 'fs'
 import { join } from 'path'
 
 function findExportsWithoutDocs(dir: string): void {
@@ -15,7 +15,8 @@ function findExportsWithoutDocs(dir: string): void {
     }
 
     if (!file.endsWith('.ts') && !file.endsWith('.tsx')) continue
-    if (file.endsWith('.test.ts') || file.endsWith('.test.tsx') || file.endsWith('.bench.ts')) continue
+    if (file.endsWith('.test.ts') || file.endsWith('.test.tsx') || file.endsWith('.bench.ts'))
+      continue
 
     const content = readFileSync(fullPath, 'utf-8')
     const lines = content.split('\n')

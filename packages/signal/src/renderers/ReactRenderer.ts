@@ -28,7 +28,7 @@ export class ReactRenderer<P extends object = object> implements Renderer {
       createElement?: (...args: any[]) => any
       renderToStaticMarkup?: (element: any) => string
     } = {}
-  ) { }
+  ) {}
 
   async render(data: Record<string, unknown>): Promise<RenderResult> {
     // Dynamic imports to avoid hard dependencies on react/react-dom

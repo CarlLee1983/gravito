@@ -21,7 +21,7 @@ export class RedisSessionStore implements SessionStore {
   constructor(
     private prefix = 'session:',
     private connection?: string
-  ) { }
+  ) {}
 
   private get client() {
     return Redis.connection(this.connection)

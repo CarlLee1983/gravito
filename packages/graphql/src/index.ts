@@ -40,7 +40,7 @@ export class OrbitGraphQL implements GravitoOrbit {
   // biome-ignore lint/suspicious/noExplicitAny: Yoga type
   private yoga: YogaServerInstance<any, any> | null = null
 
-  constructor(private config: GraphQLConfig = {}) { }
+  constructor(private config: GraphQLConfig = {}) {}
 
   async install(core: PlanetCore) {
     const container = core.container

@@ -53,7 +53,7 @@ export interface ForgeConfig extends ForgeServiceConfig {
  * @public
  */
 export class OrbitForge implements GravitoOrbit {
-  constructor(private options?: ForgeConfig) { }
+  constructor(private options?: ForgeConfig) {}
 
   /**
    * Install the orbit into PlanetCore

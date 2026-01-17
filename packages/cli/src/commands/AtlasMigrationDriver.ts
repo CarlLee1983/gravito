@@ -32,7 +32,7 @@ const DEFAULT_DATABASE_URL = 'sqlite:./demo.db'
  * @public
  */
 export class AtlasMigrationDriver implements MigrationDriver {
-  constructor(private migrationsDir = 'src/database/migrations') { }
+  constructor(private migrationsDir = 'src/database/migrations') {}
 
   async generate(name: string): Promise<MigrationResult> {
     const timestamp = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14)

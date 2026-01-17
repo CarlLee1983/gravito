@@ -70,14 +70,14 @@ export interface StepExecution {
   name: string
   /** Current state of this specific step execution */
   status:
-  | 'pending'
-  | 'running'
-  | 'completed'
-  | 'failed'
-  | 'skipped'
-  | 'suspended'
-  | 'compensated'
-  | 'compensating'
+    | 'pending'
+    | 'running'
+    | 'completed'
+    | 'failed'
+    | 'skipped'
+    | 'suspended'
+    | 'compensated'
+    | 'compensating'
   /** Timestamp when the step was first started */
   startedAt?: Date
   /** Timestamp when the step reached a terminal state */

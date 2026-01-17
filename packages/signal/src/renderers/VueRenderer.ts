@@ -29,7 +29,7 @@ export class VueRenderer<P extends object = object> implements Renderer {
       h?: (...args: any[]) => any
       renderToString?: (app: any) => Promise<string>
     } = {}
-  ) { }
+  ) {}
 
   async render(data: Record<string, unknown>): Promise<RenderResult> {
     // Dynamic imports to avoid hard dependencies on vue/@vue/server-renderer

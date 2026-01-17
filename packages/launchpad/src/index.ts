@@ -109,7 +109,7 @@ export class LaunchpadOrbit implements GravitoOrbit {
    * Create a new LaunchpadOrbit instance.
    * @param ripple - Ripple instance for real-time telemetry communication.
    */
-  constructor(private ripple: OrbitRipple) { }
+  constructor(private ripple: OrbitRipple) {}
 
   /**
    * Install the Launchpad orbit into PlanetCore.
@@ -215,11 +215,7 @@ export async function bootstrapLaunchpad() {
       PORT: 4000,
       CACHE_DRIVER: 'file',
     },
-    orbits: [
-      new OrbitCache(),
-      ripple,
-      new LaunchpadOrbit(ripple),
-    ],
+    orbits: [new OrbitCache(), ripple, new LaunchpadOrbit(ripple)],
   })
 
   await core.bootstrap()

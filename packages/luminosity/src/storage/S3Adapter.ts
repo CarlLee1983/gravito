@@ -29,9 +29,7 @@ export interface S3AdapterConfig {
     PutObjectCommand: new (args: any) => any
     GetObjectCommand: new (args: any) => any
     HeadObjectCommand: new (args: any) => any
-    DeleteObjectCommand: new (
-      args: any
-    ) => any
+    DeleteObjectCommand: new (args: any) => any
   }
 }
 

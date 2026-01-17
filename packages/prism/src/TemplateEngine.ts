@@ -199,12 +199,9 @@ export class TemplateEngine {
   }
 
   private processYields(template: string, ctx: RenderContext): string {
-    return template.replace(
-      YIELD_REGEX,
-      (_, name, defaultValue) => {
-        return ctx.sections.get(name) || defaultValue || ''
-      }
-    )
+    return template.replace(YIELD_REGEX, (_, name, defaultValue) => {
+      return ctx.sections.get(name) || defaultValue || ''
+    })
   }
 
   private processStacks(template: string, ctx: RenderContext): string {

@@ -6,12 +6,12 @@ const honoJwt = require('hono/jwt') as Partial<typeof HonoJwt>
 
 const ensure =
   <T extends (...args: any[]) => any>(fn: T | undefined, _name: string) =>
-    (...args: Parameters<T>): ReturnType<T> => {
-      if (!fn) {
-        throw new Error(`hono/jwt helper '\${name}' is not available`)
-      }
-      return fn(...args)
+  (...args: Parameters<T>): ReturnType<T> => {
+    if (!fn) {
+      throw new Error(`hono/jwt helper '\${name}' is not available`)
     }
+    return fn(...args)
+  }
 
 /**
  * JWT Middleware.

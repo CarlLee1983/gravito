@@ -135,6 +135,6 @@ export interface MailConfig {
    * Translation function for internationalization within emails.
    */
   translator?:
-  | ((key: string, replace?: Record<string, unknown>, locale?: string) => string)
-  | undefined
+    | ((key: string, replace?: Record<string, unknown>, locale?: string) => string)
+    | undefined
 }

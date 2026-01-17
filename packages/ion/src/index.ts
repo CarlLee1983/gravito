@@ -98,7 +98,7 @@ export interface OrbitIonOptions {
  * @since 3.0.0
  */
 export class OrbitIon implements GravitoOrbit {
-  constructor(private options: OrbitIonOptions = {}) { }
+  constructor(private options: OrbitIonOptions = {}) {}
 
   /**
    * Install the inertia orbit into PlanetCore

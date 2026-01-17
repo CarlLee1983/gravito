@@ -64,7 +64,7 @@ declare module '@gravito/core' {
  * @since 3.0.0
  */
 export class OrbitPulsar implements GravitoOrbit {
-  constructor(private options: OrbitPulsarOptions = {}) { }
+  constructor(private options: OrbitPulsarOptions = {}) {}
 
   install(core: PlanetCore): void {
     const configFromCore = core.config.has('session')

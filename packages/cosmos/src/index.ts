@@ -31,7 +31,7 @@ export class OrbitCosmos implements GravitoOrbit {
    * Create a new OrbitCosmos instance.
    * @param config - The i18n configuration options.
    */
-  constructor(private config: I18nConfig) { }
+  constructor(private config: I18nConfig) {}
 
   /**
    * Install the i18n service into PlanetCore.

@@ -44,7 +44,7 @@ export interface StepOptions<TInput = any, TData = any> {
  * @public
  */
 export class WorkflowBuilder<TInput = unknown, TData = Record<string, unknown>> {
-  drum: any = null; // No!
+  drum: any = null // No!
   private _name: string
   private _steps: StepDefinition[] = []
   private _validateInput?: (input: unknown) => input is TInput

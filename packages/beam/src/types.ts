@@ -8,6 +8,6 @@ export interface BeamOptions {
    * Can be either a static object or a function (sync/async) that returns headers.
    */
   headers?:
-  | Record<string, string>
-  | (() => Record<string, string> | Promise<Record<string, string>>)
+    | Record<string, string>
+    | (() => Record<string, string> | Promise<Record<string, string>>)
 }

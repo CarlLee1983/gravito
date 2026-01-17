@@ -96,7 +96,7 @@ export class OrbitRadiance implements GravitoOrbit {
           | { publish(channel: string, message: string): Promise<number> }
           | undefined
         if (redisClient) {
-          ; (driver as RedisDriver).setRedisClient(redisClient)
+          ;(driver as RedisDriver).setRedisClient(redisClient)
         }
         break
       }

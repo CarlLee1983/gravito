@@ -209,7 +209,7 @@ export type OrbitStorageOptions = OrbitNebulaOptions
  * @since 3.0.0
  */
 export class OrbitNebula implements GravitoOrbit {
-  constructor(private options?: OrbitNebulaOptions) { }
+  constructor(private options?: OrbitNebulaOptions) {}
 
   /**
    * Install storage service into PlanetCore.

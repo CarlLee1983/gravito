@@ -38,7 +38,7 @@ export class DevServer {
     private mailbox: DevMailbox,
     private base = '/__mail',
     private options?: DevServerOptions
-  ) { }
+  ) {}
 
   private async canAccess(ctx: GravitoContext): Promise<boolean> {
     const isProduction = process.env.NODE_ENV === 'production'

@@ -18,7 +18,7 @@ import type { Renderer, RenderResult } from './Renderer'
  * @public
  */
 export class HtmlRenderer implements Renderer {
-  constructor(private content: string) { }
+  constructor(private content: string) {}
 
   async render(): Promise<RenderResult> {
     return {

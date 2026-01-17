@@ -44,7 +44,7 @@ export class OrbitPlasma implements GravitoOrbit {
   private client?: RedisClient
   private connected = false
 
-  constructor(private options: OrbitPlasmaOptions = {}) { }
+  constructor(private options: OrbitPlasmaOptions = {}) {}
 
   /**
    * Static configuration helper.

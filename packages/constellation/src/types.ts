@@ -73,11 +73,11 @@ export interface SitemapVideo {
   category?: string | undefined
   /** Regional restrictions for the video. */
   restriction?:
-  | {
-    relationship: 'allow' | 'deny'
-    countries: string[]
-  }
-  | undefined
+    | {
+        relationship: 'allow' | 'deny'
+        countries: string[]
+      }
+    | undefined
 }
 
 /**

@@ -74,7 +74,7 @@ export function Layout({ children }: LayoutProps) {
     fetch('/api/system/status')
       .then((res) => res.json())
       .then(setSystemStatus)
-      .catch(() => { })
+      .catch(() => {})
   }, [])
 
   // Global SSE Stream Manager
@@ -126,7 +126,7 @@ export function Layout({ children }: LayoutProps) {
     fetch('/api/queues')
       .then((res) => res.json())
       .then(setQueueData)
-      .catch(() => { })
+      .catch(() => {})
 
     // Optional: Listen to global stats if available (from OverviewPage) to keep queue stats fresh in command palette
     const handler = (e: Event) => {
@@ -265,15 +265,15 @@ export function Layout({ children }: LayoutProps) {
     },
     ...(isAuthEnabled
       ? [
-        {
-          id: 'sys-logout',
-          title: 'Logout',
-          description: 'Sign out from the console',
-          icon: <LogOut size={18} />,
-          category: 'System' as const,
-          action: logout,
-        },
-      ]
+          {
+            id: 'sys-logout',
+            title: 'Logout',
+            description: 'Sign out from the console',
+            icon: <LogOut size={18} />,
+            category: 'System' as const,
+            action: logout,
+          },
+        ]
       : []),
   ]
 

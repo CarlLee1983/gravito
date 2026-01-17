@@ -12,12 +12,12 @@ export class SimpleCronParser {
     }
 
     const targetDate = this.getDateInTimezone(date, timezone)
-    
+
     const minutes = targetDate.getMinutes()
     const hours = targetDate.getHours()
     const dayOfMonth = targetDate.getDate()
     const month = targetDate.getMonth() + 1
-    let dayOfWeek = targetDate.getDay()
+    const dayOfWeek = targetDate.getDay()
 
     return (
       this.match(parts[0]!, minutes, 0, 59) &&
@@ -28,11 +28,17 @@ export class SimpleCronParser {
     )
   }
 
-  private static match(pattern: string, value: number, _min: number, _max: number, isDayOfWeek = false): boolean {
+  private static match(
+    pattern: string,
+    value: number,
+    _min: number,
+    _max: number,
+    isDayOfWeek = false
+  ): boolean {
     if (pattern === '*') return true
 
     if (pattern.includes(',')) {
-      return pattern.split(',').some(p => this.match(p, value, _min, _max, isDayOfWeek))
+      return pattern.split(',').some((p) => this.match(p, value, _min, _max, isDayOfWeek))
     }
 
     const stepMatch = pattern.match(/^(\*|\d+(-\d+)?)\/(\d+)$/)
@@ -40,12 +46,12 @@ export class SimpleCronParser {
       const range = stepMatch[1]!
       const step = parseInt(stepMatch[3]!, 10)
       if (range === '*') return value % step === 0
-      const [rMin, rMax] = range.split('-').map(n => parseInt(n!, 10))
+      const [rMin, rMax] = range.split('-').map((n) => parseInt(n!, 10))
       return value >= rMin! && value <= rMax! && (value - rMin!) % step === 0
     }
 
     if (pattern.includes('-')) {
-      const [rMin, rMax] = pattern.split('-').map(n => parseInt(n!, 10))
+      const [rMin, rMax] = pattern.split('-').map((n) => parseInt(n!, 10))
       return value >= rMin! && value <= rMax!
     }
 

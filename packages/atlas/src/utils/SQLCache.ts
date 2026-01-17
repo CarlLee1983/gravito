@@ -1,6 +1,6 @@
 /**
  * Lightweight LRU-like cache for compiled SQL strings.
- * 
+ *
  * Prevents re-compiling the same query structures over and over.
  */
 export class SQLCache {

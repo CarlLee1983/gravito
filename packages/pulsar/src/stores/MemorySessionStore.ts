@@ -18,7 +18,7 @@ import type { SessionId, SessionRecord, SessionStore } from '../types'
  */
 export class MemorySessionStore implements SessionStore {
   private store = new Map<string, { record: SessionRecord; expiresAt: number }>()
-  constructor(private now: () => number) { }
+  constructor(private now: () => number) {}
 
   async get(id: SessionId): Promise<SessionRecord | null> {
     const item = this.store.get(id)
