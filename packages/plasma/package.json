@@ -14,7 +14,7 @@
     }
   },
   "scripts": {
-    "build": "node_modules/.bin/tsup src/index.ts --format esm,cjs --dts || bunx tsup src/index.ts --format esm,cjs --dts",
+    "build": "node_modules/.bin/tsup || bunx tsup",
     "test": "bun test",
     "test:coverage": "bun test --coverage --coverage-threshold=80",
     "test:ci": "bun test --coverage --coverage-threshold=80",

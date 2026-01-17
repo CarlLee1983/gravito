@@ -7,6 +7,11 @@
 // ============================================================================
 
 /**
+ * Redis client implementation type
+ */
+export type RedisClientType = 'bun' | 'ioredis' | 'auto'
+
+/**
  * Redis connection configuration
  */
 export interface RedisConfig {
@@ -30,6 +35,8 @@ export interface RedisConfig {
   maxRetries?: number
   /** Retry delay in ms */
   retryDelay?: number
+  /** Client implementation type: 'bun' (Bun.redis), 'ioredis', or 'auto' (default: 'auto') */
+  clientType?: RedisClientType
 }
 
 /**
