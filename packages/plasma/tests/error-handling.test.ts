@@ -48,4 +48,40 @@ describe('BunRedisClient Error Handling', () => {
       expect((error as RedisError).command).toBe('CONNECT')
     }
   })
+
+  it('should pass health check when connected', async () => {
+    const isHealthy = await client.checkHealth()
+    expect(isHealthy).toBe(true)
+  })
+
+  it('should fail health check when disconnected', async () => {
+    const tempClient = new BunRedisClient(config)
+    expect(await tempClient.checkHealth()).toBe(false)
+  })
+
+  // To test backoff, we can try a port that doesn't exist and ensure it retries at least once (taking > 100ms)
+  // but fails eventually.
+  it('should retry connection with backoff', async () => {
+    const start = Date.now()
+    const badClient = new BunRedisClient({
+      ...config,
+      port: 9998,
+      maxRetries: 2,
+      retryDelay: 50,
+      connectTimeout: 100,
+    })
+
+    try {
+      await badClient.connect()
+    } catch {
+      // Expected to fail
+    }
+    const duration = Date.now() - start
+    // 2 retries:
+    // 0: wait
+    // 1: wait 50ms
+    // 2: wait 100ms
+    // Total wait approx 150ms + overhead
+    expect(duration).toBeGreaterThan(100)
+  })
 })

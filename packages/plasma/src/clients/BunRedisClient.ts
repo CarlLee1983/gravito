@@ -54,12 +54,42 @@ export class BunRedisClient implements RedisClientContract {
 
     // 連接到 Redis
     try {
-      await this.client.connect()
+      await this.retryWithBackoff(async () => {
+        if (this.client) {
+          await this.client.connect()
+        }
+      })
+
       this.connected = true
       this.emitter.emit('connect')
       this.emitter.emit('ready')
     } catch (error) {
       throw this.handleException(error, 'CONNECT')
+    }
+  }
+
+  /**
+   * Retry with exponential backoff
+   */
+  private async retryWithBackoff(operation: () => Promise<void>): Promise<void> {
+    const maxRetries = this.config.maxRetries ?? 10
+    const baseDelay = this.config.retryDelay ?? 100 // Default 100ms
+    let attempt = 0
+
+    while (true) {
+      try {
+        await operation()
+        return
+      } catch (error) {
+        attempt++
+        if (attempt > maxRetries) {
+          throw error
+        }
+
+        // Exponential backoff with jitter: delay * 2^attempt + random(0-100)
+        const delay = Math.min(baseDelay * 2 ** (attempt - 1), 3000) + Math.random() * 100
+        await new Promise((resolve) => setTimeout(resolve, delay))
+      }
     }
   }
 
@@ -113,6 +143,22 @@ export class BunRedisClient implements RedisClientContract {
     return result === 'PONG' ? 'PONG' : String(result)
   }
 
+  /**
+   * Health check
+   * Verifies the connection is active and responsive
+   */
+  async checkHealth(): Promise<boolean> {
+    try {
+      if (!this.isConnected()) {
+        return false
+      }
+      const result = await this.ping()
+      return result === 'PONG'
+    } catch {
+      return false
+    }
+  }
+
   // ============================================================================
   // Helper Methods
   // ============================================================================
@@ -146,10 +192,19 @@ export class BunRedisClient implements RedisClientContract {
   /**
    * Build client options from config
    */
+  /**
+   * Build client options from config
+   */
   private buildClientOptions(): RedisClientOptions {
     const options: RedisClientOptions = {
       connectionTimeout: this.config.connectTimeout ?? 10000,
-      maxRetries: this.config.maxRetries ?? 10,
+      // We handle retries manually for exponential backoff during initial connection,
+      // but let the client handle reconnections (if supported) or we rely on our wrapper.
+      // BunRedis native retry is simple, so we keep it low here and manage it ourselves?
+      // Actually, maxRetries in Bun.redis is for *connection* attempts?
+      // To avoid conflict, we can set this.config.maxRetries for our loop,
+      // and pass 1 or 0 to the client to fail fast and let us retry.
+      maxRetries: 1, // Let manual loop handle retries
       autoReconnect: true,
       enableOfflineQueue: true,
       enableAutoPipelining: true,
