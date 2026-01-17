@@ -49,10 +49,7 @@ export const binaryMiddleware = (): MiddlewareHandler => {
         const headers = c.res.headers
         headers.set('Content-Type', 'application/cbor')
 
-        const buffer = encoded.buffer.slice(
-          encoded.byteOffset,
-          encoded.byteOffset + encoded.byteLength
-        )
+        const buffer = new Uint8Array(encoded).buffer
 
         c.res = new Response(buffer, {
           status: c.res.status,
