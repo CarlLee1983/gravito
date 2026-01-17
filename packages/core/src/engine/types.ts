@@ -32,7 +32,7 @@ export interface FastContext {
   status(code: number): void
 
   /** Internal initialization for pooling */
-  init(request: Request, params?: Record<string, string>): this
+  init(request: Request, params?: Record<string, string>, path?: string): this
 
   /** Internal cleanup for pooling */
   reset(): void
