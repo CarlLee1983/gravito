@@ -111,6 +111,22 @@ export type NotFoundHandler = (ctx: FastContext) => Response | Promise<Response>
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
+ * Route metadata for middleware management
+ */
+export interface RouteMetadata {
+  handler: Handler
+  middleware: Middleware[]
+  compiled?: CompiledHandler
+  useMinimal?: boolean
+  compiledVersion?: number
+}
+
+/**
+ * Compiled handler function
+ */
+export type CompiledHandler = (ctx: FastContext) => Promise<Response>
+
+/**
  * Route match result from router
  */
 export interface RouteMatch {
@@ -122,6 +138,9 @@ export interface RouteMatch {
 
   /** Middleware to execute */
   middleware: Middleware[]
+
+  /** Optional stable route pattern for caching */
+  routePattern?: string
 }
 
 /**
