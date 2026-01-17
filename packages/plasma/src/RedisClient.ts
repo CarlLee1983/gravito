@@ -119,6 +119,13 @@ export class RedisClient implements RedisClientContract {
   }
 
   /**
+   * Register event listener
+   */
+  on(event: string, callback: (...args: any[]) => void): void {
+    this.getClient().on(event, callback)
+  }
+
+  /**
    * Load ioredis module dynamically.
    *
    * @returns A promise resolving to the ioredis module.

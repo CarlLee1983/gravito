@@ -3,6 +3,7 @@
  * @description Native Bun.redis implementation for Gravito Plasma
  */
 
+import { EventEmitter } from 'node:events'
 import type {
   PipelineResult,
   RedisClientContract,
@@ -24,6 +25,7 @@ export class BunRedisClient implements RedisClientContract {
   private subscriber: RedisClient | null = null
   private subscriptions = new Map<string, (message: string, channel: string) => void>()
   private connected = false
+  private emitter = new EventEmitter()
 
   constructor(private readonly config: RedisConfig = {}) {}
 
@@ -52,6 +54,8 @@ export class BunRedisClient implements RedisClientContract {
     // 連接到 Redis
     await this.client.connect()
     this.connected = true
+    this.emitter.emit('connect')
+    this.emitter.emit('ready')
   }
 
   /**
@@ -74,6 +78,15 @@ export class BunRedisClient implements RedisClientContract {
 
     this.subscriptions.clear()
     this.connected = false
+    this.emitter.emit('close')
+    this.emitter.emit('end')
+  }
+
+  /**
+   * Register event listener
+   */
+  on(event: string, callback: (...args: any[]) => void): void {
+    this.emitter.on(event, callback)
   }
 
   /**
@@ -926,17 +939,18 @@ class BunRedisPipeline implements RedisPipelineContract {
 
   async exec(): Promise<PipelineResult> {
     // 執行所有命令並收集結果
-    const results: PipelineResult = []
 
-    for (const cmd of this.commands) {
+    const promises = this.commands.map(async (cmd) => {
       try {
-        // @ts-expect-error 動態調用方法
+        // @ts-expect-error Dynamic call
         const result = await this.client[cmd.method](...cmd.args)
-        results.push([null, result])
+        return [null, result] as [Error | null, unknown]
       } catch (error) {
-        results.push([error as Error, null])
+        return [error as Error, null] as [Error | null, unknown]
       }
-    }
+    })
+
+    const results = await Promise.all(promises)
 
     this.commands = []
     return results

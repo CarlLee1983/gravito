@@ -139,6 +139,7 @@ export interface RedisClientContract {
   disconnect(): Promise<void>
   isConnected(): boolean
   ping(): Promise<string>
+  on(event: string, callback: (...args: any[]) => void): void
 
   // String operations
   get(key: string): Promise<string | null>
