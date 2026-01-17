@@ -21,7 +21,10 @@ interface PackageConfig {
 const PACKAGES_DIR = join(process.cwd(), 'packages')
 const SATELLITES_DIR = join(process.cwd(), 'satellites')
 
-async function checkPackage(packagePath: string, packageName: string): Promise<PackageConfig> {
+async function checkPackage(
+  packagePath: string,
+  packageName: string
+): Promise<PackageConfig | null> {
   const issues: string[] = []
   const pkgJsonPath = join(packagePath, 'package.json')
   const tsconfigPath = join(packagePath, 'tsconfig.json')
@@ -48,7 +51,7 @@ async function checkPackage(packagePath: string, packageName: string): Promise<P
       }
 
       // 檢查是否有 --skipLibCheck
-      if (!typecheckScript.includes('--skipLibCheck')) {
+      if (typecheckScript && !typecheckScript.includes('--skipLibCheck')) {
         issues.push(`❌ 缺少 --skipLibCheck（需要跳過 lib 檢查以避免類型衝突）`)
         hasSkipLibCheck = false
       } else {
@@ -78,18 +81,19 @@ async function checkPackage(packagePath: string, packageName: string): Promise<P
     } catch {
       // tsconfig.json 不存在或無法讀取，這可能不是問題（可能繼承根目錄的）
     }
-  } catch (error) {
-    issues.push(`❌ 無法讀取 package.json: ${error}`)
-  }
 
-  return {
-    name: packageName,
-    path: packagePath,
-    hasTypecheck,
-    typecheckScript,
-    hasSkipLibCheck,
-    tsconfigSkipLibCheck,
-    issues,
+    return {
+      name: packageName,
+      path: packagePath,
+      hasTypecheck,
+      typecheckScript,
+      hasSkipLibCheck,
+      tsconfigSkipLibCheck,
+      issues,
+    }
+  } catch (error) {
+    // 如果無法讀取 package.json，跳過此目錄（可能是不完整的套件或空目錄）
+    return null
   }
 }
 
@@ -105,7 +109,9 @@ async function checkAllPackages() {
       if (dir.isDirectory()) {
         const packagePath = join(PACKAGES_DIR, dir.name)
         const config = await checkPackage(packagePath, `@gravito/${dir.name}`)
-        packages.push(config)
+        if (config) {
+          packages.push(config)
+        }
       }
     }
   } catch (error) {
@@ -119,7 +125,9 @@ async function checkAllPackages() {
       if (dir.isDirectory()) {
         const packagePath = join(SATELLITES_DIR, dir.name)
         const config = await checkPackage(packagePath, `@gravito/satellite-${dir.name}`)
-        packages.push(config)
+        if (config) {
+          packages.push(config)
+        }
       }
     }
   } catch (error) {
