@@ -7,6 +7,11 @@
 // ============================================================================
 
 /**
+ * Redis client implementation type
+ */
+export type RedisClientType = 'bun' | 'ioredis' | 'auto'
+
+/**
  * Redis connection configuration
  */
 /**
@@ -34,6 +39,8 @@ export interface RedisConfig {
   maxRetries?: number
   /** Milliseconds to wait between reconnection attempts */
   retryDelay?: number
+  /** Client implementation type: 'bun' (Bun.redis), 'ioredis', or 'auto' (default: 'auto') */
+  clientType?: RedisClientType
 }
 
 /**
@@ -156,6 +163,13 @@ export interface RedisClientContract {
   isConnected(): boolean
   /** Sends a PING command to test the connection */
   ping(): Promise<string>
+  on(event: string, callback: (...args: any[]) => void): void
+
+  /**
+   * Health check
+   * Checks if connection is alive and responsive
+   */
+  checkHealth(): Promise<boolean>
 
   /** Retrieves the value of a key */
   get(key: string): Promise<string | null>

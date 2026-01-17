@@ -1,7 +1,6 @@
 import type { GravitoContext, GravitoNext, GravitoOrbit, PlanetCore } from '@gravito/core'
 import { Redis } from './Redis'
-import type { RedisClient } from './RedisClient'
-import type { RedisConfig, RedisManagerConfig } from './types'
+import type { RedisClientContract, RedisConfig, RedisManagerConfig } from './types'
 
 /**
  * Configuration options for the OrbitPlasma Redis orbit.
@@ -41,7 +40,7 @@ export interface OrbitPlasmaOptions extends Partial<RedisManagerConfig> {
  * @public
  */
 export class OrbitPlasma implements GravitoOrbit {
-  private client?: RedisClient
+  private client?: RedisClientContract
   private connected = false
 
   constructor(private options: OrbitPlasmaOptions = {}) {}
@@ -84,7 +83,7 @@ export class OrbitPlasma implements GravitoOrbit {
     }
 
     // Get the default client
-    this.client = Redis.connection() as RedisClient
+    this.client = Redis.connection()
 
     // Connect lazily on first use (or immediately if autoConnect is true)
     const autoConnect = this.options.autoConnect
@@ -140,7 +139,7 @@ export class OrbitPlasma implements GravitoOrbit {
   /**
    * Get the Redis client instance.
    */
-  getClient(): RedisClient | undefined {
+  getClient(): RedisClientContract | undefined {
     return this.client
   }
 
@@ -156,6 +155,6 @@ export class OrbitPlasma implements GravitoOrbit {
 declare module '@gravito/core' {
   interface GravitoVariables {
     /** Redis client from OrbitPlasma */
-    redis?: RedisClient
+    redis?: RedisClientContract
   }
 }

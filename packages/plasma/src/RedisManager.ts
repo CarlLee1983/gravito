@@ -3,6 +3,7 @@
  * @description Manages multiple Redis connections
  */
 
+import { BunRedisClient } from './clients/BunRedisClient'
 import { RedisClient } from './RedisClient'
 import type { RedisClientContract, RedisConfig, RedisManagerConfig } from './types'
 
@@ -11,7 +12,7 @@ import type { RedisClientContract, RedisConfig, RedisManagerConfig } from './typ
  * Manages multiple named Redis connections
  */
 export class RedisManager {
-  private connections = new Map<string, RedisClient>()
+  private connections = new Map<string, RedisClientContract>()
   private defaultConnection = 'default'
   private configs = new Map<string, RedisConfig>()
 
@@ -53,10 +54,40 @@ export class RedisManager {
       if (!config) {
         throw new Error(`Redis connection "${connectionName}" not configured`)
       }
-      this.connections.set(connectionName, new RedisClient(config))
+
+      // 根據 clientType 選擇實現
+      const client = this.createClient(config)
+      this.connections.set(connectionName, client)
     }
 
     return this.connections.get(connectionName)!
+  }
+
+  /**
+   * Create a Redis client based on configuration
+   */
+  private createClient(config: RedisConfig): RedisClientContract {
+    const clientType = config.clientType ?? 'auto'
+
+    if (clientType === 'bun') {
+      return new BunRedisClient(config)
+    }
+
+    if (clientType === 'ioredis') {
+      return new RedisClient(config)
+    }
+
+    // auto: 優先使用 Bun.redis，如果不可用則 fallback 到 ioredis
+    try {
+      // 檢查 Bun.redis 是否可用
+      if (typeof Bun !== 'undefined' && Bun.redis) {
+        return new BunRedisClient(config)
+      }
+    } catch {
+      // Bun.redis 不可用，使用 ioredis
+    }
+
+    return new RedisClient(config)
   }
 
   /**
@@ -86,9 +117,10 @@ export class RedisManager {
    * @returns A promise that resolves when all connections are closed.
    */
   async disconnectAll(): Promise<void> {
-    for (const client of this.connections.values()) {
-      await client.disconnect()
-    }
+    const disconnectPromises = Array.from(this.connections.values()).map((client) =>
+      client.disconnect()
+    )
+    await Promise.all(disconnectPromises)
     this.connections.clear()
   }
 
