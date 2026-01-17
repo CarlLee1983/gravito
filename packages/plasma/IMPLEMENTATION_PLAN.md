@@ -72,7 +72,7 @@ if (clientType === 'auto') → 檢測 Bun.redis 可用性，優先使用
 - [x] 兼容性測試（對比 ioredis 行為）
 - [x] 性能測試與基準對比
 
-### 階段四：優化與加固 📋 待開始
+### 階段四：優化與加固 ✅ 已完成
 
 - [x] 真正的 Pipeline 批量發送（已優化為並行 Promise.all，性能達標）
 - [x] 統一錯誤處理（已全面應用 RedisError）
