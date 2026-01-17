@@ -14,6 +14,8 @@ type CacheLike = {
 }
 
 export class ThrottleRequests {
+  private keyCache = new WeakMap<Request, string>()
+
   constructor(private core: PlanetCore) {}
 
   /**
@@ -32,11 +34,20 @@ export class ThrottleRequests {
       }
 
       // Resolve IP
-      const trustProxy = this.core.config.get<boolean>('TRUST_PROXY', false)
-      const forwardedFor = c.req.header('x-forwarded-for') || ''
-      const forwardedIp = forwardedFor.split(',')[0]?.trim()
-      const ip = trustProxy ? forwardedIp || '127.0.0.1' : '127.0.0.1'
-      const key = `throttle:${ip}:${c.req.path}`
+      const raw = c.req.raw
+      let key = raw && typeof raw === 'object' ? this.keyCache.get(raw) : undefined
+
+      if (!key) {
+        const trustProxy = this.core.config.get<boolean>('TRUST_PROXY', false)
+        const forwardedFor = c.req.header('x-forwarded-for') || ''
+        const forwardedIp = forwardedFor.split(',')[0]?.trim()
+        const ip = trustProxy ? forwardedIp || '127.0.0.1' : '127.0.0.1'
+        key = `throttle:${ip}:${c.req.path}`
+
+        if (raw && typeof raw === 'object') {
+          this.keyCache.set(raw, key)
+        }
+      }
 
       const limiter = cache.limiter()
       const result = await limiter.attempt(key, maxAttempts, decaySeconds)

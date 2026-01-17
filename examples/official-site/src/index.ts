@@ -17,4 +17,10 @@ const core = await bootstrap({
   version: '1.0.0',
 })
 
+// 🚀 Predictive Route Warming (New Optimization)
+// Pre-triggering JIT optimization for critical paths
+if (process.env.NODE_ENV === 'production') {
+  await core.warmup(['/', '/features', '/docs', '/releases'])
+}
+
 export default core.liftoff()

@@ -215,6 +215,17 @@ export interface HttpAdapter<V extends GravitoVariables = GravitoVariables> {
    */
   fetch(request: Request, server?: unknown): Response | Promise<Response>
 
+  /**
+   * Predictive Route Warming (JIT Optimization)
+   *
+   * Simulates requests to specified routes to trigger JIT compilation (FTL)
+   * before real traffic arrives.
+   *
+   * @param paths List of paths to warm up (e.g. ['/api/users', '/health'])
+   * @since 2.1.0
+   */
+  warmup?(paths: string[]): Promise<void>
+
   // ─────────────────────────────────────────────
   // Lifecycle
   // ─────────────────────────────────────────────

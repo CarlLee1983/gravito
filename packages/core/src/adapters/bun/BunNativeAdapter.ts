@@ -95,6 +95,18 @@ export class BunNativeAdapter implements HttpAdapter {
     this.notFoundHandler = handler
   }
 
+  /**
+   * Predictive Route Warming (JIT Optimization)
+   */
+  async warmup(paths: string[]): Promise<void> {
+    const dummyReqOpts = { headers: { 'User-Agent': 'Gravito-Warmup/1.0' } }
+
+    for (const path of paths) {
+      const req = new Request(`http://localhost${path}`, dummyReqOpts)
+      await this.fetch(req)
+    }
+  }
+
   async fetch(request: Request, _server?: unknown): Promise<Response> {
     const ctx = BunContext.create(request)
 

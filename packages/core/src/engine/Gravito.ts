@@ -17,7 +17,7 @@ import type { HttpMethod } from '../http/types'
 import { AOTRouter } from './AOTRouter'
 import { analyzeHandler, getOptimalContextType } from './analyzer'
 import { CACHED_RESPONSES, HEADERS } from './constants'
-import { FastContext } from './FastContext'
+import { FastContext as FastContextImpl } from './FastContext'
 import { MinimalContext } from './MinimalContext'
 import { extractPath } from './path'
 import { ObjectPool } from './pool'
@@ -25,6 +25,7 @@ import type {
   CompiledHandler,
   EngineOptions,
   ErrorHandler,
+  FastContext,
   Handler,
   Middleware,
   NotFoundHandler,
@@ -57,7 +58,7 @@ function compileMiddlewareChain(middleware: Middleware[], handler: Handler): Com
  */
 export class Gravito {
   private router = new AOTRouter()
-  private contextPool: ObjectPool<FastContext>
+  private contextPool: ObjectPool<FastContextImpl>
   private errorHandler?: ErrorHandler
   private notFoundHandler?: NotFoundHandler
 
@@ -82,7 +83,7 @@ export class Gravito {
 
     // Initialize context pool
     this.contextPool = new ObjectPool(
-      () => new FastContext(),
+      () => new FastContextImpl(),
       (ctx) => ctx.reset(),
       poolSize
     )
