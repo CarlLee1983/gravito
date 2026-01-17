@@ -48,7 +48,7 @@ export class HasSerialization {
     } else {
       // Include all except hidden
       result = {}
-      for (const [key, value] of Object.entries(attributes)) {
+      for (const [key, _value] of Object.entries(attributes)) {
         if (!hidden.includes(key)) {
           result[key] = attributes[key]
         }

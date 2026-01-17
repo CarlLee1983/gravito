@@ -88,7 +88,7 @@ export class HasRelationships {
    * @param id - ID field name
    * @returns Query builder for relationship
    */
-  morphOne(related: any, name: string, type: string, id: string): any {
+  morphOne(related: any, _name: string, type: string, id: string): any {
     const relatedModel = new related()
     const relatedCtor = relatedModel.constructor as any
 
@@ -107,7 +107,7 @@ export class HasRelationships {
    * @param id - ID field name
    * @returns Query builder for relationship
    */
-  morphMany(related: any, name: string, type: string, id: string): any {
+  morphMany(related: any, _name: string, type: string, id: string): any {
     const relatedModel = new related()
     const relatedCtor = relatedModel.constructor as any
 
@@ -125,7 +125,7 @@ export class HasRelationships {
    * @param id - ID field name
    * @returns Query builder for the relationship
    */
-  morphTo(name: string, type: string, id: string): any {
+  morphTo(_name: string, type: string, id: string): any {
     const typeName = (this as any)[type]
     const idValue = (this as any)[id]
 
