@@ -3,6 +3,13 @@
  * @description Low-level Redis client wrapper for ioredis
  */
 
+import {
+  type IORedisChain,
+  type IORedisClient,
+  type IORedisClientWithCall,
+  type IORedisModule,
+  RedisConnectionManager,
+} from './RedisConnectionManager'
 import type {
   PipelineResult,
   RedisClientContract,
@@ -20,13 +27,12 @@ import type {
  * Provides a type-safe wrapper around ioredis
  */
 export class RedisClient implements RedisClientContract {
-  private client: IORedisClient | null = null
-  private subscriber: IORedisClient | null = null
   private subscriptions = new Map<string, (message: string, channel: string) => void>()
-  private connected = false
-  private ioredis: IORedisModule | null = null
+  private connectionManager: RedisConnectionManager
 
-  constructor(private readonly config: RedisConfig = {}) {}
+  constructor(config: RedisConfig = {}) {
+    this.connectionManager = new RedisConnectionManager(config)
+  }
 
   // ============================================================================
   // Connection Management
@@ -40,42 +46,7 @@ export class RedisClient implements RedisClientContract {
    * @returns A promise that resolves when connected.
    */
   async connect(): Promise<void> {
-    if (this.connected) {
-      return
-    }
-
-    this.ioredis = await this.loadIORedis()
-
-    const options: IORedisOptions = {
-      host: this.config.host ?? 'localhost',
-      port: this.config.port ?? 6379,
-      db: this.config.db ?? 0,
-      connectTimeout: this.config.connectTimeout ?? 10000,
-      maxRetriesPerRequest: this.config.maxRetries ?? 3,
-      lazyConnect: true,
-    }
-
-    // Only set optional properties if defined
-    if (this.config.password) {
-      options.password = this.config.password
-    }
-    if (this.config.commandTimeout) {
-      options.commandTimeout = this.config.commandTimeout
-    }
-    if (this.config.keyPrefix) {
-      options.keyPrefix = this.config.keyPrefix
-    }
-    if (this.config.retryDelay) {
-      options.retryStrategy = () => this.config.retryDelay
-    }
-
-    if (this.config.tls) {
-      options.tls = typeof this.config.tls === 'boolean' ? {} : { ...this.config.tls }
-    }
-
-    this.client = new this.ioredis.default(options)
-    await this.client.connect()
-    this.connected = true
+    await this.connectionManager.connect()
   }
 
   /**
@@ -86,18 +57,8 @@ export class RedisClient implements RedisClientContract {
    * @returns A promise that resolves when disconnected.
    */
   async disconnect(): Promise<void> {
-    if (this.subscriber) {
-      await this.subscriber.quit()
-      this.subscriber = null
-    }
-
-    if (this.client) {
-      await this.client.quit()
-      this.client = null
-    }
-
+    await this.connectionManager.disconnect()
     this.subscriptions.clear()
-    this.connected = false
   }
 
   /**
@@ -106,7 +67,7 @@ export class RedisClient implements RedisClientContract {
    * @returns True if connected, false otherwise.
    */
   isConnected(): boolean {
-    return this.connected && this.client !== null
+    return this.connectionManager.isConnected()
   }
 
   /**
@@ -115,24 +76,7 @@ export class RedisClient implements RedisClientContract {
    * @returns A promise resolving to 'PONG'.
    */
   async ping(): Promise<string> {
-    return await this.getClient().ping()
-  }
-
-  /**
-   * Load ioredis module dynamically.
-   *
-   * @returns A promise resolving to the ioredis module.
-   * @throws {Error} If ioredis is not installed.
-   */
-  private async loadIORedis(): Promise<IORedisModule> {
-    try {
-      const ioredis = await import('ioredis')
-      return ioredis as unknown as IORedisModule
-    } catch {
-      throw new Error(
-        'Redis client requires the "ioredis" package. Please install it: bun add ioredis'
-      )
-    }
+    return await this.connectionManager.ping()
   }
 
   /**
@@ -142,10 +86,7 @@ export class RedisClient implements RedisClientContract {
    * @throws {Error} If not connected.
    */
   private getClient(): IORedisClient {
-    if (!this.client) {
-      throw new Error('Redis client not connected. Call connect() first.')
-    }
-    return this.client
+    return this.connectionManager.getClient()
   }
 
   // ============================================================================
@@ -628,29 +569,25 @@ export class RedisClient implements RedisClientContract {
     channel: string,
     callback: (message: string, channel: string) => void
   ): Promise<void> {
-    if (!this.subscriber) {
-      if (!this.ioredis) {
-        this.ioredis = await this.loadIORedis()
-      }
-      this.subscriber = this.getClient().duplicate()
+    const subscriber = await this.connectionManager.getOrCreateSubscriber()
 
-      this.subscriber.on('message', (...args: unknown[]) => {
-        const ch = args[0] as string
-        const msg = args[1] as string
-        const handler = this.subscriptions.get(ch)
-        if (handler) {
-          handler(msg, ch)
-        }
-      })
-    }
+    subscriber.on('message', (...args: unknown[]) => {
+      const ch = args[0] as string
+      const msg = args[1] as string
+      const handler = this.subscriptions.get(ch)
+      if (handler) {
+        handler(msg, ch)
+      }
+    })
 
     this.subscriptions.set(channel, callback)
-    await this.subscriber.subscribe(channel)
+    await subscriber.subscribe(channel)
   }
 
   async unsubscribe(channel: string): Promise<void> {
-    if (this.subscriber) {
-      await this.subscriber.unsubscribe(channel)
+    const subscriber = this.connectionManager.getSubscriber()
+    if (subscriber) {
+      await subscriber.unsubscribe(channel)
       this.subscriptions.delete(channel)
     }
   }
@@ -758,45 +695,4 @@ class RedisPipeline implements RedisPipelineContract {
   async exec(): Promise<PipelineResult> {
     return (await this.pipe.exec()) as PipelineResult
   }
-}
-
-// ============================================================================
-// Internal Types for ioredis
-// ============================================================================
-
-interface IORedisModule {
-  default: new (options: IORedisOptions) => IORedisClient
-}
-
-interface IORedisOptions {
-  host?: string
-  port?: number
-  password?: string
-  db?: number
-  connectTimeout?: number
-  commandTimeout?: number
-  keyPrefix?: string
-  maxRetriesPerRequest?: number
-  retryStrategy?: () => number | undefined
-  lazyConnect?: boolean
-  tls?: Record<string, unknown>
-}
-
-// biome-ignore lint/suspicious/noExplicitAny: ioredis has complex method signatures
-interface IORedisClient extends Record<string, any> {
-  connect(): Promise<void>
-  quit(): Promise<'OK'>
-  ping(): Promise<string>
-  duplicate(): IORedisClient
-  pipeline(): IORedisChain
-  on(event: string, callback: (...args: unknown[]) => void): void
-}
-
-interface IORedisClientWithCall extends IORedisClient {
-  call(command: string, ...args: unknown[]): Promise<unknown>
-}
-
-// biome-ignore lint/suspicious/noExplicitAny: ioredis pipeline has dynamic methods
-interface IORedisChain extends Record<string, any> {
-  exec(): Promise<PipelineResult>
 }
