@@ -1574,14 +1574,14 @@ packages/atlas/src/query/clauses/
 | `scaffold/.../CleanArchitectureGenerator.ts` | 916 | 🟡 Medium | 4-5h | ✅ 已完成 (減少 106 行) |
 | `scaffold/.../EnterpriseMvcGenerator.ts` | 899 | 🟡 Medium | 4-5h | ✅ 已完成 (減少 108 行) |
 | `zenith/.../QueueService.ts` | 631 | 🟡 Medium | 3-4h | ✅ 已完成 (減少 314 行，-33%) |
-| `core/src/Router.ts` | 932 | 🟡 Medium | 3-4h | ⏳ 待處理 |
-| `zenith/.../server/index.ts` | 856 | 🟡 Medium | 3-4h | ⏳ 待處理 |
+| `core/src/Router.ts` | 932 | 🟡 Medium | 3-4h | ⏳ 複雜度較高，待重新評估 |
+| `zenith/.../server/index.ts` | 856 | 🟡 Medium | 3-4h | ⏳ 複雜度較高，待重新評估 |
 | `plasma/src/RedisClient.ts` | 802 | 🟡 Medium | 2-3h | ⏳ 待處理 |
 
 **總計**: 19-23 小時
 
 **已完成**: 11-14 小時
-**剩餘**: 8-12 小時
+**剩餘**: 5-12 小時
 
 **詳細進度**:
 - ✅ CleanArchitectureGenerator: 1022 → 916 行 (-10%)
@@ -1596,7 +1596,7 @@ packages/atlas/src/query/clauses/
 
 **代碼減少總計**: ~528 行 (scaffold + QueueService)
 
-**輔助類創建總計**: 5 個新類
+**輔助類創建總計**: 6 個新類
   - ConfigGenerator
   - ServiceProviderGenerator
   - LogStreamProcessor
@@ -1604,9 +1604,14 @@ packages/atlas/src/query/clauses/
   - MaintenanceScheduler
   - ServerConfigManager
 
+**複雜文件狀態**:
+- Router.ts 和 Zenith server/index.ts 重構嘗試遇到類型衝突和導入問題
+- 需要採用不同的重構策略（例如：直接修改而非提取輔助類）
+- RedisClient.ts 可繼續處理，相對簡單
+
 ---
 
 **文檔維護者**: @Carl
-**最後更新**: 2026-01-18 00:15
-**版本**: 1.6.0
+**最後更新**: 2026-01-18 00:30
+**版本**: 1.7.0
 **狀態**: 🔄 Phase 20 部分完成 (3/6 文件已重構)
