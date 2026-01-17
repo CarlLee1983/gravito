@@ -45,6 +45,9 @@ await Redis.disconnect()
 - 📡 **Pub/Sub** - Real-time messaging
 - 🔌 **Multi-connection** - Named connections support
 - 🔄 **Auto Fallback** - Automatically falls back to ioredis if Bun.redis is unavailable
+- 💓 **Health Check** - Built-in connection verification and status checks
+- 📢 **Events** - Complete event support (connect, ready, close, end)
+- 🛡️ **Reliability** - Automatic reconnection with exponential backoff
 
 ## API Reference
 
@@ -138,6 +141,21 @@ Redis.configure({
 
 // Use specific connection
 await Redis.connection('cache').set('cached-data', data)
+```
+
+### Health Check
+
+```typescript
+if (await Redis.checkHealth()) {
+  console.log('Redis is healthy')
+}
+```
+
+### Events
+
+```typescript
+Redis.on('connect', () => console.log('Redis connected'))
+Redis.on('error', (err) => console.error('Redis error', err))
 ```
 
 ### Client Type Selection
