@@ -46,9 +46,8 @@ export class BunRedisClient implements RedisClientContract {
     const url = this.buildConnectionUrl()
     const options = this.buildClientOptions()
 
-    // 動態導入 Bun.redis
-    const { RedisClient } = await import('bun')
-    this.client = new RedisClient(url, options) as unknown as RedisClient
+    const RedisClientClass = await this.getRedisClientClass()
+    this.client = new RedisClientClass(url, options) as unknown as RedisClient
 
     // 連接到 Redis
     await this.client.connect()
@@ -170,6 +169,14 @@ export class BunRedisClient implements RedisClientContract {
    */
   private existsToNumber(result: boolean): number {
     return result ? 1 : 0
+  }
+
+  /**
+   * Get RedisClient class (for testing override)
+   */
+  protected async getRedisClientClass(): Promise<any> {
+    const { RedisClient } = await import('bun')
+    return RedisClient
   }
 
   // ============================================================================
@@ -773,8 +780,8 @@ export class BunRedisClient implements RedisClientContract {
     if (!this.subscriber) {
       const url = this.buildConnectionUrl()
       const options = this.buildClientOptions()
-      const { RedisClient } = await import('bun')
-      this.subscriber = new RedisClient(url, options) as unknown as RedisClient
+      const RedisClientClass = await this.getRedisClientClass()
+      this.subscriber = new RedisClientClass(url, options) as unknown as RedisClient
       await this.subscriber.connect()
     }
 

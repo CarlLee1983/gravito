@@ -67,7 +67,7 @@ if (clientType === 'auto') → 檢測 Bun.redis 可用性，優先使用
 - [x] 整合到 `RedisManager` 中
 - [x] 添加自動選擇機制
 - [x] 文檔更新（README.md）
-- [ ] 單元測試（BunRedisClient）
+- [x] 單元測試（BunRedisClient）
 - [ ] 整合測試（與真實 Redis）
 - [ ] 兼容性測試（對比 ioredis 行為）
 - [ ] 性能測試與基準對比
