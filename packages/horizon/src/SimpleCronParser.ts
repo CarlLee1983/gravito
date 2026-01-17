@@ -1,172 +1,66 @@
 /**
- * Simple cron expression parser for task scheduling.
- *
- * Supports standard 5-field cron expressions with timezone awareness.
- * Fields: minute hour day-of-month month day-of-week
- *
- * Supported patterns:
- * - `*` - Any value
- * - `5` - Specific value
- * - `1-5` - Range
- * - `1,2,3` - List
- * - `*/5` - Step values
- * - `1 - 10 / 2` - Range with step
- *
- * @example
- * ```typescript
-  * // Every 5 minutes
- * SimpleCronParser.isDue('*/5 * * * *', 'UTC', new Date())
-  *
- * // Every day at 9:30 AM in New York
- * SimpleCronParser.isDue('30 9 * * *', 'America/New_York', new Date())
-  *
- * // Every Monday at midnight
- * SimpleCronParser.isDue('0 0 * * 1', 'UTC', new Date())
-  * ```
- *
- * @public
+ * Simple, high-performance cron parser for standard expressions.
  */
-export const SimpleCronParser = {
+export class SimpleCronParser {
   /**
-   * Check if a cron expression matches the given date.
-   * Only supports standard 5-field cron expressions.
-   *
-   * Fields: minute hour day-of-month month day-of-week
-   * Values:
-   *  - * (any)
-   *  - numbers (0-59, 1-31, 0-11, 0-7)
-   *  - ranges (1-5)
-   *  - lists (1,2,3)
-   *  - steps (*\/5, 1-10/2)
+   * Check if a cron expression is due at the given date/time
    */
-  isDue(expression: string, timezone: string, date: Date): boolean {
-    const fields = expression.trim().split(/\s+/)
-
-    if (fields.length !== 5) {
-      throw new Error('SimpleCronParser only supports 5-field cron expressions')
+  static isDue(expression: string, timezone = 'UTC', date: Date = new Date()): boolean {
+    const parts = expression.trim().split(/\s+/)
+    if (parts.length !== 5) {
+      throw new Error(`Invalid cron expression: ${expression}`)
     }
 
-    // Adjust date to target timezone
-    let targetDate = date
-    if (timezone && timezone !== 'UTC') {
-      try {
-        const parts = new Intl.DateTimeFormat('en-US', {
-          timeZone: timezone,
-          year: 'numeric',
-          month: 'numeric',
-          day: 'numeric',
-          hour: 'numeric',
-          minute: 'numeric',
-          second: 'numeric',
-          hour12: false,
-        }).formatToParts(date)
+    const targetDate = this.getDateInTimezone(date, timezone)
+    
+    const minutes = targetDate.getMinutes()
+    const hours = targetDate.getHours()
+    const dayOfMonth = targetDate.getDate()
+    const month = targetDate.getMonth() + 1
+    let dayOfWeek = targetDate.getDay()
 
-        const partMap: Record<string, string> = {}
-        parts.forEach((p) => {
-          partMap[p.type] = p.value
-        })
-
-        targetDate = new Date(
-          parseInt(partMap.year ?? '0', 10),
-          parseInt(partMap.month ?? '1', 10) - 1,
-          parseInt(partMap.day ?? '1', 10),
-          parseInt(partMap.hour ?? '0', 10) === 24 ? 0 : parseInt(partMap.hour ?? '0', 10),
-          parseInt(partMap.minute ?? '0', 10),
-          0
-        )
-      } catch (_e) {
-        throw new Error(`Invalid timezone: ${ timezone } `)
-      }
-    } else if (timezone === 'UTC') {
-      targetDate = new Date(
-        date.getUTCFullYear(),
-        date.getUTCMonth(),
-        date.getUTCDate(),
-        date.getUTCHours(),
-        date.getUTCMinutes(),
-        0
-      )
-    }
-
-    const [minute, hour, dayOfMonth, month, dayOfWeek] = fields
-    if (
-      minute === undefined ||
-      hour === undefined ||
-      dayOfMonth === undefined ||
-      month === undefined ||
-      dayOfWeek === undefined
-    ) {
-      throw new Error('Invalid cron expression')
-    }
-
-    const matchMinute = matchField(minute, targetDate.getMinutes(), 0, 59)
-    const matchHour = matchField(hour, targetDate.getHours(), 0, 23)
-    const matchDayOfMonth = matchField(dayOfMonth, targetDate.getDate(), 1, 31)
-    const matchMonth = matchField(month, targetDate.getMonth() + 1, 1, 12)
-    const matchDayOfWeek = matchField(dayOfWeek, targetDate.getDay(), 0, 7)
-
-    return matchMinute && matchHour && matchDayOfMonth && matchMonth && matchDayOfWeek
-  },
-}
-
-function matchField(pattern: string, value: number, min: number, max: number): boolean {
-  // 1. Wildcard
-  if (pattern === '*') {
-    return true
+    return (
+      this.match(parts[0]!, minutes, 0, 59) &&
+      this.match(parts[1]!, hours, 0, 23) &&
+      this.match(parts[2]!, dayOfMonth, 1, 31) &&
+      this.match(parts[3]!, month, 1, 12) &&
+      this.match(parts[4]!, dayOfWeek, 0, 6, true)
+    )
   }
 
-  // 2. Step (*/5, 1-10/2)
-  if (pattern.includes('/')) {
-    const [range, stepStr] = pattern.split('/')
-    if (range === undefined || stepStr === undefined) {
-      return false
-    }
-    const step = parseInt(stepStr, 10)
+  private static match(pattern: string, value: number, _min: number, _max: number, isDayOfWeek = false): boolean {
+    if (pattern === '*') return true
 
-    if (range === '*') {
-      return (value - min) % step === 0
+    if (pattern.includes(',')) {
+      return pattern.split(',').some(p => this.match(p, value, _min, _max, isDayOfWeek))
     }
 
-    // Range with step (e.g., 10-20/2)
-    if (range.includes('-')) {
-      const [startStr, endStr] = range.split('-')
-      if (startStr === undefined || endStr === undefined) {
-        return false
-      }
-      const start = parseInt(startStr, 10)
-      const end = parseInt(endStr, 10)
+    const stepMatch = pattern.match(/^(\*|\d+(-\d+)?)\/(\d+)$/)
+    if (stepMatch) {
+      const range = stepMatch[1]!
+      const step = parseInt(stepMatch[3]!, 10)
+      if (range === '*') return value % step === 0
+      const [rMin, rMax] = range.split('-').map(n => parseInt(n!, 10))
+      return value >= rMin! && value <= rMax! && (value - rMin!) % step === 0
+    }
 
-      if (value >= start && value <= end) {
-        return (value - start) % step === 0
-      }
-      return false
+    if (pattern.includes('-')) {
+      const [rMin, rMax] = pattern.split('-').map(n => parseInt(n!, 10))
+      return value >= rMin! && value <= rMax!
+    }
+
+    const patternVal = parseInt(pattern, 10)
+    if (isDayOfWeek && patternVal === 7 && value === 0) return true
+    return patternVal === value
+  }
+
+  private static getDateInTimezone(date: Date, timezone: string): Date {
+    try {
+      const tzDate = new Date(date.toLocaleString('en-US', { timeZone: timezone }))
+      if (isNaN(tzDate.getTime())) throw new Error()
+      return tzDate
+    } catch {
+      throw new Error(`Invalid timezone: ${timezone}`)
     }
   }
-
-  // 3. List (1,2,3)
-  if (pattern.includes(',')) {
-    const parts = pattern.split(',')
-    return parts.some((part) => matchField(part, value, min, max))
-  }
-
-  // 4. Range (1-5)
-  if (pattern.includes('-')) {
-    const [startStr, endStr] = pattern.split('-')
-    if (startStr === undefined || endStr === undefined) {
-      return false
-    }
-    const start = parseInt(startStr, 10)
-    const end = parseInt(endStr, 10)
-    return value >= start && value <= end
-  }
-
-  // 5. Exact value
-  const expected = parseInt(pattern, 10)
-
-  // Special case for DayOfWeek: 7 is also Sunday (0)
-  if (max === 7 && expected === 7 && value === 0) {
-    return true
-  }
-
-  return value === expected
 }

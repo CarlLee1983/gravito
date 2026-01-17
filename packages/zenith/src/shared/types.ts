@@ -181,3 +181,18 @@ export interface MaintenanceConfig {
   /** Timestamp of the last maintenance run. */
   lastRun?: number
 }
+
+/**
+ * Represents a historical alert event.
+ */
+export interface AlertEvent {
+  id?: string
+  ruleId: string
+  ruleName?: string
+  type?: string
+  severity: 'critical' | 'warning' | 'info'
+  message: string
+  timestamp: number
+  resolved?: boolean
+  resolvedAt?: number
+}

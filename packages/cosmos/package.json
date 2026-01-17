@@ -5,6 +5,7 @@
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "type": "module",
+  "sideEffects": false,
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
@@ -33,8 +34,7 @@
     "@gravito/photon": "workspace:*"
   },
   "devDependencies": {
-    "bun-types": "latest",
-    "tsup": "^8.5.1"
+    "bun-types": "latest"
   },
   "publishConfig": {
     "access": "public"

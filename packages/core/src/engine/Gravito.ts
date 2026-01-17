@@ -344,27 +344,30 @@ export class Gravito {
       return this.handleNotFoundSync(request, path)
     }
 
-    // Dynamic routes always use pooled context (need params)
+    return this.executeDynamicHandler(request, match)
+  }
+
+  /**
+   * Separated execution logic to avoid closure creation in hot path
+   */
+  private async executeDynamicHandler(
+    request: Request,
+    match: { handler: Handler | null; params: Record<string, string>; middleware: Middleware[] }
+  ): Promise<Response> {
     const ctx = this.contextPool.acquire()
+    try {
+      ctx.reset(request, match.params)
 
-    const execute = async (): Promise<Response> => {
-      try {
-        ctx.reset(request, match.params)
-
-        if (match.middleware.length === 0) {
-          // match.handler is Handler | null according to match signature, but we checked !match.handler above
-          return await match.handler!(ctx)
-        }
-
-        return await this.executeMiddleware(ctx, match.middleware, match.handler!)
-      } catch (error) {
-        return await this.handleError(error as Error, ctx)
-      } finally {
-        this.contextPool.release(ctx)
+      if (match.middleware.length === 0) {
+        return await match.handler!(ctx)
       }
-    }
 
-    return execute()
+      return await this.executeMiddleware(ctx, match.middleware, match.handler!)
+    } catch (error) {
+      return await this.handleError(error as Error, ctx)
+    } finally {
+      this.contextPool.release(ctx)
+    }
   }
 
   /**
