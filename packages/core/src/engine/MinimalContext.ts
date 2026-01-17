@@ -178,12 +178,64 @@ export class MinimalContext implements IFastContext {
     })
   }
 
-  header(name: string, value: string): void {
-    this._resHeaders[name] = value
+  header(name: string): string | undefined
+  header(name: string, value: string): void
+  header(name: string, value?: string): string | undefined | void {
+    if (value !== undefined) {
+      this._resHeaders[name] = value
+      return
+    }
+    return this.req.header(name)
   }
 
   status(_code: number): void {
     // Status is set per response helper call, not stored on context
+  }
+
+  stream(stream: ReadableStream, status = 200): Response {
+    return new Response(stream, {
+      status,
+      headers: this.getHeaders('application/octet-stream'),
+    })
+  }
+
+  notFound(message = 'Not Found'): Response {
+    return this.text(message, 404)
+  }
+
+  forbidden(message = 'Forbidden'): Response {
+    return this.text(message, 403)
+  }
+
+  unauthorized(message = 'Unauthorized'): Response {
+    return this.text(message, 401)
+  }
+
+  badRequest(message = 'Bad Request'): Response {
+    return this.text(message, 400)
+  }
+
+  async forward(target: string, options: any = {}): Promise<Response> {
+    const url = new URL(this.req.url)
+    const targetUrl = new URL(
+      target.startsWith('http') ? target : `${url.protocol}//${target}${this.req.path}`
+    )
+    return fetch(targetUrl.toString(), {
+      method: this.req.method,
+      headers: this.req.raw.headers,
+    })
+  }
+
+  get<T>(_key: string): T {
+    return undefined as any
+  }
+
+  set(_key: string, _value: any): void {}
+
+  public route: (name: string, params?: any, query?: any) => string = () => ''
+
+  get native(): this {
+    return this
   }
 
   // Required for interface compatibility

@@ -21,6 +21,7 @@ export const VERSION = packageJson.version
 // These types enable swapping out the underlying HTTP engine.
 // ─────────────────────────────────────────────────────────────────────────────
 
+export { GravitoEngineAdapter } from './adapters/GravitoEngineAdapter'
 export {
   createGravitoAdapter,
   createPhotonAdapter,

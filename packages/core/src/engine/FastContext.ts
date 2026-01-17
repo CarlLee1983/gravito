@@ -63,7 +63,6 @@ class FastRequestImpl implements FastRequest {
   }
 
   private checkReleased(): void {
-    // @ts-expect-error - Accessing private property via back-ref
     if (this._ctx._isReleased) {
       throw new Error(
         'FastContext usage after release detected! (Object Pool Strict Lifecycle Guard)'
@@ -211,6 +210,7 @@ export class FastContext implements IFastContext {
     this.req.reset()
     // We don't clear _headers here because init() will create a new one.
     // If we wanted to reuse, we would clear it here.
+    this._store.clear()
   }
 
   /**
@@ -272,17 +272,95 @@ export class FastContext implements IFastContext {
     })
   }
 
+  stream(stream: ReadableStream, status = 200): Response {
+    this.checkReleased()
+    this._headers.set('Content-Type', 'application/octet-stream')
+    return new Response(stream, {
+      status,
+      headers: this._headers,
+    })
+  }
+
+  notFound(message = 'Not Found'): Response {
+    return this.text(message, 404)
+  }
+
+  forbidden(message = 'Forbidden'): Response {
+    return this.text(message, 403)
+  }
+
+  unauthorized(message = 'Unauthorized'): Response {
+    return this.text(message, 401)
+  }
+
+  badRequest(message = 'Bad Request'): Response {
+    return this.text(message, 400)
+  }
+
+  async forward(target: string, options: any = {}): Promise<Response> {
+    this.checkReleased()
+    // Minimal implementation of forwarding
+    const url = new URL(this.req.url)
+    const targetUrl = new URL(
+      target.startsWith('http') ? target : `${url.protocol}//${target}${this.req.path}`
+    )
+
+    // Copy query params
+    const searchParams = new URLSearchParams(url.search)
+    searchParams.forEach((v, k) => {
+      targetUrl.searchParams.set(k, v)
+    })
+
+    return fetch(targetUrl.toString(), {
+      method: this.req.method,
+      headers: this.req.raw.headers,
+      body: this.req.method !== 'GET' && this.req.method !== 'HEAD' ? this.req.raw.body : null,
+      // @ts-expect-error - Bun/Fetch specific
+      duplex: 'half',
+    })
+  }
+
   // ─────────────────────────────────────────────────────────────────────────
   // Header Management
   // ─────────────────────────────────────────────────────────────────────────
 
-  header(name: string, value: string): void {
+  header(name: string): string | undefined
+  header(name: string, value: string): void
+  header(name: string, value?: string): string | undefined | void {
     this.checkReleased()
-    this._headers.set(name, value)
+    if (value !== undefined) {
+      this._headers.set(name, value)
+      return
+    }
+    return this.req.header(name)
   }
 
   status(_code: number): void {
     this.checkReleased()
     // this._statusCode = code
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Context Variables
+  // ─────────────────────────────────────────────────────────────────────────
+
+  private _store = new Map<string, any>()
+
+  get<T>(key: string): T {
+    return this._store.get(key)
+  }
+
+  set(key: string, value: any): void {
+    this._store.set(key, value)
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Lifecycle helpers
+  // ─────────────────────────────────────────────────────────────────────────
+
+  public route: (name: string, params?: any, query?: any) => string = () => ''
+
+  get native(): this {
+    return this
   }
 }

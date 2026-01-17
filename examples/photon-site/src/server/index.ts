@@ -247,6 +247,22 @@ app.get('/legal/:page', (c) => {
   return renderInertia(c, 'Legal', { ...content, slug: pageParam, lang })
 })
 
+// ----------------------------------------------------------------------------
+// Lifecycle & Warmup
+// ----------------------------------------------------------------------------
+if (process.env.NODE_ENV === 'production') {
+  // Pre-warming hot paths to trigger Bun's JIT FTL compiler.
+  // This reduces latency for the first few hundred requests.
+  await app.warmup([
+    '/',
+    '/patterns',
+    '/ecosystem',
+    '/docs/intro',
+    '/docs/quickstart',
+    '/docs/benchmarks',
+  ])
+}
+
 export default {
   port: 3333,
   fetch: app.fetch.bind(app),

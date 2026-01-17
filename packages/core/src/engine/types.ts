@@ -26,10 +26,25 @@ export interface FastContext {
   html(html: string, status?: number): Response
   redirect(url: string, status?: 301 | 302 | 303 | 307 | 308): Response
   body(data: BodyInit | null, status?: number): Response
+  stream(stream: ReadableStream, status?: number): Response
+  notFound(message?: string): Response
+  forbidden(message?: string): Response
+  unauthorized(message?: string): Response
+  badRequest(message?: string): Response
+  forward(target: string, options?: any): Promise<Response>
 
   /** Header management */
+  header(name: string): string | undefined
   header(name: string, value: string): void
   status(code: number): void
+
+  /** Context Variables */
+  get<T>(key: string): T
+  set(key: string, value: any): void
+
+  /** Lifecycle helpers */
+  route: (name: string, params?: any, query?: any) => string
+  readonly native: any
 
   /** Internal initialization for pooling */
   init(request: Request, params?: Record<string, string>, path?: string): this
