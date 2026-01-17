@@ -233,6 +233,23 @@ export class Gravito {
   // ─────────────────────────────────────────────────────────────────────────
 
   /**
+   * Predictive Route Warming (JIT Optimization)
+   *
+   * Simulates requests to specified routes to trigger JIT compilation (FTL)
+   * before real traffic arrives.
+   *
+   * @param paths List of paths to warm up (e.g. ['/api/users', '/health'])
+   */
+  async warmup(paths: string[]): Promise<void> {
+    const dummyReqOpts = { headers: { 'User-Agent': 'Gravito-Warmup/1.0' } }
+
+    for (const path of paths) {
+      const req = new Request(`http://localhost${path}`, dummyReqOpts)
+      await this.fetch(req)
+    }
+  }
+
+  /**
    * Handle an incoming request
    */
   fetch = (request: Request): Response | Promise<Response> => {
