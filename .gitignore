@@ -64,4 +64,4 @@ examples/*/dist/
 packages/*/tests/.tmp-*
 
 # Claude CLI
-.claude/
+.claude/examples/benchmarks/results/*.json
