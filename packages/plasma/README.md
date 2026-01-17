@@ -5,6 +5,10 @@
 ## Installation
 
 ```bash
+# 使用 Bun.redis（推薦，無需額外依賴）
+bun add @gravito/plasma
+
+# 或使用 ioredis（作為 fallback）
 bun add @gravito/plasma ioredis
 ```
 
@@ -34,12 +38,13 @@ await Redis.disconnect()
 
 ## Features
 
-- 🚀 **Bun Native** - Optimized for Bun runtime
+- 🚀 **Bun Native** - Uses Bun.redis by default (no external dependencies needed)
 - 🎯 **Laravel-style API** - Familiar fluent interface
 - 📦 **Full Data Types** - String, Hash, List, Set, Sorted Set
 - 🔄 **Pipeline Support** - Batch operations
 - 📡 **Pub/Sub** - Real-time messaging
 - 🔌 **Multi-connection** - Named connections support
+- 🔄 **Auto Fallback** - Automatically falls back to ioredis if Bun.redis is unavailable
 
 ## API Reference
 
@@ -133,6 +138,45 @@ Redis.configure({
 
 // Use specific connection
 await Redis.connection('cache').set('cached-data', data)
+```
+
+### Client Type Selection
+
+You can explicitly choose which Redis client implementation to use:
+
+```typescript
+// Use Bun.redis (default, recommended)
+Redis.configure({
+  connections: {
+    main: { 
+      host: 'localhost', 
+      port: 6379,
+      clientType: 'bun'  // 明確指定使用 Bun.redis
+    }
+  }
+})
+
+// Use ioredis
+Redis.configure({
+  connections: {
+    main: { 
+      host: 'localhost', 
+      port: 6379,
+      clientType: 'ioredis'  // 明確指定使用 ioredis
+    }
+  }
+})
+
+// Auto (default): 優先使用 Bun.redis，不可用時 fallback 到 ioredis
+Redis.configure({
+  connections: {
+    main: { 
+      host: 'localhost', 
+      port: 6379,
+      clientType: 'auto'  // 或省略此選項
+    }
+  }
+})
 ```
 
 ## Roadmap
