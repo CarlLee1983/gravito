@@ -21,17 +21,36 @@ class FastRequestImpl implements FastRequest {
   private _url: URL = new URL('http://localhost') // Reuse this object
   private _query: URLSearchParams | null = null
   private _headers: Record<string, string> | null = null
+  private _cachedJson: unknown = undefined
+  private _jsonParsed = false
 
   /**
-   * Reset for pooling
+   * Initialize for new request
    */
-  reset(request: Request, params: Record<string, string> = {}): void {
+  init(request: Request, params: Record<string, string> = {}): void {
     this._request = request
     this._params = params
     // Reuse URL object instead of creating new one
     this._url.href = request.url
     this._query = null
     this._headers = null
+    this._cachedJson = undefined
+    this._jsonParsed = false
+  }
+
+  /**
+   * Reset for pooling
+   */
+  reset(): void {
+    // Release references to allow GC
+    // @ts-expect-error - Breaking strict null check for GC
+    this._request = undefined
+    // @ts-expect-error
+    this._params = undefined
+    this._query = null
+    this._headers = null
+    this._cachedJson = undefined
+    this._jsonParsed = false
   }
 
   get url(): string {
@@ -95,7 +114,11 @@ class FastRequestImpl implements FastRequest {
   }
 
   async json<T = unknown>(): Promise<T> {
-    return this._request.json()
+    if (!this._jsonParsed) {
+      this._cachedJson = await this._request.json()
+      this._jsonParsed = true
+    }
+    return this._cachedJson as T
   }
 
   async text(): Promise<string> {
@@ -122,21 +145,49 @@ export class FastContext implements IFastContext {
   // private _statusCode = 200
   private _headers = new Headers() // Reuse this object
 
+  private _isReleased = false
+
   /**
-   * Reset context for pooling
+   * Initialize context for a new request
    *
    * This is called when acquiring from the pool.
-   * Must clear all state from previous request.
    */
-  reset(request: Request, params: Record<string, string> = {}): this {
-    this._req.reset(request, params)
-    // this._statusCode = 200
-    // Optimization: Creating new Headers is faster than iterating to delete
+  init(request: Request, params: Record<string, string> = {}): this {
+    this._isReleased = false
+    this._req.init(request, params)
+    // Optimization: Creating new Headers is faster than iterating to delete in Bun
+    // But for strict object pooling, we might want to reconsider.
+    // For now, new Headers() is safe and fast enough.
     this._headers = new Headers()
     return this
   }
 
+  /**
+   * Reset context for pooling (Cleanup)
+   *
+   * This is called when releasing back to the pool.
+   * Implements "Deep-Reset Protocol" and "Release Guard".
+   */
+  reset(): void {
+    this._isReleased = true
+    this._req.reset()
+    // We don't clear _headers here because init() will create a new one.
+    // If we wanted to reuse, we would clear it here.
+  }
+
+  /**
+   * Check if context is released
+   */
+  private checkReleased(): void {
+    if (this._isReleased) {
+      throw new Error(
+        'FastContext usage after release detected! (Object Pool Strict Lifecycle Guard)'
+      )
+    }
+  }
+
   get req(): FastRequest {
+    this.checkReleased()
     return this._req
   }
 
@@ -145,6 +196,7 @@ export class FastContext implements IFastContext {
   // ─────────────────────────────────────────────────────────────────────────
 
   json<T>(data: T, status = 200): Response {
+    this.checkReleased()
     this._headers.set('Content-Type', 'application/json; charset=utf-8')
     return new Response(JSON.stringify(data), {
       status,
@@ -153,6 +205,7 @@ export class FastContext implements IFastContext {
   }
 
   text(text: string, status = 200): Response {
+    this.checkReleased()
     this._headers.set('Content-Type', 'text/plain; charset=utf-8')
     return new Response(text, {
       status,
@@ -161,6 +214,7 @@ export class FastContext implements IFastContext {
   }
 
   html(html: string, status = 200): Response {
+    this.checkReleased()
     this._headers.set('Content-Type', 'text/html; charset=utf-8')
     return new Response(html, {
       status,
@@ -169,6 +223,7 @@ export class FastContext implements IFastContext {
   }
 
   redirect(url: string, status: 301 | 302 | 303 | 307 | 308 = 302): Response {
+    this.checkReleased()
     this._headers.set('Location', url)
     return new Response(null, {
       status,
@@ -177,6 +232,7 @@ export class FastContext implements IFastContext {
   }
 
   body(data: BodyInit | null, status = 200): Response {
+    this.checkReleased()
     return new Response(data, {
       status,
       headers: this._headers,
@@ -188,10 +244,12 @@ export class FastContext implements IFastContext {
   // ─────────────────────────────────────────────────────────────────────────
 
   header(name: string, value: string): void {
+    this.checkReleased()
     this._headers.set(name, value)
   }
 
   status(_code: number): void {
+    this.checkReleased()
     // this._statusCode = code
   }
 }
