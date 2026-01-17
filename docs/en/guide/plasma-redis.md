@@ -10,13 +10,20 @@ Plasma (`@gravito/plasma`) is Gravito's Redis client. It provides a simple Facad
 ## Features
 
 - Laravel-style `Redis` Facade
+- **Bun Native** - Uses `Bun.redis` by default (Zero dependencies)
+- **Auto Fallback** - Automatically falls back to `ioredis` if needed
 - Multi-connection management via `Redis.connection()`
 - OrbitPlasma injects a `redis` service
-- TLS, key prefix, and retry options
+- **Health Checks** & **Events** support
+- TLS, key prefix, and **Exponential Backoff** retry options
 
 ## Install
 
 ```bash
+# Use Bun Native Redis (Recommended, Zero-dependency)
+bun add @gravito/plasma
+
+# Or use ioredis as fallback
 bun add @gravito/plasma ioredis
 ```
 
@@ -122,6 +129,21 @@ try {
 }
 ```
 
+## Health Check & Events
+
+Plasma provides built-in health checks and event listeners (`connect`, `ready`, `close`, `end`).
+
+```ts
+// Health Check
+if (await Redis.checkHealth()) {
+  console.log('Redis is healthy')
+}
+
+// Events
+Redis.on('connect', () => console.log('Redis connected'))
+Redis.on('error', (err) => console.error('Redis error', err))
+```
+
 ## Pub/Sub
 
 ```ts
@@ -224,11 +246,28 @@ Redis.configure({
 })
 ```
 
+## Client Type Selection
+
+You can force a specific client implementation or allow auto-selection:
+
+```ts
+Redis.configure({
+  connections: {
+    main: {
+      host: 'localhost',
+      port: 6379,
+      // 'bun' (default) | 'ioredis' | 'auto'
+      clientType: 'auto', 
+    },
+  },
+})
+```
+
 ## Integrations
 
 - Cache layer: `@gravito/stasis` can use a `redis` store
 
 ## Notes
 
-- Plasma depends on `ioredis`; make sure it is installed.
+- Plasma uses **Bun.redis** by default. `ioredis` is optional unless you forcefully select it or need specific `ioredis` features.
 - For Redis Cluster / Sentinel, create your own client and integrate at the store or app layer.
