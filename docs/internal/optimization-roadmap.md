@@ -1567,22 +1567,31 @@ packages/atlas/src/query/clauses/
 
 ---
 
-## 🎯 Phase 20: 其他大型文件重構 (待處理)
+## 🎯 Phase 20: 其他大型文件重構 (部分完成)
 
-| 文件 | 行數 | 優先級 | 預估工時 |
-|------|------|--------|----------|
-| `scaffold/.../CleanArchitectureGenerator.ts` | 1022 | 🟡 Medium | 4-5h |
-| `scaffold/.../EnterpriseMvcGenerator.ts` | 1007 | 🟡 Medium | 4-5h |
-| `zenith/.../QueueService.ts` | 945 | 🟡 Medium | 3-4h |
-| `core/src/Router.ts` | 931 | 🟡 Medium | 3-4h |
-| `zenith/.../server/index.ts` | 856 | 🟡 Medium | 3-4h |
-| `plasma/src/RedisClient.ts` | 802 | 🟡 Medium | 2-3h |
+| 文件 | 行數 | 優先級 | 預估工時 | 狀態 |
+|------|------|--------|----------|------|
+| `scaffold/.../CleanArchitectureGenerator.ts` | 916 | 🟡 Medium | 4-5h | ✅ 已完成 (減少 106 行) |
+| `scaffold/.../EnterpriseMvcGenerator.ts` | 899 | 🟡 Medium | 4-5h | ✅ 已完成 (減少 108 行) |
+| `zenith/.../QueueService.ts` | 945 | 🟡 Medium | 3-4h | ⏳ 待處理 |
+| `core/src/Router.ts` | 931 | 🟡 Medium | 3-4h | ⏳ 待處理 |
+| `zenith/.../server/index.ts` | 856 | 🟡 Medium | 3-4h | ⏳ 待處理 |
+| `plasma/src/RedisClient.ts` | 802 | 🟡 Medium | 2-3h | ⏳ 待處理 |
 
 **總計**: 19-23 小時
+
+**已完成**: 8-10 小時
+**剩餘**: 11-15 小時
+
+**詳細進度**:
+- ✅ CleanArchitectureGenerator: 1022 → 916 行 (-10%)
+- ✅ EnterpriseMvcGenerator: 1007 → 899 行 (-11%)
+- 📦 創建 ConfigGenerator (共享配置生成)
+- 📦 創建 ServiceProviderGenerator (共享服務提供者生成)
 
 ---
 
 **文檔維護者**: @Carl
-**最後更新**: 2026-01-17 23:00
-**版本**: 1.3.0
-**狀態**: 🔄 Phase 18.1 完成，Phase 18.2 待處理
+**最後更新**: 2026-01-17 23:30
+**版本**: 1.4.0
+**狀態**: 🔄 Phase 20 部分完成 (2/6 文件已重構)

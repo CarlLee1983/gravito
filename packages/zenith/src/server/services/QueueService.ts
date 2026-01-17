@@ -6,111 +6,55 @@ import { LogStreamProcessor } from './LogStreamProcessor'
 import { MaintenanceScheduler } from './MaintenanceScheduler'
 import { QueueMetricsCollector } from './QueueMetricsCollector'
 
-/**
- * Statistics for a single message queue.
- *
- * @public
- * @since 3.0.0
- */
 export interface QueueStats {
-  /** The name of the queue. */
   name: string
-  /** Number of jobs waiting to be processed. */
   waiting: number
-  /** Number of jobs scheduled for future execution. */
   delayed: number
-  /** Number of jobs that have failed. */
   failed: number
-  /** Number of jobs currently being processed. */
   active: number
-  /** Whether the queue is currently paused. */
   paused: boolean
 }
 
-/**
- * Telemetry report from a worker node.
- *
- * @public
- * @since 3.0.0
- */
 export interface WorkerReport {
-  /** Unique identifier for the worker node. */
   id: string
-  /** Machine hostname. */
   hostname: string
-  /** OS Process ID. */
   pid: number
-  /** Process uptime in seconds. */
   uptime: number
-  /** Memory usage statistics. */
   memory: {
     rss: string
     heapTotal: string
     heapUsed: string
   }
-  /** List of queues being processed by this worker. */
   queues: string[]
-  /** Maximum number of concurrent jobs. */
   concurrency: number
-  /** ISO timestamp of the report. */
   timestamp: string
-  /** System load average (1, 5, 15 minutes). */
   loadAvg: number[]
 }
 
-/**
- * Represents a log entry from the queue system.
- *
- * @public
- * @since 3.0.0
- */
 export interface SystemLog {
-  /** Log severity level. */
   level: 'info' | 'warn' | 'error' | 'success'
-  /** The log message. */
   message: string
-  /** ID of the worker that generated the log. */
   workerId: string
-  /** Optional queue name associated with the log. */
   queue?: string
-  /** ISO timestamp of the log event. */
   timestamp: string
 }
 
-/**
- * Aggregated global statistics for the entire queue system.
- *
- * @public
- * @since 3.0.0
- */
 export interface GlobalStats {
-  /** Statistics for all discovered queues. */
   queues: QueueStats[]
-  /** Historical throughput data points. */
   throughput: { timestamp: string; count: number }[]
-  /** List of all active workers. */
   workers: WorkerReport[]
 }
 
-/**
- * QueueService is the primary backend service for the Zenith dashboard.
- *
- * It coordinates queue discovery, metrics collection, log streaming,
- * and remote control operations across all monitored nodes.
- *
- * @public
- * @since 3.0.0
- */
 export class QueueService {
   private redis: Redis
   private subRedis: Redis
   private prefix: string
   private logEmitter = new EventEmitter()
-  private logThrottleCount = 0
-  private logThrottleReset = Date.now()
-  private readonly MAX_LOGS_PER_SEC = 50
   private manager: QueueManager
   public alerts: AlertService
+  private logProcessor: LogStreamProcessor
+  private metricsCollector: QueueMetricsCollector
+  private maintenanceScheduler: MaintenanceScheduler
 
   constructor(
     redisUrl: string,
@@ -131,7 +75,12 @@ export class QueueService {
     this.prefix = prefix
     this.logEmitter.setMaxListeners(1000)
 
-    // Initialized for potential use
+    this.logProcessor = new LogStreamProcessor(this.redis, this.subRedis)
+    this.metricsCollector = new QueueMetricsCollector(this.redis, prefix)
+    this.maintenanceScheduler = new MaintenanceScheduler(this.redis, (days) =>
+      this.cleanupArchive(days)
+    )
+
     this.manager = new QueueManager({
       default: 'redis',
       connections: {
@@ -147,183 +96,41 @@ export class QueueService {
   }
 
   async connect() {
-    await Promise.all([this.redis.connect(), this.subRedis.connect(), this.alerts.connect()])
+    await Promise.all([
+      this.redis.connect(),
+      this.subRedis.connect(),
+      this.alerts.connect(),
+      this.logProcessor.subscribe(),
+    ])
 
-    // Setup single Redis subscription
-    await this.subRedis.subscribe('flux_console:logs')
-    this.subRedis.on('message', (channel, message) => {
-      if (channel === 'flux_console:logs') {
-        try {
-          // Throttling: Reset counter every second
-          const now = Date.now()
-          if (now - this.logThrottleReset > 1000) {
-            this.logThrottleReset = now
-            this.logThrottleCount = 0
-          }
-
-          // Emit only if under limit
-          if (this.logThrottleCount < this.MAX_LOGS_PER_SEC) {
-            this.logThrottleCount++
-            const log = JSON.parse(message)
-            this.logEmitter.emit('log', log)
-
-            // Increment throughput counter if it's a job final status
-            if (log.level === 'success' || log.level === 'error') {
-              const minute = Math.floor(Date.now() / 60000)
-              this.redis
-                .incr(`flux_console:throughput:${minute}`)
-                .then(() => {
-                  this.redis.expire(`flux_console:throughput:${minute}`, 3600)
-                })
-                .catch(() => {})
-            }
-          }
-        } catch (_e) {
-          // Ignore
-        }
-      }
-    })
-
-    // Start Maintenance Loop
-    this.runMaintenanceLoop()
+    this.maintenanceScheduler.start(30000)
   }
 
-  private async runMaintenanceLoop() {
-    // Initial delay to avoid startup congestion
-    setTimeout(() => {
-      const loop = async () => {
-        try {
-          await this.checkMaintenance()
-        } catch (err) {
-          console.error('[Maintenance] Task Error:', err)
-        }
-        // Check every hour (3600000 ms)
-        setTimeout(loop, 3600000)
-      }
-      loop()
-    }, 1000 * 30) // 30 seconds after boot
-  }
-
-  private async checkMaintenance() {
-    const config = await this.getMaintenanceConfig()
-    if (!config.autoCleanup) {
-      return
-    }
-
-    const now = Date.now()
-    const lastRun = config.lastRun || 0
-    const ONE_DAY = 24 * 60 * 60 * 1000
-
-    if (now - lastRun >= ONE_DAY) {
-      console.log(
-        `[Maintenance] Starting Auto-Cleanup (Retention: ${config.retentionDays} days)...`
-      )
-      const deleted = await this.cleanupArchive(config.retentionDays)
-      console.log(`[Maintenance] Cleanup Complete. Removed ${deleted} records.`)
-
-      // Update Last Run
-      await this.saveMaintenanceConfig({
-        ...config,
-        lastRun: now,
-      })
-    }
-  }
-
-  async getMaintenanceConfig(): Promise<any> {
-    const data = await this.redis.get('gravito:zenith:maintenance:config')
-    if (data) {
-      return JSON.parse(data)
-    }
-    return { autoCleanup: false, retentionDays: 30 }
-  }
-
-  async saveMaintenanceConfig(config: any): Promise<void> {
-    await this.redis.set('gravito:zenith:maintenance:config', JSON.stringify(config))
-  }
-
-  /**
-   * Subscribes to the live log stream.
-   * Returns a cleanup function.
-   */
   onLog(callback: (msg: SystemLog) => void): () => void {
-    this.logEmitter.on('log', callback)
-    return () => {
+    const unsub = this.logProcessor.onLog(callback)
+    const emitterUnsub = () => {
       this.logEmitter.off('log', callback)
     }
-  }
-
-  /**
-   * Discovers queues using SCAN to avoid blocking Redis.
-   */
-  async listQueues(): Promise<QueueStats[]> {
-    const queues = new Set<string>()
-    let cursor = '0'
-    let limit = 1000
-
-    do {
-      const result = await this.redis.scan(cursor, 'MATCH', `${this.prefix}*`, 'COUNT', 100)
-      cursor = result[0]
-      const keys = result[1]
-
-      for (const key of keys) {
-        const relative = key.slice(this.prefix.length)
-        const parts = relative.split(':')
-        const candidateName = parts[0]
-        if (
-          candidateName &&
-          candidateName !== 'active' &&
-          candidateName !== 'schedules' &&
-          candidateName !== 'schedule' &&
-          candidateName !== 'lock'
-        ) {
-          queues.add(candidateName)
-        }
-      }
-      limit--
-    } while (cursor !== '0' && limit > 0)
-
-    const stats: QueueStats[] = []
-    const queueNames = Array.from(queues).sort()
-
-    const BATCH_SIZE = 10
-
-    for (let i = 0; i < queueNames.length; i += BATCH_SIZE) {
-      const batch = queueNames.slice(i, i + BATCH_SIZE)
-      const batchResults = await Promise.all(
-        batch.map(async (name) => {
-          const waiting = await this.redis.llen(`${this.prefix}${name}`)
-          const delayed = await this.redis.zcard(`${this.prefix}${name}:delayed`)
-          const failed = await this.redis.llen(`${this.prefix}${name}:failed`)
-          const active = await this.redis.scard(`${this.prefix}${name}:active`)
-          const paused = await this.redis.get(`${this.prefix}${name}:paused`)
-          return { name, waiting, delayed, failed, active, paused: paused === '1' }
-        })
-      )
-      stats.push(...batchResults)
+    return () => {
+      unsub()
+      emitterUnsub()
     }
-
-    return stats
   }
 
-  /**
-   * Pause a queue (workers will stop processing new jobs)
-   */
+  async listQueues(): Promise<QueueStats[]> {
+    return this.metricsCollector.listQueues()
+  }
+
   async pauseQueue(queueName: string): Promise<boolean> {
     await this.redis.set(`${this.prefix}${queueName}:paused`, '1')
     return true
   }
 
-  /**
-   * Resume a paused queue
-   */
   async resumeQueue(queueName: string): Promise<boolean> {
     await this.redis.del(`${this.prefix}${queueName}:paused`)
     return true
   }
 
-  /**
-   * Check if a queue is paused
-   */
   async isQueuePaused(queueName: string): Promise<boolean> {
     const paused = await this.redis.get(`${this.prefix}${queueName}:paused`)
     return paused === '1'
@@ -390,7 +197,6 @@ export class QueueService {
         }
       })
 
-      // If we got few results and have persistence, merge with archive
       const persistence = this.manager.getPersistence()
       if (jobs.length < stop - start + 1 && persistence && type === 'failed') {
         const archived = await persistence.list(queueName, {
@@ -404,9 +210,6 @@ export class QueueService {
     }
   }
 
-  /**
-   * Records a snapshot of current global statistics for sparklines.
-   */
   async recordStatusMetrics(
     nodes: Record<string, any> = {},
     injectedWorkers?: any[]
@@ -425,25 +228,21 @@ export class QueueService {
     const now = Math.floor(Date.now() / 60000)
     const pipe = this.redis.pipeline()
 
-    // Store snapshots for last 60 minutes
     pipe.set(`flux_console:metrics:waiting:${now}`, totals.waiting, 'EX', 3600)
     pipe.set(`flux_console:metrics:delayed:${now}`, totals.delayed, 'EX', 3600)
     pipe.set(`flux_console:metrics:failed:${now}`, totals.failed, 'EX', 3600)
 
-    // Also record worker count
     const workers = injectedWorkers || (await this.listWorkers())
     pipe.set(`flux_console:metrics:workers:${now}`, workers.length, 'EX', 3600)
 
     await pipe.exec()
 
-    // Real-time Broadcast
     this.logEmitter.emit('stats', {
       queues: stats,
       throughput: await this.getThroughputData(),
       workers,
     })
 
-    // Evaluate Alert Rules (Near Zero Overhead)
     this.alerts
       .check({
         queues: stats,
@@ -454,9 +253,6 @@ export class QueueService {
       .catch((err) => console.error('[AlertService] Rule Evaluation Error:', err))
   }
 
-  /**
-   * Subscribes to real-time stats updates.
-   */
   onStats(callback: (stats: GlobalStats) => void): () => void {
     this.logEmitter.on('stats', callback)
     return () => {
@@ -464,9 +260,6 @@ export class QueueService {
     }
   }
 
-  /**
-   * Gets historical data for a specific metric.
-   */
   async getMetricHistory(metric: string, limit = 15): Promise<number[]> {
     const now = Math.floor(Date.now() / 60000)
     const keys = []
@@ -478,9 +271,6 @@ export class QueueService {
     return values.map((v) => parseInt(v || '0', 10))
   }
 
-  /**
-   * Retrieves throughput data for the last 15 minutes.
-   */
   async getThroughputData(): Promise<{ timestamp: string; count: number }[]> {
     const now = Math.floor(Date.now() / 60000)
     const results = []
@@ -498,37 +288,10 @@ export class QueueService {
     return results
   }
 
-  /**
-   * Lists all active workers by scanning heartbeat keys.
-   */
   async listWorkers(): Promise<WorkerReport[]> {
-    const workers: WorkerReport[] = []
-    let cursor = '0'
-
-    do {
-      const [nextCursor, keys] = await this.redis.scan(cursor, 'MATCH', 'flux_console:worker:*')
-      cursor = nextCursor
-
-      if (keys.length > 0) {
-        const values = await this.redis.mget(...keys)
-        values.forEach((v) => {
-          if (v) {
-            try {
-              workers.push(JSON.parse(v))
-            } catch (_e) {
-              // Ignore malformed
-            }
-          }
-        })
-      }
-    } while (cursor !== '0')
-
-    return workers.sort((a, b) => a.id.localeCompare(b.id))
+    return this.metricsCollector.listWorkers()
   }
 
-  /**
-   * Deletes a specific job from a queue or delayed pool.
-   */
   async deleteJob(
     queueName: string,
     type: 'waiting' | 'delayed' | 'failed',
@@ -547,14 +310,10 @@ export class QueueService {
     return result > 0
   }
 
-  /**
-   * Retries a specific delayed job by moving it back to the waiting queue.
-   */
   async retryJob(queueName: string, jobRaw: string): Promise<boolean> {
     const key = `${this.prefix}${queueName}`
     const delayKey = `${key}:delayed`
 
-    // Atomically move from ZSET to LIST
     const script = `
       local delayKey = KEYS[1]
       local queueKey = KEYS[2]
@@ -571,9 +330,6 @@ export class QueueService {
     return result === 1
   }
 
-  /**
-   * Purges all jobs from a queue.
-   */
   async purgeQueue(queueName: string): Promise<void> {
     const pipe = this.redis.pipeline()
     pipe.del(`${this.prefix}${queueName}`)
@@ -583,25 +339,14 @@ export class QueueService {
     await pipe.exec()
   }
 
-  /**
-   * Retries all failed jobs in a queue.
-   */
   async retryAllFailedJobs(queueName: string): Promise<number> {
-    // Navigate via QueueManager -> Driver to use safe RPOPLPUSH (avoids Lua stack overflow)
-    // We pass a large number to retry "all" (effectively batch processing)
     return await this.manager.retryFailed(queueName, 10000)
   }
 
-  /**
-   * Clears all failed jobs (DLQ).
-   */
   async clearFailedJobs(queueName: string): Promise<void> {
     await this.manager.clearFailed(queueName)
   }
 
-  /**
-   * Get total count of jobs in a queue by type.
-   */
   async getJobCount(queueName: string, type: 'waiting' | 'delayed' | 'failed'): Promise<number> {
     const key =
       type === 'delayed'
@@ -613,9 +358,6 @@ export class QueueService {
     return type === 'delayed' ? await this.redis.zcard(key) : await this.redis.llen(key)
   }
 
-  /**
-   * Delete ALL jobs of a specific type from a queue.
-   */
   async deleteAllJobs(queueName: string, type: 'waiting' | 'delayed' | 'failed'): Promise<number> {
     const key =
       type === 'delayed'
@@ -629,9 +371,6 @@ export class QueueService {
     return count
   }
 
-  /**
-   * Retry ALL jobs of a specific type (delayed or failed).
-   */
   async retryAllJobs(queueName: string, type: 'delayed' | 'failed'): Promise<number> {
     if (type === 'delayed') {
       return await this.retryDelayedJob(queueName)
@@ -640,9 +379,6 @@ export class QueueService {
     }
   }
 
-  /**
-   * Bulk deletes jobs (works for waiting, delayed, failed).
-   */
   async deleteJobs(
     queueName: string,
     type: 'waiting' | 'delayed' | 'failed',
@@ -667,9 +403,6 @@ export class QueueService {
     return results?.reduce((acc, [_, res]) => acc + ((res as number) || 0), 0) || 0
   }
 
-  /**
-   * Bulk retries jobs (moves from failed/delayed to waiting).
-   */
   async retryJobs(
     queueName: string,
     type: 'delayed' | 'failed',
@@ -689,8 +422,6 @@ export class QueueService {
       }
     }
     const results = await pipe.exec()
-    // Each successful retry is 2 operations in pipeline (remove + push),
-    // but we count the successfully removed jobs.
     let count = 0
     if (results) {
       for (let i = 0; i < results.length; i += 2) {
@@ -703,9 +434,6 @@ export class QueueService {
     return count
   }
 
-  /**
-   * Publishes a log message (used by workers).
-   */
   async publishLog(log: { level: string; message: string; workerId: string; queue?: string }) {
     const payload = {
       ...log,
@@ -713,19 +441,16 @@ export class QueueService {
     }
     await this.redis.publish('flux_console:logs', JSON.stringify(payload))
 
-    // Also store in a capped list for history (last 100 logs)
     const pipe = this.redis.pipeline()
     pipe.lpush('flux_console:logs:history', JSON.stringify(payload))
     pipe.ltrim('flux_console:logs:history', 0, 99)
 
-    // Increment throughput counter for this minute
     const now = Math.floor(Date.now() / 60000)
     pipe.incr(`flux_console:throughput:${now}`)
-    pipe.expire(`flux_console:throughput:${now}`, 3600) // Keep for 1 hour
+    pipe.expire(`flux_console:throughput:${now}`, 3600)
 
     await pipe.exec()
 
-    // NEW: Archive to persistence if enabled
     const persistence = this.manager.getPersistence()
     if (persistence) {
       persistence
@@ -737,17 +462,11 @@ export class QueueService {
     }
   }
 
-  /**
-   * Gets recent log history.
-   */
   async getLogHistory(): Promise<any[]> {
     const logs = await this.redis.lrange('flux_console:logs:history', 0, -1)
     return logs.map((l) => JSON.parse(l)).reverse()
   }
 
-  /**
-   * Search jobs across all queues by ID or data content.
-   */
   async searchJobs(
     query: string,
     options: { limit?: number; type?: 'all' | 'waiting' | 'delayed' | 'failed' } = {}
@@ -756,7 +475,6 @@ export class QueueService {
     const results: any[] = []
     const queryLower = query.toLowerCase()
 
-    // Get all queues
     const queues = await this.listQueues()
 
     for (const queue of queues) {
@@ -778,20 +496,14 @@ export class QueueService {
             break
           }
 
-          // Search in job ID
           const idMatch = job.id && String(job.id).toLowerCase().includes(queryLower)
-
-          // Search in job name
           const nameMatch = job.name && String(job.name).toLowerCase().includes(queryLower)
 
-          // Search in job data (stringify and search)
           let dataMatch = false
           try {
             const dataStr = JSON.stringify(job.data || job).toLowerCase()
             dataMatch = dataStr.includes(queryLower)
-          } catch (_e) {
-            // Ignore stringify errors
-          }
+          } catch (_e) {}
 
           if (idMatch || nameMatch || dataMatch) {
             results.push({
@@ -808,9 +520,6 @@ export class QueueService {
     return results
   }
 
-  /**
-   * List jobs from the SQL archive.
-   */
   async getArchiveJobs(
     queue: string,
     page = 1,
@@ -835,9 +544,6 @@ export class QueueService {
     }
   }
 
-  /**
-   * Search jobs from the SQL archive.
-   */
   async searchArchive(
     query: string,
     options: { limit?: number; page?: number; queue?: string } = {}
@@ -851,17 +557,12 @@ export class QueueService {
     const offset = (page - 1) * limit
 
     const jobs = await persistence.search(query, { limit, offset, queue })
-    // For search, precise total count is harder without a dedicated search count method,
-    // so we'll return the results length or a hypothetical high number if results match the limit.
     return {
       jobs: jobs.map((j: any) => ({ ...j, _archived: true })),
       total: jobs.length === limit ? limit * page + 1 : (page - 1) * limit + jobs.length,
     }
   }
 
-  /**
-   * List logs from the SQL archive.
-   */
   async getArchivedLogs(
     options: {
       page?: number
@@ -890,9 +591,6 @@ export class QueueService {
     return { logs, total }
   }
 
-  /**
-   * Cleans up old archived jobs from SQL.
-   */
   async cleanupArchive(days: number): Promise<number> {
     const persistence = this.manager.getPersistence()
     if (!persistence) {
@@ -901,17 +599,11 @@ export class QueueService {
     return await persistence.cleanup(days)
   }
 
-  /**
-   * List all recurring schedules.
-   */
   async listSchedules(): Promise<any[]> {
     const scheduler = this.manager.getScheduler()
     return await scheduler.list()
   }
 
-  /**
-   * Register a new recurring schedule.
-   */
   async registerSchedule(config: {
     id: string
     cron: string
@@ -922,25 +614,16 @@ export class QueueService {
     await scheduler.register(config)
   }
 
-  /**
-   * Remove a recurring schedule.
-   */
   async removeSchedule(id: string): Promise<void> {
     const scheduler = this.manager.getScheduler()
     await scheduler.remove(id)
   }
 
-  /**
-   * Run a scheduled job immediately.
-   */
   async runScheduleNow(id: string): Promise<void> {
     const scheduler = this.manager.getScheduler()
     await scheduler.runNow(id)
   }
 
-  /**
-   * Tick the scheduler to process due jobs.
-   */
   async tickScheduler(): Promise<void> {
     const scheduler = this.manager.getScheduler()
     await scheduler.tick()
