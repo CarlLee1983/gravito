@@ -75,7 +75,7 @@ if (clientType === 'auto') → 檢測 Bun.redis 可用性，優先使用
 ### 階段四：優化與加固 📋 待開始
 
 - [x] 真正的 Pipeline 批量發送（已優化為並行 Promise.all，性能達標）
-- [x] 統一錯誤處理（`RedisError` 類型定義完成）
+- [x] 統一錯誤處理（已全面應用 RedisError）
 - [ ] 健康檢查機制
 - [ ] 重連策略優化（exponential backoff）
 - [x] 連接事件回調（on, emit 實現完成）

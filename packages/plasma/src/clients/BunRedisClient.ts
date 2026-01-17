@@ -4,6 +4,7 @@
  */
 
 import { EventEmitter } from 'node:events'
+import { RedisError } from '../errors'
 import type {
   PipelineResult,
   RedisClientContract,
@@ -52,10 +53,14 @@ export class BunRedisClient implements RedisClientContract {
     this.client = new RedisClientClass(url, options) as unknown as RedisClient
 
     // 連接到 Redis
-    await this.client.connect()
-    this.connected = true
-    this.emitter.emit('connect')
-    this.emitter.emit('ready')
+    try {
+      await this.client.connect()
+      this.connected = true
+      this.emitter.emit('connect')
+      this.emitter.emit('ready')
+    } catch (error) {
+      throw this.handleException(error, 'CONNECT')
+    }
   }
 
   /**
@@ -196,9 +201,24 @@ export class BunRedisClient implements RedisClientContract {
    * Send a raw command to Redis
    */
   private async sendCommand(command: string, args: string[] = []): Promise<unknown> {
-    // biome-ignore lint/suspicious/noExplicitAny: Bun.redis type definition mismatch for send
-    const client = this.getClient() as any
-    return await client.send(command, args)
+    try {
+      // biome-ignore lint/suspicious/noExplicitAny: Bun.redis type definition mismatch for send
+      const client = this.getClient() as any
+      return await client.send(command, args)
+    } catch (error) {
+      throw this.handleException(error, command)
+    }
+  }
+
+  /**
+   * Handle errors and normalize to RedisError
+   */
+  private handleException(error: unknown, command?: string): RedisError {
+    if (error instanceof RedisError) {
+      return error
+    }
+    const message = error instanceof Error ? error.message : String(error)
+    return new RedisError(message, command, error)
   }
 
   // ============================================================================
@@ -209,8 +229,12 @@ export class BunRedisClient implements RedisClientContract {
    * Get a key's value.
    */
   async get(key: string): Promise<string | null> {
-    const prefixedKey = this.prefixKey(key)
-    return await this.getClient().get(prefixedKey)
+    try {
+      const prefixedKey = this.prefixKey(key)
+      return await this.getClient().get(prefixedKey)
+    } catch (error) {
+      throw this.handleException(error, 'GET')
+    }
   }
 
   /**
@@ -229,21 +253,33 @@ export class BunRedisClient implements RedisClientContract {
     }
 
     if (args.length > 1) {
-      // @ts-expect-error
-      const result = await client.set(prefixedKey, ...args)
-      return result === 'OK' ? 'OK' : null
+      try {
+        // @ts-expect-error
+        const result = await client.set(prefixedKey, ...args)
+        return result === 'OK' ? 'OK' : null
+      } catch (error) {
+        throw this.handleException(error, 'SET')
+      }
     }
 
-    const result = await client.set(prefixedKey, value)
-    return result === 'OK' ? 'OK' : null
+    try {
+      const result = await client.set(prefixedKey, value)
+      return result === 'OK' ? 'OK' : null
+    } catch (error) {
+      throw this.handleException(error, 'SET')
+    }
   }
 
   /**
    * Delete keys.
    */
   async del(...keys: string[]): Promise<number> {
-    const prefixedKeys = keys.map((k) => this.prefixKey(k))
-    return await this.getClient().del(...prefixedKeys)
+    try {
+      const prefixedKeys = keys.map((k) => this.prefixKey(k))
+      return await this.getClient().del(...prefixedKeys)
+    } catch (error) {
+      throw this.handleException(error, 'DEL')
+    }
   }
 
   /**
@@ -251,13 +287,17 @@ export class BunRedisClient implements RedisClientContract {
    * Note: Bun.redis returns boolean, we convert to number for compatibility
    */
   async exists(...keys: string[]): Promise<number> {
-    const prefixedKeys = keys.map((k) => this.prefixKey(k))
-    let count = 0
-    for (const key of prefixedKeys) {
-      const result = await this.getClient().exists(key)
-      if (result) count++
+    try {
+      const prefixedKeys = keys.map((k) => this.prefixKey(k))
+      let count = 0
+      for (const key of prefixedKeys) {
+        const result = await this.getClient().exists(key)
+        if (result) count++
+      }
+      return count
+    } catch (error) {
+      throw this.handleException(error, 'EXISTS')
     }
-    return count
   }
 
   /**
@@ -549,24 +589,40 @@ export class BunRedisClient implements RedisClientContract {
   // ============================================================================
 
   async sadd(key: string, ...members: string[]): Promise<number> {
-    const prefixedKey = this.prefixKey(key)
-    return await this.getClient().sadd(prefixedKey, ...members)
+    try {
+      const prefixedKey = this.prefixKey(key)
+      return await this.getClient().sadd(prefixedKey, ...members)
+    } catch (error) {
+      throw this.handleException(error, 'SADD')
+    }
   }
 
   async srem(key: string, ...members: string[]): Promise<number> {
-    const prefixedKey = this.prefixKey(key)
-    return await this.getClient().srem(prefixedKey, ...members)
+    try {
+      const prefixedKey = this.prefixKey(key)
+      return await this.getClient().srem(prefixedKey, ...members)
+    } catch (error) {
+      throw this.handleException(error, 'SREM')
+    }
   }
 
   async smembers(key: string): Promise<string[]> {
-    const prefixedKey = this.prefixKey(key)
-    return await this.getClient().smembers(prefixedKey)
+    try {
+      const prefixedKey = this.prefixKey(key)
+      return await this.getClient().smembers(prefixedKey)
+    } catch (error) {
+      throw this.handleException(error, 'SMEMBERS')
+    }
   }
 
   async sismember(key: string, member: string): Promise<number> {
-    const prefixedKey = this.prefixKey(key)
-    const result = await this.getClient().sismember(prefixedKey, member)
-    return typeof result === 'number' ? result : this.existsToNumber(result as boolean)
+    try {
+      const prefixedKey = this.prefixKey(key)
+      const result = await this.getClient().sismember(prefixedKey, member)
+      return typeof result === 'number' ? result : this.existsToNumber(result as boolean)
+    } catch (error) {
+      throw this.handleException(error, 'SISMEMBER')
+    }
   }
 
   async scard(key: string): Promise<number> {
@@ -584,8 +640,13 @@ export class BunRedisClient implements RedisClientContract {
       }
       return result === null ? null : String(result)
     }
-    const result = await this.getClient().spop(prefixedKey)
-    return result === null ? null : String(result)
+
+    try {
+      const result = await this.getClient().spop(prefixedKey)
+      return result === null ? null : String(result)
+    } catch (error) {
+      throw this.handleException(error, 'SPOP')
+    }
   }
 
   async srandmember(key: string, count?: number): Promise<string | string[] | null> {
@@ -743,7 +804,7 @@ export class BunRedisClient implements RedisClientContract {
     if (Array.isArray(result) && result.length === 2) {
       return {
         cursor: String(result[0]),
-        keys: Array.isArray(result[1]) ? result[1] : [],
+        keys: Array.isArray(result[1]) ? result[1].map(String) : [],
       }
     }
     return { cursor: '0', keys: [] }
@@ -800,7 +861,11 @@ export class BunRedisClient implements RedisClientContract {
   // ============================================================================
 
   async publish(channel: string, message: string): Promise<number> {
-    return await this.getClient().publish(channel, message)
+    try {
+      return await this.getClient().publish(channel, message)
+    } catch (error) {
+      throw this.handleException(error, 'PUBLISH')
+    }
   }
 
   async subscribe(
@@ -808,29 +873,37 @@ export class BunRedisClient implements RedisClientContract {
     callback: (message: string, channel: string) => void
   ): Promise<void> {
     // Bun.redis 訂閱後需要專用連接
-    if (!this.subscriber) {
-      const url = this.buildConnectionUrl()
-      const options = this.buildClientOptions()
-      const RedisClientClass = await this.getRedisClientClass()
-      this.subscriber = new RedisClientClass(url, options) as unknown as RedisClient
-      await this.subscriber.connect()
-    }
+    try {
+      if (!this.subscriber) {
+        const url = this.buildConnectionUrl()
+        const options = this.buildClientOptions()
+        const RedisClientClass = await this.getRedisClientClass()
+        this.subscriber = new RedisClientClass(url, options) as unknown as RedisClient
+        await this.subscriber.connect()
+      }
 
-    if (this.subscriber) {
-      this.subscriptions.set(channel, callback)
-      await this.subscriber.subscribe(channel, (message) => {
-        const cb = this.subscriptions.get(channel)
-        if (cb) {
-          cb(message, channel)
-        }
-      })
+      if (this.subscriber) {
+        this.subscriptions.set(channel, callback)
+        await this.subscriber.subscribe(channel, (message) => {
+          const cb = this.subscriptions.get(channel)
+          if (cb) {
+            cb(message, channel)
+          }
+        })
+      }
+    } catch (error) {
+      throw this.handleException(error, 'SUBSCRIBE')
     }
   }
 
   async unsubscribe(channel: string): Promise<void> {
-    if (this.subscriber) {
-      await this.subscriber.unsubscribe(channel)
-      this.subscriptions.delete(channel)
+    try {
+      if (this.subscriber) {
+        await this.subscriber.unsubscribe(channel)
+        this.subscriptions.delete(channel)
+      }
+    } catch (error) {
+      throw this.handleException(error, 'UNSUBSCRIBE')
     }
   }
 
