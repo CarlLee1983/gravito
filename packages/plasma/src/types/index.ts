@@ -141,6 +141,12 @@ export interface RedisClientContract {
   ping(): Promise<string>
   on(event: string, callback: (...args: any[]) => void): void
 
+  /**
+   * Health check
+   * Checks if connection is alive and responsive
+   */
+  checkHealth(): Promise<boolean>
+
   // String operations
   get(key: string): Promise<string | null>
   set(key: string, value: string, options?: SetOptions): Promise<'OK' | null>
