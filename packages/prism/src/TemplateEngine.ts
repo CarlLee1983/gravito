@@ -91,67 +91,34 @@ interface RenderContext {
  * @public
  * @since 3.0.0
  */
+/**
+ * Static regex constants for better performance
+ */
+const EXTENDS_REGEX = /^\s*@extends\s*\(\s*['"](.+?)['"]\s*\)/m
+const SECTION_REGEX = /@section\s*\(\s*['"](.+?)['"]\s*\)([\s\S]*?)@endsection/g
+const PUSH_REGEX = /@push\s*\(\s*['"](.+?)['"]\s*\)([\s\S]*?)@endpush/g
+const YIELD_REGEX = /@yield\s*\(\s*['"](.+?)['"](?:\s*,\s*['"](.+?)['"])?\s*\)/g
+const STACK_REGEX = /@stack\s*\(\s*['"](.+?)['"]\s*\)/g
+const COMPONENT_TAG_REGEX = /<x-([a-zA-Z0-9-]+)([^>]*)>/
+const INTERPOLATE_REGEX = /\{\{\{?\s*([\w.]+)\s*\}?\}\}/g
+
 export class TemplateEngine {
   private cache = new Map<string, string>()
   private viewsDir: string
   private helpers = new Map<string, HelperFunction>()
 
-  /**
-   * Create a new TemplateEngine instance.
-   *
-   * @param viewsDir - Absolute path to the directory containing template files (.html).
-   */
   constructor(viewsDir: string) {
     this.viewsDir = viewsDir
   }
 
-  /**
-   * Register a custom helper function.
-   *
-   * @param name - The name of the helper as it will be used in templates.
-   * @param fn - The implementation of the helper function.
-   *
-   * @example
-   * ```typescript
-   * engine.registerHelper('formatDate', (args) => {
-   *   return new Date(args.date as string).toLocaleDateString();
-   * });
-   * ```
-   */
   public registerHelper(name: string, fn: HelperFunction): void {
     this.helpers.set(name, fn)
   }
 
-  /**
-   * Unregister a previously registered custom helper function.
-   *
-   * @param name - The name of the helper to remove.
-   */
   public unregisterHelper(name: string): void {
     this.helpers.delete(name)
   }
 
-  /**
-   * Render a view with provided data and options.
-   *
-   * This method handles the full rendering pipeline, including layout resolution,
-   * section extraction, component processing, and final interpolation.
-   *
-   * @param view - The view name relative to the views directory (e.g., 'home' or 'auth/login').
-   * @param data - The data object to pass to the view for interpolation and logic.
-   * @param options - Additional rendering options, such as explicit layout selection.
-   * @returns The fully rendered HTML string.
-   * @throws {Error} If the template file cannot be found or if there is a circular include.
-   *
-   * @example
-   * ```typescript
-   * const html = engine.render('profile', {
-   *   user: { id: 1, name: 'Alice' }
-   * }, {
-   *   layout: 'layouts/admin'
-   * });
-   * ```
-   */
   public render(
     view: string,
     data: Record<string, unknown> = {},
@@ -162,85 +129,48 @@ export class TemplateEngine {
       stacks: new Map(),
     }
 
-    // 1. Load the initial view
     let template = this.readTemplate(view)
-
-    // Merge options into data
     const viewData = { ...data, ...options }
 
-    // 2. Handle Blade-style Layout Inheritance (@extends)
-    const extendsMatch = template.match(/^\s*@extends\s*\(\s*['"](.+?)['"]\s*\)/m)
+    const extendsMatch = template.match(EXTENDS_REGEX)
 
     if (extendsMatch) {
       const layoutName = extendsMatch[1]
-
-      // Remove @extends line
       template = template.replace(extendsMatch[0], '')
-
-      // Extract Sections (`@section('name')...@endsection`)
       this.extractSections(template, context)
-
-      // Extract Stacks (`@push('name')...@endpush`)
       this.extractStacks(template, context)
-      // Remove stacks from template to avoid processing them in sections if nested
       template = this.removeStacks(template)
-
-      // Switch master template to the layout
       if (layoutName) {
         template = this.readTemplate(layoutName)
       }
     } else if (options.layout) {
-      // Legacy "layout" option support
       const layoutContent = this.readTemplate(options.layout)
       context.sections.set('content', template)
       template = layoutContent
     }
 
-    // 3. Compile the result
     return this.compile(template, viewData, context)
   }
 
-  // --- Core Compilation Pipeline ---
-
-  /**
-   * Core compilation pipeline.
-   *
-   * @internal
-   */
   private compile(template: string, data: Record<string, unknown>, ctx: RenderContext): string {
     let result = template
-
-    // 1. Process Includes (Recursive)
     result = this.processIncludes(result)
-
-    // 2. Inject Layout Structure (@yield, @stack)
-    // IMPORTANT: Inherited structure must be assembled BEFORE components are processed
     result = this.processYields(result, ctx)
     result = this.processStacks(result, ctx)
-
-    // 3. Process Components <x-name> (Recursive)
     result = this.processComponents(result, data, ctx)
-
-    // 4. Directives Upgrade (@if, @foreach) mapping to legacy logic
     result = this.processDirectives(result)
-
-    // 5. Logic (Loops & Conditionals)
     result = this.processLoops(result, data)
     result = this.processConditionals(result, data)
-
-    // 6. Helpers & Interpolation
     result = this.processHelpers(result, data)
     result = this.interpolate(result, data)
-
     return result
   }
 
-  // --- Structural Processors ---
-
   private extractSections(template: string, ctx: RenderContext) {
-    const sectionRegex = /@section\s*\(\s*['"](.+?)['"]\s*\)([\s\S]*?)@endsection/g
     let match: RegExpExecArray | null
-    while ((match = sectionRegex.exec(template)) !== null) {
+    // Reset lastIndex for reusable regex
+    SECTION_REGEX.lastIndex = 0
+    while ((match = SECTION_REGEX.exec(template)) !== null) {
       const name = match[1]
       const content = match[2]
       if (name && content) {
@@ -250,9 +180,9 @@ export class TemplateEngine {
   }
 
   private extractStacks(template: string, ctx: RenderContext) {
-    const pushRegex = /@push\s*\(\s*['"](.+?)['"]\s*\)([\s\S]*?)@endpush/g
     let match: RegExpExecArray | null
-    while ((match = pushRegex.exec(template)) !== null) {
+    PUSH_REGEX.lastIndex = 0
+    while ((match = PUSH_REGEX.exec(template)) !== null) {
       const name = match[1]
       const content = match[2]
       if (name && content) {
@@ -265,13 +195,12 @@ export class TemplateEngine {
   }
 
   private removeStacks(template: string): string {
-    return template.replace(/@push\s*\(\s*['"](.+?)['"]\s*\)([\s\S]*?)@endpush/g, '')
+    return template.replace(PUSH_REGEX, '')
   }
 
   private processYields(template: string, ctx: RenderContext): string {
-    // @yield('name', 'default')
     return template.replace(
-      /@yield\s*\(\s*['"](.+?)['"](?:\s*,\s*['"](.+?)['"])?\s*\)/g,
+      YIELD_REGEX,
       (_, name, defaultValue) => {
         return ctx.sections.get(name) || defaultValue || ''
       }
@@ -279,14 +208,11 @@ export class TemplateEngine {
   }
 
   private processStacks(template: string, ctx: RenderContext): string {
-    // @stack('name')
-    return template.replace(/@stack\s*\(\s*['"](.+?)['"]\s*\)/g, (_, name) => {
+    return template.replace(STACK_REGEX, (_, name) => {
       const stack = ctx.stacks.get(name)
       return stack ? stack.join('\n') : ''
     })
   }
-
-  // --- Component Processors ---
 
   private processComponents(
     template: string,
@@ -302,7 +228,7 @@ export class TemplateEngine {
     let hasComponent = true
 
     while (hasComponent) {
-      const startTagMatch = result.match(/<x-([a-zA-Z0-9-]+)([^>]*)>/)
+      const startTagMatch = result.match(COMPONENT_TAG_REGEX)
       if (!startTagMatch) {
         hasComponent = false
         break
@@ -313,7 +239,6 @@ export class TemplateEngine {
       const startIndex = startTagMatch.index!
       const contentStartIndex = startIndex + startTagMatch[0].length
 
-      // Find closing tag </x-tagName>
       let depthCounter = 1
       let searchIndex = contentStartIndex
       let finalCloseIndex = -1
@@ -338,25 +263,18 @@ export class TemplateEngine {
         }
       }
 
-      // We found the component block
       const innerContent = result.substring(contentStartIndex, finalCloseIndex)
-
-      // Process Attributes
       const componentData = this.parseAttributes(attrsString || '')
 
-      // Load Component Template
       let componentTemplate = ''
       try {
         componentTemplate = this.readTemplate(`components/${tagName}`)
       } catch (_e) {
-        console.warn(`Component x-${tagName} not found.`)
-        // Replace with comment to prevent infinite loop
         const fullMatch = result.substring(startIndex, finalCloseIndex + `</x-${tagName}>`.length)
         result = result.replace(fullMatch, `<!-- Component ${tagName} not found -->`)
         continue
       }
 
-      // Handle Slots
       const slots: Record<string, string> = {
         slot: innerContent,
       }
@@ -370,10 +288,8 @@ export class TemplateEngine {
       slots.slot = this.compile(processedDefaultSlot.trim(), data, ctx)
 
       const componentScope = { ...componentData, ...slots }
-
       const renderedComponent = this.compile(componentTemplate, componentScope, ctx)
 
-      // Careful replacement
       const before = result.substring(0, startIndex)
       const after = result.substring(finalCloseIndex + `</x-${tagName}>`.length)
       result = before + renderedComponent + after
@@ -418,8 +334,6 @@ export class TemplateEngine {
     return args
   }
 
-  // --- Directives & Legacy ---
-
   private processDirectives(template: string): string {
     return template
       .replace(/@if\s*\((.+?)\)/g, '{{#if $1}}')
@@ -438,8 +352,6 @@ export class TemplateEngine {
       })
       .replace(/@csrf/g, '<input type="hidden" name="_token" value="{{{ _token }}}">')
   }
-
-  // --- Existing Methods (Preserved) ---
 
   private readTemplate(name: string): string {
     const cached = this.cache.get(name)
@@ -560,13 +472,14 @@ export class TemplateEngine {
   }
 
   private interpolate(template: string, data: Record<string, unknown>): string {
-    const result = template.replace(/\{\{\{\s*([\w.]+)\s*\}\}\}/g, (_, key) => {
+    return template.replace(INTERPOLATE_REGEX, (match, key) => {
       const value = this.getNestedValue(data, key)
-      return String(value ?? '')
-    })
-    return result.replace(/\{\{\s*([\w.]+)\s*\}\}/g, (_, key) => {
-      const value = this.getNestedValue(data, key)
-      return this.escapeHtml(String(value ?? ''))
+      const str = String(value ?? '')
+      // Check if it's triple braces (raw)
+      if (match.startsWith('{{{')) {
+        return str
+      }
+      return this.escapeHtml(str)
     })
   }
 

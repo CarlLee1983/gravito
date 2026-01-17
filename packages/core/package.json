@@ -60,6 +60,7 @@
   },
   "devDependencies": {
     "bun-types": "latest",
+    "mitata": "^1.0.34",
     "typescript": "^5.9.3"
   },
   "publishConfig": {
