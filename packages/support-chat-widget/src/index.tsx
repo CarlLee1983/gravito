@@ -7,9 +7,18 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+/**
+ * Props for the SupportChatWidget component.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface ChatWidgetProps {
+  /** Base URL for the Gravito Support API. */
   apiBaseUrl: string
+  /** WebSocket URL for real-time messaging. */
   wsUrl: string
+  /** Optional context to auto-tag new conversations (e.g. relating to a specific order). */
   context?: {
     type: 'ORDER' | 'PRODUCT' | 'GENERAL'
     id?: string
@@ -17,6 +26,15 @@ export interface ChatWidgetProps {
   }
 }
 
+/**
+ * A floating chat widget for customer support.
+ *
+ * It connects to the Gravito Support API and provides a real-time messaging interface
+ * for customers to communicate with support agents.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export function SupportChatWidget({ apiBaseUrl, wsUrl, context }: ChatWidgetProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState<any[]>([])

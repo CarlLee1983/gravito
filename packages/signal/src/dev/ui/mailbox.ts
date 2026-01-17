@@ -21,13 +21,22 @@ function timeAgo(date: Date): string {
   return date.toLocaleDateString()
 }
 
+/**
+ * Generates the HTML for the mailbox list view.
+ *
+ * @param entries - Array of mailbox entries to display
+ * @param prefix - Base URL prefix for the dev server
+ * @returns HTML string for the mailbox UI
+ *
+ * @internal
+ */
 export function getMailboxHtml(entries: MailboxEntry[], prefix: string): string {
   const list =
     entries.length === 0
       ? '<div class="empty">No emails found in mailbox.</div>'
       : entries
-          .map(
-            (entry) => `
+        .map(
+          (entry) => `
       <a href="${prefix}/${entry.id}" class="list-item">
         <div class="meta">
           <span class="from">${formatAddress(entry.envelope.from || { address: 'Unknown' })}</span>
@@ -42,8 +51,8 @@ export function getMailboxHtml(entries: MailboxEntry[], prefix: string): string 
         </div>
       </a>
     `
-          )
-          .join('')
+        )
+        .join('')
 
   const content = `
     <div class="header">

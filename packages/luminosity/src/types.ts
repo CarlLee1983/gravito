@@ -1,53 +1,89 @@
+/**
+ * Operational modes for the Luminosity SEO engine.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export type SeoMode = 'dynamic' | 'cached' | 'incremental'
 
+/**
+ * Supported change frequency values for sitemap entries.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export type ChangeFreq = 'always' | 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'never'
 
+/**
+ * Configuration for the Luminosity SEO engine.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface SeoConfig {
-  /** Operation mode */
+  /** The operation mode for sitemap generation. */
   mode: SeoMode
 
-  /** Base URL for sitemap (e.g., 'https://example.com') - NO trailing slash */
+  /** The base URL for the site (e.g., 'https://example.com'). Do not include a trailing slash. */
   baseUrl: string
 
-  /** Data resolvers */
-  resolvers: unknown[] // Changed to avoid circular dependency, cast to SeoResolver[] in usage
+  /** An array of data resolvers that provide URL entries. */
+  resolvers: unknown[]
 
-  /** Robots.txt configuration */
+  /** Configuration for generating robots.txt files. */
   robots?: {
+    /** A list of robots rules. */
     rules: {
+      /** The user-agent this rule applies to. */
       userAgent: string
+      /** A list of allowed paths. */
       allow?: string[]
+      /** A list of disallowed paths. */
       disallow?: string[]
+      /** Delay between crawls in seconds. */
       crawlDelay?: number
     }[]
+    /** Additional sitemap URLs to include in robots.txt. */
     sitemapUrls?: string[]
+    /** The host directive for robots.txt. */
     host?: string
   }
 
-  /** Cache settings (for 'cached' mode) */
+  /** Cache settings for 'cached' mode. */
   cache?: {
-    ttl: number // TTL in seconds
-    maxSize?: number // Max entries in memory
+    /** Time-to-live for cached sitemaps in seconds. */
+    ttl: number
+    /** Maximum number of entries to keep in memory. */
+    maxSize?: number
   }
 
-  /** Incremental settings (for 'incremental' mode) */
+  /** Incremental generation settings for 'incremental' mode. */
   incremental?: {
-    logDir: string // Path to .jsonl logs
-    compactInterval?: number // Auto-compact interval (ms)
-    maxLogSize?: number // Max log file size before rotation
-    storage?: any // Optional: StorageAdapter instance
+    /** Directory where incremental .jsonl logs are stored. */
+    logDir: string
+    /** Interval in milliseconds for automatic log compaction. */
+    compactInterval?: number
+    /** Maximum log file size in bytes before triggering rotation or compaction. */
+    maxLogSize?: number
+    /** Optional custom storage adapter for incremental logs. */
+    storage?: any
   }
 
-  /** Output settings */
+  /** Configuration for sitemap file output. */
   output?: {
-    path?: string // For static file generation
-    filename?: string // Default: 'sitemap.xml'
-    maxEntriesPerSitemap?: number // For sitemap index (50,000)
+    /** Directory path for static file generation. */
+    path?: string
+    /** The main sitemap filename. @default 'sitemap.xml' */
+    filename?: string
+    /** Maximum number of entries per individual sitemap file. @default 50000 */
+    maxEntriesPerSitemap?: number
   }
 
-  /** Branding (can be disabled for enterprise) */
+  /** Configuration for Gravito branding. */
   branding?: {
-    enabled?: boolean // Default: true
-    watermark?: string // Custom watermark text
+    /** Whether to include Gravito branding watermarks. @default true */
+    enabled?: boolean
+    /** Custom watermark text to include in XML files. */
+    watermark?: string
   }
 }

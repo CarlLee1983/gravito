@@ -6,6 +6,37 @@ import { LogTransport } from './transports/LogTransport'
 import { MemoryTransport } from './transports/MemoryTransport'
 import type { MailConfig, Message } from './types'
 
+/**
+ * OrbitSignal - Mail service orbit for Gravito framework.
+ *
+ * Provides email sending capabilities with support for multiple transports,
+ * development mode with email preview UI, and queue integration.
+ *
+ * @example
+ * ```typescript
+ * import { OrbitSignal } from '@gravito/signal'
+ * import { SmtpTransport } from '@gravito/signal'
+ *
+ * const app = new Application({
+ *   orbits: [
+ *     new OrbitSignal({
+ *       transport: new SmtpTransport({
+ *         host: 'smtp.example.com',
+ *         port: 587,
+ *         auth: { user: 'user', pass: 'pass' }
+ *       }),
+ *       from: { name: 'App', email: 'noreply@example.com' }
+ *     })
+ *   ]
+ * })
+ *
+ * // In route handler
+ * await c.get('mail').send(new WelcomeEmail(user))
+ * ```
+ *
+ * @since 3.0.0
+ * @public
+ */
 export class OrbitSignal implements GravitoOrbit {
   private config: MailConfig
   private devMailbox?: DevMailbox

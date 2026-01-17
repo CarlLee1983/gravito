@@ -11,21 +11,31 @@ import type { WebSocketDriverConfig } from './drivers/WebSocketDriver'
 import { WebSocketDriver } from './drivers/WebSocketDriver'
 
 /**
- * OrbitRadiance options.
+ * Options for configuring OrbitRadiance broadcasting.
+ * @public
  */
 export interface OrbitRadianceOptions {
   /**
-   * Driver type.
+   * The broadcast driver to use.
+   * - pusher: Official Pusher API
+   * - ably: Ably Realtime API
+   * - redis: Redis Pub/Sub for custom backends
+   * - websocket: Native WebSocket (Experimental)
    */
   driver: 'pusher' | 'ably' | 'redis' | 'websocket'
 
   /**
-   * Driver configuration.
+   * Specific configuration for the selected driver.
    */
   config: PusherDriverConfig | AblyDriverConfig | RedisDriverConfig | WebSocketDriverConfig
 
   /**
-   * Channel authorization callback (optional).
+   * Optional callback to handle private channel authorization.
+   *
+   * @param channel - The channel name being accessed.
+   * @param socketId - The unique socket ID from the client.
+   * @param userId - Optional authenticated user ID.
+   * @returns Promise resolving to true if authorized.
    */
   authorizeChannel?: (
     channel: string,
@@ -35,9 +45,22 @@ export interface OrbitRadianceOptions {
 }
 
 /**
- * Broadcasting Orbit
+ * OrbitRadiance provides real-time event broadcasting capabilities.
+ * It abstracts various delivery providers (Pusher, Ably, etc.) and integrates
+ * seamlessly with Gravito's Event system.
  *
- * Provides broadcasting capabilities with multiple drivers (Pusher, Ably, Redis, WebSocket).
+ * @example
+ * ```typescript
+ * const radiance = new OrbitRadiance({
+ *   driver: 'pusher',
+ *   config: { appId: '...', key: '...', secret: '...' }
+ * });
+ * core.addOrbit(radiance);
+ *
+ * // Broadcasting an event
+ * await ctx.get('broadcast').broadcast('my-channel', 'my-event', { data: 'hello' });
+ * ```
+ * @public
  */
 export class OrbitRadiance implements GravitoOrbit {
   private options: OrbitRadianceOptions
@@ -73,7 +96,7 @@ export class OrbitRadiance implements GravitoOrbit {
           | { publish(channel: string, message: string): Promise<number> }
           | undefined
         if (redisClient) {
-          ;(driver as RedisDriver).setRedisClient(redisClient)
+          ; (driver as RedisDriver).setRedisClient(redisClient)
         }
         break
       }

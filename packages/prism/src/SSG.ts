@@ -3,12 +3,24 @@ import { dirname, join } from 'node:path'
 import type { PlanetCore } from '@gravito/core'
 
 /**
- * Static Site Generator for Gravito Prism
+ * Static Site Generator for Gravito Prism.
  *
- * Crawls registered GET routes and exports them as static HTML files.
+ * It crawls registered GET routes from the PlanetCore router and exports them
+ * as static HTML files. It also automatically generates a `sitemap.xml` and `robots.txt`.
+ *
+ * @example
+ * ```typescript
+ * const ssg = new StaticSiteGenerator(core);
+ * await ssg.export('./dist');
+ * ```
+ * @public
  */
 export class StaticSiteGenerator {
-  constructor(private core: PlanetCore) {}
+  /**
+   * Create a new SSG instance.
+   * @param core - The PlanetCore instance to crawl routes from.
+   */
+  constructor(private core: PlanetCore) { }
 
   /**
    * Export all static routes to a target directory.
@@ -99,14 +111,14 @@ export class StaticSiteGenerator {
     const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${routes
-  .map((route) => {
-    return `  <url>
+        .map((route) => {
+          return `  <url>
     <loc>${baseUrl}${route.path === '/' ? '' : route.path}</loc>
     <changefreq>weekly</changefreq>
     <priority>${route.path === '/' ? '1.0' : '0.8'}</priority>
   </url>`
-  })
-  .join('\n')}
+        })
+        .join('\n')}
 </urlset>`
 
     await writeFile(join(outputDir, 'sitemap.xml'), sitemap, 'utf-8')

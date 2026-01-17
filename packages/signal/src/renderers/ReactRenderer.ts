@@ -1,5 +1,25 @@
 import type { Renderer, RenderResult } from './Renderer'
 
+/**
+ * Renderer for React component-based emails.
+ *
+ * Renders React components to static HTML for email delivery.
+ * Supports server-side rendering with optional dependency injection
+ * for testing.
+ *
+ * @example
+ * ```typescript
+ * import { WelcomeEmail } from './emails/WelcomeEmail'
+ *
+ * const renderer = new ReactRenderer(WelcomeEmail, { name: 'John' })
+ * const { html, text } = await renderer.render({ date: new Date() })
+ * ```
+ *
+ * @typeParam P - Props type for the React component
+ *
+ * @since 3.0.0
+ * @public
+ */
 export class ReactRenderer<P extends object = object> implements Renderer {
   constructor(
     private component: any, // Use any to avoid hard React dependency in types
@@ -8,7 +28,7 @@ export class ReactRenderer<P extends object = object> implements Renderer {
       createElement?: (...args: any[]) => any
       renderToStaticMarkup?: (element: any) => string
     } = {}
-  ) {}
+  ) { }
 
   async render(data: Record<string, unknown>): Promise<RenderResult> {
     // Dynamic imports to avoid hard dependencies on react/react-dom

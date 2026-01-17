@@ -1,21 +1,46 @@
 import type { RedirectManager, RedirectRule, SitemapEntry } from '../types'
 
+/**
+ * Strategies for handling URLs that have redirects in the sitemap.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export type RedirectHandlingStrategy =
-  | 'remove_old_add_new' // 移除舊 URL，加入新 URL（預設）
-  | 'keep_relation' // 保留關聯，使用 canonical link
-  | 'update_url' // 僅更新 URL
-  | 'dual_mark' // 雙重標記
+  /** Replace the old URL with the final destination URL. (Default) */
+  | 'remove_old_add_new'
+  /** Keep the old URL in the sitemap but mark the final destination as canonical. */
+  | 'keep_relation'
+  /** Silently update the URL to the destination without extra metadata. */
+  | 'update_url'
+  /** Include both the original and destination URLs in the sitemap. */
+  | 'dual_mark'
 
+/**
+ * Options for configuring the `RedirectHandler`.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface RedirectHandlerOptions {
+  /** The redirect manager used to resolve rules. */
   manager: RedirectManager
+  /** The strategy to use when a redirect is found. */
   strategy: RedirectHandlingStrategy
+  /** Whether to follow redirect chains to the final destination. @default false */
   followChains?: boolean
+  /** Maximum number of redirect jumps to follow. @default 5 */
   maxChainLength?: number
 }
 
 /**
- * 轉址處理器
- * 處理 sitemap entries 中的轉址
+ * RedirectHandler processes sitemap entries to ensure they handle 301/302 redirects correctly.
+ *
+ * It uses a `RedirectManager` to resolve final destinations and applies one of
+ * the supported `RedirectHandlingStrategy` options to the entry list.
+ *
+ * @public
+ * @since 3.0.0
  */
 export class RedirectHandler {
   private options: RedirectHandlerOptions

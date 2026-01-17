@@ -1,11 +1,29 @@
 import type { SitemapEntry } from '../interfaces'
 import { GRAVITO_WATERMARK } from './watermark'
 
+/**
+ * Options for configuring the `XmlStreamBuilder`.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface BuilderOptions {
+  /** Base URL used to resolve relative sitemap entries. */
   baseUrl: string
+  /** Whether to include the Gravito branding watermark in the XML. @default true */
   branding?: boolean
 }
 
+/**
+ * XmlStreamBuilder handles the low-level generation of sitemap XML content.
+ *
+ * It provides methods to start the XML document, add individual URL entries
+ * (including images and videos), and end the document. It also includes
+ * a helper for full XML generation.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class XmlStreamBuilder {
   constructor(private options: BuilderOptions) {}
 

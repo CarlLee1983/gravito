@@ -8,6 +8,14 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+/**
+ * Announcement Management Page.
+ *
+ * Allows administrators to create, edit, and publish system-wide announcements.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export function AnnouncementList() {
   const { sdk } = useAdmin()
   const [items, setItems] = useState<any[]>([])

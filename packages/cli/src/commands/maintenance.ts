@@ -4,6 +4,26 @@ import { note, outro, spinner } from '@clack/prompts'
 import { LockGenerator, ProfileResolver } from '@gravito/scaffold'
 import pc from 'picocolors'
 
+/**
+ * Command for project maintenance and health checks.
+ *
+ * Provides utilities for validating project configuration,
+ * checking dependencies, and managing features.
+ *
+ * @example
+ * ```typescript
+ * const maintenance = new MaintenanceCommand()
+ *
+ * // Run health check
+ * await maintenance.doctor()
+ *
+ * // Add a feature
+ * await maintenance.addFeature('websockets')
+ * ```
+ *
+ * @since 3.0.0
+ * @public
+ */
 export class MaintenanceCommand {
   async doctor() {
     const s = spinner()

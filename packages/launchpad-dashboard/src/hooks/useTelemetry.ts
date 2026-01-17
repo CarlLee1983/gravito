@@ -1,19 +1,50 @@
 import { createRippleClient } from '@gravito/ripple-client'
 import { useEffect, useState } from 'react'
 
+/**
+ * Represents a log entry received via telemetry.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface LogData {
+  /** The unique ID of the rocket container. */
   rocketId: string
+  /** The raw log message text. */
   text: string
+  /** Epoch timestamp in milliseconds. */
   timestamp: number
 }
 
+/**
+ * Represents resource utilization statistics received via telemetry.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface StatsData {
+  /** The unique ID of the rocket container. */
   rocketId: string
+  /** Percentage of CPU utilization as a string. */
   cpu: string
+  /** Memory utilization string (e.g., '120MB'). */
   memory: string
+  /** Epoch timestamp in milliseconds. */
   timestamp: number
 }
 
+/**
+ * A React hook for subscribing to real-time telemetry data from Launchpad.
+ *
+ * It uses `RippleClient` to connect to the WebSocket server and listens for
+ * 'telemetry.data' events on the 'telemetry' channel.
+ *
+ * @param url - The WebSocket server URL. @default 'ws://localhost:4000/ws'
+ * @returns An object containing logs, stats, and connection status.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export function useTelemetry(url = 'ws://localhost:4000/ws') {
   const [logs, setLogs] = useState<LogData[]>([])
   const [stats, setStats] = useState<Record<string, StatsData>>({})

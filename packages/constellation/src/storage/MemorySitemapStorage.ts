@@ -1,5 +1,20 @@
 import type { SitemapStorage } from '../types'
 
+/**
+ * MemorySitemapStorage is a non-persistent, in-memory storage backend for sitemaps.
+ *
+ * It is primarily used for testing or for applications where sitemaps are
+ * generated on-the-fly and served directly from memory.
+ *
+ * @example
+ * ```typescript
+ * const storage = new MemorySitemapStorage('https://example.com');
+ * await storage.write('sitemap.xml', '...');
+ * ```
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class MemorySitemapStorage implements SitemapStorage {
   private files = new Map<string, string>()
 

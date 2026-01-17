@@ -1,12 +1,24 @@
 import type { ChangeTracker, SitemapChange } from '../types'
 
+/**
+ * Options for configuring the `MemoryChangeTracker`.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface MemoryChangeTrackerOptions {
-  maxChanges?: number // 最大變更記錄數，預設 100000
+  /** Maximum number of changes to keep in memory. @default 100000 */
+  maxChanges?: number
 }
 
 /**
- * 記憶體變更追蹤器實作
- * 適用於單一進程或開發環境
+ * MemoryChangeTracker is a simple, in-memory implementation of the `ChangeTracker`.
+ *
+ * It is suitable for single-process applications or development environments where
+ * persistence of change history across restarts is not required.
+ *
+ * @public
+ * @since 3.0.0
  */
 export class MemoryChangeTracker implements ChangeTracker {
   private changes: SitemapChange[] = []
@@ -47,15 +59,30 @@ export class MemoryChangeTracker implements ChangeTracker {
   }
 }
 
+/**
+ * Options for configuring the `RedisChangeTracker`.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface RedisChangeTrackerOptions {
-  client: any // Redis 客戶端
+  /** The Redis client instance. */
+  client: any
+  /** Prefix for Redis keys to avoid collisions. @default 'sitemap:changes:' */
   keyPrefix?: string
-  ttl?: number // TTL（秒），預設 7 天
+  /** Time-to-live for change records in seconds. @default 604800 (7 days) */
+  ttl?: number
 }
 
 /**
- * Redis 變更追蹤器實作
- * 適用於分散式環境或多進程
+ * RedisChangeTracker provides a distributed implementation of the `ChangeTracker`.
+ *
+ * It uses Redis to store change records, making it suitable for multi-process
+ * or distributed environments where multiple instances of Gravito need to
+ * share change history.
+ *
+ * @public
+ * @since 3.0.0
  */
 export class RedisChangeTracker implements ChangeTracker {
   private client: any

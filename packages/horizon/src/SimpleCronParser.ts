@@ -1,3 +1,31 @@
+/**
+ * Simple cron expression parser for task scheduling.
+ *
+ * Supports standard 5-field cron expressions with timezone awareness.
+ * Fields: minute hour day-of-month month day-of-week
+ *
+ * Supported patterns:
+ * - `*` - Any value
+ * - `5` - Specific value
+ * - `1-5` - Range
+ * - `1,2,3` - List
+ * - `*/5` - Step values
+ * - `1 - 10 / 2` - Range with step
+ *
+ * @example
+ * ```typescript
+  * // Every 5 minutes
+ * SimpleCronParser.isDue('*/5 * * * *', 'UTC', new Date())
+  *
+ * // Every day at 9:30 AM in New York
+ * SimpleCronParser.isDue('30 9 * * *', 'America/New_York', new Date())
+  *
+ * // Every Monday at midnight
+ * SimpleCronParser.isDue('0 0 * * 1', 'UTC', new Date())
+  * ```
+ *
+ * @public
+ */
 export const SimpleCronParser = {
   /**
    * Check if a cron expression matches the given date.
@@ -47,7 +75,7 @@ export const SimpleCronParser = {
           0
         )
       } catch (_e) {
-        throw new Error(`Invalid timezone: ${timezone}`)
+        throw new Error(`Invalid timezone: ${ timezone } `)
       }
     } else if (timezone === 'UTC') {
       targetDate = new Date(
@@ -87,7 +115,7 @@ function matchField(pattern: string, value: number, min: number, max: number): b
     return true
   }
 
-  // 2. Step (*\/5, 1-10/2)
+  // 2. Step (*/5, 1-10/2)
   if (pattern.includes('/')) {
     const [range, stepStr] = pattern.split('/')
     if (range === undefined || stepStr === undefined) {

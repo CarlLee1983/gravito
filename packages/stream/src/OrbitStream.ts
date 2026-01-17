@@ -5,30 +5,44 @@ import { QueueManager } from './QueueManager'
 import type { QueueConfig } from './types'
 
 /**
- * Orbit Queue configuration options.
+ * Options for configuring OrbitStream (Queue Orbit).
+ * @public
  */
 export interface OrbitStreamOptions extends QueueConfig {
   /**
-   * Whether to auto-start an embedded worker in development.
+   * Whether to automatically start an embedded worker in development mode.
+   * Useful for simple local testing without running a separate worker process.
    */
   autoStartWorker?: boolean
 
   /**
-   * Embedded worker options.
+   * Configuration for the embedded worker/consumer.
    */
   workerOptions?: ConsumerOptions
 }
 
 /**
- * Orbit Queue
+ * OrbitStream provides a powerful, multi-driver queue system for Gravito.
+ * It integrates with various backends (Redis, Database, SQS, RabbitMQ)
+ * and supports job serialization, delayed jobs, and FIFO processing.
  *
- * Gravito Orbit implementation providing queue functionality.
+ * @example
+ * ```typescript
+ * const stream = new OrbitStream({
+ *   default: 'redis',
+ *   connections: {
+ *     redis: { driver: 'redis', host: 'localhost' }
+ *   }
+ * });
+ * core.addOrbit(stream);
+ * ```
+ * @public
  */
 export class OrbitStream implements GravitoOrbit {
   private queueManager?: QueueManager
   private consumer?: Consumer
 
-  constructor(private options: OrbitStreamOptions = {}) {}
+  constructor(private options: OrbitStreamOptions = {}) { }
 
   /**
    * Static configuration helper.

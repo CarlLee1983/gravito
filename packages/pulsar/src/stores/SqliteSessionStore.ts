@@ -1,6 +1,22 @@
 import { createSqliteDatabase, type RuntimeSqliteDatabase } from '@gravito/core'
 import type { SessionId, SessionRecord, SessionStore } from '../types'
 
+/**
+ * SQLite-based session store for persistent storage.
+ *
+ * Stores sessions in a SQLite database with automatic expiration.
+ * Suitable for single-instance deployments requiring persistence.
+ *
+ * @example
+ * ```typescript
+ * const store = new SqliteSessionStore('./storage/sessions.db', 'sessions')
+ * await store.set('session-id', { userId: '123' }, 3600)
+ * const session = await store.get('session-id')
+ * ```
+ *
+ * @since 3.0.0
+ * @public
+ */
 export class SqliteSessionStore implements SessionStore {
   private db: RuntimeSqliteDatabase | null = null
   private tableName: string

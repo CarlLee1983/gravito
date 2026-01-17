@@ -21,6 +21,15 @@ interface AdminContextType {
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined)
 
+/**
+ * Provider component for the Gravito Admin environment.
+ *
+ * Initializes the Admin SDK and manages global state for the administrative
+ * user, permissions, and registered modules.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export function AdminProvider({
   children,
   baseUrl,
@@ -83,6 +92,12 @@ export function AdminProvider({
   return <AdminContext.Provider value={value}>{children}</AdminContext.Provider>
 }
 
+/**
+ * React hook to access the Gravito Admin context.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export function useAdmin() {
   const context = useContext(AdminContext)
   if (context === undefined) {

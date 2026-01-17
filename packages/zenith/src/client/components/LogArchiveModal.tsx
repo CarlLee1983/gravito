@@ -17,6 +17,15 @@ interface LogArchiveModalProps {
   onClose: () => void
 }
 
+/**
+ * A modal for exploring and searching historical application logs and job events.
+ *
+ * It provides advanced filtering by search query, time range, and severity level.
+ * Users can trace specific events across time and export the audit trail.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export function LogArchiveModal({ isOpen, onClose }: LogArchiveModalProps) {
   const [page, setPage] = React.useState(1)
   const [search, setSearch] = React.useState('')

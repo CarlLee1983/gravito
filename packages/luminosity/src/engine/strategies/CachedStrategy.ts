@@ -4,6 +4,15 @@ import type { SeoConfig } from '../../types'
 import type { SeoStrategy } from '../interfaces'
 import { DynamicStrategy } from './DynamicStrategy'
 
+/**
+ * CachedStrategy wraps the DynamicStrategy with a TTL-based memory cache.
+ *
+ * It provides "cache stampede" protection to ensure that multiple simultaneous
+ * requests do not trigger identical heavy regeneration tasks.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class CachedStrategy implements SeoStrategy {
   private dynamicStrategy: DynamicStrategy
   private cache: MemoryCache

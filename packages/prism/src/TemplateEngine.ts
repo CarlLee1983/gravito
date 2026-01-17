@@ -1,26 +1,106 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
+/**
+ * Options for rendering templates.
+ *
+ * Provides configuration for the rendering process, including layout specification
+ * and dynamic data injection.
+ *
+ * @example
+ * ```typescript
+ * const options: RenderOptions = {
+ *   layout: 'layouts/main',
+ *   title: 'Home Page',
+ *   user: { name: 'John' }
+ * };
+ * ```
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface RenderOptions {
+  /** Legacy layout support - specifies a layout file to use */
   layout?: string // Legacy layout support
+  /** Additional data to pass to the template */
   [key: string]: unknown
 }
 
+/**
+ * Custom helper function signature.
+ *
+ * Helpers are used to extend the template engine with custom logic that can be
+ * invoked directly from templates using the `{{ helperName arg1=val1 }}` syntax.
+ *
+ * @param args - Arguments passed to the helper in the template as key-value pairs.
+ * @param data - Global data context of the template, providing access to all template variables.
+ * @returns A string to be injected into the rendered HTML.
+ *
+ * @example
+ * ```typescript
+ * const uppercase: HelperFunction = (args) => {
+ *   return String(args.value).toUpperCase();
+ * };
+ * ```
+ *
+ * @public
+ * @since 3.0.0
+ */
 export type HelperFunction = (
+  /** Arguments passed to the helper in the template */
   args: Record<string, string | number | boolean>,
+  /** Global data context of the template */
   data: Record<string, unknown>
 ) => string
 
+/**
+ * Internal rendering context for inheritance and stacks.
+ * @internal
+ */
 interface RenderContext {
+  /** Sections captured from @section directives */
   sections: Map<string, string>
+  /** Stacks captured from @push directives */
   stacks: Map<string, string[]>
 }
 
+/**
+ * TemplateEngine is the core rendering engine for Gravito Prism.
+ *
+ * It implements a Blade-like syntax with support for inheritance, components, and custom helpers.
+ * Key features include:
+ * - Layout inheritance with `@extends`, `@section`, and `@yield`.
+ * - Content stacks with `@push` and `@stack`.
+ * - Reusable components using `<x-component>` syntax.
+ * - Dynamic data interpolation and control structures (`@if`, `@foreach`).
+ *
+ * @example
+ * ```typescript
+ * const engine = new TemplateEngine('./views');
+ *
+ * // Register a helper
+ * engine.registerHelper('upper', (args) => String(args.value).toUpperCase());
+ *
+ * // Render a template
+ * const html = engine.render('home', {
+ *   name: 'World',
+ *   showSubtitle: true
+ * });
+ * ```
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class TemplateEngine {
   private cache = new Map<string, string>()
   private viewsDir: string
   private helpers = new Map<string, HelperFunction>()
 
+  /**
+   * Create a new TemplateEngine instance.
+   *
+   * @param viewsDir - Absolute path to the directory containing template files (.html).
+   */
   constructor(viewsDir: string) {
     this.viewsDir = viewsDir
   }
@@ -28,15 +108,22 @@ export class TemplateEngine {
   /**
    * Register a custom helper function.
    *
-   * @param name - The name of the helper.
-   * @param fn - The helper function.
+   * @param name - The name of the helper as it will be used in templates.
+   * @param fn - The implementation of the helper function.
+   *
+   * @example
+   * ```typescript
+   * engine.registerHelper('formatDate', (args) => {
+   *   return new Date(args.date as string).toLocaleDateString();
+   * });
+   * ```
    */
   public registerHelper(name: string, fn: HelperFunction): void {
     this.helpers.set(name, fn)
   }
 
   /**
-   * Unregister a custom helper function.
+   * Unregister a previously registered custom helper function.
    *
    * @param name - The name of the helper to remove.
    */
@@ -45,12 +132,25 @@ export class TemplateEngine {
   }
 
   /**
-   * Render a view with data.
+   * Render a view with provided data and options.
    *
-   * @param view - The view name (e.g., 'home' or 'auth/login').
-   * @param data - The data to pass to the view.
-   * @param options - Render options (e.g., legacy layout).
-   * @returns The rendered HTML string.
+   * This method handles the full rendering pipeline, including layout resolution,
+   * section extraction, component processing, and final interpolation.
+   *
+   * @param view - The view name relative to the views directory (e.g., 'home' or 'auth/login').
+   * @param data - The data object to pass to the view for interpolation and logic.
+   * @param options - Additional rendering options, such as explicit layout selection.
+   * @returns The fully rendered HTML string.
+   * @throws {Error} If the template file cannot be found or if there is a circular include.
+   *
+   * @example
+   * ```typescript
+   * const html = engine.render('profile', {
+   *   user: { id: 1, name: 'Alice' }
+   * }, {
+   *   layout: 'layouts/admin'
+   * });
+   * ```
    */
   public render(
     view: string,

@@ -1,6 +1,17 @@
+import path from 'node:path'
 import type { DirectoryNode } from '../types'
 import { BaseGenerator, type GeneratorContext } from './BaseGenerator'
 
+/**
+ * StandaloneEngineGenerator creates a minimal, high-performance project structure.
+ *
+ * It uses only the core `Gravito` engine without the full `PlanetCore` overhead,
+ * making it ideal for microservices or simple APIs where performance is the
+ * top priority.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class StandaloneEngineGenerator extends BaseGenerator {
   get architectureType() {
     return 'standalone-engine' as const
@@ -36,14 +47,20 @@ export class StandaloneEngineGenerator extends BaseGenerator {
   }
 
   protected override async generateCommonFiles(context: GeneratorContext): Promise<void> {
+    const commonDir = path.resolve(this.config.templatesDir, 'common')
+    const extendedContext = { ...context }
+
     // Generate specialized package.json
     await this.writeFile(context.targetDir, 'package.json', this.generatePackageJson(context))
 
-    // Generate standard tsconfig
-    await this.writeFile(context.targetDir, 'tsconfig.json', this.generateTsConfig())
-
-    // Generate .gitignore
-    await this.writeFile(context.targetDir, '.gitignore', this.generateGitignore())
+    // Generate standard tsconfig & gitignore using BaseGenerator's helper
+    await this.generateFileFromTemplate(
+      commonDir,
+      'tsconfig.json.hbs',
+      'tsconfig.json',
+      extendedContext
+    )
+    await this.generateFileFromTemplate(commonDir, 'gitignore.hbs', '.gitignore', extendedContext)
 
     // No need for all the Docker/Architecture/Check scripts overhead for a minimal engine starter
   }
@@ -105,22 +122,28 @@ A high-performance web application powered by Gravito Engine.
 
 ### Install Dependencies
 
-\`\`\`bash
+ \
+ \
 bun install
-\`\`\`
+ \
+ \
 
 ### Run Development Server
 
-\`\`\`bash
+ \
+ \
 bun run dev
-\`\`\`
+ \
+ \
 
 ### Production Build
 
-\`\`\`bash
+ \
+ \
 bun run build
 bun start
-\`\`\`
+ \
+ \
 `
   }
 }

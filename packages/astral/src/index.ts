@@ -6,10 +6,16 @@ export * from './types'
 
 /**
  * Astral Contract Builder
+ * A fluent utility for defining API resource contracts.
+ * @public
  */
 export const astral = {
   /**
-   * Define a resource contract
+   * Define a resource contract with named operations.
+   *
+   * @param path - The base URL path for this resource.
+   * @param options - Configuration for operations and tags.
+   * @returns A validated AstralResource contract.
    */
   resource(path: string, options: Omit<AstralResource, 'path'>): AstralResource {
     return {
@@ -20,7 +26,22 @@ export const astral = {
 }
 
 /**
- * OrbitAstral - Gravito Orbit extension
+ * OrbitAstral provides automated OpenAPI (Swagger) documentation for Gravito.
+ * It automatically scans your routes, validates inputs/outputs against schemas,
+ * and serves a real-time Swagger UI.
+ *
+ * @example
+ * ```typescript
+ * const astral = new OrbitAstral({
+ *   title: 'My Awesome API',
+ *   version: '2.0.0',
+ *   contracts: [
+ *     astral.resource('/users', { operations: { index: { summary: 'List users' } } })
+ *   ]
+ * });
+ * core.addOrbit(astral);
+ * ```
+ * @public
  */
 export class OrbitAstral implements GravitoOrbit {
   private config: AstralConfig

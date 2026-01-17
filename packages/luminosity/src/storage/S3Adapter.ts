@@ -1,14 +1,30 @@
 import type { StorageAdapter } from './adapter'
 
+/**
+ * Minimal interface for an S3-compatible client.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface S3ClientLike {
+  /** Send a command to the S3 service. */
   send(command: any): Promise<any>
 }
 
+/**
+ * Configuration for the `S3Adapter`.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface S3AdapterConfig {
+  /** The S3 bucket name. */
   bucket: string
+  /** Optional AWS region. */
   region?: string
+  /** The S3 client instance. */
   client: S3ClientLike
-  // Minimal set of AWS SDK commands needed
+  /** Constructors for the required AWS SDK commands. */
   commands: {
     PutObjectCommand: new (args: any) => any
     GetObjectCommand: new (args: any) => any
@@ -16,22 +32,19 @@ export interface S3AdapterConfig {
     DeleteObjectCommand: new (
       args: any
     ) => any
-    // For append, we might need to read -> concat -> write, or use multipart upload (complex)
-    // S3 doesn't support native append.
-    // Simulating append by reading + writing is slow for WAL.
-    // Alternative: Each log entry is a separate object? No, too many objects.
-    // Alternative: Use Kinesis/Firehose? Too complex.
-    // Alternative: Append to a buffer in memory and flush periodically?
   }
 }
 
 /**
- * S3 Storage Adapter
+ * S3Adapter implements the `StorageAdapter` interface for AWS S3.
  *
- * Note: S3 does not support atomic append.
- * This adapter implements 'append' by reading the full object and re-uploading it.
- * THIS IS NOT RECOMMENDED FOR HIGH WRITE VOLUME.
- * For high volume, use a database or a service that supports append (like Redis streams).
+ * Note: Since S3 does not support atomic appends, this adapter simulates
+ * 'append' by reading the entire object, concatenating the new content,
+ * and re-uploading the whole file. This is inefficient for large files
+ * or high write volumes.
+ *
+ * @public
+ * @since 3.0.0
  */
 export class S3Adapter implements StorageAdapter {
   constructor(private config: S3AdapterConfig) {}

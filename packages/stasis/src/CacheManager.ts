@@ -3,6 +3,12 @@ import { RateLimiter } from './RateLimiter'
 import type { CacheStore } from './store'
 import type { CacheTtl } from './types'
 
+/**
+ * Configuration for a specific cache store.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export type StoreConfig =
   | { driver: 'memory'; maxItems?: number }
   | { driver: 'file'; directory: string }
@@ -11,13 +17,46 @@ export type StoreConfig =
   // legacy adapter: allow plugging any provider that matches old interface
   | { driver: 'provider' }
 
+/**
+ * Global cache configuration for multiple stores.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export type CacheConfig = {
+  /** The name of the default store to use. @default 'memory' */
   default?: string
+  /** Global prefix for all cache keys across all stores. */
   prefix?: string
+  /** Global default time-to-live for cache entries. */
   defaultTtl?: CacheTtl
+  /** Map of named store configurations. */
   stores?: Record<string, StoreConfig & { provider?: CacheStore }>
 }
 
+/**
+ * CacheManager orchestrates multiple cache stores and provides a unified API.
+ *
+ * It supports various drivers (Memory, File, Redis) and provides both
+ * a multi-store API (`cache.store('redis').get(...)`) and a default store
+ * proxy API (`cache.get(...)`).
+ *
+ * @example
+ * ```typescript
+ * const cache = new CacheManager(factory, {
+ *   default: 'redis',
+ *   stores: {
+ *     redis: { driver: 'redis', prefix: 'myapp:' }
+ *   }
+ * });
+ *
+ * await cache.set('key', 'value', 3600);
+ * const val = await cache.get('key');
+ * ```
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class CacheManager {
   private stores = new Map<string, CacheRepository>()
 

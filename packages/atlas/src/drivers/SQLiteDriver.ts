@@ -29,6 +29,15 @@ declare const Bun: any
 
  */
 
+/**
+ * SQLite driver implementation for Atlas ORM.
+ *
+ * Automatically detects and uses `bun:sqlite` if running in Bun,
+ * otherwise falls back to `better-sqlite3`.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class SQLiteDriver implements DriverContract {
   private config: SQLiteConfig
 

@@ -9,6 +9,12 @@ import type { Channel, ChannelType } from '../types'
 // Channel Prefixes
 // ─────────────────────────────────────────────────────────────
 
+/**
+ * Standard prefixes used to identify private and presence channels.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export const CHANNEL_PREFIXES = {
   private: 'private-',
   presence: 'presence-',

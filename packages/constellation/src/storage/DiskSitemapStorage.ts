@@ -18,6 +18,22 @@ function sanitizeFilename(filename: string): string {
   return filename
 }
 
+/**
+ * DiskSitemapStorage persists sitemap files to the local file system.
+ *
+ * It is the default storage backend for single-server Gravito deployments.
+ * It automatically handles directory creation and ensures filenames are sanitized
+ * to prevent path traversal attacks.
+ *
+ * @example
+ * ```typescript
+ * const storage = new DiskSitemapStorage('./public/sitemaps', 'https://example.com/sitemaps');
+ * await storage.write('sitemap.xml', '...');
+ * ```
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class DiskSitemapStorage implements SitemapStorage {
   constructor(
     private outDir: string,

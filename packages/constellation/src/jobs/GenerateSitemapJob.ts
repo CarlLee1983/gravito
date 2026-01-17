@@ -4,19 +4,38 @@ import type { ShadowProcessor } from '../core/ShadowProcessor'
 import type { SitemapGeneratorOptions } from '../core/SitemapGenerator'
 import { SitemapGenerator } from '../core/SitemapGenerator'
 
+/**
+ * Options for configuring the `GenerateSitemapJob`.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface GenerateSitemapJobOptions {
+  /** Options for the underlying sitemap generator. */
   generatorOptions: SitemapGeneratorOptions
+  /** Unique identifier for the generation job. */
   jobId: string
+  /** Optional progress tracker to monitor execution state. */
   progressTracker?: ProgressTracker
+  /** Optional shadow processor for atomic deployments. */
   shadowProcessor?: ShadowProcessor
+  /** Optional callback triggered during progress updates. */
   onProgress?: (progress: { processed: number; total: number; percentage: number }) => void
+  /** Optional callback triggered when the job completes successfully. */
   onComplete?: () => void
+  /** Optional callback triggered when the job encounters an error. */
   onError?: (error: Error) => void
 }
 
 /**
- * Sitemap 生成背景任務
- * 整合背景任務處理和進度追蹤
+ * GenerateSitemapJob is a background task for processing large-scale sitemaps.
+ *
+ * It integrates with Gravito's `stream` module to provide asynchronous,
+ * observable sitemap generation with real-time progress tracking and
+ * atomic deployment support.
+ *
+ * @public
+ * @since 3.0.0
  */
 export class GenerateSitemapJob extends Job {
   private options: GenerateSitemapJobOptions

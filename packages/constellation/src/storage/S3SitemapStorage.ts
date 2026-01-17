@@ -1,15 +1,28 @@
 import type { SitemapStorage } from '../types'
 
+/**
+ * Options for configuring the `S3SitemapStorage`.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface S3SitemapStorageOptions {
+  /** The AWS S3 bucket name. */
   bucket: string
+  /** The AWS region where the bucket is located. @default 'us-east-1' */
   region?: string
+  /** Optional prefix (folder path) within the bucket. */
   prefix?: string
+  /** Optional base URL for resolving sitemap locations. Defaults to standard S3 URL. */
   baseUrl?: string
+  /** Configuration for staging files before atomic deployment. */
   shadow?: {
+    /** Whether shadow processing is enabled. */
     enabled: boolean
+    /** Deployment mode: 'atomic' or 'versioned'. */
     mode: 'atomic' | 'versioned'
   }
-  // AWS SDK 配置（可選，使用環境變數或預設認證）
+  /** Optional AWS credentials. If not provided, the SDK will use environment defaults. */
   credentials?: {
     accessKeyId: string
     secretAccessKey: string
@@ -17,8 +30,22 @@ export interface S3SitemapStorageOptions {
 }
 
 /**
- * AWS S3 儲存實作
- * 支援影子處理和版本化
+ * S3SitemapStorage persists sitemap files to AWS S3.
+ *
+ * It provides robust cloud storage with support for shadow processing
+ * and file versioning, ensuring safe and atomic sitemap updates.
+ *
+ * @example
+ * ```typescript
+ * const storage = new S3SitemapStorage({
+ *   bucket: 'my-sitemaps',
+ *   region: 'ap-northeast-1',
+ *   shadow: { enabled: true, mode: 'atomic' }
+ * });
+ * ```
+ *
+ * @public
+ * @since 3.0.0
  */
 export class S3SitemapStorage implements SitemapStorage {
   private bucket: string

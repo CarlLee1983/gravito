@@ -27,6 +27,12 @@ export interface ClientData {
 // Channel Types
 // ─────────────────────────────────────────────────────────────
 
+/**
+ * Supported WebSocket channel types.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export type ChannelType = 'public' | 'private' | 'presence'
 
 /**
@@ -168,7 +174,20 @@ export interface RippleConfig {
 // WebSocket Handler Types (Bun)
 // ─────────────────────────────────────────────────────────────
 
+/**
+ * Strongly-typed Bun ServerWebSocket for Ripple.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export type RippleWebSocket = ServerWebSocket<ClientData>
+
+/**
+ * Strongly-typed Bun Server for Ripple.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export type RippleBunServer = Server<ClientData>
 
 /**

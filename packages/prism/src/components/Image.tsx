@@ -4,17 +4,27 @@ import { ImageService } from '../ImageService'
 
 /**
  * Props for the `Image` component.
+ * @public
  */
 export interface ImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
+  /** Source URL or path of the image */
   src: string
+  /** Alternative text for accessibility (Required) */
   alt: string
+  /** Fixed width in pixels (prevents CLS) */
   width?: number
+  /** Fixed height in pixels (prevents CLS) */
   height?: number
+  /** Loading strategy (default: 'lazy') */
   loading?: 'lazy' | 'eager'
+  /** Responsive sizes attribute string */
   sizes?: string
+  /** Custom widths for srcset or boolean to toggle default auto-generation */
   srcset?: boolean | number[]
+  /** Decoding strategy (default: 'async') */
   decoding?: 'async' | 'auto' | 'sync'
-  fetchpriority?: 'high' | 'low' | 'auto'
+  /** Fetch priority hint for LCP optimization */
+  fetchPriority?: 'high' | 'low' | 'auto'
 }
 
 /**
@@ -34,7 +44,7 @@ export function Image({
   className,
   style,
   decoding,
-  fetchpriority,
+  fetchPriority,
   ...rest
 }: ImageProps): React.JSX.Element {
   const imageService = new ImageService()
@@ -51,7 +61,7 @@ export function Image({
     class: className,
     style: typeof style === 'string' ? style : undefined,
     decoding,
-    fetchpriority,
+    fetchpriority: fetchPriority,
   }
 
   // Generate optimized attributes using the core service
@@ -71,7 +81,7 @@ export function Image({
       className={className}
       alt={alt}
       srcSet={generatedSrcset}
-      fetchPriority={fetchpriority}
+      fetchPriority={fetchPriority}
       style={style as React.CSSProperties}
       {...coreAttrs}
       {...rest}

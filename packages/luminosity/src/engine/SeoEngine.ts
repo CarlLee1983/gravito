@@ -6,6 +6,16 @@ import { CachedStrategy } from './strategies/CachedStrategy'
 import { DynamicStrategy } from './strategies/DynamicStrategy'
 import { IncrementalStrategy } from './strategies/IncrementalStrategy'
 
+/**
+ * SeoEngine is the main orchestrator for Luminosity's SEO features.
+ *
+ * It manages the lifecycle of the chosen `SeoStrategy` and coordinates
+ * the rendering of `robots.txt` and `sitemap.xml` files. It acts as the
+ * primary interface for the framework to interact with the SEO system.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class SeoEngine {
   private strategy: SeoStrategy
   private renderer: SeoRenderer

@@ -9,42 +9,42 @@ import { NotificationManager } from './NotificationManager'
 /**
  * OrbitFlare options.
  */
+/**
+ * Options for configuring OrbitFlare.
+ * @public
+ */
 export interface OrbitFlareOptions {
-  /**
-   * Enable mail channel.
-   */
+  /** Enable or disable the email notification channel. */
   enableMail?: boolean
-
-  /**
-   * Enable database channel.
-   */
+  /** Enable or disable the database storage notification channel. */
   enableDatabase?: boolean
-
-  /**
-   * Enable broadcast channel.
-   */
+  /** Enable or disable the real-time broadcast notification channel. */
   enableBroadcast?: boolean
-
-  /**
-   * Enable Slack channel.
-   */
+  /** Enable or disable the Slack notification channel. */
   enableSlack?: boolean
-
-  /**
-   * Enable SMS channel.
-   */
+  /** Enable or disable the SMS notification channel. */
   enableSms?: boolean
-
-  /**
-   * Custom channel configuration.
-   */
+  /** Custom channel configuration records for flexible extension. */
   channels?: Record<string, unknown>
 }
 
 /**
- * Notifications Orbit
+ * OrbitFlare is the official notification orbit for Gravito.
+ * It provides a unified API for sending notifications across multiple channels
+ * (Mail, Database, Broadcast, Slack, SMS) and supports background queuing.
  *
- * Provides notifications with multiple channels (mail, database, broadcast, Slack, SMS).
+ * @example
+ * ```typescript
+ * const flare = new OrbitFlare({
+ *   enableSlack: true,
+ *   channels: { slack: { webhookUrl: '...' } }
+ * });
+ * core.addOrbit(flare);
+ *
+ * // Usage in controller
+ * await ctx.get('notifications').send(user, new WelcomeNotification());
+ * ```
+ * @public
  */
 export class OrbitFlare implements GravitoOrbit {
   private options: OrbitFlareOptions
@@ -82,8 +82,8 @@ export class OrbitFlare implements GravitoOrbit {
     if (this.options.enableMail) {
       const mail = core.container.make('mail') as
         | {
-            send(message: import('./types').MailMessage): Promise<void>
-          }
+          send(message: import('./types').MailMessage): Promise<void>
+        }
         | undefined
 
       if (mail) {
@@ -96,13 +96,13 @@ export class OrbitFlare implements GravitoOrbit {
     if (this.options.enableDatabase) {
       const db = core.container.make('db') as
         | {
-            insertNotification(data: {
-              notifiableId: string | number
-              notifiableType: string
-              type: string
-              data: Record<string, unknown>
-            }): Promise<void>
-          }
+          insertNotification(data: {
+            notifiableId: string | number
+            notifiableType: string
+            type: string
+            data: Record<string, unknown>
+          }): Promise<void>
+        }
         | undefined
 
       if (db) {
@@ -115,8 +115,8 @@ export class OrbitFlare implements GravitoOrbit {
     if (this.options.enableBroadcast) {
       const broadcast = core.container.make('broadcast') as
         | {
-            broadcast(channel: string, event: string, data: Record<string, unknown>): Promise<void>
-          }
+          broadcast(channel: string, event: string, data: Record<string, unknown>): Promise<void>
+        }
         | undefined
 
       if (broadcast) {
@@ -129,9 +129,9 @@ export class OrbitFlare implements GravitoOrbit {
     if (this.options.enableSlack) {
       const slack = this.options.channels?.slack as
         | {
-            webhookUrl: string
-            defaultChannel?: string
-          }
+          webhookUrl: string
+          defaultChannel?: string
+        }
         | undefined
 
       if (slack) {
@@ -144,11 +144,11 @@ export class OrbitFlare implements GravitoOrbit {
     if (this.options.enableSms) {
       const sms = this.options.channels?.sms as
         | {
-            provider: string
-            apiKey?: string
-            apiSecret?: string
-            from?: string
-          }
+          provider: string
+          apiKey?: string
+          apiSecret?: string
+          from?: string
+        }
         | undefined
 
       if (sms) {
@@ -164,8 +164,8 @@ export class OrbitFlare implements GravitoOrbit {
     // Try to integrate with queue system.
     const queue = core.container.make('queue') as
       | {
-          push(job: unknown, queue?: string, connection?: string, delay?: number): Promise<void>
-        }
+        push(job: unknown, queue?: string, connection?: string, delay?: number): Promise<void>
+      }
       | undefined
 
     if (queue) {

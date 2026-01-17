@@ -1,5 +1,24 @@
 import { SimpleCronParser } from './SimpleCronParser'
 
+/**
+ * Advanced cron expression parser with fallback support.
+ *
+ * Uses SimpleCronParser for standard expressions and falls back
+ * to the full cron-parser library for complex patterns.
+ *
+ * @example
+ * ```typescript
+ * // Check if task is due
+ * const isDue = await CronParser.isDue('0 9 * * 1-5', 'UTC')
+ *
+ * // Get next execution time
+ * const next = await CronParser.nextDate('*/15 * * * *', 'America/New_York')
+ * console.log('Next run:', next)
+ * ```
+ *
+ * @since 3.0.0
+ * @public
+ */
 export class CronParser {
   /**
    * Get the next execution date based on a cron expression.
@@ -21,7 +40,7 @@ export class CronParser {
       })
       return interval.next().toDate()
     } catch (_err) {
-      throw new Error(`Invalid cron expression: ${expression}`)
+      throw new Error(`Invalid cron expression: ${ expression } `)
     }
   }
 

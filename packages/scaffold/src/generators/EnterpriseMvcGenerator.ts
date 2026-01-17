@@ -11,6 +11,16 @@
 import type { DirectoryNode } from '../types'
 import { BaseGenerator, type GeneratorContext } from './BaseGenerator'
 
+/**
+ * EnterpriseMvcGenerator implements a Laravel-inspired MVC architectural pattern.
+ *
+ * It generates a pragmatic, robust structure with Controllers, Services,
+ * Repositories, and Service Providers. It is the recommended architecture
+ * for most web applications and APIs.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class EnterpriseMvcGenerator extends BaseGenerator {
   get architectureType() {
     return 'enterprise-mvc' as const

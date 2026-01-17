@@ -8,15 +8,69 @@ import {
   type PlanetCore,
 } from '@gravito/core'
 
+/**
+ * Interface for a file storage provider.
+ *
+ * All storage backends (Local, S3, Cloudinary, etc.) must implement this interface.
+ * It provides a consistent API for file operations across different runtimes
+ * and cloud providers.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface StorageProvider {
+  /**
+   * Save data to the storage backend.
+   *
+   * @param key - Unique identifier or path for the file (e.g., 'avatars/user1.jpg').
+   * @param data - The file content as a Blob, Buffer, or string.
+   * @returns A promise that resolves when the file is successfully saved.
+   */
   put(key: string, data: Blob | Buffer | string): Promise<void>
+
+  /**
+   * Retrieve a file from the storage backend.
+   *
+   * @param key - The file identifier or path.
+   * @returns The file as a Blob, or null if the file does not exist.
+   */
   get(key: string): Promise<Blob | null>
+
+  /**
+   * Remove a file from the storage backend.
+   *
+   * @param key - The file identifier or path to delete.
+   * @returns A promise that resolves when the file is deleted.
+   */
   delete(key: string): Promise<void>
+
+  /**
+   * Get a publicly accessible URL for the given file key.
+   *
+   * Note: This may return a relative URL for local storage or a full URL
+   * for cloud storage providers.
+   *
+   * @param key - The file identifier or path.
+   * @returns The public URL string.
+   */
   getUrl(key: string): string
 }
 
 /**
- * Local storage provider implementation.
+ * Local file system storage provider.
+ *
+ * Stores files on the local disk using the configured root directory and
+ * resolves URLs using a provided base URL prefix.
+ *
+ * @example
+ * ```typescript
+ * const local = new LocalStorageProvider('./storage', '/files');
+ * await local.put('hello.txt', 'Hello World');
+ * console.log(local.getUrl('hello.txt')); // "/files/hello.txt"
+ * ```
+ *
+ * @public
+ * @since 3.0.0
  */
 export class LocalStorageProvider implements StorageProvider {
   private rootDir: string
@@ -26,8 +80,8 @@ export class LocalStorageProvider implements StorageProvider {
   /**
    * Create a new LocalStorageProvider.
    *
-   * @param rootDir - The root directory for storage.
-   * @param baseUrl - The base URL for accessing stored files.
+   * @param rootDir - The absolute path to the local storage directory.
+   * @param baseUrl - The public URL path for accessing stored files (e.g., '/storage').
    */
   constructor(rootDir: string, baseUrl = '/storage') {
     this.rootDir = rootDir
@@ -35,10 +89,7 @@ export class LocalStorageProvider implements StorageProvider {
   }
 
   /**
-   * Store data in a file.
-   *
-   * @param key - The storage key (path).
-   * @param data - The data to store.
+   * Write data to the local disk.
    */
   async put(key: string, data: Blob | Buffer | string): Promise<void> {
     const path = this.resolveKeyPath(key)
@@ -51,10 +102,7 @@ export class LocalStorageProvider implements StorageProvider {
   }
 
   /**
-   * Retrieve a file.
-   *
-   * @param key - The storage key.
-   * @returns A promise resolving to the file Blob or null if not found.
+   * Read data from the local disk.
    */
   async get(key: string): Promise<Blob | null> {
     const path = this.resolveKeyPath(key)
@@ -65,19 +113,14 @@ export class LocalStorageProvider implements StorageProvider {
   }
 
   /**
-   * Delete a file.
-   *
-   * @param key - The storage key.
+   * Delete a file from the local disk.
    */
   async delete(key: string): Promise<void> {
     await this.runtime.deleteFile(this.resolveKeyPath(key))
   }
 
   /**
-   * Get the public URL for a file.
-   *
-   * @param key - The storage key.
-   * @returns The public URL string.
+   * Resolve the public URL for a locally stored file.
    */
   getUrl(key: string): string {
     const safeKey = this.normalizeKey(key)
@@ -112,11 +155,30 @@ export class LocalStorageProvider implements StorageProvider {
   }
 }
 
+/**
+ * Configuration options for the Nebula Storage Orbit.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface OrbitNebulaOptions {
+  /**
+   * Custom storage provider instance (e.g., S3Provider).
+   * If not provided, a LocalStorageProvider will be created if `local` options are set.
+   */
   provider?: StorageProvider
-  exposeAs?: string // Default: 'storage'
+
+  /**
+   * The key used to expose the storage service in the request context.
+   * @default 'storage'
+   */
+  exposeAs?: string
+
+  /** Configuration for the default LocalStorageProvider. */
   local?: {
+    /** Absolute or relative path to the root directory on disk. */
     root: string
+    /** Base URL prefix for serving files (e.g., '/public/storage'). @default '/storage' */
     baseUrl?: string
   }
 }
@@ -125,12 +187,29 @@ export interface OrbitNebulaOptions {
 export type OrbitStorageOptions = OrbitNebulaOptions
 
 /**
- * OrbitNebula - Storage Orbit
+ * OrbitNebula provides a unified file storage abstraction for Gravito.
  *
- * Provides file storage functionality for Gravito applications.
+ * It supports multiple backends (local, S3, etc.) and provides a consistent API
+ * for file operations. It also integrates with Gravito's hook system for
+ * filtering uploads (`storage:upload`) and reacting to events (`storage:uploaded`).
+ *
+ * @example
+ * ```typescript
+ * const nebula = new OrbitNebula({
+ *   local: { root: './storage', baseUrl: '/public' }
+ * });
+ * core.addOrbit(nebula);
+ *
+ * // Usage in controller
+ * const storage = c.get('storage');
+ * await storage.put('example.txt', 'Content');
+ * ```
+ *
+ * @public
+ * @since 3.0.0
  */
 export class OrbitNebula implements GravitoOrbit {
-  constructor(private options?: OrbitNebulaOptions) {}
+  constructor(private options?: OrbitNebulaOptions) { }
 
   /**
    * Install storage service into PlanetCore.

@@ -2,20 +2,48 @@ import parser from 'cron-parser'
 import type { QueueManager } from './QueueManager'
 import type { SerializedJob } from './types'
 
+/**
+ * Configuration for a recurring scheduled job.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface ScheduledJobConfig {
+  /** Unique identifier for the scheduled task. */
   id: string
+  /** Cron expression defining the schedule (e.g., '* * * * *'). */
   cron: string
+  /** The target queue name where the job should be pushed. */
   queue: string
+  /** The serialized job data. */
   job: SerializedJob
+  /** Timestamp of the last successful execution in milliseconds. */
   lastRun?: number
+  /** Timestamp of the next scheduled execution in milliseconds. */
   nextRun?: number
+  /** Whether the scheduled job is active. */
   enabled: boolean
 }
 
 /**
- * Scheduler
+ * Scheduler manages recurring (cron) jobs in Gravito.
  *
- * Manages recurring (cron) jobs.
+ * It uses Redis to store schedule metadata and coordinates distributed
+ * execution using locks to ensure jobs are triggered exactly once per interval.
+ *
+ * @example
+ * ```typescript
+ * const scheduler = new Scheduler(queueManager);
+ * await scheduler.register({
+ *   id: 'daily-cleanup',
+ *   cron: '0 0 * * *',
+ *   queue: 'default',
+ *   job: myJob.serialize()
+ * });
+ * ```
+ *
+ * @public
+ * @since 3.0.0
  */
 export class Scheduler {
   private prefix: string

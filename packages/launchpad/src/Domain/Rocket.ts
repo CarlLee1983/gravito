@@ -8,6 +8,16 @@ import {
 import type { Mission } from './Mission'
 import { RocketStatus } from './RocketStatus'
 
+/**
+ * Rocket represents a managed application container within Launchpad.
+ *
+ * It acts as an Aggregate Root in the domain, maintaining its lifecycle state
+ * (IDLE, PREPARING, ORBITING, etc.) and emitting domain events when
+ * state transitions occur.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class Rocket extends AggregateRoot<string> {
   private _status: RocketStatus = RocketStatus.IDLE
   private _currentMission: Mission | null = null

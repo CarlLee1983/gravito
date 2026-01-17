@@ -36,8 +36,35 @@ declare module '@gravito/core' {
   }
 }
 
+/**
+ * OrbitPulsar is the official session management and CSRF protection module for Gravito.
+ *
+ * It provides a stateful experience for stateless HTTP requests, supporting multiple
+ * storage drivers including Memory, Redis, SQLite, and File-based storage.
+ *
+ * It automatically handles:
+ * - Session ID generation and rotation.
+ * - Encrypted and secure cookie management.
+ * - Flash data persistence for single-request messages.
+ * - Token-based CSRF protection for all non-GET requests.
+ *
+ * @example
+ * ```typescript
+ * import { OrbitPulsar } from '@gravito/pulsar';
+ *
+ * const pulsar = new OrbitPulsar({
+ *   driver: 'redis',
+ *   redis: { connection: 'redis://localhost:6379' },
+ *   cookie: { name: 'my_session', secure: true }
+ * });
+ * core.addOrbit(pulsar);
+ * ```
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class OrbitPulsar implements GravitoOrbit {
-  constructor(private options: OrbitPulsarOptions = {}) {}
+  constructor(private options: OrbitPulsarOptions = {}) { }
 
   install(core: PlanetCore): void {
     const configFromCore = core.config.has('session')

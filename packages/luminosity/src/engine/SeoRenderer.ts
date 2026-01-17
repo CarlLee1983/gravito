@@ -3,6 +3,16 @@ import type { SeoConfig } from '../types'
 import { SitemapIndexBuilder } from '../xml/SitemapIndexBuilder'
 import { XmlStreamBuilder } from '../xml/XmlStreamBuilder'
 
+/**
+ * SeoRenderer handles the transformation of sitemap entries into XML format.
+ *
+ * It automatically decides whether to render a single sitemap or a sitemap
+ * index based on the total number of entries and the current request parameters.
+ * It also handles pagination for large sitemaps.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class SeoRenderer {
   private static MAX_ENTRIES = 50000
 

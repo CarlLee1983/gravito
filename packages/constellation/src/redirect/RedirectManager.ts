@@ -1,11 +1,24 @@
 import type { RedirectManager, RedirectRule } from '../types'
 
+/**
+ * Options for configuring the `MemoryRedirectManager`.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface MemoryRedirectManagerOptions {
-  maxRules?: number // 最大規則數，預設 100000
+  /** Maximum number of rules to keep in memory. @default 100000 */
+  maxRules?: number
 }
 
 /**
- * 記憶體轉址管理器實作
+ * MemoryRedirectManager is a fast, in-memory implementation of the `RedirectManager`.
+ *
+ * It is suitable for development environments or small sites where redirect
+ * rules do not need to persist across application restarts.
+ *
+ * @public
+ * @since 3.0.0
  */
 export class MemoryRedirectManager implements RedirectManager {
   private rules = new Map<string, RedirectRule>()
@@ -63,14 +76,30 @@ export class MemoryRedirectManager implements RedirectManager {
   }
 }
 
+/**
+ * Options for configuring the `RedisRedirectManager`.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface RedisRedirectManagerOptions {
-  client: any // Redis 客戶端
+  /** The Redis client instance. */
+  client: any
+  /** Prefix for Redis keys to avoid collisions. @default 'sitemap:redirects:' */
   keyPrefix?: string
-  ttl?: number // TTL（秒），預設永久
+  /** Time-to-live for redirect rules in seconds. If not set, rules are permanent. */
+  ttl?: number
 }
 
 /**
- * Redis 轉址管理器實作
+ * RedisRedirectManager provides a persistent, distributed implementation of the `RedirectManager`.
+ *
+ * It uses Redis to store redirect rules, making it suitable for production
+ * environments where multiple application instances need to share the same
+ * redirect configuration.
+ *
+ * @public
+ * @since 3.0.0
  */
 export class RedisRedirectManager implements RedirectManager {
   private client: any

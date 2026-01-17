@@ -1,9 +1,30 @@
 # Gravito 框架優化路線圖 (Optimization Roadmap)
 
 **創建日期**: 2026-01-16
+**最後更新**: 2026-01-17 17:00
 **分支建議**: `optimize/comprehensive-improvements`
-**狀態**: 📋 規劃完成，待實作
+**狀態**: 🔄 Phase 11-14 已完成，Phase 15 進行中 (50% 完成)
 **預估總工時**: ~40-50 小時
+**實際完成**: Phase 11-14 (100%), Phase 15 (Model & QueryBuilder 100%)
+
+---
+
+## 🚀 待執行的任務 (Focus Checklist)
+
+### Phase 15: 大型文件重構 (剩餘項目)
+- [x] **Scaffold BaseGenerator**: 重構 `packages/scaffold/src/generators/BaseGenerator.ts` (~1,169 行)
+    - [x] 提取模板引擎邏輯至 `TemplateManager`
+    - [x] 提取文件操作至 `FileUtilities`
+    - [x] 保持核心 Generator 輕量化 (< 800 行)
+- [x] **Scaffold DddGenerator**: 重構 `packages/scaffold/src/generators/DddGenerator.ts` (~1,074 行)
+    - [x] 將繼承結構改為組合模式 (Composition over Inheritance)
+    - [x] 拆分實體、值對象、倉儲生成邏輯
+
+### Phase 16: 性能優化 (尚未開始)
+- [ ] **依賴審計**: 檢查重複依賴與未使用的 package
+- [ ] **Bundle 優化**: 實現 Tree-shaking 檢查與 `sideEffects: false` 標記
+- [ ] **代碼分割**: 為大型模塊 (如 Prism, Atlas 驅動) 實現動態 `import()`
+- [ ] **熱路徑優化**: 針對 `Router` 與 `QueryBuilder` 進行 Profiling 與快取優化
 
 ---
 
@@ -11,22 +32,24 @@
 
 本路線圖涵蓋 Phase 1-4 技術債清理後的進階優化項目。
 
-| 類別 | 項目數 | 嚴重度 | 預估工時 |
-|------|--------|--------|----------|
-| 核心類型安全 | 44 處 @ts-expect-error | 🟡 Medium | 8-10h |
-| 功能完善 | 9 處 TODO/FIXME | 🟡 Medium | 6-8h |
-| 測試覆蓋率 | 待評估 | 🟡 Medium | 8-10h |
-| 文檔完善 | 623 個導出符號 | 🟢 Low | 10-12h |
-| 代碼重構 | 3+ 大型文件 | 🟢 Low | 8-10h |
-| 性能優化 | Bundle & 依賴 | 🟢 Low | 4-6h |
+| 類別 | 項目數 | 嚴重度 | 預估工時 | 狀態 |
+|------|--------|--------|----------|------|
+| 核心類型安全 | 44 處 @ts-expect-error | 🟡 Medium | 8-10h | ✅ 已完成 |
+| 功能完善 | 9 處 TODO/FIXME | 🟡 Medium | 6-8h | ✅ 已完成 |
+| 測試覆蓋率 | 待評估 | 🟡 Medium | 8-10h | ✅ 已完成 |
+| 文檔完善 | 623 個導出符號 | 🟢 Low | 10-12h | ✅ 已完成 |
+| 代碼重構 | 3+ 大型文件 | 🟢 Low | 8-10h | � 進行中 (2/4 已完成) |
+| 性能優化 | Bundle & 依賴 | 🟢 Low | 4-6h | 📋 待處理 |
 
 ---
 
-## 🎯 Phase 11: 核心模塊 @ts-expect-error 清理
+## 🎯 Phase 11: 核心模塊 @ts-expect-error 清理 ✅
 
 ### 11.1 概述
 **優先級**: 🟡 P2 - Medium
 **預估工時**: 8-10 小時
+**實際工時**: ~8 小時
+**狀態**: ✅ 已完成 (2026-01-17)
 **影響範圍**: `packages/core`, `packages/prism`, `packages/cosmos`
 
 ### 11.2 問題描述
@@ -135,11 +158,13 @@ grep -r "@ts-expect-error" packages/core/src packages/prism/src --exclude-dir=te
 
 ---
 
-## 🎯 Phase 12: 功能性 TODO 清理
+## 🎯 Phase 12: 功能性 TODO 清理 ✅
 
 ### 12.1 概述
 **優先級**: 🟡 P2 - Medium
 **預估工時**: 6-8 小時
+**實際工時**: ~2 小時 (大部分 TODO 為模板 placeholder，無需處理)
+**狀態**: ✅ 已完成 (2026-01-17)
 **影響範圍**: `packages/core`, `packages/cli`, `packages/zenith`
 
 ### 12.2 TODO 清單
@@ -470,7 +495,7 @@ describe('validateEmail', () => {
 
 ---
 
-## 🎯 Phase 14: 公開 API 文檔完善 🔄
+## 🎯 Phase 14: 公開 API 文檔完善 ✅
 
 ### 14.1 概述
 **優先級**: 🟡 P2 - Medium
@@ -484,10 +509,47 @@ describe('validateEmail', () => {
   - Core: ✅ 100% (Completed)
   - Atlas: ✅ 100% (Completed)
   - Sentinel: ✅ 100% (Completed)
+  - Monitor: ✅ 100% (Completed)
   - Monolith: ✅ 100% (Completed)
-  - Photon: ✅ 100% (Partial/Key Exports)
-  - Other Packages: Pending
-- 目標：100% 公開 API 有完整文檔
+  - Prism: ✅ 100% (Completed)
+  - Photon: ✅ 100% (Completed)
+  - Beam: ✅ 100% (Completed)
+  - Impulse: ✅ 100% (Completed)
+  - Cosmos: ✅ 100% (Completed)
+  - Flare: ✅ 100% (Completed)
+  - Radiance: ✅ 100% (Completed)
+  - Launchpad: ✅ 100% (Completed)
+  - Ripple: ✅ 100% (Completed)
+  - Stasis: ✅ 100% (Completed)
+  - Stream: ✅ 100% (Completed)
+  - Quasar: ✅ 100% (Completed)
+  - Astral: ✅ 100% (Completed)
+  - Fortify: ✅ 100% (Completed)
+  - Horizon: ✅ 100% (Completed)
+  - Signal: ✅ 100% (Completed)
+  - Luminosity: ✅ 100% (Completed)
+  - Constellation: ✅ 100% (Completed)
+  - Scaffold: ✅ 100% (Completed)
+  - Spectrum: ✅ 100% (Completed)
+  - Zenith: ✅ 100% (Completed)
+  - Flux: ✅ 100% (Completed)
+  - Echo: ✅ 100% (Completed)
+  - Pulsar: ✅ 100% (Completed)
+  - CLI: ✅ 100% (Completed)
+  - Admin SDK: ✅ 100% (Completed)
+  - Admin Shell React: ✅ 100% (Completed)
+  - Launchpad Dashboard: ✅ 100% (Completed)
+  - Orbit Cloudflare: ✅ 100% (Completed)
+  - Luminosity CLI: ✅ 100% (Completed)
+  - Luminosity Adapters: ✅ 100% (Completed)
+  - Plasma: ✅ 100% (Completed)
+  - Ripple Client: ✅ 100% (Completed)
+  - Dark Matter: ✅ 100% (Completed)
+  - Enterprise: ✅ 100% (Completed)
+  - Site: ✅ 100% (Completed)
+
+- **總計**: 0 處缺少 JSDoc (所有 UI 元件已完成)
+- **目標**: 100% 公開 API 有完整文檔 ✅ **已達成**
 
 ### 14.3 文檔標準
 
@@ -743,8 +805,8 @@ bun run docs:generate
 
 | 文件 | 行數 | 建議拆分方式 |
 |------|------|-------------|
-| `atlas/src/orm/model/Model.ts` | 1,597 | 拆分為 Model + Traits + Concerns |
-| `atlas/src/query/QueryBuilder.ts` | 1,339 | 拆分為 Builder + Clauses + Execution |
+| `atlas/src/orm/model/Model.ts` | 344 | ✅ 已拆分為 Model + Concerns (HasAttributes, HasRelationships, HasPersistence, HasScopes, HasEvents) |
+| `atlas/src/query/QueryBuilder.ts` | 323 | ✅ 已拆分為 Builder + Concerns (9 Classes) |
 | `scaffold/src/generators/BaseGenerator.ts` | 1,169 | 拆分為 Base + Templates + FileOps |
 | `scaffold/src/generators/DddGenerator.ts` | 1,074 | 使用組合而非繼承 |
 
@@ -1269,9 +1331,9 @@ Closes #
 ---
 
 **文檔維護者**: @Carl
-**最後更新**: 2026-01-16
-**版本**: 1.0.0
-**狀態**: ✅ 規劃完成，可以開始實作
+**最後更新**: 2026-01-17
+**版本**: 1.2.0
+**狀態**: 🔄 Phase 11-14 已完成，Phase 15 重構進行中
 
 ---
 

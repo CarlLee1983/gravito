@@ -2,6 +2,14 @@ import { useAdmin } from '@gravito/admin-shell-react'
 import { Clock, Edit2, Plus, Search, Tag, Trash2, Users } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 
+/**
+ * Coupon Management Page.
+ *
+ * Manage marketing coupons, discount codes, and promotional campaigns.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export function CouponList() {
   const { sdk } = useAdmin()
   const [coupons, setCoupons] = useState<any[]>([])

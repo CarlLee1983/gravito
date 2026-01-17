@@ -3,15 +3,32 @@ import { DiffCalculator } from './DiffCalculator'
 import type { SitemapGenerator, SitemapGeneratorOptions } from './SitemapGenerator'
 import { SitemapGenerator as SitemapGeneratorImpl } from './SitemapGenerator'
 
+/**
+ * Options for configuring the `IncrementalGenerator`.
+ *
+ * Extends `SitemapGeneratorOptions` to include change tracking and difference
+ * calculation components.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface IncrementalGeneratorOptions extends SitemapGeneratorOptions {
+  /** The change tracker used to store and retrieve sitemap changes. */
   changeTracker: ChangeTracker
+  /** Optional difference calculator. Defaults to a new `DiffCalculator` instance. */
   diffCalculator?: DiffCalculator
-  autoTrack?: boolean // 自動追蹤變更，預設 true
+  /** Whether to automatically track changes during full generation. @default true */
+  autoTrack?: boolean
 }
 
 /**
- * 增量生成器
- * 只生成變更的 URL，不重新生成整個 sitemap
+ * IncrementalGenerator optimizes sitemap updates by processing only changed URLs.
+ *
+ * Instead of regenerating the entire sitemap from scratch, it uses a `ChangeTracker`
+ * to identify new, updated, or removed URLs and updates the sitemap incrementally.
+ *
+ * @public
+ * @since 3.0.0
  */
 export class IncrementalGenerator {
   private options: IncrementalGeneratorOptions

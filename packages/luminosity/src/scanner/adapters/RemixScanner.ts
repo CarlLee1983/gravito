@@ -3,34 +3,46 @@ import { join } from 'node:path'
 import type { RouteScanner, ScannedRoute } from '../types'
 import { extractParams, isDynamicRoute, matchesPatterns, normalizePath } from '../utils'
 
+/**
+ * Options for configuring the `RemixScanner`.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface RemixScannerOptions {
-  /** Routes directory path (default: ./app/routes) */
+  /** Path to the Remix routes directory. @default './app/routes' */
   routesDir?: string
 
-  /** Exclude certain route patterns from scanning */
+  /** An array of patterns (strings or RegExps) to exclude from the sitemap. */
   excludePatterns?: (string | RegExp)[]
 
-  /** Only include routes matching these patterns */
+  /** If provided, only routes matching these patterns will be included. */
   includePatterns?: (string | RegExp)[]
 
-  /** Current working directory (default: process.cwd()) */
+  /** The current working directory for resolving relative paths. @default process.cwd() */
   cwd?: string
 }
 
 /**
- * RemixScanner
+ * RemixScanner automatically discovers routes from a Remix (v2+) project using
+ * the "Flat Routes" convention.
  *
- * Scans routes from Remix V2 "Flat Routes" convention.
+ * It scans the `app/routes` directory and correctly parses Remix's filename
+ * conventions, including index routes (`_index.tsx`), dynamic segments
+ * (`$city.tsx`), and pathless layouts (`_auth.tsx`).
  *
  * @example
  * ```typescript
- * import { RemixScanner, SitemapBuilder } from '@gravito/luminosity'
+ * import { RemixScanner } from '@gravito/luminosity/scanner';
  *
- * const builder = new SitemapBuilder({
- *   scanner: new RemixScanner({ routesDir: './app/routes' }),
- *   hostname: 'https://example.com'
- * })
+ * const scanner = new RemixScanner({
+ *   routesDir: './app/routes'
+ * });
+ * const routes = await scanner.scan();
  * ```
+ *
+ * @public
+ * @since 3.0.0
  */
 export class RemixScanner implements RouteScanner {
   readonly framework = 'remix'

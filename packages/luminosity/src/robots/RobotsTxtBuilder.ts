@@ -1,3 +1,19 @@
+/**
+ * RobotsTxtBuilder provides a fluent API for generating robots.txt files.
+ *
+ * @example
+ * ```typescript
+ * const robots = new RobotsTxtBuilder()
+ *   .userAgent('Googlebot')
+ *   .allow('/')
+ *   .disallow('/admin')
+ *   .sitemap('https://example.com/sitemap.xml')
+ *   .build();
+ * ```
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class RobotsTxtBuilder {
   private _lines: string[] = []
 

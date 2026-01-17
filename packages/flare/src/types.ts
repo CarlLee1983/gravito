@@ -6,76 +6,102 @@ import type { Notification } from './Notification'
 
 /**
  * Notification channel interface.
+ * @public
  */
 export interface NotificationChannel {
   /**
-   * Send a notification.
-   * @param notification - Notification instance
-   * @param notifiable - Recipient
+   * Send a notification through the specified channel.
+   *
+   * @param notification - The notification instance containing data.
+   * @param notifiable - The recipient of the notification.
    */
   send(notification: Notification, notifiable: Notifiable): Promise<void>
 }
 
 /**
- * Notifiable (notification recipient) interface.
+ * Interface for recipients that can receive notifications.
+ * @public
  */
 export interface Notifiable {
   /**
-   * Recipient identifier (usually an ID).
+   * Unique identifier for the recipient (e.g., User ID).
    */
   getNotifiableId(): string | number
 
   /**
-   * Recipient type (optional, for polymorphic relations).
+   * Optional recipient type (useful for polymorphic notifications).
    */
   getNotifiableType?(): string
 
   /**
-   * Preferred channels (optional).
+   * Optional list of preferred channels for this specific recipient.
    */
   preferredNotificationChannels?(): string[]
 }
 
 /**
- * Mail message payload.
+ * Payload for email notifications.
+ * @public
  */
 export interface MailMessage {
+  /** Email subject line */
   subject: string
+  /** View template path */
   view?: string
+  /** Data to pass to the view template */
   data?: Record<string, unknown>
+  /** Inline HTML content */
   html?: string
+  /** Plain text content */
   text?: string
+  /** Sender address */
   from?: string
+  /** Target recipient(s) */
   to?: string | string[]
+  /** Carbon copy recipient(s) */
   cc?: string | string[]
+  /** Blind carbon copy recipient(s) */
   bcc?: string | string[]
 }
 
 /**
- * Database notification payload.
+ * Payload for database-stored notifications.
+ * @public
  */
 export interface DatabaseNotification {
+  /** Type identifier for the notification */
   type: string
+  /** JSON-serializable data payload */
   data: Record<string, unknown>
+  /** Timestamp when the notification was marked as read */
   readAt?: Date | null
 }
 
 /**
- * Broadcast notification payload.
+ * Payload for real-time broadcast notifications.
+ * @public
  */
 export interface BroadcastNotification {
+  /** Event/Type identifier for the broadcast */
   type: string
+  /** Data to be broadcasted to subscribers */
   data: Record<string, unknown>
 }
 
 /**
- * Slack message payload.
+ * Payload for Slack channel notifications.
+ * @public
  */
 export interface SlackMessage {
+  /** Main message text */
   text: string
+  /** Target Slack channel */
   channel?: string
+  /** Custom bot username */
   username?: string
+  /** Icon emoji for the bot */
   iconEmoji?: string
+  /** Array of Slack attachments for rich formatting */
   attachments?: Array<{
     color?: string
     title?: string
@@ -85,10 +111,14 @@ export interface SlackMessage {
 }
 
 /**
- * SMS message payload.
+ * Payload for SMS notifications.
+ * @public
  */
 export interface SmsMessage {
+  /** Recipient phone number */
   to: string
+  /** Message content */
   message: string
+  /** Sender ID or phone number */
   from?: string
 }

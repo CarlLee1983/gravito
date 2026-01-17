@@ -2,6 +2,15 @@ import { mkdir } from 'node:fs/promises'
 import { getRuntimeAdapter } from '@gravito/core'
 import type { IGitAdapter } from '../../Domain/Interfaces'
 
+/**
+ * ShellGitAdapter implements the `IGitAdapter` interface using the Git CLI.
+ *
+ * It provides methods for cloning repositories to a temporary directory
+ * for deployment into Rocket containers.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class ShellGitAdapter implements IGitAdapter {
   private baseDir = '/tmp/gravito-launchpad-git'
 

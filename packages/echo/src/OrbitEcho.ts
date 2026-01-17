@@ -4,9 +4,23 @@ import { WebhookDispatcher } from './send/WebhookDispatcher'
 import type { EchoConfig } from './types'
 
 /**
- * OrbitEcho - Gravito Webhook Module
+ * OrbitEcho is the official webhook orchestration module for Gravito.
  *
- * Provides secure webhook receiving and reliable webhook sending.
+ * It provides a secure way to receive incoming webhooks (e.g., from Stripe, GitHub)
+ * and a reliable way to dispatch outgoing webhooks to third-party services.
+ *
+ * @example
+ * ```typescript
+ * const echo = new OrbitEcho({
+ *   providers: {
+ *     stripe: { name: 'stripe', secret: 'whsec_...' }
+ *   }
+ * });
+ * core.addOrbit(echo);
+ * ```
+ *
+ * @public
+ * @since 3.0.0
  */
 export class OrbitEcho implements GravitoOrbit {
   private receiver: WebhookReceiver

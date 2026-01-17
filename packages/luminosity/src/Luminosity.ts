@@ -6,20 +6,41 @@ import { RobotsTxtBuilder } from './robots/RobotsTxtBuilder'
 import { SitemapIndexBuilder } from './xml/SitemapIndexBuilder'
 import { XmlStreamBuilder } from './xml/XmlStreamBuilder'
 
+/**
+ * Options for configuring the `Luminosity` sitemap generator.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface LuminosityOptions {
-  /** Output directory path (default: ./public) */
+  /** Output directory path. @default './public' */
   path?: string
-  /** Base URL for sitemaps (e.g., https://example.com) to be used in index and entries */
+  /** Base URL for sitemaps (e.g., 'https://example.com') to be used in index and entries. */
   hostname?: string
-  /** Max URLs per sitemap file (default: 50000) */
+  /** Maximum number of URLs per sitemap file. @default 50000 */
   maxEntriesPerFile?: number
-  /** Enable gzip compression */
+  /** Whether to enable gzip compression for sitemap files. @default false */
   gzip?: boolean
 }
 
 /**
- * The main entry point for the Luminosity Sitemap Engine.
- * Provides a high-level, streaming API for generating sitemaps.
+ * Luminosity is the core sitemap generation engine for Gravito.
+ *
+ * It provides a high-level, streaming API for generating SEO-compliant
+ * sitemaps. It automatically handles file sharding, gzip compression,
+ * and sitemap index generation.
+ *
+ * @example
+ * ```typescript
+ * const engine = new Luminosity({
+ *   hostname: 'https://example.com',
+ *   path: './dist'
+ * });
+ * await engine.generate(myEntries);
+ * ```
+ *
+ * @public
+ * @since 3.0.0
  */
 export class Luminosity {
   private config: LuminosityOptions

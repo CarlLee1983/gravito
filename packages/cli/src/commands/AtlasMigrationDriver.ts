@@ -6,8 +6,33 @@ import type { MigrationDriver, MigrationResult, MigrationStatus } from './Migrat
 
 const DEFAULT_DATABASE_URL = 'sqlite:./demo.db'
 
+/**
+ * Migration driver for Gravito Atlas ORM.
+ *
+ * Manages database migrations using the Atlas ORM migration system.
+ * Supports SQLite, PostgreSQL, MySQL, and MongoDB databases.
+ *
+ * @example
+ * ```typescript
+ * const driver = new AtlasMigrationDriver('src/database/migrations')
+ *
+ * // Generate a new migration
+ * await driver.generate('create_users_table')
+ *
+ * // Run pending migrations
+ * await driver.migrate()
+ *
+ * // Check migration status
+ * const status = await driver.status()
+ * console.log('Pending:', status.pending)
+ * console.log('Applied:', status.applied)
+ * ```
+ *
+ * @since 3.0.0
+ * @public
+ */
 export class AtlasMigrationDriver implements MigrationDriver {
-  constructor(private migrationsDir = 'src/database/migrations') {}
+  constructor(private migrationsDir = 'src/database/migrations') { }
 
   async generate(name: string): Promise<MigrationResult> {
     const timestamp = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14)

@@ -1,7 +1,14 @@
 import { type SeoConfig, SeoEngine } from '@gravito/luminosity'
 import type { Context, MiddlewareHandler } from '@gravito/photon'
 
+/**
+ * Dependencies for the Gravito SEO middleware, supporting dependency injection for testing.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface GravitoSeoDeps {
+  /** Override for the SeoEngine implementation. */
   SeoEngine?: typeof SeoEngine
 }
 

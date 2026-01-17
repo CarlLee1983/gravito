@@ -3,17 +3,42 @@ import type { DevMailbox } from './DevMailbox'
 import { getMailboxHtml } from './ui/mailbox'
 import { getPreviewHtml } from './ui/preview'
 
+/**
+ * Configuration options for the development mail server.
+ *
+ * @public
+ */
 export type DevServerOptions = {
+  /** Allow access in production environment (use with caution) */
   allowInProduction?: boolean
+  /** Custom gate function to control access to the dev UI */
   gate?: (c: GravitoContext) => boolean | Promise<boolean>
 }
 
+/**
+ * Development mail server for previewing captured emails.
+ *
+ * Provides a web UI at the configured base path (default: `/__mail`)
+ * to view, preview, and manage emails captured during development.
+ *
+ * @example
+ * ```typescript
+ * const mailbox = new DevMailbox()
+ * const devServer = new DevServer(mailbox, '/__mail', {
+ *   gate: (c) => c.get('user')?.isAdmin
+ * })
+ * devServer.register(core)
+ * ```
+ *
+ * @since 3.0.0
+ * @public
+ */
 export class DevServer {
   constructor(
     private mailbox: DevMailbox,
     private base = '/__mail',
     private options?: DevServerOptions
-  ) {}
+  ) { }
 
   private async canAccess(ctx: GravitoContext): Promise<boolean> {
     const isProduction = process.env.NODE_ENV === 'production'

@@ -8,6 +8,18 @@ import type { SeoConfig } from '../../types'
 import type { SeoStrategy } from '../interfaces'
 import { DynamicStrategy } from './DynamicStrategy'
 
+/**
+ * IncrementalStrategy manages sitemap updates using a Write-Ahead Log (WAL).
+ *
+ * It stores an initial snapshot of all sitemap entries and appends any
+ * subsequent changes (additions or removals) to a persistent log file (.jsonl).
+ * When retrieving entries, it replays the log onto the snapshot to provide
+ * the current state. It also handles automatic log compaction to keep the
+ * system efficient.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class IncrementalStrategy implements SeoStrategy {
   private logger: JsonlLogger
   private compactor: Compactor

@@ -32,42 +32,111 @@ function sanitizeFilename(value: string): string | null {
   return value
 }
 
+/**
+ * Configuration for a dynamically generated sitemap that is built upon request.
+ *
+ * Useful for small to medium sites where fresh data is critical. Dynamic sitemaps
+ * are generated on-the-fly and can be cached at the HTTP level.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface DynamicSitemapOptions extends SitemapStreamOptions {
-  path?: string | undefined // default: '/sitemap.xml'
+  /** The URL path where the sitemap will be exposed. @default '/sitemap.xml' */
+  path?: string | undefined
+  /** List of sitemap entry providers to scan for content. */
   providers: SitemapProvider[]
+  /** Cache duration in seconds for the HTTP response. @default undefined (no-cache) */
   cacheSeconds?: number | undefined
+  /** Persistence backend for cached XML files. Defaults to MemorySitemapStorage. */
   storage?: SitemapStorage | undefined
+  /** Optional distributed lock to prevent "cache stampede" during heavy generation. */
   lock?: SitemapLock | undefined
 }
 
+/**
+ * Configuration for a statically pre-generated sitemap.
+ *
+ * Recommended for large sites or high-traffic applications. Static sitemaps
+ * are built (usually as part of a build process) and served as static files.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface StaticSitemapOptions extends SitemapStreamOptions {
+  /** Local directory where generated XML files will be saved. */
   outDir: string
-  filename?: string | undefined // default: 'sitemap.xml'
+  /** The name of the root sitemap file. @default 'sitemap.xml' */
+  filename?: string | undefined
+  /** List of sitemap entry providers to scan for content. */
   providers: SitemapProvider[]
+  /** Custom storage backend. Defaults to DiskSitemapStorage using `outDir`. */
   storage?: SitemapStorage | undefined
-  // 增量生成配置
+  /** Optional incremental generation settings to only update changed URLs. */
   incremental?: {
+    /** Whether to enable incremental builds. */
     enabled: boolean
+    /** Backend for tracking structural site changes. */
     changeTracker: ChangeTracker
+    /** Whether to automatically record new changes during scan. @default false */
     autoTrack?: boolean
   }
-  // 301 轉址配置
+  /** Optional SEO redirect orchestration settings. */
   redirect?: {
+    /** Whether to automatically handle 301/302 redirects found in sitemap. */
     enabled: boolean
+    /** Backend for managing and resolving redirect rules. */
     manager: RedirectManager
+    /** Strategy for resolving conflicting or chained redirects. @default 'remove_old_add_new' */
     strategy?: 'remove_old_add_new' | 'keep_relation' | 'update_url' | 'dual_mark'
+    /** Whether to resolve redirect chains into a single jump. @default false */
     followChains?: boolean
+    /** Maximum number of redirect jumps to follow. @default 5 */
     maxChainLength?: number
   }
-  // 影子處理配置
+  /** Deployment settings for atomic sitemap updates via shadow staging. */
   shadow?: {
+    /** Whether to enable "shadow" (atomic staging) mode. */
     enabled: boolean
+    /** The update strategy: 'atomic' (full swap) or 'versioned' (archived). @default 'atomic' */
     mode: 'atomic' | 'versioned'
   }
-  // 進度追蹤配置
+  /** Persistence backend for long-running job progress tracking. */
   progressStorage?: SitemapProgressStorage
 }
 
+/**
+ * OrbitSitemap is the enterprise SEO orchestration module for Gravito.
+ *
+ * It provides advanced sitemap generation supporting large-scale indexing,
+ * automatic 301/302 redirect handling, and atomic sitemap deployments.
+ *
+ * It can operate in two modes:
+ * 1. **Dynamic**: Sitemaps are generated on-the-fly and cached.
+ * 2. **Static**: Sitemaps are pre-built (e.g., during CI/CD) and served from disk or cloud storage.
+ *
+ * @example Dynamic Mode
+ * ```typescript
+ * const sitemap = OrbitSitemap.dynamic({
+ *   baseUrl: 'https://example.com',
+ *   providers: [new PostSitemapProvider()]
+ * });
+ * core.addOrbit(sitemap);
+ * ```
+ *
+ * @example Static Mode
+ * ```typescript
+ * const sitemap = OrbitSitemap.static({
+ *   baseUrl: 'https://example.com',
+ *   outDir: './public',
+ *   shadow: { enabled: true, mode: 'atomic' }
+ * });
+ * await sitemap.generate();
+ * ```
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class OrbitSitemap implements GravitoOrbit {
   private options: DynamicSitemapOptions | StaticSitemapOptions
   private mode: 'dynamic' | 'static'

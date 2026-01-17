@@ -3,45 +3,101 @@ import { type MySQLPersistence, QueueManager } from '@gravito/stream'
 import { Redis } from 'ioredis'
 import { AlertService } from './AlertService'
 
+/**
+ * Statistics for a single message queue.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface QueueStats {
+  /** The name of the queue. */
   name: string
+  /** Number of jobs waiting to be processed. */
   waiting: number
+  /** Number of jobs scheduled for future execution. */
   delayed: number
+  /** Number of jobs that have failed. */
   failed: number
+  /** Number of jobs currently being processed. */
   active: number
+  /** Whether the queue is currently paused. */
   paused: boolean
 }
 
+/**
+ * Telemetry report from a worker node.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface WorkerReport {
+  /** Unique identifier for the worker node. */
   id: string
+  /** Machine hostname. */
   hostname: string
+  /** OS Process ID. */
   pid: number
+  /** Process uptime in seconds. */
   uptime: number
+  /** Memory usage statistics. */
   memory: {
     rss: string
     heapTotal: string
     heapUsed: string
   }
+  /** List of queues being processed by this worker. */
   queues: string[]
+  /** Maximum number of concurrent jobs. */
   concurrency: number
+  /** ISO timestamp of the report. */
   timestamp: string
+  /** System load average (1, 5, 15 minutes). */
   loadAvg: number[]
 }
 
+/**
+ * Represents a log entry from the queue system.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface SystemLog {
+  /** Log severity level. */
   level: 'info' | 'warn' | 'error' | 'success'
+  /** The log message. */
   message: string
+  /** ID of the worker that generated the log. */
   workerId: string
+  /** Optional queue name associated with the log. */
   queue?: string
+  /** ISO timestamp of the log event. */
   timestamp: string
 }
 
+/**
+ * Aggregated global statistics for the entire queue system.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface GlobalStats {
+  /** Statistics for all discovered queues. */
   queues: QueueStats[]
+  /** Historical throughput data points. */
   throughput: { timestamp: string; count: number }[]
+  /** List of all active workers. */
   workers: WorkerReport[]
 }
 
+/**
+ * QueueService is the primary backend service for the Zenith dashboard.
+ *
+ * It coordinates queue discovery, metrics collection, log streaming,
+ * and remote control operations across all monitored nodes.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class QueueService {
   private redis: Redis
   private subRedis: Redis

@@ -1,24 +1,84 @@
 import type { GravitoMiddleware } from '@gravito/core'
 
+/**
+ * A map of translations where keys are translation keys and values
+ * are either the translated string or a nested map for grouping.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export type TranslationMap = {
   [key: string]: string | TranslationMap
 }
 
+/**
+ * Configuration for the I18n service.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface I18nConfig {
+  /** The fallback locale to use when the requested one is not found. */
   defaultLocale: string
+  /** List of locales officially supported by the application. */
   supportedLocales: string[]
-  // Path to translation files, or a Record of translations
-  // If undefined, it will look into `resources/lang` by default (conceptually, handled by loader)
+  /**
+   * Optional record of translations indexed by locale.
+   * Keys are locale strings (e.g., 'en', 'zh-TW').
+   */
   translations?: Record<string, TranslationMap>
 }
 
+/**
+ * Interface for the I18n service providing translation capabilities.
+ *
+ * It allows for setting and getting the current locale, translating strings
+ * with optional replacements, and checking for key existence.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface I18nService {
+  /** The current active locale. */
   locale: string
+  /**
+   * Set the active locale for this service instance.
+   *
+   * @param locale - Valid locale string from supportedLocales.
+   */
   setLocale(locale: string): void
+  /**
+   * Get the current active locale.
+   *
+   * @returns Current locale string.
+   */
   getLocale(): string
+  /**
+   * Translate a key into the current locale.
+   *
+   * @param key - The translation key (e.g., 'auth.login_success').
+   * @param replacements - Optional placeholders in the format `:key` replaced by values.
+   * @returns The translated string, or the key itself if not found.
+   *
+   * @example
+   * ```typescript
+   * i18n.t('messages.hello', { name: 'John' }); // "Hello John"
+   * ```
+   */
   t(key: string, replacements?: Record<string, string | number>): string
+  /**
+   * Check if a translation key exists for the current locale.
+   *
+   * @param key - The key to check.
+   * @returns True if the key exists, false otherwise.
+   */
   has(key: string): boolean
-  // Create a request-scoped instance
+  /**
+   * Create a new request-scoped instance of the I18n service.
+   *
+   * @param locale - Optional initial locale for the new instance.
+   * @returns A new I18nService instance.
+   */
   clone(locale?: string): I18nService
 }
 

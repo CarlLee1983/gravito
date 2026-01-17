@@ -10,6 +10,14 @@ import {
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
+/**
+ * Main Admin Dashboard Page.
+ *
+ * Displays key metrics, recent activity, and quick access to core features.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export function Dashboard() {
   const { sdk } = useAdmin()
   const [stats, setStats] = useState<any>(null)

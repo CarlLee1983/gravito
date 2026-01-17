@@ -1,5 +1,14 @@
 import type { JsonLdConfig } from './interfaces'
 
+/**
+ * JsonLdBuilder generates structured data scripts in JSON-LD format.
+ *
+ * It automatically adds the `@context` and handles script tag escaping
+ * to prevent XSS and broken HTML.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class JsonLdBuilder {
   constructor(private config: JsonLdConfig | JsonLdConfig[]) {}
 

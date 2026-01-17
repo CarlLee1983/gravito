@@ -8,6 +8,15 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+/**
+ * Ad Management Page.
+ *
+ * Displays a grid of advertisements with their status, performance metrics,
+ * and management controls.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export function AdList() {
   const { sdk } = useAdmin()
   const [items, setItems] = useState<any[]>([])

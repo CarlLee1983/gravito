@@ -11,6 +11,16 @@
 import type { DirectoryNode } from '../types'
 import { BaseGenerator, type GeneratorContext } from './BaseGenerator'
 
+/**
+ * CleanArchitectureGenerator implements Uncle Bob's Clean Architecture pattern.
+ *
+ * It generates a strictly layered structure including Domain, Application,
+ * Infrastructure, and Interface layers, ensuring business logic is isolated
+ * from framework and external dependencies.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class CleanArchitectureGenerator extends BaseGenerator {
   get architectureType() {
     return 'clean' as const

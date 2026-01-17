@@ -1,11 +1,38 @@
 import type { CacheStore } from './store'
 
+/**
+ * Represents the response from a rate limiting attempt.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface RateLimiterResponse {
+  /** Whether the request is allowed. */
   allowed: boolean
+  /** Number of attempts remaining within the current window. */
   remaining: number
+  /** Epoch timestamp in seconds when the rate limit will reset. */
   reset: number
 }
 
+/**
+ * RateLimiter provides a simple mechanism for limiting request frequency.
+ *
+ * It uses a `CacheStore` backend to track attempt counts and handle
+ * expiration (sliding or fixed window depending on store capability).
+ *
+ * @example
+ * ```typescript
+ * const limiter = new RateLimiter(cacheStore);
+ * const status = await limiter.attempt('login:127.0.0.1', 5, 60);
+ * if (!status.allowed) {
+ *   throw new Error('Too many attempts');
+ * }
+ * ```
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class RateLimiter {
   constructor(private store: CacheStore) {}
 

@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync, statSync } from 'fs'
+import { readFileSync, readdirSync, statSync } from 'fs'
 import { join } from 'path'
 
 function findExportsWithoutDocs(dir: string): void {
@@ -8,13 +8,14 @@ function findExportsWithoutDocs(dir: string): void {
     const fullPath = join(dir, file)
 
     if (statSync(fullPath).isDirectory()) {
-      if (!file.includes('node_modules') && !file.includes('dist')) {
+      if (!file.includes('node_modules') && !file.includes('dist') && !file.includes('.git')) {
         findExportsWithoutDocs(fullPath)
       }
       continue
     }
 
-    if (!file.endsWith('.ts') || file.endsWith('.test.ts') || file.endsWith('.d.ts')) continue
+    if (!file.endsWith('.ts') && !file.endsWith('.tsx')) continue
+    if (file.endsWith('.test.ts') || file.endsWith('.test.tsx') || file.endsWith('.bench.ts')) continue
 
     const content = readFileSync(fullPath, 'utf-8')
     const lines = content.split('\n')
@@ -22,34 +23,15 @@ function findExportsWithoutDocs(dir: string): void {
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i]
 
-      if (/^export (class|function|interface|type|const) /.test(line)) {
+      // Match exported declarations at the start of the line
+      if (/^export (class|function|interface|type|const|abstract class)/.test(line)) {
         // Check if previous line has JSDoc
-        // Iterate backwards skipping empty lines/imports to find if comment exists
-        let prevIndex = i - 1
-        let hasDoc = false
+        const prevLine = i > 0 ? lines[i - 1].trim() : ''
 
-        while (prevIndex >= 0) {
-          const l = lines[prevIndex].trim()
-          if (l === '' || l.startsWith('@')) {
-            // skip decorators or empty
-            prevIndex--
-            continue
-          }
-          if (l.endsWith('*/')) {
-            hasDoc = true
-          }
-          break
-        }
-
-        // Also check simplified JSDoc single line /** ... */
-
-        if (!hasDoc) {
-          // Double check if line itself has doc? No, standard is block above.
-          const match = line.match(/export (class|function|interface|type|const) (\w+)/)
+        if (!prevLine.endsWith('*/')) {
+          const match = line.match(/export (?:abstract )?\w+ (\w+)/)
           if (match) {
-            // Ignore some common auto-generated patterns or index files if they just re-export
-            // But this regex catches declarations.
-            console.log(`${fullPath}:${i + 1} - Missing docs for: ${match[1]} ${match[2]}`)
+            console.log(`${fullPath}:${i + 1} - Missing docs for: ${match[1]}`)
           }
         }
       }

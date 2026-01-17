@@ -3,6 +3,14 @@ import { Check, Edit2, Plus, RefreshCw, Shield, ShieldAlert, Trash2, X } from 'l
 import type React from 'react'
 import { useCallback, useEffect, useState } from 'react'
 
+/**
+ * Role Management Page.
+ *
+ * Define roles and assign permissions to control access levels.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export function RoleList() {
   const { sdk } = useAdmin()
   const [roles, setRoles] = useState<any[]>([])

@@ -1,40 +1,95 @@
 import type { RedirectRule } from '../types'
 
+/**
+ * Options for automatic redirect detection via HTTP probes.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface AutoDetectOptions {
+  /** Whether automatic HTTP detection is enabled. */
   enabled: boolean
-  timeout?: number // 超時時間（毫秒），預設 5000
-  maxConcurrent?: number // 最大並發數，預設 10
-  cache?: boolean // 是否快取結果
-  cacheTtl?: number // 快取 TTL（秒），預設 3600
+  /** HTTP request timeout in milliseconds. @default 5000 */
+  timeout?: number
+  /** Maximum number of concurrent HTTP probes. @default 10 */
+  maxConcurrent?: number
+  /** Whether to cache detection results in memory. @default false */
+  cache?: boolean
+  /** Cache time-to-live in seconds. @default 3600 */
+  cacheTtl?: number
 }
 
+/**
+ * Options for redirect detection from a database table.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface DatabaseDetectOptions {
+  /** Whether database detection is enabled. */
   enabled: boolean
+  /** The name of the table containing redirect rules. */
   table: string
+  /** Column mapping for the redirect table. */
   columns: {
     from: string
     to: string
     type: string
   }
-  connection: any // 資料庫連接
+  /** Database connection instance (e.g., Knex, Atlas). */
+  connection: any
 }
 
+/**
+ * Options for redirect detection from a static configuration file.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface ConfigDetectOptions {
+  /** Whether configuration file detection is enabled. */
   enabled: boolean
+  /** Path to the JSON configuration file. */
   path: string
-  watch?: boolean // 是否監聽檔案變更
+  /** Whether to watch the file for changes. @default false */
+  watch?: boolean
 }
 
+/**
+ * Options for configuring the `RedirectDetector`.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface RedirectDetectorOptions {
+  /** The base URL of the site being scanned. */
   baseUrl: string
+  /** Configuration for automatic HTTP probing. */
   autoDetect?: AutoDetectOptions
+  /** Configuration for database-driven detection. */
   database?: DatabaseDetectOptions
+  /** Configuration for file-driven detection. */
   config?: ConfigDetectOptions
 }
 
 /**
- * 轉址偵測器
- * 支援多種偵測方式：自動偵測、資料庫、設定檔
+ * RedirectDetector identifies 301 and 302 redirects for URLs.
+ *
+ * It supports multiple detection strategies including database lookups,
+ * static configuration files, and live HTTP probing. This ensures that
+ * sitemaps always point to final destination URLs, improving SEO efficiency.
+ *
+ * @example
+ * ```typescript
+ * const detector = new RedirectDetector({
+ *   baseUrl: 'https://example.com',
+ *   autoDetect: { enabled: true }
+ * });
+ * const rule = await detector.detect('/old-path');
+ * ```
+ *
+ * @public
+ * @since 3.0.0
  */
 export class RedirectDetector {
   private options: RedirectDetectorOptions

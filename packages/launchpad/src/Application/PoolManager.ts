@@ -3,6 +3,15 @@ import type { Mission } from '../Domain/Mission'
 import { Rocket } from '../Domain/Rocket'
 import type { RefurbishUnit } from './RefurbishUnit'
 
+/**
+ * PoolManager handles the lifecycle and pooling of Rocket containers.
+ *
+ * It manages a pool of pre-warmed containers to ensure fast deployment of
+ * new missions. It also handles rocket assignment and recycling (refurbishment).
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class PoolManager {
   constructor(
     private dockerAdapter: IDockerAdapter,

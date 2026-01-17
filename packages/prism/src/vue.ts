@@ -1,6 +1,32 @@
 import { defineComponent, h, type PropType } from 'vue'
 import { type ImageOptions, ImageService } from './ImageService'
 
+/**
+ * Gravito Image component for Vue.
+ *
+ * A thin wrapper around the native `<img>` tag that uses `ImageService` to
+ * automatically generate optimized attributes, including responsive `srcset`
+ * and accessibility-compliant alt text.
+ *
+ * @example
+ * ```vue
+ * <template>
+ *   <GravitoImage
+ *     src="/hero.jpg"
+ *     alt="Hero Image"
+ *     :width="800"
+ *     loading="eager"
+ *   />
+ * </template>
+ *
+ * <script setup>
+ * import { Image as GravitoImage } from '@gravito/prism/vue';
+ * </script>
+ * ```
+ *
+ * @public
+ * @since 3.0.0
+ */
 export const Image = defineComponent({
   name: 'GravitoImage',
   props: {

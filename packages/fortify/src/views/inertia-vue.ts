@@ -5,6 +5,15 @@
  * Install with: bun gravito fortify:install --stack=vue
  */
 
+/**
+ * Default Login Page template for Inertia Vue.
+ *
+ * Provides a modern, responsive login form with email, password, and
+ * "remember me" functionality.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export const LoginPage = `
 <script setup lang="ts">
 import { useForm, Head, Link } from '@inertiajs/vue3'
@@ -93,6 +102,14 @@ const submit = () => {
 </template>
 `
 
+/**
+ * Default Register Page template for Inertia Vue.
+ *
+ * Provides a registration form with name, email, and password confirmation.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export const RegisterPage = `
 <script setup lang="ts">
 import { useForm, Head, Link } from '@inertiajs/vue3'
@@ -185,6 +202,14 @@ const submit = () => {
 </template>
 `
 
+/**
+ * Default Forgot Password Page template for Inertia Vue.
+ *
+ * Provides a simple form to request a password reset link.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export const ForgotPasswordPage = `
 <script setup lang="ts">
 import { useForm, Head, Link } from '@inertiajs/vue3'

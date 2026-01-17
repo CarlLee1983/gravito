@@ -18,30 +18,21 @@ const manager = new MongoManager()
 
 /**
  * MongoDB Facade
- * Provides static methods for MongoDB operations
+ *
+ * Provides static methods for MongoDB operations with support for multiple
+ * named connections, automated connection management, and a fluent query builder.
  *
  * @example
  * ```typescript
- * import { Mongo } from '@gravito/dark-matter'
+ * import { Mongo } from '@gravito/dark-matter';
  *
- * // Configure
- * Mongo.configure({
- *   default: 'main',
- *   connections: {
- *     main: { uri: 'mongodb://localhost:27017', database: 'myapp' }
- *   }
- * })
- *
- * // Connect
- * await Mongo.connect()
- *
- * // Use
  * const users = await Mongo.collection('users')
  *   .where('status', 'active')
- *   .orderBy('createdAt', 'desc')
- *   .limit(10)
- *   .get()
+ *   .get();
  * ```
+ *
+ * @public
+ * @since 3.0.0
  */
 export class Mongo {
   // ============================================================================

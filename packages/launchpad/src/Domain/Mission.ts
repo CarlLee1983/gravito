@@ -7,6 +7,15 @@ interface MissionProps {
   commitSha: string // Commit Hash
 }
 
+/**
+ * Mission represents a deployment task for a specific code version.
+ *
+ * It is a Value Object containing information about the source repository,
+ * branch, and commit to be deployed.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class Mission extends ValueObject<MissionProps> {
   get id() {
     return this.props.id

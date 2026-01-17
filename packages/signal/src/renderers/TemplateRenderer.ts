@@ -1,5 +1,20 @@
 import type { Renderer, RenderResult } from './Renderer'
 
+/**
+ * Renderer for template-based emails using Gravito Prism.
+ *
+ * Renders email templates from the filesystem using the Prism
+ * template engine with support for data binding and layouts.
+ *
+ * @example
+ * ```typescript
+ * const renderer = new TemplateRenderer('welcome', './src/emails')
+ * const { html, text } = await renderer.render({ name: 'John' })
+ * ```
+ *
+ * @since 3.0.0
+ * @public
+ */
 export class TemplateRenderer implements Renderer {
   private template: string
   private viewsDir: string

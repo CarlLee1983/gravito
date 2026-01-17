@@ -5,6 +5,15 @@ interface CacheItem {
   expiresAt: number
 }
 
+/**
+ * MemoryCache provides a simple TTL-based in-memory cache for sitemap entries.
+ *
+ * It includes a primitive locking mechanism to prevent "cache stampede"
+ * (multiple simultaneous requests triggering identical heavy generation tasks).
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class MemoryCache {
   private cache: CacheItem | null = null
   private locked = false

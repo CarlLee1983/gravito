@@ -2,6 +2,16 @@ import type { SeoResolver, SitemapEntry } from '../../interfaces'
 import type { SeoConfig } from '../../types'
 import type { SeoStrategy } from '../interfaces'
 
+/**
+ * DynamicStrategy generates sitemap entries on-the-fly by querying resolvers.
+ *
+ * It does not persist any data and always reflects the current state of
+ * the underlying data sources (e.g., database, CMS API). It is suitable
+ * for small to medium sites where data changes frequently.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class DynamicStrategy implements SeoStrategy {
   constructor(private config: SeoConfig) {}
 

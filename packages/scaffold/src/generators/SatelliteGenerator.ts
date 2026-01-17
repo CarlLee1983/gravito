@@ -8,6 +8,15 @@
 import type { DirectoryNode } from '../types'
 import { BaseGenerator, type GeneratorContext } from './BaseGenerator'
 
+/**
+ * SatelliteGenerator scaffolds modular plug-and-play extensions for Gravito.
+ *
+ * It follows a strict DDD and Clean Architecture pattern to ensure that
+ * satellites remain decoupled from the core framework and other satellites.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class SatelliteGenerator extends BaseGenerator {
   get architectureType() {
     return 'satellite' as const

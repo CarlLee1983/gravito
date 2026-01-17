@@ -1,12 +1,25 @@
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from 'react'
 
+/**
+ * Represents a system notification in the Zenith dashboard.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface Notification {
+  /** Unique notification ID. */
   id: string
+  /** The severity type of the notification. */
   type: 'info' | 'success' | 'warning' | 'error'
+  /** Short title for the notification. */
   title: string
+  /** Detailed notification message. */
   message: string
+  /** Epoch timestamp when the notification was created. */
   timestamp: number
+  /** Whether the notification has been read by the user. */
   read: boolean
+  /** Optional source identifier (e.g., a queue name). */
   source?: string
 }
 
@@ -22,6 +35,12 @@ interface NotificationContextType {
 
 const NotificationContext = createContext<NotificationContextType | null>(null)
 
+/**
+ * React hook to access the notification system.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export function useNotifications() {
   const context = useContext(NotificationContext)
   if (!context) {
@@ -34,6 +53,12 @@ interface NotificationProviderProps {
   children: ReactNode
 }
 
+/**
+ * Provider component for managing global notifications in Zenith.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export function NotificationProvider({ children }: NotificationProviderProps) {
   const [notifications, setNotifications] = useState<Notification[]>([])
 

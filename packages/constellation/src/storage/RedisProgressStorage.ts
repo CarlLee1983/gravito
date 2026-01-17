@@ -1,14 +1,28 @@
 import type { SitemapProgress, SitemapProgressStorage } from '../types'
 
+/**
+ * Options for configuring the `RedisProgressStorage`.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface RedisProgressStorageOptions {
-  client: any // Redis 客戶端
+  /** The Redis client instance. */
+  client: any
+  /** Prefix for Redis keys to avoid collisions. @default 'sitemap:progress:' */
   keyPrefix?: string
-  ttl?: number // TTL（秒），預設 24 小時
+  /** Time-to-live for progress records in seconds. @default 86400 (24 hours) */
+  ttl?: number
 }
 
 /**
- * Redis 進度儲存實作
- * 適用於分散式環境或多進程
+ * RedisProgressStorage persists sitemap generation progress to Redis.
+ *
+ * It is designed for multi-process or distributed environments where progress
+ * needs to be tracked across multiple worker instances.
+ *
+ * @public
+ * @since 3.0.0
  */
 export class RedisProgressStorage implements SitemapProgressStorage {
   private client: any

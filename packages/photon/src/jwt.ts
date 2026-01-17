@@ -6,12 +6,12 @@ const honoJwt = require('hono/jwt') as Partial<typeof HonoJwt>
 
 const ensure =
   <T extends (...args: any[]) => any>(fn: T | undefined, _name: string) =>
-  (...args: Parameters<T>): ReturnType<T> => {
-    if (!fn) {
-      throw new Error(`hono/jwt helper '\${name}' is not available`)
+    (...args: Parameters<T>): ReturnType<T> => {
+      if (!fn) {
+        throw new Error(`hono/jwt helper '\${name}' is not available`)
+      }
+      return fn(...args)
     }
-    return fn(...args)
-  }
 
 /**
  * JWT Middleware.
@@ -44,7 +44,8 @@ export const sign = ensure(honoJwt.sign, 'sign')
 export const verifyWithJwks = ensure(honoJwt.verifyWithJwks, 'verifyWithJwks')
 
 /**
- * Compatibility types for Hono v4
+ * JWT Payload typecompatibility.
+ * @public
  */
 export type JwtPayload = any // Fallback to any for now to avoid deep internal imports that might break
 /**

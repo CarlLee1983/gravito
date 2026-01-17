@@ -2,18 +2,41 @@ import type { ZodSchema } from 'zod'
 import { zodToJsonSchema } from 'zod-to-json-schema'
 import type { AstralConfig, AstralOperation, AstralResource } from './types'
 
+/**
+ * Represents a route identified during Astral's discovery process.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface AstralRoute {
+  /** The HTTP method (e.g., 'GET', 'POST'). */
   method: string
+  /** The raw URI path of the route. */
   path: string
+  /** Optional name assigned to the route. */
   name?: string
+  /** Optional domain restriction for the route. */
   domain?: string
 }
 
+/**
+ * OpenApiGenerator converts Astral contract metadata and framework routes
+ * into an OpenAPI Specification (OAS) object.
+ *
+ * It maps Domain-Driven contracts to actual registered routes, extracting
+ * Zod schemas for request validation and response bodies.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class OpenApiGenerator {
   constructor(private config: AstralConfig) {}
 
   /**
-   * Generate OpenAPI Specification object
+   * Generate an OpenAPI Specification object from the provided routes.
+   *
+   * @param routes - An array of discovered routes to be documented.
+   * @returns A plain object representing the OpenAPI 3.1.0 specification.
    */
   generate(routes: AstralRoute[]): any {
     const spec: any = {

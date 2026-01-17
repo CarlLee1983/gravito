@@ -4,12 +4,25 @@ import { RippleServer } from './RippleServer'
 import type { RippleConfig } from './types'
 
 /**
- * OrbitRipple - Gravito module for real-time WebSocket communication
+ * OrbitRipple provides native WebSocket support for Gravito.
+ * it manages the RippleServer lifecycle, integrates with the core event system,
+ * and provides a request-scoped server instance.
+ *
+ * @example
+ * ```typescript
+ * const ripple = new OrbitRipple({ path: '/realtime' });
+ * core.addOrbit(ripple);
+ * ```
+ * @public
  */
 export class OrbitRipple implements GravitoOrbit {
   private server: RippleServer
   private config: RippleConfig
 
+  /**
+   * Create a new OrbitRipple instance.
+   * @param config - Configuration options for the WebSocket server.
+   */
   constructor(config: RippleConfig = {}) {
     this.config = config
     this.server = new RippleServer(config)

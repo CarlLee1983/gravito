@@ -7,24 +7,85 @@
  * - Ensures accessibility and performance defaults
  */
 
+/**
+ * Options for generating an optimized image.
+ *
+ * Configures the image rendering process, allowing for fine-grained control over
+ * accessibility, performance, and responsive behavior.
+ *
+ * @example
+ * ```typescript
+ * const options: ImageOptions = {
+ *   src: '/images/hero.jpg',
+ *   alt: 'Hero Image',
+ *   width: 1200,
+ *   height: 600,
+ *   loading: 'eager',
+ *   fetchpriority: 'high'
+ * };
+ * ```
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface ImageOptions {
+  /** Source URL or path of the image. Absolute URLs are supported. */
   src: string
+  /** Fixed width in pixels. Highly recommended to prevent Cumulative Layout Shift (CLS). */
   width?: number
+  /** Fixed height in pixels. Highly recommended to prevent Cumulative Layout Shift (CLS). */
   height?: number
+  /** Alternative text for accessibility. REQUIRED for accessibility compliance. */
   alt: string
+  /** Loading strategy. Use 'eager' for LCP images and 'lazy' for others. @default 'lazy' */
   loading?: 'lazy' | 'eager'
+  /** Responsive sizes attribute string. e.g., "(max-width: 600px) 480px, 800px" */
   sizes?: string
+  /** Custom widths for srcset or boolean to toggle default auto-generation. */
   srcset?: boolean | number[]
+  /** CSS class names to apply to the img tag. */
   class?: string
+  /** Inline CSS styles to apply to the img tag. */
   style?: string
+  /** Decoding strategy. @default 'async' */
   decoding?: 'async' | 'auto' | 'sync'
+  /** Fetch priority hint for LCP optimization. */
   fetchpriority?: 'high' | 'low' | 'auto'
 }
 
+/**
+ * ImageService handles the generation of optimized HTML `<img>` tags.
+ *
+ * It strictly follows Web Vitals best practices, including:
+ * - Automatic `srcset` generation for responsive images.
+ * - Aspect-ratio preservation using `width` and `height`.
+ * - Accessibility enforcement via mandatory `alt` text.
+ * - Performance optimizations like `loading="lazy"` and `decoding="async"`.
+ *
+ * @example
+ * ```typescript
+ * const service = new ImageService();
+ * const html = service.generateImageTag({
+ *   src: '/assets/logo.png',
+ *   alt: 'Company Logo',
+ *   width: 200,
+ *   height: 50
+ * });
+ * ```
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class ImageService {
   /**
-   * Generate optimized image attributes.
-   * Useful for framework integrations (React, Vue) where you need props, not an HTML string.
+   * Generate optimized image attributes as a key-value object.
+   *
+   * This is useful for framework integrations (like React or Vue) where you need
+   * an object of props rather than a raw HTML string.
+   *
+   * @param options - Configuration options for the image.
+   * @returns An object containing the HTML attributes for the `<img>` tag.
+   * @throws {Error} If the mandatory `alt` attribute is missing or empty.
    */
   public generateImageAttributes(options: ImageOptions): Record<string, string> {
     const {
@@ -104,6 +165,18 @@ export class ImageService {
 
   /**
    * Generate a full `<img>` tag HTML string.
+   *
+   * @param options - Configuration options for the image.
+   * @returns A string containing the full HTML `<img>` tag.
+   *
+   * @example
+   * ```typescript
+   * const html = service.generateImageTag({
+   *   src: 'photo.jpg',
+   *   alt: 'A beautiful photo',
+   *   width: 800
+   * });
+   * ```
    */
   public generateImageTag(options: ImageOptions): string {
     const attrs = this.generateImageAttributes(options)
@@ -117,11 +190,14 @@ export class ImageService {
   }
 
   /**
-   * Generate a `srcset` string.
+   * Generate a `srcset` string for responsive images.
    *
-   * @param src - Original image path
-   * @param widths - Width list (e.g. [400, 800, 1200])
-   * @returns A `srcset` string, e.g. `"image-400w.jpg 400w, image-800w.jpg 800w"`
+   * This method generates multiple image paths with width descriptors based on
+   * the provided width list.
+   *
+   * @param src - Original image path or URL.
+   * @param widths - An array of widths (in pixels) to generate descriptors for.
+   * @returns A `srcset` string, e.g. `"image-400w.jpg 400w, image-800w.jpg 800w"`, or an empty string if widths list is invalid.
    */
   public generateSrcset(src: string, widths: number[]): string {
     if (widths.length === 0) {
@@ -199,9 +275,13 @@ export class ImageService {
   }
 
   /**
-   * Normalize an image path:
-   * - Ensures it starts with `/` for relative paths
-   * - Leaves absolute URLs untouched
+   * Normalize an image path for consistent rendering.
+   *
+   * This ensures relative paths start with a leading slash and leaves absolute
+   * URLs (http/https) untouched.
+   *
+   * @param src - The raw image path or URL.
+   * @returns The normalized path or URL.
    */
   public normalizePath(src: string): string {
     // Absolute URL: return as-is
