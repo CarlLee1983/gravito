@@ -49,8 +49,12 @@ export const binaryMiddleware = (): MiddlewareHandler => {
         const headers = c.res.headers
         headers.set('Content-Type', 'application/cbor')
 
-        // Uint8Array is a valid BodyInit, no type assertion needed
-        c.res = new Response(encoded, {
+        const buffer = encoded.buffer.slice(
+          encoded.byteOffset,
+          encoded.byteOffset + encoded.byteLength
+        )
+
+        c.res = new Response(buffer, {
           status: c.res.status,
           headers,
         })
