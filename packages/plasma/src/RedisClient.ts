@@ -119,6 +119,29 @@ export class RedisClient implements RedisClientContract {
   }
 
   /**
+   * Health check
+   * Verifies the connection is active and responsive
+   */
+  async checkHealth(): Promise<boolean> {
+    try {
+      if (!this.isConnected()) {
+        return false
+      }
+      const result = await this.ping()
+      return result === 'PONG'
+    } catch {
+      return false
+    }
+  }
+
+  /**
+   * Register event listener
+   */
+  on(event: string, callback: (...args: any[]) => void): void {
+    this.getClient().on(event, callback)
+  }
+
+  /**
    * Load ioredis module dynamically.
    *
    * @returns A promise resolving to the ioredis module.
