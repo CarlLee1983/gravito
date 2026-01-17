@@ -1573,25 +1573,32 @@ packages/atlas/src/query/clauses/
 |------|------|--------|----------|------|
 | `scaffold/.../CleanArchitectureGenerator.ts` | 916 | 🟡 Medium | 4-5h | ✅ 已完成 (減少 106 行) |
 | `scaffold/.../EnterpriseMvcGenerator.ts` | 899 | 🟡 Medium | 4-5h | ✅ 已完成 (減少 108 行) |
-| `zenith/.../QueueService.ts` | 945 | 🟡 Medium | 3-4h | ⏳ 待處理 |
+| `zenith/.../QueueService.ts` | 631 | 🟡 Medium | 3-4h | ✅ 已完成 (減少 314 行，-33%) |
 | `core/src/Router.ts` | 931 | 🟡 Medium | 3-4h | ⏳ 待處理 |
 | `zenith/.../server/index.ts` | 856 | 🟡 Medium | 3-4h | ⏳ 待處理 |
 | `plasma/src/RedisClient.ts` | 802 | 🟡 Medium | 2-3h | ⏳ 待處理 |
 
 **總計**: 19-23 小時
 
-**已完成**: 8-10 小時
-**剩餘**: 11-15 小時
+**已完成**: 11-14 小時
+**剩餘**: 5-9 小時
 
 **詳細進度**:
 - ✅ CleanArchitectureGenerator: 1022 → 916 行 (-10%)
 - ✅ EnterpriseMvcGenerator: 1007 → 899 行 (-11%)
+- ✅ QueueService: 945 → 631 行 (-33%)
 - 📦 創建 ConfigGenerator (共享配置生成)
 - 📦 創建 ServiceProviderGenerator (共享服務提供者生成)
+- 📦 創建 LogStreamProcessor (日誌流處理)
+- 📦 創建 QueueMetricsCollector (隊列指標收集)
+- 📦 創建 MaintenanceScheduler (維護排程)
+- 📦 創建 ServerConfigManager (服務器配置管理)
+
+**代碼減少總計**: ~630 行
 
 ---
 
 **文檔維護者**: @Carl
-**最後更新**: 2026-01-17 23:30
-**版本**: 1.4.0
-**狀態**: 🔄 Phase 20 部分完成 (2/6 文件已重構)
+**最後更新**: 2026-01-18 00:00
+**版本**: 1.5.0
+**狀態**: 🔄 Phase 20 部分完成 (3/6 文件已重構)
