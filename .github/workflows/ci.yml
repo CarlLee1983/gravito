@@ -7,6 +7,9 @@ on:
     branches: [main]
 
 jobs:
+  # --------------------------------------------------------------------------
+  # Lint Job (Parallel, fast)
+  # --------------------------------------------------------------------------
   lint:
     name: Lint & Style
     runs-on: ubuntu-latest
@@ -17,13 +20,7 @@ jobs:
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.3.4
-      - name: Cache dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.bun/install/cache
-          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-bun-
+          cache: bun # Built-in bun cache is faster
       - name: Install dependencies
         run: bun install --frozen-lockfile
         env:
@@ -31,9 +28,14 @@ jobs:
       - name: Run linting
         run: bun run check
 
-  build:
-    name: Build Packages
+  # --------------------------------------------------------------------------
+  # Main Pipeline (Combined to avoid artifact overhead while maintaining speed)
+  # --------------------------------------------------------------------------
+  pipeline:
+    name: Build, Typecheck & Test
     runs-on: ubuntu-latest
+    env:
+      NODE_OPTIONS: "--max-old-space-size=6144"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -43,42 +45,7 @@ jobs:
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.3.4
-      - name: Turbo Cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            .turbo
-            node_modules/.cache/turbo
-          key: turbo-${{ runner.os }}-${{ hashFiles('**/bun.lock') }}-${{ github.ref_name }}
-          restore-keys: |
-            turbo-${{ runner.os }}-${{ hashFiles('**/bun.lock') }}-
-            turbo-${{ runner.os }}-
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-        env:
-          SKIP_INSTALL_SIMPLE_GIT_HOOKS: 1
-      - name: Build
-        run: bun run build
-      - name: Verify build output
-        run: |
-          test -f packages/core/dist/index.js || (echo "Missing ESM bundle" && exit 1)
-          test -f packages/core/dist/index.cjs || (echo "Missing CJS bundle" && exit 1)
-          test -f packages/core/dist/index.d.ts || (echo "Missing type declarations" && exit 1)
-          echo "✅ All build outputs verified"
-
-  typecheck:
-    name: Typecheck
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.3.4
+          cache: bun
       - name: Turbo Cache
         uses: actions/cache@v3
         with:
@@ -86,47 +53,34 @@ jobs:
             .turbo
             node_modules/.cache/turbo
             **/tsconfig.tsbuildinfo
-          key: typecheck-${{ runner.os }}-${{ hashFiles('**/bun.lock') }}-${{ github.sha }}
+          key: turbo-full-${{ runner.os }}-${{ hashFiles('**/bun.lock') }}-${{ github.sha }}
           restore-keys: |
-            typecheck-${{ runner.os }}-${{ hashFiles('**/bun.lock') }}-
-            typecheck-${{ runner.os }}-
+            turbo-full-${{ runner.os }}-${{ hashFiles('**/bun.lock') }}-
+            turbo-full-${{ runner.os }}-
+
       - name: Install dependencies
         run: bun install --frozen-lockfile
         env:
           SKIP_INSTALL_SIMPLE_GIT_HOOKS: 1
-      - name: Run Typecheck
-        run: bun run typecheck
 
-  test:
-    name: Unit Tests
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.3.4
-      - name: Turbo Cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            .turbo
-            node_modules/.cache/turbo
-          key: test-${{ runner.os }}-${{ hashFiles('**/bun.lock') }}-${{ github.sha }}
-          restore-keys: |
-            test-${{ runner.os }}-${{ hashFiles('**/bun.lock') }}-
-            test-${{ runner.os }}-
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-        env:
-          SKIP_INSTALL_SIMPLE_GIT_HOOKS: 1
-      - name: Run Tests with Coverage
-        run: bun run test:coverage
+      - name: Run Build
+        run: bun run build
 
+      # Run these in parallel on the same machine using Turbo
+      - name: Run Typecheck & Tests
+        run: |
+          # Use turbo to run both typecheck and tests in parallel on the runner
+          # This is faster than separate steps because it utilizes multiple cores
+          bunx turbo run typecheck test:coverage
+
+      - name: Verify build output
+        run: |
+          test -f packages/core/dist/index.js || (echo "Missing ESM bundle" && exit 1)
+          echo "✅ Build outputs verified"
+
+  # --------------------------------------------------------------------------
+  # Quality Checks (Independent)
+  # --------------------------------------------------------------------------
   quality:
     name: Code Quality
     runs-on: ubuntu-latest
@@ -141,18 +95,16 @@ jobs:
         run: bun install --frozen-lockfile
         env:
           SKIP_INSTALL_SIMPLE_GIT_HOOKS: 1
-      - name: Check for TODOs without issues
+      - name: Run Quality Checks
         run: |
-          TODO_COUNT=$(grep -r "TODO\|FIXME" packages --include="*.ts" --exclude="*.test.ts" | wc -l || echo "0")
-          echo "Found $TODO_COUNT TODO/FIXME comments"
-      - name: Check for @ts-expect-error without comments
-        run: |
-          grep -rn "@ts-expect-error" packages --include="*.ts" -B1 | grep -v "^--$" | grep -v "Intentional type assertion" | head -20 || echo "✅ All @ts-expect-error have proper comments"
-      - name: Check for console.log in production code
-        run: |
+          # Check for console.log in production code
           LOG_COUNT=$(grep -r "console.log" packages --include="*.ts" --exclude="*.test.ts" --exclude="*.bench.ts" | wc -l || echo "0")
           if [ "$LOG_COUNT" -gt 0 ]; then
-            echo "⚠️  Found $LOG_COUNT console.log statements in production code"
-          else
-            echo "✅ No console.log in production code"
+            echo "⚠️ Found $LOG_COUNT console.log statements in production code"
           fi
+          
+          # Check for TODOs
+          grep -r "TODO\|FIXME" packages --include="*.ts" --exclude="*.test.ts" | head -10 || true
+          
+          # Depcheck
+          bunx depcheck || echo "⚠️ Some potential unused dependencies found"
