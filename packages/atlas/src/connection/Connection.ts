@@ -21,6 +21,7 @@ import type {
   ConnectionConfig,
   ConnectionContract,
   DriverContract,
+  ExecuteResult,
   GrammarContract,
   PostgresConfig,
   QueryBuilderContract,
@@ -50,81 +51,48 @@ export class Connection implements ConnectionContract {
     }) => void
   > = []
 
+  private proxyHandle: ConnectionContract | null = null
+
   constructor(
     protected readonly name: string,
     protected readonly config: ConnectionConfig
   ) {
     this.driver = this.createDriver()
     this.grammar = this.createGrammar()
-
-    // Proxy driver methods (e.g. redis.set, mongodb.collection)
-    // biome-ignore lint/correctness/noConstructorReturn: This proxy is intentional for dynamic driver method access
-    return new Proxy(this, {
-      get(target: Connection, prop: string | symbol) {
-        if (prop in target) {
-          return Reflect.get(target, prop)
-        }
-        // Fallback to driver if method exists there
-        if (
-          typeof prop === 'string' &&
-          target.driver &&
-          typeof (target.driver as unknown as Record<string, unknown>)[prop] === 'function'
-        ) {
-          // biome-ignore lint/complexity/noBannedTypes: We need to bind a generic function
-          return ((target.driver as unknown as Record<string, unknown>)[prop] as Function).bind(
-            target.driver
-          )
-        }
-        return undefined
-      },
-    })
   }
 
-  /**
-   * Get connection name
-   */
+  setProxy(proxy: ConnectionContract): void {
+    this.proxyHandle = proxy
+  }
+
   getName(): string {
     return this.name
   }
 
-  /**
-   * Get the underlying driver
-   */
   getDriver(): DriverContract {
     return this.driver
   }
 
-  /**
-   * Get connection configuration
-   */
   getConfig(): ConnectionConfig {
     return this.config
   }
 
-  /**
-   * Get the grammar
-   */
   getGrammar(): GrammarContract {
     return this.grammar
   }
 
-  /**
-   * Create a new query builder for a table
-   */
   table<T = Record<string, unknown>>(tableName: string): QueryBuilderContract<T> {
-    return new QueryBuilder<T>(this, this.grammar, tableName)
+    return new QueryBuilder<T>(
+      this.proxyHandle || (this as unknown as ConnectionContract),
+      this.grammar,
+      tableName
+    )
   }
 
-  /**
-   * Alias for table() for NoSQL connections
-   */
   collection<T = Record<string, unknown>>(name: string): QueryBuilderContract<T> {
     return this.table<T>(name)
   }
 
-  /**
-   * Execute raw SQL
-   */
   async raw<T = Record<string, unknown>>(
     sql: string,
     bindings: unknown[] = []
@@ -135,17 +103,13 @@ export class Connection implements ConnectionContract {
     const timestamp = Date.now()
     try {
       const result = await this.driver.query<T>(sql, bindings)
-
       const duration = performance.now() - startTime
-
-      // Log query
       DB.logQuery(sql, bindings, duration)
 
       if (DB.isDebug()) {
         console.log(`[${duration.toFixed(2)}ms]`, DB.getLastQuery())
       }
 
-      // Fire listeners
       if (Connection.queryListeners.length > 0) {
         const queryData = {
           connection: this.name,
@@ -168,9 +132,11 @@ export class Connection implements ConnectionContract {
     }
   }
 
-  /**
-   * Run a callback within a transaction
-   */
+  async execute(sql: string, bindings: unknown[] = []): Promise<ExecuteResult> {
+    await this.ensureConnected()
+    return this.driver.execute(sql, bindings)
+  }
+
   async transaction<T>(callback: (connection: ConnectionContract) => Promise<T>): Promise<T> {
     await this.ensureConnected()
 
@@ -184,7 +150,7 @@ export class Connection implements ConnectionContract {
         await this.driver.query(`SAVEPOINT sp_${depth}`, [])
       }
 
-      const result = await callback(this)
+      const result = await callback(this.proxyHandle || (this as unknown as ConnectionContract))
 
       if (depth === 1) {
         await this.driver.commit()
@@ -205,9 +171,6 @@ export class Connection implements ConnectionContract {
     }
   }
 
-  /**
-   * Disconnect from the database
-   */
   async disconnect(): Promise<void> {
     if (this.connected) {
       await this.driver.disconnect()
@@ -215,9 +178,6 @@ export class Connection implements ConnectionContract {
     }
   }
 
-  /**
-   * Connect to the database
-   */
   async connect(): Promise<void> {
     if (!this.connected) {
       await this.driver.connect()
@@ -225,23 +185,15 @@ export class Connection implements ConnectionContract {
     }
   }
 
-  /**
-   * Ensure connection is established
-   */
   protected async ensureConnected(): Promise<void> {
     if (!this.connected) {
       await this.connect()
     }
   }
 
-  /**
-   * Create the driver instance based on config
-   */
   protected createDriver(): DriverContract {
-    // Check for Bun Native Driver override
-    const g = globalThis as any
-    // biome-ignore lint/complexity/useLiteralKeys: Intentionally using bracket notation to hide 'Bun' symbol from tsc
-    const bunSql = g['Bun']?.sql
+    // biome-ignore lint/complexity/useLiteralKeys: Bypassing global check
+    const bunSql = (globalThis as any)['Bun']?.sql
 
     if (
       this.config.useNativeDriver === true &&
@@ -268,9 +220,6 @@ export class Connection implements ConnectionContract {
     }
   }
 
-  /**
-   * Create the grammar instance based on config
-   */
   protected createGrammar(): GrammarContract {
     switch (this.config.driver) {
       case 'postgres':

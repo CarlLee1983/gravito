@@ -118,7 +118,7 @@ describe('Polymorphic Relationships', () => {
     })
     spyOn(DB, 'connection').mockReturnValue(mockConn)
 
-    const post = await comment.commentable
+    const post = (await comment.commentable) as Post
     expect(post).toBeInstanceOf(Post)
     expect((post as Post).title).toBe('Atlas Rocks')
   })
@@ -136,7 +136,7 @@ describe('Polymorphic Relationships', () => {
     })
     spyOn(DB, 'connection').mockReturnValue(mockConn)
 
-    const video = await comment.commentable
+    const video = (await comment.commentable) as Video
     expect(video).toBeInstanceOf(Video)
     expect((video as Video).url).toBe('http://video.com')
   })
