@@ -46,6 +46,14 @@ export class DB {
   private static manager: ConnectionManager = new ConnectionManager()
   private static initialized = false
   private static cache: CacheInterface | undefined
+  private static _debug = false
+  private static _queryLog: Array<{
+    sql: string
+    bindings: unknown[]
+    duration: number
+    timestamp: number
+  }> = []
+  private static readonly MAX_LOG_SIZE = 1000
 
   /**
    * Set global cache provider
@@ -59,6 +67,115 @@ export class DB {
    */
   static getCache(): CacheInterface | undefined {
     return DB.cache
+  }
+
+  /**
+   * Enable/disable debug mode with query logging
+   */
+  static debug(enabled = true): void {
+    this._debug = enabled
+    if (!enabled) {
+      this._queryLog = []
+    }
+  }
+
+  /**
+   * Check if debug mode is enabled
+   */
+  static isDebug(): boolean {
+    return this._debug
+  }
+
+  /**
+   * Get the last executed query
+   */
+  static getLastQuery(): string | null {
+    const last = this._queryLog[this._queryLog.length - 1]
+    return last ? this.interpolateBindings(last.sql, last.bindings) : null
+  }
+
+  /**
+   * Get query log
+   */
+  static getQueryLog(): typeof this._queryLog {
+    return [...this._queryLog]
+  }
+
+  /**
+   * Clear query log
+   */
+  static clearQueryLog(): void {
+    this._queryLog = []
+  }
+
+  /**
+   * Log a query (internal use)
+   */
+  static logQuery(sql: string, bindings: unknown[], duration: number): void {
+    if (!this._debug) return
+
+    this._queryLog.push({
+      sql,
+      bindings,
+      duration,
+      timestamp: Date.now(),
+    })
+
+    // Prevent memory leak - keep only last N queries
+    if (this._queryLog.length > this.MAX_LOG_SIZE) {
+      this._queryLog.shift()
+    }
+  }
+
+  /**
+   * Interpolate bindings into SQL (for display only, not execution)
+   */
+  private static interpolateBindings(sql: string, bindings: unknown[]): string {
+    let index = 0
+    return sql.replace(/\?/g, () => {
+      if (index >= bindings.length) return '?'
+      const binding = bindings[index++]
+
+      if (binding === null || binding === undefined) {
+        return 'NULL'
+      }
+      if (typeof binding === 'string') {
+        return `'${binding.replace(/'/g, "''")}'`
+      }
+      if (binding instanceof Date) {
+        return `'${binding.toISOString()}'`
+      }
+      return String(binding)
+    })
+  }
+
+  /**
+   * Pretend mode: capture queries without executing
+   */
+  static async pretend<T>(callback: () => Promise<T>): Promise<{ queries: string[]; result?: T }> {
+    const originalDebug = this._debug
+    this._debug = true
+    this._queryLog = []
+
+    const driver = this.connection().getDriver()
+    const originalExecute = driver.execute.bind(driver)
+    const queries: string[] = []
+
+    // Intercept execute calls
+    driver.execute = async (sql: string, bindings?: unknown[]) => {
+      queries.push(this.interpolateBindings(sql, bindings || []))
+      // Return empty result
+      return { rows: [], affectedRows: 0 }
+    }
+
+    try {
+      await callback()
+    } finally {
+      driver.execute = originalExecute
+      this._debug = originalDebug
+    }
+
+    return { queries }
   }
 
   /**
