@@ -65,7 +65,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   protected eagerLoads = new Map<string, (query: QueryBuilderContract<any>) => void>()
   protected _cache?: { ttl: number; key?: string }
 
-  // Copy-on-Write flags
+  // Copy-on-Write flags (Reserved for future optimization)
   protected _isClone = false
   protected _isModified = false
 
@@ -85,24 +85,10 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
 
   /**
    * Ensure this query has its own state copy
-   * Only performs the copy on first modification after clone
+   * Note: Currently clone() performs deep copy immediately for safety
    */
   protected ensureOwnState(): void {
-    if (this._isClone && !this._isModified) {
-      // First modification - perform actual copy
-      this.columns = [...this.columns]
-      this.wheres = [...this.wheres]
-      this.orders = [...this.orders]
-      this.groups = [...this.groups]
-      this.havings = [...this.havings]
-      this.joins = [...this.joins]
-      this.bindingsList = [...this.bindingsList]
-      this.globalScopes = new Map(this.globalScopes)
-      this.removedScopes = new Set(this.removedScopes)
-      this.eagerLoads = new Map(this.eagerLoads)
-
-      this._isModified = true
-    }
+    // Current implementation uses immediate deep copy in clone()
   }
 
   /**

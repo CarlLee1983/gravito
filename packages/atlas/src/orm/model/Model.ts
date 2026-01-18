@@ -397,7 +397,7 @@ export abstract class Model {
 
         const relations = modelCtor.getRelationMetadata()
         if (typeof prop === 'string' && relations.has(prop)) {
-          return model._getRelationValue(prop, relations.get(prop)!)
+          return (receiver as any)._getRelationValue(prop, relations.get(prop)!)
         }
 
         // 6. Return instance values
