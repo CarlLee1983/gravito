@@ -196,6 +196,7 @@ export abstract class Model {
   /**
    * Helper to get relationship value (extracted for reuse)
    */
+  // @ts-expect-error: Accessed dynamically via Proxy
   private _getRelationValue(prop: string, relationMeta: RelationshipMeta): any {
     const builderFn = (..._args: any[]) => {
       const type = relationMeta.type

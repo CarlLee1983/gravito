@@ -85,10 +85,21 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
 
   /**
    * Ensure this query has its own state copy
-   * Note: Currently clone() performs deep copy immediately for safety
    */
   protected ensureOwnState(): void {
-    // Current implementation uses immediate deep copy in clone()
+    if (this._isClone && !this._isModified) {
+      this.columns = [...this.columns]
+      this.wheres = [...this.wheres]
+      this.orders = [...this.orders]
+      this.groups = [...this.groups]
+      this.havings = [...this.havings]
+      this.joins = [...this.joins]
+      this.bindingsList = [...this.bindingsList]
+      this.globalScopes = new Map(this.globalScopes)
+      this.removedScopes = new Set(this.removedScopes)
+      this.eagerLoads = new Map(this.eagerLoads)
+      this._isModified = true
+    }
   }
 
   /**
@@ -1320,22 +1331,30 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    */
   clone(): QueryBuilderContract<T> {
     const cloned = new QueryBuilder<T>(this.connection, this.grammar, this.tableName)
-    cloned.columns = [...this.columns]
+
+    // Shallow copy references
+    cloned.columns = this.columns
     cloned.distinctValue = this.distinctValue
-    cloned.wheres = [...this.wheres]
-    cloned.orders = [...this.orders]
-    cloned.groups = [...this.groups]
-    cloned.havings = [...this.havings]
-    cloned.joins = [...this.joins]
+    cloned.wheres = this.wheres
+    cloned.orders = this.orders
+    cloned.groups = this.groups
+    cloned.havings = this.havings
+    cloned.joins = this.joins
     cloned.limitValue = this.limitValue
     cloned.offsetValue = this.offsetValue
-    cloned.bindingsList = [...this.bindingsList]
+    cloned.bindingsList = this.bindingsList
     cloned.isReadOnly = this.isReadOnly
-    cloned.globalScopes = new Map(this.globalScopes)
-    cloned.removedScopes = new Set(this.removedScopes)
-    cloned.eagerLoads = new Map(this.eagerLoads)
+    cloned.globalScopes = this.globalScopes
+    cloned.removedScopes = this.removedScopes
+    cloned.eagerLoads = this.eagerLoads
     cloned.modelClass = this.modelClass
     cloned._cache = this._cache
+
+    // Set CoW flags for both
+    cloned._isClone = true
+    cloned._isModified = false
+    this._isClone = true
+    this._isModified = false
 
     return cloned
   }
