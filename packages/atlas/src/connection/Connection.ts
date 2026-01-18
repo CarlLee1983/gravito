@@ -192,8 +192,8 @@ export class Connection implements ConnectionContract {
   }
 
   protected createDriver(): DriverContract {
-    const g = globalThis as any
-    const bunSql = g.Bun?.sql
+    // biome-ignore lint/complexity/useLiteralKeys: Bypassing global check
+    const bunSql = (globalThis as any)['Bun']?.sql
 
     if (
       this.config.useNativeDriver === true &&
