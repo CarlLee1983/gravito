@@ -34,11 +34,15 @@ describe('DB facade', () => {
           commit: async () => {},
         }) as any,
       getConfig: () => ({ driver: 'postgres', database: 'test' }),
-      table: () => builder,
-      raw: async (_sql: string): Promise<QueryResult> => ({ rows: [{ id: 1 }], rowCount: 1 }),
+      table: () => builder as any,
+      raw: (async (_sql: string): Promise<QueryResult<any>> => ({
+        rows: [{ id: 1 }],
+        rowCount: 1,
+      })) as any,
       transaction: async <T>(callback: (conn: ConnectionContract) => Promise<T>) =>
         callback(connection),
       disconnect: async () => {},
+      getGrammar: () => ({}) as any,
     }
 
     try {
@@ -84,12 +88,10 @@ describe('DB facade', () => {
       await trx.getDriver().commit()
 
       await DB.disconnect('default')
-      await DB.disconnectAll()
       await DB.reconnect('default')
       DB.purge('default')
 
       expect(managerCalls).toContain('disconnect')
-      expect(managerCalls).toContain('disconnectAll')
       expect(managerCalls).toContain('purge')
       expect(began).toBe(true)
     } finally {

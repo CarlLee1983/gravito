@@ -51,7 +51,7 @@ describe('Transaction Test', () => {
       await User.create({ name: 'User 1' })
 
       try {
-        await trx.transaction(async (nested) => {
+        await trx.transaction(async () => {
           await User.create({ name: 'User 2' })
           throw new Error('Rollback nested')
         })
