@@ -3,19 +3,22 @@ import { defaultFortifyConfig, type FortifyConfig } from './config'
 import { registerAuthRoutes } from './routes/auth'
 
 /**
- * FortifyOrbit - Gravito Orbit for end-to-end authentication workflows
+ * FortifyOrbit provides end-to-end authentication workflows for Gravito.
+ * It registers dedicated controllers and routes for high-level auth features
+ * such as registration, multi-factor login, and password management.
  *
  * @example
  * ```typescript
- * import { FortifyOrbit } from '@gravito/fortify'
+ * import { FortifyOrbit } from '@gravito/fortify';
+ * import { User } from './models/User';
  *
- * const core = await PlanetCore.boot({
- *   orbits: [new FortifyOrbit({
- *     userModel: () => User,
- *     features: { emailVerification: true }
- *   })]
- * })
+ * const fortify = new FortifyOrbit({
+ *   userModel: () => User,
+ *   features: { registration: true, emailVerification: false }
+ * });
+ * core.addOrbit(fortify);
  * ```
+ * @public
  */
 export class FortifyOrbit implements GravitoOrbit {
   private config: FortifyConfig

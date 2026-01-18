@@ -3,24 +3,41 @@ import { Redis } from './Redis'
 import type { RedisClientContract, RedisConfig, RedisManagerConfig } from './types'
 
 /**
- * OrbitPlasma configuration options.
+ * Configuration options for the OrbitPlasma Redis orbit.
+ * @public
  */
 export interface OrbitPlasmaOptions extends Partial<RedisManagerConfig> {
   /**
-   * Expose as (default: 'redis')
+   * The key used to expose the Redis client in the context (default: 'redis').
+   * Allows accessing the service via `ctx.get('redis')`.
    */
   exposeAs?: string
 
   /**
-   * Auto-connect on install
+   * Whether to establish a connection to Redis immediately during installation.
+   * If false, the connection will be established lazily on the first request.
    */
   autoConnect?: boolean
 }
 
 /**
- * OrbitPlasma - Redis Orbit
+ * OrbitPlasma is the high-performance Redis integration for Gravito,
+ * optimized for Bun's native TCP and Unix socket capabilities.
+ * It provides a clean, Laravel-style API for all Redis data structures.
  *
- * Gravito Orbit implementation providing Redis functionality.
+ * It automatically handles connection pooling, lazy connection,
+ * and graceful shutdown.
+ *
+ * @example
+ * ```typescript
+ * const plasma = new OrbitPlasma({
+ *   connections: {
+ *     default: { host: 'localhost', port: 6379 }
+ *   }
+ * });
+ * core.addOrbit(plasma);
+ * ```
+ * @public
  */
 export class OrbitPlasma implements GravitoOrbit {
   private client?: RedisClientContract

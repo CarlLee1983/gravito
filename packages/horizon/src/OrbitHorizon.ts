@@ -3,9 +3,26 @@ import type { CacheManager } from '@gravito/stasis'
 import { LockManager } from './locks'
 import { SchedulerManager } from './SchedulerManager'
 
+/**
+ * OrbitHorizon is the official Task Scheduler for Gravito.
+ * It provides a fluent API for defining Cron jobs that can run on a schedule,
+ * with support for distributed locking (run on one server) and node roles.
+ *
+ * @example
+ * ```typescript
+ * const horizon = new OrbitHorizon();
+ * core.addOrbit(horizon);
+ *
+ * // Defining a task
+ * const scheduler = core.container.make('scheduler');
+ * scheduler.call('cleanup', async () => { ... }).daily().at('03:00').onOneServer();
+ * ```
+ * @public
+ */
 export class OrbitHorizon implements GravitoOrbit {
   /**
    * Install the Horizon Orbit into PlanetCore.
+   * Registers the SchedulerManager and configures the distributed lock driver.
    *
    * @param core - The PlanetCore instance.
    */

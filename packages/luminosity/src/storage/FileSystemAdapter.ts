@@ -3,6 +3,15 @@ import { appendFile, mkdir, readFile, rename, stat, unlink, writeFile } from 'no
 import { dirname } from 'node:path'
 import type { StorageAdapter } from './adapter'
 
+/**
+ * FileSystemAdapter implements the `StorageAdapter` interface for the local file system.
+ *
+ * It provides standard file operations (read, write, delete, etc.) using
+ * Node.js or Bun's native file system modules.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class FileSystemAdapter implements StorageAdapter {
   async append(path: string, content: string): Promise<void> {
     await this.ensureDir(path)

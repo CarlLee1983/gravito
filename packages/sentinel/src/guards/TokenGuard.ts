@@ -3,6 +3,10 @@ import type { Authenticatable } from '../contracts/Authenticatable'
 import type { Guard } from '../contracts/Guard'
 import type { UserProvider } from '../contracts/UserProvider'
 
+/**
+ * Guard implementation for simple API token authentication.
+ * @public
+ */
 export class TokenGuard<User extends Authenticatable = Authenticatable> implements Guard<User> {
   protected userInstance: User | null = null
 

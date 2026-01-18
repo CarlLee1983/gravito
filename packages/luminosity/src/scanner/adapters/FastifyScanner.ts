@@ -1,38 +1,44 @@
 import type { RouteScanner, ScannedRoute } from '../types'
 import { extractParams, isDynamicRoute, matchesPatterns, normalizePath } from '../utils'
 
+/**
+ * Options for configuring the `FastifyScanner`.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface FastifyScannerOptions {
-  /** Exclude certain route patterns from scanning */
+  /** An array of patterns (strings or RegExps) to exclude from the sitemap. */
   excludePatterns?: (string | RegExp)[]
 
-  /** Only include routes matching these patterns */
+  /** If provided, only routes matching these patterns will be included. */
   includePatterns?: (string | RegExp)[]
 }
 
 /**
- * FastifyScanner
+ * FastifyScanner collects routes from a Fastify application using the `onRoute` hook.
  *
- * Collects routes from a Fastify application via the 'onRoute' hook.
- * Because Fastify does not expose a simple route list structure, this scanner
- * acts as a collector that must be hooked into the Fastify instance.
+ * Since Fastify does not provide a built-in way to list all routes after registration,
+ * this scanner must be attached to the Fastify instance before routes are defined
+ * so it can "listen" to and record each registered route.
  *
  * @example
  * ```typescript
- * import fastify from 'fastify'
- * import { FastifyScanner, SitemapBuilder } from '@gravito/luminosity'
+ * import fastify from 'fastify';
+ * import { FastifyScanner } from '@gravito/luminosity/scanner';
  *
- * const app = fastify()
- * const scanner = new FastifyScanner()
+ * const app = fastify();
+ * const scanner = new FastifyScanner();
  *
- * // Register the hook BEFORE defining routes
- * app.addHook('onRoute', scanner.collect)
+ * // Attach the hook BEFORE adding routes
+ * app.addHook('onRoute', scanner.collect);
  *
- * app.get('/hello', ...)
- *
- * // Later
- * const builder = new SitemapBuilder({ scanner, hostname: '...' })
- * const entries = await builder.build()
+ * // Later, use the scanner to get the route list
+ * const routes = await scanner.scan();
  * ```
+ *
+ * @public
+ * @since 3.0.0
  */
 export class FastifyScanner implements RouteScanner {
   readonly framework = 'fastify'

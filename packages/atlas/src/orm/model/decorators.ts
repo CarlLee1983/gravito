@@ -13,7 +13,16 @@ export interface SoftDeletesOptions {
 /**
  * Meta keys for decorators
  */
+/**
+ * Metadata key for Soft Deletes configuration.
+ * @internal
+ */
 export const SOFT_DELETES_KEY = Symbol('soft_deletes')
+
+/**
+ * Metadata key for Column definitions.
+ * @internal
+ */
 export const COLUMN_KEY = Symbol('column')
 
 /**
@@ -49,7 +58,9 @@ export interface ColumnOptions {
 
 /**
  * Column Decorator
- * Marks a property as a database column
+ * Marks a property as a database column.
+ * Registers the model in the ModelRegistry.
+ * @public
  */
 export function column(options: ColumnOptions = {}): PropertyDecorator {
   return (target: any, propertyKey: string | symbol) => {

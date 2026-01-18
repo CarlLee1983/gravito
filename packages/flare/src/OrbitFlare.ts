@@ -9,42 +9,42 @@ import { NotificationManager } from './NotificationManager'
 /**
  * OrbitFlare options.
  */
+/**
+ * Options for configuring OrbitFlare.
+ * @public
+ */
 export interface OrbitFlareOptions {
-  /**
-   * Enable mail channel.
-   */
+  /** Enable or disable the email notification channel. */
   enableMail?: boolean
-
-  /**
-   * Enable database channel.
-   */
+  /** Enable or disable the database storage notification channel. */
   enableDatabase?: boolean
-
-  /**
-   * Enable broadcast channel.
-   */
+  /** Enable or disable the real-time broadcast notification channel. */
   enableBroadcast?: boolean
-
-  /**
-   * Enable Slack channel.
-   */
+  /** Enable or disable the Slack notification channel. */
   enableSlack?: boolean
-
-  /**
-   * Enable SMS channel.
-   */
+  /** Enable or disable the SMS notification channel. */
   enableSms?: boolean
-
-  /**
-   * Custom channel configuration.
-   */
+  /** Custom channel configuration records for flexible extension. */
   channels?: Record<string, unknown>
 }
 
 /**
- * Notifications Orbit
+ * OrbitFlare is the official notification orbit for Gravito.
+ * It provides a unified API for sending notifications across multiple channels
+ * (Mail, Database, Broadcast, Slack, SMS) and supports background queuing.
  *
- * Provides notifications with multiple channels (mail, database, broadcast, Slack, SMS).
+ * @example
+ * ```typescript
+ * const flare = new OrbitFlare({
+ *   enableSlack: true,
+ *   channels: { slack: { webhookUrl: '...' } }
+ * });
+ * core.addOrbit(flare);
+ *
+ * // Usage in controller
+ * await ctx.get('notifications').send(user, new WelcomeNotification());
+ * ```
+ * @public
  */
 export class OrbitFlare implements GravitoOrbit {
   private options: OrbitFlareOptions

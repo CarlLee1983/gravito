@@ -3,25 +3,73 @@ import type { CacheStore } from './store'
 import { isTaggableStore } from './store'
 import { type CacheKey, type CacheTtl, normalizeCacheKey } from './types'
 
+/**
+ * Supported modes for emitting cache events.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export type CacheEventMode = 'sync' | 'async' | 'off'
 
+/**
+ * Event handlers for cache lifecycle events.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export type CacheEvents = {
+  /** Triggered on a cache hit. */
   hit?: (key: string) => void | Promise<void>
+  /** Triggered on a cache miss. */
   miss?: (key: string) => void | Promise<void>
+  /** Triggered when a value is written to the cache. */
   write?: (key: string) => void | Promise<void>
+  /** Triggered when a value is removed from the cache. */
   forget?: (key: string) => void | Promise<void>
+  /** Triggered when the entire cache is flushed. */
   flush?: () => void | Promise<void>
 }
 
+/**
+ * Options for configuring the `CacheRepository`.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export type CacheRepositoryOptions = {
+  /** Optional prefix for all cache keys. */
   prefix?: string
+  /** Default time-to-live for cache entries. */
   defaultTtl?: CacheTtl
+  /** Event handlers for cache operations. */
   events?: CacheEvents
+  /** Mode for emitting events (sync, async, or off). @default 'async' */
   eventsMode?: CacheEventMode
+  /** Whether to throw an error if an event handler fails. @default false */
   throwOnEventError?: boolean
+  /** Callback triggered when an event handler encounters an error. */
   onEventError?: (error: unknown, event: keyof CacheEvents, payload: { key?: string }) => void
 }
 
+/**
+ * CacheRepository provides a high-level, developer-friendly API for cache operations.
+ *
+ * It wraps a low-level `CacheStore` and adds features like:
+ * - Key prefixing.
+ * - Event emission (hit, miss, write, etc.).
+ * - Automatic serialization/deserialization.
+ * - Higher-level helpers like `remember`, `flexible`, and `pull`.
+ * - Support for tagged cache entries (if the store supports it).
+ *
+ * @example
+ * ```typescript
+ * const cache = new CacheRepository(redisStore, { prefix: 'app:' });
+ * const user = await cache.remember('user:1', 3600, () => fetchUser(1));
+ * ```
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class CacheRepository {
   constructor(
     protected readonly store: CacheStore,

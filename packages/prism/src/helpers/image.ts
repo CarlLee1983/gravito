@@ -2,10 +2,17 @@ import { type ImageOptions, ImageService } from '../ImageService'
 import type { HelperFunction } from '../TemplateEngine'
 
 /**
- * Image helper function.
+ * Creates an image helper for the TemplateEngine.
  *
- * Usage in templates:
- * {{image src="/static/hero.jpg" width=800 height=600 alt="Hero image" loading="lazy"}}
+ * This provides the `{{image ...}}` tag in templates, generating
+ * optimized `<img>` tags that follow performance best practices.
+ *
+ * @example
+ * ```handlebars
+ * {{image src="/static/hero.jpg" width=800 alt="Hero"}}
+ * ```
+ * @returns A HelperFunction for the TemplateEngine.
+ * @public
  */
 export function createImageHelper(): HelperFunction {
   const imageService = new ImageService()

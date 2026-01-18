@@ -2,6 +2,15 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import pc from 'picocolors'
 
+/**
+ * Supported frontend stacks for Fortify authentication scaffolding.
+ *
+ * - `html`: Server-rendered HTML templates
+ * - `react`: React with Inertia.js
+ * - `vue`: Vue 3 with Inertia.js
+ *
+ * @public
+ */
 export type FortifyStack = 'html' | 'react' | 'vue'
 
 interface FortifyInstallOptions {
@@ -209,6 +218,9 @@ async function generateUserModel(cwd: string, force: boolean): Promise<void> {
 
   const content = `import { Model, column } from '@gravito/atlas'
 
+/**
+ * Represents an authenticated user managed by Fortify.
+ */
 export class User extends Model {
   static table = 'users'
 

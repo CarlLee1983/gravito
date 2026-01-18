@@ -1,6 +1,15 @@
 import { getRuntimeAdapter } from '@gravito/core'
 import type { IRouterAdapter } from '../../Domain/Interfaces'
 
+/**
+ * BunProxyAdapter implements the `IRouterAdapter` interface using Bun's native HTTP server.
+ *
+ * It provides a dynamic reverse proxy that routes requests to specific Rocket
+ * containers based on the `Host` header.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class BunProxyAdapter implements IRouterAdapter {
   private routes = new Map<string, string>() // domain -> targetUrl
 

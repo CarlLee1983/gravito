@@ -1,6 +1,15 @@
 import type { SitemapEntry } from '../interfaces'
 import type { JsonlLogger } from './JsonlLogger'
 
+/**
+ * Compactor merges incremental log entries (WAL) into a clean, unified state.
+ *
+ * It replays all logged operations ('add', 'remove') starting from an initial
+ * snapshot to produce a deduplicated and sorted list of sitemap entries.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class Compactor {
   constructor(private logger: JsonlLogger) {}
 

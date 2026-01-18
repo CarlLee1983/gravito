@@ -9,10 +9,26 @@ import { join } from 'node:path'
 import type { CapturedLog, CapturedQuery, CapturedRequest } from '../types'
 import type { SpectrumStorage } from './types'
 
+/**
+ * Configuration for the `FileStorage` backend.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface FileStorageConfig {
+  /** The directory where captured telemetry data will be stored as JSONL files. */
   directory: string
 }
 
+/**
+ * FileStorage persists Spectrum telemetry data to the local file system.
+ *
+ * It uses newline-delimited JSON (JSONL) files for efficient appends and
+ * maintains an in-memory cache for fast dashboard retrieval.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class FileStorage implements SpectrumStorage {
   private requestsPath: string
   private logsPath: string

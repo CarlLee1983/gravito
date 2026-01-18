@@ -20,10 +20,26 @@ type LockEntry = {
   expiresAt: number
 }
 
+/**
+ * Options for configuring the `MemoryStore`.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export type MemoryStoreOptions = {
+  /** Maximum number of items to keep in memory. Uses LRU eviction. */
   maxItems?: number
 }
 
+/**
+ * MemoryStore implements the `CacheStore` interface using a Map.
+ *
+ * It provides a fast, non-persistent cache backend with support for
+ * TTL expiration, basic tagging, and local locking.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class MemoryStore implements CacheStore, TaggableStore {
   private entries = new Map<string, Entry>()
   private locks = new Map<string, LockEntry>()

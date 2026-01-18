@@ -2,6 +2,15 @@ import os from 'node:os'
 import process from 'node:process'
 import type { Probe, SystemMetrics } from '../types'
 
+/**
+ * NodeProbe collects system and process-level metrics from the current runtime.
+ *
+ * It uses native modules (`os`, `process`) to gather information about CPU load,
+ * memory usage (RSS, Heap), and runtime environment (Node.js, Bun, or Deno).
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class NodeProbe implements Probe {
   private lastCpu: { idle: number; total: number; count: number }
   private lastProcessCpu: NodeJS.CpuUsage

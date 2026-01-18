@@ -1,5 +1,14 @@
 import type { IAdminUser } from './types'
 
+/**
+ * AclManager handles Access Control List (ACL) checks based on user permissions.
+ *
+ * It supports granular permission checks, SuperAdmin mode (via '*' permission),
+ * and aggregate checks (ANY or ALL permissions).
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class AclManager {
   constructor(private userProvider: () => IAdminUser | null) {}
 

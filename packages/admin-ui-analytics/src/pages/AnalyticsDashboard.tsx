@@ -19,6 +19,15 @@ export interface AnalyticsWidget {
   component: React.ComponentType<{ period: string }>
 }
 
+/**
+ * Analytics and Business Intelligence Dashboard Page.
+ *
+ * Displays various business metrics and trends using modular widgets.
+ * Supports period filtering and data export.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export function AnalyticsDashboard() {
   const [period, setPeriod] = useState('7d')
   const [widgets, setWidgets] = useState<AnalyticsWidget[]>([])

@@ -1,17 +1,34 @@
 import type { ActionCallback } from '@gravito/core'
 
+/**
+ * Represents a configuration for a scheduled task (Cron job).
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface ScheduledTask {
+  /** Unique name for the task */
   name: string
+  /** Standard cron expression mapping the frequency */
   expression: string
+  /** Timezone for evaluating the cron expression (default: UTC) */
   timezone: string
+  /** The function or task to execute */
   callback: () => void | Promise<void>
+  /** If true, uses a distributed lock to ensure only one server runs the task */
   shouldRunOnOneServer: boolean
-  lockTtl: number // seconds
+  /** Time-to-live for the distributed lock in seconds (default: 300) */
+  lockTtl: number
+  /** If true, the task runs in the background and doesn't block the scheduler loop */
   background: boolean
+  /** Optional node role required to run this task (e.g., 'worker') */
   nodeRole?: string
+  /** Command string if the task was registered via a shell command */
   command?: string
 
+  /** Callbacks executed after successful task completion */
   onSuccessCallbacks: ActionCallback[]
+  /** Callbacks executed after task failure */
   onFailureCallbacks: ActionCallback[]
 }
 
@@ -19,10 +36,15 @@ export interface ScheduledTask {
  * Fluent API for defining task schedules.
  *
  * @example
+ * ```typescript
  * scheduler.task('backup')
  *   .daily()
  *   .at('02:00')
- *   .onOneServer()
+ *   .onOneServer();
+ * ```
+ *
+ * @public
+ * @since 3.0.0
  */
 export class TaskSchedule {
   private task: ScheduledTask

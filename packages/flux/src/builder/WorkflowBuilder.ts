@@ -16,40 +16,35 @@ import type {
 } from '../types'
 
 /**
- * Step options
+ * Options for configuring a single step in a workflow.
+ * @public
  */
-interface StepOptions<TInput = any, TData = any> {
+export interface StepOptions<TInput = any, TData = any> {
+  /** Maximum number of automatic retries on failure (default: 0) */
   retries?: number
+  /** Maximum execution time in milliseconds before timeout error */
   timeout?: number
+  /** Predicate to determine if the step should be executed or skipped */
   when?: (ctx: WorkflowContext<TInput, TData>) => boolean
+  /** Logic to undo the effects of this step if a later step fails */
   compensate?: (ctx: WorkflowContext<TInput, TData>) => Promise<void> | void
 }
 
 /**
- * Workflow Builder
- *
- * Provides fluent API for defining workflows with type inference.
+ * WorkflowBuilder provides a fluent, type-safe API for defining sequential logic.
  *
  * @example
  * ```typescript
- * const workflow = createWorkflow('order-process')
+ * const myFlow = createWorkflow('process-order')
  *   .input<{ orderId: string }>()
- *   .step('validate', async (ctx) => {
- *     ctx.data.order = await fetchOrder(ctx.input.orderId)
- *   })
- *   .step('process', async (ctx) => {
- *     await processOrder(ctx.data.order)
- *   }, {
- *     compensate: async (ctx) => {
- *       await cancelOrder(ctx.data.order.id)
- *     }
- *   })
- *   .commit('notify', async (ctx) => {
- *     await sendEmail(ctx.data.order.email)
- *   })
+ *   .step('validate', async (ctx) => { ... })
+ *   .step('charge', async (ctx) => { ... }, { compensate: async (ctx) => { ... } })
+ *   .commit('ship', async (ctx) => { ... });
  * ```
+ * @public
  */
 export class WorkflowBuilder<TInput = unknown, TData = Record<string, unknown>> {
+  drum: any = null // No!
   private _name: string
   private _steps: StepDefinition[] = []
   private _validateInput?: (input: unknown) => input is TInput

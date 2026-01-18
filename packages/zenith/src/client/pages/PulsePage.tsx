@@ -394,6 +394,16 @@ function ServiceGroup({ service, nodes }: { service: string; nodes: PulseNode[] 
   )
 }
 
+/**
+ * System Pulse Dashboard Page.
+ *
+ * Provides real-time resource monitoring (CPU, RAM) and service discovery
+ * for all connected Quasar agents. It also allows remote management of
+ * connected worker nodes.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export function PulsePage() {
   const { data: initialData, isLoading } = useQuery<{ nodes: Record<string, PulseNode[]> }>({
     queryKey: ['pulse-nodes'],

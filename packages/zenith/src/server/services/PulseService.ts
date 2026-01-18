@@ -1,6 +1,15 @@
 import { Redis } from 'ioredis'
 import type { PulseNode } from '../../shared/types'
 
+/**
+ * PulseService manages the discovery and health monitoring of system nodes.
+ *
+ * It scans Redis for heartbeat keys emitted by Quasar agents and groups
+ * them by service name for the Zenith dashboard.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class PulseService {
   private redis: Redis
   private prefix = 'gravito:quasar:node:'

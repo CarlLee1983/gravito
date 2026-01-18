@@ -5,6 +5,15 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 
+/**
+ * A user profile dropdown component for the Zenith dashboard.
+ *
+ * Displays current user information, system uptime, and provides access
+ * to settings and logout functionality.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export function UserProfileDropdown() {
   const [isOpen, setIsOpen] = useState(false)
   const { isAuthEnabled, logout } = useAuth()

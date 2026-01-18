@@ -1,3 +1,12 @@
+/**
+ * @fileoverview Constellation - Gravito SEO and Sitemap Module
+ *
+ * Provides high-performance sitemap generation, change tracking,
+ * and intelligent redirect management for enterprise Gravito applications.
+ *
+ * @module @gravito/constellation
+ */
+
 export { MemoryChangeTracker, RedisChangeTracker } from './core/ChangeTracker'
 export { DiffCalculator } from './core/DiffCalculator'
 export { IncrementalGenerator, type IncrementalGeneratorOptions } from './core/IncrementalGenerator'

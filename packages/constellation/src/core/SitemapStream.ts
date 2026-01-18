@@ -1,5 +1,25 @@
 import type { SitemapEntry, SitemapStreamOptions } from '../types'
 
+/**
+ * SitemapStream handles the low-level generation of sitemap XML content.
+ *
+ * It supports standard sitemap tags as well as Google-specific extensions for
+ * images, videos, news, and internationalization (i18n) via `xhtml:link`.
+ *
+ * @example
+ * ```typescript
+ * const stream = new SitemapStream({ baseUrl: 'https://example.com' });
+ * stream.add({
+ *   url: '/contact',
+ *   changefreq: 'monthly',
+ *   priority: 0.5
+ * });
+ * const xml = stream.toXML();
+ * ```
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class SitemapStream {
   private options: SitemapStreamOptions
   private entries: SitemapEntry[] = []

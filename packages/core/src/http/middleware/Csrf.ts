@@ -2,6 +2,10 @@ import crypto from 'node:crypto'
 import { CookieJar, type CookieOptions } from '../CookieJar'
 import type { GravitoContext, GravitoMiddleware } from '../types'
 
+/**
+ * Configuration for CSRF Protection
+ * @public
+ */
 export type CsrfOptions = {
   cookieName?: string
   headerName?: string
@@ -64,6 +68,10 @@ function setCookieHeader(c: GravitoContext, name: string, value: string, options
   c.header('Set-Cookie', parts.join('; '), { append: true })
 }
 
+/**
+ * Generate (or retrieve existing) CSRF token for the session.
+ * @public
+ */
 export function getCsrfToken(c: GravitoContext, options: CsrfOptions = {}): string {
   const cookieName = options.cookieName ?? 'gravito_csrf'
   const cookieHeader = c.req.header('Cookie') || ''
@@ -84,6 +92,10 @@ export function getCsrfToken(c: GravitoContext, options: CsrfOptions = {}): stri
   return token
 }
 
+/**
+ * Middleware that validates CSRF tokens on unsafe requests.
+ * @public
+ */
 export function csrfProtection(options: CsrfOptions = {}): GravitoMiddleware {
   const cookieName = options.cookieName ?? 'gravito_csrf'
   const headerName = (options.headerName ?? 'X-CSRF-Token').toLowerCase()

@@ -4,6 +4,10 @@ import type { Authenticatable } from '../contracts/Authenticatable'
 import type { Guard } from '../contracts/Guard'
 import type { UserProvider } from '../contracts/UserProvider'
 
+/**
+ * Guard implementation for JWT-based authentication.
+ * @public
+ */
 export class JwtGuard<User extends Authenticatable = Authenticatable> implements Guard<User> {
   protected userInstance: User | null = null
   private verifyToken: typeof verify

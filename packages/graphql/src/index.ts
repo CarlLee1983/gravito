@@ -1,12 +1,39 @@
 import type { GravitoContext, GravitoNext, GravitoOrbit, PlanetCore } from '@gravito/core'
 import { createSchema, createYoga, type YogaServerInstance } from 'graphql-yoga'
 
+/**
+ * Configuration for the GraphQL orbit.
+ * @public
+ */
 export interface GraphQLConfig {
+  /**
+   * Optional pre-built GraphQLSchema. If not provided, the orbit will
+   * attempt to resolve 'GRAPHQL_SCHEMA' from the container or config.
+   */
   // biome-ignore lint/suspicious/noExplicitAny: Generic Schema
   schema?: any // Allow passing a pre-built schema
+  /**
+   * The URL path where the GraphQL endpoint will be mounted.
+   * Default: '/graphql'
+   */
   path?: string
 }
 
+/**
+ * OrbitGraphQL integrates GraphQL Yoga into the Gravito ecosystem.
+ * It provides a seamless way to build type-safe APIs with standard
+ * GraphQL tools, automatically exposing the Gravito context to resolvers.
+ *
+ * @example
+ * ```typescript
+ * const graphql = new OrbitGraphQL({
+ *   path: '/api/graphql',
+ *   schema: mySchema
+ * });
+ * core.addOrbit(graphql);
+ * ```
+ * @public
+ */
 export class OrbitGraphQL implements GravitoOrbit {
   name = 'graphql'
 

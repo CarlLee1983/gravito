@@ -9,13 +9,36 @@ declare module '@gravito/core' {
 }
 
 /**
- * OrbitCosmos - Internationalization Orbit
+ * OrbitCosmos provides internationalization (i18n) support for Gravito.
+ * It manages translations, locale switching, and provides a middleware for request-scoped locale detection.
  *
- * Provides i18n functionality for Gravito applications.
+ * @example
+ * ```typescript
+ * const cosmos = new OrbitCosmos({
+ *   defaultLocale: 'en',
+ *   supportedLocales: ['en', 'zh-TW'],
+ *   translations: {
+ *     en: { welcome: 'Welcome!' },
+ *     'zh-TW': { welcome: '歡迎！' }
+ *   }
+ * });
+ * core.addOrbit(cosmos);
+ * ```
+ * @public
  */
 export class OrbitCosmos implements GravitoOrbit {
+  /**
+   * Create a new OrbitCosmos instance.
+   * @param config - The i18n configuration options.
+   */
   constructor(private config: I18nConfig) {}
 
+  /**
+   * Install the i18n service into PlanetCore.
+   * Registers the I18nManager and sets up the locale middleware.
+   *
+   * @param core - The PlanetCore instance.
+   */
   install(core: PlanetCore): void {
     const i18nManager = new I18nManager(this.config)
 

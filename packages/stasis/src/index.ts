@@ -20,13 +20,41 @@ export * from './stores/RedisStore'
 export * from './types'
 
 /**
- * CacheStorageProvider - Low-level storage adapter interface.
+ * Interface for a low-level cache storage provider.
+ *
  * Use this to implement custom storage backends that can be plugged into Stasis.
+ *
+ * @public
+ * @since 3.0.0
  */
 export interface CacheStorageProvider {
+  /**
+   * Retrieve an item from the cache.
+   *
+   * @param key - The unique cache key.
+   * @returns The cached value, or null if not found.
+   */
   get<T = unknown>(key: string): Promise<T | null>
+
+  /**
+   * Store an item in the cache.
+   *
+   * @param key - The unique cache key.
+   * @param value - The value to store.
+   * @param ttl - Time-to-live in seconds.
+   */
   set(key: string, value: unknown, ttl?: number): Promise<void>
+
+  /**
+   * Delete an item from the cache.
+   *
+   * @param key - The cache key to remove.
+   */
   delete(key: string): Promise<void>
+
+  /**
+   * Clear all items from the cache storage.
+   */
   clear(): Promise<void>
 }
 
@@ -34,21 +62,98 @@ export interface CacheStorageProvider {
 export type CacheProvider = CacheStorageProvider
 
 /**
- * CacheService - High-level application contract for caching.
- * This is the public API exposed to the rest of the application.
+ * High-level application contract for caching operations.
+ *
+ * This is the public API exposed to the rest of the application via
+ * the request context or service container.
+ *
+ * @public
+ * @since 3.0.0
  */
 export interface CacheService {
+  /**
+   * Retrieve an item from the cache.
+   *
+   * @param key - The unique cache key.
+   * @returns The cached value, or null if not found or expired.
+   */
   get<T = unknown>(key: string): Promise<T | null>
+
+  /**
+   * Store an item in the cache with an optional TTL.
+   *
+   * @param key - The unique cache key.
+   * @param value - The value to store.
+   * @param ttl - Time-to-live in seconds or an absolute Date.
+   */
   set(key: string, value: unknown, ttl?: CacheTtl): Promise<void>
+
+  /**
+   * Determine if an item exists in the cache and is not expired.
+   *
+   * @param key - The cache key to check.
+   * @returns True if the item exists and is valid.
+   */
   has(key: string): Promise<boolean>
+
+  /**
+   * Store an item in the cache only if it doesn't already exist.
+   *
+   * @param key - The unique cache key.
+   * @param value - The value to store.
+   * @param ttl - Time-to-live.
+   * @returns True if the item was added, false otherwise.
+   */
   add(key: string, value: unknown, ttl?: CacheTtl): Promise<boolean>
+
+  /**
+   * Remove an item from the cache.
+   *
+   * @param key - The cache key to remove.
+   * @returns True if the item existed and was removed.
+   */
   delete(key: string): Promise<boolean>
+
+  /**
+   * Retrieve an item from the cache and then delete it.
+   *
+   * @param key - The cache key.
+   * @param defaultValue - Optional value to return if not found.
+   * @returns The cached value or the default.
+   */
   pull<T = unknown>(key: string, defaultValue?: T): Promise<T | null>
+
+  /**
+   * Get an item from the cache, or execute the given callback and store the result.
+   *
+   * @param key - The cache key.
+   * @param ttl - Time-to-live if the item needs to be fetched.
+   * @param callback - Closure to execute if the item is missing.
+   * @returns The cached or fetched value.
+   */
   remember<T>(key: string, ttl: CacheTtl, callback: () => Promise<T> | T): Promise<T>
+
+  /**
+   * Store an item in the cache indefinitely.
+   *
+   * @param key - The unique cache key.
+   * @param callback - Closure to execute if the item is missing.
+   * @returns The cached or fetched value.
+   */
   rememberForever<T>(key: string, callback: () => Promise<T> | T): Promise<T>
+
+  /**
+   * Clear the entire cache.
+   */
   clear(): Promise<void>
 }
 
+/**
+ * A standard in-memory implementation of `CacheStorageProvider`.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class MemoryCacheProvider implements CacheStorageProvider {
   private store = new MemoryStore()
 
@@ -69,26 +174,53 @@ export class MemoryCacheProvider implements CacheStorageProvider {
   }
 }
 
+/**
+ * Configuration for an individual cache store instance.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export type OrbitCacheStoreConfig =
+  /** Simple in-memory cache using a Map. */
   | { driver: 'memory'; maxItems?: number }
+  /** Local file system based cache. */
   | { driver: 'file'; directory: string }
+  /** Redis-backed distributed cache. */
   | { driver: 'redis'; connection?: string; prefix?: string }
+  /** No-op cache that stores nothing. */
   | { driver: 'null' }
+  /** Use a custom implementation of the low-level `CacheStore` interface. */
   | { driver: 'custom'; store: CacheStore }
+  /** Use an implementation of the `CacheStorageProvider` interface. */
   | { driver: 'provider'; provider: CacheStorageProvider }
 
+/**
+ * Options for configuring the `OrbitStasis` cache orbit.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface OrbitCacheOptions {
-  exposeAs?: string // Default: 'cache'
-  default?: string // Default store name
+  /** The key used to expose the cache manager in the request context. @default 'cache' */
+  exposeAs?: string
+  /** The name of the default store to use for proxy methods. @default 'memory' */
+  default?: string
+  /** Global prefix for all cache keys across all stores. */
   prefix?: string
+  /** Default time-to-live for cache entries if not specified. @default 60 */
   defaultTtl?: CacheTtl
+  /** Map of named cache stores and their configurations. */
   stores?: Record<string, OrbitCacheStoreConfig>
-  eventsMode?: CacheEventMode // Default: 'async' (low-overhead)
-  throwOnEventError?: boolean // Useful for debug when using sync mode
+  /** How to handle cache events (hit/miss/etc) */
+  eventsMode?: CacheEventMode
+  /** Whether to throw if an event listener fails. @default false */
+  throwOnEventError?: boolean
+  /** Custom error handler for cache events. */
   onEventError?: (error: unknown, event: keyof CacheEvents, payload: { key?: string }) => void
 
-  // Legacy options
+  /** @deprecated Use stores mapping with 'provider' driver. */
   provider?: CacheStorageProvider
+  /** @deprecated Use defaultTtl. */
   defaultTTL?: number
 }
 
@@ -185,9 +317,27 @@ function createStoreFactory(config: OrbitCacheOptions): (name: string) => CacheS
 }
 
 /**
- * OrbitStasis - Cache Orbit
+ * OrbitStasis is the core caching module for Gravito.
  *
- * Provides caching functionality for Gravito applications.
+ * It provides a robust, multi-store cache management system with support for:
+ * - Pluggable backends (Memory, File, Redis).
+ * - Advanced features like tags, distributed locks, and atomic increments.
+ * - Stale-while-revalidate (flexible) caching strategy.
+ * - Integrated rate limiting.
+ *
+ * @example
+ * ```typescript
+ * const stasis = new OrbitStasis({
+ *   default: 'redis',
+ *   stores: {
+ *     redis: { driver: 'redis', connection: 'default' }
+ *   }
+ * });
+ * core.addOrbit(stasis);
+ * ```
+ *
+ * @public
+ * @since 3.0.0
  */
 export class OrbitStasis implements GravitoOrbit {
   private manager: CacheManager | undefined

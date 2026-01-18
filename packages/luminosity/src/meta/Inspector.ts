@@ -1,7 +1,17 @@
+/**
+ * Represents a summarized view of a page's SEO metadata.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface MetaPreview {
+  /** The standard HTML title. */
   title?: string
+  /** The standard meta description. */
   description?: string
+  /** The URL of the page. */
   url?: string
+  /** Extracted Open Graph metadata. */
   og?: {
     title?: string
     description?: string
@@ -9,6 +19,7 @@ export interface MetaPreview {
     type?: string
     site_name?: string
   }
+  /** Extracted Twitter Card metadata. */
   twitter?: {
     card?: string
     site?: string
@@ -16,6 +27,16 @@ export interface MetaPreview {
   }
 }
 
+/**
+ * MetaInspector fetches and parses SEO metadata from any public URL.
+ *
+ * It extracts standard meta tags, Open Graph properties, and Twitter Cards
+ * to provide a summary of how a page will appear when shared on social media
+ * or indexed by search engines.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class MetaInspector {
   async inspect(url: string): Promise<MetaPreview> {
     try {

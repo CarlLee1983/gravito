@@ -1,5 +1,14 @@
 import type { OpenGraphConfig } from './interfaces'
 
+/**
+ * OpenGraphBuilder generates `<meta property="og:...">` tags.
+ *
+ * It supports standard Open Graph properties including titles, descriptions,
+ * URLs, locales, and detailed image metadata.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class OpenGraphBuilder {
   constructor(private config: OpenGraphConfig) {}
 

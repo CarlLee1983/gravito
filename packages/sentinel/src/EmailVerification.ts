@@ -1,11 +1,19 @@
 import crypto from 'node:crypto'
 
+/**
+ * Payload structure for email verification tokens.
+ * @public
+ */
 export interface EmailVerificationPayload {
   id: string | number
   email: string
   expiresAt: number
 }
 
+/**
+ * Configuration options for email verification.
+ * @public
+ */
 export interface EmailVerificationOptions {
   ttlSeconds?: number
 }
@@ -25,6 +33,10 @@ function parseKey(key: string): Buffer {
   return Buffer.from(key)
 }
 
+/**
+ * Service to handle secure email verification token generation and validation.
+ * @public
+ */
 export class EmailVerificationService {
   private readonly key: Buffer
 

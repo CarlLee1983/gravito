@@ -1,3 +1,16 @@
+/**
+ * @fileoverview Gravito CLI - Command Line Tool for the Gravito Ecosystem
+ *
+ * Provides a set of commands for project initialization, process management,
+ * scheduled task execution, and maintenance utilities.
+ *
+ * Commands:
+ * - create: Bootstrap a new Gravito project
+ * - schedule:run/work: Task scheduling management
+ * - dev: Optimized development workflow
+ * - maintenance: System health and diagnostic tools
+ */
+
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { cancel, intro, isCancel, note, outro, select, spinner, text } from '@clack/prompts'

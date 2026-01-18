@@ -10,11 +10,28 @@ import {
   ttlToExpiresAt,
 } from '../types'
 
+/**
+ * Options for configuring the `RedisStore`.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export type RedisStoreOptions = {
+  /** The name of the Redis connection to use. */
   connection?: string
-  prefix?: string // Redis-level prefix (though CacheRepository also handles prefix)
+  /** Optional Redis-level prefix for keys. */
+  prefix?: string
 }
 
+/**
+ * RedisStore implements the `CacheStore` interface using Redis.
+ *
+ * It provides a distributed, persistent cache backend with support for
+ * atomic increments/decrements, tagging, and distributed locking.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class RedisStore implements CacheStore, TaggableStore {
   private connectionName?: string
 

@@ -2,6 +2,14 @@ import { useAdmin } from '@gravito/admin-shell-react'
 import { Calendar, ChevronRight, CreditCard, Filter, Search, Truck } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 
+/**
+ * Order Management Page.
+ *
+ * View and process customer orders, track shipments, and handle returns.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export function OrderList() {
   const { sdk } = useAdmin()
   const [orders, setOrders] = useState<any[]>([])

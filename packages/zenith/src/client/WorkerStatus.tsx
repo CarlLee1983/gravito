@@ -53,6 +53,15 @@ interface WorkerInfo {
   }
 }
 
+/**
+ * Real-time worker node status visualization component.
+ *
+ * Displays a list of active worker nodes with their CPU, RAM, uptime metrics,
+ * and highlights a specific worker if provided.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export function WorkerStatus({
   highlightedWorkerId,
   workers = [],

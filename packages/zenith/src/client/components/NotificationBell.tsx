@@ -13,6 +13,15 @@ import { useEffect, useRef, useState } from 'react'
 import { type Notification, useNotifications } from '../contexts/NotificationContext'
 import { cn } from '../utils'
 
+/**
+ * A notification bell icon component with a dropdown panel.
+ *
+ * Displays the unread notification count and provides a list view of recent
+ * system notifications with mark-as-read and clear-all functionality.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false)
   const { notifications, unreadCount, markAsRead, markAllAsRead, clearAll, removeNotification } =

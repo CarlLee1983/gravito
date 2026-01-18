@@ -1,6 +1,16 @@
 import type { IDockerAdapter } from '../Domain/Interfaces'
 import type { Rocket } from '../Domain/Rocket'
 
+/**
+ * RefurbishUnit handles the cleaning and restoration of Rocket containers.
+ *
+ * After a mission is complete, this unit resets the container environment
+ * (clearing files, stopping processes) so the container can be returned
+ * to the idle pool for future reuse.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class RefurbishUnit {
   constructor(private docker: IDockerAdapter) {}
 

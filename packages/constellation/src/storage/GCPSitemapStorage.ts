@@ -1,21 +1,48 @@
 import type { SitemapStorage } from '../types'
 
+/**
+ * Options for configuring the `GCPSitemapStorage`.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface GCPSitemapStorageOptions {
+  /** The Google Cloud Storage bucket name. */
   bucket: string
+  /** Optional prefix (folder path) within the bucket. */
   prefix?: string
+  /** Optional base URL for resolving sitemap locations. Defaults to the standard GCS public URL. */
   baseUrl?: string
+  /** Configuration for staging files before atomic deployment. */
   shadow?: {
+    /** Whether shadow processing is enabled. */
     enabled: boolean
+    /** Deployment mode: 'atomic' or 'versioned'. */
     mode: 'atomic' | 'versioned'
   }
-  // GCP 認證配置（可選，使用環境變數或預設認證）
+  /** Path to the service account key file. */
   keyFilename?: string
+  /** The Google Cloud Project ID. */
   projectId?: string
 }
 
 /**
- * Google Cloud Storage 儲存實作
- * 支援影子處理和版本化
+ * GCPSitemapStorage persists sitemap files to Google Cloud Storage.
+ *
+ * It supports atomic deployments via shadow processing and file versioning,
+ * allowing for reliable updates in high-traffic cloud environments.
+ *
+ * @example
+ * ```typescript
+ * const storage = new GCPSitemapStorage({
+ *   bucket: 'my-sitemaps',
+ *   prefix: 'prod/',
+ *   shadow: { enabled: true, mode: 'atomic' }
+ * });
+ * ```
+ *
+ * @public
+ * @since 3.0.0
  */
 export class GCPSitemapStorage implements SitemapStorage {
   private bucket: string

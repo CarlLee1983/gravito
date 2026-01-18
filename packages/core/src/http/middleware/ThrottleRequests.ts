@@ -13,6 +13,11 @@ type CacheLike = {
   limiter: () => RateLimiterLike
 }
 
+/**
+ * Rate Limiting Middleware using Orbit Cache.
+ * Requires an active CacheService implementation.
+ * @public
+ */
 export class ThrottleRequests {
   constructor(private core: PlanetCore) {}
 

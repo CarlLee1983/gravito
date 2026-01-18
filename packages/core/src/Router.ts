@@ -3,10 +3,16 @@ import type { GravitoHandler, GravitoMiddleware, HttpMethod, ProxyOptions } from
 import type { PlanetCore } from './PlanetCore'
 import { Route } from './Route'
 
-// Type for Controller Class Constructor
+/**
+ * Type for Controller Class Constructor
+ * @public
+ */
 export type ControllerClass = new (core: PlanetCore) => Record<string, unknown>
 
-// Handler can be a function or [Class, 'methodName']
+/**
+ * Handler can be a function or [Class, 'methodName']
+ * @public
+ */
 export type RouteHandler = GravitoHandler | [ControllerClass, string]
 
 /**
@@ -16,17 +22,27 @@ export type RouteHandler = GravitoHandler | [ControllerClass, string]
 export interface FormRequestLike {
   schema: unknown
   source?: string
+  /**
+   * Validate the request context.
+   * @param ctx - The request context
+   */
   validate?(ctx: unknown): Promise<{ success: boolean; data?: unknown; error?: unknown }>
 }
 
 /**
  * Type for FormRequest class constructor
+ * @public
  */
 export type FormRequestClass = new () => FormRequestLike
 
 /**
  * Symbol to mark FormRequest classes for fast identification.
  * FormRequest classes from @gravito/impulse should set this symbol.
+ */
+/**
+ * Symbol to mark FormRequest classes for fast identification.
+ * FormRequest classes from @gravito/impulse should set this symbol.
+ * @public
  */
 export const FORM_REQUEST_SYMBOL = Symbol.for('gravito.formRequest')
 
@@ -47,6 +63,7 @@ const formRequestInstances = new WeakMap<FormRequestClass, FormRequestLike>()
 /**
  * Check if a value is a FormRequest class.
  * Optimized with Symbol check, prototype check, and caching.
+ * @internal
  */
 function isFormRequestClass(value: unknown): value is FormRequestClass {
   if (typeof value !== 'function') {
@@ -109,6 +126,7 @@ function isFormRequestClass(value: unknown): value is FormRequestClass {
 /**
  * Convert a FormRequest class to middleware.
  * Uses instance caching to avoid re-instantiation on every request.
+ * @internal
  */
 function formRequestToMiddleware(RequestClass: FormRequestClass): GravitoMiddleware {
   // Get or create cached instance
@@ -138,15 +156,27 @@ function formRequestToMiddleware(RequestClass: FormRequestClass): GravitoMiddlew
   }
 }
 
+/**
+ * Options for route definitions
+ * @public
+ */
 export interface RouteOptions {
+  /** Route prefix path */
   prefix?: string
+  /** Domain/Hostname constraint */
   domain?: string
+  /** Middleware stack for the route */
   middleware?: GravitoMiddleware[]
 }
 
 /**
  * RouteGroup
  * Helper class for chained route configuration (prefix, domain, etc.)
+ */
+/**
+ * RouteGroup
+ * Helper class for chained route configuration (prefix, domain, etc.)
+ * @public
  */
 export class RouteGroup {
   constructor(
@@ -885,8 +915,16 @@ export class Router {
   }
 }
 
+/**
+ * Standard RESTful resource action names.
+ * @public
+ */
 export type ResourceAction = 'index' | 'create' | 'store' | 'show' | 'edit' | 'update' | 'destroy'
 
+/**
+ * Options for resource route registration.
+ * @public
+ */
 export interface ResourceOptions {
   only?: ResourceAction[]
   except?: ResourceAction[]

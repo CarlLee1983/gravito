@@ -1,6 +1,14 @@
 import type { GravitoContext } from '@gravito/core'
 import { Sanitizer } from './Sanitizer.js'
 
+/**
+ * Base class for all Monolith Controllers.
+ *
+ * Provides basic functionality for calling actions and sanitizing data.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export abstract class BaseController {
   protected sanitizer = new Sanitizer()
 
@@ -14,6 +22,15 @@ export abstract class BaseController {
   }
 }
 
+/**
+ * Controller class with request context awareness and helper methods.
+ *
+ * This class provides a more feature-rich base for controllers that
+ * need direct access to the request context and common response helpers.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export abstract class Controller {
   protected context!: GravitoContext
 

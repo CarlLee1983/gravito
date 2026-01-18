@@ -1,110 +1,73 @@
 /**
- * Serialized job payload.
+ * Represents a job that has been serialized for storage in a queue.
+ * @public
  */
 export interface SerializedJob {
-  /**
-   * Unique job identifier.
-   */
+  /** Unique job identifier */
   id: string
 
-  /**
-   * Serializer type: `'json'` or `'class'`.
-   */
+  /** Serializer type: 'json' for plain objects or 'class' for instances */
   type: 'json' | 'class'
 
-  /**
-   * Serialized data.
-   */
+  /** Serialized data string */
   data: string
 
-  /**
-   * Class name (only for `type === 'class'`).
-   */
+  /** Fully qualified class name (only used for 'class' type) */
   className?: string
 
-  /**
-   * Created timestamp.
-   */
+  /** Timestamp when the job was created */
   createdAt: number
 
-  /**
-   * Delay before execution (seconds).
-   */
+  /** Optional delay in seconds before the job becomes available for processing */
   delaySeconds?: number
 
-  /**
-   * Current attempt number.
-   */
+  /** Number of times the job has been attempted */
   attempts?: number
 
-  /**
-   * Maximum attempts.
-   */
+  /** Maximum number of retry attempts before the job is marked as failed */
   maxAttempts?: number
 
-  /**
-   * Group ID for FIFO ordering.
-   */
+  /** Group ID for FIFO (strictly sequential) processing */
   groupId?: string
 
-  /**
-   * Initial retry delay (seconds).
-   */
+  /** Initial delay in seconds before first retry attempt */
   retryAfterSeconds?: number
 
-  /**
-   * Retry delay multiplier.
-   */
+  /** Multiplier for exponential backoff on retries */
   retryMultiplier?: number
 
-  /**
-   * Last error message.
-   */
+  /** Last error message if the job failed */
   error?: string
 
-  /**
-   * Timestamp when the job failed permanently.
-   */
+  /** Timestamp when the job finally failed after max attempts */
   failedAt?: number
 
-  /**
-   * Job priority.
-   */
+  /** Optional priority for the job (string or numeric) */
   priority?: string | number
 }
 
 /**
- * Topic options (for Kafka, etc.).
+ * Advanced topic options for distributed queues (e.g., Kafka).
+ * @public
  */
 export interface TopicOptions {
-  /**
-   * Number of partitions.
-   */
+  /** Number of partitions for the topic */
   partitions?: number
-
-  /**
-   * Replication factor.
-   */
+  /** Number of replicas for each partition */
   replicationFactor?: number
-
-  /**
-   * Additional config.
-   */
+  /** Additional driver-specific configurations */
   config?: Record<string, string>
 }
 
 /**
- * Queue connection config.
+ * Configuration for a specific queue connection.
+ * @public
  */
 export interface QueueConnectionConfig {
-  /**
-   * Driver type.
-   */
+  /** The driver type to use for this connection */
   driver: 'memory' | 'database' | 'redis' | 'kafka' | 'sqs' | 'rabbitmq' | 'nats'
 
-  /**
-   * Driver-specific config.
-   */
+  /** Driver-specific settings (e.g., connection string, table name) */
   [key: string]: unknown
 }
 

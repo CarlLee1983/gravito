@@ -1,13 +1,26 @@
 import type { SitemapProgress, SitemapProgressStorage } from '../types'
 
+/**
+ * Options for configuring the `ProgressTracker`.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface ProgressTrackerOptions {
+  /** The storage backend used to persist progress information. */
   storage: SitemapProgressStorage
-  updateInterval?: number // 更新間隔（毫秒），預設 1000ms
+  /** Update interval in milliseconds. @default 1000 */
+  updateInterval?: number
 }
 
 /**
- * 進度追蹤器
- * 追蹤 sitemap 生成進度
+ * ProgressTracker monitors and persists the progress of sitemap generation jobs.
+ *
+ * It provides methods to initialize, update, and complete progress tracking,
+ * ensuring that long-running generation tasks can be monitored via the storage backend.
+ *
+ * @public
+ * @since 3.0.0
  */
 export class ProgressTracker {
   private storage: SitemapProgressStorage

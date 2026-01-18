@@ -3,6 +3,22 @@ import { join } from 'node:path'
 import { getRuntimeAdapter } from '@gravito/core'
 import type { SessionId, SessionRecord, SessionStore } from '../types'
 
+/**
+ * File-based session store for single-instance deployments.
+ *
+ * Stores sessions as JSON files in the specified directory.
+ * Suitable for development and small-scale production use.
+ *
+ * @example
+ * ```typescript
+ * const store = new FileSessionStore('./storage/sessions')
+ * await store.set('session-id', { userId: '123' }, 3600)
+ * const session = await store.get('session-id')
+ * ```
+ *
+ * @since 3.0.0
+ * @public
+ */
 export class FileSessionStore implements SessionStore {
   private runtime = getRuntimeAdapter()
 

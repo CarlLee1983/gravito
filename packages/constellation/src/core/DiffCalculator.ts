@@ -1,18 +1,40 @@
 import type { SitemapChange, SitemapEntry } from '../types'
 
+/**
+ * Result of a sitemap difference calculation.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface DiffResult {
+  /** Entries that are present in the new set but not in the old one. */
   added: SitemapEntry[]
+  /** Entries that are present in both sets but have different metadata. */
   updated: SitemapEntry[]
+  /** URLs that were present in the old set but are missing from the new one. */
   removed: string[] // URLs
 }
 
+/**
+ * Options for configuring the `DiffCalculator`.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface DiffCalculatorOptions {
-  batchSize?: number // 分批處理大小，預設 10000
+  /** Batch size for processing large datasets. @default 10000 */
+  batchSize?: number
 }
 
 /**
- * 差異計算器
- * 比較兩個 sitemap 狀態，計算差異
+ * DiffCalculator compares two sets of sitemap entries to identify changes.
+ *
+ * It is used for incremental sitemap generation, allowing the system to
+ * update only the parts of the sitemap that have actually changed (added,
+ * updated, or removed).
+ *
+ * @public
+ * @since 3.0.0
  */
 export class DiffCalculator {
   private batchSize: number

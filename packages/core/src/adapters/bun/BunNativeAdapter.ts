@@ -11,6 +11,11 @@ import { BunContext } from './BunContext'
 import type { BunRequest } from './BunRequest'
 import { RadixRouter } from './RadixRouter'
 
+/**
+ * Native Bun-optimized HTTP Adapter for Gravito.
+ * Uses Bun's standard Request/Response classes and efficient router.
+ * @public
+ */
 export class BunNativeAdapter implements HttpAdapter {
   public readonly name = 'bun-native'
   public readonly version = '0.0.1'

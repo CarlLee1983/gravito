@@ -1,14 +1,38 @@
 import type { Authenticatable } from '../contracts/Authenticatable'
 import type { UserProvider } from '../contracts/UserProvider'
 
+/**
+ * Callback function to retrieve user by ID.
+ * @public
+ */
 export type Retriever<T> = (identifier: string | number) => Promise<T | null>
+
+/**
+ * Callback function to validate credentials.
+ * @public
+ */
 export type CredentialValidator<T> = (
   user: T,
   credentials: Record<string, unknown>
 ) => Promise<boolean>
+
+/**
+ * Callback function to retrieve user by 'remember me' token.
+ * @public
+ */
 export type TokenRetriever<T> = (identifier: string | number, token: string) => Promise<T | null>
+
+/**
+ * Callback function to retrieve user by credentials.
+ * @public
+ */
 export type CredentialRetriever<T> = (credentials: Record<string, unknown>) => Promise<T | null>
 
+/**
+ * User provider implementation using callbacks.
+ * Useful for custom data sources without enforcing a full class implementation.
+ * @public
+ */
 export class CallbackUserProvider<T extends Authenticatable = Authenticatable>
   implements UserProvider<T>
 {

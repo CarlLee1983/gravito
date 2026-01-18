@@ -5,6 +5,7 @@
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "type": "module",
+  "sideEffects": false,
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
@@ -34,7 +35,8 @@
   },
   "devDependencies": {
     "bun-types": "latest",
-    "tsup": "^8.5.1"
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3"
   },
   "publishConfig": {
     "access": "public"

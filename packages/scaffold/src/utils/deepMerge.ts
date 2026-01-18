@@ -1,3 +1,16 @@
+/**
+ * Recursively merge two objects or arrays.
+ *
+ * For arrays, it performs a deduplicated union.
+ * For objects, it merges nested properties.
+ *
+ * @param target - The base object to merge into.
+ * @param source - The object containing properties to merge.
+ * @returns A new object or array representing the merged result.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export function deepMerge(target: any, source: any): any {
   if (typeof target !== 'object' || target === null) {
     return source

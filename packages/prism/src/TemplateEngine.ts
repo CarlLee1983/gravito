@@ -1,20 +1,106 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
+/**
+ * Options for rendering templates.
+ *
+ * Provides configuration for the rendering process, including layout specification
+ * and dynamic data injection.
+ *
+ * @example
+ * ```typescript
+ * const options: RenderOptions = {
+ *   layout: 'layouts/main',
+ *   title: 'Home Page',
+ *   user: { name: 'John' }
+ * };
+ * ```
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface RenderOptions {
+  /** Legacy layout support - specifies a layout file to use */
   layout?: string // Legacy layout support
+  /** Additional data to pass to the template */
   [key: string]: unknown
 }
 
+/**
+ * Custom helper function signature.
+ *
+ * Helpers are used to extend the template engine with custom logic that can be
+ * invoked directly from templates using the `{{ helperName arg1=val1 }}` syntax.
+ *
+ * @param args - Arguments passed to the helper in the template as key-value pairs.
+ * @param data - Global data context of the template, providing access to all template variables.
+ * @returns A string to be injected into the rendered HTML.
+ *
+ * @example
+ * ```typescript
+ * const uppercase: HelperFunction = (args) => {
+ *   return String(args.value).toUpperCase();
+ * };
+ * ```
+ *
+ * @public
+ * @since 3.0.0
+ */
 export type HelperFunction = (
+  /** Arguments passed to the helper in the template */
   args: Record<string, string | number | boolean>,
+  /** Global data context of the template */
   data: Record<string, unknown>
 ) => string
 
+/**
+ * Internal rendering context for inheritance and stacks.
+ * @internal
+ */
 interface RenderContext {
+  /** Sections captured from @section directives */
   sections: Map<string, string>
+  /** Stacks captured from @push directives */
   stacks: Map<string, string[]>
 }
+
+/**
+ * TemplateEngine is the core rendering engine for Gravito Prism.
+ *
+ * It implements a Blade-like syntax with support for inheritance, components, and custom helpers.
+ * Key features include:
+ * - Layout inheritance with `@extends`, `@section`, and `@yield`.
+ * - Content stacks with `@push` and `@stack`.
+ * - Reusable components using `<x-component>` syntax.
+ * - Dynamic data interpolation and control structures (`@if`, `@foreach`).
+ *
+ * @example
+ * ```typescript
+ * const engine = new TemplateEngine('./views');
+ *
+ * // Register a helper
+ * engine.registerHelper('upper', (args) => String(args.value).toUpperCase());
+ *
+ * // Render a template
+ * const html = engine.render('home', {
+ *   name: 'World',
+ *   showSubtitle: true
+ * });
+ * ```
+ *
+ * @public
+ * @since 3.0.0
+ */
+/**
+ * Static regex constants for better performance
+ */
+const EXTENDS_REGEX = /^\s*@extends\s*\(\s*['"](.+?)['"]\s*\)/m
+const SECTION_REGEX = /@section\s*\(\s*['"](.+?)['"]\s*\)([\s\S]*?)@endsection/g
+const PUSH_REGEX = /@push\s*\(\s*['"](.+?)['"]\s*\)([\s\S]*?)@endpush/g
+const YIELD_REGEX = /@yield\s*\(\s*['"](.+?)['"](?:\s*,\s*['"](.+?)['"])?\s*\)/g
+const STACK_REGEX = /@stack\s*\(\s*['"](.+?)['"]\s*\)/g
+const COMPONENT_TAG_REGEX = /<x-([a-zA-Z0-9-]+)([^>]*)>/
+const INTERPOLATE_REGEX = /\{\{\{?\s*([\w.]+)\s*\}?\}\}/g
 
 export class TemplateEngine {
   private cache = new Map<string, string>()
@@ -25,33 +111,14 @@ export class TemplateEngine {
     this.viewsDir = viewsDir
   }
 
-  /**
-   * Register a custom helper function.
-   *
-   * @param name - The name of the helper.
-   * @param fn - The helper function.
-   */
   public registerHelper(name: string, fn: HelperFunction): void {
     this.helpers.set(name, fn)
   }
 
-  /**
-   * Unregister a custom helper function.
-   *
-   * @param name - The name of the helper to remove.
-   */
   public unregisterHelper(name: string): void {
     this.helpers.delete(name)
   }
 
-  /**
-   * Render a view with data.
-   *
-   * @param view - The view name (e.g., 'home' or 'auth/login').
-   * @param data - The data to pass to the view.
-   * @param options - Render options (e.g., legacy layout).
-   * @returns The rendered HTML string.
-   */
   public render(
     view: string,
     data: Record<string, unknown> = {},
@@ -62,85 +129,48 @@ export class TemplateEngine {
       stacks: new Map(),
     }
 
-    // 1. Load the initial view
     let template = this.readTemplate(view)
-
-    // Merge options into data
     const viewData = { ...data, ...options }
 
-    // 2. Handle Blade-style Layout Inheritance (@extends)
-    const extendsMatch = template.match(/^\s*@extends\s*\(\s*['"](.+?)['"]\s*\)/m)
+    const extendsMatch = template.match(EXTENDS_REGEX)
 
     if (extendsMatch) {
       const layoutName = extendsMatch[1]
-
-      // Remove @extends line
       template = template.replace(extendsMatch[0], '')
-
-      // Extract Sections (`@section('name')...@endsection`)
       this.extractSections(template, context)
-
-      // Extract Stacks (`@push('name')...@endpush`)
       this.extractStacks(template, context)
-      // Remove stacks from template to avoid processing them in sections if nested
       template = this.removeStacks(template)
-
-      // Switch master template to the layout
       if (layoutName) {
         template = this.readTemplate(layoutName)
       }
     } else if (options.layout) {
-      // Legacy "layout" option support
       const layoutContent = this.readTemplate(options.layout)
       context.sections.set('content', template)
       template = layoutContent
     }
 
-    // 3. Compile the result
     return this.compile(template, viewData, context)
   }
 
-  // --- Core Compilation Pipeline ---
-
-  /**
-   * Core compilation pipeline.
-   *
-   * @internal
-   */
   private compile(template: string, data: Record<string, unknown>, ctx: RenderContext): string {
     let result = template
-
-    // 1. Process Includes (Recursive)
     result = this.processIncludes(result)
-
-    // 2. Inject Layout Structure (@yield, @stack)
-    // IMPORTANT: Inherited structure must be assembled BEFORE components are processed
     result = this.processYields(result, ctx)
     result = this.processStacks(result, ctx)
-
-    // 3. Process Components <x-name> (Recursive)
     result = this.processComponents(result, data, ctx)
-
-    // 4. Directives Upgrade (@if, @foreach) mapping to legacy logic
     result = this.processDirectives(result)
-
-    // 5. Logic (Loops & Conditionals)
     result = this.processLoops(result, data)
     result = this.processConditionals(result, data)
-
-    // 6. Helpers & Interpolation
     result = this.processHelpers(result, data)
     result = this.interpolate(result, data)
-
     return result
   }
 
-  // --- Structural Processors ---
-
   private extractSections(template: string, ctx: RenderContext) {
-    const sectionRegex = /@section\s*\(\s*['"](.+?)['"]\s*\)([\s\S]*?)@endsection/g
     let match: RegExpExecArray | null
-    while ((match = sectionRegex.exec(template)) !== null) {
+    // Reset lastIndex for reusable regex
+    SECTION_REGEX.lastIndex = 0
+    while ((match = SECTION_REGEX.exec(template)) !== null) {
       const name = match[1]
       const content = match[2]
       if (name && content) {
@@ -150,9 +180,9 @@ export class TemplateEngine {
   }
 
   private extractStacks(template: string, ctx: RenderContext) {
-    const pushRegex = /@push\s*\(\s*['"](.+?)['"]\s*\)([\s\S]*?)@endpush/g
     let match: RegExpExecArray | null
-    while ((match = pushRegex.exec(template)) !== null) {
+    PUSH_REGEX.lastIndex = 0
+    while ((match = PUSH_REGEX.exec(template)) !== null) {
       const name = match[1]
       const content = match[2]
       if (name && content) {
@@ -165,28 +195,21 @@ export class TemplateEngine {
   }
 
   private removeStacks(template: string): string {
-    return template.replace(/@push\s*\(\s*['"](.+?)['"]\s*\)([\s\S]*?)@endpush/g, '')
+    return template.replace(PUSH_REGEX, '')
   }
 
   private processYields(template: string, ctx: RenderContext): string {
-    // @yield('name', 'default')
-    return template.replace(
-      /@yield\s*\(\s*['"](.+?)['"](?:\s*,\s*['"](.+?)['"])?\s*\)/g,
-      (_, name, defaultValue) => {
-        return ctx.sections.get(name) || defaultValue || ''
-      }
-    )
+    return template.replace(YIELD_REGEX, (_, name, defaultValue) => {
+      return ctx.sections.get(name) || defaultValue || ''
+    })
   }
 
   private processStacks(template: string, ctx: RenderContext): string {
-    // @stack('name')
-    return template.replace(/@stack\s*\(\s*['"](.+?)['"]\s*\)/g, (_, name) => {
+    return template.replace(STACK_REGEX, (_, name) => {
       const stack = ctx.stacks.get(name)
       return stack ? stack.join('\n') : ''
     })
   }
-
-  // --- Component Processors ---
 
   private processComponents(
     template: string,
@@ -202,7 +225,7 @@ export class TemplateEngine {
     let hasComponent = true
 
     while (hasComponent) {
-      const startTagMatch = result.match(/<x-([a-zA-Z0-9-]+)([^>]*)>/)
+      const startTagMatch = result.match(COMPONENT_TAG_REGEX)
       if (!startTagMatch) {
         hasComponent = false
         break
@@ -213,7 +236,6 @@ export class TemplateEngine {
       const startIndex = startTagMatch.index!
       const contentStartIndex = startIndex + startTagMatch[0].length
 
-      // Find closing tag </x-tagName>
       let depthCounter = 1
       let searchIndex = contentStartIndex
       let finalCloseIndex = -1
@@ -238,25 +260,18 @@ export class TemplateEngine {
         }
       }
 
-      // We found the component block
       const innerContent = result.substring(contentStartIndex, finalCloseIndex)
-
-      // Process Attributes
       const componentData = this.parseAttributes(attrsString || '')
 
-      // Load Component Template
       let componentTemplate = ''
       try {
         componentTemplate = this.readTemplate(`components/${tagName}`)
       } catch (_e) {
-        console.warn(`Component x-${tagName} not found.`)
-        // Replace with comment to prevent infinite loop
         const fullMatch = result.substring(startIndex, finalCloseIndex + `</x-${tagName}>`.length)
         result = result.replace(fullMatch, `<!-- Component ${tagName} not found -->`)
         continue
       }
 
-      // Handle Slots
       const slots: Record<string, string> = {
         slot: innerContent,
       }
@@ -270,10 +285,8 @@ export class TemplateEngine {
       slots.slot = this.compile(processedDefaultSlot.trim(), data, ctx)
 
       const componentScope = { ...componentData, ...slots }
-
       const renderedComponent = this.compile(componentTemplate, componentScope, ctx)
 
-      // Careful replacement
       const before = result.substring(0, startIndex)
       const after = result.substring(finalCloseIndex + `</x-${tagName}>`.length)
       result = before + renderedComponent + after
@@ -318,8 +331,6 @@ export class TemplateEngine {
     return args
   }
 
-  // --- Directives & Legacy ---
-
   private processDirectives(template: string): string {
     return template
       .replace(/@if\s*\((.+?)\)/g, '{{#if $1}}')
@@ -338,8 +349,6 @@ export class TemplateEngine {
       })
       .replace(/@csrf/g, '<input type="hidden" name="_token" value="{{{ _token }}}">')
   }
-
-  // --- Existing Methods (Preserved) ---
 
   private readTemplate(name: string): string {
     const cached = this.cache.get(name)
@@ -460,13 +469,14 @@ export class TemplateEngine {
   }
 
   private interpolate(template: string, data: Record<string, unknown>): string {
-    const result = template.replace(/\{\{\{\s*([\w.]+)\s*\}\}\}/g, (_, key) => {
+    return template.replace(INTERPOLATE_REGEX, (match, key) => {
       const value = this.getNestedValue(data, key)
-      return String(value ?? '')
-    })
-    return result.replace(/\{\{\s*([\w.]+)\s*\}\}/g, (_, key) => {
-      const value = this.getNestedValue(data, key)
-      return this.escapeHtml(String(value ?? ''))
+      const str = String(value ?? '')
+      // Check if it's triple braces (raw)
+      if (match.startsWith('{{{')) {
+        return str
+      }
+      return this.escapeHtml(str)
     })
   }
 
@@ -481,8 +491,10 @@ export class TemplateEngine {
 
   private getNestedValue(obj: unknown, path: string): unknown {
     return path.split('.').reduce((prev, curr) => {
-      // @ts-expect-error: Dynamic access
-      return prev ? prev[curr] : undefined
+      if (prev && typeof prev === 'object') {
+        return (prev as Record<string, unknown>)[curr]
+      }
+      return undefined
     }, obj)
   }
 }

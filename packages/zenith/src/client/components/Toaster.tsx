@@ -4,6 +4,16 @@ import { useEffect, useState } from 'react'
 import { useNotifications } from '../contexts/NotificationContext'
 import { cn } from '../utils'
 
+/**
+ * Global toast notification container for Zenith.
+ *
+ * Renders an animated stack of floating notifications in the corner of the
+ * screen. It integrates with the `NotificationContext` to display real-time
+ * alerts and messages.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export function Toaster() {
   const { notifications, removeNotification } = useNotifications()
   const [activeIds, setActiveIds] = useState<Set<string>>(new Set())

@@ -4,6 +4,15 @@ import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { cn } from '../utils'
 
+/**
+ * The login page for the Zenith dashboard.
+ *
+ * Provides a secure, password-protected entry point to the administration
+ * console with modern UI effects and smooth animations.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export function LoginPage() {
   const { login } = useAuth()
   const [password, setPassword] = useState('')

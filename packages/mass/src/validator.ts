@@ -3,19 +3,22 @@ import { tbValidator } from '@hono/typebox-validator'
 import type { Static, TSchema } from '@sinclair/typebox'
 
 /**
- * Validation source type.
+ * The source of the data to be validated.
+ * @public
  */
 export type ValidationSource = 'json' | 'query' | 'param' | 'form'
 
 /**
- * Create a validation middleware.
+ * Create a validation middleware using TypeBox.
  *
- * Validates the request data against the provided TypeBox schema.
+ * This function wraps the Hono TypeBox validator, providing a seamless
+ * integration with Gravito Photon for high-performance schema validation.
  *
- * @param source - Validation source (json, query, param, form)
- * @param schema - TypeBox Schema
- * @param hook - Optional callback to handle validation results
- * @returns Photon middleware handler that validates the request.
+ * @param source - The request part to validate (json, query, param, form)
+ * @param schema - The TypeBox schema to validate against
+ * @param hook - Optional callback to handle validation results manually
+ * @returns A Photon-compatible middleware handler.
+ * @public
  */
 export function validate<
   T extends TSchema,

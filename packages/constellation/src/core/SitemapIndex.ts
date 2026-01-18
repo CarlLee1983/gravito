@@ -1,5 +1,22 @@
 import type { SitemapIndexEntry, SitemapStreamOptions } from '../types'
 
+/**
+ * SitemapIndex handles the generation of sitemap index files.
+ *
+ * A sitemap index is used when a site has multiple sitemap files, usually
+ * because the number of URLs exceeds the 50,000 limit per sitemap.
+ *
+ * @example
+ * ```typescript
+ * const index = new SitemapIndex({ baseUrl: 'https://example.com' });
+ * index.add('sitemap-posts.xml');
+ * index.add({ url: 'sitemap-pages.xml', lastmod: new Date() });
+ * const xml = index.toXML();
+ * ```
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class SitemapIndex {
   private options: SitemapStreamOptions
   private entries: SitemapIndexEntry[] = []

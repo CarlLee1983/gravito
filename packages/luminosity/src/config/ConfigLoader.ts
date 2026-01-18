@@ -2,6 +2,16 @@ import { existsSync } from 'node:fs'
 import { isAbsolute, join, resolve } from 'node:path'
 import type { SeoConfig } from '../types'
 
+/**
+ * ConfigLoader is responsible for discovering and loading Luminosity
+ * configuration files.
+ *
+ * It searches for standard configuration filenames (`gravito.seo.config.ts`, etc.)
+ * in the current working directory or loads a specific file from a provided path.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class ConfigLoader {
   /**
    * Load configuration from file

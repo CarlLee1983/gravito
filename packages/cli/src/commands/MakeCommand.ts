@@ -4,6 +4,29 @@ import path from 'node:path'
 import { Scaffold } from '@gravito/scaffold'
 import pc from 'picocolors'
 
+/**
+ * Command for generating code artifacts from stubs.
+ *
+ * Provides `make:*` commands to scaffold controllers, models,
+ * middleware, seeders, and other common application components.
+ *
+ * @example
+ * ```typescript
+ * const make = new MakeCommand()
+ *
+ * // Generate a controller
+ * await make.run('controller', 'UserController')
+ *
+ * // Generate a resource controller
+ * await make.run('controller', 'PostController', { resource: true })
+ *
+ * // Generate a model with migration
+ * await make.run('model', 'User', { migration: true })
+ * ```
+ *
+ * @since 3.0.0
+ * @public
+ */
 export class MakeCommand {
   private stubsPath: string
 

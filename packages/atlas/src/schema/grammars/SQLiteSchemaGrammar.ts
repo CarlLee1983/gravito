@@ -7,6 +7,11 @@ import type { ColumnDefinition } from '../ColumnDefinition'
 import type { IndexDefinition } from '../ForeignKeyDefinition'
 import { SchemaGrammar } from './SchemaGrammar'
 
+/**
+ * SQLite Schema Grammar
+ * Generates SQL DDL statements specifically for SQLite databases.
+ * @internal
+ */
 export class SQLiteSchemaGrammar extends SchemaGrammar {
   protected wrapChar = '"'
 

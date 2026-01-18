@@ -11,6 +11,12 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null)
 
+/**
+ * React hook to access authentication state and methods.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export function useAuth() {
   const context = useContext(AuthContext)
   if (!context) {
@@ -23,6 +29,12 @@ interface AuthProviderProps {
   children: ReactNode
 }
 
+/**
+ * Provider component for managing global authentication state in Zenith.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export function AuthProvider({ children }: AuthProviderProps) {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isAuthEnabled, setIsAuthEnabled] = useState(false)

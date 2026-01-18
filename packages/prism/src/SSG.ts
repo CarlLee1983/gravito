@@ -3,11 +3,23 @@ import { dirname, join } from 'node:path'
 import type { PlanetCore } from '@gravito/core'
 
 /**
- * Static Site Generator for Gravito Prism
+ * Static Site Generator for Gravito Prism.
  *
- * Crawls registered GET routes and exports them as static HTML files.
+ * It crawls registered GET routes from the PlanetCore router and exports them
+ * as static HTML files. It also automatically generates a `sitemap.xml` and `robots.txt`.
+ *
+ * @example
+ * ```typescript
+ * const ssg = new StaticSiteGenerator(core);
+ * await ssg.export('./dist');
+ * ```
+ * @public
  */
 export class StaticSiteGenerator {
+  /**
+   * Create a new SSG instance.
+   * @param core - The PlanetCore instance to crawl routes from.
+   */
   constructor(private core: PlanetCore) {}
 
   /**

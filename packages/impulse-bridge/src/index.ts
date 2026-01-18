@@ -2,19 +2,30 @@ import type { GravitoContext } from '@gravito/core'
 import type { FormRequest } from '@gravito/impulse'
 
 /**
- * Impulse Bridge
+ * ImpulseBridge facilitates the synchronization of backend validation rules
+ * and form blueprints with frontend frameworks (primarily via Inertia.js).
  *
- * Provides utilities to synchronize backend validation rules with the frontend.
+ * It allows you to "share" a FormRequest structure so that frontend
+ * components can automatically perform client-side validation using the
+ * same rules defined on the server.
+ *
+ * @public
  */
 export const ImpulseBridge = {
   /**
-   * Share a FormRequest blueprint with the frontend (via Inertia).
+   * Serializes a FormRequest class and shares its blueprint with the frontend.
+   *
+   * @param ctx - The Gravito request context.
+   * @param key - The unique identifier for this form blueprint on the frontend.
+   * @param RequestClass - The FormRequest class (not instance) to share.
    *
    * @example
+   * ```typescript
    * async show(ctx: Context) {
-   *   ImpulseBridge.share(ctx, 'login', LoginFormRequest)
-   *   return ctx.inertia('Login')
+   *   ImpulseBridge.share(ctx, 'register', RegistrationRequest);
+   *   return ctx.inertia('Auth/Register');
    * }
+   * ```
    */
   share(ctx: GravitoContext, key: string, RequestClass: new () => FormRequest) {
     const request = new RequestClass() as any
@@ -39,7 +50,11 @@ export const ImpulseBridge = {
 }
 
 /**
- * Global middleware to automatically inject blueprints if requested.
+ * Middleware that automatically shares a set of FormRequest blueprints
+ * with every request matched by the router.
+ *
+ * @param blueprints - A map of key-to-FormRequestClass pairs.
+ * @public
  */
 export function impulseBridgeMiddleware(blueprints: Record<string, new () => FormRequest>) {
   return async (ctx: GravitoContext, next: () => Promise<Response | undefined>) => {

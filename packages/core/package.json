@@ -5,6 +5,7 @@
   "module": "./dist/index.js",
   "main": "./dist/index.cjs",
   "type": "module",
+  "sideEffects": false,
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
@@ -59,6 +60,7 @@
   },
   "devDependencies": {
     "bun-types": "latest",
+    "mitata": "^1.0.34",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3"
   },

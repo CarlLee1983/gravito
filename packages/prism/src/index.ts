@@ -9,9 +9,32 @@ import type {
 import { createImageHelper } from './helpers/image'
 import { TemplateEngine } from './TemplateEngine'
 
+/**
+ * OrbitPrism provides a flexible template rendering engine for Gravito.
+ *
+ * It integrates with PlanetCore to provide a full-featured view engine with:
+ * - Blade-like syntax (@extends, @section, @yield).
+ * - Component-based UI building (<x-component>).
+ * - Built-in performance optimizations for images.
+ * - Automatic middleware injection (exposed as `c.get('view')`).
+ *
+ * @example
+ * ```typescript
+ * import { OrbitPrism } from '@gravito/prism';
+ *
+ * const prism = new OrbitPrism();
+ * core.addOrbit(prism);
+ * ```
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class OrbitPrism implements GravitoOrbit {
   /**
-   * Install the orbit into the PlanetCore
+   * Install the orbit into the PlanetCore.
+   * Resolves the views directory, registers helpers, and injects the engine into the context.
+   *
+   * @param core - The PlanetCore instance.
    */
   install(core: PlanetCore): void {
     core.logger.info('[OrbitPrism] Initializing View Engine (Exposed as: view)')

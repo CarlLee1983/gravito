@@ -6,6 +6,31 @@ import type { MigrationDriver, MigrationResult, MigrationStatus } from './Migrat
 
 const DEFAULT_DATABASE_URL = 'sqlite:./demo.db'
 
+/**
+ * Migration driver for Gravito Atlas ORM.
+ *
+ * Manages database migrations using the Atlas ORM migration system.
+ * Supports SQLite, PostgreSQL, MySQL, and MongoDB databases.
+ *
+ * @example
+ * ```typescript
+ * const driver = new AtlasMigrationDriver('src/database/migrations')
+ *
+ * // Generate a new migration
+ * await driver.generate('create_users_table')
+ *
+ * // Run pending migrations
+ * await driver.migrate()
+ *
+ * // Check migration status
+ * const status = await driver.status()
+ * console.log('Pending:', status.pending)
+ * console.log('Applied:', status.applied)
+ * ```
+ *
+ * @since 3.0.0
+ * @public
+ */
 export class AtlasMigrationDriver implements MigrationDriver {
   constructor(private migrationsDir = 'src/database/migrations') {}
 
@@ -76,6 +101,25 @@ export default class ${className} {
     }
   }
 
+  async rollback(steps = 1): Promise<MigrationResult> {
+    try {
+      this.ensureDatabaseConfigured()
+      const migrator = new Migrator({ path: this.migrationsDir })
+      const result = await migrator.rollback(steps)
+      const message =
+        result.migrations.length === 0
+          ? 'No migrations rolled back'
+          : `Rolled back ${result.migrations.length} migration(s)`
+      return { success: true, message }
+    } catch (err: unknown) {
+      return {
+        success: false,
+        message: 'Rollback failed',
+        error: err instanceof Error ? err.message : String(err),
+      }
+    }
+  }
+
   async status(): Promise<MigrationStatus> {
     this.ensureDatabaseConfigured()
     const migrator = new Migrator({ path: this.migrationsDir })
@@ -121,6 +165,9 @@ export default class ${className} {
       let driver = parsed.protocol.replace(':', '')
       if (driver === 'postgresql') {
         driver = 'postgres'
+      } else if (driver.startsWith('mongodb')) {
+        // Handle mongodb and mongodb+srv
+        driver = 'mongodb'
       }
 
       const database = parsed.pathname ? parsed.pathname.replace(/^\//, '') : undefined
@@ -144,7 +191,6 @@ export default class ${className} {
         config.password = decodeURIComponent(parsed.password)
       }
 
-      // TODO: Improve config typing for MongoDB
       return config as unknown as ConnectionConfig
     } catch {
       return {

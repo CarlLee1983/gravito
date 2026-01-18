@@ -6,6 +6,10 @@ import { JwtGuard } from './guards/JwtGuard'
 import { SessionGuard } from './guards/SessionGuard'
 import { TokenGuard } from './guards/TokenGuard'
 
+/**
+ * Complete configuration for the authentication system.
+ * @public
+ */
 export interface AuthConfig {
   defaults: {
     guard: string
@@ -29,7 +33,16 @@ export interface AuthConfig {
   >
 }
 
+/**
+ * Resolver function type for user providers.
+ * @public
+ */
 export type UserProviderResolver = (config: Record<string, unknown>) => UserProvider
+
+/**
+ * Resolver function type for custom guards.
+ * @public
+ */
 export type GuardResolver = (
   ctx: GravitoContext,
   name: string,
@@ -37,6 +50,11 @@ export type GuardResolver = (
   provider?: UserProvider
 ) => Guard
 
+/**
+ * Central manager for authentication.
+ * Handles guard resolution, user providers, and authentication state.
+ * @public
+ */
 export class AuthManager {
   protected guards: Map<string, Guard> = new Map()
   protected customGuardCreators: Map<string, GuardResolver> = new Map()

@@ -351,6 +351,10 @@ export interface ConnectionContract {
  * Query Builder Contract
  */
 export interface QueryBuilderContract<T = Record<string, unknown>> {
+  // SETTINGS
+  setModel(model: any): this
+  getModel(): any
+
   // SELECT
   select(...columns: string[]): this
   selectRaw(sql: string, bindings?: unknown[]): this

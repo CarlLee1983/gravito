@@ -11,6 +11,16 @@
 import type { DirectoryNode } from '../types'
 import { BaseGenerator, type GeneratorContext } from './BaseGenerator'
 
+/**
+ * ActionDomainGenerator implements the Action-Domain architectural pattern.
+ *
+ * This pattern focuses on single-responsibility "Action" units for business logic,
+ * thin controllers for HTTP handling, and clear separation between request/response
+ * types and domain models.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class ActionDomainGenerator extends BaseGenerator {
   get architectureType() {
     return 'action-domain' as const
@@ -223,6 +233,9 @@ export class ActionDomainGenerator extends BaseGenerator {
 
 import { Model, column } from '@gravito/atlas'
 
+/**
+ * Represents a user in the system.
+ */
 export class User extends Model {
   static table = 'users'
 

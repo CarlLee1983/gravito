@@ -404,9 +404,8 @@ class PhotonContextWrapper<V extends GravitoVariables = GravitoVariables>
       method: this.req.method,
       headers,
       body: this.req.method !== 'GET' && this.req.method !== 'HEAD' ? this.req.raw.body : null,
-      // @ts-expect-error - Bun/Fetch specific for streaming bodies
       duplex: 'half',
-    })
+    } as RequestInit & { duplex?: string })
   }
 }
 
@@ -636,6 +635,10 @@ export { PhotonContextWrapper, PhotonRequestWrapper, toPhotonHandler, toPhotonMi
  * @category Rebranding
  */
 export const GravitoAdapter = PhotonAdapter
+/**
+ * Rebranded alias for PhotonAdapter type.
+ * @category Rebranding
+ */
 export type GravitoAdapter<V extends GravitoVariables = GravitoVariables> = PhotonAdapter<V>
 
 /**

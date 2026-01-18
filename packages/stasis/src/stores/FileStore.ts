@@ -17,14 +17,27 @@ type FileEntry = {
   value: unknown
 }
 
+/**
+ * Options for configuring the `FileStore`.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export type FileStoreOptions = {
+  /** The directory where cache files will be stored. */
   directory: string
 }
 
-function hashKey(key: string): string {
-  return createHash('sha1').update(key).digest('hex')
-}
-
+/**
+ * FileStore implements the `CacheStore` interface using the local file system.
+ *
+ * It stores cache entries as individual JSON files in the specified directory.
+ * While not as fast as memory or Redis, it provides persistent caching across
+ * application restarts without external dependencies.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class FileStore implements CacheStore {
   constructor(private options: FileStoreOptions) {}
 
@@ -184,4 +197,8 @@ export class FileStore implements CacheStore {
       },
     }
   }
+}
+
+function hashKey(key: string): string {
+  return createHash('sha256').update(key).digest('hex')
 }

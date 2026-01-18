@@ -1,20 +1,48 @@
 import type { SitemapStorage } from '../types'
 
+/**
+ * Options for configuring the `ShadowProcessor`.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface ShadowProcessorOptions {
+  /** The storage backend used for writing files. */
   storage: SitemapStorage
+  /**
+   * Deployment mode:
+   * - `atomic`: All files are swapped at once when committed.
+   * - `versioned`: Each file is committed individually, potentially creating a new version.
+   */
   mode: 'atomic' | 'versioned'
+  /** Whether shadow processing is enabled. */
   enabled: boolean
 }
 
+/**
+ * Represents a single file write operation within a shadow session.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface ShadowOperation {
+  /** The destination filename. */
   filename: string
+  /** The file content to be written. */
   content: string
+  /** Optional unique identifier for the shadow session. */
   shadowId?: string
 }
 
 /**
- * 影子處理器
- * 管理影子生成流程，支援原子切換和版本化兩種模式
+ * ShadowProcessor manages the staging and atomic deployment of generated files.
+ *
+ * It allows files to be written to a "shadow" location before being "committed"
+ * (swapped) to their final destination, ensuring zero-downtime and atomic updates
+ * for sitemaps and indexes.
+ *
+ * @public
+ * @since 3.0.0
  */
 export class ShadowProcessor {
   private options: ShadowProcessorOptions

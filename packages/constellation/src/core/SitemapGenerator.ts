@@ -4,18 +4,52 @@ import { ShadowProcessor as ShadowProcessorImpl } from './ShadowProcessor'
 import { SitemapIndex } from './SitemapIndex'
 import { SitemapStream } from './SitemapStream'
 
+/**
+ * Options for configuring the `SitemapGenerator`.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface SitemapGeneratorOptions extends SitemapStreamOptions {
+  /** The storage backend where the sitemap files will be written. */
   storage: SitemapStorage
+  /** An array of providers that supply the entries to be included in the sitemap. */
   providers: SitemapProvider[]
-  maxEntriesPerFile?: number // Default 50000
-  filename?: string // Default 'sitemap.xml' (index)
+  /** Maximum number of entries per individual sitemap file. @default 50000 */
+  maxEntriesPerFile?: number
+  /** The name of the main sitemap or sitemap index file. @default 'sitemap.xml' */
+  filename?: string
+  /** Configuration for staging files before atomic deployment. */
   shadow?: {
+    /** Whether shadow processing is enabled. */
     enabled: boolean
+    /** Deployment mode: 'atomic' or 'versioned'. */
     mode: 'atomic' | 'versioned'
   }
+  /** Optional callback to track generation progress. */
   onProgress?: (progress: { processed: number; total: number; percentage: number }) => void
 }
 
+/**
+ * SitemapGenerator is the primary orchestrator for creating sitemaps in Gravito.
+ *
+ * It coordinates multiple `SitemapProvider`s, handles file sharding when
+ * URL limits are reached, and uses a `ShadowProcessor` for atomic deployments.
+ * It automatically generates a sitemap index if multiple files are produced.
+ *
+ * @example
+ * ```typescript
+ * const generator = new SitemapGenerator({
+ *   baseUrl: 'https://example.com',
+ *   storage: new DiskSitemapStorage('./public'),
+ *   providers: [new RouteScanner()]
+ * });
+ * await generator.run();
+ * ```
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class SitemapGenerator {
   private options: SitemapGeneratorOptions
   private shadowProcessor: ShadowProcessor | null = null

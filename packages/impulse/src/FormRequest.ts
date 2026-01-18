@@ -4,45 +4,75 @@ import type { Context, MiddlewareHandler } from '@gravito/core/compat'
 import type { z } from 'zod'
 
 /**
- * Validation error detail for a single field
+ * Validation error detail for a single field.
+ *
+ * @public
+ * @since 3.0.0
  */
 export interface ValidationErrorDetail {
+  /** The dot-notated field name where the error occurred. */
   field: string
+  /** The human-readable error message. */
   message: string
+  /** Optional error code for machine readability (e.g., 'too_small'). */
   code?: string | undefined
 }
 
 /**
- * Structured validation error response
+ * Structured validation error response returned in JSON responses.
+ *
+ * @public
+ * @since 3.0.0
  */
 export interface ValidationErrorResponse {
+  /** Always false for error responses. */
   success: false
+  /** Error container. */
   error: {
+    /** High-level error code. */
     code: 'VALIDATION_ERROR' | 'AUTHORIZATION_ERROR'
+    /** General error message. */
     message: string
+    /** Detailed array of field-level validation errors. */
     details: ValidationErrorDetail[]
   }
 }
 
 /**
- * Data source for validation
+ * Data source for validation.
+ *
+ * @public
+ * @since 3.0.0
  */
 export type DataSource = 'json' | 'form' | 'query' | 'param'
 
 /**
- * i18n message provider interface
+ * i18n message provider interface for resolving localized error messages.
+ *
+ * @public
+ * @since 3.0.0
  */
 export interface MessageProvider {
-  /** Get localized message for a validation error */
+  /**
+   * Get localized message for a specific validation error.
+   *
+   * @param code - The error code from the validator.
+   * @param field - The name of the field.
+   * @param defaultMessage - Fallback message if no localization is found.
+   * @returns The localized error message.
+   */
   getMessage(code: string, field: string, defaultMessage: string): string
-  /** Get the "Validation failed" message */
+  /** Get the generic "Validation failed" summary message. */
   getValidationFailedMessage(): string
-  /** Get the "Unauthorized" message */
+  /** Get the generic "Unauthorized" summary message. */
   getUnauthorizedMessage(): string
 }
 
 /**
- * Default message provider (passthrough)
+ * Default message provider that returns original validator messages.
+ *
+ * @public
+ * @since 3.0.0
  */
 export class DefaultMessageProvider implements MessageProvider {
   getMessage(_code: string, _field: string, defaultMessage: string): string {
@@ -57,14 +87,17 @@ export class DefaultMessageProvider implements MessageProvider {
 }
 
 /**
- * FormRequest configuration options
+ * Configuration options for the FormRequest.
+ *
+ * @public
+ * @since 3.0.0
  */
 export interface FormRequestOptions {
-  /** HTTP status code for validation errors (default: 422) */
+  /** HTTP status code for validation errors. @default 422 */
   errorStatus?: ContentfulStatusCode
-  /** HTTP status code for authorization errors (default: 403) */
+  /** HTTP status code for authorization errors. @default 403 */
   authErrorStatus?: ContentfulStatusCode
-  /** i18n message provider for localized error messages */
+  /** Custom i18n message provider for localized error messages. */
   messageProvider?: MessageProvider
 }
 

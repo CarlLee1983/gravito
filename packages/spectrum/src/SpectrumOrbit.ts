@@ -13,17 +13,30 @@ import { MemoryStorage } from './storage/MemoryStorage'
 import type { SpectrumStorage } from './storage/types'
 import type { CapturedLog, CapturedRequest } from './types'
 
+/**
+ * Configuration options for the Spectrum observability orbit.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface SpectrumConfig {
+  /** The URL path where the dashboard UI will be served. @default '/gravito/spectrum' */
   path?: string
+  /** Maximum number of records to keep in memory/disk per category. @default 100 */
   maxItems?: number
+  /** Whether the spectrum capture is enabled. @default true */
   enabled?: boolean
+  /** Custom storage backend for captured data. Defaults to MemoryStorage. */
   storage?: SpectrumStorage
   /**
-   * Authorization gate. Return true to allow access.
+   * Authorization gate for accessing the dashboard and its API.
+   * Return true to allow access, false to block.
    */
   gate?: (c: GravitoContext) => boolean | Promise<boolean>
   /**
-   * Sample rate (0.0 to 1.0). Default: 1.0 (100%)
+   * Probability sample rate (0.0 to 1.0).
+   * 1.0 captures everything, 0.0 captures nothing.
+   * @default 1.0
    */
   sampleRate?: number
 }
@@ -33,6 +46,26 @@ interface SpectrumOrbitDeps {
   loadAtlas?: () => Promise<{ Connection?: { queryListeners: Array<(query: any) => void> } } | null>
 }
 
+/**
+ * SpectrumOrbit is the official observability and debug dashboard for Gravito.
+ *
+ * It automatically captures HTTP requests, application logs, and database queries,
+ * providing a real-time view of your application's internals. It includes a
+ * built-in web dashboard for exploring and replaying captured data.
+ *
+ * @example
+ * ```typescript
+ * import { SpectrumOrbit } from '@gravito/spectrum';
+ *
+ * const spectrum = new SpectrumOrbit({
+ *   gate: (ctx) => ctx.get('auth')?.user?.isAdmin
+ * });
+ * core.addOrbit(spectrum);
+ * ```
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class SpectrumOrbit implements GravitoOrbit {
   static instance: SpectrumOrbit | undefined
   readonly name = 'spectrum'

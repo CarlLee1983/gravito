@@ -1,5 +1,14 @@
 import type { RobotsConfig } from './types'
 
+/**
+ * RobotsBuilder generates robots.txt content based on configuration.
+ *
+ * It supports user-agent rules (Allow, Disallow, Crawl-delay), sitemap
+ * declarations, and the Host directive.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class RobotsBuilder {
   constructor(
     private config: RobotsConfig,

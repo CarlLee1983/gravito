@@ -1,7 +1,15 @@
 import { getPasswordAdapter } from '@gravito/core'
 
+/**
+ * Supported hashing algorithms.
+ * @public
+ */
 export type HashAlgorithm = 'bcrypt' | 'argon2id'
 
+/**
+ * Configuration for hashing.
+ * @public
+ */
 export interface HashConfig {
   algorithm?: HashAlgorithm
   bcrypt?: {
@@ -14,6 +22,10 @@ export interface HashConfig {
   }
 }
 
+/**
+ * Manages password hashing and verification using different drivers (bcrypt, argon2).
+ * @public
+ */
 export class HashManager {
   constructor(private readonly config: HashConfig = {}) {}
 

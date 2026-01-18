@@ -2,13 +2,32 @@ import type { SitemapEntry } from '../interfaces'
 import type { StorageAdapter } from './adapter'
 import { FileSystemAdapter } from './FileSystemAdapter'
 
+/**
+ * Represents a single operation in the incremental sitemap log.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface LogEntry {
+  /** The operation type: 'add' (includes update) or 'remove'. */
   op: 'add' | 'remove'
+  /** Epoch timestamp in milliseconds. */
   timestamp: number
+  /** The sitemap entry data (required for 'add' operations). */
   entry?: SitemapEntry
-  url?: string // For remove op
+  /** The target URL (required for 'remove' operations). */
+  url?: string
 }
 
+/**
+ * JsonlLogger implements a Write-Ahead Log (WAL) using newline-delimited JSON.
+ *
+ * It provides durable storage for incremental sitemap updates, allowing
+ * for atomic appends and full log replays during compaction.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class JsonlLogger {
   private adapter: StorageAdapter
 

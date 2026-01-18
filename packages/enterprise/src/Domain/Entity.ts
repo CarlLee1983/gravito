@@ -1,3 +1,14 @@
+/**
+ * Abstract base class for Domain Entities.
+ *
+ * Entities are objects that have a unique identity that persists over time,
+ * even if their attributes change.
+ *
+ * @template TId - The type of the entity's unique identifier.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export abstract class Entity<TId> {
   protected readonly _id: TId
 

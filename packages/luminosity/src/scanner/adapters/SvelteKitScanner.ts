@@ -3,34 +3,46 @@ import { join } from 'node:path'
 import type { RouteScanner, ScannedRoute } from '../types'
 import { extractParams, isDynamicRoute, matchesPatterns, normalizePath } from '../utils'
 
+/**
+ * Options for configuring the `SvelteKitScanner`.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface SvelteKitScannerOptions {
-  /** Routes directory path (default: ./src/routes) */
+  /** Path to the SvelteKit routes directory. @default './src/routes' */
   routesDir?: string
 
-  /** Exclude certain route patterns from scanning */
+  /** An array of patterns (strings or RegExps) to exclude from the sitemap. */
   excludePatterns?: (string | RegExp)[]
 
-  /** Only include routes matching these patterns */
+  /** If provided, only routes matching these patterns will be included. */
   includePatterns?: (string | RegExp)[]
 
-  /** Current working directory (default: process.cwd()) */
+  /** The current working directory for resolving relative paths. @default process.cwd() */
   cwd?: string
 }
 
 /**
- * SvelteKitScanner
+ * SvelteKitScanner automatically discovers routes from a SvelteKit project's filesystem.
  *
- * Scans routes from SvelteKit file system (src/routes).
+ * It scans the `src/routes` directory and identifies directories containing
+ * `+page.svelte`, `+page.js`, or `+page.ts` files. It also correctly handles
+ * SvelteKit's route groups (e.g., `(group)`) and dynamic segment syntax
+ * (e.g., `[slug]` and `[...slug]`).
  *
  * @example
  * ```typescript
- * import { SvelteKitScanner, SitemapBuilder } from '@gravito/luminosity'
+ * import { SvelteKitScanner } from '@gravito/luminosity/scanner';
  *
- * const builder = new SitemapBuilder({
- *   scanner: new SvelteKitScanner({ routesDir: './src/routes' }),
- *   hostname: 'https://example.com'
- * })
+ * const scanner = new SvelteKitScanner({
+ *   excludePatterns: ['/api/**']
+ * });
+ * const routes = await scanner.scan();
  * ```
+ *
+ * @public
+ * @since 3.0.0
  */
 export class SvelteKitScanner implements RouteScanner {
   readonly framework = 'sveltekit'

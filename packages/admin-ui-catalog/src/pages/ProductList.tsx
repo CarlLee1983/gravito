@@ -2,6 +2,14 @@ import { useAdmin } from '@gravito/admin-shell-react'
 import { AlertTriangle, Edit2, ExternalLink, Package, Plus, Search } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 
+/**
+ * Product Catalog Management Page.
+ *
+ * View and manage the product catalog, including inventory, pricing, and categories.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export function ProductList() {
   const { sdk } = useAdmin()
   const [products, setProducts] = useState<any[]>([])

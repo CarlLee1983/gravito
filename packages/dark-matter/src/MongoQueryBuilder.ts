@@ -603,6 +603,16 @@ export class MongoAggregateBuilder<T = Document> implements MongoAggregateContra
 // ============================================================================
 
 // biome-ignore lint/suspicious/noExplicitAny: MongoDB native types are complex
+/**
+ * Partial interface representing the MongoDB native Collection.
+ *
+ * This interface provides a type-safe way to interact with common MongoDB
+ * collection methods without requiring the full `@types/mongodb` dependency
+ * in all environments.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface MongoNativeCollection extends Record<string, any> {
   find(filter: FilterDocument, options?: Record<string, unknown>): MongoCursor
   findOne(filter: FilterDocument, options?: Record<string, unknown>): Promise<unknown>

@@ -22,22 +22,27 @@ import type {
 } from '../types'
 
 /**
- * Flux Engine
- *
- * Main workflow execution engine.
+ * FluxEngine is the primary execution orchestrator for workflows.
+ * It manages context lifecycle, persistence via storage adapters,
+ * step execution with retries, and transactional rollbacks (compensation).
  *
  * @example
  * ```typescript
- * const engine = new FluxEngine({ storage: new MemoryStorage() })
+ * const engine = new FluxEngine({
+ *   storage: new BunSQLiteStorage(),
+ *   logger: new FluxConsoleLogger()
+ * });
  *
- * const workflow = createWorkflow('process-order')
- *   .input<{ orderId: string }>()
- *   .step('fetch', async (ctx) => { ... })
- *   .step('validate', async (ctx) => { ... })
- *   .commit('save', async (ctx) => { ... })
+ * const workflow = createWorkflow('onboard-user')
+ *   .step('create-account', async (ctx) => { ... })
+ *   .step('send-email', async (ctx) => { ... });
  *
- * const result = await engine.execute(workflow, { orderId: '123' })
+ * const result = await engine.execute(workflow, { email: 'user@example.com' });
+ * if (result.status === 'completed') {
+ *   console.log('User onboarded successfully');
+ * }
  * ```
+ * @public
  */
 export class FluxEngine {
   private storage: WorkflowStorage

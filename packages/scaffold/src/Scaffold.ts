@@ -1,10 +1,3 @@
-/**
- * Scaffold - Main API for project scaffolding
- *
- * Provides a unified interface for generating project structures
- * with different architectural patterns.
- */
-
 import path from 'node:path'
 import { ActionDomainGenerator } from './generators/ActionDomainGenerator'
 import { BaseGenerator } from './generators/BaseGenerator'
@@ -17,6 +10,25 @@ import { LockGenerator } from './LockGenerator'
 import { ProfileResolver } from './ProfileResolver'
 import type { ArchitectureType, ScaffoldOptions, ScaffoldResult } from './types'
 
+/**
+ * Scaffold is the primary engine for generating Gravito project structures.
+ *
+ * It orchestrates dynamic template generation, architecture patterns,
+ * profile resolution, and environment setup.
+ *
+ * @example
+ * ```typescript
+ * const engine = new Scaffold();
+ * const result = await engine.create({
+ *   name: 'new-app',
+ *   targetDir: '/path/to/app',
+ *   architecture: 'enterprise-mvc'
+ * });
+ * ```
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class Scaffold {
   private templatesDir: string
   private verbose: boolean
@@ -27,7 +39,10 @@ export class Scaffold {
   }
 
   /**
-   * Get all available architecture types.
+   * Returns a list of all architectural patterns supported by the engine,
+   * along with human-readable names and descriptions.
+   *
+   * @returns {Array<{type: ArchitectureType, name: string, description: string}>}
    */
   getArchitectureTypes(): Array<{
     type: ArchitectureType
@@ -69,7 +84,12 @@ export class Scaffold {
   }
 
   /**
-   * Create a new project scaffold.
+   * Orchestrates the complete project generation lifecycle.
+   * This includes directory creation, file layout, profile resolution,
+   * dependency mapping, and optional post-install hooks.
+   *
+   * @param {ScaffoldOptions} options - Detailed configuration for the new project.
+   * @returns {Promise<ScaffoldResult>}
    */
   async create(options: ScaffoldOptions): Promise<ScaffoldResult> {
     const generator = this.createGenerator(options.architecture)

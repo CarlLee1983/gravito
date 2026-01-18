@@ -3,79 +3,94 @@ import type { Model } from '@gravito/atlas'
 /**
  * Fortify configuration options
  */
+/**
+ * Configuration options for the Fortify authentication orbit.
+ * @public
+ */
 export interface FortifyConfig {
   /**
-   * Feature flags to enable/disable specific authentication features
+   * Feature flags to enable/disable specific authentication flows.
    */
   features: {
-    /** Enable user registration. Default: true */
+    /** Whether to allow new user registration. (Default: true) */
     registration?: boolean
-    /** Enable password reset. Default: true */
+    /** Whether to allow users to reset their passwords. (Default: true) */
     resetPasswords?: boolean
-    /** Enable email verification. Default: false */
+    /** Whether to require email verification. (Default: false) */
     emailVerification?: boolean
-    /** Enable profile update. Default: false */
+    /** Whether to allow users to update their profile information. (Default: false) */
     updateProfileInformation?: boolean
-    /** Enable password update. Default: false */
+    /** Whether to allow users to update their passwords. (Default: false) */
     updatePasswords?: boolean
-    /** Enable two-factor authentication. Default: false (P2) */
+    /** Whether to enable two-factor authentication features. (Default: false) */
     twoFactorAuthentication?: boolean
   }
 
   /**
-   * Redirect paths after authentication actions
+   * Post-authentication redirect targets.
    */
   redirects: {
-    /** Redirect after successful login. Default: '/dashboard' */
+    /** Where to send the user after successful login. (Default: '/dashboard') */
     login?: string
-    /** Redirect after logout. Default: '/' */
+    /** Where to send the user after logging out. (Default: '/') */
     logout?: string
-    /** Redirect after successful registration. Default: '/dashboard' */
+    /** Where to send the user after successful registration. (Default: '/dashboard') */
     register?: string
-    /** Redirect after password reset. Default: '/login' */
+    /** Where to send the user after a successful password reset. (Default: '/login') */
     passwordReset?: string
-    /** Redirect after email verification. Default: '/dashboard' */
+    /** Where to send the user after successful email verification. (Default: '/dashboard') */
     emailVerification?: string
   }
 
   /**
-   * View/template paths (optional, for custom views)
+   * Custom view/template paths for overriding the default UI.
    */
   views?: {
+    /** Path to login template */
     login?: string
+    /** Path to registration template */
     register?: string
+    /** Path to forgot password template */
     forgotPassword?: string
+    /** Path to reset password template */
     resetPassword?: string
+    /** Path to email verification instruction template */
     verifyEmail?: string
   }
 
   /**
-   * User model factory function
+   * A factory function that returns the Atlas Model class representing the User.
    */
   userModel: () => typeof Model
 
   /**
-   * Username field for authentication (default: 'email')
+   * The database column used as the unique username/identifier (e.g., 'email', 'username').
+   * (Default: 'email')
    */
   username?: string
 
   /**
-   * Password field name (default: 'password')
+   * The database column used for storing the hashed password.
+   * (Default: 'password')
    */
   password?: string
 
   /**
-   * Route prefix (default: '')
+   * Optional URL prefix for all authentication routes (e.g., '/auth').
+   * (Default: '')
    */
   prefix?: string
 
   /**
-   * Use JSON responses instead of redirects (for SPA/API mode)
+   * If true, Fortify will return JSON responses (CBOR compatible) instead of redirects.
+   * Useful for Single Page Applications (SPA) or mobile apps.
+   * (Default: false)
    */
   jsonMode?: boolean
 
   /**
-   * Enable CSRF protection for HTML form flows (default: true)
+   * Enable or configure Cross-Site Request Forgery (CSRF) protection for form submissions.
+   * (Default: true)
    */
   csrf?: boolean | import('@gravito/core').CsrfOptions
 }
