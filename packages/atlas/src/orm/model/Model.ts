@@ -120,7 +120,7 @@ export abstract class Model {
     const studly = prop.replace(/(?:^|_|(?=[A-Z]))(.)/g, (_, c) => c.toUpperCase())
     const accessor = `get${studly}Attribute`
 
-    const exists = typeof this.prototype[accessor] === 'function'
+    const exists = typeof (this.prototype as any)[accessor] === 'function'
     const result = exists ? accessor : null
 
     this.accessorCache.set(prop, result)
@@ -138,7 +138,7 @@ export abstract class Model {
     const studly = prop.replace(/(?:^|_|(?=[A-Z]))(.)/g, (_, c) => c.toUpperCase())
     const mutator = `set${studly}Attribute`
 
-    const exists = typeof this.prototype[mutator] === 'function'
+    const exists = typeof (this.prototype as any)[mutator] === 'function'
     const result = exists ? mutator : null
 
     this.mutatorCache.set(prop, result)

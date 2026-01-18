@@ -153,7 +153,7 @@ export abstract class Grammar implements GrammarContract {
    * Set cache size
    */
   public static setCacheSize(max: number): void {
-    Grammar.compilationCache.max = max
+    ;(Grammar.compilationCache as any).max = max
   }
 
   /**
