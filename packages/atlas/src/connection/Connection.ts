@@ -3,6 +3,7 @@
  * @description Represents a database connection
  */
 
+import { DB } from '../DB'
 import { BunSQLDriver } from '../drivers/BunSQLDriver'
 import { MongoDBDriver } from '../drivers/MongoDBDriver'
 import { MySQLDriver } from '../drivers/MySQLDriver'
@@ -131,25 +132,39 @@ export class Connection implements ConnectionContract {
 
     const startTime = performance.now()
     const timestamp = Date.now()
-    const result = await this.driver.query<T>(sql, bindings)
+    try {
+      const result = await this.driver.query<T>(sql, bindings)
 
-    const duration = performance.now() - startTime
+      const duration = performance.now() - startTime
 
-    // Fire listeners
-    if (Connection.queryListeners.length > 0) {
-      const queryData = {
-        connection: this.name,
-        sql,
-        bindings,
-        duration,
-        timestamp,
+      // Log query
+      DB.logQuery(sql, bindings, duration)
+
+      if (DB.isDebug()) {
+        console.log(`[${duration.toFixed(2)}ms]`, DB.getLastQuery())
       }
-      for (const listener of Connection.queryListeners) {
-        listener(queryData)
+
+      // Fire listeners
+      if (Connection.queryListeners.length > 0) {
+        const queryData = {
+          connection: this.name,
+          sql,
+          bindings,
+          duration,
+          timestamp,
+        }
+        for (const listener of Connection.queryListeners) {
+          listener(queryData)
+        }
       }
+
+      return result
+    } catch (error) {
+      if (DB.isDebug()) {
+        console.error('[Query Failed]', DB.getLastQuery())
+      }
+      throw error
     }
-
-    return result
   }
 
   /**

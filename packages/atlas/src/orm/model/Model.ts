@@ -18,6 +18,7 @@ import {
 } from './errors'
 import { ModelRegistry } from './ModelRegistry'
 import { getRelationships } from './relationships'
+import type { ModelObserver } from './types'
 
 /**
  * Model attributes type
@@ -76,14 +77,34 @@ export abstract class Model {
 
   /** Table name */
   static table: string
-  static tableName: string
+
+  /**
+   * @deprecated Use Model.table instead
+   */
+  static get tableName(): string {
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn(
+        `[Deprecation] ${this.name}.tableName is deprecated. Use ${this.name}.table instead.`
+      )
+    }
+    return this.table
+  }
+
+  static set tableName(value: string) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn(
+        `[Deprecation] Setting ${this.name}.tableName is deprecated. Use ${this.name}.table = '${value}' instead.`
+      )
+    }
+    this.table = value
+  }
 
   /** Primary key column */
   static primaryKey = 'id'
   static hidden: string[] = []
   static visible: string[] = []
   static appends: string[] = []
-  static observers: any[] = []
+  static observers: Partial<ModelObserver<any>>[] = []
 
   /** Enable automatic timestamps
    * - `true`: Automatically manage both `created_at` and `updated_at`
@@ -392,7 +413,9 @@ export abstract class Model {
 
     if (!column) {
       if (modelCtor.strictMode) {
-        throw new ColumnNotFoundError(table, key)
+        // Pass available columns to error
+        const availableColumns = Array.from(schema.columns.keys())
+        throw new ColumnNotFoundError(table, key, availableColumns)
       }
       return
     }
@@ -523,7 +546,15 @@ export abstract class Model {
    */
   static getTable(): string {
     const self = this as any
-    const table = self.tableName || self.table
+    // Priority: table > tableName (for backward compatibility)
+    const table = self.table || self.tableName
+
+    if (!self.table && self.tableName && process.env.NODE_ENV !== 'production') {
+      console.warn(
+        `[Deprecation] ${this.name}.tableName is deprecated. Use ${this.name}.table instead.`
+      )
+    }
+
     if (!table) {
       throw new Error(`Model ${this.name} has no table defined.`)
     }
@@ -1050,7 +1081,10 @@ export abstract class Model {
   /**
    * Register a model observer
    */
-  static observe(observer: any) {
+  static observe<T extends Model>(
+    this: ModelConstructor<T> & typeof Model,
+    observer: Partial<ModelObserver<T>>
+  ): void {
     if (!Object.hasOwn(this, 'observers')) {
       this.observers = []
     }
@@ -1072,8 +1106,9 @@ export abstract class Model {
     // 2. Observers
     if (modelCtor.observers && modelCtor.observers.length > 0) {
       for (const observer of modelCtor.observers) {
-        if (typeof observer[event] === 'function') {
-          await observer[event](this)
+        const handler = observer[event as keyof ModelObserver<this>]
+        if (typeof handler === 'function') {
+          await handler.call(observer, this)
         }
       }
     }

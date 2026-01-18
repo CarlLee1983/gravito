@@ -4,7 +4,6 @@ import { BelongsTo, column, DB, HasMany, Model, Schema, UniqueConstraintError } 
 // 1. Define Test Models
 class User extends Model {
   static table = 'users'
-  static tableName = 'users'
   @column({ isPrimary: true }) declare id: number
   @column() declare name: string
   @column() declare email: string
@@ -15,7 +14,6 @@ class User extends Model {
 
 class Post extends Model {
   static table = 'posts'
-  static tableName = 'posts'
   @column({ isPrimary: true }) declare id: number
   @column() declare title: string
   @column() declare user_id: number

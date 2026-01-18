@@ -3,6 +3,8 @@
  * @description Custom error types for ORM model operations
  */
 
+import { findSimilar } from '../../utils/levenshtein'
+
 /**
  * Column Not Found Error
  * Thrown when accessing/setting a column that doesn't exist in schema
@@ -10,9 +12,23 @@
 export class ColumnNotFoundError extends Error {
   constructor(
     public readonly table: string,
-    public readonly column: string
+    public readonly column: string,
+    availableColumns: string[] = []
   ) {
-    super(`Column "${column}" does not exist on table "${table}".`)
+    let message = `Column "${column}" does not exist on table "${table}".`
+
+    // Add "Did you mean?" suggestions
+    if (availableColumns.length > 0) {
+      const similar = findSimilar(column, availableColumns)
+
+      if (similar.length > 0) {
+        message += `\n\n💡 Did you mean: ${similar.map((c) => `"${c}"`).join(', ')}?`
+      }
+
+      message += `\n\n📋 Available columns:\n   ${availableColumns.join(', ')}`
+    }
+
+    super(message)
     this.name = 'ColumnNotFoundError'
   }
 }

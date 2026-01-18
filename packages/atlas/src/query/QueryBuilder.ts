@@ -4,6 +4,7 @@
  */
 
 import { DB } from '../DB'
+import type { Model, ModelConstructor } from '../orm/model/Model'
 import type {
   BooleanOperator,
   CompiledQuery,
@@ -48,7 +49,7 @@ export class RecordNotFoundError extends Error {
 export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderContract<T> {
   // Query state
   protected tableName: string
-  protected modelClass?: any
+  protected modelClass?: ModelConstructor<any> & typeof Model
   protected columns: string[] = ['*']
   protected distinctValue = false
   protected wheres: WhereClause[] = []
@@ -81,7 +82,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   /**
    * Set the model class for this query
    */
-  setModel(model: any): this {
+  setModel<M extends Model>(model: ModelConstructor<M> & typeof Model): this {
     this.modelClass = model
     return this
   }
@@ -89,8 +90,8 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   /**
    * Get the model class
    */
-  getModel(): any {
-    return this.modelClass
+  getModel<M extends Model>(): (ModelConstructor<M> & typeof Model) | undefined {
+    return this.modelClass as (ModelConstructor<M> & typeof Model) | undefined
   }
 
   // ============================================================================

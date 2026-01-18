@@ -4,6 +4,7 @@
  */
 
 import { DB } from '../../DB'
+import type { QueryBuilderContract } from '../../types'
 import type { Model, ModelConstructor } from './Model'
 import { ModelRegistry } from './ModelRegistry'
 
@@ -292,10 +293,10 @@ export function MorphTo(
  * Load related models for a collection of parent models
  * Uses batch queries to avoid N+1 problem
  */
-export async function eagerLoad<T extends Model>(
+export async function eagerLoad<T extends Model, R extends Model = Model>(
   parents: T[],
   relationName: string,
-  callback?: (query: any) => void
+  callback?: (query: QueryBuilderContract<R>) => void
 ): Promise<void> {
   if (parents.length === 0) {
     return
@@ -664,7 +665,10 @@ export async function eagerLoad<T extends Model>(
  */
 export async function eagerLoadMany<T extends Model>(
   parents: T[],
-  relations: string[] | Record<string, any> | Map<string, (query: any) => void>
+  relations:
+    | string[]
+    | Record<string, any>
+    | Map<string, (query: QueryBuilderContract<any>) => void>
 ): Promise<void> {
   if (relations instanceof Map) {
     for (const [rel, callback] of relations.entries()) {
