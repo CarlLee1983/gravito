@@ -16,7 +16,7 @@ export function extractParams(path: string): string[] {
   }
 
   // Match [param] style (Next.js/Nuxt)
-  const bracketMatches = path.match(/\[([^\]]+)\]/g)
+  const bracketMatches = path.match(/\[([^[\]]+)\]/g)
   if (bracketMatches) {
     params.push(...bracketMatches.map((m) => m.slice(1, -1)))
   }
@@ -40,7 +40,7 @@ export function isDynamicRoute(path: string): boolean {
  */
 export function normalizePath(path: string): string {
   // Convert [param] to :param
-  return path.replace(/\[([^\]]+)\]/g, ':$1')
+  return path.replace(/\[([^[\]]+)\]/g, ':$1')
 }
 
 /**

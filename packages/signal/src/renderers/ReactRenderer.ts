@@ -51,8 +51,8 @@ export class ReactRenderer<P extends object = object> implements Renderer {
 
   private stripHtml(html: string): string {
     return html
-      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+      .replace(/<style(?:\s[^>]*)?>[\s\S]*?<\/style>/gi, '')
+      .replace(/<script(?:\s[^>]*)?>[\s\S]*?<\/script>/gi, '')
       .replace(/<[^>]+>/g, '')
       .replace(/&nbsp;/g, ' ')
       .replace(/\s+/g, ' ')

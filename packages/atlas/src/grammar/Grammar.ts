@@ -594,7 +594,7 @@ export abstract class Grammar implements GrammarContract {
 
     // Handle column aliases (column AS alias)
     if (column.toLowerCase().includes(' as ')) {
-      const [col, alias] = column.split(/\s+as\s+/i)
+      const [col, alias] = column.split(/ as /i).map((s) => s.trim())
       return `${this.wrapValue(col ?? '')} AS ${this.wrapValue(alias ?? '')}`
     }
 
@@ -607,7 +607,7 @@ export abstract class Grammar implements GrammarContract {
   wrapTable(table: string): string {
     // Handle table aliases (table AS alias)
     if (table.toLowerCase().includes(' as ')) {
-      const [tbl, alias] = table.split(/\s+as\s+/i)
+      const [tbl, alias] = table.split(/ as /i).map((s) => s.trim())
       return `${this.wrapValue(this.tablePrefix + (tbl ?? ''))} AS ${this.wrapValue(alias ?? '')}`
     }
 
