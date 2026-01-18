@@ -202,8 +202,10 @@ export class SatelliteGenerator extends BaseGenerator {
         typecheck: 'bun tsc --noEmit',
       },
       dependencies: {
-        '@gravito/core': 'workspace:*',
-        '@gravito/nebula': 'workspace:*',
+        '@gravito/core': depVersion,
+        '@gravito/enterprise': depVersion,
+        '@gravito/atlas': depVersion,
+        '@gravito/stasis': depVersion,
       },
       devDependencies: {
         'bun-types': 'latest',
