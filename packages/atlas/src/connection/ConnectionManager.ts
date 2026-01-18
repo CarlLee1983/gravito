@@ -43,10 +43,29 @@ export class ConnectionManager {
     }
 
     const connection = new Connection(connectionName, config)
-    this.connections.set(connectionName, connection)
+
+    const proxy = new Proxy(connection, {
+      get(target: Connection, prop: string | symbol) {
+        if (prop in target) {
+          return Reflect.get(target, prop)
+        }
+        const driver = target.getDriver()
+        if (
+          typeof prop === 'string' &&
+          driver &&
+          typeof (driver as unknown as Record<string, unknown>)[prop] === 'function'
+        ) {
+          return ((driver as unknown as Record<string, unknown>)[prop] as Function).bind(driver)
+        }
+        return undefined
+      },
+    }) as unknown as ConnectionContract
+
+    connection.setProxy(proxy)
+    this.connections.set(connectionName, proxy)
     this.lastUsed.set(connectionName, Date.now())
 
-    return connection
+    return proxy
   }
 
   /**

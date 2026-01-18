@@ -8,7 +8,7 @@ class User extends Model {
 }
 
 describe('Transaction Test', () => {
-  const ensureSqlite = () => {
+  const ensureSqlite = async () => {
     if (!DB.getConnectionConfig('sqlite')) {
       DB.configure({
         default: 'sqlite',
@@ -17,14 +17,13 @@ describe('Transaction Test', () => {
         },
       })
     }
-    if (DB.getDefaultConnection() !== 'sqlite') {
-      DB.setDefaultConnection('sqlite')
-    }
+    DB.setDefaultConnection('sqlite')
     Schema.connection('sqlite')
   }
 
   beforeAll(async () => {
-    ensureSqlite()
+    await ensureSqlite()
+    await Schema.dropIfExists('users')
     await Schema.create('users', (t) => {
       t.id()
       t.string('name')
@@ -32,8 +31,9 @@ describe('Transaction Test', () => {
     })
   })
 
-  beforeEach(() => {
-    ensureSqlite()
+  beforeEach(async () => {
+    await ensureSqlite()
+    await DB.table('users').truncate()
   })
 
   afterAll(async () => {

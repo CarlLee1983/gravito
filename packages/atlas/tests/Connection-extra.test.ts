@@ -1,17 +1,8 @@
-import { afterEach, describe, expect, it } from 'bun:test'
+import { describe, expect, it } from 'bun:test'
 import { Connection } from '../src/connection/Connection'
 import { ConnectionManager } from '../src/connection/ConnectionManager'
 
-const originalCreateDriver = Connection.prototype.createDriver
-const originalCreateGrammar = Connection.prototype.createGrammar
-
 describe('Connection and ConnectionManager', () => {
-  afterEach(() => {
-    Connection.prototype.createDriver = originalCreateDriver
-    Connection.prototype.createGrammar = originalCreateGrammar
-    Connection.queryListeners = []
-  })
-
   it('proxies driver methods and emits query listeners', async () => {
     let connected = false
     let disconnected = false
@@ -37,18 +28,20 @@ describe('Connection and ConnectionManager', () => {
       },
     }
 
-    Connection.prototype.createDriver = () => driver as any
-    Connection.prototype.createGrammar = () =>
-      ({
-        compileSelect: () => 'SELECT 1',
-      }) as any
-
     const manager = new ConnectionManager({
-      default: { driver: 'postgres', database: 'test' } as any,
+      test: { driver: 'postgres', database: 'test' } as any,
     })
 
-    const connection = manager.connection()
-    await connection.connect()
+    const connection = manager.connection('test')
+
+    // @ts-expect-error - accessing internal driver
+    connection.driver = driver as any
+    // @ts-expect-error - accessing internal grammar
+    connection.grammar = {
+      compileSelect: () => 'SELECT 1',
+    } as any
+
+    await (connection as any).connect()
     expect(connected).toBe(true)
 
     ;(connection as any).ping()
@@ -64,32 +57,16 @@ describe('Connection and ConnectionManager', () => {
     expect(result.rows[0]).toMatchObject({ ok: true })
     expect(listenerCalled).toBe(true)
 
-    await connection.disconnect()
+    await (connection as any).disconnect()
     expect(disconnected).toBe(true)
+
+    Connection.queryListeners = []
   })
 
   it('manages connections lifecycle', async () => {
-    Connection.prototype.createDriver = () =>
-      ({
-        getDriverName: () => 'postgres',
-        connect: async () => {},
-        disconnect: async () => {},
-        isConnected: () => true,
-        query: async () => ({ rows: [], rowCount: 0 }),
-        execute: async () => ({ affectedRows: 0 }),
-        beginTransaction: async () => {},
-        commit: async () => {},
-        rollback: async () => {},
-        inTransaction: () => false,
-      }) as any
-    Connection.prototype.createGrammar = () =>
-      ({
-        compileSelect: () => 'SELECT 1',
-      }) as any
-
     const manager = new ConnectionManager({
-      default: { driver: 'postgres', database: 'test' } as any,
-      analytics: { driver: 'postgres', database: 'metrics' } as any,
+      default: { driver: 'sqlite', database: ':memory:' } as any,
+      analytics: { driver: 'sqlite', database: ':memory:' } as any,
     })
 
     const conn = manager.connection()
