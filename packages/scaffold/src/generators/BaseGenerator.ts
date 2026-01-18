@@ -239,11 +239,11 @@ dist
         build: 'bun build ./src/bootstrap.ts --outdir ./dist --target bun',
         start: 'bun run dist/bootstrap.js',
         test: 'bun test',
-        typecheck: 'tsc --noEmit',
+        typecheck: 'bun tsc --noEmit',
         validate: 'bun run typecheck && bun run test',
       },
       dependencies: deps,
-      devDependencies: { 'bun-types': 'latest', typescript: '^5.0.0' },
+      devDependencies: { 'bun-types': 'latest', typescript: '^5.9.3' },
     }
     return JSON.stringify(pkg, null, 2)
   }

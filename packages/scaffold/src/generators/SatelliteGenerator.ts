@@ -197,21 +197,21 @@ export class SatelliteGenerator extends BaseGenerator {
       module: 'dist/index.mjs',
       types: 'dist/index.d.ts',
       scripts: {
-        build: 'tsup src/index.ts --format cjs,esm --dts',
+        build: 'tsup src/index.ts --format esm --dts',
         test: 'bun test',
-        typecheck: 'tsc --noEmit',
-        check: 'bun run typecheck && bun run test',
-        validate: 'bun run check',
+        typecheck: 'bun tsc --noEmit',
       },
       dependencies: {
-        '@gravito/core': depVersion,
-        '@gravito/enterprise': depVersion,
-        '@gravito/atlas': depVersion,
-        '@gravito/stasis': depVersion,
+        '@gravito/core': 'workspace:*',
+        '@gravito/nebula': 'workspace:*',
       },
       devDependencies: {
+        'bun-types': 'latest',
+        typescript: '^5.9.3',
         tsup: '^8.0.0',
-        typescript: '^5.0.0',
+      },
+      peerDependencies: {
+        '@gravito/core': '>=1.0.0',
       },
     }
 

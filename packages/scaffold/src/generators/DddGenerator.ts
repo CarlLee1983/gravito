@@ -134,7 +134,7 @@ export class DddGenerator extends BaseGenerator {
         build: 'bun build ./src/main.ts --outdir ./dist --target bun',
         start: 'bun run dist/main.js',
         test: 'bun test',
-        typecheck: 'tsc --noEmit',
+        typecheck: 'bun tsc --noEmit',
         check: 'bun run typecheck && bun run test',
         'check:deps': 'bun run scripts/check-dependencies.ts',
         validate: 'bun run check && bun run check:deps',
@@ -148,7 +148,7 @@ export class DddGenerator extends BaseGenerator {
       },
       devDependencies: {
         'bun-types': 'latest',
-        typescript: '^5.0.0',
+        typescript: '^5.9.3',
       },
     }
 

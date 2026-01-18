@@ -5,7 +5,8 @@
     "scripts": {
         "dev": "bun run --watch src/index.ts",
         "build:client": "vite build",
-        "start": "bun run src/index.ts"
+        "start": "bun run src/index.ts",
+        "typecheck": "bun tsc --noEmit"
     },
     "dependencies": {
         "@gravito/core": "workspace:*",
@@ -23,7 +24,7 @@
         "@types/react-dom": "^19.2.3",
         "@vitejs/plugin-react": "^4.2.0",
         "bun-types": "latest",
-        "typescript": "^5.0.0",
+        "typescript": "^5.9.3",
         "vite": "^6.4.1"
     }
 }

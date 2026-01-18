@@ -9,7 +9,7 @@
     "build:client": "vite build",
     "build:static": "NODE_ENV=production bun build-static.ts",
     "preview": "bun preview.ts",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "bun tsc --noEmit",
     "start": "bun run src/server/index.ts"
   },
   "dependencies": {
