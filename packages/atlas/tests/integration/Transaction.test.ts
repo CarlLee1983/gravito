@@ -1,6 +1,8 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
+import { unlinkSync } from 'node:fs'
 import { column, DB, Model, Schema } from '../../src/index'
 
+const DB_FILE = `test_trx_${Math.random().toString(36).slice(2, 7)}.sqlite`
 const CONNECTION_NAME = `trx_test_${Math.random().toString(36).slice(2, 7)}`
 
 class TransactionUser extends Model {
@@ -15,7 +17,7 @@ describe('Transaction Test', () => {
     if (!DB.hasConnection(CONNECTION_NAME)) {
       DB.addConnection(CONNECTION_NAME, {
         driver: 'sqlite',
-        database: ':memory:',
+        database: DB_FILE,
       })
     }
   }
@@ -31,6 +33,11 @@ describe('Transaction Test', () => {
 
   afterAll(async () => {
     await DB.disconnect(CONNECTION_NAME)
+    try {
+      unlinkSync(DB_FILE)
+    } catch (e) {
+      // Ignore
+    }
   })
 
   test('nested transactions with savepoints', async () => {
