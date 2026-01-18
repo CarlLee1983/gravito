@@ -20,7 +20,13 @@ jobs:
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.3.4
-          cache: bun # Built-in bun cache is faster
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
       - name: Install dependencies
         run: bun install --frozen-lockfile
         env:
@@ -45,7 +51,13 @@ jobs:
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.3.4
-          cache: bun
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
       - name: Turbo Cache
         uses: actions/cache@v3
         with:
@@ -91,6 +103,13 @@ jobs:
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.3.4
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
       - name: Install dependencies
         run: bun install --frozen-lockfile
         env:
