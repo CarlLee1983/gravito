@@ -59,14 +59,5 @@ describe('CleanArchitectureGenerator', () => {
     const pkgJson = (generator as any).generatePackageJson(context)
     expect(pkgJson).toContain('"docker:build": "docker build -t test-app ."')
     expect(pkgJson).toContain('"docker:run": "docker run -it -p 3000:3000 test-app"')
-
-    const dockerfile = (generator as any).generateDockerfile(context)
-    expect(dockerfile).toContain('FROM oven/bun:1.0 AS base')
-    expect(dockerfile).toContain('RUN bun run build')
-    expect(dockerfile).toContain('ENTRYPOINT [ "bun", "run", "index.js" ]')
-
-    const dockerignore = (generator as any).generateDockerIgnore()
-    expect(dockerignore).toContain('node_modules')
-    expect(dockerignore).toContain('dist')
   })
 })

@@ -227,6 +227,9 @@ dist
       deps['@gravito/quasar'] = '^1.0.0-beta.5'
       deps['@gravito/horizon'] = '^1.0.0-beta.5'
     }
+    if (context.withSpectrum) {
+      deps['@gravito/spectrum'] = '^1.0.0-beta.5'
+    }
     const pkg = {
       name: context.nameKebabCase,
       version: '0.1.0',
@@ -284,17 +287,38 @@ dist
     packageManager: 'bun' | 'npm' | 'yarn' | 'pnpm' = 'bun',
     extra: Record<string, unknown> = {}
   ): GeneratorContext {
-    const kebab = name
-      .replace(/([A-Z])/g, '-$1')
-      .toLowerCase()
-      .replace(/^-/, '')
-      .replace(/[_\]s]+/g, '-')
+    const toPascalCase = (str: string) =>
+      str
+        .replace(/([a-z])([A-Z])/g, '$1 $2')
+        .split(/[-_ ]+/)
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join('')
+
+    const toCamelCase = (str: string) => {
+      const pascal = toPascalCase(str)
+      return pascal.charAt(0).toLowerCase() + pascal.slice(1)
+    }
+
+    const toSnakeCase = (str: string) =>
+      str
+        .replace(/([a-z])([A-Z])/g, '$1_$2')
+        .split(/[-_ ]+/)
+        .map((word) => word.toLowerCase())
+        .join('_')
+
+    const toKebabCase = (str: string) =>
+      str
+        .replace(/([a-z])([A-Z])/g, '$1-$2')
+        .split(/[-_ ]+/)
+        .map((word) => word.toLowerCase())
+        .join('-')
+
     return {
       name,
-      namePascalCase: name,
-      nameCamelCase: name,
-      nameSnakeCase: name,
-      nameKebabCase: kebab,
+      namePascalCase: toPascalCase(name),
+      nameCamelCase: toCamelCase(name),
+      nameSnakeCase: toSnakeCase(name),
+      nameKebabCase: toKebabCase(name),
       targetDir,
       architecture,
       packageManager,
