@@ -215,7 +215,7 @@ export class MinimalContext implements IFastContext {
     return this.text(message, 400)
   }
 
-  async forward(target: string, options: any = {}): Promise<Response> {
+  async forward(target: string, _options: any = {}): Promise<Response> {
     const url = new URL(this.req.url)
     const targetUrl = new URL(
       target.startsWith('http') ? target : `${url.protocol}//${target}${this.req.path}`
