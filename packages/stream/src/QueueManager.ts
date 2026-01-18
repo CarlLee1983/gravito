@@ -5,7 +5,7 @@ import type { Queueable } from './Queueable'
 import { ClassNameSerializer } from './serializers/ClassNameSerializer'
 import type { JobSerializer } from './serializers/JobSerializer'
 import { JsonSerializer } from './serializers/JsonSerializer'
-import type { JobPushOptions, QueueConfig, SerializedJob } from './types'
+import type { JobPushOptions, PersistenceAdapter, QueueConfig, SerializedJob } from './types'
 
 /**
  * Queue Manager
@@ -32,7 +32,7 @@ export class QueueManager {
   private defaultConnection: string
   private defaultSerializer: JobSerializer
   private persistence?: QueueConfig['persistence']
-  private scheduler?: any // Using any to avoid circular dependency or import issues for now
+  private scheduler?: unknown // Changed from any to unknown, type assertion used when accessing
 
   constructor(config: QueueConfig = {}) {
     this.persistence = config.persistence
@@ -433,14 +433,14 @@ export class QueueManager {
   /**
    * Get the persistence adapter if configured.
    */
-  getPersistence(): any {
+  getPersistence(): PersistenceAdapter | undefined {
     return this.persistence?.adapter
   }
 
   /**
    * Get the scheduler if configured.
    */
-  getScheduler(): any {
+  getScheduler(): unknown {
     if (!this.scheduler) {
       const { Scheduler } = require('./Scheduler')
       this.scheduler = new Scheduler(this)
