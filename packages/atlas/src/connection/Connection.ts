@@ -145,24 +145,30 @@ export class Connection implements ConnectionContract {
 
     try {
       if (depth === 1) {
+        if (DB.isDebug()) console.log(`[Transaction] BEGIN on ${this.name}`)
         await this.driver.beginTransaction()
       } else {
+        if (DB.isDebug()) console.log(`[Transaction] SAVEPOINT sp_${depth} on ${this.name}`)
         await this.execute(`SAVEPOINT sp_${depth}`, [])
       }
 
       const result = await callback(this.proxyHandle || (this as unknown as ConnectionContract))
 
       if (depth === 1) {
+        if (DB.isDebug()) console.log(`[Transaction] COMMIT on ${this.name}`)
         await this.driver.commit()
       } else {
+        if (DB.isDebug()) console.log(`[Transaction] RELEASE sp_${depth} on ${this.name}`)
         await this.execute(`RELEASE SAVEPOINT sp_${depth}`, [])
       }
 
       return result
     } catch (error) {
       if (depth === 1) {
+        if (DB.isDebug()) console.log(`[Transaction] ROLLBACK on ${this.name}`)
         await this.driver.rollback()
       } else {
+        if (DB.isDebug()) console.log(`[Transaction] ROLLBACK TO sp_${depth} on ${this.name}`)
         await this.execute(`ROLLBACK TO SAVEPOINT sp_${depth}`, [])
       }
       throw error

@@ -136,21 +136,15 @@ export class SQLiteDriver implements DriverContract {
 
     try {
       const stmt = this.client?.prepare(sql)
-
       const rows = stmt.all(...params) as T[]
-
-      // For SQLite, better-sqlite3 returns column details in stmt.columns() after execution
-
-      // but only if it's a select? 'all' executes it.
-
-      // We can iterate columns if needed, but QueryResult usually just needs rows.
-
       return {
         rows,
-
         rowCount: rows.length,
       }
     } catch (error: any) {
+      if (process.env.DEBUG_ATLAS) {
+        console.error(`[SQLite Query Failed] ${sql}`, error)
+      }
       throw this.normalizeError(error, sql, bindings)
     }
   }
@@ -178,17 +172,16 @@ export class SQLiteDriver implements DriverContract {
 
     try {
       const stmt = this.client?.prepare(sql)
-
       const result = stmt.run(...params)
-
       return {
         affectedRows: result.changes,
-
         insertId: result.lastInsertRowid,
-
         changedRows: result.changes,
       }
     } catch (error: any) {
+      if (process.env.DEBUG_ATLAS) {
+        console.error(`[SQLite Execute Failed] ${sql}`, error)
+      }
       throw this.normalizeError(error, sql, bindings)
     }
   }
@@ -197,9 +190,8 @@ export class SQLiteDriver implements DriverContract {
     if (!this.client) {
       await this.connect()
     }
-
+    if (process.env.DEBUG_ATLAS) console.log('[SQLiteDriver] BEGIN')
     this.client?.prepare('BEGIN').run()
-
     this.inTransactionState = true
   }
 
@@ -207,9 +199,8 @@ export class SQLiteDriver implements DriverContract {
     if (!this.client) {
       return
     }
-
+    if (process.env.DEBUG_ATLAS) console.log('[SQLiteDriver] COMMIT')
     this.client?.prepare('COMMIT').run()
-
     this.inTransactionState = false
   }
 
@@ -217,9 +208,8 @@ export class SQLiteDriver implements DriverContract {
     if (!this.client) {
       return
     }
-
+    if (process.env.DEBUG_ATLAS) console.log('[SQLiteDriver] ROLLBACK')
     this.client?.prepare('ROLLBACK').run()
-
     this.inTransactionState = false
   }
 

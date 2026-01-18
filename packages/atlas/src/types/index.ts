@@ -330,10 +330,7 @@ export interface ConnectionContract {
    * Execute raw SQL
    */
   raw<T = Record<string, unknown>>(sql: string, bindings?: unknown[]): Promise<QueryResult<T>>
-
-  /**
-   * Run a callback within a transaction
-   */
+  execute(sql: string, bindings?: unknown[]): Promise<ExecuteResult>
   transaction<T>(callback: (connection: ConnectionContract) => Promise<T>): Promise<T>
 
   /**

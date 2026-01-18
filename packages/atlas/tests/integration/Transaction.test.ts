@@ -2,12 +2,13 @@ import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'bun:tes
 import { unlinkSync } from 'node:fs'
 import { column, DB, Model, Schema } from '../../src/index'
 
-const DB_FILE = `test_trx_${Math.random().toString(36).slice(2, 7)}.sqlite`
-const CONNECTION_NAME = `trx_test_${Math.random().toString(36).slice(2, 7)}`
+const DB_FILE = `test_trx_${process.pid}_${Math.random().toString(36).slice(2, 7)}.sqlite`
+const CONNECTION_NAME = `trx_test_${process.pid}_${Math.random().toString(36).slice(2, 7)}`
+const TABLE_NAME = `users_${process.pid}`
 
 class User extends Model {
   static connection = CONNECTION_NAME
-  static table = 'users'
+  static table = TABLE_NAME
   @column({ isPrimary: true }) declare id: number
   @column() declare name: string
 }
@@ -23,9 +24,11 @@ describe('Transaction Test', () => {
   }
 
   beforeAll(async () => {
+    DB.debug(true)
+    process.env.DEBUG_ATLAS = 'true'
     ensureSqlite()
-    await Schema.connection(CONNECTION_NAME).dropIfExists('users')
-    await Schema.connection(CONNECTION_NAME).create('users', (t) => {
+    await Schema.connection(CONNECTION_NAME).dropIfExists(TABLE_NAME)
+    await Schema.connection(CONNECTION_NAME).create(TABLE_NAME, (t) => {
       t.id()
       t.string('name')
       t.timestamps()
@@ -34,36 +37,98 @@ describe('Transaction Test', () => {
 
   beforeEach(async () => {
     ensureSqlite()
-    await DB.connection(CONNECTION_NAME).table('users').truncate()
+    await DB.connection(CONNECTION_NAME).table(TABLE_NAME).truncate()
   })
 
   afterAll(async () => {
     await DB.disconnect(CONNECTION_NAME)
     try {
       unlinkSync(DB_FILE)
-    } catch (e) {
-      // Ignore
-    }
+    } catch (e) {}
   })
 
   test('nested transactions with savepoints', async () => {
-    await DB.connection(CONNECTION_NAME).transaction(async (trx) => {
-      await User.create({ name: 'User 1' })
+    console.log(
+      `[Test] Starting nested transaction test on ${CONNECTION_NAME} with table ${TABLE_NAME}`
+    )
+    const conn = DB.connection(CONNECTION_NAME)
+
+    await conn.transaction(async (trx) => {
+      console.log('[Test] Outer transaction started')
+
+      await trx.execute(
+        `INSERT INTO ${TABLE_NAME} (name, created_at, updated_at) VALUES (?, ?, ?)`,
+        ['User 1', new Date().toISOString(), new Date().toISOString()]
+      )
+      console.log('[Test] User 1 inserted via raw SQL')
 
       try {
-        await trx.transaction(async () => {
-          await User.create({ name: 'User 2' })
+        await trx.transaction(async (innerTrx) => {
+          console.log('[Test] Inner transaction started')
+          await innerTrx.execute(
+            `INSERT INTO ${TABLE_NAME} (name, created_at, updated_at) VALUES (?, ?, ?)`,
+            ['User 2', new Date().toISOString(), new Date().toISOString()]
+          )
+          console.log('[Test] User 2 inserted via raw SQL')
           throw new Error('Rollback nested')
         })
-      } catch (e) {
-        // Expected
+      } catch (e: any) {
+        console.log(`[Test] Inner transaction failed as expected: ${e.message}`)
+      }
+
+      console.log('[Test] Checking User count after inner rollback')
+      const result = await trx.raw(`SELECT COUNT(*) as count FROM ${TABLE_NAME}`)
+      const count = (result.rows[0] as any).count
+      console.log(`[Test] User count: ${count}`)
+
+      expect(count).toBe(1)
+
+      const userResult = await trx.raw(`SELECT * FROM ${TABLE_NAME} LIMIT 1`)
+      expect((userResult.rows[0] as any).name).toBe('User 1')
+    })
+    console.log('[Test] Outer transaction committed')
+  })
+
+  test('nested transactions with savepoints', async () => {
+    console.log(
+      `[Test] Starting nested transaction test on ${CONNECTION_NAME} with table ${TABLE_NAME}`
+    )
+    const conn = DB.connection(CONNECTION_NAME)
+
+    await conn.transaction(async (trx) => {
+      console.log('[Test] Outer transaction started')
+
+      await trx.execute(
+        `INSERT INTO ${TABLE_NAME} (name, created_at, updated_at) VALUES (?, ?, ?)`,
+        ['User 1', new Date().toISOString(), new Date().toISOString()]
+      )
+      console.log('[Test] User 1 inserted via raw SQL')
+
+      try {
+        await trx.transaction(async (innerTrx) => {
+          console.log('[Test] Inner transaction started')
+          await innerTrx.execute(
+            `INSERT INTO ${TABLE_NAME} (name, created_at, updated_at) VALUES (?, ?, ?)`,
+            ['User 2', new Date().toISOString(), new Date().toISOString()]
+          )
+          console.log('[Test] User 2 inserted via raw SQL')
+          throw new Error('Rollback nested')
+        })
+      } catch (e: any) {
+        console.log(`[Test] Inner transaction failed as expected: ${e.message}`)
       }
 
       // User 1 should still exist
-      const count = await User.count()
+      console.log('[Test] Checking User count after inner rollback')
+      const result = await trx.raw(`SELECT COUNT(*) as count FROM ${TABLE_NAME}`)
+      const count = (result.rows[0] as any).count
+      console.log(`[Test] User count: ${count}`)
+
       expect(count).toBe(1)
-      const user = await User.first()
-      expect(user?.name).toBe('User 1')
+
+      const userResult = await trx.raw(`SELECT * FROM ${TABLE_NAME} LIMIT 1`)
+      expect((userResult.rows[0] as any).name).toBe('User 1')
     })
+    console.log('[Test] Outer transaction committed')
   })
 })

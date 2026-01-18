@@ -39,6 +39,9 @@ describe('DB facade', () => {
         rows: [{ id: 1 }],
         rowCount: 1,
       })) as any,
+      execute: (async (_sql: string): Promise<any> => ({
+        affectedRows: 1,
+      })) as any,
       transaction: async <T>(callback: (conn: ConnectionContract) => Promise<T>) =>
         callback(connection),
       disconnect: async () => {},
