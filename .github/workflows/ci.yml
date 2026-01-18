@@ -7,49 +7,58 @@ on:
     branches: [main]
 
 jobs:
-  test:
-    name: Test & Lint
+  lint:
+    name: Lint & Style
     runs-on: ubuntu-latest
-    env:
-      NODE_OPTIONS: "--max-old-space-size=6144"
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 2 # Required for turbo filter
-
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.3.4
-
-      - name: Turbo Cache
-        id: turbo-cache
+      - name: Cache dependencies
         uses: actions/cache@v3
         with:
-          path: .turbo
-          key: turbo-${{ runner.os }}-${{ github.sha }}
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
           restore-keys: |
-            turbo-${{ runner.os }}-
-
+            ${{ runner.os }}-bun-
       - name: Install dependencies
         run: bun install --frozen-lockfile
         env:
           SKIP_INSTALL_SIMPLE_GIT_HOOKS: 1
-
       - name: Run linting
         run: bun run check
 
+  build:
+    name: Build Packages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.4
+      - name: Turbo Cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            .turbo
+            node_modules/.cache/turbo
+          key: turbo-${{ runner.os }}-${{ hashFiles('**/bun.lock') }}-${{ github.ref_name }}
+          restore-keys: |
+            turbo-${{ runner.os }}-${{ hashFiles('**/bun.lock') }}-
+            turbo-${{ runner.os }}-
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+        env:
+          SKIP_INSTALL_SIMPLE_GIT_HOOKS: 1
       - name: Build
-        run: bun run build -- --concurrency=1
-
-      - name: Run Typecheck
-        run: bun run typecheck -- --concurrency=1
-
-      - name: Run Tests with Coverage
-        run: bun run test:coverage -- --concurrency=1
-
+        run: bun run build
       - name: Verify build output
         run: |
           test -f packages/core/dist/index.js || (echo "Missing ESM bundle" && exit 1)
@@ -57,78 +66,93 @@ jobs:
           test -f packages/core/dist/index.d.ts || (echo "Missing type declarations" && exit 1)
           echo "✅ All build outputs verified"
 
-      - name: Check bundle size
-        run: |
-          echo "📦 Bundle sizes:"
-          for pkg in packages/*/dist; do
-            if [ -d "$pkg" ]; then
-              pkg_name=$(basename $(dirname "$pkg"))
-              size=$(find "$pkg" -name "*.js" -o -name "*.mjs" | xargs du -cb 2>/dev/null | tail -1 | cut -f1 || echo "0")
-              echo "  $pkg_name: $((size / 1024)) KB"
-            fi
-          done
-
-      - name: Check for large files
-        run: |
-          echo "📊 Checking for large files (>800 lines):"
-          LARGE_FILES=$(find packages -name "*.ts" ! -name "*.test.ts" ! -path "*/node_modules/*" ! -path "*/dist/*" -exec wc -l {} + | awk '$1 > 800 {print}' || true)
-          if [ -n "$LARGE_FILES" ]; then
-            echo "⚠️  Found large files:"
-            echo "$LARGE_FILES"
-            echo ""
-            echo "Consider refactoring files over 800 lines. See docs/internal/optimization-roadmap.md"
-          else
-            echo "✅ No files over 800 lines"
-          fi
-
-  quality:
-    name: Code Quality
+  typecheck:
+    name: Typecheck
+    needs: build
     runs-on: ubuntu-latest
-    env:
-      NODE_OPTIONS: "--max-old-space-size=6144"
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 2
-
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.3.4
-
+      - name: Turbo Cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            .turbo
+            node_modules/.cache/turbo
+            **/tsconfig.tsbuildinfo
+          key: typecheck-${{ runner.os }}-${{ hashFiles('**/bun.lock') }}-${{ github.sha }}
+          restore-keys: |
+            typecheck-${{ runner.os }}-${{ hashFiles('**/bun.lock') }}-
+            typecheck-${{ runner.os }}-
       - name: Install dependencies
         run: bun install --frozen-lockfile
         env:
           SKIP_INSTALL_SIMPLE_GIT_HOOKS: 1
+      - name: Run Typecheck
+        run: bun run typecheck
 
+  test:
+    name: Unit Tests
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.4
+      - name: Turbo Cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            .turbo
+            node_modules/.cache/turbo
+          key: test-${{ runner.os }}-${{ hashFiles('**/bun.lock') }}-${{ github.sha }}
+          restore-keys: |
+            test-${{ runner.os }}-${{ hashFiles('**/bun.lock') }}-
+            test-${{ runner.os }}-
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+        env:
+          SKIP_INSTALL_SIMPLE_GIT_HOOKS: 1
+      - name: Run Tests with Coverage
+        run: bun run test:coverage
+
+  quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.4
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+        env:
+          SKIP_INSTALL_SIMPLE_GIT_HOOKS: 1
       - name: Check for TODOs without issues
         run: |
-          echo "📝 Checking for TODOs without GitHub issues..."
-          # Count TODOs in non-test files
           TODO_COUNT=$(grep -r "TODO\|FIXME" packages --include="*.ts" --exclude="*.test.ts" | wc -l || echo "0")
           echo "Found $TODO_COUNT TODO/FIXME comments"
-          echo "Each TODO should have a corresponding GitHub issue"
-
       - name: Check for @ts-expect-error without comments
         run: |
-          echo "⚠️  Checking for @ts-expect-error without proper comments..."
-          # Find @ts-expect-error without explanatory comment on previous line
           grep -rn "@ts-expect-error" packages --include="*.ts" -B1 | grep -v "^--$" | grep -v "Intentional type assertion" | head -20 || echo "✅ All @ts-expect-error have proper comments"
-
       - name: Check for console.log in production code
         run: |
-          echo "🔍 Checking for console.log in production code..."
           LOG_COUNT=$(grep -r "console.log" packages --include="*.ts" --exclude="*.test.ts" --exclude="*.bench.ts" | wc -l || echo "0")
           if [ "$LOG_COUNT" -gt 0 ]; then
             echo "⚠️  Found $LOG_COUNT console.log statements in production code"
-            echo "Remove them before merging"
           else
             echo "✅ No console.log in production code"
           fi
-
-      - name: Check for unused dependencies
-        run: |
-          echo "🗑️  Checking for unused dependencies..."
-          bunx depcheck || echo "⚠️  Some potential unused dependencies found"
