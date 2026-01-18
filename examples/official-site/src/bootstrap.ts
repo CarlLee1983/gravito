@@ -2,7 +2,7 @@ import { join } from 'node:path'
 import {
   bodySizeLimit,
   defineConfig,
-  GravitoAdapter,
+  GravitoEngineAdapter as GravitoAdapter,
   PlanetCore,
   securityHeaders,
 } from '@gravito/core'
@@ -72,10 +72,21 @@ export async function bootstrap(options: AppConfig = {}): Promise<PlanetCore> {
   }
 
   // 3. Static files
-  const app = core.app as Photon
+  const app = core.app as any // Gravito instance
   const staticPath = join(import.meta.dirname, '../static/favicon.ico')
-  app.get('/favicon.ico', serveStatic({ path: staticPath }))
-  app.use('/static/*', serveStatic({ root: './' }))
+
+  // Use direct Bun.file for optimized static serving in standalone engine
+  app.get('/favicon.ico', () => new Response(Bun.file(staticPath)))
+
+  // For other static files, we can use a simple middleware for now
+  app.get('/static/*', async (c: any) => {
+    const path = c.req.path.replace(/^\/static\//, '')
+    const file = Bun.file(join(process.cwd(), 'static', path))
+    if (await file.exists()) {
+      return new Response(file)
+    }
+    return c.notFound()
+  })
 
   // 3.1 SEO Middleware (Eat our own dog food)
   const { gravitoSeo } = await import('@gravito/luminosity-adapter-photon')

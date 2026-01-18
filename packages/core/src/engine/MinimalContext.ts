@@ -18,6 +18,8 @@ import type { FastRequest, FastContext as IFastContext } from './types'
  * Minimal request wrapper
  */
 class MinimalRequest implements FastRequest {
+  private _searchParams: URLSearchParams | null = null
+
   constructor(
     private readonly _request: Request,
     private readonly _params: Record<string, string>,
@@ -44,16 +46,33 @@ class MinimalRequest implements FastRequest {
     return { ...this._params }
   }
 
+  /**
+   * Lazy-initialize searchParams, only parse once
+   */
+  private getSearchParams(): URLSearchParams {
+    if (this._searchParams === null) {
+      const url = this._request.url
+      const queryStart = url.indexOf('?')
+      if (queryStart === -1) {
+        this._searchParams = new URLSearchParams()
+      } else {
+        const hashStart = url.indexOf('#', queryStart)
+        const queryString =
+          hashStart === -1 ? url.slice(queryStart + 1) : url.slice(queryStart + 1, hashStart)
+        this._searchParams = new URLSearchParams(queryString)
+      }
+    }
+    return this._searchParams
+  }
+
   query(name: string): string | undefined {
-    // Lazy parse - only when accessed
-    const url = new URL(this._request.url)
-    return url.searchParams.get(name) ?? undefined
+    return this.getSearchParams().get(name) ?? undefined
   }
 
   queries(): Record<string, string | string[]> {
-    const url = new URL(this._request.url)
+    const params = this.getSearchParams()
     const result: Record<string, string | string[]> = {}
-    for (const [key, value] of url.searchParams.entries()) {
+    for (const [key, value] of params.entries()) {
       const existing = result[key]
       if (existing === undefined) {
         result[key] = value
@@ -105,16 +124,16 @@ class MinimalRequest implements FastRequest {
  * - No custom headers needed
  */
 export class MinimalContext implements IFastContext {
-  private readonly _req: MinimalRequest
+  public readonly req: MinimalRequest
   private _resHeaders: Record<string, string> = {}
 
   constructor(request: Request, params: Record<string, string>, path: string) {
-    this._req = new MinimalRequest(request, params, path)
+    this.req = new MinimalRequest(request, params, path)
   }
 
-  get req(): FastRequest {
-    return this._req
-  }
+  // get req(): FastRequest {
+  //   return this._req
+  // }
 
   // Response helpers - merge custom headers with defaults
   private getHeaders(contentType: string): Record<string, string> {
@@ -159,16 +178,73 @@ export class MinimalContext implements IFastContext {
     })
   }
 
-  header(name: string, value: string): void {
-    this._resHeaders[name] = value
+  header(name: string): string | undefined
+  header(name: string, value: string): void
+  header(name: string, value?: string): string | undefined | void {
+    if (value !== undefined) {
+      this._resHeaders[name] = value
+      return
+    }
+    return this.req.header(name)
   }
 
   status(_code: number): void {
     // Status is set per response helper call, not stored on context
   }
 
+  stream(stream: ReadableStream, status = 200): Response {
+    return new Response(stream, {
+      status,
+      headers: this.getHeaders('application/octet-stream'),
+    })
+  }
+
+  notFound(message = 'Not Found'): Response {
+    return this.text(message, 404)
+  }
+
+  forbidden(message = 'Forbidden'): Response {
+    return this.text(message, 403)
+  }
+
+  unauthorized(message = 'Unauthorized'): Response {
+    return this.text(message, 401)
+  }
+
+  badRequest(message = 'Bad Request'): Response {
+    return this.text(message, 400)
+  }
+
+  async forward(target: string, _options: any = {}): Promise<Response> {
+    const url = new URL(this.req.url)
+    const targetUrl = new URL(
+      target.startsWith('http') ? target : `${url.protocol}//${target}${this.req.path}`
+    )
+    return fetch(targetUrl.toString(), {
+      method: this.req.method,
+      headers: this.req.raw.headers,
+    })
+  }
+
+  get<T>(_key: string): T {
+    return undefined as any
+  }
+
+  set(_key: string, _value: any): void {}
+
+  public route: (name: string, params?: any, query?: any) => string = () => ''
+
+  get native(): this {
+    return this
+  }
+
   // Required for interface compatibility
-  reset(_request: Request, _params?: Record<string, string>): this {
-    throw new Error('MinimalContext does not support reset. Create a new instance instead.')
+  init(_request: Request, _params?: Record<string, string>, _path?: string): this {
+    throw new Error('MinimalContext does not support init. Create a new instance instead.')
+  }
+
+  // Required for interface compatibility
+  reset(): void {
+    // MinimalContext is not pooled, so no-op
   }
 }

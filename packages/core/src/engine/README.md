@@ -55,6 +55,17 @@ app.use(async (c, next) => {
 export default app
 ```
 
+### Predictive Route Warming (New in v1.1)
+
+For ultra-low latency from the very first request, use `warmup()` to pre-trigger JIT optimization:
+
+```typescript
+// Warm up hot paths before starting the server
+await app.warmup(['/api/users', '/health'])
+
+export default app
+```
+
 Run with:
 ```bash
 bun run server.ts

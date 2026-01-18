@@ -6,13 +6,17 @@ describe('FastContext', () => {
     const ctx = new FastContext()
     const req = new Request('http://localhost/test')
 
-    ctx.reset(req, { id: '1' })
+    ctx.init(req, { id: '1' })
     expect(ctx.req.url).toBe('http://localhost/test')
     expect(ctx.req.param('id')).toBe('1')
 
-    // Reset with new request
+    // Reset for pooling
+    ctx.reset()
+    expect(() => ctx.req.url).toThrow()
+
+    // Re-init with new request
     const req2 = new Request('http://localhost/new')
-    ctx.reset(req2)
+    ctx.init(req2)
     expect(ctx.req.url).toBe('http://localhost/new')
     expect(ctx.req.param('id')).toBeUndefined()
   })
@@ -21,7 +25,7 @@ describe('FastContext', () => {
     it('should parse query parameters lazily', () => {
       const ctx = new FastContext()
       const req = new Request('http://localhost/?q=hello&page=1')
-      ctx.reset(req)
+      ctx.init(req)
 
       expect(ctx.req.query('q')).toBe('hello')
       expect(ctx.req.query('page')).toBe('1')
@@ -31,7 +35,7 @@ describe('FastContext', () => {
     it('should handle multiple query values', () => {
       const ctx = new FastContext()
       const req = new Request('http://localhost/?tag=a&tag=b')
-      ctx.reset(req)
+      ctx.init(req)
 
       const queries = ctx.req.queries()
       expect(queries.tag).toEqual(['a', 'b'])
@@ -42,7 +46,7 @@ describe('FastContext', () => {
       const req = new Request('http://localhost/', {
         headers: { 'X-Custom': 'value' },
       })
-      ctx.reset(req)
+      ctx.init(req)
 
       expect(ctx.req.header('x-custom')).toBe('value')
       expect(ctx.req.header('missing')).toBeUndefined()
@@ -58,7 +62,7 @@ describe('FastContext', () => {
         method: 'POST',
         body: JSON.stringify(body),
       })
-      ctx.reset(req)
+      ctx.init(req)
 
       expect(await ctx.req.json()).toEqual(body)
 
@@ -68,7 +72,7 @@ describe('FastContext', () => {
         method: 'POST',
         body: 'text content',
       })
-      ctx.reset(req2)
+      ctx.init(req2)
       expect(await ctx.req.text()).toBe('text content')
     })
   })
@@ -76,6 +80,7 @@ describe('FastContext', () => {
   describe('Response Helpers', () => {
     it('should create JSON response', async () => {
       const ctx = new FastContext()
+      ctx.init(new Request('http://localhost'))
       const res = ctx.json({ ok: true }, 201)
 
       expect(res.status).toBe(201)
@@ -85,6 +90,7 @@ describe('FastContext', () => {
 
     it('should create text response', async () => {
       const ctx = new FastContext()
+      ctx.init(new Request('http://localhost'))
       const res = ctx.text('hello')
 
       expect(res.status).toBe(200)
@@ -94,6 +100,7 @@ describe('FastContext', () => {
 
     it('should create HTML response', async () => {
       const ctx = new FastContext()
+      ctx.init(new Request('http://localhost'))
       const res = ctx.html('<h1>Hi</h1>')
 
       expect(res.status).toBe(200)
@@ -103,6 +110,7 @@ describe('FastContext', () => {
 
     it('should create redirect response', () => {
       const ctx = new FastContext()
+      ctx.init(new Request('http://localhost'))
       const res = ctx.redirect('/new-location')
 
       expect(res.status).toBe(302)
@@ -111,6 +119,7 @@ describe('FastContext', () => {
 
     it('should set custom headers on response', () => {
       const ctx = new FastContext()
+      ctx.init(new Request('http://localhost'))
       ctx.header('X-Custom', '1')
       const res = ctx.json({})
 

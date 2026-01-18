@@ -398,6 +398,17 @@ export class PlanetCore {
   }
 
   /**
+   * Predictive Route Warming (JIT Optimization)
+   *
+   * @param paths List of paths to warm up
+   */
+  async warmup(paths: string[]): Promise<void> {
+    if (this.adapter.warmup) {
+      await this.adapter.warmup(paths)
+    }
+  }
+
+  /**
    * Boot the application with a configuration object (IoC style default entry)
    *
    * @param config - The Gravito configuration object.

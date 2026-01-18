@@ -8,6 +8,7 @@
  */
 
 export * from './bun'
+export { GravitoEngineAdapter } from './GravitoEngineAdapter'
 // Implementations
 export {
   createPhotonAdapter,
@@ -15,6 +16,7 @@ export {
   PhotonContextWrapper,
   PhotonRequestWrapper,
 } from './PhotonAdapter'
+
 // Types
 export type {
   AdapterConfig,
