@@ -4,6 +4,7 @@
  */
 
 import { ConnectionManager } from './connection/ConnectionManager'
+import { Grammar } from './grammar/Grammar'
 import type {
   CacheInterface,
   ConnectionConfig,
@@ -186,6 +187,13 @@ export class DB {
   // ============================================================================
   // Configuration
   // ============================================================================
+
+  /**
+   * Get cache statistics
+   */
+  static getCacheStats(): { size: number; maxSize: number; hitRate: number } {
+    return Grammar.getCacheStats()
+  }
 
   /**
    * Configure the database with connections
