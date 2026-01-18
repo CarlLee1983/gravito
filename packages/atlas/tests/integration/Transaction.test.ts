@@ -2,42 +2,33 @@ import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'bun:tes
 import { column, DB, Model, Schema } from '../../src/index'
 
 class User extends Model {
-  static table = 'users'
+  static override table = 'users'
+  static override connection = 'transaction_test'
   @column({ isPrimary: true }) declare id: number
   @column() declare name: string
 }
 
 describe('Transaction Test', () => {
   const ensureSqlite = () => {
-    if (!DB.getConnectionConfig('sqlite')) {
-      DB.configure({
-        default: 'sqlite',
-        connections: {
-          sqlite: { driver: 'sqlite', database: ':memory:' },
-        },
+    if (!DB.hasConnection('transaction_test')) {
+      DB.addConnection('transaction_test', {
+        driver: 'sqlite',
+        database: ':memory:',
       })
     }
-    if (DB.getDefaultConnection() !== 'sqlite') {
-      DB.setDefaultConnection('sqlite')
-    }
-    Schema.connection('sqlite')
   }
 
   beforeAll(async () => {
     ensureSqlite()
-    await Schema.create('users', (t) => {
+    await Schema.connection('transaction_test').create('users', (t) => {
       t.id()
       t.string('name')
       t.timestamps()
     })
   })
 
-  beforeEach(() => {
-    ensureSqlite()
-  })
-
   afterAll(async () => {
-    await DB.disconnectAll()
+    await DB.disconnect('transaction_test')
   })
 
   test('nested transactions with savepoints', async () => {
@@ -45,7 +36,7 @@ describe('Transaction Test', () => {
       await User.create({ name: 'User 1' })
 
       try {
-        await trx.transaction(async (nested) => {
+        await trx.transaction(async (_nested) => {
           await User.create({ name: 'User 2' })
           throw new Error('Rollback nested')
         })
@@ -55,11 +46,9 @@ describe('Transaction Test', () => {
 
       // User 1 should still exist
       const count = await User.count()
-      // Note: SQLite nested transactions might be tricky with some drivers,
-      // but assuming our implementation sends SAVEPOINT correctly
       expect(count).toBe(1)
       const user = await User.first()
       expect(user?.name).toBe('User 1')
-    })
+    }, 'transaction_test')
   })
 })

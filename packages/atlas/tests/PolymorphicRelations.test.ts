@@ -118,10 +118,9 @@ describe('Polymorphic Relationships', () => {
     })
     spyOn(DB, 'connection').mockReturnValue(mockConn)
 
-    // @ts-expect-error - testing lazy load property
     const post = await comment.commentable
     expect(post).toBeInstanceOf(Post)
-    expect(post.title).toBe('Atlas Rocks')
+    expect((post as Post).title).toBe('Atlas Rocks')
   })
 
   it('should lazy load morphTo (Video)', async () => {
@@ -137,10 +136,9 @@ describe('Polymorphic Relationships', () => {
     })
     spyOn(DB, 'connection').mockReturnValue(mockConn)
 
-    // @ts-expect-error - testing lazy load property
     const video = await comment.commentable
     expect(video).toBeInstanceOf(Video)
-    expect(video.url).toBe('http://video.com')
+    expect((video as Video).url).toBe('http://video.com')
   })
 
   it('should eager load morphMany', async () => {
