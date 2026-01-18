@@ -534,6 +534,14 @@ export abstract class Model {
       return value
     }
 
+    if (type === 'json' && typeof value === 'string') {
+      try {
+        return JSON.parse(value)
+      } catch (_e) {
+        return value
+      }
+    }
+
     switch (type) {
       case 'int':
       case 'integer':
@@ -553,7 +561,6 @@ export abstract class Model {
         return [true, 1, '1', 'true', 'on', 'yes'].includes(value)
 
       case 'object':
-      case 'json':
         if (typeof value === 'object') {
           return value
         }

@@ -35,6 +35,7 @@ export class Connection implements ConnectionContract {
   protected driver: DriverContract
   protected grammar: GrammarContract
   protected connected = false
+  private transactionDepth = 0
 
   /**
    * Static query listeners for global observation (e.g. debugging)
@@ -172,15 +173,35 @@ export class Connection implements ConnectionContract {
    */
   async transaction<T>(callback: (connection: ConnectionContract) => Promise<T>): Promise<T> {
     await this.ensureConnected()
-    await this.driver.beginTransaction()
+
+    this.transactionDepth++
+    const depth = this.transactionDepth
 
     try {
+      if (depth === 1) {
+        await this.driver.beginTransaction()
+      } else {
+        await this.driver.query(`SAVEPOINT sp_${depth}`, [])
+      }
+
       const result = await callback(this)
-      await this.driver.commit()
+
+      if (depth === 1) {
+        await this.driver.commit()
+      } else {
+        await this.driver.query(`RELEASE SAVEPOINT sp_${depth}`, [])
+      }
+
       return result
     } catch (error) {
-      await this.driver.rollback()
+      if (depth === 1) {
+        await this.driver.rollback()
+      } else {
+        await this.driver.query(`ROLLBACK TO SAVEPOINT sp_${depth}`, [])
+      }
       throw error
+    } finally {
+      this.transactionDepth--
     }
   }
 

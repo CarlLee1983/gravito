@@ -13,8 +13,15 @@ import { Connection } from './Connection'
 export class ConnectionManager {
   private connections: Map<string, ConnectionContract> = new Map()
   private defaultConnectionName = 'default'
+  private lastUsed = new Map<string, number>()
+  private cleanupInterval?: ReturnType<typeof setInterval>
 
-  constructor(private readonly configs: Record<string, ConnectionConfig> = {}) {}
+  private readonly MAX_IDLE_TIME = 1000 * 60 * 10 // 10 minutes
+  private readonly CLEANUP_INTERVAL = 1000 * 60 * 5 // Check every 5 minutes
+
+  constructor(private readonly configs: Record<string, ConnectionConfig> = {}) {
+    this.startCleanup()
+  }
 
   /**
    * Get a connection by name
@@ -25,6 +32,7 @@ export class ConnectionManager {
     // Return existing connection if available
     const existing = this.connections.get(connectionName)
     if (existing) {
+      this.lastUsed.set(connectionName, Date.now())
       return existing
     }
 
@@ -36,6 +44,7 @@ export class ConnectionManager {
 
     const connection = new Connection(connectionName, config)
     this.connections.set(connectionName, connection)
+    this.lastUsed.set(connectionName, Date.now())
 
     return connection
   }
@@ -123,5 +132,47 @@ export class ConnectionManager {
   async reconnect(name?: string): Promise<ConnectionContract> {
     await this.disconnect(name)
     return this.connection(name)
+  }
+
+  private async cleanupIdleConnections(): Promise<void> {
+    const now = Date.now()
+    const toRemove: string[] = []
+
+    for (const [name, lastTime] of this.lastUsed.entries()) {
+      if (now - lastTime > this.MAX_IDLE_TIME) {
+        toRemove.push(name)
+      }
+    }
+
+    for (const name of toRemove) {
+      await this.disconnect(name)
+      // Only log in non-test/production? Or use debug log?
+      // console.log(`[Atlas] Closed idle connection: ${name}`)
+    }
+  }
+
+  private startCleanup(): void {
+    // Clear existing interval if any
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval)
+    }
+
+    this.cleanupInterval = setInterval(() => this.cleanupIdleConnections(), this.CLEANUP_INTERVAL)
+    // Unref so it doesn't keep process alive
+    if (this.cleanupInterval?.unref) {
+      this.cleanupInterval.unref()
+    }
+  }
+
+  stopCleanup(): void {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval)
+      this.cleanupInterval = undefined
+    }
+  }
+
+  async shutdown(): Promise<void> {
+    this.stopCleanup()
+    await this.disconnectAll()
   }
 }
