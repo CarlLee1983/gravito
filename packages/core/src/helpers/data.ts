@@ -70,6 +70,11 @@ function setChild(current: unknown, key: PathSegment, next: unknown): void {
     throw new TypeError('dataSet target cannot be null or undefined.')
   }
 
+  // Prevent prototype pollution
+  if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+    return
+  }
+
   if (current instanceof Map) {
     current.set(key, next)
     return
