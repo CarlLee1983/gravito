@@ -196,7 +196,6 @@ export abstract class Model {
   /**
    * Helper to get relationship value (extracted for reuse)
    */
-  // @ts-expect-error: Accessed dynamically via Proxy
   private _getRelationValue(prop: string, relationMeta: RelationshipMeta): any {
     const builderFn = (..._args: any[]) => {
       const type = relationMeta.type
@@ -398,7 +397,7 @@ export abstract class Model {
 
         const relations = modelCtor.getRelationMetadata()
         if (typeof prop === 'string' && relations.has(prop)) {
-          return (receiver as any)._getRelationValue(prop, relations.get(prop)!)
+          return model._getRelationValue(prop, relations.get(prop)!)
         }
 
         // 6. Return instance values
