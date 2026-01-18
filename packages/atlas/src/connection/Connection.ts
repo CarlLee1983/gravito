@@ -147,7 +147,7 @@ export class Connection implements ConnectionContract {
       if (depth === 1) {
         await this.driver.beginTransaction()
       } else {
-        await this.driver.query(`SAVEPOINT sp_${depth}`, [])
+        await this.execute(`SAVEPOINT sp_${depth}`, [])
       }
 
       const result = await callback(this.proxyHandle || (this as unknown as ConnectionContract))
@@ -155,7 +155,7 @@ export class Connection implements ConnectionContract {
       if (depth === 1) {
         await this.driver.commit()
       } else {
-        await this.driver.query(`RELEASE SAVEPOINT sp_${depth}`, [])
+        await this.execute(`RELEASE SAVEPOINT sp_${depth}`, [])
       }
 
       return result
@@ -163,7 +163,7 @@ export class Connection implements ConnectionContract {
       if (depth === 1) {
         await this.driver.rollback()
       } else {
-        await this.driver.query(`ROLLBACK TO SAVEPOINT sp_${depth}`, [])
+        await this.execute(`ROLLBACK TO SAVEPOINT sp_${depth}`, [])
       }
       throw error
     } finally {

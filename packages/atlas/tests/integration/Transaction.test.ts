@@ -1,7 +1,10 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'bun:test'
 import { column, DB, Model, Schema } from '../../src/index'
 
+const connectionName = `sqlite_transaction_${Math.random().toString(36).slice(2)}`
+
 class User extends Model {
+  static connection = connectionName
   static table = 'users'
   @column({ isPrimary: true }) declare id: number
   @column() declare name: string
@@ -9,16 +12,13 @@ class User extends Model {
 
 describe('Transaction Test', () => {
   const ensureSqlite = async () => {
-    if (!DB.getConnectionConfig('sqlite')) {
-      DB.configure({
-        default: 'sqlite',
-        connections: {
-          sqlite: { driver: 'sqlite', database: ':memory:' },
-        },
+    if (!DB.getConnectionConfig(connectionName)) {
+      DB.addConnection(connectionName, {
+        driver: 'sqlite',
+        database: ':memory:',
       })
     }
-    DB.setDefaultConnection('sqlite')
-    Schema.connection('sqlite')
+    Schema.connection(connectionName)
   }
 
   beforeAll(async () => {
@@ -33,15 +33,15 @@ describe('Transaction Test', () => {
 
   beforeEach(async () => {
     await ensureSqlite()
-    await DB.table('users').truncate()
+    await DB.connection(connectionName).table('users').truncate()
   })
 
   afterAll(async () => {
-    await DB.disconnectAll()
+    await DB.disconnect(connectionName)
   })
 
   test('nested transactions with savepoints', async () => {
-    await DB.transaction(async (trx) => {
+    await DB.connection(connectionName).transaction(async (trx) => {
       await User.create({ name: 'User 1' })
 
       try {
