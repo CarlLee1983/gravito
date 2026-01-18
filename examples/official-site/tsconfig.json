@@ -10,7 +10,9 @@
         ],
         "jsx": "react-jsx",
         "types": [
-            "vite/client"
+            "vite/client",
+            "three",
+            "@react-three/fiber"
         ],
         "strict": true,
         "skipLibCheck": true,
