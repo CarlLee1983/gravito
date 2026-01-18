@@ -30,6 +30,7 @@
       },
       "devDependencies": {
         "bun-types": "latest",
+        "typescript": "^5.9.3",
       },
     },
     "examples/atlas-benchmark": {
@@ -43,7 +44,7 @@
       "devDependencies": {
         "@types/node": "^20.0.0",
         "@types/pg": "^8.11.0",
-        "typescript": "^5.0.0",
+        "typescript": "^5.9.3",
       },
     },
     "examples/atlas-site": {
@@ -109,7 +110,7 @@
         "bun-types": "latest",
         "postcss": "^8.4.0",
         "tailwindcss": "^3.4.0",
-        "typescript": "^5.0.0",
+        "typescript": "^5.9.3",
         "vite": "^6.0.0",
         "vue-tsc": "^2.0.0",
       },
@@ -175,10 +176,11 @@
         "@unocss/reset": "^0.58.0",
         "@vitejs/plugin-vue": "^5.0.0",
         "picocolors": "^1.0.0",
-        "typescript": "^5.3.0",
+        "typescript": "^5.9.3",
         "unocss": "^0.58.0",
         "vite": "^5.0.0",
         "vue": "^3.4.0",
+        "vue-tsc": "^2.0.0",
       },
     },
     "examples/engine-atlas-microservice": {
@@ -190,7 +192,7 @@
       },
       "devDependencies": {
         "bun-types": "latest",
-        "typescript": "^5.0.0",
+        "typescript": "^5.9.3",
       },
     },
     "examples/event-registration-mvc": {
@@ -291,7 +293,7 @@
       "devDependencies": {
         "@types/better-sqlite3": "^7.6.0",
         "bun-types": "latest",
-        "typescript": "^5.0.0",
+        "typescript": "^5.9.3",
       },
     },
     "examples/luminosity-node": {
@@ -328,7 +330,7 @@
         "bun-types": "latest",
         "postcss": "^8.4.0",
         "tailwindcss": "^3.4.0",
-        "typescript": "^5.0.0",
+        "typescript": "^5.9.3",
         "vite": "^6.4.1",
       },
     },
@@ -363,9 +365,10 @@
         "@types/react-dom": "^18.2.22",
         "@vitejs/plugin-react": "^4.2.1",
         "autoprefixer": "^10.4.18",
+        "bun-types": "latest",
         "postcss": "^8.4.35",
         "tailwindcss": "^3.4.1",
-        "typescript": "^5.2.2",
+        "typescript": "^5.9.3",
         "vite": "^5.1.4",
       },
     },
@@ -562,7 +565,7 @@
         "bun-types": "latest",
         "postcss": "^8.4.0",
         "tailwindcss": "^3.4.0",
-        "typescript": "^5.0.0",
+        "typescript": "^5.9.3",
         "vite": "^6.4.1",
       },
     },
@@ -1889,7 +1892,7 @@
       },
       "devDependencies": {
         "bun-types": "latest",
-        "typescript": "^5.0.0",
+        "typescript": "^5.9.3",
       },
     },
     "templates/inertia-react": {
@@ -1911,7 +1914,7 @@
         "@types/react-dom": "^19.2.3",
         "@vitejs/plugin-react": "^4.2.0",
         "bun-types": "latest",
-        "typescript": "^5.0.0",
+        "typescript": "^5.9.3",
         "vite": "^6.4.1",
       },
     },
@@ -1937,7 +1940,7 @@
         "@vitejs/plugin-react": "^4.2.0",
         "@vitejs/plugin-vue": "^5.0.0",
         "bun-types": "latest",
-        "typescript": "^5.0.0",
+        "typescript": "^5.9.3",
         "vite": "^6.4.1",
       },
     },
