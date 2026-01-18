@@ -64,6 +64,9 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   protected eagerLoads = new Map<string, (query: QueryBuilderContract<any>) => void>()
   protected _cache?: { ttl: number; key?: string }
 
+  // Copy-on-Write flags
+  private _isShared = false
+
   // Global Scopes
   // biome-ignore lint/suspicious/noExplicitAny: Global scopes need any for flexibility
   protected globalScopes = new Map<string, (query: QueryBuilderContract<any>) => void>()
@@ -101,6 +104,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * Set the columns to select
    */
   select(...columns: string[]): this {
+    this.ensureOwnState()
     this.columns = columns.length > 0 ? columns : ['*']
     return this
   }
@@ -109,6 +113,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * Add a raw SELECT expression
    */
   selectRaw(sql: string | Expression, bindings: unknown[] = []): this {
+    this.ensureOwnState()
     if (sql instanceof Expression) {
       this.columns.push(sql.getValue())
       this.bindingsList.push(...sql.getBindings())
@@ -123,6 +128,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * Add DISTINCT to the query
    */
   distinct(): this {
+    this.ensureOwnState()
     this.distinctValue = true
     return this
   }
@@ -131,6 +137,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * Cache the query result
    */
   cache(ttl: number, key?: string): this {
+    this.ensureOwnState()
     if (key !== undefined) {
       this._cache = { ttl, key }
     } else {
@@ -176,6 +183,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
       finalValue = value
     }
 
+    this.ensureOwnState()
     this.wheres.push({
       type: 'basic',
       column,
@@ -211,6 +219,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
       finalValue = value
     }
 
+    this.ensureOwnState()
     this.wheres.push({
       type: 'basic',
       column,
@@ -227,6 +236,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * Add a WHERE IN clause
    */
   whereIn(column: string, values: unknown[]): this {
+    this.ensureOwnState()
     this.wheres.push({
       type: 'in',
       column,
@@ -242,6 +252,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * Add a WHERE NOT IN clause
    */
   whereNotIn(column: string, values: unknown[]): this {
+    this.ensureOwnState()
     this.wheres.push({
       type: 'in',
       column,
@@ -257,6 +268,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * Add an OR WHERE IN clause
    */
   orWhereIn(column: string, values: unknown[]): this {
+    this.ensureOwnState()
     this.wheres.push({
       type: 'in',
       column,
@@ -272,6 +284,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * Add an OR WHERE NOT IN clause
    */
   orWhereNotIn(column: string, values: unknown[]): this {
+    this.ensureOwnState()
     this.wheres.push({
       type: 'in',
       column,
@@ -287,6 +300,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * Add a WHERE NULL clause
    */
   whereNull(column: string): this {
+    this.ensureOwnState()
     this.wheres.push({
       type: 'null',
       column,
@@ -300,6 +314,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * Add a WHERE NOT NULL clause
    */
   whereNotNull(column: string): this {
+    this.ensureOwnState()
     this.wheres.push({
       type: 'null',
       column,
@@ -313,6 +328,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * Add an OR WHERE NULL clause
    */
   orWhereNull(column: string): this {
+    this.ensureOwnState()
     this.wheres.push({
       type: 'null',
       column,
@@ -326,6 +342,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * Add an OR WHERE NOT NULL clause
    */
   orWhereNotNull(column: string): this {
+    this.ensureOwnState()
     this.wheres.push({
       type: 'null',
       column,
@@ -339,6 +356,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * Add a WHERE BETWEEN clause
    */
   whereBetween(column: string, values: [unknown, unknown]): this {
+    this.ensureOwnState()
     this.wheres.push({
       type: 'between',
       column,
@@ -354,6 +372,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * Add a WHERE NOT BETWEEN clause
    */
   whereNotBetween(column: string, values: [unknown, unknown]): this {
+    this.ensureOwnState()
     this.wheres.push({
       type: 'between',
       column,
@@ -369,6 +388,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * Add a raw WHERE clause
    */
   whereRaw(sql: string | Expression, bindings: unknown[] = []): this {
+    this.ensureOwnState()
     if (sql instanceof Expression) {
       this.wheres.push({
         type: 'raw',
@@ -393,6 +413,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * Add a raw OR WHERE clause
    */
   orWhereRaw(sql: string | Expression, bindings: unknown[] = []): this {
+    this.ensureOwnState()
     if (sql instanceof Expression) {
       this.wheres.push({
         type: 'raw',
@@ -417,6 +438,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * Add a WHERE column comparison clause
    */
   whereColumn(first: string, operator: Operator, second: string): this {
+    this.ensureOwnState()
     this.wheres.push({
       type: 'column',
       operator,
@@ -517,6 +539,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * Add a CROSS JOIN
    */
   crossJoin(table: string): this {
+    this.ensureOwnState()
     this.joins.push({
       type: 'cross',
       table,
@@ -537,6 +560,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
     operator: string,
     second: string
   ): this {
+    this.ensureOwnState()
     this.joins.push({ type, table, first, operator, second })
     return this
   }
@@ -549,6 +573,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * Add GROUP BY columns
    */
   groupBy(...columns: string[]): this {
+    this.ensureOwnState()
     this.groups.push(...columns)
     return this
   }
@@ -557,6 +582,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * Add a HAVING clause
    */
   having(column: string, operator: Operator, value: unknown): this {
+    this.ensureOwnState()
     this.havings.push({
       type: 'basic',
       column,
@@ -572,6 +598,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * Add a raw HAVING clause
    */
   havingRaw(sql: string | Expression, bindings: unknown[] = []): this {
+    this.ensureOwnState()
     if (sql instanceof Expression) {
       this.havings.push({
         type: 'raw',
@@ -600,6 +627,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * Add an ORDER BY clause
    */
   orderBy(column: string, direction: OrderDirection = 'asc'): this {
+    this.ensureOwnState()
     this.orders.push({ column, direction })
     return this
   }
@@ -615,6 +643,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * Add a raw ORDER BY clause
    */
   orderByRaw(sql: string | Expression, bindings: unknown[] = []): this {
+    this.ensureOwnState()
     if (sql instanceof Expression) {
       this.orders.push({ column: sql.getValue(), direction: 'asc' })
       this.bindingsList.push(...sql.getBindings())
@@ -647,6 +676,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * Set the LIMIT
    */
   limit(value: number): this {
+    this.ensureOwnState()
     this.limitValue = value
     return this
   }
@@ -655,6 +685,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * Set the OFFSET
    */
   offset(value: number): this {
+    this.ensureOwnState()
     this.offsetValue = value
     return this
   }
@@ -974,6 +1005,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
     // biome-ignore lint/suspicious/noExplicitAny: Eager loads need any for flexibility
     relation: string | string[] | Record<string, (query: QueryBuilderContract<any>) => void>
   ): this {
+    this.ensureOwnState()
     if (typeof relation === 'string') {
       this.eagerLoads.set(relation, () => {
         /* noop */
@@ -996,6 +1028,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * Add a WHERE HAS relationship existence clause
    */
   whereHas(relation: string, callback?: (query: QueryBuilderContract<any>) => void): this {
+    this.ensureOwnState()
     if (!this.modelClass) {
       throw new Error(
         `whereHas() requires a model context. Ensure you are calling it from User.query().`
@@ -1252,23 +1285,57 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   }
 
   /**
-   * Clone the query builder
+   * Ensure this query has its own state copy
+   * Only performs the copy on first modification after clone
+   */
+  private ensureOwnState(): void {
+    if (this._isShared) {
+      // First modification - perform actual copy
+      this.columns = [...this.columns]
+      this.wheres = [...this.wheres]
+      this.orders = [...this.orders]
+      this.groups = [...this.groups]
+      this.havings = [...this.havings]
+      this.joins = [...this.joins]
+      this.bindingsList = [...this.bindingsList]
+      this.globalScopes = new Map(this.globalScopes)
+      this.removedScopes = new Set(this.removedScopes)
+      this.eagerLoads = new Map(this.eagerLoads)
+
+      this._isShared = false
+    }
+  }
+
+  /**
+   * Clone the query builder (Copy-on-Write optimization)
    */
   clone(): QueryBuilderContract<T> {
+    // Mark current instance as shared
+    this._isShared = true
+
     const cloned = new QueryBuilder<T>(this.connection, this.grammar, this.tableName)
-    cloned.columns = [...this.columns]
+
+    // Share references (shallow copy) - will be copied on modification
+    cloned.columns = this.columns
     cloned.distinctValue = this.distinctValue
-    cloned.wheres = [...this.wheres]
-    cloned.orders = [...this.orders]
-    cloned.groups = [...this.groups]
-    cloned.havings = [...this.havings]
-    cloned.joins = [...this.joins]
+    cloned.wheres = this.wheres
+    cloned.orders = this.orders
+    cloned.groups = this.groups
+    cloned.havings = this.havings
+    cloned.joins = this.joins
     cloned.limitValue = this.limitValue
     cloned.offsetValue = this.offsetValue
-    cloned.bindingsList = [...this.bindingsList]
+    cloned.bindingsList = this.bindingsList
     cloned.isReadOnly = this.isReadOnly
-    cloned.globalScopes = new Map(this.globalScopes)
-    cloned.removedScopes = new Set(this.removedScopes)
+    cloned.globalScopes = this.globalScopes
+    cloned.removedScopes = this.removedScopes
+    cloned.eagerLoads = this.eagerLoads
+    cloned.modelClass = this.modelClass
+    cloned._cache = this._cache
+
+    // Mark clone as shared
+    ;(cloned as any)._isShared = true
+
     return cloned
   }
 
@@ -1276,6 +1343,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * Apply a global scope to the query
    */
   applyScope(name: string, callback: (query: QueryBuilderContract<T>) => void): this {
+    this.ensureOwnState()
     this.globalScopes.set(name, callback)
     return this
   }
@@ -1284,6 +1352,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * Remove a global scope from the query
    */
   withoutGlobalScope(name: string): this {
+    this.ensureOwnState()
     this.removedScopes.add(name)
     return this
   }

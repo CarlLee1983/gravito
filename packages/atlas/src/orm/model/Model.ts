@@ -103,6 +103,68 @@ export abstract class Model {
   /** Enable strict mode (throw on unknown columns) */
   static strictMode = true
 
+  // Class-level caches (shared across all instances of a model)
+  private static accessorCache = new Map<string, string | null>()
+  private static mutatorCache = new Map<string, string | null>()
+  // biome-ignore lint/suspicious/noExplicitAny: Metadata can be any shape
+  private static relationCache?: Map<string, any>
+
+  /**
+   * Get accessor name with caching
+   */
+  private static getAccessorName(prop: string): string | null {
+    if (this.accessorCache.has(prop)) {
+      return this.accessorCache.get(prop)!
+    }
+
+    const studly = prop.replace(/(?:^|_|(?=[A-Z]))(.)/g, (_, c) => c.toUpperCase())
+    const accessor = `get${studly}Attribute`
+
+    const exists = typeof this.prototype[accessor] === 'function'
+    const result = exists ? accessor : null
+
+    this.accessorCache.set(prop, result)
+    return result
+  }
+
+  /**
+   * Get mutator name with caching
+   */
+  private static getMutatorName(prop: string): string | null {
+    if (this.mutatorCache.has(prop)) {
+      return this.mutatorCache.get(prop)!
+    }
+
+    const studly = prop.replace(/(?:^|_|(?=[A-Z]))(.)/g, (_, c) => c.toUpperCase())
+    const mutator = `set${studly}Attribute`
+
+    const exists = typeof this.prototype[mutator] === 'function'
+    const result = exists ? mutator : null
+
+    this.mutatorCache.set(prop, result)
+    return result
+  }
+
+  /**
+   * Get relationship metadata (precompiled, cached)
+   */
+  // biome-ignore lint/suspicious/noExplicitAny: Metadata can be any shape
+  private static getRelationMetadata(): Map<string, any> {
+    if (!this.relationCache) {
+      this.relationCache = getRelationships(this)
+    }
+    return this.relationCache
+  }
+
+  /**
+   * Clear caches (useful for tests or hot reload)
+   */
+  static clearProxyCache(): void {
+    this.accessorCache.clear()
+    this.mutatorCache.clear()
+    this.relationCache = undefined
+  }
+
   // ============================================================================
   // Instance State
   // ============================================================================
@@ -206,7 +268,6 @@ export abstract class Model {
         }
 
         // 3. Check for instance getters/methods first
-        // We prioritize methods like save(), delete(), find() etc. from the prototype
         let proto = Object.getPrototypeOf(target)
         while (proto && proto !== Object.prototype) {
           const descriptor = Object.getOwnPropertyDescriptor(proto, prop)
@@ -221,12 +282,9 @@ export abstract class Model {
 
         // 4. Check for Accessors (get[Name]Attribute)
         if (typeof prop === 'string') {
-          const studly = prop.replace(/(?:^|_|(?=[A-Z]))(.)/g, (_, c) => c.toUpperCase())
-          const accessor = `get${studly}Attribute`
-          // Check if accessor exists on the instance (prototype)
-          if (typeof (target as any)[accessor] === 'function') {
+          const accessor = modelCtor.getAccessorName(prop)
+          if (accessor) {
             const raw = model._attributes[prop]
-            // Bind to receiver (the proxy) to allow access to other attributes
             return (target as any)[accessor].call(receiver, raw)
           }
         }
@@ -236,50 +294,13 @@ export abstract class Model {
           return model._attributes[prop]
         }
 
-        const relations = getRelationships(modelCtor)
+        // 6. Check for Relationships (using cached metadata)
+        const relations = modelCtor.getRelationMetadata()
         if (typeof prop === 'string' && relations.has(prop)) {
-          const builderFn = (..._args: any[]) => {
-            const meta = relations.get(prop)!
-            const type = meta.type
-
-            if (type === 'morphTo') {
-              return (receiver as any).morphTo(
-                meta.morphName,
-                meta.morphTypeField,
-                meta.morphIdField
-              )
-            }
-
-            if (type === 'morphOne' || type === 'morphMany') {
-              const Related = meta.related?.()
-              return (receiver as any)[type](
-                Related,
-                meta.morphName,
-                meta.foreignKey,
-                meta.localKey
-              )
-            }
-
-            const Related = meta.related?.()
-            // Call hasOne, hasMany, belongsTo, or belongsToMany
-            return (receiver as any)[type](Related, meta.foreignKey, meta.localKey)
-          }
-
-          // Make it thenable for property-style lazy loading: await user.posts
-          // biome-ignore lint/suspicious/noThenProperty: Intentional thenable for property-style lazy loading
-          ;(builderFn as any).then = async (resolve: any, reject: any) => {
-            try {
-              await (receiver as any).load(prop)
-              resolve((receiver as any)._attributes[prop])
-            } catch (err) {
-              reject(err)
-            }
-          }
-
-          return builderFn
+          return model._getRelationValue(prop, relations.get(prop)!, receiver)
         }
 
-        // 6. Return instance values
+        // 7. Return instance values
         if (Object.hasOwn(target, prop)) {
           const value = Reflect.get(target, prop)
           if (typeof value === 'function') {
@@ -288,7 +309,7 @@ export abstract class Model {
           return value
         }
 
-        // 7. Return static properties from the model constructor
+        // 8. Return static properties from the model constructor
         if (prop in modelCtor && !['name', 'prototype', 'length'].includes(prop as string)) {
           const value = Reflect.get(modelCtor, prop)
           if (typeof value === 'function') {
@@ -308,22 +329,19 @@ export abstract class Model {
 
         // 2. Check for Mutators (set[Name]Attribute)
         if (typeof prop === 'string') {
-          const studly = prop.replace(/(?:^|_|(?=[A-Z]))(.)/g, (_, c) => c.toUpperCase())
-          const mutator = `set${studly}Attribute`
-          if (typeof (target as any)[mutator] === 'function') {
+          const mutator = modelCtor.getMutatorName(prop)
+          if (mutator) {
             ;(target as any)[mutator].call(receiver, value)
             return true
           }
         }
 
         // 3. Prioritize setting attributes/relations
-        // If it's already an attribute, or if it's not in the target (instance), treat as attribute
         if (!(prop in target) || (typeof prop === 'string' && prop in model._attributes)) {
           model._setAttribute(prop as string, value)
           return true
         }
 
-        // 3. Set on instance (for non-attribute properties like events array)
         return Reflect.set(target, prop, value)
       },
 
@@ -350,6 +368,50 @@ export abstract class Model {
         return Reflect.getOwnPropertyDescriptor(target, prop)
       },
     }) as T
+  }
+
+  /**
+   * Helper to get relationship value (extracted for reuse)
+   */
+  // biome-ignore lint/suspicious/noExplicitAny: Metadata can be any shape
+  private _getRelationValue(prop: string, relationMeta: any, receiver: any): any {
+    const builderFn = (..._args: any[]) => {
+      const type = relationMeta.type
+
+      if (type === 'morphTo') {
+        return (receiver as any).morphTo(
+          relationMeta.morphName,
+          relationMeta.morphTypeField,
+          relationMeta.morphIdField
+        )
+      }
+
+      if (type === 'morphOne' || type === 'morphMany') {
+        const Related = relationMeta.related?.()
+        return (receiver as any)[type](
+          Related,
+          relationMeta.morphName,
+          relationMeta.foreignKey,
+          relationMeta.localKey
+        )
+      }
+
+      const Related = relationMeta.related?.()
+      return (receiver as any)[type](Related, relationMeta.foreignKey, relationMeta.localKey)
+    }
+
+    // Make it thenable for lazy loading
+    // biome-ignore lint/suspicious/noThenProperty: Intentional thenable
+    ;(builderFn as any).then = async (resolve: any, reject: any) => {
+      try {
+        await (receiver as any).load(prop)
+        resolve((this as any)._attributes[prop])
+      } catch (err) {
+        reject(err)
+      }
+    }
+
+    return builderFn
   }
 
   // ============================================================================

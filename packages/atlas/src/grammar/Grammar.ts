@@ -3,6 +3,7 @@
  * @description Base class for database-specific SQL generation
  */
 
+import { LRUCache } from 'lru-cache'
 import { Expression } from '../query/Expression'
 import type {
   CompiledQuery,
@@ -30,8 +31,13 @@ export abstract class Grammar implements GrammarContract {
 
   /**
    * Cache for pre-compiled SQL statements
+   * Shared across all grammar instances
    */
-  protected compilationCache: Map<string, string> = new Map()
+  private static compilationCache = new LRUCache<string, string>({
+    max: 500, // Max 500 compiled queries
+    ttl: 1000 * 60 * 5, // 5 minute TTL
+    updateAgeOnGet: true,
+  })
 
   /**
    * Toggle for compilation cache
@@ -68,7 +74,7 @@ export abstract class Grammar implements GrammarContract {
     let cacheKey = ''
     if (Grammar.useCache) {
       cacheKey = this.getStructuralKey(query)
-      const cached = this.compilationCache.get(cacheKey)
+      const cached = Grammar.compilationCache.get(cacheKey)
       if (cached) {
         return cached
       }
@@ -116,15 +122,38 @@ export abstract class Grammar implements GrammarContract {
     if (query.offset !== undefined) {
       parts.push(this.compileOffset(query))
     }
-
     const sql = parts.filter(Boolean).join(' ')
 
     // 2. Store in cache
     if (Grammar.useCache && cacheKey) {
-      this.compilationCache.set(cacheKey, sql)
+      Grammar.compilationCache.set(cacheKey, sql)
     }
 
     return sql
+  }
+
+  /**
+   * Clear the compilation cache
+   */
+  public static clearCache(): void {
+    Grammar.compilationCache.clear()
+  }
+
+  /**
+   * Get cache statistics
+   */
+  public static getCacheStats() {
+    return {
+      size: Grammar.compilationCache.size,
+      max: Grammar.compilationCache.max,
+    }
+  }
+
+  /**
+   * Set cache size
+   */
+  public static setCacheSize(max: number): void {
+    Grammar.compilationCache.max = max
   }
 
   /**
@@ -145,6 +174,7 @@ export abstract class Grammar implements GrammarContract {
       .join('|')
 
     return [
+      this.constructor.name, // Isolation between grammar types
       query.table,
       query.columns.join(','),
       query.distinct ? '1' : '0',

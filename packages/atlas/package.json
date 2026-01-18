@@ -39,7 +39,9 @@
   ],
   "author": "Gravito Team",
   "license": "MIT",
-  "dependencies": {},
+  "dependencies": {
+    "lru-cache": "^11.2.4"
+  },
   "peerDependencies": {
     "better-sqlite3": "^11.0.0",
     "ioredis": "^5.8.2",
