@@ -733,6 +733,26 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   // ============================================================================
 
   /**
+   * Execute query using prepared statement (for repeated queries)
+   */
+  async getPrepared(): Promise<T[]> {
+    const sql = this.grammar.compileSelect(this.getCompiledQuery())
+    const driver = this.connection.getDriver()
+
+    if (
+      typeof (driver as any).prepare === 'function' &&
+      typeof (driver as any).executePrepared === 'function'
+    ) {
+      const stmtName = await (driver as any).prepare(sql)
+      const result = await (driver as any).executePrepared(stmtName, this.bindingsList)
+      return result.rows as T[]
+    }
+
+    // Fallback to normal execution
+    return this.get()
+  }
+
+  /**
    * Execute the query and get all results
    */
   async get(): Promise<T[]> {

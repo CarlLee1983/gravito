@@ -131,6 +131,7 @@ export abstract class Model {
   private static accessorCache = new Map<string, string | null>()
   private static mutatorCache = new Map<string, string | null>()
   private static relationCache?: Map<string, RelationshipMeta>
+  private static castCache = new Map<string, (value: any) => any>()
 
   /**
    * Get accessor name with caching
@@ -189,6 +190,7 @@ export abstract class Model {
     this.accessorCache.clear()
     this.mutatorCache.clear()
     this.relationCache = undefined
+    this.castCache.clear()
   }
 
   /**
@@ -289,9 +291,38 @@ export abstract class Model {
     const proxy = instance._createProxy(row, true)
 
     // Trigger retrieved event (async)
-    void (proxy as any).emit?.('retrieved')
+    if (
+      Model.observers.some((o) => typeof o.retrieved === 'function') ||
+      typeof (proxy as any).onRetrieved === 'function'
+    ) {
+      void (proxy as any).emit?.('retrieved')
+    }
 
     return proxy
+  }
+
+  /**
+   * Hydrate multiple models from database rows (Optimized)
+   */
+  static hydrateMany<T extends Model>(this: ModelConstructor<T>, rows: ModelAttributes[]): T[] {
+    const len = rows.length
+    const instances = new Array<T>(len)
+
+    // Check if observers exist once outside loop
+    const hasRetrievedObserver = Model.observers.some((o) => typeof o.retrieved === 'function')
+
+    for (let i = 0; i < len; i++) {
+      const instance = new this()
+      const proxy = instance._createProxy(rows[i], true)
+      instances[i] = proxy
+
+      // Trigger retrieved event if needed
+      if (hasRetrievedObserver || typeof (proxy as any).onRetrieved === 'function') {
+        void (proxy as any).emit?.('retrieved')
+      }
+    }
+
+    return instances
   }
 
   /**
@@ -527,6 +558,72 @@ export abstract class Model {
   }
 
   /**
+   * Get compiled caster function for a type
+   */
+  private static getCaster(type: string): (value: any) => any {
+    if (this.castCache.has(type)) {
+      return this.castCache.get(type)!
+    }
+
+    let caster: (value: any) => any
+
+    switch (type) {
+      case 'int':
+      case 'integer':
+      case 'number':
+        caster = (v) => (typeof v === 'string' ? parseFloat(v) : Number(v))
+        break
+      case 'real':
+      case 'float':
+      case 'double':
+        caster = (v) => parseFloat(v)
+        break
+      case 'string':
+        caster = (v) => String(v)
+        break
+      case 'bool':
+      case 'boolean':
+        caster = (v) => [true, 1, '1', 'true', 'on', 'yes'].includes(v)
+        break
+      case 'object':
+        caster = (v) => {
+          if (typeof v === 'object') return v
+          try {
+            return JSON.parse(v)
+          } catch {
+            return v
+          }
+        }
+        break
+      case 'json':
+        caster = (v) => {
+          if (typeof v === 'object') return v
+          try {
+            return JSON.parse(v)
+          } catch {
+            return v
+          }
+        }
+        break
+      case 'date':
+      case 'datetime':
+        caster = (v) => (v instanceof Date ? v : new Date(v))
+        break
+      case 'timestamp':
+        caster = (v) => (v instanceof Date ? v.getTime() : new Date(v).getTime())
+        break
+      case 'collection':
+        caster = (v) => (Array.isArray(v) ? v : [v])
+        break
+      default:
+        caster = (v) => v
+    }
+
+    this.castCache.set(type, caster)
+    return caster
+  }
+
+  /**
    * Cast attribute value to its type
    */
   private _castAttribute(_key: string, value: any, type: string): any {
@@ -534,58 +631,8 @@ export abstract class Model {
       return value
     }
 
-    if (type === 'json' && typeof value === 'string') {
-      try {
-        return JSON.parse(value)
-      } catch (_e) {
-        return value
-      }
-    }
-
-    switch (type) {
-      case 'int':
-      case 'integer':
-      case 'number':
-        return typeof value === 'string' ? parseFloat(value) : Number(value)
-
-      case 'real':
-      case 'float':
-      case 'double':
-        return parseFloat(value)
-
-      case 'string':
-        return String(value)
-
-      case 'bool':
-      case 'boolean':
-        return [true, 1, '1', 'true', 'on', 'yes'].includes(value)
-
-      case 'object':
-        if (typeof value === 'object') {
-          return value
-        }
-        try {
-          return JSON.parse(value)
-        } catch (_e) {
-          return value
-        }
-
-      case 'collection':
-        // Placeholder for Collection support
-        return Array.isArray(value) ? value : [value]
-
-      case 'date':
-      case 'datetime':
-        if (value instanceof Date) {
-          return value
-        }
-        return new Date(value)
-
-      case 'timestamp':
-        return value instanceof Date ? value.getTime() : new Date(value).getTime()
-    }
-
-    return value
+    const caster = (this.constructor as typeof Model).getCaster(type)
+    return caster(value)
   }
 
   /**
@@ -1427,7 +1474,8 @@ export abstract class Model {
         return rows as unknown as T[]
       }
 
-      const models = rows.map((row) => this.hydrate<T>(row)) as unknown as T[]
+      // Use optimized batch hydration
+      const models = this.hydrateMany<T>(rows) as unknown as T[]
 
       // Handle eager loading
       const eagerLoads = (builder as any).getEagerLoads?.()

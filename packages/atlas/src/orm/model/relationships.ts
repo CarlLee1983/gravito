@@ -286,8 +286,43 @@ export function MorphTo(
 }
 
 // ============================================================================
-// Eager Loading
+// Helpers
 // ============================================================================
+
+function resolveForeignKey(
+  type: RelationType,
+  Related: any,
+  parentModel: typeof Model,
+  morphName?: string
+): string | undefined {
+  if (type === 'belongsTo') {
+    const relatedTable = Related.getTable()
+    return `${relatedTable.replace(/s$/, '')}_id`
+  }
+  if (type === 'hasMany' || type === 'hasOne') {
+    const parentTable = (parentModel as any).getTable()
+    return `${parentTable.replace(/s$/, '')}_id`
+  }
+  if (type === 'belongsToMany') {
+    const parentTable = (parentModel as any).getTable()
+    return `${parentTable.replace(/s$/, '')}_id`
+  }
+  if (type === 'morphMany' || type === 'morphOne') {
+    return `${morphName}_id`
+  }
+  return undefined
+}
+
+function resolveLocalKey(
+  type: RelationType,
+  Related: any,
+  parentModel: typeof Model
+): string | undefined {
+  if (type === 'belongsTo') {
+    return Related?.primaryKey
+  }
+  return parentModel.primaryKey
+}
 
 /**
  * Load related models for a collection of parent models
@@ -329,18 +364,7 @@ export async function eagerLoad<T extends Model, R extends Model = Model>(
 
   // Resolve defaults if missing
   if (!foreignKey) {
-    if (type === 'belongsTo') {
-      const relatedTable = (Related as any).getTable()
-      foreignKey = `${relatedTable.replace(/s$/, '')}_id`
-    } else if (type === 'hasMany' || type === 'hasOne') {
-      const parentTable = (parentModel as any).getTable()
-      foreignKey = `${parentTable.replace(/s$/, '')}_id`
-    } else if (type === 'belongsToMany') {
-      const parentTable = (parentModel as any).getTable()
-      foreignKey = `${parentTable.replace(/s$/, '')}_id`
-    } else if (type === 'morphMany' || type === 'morphOne') {
-      foreignKey = `${morphName}_id`
-    }
+    foreignKey = resolveForeignKey(type, Related, parentModel, morphName)
   }
 
   if (type === 'morphMany' || type === 'morphOne') {
@@ -348,11 +372,7 @@ export async function eagerLoad<T extends Model, R extends Model = Model>(
   }
 
   if (!localKey) {
-    if (type === 'belongsTo') {
-      localKey = Related?.primaryKey
-    } else {
-      localKey = parentModel.primaryKey
-    }
+    localKey = resolveLocalKey(type, Related, parentModel)
   }
 
   // Ensure they are strings now for non-morphTo (morphTo handles its own)
