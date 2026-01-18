@@ -208,6 +208,7 @@ export abstract class Grammar implements GrammarContract {
       .join('|')
 
     return [
+      this.constructor.name,
       query.table,
       query.columns.join(','),
       query.distinct ? '1' : '0',

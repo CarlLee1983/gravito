@@ -1334,25 +1334,22 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    */
   clone(): QueryBuilderContract<T> {
     const cloned = new QueryBuilder<T>(this.connection, this.grammar, this.tableName)
-    cloned.columns = this.columns
+    cloned.columns = [...this.columns]
     cloned.distinctValue = this.distinctValue
-    cloned.wheres = this.wheres
-    cloned.orders = this.orders
-    cloned.groups = this.groups
-    cloned.havings = this.havings
-    cloned.joins = this.joins
+    cloned.wheres = [...this.wheres]
+    cloned.orders = [...this.orders]
+    cloned.groups = [...this.groups]
+    cloned.havings = [...this.havings]
+    cloned.joins = [...this.joins]
     cloned.limitValue = this.limitValue
     cloned.offsetValue = this.offsetValue
-    cloned.bindingsList = this.bindingsList
+    cloned.bindingsList = [...this.bindingsList]
     cloned.isReadOnly = this.isReadOnly
-    cloned.globalScopes = this.globalScopes
-    cloned.removedScopes = this.removedScopes
-    cloned.eagerLoads = this.eagerLoads
+    cloned.globalScopes = new Map(this.globalScopes)
+    cloned.removedScopes = new Set(this.removedScopes)
+    cloned.eagerLoads = new Map(this.eagerLoads)
     cloned.modelClass = this.modelClass
     cloned._cache = this._cache
-
-    // Mark as clone
-    cloned._isClone = true
 
     return cloned
   }

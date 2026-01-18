@@ -381,7 +381,7 @@ export async function eagerLoad<T extends Model, R extends Model = Model>(
   }
 
   // Get parent keys
-  const parentKeys = localKey ? parents.map((p) => (p as any)[localKey!]) : []
+  const parentKeys = localKey ? parents.map((p) => getValue(p, localKey!)) : []
   const validParentKeys = parentKeys.filter((k) => k !== undefined && k !== null)
 
   if (type !== 'morphTo' && validParentKeys.length === 0) {
@@ -435,7 +435,7 @@ export async function eagerLoad<T extends Model, R extends Model = Model>(
       // Map results back to parents
       const relatedByFk = new Map<unknown, any[]>()
       for (const model of models) {
-        const fk = (model as any)[foreignKey!]
+        const fk = getValue(model, foreignKey!)
         if (!relatedByFk.has(fk)) {
           relatedByFk.set(fk, [])
         }
@@ -444,15 +444,15 @@ export async function eagerLoad<T extends Model, R extends Model = Model>(
 
       // Assign to parents
       for (const parent of parents) {
-        const pk = (parent as any)[localKey!]
+        const pk = getValue(parent, localKey!)
         // Handle MongoDB _id vs id mapping in results
         const items =
           relatedByFk.get(pk) ?? (typeof pk === 'string' ? relatedByFk.get(pk) : undefined) ?? []
 
         if (type === 'hasOne') {
-          ;(parent as any)[currentRelation] = items[0] ?? null
+          setRelationValue(parent, currentRelation, items[0] ?? null)
         } else {
-          ;(parent as any)[currentRelation] = items
+          setRelationValue(parent, currentRelation, items)
         }
       }
       break
@@ -483,7 +483,7 @@ export async function eagerLoad<T extends Model, R extends Model = Model>(
       // Map results
       const relatedByFk = new Map<unknown, any[]>()
       for (const model of models) {
-        const fk = (model as any)[foreignKey!]
+        const fk = getValue(model, foreignKey!)
         if (!relatedByFk.has(fk)) {
           relatedByFk.set(fk, [])
         }
@@ -492,13 +492,13 @@ export async function eagerLoad<T extends Model, R extends Model = Model>(
 
       // Assign to parents
       for (const parent of parents) {
-        const pk = (parent as any)[localKey!]
+        const pk = getValue(parent, localKey!)
         const items = relatedByFk.get(pk) ?? []
 
         if (type === 'morphOne') {
-          ;(parent as any)[currentRelation] = items[0] ?? null
+          setRelationValue(parent, currentRelation, items[0] ?? null)
         } else {
-          ;(parent as any)[currentRelation] = items
+          setRelationValue(parent, currentRelation, items)
         }
       }
       break
@@ -508,7 +508,7 @@ export async function eagerLoad<T extends Model, R extends Model = Model>(
       // Group parents by type
       const parentsByType = new Map<string, T[]>()
       for (const parent of parents) {
-        const typeValue = (parent as any)[morphTypeField!]
+        const typeValue = getValue(parent, morphTypeField!)
         if (typeValue) {
           if (!parentsByType.has(typeValue)) {
             parentsByType.set(typeValue, [])
@@ -524,7 +524,7 @@ export async function eagerLoad<T extends Model, R extends Model = Model>(
           continue
         }
 
-        const ids = typeParents.map((p) => (p as any)[morphIdField!]).filter((id) => id !== null)
+        const ids = typeParents.map((p) => getValue(p, morphIdField!)).filter((id) => id !== null)
 
         if (ids.length === 0) {
           continue
@@ -550,12 +550,12 @@ export async function eagerLoad<T extends Model, R extends Model = Model>(
         // Map it back
         const relatedByPk = new Map<unknown, any>()
         for (const rm of relatedModels) {
-          relatedByPk.set((rm as any)[CurrentModel.primaryKey], rm)
+          relatedByPk.set(getValue(rm, CurrentModel.primaryKey), rm)
         }
 
         for (const parent of typeParents) {
-          const id = (parent as any)[morphIdField!]
-          ;(parent as any)[currentRelation] = relatedByPk.get(id) ?? null
+          const id = getValue(parent, morphIdField!)
+          setRelationValue(parent, currentRelation, relatedByPk.get(id) ?? null)
         }
       }
       break
@@ -564,7 +564,7 @@ export async function eagerLoad<T extends Model, R extends Model = Model>(
     case 'belongsTo': {
       // Get foreign keys from parents
       const fks = parents
-        .map((p) => (p as any)[foreignKey!])
+        .map((p) => getValue(p, foreignKey!))
         .filter((k) => k !== undefined && k !== null)
 
       if (fks.length === 0) {
@@ -589,14 +589,14 @@ export async function eagerLoad<T extends Model, R extends Model = Model>(
       // Map results
       const relatedByPk = new Map<unknown, any>()
       for (const model of models) {
-        relatedByPk.set((model as any)[localKey!], model)
+        relatedByPk.set(getValue(model, localKey!), model)
       }
 
       // Assign to parents
       for (const parent of parents) {
-        const fk = (parent as any)[foreignKey!]
+        const fk = getValue(parent, foreignKey!)
         const row = relatedByPk.get(fk)
-        ;(parent as any)[currentRelation] = row ?? null
+        setRelationValue(parent, currentRelation, row ?? null)
       }
       break
     }
@@ -652,7 +652,7 @@ export async function eagerLoad<T extends Model, R extends Model = Model>(
       // Map related by primary key
       const relatedByPk = new Map<unknown, any>()
       for (const model of models) {
-        relatedByPk.set((model as any)[localKey!], model)
+        relatedByPk.set(getValue(model, localKey!), model)
       }
 
       // Map pivots by parent FK
@@ -667,16 +667,31 @@ export async function eagerLoad<T extends Model, R extends Model = Model>(
 
       // Assign to parents
       for (const parent of parents) {
-        const pk = (parent as any)[localKey!]
+        const pk = getValue(parent, localKey!)
         const relatedPks = pivotsByParent.get(pk) ?? []
         const relatedModels = relatedPks
           .map((rpk) => relatedByPk.get(rpk))
           .filter((r): r is any => r !== undefined)
 
-        ;(parent as any)[currentRelation] = relatedModels
+        setRelationValue(parent, currentRelation, relatedModels)
       }
       break
     }
+  }
+}
+
+function getValue(obj: any, key: string): any {
+  if (obj._attributes && key in obj._attributes) {
+    return obj._attributes[key]
+  }
+  return obj[key]
+}
+
+function setRelationValue(model: any, name: string, value: any) {
+  if (model._attributes) {
+    model._attributes[name] = value
+  } else {
+    model[name] = value
   }
 }
 
