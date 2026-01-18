@@ -1,30 +1,31 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'bun:test'
+import { unlinkSync } from 'node:fs'
 import { column, DB, Model, Schema } from '../../src/index'
 
-const connectionName = `sqlite_transaction_${Math.random().toString(36).slice(2)}`
+const DB_FILE = `test_trx_${Math.random().toString(36).slice(2, 7)}.sqlite`
+const CONNECTION_NAME = `trx_test_${Math.random().toString(36).slice(2, 7)}`
 
 class User extends Model {
-  static connection = connectionName
+  static connection = CONNECTION_NAME
   static table = 'users'
   @column({ isPrimary: true }) declare id: number
   @column() declare name: string
 }
 
 describe('Transaction Test', () => {
-  const ensureSqlite = async () => {
-    if (!DB.getConnectionConfig(connectionName)) {
-      DB.addConnection(connectionName, {
+  const ensureSqlite = () => {
+    if (!DB.hasConnection(CONNECTION_NAME)) {
+      DB.addConnection(CONNECTION_NAME, {
         driver: 'sqlite',
-        database: ':memory:',
+        database: DB_FILE,
       })
     }
-    Schema.connection(connectionName)
   }
 
   beforeAll(async () => {
-    await ensureSqlite()
-    await Schema.dropIfExists('users')
-    await Schema.create('users', (t) => {
+    ensureSqlite()
+    await Schema.connection(CONNECTION_NAME).dropIfExists('users')
+    await Schema.connection(CONNECTION_NAME).create('users', (t) => {
       t.id()
       t.string('name')
       t.timestamps()
@@ -32,16 +33,21 @@ describe('Transaction Test', () => {
   })
 
   beforeEach(async () => {
-    await ensureSqlite()
-    await DB.connection(connectionName).table('users').truncate()
+    ensureSqlite()
+    await DB.connection(CONNECTION_NAME).table('users').truncate()
   })
 
   afterAll(async () => {
-    await DB.disconnect(connectionName)
+    await DB.disconnect(CONNECTION_NAME)
+    try {
+      unlinkSync(DB_FILE)
+    } catch (e) {
+      // Ignore
+    }
   })
 
   test('nested transactions with savepoints', async () => {
-    await DB.connection(connectionName).transaction(async (trx) => {
+    await DB.connection(CONNECTION_NAME).transaction(async (trx) => {
       await User.create({ name: 'User 1' })
 
       try {
@@ -55,8 +61,6 @@ describe('Transaction Test', () => {
 
       // User 1 should still exist
       const count = await User.count()
-      // Note: SQLite nested transactions might be tricky with some drivers,
-      // but assuming our implementation sends SAVEPOINT correctly
       expect(count).toBe(1)
       const user = await User.first()
       expect(user?.name).toBe('User 1')

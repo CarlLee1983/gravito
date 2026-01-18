@@ -1,7 +1,7 @@
 import { DB } from '@gravito/atlas'
 import type { GravitoContext } from '@gravito/core'
 import type { HashManager } from '@gravito/sentinel'
-import { type User, UserRole } from '../../Models/User'
+import { User, UserRole } from '../../Models/User'
 import { Controller } from './Controller'
 
 export class AuthController extends Controller {
@@ -65,8 +65,8 @@ export class AuthController extends Controller {
       return ctx.redirect('/register')
     }
 
-    // Create user
-    const [user] = await DB.table<User>('users').insert({
+    // Create user using Model
+    const user = await User.create({
       name,
       email,
       password: await hash.make(password),
