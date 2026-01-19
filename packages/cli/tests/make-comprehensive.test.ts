@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, spyOn } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, it, spyOn } from 'bun:test'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { MakeCommand } from '../src/commands/MakeCommand'
@@ -9,10 +9,22 @@ const TEST_DIR = path.resolve(__dirname, 'temp_make_comp')
 describe('MakeCommand Comprehensive', () => {
   const cmd = new MakeCommand(path.resolve(__dirname, '../stubs'))
   const originalCwd = process.cwd()
+  let exitSpy: any
 
   // Mock console to keep test output clean
   // const consoleLog = spyOn(console, 'log').mockImplementation(() => {})
   // const consoleError = spyOn(console, 'error').mockImplementation(() => {})
+
+  beforeEach(() => {
+    exitSpy = spyOn(process, 'exit').mockImplementation(() => undefined as never)
+  })
+
+  afterEach(async () => {
+    process.chdir(originalCwd)
+    await fs.rm(TEST_DIR, { recursive: true, force: true })
+    // consoleLog.mockClear()
+    exitSpy.mockRestore()
+  })
 
   it('should create a request class', async () => {
     await fs.mkdir(TEST_DIR, { recursive: true })
@@ -71,10 +83,4 @@ describe('MakeCommand Comprehensive', () => {
   // We can't easily test index.ts without refactoring it to export the action handlers.
 
   // But we can test MakeCommand's ability to handle different types.
-
-  afterEach(async () => {
-    process.chdir(originalCwd)
-    await fs.rm(TEST_DIR, { recursive: true, force: true })
-    // consoleLog.mockClear()
-  })
 })

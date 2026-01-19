@@ -17,7 +17,7 @@ import {
   TypeMismatchError,
 } from './errors'
 import { ModelRegistry } from './ModelRegistry'
-import { getRelationships } from './relationships'
+import { getRelationships, type RelationshipMeta } from './relationships'
 import type { ModelObserver } from './types'
 
 /**
@@ -125,6 +125,118 @@ export abstract class Model {
   static strictMode = true
 
   // ============================================================================
+  // Caches
+  // ============================================================================
+
+  private static accessorCache = new Map<string, string | null>()
+  private static mutatorCache = new Map<string, string | null>()
+  private static relationCache?: Map<string, RelationshipMeta>
+  private static castCache = new Map<string, (value: any) => any>()
+
+  /**
+   * Get accessor name with caching
+   */
+  private static getAccessorName(prop: string): string | null {
+    // Check cache first
+    if (this.accessorCache.has(prop)) {
+      return this.accessorCache.get(prop)!
+    }
+
+    // Compute studly case (only once)
+    const studly = prop.replace(/(?:^|_|(?=[A-Z]))(.)/g, (_, c) => c.toUpperCase())
+    const accessor = `get${studly}Attribute`
+
+    // Check if accessor exists
+    const exists = typeof (this.prototype as any)[accessor] === 'function'
+    const result = exists ? accessor : null
+
+    // Cache result
+    this.accessorCache.set(prop, result)
+    return result
+  }
+
+  /**
+   * Get mutator name with caching
+   */
+  private static getMutatorName(prop: string): string | null {
+    if (this.mutatorCache.has(prop)) {
+      return this.mutatorCache.get(prop)!
+    }
+
+    const studly = prop.replace(/(?:^|_|(?=[A-Z]))(.)/g, (_, c) => c.toUpperCase())
+    const mutator = `set${studly}Attribute`
+
+    const exists = typeof (this.prototype as any)[mutator] === 'function'
+    const result = exists ? mutator : null
+
+    this.mutatorCache.set(prop, result)
+    return result
+  }
+
+  /**
+   * Get relationship metadata (precompiled, cached)
+   */
+  private static getRelationMetadata(): Map<string, RelationshipMeta> {
+    if (!this.relationCache) {
+      this.relationCache = getRelationships(this)
+    }
+    return this.relationCache
+  }
+
+  /**
+   * Clear caches (useful for tests or hot reload)
+   */
+  static clearProxyCache(): void {
+    this.accessorCache.clear()
+    this.mutatorCache.clear()
+    this.relationCache = undefined
+    this.castCache.clear()
+  }
+
+  /**
+   * Helper to get relationship value (extracted for reuse)
+   */
+  private _getRelationValue(prop: string, relationMeta: RelationshipMeta): any {
+    const builderFn = (..._args: any[]) => {
+      const type = relationMeta.type
+
+      if (type === 'morphTo') {
+        return (this as any).morphTo(
+          relationMeta.morphName,
+          relationMeta.morphTypeField,
+          relationMeta.morphIdField
+        )
+      }
+
+      if (type === 'morphOne' || type === 'morphMany') {
+        const Related = relationMeta.related?.()
+        return (this as any)[type](
+          Related,
+          relationMeta.morphName,
+          relationMeta.foreignKey,
+          relationMeta.localKey
+        )
+      }
+
+      const Related = relationMeta.related?.()
+      return (this as any)[type](Related, relationMeta.foreignKey, relationMeta.localKey)
+    }
+
+    // Make it thenable for lazy loading
+    // biome-ignore lint/suspicious/noThenProperty: Intentional thenable
+    ;(builderFn as any).then = async (resolve: any, reject: any) => {
+      try {
+        await (this as any).load(prop)
+        resolve((this as any)._attributes[prop])
+      } catch (err) {
+        reject(err)
+      }
+    }
+
+    return builderFn
+  }
+
+  // ============================================================================
   // Instance State
   // ============================================================================
 
@@ -179,9 +291,38 @@ export abstract class Model {
     const proxy = instance._createProxy(row, true)
 
     // Trigger retrieved event (async)
-    void (proxy as any).emit?.('retrieved')
+    if (
+      Model.observers.some((o) => typeof o.retrieved === 'function') ||
+      typeof (proxy as any).onRetrieved === 'function'
+    ) {
+      void (proxy as any).emit?.('retrieved')
+    }
 
     return proxy
+  }
+
+  /**
+   * Hydrate multiple models from database rows (Optimized)
+   */
+  static hydrateMany<T extends Model>(this: ModelConstructor<T>, rows: ModelAttributes[]): T[] {
+    const len = rows.length
+    const instances = new Array<T>(len)
+
+    // Check if observers exist once outside loop
+    const hasRetrievedObserver = Model.observers.some((o) => typeof o.retrieved === 'function')
+
+    for (let i = 0; i < len; i++) {
+      const instance = new this()
+      const proxy = instance._createProxy(rows[i], true)
+      instances[i] = proxy
+
+      // Trigger retrieved event if needed
+      if (hasRetrievedObserver || typeof (proxy as any).onRetrieved === 'function') {
+        void (proxy as any).emit?.('retrieved')
+      }
+    }
+
+    return instances
   }
 
   /**
@@ -242,12 +383,9 @@ export abstract class Model {
 
         // 4. Check for Accessors (get[Name]Attribute)
         if (typeof prop === 'string') {
-          const studly = prop.replace(/(?:^|_|(?=[A-Z]))(.)/g, (_, c) => c.toUpperCase())
-          const accessor = `get${studly}Attribute`
-          // Check if accessor exists on the instance (prototype)
-          if (typeof (target as any)[accessor] === 'function') {
+          const accessor = modelCtor.getAccessorName(prop)
+          if (accessor) {
             const raw = model._attributes[prop]
-            // Bind to receiver (the proxy) to allow access to other attributes
             return (target as any)[accessor].call(receiver, raw)
           }
         }
@@ -257,47 +395,9 @@ export abstract class Model {
           return model._attributes[prop]
         }
 
-        const relations = getRelationships(modelCtor)
+        const relations = modelCtor.getRelationMetadata()
         if (typeof prop === 'string' && relations.has(prop)) {
-          const builderFn = (..._args: any[]) => {
-            const meta = relations.get(prop)!
-            const type = meta.type
-
-            if (type === 'morphTo') {
-              return (receiver as any).morphTo(
-                meta.morphName,
-                meta.morphTypeField,
-                meta.morphIdField
-              )
-            }
-
-            if (type === 'morphOne' || type === 'morphMany') {
-              const Related = meta.related?.()
-              return (receiver as any)[type](
-                Related,
-                meta.morphName,
-                meta.foreignKey,
-                meta.localKey
-              )
-            }
-
-            const Related = meta.related?.()
-            // Call hasOne, hasMany, belongsTo, or belongsToMany
-            return (receiver as any)[type](Related, meta.foreignKey, meta.localKey)
-          }
-
-          // Make it thenable for property-style lazy loading: await user.posts
-          // biome-ignore lint/suspicious/noThenProperty: Intentional thenable for property-style lazy loading
-          ;(builderFn as any).then = async (resolve: any, reject: any) => {
-            try {
-              await (receiver as any).load(prop)
-              resolve((receiver as any)._attributes[prop])
-            } catch (err) {
-              reject(err)
-            }
-          }
-
-          return builderFn
+          return model._getRelationValue(prop, relations.get(prop)!)
         }
 
         // 6. Return instance values
@@ -329,9 +429,8 @@ export abstract class Model {
 
         // 2. Check for Mutators (set[Name]Attribute)
         if (typeof prop === 'string') {
-          const studly = prop.replace(/(?:^|_|(?=[A-Z]))(.)/g, (_, c) => c.toUpperCase())
-          const mutator = `set${studly}Attribute`
-          if (typeof (target as any)[mutator] === 'function') {
+          const mutator = modelCtor.getMutatorName(prop)
+          if (mutator) {
             ;(target as any)[mutator].call(receiver, value)
             return true
           }
@@ -459,6 +558,72 @@ export abstract class Model {
   }
 
   /**
+   * Get compiled caster function for a type
+   */
+  private static getCaster(type: string): (value: any) => any {
+    if (this.castCache.has(type)) {
+      return this.castCache.get(type)!
+    }
+
+    let caster: (value: any) => any
+
+    switch (type) {
+      case 'int':
+      case 'integer':
+      case 'number':
+        caster = (v) => (typeof v === 'string' ? parseFloat(v) : Number(v))
+        break
+      case 'real':
+      case 'float':
+      case 'double':
+        caster = (v) => parseFloat(v)
+        break
+      case 'string':
+        caster = (v) => String(v)
+        break
+      case 'bool':
+      case 'boolean':
+        caster = (v) => [true, 1, '1', 'true', 'on', 'yes'].includes(v)
+        break
+      case 'object':
+        caster = (v) => {
+          if (typeof v === 'object') return v
+          try {
+            return JSON.parse(v)
+          } catch {
+            return v
+          }
+        }
+        break
+      case 'json':
+        caster = (v) => {
+          if (typeof v === 'object') return v
+          try {
+            return JSON.parse(v)
+          } catch {
+            return v
+          }
+        }
+        break
+      case 'date':
+      case 'datetime':
+        caster = (v) => (v instanceof Date ? v : new Date(v))
+        break
+      case 'timestamp':
+        caster = (v) => (v instanceof Date ? v.getTime() : new Date(v).getTime())
+        break
+      case 'collection':
+        caster = (v) => (Array.isArray(v) ? v : [v])
+        break
+      default:
+        caster = (v) => v
+    }
+
+    this.castCache.set(type, caster)
+    return caster
+  }
+
+  /**
    * Cast attribute value to its type
    */
   private _castAttribute(_key: string, value: any, type: string): any {
@@ -466,51 +631,8 @@ export abstract class Model {
       return value
     }
 
-    switch (type) {
-      case 'int':
-      case 'integer':
-      case 'number':
-        return typeof value === 'string' ? parseFloat(value) : Number(value)
-
-      case 'real':
-      case 'float':
-      case 'double':
-        return parseFloat(value)
-
-      case 'string':
-        return String(value)
-
-      case 'bool':
-      case 'boolean':
-        return [true, 1, '1', 'true', 'on', 'yes'].includes(value)
-
-      case 'object':
-      case 'json':
-        if (typeof value === 'object') {
-          return value
-        }
-        try {
-          return JSON.parse(value)
-        } catch (_e) {
-          return value
-        }
-
-      case 'collection':
-        // Placeholder for Collection support
-        return Array.isArray(value) ? value : [value]
-
-      case 'date':
-      case 'datetime':
-        if (value instanceof Date) {
-          return value
-        }
-        return new Date(value)
-
-      case 'timestamp':
-        return value instanceof Date ? value.getTime() : new Date(value).getTime()
-    }
-
-    return value
+    const caster = (this.constructor as typeof Model).getCaster(type)
+    return caster(value)
   }
 
   /**
@@ -584,7 +706,7 @@ export abstract class Model {
         }
       }
 
-      this._schema = await SchemaRegistry.getInstance().get(table)
+      this._schema = await SchemaRegistry.getInstance().get(table, modelCtor.connection)
     }
     return this._schema
   }
@@ -1352,7 +1474,8 @@ export abstract class Model {
         return rows as unknown as T[]
       }
 
-      const models = rows.map((row) => this.hydrate<T>(row)) as unknown as T[]
+      // Use optimized batch hydration
+      const models = this.hydrateMany<T>(rows) as unknown as T[]
 
       // Handle eager loading
       const eagerLoads = (builder as any).getEagerLoads?.()

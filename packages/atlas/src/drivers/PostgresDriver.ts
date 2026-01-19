@@ -28,6 +28,8 @@ export class PostgresDriver implements DriverContract {
   private connected = false
   private transactionActive = false
   private transactionClient: PgClient | null = null
+  private preparedStatements = new Map<string, string>()
+  private statementCounter = 0
 
   constructor(private readonly config: PostgresConfig) {}
 
@@ -92,6 +94,7 @@ export class PostgresDriver implements DriverContract {
 
     this.connected = false
     this.transactionActive = false
+    this.preparedStatements.clear()
   }
 
   /**
@@ -162,6 +165,86 @@ export class PostgresDriver implements DriverContract {
       }
     } catch (error) {
       throw this.normalizeError(error, sql, bindings)
+    } finally {
+      if (!this.transactionActive && client !== this.transactionClient) {
+        ;(client as PgPoolClient).release?.()
+      }
+    }
+  }
+
+  /**
+   * Prepare a statement for repeated execution
+   */
+  async prepare(sql: string): Promise<string> {
+    // Check if already prepared
+    if (this.preparedStatements.has(sql)) {
+      return this.preparedStatements.get(sql)!
+    }
+
+    const name = `stmt_${++this.statementCounter}`
+    const client = await this.getClient()
+
+    try {
+      // Postgres PREPARE syntax: PREPARE name AS query
+      await client.query(`PREPARE ${name} AS ${sql}`)
+      this.preparedStatements.set(sql, name)
+      return name
+    } finally {
+      if (!this.transactionActive && client !== this.transactionClient) {
+        ;(client as PgPoolClient).release?.()
+      }
+    }
+  }
+
+  /**
+   * Execute a prepared statement
+   */
+  async executePrepared<T>(name: string, bindings: unknown[] = []): Promise<QueryResult<T>> {
+    const client = await this.getClient()
+    const params = bindings.map((b) => (b === undefined ? null : b))
+
+    try {
+      // EXECUTE name(params)
+      const placeholders = params.map((_, i) => `$${i + 1}`).join(', ')
+      const executeSql = `EXECUTE ${name}${placeholders ? `(${placeholders})` : ''}`
+
+      const result = await client.query(executeSql, params)
+
+      const fields = result.fields?.map((f: PgFieldInfo) => ({
+        name: f.name,
+        dataType: f.dataTypeID?.toString(),
+        tableId: f.tableID,
+      }))
+
+      return {
+        rows: result.rows as T[],
+        rowCount: result.rowCount ?? 0,
+        ...(fields ? { fields } : {}),
+      }
+    } catch (error) {
+      throw this.normalizeError(error, `EXECUTE ${name}`, bindings)
+    } finally {
+      if (!this.transactionActive && client !== this.transactionClient) {
+        ;(client as PgPoolClient).release?.()
+      }
+    }
+  }
+
+  /**
+   * Clear all prepared statements
+   */
+  async clearPreparedStatements(): Promise<void> {
+    const client = await this.getClient()
+
+    try {
+      for (const name of this.preparedStatements.values()) {
+        try {
+          await client.query(`DEALLOCATE ${name}`)
+        } catch {
+          // Ignore error if already deallocated
+        }
+      }
+      this.preparedStatements.clear()
     } finally {
       if (!this.transactionActive && client !== this.transactionClient) {
         ;(client as PgPoolClient).release?.()

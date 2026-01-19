@@ -4,6 +4,7 @@
  */
 
 import { ConnectionManager } from './connection/ConnectionManager'
+import { Grammar } from './grammar/Grammar'
 import type {
   CacheInterface,
   ConnectionConfig,
@@ -188,6 +189,13 @@ export class DB {
   // ============================================================================
 
   /**
+   * Get cache statistics
+   */
+  static getCacheStats(): { size: number; maxSize: number; hitRate: number } {
+    return Grammar.getCacheStats()
+  }
+
+  /**
    * Configure the database with connections
    */
   static configure(config: {
@@ -277,7 +285,8 @@ export class DB {
    * ```
    */
   static table<T = Record<string, unknown>>(tableName: string): QueryBuilderContract<T> {
-    return DB.connection().table<T>(tableName)
+    DB.ensureConfigured()
+    return DB.manager.connection().table<T>(tableName)
   }
 
   /**
@@ -352,7 +361,14 @@ export class DB {
    */
   static async beginTransaction(connectionName?: string): Promise<ConnectionContract> {
     const connection = DB.connection(connectionName)
-    await connection.getDriver().beginTransaction()
+    const driver = connection.getDriver()
+
+    if ('beginTransaction' in driver && typeof driver.beginTransaction === 'function') {
+      await driver.beginTransaction()
+    } else {
+      throw new Error(`Driver '${driver.getDriverName()}' does not support transactions`)
+    }
+
     return connection
   }
 

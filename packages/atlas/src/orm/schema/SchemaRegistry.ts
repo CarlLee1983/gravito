@@ -115,9 +115,11 @@ export class SchemaRegistry {
   /**
    * Get schema for a table
    */
-  async get(table: string): Promise<TableSchema> {
+  async get(table: string, connection?: string): Promise<TableSchema> {
+    const cacheKey = connection ? `${connection}:${table}` : table
+
     // Check cache first
-    const cached = this.cache.get(table)
+    const cached = this.cache.get(cacheKey)
     if (cached) {
       // Check TTL in JIT mode
       if (this.mode === 'aot' || Date.now() - cached.capturedAt < this.cacheTtl) {
@@ -127,8 +129,9 @@ export class SchemaRegistry {
 
     // JIT Mode: Sniff from database
     if (this.mode === 'jit') {
-      const schema = await this.sniffer.sniff(table)
-      this.cache.set(table, schema)
+      const sniffer = connection ? new SchemaSniffer(connection) : this.sniffer
+      const schema = await sniffer.sniff(table)
+      this.cache.set(cacheKey, schema)
       return schema
     }
 

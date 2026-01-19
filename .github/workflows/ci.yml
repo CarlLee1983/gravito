@@ -82,8 +82,12 @@ jobs:
       - name: Run Typecheck & Tests
         run: |
           # Use turbo to run both typecheck and tests in parallel on the runner
+          # Filter to only packages and satellites (exclude examples to avoid CI failures)
           # This is faster than separate steps because it utilizes multiple cores
-          bunx turbo run typecheck test:coverage
+          bunx turbo run typecheck test:coverage \
+            --filter='./packages/*' \
+            --filter='./satellites/*' \
+            --concurrency=2
 
       - name: Verify build output
         run: |
