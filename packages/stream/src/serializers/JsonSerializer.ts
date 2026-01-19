@@ -22,7 +22,7 @@ export class JsonSerializer implements JobSerializer {
    * Serialize a job.
    */
   serialize(job: Job): SerializedJob {
-    const id = job.id || `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
+    const id = job.id || `${Date.now()}-${crypto.randomUUID()}`
 
     // Extract properties (exclude methods)
     const properties: Record<string, unknown> = {}

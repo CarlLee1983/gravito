@@ -149,7 +149,7 @@ export interface ConsumerOptions {
 export class Consumer extends EventEmitter {
   private running = false
   private stopRequested = false
-  private workerId = `worker-${Math.random().toString(36).substring(2, 8)}`
+  private workerId = `worker-${crypto.randomUUID()}`
   private heartbeatTimer: ReturnType<typeof setTimeout> | null = null
   private groupLimiters = new Map<string, ReturnType<typeof pLimit>>()
   private stats = {

@@ -15,7 +15,7 @@ export class ShellGitAdapter implements IGitAdapter {
   private baseDir = '/tmp/gravito-launchpad-git'
 
   async clone(repoUrl: string, branch: string): Promise<string> {
-    const dirName = `${Date.now()}-${Math.random().toString(36).slice(2)}`
+    const dirName = `${Date.now()}-${crypto.randomUUID()}`
     const targetDir = `${this.baseDir}/${dirName}`
 
     await mkdir(this.baseDir, { recursive: true })
