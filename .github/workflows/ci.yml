@@ -88,6 +88,11 @@ jobs:
             --filter='./packages/*' \
             --filter='./satellites/*' \
             --concurrency=2
+      
+      # Check for unused imports and cross-package type issues
+      - name: Check Unused Imports
+        run: bun run scripts/check-unused-imports.ts --all
+        continue-on-error: false
 
       - name: Verify build output
         run: |
