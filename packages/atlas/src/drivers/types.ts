@@ -77,13 +77,16 @@ export interface SQLiteStatement {
  * Redis Client
  */
 export interface RedisClient {
+  connect(): Promise<void>
   get(key: string): Promise<string | null>
-  set(key: string, value: string, ttl?: number): Promise<void>
-  del(key: string): Promise<void>
+  set(key: string, value: string | number): Promise<'OK'>
+  setex(key: string, seconds: number, value: string | number): Promise<'OK'>
+  del(key: string): Promise<number>
   keys(pattern: string): Promise<string[]>
   exists(key: string): Promise<number>
   expire(key: string, seconds: number): Promise<number>
   quit(): Promise<void>
+  status?: string
 }
 
 /**
@@ -106,10 +109,13 @@ export interface MongoDatabase {
  * MongoDB Collection
  */
 export interface MongoCollection {
-  find(filter?: Record<string, unknown>): MongoCursor
+  find(filter?: Record<string, unknown>, options?: Record<string, unknown>): MongoCursor
   findOne(filter?: Record<string, unknown>): Promise<Record<string, unknown> | null>
   insertOne(doc: Record<string, unknown>): Promise<{ insertedId: unknown }>
-  insertMany(docs: Record<string, unknown>[]): Promise<{ insertedIds: unknown[] }>
+  insertMany(
+    docs: Record<string, unknown>[]
+  ): Promise<{ insertedIds: unknown[]; insertedCount: number }>
+  countDocuments(filter?: Record<string, unknown>): Promise<number>
   updateOne(
     filter: Record<string, unknown>,
     update: Record<string, unknown>

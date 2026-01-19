@@ -22,7 +22,7 @@ import type { RedisClient } from './types'
 export class RedisDriver implements DriverContract {
   private config: RedisConfig
   private client: RedisClient | null = null
-  private RedisCtor: new (
+  private RedisCtor?: new (
     config: Record<string, unknown>
   ) => RedisClient
 
@@ -57,7 +57,9 @@ export class RedisDriver implements DriverContract {
         db: this.config.db ?? 0,
         lazyConnect: true,
       })
-      await this.client.connect()
+      if (this.client) {
+        await this.client.connect()
+      }
     } catch (error) {
       throw new ConnectionError('Could not connect to Redis host', error)
     }

@@ -46,22 +46,22 @@ export function castAttribute(_key: string, value: unknown, type: string): unkno
     case 'real':
     case 'float':
     case 'double':
-      return parseFloat(value)
+      return parseFloat(String(value))
 
     case 'string':
       return String(value)
 
     case 'bool':
     case 'boolean':
-      return [true, 1, '1', 'true', 'on', 'yes'].includes(value)
+      return [true, 1, '1', 'true', 'on', 'yes'].includes(value as any)
 
     case 'object':
     case 'json':
-      if (typeof value === 'object') {
+      if (typeof value === 'object' && value !== null) {
         return value
       }
       try {
-        return JSON.parse(value)
+        return JSON.parse(String(value))
       } catch (_e) {
         return value
       }
@@ -74,10 +74,10 @@ export function castAttribute(_key: string, value: unknown, type: string): unkno
       if (value instanceof Date) {
         return value
       }
-      return new Date(value)
+      return new Date(String(value))
 
     case 'timestamp':
-      return value instanceof Date ? value.getTime() : new Date(value).getTime()
+      return value instanceof Date ? value.getTime() : new Date(String(value)).getTime()
   }
 
   return value

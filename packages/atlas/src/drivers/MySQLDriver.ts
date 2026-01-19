@@ -16,6 +16,7 @@ import type {
   DriverContract,
   DriverType,
   ExecuteResult,
+  MySQLConfig,
   QueryResult,
 } from '../types'
 
@@ -53,7 +54,7 @@ export class MySQLDriver implements DriverContract {
 
     try {
       this.mysql = await this.loadMySQLModule()
-      const myConfig = this.config as Record<string, unknown>
+      const myConfig = this.config as MySQLConfig
 
       const poolConfig: Record<string, unknown> = {
         host: myConfig.host ?? 'localhost',
@@ -73,15 +74,24 @@ export class MySQLDriver implements DriverContract {
         if (typeof myConfig.ssl === 'boolean') {
           poolConfig.ssl = myConfig.ssl ? {} : undefined
         } else {
+          const sslConfig = myConfig.ssl as {
+            rejectUnauthorized?: boolean
+            ca?: string
+            key?: string
+            cert?: string
+          }
           poolConfig.ssl = {
-            rejectUnauthorized: myConfig.ssl.rejectUnauthorized,
-            ca: myConfig.ssl.ca,
-            key: myConfig.ssl.key,
-            cert: myConfig.ssl.cert,
+            rejectUnauthorized: sslConfig.rejectUnauthorized,
+            ca: sslConfig.ca,
+            key: sslConfig.key,
+            cert: sslConfig.cert,
           }
         }
       }
 
+      if (!this.mysql) {
+        throw new Error('MySQL module not loaded')
+      }
       this.pool = this.mysql.createPool(poolConfig)
       this.connected = true
     } catch (error) {
@@ -92,10 +102,10 @@ export class MySQLDriver implements DriverContract {
   /**
    * Dynamically load mysql2 module
    */
-  private async loadMySQLModule(): Promise<MySQLModule> {
+  private async loadMySQLModule(): Promise<any> {
     try {
       const mysql2 = await import('mysql2/promise')
-      return mysql2
+      return mysql2 as any
     } catch (e) {
       throw new Error(
         `MySQL driver requires the "mysql2" package. Please install it: bun add mysql2. Original Error: ${e}`
@@ -228,6 +238,9 @@ export class MySQLDriver implements DriverContract {
     }
 
     this.transactionConnection = await this.getConnection()
+    if (!this.transactionConnection) {
+      throw new Error('Failed to get transaction connection')
+    }
     await this.transactionConnection.beginTransaction()
   }
 
