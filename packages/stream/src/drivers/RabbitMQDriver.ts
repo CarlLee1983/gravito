@@ -125,6 +125,31 @@ export class RabbitMQDriver implements QueueDriver {
   }
 
   /**
+   * Pop multiple jobs.
+   * Uses channel.get() in a loop (no native batch get in AMQP).
+   */
+  async popMany(queue: string, count: number): Promise<SerializedJob[]> {
+    const channel = await this.ensureChannel()
+    await channel.assertQueue(queue, { durable: true })
+
+    const results: SerializedJob[] = []
+
+    // Attempt to get 'count' messages
+    for (let i = 0; i < count; i++) {
+      const msg = await channel.get(queue, { noAck: false })
+      if (!msg) {
+        break // Queue empty
+      }
+
+      const job = JSON.parse(msg.content.toString()) as SerializedJob
+      ;(job as any)._raw = msg
+      results.push(job)
+    }
+
+    return results
+  }
+
+  /**
    * Acknowledge a message.
    */
   async acknowledge(messageId: string): Promise<void> {
@@ -161,10 +186,14 @@ export class RabbitMQDriver implements QueueDriver {
   async subscribe(
     queue: string,
     callback: (job: SerializedJob) => Promise<void>,
-    options: { autoAck?: boolean } = {}
+    options: { autoAck?: boolean; prefetch?: number } = {}
   ): Promise<void> {
     const channel = await this.ensureChannel()
     await channel.assertQueue(queue, { durable: true })
+
+    if (options.prefetch) {
+      await channel.prefetch(options.prefetch)
+    }
 
     if (this.exchange) {
       await channel.bindQueue(queue, this.exchange, '')
