@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, it, mock, spyOn } from 'bun:test'
 import { DB } from '../src/DB'
 import { Model } from '../src/orm/model/Model'
-import { SchemaRegistry } from '../src/orm/schema/SchemaRegistry'
 
 class Base extends Model {
   static connection = 'default'

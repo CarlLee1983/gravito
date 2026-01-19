@@ -42,6 +42,9 @@
  * ```
  */
 
+export type { AtlasConfig } from './config'
+// Configuration
+export { autoConfigure, defineConfig, fromEnv, loadConfig, loadConfigFile } from './config'
 // Connection
 export { Connection } from './connection/Connection'
 export { ConnectionManager } from './connection/ConnectionManager'
@@ -121,7 +124,6 @@ export {
 export type { FactoryDefinition, Seeder, SeederFile, SeederRunnerOptions } from './seed'
 // Seed
 export { Factory, factory, SeederRunner } from './seed'
-
 // Types
 export type {
   BooleanOperator,

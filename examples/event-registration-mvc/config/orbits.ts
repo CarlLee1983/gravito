@@ -1,4 +1,4 @@
-import { DB, OrbitAtlas } from '@gravito/atlas'
+import { OrbitAtlas } from '@gravito/atlas'
 import { OrbitCosmos } from '@gravito/cosmos'
 import { OrbitIon } from '@gravito/ion'
 import { OrbitMonolith } from '@gravito/monolith'

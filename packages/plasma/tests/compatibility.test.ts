@@ -47,7 +47,9 @@ describe('Compatibility Suite', () => {
       })
 
       it('should normalize exists return to number', async () => {
-        if (!client.isConnected()) return
+        if (!client.isConnected()) {
+          return
+        }
         await client.set('c:exists', '1')
         const exists = await client.exists('c:exists')
         expect(exists).toBe(1)
@@ -59,13 +61,17 @@ describe('Compatibility Suite', () => {
       })
 
       it('should return null for get on missing key', async () => {
-        if (!client.isConnected()) return
+        if (!client.isConnected()) {
+          return
+        }
         const val = await client.get('c:missing_get')
         expect(val).toBeNull()
       })
 
       it('should handle hgetall return types consistently', async () => {
-        if (!client.isConnected()) return
+        if (!client.isConnected()) {
+          return
+        }
         await client.hset('c:hash', { f1: 'v1' })
         const all = await client.hgetall('c:hash')
         expect(all).toEqual({ f1: 'v1' })
@@ -76,7 +82,9 @@ describe('Compatibility Suite', () => {
       })
 
       it('should handle zrange return types consistently', async () => {
-        if (!client.isConnected()) return
+        if (!client.isConnected()) {
+          return
+        }
         await client.zadd('c:zset', { score: 10, member: 'm1' })
 
         const res = await client.zrange('c:zset', 0, -1)
@@ -90,7 +98,9 @@ describe('Compatibility Suite', () => {
       })
 
       it('should format pipeline results consistently', async () => {
-        if (!client.isConnected()) return
+        if (!client.isConnected()) {
+          return
+        }
         const pipe = client.pipeline()
         pipe.set('c:p1', 'v1')
         pipe.get('c:p1')

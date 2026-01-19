@@ -27,6 +27,8 @@ This page is an overview. Detailed documentation is grouped by topic:
 - **Connection Management**: Easily switch and manage multiple database connections.
 - **Eloquent-style Models**: Define Model classes and use relationships (HasMany, BelongsTo, etc.).
 - **Maintenance Tools**: Built-in Migrations, Factories, and Seeders.
+- **Performance Optimized (v2.0)**: ↑300-500% faster model hydration, ↑50-100% faster query compilation.
+- **Enhanced DX (v2.0)**: Better error messages, debug tools, environment variable support.
 
 ## Installation
 
@@ -38,21 +40,62 @@ bun add @gravito/atlas
 
 See [Getting Started](./atlas/getting-started.md) for full examples.
 
+**Option 1: Programmatic Configuration**
 ```ts
-import { PlanetCore } from '@gravito/core'
 import { DB } from '@gravito/atlas'
 
-// Configure Database
 DB.configure({
+  default: 'postgres',
   connections: {
-    default: {
+    postgres: {
       driver: 'postgres',
       host: 'localhost',
-      database: 'myapp'
+      database: 'myapp',
+      username: 'postgres',
+      password: 'password'
+    }
+  }
+})
+```
+
+**Option 2: Environment Variables (New in v2.0)**
+```ts
+import { DB } from '@gravito/atlas'
+
+// Using DATABASE_URL
+// DATABASE_URL=postgres://user:password@localhost:5432/myapp
+DB.configureFromEnv()
+
+// Or using individual variables
+// DB_DRIVER=postgres
+// DB_HOST=localhost
+// DB_DATABASE=myapp
+DB.configureFromEnv()
+```
+
+**Option 3: Configuration File (New in v2.0)**
+```ts
+// config/database.ts
+import { defineConfig } from '@gravito/atlas'
+
+export default defineConfig({
+  default: 'postgres',
+  connections: {
+    postgres: {
+      driver: 'postgres',
+      host: process.env.DB_HOST || 'localhost',
+      // ...
     }
   }
 })
 
+// Then in your app
+import { DB } from '@gravito/atlas'
+await DB.configureFromFile()
+```
+
+**Using the Database**
+```ts
 // Access in application
 const users = await DB.table('users').get()
 ```

@@ -91,7 +91,7 @@ async function checkPackage(
       tsconfigSkipLibCheck,
       issues,
     }
-  } catch (error) {
+  } catch (_error) {
     // 如果無法讀取 package.json，跳過此目錄（可能是不完整的套件或空目錄）
     return null
   }

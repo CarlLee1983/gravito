@@ -7,6 +7,8 @@
  * - Eager loading
  */
 
+import type { QueryBuilderContract } from '../../../types'
+import type { Model, ModelConstructor } from '../Model'
 import { getRelationships } from '../relationships'
 
 export class HasRelationships {
@@ -18,14 +20,24 @@ export class HasRelationships {
    * @param localKey - Local key on this model
    * @returns Query builder for relationship
    */
-  hasMany(related: any, foreignKey?: string, localKey?: string): any {
+  hasMany<T extends Model>(
+    related: ModelConstructor<T>,
+    foreignKey?: string,
+    localKey?: string
+  ): QueryBuilderContract<T> {
     const relatedModel = new related()
-    const relatedCtor = relatedModel.constructor as any
+    const relatedCtor = relatedModel.constructor as ModelConstructor<T> &
+      typeof import('../Model').Model
 
     const foreign = foreignKey ?? `${this.constructor.name.toLowerCase()}_id`
-    const local = localKey ?? (this.constructor as any).primaryKey
+    const local = localKey ?? (this.constructor as typeof import('../Model').Model).primaryKey
 
-    return relatedCtor.query().where(foreign, (this as any)[local])
+    return relatedCtor
+      .query()
+      .where(
+        foreign,
+        (this as Model & Record<string, unknown>)[local] as unknown
+      ) as QueryBuilderContract<T>
   }
 
   /**
@@ -36,14 +48,22 @@ export class HasRelationships {
    * @param ownerKey - Owner key on related model
    * @returns Query builder for relationship
    */
-  belongsTo(related: any, foreignKey?: string, ownerKey?: string): any {
+  belongsTo<T extends Model>(
+    related: ModelConstructor<T>,
+    foreignKey?: string,
+    ownerKey?: string
+  ): QueryBuilderContract<T> {
     const relatedModel = new related()
-    const relatedCtor = relatedModel.constructor as any
+    const relatedCtor = relatedModel.constructor as ModelConstructor<T> &
+      typeof import('../Model').Model
 
     const foreign = foreignKey ?? `${relatedModel.constructor.name.toLowerCase()}_id`
     const owner = ownerKey ?? relatedCtor.primaryKey
 
-    return relatedCtor.where(owner, (this as any)[foreign])
+    return relatedCtor.where(
+      owner,
+      (this as Model & Record<string, unknown>)[foreign] as unknown
+    ) as QueryBuilderContract<T>
   }
 
   /**
@@ -55,16 +75,17 @@ export class HasRelationships {
    * @param table - Pivot table name
    * @returns Query builder for relationship
    */
-  belongsToMany(
-    related: any,
+  belongsToMany<T extends Model>(
+    related: ModelConstructor<T>,
     foreignPivotKey?: string,
     relatedPivotKey?: string,
     table?: string
-  ): any {
+  ): QueryBuilderContract<T> {
     const relatedModel = new related()
-    const relatedCtor = relatedModel.constructor as any
+    const relatedCtor = relatedModel.constructor as ModelConstructor<T> &
+      typeof import('../Model').Model
 
-    const thisCtor = this.constructor as any
+    const thisCtor = this.constructor as typeof import('../Model').Model
     const thisPivotKey = relatedPivotKey ?? `${thisCtor.name.toLowerCase()}_id`
     const relatedPivot = foreignPivotKey ?? `${relatedModel.constructor.name.toLowerCase()}_id`
     const pivotTable = table ?? `${thisCtor.table}_${relatedCtor.table}`
@@ -74,9 +95,13 @@ export class HasRelationships {
       .join(
         pivotTable,
         `${pivotTable}.${relatedPivot}`,
+        '=',
         `${relatedCtor.table}.${relatedCtor.primaryKey}`
       )
-      .where(`${pivotTable}.${thisPivotKey}`, (this as any)[thisCtor.primaryKey])
+      .where(
+        `${pivotTable}.${thisPivotKey}`,
+        (this as Model & Record<string, unknown>)[thisCtor.primaryKey] as unknown
+      ) as QueryBuilderContract<T>
   }
 
   /**
@@ -88,14 +113,24 @@ export class HasRelationships {
    * @param id - ID field name
    * @returns Query builder for relationship
    */
-  morphOne(related: any, _name: string, type: string, id: string): any {
+  morphOne<T extends Model>(
+    related: ModelConstructor<T>,
+    _name: string,
+    type: string,
+    id: string
+  ): QueryBuilderContract<T> {
     const relatedModel = new related()
-    const relatedCtor = relatedModel.constructor as any
+    const relatedCtor = relatedModel.constructor as ModelConstructor<T> &
+      typeof import('../Model').Model
 
+    const thisCtor = this.constructor as typeof import('../Model').Model
     return relatedCtor
       .query()
-      .where(type, this.constructor.name)
-      .where(id, (this as any)[(this.constructor as any).primaryKey])
+      .where(type, thisCtor.name)
+      .where(
+        id,
+        (this as Model & Record<string, unknown>)[thisCtor.primaryKey] as unknown
+      ) as QueryBuilderContract<T>
   }
 
   /**
@@ -107,14 +142,24 @@ export class HasRelationships {
    * @param id - ID field name
    * @returns Query builder for relationship
    */
-  morphMany(related: any, _name: string, type: string, id: string): any {
+  morphMany<T extends Model>(
+    related: ModelConstructor<T>,
+    _name: string,
+    type: string,
+    id: string
+  ): QueryBuilderContract<T> {
     const relatedModel = new related()
-    const relatedCtor = relatedModel.constructor as any
+    const relatedCtor = relatedModel.constructor as ModelConstructor<T> &
+      typeof import('../Model').Model
 
+    const thisCtor = this.constructor as typeof import('../Model').Model
     return relatedCtor
       .query()
-      .where(type, this.constructor.name)
-      .where(id, (this as any)[(this.constructor as any).primaryKey])
+      .where(type, thisCtor.name)
+      .where(
+        id,
+        (this as Model & Record<string, unknown>)[thisCtor.primaryKey] as unknown
+      ) as QueryBuilderContract<T>
   }
 
   /**
@@ -125,9 +170,9 @@ export class HasRelationships {
    * @param id - ID field name
    * @returns Query builder for the relationship
    */
-  morphTo(_name: string, type: string, id: string): any {
-    const typeName = (this as any)[type]
-    const idValue = (this as any)[id]
+  morphTo(_name: string, type: string, id: string): QueryBuilderContract<Model> | null {
+    const typeName = (this as Model & Record<string, unknown>)[type] as string | undefined
+    const idValue = (this as Model & Record<string, unknown>)[id] as unknown
 
     if (!typeName || !idValue) {
       return null

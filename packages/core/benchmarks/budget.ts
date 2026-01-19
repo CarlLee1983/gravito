@@ -1,4 +1,3 @@
-import { bench, run } from 'mitata'
 import { FastContext } from '../src/engine/FastContext'
 import { Gravito } from '../src/engine/Gravito'
 

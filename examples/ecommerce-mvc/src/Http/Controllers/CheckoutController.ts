@@ -18,7 +18,7 @@ export class CheckoutController {
    */
   static async show(ctx: GravitoContext) {
     const inertia = ctx.get('inertia') as unknown as InertiaHelper
-    const atlas = ctx.get('atlas') as OrbitAtlas
+    const _atlas = ctx.get('atlas') as OrbitAtlas
     const auth = ctx.get('auth') as AuthManager
 
     const user = await auth.user()
@@ -55,7 +55,7 @@ export class CheckoutController {
    * Process checkout - Create order and Stripe session
    */
   static async process(ctx: GravitoContext) {
-    const atlas = ctx.get('atlas') as OrbitAtlas
+    const _atlas = ctx.get('atlas') as OrbitAtlas
     const auth = ctx.get('auth') as AuthManager
 
     const user = await auth.user()
@@ -109,7 +109,7 @@ export class CheckoutController {
    */
   static async success(ctx: GravitoContext) {
     const inertia = ctx.get('inertia') as unknown as InertiaHelper
-    const atlas = ctx.get('atlas') as OrbitAtlas
+    const _atlas = ctx.get('atlas') as OrbitAtlas
 
     const sessionId = ctx.req.query('session_id')
     if (!sessionId) {
@@ -165,7 +165,7 @@ export class CheckoutController {
    * Stripe webhook handler
    */
   static async handleWebhook(ctx: GravitoContext) {
-    const atlas = ctx.get('atlas') as OrbitAtlas
+    const _atlas = ctx.get('atlas') as OrbitAtlas
     const stripeService = new StripeService()
     const orderService = new OrderService()
 

@@ -7,10 +7,15 @@
  * @public
  * @since 3.0.0
  */
-export function applyMixins(derivedCtor: any, constructors: any[]) {
+export function applyMixins(
+  derivedCtor: new (...args: unknown[]) => unknown,
+  constructors: (new (...args: unknown[]) => unknown)[]
+) {
   constructors.forEach((baseCtor) => {
     Object.getOwnPropertyNames(baseCtor.prototype).forEach((name) => {
-      if (name === 'constructor') return
+      if (name === 'constructor') {
+        return
+      }
       Object.defineProperty(
         derivedCtor.prototype,
         name,
@@ -19,7 +24,9 @@ export function applyMixins(derivedCtor: any, constructors: any[]) {
     })
 
     Object.getOwnPropertyNames(baseCtor).forEach((name) => {
-      if (['length', 'prototype', 'name', 'constructor'].includes(name)) return
+      if (['length', 'prototype', 'name', 'constructor'].includes(name)) {
+        return
+      }
       Object.defineProperty(
         derivedCtor,
         name,

@@ -145,30 +145,42 @@ export class Connection implements ConnectionContract {
 
     try {
       if (depth === 1) {
-        if (DB.isDebug()) console.log(`[Transaction] BEGIN on ${this.name}`)
+        if (DB.isDebug()) {
+          console.log(`[Transaction] BEGIN on ${this.name}`)
+        }
         await this.driver.beginTransaction()
       } else {
-        if (DB.isDebug()) console.log(`[Transaction] SAVEPOINT sp_${depth} on ${this.name}`)
+        if (DB.isDebug()) {
+          console.log(`[Transaction] SAVEPOINT sp_${depth} on ${this.name}`)
+        }
         await this.execute(`SAVEPOINT sp_${depth}`, [])
       }
 
       const result = await callback(this.proxyHandle || (this as unknown as ConnectionContract))
 
       if (depth === 1) {
-        if (DB.isDebug()) console.log(`[Transaction] COMMIT on ${this.name}`)
+        if (DB.isDebug()) {
+          console.log(`[Transaction] COMMIT on ${this.name}`)
+        }
         await this.driver.commit()
       } else {
-        if (DB.isDebug()) console.log(`[Transaction] RELEASE sp_${depth} on ${this.name}`)
+        if (DB.isDebug()) {
+          console.log(`[Transaction] RELEASE sp_${depth} on ${this.name}`)
+        }
         await this.execute(`RELEASE SAVEPOINT sp_${depth}`, [])
       }
 
       return result
     } catch (error) {
       if (depth === 1) {
-        if (DB.isDebug()) console.log(`[Transaction] ROLLBACK on ${this.name}`)
+        if (DB.isDebug()) {
+          console.log(`[Transaction] ROLLBACK on ${this.name}`)
+        }
         await this.driver.rollback()
       } else {
-        if (DB.isDebug()) console.log(`[Transaction] ROLLBACK TO sp_${depth} on ${this.name}`)
+        if (DB.isDebug()) {
+          console.log(`[Transaction] ROLLBACK TO sp_${depth} on ${this.name}`)
+        }
         await this.execute(`ROLLBACK TO SAVEPOINT sp_${depth}`, [])
       }
       throw error
@@ -179,8 +191,32 @@ export class Connection implements ConnectionContract {
 
   async disconnect(): Promise<void> {
     if (this.connected) {
-      await this.driver.disconnect()
-      this.connected = false
+      try {
+        // Ensure any pending transactions are rolled back
+        if (this.transactionDepth > 0) {
+          if (DB.isDebug()) {
+            console.warn(
+              `[Connection] Disconnecting with active transaction (depth: ${this.transactionDepth})`
+            )
+          }
+          // Reset transaction depth to prevent issues
+          this.transactionDepth = 0
+        }
+
+        // Disconnect the driver
+        await this.driver.disconnect()
+
+        // Clear proxy handle
+        this.proxyHandle = null
+
+        // Mark as disconnected
+        this.connected = false
+      } catch (error) {
+        // Even if disconnect fails, mark as disconnected to prevent hanging
+        this.connected = false
+        this.proxyHandle = null
+        throw error
+      }
     }
   }
 

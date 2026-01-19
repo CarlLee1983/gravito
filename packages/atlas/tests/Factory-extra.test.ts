@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, mock, spyOn } from 'bun:test'
 import { DB } from '../src/DB'
 import { Model } from '../src/orm/model/Model'
-import { Factory, factory } from '../src/seed/Factory'
+import { Factory } from '../src/seed/Factory'
 
 class User extends Model {
   static table = 'users'

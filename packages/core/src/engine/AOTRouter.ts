@@ -103,7 +103,9 @@ export class AOTRouter {
     // 2. Transfer pattern-based middleware
     for (const [pattern, mws] of other.pathMiddleware) {
       // Skip internal dynamic route entries (contain ':')
-      if (pattern.includes(':')) continue
+      if (pattern.includes(':')) {
+        continue
+      }
 
       // Normalize pattern
       let newPattern: string

@@ -113,7 +113,9 @@ export class DB {
    * Log a query (internal use)
    */
   static logQuery(sql: string, bindings: unknown[], duration: number): void {
-    if (!this._debug) return
+    if (!this._debug) {
+      return
+    }
 
     this._queryLog.push({
       sql,
@@ -134,7 +136,9 @@ export class DB {
   private static interpolateBindings(sql: string, bindings: unknown[]): string {
     let index = 0
     return sql.replace(/\?/g, () => {
-      if (index >= bindings.length) return '?'
+      if (index >= bindings.length) {
+        return '?'
+      }
       const binding = bindings[index++]
 
       if (binding === null || binding === undefined) {
@@ -210,11 +214,99 @@ export class DB {
   }
 
   /**
+   * Configure database from environment variables
+   * Supports DATABASE_URL or individual DB_* variables
+   *
+   * @example
+   * ```typescript
+   * // Using DATABASE_URL
+   * DB.configureFromEnv()
+   *
+   * // Using individual variables
+   * // DB_DRIVER=postgres
+   * // DB_HOST=localhost
+   * // DB_DATABASE=myapp
+   * DB.configureFromEnv()
+   * ```
+   */
+  static configureFromEnv(connectionName = 'default'): void {
+    const { fromEnv } = require('./config/defineConfig')
+    const config = fromEnv(connectionName)
+    DB.configure(config)
+  }
+
+  /**
+   * Configure database from config file
+   * Tries to load from config/database.ts, config/database.js, etc.
+   *
+   * @example
+   * ```typescript
+   * // config/database.ts
+   * import { defineConfig } from '@gravito/atlas'
+   *
+   * export default defineConfig({
+   *   default: 'default',
+   *   connections: {
+   *     default: {
+   *       driver: 'postgres',
+   *       host: 'localhost',
+   *       database: 'myapp'
+   *     }
+   *   }
+   * })
+   *
+   * // Then in your app
+   * await DB.configureFromFile()
+   * ```
+   */
+  static async configureFromFile(configPath?: string): Promise<void> {
+    const { loadConfigFile } = await import('./config/loadConfig')
+    const config = await loadConfigFile(configPath)
+    DB.configure(config)
+  }
+
+  /**
+   * Auto-configure database from config file or environment
+   * Tries config file first, then falls back to environment variables
+   *
+   * @example
+   * ```typescript
+   * // Will try config/database.ts first, then environment variables
+   * await DB.autoConfigure()
+   * ```
+   */
+  static async autoConfigure(configPath?: string): Promise<void> {
+    const { autoConfigure: autoConfigureImpl } = await import('./config/loadConfig')
+    await autoConfigureImpl(configPath)
+  }
+
+  /**
    * Add a single connection
    */
   static addConnection(name: string, config: ConnectionConfig): void {
     DB.manager.addConnection(name, config)
     DB.initialized = true
+  }
+
+  /**
+   * Add connection from environment variables with prefix
+   * Useful for multiple connections from different env vars
+   *
+   * @example
+   * ```typescript
+   * // READ_DB_DRIVER=postgres
+   * // READ_DB_HOST=read-replica.example.com
+   * // READ_DB_DATABASE=myapp
+   * DB.addConnectionFromEnv('read', 'READ')
+   * ```
+   */
+  static addConnectionFromEnv(name: string, prefix = ''): void {
+    const { fromEnv } = require('./config/defineConfig')
+    const config = fromEnv(name, prefix)
+    DB.manager.addConnection(name, config.connections[name])
+    if (!DB.initialized) {
+      DB.initialized = true
+    }
   }
 
   /**
@@ -386,8 +478,19 @@ export class DB {
   /**
    * Disconnect from all connections
    */
+  /**
+   * Disconnect all connections
+   */
   static async disconnectAll(): Promise<void> {
     await DB.manager.disconnectAll()
+  }
+
+  /**
+   * Shutdown the database manager (disconnect all and stop cleanup)
+   * Use this when shutting down the application
+   */
+  static async shutdown(): Promise<void> {
+    await DB.manager.shutdown()
   }
 
   /**

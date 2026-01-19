@@ -1,5 +1,4 @@
 import { Activity, ExternalLink, Github, MessageSquare, Zap } from 'lucide-react'
-import React from 'react'
 
 const getFooterLinks = (
   t: any,

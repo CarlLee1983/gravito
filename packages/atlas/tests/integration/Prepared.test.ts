@@ -1,6 +1,7 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'bun:test'
-import { column, DB, Model, Schema } from '../../src/index'
+import { describe, expect, test } from 'bun:test'
+import { column, DB, Model } from '../../src/index'
 
+// biome-ignore lint/correctness/noUnusedVariables: Used in tests via Model.query()
 class User extends Model {
   static table = 'users'
   @column({ isPrimary: true }) declare id: number
@@ -9,7 +10,7 @@ class User extends Model {
 }
 
 describe('Prepared Statements Test', () => {
-  const ensurePostgres = () => {
+  const _ensurePostgres = () => {
     // Only run if POSTGRES_URL is set or if we want to mock it.
     // For local tests without PG, this might fail or skip.
     // We'll mock the driver behavior if needed or skip if no env.
@@ -44,7 +45,7 @@ describe('Prepared Statements Test', () => {
         expect(sql).toContain('SELECT * FROM "users"')
         return 'stmt_1'
       },
-      executePrepared: async (name: string, bindings: any[]) => {
+      executePrepared: async (name: string, _bindings: any[]) => {
         executeCalled = true
         expect(name).toBe('stmt_1')
         return { rows: [{ id: 1, name: 'Prepared User' }], rowCount: 1 }

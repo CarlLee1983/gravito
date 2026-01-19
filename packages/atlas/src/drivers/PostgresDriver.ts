@@ -327,24 +327,26 @@ export class PostgresDriver implements DriverContract {
   /**
    * Normalize PostgreSQL errors
    */
-  private normalizeError(error: any, sql: string, bindings: unknown[]): DatabaseError {
+  private normalizeError(error: unknown, sql: string, bindings: unknown[]): DatabaseError {
     // Postgres error codes: https://www.postgresql.org/docs/current/errcodes-appendix.html
-    const code = error.code
+    const err = error as { code?: string; message?: string }
+    const code = err.code
+    const message = err.message || String(error)
 
     if (code === '23505') {
-      return new UniqueConstraintError(error.message, error, sql, bindings)
+      return new UniqueConstraintError(message, error, sql, bindings)
     }
     if (code === '23503') {
-      return new ForeignKeyConstraintError(error.message, error, sql, bindings)
+      return new ForeignKeyConstraintError(message, error, sql, bindings)
     }
     if (code === '23502') {
-      return new NotNullConstraintError(error.message, error, sql, bindings)
+      return new NotNullConstraintError(message, error, sql, bindings)
     }
     if (code === '42P01') {
-      return new TableNotFoundError(error.message, error, sql, bindings)
+      return new TableNotFoundError(message, error, sql, bindings)
     }
 
-    return new DatabaseError(error.message, error, sql, bindings)
+    return new DatabaseError(message, error, sql, bindings)
   }
 
   /**

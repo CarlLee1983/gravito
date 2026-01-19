@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
-import { Activity, BarChart3, RotateCcw, Zap } from 'lucide-react'
-import React, { useEffect, useState } from 'react'
+import { Activity, BarChart3, RotateCcw } from 'lucide-react'
+import { useState } from 'react'
 
 export const BenchmarkLab = ({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) => {
   const [routes, setRoutes] = useState(100)
@@ -82,7 +82,7 @@ export const BenchmarkLab = ({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) => {
               min="1"
               max="2000"
               value={routes}
-              onChange={(e) => setRoutes(parseInt(e.target.value))}
+              onChange={(e) => setRoutes(parseInt(e.target.value, 10))}
               className="w-full h-1 bg-white/5 appearance-none cursor-pointer accent-photon-gold"
             />
           </div>
@@ -96,7 +96,7 @@ export const BenchmarkLab = ({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) => {
               min="0"
               max="50"
               value={middleware}
-              onChange={(e) => setMiddleware(parseInt(e.target.value))}
+              onChange={(e) => setMiddleware(parseInt(e.target.value, 10))}
               className="w-full h-1 bg-white/5 appearance-none cursor-pointer accent-photon-gold"
             />
           </div>

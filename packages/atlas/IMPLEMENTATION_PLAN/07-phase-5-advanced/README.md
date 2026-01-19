@@ -5,11 +5,13 @@
 
 ## 任務清單
 
-- [ ] [5.1 Prepared Statement 支援](./5.1-prepared-statements.md) - 4-5 小時
-- [ ] [5.2 Attribute Casting 預編譯](./5.2-attribute-casting.md) - 2-3 小時
-- [ ] [5.3 批次 Hydration 優化](./5.3-batch-hydration.md) - 4-5 小時
-- [ ] [5.4 DB Facade 優化](./5.4-db-facade.md) - 1 小時
-- [ ] [5.5 Relationships 重構](./5.5-relationships-refactor.md) - 2-3 小時
+- [x] [5.1 Prepared Statement 支援](./5.1-prepared-statements.md) - 4-5 小時 ✅ **已完成**
+- [x] [5.2 Attribute Casting 預編譯](./5.2-attribute-casting.md) - 2-3 小時 ✅ **已完成**
+- [x] [5.3 批次 Hydration 優化](./5.3-batch-hydration.md) - 4-5 小時 ✅ **已完成**
+- [x] [5.4 DB Facade 優化](./5.4-db-facade.md) - 1 小時 ⚠️ **部分完成**（功能完整，可選優化）
+- [x] [5.5 Relationships 重構](./5.5-relationships-refactor.md) - 2-3 小時 ✅ **已完成**
+
+**驗證狀態：** 詳見 [VERIFICATION.md](./VERIFICATION.md)
 
 **總計：** 13-17 小時（約 2 個工作天）
 

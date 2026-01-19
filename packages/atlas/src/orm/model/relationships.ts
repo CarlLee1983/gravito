@@ -291,20 +291,20 @@ export function MorphTo(
 
 function resolveForeignKey(
   type: RelationType,
-  Related: any,
+  Related: (ModelConstructor<Model> & typeof Model) | undefined,
   parentModel: typeof Model,
   morphName?: string
 ): string | undefined {
-  if (type === 'belongsTo') {
+  if (type === 'belongsTo' && Related) {
     const relatedTable = Related.getTable()
     return `${relatedTable.replace(/s$/, '')}_id`
   }
   if (type === 'hasMany' || type === 'hasOne') {
-    const parentTable = (parentModel as any).getTable()
+    const parentTable = parentModel.getTable()
     return `${parentTable.replace(/s$/, '')}_id`
   }
   if (type === 'belongsToMany') {
-    const parentTable = (parentModel as any).getTable()
+    const parentTable = parentModel.getTable()
     return `${parentTable.replace(/s$/, '')}_id`
   }
   if (type === 'morphMany' || type === 'morphOne') {
@@ -315,7 +315,7 @@ function resolveForeignKey(
 
 function resolveLocalKey(
   type: RelationType,
-  Related: any,
+  Related: (ModelConstructor<Model> & typeof Model) | undefined,
   parentModel: typeof Model
 ): string | undefined {
   if (type === 'belongsTo') {
@@ -363,7 +363,7 @@ export async function eagerLoad<T extends Model, R extends Model = Model>(
   let { type, foreignKey, localKey, morphName, morphTypeField, morphIdField } = relationMeta
 
   // Resolve defaults if missing
-  if (!foreignKey) {
+  if (!foreignKey && Related) {
     foreignKey = resolveForeignKey(type, Related, parentModel, morphName)
   }
 
@@ -371,7 +371,7 @@ export async function eagerLoad<T extends Model, R extends Model = Model>(
     morphTypeField = morphTypeField ?? `${morphName}_type`
   }
 
-  if (!localKey) {
+  if (!localKey && Related) {
     localKey = resolveLocalKey(type, Related, parentModel)
   }
 
@@ -409,7 +409,7 @@ export async function eagerLoad<T extends Model, R extends Model = Model>(
       const useLateral =
         query.hasLimitOrOffset() && grammar && typeof grammar.compileLateralEagerLoad === 'function'
 
-      let models: any[] = []
+      let models: R[] = []
 
       if (useLateral) {
         const compiled = query.getCompiledQuery()
@@ -420,7 +420,7 @@ export async function eagerLoad<T extends Model, R extends Model = Model>(
           compiled
         )
         const result = await (connection as any).raw(sql, bindings)
-        models = result.rows.map((row: any) => Related?.hydrate(row))
+        models = result.rows.map((row: Record<string, unknown>) => Related?.hydrate(row) as R)
       } else {
         // Fallback to whereIn
         query.whereIn(foreignKey!, validParentKeys)
@@ -508,8 +508,8 @@ export async function eagerLoad<T extends Model, R extends Model = Model>(
       // Group parents by type
       const parentsByType = new Map<string, T[]>()
       for (const parent of parents) {
-        const typeValue = getValue(parent, morphTypeField!)
-        if (typeValue) {
+        const typeValue = getValue<string>(parent, morphTypeField!)
+        if (typeValue && typeof typeValue === 'string') {
           if (!parentsByType.has(typeValue)) {
             parentsByType.set(typeValue, [])
           }
@@ -680,34 +680,49 @@ export async function eagerLoad<T extends Model, R extends Model = Model>(
   }
 }
 
-function getValue(obj: any, key: string): any {
-  if (obj._attributes && key in obj._attributes) {
-    return obj._attributes[key]
+function getValue<T = unknown>(obj: Model | Record<string, unknown>, key: string): T {
+  const objWithAttrs = obj as Model & { _attributes?: Record<string, unknown> }
+  if (
+    objWithAttrs &&
+    '_attributes' in objWithAttrs &&
+    objWithAttrs._attributes &&
+    key in objWithAttrs._attributes
+  ) {
+    return objWithAttrs._attributes[key] as T
   }
-  return obj[key]
+  return (obj as Record<string, unknown>)[key] as T
 }
 
-function setRelationValue(model: any, name: string, value: any) {
-  if (model._attributes) {
-    model._attributes[name] = value
+function setRelationValue<T = unknown>(
+  model: Model | Record<string, unknown>,
+  name: string,
+  value: T
+): void {
+  const modelWithAttrs = model as Model & { _attributes?: Record<string, unknown> }
+  if (modelWithAttrs && '_attributes' in modelWithAttrs && modelWithAttrs._attributes) {
+    modelWithAttrs._attributes[name] = value
   } else {
-    model[name] = value
+    ;(model as Record<string, unknown>)[name] = value
   }
 }
 
 /**
  * Load multiple relationships
  */
-export async function eagerLoadMany<T extends Model>(
+export async function eagerLoadMany<T extends Model, R extends Model = Model>(
   parents: T[],
   relations:
     | string[]
-    | Record<string, any>
-    | Map<string, (query: QueryBuilderContract<any>) => void>
+    | Record<string, unknown>
+    | Map<string, (query: QueryBuilderContract<R>) => void>
 ): Promise<void> {
   if (relations instanceof Map) {
     for (const [rel, callback] of relations.entries()) {
-      await eagerLoad(parents, rel, callback)
+      if (typeof callback === 'function') {
+        await eagerLoad(parents, rel, callback as (query: QueryBuilderContract<R>) => void)
+      } else {
+        await eagerLoad(parents, rel)
+      }
     }
   } else if (Array.isArray(relations)) {
     for (const rel of relations) {
@@ -716,7 +731,7 @@ export async function eagerLoadMany<T extends Model>(
   } else {
     for (const [rel, callbackOrLimit] of Object.entries(relations)) {
       if (typeof callbackOrLimit === 'function') {
-        await eagerLoad(parents, rel, callbackOrLimit)
+        await eagerLoad(parents, rel, callbackOrLimit as (query: QueryBuilderContract<R>) => void)
       } else if (typeof callbackOrLimit === 'number') {
         await eagerLoad(parents, rel, (q) => q.limit(callbackOrLimit))
       } else {

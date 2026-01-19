@@ -136,7 +136,7 @@ export class HasAttributes {
    * @param type - Target type
    * @returns Casted value
    */
-  protected _castAttribute(_key: string, value: any, type: string): any {
+  protected _castAttribute(_key: string, value: unknown, type: string): unknown {
     if (value === null || value === undefined) {
       return value
     }
@@ -153,7 +153,7 @@ export class HasAttributes {
         return String(value)
 
       case 'boolean':
-        return [true, 1, '1', 'true', 'on', 'yes'].includes(value)
+        return [true, 1, '1', 'true', 'on', 'yes'].includes(value as string | number | boolean)
 
       case 'json':
       case 'jsonb':
@@ -161,7 +161,7 @@ export class HasAttributes {
           return value
         }
         try {
-          return JSON.parse(value)
+          return JSON.parse(value as string)
         } catch (_e) {
           return value
         }
@@ -176,10 +176,12 @@ export class HasAttributes {
         if (value instanceof Date) {
           return value
         }
-        return new Date(value)
+        return new Date(value as string | number)
 
       case 'timestamp':
-        return value instanceof Date ? value.getTime() : new Date(value).getTime()
+        return value instanceof Date
+          ? value.getTime()
+          : new Date(value as string | number).getTime()
     }
 
     return value

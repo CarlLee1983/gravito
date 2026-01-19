@@ -65,7 +65,9 @@ export abstract class BaseGenerator {
       if (node.type === 'directory') {
         await fs.mkdir(fullPath, { recursive: true })
         this.log(`📁 Created directory: ${node.name}`)
-        if (node.children) await this.createStructure(fullPath, node.children, context)
+        if (node.children) {
+          await this.createStructure(fullPath, node.children, context)
+        }
       } else {
         await fs.mkdir(path.dirname(fullPath), { recursive: true })
         let content = ''
@@ -277,7 +279,9 @@ dist
   }
 
   protected log(message: string): void {
-    if (this.config.verbose) console.log(message)
+    if (this.config.verbose) {
+      console.log(message)
+    }
   }
 
   static createContext(

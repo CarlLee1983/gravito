@@ -112,7 +112,7 @@ export interface StepDefinition<TInput = any, TData = any> {
    */
   handler: (
     ctx: WorkflowContext<TInput, TData>
-  ) => void | Promise<void | undefined | FluxWaitResult> | undefined | FluxWaitResult
+  ) => undefined | Promise<undefined | undefined | FluxWaitResult> | undefined | FluxWaitResult
 
   /**
    * Logic to undo the effects of this step if a later step fails.

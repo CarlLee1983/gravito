@@ -149,7 +149,9 @@ describe('NotificationManager', () => {
 
     expect(queuePush).toHaveBeenCalledTimes(1)
     const job = queuePush.mock.calls[0]?.[0] as any
-    if (job) await job.handle()
+    if (job) {
+      await job.handle()
+    }
   })
 })
 

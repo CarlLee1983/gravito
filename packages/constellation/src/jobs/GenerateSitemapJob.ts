@@ -50,7 +50,7 @@ export class GenerateSitemapJob extends Job {
   }
 
   async handle(): Promise<void> {
-    const { progressTracker, shadowProcessor, onProgress, onComplete, onError } = this.options
+    const { progressTracker, onComplete, onError } = this.options
 
     try {
       // 初始化進度追蹤
@@ -64,9 +64,9 @@ export class GenerateSitemapJob extends Job {
       // 使用自訂的生成邏輯以支援進度追蹤
       await this.generateWithProgress()
 
-      // 提交影子處理
-      if (shadowProcessor) {
-        await shadowProcessor.commit()
+      // 提交影子處理（如果存在）
+      if (this.options.shadowProcessor) {
+        await this.options.shadowProcessor.commit()
       }
 
       // 完成進度追蹤
@@ -121,15 +121,7 @@ export class GenerateSitemapJob extends Job {
    * 帶進度追蹤的生成
    */
   private async generateWithProgress(): Promise<void> {
-    const { progressTracker, shadowProcessor, onProgress } = this.options
-    const {
-      providers,
-      maxEntriesPerFile = 50000,
-      storage,
-      baseUrl,
-      pretty,
-      filename,
-    } = this.options.generatorOptions
+    const { progressTracker, onProgress } = this.options
 
     // 這裡需要修改 SitemapGenerator 以支援進度回報
     // 為了簡化，我們直接使用現有的生成邏輯，並在外部追蹤進度

@@ -7,8 +7,6 @@ import {
   securityHeaders,
 } from '@gravito/core'
 import { OrbitIon } from '@gravito/ion'
-import type { Photon } from '@gravito/photon'
-import { serveStatic } from '@gravito/photon/bun'
 import { OrbitPrism } from '@gravito/prism'
 import { OrbitCache } from '@gravito/stasis'
 import { registerHooks } from './hooks'

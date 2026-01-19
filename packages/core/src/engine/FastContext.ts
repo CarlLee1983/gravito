@@ -326,7 +326,7 @@ export class FastContext implements IFastContext {
 
   header(name: string): string | undefined
   header(name: string, value: string): void
-  header(name: string, value?: string): string | undefined | void {
+  header(name: string, value?: string): string | undefined | undefined {
     this.checkReleased()
     if (value !== undefined) {
       this._headers.set(name, value)

@@ -13,13 +13,21 @@ import type {
  * MongoDB Driver
  * Provides a document interface via DB.connection('mongodb')
  */
+import type { MongoClient, MongoDatabase } from './types'
+
 export class MongoDBDriver implements DriverContract {
   private config: MongoDBConfig
-  private client: any | null = null
-  private db: any | null = null
-  private MongoClientCtor: any
+  private client: MongoClient | null = null
+  private db: MongoDatabase | null = null
+  private MongoClientCtor?: new (
+    url: string,
+    options?: Record<string, unknown>
+  ) => MongoClient
 
-  constructor(config: ConnectionConfig, deps?: { MongoClient?: any }) {
+  constructor(
+    config: ConnectionConfig,
+    deps?: { MongoClient?: new (url: string, options?: Record<string, unknown>) => MongoClient }
+  ) {
     if (config.driver !== 'mongodb') {
       throw new Error(`Invalid driver type '${config.driver}' for MongoDBDriver`)
     }
@@ -40,10 +48,16 @@ export class MongoDBDriver implements DriverContract {
 
     try {
       const Ctor = this.MongoClientCtor || (await this.loadMongoModule()).MongoClient
+      if (!Ctor) {
+        throw new Error('MongoClient constructor not available')
+      }
       this.client = new Ctor(
         this.config.uri ??
           `mongodb://${this.config.host}:${this.config.port}/${this.config.database}`
       )
+      if (!this.client) {
+        throw new Error('Failed to create MongoDB client')
+      }
       await this.client.connect()
       this.db = this.client.db(this.config.database)
     } catch (error) {
@@ -183,7 +197,7 @@ export class MongoDBDriver implements DriverContract {
     return false
   }
 
-  private mapDocument(doc: any): any {
+  private mapDocument(doc: Record<string, unknown>): Record<string, unknown> {
     if (doc._id) {
       doc.id = doc._id.toString()
       // Keep _id or remove? Best to keep for native usage

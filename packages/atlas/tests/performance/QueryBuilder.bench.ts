@@ -1,4 +1,3 @@
-import { DB } from '../../src/DB'
 import { PostgresGrammar } from '../../src/grammar/PostgresGrammar'
 import { QueryBuilder } from '../../src/query/QueryBuilder'
 

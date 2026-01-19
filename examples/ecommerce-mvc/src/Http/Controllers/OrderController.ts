@@ -16,7 +16,7 @@ export class OrderController {
    * Process payment for an existing order
    */
   static async pay(ctx: GravitoContext) {
-    const atlas = ctx.get('atlas') as OrbitAtlas
+    const _atlas = ctx.get('atlas') as OrbitAtlas
     const auth = ctx.get('auth') as AuthManager
     const stripeService = new StripeService()
     const orderService = new OrderService()
@@ -59,7 +59,7 @@ export class OrderController {
    */
   static async index(ctx: GravitoContext) {
     const inertia = ctx.get('inertia') as unknown as InertiaHelper
-    const atlas = ctx.get('atlas') as OrbitAtlas
+    const _atlas = ctx.get('atlas') as OrbitAtlas
     const auth = ctx.get('auth') as AuthManager
 
     const user = await auth.user()
@@ -92,7 +92,7 @@ export class OrderController {
    */
   static async show(ctx: GravitoContext) {
     const inertia = ctx.get('inertia') as unknown as InertiaHelper
-    const atlas = ctx.get('atlas') as OrbitAtlas
+    const _atlas = ctx.get('atlas') as OrbitAtlas
     const auth = ctx.get('auth') as AuthManager
 
     const user = await auth.user()
@@ -140,7 +140,7 @@ export class OrderController {
    * Cancel order
    */
   static async cancel(ctx: GravitoContext) {
-    const atlas = ctx.get('atlas') as OrbitAtlas
+    const _atlas = ctx.get('atlas') as OrbitAtlas
     const auth = ctx.get('auth') as AuthManager
 
     const user = await auth.user()

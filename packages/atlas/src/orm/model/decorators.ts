@@ -35,11 +35,11 @@ export const COLUMN_KEY = Symbol('column')
  * ```
  */
 export function SoftDeletes(options: SoftDeletesOptions = {}): ClassDecorator {
-  return (target: any) => {
+  return (target: Function) => {
     const column = options.column || 'deleted_at'
 
     // Store metadata on the model class
-    target[SOFT_DELETES_KEY] = { column }
+    ;(target as unknown as Record<string | symbol, unknown>)[SOFT_DELETES_KEY] = { column }
 
     // Add boot method logic if needed, or we'll check this in Model.query()
   }
@@ -63,15 +63,18 @@ export interface ColumnOptions {
  * @public
  */
 export function column(options: ColumnOptions = {}): PropertyDecorator {
-  return (target: any, propertyKey: string | symbol) => {
-    const ctor = target.constructor
+  return (target: object, propertyKey: string | symbol) => {
+    const ctor = (target as { constructor: Function }).constructor as unknown as Record<
+      string | symbol,
+      unknown
+    >
     if (!ctor[COLUMN_KEY]) {
       ctor[COLUMN_KEY] = {}
     }
-    ctor[COLUMN_KEY][propertyKey] = options
+    ;(ctor[COLUMN_KEY] as Record<string | symbol, ColumnOptions>)[propertyKey] = options
 
     // Auto-register in global registry
-    ModelRegistry.register(ctor)
+    ModelRegistry.register(ctor as unknown as typeof import('./Model').Model)
   }
 }
 // Add type-specific helpers (chaining/static methods style)

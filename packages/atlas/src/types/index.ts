@@ -244,6 +244,21 @@ export interface PaginateResult<T> {
 }
 
 // ============================================================================
+// Model Types (forward declarations to avoid circular dependencies)
+// ============================================================================
+
+/**
+ * Model base class (forward declaration)
+ * Actual implementation in src/orm/model/Model.ts
+ */
+export type Model = import('../orm/model/Model').Model
+
+/**
+ * Model constructor type (forward declaration)
+ */
+export type ModelConstructor<T extends Model> = import('../orm/model/Model').ModelConstructor<T>
+
+// ============================================================================
 // Contracts (Interfaces)
 // ============================================================================
 
@@ -349,8 +364,8 @@ export interface ConnectionContract {
  */
 export interface QueryBuilderContract<T = Record<string, unknown>> {
   // SETTINGS
-  setModel(model: any): this
-  getModel(): any
+  setModel<M extends Model = Model>(model: ModelConstructor<M>): this
+  getModel<M extends Model = Model>(): ModelConstructor<M> | undefined
 
   // SELECT
   select(...columns: string[]): this
