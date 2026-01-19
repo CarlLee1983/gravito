@@ -56,47 +56,44 @@ jobs:
           echo "📦 Verifying package dependencies..."
           if [ ! -d "../../packages/core/dist" ]; then
             echo "❌ @gravito/core not built!"
+            echo "📦 Checking packages directory..."
+            ls -la ../../packages/ | head -10 || true
             exit 1
           fi
           echo "✅ Dependencies verified"
           
-          # Build client assets
-          echo "📦 Building client assets..."
-          if ! bun run build:client; then
-            echo "❌ Client build failed!"
-            echo "📦 Checking for build errors..."
-            if [ -d "static/build" ]; then
-              echo "⚠️  static/build directory exists but build may have failed"
-              ls -la static/build/ || true
-            fi
-            exit 1
-          fi
-          echo "✅ Client build completed"
+          # Build static site (this will also build client assets internally)
+          echo "📦 Building static site (includes client build)..."
+          echo "📦 This may take a few minutes..."
           
-          # Verify client build output
-          if [ ! -d "static/build" ]; then
-            echo "❌ Client build output (static/build) not found!"
-            echo "📦 Available directories:"
-            ls -la
-            exit 1
-          fi
-          echo "✅ Client build output verified"
-          
-          # Build static site
-          echo "📦 Building static site..."
-          if ! bun run build:static; then
+          # Capture output for better error reporting
+          if ! bun run build:static 2>&1 | tee /tmp/build-output.log; then
             echo "❌ Static site build failed!"
+            echo "📦 Last 50 lines of build output:"
+            tail -50 /tmp/build-output.log || true
+            echo ""
             echo "📦 Checking for partial build output..."
-            if [ -d "dist-static" ]; then
-              echo "⚠️  dist-static directory exists but build may have failed"
-              ls -la dist-static/ | head -20 || true
+            if [ -d "static/build" ]; then
+              echo "⚠️  static/build directory exists:"
+              ls -la static/build/ | head -10 || true
+            else
+              echo "⚠️  static/build directory not found"
             fi
+            if [ -d "dist-static" ]; then
+              echo "⚠️  dist-static directory exists:"
+              ls -la dist-static/ | head -20 || true
+            else
+              echo "⚠️  dist-static directory not found"
+            fi
+            echo ""
+            echo "📦 Current directory contents:"
+            ls -la | head -20 || true
             exit 1
           fi
           echo "✅ Build completed"
           
           # Verify build output
-          echo "📦 Checking dist-static directory..."
+          echo "📦 Verifying build output..."
           if [ ! -d "dist-static" ]; then
             echo "❌ dist-static directory NOT found!"
             echo "📦 Available directories:"
@@ -105,13 +102,15 @@ jobs:
           fi
           
           echo "✅ dist-static directory exists"
-          echo "📦 Contents:"
+          echo "📦 Contents (first 30 items):"
           ls -la dist-static/ | head -30
           
           if [ ! -f "dist-static/index.html" ]; then
             echo "❌ index.html NOT found!"
             echo "📦 Searching for HTML files:"
-            find dist-static -name "*.html" | head -10 || true
+            find dist-static -name "*.html" -type f | head -10 || true
+            echo "📦 All files in dist-static:"
+            find dist-static -type f | head -20 || true
             exit 1
           fi
           echo "✅ index.html exists"

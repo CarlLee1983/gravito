@@ -54,15 +54,31 @@ async function build() {
 
   // Initialize Core without starting server
   console.log('🚀 Initializing Core...')
+  console.log('📂 Working directory:', process.cwd())
+  console.log('📦 Node environment:', process.env.NODE_ENV || 'not set')
+
   let core: PlanetCore
   try {
     core = await bootstrap({ port: 3000 })
     console.log('✅ Core initialized successfully')
   } catch (e) {
-    console.error('❌ Failed to initialize Core:', e)
+    console.error('❌ Failed to initialize Core')
+    console.error('Error details:', e)
     if (e instanceof Error) {
+      console.error('Error name:', e.name)
       console.error('Error message:', e.message)
-      console.error('Error stack:', e.stack)
+      if (e.stack) {
+        console.error('Error stack:')
+        console.error(e.stack)
+      }
+      // Check for common issues
+      if (e.message.includes('Cannot find module')) {
+        console.error('💡 This might be a missing dependency issue')
+        console.error('💡 Try running: bun install')
+      }
+      if (e.message.includes('EADDRINUSE')) {
+        console.error('💡 Port 3000 is already in use')
+      }
     }
     process.exit(1)
   }
