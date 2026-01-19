@@ -44,7 +44,7 @@
     },
     "simple-git-hooks": {
         "pre-commit": "export PATH=\"~/.bun/bin:$PATH\" && bunx lint-staged",
-        "pre-push": "export PATH=\"~/.bun/bin:$PATH\" && bunx lint-staged && bun run scripts/validate-affected-packages.ts"
+        "pre-push": "export PATH=\"~/.bun/bin:$PATH\" && bun run scripts/validate-affected-packages.ts"
     },
     "lint-staged": {
         "*.{js,ts,cjs,mjs}": [
