@@ -232,6 +232,51 @@ export class DB {
   }
 
   /**
+   * Configure database from config file
+   * Tries to load from config/database.ts, config/database.js, etc.
+   *
+   * @example
+   * ```typescript
+   * // config/database.ts
+   * import { defineConfig } from '@gravito/atlas'
+   *
+   * export default defineConfig({
+   *   default: 'default',
+   *   connections: {
+   *     default: {
+   *       driver: 'postgres',
+   *       host: 'localhost',
+   *       database: 'myapp'
+   *     }
+   *   }
+   * })
+   *
+   * // Then in your app
+   * await DB.configureFromFile()
+   * ```
+   */
+  static async configureFromFile(configPath?: string): Promise<void> {
+    const { loadConfigFile } = await import('./config/loadConfig')
+    const config = await loadConfigFile(configPath)
+    DB.configure(config)
+  }
+
+  /**
+   * Auto-configure database from config file or environment
+   * Tries config file first, then falls back to environment variables
+   *
+   * @example
+   * ```typescript
+   * // Will try config/database.ts first, then environment variables
+   * await DB.autoConfigure()
+   * ```
+   */
+  static async autoConfigure(configPath?: string): Promise<void> {
+    const { autoConfigure: autoConfigureImpl } = await import('./config/loadConfig')
+    await autoConfigureImpl(configPath)
+  }
+
+  /**
    * Add a single connection
    */
   static addConnection(name: string, config: ConnectionConfig): void {
