@@ -3,9 +3,8 @@
  * @description Load database configuration from various sources
  */
 
-import type { ConnectionConfig } from '../types'
 import type { AtlasConfig } from './defineConfig'
-import { defineConfig, fromEnv } from './defineConfig'
+import { fromEnv } from './defineConfig'
 
 /**
  * Load configuration from a TypeScript/JavaScript config file

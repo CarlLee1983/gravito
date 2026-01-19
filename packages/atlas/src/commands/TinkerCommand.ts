@@ -29,9 +29,6 @@ export class TinkerCommand extends Command {
       }
 
       try {
-        // Create context with pre-loaded modules
-        const _context = { ...Atlas, console }
-
         // Wrap in async function to support await
         const script = `(async () => { return (${input}) })()`
 
