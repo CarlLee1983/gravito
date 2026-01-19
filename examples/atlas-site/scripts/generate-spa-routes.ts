@@ -67,7 +67,8 @@ async function generateSPARoutes() {
       })
 
       // 添加路由修正腳本：當訪問 /features/index.html 時，重定向到 /features
-      // 這個腳本需要在 Vue 應用啟動之前執行
+      // 這個腳本需要在 Vue 應用啟動之前執行，所以要在模組腳本之前
+      // 注意：在模板字符串中，正則表達式的斜杠需要使用 \/ 來轉義
       const routeFixScript = `
     <script>
         // 修正 SPA 路由：當訪問 /features/index.html 時，重定向到 /features
@@ -77,14 +78,23 @@ async function generateSPARoutes() {
             if (currentPath.endsWith('/index.html') && currentPath !== '/index.html') {
                 var cleanPath = currentPath.replace(/\\/index\\.html$/, '') || '/';
                 if (cleanPath !== currentPath) {
-                    window.history.replaceState(null, '', cleanPath + window.location.search + window.location.hash);
+                    var search = window.location.search || '';
+                    var hash = window.location.hash || '';
+                    window.history.replaceState(null, '', cleanPath + search + hash);
                 }
             }
         })();
     </script>`
 
-      // 在 </head> 標籤之前插入路由修正腳本
-      routeHtml = routeHtml.replace('</head>', routeFixScript + '\n</head>')
+      // 在模組腳本之前插入路由修正腳本（在 <script type="module"> 之前）
+      // 這樣可以確保路由修正腳本在 Vue 應用啟動之前執行
+      const moduleScriptPattern = /<script\s+type=["']module["'][^>]*>/i
+      if (moduleScriptPattern.test(routeHtml)) {
+        routeHtml = routeHtml.replace(moduleScriptPattern, routeFixScript + '\n  $&')
+      } else {
+        // 如果找不到模組腳本，就在 </head> 之前插入
+        routeHtml = routeHtml.replace('</head>', routeFixScript + '\n</head>')
+      }
 
       // 寫入 HTML 文件
       await writeFile(routeIndexPath, routeHtml, 'utf-8')
