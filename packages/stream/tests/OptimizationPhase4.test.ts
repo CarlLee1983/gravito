@@ -63,7 +63,7 @@ describe('Phase 4 Optimizations', () => {
     it('should use popMany Lua script', async () => {
       const mockClient = {
         defineCommand: () => {},
-        popMany: mock((queue, prefix, count) => {
+        popMany: mock((queue, prefix, count, now) => {
           return Promise.resolve([
             JSON.stringify({ id: '1', data: 'foo' }),
             JSON.stringify({ id: '2', data: 'bar' }),
@@ -78,6 +78,7 @@ describe('Phase 4 Optimizations', () => {
       const jobs = await driver.popMany('default', 5)
 
       expect(mockClient.popMany).toHaveBeenCalled()
+      expect(mockClient.popMany.mock.calls[0][3]).toBeDefined() // Check if 'now' is passed
       expect(jobs.length).toBe(2)
       expect(jobs[0].id).toBe('1')
     })

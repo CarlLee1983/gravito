@@ -121,12 +121,14 @@ export class RedisDriver implements QueueDriver {
 
   // Lua Logic:
   // Iterate priorities.
+  // Check delayed.
   // Check paused.
   // RPOP count.
   private static POP_MANY_SCRIPT = `
     local queue = KEYS[1]
     local prefix = ARGV[1]
     local count = tonumber(ARGV[2])
+    local now = tonumber(ARGV[3])
     
     local priorities = {'critical', 'high', 'default', 'low'}
     local result = {}
@@ -139,10 +141,27 @@ export class RedisDriver implements QueueDriver {
         key = key .. ':' .. priority
       end
       
+      -- Check Delayed (Move to Ready if due)
+      local delayKey = key .. ":delayed"
+      -- Optimization: Only check delayed if we need more items
+      -- Fetch up to (count - #result) delayed items
+      local needed = count - #result
+      local delayed = redis.call("ZRANGEBYSCORE", delayKey, 0, now, "LIMIT", 0, needed)
+      
+      for _, job in ipairs(delayed) do
+        redis.call("ZREM", delayKey, job)
+        -- We return it directly, assuming we want to process it now.
+        -- Alternative: LPUSH to list and RPOP? No, direct return is faster.
+        table.insert(result, job)
+        needed = needed - 1
+      end
+      
+      if #result >= count then break end
+
       -- Check Paused
       local isPaused = redis.call("GET", key .. ":paused")
       if isPaused ~= "1" then
-        local needed = count - #result
+        needed = count - #result
         -- Loop RPOP to get items
         for i = 1, needed do
             local job = redis.call("RPOP", key)
@@ -615,7 +634,12 @@ export class RedisDriver implements QueueDriver {
     // Use Lua script for atomic batch pop across priorities
     if (typeof (this.client as any).popMany === 'function') {
       try {
-        const result = await (this.client as any).popMany(queue, this.prefix, count)
+        const result = await (this.client as any).popMany(
+          queue,
+          this.prefix,
+          count,
+          Date.now().toString()
+        )
         if (Array.isArray(result) && result.length > 0) {
           return result.map((p: string) => this.parsePayload(p))
         } else if (Array.isArray(result) && result.length === 0) {
