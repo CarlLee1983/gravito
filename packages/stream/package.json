@@ -44,7 +44,8 @@
     "@aws-sdk/client-sqs": "^3.955.0",
     "@gravito/atlas": "workspace:*",
     "@gravito/core": "workspace:*",
-    "cron-parser": "^5.4.0"
+    "cron-parser": "^5.4.0",
+    "p-limit": "^5.0.0"
   },
   "devDependencies": {
     "@types/ioredis": "^5.0.0",
