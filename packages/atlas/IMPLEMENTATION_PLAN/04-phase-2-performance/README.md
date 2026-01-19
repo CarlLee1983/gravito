@@ -5,11 +5,11 @@
 
 ## 任務清單
 
-- [ ] [2.1 優化 DirtyTracker](./2.1-dirty-tracker.md) - 3-4 小時
-- [ ] [2.2 優化 Model Proxy](./2.2-model-proxy.md) - 6-8 小時
-- [ ] [2.3 添加 Grammar LRU 快取](./2.3-grammar-cache.md) - 4-5 小時
-- [ ] [2.4 優化 QueryBuilder.clone()](./2.4-querybuilder-clone.md) - 5-6 小時
-- [ ] [2.5 優化 Eager Loading](./2.5-eager-loading.md) - 6-8 小時
+- [x] [2.1 優化 DirtyTracker](./2.1-dirty-tracker.md) - 3-4 小時 ✅ **已完成**
+- [x] [2.2 優化 Model Proxy](./2.2-model-proxy.md) - 6-8 小時 ✅ **已完成**
+- [x] [2.3 添加 Grammar LRU 快取](./2.3-grammar-cache.md) - 4-5 小時 ✅ **已完成**
+- [x] [2.4 優化 QueryBuilder.clone()](./2.4-querybuilder-clone.md) - 5-6 小時 ✅ **已完成**（實現 COW 模式）
+- [x] [2.5 優化 Eager Loading](./2.5-eager-loading.md) - 6-8 小時 ✅ **已完成**
 
 **總計：** 24-31 小時（約 3-4 個工作天）
 

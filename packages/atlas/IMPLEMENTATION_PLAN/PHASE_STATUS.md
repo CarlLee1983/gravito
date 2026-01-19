@@ -12,12 +12,12 @@
 |-------|------|--------|------|
 | Phase 0 | ✅ 已完成 | 100% | 已建立 baseline 報告文件 |
 | Phase 1 | ✅ 已完成 | 99% | 調試工具、錯誤訊息、API 命名完成，類型安全大幅改進（從 61 降至 1） |
-| Phase 2 | ✅ 基本完成 | 90% | 核心優化已實施 |
+| Phase 2 | ✅ 已完成 | 100% | 所有核心優化已實施，包括 QueryBuilder COW 優化 |
 | Phase 3 | ✅ 已完成 | 100% | Nested transactions 完成，Connection 清理邏輯完整 |
 | Phase 4 | ✅ 已完成 | 100% | 環境變數和配置檔案支援已完成 |
 | Phase 5 | ✅ 已完成 | 96% | 詳見 [VERIFICATION.md](./07-phase-5-advanced/VERIFICATION.md) |
 
-**總體完成度：** 約 98%
+**總體完成度：** 約 99%
 
 ---
 
@@ -97,10 +97,11 @@
 - ✅ 支援實例級別和全局快取（`cacheScope`）
 - ✅ 提供 `getCacheStats()` 方法（`Grammar.ts:59-65`）
 
-#### ⚠️ 2.4 優化 QueryBuilder.clone()
-- ⚠️ 已實現 clone 方法（`src/query/QueryBuilder.ts:1335-1355`）
-- ⚠️ 仍使用 `[...array]` 方式複製陣列
-- ⚠️ 可能需要進一步優化（如使用 Object.assign 或結構化複製）
+#### ✅ 2.4 優化 QueryBuilder.clone()
+- ✅ 已實現 clone 方法（`src/query/QueryBuilder.ts:1335-1360`）
+- ✅ 實現 Copy-on-Write (COW) 模式
+- ✅ 陣列只在第一次修改時才複製，大幅提升 clone 性能
+- ✅ 使用 `ensureOwnState()` 確保修改時的正確性
 
 #### ✅ 2.5 優化 Eager Loading
 - ✅ 已實現 `eagerLoadMany()` 函數（`src/orm/model/relationships.ts:701-727`）

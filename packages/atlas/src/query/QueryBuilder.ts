@@ -1331,23 +1331,35 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
 
   /**
    * Clone the query builder
+   * Uses Copy-on-Write (COW) pattern for better performance
+   * Arrays are only copied when the clone is first modified
    */
   clone(): QueryBuilderContract<T> {
     const cloned = new QueryBuilder<T>(this.connection, this.grammar, this.tableName)
-    cloned.columns = [...this.columns]
+
+    // Mark as clone - actual copying will happen on first modification
+    cloned._isClone = true
+    cloned._isModified = false
+
+    // Share references (COW - copy on write)
+    cloned.columns = this.columns
     cloned.distinctValue = this.distinctValue
-    cloned.wheres = [...this.wheres]
-    cloned.orders = [...this.orders]
-    cloned.groups = [...this.groups]
-    cloned.havings = [...this.havings]
-    cloned.joins = [...this.joins]
+    cloned.wheres = this.wheres
+    cloned.orders = this.orders
+    cloned.groups = this.groups
+    cloned.havings = this.havings
+    cloned.joins = this.joins
     cloned.limitValue = this.limitValue
     cloned.offsetValue = this.offsetValue
-    cloned.bindingsList = [...this.bindingsList]
+    cloned.bindingsList = this.bindingsList
     cloned.isReadOnly = this.isReadOnly
+
+    // Maps and Sets need to be copied (they're mutable)
     cloned.globalScopes = new Map(this.globalScopes)
     cloned.removedScopes = new Set(this.removedScopes)
     cloned.eagerLoads = new Map(this.eagerLoads)
+
+    // Reference types
     cloned.modelClass = this.modelClass
     cloned._cache = this._cache
 
