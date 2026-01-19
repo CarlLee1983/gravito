@@ -85,7 +85,9 @@ export class SQLiteDriver implements DriverContract {
             readonly: this.config.readonly ?? false,
           }) as unknown as SQLiteClient
 
-          this.client.pragma('journal_mode = WAL')
+          if ('pragma' in this.client && typeof this.client.pragma === 'function') {
+            this.client.pragma('journal_mode = WAL')
+          }
         } catch (e) {
           throw new Error(
             `SQLite driver requires "better-sqlite3" when running in Node.js. Please install it: bun add better-sqlite3. Original Error: ${e}`
@@ -106,7 +108,11 @@ export class SQLiteDriver implements DriverContract {
   }
 
   isConnected(): boolean {
-    return this.client?.open
+    if (!this.client) return false
+    if ('open' in this.client) {
+      return (this.client as { open?: boolean }).open !== false
+    }
+    return true
   }
 
   async query<T = Record<string, unknown>>(
@@ -176,6 +182,9 @@ export class SQLiteDriver implements DriverContract {
 
     try {
       const stmt = this.client?.prepare(sql)
+      if (!stmt) {
+        throw new Error('Failed to prepare SQL statement')
+      }
       const result = stmt.run(...params)
       return {
         affectedRows: result.changes,

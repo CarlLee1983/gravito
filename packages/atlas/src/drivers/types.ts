@@ -58,6 +58,8 @@ export interface SQLiteClient {
   query(sql: string, ...params: unknown[]): unknown[]
   run(sql: string, ...params: unknown[]): { changes: number; lastInsertRowid: number }
   exec?(sql: string): void
+  pragma?(name: string, value?: unknown): unknown
+  open?: boolean
   close(): void
 }
 
