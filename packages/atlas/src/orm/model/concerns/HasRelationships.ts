@@ -75,16 +75,17 @@ export class HasRelationships {
    * @param table - Pivot table name
    * @returns Query builder for relationship
    */
-  belongsToMany(
-    related: any,
+  belongsToMany<T extends Model>(
+    related: ModelConstructor<T>,
     foreignPivotKey?: string,
     relatedPivotKey?: string,
     table?: string
-  ): any {
+  ): QueryBuilderContract<T> {
     const relatedModel = new related()
-    const relatedCtor = relatedModel.constructor as any
+    const relatedCtor = relatedModel.constructor as ModelConstructor<T> &
+      typeof import('../Model').Model
 
-    const thisCtor = this.constructor as any
+    const thisCtor = this.constructor as typeof import('../Model').Model
     const thisPivotKey = relatedPivotKey ?? `${thisCtor.name.toLowerCase()}_id`
     const relatedPivot = foreignPivotKey ?? `${relatedModel.constructor.name.toLowerCase()}_id`
     const pivotTable = table ?? `${thisCtor.table}_${relatedCtor.table}`
@@ -94,9 +95,13 @@ export class HasRelationships {
       .join(
         pivotTable,
         `${pivotTable}.${relatedPivot}`,
+        '=',
         `${relatedCtor.table}.${relatedCtor.primaryKey}`
       )
-      .where(`${pivotTable}.${thisPivotKey}`, (this as any)[thisCtor.primaryKey])
+      .where(
+        `${pivotTable}.${thisPivotKey}`,
+        (this as Model & Record<string, unknown>)[thisCtor.primaryKey] as unknown
+      ) as QueryBuilderContract<T>
   }
 
   /**
@@ -108,14 +113,24 @@ export class HasRelationships {
    * @param id - ID field name
    * @returns Query builder for relationship
    */
-  morphOne(related: any, _name: string, type: string, id: string): any {
+  morphOne<T extends Model>(
+    related: ModelConstructor<T>,
+    _name: string,
+    type: string,
+    id: string
+  ): QueryBuilderContract<T> {
     const relatedModel = new related()
-    const relatedCtor = relatedModel.constructor as any
+    const relatedCtor = relatedModel.constructor as ModelConstructor<T> &
+      typeof import('../Model').Model
 
+    const thisCtor = this.constructor as typeof import('../Model').Model
     return relatedCtor
       .query()
-      .where(type, this.constructor.name)
-      .where(id, (this as any)[(this.constructor as any).primaryKey])
+      .where(type, thisCtor.name)
+      .where(
+        id,
+        (this as Model & Record<string, unknown>)[thisCtor.primaryKey] as unknown
+      ) as QueryBuilderContract<T>
   }
 
   /**
@@ -127,14 +142,24 @@ export class HasRelationships {
    * @param id - ID field name
    * @returns Query builder for relationship
    */
-  morphMany(related: any, _name: string, type: string, id: string): any {
+  morphMany<T extends Model>(
+    related: ModelConstructor<T>,
+    _name: string,
+    type: string,
+    id: string
+  ): QueryBuilderContract<T> {
     const relatedModel = new related()
-    const relatedCtor = relatedModel.constructor as any
+    const relatedCtor = relatedModel.constructor as ModelConstructor<T> &
+      typeof import('../Model').Model
 
+    const thisCtor = this.constructor as typeof import('../Model').Model
     return relatedCtor
       .query()
-      .where(type, this.constructor.name)
-      .where(id, (this as any)[(this.constructor as any).primaryKey])
+      .where(type, thisCtor.name)
+      .where(
+        id,
+        (this as Model & Record<string, unknown>)[thisCtor.primaryKey] as unknown
+      ) as QueryBuilderContract<T>
   }
 
   /**
@@ -145,9 +170,9 @@ export class HasRelationships {
    * @param id - ID field name
    * @returns Query builder for the relationship
    */
-  morphTo(_name: string, type: string, id: string): any {
-    const typeName = (this as any)[type]
-    const idValue = (this as any)[id]
+  morphTo(_name: string, type: string, id: string): QueryBuilderContract<Model> | null {
+    const typeName = (this as Model & Record<string, unknown>)[type] as string | undefined
+    const idValue = (this as Model & Record<string, unknown>)[id] as unknown
 
     if (!typeName || !idValue) {
       return null

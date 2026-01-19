@@ -291,20 +291,20 @@ export function MorphTo(
 
 function resolveForeignKey(
   type: RelationType,
-  Related: any,
+  Related: (ModelConstructor<Model> & typeof Model) | undefined,
   parentModel: typeof Model,
   morphName?: string
 ): string | undefined {
-  if (type === 'belongsTo') {
+  if (type === 'belongsTo' && Related) {
     const relatedTable = Related.getTable()
     return `${relatedTable.replace(/s$/, '')}_id`
   }
   if (type === 'hasMany' || type === 'hasOne') {
-    const parentTable = (parentModel as any).getTable()
+    const parentTable = parentModel.getTable()
     return `${parentTable.replace(/s$/, '')}_id`
   }
   if (type === 'belongsToMany') {
-    const parentTable = (parentModel as any).getTable()
+    const parentTable = parentModel.getTable()
     return `${parentTable.replace(/s$/, '')}_id`
   }
   if (type === 'morphMany' || type === 'morphOne') {
@@ -315,7 +315,7 @@ function resolveForeignKey(
 
 function resolveLocalKey(
   type: RelationType,
-  Related: any,
+  Related: (ModelConstructor<Model> & typeof Model) | undefined,
   parentModel: typeof Model
 ): string | undefined {
   if (type === 'belongsTo') {
@@ -363,7 +363,7 @@ export async function eagerLoad<T extends Model, R extends Model = Model>(
   let { type, foreignKey, localKey, morphName, morphTypeField, morphIdField } = relationMeta
 
   // Resolve defaults if missing
-  if (!foreignKey) {
+  if (!foreignKey && Related) {
     foreignKey = resolveForeignKey(type, Related, parentModel, morphName)
   }
 
@@ -371,7 +371,7 @@ export async function eagerLoad<T extends Model, R extends Model = Model>(
     morphTypeField = morphTypeField ?? `${morphName}_type`
   }
 
-  if (!localKey) {
+  if (!localKey && Related) {
     localKey = resolveLocalKey(type, Related, parentModel)
   }
 
