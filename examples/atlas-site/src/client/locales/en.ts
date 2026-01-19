@@ -109,7 +109,7 @@ export default {
       'atlas.connection("redis").set(...) — Absolute freedom to invoke any target with zero boilerplate.',
     bun_engine_title: 'Bun.sql Native Support',
     bun_engine_desc:
-      "Enable `useNativeDriver: true` to unlock Bun's high-speed, unified SQL API. Experience sub-millisecond query execution on a modern runtime.",
+      "Enable 'useNativeDriver: true' to unlock Bun's high-speed, unified SQL API. Experience sub-millisecond query execution on a modern runtime.",
     view_guide: 'View Driver Guide',
   },
   installation: {
