@@ -83,7 +83,7 @@ export interface QueueDriver {
   fail?(queue: string, job: SerializedJob): Promise<void>
 
   /**
-   * Get queue statistics.
+   * Get queue statistics including pending, delayed, and failed job counts.
    * @param queue - Queue name
    */
   stats?(queue: string): Promise<QueueStats>

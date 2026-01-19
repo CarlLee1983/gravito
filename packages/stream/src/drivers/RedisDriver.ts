@@ -402,6 +402,7 @@ export class RedisDriver implements QueueDriver {
 
   /**
    * Get queue statistics.
+   * Optimized with Redis Pipeline to fetch all priorities and DLQ stats in one trip.
    */
   async stats(queue: string): Promise<QueueStats> {
     const priorities = ['critical', 'high', 'default', 'low']

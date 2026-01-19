@@ -404,10 +404,11 @@ export class QueueManager {
   }
 
   /**
-   * Get queue statistics.
+   * Get queue statistics including size, delayed, and failed job counts.
    *
    * @param queue - Queue name (default: 'default').
    * @param connection - Connection name (optional).
+   * @returns Queue statistics object.
    */
   async stats(queue = 'default', connection: string = this.defaultConnection): Promise<QueueStats> {
     const driver = this.getDriver(connection)
