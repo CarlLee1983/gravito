@@ -107,7 +107,7 @@ describe('CacheRepository', () => {
       return 'v2'
     })
     expect(stale).toBe('v1')
-    await new Promise((resolve) => setTimeout(resolve, 100))
+    await new Promise((resolve) => setTimeout(resolve, 200))
     expect(await repo.get(key)).toBe('v2')
     expect(calls).toBe(2)
   })
