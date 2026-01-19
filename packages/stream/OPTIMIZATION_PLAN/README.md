@@ -102,7 +102,7 @@
 
 | 順序 | Phase | 內容 | 優先級 | 預估時間 | 依賴 | 狀態 |
 |-----|-------|------|--------|---------|------|------|
-| 1a | [00-baseline](./00-baseline/) | 基準測試 | 🔴 高 | 2-3 天 | 無 | 📋 可與 1b 平行 |
+| 1a | [00-baseline](./00-baseline/) | 基準測試 | 🔴 高 | 1 天 | 無 | ✅ 已完成 |
 | 1b | [01-type-safety](./01-type-safety/) | 類型安全優化 | 🔴 高 | 4-5 天 | 無 | 🔴 核心優化 |
 | 2 | [03-batch-optimization](./03-batch-optimization/) | 批量操作優化 | 🔴 高 | 3-4 天 | 1a, 1b | 含 Redis popMany |
 | 3 | [04-driver-optimization](./04-driver-optimization/) | 驅動層優化 | 🔴 高 | 4-5 天 | 2 | 含 BLPOP |

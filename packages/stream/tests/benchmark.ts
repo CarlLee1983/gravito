@@ -22,6 +22,9 @@ const manager = new QueueManager({
       driver: 'redis',
       client: redis as any,
     },
+    memory: {
+      driver: 'memory',
+    },
   },
   defaultSerializer: 'json',
 })
@@ -35,34 +38,51 @@ async function setup() {
 
 await setup()
 
-bench('push - single', async () => {
-  await manager.push(new BenchJob({ hello: 'world' }), { queue })
+// --- Redis Benchmarks ---
+
+bench('Redis: push - single', async () => {
+  await manager.push(new BenchJob({ hello: 'world' }).onConnection('redis'), { queue })
 })
 
-bench('pushMany - 100', async () => {
-  const jobs = Array.from({ length: 100 }, (_, i) => new BenchJob({ i }))
+bench('Redis: pushMany - 100', async () => {
+  const jobs = Array.from({ length: 100 }, (_, i) => new BenchJob({ i }).onConnection('redis'))
   await manager.pushMany(jobs)
 })
 
-bench('pop - single', async () => {
-  await manager.pop(queue)
+bench('Redis: pop - single', async () => {
+  await manager.pop(queue, 'redis')
 })
 
-const driver = manager.getDriver('redis')
-bench('popMany - 100', async () => {
-  await driver.popMany!(queue, 100)
+const redisDriver = manager.getDriver('redis')
+bench('Redis: popMany - 100', async () => {
+  await redisDriver.popMany!(queue, 100)
 })
 
-bench('pop - with priority (Lua)', async () => {
-  // Pushing different priorities to test Lua script logic
-  await manager.push(new BenchJob({ p: 'high' }).withPriority('high'), { queue })
-  await manager.pop(queue)
+bench('Redis: pop - with priority (Lua)', async () => {
+  await manager.push(new BenchJob({ p: 'high' }).withPriority('high').onConnection('redis'), {
+    queue,
+  })
+  await manager.pop(queue, 'redis')
 })
 
-bench('popBlocking - 1s timeout', async () => {
-  // This measures the overhead of BRPOP when data is already available
-  await manager.push(new BenchJob({ hello: 'blocking' }), { queue })
-  await driver.popBlocking!(queue, 1)
+// --- Memory Benchmarks ---
+
+bench('Memory: push - single', async () => {
+  await manager.push(new BenchJob({ hello: 'world' }).onConnection('memory'), { queue })
+})
+
+bench('Memory: pushMany - 100', async () => {
+  const jobs = Array.from({ length: 100 }, (_, i) => new BenchJob({ i }).onConnection('memory'))
+  await manager.pushMany(jobs)
+})
+
+bench('Memory: pop - single', async () => {
+  await manager.pop(queue, 'memory')
+})
+
+const memDriver = manager.getDriver('memory')
+bench('Memory: popMany - 100', async () => {
+  await memDriver.popMany!(queue, 100)
 })
 
 await run()
