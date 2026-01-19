@@ -1,5 +1,13 @@
 # @gravito/constellation
 
+## 3.0.2
+
+### Patch Changes
+
+- 7711324: fix: replace insecure Math.random() with crypto.randomUUID() for shadow ID generation (CWE-330) in ShadowProcessor, S3SitemapStorage, and GCPSitemapStorage.
+- Updated dependencies [905588f]
+  - @gravito/stream@2.0.1
+
 ## 3.0.1
 
 ### Patch Changes

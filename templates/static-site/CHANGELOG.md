@@ -1,5 +1,12 @@
 # my-gravito-static-site
 
+## 0.1.5
+
+### Patch Changes
+
+- Updated dependencies [7711324]
+  - @gravito/constellation@3.0.2
+
 ## 0.1.4
 
 ### Patch Changes

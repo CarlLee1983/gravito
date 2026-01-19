@@ -1,5 +1,12 @@
 # @gravito/zenith
 
+## 1.1.2
+
+### Patch Changes
+
+- Updated dependencies [905588f]
+  - @gravito/stream@2.0.1
+
 ## 1.1.1
 
 ### Patch Changes

@@ -1,5 +1,12 @@
 # @gravito/signal
 
+## 3.0.2
+
+### Patch Changes
+
+- Updated dependencies [905588f]
+  - @gravito/stream@2.0.1
+
 ## 3.0.1
 
 ### Patch Changes
