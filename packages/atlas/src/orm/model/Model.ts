@@ -1535,8 +1535,11 @@ export abstract class Model {
         if (typeof prop === 'string' && !(prop in target)) {
           // Check for local scope: active -> scopeActive
           const scopeMethod = `scope${prop.charAt(0).toUpperCase()}${prop.slice(1)}`
-          const modelClassWithScope = modelClass as typeof Model &
-            Record<string, (target: T, ...args: unknown[]) => void>
+          const modelClassWithScope = modelClass as unknown as typeof Model &
+            Record<
+              string,
+              (target: QueryBuilderContract<ModelAttributes>, ...args: unknown[]) => void
+            >
           if (typeof modelClassWithScope[scopeMethod] === 'function') {
             return (...args: unknown[]) => {
               modelClassWithScope[scopeMethod](target, ...args)
