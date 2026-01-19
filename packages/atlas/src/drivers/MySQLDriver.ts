@@ -271,22 +271,24 @@ export class MySQLDriver implements DriverContract {
   /**
    * Normalize MySQL/MariaDB errors
    */
-  private normalizeError(error: any, sql: string, bindings: unknown[]): DatabaseError {
-    const code = error.errno || error.code
+  private normalizeError(error: unknown, sql: string, bindings: unknown[]): DatabaseError {
+    const err = error as { errno?: number; code?: number; message?: string }
+    const code = err.errno || err.code
+    const message = err.message || String(error)
 
     if (code === 1062) {
-      return new UniqueConstraintError(error.message, error, sql, bindings)
+      return new UniqueConstraintError(message, error, sql, bindings)
     }
     if (code === 1451 || code === 1452) {
-      return new ForeignKeyConstraintError(error.message, error, sql, bindings)
+      return new ForeignKeyConstraintError(message, error, sql, bindings)
     }
     if (code === 1048) {
-      return new NotNullConstraintError(error.message, error, sql, bindings)
+      return new NotNullConstraintError(message, error, sql, bindings)
     }
     if (code === 1146) {
-      return new TableNotFoundError(error.message, error, sql, bindings)
+      return new TableNotFoundError(message, error, sql, bindings)
     }
 
-    return new DatabaseError(error.message, error, sql, bindings)
+    return new DatabaseError(message, error, sql, bindings)
   }
 }

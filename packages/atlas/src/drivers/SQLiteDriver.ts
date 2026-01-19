@@ -227,25 +227,27 @@ export class SQLiteDriver implements DriverContract {
 
      */
 
-  private normalizeError(error: any, sql: string, bindings: unknown[]): DatabaseError {
-    const message = error.message.toLowerCase()
+  private normalizeError(error: unknown, sql: string, bindings: unknown[]): DatabaseError {
+    const err = error as { message?: string }
+    const errorMessage = err.message || String(error)
+    const message = errorMessage.toLowerCase()
 
     if (message.includes('unique constraint failed') || message.includes('is not unique')) {
-      return new UniqueConstraintError(error.message, error, sql, bindings)
+      return new UniqueConstraintError(errorMessage, error, sql, bindings)
     }
 
     if (message.includes('foreign key constraint failed')) {
-      return new ForeignKeyConstraintError(error.message, error, sql, bindings)
+      return new ForeignKeyConstraintError(errorMessage, error, sql, bindings)
     }
 
     if (message.includes('not null constraint failed')) {
-      return new NotNullConstraintError(error.message, error, sql, bindings)
+      return new NotNullConstraintError(errorMessage, error, sql, bindings)
     }
 
     if (message.includes('no such table')) {
-      return new TableNotFoundError(error.message, error, sql, bindings)
+      return new TableNotFoundError(errorMessage, error, sql, bindings)
     }
 
-    return new DatabaseError(error.message, error, sql, bindings)
+    return new DatabaseError(errorMessage, error, sql, bindings)
   }
 }

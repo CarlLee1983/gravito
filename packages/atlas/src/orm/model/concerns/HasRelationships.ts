@@ -7,6 +7,8 @@
  * - Eager loading
  */
 
+import type { QueryBuilderContract } from '../../../types'
+import type { Model, ModelConstructor } from '../Model'
 import { getRelationships } from '../relationships'
 
 export class HasRelationships {
@@ -18,14 +20,24 @@ export class HasRelationships {
    * @param localKey - Local key on this model
    * @returns Query builder for relationship
    */
-  hasMany(related: any, foreignKey?: string, localKey?: string): any {
+  hasMany<T extends Model>(
+    related: ModelConstructor<T>,
+    foreignKey?: string,
+    localKey?: string
+  ): QueryBuilderContract<T> {
     const relatedModel = new related()
-    const relatedCtor = relatedModel.constructor as any
+    const relatedCtor = relatedModel.constructor as ModelConstructor<T> &
+      typeof import('../Model').Model
 
     const foreign = foreignKey ?? `${this.constructor.name.toLowerCase()}_id`
-    const local = localKey ?? (this.constructor as any).primaryKey
+    const local = localKey ?? (this.constructor as typeof import('../Model').Model).primaryKey
 
-    return relatedCtor.query().where(foreign, (this as any)[local])
+    return relatedCtor
+      .query()
+      .where(
+        foreign,
+        (this as Model & Record<string, unknown>)[local] as unknown
+      ) as QueryBuilderContract<T>
   }
 
   /**
@@ -36,14 +48,22 @@ export class HasRelationships {
    * @param ownerKey - Owner key on related model
    * @returns Query builder for relationship
    */
-  belongsTo(related: any, foreignKey?: string, ownerKey?: string): any {
+  belongsTo<T extends Model>(
+    related: ModelConstructor<T>,
+    foreignKey?: string,
+    ownerKey?: string
+  ): QueryBuilderContract<T> {
     const relatedModel = new related()
-    const relatedCtor = relatedModel.constructor as any
+    const relatedCtor = relatedModel.constructor as ModelConstructor<T> &
+      typeof import('../Model').Model
 
     const foreign = foreignKey ?? `${relatedModel.constructor.name.toLowerCase()}_id`
     const owner = ownerKey ?? relatedCtor.primaryKey
 
-    return relatedCtor.where(owner, (this as any)[foreign])
+    return relatedCtor.where(
+      owner,
+      (this as Model & Record<string, unknown>)[foreign] as unknown
+    ) as QueryBuilderContract<T>
   }
 
   /**
