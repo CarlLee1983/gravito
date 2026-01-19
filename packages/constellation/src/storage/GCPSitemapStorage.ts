@@ -178,7 +178,7 @@ export class GCPSitemapStorage implements SitemapStorage {
     }
 
     const { bucket } = await this.getStorageClient()
-    const id = shadowId || `shadow-${Date.now()}-${Math.random().toString(36).substring(7)}`
+    const id = shadowId || `shadow-${Date.now()}-${crypto.randomUUID()}`
     const shadowKey = this.getKey(`${filename}.shadow.${id}`)
     const file = bucket.file(shadowKey)
 
