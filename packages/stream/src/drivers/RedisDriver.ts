@@ -119,6 +119,45 @@ export class RedisDriver implements QueueDriver {
     end
   `
 
+  // Lua Logic:
+  // Iterate priorities.
+  // Check paused.
+  // RPOP count.
+  private static POP_MANY_SCRIPT = `
+    local queue = KEYS[1]
+    local prefix = ARGV[1]
+    local count = tonumber(ARGV[2])
+    
+    local priorities = {'critical', 'high', 'default', 'low'}
+    local result = {}
+    
+    for _, priority in ipairs(priorities) do
+      if #result >= count then break end
+      
+      local key = prefix .. queue
+      if priority ~= 'default' then
+        key = key .. ':' .. priority
+      end
+      
+      -- Check Paused
+      local isPaused = redis.call("GET", key .. ":paused")
+      if isPaused ~= "1" then
+        local needed = count - #result
+        -- Loop RPOP to get items
+        for i = 1, needed do
+            local job = redis.call("RPOP", key)
+            if job then
+                table.insert(result, job)
+            else
+                break
+            end
+        end
+      end
+    end
+    
+    return result
+  `
+
   constructor(config: RedisDriverConfig) {
     this.client = config.client
     this.prefix = config.prefix ?? 'queue:'
@@ -139,6 +178,10 @@ export class RedisDriver implements QueueDriver {
       this.client.defineCommand('completeGroupJob', {
         numberOfKeys: 3,
         lua: RedisDriver.COMPLETE_SCRIPT,
+      })
+      this.client.defineCommand('popMany', {
+        numberOfKeys: 1,
+        lua: RedisDriver.POP_MANY_SCRIPT,
       })
     }
   }
@@ -486,6 +529,48 @@ export class RedisDriver implements QueueDriver {
     const hasPriority = jobs.some((j) => (j as any).priority) // SerializedJob needs priority type update too
 
     if (hasGroup || hasPriority) {
+      // Use pipeline if available (ioredis)
+      if (typeof (this.client as any).pipeline === 'function') {
+        const pipe = (this.client as any).pipeline()
+        for (const job of jobs) {
+          const priority = (job as any).priority
+          const key = this.getKey(queue, priority)
+          const groupId = job.groupId
+
+          const payload = JSON.stringify({
+            id: job.id,
+            type: job.type,
+            data: job.data,
+            className: job.className,
+            createdAt: job.createdAt,
+            delaySeconds: job.delaySeconds,
+            attempts: job.attempts,
+            maxAttempts: job.maxAttempts,
+            groupId: groupId,
+            priority: priority,
+            error: job.error,
+            failedAt: job.failedAt,
+          })
+
+          if (groupId) {
+            const activeSetKey = `${this.prefix}active`
+            const pendingListKey = `${this.prefix}pending:${groupId}`
+            pipe.pushGroupJob(key, activeSetKey, pendingListKey, groupId, payload)
+          } else {
+            if (job.delaySeconds && job.delaySeconds > 0) {
+              const delayKey = `${key}:delayed`
+              const score = Date.now() + job.delaySeconds * 1000
+              pipe.zadd(delayKey, score, payload)
+            } else {
+              pipe.lpush(key, payload)
+            }
+          }
+        }
+        await pipe.exec()
+        return
+      }
+
+      // Fallback
       for (const job of jobs) {
         await this.push(queue, job, {
           groupId: job.groupId,
@@ -525,6 +610,28 @@ export class RedisDriver implements QueueDriver {
     if (count === 1) {
       const job = await this.pop(queue)
       return job ? [job] : []
+    }
+
+    // Use Lua script for atomic batch pop across priorities
+    if (typeof (this.client as any).popMany === 'function') {
+      try {
+        const result = await (this.client as any).popMany(queue, this.prefix, count)
+        if (Array.isArray(result) && result.length > 0) {
+          return result.map((p: string) => this.parsePayload(p))
+        } else if (Array.isArray(result) && result.length === 0) {
+          // Script returned empty array
+        } else {
+          // Fallback if result is weird
+        }
+        // If we got results (even partial), return them.
+        // If we got empty array, it means nothing found.
+        if (Array.isArray(result)) {
+          return result.map((p: string) => this.parsePayload(p))
+        }
+      } catch (err) {
+        console.error('[RedisDriver] Lua popMany error:', err)
+        // Fallback to manual loop
+      }
     }
 
     const priorities = ['critical', 'high', 'default', 'low']

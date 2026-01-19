@@ -200,9 +200,9 @@ export class DatabaseDriver implements QueueDriver {
       return job ? [job] : []
     }
 
-    // 1. Select and lock multiple rows
-    const result = await this.dbService
-      .execute<{
+    try {
+      // 1. Select and lock multiple rows
+      const result = await this.dbService.execute<{
         id: string
         payload: string
         attempts: number
@@ -219,44 +219,50 @@ export class DatabaseDriver implements QueueDriver {
          FOR UPDATE SKIP LOCKED`,
         [queue]
       )
-      .catch(() => {
-        // Fallback or handle missing skip locked
-        return [] as any
+
+      const rows = Array.isArray(result) ? result : result ? [result] : []
+      if (!rows || rows.length === 0) return []
+
+      // Ensure rows is treated as array of objects (DatabaseService might return different shapes)
+      const validRows = rows.filter((r) => r?.id) as any[]
+      if (validRows.length === 0) return []
+
+      const ids = validRows.map((r) => r.id)
+
+      // 2. Mark as reserved in batch
+      await this.dbService.execute(
+        `UPDATE ${this.tableName}
+         SET reserved_at = NOW()
+         WHERE id IN (${ids.map((_, i) => `$${i + 1}`).join(', ')})`,
+        ids
+      )
+
+      // 3. Map to SerializedJob
+      return validRows.map((row) => {
+        const createdAt = new Date(row.created_at).getTime()
+        try {
+          const parsed = JSON.parse(row.payload)
+          return {
+            ...parsed,
+            id: row.id,
+            attempts: row.attempts,
+          }
+        } catch (_e) {
+          return {
+            id: row.id,
+            type: 'class' as const,
+            data: row.payload,
+            createdAt,
+            attempts: row.attempts,
+          }
+        }
       })
-
-    const rows = result as any[]
-    if (!rows || rows.length === 0) return []
-
-    const ids = rows.map((r) => r.id)
-
-    // 2. Mark as reserved in batch
-    await this.dbService.execute(
-      `UPDATE ${this.tableName}
-       SET reserved_at = NOW()
-       WHERE id IN (${ids.map((_, i) => `$${i + 1}`).join(', ')})`,
-      ids
-    )
-
-    // 3. Map to SerializedJob
-    return rows.map((row) => {
-      const createdAt = new Date(row.created_at).getTime()
-      try {
-        const parsed = JSON.parse(row.payload)
-        return {
-          ...parsed,
-          id: row.id,
-          attempts: row.attempts,
-        }
-      } catch (_e) {
-        return {
-          id: row.id,
-          type: 'class' as const,
-          data: row.payload,
-          createdAt,
-          attempts: row.attempts,
-        }
-      }
-    })
+    } catch (_e) {
+      // Fallback: If SKIP LOCKED is not supported, fall back to single pop loop
+      // We avoid blocking FOR UPDATE on multiple rows to prevent deadlock/starvation
+      const firstJob = await this.pop(queue)
+      return firstJob ? [firstJob] : []
+    }
   }
 
   /**
