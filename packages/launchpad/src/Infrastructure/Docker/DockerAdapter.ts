@@ -15,7 +15,7 @@ export class DockerAdapter implements IDockerAdapter {
   private runtime = getRuntimeAdapter()
 
   async createBaseContainer(): Promise<string> {
-    const rocketId = `rocket-${Math.random().toString(36).substring(2, 9)}`
+    const rocketId = `rocket-${crypto.randomUUID()}`
 
     const proc = this.runtime.spawn([
       'docker',

@@ -23,6 +23,12 @@ import type { SitemapEntry, SitemapStreamOptions } from '../types'
 export class SitemapStream {
   private options: SitemapStreamOptions
   private entries: SitemapEntry[] = []
+  private flags = {
+    hasImages: false,
+    hasVideos: false,
+    hasNews: false,
+    hasAlternates: false,
+  }
 
   constructor(options: SitemapStreamOptions) {
     this.options = { ...options }
@@ -33,11 +39,22 @@ export class SitemapStream {
   }
 
   add(entry: string | SitemapEntry): this {
-    if (typeof entry === 'string') {
-      this.entries.push({ url: entry })
-    } else {
-      this.entries.push(entry)
+    const e = typeof entry === 'string' ? { url: entry } : entry
+    this.entries.push(e)
+
+    if (e.images && e.images.length > 0) {
+      this.flags.hasImages = true
     }
+    if (e.videos && e.videos.length > 0) {
+      this.flags.hasVideos = true
+    }
+    if (e.news) {
+      this.flags.hasNews = true
+    }
+    if (e.alternates && e.alternates.length > 0) {
+      this.flags.hasAlternates = true
+    }
+
     return this
   }
 
@@ -50,66 +67,65 @@ export class SitemapStream {
 
   toXML(): string {
     const { baseUrl, pretty } = this.options
+    const parts: string[] = []
 
-    let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`
-    xml += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"`
+    parts.push('<?xml version="1.0" encoding="UTF-8"?>\n')
+    parts.push('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"')
 
-    // Add namespaces if needed
-    if (this.hasImages()) {
-      xml += ` xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"`
+    if (this.flags.hasImages) {
+      parts.push(' xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"')
     }
-    if (this.hasVideos()) {
-      xml += ` xmlns:video="http://www.google.com/schemas/sitemap-video/1.1"`
+    if (this.flags.hasVideos) {
+      parts.push(' xmlns:video="http://www.google.com/schemas/sitemap-video/1.1"')
     }
-    if (this.hasNews()) {
-      xml += ` xmlns:news="http://www.google.com/schemas/sitemap-news/0.9"`
+    if (this.flags.hasNews) {
+      parts.push(' xmlns:news="http://www.google.com/schemas/sitemap-news/0.9"')
     }
-    if (this.hasAlternates()) {
-      xml += ` xmlns:xhtml="http://www.w3.org/1999/xhtml"`
+    if (this.flags.hasAlternates) {
+      parts.push(' xmlns:xhtml="http://www.w3.org/1999/xhtml"')
     }
 
-    xml += `>\n`
+    parts.push('>\n')
 
     for (const entry of this.entries) {
-      xml += this.renderUrl(entry, baseUrl, pretty)
+      parts.push(this.renderUrl(entry, baseUrl, pretty))
     }
 
-    xml += `</urlset>`
+    parts.push('</urlset>')
 
-    return xml
+    return parts.join('')
   }
 
   private renderUrl(entry: SitemapEntry, baseUrl: string, pretty?: boolean): string {
     const indent = pretty ? '  ' : ''
     const subIndent = pretty ? '    ' : ''
     const nl = pretty ? '\n' : ''
+    const parts: string[] = []
 
     let loc = entry.url
     if (!loc.startsWith('http')) {
-      // Ensure url starts with / if not absolute
       if (!loc.startsWith('/')) {
         loc = `/${loc}`
       }
       loc = baseUrl + loc
     }
 
-    let item = `${indent}<url>${nl}`
-    item += `${subIndent}<loc>${this.escape(loc)}</loc>${nl}`
+    parts.push(`${indent}<url>${nl}`)
+    parts.push(`${subIndent}<loc>${this.escape(loc)}</loc>${nl}`)
 
     if (entry.lastmod) {
       const date = entry.lastmod instanceof Date ? entry.lastmod : new Date(entry.lastmod)
-      item += `${subIndent}<lastmod>${date.toISOString().split('T')[0]}</lastmod>${nl}`
+      parts.push(`${subIndent}<lastmod>${date.toISOString().split('T')[0]}</lastmod>${nl}`)
     }
 
     if (entry.changefreq) {
-      item += `${subIndent}<changefreq>${entry.changefreq}</changefreq>${nl}`
+      parts.push(`${subIndent}<changefreq>${entry.changefreq}</changefreq>${nl}`)
     }
 
     if (entry.priority !== undefined) {
-      item += `${subIndent}<priority>${entry.priority.toFixed(1)}</priority>${nl}`
+      parts.push(`${subIndent}<priority>${entry.priority.toFixed(1)}</priority>${nl}`)
     }
 
-    // Alternates (i18n)
     if (entry.alternates) {
       for (const alt of entry.alternates) {
         let altLoc = alt.url
@@ -119,11 +135,12 @@ export class SitemapStream {
           }
           altLoc = baseUrl + altLoc
         }
-        item += `${subIndent}<xhtml:link rel="alternate" hreflang="${alt.lang}" href="${this.escape(altLoc)}"/>${nl}`
+        parts.push(
+          `${subIndent}<xhtml:link rel="alternate" hreflang="${alt.lang}" href="${this.escape(altLoc)}"/>${nl}`
+        )
       }
     }
 
-    // Canonical link (for redirects)
     if (entry.redirect?.canonical) {
       let canonicalUrl = entry.redirect.canonical
       if (!canonicalUrl.startsWith('http')) {
@@ -132,15 +149,17 @@ export class SitemapStream {
         }
         canonicalUrl = baseUrl + canonicalUrl
       }
-      item += `${subIndent}<xhtml:link rel="canonical" href="${this.escape(canonicalUrl)}"/>${nl}`
+      parts.push(
+        `${subIndent}<xhtml:link rel="canonical" href="${this.escape(canonicalUrl)}"/>${nl}`
+      )
     }
 
-    // Redirect comment (for documentation)
     if (entry.redirect && !entry.redirect.canonical) {
-      item += `${subIndent}<!-- Redirect: ${entry.redirect.from} → ${entry.redirect.to} (${entry.redirect.type}) -->${nl}`
+      parts.push(
+        `${subIndent}<!-- Redirect: ${entry.redirect.from} → ${entry.redirect.to} (${entry.redirect.type}) -->${nl}`
+      )
     }
 
-    // Images
     if (entry.images) {
       for (const img of entry.images) {
         let loc = img.loc
@@ -150,104 +169,114 @@ export class SitemapStream {
           }
           loc = baseUrl + loc
         }
-        item += `${subIndent}<image:image>${nl}`
-        item += `${subIndent}  <image:loc>${this.escape(loc)}</image:loc>${nl}`
+        parts.push(`${subIndent}<image:image>${nl}`)
+        parts.push(`${subIndent}  <image:loc>${this.escape(loc)}</image:loc>${nl}`)
         if (img.title) {
-          item += `${subIndent}  <image:title>${this.escape(img.title)}</image:title>${nl}`
+          parts.push(`${subIndent}  <image:title>${this.escape(img.title)}</image:title>${nl}`)
         }
         if (img.caption) {
-          item += `${subIndent}  <image:caption>${this.escape(img.caption)}</image:caption>${nl}`
+          parts.push(
+            `${subIndent}  <image:caption>${this.escape(img.caption)}</image:caption>${nl}`
+          )
         }
         if (img.geo_location) {
-          item += `${subIndent}  <image:geo_location>${this.escape(img.geo_location)}</image:geo_location>${nl}`
+          parts.push(
+            `${subIndent}  <image:geo_location>${this.escape(img.geo_location)}</image:geo_location>${nl}`
+          )
         }
         if (img.license) {
-          item += `${subIndent}  <image:license>${this.escape(img.license)}</image:license>${nl}`
+          parts.push(
+            `${subIndent}  <image:license>${this.escape(img.license)}</image:license>${nl}`
+          )
         }
-        item += `${subIndent}</image:image>${nl}`
+        parts.push(`${subIndent}</image:image>${nl}`)
       }
     }
 
-    // Videos
     if (entry.videos) {
       for (const video of entry.videos) {
-        item += `${subIndent}<video:video>${nl}`
-        item += `${subIndent}  <video:thumbnail_loc>${this.escape(video.thumbnail_loc)}</video:thumbnail_loc>${nl}`
-        item += `${subIndent}  <video:title>${this.escape(video.title)}</video:title>${nl}`
-        item += `${subIndent}  <video:description>${this.escape(video.description)}</video:description>${nl}`
+        parts.push(`${subIndent}<video:video>${nl}`)
+        parts.push(
+          `${subIndent}  <video:thumbnail_loc>${this.escape(video.thumbnail_loc)}</video:thumbnail_loc>${nl}`
+        )
+        parts.push(`${subIndent}  <video:title>${this.escape(video.title)}</video:title>${nl}`)
+        parts.push(
+          `${subIndent}  <video:description>${this.escape(video.description)}</video:description>${nl}`
+        )
         if (video.content_loc) {
-          item += `${subIndent}  <video:content_loc>${this.escape(video.content_loc)}</video:content_loc>${nl}`
+          parts.push(
+            `${subIndent}  <video:content_loc>${this.escape(video.content_loc)}</video:content_loc>${nl}`
+          )
         }
         if (video.player_loc) {
-          item += `${subIndent}  <video:player_loc>${this.escape(video.player_loc)}</video:player_loc>${nl}`
+          parts.push(
+            `${subIndent}  <video:player_loc>${this.escape(video.player_loc)}</video:player_loc>${nl}`
+          )
         }
         if (video.duration) {
-          item += `${subIndent}  <video:duration>${video.duration}</video:duration>${nl}`
+          parts.push(`${subIndent}  <video:duration>${video.duration}</video:duration>${nl}`)
         }
         if (video.view_count) {
-          item += `${subIndent}  <video:view_count>${video.view_count}</video:view_count>${nl}`
+          parts.push(`${subIndent}  <video:view_count>${video.view_count}</video:view_count>${nl}`)
         }
         if (video.publication_date) {
           const pubDate =
             video.publication_date instanceof Date
               ? video.publication_date
               : new Date(video.publication_date)
-          item += `${subIndent}  <video:publication_date>${pubDate.toISOString()}</video:publication_date>${nl}`
+          parts.push(
+            `${subIndent}  <video:publication_date>${pubDate.toISOString()}</video:publication_date>${nl}`
+          )
         }
         if (video.family_friendly) {
-          item += `${subIndent}  <video:family_friendly>${video.family_friendly}</video:family_friendly>${nl}`
+          parts.push(
+            `${subIndent}  <video:family_friendly>${video.family_friendly}</video:family_friendly>${nl}`
+          )
         }
         if (video.tag) {
           for (const tag of video.tag) {
-            item += `${subIndent}  <video:tag>${this.escape(tag)}</video:tag>${nl}`
+            parts.push(`${subIndent}  <video:tag>${this.escape(tag)}</video:tag>${nl}`)
           }
         }
-        item += `${subIndent}</video:video>${nl}`
+        parts.push(`${subIndent}</video:video>${nl}`)
       }
     }
 
-    // News
     if (entry.news) {
-      item += `${subIndent}<news:news>${nl}`
-      item += `${subIndent}  <news:publication>${nl}`
-      item += `${subIndent}    <news:name>${this.escape(entry.news.publication.name)}</news:name>${nl}`
-      item += `${subIndent}    <news:language>${this.escape(entry.news.publication.language)}</news:language>${nl}`
-      item += `${subIndent}  </news:publication>${nl}`
+      parts.push(`${subIndent}<news:news>${nl}`)
+      parts.push(`${subIndent}  <news:publication>${nl}`)
+      parts.push(
+        `${subIndent}    <news:name>${this.escape(entry.news.publication.name)}</news:name>${nl}`
+      )
+      parts.push(
+        `${subIndent}    <news:language>${this.escape(entry.news.publication.language)}</news:language>${nl}`
+      )
+      parts.push(`${subIndent}  </news:publication>${nl}`)
 
       const pubDate =
         entry.news.publication_date instanceof Date
           ? entry.news.publication_date
           : new Date(entry.news.publication_date)
-      item += `${subIndent}  <news:publication_date>${pubDate.toISOString()}</news:publication_date>${nl}`
-      item += `${subIndent}  <news:title>${this.escape(entry.news.title)}</news:title>${nl}`
+      parts.push(
+        `${subIndent}  <news:publication_date>${pubDate.toISOString()}</news:publication_date>${nl}`
+      )
+      parts.push(`${subIndent}  <news:title>${this.escape(entry.news.title)}</news:title>${nl}`)
 
       if (entry.news.genres) {
-        item += `${subIndent}  <news:genres>${this.escape(entry.news.genres)}</news:genres>${nl}`
+        parts.push(
+          `${subIndent}  <news:genres>${this.escape(entry.news.genres)}</news:genres>${nl}`
+        )
       }
       if (entry.news.keywords) {
-        item += `${subIndent}  <news:keywords>${entry.news.keywords.map((k) => this.escape(k)).join(', ')}</news:keywords>${nl}`
+        parts.push(
+          `${subIndent}  <news:keywords>${entry.news.keywords.map((k) => this.escape(k)).join(', ')}</news:keywords>${nl}`
+        )
       }
-      item += `${subIndent}</news:news>${nl}`
+      parts.push(`${subIndent}</news:news>${nl}`)
     }
 
-    item += `${indent}</url>${nl}`
-    return item
-  }
-
-  private hasImages(): boolean {
-    return this.entries.some((e) => e.images && e.images.length > 0)
-  }
-
-  private hasVideos(): boolean {
-    return this.entries.some((e) => e.videos && e.videos.length > 0)
-  }
-
-  private hasNews(): boolean {
-    return this.entries.some((e) => !!e.news)
-  }
-
-  private hasAlternates(): boolean {
-    return this.entries.some((e) => e.alternates && e.alternates.length > 0)
+    parts.push(`${indent}</url>${nl}`)
+    return parts.join('')
   }
 
   private escape(str: string): string {
@@ -257,5 +286,9 @@ export class SitemapStream {
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&apos;')
+  }
+
+  getEntries(): SitemapEntry[] {
+    return this.entries
   }
 }

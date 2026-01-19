@@ -125,6 +125,33 @@ export class GCPSitemapStorage implements SitemapStorage {
     }
   }
 
+  async readStream(filename: string): Promise<AsyncIterable<string> | null> {
+    try {
+      const { bucket } = await this.getStorageClient()
+      const key = this.getKey(filename)
+      const file = bucket.file(key)
+
+      const [exists] = await file.exists()
+      if (!exists) {
+        return null
+      }
+
+      const stream = file.createReadStream()
+      return (async function* () {
+        const decoder = new TextDecoder()
+        for await (const chunk of stream) {
+          yield decoder.decode(chunk, { stream: true })
+        }
+        yield decoder.decode()
+      })()
+    } catch (error: any) {
+      if (error.code === 404) {
+        return null
+      }
+      throw error
+    }
+  }
+
   async exists(filename: string): Promise<boolean> {
     try {
       const { bucket } = await this.getStorageClient()
@@ -151,7 +178,7 @@ export class GCPSitemapStorage implements SitemapStorage {
     }
 
     const { bucket } = await this.getStorageClient()
-    const id = shadowId || `shadow-${Date.now()}-${Math.random().toString(36).substring(7)}`
+    const id = shadowId || `shadow-${Date.now()}-${crypto.randomUUID()}`
     const shadowKey = this.getKey(`${filename}.shadow.${id}`)
     const file = bucket.file(shadowKey)
 

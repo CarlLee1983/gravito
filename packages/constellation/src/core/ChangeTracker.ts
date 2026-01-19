@@ -22,6 +22,7 @@ export interface MemoryChangeTrackerOptions {
  */
 export class MemoryChangeTracker implements ChangeTracker {
   private changes: SitemapChange[] = []
+  private urlIndex = new Map<string, SitemapChange[]>()
   private maxChanges: number
 
   constructor(options: MemoryChangeTrackerOptions = {}) {
@@ -31,9 +32,24 @@ export class MemoryChangeTracker implements ChangeTracker {
   async track(change: SitemapChange): Promise<void> {
     this.changes.push(change)
 
-    // 如果超過最大數量，移除最舊的變更
+    const urlChanges = this.urlIndex.get(change.url) || []
+    urlChanges.push(change)
+    this.urlIndex.set(change.url, urlChanges)
+
     if (this.changes.length > this.maxChanges) {
-      this.changes = this.changes.slice(-this.maxChanges)
+      const removed = this.changes.shift()
+      if (removed) {
+        const changes = this.urlIndex.get(removed.url)
+        if (changes) {
+          const index = changes.indexOf(removed)
+          if (index > -1) {
+            changes.splice(index, 1)
+          }
+          if (changes.length === 0) {
+            this.urlIndex.delete(removed.url)
+          }
+        }
+      }
     }
   }
 
@@ -46,16 +62,23 @@ export class MemoryChangeTracker implements ChangeTracker {
   }
 
   async getChangesByUrl(url: string): Promise<SitemapChange[]> {
-    return this.changes.filter((change) => change.url === url)
+    return this.urlIndex.get(url) || []
   }
 
   async clear(since?: Date): Promise<void> {
     if (!since) {
       this.changes = []
+      this.urlIndex.clear()
       return
     }
 
     this.changes = this.changes.filter((change) => change.timestamp < since)
+    this.urlIndex.clear()
+    for (const change of this.changes) {
+      const urlChanges = this.urlIndex.get(change.url) || []
+      urlChanges.push(change)
+      this.urlIndex.set(change.url, urlChanges)
+    }
   }
 }
 

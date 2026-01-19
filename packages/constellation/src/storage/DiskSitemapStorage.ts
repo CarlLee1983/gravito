@@ -1,3 +1,4 @@
+import { createReadStream } from 'node:fs'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import type { SitemapStorage } from '../types'
@@ -50,6 +51,19 @@ export class DiskSitemapStorage implements SitemapStorage {
     try {
       const safeName = sanitizeFilename(filename)
       return await fs.readFile(path.join(this.outDir, safeName), 'utf-8')
+    } catch {
+      return null
+    }
+  }
+
+  async readStream(filename: string): Promise<AsyncIterable<string> | null> {
+    try {
+      const safeName = sanitizeFilename(filename)
+      const fullPath = path.join(this.outDir, safeName)
+      await fs.access(fullPath)
+
+      const stream = createReadStream(fullPath, { encoding: 'utf-8' })
+      return stream as any as AsyncIterable<string>
     } catch {
       return null
     }

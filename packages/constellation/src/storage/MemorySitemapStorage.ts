@@ -28,6 +28,17 @@ export class MemorySitemapStorage implements SitemapStorage {
     return this.files.get(filename) || null
   }
 
+  async readStream(filename: string): Promise<AsyncIterable<string> | null> {
+    const content = this.files.get(filename)
+    if (content === undefined) {
+      return null
+    }
+
+    return (async function* () {
+      yield content
+    })()
+  }
+
   async exists(filename: string): Promise<boolean> {
     return this.files.has(filename)
   }

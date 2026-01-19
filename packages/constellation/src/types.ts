@@ -215,6 +215,8 @@ export interface SitemapStorage {
    */
   read(filename: string): Promise<string | null>
 
+  readStream?(filename: string): Promise<AsyncIterable<string> | null>
+
   /**
    * Check if a sitemap file exists in storage.
    *
@@ -473,6 +475,35 @@ export interface RedirectRule {
   type: 301 | 302
   /** Timestamp when the redirect rule was created. */
   createdAt?: Date
+}
+
+/**
+ * Represents a manifest file that tracks URL-to-shard mappings.
+ *
+ * @public
+ * @since 3.0.1
+ */
+export interface ShardManifest {
+  version: number
+  generatedAt: Date | string
+  baseUrl: string
+  maxEntriesPerShard: number
+  sort: string
+  shards: ShardInfo[]
+}
+
+/**
+ * Metadata about a single sitemap shard.
+ *
+ * @public
+ * @since 3.0.1
+ */
+export interface ShardInfo {
+  filename: string
+  from: string
+  to: string
+  count: number
+  lastmod: Date | string
 }
 
 /**

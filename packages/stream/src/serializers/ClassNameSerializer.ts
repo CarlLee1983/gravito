@@ -48,7 +48,7 @@ export class ClassNameSerializer implements JobSerializer {
    * Serialize a Job.
    */
   serialize(job: Job): SerializedJob {
-    const id = job.id || `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
+    const id = job.id || `${Date.now()}-${crypto.randomUUID()}`
     const className = job.constructor.name
 
     // Extract properties (exclude methods)
