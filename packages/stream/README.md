@@ -155,9 +155,8 @@ CREATE TABLE jobs (
   created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_jobs_queue_available ON jobs(queue, available_at);
-CREATE INDEX idx_jobs_reserved ON jobs(reserved_at);
-CREATE INDEX idx_jobs_queue_available ON jobs(queue, available_at);
+-- Optimized index for batch popping with SKIP LOCKED
+CREATE INDEX idx_jobs_queue_available_reserved ON jobs(queue, available_at, reserved_at);
 CREATE INDEX idx_jobs_reserved ON jobs(reserved_at);
 ```
 
