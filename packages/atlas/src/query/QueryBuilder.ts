@@ -1332,25 +1332,31 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * Clone the query builder
    * Uses Copy-on-Write (COW) pattern for better performance
    * Arrays are only copied when the clone is first modified
+   *
+   * Note: We copy arrays immediately to avoid issues when the original
+   * query is modified after cloning. This ensures true independence.
    */
   clone(): QueryBuilderContract<T> {
     const cloned = new QueryBuilder<T>(this.connection, this.grammar, this.tableName)
 
-    // Mark as clone - actual copying will happen on first modification
-    cloned._isClone = true
+    // Mark as clone - but we'll copy arrays immediately for independence
+    cloned._isClone = false // Not a clone anymore since we copy immediately
     cloned._isModified = false
 
-    // Share references (COW - copy on write)
-    cloned.columns = this.columns
+    // Copy arrays immediately to ensure independence
+    // This prevents issues when the original query is modified after cloning
+    cloned.columns = [...this.columns]
+    cloned.wheres = [...this.wheres]
+    cloned.orders = [...this.orders]
+    cloned.groups = [...this.groups]
+    cloned.havings = [...this.havings]
+    cloned.joins = [...this.joins]
+    cloned.bindingsList = [...this.bindingsList]
+
+    // Copy primitive values
     cloned.distinctValue = this.distinctValue
-    cloned.wheres = this.wheres
-    cloned.orders = this.orders
-    cloned.groups = this.groups
-    cloned.havings = this.havings
-    cloned.joins = this.joins
     cloned.limitValue = this.limitValue
     cloned.offsetValue = this.offsetValue
-    cloned.bindingsList = this.bindingsList
     cloned.isReadOnly = this.isReadOnly
 
     // Maps and Sets need to be copied (they're mutable)
