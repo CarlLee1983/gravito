@@ -66,6 +66,17 @@ export class MemoryDriver implements QueueDriver {
   }
 
   /**
+   * Mark a job as permanently failed.
+   */
+  async fail(queue: string, job: SerializedJob): Promise<void> {
+    const failedQueue = `failed:${queue}`
+    if (!this.queues.has(failedQueue)) {
+      this.queues.set(failedQueue, [])
+    }
+    this.queues.get(failedQueue)?.push(job)
+  }
+
+  /**
    * Get queue statistics.
    */
   async stats(queue: string): Promise<QueueStats> {

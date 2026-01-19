@@ -520,37 +520,71 @@ export class RedisDriver implements QueueDriver {
    */
   async popMany(queue: string, count: number): Promise<SerializedJob[]> {
     if (count <= 0) return []
+
+    // If we only need 1, use the optimized pop() which handles priorities and scripts correctly
     if (count === 1) {
       const job = await this.pop(queue)
       return job ? [job] : []
     }
 
-    // For better performance and atomicity across priorities, we should use a Lua script.
-    // However, to keep it simple and compatible for now, let's at least use Pipeline or RPOP count if available.
-    // If priority polling is needed, we do it in a loop but we can optimize the base case.
-
-    const key = this.getKey(queue)
-
-    // Check if RPOP with count is supported (Redis 6.2+)
-    // We try to call it and fallback if it fails or returns unexpected type
-    try {
-      const payloads = await (this.client as any).rpop(key, count)
-      if (Array.isArray(payloads)) {
-        return payloads.map((p) => this.parsePayload(p))
-      } else if (payloads) {
-        return [this.parsePayload(payloads)]
-      }
-    } catch (_e) {
-      // Fallback to loop if RPOP count is not supported
-    }
-
+    const priorities = ['critical', 'high', 'default', 'low']
     const results: SerializedJob[] = []
-    for (let i = 0; i < count; i++) {
-      const payload = await this.client.rpop(key)
-      if (payload) {
-        results.push(this.parsePayload(payload))
-      } else {
-        break
+    let remaining = count
+
+    for (const priority of priorities) {
+      if (remaining <= 0) break
+
+      const key = this.getKey(queue, priority === 'default' ? undefined : priority)
+
+      // Note: popMany strictly pulls from ready lists (RPOP).
+      // It DOES NOT check ZSET delayed jobs or Paused state for performance.
+      // Use standard pop() if those features are critical for every job.
+      // However, usually delayed jobs move to ready list via scheduler/worker.
+      // If the queue is paused, popMany() might still return jobs from the list unless we check.
+
+      // Check pause state once per priority key?
+      const isPaused = await this.client.get?.(`${key}:paused`)
+      if (isPaused === '1') continue
+
+      let fetched: string[] = []
+
+      // Try RPOP with count (Redis 6.2+)
+      try {
+        const reply = await (this.client as any).rpop(key, remaining)
+        if (reply) {
+          fetched = Array.isArray(reply) ? reply : [reply]
+        }
+      } catch (_e) {
+        // Fallback: Pipeline RPOP
+        if (typeof (this.client as any).pipeline === 'function') {
+          const pipeline = (this.client as any).pipeline()
+          for (let i = 0; i < remaining; i++) {
+            pipeline.rpop(key)
+          }
+          const replies = await pipeline.exec()
+          // replies is [[err, result], [err, result]...]
+          if (replies) {
+            fetched = replies.map((r: any) => r[1]).filter((r: any) => r !== null) as string[]
+          }
+        } else {
+          // Fallback: Serial loop (worst case)
+          for (let i = 0; i < remaining; i++) {
+            const res = await this.client.rpop(key)
+            if (res) fetched.push(res)
+            else break
+          }
+        }
+      }
+
+      if (fetched.length > 0) {
+        for (const payload of fetched) {
+          try {
+            results.push(this.parsePayload(payload))
+          } catch (e) {
+            console.error('[RedisDriver] Failed to parse job payload:', e)
+          }
+        }
+        remaining -= fetched.length
       }
     }
 
