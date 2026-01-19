@@ -1,6 +1,10 @@
 {
   "id": "04",
   "title": "FastContext",
-  "content": "<p><code>FastContext</code> 是一個池化資源，旨在最小化每個請求的記憶體分配。它採用 <strong>延遲解析 (Lazy Parsing)</strong> 策略，這意味著標頭和查詢字串僅在您的代碼實際請求它們時才會被處理。</p><h2>高效能輸入存取</h2><pre><code>app.get('/api/search/:category', (c) => {\n  // 1. 路徑參數 (由路由器預解析)\n  const category = c.req.param('category')\n\n  // 2. 查詢字串 (首次存取時延遲解析)\n  const query = c.req.query('q')\n\n  // 3. 標頭 (不區分大小寫的查找)\n  const userAgent = c.req.header('User-Agent')\n\n  return c.json({ category, query, userAgent })\n})</code></pre><h2>標準回應</h2><p>使用優化的輔助方法返回高速回應：</p><ul><li><code>c.json(data)</code>: 高速序列化。</li><li><code>c.text(str)</code>: 零複製字串回應。</li><li><code>c.html(html)</code>: 服務器端渲染支援。</li></ul>",
-  "meta": { "lastUpdated": "2026-01-15", "complexity": "MID_LEVEL", "category": "MEMORY" }
+  "content": "<p><code>FastContext</code> 是一個池化資源，旨在最小化每個請求的記憶體分配。它採用 <strong>延遲解析 (Lazy Parsing)</strong> 策略與 <strong>深度重置協定 (Deep-Reset Protocol)</strong>，確保極低的垃圾回收 (GC) 開銷。</p><h2>深度重置協定</h2><p>不同於傳統框架為每個請求創建新物件，Photon 引擎會回收並重複使用 Context 物件。深度重置協定會在 O(1) 時間內顯式清除內部引用並重置狀態機，防止記憶體洩漏，並保持 JIT 編譯器針對單態 (Monomorphic) 存取模式的最佳化。</p><h2>高效能輸入存取</h2><pre><code>app.get('/api/search/:category', (c) => {\n  // 1. 路徑參數 (由路由器預解析)\n  const category = c.req.param('category')\n\n  // 2. 查詢字串 (首次存取時延遲解析)\n  const query = c.req.query('q')\n\n  // 3. 標頭 (不區分大小寫的查找)\n  const userAgent = c.req.header('User-Agent')\n\n  return c.json({ category, query, userAgent })\n})</code></pre><h2>標準回應</h2><p>使用優化的輔助方法返回高速回應：</p><ul><li><code>c.json(data)</code>: 高速序列化。</li><li><code>c.text(str)</code>: 零複製字串回應。</li><li><code>c.html(html)</code>: 服務器端渲染支援。</li></ul>",
+  "meta": {
+    "lastUpdated": "2026-01-19",
+    "complexity": "MID_LEVEL",
+    "category": "MEMORY"
+  }
 }
