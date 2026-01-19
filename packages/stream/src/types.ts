@@ -47,6 +47,20 @@ export interface SerializedJob {
 }
 
 /**
+ * Database row for archived jobs.
+ */
+export interface JobRow {
+  id: number
+  job_id: string
+  queue: string
+  status: string
+  payload: string
+  error?: string | null
+  created_at: Date
+  archived_at: Date
+}
+
+/**
  * Statistics for a single queue.
  * @public
  */

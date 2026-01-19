@@ -1,15 +1,12 @@
+import type { ConnectionContract } from '@gravito/atlas'
 import { DB, Schema } from '@gravito/atlas'
-import type { PersistenceAdapter, SerializedJob } from '../types'
+import type { JobRow, PersistenceAdapter, SerializedJob } from '../types'
 
 /**
  * MySQL Persistence Adapter.
  * Archives jobs into a MySQL table for long-term auditing.
  */
 export class MySQLPersistence implements PersistenceAdapter {
-  /**
-   * @param db - An Atlas DB instance or compatible QueryBuilder.
-   * @param table - The name of the table to store archived jobs.
-   */
   private jobBuffer: Array<{
     queue: string
     job: SerializedJob
@@ -33,7 +30,7 @@ export class MySQLPersistence implements PersistenceAdapter {
    * @param options - Buffering options.
    */
   constructor(
-    private db: any,
+    private db: ConnectionContract,
     private table = 'flux_job_archive',
     private logsTable = 'flux_system_logs',
     options: { maxBufferSize?: number; flushInterval?: number } = {}
@@ -85,7 +82,7 @@ export class MySQLPersistence implements PersistenceAdapter {
       }))
 
       await this.db.table(this.table).insert(records)
-    } catch (err) {
+    } catch (err: unknown) {
       console.error(`[MySQLPersistence] Failed to archive ${jobs.length} jobs:`, err)
     }
   }
@@ -138,7 +135,6 @@ export class MySQLPersistence implements PersistenceAdapter {
       return null
     }
 
-    // Parse the stored payload
     try {
       const job = typeof row.payload === 'string' ? JSON.parse(row.payload) : row.payload
       return job
@@ -185,8 +181,8 @@ export class MySQLPersistence implements PersistenceAdapter {
       .offset(options.offset ?? 0)
       .get()
 
-    return rows
-      .map((r: any) => {
+    return (rows as unknown as JobRow[])
+      .map((r) => {
         try {
           const job = typeof r.payload === 'string' ? JSON.parse(r.payload) : r.payload
           return { ...job, _status: r.status, _archivedAt: r.archived_at }
@@ -194,7 +190,9 @@ export class MySQLPersistence implements PersistenceAdapter {
           return null
         }
       })
-      .filter(Boolean)
+      .filter(
+        (item): item is SerializedJob & { _status: string; _archivedAt: Date | string } => !!item
+      )
   }
 
   /**
@@ -222,8 +220,8 @@ export class MySQLPersistence implements PersistenceAdapter {
       .offset(options.offset ?? 0)
       .get()
 
-    return rows
-      .map((r: any) => {
+    return (rows as unknown as JobRow[])
+      .map((r) => {
         try {
           const job = typeof r.payload === 'string' ? JSON.parse(r.payload) : r.payload
           return { ...job, _status: r.status, _archivedAt: r.archived_at }
@@ -231,12 +229,11 @@ export class MySQLPersistence implements PersistenceAdapter {
           return null
         }
       })
-      .filter(Boolean)
+      .filter(
+        (item): item is SerializedJob & { _status: string; _archivedAt: Date | string } => !!item
+      )
   }
 
-  /**
-   * Archive a system log message.
-   */
   /**
    * Archive a system log message (buffered).
    */
@@ -282,8 +279,9 @@ export class MySQLPersistence implements PersistenceAdapter {
       }))
 
       await this.db.table(this.logsTable).insert(records)
-    } catch (err: any) {
-      console.error(`[MySQLPersistence] Failed to archive ${logs.length} logs:`, err.message)
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err : new Error(String(err))
+      console.error(`[MySQLPersistence] Failed to archive ${logs.length} logs:`, error.message)
     }
   }
 
@@ -368,8 +366,8 @@ export class MySQLPersistence implements PersistenceAdapter {
       query = query.where('timestamp', '<=', options.endTime)
     }
 
-    const result = await query.count('id as total').first()
-    return result?.total || 0
+    const result = await query.count()
+    return Number(result) || 0
   }
 
   /**
@@ -384,7 +382,7 @@ export class MySQLPersistence implements PersistenceAdapter {
       this.db.table(this.logsTable).where('timestamp', '<', threshold).delete(),
     ])
 
-    return (jobsDeleted || 0) + (logsDeleted || 0)
+    return (Number(jobsDeleted) || 0) + (Number(logsDeleted) || 0)
   }
 
   /**
@@ -417,8 +415,8 @@ export class MySQLPersistence implements PersistenceAdapter {
       query = query.where('archived_at', '<=', options.endTime)
     }
 
-    const result = await query.count('id as total').first()
-    return result?.total || 0
+    const result = await query.count()
+    return Number(result) || 0
   }
 
   /**

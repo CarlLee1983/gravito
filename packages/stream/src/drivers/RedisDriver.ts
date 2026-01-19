@@ -27,6 +27,25 @@ export interface RedisClient {
 }
 
 /**
+ * Extended Redis client with custom group commands.
+ */
+export interface GroupRedisClient extends RedisClient {
+  pushGroupJob(
+    waitList: string,
+    activeSet: string,
+    pendingList: string,
+    groupId: string,
+    payload: string
+  ): Promise<number>
+  completeGroupJob(
+    waitList: string,
+    activeSet: string,
+    pendingList: string,
+    groupId: string
+  ): Promise<number>
+}
+
+/**
  * Redis driver configuration.
  */
 export interface RedisDriverConfig {

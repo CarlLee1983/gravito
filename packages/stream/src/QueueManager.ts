@@ -2,6 +2,7 @@ import { MemoryDriver } from './drivers/MemoryDriver'
 import type { QueueDriver } from './drivers/QueueDriver'
 import type { Job } from './Job'
 import type { Queueable } from './Queueable'
+import type { Scheduler } from './Scheduler'
 import { ClassNameSerializer } from './serializers/ClassNameSerializer'
 import type { JobSerializer } from './serializers/JobSerializer'
 import { JsonSerializer } from './serializers/JsonSerializer'
@@ -39,7 +40,7 @@ export class QueueManager {
   private defaultConnection: string
   private defaultSerializer: JobSerializer
   private persistence?: QueueConfig['persistence']
-  private scheduler?: any // Using any to avoid circular dependency or import issues for now
+  private scheduler?: Scheduler
 
   constructor(config: QueueConfig = {}) {
     this.persistence = config.persistence
@@ -71,7 +72,7 @@ export class QueueManager {
    * @param name - Connection name
    * @param config - Connection config
    */
-  registerConnection(name: string, config: any): void {
+  registerConnection(name: string, config: QueueConnectionConfig): void {
     const driverType = config.driver
 
     switch (driverType) {
@@ -482,7 +483,7 @@ export class QueueManager {
   /**
    * Get the scheduler if configured.
    */
-  getScheduler(): any {
+  getScheduler(): Scheduler {
     if (!this.scheduler) {
       const { Scheduler } = require('./Scheduler')
       this.scheduler = new Scheduler(this)

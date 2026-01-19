@@ -1,4 +1,5 @@
 import parser from 'cron-parser'
+import type { GroupRedisClient } from './drivers/RedisDriver'
 import type { QueueManager } from './QueueManager'
 import type { SerializedJob } from './types'
 
@@ -55,9 +56,12 @@ export class Scheduler {
     this.prefix = options.prefix ?? 'queue:'
   }
 
-  private get client(): any {
+  private get client(): GroupRedisClient {
     const driver = this.manager.getDriver(this.manager.getDefaultConnection())
-    return (driver as any).client
+    if (!driver || !('client' in driver)) {
+      throw new Error('[Scheduler] Driver does not support Redis client access')
+    }
+    return (driver as { client: GroupRedisClient }).client
   }
 
   /**
@@ -71,7 +75,12 @@ export class Scheduler {
       enabled: true,
     }
 
-    const pipe = this.client.pipeline()
+    const client = this.client
+    if (typeof client.pipeline !== 'function') {
+      throw new Error('[Scheduler] Redis client does not support pipeline')
+    }
+
+    const pipe = client.pipeline()
     // 1. Store metadata
     pipe.hset(`${this.prefix}schedule:${config.id}`, {
       ...fullConfig,
@@ -86,7 +95,12 @@ export class Scheduler {
    * Remove a scheduled job.
    */
   async remove(id: string): Promise<void> {
-    const pipe = this.client.pipeline()
+    const client = this.client
+    if (typeof client.pipeline !== 'function') {
+      throw new Error('[Scheduler] Redis client does not support pipeline')
+    }
+
+    const pipe = client.pipeline()
     pipe.del(`${this.prefix}schedule:${id}`)
     pipe.zrem(`${this.prefix}schedules`, id)
     await pipe.exec()
@@ -96,11 +110,16 @@ export class Scheduler {
    * List all scheduled jobs.
    */
   async list(): Promise<ScheduledJobConfig[]> {
-    const ids = await this.client.zrange(`${this.prefix}schedules`, 0, -1)
+    const client = this.client
+    if (typeof client.zrange !== 'function') {
+      throw new Error('[Scheduler] Redis client does not support zrange')
+    }
+
+    const ids = await client.zrange(`${this.prefix}schedules`, 0, -1)
     const configs: ScheduledJobConfig[] = []
 
     for (const id of ids) {
-      const data = await this.client.hgetall(`${this.prefix}schedule:${id}`)
+      const data = await client.hgetall?.(`${this.prefix}schedule:${id}`)
       if (data?.id) {
         configs.push({
           ...data,
@@ -119,7 +138,9 @@ export class Scheduler {
    * Run a scheduled job immediately (out of schedule).
    */
   async runNow(id: string): Promise<void> {
-    const data = await this.client.hgetall(`${this.prefix}schedule:${id}`)
+    const client = this.client
+    const data = await client.hgetall?.(`${this.prefix}schedule:${id}`)
+
     if (data?.id) {
       const serialized = JSON.parse(data.job)
       const serializer = this.manager.getSerializer()
@@ -133,17 +154,27 @@ export class Scheduler {
    * This should be called periodically (e.g. every minute).
    */
   async tick(): Promise<number> {
+    const client = this.client
+    if (typeof client.zrangebyscore !== 'function') {
+      throw new Error('[Scheduler] Redis client does not support zrangebyscore')
+    }
+
     const now = Date.now()
-    const dueIds = await this.client.zrangebyscore(`${this.prefix}schedules`, 0, now)
+    const dueIds = await client.zrangebyscore(`${this.prefix}schedules`, 0, now)
     let fired = 0
 
     for (const id of dueIds) {
       // Use a lock to ensure only one worker processes this tick for this schedule
       const lockKey = `${this.prefix}lock:schedule:${id}:${Math.floor(now / 1000)}`
-      const lock = await this.client.set(lockKey, '1', 'EX', 10, 'NX')
+
+      if (typeof client.set !== 'function') {
+        continue // Skip if SET not supported
+      }
+
+      const lock = await client.set(lockKey, '1', 'EX', 10, 'NX')
 
       if (lock === 'OK') {
-        const data = await this.client.hgetall(`${this.prefix}schedule:${id}`)
+        const data = await client.hgetall?.(`${this.prefix}schedule:${id}`)
         if (data?.id && data.enabled === 'true') {
           try {
             const serializedJob = JSON.parse(data.job) as SerializedJob
@@ -157,17 +188,20 @@ export class Scheduler {
             // 2. Schedule next run
             const nextRun = (parser as any).parse(data.cron).next().getTime()
 
-            const pipe = this.client.pipeline()
-            pipe.hset(`${this.prefix}schedule:${id}`, {
-              lastRun: now,
-              nextRun: nextRun,
-            })
-            pipe.zadd(`${this.prefix}schedules`, nextRun, id)
-            await pipe.exec()
+            if (typeof client.pipeline === 'function') {
+              const pipe = client.pipeline()
+              pipe.hset(`${this.prefix}schedule:${id}`, {
+                lastRun: now,
+                nextRun: nextRun,
+              })
+              pipe.zadd(`${this.prefix}schedules`, nextRun, id)
+              await pipe.exec()
+            }
 
             fired++
-          } catch (err) {
-            console.error(`[Scheduler] Failed to process schedule ${id}:`, err)
+          } catch (err: unknown) {
+            const error = err instanceof Error ? err : new Error(String(err))
+            console.error(`[Scheduler] Failed to process schedule ${id}:`, error.message)
           }
         }
       }
