@@ -53,7 +53,7 @@ export class ShadowProcessor {
 
   constructor(options: ShadowProcessorOptions) {
     this.options = options
-    this.shadowId = `shadow-${Date.now()}-${Math.random().toString(36).substring(7)}`
+    this.shadowId = `shadow-${Date.now()}-${crypto.randomUUID()}`
   }
 
   /**

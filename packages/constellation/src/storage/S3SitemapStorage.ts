@@ -224,7 +224,7 @@ export class S3SitemapStorage implements SitemapStorage {
     }
 
     const s3 = await this.getS3Client()
-    const id = shadowId || `shadow-${Date.now()}-${Math.random().toString(36).substring(7)}`
+    const id = shadowId || `shadow-${Date.now()}-${crypto.randomUUID()}`
     const shadowKey = this.getKey(`${filename}.shadow.${id}`)
 
     await s3.client.send(
