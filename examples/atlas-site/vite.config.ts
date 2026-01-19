@@ -20,6 +20,25 @@ export default defineConfig({
     copyPublicDir: true,
     // Generate source maps for debugging (optional, can disable in production)
     sourcemap: false,
+    // Use absolute paths for assets to ensure they work in subdirectories
+    rollupOptions: {
+      output: {
+        // Use absolute paths for assets
+        assetFileNames: (assetInfo) => {
+          const info = assetInfo.name?.split('.') || []
+          const ext = info[info.length - 1]
+          if (/png|jpe?g|svg|gif|tiff|bmp|ico/i.test(ext)) {
+            return `assets/images/[name]-[hash][extname]`
+          }
+          if (/woff2?|eot|ttf|otf/i.test(ext)) {
+            return `assets/fonts/[name]-[hash][extname]`
+          }
+          return `assets/[name]-[hash][extname]`
+        },
+        chunkFileNames: 'assets/[name]-[hash].js',
+        entryFileNames: 'assets/[name]-[hash].js',
+      },
+    },
   },
   publicDir: 'public',
 })
