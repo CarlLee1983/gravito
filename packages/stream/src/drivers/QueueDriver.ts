@@ -48,6 +48,14 @@ export interface QueueDriver {
   pop(queue: string): Promise<SerializedJob | null>
 
   /**
+   * Pop a job from a queue (blocking).
+   * @param queues - Queue name or array of queue names
+   * @param timeout - Timeout in seconds
+   * @returns Serialized job, or `null` if timeout reached
+   */
+  popBlocking?(queues: string | string[], timeout: number): Promise<SerializedJob | null>
+
+  /**
    * Mark a job as completed (used for FIFO/Group handling).
    * @param queue - Queue name
    * @param job - Serialized job
@@ -120,14 +128,37 @@ export interface QueueDriver {
    * @param workerInfo - Worker information
    * @param prefix - Optional prefix for monitoring keys
    */
-  reportHeartbeat?(workerInfo: any, prefix?: string): Promise<void>
+  reportHeartbeat?(
+    workerInfo: {
+      id: string
+      status: string
+      hostname: string
+      pid: number
+      uptime: number
+      last_ping: string
+      queues: string[]
+      metrics?: Record<string, any>
+      [key: string]: any
+    },
+    prefix?: string
+  ): Promise<void>
 
   /**
    * Publish a log message for monitoring.
    * @param logPayload - Log payload
    * @param prefix - Optional prefix for monitoring channels/keys
    */
-  publishLog?(logPayload: any, prefix?: string): Promise<void>
+  publishLog?(
+    logPayload: {
+      level: string
+      message: string
+      workerId: string
+      jobId?: string
+      timestamp: string
+      [key: string]: any
+    },
+    prefix?: string
+  ): Promise<void>
 
   /**
    * Check if a queue is rate limited.

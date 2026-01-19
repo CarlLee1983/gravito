@@ -60,16 +60,66 @@ export interface TopicOptions {
 }
 
 /**
+ * PostgreSQL driver configuration.
+ */
+export interface DatabaseDriverConfig {
+  driver: 'database'
+  dbService: any // Still any until we have a proper DB service interface
+  table?: string
+}
+
+/**
+ * Redis driver configuration.
+ */
+export interface RedisDriverConfig {
+  driver: 'redis'
+  client: any // Will be improved in RedisDriver.ts
+  prefix?: string
+}
+
+/**
+ * Kafka driver configuration.
+ */
+export interface KafkaDriverConfig {
+  driver: 'kafka'
+  client: any
+  consumerGroupId?: string
+}
+
+/**
+ * SQS driver configuration.
+ */
+export interface SQSDriverConfig {
+  driver: 'sqs'
+  client: any
+  queueUrlPrefix?: string
+  visibilityTimeout?: number
+  waitTimeSeconds?: number
+}
+
+/**
+ * RabbitMQ driver configuration.
+ */
+export interface RabbitMQDriverConfig {
+  driver: 'rabbitmq'
+  client: any
+  exchange?: string
+  exchangeType?: string
+}
+
+/**
  * Configuration for a specific queue connection.
  * @public
  */
-export interface QueueConnectionConfig {
-  /** The driver type to use for this connection */
-  driver: 'memory' | 'database' | 'redis' | 'kafka' | 'sqs' | 'rabbitmq' | 'nats'
-
-  /** Driver-specific settings (e.g., connection string, table name) */
-  [key: string]: unknown
-}
+export type QueueConnectionConfig =
+  | { driver: 'memory' }
+  | DatabaseDriverConfig
+  | RedisDriverConfig
+  | KafkaDriverConfig
+  | SQSDriverConfig
+  | RabbitMQDriverConfig
+  | { driver: 'nats'; [key: string]: unknown }
+  | { driver: string; [key: string]: unknown }
 
 /**
  * Queue manager config.

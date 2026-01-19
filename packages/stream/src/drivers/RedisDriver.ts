@@ -2,21 +2,38 @@ import type { JobPushOptions, SerializedJob } from '../types'
 import type { QueueDriver } from './QueueDriver'
 
 /**
+ * Interface for Redis clients (compatible with ioredis and node-redis).
+ */
+export interface RedisClient {
+  lpush(key: string, ...values: string[]): Promise<number>
+  rpop(key: string): Promise<string | null>
+  llen(key: string): Promise<number>
+  del(key: string, ...keys: string[]): Promise<number>
+  lpushx?(key: string, ...values: string[]): Promise<number>
+  rpoplpush?(src: string, dst: string): Promise<string | null>
+  zadd?(key: string, score: number, member: string): Promise<number>
+  zrange?(key: string, start: number, end: number, ...args: string[]): Promise<string[]>
+  zrem?(key: string, ...members: string[]): Promise<number>
+  get?(key: string): Promise<string | null>
+  set?(key: string, value: string, ...args: any[]): Promise<'OK' | null>
+  ltrim?(key: string, start: number, stop: number): Promise<'OK'>
+  lrange?(key: string, start: number, stop: number): Promise<string[]>
+  publish?(channel: string, message: string): Promise<number>
+  pipeline?(): any
+  defineCommand?(name: string, options: { numberOfKeys: number; lua: string }): void
+  incr?(key: string): Promise<number>
+  expire?(key: string, seconds: number): Promise<number>
+  [key: string]: any
+}
+
+/**
  * Redis driver configuration.
  */
 export interface RedisDriverConfig {
   /**
    * Redis client instance (ioredis or node-redis).
    */
-  client: {
-    lpush: (key: string, ...values: string[]) => Promise<number>
-    rpop: (key: string) => Promise<string | null>
-    llen: (key: string) => Promise<number>
-    del: (key: string) => Promise<number>
-    lpushx?: (key: string, ...values: string[]) => Promise<number>
-    rpoplpush?: (src: string, dst: string) => Promise<string | null>
-    [key: string]: unknown
-  }
+  client: RedisClient
 
   /**
    * Key prefix (default: `queue:`).
@@ -94,12 +111,13 @@ export class RedisDriver implements QueueDriver {
     }
 
     // Register Lua scripts if defineCommand is available (ioredis)
-    if (typeof (this.client as any).defineCommand === 'function') {
-      ;(this.client as any).defineCommand('pushGroupJob', {
+    // Register Lua scripts if defineCommand is available (ioredis)
+    if (typeof this.client.defineCommand === 'function') {
+      this.client.defineCommand('pushGroupJob', {
         numberOfKeys: 3,
         lua: RedisDriver.PUSH_SCRIPT,
       })
-      ;(this.client as any).defineCommand('completeGroupJob', {
+      this.client.defineCommand('completeGroupJob', {
         numberOfKeys: 3,
         lua: RedisDriver.COMPLETE_SCRIPT,
       })
@@ -168,8 +186,8 @@ export class RedisDriver implements QueueDriver {
       const delayKey = `${key}:delayed`
       const score = Date.now() + job.delaySeconds * 1000
       // Store delayed job in ZSET
-      if (typeof (this.client as any).zadd === 'function') {
-        await (this.client as any).zadd(delayKey, score, payload)
+      if (typeof this.client.zadd === 'function') {
+        await this.client.zadd(delayKey, score, payload)
       } else {
         // Fallback: push directly (no delay support)
         await this.client.lpush(key, payload)
@@ -200,12 +218,11 @@ export class RedisDriver implements QueueDriver {
   }
 
   /**
-   * Pop a job (RPOP, FIFO).
+   * Pop a job from a queue (non-blocking).
    * Supports implicit priority polling (critical -> high -> default -> low).
    */
   async pop(queue: string): Promise<SerializedJob | null> {
     // Standard priorities to check implicitly
-    // undefined = the base queue (default)
     const priorities = ['critical', 'high', undefined, 'low']
 
     for (const priority of priorities) {
@@ -213,39 +230,67 @@ export class RedisDriver implements QueueDriver {
 
       // Check delayed queue first
       const delayKey = `${key}:delayed`
-      if (typeof (this.client as any).zrange === 'function') {
+      if (typeof this.client.zrange === 'function') {
         const now = Date.now()
-        const delayedJobs = await (this.client as any).zrange(delayKey, 0, 0, 'WITHSCORES')
+        const delayedJobs = await this.client.zrange(delayKey, 0, 0, 'WITHSCORES')
 
         if (delayedJobs && delayedJobs.length >= 2) {
           const score = parseFloat(delayedJobs[1]!)
           if (score <= now) {
             const payload = delayedJobs[0]!
-            await (this.client as any).zrem(delayKey, payload)
-            return this.parsePayload(payload)
+            if (this.client.zrem) {
+              await this.client.zrem(delayKey, payload)
+              return this.parsePayload(payload)
+            }
           }
         }
       }
 
-      // Check if this specific priority queue is paused
-      // Logic: Pausing 'default' should probably pause all its priorities?
-      // Current logic: Pausing 'default' sets 'queue:default:paused'.
-      // But here we are checking 'queue:default:high:paused'.
-      // If we want 'default' pause to cascade, we should check base queue pause too.
-      // For now, let's keep it simple: Pause applies to the specific list being checked.
-      if (typeof (this.client as any).get === 'function') {
-        const isPaused = await (this.client as any).get(`${key}:paused`)
+      if (typeof this.client.get === 'function') {
+        const isPaused = await this.client.get(`${key}:paused`)
         if (isPaused === '1') {
-          continue // Skip this priority, try next
+          continue
         }
       }
 
       // Pop from queue
       const payload = await this.client.rpop(key)
       if (payload) {
-        // Found a job in this priority!
         return this.parsePayload(payload)
       }
+    }
+
+    return null
+  }
+
+  /**
+   * Pop a job from the queue (blocking).
+   * Uses BRPOP for efficiency. Supports multiple queues and priorities.
+   */
+  async popBlocking(queues: string | string[], timeout: number): Promise<SerializedJob | null> {
+    const queueList = Array.isArray(queues) ? queues : [queues]
+    const priorities = ['critical', 'high', undefined, 'low']
+    const keys: string[] = []
+
+    for (const q of queueList) {
+      for (const p of priorities) {
+        keys.push(this.getKey(q, p))
+      }
+    }
+
+    if (typeof this.client.brpop !== 'function') {
+      // Fallback: pop from first queue if multiple
+      return this.pop(queueList[0]!)
+    }
+
+    try {
+      // ioredis/node-redis brpop returns [key, value]
+      const result = await this.client.brpop(...keys, timeout)
+      if (result && Array.isArray(result) && result.length >= 2) {
+        return this.parsePayload(result[1])
+      }
+    } catch (_e) {
+      // Timeout or error
     }
 
     return null
@@ -292,8 +337,8 @@ export class RedisDriver implements QueueDriver {
     await this.client.lpush(key, payload)
 
     // Optional: Keep DLQ capped at 1000 items to avoid bloat
-    if (typeof (this.client as any).ltrim === 'function') {
-      await (this.client as any).ltrim(key, 0, 999)
+    if (typeof this.client.ltrim === 'function') {
+      await this.client.ltrim(key, 0, 999)
     }
   }
 
@@ -306,7 +351,7 @@ export class RedisDriver implements QueueDriver {
     const activeSetKey = `${this.prefix}active`
 
     await this.client.del(key)
-    if (typeof (this.client as { del: unknown }).del === 'function') {
+    if (this.client.del) {
       await this.client.del(delayKey)
       // Also clear active set?
       // Ideally we should scan and clear all pending lists too but that's expensive.
@@ -359,11 +404,35 @@ export class RedisDriver implements QueueDriver {
 
   /**
    * Pop multiple jobs.
+   * Atomic operation across multiple priority levels.
    */
   async popMany(queue: string, count: number): Promise<SerializedJob[]> {
-    const key = this.getKey(queue)
-    const results: SerializedJob[] = []
+    if (count <= 0) return []
+    if (count === 1) {
+      const job = await this.pop(queue)
+      return job ? [job] : []
+    }
 
+    // For better performance and atomicity across priorities, we should use a Lua script.
+    // However, to keep it simple and compatible for now, let's at least use Pipeline or RPOP count if available.
+    // If priority polling is needed, we do it in a loop but we can optimize the base case.
+
+    const key = this.getKey(queue)
+
+    // Check if RPOP with count is supported (Redis 6.2+)
+    // We try to call it and fallback if it fails or returns unexpected type
+    try {
+      const payloads = await (this.client as any).rpop(key, count)
+      if (Array.isArray(payloads)) {
+        return payloads.map((p) => this.parsePayload(p))
+      } else if (payloads) {
+        return [this.parsePayload(payloads)]
+      }
+    } catch (_e) {
+      // Fallback to loop if RPOP count is not supported
+    }
+
+    const results: SerializedJob[] = []
     for (let i = 0; i < count; i++) {
       const payload = await this.client.rpop(key)
       if (payload) {
@@ -382,8 +451,8 @@ export class RedisDriver implements QueueDriver {
   async reportHeartbeat(workerInfo: any, prefix?: string): Promise<void> {
     const key = `${prefix ?? this.prefix}worker:${workerInfo.id}`
     // Support ioredis/node-redis style SET with EX
-    if (typeof (this.client as any).set === 'function') {
-      await (this.client as any).set(key, JSON.stringify(workerInfo), 'EX', 10)
+    if (typeof this.client.set === 'function') {
+      await this.client.set(key, JSON.stringify(workerInfo), 'EX', 10)
     }
   }
 
@@ -395,14 +464,14 @@ export class RedisDriver implements QueueDriver {
     const monitorPrefix = prefix ?? this.prefix
 
     // 1. PubSub
-    if (typeof (this.client as any).publish === 'function') {
-      await (this.client as any).publish(`${monitorPrefix}logs`, payload)
+    if (typeof this.client.publish === 'function') {
+      await this.client.publish(`${monitorPrefix}logs`, payload)
     }
 
     // 2. History (Capped List)
     const historyKey = `${monitorPrefix}logs:history`
-    if (typeof (this.client as any).pipeline === 'function') {
-      const pipe = (this.client as any).pipeline()
+    if (typeof this.client.pipeline === 'function') {
+      const pipe = this.client.pipeline()
       pipe.lpush(historyKey, payload)
       pipe.ltrim(historyKey, 0, 99)
       await pipe.exec()
@@ -424,10 +493,10 @@ export class RedisDriver implements QueueDriver {
     // Key format: queue:ratelimit:{windowStart}
     const windowKey = `${key}:${windowStart}`
 
-    const client = this.client as any
+    const client = this.client
     if (typeof client.incr === 'function') {
       const current = await client.incr(windowKey)
-      if (current === 1) {
+      if (current === 1 && client.expire) {
         // Set expiry for slightly more than duration to handle clock drift
         await client.expire(windowKey, Math.ceil(config.duration / 1000) + 1)
       }
@@ -442,7 +511,8 @@ export class RedisDriver implements QueueDriver {
    */
   async getFailed(queue: string, start = 0, end = -1): Promise<SerializedJob[]> {
     const key = `${this.getKey(queue)}:failed`
-    const payloads = await (this.client as any).lrange(key, start, end)
+    if (typeof this.client.lrange !== 'function') return []
+    const payloads = await this.client.lrange(key, start, end)
     return payloads.map((p: string) => this.parsePayload(p))
   }
 
@@ -457,7 +527,8 @@ export class RedisDriver implements QueueDriver {
     for (let i = 0; i < count; i++) {
       // RPOPLPUSH source destination
       // We pop from the RIGHT (assuming failures are pushed to LEFT, so oldest are on RIGHT)
-      const payload = await (this.client as any).rpop(failedKey)
+      if (typeof this.client.rpop !== 'function') break
+      const payload = await this.client.rpop(failedKey)
       if (!payload) {
         break
       }

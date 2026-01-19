@@ -5,7 +5,13 @@ import type { Queueable } from './Queueable'
 import { ClassNameSerializer } from './serializers/ClassNameSerializer'
 import type { JobSerializer } from './serializers/JobSerializer'
 import { JsonSerializer } from './serializers/JsonSerializer'
-import type { JobPushOptions, QueueConfig, SerializedJob } from './types'
+import type {
+  JobPushOptions,
+  PersistenceAdapter,
+  QueueConfig,
+  QueueConnectionConfig,
+  SerializedJob,
+} from './types'
 
 /**
  * Queue Manager
@@ -64,8 +70,8 @@ export class QueueManager {
    * @param name - Connection name
    * @param config - Connection config
    */
-  registerConnection(name: string, config: unknown): void {
-    const driverType = (config as { driver: string }).driver
+  registerConnection(name: string, config: any): void {
+    const driverType = config.driver
 
     switch (driverType) {
       case 'memory':
@@ -75,8 +81,7 @@ export class QueueManager {
       case 'database': {
         // Lazy-load DatabaseDriver
         const { DatabaseDriver } = require('./drivers/DatabaseDriver')
-        const dbService = (config as { dbService?: unknown }).dbService
-        if (!dbService) {
+        if (!config.dbService) {
           throw new Error(
             '[QueueManager] DatabaseDriver requires dbService. Please provide a database service that implements DatabaseService interface.'
           )
@@ -84,10 +89,8 @@ export class QueueManager {
         this.drivers.set(
           name,
           new DatabaseDriver({
-            // biome-ignore lint/suspicious/noExplicitAny: Dynamic driver loading requires type assertion
-            dbService: dbService as any,
-            // biome-ignore lint/suspicious/noExplicitAny: Dynamic driver config type
-            table: (config as any).table,
+            dbService: config.dbService,
+            table: config.table,
           })
         )
         break
@@ -96,8 +99,7 @@ export class QueueManager {
       case 'redis': {
         // Lazy-load RedisDriver
         const { RedisDriver } = require('./drivers/RedisDriver')
-        const client = (config as { client?: unknown }).client
-        if (!client) {
+        if (!config.client) {
           throw new Error(
             '[QueueManager] RedisDriver requires client. Please provide Redis client in connection config.'
           )
@@ -105,10 +107,8 @@ export class QueueManager {
         this.drivers.set(
           name,
           new RedisDriver({
-            // biome-ignore lint/suspicious/noExplicitAny: Dynamic driver loading requires type assertion
-            client: client as any,
-            // biome-ignore lint/suspicious/noExplicitAny: Dynamic driver config type
-            prefix: (config as any).prefix,
+            client: config.client,
+            prefix: config.prefix,
           })
         )
         break
@@ -117,8 +117,7 @@ export class QueueManager {
       case 'kafka': {
         // Lazy-load KafkaDriver
         const { KafkaDriver } = require('./drivers/KafkaDriver')
-        const client = (config as { client?: unknown }).client
-        if (!client) {
+        if (!config.client) {
           throw new Error(
             '[QueueManager] KafkaDriver requires client. Please provide Kafka client in connection config.'
           )
@@ -126,10 +125,8 @@ export class QueueManager {
         this.drivers.set(
           name,
           new KafkaDriver({
-            // biome-ignore lint/suspicious/noExplicitAny: Dynamic driver loading requires type assertion
-            client: client as any,
-            // biome-ignore lint/suspicious/noExplicitAny: Dynamic driver config type
-            consumerGroupId: (config as any).consumerGroupId,
+            client: config.client,
+            consumerGroupId: config.consumerGroupId,
           })
         )
         break
@@ -138,8 +135,7 @@ export class QueueManager {
       case 'sqs': {
         // Lazy-load SQSDriver
         const { SQSDriver } = require('./drivers/SQSDriver')
-        const client = (config as { client?: unknown }).client
-        if (!client) {
+        if (!config.client) {
           throw new Error(
             '[QueueManager] SQSDriver requires client. Please provide SQS client in connection config.'
           )
@@ -147,14 +143,10 @@ export class QueueManager {
         this.drivers.set(
           name,
           new SQSDriver({
-            // biome-ignore lint/suspicious/noExplicitAny: Dynamic driver loading requires type assertion
-            client: client as any,
-            // biome-ignore lint/suspicious/noExplicitAny: Dynamic driver config type
-            queueUrlPrefix: (config as any).queueUrlPrefix,
-            // biome-ignore lint/suspicious/noExplicitAny: Dynamic driver config type
-            visibilityTimeout: (config as any).visibilityTimeout,
-            // biome-ignore lint/suspicious/noExplicitAny: Dynamic driver config type
-            waitTimeSeconds: (config as any).waitTimeSeconds,
+            client: config.client,
+            queueUrlPrefix: config.queueUrlPrefix,
+            visibilityTimeout: config.visibilityTimeout,
+            waitTimeSeconds: config.waitTimeSeconds,
           })
         )
         break
@@ -163,8 +155,7 @@ export class QueueManager {
       case 'rabbitmq': {
         // Lazy-load RabbitMQDriver
         const { RabbitMQDriver } = require('./drivers/RabbitMQDriver')
-        const client = (config as { client?: unknown }).client
-        if (!client) {
+        if (!config.client) {
           throw new Error(
             '[QueueManager] RabbitMQDriver requires client. Please provide RabbitMQ connection/channel in connection config.'
           )
@@ -172,12 +163,9 @@ export class QueueManager {
         this.drivers.set(
           name,
           new RabbitMQDriver({
-            // biome-ignore lint/suspicious/noExplicitAny: Dynamic driver loading requires type assertion
-            client: client as any,
-            // biome-ignore lint/suspicious/noExplicitAny: Dynamic driver config type
-            exchange: (config as any).exchange,
-            // biome-ignore lint/suspicious/noExplicitAny: Dynamic driver config type
-            exchangeType: (config as any).exchangeType,
+            client: config.client,
+            exchange: config.exchange,
+            exchangeType: config.exchangeType,
           })
         )
         break
@@ -371,6 +359,39 @@ export class QueueManager {
   }
 
   /**
+   * Pop a job from the queue (blocking).
+   *
+   * @param queue - Queue name (default: 'default').
+   * @param timeout - Timeout in seconds (default: 0, wait forever).
+   * @param connection - Connection name (optional).
+   */
+  async popBlocking(
+    queues: string | string[] = 'default',
+    timeout = 0,
+    connection: string = this.defaultConnection
+  ): Promise<Job | null> {
+    const driver = this.getDriver(connection)
+    const serializer = this.getSerializer()
+
+    if (!driver.popBlocking) {
+      const q = Array.isArray(queues) ? queues[0]! : queues
+      return this.pop(q, connection)
+    }
+
+    const serialized = await driver.popBlocking(queues, timeout)
+    if (!serialized) {
+      return null
+    }
+
+    try {
+      return serializer.deserialize(serialized)
+    } catch (error) {
+      console.error('[QueueManager] Failed to deserialize job:', error)
+      return null
+    }
+  }
+
+  /**
    * Clear all jobs from a queue.
    *
    * @param queue - Queue name (default: 'default').
@@ -433,7 +454,7 @@ export class QueueManager {
   /**
    * Get the persistence adapter if configured.
    */
-  getPersistence(): any {
+  getPersistence(): PersistenceAdapter | undefined {
     return this.persistence?.adapter
   }
 
