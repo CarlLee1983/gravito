@@ -78,6 +78,25 @@ describe('@gravito/stream', () => {
       const popped = await driver.popMany?.('default', 2)
       expect(popped).toHaveLength(2)
     })
+
+    test('should respect maxSize limit', async () => {
+      const driver = new MemoryDriver({ maxSize: 1 })
+      const job1 = {
+        id: '1',
+        type: 'json' as const,
+        data: '{}',
+        createdAt: Date.now(),
+      }
+      const job2 = {
+        id: '2',
+        type: 'json' as const,
+        data: '{}',
+        createdAt: Date.now(),
+      }
+
+      await driver.push('default', job1)
+      expect(driver.push('default', job2)).rejects.toThrow(/full/)
+    })
   })
 
   describe('ClassNameSerializer', () => {

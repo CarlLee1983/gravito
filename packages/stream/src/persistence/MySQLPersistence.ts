@@ -7,65 +7,32 @@ import type { JobRow, PersistenceAdapter, SerializedJob } from '../types'
  * Archives jobs into a MySQL table for long-term auditing.
  */
 export class MySQLPersistence implements PersistenceAdapter {
-  private jobBuffer: Array<{
-    queue: string
-    job: SerializedJob
-    status: string
-  }> = []
-  private logBuffer: Array<{
-    level: string
-    message: string
-    workerId: string
-    queue?: string
-    timestamp: Date
-  }> = []
-  private flushTimer: ReturnType<typeof setTimeout> | null = null
-  private maxBufferSize: number
-  private flushInterval: number
-
   /**
    * @param db - An Atlas DB instance or compatible QueryBuilder.
    * @param table - The name of the table to store archived jobs.
    * @param logsTable - The name of the table to store system logs.
-   * @param options - Buffering options.
+   * @param options - Buffering options (Deprecated: Use BufferedPersistence wrapper instead).
    */
   constructor(
     private db: ConnectionContract,
     private table = 'flux_job_archive',
     private logsTable = 'flux_system_logs',
-    options: { maxBufferSize?: number; flushInterval?: number } = {}
-  ) {
-    this.maxBufferSize = options.maxBufferSize ?? 50
-    this.flushInterval = options.flushInterval ?? 5000 // 5 seconds
-  }
+    _options: { maxBufferSize?: number; flushInterval?: number } = {}
+  ) {}
 
-  /**
-   * Archive a job (buffered).
-   */
   async archive(
     queue: string,
     job: SerializedJob,
     status: 'completed' | 'failed' | 'waiting' | string
   ): Promise<void> {
-    this.jobBuffer.push({ queue, job, status })
-
-    if (this.jobBuffer.length >= this.maxBufferSize) {
-      this.flush().catch((err) => {
-        console.error('[MySQLPersistence] Auto-flush failed (jobs):', err)
-      })
-    } else {
-      this.ensureFlushTimer()
-    }
+    await this.archiveMany([{ queue, job, status }])
   }
 
-  /**
-   * Archive multiple jobs (direct batch write).
-   */
   async archiveMany(
     jobs: Array<{
       queue: string
       job: SerializedJob
-      status: string
+      status: 'completed' | 'failed' | 'waiting' | string
     }>
   ): Promise<void> {
     if (jobs.length === 0) return
@@ -87,47 +54,10 @@ export class MySQLPersistence implements PersistenceAdapter {
     }
   }
 
-  /**
-   * Ensure the flush timer is running.
-   */
-  private ensureFlushTimer(): void {
-    if (this.flushTimer) return
-
-    this.flushTimer = setTimeout(() => {
-      this.flush().catch((err) => {
-        console.error('[MySQLPersistence] Interval flush failed:', err)
-      })
-    }, this.flushInterval)
-  }
-
-  /**
-   * Flush all buffered data.
-   */
   async flush(): Promise<void> {
-    if (this.flushTimer) {
-      clearTimeout(this.flushTimer)
-      this.flushTimer = null
-    }
-
-    const jobs = [...this.jobBuffer]
-    const logs = [...this.logBuffer]
-    this.jobBuffer = []
-    this.logBuffer = []
-
-    const promises: Promise<void>[] = []
-    if (jobs.length > 0) {
-      promises.push(this.archiveMany(jobs))
-    }
-    if (logs.length > 0) {
-      promises.push(this.archiveLogMany(logs))
-    }
-
-    await Promise.all(promises)
+    // No-op: Buffering removed. Use BufferedPersistence if buffering is needed.
   }
 
-  /**
-   * Find a specific job in the archive.
-   */
   async find(queue: string, id: string): Promise<SerializedJob | null> {
     const row = await this.db.table(this.table).where('queue', queue).where('job_id', id).first()
 
@@ -244,15 +174,7 @@ export class MySQLPersistence implements PersistenceAdapter {
     queue?: string
     timestamp: Date
   }): Promise<void> {
-    this.logBuffer.push(log)
-
-    if (this.logBuffer.length >= this.maxBufferSize) {
-      this.flush().catch((err) => {
-        console.error('[MySQLPersistence] Auto-flush failed (logs):', err)
-      })
-    } else {
-      this.ensureFlushTimer()
-    }
+    await this.archiveLogMany([log])
   }
 
   /**

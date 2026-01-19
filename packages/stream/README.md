@@ -59,6 +59,18 @@ const consumer = new Consumer(manager, {
 })
 ```
 
+### 4. Concurrency & Groups
+
+```typescript
+const consumer = new Consumer(manager, {
+  queues: ['default'],
+  concurrency: 5,           // Process up to 5 jobs concurrently
+  groupJobsSequential: true // Ensure jobs with same groupId run sequentially (default: true)
+})
+```
+
+Jobs with the same `groupId` will always be processed in order, even with high concurrency. Jobs from different groups (or no group) will run in parallel.
+
 ### 2. Enqueue a job
 
 ```typescript
@@ -87,6 +99,27 @@ const core = await PlanetCore.boot({
       }
     })
   ]
+})
+```
+
+### 5. Polling & Batching Optimization
+
+```typescript
+const consumer = new Consumer(manager, {
+  queues: ['default'],
+  // Polling Strategy
+  pollInterval: 1000,       // Initial poll interval
+  minPollInterval: 100,     // Adaptive: reduce to 100ms when jobs found
+  maxPollInterval: 5000,    // Adaptive: backoff up to 5s when idle
+  backoffMultiplier: 1.5,   // Exponential backoff factor
+  
+  // Batch Consumption
+  batchSize: 10,            // Fetch 10 jobs at once (requires concurrency > 1 for parallel processing)
+  concurrency: 10,
+  
+  // Blocking Pop (Redis/SQS)
+  useBlocking: true,        // Use BLPOP when batchSize=1 (reduces CPU usage)
+  blockingTimeout: 5        // Block for 5 seconds
 })
 ```
 
@@ -173,7 +206,9 @@ OrbitStream.configure({
     adapter: new SQLitePersistence(DB), // or MySQLPersistence
     archiveCompleted: true, // Archive jobs when they complete successfully
     archiveFailed: true,    // Archive jobs when they fail permanently
-    archiveEnqueued: true   // (Audit Mode) Archive jobs immediately when pushed
+    archiveEnqueued: true,  // (Audit Mode) Archive jobs immediately when pushed
+    bufferSize: 100,        // (Optional) Batch size for buffered writes. Recommended: 50-200. Default: 0 (disabled)
+    flushInterval: 1000     // (Optional) Max time (ms) to wait before flushing buffer. Default: 0
   }
 })
 ```

@@ -215,6 +215,18 @@ export interface QueueConfig {
      * @default false
      */
     archiveEnqueued?: boolean
+
+    /**
+     * Buffer size for batched writes.
+     * If set, wraps the adapter in BufferedPersistence.
+     */
+    bufferSize?: number
+
+    /**
+     * Flush interval in ms for batched writes.
+     * If set, wraps the adapter in BufferedPersistence.
+     */
+    flushInterval?: number
   }
 }
 
@@ -237,9 +249,6 @@ export interface PersistenceAdapter {
    */
   find(queue: string, id: string): Promise<SerializedJob | null>
 
-  /**
-   * List jobs from the archive.
-   */
   /**
    * List jobs from the archive.
    */

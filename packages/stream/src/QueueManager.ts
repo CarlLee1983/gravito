@@ -47,6 +47,15 @@ export class QueueManager {
     this.persistence = config.persistence
     this.defaultConnection = config.default ?? 'default'
 
+    // Wrap persistence adapter if buffering is configured
+    if (this.persistence && (this.persistence.bufferSize || this.persistence.flushInterval)) {
+      const { BufferedPersistence } = require('./persistence/BufferedPersistence')
+      this.persistence.adapter = new BufferedPersistence(this.persistence.adapter, {
+        maxBufferSize: this.persistence.bufferSize,
+        flushInterval: this.persistence.flushInterval,
+      })
+    }
+
     // Initialize default serializer
     const serializerType = config.defaultSerializer ?? 'class'
     if (serializerType === 'class') {

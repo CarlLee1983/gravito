@@ -1,4 +1,5 @@
 import { EventEmitter } from 'node:events'
+import pLimit from 'p-limit'
 import type { Job } from './Job'
 import type { QueueManager } from './QueueManager'
 import type { WorkerOptions } from './Worker'
@@ -65,6 +66,52 @@ export interface ConsumerOptions {
    * Max concurrent jobs to process. Default: 1.
    */
   concurrency?: number
+
+  /**
+   * Whether to process jobs with the same groupId sequentially.
+   * If true, jobs with the same groupId will never run concurrently,
+   * regardless of the global concurrency setting.
+   * @default true
+   */
+  groupJobsSequential?: boolean
+
+  /**
+   * Minimum polling interval in ms (for adaptive polling).
+   * @default 100
+   */
+  minPollInterval?: number
+
+  /**
+   * Maximum polling interval in ms (for adaptive polling).
+   * @default 5000
+   */
+  maxPollInterval?: number
+
+  /**
+   * Backoff multiplier for adaptive polling.
+   * @default 1.5
+   */
+  backoffMultiplier?: number
+
+  /**
+   * Batch size for consuming jobs.
+   * If > 1, tries to fetch multiple jobs at once.
+   * @default 1
+   */
+  batchSize?: number
+
+  /**
+   * Whether to use blocking pop (BLPOP/long-polling) if supported by driver.
+   * Only applies when batchSize is 1.
+   * @default true
+   */
+  useBlocking?: boolean
+
+  /**
+   * Timeout in seconds for blocking pop.
+   * @default 5
+   */
+  blockingTimeout?: number
 }
 
 /**
@@ -98,6 +145,7 @@ export class Consumer extends EventEmitter {
   private stopRequested = false
   private workerId = `worker-${Math.random().toString(36).substring(2, 8)}`
   private heartbeatTimer: ReturnType<typeof setTimeout> | null = null
+  private groupLimiters = new Map<string, ReturnType<typeof pLimit>>()
 
   constructor(
     private queueManager: QueueManager,
@@ -122,9 +170,15 @@ export class Consumer extends EventEmitter {
     this.stopRequested = false
 
     const worker = new Worker(this.options.workerOptions)
-    const pollInterval = this.options.pollInterval ?? 1000
+    let currentPollInterval = this.options.pollInterval ?? 1000
+    const minPollInterval = this.options.minPollInterval ?? 100
+    const maxPollInterval = this.options.maxPollInterval ?? 5000
+    const backoffMultiplier = this.options.backoffMultiplier ?? 1.5
     const keepAlive = this.options.keepAlive ?? true
     const concurrency = this.options.concurrency ?? 1
+    const batchSize = this.options.batchSize ?? 1
+    const useBlocking = this.options.useBlocking ?? true
+    const blockingTimeout = this.options.blockingTimeout ?? 5
     let activeWorkers = 0
 
     console.log('[Consumer] Started', {
@@ -132,6 +186,7 @@ export class Consumer extends EventEmitter {
       connection: this.options.connection,
       workerId: this.workerId,
       concurrency,
+      batchSize,
     })
 
     if (this.options.monitor) {
@@ -145,7 +200,8 @@ export class Consumer extends EventEmitter {
     // Main loop
     while (this.running && !this.stopRequested) {
       // If we are at capacity, wait for a bit
-      if (activeWorkers >= concurrency) {
+      const capacity = concurrency - activeWorkers
+      if (capacity <= 0) {
         await new Promise((resolve) => setTimeout(resolve, 50))
         continue
       }
@@ -169,36 +225,67 @@ export class Consumer extends EventEmitter {
       }
 
       if (eligibleQueues.length === 0) {
-        await new Promise((resolve) => setTimeout(resolve, pollInterval))
+        await new Promise((resolve) => setTimeout(resolve, currentPollInterval))
         continue
       }
 
-      try {
-        const driver = this.queueManager.getDriver(this.connectionName)
-        let job: Job | null = null
+      let jobs: Job[] = []
+      let didBlock = false
 
-        // Try blocking pop if available and we have multiple potential queues
-        if (driver.popBlocking) {
-          const timeout = Math.max(1, Math.floor(pollInterval / 1000))
-          job = await this.queueManager.popBlocking(eligibleQueues, timeout, this.connectionName)
-        } else {
-          // Fallback to sequential non-blocking pop
+      try {
+        const currentBatchSize = Math.min(batchSize, capacity)
+        const driver = this.queueManager.getDriver(this.connectionName)
+
+        if (currentBatchSize > 1) {
+          // Batch fetch (non-blocking)
           for (const queue of eligibleQueues) {
-            job = await this.queueManager.pop(queue, this.connectionName)
-            if (job) break
+            const fetched = await this.queueManager.popMany(
+              queue,
+              currentBatchSize,
+              this.connectionName
+            )
+            if (fetched.length > 0) {
+              jobs = fetched
+              break
+            }
+          }
+        } else {
+          // Single fetch
+          if (useBlocking && driver.popBlocking) {
+            didBlock = true
+            const job = await this.queueManager.popBlocking(
+              eligibleQueues,
+              blockingTimeout,
+              this.connectionName
+            )
+            if (job) jobs.push(job)
+          } else {
+            // Sequential non-blocking pop
+            for (const queue of eligibleQueues) {
+              const job = await this.queueManager.pop(queue, this.connectionName)
+              if (job) {
+                jobs.push(job)
+                break
+              }
+            }
           }
         }
 
-        if (job) {
-          activeWorkers++
-          // Process job asynchronously to allow concurrency
-          this.handleJob(job, worker).finally(() => {
-            activeWorkers--
-          })
+        if (jobs.length > 0) {
+          activeWorkers += jobs.length
+          // Reset adaptive poll interval
+          currentPollInterval = minPollInterval
 
-          // Brief yield to allow next loop iteration or next blocking pop
+          // Process jobs asynchronously
+          for (const job of jobs) {
+            this.runJob(job, worker).finally(() => {
+              activeWorkers--
+            })
+          }
+
+          // Brief yield to allow next loop iteration
           await new Promise((resolve) => setTimeout(resolve, 0))
-          continue // Jump back to start of loop to check if we can process more
+          continue
         }
       } catch (error) {
         console.error('[Consumer] Loop error:', error)
@@ -210,11 +297,13 @@ export class Consumer extends EventEmitter {
       }
 
       // Wait if needed
-      if (!this.stopRequested && activeWorkers === 0) {
-        const driver = this.queueManager.getDriver(this.connectionName)
-        if (!driver.popBlocking) {
-          await new Promise((resolve) => setTimeout(resolve, pollInterval))
+      if (!this.stopRequested) {
+        if (!didBlock) {
+          // Adaptive backoff
+          await new Promise((resolve) => setTimeout(resolve, currentPollInterval))
+          currentPollInterval = Math.min(currentPollInterval * backoffMultiplier, maxPollInterval)
         }
+        // If didBlock, we effectively waited blockingTimeout, so we loop immediately
       } else {
         // Just yield
         await new Promise((resolve) => setTimeout(resolve, 50))
@@ -227,6 +316,33 @@ export class Consumer extends EventEmitter {
       await this.publishLog('info', 'Consumer stopped')
     }
     console.log('[Consumer] Stopped')
+  }
+
+  /**
+   * Run a job with concurrency controls.
+   */
+  private async runJob(job: Job, worker: Worker): Promise<void> {
+    // If group sequentiality is disabled or no groupId, run immediately
+    if (!job.groupId || this.options.groupJobsSequential === false) {
+      return this.handleJob(job, worker)
+    }
+
+    // Otherwise, ensure sequential execution for the group
+    let limiter = this.groupLimiters.get(job.groupId)
+    if (!limiter) {
+      limiter = pLimit(1)
+      this.groupLimiters.set(job.groupId, limiter)
+    }
+
+    // Schedule the job
+    await limiter(async () => {
+      await this.handleJob(job, worker)
+    })
+
+    // Cleanup limiter if empty
+    if (limiter.activeCount === 0 && limiter.pendingCount === 0) {
+      this.groupLimiters.delete(job.groupId)
+    }
   }
 
   /**
