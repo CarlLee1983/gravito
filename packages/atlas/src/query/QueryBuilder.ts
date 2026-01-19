@@ -49,7 +49,7 @@ export class RecordNotFoundError extends Error {
 export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderContract<T> {
   // Query state
   protected tableName: string
-  protected modelClass?: ModelConstructor<any> & typeof Model
+  protected modelClass?: ModelConstructor<Model>
   protected columns: string[] = ['*']
   protected distinctValue = false
   protected wheres: WhereClause[] = []
@@ -108,7 +108,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   /**
    * Set the model class for this query
    */
-  setModel<M extends Model>(model: ModelConstructor<M> & typeof Model): this {
+  setModel<M extends Model>(model: ModelConstructor<M>): this {
     this.ensureOwnState()
     this.modelClass = model
     return this
@@ -117,8 +117,8 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   /**
    * Get the model class
    */
-  getModel<M extends Model>(): (ModelConstructor<M> & typeof Model) | undefined {
-    return this.modelClass as (ModelConstructor<M> & typeof Model) | undefined
+  getModel<M extends Model>(): ModelConstructor<M> | undefined {
+    return this.modelClass as ModelConstructor<M> | undefined
   }
 
   // ============================================================================

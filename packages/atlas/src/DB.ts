@@ -210,11 +210,54 @@ export class DB {
   }
 
   /**
+   * Configure database from environment variables
+   * Supports DATABASE_URL or individual DB_* variables
+   *
+   * @example
+   * ```typescript
+   * // Using DATABASE_URL
+   * DB.configureFromEnv()
+   *
+   * // Using individual variables
+   * // DB_DRIVER=postgres
+   * // DB_HOST=localhost
+   * // DB_DATABASE=myapp
+   * DB.configureFromEnv()
+   * ```
+   */
+  static configureFromEnv(connectionName = 'default'): void {
+    const { fromEnv } = require('./config/defineConfig')
+    const config = fromEnv(connectionName)
+    DB.configure(config)
+  }
+
+  /**
    * Add a single connection
    */
   static addConnection(name: string, config: ConnectionConfig): void {
     DB.manager.addConnection(name, config)
     DB.initialized = true
+  }
+
+  /**
+   * Add connection from environment variables with prefix
+   * Useful for multiple connections from different env vars
+   *
+   * @example
+   * ```typescript
+   * // READ_DB_DRIVER=postgres
+   * // READ_DB_HOST=read-replica.example.com
+   * // READ_DB_DATABASE=myapp
+   * DB.addConnectionFromEnv('read', 'READ')
+   * ```
+   */
+  static addConnectionFromEnv(name: string, prefix = ''): void {
+    const { fromEnv } = require('./config/defineConfig')
+    const config = fromEnv(name, prefix)
+    DB.manager.addConnection(name, config.connections[name])
+    if (!DB.initialized) {
+      DB.initialized = true
+    }
   }
 
   /**

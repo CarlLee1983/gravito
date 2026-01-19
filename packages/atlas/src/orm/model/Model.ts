@@ -104,7 +104,7 @@ export abstract class Model {
   static hidden: string[] = []
   static visible: string[] = []
   static appends: string[] = []
-  static observers: Partial<ModelObserver<any>>[] = []
+  static observers: Partial<ModelObserver<Model>>[] = []
 
   /** Enable automatic timestamps
    * - `true`: Automatically manage both `created_at` and `updated_at`
