@@ -131,7 +131,7 @@ export abstract class Model {
   private static accessorCache = new Map<string, string | null>()
   private static mutatorCache = new Map<string, string | null>()
   private static relationCache?: Map<string, RelationshipMeta>
-  private static castCache = new Map<string, (value: any) => any>()
+  private static castCache = new Map<string, (value: unknown) => unknown>()
 
   /**
    * Get accessor name with caching
@@ -196,8 +196,8 @@ export abstract class Model {
   /**
    * Helper to get relationship value (extracted for reuse)
    */
-  private _getRelationValue(prop: string, relationMeta: RelationshipMeta): any {
-    const builderFn = (..._args: any[]) => {
+  private _getRelationValue(prop: string, relationMeta: RelationshipMeta): unknown {
+    const builderFn = (..._args: unknown[]) => {
       const type = relationMeta.type
 
       if (type === 'morphTo') {
@@ -224,10 +224,17 @@ export abstract class Model {
 
     // Make it thenable for lazy loading
     // biome-ignore lint/suspicious/noThenProperty: Intentional thenable
-    ;(builderFn as any).then = async (resolve: any, reject: any) => {
+    ;(
+      builderFn as {
+        then?: (
+          resolve: (value: unknown) => void,
+          reject: (error: unknown) => void
+        ) => Promise<unknown>
+      }
+    ).then = async (resolve: (value: unknown) => void, reject: (error: unknown) => void) => {
       try {
-        await (this as any).load(prop)
-        resolve((this as any)._attributes[prop])
+        await this.load(prop)
+        resolve(this._attributes[prop])
       } catch (err) {
         reject(err)
       }
@@ -560,12 +567,12 @@ export abstract class Model {
   /**
    * Get compiled caster function for a type
    */
-  private static getCaster(type: string): (value: any) => any {
+  private static getCaster(type: string): (value: unknown) => unknown {
     if (this.castCache.has(type)) {
       return this.castCache.get(type)!
     }
 
-    let caster: (value: any) => any
+    let caster: (value: unknown) => unknown
 
     switch (type) {
       case 'int':
@@ -576,20 +583,20 @@ export abstract class Model {
       case 'real':
       case 'float':
       case 'double':
-        caster = (v) => parseFloat(v)
+        caster = (v) => parseFloat(String(v))
         break
       case 'string':
         caster = (v) => String(v)
         break
       case 'bool':
       case 'boolean':
-        caster = (v) => [true, 1, '1', 'true', 'on', 'yes'].includes(v)
+        caster = (v) => [true, 1, '1', 'true', 'on', 'yes'].includes(v as string | number | boolean)
         break
       case 'object':
         caster = (v) => {
-          if (typeof v === 'object') return v
+          if (typeof v === 'object' && v !== null) return v
           try {
-            return JSON.parse(v)
+            return JSON.parse(String(v))
           } catch {
             return v
           }
@@ -597,9 +604,9 @@ export abstract class Model {
         break
       case 'json':
         caster = (v) => {
-          if (typeof v === 'object') return v
+          if (typeof v === 'object' && v !== null) return v
           try {
-            return JSON.parse(v)
+            return JSON.parse(String(v))
           } catch {
             return v
           }
@@ -607,10 +614,10 @@ export abstract class Model {
         break
       case 'date':
       case 'datetime':
-        caster = (v) => (v instanceof Date ? v : new Date(v))
+        caster = (v) => (v instanceof Date ? v : new Date(String(v)))
         break
       case 'timestamp':
-        caster = (v) => (v instanceof Date ? v.getTime() : new Date(v).getTime())
+        caster = (v) => (v instanceof Date ? v.getTime() : new Date(String(v)).getTime())
         break
       case 'collection':
         caster = (v) => (Array.isArray(v) ? v : [v])
@@ -626,7 +633,7 @@ export abstract class Model {
   /**
    * Cast attribute value to its type
    */
-  private _castAttribute(_key: string, value: any, type: string): any {
+  private _castAttribute(_key: string, value: unknown, type: string): unknown {
     if (value === null || value === undefined) {
       return value
     }
@@ -1404,7 +1411,7 @@ export abstract class Model {
     let safetyCounter = 0
     const MAX_CHUNKS = 10000 // Safety limit: 10M records max for cursor
 
-    let lastFirstId: any = null
+    let lastFirstId: string | number | null = null
 
     while (safetyCounter < MAX_CHUNKS) {
       const rows = await connection
@@ -1419,7 +1426,7 @@ export abstract class Model {
       }
 
       // Detect stuck cursor (offset ignored by driver)
-      const currentFirstId = rows[0][this.primaryKey]
+      const currentFirstId = rows[0][this.primaryKey] as string | number | null
       if (lastFirstId !== null && currentFirstId === lastFirstId) {
         // console.warn(`Cursor stuck at offset ${offset}. Offset might be ignored by driver.`)
         break
@@ -1520,9 +1527,11 @@ export abstract class Model {
         if (typeof prop === 'string' && !(prop in target)) {
           // Check for local scope: active -> scopeActive
           const scopeMethod = `scope${prop.charAt(0).toUpperCase()}${prop.slice(1)}`
-          if (typeof (modelClass as any)[scopeMethod] === 'function') {
-            return (...args: any[]) => {
-              ;(modelClass as any)[scopeMethod](target, ...args)
+          const modelClassWithScope = modelClass as typeof Model &
+            Record<string, (target: T, ...args: unknown[]) => void>
+          if (typeof modelClassWithScope[scopeMethod] === 'function') {
+            return (...args: unknown[]) => {
+              modelClassWithScope[scopeMethod](target, ...args)
               return proxy
             }
           }
@@ -1545,7 +1554,7 @@ export abstract class Model {
   static where<T extends Model>(
     this: ModelConstructor<T> & typeof Model,
     column: string | Record<string, unknown>,
-    operatorOrValue?: any,
+    operatorOrValue?: string | number | boolean | null | unknown,
     value?: unknown
   ): QueryBuilderContract<T> {
     return (this.query() as any).where(
@@ -1694,10 +1703,10 @@ export abstract class Model {
   /**
    * Convert model to plain object via toJSON
    */
-  toJSON(): any {
+  toJSON(): Record<string, unknown> {
     const modelCtor = this.constructor as typeof Model
     const attributes = { ...this._attributes }
-    const result: any = {}
+    const result: Record<string, unknown> = {}
 
     // 1. Process attributes (trigger accessors)
     for (const key of Object.keys(attributes)) {
@@ -1735,7 +1744,7 @@ export abstract class Model {
 
     // 4. Filter visible/hidden
     if (modelCtor.visible.length > 0) {
-      const filtered: any = {}
+      const filtered: Record<string, unknown> = {}
       for (const key of modelCtor.visible) {
         if (key in result) {
           filtered[key] = result[key]

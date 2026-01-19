@@ -474,8 +474,19 @@ export class DB {
   /**
    * Disconnect from all connections
    */
+  /**
+   * Disconnect all connections
+   */
   static async disconnectAll(): Promise<void> {
     await DB.manager.disconnectAll()
+  }
+
+  /**
+   * Shutdown the database manager (disconnect all and stop cleanup)
+   * Use this when shutting down the application
+   */
+  static async shutdown(): Promise<void> {
+    await DB.manager.shutdown()
   }
 
   /**

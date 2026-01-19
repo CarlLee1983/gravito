@@ -32,7 +32,7 @@ export function getJSType(value: unknown): string {
  * @param type - Target type
  * @returns Casted value
  */
-export function castAttribute(_key: string, value: any, type: string): any {
+export function castAttribute(_key: string, value: unknown, type: string): unknown {
   if (value === null || value === undefined) {
     return value
   }
