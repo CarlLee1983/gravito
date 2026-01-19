@@ -3,6 +3,7 @@ import { cp, mkdir, writeFile } from 'node:fs/promises'
 import { dirname, join, resolve } from 'node:path'
 import { promisify } from 'node:util'
 import { generateI18nEntries, SitemapStream } from '@gravito/constellation'
+import type { PlanetCore } from '@gravito/core'
 import type { Photon } from '@gravito/photon'
 import { Glob } from 'bun'
 import { bootstrap } from './src/bootstrap.ts'
@@ -19,11 +20,52 @@ async function build() {
     console.log('✅ Client build complete.')
   } catch (e) {
     console.error('❌ Client build failed:', e)
+    if (e instanceof Error) {
+      console.error('Error message:', e.message)
+      if ('stdout' in e && e.stdout) {
+        console.error('stdout:', e.stdout.toString())
+      }
+      if ('stderr' in e && e.stderr) {
+        console.error('stderr:', e.stderr.toString())
+      }
+    }
+    process.exit(1)
+  }
+
+  // Verify client build output exists
+  const staticBuildDir = join(process.cwd(), 'static', 'build')
+  try {
+    const { stat } = await import('node:fs/promises')
+    await stat(staticBuildDir)
+    console.log('✅ Client build output verified at:', staticBuildDir)
+  } catch (_e) {
+    console.error('❌ Client build output not found at:', staticBuildDir)
+    console.error('Current working directory:', process.cwd())
+    console.error('Available directories:')
+    try {
+      const { readdir } = await import('node:fs/promises')
+      const dirs = await readdir(process.cwd())
+      console.error(dirs.join(', '))
+    } catch {
+      // Ignore readdir errors
+    }
     process.exit(1)
   }
 
   // Initialize Core without starting server
-  const core = await bootstrap({ port: 3000 })
+  console.log('🚀 Initializing Core...')
+  let core: PlanetCore
+  try {
+    core = await bootstrap({ port: 3000 })
+    console.log('✅ Core initialized successfully')
+  } catch (e) {
+    console.error('❌ Failed to initialize Core:', e)
+    if (e instanceof Error) {
+      console.error('Error message:', e.message)
+      console.error('Error stack:', e.stack)
+    }
+    process.exit(1)
+  }
 
   const outputDir = join(process.cwd(), 'dist-static')
   const domain = 'https://gravito.dev'

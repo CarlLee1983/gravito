@@ -45,28 +45,77 @@ jobs:
       - name: Build Official Site
         working-directory: examples/official-site
         run: |
-          set -e  # Exit on any error
+          set -euo pipefail  # Exit on any error, undefined vars, pipe failures
+          
           echo "📦 Current directory: $(pwd)"
-          echo "📦 Building client assets..."
-          bun run build:client
-          echo "✅ Client build completed"
-          echo "📦 Building static site..."
-          bun run build:static
-          echo "✅ Build completed"
-          echo "📦 Checking dist-static directory..."
-          if [ -d "dist-static" ]; then
-            echo "✅ dist-static directory exists"
-            echo "📦 Contents:"
-            ls -la dist-static/ | head -30
-            if [ -f "dist-static/index.html" ]; then
-              echo "✅ index.html exists"
-              ls -lh dist-static/index.html
-            else
-              echo "❌ index.html NOT found!"
-            fi
-          else
-            echo "❌ dist-static directory NOT found!"
+          echo "📦 Environment variables:"
+          echo "  NODE_ENV: ${NODE_ENV:-not set}"
+          echo "  VITE_GA_ID: ${VITE_GA_ID:+set (hidden)}${VITE_GA_ID:-not set}"
+          
+          # Verify dependencies are built
+          echo "📦 Verifying package dependencies..."
+          if [ ! -d "../../packages/core/dist" ]; then
+            echo "❌ @gravito/core not built!"
+            exit 1
           fi
+          echo "✅ Dependencies verified"
+          
+          # Build client assets
+          echo "📦 Building client assets..."
+          if ! bun run build:client; then
+            echo "❌ Client build failed!"
+            echo "📦 Checking for build errors..."
+            if [ -d "static/build" ]; then
+              echo "⚠️  static/build directory exists but build may have failed"
+              ls -la static/build/ || true
+            fi
+            exit 1
+          fi
+          echo "✅ Client build completed"
+          
+          # Verify client build output
+          if [ ! -d "static/build" ]; then
+            echo "❌ Client build output (static/build) not found!"
+            echo "📦 Available directories:"
+            ls -la
+            exit 1
+          fi
+          echo "✅ Client build output verified"
+          
+          # Build static site
+          echo "📦 Building static site..."
+          if ! bun run build:static; then
+            echo "❌ Static site build failed!"
+            echo "📦 Checking for partial build output..."
+            if [ -d "dist-static" ]; then
+              echo "⚠️  dist-static directory exists but build may have failed"
+              ls -la dist-static/ | head -20 || true
+            fi
+            exit 1
+          fi
+          echo "✅ Build completed"
+          
+          # Verify build output
+          echo "📦 Checking dist-static directory..."
+          if [ ! -d "dist-static" ]; then
+            echo "❌ dist-static directory NOT found!"
+            echo "📦 Available directories:"
+            ls -la
+            exit 1
+          fi
+          
+          echo "✅ dist-static directory exists"
+          echo "📦 Contents:"
+          ls -la dist-static/ | head -30
+          
+          if [ ! -f "dist-static/index.html" ]; then
+            echo "❌ index.html NOT found!"
+            echo "📦 Searching for HTML files:"
+            find dist-static -name "*.html" | head -10 || true
+            exit 1
+          fi
+          echo "✅ index.html exists"
+          ls -lh dist-static/index.html
         env:
           NODE_ENV: production
           VITE_GA_ID: ${{ secrets.VITE_GA_ID }}
