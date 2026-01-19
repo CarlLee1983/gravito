@@ -43,8 +43,8 @@
         "typescript": "^5.9.3"
     },
     "simple-git-hooks": {
-        "pre-commit": "export PATH=\"~/.bun/bin:$PATH\" && bunx lint-staged",
-        "pre-push": "export PATH=\"~/.bun/bin:$PATH\" && bun run scripts/validate-affected-packages.ts"
+        "pre-commit": "export PATH=\"$HOME/.bun/bin:$PATH\" && bunx lint-staged",
+        "pre-push": "cd \"$(git rev-parse --show-toplevel)\" && export PATH=\"$HOME/.bun/bin:$PATH\" && bun scripts/validate-affected-packages.ts"
     },
     "lint-staged": {
         "*.{js,ts,cjs,mjs}": [
