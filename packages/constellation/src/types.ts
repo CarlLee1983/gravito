@@ -476,6 +476,35 @@ export interface RedirectRule {
 }
 
 /**
+ * Represents a manifest file that tracks URL-to-shard mappings.
+ *
+ * @public
+ * @since 3.0.1
+ */
+export interface ShardManifest {
+  version: number
+  generatedAt: Date | string
+  baseUrl: string
+  maxEntriesPerShard: number
+  sort: string
+  shards: ShardInfo[]
+}
+
+/**
+ * Metadata about a single sitemap shard.
+ *
+ * @public
+ * @since 3.0.1
+ */
+export interface ShardInfo {
+  filename: string
+  from: string
+  to: string
+  count: number
+  lastmod: Date | string
+}
+
+/**
  * Manager for registering and resolving redirect rules.
  *
  * @public
