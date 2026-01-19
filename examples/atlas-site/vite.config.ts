@@ -15,4 +15,11 @@ export default defineConfig({
       '/api': 'http://localhost:3000',
     },
   },
+  build: {
+    // Ensure public files are copied
+    copyPublicDir: true,
+    // Generate source maps for debugging (optional, can disable in production)
+    sourcemap: false,
+  },
+  publicDir: 'public',
 })
