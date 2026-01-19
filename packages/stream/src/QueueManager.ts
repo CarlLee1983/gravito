@@ -3,6 +3,7 @@ import type { QueueDriver } from './drivers/QueueDriver'
 import type { Job } from './Job'
 import type { Queueable } from './Queueable'
 import type { Scheduler } from './Scheduler'
+import { CachedSerializer } from './serializers/CachedSerializer'
 import { ClassNameSerializer } from './serializers/ClassNameSerializer'
 import type { JobSerializer } from './serializers/JobSerializer'
 import { JsonSerializer } from './serializers/JsonSerializer'
@@ -50,8 +51,16 @@ export class QueueManager {
     const serializerType = config.defaultSerializer ?? 'class'
     if (serializerType === 'class') {
       this.defaultSerializer = new ClassNameSerializer()
+    } else if (serializerType === 'msgpack') {
+      const { MessagePackSerializer } = require('./serializers/MessagePackSerializer')
+      this.defaultSerializer = new MessagePackSerializer()
     } else {
       this.defaultSerializer = new JsonSerializer()
+    }
+
+    // Wrap with CachedSerializer if enabled
+    if (config.useSerializationCache) {
+      this.defaultSerializer = new CachedSerializer(this.defaultSerializer)
     }
 
     // Initialize default connection (MemoryDriver)

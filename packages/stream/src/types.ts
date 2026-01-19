@@ -7,7 +7,7 @@ export interface SerializedJob {
   id: string
 
   /** Serializer type: 'json' for plain objects or 'class' for instances */
-  type: 'json' | 'class'
+  type: 'json' | 'class' | 'msgpack'
 
   /** Serialized data string */
   data: string
@@ -182,7 +182,14 @@ export interface QueueConfig {
   /**
    * Default serializer type.
    */
-  defaultSerializer?: 'json' | 'class'
+  defaultSerializer?: 'json' | 'class' | 'msgpack'
+
+  /**
+   * Whether to enable serialization caching.
+   * If true, re-queuing the same Job instance will use the cached serialized data.
+   * @default false
+   */
+  useSerializationCache?: boolean
 
   /**
    * Persistence configuration (SQL Archive).
