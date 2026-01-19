@@ -5,10 +5,14 @@
  * @param mixins - Mixin classes to apply
  * @returns Combined class with all mixin properties
  */
-export function applyMixins<T extends new (...args: any[]) => any, U extends any[]>(
-  base: T,
-  mixins: U
-): T & U {
+export function applyMixins<
+  T extends new (
+    ...args: unknown[]
+  ) => unknown,
+  U extends (new (
+    ...args: unknown[]
+  ) => unknown)[],
+>(base: T, mixins: U): T & U[number] {
   mixins.forEach((mixin) => {
     Object.getOwnPropertyNames(mixin.prototype).forEach((name) => {
       const descriptor = Object.getOwnPropertyDescriptor(mixin.prototype, name)
@@ -17,5 +21,7 @@ export function applyMixins<T extends new (...args: any[]) => any, U extends any
       }
     })
   })
-  return base as any
+  // TypeScript cannot statically verify the intersection type at compile time
+  // This is a limitation of mixin patterns - runtime behavior is correct
+  return base as T & U[number]
 }
