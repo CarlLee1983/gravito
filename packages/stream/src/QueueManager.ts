@@ -42,10 +42,12 @@ export class QueueManager {
   private defaultSerializer: JobSerializer
   private persistence?: QueueConfig['persistence']
   private scheduler?: Scheduler
+  private debug: boolean
 
   constructor(config: QueueConfig = {}) {
     this.persistence = config.persistence
     this.defaultConnection = config.default ?? 'default'
+    this.debug = config.debug ?? false
 
     // Wrap persistence adapter if buffering is configured
     if (this.persistence && (this.persistence.bufferSize || this.persistence.flushInterval)) {
@@ -81,6 +83,21 @@ export class QueueManager {
     if (config.connections) {
       for (const [name, connectionConfig] of Object.entries(config.connections)) {
         this.registerConnection(name, connectionConfig)
+      }
+    }
+  }
+
+  /**
+   * Log debug message.
+   */
+  private log(message: string, data?: unknown): void {
+    if (this.debug) {
+      const timestamp = new Date().toISOString()
+      const prefix = `[QueueManager] [${timestamp}]`
+      if (data) {
+        console.log(prefix, message, data)
+      } else {
+        console.log(prefix, message)
       }
     }
   }
@@ -274,6 +291,12 @@ export class QueueManager {
     }
     await driver.push(queue, serialized, pushOptions)
 
+    this.log(`Pushed job to ${queue} (${connection})`, {
+      id: serialized.id,
+      job: serialized.className ?? 'json',
+      options: pushOptions,
+    })
+
     // Auto-archive (Audit Mode) - Fire and forget
     if (this.persistence?.archiveEnqueued) {
       this.persistence.adapter.archive(queue, serialized, 'waiting').catch((err) => {
@@ -350,6 +373,8 @@ export class QueueManager {
       }
       const driver = this.getDriver(connection)
 
+      this.log(`Pushing ${serializedJobs.length} jobs to ${queue} (${connection})`)
+
       // Chunk jobs
       const chunks: SerializedJob[][] = []
       for (let i = 0; i < serializedJobs.length; i += batchSize) {
@@ -412,6 +437,8 @@ export class QueueManager {
       return null
     }
 
+    this.log(`Popped job from ${queue} (${connection})`, { id: serialized.id })
+
     try {
       return serializer.deserialize(serialized)
     } catch (error) {
@@ -440,6 +467,9 @@ export class QueueManager {
 
     if (driver.popMany) {
       const serializedJobs = await driver.popMany(queue, count)
+      if (serializedJobs.length > 0) {
+        this.log(`Popped ${serializedJobs.length} jobs from ${queue} (${connection})`)
+      }
       for (const serialized of serializedJobs) {
         try {
           results.push(serializer.deserialize(serialized))
@@ -499,6 +529,11 @@ export class QueueManager {
       return null
     }
 
+    this.log(
+      `Popped job (blocking) from ${Array.isArray(queues) ? queues.join(',') : queues} (${connection})`,
+      { id: serialized.id }
+    )
+
     try {
       return serializer.deserialize(serialized)
     } catch (error) {
@@ -552,6 +587,8 @@ export class QueueManager {
       const serialized = serializer.serialize(job)
       await driver.complete(queue, serialized)
 
+      this.log(`Completed job ${job.id} in ${queue}`)
+
       // Auto-archive
       if (this.persistence?.archiveCompleted) {
         await this.persistence.adapter.archive(queue, serialized, 'completed').catch((err) => {
@@ -578,6 +615,8 @@ export class QueueManager {
       serialized.failedAt = Date.now()
       await driver.fail(queue, serialized)
 
+      this.log(`Failed job ${job.id} in ${queue}`, { error: error.message })
+
       // Auto-archive
       if (this.persistence?.archiveFailed) {
         await this.persistence.adapter.archive(queue, serialized, 'failed').catch((err) => {
@@ -602,7 +641,7 @@ export class QueueManager {
       const { Scheduler } = require('./Scheduler')
       this.scheduler = new Scheduler(this)
     }
-    return this.scheduler
+    return this.scheduler!
   }
 
   /**

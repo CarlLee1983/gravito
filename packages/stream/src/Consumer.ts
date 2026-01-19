@@ -112,6 +112,12 @@ export interface ConsumerOptions {
    * @default 5
    */
   blockingTimeout?: number
+
+  /**
+   * Enable verbose debug logging.
+   * @default false
+   */
+  debug?: boolean
 }
 
 /**
@@ -159,6 +165,21 @@ export class Consumer extends EventEmitter {
   }
 
   /**
+   * Log debug message.
+   */
+  private log(message: string, data?: unknown): void {
+    if (this.options.debug) {
+      const timestamp = new Date().toISOString()
+      const prefix = `[Consumer:${this.workerId}] [${timestamp}]`
+      if (data) {
+        console.log(prefix, message, data)
+      } else {
+        console.log(prefix, message)
+      }
+    }
+  }
+
+  /**
    * Start the consumer loop.
    */
   async start(): Promise<void> {
@@ -181,7 +202,7 @@ export class Consumer extends EventEmitter {
     const blockingTimeout = this.options.blockingTimeout ?? 5
     let activeWorkers = 0
 
-    console.log('[Consumer] Started', {
+    this.log('Started', {
       queues: this.options.queues,
       connection: this.options.connection,
       workerId: this.workerId,
@@ -315,7 +336,7 @@ export class Consumer extends EventEmitter {
     if (this.options.monitor) {
       await this.publishLog('info', 'Consumer stopped')
     }
-    console.log('[Consumer] Stopped')
+    this.log('Stopped')
   }
 
   /**
@@ -332,6 +353,10 @@ export class Consumer extends EventEmitter {
     if (!limiter) {
       limiter = pLimit(1)
       this.groupLimiters.set(job.groupId, limiter)
+    }
+
+    if (limiter.pendingCount > 0) {
+      this.log(`Job ${job.id} queued behind group ${job.groupId}`)
     }
 
     // Schedule the job
@@ -352,6 +377,8 @@ export class Consumer extends EventEmitter {
     const currentQueue = job.queueName || 'default'
     const startTime = Date.now()
 
+    this.log(`Processing job ${job.id} from ${currentQueue}`)
+
     this.emit('job:started', { job, queue: currentQueue })
 
     if (this.options.monitor) {
@@ -363,6 +390,8 @@ export class Consumer extends EventEmitter {
       const duration = Date.now() - startTime
       this.emit('job:processed', { job, duration, queue: currentQueue })
 
+      this.log(`Completed job ${job.id} in ${duration}ms`)
+
       if (this.options.monitor) {
         await this.publishLog('success', `Completed job: ${job.id}`, job.id)
       }
@@ -371,7 +400,7 @@ export class Consumer extends EventEmitter {
       const duration = Date.now() - startTime
       this.emit('job:failed', { job, error, duration, queue: currentQueue })
 
-      console.error(`[Consumer] Error processing job in queue "${currentQueue}":`, error)
+      this.log(`Failed job ${job.id} in ${duration}ms`, { error: error.message })
 
       if (this.options.monitor) {
         await this.publishLog('error', `Job failed: ${job.id} - ${error.message}`, job.id)
@@ -388,6 +417,8 @@ export class Consumer extends EventEmitter {
         job.delay(delaySec)
         await this.queueManager.push(job)
 
+        this.log(`Retrying job ${job.id} in ${delaySec}s (Attempt ${job.attempts}/${maxAttempts})`)
+
         this.emit('job:retried', { job, attempt: job.attempts, delay: delaySec })
 
         if (this.options.monitor) {
@@ -399,6 +430,7 @@ export class Consumer extends EventEmitter {
         }
       } else {
         this.emit('job:failed_permanently', { job, error })
+        this.log(`Job ${job.id} failed permanently`)
         await this.queueManager.fail(job, error).catch((dlqErr) => {
           console.error('[Consumer] Error moving job to DLQ:', dlqErr)
         })
@@ -487,7 +519,7 @@ export class Consumer extends EventEmitter {
    * Stop the consumer loop (graceful shutdown).
    */
   async stop(): Promise<void> {
-    console.log('[Consumer] Stopping...')
+    this.log('Stopping...')
     this.stopRequested = true
 
     // Wait for current processing to finish

@@ -192,6 +192,12 @@ export interface QueueConfig {
   useSerializationCache?: boolean
 
   /**
+   * Enable verbose debug logging for QueueManager and Consumer.
+   * @default false
+   */
+  debug?: boolean
+
+  /**
    * Persistence configuration (SQL Archive).
    */
   persistence?: {

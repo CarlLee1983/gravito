@@ -223,10 +223,44 @@ When Audit Mode is enabled, every job pushed to the queue is immediately written
 ## Standalone Worker
 
 ```bash
-bun run packages/orbit-queue/cli/queue-worker.ts \
+bun run packages/stream/cli/queue-worker.ts \
   --connection=database \
   --queues=default,emails \
   --workers=4
+```
+
+## Debugging & Monitoring
+
+### Enable Debug Mode
+
+Enable verbose logging to see detailed information about job lifecycle events (enqueue, process, complete, fail).
+
+```typescript
+OrbitStream.configure({
+  debug: true, // Enable debug logging
+  // ...
+})
+```
+
+```typescript
+const consumer = new Consumer(manager, {
+  debug: true, // Enable consumer debug logging
+  // ...
+})
+```
+
+### Monitoring
+
+The Consumer emits events that you can listen to for custom monitoring:
+
+```typescript
+consumer.on('job:started', ({ job, queue }) => {
+  console.log(`Job ${job.id} started on ${queue}`)
+})
+
+consumer.on('job:failed', ({ job, error }) => {
+  console.error(`Job ${job.id} failed: ${error.message}`)
+})
 ```
 
 ## API Reference
@@ -274,6 +308,13 @@ class QueueManager {
 - **KafkaDriver** - topics and consumer groups
 - **SQSDriver** - standard/FIFO queues and long polling
 - **RabbitMQDriver** - exchanges, queues, and advanced confirm mode
+
+## Best Practices
+
+1.  **Idempotency**: Ensure your jobs are idempotent. Jobs may be retried if they fail or if the worker crashes.
+2.  **Granularity**: Keep jobs small and focused. Large jobs can block workers and increase memory usage.
+3.  **Timeouts**: Set appropriate timeouts for your jobs to prevent them from hanging indefinitely.
+4.  **Error Handling**: Use the `failed` method or throw errors to trigger retries. Avoid swallowing errors unless you want to suppress retries.
 
 ## License
 
