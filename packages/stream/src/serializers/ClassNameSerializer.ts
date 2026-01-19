@@ -66,10 +66,7 @@ export class ClassNameSerializer implements JobSerializer {
       id,
       type: 'class',
       className,
-      data: JSON.stringify({
-        class: className,
-        properties,
-      }),
+      data: JSON.stringify(properties),
       createdAt: Date.now(),
       ...(job.delaySeconds !== undefined ? { delaySeconds: job.delaySeconds } : {}),
       attempts: job.attempts ?? 0,
@@ -100,12 +97,12 @@ export class ClassNameSerializer implements JobSerializer {
       )
     }
 
-    const parsed = JSON.parse(serialized.data)
+    const properties = JSON.parse(serialized.data)
     const job = new JobClass()
 
     // Restore properties
-    if (parsed.properties) {
-      Object.assign(job, parsed.properties)
+    if (properties) {
+      Object.assign(job, properties)
     }
 
     // Restore metadata

@@ -1,5 +1,13 @@
-import type { SerializedJob } from '../types'
+import type { QueueStats, SerializedJob } from '../types'
 import type { QueueDriver } from './QueueDriver'
+
+export interface MemoryDriverConfig {
+  /**
+   * Maximum number of jobs per queue.
+   * @default Infinity
+   */
+  maxSize?: number
+}
 
 /**
  * Memory Driver
@@ -11,13 +19,18 @@ import type { QueueDriver } from './QueueDriver'
  *
  * @example
  * ```typescript
- * const driver = new MemoryDriver()
+ * const driver = new MemoryDriver({ maxSize: 1000 })
  * await driver.push('default', serializedJob)
  * const job = await driver.pop('default')
  * ```
  */
 export class MemoryDriver implements QueueDriver {
   private queues = new Map<string, SerializedJob[]>()
+  private maxSize: number
+
+  constructor(config: MemoryDriverConfig = {}) {
+    this.maxSize = config.maxSize ?? Infinity
+  }
 
   /**
    * Push a job to a queue.
@@ -26,7 +39,13 @@ export class MemoryDriver implements QueueDriver {
     if (!this.queues.has(queue)) {
       this.queues.set(queue, [])
     }
-    this.queues.get(queue)?.push(job)
+
+    const q = this.queues.get(queue)!
+    if (q.length >= this.maxSize) {
+      throw new Error(`[MemoryDriver] Queue '${queue}' is full (max size: ${this.maxSize})`)
+    }
+
+    q.push(job)
   }
 
   /**
@@ -63,6 +82,44 @@ export class MemoryDriver implements QueueDriver {
    */
   async clear(queue: string): Promise<void> {
     this.queues.delete(queue)
+  }
+
+  /**
+   * Mark a job as permanently failed.
+   */
+  async fail(queue: string, job: SerializedJob): Promise<void> {
+    const failedQueue = `failed:${queue}`
+    if (!this.queues.has(failedQueue)) {
+      this.queues.set(failedQueue, [])
+    }
+    this.queues.get(failedQueue)?.push(job)
+  }
+
+  /**
+   * Get queue statistics.
+   */
+  async stats(queue: string): Promise<QueueStats> {
+    const jobs = this.queues.get(queue) || []
+    const now = Date.now()
+
+    let pending = 0
+    let delayed = 0
+
+    for (const job of jobs) {
+      const isDelayed = job.delaySeconds && now < job.createdAt + job.delaySeconds * 1000
+      if (isDelayed) {
+        delayed++
+      } else {
+        pending++
+      }
+    }
+
+    return {
+      queue,
+      size: pending,
+      delayed,
+      failed: this.queues.get(`failed:${queue}`)?.length || 0,
+    }
   }
 
   /**

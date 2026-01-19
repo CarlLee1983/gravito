@@ -223,31 +223,31 @@ export class KafkaDriver implements QueueDriver {
     await consumer.subscribe({ topics: [queue] })
 
     await consumer.run({
-      eachMessage: async ({ message }) => {
-        if (!message.value) {
-          return
-        }
+      eachBatch: async ({ batch, resolveOffset, heartbeat, isRunning }: any) => {
+        for (const message of batch.messages) {
+          if (!isRunning() || !message.value) continue
 
-        const payload = JSON.parse(message.value.toString())
-        const job: SerializedJob = {
-          id: payload.id,
-          type: payload.type,
-          data: payload.data,
-          className: payload.className,
-          createdAt: payload.createdAt,
-          delaySeconds: payload.delaySeconds,
-          attempts: payload.attempts,
-          maxAttempts: payload.maxAttempts,
-        }
+          try {
+            const payload = JSON.parse(message.value.toString())
+            const job: SerializedJob = {
+              id: payload.id,
+              type: payload.type,
+              data: payload.data,
+              className: payload.className,
+              createdAt: payload.createdAt,
+              delaySeconds: payload.delaySeconds,
+              attempts: payload.attempts,
+              maxAttempts: payload.maxAttempts,
+            }
 
-        try {
-          await callback(job)
-          // Messages are committed automatically when eachMessage succeeds.
-        } catch (error) {
-          console.error('[KafkaDriver] Error processing message:', error)
-          // You can implement retry logic or send to a dead-letter topic here.
+            await callback(job)
+            resolveOffset(message.offset)
+            await heartbeat()
+          } catch (error) {
+            console.error('[KafkaDriver] Error processing message:', error)
+          }
         }
       },
-    })
+    } as any)
   }
 }

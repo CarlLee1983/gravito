@@ -166,6 +166,46 @@ export class SQSDriver implements QueueDriver {
   }
 
   /**
+   * Pop multiple jobs.
+   * Leverages SQS MaxNumberOfMessages (up to 10).
+   */
+  async popMany(queue: string, count: number): Promise<SerializedJob[]> {
+    const { ReceiveMessageCommand } = await import('@aws-sdk/client-sqs')
+    const queueUrl = await this.getQueueUrl(queue)
+
+    // SQS max is 10
+    const limit = Math.min(count, 10)
+
+    const response = await this.client.send(
+      new ReceiveMessageCommand({
+        QueueUrl: queueUrl,
+        MaxNumberOfMessages: limit,
+        WaitTimeSeconds: this.waitTimeSeconds,
+        VisibilityTimeout: this.visibilityTimeout,
+      })
+    )
+
+    if (!response.Messages || response.Messages.length === 0) {
+      return []
+    }
+
+    return response.Messages.map((message) => {
+      const payload = JSON.parse(message.Body ?? '{}')
+      return {
+        id: payload.id ?? message.MessageId,
+        type: payload.type,
+        data: payload.data,
+        className: payload.className,
+        createdAt: payload.createdAt,
+        delaySeconds: payload.delaySeconds,
+        attempts: payload.attempts,
+        maxAttempts: payload.maxAttempts,
+        receiptHandle: message.ReceiptHandle,
+      } as SerializedJob & { receiptHandle?: string }
+    })
+  }
+
+  /**
    * Get queue size (approximate).
    */
   async size(queue: string): Promise<number> {

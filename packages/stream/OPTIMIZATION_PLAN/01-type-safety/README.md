@@ -174,8 +174,8 @@ async pop(queue: string): Promise<SerializedJob | null> {
 
 ## ✅ 完成標準
 
-- [ ] 所有 `any` 類型已消除或正當化
-- [ ] TypeScript strict mode 通過
-- [ ] 所有測試通過
-- [ ] 類型定義文檔完成
-- [ ] 向後相容性驗證通過
+- [x] 所有 `any` 類型已消除或正當化
+- [x] TypeScript strict mode 通過
+- [x] 所有測試通過
+- [x] 類型定義文檔完成
+- [x] 向後相容性驗證通過

@@ -59,6 +59,48 @@ const consumer = new Consumer(manager, {
 })
 ```
 
+### 4. Concurrency & Groups
+
+```typescript
+const consumer = new Consumer(manager, {
+  queues: ['default'],
+  concurrency: 5,           // Process up to 5 jobs concurrently
+  groupJobsSequential: true // Ensure jobs with same groupId run sequentially (default: true)
+})
+```
+
+Jobs with the same `groupId` will always be processed in order, even with high concurrency. Jobs from different groups (or no group) will run in parallel.
+
+### 5. Polling & Batching Optimization
+
+```typescript
+const consumer = new Consumer(manager, {
+  queues: ['default'],
+  // Polling Strategy
+  pollInterval: 1000,       // Initial poll interval
+  minPollInterval: 100,     // Adaptive: reduce to 100ms when jobs found
+  maxPollInterval: 5000,    // Adaptive: backoff up to 5s when idle
+  backoffMultiplier: 1.5,   // Exponential backoff factor
+  
+  // Batch Consumption
+  batchSize: 10,            // Fetch 10 jobs at once (requires concurrency > 1 for parallel processing)
+  concurrency: 10,
+  
+  // Blocking Pop (Redis/SQS)
+  useBlocking: true,        // Use BLPOP when batchSize=1 (reduces CPU usage)
+  blockingTimeout: 5        // Block for 5 seconds
+})
+```
+
+### 6. Monitoring & Stats
+
+```typescript
+const stats = consumer.getStats()
+console.log(`Processed: ${stats.processed}, Failed: ${stats.failed}`)
+
+// Metrics are also included in the heartbeat if monitor is enabled
+```
+
 ### 2. Enqueue a job
 
 ```typescript
@@ -87,6 +129,27 @@ const core = await PlanetCore.boot({
       }
     })
   ]
+})
+```
+
+### 5. Polling & Batching Optimization
+
+```typescript
+const consumer = new Consumer(manager, {
+  queues: ['default'],
+  // Polling Strategy
+  pollInterval: 1000,       // Initial poll interval
+  minPollInterval: 100,     // Adaptive: reduce to 100ms when jobs found
+  maxPollInterval: 5000,    // Adaptive: backoff up to 5s when idle
+  backoffMultiplier: 1.5,   // Exponential backoff factor
+  
+  // Batch Consumption
+  batchSize: 10,            // Fetch 10 jobs at once (requires concurrency > 1 for parallel processing)
+  concurrency: 10,
+  
+  // Blocking Pop (Redis/SQS)
+  useBlocking: true,        // Use BLPOP when batchSize=1 (reduces CPU usage)
+  blockingTimeout: 5        // Block for 5 seconds
 })
 ```
 
@@ -155,9 +218,8 @@ CREATE TABLE jobs (
   created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_jobs_queue_available ON jobs(queue, available_at);
-CREATE INDEX idx_jobs_reserved ON jobs(reserved_at);
-CREATE INDEX idx_jobs_queue_available ON jobs(queue, available_at);
+-- Optimized index for batch popping with SKIP LOCKED
+CREATE INDEX idx_jobs_queue_available_reserved ON jobs(queue, available_at, reserved_at);
 CREATE INDEX idx_jobs_reserved ON jobs(reserved_at);
 ```
 
@@ -174,7 +236,9 @@ OrbitStream.configure({
     adapter: new SQLitePersistence(DB), // or MySQLPersistence
     archiveCompleted: true, // Archive jobs when they complete successfully
     archiveFailed: true,    // Archive jobs when they fail permanently
-    archiveEnqueued: true   // (Audit Mode) Archive jobs immediately when pushed
+    archiveEnqueued: true,  // (Audit Mode) Archive jobs immediately when pushed
+    bufferSize: 100,        // (Optional) Batch size for buffered writes. Recommended: 50-200. Default: 0 (disabled)
+    flushInterval: 1000     // (Optional) Max time (ms) to wait before flushing buffer. Default: 0
   }
 })
 ```
@@ -189,10 +253,44 @@ When Audit Mode is enabled, every job pushed to the queue is immediately written
 ## Standalone Worker
 
 ```bash
-bun run packages/orbit-queue/cli/queue-worker.ts \
+bun run packages/stream/cli/queue-worker.ts \
   --connection=database \
   --queues=default,emails \
   --workers=4
+```
+
+## Debugging & Monitoring
+
+### Enable Debug Mode
+
+Enable verbose logging to see detailed information about job lifecycle events (enqueue, process, complete, fail).
+
+```typescript
+OrbitStream.configure({
+  debug: true, // Enable debug logging
+  // ...
+})
+```
+
+```typescript
+const consumer = new Consumer(manager, {
+  debug: true, // Enable consumer debug logging
+  // ...
+})
+```
+
+### Monitoring
+
+The Consumer emits events that you can listen to for custom monitoring:
+
+```typescript
+consumer.on('job:started', ({ job, queue }) => {
+  console.log(`Job ${job.id} started on ${queue}`)
+})
+
+consumer.on('job:failed', ({ job, error }) => {
+  console.error(`Job ${job.id} failed: ${error.message}`)
+})
 ```
 
 ## API Reference
@@ -240,6 +338,13 @@ class QueueManager {
 - **KafkaDriver** - topics and consumer groups
 - **SQSDriver** - standard/FIFO queues and long polling
 - **RabbitMQDriver** - exchanges, queues, and advanced confirm mode
+
+## Best Practices
+
+1.  **Idempotency**: Ensure your jobs are idempotent. Jobs may be retried if they fail or if the worker crashes.
+2.  **Granularity**: Keep jobs small and focused. Large jobs can block workers and increase memory usage.
+3.  **Timeouts**: Set appropriate timeouts for your jobs to prevent them from hanging indefinitely.
+4.  **Error Handling**: Use the `failed` method or throw errors to trigger retries. Avoid swallowing errors unless you want to suppress retries.
 
 ## License
 

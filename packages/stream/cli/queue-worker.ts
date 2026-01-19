@@ -33,6 +33,7 @@ function parseArgs(): {
   pollInterval?: number
   keepAlive?: boolean
   config?: string
+  debug?: boolean
 } {
   const args = process.argv.slice(2)
   const options: {
@@ -44,6 +45,7 @@ function parseArgs(): {
     pollInterval?: number
     keepAlive?: boolean
     config?: string
+    debug?: boolean
   } = {
     queues: [],
   }
@@ -52,40 +54,45 @@ function parseArgs(): {
     const arg = args[i]
     if (arg.startsWith('--')) {
       const key = arg.slice(2)
-      const value = args[i + 1]
+      // Check for boolean flags or key=value pairs
+      const [flagKey, flagValue] = key.split('=')
 
-      switch (key) {
+      switch (flagKey) {
         case 'connection':
-          options.connection = value
+          options.connection = flagValue
           i++
           break
         case 'queues':
-          options.queues = value.split(',').map((q) => q.trim())
+          options.queues = flagValue.split(',').map((q) => q.trim())
           i++
           break
         case 'workers':
-          options.workers = parseInt(value, 10)
+          options.workers = parseInt(flagValue, 10)
           i++
           break
         case 'timeout':
-          options.timeout = parseInt(value, 10)
+          options.timeout = parseInt(flagValue, 10)
           i++
           break
         case 'max-attempts':
-          options.maxAttempts = parseInt(value, 10)
+          options.maxAttempts = parseInt(flagValue, 10)
           i++
           break
         case 'poll-interval':
-          options.pollInterval = parseInt(value, 10)
+          options.pollInterval = parseInt(flagValue, 10)
           i++
           break
         case 'keep-alive':
-          options.keepAlive = value === 'true'
+          options.keepAlive = flagValue === 'true'
           i++
           break
         case 'config':
-          options.config = value
+          options.config = flagValue
           i++
+          break
+        case 'debug':
+          options.debug = true
+          // Boolean flag, don't increment i
           break
       }
     }
@@ -131,6 +138,7 @@ async function main() {
   // For now, only MemoryDriver is supported here; other drivers can be added later.
   const queueManager = new QueueManager({
     default: args.connection ?? 'default',
+    debug: args.debug,
     connections: {
       default: { driver: 'memory' },
       ...(config as { connections?: Record<string, unknown> })?.connections,
@@ -150,6 +158,7 @@ async function main() {
     workerOptions,
     pollInterval: args.pollInterval ?? 1000,
     keepAlive: args.keepAlive ?? true,
+    debug: args.debug,
   }
 
   // Create and start Consumer

@@ -22,15 +22,23 @@ export class JsonSerializer implements JobSerializer {
    * Serialize a job.
    */
   serialize(job: Job): SerializedJob {
-    const id = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
+    const id = job.id || `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
+
+    // Extract properties (exclude methods)
+    const properties: Record<string, unknown> = {}
+    for (const key in job) {
+      if (
+        Object.hasOwn(job, key) &&
+        typeof (job as unknown as Record<string, unknown>)[key] !== 'function'
+      ) {
+        properties[key] = (job as unknown as Record<string, unknown>)[key]
+      }
+    }
 
     return {
       id,
       type: 'json',
-      data: JSON.stringify({
-        job: job.constructor.name,
-        properties: { ...job },
-      }),
+      data: JSON.stringify(properties),
       createdAt: Date.now(),
       ...(job.delaySeconds !== undefined ? { delaySeconds: job.delaySeconds } : {}),
       attempts: job.attempts ?? 0,
@@ -42,25 +50,31 @@ export class JsonSerializer implements JobSerializer {
 
   /**
    * Deserialize a job.
-   *
-   * Note: this implementation only restores properties and does not recreate class instances.
-   * For class instances, use `ClassNameSerializer`.
    */
   deserialize(serialized: SerializedJob): Job {
     if (serialized.type !== 'json') {
       throw new Error('Invalid serialization type: expected "json"')
     }
 
-    const parsed = JSON.parse(serialized.data)
+    const properties = JSON.parse(serialized.data)
     // Only restores properties, not class instances.
-    const job = Object.create({})
-    Object.assign(job, parsed.properties)
+    const job = Object.create({}) as Record<string, any>
+    Object.assign(job, properties)
+
+    job.id = serialized.id
     if (serialized.groupId) {
       job.groupId = serialized.groupId
     }
     if (serialized.priority) {
       job.priority = serialized.priority
     }
+    if (serialized.delaySeconds !== undefined) {
+      job.delaySeconds = serialized.delaySeconds
+    }
+    if (serialized.attempts !== undefined) {
+      job.attempts = serialized.attempts
+    }
+
     return job as Job
   }
 }

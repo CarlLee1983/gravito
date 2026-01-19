@@ -41,6 +41,7 @@ export { SQSDriver } from './drivers/SQSDriver'
 export { Job } from './Job'
 export type { OrbitStreamOptions } from './OrbitStream'
 export { OrbitStream } from './OrbitStream'
+export { BufferedPersistence } from './persistence/BufferedPersistence'
 export { MySQLPersistence } from './persistence/MySQLPersistence'
 export { SQLitePersistence } from './persistence/SQLitePersistence'
 // Core interfaces & types

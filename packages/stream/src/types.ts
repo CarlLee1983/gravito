@@ -7,7 +7,7 @@ export interface SerializedJob {
   id: string
 
   /** Serializer type: 'json' for plain objects or 'class' for instances */
-  type: 'json' | 'class'
+  type: 'json' | 'class' | 'msgpack'
 
   /** Serialized data string */
   data: string
@@ -47,6 +47,39 @@ export interface SerializedJob {
 }
 
 /**
+ * Database row for archived jobs.
+ */
+export interface JobRow {
+  id: number
+  job_id: string
+  queue: string
+  status: string
+  payload: string
+  error?: string | null
+  created_at: Date
+  archived_at: Date
+}
+
+/**
+ * Statistics for a single queue.
+ * @public
+ */
+export interface QueueStats {
+  /** Queue name */
+  queue: string
+  /** Number of pending jobs */
+  size: number
+  /** Number of delayed jobs (if supported) */
+  delayed?: number
+  /** Number of reserved/in-flight jobs (if supported) */
+  reserved?: number
+  /** Number of failed jobs in DLQ (if supported) */
+  failed?: number
+  /** Additional custom metrics */
+  metrics?: Record<string, number>
+}
+
+/**
  * Advanced topic options for distributed queues (e.g., Kafka).
  * @public
  */
@@ -60,16 +93,77 @@ export interface TopicOptions {
 }
 
 /**
+ * Database driver configuration.
+ * @public
+ */
+export interface DatabaseDriverConfig {
+  driver: 'database'
+  /** Database service implementation for executing queries */
+  dbService: any
+  /** Optional table name for job storage */
+  table?: string
+}
+
+/**
+ * Redis driver configuration.
+ * @public
+ */
+export interface RedisDriverConfig {
+  driver: 'redis'
+  /** Redis client instance (ioredis or node-redis compatible) */
+  client: any
+  /** Optional prefix for all Redis keys */
+  prefix?: string
+}
+
+/**
+ * Kafka driver configuration.
+ */
+export interface KafkaDriverConfig {
+  driver: 'kafka'
+  client: any
+  consumerGroupId?: string
+}
+
+/**
+ * SQS driver configuration.
+ * @public
+ */
+export interface SQSDriverConfig {
+  driver: 'sqs'
+  /** Amazon SQS client instance */
+  client: any
+  /** Optional prefix for queue URLs */
+  queueUrlPrefix?: string
+  /** The duration (in seconds) that the received messages are hidden from subsequent retrieve requests after being retrieved by a ReceiveMessage request. */
+  visibilityTimeout?: number
+  /** The duration (in seconds) for which the call waits for a message to arrive in the queue before returning. */
+  waitTimeSeconds?: number
+}
+
+/**
+ * RabbitMQ driver configuration.
+ */
+export interface RabbitMQDriverConfig {
+  driver: 'rabbitmq'
+  client: any
+  exchange?: string
+  exchangeType?: string
+}
+
+/**
  * Configuration for a specific queue connection.
  * @public
  */
-export interface QueueConnectionConfig {
-  /** The driver type to use for this connection */
-  driver: 'memory' | 'database' | 'redis' | 'kafka' | 'sqs' | 'rabbitmq' | 'nats'
-
-  /** Driver-specific settings (e.g., connection string, table name) */
-  [key: string]: unknown
-}
+export type QueueConnectionConfig =
+  | { driver: 'memory' }
+  | DatabaseDriverConfig
+  | RedisDriverConfig
+  | KafkaDriverConfig
+  | SQSDriverConfig
+  | RabbitMQDriverConfig
+  | { driver: 'nats'; [key: string]: unknown }
+  | { driver: string; [key: string]: unknown }
 
 /**
  * Queue manager config.
@@ -88,7 +182,20 @@ export interface QueueConfig {
   /**
    * Default serializer type.
    */
-  defaultSerializer?: 'json' | 'class'
+  defaultSerializer?: 'json' | 'class' | 'msgpack'
+
+  /**
+   * Whether to enable serialization caching.
+   * If true, re-queuing the same Job instance will use the cached serialized data.
+   * @default false
+   */
+  useSerializationCache?: boolean
+
+  /**
+   * Enable verbose debug logging for QueueManager and Consumer.
+   * @default false
+   */
+  debug?: boolean
 
   /**
    * Persistence configuration (SQL Archive).
@@ -114,6 +221,18 @@ export interface QueueConfig {
      * @default false
      */
     archiveEnqueued?: boolean
+
+    /**
+     * Buffer size for batched writes.
+     * If set, wraps the adapter in BufferedPersistence.
+     */
+    bufferSize?: number
+
+    /**
+     * Flush interval in ms for batched writes.
+     * If set, wraps the adapter in BufferedPersistence.
+     */
+    flushInterval?: number
   }
 }
 
@@ -139,9 +258,6 @@ export interface PersistenceAdapter {
   /**
    * List jobs from the archive.
    */
-  /**
-   * List jobs from the archive.
-   */
   list(
     queue: string,
     options?: {
@@ -155,9 +271,25 @@ export interface PersistenceAdapter {
   ): Promise<SerializedJob[]>
 
   /**
+   * Archive multiple jobs (batch write).
+   */
+  archiveMany?(
+    jobs: Array<{
+      queue: string
+      job: SerializedJob
+      status: 'completed' | 'failed' | 'waiting' | string
+    }>
+  ): Promise<void>
+
+  /**
    * Remove old data from the archive.
    */
   cleanup(days: number): Promise<number>
+
+  /**
+   * Flush any buffered data.
+   */
+  flush?(): Promise<void>
 
   /**
    * Count jobs in the archive.
@@ -182,6 +314,19 @@ export interface PersistenceAdapter {
     queue?: string
     timestamp: Date
   }): Promise<void>
+
+  /**
+   * Archive multiple log messages (batch write).
+   */
+  archiveLogMany?(
+    logs: Array<{
+      level: string
+      message: string
+      workerId: string
+      queue?: string
+      timestamp: Date
+    }>
+  ): Promise<void>
 
   /**
    * List system logs from the archive.
