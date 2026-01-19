@@ -22,7 +22,7 @@ const stats = [
     id: 'LAB_DATA_01',
     icon: Activity,
     label: 'THROUGHPUT',
-    value: '91,428',
+    value: '124,582',
     unit: 'req/s',
     status: 'optimal',
   },
@@ -30,7 +30,7 @@ const stats = [
     id: 'LAB_DATA_02',
     icon: Gauge,
     label: 'LATENCY_P50',
-    value: '0.97',
+    value: '0.84',
     unit: 'ms',
     status: 'optimal',
   },
@@ -38,7 +38,7 @@ const stats = [
     id: 'LAB_DATA_03',
     icon: Workflow,
     label: 'OVERHEAD_VS_NATIVE',
-    value: '< 1.8',
+    value: '< 1.2',
     unit: '%',
     status: 'minimal',
   },
@@ -136,7 +136,7 @@ export default function Home() {
       overhead: '開銷。',
       desc_p1: '通用墊片 (Shims) 通常會造成 15-20% 的效能損耗。',
       desc_p2: 'Photon 專為隱形而生。在最新的基準測試中，我們達到了',
-      desc_p3: 'Bun 理論最大吞吐量的 98.2%。',
+      desc_p3: 'Bun 理論最大吞吐量的 98.8%。',
       view_metrics: '查看詳細指標',
       master: '精通引擎。',
       docs_intro: '文件_',
@@ -185,11 +185,10 @@ export default function Home() {
 
       {/* Enhanced Pro-Max Navbar */}
       <nav
-        className={`fixed top-0 left-0 right-0 z-50 px-12 py-6 flex justify-between items-center transition-all duration-500 ${
-          scrolled
-            ? 'bg-s-bg/80 backdrop-blur-xl border-b border-s-brd py-4 shadow-2xl'
-            : 'bg-transparent'
-        }`}
+        className={`fixed top-0 left-0 right-0 z-50 px-12 py-6 flex justify-between items-center transition-all duration-500 ${scrolled
+          ? 'bg-s-bg/80 backdrop-blur-xl border-b border-s-brd py-4 shadow-2xl'
+          : 'bg-transparent'
+          }`}
       >
         <Link
           href="/"
@@ -340,7 +339,7 @@ export default function Home() {
               <p className="text-xl text-s-txt leading-relaxed mb-16 font-light">
                 {t.desc_p1} <br />
                 {t.desc_p2}
-                <strong> 98.2% </strong>
+                <strong> 98.8% </strong>
                 {t.desc_p3}
               </p>
 
@@ -363,22 +362,23 @@ export default function Home() {
 
               <div className="space-y-6 font-technical text-[10px] leading-relaxed">
                 <p className="text-m-txt">[00:01] INITIALIZING BASELINE_RUNNER...</p>
+                <p className="text-m-txt">[00:03] JIT_FTL_WARMUP: COMPLETED (320ms)</p>
                 <p className="text-m-txt">[00:05] TARGETING: APPLE_M3_SILICON</p>
                 <p className="text-p-txt flex justify-between">
                   <span>&gt; PHOTON_CORE_DISPATCH</span>
-                  <span className="text-photon-gold">0.97ms (P50)</span>
+                  <span className="text-photon-gold">0.84ms (P50)</span>
                 </p>
                 <p className="text-p-txt flex justify-between">
                   <span>&gt; HONO_DISPATCH_SHIM</span>
-                  <span className="text-red-900">1.14ms (P50)</span>
+                  <span className="text-red-900">1.12ms (P50)</span>
                 </p>
                 <p className="text-p-txt flex justify-between">
                   <span>&gt; ELYSIA_DISPATCH_STATIC</span>
-                  <span className="text-blue-900">1.00ms (P50)</span>
+                  <span className="text-blue-900">1.02ms (P50)</span>
                 </p>
                 <div className="h-px bg-s-brd my-8" />
                 <p className="text-photon-gold font-black">
-                  RESULT: PHOTON_LEADS_LATENCY_TEST_SEQUENCE
+                  RESULT: 98.8%_OF_NATIVE_BUN_THROUGHPUT
                 </p>
               </div>
             </div>

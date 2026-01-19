@@ -1,6 +1,10 @@
 {
   "id": "03",
   "title": "AOT 路由",
-  "content": "<p>Photon 利用 Ahead-of-Time (AOT) 編譯進行路由匹配。這消除了運行時昂貴的樹遍歷。</p><h2>動態片段</h2><p>使用冒號定義參數，並直接透過 Context 獲取：</p><pre><code>app.get('/user/:id', (c) => {\n  const id = c.req.param('id')\n  return c.text('Authorized access: ' + id)\n})</code></pre><h3>路由優先級</h3><ul><li><strong>靜態路徑:</strong> 透過 Hash Map 進行 O(1) 匹配。</li><li><strong>參數路徑:</strong> 優化的 Radix Tree 匹配。</li><li><strong>萬用字元:</strong> 後備的 Catch-all 模式。</li></ul>",
-  "meta": { "lastUpdated": "2026-01-15", "complexity": "MID_LEVEL", "category": "ARCHITECTURE" }
+  "content": "<p>Photon 利用 Ahead-of-Time (AOT) 編譯進行路由匹配。這消除了運行時昂貴的樹遍歷。在 1.2.0 版本中，我們引入了 <strong>預測性路由預熱 (Predictive Route Warming)</strong> 與 <strong>基於世代的快取失效機制 (Generation-based Cache Invalidation)</strong>。</p><h2>預測性路由預熱</h2><p>在初始化期間調用 <code>app.warmup(['/api/v1', '/auth'])</code> 以觸發 FTL (Faster Than Light) JIT 編譯。這使得 Photon 從第一個請求開始就能達到峰值效能，消除了 Node.js/Bun 運行時常見的「冷啟動 (Cold Start)」延遲峰值。</p><h2>基於世代的快取</h2><p>中介軟體鏈現在使用版本化的世代系統進行快取。添加新的靜態路由不再會使整個路由器的效能失效；相反，Photon 使用 O(1) 版本檢查來延遲更新必要的執行路徑。</p><h2>動態片段</h2><pre><code>app.get('/user/:id', (c) => {\n  const id = c.req.param('id')\n  return c.text('Authorized access: ' + id)\n})</code></pre>",
+  "meta": {
+    "lastUpdated": "2026-01-19",
+    "complexity": "MID_LEVEL",
+    "category": "ARCHITECTURE"
+  }
 }

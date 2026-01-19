@@ -1,6 +1,10 @@
 {
   "id": "03",
   "title": "AOT Routing",
-  "content": "<p>Photon utilizes Ahead-of-Time compilation for route matching. This eliminates the need for expensive tree traversal at runtime.</p><h2>Dynamic Segments</h2><p>Define parameters with colons and retrieve them directly via the context:</p><pre><code>app.get('/user/:id', (c) => {\n  const id = c.req.param('id')\n  return c.text('Authorized access: ' + id)\n})</code></pre><h3>Route Priorities</h3><ul><li><strong>Static Paths:</strong> O(1) matching via Hash Map.</li><li><strong>Parametric Paths:</strong> Optimized Radix Tree matching.</li><li><strong>Wildcards:</strong> Fallback catch-all patterns.</li></ul>",
-  "meta": { "lastUpdated": "2026-01-13", "complexity": "MID_LEVEL", "category": "ARCHITECTURE" }
+  "content": "<p>Photon utilizes Ahead-of-Time compilation for route matching. This eliminates the need for expensive tree traversal at runtime. In version 1.2.0, we introduced <strong>Predictive Route Warming</strong> and <strong>Generation-based Cache Invalidation</strong>.</p><h2>Predictive Route Warming</h2><p>Call <code>app.warmup(['/api/v1', '/auth'])</code> during initialization to trigger the FTL (Faster Than Light) JIT compiler. This allows Photon to reach peak performance from the very first request, eliminating the \"cold start\" latency spikes common in Node.js/Bun runtimes.</p><h2>Generation-based Cache</h2><p>Middleware chains are now cached using a versioned generation system. Adding new static routes no longer invalidates the entire router's performance; instead, Photon uses O(1) version checking to lazily update only the necessary execution paths.</p><h2>Dynamic Segments</h2><pre><code>app.get('/user/:id', (c) => {\n  const id = c.req.param('id')\n  return c.text('Authorized access: ' + id)\n})</code></pre>",
+  "meta": {
+    "lastUpdated": "2026-01-19",
+    "complexity": "MID_LEVEL",
+    "category": "ARCHITECTURE"
+  }
 }
