@@ -90,6 +90,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   protected ensureOwnState(): void {
     if (this._isClone && !this._isModified) {
       // First modification - perform actual copy
+      // Only copy arrays (Maps and Sets are already copied in clone())
       this.columns = [...this.columns]
       this.wheres = [...this.wheres]
       this.orders = [...this.orders]
@@ -97,9 +98,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
       this.havings = [...this.havings]
       this.joins = [...this.joins]
       this.bindingsList = [...this.bindingsList]
-      this.globalScopes = new Map(this.globalScopes)
-      this.removedScopes = new Set(this.removedScopes)
-      this.eagerLoads = new Map(this.eagerLoads)
+      // Maps and Sets are already copied in clone(), no need to copy again
 
       this._isModified = true
     }
