@@ -1,5 +1,12 @@
 # luminosity-benchmark
 
+## 1.0.5
+
+### Patch Changes
+
+- Updated dependencies
+  - @gravito/constellation@3.0.1
+
 ## 1.0.4
 
 ### Patch Changes

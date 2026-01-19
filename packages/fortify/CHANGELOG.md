@@ -1,5 +1,14 @@
 # @gravito/fortify
 
+## 3.0.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @gravito/core@1.2.1
+  - @gravito/sentinel@3.0.1
+  - @gravito/signal@3.0.1
+
 ## 3.0.0
 
 ### Patch Changes

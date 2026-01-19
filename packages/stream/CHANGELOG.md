@@ -1,5 +1,14 @@
 # @gravito/stream
 
+## 1.0.3
+
+### Patch Changes
+
+- Updated dependencies
+- Updated dependencies
+  - @gravito/atlas@2.1.0
+  - @gravito/core@1.2.1
+
 ## 1.0.2
 
 ### Patch Changes

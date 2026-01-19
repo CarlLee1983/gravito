@@ -1,5 +1,15 @@
 # my-gravito-inertia-app
 
+## 0.1.4
+
+### Patch Changes
+
+- Updated dependencies
+  - @gravito/core@1.2.1
+  - @gravito/ion@3.0.1
+  - @gravito/prism@3.0.1
+  - @gravito/stasis@3.0.1
+
 ## 0.1.3
 
 ### Patch Changes

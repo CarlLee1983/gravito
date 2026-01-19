@@ -1,5 +1,11 @@
 # @gravito/atlas
 
+## 2.1.0
+
+### Minor Changes
+
+- 修復 TypeScript 類型錯誤、CI 類型檢查問題，並完成性能優化和 DX 改進
+
 ## 2.0.0
 
 ### Major Changes
@@ -9,26 +15,31 @@ This release includes significant performance improvements and developer experie
 #### 🚀 Performance Optimizations
 
 - **Model Hydration**: ↑300-500% faster with optimized Proxy caching
+
   - Added accessor/mutator cache to reduce prototype chain traversal
   - Added relationship metadata cache
   - Optimized Proxy handler for better performance
 
 - **DirtyTracker**: ↑50x faster with shallow comparison optimization
+
   - Default to shallow comparison for better performance
   - Added optional `setDeepComparison(true)` for deep nested object tracking
   - Optimized Date, Array, and Object comparison logic
 
 - **Query Compilation**: ↑50-100% faster with LRU cache
+
   - Added static LRU cache for compiled SQL queries (80%+ hit rate)
   - Configurable cache size via `Grammar.setCacheSize()`
   - Cache statistics via `Grammar.getCacheStats()`
   - Support for global and instance-level cache scopes
 
 - **QueryBuilder Clone**: Optimized for independent query building
+
   - Improved clone performance for pagination and query reuse
   - Ensures true independence from original query
 
 - **Eager Loading**: ↓60-80% memory reduction for large datasets
+
   - Batch eager loading optimization
   - Chunked loading support (enabled by default)
 
@@ -39,15 +50,18 @@ This release includes significant performance improvements and developer experie
 #### 🎯 Developer Experience Improvements
 
 - **Better Error Messages**: "Did you mean?" suggestions for typos
+
   - Uses Levenshtein distance algorithm
   - Shows available column/field suggestions
 
 - **Debug Tools**: New debugging utilities
+
   - `DB.debug()` - Enable/disable debug mode
   - `DB.getQueryLog()` - Get all executed queries
   - `DB.getLastQuery()` - Get the last executed query
 
 - **Type Safety**: Improved TypeScript types
+
   - Reduced `any` usage significantly
   - Better type inference
   - Improved type coverage
@@ -60,14 +74,17 @@ This release includes significant performance improvements and developer experie
 #### 🔧 Advanced Features
 
 - **Prepared Statements**: Support for PostgreSQL prepared statements
+
   - `QueryBuilder.getPrepared()` method
   - Automatic prepared statement caching
 
 - **Attribute Casting Pre-compilation**: Faster attribute type conversion
+
   - Pre-compiled caster functions
   - Reduced switch statement overhead
 
 - **Batch Hydration**: Optimized for large datasets
+
   - `Model.hydrateMany()` static method
   - Reduced metadata lookup overhead
 
@@ -78,10 +95,12 @@ This release includes significant performance improvements and developer experie
 #### ⚠️ Breaking Changes
 
 - **DirtyTracker**: Now uses shallow comparison by default
+
   - Deep nested object mutations require `setDeepComparison(true)`
   - Use object spread for nested updates: `user.settings = { ...user.settings, theme: 'dark' }`
 
 - **Grammar Cache**: Now uses global cache by default
+
   - Multi-tenant applications should set `Grammar.cacheScope = 'instance'`
   - Prevents SQL cache pollution across tenants
 

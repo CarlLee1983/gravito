@@ -1,5 +1,12 @@
 # @gravito/impulse
 
+## 1.0.3
+
+### Patch Changes
+
+- Updated dependencies
+  - @gravito/core@1.2.1
+
 ## 1.0.2
 
 ### Patch Changes

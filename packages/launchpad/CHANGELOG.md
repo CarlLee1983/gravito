@@ -1,5 +1,15 @@
 # @gravito/launchpad
 
+## 1.2.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @gravito/core@1.2.1
+  - @gravito/enterprise@1.0.3
+  - @gravito/ripple@3.0.1
+  - @gravito/stasis@3.0.1
+
 ## 1.2.0
 
 ### Minor Changes

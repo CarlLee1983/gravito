@@ -1,6 +1,6 @@
 {
   "name": "@gravito/ion",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Inertia.js adapter for Gravito",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",

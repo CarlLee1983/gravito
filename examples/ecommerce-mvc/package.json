@@ -1,6 +1,6 @@
 {
   "name": "example-ecommerce-mvc",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "type": "module",
   "scripts": {
     "dev": "bun run --watch src/index.ts",

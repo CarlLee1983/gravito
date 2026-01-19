@@ -1,6 +1,6 @@
 {
   "name": "@gravito/impulse",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Form Request validation for Gravito - Laravel-style request validation with Zod",
   "type": "module",
   "main": "./dist/index.js",
