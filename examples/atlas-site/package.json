@@ -6,7 +6,7 @@
     "scripts": {
         "dev": "vite",
         "dev:server": "bun run src/server/index.ts",
-        "build": "vite build",
+        "build": "vite build && bun run scripts/generate-spa-routes.ts",
         "preview": "vite preview",
         "check": "bun vue-tsc --noEmit"
     },

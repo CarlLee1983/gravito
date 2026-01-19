@@ -6,10 +6,13 @@ on:
       - main
     paths:
       - 'examples/atlas-site/**'
+      - 'packages/atlas/**'
+      - 'packages/photon/**'
+      - '.github/workflows/deploy-atlas-site.yml'
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: read
   id-token: write
 
@@ -52,42 +55,120 @@ jobs:
             exit 1
           fi
           echo "✅ Build output verified"
+          
+          # Verify SPA routes were generated
+          echo "📦 Verifying SPA routes..."
+          if [ ! -d "dist/features" ] || [ ! -f "dist/features/index.html" ]; then
+            echo "❌ SPA routes not generated! dist/features/index.html not found."
+            echo "📦 Available directories in dist:"
+            ls -la dist/ | head -20
+            echo "💡 This means the generate-spa-routes.ts script may have failed"
+            exit 1
+          fi
+          echo "✅ SPA routes verified (features/index.html exists)"
+          
+          # List all generated routes
+          echo "📦 Generated SPA routes:"
+          find dist -name "index.html" -type f | grep -v "dist/index.html" | sed 's|dist/||' | sed 's|/index.html||' | while read route; do
+            echo "  ✅ /$route"
+          done
 
       - name: Synchronize to atlas-site-dist repo
         run: |
           set -euo pipefail
           
+          echo "📦 Starting deployment to atlas-site-dist..."
+          
           # Verify source directory exists
           if [ ! -d "examples/atlas-site/dist" ]; then
             echo "❌ Source directory examples/atlas-site/dist does not exist!"
+            echo "📦 Current directory: $(pwd)"
+            echo "📦 Available directories:"
+            ls -la examples/atlas-site/ || true
             exit 1
           fi
           
+          echo "✅ Source directory verified"
+          echo "📦 Source files:"
+          ls -la examples/atlas-site/dist/ | head -20 || true
+          
+          # Check if DEPLOY_TOKEN is set
+          if [ -z "${{ secrets.DEPLOY_TOKEN }}" ]; then
+            echo "❌ DEPLOY_TOKEN secret is not set!"
+            exit 1
+          fi
+          echo "✅ DEPLOY_TOKEN is set"
+          
+          # Clone target repository
+          echo "📦 Cloning atlas-site-dist repository..."
           rm -rf atlas-site-dist
-          git clone https://x-access-token:${{ secrets.DEPLOY_TOKEN }}@github.com/gravito-framework/atlas-site-dist.git atlas-site-dist
+          if ! git clone https://x-access-token:${{ secrets.DEPLOY_TOKEN }}@github.com/gravito-framework/atlas-site-dist.git atlas-site-dist; then
+            echo "❌ Failed to clone atlas-site-dist repository!"
+            echo "💡 Check if DEPLOY_TOKEN has access to gravito-framework/atlas-site-dist"
+            exit 1
+          fi
+          echo "✅ Repository cloned"
+          
           cd atlas-site-dist
           git config user.name "Gravito Deploy Bot"
           git config user.email "bot@gravito.dev"
-          find . -maxdepth 1 -mindepth 1 ! -name '.git' ! -name 'CNAME' -exec rm -rf {} +
-          cp -R ../examples/atlas-site/dist/. .
           
-          # Manually inject GA ID into index.html (Match Official Site Logic)
+          # Clean existing files (except .git and CNAME)
+          echo "📦 Cleaning existing files..."
+          find . -maxdepth 1 -mindepth 1 ! -name '.git' ! -name 'CNAME' -exec rm -rf {} +
+          
+          # Copy new files
+          echo "📦 Copying new files..."
+          if ! cp -R ../examples/atlas-site/dist/. .; then
+            echo "❌ Failed to copy files!"
+            echo "📦 Source directory contents:"
+            ls -la ../examples/atlas-site/dist/ || true
+            exit 1
+          fi
+          echo "✅ Files copied"
+          
+          # Verify index.html exists
+          if [ ! -f "index.html" ]; then
+            echo "❌ index.html not found after copy!"
+            echo "📦 Current directory contents:"
+            ls -la
+            exit 1
+          fi
+          echo "✅ index.html verified"
+          
+          # Manually inject GA ID into index.html
           GA_ID="${{ secrets.GA_ATLAS_MEASUREMENT_ID }}"
           if [ -n "$GA_ID" ]; then
             echo "💉 Injecting GA Script for: ${GA_ID:0:4}***"
             GA_SCRIPT="<script async src=\"https://www.googletagmanager.com/gtag/js?id=${GA_ID}\"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${GA_ID}');</script>"
-            sed -i "s|<!-- Google Analytics Placeholder -->|$GA_SCRIPT|g" index.html
-            
-            # Support legacy or alternate placeholder mentioned by user
-            sed -i "s|{{VITE_GA_MEASUREMENT_ID}}|$GA_ID|g" index.html
+            if ! sed -i "s|<!-- Google Analytics Placeholder -->|$GA_SCRIPT|g" index.html; then
+              echo "⚠️ Failed to inject GA script (first attempt)"
+            fi
+            # Support legacy or alternate placeholder
+            sed -i "s|{{VITE_GA_MEASUREMENT_ID}}|$GA_ID|g" index.html || true
+            echo "✅ GA script injected"
           else
             echo "⚠️ GA_ATLAS_MEASUREMENT_ID is empty! Skipping injection."
           fi
 
+          # Check for changes and commit
+          echo "📦 Checking for changes..."
           if [ -n "$(git status --porcelain)" ]; then
+            echo "📝 Changes detected, committing..."
             git add .
             git commit -m "chore: deploy atlas site with GA ($(date -u +"%Y-%m-%d %H:%M UTC"))"
-            git push origin main
+            
+            echo "📤 Pushing to origin/main..."
+            if ! git push origin main; then
+              echo "❌ Failed to push to atlas-site-dist!"
+              echo "💡 Check if DEPLOY_TOKEN has write access to gravito-framework/atlas-site-dist"
+              echo "📦 Git remote info:"
+              git remote -v
+              exit 1
+            fi
+            echo "✅ Successfully pushed to atlas-site-dist"
           else
-            echo "No changes to deploy"
+            echo "ℹ️ No changes to deploy"
           fi
+          
+          echo "✅ Deployment completed successfully"

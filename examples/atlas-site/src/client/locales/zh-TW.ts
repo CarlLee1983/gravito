@@ -105,7 +105,7 @@ export default {
     switching_desc: 'atlas.connection("redis").set(...) — 絕對的呼叫自由，零冗餘程式碼。',
     bun_engine_title: 'Bun.sql 原生支援',
     bun_engine_desc:
-      '啟用 `useNativeDriver: true` 選項即可解鎖 Bun 的高速統一 SQL API，在現代執行環境中體驗亞毫秒級查詢效能。',
+      "啟用 'useNativeDriver: true' 選項即可解鎖 Bun 的高速統一 SQL API，在現代執行環境中體驗亞毫秒級查詢效能。",
     view_guide: '查看驅動程式指南',
   },
   installation: {
