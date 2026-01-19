@@ -17,7 +17,7 @@
 - ✅ **所有測試通過** - 322 pass, 0 fail
 - ✅ **測試文件** - 40 個測試文件
 - ✅ **測試用例** - 322 個測試用例
-- ✅ **Bug 修復** - QueryBuilder.clone() COW 問題已修復
+- ✅ **Bug 修復** - QueryBuilder.clone() 獨立性問題已修復
 
 ### 3. 新增測試
 - ✅ **ColumnNotFoundError 測試** - 8 個測試用例，完整覆蓋錯誤處理

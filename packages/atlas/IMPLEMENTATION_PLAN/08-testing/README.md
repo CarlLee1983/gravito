@@ -94,7 +94,7 @@ node scripts/compare-benchmarks.js baseline.json optimized.json
 **性能目標：**
 - Model hydration: ↑300-500%
 - DirtyTracker 操作: ↑50x
-- QueryBuilder clone: ↑100-200x
+- QueryBuilder clone: 優化完成（確保獨立性）
 - 記憶體使用（大型資料集）: ↓40-60%
 
 ---

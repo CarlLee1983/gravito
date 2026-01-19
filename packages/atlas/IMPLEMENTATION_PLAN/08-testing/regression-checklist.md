@@ -1,5 +1,8 @@
 # 回歸測試清單
 
+**最後更新：** 2026-01-17  
+**整體狀態：** ✅ **核心功能完整** - 所有關鍵功能都有測試覆蓋
+
 本清單可直接轉換為測試用例。標記 ✅ 表示已有測試覆蓋，⚠️ 表示部分覆蓋，❌ 表示缺少測試。
 
 ## Core Model
@@ -38,9 +41,9 @@
   - **狀態：** 完整覆蓋
 
 - [✅] clone + 後續修改不影響原查詢
-  - **測試文件：** `tests/QueryBuilder.test.ts` (describe 'clone')
+  - **測試文件：** `tests/QueryBuilder.test.ts` (describe 'clone', test 'should create independent copy')
   - **測試文件：** `tests/performance/QueryBuilder.bench.ts`
-  - **狀態：** 完整覆蓋
+  - **狀態：** 完整覆蓋，已驗證獨立性
 
 - [✅] paginate: total 與 data 正確
   - **測試文件：** `tests/QueryBuilder-extra.test.ts` (test 'writes data and supports pagination helpers')

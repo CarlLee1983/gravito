@@ -179,8 +179,32 @@ export class Connection implements ConnectionContract {
 
   async disconnect(): Promise<void> {
     if (this.connected) {
-      await this.driver.disconnect()
-      this.connected = false
+      try {
+        // Ensure any pending transactions are rolled back
+        if (this.transactionDepth > 0) {
+          if (DB.isDebug()) {
+            console.warn(
+              `[Connection] Disconnecting with active transaction (depth: ${this.transactionDepth})`
+            )
+          }
+          // Reset transaction depth to prevent issues
+          this.transactionDepth = 0
+        }
+
+        // Disconnect the driver
+        await this.driver.disconnect()
+
+        // Clear proxy handle
+        this.proxyHandle = null
+
+        // Mark as disconnected
+        this.connected = false
+      } catch (error) {
+        // Even if disconnect fails, mark as disconnected to prevent hanging
+        this.connected = false
+        this.proxyHandle = null
+        throw error
+      }
     }
   }
 

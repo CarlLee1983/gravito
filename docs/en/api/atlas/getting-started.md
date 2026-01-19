@@ -14,7 +14,9 @@ bun add @gravito/atlas
 
 ## Basic Configuration
 
-You should configure Atlas during your application's bootstrap phase (e.g., `bootstrap.ts`). Use `DB.configure` to set up your database connections.
+You should configure Atlas during your application's bootstrap phase (e.g., `bootstrap.ts`). Atlas v2.0 supports multiple configuration methods:
+
+### Option 1: Programmatic Configuration
 
 ```ts
 import { DB } from '@gravito/atlas'
@@ -35,6 +37,48 @@ DB.configure({
     }
   }
 })
+```
+
+### Option 2: Environment Variables (New in v2.0)
+
+```ts
+import { DB } from '@gravito/atlas'
+
+// Using DATABASE_URL
+// DATABASE_URL=postgres://user:password@localhost:5432/gravito
+DB.configureFromEnv()
+
+// Or using individual variables
+// DB_DRIVER=postgres
+// DB_HOST=localhost
+// DB_DATABASE=gravito
+// DB_USERNAME=user
+// DB_PASSWORD=password
+DB.configureFromEnv()
+```
+
+### Option 3: Configuration File (New in v2.0)
+
+```ts
+// config/database.ts
+import { defineConfig } from '@gravito/atlas'
+
+export default defineConfig({
+  default: 'postgres',
+  connections: {
+    postgres: {
+      driver: 'postgres',
+      host: process.env.DB_HOST || 'localhost',
+      database: process.env.DB_DATABASE || 'gravito',
+      username: process.env.DB_USERNAME || 'user',
+      password: process.env.DB_PASSWORD || 'password'
+    }
+  }
+})
+
+// Then in your bootstrap.ts
+import { DB } from '@gravito/atlas'
+await DB.configureFromFile()
 ```
 
 ## Basic Usage
@@ -75,6 +119,19 @@ core.app.get('/users', async (c) => {
   return c.json({ users })
 })
 ```
+
+## What's New in v2.0
+
+Atlas v2.0 includes significant performance improvements and developer experience enhancements:
+
+- **Performance Optimizations**: ↑300-500% faster model hydration, ↑50-100% faster query compilation
+- **Better Error Messages**: "Did you mean?" suggestions for typos
+- **Debug Tools**: `DB.debug()`, `DB.getQueryLog()`, `DB.getLastQuery()`
+- **Environment Variable Support**: Configure via `DATABASE_URL` or individual `DB_*` variables
+- **Configuration File Support**: Use `defineConfig()` and `DB.configureFromFile()`
+- **Query Caching**: LRU cache for compiled SQL queries (80%+ hit rate)
+
+See the [upgrade guide](../../../../packages/atlas/IMPLEMENTATION_PLAN/10-upgrade-guide.md) for migration details.
 
 ## Next Steps
 

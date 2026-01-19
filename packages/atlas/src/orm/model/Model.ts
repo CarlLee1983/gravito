@@ -1724,12 +1724,14 @@ export abstract class Model {
       if (key.startsWith('_')) {
         continue
       }
-      result[key] = (this as any)[key]
+      // Use Reflect.get to safely access properties (including getters)
+      result[key] = Reflect.get(this, key)
     }
 
     // 2. Process appends
     for (const key of modelCtor.appends) {
-      result[key] = (this as any)[key]
+      // Use Reflect.get to safely access properties (including getters)
+      result[key] = Reflect.get(this, key)
     }
 
     // 3. Process relations (eager loaded on instance)
@@ -1742,7 +1744,8 @@ export abstract class Model {
         continue // already processed
       }
 
-      const value = (this as any)[key]
+      // Use Reflect.get to safely access properties
+      const value = Reflect.get(this, key)
       // Check if it's a Model or Array of Models (simple heuristic)
       if (
         value instanceof Model ||

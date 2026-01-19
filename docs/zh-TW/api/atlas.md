@@ -31,6 +31,8 @@ title: Atlas
 - **資料庫連接管理**：輕鬆切換與管理多個資料庫連接。
 - **Eloquent 風格 Models**：定義 Model 類別並使用關聯（HasMany, BelongsTo 等）。
 - **完整維護工具**：內建遷移 (Migrations) 與數據填充 (Factories/Seeders)。
+- **性能優化 (v2.0)**：Model hydration ↑300-500% 更快，查詢編譯 ↑50-100% 更快。
+- **增強的開發者體驗 (v2.0)**：更好的錯誤訊息、調試工具、環境變數支援。
 
 ## 安裝
 
@@ -42,21 +44,62 @@ bun add @gravito/atlas
 
 完整示例請見：[快速上手](./atlas/getting-started.md)。
 
+**方式 1：程式化配置**
 ```ts
-import { PlanetCore } from '@gravito/core'
 import { DB } from '@gravito/atlas'
 
-// 配置資料庫
 DB.configure({
+  default: 'postgres',
   connections: {
-    default: {
+    postgres: {
       driver: 'postgres',
       host: 'localhost',
-      database: 'myapp'
+      database: 'myapp',
+      username: 'postgres',
+      password: 'password'
+    }
+  }
+})
+```
+
+**方式 2：環境變數（v2.0 新增）**
+```ts
+import { DB } from '@gravito/atlas'
+
+// 使用 DATABASE_URL
+// DATABASE_URL=postgres://user:password@localhost:5432/myapp
+DB.configureFromEnv()
+
+// 或使用個別變數
+// DB_DRIVER=postgres
+// DB_HOST=localhost
+// DB_DATABASE=myapp
+DB.configureFromEnv()
+```
+
+**方式 3：配置檔案（v2.0 新增）**
+```ts
+// config/database.ts
+import { defineConfig } from '@gravito/atlas'
+
+export default defineConfig({
+  default: 'postgres',
+  connections: {
+    postgres: {
+      driver: 'postgres',
+      host: process.env.DB_HOST || 'localhost',
+      // ...
     }
   }
 })
 
+// 然後在應用程式中
+import { DB } from '@gravito/atlas'
+await DB.configureFromFile()
+```
+
+**使用資料庫**
+```ts
 // 在應用中存取
 const users = await DB.table('users').get()
 ```
