@@ -44,13 +44,28 @@ jobs:
 
       - name: Build Official Site
         working-directory: examples/official-site
+        timeout-minutes: 10
         run: |
           set -euo pipefail  # Exit on any error, undefined vars, pipe failures
           
+          echo "📦 ========================================"
+          echo "📦 Building Official Site"
+          echo "📦 ========================================"
           echo "📦 Current directory: $(pwd)"
+          echo "📦 Working directory: examples/official-site"
           echo "📦 Environment variables:"
           echo "  NODE_ENV: ${NODE_ENV:-not set}"
           echo "  VITE_GA_ID: ${VITE_GA_ID:+set (hidden)}${VITE_GA_ID:-not set}"
+          echo ""
+          
+          # Verify we're in the right directory
+          if [ ! -f "package.json" ]; then
+            echo "❌ package.json not found! Wrong directory?"
+            echo "📦 Current directory: $(pwd)"
+            ls -la
+            exit 1
+          fi
+          echo "✅ package.json found"
           
           # Verify dependencies are built
           echo "📦 Verifying package dependencies..."
@@ -58,39 +73,83 @@ jobs:
             echo "❌ @gravito/core not built!"
             echo "📦 Checking packages directory..."
             ls -la ../../packages/ | head -10 || true
+            echo "💡 Make sure 'Build All Packages' step completed successfully"
             exit 1
           fi
-          echo "✅ Dependencies verified"
+          echo "✅ @gravito/core built"
+          
+          # Check for other critical dependencies
+          for pkg in photon ion prism stasis constellation; do
+            if [ -d "../../packages/$pkg/dist" ]; then
+              echo "✅ @gravito/$pkg built"
+            else
+              echo "⚠️  @gravito/$pkg not found (may be optional)"
+            fi
+          done
+          echo ""
           
           # Build static site (this will also build client assets internally)
-          echo "📦 Building static site (includes client build)..."
+          echo "📦 ========================================"
+          echo "📦 Starting build process..."
           echo "📦 This may take a few minutes..."
+          echo "📦 ========================================"
           
-          # Capture output for better error reporting
-          if ! bun run build:static 2>&1 | tee /tmp/build-output.log; then
+          # Create log file
+          BUILD_LOG="/tmp/build-output-$(date +%s).log"
+          echo "📦 Build log: $BUILD_LOG"
+          
+          # Run build and capture output
+          set +e  # Temporarily disable exit on error to capture full output
+          bun run build:static 2>&1 | tee "$BUILD_LOG"
+          BUILD_EXIT_CODE=${PIPESTATUS[0]}
+          set -e  # Re-enable exit on error
+          
+          if [ $BUILD_EXIT_CODE -ne 0 ]; then
+            echo ""
+            echo "❌ ========================================"
             echo "❌ Static site build failed!"
-            echo "📦 Last 50 lines of build output:"
-            tail -50 /tmp/build-output.log || true
+            echo "❌ Exit code: $BUILD_EXIT_CODE"
+            echo "❌ ========================================"
+            echo ""
+            echo "📦 Last 100 lines of build output:"
+            tail -100 "$BUILD_LOG" || true
             echo ""
             echo "📦 Checking for partial build output..."
+            
+            # Check client build output
             if [ -d "static/build" ]; then
               echo "⚠️  static/build directory exists:"
               ls -la static/build/ | head -10 || true
             else
               echo "⚠️  static/build directory not found"
             fi
+            
+            # Check static site output
             if [ -d "dist-static" ]; then
               echo "⚠️  dist-static directory exists:"
               ls -la dist-static/ | head -20 || true
+              echo "📦 Files in dist-static:"
+              find dist-static -type f | head -30 || true
             else
               echo "⚠️  dist-static directory not found"
             fi
+            
             echo ""
             echo "📦 Current directory contents:"
             ls -la | head -20 || true
+            
+            echo ""
+            echo "📦 Checking for error patterns in log..."
+            grep -i "error\|fail\|exception" "$BUILD_LOG" | tail -20 || true
+            
             exit 1
           fi
-          echo "✅ Build completed"
+          
+          echo ""
+          echo "✅ ========================================"
+          echo "✅ Build completed successfully"
+          echo "✅ ========================================"
+          echo ""
           
           # Verify build output
           echo "📦 Verifying build output..."
@@ -115,6 +174,18 @@ jobs:
           fi
           echo "✅ index.html exists"
           ls -lh dist-static/index.html
+          
+          # Check for other critical files
+          for file in 404.html CNAME .nojekyll; do
+            if [ -f "dist-static/$file" ]; then
+              echo "✅ $file exists"
+            else
+              echo "⚠️  $file not found (may be optional)"
+            fi
+          done
+          
+          echo ""
+          echo "✅ Build verification completed successfully"
         env:
           NODE_ENV: production
           VITE_GA_ID: ${{ secrets.VITE_GA_ID }}
