@@ -66,6 +66,26 @@ async function generateSPARoutes() {
         return `${attr}="/assets/`
       })
 
+      // 添加路由修正腳本：當訪問 /features/index.html 時，重定向到 /features
+      // 這個腳本需要在 Vue 應用啟動之前執行
+      const routeFixScript = `
+    <script>
+        // 修正 SPA 路由：當訪問 /features/index.html 時，重定向到 /features
+        (function() {
+            var currentPath = window.location.pathname;
+            // 如果當前路徑以 /index.html 結尾且不是根路徑，重定向到對應的路徑
+            if (currentPath.endsWith('/index.html') && currentPath !== '/index.html') {
+                var cleanPath = currentPath.replace(/\\/index\\.html$/, '') || '/';
+                if (cleanPath !== currentPath) {
+                    window.history.replaceState(null, '', cleanPath + window.location.search + window.location.hash);
+                }
+            }
+        })();
+    </script>`
+
+      // 在 </head> 標籤之前插入路由修正腳本
+      routeHtml = routeHtml.replace('</head>', routeFixScript + '\n</head>')
+
       // 寫入 HTML 文件
       await writeFile(routeIndexPath, routeHtml, 'utf-8')
       console.log(`✅ Generated: ${route}/index.html`)

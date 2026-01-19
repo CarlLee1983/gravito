@@ -55,6 +55,23 @@ jobs:
             exit 1
           fi
           echo "✅ Build output verified"
+          
+          # Verify SPA routes were generated
+          echo "📦 Verifying SPA routes..."
+          if [ ! -d "dist/features" ] || [ ! -f "dist/features/index.html" ]; then
+            echo "❌ SPA routes not generated! dist/features/index.html not found."
+            echo "📦 Available directories in dist:"
+            ls -la dist/ | head -20
+            echo "💡 This means the generate-spa-routes.ts script may have failed"
+            exit 1
+          fi
+          echo "✅ SPA routes verified (features/index.html exists)"
+          
+          # List all generated routes
+          echo "📦 Generated SPA routes:"
+          find dist -name "index.html" -type f | grep -v "dist/index.html" | sed 's|dist/||' | sed 's|/index.html||' | while read route; do
+            echo "  ✅ /$route"
+          done
 
       - name: Synchronize to atlas-site-dist repo
         run: |
