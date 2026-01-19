@@ -107,15 +107,39 @@ async function build() {
   routes.add('/docs') // This will generate a redirect to /docs/guide/core-concepts
 
   // 2. Discover Docs
+  console.log('📚 Discovering documentation files...')
   const docsRoot = resolve(process.cwd(), '../../docs')
-  const glob = new Glob('**/[a-z]*.md') // Avoid hidden files and internal dirs
-  for await (const file of glob.scan(docsRoot)) {
-    // Strip locale prefix (e.g. 'en/', 'zh-TW/')
-    const slug = file.replace(/^[a-z-]+\//i, '').replace(/\.md$/, '')
-    if (slug === 'guide/laravel-12-mvc-parity' || slug.includes('node_modules')) {
-      continue
+  console.log('📂 Docs root:', docsRoot)
+
+  try {
+    const { stat } = await import('node:fs/promises')
+    await stat(docsRoot)
+    console.log('✅ Docs directory exists')
+  } catch (_e) {
+    console.error('❌ Docs directory not found at:', docsRoot)
+    console.error('💡 This might be okay if docs are not required for the build')
+  }
+
+  try {
+    const glob = new Glob('**/[a-z]*.md') // Avoid hidden files and internal dirs
+    let docCount = 0
+    for await (const file of glob.scan(docsRoot)) {
+      // Strip locale prefix (e.g. 'en/', 'zh-TW/')
+      const slug = file.replace(/^[a-z-]+\//i, '').replace(/\.md$/, '')
+      if (slug === 'guide/laravel-12-mvc-parity' || slug.includes('node_modules')) {
+        continue
+      }
+      routes.add(`/docs/${slug}`)
+      docCount++
     }
-    routes.add(`/docs/${slug}`)
+    console.log(`✅ Discovered ${docCount} documentation files`)
+  } catch (e) {
+    console.error('❌ Error discovering docs:', e)
+    if (e instanceof Error) {
+      console.error('Error message:', e.message)
+    }
+    // Don't fail the build if docs discovery fails, just log a warning
+    console.warn('⚠️  Continuing build without all docs routes')
   }
 
   // 3. Render Loop
@@ -209,6 +233,15 @@ async function build() {
             continue
           }
           console.error(`❌ Failed ${res.status}: ${pathname}`)
+          // Log response body for debugging if available
+          try {
+            const text = await res.text()
+            if (text.length < 500) {
+              console.error(`Response body: ${text}`)
+            }
+          } catch {
+            // Ignore errors reading response
+          }
           continue
         }
 
@@ -457,6 +490,36 @@ async function build() {
 }
 
 build().catch((error) => {
-  console.error('❌ Build failed:', error)
+  console.error('❌ Build failed with unhandled error:')
+  console.error('Error type:', error?.constructor?.name || typeof error)
+  console.error('Error value:', error)
+
+  if (error instanceof Error) {
+    console.error('Error name:', error.name)
+    console.error('Error message:', error.message)
+    if (error.stack) {
+      console.error('Error stack:')
+      console.error(error.stack)
+    }
+
+    // Check for common issues
+    if (error.message.includes('Cannot find module')) {
+      console.error('💡 This is a missing dependency issue')
+      console.error('💡 Make sure all packages are built: bun run build')
+      console.error('💡 Make sure dependencies are installed: bun install')
+    }
+    if (error.message.includes('EADDRINUSE')) {
+      console.error('💡 Port is already in use')
+    }
+    if (error.message.includes('ENOENT')) {
+      console.error('💡 File or directory not found')
+    }
+  }
+
+  // Additional debugging info
+  console.error('📂 Current working directory:', process.cwd())
+  console.error('📦 Node version:', process.version)
+  console.error('📦 NODE_ENV:', process.env.NODE_ENV || 'not set')
+
   process.exit(1)
 })
