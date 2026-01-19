@@ -53,7 +53,7 @@ export class MySQLDriver implements DriverContract {
       this.mysql = await this.loadMySQLModule()
       const myConfig = this.config as any
 
-      const poolConfig: any = {
+      const poolConfig: Record<string, unknown> = {
         host: myConfig.host ?? 'localhost',
         port: myConfig.port ?? 3306,
         database: myConfig.database,
@@ -155,11 +155,16 @@ export class MySQLDriver implements DriverContract {
       }
 
       const rows = Array.isArray(result) ? (result as T[]) : []
-      const fieldInfo = fields?.map((f: any) => ({
-        name: f.name,
-        dataType: f.type?.toString(),
-        tableId: undefined,
-      }))
+      const fieldInfo = fields?.map(
+        (f: { Field: string; Type: string; name?: string; type?: unknown } | string) => {
+          const field = typeof f === 'string' ? { Field: f, Type: '' } : f
+          return {
+            name: field.name ?? field.Field,
+            dataType: field.type?.toString() ?? field.Type,
+            tableId: undefined,
+          }
+        }
+      )
 
       return {
         rows,

@@ -185,10 +185,10 @@ export class MongoGrammar extends Grammar {
     return filter
   }
 
-  private normalizeValue(column: string, value: any): any {
+  private normalizeValue(column: string, value: unknown): unknown {
     if ((column === '_id' || column === 'id') && typeof value === 'string' && value.length === 24) {
       try {
-        return new mongodb.ObjectId(value)
+        return new mongodb.ObjectId(value as string)
       } catch {
         return value
       }

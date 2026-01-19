@@ -141,7 +141,7 @@ export class SQLiteDriver implements DriverContract {
         rows,
         rowCount: rows.length,
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (process.env.DEBUG_ATLAS) {
         console.error(`[SQLite Query Failed] ${sql}`, error)
       }
@@ -178,7 +178,7 @@ export class SQLiteDriver implements DriverContract {
         insertId: result.lastInsertRowid,
         changedRows: result.changes,
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (process.env.DEBUG_ATLAS) {
         console.error(`[SQLite Execute Failed] ${sql}`, error)
       }

@@ -100,7 +100,7 @@ export class BunSQLDriver implements DriverContract {
       // Using Bun.sql.raw or the instance's unsafe method.
       // If the client itself is not callable, we must find the execution method.
 
-      let result: any
+      let result: { rows: unknown[]; rowCount: number } | undefined
       if (typeof this.client === 'function') {
         // If it's a callable template function, we try to use it with raw
         result = await this.client(sql, ...bindings)
@@ -121,17 +121,25 @@ export class BunSQLDriver implements DriverContract {
 
       let rows: T[] = []
       if (Array.isArray(result)) {
-        rows = result
+        rows = result as T[]
       } else if (result && typeof result === 'object') {
-        rows = (result.rows || result) as T[]
-        if (!Array.isArray(rows) && typeof (rows as any)[Symbol.iterator] === 'function') {
-          rows = Array.from(rows as any)
+        const resultObj = result as { rows?: T[]; count?: number; rowCount?: number } & Record<
+          string,
+          unknown
+        >
+        rows = (resultObj.rows || result) as T[]
+        if (
+          !Array.isArray(rows) &&
+          typeof (rows as { [Symbol.iterator]?: () => Iterator<T> })[Symbol.iterator] === 'function'
+        ) {
+          rows = Array.from(rows as Iterable<T>)
         }
       }
 
+      const resultObj = result as { count?: number; rowCount?: number } | undefined
       return {
         rows,
-        rowCount: result?.rowCount ?? result?.count ?? rows.length,
+        rowCount: resultObj?.rowCount ?? resultObj?.count ?? rows.length,
       }
     } catch (error) {
       throw this.normalizeError(error, sql, bindings)
