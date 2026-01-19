@@ -32,7 +32,7 @@ jobs:
         env:
           SKIP_INSTALL_SIMPLE_GIT_HOOKS: 1
       - name: Run linting
-        run: bun run check
+        run: bunx biome check packages satellites --diagnostic-level=error
 
   # --------------------------------------------------------------------------
   # Main Pipeline (Combined to avoid artifact overhead while maintaining speed)
