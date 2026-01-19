@@ -10,6 +10,15 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  define: {
+    // 禁用 Vue DevTools 和 vue-i18n 的開發工具，避免生產環境錯誤
+    __VUE_PROD_DEVTOOLS__: false,
+    __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: false,
+    __INTLIFY_PROD_DEVTOOLS__: false,
+    __INTLIFY_DROP_MESSAGE_COMPILER__: false,
+    __VUE_I18N_FULL_INSTALL__: true,
+    __VUE_I18N_LEGACY_API__: true,
+  },
   server: {
     proxy: {
       '/api': 'http://localhost:3000',
