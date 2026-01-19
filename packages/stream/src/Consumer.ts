@@ -86,6 +86,12 @@ export interface ConsumerOptions {
  * // Standalone mode (CLI)
  * // Start via CLI tooling with graceful shutdown
  * ```
+ *
+ * @emits job:started - When a job begins processing. Payload: { job: Job, queue: string }
+ * @emits job:processed - When a job completes successfully. Payload: { job: Job, duration: number, queue: string }
+ * @emits job:failed - When a job fails an attempt. Payload: { job: Job, error: Error, duration: number, queue: string }
+ * @emits job:retried - When a job is scheduled for a retry. Payload: { job: Job, attempt: number, delay: number }
+ * @emits job:failed_permanently - When a job fails all attempts and is moved to DLQ. Payload: { job: Job, error: Error }
  */
 export class Consumer extends EventEmitter {
   private running = false
