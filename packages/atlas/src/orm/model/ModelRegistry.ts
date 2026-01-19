@@ -25,8 +25,9 @@ export class ModelRegistry {
     }
 
     // If it has a custom table name, register that too as a fallback
-    if ((model as any).table) {
-      this.models.set((model as any).table, model)
+    const modelWithTable = model as typeof Model & { table?: string }
+    if (modelWithTable.table) {
+      this.models.set(modelWithTable.table, model)
     }
   }
 
