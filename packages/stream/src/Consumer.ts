@@ -59,6 +59,11 @@ export interface ConsumerOptions {
    * Example: { 'emails': { max: 10, duration: 1000 } }
    */
   rateLimits?: Record<string, { max: number; duration: number }>
+
+  /**
+   * Max concurrent jobs to process. Default: 1.
+   */
+  concurrency?: number
 }
 
 /**
@@ -110,21 +115,31 @@ export class Consumer {
     const worker = new Worker(this.options.workerOptions)
     const pollInterval = this.options.pollInterval ?? 1000
     const keepAlive = this.options.keepAlive ?? true
+    const concurrency = this.options.concurrency ?? 1
+    let activeWorkers = 0
 
     console.log('[Consumer] Started', {
       queues: this.options.queues,
       connection: this.options.connection,
       workerId: this.workerId,
+      concurrency,
     })
 
     if (this.options.monitor) {
       this.startHeartbeat()
-      await this.publishLog('info', `Consumer started on [${this.options.queues.join(', ')}]`)
+      await this.publishLog(
+        'info',
+        `Consumer started on [${this.options.queues.join(', ')}] with concurrency ${concurrency}`
+      )
     }
 
     // Main loop
     while (this.running && !this.stopRequested) {
-      let processed = false
+      // If we are at capacity, wait for a bit
+      if (activeWorkers >= concurrency) {
+        await new Promise((resolve) => setTimeout(resolve, 50))
+        continue
+      }
 
       // Filter queues based on rate limits
       const eligibleQueues: string[] = []
@@ -166,74 +181,34 @@ export class Consumer {
         }
 
         if (job) {
-          processed = true
-          const currentQueue = job.queueName || 'default'
+          activeWorkers++
+          // Process job asynchronously to allow concurrency
+          this.handleJob(job, worker).finally(() => {
+            activeWorkers--
+          })
 
-          if (this.options.monitor) {
-            await this.publishLog('info', `Processing job: ${job.id}`, job.id)
-          }
-
-          try {
-            await worker.process(job)
-            if (this.options.monitor) {
-              await this.publishLog('success', `Completed job: ${job.id}`, job.id)
-            }
-          } catch (err: unknown) {
-            const error = err as Error
-            console.error(`[Consumer] Error processing job in queue "${currentQueue}":`, error)
-
-            if (this.options.monitor) {
-              await this.publishLog('error', `Job failed: ${job.id} - ${error.message}`, job.id)
-            }
-
-            // Retry Logic with Exponential Backoff
-            const attempts = job.attempts ?? 1
-            const maxAttempts = job.maxAttempts ?? this.options.workerOptions?.maxAttempts ?? 3
-
-            if (attempts < maxAttempts) {
-              job.attempts = attempts + 1
-              const delayMs = job.getRetryDelay(job.attempts)
-              const delaySec = Math.ceil(delayMs / 1000)
-              job.delay(delaySec)
-              await this.queueManager.push(job)
-
-              if (this.options.monitor) {
-                await this.publishLog(
-                  'warning',
-                  `Job retrying in ${delaySec}s (Attempt ${job.attempts}/${maxAttempts})`,
-                  job.id
-                )
-              }
-            } else {
-              await this.queueManager.fail(job, error).catch((dlqErr) => {
-                console.error(`[Consumer] Error moving job to DLQ:`, dlqErr)
-              })
-            }
-          } finally {
-            await this.queueManager.complete(job).catch((err) => {
-              console.error(`[Consumer] Error completing job in queue "${currentQueue}":`, err)
-            })
-          }
+          // Brief yield to allow next loop iteration or next blocking pop
+          await new Promise((resolve) => setTimeout(resolve, 0))
+          continue // Jump back to start of loop to check if we can process more
         }
       } catch (error) {
         console.error('[Consumer] Loop error:', error)
       }
 
-      // If nothing was processed and keepAlive is disabled, exit
-      if (!processed && !keepAlive) {
+      // If nothing was processed and keepAlive is disabled, and no workers are running, exit
+      if (activeWorkers === 0 && !keepAlive) {
         break
       }
 
-      // Wait if needed (already waited if popBlocking was used and returned null)
-      if (!this.stopRequested && !processed) {
-        // If popBlocking was used, we already waited 'timeout'.
-        // We only add extra wait if it's non-blocking fallback.
+      // Wait if needed
+      if (!this.stopRequested && activeWorkers === 0) {
         const driver = this.queueManager.getDriver(this.connectionName)
         if (!driver.popBlocking) {
           await new Promise((resolve) => setTimeout(resolve, pollInterval))
         }
-      } else if (!this.stopRequested && processed) {
-        await new Promise((resolve) => setTimeout(resolve, 0))
+      } else {
+        // Just yield
+        await new Promise((resolve) => setTimeout(resolve, 50))
       }
     }
 
@@ -243,6 +218,59 @@ export class Consumer {
       await this.publishLog('info', 'Consumer stopped')
     }
     console.log('[Consumer] Stopped')
+  }
+
+  /**
+   * Handle a single job.
+   */
+  private async handleJob(job: Job, worker: Worker): Promise<void> {
+    const currentQueue = job.queueName || 'default'
+
+    if (this.options.monitor) {
+      await this.publishLog('info', `Processing job: ${job.id}`, job.id)
+    }
+
+    try {
+      await worker.process(job)
+      if (this.options.monitor) {
+        await this.publishLog('success', `Completed job: ${job.id}`, job.id)
+      }
+    } catch (err: unknown) {
+      const error = err as Error
+      console.error(`[Consumer] Error processing job in queue "${currentQueue}":`, error)
+
+      if (this.options.monitor) {
+        await this.publishLog('error', `Job failed: ${job.id} - ${error.message}`, job.id)
+      }
+
+      // Retry Logic with Exponential Backoff
+      const attempts = job.attempts ?? 1
+      const maxAttempts = job.maxAttempts ?? this.options.workerOptions?.maxAttempts ?? 3
+
+      if (attempts < maxAttempts) {
+        job.attempts = attempts + 1
+        const delayMs = job.getRetryDelay(job.attempts)
+        const delaySec = Math.ceil(delayMs / 1000)
+        job.delay(delaySec)
+        await this.queueManager.push(job)
+
+        if (this.options.monitor) {
+          await this.publishLog(
+            'warning',
+            `Job retrying in ${delaySec}s (Attempt ${job.attempts}/${maxAttempts})`,
+            job.id
+          )
+        }
+      } else {
+        await this.queueManager.fail(job, error).catch((dlqErr) => {
+          console.error('[Consumer] Error moving job to DLQ:', dlqErr)
+        })
+      }
+    } finally {
+      await this.queueManager.complete(job).catch((err) => {
+        console.error(`[Consumer] Error completing job in queue "${currentQueue}":`, err)
+      })
+    }
   }
 
   private startHeartbeat() {

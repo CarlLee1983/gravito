@@ -205,9 +205,25 @@ export interface PersistenceAdapter {
   ): Promise<SerializedJob[]>
 
   /**
+   * Archive multiple jobs (batch write).
+   */
+  archiveMany?(
+    jobs: Array<{
+      queue: string
+      job: SerializedJob
+      status: 'completed' | 'failed' | 'waiting' | string
+    }>
+  ): Promise<void>
+
+  /**
    * Remove old data from the archive.
    */
   cleanup(days: number): Promise<number>
+
+  /**
+   * Flush any buffered data.
+   */
+  flush?(): Promise<void>
 
   /**
    * Count jobs in the archive.
@@ -232,6 +248,19 @@ export interface PersistenceAdapter {
     queue?: string
     timestamp: Date
   }): Promise<void>
+
+  /**
+   * Archive multiple log messages (batch write).
+   */
+  archiveLogMany?(
+    logs: Array<{
+      level: string
+      message: string
+      workerId: string
+      queue?: string
+      timestamp: Date
+    }>
+  ): Promise<void>
 
   /**
    * List system logs from the archive.

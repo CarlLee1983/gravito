@@ -219,47 +219,87 @@ export class RedisDriver implements QueueDriver {
 
   /**
    * Pop a job from a queue (non-blocking).
-   * Supports implicit priority polling (critical -> high -> default -> low).
+   * Optimized with Lua script for atomic priority polling.
    */
   async pop(queue: string): Promise<SerializedJob | null> {
-    // Standard priorities to check implicitly
-    const priorities = ['critical', 'high', undefined, 'low']
+    const priorities = ['critical', 'high', 'default', 'low']
+    const keys: string[] = []
 
-    for (const priority of priorities) {
-      const key = this.getKey(queue, priority)
-
-      // Check delayed queue first
-      const delayKey = `${key}:delayed`
-      if (typeof this.client.zrange === 'function') {
-        const now = Date.now()
-        const delayedJobs = await this.client.zrange(delayKey, 0, 0, 'WITHSCORES')
-
-        if (delayedJobs && delayedJobs.length >= 2) {
-          const score = parseFloat(delayedJobs[1]!)
-          if (score <= now) {
-            const payload = delayedJobs[0]!
-            if (this.client.zrem) {
-              await this.client.zrem(delayKey, payload)
-              return this.parsePayload(payload)
-            }
-          }
-        }
-      }
-
-      if (typeof this.client.get === 'function') {
-        const isPaused = await this.client.get(`${key}:paused`)
-        if (isPaused === '1') {
-          continue
-        }
-      }
-
-      // Pop from queue
-      const payload = await this.client.rpop(key)
-      if (payload) {
-        return this.parsePayload(payload)
-      }
+    for (const p of priorities) {
+      keys.push(this.getKey(queue, p === 'default' ? undefined : p))
     }
 
+    const script = `
+      local now = tonumber(ARGV[1])
+      for i, key in ipairs(KEYS) do
+        -- 1. Check delayed
+        local delayKey = key .. ":delayed"
+        local delayed = redis.call("ZRANGEBYSCORE", delayKey, 0, now, "LIMIT", 0, 1)
+        if delayed[1] then
+          redis.call("ZREM", delayKey, delayed[1])
+          return {key, delayed[1]}
+        end
+
+        -- 2. Check paused
+        local isPaused = redis.call("GET", key .. ":paused")
+        if isPaused ~= "1" then
+          -- 3. RPOP
+          local payload = redis.call("RPOP", key)
+          if payload then
+            return {key, payload}
+          end
+        end
+      end
+      return nil
+    `
+
+    try {
+      // Use eval or registered script if available
+      const result = await (this.client as any).eval(
+        script,
+        keys.length,
+        ...keys,
+        Date.now().toString()
+      )
+
+      if (result?.[1]) {
+        return this.parsePayload(result[1])
+      }
+    } catch (err) {
+      console.error('[RedisDriver] Lua pop error:', err)
+      // Fallback to manual loop if script fails
+      return this.popManualFallback(queue)
+    }
+
+    return null
+  }
+
+  /**
+   * Manual fallback for pop if Lua fails.
+   */
+  private async popManualFallback(queue: string): Promise<SerializedJob | null> {
+    const priorities = ['critical', 'high', undefined, 'low']
+    for (const priority of priorities) {
+      const key = this.getKey(queue, priority)
+      const delayKey = `${key}:delayed`
+
+      const now = Date.now()
+      const delayedJobs = await this.client.zrange?.(delayKey, 0, 0, 'WITHSCORES')
+      if (delayedJobs && delayedJobs.length >= 2) {
+        const score = parseFloat(delayedJobs[1]!)
+        if (score <= now) {
+          const payload = delayedJobs[0]!
+          await this.client.zrem?.(delayKey, payload)
+          return this.parsePayload(payload)
+        }
+      }
+
+      const isPaused = await this.client.get?.(`${key}:paused`)
+      if (isPaused === '1') continue
+
+      const payload = await this.client.rpop(key)
+      if (payload) return this.parsePayload(payload)
+    }
     return null
   }
 

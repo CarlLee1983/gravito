@@ -10,33 +10,122 @@ export class SQLitePersistence implements PersistenceAdapter {
    * @param db - An Atlas DB instance (SQLite driver).
    * @param table - The name of the table to store archived jobs.
    */
+  private jobBuffer: Array<{
+    queue: string
+    job: SerializedJob
+    status: string
+  }> = []
+  private logBuffer: Array<{
+    level: string
+    message: string
+    workerId: string
+    queue?: string
+    timestamp: Date
+  }> = []
+  private flushTimer: ReturnType<typeof setTimeout> | null = null
+  private maxBufferSize: number
+  private flushInterval: number
+
+  /**
+   * @param db - An Atlas DB instance (SQLite driver).
+   * @param table - The name of the table to store archived jobs.
+   * @param logsTable - The name of the table to store system logs.
+   * @param options - Buffering options.
+   */
   constructor(
     private db: any,
     private table = 'flux_job_archive',
-    private logsTable = 'flux_system_logs'
-  ) {}
+    private logsTable = 'flux_system_logs',
+    options: { maxBufferSize?: number; flushInterval?: number } = {}
+  ) {
+    this.maxBufferSize = options.maxBufferSize ?? 50
+    this.flushInterval = options.flushInterval ?? 5000 // 5 seconds
+  }
 
   /**
-   * Archive a job.
+   * Archive a job (buffered).
    */
   async archive(
     queue: string,
     job: SerializedJob,
     status: 'completed' | 'failed' | 'waiting' | string
   ): Promise<void> {
-    try {
-      await this.db.table(this.table).insert({
-        job_id: job.id,
-        queue: queue,
-        status: status,
-        payload: JSON.stringify(job),
-        error: job.error || null,
-        created_at: new Date(job.createdAt),
-        archived_at: new Date(),
+    this.jobBuffer.push({ queue, job, status })
+
+    if (this.jobBuffer.length >= this.maxBufferSize) {
+      this.flush().catch((err) => {
+        console.error('[SQLitePersistence] Auto-flush failed (jobs):', err.message)
       })
-    } catch (err: any) {
-      console.error(`[SQLitePersistence] Failed to archive job ${job.id}:`, err.message)
+    } else {
+      this.ensureFlushTimer()
     }
+  }
+
+  /**
+   * Archive multiple jobs (direct batch write).
+   */
+  async archiveMany(
+    jobs: Array<{
+      queue: string
+      job: SerializedJob
+      status: string
+    }>
+  ): Promise<void> {
+    if (jobs.length === 0) return
+
+    try {
+      const records = jobs.map((item) => ({
+        job_id: item.job.id,
+        queue: item.queue,
+        status: item.status,
+        payload: JSON.stringify(item.job),
+        error: item.job.error || null,
+        created_at: new Date(item.job.createdAt),
+        archived_at: new Date(),
+      }))
+
+      await this.db.table(this.table).insert(records)
+    } catch (err: any) {
+      console.error(`[SQLitePersistence] Failed to archive ${jobs.length} jobs:`, err.message)
+    }
+  }
+
+  /**
+   * Ensure the flush timer is running.
+   */
+  private ensureFlushTimer(): void {
+    if (this.flushTimer) return
+
+    this.flushTimer = setTimeout(() => {
+      this.flush().catch((err) => {
+        console.error('[SQLitePersistence] Interval flush failed:', err.message)
+      })
+    }, this.flushInterval)
+  }
+
+  /**
+   * Flush all buffered data.
+   */
+  async flush(): Promise<void> {
+    if (this.flushTimer) {
+      clearTimeout(this.flushTimer)
+      this.flushTimer = null
+    }
+
+    const jobs = [...this.jobBuffer]
+    const logs = [...this.logBuffer]
+    this.jobBuffer = []
+    this.logBuffer = []
+
+    const promises: Promise<void>[] = []
+    if (jobs.length > 0) {
+      promises.push(this.archiveMany(jobs))
+    }
+    if (logs.length > 0) {
+      promises.push(this.archiveLogMany(logs))
+    }
+
+    await Promise.all(promises)
   }
 
   /**
@@ -147,6 +236,9 @@ export class SQLitePersistence implements PersistenceAdapter {
   /**
    * Archive a system log message.
    */
+  /**
+   * Archive a system log message (buffered).
+   */
   async archiveLog(log: {
     level: string
     message: string
@@ -154,16 +246,43 @@ export class SQLitePersistence implements PersistenceAdapter {
     queue?: string
     timestamp: Date
   }): Promise<void> {
+    this.logBuffer.push(log)
+
+    if (this.logBuffer.length >= this.maxBufferSize) {
+      this.flush().catch((err) => {
+        console.error('[SQLitePersistence] Auto-flush failed (logs):', err.message)
+      })
+    } else {
+      this.ensureFlushTimer()
+    }
+  }
+
+  /**
+   * Archive multiple log messages (direct batch write).
+   */
+  async archiveLogMany(
+    logs: Array<{
+      level: string
+      message: string
+      workerId: string
+      queue?: string
+      timestamp: Date
+    }>
+  ): Promise<void> {
+    if (logs.length === 0) return
+
     try {
-      await this.db.table(this.logsTable).insert({
+      const records = logs.map((log) => ({
         level: log.level,
         message: log.message,
         worker_id: log.workerId,
         queue: log.queue || null,
         timestamp: log.timestamp,
-      })
+      }))
+
+      await this.db.table(this.logsTable).insert(records)
     } catch (err: any) {
-      console.error(`[SQLitePersistence] Failed to archive log:`, err.message)
+      console.error(`[SQLitePersistence] Failed to archive ${logs.length} logs:`, err.message)
     }
   }
 
