@@ -4,7 +4,6 @@ import { dirname, join, resolve } from 'node:path'
 import { promisify } from 'node:util'
 import { generateI18nEntries, SitemapStream } from '@gravito/constellation'
 import type { PlanetCore } from '@gravito/core'
-import type { Photon } from '@gravito/photon'
 import { Glob } from 'bun'
 import { bootstrap } from './src/bootstrap.ts'
 
@@ -149,8 +148,9 @@ async function build() {
   // since generateI18nEntries only generates prefixed paths
   console.log(`Render: / (Root Default)`)
   console.log('🌐 Making request to root path...')
+
   try {
-    const res = await (core.app as Photon).request('/')
+    const res = await core.adapter.fetch(new Request(`http://localhost/`))
     console.log(`📡 Response status: ${res.status}`)
     if (res.status === 200) {
       const gaId = process.env.VITE_GA_ID
@@ -220,7 +220,7 @@ async function build() {
       console.log(`Render: ${pathname}`)
 
       try {
-        const res = await (core.app as Photon).request(pathname)
+        const res = await core.adapter.fetch(new Request(`http://localhost${pathname}`))
         if (res.status !== 200) {
           if (res.status === 302 || res.status === 301) {
             const location = res.headers.get('Location')
@@ -299,7 +299,7 @@ async function build() {
   // 4. Fetch dynamic robots.txt
   console.log('🤖 Fetching robots.txt...')
   try {
-    const res = await (core.app as Photon).request('/robots.txt')
+    const res = await core.adapter.fetch(new Request(`http://localhost/robots.txt`))
     if (res.status === 200) {
       const content = await res.text()
       await writeFile(join(outputDir, 'robots.txt'), content)
@@ -317,7 +317,9 @@ async function build() {
   console.log('🚫 Generating 404.html...')
   try {
     // Request a known non-existent route to trigger the 404 hook
-    const res = await (core.app as Photon).request(`/__force_404_generation_${Date.now()}__`)
+    const res = await core.adapter.fetch(
+      new Request(`http://localhost/__force_404_generation_${Date.now()}__`)
+    )
     let html = await res.text()
 
     // For GitHub Pages SPA support, we need to add a script that:

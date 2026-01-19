@@ -46,7 +46,15 @@ function compileMiddlewareChain(middleware: Middleware[], handler: Handler): Com
     const mw = middleware[i]!
     const nextHandler = compiled
     compiled = async (ctx) => {
-      return (await mw(ctx, () => nextHandler(ctx))) as Response
+      let nextResult: Response | undefined
+      const next = async (): Promise<Response | undefined> => {
+        nextResult = (await nextHandler(ctx)) as Response
+        return nextResult
+      }
+
+      const result = await mw(ctx, next)
+      // If middleware returns undefined, fall back to the result of next()
+      return (result ?? nextResult) as Response
     }
   }
 
