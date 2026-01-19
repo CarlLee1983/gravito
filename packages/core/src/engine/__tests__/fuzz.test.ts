@@ -36,7 +36,7 @@ describe('Gravito Engine > Fuzz Testing & Hardening', () => {
       '//',
       '/../../../etc/passwd',
       '/Invalid%FFSequence',
-      '/' + 'a'.repeat(2048), // Long path
+      `/${'a'.repeat(2048)}`, // Long path
       '/??????', // Query abuse
       '/#/../../',
     ]
@@ -47,7 +47,7 @@ describe('Gravito Engine > Fuzz Testing & Hardening', () => {
         const res = await app.fetch(req)
         // Should respond with valid HTTP response (404, 400, or 200), not crash
         expect(res).toBeInstanceOf(Response)
-      } catch (e) {
+      } catch (_e) {
         // Request constructor itself might throw for extremely bad URLs,
         // but app.fetch should be safe if Request is created.
         // If Request fails, we skip as it's outside our engine scope.
@@ -80,7 +80,7 @@ describe('Gravito Engine > Fuzz Testing & Hardening', () => {
         expect(res.status).toBe(200)
 
         await res.json()
-      } catch (e) {
+      } catch (_e) {
         // Expected for some invalid headers (Bun/Node Request validation)
       }
     }

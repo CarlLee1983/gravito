@@ -1,7 +1,7 @@
 import { type Container, type PlanetCore, ServiceProvider } from '@gravito/core'
 
 export class RouteProvider extends ServiceProvider {
-  register(container: Container): void {
+  register(_container: Container): void {
     // Routes will be registered in boot
   }
 

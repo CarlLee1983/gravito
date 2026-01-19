@@ -8,13 +8,7 @@
  * @since 1.0.0
  */
 
-import type {
-  GravitoContext,
-  GravitoNext,
-  GravitoOrbit,
-  GravitoVariables,
-  PlanetCore,
-} from '@gravito/core'
+import type { GravitoContext, GravitoNext, GravitoOrbit, PlanetCore } from '@gravito/core'
 import { InertiaService } from './InertiaService'
 
 export * from './InertiaService'

@@ -22,8 +22,6 @@ import {
   Rocket,
   Server,
   Shield,
-  ShieldAlert,
-  Terminal,
   Zap,
 } from 'lucide-react'
 import React, { useRef, useState } from 'react'
@@ -55,7 +53,7 @@ const AdvancedHero = ({ t, locale }: { t: Translation; locale: string }) => {
     return () => window.removeEventListener('mousemove', handleMouseMove)
   }, [])
 
-  const titleCharItems = (t.hero.title || 'GRAVITO').split('').map((char, index) => ({
+  const _titleCharItems = (t.hero.title || 'GRAVITO').split('').map((char, index) => ({
     id: `hero-char-${index}-${char}`,
     index,
     char,

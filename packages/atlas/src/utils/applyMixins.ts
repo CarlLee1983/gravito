@@ -13,7 +13,9 @@ export function applyMixins(
 ) {
   constructors.forEach((baseCtor) => {
     Object.getOwnPropertyNames(baseCtor.prototype).forEach((name) => {
-      if (name === 'constructor') return
+      if (name === 'constructor') {
+        return
+      }
       Object.defineProperty(
         derivedCtor.prototype,
         name,
@@ -22,7 +24,9 @@ export function applyMixins(
     })
 
     Object.getOwnPropertyNames(baseCtor).forEach((name) => {
-      if (['length', 'prototype', 'name', 'constructor'].includes(name)) return
+      if (['length', 'prototype', 'name', 'constructor'].includes(name)) {
+        return
+      }
       Object.defineProperty(
         derivedCtor,
         name,

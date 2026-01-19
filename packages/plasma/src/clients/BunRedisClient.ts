@@ -301,10 +301,18 @@ export class BunRedisClient implements RedisClientContract {
 
     const args: string[] = [value]
     if (options) {
-      if (options.ex) args.push('EX', String(options.ex))
-      if (options.px) args.push('PX', String(options.px))
-      if (options.nx) args.push('NX')
-      if (options.xx) args.push('XX')
+      if (options.ex) {
+        args.push('EX', String(options.ex))
+      }
+      if (options.px) {
+        args.push('PX', String(options.px))
+      }
+      if (options.nx) {
+        args.push('NX')
+      }
+      if (options.xx) {
+        args.push('XX')
+      }
     }
 
     if (args.length > 1) {
@@ -347,7 +355,9 @@ export class BunRedisClient implements RedisClientContract {
       let count = 0
       for (const key of prefixedKeys) {
         const result = await this.getClient().exists(key)
-        if (result) count++
+        if (result) {
+          count++
+        }
       }
       return count
     } catch (error) {
@@ -501,7 +511,9 @@ export class BunRedisClient implements RedisClientContract {
     const data = fieldOrData as Record<string, string>
     // 使用 HMSET 或多次 HSET
     const entries = Object.entries(data)
-    if (entries.length === 0) return 0
+    if (entries.length === 0) {
+      return 0
+    }
 
     // Bun.redis hset 可能支持對象，如果不支持則使用 send
     try {

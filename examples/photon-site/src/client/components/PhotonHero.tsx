@@ -1,6 +1,6 @@
 import { motion, useScroll, useTransform } from 'framer-motion'
-import { Activity, Cpu, Shield, Zap } from 'lucide-react'
-import React, { useEffect, useRef } from 'react'
+import { Zap } from 'lucide-react'
+import { useRef } from 'react'
 import { ConstellationCanvas } from './ConstellationCanvas'
 
 export const PhotonHero = ({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) => {

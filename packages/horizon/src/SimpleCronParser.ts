@@ -35,7 +35,9 @@ export class SimpleCronParser {
     _max: number,
     isDayOfWeek = false
   ): boolean {
-    if (pattern === '*') return true
+    if (pattern === '*') {
+      return true
+    }
 
     if (pattern.includes(',')) {
       return pattern.split(',').some((p) => this.match(p, value, _min, _max, isDayOfWeek))
@@ -45,7 +47,9 @@ export class SimpleCronParser {
     if (stepMatch) {
       const range = stepMatch[1]!
       const step = parseInt(stepMatch[3]!, 10)
-      if (range === '*') return value % step === 0
+      if (range === '*') {
+        return value % step === 0
+      }
       const [rMin, rMax] = range.split('-').map((n) => parseInt(n!, 10))
       return value >= rMin! && value <= rMax! && (value - rMin!) % step === 0
     }
@@ -56,14 +60,18 @@ export class SimpleCronParser {
     }
 
     const patternVal = parseInt(pattern, 10)
-    if (isDayOfWeek && patternVal === 7 && value === 0) return true
+    if (isDayOfWeek && patternVal === 7 && value === 0) {
+      return true
+    }
     return patternVal === value
   }
 
   private static getDateInTimezone(date: Date, timezone: string): Date {
     try {
       const tzDate = new Date(date.toLocaleString('en-US', { timeZone: timezone }))
-      if (isNaN(tzDate.getTime())) throw new Error()
+      if (Number.isNaN(tzDate.getTime())) {
+        throw new Error()
+      }
       return tzDate
     } catch {
       throw new Error(`Invalid timezone: ${timezone}`)

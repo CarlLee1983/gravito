@@ -72,8 +72,11 @@ export class BunSQLDriver implements DriverContract {
   async disconnect(): Promise<void> {
     if (this.client) {
       // Bun.sql connection pool closing
-      if (typeof this.client.close === 'function') await this.client.close()
-      else if (typeof this.client.end === 'function') await this.client.end()
+      if (typeof this.client.close === 'function') {
+        await this.client.close()
+      } else if (typeof this.client.end === 'function') {
+        await this.client.end()
+      }
       this.client = null
     }
     this.connected = false
@@ -178,7 +181,9 @@ export class BunSQLDriver implements DriverContract {
    * Commit transaction
    */
   async commit(): Promise<void> {
-    if (!this.transactionActive) return
+    if (!this.transactionActive) {
+      return
+    }
     await this.query('COMMIT')
     this.transactionActive = false
   }
@@ -187,7 +192,9 @@ export class BunSQLDriver implements DriverContract {
    * Rollback transaction
    */
   async rollback(): Promise<void> {
-    if (!this.transactionActive) return
+    if (!this.transactionActive) {
+      return
+    }
     await this.query('ROLLBACK')
     this.transactionActive = false
   }

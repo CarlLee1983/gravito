@@ -57,7 +57,7 @@ export function fromEnv(connectionName = 'default', prefix = ''): AtlasConfig {
   const config: ConnectionConfig = {
     driver,
     host: getEnv('DB_HOST', getDefaultHost(driver)),
-    port: getEnv('DB_PORT') ? Number.parseInt(getEnv('DB_PORT')!) : getDefaultPort(driver),
+    port: getEnv('DB_PORT') ? Number.parseInt(getEnv('DB_PORT')!, 10) : getDefaultPort(driver),
     database: getEnv('DB_DATABASE'),
     username: getEnv('DB_USERNAME') || getEnv('DB_USER'),
     password: getEnv('DB_PASSWORD'),
@@ -82,8 +82,8 @@ export function fromEnv(connectionName = 'default', prefix = ''): AtlasConfig {
   if (poolMin || poolMax) {
     config.pool = {
       ...config.pool,
-      ...(poolMin && { min: Number.parseInt(poolMin) }),
-      ...(poolMax && { max: Number.parseInt(poolMax) }),
+      ...(poolMin && { min: Number.parseInt(poolMin, 10) }),
+      ...(poolMax && { max: Number.parseInt(poolMax, 10) }),
     }
   }
 
@@ -121,7 +121,7 @@ function parseConnectionUrl(url: string): ConnectionConfig {
   const config: ConnectionConfig = {
     driver,
     host: parsed.hostname,
-    port: parsed.port ? Number.parseInt(parsed.port) : getDefaultPort(driver),
+    port: parsed.port ? Number.parseInt(parsed.port, 10) : getDefaultPort(driver),
     database: parsed.pathname.slice(1),
     username: parsed.username,
     password: parsed.password,

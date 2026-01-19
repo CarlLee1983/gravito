@@ -139,10 +139,10 @@ export class StepExecutor {
   private async executeWithTimeout<TInput, TData>(
     handler: (
       ctx: WorkflowContext<TInput, TData>
-    ) => void | Promise<void | undefined | FluxWaitResult> | undefined | FluxWaitResult,
+    ) => undefined | Promise<undefined | undefined | FluxWaitResult> | undefined | FluxWaitResult,
     ctx: WorkflowContext<TInput, TData>,
     timeout: number
-  ): Promise<void | undefined | FluxWaitResult> {
+  ): Promise<undefined | undefined | FluxWaitResult> {
     let timer: ReturnType<typeof setTimeout> | null = null
     try {
       const timeoutPromise = new Promise<never>((_, reject) => {

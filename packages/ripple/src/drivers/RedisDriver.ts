@@ -163,7 +163,7 @@ export class RedisDriver implements RippleDriver {
     try {
       const ioredis = await import('ioredis')
       return ioredis.default
-    } catch (error) {
+    } catch (_error) {
       throw new Error('ioredis is required for RedisDriver. Install it with: bun add ioredis')
     }
   }

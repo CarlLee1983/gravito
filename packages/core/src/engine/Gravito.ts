@@ -357,7 +357,7 @@ export class Gravito {
     const execute = async (): Promise<Response> => {
       try {
         ctx.init(request, match.params, path)
-        return await entry!.compiled(ctx)
+        return await entry?.compiled(ctx)
       } catch (error) {
         return await this.handleError(error as Error, ctx)
       } finally {

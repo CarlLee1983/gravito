@@ -6,6 +6,7 @@ const DB_FILE = `test_trx_${process.pid}_${Math.random().toString(36).slice(2, 7
 const CONNECTION_NAME = `trx_test_${process.pid}_${Math.random().toString(36).slice(2, 7)}`
 const TABLE_NAME = `users_${process.pid}`
 
+// biome-ignore lint/correctness/noUnusedVariables: Used in tests via Model.query()
 class User extends Model {
   static connection = CONNECTION_NAME
   static table = TABLE_NAME
@@ -43,9 +44,11 @@ describe('Transaction Test', () => {
   afterAll(async () => {
     await DB.disconnect(CONNECTION_NAME)
     try {
-      if (typeof Bun !== 'undefined') await Bun.sleep(50) // Yield to event loop
+      if (typeof Bun !== 'undefined') {
+        await Bun.sleep(50) // Yield to event loop
+      }
       unlinkSync(DB_FILE)
-    } catch (e) {
+    } catch (_e) {
       // Ignore cleanup errors
     }
   })

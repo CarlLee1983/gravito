@@ -594,7 +594,9 @@ export abstract class Model {
         break
       case 'object':
         caster = (v) => {
-          if (typeof v === 'object' && v !== null) return v
+          if (typeof v === 'object' && v !== null) {
+            return v
+          }
           try {
             return JSON.parse(String(v))
           } catch {
@@ -604,7 +606,9 @@ export abstract class Model {
         break
       case 'json':
         caster = (v) => {
-          if (typeof v === 'object' && v !== null) return v
+          if (typeof v === 'object' && v !== null) {
+            return v
+          }
           try {
             return JSON.parse(String(v))
           } catch {
@@ -615,15 +619,23 @@ export abstract class Model {
       case 'date':
       case 'datetime':
         caster = (v) => {
-          if (v instanceof Date) return v
-          if (typeof v === 'string' || typeof v === 'number') return new Date(v)
+          if (v instanceof Date) {
+            return v
+          }
+          if (typeof v === 'string' || typeof v === 'number') {
+            return new Date(v)
+          }
           return new Date(String(v))
         }
         break
       case 'timestamp':
         caster = (v) => {
-          if (v instanceof Date) return v.getTime()
-          if (typeof v === 'string' || typeof v === 'number') return new Date(v).getTime()
+          if (v instanceof Date) {
+            return v.getTime()
+          }
+          if (typeof v === 'string' || typeof v === 'number') {
+            return new Date(v).getTime()
+          }
           return new Date(String(v)).getTime()
         }
         break

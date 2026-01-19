@@ -113,7 +113,9 @@ export class DB {
    * Log a query (internal use)
    */
   static logQuery(sql: string, bindings: unknown[], duration: number): void {
-    if (!this._debug) return
+    if (!this._debug) {
+      return
+    }
 
     this._queryLog.push({
       sql,
@@ -134,7 +136,9 @@ export class DB {
   private static interpolateBindings(sql: string, bindings: unknown[]): string {
     let index = 0
     return sql.replace(/\?/g, () => {
-      if (index >= bindings.length) return '?'
+      if (index >= bindings.length) {
+        return '?'
+      }
       const binding = bindings[index++]
 
       if (binding === null || binding === undefined) {

@@ -1,4 +1,4 @@
-import type { GravitoContext, GravitoNext, GravitoOrbit, PlanetCore } from '@gravito/core'
+import type { GravitoContext, GravitoOrbit, PlanetCore } from '@gravito/core'
 import { createSchema, createYoga, type YogaServerInstance } from 'graphql-yoga'
 
 /**
@@ -96,7 +96,7 @@ export class OrbitGraphQL implements GravitoOrbit {
 
     const handler = async (c: GravitoContext) => {
       // Convert Hono/Gravito request to standard Request
-      const response = await this.yoga!.fetch(c.req.raw, {
+      const response = await this.yoga?.fetch(c.req.raw, {
         gravito: c, // Pass Gravito Context into the GraphQL Context
       })
 

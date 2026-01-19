@@ -108,7 +108,9 @@ export class SQLiteDriver implements DriverContract {
   }
 
   isConnected(): boolean {
-    if (!this.client) return false
+    if (!this.client) {
+      return false
+    }
     if ('open' in this.client) {
       return (this.client as { open?: boolean }).open !== false
     }
@@ -206,7 +208,9 @@ export class SQLiteDriver implements DriverContract {
     if (!this.client) {
       await this.connect()
     }
-    if (process.env.DEBUG_ATLAS) console.log('[SQLiteDriver] BEGIN')
+    if (process.env.DEBUG_ATLAS) {
+      console.log('[SQLiteDriver] BEGIN')
+    }
     this.client?.prepare('BEGIN').run()
     this.inTransactionState = true
   }
@@ -215,7 +219,9 @@ export class SQLiteDriver implements DriverContract {
     if (!this.client) {
       return
     }
-    if (process.env.DEBUG_ATLAS) console.log('[SQLiteDriver] COMMIT')
+    if (process.env.DEBUG_ATLAS) {
+      console.log('[SQLiteDriver] COMMIT')
+    }
     this.client?.prepare('COMMIT').run()
     this.inTransactionState = false
   }
@@ -224,7 +230,9 @@ export class SQLiteDriver implements DriverContract {
     if (!this.client) {
       return
     }
-    if (process.env.DEBUG_ATLAS) console.log('[SQLiteDriver] ROLLBACK')
+    if (process.env.DEBUG_ATLAS) {
+      console.log('[SQLiteDriver] ROLLBACK')
+    }
     this.client?.prepare('ROLLBACK').run()
     this.inTransactionState = false
   }

@@ -180,7 +180,7 @@ export class MinimalContext implements IFastContext {
 
   header(name: string): string | undefined
   header(name: string, value: string): void
-  header(name: string, value?: string): string | undefined | void {
+  header(name: string, value?: string): string | undefined | undefined {
     if (value !== undefined) {
       this._resHeaders[name] = value
       return

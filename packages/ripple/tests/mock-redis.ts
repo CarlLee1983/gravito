@@ -4,20 +4,19 @@
  */
 export class MockRedis {
   private data = new Map<string, any>()
-  private subscribers = new Map<string, ((channel: string, message: string) => void)[]>()
-  private psubscribers = new Map<
-    string,
-    ((pattern: string, channel: string, message: string) => void)[]
-  >()
 
   public status = 'ready'
 
   // Helper to get raw data container
   private getContainer(key: string, type: 'list' | 'set' | 'zset'): any {
     if (!this.data.has(key)) {
-      if (type === 'list') this.data.set(key, [])
-      else if (type === 'set') this.data.set(key, new Set())
-      else if (type === 'zset') this.data.set(key, [])
+      if (type === 'list') {
+        this.data.set(key, [])
+      } else if (type === 'set') {
+        this.data.set(key, new Set())
+      } else if (type === 'zset') {
+        this.data.set(key, [])
+      }
     }
     return this.data.get(key)
   }
@@ -35,7 +34,7 @@ export class MockRedis {
     this.status = 'end'
   }
 
-  on(event: string, handler: Function): void {
+  on(_event: string, _handler: Function): void {
     // Stub
   }
 
@@ -56,7 +55,7 @@ export class MockRedis {
     return patterns.length
   }
 
-  async publish(channel: string, message: string): Promise<number> {
+  async publish(_channel: string, _message: string): Promise<number> {
     // In a real mock we would trigger handlers, but for unit tests
     // verifying that publish is CALLED is usually enough.
     // If we need to test reception, we can manually trigger the callback exposed by the mock.
@@ -65,14 +64,16 @@ export class MockRedis {
 
   // --- Keys ---
   async keys(pattern: string): Promise<string[]> {
-    const regex = new RegExp('^' + pattern.replace(/\*/g, '.*') + '$')
+    const regex = new RegExp(`^${pattern.replace(/\*/g, '.*')}$`)
     return Array.from(this.data.keys()).filter((k) => regex.test(k))
   }
 
   async del(...keys: string[]): Promise<number> {
     let count = 0
     for (const key of keys) {
-      if (this.data.delete(key)) count++
+      if (this.data.delete(key)) {
+        count++
+      }
     }
     return count
   }
@@ -102,7 +103,9 @@ export class MockRedis {
 
   async lrange(key: string, start: number, stop: number): Promise<any[]> {
     const list = this.data.get(key) as any[]
-    if (!list || !Array.isArray(list)) return []
+    if (!list || !Array.isArray(list)) {
+      return []
+    }
     const end = stop === -1 ? undefined : stop + 1
     return list.slice(start, end)
   }

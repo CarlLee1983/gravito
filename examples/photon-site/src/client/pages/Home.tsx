@@ -1,4 +1,4 @@
-import { Head, Link, router, usePage } from '@inertiajs/react'
+import { Head, Link, router } from '@inertiajs/react'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   Activity,
@@ -7,18 +7,13 @@ import {
   BookOpen,
   ChevronRight,
   Cpu,
-  Database,
   Gauge,
-  Layers,
-  Microscope,
   Moon,
-  ShieldCheck,
   Sun,
-  Terminal,
   Workflow,
   Zap,
 } from 'lucide-react'
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Footer } from '../components/Footer'
 import { PhotonHero } from '../components/PhotonHero'
 
@@ -61,7 +56,9 @@ export default function Home() {
     const savedTheme = localStorage.getItem('photon-theme') as 'dark' | 'light'
     if (savedTheme) {
       setTheme(savedTheme)
-      if (savedTheme === 'light') document.documentElement.classList.add('light')
+      if (savedTheme === 'light') {
+        document.documentElement.classList.add('light')
+      }
     }
 
     return () => window.removeEventListener('scroll', handleScroll)
