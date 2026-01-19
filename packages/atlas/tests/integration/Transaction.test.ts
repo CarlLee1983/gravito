@@ -43,8 +43,11 @@ describe('Transaction Test', () => {
   afterAll(async () => {
     await DB.disconnect(CONNECTION_NAME)
     try {
+      if (typeof Bun !== 'undefined') await Bun.sleep(50) // Yield to event loop
       unlinkSync(DB_FILE)
-    } catch (e) {}
+    } catch (e) {
+      // Ignore cleanup errors
+    }
   })
 
   test('nested transactions with savepoints', async () => {
