@@ -37,21 +37,32 @@ export class SQLitePersistence implements PersistenceAdapter {
   ): Promise<void> {
     if (jobs.length === 0) return
 
-    try {
-      const records = jobs.map((item) => ({
-        job_id: item.job.id,
-        queue: item.queue,
-        status: item.status,
-        payload: JSON.stringify(item.job),
-        error: item.job.error || null,
-        created_at: new Date(item.job.createdAt),
-        archived_at: new Date(),
-      }))
+    const batchSize = 200
+    for (let i = 0; i < jobs.length; i += batchSize) {
+      const chunk = jobs.slice(i, i + batchSize)
+      try {
+        const records = chunk.map((item) => ({
+          job_id: item.job.id,
+          queue: item.queue,
+          status: item.status,
+          payload: JSON.stringify(item.job),
+          error: item.job.error || null,
+          created_at: new Date(item.job.createdAt),
+          archived_at: new Date(),
+        }))
 
-      await this.db.table(this.table).insert(records)
-    } catch (err: unknown) {
-      const error = err instanceof Error ? err : new Error(String(err))
-      console.error(`[SQLitePersistence] Failed to archive ${jobs.length} jobs:`, error.message)
+        // For SQLite, wrapping in a transaction significantly improves performance
+        if (typeof (this.db as any).transaction === 'function') {
+          await (this.db as any).transaction(async (trx: any) => {
+            await trx.table(this.table).insert(records)
+          })
+        } else {
+          await this.db.table(this.table).insert(records)
+        }
+      } catch (err: unknown) {
+        const error = err instanceof Error ? err : new Error(String(err))
+        console.error(`[SQLitePersistence] Failed to archive ${chunk.length} jobs:`, error.message)
+      }
     }
   }
 

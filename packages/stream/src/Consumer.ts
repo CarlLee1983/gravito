@@ -152,6 +152,12 @@ export class Consumer extends EventEmitter {
   private workerId = `worker-${Math.random().toString(36).substring(2, 8)}`
   private heartbeatTimer: ReturnType<typeof setTimeout> | null = null
   private groupLimiters = new Map<string, ReturnType<typeof pLimit>>()
+  private stats = {
+    processed: 0,
+    failed: 0,
+    retried: 0,
+    active: 0,
+  }
 
   constructor(
     private queueManager: QueueManager,
@@ -200,7 +206,6 @@ export class Consumer extends EventEmitter {
     const batchSize = this.options.batchSize ?? 1
     const useBlocking = this.options.useBlocking ?? true
     const blockingTimeout = this.options.blockingTimeout ?? 5
-    let activeWorkers = 0
 
     this.log('Started', {
       queues: this.options.queues,
@@ -221,7 +226,7 @@ export class Consumer extends EventEmitter {
     // Main loop
     while (this.running && !this.stopRequested) {
       // If we are at capacity, wait for a bit
-      const capacity = concurrency - activeWorkers
+      const capacity = concurrency - this.stats.active
       if (capacity <= 0) {
         await new Promise((resolve) => setTimeout(resolve, 50))
         continue
@@ -293,14 +298,14 @@ export class Consumer extends EventEmitter {
         }
 
         if (jobs.length > 0) {
-          activeWorkers += jobs.length
+          this.stats.active += jobs.length
           // Reset adaptive poll interval
           currentPollInterval = minPollInterval
 
           // Process jobs asynchronously
           for (const job of jobs) {
             this.runJob(job, worker).finally(() => {
-              activeWorkers--
+              this.stats.active--
             })
           }
 
@@ -313,7 +318,7 @@ export class Consumer extends EventEmitter {
       }
 
       // If nothing was processed and keepAlive is disabled, and no workers are running, exit
-      if (activeWorkers === 0 && !keepAlive) {
+      if (this.stats.active === 0 && !keepAlive) {
         break
       }
 
@@ -388,6 +393,7 @@ export class Consumer extends EventEmitter {
     try {
       await worker.process(job)
       const duration = Date.now() - startTime
+      this.stats.processed++
       this.emit('job:processed', { job, duration, queue: currentQueue })
 
       this.log(`Completed job ${job.id} in ${duration}ms`)
@@ -401,6 +407,7 @@ export class Consumer extends EventEmitter {
       this.emit('job:failed', { job, error, duration, queue: currentQueue })
 
       this.log(`Failed job ${job.id} in ${duration}ms`, { error: error.message })
+      this.stats.failed++
 
       if (this.options.monitor) {
         await this.publishLog('error', `Job failed: ${job.id} - ${error.message}`, job.id)
@@ -419,6 +426,7 @@ export class Consumer extends EventEmitter {
 
         this.log(`Retrying job ${job.id} in ${delaySec}s (Attempt ${job.attempts}/${maxAttempts})`)
 
+        this.stats.retried++
         this.emit('job:retried', { job, attempt: job.attempts, delay: delaySec })
 
         if (this.options.monitor) {
@@ -463,6 +471,7 @@ export class Consumer extends EventEmitter {
               heapUsed: Math.floor(mem.heapUsed / 1024 / 1024),
               total: Math.floor(os.totalmem() / 1024 / 1024),
             },
+            stats: this.stats,
           }
 
           await driver.reportHeartbeat(
@@ -533,5 +542,21 @@ export class Consumer extends EventEmitter {
    */
   isRunning(): boolean {
     return this.running
+  }
+
+  /**
+   * Get current consumer statistics.
+   */
+  getStats() {
+    return { ...this.stats }
+  }
+
+  /**
+   * Reset statistics counters.
+   */
+  resetStats(): void {
+    this.stats.processed = 0
+    this.stats.failed = 0
+    this.stats.retried = 0
   }
 }

@@ -6,7 +6,7 @@ import type { QueueDriver } from './QueueDriver'
  */
 export interface RedisClient {
   lpush(key: string, ...values: string[]): Promise<number>
-  rpop(key: string): Promise<string | null>
+  rpop(key: string, count?: number): Promise<string | string[] | null>
   llen(key: string): Promise<number>
   del(key: string, ...keys: string[]): Promise<number>
   lpushx?(key: string, ...values: string[]): Promise<number>
@@ -23,13 +23,14 @@ export interface RedisClient {
   defineCommand?(name: string, options: { numberOfKeys: number; lua: string }): void
   incr?(key: string): Promise<number>
   expire?(key: string, seconds: number): Promise<number>
+  eval(script: string, numKeys: number, ...args: (string | number)[]): Promise<any>
   [key: string]: any
 }
 
 /**
- * Extended Redis client with custom group commands.
+ * Extended Redis client with custom commands.
  */
-export interface GroupRedisClient extends RedisClient {
+export interface CustomRedisClient extends RedisClient {
   pushGroupJob(
     waitList: string,
     activeSet: string,
@@ -43,7 +44,13 @@ export interface GroupRedisClient extends RedisClient {
     pendingList: string,
     groupId: string
   ): Promise<number>
+  popMany(queue: string, prefix: string, count: number, now: string): Promise<string[]>
 }
+
+/**
+ * Extended Redis client with custom group commands (Legacy name).
+ */
+export type GroupRedisClient = CustomRedisClient
 
 /**
  * Redis driver configuration.
@@ -81,7 +88,7 @@ export interface RedisDriverConfig {
  */
 export class RedisDriver implements QueueDriver {
   private prefix: string
-  private client: RedisDriverConfig['client']
+  private client: CustomRedisClient
 
   // Lua Logic:
   // IF (IS_MEMBER(activeSet, groupId)) -> PUSH(pendingList, job)
@@ -178,7 +185,7 @@ export class RedisDriver implements QueueDriver {
   `
 
   constructor(config: RedisDriverConfig) {
-    this.client = config.client
+    this.client = config.client as CustomRedisClient
     this.prefix = config.prefix ?? 'queue:'
 
     if (!this.client) {
@@ -248,7 +255,7 @@ export class RedisDriver implements QueueDriver {
     const payload = JSON.stringify(payloadObj)
 
     // Handle Group FIFO logic
-    if (groupId && typeof (this.client as any).pushGroupJob === 'function') {
+    if (groupId && typeof this.client.pushGroupJob === 'function') {
       // We use a global active set per queue? No, maybe structure per group?
       // Let's use:
       // activeSet: prefix:active (Set of groupIds)
@@ -258,7 +265,7 @@ export class RedisDriver implements QueueDriver {
       const pendingListKey = `${this.prefix}pending:${groupId}`
 
       // Using ioredis custom command
-      await (this.client as any).pushGroupJob(key, activeSetKey, pendingListKey, groupId, payload)
+      await this.client.pushGroupJob(key, activeSetKey, pendingListKey, groupId, payload)
       return
     }
 
@@ -293,8 +300,8 @@ export class RedisDriver implements QueueDriver {
     const activeSetKey = `${this.prefix}active`
     const pendingListKey = `${this.prefix}pending:${job.groupId}`
 
-    if (typeof (this.client as any).completeGroupJob === 'function') {
-      await (this.client as any).completeGroupJob(key, activeSetKey, pendingListKey, job.groupId)
+    if (typeof this.client.completeGroupJob === 'function') {
+      await this.client.completeGroupJob(key, activeSetKey, pendingListKey, job.groupId)
     }
   }
 
@@ -336,12 +343,7 @@ export class RedisDriver implements QueueDriver {
 
     try {
       // Use eval or registered script if available
-      const result = await (this.client as any).eval(
-        script,
-        keys.length,
-        ...keys,
-        Date.now().toString()
-      )
+      const result = await this.client.eval(script, keys.length, ...keys, Date.now().toString())
 
       if (result?.[1]) {
         return this.parsePayload(result[1])
@@ -379,7 +381,7 @@ export class RedisDriver implements QueueDriver {
       if (isPaused === '1') continue
 
       const payload = await this.client.rpop(key)
-      if (payload) return this.parsePayload(payload)
+      if (payload) return this.parsePayload(payload as string)
     }
     return null
   }
@@ -501,8 +503,8 @@ export class RedisDriver implements QueueDriver {
 
     try {
       // Use pipeline if available (ioredis)
-      if (typeof (this.client as any).pipeline === 'function') {
-        const pipe = (this.client as any).pipeline()
+      if (typeof this.client.pipeline === 'function') {
+        const pipe = this.client.pipeline()
         for (const key of keys) {
           pipe.llen(key)
           pipe.zcard(`${key}:delayed`)
@@ -549,8 +551,8 @@ export class RedisDriver implements QueueDriver {
 
     if (hasGroup || hasPriority) {
       // Use pipeline if available (ioredis)
-      if (typeof (this.client as any).pipeline === 'function') {
-        const pipe = (this.client as any).pipeline()
+      if (typeof this.client.pipeline === 'function') {
+        const pipe = this.client.pipeline()
         for (const job of jobs) {
           const priority = (job as any).priority
           const key = this.getKey(queue, priority)
@@ -632,14 +634,9 @@ export class RedisDriver implements QueueDriver {
     }
 
     // Use Lua script for atomic batch pop across priorities
-    if (typeof (this.client as any).popMany === 'function') {
+    if (typeof this.client.popMany === 'function') {
       try {
-        const result = await (this.client as any).popMany(
-          queue,
-          this.prefix,
-          count,
-          Date.now().toString()
-        )
+        const result = await this.client.popMany(queue, this.prefix, count, Date.now().toString())
         if (Array.isArray(result) && result.length > 0) {
           return result.map((p: string) => this.parsePayload(p))
         } else if (Array.isArray(result) && result.length === 0) {
@@ -681,14 +678,14 @@ export class RedisDriver implements QueueDriver {
 
       // Try RPOP with count (Redis 6.2+)
       try {
-        const reply = await (this.client as any).rpop(key, remaining)
+        const reply = await this.client.rpop(key, remaining)
         if (reply) {
           fetched = Array.isArray(reply) ? reply : [reply]
         }
       } catch (_e) {
         // Fallback: Pipeline RPOP
-        if (typeof (this.client as any).pipeline === 'function') {
-          const pipeline = (this.client as any).pipeline()
+        if (typeof this.client.pipeline === 'function') {
+          const pipeline = this.client.pipeline()
           for (let i = 0; i < remaining; i++) {
             pipeline.rpop(key)
           }
@@ -701,7 +698,7 @@ export class RedisDriver implements QueueDriver {
           // Fallback: Serial loop (worst case)
           for (let i = 0; i < remaining; i++) {
             const res = await this.client.rpop(key)
-            if (res) fetched.push(res)
+            if (res) fetched.push(res as string)
             else break
           }
         }
@@ -816,7 +813,7 @@ export class RedisDriver implements QueueDriver {
       // Limitation: Not atomic if process crashes in between.
       // But acceptable for this "Manual Retry" operation.
 
-      const job: SerializedJob = this.parsePayload(payload)
+      const job: SerializedJob = this.parsePayload(payload as string)
 
       // Reset attempts and error
       job.attempts = 0

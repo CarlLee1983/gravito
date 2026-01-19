@@ -37,20 +37,24 @@ export class MySQLPersistence implements PersistenceAdapter {
   ): Promise<void> {
     if (jobs.length === 0) return
 
-    try {
-      const records = jobs.map((item) => ({
-        job_id: item.job.id,
-        queue: item.queue,
-        status: item.status,
-        payload: JSON.stringify(item.job),
-        error: item.job.error || null,
-        created_at: new Date(item.job.createdAt),
-        archived_at: new Date(),
-      }))
+    const batchSize = 500
+    for (let i = 0; i < jobs.length; i += batchSize) {
+      const chunk = jobs.slice(i, i + batchSize)
+      try {
+        const records = chunk.map((item) => ({
+          job_id: item.job.id,
+          queue: item.queue,
+          status: item.status,
+          payload: JSON.stringify(item.job),
+          error: item.job.error || null,
+          created_at: new Date(item.job.createdAt),
+          archived_at: new Date(),
+        }))
 
-      await this.db.table(this.table).insert(records)
-    } catch (err: unknown) {
-      console.error(`[MySQLPersistence] Failed to archive ${jobs.length} jobs:`, err)
+        await this.db.table(this.table).insert(records)
+      } catch (err: unknown) {
+        console.error(`[MySQLPersistence] Failed to archive ${chunk.length} jobs:`, err)
+      }
     }
   }
 

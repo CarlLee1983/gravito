@@ -107,9 +107,9 @@
 | 1c | [02-serialization-optimization](./02-serialization-optimization/) | 序列化優化 | 🟢 低 | 2-3 天 | 無 | ✅ 已完成 |
 | 2 | [03-batch-optimization](./03-batch-optimization/) | 批量操作優化 | 🔴 高 | 3-4 天 | 1a, 1b | ✅ 已完成 |
 | 3 | [04-driver-optimization](./04-driver-optimization/) | 驅動層優化 | 🔴 高 | 4-5 天 | 2 | ✅ 已完成 |
-| 4 | [08-consumer-optimization](./08-consumer-optimization/) | Consumer 優化 | 🟡 中 | 1-2 天 | 3 | 整合 popMany + BLPOP |
-| 5 | [05-persistence-optimization](./05-persistence-optimization/) | 持久化層優化 | 🟡 中 | 2-3 天 | 1b | |
-| 6 | [06-concurrency-optimization](./06-concurrency-optimization/) | 並發處理優化 | 🟡 中 | 3-5 天 | 4 | 漸進式：6A+6B |
+| 4 | [08-consumer-optimization](./08-consumer-optimization/) | Consumer 優化 | 🟡 中 | 1-2 天 | 3 | ✅ 已完成 |
+| 5 | [05-persistence-optimization](./05-persistence-optimization/) | 持久化層優化 | 🟡 中 | 2-3 天 | 1b | ✅ 已完成 |
+| 6 | [06-concurrency-optimization](./06-concurrency-optimization/) | 並發處理優化 | 🟡 中 | 3-5 天 | 4 | ✅ 已完成 (6A+6B) |
 | 1c | [02-serialization-optimization](./02-serialization-optimization/) | 序列化優化 | 🟢 低 | 2-3 天 | 無 | ✅ 已完成 |
 | 8 | [07-memory-optimization](./07-memory-optimization/) | 內存優化 | 🟢 低 | 1-2 天 | 1a | 視 Phase 0 結果 |
 | 9 | [09-dx-optimization](./09-dx-optimization/) | DX 優化 | 🟢 低 | 1-2 天 | 無 | ✅ 已完成 |

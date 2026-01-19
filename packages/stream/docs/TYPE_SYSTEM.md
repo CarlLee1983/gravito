@@ -252,13 +252,30 @@ export interface RedisClient {
   brpop(...args: any[]): Promise<[string, string] | null>
   llen(key: string): Promise<number>
   // ... 其他方法
-  [key: string]: any // 允許額外方法
+  [key: string]: any
 }
 
-export interface GroupRedisClient extends RedisClient {
-  pushGroupJob?(...): Promise<number>
-  completeGroupJob?(...): Promise<number | null>
+/**
+ * Extended Redis client with custom commands.
+ */
+export interface CustomRedisClient extends RedisClient {
+  pushGroupJob(
+    waitList: string,
+    activeSet: string,
+    pendingList: string,
+    groupId: string,
+    payload: string
+  ): Promise<number>
+  completeGroupJob(
+    waitList: string,
+    activeSet: string,
+    pendingList: string,
+    groupId: string
+  ): Promise<number>
+  popMany(queue: string, prefix: string, count: number, now: string): Promise<string[]>
 }
+
+export type GroupRedisClient = CustomRedisClient
 ```
 
 實際使用時會轉換為這些類型。

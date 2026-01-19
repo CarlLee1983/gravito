@@ -27,7 +27,7 @@ Serializes the job as a plain JSON object.
 - **Does not restore class instances**. Jobs become plain objects. Methods are lost.
 - Larger payload than MessagePack.
 
-### 3. MessagePack Serializer (New)
+### 3. MessagePack Serializer
 Uses MessagePack (binary format) encoded as Base64.
 
 **Pros:**
@@ -40,7 +40,7 @@ Uses MessagePack (binary format) encoded as Base64.
 - Requires optional dependency: `@msgpack/msgpack`.
 - **Does not restore class instances**.
 
-## Serialization Caching (New)
+## Serialization Caching
 
 You can enable serialization caching to prevent re-serializing the same Job instance multiple times. This is useful when you reuse Job objects or push the same job to multiple queues/connections.
 

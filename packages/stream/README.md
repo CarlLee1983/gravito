@@ -71,6 +71,36 @@ const consumer = new Consumer(manager, {
 
 Jobs with the same `groupId` will always be processed in order, even with high concurrency. Jobs from different groups (or no group) will run in parallel.
 
+### 5. Polling & Batching Optimization
+
+```typescript
+const consumer = new Consumer(manager, {
+  queues: ['default'],
+  // Polling Strategy
+  pollInterval: 1000,       // Initial poll interval
+  minPollInterval: 100,     // Adaptive: reduce to 100ms when jobs found
+  maxPollInterval: 5000,    // Adaptive: backoff up to 5s when idle
+  backoffMultiplier: 1.5,   // Exponential backoff factor
+  
+  // Batch Consumption
+  batchSize: 10,            // Fetch 10 jobs at once (requires concurrency > 1 for parallel processing)
+  concurrency: 10,
+  
+  // Blocking Pop (Redis/SQS)
+  useBlocking: true,        // Use BLPOP when batchSize=1 (reduces CPU usage)
+  blockingTimeout: 5        // Block for 5 seconds
+})
+```
+
+### 6. Monitoring & Stats
+
+```typescript
+const stats = consumer.getStats()
+console.log(`Processed: ${stats.processed}, Failed: ${stats.failed}`)
+
+// Metrics are also included in the heartbeat if monitor is enabled
+```
+
 ### 2. Enqueue a job
 
 ```typescript
