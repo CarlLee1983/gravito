@@ -614,10 +614,18 @@ export abstract class Model {
         break
       case 'date':
       case 'datetime':
-        caster = (v) => (v instanceof Date ? v : new Date(String(v)))
+        caster = (v) => {
+          if (v instanceof Date) return v
+          if (typeof v === 'string' || typeof v === 'number') return new Date(v)
+          return new Date(String(v))
+        }
         break
       case 'timestamp':
-        caster = (v) => (v instanceof Date ? v.getTime() : new Date(String(v)).getTime())
+        caster = (v) => {
+          if (v instanceof Date) return v.getTime()
+          if (typeof v === 'string' || typeof v === 'number') return new Date(v).getTime()
+          return new Date(String(v)).getTime()
+        }
         break
       case 'collection':
         caster = (v) => (Array.isArray(v) ? v : [v])
