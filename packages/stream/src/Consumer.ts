@@ -1,3 +1,4 @@
+import { EventEmitter } from 'node:events'
 import type { Job } from './Job'
 import type { QueueManager } from './QueueManager'
 import type { WorkerOptions } from './Worker'
@@ -86,16 +87,18 @@ export interface ConsumerOptions {
  * // Start via CLI tooling with graceful shutdown
  * ```
  */
-export class Consumer {
+export class Consumer extends EventEmitter {
   private running = false
   private stopRequested = false
   private workerId = `worker-${Math.random().toString(36).substring(2, 8)}`
-  private heartbeatTimer: Timer | null = null
+  private heartbeatTimer: ReturnType<typeof setTimeout> | null = null
 
   constructor(
     private queueManager: QueueManager,
     private options: ConsumerOptions
-  ) {}
+  ) {
+    super()
+  }
 
   private get connectionName(): string {
     return this.options.connection ?? this.queueManager.getDefaultConnection()
@@ -225,6 +228,9 @@ export class Consumer {
    */
   private async handleJob(job: Job, worker: Worker): Promise<void> {
     const currentQueue = job.queueName || 'default'
+    const startTime = Date.now()
+
+    this.emit('job:started', { job, queue: currentQueue })
 
     if (this.options.monitor) {
       await this.publishLog('info', `Processing job: ${job.id}`, job.id)
@@ -232,11 +238,17 @@ export class Consumer {
 
     try {
       await worker.process(job)
+      const duration = Date.now() - startTime
+      this.emit('job:processed', { job, duration, queue: currentQueue })
+
       if (this.options.monitor) {
         await this.publishLog('success', `Completed job: ${job.id}`, job.id)
       }
     } catch (err: unknown) {
       const error = err as Error
+      const duration = Date.now() - startTime
+      this.emit('job:failed', { job, error, duration, queue: currentQueue })
+
       console.error(`[Consumer] Error processing job in queue "${currentQueue}":`, error)
 
       if (this.options.monitor) {
@@ -254,6 +266,8 @@ export class Consumer {
         job.delay(delaySec)
         await this.queueManager.push(job)
 
+        this.emit('job:retried', { job, attempt: job.attempts, delay: delaySec })
+
         if (this.options.monitor) {
           await this.publishLog(
             'warning',
@@ -262,6 +276,7 @@ export class Consumer {
           )
         }
       } else {
+        this.emit('job:failed_permanently', { job, error })
         await this.queueManager.fail(job, error).catch((dlqErr) => {
           console.error('[Consumer] Error moving job to DLQ:', dlqErr)
         })

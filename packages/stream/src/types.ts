@@ -47,6 +47,25 @@ export interface SerializedJob {
 }
 
 /**
+ * Statistics for a single queue.
+ * @public
+ */
+export interface QueueStats {
+  /** Queue name */
+  queue: string
+  /** Number of pending jobs */
+  size: number
+  /** Number of delayed jobs (if supported) */
+  delayed?: number
+  /** Number of reserved/in-flight jobs (if supported) */
+  reserved?: number
+  /** Number of failed jobs in DLQ (if supported) */
+  failed?: number
+  /** Additional custom metrics */
+  metrics?: Record<string, number>
+}
+
+/**
  * Advanced topic options for distributed queues (e.g., Kafka).
  * @public
  */

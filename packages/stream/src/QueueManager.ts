@@ -10,6 +10,7 @@ import type {
   PersistenceAdapter,
   QueueConfig,
   QueueConnectionConfig,
+  QueueStats,
   SerializedJob,
 } from './types'
 
@@ -400,6 +401,25 @@ export class QueueManager {
   async clear(queue = 'default', connection: string = this.defaultConnection): Promise<void> {
     const driver = this.getDriver(connection)
     await driver.clear(queue)
+  }
+
+  /**
+   * Get queue statistics.
+   *
+   * @param queue - Queue name (default: 'default').
+   * @param connection - Connection name (optional).
+   */
+  async stats(queue = 'default', connection: string = this.defaultConnection): Promise<QueueStats> {
+    const driver = this.getDriver(connection)
+    if (driver.stats) {
+      return await driver.stats(queue)
+    }
+
+    // Fallback: minimal stats
+    return {
+      queue,
+      size: await driver.size(queue),
+    }
   }
 
   /**

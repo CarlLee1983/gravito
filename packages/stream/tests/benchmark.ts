@@ -53,6 +53,18 @@ bench('popMany - 100', async () => {
   await driver.popMany!(queue, 100)
 })
 
+bench('pop - with priority (Lua)', async () => {
+  // Pushing different priorities to test Lua script logic
+  await manager.push(new BenchJob({ p: 'high' }).withPriority('high'), { queue })
+  await manager.pop(queue)
+})
+
+bench('popBlocking - 1s timeout', async () => {
+  // This measures the overhead of BRPOP when data is already available
+  await manager.push(new BenchJob({ hello: 'blocking' }), { queue })
+  await driver.popBlocking!(queue, 1)
+})
+
 await run()
 await redis.quit()
 process.exit(0)

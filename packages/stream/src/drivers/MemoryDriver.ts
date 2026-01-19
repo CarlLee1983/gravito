@@ -1,4 +1,4 @@
-import type { SerializedJob } from '../types'
+import type { QueueStats, SerializedJob } from '../types'
 import type { QueueDriver } from './QueueDriver'
 
 /**
@@ -63,6 +63,33 @@ export class MemoryDriver implements QueueDriver {
    */
   async clear(queue: string): Promise<void> {
     this.queues.delete(queue)
+  }
+
+  /**
+   * Get queue statistics.
+   */
+  async stats(queue: string): Promise<QueueStats> {
+    const jobs = this.queues.get(queue) || []
+    const now = Date.now()
+
+    let pending = 0
+    let delayed = 0
+
+    for (const job of jobs) {
+      const isDelayed = job.delaySeconds && now < job.createdAt + job.delaySeconds * 1000
+      if (isDelayed) {
+        delayed++
+      } else {
+        pending++
+      }
+    }
+
+    return {
+      queue,
+      size: pending,
+      delayed,
+      failed: this.queues.get(`failed:${queue}`)?.length || 0,
+    }
   }
 
   /**

@@ -1,4 +1,4 @@
-import type { JobPushOptions, SerializedJob, TopicOptions } from '../types'
+import type { JobPushOptions, QueueStats, SerializedJob, TopicOptions } from '../types'
 
 /**
  * Queue driver interface.
@@ -81,6 +81,12 @@ export interface QueueDriver {
    * @param job - Serialized job with error info
    */
   fail?(queue: string, job: SerializedJob): Promise<void>
+
+  /**
+   * Get queue statistics.
+   * @param queue - Queue name
+   */
+  stats?(queue: string): Promise<QueueStats>
 
   /**
    * Push multiple jobs (optional, higher throughput).

@@ -1,4 +1,4 @@
-import type { SerializedJob } from '../types'
+import type { QueueStats, SerializedJob } from '../types'
 import type { QueueDriver } from './QueueDriver'
 
 /**
@@ -257,6 +257,50 @@ export class DatabaseDriver implements QueueDriver {
         }
       }
     })
+  }
+
+  /**
+   * Get queue statistics.
+   */
+  async stats(queue: string): Promise<QueueStats> {
+    const failedQueue = `failed:${queue}`
+
+    try {
+      // Pending: available now and not reserved
+      const pendingRes = (await this.dbService.execute<{ count: number }>(
+        `SELECT COUNT(*) as count FROM ${this.tableName} WHERE queue = $1 AND available_at <= NOW() AND reserved_at IS NULL`,
+        [queue]
+      )) as any[]
+
+      // Delayed: available in future
+      const delayedRes = (await this.dbService.execute<{ count: number }>(
+        `SELECT COUNT(*) as count FROM ${this.tableName} WHERE queue = $1 AND available_at > NOW()`,
+        [queue]
+      )) as any[]
+
+      // Reserved: currently in flight
+      const reservedRes = (await this.dbService.execute<{ count: number }>(
+        `SELECT COUNT(*) as count FROM ${this.tableName} WHERE queue = $1 AND reserved_at IS NOT NULL`,
+        [queue]
+      )) as any[]
+
+      // Failed
+      const failedRes = (await this.dbService.execute<{ count: number }>(
+        `SELECT COUNT(*) as count FROM ${this.tableName} WHERE queue = $1`,
+        [failedQueue]
+      )) as any[]
+
+      return {
+        queue,
+        size: pendingRes[0]?.count || 0,
+        delayed: delayedRes[0]?.count || 0,
+        reserved: reservedRes[0]?.count || 0,
+        failed: failedRes[0]?.count || 0,
+      }
+    } catch (err) {
+      console.error('[DatabaseDriver] Failed to get stats:', err)
+      return { queue, size: 0, delayed: 0, reserved: 0, failed: 0 }
+    }
   }
 
   /**

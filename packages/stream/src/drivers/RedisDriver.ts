@@ -1,4 +1,4 @@
-import type { JobPushOptions, SerializedJob } from '../types'
+import type { JobPushOptions, QueueStats, SerializedJob } from '../types'
 import type { QueueDriver } from './QueueDriver'
 
 /**
@@ -398,6 +398,58 @@ export class RedisDriver implements QueueDriver {
       // For now just clear the active Set.
       await this.client.del(activeSetKey)
     }
+  }
+
+  /**
+   * Get queue statistics.
+   */
+  async stats(queue: string): Promise<QueueStats> {
+    const priorities = ['critical', 'high', 'default', 'low']
+    const stats: QueueStats = {
+      queue,
+      size: 0,
+      delayed: 0,
+      failed: 0,
+    }
+
+    const keys: string[] = []
+    for (const p of priorities) {
+      keys.push(this.getKey(queue, p === 'default' ? undefined : p))
+    }
+
+    try {
+      // Use pipeline if available (ioredis)
+      if (typeof (this.client as any).pipeline === 'function') {
+        const pipe = (this.client as any).pipeline()
+        for (const key of keys) {
+          pipe.llen(key)
+          pipe.zcard(`${key}:delayed`)
+        }
+        pipe.llen(`${this.getKey(queue)}:failed`)
+
+        const results = await pipe.exec()
+        if (results) {
+          let i = 0
+          for (const _p of priorities) {
+            stats.size += (results[i][1] as number) || 0
+            stats.delayed! += (results[i + 1][1] as number) || 0
+            i += 2
+          }
+          stats.failed = (results[i][1] as number) || 0
+        }
+      } else {
+        // Fallback for node-redis or others
+        for (const key of keys) {
+          stats.size += (await this.client.llen?.(key)) || 0
+          stats.delayed! += (await this.client.zcard?.(`${key}:delayed`)) || 0
+        }
+        stats.failed = (await this.client.llen?.(`${this.getKey(queue)}:failed`)) || 0
+      }
+    } catch (err) {
+      console.error('[RedisDriver] Failed to get stats:', err)
+    }
+
+    return stats
   }
 
   /**
