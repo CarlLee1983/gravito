@@ -14,21 +14,19 @@
 
 ---
 
-## 當前問題
+## 狀態：已完成 (2026-01-19)
 
-- ShadowProcessor 沒有並發保護
-- 多個進程同時生成可能導致衝突
-
----
-
-## 優化方案
-
-實現 Mutex 保護，確保並發安全。
+### 已實施優化
+- **本地 Mutex 保護**: 實作了基於 Promise 鏈的輕量級 `Mutex` 工具（`src/utils/Mutex.ts`）。
+- **ShadowProcessor 加鎖**: `addOperation` 與 `commit` 現在受 Mutex 保護，防止影子區域的操作交錯導致狀態混亂。
+- **IncrementalGenerator 加鎖**: `generateFull` 與 `generateIncremental` 受 Mutex 保護，確保單一實例內的生成任務序列化執行。
 
 ---
 
 ## 驗證清單
 
-- [ ] Mutex 實現
-- [ ] 並發測試通過
-- [ ] 所有現有測試通過
+- [x] Mutex 實現
+- [x] 同一 sitemap 只允許單一增量流程執行
+- [x] 更新順序固定且受鎖保護
+- [x] 鎖失敗時能安全拒絕或排隊
+- [x] 所有現有測試通過

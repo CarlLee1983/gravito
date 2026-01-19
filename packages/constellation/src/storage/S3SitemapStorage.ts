@@ -145,13 +145,44 @@ export class S3SitemapStorage implements SitemapStorage {
         return null
       }
 
-      // 將 stream 轉換為 string
       const chunks: Uint8Array[] = []
       for await (const chunk of response.Body as any) {
         chunks.push(chunk)
       }
       const buffer = Buffer.concat(chunks)
       return buffer.toString('utf-8')
+    } catch (error: any) {
+      if (error.name === 'NoSuchKey' || error.$metadata?.httpStatusCode === 404) {
+        return null
+      }
+      throw error
+    }
+  }
+
+  async readStream(filename: string): Promise<AsyncIterable<string> | null> {
+    try {
+      const s3 = await this.getS3Client()
+      const key = this.getKey(filename)
+
+      const response = await s3.client.send(
+        new s3.GetObjectCommand({
+          Bucket: this.bucket,
+          Key: key,
+        })
+      )
+
+      if (!response.Body) {
+        return null
+      }
+
+      const body = response.Body
+      return (async function* () {
+        const decoder = new TextDecoder()
+        for await (const chunk of body as any) {
+          yield decoder.decode(chunk, { stream: true })
+        }
+        yield decoder.decode()
+      })()
     } catch (error: any) {
       if (error.name === 'NoSuchKey' || error.$metadata?.httpStatusCode === 404) {
         return null

@@ -2,50 +2,20 @@ import type { SitemapEntry } from '../types'
 
 /**
  * SitemapParser provides utility methods for parsing sitemap XML files.
- *
- * It is primarily used by `IncrementalGenerator` to load existing sitemap entries
- * for difference calculation and incremental updates.
+ * Used by `IncrementalGenerator` for incremental updates.
  *
  * @public
  * @since 3.0.1
  */
 export class SitemapParser {
-  /**
-   * Parses a sitemap XML string and extracts entries.
-   *
-   * @param xml - The sitemap XML content to parse.
-   * @returns An array of sitemap entries.
-   */
   static parse(xml: string): SitemapEntry[] {
     const entries: SitemapEntry[] = []
     const urlRegex = /<url>([\s\S]*?)<\/url>/g
     let match: RegExpExecArray | null
 
     while ((match = urlRegex.exec(xml)) !== null) {
-      const urlContent = match[1]
-      const entry: SitemapEntry = { url: '' }
-
-      const locMatch = /<loc>(.*?)<\/loc>/.exec(urlContent)
-      if (locMatch) {
-        entry.url = this.unescape(locMatch[1])
-      }
-
-      const lastmodMatch = /<lastmod>(.*?)<\/lastmod>/.exec(urlContent)
-      if (lastmodMatch) {
-        entry.lastmod = new Date(lastmodMatch[1])
-      }
-
-      const priorityMatch = /<priority>(.*?)<\/priority>/.exec(urlContent)
-      if (priorityMatch) {
-        entry.priority = parseFloat(priorityMatch[1])
-      }
-
-      const changefreqMatch = /<changefreq>(.*?)<\/changefreq>/.exec(urlContent)
-      if (changefreqMatch) {
-        entry.changefreq = changefreqMatch[1] as any
-      }
-
-      if (entry.url) {
+      const entry = this.parseEntry(match[1])
+      if (entry) {
         entries.push(entry)
       }
     }
@@ -53,12 +23,59 @@ export class SitemapParser {
     return entries
   }
 
-  /**
-   * Parses a sitemap index XML string and extracts sitemap URLs.
-   *
-   * @param xml - The sitemap index XML content to parse.
-   * @returns An array of sitemap URLs.
-   */
+  static async *parseStream(stream: AsyncIterable<string>): AsyncIterable<SitemapEntry> {
+    let buffer = ''
+    const urlRegex = /<url>([\s\S]*?)<\/url>/g
+
+    for await (const chunk of stream) {
+      buffer += chunk
+      let match: RegExpExecArray | null
+
+      while ((match = urlRegex.exec(buffer)) !== null) {
+        const entry = this.parseEntry(match[1])
+        if (entry) {
+          yield entry
+        }
+
+        buffer = buffer.slice(match.index + match[0].length)
+        urlRegex.lastIndex = 0
+      }
+
+      if (buffer.length > 1024 * 1024) {
+        const lastUrlStart = buffer.lastIndexOf('<url>')
+        buffer = lastUrlStart !== -1 ? buffer.slice(lastUrlStart) : ''
+      }
+    }
+  }
+
+  private static parseEntry(urlContent: string): SitemapEntry | null {
+    const entry: SitemapEntry = { url: '' }
+
+    const locMatch = /<loc>(.*?)<\/loc>/.exec(urlContent)
+    if (locMatch) {
+      entry.url = this.unescape(locMatch[1])
+    } else {
+      return null
+    }
+
+    const lastmodMatch = /<lastmod>(.*?)<\/lastmod>/.exec(urlContent)
+    if (lastmodMatch) {
+      entry.lastmod = new Date(lastmodMatch[1])
+    }
+
+    const priorityMatch = /<priority>(.*?)<\/priority>/.exec(urlContent)
+    if (priorityMatch) {
+      entry.priority = parseFloat(priorityMatch[1])
+    }
+
+    const changefreqMatch = /<changefreq>(.*?)<\/changefreq>/.exec(urlContent)
+    if (changefreqMatch) {
+      entry.changefreq = changefreqMatch[1] as any
+    }
+
+    return entry
+  }
+
   static parseIndex(xml: string): string[] {
     const urls: string[] = []
     const sitemapRegex = /<sitemap>([\s\S]*?)<\/sitemap>/g

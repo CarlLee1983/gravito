@@ -1,27 +1,23 @@
 import type { ChangeTracker, ShardManifest, SitemapChange, SitemapEntry } from '../types'
+import { Mutex } from '../utils/Mutex'
 import { DiffCalculator } from './DiffCalculator'
 import type { SitemapGenerator, SitemapGeneratorOptions } from './SitemapGenerator'
 import { SitemapGenerator as SitemapGeneratorImpl } from './SitemapGenerator'
 import { SitemapParser } from './SitemapParser'
 import { SitemapStream } from './SitemapStream'
 
-/**
- * Options for configuring the `IncrementalGenerator`.
- */
 export interface IncrementalGeneratorOptions extends SitemapGeneratorOptions {
   changeTracker: ChangeTracker
   diffCalculator?: DiffCalculator
   autoTrack?: boolean
 }
 
-/**
- * IncrementalGenerator optimizes sitemap updates by processing only changed URLs.
- */
 export class IncrementalGenerator {
   private options: IncrementalGeneratorOptions
   private changeTracker: ChangeTracker
   private diffCalculator: DiffCalculator
   private generator: SitemapGenerator
+  private mutex = new Mutex()
 
   constructor(options: IncrementalGeneratorOptions) {
     this.options = {
@@ -35,6 +31,14 @@ export class IncrementalGenerator {
   }
 
   async generateFull(): Promise<void> {
+    return this.mutex.runExclusive(() => this.performFullGeneration())
+  }
+
+  async generateIncremental(since?: Date): Promise<void> {
+    return this.mutex.runExclusive(() => this.performIncrementalGeneration(since))
+  }
+
+  private async performFullGeneration(): Promise<void> {
     await this.generator.run()
 
     if (this.options.autoTrack) {
@@ -55,7 +59,7 @@ export class IncrementalGenerator {
     }
   }
 
-  async generateIncremental(since?: Date): Promise<void> {
+  private async performIncrementalGeneration(since?: Date): Promise<void> {
     const changes = await this.changeTracker.getChanges(since)
     if (changes.length === 0) {
       return
@@ -63,19 +67,21 @@ export class IncrementalGenerator {
 
     const manifest = await this.loadManifest()
     if (!manifest) {
-      await this.generateFull()
+      await this.performFullGeneration()
       return
     }
 
-    const changeRatio = changes.length / manifest.shards.reduce((acc, s) => acc + s.count, 0)
+    const totalCount = manifest.shards.reduce((acc, s) => acc + s.count, 0)
+    const changeRatio = totalCount > 0 ? changes.length / totalCount : 1
+
     if (changeRatio > 0.3) {
-      await this.generateFull()
+      await this.performFullGeneration()
       return
     }
 
     const affectedShards = this.getAffectedShards(manifest, changes)
     if (affectedShards.size / manifest.shards.length > 0.5) {
-      await this.generateFull()
+      await this.performFullGeneration()
       return
     }
 
@@ -140,21 +146,30 @@ export class IncrementalGenerator {
     affectedShards: Map<string, SitemapChange[]>
   ): Promise<void> {
     for (const [filename, shardChanges] of affectedShards) {
-      const xml = await this.options.storage.read(filename)
-      if (!xml) {
-        continue
+      const entries: SitemapEntry[] = []
+      const stream = await this.options.storage.readStream?.(filename)
+
+      if (stream) {
+        for await (const entry of SitemapParser.parseStream(stream)) {
+          entries.push(entry)
+        }
+      } else {
+        const xml = await this.options.storage.read(filename)
+        if (!xml) {
+          continue
+        }
+        entries.push(...SitemapParser.parse(xml))
       }
 
-      const entries = SitemapParser.parse(xml)
       const updatedEntries = this.applyChanges(entries, shardChanges)
 
-      const stream = new SitemapStream({
+      const outStream = new SitemapStream({
         baseUrl: this.options.baseUrl,
         pretty: this.options.pretty,
       })
-      stream.addAll(updatedEntries)
+      outStream.addAll(updatedEntries)
 
-      const newXml = stream.toXML()
+      const newXml = outStream.toXML()
       await this.options.storage.write(filename, newXml)
 
       const shardInfo = manifest.shards.find((s) => s.filename === filename)

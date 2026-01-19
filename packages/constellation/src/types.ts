@@ -215,6 +215,8 @@ export interface SitemapStorage {
    */
   read(filename: string): Promise<string | null>
 
+  readStream?(filename: string): Promise<AsyncIterable<string> | null>
+
   /**
    * Check if a sitemap file exists in storage.
    *
