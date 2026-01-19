@@ -23,11 +23,13 @@ import type {
  * MySQL Driver
  * Implements connection pooling and query execution for MySQL/MariaDB
  */
+import type { MySQLConnection, MySQLModule, MySQLPool } from './types'
+
 export class MySQLDriver implements DriverContract {
-  private pool: any | null = null
-  private transactionConnection: any | null = null
+  private pool: MySQLPool | null = null
+  private transactionConnection: MySQLConnection | null = null
   private connected = false
-  private mysql: any | null = null
+  private mysql: MySQLModule | null = null
 
   constructor(
     private readonly config: ConnectionConfig,
@@ -51,7 +53,7 @@ export class MySQLDriver implements DriverContract {
 
     try {
       this.mysql = await this.loadMySQLModule()
-      const myConfig = this.config as any
+      const myConfig = this.config as Record<string, unknown>
 
       const poolConfig: Record<string, unknown> = {
         host: myConfig.host ?? 'localhost',
@@ -90,7 +92,7 @@ export class MySQLDriver implements DriverContract {
   /**
    * Dynamically load mysql2 module
    */
-  private async loadMySQLModule(): Promise<any> {
+  private async loadMySQLModule(): Promise<MySQLModule> {
     try {
       const mysql2 = await import('mysql2/promise')
       return mysql2
@@ -195,7 +197,11 @@ export class MySQLDriver implements DriverContract {
 
     try {
       const [result] = await connection.execute(sql, params)
-      const resultInfo = result as any
+      const resultInfo = result as {
+        affectedRows?: number
+        insertId?: number
+        changedRows?: number
+      }
 
       return {
         affectedRows: resultInfo.affectedRows ?? 0,

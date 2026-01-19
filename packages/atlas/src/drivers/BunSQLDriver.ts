@@ -22,9 +22,10 @@ import type {
  * Uses Bun.sql (if available) for high-performance database interactions.
  * @internal
  */
+import type { BunSQLClient } from './types'
+
 export class BunSQLDriver implements DriverContract {
-  // biome-ignore lint/suspicious/noExplicitAny: Client type is dynamic
-  private client: any | null = null
+  private client: BunSQLClient | null = null
   private connected = false
   private transactionActive = false
 
@@ -100,15 +101,21 @@ export class BunSQLDriver implements DriverContract {
       // Using Bun.sql.raw or the instance's unsafe method.
       // If the client itself is not callable, we must find the execution method.
 
-      let result: { rows: unknown[]; rowCount: number } | undefined
+      let result: unknown
       if (typeof this.client === 'function') {
         // If it's a callable template function, we try to use it with raw
-        result = await this.client(sql, ...bindings)
-      } else {
+        result = await (this.client as (sql: string, ...bindings: unknown[]) => Promise<unknown>)(
+          sql,
+          ...bindings
+        )
+      } else if (this.client && typeof this.client === 'object') {
         // Look for common execution methods in Bun's SQL Query instance
-        const exec = this.client.query || this.client.unsafe || this.client.all || this.client.run
+        const clientObj = this.client as Record<string, unknown>
+        const exec = (clientObj.query || clientObj.unsafe || clientObj.all || clientObj.run) as
+          | ((sql: string, bindings?: unknown[]) => Promise<unknown>)
+          | undefined
         if (typeof exec === 'function') {
-          result = await exec.call(this.client, sql, bindings)
+          result = await exec.call(clientObj, sql, bindings)
         } else {
           // Absolute fallback: If Bun.sql is strictly tagged template, we can't easily
           // use it with dynamic strings without Bun.sql.raw (which is unsafe for production)
@@ -219,17 +226,17 @@ export class BunSQLDriver implements DriverContract {
     return `${protocol}://${auth}${hostPart}${portPart}/${database}`
   }
 
-  // biome-ignore lint/suspicious/noExplicitAny: Error handling generic
-  private normalizeError(error: any, sql: string, bindings: unknown[]): DatabaseError {
-    const msg = error.message?.toLowerCase() ?? ''
+  private normalizeError(error: unknown, sql: string, bindings: unknown[]): DatabaseError {
+    const err = error as { message?: string; code?: string }
+    const msg = err.message?.toLowerCase() ?? ''
 
-    if (msg.includes('unique') || error.code === '23505') {
-      return new UniqueConstraintError(error.message, error, sql, bindings)
+    if (msg.includes('unique') || err.code === '23505') {
+      return new UniqueConstraintError(err.message || String(error), error, sql, bindings)
     }
-    if (msg.includes('foreign key') || error.code === '23503') {
-      return new ForeignKeyConstraintError(error.message, error, sql, bindings)
+    if (msg.includes('foreign key') || err.code === '23503') {
+      return new ForeignKeyConstraintError(err.message || String(error), error, sql, bindings)
     }
 
-    return new DatabaseError(error.message, error, sql, bindings)
+    return new DatabaseError(err.message || String(error), error, sql, bindings)
   }
 }

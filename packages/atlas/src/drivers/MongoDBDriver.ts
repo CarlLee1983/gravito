@@ -13,13 +13,21 @@ import type {
  * MongoDB Driver
  * Provides a document interface via DB.connection('mongodb')
  */
+import type { MongoClient, MongoDatabase } from './types'
+
 export class MongoDBDriver implements DriverContract {
   private config: MongoDBConfig
-  private client: any | null = null
-  private db: any | null = null
-  private MongoClientCtor: any
+  private client: MongoClient | null = null
+  private db: MongoDatabase | null = null
+  private MongoClientCtor: new (
+    url: string,
+    options?: Record<string, unknown>
+  ) => MongoClient
 
-  constructor(config: ConnectionConfig, deps?: { MongoClient?: any }) {
+  constructor(
+    config: ConnectionConfig,
+    deps?: { MongoClient?: new (url: string, options?: Record<string, unknown>) => MongoClient }
+  ) {
     if (config.driver !== 'mongodb') {
       throw new Error(`Invalid driver type '${config.driver}' for MongoDBDriver`)
     }

@@ -20,8 +20,10 @@ import type {
   QueryResult,
   SQLiteConfig,
 } from '../types'
+import type { SQLiteClient } from './types'
 
-declare const Bun: any
+// biome-ignore lint/suspicious/noExplicitAny: Bun global type
+declare const Bun: { sql: (path: string) => SQLiteClient } | undefined
 
 /**
 
@@ -41,7 +43,7 @@ declare const Bun: any
 export class SQLiteDriver implements DriverContract {
   private config: SQLiteConfig
 
-  private client: any | null = null
+  private client: SQLiteClient | null = null
 
   private inTransactionState = false
 
@@ -70,16 +72,18 @@ export class SQLiteDriver implements DriverContract {
           readonly: this.config.readonly ?? false,
 
           create: true,
-        })
+        }) as unknown as SQLiteClient
 
-        this.client.exec('PRAGMA journal_mode = WAL;')
+        if ('exec' in this.client && typeof this.client.exec === 'function') {
+          this.client.exec('PRAGMA journal_mode = WAL;')
+        }
       } else {
         try {
           const { default: Database } = await import('better-sqlite3')
 
           this.client = new Database(this.config.database, {
             readonly: this.config.readonly ?? false,
-          })
+          }) as unknown as SQLiteClient
 
           this.client.pragma('journal_mode = WAL')
         } catch (e) {
