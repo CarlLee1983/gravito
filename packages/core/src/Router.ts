@@ -142,6 +142,12 @@ function formRequestToMiddleware(RequestClass: FormRequestClass): GravitoMiddlew
   return async (ctx, next) => {
     const result = await request?.validate?.(ctx)
 
+    if (!result) {
+      // No validation result, continue
+      await next()
+      return undefined
+    }
+
     if (!result.success) {
       // Determine status code based on error type
       const errorCode = (result.error as { error?: { code?: string } })?.error?.code
