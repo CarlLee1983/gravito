@@ -79,20 +79,26 @@ export interface TopicOptions {
 }
 
 /**
- * PostgreSQL driver configuration.
+ * Database driver configuration.
+ * @public
  */
 export interface DatabaseDriverConfig {
   driver: 'database'
-  dbService: any // Still any until we have a proper DB service interface
+  /** Database service implementation for executing queries */
+  dbService: any
+  /** Optional table name for job storage */
   table?: string
 }
 
 /**
  * Redis driver configuration.
+ * @public
  */
 export interface RedisDriverConfig {
   driver: 'redis'
-  client: any // Will be improved in RedisDriver.ts
+  /** Redis client instance (ioredis or node-redis compatible) */
+  client: any
+  /** Optional prefix for all Redis keys */
   prefix?: string
 }
 
@@ -107,12 +113,17 @@ export interface KafkaDriverConfig {
 
 /**
  * SQS driver configuration.
+ * @public
  */
 export interface SQSDriverConfig {
   driver: 'sqs'
+  /** Amazon SQS client instance */
   client: any
+  /** Optional prefix for queue URLs */
   queueUrlPrefix?: string
+  /** The duration (in seconds) that the received messages are hidden from subsequent retrieve requests after being retrieved by a ReceiveMessage request. */
   visibilityTimeout?: number
+  /** The duration (in seconds) for which the call waits for a message to arrive in the queue before returning. */
   waitTimeSeconds?: number
 }
 

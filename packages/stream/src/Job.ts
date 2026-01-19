@@ -24,6 +24,7 @@ import type { Queueable } from './Queueable'
  *   .onQueue('emails')
  *   .delay(60)
  * ```
+ * @public
  */
 export abstract class Job implements Queueable {
   /**
