@@ -60,6 +60,7 @@ export interface SQLiteClient {
   exec?(sql: string): void
   pragma?(name: string, value?: unknown): unknown
   open?: boolean
+  inTransaction?: boolean
   close(): void
 }
 

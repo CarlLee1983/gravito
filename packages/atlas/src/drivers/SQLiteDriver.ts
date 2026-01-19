@@ -145,7 +145,10 @@ export class SQLiteDriver implements DriverContract {
     })
 
     try {
-      const stmt = this.client?.prepare(sql)
+      if (!this.client) {
+        throw new Error('SQLite client not connected')
+      }
+      const stmt = this.client.prepare(sql)
       const rows = stmt.all(...params) as T[]
       return {
         rows,
