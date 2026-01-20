@@ -78,8 +78,29 @@ async function build() {
   // 3. Core Pages
   const coreRoutes = ['/', '/ecosystem', '/patterns']
 
+  // 4. Localized Variants
+  // We want to generate /zh-TW, /zh-TW/ecosystem, /zh-TW/legal/privacy etc.
+  // We exclude 'en' because it's the default locale mapped to root paths.
+  const localizedRoutes: string[] = []
+  const nonDefaultLangs = langDirs.filter((l) => l !== 'en')
+
+  nonDefaultLangs.forEach((lang) => {
+    // Root
+    localizedRoutes.push(`/${lang}`)
+
+    // Core pages (excluding root)
+    ;['ecosystem', 'patterns'].forEach((page) => {
+      localizedRoutes.push(`/${lang}/${page}`)
+    })
+
+    // Legal pages
+    ;['privacy', 'terms'].forEach((page) => {
+      localizedRoutes.push(`/${lang}/legal/${page}`)
+    })
+  })
+
   // Combine manual dynamic routes
-  const extraPaths = [...coreRoutes, ...docRoutes, ...legalRoutes]
+  const extraPaths = [...coreRoutes, ...docRoutes, ...legalRoutes, ...localizedRoutes]
 
   // Export content
   // This will crawl all GET routes, render them to HTML, and generate Sitemap + Robots.txt

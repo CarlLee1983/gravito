@@ -110,6 +110,12 @@ export class FreezeDetector {
       }
     }
 
+    // If target is default locale, do not prefix
+    if (locale === this.config.defaultLocale) {
+      if (cleanPath === '/') return '/'
+      return cleanPath.startsWith('/') ? cleanPath : `/${cleanPath}`
+    }
+
     // Add new locale prefix
     if (cleanPath === '/') {
       return `/${locale}`
@@ -145,9 +151,15 @@ export class FreezeDetector {
       }
     }
 
+    // If target is default locale, do not prefix
+    if (newLocale === this.config.defaultLocale) {
+      if (path === '/') return '/'
+      return path.startsWith('/') ? path : `/${path}`
+    }
+
     // Add new locale prefix
     if (path === '/') {
-      return `/${newLocale}/`
+      return `/${newLocale}`
     }
     return `/${newLocale}${path}`
   }

@@ -45,7 +45,13 @@ const stats = [
   },
 ]
 
-export default function Home() {
+interface HomeProps {
+  version?: string
+  isDev?: boolean
+  lang?: string
+}
+
+export default function Home({ lang, ...props }: HomeProps) {
   const [scrolled, setScrolled] = useState(false)
   const [theme, setTheme] = useState<'dark' | 'light'>('dark')
 
@@ -81,7 +87,7 @@ export default function Home() {
     typeof window !== 'undefined'
       ? new URLSearchParams(window.location.search)
       : new URLSearchParams()
-  const currentLang = (searchParams.get('lang') === 'zh-TW' ? 'zh-TW' : 'en') as 'en' | 'zh-TW'
+  const currentLang = (lang || searchParams.get('lang') === 'zh-TW' ? 'zh-TW' : 'en') as 'en' | 'zh-TW'
 
   const toggleLanguage = () => {
     const newLang = currentLang === 'en' ? 'zh-TW' : 'en'

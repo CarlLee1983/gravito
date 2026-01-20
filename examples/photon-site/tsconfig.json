@@ -15,7 +15,7 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    "types": ["bun-types", "vite/client", "node"],
+    "types": ["vite/client", "node"],
     "baseUrl": ".",
     "paths": {
       "@gravito/prism": ["../../packages/prism/src/index.ts"],

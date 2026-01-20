@@ -1,4 +1,5 @@
 import path from 'node:path'
+/// <reference types="bun-types" />
 import { InertiaService } from '@gravito/ion'
 import { Photon } from '@gravito/photon'
 import { TemplateEngine } from '@gravito/prism'
@@ -351,6 +352,8 @@ const legalContent: Record<string, Record<string, any>> = {
 }
 
 // Routes
+const supportedLangs = ['en', 'zh-TW']
+
 app.get('/', (c) => renderInertia(c, 'Home', { version: '1.2.0' }))
 
 app.get('/patterns', (c) => {
@@ -429,6 +432,42 @@ app.get('/legal/:page', (c) => {
   const content = pageData[lang] || pageData.en
 
   return renderInertia(c, 'Legal', { ...content, slug: pageParam, lang })
+})
+
+// --- Localized Routes (Must be after static routes) ---
+
+// Localized Patterns
+app.get('/:lang/patterns', (c) => {
+  const lang = c.req.param('lang')
+  if (!supportedLangs.includes(lang)) return c.notFound()
+  return renderInertia(c, 'Patterns', { lang })
+})
+
+// Localized Ecosystem
+app.get('/:lang/ecosystem', (c) => {
+  const lang = c.req.param('lang')
+  if (!supportedLangs.includes(lang)) return c.notFound()
+  return renderInertia(c, 'Ecosystem', { lang })
+})
+
+// Localized Legal
+app.get('/:lang/legal/:page', (c) => {
+  const lang = c.req.param('lang')
+  if (!supportedLangs.includes(lang)) return c.notFound()
+
+  const pageParam = c.req.param('page')
+  const pageData = (legalContent as any)[pageParam || '']
+  if (!pageData) return c.redirect(`/${lang}`)
+
+  const content = pageData[lang] || pageData.en
+  return renderInertia(c, 'Legal', { ...content, slug: pageParam, lang })
+})
+
+// Localized Root (Matches /en, /zh-TW) - Catch-all for 1 segment
+app.get('/:lang', (c) => {
+  const lang = c.req.param('lang')
+  if (!supportedLangs.includes(lang)) return c.notFound()
+  return renderInertia(c, 'Home', { version: '1.2.0', lang })
 })
 
 // ----------------------------------------------------------------------------
