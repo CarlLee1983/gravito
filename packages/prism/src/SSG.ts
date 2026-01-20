@@ -57,49 +57,77 @@ export class StaticSiteGenerator {
       `[SSG] Found ${staticRoutes.length} static routes (including manual paths) for export.`
     )
 
-    for (const route of staticRoutes) {
-      try {
-        const url = `http://localhost${route.path}`
-        this.core.logger.info(`[SSG] Rendering ${route.path}...`)
+    // Concurrency control
+    const CONCURRENCY = 10
+    const queue = [...staticRoutes]
+    const total = queue.length
+    let processed = 0
+    let success = 0
+    let failed = 0
 
-        // Use adapter.fetch to get the response
-        const request = new Request(url)
-        const response = await this.core.adapter.fetch(request)
+    const worker = async () => {
+      while (queue.length > 0) {
+        const route = queue.shift()
+        if (!route) break
 
-        if (!response.ok) {
-          this.core.logger.warn(`[SSG] Skipping ${route.path}: Returned status ${response.status}`)
-          continue
+        try {
+          const url = `http://localhost${route.path}`
+          // Optional: Add debug log for every request if needed, but reducing noise for large sites
+          // this.core.logger.debug(`[SSG] Rendering ${route.path}...`)
+
+          // Use adapter.fetch to get the response
+          const request = new Request(url)
+          const response = await this.core.adapter.fetch(request)
+
+          if (!response.ok) {
+            this.core.logger.warn(
+              `[SSG] ⚠️ Skipping ${route.path}: Returned status ${response.status}`
+            )
+            failed++
+            processed++
+            continue
+          }
+
+          const html = await response.text()
+
+          // Determine file path
+          // / -> index.html
+          // /about -> about/index.html or about.html
+          // We use component/index.html pattern for better compatibility with static hosts
+          // Remove query parameters from path (e.g., /docs/intro?lang=en -> /docs/intro)
+          const pathWithoutQuery = route.path.split('?')[0]
+          let relativePath =
+            pathWithoutQuery === '/'
+              ? 'index.html'
+              : `${pathWithoutQuery.replace(/^\//, '')}/index.html`
+
+          // If path itself ends with .html, use it directly (rare)
+          if (pathWithoutQuery.endsWith('.html')) {
+            relativePath = pathWithoutQuery.replace(/^\//, '')
+          }
+
+          const absolutePath = join(outputDir, relativePath)
+
+          // Ensure directory exists
+          await mkdir(dirname(absolutePath), { recursive: true })
+
+          // Write file
+          await writeFile(absolutePath, html, 'utf-8')
+
+          this.core.logger.info(`[SSG] ✅ Rendered (${processed + 1}/${total}): ${route.path}`)
+          success++
+        } catch (error) {
+          this.core.logger.error(`[SSG] ❌ Failed to export ${route.path}:`, error)
+          failed++
+        } finally {
+          processed++
         }
-
-        const html = await response.text()
-
-        // Determine file path
-        // / -> index.html
-        // /about -> about/index.html or about.html
-        // We use component/index.html pattern for better compatibility with static hosts
-        // Remove query parameters from path (e.g., /docs/intro?lang=en -> /docs/intro)
-        const pathWithoutQuery = route.path.split('?')[0]
-        let relativePath =
-          pathWithoutQuery === '/'
-            ? 'index.html'
-            : `${pathWithoutQuery.replace(/^\//, '')}/index.html`
-
-        // If path itself ends with .html, use it directly (rare)
-        if (pathWithoutQuery.endsWith('.html')) {
-          relativePath = pathWithoutQuery.replace(/^\//, '')
-        }
-
-        const absolutePath = join(outputDir, relativePath)
-
-        // Ensure directory exists
-        await mkdir(dirname(absolutePath), { recursive: true })
-
-        // Write file
-        await writeFile(absolutePath, html, 'utf-8')
-      } catch (error) {
-        this.core.logger.error(`[SSG] Failed to export ${route.path}:`, error)
       }
     }
+
+    // Start workers
+    const workers = Array.from({ length: Math.min(CONCURRENCY, total) }, () => worker())
+    await Promise.all(workers)
 
     // Generate Sitemap
     await this.generateSitemap(outputDir, staticRoutes, baseUrl)
@@ -107,7 +135,9 @@ export class StaticSiteGenerator {
     // Generate Robots.txt
     await this.generateRobotsTxt(outputDir, baseUrl)
 
-    this.core.logger.info('[SSG] Static export completed successfully! ✨')
+    this.core.logger.info(
+      `[SSG] Static export completed! ✨ Success: ${success}, Failed: ${failed}`
+    )
   }
 
   private async generateSitemap(outputDir: string, routes: any[], baseUrl: string) {
