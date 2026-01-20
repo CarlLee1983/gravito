@@ -390,7 +390,7 @@ export default function Home({ lang, ...props }: HomeProps) {
             </p>
 
             <StaticLink
-              href={`/docs/performance?lang=${currentLang}`}
+              href="/docs/performance"
               className="inline-flex items-center gap-6 text-[10px] font-black tracking-[0.5em] text-p-txt uppercase group py-5 px-10 bg-surf-bg border border-s-brd hover:border-photon-gold hover:text-photon-gold transition-all shadow-xl"
             >
               {t.view_metrics}
@@ -457,7 +457,7 @@ export default function Home({ lang, ...props }: HomeProps) {
             <p className="text-s-txt mb-12 font-light leading-loose text-lg">{t.docs_desc}</p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <StaticLink
-                href={`/docs/routing?lang=${currentLang}`}
+                href="/docs/routing"
                 className="p-6 border border-s-brd bg-surf-bg hover:border-photon-gold/30 transition-all group shadow-sm"
               >
                 <Cpu
@@ -472,7 +472,7 @@ export default function Home({ lang, ...props }: HomeProps) {
                 </span>
               </StaticLink>
               <StaticLink
-                href={`/docs/context?lang=${currentLang}`}
+                href="/docs/context"
                 className="p-6 border border-s-brd bg-surf-bg hover:border-photon-gold/30 transition-all group shadow-sm"
               >
                 <Workflow
@@ -496,7 +496,7 @@ export default function Home({ lang, ...props }: HomeProps) {
               {t.ready}
             </h5>
             <StaticLink
-              href={`/docs/intro?lang=${currentLang}`}
+              href="/docs/intro"
               className="inline-block px-12 py-6 bg-p-txt text-p-bg font-black text-[10px] tracking-[0.4em] uppercase hover:bg-photon-gold hover:text-black transition-all relative z-10 shadow-xl"
             >
               {t.start_reading}

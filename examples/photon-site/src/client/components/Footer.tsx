@@ -16,11 +16,11 @@ const getFooterLinks = (
     {
       title: t.protocol_resources,
       links: [
-        { label: t.privacy_policy, href: `/legal/privacy?lang=${lang}` },
-        { label: t.terms_of_use, href: `/legal/terms?lang=${lang}` },
-        { label: t.architecture_patterns, href: `/patterns?lang=${lang}` },
-        { label: t.ecosystem_registry, href: `/ecosystem?lang=${lang}` },
-        { label: t.documentation, href: `/docs/intro?lang=${lang}` },
+        { label: t.privacy_policy, href: '/legal/privacy' },
+        { label: t.terms_of_use, href: '/legal/terms' },
+        { label: t.architecture_patterns, href: '/patterns' },
+        { label: t.ecosystem_registry, href: '/ecosystem' },
+        { label: t.documentation, href: '/docs/intro' },
       ],
     },
     {
@@ -132,7 +132,6 @@ export function Footer({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) {
                         <StaticLink
                           href={link.href}
                           className="text-s-txt hover:text-photon-gold text-xs font-light transition-all flex items-center gap-3 group/link"
-                          skipLocalization // Footer links might already carry lang param, keeping manual control for now is safer
                         >
                           <span className="w-1 h-px bg-photon-gold opacity-0 group-hover/link:opacity-100 group-hover/link:w-2 transition-all" />
                           {link.label}
