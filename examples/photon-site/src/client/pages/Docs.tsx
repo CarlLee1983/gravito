@@ -228,7 +228,7 @@ export default function Docs({
 
               return (
                 <StaticLink
-                  href={`${nextItem.href}?lang=${currentLang}`}
+                  href={nextItem.href}
                   className="group relative block border border-s-brd p-12 transition-all bg-s-bg shadow-xl"
                 >
                   <div className="absolute top-0 left-0 w-1 h-full bg-photon-gold/40 scale-y-0 group-hover:scale-y-100 transition-transform origin-top z-20" />

@@ -206,10 +206,10 @@ export default function Home({ lang, ...props }: HomeProps) {
 
   // Dynamic content arrays
   const quickLinksDynamic = [
-    { label: t.intro, href: `/docs/intro?lang=${currentLang}`, desc: t.usage },
-    { label: t.quickstart, href: `/docs/quickstart?lang=${currentLang}`, desc: t.launch },
-    { label: t.aot, href: `/docs/routing?lang=${currentLang}`, desc: t.aot_desc },
-    { label: t.middleware, href: `/docs/middleware?lang=${currentLang}`, desc: t.middleware_desc },
+    { label: t.intro, href: '/docs/intro', desc: t.usage },
+    { label: t.quickstart, href: '/docs/quickstart', desc: t.launch },
+    { label: t.aot, href: '/docs/routing', desc: t.aot_desc },
+    { label: t.middleware, href: '/docs/middleware', desc: t.middleware_desc },
   ]
 
   return (
@@ -246,9 +246,9 @@ export default function Home({ lang, ...props }: HomeProps) {
         {/* Restore missing Nav Links */}
         <div className="hidden md:flex items-center gap-8 relative z-10">
           {[
-            { label: t.navbar.docs, href: `/docs/intro?lang=${currentLang}` },
-            { label: t.navbar.ecosystem, href: `/ecosystem?lang=${currentLang}` },
-            { label: t.navbar.patterns, href: `/patterns?lang=${currentLang}` },
+            { label: t.navbar.docs, href: '/docs/intro' },
+            { label: t.navbar.ecosystem, href: '/ecosystem' },
+            { label: t.navbar.patterns, href: '/patterns' },
           ].map((item) => (
             <StaticLink
               key={item.label}

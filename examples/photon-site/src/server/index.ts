@@ -436,6 +436,26 @@ app.get('/legal/:page', (c) => {
 
 // --- Localized Routes (Must be after static routes) ---
 
+// Localized Docs
+app.get('/:lang/docs/:page', async (c) => {
+  const langParam = c.req.param('lang') || ''
+  const pageParam = c.req.param('page') || ''
+  const lang = langParam === 'zh-TW' ? 'zh-TW' : 'en'
+
+  let doc = await getDocContent(lang, pageParam)
+
+  // Fallback to English if not found in requested language
+  if (!doc && lang !== 'en') {
+    doc = await getDocContent('en', pageParam)
+  }
+
+  if (!doc) {
+    return c.redirect(`/${lang}/docs/intro`)
+  }
+
+  return await renderInertia(c, 'Docs', { ...doc, slug: pageParam, lang })
+})
+
 // Localized Patterns
 app.get('/:lang/patterns', (c) => {
   const lang = c.req.param('lang')

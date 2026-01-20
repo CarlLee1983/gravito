@@ -209,7 +209,7 @@ export const DocsLayout = ({
                   {group.items.map((item) => (
                     <StaticLink
                       key={item.id}
-                      href={`${item.href}?lang=${currentLang}`}
+                      href={item.href}
                       className={`flex items-center gap-4 px-4 py-2.5 rounded-sm group transition-all ${currentId === item.id ? 'bg-surf-bg border border-s-brd text-p-txt shadow-sm' : 'text-s-txt hover:text-p-txt'}`}
                     >
                       <item.icon

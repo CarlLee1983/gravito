@@ -63,8 +63,8 @@ async function build() {
         docRoutes.push(`/docs/${slug}`)
       }
 
-      // We always support the explicit localized path /docs/:lang/:slug
-      docRoutes.push(`/docs/${lang}/${slug}`)
+      // We always support the explicit localized path /:lang/docs/:slug
+      docRoutes.push(`/${lang}/docs/${slug}`)
     })
   }
 
