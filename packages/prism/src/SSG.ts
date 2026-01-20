@@ -77,12 +77,16 @@ export class StaticSiteGenerator {
         // / -> index.html
         // /about -> about/index.html or about.html
         // We use component/index.html pattern for better compatibility with static hosts
+        // Remove query parameters from path (e.g., /docs/intro?lang=en -> /docs/intro)
+        const pathWithoutQuery = route.path.split('?')[0]
         let relativePath =
-          route.path === '/' ? 'index.html' : `${route.path.replace(/^\//, '')}/index.html`
+          pathWithoutQuery === '/'
+            ? 'index.html'
+            : `${pathWithoutQuery.replace(/^\//, '')}/index.html`
 
         // If path itself ends with .html, use it directly (rare)
-        if (route.path.endsWith('.html')) {
-          relativePath = route.path.replace(/^\//, '')
+        if (pathWithoutQuery.endsWith('.html')) {
+          relativePath = pathWithoutQuery.replace(/^\//, '')
         }
 
         const absolutePath = join(outputDir, relativePath)

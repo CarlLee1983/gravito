@@ -1,5 +1,5 @@
-import { StaticLink } from '@gravito/freeze-react'
-import { Head, router } from '@inertiajs/react'
+import { StaticLink, useFreeze } from '@gravito/freeze-react'
+import { Head } from '@inertiajs/react'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   Activity,
@@ -54,6 +54,7 @@ interface HomeProps {
 export default function Home({ lang, ...props }: HomeProps) {
   const [scrolled, setScrolled] = useState(false)
   const [theme, setTheme] = useState<'dark' | 'light'>('dark')
+  const { isStatic } = useFreeze()
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50)
@@ -94,12 +95,19 @@ export default function Home({ lang, ...props }: HomeProps) {
     // Update URL param
     const newUrl = new URL(window.location.href)
     newUrl.searchParams.set('lang', newLang)
-    // Use Inertia to navigate without full reload if possible, or just window.location since it might be easier for root path params?
-    // Actually router.visit is best.
-    router.visit(newUrl.pathname + newUrl.search, {
-      preserveScroll: true,
-      preserveState: true,
-    })
+    
+    // In static mode, use full page navigation
+    // In dynamic mode, use Inertia for SPA navigation
+    if (isStatic) {
+      window.location.href = newUrl.pathname + newUrl.search
+    } else {
+      // Dynamic mode - use Inertia router if available
+      const { router } = require('@inertiajs/react')
+      router.visit(newUrl.pathname + newUrl.search, {
+        preserveScroll: true,
+        preserveState: true,
+      })
+    }
   }
 
   // Translations
@@ -299,27 +307,33 @@ export default function Home({ lang, ...props }: HomeProps) {
           </button>
         </div>
       </nav>
-      {quickLinksDynamic.map((link) => (
-        <StaticLink
-          key={link.label}
-          href={link.href}
-          className="p-8 bg-surf-bg hover:bg-surf-bg transition-all group relative overflow-hidden"
-          style={{ boxShadow: 'var(--card-shadow)' } as any}
-        >
-          <div className="absolute top-0 left-0 w-full h-full bg-photon-gold/0 group-hover:bg-photon-gold/[0.04] transition-all" />
-          <span className="text-[9px] font-technical text-photon-gold block mb-3 opacity-60 group-hover:opacity-100 group-hover:translate-x-1 transition-all">
-            {link.desc}
-          </span>
-          <span className="text-xs font-black text-p-txt tracking-[0.2em] uppercase flex items-center justify-between">
-            {link.label}
-            <ArrowUpRight
-              size={14}
-              className="text-m-txt group-hover:text-photon-gold group-hover:translate-x-1 group-hover:-translate-y-1 transition-all"
-            />
-          </span>
-        </StaticLink>
-      ))}
-      ...
+      <PhotonHero lang={currentLang} />
+      {/* Quick Links Section */}
+      <section className="relative z-20 py-20 px-12 max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {quickLinksDynamic.map((link) => (
+            <StaticLink
+              key={link.label}
+              href={link.href}
+              className="p-8 bg-surf-bg hover:bg-surf-bg transition-all group relative overflow-hidden"
+              style={{ boxShadow: 'var(--card-shadow)' } as any}
+            >
+              <div className="absolute top-0 left-0 w-full h-full bg-photon-gold/0 group-hover:bg-photon-gold/[0.04] transition-all" />
+              <span className="text-[9px] font-technical text-photon-gold block mb-3 opacity-60 group-hover:opacity-100 group-hover:translate-x-1 transition-all">
+                {link.desc}
+              </span>
+              <span className="text-xs font-black text-p-txt tracking-[0.2em] uppercase flex items-center justify-between">
+                {link.label}
+                <ArrowUpRight
+                  size={14}
+                  className="text-m-txt group-hover:text-photon-gold group-hover:translate-x-1 group-hover:-translate-y-1 transition-all"
+                />
+              </span>
+            </StaticLink>
+          ))}
+        </div>
+      </section>
+      {/* Stats Section */}
       <section className="relative z-20 py-40 px-12 max-w-7xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {stats.map((item) => (

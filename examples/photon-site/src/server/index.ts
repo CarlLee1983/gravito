@@ -464,6 +464,7 @@ app.get('/:lang/legal/:page', (c) => {
 })
 
 // Localized Root (Matches /en, /zh-TW) - Catch-all for 1 segment
+app.get('/zh-TW', (c) => renderInertia(c, 'Home', { version: '1.2.0', lang: 'zh-TW' }))
 app.get('/:lang', (c) => {
   const lang = c.req.param('lang')
   if (!supportedLangs.includes(lang)) return c.notFound()

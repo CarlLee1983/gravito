@@ -1,5 +1,5 @@
 import { StaticLink } from '@gravito/freeze-react'
-import { Head, Link } from '@inertiajs/react'
+import { Head } from '@inertiajs/react'
 import { CheckCircle2, ChevronRight, Terminal } from 'lucide-react'
 import { useMemo } from 'react'
 import { BenchmarkLab } from '../components/BenchmarkLab'

@@ -4,10 +4,10 @@ import { createRoot } from 'react-dom/client'
 import './styles.css'
 
 const config = defineConfig({
-  staticDomains: ['photon.gravito.dev'],
+  staticDomains: ['photon.gravito.dev', 'photon-site.pages.dev'],
   locales: ['en', 'zh-TW'],
   defaultLocale: 'en',
-  baseUrl: 'https://photon.gravito.dev',
+  baseUrl: process.env.BASE_URL || 'https://photon.gravito.dev',
 })
 
 createInertiaApp({

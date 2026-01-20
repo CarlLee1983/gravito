@@ -105,7 +105,8 @@ async function build() {
   // Export content
   // This will crawl all GET routes, render them to HTML, and generate Sitemap + Robots.txt
   // The 'extraPaths' are merged into the crawlers queue and will be present in the sitemap.
-  await ssg.export(outputDir, 'https://photon.gravito.dev', extraPaths)
+  const baseUrl = process.env.BASE_URL || 'https://photon.gravito.dev'
+  await ssg.export(outputDir, baseUrl, extraPaths)
 
   console.log('✅ Build complete.')
 

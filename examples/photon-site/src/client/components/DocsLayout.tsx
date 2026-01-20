@@ -1,5 +1,5 @@
-import { StaticLink } from '@gravito/freeze-react'
-import { Link, router, usePage } from '@inertiajs/react'
+import { StaticLink, useFreeze } from '@gravito/freeze-react'
+import { usePage } from '@inertiajs/react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Activity, Command, Moon, Search, Sun, Terminal, Zap } from 'lucide-react'
 import type React from 'react'
@@ -17,6 +17,7 @@ export const DocsLayout = ({
   const [searchOpen, setSearchOpen] = useState(false)
   const [_progress, _setProgress] = useState(0)
   const { url } = usePage() // Get current URL to preserve path
+  const { isStatic } = useFreeze()
 
   // --- Theme Management ---
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
@@ -83,11 +84,22 @@ export const DocsLayout = ({
 
   const toggleLanguage = () => {
     const newLang = currentLang === 'en' ? 'zh-TW' : 'en'
-    router.visit(window.location.pathname, {
-      data: { lang: newLang },
-      preserveScroll: true,
-      preserveState: true,
-    })
+    // Update URL param
+    const newUrl = new URL(window.location.href)
+    newUrl.searchParams.set('lang', newLang)
+    
+    // In static mode, use full page navigation
+    // In dynamic mode, use Inertia for SPA navigation
+    if (isStatic) {
+      window.location.href = newUrl.pathname + newUrl.search
+    } else {
+      // Dynamic mode - use Inertia router if available
+      const { router } = require('@inertiajs/react')
+      router.visit(newUrl.pathname + newUrl.search, {
+        preserveScroll: true,
+        preserveState: true,
+      })
+    }
   }
 
   useEffect(() => {
@@ -111,7 +123,7 @@ export const DocsLayout = ({
       <aside className="w-80 border-r border-s-brd flex flex-col sticky top-0 h-screen z-40 bg-s-bg transition-colors duration-500">
         <div className="p-12 flex-1 overflow-y-auto custom-scrollbar">
           <div className="flex items-center justify-between mb-12 gap-4">
-            <Link
+            <StaticLink
               href="/"
               className="text-2xl font-black tracking-tighter uppercase flex items-center gap-3 group text-p-txt"
             >
@@ -125,7 +137,7 @@ export const DocsLayout = ({
               <span className="hidden xl:inline group-hover:translate-x-1 transition-transform duration-500">
                 Pho<span className="opacity-50 italic">ton</span>
               </span>
-            </Link>
+            </StaticLink>
 
             <div className="flex items-center gap-3">
               {/* LANG TOGGLE */}
@@ -195,7 +207,7 @@ export const DocsLayout = ({
                 </div>
                 <div className="space-y-1">
                   {group.items.map((item) => (
-                    <Link
+                    <StaticLink
                       key={item.id}
                       href={`${item.href}?lang=${currentLang}`}
                       className={`flex items-center gap-4 px-4 py-2.5 rounded-sm group transition-all ${currentId === item.id ? 'bg-surf-bg border border-s-brd text-p-txt shadow-sm' : 'text-s-txt hover:text-p-txt'}`}
@@ -211,7 +223,7 @@ export const DocsLayout = ({
                       <span className="text-[10px] font-bold tracking-[0.15em] uppercase">
                         {t(item.label)}
                       </span>
-                    </Link>
+                    </StaticLink>
                   ))}
                 </div>
               </div>
