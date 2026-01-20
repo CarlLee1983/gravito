@@ -75,8 +75,11 @@ async function build() {
   // 2. Legal Routes (Static)
   const legalRoutes = ['privacy', 'terms'].map((p) => `/legal/${p}`)
 
+  // 3. Core Pages
+  const coreRoutes = ['/', '/ecosystem', '/patterns']
+
   // Combine manual dynamic routes
-  const extraPaths = [...docRoutes, ...legalRoutes]
+  const extraPaths = [...coreRoutes, ...docRoutes, ...legalRoutes]
 
   // Export content
   // This will crawl all GET routes, render them to HTML, and generate Sitemap + Robots.txt
