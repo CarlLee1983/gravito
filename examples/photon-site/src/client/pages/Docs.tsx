@@ -248,7 +248,7 @@ export default function Docs({
                       />
                     </div>
                   </div>
-                </Link>
+                </StaticLink>
               )
             })()}
           </div>
