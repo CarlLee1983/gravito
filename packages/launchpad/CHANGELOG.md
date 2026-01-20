@@ -1,5 +1,11 @@
 # @gravito/launchpad
 
+## 1.2.2
+
+### Patch Changes
+
+- 905588f: fix: replace insecure Math.random() with crypto.randomUUID() for ID and temporary path generation (CWE-330)
+
 ## 1.2.1
 
 ### Patch Changes

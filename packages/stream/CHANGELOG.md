@@ -1,5 +1,11 @@
 # @gravito/stream
 
+## 2.0.1
+
+### Patch Changes
+
+- 905588f: fix: replace insecure Math.random() with crypto.randomUUID() for ID and temporary path generation (CWE-330)
+
 ## 1.0.3
 
 ### Patch Changes

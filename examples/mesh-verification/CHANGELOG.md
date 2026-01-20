@@ -1,5 +1,11 @@
 # example-mesh-verification
 
+## 1.0.6
+
+### Patch Changes
+
+- @gravito/flare@3.0.2
+
 ## 1.0.5
 
 ### Patch Changes

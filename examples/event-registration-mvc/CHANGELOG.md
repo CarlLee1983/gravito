@@ -1,5 +1,11 @@
 # @gravito/example-event-registration-mvc
 
+## 1.0.2
+
+### Patch Changes
+
+- @gravito/signal@3.0.2
+
 ## 1.0.1
 
 ### Patch Changes

@@ -1,6 +1,6 @@
 {
   "name": "my-gravito-static-site",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "type": "module",
   "scripts": {
     "dev": "bun run dev:vite & bun run dev:server",
