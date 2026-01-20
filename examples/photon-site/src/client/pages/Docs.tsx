@@ -80,7 +80,7 @@ function highlightCode(html: string) {
 
     const withPlaceholders = highlighted.replace(
       /<span class="([^"]+)">([\s\S]*?)<\/span>/g,
-      (_match, className, content) => {
+      (_match: string, className: string, content: string) => {
         // Escape the content inside the span to prevent HTML parsing
         const escapedContent = content
           .replace(/&/g, '&amp;')
@@ -96,7 +96,7 @@ function highlightCode(html: string) {
     // Escape remaining HTML tags (avoid double-escaping placeholders)
     // Split by placeholders to process each segment separately
     const parts = withPlaceholders.split(/(__SPAN_PLACEHOLDER_\d+__)/g)
-    const escapedParts = parts.map((part) => {
+    const escapedParts = parts.map((part: string) => {
       if (part.match(/^__SPAN_PLACEHOLDER_\d+__$/)) {
         // This is a placeholder, don't escape it
         return part
@@ -107,7 +107,7 @@ function highlightCode(html: string) {
     const escaped = escapedParts.join('')
 
     // Restore span tags (they're already properly escaped)
-    const final = escaped.replace(placeholderPattern, (_, index) => {
+    const final = escaped.replace(placeholderPattern, (_: string, index: string) => {
       return spanPlaceholders[parseInt(index, 10)]
     })
 
