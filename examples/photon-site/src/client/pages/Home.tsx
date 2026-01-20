@@ -98,6 +98,12 @@ export default function Home() {
   // Translations
   const t = {
     en: {
+      navbar: {
+        docs: 'Docs',
+        ecosystem: 'Ecosystem',
+        patterns: 'Patterns',
+        benchmarks: 'Benchmarks',
+      },
       docs: 'Documentation_',
       scroll: 'Scroll_to_explore',
       intro: 'Introduction',
@@ -122,6 +128,12 @@ export default function Home() {
       start_reading: 'Start Reading Documentation',
     },
     'zh-TW': {
+      navbar: {
+        docs: '文件',
+        ecosystem: '生態系統',
+        patterns: '設計模式',
+        benchmarks: '基準測試',
+      },
       docs: '技術文件_',
       scroll: '滑動探索',
       intro: '介紹',
@@ -141,12 +153,18 @@ export default function Home() {
       master: '精通引擎。',
       docs_intro: '文件_',
       docs_desc:
-        '我們的文件不僅僅是參考手冊。它是關於零拷貝記憶體管理、AOT 編譯和非阻塞 I/O 的技術深度探討。',
+        '我們的文件不僅僅是參考手冊。它是關於零拷貝記憶體管理、AOT 編編譯和非阻塞 I/O 的技術深度探討。',
       ready: '// 深度學習就緒',
       start_reading: '開始閱讀文件',
     },
   }[currentLang] || {
     // Fallback safely
+    navbar: {
+      docs: 'Docs',
+      ecosystem: 'Ecosystem',
+      patterns: 'Patterns',
+      benchmarks: 'Benchmarks',
+    },
     docs: 'Documentation_',
     scroll: 'Scroll_to_explore',
     intro: 'Introduction',
@@ -185,64 +203,89 @@ export default function Home() {
 
       {/* Enhanced Pro-Max Navbar */}
       <nav
-        className={`fixed top-0 left-0 right-0 z-50 px-12 py-6 flex justify-between items-center transition-all duration-500 ${
-          scrolled
-            ? 'bg-s-bg/80 backdrop-blur-xl border-b border-s-brd py-4 shadow-2xl'
-            : 'bg-transparent'
-        }`}
+        className={`fixed top-0 left-0 right-0 z-50 px-12 py-6 flex justify-between items-center transition-all duration-700 ${scrolled
+          ? 'py-4'
+          : 'bg-transparent'
+          }`}
       >
+        <div className={`absolute inset-0 transition-opacity duration-700 ${scrolled ? 'opacity-100' : 'opacity-0'}`}>
+          <div className="absolute inset-0 backdrop-blur-2xl border-b border-s-brd shadow-[0_4px_30px_rgba(0,0,0,0.03)] bg-[var(--nav-bg)]" />
+        </div>
+
         <Link
           href="/"
-          className="text-2xl font-black text-p-txt tracking-tighter uppercase group flex items-center gap-2"
+          className="relative z-10 text-2xl font-black text-p-txt tracking-tighter uppercase group flex items-center gap-3"
         >
-          <div className="w-8 h-8 border border-photon-gold/30 flex items-center justify-center relative overflow-hidden group-hover:border-photon-gold transition-colors">
+          <div className="w-10 h-10 border border-photon-gold/20 flex items-center justify-center relative overflow-hidden group-hover:border-photon-gold/50 transition-all duration-500 rounded-lg bg-photon-gold/5 backdrop-blur-md">
             <Zap
-              size={14}
-              className="text-photon-gold group-hover:scale-125 transition-transform"
+              size={18}
+              className="text-photon-gold group-hover:scale-125 group-hover:drop-shadow-[0_0_8px_rgba(255,184,0,0.8)] transition-all duration-500"
             />
-            <div className="absolute inset-0 bg-photon-gold/5 group-hover:bg-photon-gold/20 transition-colors" />
+            <div className="absolute inset-0 bg-gradient-to-br from-photon-gold/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
-          <span className="group-hover:translate-x-1 transition-transform duration-500">
-            Pho<span className="opacity-50 italic">ton</span>
+          <span className="group-hover:translate-x-1 transition-transform duration-500 glow-hover">
+            Pho<span className="opacity-50 italic font-light">ton</span>
           </span>
         </Link>
 
-        <div className="flex items-center gap-12">
-          {/* LANG TOGGLE */}
+        {/* Restore missing Nav Links */}
+        <div className="hidden md:flex items-center gap-8 relative z-10">
+          {[
+            { label: t.navbar.docs, href: `/docs/intro?lang=${currentLang}` },
+            { label: t.navbar.ecosystem, href: `/ecosystem?lang=${currentLang}` },
+            { label: t.navbar.patterns, href: `/patterns?lang=${currentLang}` },
+          ].map((item) => (
+            <Link
+              key={item.label}
+              href={item.href}
+              className="text-[10px] font-black tracking-[0.3em] uppercase text-s-txt hover:text-photon-gold transition-colors relative group py-2"
+            >
+              {item.label}
+              <span className="absolute bottom-0 left-0 w-0 h-px bg-photon-gold transition-all duration-500 group-hover:w-full shadow-[0_0_8px_rgba(255,184,0,0.8)]" />
+            </Link>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-6 relative z-10">
+          {/* LANG TOGGLE: Show target language */}
           <button
             type="button"
             onClick={toggleLanguage}
-            className="w-10 h-10 flex items-center justify-center rounded-sm border border-s-brd bg-surf-bg hover:border-photon-gold/30 transition-all text-s-txt hover:text-photon-gold shadow-sm"
-            title={currentLang === 'en' ? 'Switch to Traditional Chinese' : 'Switch to English'}
+            className="w-10 h-10 flex items-center justify-center rounded-lg border border-s-brd bg-surf-bg/50 backdrop-blur-md hover:border-photon-gold/40 transition-all text-s-txt hover:text-photon-gold shadow-lg group"
+            title={currentLang === 'en' ? '切換至繁體中文' : 'Switch to English'}
           >
-            <span className="text-[10px] font-bold font-technical">
-              {currentLang === 'en' ? 'EN' : '繁'}
+            <span className="text-[10px] font-bold font-technical group-hover:scale-110 transition-transform">
+              {currentLang === 'en' ? '繁' : 'EN'}
             </span>
           </button>
 
+          {/* THEME TOGGLE: Show target theme icon */}
           <button
             type="button"
             onClick={toggleTheme}
-            className="w-10 h-10 flex items-center justify-center rounded-sm border border-s-brd bg-surf-bg hover:border-photon-gold/30 transition-all text-s-txt hover:text-photon-gold shadow-sm"
+            className="w-10 h-10 flex items-center justify-center rounded-lg border border-s-brd bg-surf-bg/50 backdrop-blur-md hover:border-photon-gold/40 transition-all text-s-txt hover:text-photon-gold shadow-lg group"
+            title={theme === 'dark' ? 'Switch to Light Mode' : '切換至深色模式'}
           >
             <AnimatePresence mode="wait">
               {theme === 'dark' ? (
                 <motion.div
-                  key="moon"
-                  initial={{ opacity: 0, scale: 0.5 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.5 }}
+                  key="sun"
+                  initial={{ opacity: 0, rotate: -90, scale: 0.5 }}
+                  animate={{ opacity: 1, rotate: 0, scale: 1 }}
+                  exit={{ opacity: 0, rotate: 90, scale: 0.5 }}
+                  className="group-hover:scale-110 transition-transform"
                 >
-                  <Moon size={16} />
+                  <Sun size={16} />
                 </motion.div>
               ) : (
                 <motion.div
-                  key="sun"
-                  initial={{ opacity: 0, scale: 0.5 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.5 }}
+                  key="moon"
+                  initial={{ opacity: 0, rotate: -90, scale: 0.5 }}
+                  animate={{ opacity: 1, rotate: 0, scale: 1 }}
+                  exit={{ opacity: 0, rotate: 90, scale: 0.5 }}
+                  className="group-hover:scale-110 transition-transform"
                 >
-                  <Sun size={16} />
+                  <Moon size={16} />
                 </motion.div>
               )}
             </AnimatePresence>
@@ -268,13 +311,14 @@ export default function Home() {
               <Link
                 key={link.label}
                 href={link.href}
-                className="p-8 bg-s-bg hover:bg-surf-bg transition-all group relative overflow-hidden"
+                className="p-8 bg-surf-bg hover:bg-surf-bg transition-all group relative overflow-hidden"
+                style={{ boxShadow: 'var(--card-shadow)' } as any}
               >
-                <div className="absolute top-0 left-0 w-full h-full bg-photon-gold/0 group-hover:bg-photon-gold/[0.02] transition-all" />
-                <span className="text-[8px] font-technical text-photon-gold block mb-2 opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all">
+                <div className="absolute top-0 left-0 w-full h-full bg-photon-gold/0 group-hover:bg-photon-gold/[0.04] transition-all" />
+                <span className="text-[9px] font-technical text-photon-gold block mb-3 opacity-60 group-hover:opacity-100 group-hover:translate-x-1 transition-all">
                   {link.desc}
                 </span>
-                <span className="text-xs font-black text-p-txt tracking-widest uppercase flex items-center justify-between">
+                <span className="text-xs font-black text-p-txt tracking-[0.2em] uppercase flex items-center justify-between">
                   {link.label}
                   <ArrowUpRight
                     size={14}
@@ -292,7 +336,8 @@ export default function Home() {
             {stats.map((item) => (
               <div
                 key={item.id}
-                className="glass-card group p-8 bg-s-bg border border-s-brd hover:border-photon-gold/30 transition-all"
+                className="glass-card group p-10 bg-surf-bg border border-s-brd hover:border-photon-gold/40 transition-all rounded-xl"
+                style={{ boxShadow: 'var(--card-shadow)' } as any}
               >
                 <div className="flex justify-between items-start mb-12">
                   <div className="icon-container text-photon-gold/40 group-hover:text-photon-gold transition-colors">
@@ -356,29 +401,43 @@ export default function Home() {
               </Link>
             </div>
 
-            <div className="glass-card p-12 mt-20 bg-s-bg border border-s-brd">
-              <h4 className="text-xs font-technical text-p-txt mb-8 tracking-widest uppercase italic">
+            <div className="glass-card p-12 mt-20 bg-surf-bg border border-s-brd shadow-2xl relative overflow-hidden rounded-2xl group">
+              <div className="absolute inset-0 bg-photon-gold/[0.01] opacity-0 group-hover:opacity-100 transition-opacity" />
+              <h4 className="text-xs font-technical text-p-txt mb-10 tracking-widest uppercase italic border-b border-s-brd pb-4">
                 Internal_Telemetry_Log {/* Jan_2026 */}
               </h4>
 
-              <div className="space-y-6 font-technical text-[10px] leading-relaxed">
-                <p className="text-m-txt">[00:01] INITIALIZING BASELINE_RUNNER...</p>
-                <p className="text-m-txt">[00:03] JIT_FTL_WARMUP: COMPLETED (320ms)</p>
-                <p className="text-m-txt">[00:05] TARGETING: APPLE_M3_SILICON</p>
-                <p className="text-p-txt flex justify-between">
-                  <span>&gt; PHOTON_CORE_DISPATCH</span>
+              <div className="space-y-6 font-technical text-[11px] leading-relaxed relative z-10">
+                <p className="text-m-txt flex items-center gap-3">
+                  <span className="w-1.5 h-1.5 rounded-full bg-m-txt/20" />
+                  [00:01] INITIALIZING BASELINE_RUNNER...
+                </p>
+                <p className="text-m-txt flex items-center gap-3">
+                  <span className="w-1.5 h-1.5 rounded-full bg-m-txt/20" />
+                  [00:03] JIT_FTL_WARMUP: COMPLETED (320ms)
+                </p>
+                <p className="text-m-txt flex items-center gap-3">
+                  <span className="w-1.5 h-1.5 rounded-full bg-m-txt/20" />
+                  [00:05] TARGETING: APPLE_M3_SILICON
+                </p>
+                <div className="my-8 h-px bg-s-brd opacity-50" />
+                <p className="text-p-txt flex justify-between font-bold">
+                  <span className="flex items-center gap-3">
+                    <Zap size={10} className="text-photon-gold" />
+                    PHOTON_CORE_DISPATCH
+                  </span>
                   <span className="text-photon-gold">0.84ms (P50)</span>
                 </p>
-                <p className="text-p-txt flex justify-between">
+                <p className="text-s-txt flex justify-between opacity-60">
                   <span>&gt; HONO_DISPATCH_SHIM</span>
-                  <span className="text-red-900">1.12ms (P50)</span>
+                  <span className="text-red-600/60">1.12ms (P50)</span>
                 </p>
-                <p className="text-p-txt flex justify-between">
+                <p className="text-s-txt flex justify-between opacity-60">
                   <span>&gt; ELYSIA_DISPATCH_STATIC</span>
-                  <span className="text-blue-900">1.02ms (P50)</span>
+                  <span className="text-blue-600/60">1.02ms (P50)</span>
                 </p>
-                <div className="h-px bg-s-brd my-8" />
-                <p className="text-photon-gold font-black">
+                <div className="h-px bg-photon-gold/20 my-8" />
+                <p className="text-photon-gold font-black tracking-widest text-[12px]">
                   RESULT: 98.8%_OF_NATIVE_BUN_THROUGHPUT
                 </p>
               </div>

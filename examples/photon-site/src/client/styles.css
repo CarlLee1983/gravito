@@ -8,45 +8,79 @@
 
 /* --- THE SOURCE OF TRUTH: ADAPTIVE COLOR SYSTEM --- */
 :root {
-  --bg-primary: #020202;
-  --surf-bg: #0A0A0B;
-  --text-main: #D1D5DB;
-  --text-heading: #FFFFFF;
-  --text-muted: #6B7280;
-  --border-subtle: rgba(255, 255, 255, 0.08);
+  --bg-primary: #000000;
+  --surf-bg: #0C0C0D;
+  --text-primary: #F5F5F7;
+  --text-secondary: #A1A1A6;
+  --text-muted: #626267;
+  --border-subtle: rgba(255, 255, 255, 0.05);
+  --photon-gold: #FFB800;
+  --photon-gold-glow: rgba(255, 184, 0, 0.4);
+  --glow-blend: screen;
+  --hero-gradient-opacity: 0.06;
+  --card-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.8);
+  --nav-bg: rgba(0, 0, 0, 0.8);
 }
 
 .light,
 [data-theme='light'] {
-  --bg-primary: #F5F5F7;
+  --bg-primary: #FBFBFC;
   --surf-bg: #FFFFFF;
-  --text-main: #2D3748;
-  --text-heading: #000000;
-  --text-muted: #718096;
-  --border-subtle: rgba(0, 0, 0, 0.08);
+  --text-primary: #1D1D1F;
+  --text-secondary: #424245;
+  --text-muted: #86868B;
+  --border-subtle: rgba(0, 0, 0, 0.06);
+  --photon-gold: #D4A017;
+  --photon-gold-glow: rgba(212, 160, 23, 0.15);
+  --card-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.05), 0 5px 20px -5px rgba(0, 0, 0, 0.03);
+  --nav-bg: rgba(251, 251, 252, 0.85);
+  --glow-blend: multiply;
+  --hero-gradient-opacity: 0.08;
 }
 
 @layer base {
   body {
     background-color: var(--bg-primary);
-    color: var(--text-main);
-    transition: background-color 0.3s ease, color 0.3s ease;
+    color: var(--text-secondary);
+    transition: background-color 0.8s cubic-bezier(0.4, 0, 0.2, 1), color 0.8s cubic-bezier(0.4, 0, 0.2, 1);
     opacity: 1 !important;
-    /* 確保主體透明度為 1 */
+    @apply antialiased selection:bg-photon-gold/20 selection:text-photon-gold;
   }
+}
+
+/* --- PREMIUM UTILITIES --- */
+.glass-pill {
+  @apply backdrop-blur-2xl border border-white/5 bg-white/[0.02] rounded-full;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.text-gradient {
+  @apply bg-clip-text text-transparent bg-gradient-to-br from-white via-white/80 to-white/40;
+}
+
+.glow-hover {
+  @apply transition-all duration-300;
+}
+
+.glow-hover:hover {
+  text-shadow: 0 0 15px var(--photon-gold-glow);
 }
 
 /* --- ADAPTIVE UTILITY CLASSES --- */
 .text-p-txt {
-  color: var(--text-heading);
+  color: var(--text-primary);
 }
 
 .text-s-txt {
-  color: var(--text-main);
+  color: var(--text-secondary);
 }
 
 .text-m-txt {
   color: var(--text-muted);
+}
+
+.bg-p-bg {
+  background-color: var(--bg-primary);
 }
 
 .bg-surf-bg {
@@ -55,10 +89,6 @@
 
 .border-s-brd {
   border-color: var(--border-subtle);
-}
-
-.from-s-brd {
-  --tw-gradient-from: var(--border-subtle);
 }
 
 /* --- THE PHOTON PROSE SYSTEM V11 (OPACITY FIX) --- */
