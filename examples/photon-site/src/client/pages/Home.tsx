@@ -54,7 +54,7 @@ interface HomeProps {
 export default function Home({ lang, ...props }: HomeProps) {
   const [scrolled, setScrolled] = useState(false)
   const [theme, setTheme] = useState<'dark' | 'light'>('dark')
-  const { isStatic } = useFreeze()
+  const { isStatic, switchLocale } = useFreeze()
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50)
@@ -92,18 +92,16 @@ export default function Home({ lang, ...props }: HomeProps) {
 
   const toggleLanguage = () => {
     const newLang = currentLang === 'en' ? 'zh-TW' : 'en'
-    // Update URL param
-    const newUrl = new URL(window.location.href)
-    newUrl.searchParams.set('lang', newLang)
+    const target = switchLocale(newLang)
     
     // In static mode, use full page navigation
     // In dynamic mode, use Inertia for SPA navigation
     if (isStatic) {
-      window.location.href = newUrl.pathname + newUrl.search
+      window.location.href = target
     } else {
       // Dynamic mode - use Inertia router if available
       const { router } = require('@inertiajs/react')
-      router.visit(newUrl.pathname + newUrl.search, {
+      router.visit(target, {
         preserveScroll: true,
         preserveState: true,
       })

@@ -8,6 +8,7 @@ const config = defineConfig({
   locales: ['en', 'zh-TW'],
   defaultLocale: 'en',
   baseUrl: process.env.BASE_URL || 'https://photon.gravito.dev',
+  previewPort: 8000,
 })
 
 createInertiaApp({
