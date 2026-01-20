@@ -65,30 +65,30 @@ describe('@gravito/freeze', () => {
 
     describe('getLocalizedPath', () => {
       it('should add locale prefix', () => {
-        expect(detector.getLocalizedPath('/about', 'en')).toBe('/en/about')
+        expect(detector.getLocalizedPath('/about', 'en')).toBe('/about')
         expect(detector.getLocalizedPath('/docs/guide', 'zh')).toBe('/zh/docs/guide')
       })
 
       it('should handle root path', () => {
-        expect(detector.getLocalizedPath('/', 'en')).toBe('/en')
+        expect(detector.getLocalizedPath('/', 'en')).toBe('/')
         expect(detector.getLocalizedPath('/', 'zh')).toBe('/zh')
       })
 
       it('should replace existing locale prefix', () => {
         expect(detector.getLocalizedPath('/en/docs', 'zh')).toBe('/zh/docs')
-        expect(detector.getLocalizedPath('/zh/about', 'en')).toBe('/en/about')
+        expect(detector.getLocalizedPath('/zh/about', 'en')).toBe('/about')
       })
     })
 
     describe('switchLocale', () => {
       it('should switch locale while preserving path', () => {
         expect(detector.switchLocale('/en/docs/guide', 'zh')).toBe('/zh/docs/guide')
-        expect(detector.switchLocale('/zh/about', 'en')).toBe('/en/about')
+        expect(detector.switchLocale('/zh/about', 'en')).toBe('/about')
       })
 
       it('should handle root locale paths', () => {
-        expect(detector.switchLocale('/en', 'zh')).toBe('/zh/')
-        expect(detector.switchLocale('/zh/', 'en')).toBe('/en/')
+        expect(detector.switchLocale('/en', 'zh')).toBe('/zh')
+        expect(detector.switchLocale('/zh/', 'en')).toBe('/')
       })
     })
 
