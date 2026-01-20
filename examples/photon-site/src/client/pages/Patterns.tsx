@@ -1,4 +1,5 @@
-import { Head, Link } from '@inertiajs/react'
+import { StaticLink } from '@gravito/freeze-react'
+import { Head } from '@inertiajs/react'
 import { motion } from 'framer-motion'
 import {
   Activity,
@@ -268,46 +269,21 @@ export default function Patterns({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) {
                 : 'Photon patterns are designed to be composable. Mix and match these architectural blocks to create the ultimate orchestration kernel.'}
             </p>
             <div className="mt-auto">
-              <Link
+              <StaticLink
                 href={`/docs/routing?lang=${lang}`}
                 className="inline-flex items-center gap-4 px-8 py-4 bg-surf-bg border border-s-brd text-[11px] font-technical text-p-txt uppercase tracking-[0.3em] font-black hover:bg-photon-gold hover:text-black hover:border-photon-gold transition-all"
               >
                 {isZh ? '探索路由協定' : 'Explore Routing Protocol'} <ChevronRight size={14} />
-              </Link>
-            </div>
-          </div>
-        </motion.div>
+              </StaticLink>
 
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.2 }}
-          className="p-12 md:p-16 border border-s-brd bg-s-bg relative overflow-hidden group hover:border-photon-gold/40 transition-all duration-700 shadow-xl"
-        >
-          <div className="absolute -top-10 -right-10 p-10 opacity-5 pointer-events-none text-p-txt -rotate-12 transition-transform duration-1000 group-hover:rotate-0">
-            <Activity size={250} strokeWidth={0.5} />
-          </div>
-          <div className="relative z-10 flex flex-col h-full">
-            <div className="w-12 h-1 px-4 bg-photon-gold mb-10" />
-            <h2 className="text-4xl md:text-5xl font-black text-p-txt uppercase tracking-tighter mb-8 leading-[0.9]">
-              {isZh ? '效能' : 'Performance'}{' '}
-              <span className="text-photon-gold block mt-2">
-                {isZh ? '引擎優化' : 'Engine_First'}
-              </span>
-            </h2>
-            <p className="text-lg text-s-txt leading-relaxed mb-12 opacity-80 font-light">
-              {isZh
-                ? '所有模式都經過精心設計，以實現最佳效能。從零複製傳輸到編譯時優化，每個模式都專注於最小化開銷。'
-                : 'All patterns are carefully designed for optimal performance. From zero-copy transfers to compile-time optimizations.'}
-            </p>
-            <div className="mt-auto">
-              <Link
+              ...
+
+              <StaticLink
                 href={`/docs/performance?lang=${lang}`}
                 className="inline-flex items-center gap-4 px-8 py-4 bg-surf-bg border border-s-brd text-[11px] font-technical text-p-txt uppercase tracking-[0.3em] font-black hover:bg-photon-gold hover:text-black hover:border-photon-gold transition-all"
               >
                 {isZh ? '閱讀效能指標' : 'Review Performance Metrics'} <ChevronRight size={14} />
-              </Link>
+              </StaticLink>
             </div>
           </div>
         </motion.div>

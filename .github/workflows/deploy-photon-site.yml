@@ -10,6 +10,8 @@ on:
       - 'packages/core/**'
       - 'packages/ion/**'
       - 'packages/prism/**'
+      - 'packages/freeze/**'
+      - 'packages/freeze-react/**'
       - '.github/workflows/deploy-photon-site.yml'
   workflow_dispatch:
 
@@ -36,7 +38,7 @@ jobs:
 
       - name: Build Dependencies
         # Build core packages that photon-site depends on
-        run: bunx turbo run build --filter=@gravito/core --filter=@gravito/photon --filter=@gravito/ion --filter=@gravito/prism
+        run: bunx turbo run build --filter=@gravito/core --filter=@gravito/photon --filter=@gravito/ion --filter=@gravito/prism --filter=@gravito/freeze --filter=@gravito/freeze-react
 
       - name: Build Photon Site
         working-directory: examples/photon-site

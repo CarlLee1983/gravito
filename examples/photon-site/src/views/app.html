@@ -29,7 +29,8 @@
         href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800;900&family=Fira+Code:wght@400;500&display=swap"
         rel="stylesheet">
 
-    <!-- Vite React Preamble -->
+    <!-- Vite React Preamble & Client -->
+    @if(isDev)
     <script type="module">
         import RefreshRuntime from 'http://localhost:5173/@react-refresh'
         RefreshRuntime.injectIntoGlobalHook(window)
@@ -37,8 +38,12 @@
         window.$RefreshSig$ = () => (type) => type
         window.__vite_plugin_react_preamble_installed__ = true
     </script>
-
-    @vite(['src/client/app.tsx'])
+    <script type="module" src="http://localhost:5173/@vite/client"></script>
+    <script type="module" src="http://localhost:5173/src/client/app.tsx"></script>
+    @else
+    <link rel="stylesheet" href="/assets/app.css">
+    <script type="module" src="/assets/app.js"></script>
+    @endif
 </head>
 
 <body class="selection:bg-photon-gold/30 overflow-x-hidden antialiased">

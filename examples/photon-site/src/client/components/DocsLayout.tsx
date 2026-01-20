@@ -1,3 +1,4 @@
+import { StaticLink } from '@gravito/freeze-react'
 import { Link, router, usePage } from '@inertiajs/react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Activity, Command, Moon, Search, Sun, Terminal, Zap } from 'lucide-react'
@@ -237,9 +238,9 @@ export const DocsLayout = ({
       <main className="flex-1 relative overflow-y-auto h-screen custom-scrollbar transition-colors duration-500 grid-texture bg-p-bg">
         <div className="max-w-5xl py-24 px-12 md:px-24 mx-auto pb-4">
           <div className="mb-12 flex items-center gap-2 text-[10px] font-bold text-m-txt opacity-70 tracking-widest uppercase">
-            <Link href="/" className="hover:text-photon-gold transition-colors text-p-txt">
+            <StaticLink href="/" className="hover:text-photon-gold transition-colors text-p-txt">
               HOME
-            </Link>
+            </StaticLink>
             <span>/</span>
             <span className="text-p-txt">{currentId || 'DOCS'}</span>
           </div>

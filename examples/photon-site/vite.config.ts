@@ -11,6 +11,11 @@ export default defineConfig({
       input: {
         app: path.resolve(__dirname, 'src/client/app.tsx'),
       },
+      output: {
+        entryFileNames: 'assets/[name].js',
+        chunkFileNames: 'assets/[name].js',
+        assetFileNames: 'assets/[name].[ext]',
+      },
     },
   },
   server: {

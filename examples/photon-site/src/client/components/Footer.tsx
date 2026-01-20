@@ -1,3 +1,4 @@
+import { StaticLink } from '@gravito/freeze-react'
 import { Activity, ExternalLink, Github, MessageSquare, Zap } from 'lucide-react'
 
 const getFooterLinks = (
@@ -127,22 +128,33 @@ export function Footer({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) {
                 <ul className="flex flex-col gap-4">
                   {group.links.map((link) => (
                     <li key={link.label}>
-                      <a
-                        href={link.href}
-                        className="text-s-txt hover:text-photon-gold text-xs font-light transition-all flex items-center gap-3 group/link"
-                        target={link.href.startsWith('http') ? '_blank' : undefined}
-                        rel={link.href.startsWith('http') ? 'noopener noreferrer' : undefined}
-                      >
-                        <span className="w-1 h-px bg-photon-gold opacity-0 group-hover/link:opacity-100 group-hover/link:w-2 transition-all" />
-                        {link.label}
-                        {link.icon && <link.icon size={12} className="opacity-40 group-hover/link:text-photon-gold transition-colors" />}
-                        {link.href.startsWith('http') && !link.icon && (
-                          <ExternalLink
-                            size={10}
-                            className="opacity-0 group-hover/link:opacity-40 transition-opacity"
-                          />
-                        )}
-                      </a>
+                      {link.href.startsWith('/') ? (
+                        <StaticLink
+                          href={link.href}
+                          className="text-s-txt hover:text-photon-gold text-xs font-light transition-all flex items-center gap-3 group/link"
+                          skipLocalization // Footer links might already carry lang param, keeping manual control for now is safer
+                        >
+                          <span className="w-1 h-px bg-photon-gold opacity-0 group-hover/link:opacity-100 group-hover/link:w-2 transition-all" />
+                          {link.label}
+                        </StaticLink>
+                      ) : (
+                        <a
+                          href={link.href}
+                          className="text-s-txt hover:text-photon-gold text-xs font-light transition-all flex items-center gap-3 group/link"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <span className="w-1 h-px bg-photon-gold opacity-0 group-hover/link:opacity-100 group-hover/link:w-2 transition-all" />
+                          {link.label}
+                          {link.icon && <link.icon size={12} className="opacity-40 group-hover/link:text-photon-gold transition-colors" />}
+                          {!link.icon && (
+                            <ExternalLink
+                              size={10}
+                              className="opacity-0 group-hover/link:opacity-40 transition-opacity"
+                            />
+                          )}
+                        </a>
+                      )}
                     </li>
                   ))}
                 </ul>

@@ -1,3 +1,4 @@
+import { StaticLink } from '@gravito/freeze-react'
 import { Head, Link } from '@inertiajs/react'
 import { CheckCircle2, ChevronRight, Terminal } from 'lucide-react'
 import { useMemo } from 'react'
@@ -226,7 +227,7 @@ export default function Docs({
               const currentLang = searchParams.get('lang') === 'zh-TW' ? 'zh-TW' : 'en'
 
               return (
-                <Link
+                <StaticLink
                   href={`${nextItem.href}?lang=${currentLang}`}
                   className="group relative block border border-s-brd p-12 transition-all bg-s-bg shadow-xl"
                 >
