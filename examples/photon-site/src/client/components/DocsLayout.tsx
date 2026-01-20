@@ -17,7 +17,7 @@ export const DocsLayout = ({
   const [searchOpen, setSearchOpen] = useState(false)
   const [_progress, _setProgress] = useState(0)
   const { url } = usePage() // Get current URL to preserve path
-  const { isStatic, switchLocale } = useFreeze()
+  const { isStatic, switchLocale, locale: currentLang } = useFreeze()
 
   // --- Theme Management ---
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
@@ -28,11 +28,7 @@ export const DocsLayout = ({
   })
 
   // --- Language Management ---
-  const searchParams =
-    typeof window !== 'undefined'
-      ? new URLSearchParams(window.location.search)
-      : new URLSearchParams()
-  const currentLang = searchParams.get('lang') === 'zh-TW' ? 'zh-TW' : 'en'
+  // Removed manual searchParams parsing in favor of useFreeze locale
 
   const navTranslations: Record<string, string> = {
     // Categories
