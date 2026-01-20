@@ -17,7 +17,7 @@ export const DocsLayout = ({
   const [searchOpen, setSearchOpen] = useState(false)
   const [_progress, _setProgress] = useState(0)
   const { url } = usePage() // Get current URL to preserve path
-  const { isStatic } = useFreeze()
+  const { isStatic, switchLocale } = useFreeze()
 
   // --- Theme Management ---
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
@@ -84,18 +84,16 @@ export const DocsLayout = ({
 
   const toggleLanguage = () => {
     const newLang = currentLang === 'en' ? 'zh-TW' : 'en'
-    // Update URL param
-    const newUrl = new URL(window.location.href)
-    newUrl.searchParams.set('lang', newLang)
+    const target = switchLocale(newLang)
     
     // In static mode, use full page navigation
     // In dynamic mode, use Inertia for SPA navigation
     if (isStatic) {
-      window.location.href = newUrl.pathname + newUrl.search
+      window.location.href = target
     } else {
       // Dynamic mode - use Inertia router if available
       const { router } = require('@inertiajs/react')
-      router.visit(newUrl.pathname + newUrl.search, {
+      router.visit(target, {
         preserveScroll: true,
         preserveState: true,
       })
