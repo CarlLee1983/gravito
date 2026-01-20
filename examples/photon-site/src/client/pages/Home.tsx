@@ -201,15 +201,15 @@ export default function Home() {
   return (
     <div className="min-h-screen font-sans selection:bg-photon-gold/20 transition-colors duration-500 bg-p-bg text-s-txt">
       <Head title="PHOTON // THE ABSOLUTE ENGINE" />
-
       {/* Enhanced Pro-Max Navbar */}
       <nav
-        className={`fixed top-0 left-0 right-0 z-50 px-12 py-6 flex justify-between items-center transition-all duration-700 ${scrolled
-          ? 'py-4'
-          : 'bg-transparent'
-          }`}
+        className={`fixed top-0 left-0 right-0 z-50 px-12 py-6 flex justify-between items-center transition-all duration-700 ${
+          scrolled ? 'py-4' : 'bg-transparent'
+        }`}
       >
-        <div className={`absolute inset-0 transition-opacity duration-700 ${scrolled ? 'opacity-100' : 'opacity-0'}`}>
+        <div
+          className={`absolute inset-0 transition-opacity duration-700 ${scrolled ? 'opacity-100' : 'opacity-0'}`}
+        >
           <div className="absolute inset-0 backdrop-blur-2xl border-b border-s-brd shadow-[0_4px_30px_rgba(0,0,0,0.03)] bg-[var(--nav-bg)]" />
         </div>
 
@@ -293,7 +293,6 @@ export default function Home() {
           </button>
         </div>
       </nav>
-
       {quickLinksDynamic.map((link) => (
         <StaticLink
           key={link.label}
@@ -314,9 +313,7 @@ export default function Home() {
           </span>
         </StaticLink>
       ))}
-
       ...
-
       <section className="relative z-20 py-40 px-12 max-w-7xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {stats.map((item) => (
@@ -337,9 +334,7 @@ export default function Home() {
                 <span className="text-5xl font-black text-p-txt tracking-tighter transition-colors">
                   {item.value}
                 </span>
-                <span className="text-[10px] font-technical text-m-txt uppercase">
-                  {item.unit}
-                </span>
+                <span className="text-[10px] font-technical text-m-txt uppercase">{item.unit}</span>
               </div>
               <div className="text-technical text-[8px] flex items-center gap-2">
                 <span
@@ -352,7 +347,6 @@ export default function Home() {
           ))}
         </div>
       </section>
-
       {/* Engineering Comparison */}
       <section className="py-20 px-12 max-w-7xl mx-auto relative">
         <div className="absolute top-0 right-0 p-24 opacity-5 pointer-events-none text-p-txt">
@@ -430,7 +424,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
       {/* Docs Access Section */}
       <section className="py-40 px-12 border-t border-s-brd bg-s-bg">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-24 items-center">
@@ -493,6 +486,5 @@ export default function Home() {
       </section>
       <Footer lang={currentLang} />
     </div>
-    </div >
   )
 }
