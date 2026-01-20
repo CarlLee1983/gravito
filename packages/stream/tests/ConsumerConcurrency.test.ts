@@ -39,7 +39,9 @@ describe('Consumer Concurrency', () => {
   })
 
   afterEach(async () => {
-    if (consumer) await consumer.stop()
+    if (consumer) {
+      await consumer.stop()
+    }
   })
 
   it('should run non-grouped jobs concurrently', async () => {

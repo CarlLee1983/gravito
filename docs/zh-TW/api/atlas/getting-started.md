@@ -78,6 +78,18 @@ import { DB } from '@gravito/atlas'
 await DB.configureFromFile()
 ```
 
+**注意：** `configureFromFile()` 會自動依序搜尋以下配置檔案：
+- `config/database.ts`
+- `config/database.js`
+- `config/database.mjs`
+- `database.config.ts`
+- `database.config.js`
+
+您也可以指定自訂路徑：
+```ts
+await DB.configureFromFile('./my-custom-path/database.ts')
+```
+
 ### 資料庫類型支援
 
 Atlas 目前支援以下驅動程式：
@@ -118,6 +130,28 @@ const users = await DB.table('users').get()
 // 指定使用 analytics 連接
 const logs = await DB.connection('analytics').table('logs').get()
 ```
+
+## 原生 Bun.sql 驅動程式（可選）
+
+對於 PostgreSQL、MySQL 和 SQLite，Atlas 支援 Bun 的原生統一 SQL API (`Bun.sql`)，以獲得更好的效能。透過設定 `useNativeDriver: true` 來啟用：
+
+```ts
+DB.configure({
+  default: 'postgres',
+  connections: {
+    postgres: {
+      driver: 'postgres',
+      useNativeDriver: true, // 啟用 Bun.sql 原生驅動程式
+      host: 'localhost',
+      database: 'myapp',
+      username: 'postgres',
+      password: 'password'
+    }
+  }
+})
+```
+
+**注意：** 此功能需要 Bun 1.3+，如果 `Bun.sql` 不可用，會自動回退到標準驅動程式。
 
 ## 基本使用
 

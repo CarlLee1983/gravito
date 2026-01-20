@@ -1,4 +1,4 @@
-import { describe, expect, it, mock } from 'bun:test'
+import { describe, expect, it } from 'bun:test'
 import { BatchConsumer } from '../src/BatchConsumer'
 import { Job } from '../src/Job'
 import { QueueManager } from '../src/QueueManager'

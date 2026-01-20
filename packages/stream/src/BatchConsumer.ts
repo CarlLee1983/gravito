@@ -75,7 +75,9 @@ export class BatchConsumer {
    * Start consuming.
    */
   async start(): Promise<void> {
-    if (this.running) return
+    if (this.running) {
+      return
+    }
     this.running = true
 
     const { queue, connection, batchSize, pollInterval, autoAck } = this.options

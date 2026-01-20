@@ -18,11 +18,11 @@ class MockPersistenceAdapter implements PersistenceAdapter {
     this.archivedJobs.push({ queue, job, status })
   }
 
-  async find(queue: string, id: string): Promise<SerializedJob | null> {
+  async find(_queue: string, _id: string): Promise<SerializedJob | null> {
     return null
   }
 
-  async list(queue: string): Promise<SerializedJob[]> {
+  async list(_queue: string): Promise<SerializedJob[]> {
     return []
   }
 
@@ -32,11 +32,11 @@ class MockPersistenceAdapter implements PersistenceAdapter {
     this.archivedJobs.push(...items)
   }
 
-  async cleanup(days: number): Promise<number> {
+  async cleanup(_days: number): Promise<number> {
     return 0
   }
 
-  async count(queue: string): Promise<number> {
+  async count(_queue: string): Promise<number> {
     return this.archivedJobs.length
   }
 
@@ -104,7 +104,9 @@ describe('BufferedPersistence E2E (High Load)', () => {
     const waitForCompletion = async () => {
       const maxRetries = 20
       for (let i = 0; i < maxRetries; i++) {
-        if (mockAdapter.archivedJobs.length === jobCount) return
+        if (mockAdapter.archivedJobs.length === jobCount) {
+          return
+        }
         await new Promise((resolve) => setTimeout(resolve, 50))
       }
     }

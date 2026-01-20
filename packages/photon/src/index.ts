@@ -1,9 +1,10 @@
 /**
- * @gravito/photon - High-performance web framework based on Hono.
+ * @gravito/photon - High-performance web framework for Gravito.
  *
  * Photon is the primary web engine for Gravito, providing a fast,
  * flexible, and standard-compliant API for building web applications.
- * It re-exports Hono while adding enterprise-grade middleware and utilities.
+ * It includes enterprise-grade middleware and utilities designed
+ * for the Gravito ecosystem.
  *
  * @example
  * ```typescript
@@ -18,3 +19,7 @@ export { Hono as Photon } from 'hono'
  * Binary-related middleware for Photon.
  */
 export * from './middleware/binary'
+/**
+ * HTMX-related middleware for Photon.
+ */
+export * from './middleware/htmx'

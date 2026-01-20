@@ -202,7 +202,9 @@ export class BufferedPersistence implements PersistenceAdapter {
   }
 
   private ensureFlushTimer(): void {
-    if (this.flushTimer) return
+    if (this.flushTimer) {
+      return
+    }
 
     this.flushTimer = setTimeout(() => {
       this.flush().catch((err) => {

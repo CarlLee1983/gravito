@@ -17,7 +17,7 @@ describe('Batch Operations', () => {
       const batches: number[] = []
 
       // Mock pushMany on the driver
-      driver.pushMany = async (queue, jobs) => {
+      driver.pushMany = async (_queue, jobs) => {
         callCount++
         batches.push(jobs.length)
       }
@@ -37,7 +37,7 @@ describe('Batch Operations', () => {
       // Mock with delay to test concurrency?
       // Hard to deterministicly test concurrency without deeper instrumentation.
       // But we can ensure it completes.
-      driver.pushMany = async (queue, jobs) => {
+      driver.pushMany = async (_queue, _jobs) => {
         await new Promise((r) => setTimeout(r, 10))
       }
 
@@ -60,7 +60,7 @@ describe('Batch Operations', () => {
     it('should use rpop count when available', async () => {
       const mockClient = {
         defineCommand: () => {},
-        rpop: mock((key: string, count?: number) => {
+        rpop: mock((_key: string, count?: number) => {
           if (count) {
             return Promise.resolve([
               JSON.stringify({ id: '1', data: 'foo' }),
@@ -93,8 +93,10 @@ describe('Batch Operations', () => {
 
       const mockClient = {
         defineCommand: () => {},
-        rpop: mock((key: string, count?: number) => {
-          if (count) return Promise.reject(new Error('ERR syntax error')) // Simulate old Redis
+        rpop: mock((_key: string, count?: number) => {
+          if (count) {
+            return Promise.reject(new Error('ERR syntax error')) // Simulate old Redis
+          }
           return Promise.resolve(null)
         }),
         pipeline: () => mockPipeline,

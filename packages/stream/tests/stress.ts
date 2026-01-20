@@ -60,8 +60,10 @@ async function runStress() {
   const driver = manager.getDriver('redis')
 
   while (poppedCount < totalJobs) {
-    const jobs = await driver.popMany!(queue, batchSize)
-    if (jobs.length === 0) break
+    const jobs = await driver.popMany?.(queue, batchSize)
+    if (jobs.length === 0) {
+      break
+    }
     poppedCount += jobs.length
   }
 

@@ -81,6 +81,18 @@ import { DB } from '@gravito/atlas'
 await DB.configureFromFile()
 ```
 
+**Note:** `configureFromFile()` will automatically search for configuration files in the following order:
+- `config/database.ts`
+- `config/database.js`
+- `config/database.mjs`
+- `database.config.ts`
+- `database.config.js`
+
+You can also specify a custom path:
+```ts
+await DB.configureFromFile('./my-custom-path/database.ts')
+```
+
 ## Basic Usage
 
 You can use the `DB` facade to start building queries from any table.
@@ -108,6 +120,28 @@ If you have configured multiple connections, you can switch between them using `
 // Use the 'sqlite' connection
 const logs = await DB.connection('sqlite').table('logs').get()
 ```
+
+## Native Bun.sql Driver (Optional)
+
+For PostgreSQL, MySQL, and SQLite, Atlas supports Bun's native unified SQL API (`Bun.sql`) for even better performance. Enable it by setting `useNativeDriver: true`:
+
+```ts
+DB.configure({
+  default: 'postgres',
+  connections: {
+    postgres: {
+      driver: 'postgres',
+      useNativeDriver: true, // Enable Bun.sql native driver
+      host: 'localhost',
+      database: 'myapp',
+      username: 'postgres',
+      password: 'password'
+    }
+  }
+})
+```
+
+**Note:** This feature requires Bun 1.3+ and will automatically fall back to the standard driver if `Bun.sql` is not available.
 
 ## Using in Routes
 

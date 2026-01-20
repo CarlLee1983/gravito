@@ -378,10 +378,14 @@ export class RedisDriver implements QueueDriver {
       }
 
       const isPaused = await this.client.get?.(`${key}:paused`)
-      if (isPaused === '1') continue
+      if (isPaused === '1') {
+        continue
+      }
 
       const payload = await this.client.rpop(key)
-      if (payload) return this.parsePayload(payload as string)
+      if (payload) {
+        return this.parsePayload(payload as string)
+      }
     }
     return null
   }
@@ -625,7 +629,9 @@ export class RedisDriver implements QueueDriver {
    * Atomic operation across multiple priority levels.
    */
   async popMany(queue: string, count: number): Promise<SerializedJob[]> {
-    if (count <= 0) return []
+    if (count <= 0) {
+      return []
+    }
 
     // If we only need 1, use the optimized pop() which handles priorities and scripts correctly
     if (count === 1) {
@@ -660,7 +666,9 @@ export class RedisDriver implements QueueDriver {
     let remaining = count
 
     for (const priority of priorities) {
-      if (remaining <= 0) break
+      if (remaining <= 0) {
+        break
+      }
 
       const key = this.getKey(queue, priority === 'default' ? undefined : priority)
 
@@ -672,7 +680,9 @@ export class RedisDriver implements QueueDriver {
 
       // Check pause state once per priority key?
       const isPaused = await this.client.get?.(`${key}:paused`)
-      if (isPaused === '1') continue
+      if (isPaused === '1') {
+        continue
+      }
 
       let fetched: string[] = []
 
@@ -698,8 +708,11 @@ export class RedisDriver implements QueueDriver {
           // Fallback: Serial loop (worst case)
           for (let i = 0; i < remaining; i++) {
             const res = await this.client.rpop(key)
-            if (res) fetched.push(res as string)
-            else break
+            if (res) {
+              fetched.push(res as string)
+            } else {
+              break
+            }
           }
         }
       }
@@ -785,7 +798,9 @@ export class RedisDriver implements QueueDriver {
    */
   async getFailed(queue: string, start = 0, end = -1): Promise<SerializedJob[]> {
     const key = `${this.getKey(queue)}:failed`
-    if (typeof this.client.lrange !== 'function') return []
+    if (typeof this.client.lrange !== 'function') {
+      return []
+    }
     const payloads = await this.client.lrange(key, start, end)
     return payloads.map((p: string) => this.parsePayload(p))
   }
@@ -801,7 +816,9 @@ export class RedisDriver implements QueueDriver {
     for (let i = 0; i < count; i++) {
       // RPOPLPUSH source destination
       // We pop from the RIGHT (assuming failures are pushed to LEFT, so oldest are on RIGHT)
-      if (typeof this.client.rpop !== 'function') break
+      if (typeof this.client.rpop !== 'function') {
+        break
+      }
       const payload = await this.client.rpop(failedKey)
       if (!payload) {
         break

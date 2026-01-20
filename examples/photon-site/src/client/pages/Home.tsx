@@ -185,10 +185,11 @@ export default function Home() {
 
       {/* Enhanced Pro-Max Navbar */}
       <nav
-        className={`fixed top-0 left-0 right-0 z-50 px-12 py-6 flex justify-between items-center transition-all duration-500 ${scrolled
-          ? 'bg-s-bg/80 backdrop-blur-xl border-b border-s-brd py-4 shadow-2xl'
-          : 'bg-transparent'
-          }`}
+        className={`fixed top-0 left-0 right-0 z-50 px-12 py-6 flex justify-between items-center transition-all duration-500 ${
+          scrolled
+            ? 'bg-s-bg/80 backdrop-blur-xl border-b border-s-brd py-4 shadow-2xl'
+            : 'bg-transparent'
+        }`}
       >
         <Link
           href="/"

@@ -21,7 +21,9 @@ describe('Consumer Polling & Batching', () => {
   })
 
   afterEach(async () => {
-    if (consumer) await consumer.stop()
+    if (consumer) {
+      await consumer.stop()
+    }
   })
 
   it('should use popMany when batchSize > 1 and concurrency allows', async () => {

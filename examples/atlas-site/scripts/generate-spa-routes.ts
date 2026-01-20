@@ -90,10 +90,10 @@ async function generateSPARoutes() {
       // 這樣可以確保路由修正腳本在 Vue 應用啟動之前執行
       const moduleScriptPattern = /<script\s+type=["']module["'][^>]*>/i
       if (moduleScriptPattern.test(routeHtml)) {
-        routeHtml = routeHtml.replace(moduleScriptPattern, routeFixScript + '\n  $&')
+        routeHtml = routeHtml.replace(moduleScriptPattern, `${routeFixScript}\n  $&`)
       } else {
         // 如果找不到模組腳本，就在 </head> 之前插入
-        routeHtml = routeHtml.replace('</head>', routeFixScript + '\n</head>')
+        routeHtml = routeHtml.replace('</head>', `${routeFixScript}\n</head>`)
       }
 
       // 寫入 HTML 文件

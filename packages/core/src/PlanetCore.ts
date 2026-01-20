@@ -328,7 +328,12 @@ export class PlanetCore {
       // Add route helper
       c.route = (name: string, params?: any, query?: any) => this.router.url(name, params, query)
 
-      return await next()
+      const result = await next()
+
+      // Automatically attach queued cookies to response
+      cookieJar.attach(c)
+
+      return result
     })
     // Router depends on `core.app` for route registration and optional global middleware.
     this.router = new Router(this)

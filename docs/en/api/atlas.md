@@ -23,10 +23,13 @@ This page is an overview. Detailed documentation is grouped by topic:
 ## Features Overview
 
 - **Multi-driver Support**: Full support for PostgreSQL, MySQL, SQLite, MongoDB, and Redis.
+  - **SQL Databases** (PostgreSQL, MySQL, SQLite): Full ORM support including Models, Relationships, Migrations, and all Query Builder features.
+  - **MongoDB**: Query Builder support with document-based operations. Limited ORM features (Models and Relationships may have restrictions).
+  - **Redis**: Key-value operations via Query Builder. Primarily designed for caching and simple data storage.
 - **Fluent Queries**: Laravel-like API for building complex `where`, `join`, and JSON queries.
 - **Connection Management**: Easily switch and manage multiple database connections.
-- **Eloquent-style Models**: Define Model classes and use relationships (HasMany, BelongsTo, etc.).
-- **Maintenance Tools**: Built-in Migrations, Factories, and Seeders.
+- **Eloquent-style Models**: Define Model classes and use relationships (HasMany, BelongsTo, etc.) - **Full support for SQL databases only**.
+- **Maintenance Tools**: Built-in Migrations, Factories, and Seeders - **SQL databases only**.
 - **Performance Optimized (v2.0)**: ↑300-500% faster model hydration, ↑50-100% faster query compilation.
 - **Enhanced DX (v2.0)**: Better error messages, debug tools, environment variable support.
 

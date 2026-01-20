@@ -241,7 +241,9 @@ export class Consumer extends EventEmitter {
             const driver = this.queueManager.getDriver(this.connectionName)
             if (driver.checkRateLimit) {
               const allowed = await driver.checkRateLimit(queue, limit!)
-              if (!allowed) continue
+              if (!allowed) {
+                continue
+              }
             }
           } catch (err) {
             console.error(`[Consumer] Error checking rate limit for "${queue}":`, err)
@@ -284,7 +286,9 @@ export class Consumer extends EventEmitter {
               blockingTimeout,
               this.connectionName
             )
-            if (job) jobs.push(job)
+            if (job) {
+              jobs.push(job)
+            }
           } else {
             // Sequential non-blocking pop
             for (const queue of eligibleQueues) {

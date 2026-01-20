@@ -145,46 +145,98 @@
 
 .terminal-window pre {
   @apply bg-transparent border-none m-0 shadow-none p-0 overflow-x-auto;
+  white-space: pre;
 }
 
 .terminal-window code {
   @apply font-mono text-[14px] md:text-[15px] leading-[1.8] px-8 py-10 block;
   color: #E0E0E0 !important;
   background-color: transparent;
+  white-space: pre;
+  font-family: 'Fira Code', 'Courier New', monospace;
+}
+
+/* HTML Tag Highlighting */
+.terminal-window code .html-tag {
+  color: #E06C75 !important;
+  font-weight: 600;
+}
+
+.terminal-window code .html-attr {
+  color: #98C379 !important;
+}
+
+.terminal-window code .html-string {
+  color: #D19A66 !important;
+}
+
+.terminal-window code .prism-directive {
+  color: #C678DD !important;
+  font-weight: 600;
 }
 
 /* Syntax Color Palette (IDE-Grade) */
+.terminal-window code .keyword {
+  color: #C678DD !important;
+}
+
+/* Purple */
+.terminal-window code .function {
+  color: #61AFEF !important;
+}
+
+/* Blue */
+.terminal-window code .string {
+  color: #98C379 !important;
+}
+
+/* Green */
+.terminal-window code .number {
+  color: #D19A66 !important;
+}
+
+/* Orange */
+.terminal-window code .boolean {
+  color: #D19A66 !important;
+}
+
+/* Orange */
+.terminal-window code .comment {
+  color: #5C6370 !important;
+  font-style: italic;
+}
+
+/* Gray */
+.terminal-window code .property {
+  color: #E06C75 !important;
+}
+
+/* Also apply to photon-prose for backward compatibility */
 .photon-prose .keyword {
   color: #C678DD;
 }
 
-/* Purple */
 .photon-prose .function {
   color: #61AFEF;
 }
 
-/* Blue */
 .photon-prose .string {
   color: #98C379;
 }
 
-/* Green */
 .photon-prose .number {
   color: #D19A66;
 }
 
-/* Orange */
 .photon-prose .boolean {
   color: #D19A66;
 }
 
-/* Orange */
 .photon-prose .comment {
   color: #5C6370;
   font-style: italic;
 }
 
-/* Gray */
 .photon-prose .property {
   color: #E06C75;
 }

@@ -11,6 +11,7 @@ export type { CookieOptions } from './CookieJar'
 
 // Cookie Management
 export { CookieJar } from './CookieJar'
+export { deleteCookie, getCookie, setCookie } from './cookie'
 // Middleware
 export { type BodySizeLimitOptions, bodySizeLimit } from './middleware/BodySizeLimit'
 export { type CorsOptions, type CorsOrigin, cors } from './middleware/Cors'

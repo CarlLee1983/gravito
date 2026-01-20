@@ -27,10 +27,13 @@ title: Atlas
 ## 功能概覽
 
 - **多驅動支援**：完整支援 PostgreSQL, MySQL, SQLite, MongoDB 與 Redis。
+  - **SQL 資料庫**（PostgreSQL, MySQL, SQLite）：完整的 ORM 支援，包括 Models、Relationships、Migrations 和所有 Query Builder 功能。
+  - **MongoDB**：支援 Query Builder 與文件型操作。ORM 功能有限（Models 和 Relationships 可能有限制）。
+  - **Redis**：透過 Query Builder 進行鍵值操作。主要設計用於快取和簡單資料儲存。
 - **流暢查詢**：與 Laravel 相似的查詢構築介面，支援複雜的 `where`、`join` 與 JSON 查詢。
 - **資料庫連接管理**：輕鬆切換與管理多個資料庫連接。
-- **Eloquent 風格 Models**：定義 Model 類別並使用關聯（HasMany, BelongsTo 等）。
-- **完整維護工具**：內建遷移 (Migrations) 與數據填充 (Factories/Seeders)。
+- **Eloquent 風格 Models**：定義 Model 類別並使用關聯（HasMany, BelongsTo 等）——**僅 SQL 資料庫完整支援**。
+- **完整維護工具**：內建遷移 (Migrations) 與數據填充 (Factories/Seeders)——**僅 SQL 資料庫支援**。
 - **性能優化 (v2.0)**：Model hydration ↑300-500% 更快，查詢編譯 ↑50-100% 更快。
 - **增強的開發者體驗 (v2.0)**：更好的錯誤訊息、調試工具、環境變數支援。
 

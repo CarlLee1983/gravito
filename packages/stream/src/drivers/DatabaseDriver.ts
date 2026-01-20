@@ -221,11 +221,15 @@ export class DatabaseDriver implements QueueDriver {
       )
 
       const rows = Array.isArray(result) ? result : result ? [result] : []
-      if (!rows || rows.length === 0) return []
+      if (!rows || rows.length === 0) {
+        return []
+      }
 
       // Ensure rows is treated as array of objects (DatabaseService might return different shapes)
       const validRows = rows.filter((r) => r?.id) as any[]
-      if (validRows.length === 0) return []
+      if (validRows.length === 0) {
+        return []
+      }
 
       const ids = validRows.map((r) => r.id)
 
@@ -342,7 +346,9 @@ export class DatabaseDriver implements QueueDriver {
 
     while (true) {
       const job = await this.pop(queue)
-      if (job) return job
+      if (job) {
+        return job
+      }
 
       if (timeout > 0 && Date.now() - start >= timeoutMs) {
         return null
@@ -358,7 +364,9 @@ export class DatabaseDriver implements QueueDriver {
    * Optimizes by using a single multi-row insert if possible.
    */
   async pushMany(queue: string, jobs: SerializedJob[]): Promise<void> {
-    if (jobs.length === 0) return
+    if (jobs.length === 0) {
+      return
+    }
 
     // For database drivers, multi-row INSERT is significantly faster
     // Constructing query manually for generality (assuming standard (?,?) or ($1,$2) syntax)

@@ -35,7 +35,9 @@ export class SQLitePersistence implements PersistenceAdapter {
       status: 'completed' | 'failed' | 'waiting' | string
     }>
   ): Promise<void> {
-    if (jobs.length === 0) return
+    if (jobs.length === 0) {
+      return
+    }
 
     const batchSize = 200
     for (let i = 0; i < jobs.length; i += batchSize) {
@@ -201,7 +203,9 @@ export class SQLitePersistence implements PersistenceAdapter {
       timestamp: Date
     }>
   ): Promise<void> {
-    if (logs.length === 0) return
+    if (logs.length === 0) {
+      return
+    }
 
     try {
       const records = logs.map((log) => ({

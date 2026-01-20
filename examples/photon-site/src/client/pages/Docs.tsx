@@ -27,18 +27,36 @@ function highlightCode(html: string) {
     const code = rawCode.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&')
 
     // Single-pass highlighting to prevent tag injection/overlap
+    // Order matters: more specific patterns first, JavaScript before HTML
     const tokens = [
-      { name: 'string', regex: /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')/ },
+      // Code comments (must be first to avoid matching other patterns)
       { name: 'comment', regex: /(\/\/.*)/ },
+      // HTML comments
+      { name: 'comment', regex: /(<!--[\s\S]*?-->)/ },
+      // Prism directives (@include, @if, @each, etc.)
+      { name: 'prism-directive', regex: /(@[a-zA-Z]+|@endif|@endeach|@else)/ },
+      // JavaScript keywords (before HTML to avoid conflicts)
       {
         name: 'keyword',
         regex:
           /\b(const|let|var|if|else|return|async|await|export|import|from|class|extends|new|try|catch|finally|throw|as|type|interface|enum|public|private|protected|static|readonly|case|switch|break|continue|default)\b/,
       },
+      // Numbers
       { name: 'number', regex: /\b(\d+)\b/ },
+      // Booleans
       { name: 'boolean', regex: /\b(true|false|null|undefined)\b/ },
+      // Regular strings (before HTML strings to match JS strings first)
+      { name: 'string', regex: /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')/ },
+      // Functions (before HTML tags)
       { name: 'function', regex: /\b([a-zA-Z_$][a-zA-Z0-9_$]*)(?=\s*\()/ },
+      // Properties
       { name: 'property', regex: /\b([a-z_$][a-zA-Z0-9_$]*)(?=\s*:)/ },
+      // Complete HTML tags with attributes (self-closing)
+      { name: 'html-tag', regex: /<\/?[a-zA-Z][a-zA-Z0-9-]*(?:\s+[^>]*)?\/?>/ },
+      // HTML attribute values (quoted strings after =)
+      { name: 'html-string', regex: /="([^"]*)"/ },
+      // HTML attributes (before =)
+      { name: 'html-attr', regex: /\b([a-zA-Z-]+)(?=\s*=)/ },
     ]
 
     const combinedRegex = new RegExp(tokens.map((t) => `(${t.regex.source})`).join('|'), 'g')
@@ -53,6 +71,45 @@ function highlightCode(html: string) {
       return args[0]
     })
 
+    // Escape HTML tags in the code (but preserve our highlight spans)
+    // First, temporarily replace our span tags with placeholders
+    const spanPlaceholders: string[] = []
+    let placeholderIndex = 0
+    const placeholderPattern = /__SPAN_PLACEHOLDER_(\d+)__/g
+
+    const withPlaceholders = highlighted.replace(
+      /<span class="([^"]+)">([\s\S]*?)<\/span>/g,
+      (_match, className, content) => {
+        // Escape the content inside the span to prevent HTML parsing
+        const escapedContent = content
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+        const placeholder = `__SPAN_PLACEHOLDER_${placeholderIndex}__`
+        spanPlaceholders[placeholderIndex] = `<span class="${className}">${escapedContent}</span>`
+        placeholderIndex++
+        return placeholder
+      }
+    )
+
+    // Escape remaining HTML tags (avoid double-escaping placeholders)
+    // Split by placeholders to process each segment separately
+    const parts = withPlaceholders.split(/(__SPAN_PLACEHOLDER_\d+__)/g)
+    const escapedParts = parts.map((part) => {
+      if (part.match(/^__SPAN_PLACEHOLDER_\d+__$/)) {
+        // This is a placeholder, don't escape it
+        return part
+      }
+      // Escape HTML in this part
+      return part.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    })
+    const escaped = escapedParts.join('')
+
+    // Restore span tags (they're already properly escaped)
+    const final = escaped.replace(placeholderPattern, (_, index) => {
+      return spanPlaceholders[parseInt(index, 10)]
+    })
+
     return `
       <div class="terminal-window">
         <div class="terminal-header">
@@ -63,7 +120,7 @@ function highlightCode(html: string) {
           </div>
           <div class="terminal-title">PHOTON_SESSION // EXE</div>
         </div>
-        <pre><code>${highlighted}</code></pre>
+        <pre><code>${final}</code></pre>
       </div>
     `
   })

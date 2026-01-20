@@ -225,7 +225,9 @@ export class KafkaDriver implements QueueDriver {
     await consumer.run({
       eachBatch: async ({ batch, resolveOffset, heartbeat, isRunning }: any) => {
         for (const message of batch.messages) {
-          if (!isRunning() || !message.value) continue
+          if (!isRunning() || !message.value) {
+            continue
+          }
 
           try {
             const payload = JSON.parse(message.value.toString())

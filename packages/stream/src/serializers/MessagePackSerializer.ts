@@ -65,10 +65,18 @@ export class MessagePackSerializer implements JobSerializer {
     Object.assign(job, properties)
 
     job.id = serialized.id
-    if (serialized.groupId) job.groupId = serialized.groupId
-    if (serialized.priority) job.priority = serialized.priority
-    if (serialized.delaySeconds !== undefined) job.delaySeconds = serialized.delaySeconds
-    if (serialized.attempts !== undefined) job.attempts = serialized.attempts
+    if (serialized.groupId) {
+      job.groupId = serialized.groupId
+    }
+    if (serialized.priority) {
+      job.priority = serialized.priority
+    }
+    if (serialized.delaySeconds !== undefined) {
+      job.delaySeconds = serialized.delaySeconds
+    }
+    if (serialized.attempts !== undefined) {
+      job.attempts = serialized.attempts
+    }
 
     return job as Job
   }

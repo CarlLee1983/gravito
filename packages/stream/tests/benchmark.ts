@@ -55,7 +55,7 @@ bench('Redis: pop - single', async () => {
 
 const redisDriver = manager.getDriver('redis')
 bench('Redis: popMany - 100', async () => {
-  await redisDriver.popMany!(queue, 100)
+  await redisDriver.popMany?.(queue, 100)
 })
 
 bench('Redis: pop - with priority (Lua)', async () => {
@@ -82,7 +82,7 @@ bench('Memory: pop - single', async () => {
 
 const memDriver = manager.getDriver('memory')
 bench('Memory: popMany - 100', async () => {
-  await memDriver.popMany!(queue, 100)
+  await memDriver.popMany?.(queue, 100)
 })
 
 await run()
