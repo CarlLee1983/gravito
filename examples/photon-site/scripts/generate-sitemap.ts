@@ -2,7 +2,9 @@ import { readdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
 const outputDir = path.join(process.cwd(), 'dist/static')
-const baseUrl = process.env.BASE_URL || 'https://photon.gravito.dev'
+const baseUrl =
+  process.env.BASE_URL ||
+  (process.env.CF_PAGES_URL ? process.env.CF_PAGES_URL : 'https://photon.gravito.dev')
 
 async function generateArtifacts() {
   console.log('🗺️  Generating sitemap.xml and robots.txt manually...')

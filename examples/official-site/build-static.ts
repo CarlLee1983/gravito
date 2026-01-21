@@ -272,10 +272,19 @@ async function build() {
             )
           : html
 
-        // For paths like /en/docs/foo, we save to en/docs/foo/index.html
+        // For paths like /en/docs/foo, we save to BOTH:
+        // 1. en/docs/foo/index.html (for trailing slash)
+        // 2. en/docs/foo.html (for non-trailing slash)
         const filePath = join(outputDir, pathname, 'index.html')
         await mkdir(dirname(filePath), { recursive: true })
         await writeFile(filePath, finalHtml)
+
+        // Also create direct HTML file for non-trailing slash access
+        if (pathname !== '/' && !pathname.includes('.')) {
+          const directHtmlPath = join(outputDir, pathname + '.html')
+          await mkdir(dirname(directHtmlPath), { recursive: true })
+          await writeFile(directHtmlPath, finalHtml)
+        }
       } catch (e) {
         console.error(`❌ Error rendering ${pathname}:`, e)
       }

@@ -38,14 +38,13 @@ mock.module('react', () => ({
   useContext: useContextMock,
   useMemo: (factory: () => unknown) => factory(),
   useCallback: (fn: (...args: any[]) => unknown) => fn,
-  useState: (initial: unknown) => [initial, () => {}],
-  createElement: createElementMock,
   useState: <T>(initial: T | (() => T)) => {
     if (typeof initial === 'function') {
       return [(initial as () => T)(), () => {}]
     }
-    return [initial, () => {}]
+    return [initial as T, () => {}]
   },
+  createElement: createElementMock,
   useEffect: (effect: () => () => void) => {},
 }))
 

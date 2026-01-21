@@ -13,6 +13,8 @@ export default {
     desc: '專為現代 Web 打造的高效能資料庫引擎。統一 SQL 與 NoSQL 工作流程，為 Bun 與 Gravito 生態系優化的精確流暢 API。',
     demo_label: '即時主控台',
     demo_comment: '// 連接數據流並執行查詢',
+    version_badge: 'V1.3.0 軌道部署完成',
+    data_engine: '資料引擎',
     benchmark: {
       raw_read: '原生吞吐量',
       raw_read_sub: '零開銷執行',

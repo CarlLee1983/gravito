@@ -16,13 +16,13 @@
               <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
               <span class="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
             </span>
-            V1.3.0 ORBITAL DEPLOYED
+            {{ t('hero.version_badge') }}
           </div>
 
           <h1 class="text-7xl md:text-9xl font-display font-black text-white mb-10 leading-[0.85] tracking-[-0.04em] max-w-4xl">
              {{ t('hero.title_line1') }}
              <span class="block text-transparent bg-clip-text bg-gradient-to-br from-white via-primary-glow to-primary mt-4 pb-4">
-               DATA ENGINE
+                {{ t('hero.data_engine') }}
              </span>
           </h1>
           
@@ -80,38 +80,38 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
                 <!-- Stat 1 -->
                 <div class="flex flex-col items-center justify-center p-14 bg-white/[0.03] rounded-t-[2.8rem] md:rounded-t-none md:rounded-l-[2.8rem] group hover:bg-white/[0.08] transition-all duration-700">
-                    <div class="text-atlas-metallic font-mono text-[10px] font-black uppercase tracking-[0.4em] mb-6 group-hover:text-primary-glow transition-colors">{{ t('benchmark.raw_read') }}</div>
+                    <div class="text-atlas-metallic font-mono text-[10px] font-black uppercase tracking-[0.4em] mb-6 group-hover:text-primary-glow transition-colors">{{ t('hero.benchmark.raw_read') }}</div>
                     <div class="text-6xl md:text-7xl font-display font-black text-white tabular-nums tracking-tighter mb-4">
                         1.1M<span class="text-primary text-4xl">/s</span>
                     </div>
-                    <div class="text-[10px] text-primary-glow font-black uppercase tracking-widest bg-primary/10 border border-primary/20 px-4 py-2 rounded-xl shadow-inner-glow">{{ t('benchmark.raw_read_sub') }}</div>
+                    <div class="text-[10px] text-primary-glow font-black uppercase tracking-widest bg-primary/10 border border-primary/20 px-4 py-2 rounded-xl shadow-inner-glow">{{ t('hero.benchmark.raw_read_sub') }}</div>
                 </div>
                 
                 <!-- Stat 2 -->
                 <div class="flex flex-col items-center justify-center p-14 bg-white/[0.03] group hover:bg-white/[0.08] transition-all duration-700">
-                    <div class="text-atlas-metallic font-mono text-[10px] font-black uppercase tracking-[0.4em] mb-6 group-hover:text-atlas-cyan transition-colors">{{ t('benchmark.hydration') }}</div>
+                    <div class="text-atlas-metallic font-mono text-[10px] font-black uppercase tracking-[0.4em] mb-6 group-hover:text-atlas-cyan transition-colors">{{ t('hero.benchmark.hydration') }}</div>
                     <div class="text-6xl md:text-7xl font-display font-black text-white tabular-nums tracking-tighter mb-4">
                         42k<span class="text-atlas-cyan text-4xl">/ms</span>
                     </div>
-                    <div class="text-[10px] text-atlas-cyan font-black uppercase tracking-widest bg-atlas-cyan/10 border border-atlas-cyan/20 px-4 py-2 rounded-xl shadow-inner-glow">{{ t('benchmark.hydration_sub') }}</div>
+                    <div class="text-[10px] text-atlas-cyan font-black uppercase tracking-widest bg-atlas-cyan/10 border border-atlas-cyan/20 px-4 py-2 rounded-xl shadow-inner-glow">{{ t('hero.benchmark.hydration_sub') }}</div>
                 </div>
 
                 <!-- Stat 3 -->
                 <div class="flex flex-col items-center justify-center p-14 bg-white/[0.03] rounded-b-[2.8rem] md:rounded-b-none md:rounded-r-[2.8rem] group hover:bg-white/[0.08] transition-all duration-700">
-                    <div class="text-atlas-metallic font-mono text-[10px] font-black uppercase tracking-[0.4em] mb-6 group-hover:text-white transition-colors">{{ t('benchmark.throughput') }}</div>
+                    <div class="text-atlas-metallic font-mono text-[10px] font-black uppercase tracking-[0.4em] mb-6 group-hover:text-white transition-colors">{{ t('hero.benchmark.throughput') }}</div>
                     <div class="text-6xl md:text-7xl font-display font-black text-white tabular-nums tracking-tighter mb-4">
                         70k<span class="text-white text-4xl">/s</span>
                     </div>
-                    <div class="text-[10px] text-white/40 font-black uppercase tracking-widest bg-white/10 border border-white/20 px-4 py-2 rounded-xl shadow-inner-glow">{{ t('benchmark.throughput_sub') }}</div>
+                    <div class="text-[10px] text-white/40 font-black uppercase tracking-widest bg-white/10 border border-white/20 px-4 py-2 rounded-xl shadow-inner-glow">{{ t('hero.benchmark.throughput_sub') }}</div>
                 </div>
             </div>
         </div>
         
         <!-- Benchmark Footer Info -->
         <div class="mt-8 flex flex-col md:flex-row items-center justify-center gap-3 text-xs text-atlas-metallic font-medium opacity-60">
-            <span>{{ t('benchmark.context') }}</span>
+            <span>{{ t('hero.benchmark.context') }}</span>
             <StaticLink to="/docs/benchmark" class="flex items-center gap-2 text-primary hover:text-white transition-all group">
-               <span class="border-b border-primary/30 group-hover:border-white transition-colors">{{ t('benchmark.view_source') }}</span>
+               <span class="border-b border-primary/30 group-hover:border-white transition-colors">{{ t('hero.benchmark.view_source') }}</span>
                <svg class="w-3.5 h-3.5 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
                  <path d="M9 5l7 7-7 7" />
                </svg>

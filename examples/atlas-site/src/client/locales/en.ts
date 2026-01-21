@@ -13,6 +13,8 @@ export default {
     desc: 'The high-performance database engine for the modern web. Unify SQL and NoSQL workflows with a precise, fluent API optimized for Bun and the Gravito ecosystem.',
     demo_label: 'LIVE CONSOLE',
     demo_comment: '// Connect to the data stream and query',
+    version_badge: 'V1.3.0 ORBITAL DEPLOYED',
+    data_engine: 'DATA ENGINE',
     benchmark: {
       raw_read: 'Native Throughput',
       raw_read_sub: 'Zero-overhead execution',

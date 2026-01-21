@@ -288,6 +288,28 @@ export default function Layout({ children, noPadding = false }: LayoutProps) {
               </li>
               <li>
                 <a
+                  href="https://photon.gravito.dev"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="group flex items-center gap-3 p-3 -mx-3 rounded-2xl transition-all duration-300 hover:bg-white/5 border border-transparent hover:border-white/5"
+                >
+                  <div className="relative w-10 h-10 rounded-xl bg-gradient-to-tr from-orange-600 to-red-400 flex items-center justify-center overflow-hidden border border-white/20 shadow-[0_0_20px_rgba(251,146,60,0.3)] transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3">
+                    <div className="w-1/2 h-1/2 rounded-full bg-void shadow-inner flex items-center justify-center">
+                      <div className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" />
+                    </div>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-bold text-gray-300 group-hover:text-white transition-colors">
+                      {trans('footer.photon', 'Photon')}
+                    </span>
+                    <span className="text-[10px] text-gray-600 group-hover:text-gray-500 font-mono uppercase tracking-widest mt-0.5">
+                      Ultra-Fast HTTP Engine
+                    </span>
+                  </div>
+                </a>
+              </li>
+              <li>
+                <a
                   href="https://atlas.gravito.dev"
                   target="_blank"
                   rel="noreferrer"
