@@ -343,7 +343,7 @@ export default function Home({ lang = 'en', ...props }: HomeProps) {
       {/* Stats Section */}
       <section className="relative z-20 py-40 px-12 max-w-7xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {stats.map((item) => (
+          {stats.map((item, idx) => (
             <div
               key={item.id}
               className="glass-card group p-10 bg-surf-bg border border-s-brd hover:border-photon-gold/40 transition-all rounded-xl"
@@ -361,13 +361,15 @@ export default function Home({ lang = 'en', ...props }: HomeProps) {
                 <span className="text-5xl font-black text-p-txt tracking-tighter transition-colors">
                   {item.value}
                 </span>
-                <span className="text-[10px] font-technical text-m-txt uppercase">{item.unit}</span>
+                <span className="text-[10px] font-technical text-m-txt uppercase">
+                  {t.stats[idx]?.unit || item.unit}
+                </span>
               </div>
               <div className="text-technical text-[8px] flex items-center gap-2">
                 <span
                   className={`w-1 h-1 rounded-full ${item.status === 'optimal' ? 'bg-photon-gold' : 'bg-gray-600'}`}
                 />
-                {item.label}
+                {t.stats[idx]?.label || item.label}
                 {/* VALIDATED_M3_SILICON */}
               </div>
             </div>
@@ -411,21 +413,21 @@ export default function Home({ lang = 'en', ...props }: HomeProps) {
           <div className="glass-card p-12 mt-20 bg-surf-bg border border-s-brd shadow-2xl relative overflow-hidden rounded-2xl group">
             <div className="absolute inset-0 bg-photon-gold/[0.01] opacity-0 group-hover:opacity-100 transition-opacity" />
             <h4 className="text-xs font-technical text-p-txt mb-10 tracking-widest uppercase italic border-b border-s-brd pb-4">
-              Internal_Telemetry_Log {/* Jan_2026 */}
+              {t.telemetry.title} {/* Jan_2026 */}
             </h4>
 
             <div className="space-y-6 font-technical text-[11px] leading-relaxed relative z-10">
               <p className="text-m-txt flex items-center gap-3">
                 <span className="w-1.5 h-1.5 rounded-full bg-m-txt/20" />
-                [00:01] INITIALIZING BASELINE_RUNNER...
+                [00:01] {t.telemetry.initializing}
               </p>
               <p className="text-m-txt flex items-center gap-3">
                 <span className="w-1.5 h-1.5 rounded-full bg-m-txt/20" />
-                [00:03] JIT_FTL_WARMUP: COMPLETED (320ms)
+                [00:03] {t.telemetry.warmup}
               </p>
               <p className="text-m-txt flex items-center gap-3">
                 <span className="w-1.5 h-1.5 rounded-full bg-m-txt/20" />
-                [00:05] TARGETING: APPLE_M3_SILICON
+                [00:05] {t.telemetry.targeting}
               </p>
               <div className="my-8 h-px bg-s-brd opacity-50" />
               <p className="text-p-txt flex justify-between font-bold">
@@ -445,7 +447,7 @@ export default function Home({ lang = 'en', ...props }: HomeProps) {
               </p>
               <div className="h-px bg-photon-gold/20 my-8" />
               <p className="text-photon-gold font-black tracking-widest text-[12px]">
-                RESULT: 98.8%_OF_NATIVE_BUN_THROUGHPUT
+                {t.telemetry.result}
               </p>
             </div>
           </div>

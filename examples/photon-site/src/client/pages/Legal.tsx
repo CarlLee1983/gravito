@@ -3,6 +3,7 @@ import { Head } from '@inertiajs/react'
 import { motion } from 'framer-motion'
 import { Scale, Shield } from 'lucide-react'
 import { DocsLayout } from '../components/DocsLayout'
+import { legalTranslations } from '../locales/legal'
 
 interface LegalProps {
   title: string
@@ -16,26 +17,7 @@ interface LegalProps {
 export default function Legal({ title, content, id, slug, lastUpdated, lang = 'en' }: LegalProps) {
   const { locale } = useFreeze()
   const currentLang = (lang === 'zh-TW' ? 'zh-TW' : 'en') as 'en' | 'zh-TW'
-  const t = {
-    en: {
-      breadcrumb: 'HOME',
-      compliance: 'LEGAL_COMPLIANCE_v1.0',
-      mod_id: 'MOD_ID',
-      last_update: 'LAST_UPDATE',
-      disclaimer_title: 'Legal Disclaimer',
-      disclaimer_text:
-        'This document is part of the Gravito Research Labs legal framework. Photon Engine is provided "as is" without warranty. For specific commercial licensing, please contact our enterprise relations module.',
-    },
-    'zh-TW': {
-      breadcrumb: '首頁',
-      compliance: '法律合規性_v1.0',
-      mod_id: '模組編號',
-      last_update: '最後更新',
-      disclaimer_title: '法律免責聲明',
-      disclaimer_text:
-        '本文件屬 Gravito 研究實驗室法律框架之一部分。Photon Engine 按「原樣」提供，不提供任何保證。如需特定的商業授權，請聯繫我們的企業關係模組。',
-    },
-  }[currentLang]
+  const t = (legalTranslations as any)[currentLang] || legalTranslations.en
 
   return (
     <DocsLayout currentId={slug}>

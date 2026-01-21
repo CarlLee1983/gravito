@@ -28,6 +28,18 @@ export const homeTranslations = {
       'Our documentation is more than just a reference. It is a technical deep-dive into zero-copy memory management, AOT compilation, and non-blocking I/O.',
     ready: '// READY_FOR_DEEP_LEARNING',
     start_reading: 'Start Reading Documentation',
+    stats: [
+      { label: 'THROUGHPUT', unit: 'req/s' },
+      { label: 'LATENCY_P50', unit: 'ms' },
+      { label: 'OVERHEAD_VS_NATIVE', unit: '%' },
+    ],
+    telemetry: {
+      title: 'Internal_Telemetry_Log',
+      initializing: 'INITIALIZING BASELINE_RUNNER...',
+      warmup: 'JIT_FTL_WARMUP: COMPLETED (320ms)',
+      targeting: 'TARGETING: APPLE_M3_SILICON',
+      result: 'RESULT: 98.8%_OF_NATIVE_BUN_THROUGHPUT',
+    },
   },
   'zh-TW': {
     navbar: {
@@ -58,5 +70,17 @@ export const homeTranslations = {
       '我們的文件不僅僅是參考手冊。它是關於零拷貝記憶體管理、AOT 編編譯和非阻塞 I/O 的技術深度探討。',
     ready: '// 深度學習就緒',
     start_reading: '開始閱讀文件',
+    stats: [
+      { label: '吞吐量', unit: '次 / 秒' },
+      { label: '延遲 (P50)', unit: '毫秒' },
+      { label: '核心開銷', unit: '%' },
+    ],
+    telemetry: {
+      title: '內部遙測日誌',
+      initializing: '正在初始化基準測試器...',
+      warmup: 'JIT_FTL 預熱：已完成 (320ms)',
+      targeting: '目標架構：APPLE_M3_SILICON',
+      result: '結果：達到了 98.8% 的原生 Bun 吞吐量',
+    },
   },
 }
