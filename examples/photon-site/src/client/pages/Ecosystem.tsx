@@ -22,6 +22,8 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import { DocsLayout } from '../components/DocsLayout'
+import { ecosystemTranslations } from '../locales/ecosystem'
+import { getTranslation } from '../locales/types'
 
 interface Orbit {
   name: string
@@ -34,38 +36,7 @@ interface Orbit {
   metrics?: { label: string; value: string }
 }
 
-const translations = {
-  en: {
-    title: 'Ecosystem',
-    subtitle:
-      'Photon is an atomic core. Extend its capabilities using Orbits—plug-and-play modules designed for the Gravito framework.',
-    typeLabel: 'Type',
-    install: 'Install_Shell',
-    copied: 'Copied_to_Clipboard',
-    buildTitle: 'Build Your Own',
-    buildDesc:
-      'Have a micro-service or utility that benefits the Gravito ecosystem? Join the registry and provide atomic power to thousands of nodes.',
-    registryDocs: 'Registry Documentation',
-    orbitType: { OFFICIAL: 'OFFICIAL', THIRD_PARTY: 'THIRD_PARTY' },
-    metricsHeader: 'CORE_METRICS',
-  },
-  'zh-TW': {
-    title: '生態系統',
-    subtitle:
-      'Photon 是一個原子核心。使用 Orbits 擴展其功能——專為 Gravito 框架設計的隨插即用模組。',
-    typeLabel: '類型',
-    install: '安裝 Shell',
-    copied: '已複製到剪貼簿',
-    buildTitle: '構建您自己的',
-    buildDesc:
-      '擁有對 Gravito 生態系統有益的微服務或工具？加入註冊表，為成千上萬的節點提供原子動力。',
-    registryDocs: '註冊表文檔',
-    orbitType: { OFFICIAL: '官方', THIRD_PARTY: '第三方' },
-    metricsHeader: '核心指標',
-  },
-}
-
-const getOrbits = (lang: 'en' | 'zh-TW'): Orbit[] => {
+const getOrbits = (lang: 'en' | 'zh-TW', t: any): Orbit[] => {
   const isZh = lang === 'zh-TW'
   return [
     {
@@ -79,7 +50,7 @@ const getOrbits = (lang: 'en' | 'zh-TW'): Orbit[] => {
       features: isZh
         ? ['JWE 支援', '會話防護', '角色管理']
         : ['JWE Support', 'Session Shield', 'Role Management'],
-      metrics: { label: 'Latency', value: '< 0.05ms' },
+      metrics: { label: t.metrics.latency, value: '< 0.05ms' },
     },
     {
       name: 'Atlas',
@@ -92,7 +63,7 @@ const getOrbits = (lang: 'en' | 'zh-TW'): Orbit[] => {
       features: isZh
         ? ['Eloquent 風格', '多資料庫支援', '遷移與 Seed']
         : ['Eloquent-style', 'Multi-DB Support', 'Migrations & Seeders'],
-      metrics: { label: 'Queries/s', value: '1.2M+' },
+      metrics: { label: t.metrics.queries, value: '1.2M+' },
     },
     {
       name: 'Prism',
@@ -105,7 +76,7 @@ const getOrbits = (lang: 'en' | 'zh-TW'): Orbit[] => {
       features: isZh
         ? ['邏輯區塊', '佈局 Yields', '高速 JIT']
         : ['Logic Blocks', 'Layout Yields', 'High-Speed JIT'],
-      metrics: { label: 'Render', value: '0.01ms' },
+      metrics: { label: t.metrics.render, value: '0.01ms' },
     },
     {
       name: 'Ion',
@@ -118,7 +89,7 @@ const getOrbits = (lang: 'en' | 'zh-TW'): Orbit[] => {
       features: isZh
         ? ['共享狀態', '握手協議', '資產版本控制']
         : ['Shared State', 'Handshake Protocol', 'Asset Versioning'],
-      metrics: { label: 'TTFB', value: '8ms (Edge)' },
+      metrics: { label: t.metrics.ttfb, value: '8ms (Edge)' },
     },
     {
       name: 'Stasis',
@@ -131,7 +102,7 @@ const getOrbits = (lang: 'en' | 'zh-TW'): Orbit[] => {
       features: isZh
         ? ['多級快取', '標籤支援', '分散式鎖']
         : ['Multi-Level Cache', 'Tags', 'Distributed Locks'],
-      metrics: { label: 'Throughput', value: '2.4M/s' },
+      metrics: { label: t.metrics.throughput, value: '2.4M/s' },
     },
     {
       name: 'Signal',
@@ -209,8 +180,9 @@ const getOrbits = (lang: 'en' | 'zh-TW'): Orbit[] => {
 }
 
 export default function Ecosystem({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) {
-  const t = translations[lang] || translations.en
-  const orbits = getOrbits(lang as 'en' | 'zh-TW')
+  const currentLang = (lang === 'zh-TW' ? 'zh-TW' : 'en') as 'en' | 'zh-TW'
+  const t = getTranslation(ecosystemTranslations, currentLang)
+  const orbits = getOrbits(currentLang, t)
   const [copiedPackage, setCopiedPackage] = useState<string | null>(null)
 
   const handleInstall = (packageName: string) => {
@@ -223,7 +195,7 @@ export default function Ecosystem({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) {
 
   return (
     <DocsLayout currentId="ecosystem">
-      <Head title={`${t.title} Orbits | Photon Engine`} />
+      <Head title={`${t.head_title} | Photon Engine`} />
 
       <div className="mb-24 relative">
         <div className="absolute -top-24 -left-24 w-64 h-64 bg-photon-gold/5 blur-[100px] rounded-full pointer-events-none" />
@@ -387,13 +359,13 @@ export default function Ecosystem({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) {
             </p>
             <div className="flex flex-col sm:flex-row gap-6">
               <a
-                href="#"
+                href="https://github.com/gravito-framework/gravito"
                 className="inline-flex items-center justify-center gap-4 px-10 py-5 bg-photon-gold text-[12px] font-technical text-black uppercase tracking-widest font-black hover:bg-white transition-all shadow-xl shadow-photon-gold/10"
               >
                 {t.registryDocs} <ChevronRight size={16} />
               </a>
               <a
-                href="#"
+                href="https://github.com/gravito-framework/gravito/discussions"
                 className="inline-flex items-center justify-center gap-4 px-10 py-5 bg-surf-bg border border-s-brd text-[12px] font-technical text-p-txt uppercase tracking-widest hover:border-p-txt transition-all"
               >
                 <MessageSquare size={16} /> Discuss_Proposal
@@ -403,7 +375,7 @@ export default function Ecosystem({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) {
         </div>
       </div>
 
-      <div className="mt-40 grid grid-cols-2 lg:grid-cols-4 gap-8 border-t border-s-brd pt-20 pb-20">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-24">
         {[
           { label: lang === 'zh-TW' ? '總下載量' : 'TOTAL_PULLS', value: '4.8M+', icon: Download },
           { label: lang === 'zh-TW' ? '活動節點' : 'ACTIVE_NODES', value: '124K', icon: Activity },

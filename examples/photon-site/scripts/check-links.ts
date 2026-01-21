@@ -63,8 +63,12 @@ async function checkFile(filePath: string, relativePath: string) {
       while ((match = docLinkRegex.exec(content)) !== null) {
         const href = match[1]
         const query = match[2] || ''
-        // 如果連結不包含 lang 參數，且不是路徑格式（/docs/:lang/:page）
-        if (!query.includes('lang=') && !href.match(/\/docs\/(en|zh-TW)\//)) {
+        // 如果連結不包含 lang 參數，且不是路徑格式（/docs/:lang/:page 或 /:lang/docs/:page）
+        if (
+          !query.includes('lang=') &&
+          !href.match(/\/docs\/(en|zh-TW)\//) &&
+          !href.match(/^\/(en|zh-TW)\/docs\//)
+        ) {
           const lineNum = content.substring(0, match.index).split('\n').length
           issues.push({
             file: relativePath,

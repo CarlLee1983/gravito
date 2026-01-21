@@ -354,7 +354,7 @@ const legalContent: Record<string, Record<string, any>> = {
 // Routes
 const supportedLangs = ['en', 'zh-TW']
 
-app.get('/', (c) => renderInertia(c, 'Home', { version: '1.2.0' }))
+app.get('/', (c) => renderInertia(c, 'Home', { version: '1.2.0', lang: 'en' }))
 
 app.get('/patterns', (c) => {
   const queryLang = c.req.query('lang')
@@ -370,31 +370,26 @@ app.get('/ecosystem', (c) => {
 
 app.get('/docs/:page', async (c) => {
   const pageParam = c.req.param('page') || 'intro'
-  // Support ?lang=zh-TW
-  const queryLang = c.req.query('lang')
-  const lang = queryLang === 'zh-TW' ? 'zh-TW' : 'en'
 
-  // Try dynamic first
+  const queryLang = c.req.query('lang') || ''
+  const pathLang = queryLang || c.req.url.split('/')[1]?.split('?')[0] || 'en'
+  const lang = pathLang === 'zh-TW' ? 'zh-TW' : 'en'
+
   let doc = await getDocContent(lang, pageParam)
 
-  // If missing in requested language (e.g. zh-TW), fallback to English
   if (!doc && lang !== 'en') {
     doc = await getDocContent('en', pageParam)
   }
 
-  // Fallback to intro if nothing found
   if (!doc) {
-    // If not found in English, try fallback to intro in requested lang
     doc = await getDocContent(lang, 'intro')
-    // If still not found, try intro in English
     if (!doc) {
       doc = await getDocContent('en', 'intro')
     }
   }
 
-  // Last resort
   if (!doc && pageParam !== 'intro') {
-    return c.redirect(`/docs/intro?lang=${lang}`)
+    return c.redirect(`/docs/intro?lang=${queryLang || lang}`)
   }
 
   return await renderInertia(c, 'Docs', { ...doc, slug: pageParam, lang })
@@ -403,11 +398,17 @@ app.get('/docs/:page', async (c) => {
 app.get('/docs/:lang/:page', async (c) => {
   const pageParam = c.req.param('page') || ''
   const langParam = c.req.param('lang') || ''
-  const lang = langParam === 'zh-TW' ? 'zh-TW' : 'en'
+
+  const queryLang = c.req.query('lang') || ''
+
+  let lang = langParam === 'zh-TW' ? 'zh-TW' : 'en'
+
+  if (queryLang) {
+    lang = queryLang === 'zh-TW' ? 'zh-TW' : 'en'
+  }
 
   let doc = await getDocContent(lang, pageParam)
 
-  // Fallback to English if not found in requested language
   if (!doc && lang !== 'en') {
     doc = await getDocContent('en', pageParam)
   }
@@ -486,8 +487,13 @@ app.get('/:lang/legal/:page', (c) => {
 // Localized Root (Matches /en, /zh-TW) - Catch-all for 1 segment
 app.get('/zh-TW', (c) => renderInertia(c, 'Home', { version: '1.2.0', lang: 'zh-TW' }))
 app.get('/:lang', (c) => {
-  const lang = c.req.param('lang')
+  const pathLang = c.req.param('lang')
+  const queryLang = c.req.query('lang')
+
+  const lang = queryLang || pathLang || 'en'
+
   if (!supportedLangs.includes(lang)) return c.notFound()
+
   return renderInertia(c, 'Home', { version: '1.2.0', lang })
 })
 

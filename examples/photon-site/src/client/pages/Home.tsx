@@ -1,5 +1,5 @@
 import { StaticLink, useFreeze } from '@gravito/freeze-react'
-import { Head } from '@inertiajs/react'
+import { Head, router } from '@inertiajs/react'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   Activity,
@@ -9,14 +9,18 @@ import {
   ChevronRight,
   Cpu,
   Gauge,
+  Menu,
   Moon,
   Sun,
   Workflow,
+  X,
   Zap,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Footer } from '../components/Footer'
 import { PhotonHero } from '../components/PhotonHero'
+import { homeTranslations } from '../locales/home'
+import { getTranslation } from '../locales/types'
 
 const stats = [
   {
@@ -51,26 +55,31 @@ interface HomeProps {
   lang?: string
 }
 
-export default function Home({ lang, ...props }: HomeProps) {
+export default function Home({ lang = 'en', ...props }: HomeProps) {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark')
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem('photon-theme') as 'dark' | 'light') || 'dark'
+    }
+    return 'dark'
+  })
   const { isStatic, switchLocale } = useFreeze()
+  const currentLang = (lang === 'zh-TW' ? 'zh-TW' : 'en') as 'en' | 'zh-TW'
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50)
     window.addEventListener('scroll', handleScroll)
 
-    // Sync theme with localStorage
-    const savedTheme = localStorage.getItem('photon-theme') as 'dark' | 'light'
-    if (savedTheme) {
-      setTheme(savedTheme)
-      if (savedTheme === 'light') {
-        document.documentElement.classList.add('light')
-      }
+    // Sync document class
+    if (theme === 'light') {
+      document.documentElement.classList.add('light')
+    } else {
+      document.documentElement.classList.remove('light')
     }
 
     return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
+  }, [theme])
 
   const toggleTheme = () => {
     const newTheme = theme === 'dark' ? 'light' : 'dark'
@@ -83,124 +92,20 @@ export default function Home({ lang, ...props }: HomeProps) {
     localStorage.setItem('photon-theme', newTheme)
   }
 
-  // --- Language Management ---
-  const searchParams =
-    typeof window !== 'undefined'
-      ? new URLSearchParams(window.location.search)
-      : new URLSearchParams()
-  const currentLang = (lang || searchParams.get('lang') === 'zh-TW' ? 'zh-TW' : 'en') as 'en' | 'zh-TW'
-
   const toggleLanguage = () => {
     const newLang = currentLang === 'en' ? 'zh-TW' : 'en'
-    const target = switchLocale(newLang)
-    
-    // In static mode, use full page navigation
-    // In dynamic mode, use Inertia for SPA navigation
+
     if (isStatic) {
-      window.location.href = target
+      window.location.href = switchLocale(newLang)
     } else {
-      // Dynamic mode - use Inertia router if available
-      const { router } = require('@inertiajs/react')
-      router.visit(target, {
+      router.visit(switchLocale(newLang), {
         preserveScroll: true,
-        preserveState: true,
       })
     }
   }
 
   // Translations
-  const t = {
-    en: {
-      navbar: {
-        docs: 'Docs',
-        ecosystem: 'Ecosystem',
-        patterns: 'Patterns',
-        benchmarks: 'Benchmarks',
-      },
-      docs: 'Documentation_',
-      scroll: 'Scroll_to_explore',
-      intro: 'Introduction',
-      quickstart: 'Quickstart',
-      usage: 'Why Photon?',
-      launch: '60s to launch',
-      aot: 'AOT Routing',
-      aot_desc: 'O(1) Dispatch',
-      middleware: 'Middleware',
-      middleware_desc: 'Async Chains',
-      near_zero: 'Near-Zero',
-      overhead: 'Overhead.',
-      desc_p1: 'Generic shims usually cost 15-20% in performance.',
-      desc_p2: 'Photon is engineered to be invisible. In our latest baseline tests, we achieved',
-      desc_p3: "of Bun's theoretical maximum throughput.",
-      view_metrics: 'View Detailed Metrics',
-      master: 'Master the Engine.',
-      docs_intro: 'Docs_',
-      docs_desc:
-        'Our documentation is more than just a reference. It is a technical deep-dive into zero-copy memory management, AOT compilation, and non-blocking I/O.',
-      ready: '// READY_FOR_DEEP_LEARNING',
-      start_reading: 'Start Reading Documentation',
-    },
-    'zh-TW': {
-      navbar: {
-        docs: '文件',
-        ecosystem: '生態系統',
-        patterns: '設計模式',
-        benchmarks: '基準測試',
-      },
-      docs: '技術文件_',
-      scroll: '滑動探索',
-      intro: '介紹',
-      quickstart: '快速開始',
-      usage: '為什麼選擇 Photon?',
-      launch: '60秒啟動',
-      aot: 'AOT 路由',
-      aot_desc: 'O(1) 調度',
-      middleware: '中介軟體',
-      middleware_desc: '非同步鏈',
-      near_zero: '幾近零',
-      overhead: '開銷。',
-      desc_p1: '通用墊片 (Shims) 通常會造成 15-20% 的效能損耗。',
-      desc_p2: 'Photon 專為隱形而生。在最新的基準測試中，我們達到了',
-      desc_p3: 'Bun 理論最大吞吐量的 98.8%。',
-      view_metrics: '查看詳細指標',
-      master: '精通引擎。',
-      docs_intro: '文件_',
-      docs_desc:
-        '我們的文件不僅僅是參考手冊。它是關於零拷貝記憶體管理、AOT 編編譯和非阻塞 I/O 的技術深度探討。',
-      ready: '// 深度學習就緒',
-      start_reading: '開始閱讀文件',
-    },
-  }[currentLang] || {
-    // Fallback safely
-    navbar: {
-      docs: 'Docs',
-      ecosystem: 'Ecosystem',
-      patterns: 'Patterns',
-      benchmarks: 'Benchmarks',
-    },
-    docs: 'Documentation_',
-    scroll: 'Scroll_to_explore',
-    intro: 'Introduction',
-    quickstart: 'Quickstart',
-    usage: 'Why Photon?',
-    launch: '60s to launch',
-    aot: 'AOT Routing',
-    aot_desc: 'O(1) Dispatch',
-    middleware: 'Middleware',
-    middleware_desc: 'Async Chains',
-    near_zero: 'Near-Zero',
-    overhead: 'Overhead.',
-    desc_p1: 'Generic shims usually cost 15-20% in performance.',
-    desc_p2: 'Photon is engineered to be invisible. In our latest baseline tests, we achieved',
-    desc_p3: "of Bun's theoretical maximum throughput.",
-    view_metrics: 'View Detailed Metrics',
-    master: 'Master the Engine.',
-    docs_intro: 'Docs_',
-    docs_desc:
-      'Our documentation is more than just a reference. It is a technical deep-dive into zero-copy memory management, AOT compilation, and non-blocking I/O.',
-    ready: '// READY_FOR_DEEP_LEARNING',
-    start_reading: 'Start Reading Documentation',
-  }
+  const t = getTranslation(homeTranslations, currentLang)
 
   // Dynamic content arrays
   const quickLinksDynamic = [
@@ -212,11 +117,11 @@ export default function Home({ lang, ...props }: HomeProps) {
 
   return (
     <div className="min-h-screen font-sans selection:bg-photon-gold/20 transition-colors duration-500 bg-p-bg text-s-txt">
-      <Head title="PHOTON // THE ABSOLUTE ENGINE" />
+      <Head title={t.head_title} />
       {/* Enhanced Pro-Max Navbar */}
       <nav
-        className={`fixed top-0 left-0 right-0 z-50 px-12 py-6 flex justify-between items-center transition-all duration-700 ${
-          scrolled ? 'py-4' : 'bg-transparent'
+        className={`fixed top-0 left-0 right-0 z-50 px-4 md:px-12 py-4 md:py-6 flex justify-between items-center transition-all duration-700 ${
+          scrolled ? 'py-3 md:py-4' : 'bg-transparent'
         }`}
       >
         <div
@@ -225,9 +130,19 @@ export default function Home({ lang, ...props }: HomeProps) {
           <div className="absolute inset-0 backdrop-blur-2xl border-b border-s-brd shadow-[0_4px_30px_rgba(0,0,0,0.03)] bg-[var(--nav-bg)]" />
         </div>
 
+        {/* Mobile Menu Toggle Button - Show only on mobile */}
+        <button
+          type="button"
+          onClick={() => setMobileMenuOpen(true)}
+          className="md:hidden flex items-center justify-center p-2 -ml-2 text-s-txt hover:text-photon-gold transition-colors relative z-10"
+          aria-label="Open menu"
+        >
+          <Menu size={24} />
+        </button>
+
         <StaticLink
           href="/"
-          className="relative z-10 text-2xl font-black text-p-txt tracking-tighter uppercase group flex items-center gap-3"
+          className="relative z-10 text-2xl font-black text-p-txt tracking-tighter uppercase group flex items-center gap-3 shrink-0"
         >
           <div className="w-10 h-10 border border-photon-gold/20 flex items-center justify-center relative overflow-hidden group-hover:border-photon-gold/50 transition-all duration-500 rounded-lg bg-photon-gold/5 backdrop-blur-md">
             <Zap
@@ -236,13 +151,13 @@ export default function Home({ lang, ...props }: HomeProps) {
             />
             <div className="absolute inset-0 bg-gradient-to-br from-photon-gold/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
-          <span className="group-hover:translate-x-1 transition-transform duration-500 glow-hover">
+          <span className="hidden sm:inline group-hover:translate-x-1 transition-transform duration-500 glow-hover">
             Pho<span className="opacity-50 italic font-light">ton</span>
           </span>
         </StaticLink>
 
         {/* Restore missing Nav Links */}
-        <div className="hidden md:flex items-center gap-8 relative z-10">
+        <div className="hidden md:flex items-center gap-4 lg:gap-8 relative z-10">
           {[
             { label: t.navbar.docs, href: '/docs/intro' },
             { label: t.navbar.ecosystem, href: '/ecosystem' },
@@ -259,38 +174,28 @@ export default function Home({ lang, ...props }: HomeProps) {
           ))}
         </div>
 
-        <div className="flex items-center gap-6 relative z-10">
+        <div className="flex items-center gap-3 md:gap-6 relative z-10 shrink-0">
           {/* LANG TOGGLE: Show target language */}
           <button
             type="button"
             onClick={toggleLanguage}
             className="w-10 h-10 flex items-center justify-center rounded-lg border border-s-brd bg-surf-bg/50 backdrop-blur-md hover:border-photon-gold/40 transition-all text-s-txt hover:text-photon-gold shadow-lg group"
-            title={currentLang === 'en' ? '切換至繁體中文' : 'Switch to English'}
+            title={t.switch_lang_tip}
           >
             <span className="text-[10px] font-bold font-technical group-hover:scale-110 transition-transform">
               {currentLang === 'en' ? '繁' : 'EN'}
             </span>
           </button>
 
-          {/* THEME TOGGLE: Show target theme icon */}
+          {/* THEME TOGGLE: Show current theme icon */}
           <button
             type="button"
             onClick={toggleTheme}
             className="w-10 h-10 flex items-center justify-center rounded-lg border border-s-brd bg-surf-bg/50 backdrop-blur-md hover:border-photon-gold/40 transition-all text-s-txt hover:text-photon-gold shadow-lg group"
-            title={theme === 'dark' ? 'Switch to Light Mode' : '切換至深色模式'}
+            title={t.switch_theme_tip}
           >
             <AnimatePresence mode="wait">
               {theme === 'dark' ? (
-                <motion.div
-                  key="sun"
-                  initial={{ opacity: 0, rotate: -90, scale: 0.5 }}
-                  animate={{ opacity: 1, rotate: 0, scale: 1 }}
-                  exit={{ opacity: 0, rotate: 90, scale: 0.5 }}
-                  className="group-hover:scale-110 transition-transform"
-                >
-                  <Sun size={16} />
-                </motion.div>
-              ) : (
                 <motion.div
                   key="moon"
                   initial={{ opacity: 0, rotate: -90, scale: 0.5 }}
@@ -300,11 +205,116 @@ export default function Home({ lang, ...props }: HomeProps) {
                 >
                   <Moon size={16} />
                 </motion.div>
+              ) : (
+                <motion.div
+                  key="sun"
+                  initial={{ opacity: 0, rotate: -90, scale: 0.5 }}
+                  animate={{ opacity: 1, rotate: 0, scale: 1 }}
+                  exit={{ opacity: 0, rotate: 90, scale: 0.5 }}
+                  className="group-hover:scale-110 transition-transform"
+                >
+                  <Sun size={16} />
+                </motion.div>
               )}
             </AnimatePresence>
           </button>
         </div>
       </nav>
+      {/* Mobile Navigation Drawer */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <>
+            {/* Backdrop Overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setMobileMenuOpen(false)}
+              className="fixed inset-0 bg-black/60 z-40 md:hidden backdrop-blur-sm"
+            />
+
+            {/* Mobile Drawer */}
+            <motion.aside
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed inset-y-0 left-0 w-80 max-w-[85vw] bg-s-bg border-r border-s-brd shadow-2xl z-50 md:hidden flex flex-col"
+            >
+              {/* Drawer Header */}
+              <div className="flex items-center justify-between p-6 border-b border-s-brd">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 border border-photon-gold/30 flex items-center justify-center relative overflow-hidden">
+                    <Zap size={14} className="text-photon-gold" />
+                  </div>
+                  <span className="text-xl font-black text-p-txt tracking-tighter uppercase">
+                    Photon
+                  </span>
+                </div>
+
+                {/* Close Button */}
+                <button
+                  type="button"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="p-2 text-s-txt hover:text-p-txt hover:bg-s-brd/10 rounded-lg transition-colors"
+                  aria-label="Close menu"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Navigation Links */}
+              <nav className="flex-1 overflow-y-auto p-6 space-y-4">
+                {[
+                  { label: t.navbar.docs, href: '/docs/intro' },
+                  { label: t.navbar.ecosystem, href: '/ecosystem' },
+                  { label: t.navbar.patterns, href: '/patterns' },
+                ].map((item) => (
+                  <StaticLink
+                    key={item.label}
+                    href={item.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block py-4 px-4 text-base font-bold text-s-txt hover:text-photon-gold hover:bg-s-brd/10 rounded-lg transition-all border-l-2 border-transparent hover:border-photon-gold"
+                  >
+                    {item.label}
+                  </StaticLink>
+                ))}
+              </nav>
+
+              {/* Drawer Footer with Theme and Lang Toggles */}
+              <div className="p-6 border-t border-s-brd bg-surf-bg">
+                <div className="flex items-center justify-center gap-4">
+                  {/* Lang Toggle */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      toggleLanguage()
+                      setMobileMenuOpen(false)
+                    }}
+                    className="flex-1 py-3 px-4 flex items-center justify-center gap-2 border border-s-brd bg-p-bg text-s-txt hover:text-photon-gold hover:border-photon-gold/30 rounded-lg transition-all"
+                  >
+                    <span className="text-xs font-bold font-technical uppercase">
+                      {currentLang === 'en' ? '繁' : 'EN'}
+                    </span>
+                  </button>
+
+                  {/* Theme Toggle */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      toggleTheme()
+                      setMobileMenuOpen(false)
+                    }}
+                    className="flex-1 py-3 px-4 flex items-center justify-center gap-2 border border-s-brd bg-p-bg text-s-txt hover:text-photon-gold hover:border-photon-gold/30 rounded-lg transition-all"
+                  >
+                    {theme === 'dark' ? <Moon size={16} /> : <Sun size={16} />}
+                  </button>
+                </div>
+              </div>
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
       <PhotonHero lang={currentLang} />
       {/* Quick Links Section */}
       <section className="relative z-20 py-20 px-12 max-w-7xl mx-auto">
@@ -334,7 +344,7 @@ export default function Home({ lang, ...props }: HomeProps) {
       {/* Stats Section */}
       <section className="relative z-20 py-40 px-12 max-w-7xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {stats.map((item) => (
+          {stats.map((item, idx) => (
             <div
               key={item.id}
               className="glass-card group p-10 bg-surf-bg border border-s-brd hover:border-photon-gold/40 transition-all rounded-xl"
@@ -352,13 +362,15 @@ export default function Home({ lang, ...props }: HomeProps) {
                 <span className="text-5xl font-black text-p-txt tracking-tighter transition-colors">
                   {item.value}
                 </span>
-                <span className="text-[10px] font-technical text-m-txt uppercase">{item.unit}</span>
+                <span className="text-[10px] font-technical text-m-txt uppercase">
+                  {t.stats[idx]?.unit || item.unit}
+                </span>
               </div>
               <div className="text-technical text-[8px] flex items-center gap-2">
                 <span
                   className={`w-1 h-1 rounded-full ${item.status === 'optimal' ? 'bg-photon-gold' : 'bg-gray-600'}`}
                 />
-                {item.label}
+                {t.stats[idx]?.label || item.label}
                 {/* VALIDATED_M3_SILICON */}
               </div>
             </div>
@@ -402,21 +414,21 @@ export default function Home({ lang, ...props }: HomeProps) {
           <div className="glass-card p-12 mt-20 bg-surf-bg border border-s-brd shadow-2xl relative overflow-hidden rounded-2xl group">
             <div className="absolute inset-0 bg-photon-gold/[0.01] opacity-0 group-hover:opacity-100 transition-opacity" />
             <h4 className="text-xs font-technical text-p-txt mb-10 tracking-widest uppercase italic border-b border-s-brd pb-4">
-              Internal_Telemetry_Log {/* Jan_2026 */}
+              {t.telemetry.title} {/* Jan_2026 */}
             </h4>
 
             <div className="space-y-6 font-technical text-[11px] leading-relaxed relative z-10">
               <p className="text-m-txt flex items-center gap-3">
                 <span className="w-1.5 h-1.5 rounded-full bg-m-txt/20" />
-                [00:01] INITIALIZING BASELINE_RUNNER...
+                [00:01] {t.telemetry.initializing}
               </p>
               <p className="text-m-txt flex items-center gap-3">
                 <span className="w-1.5 h-1.5 rounded-full bg-m-txt/20" />
-                [00:03] JIT_FTL_WARMUP: COMPLETED (320ms)
+                [00:03] {t.telemetry.warmup}
               </p>
               <p className="text-m-txt flex items-center gap-3">
                 <span className="w-1.5 h-1.5 rounded-full bg-m-txt/20" />
-                [00:05] TARGETING: APPLE_M3_SILICON
+                [00:05] {t.telemetry.targeting}
               </p>
               <div className="my-8 h-px bg-s-brd opacity-50" />
               <p className="text-p-txt flex justify-between font-bold">
@@ -436,7 +448,7 @@ export default function Home({ lang, ...props }: HomeProps) {
               </p>
               <div className="h-px bg-photon-gold/20 my-8" />
               <p className="text-photon-gold font-black tracking-widest text-[12px]">
-                RESULT: 98.8%_OF_NATIVE_BUN_THROUGHPUT
+                {t.telemetry.result}
               </p>
             </div>
           </div>

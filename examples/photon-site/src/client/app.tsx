@@ -17,11 +17,8 @@ createInertiaApp({
     return pages[`./pages/${name}.tsx`]
   },
   setup({ el, App, props }) {
-    // Extract lang from initial page props if available
-    const initialLang = (props.initialPage.props as any).lang as string | undefined
-
     createRoot(el).render(
-      <FreezeProvider config={config} locale={initialLang}>
+      <FreezeProvider config={config}>
         <App {...props} />
       </FreezeProvider>
     )

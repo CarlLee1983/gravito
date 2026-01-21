@@ -185,12 +185,24 @@ export class FreezeDetector {
   /**
    * Get the current locale from browser URL.
    *
+   * It checks both the path prefix and the 'lang' query parameter.
+   * Priority: 1. 'lang' query parameter, 2. Path prefix, 3. Default locale.
+   *
    * @returns The current locale string.
    */
   getCurrentLocale(): string {
     if (typeof window === 'undefined') {
       return this.config.defaultLocale
     }
+
+    // 1. Check query parameter 'lang'
+    const params = new URLSearchParams(window.location.search)
+    const lang = params.get('lang')
+    if (lang && this.config.locales.includes(lang)) {
+      return lang
+    }
+
+    // 2. Check path prefix
     return this.getLocaleFromPath(window.location.pathname)
   }
 }

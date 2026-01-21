@@ -5,7 +5,7 @@
  */
 
 import { createDetector, type FreezeConfig, type FreezeDetector } from '@gravito/freeze'
-import { createContext, type ReactNode, useContext, useMemo } from 'react'
+import { createContext, type ReactNode, useContext, useEffect, useMemo, useState } from 'react'
 
 /**
  * Freeze Context value
@@ -56,17 +56,58 @@ export interface FreezeProviderProps {
  * }
  * ```
  */
-export function FreezeProvider({ config, locale, children }: FreezeProviderProps) {
-  const value = useMemo(() => {
-    const detector = createDetector(config)
-    const currentLocale = locale ?? detector.getCurrentLocale()
+export function FreezeProvider({ config, locale: forcedLocale, children }: FreezeProviderProps) {
+  const detector = useMemo(() => createDetector(config), [config])
 
+  const [currentLocale, setCurrentLocale] = useState(
+    () => forcedLocale ?? detector.getCurrentLocale()
+  )
+
+  useEffect(() => {
+    if (forcedLocale !== undefined) {
+      setCurrentLocale(forcedLocale)
+    }
+  }, [forcedLocale])
+
+  useEffect(() => {
+    if (forcedLocale !== undefined || typeof window === 'undefined') {
+      return
+    }
+
+    const handleLocationChange = () => {
+      const detected = detector.getCurrentLocale()
+      setCurrentLocale((prev) => (prev !== detected ? detected : prev))
+    }
+
+    window.addEventListener('popstate', handleLocationChange)
+
+    const originalPushState = window.history.pushState
+    const originalReplaceState = window.history.replaceState
+
+    window.history.pushState = function (...args) {
+      originalPushState.apply(this, args)
+      handleLocationChange()
+    }
+
+    window.history.replaceState = function (...args) {
+      originalReplaceState.apply(this, args)
+      handleLocationChange()
+    }
+
+    return () => {
+      window.removeEventListener('popstate', handleLocationChange)
+      window.history.pushState = originalPushState
+      window.history.replaceState = originalReplaceState
+    }
+  }, [detector, forcedLocale])
+
+  const value = useMemo(() => {
     return {
       config,
       detector,
       currentLocale,
     }
-  }, [config, locale])
+  }, [config, detector, currentLocale])
 
   return <FreezeContext.Provider value={value}>{children}</FreezeContext.Provider>
 }

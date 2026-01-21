@@ -35,7 +35,7 @@ interface DocsProps {
 export default function Docs() {
   const { trans } = useTrans()
   const props = usePage<DocsProps>().props
-  const { title, content, sidebar, currentPath, toc, editUrl, locale } = props
+  const { title, content, sidebar, currentPath, toc, locale } = props
   const isZh = locale === 'zh'
   const contentRef = useRef<HTMLDivElement | null>(null)
   const [activeId, setActiveId] = useState<string | null>(null)

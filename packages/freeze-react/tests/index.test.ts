@@ -39,6 +39,13 @@ mock.module('react', () => ({
   useMemo: (factory: () => unknown) => factory(),
   useCallback: (fn: (...args: any[]) => unknown) => fn,
   createElement: createElementMock,
+  useState: <T>(initial: T | (() => T)) => {
+    if (typeof initial === 'function') {
+      return [(initial as () => T)(), () => {}]
+    }
+    return [initial, () => {}]
+  },
+  useEffect: (effect: () => () => void) => {},
 }))
 
 mock.module('react/jsx-runtime', () => ({

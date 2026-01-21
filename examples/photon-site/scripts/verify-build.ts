@@ -4,7 +4,8 @@
  * 檢查靜態網站建置是否完整且正確
  */
 
-import { existsSync, readdir, stat } from 'node:fs/promises'
+import { existsSync } from 'node:fs'
+import { readdir, stat } from 'node:fs/promises'
 import path from 'node:path'
 
 interface CheckResult {
