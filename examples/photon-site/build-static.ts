@@ -106,7 +106,43 @@ async function build() {
   // This will crawl all GET routes, render them to HTML, and generate Sitemap + Robots.txt
   // The 'extraPaths' are merged into the crawlers queue and will be present in the sitemap.
   const baseUrl = process.env.BASE_URL || 'https://photon.gravito.dev'
-  await ssg.export(outputDir, baseUrl, extraPaths)
+  try {
+    await ssg.export(outputDir, baseUrl, extraPaths)
+  } catch (err) {
+    console.error('❌ CRITICAL SSG ERROR:', err)
+  }
+
+  // Manual fallback for sitemap.xml and robots.txt if SSG failed to generate them
+  const { existsSync } = await import('node:fs')
+  const { writeFile } = await import('node:fs/promises')
+
+  if (!existsSync(path.join(outputDir, 'sitemap.xml'))) {
+    console.warn('⚠️ SSG failed to generate sitemap.xml. Generating manually...')
+    const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${extraPaths
+  .map((route) => {
+    return `  <url>
+    <loc>${baseUrl}${route === '/' ? '' : route}</loc>
+    <changefreq>weekly</changefreq>
+    <priority>${route === '/' ? '1.0' : '0.8'}</priority>
+  </url>`
+  })
+  .join('\n')}
+</urlset>`
+    await writeFile(path.join(outputDir, 'sitemap.xml'), sitemap, 'utf-8')
+    console.log('✅ Manual sitemap.xml generated.')
+  }
+
+  if (!existsSync(path.join(outputDir, 'robots.txt'))) {
+    console.warn('⚠️ SSG failed to generate robots.txt. Generating manually...')
+    const robots = `User-agent: *
+Allow: /
+
+Sitemap: ${baseUrl}/sitemap.xml`
+    await writeFile(path.join(outputDir, 'robots.txt'), robots, 'utf-8')
+    console.log('✅ Manual robots.txt generated.')
+  }
 
   console.log('✅ Build complete.')
 
@@ -130,8 +166,6 @@ async function build() {
   } catch (e) {
     console.warn('⚠️ Could not copy public assets (directory might be empty or missing):', e)
   }
-
-  process.exit(0)
 }
 
 build().catch((err) => {

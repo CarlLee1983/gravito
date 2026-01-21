@@ -1,3 +1,4 @@
+import { useFreeze } from '@gravito/freeze-react'
 import { Head } from '@inertiajs/react'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
@@ -209,8 +210,10 @@ const getOrbits = (lang: 'en' | 'zh-TW'): Orbit[] => {
 }
 
 export default function Ecosystem({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) {
-  const t = translations[lang] || translations.en
-  const orbits = getOrbits(lang as 'en' | 'zh-TW')
+  const { locale } = useFreeze()
+  const currentLang = (lang === 'zh-TW' ? 'zh-TW' : 'en') as 'en' | 'zh-TW'
+  const t = translations[currentLang] || translations.en
+  const orbits = getOrbits(currentLang)
   const [copiedPackage, setCopiedPackage] = useState<string | null>(null)
 
   const handleInstall = (packageName: string) => {

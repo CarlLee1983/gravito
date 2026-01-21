@@ -66,7 +66,14 @@ export function useFreeze(): UseFreezeReturn {
       if (typeof window === 'undefined') {
         return `/${newLocale}`
       }
-      return detector.switchLocale(window.location.pathname, newLocale)
+
+      // Preserve existing query parameters but remove 'lang' to avoid conflicts
+      const params = new URLSearchParams(window.location.search)
+      params.delete('lang')
+      const search = params.toString()
+
+      const newPath = detector.switchLocale(window.location.pathname, newLocale)
+      return search ? `${newPath}?${search}` : newPath
     },
     [detector]
   )

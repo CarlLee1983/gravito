@@ -99,7 +99,7 @@
 }
 
 .photon-prose h2 {
-  @apply text-4xl font-black uppercase tracking-tighter mt-48 mb-16 flex flex-col gap-6;
+  @apply text-2xl sm:text-3xl md:text-4xl font-black uppercase tracking-tighter mt-24 mb-10 md:mt-48 md:mb-16 flex flex-col gap-6;
   color: var(--text-heading);
 }
 
@@ -110,7 +110,7 @@
 }
 
 .photon-prose h3 {
-  @apply text-xl font-bold uppercase tracking-[0.2em] mt-24 mb-10 flex items-center gap-6;
+  @apply text-lg sm:text-xl font-bold uppercase tracking-[0.2em] mt-16 mb-8 md:mt-24 md:mb-10 flex items-center gap-6;
   color: var(--text-heading);
 }
 
@@ -120,7 +120,7 @@
 }
 
 .photon-prose p {
-  @apply text-lg md:text-[20px] leading-[2.2] mb-16 font-light pl-10 relative block;
+  @apply text-base md:text-[20px] leading-[1.8] md:leading-[2.2] mb-12 md:mb-16 font-light pl-10 relative block;
   color: var(--text-main) !important;
 }
 
@@ -141,7 +141,7 @@
 
 /* --- PREMIUM TERMINAL SYSTEM --- */
 .terminal-window {
-  @apply bg-[#16161A] border border-white/10 my-24 overflow-hidden rounded-xl shadow-2xl relative transition-all duration-500;
+  @apply bg-[#16161A] border border-white/10 my-12 md:my-24 -mx-4 md:mx-0 overflow-hidden rounded-xl shadow-2xl relative transition-all duration-500;
   box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.6), 0 18px 36px -18px rgba(0, 0, 0, 0.5);
 }
 
@@ -179,7 +179,7 @@
 }
 
 .terminal-window code {
-  @apply font-mono text-[14px] md:text-[15px] leading-[1.8] px-8 py-10 block;
+  @apply font-mono text-xs sm:text-[13px] md:text-[14px] lg:text-[15px] leading-[1.8] px-4 py-6 sm:px-6 sm:py-8 md:px-8 md:py-10 block;
   color: #E0E0E0 !important;
   background-color: transparent;
   white-space: pre;
@@ -307,4 +307,115 @@
     linear-gradient(90deg, rgba(255, 0, 0, 0.01), rgba(0, 255, 0, 0.005), rgba(0, 0, 255, 0.01));
   background-size: 100% 3px, 3px 100%;
   opacity: 0.3;
+}
+
+/* --- RESPONSIVE GRID SYSTEM (MOBILE FIXES) --- */
+
+/* Responsive Grid Override for Inline Styles */
+.photon-prose [style*="display: grid"] {
+  /* Default mobile: 1 column */
+  grid-template-columns: 1fr !important;
+}
+
+@media (min-width: 640px) {
+  .photon-prose [style*="display: grid"] {
+    /* Small tablet: try to maintain 2 columns if space allows */
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .photon-prose [style*="display: grid"] {
+    /* Tablet+: maintain original layout */
+    grid-template-columns: revert !important;
+  }
+}
+
+/* 3-column grids become 2 on tablet */
+@media (min-width: 640px) and (max-width: 767px) {
+  .photon-prose [style*="grid-template-columns: repeat(3, 1fr)"],
+  .photon-prose [style*="grid-template-columns: repeat(3,1fr)"],
+  .photon-prose [style*="grid-template-columns:repeat(3,1fr)"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* Reduce gaps on mobile */
+.photon-prose [style*="gap: 24px"] {
+  gap: 16px !important;
+}
+
+@media (min-width: 640px) {
+  .photon-prose [style*="gap: 24px"] {
+    gap: 20px !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .photon-prose [style*="gap: 24px"] {
+    gap: revert !important;
+  }
+}
+
+/* Bento Grid Responsive */
+.bento-grid {
+  grid-template-columns: 1fr !important;
+  gap: 16px !important;
+}
+
+@media (min-width: 640px) {
+  .bento-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 20px !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .bento-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 24px !important;
+  }
+}
+
+/* Reduce grid margins on mobile */
+.photon-prose [style*="margin: 48px 0"] {
+  margin: 24px 0 !important;
+}
+
+.photon-prose [style*="margin: 32px 0"] {
+  margin: 20px 0 !important;
+}
+
+@media (min-width: 640px) {
+  .photon-prose [style*="margin: 48px 0"] {
+    margin: 32px 0 !important;
+  }
+  
+  .photon-prose [style*="margin: 32px 0"] {
+    margin: 28px 0 !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .photon-prose [style*="margin: 48px 0"] {
+    margin: revert !important;
+  }
+  
+  .photon-prose [style*="margin: 32px 0"] {
+    margin: revert !important;
+  }
+}
+
+/* Prevent horizontal scroll */
+.photon-prose [style*="display: grid"],
+.bento-grid {
+  overflow-x: hidden !important;
+}
+
+/* Ensure grid items don't overflow */
+.photon-prose [style*="display: grid"] > div,
+.bento-grid > div {
+  min-width: 0 !important;
+  word-wrap: break-word !important;
+  overflow-wrap: break-word !important;
 }

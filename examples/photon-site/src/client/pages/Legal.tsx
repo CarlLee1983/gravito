@@ -1,3 +1,4 @@
+import { useFreeze } from '@gravito/freeze-react'
 import { Head } from '@inertiajs/react'
 import { motion } from 'framer-motion'
 import { Scale, Shield } from 'lucide-react'
@@ -13,6 +14,8 @@ interface LegalProps {
 }
 
 export default function Legal({ title, content, id, slug, lastUpdated, lang = 'en' }: LegalProps) {
+  const { locale } = useFreeze()
+  const currentLang = (lang === 'zh-TW' ? 'zh-TW' : 'en') as 'en' | 'zh-TW'
   const t = {
     en: {
       breadcrumb: 'HOME',
@@ -32,7 +35,7 @@ export default function Legal({ title, content, id, slug, lastUpdated, lang = 'e
       disclaimer_text:
         '本文件屬 Gravito 研究實驗室法律框架之一部分。Photon Engine 按「原樣」提供，不提供任何保證。如需特定的商業授權，請聯繫我們的企業關係模組。',
     },
-  }[lang]
+  }[currentLang]
 
   return (
     <DocsLayout currentId={slug}>

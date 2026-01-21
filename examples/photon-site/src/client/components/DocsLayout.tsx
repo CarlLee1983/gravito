@@ -1,7 +1,7 @@
 import { StaticLink, useFreeze } from '@gravito/freeze-react'
-import { usePage } from '@inertiajs/react'
+import { Head, router, usePage } from '@inertiajs/react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Activity, Command, Moon, Search, Sun, Terminal, Zap } from 'lucide-react'
+import { Activity, Command, Menu, Moon, Search, Sun, Terminal, X, Zap } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useState } from 'react'
 import { navGroups } from '../constants/navigation'
@@ -15,11 +15,16 @@ export const DocsLayout = ({
   currentId?: string
 }) => {
   const [searchOpen, setSearchOpen] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [_progress, _setProgress] = useState(0)
-  const { url } = usePage() // Get current URL to preserve path
-  const { isStatic, switchLocale, locale: currentLang } = useFreeze()
+  const { isStatic, switchLocale } = useFreeze()
+  const { props } = usePage()
+  const currentLang = (props.lang as string) || 'en'
 
-  // --- Theme Management ---
+  useEffect(() => {
+    setMobileMenuOpen(false)
+  }, [])
+
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     if (typeof window !== 'undefined') {
       return (localStorage.getItem('photon-theme') as 'dark' | 'light') || 'dark'
@@ -27,11 +32,7 @@ export const DocsLayout = ({
     return 'dark'
   })
 
-  // --- Language Management ---
-  // Removed manual searchParams parsing in favor of useFreeze locale
-
   const navTranslations: Record<string, string> = {
-    // Categories
     GETTING_STARTED: '入門指南',
     TECHNICAL_ARCHITECTURE: '技術架構',
     CORE_LIFECYCLE: '核心生命週期',
@@ -40,7 +41,6 @@ export const DocsLayout = ({
     EXTENSIONS_ECO: '擴充生態',
     LAB_EXPERIMENTS: '實驗室',
 
-    // Items
     INTRODUCTION: '介紹',
     QUICKSTART: '快速開始',
     PROJECT_STRUCTURE: '專案結構',
@@ -80,18 +80,12 @@ export const DocsLayout = ({
 
   const toggleLanguage = () => {
     const newLang = currentLang === 'en' ? 'zh-TW' : 'en'
-    const target = switchLocale(newLang)
-    
-    // In static mode, use full page navigation
-    // In dynamic mode, use Inertia for SPA navigation
+
     if (isStatic) {
-      window.location.href = target
+      window.location.href = switchLocale(newLang)
     } else {
-      // Dynamic mode - use Inertia router if available
-      const { router } = require('@inertiajs/react')
-      router.visit(target, {
+      router.visit(switchLocale(newLang), {
         preserveScroll: true,
-        preserveState: true,
       })
     }
   }
@@ -109,12 +103,53 @@ export const DocsLayout = ({
   const toggleTheme = () => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))
 
   return (
-    <div className="min-h-screen flex bg-p-bg text-s-txt transition-colors duration-500">
-      {/* Global CRT Filter Overlay */}
+    <div className="min-h-screen flex flex-col lg:flex-row bg-p-bg text-s-txt transition-colors duration-500">
       <div className="crt-overlay pointer-events-none" />
 
-      {/* Sidebar Navigation */}
-      <aside className="w-80 border-r border-s-brd flex flex-col sticky top-0 h-screen z-40 bg-s-bg transition-colors duration-500">
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-s-bg border-b border-s-brd px-4 h-16 flex items-center justify-between transition-colors duration-500">
+        <button
+          type="button"
+          onClick={() => setMobileMenuOpen(true)}
+          className="p-2 -ml-2 text-s-txt hover:text-photon-gold transition-colors"
+        >
+          <Menu size={24} />
+        </button>
+
+        <div className="flex items-center gap-2">
+          <Zap size={14} className="text-photon-gold" />
+          <span className="font-black tracking-tighter uppercase text-p-txt">Photon</span>
+        </div>
+
+        <div className="w-8" />
+      </div>
+
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setMobileMenuOpen(false)}
+            className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm"
+          />
+        )}
+      </AnimatePresence>
+
+      <aside
+        className={`
+          fixed inset-y-0 left-0 z-50 bg-s-bg w-80 border-r border-s-brd flex flex-col transition-all duration-300 ease-in-out
+          lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 lg:z-40 lg:shadow-none
+          ${mobileMenuOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}
+      `}
+      >
+        <button
+          type="button"
+          onClick={() => setMobileMenuOpen(false)}
+          className="absolute top-4 right-4 lg:hidden p-2 text-s-txt hover:text-p-txt z-50"
+        >
+          <X size={20} />
+        </button>
+
         <div className="p-12 flex-1 overflow-y-auto custom-scrollbar">
           <div className="flex items-center justify-between mb-12 gap-4">
             <StaticLink
@@ -134,7 +169,6 @@ export const DocsLayout = ({
             </StaticLink>
 
             <div className="flex items-center gap-3">
-              {/* LANG TOGGLE */}
               <button
                 type="button"
                 onClick={toggleLanguage}
@@ -142,15 +176,15 @@ export const DocsLayout = ({
                 title={currentLang === 'en' ? 'Switch to Traditional Chinese' : 'Switch to English'}
               >
                 <span className="text-[10px] font-bold font-technical">
-                  {currentLang === 'en' ? 'EN' : '繁'}
+                  {currentLang === 'en' ? '繁' : 'EN'}
                 </span>
               </button>
 
-              {/* THEME TOGGLE */}
               <button
                 type="button"
                 onClick={toggleTheme}
                 className="w-8 h-8 flex items-center justify-center rounded-sm border border-s-brd bg-surf-bg text-s-txt hover:text-photon-gold transition-all shadow-sm"
+                title={theme === 'dark' ? '切換至亮色模式' : 'Switch to Dark Mode'}
               >
                 <AnimatePresence mode="wait">
                   {theme === 'dark' ? (
@@ -240,8 +274,7 @@ export const DocsLayout = ({
         </div>
       </aside>
 
-      {/* Main Content Area */}
-      <main className="flex-1 relative overflow-y-auto h-screen custom-scrollbar transition-colors duration-500 grid-texture bg-p-bg">
+      <main className="flex-1 relative overflow-y-auto h-screen custom-scrollbar transition-colors duration-500 grid-texture bg-p-bg pt-16 lg:pt-0">
         <div className="max-w-5xl py-24 px-12 md:px-24 mx-auto pb-4">
           <div className="mb-12 flex items-center gap-2 text-[10px] font-bold text-m-txt opacity-70 tracking-widest uppercase">
             <StaticLink href="/" className="hover:text-photon-gold transition-colors text-p-txt">
@@ -252,10 +285,9 @@ export const DocsLayout = ({
           </div>
           {children}
         </div>
-        <Footer lang={currentLang} />
+        <Footer lang={currentLang as 'en' | 'zh-TW'} />
       </main>
 
-      {/* Command Palette Modal */}
       <AnimatePresence>
         {searchOpen && (
           <motion.div

@@ -1,4 +1,4 @@
-import { StaticLink } from '@gravito/freeze-react'
+import { StaticLink, useFreeze } from '@gravito/freeze-react'
 import { Head } from '@inertiajs/react'
 import { motion } from 'framer-motion'
 import {
@@ -137,8 +137,10 @@ const getPatterns = (lang: 'en' | 'zh-TW') => {
 }
 
 export default function Patterns({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) {
-  const isZh = lang === 'zh-TW'
-  const items = getPatterns(lang as 'en' | 'zh-TW')
+  const { locale } = useFreeze()
+  const currentLang = (lang === 'zh-TW' ? 'zh-TW' : 'en') as 'en' | 'zh-TW'
+  const isZh = currentLang === 'zh-TW'
+  const items = getPatterns(currentLang)
 
   return (
     <DocsLayout currentId="patterns">
@@ -275,9 +277,7 @@ export default function Patterns({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) {
               >
                 {isZh ? '探索路由協定' : 'Explore Routing Protocol'} <ChevronRight size={14} />
               </StaticLink>
-
               ...
-
               <StaticLink
                 href={`/docs/performance?lang=${lang}`}
                 className="inline-flex items-center gap-4 px-8 py-4 bg-surf-bg border border-s-brd text-[11px] font-technical text-p-txt uppercase tracking-[0.3em] font-black hover:bg-photon-gold hover:text-black hover:border-photon-gold transition-all"
