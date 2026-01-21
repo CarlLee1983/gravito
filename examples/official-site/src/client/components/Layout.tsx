@@ -4,7 +4,6 @@ import { ArrowUpRight, Book, Github, Home as HomeIcon, Menu, Rocket, Zap } from 
 import { useEffect, useState } from 'react'
 import { useTrans } from '../hooks/useTrans'
 import Logo from './Logo'
-import { MagneticCursor } from './MagneticCursor'
 import { getBasePath, StaticLink } from './StaticLink'
 
 interface LayoutProps {
@@ -86,10 +85,7 @@ export default function Layout({ children, noPadding = false }: LayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-void text-white font-sans selection:bg-singularity/30 relative flex flex-col cursor-none-if-needed">
-      {/* Custom Cursor */}
-      <MagneticCursor />
-
+    <div className="min-h-screen bg-void text-white font-sans selection:bg-singularity/30 relative flex flex-col">
       {/* Background Decor */}
       <div className="fixed inset-0 bg-hex-grid opacity-10 pointer-events-none z-0" />
       <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-singularity/5 rounded-full blur-[200px] pointer-events-none z-0" />

@@ -19,7 +19,8 @@ export function isStaticSite(): boolean {
   const hostname = window.location.hostname
   const port = window.location.port
 
-  if ((hostname === 'localhost' || hostname === '127.0.0.1') && port === '4173') {
+  // Local preview ports (Vite default 4173, Custom Preview 4174/4175)
+  if ((hostname === 'localhost' || hostname === '127.0.0.1') && ['4173', '4174', '4175'].includes(port)) {
     return true
   }
 

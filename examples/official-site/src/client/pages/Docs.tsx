@@ -455,17 +455,20 @@ export default function Docs() {
               className="
                                 prose prose-invert prose-lg max-w-none
                                 prose-headings:italic prose-headings:tracking-tighter prose-headings:font-black
-                                prose-h1:text-white
-                                prose-h2:text-4xl prose-h2:text-white prose-h2:border-l-4 prose-h2:border-singularity prose-h2:pl-6 prose-h2:mt-24 prose-h2:mb-10 prose-h2:bg-gradient-to-r prose-h2:from-singularity/5 prose-h2:to-transparent prose-h2:py-4 prose-h2:rounded-r-2xl
-                                prose-h3:text-2xl prose-h3:text-white/90 prose-h3:mt-16 prose-h3:mb-6 prose-h3:flex prose-h3:items-center prose-h3:gap-3
-                                prose-a:font-bold prose-a:text-singularity hover:prose-a:text-cyan-300 transition-colors
-                                prose-p:text-gray-300 prose-p:leading-relaxed prose-p:mb-8 prose-p:font-medium
-                                prose-pre:bg-white/5 prose-pre:border prose-pre:border-white/10 prose-pre:rounded-2xl prose-pre:shadow-lg prose-pre:p-6
+                                prose-h1:text-white prose-h1:text-5xl prose-h1:mb-12
+                                prose-h2:text-3xl prose-h2:text-white prose-h2:border-l-4 prose-h2:border-singularity prose-h2:pl-6 prose-h2:mt-20 prose-h2:mb-8 prose-h2:bg-gradient-to-r prose-h2:from-singularity/5 prose-h2:to-transparent prose-h2:py-3 prose-h2:rounded-r-2xl
+                                prose-h3:text-2xl prose-h3:text-white/90 prose-h3:mt-12 prose-h3:mb-6 prose-h3:flex prose-h3:items-center prose-h3:gap-3
+                                prose-h4:text-xl prose-h4:text-white/80 prose-h4:mt-8 prose-h4:mb-4 prose-h4:font-bold
+                                prose-a:font-bold prose-a:text-singularity hover:prose-a:text-cyan-300 transition-colors prose-a:no-underline hover:prose-a:underline prose-a:decoration-singularity/50 prose-a:underline-offset-4
+                                prose-p:text-gray-300 prose-p:leading-8 prose-p:mb-6 prose-p:font-medium prose-p:tracking-wide
+                                prose-pre:bg-[#050505] prose-pre:border prose-pre:border-white/10 prose-pre:rounded-2xl prose-pre:shadow-2xl prose-pre:p-6 prose-pre:my-8
+                                prose-code:text-cyan-300 prose-code:bg-cyan-900/20 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:before:content-none prose-code:after:content-none prose-code:font-mono
                                 prose-strong:text-white prose-strong:font-black
-                                prose-hr:border-white/5 prose-hr:my-20
-                                prose-blockquote:border-singularity prose-blockquote:bg-singularity/5 prose-blockquote:py-2 prose-blockquote:px-8 prose-blockquote:rounded-r-2xl prose-blockquote:italic prose-blockquote:text-gray-300
-                                prose-li:text-gray-300 prose-li:mb-2
-                                prose-img:rounded-[2rem] prose-img:border prose-img:border-white/10 prose-img:shadow-2xl
+                                prose-hr:border-white/10 prose-hr:my-16
+                                prose-blockquote:border-l-4 prose-blockquote:border-singularity prose-blockquote:bg-singularity/5 prose-blockquote:py-4 prose-blockquote:px-8 prose-blockquote:rounded-r-2xl prose-blockquote:italic prose-blockquote:text-gray-300 prose-blockquote:my-8
+                                prose-ul:list-disc prose-ul:pl-6 prose-ul:my-6 prose-li:text-gray-300 prose-li:mb-2 prose-li:pl-2
+                                prose-ol:list-decimal prose-ol:pl-6 prose-ol:my-6
+                                prose-img:rounded-[2rem] prose-img:border prose-img:border-white/10 prose-img:shadow-2xl prose-img:my-12
                                "
               // biome-ignore lint/security/noDangerouslySetInnerHtml: docs markdown is treated as trusted content in this example site
               dangerouslySetInnerHTML={{ __html: content }}
@@ -485,6 +488,23 @@ export default function Docs() {
                   </div>
                 </div>
               </div>
+
+              {editUrl && (
+                <a
+                  href={editUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-xs font-bold text-gray-500 hover:text-singularity transition-colors group/edit"
+                >
+                  <span className="group-hover/edit:underline decoration-singularity/50 underline-offset-4">
+                    {isZh ? '在 GitHub 上編輯此頁' : 'Edit this page on GitHub'}
+                  </span>
+                  <ChevronRight
+                    size={12}
+                    className="group-hover/edit:translate-x-1 transition-transform"
+                  />
+                </a>
+              )}
             </div>
 
             {/* Next/Prev Navigation */}

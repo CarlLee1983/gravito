@@ -123,6 +123,15 @@ async function build() {
     const glob = new Glob('**/[a-z]*.md') // Avoid hidden files and internal dirs
     let docCount = 0
     for await (const file of glob.scan(docsRoot)) {
+      // Exclude internal directories
+      if (
+        file.startsWith('design/') ||
+        file.startsWith('internal/') ||
+        file.includes('/internal/')
+      ) {
+        continue
+      }
+
       // Strip locale prefix (e.g. 'en/', 'zh-TW/')
       const slug = file.replace(/^[a-z-]+\//i, '').replace(/\.md$/, '')
       if (slug === 'guide/laravel-12-mvc-parity' || slug.includes('node_modules')) {
