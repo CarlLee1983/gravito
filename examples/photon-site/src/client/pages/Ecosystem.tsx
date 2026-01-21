@@ -1,4 +1,3 @@
-import { useFreeze } from '@gravito/freeze-react'
 import { Head } from '@inertiajs/react'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
@@ -37,7 +36,7 @@ interface Orbit {
   metrics?: { label: string; value: string }
 }
 
-const getOrbits = (lang: 'en' | 'zh-TW'): Orbit[] => {
+const getOrbits = (lang: 'en' | 'zh-TW', t: any): Orbit[] => {
   const isZh = lang === 'zh-TW'
   return [
     {
@@ -51,7 +50,7 @@ const getOrbits = (lang: 'en' | 'zh-TW'): Orbit[] => {
       features: isZh
         ? ['JWE 支援', '會話防護', '角色管理']
         : ['JWE Support', 'Session Shield', 'Role Management'],
-      metrics: { label: 'Latency', value: '< 0.05ms' },
+      metrics: { label: t.metrics.latency, value: '< 0.05ms' },
     },
     {
       name: 'Atlas',
@@ -64,7 +63,7 @@ const getOrbits = (lang: 'en' | 'zh-TW'): Orbit[] => {
       features: isZh
         ? ['Eloquent 風格', '多資料庫支援', '遷移與 Seed']
         : ['Eloquent-style', 'Multi-DB Support', 'Migrations & Seeders'],
-      metrics: { label: 'Queries/s', value: '1.2M+' },
+      metrics: { label: t.metrics.queries, value: '1.2M+' },
     },
     {
       name: 'Prism',
@@ -77,7 +76,7 @@ const getOrbits = (lang: 'en' | 'zh-TW'): Orbit[] => {
       features: isZh
         ? ['邏輯區塊', '佈局 Yields', '高速 JIT']
         : ['Logic Blocks', 'Layout Yields', 'High-Speed JIT'],
-      metrics: { label: 'Render', value: '0.01ms' },
+      metrics: { label: t.metrics.render, value: '0.01ms' },
     },
     {
       name: 'Ion',
@@ -90,7 +89,7 @@ const getOrbits = (lang: 'en' | 'zh-TW'): Orbit[] => {
       features: isZh
         ? ['共享狀態', '握手協議', '資產版本控制']
         : ['Shared State', 'Handshake Protocol', 'Asset Versioning'],
-      metrics: { label: 'TTFB', value: '8ms (Edge)' },
+      metrics: { label: t.metrics.ttfb, value: '8ms (Edge)' },
     },
     {
       name: 'Stasis',
@@ -103,7 +102,7 @@ const getOrbits = (lang: 'en' | 'zh-TW'): Orbit[] => {
       features: isZh
         ? ['多級快取', '標籤支援', '分散式鎖']
         : ['Multi-Level Cache', 'Tags', 'Distributed Locks'],
-      metrics: { label: 'Throughput', value: '2.4M/s' },
+      metrics: { label: t.metrics.throughput, value: '2.4M/s' },
     },
     {
       name: 'Signal',
@@ -183,7 +182,7 @@ const getOrbits = (lang: 'en' | 'zh-TW'): Orbit[] => {
 export default function Ecosystem({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) {
   const currentLang = (lang === 'zh-TW' ? 'zh-TW' : 'en') as 'en' | 'zh-TW'
   const t = getTranslation(ecosystemTranslations, currentLang)
-  const orbits = getOrbits(currentLang)
+  const orbits = getOrbits(currentLang, t)
   const [copiedPackage, setCopiedPackage] = useState<string | null>(null)
 
   const handleInstall = (packageName: string) => {
@@ -196,7 +195,7 @@ export default function Ecosystem({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) {
 
   return (
     <DocsLayout currentId="ecosystem">
-      <Head title={`${t.title} Orbits | Photon Engine`} />
+      <Head title={`${t.head_title} | Photon Engine`} />
 
       <div className="mb-24 relative">
         <div className="absolute -top-24 -left-24 w-64 h-64 bg-photon-gold/5 blur-[100px] rounded-full pointer-events-none" />
@@ -376,7 +375,7 @@ export default function Ecosystem({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) {
         </div>
       </div>
 
-      <div className="mt-40 grid grid-cols-2 lg:grid-cols-4 gap-8 border-t border-s-brd pt-20 pb-20">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-24">
         {[
           { label: lang === 'zh-TW' ? '總下載量' : 'TOTAL_PULLS', value: '4.8M+', icon: Download },
           { label: lang === 'zh-TW' ? '活動節點' : 'ACTIVE_NODES', value: '124K', icon: Activity },

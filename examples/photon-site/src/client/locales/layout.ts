@@ -1,6 +1,7 @@
 import type { TranslationMap } from './types'
 
 export interface NavTranslations {
+  docs_head_title: string
   home: string
   ecosystem: string
   patterns: string
@@ -14,6 +15,7 @@ export interface NavTranslations {
 
 export const navTranslations: TranslationMap<NavTranslations> = {
   en: {
+    docs_head_title: 'PHOTON_ENGINE_DOCS',
     home: 'Home',
     ecosystem: 'Ecosystem',
     patterns: 'Patterns',
@@ -64,6 +66,7 @@ export const navTranslations: TranslationMap<NavTranslations> = {
     ZERO_COPY_UPLOADS: 'ZERO_COPY_UPLOADS',
   },
   'zh-TW': {
+    docs_head_title: 'PHOTON_引擎技術文件',
     home: '首頁',
     ecosystem: '生態系統',
     patterns: '設計模式',

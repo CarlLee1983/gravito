@@ -1,6 +1,9 @@
 import type { TranslationMap } from './types'
 
 export interface HomeTranslations {
+  head_title: string
+  switch_lang_tip: string
+  switch_theme_tip: string
   navbar: {
     docs: string
     ecosystem: string
@@ -40,6 +43,9 @@ export interface HomeTranslations {
 
 export const homeTranslations: TranslationMap<HomeTranslations> = {
   en: {
+    head_title: 'PHOTON // THE ABSOLUTE ENGINE',
+    switch_lang_tip: 'Switch to Traditional Chinese',
+    switch_theme_tip: 'Toggle Theme',
     navbar: {
       docs: 'Docs',
       ecosystem: 'Ecosystem',
@@ -82,6 +88,9 @@ export const homeTranslations: TranslationMap<HomeTranslations> = {
     },
   },
   'zh-TW': {
+    head_title: 'PHOTON // 絕對引擎',
+    switch_lang_tip: '切換至繁體中文',
+    switch_theme_tip: '切換主題模式',
     navbar: {
       docs: '文件',
       ecosystem: '生態系統',

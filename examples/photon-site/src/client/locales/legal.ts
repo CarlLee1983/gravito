@@ -1,6 +1,7 @@
 import type { TranslationMap } from './types'
 
 export interface LegalTranslations {
+  head_title: string
   breadcrumb: string
   compliance: string
   mod_id: string
@@ -11,6 +12,7 @@ export interface LegalTranslations {
 
 export const legalTranslations: TranslationMap<LegalTranslations> = {
   en: {
+    head_title: 'LEGAL_PROTOCOL',
     breadcrumb: 'HOME',
     compliance: 'LEGAL_COMPLIANCE_v1.0',
     mod_id: 'MOD_ID',
@@ -20,6 +22,7 @@ export const legalTranslations: TranslationMap<LegalTranslations> = {
       'This document is part of the Gravito Research Labs legal framework. Photon Engine is provided "as is" without warranty. For specific commercial licensing, please contact our enterprise relations module.',
   },
   'zh-TW': {
+    head_title: '法律協議協定',
     breadcrumb: '首頁',
     compliance: '法律合規性_v1.0',
     mod_id: '模組編號',

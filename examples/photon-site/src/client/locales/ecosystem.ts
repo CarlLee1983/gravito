@@ -1,6 +1,7 @@
 import type { TranslationMap } from './types'
 
 export interface EcosystemTranslations {
+  head_title: string
   breadcrumb: string
   title: string
   subtitle: string
@@ -23,10 +24,22 @@ export interface EcosystemTranslations {
   buildTitle: string
   buildDesc: string
   metricsHeader: string
+  metrics: {
+    latency: string
+    queries: string
+    render: string
+    ttfb: string
+    throughput: string
+    total_pulls: string
+    active_nodes: string
+    security_score: string
+    global_latency: string
+  }
 }
 
 export const ecosystemTranslations: TranslationMap<EcosystemTranslations> = {
   en: {
+    head_title: 'Orbits Ecosystem',
     breadcrumb: 'HOME',
     title: 'Ecosystem',
     subtitle:
@@ -51,8 +64,20 @@ export const ecosystemTranslations: TranslationMap<EcosystemTranslations> = {
     buildDesc:
       'Have a micro-service or utility that benefits the Gravito ecosystem? Join the registry and provide atomic power to thousands of nodes.',
     metricsHeader: 'CORE_METRICS',
+    metrics: {
+      latency: 'Latency',
+      queries: 'Queries/s',
+      render: 'Render',
+      ttfb: 'TTFB',
+      throughput: 'Throughput',
+      total_pulls: 'TOTAL_PULLS',
+      active_nodes: 'ACTIVE_NODES',
+      security_score: 'SECURITY_SCORE',
+      global_latency: 'GLOBAL_LATENCY',
+    },
   },
   'zh-TW': {
+    head_title: 'Orbits 生態系統',
     breadcrumb: '首頁',
     title: '生態系統',
     subtitle:
@@ -77,5 +102,16 @@ export const ecosystemTranslations: TranslationMap<EcosystemTranslations> = {
     buildDesc:
       '擁有一個對 Gravito 生態系統有益的微服務或實用程序？加入註冊表，為數千個節點提供原子動力。',
     metricsHeader: '核心指標',
+    metrics: {
+      latency: '延遲',
+      queries: '查詢 / 秒',
+      render: '渲染',
+      ttfb: '首位元組時間',
+      throughput: '吞吐量',
+      total_pulls: '總下載量',
+      active_nodes: '活動節點',
+      security_score: '安全審核',
+      global_latency: '全球延遲',
+    },
   },
 }

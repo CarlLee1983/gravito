@@ -20,8 +20,8 @@ export default function Legal({ title, content, id, slug, lastUpdated, lang = 'e
   const t = getTranslation(legalTranslations, currentLang)
 
   return (
-    <DocsLayout currentId={slug}>
-      <Head title={`${title} // LEGAL_PROTOCOL`} />
+    <DocsLayout currentId={id}>
+      <Head title={`${title} // ${t.head_title}`} />
 
       <div className="bg-p-bg transition-colors duration-500">
         <header className="max-w-4xl mx-auto mb-20 px-4 pt-16 relative z-10 text-center">

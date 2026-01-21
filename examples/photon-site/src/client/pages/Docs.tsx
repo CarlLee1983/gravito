@@ -1,10 +1,12 @@
-import { StaticLink, useFreeze } from '@gravito/freeze-react'
+import { StaticLink } from '@gravito/freeze-react'
 import { Head } from '@inertiajs/react'
 import { CheckCircle2, ChevronRight, Terminal } from 'lucide-react'
 import { useMemo } from 'react'
 import { BenchmarkLab } from '../components/BenchmarkLab'
 import { DocsLayout } from '../components/DocsLayout'
 import { navItems } from '../constants/navigation'
+import { navTranslations } from '../locales/layout'
+import { getTranslation } from '../locales/types'
 
 interface DocsProps {
   title: string
@@ -136,6 +138,7 @@ export default function Docs({
   lang = 'en',
 }: DocsProps & { lang?: 'en' | 'zh-TW' }) {
   const currentLang = (lang === 'zh-TW' ? 'zh-TW' : 'en') as 'en' | 'zh-TW'
+  const navT = getTranslation(navTranslations, currentLang)
   const renderedContent = useMemo(() => {
     const highlightedContent = highlightCode(content || '')
     const parts = highlightedContent.split('[BENCHMARK_LAB]')
@@ -158,8 +161,8 @@ export default function Docs({
   }, [content, currentLang])
 
   return (
-    <DocsLayout currentId={slug}>
-      <Head title={`${title} // PHOTON_ENGINE_DOCS`} />
+    <DocsLayout currentId={id}>
+      <Head title={`${title} // ${navT.docs_head_title}`} />
 
       <div className="min-h-screen">
         {/* Module Header */}

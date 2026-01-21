@@ -117,7 +117,7 @@ export default function Home({ lang = 'en', ...props }: HomeProps) {
 
   return (
     <div className="min-h-screen font-sans selection:bg-photon-gold/20 transition-colors duration-500 bg-p-bg text-s-txt">
-      <Head title="PHOTON // THE ABSOLUTE ENGINE" />
+      <Head title={t.head_title} />
       {/* Enhanced Pro-Max Navbar */}
       <nav
         className={`fixed top-0 left-0 right-0 z-50 px-4 md:px-12 py-4 md:py-6 flex justify-between items-center transition-all duration-700 ${
@@ -180,7 +180,7 @@ export default function Home({ lang = 'en', ...props }: HomeProps) {
             type="button"
             onClick={toggleLanguage}
             className="w-10 h-10 flex items-center justify-center rounded-lg border border-s-brd bg-surf-bg/50 backdrop-blur-md hover:border-photon-gold/40 transition-all text-s-txt hover:text-photon-gold shadow-lg group"
-            title={currentLang === 'en' ? '切換至繁體中文' : 'Switch to English'}
+            title={t.switch_lang_tip}
           >
             <span className="text-[10px] font-bold font-technical group-hover:scale-110 transition-transform">
               {currentLang === 'en' ? '繁' : 'EN'}
@@ -192,7 +192,7 @@ export default function Home({ lang = 'en', ...props }: HomeProps) {
             type="button"
             onClick={toggleTheme}
             className="w-10 h-10 flex items-center justify-center rounded-lg border border-s-brd bg-surf-bg/50 backdrop-blur-md hover:border-photon-gold/40 transition-all text-s-txt hover:text-photon-gold shadow-lg group"
-            title={theme === 'dark' ? '切換至亮色模式' : 'Switch to Dark Mode'}
+            title={t.switch_theme_tip}
           >
             <AnimatePresence mode="wait">
               {theme === 'dark' ? (
