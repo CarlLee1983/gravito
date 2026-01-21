@@ -1,5 +1,12 @@
 # example-ecommerce-mvc
 
+## 1.1.4
+
+### Patch Changes
+
+- Updated dependencies [6234dab]
+  - @gravito/prism@3.0.2
+
 ## 1.1.3
 
 ### Patch Changes

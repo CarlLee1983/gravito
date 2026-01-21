@@ -1,5 +1,12 @@
 # my-gravito-static-site
 
+## 0.1.6
+
+### Patch Changes
+
+- Updated dependencies [6234dab]
+  - @gravito/prism@3.0.2
+
 ## 0.1.5
 
 ### Patch Changes

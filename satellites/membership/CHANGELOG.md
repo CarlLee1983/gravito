@@ -1,5 +1,11 @@
 # @gravito/satellite-membership
 
+## 0.1.7
+
+### Patch Changes
+
+- @gravito/signal@3.0.3
+
 ## 0.1.6
 
 ### Patch Changes
