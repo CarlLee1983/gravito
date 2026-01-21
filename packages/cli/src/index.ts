@@ -328,6 +328,59 @@ cli
         force: true, // Allow overwriting empty dir
       })
 
+      // --- Skill Injection (The Freeze Engine & Friends) ---
+      const TEMPLATE_SKILLS: Record<string, string[]> = {
+        'static-site': ['static-site-generator'],
+        'inertia-react': ['mvc-master', 'ui-ux-pro-max', 'clean-architect'],
+        basic: ['fortify-security'],
+      }
+
+      const skillsToInject = TEMPLATE_SKILLS[project.template as string] || []
+      if (skillsToInject.length > 0) {
+        // Try to locate local .skills if running inside monorepo
+        // Root .skills is at ../../../.skills relative to packages/cli/src
+        const localSkillsRoot = path.resolve(import.meta.dirname, '../../../.skills')
+        const hasLocalSkills = await fs
+          .access(localSkillsRoot)
+          .then(() => true)
+          .catch(() => false)
+
+        for (const skill of skillsToInject) {
+          const skillDest = path.join(targetDir, '.skills', skill)
+
+          // Determine source and injection method
+          let skillSource = `github:gravito-framework/gravito/.skills/${skill}#main`
+          let isLocal = false
+
+          if (hasLocalSkills) {
+            const localPath = path.join(localSkillsRoot, skill)
+            const exists = await fs
+              .access(localPath)
+              .then(() => true)
+              .catch(() => false)
+            if (exists) {
+              skillSource = localPath
+              isLocal = true
+            }
+          }
+
+          try {
+            if (isLocal) {
+              await fs.mkdir(path.dirname(skillDest), { recursive: true })
+              await fs.cp(skillSource, skillDest, { recursive: true })
+            } else {
+              await downloadTemplate(skillSource, {
+                dir: skillDest,
+                force: true,
+              })
+            }
+          } catch (skillErr) {
+            console.warn(pc.yellow(`⚠️  Failed to inject skill '${skill}':`), skillErr)
+          }
+        }
+      }
+      // ----------------------------------------------------
+
       // Handle framework-specific files for static-site template
       if (project.template === 'static-site' && framework) {
         const clientDir = path.join(process.cwd(), targetDir, 'src', 'client')

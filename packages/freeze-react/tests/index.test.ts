@@ -38,6 +38,7 @@ mock.module('react', () => ({
   useContext: useContextMock,
   useMemo: (factory: () => unknown) => factory(),
   useCallback: (fn: (...args: any[]) => unknown) => fn,
+  useState: (initial: unknown) => [initial, () => {}],
   createElement: createElementMock,
   useState: <T>(initial: T | (() => T)) => {
     if (typeof initial === 'function') {
@@ -133,6 +134,7 @@ describe('@gravito/freeze-react', () => {
       baseUrl: 'https://example.com',
     })
 
+    // @ts-expect-error - mock createElement doesn't match real React types
     React.createElement(FreezeProvider, { config }, () => null)
     const value = useFreeze()
 
@@ -147,6 +149,7 @@ describe('@gravito/freeze-react', () => {
       baseUrl: 'https://example.com',
     })
 
+    // @ts-expect-error - mock createElement doesn't match real React types
     React.createElement(FreezeProvider, { config }, () => null)
     const link = StaticLink({ href: '/about', children: 'About' } as any)
     expect(link.props?.href).toBe('/en/about')
@@ -160,6 +163,7 @@ describe('@gravito/freeze-react', () => {
 
     detectorState.currentLocale = 'en'
 
+    // @ts-expect-error - mock createElement doesn't match real React types
     React.createElement(FreezeProvider, { config, locale: 'en' }, () => null)
     const link = LocaleSwitcher({ locale: 'en', children: 'English' } as any)
     expect(link.props?.['aria-current']).toBe('page')
