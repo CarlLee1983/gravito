@@ -5,6 +5,7 @@ import { Activity, Command, Menu, Moon, Search, Sun, Terminal, X, Zap } from 'lu
 import type React from 'react'
 import { useEffect, useState } from 'react'
 import { navGroups } from '../constants/navigation'
+import { navTranslations } from '../locales/layout'
 import { Footer } from './Footer'
 
 export const DocsLayout = ({
@@ -32,51 +33,10 @@ export const DocsLayout = ({
     return 'dark'
   })
 
-  const navTranslations: Record<string, string> = {
-    GETTING_STARTED: '入門指南',
-    TECHNICAL_ARCHITECTURE: '技術架構',
-    CORE_LIFECYCLE: '核心生命週期',
-    PHYSICAL_LAYER: '物理層',
-    FULLSTACK_SUITE: '全端套件',
-    EXTENSIONS_ECO: '擴充生態',
-    LAB_EXPERIMENTS: '實驗室',
-
-    INTRODUCTION: '介紹',
-    QUICKSTART: '快速開始',
-    PROJECT_STRUCTURE: '專案結構',
-    PATTERN_GALLERY: '設計模式',
-    ROUTING_SYSTEM: '路由系統',
-    PROXIES_GATEWAY: '代理與閘道',
-    CBOR_PROTOCOL: 'CBOR 協定',
-    HTMX_PRISM_HDA: 'HTMX Prism HDA',
-    CONTEXT_API: 'Context API',
-    MIDDLEWARE_MATRIX: '中介軟體矩陣',
-    EXCEPTION_HANDLING: '異常處理',
-    DATA_VALIDATION: '資料驗證',
-    PERF_TUNING: '效能調優',
-    INSTRUCTION_LEVEL_OPT: '指令級優化',
-    ZERO_COPY_BUFFERING: '零複製緩衝',
-    RECYCLED_CONTEXT: 'Context 回收',
-    PRISM_TEMPLATES: 'Prism 模板',
-    ION_SPA_BRIDGE: 'Ion SPA 橋接',
-    ATLAS_ORM: 'Atlas ORM',
-    STATIC_SITE_GEN: '靜態網站生成',
-    ECOSYSTEM_REGISTRY: '生態系統註冊表',
-    BEAM_RPC_CLIENT: 'Beam RPC 客戶端',
-    TESTING_SUITE: '測試套件',
-    SENTINEL_AUTH: 'Sentinel 身份驗證',
-    REALTIME_RIPPLE: '即時 Ripple',
-    WEBHOOK_ECHO: 'Webhook Echo',
-    BUN_DEPLOYMENT: 'Bun 部署',
-    '3RD_PARTY_INTEGRATIONS': '第三方整合',
-    ULTRA_HELLO_WORLD: '極速 Hello World',
-    ZERO_COPY_STREAM: '零複製串流',
-    MIDDLEWARE_PULSE: '中介軟體脈衝',
-    ATOMIC_CRUD_ATLAS: '原子化 CRUD',
-    ZERO_COPY_UPLOADS: '零複製上傳',
+  const t = (key: string) => {
+    const localeTranslations = (navTranslations as any)[currentLang] || navTranslations.en
+    return localeTranslations[key] || key
   }
-
-  const t = (key: string) => (currentLang === 'zh-TW' ? navTranslations[key] || key : key)
 
   const toggleLanguage = () => {
     const newLang = currentLang === 'en' ? 'zh-TW' : 'en'

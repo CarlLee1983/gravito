@@ -1,5 +1,6 @@
 import { StaticLink } from '@gravito/freeze-react'
 import { Activity, ExternalLink, Github, MessageSquare, Zap } from 'lucide-react'
+import { footerTranslations } from '../locales/footer'
 
 const getFooterLinks = (
   t: any,
@@ -38,56 +39,7 @@ const getFooterLinks = (
   ]
 
 export function Footer({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) {
-  const t = {
-    en: {
-      desc_1: 'The high-performance, zero-copy orchestration engine.',
-      desc_2: 'Invisible. Atomic. Absolute.',
-      license: 'Licensed_MIT',
-      version: 'v1.2.0_LATEST',
-      protocol_stable: 'Protocol_Stable',
-      ecosystem_part: 'Part_of_the_Ecosystem',
-      ecosystem_nodes: 'ECOSYSTEM_NODES',
-      protocol_resources: 'PROTOCOL_RESOURCES',
-      external_links: 'EXTERNAL_LINKS',
-      privacy_policy: 'Privacy Policy',
-      terms_of_use: 'Terms of Use',
-      architecture_patterns: 'Architecture Patterns',
-      ecosystem_registry: 'Ecosystem Registry',
-      documentation: 'Documentation',
-    },
-    'zh-TW': {
-      desc_1: '高性能、零拷貝的協調引擎。',
-      desc_2: '隱形。原子。絕對。',
-      license: 'MIT_授權',
-      version: 'v1.2.0_最新',
-      protocol_stable: '協議_穩定',
-      ecosystem_part: '生態系統的一部份',
-      ecosystem_nodes: '生態系統_節點',
-      protocol_resources: '協議_資源',
-      external_links: '外部_連結',
-      privacy_policy: '隱私政策',
-      terms_of_use: '使用條款',
-      architecture_patterns: '架構模式',
-      ecosystem_registry: '生態系統註冊表',
-      documentation: '技術文件',
-    },
-  }[lang] || {
-    // Fallback
-    desc_1: 'The high-performance, zero-copy orchestration engine.',
-    desc_2: 'Invisible. Atomic. Absolute.',
-    license: 'Licensed_MIT',
-    version: 'v1.2.0_LATEST',
-    protocol_stable: 'Protocol_Stable',
-    ecosystem_part: 'Part_of_the_Ecosystem',
-    ecosystem_nodes: 'ECOSYSTEM_NODES',
-    protocol_resources: 'PROTOCOL_RESOURCES',
-    external_links: 'EXTERNAL_LINKS',
-    privacy_policy: 'Privacy Policy',
-    terms_of_use: 'Terms of Use',
-    architecture_patterns: 'Architecture Patterns',
-    ecosystem_registry: 'Ecosystem Registry',
-    documentation: 'Documentation',
-  }
+  const t = (footerTranslations as any)[lang] || footerTranslations.en
 
   const links = getFooterLinks(t, lang)
 
