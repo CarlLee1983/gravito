@@ -182,7 +182,23 @@ export class DocsService {
     const fsLocale = locale === 'zh' ? 'zh-TW' : 'en'
 
     // Construct file path: docs/{locale}/{slug}.md
-    const filePath = path.join(DOCS_ROOT, fsLocale, `${slug}.md`)
+    let filePath = path.join(DOCS_ROOT, fsLocale, `${slug}.md`)
+
+    // Fallback logic
+    try {
+      await fs.access(filePath)
+    } catch {
+      if (fsLocale !== 'en') {
+        // Fallback to English
+        const fallbackPath = path.join(DOCS_ROOT, 'en', `${slug}.md`)
+        try {
+          await fs.access(fallbackPath)
+          filePath = fallbackPath
+        } catch {
+          // Both missing, return null (handled by catch below)
+        }
+      }
+    }
 
     try {
       const raw = await fs.readFile(filePath, 'utf-8')
