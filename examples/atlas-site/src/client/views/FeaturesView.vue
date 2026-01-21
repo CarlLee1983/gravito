@@ -527,6 +527,11 @@ Factory.<span class="text-blue-300">define</span>(User, ({ <span class="text-ora
 import { useI18n } from 'vue-i18n'
 import DataSortingGrid from '@/client/components/DataSortingGrid.vue'
 import StaticLink from '@/client/components/StaticLink.vue'
+
+defineOptions({
+  name: 'FeaturesView'
+})
+
 const { t } = useI18n()
 </script>
 

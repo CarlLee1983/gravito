@@ -5,7 +5,7 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     { path: '/', name: 'Home', component: Home },
-    { path: '/features', name: 'Features', component: () => import('../views/Features.vue') },
+    { path: '/features', name: 'Features', component: () => import('../views/FeaturesView.vue') },
     { path: '/docs/:id', name: 'Docs', component: () => import('../views/Docs.vue') },
   ],
   scrollBehavior(_to, _from, savedPosition) {

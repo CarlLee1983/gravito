@@ -52,7 +52,7 @@ export default {
       'Unlike stateless mappers, Atlas models track changes internally. Only modified fields are sent to the database, drastically reducing I/O and preventing accidental overwrites.',
     orm_title: 'Eloquent-Style Models',
     orm_desc:
-      'Atlas brings the Active Record pattern to TypeScript. Define models with @column decorators, manage lifecycle hooks, and enjoy powerful relationship handling (hasMany, belongsTo) that mirrors the best parts of Laravel Eloquent.',
+      "Atlas brings the Active Record pattern to TypeScript. Define models with {'@'}column decorators, manage lifecycle hooks, and enjoy powerful relationship handling (hasMany, belongsTo) that mirrors the best parts of Laravel Eloquent.",
     query_title: 'Fluent Orbit Builder',
     query_desc:
       'Build complex queries with a chainable API. Supports eager loading (with), pagination, and database transactions, with an API designed for maximum readability for PHP artisans moving to the edge.',

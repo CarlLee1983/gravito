@@ -51,7 +51,7 @@ export default {
       '與無狀態的映射器不同，Atlas 模型能追蹤內部狀態變更。系統僅會將「已修改」的欄位同步至資料庫，大幅減少 I/O 損耗並防止意外覆寫。',
     orm_title: 'Eloquent 風格模型',
     orm_desc:
-      'Atlas 將 Active Record 模式帶入了 TypeScript 環境。透過 @column 裝飾器定義模型、管理生命週期掛鉤 (Hooks)，並享受強大的關聯處理 (hasMany, belongsTo) 能力。',
+      "Atlas 將 Active Record 模式帶入了 TypeScript 環境。透過 {'@'}column 裝飾器定義模型、管理生命週期掛鉤 (Hooks)，並享受強大的關聯處理 (hasMany, belongsTo) 能力。",
     query_title: '流暢軌道建構器 (Orbit Builder)',
     query_desc:
       '使用鏈式 API 建構複雜查詢。原生支援預載入 (with)、分頁以及資料庫交易 (Transactions)，提供極致的可讀性。',
