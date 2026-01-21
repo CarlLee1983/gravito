@@ -119,17 +119,17 @@ async function build() {
   if (!existsSync(path.join(outputDir, 'sitemap.xml'))) {
     console.warn('⚠️ SSG failed to generate sitemap.xml. Generating manually...')
     const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${extraPaths
-  .map((route) => {
-    return `  <url>
-    <loc>${baseUrl}${route === '/' ? '' : route}</loc>
-    <changefreq>weekly</changefreq>
-    <priority>${route === '/' ? '1.0' : '0.8'}</priority>
-  </url>`
-  })
-  .join('\n')}
-</urlset>`
+    <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    ${extraPaths
+      .map((route) => {
+        return `  <url>
+        <loc>${baseUrl}${route === '/' ? '' : route}</loc>
+        <changefreq>weekly</changefreq>
+        <priority>${route === '/' ? '1.0' : '0.8'}</priority>
+      </url>`
+      })
+      .join('\n')}
+    </urlset>`
     await writeFile(path.join(outputDir, 'sitemap.xml'), sitemap, 'utf-8')
     console.log('✅ Manual sitemap.xml generated.')
   }
@@ -137,16 +137,14 @@ ${extraPaths
   if (!existsSync(path.join(outputDir, 'robots.txt'))) {
     console.warn('⚠️ SSG failed to generate robots.txt. Generating manually...')
     const robots = `User-agent: *
-Allow: /
-
-Sitemap: ${baseUrl}/sitemap.xml`
+    Allow: /
+    
+    Sitemap: ${baseUrl}/sitemap.xml`
     await writeFile(path.join(outputDir, 'robots.txt'), robots, 'utf-8')
     console.log('✅ Manual robots.txt generated.')
   }
 
-  console.log('✅ Build complete.')
-
-  // 3. Copy Public Assets
+  console.log('✅ Build complete.') // 3. Copy Public Assets
   console.log('📦 Copying public assets...')
   const publicDir = path.join(process.cwd(), 'public')
   try {

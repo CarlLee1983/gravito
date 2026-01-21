@@ -44,22 +44,37 @@ export class StaticSiteGenerator {
       this.core.logger.warn('[SSG] Could not detect routes specific format. SSG might fail.')
     }
 
-    const staticRoutes = routes.filter(
-      (r: any) => r.method.toLowerCase() === 'get' && !r.path.includes(':') && !r.path.includes('*')
-    )
+    // Deduplicate routes based on path
+    const uniquePaths = new Set<string>()
+    const uniqueRoutes: any[] = []
 
-    // Append extra paths
-    for (const path of extraPaths) {
-      staticRoutes.push({ path, method: 'GET' })
+    // Helper to add route if unique
+    const addRoute = (r: any) => {
+      // Actually, for SSG, we usually want exact match.
+      if (!uniquePaths.has(r.path)) {
+        uniquePaths.add(r.path)
+        uniqueRoutes.push(r)
+      }
     }
 
-    this.core.logger.info(
-      `[SSG] Found ${staticRoutes.length} static routes (including manual paths) for export.`
-    )
+    // Process router routes
+    routes
+      .filter(
+        (r: any) =>
+          r.method.toLowerCase() === 'get' && !r.path.includes(':') && !r.path.includes('*')
+      )
+      .forEach(addRoute)
+
+    // Process extra paths
+    extraPaths.forEach((path) => {
+      addRoute({ path, method: 'GET' })
+    })
+
+    this.core.logger.info(`[SSG] Found ${uniqueRoutes.length} unique static routes for export.`)
 
     // Concurrency control
     const CONCURRENCY = 10
-    const queue = [...staticRoutes]
+    const queue = [...uniqueRoutes]
     const total = queue.length
     let processed = 0
     let success = 0
@@ -130,7 +145,7 @@ export class StaticSiteGenerator {
     await Promise.all(workers)
 
     // Generate Sitemap
-    await this.generateSitemap(outputDir, staticRoutes, baseUrl)
+    await this.generateSitemap(outputDir, uniqueRoutes, baseUrl)
 
     // Generate Robots.txt
     await this.generateRobotsTxt(outputDir, baseUrl)
