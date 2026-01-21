@@ -2,13 +2,14 @@ import { motion } from 'framer-motion'
 import { Activity, BarChart3, RotateCcw } from 'lucide-react'
 import { useState } from 'react'
 import { labTranslations } from '../locales/lab'
+import { getTranslation } from '../locales/types'
 
 export const BenchmarkLab = ({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) => {
   const [routes, setRoutes] = useState(100)
   const [middleware, setMiddleware] = useState(5)
   const [active, setActive] = useState(false)
 
-  const t = (labTranslations as any)[lang] || labTranslations.en
+  const t = getTranslation(labTranslations, lang)
 
   // Simulation Algorithm: Photon is less affected by complexity than generic frameworks
   const calculateRPS = (base: number, r: number, m: number, factor: number) => {

@@ -6,6 +6,7 @@ import type React from 'react'
 import { useEffect, useState } from 'react'
 import { navGroups } from '../constants/navigation'
 import { navTranslations } from '../locales/layout'
+import { getTranslation } from '../locales/types'
 import { Footer } from './Footer'
 
 export const DocsLayout = ({
@@ -34,7 +35,7 @@ export const DocsLayout = ({
   })
 
   const t = (key: string) => {
-    const localeTranslations = (navTranslations as any)[currentLang] || navTranslations.en
+    const localeTranslations = getTranslation(navTranslations, currentLang)
     return localeTranslations[key] || key
   }
 

@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { Scale, Shield } from 'lucide-react'
 import { DocsLayout } from '../components/DocsLayout'
 import { legalTranslations } from '../locales/legal'
+import { getTranslation } from '../locales/types'
 
 interface LegalProps {
   title: string
@@ -16,7 +17,7 @@ interface LegalProps {
 
 export default function Legal({ title, content, id, slug, lastUpdated, lang = 'en' }: LegalProps) {
   const currentLang = (lang === 'zh-TW' ? 'zh-TW' : 'en') as 'en' | 'zh-TW'
-  const t = (legalTranslations as any)[currentLang] || legalTranslations.en
+  const t = getTranslation(legalTranslations, currentLang)
 
   return (
     <DocsLayout currentId={slug}>

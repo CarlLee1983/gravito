@@ -1,4 +1,20 @@
-export const heroTranslations = {
+import type { TranslationMap } from './types'
+
+export interface HeroTranslations {
+  headline_1: string
+  headline_2: string
+  tagline: string
+  sub_tagline: string
+  build_target: string
+  protocol: string
+  cluster_mode: string
+  badge: string
+  status_dispatch: string
+  status_aot: string
+  status_mem: string
+}
+
+export const heroTranslations: TranslationMap<HeroTranslations> = {
   en: {
     headline_1: 'The Absolute',
     headline_2: 'Engine.',

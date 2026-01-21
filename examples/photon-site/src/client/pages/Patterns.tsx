@@ -4,11 +4,12 @@ import { motion } from 'framer-motion'
 import { ChevronRight, Code, Sparkles, Workflow, Zap } from 'lucide-react'
 import { DocsLayout } from '../components/DocsLayout'
 import { patternsTranslations } from '../locales/patterns'
+import { getTranslation } from '../locales/types'
 
 export default function Patterns({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) {
   const currentLang = (lang === 'zh-TW' ? 'zh-TW' : 'en') as 'en' | 'zh-TW'
   const isZh = currentLang === 'zh-TW'
-  const t = (patternsTranslations as any)[currentLang] || patternsTranslations.en
+  const t = getTranslation(patternsTranslations, currentLang)
   const items = t.patterns
 
   return (

@@ -1,6 +1,7 @@
 import { StaticLink } from '@gravito/freeze-react'
 import { Activity, ExternalLink, Github, MessageSquare, Zap } from 'lucide-react'
 import { footerTranslations } from '../locales/footer'
+import { getTranslation } from '../locales/types'
 
 const getFooterLinks = (
   t: any,
@@ -39,7 +40,7 @@ const getFooterLinks = (
 ]
 
 export function Footer({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) {
-  const t = (footerTranslations as any)[lang] || footerTranslations.en
+  const t = getTranslation(footerTranslations, lang)
 
   const links = getFooterLinks(t, lang)
 

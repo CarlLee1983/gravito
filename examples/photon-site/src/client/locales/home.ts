@@ -1,4 +1,44 @@
-export const homeTranslations = {
+import type { TranslationMap } from './types'
+
+export interface HomeTranslations {
+  navbar: {
+    docs: string
+    ecosystem: string
+    patterns: string
+    benchmarks: string
+  }
+  docs: string
+  scroll: string
+  intro: string
+  quickstart: string
+  usage: string
+  launch: string
+  aot: string
+  aot_desc: string
+  middleware: string
+  middleware_desc: string
+  near_zero: string
+  overhead: string
+  desc_p1: string
+  desc_p2: string
+  desc_p3: string
+  view_metrics: string
+  master: string
+  docs_intro: string
+  docs_desc: string
+  ready: string
+  start_reading: string
+  stats: { label: string; unit: string }[]
+  telemetry: {
+    title: string
+    initializing: string
+    warmup: string
+    targeting: string
+    result: string
+  }
+}
+
+export const homeTranslations: TranslationMap<HomeTranslations> = {
   en: {
     navbar: {
       docs: 'Docs',

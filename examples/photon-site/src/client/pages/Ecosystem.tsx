@@ -24,6 +24,7 @@ import {
 import { useState } from 'react'
 import { DocsLayout } from '../components/DocsLayout'
 import { ecosystemTranslations } from '../locales/ecosystem'
+import { getTranslation } from '../locales/types'
 
 interface Orbit {
   name: string
@@ -181,7 +182,7 @@ const getOrbits = (lang: 'en' | 'zh-TW'): Orbit[] => {
 
 export default function Ecosystem({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) {
   const currentLang = (lang === 'zh-TW' ? 'zh-TW' : 'en') as 'en' | 'zh-TW'
-  const t = (ecosystemTranslations as any)[currentLang] || ecosystemTranslations.en
+  const t = getTranslation(ecosystemTranslations, currentLang)
   const orbits = getOrbits(currentLang)
   const [copiedPackage, setCopiedPackage] = useState<string | null>(null)
 

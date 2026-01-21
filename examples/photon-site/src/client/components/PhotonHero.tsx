@@ -2,19 +2,23 @@ import { motion, useScroll, useTransform } from 'framer-motion'
 import { Zap } from 'lucide-react'
 import { useRef } from 'react'
 import { heroTranslations } from '../locales/hero'
+import { getTranslation } from '../locales/types'
 import { ConstellationCanvas } from './ConstellationCanvas'
 
 export const PhotonHero = ({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) => {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const { scrollY } = useScroll()
+  const containerRef = useRef(null)
+  const { scrollY } = useScroll({
+    target: containerRef,
+    offset: ['start start', 'end start'],
+  })
 
   const y1 = useTransform(scrollY, [0, 500], [0, 200])
   const opacity = useTransform(scrollY, [0, 300], [1, 0])
 
-  const t = (heroTranslations as any)[lang] || heroTranslations.en
+  const t = getTranslation(heroTranslations, lang)
 
   return (
-    <div
+    <section
       ref={containerRef}
       className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20"
     >
@@ -155,6 +159,6 @@ export const PhotonHero = ({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) => {
           </div>
         </div>
       </div>
-    </div>
+    </section>
   )
 }

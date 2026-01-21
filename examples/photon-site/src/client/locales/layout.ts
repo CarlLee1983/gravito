@@ -1,5 +1,27 @@
-export const navTranslations: Record<string, Record<string, string>> = {
+import type { TranslationMap } from './types'
+
+export interface NavTranslations {
+  home: string
+  ecosystem: string
+  patterns: string
+  benchmarks: string
+  docs: string
+  search: string
+  switch_lang: string
+  toggle_theme: string
+  [key: string]: string
+}
+
+export const navTranslations: TranslationMap<NavTranslations> = {
   en: {
+    home: 'Home',
+    ecosystem: 'Ecosystem',
+    patterns: 'Patterns',
+    benchmarks: 'Benchmarks',
+    docs: 'Docs',
+    search: 'Search',
+    switch_lang: 'Switch Language',
+    toggle_theme: 'Toggle Theme',
     GETTING_STARTED: 'GETTING_STARTED',
     TECHNICAL_ARCHITECTURE: 'TECHNICAL_ARCHITECTURE',
     CORE_LIFECYCLE: 'CORE_LIFECYCLE',
@@ -7,7 +29,6 @@ export const navTranslations: Record<string, Record<string, string>> = {
     FULLSTACK_SUITE: 'FULLSTACK_SUITE',
     EXTENSIONS_ECO: 'EXTENSIONS_ECO',
     LAB_EXPERIMENTS: 'LAB_EXPERIMENTS',
-
     INTRODUCTION: 'INTRODUCTION',
     QUICKSTART: 'QUICKSTART',
     PROJECT_STRUCTURE: 'PROJECT_STRUCTURE',
@@ -43,6 +64,14 @@ export const navTranslations: Record<string, Record<string, string>> = {
     ZERO_COPY_UPLOADS: 'ZERO_COPY_UPLOADS',
   },
   'zh-TW': {
+    home: '首頁',
+    ecosystem: '生態系統',
+    patterns: '設計模式',
+    benchmarks: '基準測試',
+    docs: '文件',
+    search: '搜尋',
+    switch_lang: '切換語言',
+    toggle_theme: '切換主題',
     GETTING_STARTED: '入門指南',
     TECHNICAL_ARCHITECTURE: '技術架構',
     CORE_LIFECYCLE: '核心生命週期',
@@ -50,7 +79,6 @@ export const navTranslations: Record<string, Record<string, string>> = {
     FULLSTACK_SUITE: '全端套件',
     EXTENSIONS_ECO: '擴充生態',
     LAB_EXPERIMENTS: '實驗室',
-
     INTRODUCTION: '介紹',
     QUICKSTART: '快速開始',
     PROJECT_STRUCTURE: '專案結構',
@@ -79,10 +107,10 @@ export const navTranslations: Record<string, Record<string, string>> = {
     WEBHOOK_ECHO: 'Webhook Echo',
     BUN_DEPLOYMENT: 'Bun 部署',
     '3RD_PARTY_INTEGRATIONS': '第三方整合',
-    ULTRA_HELLO_WORLD: '極速 Hello World',
-    ZERO_COPY_STREAM: '零複製串流',
-    MIDDLEWARE_PULSE: '中介軟體脈衝',
-    ATOMIC_CRUD_ATLAS: '原子化 CRUD',
-    ZERO_COPY_UPLOADS: '零複製上傳',
+    ULTRA_HELLO_WORLD: 'Ultra Hello World',
+    ZERO_COPY_STREAM: '零拷貝串流',
+    MIDDLEWARE_PULSE: 'Middleware Pulse',
+    ATOMIC_CRUD_ATLAS: 'Atomic CRUD Atlas',
+    ZERO_COPY_UPLOADS: '零拷貝上傳',
   },
 }

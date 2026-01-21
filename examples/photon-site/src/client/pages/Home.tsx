@@ -20,6 +20,7 @@ import { useEffect, useState } from 'react'
 import { Footer } from '../components/Footer'
 import { PhotonHero } from '../components/PhotonHero'
 import { homeTranslations } from '../locales/home'
+import { getTranslation } from '../locales/types'
 
 const stats = [
   {
@@ -104,7 +105,7 @@ export default function Home({ lang = 'en', ...props }: HomeProps) {
   }
 
   // Translations
-  const t = (homeTranslations as any)[currentLang] || homeTranslations.en
+  const t = getTranslation(homeTranslations, currentLang)
 
   // Dynamic content arrays
   const quickLinksDynamic = [

@@ -1,5 +1,26 @@
-export const footerTranslations = {
+import type { TranslationMap } from './types'
+
+export interface FooterTranslations {
+  tagline: string
+  version: string
+  license: string
+  ecosystem_nodes: string
+  protocol_resources: string
+  external_links: string
+  privacy_policy: string
+  terms_of_use: string
+  architecture_patterns: string
+  ecosystem_registry: string
+  documentation: string
+  protocol_stable: string
+  desc_1: string
+  desc_2: string
+  ecosystem_part: string
+}
+
+export const footerTranslations: TranslationMap<FooterTranslations> = {
   en: {
+    tagline: 'PHOTON_ENGINE',
     desc_1: 'The high-performance, zero-copy orchestration engine.',
     desc_2: 'Invisible. Atomic. Absolute.',
     license: 'Licensed_MIT',
@@ -16,6 +37,7 @@ export const footerTranslations = {
     documentation: 'Documentation',
   },
   'zh-TW': {
+    tagline: 'PHOTON_核心引擎',
     desc_1: '高性能、零拷貝的協調引擎。',
     desc_2: '隱形。原子。絕對。',
     license: 'MIT_授權',

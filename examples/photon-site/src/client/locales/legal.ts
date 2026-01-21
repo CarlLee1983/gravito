@@ -1,4 +1,15 @@
-export const legalTranslations = {
+import type { TranslationMap } from './types'
+
+export interface LegalTranslations {
+  breadcrumb: string
+  compliance: string
+  mod_id: string
+  last_update: string
+  disclaimer_title: string
+  disclaimer_text: string
+}
+
+export const legalTranslations: TranslationMap<LegalTranslations> = {
   en: {
     breadcrumb: 'HOME',
     compliance: 'LEGAL_COMPLIANCE_v1.0',

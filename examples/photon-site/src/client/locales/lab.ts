@@ -1,4 +1,20 @@
-export const labTranslations = {
+import type { TranslationMap } from './types'
+
+export interface LabTranslations {
+  title: string
+  subtitle: string
+  btn_active: string
+  btn_start: string
+  route_count: string
+  middleware_layers: string
+  photon_core: string
+  generic_engine: string
+  efficiency_prefix: string
+  efficiency_suffix: string
+  init: string
+}
+
+export const labTranslations: TranslationMap<LabTranslations> = {
   en: {
     title: 'The Stress Lab',
     subtitle:
