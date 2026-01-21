@@ -1,8 +1,8 @@
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { Zap } from 'lucide-react'
 import { useRef } from 'react'
-import { ConstellationCanvas } from './ConstellationCanvas'
 import { heroTranslations } from '../locales/hero'
+import { ConstellationCanvas } from './ConstellationCanvas'
 
 export const PhotonHero = ({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) => {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -23,11 +23,17 @@ export const PhotonHero = ({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) => {
         <ConstellationCanvas />
         <div
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] bg-photon-gold rounded-full blur-[160px] animate-pulse"
-          style={{ mixBlendMode: 'var(--glow-blend)' as any, opacity: 'var(--hero-gradient-opacity)' as any }}
+          style={{
+            mixBlendMode: 'var(--glow-blend)' as any,
+            opacity: 'var(--hero-gradient-opacity)' as any,
+          }}
         />
         <div
           className="absolute top-1/4 -left-20 w-[600px] h-[600px] bg-photon-gold rounded-full blur-[120px]"
-          style={{ mixBlendMode: 'var(--glow-blend)' as any, opacity: 'calc(var(--hero-gradient-opacity) * 0.6)' as any }}
+          style={{
+            mixBlendMode: 'var(--glow-blend)' as any,
+            opacity: 'calc(var(--hero-gradient-opacity) * 0.6)' as any,
+          }}
         />
         <div className="absolute bottom-0 left-0 right-0 h-[500px] bg-gradient-to-t from-bg-primary via-transparent to-transparent z-10" />
       </div>
@@ -38,7 +44,7 @@ export const PhotonHero = ({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) => {
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
+            transition={{ duration: 0.8, ease: 'easeOut' }}
             className="inline-flex items-center gap-4 px-6 md:px-8 py-2 md:py-3 border border-photon-gold/20 bg-photon-gold/5 backdrop-blur-xl mb-8 md:mb-12 rounded-full shadow-[0_0_20px_rgba(255,184,0,0.1)] group hover:border-photon-gold/40 transition-colors"
           >
             <div className="w-2.5 h-2.5 rounded-full bg-photon-gold animate-pulse shadow-[0_0_10px_rgba(255,184,0,1)]" />
@@ -141,7 +147,7 @@ export const PhotonHero = ({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) => {
               <motion.div
                 initial={{ x: '-100%' }}
                 animate={{ x: '100%' }}
-                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
                 className="w-1/2 h-full bg-photon-gold shadow-[0_0_10px_rgba(255,184,0,1)]"
               />
             </div>

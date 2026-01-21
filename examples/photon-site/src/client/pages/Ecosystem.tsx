@@ -180,7 +180,6 @@ const getOrbits = (lang: 'en' | 'zh-TW'): Orbit[] => {
 }
 
 export default function Ecosystem({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) {
-  const { locale } = useFreeze()
   const currentLang = (lang === 'zh-TW' ? 'zh-TW' : 'en') as 'en' | 'zh-TW'
   const t = (ecosystemTranslations as any)[currentLang] || ecosystemTranslations.en
   const orbits = getOrbits(currentLang)
@@ -360,13 +359,13 @@ export default function Ecosystem({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) {
             </p>
             <div className="flex flex-col sm:flex-row gap-6">
               <a
-                href="#"
+                href="https://github.com/gravito-framework/gravito"
                 className="inline-flex items-center justify-center gap-4 px-10 py-5 bg-photon-gold text-[12px] font-technical text-black uppercase tracking-widest font-black hover:bg-white transition-all shadow-xl shadow-photon-gold/10"
               >
                 {t.registryDocs} <ChevronRight size={16} />
               </a>
               <a
-                href="#"
+                href="https://github.com/gravito-framework/gravito/discussions"
                 className="inline-flex items-center justify-center gap-4 px-10 py-5 bg-surf-bg border border-s-brd text-[12px] font-technical text-p-txt uppercase tracking-widest hover:border-p-txt transition-all"
               >
                 <MessageSquare size={16} /> Discuss_Proposal

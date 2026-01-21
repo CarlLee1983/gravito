@@ -48,35 +48,43 @@ export class StaticSiteGenerator {
     const uniquePaths = new Set<string>()
     const uniqueRoutes: any[] = []
 
-    // Helper to add route if unique
     const addRoute = (r: any) => {
-      // Actually, for SSG, we usually want exact match.
-      if (!uniquePaths.has(r.path)) {
+      if (r?.path && !uniquePaths.has(r.path)) {
         uniquePaths.add(r.path)
         uniqueRoutes.push(r)
       }
     }
 
     // Process router routes
-    routes
-      .filter(
-        (r: any) =>
-          r.method.toLowerCase() === 'get' && !r.path.includes(':') && !r.path.includes('*')
-      )
-      .forEach(addRoute)
+    if (Array.isArray(routes)) {
+      routes
+        .filter(
+          (r: any) =>
+            r?.method &&
+            r.method.toLowerCase() === 'get' &&
+            r.path &&
+            !r.path.includes(':') &&
+            !r.path.includes('*')
+        )
+        .forEach(addRoute)
+    }
 
     // Process extra paths
     extraPaths.forEach((path) => {
-      addRoute({ path, method: 'GET' })
+      if (path) addRoute({ path, method: 'GET' })
     })
 
-    this.core.logger.info(`[SSG] Found ${uniqueRoutes.length} unique static routes for export.`)
+    const total = uniqueRoutes.length
+    this.core.logger.info(`[SSG] Found ${total} unique static routes for export.`)
+
+    if (total === 0) {
+      this.core.logger.warn('[SSG] No static routes found to export.')
+      return
+    }
 
     // Concurrency control
     const CONCURRENCY = 10
     const queue = [...uniqueRoutes]
-    const total = queue.length
-    let processed = 0
     let success = 0
     let failed = 0
 
@@ -87,11 +95,12 @@ export class StaticSiteGenerator {
 
         try {
           const url = `http://localhost${route.path}`
-          // Optional: Add debug log for every request if needed, but reducing noise for large sites
-          // this.core.logger.debug(`[SSG] Rendering ${route.path}...`)
 
-          // Use adapter.fetch to get the response
-          const request = new Request(url)
+          // Use adapter.fetch with a timeout signal
+          const request = new Request(url, {
+            signal: AbortSignal.timeout(30000), // 30 second timeout per page
+          })
+
           const response = await this.core.adapter.fetch(request)
 
           if (!response.ok) {
@@ -99,43 +108,31 @@ export class StaticSiteGenerator {
               `[SSG] ⚠️ Skipping ${route.path}: Returned status ${response.status}`
             )
             failed++
-            processed++
             continue
           }
 
           const html = await response.text()
 
           // Determine file path
-          // / -> index.html
-          // /about -> about/index.html or about.html
-          // We use component/index.html pattern for better compatibility with static hosts
-          // Remove query parameters from path (e.g., /docs/intro?lang=en -> /docs/intro)
           const pathWithoutQuery = route.path.split('?')[0]
           let relativePath =
             pathWithoutQuery === '/'
               ? 'index.html'
               : `${pathWithoutQuery.replace(/^\//, '')}/index.html`
 
-          // If path itself ends with .html, use it directly (rare)
           if (pathWithoutQuery.endsWith('.html')) {
             relativePath = pathWithoutQuery.replace(/^\//, '')
           }
 
           const absolutePath = join(outputDir, relativePath)
-
-          // Ensure directory exists
           await mkdir(dirname(absolutePath), { recursive: true })
-
-          // Write file
           await writeFile(absolutePath, html, 'utf-8')
 
-          this.core.logger.info(`[SSG] ✅ Rendered (${processed + 1}/${total}): ${route.path}`)
           success++
-        } catch (error) {
-          this.core.logger.error(`[SSG] ❌ Failed to export ${route.path}:`, error)
+          this.core.logger.info(`[SSG] ✅ Rendered (${success + failed}/${total}): ${route.path}`)
+        } catch (error: any) {
           failed++
-        } finally {
-          processed++
+          this.core.logger.error(`[SSG] ❌ Failed to export ${route.path}: ${error.message}`)
         }
       }
     }
@@ -145,10 +142,18 @@ export class StaticSiteGenerator {
     await Promise.all(workers)
 
     // Generate Sitemap
-    await this.generateSitemap(outputDir, uniqueRoutes, baseUrl)
+    try {
+      await this.generateSitemap(outputDir, uniqueRoutes, baseUrl)
+    } catch (e: any) {
+      this.core.logger.error(`[SSG] Failed to generate sitemap: ${e.message}`)
+    }
 
     // Generate Robots.txt
-    await this.generateRobotsTxt(outputDir, baseUrl)
+    try {
+      await this.generateRobotsTxt(outputDir, baseUrl)
+    } catch (e: any) {
+      this.core.logger.error(`[SSG] Failed to generate robots.txt: ${e.message}`)
+    }
 
     this.core.logger.info(
       `[SSG] Static export completed! ✨ Success: ${success}, Failed: ${failed}`

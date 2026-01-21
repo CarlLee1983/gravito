@@ -15,7 +15,6 @@ interface LegalProps {
 }
 
 export default function Legal({ title, content, id, slug, lastUpdated, lang = 'en' }: LegalProps) {
-  const { locale } = useFreeze()
   const currentLang = (lang === 'zh-TW' ? 'zh-TW' : 'en') as 'en' | 'zh-TW'
   const t = (legalTranslations as any)[currentLang] || legalTranslations.en
 

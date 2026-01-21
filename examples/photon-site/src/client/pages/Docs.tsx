@@ -135,7 +135,6 @@ export default function Docs({
   meta,
   lang = 'en',
 }: DocsProps & { lang?: 'en' | 'zh-TW' }) {
-  const { locale } = useFreeze()
   const currentLang = (lang === 'zh-TW' ? 'zh-TW' : 'en') as 'en' | 'zh-TW'
   const renderedContent = useMemo(() => {
     const highlightedContent = highlightCode(content || '')

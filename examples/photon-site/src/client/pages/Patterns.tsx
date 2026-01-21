@@ -1,23 +1,11 @@
 import { StaticLink, useFreeze } from '@gravito/freeze-react'
 import { Head } from '@inertiajs/react'
 import { motion } from 'framer-motion'
-import {
-  ChevronRight,
-  Code,
-  Sparkles,
-  Workflow,
-  Zap,
-} from 'lucide-react'
+import { ChevronRight, Code, Sparkles, Workflow, Zap } from 'lucide-react'
 import { DocsLayout } from '../components/DocsLayout'
 import { patternsTranslations } from '../locales/patterns'
 
-const getPatterns = (lang: 'en' | 'zh-TW') => {
-  const t = (patternsTranslations as any)[lang] || patternsTranslations.en
-  return t.patterns
-}
-
 export default function Patterns({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) {
-  const { locale } = useFreeze()
   const currentLang = (lang === 'zh-TW' ? 'zh-TW' : 'en') as 'en' | 'zh-TW'
   const isZh = currentLang === 'zh-TW'
   const t = (patternsTranslations as any)[currentLang] || patternsTranslations.en
@@ -140,9 +128,7 @@ export default function Patterns({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) {
             <div className="w-12 h-1 px-4 bg-photon-gold mb-10" />
             <h2 className="text-4xl md:text-5xl font-black text-p-txt uppercase tracking-tighter mb-8 leading-[0.9]">
               {t.composable_title}{' '}
-              <span className="text-photon-gold block mt-2">
-                {t.composable_subtitle}
-              </span>
+              <span className="text-photon-gold block mt-2">{t.composable_subtitle}</span>
             </h2>
             <p className="text-lg text-s-txt leading-relaxed mb-12 opacity-80 font-light">
               {t.composable_desc}
