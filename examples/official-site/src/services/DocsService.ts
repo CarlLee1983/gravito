@@ -229,8 +229,38 @@ export class DocsService {
           .replace(/'/g, '&#039;')
       }
 
-      // Add custom renderer for code blocks and links
+      // Add custom renderer for code blocks, links, and images
       const renderer = new marked.Renderer()
+
+      // Use ImageService for optimized markdown images
+      const imageService = await import('@gravito/prism').then((m) => new m.ImageService())
+
+      renderer.image = ({
+        href,
+        title,
+        text,
+      }: {
+        href: string
+        title?: string | null
+        text: string
+      }) => {
+        try {
+          // If it's a local path, try to optimize it
+          if (!href.startsWith('http') && !href.startsWith('//')) {
+            return imageService.generateImageTag({
+              src: href,
+              alt: text,
+              usePicture: true,
+              formatNegotiation: true,
+            })
+          }
+        } catch (e) {
+          console.warn(`[DocsService] Failed to optimize image: ${href}`, e)
+        }
+
+        // Fallback to standard img tag
+        return `<img src="${href}" alt="${text}"${title ? ` title="${title}"` : ''} />`
+      }
 
       // Transform Markdown links to SPA routes
       renderer.link = ({
