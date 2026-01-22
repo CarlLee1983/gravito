@@ -465,3 +465,206 @@ describe('OrbitAstral Configuration Validation', () => {
     }).not.toThrow()
   })
 })
+
+describe('OpenAPI Specification Generation', () => {
+  const UserDTO = z.object({
+    id: z.number(),
+    name: z.string(),
+  })
+
+  test('should generate servers in spec', () => {
+    const config = {
+      servers: [
+        {
+          url: 'https://api.example.com',
+          description: 'Production server',
+        },
+        {
+          url: 'https://staging.example.com',
+          description: 'Staging server',
+        },
+      ],
+      contracts: [],
+    }
+    const gen = new OpenApiGenerator(config)
+    const spec = gen.generate([])
+
+    expect(spec.servers).toBeDefined()
+    expect(spec.servers.length).toBe(2)
+    expect(spec.servers[0].url).toBe('https://api.example.com')
+  })
+
+  test('should generate security schemes in components', () => {
+    const config = {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http' as const,
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+        },
+        apiKey: {
+          type: 'apiKey' as const,
+          name: 'X-API-Key',
+          in: 'header' as const,
+        },
+      },
+      contracts: [],
+    }
+    const gen = new OpenApiGenerator(config)
+    const spec = gen.generate([])
+
+    expect(spec.components.securitySchemes).toBeDefined()
+    expect(spec.components.securitySchemes.bearerAuth).toBeDefined()
+    expect(spec.components.securitySchemes.apiKey).toBeDefined()
+  })
+
+  test('should generate global security requirements', () => {
+    const config = {
+      security: [{ bearerAuth: [] }],
+      contracts: [],
+    }
+    const gen = new OpenApiGenerator(config)
+    const spec = gen.generate([])
+
+    expect(spec.security).toBeDefined()
+    expect(spec.security[0].bearerAuth).toBeDefined()
+  })
+
+  test('should generate tags', () => {
+    const config = {
+      tags: [
+        { name: 'users', description: 'User management' },
+        { name: 'posts', description: 'Post management' },
+      ],
+      contracts: [],
+    }
+    const gen = new OpenApiGenerator(config)
+    const spec = gen.generate([])
+
+    expect(spec.tags).toBeDefined()
+    expect(spec.tags.length).toBe(2)
+    expect(spec.tags[0].name).toBe('users')
+  })
+
+  test('should generate external documentation', () => {
+    const config = {
+      externalDocs: {
+        url: 'https://docs.example.com',
+        description: 'Full API Documentation',
+      },
+      contracts: [],
+    }
+    const gen = new OpenApiGenerator(config)
+    const spec = gen.generate([])
+
+    expect(spec.externalDocs).toBeDefined()
+    expect(spec.externalDocs.url).toBe('https://docs.example.com')
+  })
+
+  test('should process component schemas', () => {
+    const config = {
+      components: {
+        schemas: {
+          User: UserDTO,
+          Error: z.object({
+            code: z.string(),
+            message: z.string(),
+          }),
+        },
+      },
+      contracts: [],
+    }
+    const gen = new OpenApiGenerator(config)
+    const spec = gen.generate([])
+
+    expect(spec.components.schemas.User).toBeDefined()
+    expect(spec.components.schemas.Error).toBeDefined()
+    expect(spec.components.schemas.User.properties.id).toBeDefined()
+    expect(spec.components.schemas.Error.properties.code).toBeDefined()
+  })
+
+  test('should merge custom components with generated schemas', () => {
+    const config = {
+      components: {
+        schemas: {
+          CustomError: z.object({
+            statusCode: z.number(),
+          }),
+        },
+        responses: {
+          NotFound: {
+            description: 'Resource not found',
+            content: {
+              'application/json': {
+                schema: { type: 'object' },
+              },
+            },
+          },
+        },
+        parameters: {
+          PageParam: {
+            name: 'page',
+            in: 'query',
+            schema: { type: 'integer' },
+          },
+        },
+      },
+      contracts: [],
+    }
+    const gen = new OpenApiGenerator(config)
+    const spec = gen.generate([])
+
+    expect(spec.components.schemas.CustomError).toBeDefined()
+    expect(spec.components.responses.NotFound).toBeDefined()
+    expect(spec.components.parameters.PageParam).toBeDefined()
+  })
+
+  test('should generate complete OpenAPI spec with all features', () => {
+    const config = {
+      title: 'Complete API',
+      version: '2.0.0',
+      description: 'A complete API with all features',
+      servers: [{ url: 'https://api.example.com' }],
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http' as const,
+          scheme: 'bearer',
+        },
+      },
+      security: [{ bearerAuth: [] }],
+      tags: [{ name: 'users' }],
+      externalDocs: {
+        url: 'https://docs.example.com',
+      },
+      components: {
+        schemas: {
+          User: UserDTO,
+        },
+      },
+      contracts: [
+        astral.resource('/users', {
+          tags: ['users'],
+          operations: {
+            index: {
+              summary: 'List users',
+              output: [UserDTO],
+            },
+          },
+        }),
+      ],
+    }
+    const gen = new OpenApiGenerator(config)
+    const spec = gen.generate([{ path: '/users', method: 'GET' }])
+
+    // Verify all top-level fields
+    expect(spec.openapi).toBe('3.1.0')
+    expect(spec.info.title).toBe('Complete API')
+    expect(spec.servers).toBeDefined()
+    expect(spec.security).toBeDefined()
+    expect(spec.tags).toBeDefined()
+    expect(spec.externalDocs).toBeDefined()
+    expect(spec.components.securitySchemes).toBeDefined()
+    expect(spec.components.schemas.User).toBeDefined()
+    expect(spec.paths['/users']).toBeDefined()
+  })
+})

@@ -55,12 +55,95 @@ export class OpenApiGenerator {
       },
     }
 
+    // Add servers if configured
+    if (this.config.servers && this.config.servers.length > 0) {
+      spec.servers = this.config.servers
+    }
+
+    // Add security schemes to components
+    if (this.config.securitySchemes) {
+      spec.components.securitySchemes = this.config.securitySchemes
+    }
+
+    // Add global security requirements
+    if (this.config.security && this.config.security.length > 0) {
+      spec.security = this.config.security
+    }
+
+    // Add tags
+    if (this.config.tags && this.config.tags.length > 0) {
+      spec.tags = this.config.tags
+    }
+
+    // Add external documentation
+    if (this.config.externalDocs) {
+      spec.externalDocs = this.config.externalDocs
+    }
+
+    // Add custom components
+    if (this.config.components) {
+      // Merge custom components with existing components
+      if (this.config.components.schemas) {
+        spec.components.schemas = {
+          ...spec.components.schemas,
+          ...this.processComponentSchemas(this.config.components.schemas),
+        }
+      }
+      if (this.config.components.responses) {
+        spec.components.responses = this.config.components.responses
+      }
+      if (this.config.components.parameters) {
+        spec.components.parameters = this.config.components.parameters
+      }
+      if (this.config.components.examples) {
+        spec.components.examples = this.config.components.examples
+      }
+      if (this.config.components.requestBodies) {
+        spec.components.requestBodies = this.config.components.requestBodies
+      }
+      if (this.config.components.headers) {
+        spec.components.headers = this.config.components.headers
+      }
+      if (this.config.components.links) {
+        spec.components.links = this.config.components.links
+      }
+      if (this.config.components.callbacks) {
+        spec.components.callbacks = this.config.components.callbacks
+      }
+    }
+
     // Process each contract/resource
     for (const resource of this.config.contracts || []) {
       this.processResource(spec, resource, routes)
     }
 
     return spec
+  }
+
+  /**
+   * 處理 components.schemas，將 Zod schemas 轉換為 JSON Schema
+   * @private
+   */
+  private processComponentSchemas(schemas: Record<string, any>): Record<string, any> {
+    const processed: Record<string, any> = {}
+    for (const [name, schema] of Object.entries(schemas)) {
+      try {
+        // 如果是 Zod schema，進行轉換
+        if (schema && typeof schema === 'object' && '_def' in schema) {
+          processed[name] = this.zodToSchema(schema)
+        } else {
+          // 否則直接使用
+          processed[name] = schema
+        }
+      } catch (error) {
+        throw new AstralSchemaError(
+          `無法處理 component schema '${name}'`,
+          schema,
+          error instanceof Error ? error : undefined
+        )
+      }
+    }
+    return processed
   }
 
   private processResource(spec: any, resource: AstralResource, routes: AstralRoute[]) {
