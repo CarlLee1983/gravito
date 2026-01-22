@@ -5,6 +5,9 @@
  */
 
 import type { FreezeConfig, RedirectRule } from './config'
+import { addLocalePrefix, stripLocalePrefix } from './path-utils'
+import type { AbsolutePath, Locale } from './types'
+import { asAbsolutePath, asLocale } from './types'
 
 /**
  * Generate redirect HTML for abstract routes
@@ -13,7 +16,7 @@ import type { FreezeConfig, RedirectRule } from './config'
  * generateRedirectHtml('/en/about')
  * // Returns HTML with meta refresh and JS redirect
  */
-export function generateRedirectHtml(targetUrl: string): string {
+export function generateRedirectHtml(targetUrl: string | AbsolutePath): string {
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -69,13 +72,7 @@ export function generateLocalizedRoutes(abstractRoutes: string[], locales: strin
 
   for (const route of abstractRoutes) {
     for (const locale of locales) {
-      if (route === '/') {
-        routes.push(`/${locale}`)
-      } else if (route.startsWith('/')) {
-        routes.push(`/${locale}${route}`)
-      } else {
-        routes.push(`/${locale}/${route}`)
-      }
+      routes.push(addLocalePrefix(route, locale, ''))
     }
   }
 
@@ -91,19 +88,15 @@ export function generateLocalizedRoutes(abstractRoutes: string[], locales: strin
  * @param defaultLocale - The default locale code.
  * @param commonRoutes - List of routes to create redirects for.
  * @returns An array of RedirectRule objects.
- *
- * @example
- * inferRedirects(['en', 'zh'], 'en', ['/docs', '/about'])
- * // Returns redirects from abstract routes to default locale versions
  */
 export function inferRedirects(
-  _locales: string[],
-  defaultLocale: string,
-  commonRoutes: string[]
+  _locales: string[] | Locale[],
+  defaultLocale: string | Locale,
+  commonRoutes: string[] | AbsolutePath[]
 ): RedirectRule[] {
   return commonRoutes.map((route) => ({
-    from: route,
-    to: route === '/' ? `/${defaultLocale}` : `/${defaultLocale}${route}`,
+    from: asAbsolutePath(route),
+    to: asAbsolutePath(addLocalePrefix(route, defaultLocale, '')),
   }))
 }
 
@@ -142,13 +135,7 @@ export function generateSitemapEntries(routes: string[], config: FreezeConfig): 
 
   for (const route of routes) {
     // Extract the non-localized path
-    let cleanPath = route
-    for (const locale of config.locales) {
-      if (cleanPath === `/${locale}` || cleanPath.startsWith(`/${locale}/`)) {
-        cleanPath = cleanPath.replace(new RegExp(`^/${locale}`), '') || '/'
-        break
-      }
-    }
+    const cleanPath = stripLocalePrefix(route, config.locales)
 
     if (!routeGroups.has(cleanPath)) {
       routeGroups.set(cleanPath, [])
@@ -193,4 +180,101 @@ export function generateSitemapEntries(routes: string[], config: FreezeConfig): 
   }
 
   return entries
+}
+
+/**
+ * Generate Sitemap XML from entries.
+ *
+ * @param entries - List of sitemap entries.
+ * @returns A string containing the sitemap XML.
+ */
+export function generateSitemapXml(entries: SitemapEntry[]): string {
+  let xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
+  xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" '
+  xml += 'xmlns:xhtml="http://www.w3.org/1999/xhtml">\n'
+
+  for (const entry of entries) {
+    xml += '  <url>\n'
+    xml += `    <loc>${entry.url}</loc>\n`
+
+    if (entry.lastmod) {
+      xml += `    <lastmod>${entry.lastmod}</lastmod>\n`
+    }
+    if (entry.changefreq) {
+      xml += `    <changefreq>${entry.changefreq}</changefreq>\n`
+    }
+    if (entry.priority !== undefined) {
+      xml += `    <priority>${entry.priority.toFixed(1)}</priority>\n`
+    }
+
+    if (entry.alternates) {
+      for (const alt of entry.alternates) {
+        xml += `    <xhtml:link rel="alternate" hreflang="${alt.hreflang}" href="${alt.href}"/>\n`
+      }
+    }
+
+    xml += '  </url>\n'
+  }
+
+  xml += '</urlset>'
+  return xml
+}
+
+/**
+ * Generate robots.txt content.
+ *
+ * @param config - The Freeze configuration.
+ * @returns A string containing the robots.txt content.
+ */
+export function generateRobotsTxt(config: FreezeConfig): string {
+  const baseUrl = config.baseUrl.replace(/\/$/, '')
+  let robots = 'User-agent: *\n'
+  robots += 'Allow: /\n'
+  robots += `\nSitemap: ${baseUrl}/sitemap.xml\n`
+
+  return robots
+}
+
+/**
+ * Generate 404 HTML for static hosting.
+ *
+ * @param targetUrl - Optional redirect target (e.g. to home page).
+ * @returns A string containing the 404 HTML.
+ */
+export function generate404Html(targetUrl?: string): string {
+  if (targetUrl) {
+    return generateRedirectHtml(targetUrl)
+  }
+
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>404 - Page Not Found</title>
+</head>
+<body>
+  <h1>404 - Page Not Found</h1>
+  <p>The page you are looking for does not exist.</p>
+  <a href="/">Go back home</a>
+</body>
+</html>`
+}
+
+/**
+ * Validate routes against configuration.
+ *
+ * @param routes - List of routes to validate.
+ * @returns An array of error messages.
+ */
+export function validateRoutes(routes: string[]): string[] {
+  const errors: string[] = []
+  for (const route of routes) {
+    if (!route.startsWith('/')) {
+      errors.push(`Route must start with '/': ${route}`)
+    }
+    if (route !== '/' && route.endsWith('/')) {
+      errors.push(`Route should not end with '/': ${route}`)
+    }
+  }
+  return errors
 }

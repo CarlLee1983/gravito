@@ -4,14 +4,17 @@
  * Configuration for SSG detection, locale handling, and build options.
  */
 
+import type { AbsolutePath, Locale } from './types'
+import { asAbsolutePath, asLocale } from './types'
+
 /**
  * Redirect rule for abstract routes
  */
 export interface RedirectRule {
   /** Source path (e.g., '/docs', '/about') */
-  from: string
+  from: AbsolutePath
   /** Target path with locale (e.g., '/en/docs/guide/getting-started') */
-  to: string
+  to: AbsolutePath
 }
 
 /**
@@ -34,13 +37,13 @@ export interface FreezeConfig {
    * Supported locales
    * @example ['en', 'zh']
    */
-  locales: string[]
+  locales: Locale[]
 
   /**
    * Default locale (used for redirects)
    * @default 'en'
    */
-  defaultLocale: string
+  defaultLocale: Locale
 
   /**
    * Redirect rules for abstract routes
@@ -59,6 +62,12 @@ export interface FreezeConfig {
    * @example 'https://example.com'
    */
   baseUrl: string
+
+  /**
+   * Common static hosting patterns for auto-detection
+   * @default ['.github.io', '.vercel.app', '.netlify.app', '.pages.dev', '.surge.sh', '.render.com']
+   */
+  staticPatterns: string[]
 }
 
 /**
@@ -66,11 +75,19 @@ export interface FreezeConfig {
  */
 export const defaultConfig: Partial<FreezeConfig> = {
   previewPort: 4173,
-  defaultLocale: 'en',
+  defaultLocale: asLocale('en'),
   outputDir: 'dist-static',
-  locales: ['en'],
+  locales: [asLocale('en')],
   redirects: [],
   staticDomains: [],
+  staticPatterns: [
+    '.github.io',
+    '.vercel.app',
+    '.netlify.app',
+    '.pages.dev',
+    '.surge.sh',
+    '.render.com',
+  ],
 }
 
 /**
@@ -82,8 +99,23 @@ export const defaultConfig: Partial<FreezeConfig> = {
  * @returns A complete FreezeConfig object.
  */
 export function defineConfig(config: Partial<FreezeConfig>): FreezeConfig {
-  return {
+  const merged = {
     ...defaultConfig,
     ...config,
   } as FreezeConfig
+
+  if (config.locales) {
+    merged.locales = config.locales.map((l) => asLocale(l))
+  }
+  if (config.defaultLocale) {
+    merged.defaultLocale = asLocale(config.defaultLocale)
+  }
+  if (config.redirects) {
+    merged.redirects = config.redirects.map((r) => ({
+      from: asAbsolutePath(r.from),
+      to: asAbsolutePath(r.to),
+    }))
+  }
+
+  return merged
 }
