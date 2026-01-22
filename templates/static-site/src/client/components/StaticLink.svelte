@@ -25,17 +25,16 @@
       .map((d: string) => d.trim())
       .filter((d: string) => d.length > 0)
 
+    // 預設支援的靜態模式
+    const defaultPatterns = ['.github.io', '.vercel.app', '.netlify.app', '.pages.dev', '.surge.sh', '.render.com']
+
     if (staticDomains.length === 0) {
-      // 使用 endsWith 而不是 includes 以避免 URL substring sanitization 漏洞
-      return (
-        hostname.endsWith('.github.io') ||
-        hostname.endsWith('.vercel.app') ||
-        hostname.endsWith('.netlify.app') ||
-        hostname.endsWith('.pages.dev')
-      )
+      return defaultPatterns.some(pattern => hostname.endsWith(pattern))
     }
 
-    return staticDomains.includes(hostname)
+    return staticDomains.some(
+      (domain: string) => hostname === domain || hostname.endsWith(`.${domain}`)
+    )
   }
 
   const isStatic = isStaticSite()
