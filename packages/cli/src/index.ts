@@ -400,36 +400,87 @@ cli
         const clientDir = path.join(process.cwd(), targetDir, 'src', 'client')
 
         if (framework === 'react') {
-          // Remove Vue files and keep React files
+          // Remove Vue and Svelte files and keep React files
           try {
             await fs.unlink(path.join(clientDir, 'app.vue.ts'))
+            await fs.unlink(path.join(clientDir, 'app.svelte.ts'))
             await fs.unlink(path.join(clientDir, 'components', 'StaticLink.vue'))
+            await fs.unlink(path.join(clientDir, 'components', 'StaticLink.svelte'))
             await fs.unlink(path.join(clientDir, 'components', 'Layout.vue'))
+            await fs.unlink(path.join(clientDir, 'components', 'Layout.svelte'))
             await fs.unlink(path.join(clientDir, 'pages', 'Home.vue'))
+            await fs.unlink(path.join(clientDir, 'pages', 'Home.svelte'))
             await fs.unlink(path.join(clientDir, 'pages', 'About.vue'))
+            await fs.unlink(path.join(clientDir, 'pages', 'About.svelte'))
           } catch {
             // Files might not exist, ignore
           }
 
-          // Update package.json to remove Vue dependencies
+          // Remove Svelte-specific files
+          try {
+            await fs.unlink(path.join(process.cwd(), targetDir, 'vitest.config.ts'))
+            await fs.unlink(path.join(process.cwd(), targetDir, 'svelte.config.js'))
+            const testsDir = path.join(clientDir, 'components', '__tests__')
+            const files = await fs.readdir(testsDir)
+            for (const file of files) {
+              await fs.unlink(path.join(testsDir, file))
+            }
+            await fs.rmdir(testsDir)
+          } catch {
+            // Files might not exist, ignore
+          }
+
+          // Update package.json to remove Vue/Svelte dependencies
           const pkgPath = path.join(process.cwd(), targetDir, 'package.json')
           const pkg = JSON.parse(await fs.readFile(pkgPath, 'utf-8'))
           if (pkg.dependencies) {
             delete pkg.dependencies['@inertiajs/vue3']
+            delete pkg.dependencies['@inertiajs/svelte']
             delete pkg.dependencies.vue
+            delete pkg.dependencies.svelte
           }
           if (pkg.devDependencies) {
             delete pkg.devDependencies['@vitejs/plugin-vue']
+            delete pkg.devDependencies['@sveltejs/vite-plugin-svelte']
+            delete pkg.devDependencies['svelte-check']
+            delete pkg.devDependencies.vitest
+            delete pkg.devDependencies['@vitest/ui']
+            delete pkg.devDependencies['@testing-library/svelte']
+            delete pkg.devDependencies['@testing-library/jest-dom']
+            delete pkg.devDependencies.jsdom
+          }
+          if (pkg.scripts) {
+            delete pkg.scripts.test
+            delete pkg.scripts['test:ui']
           }
           await fs.writeFile(pkgPath, JSON.stringify(pkg, null, 2))
         } else if (framework === 'vue') {
-          // Remove React files and keep Vue files
+          // Remove React and Svelte files and keep Vue files
           try {
             await fs.unlink(path.join(clientDir, 'app.tsx'))
+            await fs.unlink(path.join(clientDir, 'app.svelte.ts'))
             await fs.unlink(path.join(clientDir, 'components', 'StaticLink.tsx'))
+            await fs.unlink(path.join(clientDir, 'components', 'StaticLink.svelte'))
             await fs.unlink(path.join(clientDir, 'components', 'Layout.tsx'))
+            await fs.unlink(path.join(clientDir, 'components', 'Layout.svelte'))
             await fs.unlink(path.join(clientDir, 'pages', 'Home.tsx'))
+            await fs.unlink(path.join(clientDir, 'pages', 'Home.svelte'))
             await fs.unlink(path.join(clientDir, 'pages', 'About.tsx'))
+            await fs.unlink(path.join(clientDir, 'pages', 'About.svelte'))
+          } catch {
+            // Files might not exist, ignore
+          }
+
+          // Remove Svelte-specific files
+          try {
+            await fs.unlink(path.join(process.cwd(), targetDir, 'vitest.config.ts'))
+            await fs.unlink(path.join(process.cwd(), targetDir, 'svelte.config.js'))
+            const testsDir = path.join(clientDir, 'components', '__tests__')
+            const files = await fs.readdir(testsDir)
+            for (const file of files) {
+              await fs.unlink(path.join(testsDir, file))
+            }
+            await fs.rmdir(testsDir)
           } catch {
             // Files might not exist, ignore
           }
@@ -445,13 +496,15 @@ cli
             // File might not exist, ignore
           }
 
-          // Update package.json to remove React dependencies and add Vue
+          // Update package.json to remove React/Svelte dependencies and add Vue
           const pkgPath = path.join(process.cwd(), targetDir, 'package.json')
           const pkg = JSON.parse(await fs.readFile(pkgPath, 'utf-8'))
           if (pkg.dependencies) {
             delete pkg.dependencies['@inertiajs/react']
+            delete pkg.dependencies['@inertiajs/svelte']
             delete pkg.dependencies.react
             delete pkg.dependencies['react-dom']
+            delete pkg.dependencies.svelte
             if (!pkg.dependencies['@inertiajs/vue3']) {
               pkg.dependencies['@inertiajs/vue3'] = '^1.0.0'
             }
@@ -463,9 +516,20 @@ cli
             delete pkg.devDependencies['@vitejs/plugin-react']
             delete pkg.devDependencies['@types/react']
             delete pkg.devDependencies['@types/react-dom']
+            delete pkg.devDependencies['@sveltejs/vite-plugin-svelte']
+            delete pkg.devDependencies['svelte-check']
+            delete pkg.devDependencies.vitest
+            delete pkg.devDependencies['@vitest/ui']
+            delete pkg.devDependencies['@testing-library/svelte']
+            delete pkg.devDependencies['@testing-library/jest-dom']
+            delete pkg.devDependencies.jsdom
             if (!pkg.devDependencies['@vitejs/plugin-vue']) {
               pkg.devDependencies['@vitejs/plugin-vue'] = '^5.0.0'
             }
+          }
+          if (pkg.scripts) {
+            delete pkg.scripts.test
+            delete pkg.scripts['test:ui']
           }
           await fs.writeFile(pkgPath, JSON.stringify(pkg, null, 2))
 
@@ -535,9 +599,28 @@ cli
             if (!pkg.devDependencies['svelte-check']) {
               pkg.devDependencies['svelte-check'] = '^3.6.0'
             }
+            if (!pkg.devDependencies.vitest) {
+              pkg.devDependencies.vitest = '^3.0.0'
+            }
+            if (!pkg.devDependencies['@vitest/ui']) {
+              pkg.devDependencies['@vitest/ui'] = '^3.0.0'
+            }
+            if (!pkg.devDependencies['@testing-library/svelte']) {
+              pkg.devDependencies['@testing-library/svelte'] = '^5.3.0'
+            }
+            if (!pkg.devDependencies['@testing-library/jest-dom']) {
+              pkg.devDependencies['@testing-library/jest-dom'] = '^6.6.3'
+            }
+            if (!pkg.devDependencies.jsdom) {
+              pkg.devDependencies.jsdom = '^25.0.0'
+            }
           }
           if (pkg.scripts?.typecheck) {
             pkg.scripts.typecheck = 'svelte-check --tsconfig ./tsconfig.json'
+          }
+          if (pkg.scripts && !pkg.scripts.test) {
+            pkg.scripts.test = 'vitest'
+            pkg.scripts['test:ui'] = 'vitest --ui'
           }
           await fs.writeFile(pkgPath, JSON.stringify(pkg, null, 2))
 
