@@ -16,6 +16,7 @@ bun add @gravito/freeze-vue
 // main.ts
 import { createApp } from 'vue'
 import { FreezePlugin, defineConfig } from '@gravito/freeze-vue'
+import { Link } from '@inertiajs/vue3'
 import App from './App.vue'
 
 const config = defineConfig({
@@ -26,7 +27,7 @@ const config = defineConfig({
 })
 
 const app = createApp(App)
-app.use(FreezePlugin, config)
+app.use(FreezePlugin, { config, LinkComponent: Link })
 app.mount('#app')
 ```
 
@@ -91,7 +92,7 @@ const { isStatic, locale, getLocalizedPath, navigateToLocale } = useFreeze()
 Vue 3 plugin for SSG functionality.
 
 ```typescript
-app.use(FreezePlugin, config)
+app.use(FreezePlugin, { config, LinkComponent: Link })
 ```
 
 ### Components
@@ -140,15 +141,16 @@ const {
 
 ### Helper Function
 
-#### `provideFreeze(config)`
+#### `provideFreeze({ config, LinkComponent })`
 
 Manually provide freeze context (for SSR or custom setups).
 
 ```typescript
 import { provideFreeze, defineConfig } from '@gravito/freeze-vue'
+import { Link } from '@inertiajs/vue3'
 
 const config = defineConfig({ ... })
-provideFreeze(config)
+provideFreeze({ config, LinkComponent: Link })
 ```
 
 ### Re-exports from @gravito/freeze

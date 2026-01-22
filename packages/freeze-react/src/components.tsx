@@ -5,34 +5,17 @@
  * and Inertia Link for dynamic SSR mode.
  */
 
+import type { AbsolutePath, Locale } from '@gravito/freeze'
 import type { ReactNode } from 'react'
+import { useFreezeContext } from './provider'
 import { useFreeze } from './use-freeze'
-
-/**
- * Try to import Inertia Link, fallback to null if not available
- */
-let InertiaLink: React.ComponentType<{
-  href: string
-  className?: string
-  children?: ReactNode
-  [key: string]: unknown
-}> | null = null
-
-try {
-  // Dynamic import check - will be tree-shaken in production
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const inertia = require('@inertiajs/react')
-  InertiaLink = inertia.Link
-} catch {
-  // Inertia not installed, will use native <a> tags
-}
 
 /**
  * Props for StaticLink component
  */
 export interface StaticLinkProps {
   /** Target URL path (will be localized automatically) */
-  href: string
+  href: string | AbsolutePath
   /** CSS class name */
   className?: string
   /** Child elements */
@@ -78,12 +61,13 @@ export function StaticLink({
   ...props
 }: StaticLinkProps) {
   const { isStatic, getLocalizedPath } = useFreeze()
+  const { LinkComponent: ContextLink } = useFreezeContext()
 
   // Localize the path unless explicitly skipped
   const finalHref = skipLocalization ? href : getLocalizedPath(href)
 
-  // In static mode or if Inertia is not available, use native <a>
-  if (isStatic || !InertiaLink) {
+  // In static mode or if no Inertia Link is provided, use native <a>
+  if (isStatic || !ContextLink) {
     return (
       <a href={finalHref} className={className} {...props}>
         {children}
@@ -93,9 +77,9 @@ export function StaticLink({
 
   // In SSR mode with Inertia, use Link component
   return (
-    <InertiaLink href={finalHref} className={className} {...props}>
+    <ContextLink href={finalHref} className={className} {...props}>
       {children}
-    </InertiaLink>
+    </ContextLink>
   )
 }
 
@@ -104,7 +88,7 @@ export function StaticLink({
  */
 export interface LocaleSwitcherProps {
   /** Locale to switch to (e.g., 'en', 'zh') */
-  locale: string
+  locale: string | Locale
   /** CSS class name */
   className?: string
   /** Optional custom content, defaults to uppercase locale code */

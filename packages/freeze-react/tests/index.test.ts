@@ -78,6 +78,8 @@ mock.module('@gravito/freeze', () => ({
   generateLocalizedRoutes: () => [],
   inferRedirects: () => [],
   generateSitemapEntries: () => [],
+  asLocale: (v: string) => v,
+  asAbsolutePath: (v: string) => v,
 }))
 
 let React: typeof import('react')

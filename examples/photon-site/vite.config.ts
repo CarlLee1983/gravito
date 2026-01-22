@@ -6,7 +6,12 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   define: {
-    'process.env.BASE_URL': JSON.stringify(process.env.BASE_URL || 'https://photon.gravito.dev'),
+    'process.env.BASE_URL': JSON.stringify(
+      (process.env.BASE_URL || process.env.CF_PAGES_URL || 'https://photon.gravito.dev').replace(
+        /\/$/,
+        ''
+      )
+    ),
   },
   build: {
     outDir: 'dist/client',

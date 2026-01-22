@@ -7,7 +7,7 @@ const config = defineConfig({
   staticDomains: ['photon.gravito.dev', 'photon-site.pages.dev'],
   locales: ['en', 'zh-TW'],
   defaultLocale: 'en',
-  baseUrl: process.env.BASE_URL || 'https://photon.gravito.dev',
+  baseUrl: (process.env.BASE_URL || 'https://photon.gravito.dev').replace(/\/$/, ''),
   previewPort: 8000,
 })
 

@@ -17,6 +17,7 @@ bun add @gravito/freeze-react
 
 ```tsx
 import { FreezeProvider, defineConfig, StaticLink, LocaleSwitcher } from '@gravito/freeze-react'
+import { Link } from '@inertiajs/react'
 
 const config = defineConfig({
   staticDomains: ['example.com'],
@@ -27,7 +28,7 @@ const config = defineConfig({
 
 export function App() {
   return (
-    <FreezeProvider config={config}>
+    <FreezeProvider config={config} LinkComponent={Link}>
       <StaticLink href="/about">About</StaticLink>
       <LocaleSwitcher locale="zh">中文</LocaleSwitcher>
     </FreezeProvider>
