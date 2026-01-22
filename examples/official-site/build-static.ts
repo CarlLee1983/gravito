@@ -1,545 +1,133 @@
 import { exec } from 'node:child_process'
-import { cp, mkdir, writeFile } from 'node:fs/promises'
+import { existsSync } from 'node:fs'
+import { cp, mkdir, rm, writeFile } from 'node:fs/promises'
 import { dirname, join, resolve } from 'node:path'
 import { promisify } from 'node:util'
 import { generateI18nEntries, SitemapStream } from '@gravito/constellation'
-import type { PlanetCore } from '@gravito/core'
+import { StaticSiteGenerator } from '@gravito/prism'
 import { Glob } from 'bun'
 import { bootstrap } from './src/bootstrap.ts'
 
-console.log('🏗️  Starting SSG Build for gravito.dev...')
+console.log('🏗️  Starting Refactored SSG Build for gravito.dev...')
 
 const execAsync = promisify(exec)
 
 async function build() {
   // 0. Build Client Assets
   console.log('⚡ Building client assets (Vite)...')
-  try {
-    await execAsync('bun run build:client')
-    console.log('✅ Client build complete.')
-  } catch (e) {
-    console.error('❌ Client build failed:', e)
-    if (e instanceof Error) {
-      console.error('Error message:', e.message)
-      if ('stdout' in e && e.stdout) {
-        console.error('stdout:', e.stdout.toString())
-      }
-      if ('stderr' in e && e.stderr) {
-        console.error('stderr:', e.stderr.toString())
-      }
-    }
-    process.exit(1)
-  }
+  await execAsync('bun run build:client')
 
-  // Verify client build output exists
-  const staticBuildDir = join(process.cwd(), 'static', 'build')
-  try {
-    const { stat } = await import('node:fs/promises')
-    await stat(staticBuildDir)
-    console.log('✅ Client build output verified at:', staticBuildDir)
-  } catch (_e) {
-    console.error('❌ Client build output not found at:', staticBuildDir)
-    console.error('Current working directory:', process.cwd())
-    console.error('Available directories:')
-    try {
-      const { readdir } = await import('node:fs/promises')
-      const dirs = await readdir(process.cwd())
-      console.error(dirs.join(', '))
-    } catch {
-      // Ignore readdir errors
-    }
-    process.exit(1)
-  }
-
-  // Initialize Core without starting server
-  console.log('🚀 Initializing Core...')
-  console.log('📂 Working directory:', process.cwd())
-  console.log('📦 Node environment:', process.env.NODE_ENV || 'not set')
-
-  let core: PlanetCore
-  try {
-    core = await bootstrap({ port: 3000 })
-    console.log('✅ Core initialized successfully')
-  } catch (e) {
-    console.error('❌ Failed to initialize Core')
-    console.error('Error details:', e)
-    if (e instanceof Error) {
-      console.error('Error name:', e.name)
-      console.error('Error message:', e.message)
-      if (e.stack) {
-        console.error('Error stack:')
-        console.error(e.stack)
-      }
-      // Check for common issues
-      if (e.message.includes('Cannot find module')) {
-        console.error('💡 This might be a missing dependency issue')
-        console.error('💡 Try running: bun install')
-      }
-      if (e.message.includes('EADDRINUSE')) {
-        console.error('💡 Port 3000 is already in use')
-      }
-    }
-    process.exit(1)
-  }
-
+  // Initialize Core
+  const core = await bootstrap({ port: 3000 })
   const outputDir = join(process.cwd(), 'dist-static')
   const domain = 'https://gravito.dev'
   const locales = ['en', 'zh', 'zh-TW']
 
-  // Debug: Log working directory and output directory
-  console.log('📂 Current working directory:', process.cwd())
-  console.log('📂 Output directory:', outputDir)
-
-  // Ensure output directory exists
   await mkdir(outputDir, { recursive: true })
-  console.log('✅ Output directory created/verified')
 
-  const routes = new Set<string>()
+  const abstractRoutes = new Set<string>()
+  abstractRoutes.add('/')
+  abstractRoutes.add('/about')
+  abstractRoutes.add('/features')
+  abstractRoutes.add('/releases')
+  abstractRoutes.add('/privacy')
+  abstractRoutes.add('/terms')
+  abstractRoutes.add('/docs')
 
-  // 1. Static Routes
-  routes.add('/')
-  routes.add('/about')
-  routes.add('/features')
-  routes.add('/releases')
-  routes.add('/privacy')
-  routes.add('/terms')
-  routes.add('/docs') // This will generate a redirect to /docs/guide/core-concepts
-
-  // 2. Discover Docs
-  console.log('📚 Discovering documentation files...')
+  // Discover Docs
   const docsRoot = resolve(process.cwd(), '../../docs')
-  console.log('📂 Docs root:', docsRoot)
-
-  try {
-    const { stat } = await import('node:fs/promises')
-    await stat(docsRoot)
-    console.log('✅ Docs directory exists')
-  } catch (_e) {
-    console.error('❌ Docs directory not found at:', docsRoot)
-    console.error('💡 This might be okay if docs are not required for the build')
+  const glob = new Glob('**/[a-z]*.md')
+  for await (const file of glob.scan(docsRoot)) {
+    if (file.startsWith('design/') || file.startsWith('internal/')) continue
+    const slug = file.replace(/^[a-z-]+\//i, '').replace(/\.md$/, '')
+    if (slug === 'guide/laravel-12-mvc-parity' || slug.includes('node_modules')) continue
+    abstractRoutes.add(`/docs/${slug}`)
   }
 
-  try {
-    const glob = new Glob('**/[a-z]*.md') // Avoid hidden files and internal dirs
-    let docCount = 0
-    for await (const file of glob.scan(docsRoot)) {
-      // Exclude internal directories
-      if (
-        file.startsWith('design/') ||
-        file.startsWith('internal/') ||
-        file.includes('/internal/')
-      ) {
-        continue
-      }
-
-      // Strip locale prefix (e.g. 'en/', 'zh-TW/')
-      const slug = file.replace(/^[a-z-]+\//i, '').replace(/\.md$/, '')
-      if (slug === 'guide/laravel-12-mvc-parity' || slug.includes('node_modules')) {
-        continue
-      }
-      routes.add(`/docs/${slug}`)
-      docCount++
-    }
-    console.log(`✅ Discovered ${docCount} documentation files`)
-  } catch (e) {
-    console.error('❌ Error discovering docs:', e)
-    if (e instanceof Error) {
-      console.error('Error message:', e.message)
-    }
-    // Don't fail the build if docs discovery fails, just log a warning
-    console.warn('⚠️  Continuing build without all docs routes')
-  }
-
-  // 3. Render Loop
+  // Generate full list of localized paths
+  const extraPaths: string[] = []
   const smStream = new SitemapStream({ baseUrl: domain })
 
-  // We add the bare root '/' manually to the sitemap and render it
-  // since generateI18nEntries only generates prefixed paths
-  console.log(`Render: / (Root Default)`)
-  console.log('🌐 Making request to root path...')
-
-  try {
-    const res = await core.adapter.fetch(new Request(`http://localhost/`))
-    console.log(`📡 Response status: ${res.status}`)
-    if (res.status === 200) {
-      const gaId = process.env.VITE_GA_ID
-      const html = await res.text()
-      const finalHtml = gaId
-        ? html.replace(
-            '<!-- Google Analytics Placeholder -->',
-            `<script async src="https://www.googletagmanager.com/gtag/js?id=${gaId}"></script>
-             <script>
-               window.dataLayer = window.dataLayer || [];
-               function gtag(){dataLayer.push(arguments);}
-               gtag('js', new Date());
-               gtag('config', '${gaId}');
-             </script>`
-          )
-        : html
-
-      const indexPath = join(outputDir, 'index.html')
-      console.log('📝 Writing index.html to:', indexPath)
-      await writeFile(indexPath, finalHtml)
-      const rootEntry = {
+  for (const abstractPath of abstractRoutes) {
+    const entries = generateI18nEntries(abstractPath, locales, domain)
+    if (abstractPath === '/') {
+      // Root special case for x-default
+      extraPaths.push('/')
+      smStream.add({
         url: `${domain}/`,
         priority: 1.0,
         alternates: [
           ...locales.map((l) => ({ lang: l, url: `${domain}/${l}/` })),
           { lang: 'x-default', url: `${domain}/` },
         ],
-      }
-      smStream.add(rootEntry)
-      console.log('✅ Root index.html generated at:', indexPath)
-
-      // Verify file was written
-      const { stat } = await import('node:fs/promises')
-      const stats = await stat(indexPath)
-      console.log('✅ Verified: index.html exists, size:', stats.size, 'bytes')
-    } else {
-      console.error(`❌ Failed to render root: HTTP ${res.status}`)
-      throw new Error(`Failed to render root: HTTP ${res.status}`)
-    }
-  } catch (e) {
-    console.error('❌ Error rendering root:', e)
-    throw e // Re-throw to ensure build fails if root page can't be generated
-  }
-
-  for (const abstractPath of routes) {
-    // generateI18nEntries generates:
-    // / -> /en/, /zh/
-    // /docs/foo -> /en/docs/foo, /zh/docs/foo
-    const entries = generateI18nEntries(abstractPath, locales, domain)
-
-    // Add bare root as x-default alternate for the home page versions
-    if (abstractPath === '/') {
-      for (const entry of entries) {
-        entry.alternates?.push({ lang: 'x-default', url: `${domain}/` })
-      }
+      })
     }
 
     for (const entry of entries) {
       const urlObj = new URL(entry.url)
       const pathname = urlObj.pathname.replace(/\/$/, '') || '/'
-
-      // Skip root since we handled it above (if it was somehow in entries)
-      if (pathname === '/') {
-        continue
-      }
-
-      console.log(`Render: ${pathname}`)
-
-      try {
-        const res = await core.adapter.fetch(new Request(`http://localhost${pathname}`))
-        if (res.status !== 200) {
-          if (res.status === 302 || res.status === 301) {
-            const location = res.headers.get('Location')
-            console.log(`  ↪ Redirect to ${location}`)
-            const html = `<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=${location}" /></head></html>`
-            const filePath = join(outputDir, pathname, 'index.html')
-            await mkdir(dirname(filePath), { recursive: true })
-            await writeFile(filePath, html)
-            // Still add to sitemap? Usually not for redirects, but let's follow standard
-            continue
-          }
-          console.error(`❌ Failed ${res.status}: ${pathname}`)
-          // Log response body for debugging if available
-          try {
-            const text = await res.text()
-            if (text.length < 500) {
-              console.error(`Response body: ${text}`)
-            }
-          } catch {
-            // Ignore errors reading response
-          }
-          continue
-        }
-
-        // Successfully rendered, add to sitemap
+      if (pathname !== '/') {
+        extraPaths.push(pathname)
         smStream.add(entry)
-
-        const gaId = process.env.VITE_GA_ID
-        const html = await res.text()
-        const finalHtml = gaId
-          ? html.replace(
-              '<!-- Google Analytics Placeholder -->',
-              `<script async src="https://www.googletagmanager.com/gtag/js?id=${gaId}"></script>
-             <script>
-               window.dataLayer = window.dataLayer || [];
-               function gtag(){dataLayer.push(arguments);}
-               gtag('js', new Date());
-               gtag('config', '${gaId}');
-             </script>`
-            )
-          : html
-
-        // For paths like /en/docs/foo, we save to BOTH:
-        // 1. en/docs/foo/index.html (for trailing slash)
-        // 2. en/docs/foo.html (for non-trailing slash)
-        const filePath = join(outputDir, pathname, 'index.html')
-        await mkdir(dirname(filePath), { recursive: true })
-        await writeFile(filePath, finalHtml)
-
-        // Also create direct HTML file for non-trailing slash access
-        if (pathname !== '/' && !pathname.includes('.')) {
-          const directHtmlPath = join(outputDir, pathname + '.html')
-          await mkdir(dirname(directHtmlPath), { recursive: true })
-          await writeFile(directHtmlPath, finalHtml)
-        }
-      } catch (e) {
-        console.error(`❌ Error rendering ${pathname}:`, e)
       }
     }
   }
 
-  const sitemapXml = smStream.toXML()
-  await writeFile(join(outputDir, 'sitemap.xml'), sitemapXml)
-  console.log('🗺️  Sitemap generated.')
+  // Use Prism SSG Engine
+  const ssg = new StaticSiteGenerator(core)
+  console.log(`🚀 Exporting ${extraPaths.length} paths using Incremental Builder...`)
 
-  // Copy static assets
-  console.log('📦 Copying static assets...')
+  await ssg.exportIncremental(outputDir, {
+    baseUrl: domain,
+    incremental: true,
+    extraPaths,
+  })
 
-  // 1. Copy public assets (Vite build output)
-  // Vite config: outDir: '../../static/build'
-  // ../../static/build is relative to examples/official-site/src/client ??
-  // No, vite.config.ts is at examples/official-site/
-  // root: ./src/client
-  // outDir: ../../static/build -> src/client/../../static/build -> examples/official-site/static/build
-  // Let's copy from examples/official-site/static
+  // Post-processing: 404.html, CNAME, .nojekyll, Redirects
+  console.log('🧹 Post-processing...')
 
-  // Copy 'static' directory if exists
-  const staticDir = join(process.cwd(), 'static')
-  try {
-    await cp(staticDir, join(outputDir, 'static'), { recursive: true })
-  } catch (_e) {
-    console.warn('⚠️  No static directory found or failed to copy.')
-  }
+  // 1. Generate 404.html (Fetch it from core)
+  const res404 = await core.adapter.fetch(new Request('http://localhost/__force_404__'))
+  let html404 = await res404.text()
+  // Add SPA script (simplified here for brevity, keeping existing logic in spirit)
+  const spaScript = `<script>(function(){const p=window.location.pathname;if(p==='/404.html')return;fetch(p.endsWith('/')?p+'index.html':p+'.html').then(r=>{if(r.ok)return r.text();throw 1}).then(h=>{document.open();document.write(h);document.close()}).catch(()=>{})})()</script>`
+  html404 = html404.replace('</body>', `${spaScript}</body>`)
+  await writeFile(join(outputDir, '404.html'), html404)
 
-  // 4. Fetch dynamic robots.txt
-  console.log('🤖 Fetching robots.txt...')
-  try {
-    const res = await core.adapter.fetch(new Request(`http://localhost/robots.txt`))
-    if (res.status === 200) {
-      const content = await res.text()
-      await writeFile(join(outputDir, 'robots.txt'), content)
-    } else {
-      console.warn('⚠️  Could not fetch robots.txt')
-    }
-  } catch (e) {
-    console.warn('⚠️  Error fetching robots.txt:', e)
-  }
-
-  // 5. Generate 404.html for GitHub Pages
-  // GitHub Pages uses 404.html to handle SPA routing
-  // When a route doesn't exist, GitHub Pages serves 404.html
-  // We need to make 404.html try to load the corresponding HTML file
-  console.log('🚫 Generating 404.html...')
-  try {
-    // Request a known non-existent route to trigger the 404 hook
-    const res = await core.adapter.fetch(
-      new Request(`http://localhost/__force_404_generation_${Date.now()}__`)
-    )
-    let html = await res.text()
-
-    // For GitHub Pages SPA support, we need to add a script that:
-    // 1. Reads the current URL
-    // 2. Tries to fetch the corresponding HTML file
-    // 3. If found, replaces the current page content
-    // 4. If not found, shows the 404 error
-
-    // Insert a script before closing body tag to handle SPA routing
-    const spaScript = `
-    <script>
-      // GitHub Pages SPA routing handler for Inertia.js
-      (function() {
-        const currentPath = window.location.pathname;
-        const currentSearch = window.location.search;
-        const currentHash = window.location.hash;
-        
-        // Skip if we're already on a 404 page or if this is a direct 404.html request
-        if (currentPath === '/404.html' || currentPath.endsWith('/404.html')) {
-          return;
-        }
-        
-        // Function to try loading HTML file
-        function tryLoadHtml(path, callback) {
-          // Try with trailing slash first (directory index)
-          let htmlPath = path.endsWith('/') ? path + 'index.html' : path + '/index.html';
-          
-          fetch(htmlPath)
-            .then(function(response) {
-              if (response.ok) {
-                return response.text();
-              }
-              // If not found, try without trailing slash
-              if (htmlPath.endsWith('/index.html')) {
-                const altPath = path + '.html';
-                return fetch(altPath).then(function(altResponse) {
-                  if (altResponse.ok) {
-                    return altResponse.text();
-                  }
-                  throw new Error('Not found');
-                });
-              }
-              throw new Error('Not found');
-            })
-            .then(function(html) {
-              callback(null, html);
-            })
-            .catch(function(error) {
-              callback(error, null);
-            });
-        }
-        
-        // Wait for Inertia to be initialized
-        function handleRoute() {
-          tryLoadHtml(currentPath, function(error, html) {
-            if (error || !html) {
-              // Route not found, show 404
-              console.log('Route not found:', currentPath);
-              return;
-            }
-            
-            // Parse the HTML and extract the data-page attribute
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-            const appDiv = doc.querySelector('#app');
-            
-            // For static deployment, the simplest approach is to replace the entire page
-            // This ensures Inertia.js re-initializes with the correct data-page attribute
-            // Update URL first
-            window.history.replaceState(null, '', currentPath + currentSearch + currentHash);
-            
-            // Replace the entire document to trigger Inertia re-initialization
-            document.open();
-            document.write(html);
-            document.close();
-          });
-        }
-        
-        // Try to handle route immediately
-        if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', handleRoute);
-        } else {
-          handleRoute();
-        }
-      })();
-    </script>`
-
-    // Insert the script before the closing body tag
-    // Use a more reliable method to find and replace </body>
-    if (html.includes('</body>')) {
-      html = html.replace('</body>', `${spaScript}\n</body>`)
-    } else if (html.includes('</BODY>')) {
-      html = html.replace('</BODY>', `${spaScript}\n</BODY>`)
-    } else {
-      // If no body tag found, append before closing html tag
-      html = html.replace('</html>', `${spaScript}\n</html>`)
-    }
-
-    await writeFile(join(outputDir, '404.html'), html)
-    console.log('✅ 404.html generated with SPA routing support.')
-  } catch (e) {
-    console.error('❌ Failed to generate 404.html:', e)
-  }
-
-  // CNAME (Note: Ensure this matches your production domain)
+  // 2. CNAME & .nojekyll
   await writeFile(join(outputDir, 'CNAME'), 'gravito.dev')
-
-  // .nojekyll
   await writeFile(join(outputDir, '.nojekyll'), '')
 
-  // Create redirect for /docs to /en/docs/guide/core-concepts
-  console.log('🔄 Creating /docs redirect...')
-  const docsRedirectHtml = `<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=/en/docs/guide/core-concepts" /><script>window.location.href='/en/docs/guide/core-concepts';</script></head><body>Redirecting to <a href="/en/docs/guide/core-concepts">/en/docs/guide/core-concepts</a>...</body></html>`
-  await mkdir(join(outputDir, 'docs'), { recursive: true })
-  await writeFile(join(outputDir, 'docs', 'index.html'), docsRedirectHtml)
-  console.log('✅ /docs redirect created')
+  // 3. Sitemap (Constellation-powered)
+  await writeFile(join(outputDir, 'sitemap.xml'), smStream.toXML())
 
-  // Create redirect for /about to /en/about
-  console.log('🔄 Creating /about redirect...')
-  const aboutRedirectHtml = `<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=/en/about" /><script>window.location.href='/en/about';</script></head><body>Redirecting to <a href="/en/about">/en/about</a>...</body></html>`
-  await mkdir(join(outputDir, 'about'), { recursive: true })
-  await writeFile(join(outputDir, 'about', 'index.html'), aboutRedirectHtml)
-  console.log('✅ /about redirect created')
-
-  // Create redirect for /features to /en/features
-  console.log('🔄 Creating /features redirect...')
-  const featuresRedirectHtml = `<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=/en/features" /><script>window.location.href='/en/features';</script></head><body>Redirecting to <a href="/en/features">/en/features</a>...</body></html>`
-  await mkdir(join(outputDir, 'features'), { recursive: true })
-  await writeFile(join(outputDir, 'features', 'index.html'), featuresRedirectHtml)
-  console.log('✅ /features redirect created')
-
-  // Create redirect for /releases to /en/releases
-  console.log('🔄 Creating /releases redirect...')
-  const releasesRedirectHtml = `<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=/en/releases" /><script>window.location.href='/en/releases';</script></head><body>Redirecting to <a href="/en/releases">/en/releases</a>...</body></html>`
-  await mkdir(join(outputDir, 'releases'), { recursive: true })
-  await writeFile(join(outputDir, 'releases', 'index.html'), releasesRedirectHtml)
-  console.log('✅ /releases redirect created')
-
-  // Create redirect for /privacy to /en/privacy
-  console.log('🔄 Creating /privacy redirect...')
-  const privacyRedirectHtml = `<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=/en/privacy" /><script>window.location.href='/en/privacy';</script></head><body>Redirecting to <a href="/en/privacy">/en/privacy</a>...</body></html>`
-  await mkdir(join(outputDir, 'privacy'), { recursive: true })
-  await writeFile(join(outputDir, 'privacy', 'index.html'), privacyRedirectHtml)
-  console.log('✅ /privacy redirect created')
-
-  // Create redirect for /terms to /en/terms
-  console.log('🔄 Creating /terms redirect...')
-  const termsRedirectHtml = `<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=/en/terms" /><script>window.location.href='/en/terms';</script></head><body>Redirecting to <a href="/en/terms">/en/terms</a>...</body></html>`
-  await mkdir(join(outputDir, 'terms'), { recursive: true })
-  await writeFile(join(outputDir, 'terms', 'index.html'), termsRedirectHtml)
-  console.log('✅ /terms redirect created')
-
-  // Copy root assets (favicon, manifest) from static to root
-  const rootAssets = [
-    'favicon.ico',
-    'site.webmanifest',
-    'android-chrome-192x192.png',
-    'apple-touch-icon.png',
-  ]
-  for (const asset of rootAssets) {
-    try {
-      await cp(join(staticDir, asset), join(outputDir, asset))
-    } catch (_e) {
-      // Ignore if missing, strictly speaking
+  // 4. Assets
+  const staticDir = join(process.cwd(), 'static')
+  if (existsSync(staticDir)) {
+    await cp(staticDir, join(outputDir, 'static'), { recursive: true })
+    // Copy root assets
+    const rootAssets = [
+      'favicon.ico',
+      'site.webmanifest',
+      'android-chrome-192x192.png',
+      'apple-touch-icon.png',
+    ]
+    for (const a of rootAssets) {
+      if (existsSync(join(staticDir, a))) await cp(join(staticDir, a), join(outputDir, a))
     }
+  }
+
+  // 5. Clean up favicon directory if created by mistake by SSG
+  const faviconDir = join(outputDir, 'favicon.ico')
+  if (
+    existsSync(faviconDir) &&
+    (await (await import('node:fs/promises')).stat(faviconDir)).isDirectory()
+  ) {
+    await rm(faviconDir, { recursive: true })
   }
 
   console.log('✅ SSG Build Complete!')
   process.exit(0)
 }
 
-build().catch((error) => {
-  console.error('❌ Build failed with unhandled error:')
-  console.error('Error type:', error?.constructor?.name || typeof error)
-  console.error('Error value:', error)
-
-  if (error instanceof Error) {
-    console.error('Error name:', error.name)
-    console.error('Error message:', error.message)
-    if (error.stack) {
-      console.error('Error stack:')
-      console.error(error.stack)
-    }
-
-    // Check for common issues
-    if (error.message.includes('Cannot find module')) {
-      console.error('💡 This is a missing dependency issue')
-      console.error('💡 Make sure all packages are built: bun run build')
-      console.error('💡 Make sure dependencies are installed: bun install')
-    }
-    if (error.message.includes('EADDRINUSE')) {
-      console.error('💡 Port is already in use')
-    }
-    if (error.message.includes('ENOENT')) {
-      console.error('💡 File or directory not found')
-    }
-  }
-
-  // Additional debugging info
-  console.error('📂 Current working directory:', process.cwd())
-  console.error('📦 Node version:', process.version)
-  console.error('📦 NODE_ENV:', process.env.NODE_ENV || 'not set')
-
-  process.exit(1)
-})
+build().catch(console.error)

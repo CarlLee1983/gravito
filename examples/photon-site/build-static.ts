@@ -112,7 +112,11 @@ async function build() {
   ).replace(/\/$/, '')
 
   try {
-    await ssg.export(outputDir, baseUrl, extraPaths)
+    await ssg.exportIncremental(outputDir, {
+      baseUrl,
+      incremental: true,
+      extraPaths,
+    })
   } catch (err) {
     console.error('❌ CRITICAL SSG ERROR:', err)
   }

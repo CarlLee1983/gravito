@@ -45,23 +45,7 @@
  * @packageDocumentation
  */
 
-export type {
-  FreezeConfig,
-  FreezeDetector,
-  RedirectInfo,
-  RedirectRule,
-  SitemapEntry,
-} from '@gravito/freeze'
-// Re-export core types and functions
-export {
-  createDetector,
-  defineConfig,
-  generateLocalizedRoutes,
-  generateRedirectHtml,
-  generateRedirects,
-  generateSitemapEntries,
-  inferRedirects,
-} from '@gravito/freeze'
+export * from '@gravito/freeze'
 // Components
 export { LocaleSwitcher, StaticLink } from './components'
 export type { FreezeContext, UseFreezeReturn } from './composables'

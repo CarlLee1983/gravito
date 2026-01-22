@@ -27,7 +27,12 @@ export const orbits = [
   new OrbitStasis(),
 
   // Asset management and Vite directives (Required by OrbitIon for initial load)
-  new OrbitPrism(),
+  new OrbitPrism({
+    cache: {
+      enabled: process.env.NODE_ENV === 'production',
+      maxSize: 1000,
+    },
+  }),
 
   // Session management
   new OrbitPulsar({

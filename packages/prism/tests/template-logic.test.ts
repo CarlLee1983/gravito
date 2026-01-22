@@ -3,7 +3,7 @@ import { mkdtempSync, writeFileSync } from 'node:fs'
 import { rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { TemplateEngine } from '../src/TemplateEngine'
+import { TemplateEngine } from '../src/engine/TemplateEngine'
 
 let viewsDir = ''
 
