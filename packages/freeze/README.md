@@ -90,6 +90,47 @@ detector.getCurrentLocale() // 'en'
 
 ### Build Utilities
 
+#### `generateSitemapXml(entries, baseUrl)`
+
+Generate a standard sitemap.xml with hreflang alternates.
+
+```typescript
+import { generateSitemapEntries, generateSitemapXml } from '@gravito/freeze'
+
+const entries = generateSitemapEntries(config, ['/about', '/products'])
+const xml = generateSitemapXml(entries, 'https://example.com')
+```
+
+#### `generateRobotsTxt(baseUrl, sitemap = true)`
+
+Generate a standard robots.txt file.
+
+```typescript
+import { generateRobotsTxt } from '@gravito/freeze'
+
+const robots = generateRobotsTxt('https://example.com')
+```
+
+#### `generate404Html(config)`
+
+Generate a generic 404.html for static hosting.
+
+```typescript
+import { generate404Html } from '@gravito/freeze'
+
+const html = generate404Html(config)
+```
+
+#### `validateRoutes(routes)`
+
+Ensure all routes start with a forward slash.
+
+```typescript
+import { validateRoutes } from '@gravito/freeze'
+
+validateRoutes(['/about', 'invalid']) // Throws Error
+```
+
 #### `generateRedirectHtml(targetUrl)`
 
 Generate redirect HTML for abstract routes.

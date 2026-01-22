@@ -15,6 +15,7 @@ bun add @gravito/freeze-react
 ```tsx
 // App.tsx
 import { FreezeProvider, defineConfig } from '@gravito/freeze-react'
+import { Link } from '@inertiajs/react'
 
 const config = defineConfig({
   staticDomains: ['example.com', 'example.github.io'],
@@ -25,7 +26,7 @@ const config = defineConfig({
 
 function App() {
   return (
-    <FreezeProvider config={config}>
+    <FreezeProvider config={config} LinkComponent={Link}>
       <Layout>...</Layout>
     </FreezeProvider>
   )
@@ -93,7 +94,7 @@ function CustomComponent() {
 Context provider for SSG functionality.
 
 ```tsx
-<FreezeProvider config={config} locale="en">
+<FreezeProvider config={config} locale="en" LinkComponent={Link}>
   {children}
 </FreezeProvider>
 ```
@@ -102,6 +103,7 @@ Context provider for SSG functionality.
 |------|------|-------------|
 | `config` | `FreezeConfig` | SSG configuration |
 | `locale` | `string?` | Override current locale |
+| `LinkComponent` | `Component?` | Optional Inertia Link component |
 | `children` | `ReactNode` | Child components |
 
 #### `<StaticLink>`

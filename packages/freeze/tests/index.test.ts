@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it } from 'bun:test'
 import {
+  asAbsolutePath,
+  asLocale,
   createDetector,
   defineConfig,
   generateLocalizedRoutes,
@@ -19,7 +21,7 @@ describe('@gravito/freeze', () => {
 
       expect(config.staticDomains).toEqual(['example.com'])
       expect(config.previewPort).toBe(4173)
-      expect(config.defaultLocale).toBe('en')
+      expect(config.defaultLocale).toBe(asLocale('en'))
       expect(config.outputDir).toBe('dist-static')
     })
 
@@ -28,80 +30,100 @@ describe('@gravito/freeze', () => {
         staticDomains: ['example.com'],
         baseUrl: 'https://example.com',
         previewPort: 5000,
-        defaultLocale: 'zh',
+        defaultLocale: asLocale('zh'),
       })
 
       expect(config.previewPort).toBe(5000)
-      expect(config.defaultLocale).toBe('zh')
+      expect(config.defaultLocale).toBe(asLocale('zh'))
     })
   })
 
   describe('FreezeDetector', () => {
     const config = defineConfig({
       staticDomains: ['example.com', 'example.github.io'],
-      locales: ['en', 'zh'],
-      defaultLocale: 'en',
+      locales: [asLocale('en'), asLocale('zh')],
+      defaultLocale: asLocale('en'),
       baseUrl: 'https://example.com',
       redirects: [
-        { from: '/docs', to: '/en/docs/guide/getting-started' },
-        { from: '/about', to: '/en/about' },
+        { from: asAbsolutePath('/docs'), to: asAbsolutePath('/en/docs/guide/getting-started') },
+        { from: asAbsolutePath('/about'), to: asAbsolutePath('/en/about') },
       ],
     })
     const detector = createDetector(config)
 
     describe('getLocaleFromPath', () => {
       it('should extract locale from path', () => {
-        expect(detector.getLocaleFromPath('/en/docs')).toBe('en')
-        expect(detector.getLocaleFromPath('/zh/about')).toBe('zh')
-        expect(detector.getLocaleFromPath('/en')).toBe('en')
-        expect(detector.getLocaleFromPath('/zh')).toBe('zh')
+        expect(detector.getLocaleFromPath(asAbsolutePath('/en/docs'))).toBe(asLocale('en'))
+        expect(detector.getLocaleFromPath(asAbsolutePath('/zh/about'))).toBe(asLocale('zh'))
+        expect(detector.getLocaleFromPath(asAbsolutePath('/en'))).toBe(asLocale('en'))
+        expect(detector.getLocaleFromPath(asAbsolutePath('/zh'))).toBe(asLocale('zh'))
       })
 
       it('should return default locale for paths without locale', () => {
-        expect(detector.getLocaleFromPath('/docs')).toBe('en')
-        expect(detector.getLocaleFromPath('/')).toBe('en')
+        expect(detector.getLocaleFromPath(asAbsolutePath('/docs'))).toBe(asLocale('en'))
+        expect(detector.getLocaleFromPath(asAbsolutePath('/'))).toBe(asLocale('en'))
       })
     })
 
     describe('getLocalizedPath', () => {
       it('should add locale prefix', () => {
-        expect(detector.getLocalizedPath('/about', 'en')).toBe('/about')
-        expect(detector.getLocalizedPath('/docs/guide', 'zh')).toBe('/zh/docs/guide')
+        expect(detector.getLocalizedPath(asAbsolutePath('/about'), asLocale('en'))).toBe(
+          asAbsolutePath('/about')
+        )
+        expect(detector.getLocalizedPath(asAbsolutePath('/docs/guide'), asLocale('zh'))).toBe(
+          asAbsolutePath('/zh/docs/guide')
+        )
       })
 
       it('should handle root path', () => {
-        expect(detector.getLocalizedPath('/', 'en')).toBe('/')
-        expect(detector.getLocalizedPath('/', 'zh')).toBe('/zh')
+        expect(detector.getLocalizedPath(asAbsolutePath('/'), asLocale('en'))).toBe(
+          asAbsolutePath('/')
+        )
+        expect(detector.getLocalizedPath(asAbsolutePath('/'), asLocale('zh'))).toBe(
+          asAbsolutePath('/zh')
+        )
       })
 
       it('should replace existing locale prefix', () => {
-        expect(detector.getLocalizedPath('/en/docs', 'zh')).toBe('/zh/docs')
-        expect(detector.getLocalizedPath('/zh/about', 'en')).toBe('/about')
+        expect(detector.getLocalizedPath(asAbsolutePath('/en/docs'), asLocale('zh'))).toBe(
+          asAbsolutePath('/zh/docs')
+        )
+        expect(detector.getLocalizedPath(asAbsolutePath('/zh/about'), asLocale('en'))).toBe(
+          asAbsolutePath('/about')
+        )
       })
     })
 
     describe('switchLocale', () => {
       it('should switch locale while preserving path', () => {
-        expect(detector.switchLocale('/en/docs/guide', 'zh')).toBe('/zh/docs/guide')
-        expect(detector.switchLocale('/zh/about', 'en')).toBe('/about')
+        expect(detector.switchLocale(asAbsolutePath('/en/docs/guide'), asLocale('zh'))).toBe(
+          asAbsolutePath('/zh/docs/guide')
+        )
+        expect(detector.switchLocale(asAbsolutePath('/zh/about'), asLocale('en'))).toBe(
+          asAbsolutePath('/about')
+        )
       })
 
       it('should handle root locale paths', () => {
-        expect(detector.switchLocale('/en', 'zh')).toBe('/zh')
-        expect(detector.switchLocale('/zh/', 'en')).toBe('/')
+        expect(detector.switchLocale(asAbsolutePath('/en'), asLocale('zh'))).toBe(
+          asAbsolutePath('/zh')
+        )
+        expect(detector.switchLocale(asAbsolutePath('/zh/'), asLocale('en'))).toBe(
+          asAbsolutePath('/')
+        )
       })
     })
 
     describe('needsRedirect', () => {
       it('should detect redirect rules', () => {
-        const redirect = detector.needsRedirect('/docs')
+        const redirect = detector.needsRedirect(asAbsolutePath('/docs'))
         expect(redirect).not.toBeNull()
-        expect(redirect?.to).toBe('/en/docs/guide/getting-started')
+        expect(redirect?.to).toBe(asAbsolutePath('/en/docs/guide/getting-started'))
       })
 
       it('should return null for non-redirect paths', () => {
-        expect(detector.needsRedirect('/en/docs')).toBeNull()
-        expect(detector.needsRedirect('/random')).toBeNull()
+        expect(detector.needsRedirect(asAbsolutePath('/en/docs'))).toBeNull()
+        expect(detector.needsRedirect(asAbsolutePath('/random'))).toBeNull()
       })
     })
 
@@ -121,6 +143,7 @@ describe('@gravito/freeze', () => {
           },
         } as any
 
+        const detector = createDetector(config)
         expect(detector.isStaticSite()).toBe(true)
       })
 
@@ -133,6 +156,7 @@ describe('@gravito/freeze', () => {
           },
         } as any
 
+        const detector = createDetector(config)
         expect(detector.isStaticSite()).toBe(true)
       })
 
@@ -145,6 +169,7 @@ describe('@gravito/freeze', () => {
           },
         } as any
 
+        const detector = createDetector(config)
         expect(detector.isStaticSite()).toBe(false)
       })
     })
@@ -161,6 +186,7 @@ describe('@gravito/freeze', () => {
           location: { pathname: '/zh/docs' },
         } as any
 
+        const detector = createDetector(config)
         expect(detector.getCurrentLocale()).toBe('zh')
       })
     })
@@ -183,8 +209,8 @@ describe('@gravito/freeze', () => {
         staticDomains: [],
         baseUrl: 'https://example.com',
         redirects: [
-          { from: '/docs', to: '/en/docs' },
-          { from: '/about', to: '/en/about' },
+          { from: asAbsolutePath('/docs'), to: asAbsolutePath('/en/docs') },
+          { from: asAbsolutePath('/about'), to: asAbsolutePath('/en/about') },
         ],
       })
 
@@ -217,11 +243,14 @@ describe('@gravito/freeze', () => {
 
   describe('inferRedirects', () => {
     it('should infer redirects from common routes', () => {
-      const redirects = inferRedirects(['en', 'zh'], 'en', ['/docs', '/about'])
+      const redirects = inferRedirects([asLocale('en'), asLocale('zh')], asLocale('en'), [
+        asAbsolutePath('/docs'),
+        asAbsolutePath('/about'),
+      ])
 
       expect(redirects).toEqual([
-        { from: '/docs', to: '/en/docs' },
-        { from: '/about', to: '/en/about' },
+        { from: asAbsolutePath('/docs'), to: asAbsolutePath('/en/docs') },
+        { from: asAbsolutePath('/about'), to: asAbsolutePath('/en/about') },
       ])
     })
   })
@@ -231,8 +260,8 @@ describe('@gravito/freeze', () => {
       const config = defineConfig({
         staticDomains: ['example.com'],
         baseUrl: 'https://example.com',
-        locales: ['en', 'zh'],
-        defaultLocale: 'en',
+        locales: [asLocale('en'), asLocale('zh')],
+        defaultLocale: asLocale('en'),
       })
 
       const routes = ['/en', '/zh', '/en/about', '/zh/about']

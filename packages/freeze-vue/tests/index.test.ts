@@ -24,12 +24,15 @@ mock.module('@gravito/freeze', () => ({
     getLocalizedPath: (path: string, locale: string) => `/${locale}${path === '/' ? '' : path}`,
     switchLocale: (path: string, locale: string) => `/${locale}${path === '/' ? '/' : path}`,
     getLocaleFromPath: (path: string) => (path.startsWith('/zh') ? 'zh' : 'en'),
+    getCurrentLocale: () => 'en',
   }),
   generateRedirectHtml: (target: string) => `redirect:${target}`,
   generateRedirects: () => new Map(),
   generateLocalizedRoutes: () => [],
   inferRedirects: () => [],
   generateSitemapEntries: () => [],
+  asLocale: (v: string) => v,
+  asAbsolutePath: (v: string) => v,
 }))
 
 let defineConfig: typeof import('../src').defineConfig
@@ -63,7 +66,7 @@ describe('@gravito/freeze-vue', () => {
     })
 
     const app = { provide: (key: unknown, value: unknown) => injectionStore.set(key, value) }
-    FreezePlugin.install(app as any, config as any)
+    FreezePlugin.install(app as any, { config: config as any })
 
     const context = injectionStore.get(FREEZE_KEY) as any
     expect(context.config.baseUrl).toBe('https://example.com')
@@ -76,7 +79,7 @@ describe('@gravito/freeze-vue', () => {
       baseUrl: 'https://example.com',
     })
 
-    provideFreeze(config as any)
+    provideFreeze({ config: config as any })
     const freeze = useFreeze()
 
     expect(freeze.isStatic.value).toBe(true)
@@ -89,7 +92,7 @@ describe('@gravito/freeze-vue', () => {
       staticDomains: ['example.com'],
       baseUrl: 'https://example.com',
     })
-    provideFreeze(config as any)
+    provideFreeze({ config: config as any })
 
     const render = StaticLink.setup?.(
       { href: '/about', skipLocalization: false },
@@ -109,7 +112,7 @@ describe('@gravito/freeze-vue', () => {
       staticDomains: ['example.com'],
       baseUrl: 'https://example.com',
     })
-    provideFreeze(config as any)
+    provideFreeze({ config: config as any })
 
     const render = LocaleSwitcher.setup?.(
       { locale: 'en' },
