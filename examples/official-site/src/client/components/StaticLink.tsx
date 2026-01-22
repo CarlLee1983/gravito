@@ -32,7 +32,7 @@ export function isStaticSite(): boolean {
   }
 
   // 支援靜態託管匹配
-  const staticDomains = ['github.io', 'vercel.app', 'netlify.app', 'pages.dev']
+  const staticDomains = ['gravito.dev', 'github.io', 'vercel.app', 'netlify.app', 'pages.dev']
   return staticDomains.some(
     (domain) => hostname === domain || hostname.endsWith(`.${domain}`)
   )
