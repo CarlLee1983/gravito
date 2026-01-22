@@ -45,12 +45,20 @@ bun run dev
 
 Visit http://localhost:3000
 
-### 5. Lint and Format
+### 5. Run Type Checking
+
+```bash
+bun run typecheck
+```
+
+### 6. Lint and Format
 
 ```bash
 bun run lint
 bun run format
 ```
+
+### 7. Build Static Site
 
 ### 6. Build Static Site
 
@@ -60,7 +68,7 @@ bun run build:static
 
 The static files will be generated in `dist-static/` directory.
 
-### 6. Preview Static Site
+### 8. Preview Static Site
 
 ```bash
 bun run preview:static
