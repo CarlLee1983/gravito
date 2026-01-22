@@ -105,7 +105,12 @@ async function build() {
   // Export content
   // This will crawl all GET routes, render them to HTML, and generate Sitemap + Robots.txt
   // The 'extraPaths' are merged into the crawlers queue and will be present in the sitemap.
-  const baseUrl = process.env.BASE_URL || 'https://photon.gravito.dev'
+  const baseUrl = (
+    process.env.BASE_URL ||
+    process.env.CF_PAGES_URL ||
+    'https://photon.gravito.dev'
+  ).replace(/\/$/, '')
+
   try {
     await ssg.export(outputDir, baseUrl, extraPaths)
   } catch (err) {
@@ -119,17 +124,18 @@ async function build() {
   if (!existsSync(path.join(outputDir, 'sitemap.xml'))) {
     console.warn('⚠️ SSG failed to generate sitemap.xml. Generating manually...')
     const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
-    <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-    ${extraPaths
-      .map((route) => {
-        return `  <url>
-        <loc>${baseUrl}${route === '/' ? '' : route}</loc>
-        <changefreq>weekly</changefreq>
-        <priority>${route === '/' ? '1.0' : '0.8'}</priority>
-      </url>`
-      })
-      .join('\n')}
-    </urlset>`
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+${extraPaths
+  .map((route) => {
+    const loc = `${baseUrl}${route === '/' ? '' : route}`
+    return `  <url>
+    <loc>${loc}</loc>
+    <changefreq>weekly</changefreq>
+    <priority>${route === '/' ? '1.0' : '0.8'}</priority>
+  </url>`
+  })
+  .join('\n')}
+</urlset>`.trim()
     await writeFile(path.join(outputDir, 'sitemap.xml'), sitemap, 'utf-8')
     console.log('✅ Manual sitemap.xml generated.')
   }
@@ -137,9 +143,9 @@ async function build() {
   if (!existsSync(path.join(outputDir, 'robots.txt'))) {
     console.warn('⚠️ SSG failed to generate robots.txt. Generating manually...')
     const robots = `User-agent: *
-    Allow: /
-    
-    Sitemap: ${baseUrl}/sitemap.xml`
+Allow: /
+
+Sitemap: ${baseUrl}/sitemap.xml`.trim()
     await writeFile(path.join(outputDir, 'robots.txt'), robots, 'utf-8')
     console.log('✅ Manual robots.txt generated.')
   }

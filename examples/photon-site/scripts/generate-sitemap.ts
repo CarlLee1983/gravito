@@ -2,9 +2,13 @@ import { readdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
 const outputDir = path.join(process.cwd(), 'dist/static')
-const baseUrl =
+
+// Improved baseUrl detection
+const baseUrl = (
   process.env.BASE_URL ||
-  (process.env.CF_PAGES_URL ? process.env.CF_PAGES_URL : 'https://photon.gravito.dev')
+  process.env.CF_PAGES_URL ||
+  'https://photon.gravito.dev'
+).replace(/\/$/, '')
 
 async function generateArtifacts() {
   console.log('🗺️  Generating sitemap.xml and robots.txt manually...')
@@ -48,17 +52,18 @@ async function generateArtifacts() {
 
   // Sitemap
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
 ${extraPaths
   .map((route) => {
+    const loc = `${baseUrl}${route === '/' ? '' : route}`
     return `  <url>
-    <loc>${baseUrl}${route === '/' ? '' : route}</loc>
+    <loc>${loc}</loc>
     <changefreq>weekly</changefreq>
     <priority>${route === '/' ? '1.0' : '0.8'}</priority>
   </url>`
   })
   .join('\n')}
-</urlset>`
+</urlset>`.trim()
 
   await writeFile(path.join(outputDir, 'sitemap.xml'), sitemap, 'utf-8')
   console.log(`✅ Generated sitemap.xml with ${extraPaths.length} URLs`)
