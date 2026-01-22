@@ -7,7 +7,7 @@
  * - Ensures accessibility and performance defaults
  */
 
-import type { ImageCDNLoader } from './image/ImageCDNLoader'
+import type { ImageCDNLoader } from './ImageCDNLoader'
 
 /**
  * Art direction configuration for responsive images

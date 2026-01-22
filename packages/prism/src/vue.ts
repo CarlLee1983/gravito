@@ -1,6 +1,6 @@
 import { defineComponent, h, type PropType } from 'vue'
-import type { ArtDirectionConfig, ImageOptions } from './ImageService'
-import { ImageService } from './ImageService'
+import type { ArtDirectionConfig, ImageOptions } from './image/ImageService'
+import { ImageService } from './image/ImageService'
 
 /**
  * Gravito Image component for Vue.

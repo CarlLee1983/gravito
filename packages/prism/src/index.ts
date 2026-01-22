@@ -6,11 +6,20 @@ import type {
   PlanetCore,
   ViewService,
 } from '@gravito/core'
+import { type CacheOptions, TemplateEngine } from './engine/TemplateEngine'
 import { createImageHelper } from './helpers/image'
-import { type CacheOptions, TemplateEngine } from './TemplateEngine'
+import { StaticSiteGenerator } from './ssg/StaticSiteGenerator'
+
+export interface SSGOptions {
+  concurrency?: number
+  timeout?: number
+  incremental?: boolean
+  manifestPath?: string
+}
 
 export interface OrbitPrismOptions {
   cache?: CacheOptions
+  ssg?: SSGOptions
 }
 
 /**
@@ -87,6 +96,10 @@ export class OrbitPrism implements GravitoOrbit {
     core.container.instance('view', engine)
 
     core.hooks.doAction('view:helpers:register', engine)
+
+    const ssg = new StaticSiteGenerator(core)
+    core.container.singleton('ssg', () => ssg)
+    core.logger.info('[OrbitPrism] SSG registered (Exposed as: ssg)')
   }
 }
 
@@ -98,9 +111,60 @@ declare module '@gravito/core' {
   }
 }
 
+// ============================================
+// Core exports (backward compatible)
+// ============================================
 export type { ViewService, CacheOptions }
 export { TemplateEngine }
+
+// ============================================
+// Image exports
+// ============================================
 export { Image, type ImageProps } from './components/Image'
+export type { CacheStats } from './core/TemplateCache'
+// ============================================
+// New exports (Phase 1-5)
+// ============================================
+export { TemplateCache } from './core/TemplateCache'
+export type { CompiledMetadata, CompilerOptions } from './core/TemplateCompiler'
+export { TemplateCompiler } from './core/TemplateCompiler'
+export type { HelperFunction, RenderContext } from './engine/TemplateEngine'
 export { createImageHelper } from './helpers/image'
-export { type ImageOptions, ImageService } from './ImageService'
-export { StaticSiteGenerator } from './SSG'
+export { defaultLoader, type ImageCDNLoader, type TransformOptions } from './image/ImageCDNLoader'
+export {
+  calculateLQIPDimensions,
+  calculateMinLQIPSize,
+  generateColorPlaceholder,
+  generatePlaceholderStyles,
+  hexToRGB,
+} from './image/ImagePlaceholder'
+export { type ImageOptions, ImageService } from './image/ImageService'
+export {
+  type DynamicRoute,
+  DynamicRouteResolver,
+  type ResolvedRoute,
+} from './ssg/DynamicRouteResolver'
+export { IncrementalBuilder } from './ssg/IncrementalBuilder'
+// ============================================
+// SSG exports
+// ============================================
+export { type ExportOptions, StaticSiteGenerator } from './ssg/StaticSiteGenerator'
+export type {
+  ArtDirectionConfig,
+  CDNLoaderOptions,
+  PlaceholderOptions,
+} from './types/image'
+export type {
+  BuildManifest,
+  DynamicRouteConfig,
+  PageEntry,
+  ResolvedRouteConfig,
+  SSGExportOptions,
+} from './types/ssg'
+// ============================================
+// Type re-exports (unified types)
+// ============================================
+export type {
+  CompiledMetadata as TemplateMetadata,
+  RenderOptions,
+} from './types/template'

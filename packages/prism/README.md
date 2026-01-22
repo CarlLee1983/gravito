@@ -178,6 +178,74 @@ const styles = generatePlaceholderStyles('data:image/jpeg;base64,...', 1440, 810
 }}
 ```
 
+## Static Site Generation (v3.1.0)
+
+### Basic SSG Export
+
+```typescript
+import { PlanetCore } from '@gravito/core'
+
+const core = await PlanetCore.boot(config)
+const ssg = core.container.resolve('ssg')
+
+// Export all static routes
+await ssg.export('./dist', 'https://example.com')
+```
+
+### Dynamic Routes
+
+Generate static pages from dynamic data sources:
+
+```typescript
+import { DynamicRouteResolver, StaticSiteGenerator } from '@gravito/prism'
+
+const dynamicRoutes = [
+  {
+    pattern: '/blog/[slug]',
+    getStaticPaths: async () => {
+      const posts = await fetchPosts()
+      return posts.map(post => ({
+        params: { slug: post.slug },
+        data: post
+      }))
+    }
+  },
+  {
+    pattern: '/docs/[...path]',
+    getStaticPaths: async () => {
+      return [
+        { params: { path: 'getting-started' } },
+        { params: { path: 'api/reference' } },
+        { params: { path: 'guides/advanced/tips' } }
+      ]
+    }
+  }
+]
+
+await ssg.exportDynamic(dynamicRoutes, './dist', {
+  baseUrl: 'https://example.com',
+  concurrency: 10,
+  timeout: 30000
+})
+```
+
+### Incremental Builds
+
+Only rebuild changed pages for faster builds:
+
+```typescript
+await ssg.exportIncremental('./dist', {
+  baseUrl: 'https://example.com',
+  incremental: true,
+  force: false  // Set true to force full rebuild
+})
+```
+
+**Performance:**
+- Tracks content hashes in `.build-manifest.json`
+- Skips unchanged pages automatically
+- Typical rebuild time: <10% of full build
+
 ## React Component (Optional)
 
 ```tsx
@@ -193,6 +261,57 @@ export const Hero = () => (
   />
 )
 ```
+
+## Vue Component (Optional)
+
+```vue
+<script setup>
+import { GravitoImage } from '@gravito/prism/vue'
+</script>
+
+<template>
+  <GravitoImage
+    src="/assets/hero.jpg"
+    alt="Hero"
+    :width="1200"
+    :height="630"
+    loading="eager"
+  />
+</template>
+```
+
+## Architecture (v3.1.0)
+
+The internal architecture has been refactored for better maintainability:
+
+```
+src/
+├── core/           # Cache and compiler
+├── engine/         # Template orchestration
+├── image/          # Image optimization
+├── ssg/            # Static site generation
+├── components/     # React/Vue components
+├── helpers/        # Template helpers
+├── types/          # TypeScript definitions
+└── index.ts        # Public API
+```
+
+**Key Classes:**
+- `TemplateEngine` - Main rendering orchestrator
+- `TemplateCompiler` - Directive and component processing
+- `TemplateCache` - LRU caching with hash validation
+- `ImageService` - Image tag generation
+- `StaticSiteGenerator` - SSG with incremental builds
+- `IncrementalBuilder` - Manifest-based change tracking
+- `DynamicRouteResolver` - Dynamic route resolution
+
+## API Reference
+
+See [docs/API.md](./docs/API.md) for complete API documentation.
+
+## Migration Guide
+
+See [docs/MIGRATION.md](./docs/MIGRATION.md) for upgrading from v3.0.x.
 
 ## License
 

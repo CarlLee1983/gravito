@@ -1,6 +1,8 @@
 import { mkdir, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import type { PlanetCore } from '@gravito/core'
+import { type DynamicRoute, DynamicRouteResolver } from './DynamicRouteResolver'
+import { IncrementalBuilder } from './IncrementalBuilder'
 
 /**
  * SSG Route interface
@@ -16,6 +18,16 @@ interface SSGRoute {
 interface RouterWithRoutes {
   routes?: SSGRoute[]
   getRoutes?: () => SSGRoute[]
+}
+
+export interface ExportOptions {
+  baseUrl?: string
+  concurrency?: number
+  timeout?: number
+  incremental?: boolean
+  force?: boolean
+  manifestPath?: string
+  extraPaths?: string[]
 }
 
 /**
@@ -38,9 +50,123 @@ export class StaticSiteGenerator {
    */
   constructor(private core: PlanetCore) {}
 
-  /**
-   * Export all static routes to a target directory.
-   */
+  async exportDynamic(
+    dynamicRoutes: DynamicRoute[],
+    outputDir: string,
+    options: ExportOptions = {}
+  ): Promise<void> {
+    const baseUrl = options.baseUrl ?? 'https://gravito.dev'
+
+    this.core.logger.info('[SSG] Resolving dynamic routes...')
+    const resolved = await DynamicRouteResolver.resolve(dynamicRoutes)
+    this.core.logger.info(`[SSG] Resolved ${resolved.length} static paths from dynamic routes`)
+
+    if (options.incremental) {
+      const builder = new IncrementalBuilder(this.core, outputDir, options)
+      await builder.export(resolved, baseUrl, options)
+    } else {
+      await this.exportRoutes(resolved, outputDir, baseUrl, options)
+    }
+  }
+
+  async exportIncremental(outputDir: string, options: ExportOptions = {}): Promise<void> {
+    const baseUrl = options.baseUrl ?? 'https://gravito.dev'
+
+    const routes = this.getStaticRoutes()
+    const extraPaths = (options.extraPaths ?? []).map((p) => ({ path: p }))
+    const resolved = [...routes.map((r) => ({ path: r.path })), ...extraPaths]
+
+    const builder = new IncrementalBuilder(this.core, outputDir, options)
+    await builder.export(resolved, baseUrl, options)
+
+    await this.generateSitemap(outputDir, resolved, baseUrl)
+    await this.generateRobotsTxt(outputDir, baseUrl)
+  }
+
+  private async exportRoutes(
+    routes: Array<{ path: string; getData?: () => Promise<any> }>,
+    outputDir: string,
+    baseUrl: string,
+    options: ExportOptions = {}
+  ): Promise<void> {
+    const concurrency = options.concurrency ?? 10
+    const timeout = options.timeout ?? 30000
+
+    const queue = [...routes]
+    const total = routes.length
+    let success = 0
+    let failed = 0
+
+    const worker = async () => {
+      while (queue.length > 0) {
+        const route = queue.shift()
+        if (!route) break
+
+        try {
+          const url = `http://localhost${route.path}`
+          const request = new Request(url, {
+            signal: AbortSignal.timeout(timeout),
+          })
+
+          const response = await this.core.adapter.fetch(request)
+
+          if (!response.ok) {
+            this.core.logger.warn(`[SSG] ⚠️ Skipping ${route.path}: Status ${response.status}`)
+            failed++
+            continue
+          }
+
+          const html = await response.text()
+
+          const pathWithoutQuery = route.path.split('?')[0]
+          let relativePath =
+            pathWithoutQuery === '/'
+              ? 'index.html'
+              : `${pathWithoutQuery.replace(/^\//, '')}/index.html`
+
+          if (pathWithoutQuery.endsWith('.html')) {
+            relativePath = pathWithoutQuery.replace(/^\//, '')
+          }
+
+          const absolutePath = join(outputDir, relativePath)
+          await mkdir(dirname(absolutePath), { recursive: true })
+          await writeFile(absolutePath, html, 'utf-8')
+
+          success++
+          this.core.logger.info(`[SSG] ✅ Rendered (${success + failed}/${total}): ${route.path}`)
+        } catch (error: any) {
+          failed++
+          this.core.logger.error(`[SSG] ❌ Failed ${route.path}: ${error.message}`)
+        }
+      }
+    }
+
+    const workers = Array.from({ length: Math.min(concurrency, total) }, () => worker())
+    await Promise.all(workers)
+
+    this.core.logger.info(`[SSG] Export complete! Success: ${success}, Failed: ${failed}`)
+  }
+
+  private getStaticRoutes(): Array<{ path: string; method: string }> {
+    const router = this.core.router as RouterWithRoutes
+    let routes: SSGRoute[] = []
+
+    if (Array.isArray(router.routes)) {
+      routes = router.routes
+    } else if (typeof router.getRoutes === 'function') {
+      routes = router.getRoutes()
+    }
+
+    return routes.filter(
+      (r: SSGRoute) =>
+        r?.method?.toLowerCase() === 'get' &&
+        r.path &&
+        !r.path.includes(':') &&
+        !r.path.includes('*') &&
+        !r.path.includes('[')
+    )
+  }
+
   async export(
     outputDir: string,
     baseUrl = 'https://gravito.dev',
@@ -186,7 +312,11 @@ export class StaticSiteGenerator {
     )
   }
 
-  private async generateSitemap(outputDir: string, routes: SSGRoute[], baseUrl: string) {
+  private async generateSitemap(
+    outputDir: string,
+    routes: Array<{ path: string }>,
+    baseUrl: string
+  ) {
     this.core.logger.info('[SSG] Generating sitemap.xml...')
     const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">

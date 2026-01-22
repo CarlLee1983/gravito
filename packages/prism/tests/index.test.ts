@@ -12,6 +12,7 @@ describe('OrbitPrism', () => {
       },
       container: {
         instance: mock(() => {}),
+        singleton: mock(() => {}),
       },
       adapter: {
         use: mock((_path: string, handler: typeof middleware) => {

@@ -31,7 +31,16 @@ export async function bootstrap(options: AppConfig = {}): Promise<PlanetCore> {
       VIEW_DIR: 'src/views',
     },
     // Add OrbitIon
-    orbits: [OrbitCache, OrbitPrism, OrbitIon],
+    orbits: [
+      new OrbitCache(),
+      new OrbitPrism({
+        cache: {
+          enabled: process.env.NODE_ENV === 'production',
+          maxSize: 1000,
+        },
+      }),
+      new OrbitIon(),
+    ],
     adapter: new GravitoAdapter(),
   })
 

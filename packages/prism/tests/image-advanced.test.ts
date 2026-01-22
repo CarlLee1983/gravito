@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'bun:test'
-import { ImageService } from '../src/ImageService'
 import {
   calculateLQIPDimensions,
   calculateMinLQIPSize,
   generateColorPlaceholder,
   hexToRGB,
 } from '../src/image/ImagePlaceholder'
+import { ImageService } from '../src/image/ImageService'
 import { createCloudinaryLoader } from '../src/image/loaders/cloudinary'
 import { createImgixLoader } from '../src/image/loaders/imgix'
 import { vercelLoader } from '../src/image/loaders/vercel'

@@ -1,6 +1,6 @@
 import type React from 'react'
-import type { ArtDirectionConfig, ImageOptions } from '../ImageService'
-import { ImageService } from '../ImageService'
+import type { ArtDirectionConfig, ImageOptions } from '../image/ImageService'
+import { ImageService } from '../image/ImageService'
 import type { ImageCDNLoader } from '../image/ImageCDNLoader'
 
 /**

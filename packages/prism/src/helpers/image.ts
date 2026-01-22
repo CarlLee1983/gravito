@@ -1,5 +1,5 @@
-import { type ImageOptions, ImageService } from '../ImageService'
-import type { HelperFunction } from '../TemplateEngine'
+import type { HelperFunction } from '../engine/TemplateEngine'
+import { type ImageOptions, ImageService } from '../image/ImageService'
 
 /**
  * Creates an image helper for the TemplateEngine.

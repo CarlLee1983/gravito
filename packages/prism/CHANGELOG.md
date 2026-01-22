@@ -16,6 +16,17 @@
   - LQIP utilities for Chrome LCP compliance
   - Extended `ImageOptions` with 9 new optional properties
 
+- **SSG Enhancements**
+  - Incremental builds with manifest tracking
+  - Dynamic route generation (`[slug]`, `[...path]`)
+  - Configurable concurrency and timeout
+
+- **Architecture Refactor (Phase 5)**
+  - Extracted `TemplateCompiler` class for compilation logic
+  - Reorganized directory structure (internal only, public API unchanged)
+  - Unified type definitions in `src/types/`
+  - Better separation of concerns (Engine → Compiler → Cache)
+
 - **Developer Experience**
   - Comprehensive JSDoc documentation on all public APIs
   - 38 new tests (100% pass rate: 71/71)

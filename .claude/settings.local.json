@@ -13,7 +13,10 @@
       "Bash(bun install)",
       "Bash(git restore:*)",
       "Bash(find:*)",
-      "Bash(bun pm:*)"
+      "Bash(bun pm:*)",
+      "Bash(mkdir:*)",
+      "Bash(mv:*)",
+      "Bash(bunx madge:*)"
     ]
   }
 }

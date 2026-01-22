@@ -107,7 +107,11 @@ async function build() {
   // The 'extraPaths' are merged into the crawlers queue and will be present in the sitemap.
   const baseUrl = process.env.BASE_URL || 'https://photon.gravito.dev'
   try {
-    await ssg.export(outputDir, baseUrl, extraPaths)
+    await ssg.exportIncremental(outputDir, {
+      baseUrl,
+      incremental: true,
+      extraPaths,
+    })
   } catch (err) {
     console.error('❌ CRITICAL SSG ERROR:', err)
   }

@@ -113,6 +113,77 @@ import { Image } from '@gravito/prism/vue'
 </x-card>
 ```
 
+## 現代格式與 Picture 元素
+
+從 **v3.1.0** 開始，`Image` 元件支援 `<picture>` 標籤，以進行進階的格式協商。
+
+```handlebars
+{{image 
+  src="/hero.jpg" 
+  alt="Hero" 
+  width=1920 
+  height=1080
+  formatNegotiation=true
+  usePicture=true
+}}
+```
+
+這會自動生成一個 `<picture>` 標籤，包含優化後的 `AVIF` 與 `WebP` 來源，並以原始的 `JPG` 作為備選方案。
+
+---
+
+## CDN 整合 (CDN Integration)
+
+Prism 與主流的圖片 CDN 無縫整合。這讓您可以將圖片處理工作交給專業服務，同時保持程式碼簡潔。
+
+```typescript
+import { ImageService } from '@gravito/prism'
+import { createCloudinaryLoader } from '@gravito/prism/image/loaders/cloudinary'
+
+const loader = createCloudinaryLoader({ cloudName: 'your-cloud-name' })
+
+// 在您的樣板或元件中
+<Image 
+  src="/products/shoes.jpg" 
+  alt="Shoes" 
+  width={800} 
+  height={600} 
+  loader={loader}
+/>
+```
+
+**支援的 Loader：**
+- **Cloudinary**: `createCloudinaryLoader({ cloudName })`
+- **imgix**: `createImgixLoader({ domain })`
+- **Vercel**: `vercelLoader`
+
+---
+
+## LQIP (低畫質圖片佔位符)
+
+為了提升最大內容繪製 (LCP) 指標並提供更好的使用者體驗，Prism 支援 **低畫質圖片佔位符 (Low Quality Image Placeholders)**。
+
+```handlebars
+{{image 
+  src="/hero.jpg" 
+  alt="Hero"
+  width=1440
+  height=810
+  placeholder="blur"
+  blurDataURL="data:image/jpeg;base64,..."
+}}
+```
+
+### 生成佔位符
+
+您可以使用內建工具來計算符合 Chrome LCP 標準 (0.05 Bits Per Pixel) 的最佳佔位符尺寸。
+
+```typescript
+import { calculateMinLQIPSize } from '@gravito/prism'
+
+const minSizeKB = calculateMinLQIPSize(1440, 810) // 回傳約 8KB
+```
+
 ---
 
 ## Core Web Vitals 核對清單

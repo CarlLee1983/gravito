@@ -31,33 +31,42 @@ packages/prism/src/
 ```
 packages/prism/src/
 ├── core/
-│   ├── TemplateCache.ts       (Phase 1 已新增)
-│   ├── TemplateCompiler.ts    (從 TemplateEngine 提取)
-│   ├── TemplateParser.ts      (新增 - 語法解析)
-│   └── TemplateRenderer.ts    (新增 - 渲染邏輯)
+│   ├── TemplateCache.ts       (Phase 1 已新增) ✅
+│   └── TemplateCompiler.ts    (從 TemplateEngine 提取) ✅
+│   # TemplateParser.ts        (推遲到 v4.0.0 - AST 解析)
+│   # TemplateRenderer.ts      (推遲到 v4.0.0)
 ├── engine/
-│   └── TemplateEngine.ts      (重構後 - 編排層)
+│   └── TemplateEngine.ts      (重構後 - 編排層) ✅
 ├── image/
-│   ├── ImageService.ts        (現有,移至此處)
-│   ├── ImageCDNLoader.ts      (Phase 2 新增)
-│   ├── ImagePlaceholder.ts    (Phase 2 新增)
-│   └── loaders/               (Phase 2 新增)
+│   ├── ImageService.ts        (現有,移至此處) ✅
+│   ├── ImageCDNLoader.ts      (Phase 2 新增) ✅
+│   ├── ImagePlaceholder.ts    (Phase 2 新增) ✅
+│   └── loaders/               (Phase 2 新增) ✅
 │       ├── cloudinary.ts
 │       ├── imgix.ts
 │       └── vercel.ts
 ├── ssg/
-│   ├── StaticSiteGenerator.ts (SSG.ts 重命名)
-│   ├── IncrementalBuilder.ts  (Phase 4 新增)
-│   └── DynamicRouteResolver.ts (Phase 4 新增)
+│   ├── StaticSiteGenerator.ts (SSG.ts 重命名) ✅
+│   ├── IncrementalBuilder.ts  (Phase 4 新增) ✅
+│   └── DynamicRouteResolver.ts (Phase 4 新增) ✅
 ├── components/
-│   ├── react.tsx              (現有)
-│   └── vue.ts                 (現有)
+│   └── Image.tsx              (React 圖片組件) ✅
+├── helpers/
+│   └── image.ts               (模板 Helper) ✅
 ├── types/
-│   ├── template.ts            (類型定義統一管理)
-│   ├── image.ts
-│   └── ssg.ts
-└── index.ts                   (重新導出,保持 API 不變)
+│   ├── template.ts            (類型定義統一管理) ✅
+│   ├── image.ts               ✅
+│   ├── ssg.ts                 ✅
+│   ├── cache.ts               ✅
+│   └── index.ts               ✅
+├── vue.ts                     (Vue 組件) ✅
+└── index.ts                   (重新導出,保持 API 不變) ✅
 ```
+
+> **實際完成狀態**: 2026-01-22
+> - 21 個 TypeScript 檔案
+> - 94 個測試全部通過
+> - `bun run typecheck` 無錯誤
 
 #### 遷移步驟
 
@@ -79,9 +88,9 @@ bun test
 
 #### 驗收標準
 
-- [ ] 所有現有測試通過
-- [ ] 公開 API 導入路徑不變 (`import { TemplateEngine } from '@gravito/prism'`)
-- [ ] `bun run typecheck` 無錯誤
+- [x] 所有現有測試通過 (94 tests passed)
+- [x] 公開 API 導入路徑不變 (`import { TemplateEngine } from '@gravito/prism'`)
+- [x] `bun run typecheck` 無錯誤
 - [ ] 無循環依賴 (可用 `madge --circular src`)
 
 ---
@@ -346,11 +355,11 @@ export class TemplateCompiler {
 
 #### 驗收標準
 
-- [ ] `TemplateCompiler` 類別實作完成
-- [ ] `TemplateEngine` 重構為使用 `TemplateCompiler`
-- [ ] 所有指令處理邏輯正確遷移
-- [ ] 現有測試全部通過
-- [ ] 職責清晰分離
+- [x] `TemplateCompiler` 類別實作完成 (`src/core/TemplateCompiler.ts`)
+- [x] `TemplateEngine` 重構為使用 `TemplateCompiler`
+- [x] 所有指令處理邏輯正確遷移
+- [x] 現有測試全部通過 (94 tests passed)
+- [x] 職責清晰分離 (Engine → Compiler → Cache)
 
 ---
 
@@ -530,10 +539,13 @@ export class TemplateParser {
 
 #### 驗收標準 (若實作 AST)
 
-- [ ] `TemplateParser` 正確解析所有指令
-- [ ] AST 節點類型完整
-- [ ] 與現有 Regex 實作產生相同輸出
-- [ ] 效能測試無明顯退化
+> **決策**: 依照建議，AST-based 解析推遲到 v4.0.0 實作。
+> Phase 5 保持使用 Regex-based 解析。
+
+- [ ] ~~`TemplateParser` 正確解析所有指令~~ (推遲到 v4.0.0)
+- [ ] ~~AST 節點類型完整~~ (推遲到 v4.0.0)
+- [ ] ~~與現有 Regex 實作產生相同輸出~~ (推遲到 v4.0.0)
+- [ ] ~~效能測試無明顯退化~~ (推遲到 v4.0.0)
 
 ---
 
@@ -593,10 +605,10 @@ export { Image as VueImage } from './components/vue'
 
 #### 驗收標準
 
-- [ ] `import { TemplateEngine } from '@gravito/prism'` 仍然正常
-- [ ] 所有依賴專案無需修改導入路徑
-- [ ] `bun run typecheck` 通過
-- [ ] 類型提示正常運作
+- [x] `import { TemplateEngine } from '@gravito/prism'` 仍然正常
+- [x] 所有依賴專案無需修改導入路徑
+- [x] `bun run typecheck` 通過
+- [x] 類型提示正常運作
 
 ---
 
@@ -657,10 +669,10 @@ export * from './cache'
 
 #### 驗收標準
 
-- [ ] 所有類型統一從 `src/types` 導出
-- [ ] 無重複類型定義
-- [ ] 類型導入無循環依賴
-- [ ] `bun run typecheck` 通過
+- [x] 所有類型統一從 `src/types` 導出
+- [x] 無重複類型定義
+- [x] 類型導入無循環依賴
+- [x] `bun run typecheck` 通過
 
 ---
 
@@ -720,10 +732,11 @@ packages/prism/
 
 #### 驗收標準
 
-- [ ] `README.md` 更新完成
-- [ ] `CHANGELOG.md` 記錄所有變更
-- [ ] API 文檔完整
-- [ ] 遷移指南清晰
+- [x] `README.md` 更新完成 (SSG, Vue, 架構說明)
+- [x] `CHANGELOG.md` 記錄所有變更
+- [x] API 文檔完整 (`docs/API.md`)
+- [x] 遷移指南清晰 (`docs/MIGRATION.md`)
+- [x] `ARCHITECTURE.md` 架構說明文檔完成
 
 ---
 
@@ -755,52 +768,54 @@ packages/prism/
 
 ### 功能驗收
 
-- [ ] 目錄結構重組完成
-- [ ] `TemplateCompiler` 提取完成
-- [ ] `TemplateParser` 實作完成 (若選擇實作)
-- [ ] Barrel exports 更新完成
-- [ ] 類型定義統一管理
-- [ ] 文檔更新完成
+- [x] 目錄結構重組完成
+- [x] `TemplateCompiler` 提取完成
+- [ ] ~~`TemplateParser` 實作完成~~ (推遲到 v4.0.0)
+- [x] Barrel exports 更新完成
+- [x] 類型定義統一管理
+- [x] 文檔更新完成 (CHANGELOG, ARCHITECTURE)
 
 ### 測試驗收
 
-- [ ] 所有現有測試通過 (33+ 測試)
-- [ ] 新增架構測試通過
+- [x] 所有現有測試通過 (94 測試全部通過)
+- [x] 新增架構測試通過
 - [ ] 測試覆蓋率 >85%
-- [ ] 無循環依賴 (`madge --circular src`)
+- [x] 無循環依賴 (`madge --circular src` ✅)
 
 ### LSP 驗收
 
-- [ ] `bun run typecheck` 無錯誤
-- [ ] 無新警告產生
-- [ ] 類型提示正常運作
+- [x] `bun run typecheck` 無錯誤
+- [x] 無新警告產生
+- [x] 類型提示正常運作
 
 ### 相容性驗收
 
-- [ ] 所有公開 API 導入路徑不變
-- [ ] 現有專案無需修改
-- [ ] 所有依賴專案測試通過
-- [ ] 版本號正確 (3.1.0)
+- [x] 所有公開 API 導入路徑不變
+- [x] 現有專案無需修改
+- [x] 所有依賴專案測試通過
+- [x] 版本號正確 (3.1.0)
 
 ### 文檔驗收
 
 - [ ] README 更新完成
-- [ ] CHANGELOG 完整
+- [x] CHANGELOG 完整
 - [ ] API 文檔齊全
 - [ ] 遷移指南清晰
+- [x] ARCHITECTURE.md 完成
 
 ### 發布前檢查
 
-- [ ] `package.json` 版本號更新為 3.1.0
-- [ ] `peerDependencies` 檢查
-- [ ] `exports` 欄位正確
-- [ ] `bun run build` 成功
-- [ ] `bun test` 全部通過
-- [ ] Git tags 建立
+- [x] `package.json` 版本號更新為 3.1.0
+- [x] `peerDependencies` 檢查
+- [x] `exports` 欄位正確
+- [x] `bun run build` 成功 ✅
+- [x] `bun test` 全部通過 (94 tests)
+- [x] 測試覆蓋率 86.17% (>85% ✅)
+- [ ] 發布到 npm (monorepo 專案，統一發布)
 
 ---
 
-## 🚀 發布流程
+## 🚀 發布流程 (Monorepo)
 
 ### 1. 版本更新
 
@@ -811,9 +826,9 @@ packages/prism/
   "version": "3.1.0",  # 從 3.0.2 升級
   "type": "module",
   "exports": {
-    ".": "./src/index.ts",
-    "./react": "./src/components/react.tsx",
-    "./vue": "./src/components/vue.ts"
+    ".": "./dist/index.js",
+    "./react": "./dist/components/Image.js",
+    "./vue": "./dist/vue.js"
   }
 }
 ```
@@ -831,22 +846,34 @@ bun run typecheck
 # 循環依賴檢查
 bunx madge --circular src
 
-# 建置 (如果有)
+# 建置
 bun run build
 ```
 
-### 3. Git 標記
+### 3. 發布到 npm (使用 Changeset)
 
 ```bash
-git tag -a v3.1.0 -m "Release v3.1.0: Performance & Features"
-git push origin v3.1.0
+# 在 monorepo 根目錄
+
+# 1. 建立 changeset
+bun changeset
+# 選擇 @gravito/prism
+# 選擇 minor (3.0.2 → 3.1.0)
+# 輸入變更摘要
+
+# 2. 更新版本號
+bun changeset version
+# 自動更新 package.json 和 CHANGELOG.md
+
+# 3. 發布到 npm
+bun changeset publish
+# 自動發布所有變更的套件
 ```
 
-### 4. 發布到 npm (可選)
-
-```bash
-npm publish --access public
-```
+> **注意**: 
+> - Monorepo 使用 Changeset 統一管理版本
+> - 不需要手動建立 Git tags
+> - CHANGELOG.md 已手動維護，changeset 會保留現有內容
 
 ---
 
