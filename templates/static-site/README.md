@@ -60,8 +60,6 @@ bun run format
 
 ### 7. Build Static Site
 
-### 6. Build Static Site
-
 ```bash
 bun run build:static
 ```

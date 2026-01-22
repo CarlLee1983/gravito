@@ -16,19 +16,25 @@ function isStaticSite(): boolean {
   }
 
   const hostname = window.location.hostname
+  const port = window.location.port
 
-  // 從環境變數讀取靜態網站域名列表
-  // 在 Vite 中，環境變數需要以 VITE_ 開頭才能在客戶端訪問
-  // 但我們可以在建置時注入，或使用 import.meta.env
+  // 🔥 Static preview server detection (bun run build:preview)
+  if ((hostname === 'localhost' || hostname === '127.0.0.1') && port === '4173') {
+    return true
+  }
+
+  // 🔥 Development mode with Inertia backend (port 3000/5173)
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return false
+  }
+
   const staticDomainsEnv = import.meta.env.VITE_STATIC_SITE_DOMAINS || ''
   const staticDomains = staticDomainsEnv
     .split(',')
     .map((d: string) => d.trim())
     .filter((d: string) => d.length > 0)
 
-  // 如果沒有配置環境變數，檢查常見的靜態託管域名模式
   if (staticDomains.length === 0) {
-    // 常見的靜態託管平台域名模式
     return (
       hostname.includes('github.io') ||
       hostname.includes('vercel.app') ||

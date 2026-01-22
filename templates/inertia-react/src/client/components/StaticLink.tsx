@@ -16,6 +16,17 @@ function isStaticSite(): boolean {
   }
 
   const hostname = window.location.hostname
+  const port = window.location.port
+
+  // 🔥 Static preview server detection (bun run build:preview)
+  if ((hostname === 'localhost' || hostname === '127.0.0.1') && port === '4173') {
+    return true
+  }
+
+  // 🔥 Development mode with Inertia backend (port 3000/5173)
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return false
+  }
 
   // 從環境變數讀取靜態網站域名列表
   // 在 Vite 中，環境變數需要以 VITE_ 開頭才能在客戶端訪問

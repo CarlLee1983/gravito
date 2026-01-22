@@ -496,6 +496,7 @@ cli
         '@gravito/stasis': '^3.0.1',
         '@gravito/ion': '^3.0.1',
         '@gravito/atlas': '^2.1.0',
+        '@gravito/constellation': '^3.0.2',
         default: '^1.0.0', // Fallback for other orbits
       }
 
