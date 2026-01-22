@@ -31,8 +31,8 @@ export function isStaticSite(): boolean {
     return false
   }
 
-  // 支援子網域匹配 (例如 zenith.gravito.dev)
-  const staticDomains = ['gravito.dev', 'github.io', 'vercel.app', 'netlify.app', 'pages.dev']
+  // 支援靜態託管匹配
+  const staticDomains = ['github.io', 'vercel.app', 'netlify.app', 'pages.dev']
   return staticDomains.some(
     (domain) => hostname === domain || hostname.endsWith(`.${domain}`)
   )
