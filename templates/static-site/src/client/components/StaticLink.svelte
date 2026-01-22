@@ -26,11 +26,12 @@
       .filter((d: string) => d.length > 0)
 
     if (staticDomains.length === 0) {
+      // 使用 endsWith 而不是 includes 以避免 URL substring sanitization 漏洞
       return (
-        hostname.includes('github.io') ||
-        hostname.includes('vercel.app') ||
-        hostname.includes('netlify.app') ||
-        hostname.includes('pages.dev')
+        hostname.endsWith('.github.io') ||
+        hostname.endsWith('.vercel.app') ||
+        hostname.endsWith('.netlify.app') ||
+        hostname.endsWith('.pages.dev')
       )
     }
 
