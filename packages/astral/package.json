@@ -20,8 +20,8 @@
   "scripts": {
     "build": "tsup src/index.ts --format esm,cjs --dts",
     "test": "bun test",
-    "test:coverage": "bun test --coverage --coverage-threshold=10",
-    "test:ci": "bun test --coverage --coverage-threshold=10",
+    "test:coverage": "bun test --coverage --coverage-threshold=70",
+    "test:ci": "bun test --coverage --coverage-threshold=70",
     "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck"
   },
   "license": "MIT",
