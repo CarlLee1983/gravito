@@ -536,6 +536,9 @@ cli
               pkg.devDependencies['svelte-check'] = '^3.6.0'
             }
           }
+          if (pkg.scripts?.typecheck) {
+            pkg.scripts.typecheck = 'svelte-check --tsconfig ./tsconfig.json'
+          }
           await fs.writeFile(pkgPath, JSON.stringify(pkg, null, 2))
 
           // Update vite.config.ts for Svelte
