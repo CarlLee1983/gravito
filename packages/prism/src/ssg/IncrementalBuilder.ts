@@ -153,15 +153,32 @@ export class IncrementalBuilder {
 
           const response = await this.core.adapter.fetch(request)
 
-          if (!response.ok) {
+          let html: string
+
+          if (response.status >= 300 && response.status < 400) {
+            const location = response.headers.get('Location')
+            if (location) {
+              html = `<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0;url=${location}"></head><body>Redirecting to <a href="${location}">${location}</a>...</body></html>`
+              this.core.logger.info(
+                `[IncrementalBuilder] ↪️  Redirect (${built + skipped + failed}/${total}): ${route.path} -> ${location}`
+              )
+            } else {
+              this.core.logger.warn(
+                `[IncrementalBuilder] ⚠️  Redirect without Location header ${route.path}: Status ${response.status}`
+              )
+              failed++
+              continue
+            }
+          } else if (!response.ok) {
             this.core.logger.warn(
               `[IncrementalBuilder] ⚠️  Failed ${route.path}: Status ${response.status}`
             )
             failed++
             continue
+          } else {
+            html = await response.text()
           }
 
-          const html = await response.text()
           const contentHash = this.computeHash(html)
 
           const pathWithoutQuery = route.path.split('?')[0]

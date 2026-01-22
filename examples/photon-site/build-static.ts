@@ -55,6 +55,9 @@ async function build() {
     // Filter for JSON files
     const validFiles = files.filter((f) => f.endsWith('.json'))
 
+    // Add localized root for docs (redirects to intro)
+    docRoutes.push(`/${lang}/docs`)
+
     validFiles.forEach((file) => {
       const slug = file.replace('.json', '')
 

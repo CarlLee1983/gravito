@@ -2,6 +2,7 @@
 import path from 'node:path'
 import { InertiaService } from '@gravito/ion'
 import { Photon } from '@gravito/photon'
+import { serveStatic } from '@gravito/photon/bun'
 import { TemplateEngine } from '@gravito/prism'
 
 export const app = new Photon()
@@ -11,14 +12,19 @@ app.use(async (_, next) => {
   return await next()
 })
 
+const isDev = process.env.NODE_ENV === 'development'
+
+if (!isDev) {
+  // Serve static assets in production
+  app.use('/*', serveStatic({ root: './dist/static' }))
+}
+
 // Explicit static routes for known assets
 app.get('/favicon.svg', () => {
   return new Response(Bun.file(path.join(process.cwd(), 'public/favicon.svg')), {
     headers: { 'Content-Type': 'image/svg+xml' },
   })
 })
-
-const isDev = process.env.NODE_ENV === 'development'
 
 // Vite proxy for development mode
 if (isDev) {
@@ -436,6 +442,13 @@ app.get('/legal/:page', (c) => {
 })
 
 // --- Localized Routes (Must be after static routes) ---
+
+// Localized Docs Root Redirect
+app.get('/:lang/docs', (c) => {
+  const lang = c.req.param('lang')
+  if (!supportedLangs.includes(lang)) return c.notFound()
+  return c.redirect(`/${lang}/docs/intro`)
+})
 
 // Localized Docs
 app.get('/:lang/docs/:page', async (c) => {
