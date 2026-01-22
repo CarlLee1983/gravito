@@ -85,6 +85,11 @@ await core.liftoff()
 
 Navigate to `http://localhost:3000/docs` to see your Swagger UI!
 
+## 📚 Documentation
+
+- [API Reference](./docs/API.md) - Detailed guide on configuration, interfaces, and helpers.
+- [Advanced Usage](./docs/ADVANCED.md) - Learn about security schemes, reusable components, and custom error handling.
+
 ## ✨ Key Features
 
 - **Zero Purity Loss**: No decorators or JSDoc in your Controllers.

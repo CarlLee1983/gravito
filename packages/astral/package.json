@@ -1,6 +1,6 @@
 {
   "name": "@gravito/astral",
-  "version": "0.1.2",
+  "version": "1.0.0",
   "description": "Schema-driven OpenAPI generator for Gravito with Swagger UI support",
   "module": "./dist/index.js",
   "main": "./dist/index.cjs",
@@ -20,8 +20,8 @@
   "scripts": {
     "build": "tsup src/index.ts --format esm,cjs --dts",
     "test": "bun test",
-    "test:coverage": "bun test --coverage --coverage-threshold=10",
-    "test:ci": "bun test --coverage --coverage-threshold=10",
+    "test:coverage": "bun test --coverage --coverage-threshold=100",
+    "test:ci": "bun test --coverage --coverage-threshold=100",
     "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck"
   },
   "license": "MIT",

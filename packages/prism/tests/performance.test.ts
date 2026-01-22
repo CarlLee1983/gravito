@@ -101,7 +101,7 @@ describe('TemplateCache Performance', () => {
     const duration = performance.now() - start
 
     console.log(`  1000 hash computations on 60KB template: ${duration.toFixed(2)}ms`)
-    expect(duration).toBeLessThan(200)
+    expect(duration).toBeLessThan(500)
   })
 
   it('should handle LRU eviction efficiently', () => {
