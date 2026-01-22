@@ -9,6 +9,7 @@ import {
 import { OrbitIon } from '@gravito/ion'
 import { OrbitPrism } from '@gravito/prism'
 import { OrbitCache } from '@gravito/stasis'
+import type { Context, Next } from 'hono'
 import { registerHooks } from './hooks'
 import { registerRoutes } from './routes'
 import { setupViteProxy } from './utils/vite'
@@ -103,7 +104,7 @@ export async function bootstrap(options: AppConfig = {}): Promise<PlanetCore> {
   app.use('*', gravitoSeo(seoConfig))
 
   // 3.2 Google Analytics Injection (for SSG and Production)
-  app.use('*', async (c: any, next: any) => {
+  app.use('*', async (c: Context, next: Next) => {
     await next()
     const gaId = process.env.VITE_GA_ID
     if (gaId && c.res.status === 200) {
