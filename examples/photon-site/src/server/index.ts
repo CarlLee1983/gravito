@@ -443,6 +443,13 @@ app.get('/legal/:page', (c) => {
 
 // --- Localized Routes (Must be after static routes) ---
 
+// Localized Docs Root Redirect
+app.get('/:lang/docs', (c) => {
+  const lang = c.req.param('lang')
+  if (!supportedLangs.includes(lang)) return c.notFound()
+  return c.redirect(`/${lang}/docs/intro`)
+})
+
 // Localized Docs
 app.get('/:lang/docs/:page', async (c) => {
   const langParam = c.req.param('lang') || ''
