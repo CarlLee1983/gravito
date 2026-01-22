@@ -299,6 +299,11 @@ cli
               label: '🟢 Vue 3',
               hint: 'Composition API with TypeScript',
             },
+            {
+              value: 'svelte',
+              label: '🔶 Svelte',
+              hint: 'Lightweight and reactive',
+            },
           ],
         })
 
@@ -475,6 +480,75 @@ cli
             .replace('plugins: [react()]', 'plugins: [vue()]')
             .replace("input: './src/client/app.tsx'", "input: './src/client/app.ts'")
           await fs.writeFile(viteConfigPath, vueViteConfig)
+        } else if (framework === 'svelte') {
+          // Remove React and Vue files, keep only Svelte files
+          try {
+            await fs.unlink(path.join(clientDir, 'app.tsx'))
+            await fs.unlink(path.join(clientDir, 'app.vue.ts'))
+            await fs.unlink(path.join(clientDir, 'components', 'StaticLink.tsx'))
+            await fs.unlink(path.join(clientDir, 'components', 'StaticLink.vue'))
+            await fs.unlink(path.join(clientDir, 'components', 'Layout.tsx'))
+            await fs.unlink(path.join(clientDir, 'components', 'Layout.vue'))
+            await fs.unlink(path.join(clientDir, 'pages', 'Home.tsx'))
+            await fs.unlink(path.join(clientDir, 'pages', 'Home.vue'))
+            await fs.unlink(path.join(clientDir, 'pages', 'About.tsx'))
+            await fs.unlink(path.join(clientDir, 'pages', 'About.vue'))
+          } catch {
+            // Files might not exist, ignore
+          }
+
+          // Rename app.svelte.ts to app.ts (Svelte entry point)
+          const appSveltePath = path.join(clientDir, 'app.svelte.ts')
+          const appTsPath = path.join(clientDir, 'app.ts')
+          try {
+            const content = await fs.readFile(appSveltePath, 'utf-8')
+            await fs.writeFile(appTsPath, content)
+            await fs.unlink(appSveltePath)
+          } catch {
+            // File might not exist, ignore
+          }
+
+          // Update package.json to remove React/Vue and add Svelte
+          const pkgPath = path.join(process.cwd(), targetDir, 'package.json')
+          const pkg = JSON.parse(await fs.readFile(pkgPath, 'utf-8'))
+          if (pkg.dependencies) {
+            delete pkg.dependencies['@inertiajs/react']
+            delete pkg.dependencies['@inertiajs/vue3']
+            delete pkg.dependencies.react
+            delete pkg.dependencies['react-dom']
+            delete pkg.dependencies.vue
+            if (!pkg.dependencies['@inertiajs/svelte']) {
+              pkg.dependencies['@inertiajs/svelte'] = '^1.0.0'
+            }
+            if (!pkg.dependencies.svelte) {
+              pkg.dependencies.svelte = '^5.0.0'
+            }
+          }
+          if (pkg.devDependencies) {
+            delete pkg.devDependencies['@vitejs/plugin-react']
+            delete pkg.devDependencies['@vitejs/plugin-vue']
+            delete pkg.devDependencies['@types/react']
+            delete pkg.devDependencies['@types/react-dom']
+            if (!pkg.devDependencies['@sveltejs/vite-plugin-svelte']) {
+              pkg.devDependencies['@sveltejs/vite-plugin-svelte'] = '^6.0.0'
+            }
+            if (!pkg.devDependencies['svelte-check']) {
+              pkg.devDependencies['svelte-check'] = '^3.6.0'
+            }
+          }
+          await fs.writeFile(pkgPath, JSON.stringify(pkg, null, 2))
+
+          // Update vite.config.ts for Svelte
+          const viteConfigPath = path.join(process.cwd(), targetDir, 'vite.config.ts')
+          const viteConfig = await fs.readFile(viteConfigPath, 'utf-8')
+          const svelteViteConfig = viteConfig
+            .replace(
+              "import react from '@vitejs/plugin-react'",
+              "import { svelte } from '@sveltejs/vite-plugin-svelte'"
+            )
+            .replace('plugins: [react()]', 'plugins: [svelte()]')
+            .replace("input: './src/client/app.tsx'", "input: './src/client/app.ts'")
+          await fs.writeFile(viteConfigPath, svelteViteConfig)
         }
       }
 
@@ -544,7 +618,7 @@ cli
 
       const frameworkNote =
         project.template === 'static-site' && framework
-          ? `\nFramework: ${framework === 'react' ? '⚛️ React' : '🟢 Vue 3'}`
+          ? `\nFramework: ${framework === 'react' ? '⚛️ React' : framework === 'vue' ? '🟢 Vue 3' : '🔶 Svelte'}`
           : ''
 
       const profileNote = `\nProfile: ${options.profile}`
