@@ -27,10 +27,6 @@ export function Navbar() {
     { label: trans('nav.about'), path: '/about' },
   ]
 
-  const getLink = (path: string) => {
-    return locale === 'zh-TW' ? `/zh-TW${path}` : path
-  }
-
   return (
     <>
       <motion.nav
@@ -46,7 +42,7 @@ export function Navbar() {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-2">
               <StaticLink
-                href={locale === 'zh-TW' ? '/zh-TW' : '/'}
+                href="/"
                 className="flex items-center gap-2 group"
               >
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-zenith-500 to-zenith-accent flex items-center justify-center group-hover:scale-110 transition-transform shadow-[0_0_15px_rgba(0,251,255,0.3)]">
@@ -61,7 +57,7 @@ export function Navbar() {
               {links.map((link) => (
                 <StaticLink
                   key={link.path}
-                  href={getLink(link.path)}
+                  href={link.path}
                   className={`transition-colors py-1 ${url.includes(link.path) ? 'text-zenith-accent border-b-2 border-zenith-accent' : 'hover:text-white'}`}
                 >
                   {link.label}
@@ -81,13 +77,15 @@ export function Navbar() {
                 </button>
                 <div className="absolute right-0 top-full mt-2 w-32 bg-zenith-abyss border border-white/10 rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 overflow-hidden backdrop-blur-xl">
                   <StaticLink
-                    href={locale === 'zh-TW' ? '/' : '/zh-TW'}
+                    href="/"
+                    locale={locale === 'zh-TW' ? 'en' : 'zh-TW'}
                     className="block px-4 py-3 text-[10px] font-black uppercase hover:bg-zenith-accent/20 transition-colors text-left font-body"
                   >
                     {locale === 'zh-TW' ? 'English' : '繁體中文'}
                   </StaticLink>
                   <StaticLink
-                    href={locale === 'zh-TW' ? '/about' : '/zh-TW/about'}
+                    href="/about"
+                    locale={locale === 'zh-TW' ? 'en' : 'zh-TW'}
                     className="block px-4 py-3 text-[10px] font-black uppercase hover:bg-zenith-accent/20 transition-colors text-left border-t border-white/5 font-body"
                   >
                     {locale === 'zh-TW' ? 'About (EN)' : '關於 (繁中)'}
@@ -131,7 +129,7 @@ export function Navbar() {
             {links.map((link) => (
               <StaticLink
                 key={link.path}
-                href={getLink(link.path)}
+                href={link.path}
                 onClick={() => setIsOpen(false)}
                 className="text-2xl font-black font-heading uppercase italic tracking-widest text-zinc-400 hover:text-zenith-accent transition-colors"
               >

@@ -66,12 +66,24 @@ export const FreezePlugin = {
    * Plugin installation function.
    *
    * @param app - The Vue application instance.
-   * @param options - Plugin options.
-   * @param options.config - The Freeze configuration.
-   * @param options.LinkComponent - Optional Inertia Link component.
+   * @param options - Plugin options. Can be a FreezeConfig or an object containing it.
    */
-  install(app: App, options: { config: FreezeConfig; LinkComponent?: Component }) {
-    const { config, LinkComponent } = options
+  install(app: App, options?: { config: FreezeConfig; LinkComponent?: Component } | FreezeConfig) {
+    if (!options) {
+      throw new Error(
+        'FreezePlugin requires a configuration. Please pass FreezeConfig or { config: FreezeConfig }.'
+      )
+    }
+
+    const config = 'config' in options ? options.config : options
+    const LinkComponent = 'config' in options ? options.LinkComponent : undefined
+
+    if (!config || !config.locales) {
+      throw new Error(
+        'FreezePlugin requires a valid configuration. Ensure you are passing FreezeConfig.'
+      )
+    }
+
     const detector = createDetector(config)
 
     const currentLocale = computed(() => {
@@ -202,16 +214,22 @@ export function useFreeze(): UseFreezeReturn {
  *
  * Useful for SSR, testing, or custom setup scenarios where the plugin isn't used.
  *
- * @param options - Provision options.
+ * @param options - Provision options. Can be a FreezeConfig or an object containing it.
  * @param options.config - The Freeze configuration.
  * @param options.LinkComponent - Optional Inertia Link component.
  * @returns The created `FreezeContext`.
  */
-export function provideFreeze(options: {
-  config: FreezeConfig
-  LinkComponent?: Component
-}): FreezeContext {
-  const { config, LinkComponent } = options
+export function provideFreeze(
+  options:
+    | {
+        config: FreezeConfig
+        LinkComponent?: Component
+      }
+    | FreezeConfig
+): FreezeContext {
+  const config = 'config' in options ? options.config : options
+  const LinkComponent = 'config' in options ? options.LinkComponent : undefined
+
   const detector = createDetector(config)
 
   const currentLocale = computed(() => {

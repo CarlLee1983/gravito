@@ -73,6 +73,19 @@ describe('@gravito/freeze-vue', () => {
     expect(context.currentLocale.value).toBe('en')
   })
 
+  it('installs plugin with direct config and provides context', () => {
+    const config = defineConfig({
+      staticDomains: ['example.com'],
+      baseUrl: 'https://example.com/direct',
+    })
+
+    const app = { provide: (key: unknown, value: unknown) => injectionStore.set(key, value) }
+    FreezePlugin.install(app as any, config as any)
+
+    const context = injectionStore.get(FREEZE_KEY) as any
+    expect(context.config.baseUrl).toBe('https://example.com/direct')
+  })
+
   it('useFreeze exposes localized helpers', () => {
     const config = defineConfig({
       staticDomains: ['example.com'],
