@@ -28,23 +28,11 @@ function isStaticSite(): boolean {
     return false
   }
 
-  const staticDomainsEnv = import.meta.env.VITE_STATIC_SITE_DOMAINS || ''
-  const staticDomains = staticDomainsEnv
-    .split(',')
-    .map((d: string) => d.trim())
-    .filter((d: string) => d.length > 0)
-
-  if (staticDomains.length === 0) {
-    // 使用 endsWith 而不是 includes 以避免 URL substring sanitization 漏洞
-    return (
-      hostname.endsWith('.github.io') ||
-      hostname.endsWith('.vercel.app') ||
-      hostname.endsWith('.netlify.app') ||
-      hostname.endsWith('.pages.dev')
-    )
-  }
-
-  return staticDomains.includes(hostname)
+  // 支援子網域匹配 (例如 zenith.gravito.dev)
+  const staticDomains = ['gravito.dev', 'github.io', 'vercel.app', 'netlify.app', 'pages.dev']
+  return staticDomains.some(
+    (domain) => hostname === domain || hostname.endsWith(`.${domain}`)
+  )
 }
 
 type LinkChildren = ComponentProps<typeof Link>['children']

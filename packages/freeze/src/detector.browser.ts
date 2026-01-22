@@ -22,7 +22,11 @@ export class BrowserFreezeDetector extends FreezeDetector {
       return false
     }
 
-    if (this.config.staticDomains.includes(hostname)) {
+    if (
+      this.config.staticDomains.some(
+        (domain) => hostname === domain || hostname.endsWith(`.${domain}`)
+      )
+    ) {
       return true
     }
 

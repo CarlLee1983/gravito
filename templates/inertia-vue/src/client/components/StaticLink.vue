@@ -51,25 +51,11 @@ function isStaticSite(): boolean {
     return false
   }
 
-  // 從環境變數讀取靜態網站域名列表
-  const staticDomainsEnv = import.meta.env.VITE_STATIC_SITE_DOMAINS || ''
-  const staticDomains = staticDomainsEnv
-    .split(',')
-    .map((d: string) => d.trim())
-    .filter((d: string) => d.length > 0)
-
-  // 如果沒有配置環境變數，檢查常見的靜態託管域名模式
-  if (staticDomains.length === 0) {
-    // 使用 endsWith 而不是 includes 以避免 URL substring sanitization 漏洞
-    return (
-      hostname.endsWith('.github.io') ||
-      hostname.endsWith('.vercel.app') ||
-      hostname.endsWith('.netlify.app') ||
-      hostname.endsWith('.pages.dev')
-    )
-  }
-
-  return staticDomains.includes(hostname)
+  // 支援子網域匹配 (例如 zenith.gravito.dev)
+  const staticDomains = ['gravito.dev', 'github.io', 'vercel.app', 'netlify.app', 'pages.dev']
+  return staticDomains.some(
+    (domain) => hostname === domain || hostname.endsWith(`.${domain}`)
+  )
 }
 
 const isStatic = isStaticSite()
