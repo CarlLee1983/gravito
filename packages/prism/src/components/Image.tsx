@@ -1,7 +1,7 @@
 import type React from 'react'
+import type { ImageCDNLoader } from '../image/ImageCDNLoader'
 import type { ArtDirectionConfig, ImageOptions } from '../image/ImageService'
 import { ImageService } from '../image/ImageService'
-import type { ImageCDNLoader } from '../image/ImageCDNLoader'
 
 /**
  * Props for the `Image` component.
