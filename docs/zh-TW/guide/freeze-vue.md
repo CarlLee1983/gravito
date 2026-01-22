@@ -25,6 +25,7 @@ bun add @gravito/freeze-vue
 ```ts
 import { createApp } from 'vue'
 import { FreezePlugin, defineConfig } from '@gravito/freeze-vue'
+import { Link } from '@inertiajs/vue3'
 import App from './App.vue'
 
 const config = defineConfig({
@@ -34,7 +35,7 @@ const config = defineConfig({
   baseUrl: 'https://example.com',
 })
 
-createApp(App).use(FreezePlugin, config).mount('#app')
+createApp(App).use(FreezePlugin, { config, LinkComponent: Link }).mount('#app')
 ```
 
 ## Static / Dynamic 模式
