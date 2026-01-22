@@ -102,6 +102,29 @@ export async function bootstrap(options: AppConfig = {}): Promise<PlanetCore> {
   // Mounted at root to catch /sitemap.xml and /robots.txt
   app.use('*', gravitoSeo(seoConfig))
 
+  // 3.2 Google Analytics Injection (for SSG and Production)
+  app.use('*', async (c: any, next: any) => {
+    await next()
+    const gaId = process.env.VITE_GA_ID
+    if (gaId && c.res.status === 200) {
+      const contentType = c.res.headers.get('Content-Type')
+      if (contentType?.includes('text/html')) {
+        let html = await c.res.text()
+        html = html.replace(
+          '<!-- Google Analytics Placeholder -->',
+          `<script async src="https://www.googletagmanager.com/gtag/js?id=${gaId}"></script>
+             <script>
+               window.dataLayer = window.dataLayer || [];
+               function gtag(){dataLayer.push(arguments);}
+               gtag('js', new Date());
+               gtag('config', '${gaId}');
+             </script>`
+        )
+        c.res = new Response(html, c.res)
+      }
+    }
+  })
+
   // 4. Proxy Vite dev server in development mode
   if (process.env.NODE_ENV !== 'production') {
     setupViteProxy(core)

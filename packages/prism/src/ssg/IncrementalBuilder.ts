@@ -10,6 +10,8 @@
 
 import { createHash } from 'node:crypto'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { mkdir, writeFile } from 'node:fs/promises'
+import { dirname, join } from 'node:path'
 import type { PlanetCore } from '@gravito/core'
 
 interface BuildManifest {
@@ -161,6 +163,20 @@ export class IncrementalBuilder {
 
           const html = await response.text()
           const contentHash = this.computeHash(html)
+
+          const pathWithoutQuery = route.path.split('?')[0]
+          let relativePath =
+            pathWithoutQuery === '/'
+              ? 'index.html'
+              : `${pathWithoutQuery.replace(/^\//, '')}/index.html`
+
+          if (pathWithoutQuery.endsWith('.html')) {
+            relativePath = pathWithoutQuery.replace(/^\//, '')
+          }
+
+          const absolutePath = join(this.outputDir, relativePath)
+          await mkdir(dirname(absolutePath), { recursive: true })
+          await writeFile(absolutePath, html, 'utf-8')
 
           manifest.pages[route.path] = {
             path: route.path,

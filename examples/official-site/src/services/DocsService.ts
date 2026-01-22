@@ -477,6 +477,7 @@ export class DocsService {
             i18n: '國際化 (I18n)',
             deployment: '正式環境部署',
             enterprise_integration: '企業級整合',
+            official_site_arch: '官方網站架構',
             monitor: '觀察者系統 (Monitor)',
             cli: 'CLI 指令',
             plugins: '插件開發',
@@ -569,6 +570,7 @@ export class DocsService {
             i18n: 'Internationalization',
             deployment: 'Production Deployment',
             enterprise_integration: 'Enterprise Integration',
+            official_site_arch: 'Official Site Architecture',
             monitor: 'Monitoring (Monitor)',
             cli: 'CLI Commands',
             plugins: 'Plugin Development',
@@ -602,6 +604,7 @@ export class DocsService {
         path: '#',
         children: [
           { title: trans.architecture, path: `${prefix}/guide/core-concepts` },
+          { title: trans.official_site_arch, path: `${prefix}/guide/official-site-architecture` },
           { title: trans.ecosystem, path: `${prefix}/guide/ecosystem` },
           // Placeholder for now
           // { title: trans.lifecycle, path: `${prefix}/guide/lifecycle` },
