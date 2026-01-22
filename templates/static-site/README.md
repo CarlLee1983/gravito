@@ -45,7 +45,14 @@ bun run dev
 
 Visit http://localhost:3000
 
-### 5. Build Static Site
+### 5. Lint and Format
+
+```bash
+bun run lint
+bun run format
+```
+
+### 6. Build Static Site
 
 ```bash
 bun run build:static

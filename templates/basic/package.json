@@ -4,8 +4,11 @@
     "type": "module",
     "scripts": {
         "dev": "bun run --watch src/index.ts",
+        "build": "bun build ./src/index.ts --outdir ./dist --target bun",
         "start": "bun run src/index.ts",
-        "typecheck": "bun tsc --noEmit"
+        "typecheck": "bun tsc --noEmit",
+        "lint": "biome check .",
+        "format": "biome format --write ."
     },
     "dependencies": {
         "@gravito/core": "workspace:*",
@@ -15,6 +18,7 @@
         "@gravito/photon": "workspace:*"
     },
     "devDependencies": {
+        "@biomejs/biome": "1.9.4",
         "bun-types": "latest",
         "typescript": "^5.9.3"
     }

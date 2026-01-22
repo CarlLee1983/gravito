@@ -381,6 +381,15 @@ cli
       }
       // ----------------------------------------------------
 
+      // Rename stubs
+      const biomeStubPath = path.join(process.cwd(), targetDir, 'biome.json.stub')
+      const biomePath = path.join(process.cwd(), targetDir, 'biome.json')
+      try {
+        await fs.rename(biomeStubPath, biomePath)
+      } catch {
+        // stub might not exist
+      }
+
       // Handle framework-specific files for static-site template
       if (project.template === 'static-site' && framework) {
         const clientDir = path.join(process.cwd(), targetDir, 'src', 'client')
@@ -544,8 +553,8 @@ cli
 
       const nextSteps =
         project.template === 'static-site'
-          ? `\n  cd ${pc.cyan(project.name)}\n  bun install\n  ${pc.yellow('# Edit .env and configure STATIC_SITE_DOMAINS')}\n  bun run dev`
-          : `\n  cd ${pc.cyan(project.name)}\n  bun install\n  bun run dev`
+          ? `\n  cd ${pc.cyan(targetDir)}\n  bun install\n  ${pc.yellow('# Edit .env and configure STATIC_SITE_DOMAINS')}\n  bun run dev\n\n  ${pc.gray('Available commands:')}\n  bun run lint       ${pc.gray('// Check code style')}\n  bun run typecheck  ${pc.gray('// Check types')}`
+          : `\n  cd ${pc.cyan(targetDir)}\n  bun install\n  bun run dev\n\n  ${pc.gray('Available commands:')}\n  bun run lint       ${pc.gray('// Check code style')}\n  bun run typecheck  ${pc.gray('// Check types')}`
 
       outro(`You're all set! ${nextSteps}`)
     } catch (err: unknown) {

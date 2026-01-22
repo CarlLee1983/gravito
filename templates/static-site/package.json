@@ -8,9 +8,12 @@
     "dev:vite": "vite",
     "build:client": "vite build",
     "build:static": "NODE_ENV=production bun build-static.ts",
+    "build": "bun run build:client && bun run build:static",
     "preview:static": "cd dist-static && npx serve .",
     "typecheck": "bun tsc --noEmit",
-    "start": "bun run src/index.ts"
+    "start": "bun run src/index.ts",
+    "lint": "biome check .",
+    "format": "biome format --write ."
   },
   "dependencies": {
     "@gravito/core": "workspace:*",
@@ -26,6 +29,7 @@
     "@gravito/photon": "workspace:*"
   },
   "devDependencies": {
+    "@biomejs/biome": "1.9.4",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^4.2.0",

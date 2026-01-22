@@ -20,7 +20,7 @@ export function createPagesRoute(core: PlanetCore) {
     const inertia = c.get('inertia') as InertiaService
 
     return inertia.render('Home', {
-      msg: 'Hello from Gravito React Backend!',
+      msg: 'Hello from Gravito Vue Backend!',
       version: core.config.get('APP_VERSION'),
     })
   })
