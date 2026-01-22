@@ -76,7 +76,7 @@ export default function Patterns({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) {
 
             <div className="relative z-10">
               <div className="flex flex-wrap gap-2.5 mb-8">
-                {item.benefits.map((benefit: string, bIdx: number) => (
+                {item.tags.map((benefit: string, bIdx: number) => (
                   <span
                     key={bIdx}
                     className="text-[10px] font-technical text-photon-gold/80 uppercase px-3 py-1.5 bg-surf-bg border border-s-brd rounded-xs group-hover:border-photon-gold/20 transition-colors"
