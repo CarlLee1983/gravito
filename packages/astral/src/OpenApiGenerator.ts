@@ -358,8 +358,9 @@ export class OpenApiGenerator {
       }
       if (op.examples.response) {
         for (const [statusCode, response] of Object.entries(operation.responses)) {
-          if (response.content?.['application/json'] && op.examples.response[statusCode]) {
-            response.content['application/json'].examples = {
+          const responseObj = response as any
+          if (responseObj.content?.['application/json'] && op.examples.response[statusCode]) {
+            responseObj.content['application/json'].examples = {
               [statusCode]: op.examples.response[statusCode],
             }
           }
