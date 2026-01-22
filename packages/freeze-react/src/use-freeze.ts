@@ -5,6 +5,7 @@
  */
 
 import type { AbsolutePath, Locale } from '@gravito/freeze'
+import { asAbsolutePath } from '@gravito/freeze'
 import { useCallback } from 'react'
 import { useFreezeContext } from './provider'
 
@@ -65,7 +66,7 @@ export function useFreeze(): UseFreezeReturn {
   const switchLocale = useCallback(
     (newLocale: string) => {
       if (typeof window === 'undefined') {
-        return `/${newLocale}`
+        return asAbsolutePath(`/${newLocale}`)
       }
 
       // Preserve existing query parameters but remove 'lang' to avoid conflicts
@@ -74,7 +75,7 @@ export function useFreeze(): UseFreezeReturn {
       const search = params.toString()
 
       const newPath = detector.switchLocale(window.location.pathname, newLocale)
-      return search ? `${newPath}?${search}` : newPath
+      return search ? asAbsolutePath(`${newPath}?${search}`) : newPath
     },
     [detector]
   )
