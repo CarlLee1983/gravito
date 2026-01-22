@@ -6,7 +6,7 @@ A pre-configured static site template built with Gravito + Inertia.js, ready for
 
 - ✅ **StaticLink Component** - Automatically handles navigation in static vs dynamic environments
 - ✅ **Pre-configured Build Script** - Ready-to-use static site generation
-- ✅ **Framework Support** - Choose between React or Vue during setup
+- ✅ **Framework Support** - Choose between React, Vue, or Svelte during setup
 - ✅ **Environment-based Configuration** - Configure production domains via environment variables
 - ✅ **SPA Routing Support** - Includes 404.html with SPA routing for GitHub Pages
 - ✅ **Best Practices** - Follows all static site development standards
@@ -19,7 +19,7 @@ A pre-configured static site template built with Gravito + Inertia.js, ready for
 gravito create my-static-site --template static-site
 ```
 
-The CLI will ask you to choose between React or Vue.
+The CLI will ask you to choose between React, Vue, or Svelte.
 
 ### 2. Configure Environment
 
@@ -45,7 +45,20 @@ bun run dev
 
 Visit http://localhost:3000
 
-### 5. Build Static Site
+### 5. Run Type Checking
+
+```bash
+bun run typecheck
+```
+
+### 6. Lint and Format
+
+```bash
+bun run lint
+bun run format
+```
+
+### 7. Build Static Site
 
 ```bash
 bun run build:static
@@ -53,7 +66,7 @@ bun run build:static
 
 The static files will be generated in `dist-static/` directory.
 
-### 6. Preview Static Site
+### 8. Preview Static Site
 
 ```bash
 bun run preview:static
@@ -125,6 +138,9 @@ import { StaticLink } from '@/components/StaticLink'
 <StaticLink href="/about">About</StaticLink>
 
 // Vue
+<StaticLink href="/about">About</StaticLink>
+
+// Svelte
 <StaticLink href="/about">About</StaticLink>
 ```
 

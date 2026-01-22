@@ -4,9 +4,13 @@
     "type": "module",
     "scripts": {
         "dev": "bun run --watch src/index.ts",
+        "build": "bun run build:client && bun run build:server",
         "build:client": "vite build",
+        "build:server": "bun build ./src/index.ts --outdir ./dist --target bun",
         "start": "bun run src/index.ts",
-        "typecheck": "bun tsc --noEmit"
+        "typecheck": "bun tsc --noEmit",
+        "lint": "biome check .",
+        "format": "biome format --write ."
     },
     "dependencies": {
         "@gravito/core": "workspace:*",
@@ -20,6 +24,7 @@
         "@gravito/photon": "workspace:*"
     },
     "devDependencies": {
+        "@biomejs/biome": "1.9.4",
         "@types/react": "^19.2.7",
         "@types/react-dom": "^19.2.3",
         "@vitejs/plugin-react": "^4.2.0",
