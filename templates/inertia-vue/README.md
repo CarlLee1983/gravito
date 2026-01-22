@@ -2,7 +2,7 @@
 
 A modern full-stack web application built with [Gravito](https://github.com/gravito-framework/gravito), Inertia.js, and Vue 3.
 
-## Quick Start
+## 🚀 Quick Start
 
 ```bash
 # Install dependencies
@@ -14,12 +14,21 @@ bun run dev
 # In another terminal (for Vite HMR):
 bun x vite src/client
 
-# Start production server
+# Run type checking
+bun run typecheck
+
+# Lint and format code
+bun run lint
+bun run format
+
+# Build for production
 bun run build
+
+# Start production server
 bun run start
 ```
 
-## Project Structure
+## 📂 Project Structure
 
 ```
 src/
@@ -36,6 +45,14 @@ src/
     └── app.html       # Root HTML template
 ```
 
-## License
+## 🛠 Features
+
+- **Inertia.js Integration**: The classic monolith feel with SPA speed.
+- **Orbit System**: Modular plugin architecture.
+- **Type-Safe API**: End-to-end type safety between server and client.
+- **Vite & Vue 3**: Modern frontend development experience.
+- **Biome**: Fast linting and formatting.
+
+## 📄 License
 
 MIT

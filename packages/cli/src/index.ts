@@ -489,11 +489,14 @@ cli
 
       // Replace workspace:* with actual versions
       const versionMap: Record<string, string> = {
-        '@gravito/core': '^1.0.0-beta.1',
-        '@gravito/beam': '^1.0.0-alpha.1',
-        '@gravito/prism': '^1.0.0-beta.1',
-        '@gravito/stasis': '^1.0.0-beta.1',
-        default: '^1.0.0-alpha.1', // Fallback for other orbits still in alpha
+        '@gravito/core': '^1.2.1',
+        '@gravito/beam': '^1.0.0-alpha.2',
+        '@gravito/photon': '^1.0.0-beta.1',
+        '@gravito/prism': '^3.0.2',
+        '@gravito/stasis': '^3.0.1',
+        '@gravito/ion': '^3.0.1',
+        '@gravito/atlas': '^2.1.0',
+        default: '^1.0.0', // Fallback for other orbits
       }
 
       if (pkg.dependencies) {
