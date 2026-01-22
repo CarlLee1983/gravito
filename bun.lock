@@ -38,6 +38,16 @@
         "typescript": "^5.9.3",
       },
     },
+    "examples/astral-verification": {
+      "name": "astral-verification",
+      "version": "1.0.0",
+      "dependencies": {
+        "@gravito/astral": "workspace:*",
+        "@gravito/core": "workspace:*",
+        "@gravito/impulse": "workspace:*",
+        "zod": "^3.23.0",
+      },
+    },
     "examples/atlas-benchmark": {
       "name": "atlas-benchmark",
       "dependencies": {
@@ -791,7 +801,7 @@
     },
     "packages/astral": {
       "name": "@gravito/astral",
-      "version": "0.1.2",
+      "version": "1.0.0",
       "dependencies": {
         "@gravito/core": "workspace:*",
         "@gravito/impulse": "workspace:*",
@@ -3226,6 +3236,8 @@
     "assert-never": ["assert-never@1.4.0", "", {}, "sha512-5oJg84os6NMQNl27T9LnZkvvqzvAnHu03ShCnoj6bsJwS7L8AO4lf+C/XjK/nvzEqQB744moC6V128RucQd1jA=="],
 
     "assertion-error": ["assertion-error@2.0.1", "", {}, "sha512-Izi8RQcffqCeNVgFigKli1ssklIbpHnCYc6AknXGYoB6grJqyeby7jv12JUQgmTAnIDnbck1uxksT4dzN3PWBA=="],
+
+    "astral-verification": ["astral-verification@workspace:examples/astral-verification"],
 
     "async-retry": ["async-retry@1.3.3", "", { "dependencies": { "retry": "0.13.1" } }, "sha512-wfr/jstw9xNi/0teMHrRW7dsz3Lt5ARhYNZ2ewpadnhaIp5mbALhOAP+EAdsC7t4Z6wqsDVv9+W6gm1Dk9mEyw=="],
 

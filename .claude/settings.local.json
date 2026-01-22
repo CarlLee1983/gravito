@@ -16,7 +16,11 @@
       "Bash(bun pm:*)",
       "Bash(mkdir:*)",
       "Bash(mv:*)",
-      "Bash(bunx madge:*)"
+      "Bash(bunx madge:*)",
+      "Bash(git fetch:*)",
+      "Bash(bun run build:*)",
+      "Bash(bun run test:coverage:*)",
+      "Bash(bun run test)"
     ]
   }
 }

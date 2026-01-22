@@ -1,5 +1,22 @@
 # @gravito/astral
 
+## 0.2.0
+
+### Minor Changes
+
+- **完整 OpenAPI 3.1.0 規範支援**
+  - ✨ 新增 `servers` 配置支援（多環境設定）
+  - ✨ 新增 `securitySchemes` 與全域 `security` 支援
+  - ✨ 新增 `tags` 完整定義（含 description 與 externalDocs）
+  - ✨ 新增 `externalDocs` 全域文檔連結
+  - ✨ 新增 `components` 完整支援（schemas, responses, parameters, examples 等）
+  - ✨ 自動轉換 Zod schemas 為 JSON Schema 於 components
+
+- **測試覆蓋提升**
+  - 測試數量：29 → 37（+27.6%）
+  - 新增 8 個 OpenAPI 規範生成測試
+  - OpenApiGenerator.ts 保持 100% 覆蓋率
+
 ## 0.1.2
 
 ### Patch Changes
