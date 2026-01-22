@@ -1,5 +1,11 @@
 # @gravito/flare
 
+## 3.0.3
+
+### Patch Changes
+
+- @gravito/signal@3.0.3
+
 ## 3.0.2
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # example-auth-verification
 
+## 1.0.6
+
+### Patch Changes
+
+- @gravito/fortify@3.0.3
+
 ## 1.0.5
 
 ### Patch Changes

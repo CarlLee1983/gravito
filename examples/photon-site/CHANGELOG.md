@@ -1,5 +1,12 @@
 # photon-site
 
+## 1.2.2
+
+### Patch Changes
+
+- Updated dependencies [6234dab]
+  - @gravito/prism@3.0.2
+
 ## 1.2.1
 
 ### Patch Changes
