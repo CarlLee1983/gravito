@@ -8,13 +8,12 @@ import { Job, OrbitStream } from '@gravito/stream'
 // Global core reference for Jobs running in the same process
 let appCore: PlanetCore
 
-// 1. Define Mock Remote Storage Providers (unchanged)
 class S3MockProvider implements StorageProvider {
   constructor(private bucket: string) {}
 
   async put(key: string, data: Blob | Buffer | string): Promise<void> {
     console.log(`[S3 MOCK] Uploading to bucket "${this.bucket}": ${key}`)
-    const path = join(process.cwd(), 'storage/s3-sim', key)
+    const path = this.resolvePath(key)
     const dir = path.substring(0, path.lastIndexOf('/'))
     await mkdir(dir, { recursive: true })
     await Bun.write(path, data)
@@ -22,16 +21,44 @@ class S3MockProvider implements StorageProvider {
   }
 
   async get(key: string): Promise<Blob | null> {
-    return Bun.file(join(process.cwd(), 'storage/s3-sim', key))
+    const file = Bun.file(this.resolvePath(key))
+    return (await file.exists()) ? file : null
   }
 
-  async delete(key: string): Promise<void> {
+  async delete(key: string): Promise<boolean> {
     const fs = await import('node:fs/promises')
-    await fs.unlink(join(process.cwd(), 'storage/s3-sim', key))
+    try {
+      await fs.unlink(this.resolvePath(key))
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  async exists(key: string): Promise<boolean> {
+    return Bun.file(this.resolvePath(key)).exists()
+  }
+
+  async copy(from: string, to: string): Promise<void> {
+    const data = await this.get(from)
+    if (data) await this.put(to, data)
+  }
+
+  async move(from: string, to: string): Promise<void> {
+    await this.copy(from, to)
+    await this.delete(from)
+  }
+
+  async getMetadata(key: string): Promise<any> {
+    return { key, size: 0 }
   }
 
   getUrl(key: string): string {
     return `https://${this.bucket}.s3.amazonaws.com/${key}`
+  }
+
+  private resolvePath(key: string) {
+    return join(process.cwd(), 'storage/s3-sim', key)
   }
 }
 
@@ -40,7 +67,7 @@ class GCSMockProvider implements StorageProvider {
 
   async put(key: string, data: Blob | Buffer | string): Promise<void> {
     console.log(`[GCS MOCK] Uploading to bucket "${this.bucket}": ${key}`)
-    const path = join(process.cwd(), 'storage/gcs-sim', key)
+    const path = this.resolvePath(key)
     const dir = path.substring(0, path.lastIndexOf('/'))
     await mkdir(dir, { recursive: true })
     await Bun.write(path, data)
@@ -48,16 +75,44 @@ class GCSMockProvider implements StorageProvider {
   }
 
   async get(key: string): Promise<Blob | null> {
-    return Bun.file(join(process.cwd(), 'storage/gcs-sim', key))
+    const file = Bun.file(this.resolvePath(key))
+    return (await file.exists()) ? file : null
   }
 
-  async delete(key: string): Promise<void> {
+  async delete(key: string): Promise<boolean> {
     const fs = await import('node:fs/promises')
-    await fs.unlink(join(process.cwd(), 'storage/gcs-sim', key))
+    try {
+      await fs.unlink(this.resolvePath(key))
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  async exists(key: string): Promise<boolean> {
+    return Bun.file(this.resolvePath(key)).exists()
+  }
+
+  async copy(from: string, to: string): Promise<void> {
+    const data = await this.get(from)
+    if (data) await this.put(to, data)
+  }
+
+  async move(from: string, to: string): Promise<void> {
+    await this.copy(from, to)
+    await this.delete(from)
+  }
+
+  async getMetadata(key: string): Promise<any> {
+    return { key, size: 0 }
   }
 
   getUrl(key: string): string {
     return `https://storage.googleapis.com/${this.bucket}/${key}`
+  }
+
+  private resolvePath(key: string) {
+    return join(process.cwd(), 'storage/gcs-sim', key)
   }
 }
 
@@ -88,16 +143,14 @@ class ProcessImageJob extends Job {
     // This is a simplified demo - in production, you'd pass the processed data differently
     interface CoreWithInternals extends PlanetCore {
       _forgeService: ForgeService
-      _localStorage: StorageProvider
-      _remoteStorages: Record<string, StorageProvider>
+      _storage: any // Should be StorageManager in v4
     }
 
     const internals = appCore as unknown as CoreWithInternals
     const forge = internals._forgeService
-    const localStore = internals._localStorage
-    const remoteStore = internals._remoteStorages?.[target]
+    const storage = internals._storage
 
-    if (!forge || !localStore || !remoteStore) {
+    if (!forge || !storage) {
       throw new Error('Services not initialized')
     }
 
@@ -126,13 +179,13 @@ class ProcessImageJob extends Job {
         throw new Error('Processed file path is missing')
       }
 
-      await localStore.put(localKey, processedFile)
-      const localUrl = localStore.getUrl(localKey)
+      await storage.put(localKey, processedFile)
+      const localUrl = storage.getUrl(localKey)
 
       // 3. Upload to Remote Storage (S3/GCS Simulation)
       const remoteKey = `${remoteKeyPrefix}/${new Date().toISOString().split('T')[0]}/${filename}.webp`
-      await remoteStore.put(remoteKey, processedFile)
-      const remoteUrl = remoteStore.getUrl(remoteKey)
+      await storage.disk(target).put(remoteKey, processedFile)
+      const remoteUrl = storage.disk(target).getUrl(remoteKey)
 
       console.log(`[JOB - ${jobId}] ✅ Image processed and uploaded to ${target.toUpperCase()}`)
       // Update job status (Forge's status store can be used for this)
@@ -187,18 +240,12 @@ const core = await PlanetCore.boot({
     // Storage Engine (Configured with Multiple Providers)
     new OrbitStorage({
       exposeAs: 'storage',
-      local: { root: './storage/local', baseUrl: '/storage' },
-    }),
-
-    // Remote Storage Simulations
-    new OrbitStorage({
-      exposeAs: 's3',
-      provider: new S3MockProvider('my-production-bucket'),
-    }),
-
-    new OrbitStorage({
-      exposeAs: 'gcs',
-      provider: new GCSMockProvider('my-asset-bucket'),
+      default: 'local',
+      disks: {
+        local: { driver: 'local', root: './storage/local', baseUrl: '/storage' },
+        s3: { driver: 'custom', store: new S3MockProvider('my-production-bucket') },
+        gcs: { driver: 'custom', store: new GCSMockProvider('my-asset-bucket') },
+      },
     }),
 
     // Forge Engine (File Processing)
@@ -243,6 +290,11 @@ if (!Number.isNaN(bodyLimit) && bodyLimit > 0) {
 
 // Assign initialized core to global variable for Job access
 appCore = core
+
+// Access manager for jobs
+const storageManager = core.container.make('storage')
+;(appCore as any)._storage = storageManager
+;(appCore as any)._forgeService = core.container.make('forge')
 
 const router = core.router
 
@@ -425,7 +477,9 @@ router.post('/upload', async (c: GravitoContext) => {
 // Serve local storage files
 router.get('/storage/*', async (c: GravitoContext) => {
   const path = c.req.path.replace('/storage/', '')
-  const storage = c.get('storage') as StorageProvider
+  // In v4, c.get('storage') is StorageManager
+  // We use the default 'local' disk to serve files
+  const storage = c.get('storage')
   const file = await storage.get(path)
   if (!file) {
     return c.text('Not Found', 404)

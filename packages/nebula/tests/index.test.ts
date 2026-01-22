@@ -110,7 +110,7 @@ describe('OrbitNebula', () => {
     const core = createCore({ exposeAs: 'storage' })
     const orbit = new OrbitNebula()
     expect(() => orbit.install(core as any)).toThrow(
-      '[OrbitNebula] No provider configured. Please provide a provider instance or local configuration.'
+      '[OrbitNebula] Driver not configured for disk: local'
     )
   })
 })
@@ -155,7 +155,7 @@ describe('orbitStorage', () => {
           local: undefined,
         } as any
       )
-    ).toThrow('[OrbitNebula] No provider configured.')
+    ).toThrow('[OrbitNebula] Driver not configured for disk: local')
   })
 })
 
