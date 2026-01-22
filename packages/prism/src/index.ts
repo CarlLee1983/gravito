@@ -7,7 +7,11 @@ import type {
   ViewService,
 } from '@gravito/core'
 import { createImageHelper } from './helpers/image'
-import { TemplateEngine } from './TemplateEngine'
+import { type CacheOptions, TemplateEngine } from './TemplateEngine'
+
+export interface OrbitPrismOptions {
+  cache?: CacheOptions
+}
 
 /**
  * OrbitPrism provides a flexible template rendering engine for Gravito.
@@ -30,36 +34,58 @@ import { TemplateEngine } from './TemplateEngine'
  * @since 3.0.0
  */
 export class OrbitPrism implements GravitoOrbit {
+  private options?: OrbitPrismOptions
+
   /**
-   * Install the orbit into the PlanetCore.
-   * Resolves the views directory, registers helpers, and injects the engine into the context.
+   * Create a new OrbitPrism instance.
    *
-   * @param core - The PlanetCore instance.
+   * @param options - Optional configuration for the orbit
+   *
+   * @example
+   * ```typescript
+   * const prism = new OrbitPrism({
+   *   cache: {
+   *     maxSize: 1000,
+   *     enabled: process.env.NODE_ENV === 'production'
+   *   }
+   * });
+   * ```
+   *
+   * @public
+   * @since 3.0.0
+   */
+  constructor(options?: OrbitPrismOptions) {
+    this.options = options
+  }
+
+  /**
+   * Install the orbit into PlanetCore.
+   *
+   * This method is called by PlanetCore during the boot sequence.
+   * It initializes the template engine, registers helpers, and sets up middleware.
+   *
+   * @param core - The PlanetCore instance
+   *
+   * @public
+   * @since 3.0.0
    */
   install(core: PlanetCore): void {
     core.logger.info('[OrbitPrism] Initializing View Engine (Exposed as: view)')
 
-    // 1. Resolve Views Directory
-    // Default to 'src/views' relative to CWD
     const configuredPath = core.config.get<string>('VIEW_DIR', 'src/views')
     const viewsDir = resolve(process.cwd(), configuredPath)
 
-    // 2. Initialize Engine
-    const engine = new TemplateEngine(viewsDir)
+    const engine = new TemplateEngine(viewsDir, this.options?.cache)
 
-    // 3. Register Built-in Helpers
     engine.registerHelper('image', createImageHelper())
 
-    // 4. Inject into Context via Middleware
     core.adapter.use('*', async (c: GravitoContext, next: GravitoNext) => {
       c.set('view', engine)
       return await next()
     })
 
-    // 5. Register in core container for global access (CLI, Jobs)
     core.container.instance('view', engine)
 
-    // 6. Trigger hook for additional helper registration
     core.hooks.doAction('view:helpers:register', engine)
   }
 }
@@ -72,7 +98,7 @@ declare module '@gravito/core' {
   }
 }
 
-export type { ViewService }
+export type { ViewService, CacheOptions }
 export { TemplateEngine }
 export { Image, type ImageProps } from './components/Image'
 export { createImageHelper } from './helpers/image'

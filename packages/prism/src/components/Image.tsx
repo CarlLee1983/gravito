@@ -1,6 +1,7 @@
 import type React from 'react'
-import type { ImageOptions } from '../ImageService'
+import type { ArtDirectionConfig, ImageOptions } from '../ImageService'
 import { ImageService } from '../ImageService'
+import type { ImageCDNLoader } from '../image/ImageCDNLoader'
 
 /**
  * Props for the `Image` component.
@@ -25,6 +26,22 @@ export interface ImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   decoding?: 'async' | 'auto' | 'sync'
   /** Fetch priority hint for LCP optimization */
   fetchPriority?: 'high' | 'low' | 'auto'
+  /** Enable format negotiation (AVIF/WebP) */
+  formatNegotiation?: boolean
+  /** Target formats for format negotiation */
+  formats?: ('avif' | 'webp' | 'original')[]
+  /** Use <picture> element */
+  usePicture?: boolean
+  /** Art direction configuration */
+  artDirection?: ArtDirectionConfig[]
+  /** Placeholder type */
+  placeholder?: 'none' | 'blur' | 'color'
+  /** Base64 encoded blur image (for LQIP) */
+  blurDataURL?: string
+  /** Dominant color (for color placeholder) */
+  dominantColor?: string
+  /** CDN Loader */
+  loader?: ImageCDNLoader
 }
 
 /**
@@ -45,11 +62,18 @@ export function Image({
   style,
   decoding,
   fetchPriority,
+  formatNegotiation,
+  formats,
+  usePicture,
+  artDirection,
+  placeholder,
+  blurDataURL,
+  dominantColor,
+  loader,
   ...rest
 }: ImageProps): React.JSX.Element {
   const imageService = new ImageService()
 
-  // Convert React props to ImageOptions
   const options: ImageOptions = {
     src,
     alt,
@@ -62,12 +86,24 @@ export function Image({
     style: typeof style === 'string' ? style : undefined,
     decoding,
     fetchpriority: fetchPriority,
+    formatNegotiation,
+    formats,
+    usePicture,
+    artDirection,
+    placeholder,
+    blurDataURL,
+    dominantColor,
+    loader,
   }
 
-  // Generate optimized attributes using the core service
+  if (usePicture || formatNegotiation || artDirection) {
+    const html = imageService.generatePictureElement(options)
+    // biome-ignore lint/security/noDangerouslySetInnerHtml: Required for rendering <picture> elements in React
+    return <div dangerouslySetInnerHTML={{ __html: html }} {...rest} />
+  }
+
   const imgAttrs = imageService.generateImageAttributes(options)
 
-  // Map optimized attributes back to React props
   const {
     class: _cls,
     srcset: generatedSrcset,
@@ -89,5 +125,4 @@ export function Image({
   )
 }
 
-// Default export
 export default Image

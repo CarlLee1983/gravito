@@ -7,6 +7,24 @@
  * - Ensures accessibility and performance defaults
  */
 
+import type { ImageCDNLoader } from './image/ImageCDNLoader'
+
+/**
+ * Art direction configuration for responsive images
+ */
+export interface ArtDirectionConfig {
+  /** Media query */
+  media: string
+  /** Image source */
+  src: string
+  /** Width */
+  width?: number
+  /** Height */
+  height?: number
+  /** Formats for this breakpoint */
+  formats?: ('avif' | 'webp' | 'original')[]
+}
+
 /**
  * Options for generating an optimized image.
  *
@@ -51,6 +69,22 @@ export interface ImageOptions {
   decoding?: 'async' | 'auto' | 'sync'
   /** Fetch priority hint for LCP optimization. */
   fetchpriority?: 'high' | 'low' | 'auto'
+  /** Enable format negotiation (AVIF/WebP). @default false */
+  formatNegotiation?: boolean
+  /** Target formats for format negotiation. @default ['avif', 'webp'] */
+  formats?: ('avif' | 'webp' | 'original')[]
+  /** Use <picture> element. @default false */
+  usePicture?: boolean
+  /** Art direction configuration */
+  artDirection?: ArtDirectionConfig[]
+  /** Placeholder type. @default 'none' */
+  placeholder?: 'none' | 'blur' | 'color'
+  /** Base64 encoded blur image (for LQIP) */
+  blurDataURL?: string
+  /** Dominant color (for color placeholder) */
+  dominantColor?: string
+  /** CDN Loader */
+  loader?: ImageCDNLoader
 }
 
 /**
@@ -181,12 +215,146 @@ export class ImageService {
   public generateImageTag(options: ImageOptions): string {
     const attrs = this.generateImageAttributes(options)
 
-    // Convert attributes object to string
     const attrString = Object.entries(attrs)
       .map(([key, value]) => `${key}="${this.escapeHtml(value)}"`)
       .join(' ')
 
     return `<img ${attrString} />`
+  }
+
+  /**
+   * Generate <picture> element with format negotiation and art direction
+   *
+   * @param options - Configuration options for the picture element
+   * @returns A string containing the full HTML <picture> tag
+   *
+   * @example
+   * ```typescript
+   * const html = service.generatePictureElement({
+   *   src: '/hero.jpg',
+   *   alt: 'Hero',
+   *   width: 1920,
+   *   height: 1080,
+   *   formatNegotiation: true,
+   *   artDirection: [
+   *     { media: '(min-width: 1200px)', src: '/hero-desktop.jpg' },
+   *     { media: '(min-width: 768px)', src: '/hero-tablet.jpg' }
+   *   ]
+   * })
+   * ```
+   */
+  public generatePictureElement(options: ImageOptions): string {
+    if (!options.usePicture && !options.artDirection && !options.formatNegotiation) {
+      return this.generateImageTag(options)
+    }
+
+    const sources: string[] = []
+
+    if (options.artDirection) {
+      for (const config of options.artDirection) {
+        sources.push(this.generateArtDirectionSource(config, options))
+      }
+    }
+
+    if (options.formatNegotiation !== false) {
+      const formats = options.formats ?? ['avif', 'webp']
+      for (const format of formats) {
+        if (format !== 'original') {
+          sources.push(this.generateFormatSource(options, format))
+        }
+      }
+    }
+
+    const fallbackImg = this.generateImageTag({
+      ...options,
+      usePicture: undefined,
+      artDirection: undefined,
+      formatNegotiation: undefined,
+    })
+
+    return `<picture>\n  ${sources.join('\n  ')}\n  ${fallbackImg}\n</picture>`
+  }
+
+  private generateArtDirectionSource(
+    config: ArtDirectionConfig,
+    baseOptions: ImageOptions
+  ): string {
+    const formats = config.formats ?? baseOptions.formats ?? ['webp']
+    const srcsetItems: string[] = []
+
+    for (const format of formats) {
+      const transformedSrc = this.transformSrcForFormat(config.src, format)
+
+      if (config.width) {
+        const widths = this.generateDefaultSrcsetWidths(config.width)
+        const srcset = widths
+          .map((w) => `${this.addWidthToPath(transformedSrc, w)} ${w}w`)
+          .join(', ')
+        srcsetItems.push(srcset)
+      } else {
+        srcsetItems.push(transformedSrc)
+      }
+    }
+
+    const type = this.getFormatMimeType(formats[0])
+    const sizes =
+      baseOptions.sizes ??
+      (config.width ? `(max-width: ${config.width}px) 100vw, ${config.width}px` : undefined)
+
+    const attrs: string[] = [
+      `media="${config.media}"`,
+      srcsetItems.length > 0 ? `srcset="${srcsetItems.join(', ')}"` : '',
+      type ? `type="${type}"` : '',
+      sizes ? `sizes="${sizes}"` : '',
+    ].filter(Boolean)
+
+    return `<source ${attrs.join(' ')} />`
+  }
+
+  private generateFormatSource(options: ImageOptions, format: 'avif' | 'webp'): string {
+    const transformedSrc = this.transformSrcForFormat(options.src, format)
+    const type = this.getFormatMimeType(format)
+
+    let srcset = transformedSrc
+    if (options.width && options.srcset !== false) {
+      const widths = Array.isArray(options.srcset)
+        ? options.srcset
+        : this.generateDefaultSrcsetWidths(options.width)
+      srcset = this.generateSrcset(transformedSrc, widths)
+    }
+
+    const attrs: string[] = [
+      srcset ? `srcset="${srcset}"` : '',
+      type ? `type="${type}"` : '',
+      options.sizes ? `sizes="${options.sizes}"` : '',
+    ].filter(Boolean)
+
+    return `<source ${attrs.join(' ')} />`
+  }
+
+  private transformSrcForFormat(src: string, format: 'avif' | 'webp' | 'original'): string {
+    if (format === 'original') {
+      return src
+    }
+
+    const lastDotIndex = src.lastIndexOf('.')
+    if (lastDotIndex === -1) {
+      return `${src}.${format}`
+    }
+
+    const pathWithoutExt = src.substring(0, lastDotIndex)
+    return `${pathWithoutExt}.${format}`
+  }
+
+  private getFormatMimeType(format: 'avif' | 'webp' | 'original' | string): string {
+    const mimeTypes: Record<string, string> = {
+      avif: 'image/avif',
+      webp: 'image/webp',
+      jpg: 'image/jpeg',
+      jpeg: 'image/jpeg',
+      png: 'image/png',
+    }
+    return mimeTypes[format] || ''
   }
 
   /**

@@ -3,6 +3,22 @@ import { dirname, join } from 'node:path'
 import type { PlanetCore } from '@gravito/core'
 
 /**
+ * SSG Route interface
+ */
+interface SSGRoute {
+  path: string
+  method: string
+}
+
+/**
+ * Router with route access methods
+ */
+interface RouterWithRoutes {
+  routes?: SSGRoute[]
+  getRoutes?: () => SSGRoute[]
+}
+
+/**
  * Static Site Generator for Gravito Prism.
  *
  * It crawls registered GET routes from the PlanetCore router and exports them
@@ -33,8 +49,8 @@ export class StaticSiteGenerator {
     this.core.logger.info(`[SSG] Starting static export to: ${outputDir}`)
 
     // Get routes from either PlanetCore Router or Gravito AOTRouter
-    let routes: any[] = []
-    const router = this.core.router as any
+    let routes: SSGRoute[] = []
+    const router = this.core.router as RouterWithRoutes
 
     if (Array.isArray(router.routes)) {
       routes = router.routes
@@ -46,12 +62,15 @@ export class StaticSiteGenerator {
 
     // Deduplicate routes based on path
     const uniquePaths = new Set<string>()
-    const uniqueRoutes: any[] = []
+    const uniqueRoutes: SSGRoute[] = []
 
-    const addRoute = (r: any) => {
+    const addRoute = (r: SSGRoute | { path: string; method?: string }) => {
       if (r?.path && !uniquePaths.has(r.path)) {
         uniquePaths.add(r.path)
-        uniqueRoutes.push(r)
+        uniqueRoutes.push({
+          path: r.path,
+          method: r.method ?? 'GET',
+        })
       }
     }
 
@@ -59,7 +78,7 @@ export class StaticSiteGenerator {
     if (Array.isArray(routes)) {
       routes
         .filter(
-          (r: any) =>
+          (r) =>
             r?.method &&
             r.method.toLowerCase() === 'get' &&
             r.path &&
@@ -71,7 +90,9 @@ export class StaticSiteGenerator {
 
     // Process extra paths
     extraPaths.forEach((path) => {
-      if (path) addRoute({ path, method: 'GET' })
+      if (path) {
+        addRoute({ path, method: 'GET' })
+      }
     })
 
     const total = uniqueRoutes.length
@@ -91,7 +112,9 @@ export class StaticSiteGenerator {
     const worker = async () => {
       while (queue.length > 0) {
         const route = queue.shift()
-        if (!route) break
+        if (!route) {
+          break
+        }
 
         try {
           const url = `http://localhost${route.path}`
@@ -130,9 +153,10 @@ export class StaticSiteGenerator {
 
           success++
           this.core.logger.info(`[SSG] ✅ Rendered (${success + failed}/${total}): ${route.path}`)
-        } catch (error: any) {
+        } catch (error) {
           failed++
-          this.core.logger.error(`[SSG] ❌ Failed to export ${route.path}: ${error.message}`)
+          const errorMessage = error instanceof Error ? error.message : String(error)
+          this.core.logger.error(`[SSG] ❌ Failed to export ${route.path}: ${errorMessage}`)
         }
       }
     }
@@ -144,15 +168,17 @@ export class StaticSiteGenerator {
     // Generate Sitemap
     try {
       await this.generateSitemap(outputDir, uniqueRoutes, baseUrl)
-    } catch (e: any) {
-      this.core.logger.error(`[SSG] Failed to generate sitemap: ${e.message}`)
+    } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : String(e)
+      this.core.logger.error(`[SSG] Failed to generate sitemap: ${errorMessage}`)
     }
 
     // Generate Robots.txt
     try {
       await this.generateRobotsTxt(outputDir, baseUrl)
-    } catch (e: any) {
-      this.core.logger.error(`[SSG] Failed to generate robots.txt: ${e.message}`)
+    } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : String(e)
+      this.core.logger.error(`[SSG] Failed to generate robots.txt: ${errorMessage}`)
     }
 
     this.core.logger.info(
@@ -160,7 +186,7 @@ export class StaticSiteGenerator {
     )
   }
 
-  private async generateSitemap(outputDir: string, routes: any[], baseUrl: string) {
+  private async generateSitemap(outputDir: string, routes: SSGRoute[], baseUrl: string) {
     this.core.logger.info('[SSG] Generating sitemap.xml...')
     const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">

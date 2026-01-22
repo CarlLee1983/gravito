@@ -1,5 +1,6 @@
 import { defineComponent, h, type PropType } from 'vue'
-import { type ImageOptions, ImageService } from './ImageService'
+import type { ArtDirectionConfig, ImageOptions } from './ImageService'
+import { ImageService } from './ImageService'
 
 /**
  * Gravito Image component for Vue.
@@ -66,12 +67,39 @@ export const Image = defineComponent({
       type: String as PropType<'high' | 'low' | 'auto'>,
       default: undefined,
     },
+    formatNegotiation: {
+      type: Boolean,
+      default: false,
+    },
+    formats: {
+      type: Array as PropType<('avif' | 'webp' | 'original')[]>,
+      default: undefined,
+    },
+    usePicture: {
+      type: Boolean,
+      default: false,
+    },
+    artDirection: {
+      type: Array as PropType<ArtDirectionConfig[]>,
+      default: undefined,
+    },
+    placeholder: {
+      type: String as PropType<'none' | 'blur' | 'color'>,
+      default: 'none',
+    },
+    blurDataURL: {
+      type: String,
+      default: undefined,
+    },
+    dominantColor: {
+      type: String,
+      default: undefined,
+    },
   },
   setup(props, { attrs }) {
     const service = new ImageService()
 
     return () => {
-      // Map boolean false to undefined to match ImageOptions type
       const srcsetOption = props.srcset === false ? false : props.srcset
 
       const options: ImageOptions = {
@@ -86,12 +114,21 @@ export const Image = defineComponent({
         style: typeof attrs.style === 'string' ? attrs.style : undefined,
         decoding: props.decoding,
         fetchpriority: props.fetchpriority,
+        formatNegotiation: props.formatNegotiation,
+        formats: props.formats,
+        usePicture: props.usePicture,
+        artDirection: props.artDirection,
+        placeholder: props.placeholder,
+        blurDataURL: props.blurDataURL,
+        dominantColor: props.dominantColor,
       }
 
-      // Generate optimized attributes using the core service
-      const imgAttrs = service.generateImageAttributes(options)
+      if (props.usePicture || props.formatNegotiation || props.artDirection) {
+        const html = service.generatePictureElement(options)
+        return h('div', { innerHTML: html })
+      }
 
-      // Render native <img> tag with optimized attributes
+      const imgAttrs = service.generateImageAttributes(options)
       return h('img', imgAttrs)
     }
   },

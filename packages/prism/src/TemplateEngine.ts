@@ -1,5 +1,8 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { type CacheOptions, TemplateCache } from './core/TemplateCache'
+
+export type { CacheOptions }
 
 /**
  * Options for rendering templates.
@@ -103,22 +106,108 @@ const COMPONENT_TAG_REGEX = /<x-([a-zA-Z0-9-]+)([^>]*)>/
 const INTERPOLATE_REGEX = /\{\{\{?\s*([\w.]+)\s*\}?\}\}/g
 
 export class TemplateEngine {
-  private cache = new Map<string, string>()
+  private cache: TemplateCache
   private viewsDir: string
   private helpers = new Map<string, HelperFunction>()
 
-  constructor(viewsDir: string) {
+  /**
+   * Create a new TemplateEngine instance.
+   *
+   * @param viewsDir - Absolute path to the views directory containing template files
+   * @param cacheOptions - Optional cache configuration for template optimization
+   *
+   * @example
+   * ```typescript
+   * const engine = new TemplateEngine('./src/views', {
+   *   maxSize: 1000,
+   *   enabled: process.env.NODE_ENV === 'production'
+   * });
+   * ```
+   *
+   * @public
+   * @since 3.0.0
+   */
+  constructor(viewsDir: string, cacheOptions?: CacheOptions) {
     this.viewsDir = viewsDir
+    this.cache = new TemplateCache(cacheOptions)
   }
 
+  /**
+   * Register a custom helper function.
+   *
+   * Helpers can be invoked from templates using `{{helperName arg=value}}` syntax.
+   * They receive arguments as key-value pairs and must return a string.
+   *
+   * @param name - Helper name (must be alphanumeric with underscores, no spaces)
+   * @param fn - Helper function that takes arguments and returns HTML string
+   *
+   * @example
+   * ```typescript
+   * engine.registerHelper('formatDate', (args) => {
+   *   const date = new Date(args.date as string);
+   *   return date.toLocaleDateString();
+   * });
+   *
+   * // In template:
+   * // {{formatDate date="2024-01-01"}}
+   * ```
+   *
+   * @public
+   * @since 3.0.0
+   */
   public registerHelper(name: string, fn: HelperFunction): void {
     this.helpers.set(name, fn)
   }
 
+  /**
+   * Unregister a previously registered helper function.
+   *
+   * @param name - Name of the helper to remove
+   *
+   * @example
+   * ```typescript
+   * engine.unregisterHelper('formatDate');
+   * ```
+   *
+   * @public
+   * @since 3.0.0
+   */
   public unregisterHelper(name: string): void {
     this.helpers.delete(name)
   }
 
+  /**
+   * Render a template with data.
+   *
+   * Processes the template through the full rendering pipeline including:
+   * - Layout inheritance (`@extends`)
+   * - Sections and yields (`@section`, `@yield`)
+   * - Content stacks (`@push`, `@stack`)
+   * - Components (`<x-component>`)
+   * - Includes (`@include`)
+   * - Control structures (`@if`, `@foreach`)
+   * - Variable interpolation (`{{ var }}`)
+   *
+   * @param view - Template name (relative to viewsDir, without .html extension)
+   * @param data - Data to pass to the template
+   * @param options - Render options including legacy layout support
+   * @returns Rendered HTML string
+   *
+   * @throws {Error} If template file is not found
+   * @throws {Error} If maximum component depth (10) is exceeded
+   * @throws {Error} If maximum include depth (50) is exceeded
+   *
+   * @example
+   * ```typescript
+   * const html = engine.render('user/profile', {
+   *   user: { name: 'John', email: 'john@example.com' },
+   *   isAdmin: true
+   * });
+   * ```
+   *
+   * @public
+   * @since 3.0.0
+   */
   public render(
     view: string,
     data: Record<string, unknown> = {},
@@ -167,10 +256,7 @@ export class TemplateEngine {
   }
 
   private extractSections(template: string, ctx: RenderContext) {
-    let match: RegExpExecArray | null
-    // Reset lastIndex for reusable regex
-    SECTION_REGEX.lastIndex = 0
-    while ((match = SECTION_REGEX.exec(template)) !== null) {
+    for (const match of template.matchAll(SECTION_REGEX)) {
       const name = match[1]
       const content = match[2]
       if (name && content) {
@@ -180,9 +266,7 @@ export class TemplateEngine {
   }
 
   private extractStacks(template: string, ctx: RenderContext) {
-    let match: RegExpExecArray | null
-    PUSH_REGEX.lastIndex = 0
-    while ((match = PUSH_REGEX.exec(template)) !== null) {
+    for (const match of template.matchAll(PUSH_REGEX)) {
       const name = match[1]
       const content = match[2]
       if (name && content) {
@@ -233,7 +317,7 @@ export class TemplateEngine {
 
       const tagName = startTagMatch[1]
       const attrsString = startTagMatch[2]
-      const startIndex = startTagMatch.index!
+      const startIndex = startTagMatch.index ?? 0
       const contentStartIndex = startIndex + startTagMatch[0].length
 
       let depthCounter = 1
@@ -299,8 +383,7 @@ export class TemplateEngine {
     const args: Record<string, unknown> = {}
     const pattern = /([a-zA-Z0-9-:]+)(?:=(?:"([^"]*)"|'([^']*)'|(\S+)))?/g
 
-    let match: RegExpExecArray | null
-    while ((match = pattern.exec(attrString)) !== null) {
+    for (const match of attrString.matchAll(pattern)) {
       const key = match[1]
       const valDouble = match[2]
       const valSingle = match[3]
@@ -351,8 +434,8 @@ export class TemplateEngine {
   }
 
   private readTemplate(name: string): string {
-    const cached = this.cache.get(name)
-    if (cached !== undefined) {
+    const cached = this.cache.getSource(name)
+    if (cached !== null) {
       return cached
     }
 
@@ -362,9 +445,7 @@ export class TemplateEngine {
     }
 
     const content = readFileSync(path, 'utf-8')
-    if (process.env.NODE_ENV === 'production') {
-      this.cache.set(name, content)
-    }
+    this.cache.setSource(name, content)
     return content
   }
 
@@ -447,8 +528,8 @@ export class TemplateEngine {
   private parseHelperArgs(argsString: string): Record<string, string | number | boolean> {
     const args: Record<string, string | number | boolean> = {}
     const argPattern = /(\w+)\s*=\s*("([^"]*)"|'([^']*)'|(\d+\.?\d*)|(true|false)|([^\s}]+))/g
-    let match: RegExpExecArray | null = argPattern.exec(argsString)
-    while (match !== null) {
+
+    for (const match of argsString.matchAll(argPattern)) {
       const key = match[1]
       if (key) {
         if (match[3] !== undefined) {
@@ -463,7 +544,6 @@ export class TemplateEngine {
           args[key] = match[7]
         }
       }
-      match = argPattern.exec(argsString)
     }
     return args
   }
