@@ -156,4 +156,10 @@ export class OrbitFlux implements GravitoOrbit {
   getEngine(): FluxEngine | undefined {
     return this.engine
   }
+
+  async cleanup(): Promise<void> {
+    if (this.engine) {
+      await this.engine.close()
+    }
+  }
 }
