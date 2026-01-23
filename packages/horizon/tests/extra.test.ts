@@ -24,18 +24,21 @@ mock.module('cron-parser', () => ({
 
 describe('CronParser', () => {
   it('calculates nextDate via cron-parser fallback', async () => {
+    CronParser.clearCache()
     const current = new Date('2024-01-01T00:00:00Z')
     const next = await CronParser.nextDate('* * * * *', 'UTC', current)
     expect(next.getTime()).toBe(current.getTime() + 60000)
   })
 
   it('uses fallback cron-parser when expression is unsupported', async () => {
+    CronParser.clearCache()
     const current = new Date('2024-01-01T00:00:00Z')
     const due = await CronParser.isDue('bad expression', 'UTC', current)
     expect(due).toBe(true)
   })
 
   it('returns false when cron-parser fails', async () => {
+    CronParser.clearCache()
     cronShouldThrow = true
     const current = new Date('2024-01-01T00:00:00Z')
     const due = await CronParser.isDue('bad expression', 'UTC', current)

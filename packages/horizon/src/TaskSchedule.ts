@@ -31,6 +31,8 @@ export interface ScheduledTask {
   nodeRole?: string
   /** Command string if the task was registered via a shell command */
   command?: string
+  /** Task execution timeout in milliseconds (default: 3600000 - 1 hour) */
+  timeout?: number
 
   /** Callbacks executed after successful task completion */
   onSuccessCallbacks: ActionCallback[]
@@ -292,6 +294,20 @@ export class TaskSchedule {
    */
   onNode(role: string): this {
     this.task.nodeRole = role
+    return this
+  }
+
+  /**
+   * Set task execution timeout.
+   *
+   * @param ms - Timeout in milliseconds
+   * @returns The TaskSchedule instance.
+   */
+  timeout(ms: number): this {
+    if (ms <= 0) {
+      throw new Error('Timeout must be a positive number')
+    }
+    this.task.timeout = ms
     return this
   }
 

@@ -165,8 +165,17 @@ export class SchedulerManager {
     const startTime = Date.now()
     await this.hooks?.doAction('scheduler:task:start', { name: task.name, startTime })
 
+    const timeout = task.timeout || 3600000
+    let timeoutId: ReturnType<typeof setTimeout> | undefined
+
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timeoutId = setTimeout(() => {
+        reject(new Error(`Task "${task.name}" timed out after ${timeout}ms`))
+      }, timeout)
+    })
+
     try {
-      await task.callback()
+      await Promise.race([task.callback(), timeoutPromise])
 
       const duration = Date.now() - startTime
       await this.hooks?.doAction('scheduler:task:success', { name: task.name, duration })
@@ -191,7 +200,8 @@ export class SchedulerManager {
           await cb(err)
         } catch {}
       }
-      // We don't rethrow here to ensure cleanup happens in runTask
+    } finally {
+      if (timeoutId) clearTimeout(timeoutId)
     }
   }
 }
