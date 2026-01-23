@@ -98,7 +98,7 @@ export async function bootstrap(options: AppConfig = {}): Promise<PlanetCore> {
   app.use('*', async (c: Context, next: Next) => {
     await next()
     const gaId = process.env.VITE_GA_ID
-    if (gaId && c.res.status === 200) {
+    if (gaId && c.res && c.res.status === 200) {
       const contentType = c.res.headers.get('Content-Type')
       if (contentType?.includes('text/html')) {
         let html = await c.res.text()
