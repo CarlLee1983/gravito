@@ -1,0 +1,753 @@
+# @gravito/flux 優化改善計劃
+
+> **版本**：v1.1 (審查後修訂版)
+> **建立日期**：2025-01-23
+> **分支**：refactor/flux-optimization
+> **目標**：將模組品質從 B+ 提升至 A 級別
+> **審查評分**：7.4/10 → 目標 9.0/10
+
+---
+
+## 目錄
+
+1. [現況分析摘要](#1-現況分析摘要)
+2. [優先級分類](#2-優先級分類)
+3. [第一階段：關鍵修復](#3-第一階段關鍵修復)
+4. [第二階段：架構重構](#4-第二階段架構重構)
+5. [第三階段：測試補強](#5-第三階段測試補強)
+6. [第四階段：文檔完善](#6-第四階段文檔完善)
+7. [執行時程與分工](#7-執行時程與分工)
+8. [向後兼容與遷移策略](#8-向後兼容與遷移策略)
+9. [效能基準測試](#9-效能基準測試)
+10. [驗收標準](#10-驗收標準)
+
+---
+
+## 1. 現況分析摘要
+
+### 1.1 代碼規模
+
+| 指標 | 數值 | 評估 |
+|------|------|------|
+| 源代碼行數 | 2,631 行 | ✅ 適中 |
+| 測試代碼行數 | 781 行 | ✅ 合理 |
+| 最大單檔行數 | 638 行 (FluxEngine.ts) | ⚠️ 過大 |
+| 平均檔案大小 | 126 行 | ✅ 良好 |
+| 主要類別數量 | 12 個 | ✅ 適當 |
+
+### 1.2 測試覆蓋率
+
+| 檔案 | 函數覆蓋 | 行覆蓋 | 狀態 |
+|------|---------|--------|------|
+| 整體 | 74.24% | 87.31% | ⚠️ 需改善 |
+| FluxEngine.ts | 93.10% | 95.46% | ✅ 良好 |
+| WorkflowProfiler.ts | 0% | 5.04% | 🔴 嚴重不足 |
+| OrbitFlux.ts | 35.71% | 91.23% | 🔴 需補強 |
+| MemoryStorage.ts | 68.75% | 83.78% | ⚠️ 需改善 |
+
+### 1.3 主要問題彙總
+
+```
+🔴 嚴重問題 (4 項)
+├── FluxEngine.ts 過度龐大 (638 行)
+├── WorkflowBuilder 存在垃圾代碼 (drum 屬性)
+├── 上下文管理違反不可變性原則 (10+ 個 Object.assign)
+└── WorkflowProfiler 測試覆蓋率僅 5%
+
+🟡 中等問題 (4 項)
+├── 類型強制轉換 (7 個 as any，主要為回調類型)
+├── OrbitFlux 集成測試不足
+├── MemoryStorage 邊界測試缺失
+└── 異步方法複雜度高
+
+🟢 改進項目 (3 項)
+├── 缺乏架構設計文檔
+├── 無故障排除指南
+└── 性能調優文檔不完整
+```
+
+---
+
+## 2. 優先級分類
+
+### P0 - 阻塞性問題（必須立即修復）
+
+| 項目 | 影響 | 預估工時 |
+|------|------|----------|
+| 移除 `drum` 垃圾屬性 | 代碼品質 | 5 分鐘 |
+| 修復 Object.assign 突變 | 狀態可預測性 | 2-3 小時 |
+
+### P1 - 高優先級（本次迭代完成）
+
+| 項目 | 影響 | 預估工時 |
+|------|------|----------|
+| 拆分 FluxEngine 類別 | 可維護性 | 4-5 小時 |
+| WorkflowProfiler 測試 | 覆蓋率 +20% | 3-4 小時 |
+
+### P2 - 中優先級（下次迭代）
+
+| 項目 | 影響 | 預估工時 |
+|------|------|----------|
+| 消除 `as any` 類型 | 型別安全 | 1-2 小時 |
+| OrbitFlux 集成測試 | 功能信心 | 2-3 小時 |
+| MemoryStorage 測試 | 邊界覆蓋 | 1-2 小時 |
+| 架構文檔 | 可理解性 | 2-3 小時 |
+
+### P3 - 低優先級（未來規劃）
+
+| 項目 | 影響 | 預估工時 |
+|------|------|----------|
+| 故障排除指南 | 使用者體驗 | 1-2 小時 |
+| 性能調優文檔 | 進階使用 | 1-2 小時 |
+
+---
+
+## 3. 第一階段：關鍵修復
+
+### 3.1 移除垃圾代碼
+
+**檔案**：`src/builder/WorkflowBuilder.ts`
+
+**問題**：
+```typescript
+export class WorkflowBuilder<TInput = unknown, TData = Record<string, unknown>> {
+  drum: any = null // No!  ← 🚨 測試遺留物
+  // ...
+}
+```
+
+**修復方式**：
+```typescript
+// 直接刪除第 47 行的 drum 屬性
+export class WorkflowBuilder<TInput = unknown, TData = Record<string, unknown>> {
+  private _name: string
+  // ...
+}
+```
+
+**驗證**：
+- [ ] 編譯通過
+- [ ] 所有測試通過
+- [ ] 無 TypeScript 錯誤
+
+---
+
+### 3.2 修復不可變性違規
+
+**檔案**：`src/engine/FluxEngine.ts`
+
+**問題位置**：
+```typescript
+// 行 426, 446, 470, 485, 490, 501, 512, 525, 543, 570
+Object.assign(ctx, { status: 'running' })
+Object.assign(ctx, { currentStep: i })
+// ... 共 10 處突變
+```
+
+**重構方案**：
+
+1. **建立狀態更新函數**：
+```typescript
+// src/engine/stateUpdater.ts (新檔案)
+export function updateWorkflowContext<T extends WorkflowContext>(
+  ctx: T,
+  updates: Partial<T>
+): T {
+  return {
+    ...ctx,
+    ...updates,
+    updatedAt: new Date()
+  }
+}
+```
+
+2. **修改 FluxEngine 調用方式**：
+```typescript
+// 修改前
+Object.assign(ctx, { status: 'running' })
+
+// 修改後
+ctx = updateWorkflowContext(ctx, { status: 'running' })
+await this.saveState(ctx)
+```
+
+3. **更新 saveState 簽名**：
+```typescript
+private async saveState(ctx: WorkflowContext): Promise<void>
+```
+
+**驗證**：
+- [ ] 無 Object.assign 直接修改 ctx
+- [ ] 所有狀態變更通過 updateWorkflowContext
+- [ ] 測試全部通過
+
+---
+
+## 4. 第二階段：架構重構
+
+### 4.1 FluxEngine 拆分計劃
+
+**目標**：將 638 行的 FluxEngine 拆分為職責單一的模組
+
+**新架構**：
+```
+src/engine/
+├── FluxEngine.ts (200-250 行)      # 主協調器
+├── WorkflowExecutor.ts (150-180 行) # 執行邏輯
+├── RollbackManager.ts (80-100 行)   # 回滾邏輯
+├── TraceEmitter.ts (50-60 行)       # 追蹤事件
+└── index.ts                         # 導出
+```
+
+#### 4.1.1 WorkflowExecutor 類別
+
+**職責**：管理工作流步驟的執行循環
+
+```typescript
+// src/engine/WorkflowExecutor.ts
+export class WorkflowExecutor {
+  constructor(
+    private stepExecutor: StepExecutor,
+    private contextManager: ContextManager,
+    private traceEmitter: TraceEmitter
+  ) {}
+
+  async execute(
+    definition: WorkflowDefinition,
+    ctx: WorkflowContext,
+    stateMachine: StateMachine,
+    startIndex: number
+  ): Promise<WorkflowContext> {
+    // 從 runFrom() 提取的核心邏輯
+  }
+}
+```
+
+#### 4.1.2 RollbackManager 類別
+
+**職責**：處理 Saga 模式的補償邏輯
+
+```typescript
+// src/engine/RollbackManager.ts
+export class RollbackManager {
+  constructor(
+    private contextManager: ContextManager,
+    private traceEmitter: TraceEmitter
+  ) {}
+
+  async rollback(
+    definition: WorkflowDefinition,
+    ctx: WorkflowContext,
+    failedIndex: number,
+    error: Error
+  ): Promise<WorkflowContext> {
+    // 從 rollback() 提取的補償邏輯
+  }
+}
+```
+
+#### 4.1.3 TraceEmitter 類別
+
+**職責**：統一管理追蹤事件的發送
+
+```typescript
+// src/engine/TraceEmitter.ts
+export class TraceEmitter {
+  constructor(private traceSink?: FluxTraceSink) {}
+
+  async emit(event: FluxTraceEvent): Promise<void> {
+    await this.traceSink?.write(event)
+  }
+
+  workflowStart(ctx: WorkflowContext): Promise<void>
+  stepStart(ctx: WorkflowContext, stepName: string): Promise<void>
+  stepComplete(ctx: WorkflowContext, stepName: string, result: StepResult): Promise<void>
+  // ... 其他事件
+}
+```
+
+#### 4.1.4 重構後的 FluxEngine
+
+```typescript
+// src/engine/FluxEngine.ts (重構後約 200-250 行)
+export class FluxEngine {
+  private executor: WorkflowExecutor
+  private rollbackManager: RollbackManager
+  private traceEmitter: TraceEmitter
+
+  constructor(config: FluxConfig) {
+    this.traceEmitter = new TraceEmitter(config.traceSink)
+    this.executor = new WorkflowExecutor(
+      new StepExecutor(config),
+      new ContextManager(),
+      this.traceEmitter
+    )
+    this.rollbackManager = new RollbackManager(
+      new ContextManager(),
+      this.traceEmitter
+    )
+  }
+
+  async execute<TInput, TData>(
+    workflow: WorkflowDefinition<TInput, TData>,
+    input: TInput
+  ): Promise<FluxResult<TData>> {
+    // 簡化的協調邏輯
+  }
+
+  async resume(workflowId: string): Promise<FluxResult<unknown>>
+  async signal(workflowId: string, signal: FluxSignal): Promise<FluxResult<unknown>>
+  async retryStep(workflowId: string, stepName: string): Promise<FluxResult<unknown>>
+}
+```
+
+---
+
+### 4.2 消除類型強制轉換 (P2)
+
+**問題**：7 處 `as any` 類型強制轉換
+
+**分布情況**：
+- FluxEngine.ts: 5 處（回調類型）
+- BunSQLiteStorage.ts: 1 處（SQL 參數）
+- ContextManager.ts: 1 處（泛型展開）
+
+**解決方案**：
+
+1. **定義回調類型**：
+```typescript
+// src/types.ts 新增
+export interface FluxEventCallbacks<TData = unknown> {
+  stepStart?: (stepName: string, ctx: WorkflowContext<TData>) => void
+  stepComplete?: (stepName: string, ctx: WorkflowContext<TData>, result: StepResult) => void
+  stepError?: (stepName: string, ctx: WorkflowContext<TData>, error: Error) => void
+  // ...
+}
+```
+
+2. **更新 FluxConfig**：
+```typescript
+export interface FluxConfig<TData = unknown> {
+  // ...
+  on?: FluxEventCallbacks<TData>
+}
+```
+
+3. **使用泛型傳遞**：
+```typescript
+// FluxEngine 內部
+this.config.on?.stepStart?.(step.name, ctx) // 無需 as any
+```
+
+---
+
+## 5. 第三階段：測試補強
+
+### 5.1 WorkflowProfiler 測試計劃
+
+**目標**：從 5% 提升至 90%+ 行覆蓋率
+
+**測試檔案**：`tests/profiler.test.ts` (新建)
+
+```typescript
+import { describe, it, expect } from 'bun:test'
+import { WorkflowProfiler } from '../src/profiler/WorkflowProfiler'
+
+describe('WorkflowProfiler', () => {
+  describe('profile()', () => {
+    it('應計算正確的平均執行時間')
+    it('應識別最慢的步驟')
+    it('應計算 P95 延遲')
+    it('應處理空的執行歷史')
+    it('應正確統計重試次數')
+  })
+
+  describe('recommend()', () => {
+    it('應對慢速步驟建議快取')
+    it('應對高重試率建議增加超時')
+    it('應對並行可行性給出建議')
+    it('應處理無數據的情況')
+  })
+
+  describe('formatReport()', () => {
+    it('應生成可讀的文字報告')
+    it('應包含所有關鍵指標')
+  })
+})
+```
+
+**預計新增測試**：15-20 個測試用例
+
+---
+
+### 5.2 OrbitFlux 集成測試計劃
+
+**目標**：從 35% 提升至 85%+ 函數覆蓋率
+
+**測試檔案**：`tests/orbit.test.ts` (擴充)
+
+```typescript
+describe('OrbitFlux', () => {
+  describe('boot()', () => {
+    it('應正確初始化存儲')
+    it('應處理存儲初始化失敗')
+    it('應在 Gravito 生命週期中正確啟動')
+  })
+
+  describe('execute()', () => {
+    it('應透過 OrbitFlux 執行工作流')
+    it('應正確傳遞 Gravito 上下文')
+  })
+
+  describe('cleanup()', () => {
+    it('應在關閉時釋放資源')
+  })
+})
+```
+
+---
+
+### 5.3 MemoryStorage 邊界測試
+
+**測試檔案**：`tests/memory-storage.test.ts` (新建)
+
+```typescript
+describe('MemoryStorage 邊界情況', () => {
+  it('應正確處理 close() 後的狀態')
+  it('應處理不存在的 workflowId')
+  it('應正確過濾複合條件')
+  it('應處理大量工作流的列表查詢')
+})
+```
+
+---
+
+## 6. 第四階段：文檔完善
+
+### 6.1 架構設計文檔
+
+**檔案**：`docs/ARCHITECTURE.md`
+
+**內容大綱**：
+```markdown
+# Flux 架構設計
+
+## 系統概覽
+[高層架構圖]
+
+## 核心模組
+### FluxEngine
+### WorkflowBuilder
+### StepExecutor
+
+## 狀態機設計
+[狀態轉移圖]
+
+## Saga 模式
+[補償流程圖]
+
+## 存儲抽象
+[存儲適配器架構]
+```
+
+---
+
+### 6.2 故障排除指南
+
+**檔案**：`docs/TROUBLESHOOTING.md`
+
+**內容大綱**：
+```markdown
+# 故障排除指南
+
+## 常見問題
+
+### 工作流卡在 suspended 狀態
+**原因**：...
+**解決**：...
+
+### 補償執行失敗
+**原因**：...
+**解決**：...
+
+### 存儲連接問題
+**原因**：...
+**解決**：...
+
+## 調試技巧
+
+### 啟用詳細追蹤
+### 使用 WorkflowProfiler
+### 檢查狀態機轉換
+```
+
+---
+
+## 7. 執行時程與分工
+
+### 7.1 任務依賴關係
+
+```mermaid
+graph TD
+    A[3.1 移除垃圾代碼] --> B[3.2 修復不可變性]
+    B --> C[4.1 FluxEngine 拆分]
+    C --> D[4.2 消除類型強制]
+    D --> E[5.1 Profiler 測試]
+    D --> F[5.2 OrbitFlux 測試]
+    D --> G[5.3 MemoryStorage 測試]
+    E --> H[6.1 架構文檔]
+    F --> H
+    G --> H
+    H --> I[6.2 故障排除指南]
+```
+
+### 7.2 執行時程
+
+| 階段 | 任務 | 負責人 | 預計天數 | 產出 |
+|------|------|--------|----------|------|
+| 1 | 關鍵修復 (3.1, 3.2) | TBD | Day 1-2 | 乾淨的代碼基礎 |
+| 2 | 架構重構 (4.1) | TBD | Day 3-5 | 模組化架構 |
+| 3 | 測試補強 (5.1-5.3) | TBD | Day 6-8 | 85%+ 覆蓋率 |
+| 4 | 類型優化 (4.2) + 文檔 (6.1-6.2) | TBD | Day 9-10 | 完整交付 |
+
+### 7.3 里程碑
+
+| 里程碑 | 完成標準 | 檢查點 |
+|--------|----------|--------|
+| M1 | Object.assign 突變 = 0 | 階段 1 結束 |
+| M2 | FluxEngine <= 300 行 | 階段 2 結束 |
+| M3 | 測試覆蓋率 >= 85% | 階段 3 結束 |
+| M4 | 文檔與 API 完整 | 最終交付 |
+
+---
+
+## 8. 向後兼容與遷移策略
+
+### 8.1 API 兼容性承諾
+
+| 層級 | 承諾 | 說明 |
+|------|------|------|
+| 公開 API | ✅ 完全兼容 | `execute`, `resume`, `signal`, `retryStep` 簽名不變 |
+| 類別導出 | ✅ 完全兼容 | `FluxEngine`, `WorkflowBuilder` 維持不變 |
+| 內部結構 | ⚠️ 可能變動 | 新增 `WorkflowExecutor`, `RollbackManager` 為內部類別 |
+
+### 8.2 遷移策略
+
+**原則**：使用者程式碼零修改
+
+```typescript
+// 重構前後使用方式完全相同
+const engine = new FluxEngine({ storage: new MemoryStorage() })
+const result = await engine.execute(workflow, input)
+```
+
+**內部實現變更**：
+```typescript
+// FluxEngine 使用組合模式委派
+class FluxEngine {
+  private executor: WorkflowExecutor  // 新增內部依賴
+
+  async execute(workflow, input) {
+    // 委派給 WorkflowExecutor
+    return this.executor.execute(...)
+  }
+}
+```
+
+### 8.3 棄用計劃
+
+| 項目 | 狀態 | 處理方式 |
+|------|------|----------|
+| `drum` 屬性 | 移除 | 此屬性從未公開，直接刪除 |
+| 內部 `runFrom()` | 內部化 | 轉移至 `WorkflowExecutor` |
+| 內部 `rollback()` | 內部化 | 轉移至 `RollbackManager` |
+
+---
+
+## 9. 效能基準測試
+
+### 9.1 基準測試計劃
+
+**測試項目**：
+
+| 測試名稱 | 描述 | 基準值 (TBD) | 目標 |
+|----------|------|--------------|------|
+| 單一工作流執行 | 5 步驟工作流執行時間 | - | <= 基準 × 1.05 |
+| 並發吞吐量 | 100 工作流同時執行 | - | <= 基準 × 1.10 |
+| 記憶體峰值 | 1000 工作流後記憶體用量 | - | <= 基準 × 1.10 |
+| 冷啟動時間 | FluxEngine 建構時間 | - | <= 基準 × 1.20 |
+
+### 9.2 測試腳本
+
+**檔案**：`tests/benchmark.ts` (新建)
+
+```typescript
+import { FluxEngine, MemoryStorage, createWorkflow } from '../src'
+
+const workflow = createWorkflow('benchmark')
+  .input<{ n: number }>()
+  .step('step1', async () => ({ result: 1 }))
+  .step('step2', async () => ({ result: 2 }))
+  .step('step3', async () => ({ result: 3 }))
+  .step('step4', async () => ({ result: 4 }))
+  .step('step5', async () => ({ result: 5 }))
+  .build()
+
+// 單一執行基準
+async function benchmarkSingle() {
+  const engine = new FluxEngine({ storage: new MemoryStorage() })
+  const start = performance.now()
+  await engine.execute(workflow, { n: 1 })
+  return performance.now() - start
+}
+
+// 並發基準
+async function benchmarkConcurrent(count: number) {
+  const engine = new FluxEngine({ storage: new MemoryStorage() })
+  const start = performance.now()
+  await Promise.all(
+    Array.from({ length: count }, (_, i) =>
+      engine.execute(workflow, { n: i })
+    )
+  )
+  return performance.now() - start
+}
+
+// 記憶體基準
+async function benchmarkMemory(count: number) {
+  const engine = new FluxEngine({ storage: new MemoryStorage() })
+  const before = process.memoryUsage().heapUsed
+  for (let i = 0; i < count; i++) {
+    await engine.execute(workflow, { n: i })
+  }
+  return process.memoryUsage().heapUsed - before
+}
+```
+
+### 9.3 驗收標準
+
+| 指標 | 退化容忍度 | 驗收方式 |
+|------|------------|----------|
+| 執行時間 | <= 5% 增加 | `bun run tests/benchmark.ts` |
+| 並發效能 | <= 10% 增加 | CI 基準測試 |
+| 記憶體用量 | <= 10% 增加 | CI 基準測試 |
+
+---
+
+## 10. 驗收標準
+
+### 10.1 代碼品質指標
+
+| 指標 | 目前 | 目標 | 驗收方式 |
+|------|------|------|----------|
+| 最大檔案行數 | 638 | ≤ 300 | `wc -l` 檢查 |
+| Object.assign 突變 | 11 | 0 | `grep -r "Object.assign(ctx"` |
+| `as any` 使用 | 7 | ≤ 2 | TypeScript 嚴格模式 |
+| 垃圾代碼 | 存在 | 無 | 代碼審查 |
+
+### 10.2 測試覆蓋率
+
+| 指標 | 目前 | 目標 | 驗收方式 |
+|------|------|------|----------|
+| 整體行覆蓋 | 87.31% | ≥ 90% | `bun test:coverage` |
+| 整體函數覆蓋 | 74.24% | ≥ 85% | `bun test:coverage` |
+| Profiler 覆蓋 | 5% | ≥ 85% | `bun test:coverage` |
+| OrbitFlux 覆蓋 | 35% | ≥ 80% | `bun test:coverage` |
+
+### 10.3 效能指標
+
+| 指標 | 容忍度 | 驗收方式 |
+|------|--------|----------|
+| 單一執行時間 | <= 基準 × 1.05 | 基準測試腳本 |
+| 並發吞吐量 | <= 基準 × 1.10 | 基準測試腳本 |
+| 記憶體峰值 | <= 基準 × 1.10 | 基準測試腳本 |
+
+### 10.4 回歸測試
+
+| 項目 | 驗收標準 |
+|------|----------|
+| 現有測試 | 所有 45 個測試必須通過 |
+| 公開 API | `execute`, `resume`, `signal`, `retryStep` 行為不變 |
+| 類型導出 | 所有現有類型保持相容 |
+
+### 10.5 文檔完整性
+
+| 項目 | 狀態 | 驗收標準 |
+|------|------|----------|
+| 架構文檔 | ❌ 缺失 | 包含系統概覽圖、狀態轉移圖、3+ 核心類別說明 |
+| 故障排除 | ❌ 缺失 | 涵蓋 5+ 常見問題，每個含原因與解決方案 |
+| API 文檔 | ✅ 完整 | 維持 100% JSDoc |
+
+---
+
+## 完整驗收清單
+
+執行前請逐項確認：
+
+### 程式碼品質
+- [ ] FluxEngine.ts <= 300 行
+- [ ] Object.assign 突變 = 0
+- [ ] `as any` <= 2
+- [ ] 無垃圾代碼 (`drum` 已移除)
+
+### 測試覆蓋
+- [ ] 整體行覆蓋 >= 90%
+- [ ] 整體函數覆蓋 >= 85%
+- [ ] WorkflowProfiler 行覆蓋 >= 85%
+- [ ] 所有 45 個現有測試通過
+
+### 效能
+- [ ] 單一工作流執行時間 <= 基準 × 1.05
+- [ ] 並發 100 工作流測試通過
+- [ ] 記憶體用量 <= 基準 × 1.10
+
+### 向後兼容
+- [ ] 公開 API 簽名不變
+- [ ] 現有使用者程式碼無需修改
+
+### 文檔
+- [ ] 架構文檔包含系統圖
+- [ ] 故障排除涵蓋 >= 5 問題
+- [ ] JSDoc 100% 覆蓋
+
+---
+
+## 附錄
+
+### A. 相關檔案清單
+
+```
+packages/flux/
+├── src/
+│   ├── builder/WorkflowBuilder.ts    # 需修復 drum 屬性
+│   ├── engine/FluxEngine.ts          # 需拆分
+│   ├── profiler/WorkflowProfiler.ts  # 需測試
+│   └── orbit/OrbitFlux.ts            # 需測試
+├── tests/
+│   ├── profiler.test.ts              # 新建
+│   ├── orbit.test.ts                 # 擴充
+│   └── memory-storage.test.ts        # 新建
+└── docs/
+    ├── ARCHITECTURE.md               # 新建
+    └── TROUBLESHOOTING.md            # 新建
+```
+
+### B. 參考資源
+
+- [Saga 模式](https://microservices.io/patterns/data/saga.html)
+- [不可變狀態管理](https://redux.js.org/faq/immutable-data)
+- [TypeScript 嚴格模式](https://www.typescriptlang.org/tsconfig#strict)
+
+---
+
+**文件維護者**：Claude Code
+**最後更新**：2025-01-23 (v1.1 審查後修訂)
+
+---
+
+## 變更記錄
+
+| 版本 | 日期 | 變更內容 |
+|------|------|----------|
+| v1.0 | 2025-01-23 | 初始版本 |
+| v1.1 | 2025-01-23 | 審查後修訂：修正 as any 數量(7 非 13)、新增效能基準測試、向後兼容策略、執行時程、完整驗收清單 |
