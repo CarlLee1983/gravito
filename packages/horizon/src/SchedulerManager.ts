@@ -87,7 +87,14 @@ export class SchedulerManager {
     }
 
     if (dueTasks.length > 0) {
-      // Log found tasks?
+      this.logger?.debug(`[Horizon] Found ${dueTasks.length} due task(s) to execute`, {
+        tasks: dueTasks.map((t) => ({
+          name: t.name,
+          expression: t.expression,
+          background: t.background,
+          oneServer: t.shouldRunOnOneServer,
+        })),
+      })
     }
 
     for (const task of dueTasks) {

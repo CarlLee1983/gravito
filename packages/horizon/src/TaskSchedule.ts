@@ -1,4 +1,10 @@
 import type { ActionCallback } from '@gravito/core'
+import {
+  parseTime,
+  validateDayOfMonth,
+  validateDayOfWeek,
+  validateMinute,
+} from './utils/validation'
 
 /**
  * Represents a configuration for a scheduled task (Cron job).
@@ -143,6 +149,7 @@ export class TaskSchedule {
    * @returns The TaskSchedule instance.
    */
   hourlyAt(minute: number): this {
+    validateMinute(minute)
     return this.cron(`${minute} * * * *`)
   }
 
@@ -162,8 +169,8 @@ export class TaskSchedule {
    * @returns The TaskSchedule instance.
    */
   dailyAt(time: string): this {
-    const [hour, minute] = time.split(':')
-    return this.cron(`${Number(minute)} ${Number(hour)} * * *`)
+    const { hour, minute } = parseTime(time)
+    return this.cron(`${minute} ${hour} * * *`)
   }
 
   /**
@@ -183,8 +190,9 @@ export class TaskSchedule {
    * @returns The TaskSchedule instance.
    */
   weeklyOn(day: number, time = '00:00'): this {
-    const [hour, minute] = time.split(':')
-    return this.cron(`${Number(minute)} ${Number(hour)} * * ${day}`)
+    validateDayOfWeek(day)
+    const { hour, minute } = parseTime(time)
+    return this.cron(`${minute} ${hour} * * ${day}`)
   }
 
   /**
@@ -204,8 +212,9 @@ export class TaskSchedule {
    * @returns The TaskSchedule instance.
    */
   monthlyOn(day: number, time = '00:00'): this {
-    const [hour, minute] = time.split(':')
-    return this.cron(`${Number(minute)} ${Number(hour)} ${day} * *`)
+    validateDayOfMonth(day)
+    const { hour, minute } = parseTime(time)
+    return this.cron(`${minute} ${hour} ${day} * *`)
   }
 
   // --- Constraints ---
@@ -229,11 +238,11 @@ export class TaskSchedule {
    * @returns The TaskSchedule instance.
    */
   at(time: string): this {
-    const [hour, minute] = time.split(':')
+    const { hour, minute } = parseTime(time)
     const parts = this.task.expression.split(' ')
     if (parts.length >= 5) {
-      parts[0] = String(Number(minute))
-      parts[1] = String(Number(hour))
+      parts[0] = String(minute)
+      parts[1] = String(hour)
       this.task.expression = parts.join(' ')
     }
     return this
