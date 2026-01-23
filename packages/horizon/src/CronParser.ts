@@ -42,17 +42,25 @@ export class CronParser {
     currentDate: Date = new Date()
   ): Promise<boolean> {
     const minuteKey = `${expression}:${timezone}:${Math.floor(currentDate.getTime() / 60000)}`
+    const now = Date.now()
 
     const cached = this.cache.get(minuteKey)
-    if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
-      return cached.result
+    if (cached) {
+      if (now - cached.timestamp < this.CACHE_TTL) {
+        // LRU: Refresh position
+        this.cache.delete(minuteKey)
+        this.cache.set(minuteKey, cached)
+        return cached.result
+      }
+      // Expired
+      this.cache.delete(minuteKey)
     }
 
     const result = await this.computeIsDue(expression, timezone, currentDate)
 
     this.cache.set(minuteKey, {
       result,
-      timestamp: Date.now(),
+      timestamp: now,
     })
 
     this.cleanupCache()
@@ -87,20 +95,14 @@ export class CronParser {
   }
 
   private static cleanupCache(): void {
-    const now = Date.now()
+    if (this.cache.size <= this.MAX_CACHE_SIZE) return
 
-    for (const [key, value] of this.cache) {
-      if (now - value.timestamp > this.CACHE_TTL) {
-        this.cache.delete(key)
-      }
-    }
-
-    if (this.cache.size > this.MAX_CACHE_SIZE) {
-      const entries = [...this.cache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp)
-      const toDelete = entries.slice(0, this.cache.size - this.MAX_CACHE_SIZE)
-      for (const [key] of toDelete) {
-        this.cache.delete(key)
-      }
+    // Map iterates in insertion order, so the first key is the oldest (LRU)
+    // We only need to remove one item because we check after every insertion
+    const iterator = this.cache.keys()
+    const oldestKey = iterator.next().value
+    if (oldestKey) {
+      this.cache.delete(oldestKey)
     }
   }
 

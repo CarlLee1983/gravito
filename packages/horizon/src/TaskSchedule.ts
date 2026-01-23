@@ -95,7 +95,7 @@ export class TaskSchedule {
       )
     }
 
-    const pattern = /^[0-9,\-/*]+$/
+    const pattern = /^[0-9,\-/*?L#A-Za-z]+$/
 
     for (let i = 0; i < 5; i++) {
       if (!pattern.test(parts[i])) {

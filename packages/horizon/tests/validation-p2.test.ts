@@ -97,15 +97,15 @@ describe('P2: Additional Validation', () => {
 
     test('should reject expressions with invalid characters', () => {
       expect(() => {
-        scheduler.task('test1', () => {}).cron('@ * * * *')
+        scheduler.task('test1', () => {}).cron('$ * * * *')
       }).toThrow(/contains invalid characters/)
 
       expect(() => {
-        scheduler.task('test2', () => {}).cron('* abc * * *')
+        scheduler.task('test2', () => {}).cron('* % * * *')
       }).toThrow(/contains invalid characters/)
 
       expect(() => {
-        scheduler.task('test3', () => {}).cron('* * $ * *')
+        scheduler.task('test3', () => {}).cron('* * ! * *')
       }).toThrow(/contains invalid characters/)
     })
 
