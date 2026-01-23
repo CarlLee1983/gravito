@@ -1,10 +1,10 @@
 # @gravito/flux 優化改善計劃
 
-> **版本**：v1.1 (審查後修訂版)
+> **版本**：v1.2 (二次審查修訂版)
 > **建立日期**：2025-01-23
 > **分支**：refactor/flux-optimization
 > **目標**：將模組品質從 B+ 提升至 A 級別
-> **審查評分**：7.4/10 → 目標 9.0/10
+> **審查評分**：7.4/10 → 8.5/10 → 目標 9.0/10
 
 ---
 
@@ -19,7 +19,9 @@
 7. [執行時程與分工](#7-執行時程與分工)
 8. [向後兼容與遷移策略](#8-向後兼容與遷移策略)
 9. [效能基準測試](#9-效能基準測試)
-10. [驗收標準](#10-驗收標準)
+10. [風險評估與應對策略](#10-風險評估與應對策略)
+11. [CI/CD 整合](#11-cicd-整合)
+12. [驗收標準](#12-驗收標準)
 
 ---
 
@@ -134,14 +136,40 @@ export class WorkflowBuilder<TInput = unknown, TData = Record<string, unknown>> 
 
 ### 3.2 修復不可變性違規
 
+#### 3.2.1 FluxEngine 中的突變
+
 **檔案**：`src/engine/FluxEngine.ts`
 
 **問題位置**：
 ```typescript
-// 行 426, 446, 470, 485, 490, 501, 512, 525, 543, 570
+// 行 142, 238, 339, 384, 401, 411, 426, 446, 470, 569, 613
 Object.assign(ctx, { status: 'running' })
 Object.assign(ctx, { currentStep: i })
-// ... 共 10 處突變
+// ... 共 11 處突變
+```
+
+#### 3.2.2 StepExecutor 中的突變（新發現）
+
+**檔案**：`src/core/StepExecutor.ts`
+
+**問題位置**：
+```typescript
+// 行 65, 72, 73, 78, 90, 91, 92, 93, 103, 104, 105, 124, 125
+execution.status = 'running'
+execution.startedAt = new Date()
+execution.retries = attempt
+// ... 共 15 處直接屬性賦值
+```
+
+**額外重構**：
+```typescript
+// src/core/executionUpdater.ts (新檔案)
+export function updateExecution(
+  execution: StepExecution,
+  updates: Partial<StepExecution>
+): StepExecution {
+  return { ...execution, ...updates }
+}
 ```
 
 **重構方案**：
@@ -634,18 +662,126 @@ async function benchmarkMemory(count: number) {
 
 ---
 
-## 10. 驗收標準
+## 10. 風險評估與應對策略
 
-### 10.1 代碼品質指標
+### 10.1 技術風險
+
+| 風險 | 可能性 | 影響 | 應對策略 |
+|------|--------|------|----------|
+| FluxEngine 拆分破壞現有功能 | 中 | 高 | 保持公開 API 不變，使用組合模式委派 |
+| 不可變性重構引入效能退化 | 低 | 中 | 基準測試驗證，允許 5% 退化 |
+| 並發執行時狀態競態 | 中 | 高 | 引入樂觀鎖定機制 |
+| 測試補強發現隱藏 bug | 中 | 中 | 視為改善機會，優先修復 |
+
+### 10.2 競態條件防護
+
+**問題場景**：多個 `saveState` 同時執行可能導致狀態覆蓋
+
+**解決方案**：引入版本欄位進行樂觀鎖定
+
+```typescript
+// WorkflowContext 新增
+interface WorkflowContext {
+  // ...existing fields
+  version: number  // 樂觀鎖定版本
+}
+
+// 更新時驗證版本
+async function saveState(ctx: WorkflowContext): Promise<void> {
+  const stored = await this.storage.get(ctx.id)
+  if (stored && stored.version !== ctx.version) {
+    throw new Error('Concurrent modification detected')
+  }
+  await this.storage.save({ ...ctx, version: ctx.version + 1 })
+}
+```
+
+### 10.3 回滾計劃
+
+若重構導致嚴重問題：
+
+1. **Git 回滾**：`git revert` 相關提交
+2. **版本策略**：發布為 `3.1.0-beta.x` 進行驗證
+3. **功能開關**：可選的 `useNewEngine` 配置項
+
+---
+
+## 11. CI/CD 整合
+
+### 11.1 自動化驗證
+
+**新增 GitHub Actions 步驟**：
+
+```yaml
+# .github/workflows/flux-quality.yml
+name: Flux Quality Gates
+
+on:
+  pull_request:
+    paths:
+      - 'packages/flux/**'
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Type check
+        run: bun run typecheck
+        working-directory: packages/flux
+
+      - name: Run tests with coverage
+        run: bun test:coverage
+        working-directory: packages/flux
+
+      - name: Check coverage thresholds
+        run: |
+          # 驗證覆蓋率 >= 90%
+          bun test:coverage --json | jq '.coverageMap.total.lines.pct >= 90'
+        working-directory: packages/flux
+
+      - name: Check file sizes
+        run: |
+          # 驗證 FluxEngine <= 300 行
+          [ $(wc -l < src/engine/FluxEngine.ts) -le 300 ]
+        working-directory: packages/flux
+
+      - name: Run benchmarks
+        run: bun run tests/benchmark.ts
+        working-directory: packages/flux
+```
+
+### 11.2 品質門檻
+
+| 檢查項目 | 閾值 | 失敗處理 |
+|----------|------|----------|
+| 測試覆蓋率 | >= 90% | 阻止合併 |
+| 型別檢查 | 0 錯誤 | 阻止合併 |
+| FluxEngine 行數 | <= 300 | 警告 |
+| 基準測試退化 | <= 10% | 警告 |
+
+---
+
+## 12. 驗收標準
+
+### 12.1 代碼品質指標
 
 | 指標 | 目前 | 目標 | 驗收方式 |
 |------|------|------|----------|
 | 最大檔案行數 | 638 | ≤ 300 | `wc -l` 檢查 |
-| Object.assign 突變 | 11 | 0 | `grep -r "Object.assign(ctx"` |
+| FluxEngine 突變 | 11 | 0 | `grep -r "Object.assign(ctx"` |
+| StepExecutor 突變 | 15 | 0 | `grep -rn "execution\." src/core/StepExecutor.ts` |
 | `as any` 使用 | 7 | ≤ 2 | TypeScript 嚴格模式 |
 | 垃圾代碼 | 存在 | 無 | 代碼審查 |
 
-### 10.2 測試覆蓋率
+### 12.2 測試覆蓋率
 
 | 指標 | 目前 | 目標 | 驗收方式 |
 |------|------|------|----------|
@@ -654,7 +790,7 @@ async function benchmarkMemory(count: number) {
 | Profiler 覆蓋 | 5% | ≥ 85% | `bun test:coverage` |
 | OrbitFlux 覆蓋 | 35% | ≥ 80% | `bun test:coverage` |
 
-### 10.3 效能指標
+### 12.3 效能指標
 
 | 指標 | 容忍度 | 驗收方式 |
 |------|--------|----------|
@@ -662,7 +798,7 @@ async function benchmarkMemory(count: number) {
 | 並發吞吐量 | <= 基準 × 1.10 | 基準測試腳本 |
 | 記憶體峰值 | <= 基準 × 1.10 | 基準測試腳本 |
 
-### 10.4 回歸測試
+### 12.4 回歸測試
 
 | 項目 | 驗收標準 |
 |------|----------|
@@ -670,7 +806,7 @@ async function benchmarkMemory(count: number) {
 | 公開 API | `execute`, `resume`, `signal`, `retryStep` 行為不變 |
 | 類型導出 | 所有現有類型保持相容 |
 
-### 10.5 文檔完整性
+### 12.5 文檔完整性
 
 | 項目 | 狀態 | 驗收標準 |
 |------|------|----------|
@@ -686,7 +822,8 @@ async function benchmarkMemory(count: number) {
 
 ### 程式碼品質
 - [ ] FluxEngine.ts <= 300 行
-- [ ] Object.assign 突變 = 0
+- [ ] FluxEngine Object.assign 突變 = 0
+- [ ] StepExecutor 直接屬性賦值 = 0
 - [ ] `as any` <= 2
 - [ ] 無垃圾代碼 (`drum` 已移除)
 
@@ -741,7 +878,7 @@ packages/flux/
 ---
 
 **文件維護者**：Claude Code
-**最後更新**：2025-01-23 (v1.1 審查後修訂)
+**最後更新**：2025-01-23 (v1.2 二次審查修訂)
 
 ---
 
@@ -751,3 +888,4 @@ packages/flux/
 |------|------|----------|
 | v1.0 | 2025-01-23 | 初始版本 |
 | v1.1 | 2025-01-23 | 審查後修訂：修正 as any 數量(7 非 13)、新增效能基準測試、向後兼容策略、執行時程、完整驗收清單 |
+| v1.2 | 2025-01-23 | 二次審查：新增 StepExecutor 突變問題(15處)、風險評估與應對策略、競態條件防護、回滾計劃、CI/CD 整合方案 |
