@@ -14,6 +14,10 @@ export type { DataSource } from './core/DataExtractor'
 export * from './core/DataExtractor'
 // Export typed FormRequest base classes
 export * from './core/FormRequestBase'
+// Export performance optimization utilities
+export * from './core/FormRequestInstanceCache'
+export * from './core/MessageCache'
+export * from './core/SchemaCache'
 // Export type utilities for advanced usage
 export * from './core/TypeUtils'
 export * from './core/ValibotFormRequest'

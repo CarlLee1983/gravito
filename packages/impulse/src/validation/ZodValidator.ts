@@ -1,6 +1,15 @@
 import type { z } from 'zod'
 import { type SchemaValidationResult, SchemaValidator } from './SchemaValidator'
 
+let SchemaCompilationCache: any
+function getSchemaCompilationCache() {
+  if (!SchemaCompilationCache) {
+    const { SchemaCompilationCache: Cache } = require('../core/SchemaCompilationCache')
+    SchemaCompilationCache = Cache
+  }
+  return SchemaCompilationCache
+}
+
 /**
  * Zod schema validator implementation.
  *
@@ -27,7 +36,7 @@ export class ZodValidator extends SchemaValidator {
   }
 
   /**
-   * Validate data with Zod schema.
+   * Validate data with Zod schema using compilation cache.
    *
    * @param schema - The Zod schema to validate against.
    * @param data - The data to validate.
@@ -38,19 +47,14 @@ export class ZodValidator extends SchemaValidator {
       throw new Error('Invalid schema provided to ZodValidator')
     }
 
-    const result = (schema as z.ZodType).safeParse(data)
+    const compilationCache = getSchemaCompilationCache()
+    const zodSchema = schema as z.ZodType
 
-    if (result.success) {
-      return { success: true, data: result.data }
-    }
+    // Use SchemaCompilationCache.getCompiledValidator API
+    const validator = compilationCache.getCompiledValidator(zodSchema, () =>
+      compilationCache.compileZodValidator(zodSchema)
+    )
 
-    return {
-      success: false,
-      errors: result.error.errors.map((err) => ({
-        path: err.path.map(String),
-        message: err.message,
-        code: err.code,
-      })),
-    }
+    return await validator.validate(data)
   }
 }

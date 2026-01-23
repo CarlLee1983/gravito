@@ -28,8 +28,21 @@ export class DataExtractor {
    */
   public async extract(ctx: Context, source: DataSource): Promise<unknown> {
     switch (source) {
-      case 'json':
-        return ctx.req.json().catch(() => ({}))
+      case 'json': {
+        const contentType = ctx.req.header('content-type')
+        if (!contentType || !contentType.includes('application/json')) {
+          return {}
+        }
+
+        const cached = ctx.get('__parsedBody')
+        if (cached !== undefined) {
+          return cached
+        }
+
+        const body = await ctx.req.json().catch(() => ({}))
+        ctx.set('__parsedBody', body)
+        return body
+      }
       case 'form': {
         const fd = await ctx.req.formData().catch(() => null)
         if (!fd) {
