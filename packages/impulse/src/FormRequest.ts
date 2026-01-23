@@ -2,6 +2,12 @@ import type { ContentfulStatusCode } from '@gravito/core'
 import { AuthorizationException, ValidationException } from '@gravito/core'
 import type { Context, MiddlewareHandler } from '@gravito/core/compat'
 import type { z } from 'zod'
+import { BlueprintGenerator } from './core/BlueprintGenerator'
+// Import extracted components
+import { DataExtractor, type DataSource } from './core/DataExtractor'
+import { type SchemaValidationResult, SchemaValidatorFactory } from './validation/SchemaValidator'
+// Initialize validators (this must happen for the factory to work)
+import './validation/index'
 
 /**
  * Validation error detail for a single field.
@@ -44,7 +50,6 @@ export interface ValidationErrorResponse {
  * @public
  * @since 3.0.0
  */
-export type DataSource = 'json' | 'form' | 'query' | 'param'
 
 /**
  * i18n message provider interface for resolving localized error messages.
@@ -102,111 +107,6 @@ export interface FormRequestOptions {
 }
 
 /**
- * Schema-agnostic validation result interface
- */
-interface SchemaValidationResult {
-  success: boolean
-  data?: unknown
-  errors?: Array<{ path: string[]; message: string; code?: string | undefined }>
-}
-
-/**
- * Valibot-like schema interface (for duck-typing)
- */
-interface ValibotLikeSchema {
-  _run?(
-    dataset: unknown,
-    config?: unknown
-  ): { issues?: Array<{ path?: Array<{ key: string }>; message: string; type?: string }> }
-  parse?(data: unknown): unknown
-}
-
-/**
- * Check if schema is Zod-like
- */
-function isZodSchema(schema: unknown): schema is z.ZodType {
-  return (
-    schema !== null &&
-    typeof schema === 'object' &&
-    'safeParse' in schema &&
-    typeof (schema as { safeParse: unknown }).safeParse === 'function'
-  )
-}
-
-/**
- * Check if schema is Valibot-like
- */
-function isValibotSchema(schema: unknown): schema is ValibotLikeSchema {
-  return (
-    schema !== null &&
-    typeof schema === 'object' &&
-    ('_run' in schema || ('parse' in schema && !('safeParse' in schema)))
-  )
-}
-
-/**
- * Validate data with Zod schema
- */
-function validateWithZod(schema: z.ZodType, data: unknown): SchemaValidationResult {
-  const result = schema.safeParse(data)
-  if (result.success) {
-    return { success: true, data: result.data }
-  }
-  return {
-    success: false,
-    errors: result.error.errors.map((err) => ({
-      path: err.path.map(String),
-      message: err.message,
-      code: err.code,
-    })),
-  }
-}
-
-/**
- * Validate data with Valibot schema (dynamic import not needed, uses duck-typing)
- */
-function validateWithValibot(schema: ValibotLikeSchema, data: unknown): SchemaValidationResult {
-  try {
-    // Try using _run for Valibot v1+
-    if (schema._run) {
-      const result = schema._run({ typed: false, value: data }, {})
-      if (!result.issues || result.issues.length === 0) {
-        return { success: true, data }
-      }
-      return {
-        success: false,
-        errors: result.issues.map((issue) => ({
-          path: issue.path?.map((p) => p.key) ?? [],
-          message: issue.message,
-          code: issue.type,
-        })),
-      }
-    }
-    // Fallback to parse (throws on error)
-    if (schema.parse) {
-      const data2 = schema.parse(data)
-      return { success: true, data: data2 }
-    }
-    return { success: false, errors: [{ path: [], message: 'Invalid schema' }] }
-  } catch (err: unknown) {
-    const error = err as {
-      issues?: Array<{ path?: Array<{ key: string }>; message: string; type?: string }>
-    }
-    if (error.issues) {
-      return {
-        success: false,
-        errors: error.issues.map((issue) => ({
-          path: issue.path?.map((p) => p.key) ?? [],
-          message: issue.message,
-          code: issue.type,
-        })),
-      }
-    }
-    return { success: false, errors: [{ path: [], message: String(err) }] }
-  }
-}
-
-/**
  * Base class for Form Request validation.
  * Supports both Zod and Valibot schemas.
  *
@@ -248,6 +148,9 @@ export abstract class FormRequest<T = unknown> {
 
   /** Configuration options */
   options: FormRequestOptions = {}
+
+  /** Data extractor instance for getting raw data from context */
+  private dataExtractor = new DataExtractor()
 
   /**
    * Authorization check (optional).
@@ -303,37 +206,7 @@ export abstract class FormRequest<T = unknown> {
    * @returns A promise that resolves to the raw data object.
    */
   public async getData(ctx: Context): Promise<unknown> {
-    switch (this.source) {
-      case 'json':
-        return ctx.req.json().catch(() => ({}))
-      case 'form': {
-        const fd = await ctx.req.formData().catch(() => null)
-        if (!fd) {
-          return {}
-        }
-        const obj: Record<string, unknown> = {}
-        fd.forEach((value, key) => {
-          obj[key] = value
-        })
-        return obj
-      }
-      case 'query': {
-        const queries = ctx.req.queries()
-        const flattened: Record<string, unknown> = {}
-        for (const [key, value] of Object.entries(queries)) {
-          if (Array.isArray(value) && value.length === 1) {
-            flattened[key] = value[0]
-          } else {
-            flattened[key] = value
-          }
-        }
-        return flattened
-      }
-      case 'param':
-        return ctx.req.params()
-      default:
-        return {}
-    }
+    return this.dataExtractor.extract(ctx, this.source)
   }
 
   /**
@@ -413,40 +286,8 @@ export abstract class FormRequest<T = unknown> {
     }
 
     // 4. Validate with appropriate schema library
-    let result: SchemaValidationResult
-
-    if (isZodSchema(this.schema)) {
-      result = validateWithZod(this.schema, data)
-    } else if (isValibotSchema(this.schema)) {
-      result = validateWithValibot(this.schema, data)
-    } else {
-      // Unknown schema type, try duck-typing for safeParse
-      const schemaAny = this.schema as {
-        safeParse?: (data: unknown) => {
-          success: boolean
-          data?: unknown
-          error?: { errors: Array<{ path: unknown[]; message: string; code?: string }> }
-        }
-      }
-      if (schemaAny.safeParse) {
-        const r = schemaAny.safeParse(data)
-        if (r.success) {
-          result = { success: true, data: r.data }
-        } else {
-          result = {
-            success: false,
-            errors:
-              r.error?.errors.map((e) => ({
-                path: e.path.map(String),
-                message: e.message,
-                code: e.code,
-              })) ?? [],
-          }
-        }
-      } else {
-        throw new Error('Unsupported schema type. Use Zod or Valibot.')
-      }
-    }
+    const validator = SchemaValidatorFactory.getValidator(this.schema)
+    const result = await validator.validate(this.schema, data)
 
     if (!result.success) {
       const details: ValidationErrorDetail[] = (result.errors ?? []).map((err) => ({
@@ -476,96 +317,7 @@ export abstract class FormRequest<T = unknown> {
    * This allows the frontend to replicate validation logic without code duplication.
    */
   getBlueprint(): Record<string, any> {
-    const blueprint: Record<string, any> = {
-      source: this.source,
-      rules: {},
-    }
-
-    if (isZodSchema(this.schema)) {
-      const def = (this.schema as any)._def
-      if (def?.shape) {
-        const shape = def.shape()
-        for (const [key, field] of Object.entries(shape)) {
-          blueprint.rules[key] = this.parseZodField(field)
-        }
-      }
-    }
-
-    return blueprint
-  }
-
-  /**
-   * Lightweight Zod field parser to extract metadata for the bridge.
-   */
-  private parseZodField(field: any): any {
-    const metadata: any = { type: 'string', required: true }
-    let current = field
-
-    // Unwrap optional/nullable/default
-    while (current._def) {
-      const def = current._def
-      const typeName = def.typeName
-
-      if (typeName === 'ZodOptional') {
-        metadata.required = false
-        current = def.innerType
-      } else if (typeName === 'ZodNullable') {
-        metadata.nullable = true
-        current = def.innerType
-      } else if (typeName === 'ZodDefault') {
-        metadata.default = def.defaultValue()
-        current = def.innerType
-      } else if (typeName === 'ZodString') {
-        metadata.type = 'string'
-        def.checks?.forEach((check: any) => {
-          if (check.kind === 'min') {
-            metadata.min = check.value
-          }
-          if (check.kind === 'max') {
-            metadata.max = check.value
-          }
-          if (check.kind === 'email') {
-            metadata.format = 'email'
-          }
-          if (check.kind === 'url') {
-            metadata.format = 'url'
-          }
-          if (check.kind === 'regex') {
-            metadata.pattern = check.regex.source
-          }
-        })
-        break
-      } else if (typeName === 'ZodNumber') {
-        metadata.type = 'number'
-        def.checks?.forEach((check: any) => {
-          if (check.kind === 'min') {
-            metadata.min = check.value
-          }
-          if (check.kind === 'max') {
-            metadata.max = check.value
-          }
-          if (check.kind === 'int') {
-            metadata.integer = true
-          }
-        })
-        break
-      } else if (typeName === 'ZodBoolean') {
-        metadata.type = 'boolean'
-        break
-      } else if (typeName === 'ZodEnum') {
-        metadata.type = 'enum'
-        metadata.options = def.values
-        break
-      } else if (typeName === 'ZodArray') {
-        metadata.type = 'array'
-        metadata.items = this.parseZodField(def.type)
-        break
-      } else {
-        break
-      }
-    }
-
-    return metadata
+    return BlueprintGenerator.generateBlueprint(this.schema, this.source)
   }
 }
 
