@@ -1,10 +1,11 @@
 # @gravito/horizon 優化改善計劃
 
-> **版本**: 3.0.1
+> **目標版本範圍**: v3.1.0 - v3.3.0
 > **日期**: 2025-01-23
 > **分支**: `dx/horizon-improvement-plan`
-> **整體評分**: 8.1/10
-> **審查後評分**: 8.5/10（補充安全性、相容性、時程後）
+> **初版評分**: 8.1/10
+> **一審補強後**: 8.5/10（補充安全性、相容性、時程後）
+> **二審補強後**: 8.8/10（修正代碼範例、補充遺漏項目、調整版本策略）
 
 ---
 
@@ -109,7 +110,7 @@ horizon/src/
 |------|------|----------|----------|
 | P1-01 | `TaskSchedule.at()` 無效時間會產生 NaN 表達式 | 高 | 所有使用 at() 的任務 |
 | P1-02 | 到期任務無日誌記錄，難以追蹤 | 中 | 生產環境監控 |
-| P1-03 | `dailyAt()`, `weeklyOn()`, `monthlyOn()` 同樣缺乏驗證 | 高 | 所有使用這些方法的任務 |
+| P1-03 | `dailyAt()`, `weeklyOn()`, `monthlyOn()`, `hourlyAt()` 同樣缺乏驗證 | 高 | 所有使用這些方法的任務 |
 
 ### P2 - 重要（下一版本修復）
 
@@ -117,8 +118,10 @@ horizon/src/
 |------|------|----------|----------|
 | P2-01 | CronParser 雙重解析效能問題 | 中 | 高頻任務檢查 |
 | P2-02 | 缺少任務執行超時控制 | 中 | 長時間任務 |
-| P2-03 | 記憶體鎖在多機環境警告不足 | 中 | 分散式部署 |
-| P2-04 | 邊界測試覆蓋不足 | 中 | 代碼可靠性 |
+| P2-03 | `timezone()` 缺乏有效性驗證 | 中 | 使用自訂時區的任務 |
+| P2-04 | `cron()` 缺乏表達式格式驗證 | 中 | 使用自訂 cron 的任務 |
+| P2-05 | 邊界測試覆蓋不足 | 中 | 代碼可靠性 |
+| P2-06 | 記憶體鎖在多機環境警告不足 | 低 | 分散式部署（降級） |
 
 ### P3 - 優化（可排入未來版本）
 
@@ -137,18 +140,24 @@ horizon/src/
 **檔案**: `src/TaskSchedule.ts`
 **行號**: 231-240
 
-**現況代碼**:
+**現況代碼**（TaskSchedule.ts:231-240）:
 ```typescript
 at(time: string): this {
   const [hour, minute] = time.split(':')
   const parts = this.task.expression.split(' ')
   if (parts.length >= 5) {
-    parts[0] = String(Number(minute))  // 危險：Number('') 返回 0
-    parts[1] = String(Number(hour))    // 危險：Number(undefined) 返回 NaN
+    parts[0] = String(Number(minute))  // 危險：Number('') 返回 0，Number(undefined) 返回 NaN
+    parts[1] = String(Number(hour))    // 危險：同上
+    this.task.expression = parts.join(' ')
   }
   return this
 }
 ```
+
+**問題分析**：
+- `'invalid'.split(':')` 返回 `['invalid']`，導致 `minute = undefined`
+- `Number(undefined)` 返回 `NaN`，`String(NaN)` 返回 `'NaN'`
+- 最終產生無效表達式如 `'NaN NaN * * *'`，任務永遠不會執行
 
 **修復方案**:
 ```typescript
@@ -233,9 +242,22 @@ if (dueTasks.length > 0) {
 
 **檔案**: `src/TaskSchedule.ts`
 
-同樣的驗證問題存在於 `dailyAt()`, `weeklyOn()`, `monthlyOn()` 方法。
+同樣的驗證問題存在於 `hourlyAt()`, `dailyAt()`, `weeklyOn()`, `monthlyOn()` 方法。
 
-**dailyAt() 修復方案**:
+**hourlyAt() 修復方案**（第 145-147 行）:
+```typescript
+hourlyAt(minute: number): this {
+  if (!Number.isInteger(minute) || minute < 0 || minute > 59) {
+    throw new Error(
+      `Invalid minute: ${minute}. Expected integer 0-59`
+    )
+  }
+  this.task.expression = `${minute} * * * *`
+  return this
+}
+```
+
+**dailyAt() 修復方案**（第 164-167 行）:
 ```typescript
 dailyAt(time: string): this {
   const [hourStr, minuteStr] = time.split(':')
@@ -349,7 +371,7 @@ export function parseTime(time: string): { hour: number; minute: number } {
 
 **目標**: 避免重複解析相同的 Cron 表達式
 
-**實現方案**:
+**實現方案**（含 LRU 容量限制）:
 ```typescript
 export class CronParser {
   // 快取已解析的表達式結果（帶時間戳）
@@ -358,8 +380,9 @@ export class CronParser {
     timestamp: number
   }>()
 
-  // 快取有效期（1 分鐘）
-  private static CACHE_TTL = 60000
+  // 快取配置
+  private static readonly CACHE_TTL = 60000      // 1 分鐘
+  private static readonly MAX_CACHE_SIZE = 500   // 最大快取數量
 
   static async isDue(
     expression: string,
@@ -382,7 +405,7 @@ export class CronParser {
       timestamp: Date.now()
     })
 
-    // 清理過期快取
+    // 清理過期快取並限制容量
     this.cleanupCache()
 
     return result
@@ -390,11 +413,28 @@ export class CronParser {
 
   private static cleanupCache(): void {
     const now = Date.now()
+
+    // 1. 清理過期項目
     for (const [key, value] of this.cache) {
       if (now - value.timestamp > this.CACHE_TTL) {
         this.cache.delete(key)
       }
     }
+
+    // 2. 如果仍超過容量上限，刪除最舊的項目（LRU）
+    if (this.cache.size > this.MAX_CACHE_SIZE) {
+      const entries = [...this.cache.entries()]
+        .sort((a, b) => a[1].timestamp - b[1].timestamp)
+      const toDelete = entries.slice(0, this.cache.size - this.MAX_CACHE_SIZE)
+      for (const [key] of toDelete) {
+        this.cache.delete(key)
+      }
+    }
+  }
+
+  // 提供清除快取的方法（用於測試）
+  static clearCache(): void {
+    this.cache.clear()
   }
 }
 ```
@@ -432,22 +472,28 @@ export class TaskSchedule {
 > **重要說明**：單純的 `Promise.race` 無法取消正在執行的任務，只是「放棄等待」。
 > 若需要真正取消任務，callback 必須支援 `AbortSignal`。
 
-**基礎實現（放棄等待模式）**:
+**基礎實現（放棄等待模式，含 timer 清理）**:
 ```typescript
 private async executeTask(task: ScheduledTask): Promise<void> {
   const timeout = task.timeout || 3600000  // 預設 1 小時
+  let timeoutId: ReturnType<typeof setTimeout> | undefined
 
   const timeoutPromise = new Promise<never>((_, reject) => {
-    setTimeout(() => {
+    timeoutId = setTimeout(() => {
       reject(new Error(`Task "${task.name}" timed out after ${timeout}ms`))
     }, timeout)
   })
 
-  // 注意：這只是放棄等待，task.callback() 仍會繼續執行
-  await Promise.race([
-    task.callback(),
-    timeoutPromise
-  ])
+  try {
+    // 注意：這只是放棄等待，task.callback() 仍會繼續執行
+    await Promise.race([
+      task.callback(),
+      timeoutPromise
+    ])
+  } finally {
+    // 重要：確保清理 timer，避免記憶體洩漏
+    if (timeoutId) clearTimeout(timeoutId)
+  }
 }
 ```
 
@@ -524,38 +570,167 @@ async orbit(core: PlanetCore): Promise<void> {
 
 ---
 
-### 5.4 P2-04：邊界測試補充
+### 5.4 P2-03：添加 `timezone()` 驗證
+
+**檔案**: `src/TaskSchedule.ts`
+
+**現況**：`timezone()` 方法直接設置時區，無效時區只會在執行時才發現錯誤。
+
+**修復方案**:
+```typescript
+timezone(tz: string): this {
+  // 驗證時區是否有效
+  try {
+    new Date().toLocaleString('en-US', { timeZone: tz })
+  } catch {
+    throw new Error(
+      `Invalid timezone: "${tz}". ` +
+      `See https://en.wikipedia.org/wiki/List_of_tz_database_time_zones for valid values.`
+    )
+  }
+  this.task.timezone = tz
+  return this
+}
+```
+
+**測試**:
+```typescript
+describe('TaskSchedule.timezone() validation', () => {
+  it('should accept valid timezones', () => {
+    const schedule = new TaskSchedule('test', () => {})
+    expect(() => schedule.timezone('Asia/Taipei')).not.toThrow()
+    expect(() => schedule.timezone('UTC')).not.toThrow()
+    expect(() => schedule.timezone('America/New_York')).not.toThrow()
+  })
+
+  it('should reject invalid timezones', () => {
+    const schedule = new TaskSchedule('test', () => {})
+    expect(() => schedule.timezone('Invalid/Timezone')).toThrow(/Invalid timezone/)
+    expect(() => schedule.timezone('ABC')).toThrow(/Invalid timezone/)
+  })
+})
+```
+
+---
+
+### 5.5 P2-04：添加 `cron()` 表達式驗證
+
+**檔案**: `src/TaskSchedule.ts`
+
+**現況**：`cron()` 方法直接設置表達式，無任何格式驗證。
+
+**修復方案**:
+```typescript
+cron(expression: string): this {
+  const parts = expression.trim().split(/\s+/)
+
+  if (parts.length !== 5) {
+    throw new Error(
+      `Invalid cron expression: "${expression}". ` +
+      `Expected 5 parts (minute hour day month weekday), got ${parts.length}.`
+    )
+  }
+
+  // 基本格式驗證（可選：更嚴格的驗證）
+  const patterns = [
+    /^(\*|[0-9,\-\/]+)$/,  // minute
+    /^(\*|[0-9,\-\/]+)$/,  // hour
+    /^(\*|[0-9,\-\/]+)$/,  // day
+    /^(\*|[0-9,\-\/]+)$/,  // month
+    /^(\*|[0-9,\-\/]+)$/   // weekday
+  ]
+
+  for (let i = 0; i < 5; i++) {
+    if (!patterns[i].test(parts[i])) {
+      throw new Error(
+        `Invalid cron expression: "${expression}". ` +
+        `Part ${i + 1} ("${parts[i]}") contains invalid characters.`
+      )
+    }
+  }
+
+  this.task.expression = expression
+  return this
+}
+```
+
+**測試**:
+```typescript
+describe('TaskSchedule.cron() validation', () => {
+  it('should accept valid expressions', () => {
+    const schedule = new TaskSchedule('test', () => {})
+    expect(() => schedule.cron('* * * * *')).not.toThrow()
+    expect(() => schedule.cron('0 0 * * *')).not.toThrow()
+    expect(() => schedule.cron('*/5 9-17 * * 1-5')).not.toThrow()
+  })
+
+  it('should reject invalid expressions', () => {
+    const schedule = new TaskSchedule('test', () => {})
+    expect(() => schedule.cron('* * *')).toThrow(/Expected 5 parts/)
+    expect(() => schedule.cron('* * * * * *')).toThrow(/Expected 5 parts/)
+    expect(() => schedule.cron('abc * * * *')).toThrow(/invalid characters/)
+  })
+})
+```
+
+---
+
+### 5.6 P2-05：邊界測試補充
 
 **新增測試檔案**: `tests/edge-cases.test.ts`
 
+> **注意**：以下測試代碼已根據實際 API 修正。
+
 ```typescript
-import { describe, it, expect } from 'bun:test'
+import { describe, it, expect, beforeEach } from 'bun:test'
 import { TaskSchedule } from '../src/TaskSchedule'
 import { CronParser } from '../src/CronParser'
 import { SimpleCronParser } from '../src/SimpleCronParser'
 
 describe('Edge Cases', () => {
   describe('TaskSchedule.at() edge cases', () => {
+    let schedule: TaskSchedule
+
+    beforeEach(() => {
+      // 正確的建構函數調用：(name: string, callback: Function)
+      schedule = new TaskSchedule('test-task', () => {})
+    })
+
     it('should handle midnight correctly', () => {
-      const schedule = new TaskSchedule(mockTask)
-      schedule.at('00:00')
-      expect(schedule.getExpression()).toContain('0 0')
+      schedule.daily().at('00:00')
+      expect(schedule.getTask().expression).toBe('0 0 * * *')
     })
 
     it('should handle end of day correctly', () => {
-      const schedule = new TaskSchedule(mockTask)
-      schedule.at('23:59')
-      expect(schedule.getExpression()).toContain('59 23')
+      schedule.daily().at('23:59')
+      expect(schedule.getTask().expression).toBe('59 23 * * *')
     })
 
     it('should reject invalid hour 24', () => {
-      const schedule = new TaskSchedule(mockTask)
-      expect(() => schedule.at('24:00')).toThrow()
+      expect(() => schedule.daily().at('24:00')).toThrow(/Invalid time format/)
     })
 
     it('should reject negative values', () => {
-      const schedule = new TaskSchedule(mockTask)
-      expect(() => schedule.at('-1:30')).toThrow()
+      expect(() => schedule.daily().at('-1:30')).toThrow(/Invalid time format/)
+    })
+
+    it('should reject non-numeric input', () => {
+      expect(() => schedule.daily().at('abc:def')).toThrow(/Invalid time format/)
+    })
+  })
+
+  describe('TaskSchedule.hourlyAt() edge cases', () => {
+    it('should accept valid minutes', () => {
+      const schedule = new TaskSchedule('test', () => {})
+      expect(() => schedule.hourlyAt(0)).not.toThrow()
+      expect(() => schedule.hourlyAt(59)).not.toThrow()
+    })
+
+    it('should reject invalid minutes', () => {
+      const schedule = new TaskSchedule('test', () => {})
+      expect(() => schedule.hourlyAt(-1)).toThrow(/Invalid minute/)
+      expect(() => schedule.hourlyAt(60)).toThrow(/Invalid minute/)
+      expect(() => schedule.hourlyAt(1.5)).toThrow(/Invalid minute/)
     })
   })
 
@@ -568,7 +743,7 @@ describe('Edge Cases', () => {
         'America/New_York',
         dstDate
       )
-      // DST 期間 2:30 可能不存在
+      // DST 期間 2:30 可能不存在，應返回 boolean
       expect(typeof result).toBe('boolean')
     })
 
@@ -584,13 +759,14 @@ describe('Edge Cases', () => {
   })
 
   describe('SimpleCronParser edge cases', () => {
-    it('should handle empty expression', () => {
+    it('should throw on empty expression', () => {
+      // 注意：SimpleCronParser 對無效表達式會拋出錯誤，而非返回 false
       expect(() => SimpleCronParser.isDue('', new Date())).toThrow()
     })
 
-    it('should handle malformed expression', () => {
-      const result = SimpleCronParser.isDue('not a cron', new Date())
-      expect(result).toBe(false)
+    it('should throw on malformed expression', () => {
+      // 修正：實際行為是拋出錯誤
+      expect(() => SimpleCronParser.isDue('not a cron', new Date())).toThrow(/Invalid cron expression/)
     })
 
     it('should handle very large step values', () => {
@@ -813,16 +989,28 @@ bun test tests/edge-cases.test.ts
 ### 8.2 CHANGELOG 更新範本
 
 ```markdown
-## [3.0.2] - YYYY-MM-DD
+## [3.1.0] - YYYY-MM-DD
+
+### BREAKING CHANGES
+- `at()`, `hourlyAt()`, `dailyAt()`, `weeklyOn()`, `monthlyOn()` 方法現在會驗證輸入
+  - 無效輸入將拋出 Error 而非靜默產生無效表達式
+  - 遷移指南：確保時間格式為 "HH:mm"（24 小時制，00:00-23:59）
 
 ### Fixed
 - 修復 `TaskSchedule.at()` 無效時間格式導致 NaN 表達式的問題 (#P1-01)
-- 添加到期任務的詳細日誌記錄 (#P1-02)
+- 修復 `hourlyAt()`, `dailyAt()`, `weeklyOn()`, `monthlyOn()` 同樣的驗證問題 (#P1-03)
 
 ### Added
-- Cron 表達式解析結果快取機制
-- 任務執行超時控制 (`timeout()` 方法)
-- 分散式環境使用記憶體鎖的警告
+- 到期任務的詳細日誌記錄 (#P1-02)
+
+## [3.2.0] - YYYY-MM-DD
+
+### Added
+- Cron 表達式解析結果快取機制（含 LRU 容量限制）(#P2-01)
+- 任務執行超時控制 `timeout()` 方法 (#P2-02)
+- `timezone()` 時區有效性驗證 (#P2-03)
+- `cron()` 表達式格式驗證 (#P2-04)
+- 分散式環境使用記憶體鎖的警告 (#P2-06)
 
 ### Changed
 - 提升測試覆蓋率至 80%
@@ -840,17 +1028,20 @@ bun test tests/edge-cases.test.ts
 ├─────────────────────────────────────────────────────────────────────┤
 │ • P1-01: 修復 at() 輸入驗證                                          │
 │ • P1-02: 添加任務日誌記錄                                            │
+│ • P1-03: 修復 hourlyAt/dailyAt/weeklyOn/monthlyOn 驗證               │
 │ • 更新 CHANGELOG                                                     │
-│ • 提交 PR 並發布 patch 版本                                           │
+│ • 提交 PR 並發布 minor 版本（含 breaking changes）                    │
 └─────────────────────────────────────────────────────────────────────┘
                                     ↓
 ┌─────────────────────────────────────────────────────────────────────┐
 │ 第二階段 (P2)：功能強化                                              │
 ├─────────────────────────────────────────────────────────────────────┤
-│ • P2-01: 實現 Cron 快取                                              │
+│ • P2-01: 實現 Cron 快取（含 LRU）                                     │
 │ • P2-02: 添加超時控制                                                │
-│ • P2-03: 強化分散式警告                                              │
-│ • P2-04: 補充邊界測試                                                │
+│ • P2-03: 添加 timezone() 驗證                                        │
+│ • P2-04: 添加 cron() 驗證                                            │
+│ • P2-05: 補充邊界測試                                                │
+│ • P2-06: 強化分散式警告                                              │
 │ • 更新文檔                                                           │
 │ • 提交 PR 並發布 minor 版本                                           │
 └─────────────────────────────────────────────────────────────────────┘
@@ -869,25 +1060,27 @@ bun test tests/edge-cases.test.ts
 
 | 里程碑 | 目標版本 | 完成標準 | 預估工時 | 人力需求 |
 |--------|----------|----------|----------|----------|
-| M1 | v3.0.2 | P1 全部完成，測試通過 | 1-2 天 | 1 人 |
-| M2 | v3.1.0 | P2 全部完成，覆蓋率 ≥ 80% | 3-5 天 | 1 人 |
-| M3 | v3.2.0 | P3 全部完成，文檔完整 | 5-7 天 | 1 人 |
+| M1 | v3.1.0 | P1 全部完成，測試通過（含 breaking changes） | 1-2 天 | 1 人 |
+| M2 | v3.2.0 | P2 全部完成，覆蓋率 ≥ 80% | 3-5 天 | 1 人 |
+| M3 | v3.3.0 | P3 全部完成，文檔完整 | 5-7 天 | 1 人 |
 
 ### 9.3 任務依賴關係
 
 ```
-P1-01 (at 驗證) ──┐
-P1-02 (日誌)    ──┼─→ P1 測試 ─→ M1 發布
-P1-03 (相關方法) ──┘
-                    ↓
-P2-01 (Cron 快取) ──┐
-P2-02 (超時控制)  ──┼─→ P2 測試 + 邊界測試 ─→ M2 發布
-P2-03 (警告強化)  ──┘
-P2-04 (邊界測試)  ──┘
-                    ↓
-P3-01 (重試機制) ──┐
-P3-02 (執行指標) ──┼─→ P3 測試 + 文檔更新 ─→ M3 發布
-P3-03 (文檔補充) ──┘
+P1-01 (at 驗證)     ──┐
+P1-02 (日誌)        ──┼─→ P1 測試 ─→ M1 發布 (v3.1.0)
+P1-03 (相關方法驗證) ──┘
+                       ↓
+P2-01 (Cron 快取)   ──┐
+P2-02 (超時控制)    ──┤
+P2-03 (timezone驗證) ─┼─→ P2 測試 + 邊界測試 ─→ M2 發布 (v3.2.0)
+P2-04 (cron驗證)    ──┤
+P2-05 (邊界測試)    ──┤
+P2-06 (警告強化)    ──┘
+                       ↓
+P3-01 (重試機制)    ──┐
+P3-02 (執行指標)    ──┼─→ P3 測試 + 文檔更新 ─→ M3 發布 (v3.3.0)
+P3-03 (文檔補充)    ──┘
 ```
 
 ### 9.4 驗收標準
@@ -906,9 +1099,11 @@ P3-03 (文檔補充) ──┘
 
 | 風險 | 可能性 | 影響 | 緩解措施 |
 |------|--------|------|----------|
-| Cron 快取導致記憶體洩漏 | 中 | 中 | 實現自動清理機制 |
-| 超時中斷導致資源洩漏 | 低 | 高 | 使用 AbortController |
+| Cron 快取導致記憶體洩漏 | 低 | 中 | 實現 LRU + TTL 清理機制（已規劃） |
+| 超時中斷導致資源洩漏 | 低 | 高 | 使用 AbortController + clearTimeout |
 | 重試機制導致重複執行 | 中 | 高 | 確保冪等性或使用鎖 |
+| 任務執行超過檢查週期（1分鐘） | 中 | 中 | 使用 `withoutOverlapping()` 或設定 `timeout()` |
+| 靜態快取在多執行緒環境的競態 | 低 | 低 | Bun/Node 單執行緒，風險極低 |
 
 ### 10.2 相容性風險
 
@@ -934,16 +1129,21 @@ P3-03 (文檔補充) ──┘
 
 `Process.run()` 直接執行 shell 命令，若 command 來自使用者輸入，存在命令注入風險。
 
-**現況分析**:
+**現況分析**（Process.ts:27-35）:
 ```typescript
-// 當前實現（簡化）
-static async run(command: string): Promise<ProcessResult> {
-  const proc = Bun.spawn(['sh', '-c', command], {
-    // ...
+// 當前實現使用 runtime adapter，支援多種運行環境
+export async function runProcess(command: string): Promise<ProcessResult> {
+  const runtime = getRuntimeAdapter()  // 取得當前運行時適配器
+  const proc = runtime.spawn(['sh', '-c', command], {
+    stdout: 'pipe',
+    stderr: 'pipe',
   })
   // ...
 }
 ```
+
+> **注意**：雖然使用了 runtime adapter 抽象層，但底層仍透過 `sh -c` 執行命令，
+> 命令注入風險依然存在。
 
 **風險等級**: 中（取決於 command 來源）
 
@@ -1006,7 +1206,7 @@ static validateCommand(command: string): boolean {
 .at('00:00')  // 正確
 ```
 
-#### P1-03: `dailyAt()`, `weeklyOn()`, `monthlyOn()` 驗證
+#### P1-03: `hourlyAt()`, `dailyAt()`, `weeklyOn()`, `monthlyOn()` 驗證
 
 同樣的 breaking change 適用於這些方法。
 
@@ -1021,16 +1221,22 @@ static validateCommand(command: string): boolean {
 - P1-02: 日誌記錄（只增加輸出，不改變行為）
 - P2-01: Cron 快取（內部優化，無 API 變更）
 - P2-02: 超時控制（新增可選方法）
-- P2-03: 警告訊息（只增加日誌）
+- P2-03: timezone 驗證（新增驗證，無效值原本也會在執行時失敗）
+- P2-04: cron 驗證（新增驗證，Breaking Change）
+- P2-05: 邊界測試（只增加測試）
+- P2-06: 警告訊息（只增加日誌）
 - P3-*: 所有長期優化都是新增功能
 
 ### 12.3 版本策略
 
 | 變更類型 | 版本影響 | 說明 |
 |----------|----------|------|
-| P1 修復 | patch (x.x.X) | 雖有 breaking change，但修復的是 bug |
-| P2 功能 | minor (x.X.0) | 新增功能，無 breaking change |
+| P1 修復 | **minor (x.X.0)** | 含 breaking change（輸入驗證會拋出錯誤） |
+| P2 功能 | minor (x.X.0) | 新增功能，P2-03/P2-04 有輕微 breaking change |
 | P3 優化 | minor (x.X.0) | 新增功能，無 breaking change |
+
+> **重要**：由於 P1 包含 breaking changes，版本號從 v3.0.1 升至 v3.1.0，
+> 而非 patch 版本 v3.0.2。這符合 SemVer 規範。
 
 ---
 
@@ -1091,7 +1297,7 @@ await run()
 **步驟 2：緊急回滾（若需要）**
 ```bash
 # 標記問題版本為 deprecated
-npm deprecate @gravito/horizon@3.0.2 "Critical bug found, please use 3.0.1"
+npm deprecate @gravito/horizon@3.1.0 "Critical bug found, please use 3.0.1"
 
 # 發布 hotfix 恢復舊行為
 git revert <commit-hash>
@@ -1107,9 +1313,9 @@ npm publish --tag hotfix
 
 | 問題版本 | 回滾至 | 說明 |
 |----------|--------|------|
-| v3.0.2 | v3.0.1 | 若 P1 修復導致問題 |
-| v3.1.0 | v3.0.2 | 若 P2 功能導致問題 |
-| v3.2.0 | v3.1.0 | 若 P3 功能導致問題 |
+| v3.1.0 | v3.0.1 | 若 P1 修復（breaking changes）導致問題 |
+| v3.2.0 | v3.1.0 | 若 P2 功能導致問題 |
+| v3.3.0 | v3.2.0 | 若 P3 功能導致問題 |
 
 ### 14.3 回滾測試
 
@@ -1169,7 +1375,11 @@ at(time: string): this {
 
 ---
 
-**文檔版本**: 1.1
+**文檔版本**: 1.2
 **最後更新**: 2025-01-23
 **作者**: Claude Code + Carl
-**審查狀態**: 已審查並補充（安全性、相容性、時程、回滾計劃）
+**審查狀態**: 二審完成
+**審查記錄**:
+- v1.0: 初版（評分 8.1/10）
+- v1.1: 一審補強 - 補充安全性、相容性、時程、回滾計劃（評分 8.5/10）
+- v1.2: 二審補強 - 修正代碼範例、補充遺漏項目、調整版本策略（評分 8.8/10）
