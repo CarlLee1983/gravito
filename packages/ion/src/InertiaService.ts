@@ -102,66 +102,70 @@ export class InertiaService {
   public render(
     component: string,
     props: Record<string, unknown> = {},
-    rootVars: Record<string, unknown> = {}
+    rootVars: Record<string, unknown> = {},
+    status?: number
   ): Response {
-    // For SSG, use relative URL (pathname only) to avoid cross-origin issues
-    let pageUrl: string
     try {
-      const reqUrl = new URL(this.context.req.url, 'http://localhost')
-      pageUrl = reqUrl.pathname + reqUrl.search
-    } catch {
-      // Fallback if URL parsing fails
-      pageUrl = this.context.req.url
-    }
-
-    // Resolve lazy props (functions)
-    const resolveProps = (p: Record<string, unknown>) => {
-      const resolved: Record<string, unknown> = {}
-      for (const [key, value] of Object.entries(p)) {
-        resolved[key] = typeof value === 'function' ? value() : value
+      // For SSG, use relative URL (pathname only) to avoid cross-origin issues
+      let pageUrl: string
+      try {
+        const reqUrl = new URL(this.context.req.url, 'http://localhost')
+        pageUrl = reqUrl.pathname + reqUrl.search
+      } catch {
+        // Fallback if URL parsing fails
+        pageUrl = this.context.req.url
       }
-      return resolved
-    }
 
-    const page = {
-      component,
-      props: resolveProps({ ...this.sharedProps, ...props }),
-      url: pageUrl,
-      version: this.config.version,
-    }
+      // Resolve lazy props (functions)
+      const resolveProps = (p: Record<string, unknown>) => {
+        const resolved: Record<string, unknown> = {}
+        for (const [key, value] of Object.entries(p)) {
+          resolved[key] = typeof value === 'function' ? value() : value
+        }
+        return resolved
+      }
 
-    // 1. If it's an Inertia request, return JSON
-    if (this.context.req.header('X-Inertia')) {
-      this.context.header('X-Inertia', 'true')
-      this.context.header('Vary', 'Accept')
-      return this.context.json(page)
-    }
+      const page = {
+        component,
+        props: resolveProps({ ...this.sharedProps, ...props }),
+        url: pageUrl,
+        version: this.config.version,
+      }
 
-    // 2. Otherwise return the root HTML with data-page attribute
-    // We assume there is a ViewService that handles the root template
-    // The rootView should contain: <div id="app" data-page='{{{ page }}}'></div>
-    const view = this.context.get('view') as ViewService | undefined
-    const rootView = this.config.rootView ?? 'app'
+      // 1. If it's an Inertia request, return JSON
+      if (this.context.req.header('X-Inertia')) {
+        this.context.header('X-Inertia', 'true')
+        this.context.header('Vary', 'Accept')
+        return this.context.json(page, status)
+      }
 
-    if (!view) {
-      throw new Error('OrbitPrism is required for the initial page load in OrbitIon')
-    }
+      // 2. Otherwise return the root HTML with data-page attribute
+      const view = this.context.get('view') as ViewService | undefined
+      const rootView = this.config.rootView ?? 'app'
 
-    // Detect development mode
-    const isDev = process.env.NODE_ENV !== 'production'
+      if (!view) {
+        throw new Error('OrbitPrism is required for the initial page load in OrbitIon')
+      }
 
-    // ... (no changes to lines 1-153)
-    return this.context.html(
-      view.render(
-        rootView,
-        {
-          ...rootVars,
-          page: this.escapeForSingleQuotedHtmlAttribute(JSON.stringify(page)),
-          isDev,
-        },
-        { layout: '' }
+      const isDev = process.env.NODE_ENV !== 'production'
+
+      return this.context.html(
+        view.render(
+          rootView,
+          {
+            ...rootVars,
+            page: this.escapeForSingleQuotedHtmlAttribute(JSON.stringify(page)),
+            isDev,
+          },
+          { layout: '' }
+        ),
+        status
       )
-    )
+    } catch (error) {
+      console.error('[InertiaService] Render Error:', error)
+      // Fallback response if everything fails
+      return new Response('Inertia Render Error', { status: 500 })
+    }
   }
   // ...
 

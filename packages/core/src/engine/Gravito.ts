@@ -267,7 +267,7 @@ export class Gravito {
   /**
    * Handle an incoming request
    */
-  fetch = (request: Request): Response | Promise<Response> => {
+  fetch = async (request: Request): Promise<Response> => {
     // Fast path: extract pathname without creating URL object
     const path = extractPath(request.url)
     const method = request.method.toLowerCase()
@@ -287,18 +287,18 @@ export class Gravito {
           if (result instanceof Response) {
             return result
           }
-          return result as Promise<Response>
+          return await result
         } catch (error) {
           return this.handleErrorSync(error as Error, request, path)
         }
       }
 
       // Has middleware, or needs FastContext: use pooled context
-      return this.handleWithMiddleware(request, path, staticRoute) as any
+      return await this.handleWithMiddleware(request, path, staticRoute)
     }
 
     // Dynamic route: use Radix Tree
-    return this.handleDynamicRoute(request, method, path) as any
+    return await this.handleDynamicRoute(request, method, path)
   }
 
   /**

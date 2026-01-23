@@ -3,9 +3,11 @@
     "version": "0.1.7",
     "type": "module",
     "scripts": {
+        "predev": "bun run clean:ports",
         "dev": "bun run dev:vite & bun run dev:server",
         "dev:server": "NODE_ENV=development bun run --watch src/index.ts",
         "dev:vite": "vite",
+        "clean:ports": "bun scripts/clean-port.ts 5174; bun scripts/clean-port.ts 3000",
         "build:client": "vite build",
         "build:static": "NODE_ENV=production bun build-static.ts",
         "preview": "bun preview.ts",

@@ -1,6 +1,6 @@
 ---
 name: static-site-generator
-description: Framework-exclusive skill for Gravito SSG (Freeze Protocol). Operates directly on PlanetCore and Orbit systems. Use when user asks to: (1) Create static site with gravito create --template static-site, (2) Configure Freeze/SSG settings, (3) Fix StaticLink navigation issues, (4) Generate sitemap via OrbitConstellation, (5) Deploy to GitHub Pages/Vercel, (6) Debug empty pages or 404 on static hosting.
+description: Framework-exclusive skill for Gravito SSG (Freeze Protocol). Operates directly on PlanetCore and Orbit systems. Use when user asks to: (1) Create static site with gravito create --template static-site, (2) Configure Freeze/SSG settings, (3) Fix StaticLink navigation issues, (4) Generate sitemap via OrbitConstellation, (5) Deploy to GitHub Pages/Vercel, (6) Debug deployment issues (404, empty pages, asset loading failures, MIME type errors), (7) Troubleshoot dev environment (Vite proxy, middleware order, port conflicts).
 ---
 
 # Gravito Static Site Generator (Freeze Engine)
@@ -76,6 +76,23 @@ core.hooks.addFilter('ssg:rendered', async (html: string) => {
 
 詳見 `references/configuration.md`
 
+## Development Environment
+
+開發環境常見問題：
+
+| 症狀 | 可能原因 |
+|------|---------|
+| 前端資源 404 | Vite proxy 未正確設置，或 bootstrap 順序錯誤 |
+| CSS MIME type 錯誤 | 強制覆蓋了 Vite 的 Content-Type |
+| 端口衝突 | 舊進程佔用端口 |
+
+**關鍵原則**：
+- `setupViteProxy` 必須在 `registerRoutes` **之前**調用
+- 使用 `app.use('*', ...)` 而非 `app.all('*', ...)`
+- 保留 Vite 原始 Content-Type，勿強制覆蓋
+
+詳見 `references/dev-troubleshooting.md`
+
 ## Best Practices
 
 - **Suffix Views**: Entry-point components use `*View.vue` / `*View.tsx` to avoid naming collisions
@@ -84,6 +101,7 @@ core.hooks.addFilter('ssg:rendered', async (html: string) => {
   - Assets 從 `/static/build/` 載入
   - `404.html` 存在於 root
   - CNAME 檔案已生成（若適用）
+- **Dev Environment**: 確保 bootstrap 順序正確（Middleware → Proxy → Routes）
 
 ## Scripts
 
@@ -126,3 +144,4 @@ core.hooks.addFilter('ssg:rendered', async (html: string) => {
 
 - **references/configuration.md**: 環境變數、bootstrap 配置、hooks 說明
 - **references/atlas-lessons.md**: StaticLink 問題排查、命名衝突、SPA recovery 經驗
+- **references/dev-troubleshooting.md**: 開發環境故障排除（Vite proxy、middleware 順序、端口衝突）
