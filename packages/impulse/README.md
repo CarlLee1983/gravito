@@ -6,18 +6,17 @@ title: Orbit Request
 
 Form Request validation for Gravito with Zod and Valibot support.
 
-**Orbit Request** provides Laravel-style request validation for Gravito applications. Define your validation rules as classes and get type-safe validated data in your controllers.
+**Orbit Request** (@gravito/impulse) provides Laravel-style request validation for Gravito applications. Define your validation rules as classes and get type-safe validated data in your controllers.
 
 ## Features
 
 - **Type-Safe Validation**: Full TypeScript inference with Zod or Valibot
 - **Class-Based Requests**: Organize validation logic into reusable classes
+- **Performance Optimized**: Multi-layer caching (Schema, Instance, Compilation)
 - **Authorization Hook**: Built-in `authorize()` method for access control
 - **Multiple Data Sources**: Validate JSON, form data, query params, or route params
 - **Structured Errors**: Consistent error response format
-- **Custom Messages**: Override error messages per field
 - **i18n Support**: Pluggable MessageProvider for localization
-- **Router Integration**: Use directly in Gravito router definitions
 
 ## Installation
 
@@ -25,7 +24,7 @@ Form Request validation for Gravito with Zod and Valibot support.
 bun add @gravito/impulse
 ```
 
-## Basic Usage
+## Quick Start
 
 ### 1. Define a FormRequest
 
@@ -61,6 +60,7 @@ core.router.post('/users', validateRequest(StoreUserRequest), [UserController, '
 // src/controllers/UserController.ts
 export class UserController {
   store(ctx: Context) {
+    // Fully typed data based on your Zod schema
     const data = ctx.get('validated') as {
       name: string
       email: string
@@ -71,7 +71,9 @@ export class UserController {
 }
 ```
 
-## Authorization
+## Advanced Usage
+
+### Authorization
 
 Add authorization logic to restrict access:
 
@@ -85,9 +87,11 @@ export class AdminRequest extends FormRequest {
   })
 
   // Return false to reject with 403
-  authorize(ctx: Context) {
+  async authorize(ctx: Context) {
     const user = ctx.get('user')
-    return user?.role === 'admin'
+    // Async checks supported
+    const hasPermission = await checkPermission(user.id, 'admin')
+    return hasPermission
   }
 
   // Optional: Custom authorization error message
@@ -97,20 +101,7 @@ export class AdminRequest extends FormRequest {
 }
 ```
 
-Failed authorization returns:
-
-```json
-{
-  "success": false,
-  "error": {
-    "code": "AUTHORIZATION_ERROR",
-    "message": "Admin access required",
-    "details": []
-  }
-}
-```
-
-## Custom Error Messages
+### Custom Error Messages
 
 Override default validation messages:
 
@@ -131,62 +122,9 @@ export class StoreUserRequest extends FormRequest {
 }
 ```
 
-## i18n Support
+### Data Sources
 
-Implement `MessageProvider` for full localization:
-
-```typescript
-import type { MessageProvider } from '@gravito/impulse'
-
-export class CustomMessageProvider implements MessageProvider {
-  getMessage(code: string, field: string, defaultMessage: string): string {
-    const messages: Record<string, string> = {
-      'email.invalid_string': 'Invalid email format',
-      'name.too_small': 'Name is too short',
-    }
-    return messages[`${field}.${code}`] ?? defaultMessage
-  }
-
-  getValidationFailedMessage(): string {
-    return 'Validation failed'
-  }
-
-  getUnauthorizedMessage(): string {
-    return 'Unauthorized'
-  }
-}
-
-// Use in FormRequest
-export class LocalizedRequest extends FormRequest {
-  schema = z.object({ email: z.string().email() })
-
-  options = {
-    messageProvider: new CustomMessageProvider(),
-  }
-}
-```
-
-## Valibot Support
-
-Use Valibot instead of Zod:
-
-```typescript
-import { FormRequest } from '@gravito/impulse'
-import * as v from 'valibot'
-
-export class StoreUserRequest extends FormRequest {
-  schema = v.object({
-    name: v.pipe(v.string(), v.minLength(2)),
-    email: v.pipe(v.string(), v.email()),
-  })
-}
-```
-
-The same FormRequest works with both libraries. Schema type is auto-detected.
-
-## Data Sources
-
-Change the data source for validation:
+Change the data source for validation using the `source` property:
 
 ```typescript
 class SearchRequest extends FormRequest {
@@ -206,9 +144,9 @@ class SearchRequest extends FormRequest {
 | `query` | URL query parameters |
 | `param` | Route parameters |
 
-## Transform Data
+### Data Transformation
 
-Pre-process data before validation:
+Pre-process data before validation using `transform()`:
 
 ```typescript
 class UppercaseRequest extends FormRequest {
@@ -226,19 +164,19 @@ class UppercaseRequest extends FormRequest {
 }
 ```
 
-## Validation Error Format
+### Valibot Support
 
-```json
-{
-  "success": false,
-  "error": {
-    "code": "VALIDATION_ERROR",
-    "message": "Validation failed",
-    "details": [
-      { "field": "email", "message": "Invalid email format", "code": "invalid_string" },
-      { "field": "name", "message": "Name must be at least 2 characters", "code": "too_small" }
-    ]
-  }
+You can use [Valibot](https://valibot.dev/) instead of Zod. Impulse automatically detects the schema library.
+
+```typescript
+import { FormRequest } from '@gravito/impulse'
+import * as v from 'valibot'
+
+export class StoreUserRequest extends FormRequest {
+  schema = v.object({
+    name: v.pipe(v.string(), v.minLength(2)),
+    email: v.pipe(v.string(), v.email()),
+  })
 }
 ```
 
@@ -248,7 +186,7 @@ Orbit Request is built for high-performance applications with multi-layer cachin
 
 - **Instance Caching**: FormRequest instances are cached in a WeakMap, reusing them across requests to reduce memory allocation.
 - **Schema Caching**: Schema types (Zod vs Valibot) are detected once and cached.
-- **Compilation Caching**: Schemas are compiled into optimized validator functions.
+- **Compilation Caching**: Schemas are compiled into optimized validator functions (up to 100x faster for repeated validations).
 - **Message Caching**: Custom error messages are resolved once and cached per class.
 - **Data Extraction Caching**: Request body parsing is cached to prevent redundant operations.
 
@@ -256,6 +194,24 @@ Orbit Request is built for high-performance applications with multi-layer cachin
 - **Schema Type Detection**: ~80x faster
 - **FormRequest Creation**: ~6x faster
 - **Message Resolution**: ~10x faster
+
+## Best Practices
+
+1.  **Reuse Schemas**: Define Zod schemas outside the class if they are shared across requests.
+2.  **Keep it Static**: Avoid dynamic schema generation in the `schema` property. Impulse optimizes for static schemas.
+3.  **Use `transform` sparingly**: Only use `transform` for necessary coercion. Let the schema handle validation logic.
+4.  **Type Safety**: Use `z.infer<typeof schema>` to export types for your controllers.
+
+## Troubleshooting
+
+### Validation fails silently?
+Check if your middleware is correctly applied. Ensure `validateRequest` wraps your class if not using the Gravito Router's auto-detection.
+
+### Type errors on `ctx.get('validated')`?
+You need to cast the result, or use module augmentation to add your types to `GravitoVariables`.
+
+### Authorization always fails?
+Ensure your `authorize` method returns `true` (or a Promise resolving to `true`). If it returns `undefined` or `void`, it is treated as false.
 
 ## License
 
