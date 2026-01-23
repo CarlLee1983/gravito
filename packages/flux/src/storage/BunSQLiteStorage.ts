@@ -1,36 +1,11 @@
-/**
- * @fileoverview Bun SQLite Storage Adapter
- *
- * High-performance storage using Bun's built-in SQLite.
- *
- * @module @gravito/flux/storage
- */
-
 import { Database } from 'bun:sqlite'
 import type { WorkflowFilter, WorkflowState, WorkflowStorage } from '../types'
 
-/**
- * SQLite Storage Options
- */
 export interface BunSQLiteStorageOptions {
-  /** Database file path (default: ':memory:') */
   path?: string
-  /** Table name (default: 'flux_workflows') */
   tableName?: string
 }
 
-/**
- * Bun SQLite Storage
- *
- * High-performance storage adapter using Bun's built-in SQLite.
- *
- * @example
- * ```typescript
- * const engine = new FluxEngine({
- *   storage: new BunSQLiteStorage({ path: './data/flux.db' })
- * })
- * ```
- */
 export class BunSQLiteStorage implements WorkflowStorage {
   private db: Database
   private tableName: string
@@ -41,9 +16,6 @@ export class BunSQLiteStorage implements WorkflowStorage {
     this.tableName = options.tableName ?? 'flux_workflows'
   }
 
-  /**
-   * Initialize storage (create tables)
-   */
   async init(): Promise<void> {
     if (this.initialized) {
       return
@@ -61,11 +33,11 @@ export class BunSQLiteStorage implements WorkflowStorage {
         error TEXT,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
-        completed_at TEXT
+        completed_at TEXT,
+        version INTEGER NOT NULL DEFAULT 1
       )
     `)
 
-    // Create indexes for common queries
     this.db.run(`
       CREATE INDEX IF NOT EXISTS idx_${this.tableName}_name 
       ON ${this.tableName}(name)
@@ -82,16 +54,13 @@ export class BunSQLiteStorage implements WorkflowStorage {
     this.initialized = true
   }
 
-  /**
-   * Save workflow state
-   */
   async save(state: WorkflowState): Promise<void> {
     await this.init()
 
     const stmt = this.db.prepare(`
       INSERT OR REPLACE INTO ${this.tableName} 
-      (id, name, status, input, data, current_step, history, error, created_at, updated_at, completed_at)
-      VALUES ($id, $name, $status, $input, $data, $currentStep, $history, $error, $createdAt, $updatedAt, $completedAt)
+      (id, name, status, input, data, current_step, history, error, created_at, updated_at, completed_at, version)
+      VALUES ($id, $name, $status, $input, $data, $currentStep, $history, $error, $createdAt, $updatedAt, $completedAt, $version)
     `)
 
     stmt.run({
@@ -106,12 +75,10 @@ export class BunSQLiteStorage implements WorkflowStorage {
       $createdAt: state.createdAt.toISOString(),
       $updatedAt: state.updatedAt.toISOString(),
       $completedAt: state.completedAt?.toISOString() ?? null,
+      $version: state.version,
     })
   }
 
-  /**
-   * Load workflow state by ID
-   */
   async load(id: string): Promise<WorkflowState | null> {
     await this.init()
 
@@ -128,9 +95,6 @@ export class BunSQLiteStorage implements WorkflowStorage {
     return this.rowToState(row)
   }
 
-  /**
-   * List workflow states with optional filter
-   */
   async list(filter?: WorkflowFilter): Promise<WorkflowState[]> {
     await this.init()
 
@@ -168,15 +132,11 @@ export class BunSQLiteStorage implements WorkflowStorage {
     }
 
     const stmt = this.db.prepare(query)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const rows = stmt.all(params as any) as SQLiteRow[]
+    const rows = stmt.all(params as Record<string, any>) as SQLiteRow[]
 
     return rows.map((row) => this.rowToState(row))
   }
 
-  /**
-   * Delete workflow state
-   */
   async delete(id: string): Promise<void> {
     await this.init()
 
@@ -187,17 +147,11 @@ export class BunSQLiteStorage implements WorkflowStorage {
     stmt.run({ $id: id })
   }
 
-  /**
-   * Close database connection
-   */
   async close(): Promise<void> {
     this.db.close()
     this.initialized = false
   }
 
-  /**
-   * Convert SQLite row to WorkflowState
-   */
   private rowToState(row: SQLiteRow): WorkflowState {
     return {
       id: row.id,
@@ -211,27 +165,19 @@ export class BunSQLiteStorage implements WorkflowStorage {
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at),
       completedAt: row.completed_at ? new Date(row.completed_at) : undefined,
+      version: row.version,
     }
   }
 
-  /**
-   * Get raw database (for advanced usage)
-   */
   getDatabase(): Database {
     return this.db
   }
 
-  /**
-   * Run a vacuum to optimize database
-   */
   vacuum(): void {
     this.db.run('VACUUM')
   }
 }
 
-/**
- * SQLite row type
- */
 interface SQLiteRow {
   id: string
   name: string
@@ -244,4 +190,5 @@ interface SQLiteRow {
   created_at: string
   updated_at: string
   completed_at: string | null
+  version: number
 }

@@ -1,30 +1,11 @@
-/**
- * @fileoverview Context Manager for workflow execution
- *
- * Manages workflow context lifecycle and state snapshots.
- *
- * @module @gravito/flux/core
- */
-
 import type { StepExecution, WorkflowContext, WorkflowState, WorkflowStatus } from '../types'
 
-/**
- * Generate unique ID using crypto.randomUUID (Web Standard)
- */
 function generateId(): string {
   return crypto.randomUUID()
 }
 
-/**
- * Context Manager
- *
- * Creates and manages workflow execution contexts.
- */
 export class ContextManager {
-  /**
-   * Create a new workflow context
-   */
-  create<TInput, TData = any>(
+  create<TInput, TData extends Record<string, any> = Record<string, any>>(
     name: string,
     input: TInput,
     stepCount: number
@@ -43,13 +24,11 @@ export class ContextManager {
       status: 'pending',
       currentStep: 0,
       history,
+      version: 1,
     }
   }
 
-  /**
-   * Restore context from saved state
-   */
-  restore<TInput, TData = any>(
+  restore<TInput, TData extends Record<string, any> = Record<string, any>>(
     state: WorkflowState<TInput, TData>
   ): WorkflowContext<TInput, TData> {
     return {
@@ -60,30 +39,28 @@ export class ContextManager {
       status: state.status,
       currentStep: state.currentStep,
       history: state.history.map((h) => ({ ...h })),
+      version: state.version || 1,
     }
   }
 
-  /**
-   * Convert context to serializable state
-   */
-  toState<TInput, TData>(ctx: WorkflowContext<TInput, TData>): WorkflowState<TInput, TData> {
+  toState<TInput, TData extends Record<string, any>>(
+    ctx: WorkflowContext<TInput, TData>
+  ): WorkflowState<TInput, TData> {
     return {
       id: ctx.id,
       name: ctx.name,
       status: ctx.status,
       input: ctx.input,
-      data: { ...(ctx.data as any) },
+      data: { ...ctx.data },
       currentStep: ctx.currentStep,
       history: ctx.history.map((h) => ({ ...h })),
       createdAt: new Date(),
       updatedAt: new Date(),
+      version: ctx.version,
     }
   }
 
-  /**
-   * Update context status (returns new context for immutability)
-   */
-  updateStatus<TInput, TData>(
+  updateStatus<TInput, TData extends Record<string, any>>(
     ctx: WorkflowContext<TInput, TData>,
     status: WorkflowStatus
   ): WorkflowContext<TInput, TData> {
@@ -93,26 +70,28 @@ export class ContextManager {
     }
   }
 
-  /**
-   * Advance to next step
-   */
-  advanceStep<TInput, TData>(ctx: WorkflowContext<TInput, TData>): WorkflowContext<TInput, TData> {
+  advanceStep<TInput, TData extends Record<string, any>>(
+    ctx: WorkflowContext<TInput, TData>
+  ): WorkflowContext<TInput, TData> {
     return {
       ...ctx,
       currentStep: ctx.currentStep + 1,
     }
   }
 
-  /**
-   * Update step name in history
-   */
-  setStepName<TInput, TData>(
+  setStepName<TInput, TData extends Record<string, any>>(
     ctx: WorkflowContext<TInput, TData>,
     index: number,
     name: string
-  ): void {
-    if (ctx.history[index]) {
-      ctx.history[index].name = name
+  ): WorkflowContext<TInput, TData> {
+    if (!ctx.history[index]) {
+      return ctx
+    }
+    const history = [...ctx.history]
+    history[index] = { ...history[index], name }
+    return {
+      ...ctx,
+      history,
     }
   }
 }

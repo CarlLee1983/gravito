@@ -85,6 +85,6 @@ export class StateMachine extends EventTarget {
    * Check if workflow can be executed
    */
   canExecute(): boolean {
-    return this._status === 'pending' || this._status === 'paused'
+    return this._status === 'pending' || this._status === 'paused' || this._status === 'suspended'
   }
 }
