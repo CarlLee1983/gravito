@@ -1,10 +1,10 @@
 # @gravito/flux 優化改善計劃
 
-> **版本**：v1.2 (二次審查修訂版)
+> **版本**：v1.3 (三次審查修訂版)
 > **建立日期**：2025-01-23
 > **分支**：refactor/flux-optimization
 > **目標**：將模組品質從 B+ 提升至 A 級別
-> **審查評分**：7.4/10 → 8.5/10 → 目標 9.0/10
+> **審查評分**：7.4/10 → 8.5/10 → 9.2/10
 
 ---
 
@@ -20,8 +20,9 @@
 8. [向後兼容與遷移策略](#8-向後兼容與遷移策略)
 9. [效能基準測試](#9-效能基準測試)
 10. [風險評估與應對策略](#10-風險評估與應對策略)
-11. [CI/CD 整合](#11-cicd-整合)
-12. [驗收標準](#12-驗收標準)
+11. [版本發布策略](#11-版本發布策略)
+12. [CI/CD 整合](#12-cicd-整合)
+13. [驗收標準](#13-驗收標準)
 
 ---
 
@@ -56,10 +57,12 @@
 ├── 上下文管理違反不可變性原則 (10+ 個 Object.assign)
 └── WorkflowProfiler 測試覆蓋率僅 5%
 
-🟡 中等問題 (4 項)
+🟡 中等問題 (6 項)
 ├── 類型強制轉換 (7 個 as any，主要為回調類型)
 ├── OrbitFlux 集成測試不足
 ├── MemoryStorage 邊界測試缺失
+├── StateMachine 函數覆蓋僅 71.43%
+├── 無自定義錯誤類型（13 處 throw new Error）
 └── 異步方法複雜度高
 
 🟢 改進項目 (3 項)
@@ -331,7 +334,77 @@ export class FluxEngine {
 
 ---
 
-### 4.2 消除類型強制轉換 (P2)
+### 4.2 統一錯誤處理（新增）
+
+**問題**：13 處 `throw new Error(string)` 無結構化錯誤類型
+
+**分布情況**：
+- FluxEngine.ts: 10 處
+- StateMachine.ts: 1 處
+- WorkflowBuilder.ts: 1 處
+- StepExecutor.ts: 1 處（超時錯誤）
+
+**解決方案**：
+
+1. **定義錯誤類型層級**：
+```typescript
+// src/errors.ts (新檔案)
+export class FluxError extends Error {
+  constructor(
+    message: string,
+    public readonly code: FluxErrorCode,
+    public readonly context?: Record<string, unknown>
+  ) {
+    super(message)
+    this.name = 'FluxError'
+  }
+}
+
+export enum FluxErrorCode {
+  // 工作流錯誤
+  WORKFLOW_NOT_FOUND = 'WORKFLOW_NOT_FOUND',
+  WORKFLOW_INVALID_INPUT = 'WORKFLOW_INVALID_INPUT',
+  WORKFLOW_DEFINITION_CHANGED = 'WORKFLOW_DEFINITION_CHANGED',
+  WORKFLOW_NAME_MISMATCH = 'WORKFLOW_NAME_MISMATCH',
+
+  // 狀態錯誤
+  INVALID_STATE_TRANSITION = 'INVALID_STATE_TRANSITION',
+  WORKFLOW_NOT_SUSPENDED = 'WORKFLOW_NOT_SUSPENDED',
+  INVALID_STEP_INDEX = 'INVALID_STEP_INDEX',
+
+  // 執行錯誤
+  STEP_TIMEOUT = 'STEP_TIMEOUT',
+  STEP_NOT_FOUND = 'STEP_NOT_FOUND',
+  CONCURRENT_MODIFICATION = 'CONCURRENT_MODIFICATION',
+}
+
+// 便利工廠函數
+export function workflowNotFound(id: string): FluxError {
+  return new FluxError(
+    `Workflow not found: ${id}`,
+    FluxErrorCode.WORKFLOW_NOT_FOUND,
+    { workflowId: id }
+  )
+}
+```
+
+2. **錯誤處理最佳實踐**：
+```typescript
+// 修改前
+throw new Error('Workflow not found')
+
+// 修改後
+throw workflowNotFound(workflowId)
+```
+
+**驗證**：
+- [ ] 所有錯誤使用 FluxError 或其子類
+- [ ] 錯誤代碼可用於程式化處理
+- [ ] 錯誤上下文包含調試資訊
+
+---
+
+### 4.3 消除類型強制轉換 (P2)
 
 **問題**：7 處 `as any` 類型強制轉換
 
@@ -450,6 +523,52 @@ describe('MemoryStorage 邊界情況', () => {
 
 ---
 
+### 5.4 StateMachine 測試補強（新增）
+
+**目標**：從 71.43% 提升至 95%+ 函數覆蓋率
+
+**測試檔案**：`tests/state-machine.test.ts` (新建)
+
+```typescript
+import { describe, it, expect } from 'bun:test'
+import { StateMachine } from '../src/core/StateMachine'
+
+describe('StateMachine', () => {
+  describe('canTransition()', () => {
+    it('pending → running 應該允許')
+    it('pending → completed 應該禁止')
+    it('running → suspended 應該允許')
+    it('completed → 任何狀態 應該禁止（終端狀態）')
+  })
+
+  describe('transition()', () => {
+    it('無效轉換應拋出錯誤')
+    it('應發送 transition 事件')
+  })
+
+  describe('canExecute()', () => {
+    it('pending 狀態應返回 true')
+    it('paused 狀態應返回 true')
+    it('running 狀態應返回 false')
+  })
+
+  describe('isTerminal()', () => {
+    it('completed 應返回 true')
+    it('failed 應返回 true')
+    it('rolled_back 應返回 true')
+    it('running 應返回 false')
+  })
+
+  describe('forceStatus()', () => {
+    it('應強制設置任何狀態')
+  })
+})
+```
+
+**預計新增測試**：12-15 個測試用例
+
+---
+
 ## 6. 第四階段：文檔完善
 
 ### 6.1 架構設計文檔
@@ -469,8 +588,40 @@ describe('MemoryStorage 邊界情況', () => {
 ### StepExecutor
 
 ## 狀態機設計
-[狀態轉移圖]
+```
 
+**狀態轉移圖**（必須包含）：
+
+```mermaid
+stateDiagram-v2
+    [*] --> pending
+    pending --> running: execute()
+    pending --> failed: error
+
+    running --> paused: pause()
+    running --> completed: success
+    running --> failed: error
+    running --> suspended: Flux.wait()
+    running --> rolling_back: compensation
+
+    paused --> running: resume()
+    paused --> failed: error
+
+    suspended --> running: signal()
+    suspended --> failed: timeout/error
+
+    rolling_back --> rolled_back: success
+    rolling_back --> failed: compensation error
+
+    rolled_back --> pending: retry
+    failed --> pending: retry
+
+    completed --> [*]
+    failed --> [*]
+    rolled_back --> [*]
+```
+
+```markdown
 ## Saga 模式
 [補償流程圖]
 
@@ -704,11 +855,66 @@ async function saveState(ctx: WorkflowContext): Promise<void> {
 2. **版本策略**：發布為 `3.1.0-beta.x` 進行驗證
 3. **功能開關**：可選的 `useNewEngine` 配置項
 
+### 10.4 外部依賴驗證（新增）
+
+**已識別的外部依賴**：
+
+| 專案 | 路徑 | 使用的 API |
+|------|------|------------|
+| workflow-verification | `examples/workflow-verification/` | `createWorkflow`, `FluxEngine` |
+| flux-enterprise | `examples/flux-enterprise/` | `FluxEngine`, `MemoryStorage`, `JsonFileTraceSink` |
+
+**驗證策略**：
+
+```bash
+# 在重構完成後執行
+cd examples/workflow-verification && bun test
+cd examples/flux-enterprise && bun test
+```
+
+**驗收標準**：
+- [ ] 所有外部專案測試通過
+- [ ] 無需修改外部專案代碼
+
 ---
 
-## 11. CI/CD 整合
+## 11. 版本發布策略（新增）
 
-### 11.1 自動化驗證
+### 11.1 語義版本規則
+
+| 變更類型 | 版本增量 | 範例 |
+|----------|----------|------|
+| 破壞性變更 | Major | 3.x → 4.0 |
+| 新功能（向後兼容） | Minor | 3.0 → 3.1 |
+| Bug 修復 | Patch | 3.0.0 → 3.0.1 |
+
+### 11.2 本次重構版本規劃
+
+```
+當前版本: 3.0.1
+↓
+3.1.0-beta.1  # 完成階段 1（關鍵修復）
+↓
+3.1.0-beta.2  # 完成階段 2（架構重構）
+↓
+3.1.0-rc.1    # 完成階段 3（測試補強）
+↓
+3.1.0         # 正式發布
+```
+
+### 11.3 發布檢查清單
+
+- [ ] CHANGELOG.md 已更新
+- [ ] 所有測試通過
+- [ ] 外部依賴專案驗證通過
+- [ ] 基準測試無顯著退化
+- [ ] README 已更新（如有必要）
+
+---
+
+## 12. CI/CD 整合
+
+### 12.1 自動化驗證
 
 **新增 GitHub Actions 步驟**：
 
@@ -758,7 +964,7 @@ jobs:
         working-directory: packages/flux
 ```
 
-### 11.2 品質門檻
+### 12.2 品質門檻
 
 | 檢查項目 | 閾值 | 失敗處理 |
 |----------|------|----------|
@@ -767,11 +973,35 @@ jobs:
 | FluxEngine 行數 | <= 300 | 警告 |
 | 基準測試退化 | <= 10% | 警告 |
 
+### 12.3 代碼審查標準（新增）
+
+**PR 審查清單**：
+
+#### 必須檢查項目
+- [ ] 公開 API 簽名未變更
+- [ ] 新代碼有對應測試
+- [ ] 無新增 `as any` 類型轉換
+- [ ] 無直接狀態突變（Object.assign / 直接賦值）
+- [ ] 錯誤使用 FluxError 類型
+
+#### 建議檢查項目
+- [ ] 函數長度 <= 50 行
+- [ ] 檔案長度 <= 300 行
+- [ ] 有意義的變數命名
+- [ ] JSDoc 註釋完整
+
+#### 審查者職責
+| 角色 | 審查重點 |
+|------|----------|
+| 代碼擁有者 | API 設計、架構一致性 |
+| 安全審查者 | 輸入驗證、錯誤處理 |
+| 效能審查者 | 基準測試結果、記憶體使用 |
+
 ---
 
-## 12. 驗收標準
+## 13. 驗收標準
 
-### 12.1 代碼品質指標
+### 13.1 代碼品質指標
 
 | 指標 | 目前 | 目標 | 驗收方式 |
 |------|------|------|----------|
@@ -781,7 +1011,7 @@ jobs:
 | `as any` 使用 | 7 | ≤ 2 | TypeScript 嚴格模式 |
 | 垃圾代碼 | 存在 | 無 | 代碼審查 |
 
-### 12.2 測試覆蓋率
+### 13.2 測試覆蓋率
 
 | 指標 | 目前 | 目標 | 驗收方式 |
 |------|------|------|----------|
@@ -789,8 +1019,9 @@ jobs:
 | 整體函數覆蓋 | 74.24% | ≥ 85% | `bun test:coverage` |
 | Profiler 覆蓋 | 5% | ≥ 85% | `bun test:coverage` |
 | OrbitFlux 覆蓋 | 35% | ≥ 80% | `bun test:coverage` |
+| StateMachine 覆蓋 | 71% | ≥ 95% | `bun test:coverage` |
 
-### 12.3 效能指標
+### 13.3 效能指標
 
 | 指標 | 容忍度 | 驗收方式 |
 |------|--------|----------|
@@ -798,7 +1029,7 @@ jobs:
 | 並發吞吐量 | <= 基準 × 1.10 | 基準測試腳本 |
 | 記憶體峰值 | <= 基準 × 1.10 | 基準測試腳本 |
 
-### 12.4 回歸測試
+### 13.4 回歸測試
 
 | 項目 | 驗收標準 |
 |------|----------|
@@ -806,7 +1037,7 @@ jobs:
 | 公開 API | `execute`, `resume`, `signal`, `retryStep` 行為不變 |
 | 類型導出 | 所有現有類型保持相容 |
 
-### 12.5 文檔完整性
+### 13.5 文檔完整性
 
 | 項目 | 狀態 | 驗收標準 |
 |------|------|----------|
@@ -826,12 +1057,18 @@ jobs:
 - [ ] StepExecutor 直接屬性賦值 = 0
 - [ ] `as any` <= 2
 - [ ] 無垃圾代碼 (`drum` 已移除)
+- [ ] 所有錯誤使用 FluxError 類型
 
 ### 測試覆蓋
 - [ ] 整體行覆蓋 >= 90%
 - [ ] 整體函數覆蓋 >= 85%
 - [ ] WorkflowProfiler 行覆蓋 >= 85%
+- [ ] StateMachine 函數覆蓋 >= 95%
 - [ ] 所有 45 個現有測試通過
+
+### 外部依賴
+- [ ] examples/workflow-verification 測試通過
+- [ ] examples/flux-enterprise 測試通過
 
 ### 效能
 - [ ] 單一工作流執行時間 <= 基準 × 1.05
@@ -858,27 +1095,44 @@ packages/flux/
 ├── src/
 │   ├── builder/WorkflowBuilder.ts    # 需修復 drum 屬性
 │   ├── engine/FluxEngine.ts          # 需拆分
+│   ├── engine/WorkflowExecutor.ts    # 新建（從 FluxEngine 提取）
+│   ├── engine/RollbackManager.ts     # 新建（從 FluxEngine 提取）
+│   ├── engine/TraceEmitter.ts        # 新建（從 FluxEngine 提取）
+│   ├── core/StepExecutor.ts          # 需修復突變
+│   ├── errors.ts                     # 新建（統一錯誤類型）
 │   ├── profiler/WorkflowProfiler.ts  # 需測試
 │   └── orbit/OrbitFlux.ts            # 需測試
 ├── tests/
 │   ├── profiler.test.ts              # 新建
+│   ├── state-machine.test.ts         # 新建
 │   ├── orbit.test.ts                 # 擴充
-│   └── memory-storage.test.ts        # 新建
+│   ├── memory-storage.test.ts        # 新建
+│   └── benchmark.ts                  # 新建
 └── docs/
-    ├── ARCHITECTURE.md               # 新建
+    ├── ARCHITECTURE.md               # 新建（含狀態轉移圖）
     └── TROUBLESHOOTING.md            # 新建
 ```
 
-### B. 參考資源
+### B. 外部依賴專案
+
+```
+examples/
+├── workflow-verification/            # 驗證測試
+└── flux-enterprise/                  # 企業級範例
+```
+
+### C. 參考資源
 
 - [Saga 模式](https://microservices.io/patterns/data/saga.html)
 - [不可變狀態管理](https://redux.js.org/faq/immutable-data)
 - [TypeScript 嚴格模式](https://www.typescriptlang.org/tsconfig#strict)
+- [語義版本規範](https://semver.org/lang/zh-TW/)
+- [自定義錯誤類型最佳實踐](https://www.typescriptlang.org/docs/handbook/2/classes.html#extends-clauses)
 
 ---
 
 **文件維護者**：Claude Code
-**最後更新**：2025-01-23 (v1.2 二次審查修訂)
+**最後更新**：2025-01-23 (v1.3 三次審查修訂)
 
 ---
 
@@ -889,3 +1143,4 @@ packages/flux/
 | v1.0 | 2025-01-23 | 初始版本 |
 | v1.1 | 2025-01-23 | 審查後修訂：修正 as any 數量(7 非 13)、新增效能基準測試、向後兼容策略、執行時程、完整驗收清單 |
 | v1.2 | 2025-01-23 | 二次審查：新增 StepExecutor 突變問題(15處)、風險評估與應對策略、競態條件防護、回滾計劃、CI/CD 整合方案 |
+| v1.3 | 2025-01-23 | 三次審查：新增統一錯誤處理(FluxError)、StateMachine 測試計劃、狀態轉移圖、外部依賴驗證、版本發布策略、代碼審查標準 |
