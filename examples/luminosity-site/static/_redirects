@@ -1,0 +1,3 @@
+# SPA fallback for client-side routing
+# This ensures that direct navigation to routes works correctly
+/*    /404.html   404

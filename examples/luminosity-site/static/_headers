@@ -1,0 +1,25 @@
+# Cache static assets
+/static/build/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Cache images
+/static/*.png
+  Cache-Control: public, max-age=31536000, immutable
+/static/*.jpg
+  Cache-Control: public, max-age=31536000, immutable
+/static/*.svg
+  Cache-Control: public, max-age=31536000, immutable
+
+# HTML files - no cache
+/*.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+# Root HTML
+/
+  Cache-Control: public, max-age=0, must-revalidate
+
+# Ensure correct MIME types
+/static/build/assets/*.js
+  Content-Type: application/javascript; charset=utf-8
+/static/build/assets/*.css
+  Content-Type: text/css; charset=utf-8
