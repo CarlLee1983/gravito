@@ -1,5 +1,21 @@
 # @gravito/flare
 
+## 3.3.0
+
+### Added
+
+- Added retry mechanism (#P3-01)
+  - `RetryConfig` options: `maxAttempts`, `backoff`, `baseDelay`, `maxDelay`
+  - Per-notification retry with `ShouldRetry` interface
+  - Per-send retry override via `SendOptions`
+- Added metrics collection (#P3-02)
+  - `NotificationMetricsCollector`
+  - Prometheus exporter support
+- Added AWS SNS SMS provider support (#P3-03)
+- Added template system (#P3-04)
+  - `TemplatedNotification` base class
+  - `MailTemplate` and `SlackTemplate` interfaces
+
 ## 3.2.0
 
 ### Added

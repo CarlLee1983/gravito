@@ -1,13 +1,21 @@
 import type { PlanetCore } from '@gravito/core'
+import {
+  type MetricsSummary,
+  type NotificationMetric,
+  NotificationMetricsCollector,
+} from './metrics/NotificationMetrics'
 import type { Notification } from './Notification'
 import type {
   BatchResult,
   Notifiable,
   NotificationChannel,
   NotificationResult,
+  RetryConfig,
   SendOptions,
   SendResult,
+  ShouldRetry,
 } from './types'
+import { isRetryableError, withRetry } from './utils/retry'
 import { deepSerialize } from './utils/serialization'
 
 /**
@@ -36,6 +44,29 @@ export class NotificationManager {
     | undefined
 
   constructor(private core: PlanetCore) {}
+
+  private metrics?: NotificationMetricsCollector
+
+  /**
+   * Enable metrics collection.
+   */
+  enableMetrics(maxHistory = 10000): void {
+    this.metrics = new NotificationMetricsCollector(maxHistory)
+  }
+
+  /**
+   * Get metrics summary.
+   */
+  getMetrics(since?: Date): MetricsSummary | undefined {
+    return this.metrics?.getSummary(since)
+  }
+
+  /**
+   * Get recent failures.
+   */
+  getRecentFailures(limit = 10): NotificationMetric[] {
+    return this.metrics?.getRecentFailures(limit) ?? []
+  }
 
   /**
    * Register a notification channel.
@@ -260,25 +291,26 @@ export class NotificationManager {
     const { parallel = true, concurrency } = options
 
     if (!parallel) {
-      return this.sendSequential(notifiable, notification, channels)
+      return this.sendSequential(notifiable, notification, channels, options)
     }
 
     if (concurrency && concurrency > 0) {
-      return this.sendWithConcurrencyLimit(notifiable, notification, channels, concurrency)
+      return this.sendWithConcurrencyLimit(notifiable, notification, channels, concurrency, options)
     }
 
-    return this.sendParallel(notifiable, notification, channels)
+    return this.sendParallel(notifiable, notification, channels, options)
   }
 
   private async sendSequential(
     notifiable: Notifiable,
     notification: Notification,
-    channels: string[]
+    channels: string[],
+    options?: SendOptions
   ): Promise<SendResult[]> {
     const results: SendResult[] = []
 
     for (const channelName of channels) {
-      results.push(await this.sendToChannel(notifiable, notification, channelName))
+      results.push(await this.sendToChannel(notifiable, notification, channelName, options?.retry))
     }
     return results
   }
@@ -286,10 +318,11 @@ export class NotificationManager {
   private async sendParallel(
     notifiable: Notifiable,
     notification: Notification,
-    channels: string[]
+    channels: string[],
+    options?: SendOptions
   ): Promise<SendResult[]> {
     const promises = channels.map((channelName) =>
-      this.sendToChannel(notifiable, notification, channelName)
+      this.sendToChannel(notifiable, notification, channelName, options?.retry)
     )
 
     return Promise.all(promises)
@@ -299,11 +332,12 @@ export class NotificationManager {
     notifiable: Notifiable,
     notification: Notification,
     channels: string[],
-    concurrency: number
+    concurrency: number,
+    options?: SendOptions
   ): Promise<SendResult[]> {
     return this.processWithConcurrency(
       channels,
-      (channel) => this.sendToChannel(notifiable, notification, channel),
+      (channel) => this.sendToChannel(notifiable, notification, channel, options?.retry),
       concurrency
     )
   }
@@ -334,7 +368,8 @@ export class NotificationManager {
   private async sendToChannel(
     notifiable: Notifiable,
     notification: Notification,
-    channelName: string
+    channelName: string,
+    retryConfig?: Partial<RetryConfig> | boolean
   ): Promise<SendResult> {
     const channel = this.channels.get(channelName)
     const startTime = Date.now()
@@ -348,29 +383,53 @@ export class NotificationManager {
       }
     }
 
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (this.core.hooks as any).emit('notification:channel:sending', {
-        notification,
-        notifiable,
-        channel: channelName,
-      })
+    const retry = this.getRetryConfig(notification, retryConfig)
 
-      await channel.send(notification, notifiable)
+    try {
+      if (retry) {
+        await withRetry(
+          () => this.executeChannelSend(channel, notification, notifiable, channelName),
+          {
+            ...retry,
+            shouldRetry: retry.retryableErrors || isRetryableError,
+            onRetry: (error, attempt, delay) => {
+              this.core.logger.warn(
+                `[NotificationManager] Channel '${channelName}' failed, ` +
+                  `retrying (${attempt}/${retry.maxAttempts}) in ${delay}ms`,
+                error
+              )
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              ;(this.core.hooks as any).emit('notification:channel:retry', {
+                notification,
+                notifiable,
+                channel: channelName,
+                error,
+                attempt,
+                nextDelay: delay,
+              })
+            },
+          }
+        )
+      } else {
+        await this.executeChannelSend(channel, notification, notifiable, channelName)
+      }
+
       const duration = Date.now() - startTime
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (this.core.hooks as any).emit('notification:channel:sent', {
-        notification,
-        notifiable,
-        channel: channelName,
-        duration,
-      })
+      if (this.metrics) {
+        this.metrics.record({
+          notification: notification.constructor.name,
+          channel: channelName,
+          success: true,
+          duration,
+          timestamp: new Date(),
+        })
+      }
 
       return {
         success: true,
         channel: channelName,
-        duration: Date.now() - startTime,
+        duration,
       }
     } catch (error) {
       const duration = Date.now() - startTime
@@ -389,6 +448,18 @@ export class NotificationManager {
         `[NotificationManager] Failed to send notification via '${channelName}':`,
         error
       )
+
+      if (this.metrics) {
+        this.metrics.record({
+          notification: notification.constructor.name,
+          channel: channelName,
+          success: false,
+          duration,
+          timestamp: new Date(),
+          error: err.message,
+        })
+      }
+
       return {
         success: false,
         channel: channelName,
@@ -396,6 +467,66 @@ export class NotificationManager {
         duration: Date.now() - startTime,
       }
     }
+  }
+
+  private async executeChannelSend(
+    channel: NotificationChannel,
+    notification: Notification,
+    notifiable: Notifiable,
+    channelName: string
+  ): Promise<void> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (this.core.hooks as any).emit('notification:channel:sending', {
+      notification,
+      notifiable,
+      channel: channelName,
+    })
+
+    await channel.send(notification, notifiable)
+    const duration = 0 // Approximate for inner call, total calculated in wrapper
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (this.core.hooks as any).emit('notification:channel:sent', {
+      notification,
+      notifiable,
+      channel: channelName,
+      duration,
+    })
+  }
+
+  private getRetryConfig(
+    notification: Notification,
+    options?: Partial<RetryConfig> | boolean
+  ): RetryConfig | undefined {
+    // Check if notification implements ShouldRetry
+    const notificationRetry = (notification as unknown as ShouldRetry).retry
+
+    if (options === false || notificationRetry === undefined) {
+      if (typeof options === 'object') {
+        return {
+          maxAttempts: 3,
+          baseDelay: 1000,
+          backoff: 'exponential',
+          maxDelay: 30000,
+          ...options,
+        }
+      }
+      return undefined
+    }
+
+    if (options || notificationRetry) {
+      const retryOptions = typeof options === 'object' ? options : {}
+      return {
+        maxAttempts: 3,
+        baseDelay: 1000,
+        backoff: 'exponential',
+        maxDelay: 30000,
+        ...notificationRetry,
+        ...retryOptions,
+      }
+    }
+
+    return undefined
   }
 
   /**

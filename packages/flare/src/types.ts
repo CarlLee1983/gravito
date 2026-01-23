@@ -157,6 +157,34 @@ export interface SendOptions {
   parallel?: boolean
   /** Maximum number of concurrent channel sends (default: unlimited) */
   concurrency?: number
+  /** Retry configuration */
+  retry?: Partial<RetryConfig> | boolean
+}
+
+/**
+ * Retry configuration options.
+ * @public
+ */
+export interface RetryConfig {
+  /** Maximum number of retry attempts (default: 3) */
+  maxAttempts: number
+  /** Base delay in milliseconds (default: 1000) */
+  baseDelay: number
+  /** Backoff strategy: 'fixed' | 'linear' | 'exponential' (default: 'exponential') */
+  backoff: 'fixed' | 'linear' | 'exponential'
+  /** Maximum delay in milliseconds (default: 30000) */
+  maxDelay: number
+  /** Function to determine if an error is retryable */
+  retryableErrors?: (error: Error) => boolean
+}
+
+/**
+ * Interface for notifications that should retry on failure.
+ * @public
+ */
+export interface ShouldRetry {
+  /** Retry configuration for this notification */
+  retry?: Partial<RetryConfig>
 }
 
 /**
