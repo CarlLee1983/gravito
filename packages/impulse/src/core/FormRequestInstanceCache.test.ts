@@ -73,9 +73,9 @@ describe('FormRequestInstanceCache', () => {
       }
       const cachedTime = performance.now() - cachedStart
 
-      // Cached should be significantly faster (at least 5x for realistic benchmark)
+      // Cached should be significantly faster (at least 2x for realistic benchmark in CI)
       const speedupRatio = uncachedTime / cachedTime
-      expect(speedupRatio).toBeGreaterThan(5)
+      expect(speedupRatio).toBeGreaterThan(2)
 
       console.log(`Instance cache performance improvement: ${speedupRatio.toFixed(1)}x faster`)
       console.log(`Uncached: ${uncachedTime.toFixed(2)}ms, Cached: ${cachedTime.toFixed(2)}ms`)

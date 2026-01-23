@@ -66,8 +66,19 @@ export class DataExtractor {
         }
         return flattened
       }
-      case 'param':
-        return ctx.req.params()
+      case 'param': {
+        // Try standard Gravito/Hono param accessor
+        if (typeof ctx.req.param === 'function') {
+          // In some Hono versions, param() returns all params if no key provided
+          // or we might need to check if params() exists (Gravito extension)
+          const params = (ctx.req as any).param()
+          if (typeof params === 'object') return params
+        }
+        if (typeof (ctx.req as any).params === 'function') {
+          return (ctx.req as any).params()
+        }
+        return {}
+      }
       default:
         return {}
     }
