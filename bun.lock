@@ -927,6 +927,7 @@
       "version": "3.0.1",
       "devDependencies": {
         "bun-types": "latest",
+        "mitata": "^1.0.34",
         "tsup": "^8.5.1",
         "typescript": "^5.9.3",
       },

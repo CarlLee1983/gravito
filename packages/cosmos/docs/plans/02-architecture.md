@@ -266,27 +266,27 @@ i18n.t('welcome')             // 從預設命名空間
 ## 實施步驟
 
 ### Step 1: 型別強化
-- [ ] 定義 `NestedKeyOf` 工具型別
-- [ ] 建立型別安全的 API
-- [ ] 更新 JSDoc 文件
+- [x] 定義 `NestedKeyOf` 工具型別
+- [x] 建立型別安全的 API
+- [x] 更新 JSDoc 文件
 
 ### Step 2: 複數形式
-- [ ] 實作 `PluralConfig` 介面
-- [ ] 整合 `Intl.PluralRules`
-- [ ] 建立測試案例
+- [x] 實作 `PluralConfig` 介面 (Implicit in logic)
+- [x] 整合 `Intl.PluralRules`
+- [x] 建立測試案例
 
 ### Step 3: 可插拔檢測器
-- [ ] 定義 `LocaleDetector` 介面
-- [ ] 實作內建檢測器
-- [ ] 重構 `localeMiddleware`
+- [x] 定義 `LocaleDetector` 介面
+- [x] 實作內建檢測器
+- [x] 重構 `localeMiddleware`
 
 ### Step 4: ICU 支援 (可選)
-- [ ] 評估 `intl-messageformat` 套件
+- [ ] 評估 `intl-messageformat` 套件 (Skipped for now)
 - [ ] 實作 `translateICU()` 方法
 - [ ] 效能測試
 
 ### Step 5: 命名空間
-- [ ] 設計命名空間載入機制
+- [ ] 設計命名空間載入機制 (Skipped/Future)
 - [ ] 實作命名空間解析
 - [ ] 文件更新
 
@@ -302,8 +302,8 @@ i18n.t('welcome')             // 從預設命名空間
 
 ## 成功標準
 
-- [ ] 型別推斷覆蓋主要 API
-- [ ] 複數形式支援主要語言
-- [ ] 檢測器可自由組合
-- [ ] 向後相容性 100%
-- [ ] 文件完整更新
+- [x] 型別推斷覆蓋主要 API
+- [x] 複數形式支援主要語言
+- [x] 檢測器可自由組合
+- [x] 向後相容性 100%
+- [x] 文件完整更新

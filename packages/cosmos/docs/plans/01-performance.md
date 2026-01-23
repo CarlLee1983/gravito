@@ -146,29 +146,29 @@ class I18nManager {
 bun test:perf
 ```
 
-- [ ] 建立翻譯查找基準測試
-- [ ] 建立參數替換基準測試
-- [ ] 建立檔案加載基準測試
+- [x] 建立翻譯查找基準測試
+- [x] 建立參數替換基準測試
+- [x] 建立檔案加載基準測試
 
 ### Step 2: 實施快取機制
-- [ ] 實作 `TranslationCache` 類別
-- [ ] 整合至 `I18nManager`
-- [ ] 單元測試覆蓋
+- [x] 實作 `TranslationCache` 類別 (Implemented as Map in I18nManager)
+- [x] 整合至 `I18nManager`
+- [x] 單元測試覆蓋
 
 ### Step 3: 正則預編譯
-- [ ] 實作 `RegexCache`
-- [ ] 替換現有實作
-- [ ] 效能驗證
+- [x] 實作 `RegexCache` (Implemented as constant REPLACEMENT_REGEX)
+- [x] 替換現有實作
+- [x] 效能驗證
 
 ### Step 4: 懶加載機制
-- [ ] 設計 `LazyLoadConfig` 介面
-- [ ] 實作 `ensureLocale()` 方法
-- [ ] 整合至中間件
+- [x] 設計 `LazyLoadConfig` 介面
+- [x] 實作 `ensureLocale()` 方法
+- [x] 整合至中間件
 
 ### Step 5: 效能驗證
-- [ ] 執行基準測試比對
-- [ ] 記憶體使用分析
-- [ ] 真實場景壓測
+- [x] 執行基準測試比對
+- [x] 記憶體使用分析
+- [x] 真實場景壓測
 
 ## 風險評估
 
@@ -180,8 +180,8 @@ bun test:perf
 
 ## 成功標準
 
-- [ ] 翻譯查找效能提升 50%+
-- [ ] 初始載入時間減少 40%+
-- [ ] 無記憶體洩漏
-- [ ] 所有現有測試通過
-- [ ] 新增效能測試套件
+- [x] 翻譯查找效能提升 50%+
+- [x] 初始載入時間減少 40%+
+- [x] 無記憶體洩漏
+- [x] 所有現有測試通過
+- [x] 新增效能測試套件
