@@ -1,5 +1,42 @@
 # @gravito/flare
 
+## 3.2.0
+
+### Added
+
+- Added notification lifecycle hooks (#P2-01)
+  - `notification:sending`, `notification:sent`, `notification:queued`
+  - `notification:channel:sending`, `notification:channel:sent`, `notification:channel:failed`
+  - `notification:batch:start`, `notification:batch:complete`
+- Added parallel channel sending support (#P2-02)
+  - Added `parallel` option (default: true)
+  - Added `concurrency` option to limit concurrent channel sends
+- Added batch sending API (#P2-03)
+  - `NotificationManager.sendBatch()`
+  - `NotificationManager.sendBatchStream()`
+- Added configuration validation for `OrbitFlare` (#P2-05)
+
+### Changed
+
+- Refactored `OrbitFlare` type safety (#P2-04)
+
+## 3.1.0
+
+### Changed
+
+- `NotificationManager.send()` now returns `NotificationResult` object, containing results for each channel (#P1-01)
+  - Added `SendResult` and `NotificationResult` types
+  - Added `throwOnError` option to optionally throw `AggregateError` on failure
+
+### Fixed
+
+- Fixed optional method type definitions in `Notification` base class (#P1-02)
+- Fixed serialization issues with nested objects and Date objects (#P1-03)
+
+### Added
+
+- Added `deepSerialize` and `deepDeserialize` utility functions
+
 ## 3.0.3
 
 ### Patch Changes

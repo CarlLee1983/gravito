@@ -1,6 +1,14 @@
 import type { PlanetCore } from '@gravito/core'
 import type { Notification } from './Notification'
-import type { Notifiable, NotificationChannel } from './types'
+import type {
+  BatchResult,
+  Notifiable,
+  NotificationChannel,
+  NotificationResult,
+  SendOptions,
+  SendResult,
+} from './types'
+import { deepSerialize } from './utils/serialization'
 
 /**
  * Notification manager.
@@ -53,18 +61,38 @@ export class NotificationManager {
    *
    * @param notifiable - The recipient of the notification.
    * @param notification - The notification instance.
-   * @returns A promise that resolves when the notification is sent or queued.
+   * @param options - Options for sending.
+   * @returns A promise that resolves to the notification result.
    *
    * @example
    * ```typescript
-   * await notificationManager.send(user, new InvoicePaid(invoice))
+   * const result = await notificationManager.send(user, new InvoicePaid(invoice))
+   * if (!result.allSuccess) { ... }
    * ```
    */
-  async send(notifiable: Notifiable, notification: Notification): Promise<void> {
+  async send(
+    notifiable: Notifiable,
+    notification: Notification,
+    options: SendOptions = {}
+  ): Promise<NotificationResult> {
     const channels = notification.via(notifiable)
+    const startTime = Date.now()
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (this.core.hooks as any).emit('notification:sending', {
+      notification,
+      notifiable,
+      channels,
+    })
 
     // Check whether it should be queued.
     if (notification.shouldQueue() && this.queueManager) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (this.core.hooks as any).emit('notification:queued', {
+        notification,
+        notifiable,
+        channels,
+      })
       const queueConfig = notification.getQueueConfig()
 
       // Create a queue job.
@@ -86,40 +114,286 @@ export class NotificationManager {
         queueConfig.connection,
         queueConfig.delay
       )
-      return
+
+      return {
+        notification: notification.constructor.name,
+        notifiable: notifiable.getNotifiableId(),
+        results: [{ success: true, channel: 'queue' }],
+        allSuccess: true,
+        timestamp: new Date(),
+      }
     }
 
     // Send immediately.
-    await this.sendNow(notifiable, notification, channels)
+    const results = await this.sendNow(notifiable, notification, channels, options)
+    const totalDuration = Date.now() - startTime
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (this.core.hooks as any).emit('notification:sent', {
+      notification,
+      notifiable,
+      results,
+      allSuccess: results.every((r) => r.success),
+      totalDuration,
+    })
+
+    if (options.throwOnError) {
+      const errors = results.filter((r) => !r.success && r.error).map((r) => r.error!)
+
+      if (errors.length > 0) {
+        throw new AggregateError(errors, `Notification failed on ${errors.length} channel(s)`)
+      }
+    }
+
+    return {
+      notification: notification.constructor.name,
+      notifiable: notifiable.getNotifiableId(),
+      results,
+      allSuccess: results.every((r) => r.success),
+      timestamp: new Date(),
+    }
+  }
+
+  /**
+   * Batch send notification to multiple recipients.
+   *
+   * @param notifiables - List of recipients.
+   * @param notification - The notification instance.
+   * @param options - Options for sending.
+   * @returns A promise that resolves to the batch result.
+   */
+  async sendBatch(
+    notifiables: Notifiable[],
+    notification: Notification,
+    options: SendOptions & {
+      /** Batch concurrency (default: 10) */
+      batchConcurrency?: number
+    } = {}
+  ): Promise<BatchResult> {
+    const { batchConcurrency = 10 } = options
+    const startTime = Date.now()
+    const results: NotificationResult[] = []
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (this.core.hooks as any).emit('notification:batch:start', {
+      notification,
+      count: notifiables.length,
+    })
+
+    // Process in batches
+    for (let i = 0; i < notifiables.length; i += batchConcurrency) {
+      const batch = notifiables.slice(i, i + batchConcurrency)
+      const batchPromises = batch.map((notifiable) => this.send(notifiable, notification, options))
+      const batchResults = await Promise.all(batchPromises)
+      results.push(...batchResults)
+    }
+
+    const duration = Date.now() - startTime
+    const successCount = results.filter((r) => r.allSuccess).length
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (this.core.hooks as any).emit('notification:batch:complete', {
+      notification,
+      total: notifiables.length,
+      success: successCount,
+      failed: notifiables.length - successCount,
+      duration,
+    })
+
+    return {
+      total: notifiables.length,
+      success: successCount,
+      failed: notifiables.length - successCount,
+      results,
+      duration,
+    }
+  }
+
+  /**
+   * Batch send notification to multiple recipients (streaming).
+   *
+   * @param notifiables - AsyncIterable or Iterable of recipients.
+   * @param notification - The notification instance.
+   * @param options - Options for sending.
+   * @yields Notification results as they are processed.
+   */
+  async *sendBatchStream(
+    notifiables: AsyncIterable<Notifiable> | Iterable<Notifiable>,
+    notification: Notification,
+    options: SendOptions & { batchSize?: number } = {}
+  ): AsyncGenerator<NotificationResult> {
+    const { batchSize = 10 } = options
+    let batch: Notifiable[] = []
+
+    for await (const notifiable of notifiables) {
+      batch.push(notifiable)
+
+      if (batch.length >= batchSize) {
+        const promises = batch.map((n) => this.send(n, notification, options))
+        const results = await Promise.all(promises)
+        for (const result of results) {
+          yield result
+        }
+        batch = []
+      }
+    }
+
+    // Process remaining
+    if (batch.length > 0) {
+      const promises = batch.map((n) => this.send(n, notification, options))
+      const results = await Promise.all(promises)
+      for (const result of results) {
+        yield result
+      }
+    }
   }
 
   /**
    * Send immediately (without queue).
-   *
-   * @param notifiable - The recipient.
-   * @param notification - The notification.
-   * @param channels - The list of channels to send via.
    */
   private async sendNow(
     notifiable: Notifiable,
     notification: Notification,
-    channels: string[]
-  ): Promise<void> {
-    for (const channelName of channels) {
-      const channel = this.channels.get(channelName)
-      if (!channel) {
-        this.core.logger.warn(`[NotificationManager] Channel '${channelName}' not found, skipping`)
-        continue
-      }
+    channels: string[],
+    options: SendOptions = {}
+  ): Promise<SendResult[]> {
+    const { parallel = true, concurrency } = options
 
-      try {
-        await channel.send(notification, notifiable)
-      } catch (error) {
-        this.core.logger.error(
-          `[NotificationManager] Failed to send notification via '${channelName}':`,
-          error
-        )
-        // Continue with other channels.
+    if (!parallel) {
+      return this.sendSequential(notifiable, notification, channels)
+    }
+
+    if (concurrency && concurrency > 0) {
+      return this.sendWithConcurrencyLimit(notifiable, notification, channels, concurrency)
+    }
+
+    return this.sendParallel(notifiable, notification, channels)
+  }
+
+  private async sendSequential(
+    notifiable: Notifiable,
+    notification: Notification,
+    channels: string[]
+  ): Promise<SendResult[]> {
+    const results: SendResult[] = []
+
+    for (const channelName of channels) {
+      results.push(await this.sendToChannel(notifiable, notification, channelName))
+    }
+    return results
+  }
+
+  private async sendParallel(
+    notifiable: Notifiable,
+    notification: Notification,
+    channels: string[]
+  ): Promise<SendResult[]> {
+    const promises = channels.map((channelName) =>
+      this.sendToChannel(notifiable, notification, channelName)
+    )
+
+    return Promise.all(promises)
+  }
+
+  private async sendWithConcurrencyLimit(
+    notifiable: Notifiable,
+    notification: Notification,
+    channels: string[],
+    concurrency: number
+  ): Promise<SendResult[]> {
+    return this.processWithConcurrency(
+      channels,
+      (channel) => this.sendToChannel(notifiable, notification, channel),
+      concurrency
+    )
+  }
+
+  private async processWithConcurrency<T>(
+    items: string[],
+    handler: (item: string) => Promise<T>,
+    concurrency: number
+  ): Promise<T[]> {
+    const finalResults: T[] = []
+    const pool = new Set<Promise<void>>()
+
+    for (const item of items) {
+      const p = handler(item).then((res) => {
+        finalResults.push(res)
+      })
+      pool.add(p)
+      p.finally(() => pool.delete(p))
+
+      if (pool.size >= concurrency) {
+        await Promise.race(pool)
+      }
+    }
+    await Promise.all(pool)
+    return finalResults
+  }
+
+  private async sendToChannel(
+    notifiable: Notifiable,
+    notification: Notification,
+    channelName: string
+  ): Promise<SendResult> {
+    const channel = this.channels.get(channelName)
+    const startTime = Date.now()
+
+    if (!channel) {
+      this.core.logger.warn(`[NotificationManager] Channel '${channelName}' not found, skipping`)
+      return {
+        success: false,
+        channel: channelName,
+        error: new Error(`Channel '${channelName}' not registered`),
+      }
+    }
+
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (this.core.hooks as any).emit('notification:channel:sending', {
+        notification,
+        notifiable,
+        channel: channelName,
+      })
+
+      await channel.send(notification, notifiable)
+      const duration = Date.now() - startTime
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (this.core.hooks as any).emit('notification:channel:sent', {
+        notification,
+        notifiable,
+        channel: channelName,
+        duration,
+      })
+
+      return {
+        success: true,
+        channel: channelName,
+        duration: Date.now() - startTime,
+      }
+    } catch (error) {
+      const duration = Date.now() - startTime
+      const err = error instanceof Error ? error : new Error(String(error))
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (this.core.hooks as any).emit('notification:channel:failed', {
+        notification,
+        notifiable,
+        channel: channelName,
+        error: err,
+        duration,
+      })
+
+      this.core.logger.error(
+        `[NotificationManager] Failed to send notification via '${channelName}':`,
+        error
+      )
+      return {
+        success: false,
+        channel: channelName,
+        error: err,
+        duration: Date.now() - startTime,
       }
     }
   }
@@ -131,12 +405,6 @@ export class NotificationManager {
    * @returns A plain object representation of the notification.
    */
   private serializeNotification(notification: Notification): Record<string, unknown> {
-    const data: Record<string, unknown> = {}
-    for (const [key, value] of Object.entries(notification)) {
-      if (!key.startsWith('_') && typeof value !== 'function') {
-        data[key] = value
-      }
-    }
-    return data
+    return deepSerialize(notification) as Record<string, unknown>
   }
 }
