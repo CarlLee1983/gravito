@@ -84,5 +84,16 @@ demoValidation('Set Timeout (.timeout(5000))', false, () => {
     .timeout(5000)
 })
 
+console.log('\n--- P3: Retry Mechanism ---')
+
+demoValidation('Set Retry (.retry(3, 1000))', false, () => {
+  scheduler
+    .task('retry-task', async () => {
+      throw new Error('Planned failure')
+    })
+    .everyMinute()
+    .retry(3, 1000)
+})
+
 console.log('\n--- Demo Complete ---')
 process.exit(0)

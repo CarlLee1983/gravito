@@ -12,6 +12,10 @@
 ### Features
 
 - **Timeout Control**: Added `.timeout(ms)` method to `TaskSchedule`. Default timeout is 1 hour.
+- **Retry Mechanism**: Added `.retry(attempts, delayMs)` method to `TaskSchedule`. Allows automatic retries for failed tasks.
+- **Enhanced Hooks & Metrics**:
+  - Added `scheduler:task:retry` hook for monitoring retry attempts.
+  - Success and failure hooks now include `attempts` count in their payload.
 - **Enhanced Validation**: 
   - Added `.timezone()` validation with helpful error messages.
   - Added `.cron()` syntax validation.

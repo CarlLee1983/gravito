@@ -33,6 +33,10 @@ export interface ScheduledTask {
   command?: string
   /** Task execution timeout in milliseconds (default: 3600000 - 1 hour) */
   timeout?: number
+  /** Maximum number of retry attempts on failure (default: 0 - no retry) */
+  retries?: number
+  /** Delay between retry attempts in milliseconds (default: 1000) */
+  retryDelay?: number
 
   /** Callbacks executed after successful task completion */
   onSuccessCallbacks: ActionCallback[]
@@ -336,6 +340,25 @@ export class TaskSchedule {
       throw new Error('Timeout must be a positive number')
     }
     this.task.timeout = ms
+    return this
+  }
+
+  /**
+   * Set retry configuration for the task.
+   *
+   * @param attempts - Maximum number of retry attempts (default: 3)
+   * @param delayMs - Delay between retries in milliseconds (default: 1000)
+   * @returns The TaskSchedule instance.
+   */
+  retry(attempts = 3, delayMs = 1000): this {
+    if (attempts < 0) {
+      throw new Error('Retry attempts must be non-negative')
+    }
+    if (delayMs < 0) {
+      throw new Error('Retry delay must be non-negative')
+    }
+    this.task.retries = attempts
+    this.task.retryDelay = delayMs
     return this
   }
 
