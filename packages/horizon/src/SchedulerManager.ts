@@ -87,7 +87,14 @@ export class SchedulerManager {
     }
 
     if (dueTasks.length > 0) {
-      // Log found tasks?
+      this.logger?.debug(`[Horizon] Found ${dueTasks.length} due task(s) to execute`, {
+        tasks: dueTasks.map((t) => ({
+          name: t.name,
+          expression: t.expression,
+          background: t.background,
+          oneServer: t.shouldRunOnOneServer,
+        })),
+      })
     }
 
     for (const task of dueTasks) {
@@ -158,33 +165,71 @@ export class SchedulerManager {
     const startTime = Date.now()
     await this.hooks?.doAction('scheduler:task:start', { name: task.name, startTime })
 
-    try {
-      await task.callback()
+    const timeout = task.timeout || 3600000
+    const maxRetries = task.retries ?? 0
+    const retryDelay = task.retryDelay ?? 1000
+    let lastError: Error | undefined
 
-      const duration = Date.now() - startTime
-      await this.hooks?.doAction('scheduler:task:success', { name: task.name, duration })
-
-      for (const cb of task.onSuccessCallbacks) {
-        try {
-          await cb({ name: task.name })
-        } catch {}
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      if (attempt > 0) {
+        this.logger?.info(
+          `[Horizon] Retrying task "${task.name}" (attempt ${attempt}/${maxRetries})...`
+        )
+        await this.hooks?.doAction('scheduler:task:retry', {
+          name: task.name,
+          attempt,
+          maxRetries,
+          error: lastError,
+          delay: retryDelay,
+        })
+        await new Promise((resolve) => setTimeout(resolve, retryDelay))
       }
-    } catch (err: any) {
-      const duration = Date.now() - startTime
-      this.logger?.error(`Task ${task.name} failed`, err)
 
-      await this.hooks?.doAction('scheduler:task:failure', {
-        name: task.name,
-        error: err,
-        duration,
+      let timeoutId: ReturnType<typeof setTimeout> | undefined
+
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        timeoutId = setTimeout(() => {
+          reject(new Error(`Task "${task.name}" timed out after ${timeout}ms`))
+        }, timeout)
       })
 
-      for (const cb of task.onFailureCallbacks) {
-        try {
-          await cb(err)
-        } catch {}
+      try {
+        await Promise.race([task.callback(), timeoutPromise])
+
+        const duration = Date.now() - startTime
+        await this.hooks?.doAction('scheduler:task:success', {
+          name: task.name,
+          duration,
+          attempts: attempt + 1,
+        })
+
+        for (const cb of task.onSuccessCallbacks) {
+          try {
+            await cb({ name: task.name })
+          } catch {}
+        }
+
+        return
+      } catch (err: any) {
+        lastError = err
+        this.logger?.error(`Task ${task.name} failed (attempt ${attempt + 1})`, err)
+      } finally {
+        if (timeoutId) clearTimeout(timeoutId)
       }
-      // We don't rethrow here to ensure cleanup happens in runTask
+    }
+
+    const duration = Date.now() - startTime
+    await this.hooks?.doAction('scheduler:task:failure', {
+      name: task.name,
+      error: lastError,
+      duration,
+      attempts: maxRetries + 1,
+    })
+
+    for (const cb of task.onFailureCallbacks) {
+      try {
+        await cb(lastError)
+      } catch {}
     }
   }
 }

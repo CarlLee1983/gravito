@@ -72,3 +72,6 @@ examples/benchmarks/results/*.json
 # Temporary error files
 **/lint_error.txt
 **/*_error.txt
+
+# Example storage
+**/storage/

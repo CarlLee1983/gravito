@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "worker": "bun run src/index.ts"
+    "worker": "bun run src/index.ts",
+    "demo:validation": "bun run src/validation-demo.ts"
   },
   "dependencies": {
     "@gravito/core": "workspace:*",

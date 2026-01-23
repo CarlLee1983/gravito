@@ -28,9 +28,14 @@ jobs:
         uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
+          # Explicitly provide the token to prevent authentication errors
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Autobuild
         uses: github/codeql-action/autobuild@v3
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
+        with:
+          # Explicitly provide the token for consistent authentication
+          token: ${{ secrets.GITHUB_TOKEN }}
