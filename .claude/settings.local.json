@@ -22,5 +22,9 @@
       "Bash(bun run test:coverage:*)",
       "Bash(bun run test)"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "pencil",
+    "context7"
+  ]
 }
