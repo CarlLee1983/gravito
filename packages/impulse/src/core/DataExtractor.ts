@@ -28,8 +28,21 @@ export class DataExtractor {
    */
   public async extract(ctx: Context, source: DataSource): Promise<unknown> {
     switch (source) {
-      case 'json':
-        return ctx.req.json().catch(() => ({}))
+      case 'json': {
+        const contentType = ctx.req.header('content-type')
+        if (!contentType || !contentType.includes('application/json')) {
+          return {}
+        }
+
+        const cached = ctx.get('__parsedBody')
+        if (cached !== undefined) {
+          return cached
+        }
+
+        const body = await ctx.req.json().catch(() => ({}))
+        ctx.set('__parsedBody', body)
+        return body
+      }
       case 'form': {
         const fd = await ctx.req.formData().catch(() => null)
         if (!fd) {
@@ -53,8 +66,19 @@ export class DataExtractor {
         }
         return flattened
       }
-      case 'param':
-        return ctx.req.params()
+      case 'param': {
+        // Try standard Gravito/Hono param accessor
+        if (typeof ctx.req.param === 'function') {
+          // In some Hono versions, param() returns all params if no key provided
+          // or we might need to check if params() exists (Gravito extension)
+          const params = (ctx.req as any).param()
+          if (typeof params === 'object') return params
+        }
+        if (typeof (ctx.req as any).params === 'function') {
+          return (ctx.req as any).params()
+        }
+        return {}
+      }
       default:
         return {}
     }

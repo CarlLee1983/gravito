@@ -210,38 +210,50 @@ export abstract class FormRequest<T = unknown> {
   }
 
   /**
-   * Get localized/custom message for a validation error.
+   * Get localized error message for a field with performance caching.
    *
-   * @param field - The field name.
-   * @param code - The error code.
-   * @param defaultMessage - The default error message.
-   * @returns The resolved error message.
+   * Resolution order:
+   * 1. Custom messages from messages() method (cached)
+   * 2. MessageProvider (if configured)
+   * 3. Default validator message
    */
-  protected getErrorMessage(
-    field: string,
-    code: string | undefined,
-    defaultMessage: string
-  ): string {
-    // 1. Check custom messages from messages() method
-    if (this.messages) {
-      const customMessages = this.messages()
-      const key = code ? `${field}.${code}` : field
-      if (customMessages[key]) {
-        return customMessages[key]
-      }
-      // Try field-only key
-      if (customMessages[field]) {
-        return customMessages[field]
-      }
-    }
+  private getMessage(field: string, code: string | undefined, defaultMessage: string): string {
+    // Import MessageCache lazily to avoid circular dependency
+    const { MessageCache } = require('./core/MessageCache')
 
-    // 2. Check i18n message provider
-    if (this.options.messageProvider) {
-      return this.options.messageProvider.getMessage(code ?? '', field, defaultMessage)
-    }
+    // Create cache key including instance reference via constructor name
+    const instanceId = this.constructor.name
+    const cacheKey = MessageCache.createCacheKey(instanceId, field, code, defaultMessage)
 
-    // 3. Return default
-    return defaultMessage
+    // Use cached message resolution
+    return MessageCache.getCachedMessage(cacheKey, () => {
+      // 1. Check cached custom messages from messages() method
+      if (this.messages) {
+        const customMessages = MessageCache.getInstanceMessages(this)
+        if (customMessages) {
+          const key = code ? `${field}.${code}` : field
+          if (customMessages[key]) {
+            return customMessages[key]
+          }
+          // Try field-only key
+          if (customMessages[field]) {
+            return customMessages[field]
+          }
+        }
+      }
+
+      // 2. Check i18n message provider
+      if (this.options.messageProvider) {
+        return this.options.messageProvider.getMessage(code ?? '', field, defaultMessage)
+      }
+
+      // 3. Return default message
+      return defaultMessage
+    })
+  }
+
+  private getErrorMessage(field: string, code: string | undefined, message: string): string {
+    return this.getMessage(field, code, message)
   }
 
   /**
@@ -322,14 +334,18 @@ export abstract class FormRequest<T = unknown> {
 }
 
 /**
- * Create a Photon middleware from a FormRequest class.
+ * Create a middleware to validate requests with a FormRequest class.
  *
  * @param RequestClass - The FormRequest class constructor.
  * @returns A Photon middleware handler.
  */
 export function validateRequest<T>(RequestClass: new () => FormRequest<T>): MiddlewareHandler {
   return async (ctx, next) => {
-    const request = new RequestClass()
+    // Import FormRequestInstanceCache lazily to avoid circular dependency
+    const { FormRequestInstanceCache } = require('./core/FormRequestInstanceCache')
+
+    // Use cached instance instead of creating new one every time
+    const request = FormRequestInstanceCache.getInstance(RequestClass)
     const result = await request.validate(ctx)
 
     if (!result.success) {
@@ -341,7 +357,7 @@ export function validateRequest<T>(RequestClass: new () => FormRequest<T>): Midd
 
       if (errorData.code === 'VALIDATION_ERROR') {
         const exception = new ValidationException(
-          errorData.details.map((d) => ({
+          errorData.details.map((d: any) => ({
             field: d.field,
             message: d.message,
             ...(d.code !== undefined ? { code: d.code } : {}),

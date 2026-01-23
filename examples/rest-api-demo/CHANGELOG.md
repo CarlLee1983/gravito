@@ -1,5 +1,13 @@
 # @gravito/example-rest-api
 
+## 0.0.3
+
+### Patch Changes
+
+- Updated dependencies [1e7f7d6]
+  - @gravito/impulse@1.1.0
+  - @gravito/astral@1.0.1
+
 ## 0.0.2
 
 ### Patch Changes

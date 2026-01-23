@@ -43,7 +43,7 @@ export abstract class SchemaValidator {
 }
 
 /**
- * Factory for creating appropriate schema validators.
+ * Factory for creating appropriate schema validators with performance caching.
  *
  * @public
  * @since 3.0.0
@@ -61,18 +61,28 @@ export class SchemaValidatorFactory {
   }
 
   /**
-   * Get appropriate validator for a schema.
+   * Get appropriate validator for a schema with performance caching.
+   *
+   * This method now uses SchemaCache for significant performance improvements
+   * on repeated validations with the same schema objects.
    *
    * @param schema - The schema to find validator for.
    * @returns The appropriate validator.
    * @throws Error if no suitable validator is found.
    */
   static getValidator(schema: unknown): SchemaValidator {
-    for (const validator of this.validators) {
-      if (validator.canHandle(schema)) {
-        return validator
-      }
-    }
-    throw new Error('Unsupported schema type. Use Zod or Valibot.')
+    // Import SchemaCache lazily to avoid circular dependency
+    const { SchemaCache } = require('../core/SchemaCache')
+
+    // Delegate to cached implementation
+    return SchemaCache.getValidator(schema)
+  }
+
+  /**
+   * Get all registered validators (used by SchemaCache).
+   * @internal
+   */
+  static getValidators(): SchemaValidator[] {
+    return [...this.validators]
   }
 }

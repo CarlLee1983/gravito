@@ -70,6 +70,7 @@ export class BlueprintGenerator {
         current = def.innerType
       } else if (typeName === 'ZodDefault') {
         metadata.default = def.defaultValue()
+        metadata.required = false
         current = def.innerType
       } else if (typeName === 'ZodString') {
         metadata.type = 'string'
