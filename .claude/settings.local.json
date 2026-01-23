@@ -20,7 +20,8 @@
       "Bash(git fetch:*)",
       "Bash(bun run build:*)",
       "Bash(bun run test:coverage:*)",
-      "Bash(bun run test)"
+      "Bash(bun run test)",
+      "Bash(bun test:coverage:*)"
     ]
   }
 }
