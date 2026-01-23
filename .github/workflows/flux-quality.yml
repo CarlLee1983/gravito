@@ -15,9 +15,7 @@ jobs:
         uses: oven-sh/setup-bun@v1
 
       - name: Install dependencies
-        run: bun install
-        env:
-          SKIP_SIMPLE_GIT_HOOKS: 1
+        run: bun install --ignore-scripts
 
       - name: Type check
         run: bun run typecheck
