@@ -1,6 +1,6 @@
 import { describe, expect, it, jest } from 'bun:test'
-import { I18nInstance, I18nManager, localeMiddleware } from '../src/I18nService'
-import { I18nOrbit, OrbitCosmos } from '../src/index'
+import { I18nInstance, I18nManager, localeMiddleware } from '../../src/I18nService'
+import { I18nOrbit, OrbitCosmos } from '../../src/index'
 
 describe('I18nManager and I18nInstance', () => {
   const baseConfig = {

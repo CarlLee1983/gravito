@@ -25,12 +25,9 @@ export async function loadTranslations(
       }
 
       const locale = parse(file).name // 'en' from 'en.json'
-      const content = await readFile(join(directory, file), 'utf-8')
-
-      try {
-        translations[locale] = JSON.parse(content)
-      } catch (e) {
-        console.error(`[Orbit-I18n] Failed to parse translation file: ${file}`, e)
+      const translationsForLocale = await loadLocale(directory, locale)
+      if (translationsForLocale) {
+        translations[locale] = translationsForLocale
       }
     }
   } catch (_e) {
@@ -40,4 +37,17 @@ export async function loadTranslations(
   }
 
   return translations
+}
+
+export async function loadLocale(
+  directory: string,
+  locale: string
+): Promise<Record<string, string> | null> {
+  const filePath = join(directory, `${locale}.json`)
+  try {
+    const content = await readFile(filePath, 'utf-8')
+    return JSON.parse(content)
+  } catch {
+    return null
+  }
 }

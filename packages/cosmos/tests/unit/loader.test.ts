@@ -3,7 +3,7 @@ import { mkdtempSync, writeFileSync } from 'node:fs'
 import { rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { loadTranslations } from '../src/loader'
+import { loadTranslations } from '../../src/loader'
 
 describe('loadTranslations', () => {
   it('loads json translation files from a directory', async () => {

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { I18nManager } from '../src/index'
+import { I18nManager } from '../../src/index'
 
 describe('Orbit I18n Manager', () => {
   const _config = {
