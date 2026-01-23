@@ -86,6 +86,26 @@ export class TaskSchedule {
    * @returns The TaskSchedule instance.
    */
   cron(expression: string): this {
+    const parts = expression.trim().split(/\s+/)
+
+    if (parts.length !== 5) {
+      throw new Error(
+        `Invalid cron expression: "${expression}". ` +
+          `Expected 5 parts (minute hour day month weekday), got ${parts.length}.`
+      )
+    }
+
+    const pattern = /^[0-9,\-/*]+$/
+
+    for (let i = 0; i < 5; i++) {
+      if (!pattern.test(parts[i])) {
+        throw new Error(
+          `Invalid cron expression: "${expression}". ` +
+            `Part ${i + 1} ("${parts[i]}") contains invalid characters.`
+        )
+      }
+    }
+
     this.task.expression = expression
     return this
   }
@@ -222,12 +242,20 @@ export class TaskSchedule {
   // --- Constraints ---
 
   /**
-   * Set the timezone for the task execution.
+   * Set timezone for evaluating cron expressions.
    *
    * @param timezone - Timezone identifier (e.g., "Asia/Taipei", "UTC")
    * @returns The TaskSchedule instance.
    */
   timezone(timezone: string): this {
+    try {
+      new Date().toLocaleString('en-US', { timeZone: timezone })
+    } catch {
+      throw new Error(
+        `Invalid timezone: "${timezone}". ` +
+          'See https://en.wikipedia.org/wiki/List_of_tz_database_time_zones for valid values.'
+      )
+    }
     this.task.timezone = timezone
     return this
   }
