@@ -157,8 +157,13 @@ export class AOTRouter {
    * @param middleware - Middleware functions
    */
   usePattern(pattern: string, ...middleware: Middleware[]): void {
-    const existing = this.pathMiddleware.get(pattern) ?? []
-    this.pathMiddleware.set(pattern, [...existing, ...middleware])
+    // Special case: '*' pattern should be treated as global middleware
+    if (pattern === '*') {
+      this.globalMiddleware.push(...middleware)
+    } else {
+      const existing = this.pathMiddleware.get(pattern) ?? []
+      this.pathMiddleware.set(pattern, [...existing, ...middleware])
+    }
     this.version++
   }
 

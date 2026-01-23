@@ -12,6 +12,7 @@ export class HomeController {
   }
 
   index = async (c: Context) => {
+    console.log('[HomeController] index hit')
     const inertia = c.get('inertia') as unknown as InertiaHelper
     const locale = (c.get('locale') as string) || 'en'
     const t = getTranslation(locale)

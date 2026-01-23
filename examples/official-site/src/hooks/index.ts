@@ -36,7 +36,7 @@ export function registerHooks(core: PlanetCore): void {
     // Only intercept if this is an Inertia request or we want to render HTML
     // But OrbitIon typically handles all HTML requests if installed
     if (inertia) {
-      return inertia.render('Error', { status: 404 })
+      return inertia.render('Error', { status: 404 }, {}, 404)
     }
 
     // Return null to use default error handling
@@ -54,15 +54,20 @@ export function registerHooks(core: PlanetCore): void {
     const status = typeof error?.status === 'number' ? error.status : 500
 
     if (inertia) {
-      return inertia.render('Error', {
-        status,
-        message:
-          process.env.NODE_ENV === 'production'
-            ? undefined
-            : error?.message ||
-              (error instanceof Error ? error.message : undefined) ||
-              'Unknown distortion in space-time',
-      })
+      return inertia.render(
+        'Error',
+        {
+          status,
+          message:
+            process.env.NODE_ENV === 'production'
+              ? undefined
+              : error?.message ||
+                (error instanceof Error ? error.message : undefined) ||
+                'Unknown distortion in space-time',
+        },
+        {},
+        status
+      )
     }
 
     // Return null to use default error handling

@@ -36,7 +36,12 @@ export interface InertiaHelper {
    * @param props - Data to pass to the component
    * @param rootVars - Variables for the root HTML template (e.g., meta tags)
    */
-  (component: string, props?: Record<string, unknown>, rootVars?: Record<string, unknown>): Response
+  (
+    component: string,
+    props?: Record<string, unknown>,
+    rootVars?: Record<string, unknown>,
+    status?: number
+  ): Response
 
   /** Share data with all Inertia responses for the remainder of the request */
   share(key: string, value: unknown): void
@@ -51,7 +56,8 @@ export interface InertiaHelper {
   render(
     component: string,
     props?: Record<string, unknown>,
-    rootVars?: Record<string, unknown>
+    rootVars?: Record<string, unknown>,
+    status?: number
   ): Response
 
   /** Direct access to the low-level Inertia service instance */
@@ -114,9 +120,10 @@ export class OrbitIon implements GravitoOrbit {
       const inertiaProxy = (
         component: string,
         props: Record<string, unknown> = {},
-        rootVars: Record<string, unknown> = {}
+        rootVars: Record<string, unknown> = {},
+        status?: number
       ) => {
-        return service.render(component, props, rootVars)
+        return service.render(component, props, rootVars, status)
       }
 
       // Attach methods to the function to allow advanced usage (share, etc.)

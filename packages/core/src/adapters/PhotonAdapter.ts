@@ -599,6 +599,9 @@ export class PhotonAdapter<V extends GravitoVariables = GravitoVariables>
     ...handlers: (GravitoHandler<V> | GravitoMiddleware<V>)[]
   ): void {
     const fullPath = (this.config.basePath || '') + path
+    console.log(
+      `[PhotonAdapter] Registering ${method.toUpperCase()} ${fullPath} with ${handlers.length} handlers`
+    )
     // We treat all handlers as potential middleware (accepting next)
     const photonHandlers = handlers.map((h) => toPhotonMiddleware<V>(h as GravitoMiddleware<V>))
 

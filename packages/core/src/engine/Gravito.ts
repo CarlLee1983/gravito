@@ -267,10 +267,68 @@ export class Gravito {
   /**
    * Handle an incoming request
    */
-  fetch = (request: Request): Response | Promise<Response> => {
+  fetch = async (request: Request): Promise<Response> => {
     // Fast path: extract pathname without creating URL object
     const path = extractPath(request.url)
     const method = request.method.toLowerCase()
+
+    // Execute global and path-based middleware BEFORE route matching
+    // This allows middleware (like Vite proxy) to intercept requests before 404
+    const globalMiddleware = this.router.collectMiddlewarePublic(path, [])
+    if (globalMiddleware.length > 0) {
+      const ctx = this.contextPool.acquire()
+      let contextReleased = false
+      try {
+        ctx.init(request, {}, path)
+
+        // Execute middleware chain - if any middleware returns a Response, use it
+        let index = 0
+        let middlewareResponse: Response | undefined
+        const next = async (): Promise<Response | undefined> => {
+          if (index < globalMiddleware.length) {
+            const mw = globalMiddleware[index++]!
+            const result = await mw(ctx, next)
+            if (result instanceof Response) {
+              middlewareResponse = result
+              if (!contextReleased) {
+                this.contextPool.release(ctx)
+                contextReleased = true
+              }
+              return result
+            }
+            // If middleware returns undefined, continue to next middleware
+            return undefined
+          }
+          // All middleware executed, continue to route matching
+          return undefined
+        }
+
+        const result = await next()
+        if (result instanceof Response || middlewareResponse instanceof Response) {
+          const finalResponse = result instanceof Response ? result : middlewareResponse
+          if (!contextReleased) {
+            this.contextPool.release(ctx)
+          }
+          return finalResponse!
+        }
+        // Continue to route matching after middleware - release context now
+        if (!contextReleased) {
+          this.contextPool.release(ctx)
+          contextReleased = true
+        }
+      } catch (error) {
+        if (!contextReleased) {
+          this.contextPool.release(ctx)
+        }
+        const errorCtx = this.contextPool.acquire()
+        try {
+          errorCtx.init(request, {}, path)
+          return await this.handleError(error as Error, errorCtx)
+        } finally {
+          this.contextPool.release(errorCtx)
+        }
+      }
+    }
 
     // Try static route first (O(1) lookup, inlined for performance)
     const staticKey = `${method}:${path}`
@@ -287,18 +345,18 @@ export class Gravito {
           if (result instanceof Response) {
             return result
           }
-          return result as Promise<Response>
+          return await result
         } catch (error) {
           return this.handleErrorSync(error as Error, request, path)
         }
       }
 
       // Has middleware, or needs FastContext: use pooled context
-      return this.handleWithMiddleware(request, path, staticRoute) as any
+      return await this.handleWithMiddleware(request, path, staticRoute)
     }
 
     // Dynamic route: use Radix Tree
-    return this.handleDynamicRoute(request, method, path) as any
+    return await this.handleDynamicRoute(request, method, path)
   }
 
   /**
