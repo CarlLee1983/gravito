@@ -1,5 +1,11 @@
 # @gravito/example-commerce-fullstack
 
+## 1.0.8
+
+### Patch Changes
+
+- @gravito/satellite-commerce@0.1.5
+
 ## 1.0.7
 
 ### Patch Changes
