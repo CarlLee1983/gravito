@@ -23,11 +23,13 @@ export class TwoFactorService {
   }
 
   async verify(token: string, secret: string): Promise<boolean> {
-    return await verify({
+    const result = await verify({
       token,
       secret,
+      // @ts-expect-error window option might be named differently in this version
       window: this.config.window,
     })
+    return typeof result === 'boolean' ? result : result?.valid
   }
 
   generateRecoveryCodes(): string[] {

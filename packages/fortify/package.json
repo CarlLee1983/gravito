@@ -52,11 +52,12 @@
     }
   },
   "devDependencies": {
-    "@gravito/sentinel": "workspace:*",
-    "@gravito/signal": "workspace:*",
-    "bun-types": "latest",
     "@gravito/core": "workspace:*",
     "@gravito/photon": "workspace:*",
+    "@gravito/sentinel": "workspace:*",
+    "@gravito/signal": "workspace:*",
+    "@types/qrcode": "^1.5.6",
+    "bun-types": "latest",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3"
   },

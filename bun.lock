@@ -26,7 +26,7 @@
     },
     "examples/astral-site": {
       "name": "@examples/astral-site",
-      "version": "0.1.2",
+      "version": "0.1.3",
       "dependencies": {
         "@gravito/astral": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -40,7 +40,7 @@
     },
     "examples/astral-verification": {
       "name": "astral-verification",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "dependencies": {
         "@gravito/astral": "workspace:*",
         "@gravito/core": "workspace:*",
@@ -132,7 +132,7 @@
     },
     "examples/commerce-fullstack": {
       "name": "@gravito/example-commerce-fullstack",
-      "version": "1.0.7",
+      "version": "1.0.8",
       "dependencies": {
         "@gravito/admin-shell-react": "workspace:*",
         "@gravito/admin-ui-analytics": "workspace:*",
@@ -481,7 +481,7 @@
     },
     "examples/rest-api-demo": {
       "name": "@gravito/example-rest-api",
-      "version": "0.0.2",
+      "version": "0.0.3",
       "dependencies": {
         "@gravito/astral": "workspace:*",
         "@gravito/atlas": "workspace:*",
@@ -541,7 +541,7 @@
     },
     "examples/workflow-verification": {
       "name": "example-workflow-verification",
-      "version": "1.0.4",
+      "version": "1.0.5",
       "dependencies": {
         "@gravito/core": "workspace:*",
         "@gravito/flux": "workspace:*",
@@ -801,7 +801,7 @@
     },
     "packages/astral": {
       "name": "@gravito/astral",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "dependencies": {
         "@gravito/core": "workspace:*",
         "@gravito/impulse": "workspace:*",
@@ -1051,7 +1051,7 @@
     },
     "packages/fortify": {
       "name": "@gravito/fortify",
-      "version": "3.0.3",
+      "version": "3.1.0",
       "dependencies": {
         "otplib": "^13.1.1",
         "qrcode": "^1.5.4",
@@ -1061,6 +1061,7 @@
         "@gravito/photon": "workspace:*",
         "@gravito/sentinel": "workspace:*",
         "@gravito/signal": "workspace:*",
+        "@types/qrcode": "^1.5.6",
         "bun-types": "latest",
         "tsup": "^8.5.1",
         "typescript": "^5.9.3",
@@ -1161,7 +1162,7 @@
     },
     "packages/impulse": {
       "name": "@gravito/impulse",
-      "version": "1.0.3",
+      "version": "1.1.0",
       "dependencies": {
         "@gravito/core": "workspace:*",
         "zod": "^3.23.0",
@@ -1179,7 +1180,7 @@
     },
     "packages/impulse-bridge": {
       "name": "@gravito/impulse-bridge",
-      "version": "1.0.2",
+      "version": "2.0.0",
       "devDependencies": {
         "@gravito/core": "workspace:*",
         "@gravito/impulse": "workspace:*",
@@ -1494,7 +1495,7 @@
     },
     "packages/ripple": {
       "name": "@gravito/ripple",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "devDependencies": {
         "bun-types": "latest",
         "ioredis": "^5.4.2",
@@ -1790,7 +1791,7 @@
     },
     "satellites/commerce": {
       "name": "@gravito/satellite-commerce",
-      "version": "0.1.4",
+      "version": "0.1.5",
       "dependencies": {
         "@gravito/atlas": "workspace:*",
         "@gravito/core": "workspace:*",
