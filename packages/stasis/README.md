@@ -70,6 +70,47 @@ await cache.lock('jobs:rebuild', 10).block(5, async () => {
 });
 ```
 
+### Flexible Cache (Stale-While-Revalidate)
+
+Serve stale data while refreshing in the background.
+
+```ts
+// TTL: 60s, Stale: 30s (Serve stale for up to 30s after expiry)
+const value = await cache.flexible('stats:daily', 60, 30, async () => {
+  return await fetchDailyStats();
+});
+```
+
+Configure background refresh behavior:
+
+```ts
+const cache = orbitCache(core, {
+  // ...
+  refreshTimeout: 10_000, // 10s timeout
+  maxRetries: 2,          // Retry twice on failure
+  retryDelay: 100,        // 100ms delay between retries
+});
+
+// Get stats about background refreshes
+const stats = cache.getFlexibleStats();
+console.log(stats); // { refreshCount: 5, refreshFailures: 0, avgRefreshTime: 120 }
+```
+
+### Memory Store Stats
+
+When using the `memory` driver, you can inspect cache usage:
+
+```ts
+import { MemoryStore } from '@gravito/stasis';
+
+const memoryStore = cache.getStore();
+// Note: You might need to cast or check instanceof if using typescript
+if (memoryStore instanceof MemoryStore) {
+  console.log(memoryStore.getStats());
+  // { hits: 100, misses: 20, size: 500, evictions: 10 }
+}
+```
+
 ## 🪝 Hooks
 
 - `cache:miss` - Fired when data is not found in cache.

@@ -39,10 +39,15 @@ export type MemoryStoreOptions = {
  * @since 3.0.0
  */
 export type MemoryCacheStats = {
+  /** Number of successful cache lookups. */
   hits: number
+  /** Number of failed cache lookups. */
   misses: number
+  /** The ratio of hits to total lookups (hits / (hits + misses)). */
   hitRate: number
+  /** Current number of items in the cache. */
   size: number
+  /** Total number of items evicted due to the `maxItems` limit. */
   evictions: number
 }
 

@@ -52,6 +52,10 @@ export class LRUCache<T> {
       return
     }
 
+    if (this.maxSize > 0 && this.map.size >= this.maxSize) {
+      this.evict()
+    }
+
     const newNode: LRUNode<T> = {
       key,
       value,
@@ -69,10 +73,6 @@ export class LRUCache<T> {
     }
 
     this.map.set(key, newNode)
-
-    if (this.maxSize > 0 && this.map.size > this.maxSize) {
-      this.evict()
-    }
   }
 
   delete(key: string): boolean {

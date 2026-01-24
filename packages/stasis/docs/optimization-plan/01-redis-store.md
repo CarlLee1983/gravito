@@ -186,12 +186,22 @@ describe('RedisStore Tag System', () => {
 
 ## 實作步驟
 
-1. [ ] 新增 Lua 腳本檔案結構
-2. [ ] 實作腳本載入機制
-3. [ ] 修改 `forget()` 使用 Lua 腳本
-4. [ ] 修改 `tagIndexAdd()` 記錄標籤元資料
-5. [ ] 統一 TaggableStore 介面
-6. [ ] 新增單元測試和整合測試
+1. [x] 新增 Lua 腳本支援 (直接嵌入 RedisStore)
+2. [x] 實作原子清理機制
+3. [x] 修改 `forget()` 使用 Lua 腳本
+4. [x] 修改 `tagIndexAdd()` 記錄標籤元資料
+5. [x] 統一 TaggableStore 介面
+6. [x] 新增單元測試和整合測試 (`redis-store-tags.test.ts`)
+
+---
+
+## 實作總結 (已完成)
+
+已於 `packages/stasis/src/stores/RedisStore.ts` 中實作方案 A：
+- **原子性**：透過 Lua 腳本確保刪除快取鍵時，同步清理標籤集合中的索引。
+- **元資料**：新增 `key:tags` 集合記錄快取鍵所擁有的標籤，提升清理效率。
+- **一致性**：統一了異步標籤操作 API。
+- **安全性**：分散式鎖亦改用 Lua 腳本實現原子釋放與續期。
 
 ---
 

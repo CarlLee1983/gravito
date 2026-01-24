@@ -72,7 +72,7 @@ export interface CacheStore {
    * Get a distributed lock instance for the given name.
    *
    * @param name - The lock name.
-   * @param seconds - Optional default duration for the lock.
+   * @param seconds - Optional default duration for the lock in seconds.
    * @returns A `CacheLock` instance if supported, otherwise undefined.
    */
   lock?(name: string, seconds?: number): CacheLock | undefined
@@ -81,7 +81,7 @@ export interface CacheStore {
    * Get the remaining time-to-live (TTL) for a key in seconds.
    *
    * @param key - The cache key.
-   * @returns The remaining TTL in seconds, or null if the key doesn't exist or has no expiration.
+   * @returns A promise that resolves to the remaining TTL in seconds, or null if the key doesn't exist or has no expiration.
    */
   ttl?(key: CacheKey): Promise<number | null>
 }

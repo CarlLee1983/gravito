@@ -162,12 +162,22 @@ describe('Distributed Lock Race Conditions', () => {
 
 ## 實作步驟
 
-1. [ ] 修改 `RedisLock.release()` 使用 Lua 腳本
-2. [ ] 修改 `RedisLock.acquire()` 使用 SET NX EX
-3. [ ] 實作 `extend()` 方法
-4. [ ] 改進 `block()` 方法
-5. [ ] 更新 FileLock 使用原子操作
-6. [ ] 新增競態條件測試
+1. [x] 修改 `RedisLock.release()` 使用 Lua 腳本
+2. [x] 修改 `RedisLock.acquire()` 使用 SET NX EX
+3. [x] 實作 `extend()` 方法
+4. [x] 改進 `block()` 方法
+5. [x] 更新 FileLock 使用原子操作 (open 'wx') 並處理殭屍鎖
+6. [x] 新增競態條件測試 (`redis-store-locks.test.ts`)
+
+---
+
+## 實作總結 (已完成)
+
+已全面強化分散式鎖的安全性與功能：
+- **原子性**：Redis 鎖操作改用 Lua 腳本，消除 GET-DEL 競態條件。
+- **持久性**：檔案鎖使用 `open(..., 'wx')` 確保原子性，並新增 PID 檢查機制自動回收當機程序的殭屍鎖。
+- **功能擴展**：新增 `extend()` 與 `getRemainingTime()` 方法。
+- **穩健性**：`block()` 方法支援指數退避重試、最大重試次數限制以及 `AbortSignal` 取消機制。
 
 ---
 

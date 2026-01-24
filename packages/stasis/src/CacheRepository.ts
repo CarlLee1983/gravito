@@ -1,4 +1,4 @@
-import type { CacheLock } from './locks'
+import { type CacheLock, LockTimeoutError, sleep } from './locks'
 import type { CacheStore } from './store'
 import { isTaggableStore } from './store'
 import { type CacheKey, type CacheTtl, normalizeCacheKey } from './types'
@@ -51,6 +51,16 @@ export type CacheRepositoryOptions = {
   onEventError?: (error: unknown, event: keyof CacheEvents, payload: { key?: string }) => void
   /** Timeout for background flexible refresh in milliseconds. @default 30000 */
   refreshTimeout?: number
+  /**
+   * Maximum number of retries for the background flexible refresh callback.
+   * @default 0
+   */
+  maxRetries?: number
+  /**
+   * Delay between retries for flexible refresh in milliseconds.
+   * @default 50
+   */
+  retryDelay?: number
 }
 
 /**
@@ -60,8 +70,11 @@ export type CacheRepositoryOptions = {
  * @since 3.0.0
  */
 export type FlexibleStats = {
+  /** Total number of successful background refreshes. */
   refreshCount: number
+  /** Total number of background refresh failures (after all retries). */
   refreshFailures: number
+  /** Average time taken for a successful refresh in milliseconds. */
   avgRefreshTime: number
 }
 
@@ -185,6 +198,13 @@ export class CacheRepository {
     await this.store.forget(metaKey)
   }
 
+  /**
+   * Retrieve an item from the cache by its key.
+   *
+   * @param key - The unique cache key.
+   * @param defaultValue - A default value or factory function to use if the key is not found.
+   * @returns A promise that resolves to the cached value, or the default value if not found.
+   */
   async get<T = unknown>(
     key: CacheKey,
     defaultValue?: T | (() => T | Promise<T>)
@@ -212,14 +232,33 @@ export class CacheRepository {
     return defaultValue
   }
 
+  /**
+   * Determine if an item exists in the cache.
+   *
+   * @param key - The cache key.
+   * @returns A promise that resolves to true if the item exists, false otherwise.
+   */
   async has(key: CacheKey): Promise<boolean> {
     return (await this.get(key)) !== null
   }
 
+  /**
+   * Determine if an item is missing from the cache.
+   *
+   * @param key - The cache key.
+   * @returns A promise that resolves to true if the item is missing, false otherwise.
+   */
   async missing(key: CacheKey): Promise<boolean> {
     return !(await this.has(key))
   }
 
+  /**
+   * Store an item in the cache for a specific duration.
+   *
+   * @param key - The unique cache key.
+   * @param value - The value to store.
+   * @param ttl - Time-to-live.
+   */
   async put(key: CacheKey, value: unknown, ttl: CacheTtl): Promise<void> {
     const fullKey = this.key(key)
     await this.store.put(fullKey, value, ttl)
@@ -229,11 +268,28 @@ export class CacheRepository {
     }
   }
 
+  /**
+   * Store an item in the cache for a specific duration.
+   *
+   * If no TTL is provided, the repository's default TTL will be used.
+   *
+   * @param key - The unique cache key.
+   * @param value - The value to store.
+   * @param ttl - Optional time-to-live.
+   */
   async set(key: CacheKey, value: unknown, ttl?: CacheTtl): Promise<void> {
     const resolved = ttl ?? this.options.defaultTtl
     await this.put(key, value, resolved)
   }
 
+  /**
+   * Store an item in the cache only if the key does not already exist.
+   *
+   * @param key - The unique cache key.
+   * @param value - The value to store.
+   * @param ttl - Optional time-to-live.
+   * @returns A promise that resolves to true if the item was added, false otherwise.
+   */
   async add(key: CacheKey, value: unknown, ttl?: CacheTtl): Promise<boolean> {
     const fullKey = this.key(key)
     const resolved = ttl ?? this.options.defaultTtl
@@ -247,10 +303,24 @@ export class CacheRepository {
     return ok
   }
 
+  /**
+   * Store an item in the cache indefinitely.
+   *
+   * @param key - The unique cache key.
+   * @param value - The value to store.
+   */
   async forever(key: CacheKey, value: unknown): Promise<void> {
     await this.put(key, value, null)
   }
 
+  /**
+   * Get an item from the cache, or execute the given callback and store the result.
+   *
+   * @param key - The unique cache key.
+   * @param ttl - Time-to-live.
+   * @param callback - The callback to execute if the key is not found.
+   * @returns A promise that resolves to the cached value or the result of the callback.
+   */
   async remember<T = unknown>(
     key: CacheKey,
     ttl: CacheTtl,
@@ -266,10 +336,23 @@ export class CacheRepository {
     return value
   }
 
+  /**
+   * Get an item from the cache, or execute the given callback and store the result indefinitely.
+   *
+   * @param key - The unique cache key.
+   * @param callback - The callback to execute if the key is not found.
+   * @returns A promise that resolves to the cached value or the result of the callback.
+   */
   async rememberForever<T = unknown>(key: CacheKey, callback: () => Promise<T> | T): Promise<T> {
     return this.remember(key, null, callback)
   }
 
+  /**
+   * Retrieve multiple items from the cache by their keys.
+   *
+   * @param keys - An array of unique cache keys.
+   * @returns A promise that resolves to an object where keys are the original keys and values are the cached values.
+   */
   async many<T = unknown>(keys: readonly CacheKey[]): Promise<Record<string, T | null>> {
     const out: Record<string, T | null> = {}
     for (const key of keys) {
@@ -278,6 +361,12 @@ export class CacheRepository {
     return out
   }
 
+  /**
+   * Store multiple items in the cache for a specific duration.
+   *
+   * @param values - An object where keys are the unique cache keys and values are the values to store.
+   * @param ttl - Time-to-live.
+   */
   async putMany(values: Record<string, unknown>, ttl: CacheTtl): Promise<void> {
     await Promise.all(Object.entries(values).map(([k, v]) => this.put(k, v, ttl)))
   }
@@ -285,8 +374,13 @@ export class CacheRepository {
   /**
    * Laravel-like flexible cache (stale-while-revalidate).
    *
-   * - `ttlSeconds`: how long the value is considered fresh
-   * - `staleSeconds`: how long the stale value may be served while a refresh happens
+   * Serves stale content while revalidating the cache in the background.
+   *
+   * @param key - The unique cache key.
+   * @param ttlSeconds - How long the value is considered fresh.
+   * @param staleSeconds - How long the stale value may be served while a refresh happens.
+   * @param callback - The callback to execute to refresh the cache.
+   * @returns A promise that resolves to the fresh or stale cached value.
    */
   async flexible<T = unknown>(
     key: CacheKey,
@@ -381,13 +475,31 @@ export class CacheRepository {
     const startTime = Date.now()
     try {
       const timeoutMillis = this.options.refreshTimeout ?? 30000
+      const maxRetries = this.options.maxRetries ?? 0
+      const retryDelay = this.options.retryDelay ?? 50
+      let lastError: unknown
+      let value: T | undefined
 
-      const value = await Promise.race([
-        Promise.resolve(callback()),
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('Refresh timeout')), timeoutMillis)
-        ),
-      ])
+      for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+          value = await Promise.race([
+            Promise.resolve(callback()),
+            new Promise<never>((_, reject) =>
+              setTimeout(() => reject(new Error('Refresh timeout')), timeoutMillis)
+            ),
+          ])
+          break
+        } catch (err) {
+          lastError = err
+          if (attempt < maxRetries) {
+            await sleep(retryDelay)
+          }
+        }
+      }
+
+      if (value === undefined && lastError) {
+        throw lastError
+      }
 
       const totalTtl = ttlSeconds + staleSeconds
       const now = Date.now()
@@ -407,12 +519,25 @@ export class CacheRepository {
     }
   }
 
+  /**
+   * Retrieve an item from the cache and delete it.
+   *
+   * @param key - The unique cache key.
+   * @param defaultValue - A default value to use if the key is not found.
+   * @returns A promise that resolves to the cached value, or the default value if not found.
+   */
   async pull<T = unknown>(key: CacheKey, defaultValue?: T): Promise<T | null> {
     const value = await this.get<T>(key, defaultValue as T)
     await this.forget(key)
     return value
   }
 
+  /**
+   * Remove an item from the cache by its key.
+   *
+   * @param key - The cache key to remove.
+   * @returns A promise that resolves to true if the item existed and was removed.
+   */
   async forget(key: CacheKey): Promise<boolean> {
     const fullKey = this.key(key)
     const metaKey = this.flexibleFreshUntilKey(fullKey)
@@ -427,10 +552,19 @@ export class CacheRepository {
     return ok
   }
 
+  /**
+   * Alias for `forget`.
+   *
+   * @param key - The cache key to remove.
+   * @returns A promise that resolves to true if the item existed and was removed.
+   */
   async delete(key: CacheKey): Promise<boolean> {
     return this.forget(key)
   }
 
+  /**
+   * Remove all items from the cache storage.
+   */
   async flush(): Promise<void> {
     await this.store.flush()
     const e = this.emit('flush')
@@ -439,22 +573,52 @@ export class CacheRepository {
     }
   }
 
+  /**
+   * Alias for `flush`.
+   */
   async clear(): Promise<void> {
     return this.flush()
   }
 
+  /**
+   * Increment the value of a numeric item in the cache.
+   *
+   * @param key - The cache key.
+   * @param value - The amount to increment by.
+   * @returns A promise that resolves to the new value.
+   */
   increment(key: string, value?: number) {
     return this.store.increment(this.key(key), value)
   }
 
+  /**
+   * Decrement the value of a numeric item in the cache.
+   *
+   * @param key - The cache key.
+   * @param value - The amount to decrement by.
+   * @returns A promise that resolves to the new value.
+   */
   decrement(key: string, value?: number) {
     return this.store.decrement(this.key(key), value)
   }
 
+  /**
+   * Get a distributed lock instance for the given name.
+   *
+   * @param name - The lock name.
+   * @param seconds - Optional default duration for the lock in seconds.
+   * @returns A `CacheLock` instance if supported, otherwise undefined.
+   */
   lock(name: string, seconds?: number) {
     return this.store.lock ? this.store.lock(this.key(name), seconds) : undefined
   }
 
+  /**
+   * Create a new repository instance with the given tags.
+   *
+   * @param tags - An array of tag names.
+   * @returns A new `CacheRepository` instance that uses the given tags.
+   */
   tags(tags: readonly string[]) {
     if (!isTaggableStore(this.store)) {
       throw new Error('This cache store does not support tags.')
