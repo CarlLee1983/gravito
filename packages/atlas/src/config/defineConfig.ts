@@ -1,7 +1,17 @@
 import type { ConnectionConfig, PostgresConfig } from '../types'
 
+/**
+ * Atlas configuration structure
+ */
 export interface AtlasConfig {
+  /**
+   * The default connection name to use
+   */
   default: string
+
+  /**
+   * Map of connection names to their configurations
+   */
   connections: Record<string, ConnectionConfig>
 }
 

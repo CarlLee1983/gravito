@@ -14,16 +14,25 @@ import {
 
 /**
  * Schema Facade
- * Provides static methods for schema operations
+ *
+ * The Schema class provides a database agnostic way of manipulating tables.
+ * It works with all supported databases and provides a unified API for
+ * creating, modifying, and dropping tables.
  *
  * @example
  * ```typescript
  * import { Schema } from '@gravito/atlas'
  *
+ * // Create a new table
  * await Schema.create('users', (table) => {
  *   table.id()
  *   table.string('email').unique()
  *   table.timestamps()
+ * })
+ *
+ * // Modify an existing table
+ * await Schema.table('users', (table) => {
+ *   table.string('phone').nullable()
  * })
  * ```
  */
@@ -36,7 +45,10 @@ export class Schema {
   // ============================================================================
 
   /**
-   * Set the connection to use for schema operations
+   * Set the connection to use for schema operations.
+   *
+   * @param name The name of the connection defined in your database configuration.
+   * @returns The Schema class for chaining.
    */
   static connection(name: string): typeof Schema {
     Schema.connectionName = name
@@ -105,7 +117,21 @@ export class Schema {
   // ============================================================================
 
   /**
-   * Create a new table
+   * Create a new table on the schema.
+   *
+   * @param table The name of the table to create.
+   * @param callback A callback that receives a Blueprint instance to define columns.
+   *
+   * @example
+   * ```typescript
+   * await Schema.create('posts', (table) => {
+   *   table.id()
+   *   table.foreignId('user_id').constrained().onDelete('cascade')
+   *   table.string('title')
+   *   table.text('content')
+   *   table.timestamps()
+   * })
+   * ```
    */
   static async create(table: string, callback: (blueprint: Blueprint) => void): Promise<void> {
     const blueprint = new Blueprint(table)
@@ -124,7 +150,18 @@ export class Schema {
   }
 
   /**
-   * Modify an existing table
+   * Modify an existing table on the schema.
+   *
+   * @param table The name of the table to modify.
+   * @param callback A callback that receives a Blueprint instance to modify columns or indexes.
+   *
+   * @example
+   * ```typescript
+   * await Schema.table('users', (table) => {
+   *   table.string('avatar_url').nullable()
+   *   table.index(['email', 'avatar_url'])
+   * })
+   * ```
    */
   static async table(table: string, callback: (blueprint: Blueprint) => void): Promise<void> {
     const blueprint = new Blueprint(table)
@@ -139,7 +176,9 @@ export class Schema {
   }
 
   /**
-   * Drop a table
+   * Drop a table from the schema.
+   *
+   * @param table The name of the table to drop.
    */
   static async drop(table: string): Promise<void> {
     const grammar = Schema.getGrammar()
@@ -148,7 +187,9 @@ export class Schema {
   }
 
   /**
-   * Drop a table if it exists
+   * Drop a table from the schema if it exists.
+   *
+   * @param table The name of the table to drop.
    */
   static async dropIfExists(table: string): Promise<void> {
     const grammar = Schema.getGrammar()
@@ -157,7 +198,10 @@ export class Schema {
   }
 
   /**
-   * Rename a table
+   * Rename a table on the schema.
+   *
+   * @param from The current name of the table.
+   * @param to The new name for the table.
    */
   static async rename(from: string, to: string): Promise<void> {
     const grammar = Schema.getGrammar()
@@ -170,7 +214,10 @@ export class Schema {
   // ============================================================================
 
   /**
-   * Check if a table exists
+   * Determine if the given table exists.
+   *
+   * @param table The name of the table to check.
+   * @returns True if the table exists, false otherwise.
    */
   static async hasTable(table: string): Promise<boolean> {
     const grammar = Schema.getGrammar()
@@ -191,7 +238,11 @@ export class Schema {
   }
 
   /**
-   * Check if a column exists
+   * Determine if the given table has a given column.
+   *
+   * @param table The name of the table.
+   * @param column The name of the column.
+   * @returns True if the column exists, false otherwise.
    */
   static async hasColumn(table: string, column: string): Promise<boolean> {
     const grammar = Schema.getGrammar()
@@ -211,7 +262,9 @@ export class Schema {
   }
 
   /**
-   * Get all table names
+   * Get all table names for the current connection.
+   *
+   * @returns An array of table names.
    */
   static async getTables(): Promise<string[]> {
     const grammar = Schema.getGrammar()
