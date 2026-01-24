@@ -2,6 +2,18 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import pc from 'picocolors'
 
+/**
+ * Cache named routes to a JSON manifest file.
+ *
+ * Scans the application's entry point, exports named routes from the router,
+ * and saves them to the specified output file for faster lookup at runtime.
+ *
+ * @param options - Caching options.
+ * @param options.entry - The entry file of the application.
+ * @param options.output - The path to the output manifest file.
+ * @returns A promise that resolves when the routes are cached.
+ * @public
+ */
 export async function routeCache(options: { entry: string; output?: string }) {
   try {
     const cwd = process.cwd()
@@ -28,6 +40,14 @@ export async function routeCache(options: { entry: string; output?: string }) {
   }
 }
 
+/**
+ * Clear the cached routes manifest file.
+ *
+ * @param options - Clearing options.
+ * @param options.output - The path to the manifest file to remove.
+ * @returns A promise that resolves when the cache is cleared.
+ * @public
+ */
 export async function routeClear(options: { output?: string }) {
   try {
     const cwd = process.cwd()

@@ -24,9 +24,15 @@ import cac from 'cac'
 import { downloadTemplate } from 'giget'
 import pc from 'picocolors'
 
+/**
+ * Configuration for a new project being created.
+ */
 interface ProjectConfig {
+  /** The name of the project. */
   name: string
+  /** The template to use for scaffolding. */
   template: string
+  /** Additional dynamic configuration properties. */
   [key: string]: unknown
 }
 
@@ -729,6 +735,12 @@ cli
     }
   })
 
+/**
+ * Execute a group of interactive prompts and return the results as a structured object.
+ *
+ * @param prompts - A record of prompt functions to execute.
+ * @returns A promise that resolves with the results of the prompts.
+ */
 async function group<T extends Record<string, unknown>>(
   prompts: Record<string, () => Promise<unknown>>
 ): Promise<T> {
