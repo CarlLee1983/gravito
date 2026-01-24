@@ -49,6 +49,20 @@ export type CacheRepositoryOptions = {
   throwOnEventError?: boolean
   /** Callback triggered when an event handler encounters an error. */
   onEventError?: (error: unknown, event: keyof CacheEvents, payload: { key?: string }) => void
+  /** Timeout for background flexible refresh in milliseconds. @default 30000 */
+  refreshTimeout?: number
+}
+
+/**
+ * Statistics for flexible cache operations.
+ *
+ * @public
+ * @since 3.0.0
+ */
+export type FlexibleStats = {
+  refreshCount: number
+  refreshFailures: number
+  avgRefreshTime: number
 }
 
 /**
@@ -71,10 +85,27 @@ export type CacheRepositoryOptions = {
  * @since 3.0.0
  */
 export class CacheRepository {
+  private refreshSemaphore = new Map<string, Promise<void>>()
+  private flexibleStats = { refreshCount: 0, refreshFailures: 0, totalTime: 0 }
+
   constructor(
     protected readonly store: CacheStore,
     protected readonly options: CacheRepositoryOptions = {}
   ) {}
+
+  /**
+   * Get statistics about flexible cache operations.
+   */
+  getFlexibleStats(): FlexibleStats {
+    return {
+      refreshCount: this.flexibleStats.refreshCount,
+      refreshFailures: this.flexibleStats.refreshFailures,
+      avgRefreshTime:
+        this.flexibleStats.refreshCount > 0
+          ? this.flexibleStats.totalTime / this.flexibleStats.refreshCount
+          : 0,
+    }
+  }
 
   private emit(event: keyof CacheEvents, payload: { key?: string } = {}): void | Promise<void> {
     const mode = this.options.eventsMode ?? 'async'
@@ -317,6 +348,27 @@ export class CacheRepository {
     staleSeconds: number,
     callback: () => Promise<T> | T
   ): Promise<void> {
+    if (this.refreshSemaphore.has(fullKey)) {
+      return
+    }
+
+    const refreshPromise = this.doRefresh(fullKey, metaKey, ttlSeconds, staleSeconds, callback)
+    this.refreshSemaphore.set(fullKey, refreshPromise)
+
+    try {
+      await refreshPromise
+    } finally {
+      this.refreshSemaphore.delete(fullKey)
+    }
+  }
+
+  private async doRefresh<T>(
+    fullKey: string,
+    metaKey: string,
+    ttlSeconds: number,
+    staleSeconds: number,
+    callback: () => Promise<T> | T
+  ): Promise<void> {
     if (!this.store.lock) {
       return
     }
@@ -326,8 +378,17 @@ export class CacheRepository {
       return
     }
 
+    const startTime = Date.now()
     try {
-      const value = await callback()
+      const timeoutMillis = this.options.refreshTimeout ?? 30000
+
+      const value = await Promise.race([
+        Promise.resolve(callback()),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Refresh timeout')), timeoutMillis)
+        ),
+      ])
+
       const totalTtl = ttlSeconds + staleSeconds
       const now = Date.now()
       await this.store.put(fullKey, value, totalTtl)
@@ -336,6 +397,11 @@ export class CacheRepository {
       if (e) {
         await e
       }
+
+      this.flexibleStats.refreshCount++
+      this.flexibleStats.totalTime += Date.now() - startTime
+    } catch {
+      this.flexibleStats.refreshFailures++
     } finally {
       await lock.release()
     }
