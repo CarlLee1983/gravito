@@ -9,6 +9,7 @@ Inspired by Laravel Fortify and Breeze, this package provides ready-to-use authe
 - ✅ Password Reset
 - ✅ Email Verification
 - ✅ API Tokens (Sanctum-style)
+- ✅ OAuth / Social Login (Google, GitHub)
 - 🚧 Two-Factor Authentication (coming soon)
 
 ## Installation
@@ -75,6 +76,9 @@ Visit `/login`, `/register`, or `/forgot-password` to see auth pages.
 | DELETE | `/tokens/:id` | Revoke a token |
 | DELETE | `/tokens` | Revoke all tokens |
 
+| GET | `/oauth/:provider` | Redirect to OAuth provider |
+| GET | `/oauth/:provider/callback` | Handle OAuth callback |
+
 ## Configuration
 
 ```typescript
@@ -85,6 +89,19 @@ interface FortifyConfig {
     resetPasswords?: boolean    // Default: true
     emailVerification?: boolean // Default: false
     apiTokens?: boolean         // Default: false
+    oauth?: boolean             // Default: false
+  }
+  
+  // OAuth configuration
+  oauth?: {
+    providers: {
+      [key: string]: {
+        clientId: string
+        clientSecret: string
+        redirectUri: string
+        scopes?: string[]
+      }
+    }
   }
   
   // Redirect paths
@@ -184,6 +201,43 @@ router.get('/api/user', bearerTokenAuth(fortify.tokenService), (c) => {
   return c.json(c.get('auth:user'))
 })
 ```
+
+## OAuth / Social Login
+
+Fortify supports OAuth authentication (Google, GitHub).
+
+### Enable Feature
+
+```typescript
+new FortifyOrbit({
+  // ...
+  features: {
+    oauth: true,
+  },
+  oauth: {
+    providers: {
+      google: {
+        clientId: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        redirectUri: 'https://your-app.com/auth/oauth/google/callback'
+      },
+      github: {
+        clientId: process.env.GITHUB_CLIENT_ID,
+        clientSecret: process.env.GITHUB_CLIENT_SECRET,
+        redirectUri: 'https://your-app.com/auth/oauth/github/callback'
+      }
+    }
+  }
+})
+```
+
+### Flow
+
+1. User visits `/auth/oauth/google`
+2. User is redirected to Google
+3. User approves and redirects back to `/auth/oauth/google/callback`
+4. Fortify creates/links user and logs them in
+5. User is redirected to dashboard
 
 ## License
 

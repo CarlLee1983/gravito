@@ -26,6 +26,10 @@ export const ErrorCodes = {
   RATE_COOLDOWN: 'rate.cooldown',
 
   INTERNAL_ERROR: 'internal.error',
+
+  OAUTH_UNKNOWN_PROVIDER: 'oauth.unknown_provider',
+  OAUTH_INVALID_STATE: 'oauth.invalid_state',
+  OAUTH_AUTHENTICATION_FAILED: 'oauth.authentication_failed',
 } as const
 
 export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes]

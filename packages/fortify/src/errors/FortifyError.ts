@@ -97,4 +97,16 @@ export class FortifyError extends Error {
   static internal(error?: unknown) {
     return new FortifyError(ErrorCodes.INTERNAL_ERROR, 500, { error })
   }
+
+  static unknownProvider() {
+    return new FortifyError(ErrorCodes.OAUTH_UNKNOWN_PROVIDER, 404)
+  }
+
+  static invalidState() {
+    return new FortifyError(ErrorCodes.OAUTH_INVALID_STATE, 401)
+  }
+
+  static authenticationFailed() {
+    return new FortifyError(ErrorCodes.OAUTH_AUTHENTICATION_FAILED, 401)
+  }
 }

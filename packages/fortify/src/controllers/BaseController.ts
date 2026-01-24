@@ -29,6 +29,9 @@ const ERROR_MESSAGES: Record<ErrorCode, string> = {
   [ErrorCodes.RATE_TOO_MANY_ATTEMPTS]: 'Too many attempts',
   [ErrorCodes.RATE_COOLDOWN]: 'Please wait before trying again',
   [ErrorCodes.INTERNAL_ERROR]: 'Internal server error',
+  [ErrorCodes.OAUTH_UNKNOWN_PROVIDER]: 'Unknown provider',
+  [ErrorCodes.OAUTH_INVALID_STATE]: 'Invalid state',
+  [ErrorCodes.OAUTH_AUTHENTICATION_FAILED]: 'Authentication failed',
 }
 
 export abstract class BaseController {

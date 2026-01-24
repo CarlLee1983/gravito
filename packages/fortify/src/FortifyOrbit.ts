@@ -1,8 +1,12 @@
 import type { GravitoOrbit, PlanetCore } from '@gravito/core'
 import { defaultFortifyConfig, type FortifyConfig } from './config'
+import { FortifyEventEmitter } from './events/EventEmitter'
 import { securityHeaders } from './middleware/SecurityHeaders'
 import { registerAuthRoutes } from './routes/auth'
 import { MemoryAuthLogger } from './services/AuthLogger'
+import { GitHubProvider } from './services/OAuth/GitHubProvider'
+import { GoogleProvider } from './services/OAuth/GoogleProvider'
+import { OAuthService } from './services/OAuthService'
 import { PersonalAccessTokenService } from './services/PersonalAccessTokenService'
 import { MemoryRateLimiterStorage, RateLimiter } from './services/RateLimiter'
 import { StrengthValidator } from './services/StrengthValidator'
@@ -105,10 +109,26 @@ export class FortifyOrbit implements GravitoOrbit {
     const authLogger = new MemoryAuthLogger()
     core.container.singleton('fortify.authLogger', () => authLogger)
 
+    const events = new FortifyEventEmitter()
+    core.container.singleton('fortify.events', () => events)
+
     let tokenService: PersonalAccessTokenService | undefined
     if (this.config.features.apiTokens) {
       tokenService = new PersonalAccessTokenService(() => core.container.make('db'))
       core.container.singleton('fortify.tokenService', () => tokenService!)
+    }
+
+    let oauthService: OAuthService | undefined
+    if (this.config.features.oauth && this.config.oauth) {
+      oauthService = new OAuthService()
+      for (const [name, providerConfig] of Object.entries(this.config.oauth.providers)) {
+        if (name === 'google') {
+          oauthService.register(name, new GoogleProvider(providerConfig))
+        } else if (name === 'github') {
+          oauthService.register(name, new GitHubProvider(providerConfig))
+        }
+      }
+      core.container.singleton('fortify.oauthService', () => oauthService!)
     }
 
     registerAuthRoutes(
@@ -119,7 +139,10 @@ export class FortifyOrbit implements GravitoOrbit {
       emailVerificationRateLimiter,
       strengthValidator,
       authLogger,
-      tokenService
+      tokenService,
+      oauthService,
+      () => core.container.make('db'),
+      events
     )
 
     core.logger.info('[Fortify] Authentication routes registered')

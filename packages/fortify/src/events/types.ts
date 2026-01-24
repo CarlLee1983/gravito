@@ -98,6 +98,23 @@ export interface AllTokensRevokedEvent {
   timestamp: Date
 }
 
+export interface OAuthLoginEvent {
+  user: any
+  provider: string
+  oauthUser: any
+  ip: string
+  userAgent: string
+  timestamp: Date
+}
+
+export interface OAuthFailedEvent {
+  provider: string
+  error: unknown
+  ip: string
+  userAgent: string
+  timestamp: Date
+}
+
 export interface FortifyEvents {
   'auth:login': LoginEvent
   'auth:logout': LogoutEvent
@@ -111,4 +128,6 @@ export interface FortifyEvents {
   'auth:token-created': TokenCreatedEvent
   'auth:token-revoked': TokenRevokedEvent
   'auth:all-tokens-revoked': AllTokensRevokedEvent
+  'auth:oauth-login': OAuthLoginEvent
+  'auth:oauth-failed': OAuthFailedEvent
 }

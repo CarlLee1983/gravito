@@ -1,17 +1,21 @@
 import type { Router } from '@gravito/core'
 import { csrfProtection } from '@gravito/core'
+import type { Knex } from 'knex'
 import type { FortifyConfig } from '../config'
 import { ForgotPasswordController } from '../controllers/ForgotPasswordController'
 import { LoginController } from '../controllers/LoginController'
 import { LogoutController } from '../controllers/LogoutController'
+import { OAuthController } from '../controllers/OAuthController'
 import { RegisterController } from '../controllers/RegisterController'
 import { ResetPasswordController } from '../controllers/ResetPasswordController'
 import { TokenController } from '../controllers/TokenController'
 import { VerifyEmailController } from '../controllers/VerifyEmailController'
 import { resolveCsrfOptions } from '../csrf'
+import type { FortifyEventEmitter } from '../events/EventEmitter'
 import { bearerTokenAuth } from '../middleware/BearerTokenAuth'
 import { securityHeaders } from '../middleware/SecurityHeaders'
 import type { AuthLogger } from '../services/AuthLogger'
+import type { OAuthService } from '../services/OAuthService'
 import type { PersonalAccessTokenService } from '../services/PersonalAccessTokenService'
 import type { RateLimiter } from '../services/RateLimiter'
 import type { StrengthValidator } from '../services/StrengthValidator'
@@ -37,7 +41,10 @@ export function registerAuthRoutes(
   emailVerificationRateLimiter?: RateLimiter,
   strengthValidator?: StrengthValidator,
   authLogger?: AuthLogger,
-  tokenService?: PersonalAccessTokenService
+  tokenService?: PersonalAccessTokenService,
+  oauthService?: OAuthService,
+  db?: () => Knex,
+  events?: FortifyEventEmitter
 ): void {
   const prefix = config.prefix ?? ''
   const csrfOptions = resolveCsrfOptions(config)
@@ -90,12 +97,18 @@ export function registerAuthRoutes(
   }
 
   if (config.features.apiTokens && tokenService) {
-    const tokenController = new TokenController(config, tokenService)
+    const tokenController = new TokenController(config, tokenService, events)
     const tokenAuth = bearerTokenAuth(tokenService)
 
     router.get(`${prefix}/tokens`, tokenAuth, (c) => tokenController.index(c))
     router.post(`${prefix}/tokens`, tokenAuth, (c) => tokenController.store(c))
     router.delete(`${prefix}/tokens/:id`, tokenAuth, (c) => tokenController.destroy(c))
     router.delete(`${prefix}/tokens`, tokenAuth, (c) => tokenController.destroyAll(c))
+  }
+
+  if (config.features.oauth && oauthService && db) {
+    const oauthController = new OAuthController(config, oauthService, db, events)
+    router.get(`${prefix}/oauth/:provider`, (c) => oauthController.redirect(c))
+    router.get(`${prefix}/oauth/:provider/callback`, (c) => oauthController.callback(c))
   }
 }

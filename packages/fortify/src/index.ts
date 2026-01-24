@@ -18,6 +18,7 @@ export { BaseController } from './controllers/BaseController'
 export { ForgotPasswordController } from './controllers/ForgotPasswordController'
 export { LoginController } from './controllers/LoginController'
 export { LogoutController } from './controllers/LogoutController'
+export { OAuthController } from './controllers/OAuthController'
 export { RegisterController } from './controllers/RegisterController'
 export { ResetPasswordController } from './controllers/ResetPasswordController'
 export { TokenController } from './controllers/TokenController'
@@ -35,5 +36,9 @@ export { bearerTokenAuth, getAuthToken, getAuthUser, tokenCan } from './middlewa
 export { verified } from './middleware/verified'
 // Routes
 export { registerAuthRoutes } from './routes/auth'
+export { GitHubProvider } from './services/OAuth/GitHubProvider'
+export { GoogleProvider } from './services/OAuth/GoogleProvider'
+export * from './services/OAuth/types'
+export { OAuthService } from './services/OAuthService'
 // Services
 export { PersonalAccessTokenService } from './services/PersonalAccessTokenService'

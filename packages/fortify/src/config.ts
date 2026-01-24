@@ -72,6 +72,17 @@ export interface SecurityConfig {
   }
 }
 
+export interface OAuthConfig {
+  providers: {
+    [provider: string]: {
+      clientId: string
+      clientSecret: string
+      redirectUri: string
+      scopes?: string[]
+    }
+  }
+}
+
 /**
  * Configuration options for the Fortify authentication orbit.
  * @public
@@ -95,7 +106,14 @@ export interface FortifyConfig {
     twoFactorAuthentication?: boolean
     /** Whether to enable API token authentication (Sanctum-style). (Default: false) */
     apiTokens?: boolean
+    /** Whether to enable OAuth/Social login. (Default: false) */
+    oauth?: boolean
   }
+
+  /**
+   * OAuth configuration.
+   */
+  oauth?: OAuthConfig
 
   /**
    * Post-authentication redirect targets.
@@ -183,6 +201,7 @@ export const defaultFortifyConfig: Partial<FortifyConfig> = {
     updatePasswords: false,
     twoFactorAuthentication: false,
     apiTokens: false,
+    oauth: false,
   },
   redirects: {
     login: '/dashboard',
