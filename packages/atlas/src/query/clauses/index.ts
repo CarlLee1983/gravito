@@ -1,7 +1,6 @@
 /**
  * Query Clauses Index
- *
- * Re-exports all query clause modules
+ * @description Re-exports all query clause modules for easier access
  */
 
 export { JoinClauseBuilder as JoinClause, type JoinCondition } from './JoinClause'

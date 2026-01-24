@@ -65,22 +65,54 @@ export class Connection implements ConnectionContract {
     this.proxyHandle = proxy
   }
 
+  /**
+   * Get the name of the connection.
+   *
+   * @returns The connection name.
+   */
   getName(): string {
     return this.name
   }
 
+  /**
+   * Get the driver instance for this connection.
+   *
+   * @returns The driver instance.
+   */
   getDriver(): DriverContract {
     return this.driver
   }
 
+  /**
+   * Get the configuration for this connection.
+   *
+   * @returns The connection configuration.
+   */
   getConfig(): ConnectionConfig {
     return this.config
   }
 
+  /**
+   * Get the grammar instance for this connection.
+   *
+   * @returns The grammar instance.
+   */
   getGrammar(): GrammarContract {
     return this.grammar
   }
 
+  /**
+   * Begin a fluent query against a database table.
+   *
+   * @template T - The type of the record (defaults to Record<string, unknown>).
+   * @param tableName - The name of the table to query.
+   * @returns A new QueryBuilder instance for the specified table.
+   *
+   * @example
+   * ```typescript
+   * const users = await connection.table('users').where('active', true).get();
+   * ```
+   */
   table<T = Record<string, unknown>>(tableName: string): QueryBuilderContract<T> {
     return new QueryBuilder<T>(
       this.proxyHandle || (this as unknown as ConnectionContract),
@@ -93,6 +125,15 @@ export class Connection implements ConnectionContract {
     return this.table<T>(name)
   }
 
+  /**
+   * Execute a raw SQL query and return the result set.
+   * Used for SELECT queries or queries that return data.
+   *
+   * @template T - The expected return type of the rows.
+   * @param sql - The raw SQL string with placeholders.
+   * @param bindings - Array of values to bind to the placeholders.
+   * @returns The query result containing rows and metadata.
+   */
   async raw<T = Record<string, unknown>>(
     sql: string,
     bindings: unknown[] = []
@@ -132,9 +173,45 @@ export class Connection implements ConnectionContract {
     }
   }
 
+  /**
+   * Execute a raw SQL statement and return execution metadata.
+   * Used for INSERT, UPDATE, DELETE, or DDL statements.
+   *
+   * @param sql - The raw SQL string with placeholders.
+   * @param bindings - Array of values to bind to the placeholders.
+   * @returns Execution result containing affected rows and last insert ID.
+   */
   async execute(sql: string, bindings: unknown[] = []): Promise<ExecuteResult> {
     await this.ensureConnected()
     return this.driver.execute(sql, bindings)
+  }
+
+  /**
+   * Begin a database transaction.
+   *
+   * @returns A promise that resolves when the transaction has started.
+   */
+  async beginTransaction(): Promise<void> {
+    await this.ensureConnected()
+    await this.driver.beginTransaction()
+  }
+
+  /**
+   * Commit the current database transaction.
+   *
+   * @returns A promise that resolves when the transaction has been committed.
+   */
+  async commit(): Promise<void> {
+    await this.driver.commit()
+  }
+
+  /**
+   * Rollback the current database transaction.
+   *
+   * @returns A promise that resolves when the transaction has been rolled back.
+   */
+  async rollback(): Promise<void> {
+    await this.driver.rollback()
   }
 
   async transaction<T>(callback: (connection: ConnectionContract) => Promise<T>): Promise<T> {
@@ -189,6 +266,11 @@ export class Connection implements ConnectionContract {
     }
   }
 
+  /**
+   * Close the database connection.
+   *
+   * @returns A promise that resolves when the connection is closed.
+   */
   async disconnect(): Promise<void> {
     if (this.connected) {
       try {
@@ -220,6 +302,11 @@ export class Connection implements ConnectionContract {
     }
   }
 
+  /**
+   * Establish the database connection.
+   *
+   * @returns A promise that resolves when the connection is established.
+   */
   async connect(): Promise<void> {
     if (!this.connected) {
       await this.driver.connect()
@@ -227,12 +314,22 @@ export class Connection implements ConnectionContract {
     }
   }
 
+  /**
+   * Ensure the connection is established before performing operations.
+   *
+   * @returns A promise that resolves when the connection is ready.
+   */
   protected async ensureConnected(): Promise<void> {
     if (!this.connected) {
       await this.connect()
     }
   }
 
+  /**
+   * Create the database driver instance based on configuration.
+   *
+   * @returns The driver instance.
+   */
   protected createDriver(): DriverContract {
     // biome-ignore lint/complexity/useLiteralKeys: Bypassing global check
     const bunSql = (globalThis as any)['Bun']?.sql
@@ -262,6 +359,11 @@ export class Connection implements ConnectionContract {
     }
   }
 
+  /**
+   * Create the database grammar instance based on configuration.
+   *
+   * @returns The grammar instance.
+   */
   protected createGrammar(): GrammarContract {
     switch (this.config.driver) {
       case 'postgres':

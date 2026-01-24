@@ -1,19 +1,23 @@
-/**
- * HasEvents Concern
- *
- * Provides event system functionality including:
- * - Model lifecycle events
- * - Observer registration
- */
-
 import type { Model } from '../Model'
 import type { ModelObserver } from '../types'
 
+/**
+ * HasEvents Concern
+ * @description Provides event system functionality including model lifecycle events and observer registration.
+ */
 export class HasEvents {
   /**
-   * Register an observer
+   * Register a model observer to listen for lifecycle events.
    *
-   * @param observer - Observer object
+   * @template T - The model type
+   * @param observer - An object containing lifecycle event handlers
+   *
+   * @example
+   * ```typescript
+   * User.observe({
+   *   creating: (user) => { user.api_token = Str.random() }
+   * })
+   * ```
    */
   static observe<T extends Model>(observer: Partial<ModelObserver<T>>): void {
     const modelCtor = this as unknown as typeof import('../Model').Model & {
@@ -26,9 +30,10 @@ export class HasEvents {
   }
 
   /**
-   * Emit an event to observers
+   * Emit a lifecycle event to all registered observers and instance hooks.
    *
-   * @param event - Event name
+   * @param event - The name of the event to emit (e.g., 'saving', 'created')
+   * @internal
    */
   protected async emit(event: string): Promise<void> {
     const modelCtor = this.constructor as unknown as typeof import('../Model').Model & {
@@ -45,9 +50,10 @@ export class HasEvents {
   }
 
   /**
-   * Fire a static event (e.g., retrieved)
+   * Fire a static event that doesn't require a model instance.
    *
-   * @param event - Event name
+   * @param event - The name of the event to fire
+   * @internal
    */
   static async fire(event: string): Promise<void> {
     const observers =

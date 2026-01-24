@@ -32,7 +32,10 @@ export interface MigrationResult {
 
 /**
  * Migrator
- * Handles running and rolling back database migrations
+ *
+ * The Migrator class is responsible for managing the database migration lifecycle.
+ * It handles discovering migration files, tracking which migrations have been run
+ * in the database, and executing the `up` or `down` methods of migration classes.
  *
  * @example
  * ```typescript
@@ -41,11 +44,8 @@ export interface MigrationResult {
  * // Run all pending migrations
  * await migrator.run()
  *
- * // Rollback the last batch
+ * // Rollback the last batch of migrations
  * await migrator.rollback()
- *
- * // Get migration status
- * const status = await migrator.status()
  * ```
  */
 export class Migrator {
@@ -87,7 +87,12 @@ export class Migrator {
   // ============================================================================
 
   /**
-   * Run all pending migrations
+   * Run all pending migrations.
+   *
+   * This method will identify all migration files that have not yet been
+   * recorded in the migrations table and execute their `up` method.
+   *
+   * @returns A promise that resolves to the migration result.
    */
   async run(): Promise<MigrationResult> {
     await this.repository.createRepository()
@@ -138,7 +143,13 @@ export class Migrator {
   }
 
   /**
-   * Rollback the last batch of migrations
+   * Rollback the last batch of migrations.
+   *
+   * This method will identify the migrations that were part of the last
+   * execution batch and execute their `down` method.
+   *
+   * @param steps The number of batches to rollback (defaults to 1).
+   * @returns A promise that resolves to the migration result.
    */
   async rollback(steps = 1): Promise<MigrationResult> {
     await this.repository.createRepository()

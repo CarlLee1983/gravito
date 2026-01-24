@@ -1,28 +1,32 @@
 /**
  * HasPersistence Concern
- *
- * Provides database persistence functionality including:
- * - Saving (insert/update)
- * - Deleting (soft/hard)
- * - Refreshing
+ * @description Provides database persistence functionality including saving, deleting, and refreshing.
  */
-
 export class HasPersistence {
+  /**
+   * Indicates if the model exists in the database.
+   * @internal
+   */
   protected _exists = false
 
   /**
-   * Check if model exists in database
+   * Check if the model instance exists in the database.
    *
-   * @returns True if exists
+   * @returns True if the model has been persisted
    */
   exists(): boolean {
     return this._exists
   }
 
   /**
-   * Save model (insert or update)
+   * Save the model instance to the database (insert or update).
    *
-   * @returns This model instance
+   * @returns A promise that resolves to the model instance
+   *
+   * @example
+   * ```typescript
+   * await user.save()
+   * ```
    */
   async save(): Promise<this> {
     if (this._exists) {
@@ -33,9 +37,10 @@ export class HasPersistence {
   }
 
   /**
-   * Perform insert operation
+   * Perform an insert operation for a new model instance.
    *
-   * @returns This model instance
+   * @returns A promise that resolves to the model instance
+   * @internal
    */
   protected async _performInsert(): Promise<this> {
     const modelCtor = this.constructor as any
@@ -85,9 +90,10 @@ export class HasPersistence {
   }
 
   /**
-   * Perform update operation
+   * Perform an update operation for an existing model instance.
    *
-   * @returns This model instance
+   * @returns A promise that resolves to the model instance
+   * @internal
    */
   protected async _performUpdate(): Promise<this> {
     const modelCtor = this.constructor as any
@@ -132,9 +138,15 @@ export class HasPersistence {
   }
 
   /**
-   * Delete model (soft if enabled, otherwise hard)
+   * Delete the model instance from the database.
+   * Supports soft deletes if configured on the model.
    *
-   * @returns True if deleted
+   * @returns A promise that resolves to true if deleted successfully
+   *
+   * @example
+   * ```typescript
+   * await user.delete()
+   * ```
    */
   async delete(): Promise<boolean> {
     const modelCtor = this.constructor as any
@@ -150,9 +162,10 @@ export class HasPersistence {
   }
 
   /**
-   * Perform soft delete
+   * Perform a soft delete operation.
    *
-   * @returns True if deleted
+   * @returns A promise that resolves to true
+   * @internal
    */
   protected async _performSoftDelete(): Promise<boolean> {
     const modelCtor = this.constructor as any
@@ -174,9 +187,10 @@ export class HasPersistence {
   }
 
   /**
-   * Perform hard delete
+   * Perform a hard delete operation (physical removal).
    *
-   * @returns True if deleted
+   * @returns A promise that resolves to true
+   * @internal
    */
   protected async _performHardDelete(): Promise<boolean> {
     const modelCtor = this.constructor as any
@@ -203,9 +217,14 @@ export class HasPersistence {
   }
 
   /**
-   * Restore soft-deleted model
+   * Restore a soft-deleted model instance.
    *
-   * @returns True if restored
+   * @returns A promise that resolves to true
+   *
+   * @example
+   * ```typescript
+   * await user.restore()
+   * ```
    */
   async restore(): Promise<boolean> {
     const modelCtor = this.constructor as any
@@ -221,18 +240,28 @@ export class HasPersistence {
   }
 
   /**
-   * Force hard delete (even if soft deletes enabled)
+   * Force a hard delete even if soft deletes are enabled.
    *
-   * @returns True if deleted
+   * @returns A promise that resolves to true
+   *
+   * @example
+   * ```typescript
+   * await user.forceDelete()
+   * ```
    */
   async forceDelete(): Promise<boolean> {
     return this._performHardDelete()
   }
 
   /**
-   * Refresh model from database
+   * Refresh the model instance with fresh data from the database.
    *
-   * @returns This model instance
+   * @returns A promise that resolves to the model instance
+   *
+   * @example
+   * ```typescript
+   * await user.refresh()
+   * ```
    */
   async refresh(): Promise<this> {
     const modelCtor = this.constructor as any
@@ -266,9 +295,10 @@ export class HasPersistence {
   }
 
   /**
-   * Emit model event
+   * Emit a model lifecycle event.
    *
-   * @param event - Event name
+   * @param event - The event name
+   * @internal
    */
   protected async emit(event: string): Promise<void> {
     const modelCtor = this.constructor as any

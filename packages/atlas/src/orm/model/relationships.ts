@@ -21,13 +21,39 @@ export type RelationType =
   | 'morphTo'
 
 /**
- * Relationship Options
+ * Options for defining relationships between models.
  */
 export interface RelationshipOptions {
+  /**
+   * The foreign key column name.
+   * - For `HasOne`/`HasMany`: Defaults to `parent_table_id` on the related table.
+   * - For `BelongsTo`: Defaults to `related_table_id` on the local table.
+   * - For `BelongsToMany`: Defaults to `parent_table_id` on the pivot table.
+   */
   foreignKey?: string
+
+  /**
+   * The local key column name.
+   * - For `HasOne`/`HasMany`: Defaults to the primary key of the local table.
+   * - For `BelongsTo`: Defaults to the primary key of the related table.
+   */
   localKey?: string
+
+  /**
+   * The name of the pivot table for many-to-many relationships.
+   * Defaults to an alphabetical concatenation of the two table names (e.g., `roles_users`).
+   */
   pivotTable?: string
+
+  /**
+   * The related key column name in the pivot table.
+   * Defaults to `related_table_id`.
+   */
   relatedKey?: string
+
+  /**
+   * Additional columns to select from the pivot table.
+   */
   pivotColumns?: string[]
 }
 
@@ -98,11 +124,18 @@ export function defineRelationship(
 
 /**
  * HasOne Relationship Decorator
+ *
+ * Defines a one-to-one relationship where the related model's table
+ * contains the foreign key.
+ *
+ * @param related - A factory function that returns the related Model class.
+ * @param options - Configuration for the relationship.
+ *
  * @example
  * ```typescript
  * class User extends Model {
  *   @HasOne(() => Profile)
- *   profile!: Profile
+ *   declare profile: Profile
  * }
  * ```
  */
@@ -124,11 +157,18 @@ export function HasOne(
 
 /**
  * HasMany Relationship Decorator
+ *
+ * Defines a one-to-many relationship where the related model's table
+ * contains the foreign key.
+ *
+ * @param related - A factory function that returns the related Model class.
+ * @param options - Configuration for the relationship.
+ *
  * @example
  * ```typescript
  * class User extends Model {
  *   @HasMany(() => Post)
- *   posts!: Post[]
+ *   declare posts: Post[]
  * }
  * ```
  */
@@ -150,11 +190,18 @@ export function HasMany(
 
 /**
  * BelongsTo Relationship Decorator
+ *
+ * Defines an inverse relationship where the local model's table
+ * contains the foreign key.
+ *
+ * @param related - A factory function that returns the related Model class.
+ * @param options - Configuration for the relationship.
+ *
  * @example
  * ```typescript
  * class Post extends Model {
  *   @BelongsTo(() => User)
- *   author!: User
+ *   declare author: User
  * }
  * ```
  */
@@ -176,11 +223,17 @@ export function BelongsTo(
 
 /**
  * BelongsToMany Relationship Decorator
+ *
+ * Defines a many-to-many relationship using a pivot table.
+ *
+ * @param related - A factory function that returns the related Model class.
+ * @param options - Configuration for the relationship, including pivot table details.
+ *
  * @example
  * ```typescript
  * class User extends Model {
  *   @BelongsToMany(() => Role, { pivotTable: 'user_roles' })
- *   roles!: Role[]
+ *   declare roles: Role[]
  * }
  * ```
  */
@@ -205,11 +258,18 @@ export function BelongsToMany(
 
 /**
  * MorphOne Relationship Decorator
+ *
+ * Defines a polymorphic one-to-one relationship.
+ *
+ * @param related - A factory function that returns the related Model class.
+ * @param name - The name of the polymorphic relationship (e.g., 'imageable').
+ * @param options - Configuration for the relationship.
+ *
  * @example
  * ```typescript
  * class Post extends Model {
  *   @MorphOne(() => Image, 'imageable')
- *   image!: Image
+ *   declare image: Image
  * }
  * ```
  */
@@ -233,11 +293,18 @@ export function MorphOne(
 
 /**
  * MorphMany Relationship Decorator
+ *
+ * Defines a polymorphic one-to-many relationship.
+ *
+ * @param related - A factory function that returns the related Model class.
+ * @param name - The name of the polymorphic relationship (e.g., 'commentable').
+ * @param options - Configuration for the relationship.
+ *
  * @example
  * ```typescript
  * class Post extends Model {
  *   @MorphMany(() => Comment, 'commentable')
- *   comments!: Comment[]
+ *   declare comments: Comment[]
  * }
  * ```
  */
@@ -261,11 +328,16 @@ export function MorphMany(
 
 /**
  * MorphTo Relationship Decorator
+ *
+ * Defines the inverse of a polymorphic relationship.
+ *
+ * @param options - Configuration for the polymorphic relationship.
+ *
  * @example
  * ```typescript
  * class Comment extends Model {
  *   @MorphTo()
- *   commentable!: Post | Video
+ *   declare commentable: Post | Video
  * }
  * ```
  */

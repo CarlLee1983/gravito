@@ -200,7 +200,24 @@ export class DB {
   }
 
   /**
-   * Configure the database with connections
+   * Configure the database with connections.
+   * This is the primary way to initialize Atlas.
+   *
+   * @param config - Configuration object containing default connection name and connection settings.
+   *
+   * @example
+   * ```typescript
+   * DB.configure({
+   *   default: 'postgres',
+   *   connections: {
+   *     postgres: {
+   *       driver: 'postgres',
+   *       host: 'localhost',
+   *       database: 'myapp'
+   *     }
+   *   }
+   * })
+   * ```
    */
   static configure(config: {
     default?: string
@@ -281,7 +298,10 @@ export class DB {
   }
 
   /**
-   * Add a single connection
+   * Add a single connection configuration to the manager.
+   *
+   * @param name - Unique name for the connection.
+   * @param config - Connection configuration settings.
    */
   static addConnection(name: string, config: ConnectionConfig): void {
     DB.manager.addConnection(name, config)
@@ -328,7 +348,12 @@ export class DB {
   // ============================================================================
 
   /**
-   * Get a connection by name
+   * Get a connection instance by name.
+   * If no name is provided, the default connection is returned.
+   *
+   * @param name - Optional connection name.
+   * @returns The connection instance implementing ConnectionContract.
+   * @throws Error if the connection is not configured.
    */
   static connection(name?: string): ConnectionContract {
     DB.ensureConfigured()

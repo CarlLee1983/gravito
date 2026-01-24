@@ -7,6 +7,8 @@ import type { ForeignKeyAction } from './ColumnDefinition'
 
 /**
  * Foreign Key Definition
+ *
+ * Represents a foreign key constraint between two tables.
  */
 export interface ForeignKeyDefinition {
   /** Local column name */
@@ -23,6 +25,8 @@ export interface ForeignKeyDefinition {
 
 /**
  * Index Definition
+ *
+ * Represents a database index (Primary, Unique, Index, Fulltext, or Spatial).
  */
 export interface IndexDefinition {
   /** Index name */
