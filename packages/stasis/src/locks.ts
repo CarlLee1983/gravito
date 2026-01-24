@@ -28,6 +28,21 @@ export interface CacheLock {
   release(): Promise<void>
 
   /**
+   * Extend the lock's TTL by the specified number of seconds.
+   *
+   * @param seconds - Number of seconds to extend the lock.
+   * @returns `true` if the lock was extended (still owned by this owner), `false` otherwise.
+   */
+  extend?(seconds: number): Promise<boolean>
+
+  /**
+   * Get the remaining time-to-live for the lock in seconds.
+   *
+   * @returns The remaining TTL in seconds, or -1 if the lock doesn't exist, -2 if it has no TTL.
+   */
+  getRemainingTime?(): Promise<number>
+
+  /**
    * Attempt to acquire the lock and execute a callback.
    * If the lock is held by someone else, it will wait (poll) until the timeout.
    *
@@ -37,11 +52,37 @@ export interface CacheLock {
    * @returns The result of the callback.
    * @throws {LockTimeoutError} If the lock could not be acquired within the timeout.
    */
-  block<T>(
-    seconds: number,
-    callback: () => Promise<T> | T,
-    options?: { sleepMillis?: number }
-  ): Promise<T>
+  block<T>(seconds: number, callback: () => Promise<T> | T, options?: BlockOptions): Promise<T>
+}
+
+/**
+ * Options for the block() method.
+ *
+ * @public
+ * @since 3.1.0
+ */
+export interface BlockOptions {
+  /**
+   * Milliseconds to wait between retry attempts.
+   * @default 100
+   */
+  retryInterval?: number
+
+  /**
+   * Maximum number of retry attempts before giving up.
+   * @default Infinity
+   */
+  maxRetries?: number
+
+  /**
+   * AbortSignal to cancel the lock acquisition attempt.
+   */
+  signal?: AbortSignal
+
+  /**
+   * @deprecated Use retryInterval instead.
+   */
+  sleepMillis?: number
 }
 
 /**

@@ -685,6 +685,10 @@ export class RedisClient implements RedisClientContract {
   pipeline(): RedisPipelineContract {
     return new RedisPipeline(this.getClient().pipeline())
   }
+
+  async eval(script: string, numKeys: number, ...args: string[]): Promise<unknown> {
+    return await this.getClient().eval(script, numKeys, ...args)
+  }
 }
 
 /**

@@ -128,6 +128,27 @@ export class Redis {
     return await manager.getDefault().ping()
   }
 
+  /**
+   * Remove a connection.
+   *
+   * Disconnects the connection if active and removes its configuration.
+   *
+   * @param name - The name of the connection.
+   */
+  static async removeConnection(name: string): Promise<void> {
+    await manager.removeConnection(name)
+  }
+
+  /**
+   * Check if a connection exists.
+   *
+   * @param name - The name of the connection.
+   * @returns True if configured, false otherwise.
+   */
+  static hasConnection(name: string): boolean {
+    return manager.hasConnection(name)
+  }
+
   // ============================================================================
   // String Operations
   // ============================================================================
