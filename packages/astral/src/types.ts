@@ -2,237 +2,305 @@ import type { FormRequestClass } from '@gravito/core'
 import type { ZodSchema } from 'zod'
 
 /**
- * OpenAPI Server 定義
+ * OpenAPI Server object definition.
+ * Describes the server environment (e.g., development, production).
+ *
  * @public
+ * @since 3.0.0
  */
 export interface OpenAPIServer {
-  /** Server URL */
+  /** The server URL, can include variables in brackets {}. */
   url: string
-  /** Server 描述 */
+  /** An optional string describing the host designated by the URL. */
   description?: string
-  /** Server 變數 */
+  /** A map between a variable name and its value. */
   variables?: Record<
     string,
     {
+      /** The default value to use for substitution. */
       default: string
+      /** An optional description for the server variable. */
       description?: string
+      /** An enumeration of string values to be used if the substitution options are from a limited set. */
       enum?: string[]
     }
   >
 }
 
 /**
- * OpenAPI Security Scheme 定義
+ * OpenAPI Security Scheme object definition.
+ *
  * @public
+ * @since 3.0.0
  */
 export interface SecurityScheme {
+  /** The type of the security scheme. */
   type: 'apiKey' | 'http' | 'oauth2' | 'openIdConnect' | 'mutualTLS'
+  /** A short description for security scheme. */
   description?: string
+  /** The name of the header, query or cookie parameter to be used. */
   name?: string
+  /** The location of the API key (query, header or cookie). */
   in?: 'query' | 'header' | 'cookie'
+  /** The name of the HTTP Authorization scheme to be used in the Authorization header. */
   scheme?: string
+  /** A hint to the client to identify how the bearer token is formatted. */
   bearerFormat?: string
+  /** An object containing configuration information for the flow types supported. */
   flows?: any
+  /** OpenId Connect URL to discover OAuth2 configuration values. */
   openIdConnectUrl?: string
 }
 
 /**
- * Security Requirement 定義
+ * Security Requirement object definition.
+ * Lists the required security schemes to execute this operation.
+ *
  * @public
+ * @since 3.0.0
  */
 export type SecurityRequirement = Record<string, string[]>
 
 /**
- * External Documentation 定義
+ * External Documentation object definition.
+ * Allows referencing an external resource for extended documentation.
+ *
  * @public
+ * @since 3.0.0
  */
 export interface ExternalDocumentation {
-  /** 外部文檔 URL */
+  /** The URL for the target documentation. */
   url: string
-  /** 外部文檔描述 */
+  /** A short description of the target documentation. */
   description?: string
 }
 
 /**
- * OpenAPI Example 物件定義
+ * OpenAPI Example object definition.
+ * Provides example values for parameters or request bodies.
+ *
  * @public
+ * @since 3.0.0
  */
 export interface ExampleObject {
-  /** Example 摘要 */
+  /** Short description for the example. */
   summary?: string
-  /** Example 描述 */
+  /** Long description for the example. */
   description?: string
-  /** Example 值 */
+  /** Embedded literal example. */
   value?: any
-  /** Example 外部值 URL */
+  /** A URL that points to the literal example. */
   externalValue?: string
 }
 
 /**
- * Media Type 物件定義
+ * Media Type object definition.
+ * Provides schema and examples for a particular media type.
+ *
  * @public
+ * @since 3.0.0
  */
 export interface MediaTypeObject {
-  /** Schema 定義 */
+  /** The schema defining the content of the request, response, or parameter. */
   schema?: ZodSchema | any
-  /** Example 值 */
+  /** Example of the media type. */
   example?: any
-  /** 多個 examples */
+  /** Examples of the media type. */
   examples?: Record<string, ExampleObject>
-  /** Encoding 定義 */
+  /** A map between a property name and its encoding information. */
   encoding?: Record<string, any>
 }
 
 /**
- * Request Body 定義
+ * Request Body object definition.
+ *
  * @public
+ * @since 3.0.0
  */
 export interface RequestBodyObject {
-  /** Request body 描述 */
+  /** A brief description of the request body. */
   description?: string
-  /** Content type 對應的 schema */
+  /** The content of the request body. Keyed by media type. */
   content: Record<string, MediaTypeObject>
-  /** 是否必要 */
+  /** Determines if the request body is required in the request. */
   required?: boolean
 }
 
 /**
  * Operation definition for a specific route/method in an API contract.
+ * Describes the metadata, input/output validation, and documentation for a single endpoint.
+ *
  * @public
+ * @since 3.0.0
  */
 export interface AstralOperation {
-  /** Short summary of the operation */
+  /** Short summary of the operation. */
   summary?: string
-  /** Detailed description of the operation */
+  /** Detailed description of the operation. */
   description?: string
-  /** Tags for categorization in the documentation UI */
+  /** Tags for categorization in the documentation UI. */
   tags?: string[]
-  /** Input validation schema (either a FormRequest class or a Zod schema) */
+  /**
+   * Input validation schema.
+   * Can be a `FormRequest` class (automatic inference) or a Zod schema.
+   */
   input?: FormRequestClass | ZodSchema
-  /** Output validation schema for successful responses */
+  /**
+   * Output validation schema for successful responses.
+   * If an array of schemas is provided, it will be documented as an array of items.
+   */
   output?: ZodSchema | ZodSchema[]
-  /** Map of error status codes to their respective descriptions or schemas */
+  /**
+   * Map of error status codes to their respective descriptions or schemas.
+   * Key is the HTTP status code (e.g., 404), value is either a string description or a schema.
+   */
   errors?: Record<number, string | ZodSchema>
-  /** HTTP status code for a successful response (default: 200) */
+  /** HTTP status code for a successful response (default: 200). */
   status?: number
-  /** Schema for path parameters */
+  /**
+   * Schema for path parameters.
+   * Keyed by the parameter name in the route path (e.g., ':id').
+   */
   params?: Record<string, ZodSchema>
-  /** Unique operation identifier */
+  /** Unique operation identifier across the whole API. */
   operationId?: string
-  /** Marks the operation as deprecated */
+  /** Marks the operation as deprecated. */
   deprecated?: boolean
-  /** Security requirements for this operation */
+  /** Security requirements for this specific operation. Overrides global security. */
   security?: SecurityRequirement[]
-  /** Custom request body definition (overrides input if provided) */
+  /** Custom request body definition (overrides inferred `input` if provided). */
   requestBody?: RequestBodyObject
-  /** Request and response examples */
+  /** Request and response examples for documentation. */
   examples?: {
+    /** Examples for the request body. */
     request?: Record<string, ExampleObject>
+    /** Examples for the responses, keyed by status code. */
     response?: Record<string, ExampleObject>
   }
-  /** External documentation reference */
+  /** External documentation reference for this operation. */
   externalDocs?: ExternalDocumentation
 }
 
 /**
  * A resource contract that maps a base path to various operations (CRUD or custom).
+ * Serves as the central definition for a group of related API endpoints.
+ *
  * @public
+ * @since 3.0.0
  */
 export interface AstralResource {
-  /** The base resource path (e.g., '/users') */
+  /** The base resource path (e.g., '/users'). */
   path: string
-  /** Default tags applied to all operations in this resource */
+  /** Default tags applied to all operations in this resource. */
   tags?: string[]
-  /** Map of operation names ('index', 'show', 'store', etc.) to their definitions */
+  /** Map of operation names ('index', 'show', 'store', etc.) to their definitions. */
   operations: {
+    /** List resources (GET /) */
     index?: AstralOperation
+    /** Get a single resource (GET /:id) */
     show?: AstralOperation
+    /** Create a resource (POST /) */
     store?: AstralOperation
+    /** Update a resource (PUT /:id) */
     update?: AstralOperation
+    /** Delete a resource (DELETE /:id) */
     destroy?: AstralOperation
+    /** Custom named operations or fallback keys. */
     [key: string]: AstralOperation | undefined
   }
 }
 
 /**
- * OpenAPI Tag 定義
+ * OpenAPI Tag object definition.
+ *
  * @public
+ * @since 3.0.0
  */
 export interface TagObject {
-  /** Tag 名稱 */
+  /** The name of the tag. */
   name: string
-  /** Tag 描述 */
+  /** A short description for the tag. */
   description?: string
-  /** 外部文檔 */
+  /** Additional external documentation for this tag. */
   externalDocs?: ExternalDocumentation
 }
 
 /**
- * OpenAPI Components 定義
+ * OpenAPI Components object definition.
+ * Holds a set of reusable objects for different aspects of the OAS.
+ *
  * @public
+ * @since 3.0.0
  */
 export interface ComponentsObject {
-  /** 共用的 schemas */
+  /** Reusable schemas (models). */
   schemas?: Record<string, ZodSchema | any>
-  /** 共用的 responses */
+  /** Reusable responses. */
   responses?: Record<string, any>
-  /** 共用的 parameters */
+  /** Reusable parameters. */
   parameters?: Record<string, any>
-  /** 共用的 examples */
+  /** Reusable examples. */
   examples?: Record<string, ExampleObject>
-  /** 共用的 request bodies */
+  /** Reusable request bodies. */
   requestBodies?: Record<string, RequestBodyObject>
-  /** 共用的 headers */
+  /** Reusable headers. */
   headers?: Record<string, any>
-  /** 共用的 security schemes */
+  /** Reusable security schemes. */
   securitySchemes?: Record<string, SecurityScheme>
-  /** 共用的 links */
+  /** Reusable links. */
   links?: Record<string, any>
-  /** 共用的 callbacks */
+  /** Reusable callbacks. */
   callbacks?: Record<string, any>
 }
 
 /**
  * Global configuration for the Astral OpenAPI orbit.
+ *
  * @public
+ * @since 3.0.0
  */
 export interface AstralConfig {
-  /** The API title shown in the documentation UI */
+  /** The title of the API. */
   title?: string
-  /** The API version string */
+  /** The version of the API (semver recommended). */
   version?: string
-  /** Brief description of the entire API */
+  /** A short description of the API. */
   description?: string
-  /** List of predefined resource contracts */
+  /** List of resource contracts to be included in the documentation. */
   contracts?: AstralResource[]
-  /** The URL path where the Swagger UI will be served (default: '/docs') */
+  /** The URL path where the Swagger UI will be served (default: '/docs'). */
   uiPath?: string
-  /** The URL path where the OpenAPI JSON spec will be served (default: '/openapi.json') */
+  /** The URL path where the OpenAPI JSON spec will be served (default: '/openapi.json'). */
   jsonPath?: string
-  /** Shorthand for uiPath */
+  /** Shorthand for `uiPath`. */
   path?: string
-  /** Server definitions */
+  /** An array of Server Objects, which provide connectivity information to a target server. */
   servers?: OpenAPIServer[]
-  /** Global security schemes */
+  /** A declaration of which security mechanisms can be used across the API. */
   securitySchemes?: Record<string, SecurityScheme>
-  /** Global security requirements */
+  /** A declaration of which security requirements must be met to use the API. */
   security?: SecurityRequirement[]
-  /** Global tags definitions */
+  /** A list of tags used by the specification with additional metadata. */
   tags?: TagObject[]
-  /** External documentation */
+  /** Global external documentation reference. */
   externalDocs?: ExternalDocumentation
-  /** Reusable components */
+  /** An element to hold various schemas for the specification. */
   components?: ComponentsObject
 }
 
 /**
- * 從 AstralOperation 推斷 Input 類型
+ * Type utility to infer the input type from an `AstralOperation`.
+ *
+ * @template T - The AstralOperation type.
  * @public
  */
 export type InferInput<T extends AstralOperation> = T['input'] extends ZodSchema<infer U> ? U : any
 
 /**
- * 從 AstralOperation 推斷 Output 類型
+ * Type utility to infer the output type from an `AstralOperation`.
+ * Supports both single schemas and arrays of schemas.
+ *
+ * @template T - The AstralOperation type.
  * @public
  */
 export type InferOutput<T extends AstralOperation> =
@@ -245,7 +313,9 @@ export type InferOutput<T extends AstralOperation> =
       : any
 
 /**
- * 從 AstralOperation 推斷 Params 類型
+ * Type utility to infer the path parameters type from an `AstralOperation`.
+ *
+ * @template T - The AstralOperation type.
  * @public
  */
 export type InferParams<T extends AstralOperation> =
@@ -254,7 +324,9 @@ export type InferParams<T extends AstralOperation> =
     : Record<string, any>
 
 /**
- * 從 AstralOperation 推斷 Error 類型
+ * Type utility to infer the error response types from an `AstralOperation`.
+ *
+ * @template T - The AstralOperation type.
  * @public
  */
 export type InferErrors<T extends AstralOperation> =
