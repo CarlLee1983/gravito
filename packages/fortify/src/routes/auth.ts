@@ -1,6 +1,6 @@
+import type { ConnectionContract } from '@gravito/atlas'
 import type { Router } from '@gravito/core'
 import { csrfProtection } from '@gravito/core'
-import type { Knex } from 'knex'
 import type { FortifyConfig } from '../config'
 import { ForgotPasswordController } from '../controllers/ForgotPasswordController'
 import { LoginController } from '../controllers/LoginController'
@@ -47,7 +47,7 @@ export function registerAuthRoutes(
   authLogger?: AuthLogger,
   tokenService?: PersonalAccessTokenService,
   oauthService?: OAuthService,
-  db?: () => Knex,
+  db?: () => ConnectionContract,
   events?: FortifyEventEmitter,
   twoFactorService?: TwoFactorService,
   magicLinkService?: MagicLinkService

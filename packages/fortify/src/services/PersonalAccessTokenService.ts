@@ -1,4 +1,4 @@
-import type { Knex } from 'knex'
+import type { ConnectionContract } from '@gravito/atlas'
 
 export interface PersonalAccessToken {
   id: number
@@ -26,7 +26,7 @@ export interface TokenValidationResult {
 }
 
 export class PersonalAccessTokenService {
-  constructor(private db: () => Knex) {}
+  constructor(private db: () => ConnectionContract) {}
 
   async createToken(
     userId: number,
@@ -37,18 +37,20 @@ export class PersonalAccessTokenService {
 
     const expiresAt = options.expiresAt || this.calculateExpiration(options.expiresInMinutes)
 
-    const [id] = await this.db()('personal_access_tokens').insert({
-      tokenable_type: 'User',
-      tokenable_id: userId,
-      name: options.name,
-      token: hashedToken,
-      abilities: options.abilities ? JSON.stringify(options.abilities) : null,
-      expires_at: expiresAt,
-      created_at: new Date(),
-      updated_at: new Date(),
-    })
+    const [id] = (await this.db()
+      .table('personal_access_tokens')
+      .insert({
+        tokenable_type: 'User',
+        tokenable_id: userId,
+        name: options.name,
+        token: hashedToken,
+        abilities: options.abilities ? JSON.stringify(options.abilities) : null,
+        expires_at: expiresAt,
+        created_at: new Date(),
+        updated_at: new Date(),
+      })) as unknown as [number]
 
-    const accessToken = await this.findById(id)
+    const accessToken = await this.findById(id as any)
     if (!accessToken) {
       throw new Error('Failed to create access token')
     }
@@ -99,36 +101,41 @@ export class PersonalAccessTokenService {
   }
 
   async revokeToken(tokenId: number): Promise<boolean> {
-    const deleted = await this.db()('personal_access_tokens').where('id', tokenId).delete()
+    const deleted = await this.db().table('personal_access_tokens').where('id', tokenId).delete()
 
     return deleted > 0
   }
 
   async revokeAllTokens(userId: number): Promise<number> {
-    return await this.db()('personal_access_tokens')
+    return await this.db()
+      .table('personal_access_tokens')
       .where('tokenable_type', 'User')
       .where('tokenable_id', userId)
       .delete()
   }
 
   async listTokens(userId: number): Promise<PersonalAccessToken[]> {
-    const tokens = await this.db()('personal_access_tokens')
+    const tokens = await this.db()
+      .table('personal_access_tokens')
       .where('tokenable_type', 'User')
       .where('tokenable_id', userId)
       .orderBy('created_at', 'desc')
-      .select('*')
+      .get()
 
-    return tokens.map((token) => this.parseToken(token))
+    return tokens.map((token: any) => this.parseToken(token))
   }
 
   async findById(id: number): Promise<PersonalAccessToken | null> {
-    const token = await this.db()('personal_access_tokens').where('id', id).first()
+    const token = await this.db().table('personal_access_tokens').where('id', id).first()
 
     return token ? this.parseToken(token) : null
   }
 
   async cleanExpiredTokens(): Promise<number> {
-    return await this.db()('personal_access_tokens').where('expires_at', '<', new Date()).delete()
+    return await this.db()
+      .table('personal_access_tokens')
+      .where('expires_at', '<', new Date())
+      .delete()
   }
 
   private generatePlainToken(): string {
@@ -159,14 +166,14 @@ export class PersonalAccessTokenService {
   }
 
   private async updateLastUsed(tokenId: number): Promise<void> {
-    await this.db()('personal_access_tokens').where('id', tokenId).update({
+    await this.db().table('personal_access_tokens').where('id', tokenId).update({
       last_used_at: new Date(),
       updated_at: new Date(),
     })
   }
 
   private async findUser(userId: number): Promise<any> {
-    return await this.db()('users').where('id', userId).first()
+    return await this.db().table('users').where('id', userId).first()
   }
 
   private parseToken(row: any): PersonalAccessToken {

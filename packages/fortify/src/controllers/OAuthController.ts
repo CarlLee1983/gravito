@@ -1,7 +1,6 @@
+import type { ConnectionContract } from '@gravito/atlas'
 import type { GravitoContext } from '@gravito/core'
-import type { Knex } from 'knex'
 import type { FortifyConfig } from '../config'
-import { ErrorCodes } from '../errors/codes'
 import { FortifyError } from '../errors/FortifyError'
 import type { FortifyEventEmitter } from '../events/EventEmitter'
 import type { OAuthUser } from '../services/OAuth/types'
@@ -12,7 +11,7 @@ export class OAuthController extends BaseController {
   constructor(
     config: FortifyConfig,
     private oauthService: OAuthService,
-    private db: () => Knex,
+    private db: () => ConnectionContract,
     events?: FortifyEventEmitter
   ) {
     super(config, events)
@@ -101,7 +100,8 @@ export class OAuthController extends BaseController {
   }
 
   private async findOrCreateUser(provider: string, oauthUser: OAuthUser): Promise<any> {
-    const identity = await this.db()('oauth_identities')
+    const identity = await this.db()
+      .table('oauth_identities')
       .where('provider', provider)
       .where('provider_id', oauthUser.id)
       .first()
@@ -109,8 +109,9 @@ export class OAuthController extends BaseController {
     const UserModel = this.config.userModel() as any
 
     if (identity) {
-      await this.db()('oauth_identities')
-        .where('id', identity.id)
+      await this.db()
+        .table('oauth_identities')
+        .where('id', (identity as any).id)
         .update({
           access_token: oauthUser.accessToken,
           refresh_token: oauthUser.refreshToken,
@@ -120,7 +121,7 @@ export class OAuthController extends BaseController {
           updated_at: new Date(),
         })
 
-      return await UserModel.find(identity.user_id)
+      return await UserModel.find((identity as any).user_id)
     }
 
     let user = await UserModel.query().where('email', oauthUser.email).first()
@@ -135,16 +136,18 @@ export class OAuthController extends BaseController {
       })
     }
 
-    await this.db()('oauth_identities').insert({
-      user_id: user.id,
-      provider,
-      provider_id: oauthUser.id,
-      access_token: oauthUser.accessToken,
-      refresh_token: oauthUser.refreshToken,
-      expires_at: oauthUser.expiresIn ? new Date(Date.now() + oauthUser.expiresIn * 1000) : null,
-      created_at: new Date(),
-      updated_at: new Date(),
-    })
+    await this.db()
+      .table('oauth_identities')
+      .insert({
+        user_id: user.id,
+        provider,
+        provider_id: oauthUser.id,
+        access_token: oauthUser.accessToken,
+        refresh_token: oauthUser.refreshToken,
+        expires_at: oauthUser.expiresIn ? new Date(Date.now() + oauthUser.expiresIn * 1000) : null,
+        created_at: new Date(),
+        updated_at: new Date(),
+      })
 
     return user
   }

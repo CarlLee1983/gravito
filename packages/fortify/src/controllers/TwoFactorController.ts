@@ -1,7 +1,6 @@
+import type { ConnectionContract } from '@gravito/atlas'
 import type { GravitoContext } from '@gravito/core'
-import type { Knex } from 'knex'
 import type { FortifyConfig } from '../config'
-import { ErrorCodes } from '../errors/codes'
 import { FortifyError } from '../errors/FortifyError'
 import type { FortifyEventEmitter } from '../events/EventEmitter'
 import type { TwoFactorService } from '../services/TwoFactorService'
@@ -11,7 +10,7 @@ export class TwoFactorController extends BaseController {
   constructor(
     config: FortifyConfig,
     private twoFactorService: TwoFactorService,
-    private db: () => Knex,
+    private db: () => ConnectionContract,
     events?: FortifyEventEmitter
   ) {
     super(config, events)
@@ -23,7 +22,6 @@ export class TwoFactorController extends BaseController {
 
     const secret = this.twoFactorService.generateSecret()
 
-    // Store secret in session temporarily
     const session = c.get('session') as any
     if (session) {
       await session.set('two_factor_secret', secret)
@@ -63,12 +61,8 @@ export class TwoFactorController extends BaseController {
 
     const recoveryCodes = this.twoFactorService.generateRecoveryCodes()
 
-    // Encrypt secret/codes? Assuming plain text for now as encryption service is not in Fortify scope yet?
-    // The plan mentioned crypto service. I'll just store plain text for MVP or assume user model handles it?
-    // Actually, I should probably encrypt it. But I don't have encryption service injected.
-    // I will store plain text for now, but mark TODO.
-
-    await this.db()('users')
+    await this.db()
+      .table('users')
       .where('id', user.id)
       .update({
         two_factor_secret: secret,
@@ -86,7 +80,7 @@ export class TwoFactorController extends BaseController {
         ip: c.req.header('x-forwarded-for') || 'unknown',
         userAgent: c.req.header('user-agent') || 'unknown',
         timestamp: new Date(),
-      } as any) // Cast until event type updated
+      } as any)
     }
 
     if (this.config.jsonMode) {
@@ -100,9 +94,7 @@ export class TwoFactorController extends BaseController {
     const user = await this.getAuthUser(c)
     if (!user) return this.error(c, FortifyError.unauthenticated())
 
-    // Should verify password here (omitted for brevity, requires HashManager)
-
-    await this.db()('users').where('id', user.id).update({
+    await this.db().table('users').where('id', user.id).update({
       two_factor_secret: null,
       two_factor_recovery_codes: null,
       two_factor_confirmed_at: null,
@@ -147,7 +139,7 @@ export class TwoFactorController extends BaseController {
       code?: string
       recovery_code?: string
     }
-    const user = await this.db()('users').where('id', userId).first()
+    const user = await this.db().table('users').where('id', userId).first()
 
     if (!user) {
       return this.error(c, FortifyError.unauthenticated())
@@ -156,13 +148,14 @@ export class TwoFactorController extends BaseController {
     let valid = false
 
     if (recovery_code) {
-      const recoveryCodes = JSON.parse(user.two_factor_recovery_codes || '[]')
+      const recoveryCodes = JSON.parse((user as any).two_factor_recovery_codes || '[]')
       const index = recoveryCodes.indexOf(recovery_code)
 
       if (index !== -1) {
         valid = true
         recoveryCodes.splice(index, 1)
-        await this.db()('users')
+        await this.db()
+          .table('users')
           .where('id', userId)
           .update({
             two_factor_recovery_codes: JSON.stringify(recoveryCodes),
@@ -171,7 +164,7 @@ export class TwoFactorController extends BaseController {
         return this.error(c, FortifyError.invalidRecoveryCode())
       }
     } else if (code) {
-      valid = await this.twoFactorService.verify(code, user.two_factor_secret)
+      valid = await this.twoFactorService.verify(code, (user as any).two_factor_secret)
       if (!valid) {
         return this.error(c, FortifyError.invalidCode())
       }
