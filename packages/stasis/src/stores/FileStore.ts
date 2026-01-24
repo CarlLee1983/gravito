@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto'
-import { mkdir, open, readdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, open, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { type CacheLock, LockTimeoutError, sleep } from '../locks'
 import type { CacheStore } from '../store'
@@ -17,6 +17,12 @@ type FileEntry = {
   value: unknown
 }
 
+type LockFileEntry = {
+  owner: string
+  expiresAt: number
+  pid: number
+}
+
 /**
  * Options for configuring the `FileStore`.
  *
@@ -26,6 +32,12 @@ type FileEntry = {
 export type FileStoreOptions = {
   /** The directory where cache files will be stored. */
   directory: string
+  /** Enable automatic cleanup of expired files (default: true) */
+  enableCleanup?: boolean
+  /** Cleanup interval in milliseconds (default: 60000) */
+  cleanupInterval?: number
+  /** Maximum number of cache files before triggering cleanup (default: unlimited) */
+  maxFiles?: number
 }
 
 /**
@@ -39,7 +51,55 @@ export type FileStoreOptions = {
  * @since 3.0.0
  */
 export class FileStore implements CacheStore {
-  constructor(private options: FileStoreOptions) {}
+  private cleanupTimer: ReturnType<typeof setInterval> | null = null
+
+  constructor(private options: FileStoreOptions) {
+    if (options.enableCleanup !== false) {
+      this.startCleanupDaemon(options.cleanupInterval ?? 60_000)
+    }
+  }
+
+  private startCleanupDaemon(interval: number): void {
+    this.cleanupTimer = setInterval(() => {
+      this.cleanExpiredFiles().catch(() => {})
+    }, interval)
+
+    if (this.cleanupTimer.unref) {
+      this.cleanupTimer.unref()
+    }
+  }
+
+  async cleanExpiredFiles(): Promise<number> {
+    await this.ensureDir()
+    const files = await readdir(this.options.directory)
+    let cleaned = 0
+
+    for (const file of files) {
+      if (!file.endsWith('.json') || file.startsWith('.lock-')) {
+        continue
+      }
+
+      try {
+        const filePath = join(this.options.directory, file)
+        const raw = await readFile(filePath, 'utf8')
+        const data = JSON.parse(raw) as FileEntry
+
+        if (isExpired(data.expiresAt)) {
+          await rm(filePath, { force: true })
+          cleaned++
+        }
+      } catch {}
+    }
+
+    return cleaned
+  }
+
+  async destroy(): Promise<void> {
+    if (this.cleanupTimer) {
+      clearInterval(this.cleanupTimer)
+      this.cleanupTimer = null
+    }
+  }
 
   private async ensureDir(): Promise<void> {
     await mkdir(this.options.directory, { recursive: true })
@@ -78,8 +138,16 @@ export class FileStore implements CacheStore {
     }
 
     const file = this.filePathForKey(normalized)
+    const tempFile = `${file}.tmp.${Date.now()}.${randomUUID()}`
     const payload: FileEntry = { expiresAt: expiresAt ?? null, value }
-    await writeFile(file, JSON.stringify(payload), 'utf8')
+
+    try {
+      await writeFile(tempFile, JSON.stringify(payload), 'utf8')
+      await rename(tempFile, file)
+    } catch (error) {
+      await rm(tempFile, { force: true }).catch(() => {})
+      throw error
+    }
   }
 
   async add(key: CacheKey, value: unknown, ttl: CacheTtl): Promise<boolean> {
@@ -132,25 +200,39 @@ export class FileStore implements CacheStore {
     const ttlMillis = Math.max(1, seconds) * 1000
     const owner = randomUUID()
 
+    const isProcessAlive = (pid: number): boolean => {
+      try {
+        process.kill(pid, 0)
+        return true
+      } catch {
+        return false
+      }
+    }
+
     const tryAcquire = async (): Promise<boolean> => {
       await this.ensureDir()
       try {
         const handle = await open(lockFile, 'wx')
-        await handle.writeFile(JSON.stringify({ owner, expiresAt: Date.now() + ttlMillis }), 'utf8')
+        const lockData: LockFileEntry = {
+          owner,
+          expiresAt: Date.now() + ttlMillis,
+          pid: process.pid,
+        }
+        await handle.writeFile(JSON.stringify(lockData), 'utf8')
         await handle.close()
         return true
       } catch {
-        // If lock exists, attempt stale cleanup
         try {
           const raw = await readFile(lockFile, 'utf8')
-          const data = JSON.parse(raw) as { owner?: string; expiresAt?: number }
-          if (!data.expiresAt || Date.now() > data.expiresAt) {
+          const data = JSON.parse(raw) as LockFileEntry
+
+          const isExpired = !data.expiresAt || Date.now() > data.expiresAt
+          const isProcessDead = data.pid && !isProcessAlive(data.pid)
+
+          if (isExpired || isProcessDead) {
             await rm(lockFile, { force: true })
-            return false
           }
-        } catch {
-          // ignore
-        }
+        } catch {}
         return false
       }
     }
@@ -163,13 +245,11 @@ export class FileStore implements CacheStore {
       async release(): Promise<void> {
         try {
           const raw = await readFile(lockFile, 'utf8')
-          const data = JSON.parse(raw) as { owner?: string }
+          const data = JSON.parse(raw) as LockFileEntry
           if (data.owner === owner) {
             await rm(lockFile, { force: true })
           }
-        } catch {
-          // ignore
-        }
+        } catch {}
       },
 
       async block<T>(
