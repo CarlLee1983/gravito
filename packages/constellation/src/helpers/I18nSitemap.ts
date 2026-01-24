@@ -9,10 +9,18 @@ export type I18nSitemapEntryOptions = Omit<SitemapEntry, 'url' | 'alternates'>
 /**
  * Generate fully cross-referenced SitemapEntries for multiple locales.
  *
- * @param path The path relative to the locale prefix (e.g. '/docs/intro')
- * @param locales List of supported locales (e.g. ['en', 'zh', 'jp'])
- * @param baseUrl The domain root (e.g. 'https://gravito.dev'). IF provided, URLs will be absolute. If not, they remain relative paths but include the locale prefix.
- * @param options Additional SitemapEntry options (lastmod, priority, etc.)
+ * This helper creates a set of sitemap entries where each entry represents a
+ * specific locale version of a page, and all entries are linked via `xhtml:link`
+ * alternate tags to satisfy Google's internationalization requirements.
+ *
+ * @param path - The path relative to the locale prefix (e.g., '/docs/intro').
+ * @param locales - List of supported language/region codes (e.g., ['en', 'zh-TW']).
+ * @param baseUrl - The domain root (e.g., 'https://example.com').
+ * @param options - Additional SitemapEntry properties like `lastmod` or `priority`.
+ * @returns An array of interconnected `SitemapEntry` objects.
+ *
+ * @public
+ * @since 3.0.0
  */
 export function generateI18nEntries(
   path: string,
