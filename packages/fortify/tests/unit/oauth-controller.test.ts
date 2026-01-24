@@ -48,7 +48,9 @@ describe('OAuthController', () => {
     }
 
     mockQueryBuilder = new MockBuilder()
-    mockDb = mock(() => mockQueryBuilder)
+    mockDb = {
+      table: mock(() => mockQueryBuilder),
+    }
 
     controller = new OAuthController(config, mockOAuthService, () => mockDb)
   })

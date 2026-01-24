@@ -34,7 +34,9 @@ describe('TwoFactorController', () => {
     }
 
     mockQueryBuilder = new MockBuilder()
-    mockDb = mock(() => mockQueryBuilder)
+    mockDb = {
+      table: mock(() => mockQueryBuilder),
+    }
 
     controller = new TwoFactorController(config, mockTwoFactorService, () => mockDb)
   })

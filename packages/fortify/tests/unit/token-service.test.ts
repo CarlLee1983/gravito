@@ -15,9 +15,12 @@ describe('PersonalAccessTokenService', () => {
       delete: mock().mockResolvedValue(1 as any),
       first: mock().mockResolvedValue(null as any),
       select: mock().mockResolvedValue([] as any),
+      get: mock().mockResolvedValue([] as any),
     }
 
-    mockDb = mock(() => mockQueryBuilder)
+    mockDb = {
+      table: mock(() => mockQueryBuilder),
+    }
     service = new PersonalAccessTokenService(() => mockDb)
   })
 
@@ -103,7 +106,7 @@ describe('PersonalAccessTokenService', () => {
       },
     ]
 
-    mockQueryBuilder.select.mockResolvedValue(dbTokens as any)
+    mockQueryBuilder.get.mockResolvedValue(dbTokens as any)
 
     const tokens = await service.listTokens(1)
     expect(tokens).toHaveLength(2)
