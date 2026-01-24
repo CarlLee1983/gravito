@@ -6,26 +6,27 @@ import { RedisStore } from '../src/stores/RedisStore'
 describe('RedisStore Distributed Lock Atomicity', () => {
   beforeAll(async () => {
     Redis.configure({
-      default: 'test',
       connections: {
-        test: {
+        'locks-test': {
           host: 'localhost',
           port: 6379,
           db: 14,
         },
       },
     })
-    await Redis.connect()
-    await Redis.flushdb()
+    const client = Redis.connection('locks-test')
+    await client.connect()
+    await client.flushdb()
   })
 
   afterAll(async () => {
-    await Redis.flushdb()
+    const client = Redis.connection('locks-test')
+    await client.flushdb()
     // Avoid Redis.disconnect() to prevent closing shared connections in parallel tests
   })
 
   it('should acquire and release lock correctly', async () => {
-    const store = new RedisStore({ connection: 'test' })
+    const store = new RedisStore({ connection: 'locks-test' })
     const lock = store.lock('resource:1', 5)
 
     expect(await lock.acquire()).toBe(true)
@@ -38,7 +39,7 @@ describe('RedisStore Distributed Lock Atomicity', () => {
   })
 
   it('should not release another owners lock (race condition fix)', async () => {
-    const store = new RedisStore({ connection: 'test' })
+    const store = new RedisStore({ connection: 'locks-test' })
 
     const lockA = store.lock('shared-resource', 1)
     const lockB = store.lock('shared-resource', 5)
@@ -47,35 +48,37 @@ describe('RedisStore Distributed Lock Atomicity', () => {
 
     await sleep(1100)
 
-    const lockAfterExpiry = await Redis.get('lock:shared-resource')
+    const client = Redis.connection('locks-test')
+    const lockAfterExpiry = await client.get('lock:shared-resource')
     expect(lockAfterExpiry).toBeNull()
 
     expect(await lockB.acquire()).toBe(true)
 
     await lockA.release()
 
-    const lockValue = await Redis.get('lock:shared-resource')
+    const lockValue = await client.get('lock:shared-resource')
     expect(lockValue).not.toBeNull()
 
     await lockB.release()
 
-    const lockValueAfter = await Redis.get('lock:shared-resource')
+    const lockValueAfter = await client.get('lock:shared-resource')
     expect(lockValueAfter).toBeNull()
   })
 
   it('should extend lock TTL only if owner matches', async () => {
-    const store = new RedisStore({ connection: 'test' })
+    const store = new RedisStore({ connection: 'locks-test' })
 
     const lock1 = store.lock('extendable', 1)
     const lock2 = store.lock('extendable', 1)
 
     expect(await lock1.acquire()).toBe(true)
 
+    const client = Redis.connection('locks-test')
     if (lock1.extend) {
       const extended = await lock1.extend(10)
       expect(extended).toBe(true)
 
-      const ttl = await Redis.ttl('lock:extendable')
+      const ttl = await client.ttl('lock:extendable')
       expect(ttl).toBeGreaterThan(5)
       expect(ttl).toBeLessThanOrEqual(10)
     }
@@ -89,7 +92,7 @@ describe('RedisStore Distributed Lock Atomicity', () => {
   })
 
   it('should get remaining time for lock', async () => {
-    const store = new RedisStore({ connection: 'test' })
+    const store = new RedisStore({ connection: 'locks-test' })
 
     const lock = store.lock('timed-resource', 5)
     expect(await lock.acquire()).toBe(true)
@@ -109,7 +112,7 @@ describe('RedisStore Distributed Lock Atomicity', () => {
   })
 
   it('should support block with retryInterval and maxRetries', async () => {
-    const store = new RedisStore({ connection: 'test' })
+    const store = new RedisStore({ connection: 'locks-test' })
 
     const lock1 = store.lock('blocking-resource', 2)
     await lock1.acquire()
@@ -136,7 +139,7 @@ describe('RedisStore Distributed Lock Atomicity', () => {
   })
 
   it('should support block with AbortSignal', async () => {
-    const store = new RedisStore({ connection: 'test' })
+    const store = new RedisStore({ connection: 'locks-test' })
 
     const lock1 = store.lock('abortable-resource', 10)
     await lock1.acquire()
@@ -158,7 +161,7 @@ describe('RedisStore Distributed Lock Atomicity', () => {
   })
 
   it('should use exponential backoff in block method', async () => {
-    const store = new RedisStore({ connection: 'test' })
+    const store = new RedisStore({ connection: 'locks-test' })
 
     const lock1 = store.lock('backoff-resource', 1)
     await lock1.acquire()
@@ -186,7 +189,7 @@ describe('RedisStore Distributed Lock Atomicity', () => {
   })
 
   it('should execute callback and release lock on success', async () => {
-    const store = new RedisStore({ connection: 'test' })
+    const store = new RedisStore({ connection: 'locks-test' })
 
     const lock = store.lock('callback-resource', 5)
 
@@ -197,12 +200,13 @@ describe('RedisStore Distributed Lock Atomicity', () => {
 
     expect(result).toBe('task completed')
 
-    const lockValue = await Redis.get('lock:callback-resource')
+    const client = Redis.connection('locks-test')
+    const lockValue = await client.get('lock:callback-resource')
     expect(lockValue).toBeNull()
   })
 
   it('should release lock even if callback throws', async () => {
-    const store = new RedisStore({ connection: 'test' })
+    const store = new RedisStore({ connection: 'locks-test' })
 
     const lock = store.lock('error-resource', 5)
 
@@ -212,12 +216,13 @@ describe('RedisStore Distributed Lock Atomicity', () => {
       })
     ).rejects.toThrow('callback failed')
 
-    const lockValue = await Redis.get('lock:error-resource')
+    const client = Redis.connection('locks-test')
+    const lockValue = await client.get('lock:error-resource')
     expect(lockValue).toBeNull()
   })
 
   it('should handle concurrent lock acquisitions correctly', async () => {
-    const store = new RedisStore({ connection: 'test' })
+    const store = new RedisStore({ connection: 'locks-test' })
 
     let sharedCounter = 0
     const increment = async () => {

@@ -126,26 +126,28 @@ describe('RateLimiter TTL Precision', () => {
 
     beforeAll(async () => {
       Redis.configure({
-        default: 'test',
         connections: {
-          test: {
+          'ratelimit-test': {
             host: 'localhost',
             port: 6379,
             db: 15,
           },
         },
       })
-      await Redis.connect()
+      const client = Redis.connection('ratelimit-test')
+      await client.connect()
     })
 
     afterAll(async () => {
-      await Redis.flushdb()
-      await Redis.disconnect()
+      const client = Redis.connection('ratelimit-test')
+      await client.flushdb()
+      // Avoid Redis.disconnect()
     })
 
     beforeEach(async () => {
-      await Redis.flushdb()
-      store = new RedisStore({ connection: 'test', prefix: 'ttl:' })
+      const client = Redis.connection('ratelimit-test')
+      await client.flushdb()
+      store = new RedisStore({ connection: 'ratelimit-test', prefix: 'ttl:' })
       limiter = new RateLimiter(store)
     })
 
