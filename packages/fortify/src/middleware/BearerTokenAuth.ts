@@ -54,7 +54,7 @@ export function getAuthUser(c: GravitoContext): any {
 }
 
 export function getAuthToken(c: GravitoContext): TokenAuthResult['token'] | undefined {
-  return c.get('auth:token')
+  return c.get('auth:token') as TokenAuthResult['token'] | undefined
 }
 
 export function tokenCan(c: GravitoContext, ability: string): boolean {
