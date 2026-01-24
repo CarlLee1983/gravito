@@ -1,3 +1,5 @@
+import type { Operator } from '../../types'
+
 /**
  * Where Condition Interface
  * @description Represents a single WHERE condition or a group of nested conditions
