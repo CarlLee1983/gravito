@@ -1,8 +1,21 @@
 import type { GravitoMiddleware } from '@gravito/core'
 import { loadLocale } from './loader'
 
+/**
+ * Interface for locale detectors used to determine the user's preferred locale from a request context.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface LocaleDetector {
+  /** The unique name of the detector (e.g., 'query', 'header'). */
   name: string
+  /**
+   * Detect the locale from the given context.
+   *
+   * @param c - The application context (e.g., Hono context).
+   * @returns The detected locale string, or undefined if not found.
+   */
   detect(c: any): string | undefined | Promise<string | undefined>
 }
 
@@ -17,6 +30,12 @@ export type TranslationMap = {
   [key: string]: string | TranslationMap
 }
 
+/**
+ * Utility type to extract all possible dot-notation keys from a nested translation schema.
+ *
+ * @template T - The translation schema object.
+ * @public
+ */
 export type NestedKeyOf<T> = T extends object
   ? {
       [K in keyof T & (string | number)]: T[K] extends object
@@ -25,14 +44,38 @@ export type NestedKeyOf<T> = T extends object
     }[keyof T & (string | number)]
   : never
 
+/**
+ * Configuration for lazy loading translation files.
+ *
+ * @public
+ */
 export interface LazyLoadConfig {
+  /** The base directory where translation files are located. */
   baseDir: string
+  /** Optional list of locales to preload on startup. */
   preload?: string[]
 }
 
+/**
+ * Configuration for translation fallback strategies.
+ *
+ * @public
+ */
 export interface FallbackConfig {
+  /**
+   * Custom fallback chains for specific locales.
+   * Key is the requested locale, value is an array of fallback locales.
+   */
   fallbackChain?: Record<string, string[]>
+  /**
+   * Strategy to use when a translation key is missing.
+   * - 'key': Return the key itself (default).
+   * - 'empty': Return an empty string.
+   * - 'throw': Throw an error.
+   * - (key, locale) => string: Custom handler function.
+   */
   onMissingKey?: 'key' | 'empty' | 'throw' | ((key: string, locale: string) => string)
+  /** Whether to log a warning when a key is missing. */
   warnOnMissing?: boolean
 }
 
@@ -43,23 +86,39 @@ export interface FallbackConfig {
  * @since 3.0.0
  */
 export interface I18nConfig {
-  /** The fallback locale to use when the requested one is not found. */
+  /** The default locale to use when no locale is detected or for fallbacks. */
   defaultLocale: string
   /** List of locales officially supported by the application. */
   supportedLocales: string[]
   /**
-   * Optional record of translations indexed by locale.
+   * Static translations indexed by locale.
    * Keys are locale strings (e.g., 'en', 'zh-TW').
    */
   translations?: Record<string, TranslationMap>
   /**
-   * Configuration for lazy loading translation files.
+   * Configuration for lazy loading translation files from the filesystem.
    */
   lazyLoad?: LazyLoadConfig
   /**
-   * Configuration for fallback strategies.
+   * Configuration for fallback strategies and missing key handling.
    */
   fallback?: FallbackConfig
+}
+
+/**
+ * Statistics about the I18n service state and performance.
+ *
+ * @public
+ */
+export interface I18nStats {
+  /** Number of locales currently loaded. */
+  localesCount: number
+  /** Estimated total number of translation keys across all locales. */
+  totalKeys: number
+  /** Percentage of translation requests served from cache. */
+  cacheHitRate: number
+  /** Number of entries currently in the translation cache. */
+  cacheSize: number
 }
 
 /**
@@ -68,16 +127,18 @@ export interface I18nConfig {
  * It allows for setting and getting the current locale, translating strings
  * with optional replacements, and checking for key existence.
  *
+ * @template Schema - The translation schema for type-safe keys.
  * @public
  * @since 3.0.0
  */
 export interface I18nService<Schema = TranslationMap> {
-  /** The current active locale. */
+  /** The current active locale for this instance. */
   locale: string
   /**
    * Set the active locale for this service instance.
    *
    * @param locale - Valid locale string from supportedLocales.
+   * @throws Error if locale is not supported (depending on implementation).
    */
   setLocale(locale: string): void
   /**
@@ -87,20 +148,27 @@ export interface I18nService<Schema = TranslationMap> {
    */
   getLocale(): string
   /**
-   * Ensure translations for a locale are loaded.
+   * Ensure translations for a locale are loaded (useful for lazy loading).
+   *
+   * @param locale - The locale to load.
+   * @returns Promise that resolves when loading is complete.
    */
   ensureLocale(locale: string): Promise<void>
   /**
    * Translate a key into the current locale.
    *
+   * Supports parameter replacement using `:key` syntax and pluralization
+   * if a `count` parameter is provided.
+   *
    * @param key - The translation key (e.g., 'auth.login_success').
-   * @param replacements - Optional placeholders in the format `:key` replaced by values.
+   * @param replacements - Optional placeholders replaced by values.
    * @returns The translated string, or the key itself if not found.
    *
    * @example
    * ```typescript
-   *    i18n.t('messages.hello', { name: 'John' }); // "Hello John"
-   *    ```
+   * i18n.t('messages.hello', { name: 'John' }); // "Hello John"
+   * i18n.t('items.count', { count: 5 }); // "5 items"
+   * ```
    */
   t(
     key: NestedKeyOf<Schema> | (string & {}),
@@ -110,7 +178,7 @@ export interface I18nService<Schema = TranslationMap> {
    * Translate multiple keys at once.
    *
    * @param keysOrEntries - Array of keys or [key, replacements] tuples.
-   * @returns Map of key -> translated string.
+   * @returns Object mapping each key to its translated string.
    */
   tMany(
     keysOrEntries: Array<
@@ -129,35 +197,50 @@ export interface I18nService<Schema = TranslationMap> {
   /**
    * Create a new request-scoped instance of the I18n service.
    *
+   * This is typically used in middleware to provide a fresh instance per request
+   * that shares the same translation resources but has its own locale state.
+   *
    * @param locale - Optional initial locale for the new instance.
    * @returns A new I18nService instance.
    */
   clone(locale?: string): I18nService<Schema>
 
-  // State Query
+  /**
+   * Get list of all currently loaded locales.
+   * @returns Array of locale strings.
+   */
   getLocales(): string[]
+  /**
+   * Check if translations for a specific locale are already loaded.
+   * @param locale - Locale to check.
+   * @returns True if loaded.
+   */
   isLocaleLoaded(locale: string): boolean
+  /**
+   * Get performance and usage statistics.
+   * @returns I18nStats object.
+   */
   getStats(): I18nStats
 }
 
-export interface I18nStats {
-  localesCount: number
-  totalKeys: number
-  cacheHitRate: number
-  cacheSize: number
-}
-
 /**
- * Request-scoped I18n Instance
- * Holds the state (locale) for a single request, but shares the heavy resources (translations)
+ * Request-scoped I18n Instance.
+ *
+ * Holds the state (current locale) for a single request, but shares the heavy
+ * resources (translation bundles) through the central I18nManager.
+ *
+ * @template Schema - The translation schema for type-safe keys.
+ * @public
+ * @since 3.0.0
  */
 export class I18nInstance<Schema = TranslationMap> implements I18nService<Schema> {
+  /** The current active locale for this instance. */
   private _locale: string
 
   /**
    * Create a new I18nInstance.
    *
-   * @param manager - The I18nManager instance.
+   * @param manager - The central I18nManager instance.
    * @param initialLocale - The initial locale for this instance.
    */
   constructor(
@@ -167,18 +250,26 @@ export class I18nInstance<Schema = TranslationMap> implements I18nService<Schema
     this._locale = initialLocale
   }
 
+  /**
+   * Get the current active locale.
+   */
   get locale(): string {
     return this._locale
   }
 
+  /**
+   * Set the current active locale.
+   */
   set locale(value: string) {
     this.setLocale(value)
   }
 
   /**
-   * Set the current locale.
+   * Set the active locale for this instance.
    *
-   * @param locale - The locale to set.
+   * Validates that the locale is among the supported locales defined in config.
+   *
+   * @param locale - Valid locale string from supportedLocales.
    */
   setLocale(locale: string) {
     if (this.manager.getConfig().supportedLocales.includes(locale)) {
@@ -188,26 +279,32 @@ export class I18nInstance<Schema = TranslationMap> implements I18nService<Schema
 
   /**
    * Ensure translations for a locale are loaded.
+   *
+   * Delegates to the manager's loading mechanism (e.g., filesystem read).
+   *
+   * @param locale - Locale to load.
    */
   async ensureLocale(locale: string): Promise<void> {
     return this.manager.ensureLocale(locale)
   }
 
   /**
-   * Get the current locale.
+   * Get the current locale string.
    *
-   * @returns The current locale string.
+   * @returns Current locale.
    */
   getLocale(): string {
     return this._locale
   }
 
   /**
-   * Translate a key.
+   * Translate a key into the current locale.
    *
-   * @param key - The translation key (e.g., 'messages.welcome').
-   * @param replacements - Optional replacements for parameters in the translation string.
-   * @returns The translated string, or the key if not found.
+   * Supports parameter replacement and pluralization.
+   *
+   * @param key - The translation key (dot notation supported).
+   * @param replacements - Key-value pairs for parameter replacement.
+   * @returns The translated string.
    */
   t(
     key: NestedKeyOf<Schema> | (string & {}),
@@ -216,6 +313,12 @@ export class I18nInstance<Schema = TranslationMap> implements I18nService<Schema
     return this.manager.translate(this._locale, key, replacements)
   }
 
+  /**
+   * Translate multiple keys at once for the current locale.
+   *
+   * @param keysOrEntries - Array of keys or [key, replacements] tuples.
+   * @returns Map of key to translated string.
+   */
   tMany(
     keysOrEntries: Array<
       | NestedKeyOf<Schema>
@@ -236,10 +339,10 @@ export class I18nInstance<Schema = TranslationMap> implements I18nService<Schema
   }
 
   /**
-   * Check if a translation key exists.
+   * Check if a translation key exists for the current locale.
    *
-   * @param key - The translation key to check.
-   * @returns True if the key exists, false otherwise.
+   * @param key - Key to check.
+   * @returns True if key exists.
    */
   has(key: NestedKeyOf<Schema> | (string & {})): boolean {
     return this.t(key) !== key
@@ -248,7 +351,9 @@ export class I18nInstance<Schema = TranslationMap> implements I18nService<Schema
   /**
    * Clone the current instance with a potentially new locale.
    *
-   * @param locale - Optional new locale for the cloned instance.
+   * Shares the same manager and underlying resources.
+   *
+   * @param locale - Optional new locale for the clone.
    * @returns A new I18nInstance.
    */
   clone(locale?: string): I18nService<Schema> {
@@ -256,44 +361,67 @@ export class I18nInstance<Schema = TranslationMap> implements I18nService<Schema
   }
 
   /**
-   * Get the I18n configuration.
+   * Get the current I18n configuration from the manager.
+   * @returns I18nConfig
    */
   getConfig(): I18nConfig {
     return this.manager.getConfig()
   }
 
   /**
-   * Get the translations.
+   * Access the central translation bundles.
    */
   get translations(): Record<string, TranslationMap> {
     return this.manager.translations
   }
 
+  /**
+   * Get list of all currently loaded locales.
+   */
   getLocales(): string[] {
     return this.manager.getLocales()
   }
 
+  /**
+   * Check if translations for a specific locale are already loaded.
+   */
   isLocaleLoaded(locale: string): boolean {
     return this.manager.isLocaleLoaded(locale)
   }
 
+  /**
+   * Get performance and usage statistics.
+   */
   getStats(): I18nStats {
     return this.manager.getStats()
   }
 }
 
 /**
- * Global I18n Manager
- * Holds shared configuration and translation resources
+ * Global I18n Manager.
+ *
+ * The central hub for internationalization. Holds configuration, shared translation
+ * resources, pluralization rules, and handles the actual translation logic
+ * including fallbacks and caching.
+ *
+ * @template Schema - The translation schema for type-safe keys.
+ * @public
+ * @since 3.0.0
  */
 export class I18nManager<Schema = TranslationMap> implements I18nService<Schema> {
+  /** Map of translation bundles indexed by locale. */
   public translations: Record<string, TranslationMap> = {}
+  /** Internal cache for resolved translation strings. */
   private cache = new Map<string, string>()
+  /** Cache for Intl.PluralRules instances. */
   private pluralRules = new Map<string, Intl.PluralRules>()
+  /** Set of locales that have been successfully loaded. */
   private loadedLocales = new Set<string>()
+  /** Counter for cache hits. */
   private cacheHits = 0
+  /** Counter for cache misses. */
   private cacheMisses = 0
-  // Default instance for global usage (e.g. CLI or background jobs)
+  /** Default instance for global/CLI usage. */
   private globalInstance: I18nInstance<Schema>
 
   /**
@@ -310,6 +438,7 @@ export class I18nManager<Schema = TranslationMap> implements I18nService<Schema>
 
   // --- I18nService Implementation (Delegates to global instance) ---
 
+  /** The global active locale. */
   get locale(): string {
     return this.globalInstance.locale
   }
@@ -320,8 +449,7 @@ export class I18nManager<Schema = TranslationMap> implements I18nService<Schema>
 
   /**
    * Set the global locale.
-   *
-   * @param locale - The locale to set.
+   * @param locale - Locale string.
    */
   setLocale(locale: string): void {
     this.globalInstance.setLocale(locale)
@@ -329,8 +457,6 @@ export class I18nManager<Schema = TranslationMap> implements I18nService<Schema>
 
   /**
    * Get the global locale.
-   *
-   * @returns The global locale string.
    */
   getLocale(): string {
     return this.globalInstance.getLocale()
@@ -339,9 +465,8 @@ export class I18nManager<Schema = TranslationMap> implements I18nService<Schema>
   /**
    * Translate a key using the global locale.
    *
-   * @param key - The translation key.
-   * @param replacements - Optional replacements.
-   * @returns The translated string.
+   * @param key - Translation key.
+   * @param replacements - Replacement parameters.
    */
   t(
     key: NestedKeyOf<Schema> | (string & {}),
@@ -350,6 +475,9 @@ export class I18nManager<Schema = TranslationMap> implements I18nService<Schema>
     return this.globalInstance.t(key, replacements)
   }
 
+  /**
+   * Translate multiple keys at once using the global locale.
+   */
   tMany(
     keysOrEntries: Array<
       | NestedKeyOf<Schema>
@@ -362,32 +490,37 @@ export class I18nManager<Schema = TranslationMap> implements I18nService<Schema>
 
   /**
    * Check if a translation key exists in the global locale.
-   *
-   * @param key - The translation key.
-   * @returns True if found.
    */
   has(key: NestedKeyOf<Schema> | (string & {})): boolean {
     return this.globalInstance.has(key)
   }
 
   /**
-   * Clone the global instance.
+   * Create a request-scoped I18nInstance from this manager.
    *
-   * @param locale - Optional locale for the clone.
-   * @returns A new I18nInstance.
+   * @param locale - Optional initial locale.
    */
   clone(locale?: string): I18nService<Schema> {
     return new I18nInstance(this, locale || this.config.defaultLocale)
   }
 
+  /**
+   * Get list of all currently loaded locales.
+   */
   getLocales(): string[] {
     return Object.keys(this.translations)
   }
 
+  /**
+   * Check if translations for a specific locale are already loaded.
+   */
   isLocaleLoaded(locale: string): boolean {
     return this.loadedLocales.has(locale) || locale in this.translations
   }
 
+  /**
+   * Get performance and usage statistics.
+   */
   getStats(): I18nStats {
     const totalKeys = Object.values(this.translations).reduce((acc, map) => {
       // Very rough estimate of keys, deep counting is expensive
@@ -406,7 +539,9 @@ export class I18nManager<Schema = TranslationMap> implements I18nService<Schema>
   }
 
   /**
-   * Ensure translations for a locale are loaded.
+   * Ensure translations for a locale are loaded from the filesystem if lazy loading is enabled.
+   *
+   * @param locale - Locale to load.
    */
   async ensureLocale(locale: string): Promise<void> {
     // If already loaded or no lazy load config, skip
@@ -419,29 +554,23 @@ export class I18nManager<Schema = TranslationMap> implements I18nService<Schema>
     if (translations) {
       this.addResource(locale, translations)
       this.loadedLocales.add(locale)
-    } else {
-      // Mark as loaded even if failed/empty to prevent repeated attempts?
-      // Maybe not, in case it appears later. But for performance, maybe yes.
-      // For now, let's just not add it to loadedLocales so we retry.
     }
   }
 
   // --- Manager Internal API ---
 
   /**
-   * Get the I18n configuration.
-   *
-   * @returns The configuration object.
+   * Get the current shared I18n configuration.
    */
   getConfig(): I18nConfig {
     return this.config
   }
 
   /**
-   * Add a resource bundle for a specific locale.
+   * Add or merge a resource bundle for a specific locale.
    *
-   * @param locale - The locale string.
-   * @param translations - The translations object.
+   * @param locale - Locale string.
+   * @param translations - Translation map to add.
    */
   addResource(locale: string, translations: TranslationMap) {
     this.translations[locale] = {
@@ -451,6 +580,11 @@ export class I18nManager<Schema = TranslationMap> implements I18nService<Schema>
     this.invalidateCache(locale)
   }
 
+  /**
+   * Invalidate the translation cache.
+   *
+   * @param locale - If provided, only invalidates keys for this locale.
+   */
   private invalidateCache(locale?: string) {
     if (locale) {
       for (const key of this.cache.keys()) {
@@ -463,6 +597,9 @@ export class I18nManager<Schema = TranslationMap> implements I18nService<Schema>
     }
   }
 
+  /**
+   * Get the plural form for a locale and count.
+   */
   private getPluralForm(locale: string, count: number): string {
     if (!this.pluralRules.has(locale)) {
       this.pluralRules.set(locale, new Intl.PluralRules(locale))
@@ -470,6 +607,9 @@ export class I18nManager<Schema = TranslationMap> implements I18nService<Schema>
     return this.pluralRules.get(locale)!.select(count)
   }
 
+  /**
+   * Resolve a dot-notation key to its value in a specific locale.
+   */
   private resolveKey(locale: string, key: string): string | TranslationMap | undefined {
     const keys = key.split('.')
     let value: string | TranslationMap | undefined = this.translations[locale]
@@ -484,6 +624,9 @@ export class I18nManager<Schema = TranslationMap> implements I18nService<Schema>
     return value
   }
 
+  /**
+   * Resolve a key using the configured fallback chain.
+   */
   private resolveFallback(locale: string, key: string): string | TranslationMap | undefined {
     const chain = this.config.fallback?.fallbackChain?.[locale] ?? [this.config.defaultLocale]
 
@@ -500,6 +643,9 @@ export class I18nManager<Schema = TranslationMap> implements I18nService<Schema>
     return undefined
   }
 
+  /**
+   * Handle cases where a translation key is missing after fallbacks.
+   */
   private handleMissingKey(key: string, locale: string): string {
     const handler = this.config.fallback?.onMissingKey ?? 'key'
 
@@ -522,7 +668,13 @@ export class I18nManager<Schema = TranslationMap> implements I18nService<Schema>
   }
 
   /**
-   * Internal translation logic used by instances
+   * The core translation logic. Handles caching, key resolution, fallbacks,
+   * pluralization, and parameter replacement.
+   *
+   * @param locale - Locale to translate into.
+   * @param key - Translation key.
+   * @param replacements - Placeholder replacements.
+   * @returns Translated string.
    */
   translate(locale: string, key: string, replacements?: Record<string, string | number>): string {
     const cacheKey = `${locale}:${key}`
@@ -567,9 +719,6 @@ export class I18nManager<Schema = TranslationMap> implements I18nService<Schema>
     }
 
     if (typeof value !== 'string') {
-      // If it resolved to an object but no plural replacement happened (or plural selection failed to find string)
-      // For backwards compat, if it is an object, maybe return key? Or some string representation?
-      // Old logic returned key if !== string.
       return key
     }
 
@@ -585,18 +734,44 @@ export class I18nManager<Schema = TranslationMap> implements I18nService<Schema>
   }
 }
 
+/** Regex for finding placeholders in translation strings. */
 const REPLACEMENT_REGEX = /:([a-zA-Z0-9_]+)/g
 
+/**
+ * Detector that extracts the locale from a route parameter named 'locale'.
+ *
+ * @example
+ * ```typescript
+ * // router.get('/:locale/home', ...)
+ * ```
+ * @public
+ */
 export const RouteParamDetector: LocaleDetector = {
   name: 'routeParam',
   detect: (c) => c.req.param('locale'),
 }
 
+/**
+ * Detector that extracts the locale from a query parameter named 'lang'.
+ *
+ * @example
+ * ```typescript
+ * // GET /home?lang=zh-TW
+ * ```
+ * @public
+ */
 export const QueryDetector: LocaleDetector = {
   name: 'query',
   detect: (c) => c.req.query('lang'),
 }
 
+/**
+ * Detector that extracts the locale from the 'Accept-Language' HTTP header.
+ *
+ * Picks the first (preferred) language from the comma-separated list.
+ *
+ * @public
+ */
 export const HeaderDetector: LocaleDetector = {
   name: 'header',
   detect: (c) => {
@@ -608,8 +783,26 @@ export const HeaderDetector: LocaleDetector = {
   },
 }
 
+/**
+ * Default list of detectors used by the middleware.
+ * Order: Route Parameter > Query Parameter > Accept-Language Header.
+ *
+ * @public
+ */
 export const DefaultDetectors = [RouteParamDetector, QueryDetector, HeaderDetector]
 
+/**
+ * Middleware for Gravito/Photon that handles request-scoped internationalization.
+ *
+ * It uses a list of detectors to determine the locale, ensures it is loaded,
+ * and injects a request-scoped `I18nService` instance into the context under the key 'i18n'.
+ *
+ * @param i18nManager - The central I18nManager instance.
+ * @param detectors - Optional custom list of detectors.
+ * @returns GravitoMiddleware
+ *
+ * @public
+ */
 export const localeMiddleware = (
   i18nManager: I18nService,
   detectors: LocaleDetector[] = DefaultDetectors
