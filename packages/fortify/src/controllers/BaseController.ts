@@ -32,6 +32,10 @@ const ERROR_MESSAGES: Record<ErrorCode, string> = {
   [ErrorCodes.OAUTH_UNKNOWN_PROVIDER]: 'Unknown provider',
   [ErrorCodes.OAUTH_INVALID_STATE]: 'Invalid state',
   [ErrorCodes.OAUTH_AUTHENTICATION_FAILED]: 'Authentication failed',
+  [ErrorCodes.TFA_INVALID_CODE]: 'Invalid two-factor authentication code',
+  [ErrorCodes.TFA_SESSION_EXPIRED]: 'Two-factor authentication session expired',
+  [ErrorCodes.TFA_INVALID_RECOVERY_CODE]: 'Invalid recovery code',
+  [ErrorCodes.MAGIC_LINK_INVALID]: 'Invalid or expired magic link',
 }
 
 export abstract class BaseController {

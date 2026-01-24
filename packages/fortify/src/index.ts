@@ -22,6 +22,7 @@ export { OAuthController } from './controllers/OAuthController'
 export { RegisterController } from './controllers/RegisterController'
 export { ResetPasswordController } from './controllers/ResetPasswordController'
 export { TokenController } from './controllers/TokenController'
+export { TwoFactorController } from './controllers/TwoFactorController'
 export { VerifyEmailController } from './controllers/VerifyEmailController'
 // Errors
 export { ErrorCodes } from './errors/codes'
@@ -42,3 +43,4 @@ export * from './services/OAuth/types'
 export { OAuthService } from './services/OAuthService'
 // Services
 export { PersonalAccessTokenService } from './services/PersonalAccessTokenService'
+export { TwoFactorService } from './services/TwoFactorService'

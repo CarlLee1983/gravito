@@ -30,6 +30,12 @@ export const ErrorCodes = {
   OAUTH_UNKNOWN_PROVIDER: 'oauth.unknown_provider',
   OAUTH_INVALID_STATE: 'oauth.invalid_state',
   OAUTH_AUTHENTICATION_FAILED: 'oauth.authentication_failed',
+
+  TFA_INVALID_CODE: 'tfa.invalid_code',
+  TFA_SESSION_EXPIRED: 'tfa.session_expired',
+  TFA_INVALID_RECOVERY_CODE: 'tfa.invalid_recovery_code',
+
+  MAGIC_LINK_INVALID: 'magic_link.invalid',
 } as const
 
 export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes]

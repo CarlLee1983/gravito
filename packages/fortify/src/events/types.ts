@@ -115,6 +115,21 @@ export interface OAuthFailedEvent {
   timestamp: Date
 }
 
+export interface TwoFactorEvent {
+  user: any
+  ip: string
+  userAgent: string
+  timestamp: Date
+}
+
+export interface MagicLinkEvent {
+  user: any
+  token?: string
+  ip: string
+  userAgent: string
+  timestamp: Date
+}
+
 export interface FortifyEvents {
   'auth:login': LoginEvent
   'auth:logout': LogoutEvent
@@ -130,4 +145,9 @@ export interface FortifyEvents {
   'auth:all-tokens-revoked': AllTokensRevokedEvent
   'auth:oauth-login': OAuthLoginEvent
   'auth:oauth-failed': OAuthFailedEvent
+  'auth:two-factor-enabled': TwoFactorEvent
+  'auth:two-factor-disabled': TwoFactorEvent
+  'auth:two-factor-verified': TwoFactorEvent
+  'auth:magic-link-sent': MagicLinkEvent
+  'auth:magic-link-login': MagicLinkEvent
 }

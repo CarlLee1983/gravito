@@ -5,20 +5,24 @@ import type { FortifyConfig } from '../config'
 import { ForgotPasswordController } from '../controllers/ForgotPasswordController'
 import { LoginController } from '../controllers/LoginController'
 import { LogoutController } from '../controllers/LogoutController'
+import { MagicLinkController } from '../controllers/MagicLinkController'
 import { OAuthController } from '../controllers/OAuthController'
 import { RegisterController } from '../controllers/RegisterController'
 import { ResetPasswordController } from '../controllers/ResetPasswordController'
 import { TokenController } from '../controllers/TokenController'
+import { TwoFactorController } from '../controllers/TwoFactorController'
 import { VerifyEmailController } from '../controllers/VerifyEmailController'
 import { resolveCsrfOptions } from '../csrf'
 import type { FortifyEventEmitter } from '../events/EventEmitter'
 import { bearerTokenAuth } from '../middleware/BearerTokenAuth'
 import { securityHeaders } from '../middleware/SecurityHeaders'
 import type { AuthLogger } from '../services/AuthLogger'
+import type { MagicLinkService } from '../services/MagicLinkService'
 import type { OAuthService } from '../services/OAuthService'
 import type { PersonalAccessTokenService } from '../services/PersonalAccessTokenService'
 import type { RateLimiter } from '../services/RateLimiter'
 import type { StrengthValidator } from '../services/StrengthValidator'
+import type { TwoFactorService } from '../services/TwoFactorService'
 
 /**
  * Register all authentication routes
@@ -44,7 +48,9 @@ export function registerAuthRoutes(
   tokenService?: PersonalAccessTokenService,
   oauthService?: OAuthService,
   db?: () => Knex,
-  events?: FortifyEventEmitter
+  events?: FortifyEventEmitter,
+  twoFactorService?: TwoFactorService,
+  magicLinkService?: MagicLinkService
 ): void {
   const prefix = config.prefix ?? ''
   const csrfOptions = resolveCsrfOptions(config)
@@ -110,5 +116,21 @@ export function registerAuthRoutes(
     const oauthController = new OAuthController(config, oauthService, db, events)
     router.get(`${prefix}/oauth/:provider`, (c) => oauthController.redirect(c))
     router.get(`${prefix}/oauth/:provider/callback`, (c) => oauthController.callback(c))
+  }
+
+  if (config.features.twoFactorAuthentication && twoFactorService && db) {
+    const twoFactorController = new TwoFactorController(config, twoFactorService, db, events)
+    router.get(`${prefix}/two-factor/setup`, (c) => twoFactorController.setup(c))
+    router.post(`${prefix}/two-factor/confirm`, (c) => twoFactorController.confirm(c))
+    router.delete(`${prefix}/two-factor`, (c) => twoFactorController.disable(c))
+    router.get(`${prefix}/two-factor/challenge`, (c) => twoFactorController.showChallenge(c))
+    router.post(`${prefix}/two-factor/challenge`, (c) => twoFactorController.challenge(c))
+  }
+
+  if (config.features.magicLink && magicLinkService) {
+    const magicLinkController = new MagicLinkController(config, magicLinkService, events)
+    router.get(`${prefix}/magic-link`, (c) => c.json({ view: 'magic-link' }))
+    router.post(`${prefix}/magic-link`, (c) => magicLinkController.send(c))
+    router.get(`${prefix}/magic-link/:token`, (c) => magicLinkController.verify(c))
   }
 }

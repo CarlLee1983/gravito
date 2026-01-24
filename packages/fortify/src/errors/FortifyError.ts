@@ -109,4 +109,20 @@ export class FortifyError extends Error {
   static authenticationFailed() {
     return new FortifyError(ErrorCodes.OAUTH_AUTHENTICATION_FAILED, 401)
   }
+
+  static invalidCode() {
+    return new FortifyError(ErrorCodes.TFA_INVALID_CODE, 422)
+  }
+
+  static sessionExpiredTfa() {
+    return new FortifyError(ErrorCodes.TFA_SESSION_EXPIRED, 401)
+  }
+
+  static invalidRecoveryCode() {
+    return new FortifyError(ErrorCodes.TFA_INVALID_RECOVERY_CODE, 422)
+  }
+
+  static invalidMagicLink() {
+    return new FortifyError(ErrorCodes.MAGIC_LINK_INVALID, 422)
+  }
 }

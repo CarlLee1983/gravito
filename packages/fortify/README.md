@@ -10,7 +10,8 @@ Inspired by Laravel Fortify and Breeze, this package provides ready-to-use authe
 - ✅ Email Verification
 - ✅ API Tokens (Sanctum-style)
 - ✅ OAuth / Social Login (Google, GitHub)
-- 🚧 Two-Factor Authentication (coming soon)
+- ✅ Magic Link Login
+- ✅ Two-Factor Authentication (TOTP)
 
 ## Installation
 
@@ -79,6 +80,9 @@ Visit `/login`, `/register`, or `/forgot-password` to see auth pages.
 | GET | `/oauth/:provider` | Redirect to OAuth provider |
 | GET | `/oauth/:provider/callback` | Handle OAuth callback |
 
+| POST | `/magic-link` | Send magic link email |
+| GET | `/magic-link/:token` | Verify magic link and login |
+
 ## Configuration
 
 ```typescript
@@ -90,6 +94,7 @@ interface FortifyConfig {
     emailVerification?: boolean // Default: false
     apiTokens?: boolean         // Default: false
     oauth?: boolean             // Default: false
+    magicLink?: boolean         // Default: false
   }
   
   // OAuth configuration

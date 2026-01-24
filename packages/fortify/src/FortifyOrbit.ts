@@ -4,12 +4,14 @@ import { FortifyEventEmitter } from './events/EventEmitter'
 import { securityHeaders } from './middleware/SecurityHeaders'
 import { registerAuthRoutes } from './routes/auth'
 import { MemoryAuthLogger } from './services/AuthLogger'
+import { MagicLinkService } from './services/MagicLinkService'
 import { GitHubProvider } from './services/OAuth/GitHubProvider'
 import { GoogleProvider } from './services/OAuth/GoogleProvider'
 import { OAuthService } from './services/OAuthService'
 import { PersonalAccessTokenService } from './services/PersonalAccessTokenService'
 import { MemoryRateLimiterStorage, RateLimiter } from './services/RateLimiter'
 import { StrengthValidator } from './services/StrengthValidator'
+import { TwoFactorService } from './services/TwoFactorService'
 
 /**
  * FortifyOrbit provides end-to-end authentication workflows for Gravito.
@@ -131,6 +133,21 @@ export class FortifyOrbit implements GravitoOrbit {
       core.container.singleton('fortify.oauthService', () => oauthService!)
     }
 
+    let twoFactorService: TwoFactorService | undefined
+    if (this.config.features.twoFactorAuthentication) {
+      twoFactorService = new TwoFactorService(this.config.twoFactor ?? { enabled: true })
+      core.container.singleton('fortify.twoFactorService', () => twoFactorService!)
+    }
+
+    let magicLinkService: MagicLinkService | undefined
+    if (this.config.features.magicLink) {
+      if (!tokenService) {
+        tokenService = new PersonalAccessTokenService(() => core.container.make('db'))
+      }
+      magicLinkService = new MagicLinkService(this.config, tokenService)
+      core.container.singleton('fortify.magicLinkService', () => magicLinkService!)
+    }
+
     registerAuthRoutes(
       core.router,
       this.config,
@@ -142,7 +159,9 @@ export class FortifyOrbit implements GravitoOrbit {
       tokenService,
       oauthService,
       () => core.container.make('db'),
-      events
+      events,
+      twoFactorService,
+      magicLinkService
     )
 
     core.logger.info('[Fortify] Authentication routes registered')

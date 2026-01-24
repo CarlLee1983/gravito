@@ -83,6 +83,18 @@ export interface OAuthConfig {
   }
 }
 
+export interface TwoFactorConfig {
+  enabled?: boolean
+  issuer?: string
+  window?: number
+  confirmPassword?: boolean
+}
+
+export interface MagicLinkConfig {
+  enabled?: boolean
+  expiresInMinutes?: number
+}
+
 /**
  * Configuration options for the Fortify authentication orbit.
  * @public
@@ -108,7 +120,66 @@ export interface FortifyConfig {
     apiTokens?: boolean
     /** Whether to enable OAuth/Social login. (Default: false) */
     oauth?: boolean
+    /** Whether to enable Magic Link login. (Default: false) */
+    magicLink?: boolean
   }
+
+  /**
+   * Redirect paths for various authentication actions.
+   */
+  redirects: {
+    login?: string
+    logout?: string
+    register?: string
+    passwordReset?: string
+    emailVerification?: string
+  }
+
+  /**
+   * User model factory.
+   */
+  userModel: () => typeof Model
+
+  /**
+   * Username field (default: 'email').
+   */
+  username?: string
+
+  /**
+   * Password field (default: 'password').
+   */
+  password?: string
+
+  /**
+   * Route prefix (default: '').
+   */
+  prefix?: string
+
+  /**
+   * JSON mode for SPA (default: false).
+   */
+  jsonMode?: boolean
+
+  /**
+   * CSRF protection enabled (default: true).
+   */
+  csrf?: boolean
+
+  /**
+   * Custom view templates.
+   */
+  views?: {
+    login?: string
+    register?: string
+    forgotPassword?: string
+    resetPassword?: string
+    verifyEmail?: string
+  }
+
+  /**
+   * Security configuration.
+   */
+  security?: SecurityConfig
 
   /**
    * OAuth configuration.
@@ -116,77 +187,14 @@ export interface FortifyConfig {
   oauth?: OAuthConfig
 
   /**
-   * Post-authentication redirect targets.
+   * Magic Link configuration.
    */
-  redirects: {
-    /** Where to send the user after successful login. (Default: '/dashboard') */
-    login?: string
-    /** Where to send the user after logging out. (Default: '/') */
-    logout?: string
-    /** Where to send the user after successful registration. (Default: '/dashboard') */
-    register?: string
-    /** Where to send the user after a successful password reset. (Default: '/login') */
-    passwordReset?: string
-    /** Where to send the user after successful email verification. (Default: '/dashboard') */
-    emailVerification?: string
-  }
+  magicLink?: MagicLinkConfig
 
   /**
-   * Custom view/template paths for overriding the default UI.
+   * Two Factor Authentication configuration.
    */
-  views?: {
-    /** Path to login template */
-    login?: string
-    /** Path to registration template */
-    register?: string
-    /** Path to forgot password template */
-    forgotPassword?: string
-    /** Path to reset password template */
-    resetPassword?: string
-    /** Path to email verification instruction template */
-    verifyEmail?: string
-  }
-
-  /**
-   * A factory function that returns the Atlas Model class representing the User.
-   */
-  userModel: () => typeof Model
-
-  /**
-   * The database column used as the unique username/identifier (e.g., 'email', 'username').
-   * (Default: 'email')
-   */
-  username?: string
-
-  /**
-   * The database column used for storing the hashed password.
-   * (Default: 'password')
-   */
-  password?: string
-
-  /**
-   * Optional URL prefix for all authentication routes (e.g., '/auth').
-   * (Default: '')
-   */
-  prefix?: string
-
-  /**
-   * If true, Fortify will return JSON responses (CBOR compatible) instead of redirects.
-   * Useful for Single Page Applications (SPA) or mobile apps.
-   * (Default: false)
-   */
-  jsonMode?: boolean
-
-  /**
-   * Enable or configure Cross-Site Request Forgery (CSRF) protection for form submissions.
-   * (Default: true)
-   */
-  csrf?: boolean | import('@gravito/core').CsrfOptions
-
-  /**
-   * Security configuration for rate limiting, password rules, headers, etc.
-   */
-  security?: SecurityConfig
+  twoFactor?: TwoFactorConfig
 }
 
 /**
@@ -247,6 +255,12 @@ export const defaultFortifyConfig: Partial<FortifyConfig> = {
     logging: { enabled: true, driver: 'database' },
     session: { regenerateOnLogin: true, lifetime: 7200, secure: true },
   },
+  twoFactor: {
+    enabled: false,
+    issuer: 'Gravito',
+    window: 1,
+    confirmPassword: true,
+  },
 }
 
 /**
@@ -291,6 +305,10 @@ export function definefortifyConfig(config: FortifyConfig): FortifyConfig {
         ...defaultFortifyConfig.security?.session,
         ...config.security?.session,
       },
+    },
+    twoFactor: {
+      ...defaultFortifyConfig.twoFactor,
+      ...config.twoFactor,
     },
   }
 }
