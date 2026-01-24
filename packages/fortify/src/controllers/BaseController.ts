@@ -79,21 +79,7 @@ export abstract class BaseController {
   }
 
   protected validationError(c: GravitoContext, errors: Record<string, string[]>): Response {
-    if (this.config.jsonMode) {
-      return c.json(
-        {
-          success: false,
-          error: {
-            code: ErrorCodes.REG_VALIDATION_FAILED,
-            message: 'Validation failed',
-            errors,
-          },
-        },
-        422
-      )
-    }
-
-    return c.json({ errors }, 422)
+    return this.error(c, FortifyError.validationFailed(errors))
   }
 
   protected render(c: GravitoContext, view: string, props: Record<string, unknown> = {}): Response {

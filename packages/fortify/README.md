@@ -8,6 +8,7 @@ Inspired by Laravel Fortify and Breeze, this package provides ready-to-use authe
 - ✅ Login / Logout
 - ✅ Password Reset
 - ✅ Email Verification
+- ✅ API Tokens (Sanctum-style)
 - 🚧 Two-Factor Authentication (coming soon)
 
 ## Installation
@@ -69,6 +70,10 @@ Visit `/login`, `/register`, or `/forgot-password` to see auth pages.
 | GET | `/verify-email` | Show verification notice |
 | GET | `/verify-email/:id/:hash` | Verify email |
 | POST | `/email/verification-notification` | Resend verification |
+| GET | `/tokens` | List all tokens |
+| POST | `/tokens` | Create a new token |
+| DELETE | `/tokens/:id` | Revoke a token |
+| DELETE | `/tokens` | Revoke all tokens |
 
 ## Configuration
 
@@ -79,6 +84,7 @@ interface FortifyConfig {
     registration?: boolean      // Default: true
     resetPasswords?: boolean    // Default: true
     emailVerification?: boolean // Default: false
+    apiTokens?: boolean         // Default: false
   }
   
   // Redirect paths
@@ -139,6 +145,43 @@ import { verified } from '@gravito/fortify'
 
 router.middleware(verified).group((r) => {
   r.get('/dashboard', dashboardHandler)
+})
+```
+
+## API Tokens
+
+Fortify includes a simple token authentication system for APIs (Sanctum-style).
+
+### Enable Feature
+
+```typescript
+new FortifyOrbit({
+  // ...
+  features: {
+    apiTokens: true,
+  },
+})
+```
+
+### Usage
+
+1. **Create Token**: POST to `/tokens` with JSON body `{ "name": "My Token" }`.
+   Response includes `plain_text_token` (e.g. `1|abcdef...`). Store this securely!
+
+2. **Authenticate**: Add header to requests:
+   ```
+   Authorization: Bearer 1|abcdef...
+   ```
+
+### Middleware
+
+```typescript
+import { bearerTokenAuth } from '@gravito/fortify'
+
+// Middleware is automatically applied to /tokens routes when enabled.
+// Use it in your own API routes:
+router.get('/api/user', bearerTokenAuth(fortify.tokenService), (c) => {
+  return c.json(c.get('auth:user'))
 })
 ```
 

@@ -1,6 +1,11 @@
 import type { GravitoOrbit, PlanetCore } from '@gravito/core'
 import { defaultFortifyConfig, type FortifyConfig } from './config'
+import { securityHeaders } from './middleware/SecurityHeaders'
 import { registerAuthRoutes } from './routes/auth'
+import { MemoryAuthLogger } from './services/AuthLogger'
+import { PersonalAccessTokenService } from './services/PersonalAccessTokenService'
+import { MemoryRateLimiterStorage, RateLimiter } from './services/RateLimiter'
+import { StrengthValidator } from './services/StrengthValidator'
 
 /**
  * FortifyOrbit provides end-to-end authentication workflows for Gravito.
@@ -35,15 +40,87 @@ export class FortifyOrbit implements GravitoOrbit {
         ...defaultFortifyConfig.redirects,
         ...config.redirects,
       },
+      security: {
+        ...defaultFortifyConfig.security,
+        ...config.security,
+        rateLimit: {
+          ...defaultFortifyConfig.security?.rateLimit,
+          ...config.security?.rateLimit,
+        },
+        lockout: {
+          ...defaultFortifyConfig.security?.lockout,
+          ...config.security?.lockout,
+        },
+        passwordRules: {
+          ...defaultFortifyConfig.security?.passwordRules,
+          ...config.security?.passwordRules,
+        },
+        securityHeaders: {
+          ...defaultFortifyConfig.security?.securityHeaders,
+          ...config.security?.securityHeaders,
+        },
+        logging: {
+          ...defaultFortifyConfig.security?.logging,
+          ...config.security?.logging,
+        },
+        session: {
+          ...defaultFortifyConfig.security?.session,
+          ...config.security?.session,
+        },
+      },
     } as FortifyConfig
   }
 
   async install(core: PlanetCore): Promise<void> {
-    // Store config in container for controllers to access
     core.container.singleton('fortify.config', () => this.config)
 
-    // Register authentication routes
-    registerAuthRoutes(core.router, this.config)
+    const rateLimiterStorage = new MemoryRateLimiterStorage()
+    const loginRateLimiter = new RateLimiter(
+      rateLimiterStorage,
+      this.config.security?.rateLimit?.login ?? defaultFortifyConfig.security!.rateLimit!.login!
+    )
+    const passwordResetRateLimiter = new RateLimiter(
+      rateLimiterStorage,
+      this.config.security?.rateLimit?.passwordReset ??
+        defaultFortifyConfig.security!.rateLimit!.passwordReset!
+    )
+    const emailVerificationRateLimiter = new RateLimiter(
+      rateLimiterStorage,
+      this.config.security?.rateLimit?.emailVerification ??
+        defaultFortifyConfig.security!.rateLimit!.emailVerification!
+    )
+
+    core.container.singleton('fortify.rateLimiter.login', () => loginRateLimiter)
+    core.container.singleton('fortify.rateLimiter.passwordReset', () => passwordResetRateLimiter)
+    core.container.singleton(
+      'fortify.rateLimiter.emailVerification',
+      () => emailVerificationRateLimiter
+    )
+
+    const strengthValidator = new StrengthValidator(
+      this.config.security?.passwordRules ?? defaultFortifyConfig.security!.passwordRules!
+    )
+    core.container.singleton('fortify.strengthValidator', () => strengthValidator)
+
+    const authLogger = new MemoryAuthLogger()
+    core.container.singleton('fortify.authLogger', () => authLogger)
+
+    let tokenService: PersonalAccessTokenService | undefined
+    if (this.config.features.apiTokens) {
+      tokenService = new PersonalAccessTokenService(() => core.container.make('db'))
+      core.container.singleton('fortify.tokenService', () => tokenService!)
+    }
+
+    registerAuthRoutes(
+      core.router,
+      this.config,
+      loginRateLimiter,
+      passwordResetRateLimiter,
+      emailVerificationRateLimiter,
+      strengthValidator,
+      authLogger,
+      tokenService
+    )
 
     core.logger.info('[Fortify] Authentication routes registered')
   }

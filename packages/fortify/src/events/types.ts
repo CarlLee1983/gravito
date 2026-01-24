@@ -68,6 +68,36 @@ export interface AccountLockedEvent {
   timestamp: Date
 }
 
+export interface TokenCreatedEvent {
+  user: any
+  token: {
+    id: number
+    name: string
+  }
+  ip: string
+  userAgent: string
+  timestamp: Date
+}
+
+export interface TokenRevokedEvent {
+  user: any
+  token: {
+    id: number
+    name: string
+  }
+  ip: string
+  userAgent: string
+  timestamp: Date
+}
+
+export interface AllTokensRevokedEvent {
+  user: any
+  count: number
+  ip: string
+  userAgent: string
+  timestamp: Date
+}
+
 export interface FortifyEvents {
   'auth:login': LoginEvent
   'auth:logout': LogoutEvent
@@ -78,4 +108,7 @@ export interface FortifyEvents {
   'auth:email-verification-sent': EmailVerificationSentEvent
   'auth:login-failed': LoginFailedEvent
   'auth:account-locked': AccountLockedEvent
+  'auth:token-created': TokenCreatedEvent
+  'auth:token-revoked': TokenRevokedEvent
+  'auth:all-tokens-revoked': AllTokensRevokedEvent
 }

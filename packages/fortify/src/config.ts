@@ -1,8 +1,77 @@
 import type { Model } from '@gravito/atlas'
 
-/**
- * Fortify configuration options
- */
+export interface RateLimitConfig {
+  login?: {
+    maxAttempts: number
+    decayMinutes: number
+    lockoutMinutes: number
+  }
+  passwordReset?: {
+    maxAttempts: number
+    decayMinutes: number
+    lockoutMinutes: number
+  }
+  emailVerification?: {
+    maxAttempts: number
+    decayMinutes: number
+    lockoutMinutes: number
+  }
+}
+
+export interface LockoutConfig {
+  enabled?: boolean
+  threshold?: number
+  duration?: number
+  permanent?: {
+    enabled: boolean
+    threshold: number
+  }
+}
+
+export interface PasswordRulesConfig {
+  minLength?: number
+  maxLength?: number
+  requireUppercase?: boolean
+  requireLowercase?: boolean
+  requireNumbers?: boolean
+  requireSymbols?: boolean
+  preventCommon?: boolean
+  preventReuse?: number
+}
+
+export interface SecurityHeadersConfig {
+  hsts?: {
+    enabled: boolean
+    maxAge: number
+    includeSubDomains?: boolean
+    preload?: boolean
+  }
+  csp?: {
+    enabled: boolean
+    directives: Record<string, string[]>
+  }
+  noSniff?: boolean
+  frameOptions?: 'DENY' | 'SAMEORIGIN' | false
+  xssFilter?: boolean
+  xssProtection?: string
+}
+
+export interface SecurityConfig {
+  rateLimit?: RateLimitConfig
+  lockout?: LockoutConfig
+  passwordRules?: PasswordRulesConfig
+  securityHeaders?: SecurityHeadersConfig
+  logging?: {
+    enabled?: boolean
+    driver?: 'database' | 'file' | 'custom'
+  }
+  session?: {
+    regenerateOnLogin?: boolean
+    lifetime?: number
+    secure?: boolean
+  }
+}
+
 /**
  * Configuration options for the Fortify authentication orbit.
  * @public
@@ -24,6 +93,8 @@ export interface FortifyConfig {
     updatePasswords?: boolean
     /** Whether to enable two-factor authentication features. (Default: false) */
     twoFactorAuthentication?: boolean
+    /** Whether to enable API token authentication (Sanctum-style). (Default: false) */
+    apiTokens?: boolean
   }
 
   /**
@@ -93,6 +164,11 @@ export interface FortifyConfig {
    * (Default: true)
    */
   csrf?: boolean | import('@gravito/core').CsrfOptions
+
+  /**
+   * Security configuration for rate limiting, password rules, headers, etc.
+   */
+  security?: SecurityConfig
 }
 
 /**
@@ -106,6 +182,7 @@ export const defaultFortifyConfig: Partial<FortifyConfig> = {
     updateProfileInformation: false,
     updatePasswords: false,
     twoFactorAuthentication: false,
+    apiTokens: false,
   },
   redirects: {
     login: '/dashboard',
@@ -119,6 +196,38 @@ export const defaultFortifyConfig: Partial<FortifyConfig> = {
   prefix: '',
   jsonMode: false,
   csrf: true,
+  security: {
+    rateLimit: {
+      login: { maxAttempts: 5, decayMinutes: 15, lockoutMinutes: 30 },
+      passwordReset: { maxAttempts: 3, decayMinutes: 60, lockoutMinutes: 60 },
+      emailVerification: { maxAttempts: 5, decayMinutes: 60, lockoutMinutes: 30 },
+    },
+    lockout: {
+      enabled: true,
+      threshold: 5,
+      duration: 30,
+      permanent: { enabled: false, threshold: 20 },
+    },
+    passwordRules: {
+      minLength: 8,
+      maxLength: 128,
+      requireUppercase: true,
+      requireLowercase: true,
+      requireNumbers: true,
+      requireSymbols: false,
+      preventCommon: true,
+      preventReuse: 5,
+    },
+    securityHeaders: {
+      hsts: { enabled: true, maxAge: 31536000, includeSubDomains: true },
+      csp: { enabled: false, directives: {} },
+      noSniff: true,
+      frameOptions: 'SAMEORIGIN',
+      xssFilter: true,
+    },
+    logging: { enabled: true, driver: 'database' },
+    session: { regenerateOnLogin: true, lifetime: 7200, secure: true },
+  },
 }
 
 /**
@@ -135,6 +244,34 @@ export function definefortifyConfig(config: FortifyConfig): FortifyConfig {
     redirects: {
       ...defaultFortifyConfig.redirects,
       ...config.redirects,
+    },
+    security: {
+      ...defaultFortifyConfig.security,
+      ...config.security,
+      rateLimit: {
+        ...defaultFortifyConfig.security?.rateLimit,
+        ...config.security?.rateLimit,
+      },
+      lockout: {
+        ...defaultFortifyConfig.security?.lockout,
+        ...config.security?.lockout,
+      },
+      passwordRules: {
+        ...defaultFortifyConfig.security?.passwordRules,
+        ...config.security?.passwordRules,
+      },
+      securityHeaders: {
+        ...defaultFortifyConfig.security?.securityHeaders,
+        ...config.security?.securityHeaders,
+      },
+      logging: {
+        ...defaultFortifyConfig.security?.logging,
+        ...config.security?.logging,
+      },
+      session: {
+        ...defaultFortifyConfig.security?.session,
+        ...config.security?.session,
+      },
     },
   }
 }
