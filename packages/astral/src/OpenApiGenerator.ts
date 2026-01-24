@@ -1,6 +1,6 @@
 import type { ZodSchema } from 'zod'
 import { zodToJsonSchema } from 'zod-to-json-schema'
-import { AstralGenerationError, AstralSchemaError } from './errors'
+import { AstralSchemaError } from './errors'
 import type { AstralConfig, AstralOperation, AstralResource } from './types'
 
 /**
@@ -121,23 +121,26 @@ export class OpenApiGenerator {
   }
 
   /**
-   * 處理 components.schemas，將 Zod schemas 轉換為 JSON Schema
+   * Process component schemas, converting Zod schemas to JSON Schema.
+   *
+   * @param schemas - A map of schema names to their Zod or JSON Schema definitions.
+   * @returns A map of processed JSON Schemas.
    * @private
    */
   private processComponentSchemas(schemas: Record<string, any>): Record<string, any> {
     const processed: Record<string, any> = {}
     for (const [name, schema] of Object.entries(schemas)) {
       try {
-        // 如果是 Zod schema，進行轉換
+        // If it's a Zod schema, convert it
         if (schema && typeof schema === 'object' && '_def' in schema) {
           processed[name] = this.zodToSchema(schema)
         } else {
-          // 否則直接使用
+          // Otherwise use it as is
           processed[name] = schema
         }
       } catch (error) {
         throw new AstralSchemaError(
-          `無法處理 component schema '${name}'`,
+          `Failed to process component schema '${name}'`,
           schema,
           error instanceof Error ? error : undefined
         )
@@ -146,6 +149,14 @@ export class OpenApiGenerator {
     return processed
   }
 
+  /**
+   * Process a resource contract and map it to discovered routes.
+   *
+   * @param spec - The root OpenAPI specification object.
+   * @param resource - The Astral resource contract.
+   * @param routes - The array of discovered framework routes.
+   * @private
+   */
   private processResource(spec: any, resource: AstralResource, routes: AstralRoute[]) {
     // Find matching routes using precise path matching
     const matchingRoutes = routes.filter((route) =>
@@ -169,28 +180,35 @@ export class OpenApiGenerator {
   }
 
   /**
-   * 精確檢查路由是否匹配資源路徑
-   * 支援路徑參數匹配（例如 /users/:id 匹配 /users）
+   * Check if a framework route path matches a resource base path.
+   * Supports path parameter matching (e.g., /users/:id matches /users).
+   *
+   * @param routePath - The actual route path from the framework.
+   * @param resourcePath - The base path defined in the contract.
+   * @returns True if they match.
    * @private
    */
   private isRouteMatchingResource(routePath: string, resourcePath: string): boolean {
-    // 完全匹配
+    // Exact match
     if (routePath === resourcePath) {
       return true
     }
 
-    // 檢查是否為資源的子路徑
+    // Check if it's a sub-path of the resource
     if (!routePath.startsWith(resourcePath)) {
       return false
     }
 
-    // 確保是在路徑分隔符處匹配，避免 /users 匹配到 /users2
+    // Ensure it matches at a path separator to avoid /users matching /users2
     const remainder = routePath.slice(resourcePath.length)
     return remainder.startsWith('/')
   }
 
   /**
-   * 從路徑中提取路徑參數定義
+   * Extract path parameter definitions from a route path.
+   *
+   * @param path - The route path containing parameters (e.g., /users/:id).
+   * @returns An array of parameter objects for OAS.
    * @private
    */
   private extractPathParameters(path: string): Array<{
@@ -206,7 +224,7 @@ export class OpenApiGenerator {
       schema: { type: 'string'; description?: string }
     }> = []
 
-    // 匹配 :paramName 格式的路徑參數
+    // Match :paramName format
     const matches = path.matchAll(/:([a-zA-Z0-9_]+)/g)
 
     for (const match of matches) {
@@ -224,6 +242,16 @@ export class OpenApiGenerator {
     return params
   }
 
+  /**
+   * Build an OpenAPI Operation Object from Astral metadata.
+   *
+   * @param op - The operation metadata.
+   * @param resource - The parent resource contract.
+   * @param method - HTTP method.
+   * @param originalPath - The original framework route path.
+   * @returns An OAS-compliant Operation Object.
+   * @private
+   */
   private buildOperation(
     op: AstralOperation,
     resource: AstralResource,
@@ -371,6 +399,14 @@ export class OpenApiGenerator {
     return operation
   }
 
+  /**
+   * Extract a Zod schema from an input definition.
+   * Supports `FormRequest` classes by instantiating them and accessing the `schema` property.
+   *
+   * @param input - The input definition (FormRequest class or ZodSchema).
+   * @returns The extracted ZodSchema.
+   * @private
+   */
   private extractZodSchema(input: any): ZodSchema {
     // If it's a FormRequest class, try to instantiate and get schema
     if (typeof input === 'function') {
@@ -387,12 +423,20 @@ export class OpenApiGenerator {
     return input as ZodSchema
   }
 
+  /**
+   * Convert a Zod schema (or array of schemas) to an OpenAPI JSON Schema.
+   * Uses an internal cache to improve performance for recurring schemas.
+   *
+   * @param zod - The Zod schema to convert.
+   * @returns The converted JSON Schema object.
+   * @private
+   */
   private zodToSchema(zod: any) {
     try {
-      // 生成快取鍵
+      // Generate cache key
       const cacheKey = this.getSchemaKey(zod)
 
-      // 檢查快取
+      // Check cache
       if (this.schemaCache.has(cacheKey)) {
         return this.schemaCache.get(cacheKey)
       }
@@ -408,13 +452,13 @@ export class OpenApiGenerator {
         result = zodToJsonSchema(zod as ZodSchema, { target: 'openApi3' })
       }
 
-      // 存入快取
+      // Store in cache
       this.schemaCache.set(cacheKey, result)
 
       return result
     } catch (error) {
       throw new AstralSchemaError(
-        'Zod schema 轉換為 JSON Schema 時發生錯誤',
+        'Error converting Zod schema to JSON Schema',
         zod,
         error instanceof Error ? error : undefined
       )
@@ -422,7 +466,10 @@ export class OpenApiGenerator {
   }
 
   /**
-   * 為 schema 生成快取鍵
+   * Generate a unique cache key for a schema.
+   *
+   * @param schema - The schema object.
+   * @returns A string key.
    * @private
    */
   private getSchemaKey(schema: any): string {
@@ -444,16 +491,30 @@ export class OpenApiGenerator {
       // Fallback to JSON serialization
       return JSON.stringify(schema)
     } catch {
-      // 如果無法序列化，使用隨機鍵（避免快取衝突）
+      // Fallback to random key to avoid cache collision if serialization fails
       return `ref:${Math.random()}`
     }
   }
 
+  /**
+   * Normalize a route path by converting `:param` to `{param}` for OpenAPI compatibility.
+   *
+   * @param path - The raw route path.
+   * @returns Normalized path.
+   * @private
+   */
   private normalizePath(path: string): string {
-    // Convert :param to {param} for OpenAPI
     return path.replace(/:([a-zA-Z0-9_]+)/g, '{$1}')
   }
 
+  /**
+   * Infer the operation key (e.g., 'index', 'store', 'show') based on route method and path.
+   *
+   * @param route - The discovered route info.
+   * @param resource - The parent resource contract.
+   * @returns The inferred operation key string.
+   * @private
+   */
   private inferOperationKey(route: AstralRoute, resource: AstralResource): string {
     const relPath = route.path.replace(resource.path, '').replace(/^\//, '')
     const method = route.method.toLowerCase()

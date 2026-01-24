@@ -49,6 +49,11 @@ export class OrbitAstral implements GravitoOrbit {
   private config: AstralConfig
   private generator: OpenApiGenerator
 
+  /**
+   * Create a new OrbitAstral instance.
+   *
+   * @param config - The configuration for the OpenAPI generator and UI.
+   */
   constructor(config: AstralConfig = {}) {
     this.config = {
       title: 'API Documentation',
@@ -62,65 +67,68 @@ export class OrbitAstral implements GravitoOrbit {
   }
 
   /**
-   * 驗證 Astral 配置的有效性
+   * Validate the global Astral configuration for consistency and correctness.
+   *
+   * @param config - The config object to validate.
+   * @throws AstralConfigError if validation fails.
    * @private
    */
   private validateConfig(config: AstralConfig): void {
-    // 驗證路徑格式
+    // Validate path formats
     if (config.uiPath && !config.uiPath.startsWith('/')) {
-      throw new AstralConfigError('uiPath 必須以 / 開頭', 'uiPath')
+      throw new AstralConfigError('uiPath must start with /', 'uiPath')
     }
     if (config.jsonPath && !config.jsonPath.startsWith('/')) {
-      throw new AstralConfigError('jsonPath 必須以 / 開頭', 'jsonPath')
+      throw new AstralConfigError('jsonPath must start with /', 'jsonPath')
     }
     if (config.path && !config.path.startsWith('/')) {
-      throw new AstralConfigError('path 必須以 / 開頭', 'path')
+      throw new AstralConfigError('path must start with /', 'path')
     }
 
-    // 驗證版本格式
+    // Validate version format
     if (config.version && !/^\d+\.\d+\.\d+/.test(config.version)) {
-      throw new AstralConfigError('版本號應遵循 semver 格式 (例如: 1.0.0)', 'version')
+      throw new AstralConfigError('version should follow semver format (e.g., 1.0.0)', 'version')
     }
 
-    // 驗證 contracts
+    // Validate contracts
     if (config.contracts) {
       if (!Array.isArray(config.contracts)) {
-        throw new AstralConfigError('contracts 必須是陣列', 'contracts')
+        throw new AstralConfigError('contracts must be an array', 'contracts')
       }
       for (const contract of config.contracts) {
         this.validateResource(contract)
       }
     }
 
-    // 驗證 servers
+    // Validate servers
     if (config.servers) {
       if (!Array.isArray(config.servers)) {
-        throw new AstralConfigError('servers 必須是陣列', 'servers')
+        throw new AstralConfigError('servers must be an array', 'servers')
       }
       for (const server of config.servers) {
         if (!server.url) {
-          throw new AstralConfigError('每個 server 必須有 url 欄位', 'servers')
+          throw new AstralConfigError('each server must have a url field', 'servers')
         }
         try {
           new URL(server.url.startsWith('http') ? server.url : `http://localhost${server.url}`)
         } catch {
-          throw new AstralConfigError(`無效的 server URL: ${server.url}`, 'servers')
+          throw new AstralConfigError(`invalid server URL: ${server.url}`, 'servers')
         }
       }
     }
 
-    // 驗證 tags
+    // Validate tags
     if (config.tags) {
       if (!Array.isArray(config.tags)) {
-        throw new AstralConfigError('tags 必須是陣列', 'tags')
+        throw new AstralConfigError('tags must be an array', 'tags')
       }
       const tagNames = new Set<string>()
       for (const tag of config.tags) {
         if (!tag.name) {
-          throw new AstralConfigError('每個 tag 必須有 name 欄位', 'tags')
+          throw new AstralConfigError('each tag must have a name field', 'tags')
         }
         if (tagNames.has(tag.name)) {
-          throw new AstralConfigError(`重複的 tag 名稱: ${tag.name}`, 'tags')
+          throw new AstralConfigError(`duplicate tag name: ${tag.name}`, 'tags')
         }
         tagNames.add(tag.name)
       }
@@ -128,22 +136,25 @@ export class OrbitAstral implements GravitoOrbit {
   }
 
   /**
-   * 驗證資源定義的有效性
+   * Validate a resource contract definition.
+   *
+   * @param resource - The resource contract to validate.
+   * @throws AstralResourceError if validation fails.
    * @private
    */
   private validateResource(resource: AstralResource): void {
-    // 驗證 path
+    // Validate path
     if (!resource.path) {
-      throw new AstralResourceError('resource 必須有 path 欄位', resource)
+      throw new AstralResourceError('resource must have a path field', resource)
     }
     if (!resource.path.startsWith('/')) {
-      throw new AstralResourceError(`路徑必須以 / 開頭: ${resource.path}`, resource, 'path')
+      throw new AstralResourceError(`path must start with /: ${resource.path}`, resource, 'path')
     }
 
-    // 驗證 operations
+    // Validate operations
     if (!resource.operations || typeof resource.operations !== 'object') {
       throw new AstralResourceError(
-        'resource 必須有 operations 欄位且為物件',
+        'resource must have operations field and it must be an object',
         resource,
         'operations'
       )
@@ -151,10 +162,14 @@ export class OrbitAstral implements GravitoOrbit {
 
     const operationCount = Object.keys(resource.operations).length
     if (operationCount === 0) {
-      throw new AstralResourceError('至少需要定義一個 operation', resource, 'operations')
+      throw new AstralResourceError(
+        'at least one operation must be defined',
+        resource,
+        'operations'
+      )
     }
 
-    // 驗證每個 operation
+    // Validate each operation
     for (const [key, operation] of Object.entries(resource.operations)) {
       if (operation) {
         this.validateOperation(operation, resource, key)
@@ -163,7 +178,12 @@ export class OrbitAstral implements GravitoOrbit {
   }
 
   /**
-   * 驗證單個 operation 定義
+   * Validate a single operation definition.
+   *
+   * @param operation - The operation metadata.
+   * @param resource - The parent resource.
+   * @param operationKey - The key of the operation (e.g., 'index').
+   * @throws AstralResourceError if validation fails.
    * @private
    */
   private validateOperation(
@@ -171,42 +191,42 @@ export class OrbitAstral implements GravitoOrbit {
     resource: AstralResource,
     operationKey: string
   ): void {
-    // 驗證 status code
+    // Validate status code
     if (operation.status !== undefined) {
       if (typeof operation.status !== 'number') {
         throw new AstralResourceError(
-          `operation '${operationKey}' 的 status 必須是數字`,
+          `status for operation '${operationKey}' must be a number`,
           resource,
           `operations.${operationKey}.status`
         )
       }
       if (operation.status < 100 || operation.status > 599) {
         throw new AstralResourceError(
-          `operation '${operationKey}' 的 status 必須在 100-599 範圍內`,
+          `status for operation '${operationKey}' must be between 100 and 599`,
           resource,
           `operations.${operationKey}.status`
         )
       }
     }
 
-    // 驗證 security
+    // Validate security
     if (operation.security) {
       if (!Array.isArray(operation.security)) {
         throw new AstralResourceError(
-          `operation '${operationKey}' 的 security 必須是陣列`,
+          `security for operation '${operationKey}' must be an array`,
           resource,
           `operations.${operationKey}.security`
         )
       }
     }
 
-    // 驗證 errors
+    // Validate errors
     if (operation.errors) {
       for (const [statusCode] of Object.entries(operation.errors)) {
         const code = Number(statusCode)
-        if (isNaN(code) || code < 100 || code > 599) {
+        if (Number.isNaN(code) || code < 100 || code > 599) {
           throw new AstralResourceError(
-            `operation '${operationKey}' 的 error status code 必須在 100-599 範圍內: ${statusCode}`,
+            `error status code for operation '${operationKey}' must be between 100 and 599: ${statusCode}`,
             resource,
             `operations.${operationKey}.errors`
           )
@@ -214,11 +234,11 @@ export class OrbitAstral implements GravitoOrbit {
       }
     }
 
-    // 驗證 externalDocs
+    // Validate externalDocs
     if (operation.externalDocs) {
       if (!operation.externalDocs.url) {
         throw new AstralResourceError(
-          `operation '${operationKey}' 的 externalDocs 必須有 url 欄位`,
+          `externalDocs for operation '${operationKey}' must have a url field`,
           resource,
           `operations.${operationKey}.externalDocs`
         )
@@ -227,7 +247,7 @@ export class OrbitAstral implements GravitoOrbit {
         new URL(operation.externalDocs.url)
       } catch {
         throw new AstralResourceError(
-          `operation '${operationKey}' 的 externalDocs URL 無效: ${operation.externalDocs.url}`,
+          `externalDocs URL for operation '${operationKey}' is invalid: ${operation.externalDocs.url}`,
           resource,
           `operations.${operationKey}.externalDocs`
         )
@@ -235,13 +255,22 @@ export class OrbitAstral implements GravitoOrbit {
     }
   }
 
+  /**
+   * Fluent configuration helper for creating an OrbitAstral instance.
+   *
+   * @param config - Configuration options.
+   * @returns A new OrbitAstral instance.
+   */
   static configure(config: AstralConfig): OrbitAstral {
     return new OrbitAstral(config)
   }
 
   /**
-   * Install the orbit
-   * This will be called by PlanetCore
+   * Install the Astral orbit into the framework core.
+   * Registers routes for serving the OpenAPI JSON specification and the Swagger UI.
+   *
+   * @param core - The PlanetCore instance.
+   * @returns A promise that resolves when installation is complete.
    */
   async install(core: PlanetCore): Promise<void> {
     const router = core.router
