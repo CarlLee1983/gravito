@@ -57,12 +57,17 @@ export class ShadowProcessor {
   }
 
   /**
-   * 添加一個影子操作
+   * Adds a single file write operation to the current shadow session.
+   *
+   * If shadow processing is disabled, the file is written directly to the
+   * final destination in storage. Otherwise, it is written to the shadow staging area.
+   *
+   * @param operation - The shadow write operation details.
    */
   async addOperation(operation: ShadowOperation): Promise<void> {
     return this.mutex.runExclusive(async () => {
       if (!this.options.enabled) {
-        // 如果未啟用影子處理，直接寫入
+        // If shadow processing is disabled, write directly
         await this.options.storage.write(operation.filename, operation.content)
         return
       }
@@ -72,18 +77,21 @@ export class ShadowProcessor {
         shadowId: operation.shadowId || this.shadowId,
       })
 
-      // 寫入影子位置
+      // Write to shadow location
       if (this.options.storage.writeShadow) {
         await this.options.storage.writeShadow(operation.filename, operation.content, this.shadowId)
       } else {
-        // 如果儲存不支援影子處理，直接寫入
+        // If storage does not support shadow processing, write directly
         await this.options.storage.write(operation.filename, operation.content)
       }
     })
   }
 
   /**
-   * 提交所有影子操作
+   * Commits all staged shadow operations to the final production location.
+   *
+   * Depending on the `mode`, this will either perform an atomic swap of all files
+   * or commit each file individually (potentially creating new versions).
    */
   async commit(): Promise<void> {
     return this.mutex.runExclusive(async () => {
@@ -92,12 +100,12 @@ export class ShadowProcessor {
       }
 
       if (this.options.mode === 'atomic') {
-        // 原子切換模式：一次性提交所有影子檔案
+        // Atomic switch mode: commit all shadow files at once
         if (this.options.storage.commitShadow) {
           await this.options.storage.commitShadow(this.shadowId)
         }
       } else {
-        // 版本化模式：為每個檔案創建版本
+        // Versioned mode: create version for each file
         for (const operation of this.operations) {
           if (this.options.storage.commitShadow) {
             await this.options.storage.commitShadow(operation.shadowId || this.shadowId)
@@ -105,32 +113,32 @@ export class ShadowProcessor {
         }
       }
 
-      // 清空操作列表
+      // Clear operation list
       this.operations = []
     })
   }
 
   /**
-   * 取消所有影子操作
+   * Cancels all staged shadow operations without committing them.
    */
   async rollback(): Promise<void> {
     if (!this.options.enabled) {
       return
     }
 
-    // 清空操作列表（實際檔案清理由儲存層處理）
+    // Clear operation list (actual file cleanup is handled by storage layer)
     this.operations = []
   }
 
   /**
-   * 獲取當前影子 ID
+   * Returns the unique identifier for the current shadow session.
    */
   getShadowId(): string {
     return this.shadowId
   }
 
   /**
-   * 獲取所有操作
+   * Returns an array of all staged shadow operations.
    */
   getOperations(): ShadowOperation[] {
     return [...this.operations]

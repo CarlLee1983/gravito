@@ -41,12 +41,24 @@ export class DiskSitemapStorage implements SitemapStorage {
     private baseUrl: string
   ) {}
 
+  /**
+   * Writes sitemap content to a file on the local disk.
+   *
+   * @param filename - The name of the file to write.
+   * @param content - The XML or JSON content.
+   */
   async write(filename: string, content: string): Promise<void> {
     const safeName = sanitizeFilename(filename)
     await fs.mkdir(this.outDir, { recursive: true })
     await fs.writeFile(path.join(this.outDir, safeName), content)
   }
 
+  /**
+   * Reads sitemap content from a file on the local disk.
+   *
+   * @param filename - The name of the file to read.
+   * @returns A promise resolving to the file content as a string, or null if not found.
+   */
   async read(filename: string): Promise<string | null> {
     try {
       const safeName = sanitizeFilename(filename)
@@ -56,6 +68,12 @@ export class DiskSitemapStorage implements SitemapStorage {
     }
   }
 
+  /**
+   * Returns a readable stream for a sitemap file on the local disk.
+   *
+   * @param filename - The name of the file to stream.
+   * @returns A promise resolving to an async iterable of file chunks, or null if not found.
+   */
   async readStream(filename: string): Promise<AsyncIterable<string> | null> {
     try {
       const safeName = sanitizeFilename(filename)
@@ -69,6 +87,12 @@ export class DiskSitemapStorage implements SitemapStorage {
     }
   }
 
+  /**
+   * Checks if a sitemap file exists on the local disk.
+   *
+   * @param filename - The name of the file to check.
+   * @returns A promise resolving to true if the file exists, false otherwise.
+   */
   async exists(filename: string): Promise<boolean> {
     try {
       const safeName = sanitizeFilename(filename)
@@ -79,6 +103,12 @@ export class DiskSitemapStorage implements SitemapStorage {
     }
   }
 
+  /**
+   * Returns the full public URL for a sitemap file.
+   *
+   * @param filename - The name of the sitemap file.
+   * @returns The public URL as a string.
+   */
   getUrl(filename: string): string {
     const safeName = sanitizeFilename(filename)
     const base = this.baseUrl.endsWith('/') ? this.baseUrl.slice(0, -1) : this.baseUrl

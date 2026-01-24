@@ -50,14 +50,17 @@ export class RedirectHandler {
   }
 
   /**
-   * 處理 entries 中的轉址
+   * Processes a list of sitemap entries and handles redirects according to the configured strategy.
+   *
+   * @param entries - The original list of sitemap entries.
+   * @returns A promise resolving to the processed list of entries.
    */
   async processEntries(entries: SitemapEntry[]): Promise<SitemapEntry[]> {
     const { manager, strategy, followChains, maxChainLength } = this.options
     const _processedEntries: SitemapEntry[] = []
     const redirectMap = new Map<string, RedirectRule>()
 
-    // 1. 解析所有轉址
+    // 1. Resolve all redirects
     for (const entry of entries) {
       const redirectTarget = await manager.resolve(entry.url, followChains, maxChainLength)
       if (redirectTarget && entry.url !== redirectTarget) {
@@ -69,7 +72,7 @@ export class RedirectHandler {
       }
     }
 
-    // 2. 根據策略處理
+    // 2. Handle according to strategy
     switch (strategy) {
       case 'remove_old_add_new':
         return this.handleRemoveOldAddNew(entries, redirectMap)
@@ -85,7 +88,7 @@ export class RedirectHandler {
   }
 
   /**
-   * 策略一：移除舊 URL，加入新 URL
+   * Strategy 1: Remove old URL and add the new destination URL.
    */
   private handleRemoveOldAddNew(
     entries: SitemapEntry[],
@@ -97,9 +100,9 @@ export class RedirectHandler {
     for (const entry of entries) {
       const redirect = redirectMap.get(entry.url)
       if (redirect) {
-        // 標記為已處理
+        // Mark as processed
         redirectedUrls.add(entry.url)
-        // 創建新 entry
+        // Create new entry
         processed.push({
           ...entry,
           url: redirect.to,
@@ -110,7 +113,7 @@ export class RedirectHandler {
           },
         })
       } else if (!redirectedUrls.has(entry.url)) {
-        // 只添加未轉址的 entry
+        // Only add non-redirected entries
         processed.push(entry)
       }
     }
@@ -119,7 +122,7 @@ export class RedirectHandler {
   }
 
   /**
-   * 策略二：保留關聯，使用 canonical link
+   * Strategy 2: Keep the original URL but mark the destination as canonical.
    */
   private handleKeepRelation(
     entries: SitemapEntry[],
@@ -130,7 +133,7 @@ export class RedirectHandler {
     for (const entry of entries) {
       const redirect = redirectMap.get(entry.url)
       if (redirect) {
-        // 保留舊 URL，但標記 canonical
+        // Keep old URL but mark canonical
         processed.push({
           ...entry,
           redirect: {
@@ -149,7 +152,7 @@ export class RedirectHandler {
   }
 
   /**
-   * 策略三：僅更新 URL
+   * Strategy 3: Silently update the URL to the destination.
    */
   private handleUpdateUrl(
     entries: SitemapEntry[],
@@ -173,7 +176,7 @@ export class RedirectHandler {
   }
 
   /**
-   * 策略四：雙重標記
+   * Strategy 4: Include both the original and destination URLs.
    */
   private handleDualMark(
     entries: SitemapEntry[],
@@ -185,7 +188,7 @@ export class RedirectHandler {
     for (const entry of entries) {
       const redirect = redirectMap.get(entry.url)
       if (redirect) {
-        // 保留舊 URL（標記轉址）
+        // Keep old URL (marked as redirect)
         processed.push({
           ...entry,
           redirect: {
@@ -195,7 +198,7 @@ export class RedirectHandler {
           },
         })
 
-        // 添加新 URL（如果尚未添加）
+        // Add new URL (if not already added)
         if (!addedUrls.has(redirect.to)) {
           processed.push({
             ...entry,

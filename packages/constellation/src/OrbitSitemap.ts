@@ -176,7 +176,7 @@ export class OrbitSitemap implements GravitoOrbit {
   }
 
   /**
-   * Install the sitemap module into PlanetCore.
+   * Installs the sitemap module into PlanetCore.
    *
    * @param core - The PlanetCore instance.
    */
@@ -190,6 +190,9 @@ export class OrbitSitemap implements GravitoOrbit {
     }
   }
 
+  /**
+   * Internal method to set up dynamic sitemap routes.
+   */
   private installDynamic(core: PlanetCore) {
     const opts = this.options as DynamicSitemapOptions
     const storage = opts.storage ?? new MemorySitemapStorage(opts.baseUrl)
@@ -267,7 +270,7 @@ export class OrbitSitemap implements GravitoOrbit {
   }
 
   /**
-   * Generate the sitemap (static mode only).
+   * Generates the sitemap (static mode only).
    *
    * @returns A promise that resolves when generation is complete.
    * @throws {Error} If called in dynamic mode.
@@ -285,7 +288,7 @@ export class OrbitSitemap implements GravitoOrbit {
       storage = new DiskSitemapStorage(opts.outDir, opts.baseUrl)
     }
 
-    // 處理轉址（如果啟用）
+    // Handle redirects (if enabled)
     let providers = opts.providers
     if (opts.redirect?.enabled && opts.redirect.manager) {
       const handler = new RedirectHandler({
@@ -295,7 +298,7 @@ export class OrbitSitemap implements GravitoOrbit {
         maxChainLength: opts.redirect.maxChainLength,
       })
 
-      // 包裝 providers 以處理轉址
+      // Wrap providers to handle redirects
       providers = opts.providers.map((provider) => ({
         getEntries: async () => {
           const entries = await provider.getEntries()
@@ -319,7 +322,7 @@ export class OrbitSitemap implements GravitoOrbit {
   }
 
   /**
-   * Generate incremental sitemap updates (static mode only).
+   * Generates incremental sitemap updates (static mode only).
    *
    * @param since - Only include items modified since this date.
    * @returns A promise that resolves when incremental generation is complete.
@@ -356,7 +359,7 @@ export class OrbitSitemap implements GravitoOrbit {
   }
 
   /**
-   * Generate sitemap asynchronously in the background (static mode only).
+   * Generates sitemap asynchronously in the background (static mode only).
    *
    * @param options - Options for the async generation job.
    * @returns A promise resolving to the job ID.
@@ -382,7 +385,7 @@ export class OrbitSitemap implements GravitoOrbit {
       storage = new DiskSitemapStorage(opts.outDir, opts.baseUrl)
     }
 
-    // 處理轉址（如果啟用）
+    // Handle redirects (if enabled)
     let providers = opts.providers
     if (opts.redirect?.enabled && opts.redirect.manager) {
       const handler = new RedirectHandler({
@@ -401,7 +404,7 @@ export class OrbitSitemap implements GravitoOrbit {
       }))
     }
 
-    // 建立進度追蹤器
+    // Create progress tracker
     let progressTracker: ProgressTracker | undefined
     if (opts.progressStorage) {
       progressTracker = new ProgressTracker({
@@ -409,7 +412,7 @@ export class OrbitSitemap implements GravitoOrbit {
       })
     }
 
-    // 建立背景任務
+    // Create background job
     const job = new GenerateSitemapJob({
       jobId,
       generatorOptions: {
@@ -425,9 +428,7 @@ export class OrbitSitemap implements GravitoOrbit {
       onError: options?.onError,
     })
 
-    // 如果配置了 queue，推送到 queue；否則直接執行
-    // 這裡假設有 queue 可用（需要從 core 取得）
-    // 簡化實作：直接執行
+    // Execute job asynchronously
     job.handle().catch((error) => {
       if (options?.onError) {
         options.onError(error)
@@ -438,7 +439,7 @@ export class OrbitSitemap implements GravitoOrbit {
   }
 
   /**
-   * Install API endpoints for triggering and monitoring sitemap generation.
+   * Installs API endpoints for triggering and monitoring sitemap generation.
    *
    * @param core - The PlanetCore instance.
    * @param basePath - The base path for the API endpoints (default: '/admin/sitemap').
@@ -446,7 +447,7 @@ export class OrbitSitemap implements GravitoOrbit {
   installApiEndpoints(core: PlanetCore, basePath = '/admin/sitemap'): void {
     const opts = this.options as StaticSitemapOptions
 
-    // 觸發生成
+    // Trigger generation
     core.router.post(`${basePath}/generate`, async (ctx: GravitoContext) => {
       try {
         const body = (await ctx.req.json().catch(() => ({}))) as {
@@ -464,7 +465,7 @@ export class OrbitSitemap implements GravitoOrbit {
       }
     })
 
-    // 查詢進度
+    // Query progress
     core.router.get(`${basePath}/status/:jobId`, async (ctx: GravitoContext) => {
       const jobId = ctx.req.param('jobId')
       if (!opts.progressStorage) {
@@ -482,7 +483,7 @@ export class OrbitSitemap implements GravitoOrbit {
       return ctx.json(progress)
     })
 
-    // 查詢歷史記錄
+    // Query history
     core.router.get(`${basePath}/history`, async (ctx: GravitoContext) => {
       if (!opts.progressStorage) {
         return ctx.json({ error: 'Progress tracking is not enabled' }, 400)

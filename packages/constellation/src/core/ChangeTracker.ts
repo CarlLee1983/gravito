@@ -29,6 +29,11 @@ export class MemoryChangeTracker implements ChangeTracker {
     this.maxChanges = options.maxChanges || 100000
   }
 
+  /**
+   * Record a new site structure change in memory.
+   *
+   * @param change - The change event to record.
+   */
   async track(change: SitemapChange): Promise<void> {
     this.changes.push(change)
 
@@ -53,6 +58,12 @@ export class MemoryChangeTracker implements ChangeTracker {
     }
   }
 
+  /**
+   * Retrieve all changes recorded in memory since a specific time.
+   *
+   * @param since - Optional start date for the query.
+   * @returns An array of change events.
+   */
   async getChanges(since?: Date): Promise<SitemapChange[]> {
     if (!since) {
       return [...this.changes]
@@ -61,10 +72,21 @@ export class MemoryChangeTracker implements ChangeTracker {
     return this.changes.filter((change) => change.timestamp >= since)
   }
 
+  /**
+   * Retrieve the full change history for a specific URL from memory.
+   *
+   * @param url - The URL to query history for.
+   * @returns An array of change events.
+   */
   async getChangesByUrl(url: string): Promise<SitemapChange[]> {
     return this.urlIndex.get(url) || []
   }
 
+  /**
+   * Purge old change records from memory storage.
+   *
+   * @param since - If provided, only records older than this date will be cleared.
+   */
   async clear(since?: Date): Promise<void> {
     if (!since) {
       this.changes = []
@@ -115,7 +137,7 @@ export class RedisChangeTracker implements ChangeTracker {
   constructor(options: RedisChangeTrackerOptions) {
     this.client = options.client
     this.keyPrefix = options.keyPrefix || 'sitemap:changes:'
-    this.ttl = options.ttl || 604800 // 7 天
+    this.ttl = options.ttl || 604800 // 7 days
   }
 
   private getKey(url: string): string {
@@ -126,20 +148,31 @@ export class RedisChangeTracker implements ChangeTracker {
     return `${this.keyPrefix}list`
   }
 
+  /**
+   * Record a new site structure change in Redis.
+   *
+   * @param change - The change event to record.
+   */
   async track(change: SitemapChange): Promise<void> {
     const key = this.getKey(change.url)
     const listKey = this.getListKey()
     const data = JSON.stringify(change)
 
-    // 儲存變更
+    // Save change
     await this.client.set(key, data, 'EX', this.ttl)
 
-    // 添加到時間序列列表
+    // Add to time series list
     const score = change.timestamp.getTime()
     await this.client.zadd(listKey, score, change.url)
     await this.client.expire(listKey, this.ttl)
   }
 
+  /**
+   * Retrieve all changes recorded in Redis since a specific time.
+   *
+   * @param since - Optional start date for the query.
+   * @returns An array of change events.
+   */
   async getChanges(since?: Date): Promise<SitemapChange[]> {
     try {
       const listKey = this.getListKey()
@@ -163,6 +196,12 @@ export class RedisChangeTracker implements ChangeTracker {
     }
   }
 
+  /**
+   * Retrieve the full change history for a specific URL from Redis.
+   *
+   * @param url - The URL to query history for.
+   * @returns An array of change events.
+   */
   async getChangesByUrl(url: string): Promise<SitemapChange[]> {
     try {
       const key = this.getKey(url)
@@ -178,19 +217,24 @@ export class RedisChangeTracker implements ChangeTracker {
     }
   }
 
+  /**
+   * Purge old change records from Redis storage.
+   *
+   * @param since - If provided, only records older than this date will be cleared.
+   */
   async clear(since?: Date): Promise<void> {
     try {
       const listKey = this.getListKey()
 
       if (!since) {
-        // 清除所有
+        // Clear all
         const urls = await this.client.zrange(listKey, 0, -1)
         for (const url of urls) {
           await this.client.del(this.getKey(url))
         }
         await this.client.del(listKey)
       } else {
-        // 清除指定時間之前的
+        // Clear before specified time
         const maxScore = since.getTime()
         const urls = await this.client.zrangebyscore(listKey, 0, maxScore)
         for (const url of urls) {
@@ -199,7 +243,7 @@ export class RedisChangeTracker implements ChangeTracker {
         }
       }
     } catch {
-      // 忽略錯誤
+      // Ignore errors
     }
   }
 }
