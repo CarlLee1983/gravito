@@ -1,3 +1,9 @@
+/**
+ * @file packages/cosmos/src/index.ts
+ * @module @gravito/cosmos
+ * @description Entry point for the Gravito Cosmos internationalization module.
+ */
+
 import type { GravitoMiddleware, GravitoOrbit, PlanetCore } from '@gravito/core'
 import { type I18nConfig, I18nManager, type I18nService, localeMiddleware } from './I18nService'
 

@@ -1,3 +1,9 @@
+/**
+ * @file packages/cosmos/src/loader.ts
+ * @module @gravito/cosmos/loader
+ * @description Utilities for loading translation files from the filesystem.
+ */
+
 import { readdir, readFile } from 'node:fs/promises'
 import { join, parse } from 'node:path'
 
