@@ -72,10 +72,18 @@ export interface CacheStore {
    * Get a distributed lock instance for the given name.
    *
    * @param name - The lock name.
-   * @param seconds - Optional default duration for the lock.
+   * @param seconds - Optional default duration for the lock in seconds.
    * @returns A `CacheLock` instance if supported, otherwise undefined.
    */
   lock?(name: string, seconds?: number): CacheLock | undefined
+
+  /**
+   * Get the remaining time-to-live (TTL) for a key in seconds.
+   *
+   * @param key - The cache key.
+   * @returns A promise that resolves to the remaining TTL in seconds, or null if the key doesn't exist or has no expiration.
+   */
+  ttl?(key: CacheKey): Promise<number | null>
 }
 
 /**
@@ -107,14 +115,14 @@ export interface TaggableStore {
    * @param tags - An array of tag names.
    * @param taggedKey - The key to associate with the tags.
    */
-  tagIndexAdd(tags: readonly string[], taggedKey: string): void
+  tagIndexAdd(tags: readonly string[], taggedKey: string): void | Promise<void>
 
   /**
    * Remove a key from the tag index.
    *
    * @param taggedKey - The key to remove from all tag indexes.
    */
-  tagIndexRemove(taggedKey: string): void
+  tagIndexRemove(taggedKey: string): void | Promise<void>
 }
 
 /**

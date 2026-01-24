@@ -1,10 +1,18 @@
 # @gravito/astral
 
+## 1.0.1
+
+### Patch Changes
+
+- Updated dependencies [1e7f7d6]
+  - @gravito/impulse@1.1.0
+
 ## 0.2.0
 
 ### Minor Changes
 
 - **完整 OpenAPI 3.1.0 規範支援**
+
   - ✨ 新增 `servers` 配置支援（多環境設定）
   - ✨ 新增 `securitySchemes` 與全域 `security` 支援
   - ✨ 新增 `tags` 完整定義（含 description 與 externalDocs）

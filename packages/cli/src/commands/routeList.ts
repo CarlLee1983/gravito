@@ -1,13 +1,34 @@
 import path from 'node:path'
 import pc from 'picocolors'
 
+/**
+ * Check if a value is a plain object record.
+ *
+ * @param value - The value to check.
+ * @returns True if the value is a record, false otherwise.
+ * @private
+ */
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
 }
 
+/**
+ * Simplified route object structure from Photon.
+ */
 type PhotonRouteLike = { method: string; path: string; name?: string }
+
+/**
+ * Simplified Photon application structure.
+ */
 type PhotonAppLike = { routes: PhotonRouteLike[] }
 
+/**
+ * Type guard to check if a value resembles a Photon application instance.
+ *
+ * @param value - The value to check.
+ * @returns True if the value matches the PhotonAppLike interface.
+ * @private
+ */
 function isPhotonAppLike(value: unknown): value is PhotonAppLike {
   return (
     isRecord(value) &&
@@ -22,6 +43,17 @@ function isPhotonAppLike(value: unknown): value is PhotonAppLike {
   )
 }
 
+/**
+ * List all registered routes in the application.
+ *
+ * Scans the application's entry point, finds the Photon app instance,
+ * and prints a formatted table of all defined routes.
+ *
+ * @param options - Listing options.
+ * @param options.entry - The entry file of the application.
+ * @returns A promise that resolves when the routes are listed.
+ * @public
+ */
 export async function routeList(options: { entry: string }) {
   try {
     const cwd = process.cwd()

@@ -30,7 +30,6 @@
  * @module @gravito/ripple
  */
 
-// Channels
 export {
   CHANNEL_PREFIXES,
   ChannelManager,
@@ -40,15 +39,24 @@ export {
   PublicChannel,
   requiresAuth,
 } from './channels'
-// Drivers
 export { LocalDriver } from './drivers'
-// Events
-export { BroadcastEvent, Broadcaster, broadcast, getRippleServer, setRippleServer } from './events'
-// Core
+export { RippleDriverError, RippleError } from './errors'
+export {
+  BroadcastEvent,
+  Broadcaster,
+  BroadcastManager,
+  broadcast,
+  getRippleServer,
+  setRippleServer,
+} from './events'
+export type { ComponentHealth, HealthCheckResult, HealthStatus } from './health/HealthChecker'
+export { HealthChecker } from './health/HealthChecker'
+export type { LogContext, LogLevel, RippleLogger } from './logging/Logger'
+export { ConsoleLogger, createLogger } from './logging/Logger'
 export { OrbitRipple } from './OrbitRipple'
 export { RippleServer } from './RippleServer'
-
-// Types
+export type { ConnectionEvent, ConnectionTracker } from './tracking/ConnectionTracker'
+export { DefaultConnectionTracker } from './tracking/ConnectionTracker'
 export type {
   BroadcastEventInterface,
   Channel,
@@ -56,11 +64,15 @@ export type {
   ChannelType,
   ClientData,
   ClientMessage,
+  DriverStatus,
+  ErrorServerMessage,
   PresenceUserInfo,
   RippleBunServer,
   RippleConfig,
   RippleDriver,
+  RippleErrorCode,
   RippleWebSocket,
   ServerMessage,
   WebSocketHandlerConfig,
 } from './types'
+export { MessageSerializer } from './utils/MessageSerializer'

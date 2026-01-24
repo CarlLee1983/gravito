@@ -5,67 +5,36 @@ import type { BeamOptions } from './types'
 /**
  * Orbit Beam - Lightweight type-safe RPC client for Gravito applications.
  *
- * This function wraps the Beam client to provide a seamless, type-safe development experience
- * similar to tRPC but with zero runtime overhead. It directly delegates to the Photon client, maintaining
- * maximum performance and minimal bundle size.
+ * This function creates a type-safe API client by wrapping the underlying Beam client.
+ * It provides a seamless development experience similar to tRPC but with **zero runtime overhead**.
+ * The client directly delegates to Photon's high-performance HTTP engine.
  *
- * **Zero Runtime Overhead**: This is a pure type wrapper that delegates directly to the Beam client.
- * No additional abstraction layers or middleware are added.
+ * ### Key Features
+ * - **Zero Runtime Overhead**: Pure type wrapper, no additional abstraction layers.
+ * - **Type Safety**: Automatically infers types from your backend `AppType` or `AppRoutes`.
+ * - **IntelliSense**: Full autocomplete for routes, methods, and request/response bodies.
  *
- * **Type Support**: Supports both `AppType` (simple Photon instance) and `AppRoutes` (from `app.route()`).
- * Both are Photon instances and work seamlessly with this function.
+ * @template T - The generic type parameter representing your Photon app or routes.
+ *   - `AppType`: `typeof app` - For direct route definitions.
+ *   - `AppRoutes`: `ReturnType<typeof createApp>` - For modular app.route() chains.
  *
- * @template T - The type of your Photon app. Can be either:
- *   - `AppType`: `typeof app` - Direct type from Photon instance (simple scenarios)
- *   - `AppRoutes`: `ReturnType<typeof _createTypeOnlyApp>` - Type from `app.route()` chain (recommended, matches template usage)
- * @param baseUrl - The base URL of your API server (e.g., 'http://localhost:3000')
- * @param options - Optional configuration including fetch options (headers, etc.)
- * @returns A fully typed Beam client instance that provides IntelliSense for all routes
+ * @param baseUrl - The root URL of your API server (e.g., `'http://localhost:3000'`).
+ * @param options - Optional configuration for the client (headers, credentials, etc.).
+ * @returns A fully typed Beam client proxy for your API.
  *
  * @example
- * **Using AppType (simple scenario):**
  * ```typescript
- * // server/app.ts
- * const app = new Photon()
- *   .post('/post', validate('json', PostSchema), (c) => {
- *     return c.json({ id: 1, title: 'Hello' })
- *   })
- *
- * export type AppType = typeof app
- *
- * // client.ts
  * import { createBeam } from '@gravito/beam'
- * import type { AppType } from '../server/app'
+ * import type { AppType } from './server'
  *
  * const client = createBeam<AppType>('http://localhost:3000')
  *
- * // Fully typed request - TypeScript will autocomplete and validate
- * const res = await client.post.$post({
- *   json: { title: 'Gravito' } // ✅ Type checked!
- * })
+ * // Fully typed GET request
+ * const res = await client.hello.$get()
+ * const data = await res.json()
  * ```
  *
- * @example
- * **Using AppRoutes (recommended, matches template usage):**
- * ```typescript
- * // server/app.ts
- * const routes = app
- *   .route('/api/users', userRoute)
- *   .route('/api', apiRoute)
- *
- * export type AppRoutes = typeof routes
- *
- * // client.ts
- * import { createBeam } from '@gravito/beam'
- * import type { AppRoutes } from '../server/types'
- *
- * const client = createBeam<AppRoutes>('http://localhost:3000')
- *
- * // Fully typed request with nested routes
- * const res = await client.api.users.login.$post({
- *   json: { username: 'user', password: 'pass' } // ✅ Type checked!
- * })
- * ```
+ * @public
  */
 export function createBeam<T extends Photon<Env, Schema, string>>(
   baseUrl: string,
@@ -77,8 +46,10 @@ export function createBeam<T extends Photon<Env, Schema, string>>(
 }
 
 /**
- * Backward compatible alias for createBeam
- * @deprecated Use createBeam instead
+ * Backward compatible alias for {@link createBeam}.
+ *
+ * @deprecated Use {@link createBeam} instead. This alias will be removed in future versions.
+ * @public
  */
 export const createGravitoClient = createBeam
 

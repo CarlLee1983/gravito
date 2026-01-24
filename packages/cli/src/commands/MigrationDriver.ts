@@ -57,14 +57,36 @@ export interface MigrationStatus {
  * @since 3.0.0
  */
 export interface MigrationDriver {
-  /** Generate a new migration file */
+  /**
+   * Generate a new migration file.
+   *
+   * @param name - The name of the migration.
+   * @returns A promise that resolves with the migration result.
+   */
   generate(name: string): Promise<MigrationResult>
-  /** Run all pending migrations */
+  /**
+   * Run all pending migrations.
+   *
+   * @returns A promise that resolves with the migration result.
+   */
   migrate(): Promise<MigrationResult>
-  /** Drop all tables and re-run migrations */
+  /**
+   * Drop all tables and re-run migrations.
+   *
+   * @returns A promise that resolves with the migration result.
+   */
   fresh(): Promise<MigrationResult>
-  /** Rollback the last N migrations */
+  /**
+   * Rollback the last N migrations.
+   *
+   * @param steps - The number of migrations to rollback (default: 1).
+   * @returns A promise that resolves with the migration result.
+   */
   rollback(steps?: number): Promise<MigrationResult>
-  /** Get migration status */
+  /**
+   * Get the current status of migrations.
+   *
+   * @returns A promise that resolves with the migration status.
+   */
   status(): Promise<MigrationStatus>
 }

@@ -8,23 +8,19 @@ describe('RedisDriver', () => {
   let subClient: any
 
   beforeEach(async () => {
-    // Manually inject mocks
     pubClient = new MockRedis()
     subClient = new MockRedis()
 
     driver = new RedisDriver({
-      driver: 'redis',
       host: 'localhost',
       port: 6379,
     })
 
-    // Inject mocks directly into private properties
-    // biome-ignore lint/suspicious/noExplicitAny: Accessing private properties for testing
     ;(driver as any).redis = pubClient
-    // biome-ignore lint/suspicious/noExplicitAny: Accessing private properties for testing
     ;(driver as any).subscriber = subClient
+    ;(driver as any)._initialized = true
+    ;(driver as any)._connected = true
 
-    // Override init to do nothing (since we already injected connected clients)
     driver.init = async () => {}
   })
 
@@ -33,12 +29,10 @@ describe('RedisDriver', () => {
   })
 
   it('should initialize and shutdown successfully', async () => {
-    // Already connected in beforeEach
     expect(driver).toBeDefined()
   })
 
   it('should publish and receive messages', async () => {
-    // For this test with mocks, we verify methods are called
     const spy = spyOn(pubClient, 'publish')
     await driver.publish('test-channel', 'test', 123)
     expect(spy).toHaveBeenCalled()
@@ -56,20 +50,18 @@ describe('RedisDriver', () => {
     await driver.subscribe('channel-1', handler1)
     await driver.subscribe('channel-1', handler2)
 
-    expect(spy).toHaveBeenCalledTimes(1) // Should subscribe only once per channel
+    expect(spy).toHaveBeenCalledTimes(1)
     expect(spy).toHaveBeenCalledWith('ripple:channel-1')
   })
 
   it('should support channel prefix', async () => {
     driver = new RedisDriver({
-      driver: 'redis',
       keyPrefix: 'custom:',
     })
-    // Re-inject mocks
-    // biome-ignore lint/suspicious/noExplicitAny: Accessing private properties for testing
     ;(driver as any).redis = pubClient
-    // biome-ignore lint/suspicious/noExplicitAny: Accessing private properties for testing
     ;(driver as any).subscriber = subClient
+    ;(driver as any)._initialized = true
+    ;(driver as any)._connected = true
     driver.init = async () => {}
 
     const spy = spyOn(pubClient, 'publish')
@@ -83,24 +75,22 @@ describe('RedisDriver', () => {
     const handler = () => {}
 
     await driver.subscribe('channel-2', handler)
-    await driver.unsubscribe('channel-2', handler)
+    await driver.unsubscribe('channel-2')
 
     expect(spy).toHaveBeenCalledWith('ripple:channel-2')
   })
 
   it('should throw error if publish before init', async () => {
-    const newDriver = new RedisDriver({ driver: 'redis' })
-    // No connect() called
-    expect(newDriver.publish('test', {})).rejects.toThrow()
+    const newDriver = new RedisDriver()
+    expect(newDriver.publish('test', 'event', {})).rejects.toThrow()
   })
 
   it('should throw error if subscribe before init', async () => {
-    const newDriver = new RedisDriver({ driver: 'redis' })
+    const newDriver = new RedisDriver()
     expect(newDriver.subscribe('test', () => {})).rejects.toThrow()
   })
 })
 
-// Helper to spy on methods
 function spyOn(obj: any, method: string) {
   const original = obj[method]
   const mockFn = jest.fn(original)

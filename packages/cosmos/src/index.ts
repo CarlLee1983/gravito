@@ -3,17 +3,24 @@ import { type I18nConfig, I18nManager, type I18nService, localeMiddleware } from
 
 declare module '@gravito/core' {
   interface GravitoVariables {
-    /** I18n service for translations */
+    /**
+     * The request-scoped I18n service instance.
+     * Provides translation and locale management for the current request.
+     */
     i18n: I18nService
   }
 }
 
 /**
- * OrbitCosmos provides internationalization (i18n) support for Gravito.
- * It manages translations, locale switching, and provides a middleware for request-scoped locale detection.
+ * OrbitCosmos provides internationalization (i18n) support for the Gravito framework.
+ *
+ * It manages global translation resources, handles locale detection through middleware,
+ * and provides request-scoped i18n instances.
  *
  * @example
  * ```typescript
+ * import { OrbitCosmos } from '@gravito/cosmos'
+ *
  * const cosmos = new OrbitCosmos({
  *   defaultLocale: 'en',
  *   supportedLocales: ['en', 'zh-TW'],
@@ -25,19 +32,25 @@ declare module '@gravito/core' {
  * core.addOrbit(cosmos);
  * ```
  * @public
+ * @since 3.0.0
  */
 export class OrbitCosmos implements GravitoOrbit {
   /**
    * Create a new OrbitCosmos instance.
-   * @param config - The i18n configuration options.
+   *
+   * @param config - The i18n configuration options including locales and translations.
    */
   constructor(private config: I18nConfig) {}
 
   /**
    * Install the i18n service into PlanetCore.
-   * Registers the I18nManager and sets up the locale middleware.
    *
-   * @param core - The PlanetCore instance.
+   * This method:
+   * 1. Initializes the central `I18nManager`.
+   * 2. Registers the manager in the IoC container as 'i18n'.
+   * 3. Injects the `localeMiddleware` into the adapter for all routes.
+   *
+   * @param core - The PlanetCore instance to install into.
    */
   install(core: PlanetCore): void {
     const i18nManager = new I18nManager(this.config)
