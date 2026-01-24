@@ -117,9 +117,10 @@ export class RippleServer {
    *
    * @param req - The HTTP request.
    * @param server - The Bun server instance.
+   * @param options - Optional upgrade options (userId for authenticated connections).
    * @returns True if the request was upgraded, false otherwise.
    */
-  upgrade(req: Request, server: Server<ClientData>): boolean {
+  upgrade(req: Request, server: Server<ClientData>, options?: { userId?: string }): boolean {
     const url = new URL(req.url)
 
     if (url.pathname !== this.config.path) {
@@ -130,6 +131,7 @@ export class RippleServer {
       data: {
         id: crypto.randomUUID(),
         channels: new Set<string>(),
+        userId: options?.userId,
       } satisfies ClientData,
     })
 

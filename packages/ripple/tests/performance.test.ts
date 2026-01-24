@@ -4,6 +4,20 @@ import { MessageSerializer } from '../src/utils/MessageSerializer'
 
 describe('Performance Optimizations', () => {
   describe('MessageSerializer', () => {
+    it('should serialize message to JSON string', () => {
+      const serializer = new MessageSerializer()
+      const message: ServerMessage = {
+        type: 'event',
+        channel: 'test',
+        event: 'TestEvent',
+        data: { foo: 'bar' },
+      }
+
+      const result = serializer.serialize(message)
+      expect(result).toBe(JSON.stringify(message))
+      expect(typeof result).toBe('string')
+    })
+
     it('should cache broadcast messages to serialize only once', () => {
       const serializer = new MessageSerializer()
       const spy = vi.spyOn(JSON, 'stringify')
