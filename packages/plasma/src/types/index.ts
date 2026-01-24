@@ -326,6 +326,9 @@ export interface RedisClientContract {
 
   /** Starts a pipeline for atomic/batch command execution */
   pipeline(): RedisPipelineContract
+
+  /** Executes a Lua script atomically on the Redis server */
+  eval(script: string, numKeys: number, ...args: string[]): Promise<unknown>
 }
 
 /**

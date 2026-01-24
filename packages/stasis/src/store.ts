@@ -107,14 +107,14 @@ export interface TaggableStore {
    * @param tags - An array of tag names.
    * @param taggedKey - The key to associate with the tags.
    */
-  tagIndexAdd(tags: readonly string[], taggedKey: string): void
+  tagIndexAdd(tags: readonly string[], taggedKey: string): void | Promise<void>
 
   /**
    * Remove a key from the tag index.
    *
    * @param taggedKey - The key to remove from all tag indexes.
    */
-  tagIndexRemove(taggedKey: string): void
+  tagIndexRemove(taggedKey: string): void | Promise<void>
 }
 
 /**

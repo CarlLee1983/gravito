@@ -981,6 +981,14 @@ export class BunRedisClient implements RedisClientContract {
   pipeline(): RedisPipelineContract {
     return new BunRedisPipeline(this)
   }
+
+  async eval(script: string, numKeys: number, ...args: string[]): Promise<unknown> {
+    try {
+      return await this.sendCommand('EVAL', [script, numKeys.toString(), ...args])
+    } catch (error) {
+      throw this.handleException(error, 'EVAL')
+    }
+  }
 }
 
 /**
