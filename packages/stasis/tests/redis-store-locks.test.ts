@@ -11,7 +11,7 @@ describe('RedisStore Distributed Lock Atomicity', () => {
         test: {
           host: 'localhost',
           port: 6379,
-          db: 15,
+          db: 14,
         },
       },
     })
@@ -21,7 +21,7 @@ describe('RedisStore Distributed Lock Atomicity', () => {
 
   afterAll(async () => {
     await Redis.flushdb()
-    await Redis.disconnect()
+    // Avoid Redis.disconnect() to prevent closing shared connections in parallel tests
   })
 
   it('should acquire and release lock correctly', async () => {

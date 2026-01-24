@@ -21,7 +21,7 @@ describe('RedisStore Tag System', () => {
 
   afterAll(async () => {
     await Redis.flushdb()
-    await Redis.disconnect()
+    // Avoid Redis.disconnect() to prevent closing shared connections in parallel tests
   })
 
   it('should remove key from tag index when forget is called', async () => {
