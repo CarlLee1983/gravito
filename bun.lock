@@ -924,7 +924,7 @@
     },
     "packages/cosmos": {
       "name": "@gravito/cosmos",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "devDependencies": {
         "bun-types": "latest",
         "mitata": "^1.0.34",
@@ -1494,6 +1494,7 @@
       "devDependencies": {
         "bun-types": "latest",
         "ioredis": "^5.4.2",
+        "tinybench": "^6.0.0",
         "typescript": "^5.9.3",
       },
       "peerDependencies": {
