@@ -1,3 +1,9 @@
+/**
+ * @file packages/cosmos/src/I18nService.ts
+ * @module @gravito/cosmos/service
+ * @description Core services and interfaces for internationalization.
+ */
+
 import type { GravitoMiddleware } from '@gravito/core'
 import { loadLocale } from './loader'
 
@@ -569,8 +575,16 @@ export class I18nManager<Schema = TranslationMap> implements I18nService<Schema>
   /**
    * Add or merge a resource bundle for a specific locale.
    *
-   * @param locale - Locale string.
-   * @param translations - Translation map to add.
+   * @param locale - The locale string (e.g., 'en', 'fr').
+   * @param translations - The translation map to merge into the existing bundle.
+   *
+   * @example
+   * ```typescript
+   * manager.addResource('es', {
+   *   greeting: 'Hola',
+   *   auth: { login: 'Iniciar sesión' }
+   * });
+   * ```
    */
   addResource(locale: string, translations: TranslationMap) {
     this.translations[locale] = {
