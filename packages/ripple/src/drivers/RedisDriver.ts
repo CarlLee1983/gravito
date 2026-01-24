@@ -1,78 +1,106 @@
 /**
  * @fileoverview Redis driver for @gravito/ripple
  *
- * Enables horizontal scaling across multiple server instances using
- * Redis Pub/Sub for message broadcasting.
- *
  * @module @gravito/ripple/drivers
  */
 
-import type { RippleDriver } from '../types'
+import type { Redis as RedisClient, RedisOptions } from 'ioredis'
+import { RippleDriverError } from '../errors/RippleError'
+import type { RippleLogger } from '../logging/Logger'
+import { createLogger } from '../logging/Logger'
+import type { DriverStatus, RippleDriver } from '../types'
 
-/**
- * Redis-based driver for multi-server deployments
- *
- * This driver uses Redis Pub/Sub to broadcast messages across multiple
- * server instances, enabling horizontal scaling of WebSocket connections.
- *
- * @example
- * ```typescript
- * const ripple = new RippleServer({
- *   driver: 'redis',
- *   redis: {
- *     host: 'localhost',
- *     port: 6379
- *   }
- * })
- * ```
- */
 export class RedisDriver implements RippleDriver {
   readonly name = 'redis'
 
-  private redis: any
-  private subscriber: any
+  private redis?: RedisClient
+  private subscriber?: RedisClient
   private channelPrefix: string
   private subscriptions = new Map<string, Set<(event: string, data: unknown) => void>>()
+  private _initialized = false
+  private _connected = false
+  private _lastError?: string
+  private logger: RippleLogger
 
   constructor(private config: RedisDriverConfig = {}) {
     this.channelPrefix = config.keyPrefix ?? 'ripple:'
+    this.logger = config.logger ?? createLogger('RedisDriver')
+  }
+
+  get isInitialized(): boolean {
+    return this._initialized
   }
 
   async init(): Promise<void> {
-    // Dynamically import ioredis
-    const Redis = await this.getRedisClient()
-
-    const redisOptions = {
-      host: this.config.host ?? 'localhost',
-      port: this.config.port ?? 6379,
-      password: this.config.password,
-      db: this.config.db ?? 0,
+    if (this._initialized) {
+      this.logger.debug('RedisDriver already initialized, skipping')
+      return
     }
 
-    // Create publisher connection
-    this.redis = new Redis(redisOptions)
-
-    // Create subscriber connection (Redis requires separate connection for pub/sub)
-    this.subscriber = new Redis(redisOptions)
-
-    // Handle subscriber messages
-    this.subscriber.on('message', (channel: string, message: string) => {
-      this.handleMessage(channel, message)
+    this.logger.info('Initializing RedisDriver', {
+      host: this.config.host ?? 'localhost',
+      port: this.config.port ?? 6379,
     })
 
-    // Handle subscriber errors
-    this.subscriber.on('error', (error: Error) => {
-      console.error('[RedisDriver] Subscriber error:', error)
-    })
+    try {
+      const Redis = await this.getRedisClient()
 
-    this.redis.on('error', (error: Error) => {
-      console.error('[RedisDriver] Publisher error:', error)
-    })
+      const redisOptions: RedisOptions = {
+        host: this.config.host ?? 'localhost',
+        port: this.config.port ?? 6379,
+        password: this.config.password,
+        db: this.config.db ?? 0,
+        retryStrategy: (times) => Math.min(times * 50, 2000),
+        maxRetriesPerRequest: 3,
+        connectTimeout: this.config.connectTimeout ?? 5000,
+        commandTimeout: this.config.commandTimeout ?? 3000,
+        enableReadyCheck: this.config.enableReadyCheck ?? true,
+        lazyConnect: this.config.lazyConnect ?? false,
+      }
+
+      this.redis = new Redis(redisOptions)
+      this.subscriber = new Redis(redisOptions)
+
+      this.subscriber.on('message', (channel: string, message: string) => {
+        this.handleMessage(channel, message)
+      })
+
+      this.subscriber.on('error', (error: Error) => {
+        this.handleError('subscriber', error)
+      })
+
+      this.subscriber.on('connect', () => {
+        this._connected = true
+        this.logger.info('Redis subscriber connected')
+      })
+
+      this.subscriber.on('close', () => {
+        this._connected = false
+        this.logger.warn('Redis subscriber connection closed')
+      })
+
+      this.redis.on('error', (error: Error) => {
+        this.handleError('publisher', error)
+      })
+
+      this._initialized = true
+      this.logger.info('RedisDriver initialized successfully')
+    } catch (error) {
+      this._lastError = error instanceof Error ? error.message : String(error)
+      this.logger.error('Failed to initialize RedisDriver', {
+        error: this._lastError,
+        errorCode: 'REDIS_CONNECTION_FAILED',
+      })
+      throw error
+    }
   }
 
   async publish(channel: string, event: string, data: unknown): Promise<void> {
-    if (!this.redis) {
-      throw new Error('RedisDriver not initialized. Call init() first.')
+    if (!this.redis || !this._initialized) {
+      throw new RippleDriverError(
+        'DRIVER_NOT_INITIALIZED',
+        'RedisDriver not initialized. Call init() first.'
+      )
     }
 
     const prefixedChannel = this.channelPrefix + channel
@@ -85,17 +113,19 @@ export class RedisDriver implements RippleDriver {
     channel: string,
     callback: (event: string, data: unknown) => void
   ): Promise<void> {
-    if (!this.subscriber) {
-      throw new Error('RedisDriver not initialized. Call init() first.')
+    if (!this.subscriber || !this._initialized) {
+      throw new RippleDriverError(
+        'DRIVER_NOT_INITIALIZED',
+        'RedisDriver not initialized. Call init() first.'
+      )
     }
 
     const prefixedChannel = this.channelPrefix + channel
 
-    // Store callback
     if (!this.subscriptions.has(prefixedChannel)) {
       this.subscriptions.set(prefixedChannel, new Set())
-      // Subscribe to Redis channel
       await this.subscriber.subscribe(prefixedChannel)
+      this.logger.debug('Subscribed to Redis channel', { channel: prefixedChannel })
     }
 
     this.subscriptions.get(prefixedChannel)?.add(callback)
@@ -108,36 +138,54 @@ export class RedisDriver implements RippleDriver {
 
     const prefixedChannel = this.channelPrefix + channel
 
-    // Remove from subscriptions
     this.subscriptions.delete(prefixedChannel)
 
-    // Unsubscribe from Redis if no more callbacks
     if (!this.subscriptions.has(prefixedChannel)) {
       await this.subscriber.unsubscribe(prefixedChannel)
     }
   }
 
   async shutdown(): Promise<void> {
+    this.logger.info('Shutting down RedisDriver')
+
     this.subscriptions.clear()
 
     if (this.subscriber) {
       try {
         await this.subscriber.quit()
-      } catch (_e) {}
-      this.subscriber = null
+        this.logger.debug('Redis subscriber quit successfully')
+      } catch (error) {
+        this._lastError = error instanceof Error ? error.message : String(error)
+        this.logger.error('Failed to quit Redis subscriber', { error: this._lastError })
+      }
+      this.subscriber = undefined
     }
 
     if (this.redis) {
       try {
         await this.redis.quit()
-      } catch (_e) {}
-      this.redis = null
+        this.logger.debug('Redis publisher quit successfully')
+      } catch (error) {
+        this._lastError = error instanceof Error ? error.message : String(error)
+        this.logger.error('Failed to quit Redis publisher', { error: this._lastError })
+      }
+      this.redis = undefined
+    }
+
+    this._initialized = false
+    this._connected = false
+    this.logger.info('RedisDriver shutdown complete')
+  }
+
+  getStatus(): DriverStatus {
+    return {
+      name: this.name,
+      initialized: this._initialized,
+      connected: this._connected,
+      lastError: this._lastError,
     }
   }
 
-  /**
-   * Handle incoming Redis messages
-   */
   private handleMessage(channel: string, message: string): void {
     try {
       const callbacks = this.subscriptions.get(channel)
@@ -152,35 +200,44 @@ export class RedisDriver implements RippleDriver {
         callback(event, data)
       }
     } catch (error) {
-      console.error('[RedisDriver] Failed to handle message:', error)
+      this._lastError = error instanceof Error ? error.message : String(error)
+      this.logger.error('Failed to handle Redis message', {
+        channel,
+        error: this._lastError,
+      })
     }
   }
 
-  /**
-   * Dynamically import ioredis to avoid bundling it if not used
-   */
-  private async getRedisClient(): Promise<any> {
+  private handleError(source: 'publisher' | 'subscriber', error: Error): void {
+    this._lastError = `${source}: ${error.message}`
+    this.logger.error(`Redis ${source} error`, {
+      error: error.message,
+      errorCode: 'REDIS_CONNECTION_FAILED',
+    })
+  }
+
+  private async getRedisClient(): Promise<typeof import('ioredis').default> {
     try {
       const ioredis = await import('ioredis')
       return ioredis.default
-    } catch (_error) {
-      throw new Error('ioredis is required for RedisDriver. Install it with: bun add ioredis')
+    } catch {
+      throw new RippleDriverError(
+        'REDIS_NOT_INSTALLED',
+        'ioredis is required for RedisDriver. Install it with: bun add ioredis'
+      )
     }
   }
 }
 
-/**
- * Configuration options for RedisDriver
- */
 export interface RedisDriverConfig {
-  /** Redis host (default: 'localhost') */
   host?: string
-  /** Redis port (default: 6379) */
   port?: number
-  /** Redis password (optional) */
   password?: string
-  /** Redis database number (default: 0) */
   db?: number
-  /** Key prefix for channels (default: 'ripple:') */
   keyPrefix?: string
+  logger?: RippleLogger
+  connectTimeout?: number
+  commandTimeout?: number
+  enableReadyCheck?: boolean
+  lazyConnect?: boolean
 }

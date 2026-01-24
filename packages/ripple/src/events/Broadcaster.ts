@@ -6,69 +6,50 @@
 
 import type { RippleServer } from '../RippleServer'
 import type { BroadcastEvent } from './BroadcastEvent'
+import { BroadcastManager } from './BroadcastManager'
 
-/**
- * Global Ripple server instance holder
- */
 let globalRippleServer: RippleServer | null = null
 
 /**
- * Set the global Ripple server instance
+ * @deprecated Use BroadcastManager instead. Will be removed in v4.0.
  */
 export function setRippleServer(server: RippleServer): void {
   globalRippleServer = server
 }
 
 /**
- * Get the global Ripple server instance
+ * @deprecated Use BroadcastManager instead. Will be removed in v4.0.
  */
 export function getRippleServer(): RippleServer | null {
   return globalRippleServer
 }
 
 /**
- * Broadcast an event to its channels
+ * @deprecated Use BroadcastManager.broadcast() instead. Will be removed in v4.0.
  *
  * @example
  * ```typescript
- * class OrderShipped extends BroadcastEvent {
- *   constructor(public order: Order) { super() }
- *   broadcastOn() { return new PrivateChannel(`orders.${this.order.userId}`) }
- * }
- *
- * broadcast(new OrderShipped(order))
+ * const manager = container.make<BroadcastManager>('broadcast')
+ * manager.broadcast(new OrderShipped(order))
  * ```
  */
 export function broadcast(event: BroadcastEvent): void {
   if (!globalRippleServer) {
-    console.warn('[Ripple] No server configured. Event not broadcast.')
+    console.warn('[Ripple] No server configured. Use BroadcastManager instead.')
     return
   }
 
-  const channels = event.broadcastOn()
-  const eventName = event.broadcastAs()
-  const data = event.broadcastWith()
-  const _except = event.broadcastExcept()
-
-  const channelList = Array.isArray(channels) ? channels : [channels]
-
-  for (const channel of channelList) {
-    // For each subscriber in the channel, excluding specified sockets
-    globalRippleServer.broadcast(channel.fullName, eventName, data)
-  }
+  const manager = new BroadcastManager(globalRippleServer)
+  manager.broadcast(event)
 }
 
 /**
- * Fluent Broadcaster API for more control
+ * @deprecated Use BroadcastManager instead. Will be removed in v4.0.
  *
  * @example
  * ```typescript
- * Broadcaster.to('orders.123')
- *   .emit('OrderUpdated', { status: 'shipped' })
- *
- * Broadcaster.toPrivate('orders.123')
- *   .except(socketId)
- *   .emit('OrderUpdated', { status: 'shipped' })
+ * const manager = container.make<BroadcastManager>('broadcast')
+ * manager.to('orders.123').emit('OrderUpdated', { status: 'shipped' })
  * ```
  */
 export class Broadcaster {
@@ -79,42 +60,27 @@ export class Broadcaster {
     this._channel = channel
   }
 
-  /**
-   * Target a public channel
-   */
   static to(channel: string): Broadcaster {
     return new Broadcaster(channel)
   }
 
-  /**
-   * Target a private channel
-   */
   static toPrivate(channel: string): Broadcaster {
     return new Broadcaster(`private-${channel}`)
   }
 
-  /**
-   * Target a presence channel
-   */
   static toPresence(channel: string): Broadcaster {
     return new Broadcaster(`presence-${channel}`)
   }
 
-  /**
-   * Exclude specific socket IDs from broadcast
-   */
   except(socketIds: string | string[]): this {
     const ids = Array.isArray(socketIds) ? socketIds : [socketIds]
     this._except.push(...ids)
     return this
   }
 
-  /**
-   * Emit an event to the channel
-   */
   emit(event: string, data: unknown): void {
     if (!globalRippleServer) {
-      console.warn('[Ripple] No server configured. Event not broadcast.')
+      console.warn('[Ripple] No server configured. Use BroadcastManager instead.')
       return
     }
 

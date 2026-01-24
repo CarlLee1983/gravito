@@ -89,53 +89,72 @@ export type ClientMessage =
   | { type: 'whisper'; channel: string; event: string; data: unknown }
   | { type: 'ping' }
 
-/**
- * Server-to-client message types
- */
+export type RippleErrorCode =
+  | 'UNAUTHORIZED'
+  | 'NOT_SUBSCRIBED'
+  | 'INVALID_FORMAT'
+  | 'DRIVER_NOT_INITIALIZED'
+  | 'REDIS_NOT_INSTALLED'
+  | 'REDIS_CONNECTION_FAILED'
+
+export interface ErrorServerMessage {
+  type: 'error'
+  code: RippleErrorCode
+  message: string
+  channel?: string
+}
+
 export type ServerMessage =
   | { type: 'subscribed'; channel: string }
   | { type: 'unsubscribed'; channel: string }
-  | { type: 'error'; message: string; channel?: string }
+  | { type: 'error'; message: string; channel?: string; code?: RippleErrorCode }
   | { type: 'event'; channel: string; event: string; data: unknown }
   | { type: 'presence'; channel: string; event: 'join' | 'leave' | 'members'; data: unknown }
   | { type: 'pong' }
   | { type: 'connected'; socketId: string }
 
+export interface DriverStatus {
+  name: string
+  initialized: boolean
+  connected: boolean
+  lastError?: string
+}
+
+export const SERVER_MESSAGE_TYPES = {
+  SUBSCRIBED: 'subscribed',
+  UNSUBSCRIBED: 'unsubscribed',
+  ERROR: 'error',
+  EVENT: 'event',
+  PRESENCE: 'presence',
+  PONG: 'pong',
+  CONNECTED: 'connected',
+} as const
+
+export const CLIENT_MESSAGE_TYPES = {
+  SUBSCRIBE: 'subscribe',
+  UNSUBSCRIBE: 'unsubscribe',
+  WHISPER: 'whisper',
+  PING: 'ping',
+} as const
+
 // ─────────────────────────────────────────────────────────────
 // Driver Interface
 // ─────────────────────────────────────────────────────────────
 
-/**
- * Driver interface for pub/sub backends
- */
 export interface RippleDriver {
-  /** Driver name */
   readonly name: string
 
-  /**
-   * Publish a message to a channel
-   */
   publish(channel: string, event: string, data: unknown): Promise<void>
 
-  /**
-   * Subscribe to channel messages (for Redis driver)
-   */
   subscribe?(channel: string, callback: (event: string, data: unknown) => void): Promise<void>
 
-  /**
-   * Unsubscribe from a channel
-   */
   unsubscribe?(channel: string): Promise<void>
 
-  /**
-   * Initialize the driver
-   */
   init?(): Promise<void>
 
-  /**
-   * Shutdown the driver
-   */
   shutdown?(): Promise<void>
+
+  getStatus?(): DriverStatus
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -168,6 +187,21 @@ export interface RippleConfig {
 
   /** Ping interval in milliseconds (default: 30000) */
   pingInterval?: number
+
+  /** Custom logger */
+  logger?: import('./logging/Logger').RippleLogger
+
+  /** Log level */
+  logLevel?: import('./logging/Logger').LogLevel
+
+  /** Connection tracker */
+  connectionTracker?: import('./tracking/ConnectionTracker').ConnectionTracker
+
+  /** Health check configuration */
+  healthCheck?: {
+    enabled: boolean
+    path?: string
+  }
 }
 
 // ─────────────────────────────────────────────────────────────

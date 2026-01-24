@@ -9,6 +9,11 @@
 import type { Server } from 'bun'
 import { ChannelManager, requiresAuth } from './channels'
 import { LocalDriver, RedisDriver } from './drivers'
+import { HealthChecker } from './health/HealthChecker'
+import type { RippleLogger } from './logging/Logger'
+import { createLogger } from './logging/Logger'
+import type { ConnectionTracker } from './tracking/ConnectionTracker'
+import { DefaultConnectionTracker } from './tracking/ConnectionTracker'
 import type {
   ChannelAuthorizer,
   ClientData,
@@ -19,6 +24,7 @@ import type {
   ServerMessage,
   WebSocketHandlerConfig,
 } from './types'
+import { MessageSerializer } from './utils/MessageSerializer'
 
 /**
  * Ripple WebSocket Server
@@ -50,6 +56,10 @@ export class RippleServer {
   private authorizer?: ChannelAuthorizer
   private pingInterval?: ReturnType<typeof setInterval>
   private eventListeners: Map<string, ((socket: RippleWebSocket, data: any) => void)[]> = new Map()
+  private logger: RippleLogger
+  private tracker: ConnectionTracker
+  private healthChecker: HealthChecker
+  private serializer: MessageSerializer
 
   readonly config: Required<Pick<RippleConfig, 'path' | 'authEndpoint' | 'pingInterval'>> &
     RippleConfig
@@ -62,10 +72,16 @@ export class RippleServer {
       ...config,
     }
 
+    this.logger = config.logger ?? createLogger('RippleServer', config.logLevel)
     this.channels = new ChannelManager()
     this.driver =
-      config.driver === 'redis' ? new RedisDriver(config.redis ?? {}) : new LocalDriver()
+      config.driver === 'redis'
+        ? new RedisDriver({ ...config.redis, logger: this.logger })
+        : new LocalDriver()
     this.authorizer = config.authorizer
+    this.tracker = config.connectionTracker ?? new DefaultConnectionTracker(this.logger)
+    this.healthChecker = new HealthChecker(this, this.driver)
+    this.serializer = new MessageSerializer()
   }
 
   /**
@@ -140,6 +156,12 @@ export class RippleServer {
 
   private handleOpen(ws: RippleWebSocket): void {
     this.channels.addClient(ws)
+    this.tracker.onConnect(ws.data.id)
+
+    this.logger.info('Client connected', {
+      clientId: ws.data.id,
+      activeConnections: this.tracker.getActiveConnections(),
+    })
 
     // Send connection confirmation with socket ID
     this.send(ws, {
@@ -170,6 +192,11 @@ export class RippleServer {
           break
       }
     } catch (error) {
+      this.logger.error('Failed to parse message', {
+        clientId: ws.data.id,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      })
+      this.tracker.onError(ws.data.id, error instanceof Error ? error.message : 'Invalid message')
       this.send(ws, {
         type: 'error',
         message: error instanceof Error ? error.message : 'Invalid message',
@@ -177,8 +204,17 @@ export class RippleServer {
     }
   }
 
-  private handleClose(ws: RippleWebSocket, _code: number, _reason: string): void {
+  private handleClose(ws: RippleWebSocket, code: number, reason: string): void {
     const leftChannels = this.channels.removeClient(ws.data.id)
+    this.tracker.onDisconnect(ws.data.id, code, reason)
+
+    this.logger.info('Client disconnected', {
+      clientId: ws.data.id,
+      code: code.toString(),
+      reason,
+      channelsLeft: leftChannels.length,
+      activeConnections: this.tracker.getActiveConnections(),
+    })
 
     // Notify presence channels about user leaving
     for (const channel of leftChannels) {
@@ -211,6 +247,10 @@ export class RippleServer {
     // Check if channel requires authentication
     if (requiresAuth(channel)) {
       if (!this.authorizer) {
+        this.logger.warn('Auth required but no authorizer configured', {
+          clientId: ws.data.id,
+          channel,
+        })
         this.send(ws, {
           type: 'error',
           message: 'No authorizer configured for private channels',
@@ -222,6 +262,11 @@ export class RippleServer {
       const result = await this.authorizer(channel, ws.data.userId, ws.data.id)
 
       if (result === false) {
+        this.logger.warn('Subscription denied', {
+          clientId: ws.data.id,
+          channel,
+          userId: ws.data.userId,
+        })
         this.send(ws, {
           type: 'error',
           message: 'Unauthorized',
@@ -233,6 +278,13 @@ export class RippleServer {
       // For presence channels, result contains user info
       if (typeof result === 'object' && 'id' in result) {
         this.channels.subscribe(ws.data.id, channel, result)
+        this.tracker.onSubscribe(ws.data.id, channel)
+
+        this.logger.info('Client subscribed to presence channel', {
+          clientId: ws.data.id,
+          channel,
+          userId: result.id,
+        })
 
         // Notify other members about join
         this.broadcastToChannel(
@@ -254,9 +306,21 @@ export class RippleServer {
         })
       } else {
         this.channels.subscribe(ws.data.id, channel)
+        this.tracker.onSubscribe(ws.data.id, channel)
+
+        this.logger.info('Client subscribed to private channel', {
+          clientId: ws.data.id,
+          channel,
+        })
       }
     } else {
       this.channels.subscribe(ws.data.id, channel)
+      this.tracker.onSubscribe(ws.data.id, channel)
+
+      this.logger.debug('Client subscribed to public channel', {
+        clientId: ws.data.id,
+        channel,
+      })
     }
 
     this.send(ws, { type: 'subscribed', channel })
@@ -280,6 +344,13 @@ export class RippleServer {
     }
 
     this.channels.unsubscribe(ws.data.id, channel)
+    this.tracker.onUnsubscribe(ws.data.id, channel)
+
+    this.logger.debug('Client unsubscribed', {
+      clientId: ws.data.id,
+      channel,
+    })
+
     this.send(ws, { type: 'unsubscribed', channel })
   }
 
@@ -294,6 +365,11 @@ export class RippleServer {
 
     // Whispers are client-to-client messages, excluding sender
     if (!this.channels.isSubscribed(ws.data.id, channel)) {
+      this.logger.warn('Whisper to non-subscribed channel', {
+        clientId: ws.data.id,
+        channel,
+        event,
+      })
       this.send(ws, {
         type: 'error',
         message: 'Not subscribed to channel',
@@ -301,6 +377,12 @@ export class RippleServer {
       })
       return
     }
+
+    this.logger.debug('Client whisper', {
+      clientId: ws.data.id,
+      channel,
+      event,
+    })
 
     this.broadcastToChannel(channel, event, data, ws.data.id)
   }
@@ -348,40 +430,49 @@ export class RippleServer {
     excludeClientId?: string
   ): void {
     const subscribers = this.channels.getSubscribers(channel)
+    if (subscribers.length === 0) return
+
+    const message: ServerMessage =
+      event === 'presence'
+        ? {
+            type: 'presence',
+            channel,
+            event: (data as { event: 'join' | 'leave' | 'members' }).event,
+            data: (data as { data: unknown }).data,
+          }
+        : { type: 'event', channel, event, data }
+
+    const serialized = this.serializer.serializeForBroadcast(message)
 
     for (const ws of subscribers) {
       if (excludeClientId && ws.data.id === excludeClientId) {
         continue
       }
-
-      if (event === 'presence') {
-        this.send(ws, {
-          type: 'presence',
-          channel,
-          event: (data as { event: 'join' | 'leave' | 'members' }).event,
-          data: (data as { data: unknown }).data,
-        })
-      } else {
-        this.send(ws, {
-          type: 'event',
-          channel,
-          event,
-          data,
-        })
-      }
+      this.sendRaw(ws, serialized)
     }
+
+    this.serializer.clearBroadcastCache()
   }
 
   // ─────────────────────────────────────────────────────────────
   // Utilities
   // ─────────────────────────────────────────────────────────────
 
-  private send(ws: RippleWebSocket, message: ServerMessage): void {
+  private sendRaw(ws: RippleWebSocket, serialized: string): boolean {
     try {
-      ws.send(JSON.stringify(message))
-    } catch {
-      // Connection might be closed
+      ws.send(serialized)
+      return true
+    } catch (error) {
+      this.logger.error('Failed to send message', {
+        clientId: ws.data.id,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      })
+      return false
     }
+  }
+
+  private send(ws: RippleWebSocket, message: ServerMessage): boolean {
+    return this.sendRaw(ws, this.serializer.serialize(message))
   }
 
   /**
@@ -394,6 +485,15 @@ export class RippleServer {
   }
 
   /**
+   * Get server health status.
+   *
+   * @returns A promise that resolves to the health check result.
+   */
+  async getHealth() {
+    return await this.healthChecker.check()
+  }
+
+  /**
    * Initialize the server.
    *
    * Initializes the driver and starts the ping interval.
@@ -401,16 +501,29 @@ export class RippleServer {
    * @returns A promise that resolves when initialization is complete.
    */
   async init(): Promise<void> {
+    this.logger.info('Initializing RippleServer', {
+      driver: this.driver.name,
+      path: this.config.path,
+      pingInterval: this.config.pingInterval,
+    })
+
     await this.driver.init?.()
 
-    // Start ping interval
     if (this.config.pingInterval > 0) {
+      const pongMessage = this.serializer.getPongMessage()
+
       this.pingInterval = setInterval(() => {
         for (const ws of this.channels.getAllClients()) {
-          this.send(ws, { type: 'pong' })
+          try {
+            ws.send(pongMessage)
+          } catch {
+            // Connection might be closed
+          }
         }
       }, this.config.pingInterval)
     }
+
+    this.logger.info('RippleServer initialized successfully')
   }
 
   /**
@@ -421,9 +534,15 @@ export class RippleServer {
    * @returns A promise that resolves when shutdown is complete.
    */
   async shutdown(): Promise<void> {
+    this.logger.info('Shutting down RippleServer', {
+      activeConnections: this.tracker.getActiveConnections(),
+    })
+
     if (this.pingInterval) {
       clearInterval(this.pingInterval)
     }
     await this.driver.shutdown?.()
+
+    this.logger.info('RippleServer shutdown complete')
   }
 }

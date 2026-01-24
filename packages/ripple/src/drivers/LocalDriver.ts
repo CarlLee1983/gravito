@@ -1,29 +1,16 @@
 /**
  * @fileoverview Local (in-memory) driver for @gravito/ripple
  *
- * Suitable for single-instance deployments. For horizontal scaling,
- * use the Redis driver.
- *
  * @module @gravito/ripple/drivers
  */
 
-import type { RippleDriver } from '../types'
+import type { DriverStatus, RippleDriver } from '../types'
 
-/**
- * In-memory driver for single-instance deployments
- *
- * This driver keeps all state in memory and is suitable for:
- * - Development
- * - Single-server deployments
- * - Serverless functions (with caveats)
- *
- * For multi-server deployments, use RedisDriver instead.
- */
 export class LocalDriver implements RippleDriver {
   readonly name = 'local'
 
-  /** Event callbacks per channel */
   private listeners = new Map<string, Set<(event: string, data: unknown) => void>>()
+  private _initialized = false
 
   async publish(channel: string, event: string, data: unknown): Promise<void> {
     const callbacks = this.listeners.get(channel)
@@ -49,10 +36,19 @@ export class LocalDriver implements RippleDriver {
   }
 
   async init(): Promise<void> {
-    // No-op for local driver
+    this._initialized = true
   }
 
   async shutdown(): Promise<void> {
     this.listeners.clear()
+    this._initialized = false
+  }
+
+  getStatus(): DriverStatus {
+    return {
+      name: this.name,
+      initialized: this._initialized,
+      connected: this._initialized,
+    }
   }
 }
