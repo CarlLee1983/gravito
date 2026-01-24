@@ -1,23 +1,28 @@
-import type { Knex } from 'knex'
+import { type Blueprint, Schema } from '@gravito/atlas'
 
-export async function up(knex: Knex): Promise<void> {
-  await knex.schema.createTable('oauth_identities', (table) => {
-    table.bigIncrements('id').primary()
-    table.bigInteger('user_id').notNullable().references('id').inTable('users').onDelete('CASCADE')
-    table.string('provider', 50).notNullable()
-    table.string('provider_id').notNullable()
+/**
+ * Create oauth identities table
+ *
+ * This docstring is necessary as it documents the purpose of this database migration.
+ */
+export async function up(): Promise<void> {
+  await Schema.create('oauth_identities', (table: Blueprint) => {
+    table.id()
+    table.bigInteger('user_id')
+    table.string('provider', 50)
+    table.string('provider_id')
     table.text('access_token').nullable()
     table.text('refresh_token').nullable()
     table.timestamp('expires_at').nullable()
     table.json('metadata').nullable()
-    table.timestamp('created_at').defaultTo(knex.fn.now()).notNullable()
-    table.timestamp('updated_at').defaultTo(knex.fn.now()).notNullable()
+    table.timestamp('created_at').nullable()
+    table.timestamp('updated_at').nullable()
 
     table.unique(['provider', 'provider_id'])
     table.index(['user_id', 'provider'])
   })
 }
 
-export async function down(knex: Knex): Promise<void> {
-  await knex.schema.dropTable('oauth_identities')
+export async function down(): Promise<void> {
+  await Schema.dropIfExists('oauth_identities')
 }

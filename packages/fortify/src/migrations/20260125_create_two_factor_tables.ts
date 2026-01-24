@@ -1,28 +1,31 @@
-import type { Knex } from 'knex'
+import { type Blueprint, Schema } from '@gravito/atlas'
 
-export async function up(knex: Knex): Promise<void> {
-  await knex.schema.alterTable('users', (table) => {
+/**
+ * Create two factor tables
+ *
+ * This docstring is necessary as it documents the purpose of this database migration.
+ */
+export async function up(): Promise<void> {
+  await Schema.table('users', (table: Blueprint) => {
     table.string('two_factor_secret').nullable()
     table.text('two_factor_recovery_codes').nullable()
     table.timestamp('two_factor_confirmed_at').nullable()
   })
 
-  await knex.schema.createTable('two_factor_challenges', (table) => {
-    table.bigIncrements('id').primary()
-    table.bigInteger('user_id').notNullable().references('id').inTable('users').onDelete('CASCADE')
+  await Schema.create('two_factor_challenges', (table: Blueprint) => {
+    table.id()
+    table.bigInteger('user_id')
     table.string('code', 10).nullable()
-    table.timestamp('expires_at').notNullable()
+    table.timestamp('expires_at')
     table.timestamp('verified_at').nullable()
-    table.timestamp('created_at').defaultTo(knex.fn.now()).notNullable()
+    table.timestamp('created_at').nullable()
     table.index(['user_id', 'created_at'])
   })
 }
 
-export async function down(knex: Knex): Promise<void> {
-  await knex.schema.dropTable('two_factor_challenges')
-  await knex.schema.alterTable('users', (table) => {
-    table.dropColumn('two_factor_secret')
-    table.dropColumn('two_factor_recovery_codes')
-    table.dropColumn('two_factor_confirmed_at')
+export async function down(): Promise<void> {
+  await Schema.dropIfExists('two_factor_challenges')
+  await Schema.table('users', (table: Blueprint) => {
+    table.dropColumn(['two_factor_secret', 'two_factor_recovery_codes', 'two_factor_confirmed_at'])
   })
 }
