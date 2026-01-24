@@ -194,6 +194,25 @@ export class FileStore implements CacheStore {
     return this.increment(key, -value)
   }
 
+  async ttl(key: CacheKey): Promise<number | null> {
+    const normalized = normalizeCacheKey(key)
+    const file = this.filePathForKey(normalized)
+
+    try {
+      const raw = await readFile(file, 'utf8')
+      const data = JSON.parse(raw) as FileEntry
+
+      if (data.expiresAt === null) {
+        return null
+      }
+
+      const remaining = Math.ceil((data.expiresAt - Date.now()) / 1000)
+      return remaining > 0 ? remaining : null
+    } catch {
+      return null
+    }
+  }
+
   lock(name: string, seconds = 10): CacheLock {
     const normalizedName = normalizeCacheKey(name)
     const lockFile = join(this.options.directory, `.lock-${hashKey(normalizedName)}`)

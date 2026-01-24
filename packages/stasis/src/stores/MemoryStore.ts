@@ -145,6 +145,23 @@ export class MemoryStore implements CacheStore, TaggableStore {
     return this.increment(key, -value)
   }
 
+  async ttl(key: CacheKey): Promise<number | null> {
+    const normalized = normalizeCacheKey(key)
+    const entry = this.entries.get(normalized)
+
+    if (!entry || entry.expiresAt === null) {
+      return null
+    }
+
+    const now = Date.now()
+    if (isExpired(entry.expiresAt, now)) {
+      await this.forget(normalized)
+      return null
+    }
+
+    return Math.max(0, Math.ceil((entry.expiresAt - now) / 1000))
+  }
+
   lock(name: string, seconds = 10): CacheLock {
     const lockKey = `lock:${normalizeCacheKey(name)}`
     const ttlMillis = Math.max(1, seconds) * 1000

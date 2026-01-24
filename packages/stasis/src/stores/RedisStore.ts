@@ -227,6 +227,12 @@ export class RedisStore implements CacheStore, TaggableStore {
   // Locks
   // ============================================================================
 
+  async ttl(key: CacheKey): Promise<number | null> {
+    const normalized = normalizeCacheKey(key)
+    const result = await this.client.ttl(normalized)
+    return result < 0 ? null : result
+  }
+
   lock(name: string, seconds = 10): CacheLock {
     const lockKey = `lock:${normalizeCacheKey(name)}`
     const owner = randomUUID()

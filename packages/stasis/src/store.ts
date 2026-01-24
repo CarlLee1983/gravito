@@ -76,6 +76,14 @@ export interface CacheStore {
    * @returns A `CacheLock` instance if supported, otherwise undefined.
    */
   lock?(name: string, seconds?: number): CacheLock | undefined
+
+  /**
+   * Get the remaining time-to-live (TTL) for a key in seconds.
+   *
+   * @param key - The cache key.
+   * @returns The remaining TTL in seconds, or null if the key doesn't exist or has no expiration.
+   */
+  ttl?(key: CacheKey): Promise<number | null>
 }
 
 /**
