@@ -9,6 +9,7 @@ import {
   normalizeCacheKey,
   ttlToExpiresAt,
 } from '../types'
+import { LRUCache } from '../utils/LRUCache'
 
 type Entry = {
   value: unknown
@@ -32,6 +33,20 @@ export type MemoryStoreOptions = {
 }
 
 /**
+ * Statistics for the MemoryStore.
+ *
+ * @public
+ * @since 3.0.0
+ */
+export type MemoryCacheStats = {
+  hits: number
+  misses: number
+  hitRate: number
+  size: number
+  evictions: number
+}
+
+/**
  * MemoryStore implements the `CacheStore` interface using a Map.
  *
  * It provides a fast, non-persistent cache backend with support for
@@ -41,39 +56,36 @@ export type MemoryStoreOptions = {
  * @since 3.0.0
  */
 export class MemoryStore implements CacheStore, TaggableStore {
-  private entries = new Map<string, Entry>()
+  private entries: LRUCache<Entry>
   private locks = new Map<string, LockEntry>()
+  private stats = { hits: 0, misses: 0, evictions: 0 }
 
   private tagToKeys = new Map<string, Set<string>>()
   private keyToTags = new Map<string, Set<string>>()
 
-  constructor(private options: MemoryStoreOptions = {}) {}
-
-  private touchLRU(key: string): void {
-    const entry = this.entries.get(key)
-    if (!entry) {
-      return
-    }
-    this.entries.delete(key)
-    this.entries.set(key, entry)
+  constructor(private options: MemoryStoreOptions = {}) {
+    this.entries = new LRUCache<Entry>(options.maxItems ?? 0, (key) => {
+      this.tagIndexRemove(key)
+      this.stats.evictions++
+    })
   }
 
-  private pruneIfNeeded(): void {
-    const maxItems = this.options.maxItems
-    if (!maxItems || maxItems <= 0) {
-      return
-    }
-    while (this.entries.size > maxItems) {
-      const oldest = this.entries.keys().next().value as string | undefined
-      if (!oldest) {
-        return
-      }
-      void this.forget(oldest)
+  /**
+   * Get the current cache statistics.
+   */
+  getStats(): MemoryCacheStats {
+    const total = this.stats.hits + this.stats.misses
+    return {
+      hits: this.stats.hits,
+      misses: this.stats.misses,
+      hitRate: total > 0 ? this.stats.hits / total : 0,
+      size: this.entries.size,
+      evictions: this.stats.evictions,
     }
   }
 
   private cleanupExpired(key: string, now = Date.now()): void {
-    const entry = this.entries.get(key)
+    const entry = this.entries.peek(key)
     if (!entry) {
       return
     }
@@ -86,15 +98,17 @@ export class MemoryStore implements CacheStore, TaggableStore {
     const normalized = normalizeCacheKey(key)
     const entry = this.entries.get(normalized)
     if (!entry) {
+      this.stats.misses++
       return null
     }
 
     if (isExpired(entry.expiresAt)) {
       await this.forget(normalized)
+      this.stats.misses++
       return null
     }
 
-    this.touchLRU(normalized)
+    this.stats.hits++
     return entry.value as T
   }
 
@@ -107,7 +121,6 @@ export class MemoryStore implements CacheStore, TaggableStore {
     }
 
     this.entries.set(normalized, { value, expiresAt: expiresAt ?? null })
-    this.pruneIfNeeded()
   }
 
   async add(key: CacheKey, value: unknown, ttl: CacheTtl): Promise<boolean> {
@@ -147,7 +160,7 @@ export class MemoryStore implements CacheStore, TaggableStore {
 
   async ttl(key: CacheKey): Promise<number | null> {
     const normalized = normalizeCacheKey(key)
-    const entry = this.entries.get(normalized)
+    const entry = this.entries.peek(normalized)
 
     if (!entry || entry.expiresAt === null) {
       return null
