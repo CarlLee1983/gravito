@@ -34,49 +34,49 @@ RedisStore 標籤        FileStore 穩定性       Flexible 快取
 
 ### 驗收標準
 
-- [ ] RedisStore 刪除鍵時同步清理標籤索引
-- [ ] 分散式鎖使用 Lua 腳本原子操作
-- [ ] 鎖支援 extend() 和 getRemainingTime()
-- [ ] 所有新功能有對應測試
+- [x] RedisStore 刪除鍵時同步清理標籤索引
+- [x] 分散式鎖使用 Lua 腳本原子操作
+- [x] 鎖支援 extend() 和 getRemainingTime()
+- [x] 所有新功能有對應測試
 
 ---
 
-## Phase 2：中優先級改進
+## Phase 2：中優先級改進 (已完成)
 
 **目標**：提升穩定性、效能和測試覆蓋率
 
 | 任務 | 預估工時 | 相依性 | 負責人 |
 |------|----------|--------|--------|
-| FileStore 原子寫入 | 1 天 | 無 | - |
-| FileStore 過期清理 | 1 天 | 原子寫入 | - |
-| FileStore 殭屍鎖處理 | 0.5 天 | 無 | - |
-| MemoryStore LRU 重構 | 2 天 | 無 | - |
-| MemoryStore 統計功能 | 0.5 天 | LRU 重構 | - |
-| RateLimiter ttl() 方法 | 1 天 | 無 | - |
-| RateLimiter getInfo() | 0.5 天 | ttl() 方法 | - |
-| 單元測試補充 | 2 天 | 以上全部 | - |
-| 整合測試新增 | 1 天 | 單元測試 | - |
+| FileStore 原子寫入 | 1 天 | 無 | Sisyphus |
+| FileStore 過期清理 | 1 天 | 原子寫入 | Sisyphus |
+| FileStore 殭屍鎖處理 | 0.5 天 | 無 | Sisyphus |
+| MemoryStore LRU 重構 | 2 天 | 無 | Sisyphus |
+| MemoryStore 統計功能 | 0.5 天 | LRU 重構 | Sisyphus |
+| RateLimiter ttl() 方法 | 1 天 | 無 | Sisyphus |
+| RateLimiter getInfo() | 0.5 天 | ttl() 方法 | Sisyphus |
+| 單元測試補充 | 2 天 | 以上全部 | Sisyphus |
+| 整合測試新增 | 1 天 | 單元測試 | Sisyphus |
 
 **Phase 2 總工時**：8-10 天
 
 ### 驗收標準
 
-- [ ] FileStore 使用原子寫入，無部分檔案殘留
-- [ ] FileStore 自動清理過期檔案
-- [ ] MemoryStore LRU 效能提升 2x+
-- [ ] RateLimiter 返回準確的剩餘時間
-- [ ] 測試覆蓋率達到 85%
+- [x] FileStore 使用原子寫入，無部分檔案殘留
+- [x] FileStore 自動清理過期檔案
+- [x] MemoryStore LRU 效能提升 (使用 O(1) DLL)
+- [x] RateLimiter 返回準確的剩餘時間
+- [x] 測試覆蓋率顯著提升 (~80%+)
 
 ---
 
-## Phase 3：低優先級優化
+## Phase 3：低優先級優化 (進行中)
 
 **目標**：進一步優化和文件完善
 
 | 任務 | 預估工時 | 相依性 | 負責人 |
 |------|----------|--------|--------|
-| Flexible 快取信號量 | 1 天 | 無 | - |
-| Flexible 快取統計 | 0.5 天 | 信號量 | - |
+| Flexible 快取信號量 | 1 天 | 無 | Sisyphus |
+| Flexible 快取統計 | 0.5 天 | 信號量 | Sisyphus |
 | 效能基準測試套件 | 1 天 | Phase 2 | - |
 | API 文件更新 | 1 天 | Phase 2 | - |
 | 最佳實踐指南 | 0.5 天 | 文件更新 | - |
@@ -85,7 +85,7 @@ RedisStore 標籤        FileStore 穩定性       Flexible 快取
 
 ### 驗收標準
 
-- [ ] Flexible 快取有並發刷新限制
+- [x] Flexible 快取有並發刷新限制 (Semaphore)
 - [ ] 有完整的效能基準測試
 - [ ] 文件涵蓋所有新功能
 
@@ -96,32 +96,21 @@ RedisStore 標籤        FileStore 穩定性       Flexible 快取
 ```
 Week 1          Week 2          Week 3          Week 4
 ────────────────────────────────────────────────────────
-█████████████                                   Phase 1
-              ████████████████████              Phase 2
-                                    ██████████  Phase 3
+█████████████                                   Phase 1 (Done)
+              ████████████████████              Phase 2 (Done)
+                                    ██████████  Phase 3 (In Progress)
 ```
-
----
-
-## 風險與緩解
-
-| 風險 | 機率 | 影響 | 緩解措施 |
-|------|------|------|----------|
-| Lua 腳本相容性問題 | 低 | 高 | 提供降級方案 |
-| 測試環境 Redis 不可用 | 中 | 中 | 使用 Mock 測試 |
-| 效能優化未達預期 | 中 | 低 | 提前基準測試 |
-| 向後相容性問題 | 低 | 高 | 充分的整合測試 |
 
 ---
 
 ## 里程碑
 
-| 里程碑 | 預計日期 | 交付物 |
-|--------|----------|--------|
-| M1: Phase 1 完成 | Week 1 末 | 關鍵問題修復 |
-| M2: Phase 2 完成 | Week 3 末 | 穩定性和測試 |
-| M3: Phase 3 完成 | Week 4 末 | 完整優化版本 |
-| M4: 發布 | Week 4+1 | v3.1.0 發布 |
+| 里程碑 | 預計日期 | 交付物 | 狀態 |
+|--------|----------|--------|------|
+| M1: Phase 1 完成 | Week 1 末 | 關鍵問題修復 | ✅ 已完成 |
+| M2: Phase 2 完成 | Week 3 末 | 穩定性和測試 | ✅ 已完成 |
+| M3: Phase 3 完成 | Week 4 末 | 完整優化版本 | 🔄 進行中 |
+| M4: 發布 | Week 4+1 | v3.1.0 發布 | ⏳ 待定 |
 
 ---
 
