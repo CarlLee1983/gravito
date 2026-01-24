@@ -139,9 +139,7 @@ describe('RateLimiter TTL Precision', () => {
     })
 
     afterAll(async () => {
-      const client = Redis.connection('ratelimit-test')
-      await client.flushdb()
-      // Avoid Redis.disconnect()
+      await Redis.removeConnection('ratelimit-test')
     })
 
     beforeEach(async () => {

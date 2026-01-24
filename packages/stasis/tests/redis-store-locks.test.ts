@@ -20,9 +20,7 @@ describe('RedisStore Distributed Lock Atomicity', () => {
   })
 
   afterAll(async () => {
-    const client = Redis.connection('locks-test')
-    await client.flushdb()
-    // Avoid Redis.disconnect() to prevent closing shared connections in parallel tests
+    await Redis.removeConnection('locks-test')
   })
 
   it('should acquire and release lock correctly', async () => {

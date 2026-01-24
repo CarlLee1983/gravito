@@ -20,9 +20,7 @@ describe('RedisStore Tag System', () => {
   })
 
   afterAll(async () => {
-    const client = Redis.connection('tags-test')
-    await client.flushdb()
-    // Avoid Redis.disconnect() to prevent closing shared connections in parallel tests
+    await Redis.removeConnection('tags-test')
   })
 
   it('should remove key from tag index when forget is called', async () => {
