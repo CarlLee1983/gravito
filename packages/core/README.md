@@ -12,15 +12,17 @@
 ## ✨ Features
 
 - 🪐 **PlanetCore** - A centralized Photon-based kernel to manage your application lifecycle.
+- 🏢 **Application Container** - Enterprise-grade container with auto-discovery of providers and convention-over-configuration patterns.
 - 📦 **IoC Container** - A lightweight dependency injection container with binding and singleton support.
 - 🧩 **Service Providers** - Modular service registration and booting lifecycle.
 - 🪝 **Hook System** - WordPress-style async **Filters** and **Actions** for powerful extensibility.
+- 📡 **Event System** - Centralized EventManager for cross-module communication and event-driven architecture.
 - 🛰️ **Orbit Mounting** - Easily mount external Photon applications (Orbits) to specific paths.
 - 📝 **Logger System** - PSR-3 style logger interface with default standard output implementation.
-- ⚙️ **Config Manager** - Unified configuration management supporting environment variables (`Bun.env`) and runtime injection.
+- ⚙️ **Config Manager** - Unified configuration management supporting environment variables, runtime injection, and file-based config loading.
 - 🛡️ **Security Middleware** - Built-in protection including CSRF, CORS, HSTS, and request throttling.
 - 🔌 **Runtime Adapters** - Abstraction layer for underlying runtimes (Bun, Node.js) and HTTP engines.
-- 🛡️ **Error Handling** - Built-in standardized JSON error responses and 404 handling.
+- 🛡️ **Error Handling** - Built-in standardized JSON error responses, 404 handling, and process-level error management.
 - 🚀 **Modern** - Built for **Bun** runtime with native TypeScript support.
 - 🪶 **Lightweight** - Zero external dependencies (except `@gravito/photon`).
 
@@ -32,12 +34,28 @@ bun add @gravito/core
 
 ## 🚀 Quick Start
 
-### 1. Initialize the Core
+### 1. Initialize the Application
+
+For enterprise applications, use the `Application` class which provides auto-discovery and conventions:
+
+```typescript
+import { Application } from '@gravito/core';
+
+const app = new Application({
+  basePath: import.meta.dir,
+  env: process.env.NODE_ENV as 'development' | 'production',
+});
+
+await app.boot();
+
+export default app.core.liftoff();
+```
+
+Or use the lightweight `PlanetCore` directly:
 
 ```typescript
 import { PlanetCore } from '@gravito/core';
 
-// Initialize with options (v0.2.0+)
 const core = new PlanetCore({
   config: {
     PORT: 4000,
@@ -138,7 +156,15 @@ core.hooks.addAction('processError:report', async (ctx) => {
 
 ## 📖 API Reference
 
-### `PlanetCore`
+### `Application` (Enterprise Container)
+
+- **`constructor(options: ApplicationConfig)`**: Create an application instance.
+- **`boot()`**: Orchestrate the boot sequence (config loading, provider discovery).
+- **`make<T>(key)`**: Resolve a service from the shared container.
+- **`getConfig(key, default?)`**: Retrieve configuration.
+- **`path(...segments)`**: Path helper relative to base path.
+
+### `PlanetCore` (Micro-kernel)
 
 - **`constructor(options?)`**: Initialize the core with optional Logger and Config.
 - **`register(provider: ServiceProvider)`**: Register a service provider.
@@ -148,6 +174,7 @@ core.hooks.addAction('processError:report', async (ctx) => {
 - **`container`**: Access the IoC Container.
 - **`app`**: Access the internal Photon instance.
 - **`hooks`**: Access the HookManager.
+- **`events`**: Access the EventManager.
 - **`logger`**: Access the Logger instance.
 - **`config`**: Access the ConfigManager.
 
@@ -165,6 +192,12 @@ core.hooks.addAction('processError:report', async (ctx) => {
 - **`applyFilters(hook, initialValue, ...args)`**: Execute filters sequentially.
 - **`addAction(hook, callback)`**: Register an action.
 - **`doAction(hook, ...args)`**: Execute actions.
+
+### `EventManager`
+
+- **`emit(event, ...args)`**: Dispatch an event.
+- **`on(event, callback)`**: Listen to an event.
+- **`off(event, callback)`**: Remove a listener.
 
 ### `ConfigManager`
 
