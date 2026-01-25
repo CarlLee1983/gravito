@@ -3,7 +3,22 @@ import type { WorkflowContext, WorkflowDefinition, WorkflowStorage } from '../ty
 import { updateWorkflowContext } from './stateUpdater'
 import type { TraceEmitter } from './TraceEmitter'
 
+/**
+ * Manages the compensation (rollback) logic for failed workflows.
+ *
+ * The RollbackManager is responsible for executing `compensate` handlers defined
+ * in workflow steps in reverse order when a workflow fails. This ensures eventual
+ * consistency in distributed transactions (Saga pattern).
+ */
 export class RollbackManager {
+  /**
+   * Initializes the RollbackManager.
+   *
+   * @param storage - The storage adapter for persisting rollback progress.
+   * @param contextManager - Manager for workflow context operations.
+   * @param traceEmitter - Emitter for rollback-related trace events.
+   * @param onPersist - Optional callback to handle custom persistence logic.
+   */
   constructor(
     private storage: WorkflowStorage,
     private contextManager: ContextManager,
@@ -11,6 +26,28 @@ export class RollbackManager {
     private onPersist?: (ctx: WorkflowContext<any, any>) => Promise<WorkflowContext<any, any>>
   ) {}
 
+  /**
+   * Executes the rollback process for a failed workflow.
+   *
+   * Iterates backwards from the failed step and executes the `compensate` handler
+   * for each completed step that has one defined.
+   *
+   * @param definition - The definition of the workflow being rolled back.
+   * @param ctx - The current workflow context.
+   * @param failedAtIndex - The index of the step where the failure occurred.
+   * @param originalError - The error that triggered the rollback.
+   * @returns A promise resolving to the updated workflow context after rollback.
+   *
+   * @example
+   * ```typescript
+   * const rolledBackCtx = await rollbackManager.rollback(
+   *   definition,
+   *   ctx,
+   *   failedIndex,
+   *   error
+   * );
+   * ```
+   */
   async rollback<TInput, TData extends Record<string, any> = Record<string, any>>(
     definition: WorkflowDefinition<TInput, TData>,
     ctx: WorkflowContext<TInput, TData>,

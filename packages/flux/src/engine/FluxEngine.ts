@@ -17,6 +17,23 @@ import { updateWorkflowContext } from './stateUpdater'
 import { TraceEmitter } from './TraceEmitter'
 import { WorkflowExecutor } from './WorkflowExecutor'
 
+/**
+ * The core execution engine for Flux workflows.
+ *
+ * FluxEngine manages the lifecycle of workflow execution, including persistence,
+ * state transitions, retries, and compensation (rollback) logic. It acts as the
+ * primary entry point for interacting with the workflow system.
+ *
+ * @example
+ * ```typescript
+ * const engine = new FluxEngine({
+ *   storage: new MemoryStorage(),
+ *   defaultRetries: 3
+ * });
+ * await engine.init();
+ * const result = await engine.execute(myWorkflow, { userId: '123' });
+ * ```
+ */
 export class FluxEngine {
   private storage: WorkflowStorage
   private contextManager: ContextManager
@@ -24,6 +41,11 @@ export class FluxEngine {
   private executor: WorkflowExecutor
   private rollbackManager: RollbackManager
 
+  /**
+   * Initializes a new instance of the FluxEngine.
+   *
+   * @param config - Configuration options for the engine, including storage and retry policies.
+   */
   constructor(config: FluxConfig = {}) {
     this.storage = config.storage ?? new MemoryStorage()
     this.contextManager = new ContextManager()
@@ -68,6 +90,25 @@ export class FluxEngine {
     )
   }
 
+  /**
+   * Starts the execution of a workflow from the beginning.
+   *
+   * This method creates a new workflow instance, validates the input, and
+   * orchestrates the execution of all defined steps.
+   *
+   * @param workflow - The workflow definition or builder to execute.
+   * @param input - The initial data required by the workflow.
+   * @returns A promise that resolves to the final result of the workflow execution.
+   * @throws {FluxError} If the input validation fails or if a concurrent modification is detected during persistence.
+   *
+   * @example
+   * ```typescript
+   * const result = await engine.execute(orderWorkflow, { orderId: 'ORD-001' });
+   * if (result.status === 'completed') {
+   *   console.log('Order processed:', result.data);
+   * }
+   * ```
+   */
   async execute<TInput, TData extends Record<string, any> = Record<string, any>>(
     workflow: WorkflowBuilder<TInput, TData> | WorkflowDefinition<TInput, TData>,
     input: TInput
@@ -93,6 +134,23 @@ export class FluxEngine {
     return this.handleResult(definition, ctx, result)
   }
 
+  /**
+   * Resumes a previously interrupted or failed workflow.
+   *
+   * This is useful for recovering from system crashes or manual interventions.
+   * The engine will reload the state from storage and continue from the specified step.
+   *
+   * @param workflow - The workflow definition or builder.
+   * @param workflowId - The unique identifier of the workflow instance to resume.
+   * @param options - Optional parameters to specify the starting point.
+   * @returns The result of the resumed execution, or null if the workflow state is not found.
+   * @throws {FluxError} If the workflow name mismatches or the definition has changed since the last save.
+   *
+   * @example
+   * ```typescript
+   * await engine.resume(orderWorkflow, 'workflow-id-123', { fromStep: 'payment' });
+   * ```
+   */
   async resume<TInput, TData extends Record<string, any> = Record<string, any>>(
     workflow: WorkflowBuilder<TInput, TData> | WorkflowDefinition<TInput, TData>,
     workflowId: string,
@@ -136,6 +194,24 @@ export class FluxEngine {
     return this.handleResult(definition, ctx, result)
   }
 
+  /**
+   * Sends an external signal to a suspended workflow.
+   *
+   * Used to resume workflows that are waiting for external events like manual approvals
+   * or webhook callbacks.
+   *
+   * @param workflow - The workflow definition or builder.
+   * @param workflowId - The unique identifier of the suspended workflow.
+   * @param signalName - The name of the signal the workflow is waiting for.
+   * @param payload - Optional data to pass along with the signal.
+   * @returns The result of the workflow execution after receiving the signal.
+   * @throws {FluxError} If the workflow is not found, not suspended, or waiting for a different signal.
+   *
+   * @example
+   * ```typescript
+   * await engine.signal(orderWorkflow, 'id-123', 'payment_received', { amount: 100 });
+   * ```
+   */
   async signal<TInput, TData extends Record<string, any> = Record<string, any>>(
     workflow: WorkflowBuilder<TInput, TData> | WorkflowDefinition<TInput, TData>,
     workflowId: string,
@@ -209,6 +285,23 @@ export class FluxEngine {
     return this.handleResult(definition, ctx, result)
   }
 
+  /**
+   * Retries a specific step in a failed or suspended workflow.
+   *
+   * This allows for targeted recovery of specific failures without necessarily
+   * resuming from the very last saved state.
+   *
+   * @param workflow - The workflow definition or builder.
+   * @param workflowId - The unique identifier of the workflow.
+   * @param stepName - The name of the step to retry.
+   * @returns The result of the execution after the retry, or null if the workflow is not found.
+   * @throws {FluxError} If the workflow definition has changed or the step name is invalid.
+   *
+   * @example
+   * ```typescript
+   * await engine.retryStep(orderWorkflow, 'id-123', 'shipping');
+   * ```
+   */
   async retryStep<TInput, TData extends Record<string, any> = Record<string, any>>(
     workflow: WorkflowBuilder<TInput, TData> | WorkflowDefinition<TInput, TData>,
     workflowId: string,
@@ -252,12 +345,32 @@ export class FluxEngine {
     return this.handleResult(definition, ctx, result)
   }
 
+  /**
+   * Retrieves the current state of a workflow instance from storage.
+   *
+   * @param workflowId - The unique identifier of the workflow.
+   * @returns A promise resolving to the workflow state or null if not found.
+   *
+   * @example
+   * ```typescript
+   * const state = await engine.get('workflow-id-123');
+   * console.log('Current status:', state?.status);
+   * ```
+   */
   async get<TInput = any, TData = any>(
     workflowId: string
   ): Promise<WorkflowState<TInput, TData> | null> {
     return this.storage.load(workflowId) as Promise<WorkflowState<TInput, TData> | null>
   }
 
+  /**
+   * Manually saves a workflow state to storage.
+   *
+   * Performs a version check to prevent concurrent modifications.
+   *
+   * @param state - The workflow state to persist.
+   * @throws {FluxError} If a concurrent modification is detected.
+   */
   async saveState<TInput, TData extends Record<string, any>>(
     state: WorkflowState<TInput, TData>
   ): Promise<void> {
@@ -271,14 +384,28 @@ export class FluxEngine {
     return this.storage.save({ ...state, version: state.version + 1 } as WorkflowState)
   }
 
+  /**
+   * Lists workflow instances based on the provided filter.
+   *
+   * @param filter - Criteria to filter the workflow list.
+   * @returns A list of workflow states matching the filter.
+   */
   async list(filter?: Parameters<WorkflowStorage['list']>[0]) {
     return this.storage.list(filter)
   }
 
+  /**
+   * Initializes the engine and its underlying storage.
+   *
+   * Should be called before any execution if the storage requires setup.
+   */
   async init(): Promise<void> {
     await this.storage.init?.()
   }
 
+  /**
+   * Closes the engine and releases storage resources.
+   */
   async close(): Promise<void> {
     await this.storage.close?.()
   }

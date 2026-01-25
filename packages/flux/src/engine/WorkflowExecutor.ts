@@ -11,7 +11,23 @@ import type {
 import { updateWorkflowContext } from './stateUpdater'
 import type { TraceEmitter } from './TraceEmitter'
 
+/**
+ * Internal component responsible for the sequential execution of workflow steps.
+ *
+ * WorkflowExecutor handles the iteration over steps, interaction with the StepExecutor,
+ * state machine transitions, and persistence between steps.
+ */
 export class WorkflowExecutor {
+  /**
+   * Initializes the WorkflowExecutor.
+   *
+   * @param storage - The storage adapter for persistence.
+   * @param contextManager - Manager for workflow context operations.
+   * @param stepExecutor - Executor for individual steps.
+   * @param traceEmitter - Emitter for execution-related trace events.
+   * @param config - Global engine configuration.
+   * @param onPersist - Optional callback for custom persistence logic.
+   */
   constructor(
     private storage: WorkflowStorage,
     private contextManager: ContextManager,
@@ -21,6 +37,25 @@ export class WorkflowExecutor {
     private onPersist?: (ctx: WorkflowContext<any, any>) => Promise<WorkflowContext<any, any>>
   ) {}
 
+  /**
+   * Executes the steps of a workflow definition.
+   *
+   * This method manages the loop over workflow steps, handling suspensions,
+   * failures, and successful completions.
+   *
+   * @param definition - The workflow definition to execute.
+   * @param ctx - The current workflow context.
+   * @param stateMachine - The state machine governing the workflow status.
+   * @param startTime - The timestamp when the workflow execution originally started.
+   * @param startIndex - The index of the step to start execution from.
+   * @param meta - Metadata about the execution (e.g., if it's a resume or retry).
+   * @returns A promise resolving to the result of the workflow execution.
+   *
+   * @example
+   * ```typescript
+   * const result = await executor.execute(definition, ctx, stateMachine, Date.now(), 0);
+   * ```
+   */
   async execute<TInput, TData extends Record<string, any> = Record<string, any>>(
     definition: WorkflowDefinition<TInput, TData>,
     ctx: WorkflowContext<TInput, TData>,
