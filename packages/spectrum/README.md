@@ -142,14 +142,14 @@ Spectrum wraps the Gravito core logger. Any logs generated via `core.logger.info
 
 ### Phase 5: Core Bug Fixes
 
-| Issue | Description | Priority |
-|-------|-------------|----------|
-| **Request-Log-Query Correlation** | Link logs and queries to their originating request for better debugging | High |
-| **Config Consistency** | Ensure `SpectrumConfig.maxItems` is properly passed to Storage backends | High |
-| **FileStorage.prune()** | Currently only prunes requests, needs to handle logs and queries | Medium |
-| **SSE Connection Cleanup** | Improve handling of disconnected SSE clients to prevent memory leaks | High |
-| **Dashboard CSRF Protection** | Add CSRF protection for POST endpoints (`/clear`, `/replay`) | High |
-| **Large Payload Handling** | Implement streaming for large request/response bodies | Medium |
+| Issue | Description | Status | Priority |
+|-------|-------------|--------|----------|
+| **Request-Log-Query Correlation** | Link logs and queries to their originating request for better debugging | ✅ Fixed | High |
+| **Config Consistency** | Ensure `SpectrumConfig.maxItems` is properly passed to Storage backends | ✅ Fixed | High |
+| **FileStorage.prune()** | Currently only prunes requests, needs to handle logs and queries | ✅ Fixed | Medium |
+| **SSE Connection Cleanup** | Improve handling of disconnected SSE clients to prevent memory leaks | ✅ Fixed | High |
+| **Dashboard CSRF Protection** | Add CSRF protection for POST endpoints (`/clear`, `/replay`) | ✅ Fixed | High |
+| **Large Payload Handling** | Implement streaming for large request/response bodies | ⏳ Planned | Medium |
 
 ### Contributing
 
