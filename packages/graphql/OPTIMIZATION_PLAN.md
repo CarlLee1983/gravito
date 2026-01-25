@@ -314,13 +314,13 @@ const schemaContent = await schemaFile.text()
 
 ### 實作任務清單
 
-- [ ] 實作 Subscription 支援（優先 Bun WebSocket）
+- [x] 實作 Subscription 支援（優先 Bun WebSocket）
 - [x] 實作 Plugin 系統傳遞
 - [x] 實作自訂錯誤格式化
 - [x] 實作 CORS 配置
 - [x] 實作驗證整合
-- [ ] 整合 Bun 原生 API
-- [ ] 新增相關測試案例
+- [x] 整合 Bun 原生 API
+- [x] 新增相關測試案例
 
 ---
 
@@ -390,10 +390,10 @@ export interface GraphQLConfig {
 
 ### 實作任務清單
 
-- [ ] 整合查詢深度限制 Plugin
+- [x] 整合查詢深度限制 Plugin
 - [ ] 實作查詢複雜度計算
-- [ ] 實作查詢快取機制
-- [ ] 提供 DataLoader 整合範例
+- [x] 實作查詢快取機制
+- [x] 提供 DataLoader 整合範例
 - [ ] 實作 APQ 支援
 - [ ] 新增效能基準測試
 
@@ -447,11 +447,11 @@ describe('GraphQL Performance', () => {
 
 ### 實作任務清單
 
-- [ ] 新增 Schema 解析優先順序測試
-- [ ] 新增錯誤處理測試
+- [x] 新增 Schema 解析優先順序測試
+- [x] 新增錯誤處理測試
 - [ ] 新增效能基準測試
-- [ ] 新增邊界條件測試
-- [ ] 確保覆蓋率達 80%+
+- [x] 新增邊界條件測試
+- [x] 確保覆蓋率達 80%+
 
 ---
 
@@ -543,11 +543,11 @@ bunx @gravito/graphql codegen --output ./types.ts
 
 ### 實作任務清單
 
-- [ ] 完善所有公開 API 的 JSDoc
-- [ ] 建立自訂錯誤類別
-- [ ] 撰寫 Pothos 整合指南
+- [x] 完善所有公開 API 的 JSDoc
+- [x] 建立自訂錯誤類別
+- [x] 撰寫 Pothos 整合指南
 - [ ] 建立 CLI 工具（選配）
-- [ ] 更新 README 與範例程式碼
+- [x] 更新 README 與範例程式碼
 
 ---
 
