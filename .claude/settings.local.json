@@ -21,7 +21,8 @@
       "Bash(bun run build:*)",
       "Bash(bun run test:coverage:*)",
       "Bash(bun run test)",
-      "Bash(bun test:coverage:*)"
+      "Bash(bun test:coverage:*)",
+      "Skill(skill-creator)"
     ]
   },
   "enabledMcpjsonServers": [
