@@ -1,7 +1,7 @@
 # @gravito/graphql 優化改進計劃
 
 > 📅 建立日期：2026-01-25
-> 📦 版本：1.0.1
+> 📦 版本：1.1.0
 > 🎯 目標版本：2.0.0
 
 > **與 RFC 對齊說明**：本計劃為 [RFC.md](./RFC.md) 的詳細實作規劃。RFC 中的 Phase 2（Pothos 整合）納入 v1.2.0 規劃，Phase 3（Atlas 整合）將在後續版本中另行規劃。
@@ -169,11 +169,11 @@ declare module '@gravito/core' {
 
 ### 實作任務清單
 
-- [ ] 定義 `GraphQLContext` 介面
-- [ ] 移除所有 `any` 類型註解
-- [ ] 完善 `GraphQLConfig` 介面
-- [ ] 擴充 `@gravito/core` 模組類型
-- [ ] 新增 `biome.json` 規則禁止 `any`
+- [x] 定義 `GraphQLContext` 介面
+- [x] 移除所有 `any` 類型註解
+- [x] 完善 `GraphQLConfig` 介面
+- [x] 擴充 `@gravito/core` 模組類型
+- [x] 新增 `biome.json` 規則禁止 `any`
 
 ---
 
@@ -315,10 +315,10 @@ const schemaContent = await schemaFile.text()
 ### 實作任務清單
 
 - [ ] 實作 Subscription 支援（優先 Bun WebSocket）
-- [ ] 實作 Plugin 系統傳遞
-- [ ] 實作自訂錯誤格式化
-- [ ] 實作 CORS 配置
-- [ ] 實作驗證整合
+- [x] 實作 Plugin 系統傳遞
+- [x] 實作自訂錯誤格式化
+- [x] 實作 CORS 配置
+- [x] 實作驗證整合
 - [ ] 整合 Bun 原生 API
 - [ ] 新增相關測試案例
 

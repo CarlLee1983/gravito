@@ -63,7 +63,9 @@ The `GraphQLConfig` object supports the following options:
 | Option | Type | Default | Description |
 |---|---|---|---|
 | `path` | `string` | `'/graphql'` | The URL path where the GraphQL endpoint will be mounted. |
-| `schema` | `GraphQLSchema` | `undefined` | A pre-built GraphQL schema instance. |
+| `schema` | `GraphQLSchema \| string` | `undefined` | A pre-built GraphQL schema instance, OR a file path (Bun only). |
+| `subscriptions` | `object` | `{ enabled: false }` | WebSocket subscription configuration. |
+| `security` | `object` | `{ depthLimit: undefined }` | Security options like Query Depth Limit. |
 
 ## 🔌 Accessing Gravito Context
 
@@ -95,6 +97,11 @@ core.container.singleton('GRAPHQL_SCHEMA', () => {
 // The orbit will automatically find and use the registered schema
 await core.orbit(new OrbitGraphQL());
 ```
+
+## 🏗️ Code-First Schema (Pothos)
+
+We recommend using Pothos for building type-safe schemas.
+See the [Pothos Integration Guide](./docs/POTHOS_INTEGRATION.md).
 
 ## 📄 License
 
