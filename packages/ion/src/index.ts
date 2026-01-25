@@ -11,6 +11,7 @@
 import type { GravitoContext, GravitoNext, GravitoOrbit, PlanetCore } from '@gravito/core'
 import { InertiaService } from './InertiaService'
 
+export * from './errors'
 export * from './InertiaService'
 
 /**
@@ -36,9 +37,9 @@ export interface InertiaHelper {
    * @param props - Data to pass to the component
    * @param rootVars - Variables for the root HTML template (e.g., meta tags)
    */
-  (
+  <T extends Record<string, unknown> = Record<string, unknown>>(
     component: string,
-    props?: Record<string, unknown>,
+    props?: T,
     rootVars?: Record<string, unknown>,
     status?: number
   ): Response
@@ -53,9 +54,9 @@ export interface InertiaHelper {
   getSharedProps(): Record<string, unknown>
 
   /** Explicitly render an Inertia component */
-  render(
+  render<T extends Record<string, unknown> = Record<string, unknown>>(
     component: string,
-    props?: Record<string, unknown>,
+    props?: T,
     rootVars?: Record<string, unknown>,
     status?: number
   ): Response

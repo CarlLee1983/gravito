@@ -9,6 +9,7 @@
  */
 
 import type { GravitoContext, GravitoVariables, ViewService } from '@gravito/core'
+import { InertiaError } from './errors'
 
 /**
  * Configuration options for InertiaService
@@ -24,6 +25,29 @@ export interface InertiaConfig {
    * Asset version for cache busting
    */
   version?: string
+
+  /**
+   * Logging level for Inertia operations
+   * @default 'info'
+   */
+  logLevel?: 'debug' | 'info' | 'warn' | 'error' | 'silent'
+
+  /**
+   * Callback for render metrics (performance monitoring)
+   */
+  onRender?: (metrics: RenderMetrics) => void
+}
+
+/**
+ * Metrics collected during render operations
+ */
+export interface RenderMetrics {
+  component: string
+  duration: number
+  isInertiaRequest: boolean
+  propsCount: number
+  timestamp: number
+  status?: number
 }
 
 /**
@@ -43,6 +67,8 @@ export interface InertiaConfig {
  */
 export class InertiaService {
   private sharedProps: Record<string, unknown> = {}
+  private readonly logLevel: 'debug' | 'info' | 'warn' | 'error' | 'silent'
+  private readonly onRenderCallback?: (metrics: RenderMetrics) => void
 
   /**
    * Create a new InertiaService instance
@@ -53,7 +79,27 @@ export class InertiaService {
   constructor(
     private context: GravitoContext<GravitoVariables>,
     private config: InertiaConfig = {}
-  ) {}
+  ) {
+    this.logLevel = config.logLevel ?? 'info'
+    this.onRenderCallback = config.onRender
+  }
+
+  private log(level: 'debug' | 'info' | 'warn' | 'error', message: string, data?: unknown): void {
+    const levels = ['debug', 'info', 'warn', 'error', 'silent']
+    const currentLevelIndex = levels.indexOf(this.logLevel)
+    const messageLevelIndex = levels.indexOf(level)
+
+    if (this.logLevel === 'silent' || messageLevelIndex < currentLevelIndex) {
+      return
+    }
+
+    const logger =
+      typeof this.context.get === 'function' ? (this.context.get('logger') as any) : undefined
+
+    if (logger && typeof logger[level] === 'function') {
+      logger[level](message, data)
+    }
+  }
 
   /**
    * Escape a string for safe use in HTML attributes
@@ -99,24 +145,30 @@ export class InertiaService {
    * })
    * ```
    */
-  public render(
+  public render<T extends Record<string, unknown> = Record<string, unknown>>(
     component: string,
-    props: Record<string, unknown> = {},
+    props?: T,
     rootVars: Record<string, unknown> = {},
     status?: number
   ): Response {
+    const startTime = performance.now()
+    const isInertiaRequest = Boolean(this.context.req.header('X-Inertia'))
+
     try {
-      // For SSG, use relative URL (pathname only) to avoid cross-origin issues
+      this.log('debug', '[InertiaService] Starting render', {
+        component,
+        isInertiaRequest,
+        propsCount: props ? Object.keys(props).length : 0,
+      })
+
       let pageUrl: string
       try {
         const reqUrl = new URL(this.context.req.url, 'http://localhost')
         pageUrl = reqUrl.pathname + reqUrl.search
       } catch {
-        // Fallback if URL parsing fails
         pageUrl = this.context.req.url
       }
 
-      // Resolve lazy props (functions)
       const resolveProps = (p: Record<string, unknown>) => {
         const resolved: Record<string, unknown> = {}
         for (const [key, value] of Object.entries(p)) {
@@ -127,43 +179,89 @@ export class InertiaService {
 
       const page = {
         component,
-        props: resolveProps({ ...this.sharedProps, ...props }),
+        props: resolveProps({ ...this.sharedProps, ...(props ?? {}) }),
         url: pageUrl,
         version: this.config.version,
       }
 
-      // 1. If it's an Inertia request, return JSON
-      if (this.context.req.header('X-Inertia')) {
+      let pageJson: string
+      try {
+        pageJson = JSON.stringify(page)
+      } catch (error) {
+        this.log('error', '[InertiaService] Serialization failed', { component, error })
+        throw InertiaError.serializationFailed(component, error)
+      }
+
+      let response: Response
+
+      if (isInertiaRequest) {
         this.context.header('X-Inertia', 'true')
         this.context.header('Vary', 'Accept')
-        return this.context.json(page, status)
+        response = this.context.json(page, status)
+      } else {
+        const view = this.context.get('view') as ViewService | undefined
+        const rootView = this.config.rootView ?? 'app'
+
+        if (!view) {
+          this.log('error', '[InertiaService] ViewService not found')
+          throw InertiaError.viewServiceMissing()
+        }
+
+        const isDev = process.env.NODE_ENV !== 'production'
+
+        response = this.context.html(
+          view.render(
+            rootView,
+            {
+              ...rootVars,
+              page: this.escapeForSingleQuotedHtmlAttribute(pageJson),
+              isDev,
+            },
+            { layout: '' }
+          ),
+          status
+        )
       }
 
-      // 2. Otherwise return the root HTML with data-page attribute
-      const view = this.context.get('view') as ViewService | undefined
-      const rootView = this.config.rootView ?? 'app'
+      const duration = performance.now() - startTime
 
-      if (!view) {
-        throw new Error('OrbitPrism is required for the initial page load in OrbitIon')
+      this.log('info', '[InertiaService] Render complete', {
+        component,
+        duration: `${duration.toFixed(2)}ms`,
+        isInertiaRequest,
+        status: status ?? 200,
+      })
+
+      if (this.onRenderCallback) {
+        this.onRenderCallback({
+          component,
+          duration,
+          isInertiaRequest,
+          propsCount: props ? Object.keys(props).length : 0,
+          timestamp: Date.now(),
+          status,
+        })
       }
 
-      const isDev = process.env.NODE_ENV !== 'production'
-
-      return this.context.html(
-        view.render(
-          rootView,
-          {
-            ...rootVars,
-            page: this.escapeForSingleQuotedHtmlAttribute(JSON.stringify(page)),
-            isDev,
-          },
-          { layout: '' }
-        ),
-        status
-      )
+      return response
     } catch (error) {
-      console.error('[InertiaService] Render Error:', error)
-      // Fallback response if everything fails
+      const duration = performance.now() - startTime
+
+      if (error instanceof InertiaError) {
+        this.log('error', '[InertiaService] Render failed', {
+          component,
+          duration: `${duration.toFixed(2)}ms`,
+          errorCode: error.code,
+          errorDetails: error.details,
+        })
+        throw error
+      }
+
+      this.log('error', '[InertiaService] Unexpected render error', {
+        component,
+        duration: `${duration.toFixed(2)}ms`,
+        error,
+      })
       return new Response('Inertia Render Error', { status: 500 })
     }
   }

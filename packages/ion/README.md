@@ -75,6 +75,57 @@ export class HomeController {
 
 The `'Home'` string corresponds to your frontend component path (e.g., `src/client/pages/Home.tsx`).
 
+#### Type-Safe Props (TypeScript)
+
+You can use generics for type-safe props:
+
+```typescript
+interface HomeProps {
+  user: string;
+  stats: { visits: number };
+}
+
+export class HomeController {
+  index = async (c: Context) => {
+    const inertia = c.get('inertia') as InertiaService;
+    
+    return inertia.render<HomeProps>('Home', {
+      user: 'Carl',
+      stats: { visits: 100 }
+    });
+  };
+}
+```
+
+## 🛡️ Error Handling
+
+OrbitIon provides structured error handling with custom error types:
+
+```typescript
+import { InertiaError, InertiaErrorCodes } from '@gravito/ion';
+
+try {
+  return inertia.render('Dashboard', { data: myData });
+} catch (error) {
+  if (error instanceof InertiaError) {
+    console.error('Inertia Error:', error.code);
+    console.error('Details:', error.details);
+    
+    switch (error.code) {
+      case InertiaErrorCodes.CONFIG_VIEW_SERVICE_MISSING:
+        // OrbitPrism not loaded
+        break;
+      case InertiaErrorCodes.SERIALIZATION_FAILED:
+        // Props contain circular references or BigInt
+        break;
+      case InertiaErrorCodes.TEMPLATE_RENDER_FAILED:
+        // View template issue
+        break;
+    }
+  }
+}
+```
+
 ## 🔧 Client-Side Setup (React Example)
 
 You need to set up your client entry point (e.g., `src/client/app.tsx`):
