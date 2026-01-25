@@ -101,6 +101,63 @@ Spectrum wraps the Gravito core logger. Any logs generated via `core.logger.info
 | **Retention** | Short-term (Recent items) | Long-term (TSDB Integration) |
 | **Best For** | Developers fixing bugs locally | DevOps monitoring system health |
 
+## 🛠️ Roadmap & Future Improvements
+
+### Phase 1: Core Enhancement
+
+| Feature | Description | Priority |
+|---------|-------------|----------|
+| **Request/Response Body Capture** | Capture and display request/response bodies with size limits and content-type filtering | High |
+| **Advanced Filtering** | Add search, filter by method/status/duration in dashboard | High |
+| **Export Functionality** | Export captured data as HAR, JSON, or CSV | Medium |
+| **Request Diff View** | Compare two captured requests side-by-side | Medium |
+
+### Phase 2: Storage & Performance
+
+| Feature | Description | Priority |
+|---------|-------------|----------|
+| **SQLite Storage** | Add SQLite backend for better query performance and data integrity | High |
+| **Batch Write Optimization** | Buffer writes and flush periodically to reduce I/O | Medium |
+| **Memory Limit Controls** | Configurable memory caps with automatic pruning | Medium |
+| **Compression** | GZIP compression for FileStorage to reduce disk usage | Low |
+
+### Phase 3: Observability Integration
+
+| Feature | Description | Priority |
+|---------|-------------|----------|
+| **OpenTelemetry Export** | Export traces to OTLP-compatible backends | High |
+| **Trace Context Propagation** | Link requests to distributed traces | High |
+| **Custom Span Annotations** | Allow manual span creation within request lifecycle | Medium |
+| **Metrics Dashboard** | P50/P95/P99 latency charts, request rate graphs | Medium |
+
+### Phase 4: Developer Experience
+
+| Feature | Description | Priority |
+|---------|-------------|----------|
+| **Dark/Light Theme Toggle** | User-selectable theme for dashboard | Low |
+| **Keyboard Shortcuts** | Navigate and filter with keyboard | Low |
+| **WebSocket Support** | Capture and display WebSocket frames | Medium |
+| **Request Timeline View** | Visual timeline showing request waterfall | Medium |
+| **Mobile-Responsive Dashboard** | Improved mobile layout for dashboard | Low |
+
+### Phase 5: Core Bug Fixes
+
+| Issue | Description | Priority |
+|-------|-------------|----------|
+| **Request-Log-Query Correlation** | Link logs and queries to their originating request for better debugging | High |
+| **Config Consistency** | Ensure `SpectrumConfig.maxItems` is properly passed to Storage backends | High |
+| **FileStorage.prune()** | Currently only prunes requests, needs to handle logs and queries | Medium |
+| **SSE Connection Cleanup** | Improve handling of disconnected SSE clients to prevent memory leaks | High |
+| **Dashboard CSRF Protection** | Add CSRF protection for POST endpoints (`/clear`, `/replay`) | High |
+| **Large Payload Handling** | Implement streaming for large request/response bodies | Medium |
+
+### Contributing
+
+We welcome contributions! Priority areas:
+- Storage backend implementations (Redis, PostgreSQL)
+- Dashboard UI improvements
+- Performance optimizations for high-traffic scenarios
+
 ## 📄 License
 
 MIT © Carl Lee
