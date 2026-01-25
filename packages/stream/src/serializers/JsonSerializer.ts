@@ -3,23 +3,21 @@ import type { SerializedJob } from '../types'
 import type { JobSerializer } from './JobSerializer'
 
 /**
- * JSON Serializer
+ * JSON Serializer.
  *
- * Serializes jobs using JSON.
- * Suitable for simple scenarios where you only need to persist plain properties.
+ * Serializes jobs to standard JSON. This is the simplest serializer but has limitations:
+ * it cannot restore class instances (methods are lost) or handle complex types like Maps/Sets.
+ * Deserialized jobs will be plain objects that must be manually handled or cast.
  *
- * Limitation: cannot restore class instances, functions, or complex objects.
- *
+ * @public
  * @example
  * ```typescript
- * const serializer = new JsonSerializer()
- * const serialized = serializer.serialize(job)
- * const job = serializer.deserialize(serialized)
+ * const serializer = new JsonSerializer();
  * ```
  */
 export class JsonSerializer implements JobSerializer {
   /**
-   * Serialize a job.
+   * Serializes a job to a JSON object.
    */
   serialize(job: Job): SerializedJob {
     const id = job.id || `${Date.now()}-${crypto.randomUUID()}`
@@ -49,7 +47,9 @@ export class JsonSerializer implements JobSerializer {
   }
 
   /**
-   * Deserialize a job.
+   * Deserializes a JSON object into a basic Job-like object.
+   *
+   * Note: The result is NOT an instance of the original Job class.
    */
   deserialize(serialized: SerializedJob): Job {
     if (serialized.type !== 'json') {

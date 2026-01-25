@@ -3,12 +3,18 @@ import type { SerializedJob } from '../types'
 import type { JobSerializer } from './JobSerializer'
 
 /**
- * MessagePack Serializer
+ * MessagePack Serializer.
  *
- * Serializes jobs using MessagePack (encoded as Base64).
- * Provides smaller payload size and potentially faster serialization than JSON.
+ * Serializes jobs using MessagePack (binary format), encoded as a Base64 string.
+ * Offers smaller payload sizes than JSON for complex data structures.
  *
- * Requires optional dependency: @msgpack/msgpack
+ * Requires the optional `@msgpack/msgpack` dependency.
+ *
+ * @public
+ * @example
+ * ```typescript
+ * const serializer = new MessagePackSerializer();
+ * ```
  */
 export class MessagePackSerializer implements JobSerializer {
   private msgpack: any
@@ -23,6 +29,9 @@ export class MessagePackSerializer implements JobSerializer {
     }
   }
 
+  /**
+   * Serialize a job using MessagePack.
+   */
   serialize(job: Job): SerializedJob {
     const id = job.id || `${Date.now()}-${crypto.randomUUID()}`
 
@@ -53,6 +62,9 @@ export class MessagePackSerializer implements JobSerializer {
     }
   }
 
+  /**
+   * Deserialize a MessagePack job.
+   */
   deserialize(serialized: SerializedJob): Job {
     if (serialized.type !== 'msgpack') {
       throw new Error('Invalid serialization type: expected "msgpack"')

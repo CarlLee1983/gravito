@@ -6,8 +6,20 @@ import type { SerializedJob } from './types'
 /**
  * Configuration for a recurring scheduled job.
  *
+ * Defines the schedule (CRON), the job to execute, and metadata tracking execution times.
+ *
  * @public
  * @since 3.0.0
+ * @example
+ * ```typescript
+ * const config: ScheduledJobConfig = {
+ *   id: 'daily-report',
+ *   cron: '0 0 * * *',
+ *   queue: 'reports',
+ *   job: serializedJob,
+ *   enabled: true
+ * };
+ * ```
  */
 export interface ScheduledJobConfig {
   /** Unique identifier for the scheduled task. */
@@ -27,24 +39,26 @@ export interface ScheduledJobConfig {
 }
 
 /**
- * Scheduler manages recurring (cron) jobs in Gravito.
+ * Manages recurring tasks and cron jobs.
  *
- * It uses Redis to store schedule metadata and coordinates distributed
- * execution using locks to ensure jobs are triggered exactly once per interval.
- *
- * @example
- * ```typescript
- * const scheduler = new Scheduler(queueManager);
- * await scheduler.register({
- *   id: 'daily-cleanup',
- *   cron: '0 0 * * *',
- *   queue: 'default',
- *   job: myJob.serialize()
- * });
- * ```
+ * The Scheduler allows you to register jobs to run at specific intervals using CRON syntax.
+ * It uses Redis (or a compatible driver) to coordinate distributed execution, ensuring that
+ * a scheduled job runs only once per interval across multiple scheduler instances.
  *
  * @public
  * @since 3.0.0
+ * @example
+ * ```typescript
+ * const scheduler = manager.getScheduler();
+ * await scheduler.register({
+ *   id: 'cleanup',
+ *   cron: '0 * * * *', // Every hour
+ *   job: new CleanupJob()
+ * });
+ *
+ * // In your worker loop or separate process
+ * setInterval(() => scheduler.tick(), 60000);
+ * ```
  */
 export class Scheduler {
   private prefix: string
@@ -65,7 +79,12 @@ export class Scheduler {
   }
 
   /**
-   * Register a scheduled job.
+   * Registers a new scheduled job or updates an existing one.
+   *
+   * Calculates the next run time based on the CRON expression and stores the configuration in Redis.
+   *
+   * @param config - The job configuration (excluding nextRun and enabled status which are auto-set).
+   * @throws {Error} If Redis client does not support pipelining.
    */
   async register(config: Omit<ScheduledJobConfig, 'nextRun' | 'enabled'>): Promise<void> {
     const nextRun = (parser as any).parse(config.cron).next().getTime()
@@ -92,7 +111,11 @@ export class Scheduler {
   }
 
   /**
-   * Remove a scheduled job.
+   * Removes a scheduled job.
+   *
+   * Deletes the job metadata and schedule entry from Redis.
+   *
+   * @param id - The unique identifier of the scheduled job.
    */
   async remove(id: string): Promise<void> {
     const client = this.client
@@ -107,7 +130,9 @@ export class Scheduler {
   }
 
   /**
-   * List all scheduled jobs.
+   * Lists all registered scheduled jobs.
+   *
+   * @returns An array of all scheduled job configurations.
    */
   async list(): Promise<ScheduledJobConfig[]> {
     const client = this.client
@@ -135,7 +160,11 @@ export class Scheduler {
   }
 
   /**
-   * Run a scheduled job immediately (out of schedule).
+   * Manually triggers a scheduled job immediately.
+   *
+   * Forces execution of the job regardless of its schedule, without affecting the next scheduled run time.
+   *
+   * @param id - The unique identifier of the scheduled job.
    */
   async runNow(id: string): Promise<void> {
     const client = this.client
@@ -150,8 +179,13 @@ export class Scheduler {
   }
 
   /**
-   * Process due tasks (TICK).
-   * This should be called periodically (e.g. every minute).
+   * Checks for and triggers tasks that are due for execution.
+   *
+   * This method should be called periodically (e.g., via a system cron or a dedicated tick loop).
+   * It scans the schedule for tasks with `nextRun <= now`, acquires a lock for each,
+   * pushes them to their queue, and updates the `nextRun` time.
+   *
+   * @returns The number of jobs triggered in this tick.
    */
   async tick(): Promise<number> {
     const client = this.client

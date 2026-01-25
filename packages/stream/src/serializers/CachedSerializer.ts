@@ -5,30 +5,30 @@ import type { JobSerializer } from './JobSerializer'
 /**
  * Cached Serializer Decorator.
  *
- * Caches the serialization result of a job instance using WeakMap.
- * This prevents redundant serialization when the same job object is passed multiple times,
- * which is common in complex workflows or when using the same job instance in tests.
+ * Wraps another serializer to cache the results of serialization for the same Job instance.
+ * Useful when the same job object is enqueued multiple times (e.g., fan-out or testing),
+ * avoiding redundant serialization overhead.
  *
+ * Uses `WeakMap` to associate cached payloads with Job object references without causing memory leaks.
+ *
+ * @public
  * @example
  * ```typescript
- * const baseSerializer = new JsonSerializer()
- * const serializer = new CachedSerializer(baseSerializer)
- *
- * const job = new MyJob()
- * const s1 = serializer.serialize(job)
- * const s2 = serializer.serialize(job) // Returns cached result
+ * const serializer = new CachedSerializer(new JsonSerializer());
  * ```
  */
 export class CachedSerializer implements JobSerializer {
   private cache = new WeakMap<Job, SerializedJob>()
 
   /**
-   * @param delegate - The actual serializer to use for the first serialization
+   * @param delegate - The underlying serializer to use.
    */
   constructor(private delegate: JobSerializer) {}
 
   /**
-   * Serialize a job with caching.
+   * Serializes the job, returning a cached result if available.
+   *
+   * @param job - The job to serialize.
    */
   serialize(job: Job): SerializedJob {
     if (this.cache.has(job)) {
@@ -41,8 +41,9 @@ export class CachedSerializer implements JobSerializer {
   }
 
   /**
-   * Deserialize a job.
-   * No caching for deserialization as we get new objects each time from the driver.
+   * Deserializes a job.
+   *
+   * Caching is not applied here as deserialization always produces new instances.
    */
   deserialize(serialized: SerializedJob): Job {
     return this.delegate.deserialize(serialized)

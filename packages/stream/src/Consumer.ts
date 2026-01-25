@@ -6,145 +6,183 @@ import type { WorkerOptions } from './Worker'
 import { Worker } from './Worker'
 
 /**
- * Consumer options.
+ * Configuration options for the Consumer.
+ *
+ * Defines which queues to listen to, connection settings, concurrency levels,
+ * and advanced behavior like rate limiting and batch processing.
+ *
+ * @example
+ * ```typescript
+ * const options: ConsumerOptions = {
+ *   queues: ['emails', 'notifications'],
+ *   concurrency: 5,
+ *   pollInterval: 2000
+ * };
+ * ```
  */
 export interface ConsumerOptions {
   /**
-   * Queues to listen on.
+   * List of queue names to consume jobs from.
+   *
+   * The consumer will poll these queues in the order provided or based on driver logic.
    */
   queues: string[]
 
   /**
-   * Connection name.
+   * The connection name to use (e.g., 'redis', 'sqs').
+   *
+   * If not provided, uses the default connection from QueueManager.
    */
   connection?: string
 
   /**
-   * Worker options.
+   * Configuration options passed to the underlying Worker.
    */
   workerOptions?: WorkerOptions
 
   /**
-   * Polling interval (milliseconds).
+   * The interval in milliseconds to wait before polling again when the queue is empty.
    */
   pollInterval?: number
 
   /**
-   * Whether to keep polling when queues are empty.
+   * Whether to keep the process alive when queues are empty.
+   *
+   * If false, the consumer will exit the loop when no jobs are found (useful for one-off scripts).
    */
   keepAlive?: boolean
 
   /**
-   * Monitoring options.
+   * Monitoring configuration.
+   *
+   * Can be a boolean to enable default monitoring, or an object for advanced configuration.
    */
   monitor?:
     | boolean
     | {
         /**
-         * Heartbeat interval (milliseconds). Default: 5000.
+         * The interval in milliseconds for sending heartbeat updates.
+         * @default 5000
          */
         interval?: number
 
         /**
-         * Extra info to report with heartbeat.
+         * Additional metadata to include in heartbeat payloads.
          */
         extraInfo?: Record<string, unknown>
 
         /**
-         * Prefix for monitoring keys/channels.
+         * Key prefix for monitoring events (e.g. for Redis Pub/Sub).
          */
         prefix?: string
       }
 
   /**
-   * Rate limits per queue.
-   * Example: { 'emails': { max: 10, duration: 1000 } }
+   * Rate limiting configuration per queue.
+   *
+   * Defines the maximum number of jobs to process within a given duration.
+   *
+   * @example
+   * ```typescript
+   * { 'emails': { max: 10, duration: 1000 } } // 10 emails per second
+   * ```
    */
   rateLimits?: Record<string, { max: number; duration: number }>
 
   /**
-   * Max concurrent jobs to process. Default: 1.
+   * The maximum number of jobs to process concurrently.
+   *
+   * @default 1
    */
   concurrency?: number
 
   /**
-   * Whether to process jobs with the same groupId sequentially.
-   * If true, jobs with the same groupId will never run concurrently,
-   * regardless of the global concurrency setting.
+   * Whether to enforce sequential processing for jobs with the same `groupId`.
+   *
+   * If true, jobs sharing a `groupId` will be processed one after another,
+   * even if global concurrency is high.
+   *
    * @default true
    */
   groupJobsSequential?: boolean
 
   /**
-   * Minimum polling interval in ms (for adaptive polling).
+   * The minimum polling interval in milliseconds for adaptive polling.
+   *
    * @default 100
    */
   minPollInterval?: number
 
   /**
-   * Maximum polling interval in ms (for adaptive polling).
+   * The maximum polling interval in milliseconds for adaptive polling.
+   *
    * @default 5000
    */
   maxPollInterval?: number
 
   /**
-   * Backoff multiplier for adaptive polling.
+   * The multiplier used to increase the polling interval when the queue is empty.
+   *
    * @default 1.5
    */
   backoffMultiplier?: number
 
   /**
-   * Batch size for consuming jobs.
-   * If > 1, tries to fetch multiple jobs at once.
+   * The number of jobs to try to fetch in a single request.
+   *
+   * If supported by the driver, fetching multiple jobs reduces network round-trips.
+   *
    * @default 1
    */
   batchSize?: number
 
   /**
-   * Whether to use blocking pop (BLPOP/long-polling) if supported by driver.
-   * Only applies when batchSize is 1.
+   * Whether to use blocking operations (like BLPOP in Redis) when polling.
+   *
+   * Significant optimization for low-latency job pickup. Only applies when `batchSize` is 1.
+   *
    * @default true
    */
   useBlocking?: boolean
 
   /**
-   * Timeout in seconds for blocking pop.
+   * The timeout in seconds for blocking operations.
+   *
    * @default 5
    */
   blockingTimeout?: number
 
   /**
-   * Enable verbose debug logging.
+   * Enable verbose debug logging for consumer activities.
+   *
    * @default false
    */
   debug?: boolean
 }
 
 /**
- * Consumer
+ * The Consumer responsible for processing jobs from the queue.
  *
- * Consumes and executes jobs from queues.
- * Supports embedded mode (inside the main app) and standalone mode (as a worker service).
+ * It polls the configured queues, retrieves jobs, and delegates execution to a `Worker`.
+ * It handles concurrency, rate limiting, adaptive polling, and emits lifecycle events
+ * (job:started, job:processed, job:failed, etc.).
  *
+ * @public
  * @example
  * ```typescript
- * // Embedded mode
  * const consumer = new Consumer(queueManager, {
- *   queues: ['default', 'emails'],
- *   pollInterval: 1000
- * })
+ *   queues: ['default'],
+ *   concurrency: 10
+ * });
  *
- * consumer.start()
- *
- * // Standalone mode (CLI)
- * // Start via CLI tooling with graceful shutdown
+ * await consumer.start();
  * ```
  *
  * @emits job:started - When a job begins processing. Payload: { job: Job, queue: string }
  * @emits job:processed - When a job completes successfully. Payload: { job: Job, duration: number, queue: string }
  * @emits job:failed - When a job fails an attempt. Payload: { job: Job, error: Error, duration: number, queue: string }
  * @emits job:retried - When a job is scheduled for a retry. Payload: { job: Job, attempt: number, delay: number }
- * @emits job:failed_permanently - When a job fails all attempts and is moved to DLQ. Payload: { job: Job, error: Error }
+ * @emits job:failed_permanently - When a job fails all attempts. Payload: { job: Job, error: Error }
  */
 export class Consumer extends EventEmitter {
   private running = false
@@ -171,7 +209,7 @@ export class Consumer extends EventEmitter {
   }
 
   /**
-   * Log debug message.
+   * Logs a debug message if debug mode is enabled.
    */
   private log(message: string, data?: unknown): void {
     if (this.options.debug) {
@@ -186,7 +224,12 @@ export class Consumer extends EventEmitter {
   }
 
   /**
-   * Start the consumer loop.
+   * Starts the consumer loop.
+   *
+   * Begins polling the queues and processing jobs. This method returns a promise that resolves
+   * only when the consumer stops (if `keepAlive` is false) or throws if already running.
+   *
+   * @throws {Error} If the consumer is already running.
    */
   async start(): Promise<void> {
     if (this.running) {
@@ -349,7 +392,7 @@ export class Consumer extends EventEmitter {
   }
 
   /**
-   * Run a job with concurrency controls.
+   * Run a job with concurrency controls and group locking.
    */
   private async runJob(job: Job, worker: Worker): Promise<void> {
     // If group sequentiality is disabled or no groupId, run immediately
@@ -380,7 +423,7 @@ export class Consumer extends EventEmitter {
   }
 
   /**
-   * Handle a single job.
+   * Delegates the actual processing to the worker and handles stats/logging.
    */
   private async handleJob(job: Job, worker: Worker): Promise<void> {
     const currentQueue = job.queueName || 'default'
@@ -529,7 +572,12 @@ export class Consumer extends EventEmitter {
   }
 
   /**
-   * Stop the consumer loop (graceful shutdown).
+   * Gracefully stops the consumer.
+   *
+   * Signals the consumer to stop accepting new jobs and waits for currently running jobs
+   * to complete.
+   *
+   * @returns A promise that resolves when the consumer has fully stopped.
    */
   async stop(): Promise<void> {
     this.log('Stopping...')
@@ -542,21 +590,25 @@ export class Consumer extends EventEmitter {
   }
 
   /**
-   * Check whether the consumer is running.
+   * Checks if the consumer is currently active.
+   *
+   * @returns True if the consumer loop is running.
    */
   isRunning(): boolean {
     return this.running
   }
 
   /**
-   * Get current consumer statistics.
+   * Retrieves current operational statistics.
+   *
+   * @returns An object containing processed, failed, retried, and active job counts.
    */
   getStats() {
     return { ...this.stats }
   }
 
   /**
-   * Reset statistics counters.
+   * Resets the internal statistics counters.
    */
   resetStats(): void {
     this.stats.processed = 0

@@ -23,21 +23,17 @@ export interface RabbitMQDriverConfig {
 }
 
 /**
- * RabbitMQ Driver
+ * RabbitMQ (AMQP) queue driver.
  *
- * Uses RabbitMQ as the queue backend.
- * Implements FIFO via RabbitMQ Queues.
+ * Uses RabbitMQ as the backend. Supports standard AMQP queues, exchanges,
+ * and reliable message acknowledgements.
  *
- * Requires `amqplib`.
- *
+ * @public
  * @example
  * ```typescript
- * import amqp from 'amqplib'
- *
- * const connection = await amqp.connect('amqp://localhost')
- * const driver = new RabbitMQDriver({ client: connection })
- *
- * await driver.push('default', serializedJob)
+ * import amqp from 'amqplib';
+ * const conn = await amqp.connect('amqp://localhost');
+ * const driver = new RabbitMQDriver({ client: conn });
  * ```
  */
 export class RabbitMQDriver implements QueueDriver {
@@ -89,7 +85,10 @@ export class RabbitMQDriver implements QueueDriver {
   }
 
   /**
-   * Push a job (sendToQueue / publish).
+   * Pushes a job to a RabbitMQ queue or exchange.
+   *
+   * @param queue - The queue name.
+   * @param job - The serialized job.
    */
   async push(queue: string, job: SerializedJob): Promise<void> {
     const channel = await this.ensureChannel()
@@ -106,7 +105,9 @@ export class RabbitMQDriver implements QueueDriver {
   }
 
   /**
-   * Pop a job (get).
+   * Pops a job from the queue.
+   *
+   * @param queue - The queue name.
    */
   async pop(queue: string): Promise<SerializedJob | null> {
     const channel = await this.ensureChannel()
@@ -125,8 +126,10 @@ export class RabbitMQDriver implements QueueDriver {
   }
 
   /**
-   * Pop multiple jobs.
-   * Uses channel.get() in a loop (no native batch get in AMQP).
+   * Pops multiple jobs.
+   *
+   * @param queue - The queue name.
+   * @param count - Max jobs.
    */
   async popMany(queue: string, count: number): Promise<SerializedJob[]> {
     const channel = await this.ensureChannel()
@@ -150,7 +153,9 @@ export class RabbitMQDriver implements QueueDriver {
   }
 
   /**
-   * Acknowledge a message.
+   * Acknowledges a message.
+   *
+   * @param messageId - The message object (RabbitMQ requires object reference).
    */
   async acknowledge(messageId: string): Promise<void> {
     // Note: RabbitMQ acks by message object, not ID in amqplib.
@@ -181,7 +186,7 @@ export class RabbitMQDriver implements QueueDriver {
   }
 
   /**
-   * Subscribe to a queue.
+   * Subscribes to a queue.
    */
   async subscribe(
     queue: string,
@@ -223,7 +228,9 @@ export class RabbitMQDriver implements QueueDriver {
   }
 
   /**
-   * Get queue size.
+   * Returns the number of messages in the queue.
+   *
+   * @param queue - The queue name.
    */
   async size(queue: string): Promise<number> {
     const channel = await this.ensureChannel()
@@ -232,7 +239,9 @@ export class RabbitMQDriver implements QueueDriver {
   }
 
   /**
-   * Clear a queue.
+   * Purges the queue.
+   *
+   * @param queue - The queue name.
    */
   async clear(queue: string): Promise<void> {
     const channel = await this.ensureChannel()

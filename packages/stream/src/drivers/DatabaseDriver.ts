@@ -3,54 +3,58 @@ import type { QueueDriver } from './QueueDriver'
 
 /**
  * Generic database service interface.
- * Users should implement this interface with their preferred ORM/database client.
+ *
+ * Adapts any SQL database client (e.g., pg, mysql2, sqlite3) for use with the DatabaseDriver.
+ * Users must provide an implementation of this interface that wraps their specific DB library.
  */
 export interface DatabaseService {
   /**
    * Execute a raw SQL query.
-   * @param sql - The SQL query string with placeholders ($1, $2, etc.)
-   * @param bindings - The values to bind to placeholders
+   *
+   * @param sql - The SQL query string with placeholders (e.g., $1, ?).
+   * @param bindings - The values to bind to the placeholders.
+   * @returns The query result (rows or metadata).
    */
   execute<T = unknown>(sql: string, bindings?: unknown[]): Promise<T[] | T>
 
   /**
-   * Execute multiple queries within a transaction.
-   * @param callback - The callback to execute within the transaction
+   * Execute multiple queries within a single transaction.
+   *
+   * @param callback - A function that receives a transaction-scoped service instance.
+   * @returns The result of the callback.
    */
   transaction<T>(callback: (tx: DatabaseService) => Promise<T>): Promise<T>
 }
 
 /**
- * Database driver configuration.
+ * Configuration options for the DatabaseDriver.
  */
 export interface DatabaseDriverConfig {
   /**
-   * Table name (default: `jobs`).
+   * The name of the table used to store jobs.
+   * @default 'jobs'
    */
   table?: string
 
   /**
-   * Database service instance that implements DatabaseService interface.
+   * The database service adapter instance.
    */
   dbService?: DatabaseService
 }
 
 /**
- * Database Driver
+ * Database-backed queue driver.
  *
- * Uses a database as the queue backend.
- * Works with any database service that implements the DatabaseService interface.
+ * Persists jobs in a SQL database table. Supports delayed jobs, reservation (locking),
+ * and reliable delivery. Compatible with PostgreSQL (SKIP LOCKED), MySQL, and SQLite.
  *
+ * @public
  * @example
  * ```typescript
- * // Create a database service adapter
- * const dbService = {
- *   execute: async (sql, bindings) => yourDbClient.query(sql, bindings),
- *   transaction: async (callback) => yourDbClient.transaction(callback),
- * }
- *
- * const driver = new DatabaseDriver({ dbService, table: 'jobs' })
- * await driver.push('default', serializedJob)
+ * const driver = new DatabaseDriver({
+ *   dbService: myDbAdapter,
+ *   table: 'queue_jobs'
+ * });
  * ```
  */
 export class DatabaseDriver implements QueueDriver {
@@ -69,7 +73,12 @@ export class DatabaseDriver implements QueueDriver {
   }
 
   /**
-   * Push a job to a queue.
+   * Pushes a job to the database queue.
+   *
+   * Inserts a new row into the jobs table.
+   *
+   * @param queue - The queue name.
+   * @param job - The serialized job.
    */
   async push(queue: string, job: SerializedJob): Promise<void> {
     const availableAt = job.delaySeconds
@@ -87,7 +96,13 @@ export class DatabaseDriver implements QueueDriver {
   }
 
   /**
-   * Pop a job from the queue (FIFO, with delay support).
+   * Pops the next available job from the queue.
+   *
+   * Uses transactional locking (SELECT ... FOR UPDATE SKIP LOCKED if supported) to ensure
+   * atomic reservation of jobs by workers.
+   *
+   * @param queue - The queue name.
+   * @returns The job or `null`.
    */
   async pop(queue: string): Promise<SerializedJob | null> {
     // Use SELECT FOR UPDATE to lock rows (PostgreSQL/MySQL).
@@ -192,7 +207,10 @@ export class DatabaseDriver implements QueueDriver {
   }
 
   /**
-   * Pop multiple jobs from the queue.
+   * Pops multiple jobs from the queue in a single transaction.
+   *
+   * @param queue - The queue name.
+   * @param count - Max jobs to pop.
    */
   async popMany(queue: string, count: number): Promise<SerializedJob[]> {
     if (count <= 1) {
@@ -270,7 +288,9 @@ export class DatabaseDriver implements QueueDriver {
   }
 
   /**
-   * Get queue statistics.
+   * Retrieves queue statistics by querying the table.
+   *
+   * @param queue - The queue name.
    */
   async stats(queue: string): Promise<QueueStats> {
     const failedQueue = `failed:${queue}`
@@ -314,7 +334,9 @@ export class DatabaseDriver implements QueueDriver {
   }
 
   /**
-   * Get queue size.
+   * Returns the count of pending jobs.
+   *
+   * @param queue - The queue name.
    */
   async size(queue: string): Promise<number> {
     const result = (await this.dbService.execute<{ count: number }>(
@@ -330,15 +352,19 @@ export class DatabaseDriver implements QueueDriver {
   }
 
   /**
-   * Clear a queue.
+   * Clears the queue by deleting all rows for the queue.
+   *
+   * @param queue - The queue name.
    */
   async clear(queue: string): Promise<void> {
     await this.dbService.execute(`DELETE FROM ${this.tableName} WHERE queue = $1`, [queue])
   }
 
   /**
-   * Pop a job from the queue (blocking).
-   * Simple polling fallback for databases.
+   * Pops a job using a polling loop (Blocking simulation).
+   *
+   * @param queue - The queue name.
+   * @param timeout - Timeout in seconds.
    */
   async popBlocking(queue: string, timeout: number): Promise<SerializedJob | null> {
     const start = Date.now()
@@ -360,8 +386,10 @@ export class DatabaseDriver implements QueueDriver {
   }
 
   /**
-   * Push multiple jobs.
-   * Optimizes by using a single multi-row insert if possible.
+   * Pushes multiple jobs using a transaction.
+   *
+   * @param queue - The queue name.
+   * @param jobs - Array of jobs.
    */
   async pushMany(queue: string, jobs: SerializedJob[]): Promise<void> {
     if (jobs.length === 0) {
@@ -395,7 +423,10 @@ export class DatabaseDriver implements QueueDriver {
   }
 
   /**
-   * Mark a job as failed (DLQ).
+   * Marks a job as permanently failed by moving it to the DLQ (separate logical queue in DB).
+   *
+   * @param queue - The queue name.
+   * @param job - The failed job.
    */
   async fail(queue: string, job: SerializedJob): Promise<void> {
     const failedQueue = `failed:${queue}`
@@ -409,7 +440,10 @@ export class DatabaseDriver implements QueueDriver {
   }
 
   /**
-   * Acknowledge/Complete a job.
+   * Deletes a job row from the database (completion).
+   *
+   * @param _queue - The queue name (unused).
+   * @param job - The job to complete.
    */
   async complete(_queue: string, job: SerializedJob): Promise<void> {
     if (!job.id) {

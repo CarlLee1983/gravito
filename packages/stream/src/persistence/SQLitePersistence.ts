@@ -4,7 +4,15 @@ import type { JobRow, PersistenceAdapter, SerializedJob } from '../types'
 
 /**
  * SQLite Persistence Adapter.
+ *
  * Archives jobs into a local SQLite database for zero-config persistence.
+ * Uses transactions to optimize write performance for batches.
+ *
+ * @public
+ * @example
+ * ```typescript
+ * const persistence = new SQLitePersistence(db);
+ * ```
  */
 export class SQLitePersistence implements PersistenceAdapter {
   /**
@@ -20,6 +28,9 @@ export class SQLitePersistence implements PersistenceAdapter {
     _options: { maxBufferSize?: number; flushInterval?: number } = {}
   ) {}
 
+  /**
+   * Archives a single job.
+   */
   async archive(
     queue: string,
     job: SerializedJob,
@@ -28,6 +39,11 @@ export class SQLitePersistence implements PersistenceAdapter {
     await this.archiveMany([{ queue, job, status }])
   }
 
+  /**
+   * Archives multiple jobs in a batch.
+   *
+   * Optimized for SQLite by wrapping chunks in transactions.
+   */
   async archiveMany(
     jobs: Array<{
       queue: string
@@ -68,10 +84,16 @@ export class SQLitePersistence implements PersistenceAdapter {
     }
   }
 
+  /**
+   * No-op. Use BufferedPersistence if flushing is needed.
+   */
   async flush(): Promise<void> {
     // No-op: Buffering removed. Use BufferedPersistence if buffering is needed.
   }
 
+  /**
+   * Finds an archived job by ID.
+   */
   async find(queue: string, id: string): Promise<SerializedJob | null> {
     const row = await this.db.table(this.table).where('queue', queue).where('job_id', id).first()
 

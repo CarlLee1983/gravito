@@ -2,7 +2,20 @@ import type { PersistenceAdapter, SerializedJob } from '../types'
 
 /**
  * Buffered Persistence Wrapper.
- * Wraps any PersistenceAdapter to add buffering and batch writing capabilities.
+ *
+ * Decorates any `PersistenceAdapter` to add write buffering. Instead of writing
+ * to the database immediately for every event, it collects jobs and logs in memory
+ * and flushes them in batches. This significantly reduces database I/O for high-throughput queues.
+ *
+ * @public
+ * @example
+ * ```typescript
+ * const mysqlAdapter = new MySQLPersistence(db);
+ * const bufferedAdapter = new BufferedPersistence(mysqlAdapter, {
+ *   maxBufferSize: 100,
+ *   flushInterval: 500
+ * });
+ * ```
  */
 export class BufferedPersistence implements PersistenceAdapter {
   private jobBuffer: Array<{
@@ -31,6 +44,13 @@ export class BufferedPersistence implements PersistenceAdapter {
     this.flushInterval = options.flushInterval ?? 5000
   }
 
+  /**
+   * Buffers a job archive request.
+   *
+   * @param queue - The queue name.
+   * @param job - The serialized job.
+   * @param status - The final job status.
+   */
   async archive(
     queue: string,
     job: SerializedJob,
@@ -47,10 +67,16 @@ export class BufferedPersistence implements PersistenceAdapter {
     }
   }
 
+  /**
+   * Delegates find to the underlying adapter (no buffering for reads).
+   */
   async find(queue: string, id: string): Promise<SerializedJob | null> {
     return this.adapter.find(queue, id)
   }
 
+  /**
+   * Delegates list to the underlying adapter (no buffering for reads).
+   */
   async list(
     queue: string,
     options?: {
@@ -65,6 +91,11 @@ export class BufferedPersistence implements PersistenceAdapter {
     return this.adapter.list(queue, options)
   }
 
+  /**
+   * Archives multiple jobs directly (bypassing buffer, or flushing first).
+   *
+   * Actually, for consistency, this might just pass through.
+   */
   async archiveMany(
     jobs: Array<{
       queue: string
@@ -81,10 +112,18 @@ export class BufferedPersistence implements PersistenceAdapter {
     }
   }
 
+  /**
+   * Delegates cleanup to the underlying adapter.
+   */
   async cleanup(days: number): Promise<number> {
     return this.adapter.cleanup(days)
   }
 
+  /**
+   * Flushes all buffered data to the underlying adapter.
+   *
+   * Uses `archiveMany` and `archiveLogMany` if supported by the adapter for batch efficiency.
+   */
   async flush(): Promise<void> {
     if (this.flushTimer) {
       clearTimeout(this.flushTimer)
@@ -129,6 +168,9 @@ export class BufferedPersistence implements PersistenceAdapter {
     await Promise.all(promises)
   }
 
+  /**
+   * Delegates count to the underlying adapter.
+   */
   async count(
     queue: string,
     options?: {
@@ -141,6 +183,9 @@ export class BufferedPersistence implements PersistenceAdapter {
     return this.adapter.count(queue, options)
   }
 
+  /**
+   * Buffers a log message.
+   */
   async archiveLog(log: {
     level: string
     message: string
@@ -159,6 +204,9 @@ export class BufferedPersistence implements PersistenceAdapter {
     }
   }
 
+  /**
+   * Archives multiple logs directly.
+   */
   async archiveLogMany(
     logs: Array<{
       level: string
@@ -177,6 +225,9 @@ export class BufferedPersistence implements PersistenceAdapter {
     }
   }
 
+  /**
+   * Delegates listLogs to the underlying adapter.
+   */
   async listLogs(options?: {
     limit?: number
     offset?: number
@@ -190,6 +241,9 @@ export class BufferedPersistence implements PersistenceAdapter {
     return this.adapter.listLogs(options)
   }
 
+  /**
+   * Delegates countLogs to the underlying adapter.
+   */
   async countLogs(options?: {
     level?: string
     workerId?: string
@@ -201,6 +255,9 @@ export class BufferedPersistence implements PersistenceAdapter {
     return this.adapter.countLogs(options)
   }
 
+  /**
+   * Ensures the auto-flush timer is running.
+   */
   private ensureFlushTimer(): void {
     if (this.flushTimer) {
       return

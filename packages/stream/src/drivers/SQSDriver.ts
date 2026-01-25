@@ -36,27 +36,17 @@ export interface SQSDriverConfig {
 }
 
 /**
- * SQS Driver
+ * Amazon SQS queue driver.
  *
- * Uses AWS SQS as the queue backend.
- * Supports standard/FIFO queues, long polling, DLQ setups, etc.
+ * Wraps the AWS SDK for SQS. Supports standard and FIFO queues, long polling,
+ * and visibility timeouts.
  *
- * Requires `@aws-sdk/client-sqs`.
- *
+ * @public
  * @example
  * ```typescript
- * import { SQSClient } from '@aws-sdk/client-sqs'
- *
- * const sqs = new SQSClient({
- *   region: 'us-east-1',
- *   credentials: {
- *     accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
- *     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
- *   }
- * })
- *
- * const driver = new SQSDriver({ client: sqs })
- * await driver.push('default', serializedJob)
+ * import { SQSClient } from '@aws-sdk/client-sqs';
+ * const sqs = new SQSClient({ region: 'us-east-1' });
+ * const driver = new SQSDriver({ client: sqs });
  * ```
  */
 export class SQSDriver implements QueueDriver {
@@ -100,7 +90,10 @@ export class SQSDriver implements QueueDriver {
   }
 
   /**
-   * Push a job to SQS.
+   * Pushes a job to SQS.
+   *
+   * @param queue - The queue name (or URL).
+   * @param job - The serialized job.
    */
   async push(queue: string, job: SerializedJob): Promise<void> {
     const { SendMessageCommand } = await import('@aws-sdk/client-sqs')
@@ -129,7 +122,9 @@ export class SQSDriver implements QueueDriver {
   }
 
   /**
-   * Pop a job (long polling).
+   * Pops a job from SQS (using long polling).
+   *
+   * @param queue - The queue name (or URL).
    */
   async pop(queue: string): Promise<SerializedJob | null> {
     const { ReceiveMessageCommand } = await import('@aws-sdk/client-sqs')
@@ -166,8 +161,10 @@ export class SQSDriver implements QueueDriver {
   }
 
   /**
-   * Pop multiple jobs.
-   * Leverages SQS MaxNumberOfMessages (up to 10).
+   * Pops multiple jobs (up to 10).
+   *
+   * @param queue - The queue name.
+   * @param count - Max jobs (capped at 10 by SQS).
    */
   async popMany(queue: string, count: number): Promise<SerializedJob[]> {
     const { ReceiveMessageCommand } = await import('@aws-sdk/client-sqs')
@@ -206,7 +203,9 @@ export class SQSDriver implements QueueDriver {
   }
 
   /**
-   * Get queue size (approximate).
+   * Returns the approximate number of messages in the queue.
+   *
+   * @param queue - The queue name.
    */
   async size(queue: string): Promise<number> {
     const { GetQueueAttributesCommand } = await import('@aws-sdk/client-sqs')
@@ -228,10 +227,12 @@ export class SQSDriver implements QueueDriver {
   }
 
   /**
-   * Clear a queue by receiving and deleting messages.
+   * Clears the queue by continuously receiving and deleting messages.
    *
-   * Note: SQS does not provide a direct "purge" API via this wrapper. This method will
-   * keep receiving and deleting messages until the queue is empty.
+   * SQS does not have a "purge" command in the client data plane easily accessible here,
+   * so we drain the queue.
+   *
+   * @param queue - The queue name.
    */
   async clear(queue: string): Promise<void> {
     const { DeleteMessageCommand } = await import('@aws-sdk/client-sqs')
@@ -257,7 +258,10 @@ export class SQSDriver implements QueueDriver {
   }
 
   /**
-   * Push multiple jobs.
+   * Pushes multiple jobs using SQS batch API.
+   *
+   * @param queue - The queue name.
+   * @param jobs - Array of jobs.
    */
   async pushMany(queue: string, jobs: SerializedJob[]): Promise<void> {
     if (jobs.length === 0) {
@@ -300,7 +304,7 @@ export class SQSDriver implements QueueDriver {
   }
 
   /**
-   * Acknowledge is not supported via messageId.
+   * Throws error as SQS requires ReceiptHandle, not just MessageId.
    */
   async acknowledge(_messageId: string): Promise<void> {
     // SQS acknowledgements require a ReceiptHandle.
@@ -308,7 +312,10 @@ export class SQSDriver implements QueueDriver {
   }
 
   /**
-   * Delete a message (acknowledge processing completion).
+   * Deletes a message using its ReceiptHandle (ACK).
+   *
+   * @param queue - The queue name.
+   * @param receiptHandle - The SQS receipt handle.
    */
   async deleteMessage(queue: string, receiptHandle: string): Promise<void> {
     const { DeleteMessageCommand } = await import('@aws-sdk/client-sqs')
