@@ -133,6 +133,11 @@ export {
   BeamNetworkError,
   BeamTimeoutError,
 } from './errors'
+export {
+  createAuthenticatedBeam,
+  safeResponse,
+  unwrapResponse,
+} from './helpers'
 export type {
   BeamOptions,
   BeamOptions as GravitoClientOptions,
