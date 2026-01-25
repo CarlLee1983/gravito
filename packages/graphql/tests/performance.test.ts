@@ -1,6 +1,5 @@
-import { afterAll, describe, expect, it } from 'bun:test'
+import { describe, expect, it } from 'bun:test'
 import { defineConfig, GravitoAdapter, PlanetCore } from '@gravito/core'
-import { buildSchema } from 'graphql'
 import { createSchema } from 'graphql-yoga'
 import { type GraphQLContext, OrbitGraphQL } from '../src/index'
 

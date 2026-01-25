@@ -16,6 +16,16 @@ interface BunServerLike {
 }
 
 /**
+ * Custom Error for GraphQL Configuration issues
+ */
+export class GraphQLConfigError extends Error {
+  constructor(message: string) {
+    super(`[OrbitGraphQL] ${message}`)
+    this.name = 'GraphQLConfigError'
+  }
+}
+
+/**
  * GraphQL Context, containing Yoga initial context and Gravito extension.
  *
  * Note: gravito is injected via the second argument of yoga.fetch(),
@@ -87,7 +97,7 @@ export interface GraphQLConfig {
   /**
    * Custom handler for authentication failure
    */
-  onAuthFailure?: (context: GraphQLContext) => Response | void
+  onAuthFailure?: (context: GraphQLContext) => Response | undefined
   /**
    * Subscription Configuration (WebSocket)
    */
@@ -172,10 +182,10 @@ export class OrbitGraphQL implements GravitoOrbit {
               `[OrbitGraphQL] Failed to load schema from file: ${this.config.schema}`,
               e
             )
-            throw e
+            throw new GraphQLConfigError(`Failed to load schema from file: ${this.config.schema}`)
           }
         } else {
-          throw new Error('[OrbitGraphQL] String schema path is only supported in Bun runtime.')
+          throw new GraphQLConfigError('String schema path is only supported in Bun runtime.')
         }
       } else {
         schema = this.config.schema
@@ -348,7 +358,9 @@ export class OrbitGraphQL implements GravitoOrbit {
         if (!authenticated) {
           if (this.config.onAuthFailure) {
             const res = this.config.onAuthFailure(c as unknown as GraphQLContext)
-            if (res) return res
+            if (res) {
+              return res
+            }
           }
           return c.text('Unauthorized', 401)
         }

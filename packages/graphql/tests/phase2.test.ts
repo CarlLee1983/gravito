@@ -1,8 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import { unlink } from 'node:fs/promises'
+import { join } from 'node:path'
 import { defineConfig, GravitoAdapter, PlanetCore } from '@gravito/core'
 import { buildSchema } from 'graphql'
-import { join } from 'path'
 import { OrbitGraphQL } from '../src/index'
 
 describe('GraphQL Phase 2 Features', () => {

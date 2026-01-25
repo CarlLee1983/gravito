@@ -66,6 +66,8 @@ The `GraphQLConfig` object supports the following options:
 | `schema` | `GraphQLSchema \| string` | `undefined` | A pre-built GraphQL schema instance, OR a file path (Bun only). |
 | `subscriptions` | `object` | `{ enabled: false }` | WebSocket subscription configuration. |
 | `security` | `object` | `{ depthLimit: undefined }` | Security options like Query Depth Limit. |
+| `performance` | `object` | `{ cache: { enabled: false } }` | Performance options like Response Cache. |
+| `dataLoaders` | `function` | `undefined` | Factory function to create per-request DataLoaders. |
 
 ## 🔌 Accessing Gravito Context
 
