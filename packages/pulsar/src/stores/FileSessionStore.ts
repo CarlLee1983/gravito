@@ -26,9 +26,22 @@ export class FileSessionStore implements SessionStore {
     mkdirSync(this.path, { recursive: true })
   }
 
+  private sanitizeSessionId(sessionId: string): string {
+    const sanitized = sessionId.replace(/[^a-zA-Z0-9_-]/g, '')
+
+    if (sanitized.length === 0) {
+      throw new Error('Invalid session ID: no valid characters')
+    }
+
+    if (sanitized !== sessionId) {
+      throw new Error(`Invalid session ID: contains illegal characters`)
+    }
+
+    return sanitized
+  }
+
   private getFilePath(id: string): string {
-    // Basic sanitization
-    const safeId = id.replace(/[^a-zA-Z0-9_-]/g, '')
+    const safeId = this.sanitizeSessionId(id)
     return join(this.path, `${safeId}.json`)
   }
 

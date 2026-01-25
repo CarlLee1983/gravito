@@ -109,4 +109,29 @@ export class SqliteSessionStore implements SessionStore {
     const query = this.db.query(`DELETE FROM "${this.tableName}" WHERE id = $id`)
     query.run({ $id: id })
   }
+
+  /**
+   * Remove all expired sessions from the database.
+   *
+   * @returns The number of sessions deleted
+   */
+  async cleanup(): Promise<number> {
+    await this.ensureReady()
+    if (!this.db) {
+      return 0
+    }
+    const now = Math.floor(Date.now() / 1000)
+    const countQuery = this.db.query(
+      `SELECT COUNT(*) as count FROM "${this.tableName}" WHERE expires_at < $now`
+    )
+    const countResult = countQuery.get({ $now: now }) as { count: number } | null
+    const count = countResult?.count ?? 0
+
+    if (count > 0) {
+      const deleteQuery = this.db.query(`DELETE FROM "${this.tableName}" WHERE expires_at < $now`)
+      deleteQuery.run({ $now: now })
+    }
+
+    return count
+  }
 }
