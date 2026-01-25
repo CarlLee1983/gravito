@@ -1,27 +1,72 @@
 /**
- * @gravito/mass
+ * @gravito/mass - TypeBox-based validation for Gravito Galaxy Architecture.
  *
- * TypeBox-based validation for Gravito
- * High-performance schema validation with full TypeScript support
+ * Mass provides high-performance schema validation with full TypeScript support,
+ * seamlessly integrating with Photon middleware system. Named after the concept
+ * of "mass" in physics, this package provides the "weight" of data integrity
+ * to your API endpoints.
  *
- * @example
+ * ## Key Features
+ *
+ * - **Zero-overhead TypeBox validation** - Generates validators at build-time for faster runtime performance
+ * - **Full TypeScript inference** - Validated data is fully typed without manual typings
+ * - **Multiple validation sources** - Validate JSON, query, params, and form data
+ * - **Custom error handling hooks** - Override default error responses
+ * - **Seamless Photon/Hono integration** - Works out of the box with Gravito's HTTP layer
+ *
+ * @example Basic JSON validation
  * ```typescript
  * import { Photon } from '@gravito/photon'
  * import { Schema, validate } from '@gravito/mass'
  *
  * const app = new Photon()
  *
- * app.post('/login',
- *   validate('json', Schema.Object({
- *     username: Schema.String(),
- *     password: Schema.String()
- *   })),
- *   (c) => {
- *     const { username } = c.req.valid('json')
- *     return c.json({ success: true, message: `Welcome ${username}` })
- *   }
+ * const loginSchema = Schema.Object({
+ *   username: Schema.String({ minLength: 3, maxLength: 50 }),
+ *   password: Schema.String({ minLength: 8 })
+ * })
+ *
+ * app.post('/login', validate('json', loginSchema), (c) => {
+ *   const { username } = c.req.valid('json')
+ *   // username is fully typed as string
+ *   return c.json({ success: true, user: username })
+ * })
+ * ```
+ *
+ * @example Custom error handling
+ * ```typescript
+ * app.post('/register',
+ *   validate('json', registerSchema, (result, c) => {
+ *     if (!result.success) {
+ *       return c.json({
+ *         error: 'Validation failed',
+ *         details: result.errors
+ *       }, 400)
+ *     }
+ *   }),
+ *   handler
  * )
  * ```
+ *
+ * @example Query parameter validation
+ * ```typescript
+ * const searchSchema = Schema.Object({
+ *   q: Schema.String(),
+ *   page: Schema.Optional(Schema.Number({ minimum: 1, default: 1 })),
+ *   limit: Schema.Optional(Schema.Number({ minimum: 1, maximum: 100, default: 20 }))
+ * })
+ *
+ * app.get('/search', validate('query', searchSchema), (c) => {
+ *   const { q, page, limit } = c.req.valid('query')
+ *   return c.json({ query: q, page, limit })
+ * })
+ * ```
+ *
+ * @see {@link validate} - Main validation middleware
+ * @see {@link Schema} - TypeBox schema builders
+ * @see {@link https://github.com/sinclairzx81/typebox | TypeBox Documentation}
+ *
+ * @packageDocumentation
  */
 
 // Export validator
@@ -31,6 +76,12 @@ export { tbValidator as validator } from '@hono/typebox-validator'
 export type { Static, TSchema } from '@sinclair/typebox'
 // Re-export TypeBox Schema builder as Schema
 export * as Schema from '@sinclair/typebox'
-
+export { formatErrors, MassValidationError } from './errors'
+export type {
+  ValidationError,
+  ValidationHook,
+  ValidationResult,
+} from './types'
+export { partial } from './utils'
 // Export validate function
 export { type ValidationSource, validate } from './validator'
