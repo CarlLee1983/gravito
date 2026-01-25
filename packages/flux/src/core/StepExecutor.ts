@@ -16,9 +16,16 @@ import type {
 import { updateStepExecution } from './executionUpdater'
 
 /**
- * Step Executor
+ * Handles the isolated execution of a single workflow step.
  *
- * Executes individual workflow steps with retry and timeout support.
+ * The StepExecutor manages the operational aspects of step execution, including
+ * condition checking, retry logic with exponential backoff, and timeout enforcement.
+ *
+ * @example
+ * ```typescript
+ * const executor = new StepExecutor({ defaultRetries: 3 });
+ * const { result } = await executor.execute(stepDef, ctx, executionRecord);
+ * ```
  */
 export class StepExecutor {
   private defaultRetries: number
@@ -31,6 +38,11 @@ export class StepExecutor {
     maxRetries: number
   ) => void | Promise<void>
 
+  /**
+   * Creates a new StepExecutor with global defaults.
+   *
+   * @param options - Configuration for default behavior and lifecycle hooks.
+   */
   constructor(
     options: {
       defaultRetries?: number
@@ -50,7 +62,21 @@ export class StepExecutor {
   }
 
   /**
-   * Execute a step with retry and timeout
+   * Executes a step definition against a workflow context.
+   *
+   * This method performs the following sequence:
+   * 1. Evaluates the `when` condition (if present).
+   * 2. Initiates the execution loop with retries.
+   * 3. Enforces timeouts for each attempt.
+   * 4. Handles suspension signals (`flux_wait`).
+   * 5. Updates the execution history record.
+   *
+   * @param step - The definition of the step to execute.
+   * @param ctx - The current workflow context.
+   * @param execution - The current execution record for this step.
+   * @returns The result of the execution and the updated execution record.
+   *
+   * @throws {Error} If the step handler throws an unrecoverable error or times out.
    */
   async execute<TInput, TData extends Record<string, any>>(
     step: StepDefinition<TInput, TData>,
@@ -159,7 +185,13 @@ export class StepExecutor {
   }
 
   /**
-   * Execute handler with timeout
+   * Wraps the step handler in a timeout race.
+   *
+   * @param handler - The user-defined step handler.
+   * @param ctx - The workflow context.
+   * @param timeout - Maximum time allowed for execution in milliseconds.
+   * @returns The handler result or a suspension signal.
+   * @throws {Error} If the timeout is reached before the handler completes.
    */
   private async executeWithTimeout<TInput, TData extends Record<string, any>>(
     handler: StepDefinition<TInput, TData>['handler'],
@@ -181,7 +213,9 @@ export class StepExecutor {
   }
 
   /**
-   * Sleep helper
+   * Pauses execution for a specified duration.
+   *
+   * @param ms - Milliseconds to sleep.
    */
   private sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms))

@@ -9,7 +9,10 @@
 import type { WorkflowStatus } from '../types'
 
 /**
- * Valid state transitions
+ * Defines the authoritative set of allowed status transitions for a workflow.
+ *
+ * This map ensures that workflows follow a logical progression and prevents
+ * illegal state jumps (e.g., from 'completed' back to 'running').
  */
 const TRANSITIONS: Record<WorkflowStatus, WorkflowStatus[]> = {
   pending: ['running', 'failed'],
@@ -23,31 +26,52 @@ const TRANSITIONS: Record<WorkflowStatus, WorkflowStatus[]> = {
 }
 
 /**
- * State Machine for workflow status management
+ * Manages the lifecycle states of a workflow instance.
  *
- * Provides validated state transitions using EventTarget for events.
+ * The StateMachine enforces transition rules and notifies listeners of state changes.
+ * It is designed to be the single source of truth for a workflow's current progress.
+ *
+ * @example
+ * ```typescript
+ * const sm = new StateMachine();
+ * sm.addEventListener('transition', (e) => console.log(e.detail));
+ * sm.transition('running');
+ * ```
  */
 export class StateMachine extends EventTarget {
   private _status: WorkflowStatus = 'pending'
 
   /**
-   * Current status
+   * The current operational status of the workflow.
    */
   get status(): WorkflowStatus {
     return this._status
   }
 
   /**
-   * Check if transition to target status is allowed
+   * Evaluates if a transition to the specified status is valid from the current state.
+   *
+   * @param to - The target status to check.
+   * @returns True if the transition is permitted by the transition map.
    */
   canTransition(to: WorkflowStatus): boolean {
     return TRANSITIONS[this._status].includes(to)
   }
 
   /**
-   * Transition to a new status
+   * Moves the workflow to a new status if the transition is valid.
    *
-   * @throws {Error} If transition is not allowed
+   * @param to - The target status.
+   * @throws {Error} If the transition is illegal according to the defined rules.
+   *
+   * @example
+   * ```typescript
+   * try {
+   *   sm.transition('completed');
+   * } catch (e) {
+   *   // Handle invalid transition
+   * }
+   * ```
    */
   transition(to: WorkflowStatus): void {
     if (!this.canTransition(to)) {
@@ -66,14 +90,21 @@ export class StateMachine extends EventTarget {
   }
 
   /**
-   * Force set status (for replay/restore)
+   * Overrides the current status without validation.
+   *
+   * This should only be used during workflow restoration from persisted storage
+   * or when replaying history where the state is already known to be valid.
+   *
+   * @param status - The status to force set.
    */
   forceStatus(status: WorkflowStatus): void {
     this._status = status
   }
 
   /**
-   * Check if workflow is in terminal state
+   * Determines if the workflow has reached a state where no further execution is possible.
+   *
+   * @returns True if the status is 'completed', 'failed', or 'rolled_back'.
    */
   isTerminal(): boolean {
     return (
@@ -82,7 +113,9 @@ export class StateMachine extends EventTarget {
   }
 
   /**
-   * Check if workflow can be executed
+   * Checks if the workflow is in a state that allows for execution or resumption.
+   *
+   * @returns True if the workflow can be started or resumed.
    */
   canExecute(): boolean {
     return this._status === 'pending' || this._status === 'paused' || this._status === 'suspended'
