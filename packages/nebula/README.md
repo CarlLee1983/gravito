@@ -1,8 +1,23 @@
 # @gravito/nebula
 
-> The Standard Storage Orbit for Galaxy Architecture.
+> The Standard Storage Orbit for Galaxy Architecture. Lightweight, multi-disk, and pluggable.
 
-Provides a unified file storage abstraction layer with multi-disk support and pluggable backends.
+[![npm version](https://img.shields.io/npm/v/@gravito/nebula.svg)](https://www.npmjs.com/package/@gravito/nebula)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
+[![Bun](https://img.shields.io/badge/Bun-1.0+-black.svg)](https://bun.sh/)
+
+**@gravito/nebula** provides a unified file storage abstraction layer for Gravito applications. Built on the **Orbit** pattern, it acts as a bridge between the core micro-kernel and various storage backends (Local, S3, Memory, etc.), supporting multi-disk configurations and high extensibility via hooks.
+
+## ✨ Features
+
+- 🪐 **Orbit Integration** - Seamlessly plugs into the PlanetCore micro-kernel.
+- 💽 **Multi-Disk Support** - Manage multiple storage backends (disks) within a single application.
+- 🔌 **Pluggable Drivers** - Built-in support for `local`, `memory`, and `null` drivers, with easy `custom` driver implementation.
+- 🪝 **Powerful Hooks** - Intercept and modify storage operations (upload, delete, etc.) using Gravito's async Hook system.
+- 🏢 **Enterprise Ready** - Automatic service registration in the IoC container and context-aware middleware.
+- 🧪 **Test Friendly** - Includes a `MemoryStore` for fast, zero-side-effect unit testing.
+- 🚀 **Modern** - Built for **Bun** with native TypeScript support.
 
 ## 📦 Installation
 
@@ -12,14 +27,15 @@ bun add @gravito/nebula
 
 ## 🚀 Quick Start
 
-### Basic Usage
+### 1. Initialize with PlanetCore
 
 ```typescript
-import { PlanetCore } from '@gravito/core'
-import orbitStorage from '@gravito/nebula'
+import { PlanetCore } from '@gravito/core';
+import orbitStorage from '@gravito/nebula';
 
-const core = new PlanetCore()
+const core = new PlanetCore();
 
+// Quick install with options
 const storage = orbitStorage(core, {
   default: 'local',
   disks: {
@@ -29,326 +45,131 @@ const storage = orbitStorage(core, {
       baseUrl: '/uploads'
     }
   }
-})
-
-// Use in routes
-core.app.post('/upload', async (c) => {
-  const body = await c.req.parseBody()
-  const file = body['file']
-  
-  if (file instanceof File) {
-    const storage = c.get('storage')
-    await storage.put(file.name, file)
-    return c.json({ url: storage.getUrl(file.name) })
-  }
-  
-  return c.text('No file uploaded', 400)
-})
+});
 ```
 
----
+### 2. Use in Routes (Middleware)
+
+Nebula automatically injects the `storage` manager into the request context:
+
+```typescript
+core.app.post('/upload', async (c) => {
+  const body = await c.req.parseBody();
+  const file = body['file'];
+  
+  if (file instanceof File) {
+    const storage = c.get('storage'); // Resolved from context
+    await storage.put(`avatars/${file.name}`, file);
+    
+    return c.json({ 
+      success: true, 
+      url: storage.getUrl(`avatars/${file.name}`) 
+    });
+  }
+  
+  return c.text('No file uploaded', 400);
+});
+```
 
 ## 🔧 Multi-Disk Configuration
 
+You can define multiple disks and switch between them at runtime:
+
 ```typescript
 const storage = orbitStorage(core, {
   default: 'local',
   disks: {
-    // Local disk
-    local: {
-      driver: 'local',
-      root: './uploads',
-      baseUrl: '/uploads'
-    },
-    
-    // Memory disk (for testing)
-    temp: {
-      driver: 'memory'
-    },
-    
-    // Null disk (no-op)
-    null: {
-      driver: 'null'
-    },
-    
-    // Custom disk (e.g., S3)
-    s3: {
-      driver: 'custom',
-      store: new S3Store({
-        bucket: 'my-bucket',
-        region: 'us-east-1'
-      })
-    }
-  }
-})
-
-// Use default disk
-await storage.put('file.txt', 'content')
-
-// Use specific disk
-await storage.disk('s3').put('important.pdf', pdfData)
-await storage.disk('temp').put('cache.json', jsonData)
-```
-
----
-
-## 📖 API Reference
-
-### StorageManager
-
-The main storage manager returned by `orbitStorage()` or `c.get('storage')`.
-
-#### Methods
-
-##### `disk(name?: string): StorageRepository`
-
-Get a specific disk repository. If `name` is not provided, returns the default disk.
-
-```typescript
-const local = storage.disk('local')
-const s3 = storage.disk('s3')
-```
-
-##### `put(key: string, data: Blob | Buffer | string): Promise<void>`
-
-Store a file (using default disk).
-
-```typescript
-await storage.put('file.txt', 'Hello World')
-await storage.put('image.png', imageBlob)
-```
-
-##### `get(key: string): Promise<Blob | null>`
-
-Retrieve a file (using default disk).
-
-```typescript
-const data = await storage.get('file.txt')
-if (data) {
-  console.log(await data.text())
-}
-```
-
-##### `delete(key: string): Promise<boolean>`
-
-Delete a file (using default disk). Returns `true` if deleted, `false` if file didn't exist.
-
-```typescript
-const deleted = await storage.delete('old-file.txt')
-```
-
-##### `exists(key: string): Promise<boolean>` 🆕
-
-Check if a file exists (using default disk).
-
-```typescript
-if (await storage.exists('config.json')) {
-  // File exists
-}
-```
-
-##### `copy(from: string, to: string): Promise<void>` 🆕
-
-Copy a file (using default disk).
-
-```typescript
-await storage.copy('original.txt', 'backup.txt')
-```
-
-##### `move(from: string, to: string): Promise<void>` 🆕
-
-Move/rename a file (using default disk).
-
-```typescript
-await storage.move('temp.txt', 'final.txt')
-```
-
-##### `getMetadata(key: string): Promise<StorageMetadata | null>` 🆕
-
-Get file metadata (using default disk).
-
-```typescript
-const meta = await storage.getMetadata('file.pdf')
-if (meta) {
-  console.log(meta.size, meta.mimeType, meta.lastModified)
-}
-```
-
-##### `getUrl(key: string): string`
-
-Get the public URL for a file (using default disk).
-
-```typescript
-const url = storage.getUrl('avatar.jpg')
-// "/uploads/avatar.jpg"
-```
-
-##### `getSignedUrl(key: string, expiresIn: number): Promise<string>` 🆕
-
-Get a signed URL with expiration (if supported by the driver).
-
-```typescript
-// Generate a URL that expires in 1 hour
-const signedUrl = await storage.disk('s3').getSignedUrl('private.pdf', 3600)
-```
-
-##### `list(prefix?: string): AsyncIterable<StorageItem>` 🆕
-
-List files in a directory (if supported by the driver).
-
-```typescript
-for await (const item of storage.list('uploads/')) {
-  console.log(item.key, item.size, item.lastModified)
-}
-```
-
----
-
-## 🪝 Hooks
-
-Nebula integrates with Gravito's hook system for extensibility.
-
-| Hook | Type | Parameters | Description |
-|------|------|------------|-------------|
-| `storage:init` | Action | `{ manager: StorageManager }` | Fired when storage is initialized |
-| `storage:upload` | Filter | `data: Blob/Buffer/string, { key: string }` | Modify data before upload |
-| `storage:uploaded` | Action | `{ key: string }` | Triggered after successful upload |
-| `storage:hit` | Action | `{ key: string }` | File retrieved successfully |
-| `storage:miss` | Action | `{ key: string }` | File not found |
-| `storage:deleted` | Action | `{ key: string }` | File deleted |
-| `storage:copied` 🆕 | Action | `{ from: string, to: string }` | File copied |
-| `storage:moved` 🆕 | Action | `{ from: string, to: string }` | File moved |
-
-### Example: Auto-resize Images on Upload
-
-```typescript
-core.hooks.addFilter('storage:upload', async (data, context) => {
-  if (context.key.endsWith('.jpg') || context.key.endsWith('.png')) {
-    // Resize image using sharp, etc.
-    return await resizeImage(data, { width: 1920 })
-  }
-  return data
-})
-```
-
-### Example: Log All Uploads
-
-```typescript
-core.hooks.addAction('storage:uploaded', async (context) => {
-  core.logger.info(`File uploaded: ${context.key}`)
-})
-```
-
----
-
-## 🔌 Custom Storage Drivers
-
-Implement the `StorageStore` interface to create custom drivers.
-
-```typescript
-import type { StorageStore, StorageMetadata } from '@gravito/nebula'
-
-class S3Store implements StorageStore {
-  async put(key: string, data: Blob | Buffer | string): Promise<void> {
-    // Upload to S3
-  }
-
-  async get(key: string): Promise<Blob | null> {
-    // Download from S3
-  }
-
-  async delete(key: string): Promise<boolean> {
-    // Delete from S3
-  }
-
-  async exists(key: string): Promise<boolean> {
-    // Check if exists in S3
-  }
-
-  async copy(from: string, to: string): Promise<void> {
-    // S3 copy operation
-  }
-
-  async move(from: string, to: string): Promise<void> {
-    await this.copy(from, to)
-    await this.delete(from)
-  }
-
-  async getMetadata(key: string): Promise<StorageMetadata | null> {
-    // Get S3 object metadata
-  }
-
-  getUrl(key: string): string {
-    return `https://my-bucket.s3.amazonaws.com/${key}`
-  }
-
-  async getSignedUrl(key: string, expiresIn: number): Promise<string> {
-    // Generate pre-signed URL
-  }
-}
-
-// Use it
-const storage = orbitStorage(core, {
-  disks: {
+    local: { driver: 'local', root: './uploads', baseUrl: '/uploads' },
+    temp: { driver: 'memory' },
     s3: {
       driver: 'custom',
       store: new S3Store({ bucket: 'my-bucket' })
     }
   }
-})
+});
+
+// Uses 'local' (default)
+await storage.put('hello.txt', 'world');
+
+// Uses 's3' disk explicitly
+await storage.disk('s3').put('backup.zip', data);
 ```
 
----
+## 📖 API Reference
+
+### `StorageManager`
+
+The central hub accessed via `c.get('storage')` or returned by `orbitStorage()`.
+
+- **`disk(name?: string)`**: Access a specific disk repository.
+- **`put(key, data)`**: Store content (Default disk).
+- **`get(key)`**: Retrieve content as a `Blob` (Default disk).
+- **`delete(key)`**: Remove a file (Default disk).
+- **`exists(key)`**: Check file existence (Default disk).
+- **`copy(from, to)`**: Copy a file (Default disk).
+- **`move(from, to)`**: Move/Rename a file (Default disk).
+- **`getUrl(key)`**: Get public URL (Default disk).
+- **`getSignedUrl(key, expires)`**: Get temporary signed URL (Default disk).
+- **`getMetadata(key)`**: Get file metadata (size, mimeType, etc.).
+- **`list(prefix?)`**: List files as an async iterable.
+
+### `StorageRepository`
+
+Returned by `storage.disk('name')`. Implements the same storage methods as above but scoped to that specific disk.
+
+## 🪝 Hooks
+
+Nebula triggers various hooks during its lifecycle:
+
+| Hook | Type | Context | Description |
+|------|------|---------|-------------|
+| `storage:init` | Action | `{ manager }` | Fired on initialization |
+| `storage:upload` | Filter | `data, { key }` | Modify data before it's saved |
+| `storage:uploaded`| Action | `{ key }` | Fired after successful save |
+| `storage:hit` | Action | `{ key }` | Fired when file is found/retrieved |
+| `storage:miss` | Action | `{ key }` | Fired when file is not found |
+| `storage:deleted` | Action | `{ key }` | Fired after file deletion |
+
+### Example: Image Resizing
+
+```typescript
+core.hooks.addFilter('storage:upload', async (data, context) => {
+  if (context.key.match(/\.(jpg|png)$/)) {
+    return await myImageProcessor.resize(data, 800);
+  }
+  return data;
+});
+```
+
+## 🔌 Custom Drivers
+
+Implement the `StorageStore` interface to create your own backend:
+
+```typescript
+import type { StorageStore, StorageMetadata } from '@gravito/nebula';
+
+class MyCustomStore implements StorageStore {
+  async put(key: string, data: Blob | Buffer | string): Promise<void> { /* ... */ }
+  async get(key: string): Promise<Blob | null> { /* ... */ }
+  async delete(key: string): Promise<boolean> { /* ... */ }
+  async exists(key: string): Promise<boolean> { /* ... */ }
+  getUrl(key: string): string { /* ... */ }
+  // ... implement other methods
+}
+```
 
 ## 🔄 Migration from v3.x
 
-### Configuration Changes
+Nebula v4.0 introduces the **Manager** pattern for multi-disk support. 
 
-```typescript
-// v3.x (Old)
-orbitStorage(core, {
-  local: { root: './uploads', baseUrl: '/uploads' },
-  exposeAs: 'storage'
-})
+- **Breaking**: The configuration structure has moved under a `disks` property.
+- **Compatibility**: The old flat configuration format is still supported but will trigger a deprecation warning.
+- **Types**: `StorageProvider` is now `StorageStore`, and `LocalStorageProvider` is now `LocalStore`.
 
-// v4.0 (New)
-orbitStorage(core, {
-  default: 'local',
-  disks: {
-    local: { driver: 'local', root: './uploads', baseUrl: '/uploads' }
-  },
-  exposeAs: 'storage'
-})
-```
+## 🤝 Contributing
 
-**Note**: The old format is still supported for backward compatibility but is deprecated.
-
-### Return Value Changes
-
-```typescript
-// v3.x - Returns wrapped provider
-const storage = orbitStorage(core, { ... })
-await storage.put('file.txt', data)
-
-// v4.0 - Returns StorageManager
-const storage = orbitStorage(core, { ... })
-await storage.put('file.txt', data)  // Same API!
-await storage.disk('s3').put('file.txt', data)  // New!
-```
-
-The API is backward compatible, but v4.0 adds multi-disk support via `disk()`.
-
-### Type Changes
-
-| v3.x | v4.0 |
-|------|------|
-| `StorageProvider` | `StorageStore` |
-| `LocalStorageProvider` | `LocalStore` |
-| `OrbitStorageOptions` | `OrbitNebulaOptions` |
-
-Old type names are still exported with `@deprecated` warnings.
-
----
+Contributions, issues and feature requests are welcome!
+Feel free to check the [issues page](https://github.com/gravito-framework/gravito/issues).
 
 ## 📝 License
 
