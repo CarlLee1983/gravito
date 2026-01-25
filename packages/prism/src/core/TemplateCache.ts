@@ -1,37 +1,43 @@
 /**
- * TemplateCache - LRU-based template caching with hash validation
+ * TemplateCache - LRU-based template caching mechanism.
+ *
+ * Implements a Least Recently Used (LRU) cache with optional hash-based invalidation.
  *
  * Features:
- * - LRU eviction with configurable max size
- * - Hash-based cache invalidation
- * - Separate cache for source and compiled templates
- * - Development mode support
+ * - **Memory Management**: Limits cache size to prevent OOM errors.
+ * - **Performance**: Reduces file I/O and recompilation overhead.
+ * - **Integrity**: Supports content hashing to ensure stale templates are not served.
+ * - **Developer Experience**: Hot-reloading friendly in development mode.
  *
  * @public
  * @since 3.1.0
  */
 
 /**
- * Compiled template representation
+ * Represents a successfully compiled template in cache.
  */
 export interface CompiledTemplate {
-  /** Content hash for validation */
+  /** Content hash for integrity validation. */
   hash: string
-  /** Compiled render function */
+  /** The executable render function derived from the template. */
   render: RenderFunction
-  /** Included templates (for dependency tracking) */
+  /** List of other templates (partials/components) this template depends on. */
   dependencies: string[]
-  /** Compilation timestamp */
+  /** Timestamp of when the template was compiled. */
   compiledAt: number
 }
 
 /**
- * Render function signature
+ * Function signature for a compiled template renderer.
+ *
+ * @param data - Variable context.
+ * @param ctx - Rendering context (sections/stacks).
+ * @returns Rendered string.
  */
 export type RenderFunction = (data: Record<string, unknown>, ctx: RenderContext) => string
 
 /**
- * Render context passed to compiled templates
+ * Context passed to compiled templates during execution.
  */
 export interface RenderContext {
   sections: Map<string, string>
@@ -39,7 +45,7 @@ export interface RenderContext {
 }
 
 /**
- * Cache statistics for monitoring
+ * Runtime statistics for the cache system.
  */
 export interface CacheStats {
   hits: number
@@ -49,20 +55,21 @@ export interface CacheStats {
 }
 
 /**
- * Cache configuration options
+ * Configuration options for the TemplateCache.
  */
 export interface CacheOptions {
-  /** Maximum number of entries (default: 500) */
+  /** Maximum number of items to hold in cache. @default 500 */
   maxSize?: number
-  /** Enable/disable caching (default: true) */
+  /** Whether to enable caching. @default true */
   enabled?: boolean
-  /** Development mode - validates cache on every access (default: false) */
+  /** If true, verifies file hashes on every read (slower, but safer for dev). @default false */
   development?: boolean
 }
 
 /**
- * Simple LRU Cache implementation using Map
- * Map preserves insertion order, so we can use it for LRU eviction
+ * Simple LRU Cache implementation using Map.
+ *
+ * Exploits JavaScript's Map property where iteration order follows insertion order.
  */
 class LRUMap<K, V> {
   private map = new Map<K, V>()
@@ -114,20 +121,24 @@ class LRUMap<K, V> {
 }
 
 /**
- * Template cache with LRU eviction and hash-based invalidation
+ * Template cache with LRU eviction and hash-based invalidation.
+ *
+ * Manages two separate caches:
+ * 1. Source Cache: Raw template strings (reduces disk I/O).
+ * 2. Compiled Cache: Processed render functions (reduces CPU).
  *
  * @example
  * ```typescript
- * const cache = new TemplateCache({ maxSize: 1000 })
+ * const cache = new TemplateCache({ maxSize: 1000 });
  *
  * // Cache source template
- * cache.setSource('home', '<h1>{{title}}</h1>')
+ * cache.setSource('home', '<h1>{{title}}</h1>');
  *
  * // Retrieve from cache
- * const source = cache.getSource('home')
+ * const source = cache.getSource('home');
  *
  * // Check statistics
- * console.log(cache.getStats())
+ * console.log(cache.getStats());
  * // { hits: 1, misses: 0, evictions: 0, size: 1 }
  * ```
  *
@@ -140,6 +151,11 @@ export class TemplateCache {
   private stats: { hits: number; misses: number }
   private options: Required<CacheOptions>
 
+  /**
+   * Create a new TemplateCache instance.
+   *
+   * @param options - Cache configuration.
+   */
   constructor(options?: CacheOptions) {
     this.options = {
       maxSize: options?.maxSize ?? 500,
@@ -153,8 +169,19 @@ export class TemplateCache {
   }
 
   /**
-   * Get compiled template from cache
-   * Returns null if not cached or invalid (hash mismatch)
+   * Retrieve a compiled template from the cache.
+   *
+   * @param name - Template name or key.
+   * @param sourceHash - Current hash of the source content to validate freshness.
+   * @returns The compiled template if found and valid, otherwise null.
+   *
+   * @example
+   * ```typescript
+   * const compiled = cache.getCompiled('home', 'hash123');
+   * if (compiled) {
+   *   // Use compiled.render(...)
+   * }
+   * ```
    */
   getCompiled(name: string, sourceHash: string): CompiledTemplate | null {
     if (!this.options.enabled) {
@@ -178,7 +205,17 @@ export class TemplateCache {
   }
 
   /**
-   * Cache compiled template
+   * Store a compiled template in the cache.
+   *
+   * @param name - Template name or key.
+   * @param source - Raw template source (used to compute validation hash).
+   * @param render - The executable render function.
+   * @param dependencies - List of dependencies (included files).
+   *
+   * @example
+   * ```typescript
+   * cache.setCompiled('home', '<h1>...</h1>', renderFn, ['layout']);
+   * ```
    */
   setCompiled(
     name: string,
@@ -201,7 +238,10 @@ export class TemplateCache {
   }
 
   /**
-   * Get source template (for include directives)
+   * Retrieve raw source template from cache.
+   *
+   * @param name - Template name.
+   * @returns Raw template string or null if not found.
    */
   getSource(name: string): string | null {
     if (!this.options.enabled) {
@@ -219,7 +259,10 @@ export class TemplateCache {
   }
 
   /**
-   * Cache source template
+   * Store raw source template in cache.
+   *
+   * @param name - Template name.
+   * @param source - Raw template string.
    */
   setSource(name: string, source: string): void {
     if (!this.options.enabled) {
@@ -229,7 +272,12 @@ export class TemplateCache {
   }
 
   /**
-   * Compute hash for cache validation (DJB2 algorithm)
+   * Compute a lightweight hash for cache validation.
+   *
+   * Uses the DJB2 algorithm for speed.
+   *
+   * @param source - String content to hash.
+   * @returns Base36 encoded hash string.
    */
   computeHash(source: string): string {
     let hash = 5381
@@ -240,7 +288,9 @@ export class TemplateCache {
   }
 
   /**
-   * Invalidate a specific template and its dependents
+   * Invalidate a specific template and remove it from all caches.
+   *
+   * @param name - Template name to remove.
    */
   invalidate(name: string): void {
     this.sourceCache.delete(name)
@@ -248,7 +298,9 @@ export class TemplateCache {
   }
 
   /**
-   * Clear all caches
+   * Clear all items from all caches.
+   *
+   * Resets hits/misses counters but keeps total eviction count.
    */
   clear(): void {
     this.sourceCache.clear()
@@ -257,7 +309,9 @@ export class TemplateCache {
   }
 
   /**
-   * Get cache statistics
+   * Get current cache performance statistics.
+   *
+   * @returns Read-only statistics object.
    */
   getStats(): Readonly<CacheStats> {
     return {
@@ -268,7 +322,9 @@ export class TemplateCache {
   }
 
   /**
-   * Get cache hit rate (for monitoring)
+   * Calculate current cache hit rate.
+   *
+   * @returns Number between 0 and 1.
    */
   getHitRate(): number {
     const total = this.stats.hits + this.stats.misses
@@ -276,14 +332,14 @@ export class TemplateCache {
   }
 
   /**
-   * Check if caching is enabled
+   * Check if caching is currently enabled.
    */
   isEnabled(): boolean {
     return this.options.enabled
   }
 
   /**
-   * Check if running in development mode
+   * Check if running in development mode.
    */
   isDevelopment(): boolean {
     return this.options.development

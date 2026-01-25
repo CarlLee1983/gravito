@@ -1,28 +1,36 @@
 /**
- * TemplateCompiler - Template compilation logic
+ * TemplateCompiler - Core logic for compiling templates into HTML.
  *
  * Responsibilities:
- * - Process directives (@if, @foreach, @section)
- * - Handle component tags
- * - Process helpers
- * - Variable interpolation
+ * - Parsing and processing Blade-like directives (`@if`, `@foreach`, `@section`).
+ * - Resolving component tags (`<x-component>`).
+ * - executing helper functions.
+ * - Interpolating variables.
+ *
+ * This class handles the low-level string manipulation required to transform
+ * a raw template string into a final rendered output.
  *
  * @public
  * @since 3.1.0
  */
 
 /**
- * Render context for section and stack management
+ * Render context for managing template inheritance and stacking.
+ *
+ * Stores content captured by `@section` and `@push` directives to be yielded
+ * or stacked in layouts.
  */
 export interface RenderContext {
-  /** Sections captured from @section directives */
+  /** Sections captured from `@section` directives, mapped by name. */
   sections: Map<string, string>
-  /** Stacks captured from @push directives */
+  /** Stacks captured from `@push` directives, mapped by stack name. */
   stacks: Map<string, string[]>
 }
 
 /**
- * Compiled template metadata
+ * Metadata extracted from a compiled template.
+ *
+ * Used to optimize rendering by identifying which features are present.
  */
 export interface CompiledMetadata {
   hasConditionals: boolean
@@ -31,7 +39,11 @@ export interface CompiledMetadata {
 }
 
 /**
- * Helper function signature
+ * Signature for custom helper functions.
+ *
+ * @param args - Key-value arguments passed from the template (e.g., `arg="value"`).
+ * @param data - The full data context available to the template.
+ * @returns The generated HTML string.
  */
 export type HelperFunction = (
   args: Record<string, string | number | boolean>,
@@ -39,12 +51,12 @@ export type HelperFunction = (
 ) => string
 
 /**
- * Compiler options
+ * Configuration options for the compiler.
  */
 export interface CompilerOptions {
-  /** Strict mode - throw on undefined vars */
+  /** If true, throws errors when accessing undefined variables. */
   strict?: boolean
-  /** Debug mode - add source maps */
+  /** If true, includes source map information for debugging. */
   debug?: boolean
 }
 
@@ -59,19 +71,27 @@ const COMPONENT_TAG_REGEX = /<x-([a-zA-Z0-9-]+)([^>]*)>/
 const INTERPOLATE_REGEX = /\{\{\{?\s*([\w.]+)\s*\}?\}\}/g
 
 /**
- * TemplateCompiler handles the compilation of template source code.
+ * TemplateCompiler handles the transformation of template source code into HTML.
  *
- * This class is responsible for:
- * - Processing directives (@if, @else, @endif, @foreach, @vite, etc.)
- * - Processing components (<x-component>)
- * - Processing helpers ({{helperName arg=value}})
- * - Variable interpolation ({{variable}})
+ * It provides the compilation pipeline that processes:
+ * 1. Includes
+ * 2. Inheritance (Yields & Stacks)
+ * 3. Components
+ * 4. Directives (@if, @foreach)
+ * 5. Helpers
+ * 6. Interpolation
  *
  * @example
  * ```typescript
- * const compiler = new TemplateCompiler()
- * const ctx = { sections: new Map(), stacks: new Map() }
- * const result = compiler.compile(template, data, ctx, helpers, readTemplate)
+ * const compiler = new TemplateCompiler();
+ * const ctx = { sections: new Map(), stacks: new Map() };
+ * const html = compiler.compile(
+ *   '<h1>{{ title }}</h1>',
+ *   { title: 'Hello' },
+ *   ctx,
+ *   helpers,
+ *   (name) => loadTemplate(name)
+ * );
  * ```
  *
  * @public
@@ -80,19 +100,29 @@ const INTERPOLATE_REGEX = /\{\{\{?\s*([\w.]+)\s*\}?\}\}/g
 export class TemplateCompiler {
   private options: CompilerOptions
 
+  /**
+   * Create a new TemplateCompiler instance.
+   *
+   * @param options - Compiler configuration options.
+   */
   constructor(options: CompilerOptions = {}) {
     this.options = options
   }
 
   /**
-   * Compile template source to rendered HTML
+   * Compile template source to rendered HTML.
    *
-   * @param template - Template source string
-   * @param data - Data to pass to the template
-   * @param ctx - Render context for sections and stacks
-   * @param helpers - Map of registered helper functions
-   * @param readTemplate - Function to read included templates
-   * @returns Rendered HTML string
+   * Runs the full compilation pipeline on the provided template string.
+   *
+   * @param template - Raw template source string.
+   * @param data - Data context for variable interpolation.
+   * @param ctx - Render context for sections and stacks.
+   * @param helpers - Map of registered helper functions.
+   * @param readTemplate - Callback to read included/component templates from disk.
+   * @returns The fully rendered HTML string.
+   *
+   * @throws {Error} If max recursion depth is exceeded for components or includes.
+   * @throws {Error} If template syntax is invalid.
    */
   compile(
     template: string,
@@ -115,7 +145,13 @@ export class TemplateCompiler {
   }
 
   /**
-   * Extract sections from template
+   * Extract sections from a template.
+   *
+   * Parses `@section('name')...@endsection` blocks and stores them in the context.
+   * Used during the inheritance phase to capture child content.
+   *
+   * @param template - Template source to parse.
+   * @param ctx - Render context where sections will be stored.
    */
   extractSections(template: string, ctx: RenderContext): void {
     for (const match of template.matchAll(SECTION_REGEX)) {
@@ -128,7 +164,13 @@ export class TemplateCompiler {
   }
 
   /**
-   * Extract stacks from template
+   * Extract stacks from a template.
+   *
+   * Parses `@push('name')...@endpush` blocks and appends them to the named stack in the context.
+   * Used to aggregate scripts or styles from multiple partials.
+   *
+   * @param template - Template source to parse.
+   * @param ctx - Render context where stacks will be stored.
    */
   extractStacks(template: string, ctx: RenderContext): void {
     for (const match of template.matchAll(PUSH_REGEX)) {
@@ -144,7 +186,12 @@ export class TemplateCompiler {
   }
 
   /**
-   * Remove @push directives from template
+   * Remove `@push` directives from the template.
+   *
+   * Cleans up `@push` blocks after they have been extracted, so they don't appear in the output.
+   *
+   * @param template - Template source.
+   * @returns Cleaned template source.
    */
   removeStacks(template: string): string {
     return template.replace(PUSH_REGEX, '')
