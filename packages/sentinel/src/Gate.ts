@@ -17,9 +17,9 @@ export type PolicyCallback = (
 ) => boolean | Promise<boolean>
 
 /**
- * Authorization Gate.
- * Manages abilities, policies, and access control checks.
+ * Authorization Gate for permission management.
  * @public
+ * @since 1.0.0
  */
 export class Gate {
   protected abilities = new Map<string, PolicyCallback>()
@@ -39,7 +39,8 @@ export class Gate {
   }
 
   /**
-   * Create a new Gate instance for a specific user context.
+   * Create a new Gate instance for a specific user.
+   * @param resolver - Async function to resolve the user
    */
   public forUser(resolver: () => Promise<Authenticatable | null>): Gate {
     const gate = new Gate(this)
@@ -48,7 +49,9 @@ export class Gate {
   }
 
   /**
-   * Define a new ability.
+   * Define a new authorization ability.
+   * @param ability - Unique name for the ability
+   * @param callback - Logic to determine access
    */
   define(ability: string, callback: PolicyCallback): this {
     this.abilities.set(ability, callback)
@@ -56,7 +59,9 @@ export class Gate {
   }
 
   /**
-   * Define a policy for a model.
+   * Define a policy class for a model.
+   * @param model - Model constructor
+   * @param policy - Object containing ability methods
    */
   policy(model: Constructor, policy: Record<string, unknown>): this {
     this.policies.set(model, policy)
@@ -64,7 +69,7 @@ export class Gate {
   }
 
   /**
-   * Register a callback to run before all other checks.
+   * Register a callback to run before any other check.
    */
   before(callback: PolicyCallback): this {
     this.beforeCallbacks.push(callback)
@@ -80,7 +85,7 @@ export class Gate {
   }
 
   /**
-   * Determine if the given ability should be granted for the current user.
+   * Check if the user has a specific ability.
    */
   async allows(ability: string, ...args: unknown[]): Promise<boolean> {
     const user = this.userResolver ? await this.userResolver() : null
@@ -95,7 +100,8 @@ export class Gate {
 
     // 2. Check defined abilities
     if (this.abilities.has(ability)) {
-      return !!(await this.abilities.get(ability)?.(user, ...args))
+      const result = await this.abilities.get(ability)?.(user, ...args)
+      return this.runAfterCallbacks(user, ability, !!result, ...args)
     }
 
     // 3. Check policies
@@ -104,11 +110,14 @@ export class Gate {
       const policy = this.getPolicyFor(target)
       const handler = policy ? policy[ability] : undefined
       if (typeof handler === 'function') {
-        return !!(await handler(user, ...args))
+        const result = await handler(user, ...args)
+        if (result !== undefined && result !== null) {
+          return this.runAfterCallbacks(user, ability, !!result, ...args)
+        }
       }
     }
 
-    return false
+    return this.runAfterCallbacks(user, ability, false, ...args)
   }
 
   async denies(ability: string, ...args: unknown[]): Promise<boolean> {
@@ -119,6 +128,22 @@ export class Gate {
     if (await this.denies(ability, ...args)) {
       throw new AuthorizationException()
     }
+  }
+
+  protected async runAfterCallbacks(
+    user: Authenticatable | null,
+    ability: string,
+    result: boolean,
+    ...args: unknown[]
+  ): Promise<boolean> {
+    for (const callback of this.afterCallbacks) {
+      const afterResult = await callback(user, ability, result, ...args)
+      if (afterResult !== undefined && afterResult !== null) {
+        return !!afterResult
+      }
+    }
+
+    return result
   }
 
   protected getPolicyFor(target: unknown): Record<string, unknown> | null {

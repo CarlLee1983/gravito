@@ -51,9 +51,10 @@ export type GuardResolver = (
 ) => Guard
 
 /**
- * Central manager for authentication.
+ * Central manager for authentication in Gravito.
  * Handles guard resolution, user providers, and authentication state.
  * @public
+ * @since 1.0.0
  */
 export class AuthManager {
   protected guards: Map<string, Guard> = new Map()
@@ -61,15 +62,13 @@ export class AuthManager {
   protected customProviderCreators: Map<string, UserProviderResolver> = new Map()
   private defaultGuardResolved = false
 
-  // Cache resolved providers to share across guards if needed
   protected resolvedProviders: Map<string, UserProvider> = new Map()
 
   /**
    * Create a new AuthManager instance.
-   *
-   * @param ctx - The request context.
-   * @param config - The authentication configuration.
-   * @param providerResolvers - A map of custom provider resolvers.
+   * @param ctx - The request context
+   * @param config - The auth configuration
+   * @param providerResolvers - Optional user provider resolvers
    */
   constructor(
     protected ctx: GravitoContext,
@@ -79,9 +78,7 @@ export class AuthManager {
 
   /**
    * Set the default guard for the current request.
-   *
-   * @param name - The name of the guard to use as default.
-   * @returns The AuthManager instance.
+   * @param name - Guard name
    */
   public shouldUse(name: string): this {
     this.config.defaults.guard = name
@@ -90,9 +87,7 @@ export class AuthManager {
 
   /**
    * Get a guard instance by name.
-   *
-   * @param name - The name of the guard (optional). Defaults to the configured default guard.
-   * @returns The guard instance.
+   * @param name - Guard name (optional, defaults to configured default)
    */
   public guard<T extends Guard = Guard>(name?: string): T {
     const guardName = name || this.config.defaults.guard

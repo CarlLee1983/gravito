@@ -24,6 +24,9 @@ describe('JwtRefreshGuard', () => {
     ({
       get: mock(() => null),
       set: mock(() => {}),
+      req: {
+        header: mock(() => null),
+      },
     }) as unknown as GravitoContext
 
   it('creates a token pair', async () => {
@@ -70,5 +73,42 @@ describe('JwtRefreshGuard', () => {
     const result = await guard.refreshTokens(accessToken)
 
     expect(result).toBeNull()
+  })
+
+  it('authenticates user via access token', async () => {
+    const user = { id: 'user-123', getAuthIdentifier: () => 'user-123' }
+    const provider = createMockProvider({ 'user-123': user })
+    const accessToken = JSON.stringify({ sub: 'user-123', type: 'access' })
+    const ctx = {
+      req: {
+        header: mock((name: string) => (name === 'Authorization' ? `Bearer ${accessToken}` : null)),
+      },
+    } as unknown as GravitoContext
+
+    const guard = new JwtRefreshGuard(provider, ctx, { secret: 'test' })
+    const authenticatedUser = await guard.user()
+
+    expect(authenticatedUser).toBe(user)
+    expect(await guard.id()).toBe('user-123')
+    expect(await guard.check()).toBe(true)
+  })
+
+  it('handles guest status and manual user setting', async () => {
+    const guard = new JwtRefreshGuard({} as any, createMockContext(), { secret: 'test' })
+    expect(await guard.guest()).toBe(true)
+
+    const user = { id: 1, getAuthIdentifier: () => 1 }
+    guard.setUser(user as any)
+    expect(await guard.user()).toBe(user as any)
+    expect(await guard.guest()).toBe(false)
+  })
+
+  it('validates credentials via provider', async () => {
+    const provider = {
+      retrieveByCredentials: mock(async () => ({})),
+      validateCredentials: mock(async () => true),
+    }
+    const guard = new JwtRefreshGuard(provider as any, createMockContext(), { secret: 'test' })
+    expect(await guard.validate({})).toBe(true)
   })
 })

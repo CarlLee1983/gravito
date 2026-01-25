@@ -59,4 +59,25 @@ describe('CachedUserProvider', () => {
 
     expect(inner.retrieveById).toHaveBeenCalledTimes(4)
   })
+
+  it('delegates other methods to inner provider', async () => {
+    const inner = {
+      retrieveByToken: mock(async () => ({})),
+      updateRememberToken: mock(async () => {}),
+      retrieveByCredentials: mock(async () => ({})),
+      validateCredentials: mock(async () => true),
+      retrieveById: mock(async () => ({})),
+    }
+    const provider = new CachedUserProvider(inner as any)
+
+    await provider.retrieveByToken(1, 't')
+    await provider.updateRememberToken({} as any, 't')
+    await provider.retrieveByCredentials({})
+    await provider.validateCredentials({} as any, {})
+
+    expect(inner.retrieveByToken).toHaveBeenCalled()
+    expect(inner.updateRememberToken).toHaveBeenCalled()
+    expect(inner.retrieveByCredentials).toHaveBeenCalled()
+    expect(inner.validateCredentials).toHaveBeenCalled()
+  })
 })

@@ -4,12 +4,17 @@ Authentication and authorization orbit for Gravito Galaxy. Inspired by Laravel's
 
 ## Features
 
-- **Multiple guards**: Session, JWT, and token-based authentication
-- **Flexible user providers**: Callback-based provider for custom user lookup
-- **Authorization gates**: Define and check abilities
-- **Password management**: HashManager with bcrypt and argon2id
-- **Password resets**: PasswordBroker workflow support
-- **Email verification**: Optional verification service
+- **Multiple guards**: Session, JWT (with refresh tokens), and token-based authentication.
+- **Remember Me**: Persistent session support via secure cookies.
+- **Token Hashing**: Support for SHA-256/SHA-512 token storage.
+- **Token Blacklist**: Revoke JWTs and API tokens instantly.
+- **Rate Limiting**: Built-in `throttleAuth` middleware for brute-force protection.
+- **User Caching**: Optimized query performance with `CachedUserProvider`.
+- **Flexible user providers**: Callback-based provider for custom user lookup.
+- **Authorization gates**: Define and check abilities and policies.
+- **Password management**: HashManager with bcrypt and argon2id.
+- **Password resets**: PasswordBroker workflow support.
+- **Email verification**: Optional verification service.
 
 ## Installation
 
@@ -17,101 +22,48 @@ Authentication and authorization orbit for Gravito Galaxy. Inspired by Laravel's
 bun add @gravito/sentinel
 ```
 
-Peer dependencies:
+## Migration from v3 to v4
 
-- `@gravito/core`
-- `@gravito/photon` (^4.0.0)
+### Breaking Changes
 
-If you use the Session guard, install `@gravito/pulsar`:
-
-```bash
-bun add @gravito/pulsar
-```
-
-## Quick Start
-
-### 1. Configure OrbitSentinel
+1. **CallbackUserProvider**: The fallback to `global.MOCK_USERS` has been removed. You must now provide a `retrieveByCredentialsCallback`.
+2. **Middleware Types**: If you were using `any` in your middleware handlers, you should now use `GravitoContext` and `GravitoNext`.
 
 ```typescript
-import { PlanetCore } from '@gravito/core'
-import { OrbitSentinel, type AuthConfig, CallbackUserProvider } from '@gravito/sentinel'
-import { OrbitPulsar } from '@gravito/pulsar'
+// v3
+app.get('/admin', auth(), async (c: any, next: any) => { ... })
 
-const core = new PlanetCore()
-
-const session = new OrbitPulsar({
-  driver: 'memory',
-})
-session.install(core)
-
-const authConfig: AuthConfig = {
-  defaults: {
-    guard: 'web',
-    passwords: 'users',
-  },
-  guards: {
-    web: {
-      driver: 'session',
-      provider: 'users',
-      sessionKey: 'auth_session'
-    }
-  },
-  providers: {
-    users: {
-      driver: 'callback'
-    }
-  }
-}
-
-const auth = new OrbitSentinel({
-  ...authConfig,
-  bindings: {
-    providers: {
-      users: () => new CallbackUserProvider(
-        async (id) => {
-          return null
-        },
-        async (user, credentials) => {
-          return false
-        },
-        async (identifier, token) => null,
-        async (credentials) => {
-          return null
-        }
-      )
-    }
-  }
-})
-
-auth.install(core)
+// v4
+import type { GravitoContext, GravitoNext } from '@gravito/core'
+app.get('/admin', auth(), async (c: GravitoContext, next: GravitoNext) => { ... })
 ```
 
-### 2. Authenticate in routes
+### New Features
+
+#### Remember Me
+`SessionGuard` now supports a `remember` parameter in `login()` and `attempt()`.
 
 ```typescript
-import { auth } from '@gravito/sentinel'
+await auth.attempt(credentials, true) // Enable remember me
+```
 
-app.post('/login', async (c) => {
-  const authManager = c.get('auth')
+#### JWT Refresh Tokens
+Use `JwtRefreshGuard` to generate and refresh token pairs.
 
-  const success = await authManager.attempt({
-    email: c.req.query('email'),
-    password: c.req.query('password')
-  })
+```typescript
+const tokens = await guard.createTokenPair(user)
+// { accessToken, refreshToken, expiresIn }
 
-  if (success) {
-    return c.json({ message: 'Logged in' })
-  }
+const newTokens = await guard.refreshTokens(refreshToken)
+```
 
-  return c.json({ message: 'Invalid credentials' }, 401)
-})
+#### Rate Limiting
+Protect your login routes with `throttleAuth`.
 
-app.get('/dashboard', auth(), async (c) => {
-  const authManager = c.get('auth')
-  const user = await authManager.user()
+```typescript
+import { throttleAuth } from '@gravito/sentinel'
 
-  return c.json({ user })
-})
+app.post('/login', throttleAuth({ maxAttempts: 5 }), async (c) => { ... })
 ```
 
 ## License
