@@ -1,68 +1,70 @@
 /**
- * @fileoverview Inertia.js Service for Gravito
+ * @fileoverview Inertia.js Service for Gravito.
  *
- * Provides server-side Inertia.js integration for building modern
- * single-page applications with server-side routing.
+ * This service implements the Inertia.js server-side protocol, enabling
+ * seamless page transitions and data synchronization for monolith SPAs.
  *
  * @module @gravito/ion
- * @since 1.0.0
  */
 
 import type { GravitoContext, GravitoVariables, ViewService } from '@gravito/core'
 import { InertiaError } from './errors'
 
 /**
- * Configuration options for InertiaService
+ * Configuration options for the InertiaService instance.
  */
 export interface InertiaConfig {
   /**
-   * The root view template name
+   * The name of the root view template used for the initial page load.
    * @default 'app'
    */
   rootView?: string
 
   /**
-   * Asset version for cache busting
+   * Asset version string. Used by Inertia to trigger a full page reload if the version changes.
    */
   version?: string
 
   /**
-   * Logging level for Inertia operations
+   * Minimum logging level for internal operations.
    * @default 'info'
    */
   logLevel?: 'debug' | 'info' | 'warn' | 'error' | 'silent'
 
   /**
-   * Callback for render metrics (performance monitoring)
+   * Performance monitoring callback triggered after each render.
    */
   onRender?: (metrics: RenderMetrics) => void
 }
 
 /**
- * Metrics collected during render operations
+ * Encapsulates performance and status metrics for a single render operation.
  */
 export interface RenderMetrics {
+  /** Name of the frontend component rendered. */
   component: string
+  /** Time taken in milliseconds. */
   duration: number
+  /** Whether the request was a partial Inertia AJAX request. */
   isInertiaRequest: boolean
+  /** Number of top-level props passed to the component. */
   propsCount: number
+  /** Epoch timestamp of the operation. */
   timestamp: number
+  /** Resulting HTTP status code. */
   status?: number
 }
 
 /**
- * InertiaService - Server-side Inertia.js adapter
+ * InertiaService - Server-side adapter for the Inertia.js protocol.
  *
- * This service handles the Inertia.js protocol for seamless
- * SPA-like navigation with server-side routing.
+ * This service handles component resolution, prop merging (including lazy props),
+ * asset versioning, and initial HTML generation using the Gravito ViewService.
  *
  * @example
  * ```typescript
- * // In a controller
- * async index(ctx: GravitoContext) {
- *   const inertia = ctx.get('inertia') as InertiaService
- *   return inertia.render('Home', { users: await User.all() })
- * }
+ * const service = new InertiaService(ctx, { version: '1.0' });
+ * return service.render('Welcome', { user: 'Carl' });
  * ```
  */
 export class InertiaService {
@@ -71,10 +73,10 @@ export class InertiaService {
   private readonly onRenderCallback?: (metrics: RenderMetrics) => void
 
   /**
-   * Create a new InertiaService instance
+   * Initializes a new instance of the Inertia service.
    *
-   * @param context - The Gravito request context
-   * @param config - Optional configuration
+   * @param context - The current Gravito request context
+   * @param config - Instance configuration options
    */
   constructor(
     private context: GravitoContext<GravitoVariables>,
@@ -84,6 +86,13 @@ export class InertiaService {
     this.onRenderCallback = config.onRender
   }
 
+  /**
+   * Internal logging helper that respects the configured log level.
+   *
+   * @param level - Log severity level
+   * @param message - Descriptive message
+   * @param data - Optional metadata for the log
+   */
   private log(level: 'debug' | 'info' | 'warn' | 'error', message: string, data?: unknown): void {
     const levels = ['debug', 'info', 'warn', 'error', 'silent']
     const currentLevelIndex = levels.indexOf(this.logLevel)
@@ -102,47 +111,37 @@ export class InertiaService {
   }
 
   /**
-   * Escape a string for safe use in HTML attributes
+   * Escapes a string for safe embedding into a single-quoted HTML attribute.
    *
-   * Strategy: JSON.stringify already escapes special characters including
-   * quotes as \". We need to escape these for HTML attributes, but we must
-   * be careful not to break JSON escape sequences.
+   * This ensures that JSON strings can be safely passed to the frontend
+   * via the `data-page` attribute without breaking the HTML structure.
    *
-   * The solution: Escape backslash-quote sequences (\" from JSON.stringify)
-   * as \\&quot; so they become \\&quot; in HTML, which the browser decodes
-   * to \\" (valid JSON), not \&quot; (invalid JSON).
-   *
-   * @param value - The string to escape.
-   * @returns The escaped string.
+   * @param value - Raw JSON or text string
+   * @returns Safely escaped HTML attribute value
    */
   private escapeForSingleQuotedHtmlAttribute(value: string): string {
-    // First escape ampersands to prevent breaking existing HTML entities
-    // Then escape backslash-quote sequences (from JSON.stringify) as \\&quot;
-    // This ensures \" becomes \\&quot; which decodes to \\" (valid JSON)
     return value
       .replace(/&/g, '&amp;')
-      .replace(/\\"/g, '\\&quot;') // Escape \" as \\&quot; (becomes \\" after decode)
+      .replace(/\\"/g, '\\&quot;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/'/g, '&#039;')
-    // Note: We don't escape standalone " because JSON.stringify already
-    // escaped all quotes as \", so any remaining " would be invalid JSON anyway
   }
 
   /**
-   * Render an Inertia component
+   * Renders an Inertia component by either returning a JSON response (for AJAX)
+   * or a full HTML document (for initial load).
    *
-   * @param component - The component name to render
-   * @param props - Props to pass to the component
-   * @param rootVars - Additional variables for the root template
-   * @returns HTTP Response
+   * @param component - Frontend component name
+   * @param props - Data passed to the component
+   * @param rootVars - Variables for the root template
+   * @param status - HTTP status code
+   * @returns Gravito HTTP Response
+   * @throws {InertiaError} If serialization fails or the ViewService is missing
    *
    * @example
    * ```typescript
-   * return inertia.render('Users/Index', {
-   *   users: await User.all(),
-   *   filters: { search: ctx.req.query('search') }
-   * })
+   * return inertia.render('Dashboard', { stats: getStats() });
    * ```
    */
   public render<T extends Record<string, unknown> = Record<string, unknown>>(
@@ -169,6 +168,9 @@ export class InertiaService {
         pageUrl = this.context.req.url
       }
 
+      /**
+       * Resolves lazy props by executing any functional prop values.
+       */
       const resolveProps = (p: Record<string, unknown>) => {
         const resolved: Record<string, unknown> = {}
         for (const [key, value] of Object.entries(p)) {
@@ -265,40 +267,32 @@ export class InertiaService {
       return new Response('Inertia Render Error', { status: 500 })
     }
   }
-  // ...
 
   /**
-   * Share data with all Inertia responses
+   * Registers a piece of data to be shared with all Inertia responses.
    *
-   * Shared props are merged with component-specific props on every render.
+   * Shared props are automatically merged with component props during render.
    *
-   * @param key - The prop key
-   * @param value - The prop value
-   *
-   * @example
-   * ```typescript
-   * // In middleware
-   * inertia.share('auth', { user: ctx.get('auth')?.user() })
-   * inertia.share('flash', ctx.get('session')?.getFlash('message'))
-   * ```
+   * @param key - Identifier for the shared prop
+   * @param value - Value to share (must be JSON serializable)
    */
   public share(key: string, value: unknown): void {
     this.sharedProps[key] = value
   }
 
   /**
-   * Share multiple props at once
+   * Shares multiple props in a single operation.
    *
-   * @param props - Object of props to share
+   * @param props - Object containing props to merge into the shared state
    */
   public shareAll(props: Record<string, unknown>): void {
     Object.assign(this.sharedProps, props)
   }
 
   /**
-   * Get all shared props
+   * Returns a copy of the current shared props.
    *
-   * @returns A shallow copy of the shared props object.
+   * @returns Current shared props dictionary
    */
   public getSharedProps(): Record<string, unknown> {
     return { ...this.sharedProps }
