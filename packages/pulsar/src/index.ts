@@ -81,12 +81,10 @@ export class OrbitPulsar implements GravitoOrbit {
 
     const exposeAs = (resolved.exposeAs as any) ?? 'session'
     const driver = resolved.driver ?? 'memory'
-    const _cacheKey = resolved.cacheKey ?? 'cache'
     const keyPrefix = resolved.keyPrefix ?? 'session:'
     const cookieName = resolved.cookie?.name ?? 'gravito_session'
     const cookiePath = resolved.cookie?.path ?? '/'
     const cookieSameSite = resolved.cookie?.sameSite ?? 'Lax'
-    const _cookieHttpOnly = resolved.cookie?.httpOnly ?? true
     const cookieSecure = resolved.cookie?.secure ?? process.env.NODE_ENV === 'production'
     const idleTimeoutSeconds = resolved.idleTimeoutSeconds ?? 60 * 30
     const touchIntervalSeconds = resolved.touchIntervalSeconds ?? 60
@@ -94,9 +92,6 @@ export class OrbitPulsar implements GravitoOrbit {
     const csrfEnabled = resolved.csrf?.enabled ?? true
     const csrfHeaderNames = ['X-XSRF-TOKEN', 'X-CSRF-TOKEN']
     const csrfCookieName = resolved.csrf?.cookieName ?? 'XSRF-TOKEN'
-    const _csrfCookiePath = resolved.csrf?.cookiePath ?? '/'
-    const _csrfCookieSameSite = resolved.csrf?.cookieSameSite ?? 'Lax'
-    const _csrfCookieSecure = resolved.csrf?.cookieSecure ?? process.env.NODE_ENV === 'production'
     const csrfIgnore = resolved.csrf?.ignore
 
     const now = resolved.now ?? (() => Date.now())
@@ -134,8 +129,17 @@ export class OrbitPulsar implements GravitoOrbit {
       let data: Record<string, any> = record?.data ?? {}
       let dirty = false
       let isRegenerated = false
+      const started = !!record
       const markDirty = () => {
         dirty = true
+      }
+
+      const setCookiesHelper = (sid: string, csrfToken: string) => {
+        const common = `; Path=${cookiePath}; SameSite=${cookieSameSite}; Max-Age=${60 * 60 * 24 * 7}${cookieSecure ? '; Secure' : ''}`
+        const sidStr = `${cookieName}=${sid}${common}; HttpOnly`
+        const csrfStr = `${csrfCookieName}=${encodeURIComponent(csrfToken)}${common}`
+        c.header('Set-Cookie', sidStr, { append: true })
+        c.header('Set-Cookie', csrfStr, { append: true })
       }
 
       // Flash data handling: Move current flash to old flash, clear current
@@ -148,6 +152,21 @@ export class OrbitPulsar implements GravitoOrbit {
 
       const session: any = {
         id: () => sessionId,
+        isStarted: () => started,
+        has: (k: string) => {
+          const parts = k.split('.')
+          let curr: any = data
+          for (const p of parts) {
+            if (p === '__proto__' || p === 'constructor' || p === 'prototype') {
+              return false
+            }
+            if (curr == null || typeof curr !== 'object') {
+              return false
+            }
+            curr = curr[p]
+          }
+          return curr !== undefined
+        },
         get: (k: string, d?: any) => {
           const parts = k.split('.')
           let curr: any = data
@@ -183,6 +202,11 @@ export class OrbitPulsar implements GravitoOrbit {
           markDirty()
         },
         set: (k: string, v: any) => session.put(k, v),
+        pull: (k: string, d?: any) => {
+          const value = session.get(k, d)
+          session.forget(k)
+          return value
+        },
         forget: (k: string) => {
           const parts = k.split('.')
           let curr = data
@@ -231,6 +255,15 @@ export class OrbitPulsar implements GravitoOrbit {
         getFlash: (k: string, d?: any) => {
           flashReads.add(k)
           return oldFlash[k] ?? d
+        },
+        reflash: () => {
+          if (Object.keys(oldFlash).length > 0) {
+            if (!data._flash) {
+              data._flash = {}
+            }
+            data._flash = { ...data._flash, ...oldFlash }
+            markDirty()
+          }
         },
         keep: (keys: string[]) => {
           for (const key of keys) {
@@ -281,13 +314,12 @@ export class OrbitPulsar implements GravitoOrbit {
               incoming = cookies[csrfCookieName]
             }
 
-            // Robust comparison with double-decode safety
-            const cleanIncoming = incoming ? decodeURIComponent(decodeURIComponent(incoming)) : ''
-
-            if (!cleanIncoming || !safeEquals(cleanIncoming, expected)) {
-              console.error(
-                `[CSRF ERROR] Mismatch URL: ${c.req.url}, Expected: ${expected}, GOT: ${cleanIncoming || '(empty)'}`
-              )
+            if (!incoming || !safeEquals(incoming, expected)) {
+              console.error('[CSRF ERROR] CSRF token mismatch', {
+                url: c.req.url,
+                method: c.req.method,
+                hasToken: !!incoming,
+              })
 
               // Shared Save Logic Helper
               const saveSession = async () => {
@@ -305,13 +337,7 @@ export class OrbitPulsar implements GravitoOrbit {
                   )
                 }
 
-                // Cookie Delivery
-                const common = `; Path=${cookiePath}; SameSite=${cookieSameSite}; Max-Age=${60 * 60 * 24 * 7}${cookieSecure ? '; Secure' : ''}`
-                const sidStr = `${cookieName}=${sessionId}${common}; HttpOnly`
-                const csrfStr = `${csrfCookieName}=${encodeURIComponent(currentToken)}${common}`
-
-                c.header('Set-Cookie', sidStr, { append: true })
-                c.header('Set-Cookie', csrfStr, { append: true })
+                setCookiesHelper(sessionId, currentToken)
               }
 
               if (c.req.header('X-Inertia')) {
@@ -346,24 +372,7 @@ export class OrbitPulsar implements GravitoOrbit {
         )
       }
 
-      // Final Cookie Delivery
-      const common = `; Path=${cookiePath}; SameSite=${cookieSameSite}; Max-Age=${60 * 60 * 24 * 7}${cookieSecure ? '; Secure' : ''}`
-      const sidStr = `${cookieName}=${sessionId}${common}; HttpOnly`
-      const csrfStr = `${csrfCookieName}=${encodeURIComponent(currentToken)}${common}` // Notice: NOT HttpOnly
-
-      c.header('Set-Cookie', sidStr, { append: true })
-      c.header('Set-Cookie', csrfStr, { append: true })
-
-      const resToMod = res || (c as any).native?.res
-      if (resToMod?.headers) {
-        try {
-          resToMod.headers.append('Set-Cookie', sidStr)
-          resToMod.headers.append('Set-Cookie', csrfStr)
-        } catch {
-          // Intentionally ignored: Headers may already be immutable or response locked.
-          // Cookies are already set via c.header() above, this is just a fallback.
-        }
-      }
+      setCookiesHelper(sessionId, currentToken)
 
       return res
     })
