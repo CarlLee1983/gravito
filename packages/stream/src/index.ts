@@ -20,8 +20,10 @@
  * ```
  */
 
+export { BatchConsumer, type BatchConsumerOptions } from './BatchConsumer'
 export type { ConsumerOptions } from './Consumer'
 export { Consumer } from './Consumer'
+
 // Driver config types
 export type { DatabaseDriverConfig } from './drivers/DatabaseDriver'
 export { DatabaseDriver } from './drivers/DatabaseDriver'

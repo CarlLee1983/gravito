@@ -2,55 +2,68 @@ import type { Job } from './Job'
 import type { QueueManager } from './QueueManager'
 
 /**
- * Batch Consumer Options
+ * Configuration options for the BatchConsumer.
+ *
+ * @example
+ * ```typescript
+ * const options: BatchConsumerOptions = {
+ *   batchSize: 50,
+ *   autoAck: false
+ * };
+ * ```
  */
 export interface BatchConsumerOptions {
   /**
-   * Queue name to consume from.
+   * The name of the queue to consume from.
    * @default 'default'
    */
   queue?: string
 
   /**
-   * Connection name.
-   * @default default connection
+   * The connection name to use.
+   * @default The default connection of QueueManager
    */
   connection?: string
 
   /**
-   * Number of jobs to process in a batch.
+   * The number of jobs to try to retrieve in each batch.
    * @default 10
    */
   batchSize?: number
 
   /**
-   * Polling interval in milliseconds when queue is empty.
+   * The polling interval in milliseconds when the queue is empty.
    * @default 1000
    */
   pollInterval?: number
 
   /**
-   * Whether to automatically acknowledge (complete) jobs after successful handling.
-   * If false, the handler is responsible for completing/failing jobs.
+   * Whether to automatically complete jobs after the handler returns successfully.
+   *
+   * If set to `false`, the handler function is responsible for calling `manager.complete()`
+   * or `manager.fail()` for each job.
+   *
    * @default true
    */
   autoAck?: boolean
 }
 
 /**
- * Batch Consumer
+ * Specialized consumer for processing jobs in bulk.
  *
- * Efficiently polls and processes jobs in batches.
- * Reduces I/O overhead by using `popMany` and processing jobs in bulk.
+ * Unlike the standard `Consumer` which processes jobs individually (even if fetched in batches),
+ * the `BatchConsumer` passes an array of jobs to a single handler function. This is ideal for
+ * operations that benefit from bulk processing, such as database inserts or API calls that support batching.
  *
+ * @public
  * @example
  * ```typescript
  * const consumer = new BatchConsumer(manager, async (jobs) => {
- *   console.log(`Processing ${jobs.length} jobs...`)
- *   await db.insertMany(jobs.map(j => j.data))
- * }, { batchSize: 100 })
+ *   // Process 100 jobs at once
+ *   await elasticsearch.bulkIndex(jobs.map(j => j.data));
+ * }, { batchSize: 100 });
  *
- * consumer.start()
+ * consumer.start();
  * ```
  */
 export class BatchConsumer {
@@ -72,7 +85,9 @@ export class BatchConsumer {
   }
 
   /**
-   * Start consuming.
+   * Starts the batch consuming loop.
+   *
+   * Continuously polls for batches of jobs and passes them to the handler.
    */
   async start(): Promise<void> {
     if (this.running) {
@@ -116,7 +131,9 @@ export class BatchConsumer {
   }
 
   /**
-   * Stop consuming.
+   * Stops the consumer loop.
+   *
+   * Sets the running flag to false. The loop will exit after the current iteration finishes.
    */
   stop(): void {
     this.running = false

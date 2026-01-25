@@ -1,27 +1,30 @@
 import type { QueueStats, SerializedJob } from '../types'
 import type { QueueDriver } from './QueueDriver'
 
+/**
+ * Configuration options for the MemoryDriver.
+ */
 export interface MemoryDriverConfig {
   /**
-   * Maximum number of jobs per queue.
+   * The maximum number of jobs allowed in a single queue.
+   *
    * @default Infinity
    */
   maxSize?: number
 }
 
 /**
- * Memory Driver
+ * In-memory queue driver.
  *
- * In-memory driver for development and testing.
- * All data is stored in memory and will be lost when the process restarts.
+ * Stores jobs in a local JavaScript Map. Ideal for development, testing, and simple
+ * use cases where persistence across restarts is not required.
+ * It supports basic delay handling but data is volatile.
  *
- * Zero-config: works out of the box.
- *
+ * @public
  * @example
  * ```typescript
- * const driver = new MemoryDriver({ maxSize: 1000 })
- * await driver.push('default', serializedJob)
- * const job = await driver.pop('default')
+ * const driver = new MemoryDriver({ maxSize: 1000 });
+ * await driver.push('default', job);
  * ```
  */
 export class MemoryDriver implements QueueDriver {
@@ -33,7 +36,11 @@ export class MemoryDriver implements QueueDriver {
   }
 
   /**
-   * Push a job to a queue.
+   * Pushes a job to the in-memory queue.
+   *
+   * @param queue - The queue name.
+   * @param job - The serialized job.
+   * @throws {Error} If the queue has reached `maxSize`.
    */
   async push(queue: string, job: SerializedJob): Promise<void> {
     if (!this.queues.has(queue)) {
@@ -49,7 +56,12 @@ export class MemoryDriver implements QueueDriver {
   }
 
   /**
-   * Pop a job from a queue (FIFO).
+   * Pops the next available job from the queue.
+   *
+   * Respects `delaySeconds` by checking the job's `createdAt` timestamp.
+   *
+   * @param queue - The queue name.
+   * @returns The job or `null`.
    */
   async pop(queue: string): Promise<SerializedJob | null> {
     const queueJobs = this.queues.get(queue)
@@ -71,21 +83,30 @@ export class MemoryDriver implements QueueDriver {
   }
 
   /**
-   * Get queue size.
+   * Returns the number of jobs in the queue.
+   *
+   * @param queue - The queue name.
    */
   async size(queue: string): Promise<number> {
     return this.queues.get(queue)?.length ?? 0
   }
 
   /**
-   * Clear a queue.
+   * Clears all jobs from the queue.
+   *
+   * @param queue - The queue name.
    */
   async clear(queue: string): Promise<void> {
     this.queues.delete(queue)
   }
 
   /**
-   * Mark a job as permanently failed.
+   * Moves a job to the failed (DLQ) list.
+   *
+   * In MemoryDriver, this simply pushes to a `failed:{queue}` list.
+   *
+   * @param queue - The original queue name.
+   * @param job - The failed job.
    */
   async fail(queue: string, job: SerializedJob): Promise<void> {
     const failedQueue = `failed:${queue}`
@@ -96,7 +117,11 @@ export class MemoryDriver implements QueueDriver {
   }
 
   /**
-   * Get queue statistics.
+   * Retrieves statistics for the queue.
+   *
+   * Calculates pending, delayed, and failed counts by iterating through the list.
+   *
+   * @param queue - The queue name.
    */
   async stats(queue: string): Promise<QueueStats> {
     const jobs = this.queues.get(queue) || []
@@ -123,7 +148,10 @@ export class MemoryDriver implements QueueDriver {
   }
 
   /**
-   * Push multiple jobs.
+   * Pushes multiple jobs to the queue.
+   *
+   * @param queue - The queue name.
+   * @param jobs - Array of jobs.
    */
   async pushMany(queue: string, jobs: SerializedJob[]): Promise<void> {
     if (!this.queues.has(queue)) {
@@ -133,7 +161,10 @@ export class MemoryDriver implements QueueDriver {
   }
 
   /**
-   * Pop multiple jobs.
+   * Pops multiple jobs from the queue.
+   *
+   * @param queue - The queue name.
+   * @param count - Max jobs to pop.
    */
   async popMany(queue: string, count: number): Promise<SerializedJob[]> {
     const results: SerializedJob[] = []

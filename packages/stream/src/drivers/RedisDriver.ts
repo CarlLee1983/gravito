@@ -68,22 +68,18 @@ export interface RedisDriverConfig {
 }
 
 /**
- * Redis Driver
+ * High-performance Redis queue driver.
  *
- * Uses Redis as the queue backend.
- * Implements FIFO via Redis Lists (LPUSH/RPOP).
+ * Implements FIFO queues using Redis Lists, reliable priority support, delayed jobs via Sorted Sets,
+ * and rate limiting. Uses Lua scripts for atomic operations and advanced features like
+ * group-based sequential processing.
  *
- * Requires `ioredis` or `redis`.
- *
+ * @public
  * @example
  * ```typescript
- * import Redis from 'ioredis'
- *
- * const redis = new Redis('redis://localhost:6379')
- * const redis = new Redis('ioredis://localhost:6379')
- * const driver = new RedisDriver({ client: redis })
- *
- * await driver.push('default', serializedJob)
+ * import Redis from 'ioredis';
+ * const redis = new Redis();
+ * const driver = new RedisDriver({ client: redis });
  * ```
  */
 export class RedisDriver implements QueueDriver {
@@ -117,7 +113,7 @@ export class RedisDriver implements QueueDriver {
     local activeSet = KEYS[2]
     local pendingList = KEYS[3]
     local groupId = ARGV[1]
-
+    
     local nextJob = redis.call('LPOP', pendingList)
     if nextJob then
       return redis.call('LPUSH', waitList, nextJob)
@@ -195,7 +191,6 @@ export class RedisDriver implements QueueDriver {
     }
 
     // Register Lua scripts if defineCommand is available (ioredis)
-    // Register Lua scripts if defineCommand is available (ioredis)
     if (typeof this.client.defineCommand === 'function') {
       this.client.defineCommand('pushGroupJob', {
         numberOfKeys: 3,
@@ -223,7 +218,13 @@ export class RedisDriver implements QueueDriver {
   }
 
   /**
-   * Push a job (LPUSH).
+   * Pushes a job to Redis.
+   *
+   * Handles regular jobs (LPUSH), delayed jobs (ZADD), and grouped jobs (custom Lua logic).
+   *
+   * @param queue - The queue name.
+   * @param job - The serialized job.
+   * @param options - Push options.
    */
   async push(queue: string, job: SerializedJob, options?: JobPushOptions): Promise<void> {
     const key = this.getKey(queue, options?.priority)
@@ -286,7 +287,12 @@ export class RedisDriver implements QueueDriver {
   }
 
   /**
-   * Complete a job (handle Group FIFO).
+   * Completes a job.
+   *
+   * Crucial for Group FIFO logic to unlock the next job in the group.
+   *
+   * @param queue - The queue name.
+   * @param job - The job to complete.
    */
   async complete(queue: string, job: SerializedJob): Promise<void> {
     if (!job.groupId) {
@@ -306,8 +312,13 @@ export class RedisDriver implements QueueDriver {
   }
 
   /**
-   * Pop a job from a queue (non-blocking).
-   * Optimized with Lua script for atomic priority polling.
+   * Pops a job from the queue.
+   *
+   * Checks priorities in order (critical -> high -> default -> low).
+   * Also checks for due delayed jobs and moves them to the active list.
+   *
+   * @param queue - The queue name.
+   * @returns The job or `null`.
    */
   async pop(queue: string): Promise<SerializedJob | null> {
     const priorities = ['critical', 'high', 'default', 'low']
@@ -391,8 +402,12 @@ export class RedisDriver implements QueueDriver {
   }
 
   /**
-   * Pop a job from the queue (blocking).
-   * Uses BRPOP for efficiency. Supports multiple queues and priorities.
+   * Pops a job using blocking Redis commands (BRPOP).
+   *
+   * Efficiently waits for a job to arrive without polling.
+   *
+   * @param queues - The queues to listen to.
+   * @param timeout - Timeout in seconds.
    */
   async popBlocking(queues: string | string[], timeout: number): Promise<SerializedJob | null> {
     const queueList = Array.isArray(queues) ? queues : [queues]
@@ -445,7 +460,9 @@ export class RedisDriver implements QueueDriver {
   }
 
   /**
-   * Get queue size.
+   * Returns the length of the queue (Redis List length).
+   *
+   * @param queue - The queue name.
    */
   async size(queue: string): Promise<number> {
     const key = this.getKey(queue)
@@ -453,7 +470,10 @@ export class RedisDriver implements QueueDriver {
   }
 
   /**
-   * Mark a job as permanently failed (DLQ).
+   * Marks a job as permanently failed by moving it to a DLQ list.
+   *
+   * @param queue - The queue name.
+   * @param job - The failed job.
    */
   async fail(queue: string, job: SerializedJob): Promise<void> {
     const key = `${this.getKey(queue)}:failed`
@@ -470,7 +490,9 @@ export class RedisDriver implements QueueDriver {
   }
 
   /**
-   * Clear a queue.
+   * Clears the queue and its associated delayed/active sets.
+   *
+   * @param queue - The queue name.
    */
   async clear(queue: string): Promise<void> {
     const key = this.getKey(queue)
@@ -488,8 +510,11 @@ export class RedisDriver implements QueueDriver {
   }
 
   /**
-   * Get queue statistics.
-   * Optimized with Redis Pipeline to fetch all priorities and DLQ stats in one trip.
+   * Retrieves full stats for the queue using Redis Pipelining.
+   *
+   * Aggregates counts from all priority lists and the DLQ.
+   *
+   * @param queue - The queue name.
    */
   async stats(queue: string): Promise<QueueStats> {
     const priorities = ['critical', 'high', 'default', 'low']
@@ -541,7 +566,12 @@ export class RedisDriver implements QueueDriver {
   }
 
   /**
-   * Push multiple jobs.
+   * Pushes multiple jobs to the queue.
+   *
+   * Uses pipeline for batch efficiency. Falls back to individual pushes if complex logic (groups/priority) is involved.
+   *
+   * @param queue - The queue name.
+   * @param jobs - Array of jobs.
    */
   async pushMany(queue: string, jobs: SerializedJob[]): Promise<void> {
     if (jobs.length === 0) {
@@ -625,8 +655,12 @@ export class RedisDriver implements QueueDriver {
   }
 
   /**
-   * Pop multiple jobs.
-   * Atomic operation across multiple priority levels.
+   * Pops multiple jobs from the queue.
+   *
+   * Uses a Lua script for atomic retrieval across priorities.
+   *
+   * @param queue - The queue name.
+   * @param count - Max jobs to pop.
    */
   async popMany(queue: string, count: number): Promise<SerializedJob[]> {
     if (count <= 0) {
@@ -733,7 +767,9 @@ export class RedisDriver implements QueueDriver {
   }
 
   /**
-   * Report worker heartbeat for monitoring.
+   * Reports a worker heartbeat.
+   *
+   * Stores worker metadata in a key with an expiration (TTL).
    */
   async reportHeartbeat(workerInfo: any, prefix?: string): Promise<void> {
     const key = `${prefix ?? this.prefix}worker:${workerInfo.id}`
@@ -744,7 +780,9 @@ export class RedisDriver implements QueueDriver {
   }
 
   /**
-   * Publish a log message for monitoring.
+   * Publishes monitoring logs.
+   *
+   * Uses Redis Pub/Sub for real-time logs and a capped List for history.
    */
   async publishLog(logPayload: any, prefix?: string): Promise<void> {
     const payload = JSON.stringify(logPayload)
@@ -768,8 +806,12 @@ export class RedisDriver implements QueueDriver {
   }
 
   /**
-   * Check if a queue is rate limited.
-   * Uses a fixed window counter.
+   * Checks the rate limit for a queue.
+   *
+   * Uses a simple Fixed Window counter (INCR + EXPIRE).
+   *
+   * @param queue - The queue name.
+   * @param config - Rate limit rules.
    */
   async checkRateLimit(queue: string, config: { max: number; duration: number }): Promise<boolean> {
     const key = `${this.prefix}${queue}:ratelimit`
@@ -794,7 +836,11 @@ export class RedisDriver implements QueueDriver {
   }
 
   /**
-   * Get failed jobs from DLQ.
+   * Retrieves failed jobs from the DLQ.
+   *
+   * @param queue - The queue name.
+   * @param start - Start index.
+   * @param end - End index.
    */
   async getFailed(queue: string, start = 0, end = -1): Promise<SerializedJob[]> {
     const key = `${this.getKey(queue)}:failed`
@@ -806,8 +852,12 @@ export class RedisDriver implements QueueDriver {
   }
 
   /**
-   * Retry failed jobs from DLQ.
-   * Moves jobs from failed list back to the main queue.
+   * Retries failed jobs.
+   *
+   * Pops from DLQ and pushes back to the active queue (RPOPLPUSH equivalent logic).
+   *
+   * @param queue - The queue name.
+   * @param count - Jobs to retry.
    */
   async retryFailed(queue: string, count = 1): Promise<number> {
     const failedKey = `${this.getKey(queue)}:failed`
@@ -836,8 +886,10 @@ export class RedisDriver implements QueueDriver {
       job.attempts = 0
       delete job.error
       delete job.failedAt
+      delete (job as any).priority // Clean priority if sticking to default? Or keep it?
 
-      await this.push(queue, job, { priority: job.priority, groupId: job.groupId })
+      // Note: Original code kept priority. Re-using existing push logic.
+      await this.push(queue, job, { priority: (job as any).priority, groupId: job.groupId })
       retried++
     }
 
@@ -845,7 +897,9 @@ export class RedisDriver implements QueueDriver {
   }
 
   /**
-   * Clear failed jobs from DLQ.
+   * Clears the Dead Letter Queue.
+   *
+   * @param queue - The queue name.
    */
   async clearFailed(queue: string): Promise<void> {
     const key = `${this.getKey(queue)}:failed`

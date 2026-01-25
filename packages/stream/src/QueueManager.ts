@@ -17,22 +17,23 @@ import type {
 } from './types'
 
 /**
- * Queue Manager
+ * The central manager for queue operations.
  *
- * Manages multiple queue connections and drivers, exposing a unified API for pushing and consuming jobs.
- * Supports lazy-loading drivers to keep the core lightweight.
+ * This class manages multiple queue connections and drivers, exposing a unified API for pushing,
+ * popping, and managing jobs. It handles connection pooling, serialization, persistence,
+ * and driver lazy-loading.
  *
+ * @public
  * @example
  * ```typescript
  * const manager = new QueueManager({
- *   default: 'database',
+ *   default: 'redis',
  *   connections: {
- *     database: { driver: 'database', table: 'jobs' },
- *     redis: { driver: 'redis', url: 'redis://...' }
+ *     redis: { driver: 'redis', client: redisClient }
  *   }
- * })
+ * });
  *
- * await manager.push(new SendEmail('user@example.com'))
+ * await manager.push(new SendEmailJob('hello@example.com'));
  * ```
  */
 export class QueueManager {
@@ -103,9 +104,18 @@ export class QueueManager {
   }
 
   /**
-   * Register a connection.
-   * @param name - Connection name
-   * @param config - Connection config
+   * Registers a new queue connection with the manager.
+   *
+   * Dynamically loads the required driver implementation based on the configuration.
+   *
+   * @param name - The name of the connection (e.g., 'primary').
+   * @param config - The configuration object for the driver.
+   * @throws {Error} If the driver type is missing required dependencies or unsupported.
+   *
+   * @example
+   * ```typescript
+   * manager.registerConnection('analytics', { driver: 'sqs', client: sqs });
+   * ```
    */
   registerConnection(name: string, config: QueueConnectionConfig): void {
     const driverType = config.driver
@@ -216,9 +226,16 @@ export class QueueManager {
   }
 
   /**
-   * Get a driver for a connection.
-   * @param connection - Connection name
-   * @returns Driver instance
+   * Retrieves the driver instance for a specific connection.
+   *
+   * @param connection - The name of the connection.
+   * @returns The configured QueueDriver instance.
+   * @throws {Error} If the connection has not been registered.
+   *
+   * @example
+   * ```typescript
+   * const driver = manager.getDriver('redis');
+   * ```
    */
   getDriver(connection: string): QueueDriver {
     const driver = this.drivers.get(connection)
@@ -229,17 +246,20 @@ export class QueueManager {
   }
 
   /**
-   * Get the default connection name.
-   * @returns Default connection name
+   * Gets the name of the default connection.
+   *
+   * @returns The default connection name.
    */
   getDefaultConnection(): string {
     return this.defaultConnection
   }
 
   /**
-   * Get a serializer.
-   * @param type - Serializer type
-   * @returns Serializer instance
+   * Retrieves a serializer instance by type.
+   *
+   * @param type - The serializer type (e.g., 'json', 'class'). If omitted, returns the default serializer.
+   * @returns The JobSerializer instance.
+   * @throws {Error} If the requested serializer type is not found.
    */
   getSerializer(type?: string): JobSerializer {
     if (type) {
@@ -253,8 +273,17 @@ export class QueueManager {
   }
 
   /**
-   * Register Job classes (used by ClassNameSerializer).
-   * @param jobClasses - Job class array
+   * Registers Job classes for the `ClassNameSerializer`.
+   *
+   * This is required when using 'class' serialization to allow proper hydration of job instances
+   * upon deserialization.
+   *
+   * @param jobClasses - An array of Job class constructors.
+   *
+   * @example
+   * ```typescript
+   * manager.registerJobClasses([SendEmailJob, ProcessOrderJob]);
+   * ```
    */
   registerJobClasses(jobClasses: Array<new (...args: unknown[]) => Job>): void {
     if (this.defaultSerializer instanceof ClassNameSerializer) {
@@ -263,12 +292,15 @@ export class QueueManager {
   }
 
   /**
-   * Push a Job to the queue.
+   * Pushes a single job to the queue.
    *
-   * @template T - The type of the job.
-   * @param job - Job instance to push.
-   * @param options - Push options.
-   * @returns The same job instance (for fluent chaining).
+   * Serializes the job, selects the appropriate driver based on job configuration,
+   * and dispatches it. Also handles audit logging if persistence is enabled.
+   *
+   * @template T - The type of the job (extends Job).
+   * @param job - The job instance to enqueue.
+   * @param options - Optional overrides for push behavior (priority, delay, etc.).
+   * @returns The same job instance (for chaining).
    *
    * @example
    * ```typescript
@@ -308,15 +340,19 @@ export class QueueManager {
   }
 
   /**
-   * Push multiple jobs to the queue.
+   * Pushes multiple jobs to the queue in a batch.
+   *
+   * Optimizes network requests by batching jobs where possible. Groups jobs by connection
+   * and queue to maximize throughput.
    *
    * @template T - The type of the jobs.
-   * @param jobs - Array of job instances.
-   * @param options - Bulk push options.
+   * @param jobs - An array of job instances to enqueue.
+   * @param options - Configuration for batch size and concurrency.
+   * @returns A promise that resolves when all jobs have been pushed.
    *
    * @example
    * ```typescript
-   * await manager.pushMany(jobs, { batchSize: 500, concurrency: 2 });
+   * await manager.pushMany(jobs, { batchSize: 500, concurrency: 5 });
    * ```
    */
   async pushMany<T extends Job & Queueable>(
@@ -416,15 +452,17 @@ export class QueueManager {
   }
 
   /**
-   * Pop a job from the queue.
+   * Pops a single job from the queue.
    *
-   * @param queue - Queue name (default: 'default').
-   * @param connection - Connection name (optional).
-   * @returns Job instance or null if queue is empty.
+   * Retrieves the next available job from the specified queue.
+   *
+   * @param queue - The queue name (default: 'default').
+   * @param connection - The connection name (defaults to default connection).
+   * @returns A Job instance if found, or `null` if the queue is empty.
    *
    * @example
    * ```typescript
-   * const job = await manager.pop('emails');
+   * const job = await manager.pop('priority-queue');
    * if (job) await job.handle();
    * ```
    */
@@ -449,12 +487,20 @@ export class QueueManager {
   }
 
   /**
-   * Pop multiple jobs from the queue.
+   * Pops multiple jobs from the queue efficiently.
    *
-   * @param queue - Queue name (default: 'default').
-   * @param count - Number of jobs to pop (default: 10).
-   * @param connection - Connection name (optional).
-   * @returns Array of Job instances.
+   * Attempts to retrieve a batch of jobs from the driver. If the driver does not support
+   * batching, it falls back to sequential popping.
+   *
+   * @param queue - The queue name (default: 'default').
+   * @param count - The maximum number of jobs to retrieve (default: 10).
+   * @param connection - The connection name.
+   * @returns An array of Job instances.
+   *
+   * @example
+   * ```typescript
+   * const jobs = await manager.popMany('default', 50);
+   * ```
    */
   async popMany(
     queue = 'default',
@@ -493,11 +539,16 @@ export class QueueManager {
   }
 
   /**
-   * Get queue size.
+   * Retrieves the current size of a queue.
    *
-   * @param queue - Queue name (default: 'default').
-   * @param connection - Connection name (optional).
-   * @returns Number of jobs in the queue.
+   * @param queue - The queue name (default: 'default').
+   * @param connection - The connection name.
+   * @returns The number of waiting jobs.
+   *
+   * @example
+   * ```typescript
+   * const count = await manager.size('emails');
+   * ```
    */
   async size(queue = 'default', connection: string = this.defaultConnection): Promise<number> {
     const driver = this.getDriver(connection)
@@ -505,11 +556,21 @@ export class QueueManager {
   }
 
   /**
-   * Pop a job from the queue (blocking).
+   * Pops a job from the queue with blocking (wait) behavior.
    *
-   * @param queue - Queue name (default: 'default').
-   * @param timeout - Timeout in seconds (default: 0, wait forever).
-   * @param connection - Connection name (optional).
+   * Waits for a job to become available for the specified timeout duration.
+   * Useful for reducing polling loop frequency.
+   *
+   * @param queues - A queue name or array of queue names to listen to.
+   * @param timeout - Timeout in seconds (0 = block indefinitely).
+   * @param connection - The connection name.
+   * @returns A Job instance if found, or `null` if timed out.
+   *
+   * @example
+   * ```typescript
+   * // Wait up to 30 seconds for a job
+   * const job = await manager.popBlocking('default', 30);
+   * ```
    */
   async popBlocking(
     queues: string | string[] = 'default',
@@ -543,10 +604,15 @@ export class QueueManager {
   }
 
   /**
-   * Clear all jobs from a queue.
+   * Removes all jobs from a specific queue.
    *
-   * @param queue - Queue name (default: 'default').
-   * @param connection - Connection name (optional).
+   * @param queue - The queue name to purge.
+   * @param connection - The connection name.
+   *
+   * @example
+   * ```typescript
+   * await manager.clear('test-queue');
+   * ```
    */
   async clear(queue = 'default', connection: string = this.defaultConnection): Promise<void> {
     const driver = this.getDriver(connection)
@@ -554,11 +620,19 @@ export class QueueManager {
   }
 
   /**
-   * Get queue statistics including size, delayed, and failed job counts.
+   * Retrieves comprehensive statistics for a queue.
    *
-   * @param queue - Queue name (default: 'default').
-   * @param connection - Connection name (optional).
-   * @returns Queue statistics object.
+   * Includes counts for pending, processing, delayed, and failed jobs.
+   *
+   * @param queue - The queue name.
+   * @param connection - The connection name.
+   * @returns A QueueStats object.
+   *
+   * @example
+   * ```typescript
+   * const stats = await manager.stats('default');
+   * console.log(stats.size, stats.failed);
+   * ```
    */
   async stats(queue = 'default', connection: string = this.defaultConnection): Promise<QueueStats> {
     const driver = this.getDriver(connection)
@@ -574,8 +648,16 @@ export class QueueManager {
   }
 
   /**
-   * Mark a job as completed.
-   * @param job - Job instance
+   * Marks a job as successfully completed.
+   *
+   * Removes the job from the processing state and optionally archives it.
+   *
+   * @param job - The job instance that finished.
+   *
+   * @example
+   * ```typescript
+   * await manager.complete(job);
+   * ```
    */
   async complete<T extends Job & Queueable>(job: T): Promise<void> {
     const connection = job.connectionName ?? this.defaultConnection
@@ -599,9 +681,18 @@ export class QueueManager {
   }
 
   /**
-   * Mark a job as permanently failed.
-   * @param job - Job instance
-   * @param error - Error object
+   * Marks a job as failed.
+   *
+   * Moves the job to the failed state (Dead Letter Queue) and optionally archives it.
+   * This is typically called after max retry attempts are exhausted.
+   *
+   * @param job - The job instance that failed.
+   * @param error - The error that caused the failure.
+   *
+   * @example
+   * ```typescript
+   * await manager.fail(job, new Error('Something went wrong'));
+   * ```
    */
   async fail<T extends Job & Queueable>(job: T, error: Error): Promise<void> {
     const connection = job.connectionName ?? this.defaultConnection
@@ -627,14 +718,20 @@ export class QueueManager {
   }
 
   /**
-   * Get the persistence adapter if configured.
+   * Retrieves the configured persistence adapter.
+   *
+   * @returns The PersistenceAdapter instance, or undefined if not configured.
    */
   getPersistence(): PersistenceAdapter | undefined {
     return this.persistence?.adapter
   }
 
   /**
-   * Get the scheduler if configured.
+   * Gets the Scheduler instance associated with this manager.
+   *
+   * The Scheduler handles delayed jobs and periodic tasks.
+   *
+   * @returns The Scheduler instance.
    */
   getScheduler(): Scheduler {
     if (!this.scheduler) {
@@ -645,7 +742,18 @@ export class QueueManager {
   }
 
   /**
-   * Get failed jobs from DLQ (if driver supports it).
+   * Retrieves failed jobs from the Dead Letter Queue.
+   *
+   * @param queue - The queue name.
+   * @param start - The starting index (pagination).
+   * @param end - The ending index (pagination).
+   * @param connection - The connection name.
+   * @returns An array of serialized jobs.
+   *
+   * @example
+   * ```typescript
+   * const failedJobs = await manager.getFailed('default', 0, 10);
+   * ```
    */
   async getFailed(
     queue: string,
@@ -661,7 +769,19 @@ export class QueueManager {
   }
 
   /**
-   * Retry failed jobs from DLQ (if driver supports it).
+   * Retries failed jobs from the Dead Letter Queue.
+   *
+   * Moves jobs from the failed state back to the active queue for re-processing.
+   *
+   * @param queue - The queue name.
+   * @param count - The number of jobs to retry.
+   * @param connection - The connection name.
+   * @returns The number of jobs successfully retried.
+   *
+   * @example
+   * ```typescript
+   * await manager.retryFailed('default', 5);
+   * ```
    */
   async retryFailed(
     queue: string,
@@ -676,7 +796,15 @@ export class QueueManager {
   }
 
   /**
-   * Clear failed jobs from DLQ (if driver supports it).
+   * Clears all failed jobs from the Dead Letter Queue.
+   *
+   * @param queue - The queue name.
+   * @param connection - The connection name.
+   *
+   * @example
+   * ```typescript
+   * await manager.clearFailed('default');
+   * ```
    */
   async clearFailed(queue: string, connection: string = this.defaultConnection): Promise<void> {
     const driver = this.getDriver(connection)
