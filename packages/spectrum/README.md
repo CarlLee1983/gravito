@@ -1,20 +1,23 @@
-# @gravito/spectrum
+# @gravito/spectrum 🔭
 
 > **Your telescope into the Gravito universe — real-time insights, zero configuration.**
 
-`@gravito/spectrum` is a powerful, zero-config debug dashboard designed specifically for the Gravito ecosystem. It acts as a telescope for your application, capturing HTTP requests, database queries, logs, and exceptions in real-time.
+`@gravito/spectrum` is a powerful, zero-config observability and debug dashboard designed specifically for the Gravito ecosystem. It acts as a telescope for your application, capturing HTTP requests, database queries, and application logs in real-time.
 
 ![Spectrum Dashboard](https://via.placeholder.com/1200x600/0f172a/38bdf8?text=Gravito+Spectrum+UI)
 
-## ✨ Features
+## 🌟 Features
 
-- **⚡️ Real-time Updates**: Powered by Server-Sent Events (SSE), observe requests as they happen without refreshing.
-- **🔍 Deep Inspection**: View detailed request/response headers, bodies, and execution time.
-- **🗄️ Database Profiling**: Automatically captures `@gravito/atlas` SQL queries with bindings and duration.
-- **↺ Request Replay**: One-click replay of any captured request to quickly reproduce bugs or test fixes.
-- **📊 Live Statistics**: Monitor error rates, average latency, and throughput in real-time.
-- **💾 Persistence**: Support for File-based storage to keep debug data across server restarts.
-- **🛡️ Security Gates**: Configurable authorization logic to secure the dashboard in sensitive environments.
+- **⚡️ Real-time Updates**: Powered by **Server-Sent Events (SSE)**, observe requests and logs as they happen without refreshing the page.
+- **🔍 Deep Inspection**: View detailed request/response headers, status codes, and precise execution timing.
+- **🗄️ Database Profiling**: Automatically hooks into `@gravito/atlas` to capture SQL queries, bindings, and execution duration.
+- **↺ Request Replay**: One-click replay of any captured request directly from the dashboard to quickly reproduce bugs or test fixes.
+- **📊 Live Statistics**: Monitor total requests, average latency, and error rates via a real-time dashboard.
+- **💾 Pluggable Storage**: 
+  - **MemoryStorage**: Fast, zero-config storage for development (default).
+  - **FileStorage**: Persistent storage that survives server restarts.
+- **🛡️ Security Gates**: Built-in authorization support to protect your debug data in sensitive environments.
+- **🎨 Modern UI**: A clean, responsive dashboard built with Tailwind CSS and Vue.js.
 
 ## 📦 Installation
 
@@ -32,7 +35,7 @@ import { SpectrumOrbit } from '@gravito/spectrum'
 
 const core = new PlanetCore()
 
-// Initialize Spectrum (Development only recommended)
+// Initialize Spectrum (Recommended for development only)
 if (process.env.NODE_ENV !== 'production') {
   await core.orbit(new SpectrumOrbit())
 }
@@ -40,72 +43,64 @@ if (process.env.NODE_ENV !== 'production') {
 await core.liftoff()
 ```
 
-Visit **http://localhost:3000/gravito/spectrum** to see your dashboard.
+By default, visit **`http://localhost:3000/gravito/spectrum`** to access your dashboard.
 
 ## ⚙️ Configuration
 
-You can customize Spectrum by passing a configuration object.
+You can customize Spectrum by passing a configuration object to the `SpectrumOrbit` constructor.
 
 ```typescript
+import { SpectrumOrbit, FileStorage } from '@gravito/spectrum'
+
 await core.orbit(new SpectrumOrbit({
-  // Change the dashboard path
+  // Custom dashboard path
   path: '/_debug',
   
-  // Storage Strategy (Memory or File)
-  storage: new MemoryStorage(), 
+  // Storage Strategy (MemoryStorage or FileStorage)
+  storage: new FileStorage({ directory: './storage/spectrum' }), 
   
+  // Maximum number of items to keep (per category)
+  maxItems: 500,
+
   // Sample Rate (0.0 to 1.0)
-  // Useful for high-traffic environments to prevent flooding
+  // 1.0 captures everything, 0.1 captures only 10% of traffic
   sampleRate: 1.0, 
   
   // Security Gate (Authorization)
   gate: async (c) => {
-    // Return true to allow access
-    return c.req.ip === '127.0.0.1'
+    // Return true to allow access, false to block
+    const user = c.get('auth')?.user;
+    return user?.isAdmin === true;
   }
 }))
 ```
 
 ## 🛡️ Production Safety
 
-Spectrum is designed primarily for **local development**. If you enable it in production, you **MUST** follow these rules:
+Spectrum is optimized for local development. If you choose to enable it in production, please follow these security guidelines:
 
-1.  **Configure a Gate**: Never leave the dashboard open to the public.
-2.  **Enable Persistence**: Use `FileStorage` so data isn't lost on restart, or stick to `MemoryStorage` to avoid filling up disk space.
-3.  **Set Sample Rate**: Set `sampleRate: 0.1` (10%) or lower to avoid performance impact on high-traffic sites.
-
-```typescript
-if (process.env.NODE_ENV === 'production') {
-  await core.orbit(new SpectrumOrbit({
-    storage: new FileStorage({ directory: './storage/spectrum' }),
-    sampleRate: 0.05, // Capture only 5% of requests
-    gate: async (c) => c.req.header('x-admin-token') === process.env.ADMIN_TOKEN
-  }))
-}
-```
+1.  **Always Configure a Gate**: Never leave the dashboard publicly accessible. Use the `gate` option to implement authentication.
+2.  **Enable Persistence with Caution**: Use `FileStorage` to keep data across restarts, but monitor disk usage.
+3.  **Adjust Sample Rate**: For high-traffic applications, set a lower `sampleRate` (e.g., `0.01` or 1%) to minimize performance overhead.
 
 ## 🔌 Integrations
 
 ### Database (Atlas)
-
-If `@gravito/atlas` is installed and loaded in your application, Spectrum automatically detects it and begins capturing all database queries. No extra configuration is needed.
+Spectrum automatically detects `@gravito/atlas` if it's part of your orbits. It will begin capturing all SQL queries, allowing you to see exactly what's happening at the database level for every request.
 
 ### Logs (Logger)
-
-Spectrum automatically wraps the core logger. Any call to `core.logger.info()`, `debug()`, `warn()`, or `error()` is captured and displayed in the dashboard alongside the request context.
+Spectrum wraps the Gravito core logger. Any logs generated via `core.logger.info()`, `debug()`, `warn()`, or `error()` are captured and linked to the timeline of incoming requests.
 
 ## ❓ Spectrum vs Monitor
 
 | Feature | `@gravito/spectrum` | `@gravito/monitor` |
 |---------|---------------------|--------------------|
-| **Goal** | **Local Debugging** | **Cluster Observability** |
-| **Interface** | Built-in UI Dashboard | JSON / Prometheus / OTLP |
-| **Scope** | Single Node (Stateful) | Distributed (Stateless) |
-| **Data Retention** | Short-term (Recent 100) | Long-term (TSDB) |
-| **Best For** | Developers fixing bugs | DevOps monitoring uptime |
+| **Primary Goal** | **Local Debugging & Profiling** | **Production Cluster Observability** |
+| **Interface** | Built-in Web UI Dashboard | JSON / Prometheus / OpenTelemetry |
+| **Data Scope** | Single Node (Stateful) | Distributed (Stateless) |
+| **Retention** | Short-term (Recent items) | Long-term (TSDB Integration) |
+| **Best For** | Developers fixing bugs locally | DevOps monitoring system health |
 
-If you are running in Kubernetes or Serverless and need aggregated logs from multiple instances, use **@gravito/monitor** with an external backend like Grafana or Datadog.
+## 📄 License
 
-## License
-
-MIT
+MIT © Carl Lee
