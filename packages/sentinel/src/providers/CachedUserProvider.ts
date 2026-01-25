@@ -11,19 +11,42 @@ export interface CacheOptions {
 }
 
 /**
- * Decorator for any UserProvider to add caching capabilities.
+ * Decorator for UserProvider that adds an in-memory caching layer.
+ *
+ * This provider wraps any other UserProvider implementation and caches the
+ * results of `retrieveById` to improve performance by reducing the number
+ * of database or external API calls. It supports TTL-based expiration and
+ * LRU (Least Recently Used) eviction.
+ *
  * @public
+ * @example
+ * ```typescript
+ * const innerProvider = new DatabaseUserProvider();
+ * const provider = new CachedUserProvider(innerProvider, { ttlSeconds: 60 });
+ * ```
  */
 export class CachedUserProvider<T extends Authenticatable = Authenticatable>
   implements UserProvider<T>
 {
   private cache = new Map<string | number, { user: T; expires: number }>()
 
+  /**
+   * Create a new cached user provider.
+   *
+   * @param provider - The underlying user provider to delegate to
+   * @param options - Cache configuration options
+   */
   constructor(
     private readonly provider: UserProvider<T>,
     private readonly options: CacheOptions = {}
   ) {}
 
+  /**
+   * Retrieve a user by ID, using the cache if available.
+   *
+   * @param identifier - The user identifier
+   * @returns The user instance or null
+   */
   async retrieveById(identifier: string | number): Promise<T | null> {
     const cached = this.cache.get(identifier)
     if (cached && cached.expires > Date.now()) {
@@ -37,6 +60,9 @@ export class CachedUserProvider<T extends Authenticatable = Authenticatable>
     return user
   }
 
+  /**
+   * Retrieve a user by token (always delegated to the inner provider).
+   */
   async retrieveByToken(identifier: string | number, token: string): Promise<T | null> {
     if (this.provider.retrieveByToken) {
       return this.provider.retrieveByToken(identifier, token)
@@ -44,14 +70,23 @@ export class CachedUserProvider<T extends Authenticatable = Authenticatable>
     return null
   }
 
+  /**
+   * Update a user's remember token.
+   */
   async updateRememberToken(user: T, token: string): Promise<void> {
     await this.provider.updateRememberToken?.(user, token)
   }
 
+  /**
+   * Retrieve a user by credentials (always delegated to the inner provider).
+   */
   async retrieveByCredentials(credentials: Record<string, unknown>): Promise<T | null> {
     return this.provider.retrieveByCredentials(credentials)
   }
 
+  /**
+   * Validate user credentials (always delegated to the inner provider).
+   */
   async validateCredentials(user: T, credentials: Record<string, unknown>): Promise<boolean> {
     return this.provider.validateCredentials(user, credentials)
   }
@@ -73,8 +108,9 @@ export class CachedUserProvider<T extends Authenticatable = Authenticatable>
   }
 
   /**
-   * Invalidate cache for a specific identifier or clear all.
-   * @param identifier - The user identifier to invalidate
+   * Invalidate the cache for a specific user or clear the entire cache.
+   *
+   * @param identifier - The user identifier to remove from cache
    */
   invalidate(identifier?: string | number): void {
     if (identifier !== undefined) {

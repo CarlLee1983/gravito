@@ -12,7 +12,19 @@ interface SessionContract {
 
 /**
  * Guard implementation for session-based authentication.
+ *
+ * This guard uses the underlying session store to persist the authenticated
+ * state across multiple requests. It also supports "remember me" functionality
+ * via secure cookies.
+ *
  * @public
+ * @example
+ * ```typescript
+ * const guard = new SessionGuard('web', provider, ctx);
+ * if (await guard.attempt(credentials, true)) {
+ *   const user = await guard.user();
+ * }
+ * ```
  */
 export class SessionGuard<User extends Authenticatable = Authenticatable>
   implements StatefulGuard<User>
@@ -22,6 +34,14 @@ export class SessionGuard<User extends Authenticatable = Authenticatable>
   protected rememberCookieName = 'remember_token'
   protected rememberDuration = 60 * 60 * 24 * 30
 
+  /**
+   * Create a new session guard instance.
+   *
+   * @param name - Unique name for the guard
+   * @param provider - User provider instance
+   * @param ctx - Gravito request context
+   * @param sessionKey - Key name used in session storage
+   */
   constructor(
     protected name: string,
     protected provider: UserProvider<User>,
@@ -29,14 +49,29 @@ export class SessionGuard<User extends Authenticatable = Authenticatable>
     protected sessionKey = 'auth_session'
   ) {}
 
+  /**
+   * Determine if the current user is authenticated.
+   *
+   * @returns True if authenticated, false otherwise
+   */
   async check(): Promise<boolean> {
     return (await this.user()) !== null
   }
 
+  /**
+   * Determine if the current user is a guest.
+   *
+   * @returns True if not authenticated, false otherwise
+   */
   async guest(): Promise<boolean> {
     return !(await this.check())
   }
 
+  /**
+   * Get the currently authenticated user.
+   *
+   * @returns The user instance or null if not authenticated
+   */
   public async user(): Promise<User | null> {
     if (this.loggedOut) {
       return null
@@ -61,6 +96,11 @@ export class SessionGuard<User extends Authenticatable = Authenticatable>
     return this.userInstance
   }
 
+  /**
+   * Get the unique identifier for the authenticated user.
+   *
+   * @returns The user ID or null
+   */
   async id(): Promise<string | number | null> {
     if (this.loggedOut) {
       return null
@@ -69,16 +109,35 @@ export class SessionGuard<User extends Authenticatable = Authenticatable>
     return user ? user.getAuthIdentifier() : null
   }
 
+  /**
+   * Validate a user's credentials.
+   *
+   * @param credentials - Authentication credentials
+   * @returns True if valid, false otherwise
+   */
   async validate(credentials: Record<string, unknown>): Promise<boolean> {
     const user = await this.provider.retrieveByCredentials(credentials)
     return user ? await this.provider.validateCredentials(user, credentials) : false
   }
 
+  /**
+   * Set the current user.
+   *
+   * @param user - The user instance
+   * @returns The guard instance
+   */
   setUser(user: User): this {
     this.userInstance = user
     return this
   }
 
+  /**
+   * Attempt to authenticate a user using credentials.
+   *
+   * @param credentials - Authentication credentials
+   * @param remember - Whether to enable persistent session
+   * @returns True if successful, false otherwise
+   */
   async attempt(credentials: Record<string, unknown>, remember = false): Promise<boolean> {
     const user = await this.provider.retrieveByCredentials(credentials)
 
@@ -90,6 +149,12 @@ export class SessionGuard<User extends Authenticatable = Authenticatable>
     return true
   }
 
+  /**
+   * Log a specific user into the application.
+   *
+   * @param user - The user to log in
+   * @param remember - Whether to enable persistent session
+   */
   public async login(user: User, remember = false): Promise<void> {
     const id = user.getAuthIdentifier()
 
@@ -117,6 +182,9 @@ export class SessionGuard<User extends Authenticatable = Authenticatable>
     this.loggedOut = false
   }
 
+  /**
+   * Log the user out of the application.
+   */
   async logout(): Promise<void> {
     this.userInstance = null
     this.loggedOut = true
@@ -132,10 +200,20 @@ export class SessionGuard<User extends Authenticatable = Authenticatable>
     this.ctx.header('Set-Cookie', `${this.rememberCookieName}=; Path=/; HttpOnly; Max-Age=0`)
   }
 
+  /**
+   * Get the user provider.
+   *
+   * @returns The user provider instance
+   */
   getProvider(): UserProvider<User> {
     return this.provider
   }
 
+  /**
+   * Set the user provider.
+   *
+   * @param provider - The user provider instance
+   */
   setProvider(provider: UserProvider<User>): void {
     this.provider = provider
   }

@@ -85,12 +85,21 @@ export class Gate {
   }
 
   /**
-   * Check if the user has a specific ability.
+   * Determine if the user has a specific ability.
+   *
+   * This method executes the following steps:
+   * 1. Run "before" callbacks. If any returns a boolean, that result is final.
+   * 2. Check if a specific ability callback is defined.
+   * 3. Check if a policy is defined for the first argument (target object).
+   * 4. Run "after" callbacks on the intermediate result.
+   *
+   * @param ability - The name of the ability to check
+   * @param args - Additional arguments for the check (usually the resource)
+   * @returns True if allowed, false otherwise
    */
   async allows(ability: string, ...args: unknown[]): Promise<boolean> {
     const user = this.userResolver ? await this.userResolver() : null
 
-    // 1. Run before callbacks
     for (const callback of this.beforeCallbacks) {
       const result = await callback(user, ability, ...args)
       if (result !== undefined && result !== null) {
@@ -98,13 +107,11 @@ export class Gate {
       }
     }
 
-    // 2. Check defined abilities
     if (this.abilities.has(ability)) {
       const result = await this.abilities.get(ability)?.(user, ...args)
       return this.runAfterCallbacks(user, ability, !!result, ...args)
     }
 
-    // 3. Check policies
     const target = args[0]
     if (target) {
       const policy = this.getPolicyFor(target)
@@ -120,16 +127,33 @@ export class Gate {
     return this.runAfterCallbacks(user, ability, false, ...args)
   }
 
+  /**
+   * Determine if the user does NOT have a specific ability.
+   *
+   * @param ability - Ability name
+   * @param args - Arguments for the check
+   * @returns True if denied
+   */
   async denies(ability: string, ...args: unknown[]): Promise<boolean> {
     return !(await this.allows(ability, ...args))
   }
 
+  /**
+   * Authorize a specific ability or throw an exception.
+   *
+   * @param ability - Ability name
+   * @param args - Arguments for the check
+   * @throws {AuthorizationException} If the user is not authorized
+   */
   async authorize(ability: string, ...args: unknown[]): Promise<void> {
     if (await this.denies(ability, ...args)) {
       throw new AuthorizationException()
     }
   }
 
+  /**
+   * Execute after callbacks on the result.
+   */
   protected async runAfterCallbacks(
     user: Authenticatable | null,
     ability: string,
@@ -146,6 +170,9 @@ export class Gate {
     return result
   }
 
+  /**
+   * Get the policy instance for a given target.
+   */
   protected getPolicyFor(target: unknown): Record<string, unknown> | null {
     if (this.policies.has(target as Constructor)) {
       return this.policies.get(target as Constructor) ?? null

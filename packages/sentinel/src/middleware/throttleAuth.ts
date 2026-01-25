@@ -11,8 +11,23 @@ export interface AuthThrottleOptions {
 }
 
 /**
- * Middleware to throttle authentication attempts.
- * Prevents brute-force attacks by limiting failed login attempts.
+ * Middleware that throttles authentication attempts to prevent brute-force attacks.
+ *
+ * This middleware tracks failed authentication attempts (401 status) based on
+ * a key generated for the request (defaults to the client IP). If the number
+ * of failed attempts exceeds the limit, it returns a 429 response with a
+ * Retry-After header.
+ *
+ * @param options - Throttling configuration options
+ * @returns A Gravito middleware handler
+ *
+ * @example
+ * ```typescript
+ * app.post('/login', throttleAuth({ maxAttempts: 5, decayMinutes: 1 }), (c) => {
+ *   // Authentication logic
+ * });
+ * ```
+ *
  * @public
  */
 export function throttleAuth(options: AuthThrottleOptions = {}) {

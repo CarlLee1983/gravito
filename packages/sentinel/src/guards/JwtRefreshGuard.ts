@@ -28,7 +28,17 @@ export interface JwtRefreshConfig {
 
 /**
  * Guard implementation with support for JWT access and refresh tokens.
+ *
+ * This guard manages a pair of tokens: a short-lived access token for
+ * authentication and a long-lived refresh token for obtaining new access
+ * tokens without re-authenticating.
+ *
  * @public
+ * @example
+ * ```typescript
+ * const guard = new JwtRefreshGuard(provider, ctx, config);
+ * const tokens = await guard.createTokenPair(user);
+ * ```
  */
 export class JwtRefreshGuard<User extends Authenticatable = Authenticatable>
   implements Guard<User>
@@ -37,6 +47,13 @@ export class JwtRefreshGuard<User extends Authenticatable = Authenticatable>
   private readonly accessTokenTtl: number
   private readonly refreshTokenTtl: number
 
+  /**
+   * Create a new JWT refresh guard instance.
+   *
+   * @param provider - User provider instance
+   * @param ctx - Gravito request context
+   * @param config - Guard configuration including TTLs and secrets
+   */
   constructor(
     protected provider: UserProvider<User>,
     protected ctx: GravitoContext,
@@ -46,14 +63,29 @@ export class JwtRefreshGuard<User extends Authenticatable = Authenticatable>
     this.refreshTokenTtl = config.refreshTokenTtl ?? 604800
   }
 
+  /**
+   * Determine if the current user is authenticated.
+   *
+   * @returns True if a valid access token is present, false otherwise
+   */
   async check(): Promise<boolean> {
     return (await this.user()) !== null
   }
 
+  /**
+   * Determine if the current user is a guest.
+   *
+   * @returns True if not authenticated, false otherwise
+   */
   async guest(): Promise<boolean> {
     return !(await this.check())
   }
 
+  /**
+   * Get the currently authenticated user instance.
+   *
+   * @returns The user instance or null if access token is invalid
+   */
   async user(): Promise<User | null> {
     if (this.userInstance) {
       return this.userInstance
@@ -75,11 +107,22 @@ export class JwtRefreshGuard<User extends Authenticatable = Authenticatable>
     }
   }
 
+  /**
+   * Get the unique identifier for the authenticated user.
+   *
+   * @returns The user ID or null
+   */
   async id(): Promise<string | number | null> {
     const user = await this.user()
     return user ? user.getAuthIdentifier() : null
   }
 
+  /**
+   * Validate a user's credentials.
+   *
+   * @param credentials - Authentication credentials
+   * @returns True if valid, false otherwise
+   */
   async validate(credentials: Record<string, unknown>): Promise<boolean> {
     const user = await this.provider.retrieveByCredentials(credentials)
     if (user && (await this.provider.validateCredentials(user, credentials))) {
@@ -88,22 +131,40 @@ export class JwtRefreshGuard<User extends Authenticatable = Authenticatable>
     return false
   }
 
+  /**
+   * Set the current user.
+   *
+   * @param user - The user instance
+   * @returns The guard instance
+   */
   setUser(user: User): this {
     this.userInstance = user
     return this
   }
 
+  /**
+   * Get the user provider.
+   *
+   * @returns The user provider instance
+   */
   getProvider(): UserProvider<User> {
     return this.provider
   }
 
+  /**
+   * Set the user provider.
+   *
+   * @param provider - The user provider instance
+   */
   setProvider(provider: UserProvider<User>): void {
     this.provider = provider
   }
 
   /**
-   * Create a new token pair for the given user.
-   * @param user - The user to create tokens for
+   * Create a new access and refresh token pair for the given user.
+   *
+   * @param user - The user instance to create tokens for
+   * @returns The token pair and expiration time
    */
   async createTokenPair(user: User): Promise<JwtTokenPair> {
     const now = Math.floor(Date.now() / 1000)
@@ -129,8 +190,10 @@ export class JwtRefreshGuard<User extends Authenticatable = Authenticatable>
   }
 
   /**
-   * Refresh tokens using a valid refresh token.
-   * @param refreshToken - The refresh token provided by the client
+   * Refresh the token pair using a valid refresh token.
+   *
+   * @param refreshToken - The long-lived refresh token
+   * @returns A new token pair or null if the refresh token is invalid
    */
   async refreshTokens(refreshToken: string): Promise<JwtTokenPair | null> {
     try {
