@@ -391,11 +391,11 @@ export interface GraphQLConfig {
 ### 實作任務清單
 
 - [x] 整合查詢深度限制 Plugin
-- [ ] 實作查詢複雜度計算
+- [x] 實作查詢複雜度計算
 - [x] 實作查詢快取機制
 - [x] 提供 DataLoader 整合範例
-- [ ] 實作 APQ 支援
-- [ ] 新增效能基準測試
+- [x] 實作 APQ 支援
+- [x] 新增效能基準測試
 
 ---
 
