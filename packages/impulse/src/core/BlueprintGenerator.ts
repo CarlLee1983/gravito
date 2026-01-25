@@ -1,19 +1,19 @@
 /**
- * 驗證 Schema 元資料提取器
+ * Validation Schema Metadata Extractor
  *
- * 將後端的驗證 schema（Zod、Valibot 等）轉換為可序列化的 JSON 元資料格式。
- * 讓前端能夠獲取驗證規則，實現前後端驗證邏輯的一致性，避免重複定義。
+ * Converts backend validation schemas (Zod, Valibot, etc.) into serializable JSON metadata format.
+ * This allows the frontend to obtain validation rules, ensuring consistency between frontend and backend validation logic and avoiding duplicate definitions.
  *
- * 典型使用場景：
- * - **動態表單產生**：根據 blueprint 在前端自動產生表單欄位和驗證規則
- * - **即時驗證**：在使用者輸入時提供即時的驗證回饋
- * - **API 文件**：自動產生 API 請求參數的規格文件
- * - **測試資料產生**：根據 schema 規則產生符合規範的測試資料
+ * Typical usage scenarios:
+ * - **Dynamic Form Generation**: Automatically generate form fields and validation rules on the frontend based on the blueprint.
+ * - **Real-time Validation**: Provide instant validation feedback as users type.
+ * - **API Documentation**: Automatically generate specification documents for API request parameters.
+ * - **Test Data Generation**: Generate test data that complies with specifications based on schema rules.
  *
- * 設計理念：
- * - **無侵入性**：不需要修改現有的 schema 定義
- * - **輕量級**：只提取必要的元資料，保持 payload 小巧
- * - **可擴展**：易於新增對其他驗證函式庫的支援
+ * Design Philosophy:
+ * - **Non-intrusive**: No need to modify existing schema definitions.
+ * - **Lightweight**: Only extract necessary metadata, keeping the payload small.
+ * - **Extensible**: Easy to add support for other validation libraries.
  *
  * @public
  * @since 3.0.0
@@ -30,7 +30,7 @@
  * })
  *
  * const blueprint = BlueprintGenerator.generateBlueprint(schema, 'json')
- * // 返回:
+ * // Returns:
  * // {
  * //   source: 'json',
  * //   rules: {
@@ -43,13 +43,13 @@
  */
 export class BlueprintGenerator {
   /**
-   * 檢查 schema 是否為 Zod schema
+   * Check if a schema is a Zod schema
    *
-   * 使用鴨子型別（duck typing）來判斷，檢查是否存在 Zod schema 的特徵屬性。
-   * 這種方式避免了直接依賴 Zod 套件，保持函式庫的輕量性。
+   * Uses duck typing to determine this by checking for characteristic properties of a Zod schema.
+   * This approach avoids a direct dependency on the Zod package, keeping the library lightweight.
    *
-   * @param schema - 待檢查的 schema 物件
-   * @returns 是否為 Zod schema
+   * @param schema - The schema object to check
+   * @returns Whether it is a Zod schema
    *
    * @example
    * ```typescript
@@ -73,21 +73,21 @@ export class BlueprintGenerator {
   }
 
   /**
-   * 提取驗證 schema 的元資料
+   * Extract metadata from a validation schema
    *
-   * 解析 schema 的內部結構，提取每個欄位的驗證規則、型別資訊和限制條件。
-   * 目前支援 Zod schema，未來可擴展支援其他驗證函式庫。
+   * Parses the internal structure of a schema, extracting validation rules, type information, and constraints for each field.
+   * Currently supports Zod schemas, with plans to extend support to other validation libraries in the future.
    *
-   * 提取的元資料包括：
-   * - 欄位型別（string、number、boolean、enum、array 等）
-   * - 是否必填（required）
-   * - 長度/值限制（min、max）
-   * - 格式要求（email、url、regex 等）
-   * - 預設值（default）
+   * Extracted metadata includes:
+   * - Field type (string, number, boolean, enum, array, etc.)
+   * - Whether it is required
+   * - Length/value constraints (min, max)
+   * - Format requirements (email, url, regex, etc.)
+   * - Default value (default)
    *
-   * @param schema - 驗證 schema 物件
-   * @param source - 資料來源類型（json、form、query、param）
-   * @returns Blueprint 物件，包含資料來源和所有欄位的驗證規則
+   * @param schema - The validation schema object
+   * @param source - Data source type (json, form, query, param)
+   * @returns A Blueprint object containing the data source and validation rules for all fields
    *
    * @example
    * ```typescript
@@ -102,16 +102,16 @@ export class BlueprintGenerator {
    *
    * const blueprint = BlueprintGenerator.generateBlueprint(userSchema, 'json')
    *
-   * // 前端可使用此 blueprint 來驗證表單輸入
+   * // The frontend can use this blueprint to validate form input
    * function validateField(fieldName: string, value: any) {
    *   const rule = blueprint.rules[fieldName]
    *   if (rule.required && !value) {
-   *     return '此欄位為必填'
+   *     return 'This field is required'
    *   }
    *   if (rule.type === 'string' && rule.min && value.length < rule.min) {
-   *     return `最少需要 ${rule.min} 個字元`
+   *     return `Minimum ${rule.min} characters required`
    *   }
-   *   // ...更多驗證邏輯
+   *   // ...more validation logic
    * }
    * ```
    */
@@ -135,23 +135,22 @@ export class BlueprintGenerator {
   }
 
   /**
-   * 解析單一 Zod 欄位的元資料
+   * Parse metadata for a single Zod field
    *
-   * 遞迴地展開 Zod schema 的包裝層（如 optional、nullable、default），
-   * 提取核心的型別資訊和驗證規則。
+   * Recursively unwraps the Zod schema's wrapping layers (such as optional, nullable, default), extracting core type information and validation rules.
    *
-   * 支援的 Zod 型別：
-   * - ZodString：提取 min、max、email、url、regex 等規則
-   * - ZodNumber：提取 min、max、int 等規則
-   * - ZodBoolean：布林值
-   * - ZodEnum：提取可選值列表
-   * - ZodArray：遞迴解析陣列元素型別
-   * - ZodOptional：標記為非必填
-   * - ZodNullable：標記為可為 null
-   * - ZodDefault：提取預設值
+   * Supported Zod types:
+   * - ZodString: Extracts rules like min, max, email, url, regex, etc.
+   * - ZodNumber: Extracts rules like min, max, int, etc.
+   * - ZodBoolean: Boolean values.
+   * - ZodEnum: Extracts a list of optional values.
+   * - ZodArray: Recursively parses array element types.
+   * - ZodOptional: Marks as not required.
+   * - ZodNullable: Marks as nullable.
+   * - ZodDefault: Extracts default value.
    *
-   * @param field - Zod schema 欄位物件
-   * @returns 欄位的元資料物件
+   * @param field - Zod schema field object
+   * @returns Metadata object for the field
    *
    * @internal
    */

@@ -1,24 +1,24 @@
 /**
  * @gravito/impulse
  *
- * 類似 Laravel FormRequest 的宣告式請求驗證函式庫
+ * A declarative request validation library similar to Laravel FormRequest.
  *
- * 提供優雅的方式來驗證 HTTP 請求資料，將驗證邏輯從控制器中分離出來。
- * 支援 Zod 和 Valibot 兩種主流的 TypeScript schema 驗證函式庫。
+ * Provides an elegant way to validate HTTP request data, separating validation logic from controllers.
+ * Supports both Zod and Valibot, two mainstream TypeScript schema validation libraries.
  *
- * 核心功能：
- * - **宣告式驗證**：使用類別定義驗證規則，提升程式碼可讀性和可維護性
- * - **授權整合**：在同一個類別中處理授權和驗證邏輯
- * - **型別安全**：完整的 TypeScript 型別推論，驗證後的資料自動獲得正確型別
- * - **自訂訊息**：支援欄位級別的錯誤訊息自訂和國際化
- * - **Blueprint**：提取驗證規則供前端使用，確保前後端驗證一致性
- * - **效能優化**：內建多層快取機制，大幅提升重複驗證的效能
+ * Core Features:
+ * - **Declarative Validation**: Define validation rules using classes to improve code readability and maintainability.
+ * - **Authorization Integration**: Handle authorization and validation logic within the same class.
+ * - **Type Safety**: Full TypeScript type inference; validated data automatically obtains the correct type.
+ * - **Custom Messages**: Support for field-level custom error messages and internationalization.
+ * - **Blueprint**: Extract validation rules for frontend use, ensuring consistency between frontend and backend validation.
+ * - **Performance Optimization**: Built-in multi-layer caching mechanisms significantly improve the performance of repeated validations.
  *
  * @packageDocumentation
  *
  * @example
  * ```typescript
- * // 基本使用範例
+ * // Basic usage example
  * import { ZodFormRequest, validateRequest } from '@gravito/impulse'
  * import { z } from 'zod'
  *
@@ -35,7 +35,7 @@
  *
  * app.post('/users', validateRequest(CreateUserRequest), (ctx) => {
  *   const data = ctx.get('validated')
- *   // data 已驗證且型別安全
+ *   // data is validated and type-safe
  * })
  * ```
  */

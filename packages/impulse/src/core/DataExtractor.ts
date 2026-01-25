@@ -1,41 +1,41 @@
 import type { Context } from '@gravito/core/compat'
 
 /**
- * 請求資料來源類型
+ * Request Data Source Type
  *
- * 定義 FormRequest 可以從哪些部分提取資料進行驗證。
- * 每種來源類型對應請求的不同部分，適用於不同的 API 設計模式。
+ * Defines from which parts of the request a FormRequest can extract data for validation.
+ * Each source type corresponds to a different part of the request, suitable for different API design patterns.
  *
  * @public
  * @since 3.0.0
  *
  * @example
  * ```typescript
- * // JSON 請求主體 - 適用於 POST/PUT/PATCH API
+ * // JSON request body - Suitable for POST/PUT/PATCH APIs
  * source: DataSource = 'json'
  *
- * // 表單資料 - 適用於檔案上傳或傳統 HTML 表單
+ * // Form data - Suitable for file uploads or traditional HTML forms
  * source: DataSource = 'form'
  *
- * // URL 查詢參數 - 適用於 GET 請求的過濾和分頁
+ * // URL query parameters - Suitable for GET request filtering and pagination
  * source: DataSource = 'query'
  *
- * // 路由參數 - 適用於驗證 URL 中的資源 ID
+ * // Route parameters - Suitable for validating resource IDs in the URL
  * source: DataSource = 'param'
  * ```
  */
 export type DataSource = 'json' | 'form' | 'query' | 'param'
 
 /**
- * 請求資料提取器
+ * Request Data Extractor
  *
- * 封裝從不同請求來源提取資料的複雜邏輯，提供統一的介面。
- * 處理了各種邊緣情況，如空請求主體、格式錯誤的 JSON、以及陣列查詢參數的扁平化。
+ * Encapsulates the complex logic of extracting data from different request sources, providing a unified interface.
+ * Handles various edge cases such as empty request bodies, malformed JSON, and flattening of array query parameters.
  *
- * 設計考量：
- * - **錯誤容忍**：解析失敗時返回空物件而非拋出錯誤，讓驗證器來處理
- * - **效能優化**：對 JSON 請求主體進行快取，避免重複解析
- * - **型別安全**：雖然返回 `unknown`，但為後續的 schema 驗證提供了基礎
+ * Design Considerations:
+ * - **Error Tolerance**: Returns an empty object instead of throwing an error when parsing fails, leaving it to the validator to handle.
+ * - **Performance Optimization**: Caches the JSON request body to avoid redundant parsing.
+ * - **Type Safety**: Although it returns `unknown`, it provides a foundation for subsequent schema validation.
  *
  * @public
  * @since 3.0.0
@@ -44,37 +44,37 @@ export type DataSource = 'json' | 'form' | 'query' | 'param'
  * ```typescript
  * const extractor = new DataExtractor()
  *
- * // 提取 JSON 請求主體
+ * // Extract JSON request body
  * const jsonData = await extractor.extract(ctx, 'json')
  *
- * // 提取查詢參數
+ * // Extract query parameters
  * const queryData = await extractor.extract(ctx, 'query')
  * ```
  */
 export class DataExtractor {
   /**
-   * 從指定來源提取原始資料
+   * Extract raw data from a specified source
    *
-   * 根據 `source` 參數決定提取策略：
-   * - `json`: 解析 JSON 請求主體（帶快取和錯誤處理）
-   * - `form`: 解析 FormData 並轉換為普通物件
-   * - `query`: 解析 URL 查詢參數（扁平化單元素陣列）
-   * - `param`: 提取路由參數
+   * Determines the extraction strategy based on the `source` parameter:
+   * - `json`: Parses the JSON request body (with caching and error handling)
+   * - `form`: Parses FormData and converts it into a plain object
+   * - `query`: Parses URL query parameters (flattens single-element arrays)
+   * - `param`: Extracts route parameters
    *
-   * @param ctx - Gravito 請求 context 物件
-   * @param source - 資料來源類型
-   * @returns 原始資料物件，解析失敗時返回空物件
+   * @param ctx - Gravito request context object
+   * @param source - Data source type
+   * @returns Raw data object; returns an empty object on parsing failure
    *
    * @example
    * ```typescript
-   * // 從 JSON 主體提取
+   * // Extract from JSON body
    * const data = await extractor.extract(ctx, 'json')
-   * // 可能返回: { name: "John", email: "john@example.com" }
+   * // Might return: { name: "John", email: "john@example.com" }
    *
-   * // 從查詢參數提取
+   * // Extract from query parameters
    * // URL: /users?page=1&limit=10&sort=name
    * const query = await extractor.extract(ctx, 'query')
-   * // 返回: { page: "1", limit: "10", sort: "name" }
+   * // Returns: { page: "1", limit: "10", sort: "name" }
    * ```
    */
   public async extract(ctx: Context, source: DataSource): Promise<unknown> {

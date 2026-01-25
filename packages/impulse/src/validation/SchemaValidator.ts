@@ -1,32 +1,32 @@
 /**
- * Schema 驗證結果的統一介面
+ * Unified interface for Schema validation results
  *
- * 提供與驗證函式庫無關的標準化驗證結果格式。
- * 無論使用 Zod、Valibot 或其他驗證函式庫，都會轉換為這種統一格式。
+ * Provides a standardized validation result format that is independent of the validation library.
+ * Whether using Zod, Valibot, or other validation libraries, they will be converted to this unified format.
  *
- * 設計理念：
- * - **一致性**：不同驗證函式庫的結果格式統一，簡化錯誤處理邏輯
- * - **詳細性**：提供完整的錯誤路徑和代碼，方便定位問題
- * - **可序列化**：所有欄位都可安全地轉為 JSON，適用於 API 回應
+ * Design Philosophy:
+ * - **Consistency**: The result format is unified across different validation libraries, simplifying error handling logic.
+ * - **Detail**: Provides complete error paths and codes for easy problem location.
+ * - **Serializability**: All fields can be safely converted to JSON, suitable for API responses.
  *
  * @public
  * @since 3.0.0
  *
  * @example
  * ```typescript
- * // 驗證成功的結果
+ * // Result of successful validation
  * const successResult: SchemaValidationResult = {
  *   success: true,
  *   data: { name: 'John', email: 'john@example.com' }
  * }
  *
- * // 驗證失敗的結果
+ * // Result of failed validation
  * const failureResult: SchemaValidationResult = {
  *   success: false,
  *   errors: [
  *     {
  *       path: ['email'],
- *       message: '電子郵件格式不正確',
+ *       message: 'Invalid email format',
  *       code: 'invalid_string'
  *     }
  *   ]
@@ -34,46 +34,46 @@
  * ```
  */
 export interface SchemaValidationResult {
-  /** 驗證是否成功 */
+  /** Whether the validation was successful */
   success: boolean
-  /** 驗證成功時的解析資料（可能經過型別轉換） */
+  /** Parsed data when validation is successful (may have undergone type conversion) */
   data?: unknown
-  /** 驗證失敗時的錯誤陣列，每個錯誤包含路徑、訊息和代碼 */
+  /** Array of errors when validation fails; each error contains path, message, and code */
   errors?: Array<{
-    /** 錯誤欄位的路徑（以陣列表示，如 ['user', 'email'] 代表 user.email） */
+    /** Path to the error field (represented as an array, e.g., ['user', 'email'] for user.email) */
     path: string[]
-    /** 人類可讀的錯誤訊息 */
+    /** Human-readable error message */
     message: string
-    /** 機器可讀的錯誤代碼（如 'invalid_string'、'too_small'） */
+    /** Machine-readable error code (e.g., 'invalid_string', 'too_small') */
     code?: string | undefined
   }>
 }
 
 /**
- * Schema 驗證器的抽象基礎類別
+ * Abstract base class for Schema validators
  *
- * 實作策略模式（Strategy Pattern），讓系統能夠支援多種驗證函式庫。
- * 每個具體的驗證器（如 ZodValidator、ValibotValidator）都繼承此類別。
+ * Implements the Strategy Pattern, allowing the system to support multiple validation libraries.
+ * Each concrete validator (e.g., ZodValidator, ValibotValidator) inherits from this class.
  *
- * 設計模式優勢：
- * - **開放封閉原則**：可輕鬆新增新的驗證函式庫支援，無需修改現有程式碼
- * - **統一介面**：所有驗證器提供一致的 API，簡化使用方式
- * - **執行時選擇**：根據 schema 型別自動選擇適當的驗證器
+ * Design Pattern Advantages:
+ * - **Open-Closed Principle**: Easily add support for new validation libraries without modifying existing code.
+ * - **Unified Interface**: All validators provide a consistent API, simplifying usage.
+ * - **Runtime Selection**: Automatically choose the appropriate validator based on the schema type.
  *
  * @public
  * @since 3.0.0
  *
  * @example
  * ```typescript
- * // 實作自訂驗證器
+ * // Implement a custom validator
  * class CustomValidator extends SchemaValidator {
  *   canHandle(schema: unknown): boolean {
- *     // 檢查 schema 是否為此驗證器支援的型別
+ *     // Check if the schema is a type supported by this validator
  *     return schema instanceof CustomSchema
  *   }
  *
  *   async validate(schema: unknown, data: unknown): Promise<SchemaValidationResult> {
- *     // 執行驗證邏輯
+ *     // Execute validation logic
  *     try {
  *       const result = (schema as CustomSchema).validate(data)
  *       return { success: true, data: result }
@@ -86,76 +86,74 @@ export interface SchemaValidationResult {
  *   }
  * }
  *
- * // 註冊自訂驗證器
+ * // Register the custom validator
  * SchemaValidatorFactory.register(new CustomValidator())
  * ```
  */
 export abstract class SchemaValidator {
   /**
-   * 使用 schema 驗證資料
+   * Validate data using a schema
    *
-   * 具體的驗證邏輯由子類別實作，需要將驗證函式庫的結果轉換為統一的 `SchemaValidationResult` 格式。
+   * Concrete validation logic is implemented by subclasses, which must convert the validation library's results into the unified `SchemaValidationResult` format.
    *
-   * @param schema - 驗證 schema 物件
-   * @param data - 待驗證的資料
-   * @returns 統一格式的驗證結果
+   * @param schema - The validation schema object
+   * @param data - The data to be validated
+   * @returns Validation result in unified format
    */
   abstract validate(schema: unknown, data: unknown): Promise<SchemaValidationResult>
 
   /**
-   * 檢查此驗證器是否能處理給定的 schema
+   * Check if this validator can handle the given schema
    *
-   * 用於執行時自動選擇適當的驗證器。每個驗證器透過鴨子型別（duck typing）
-   * 或 instanceof 檢查來判斷 schema 是否為其支援的型別。
+   * Used for automatically selecting the appropriate validator at runtime. Each validator checks whether the schema is of a supported type using duck typing or instanceof checks.
    *
-   * @param schema - 待檢查的 schema 物件
-   * @returns 是否支援此 schema
+   * @param schema - The schema object to check
+   * @returns Whether this schema is supported
    */
   abstract canHandle(schema: unknown): boolean
 }
 
 /**
- * Schema 驗證器工廠
+ * Schema Validator Factory
  *
- * 管理所有已註冊的驗證器，並根據 schema 型別自動選擇適當的驗證器。
- * 使用工廠模式和快取機制來優化效能，避免重複的驗證器查找。
+ * Manages all registered validators and automatically selects the appropriate one based on the schema type.
+ * Uses the Factory Pattern and caching mechanisms to optimize performance and avoid redundant validator lookups.
  *
- * 工作原理：
- * 1. 應用程式啟動時註冊所有支援的驗證器（ZodValidator、ValibotValidator 等）
- * 2. 收到驗證請求時，遍歷已註冊的驗證器，找到第一個能處理該 schema 的驗證器
- * 3. 使用 SchemaCache 快取 schema 與驗證器的對應關係，提升後續查找速度
+ * How it works:
+ * 1. Register all supported validators (ZodValidator, ValibotValidator, etc.) during application startup.
+ * 2. Upon receiving a validation request, traverse the registered validators to find the first one that can handle the schema.
+ * 3. Use SchemaCache to cache the mapping between schemas and validators, improving the speed of subsequent lookups.
  *
  * @public
  * @since 3.0.0
  *
  * @example
  * ```typescript
- * // 註冊自訂驗證器（通常在應用程式初始化時執行）
+ * // Register a custom validator (typically executed during application initialization)
  * import { SchemaValidatorFactory } from '@gravito/impulse'
  * import { CustomValidator } from './validators/CustomValidator'
  *
  * SchemaValidatorFactory.register(new CustomValidator())
  *
- * // 自動選擇驗證器（由 FormRequest 內部呼叫）
+ * // Automatically select a validator (called internally by FormRequest)
  * const validator = SchemaValidatorFactory.getValidator(mySchema)
  * const result = await validator.validate(mySchema, data)
  * ```
  */
 export class SchemaValidatorFactory {
-  /** 已註冊的驗證器陣列，按照註冊順序儲存 */
+  /** Array of registered validators, stored in order of registration */
   private static validators: SchemaValidator[] = []
 
   /**
-   * 註冊新的 schema 驗證器
+   * Register a new schema validator
    *
-   * 將驗證器加入到可用驗證器列表中。註冊順序會影響驗證器的選擇優先順序，
-   * 第一個匹配的驗證器會被使用。
+   * Adds a validator to the list of available validators. The order of registration affects the selection priority; the first matching validator will be used.
    *
-   * @param validator - 要註冊的驗證器實例
+   * @param validator - The validator instance to register
    *
    * @example
    * ```typescript
-   * // 註冊內建驗證器（已在 validation/index.ts 中自動完成）
+   * // Register built-in validators (automatically completed in validation/index.ts)
    * SchemaValidatorFactory.register(new ZodValidator())
    * SchemaValidatorFactory.register(new ValibotValidator())
    * ```
@@ -165,15 +163,15 @@ export class SchemaValidatorFactory {
   }
 
   /**
-   * 為 schema 獲取適當的驗證器（帶快取）
+   * Obtain the appropriate validator for a schema (with caching)
    *
-   * 使用 SchemaCache 快取 schema 與驗證器的對應關係，大幅提升重複驗證的效能。
-   * 對於同一個 schema 物件，第二次查找會直接從快取中返回，避免遍歷所有驗證器。
+   * Uses SchemaCache to cache the mapping between schemas and validators, significantly improving the performance of repeated validations.
+   * For the same schema object, subsequent lookups will return directly from the cache, avoiding the need to traverse all validators.
    *
-   * @param schema - 待驗證的 schema 物件
-   * @returns 能處理該 schema 的驗證器
+   * @param schema - The schema object to be validated
+   * @returns A validator that can handle the schema
    *
-   * @throws {Error} 如果找不到支援該 schema 的驗證器
+   * @throws {Error} If no validator supporting the schema is found
    *
    * @example
    * ```typescript
@@ -181,11 +179,11 @@ export class SchemaValidatorFactory {
    *
    * const schema = z.object({ name: z.string() })
    * const validator = SchemaValidatorFactory.getValidator(schema)
-   * // 返回 ZodValidator 實例
+   * // Returns a ZodValidator instance
    *
-   * // 第二次查找同一個 schema 會使用快取
+   * // Second lookup of the same schema uses the cache
    * const cachedValidator = SchemaValidatorFactory.getValidator(schema)
-   * // 立即返回，無需遍歷驗證器列表
+   * // Returns immediately without traversing the validator list
    * ```
    */
   static getValidator(schema: unknown): SchemaValidator {
@@ -197,13 +195,13 @@ export class SchemaValidatorFactory {
   }
 
   /**
-   * 獲取所有已註冊的驗證器
+   * Get all registered validators
    *
-   * 此方法供 SchemaCache 內部使用，用於遍歷驗證器尋找匹配的實例。
-   * 返回驗證器陣列的副本，避免外部修改內部狀態。
+   * This method is used internally by SchemaCache to traverse validators and find matching instances.
+   * Returns a copy of the validator array to prevent external modification of internal state.
    *
    * @internal
-   * @returns 已註冊的驗證器陣列副本
+   * @returns A copy of the array of registered validators
    */
   static getValidators(): SchemaValidator[] {
     return [...this.validators]

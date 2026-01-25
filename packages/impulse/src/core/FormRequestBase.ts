@@ -6,120 +6,118 @@ import type { DefaultMessageProvider, FormRequestOptions, MessageProvider } from
 import type { ValidationResult } from './TypeUtils'
 
 /**
- * 所有 FormRequest 實作的抽象基礎類別
+ * Abstract base class for all FormRequest implementations
  *
- * 提供通用的驗證流程框架，同時允許子類別（如 ZodFormRequest、ValibotFormRequest）
- * 定義各自的 schema 驗證邏輯。這種設計模式確保了不同驗證函式庫之間的一致性 API。
+ * Provides a common framework for the validation process while allowing subclasses (e.g., ZodFormRequest, ValibotFormRequest)
+ * to define their own schema validation logic. This design pattern ensures a consistent API across different validation libraries.
  *
- * 主要職責：
- * - 資料提取：從不同來源（JSON、表單、查詢參數等）統一提取資料
- * - 訊息解析：處理自訂錯誤訊息和國際化
- * - 共用邏輯：提供授權、轉換等可重用的功能
+ * Main Responsibilities:
+ * - Data Extraction: Unified extraction of data from various sources (JSON, form, query parameters, etc.).
+ * - Message Resolution: Handling custom error messages and internationalization.
+ * - Shared Logic: Providing reusable functions such as authorization and transformation.
  *
- * 不應直接使用此類別，而應使用 `ZodFormRequest` 或 `ValibotFormRequest`。
+ * This class should not be used directly; instead, use `ZodFormRequest` or `ValibotFormRequest`.
  *
- * @typeParam TData - 驗證成功後的資料型別，通常從 schema 推論
+ * @typeParam TData - The type of data after successful validation, typically inferred from the schema.
  *
  * @public
  * @since 3.1.0
  *
  * @example
  * ```typescript
- * // 不要直接使用 FormRequestBase
- * // ❌ class MyRequest extends FormRequestBase { ... }
- *
- * // 應該使用具體的實作類別
- * // ✅ class MyRequest extends ZodFormRequest { ... }
- * // ✅ class MyRequest extends ValibotFormRequest { ... }
+ * // Do not use FormRequestBase directly
+ * // Incorrect: class MyRequest extends FormRequestBase { ... }
+ * // Correct: class MyRequest extends ZodFormRequest { ... }
+ * // Correct: class MyRequest extends ValibotFormRequest { ... }
  * ```
  */
 export abstract class FormRequestBase<TData = unknown> {
-  /** 資料來源：決定從請求的哪個部分提取資料進行驗證 */
+  /** Data Source: Determines from which part of the request to extract data for validation */
   source: DataSource = 'json'
 
-  /** 設定選項：自訂 HTTP 狀態碼和訊息提供者 */
+  /** Configuration options: Custom HTTP status codes and message providers */
   options: FormRequestOptions = {}
 
-  /** 資料提取器實例：負責從 context 中提取原始資料 */
+  /** Data extractor instance: Responsible for extracting raw data from the context */
   private dataExtractor = new DataExtractor()
 
   /**
-   * 授權檢查鉤子（可選）
+   * Authorization check hook (optional)
    *
-   * 在資料驗證前執行，用於檢查當前使用者是否有權限執行此操作。
-   * 返回 false 將中止驗證並拋出 403 授權錯誤。
+   * Executed before data validation; used to check if the current user has permission to perform this operation.
+   * Returning false will abort the validation and throw a 403 Authorization Error.
    *
-   * @param ctx - 請求 context，可從中獲取使用者資訊
-   * @returns 是否允許繼續執行驗證
+   * @param ctx - The request context, from which user information can be obtained
+   * @returns Whether to allow validation to proceed
    */
   authorize?(ctx: Context): boolean | Promise<boolean>
 
   /**
-   * 自訂授權錯誤訊息（可選）
+   * Custom authorization error message (optional)
    *
-   * 當授權檢查失敗時，提供更具體的錯誤訊息給使用者。
+   * Provides a more specific error message to the user when an authorization check fails.
    *
-   * @returns 授權失敗時的錯誤訊息
+   * @returns The error message for authorization failure
    */
   authorizationMessage?(): string
 
   /**
-   * 資料轉換鉤子（可選）
+   * Data transformation hook (optional)
    *
-   * 在 schema 驗證前對原始資料進行預處理。
-   * 常用於型別強制轉換、新增預設值、或格式化輸入資料。
+   * Pre-processes the raw data before schema validation.
+   * Commonly used for type coercion, adding default values, or formatting input data.
    *
-   * @param data - 從請求中提取的原始資料
-   * @returns 轉換後的資料
+   * @param data - Raw data extracted from the request
+   * @returns Transformed data
    */
   transform?(data: unknown): unknown
 
   /**
-   * 自訂錯誤訊息映射（可選）
+   * Custom error message mapping (optional)
    *
-   * 定義欄位級別的錯誤訊息，覆蓋驗證器的預設訊息。
-   * 鍵值格式：`欄位名稱.錯誤代碼` 或僅 `欄位名稱`。
+   * Defines field-level error messages to override the validator's default messages.
+   * Key format: `field_name.error_code` or simply `field_name`.
    *
-   * @returns 錯誤訊息映射物件
+   * @returns An object mapping fields to error messages
    */
   messages?(): Record<string, string>
 
   /**
-   * 驗證失敗時的重新導向 URL（可選）
+   * Redirect URL upon validation failure (optional)
    *
-   * 用於伺服器端渲染的應用程式，指定驗證失敗時要重新導向的頁面。
+   * Used for server-side rendered applications; specifies the page to redirect to when validation fails.
    *
-   * @returns 重新導向的目標 URL
+   * @returns The target URL for redirection
    */
   redirect?(): string
 
   /**
-   * 從請求 context 中提取原始資料
+   * Extract raw data from the request context
    *
-   * 根據 `source` 屬性的設定，從對應的請求部分提取資料。
-   * 此方法處理了不同資料來源（JSON、表單、查詢參數、路由參數）的複雜性。
+   * Extracts data from the corresponding part of the request based on the `source` attribute configuration.
+   * This method handles the complexities of different data sources (JSON, form data, query parameters, route parameters).
    *
-   * @param ctx - Gravito 請求 context 物件
-   * @returns 原始資料物件（尚未驗證）
+   * @param ctx - Gravito request context object
+   * @returns Raw data object (unvalidated)
    */
   public async getData(ctx: Context): Promise<unknown> {
     return this.dataExtractor.extract(ctx, this.source)
   }
 
   /**
-   * 解析驗證錯誤的最終訊息
+   * Resolve the final validation error message
    *
-   * 按照優先順序查找適當的錯誤訊息：
-   * 1. 自訂訊息（從 `messages()` 方法）
-   * 2. 國際化訊息（從 `messageProvider`）
-   * 3. 預設訊息（驗證器原始訊息）
+   * Look up an appropriate error message in the following order of priority:
+   * 1. Custom messages (from the `messages()` method)
+   * 2. Internationalized messages (from the `messageProvider`)
+   * 3. Default message (original message from the validator)
    *
-   * 這個方法是 protected，因為它是內部使用的輔助方法。
+   * This method is protected as it is a helper method for internal use.
    *
-   * @param field - 欄位名稱
-   * @param code - 錯誤代碼（可選）
-   * @param defaultMessage - 預設錯誤訊息
-   * @returns 解析後的最終錯誤訊息
+   * @param field - Field name
+   * @param code - Error code (optional)
+   * @param defaultMessage - Default error message
+   * @returns The resolved final error message
    */
   protected getErrorMessage(
     field: string,
@@ -149,23 +147,23 @@ export abstract class FormRequestBase<TData = unknown> {
   }
 
   /**
-   * 執行 schema 驗證的抽象方法
+   * Abstract method to perform schema validation
    *
-   * 此方法必須由具體的子類別（如 ZodFormRequest、ValibotFormRequest）實作。
-   * 每個子類別會根據其使用的驗證函式庫來實作驗證邏輯。
+   * This method must be implemented by concrete subclasses (e.g., ZodFormRequest, ValibotFormRequest).
+   * Each subclass will implement validation logic according to the validation library it uses.
    *
-   * @param ctx - 請求 context 物件
-   * @returns 型別安全的驗證結果，包含驗證後的資料或錯誤資訊
+   * @param ctx - Request context object
+   * @returns Type-safe validation result containing validated data or error information
    */
   abstract validate(ctx: Context): Promise<ValidationResult<TData>>
 
   /**
-   * 提取驗證 schema 元資料的抽象方法
+   * Abstract method to extract validation schema metadata
    *
-   * 此方法必須由子類別實作，用於將 schema 轉換為可序列化的 JSON 格式。
-   * 前端可使用這些元資料來實現相同的驗證規則，避免重複定義。
+   * This method must be implemented by subclasses to convert the schema into a serializable JSON format.
+   * The frontend can use this metadata to implement the same validation rules, avoiding duplicate definitions.
    *
-   * @returns Schema 的結構化元資料物件
+   * @returns A structured metadata object of the Schema
    */
   abstract getBlueprint(): Record<string, any>
 }
