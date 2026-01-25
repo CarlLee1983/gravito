@@ -159,104 +159,69 @@ await user.delete() // soft delete
 await user.forceDelete() // hard delete
 ```
 
-### 4. Debugging & Monitoring (New in v2.0)
-
-```typescript
-import { DB, Grammar } from '@gravito/atlas'
-
-// Enable debug mode
-DB.debug(true)
-
-// View query log
-const logs = DB.getQueryLog()
-console.log(`Total queries: ${logs.length}`)
-
-// Get last query
-const lastQuery = DB.getLastQuery()
-console.log(lastQuery.sql, lastQuery.bindings)
-
-// Monitor cache performance
-const cacheStats = Grammar.getCacheStats()
-console.log(`Cache hit rate: ${(cacheStats.hitRate * 100).toFixed(2)}%`)
-```
-
-### 5. Advanced Features
-
-```typescript
-// Prepared Statements (PostgreSQL)
-const prepared = await User.query()
-  .where('status', 'active')
-  .getPrepared()
-
-// Batch Operations
-const users = await User.hydrateMany([
-  { id: 1, name: 'John' },
-  { id: 2, name: 'Jane' },
-  // ... 1000+ records
-])
-
-// Dirty Tracking with Deep Comparison
-const user = await User.find(1)
-user.getDirtyTracker().setDeepComparison(true)
-user.settings.theme = 'dark' // Now tracked as dirty
-
-// Query Builder Clone
-const baseQuery = User.query().where('status', 'active')
-const activeUsers = await baseQuery.clone().get()
-const activeCount = await baseQuery.clone().count()
-```
-
 ## ✨ Core Features
 
-### 🚀 Native Bun.sql Support (New!)
-Atlas now natively supports Bun 1.3's `Bun.sql` unified API. By leveraging the native driver, you can achieve even higher throughput and lower latency.
+### 🏢 Galaxy Architecture Integration
+As a core **Orbit** in the Gravito ecosystem, Atlas integrates seamlessly with PlanetCore's lifecycle hooks and IoC container.
 
-Simply enable `useNativeDriver` in your configuration:
+### 🚀 High-Performance ORM
+- **Model Hydration**: Extremely fast hydration using optimized Proxy caching.
+- **Dirty Tracking**: Efficiently track modified fields with shallow and deep comparison options.
+- **Eager Loading**: Prevent N+1 query problems with sophisticated relation loading.
+- **Polymorphic Relationships**: Support for `morphOne`, `morphMany`, and `morphTo` associations.
+
+### 🛡️ Type Safety & DX
+- **Full TypeScript Support**: Leverages decorators and advanced types for a superior developer experience.
+- **Detailed Error Messages**: "Did you mean?" suggestions and descriptive error types.
+- **Debug Tools**: Built-in query logging, execution time monitoring, and cache statistics.
+
+### 🔄 Database Versioning
+- **Fluent Schema Builder**: Expressive syntax for creating and altering tables.
+- **Robust Migrator**: Track and manage database changes across different environments.
+- **Seeds & Factories**: Easily generate test data with integrated faker support.
+
+### 🗄️ Multi-Driver Support
+Native support for major databases with unified API:
+- **PostgreSQL**: Native `pg` and `Bun.sql` support.
+- **MySQL/MariaDB**: High-performance `mysql2` driver.
+- **SQLite**: Lightning-fast `bun:sqlite` and `better-sqlite3`.
+- **MongoDB & Redis**: Strategic support for NoSQL and caching layers.
+
+## 🧠 Advanced Module Functionality
+
+### 📡 Event System & Observers
+Listen to model lifecycle events to implement cross-cutting concerns.
 ```typescript
-DB.configure({
-  connections: {
-    postgres: {
-      driver: 'postgres',
-      useNativeDriver: true, // Enable native Bun.sql driver
-      // ...other config
-    }
+User.observe({
+  creating: (user) => {
+    user.api_token = Str.random(40)
+  },
+  saved: (user) => {
+    Signal.emit('user.updated', user)
   }
 })
 ```
 
-### 🛡️ Secure by Default
-Built-in protection against SQL injection via **Auto-Parameterization**. All user inputs are treated as bindings, never interpolated.
-
-### 🎯 Enhanced Developer Experience (v2.0)
-- **Better Error Messages**: "Did you mean?" suggestions for typos
-- **Debug Tools**: `DB.debug()`, `DB.getQueryLog()`, `DB.getLastQuery()`
-- **Type Safety**: Improved TypeScript types, reduced `any` usage
-- **Query Cache Monitoring**: `Grammar.getCacheStats()` for cache performance insights
-
-### 🔗 Rich Relationships
-Atlas supports a comprehensive set of relationships:
-- **HasOne** / **BelongsTo**: One-to-one connections.
-- **HasMany** / **BelongsTo**: One-to-many lists.
-- **BelongsToMany**: Many-to-many with pivot tables.
-- **MorphOne** / **MorphMany** / **MorphTo**: Polymorphic associations.
-
-### 🌱 Seeding & Factories
-Generate dummy data for testing with ease.
-
+### 🧬 Dynamic Attribute Casting
+Automatically transform database values to JavaScript types and back.
 ```typescript
-import { Factory } from '@gravito/atlas'
-
-const userFactory = Factory.define(User, ({ faker }) => ({
-  name: faker.person.fullName(),
-  email: faker.internet.email(),
-}))
-
-// Create 10 users
-await userFactory.createMany(10)
+class User extends Model {
+  static casts = {
+    settings: 'json',
+    is_admin: 'boolean',
+    last_login: 'datetime'
+  }
+}
 ```
 
+### 🔍 Advanced Query Builder
+- **Nested Where Clauses**: Complex logical grouping.
+- **Join Management**: Fluent inner, left, and right joins.
+- **Subqueries**: Use query builders as expressions within other queries.
+- **Raw Expressions**: Drop down to raw SQL when needed safely via `DB.raw()`.
+
 ### 🧠 Memory Safe Streams
-Handle millions of records without heap overflows using our cursor-based streaming API.
+Handle millions of records without heap overflows using cursor-based streaming.
 ```typescript
 for await (const users of User.cursor(500)) {
   for (const user of users) {
@@ -265,89 +230,14 @@ for await (const users of User.cursor(500)) {
 }
 ```
 
-### 🛠️ Schema & Migrations
-Manage your database versioning with a familiar, expressive syntax.
-```typescript
-import { Schema } from '@gravito/atlas'
+## 📊 Performance Benchmark
 
-await Schema.create('users', (table) => {
-  table.id()
-  table.string('email').unique()
-  table.json('settings').nullable()
-  table.softDeletes() // Adds deleted_at
-  table.timestamps()
-})
-```
-
-### 💻 Command Line Interface (Orbit)
-Accelerate development with built-in scaffolding.
-```bash
-# Generate a model
-bun orbit make:model User
-
-# Generate a migration
-bun orbit make:migration create_users_table
-
-# Run migrations
-bun orbit migrate
-```
-
-### 🔧 Configuration Options (v2.0)
-
-```typescript
-import { Grammar, DB } from '@gravito/atlas'
-
-// Configure cache size
-Grammar.setCacheSize(1000) // Increase for query-heavy apps
-
-// Set cache scope (for multi-tenant)
-Grammar.cacheScope = 'instance' // or 'global' (default)
-
-// Configure eager loading chunking
-import { setEagerLoadChunking } from '@gravito/atlas'
-setEagerLoadChunking(false) // Disable chunking if needed
-
-// Clear caches (useful for testing)
-Grammar.clearCache()
-Model.clearProxyCache()
-```
-
-## 🗄️ Supported Databases
-
-| Database | Status | Driver |
-|----------|--------|--------|
-| **PostgreSQL** | ✅ Supported | `pg` / `Bun.sql` (Native) |
-| **MySQL** | ✅ Supported | `mysql2` / `Bun.sql` (Native) |
-| **MariaDB** | ✅ Supported | `mysql2` / `Bun.sql` (Native) |
-| **SQLite** | ✅ Supported | `bun:sqlite` / `Bun.sql` |
-
-## 📊 Performance
-
-Atlas is designed for the edge. In our benchmarks, it achieves:
-*   **1.1M+** Raw reads per second.
-*   **42,000+** Full Active Record hydrations per second.
-*   **Constant memory profile** during massive data streams.
-
-### 🚀 Performance Optimizations (v2.0)
-
-Version 2.0 includes significant performance improvements:
-
-- **Model Hydration**: ↑300-500% faster with optimized Proxy caching
-- **DirtyTracker**: ↑50x faster with shallow comparison optimization
-- **Query Compilation**: ↑50-100% faster with LRU cache (80%+ hit rate)
-- **Memory Usage**: ↓40-60% reduction for large datasets
-- **QueryBuilder Clone**: Optimized for independent query building
-
-[Read the full Performance Whitepaper](../../docs/ATLAS_PERFORMANCE_WHITEPAPER.md)
-
-## 🔄 Upgrading from v1.x
-
-See the [Upgrade Guide](./IMPLEMENTATION_PLAN/10-upgrade-guide.md) for detailed migration instructions.
-
-**Key Changes:**
-- DirtyTracker now uses shallow comparison by default (use `setDeepComparison(true)` for deep comparison)
-- Grammar cache is now global by default (set `Grammar.cacheScope = 'instance'` for multi-tenant)
-- Eager loading uses chunking by default (use `setEagerLoadChunking(false)` to disable)
+| Operation | Performance |
+|-----------|-------------|
+| Raw Query Reads | 1.1M+ rows/sec |
+| Model Hydration | 42k+ models/sec |
+| Dirty Tracking | ↑50x faster (v2.0) |
+| Memory Overhead | ↓40-60% (v2.0) |
 
 ## 📄 License
 
