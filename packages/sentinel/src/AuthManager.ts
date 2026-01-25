@@ -59,6 +59,7 @@ export class AuthManager {
   protected guards: Map<string, Guard> = new Map()
   protected customGuardCreators: Map<string, GuardResolver> = new Map()
   protected customProviderCreators: Map<string, UserProviderResolver> = new Map()
+  private defaultGuardResolved = false
 
   // Cache resolved providers to share across guards if needed
   protected resolvedProviders: Map<string, UserProvider> = new Map()
@@ -95,6 +96,10 @@ export class AuthManager {
    */
   public guard<T extends Guard = Guard>(name?: string): T {
     const guardName = name || this.config.defaults.guard
+
+    if (!name && !this.defaultGuardResolved) {
+      this.defaultGuardResolved = true
+    }
 
     if (!this.guards.has(guardName)) {
       this.guards.set(guardName, this.resolve(guardName))
