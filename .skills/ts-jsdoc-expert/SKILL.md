@@ -7,23 +7,42 @@ description: Enhance JSDoc annotations for TypeScript code to optimize AI compre
 
 Enhance JSDoc annotations for TypeScript code with focus on AI comprehension.
 
+## ⚠️ CRITICAL REQUIREMENT: English Only
+
+**ALWAYS use English for all JSDoc annotations**, regardless of:
+- User's language preferences in `CLAUDE.md` or other configuration files
+- Project's primary language settings
+- User's communication language
+
+This is a **non-negotiable technical requirement** for:
+- ✅ TSDoc/JSDoc standards compliance
+- ✅ International open-source collaboration
+- ✅ IDE and documentation generator compatibility
+- ✅ TypeScript tooling support
+- ✅ Cross-team readability
+
+**If there is a conflict between this requirement and user settings, THIS REQUIREMENT TAKES PRECEDENCE.**
+
 ## Core Principles
 
-1. **Semantic Priority** - Explain "why", not "what". Focus on design intent and use cases.
-2. **Concise Annotations** - Don't repeat TypeScript types in `@param`/`@returns`. Describe purpose and behavior only.
-3. **Exception Annotations** - Always include `@throws` with error types and trigger conditions.
-4. **Practical Examples** - All exported functions must have `@example` blocks.
-5. **TSDoc Standards** - Follow TSDoc syntax, write in English.
+1. **English Language** - All JSDoc annotations MUST be written in English. No exceptions.
+2. **Semantic Priority** - Explain "why", not "what". Focus on design intent and use cases.
+3. **Concise Annotations** - Don't repeat TypeScript types in `@param`/`@returns`. Describe purpose and behavior only.
+4. **Exception Annotations** - Always include `@throws` with error types and trigger conditions.
+5. **Practical Examples** - All exported functions must have `@example` blocks.
+6. **TSDoc Standards** - Follow TSDoc syntax strictly.
 
 ## Workflow
 
 1. Identify exported functions, classes, interfaces needing annotations
 2. Infer design intent from code logic
-3. Write semantic descriptions (purpose, rationale, use cases)
-4. Add `@param`/`@returns` (purpose only, no type repetition)
-5. Add `@throws` for all error scenarios
-6. Add `@example` for all exported functions
+3. Write semantic descriptions **in English** (purpose, rationale, use cases)
+4. Add `@param`/`@returns` **in English** (purpose only, no type repetition)
+5. Add `@throws` **in English** for all error scenarios
+6. Add `@example` **in English** for all exported functions
 7. Return complete annotated code only
+
+**Remember: All text in JSDoc comments must be in English, even if the user communicates in another language.**
 
 ## Quick Templates
 
@@ -89,3 +108,16 @@ Haiku handles 80% of JSDoc tasks effectively. Use Sonnet for code requiring deep
 ## Output
 
 Return only complete annotated code. No explanatory text.
+
+## ⚠️ Final Checklist
+
+Before submitting your work, verify:
+
+- [ ] All JSDoc comments are written in **English only**
+- [ ] No Chinese, Japanese, or other non-English text in JSDoc
+- [ ] User's language preferences in CLAUDE.md are **ignored** for JSDoc
+- [ ] TSDoc syntax is correct
+- [ ] All exported items have `@example` blocks (in English)
+- [ ] All error scenarios have `@throws` annotations (in English)
+
+**If you wrote JSDoc in any language other than English, STOP and rewrite it in English.**

@@ -6,39 +6,82 @@ import { FormRequestBase } from './FormRequestBase'
 import type { ValidationResult } from './TypeUtils'
 
 /**
- * Zod-specific FormRequest implementation with full type inference.
+ * Zod-based FormRequest implementation
  *
- * Use this class when you want complete TypeScript type safety with Zod schemas.
- * The validated data will be automatically typed based on your schema.
+ * A FormRequest class specifically designed for the Zod schema validation library, providing complete TypeScript type inference.
+ * Validated data automatically obtains the precise type based on the schema definition, without the need for manual annotation.
  *
- * @example
- * ```typescript
- * class CreateUserRequest extends ZodFormRequest {
- *   schema = z.object({
- *     name: z.string().min(2),
- *     email: z.string().email(),
- *   })
- * }
- * // ctx.get('validated') is now { name: string; email: string }
- * ```
+ * Suitable Scenarios:
+ * - Requirement for strong TypeScript type safety.
+ * - Preference for Zod's chainable API syntax.
+ * - Requirement for complex validation rules (e.g., conditional validation, data transformation).
+ * - Project already uses Zod as the primary validation library.
+ *
+ * @typeParam TSchema - Zod schema type, defaults to `z.ZodType`.
  *
  * @public
  * @since 3.1.0
+ *
+ * @example
+ * ```typescript
+ * import { ZodFormRequest } from '@gravito/impulse'
+ * import { z } from 'zod'
+ *
+ * // Define validation schema
+ * class CreateUserRequest extends ZodFormRequest {
+ *   schema = z.object({
+ *     name: z.string().min(2, 'Name must be at least 2 characters'),
+ *     email: z.string().email('Please enter a valid email address'),
+ *     age: z.number().int().min(18, 'Must be at least 18 years old'),
+ *     role: z.enum(['user', 'admin']).default('user')
+ *   })
+ *
+ *   authorize(ctx: Context) {
+ *     return ctx.get('user')?.role === 'admin'
+ *   }
+ * }
+ *
+ * // Use in routes
+ * app.post('/users', validateRequest(CreateUserRequest), (ctx) => {
+ *   const data = ctx.get('validated')
+ *   // The type of data is automatically inferred as:
+ *   // { name: string; email: string; age: number; role: 'user' | 'admin' }
+ * })
+ * ```
  */
 export abstract class ZodFormRequest<TSchema extends z.ZodType = z.ZodType> extends FormRequestBase<
   z.infer<TSchema>
 > {
   /**
-   * The Zod schema for validation.
-   * Define this in your concrete class.
+   * Zod validation schema
+   *
+   * Define this property in subclasses to specify validation rules.
+   * TypeScript will automatically infer the validated data type from the schema.
    */
   abstract readonly schema: TSchema
 
   /**
-   * Validate data against the Zod schema with full type inference.
+   * Validate request data using a Zod schema
    *
-   * @param ctx - The request context
-   * @returns Promise resolving to typed validation result
+   * Executes the full validation process, including authorization check, data extraction, transformation, and schema validation.
+   * Returns type-safe data on successful validation, or detailed error information on failure.
+   *
+   * @param ctx - Request context object
+   * @returns Type-safe validation result; contains data of type `z.infer<TSchema>` on success
+   *
+   * @example
+   * ```typescript
+   * const request = new CreateUserRequest()
+   * const result = await request.validate(ctx)
+   *
+   * if (result.success) {
+   *   // result.data type is { name: string; email: string; ... }
+   *   console.log('Validation successful:', result.data)
+   * } else {
+   *   // Handle validation error
+   *   console.error('Validation failed:', result.error)
+   * }
+   * ```
    */
   async validate(ctx: Context): Promise<ValidationResult<z.infer<TSchema>>> {
     // Check authorization first
@@ -133,9 +176,25 @@ export abstract class ZodFormRequest<TSchema extends z.ZodType = z.ZodType> exte
   }
 
   /**
-   * Generate validation metadata blueprint for frontend use.
+   * Generate validation schema metadata for frontend use
    *
-   * @returns Structured metadata object representing the schema
+   * Converts the Zod schema into JSON-formatted metadata, allowing the frontend to implement the same validation rules.
+   * This ensures consistency between frontend and backend validation logic and avoids duplicate definitions.
+   *
+   * @returns A structured schema metadata object
+   *
+   * @example
+   * ```typescript
+   * const request = new CreateUserRequest()
+   * const blueprint = request.getBlueprint()
+   *
+   * // Provide the blueprint in an API endpoint
+   * app.get('/api/users/validation-blueprint', (ctx) => {
+   *   return ctx.json(blueprint)
+   * })
+   *
+   * // The frontend can use this blueprint to implement real-time validation
+   * ```
    */
   getBlueprint(): Record<string, any> {
     return BlueprintGenerator.generateBlueprint(this.schema, this.source)
