@@ -26,7 +26,9 @@ export type OrbitStorageOptions = OrbitNebulaOptions
 /**
  * OrbitNebula provides a unified file storage abstraction for Gravito.
  *
- * It supports multiple backends (local, S3, etc.) via the StorageManager.
+ * It implements the Galaxy Architecture's Orbit pattern, acting as a bridge between
+ * the PlanetCore micro-kernel and various storage backends. It manages the lifecycle
+ * of the StorageManager and integrates with the core's hook system.
  *
  * @example
  * ```typescript
@@ -40,7 +42,6 @@ export type OrbitStorageOptions = OrbitNebulaOptions
  * ```
  *
  * @public
- * @since 3.0.0 (Refactored in 4.0.0)
  */
 export class OrbitNebula implements GravitoOrbit {
   private manager?: StorageManager
@@ -48,9 +49,13 @@ export class OrbitNebula implements GravitoOrbit {
   constructor(private options?: OrbitNebulaOptions) {}
 
   /**
-   * Install storage service into PlanetCore.
+   * Bootstraps the storage service and registers it with PlanetCore.
    *
-   * @param core - The PlanetCore instance.
+   * This method initializes the StorageManager, configures the default disk,
+   * and registers the storage service in the IoC container and middleware.
+   *
+   * @param core - The PlanetCore instance to install into
+   * @throws {Error} If configuration is missing or default disk cannot be initialized
    */
   install(core: PlanetCore): void {
     const config = this.options || core.config.get('storage')
@@ -98,10 +103,13 @@ export class OrbitNebula implements GravitoOrbit {
   }
 
   /**
-   * Get the installed StorageManager instance.
+   * Retrieves the initialized StorageManager instance.
    *
-   * @returns The StorageManager instance.
-   * @throws {Error} If not installed.
+   * Use this to access storage operations directly from the orbit instance
+   * after it has been installed.
+   *
+   * @returns The active StorageManager instance
+   * @throws {Error} If called before the orbit is installed
    */
   getStorage(): StorageManager {
     if (!this.manager) {
@@ -145,11 +153,23 @@ export class OrbitNebula implements GravitoOrbit {
 }
 
 /**
- * Functional API for installing OrbitNebula.
+ * Factory function for quick OrbitNebula installation.
  *
- * @param core - The PlanetCore instance.
- * @param options - Storage options.
- * @returns The StorageManager instance.
+ * Provides a functional approach to adding storage capabilities to a Gravito application.
+ *
+ * @param core - The PlanetCore instance
+ * @param options - Storage configuration options
+ * @returns The initialized StorageManager instance
+ *
+ * @example
+ * ```typescript
+ * const storage = orbitStorage(core, {
+ *   default: 'local',
+ *   disks: {
+ *     local: { driver: 'local', root: './uploads' }
+ *   }
+ * });
+ * ```
  */
 export default function orbitStorage(
   core: PlanetCore,
