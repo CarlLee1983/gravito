@@ -97,7 +97,6 @@ export class SessionGuard<User extends Authenticatable = Authenticatable>
   public async login(user: User, _remember = false): Promise<void> {
     const id = user.getAuthIdentifier()
 
-    this.ctx.set('auth' as any, user as any)
     this.userInstance = user
 
     const session = this.ctx.get(

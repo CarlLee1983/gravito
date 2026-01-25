@@ -1,4 +1,4 @@
-import { AuthorizationException } from '@gravito/core'
+import { AuthorizationException, type GravitoContext, type GravitoNext } from '@gravito/core'
 import type { Gate } from '../Gate'
 
 /**
@@ -7,7 +7,7 @@ import type { Gate } from '../Gate'
  * @public
  */
 export function can(ability: string, ...args: unknown[]) {
-  return async (c: any, next: any) => {
+  return async (c: GravitoContext, next: GravitoNext) => {
     const gate = c.get('gate') as Gate
 
     if (await gate.denies(ability, ...args)) {

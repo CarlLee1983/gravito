@@ -16,7 +16,8 @@ export class TokenGuard<User extends Authenticatable = Authenticatable> implemen
     protected inputKey = 'api_token',
     protected storageKey = 'api_token',
     protected hash = false,
-    protected allowQueryToken = false
+    protected allowQueryToken = false,
+    protected hashAlgorithm: 'sha256' | 'sha512' = 'sha256'
   ) {}
 
   async check(): Promise<boolean> {
@@ -32,10 +33,14 @@ export class TokenGuard<User extends Authenticatable = Authenticatable> implemen
       return this.userInstance
     }
 
-    const token = this.getTokenForRequest()
+    let token = this.getTokenForRequest()
 
     if (!token) {
       return null
+    }
+
+    if (this.hash) {
+      token = await this.hashToken(token)
     }
 
     if (this.provider.retrieveByCredentials) {
@@ -45,6 +50,13 @@ export class TokenGuard<User extends Authenticatable = Authenticatable> implemen
     }
 
     return this.userInstance
+  }
+
+  private async hashToken(token: string): Promise<string> {
+    const encoder = new TextEncoder()
+    const data = encoder.encode(token)
+    const hashBuffer = await crypto.subtle.digest(this.hashAlgorithm.toUpperCase(), data)
+    return Buffer.from(hashBuffer).toString('hex')
   }
 
   async id(): Promise<string | number | null> {

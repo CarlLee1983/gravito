@@ -65,14 +65,6 @@ export class CallbackUserProvider<T extends Authenticatable = Authenticatable>
       return this.retrieveByCredentialsCallback(credentials)
     }
 
-    console.log('[CallbackUserProvider] retrieveByCredentials', credentials)
-    if (credentials.email) {
-      const users = (global as any).MOCK_USERS || []
-      const raw = users.find((u: any) => u.email === credentials.email)
-      if (raw) {
-        return this.retrieveById(raw.id)
-      }
-    }
     return null
   }
 
@@ -80,7 +72,6 @@ export class CallbackUserProvider<T extends Authenticatable = Authenticatable>
     if (this.validateCredentialsCallback) {
       return this.validateCredentialsCallback(user, credentials)
     }
-    console.log('[CallbackUserProvider] validateCredentials', credentials)
     return true
   }
 }
