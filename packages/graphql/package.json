@@ -22,7 +22,9 @@
   "dependencies": {
     "@envelop/depth-limit": "^7.1.0",
     "@envelop/response-cache": "^9.1.0",
+    "@graphql-yoga/plugin-apq": "^3.18.0",
     "graphql": "^16.8.1",
+    "graphql-complexity-validation": "^1.0.4",
     "graphql-ws": "^6.0.6",
     "graphql-yoga": "^5.1.1"
   },

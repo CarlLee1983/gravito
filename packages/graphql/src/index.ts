@@ -1,7 +1,9 @@
 import { useDepthLimit } from '@envelop/depth-limit'
 import { useResponseCache } from '@envelop/response-cache'
+import { useAPQ } from '@graphql-yoga/plugin-apq'
 import type { GravitoContext, GravitoOrbit, PlanetCore } from '@gravito/core'
 import type { GraphQLError, GraphQLFormattedError, GraphQLSchema } from 'graphql'
+import { createComplexityLimitRule } from 'graphql-complexity-validation'
 import { makeHandler } from 'graphql-ws/use/bun'
 import {
   createSchema,
@@ -113,6 +115,8 @@ export interface GraphQLConfig {
   security?: {
     /** Max Query Depth @default undefined (no limit) */
     depthLimit?: number
+    /** Max Query Complexity @default undefined (no limit) */
+    complexityLimit?: number
   }
   /**
    * Performance Configurations
@@ -126,6 +130,18 @@ export interface GraphQLConfig {
       ttl?: number
       /** Whether to include the HTTP Authorization header in the cache key @default false */
       includeAuthorization?: boolean
+    }
+    /** Automatic Persisted Queries Config */
+    persistedQueries?: {
+      /** Whether to enable APQ @default false */
+      enabled?: boolean
+      /**
+       * Store for persisted operations.
+       * Can be a Map, or an object with get/set methods (like Redis client wrapper).
+       * Defaults to in-memory Map if not provided.
+       */
+      // biome-ignore lint/suspicious/noExplicitAny: Store type is flexible (Map or Cache Interface)
+      store?: any
     }
   }
   /**
@@ -229,7 +245,28 @@ export class OrbitGraphQL implements GravitoOrbit {
       )
     }
 
+    if (this.config.security?.complexityLimit) {
+      const maxComplexity = this.config.security.complexityLimit
+      plugins.push({
+        onValidate({ params, addValidationRule }) {
+          addValidationRule(
+            createComplexityLimitRule({
+              maxComplexity,
+            })
+          )
+        },
+      } as Plugin)
+    }
     // Add Performance Plugins
+    if (this.config.performance?.persistedQueries?.enabled) {
+      const store = this.config.performance.persistedQueries.store || new Map<string, string>()
+
+      plugins.push(
+        // biome-ignore lint/suspicious/noExplicitAny: APQ plugin type compatibility
+        useAPQ({ store }) as any
+      )
+    }
+
     if (this.config.performance?.cache?.enabled) {
       plugins.push(
         useResponseCache({
