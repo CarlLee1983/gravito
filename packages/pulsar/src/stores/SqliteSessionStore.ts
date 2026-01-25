@@ -2,16 +2,34 @@ import { createSqliteDatabase, type RuntimeSqliteDatabase } from '@gravito/core'
 import type { SessionId, SessionRecord, SessionStore } from '../types'
 
 /**
- * SQLite-based session store for persistent storage.
+ * SQLite-based session store for persistent single-instance storage.
  *
- * Stores sessions in a SQLite database with automatic expiration.
- * Suitable for single-instance deployments requiring persistence.
+ * Stores sessions in a SQLite database file, providing durability across process restarts.
+ * Unlike Redis, this store requires manual cleanup of expired sessions via the `cleanup()` method.
+ * File-based locking makes it unsuitable for multi-instance deployments.
+ *
+ * **Performance Characteristics:**
+ * - ✅ Persistent across restarts (survives crashes)
+ * - ✅ Good for single-instance production (VPS, single server)
+ * - ✅ No external dependencies (built-in SQLite)
+ * - ⚠️  Requires manual cleanup via `cleanup()` method (no automatic expiration)
+ * - ⚠️  Slower than memory/Redis due to disk I/O
+ * - ❌ Not suitable for multi-instance (file locking conflicts)
+ *
+ * **Best For:** Single-instance production, VPS deployments, persistent development environments
  *
  * @example
  * ```typescript
  * const store = new SqliteSessionStore('./storage/sessions.db', 'sessions')
- * await store.set('session-id', { userId: '123' }, 3600)
+ * await store.set('session-id', {
+ *   data: { userId: '123' },
+ *   createdAt: Date.now(),
+ *   lastActivityAt: Date.now()
+ * }, 3600)
  * const session = await store.get('session-id')
+ *
+ * // Periodic cleanup of expired sessions
+ * setInterval(() => store.cleanup(), 60 * 60 * 1000) // Every hour
  * ```
  *
  * @since 3.0.0
@@ -40,6 +58,14 @@ export class SqliteSessionStore implements SessionStore {
     }
   }
 
+  /**
+   * Initialize the SQLite database schema.
+   *
+   * Creates the sessions table and expiration index if they don't exist.
+   *
+   * @throws {Error} If database connection was not properly initialized
+   * @private
+   */
   private init() {
     if (!this.db) {
       throw new Error('[SqliteSessionStore] Database not initialized')

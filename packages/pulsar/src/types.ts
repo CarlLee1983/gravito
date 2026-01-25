@@ -21,7 +21,56 @@ export interface SessionRecord {
   createdAt: number
   /** Epoch timestamp representing the last time the session was accessed. */
   lastActivityAt: number
-  /** Temporary "flash" data that persists for a single request cycle. */
+  /**
+   * Temporary "flash" data that persists for exactly one request cycle.
+   *
+   * Flash data provides a mechanism to pass messages between requests,
+   * commonly used for success notifications, validation errors, or temporary alerts.
+   * The data automatically expires after being read once.
+   *
+   * **How Flash Data Works:**
+   *
+   * Flash data uses a two-phase rotation system with `now` and `next` arrays:
+   * - `now`: Flash keys available in the current request (set in previous request)
+   * - `next`: Flash keys to be available in the next request (set in current request)
+   *
+   * On each request, the framework automatically:
+   * 1. Moves `next` → `now` (making previous flash data available)
+   * 2. Clears `next` (preparing for new flash data)
+   * 3. After response, discards `now` (flash data consumed)
+   *
+   * **Lifecycle Example:**
+   *
+   * ```typescript
+   * // Request 1: User submits form
+   * session.flash('success', 'Profile updated!')
+   * // Internal state: data._flash = { next: ['success'] }
+   *
+   * // Request 2: Redirect to profile page
+   * const message = session.getFlash('success') // Returns 'Profile updated!'
+   * // Internal state: data._flash = { now: ['success'], next: [] }
+   *
+   * // Request 3: User navigates elsewhere
+   * const message = session.getFlash('success') // Returns undefined
+   * // Flash data has been automatically cleared
+   * ```
+   *
+   * **Common Use Cases:**
+   * - Form submission success/error messages
+   * - Validation errors after redirect
+   * - One-time notifications
+   * - Post-authentication welcome messages
+   *
+   * **Advanced Operations:**
+   *
+   * ```typescript
+   * // Keep all flash data for one more request
+   * session.reflash()
+   *
+   * // Keep specific flash keys for one more request
+   * session.keep(['error', 'warning'])
+   * ```
+   */
   flash?: {
     /** Flash data available in the current request. */
     now: string[]
