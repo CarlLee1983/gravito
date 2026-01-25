@@ -1,7 +1,26 @@
 /**
  * @gravito/radiance
  *
- * Lightweight, high-performance broadcasting with multiple drivers (Pusher, Ably, Redis, WebSocket).
+ * A lightweight, high-performance broadcasting library for the Gravito framework.
+ * It provides a unified API for broadcasting events across different drivers
+ * (Pusher, Ably, Redis, WebSocket) with zero runtime overhead for unused drivers.
+ *
+ * @module
+ * @example
+ * ```typescript
+ * // Quick setup with PlanetCore
+ * import { PlanetCore } from '@gravito/core';
+ * import { OrbitRadiance } from '@gravito/radiance';
+ *
+ * const core = await PlanetCore.boot({
+ *   orbits: [
+ *     OrbitRadiance.configure({
+ *       driver: 'redis',
+ *       config: { url: 'redis://localhost:6379' }
+ *     })
+ *   ]
+ * });
+ * ```
  */
 
 export type { ChannelAuthorizationCallback } from './BroadcastManager'

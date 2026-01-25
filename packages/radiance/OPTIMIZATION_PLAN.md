@@ -14,7 +14,7 @@
 | WebSocketDriver 日誌系統整合 | ⏳ 待處理 | 🟡 重要 | 可觀測性 |
 | OrbitRadiance 測試覆蓋率提升 | ⏳ 待處理 | 🟡 重要 | 穩定性 |
 | README.zh-TW.md 內容完善 | ⏳ 待處理 | 🟢 改進 | 開發者體驗 |
-| JSDoc 文檔增強 | ⏳ 待處理 | 🟢 改進 | 開發者體驗 |
+| JSDoc 文檔增強 | ✅ 已完成 | 🟢 改進 | 開發者體驗 |
 | 效能最佳化文檔 | ⏳ 待處理 | 🟢 改進 | 文檔完整性 |
 
 **當前代碼品質評分**: 8.5/10
@@ -230,49 +230,17 @@ describe('OrbitRadiance edge cases', () => {
 
 ---
 
-### 3.2 JSDoc 文檔增強
+### 3.2 JSDoc 文檔增強 ✅
+
+**狀態**：已完成
+**實現內容**：
+- [x] 在 `BroadcastManager.ts` 與 `OrbitRadiance.ts` 中添加了符合 TSDoc 標準的英文文檔。
+- [x] 為所有驅動程式（Pusher, Ably, Redis, WebSocket）添加了詳細的配置說明與範例。
+- [x] 為所有公開 API 添加了 `@example` 使用範例。
+- [x] 明確標註了 `@throws` 異常情況。
 
 **待強化項目**：
-
-1. **BroadcastManager.ts**：
-   - 添加 `@throws` 說明
-   - 添加完整的使用範例
-   - 補充授權流程說明
-
-2. **各驅動程式**：
-   - 添加配置選項的詳細說明
-   - 添加效能特徵說明
-   - 添加限制與注意事項
-
-3. **OrbitRadiance.ts**：
-   - 添加 Orbit 生命週期說明
-   - 添加與 EventManager 整合的範例
-
-**範例格式**：
-```typescript
-/**
- * 廣播事件至指定通道
- *
- * @param event - 觸發廣播的事件實例
- * @param channel - 目標通道（含類型前綴，如 'private-orders'）
- * @param data - 要廣播的資料
- * @param eventName - 事件名稱（預設為事件類名）
- *
- * @throws {Error} 當驅動程式未設置時拋出
- * @throws {Error} 當驅動程式廣播失敗時拋出
- *
- * @example
- * ```typescript
- * await manager.broadcast(
- *   orderEvent,
- *   'private-orders.123',
- *   { status: 'shipped' },
- *   'OrderShipped'
- * )
- * ```
- */
-async broadcast(...): Promise<void>
-```
+(已全部完成)
 
 ---
 
