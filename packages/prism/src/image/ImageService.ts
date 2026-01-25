@@ -1,35 +1,46 @@
 /**
- * ImageService - core image rendering service.
+ * ImageService - Core service for generating optimized image markup.
  *
- * Generates optimized `<img>` tags aligned with Core Web Vitals:
- * - Generates responsive `srcset`
- * - Normalizes image paths
- * - Ensures accessibility and performance defaults
+ * This service is the heart of Gravito's image optimization strategy, responsible for
+ * generating high-performance `<img>` and `<picture>` tags that comply with
+ * Core Web Vitals best practices.
+ *
+ * Key features:
+ * - **Responsive Images**: Automatically generates `srcset` and `sizes` attributes.
+ * - **Format Negotiation**: Supports AVIF and WebP with modern fallback strategies.
+ * - **CLS Prevention**: Enforces width/height attributes to reserve layout space.
+ * - **Lazy Loading**: Applies optimal loading strategies based on image priority.
+ * - **Art Direction**: Supports `<picture>` media queries for different device layouts.
+ *
+ * @public
+ * @since 3.0.0
  */
 
 import type { ImageCDNLoader } from './ImageCDNLoader'
 
 /**
- * Art direction configuration for responsive images
+ * Configuration for art-directed images using the `<picture>` element.
+ *
+ * Allows specifying different image sources or crops for different viewport sizes.
  */
 export interface ArtDirectionConfig {
-  /** Media query */
+  /** CSS media query (e.g., `(min-width: 768px)`). */
   media: string
-  /** Image source */
+  /** Source URL for this breakpoint. */
   src: string
-  /** Width */
+  /** Intrinsic width of the image at this breakpoint. */
   width?: number
-  /** Height */
+  /** Intrinsic height of the image at this breakpoint. */
   height?: number
-  /** Formats for this breakpoint */
+  /** Specific file formats to generate for this breakpoint (overrides defaults). */
   formats?: ('avif' | 'webp' | 'original')[]
 }
 
 /**
  * Options for generating an optimized image.
  *
- * Configures the image rendering process, allowing for fine-grained control over
- * accessibility, performance, and responsive behavior.
+ * Provides granular control over the rendering of image tags, including performance
+ * hints, accessibility attributes, and responsive behaviors.
  *
  * @example
  * ```typescript
@@ -47,54 +58,51 @@ export interface ArtDirectionConfig {
  * @since 3.0.0
  */
 export interface ImageOptions {
-  /** Source URL or path of the image. Absolute URLs are supported. */
+  /** Source URL or path of the image. Absolute URLs and relative paths are supported. */
   src: string
-  /** Fixed width in pixels. Highly recommended to prevent Cumulative Layout Shift (CLS). */
+  /** Fixed width in pixels. Required to prevent Cumulative Layout Shift (CLS). */
   width?: number
-  /** Fixed height in pixels. Highly recommended to prevent Cumulative Layout Shift (CLS). */
+  /** Fixed height in pixels. Required to prevent Cumulative Layout Shift (CLS). */
   height?: number
-  /** Alternative text for accessibility. REQUIRED for accessibility compliance. */
+  /** Alternative text for accessibility. MUST describe the image content. */
   alt: string
-  /** Loading strategy. Use 'eager' for LCP images and 'lazy' for others. @default 'lazy' */
+  /** Browser loading strategy. Use 'eager' for LCP images (above the fold) and 'lazy' for others. @default 'lazy' */
   loading?: 'lazy' | 'eager'
-  /** Responsive sizes attribute string. e.g., "(max-width: 600px) 480px, 800px" */
+  /** Responsive `sizes` attribute. Defines the slot width. e.g., "(max-width: 600px) 480px, 800px". */
   sizes?: string
-  /** Custom widths for srcset or boolean to toggle default auto-generation. */
+  /** Custom widths for `srcset` generation. Set to `false` to disable auto-generation. */
   srcset?: boolean | number[]
   /** CSS class names to apply to the img tag. */
   class?: string
   /** Inline CSS styles to apply to the img tag. */
   style?: string
-  /** Decoding strategy. @default 'async' */
+  /** Image decoding hint. Use 'async' to prevent main thread blocking. @default 'async' */
   decoding?: 'async' | 'auto' | 'sync'
-  /** Fetch priority hint for LCP optimization. */
+  /** Fetch priority hint. Use 'high' for LCP images to boost priority. */
   fetchpriority?: 'high' | 'low' | 'auto'
-  /** Enable format negotiation (AVIF/WebP). @default false */
+  /** Enable automatic format negotiation (AVIF/WebP) via `<picture>` tag. @default false */
   formatNegotiation?: boolean
   /** Target formats for format negotiation. @default ['avif', 'webp'] */
   formats?: ('avif' | 'webp' | 'original')[]
-  /** Use <picture> element. @default false */
+  /** Force usage of `<picture>` element instead of simple `<img>`. @default false */
   usePicture?: boolean
-  /** Art direction configuration */
+  /** Array of art direction configurations for responsive design. */
   artDirection?: ArtDirectionConfig[]
-  /** Placeholder type. @default 'none' */
+  /** Placeholder strategy for loading state. @default 'none' */
   placeholder?: 'none' | 'blur' | 'color'
-  /** Base64 encoded blur image (for LQIP) */
+  /** Base64 encoded low-quality image placeholder (LQIP). Required if placeholder is 'blur'. */
   blurDataURL?: string
-  /** Dominant color (for color placeholder) */
+  /** Dominant color hex string. Required if placeholder is 'color'. */
   dominantColor?: string
-  /** CDN Loader */
+  /** Custom CDN loader to transform image URLs. */
   loader?: ImageCDNLoader
 }
 
 /**
  * ImageService handles the generation of optimized HTML `<img>` tags.
  *
- * It strictly follows Web Vitals best practices, including:
- * - Automatic `srcset` generation for responsive images.
- * - Aspect-ratio preservation using `width` and `height`.
- * - Accessibility enforcement via mandatory `alt` text.
- * - Performance optimizations like `loading="lazy"` and `decoding="async"`.
+ * It enforces web performance best practices by default, ensuring that images
+ * are accessible, responsive, and efficient.
  *
  * @example
  * ```typescript
@@ -112,14 +120,24 @@ export interface ImageOptions {
  */
 export class ImageService {
   /**
-   * Generate optimized image attributes as a key-value object.
+   * Generate a dictionary of HTML attributes for an image.
    *
-   * This is useful for framework integrations (like React or Vue) where you need
-   * an object of props rather than a raw HTML string.
+   * Useful when integrating with component frameworks (React, Vue) where you need
+   * props objects instead of raw HTML strings.
    *
    * @param options - Configuration options for the image.
-   * @returns An object containing the HTML attributes for the `<img>` tag.
-   * @throws {Error} If the mandatory `alt` attribute is missing or empty.
+   * @returns Key-value pairs of HTML attributes (e.g., `{ src: '...', alt: '...' }`).
+   * @throws {Error} If `alt` text is missing or empty (accessibility violation).
+   *
+   * @example
+   * ```typescript
+   * const props = service.generateImageAttributes({
+   *   src: 'photo.jpg',
+   *   alt: 'Photo',
+   *   width: 100
+   * });
+   * // => { src: 'photo.jpg', alt: 'Photo', width: '100', ... }
+   * ```
    */
   public generateImageAttributes(options: ImageOptions): Record<string, string> {
     const {
@@ -198,10 +216,10 @@ export class ImageService {
   }
 
   /**
-   * Generate a full `<img>` tag HTML string.
+   * Generate a complete HTML `<img>` tag string.
    *
    * @param options - Configuration options for the image.
-   * @returns A string containing the full HTML `<img>` tag.
+   * @returns A fully formed HTML string, e.g., `<img src="..." ... />`.
    *
    * @example
    * ```typescript
@@ -223,10 +241,13 @@ export class ImageService {
   }
 
   /**
-   * Generate <picture> element with format negotiation and art direction
+   * Generate a `<picture>` element with format negotiation and/or art direction.
    *
-   * @param options - Configuration options for the picture element
-   * @returns A string containing the full HTML <picture> tag
+   * Creates a `<picture>` tag wrapping multiple `<source>` elements and a fallback `<img>`.
+   * Used for serving modern formats (AVIF/WebP) or different images for different screen sizes.
+   *
+   * @param options - Configuration options including `formatNegotiation` or `artDirection`.
+   * @returns HTML string for the `<picture>` element.
    *
    * @example
    * ```typescript
@@ -234,13 +255,8 @@ export class ImageService {
    *   src: '/hero.jpg',
    *   alt: 'Hero',
    *   width: 1920,
-   *   height: 1080,
-   *   formatNegotiation: true,
-   *   artDirection: [
-   *     { media: '(min-width: 1200px)', src: '/hero-desktop.jpg' },
-   *     { media: '(min-width: 768px)', src: '/hero-tablet.jpg' }
-   *   ]
-   * })
+   *   formatNegotiation: true
+   * });
    * ```
    */
   public generatePictureElement(options: ImageOptions): string {
@@ -360,12 +376,17 @@ export class ImageService {
   /**
    * Generate a `srcset` string for responsive images.
    *
-   * This method generates multiple image paths with width descriptors based on
-   * the provided width list.
+   * Creates a comma-separated list of image candidates with width descriptors.
    *
-   * @param src - Original image path or URL.
-   * @param widths - An array of widths (in pixels) to generate descriptors for.
-   * @returns A `srcset` string, e.g. `"image-400w.jpg 400w, image-800w.jpg 800w"`, or an empty string if widths list is invalid.
+   * @param src - Base image URL.
+   * @param widths - List of widths to generate candidates for.
+   * @returns Formatted srcset string or empty string if no widths provided.
+   *
+   * @example
+   * ```typescript
+   * const srcset = service.generateSrcset('img.jpg', [400, 800]);
+   * // => "img-400w.jpg 400w, img-800w.jpg 800w"
+   * ```
    */
   public generateSrcset(src: string, widths: number[]): string {
     if (widths.length === 0) {
@@ -387,7 +408,10 @@ export class ImageService {
   }
 
   /**
-   * Generate default srcset widths based on a base width (1x, 1.5x, 2x).
+   * Generate default srcset widths based on a base width.
+   *
+   * Generates standard breakpoints (1x, 2x) and responsive steps (400px, 800px)
+   * appropriate for the base width.
    */
   private generateDefaultSrcsetWidths(baseWidth: number): number[] {
     const widths = new Set<number>()
@@ -445,11 +469,11 @@ export class ImageService {
   /**
    * Normalize an image path for consistent rendering.
    *
-   * This ensures relative paths start with a leading slash and leaves absolute
-   * URLs (http/https) untouched.
+   * Ensures paths are absolute relative to the root (start with `/`) unless
+   * they are external URLs.
    *
-   * @param src - The raw image path or URL.
-   * @returns The normalized path or URL.
+   * @param src - Raw source path.
+   * @returns Normalized path.
    */
   public normalizePath(src: string): string {
     // Absolute URL: return as-is
@@ -466,7 +490,7 @@ export class ImageService {
   }
 
   /**
-   * Escape HTML.
+   * Escape HTML special characters.
    */
   private escapeHtml(unsafe: string): string {
     return unsafe

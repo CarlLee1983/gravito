@@ -1,34 +1,38 @@
 /**
- * ImagePlaceholder - LQIP (Low Quality Image Placeholder) utilities
+ * ImagePlaceholder - Utilities for Low Quality Image Placeholders (LQIP).
  *
- * Provides utilities for:
- * - Calculating minimum LQIP size for LCP compliance
- * - Generating blur placeholders
- * - Extracting dominant colors
+ * Provides helper functions to calculate optimal placeholder sizes and generate
+ * CSS styles for blur effects, helping to improve perceived performance and LCP.
+ *
+ * @public
+ * @since 3.1.0
  */
 
+/**
+ * Configuration options for LQIP generation.
+ */
 export interface LQIPOptions {
-  /** Image width */
+  /** Original image width */
   width: number
-  /** Image height */
+  /** Original image height */
   height: number
-  /** Target quality (optional, default: auto-calculated) */
+  /** Target quality (1-100). Optional. */
   quality?: number
 }
 
 /**
- * Calculate minimum LQIP size for Chrome LCP requirements
+ * Calculate minimum LQIP size required to satisfy Chrome's LCP heuristics.
  *
- * Chrome requires minimum 0.05 BPP (bits per pixel) for an image
- * to be considered "contentful" enough to count as LCP.
+ * Chrome requires an image to have a minimum entropy of 0.05 bits per pixel
+ * to be considered "contentful" for Largest Contentful Paint (LCP).
  *
- * @param width - Image width in pixels
- * @param height - Image height in pixels
- * @returns Minimum size in KB
+ * @param width - Image width in pixels.
+ * @param height - Image height in pixels.
+ * @returns Minimum estimated size in KB.
  *
  * @example
  * ```typescript
- * const minSize = calculateMinLQIPSize(1440, 810)
+ * const minSize = calculateMinLQIPSize(1440, 810);
  * // Returns: ~8.02 KB
  * ```
  */
@@ -44,15 +48,21 @@ export function calculateMinLQIPSize(width: number, height: number): number {
 }
 
 /**
- * Generate recommended LQIP dimensions
+ * Calculate recommended dimensions for a blur placeholder.
  *
- * For blur placeholders, we can use smaller dimensions
- * (typically 10-20px wide) since they'll be blurred anyway.
+ * Placeholders should be very small (e.g., 20px wide) to minimize payload size,
+ * relying on CSS blurring to smooth out the pixels.
  *
- * @param width - Original width
- * @param height - Original height
- * @param targetWidth - Target LQIP width (default: 20px)
- * @returns Scaled dimensions
+ * @param width - Original image width.
+ * @param height - Original image height.
+ * @param targetWidth - Desired width for the placeholder. @default 20
+ * @returns Object containing `width` and `height` maintaining aspect ratio.
+ *
+ * @example
+ * ```typescript
+ * const dims = calculateLQIPDimensions(800, 600);
+ * // => { width: 20, height: 15 }
+ * ```
  */
 export function calculateLQIPDimensions(
   width: number,
@@ -67,12 +77,20 @@ export function calculateLQIPDimensions(
 }
 
 /**
- * Generate placeholder styles for blur effect
+ * Generate CSS styles for a blur placeholder.
  *
- * @param blurDataURL - Base64 encoded blur image
- * @param width - Image width
- * @param height - Image height
- * @returns CSS styles object
+ * Creates the necessary CSS to display a base64 background image with a blur filter,
+ * scaled slightly to hide blurred edges.
+ *
+ * @param blurDataURL - Base64 encoded placeholder image.
+ * @param width - Display width in pixels.
+ * @param height - Display height in pixels.
+ * @returns Record of CSS properties.
+ *
+ * @example
+ * ```typescript
+ * const style = generatePlaceholderStyles('data:image...', 800, 600);
+ * ```
  */
 export function generatePlaceholderStyles(
   blurDataURL: string,
@@ -91,7 +109,10 @@ export function generatePlaceholderStyles(
 }
 
 /**
- * Convert hex color to RGB
+ * Convert a hex color string to an RGB object.
+ *
+ * @param hex - Hex color string (e.g., "#ff0000" or "ff0000").
+ * @returns Object with r, g, b values.
  */
 export function hexToRGB(hex: string): { r: number; g: number; b: number } {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
@@ -105,12 +126,19 @@ export function hexToRGB(hex: string): { r: number; g: number; b: number } {
 }
 
 /**
- * Generate solid color placeholder
+ * Generate a solid color placeholder image as an SVG data URL.
  *
- * @param color - Hex color (e.g., '#ff0000')
- * @param width - Image width
- * @param height - Image height
- * @returns SVG data URL
+ * Useful for extremely lightweight placeholders that just match the dominant color.
+ *
+ * @param color - CSS color string (hex, rgb, etc.).
+ * @param width - Image width.
+ * @param height - Image height.
+ * @returns Base64 encoded SVG data URL.
+ *
+ * @example
+ * ```typescript
+ * const dataUrl = generateColorPlaceholder('#3b82f6', 100, 100);
+ * ```
  */
 export function generateColorPlaceholder(color: string, width: number, height: number): string {
   const svg = `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">

@@ -5,7 +5,7 @@ import { type DynamicRoute, DynamicRouteResolver } from './DynamicRouteResolver'
 import { IncrementalBuilder } from './IncrementalBuilder'
 
 /**
- * SSG Route interface
+ * Interface representing a route structure for SSG.
  */
 interface SSGRoute {
   path: string
@@ -13,43 +13,72 @@ interface SSGRoute {
 }
 
 /**
- * Router with route access methods
+ * Interface for a Router that exposes its routes.
+ * Compatibility layer for different router implementations.
  */
 interface RouterWithRoutes {
   routes?: SSGRoute[]
   getRoutes?: () => SSGRoute[]
 }
 
+/**
+ * Configuration options for the export process.
+ */
 export interface ExportOptions {
+  /** Base URL for the site (used in sitemap.xml). */
   baseUrl?: string
+  /** Number of concurrent requests during export. @default 10 */
   concurrency?: number
+  /** Timeout per page request in milliseconds. @default 30000 */
   timeout?: number
+  /** Enable incremental builds (skip unchanged pages). @default false */
   incremental?: boolean
+  /** Force rebuild even if incremental is enabled. @default false */
   force?: boolean
+  /** Path to the build manifest file. */
   manifestPath?: string
+  /** Additional paths to export that aren't in the router. */
   extraPaths?: string[]
 }
 
 /**
- * Static Site Generator for Gravito Prism.
+ * Static Site Generator (SSG) for Gravito Prism.
  *
- * It crawls registered GET routes from the PlanetCore router and exports them
- * as static HTML files. It also automatically generates a `sitemap.xml` and `robots.txt`.
+ * Crawls the application's registered routes and renders them to static HTML files.
+ * Supports incremental builds, dynamic routes, sitemap generation, and robots.txt creation.
  *
  * @example
  * ```typescript
  * const ssg = new StaticSiteGenerator(core);
  * await ssg.export('./dist');
  * ```
+ *
  * @public
  */
 export class StaticSiteGenerator {
   /**
    * Create a new SSG instance.
+   *
    * @param core - The PlanetCore instance to crawl routes from.
    */
   constructor(private core: PlanetCore) {}
 
+  /**
+   * Export dynamic routes to static HTML.
+   *
+   * Resolves dynamic patterns (e.g., `/blog/[slug]`) into concrete paths before exporting.
+   *
+   * @param dynamicRoutes - Array of dynamic route definitions.
+   * @param outputDir - Directory to write static files to.
+   * @param options - Export configuration options.
+   *
+   * @example
+   * ```typescript
+   * await ssg.exportDynamic([
+   *   { pattern: '/posts/[id]', getPaths: async () => ... }
+   * ], './dist');
+   * ```
+   */
   async exportDynamic(
     dynamicRoutes: DynamicRoute[],
     outputDir: string,
@@ -69,6 +98,20 @@ export class StaticSiteGenerator {
     }
   }
 
+  /**
+   * Run an incremental export for the entire site.
+   *
+   * Automatically detects static routes from the router and combines them with
+   * any extra paths provided. Only rebuilds pages that have changed (if incremental is true).
+   *
+   * @param outputDir - Directory to write files to.
+   * @param options - Export configuration.
+   *
+   * @example
+   * ```typescript
+   * await ssg.exportIncremental('./dist', { incremental: true });
+   * ```
+   */
   async exportIncremental(outputDir: string, options: ExportOptions = {}): Promise<void> {
     const baseUrl = options.baseUrl ?? 'https://gravito.dev'
 
@@ -83,6 +126,9 @@ export class StaticSiteGenerator {
     await this.generateRobotsTxt(outputDir, baseUrl)
   }
 
+  /**
+   * Internal method to process a batch of routes.
+   */
   private async exportRoutes(
     routes: Array<{ path: string; getData?: () => Promise<any> }>,
     outputDir: string,
@@ -147,6 +193,10 @@ export class StaticSiteGenerator {
     this.core.logger.info(`[SSG] Export complete! Success: ${success}, Failed: ${failed}`)
   }
 
+  /**
+   * Extract static routes from the router.
+   * Filters out dynamic routes (with params) and non-GET routes.
+   */
   private getStaticRoutes(): Array<{ path: string; method: string }> {
     const router = this.core.router as RouterWithRoutes
     let routes: SSGRoute[] = []
@@ -167,6 +217,15 @@ export class StaticSiteGenerator {
     )
   }
 
+  /**
+   * Run a full static export.
+   *
+   * Legacy method for full export. Consolidates routes and triggers export.
+   *
+   * @param outputDir - Output directory.
+   * @param baseUrl - Site base URL.
+   * @param extraPaths - Additional paths.
+   */
   async export(
     outputDir: string,
     baseUrl = 'https://gravito.dev',

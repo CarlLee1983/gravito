@@ -1,11 +1,16 @@
 /**
- * IncrementalBuilder - Manifest-based incremental SSG builds
+ * IncrementalBuilder - Logic for incremental static exports.
  *
- * Features:
- * - Content hash tracking for change detection
- * - Build manifest persistence
- * - Skip unchanged pages
- * - Configurable concurrency and timeout
+ * Optimizes the build process by tracking content hashes and only rebuilding
+ * pages that have changed. Maintains a build manifest to persist state between builds.
+ *
+ * Key features:
+ * - **Content Hashing**: Detects changes in data or template output.
+ * - **Manifest persistence**: Tracks build history in `.build-manifest.json`.
+ * - **Smart Skipping**: Skips generation for unchanged routes.
+ *
+ * @public
+ * @since 3.1.0
  */
 
 import { createHash } from 'node:crypto'
@@ -14,6 +19,9 @@ import { mkdir, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import type { PlanetCore } from '@gravito/core'
 
+/**
+ * Structure of the build manifest file.
+ */
 interface BuildManifest {
   version: string
   baseUrl: string
@@ -21,6 +29,9 @@ interface BuildManifest {
   pages: Record<string, PageEntry>
 }
 
+/**
+ * Entry for a single page in the manifest.
+ */
 interface PageEntry {
   path: string
   hash: string
@@ -29,17 +40,41 @@ interface PageEntry {
   size: number
 }
 
+/**
+ * Options for the incremental builder.
+ */
 interface IncrementalOptions {
+  /** Force a full rebuild, ignoring the manifest. */
   force?: boolean
+  /** Custom path for the manifest file. */
   manifestPath?: string
+  /** Number of concurrent workers. */
   concurrency?: number
+  /** Request timeout in milliseconds. */
   timeout?: number
 }
 
+/**
+ * IncrementalBuilder manages the stateful export process.
+ *
+ * @example
+ * ```typescript
+ * const builder = new IncrementalBuilder(core, './dist');
+ * const stats = await builder.export(routes, 'https://example.com');
+ * console.log(`Built ${stats.built} pages.`);
+ * ```
+ */
 export class IncrementalBuilder {
   private manifest: BuildManifest | null = null
   private manifestPath: string
 
+  /**
+   * Create a new IncrementalBuilder.
+   *
+   * @param core - PlanetCore instance.
+   * @param outputDir - Directory for build output.
+   * @param options - Configuration options.
+   */
   constructor(
     private core: PlanetCore,
     private outputDir: string,
@@ -103,7 +138,12 @@ export class IncrementalBuilder {
   }
 
   /**
-   * Export with incremental support
+   * Execute the incremental export.
+   *
+   * @param routes - List of routes to process.
+   * @param baseUrl - Site base URL.
+   * @param options - Build options.
+   * @returns Statistics about the build (built, skipped, failed counts).
    */
   async export(
     routes: Array<{ path: string; getData?: () => Promise<any> }>,
@@ -226,6 +266,11 @@ export class IncrementalBuilder {
     return { built, skipped, failed }
   }
 
+  /**
+   * Get statistics from the current manifest.
+   *
+   * @returns Stats object including total pages, size, and build times.
+   */
   getStats() {
     const manifest = this.loadManifest()
     const pages = Object.values(manifest.pages)
