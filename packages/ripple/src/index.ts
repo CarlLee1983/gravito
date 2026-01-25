@@ -1,30 +1,45 @@
 /**
- * @fileoverview @gravito/ripple - Bun-native WebSocket broadcasting
+ * @gravito/ripple - Bun-native WebSocket broadcasting for Gravito.
  *
- * Channel-based real-time communication for Gravito applications.
+ * Ripple is a high-performance, real-time broadcasting module designed for the Gravito ecosystem.
+ * It provides channel-based WebSocket communication (Public, Private, Presence) powered by
+ * Bun's native WebSocket implementation for maximum speed and minimal overhead.
+ *
+ * Key features:
+ * - **Bun Native**: Leveraging `Bun.serve({ websocket })` for sub-millisecond latency.
+ * - **Channel System**: Built-in support for Public, Private (authenticated), and Presence (user tracking) channels.
+ * - **Scalable Drivers**: Includes `LocalDriver` for single-server and `RedisDriver` for horizontal scaling.
+ * - **Type-Safe**: Fully typed events and channel management.
  *
  * @example
  * ```typescript
- * import { OrbitRipple, broadcast, PrivateChannel, BroadcastEvent } from '@gravito/ripple'
+ * // 1. Setup Server
+ * import { OrbitRipple } from '@gravito/ripple'
  *
- * // Install the module
  * core.install(new OrbitRipple({
  *   path: '/ws',
- *   authorizer: async (channel, userId) => userId !== undefined
+ *   authorizer: async (channel, userId) => {
+ *     // Return true/false for private channels
+ *     // Return user info object for presence channels
+ *     return userId !== undefined
+ *   }
  * }))
  *
- * // Define a broadcast event
- * class OrderShipped extends BroadcastEvent {
- *   constructor(public order: Order) { super() }
- *   broadcastOn() { return new PrivateChannel(`orders.${this.order.userId}`) }
+ * // 2. Define Event
+ * import { BroadcastEvent, PrivateChannel } from '@gravito/ripple'
+ *
+ * class OrderUpdated extends BroadcastEvent {
+ *   constructor(public orderId: string, public status: string) { super() }
+ *
+ *   broadcastOn() {
+ *     return new PrivateChannel(`orders.${this.orderId}`)
+ *   }
  * }
  *
- * // Broadcast from anywhere
- * broadcast(new OrderShipped(order))
+ * // 3. Broadcast
+ * import { broadcast } from '@gravito/ripple'
  *
- * // Or use the fluent API
- * import { Broadcaster } from '@gravito/ripple'
- * Broadcaster.toPrivate('orders.123').emit('OrderUpdated', { status: 'shipped' })
+ * broadcast(new OrderUpdated('123', 'shipped'))
  * ```
  *
  * @module @gravito/ripple
@@ -39,7 +54,7 @@ export {
   PublicChannel,
   requiresAuth,
 } from './channels'
-export { LocalDriver } from './drivers'
+export { LocalDriver, RedisDriver } from './drivers'
 export { RippleDriverError, RippleError } from './errors'
 export {
   BroadcastEvent,
