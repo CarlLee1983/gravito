@@ -1,55 +1,63 @@
-# @gravito/flare
+# @gravito/flare 🌌
 
-> Lightweight, high-performance notifications for Gravito with multi-channel delivery (mail, database, broadcast, Slack, SMS).
+> Lightweight, high-performance notifications for Gravito with multi-channel delivery (Mail, Database, Broadcast, Slack, SMS).
 
-**Status**: v0.1.0 - core features complete with multiple channel support.
+`@gravito/flare` is the official notification engine for the Gravito framework. It provides a clean, expressive API to send notifications across various channels while supporting background queuing out-of-the-box.
 
-## Features
+**Status**: v1.0.0 - Production ready.
 
-- **Zero runtime overhead**: Pure type wrappers that delegate to channel drivers
-- **Multi-channel delivery**: Mail, database, broadcast, Slack, SMS
-- **Modular by design**: Install only the channels you need
-- **Queue support**: Works with `@gravito/stream` for async delivery
-- **AI-friendly**: Strong typing, clear JSDoc, and predictable APIs
+## 🌟 Key Features
 
-## Installation
+- **Zero Runtime Overhead**: Pure TypeScript implementation that delegates to efficient channel drivers.
+- **Multi-Channel Support**: Send a single notification via multiple channels (Mail, DB, Slack, etc.) simultaneously.
+- **Background Queuing**: Seamlessly integrates with `@gravito/stream` (OrbitStream) to handle high-volume notification delivery without blocking the request.
+- **Type-Safe Payloads**: Heavily typed message structures for each channel to ensure data integrity.
+- **Extensible Architecture**: Easily register custom notification channels.
+- **Galaxy-Ready**: Designed as a standard Gravito Orbit for zero-config integration.
+
+## 📦 Installation
 
 ```bash
 bun add @gravito/flare
 ```
 
-## Quick Start
+## 🚀 Quick Start
 
-### 1. Create a notification
+### 1. Define Your Notification
+
+Create a notification class that extends `Notification`. Implement the `via` method to specify channels and `to[Channel]` methods for payloads.
 
 ```typescript
 import { Notification } from '@gravito/flare'
 import type { MailMessage, DatabaseNotification, Notifiable } from '@gravito/flare'
 
-class InvoicePaid extends Notification {
-  constructor(private invoice: Invoice) {
+class OrderShipped extends Notification {
+  constructor(private order: any) {
     super()
   }
 
+  // Determine delivery channels
   via(user: Notifiable): string[] {
     return ['mail', 'database']
   }
 
+  // Mail payload
   toMail(user: Notifiable): MailMessage {
     return {
-      subject: 'Invoice Paid',
-      view: 'emails.invoice-paid',
-      data: { invoice: this.invoice },
+      subject: `Order #${this.order.id} Shipped!`,
+      view: 'emails.order-shipped',
+      data: { order: this.order },
       to: user.email,
     }
   }
 
+  // Database payload
   toDatabase(user: Notifiable): DatabaseNotification {
     return {
-      type: 'invoice-paid',
+      type: 'order_shipped',
       data: {
-        invoice_id: this.invoice.id,
-        amount: this.invoice.amount,
+        order_id: this.order.id,
+        tracking_number: this.order.tracking,
       },
     }
   }
@@ -58,23 +66,20 @@ class InvoicePaid extends Notification {
 
 ### 2. Configure OrbitFlare
 
+Register `OrbitFlare` in your `PlanetCore` boot sequence.
+
 ```typescript
 import { PlanetCore } from '@gravito/core'
 import { OrbitFlare } from '@gravito/flare'
-import { OrbitSignal } from '@gravito/signal'
-import { OrbitStream } from '@gravito/stream'
 
 const core = await PlanetCore.boot({
   orbits: [
-    OrbitSignal.configure({ /* ... */ }),
-    OrbitStream.configure({ /* ... */ }),
     OrbitFlare.configure({
       enableMail: true,
       enableDatabase: true,
-      enableBroadcast: true,
       channels: {
         slack: {
-          webhookUrl: 'https://hooks.slack.com/services/...',
+          webhookUrl: process.env.SLACK_WEBHOOK_URL,
         },
       },
     }),
@@ -82,147 +87,64 @@ const core = await PlanetCore.boot({
 })
 ```
 
-### 3. Send a notification
+### 3. Send Notifications
+
+Access the `notifications` manager via the core container or context variables.
 
 ```typescript
-// In a controller
-const notifications = c.get('notifications') as NotificationManager
+// In your business logic or controller
+const notifications = core.container.make('notifications')
 
-await notifications.send(user, new InvoicePaid(invoice))
+await notifications.send(user, new OrderShipped(order))
 ```
 
-## Queueing Notifications
+## ⏳ Async Queuing
+
+To send notifications in the background, simply implement the `ShouldQueue` interface in your notification class.
 
 ```typescript
 import { Notification, ShouldQueue } from '@gravito/flare'
 
-class SendEmailNotification extends Notification implements ShouldQueue {
-  queue = 'notifications'
-  delay = 60 // delay by 60 seconds
+class WeeklyReport extends Notification implements ShouldQueue {
+  queue = 'notifications' // Optional: specific queue name
+  delay = 3600            // Optional: delay in seconds
 
   via(user: Notifiable): string[] {
     return ['mail']
   }
-
-  toMail(user: Notifiable): MailMessage {
-    return {
-      subject: 'Welcome!',
-      to: user.email,
-      view: 'emails.welcome',
-    }
-  }
-}
-
-await notifications.send(user, new SendEmailNotification())
-```
-
-## Channels
-
-### Mail
-
-Requires `@gravito/signal`:
-
-```typescript
-via(user: Notifiable): string[] {
-  return ['mail']
-}
-
-toMail(user: Notifiable): MailMessage {
-  return {
-    subject: 'Subject',
-    view: 'emails.template',
-    data: { /* ... */ },
-    to: user.email,
-  }
+  
+  // ... toMail implementation
 }
 ```
 
-### Database
+## 🛠️ Supported Channels
 
-Requires database support:
+| Channel | Dependency | Description |
+|---|---|---|
+| **Mail** | `@gravito/signal` | Sends emails via the configured mail driver. |
+| **Database** | `@gravito/atlas` | Stores notifications in the `notifications` table. |
+| **Broadcast**| `@gravito/radiance`| Pushes real-time updates via WebSockets. |
+| **Slack** | None | Sends messages to Slack via Webhooks. |
+| **SMS** | Provider Config | Sends text messages via configured SMS providers. |
 
-```typescript
-via(user: Notifiable): string[] {
-  return ['database']
-}
+## 🧩 API Reference
 
-toDatabase(user: Notifiable): DatabaseNotification {
-  return {
-    type: 'notification-type',
-    data: { /* ... */ },
-  }
-}
-```
+### `Notification` Base Class
+- `via(notifiable)`: Returns an array of channel strings.
+- `toMail(notifiable)`: Returns `MailMessage`.
+- `toDatabase(notifiable)`: Returns `DatabaseNotification`.
+- `toBroadcast(notifiable)`: Returns `BroadcastNotification`.
+- `toSlack(notifiable)`: Returns `SlackMessage`.
+- `toSms(notifiable)`: Returns `SmsMessage`.
 
-### Broadcast
+### `NotificationManager`
+- `send(notifiable, notification)`: Sends the notification to all specified channels.
+- `channel(name, implementation)`: Registers a custom delivery channel.
 
-Requires `@gravito/radiance`:
+## 🤝 Contributing
 
-```typescript
-via(user: Notifiable): string[] {
-  return ['broadcast']
-}
+We welcome contributions! Please see our [Contributing Guide](../../CONTRIBUTING.md) for details.
 
-toBroadcast(user: Notifiable): BroadcastNotification {
-  return {
-    type: 'notification-type',
-    data: { /* ... */ },
-  }
-}
-```
-
-### Slack
-
-```typescript
-via(user: Notifiable): string[] {
-  return ['slack']
-}
-
-toSlack(user: Notifiable): SlackMessage {
-  return {
-    text: 'Notification message',
-    channel: '#notifications',
-  }
-}
-```
-
-### SMS
-
-```typescript
-via(user: Notifiable): string[] {
-  return ['sms']
-}
-
-toSms(user: Notifiable): SmsMessage {
-  return {
-    to: user.phone,
-    message: 'Notification message',
-  }
-}
-```
-
-## API Reference
-
-### Notification
-
-Every notification should extend `Notification`.
-
-#### Methods
-
-- `via(notifiable: Notifiable): string[]` - Choose delivery channels (required)
-- `toMail(notifiable: Notifiable): MailMessage` - Mail payload (optional)
-- `toDatabase(notifiable: Notifiable): DatabaseNotification` - Database payload (optional)
-- `toBroadcast(notifiable: Notifiable): BroadcastNotification` - Broadcast payload (optional)
-- `toSlack(notifiable: Notifiable): SlackMessage` - Slack payload (optional)
-- `toSms(notifiable: Notifiable): SmsMessage` - SMS payload (optional)
-
-### NotificationManager
-
-#### Methods
-
-- `send(notifiable: Notifiable, notification: Notification): Promise<void>` - Send notification
-- `channel(name: string, channel: NotificationChannel): void` - Register a custom channel
-
-## License
+## 📄 License
 
 MIT © Carl Lee
