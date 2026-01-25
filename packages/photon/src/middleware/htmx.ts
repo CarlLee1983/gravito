@@ -1,42 +1,98 @@
-import type { MiddlewareHandler } from 'hono' // Direct import to avoid circular dependency
+import type { MiddlewareHandler } from 'hono'
 
 /**
- * HTMX Middleware for Photon
+ * HTMX request detection and header extraction middleware.
  *
- * Automatically detects HTMX requests and provides a helper method
- * to check if the current request is from HTMX.
+ * Automatically detects HTMX requests via the `HX-Request` header and populates the
+ * request context with HTMX-specific metadata. This enables conditional rendering
+ * of full pages vs. HTML fragments for hypermedia-driven applications.
+ *
+ * **Design Rationale:**
+ * HTMX applications often need to distinguish between traditional page loads and
+ * partial updates. This middleware centralizes that logic, storing all HTMX headers
+ * in the context for easy access throughout the request lifecycle.
+ *
+ * **Use Cases:**
+ * - Building server-side rendered (SSR) applications with progressive enhancement
+ * - Implementing hypermedia APIs that return HTML fragments for HTMX requests
+ * - Conditional rendering based on whether the request originated from HTMX or a browser navigation
+ * - Accessing HTMX-specific headers like trigger element, target element, and boosted state
+ *
+ * **Context Variables Set:**
+ * - `c.get('htmx')` - Boolean indicating if request is from HTMX
+ * - `c.get('htmx.boosted')` - Whether request was boosted (anchor converted to AJAX)
+ * - `c.get('htmx.currentUrl')` - Current URL in the browser
+ * - `c.get('htmx.historyRestoreRequest')` - Whether this is a history restoration
+ * - `c.get('htmx.prompt')` - User's prompt response if `hx-prompt` was used
+ * - `c.get('htmx.request')` - Always true for HTMX requests (same as `c.get('htmx')`)
+ * - `c.get('htmx.target')` - ID of the target element for the swap
+ * - `c.get('htmx.trigger')` - ID of the element that triggered the request
+ * - `c.get('htmx.triggerName')` - Name attribute of the trigger element (if present)
+ *
+ * @returns Middleware handler that populates HTMX context variables
  *
  * @example
+ * Conditional rendering for HTMX requests
  * ```typescript
- * import { Photon } from '@gravito/photon'
- * import { htmxMiddleware } from '@gravito/photon/middleware/htmx'
+ * import { Photon, htmxMiddleware } from '@gravito/photon'
  *
  * const app = new Photon()
  * app.use(htmxMiddleware())
  *
  * app.get('/search', async (c) => {
- *   const view = c.get('view')
- *   const query = c.req.query('q')
+ *   const results = await db.search(c.req.query('q'))
  *
- *   // Use the helper method instead of checking header manually
  *   if (c.get('htmx')) {
- *     const results = await db.posts.search(query)
- *     return c.html(view.render('partials/search-results', { results }))
+ *     // Return HTML fragment for HTMX swap
+ *     return c.html(`<div>${results.map(r => `<p>${r.title}</p>`).join('')}</div>`)
  *   }
  *
- *   return c.html(view.render('search-page', { query }))
+ *   // Return full page for browser navigation
+ *   return c.html(`
+ *     <!DOCTYPE html>
+ *     <html><body><div id="results">...</div></body></html>
+ *   `)
  * })
  * ```
+ *
+ * @example
+ * Accessing HTMX-specific headers
+ * ```typescript
+ * app.post('/submit', async (c) => {
+ *   const target = c.get('htmx.target')
+ *   const trigger = c.get('htmx.trigger')
+ *
+ *   console.log(`Request triggered by #${trigger}, targeting #${target}`)
+ *
+ *   // Process submission and return appropriate fragment
+ *   return c.html(`<div id="${target}">Updated content</div>`)
+ * })
+ * ```
+ *
+ * @example
+ * Handling boosted links
+ * ```typescript
+ * app.get('/page', (c) => {
+ *   if (c.get('htmx.boosted')) {
+ *     // This was an anchor tag converted to AJAX by hx-boost
+ *     // Return just the content area
+ *     return c.html('<main>Page content</main>')
+ *   }
+ *
+ *   // Regular page load, include full layout
+ *   return c.html('<!DOCTYPE html><html>...</html>')
+ * })
+ * ```
+ *
+ * @see {@link https://htmx.org/reference/#request_headers} HTMX Request Headers Reference
+ * @public
  */
 export const htmxMiddleware = (): MiddlewareHandler => {
   return async (c, next) => {
-    // Check for HTMX request header
     const isHtmx = c.req.header('HX-Request') === 'true'
 
-    // Store in context for easy access
     c.set('htmx', isHtmx)
 
-    // Also store HTMX-specific headers if present
     if (isHtmx) {
       c.set('htmx.boosted', c.req.header('HX-Boosted') === 'true')
       c.set('htmx.currentUrl', c.req.header('HX-Current-URL') || null)
