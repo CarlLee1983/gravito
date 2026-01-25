@@ -17,6 +17,12 @@ export interface CreateAlternatesOptions {
 /**
  * Helper to create i18n alternate URLs for a sitemap entry.
  *
+ * Generates alternate URL objects for different locales, useful for creating
+ * `hreflang` tags. Supports simple locale prefixes or custom transformation functions.
+ *
+ * @param options - Configuration for creating alternates.
+ * @returns An array of alternate URL objects.
+ *
  * @example
  * ```typescript
  * createAlternates({

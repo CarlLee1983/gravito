@@ -21,9 +21,14 @@ export class SeoRenderer {
   /**
    * Render the sitemap or sitemap index based on entries count and page query.
    *
-   * @param entries All sitemap entries
-   * @param url The current request URL (used to generate sub-sitemap URLs)
-   * @param page The requested page number (1-based), or undefined for index/main
+   * If the number of entries exceeds the configured maximum (default 50,000),
+   * this method will automatically generate a sitemap index or a paginated
+   * sub-sitemap based on the `page` argument.
+   *
+   * @param entries - All sitemap entries.
+   * @param url - The current request URL (used to generate sub-sitemap URLs).
+   * @param page - The requested page number (1-based), or undefined for index/main.
+   * @returns The generated XML string.
    */
   render(entries: SitemapEntry[], url: string, page?: number): string {
     const maxEntries = this.config.output?.maxEntriesPerSitemap || SeoRenderer.MAX_ENTRIES

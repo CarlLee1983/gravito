@@ -52,7 +52,19 @@ export class Luminosity {
   /**
    * Generates sitemaps based on the provided entries using a highly efficient stream.
    *
+   * Processes large datasets by streaming entries to disk, automatically splitting
+   * files when the entry limit is reached, and compressing output if enabled.
+   *
    * @param entries - An array of entries, an async generator, or a resolver function.
+   * @throws {Error} If file writing fails.
+   *
+   * @example
+   * ```typescript
+   * await engine.generate(async function* () {
+   *   yield { url: '/page1' };
+   *   yield { url: '/page2' };
+   * });
+   * ```
    */
   async generate(
     entries: SitemapEntry[] | AsyncIterable<SitemapEntry> | (() => Promise<SitemapEntry[]>)
@@ -166,6 +178,18 @@ export class Luminosity {
 
   /**
    * Create a Robots.txt builder.
+   *
+   * Returns a builder instance for constructing a `robots.txt` file programmatically.
+   *
+   * @returns A new RobotsTxtBuilder instance.
+   *
+   * @example
+   * ```typescript
+   * const robots = engine.robots()
+   *   .allow('/public')
+   *   .disallow('/admin')
+   *   .build();
+   * ```
    */
   robots(): RobotsTxtBuilder {
     return new RobotsTxtBuilder()

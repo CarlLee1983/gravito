@@ -14,8 +14,20 @@ import type { SeoConfig } from '../types'
  */
 export class ConfigLoader {
   /**
-   * Load configuration from file
-   * Supports .ts, .js, .mjs chunks
+   * Load configuration from file.
+   *
+   * Supports .ts, .js, and .mjs files. Prioritizes the provided `configPath`
+   * if given, otherwise searches default paths.
+   *
+   * @param configPath - Optional explicit path to the configuration file.
+   * @returns The loaded and validated configuration.
+   * @throws {Error} If the file is not found or is invalid.
+   *
+   * @example
+   * ```typescript
+   * const loader = new ConfigLoader();
+   * const config = await loader.load('./seo.config.ts');
+   * ```
    */
   async load(configPath?: string): Promise<SeoConfig> {
     const cwd = process.cwd()
