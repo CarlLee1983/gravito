@@ -7,14 +7,32 @@
 import type { FreezeConfig, RedirectRule } from './config'
 import { addLocalePrefix, stripLocalePrefix } from './path-utils'
 import type { AbsolutePath, Locale } from './types'
-import { asAbsolutePath, asLocale } from './types'
+import { asAbsolutePath } from './types'
 
 /**
- * Generate redirect HTML for abstract routes
+ * Generates HTML content for client-side redirects.
+ *
+ * Creates a complete HTML document with multiple redirect mechanisms:
+ * - Meta refresh tag for basic browser support
+ * - Canonical link for SEO
+ * - JavaScript redirect for modern browsers
+ * - Fallback link for users with JS disabled
+ *
+ * Used to generate redirect files for abstract routes (e.g., `/docs` → `/en/docs`).
+ *
+ * @param targetUrl - The destination URL to redirect to
+ * @returns Complete HTML document as a string
  *
  * @example
- * generateRedirectHtml('/en/about')
- * // Returns HTML with meta refresh and JS redirect
+ * ```typescript
+ * const html = generateRedirectHtml('/en/docs/guide')
+ * // Generates:
+ * // \u003c!DOCTYPE html\u003e
+ * // \u003chtml\u003e
+ * //   \u003cmeta http-equiv="refresh" content="0; url=/en/docs/guide"\u003e
+ * //   \u003cscript\u003ewindow.location.href='/en/docs/guide';\u003c/script\u003e
+ * //   ...
+ * ```
  */
 export function generateRedirectHtml(targetUrl: string | AbsolutePath): string {
   return `<!DOCTYPE html>

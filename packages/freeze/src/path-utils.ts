@@ -1,16 +1,27 @@
 /**
  * @gravito/freeze - Path & Locale Utilities
  *
- * Side-effect free utilities for handling localized paths.
+ * Pure, side-effect free functions for manipulating locale-prefixed URL paths.
+ * Used by both runtime detection and build-time generation.
  */
 
 /**
- * Extract locale from URL path.
+ * Extracts the locale identifier from a URL path.
  *
- * @param path - The URL pathname.
- * @param locales - Supported locales.
- * @param defaultLocale - The fallback locale.
- * @returns The extracted locale string, or the default locale if not found.
+ * Scans the path for locale prefixes (e.g., `/en/`, `/zh/`) and returns
+ * the matching locale. Returns the default locale if no match is found.
+ *
+ * @param path - The URL pathname to analyze
+ * @param locales - Array of supported locale identifiers
+ * @param defaultLocale - Fallback locale when no prefix matches
+ * @returns The detected locale or default locale
+ *
+ * @example
+ * ```typescript
+ * getLocaleFromPath('/en/docs', ['en', 'zh'], 'en') // 'en'
+ * getLocaleFromPath('/zh/about', ['en', 'zh'], 'en') // 'zh'
+ * getLocaleFromPath('/about', ['en', 'zh'], 'en') // 'en' (default)
+ * ```
  */
 export function getLocaleFromPath(path: string, locales: string[], defaultLocale: string): string {
   for (const locale of locales) {
@@ -22,11 +33,21 @@ export function getLocaleFromPath(path: string, locales: string[], defaultLocale
 }
 
 /**
- * Remove locale prefix from a path if present.
+ * Removes locale prefix from a URL path if present.
  *
- * @param path - The URL pathname.
- * @param locales - Supported locales.
- * @returns The path without the locale prefix.
+ * Strips the leading locale segment (e.g., `/en/`, `/zh/`) from the path,
+ * returning the locale-neutral base path. Used for path normalization.
+ *
+ * @param path - The URL pathname with potential locale prefix
+ * @param locales - Array of supported locale identifiers
+ * @returns The path with locale prefix removed, or the original path
+ *
+ * @example
+ * ```typescript
+ * stripLocalePrefix('/en/docs', ['en', 'zh']) // '/docs'
+ * stripLocalePrefix('/zh', ['en', 'zh']) // '/'
+ * stripLocalePrefix('/about', ['en', 'zh']) // '/about' (unchanged)
+ * ```
  */
 export function stripLocalePrefix(path: string, locales: string[]): string {
   let cleanPath = path
@@ -40,12 +61,26 @@ export function stripLocalePrefix(path: string, locales: string[]): string {
 }
 
 /**
- * Add locale prefix to a path.
+ * Adds a locale prefix to a base path.
  *
- * @param path - The base path (abstract route).
- * @param locale - The target locale.
- * @param defaultLocale - The default locale.
- * @returns The localized path.
+ * Prepends the locale identifier to the path unless it's the default locale.
+ * Ensures proper slash handling for root and nested paths.
+ *
+ * @param path - The base path without locale
+ * @param locale - The target locale identifier
+ * @param defaultLocale - The default locale (omitted from URLs)
+ * @returns The localized path with appropriate prefix
+ *
+ * @example
+ * ```typescript
+ * // Non-default locale
+ * addLocalePrefix('/docs', 'zh', 'en') // '/zh/docs'
+ * addLocalePrefix('/', 'zh', 'en') // '/zh'
+ *
+ * // Default locale (no prefix)
+ * addLocalePrefix('/docs', 'en', 'en') // '/docs'
+ * addLocalePrefix('/', 'en', 'en') // '/'
+ * ```
  */
 export function addLocalePrefix(path: string, locale: string, defaultLocale: string): string {
   const cleanPath = path.startsWith('/') ? path : `/${path}`
@@ -61,13 +96,26 @@ export function addLocalePrefix(path: string, locale: string, defaultLocale: str
 }
 
 /**
- * Get localized path for a given path and target locale, ensuring any existing prefix is replaced.
+ * Switches the locale of a path while preserving the base route.
  *
- * @param path - The current path.
- * @param targetLocale - The locale to switch to.
- * @param locales - All supported locales.
- * @param defaultLocale - The default locale.
- * @returns The new path with the correct locale prefix.
+ * Removes any existing locale prefix and applies the target locale's prefix.
+ * This is a composite operation combining {@link stripLocalePrefix} and {@link addLocalePrefix}.
+ *
+ * @param path - The current path (possibly with locale prefix)
+ * @param targetLocale - The locale to switch to
+ * @param locales - Array of all supported locale identifiers
+ * @param defaultLocale - The default locale identifier
+ * @returns The path with the target locale's prefix
+ *
+ * @example
+ * ```typescript
+ * // Switching between locales
+ * getLocalizedPath('/en/docs', 'zh', ['en', 'zh'], 'en') // '/zh/docs'
+ * getLocalizedPath('/zh/about', 'en', ['en', 'zh'], 'en') // '/about'
+ *
+ * // Switching to default locale removes prefix
+ * getLocalizedPath('/zh/docs', 'en', ['en', 'zh'], 'en') // '/docs'
+ * ```
  */
 export function getLocalizedPath(
   path: string,
@@ -80,11 +128,22 @@ export function getLocalizedPath(
 }
 
 /**
- * Check if a path is already localized.
+ * Checks whether a path already contains a locale prefix.
  *
- * @param path - The path to check.
- * @param locales - Supported locales.
- * @returns True if the path starts with a supported locale.
+ * Tests if the path starts with any of the supported locale identifiers.
+ * Useful for conditional path processing and validation.
+ *
+ * @param path - The path to test
+ * @param locales - Array of supported locale identifiers
+ * @returns `true` if the path has a locale prefix, `false` otherwise
+ *
+ * @example
+ * ```typescript
+ * isLocalizedPath('/en/docs', ['en', 'zh']) // true
+ * isLocalizedPath('/zh', ['en', 'zh']) // true
+ * isLocalizedPath('/docs', ['en', 'zh']) // false
+ * isLocalizedPath('/about', ['en', 'zh']) // false
+ * ```
  */
 export function isLocalizedPath(path: string, locales: string[]): boolean {
   return locales.some((locale) => path === `/${locale}` || path.startsWith(`/${locale}/`))
