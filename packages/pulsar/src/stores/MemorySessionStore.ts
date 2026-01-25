@@ -3,13 +3,23 @@ import type { SessionId, SessionRecord, SessionStore } from '../types'
 /**
  * In-memory session store for development and testing.
  *
- * Stores sessions in memory with automatic expiration.
- * Not suitable for production use in multi-instance deployments.
+ * Stores sessions in a JavaScript Map with automatic expiration checks on read.
+ * This is the fastest storage option but data is lost on process restart.
+ *
+ * **Performance Characteristics:**
+ * - ✅ Fastest read/write performance (O(1) Map operations)
+ * - ✅ No external dependencies or network latency
+ * - ✅ Zero configuration required
+ * - ❌ Data lost on process restart or crash
+ * - ❌ Not suitable for multi-instance deployments (no session sharing)
+ * - ❌ Memory consumption grows with session count
+ *
+ * **Best For:** Development, unit tests, single-instance prototypes
  *
  * @example
  * ```typescript
  * const store = new MemorySessionStore(() => Date.now())
- * await store.set('session-id', { userId: '123' }, 3600)
+ * await store.set('session-id', { data: { userId: '123' }, createdAt: Date.now(), lastActivityAt: Date.now() }, 3600)
  * const session = await store.get('session-id')
  * ```
  *

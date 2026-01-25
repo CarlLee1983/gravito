@@ -83,6 +83,64 @@ session: {
 - Token source: session key `_csrf`
 - Also sets a readable cookie (default `XSRF-TOKEN`) for frontend usage
 
+## Flash Data
+
+Flash data is only available for the next request. Perfect for success messages or validation errors.
+
+```typescript
+// In your handler
+const session = c.get('session')
+session.flash('success', 'Profile updated!')
+
+// In the next request handler
+const message = session.getFlash('success')
+```
+
+## Performance Tuning
+
+- `touchIntervalSeconds`: Defaults to 60. This prevents writing to the session store on every request if only the `lastActivityAt` changed.
+- Driver selection: `redis` is recommended for production multi-instance setups. `sqlite` is great for persistent single-instance setups.
+
+## Security Best Practices
+
+- **HTTPS**: Always use `cookie: { secure: true }` in production.
+- **SameSite**: The default `Lax` is usually appropriate, but `Strict` offers more protection if your site doesn't rely on cross-site sub-requests.
+- **Session ID**: Pulsar uses cryptographically secure tokens for session IDs.
+- **Cleanup**: If using `sqlite`, remember to occasionally call `store.cleanup()` (exposed via the `SqliteSessionStore` class) to purge expired records.
+
+## API Quick Reference
+
+### Session Methods
+
+| Method | Description | Example |
+|--------|-------------|---------|
+| `session.id()` | Get current session ID | `const sid = session.id()` |
+| `session.isStarted()` | Check if session loaded from store | `if (session.isStarted()) {...}` |
+| `session.get(key, default?)` | Retrieve session value | `const user = session.get('user')` |
+| `session.put(key, value)` | Store session value | `session.put('user.name', 'Alice')` |
+| `session.pull(key, default?)` | Get and remove value | `const temp = session.pull('temp')` |
+| `session.flash(key, value)` | Store value for next request only | `session.flash('success', 'Saved!')` |
+| `session.getFlash(key, default?)` | Retrieve flashed value | `const msg = session.getFlash('success')` |
+| `session.reflash()` | Keep all flash data for one more cycle | `session.reflash()` |
+| `session.regenerate()` | Change session ID (security) | `session.regenerate()` |
+
+## Troubleshooting
+
+### Sessions Not Persisting
+- Verify your driver configuration matches your environment.
+- Check that cookies are being set (inspect browser DevTools).
+- Ensure `touchIntervalSeconds` isn't too high for your use case.
+
+### CSRF Errors in Development
+- Make sure to include the CSRF token in non-GET requests.
+- Check that the `XSRF-TOKEN` cookie is accessible to your frontend.
+- For API endpoints, you can disable CSRF: `csrf: { ignore: (ctx) => ctx.req.path.startsWith('/api') }`.
+
+### File/SQLite Drivers Not Working
+- Check directory/file permissions.
+- For SQLite, ensure the database file is writable.
+- Run `cleanup()` periodically if using SQLite in production.
+
 ## License
 
 MIT

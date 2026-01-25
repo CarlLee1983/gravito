@@ -151,8 +151,19 @@ export class OrbitPulsar implements GravitoOrbit {
       }
 
       const session: any = {
+        /** Returns the current session identifier. */
         id: () => sessionId,
+        /** Returns true if the session was loaded from a persistent store. */
         isStarted: () => started,
+        /**
+         * Checks if a key exists in the session data.
+         *
+         * Supports dot notation for nested keys (e.g., 'user.profile.name').
+         * Returns false for dangerous property names to prevent prototype pollution.
+         *
+         * @param k - The key path (supports dot notation)
+         * @returns True if the key exists and is safe to access
+         */
         has: (k: string) => {
           const parts = k.split('.')
           let curr: any = data
@@ -167,6 +178,7 @@ export class OrbitPulsar implements GravitoOrbit {
           }
           return curr !== undefined
         },
+        /** Retrieves a value by key with an optional default. */
         get: (k: string, d?: any) => {
           const parts = k.split('.')
           let curr: any = data
@@ -181,6 +193,16 @@ export class OrbitPulsar implements GravitoOrbit {
           }
           return curr ?? d
         },
+        /**
+         * Stores a value in the session.
+         *
+         * Supports dot notation for nested keys (e.g., 'user.profile.name').
+         * Silently rejects attempts to set dangerous property names
+         * (__proto__, constructor, prototype) to prevent prototype pollution attacks.
+         *
+         * @param k - The key path (supports dot notation)
+         * @param v - The value to store
+         */
         put: (k: string, v: any) => {
           const parts = k.split('.')
           let curr = data
@@ -201,12 +223,15 @@ export class OrbitPulsar implements GravitoOrbit {
           curr[lastPart] = v
           markDirty()
         },
+        /** Alias for put(). */
         set: (k: string, v: any) => session.put(k, v),
+        /** Retrieves and immediately removes a value from the session. */
         pull: (k: string, d?: any) => {
           const value = session.get(k, d)
           session.forget(k)
           return value
         },
+        /** Removes a specific key from the session. */
         forget: (k: string) => {
           const parts = k.split('.')
           let curr = data
@@ -227,6 +252,7 @@ export class OrbitPulsar implements GravitoOrbit {
           delete curr[lastPart]
           markDirty()
         },
+        /** Changes the session ID while keeping the existing data. */
         regenerate: () => {
           const old = { ...data }
           delete old._csrf
@@ -238,13 +264,16 @@ export class OrbitPulsar implements GravitoOrbit {
             core.hooks.doAction('session:regenerated', { sessionId })
           }
         },
+        /** Clears all session data and changes the session ID. */
         invalidate: () => {
           data = {}
           sessionId = generateToken()
           markDirty()
           isRegenerated = true
         },
+        /** Permanently expires and deletes the session. */
         destroy: () => session.invalidate(),
+        /** Stores a value that only lasts for the next request. */
         flash: (k: string, v: any) => {
           if (!data._flash) {
             data._flash = {}
@@ -252,10 +281,12 @@ export class OrbitPulsar implements GravitoOrbit {
           data._flash[k] = v
           markDirty()
         },
+        /** Retrieves a flashed value. */
         getFlash: (k: string, d?: any) => {
           flashReads.add(k)
           return oldFlash[k] ?? d
         },
+        /** Persists all current flash data for another request cycle. */
         reflash: () => {
           if (Object.keys(oldFlash).length > 0) {
             if (!data._flash) {
@@ -265,6 +296,7 @@ export class OrbitPulsar implements GravitoOrbit {
             markDirty()
           }
         },
+        /** Persists specific keys from current flash data for another request cycle. */
         keep: (keys: string[]) => {
           for (const key of keys) {
             if (key in oldFlash) {
@@ -277,6 +309,7 @@ export class OrbitPulsar implements GravitoOrbit {
             }
           }
         },
+        /** Returns all data stored in the current session. */
         all: () => data,
       }
 
