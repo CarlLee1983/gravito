@@ -19,6 +19,8 @@ export class SessionGuard<User extends Authenticatable = Authenticatable>
 {
   protected userInstance: User | null = null
   protected loggedOut = false
+  protected rememberCookieName = 'remember_token'
+  protected rememberDuration = 60 * 60 * 24 * 30
 
   constructor(
     protected name: string,
@@ -44,33 +46,27 @@ export class SessionGuard<User extends Authenticatable = Authenticatable>
       return this.userInstance
     }
 
-    // Access session via unknown cast to avoid depending on specific session implementation
     const session = this.ctx.get(
       'session' as keyof import('@gravito/core').GravitoVariables
     ) as unknown as SessionContract | undefined
     const id = session?.get(this.getName())
 
-    if (!id) {
-      return null
+    if (id) {
+      this.userInstance = (await this.provider.retrieveById(id)) as User | null
+      return this.userInstance
     }
 
-    const user = (await this.provider.retrieveById(id)) as User | null
-    this.userInstance = user
+    this.userInstance = await this.retrieveFromRememberCookie()
 
-    return user
+    return this.userInstance
   }
 
   async id(): Promise<string | number | null> {
     if (this.loggedOut) {
       return null
     }
-    const session = this.ctx.get(
-      'session' as keyof import('@gravito/core').GravitoVariables
-    ) as unknown as SessionContract | undefined
-    const id = session?.get(this.getName())
-    return (
-      (id as string | number) ?? (this.userInstance ? this.userInstance.getAuthIdentifier() : null)
-    )
+    const user = await this.user()
+    return user ? user.getAuthIdentifier() : null
   }
 
   async validate(credentials: Record<string, unknown>): Promise<boolean> {
@@ -94,7 +90,7 @@ export class SessionGuard<User extends Authenticatable = Authenticatable>
     return true
   }
 
-  public async login(user: User, _remember = false): Promise<void> {
+  public async login(user: User, remember = false): Promise<void> {
     const id = user.getAuthIdentifier()
 
     this.userInstance = user
@@ -107,6 +103,15 @@ export class SessionGuard<User extends Authenticatable = Authenticatable>
         await session.regenerate()
       }
       session.put(this.getName(), id)
+    }
+
+    if (remember && user.setRememberToken) {
+      const token = this.generateRememberToken()
+      user.setRememberToken(token)
+      if (this.provider.updateRememberToken) {
+        await this.provider.updateRememberToken(user, token)
+      }
+      this.setRememberCookie(id, token)
     }
 
     this.loggedOut = false
@@ -124,6 +129,7 @@ export class SessionGuard<User extends Authenticatable = Authenticatable>
         await session.regenerate()
       }
     }
+    this.ctx.header('Set-Cookie', `${this.rememberCookieName}=; Path=/; HttpOnly; Max-Age=0`)
   }
 
   getProvider(): UserProvider<User> {
@@ -136,5 +142,44 @@ export class SessionGuard<User extends Authenticatable = Authenticatable>
 
   protected getName(): string {
     return `login_${this.name}_${this.sessionKey}`
+  }
+
+  private generateRememberToken(): string {
+    return `${crypto.randomUUID()}${crypto.randomUUID()}`
+  }
+
+  private setRememberCookie(id: string | number, token: string): void {
+    const value = `${id}|${token}`
+    this.ctx.header(
+      'Set-Cookie',
+      `${this.rememberCookieName}=${value}; Path=/; HttpOnly; Max-Age=${this.rememberDuration}`
+    )
+  }
+
+  private async retrieveFromRememberCookie(): Promise<User | null> {
+    const cookieString = this.ctx.req.header('Cookie')
+    if (!cookieString) return null
+
+    const cookies = cookieString.split(';').reduce(
+      (acc, cookie) => {
+        const [key, value] = cookie.trim().split('=')
+        acc[key] = value
+        return acc
+      },
+      {} as Record<string, string>
+    )
+
+    const rememberToken = cookies[this.rememberCookieName]
+    if (!rememberToken) return null
+
+    const [id, token] = rememberToken.split('|')
+    if (!id || !token) return null
+
+    if (this.provider.retrieveByToken) {
+      const user = await this.provider.retrieveByToken(id, token)
+      return user as User | null
+    }
+
+    return null
   }
 }
