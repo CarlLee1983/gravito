@@ -3,6 +3,8 @@ import type { ChangeFreq } from './types'
 /**
  * Metadata for an image included in a sitemap.
  *
+ * Used to describe images to search engines, improving image search ranking.
+ *
  * @public
  * @since 3.0.0
  */
@@ -21,6 +23,8 @@ export interface SitemapImage {
 
 /**
  * Metadata for a video included in a sitemap.
+ *
+ * Used to provide detailed information about video content to search engines.
  *
  * @public
  * @since 3.0.0
@@ -55,6 +59,8 @@ export interface SitemapVideo {
 /**
  * Represents an alternate language or regional version of a URL.
  *
+ * Used for hreflang tags to serve the correct language or regional URL to users.
+ *
  * @public
  * @since 3.0.0
  */
@@ -67,6 +73,9 @@ export interface AlternateUrl {
 
 /**
  * Represents a single URL entry in an XML sitemap.
+ *
+ * Contains all standard sitemap fields plus extensions for images, videos, and
+ * internationalization (hreflang).
  *
  * @public
  * @since 3.0.0
@@ -91,6 +100,9 @@ export interface SitemapEntry {
 /**
  * Interface for data resolvers that provide URL entries to the SEO engine.
  *
+ * Resolvers are responsible for fetching dynamic content (e.g., products, blog posts)
+ * and converting them into standard sitemap entries.
+ *
  * @public
  * @since 3.0.0
  */
@@ -102,6 +114,7 @@ export interface SeoResolver {
    * Fetch all URL entries provided by this resolver.
    *
    * @returns A promise that resolves to an array of sitemap entries.
+   * @throws {Error} If data fetching fails.
    */
   fetch: () => Promise<SitemapEntry[]> | SitemapEntry[]
 

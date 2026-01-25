@@ -48,7 +48,11 @@ export class FastifyScanner implements RouteScanner {
 
   /**
    * Fastify 'onRoute' hook handler.
-   * Bind this to the hook: `app.addHook('onRoute', scanner.collect)`
+   *
+   * Captures route information as routes are registered in Fastify.
+   * Bind this to the hook: `app.addHook('onRoute', scanner.collect)`.
+   *
+   * @param routeOptions - The Fastify route configuration object.
    */
   public collect = (routeOptions: any): void => {
     // Fastify routeOptions has { method, url, path, prefix, ... }
@@ -82,6 +86,11 @@ export class FastifyScanner implements RouteScanner {
     }
   }
 
+  /**
+   * Returns the list of routes collected via the `onRoute` hook.
+   *
+   * @returns A promise resolving to the list of scanned routes.
+   */
   async scan(): Promise<ScannedRoute[]> {
     return this.routes
   }

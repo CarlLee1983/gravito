@@ -12,6 +12,11 @@ import type { MetaConfig } from './interfaces'
 export class MetaTagBuilder {
   constructor(private config: MetaConfig) {}
 
+  /**
+   * Generates the standard HTML meta tags.
+   *
+   * @returns A string containing title, description, keywords, canonical, and robots tags.
+   */
   build(): string {
     const tags: string[] = []
 

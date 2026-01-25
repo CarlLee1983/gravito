@@ -15,6 +15,11 @@ export class RobotsBuilder {
     private baseUrl: string
   ) {}
 
+  /**
+   * Generates the complete robots.txt content.
+   *
+   * @returns The raw string content of the robots.txt file.
+   */
   build(): string {
     let output = ''
 

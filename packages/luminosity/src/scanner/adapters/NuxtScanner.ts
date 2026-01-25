@@ -46,6 +46,13 @@ export class NuxtScanner implements RouteScanner {
 
   constructor(private options: NuxtScannerOptions = {}) {}
 
+  /**
+   * Scans the Nuxt.js pages directory for routes.
+   *
+   * Handles both Nuxt 2 and Nuxt 3 routing conventions.
+   *
+   * @returns A promise resolving to the list of scanned routes.
+   */
   async scan(): Promise<ScannedRoute[]> {
     const cwd = this.options.cwd ?? process.cwd()
     const srcDir = join(cwd, this.options.srcDir ?? '')

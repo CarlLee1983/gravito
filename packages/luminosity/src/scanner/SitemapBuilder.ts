@@ -48,7 +48,10 @@ export class SitemapBuilder {
   }
 
   /**
-   * Register a dynamic route resolver
+   * Register a dynamic route resolver.
+   *
+   * @param resolver - The resolver configuration.
+   * @returns The builder instance for chaining.
    */
   addResolver(resolver: DynamicRouteResolver): this {
     this.dynamicResolvers.set(resolver.pattern, resolver)
@@ -56,7 +59,14 @@ export class SitemapBuilder {
   }
 
   /**
-   * Build sitemap entries from scanned routes
+   * Build sitemap entries from scanned routes.
+   *
+   * Scans all routes, filters them based on patterns and exclusions,
+   * resolves dynamic parameters, and generates final sitemap entries.
+   *
+   * @param hostname - Optional override for the base URL.
+   * @returns A promise that resolves to an array of sitemap entries.
+   * @throws {Error} If scanning fails.
    */
   async build(hostname?: string): Promise<SitemapEntry[]> {
     const baseUrl = hostname ?? this.options.hostname ?? ''
@@ -98,7 +108,14 @@ export class SitemapBuilder {
   }
 
   /**
-   * Process a single route and return sitemap entries
+   * Process a single route and return sitemap entries.
+   *
+   * Handles both static and dynamic routes. For dynamic routes, it looks up
+   * the corresponding resolver to generate all possible URL variations.
+   *
+   * @param route - The scanned route.
+   * @param baseUrl - The base URL of the site.
+   * @returns A promise resolving to an array of entries.
    */
   private async processRoute(route: ScannedRoute, baseUrl: string): Promise<SitemapEntry[]> {
     const entries: SitemapEntry[] = []
@@ -130,7 +147,13 @@ export class SitemapBuilder {
   }
 
   /**
-   * Create a SitemapEntry from route information
+   * Create a SitemapEntry from route information.
+   *
+   * @param path - The URL path.
+   * @param baseUrl - The base URL.
+   * @param route - The original scanned route info.
+   * @param resolverMeta - Optional metadata from the dynamic resolver.
+   * @returns The fully constructed sitemap entry.
    */
   private createEntry(
     path: string,
@@ -169,14 +192,18 @@ export class SitemapBuilder {
   }
 
   /**
-   * Get framework name from scanner
+   * Get framework name from scanner.
+   *
+   * @returns The framework identifier.
    */
   get framework(): string {
     return this.scanner.framework
   }
 
   /**
-   * Get all registered dynamic resolvers
+   * Get all registered dynamic resolvers.
+   *
+   * @returns An array of registered resolvers.
    */
   get resolvers(): DynamicRouteResolver[] {
     return Array.from(this.dynamicResolvers.values())

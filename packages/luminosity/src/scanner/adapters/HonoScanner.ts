@@ -59,6 +59,14 @@ export class HonoScanner implements RouteScanner {
     private options: HonoScannerOptions = {}
   ) {}
 
+  /**
+   * Scans the Hono application for registered routes.
+   *
+   * Iterates through Hono's internal route list and converts them
+   * into standardized `ScannedRoute` objects.
+   *
+   * @returns A promise resolving to the list of scanned routes.
+   */
   async scan(): Promise<ScannedRoute[]> {
     const routes: ScannedRoute[] = []
 

@@ -1,7 +1,13 @@
 import type { ChangeFreq } from '../types'
 
 /**
- * Scanned route information from a framework
+ * Scanned route information from a framework.
+ *
+ * Represents a route discovered by a scanner, including its path, method,
+ * parameters, and optional metadata.
+ *
+ * @public
+ * @since 3.0.0
  */
 export interface ScannedRoute {
   /** Route path (may contain params like /blog/:slug) */
@@ -26,13 +32,20 @@ export interface ScannedRoute {
 }
 
 /**
- * Route Scanner Interface - Framework Agnostic
+ * Route Scanner Interface - Framework Agnostic.
  *
  * Implementations scan registered routes from various frameworks
  * and return a standardized list of ScannedRoute objects.
+ *
+ * @public
+ * @since 3.0.0
  */
 export interface RouteScanner {
-  /** Scan and return all indexable routes */
+  /**
+   * Scan and return all indexable routes.
+   *
+   * @returns A promise resolving to an array of ScannedRoute objects.
+   */
   scan(): Promise<ScannedRoute[]>
 
   /** Framework name (e.g., 'gravito', 'hono', 'express', 'next.js', 'nuxt') */
@@ -40,16 +53,23 @@ export interface RouteScanner {
 }
 
 /**
- * Dynamic Route Resolver
+ * Dynamic Route Resolver.
  *
  * Used to expand dynamic routes (e.g., /blog/:slug) into actual URLs
  * by providing all possible parameter combinations.
+ *
+ * @public
+ * @since 3.0.0
  */
 export interface DynamicRouteResolver {
   /** Route pattern (e.g., /blog/:slug, /products/:category/:id) */
   pattern: string
 
-  /** Resolve function - returns all possible parameter combinations */
+  /**
+   * Resolve function - returns all possible parameter combinations.
+   *
+   * @returns A promise resolving to an array of parameter objects.
+   */
   resolve: () => Promise<Record<string, string | number>[]> | Record<string, string | number>[]
 
   /** Optional metadata to apply to all resolved URLs */
@@ -61,7 +81,10 @@ export interface DynamicRouteResolver {
 }
 
 /**
- * Options for SitemapBuilder
+ * Options for SitemapBuilder.
+ *
+ * @public
+ * @since 3.0.0
  */
 export interface SitemapBuilderOptions {
   /** Route scanner instance */
