@@ -35,6 +35,8 @@ export interface CapturedRequest {
   requestBody?: any
   /** Parsed response body (if captured). */
   responseBody?: any
+  /** Request ID for correlation with logs and queries. */
+  requestId?: string
 }
 
 /**
@@ -54,6 +56,8 @@ export interface CapturedLog {
   args: any[]
   /** Epoch timestamp when the log was generated. */
   timestamp: number
+  /** Request ID for correlation with the originating request. */
+  requestId?: string
 }
 
 /**
@@ -75,4 +79,6 @@ export interface CapturedQuery {
   duration: number
   /** Epoch timestamp when the query was executed. */
   timestamp: number
+  /** Request ID for correlation with the originating request. */
+  requestId?: string
 }
