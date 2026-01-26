@@ -27,10 +27,10 @@ this.timer = setInterval(() => this.tick(), this.interval)
 
 ### 改進項目
 
-- [ ] 實作自適應心跳間隔
-- [ ] 新增心跳失敗重試機制
-- [ ] 支援心跳抖動（jitter）避免同步
-- [ ] 記錄心跳成功/失敗統計
+- [x] 實作自適應心跳間隔
+- [x] 新增心跳失敗重試機制
+- [x] 支援心跳抖動（jitter）避免同步
+- [x] 記錄心跳成功/失敗統計
 
 ```typescript
 // heartbeat/AdaptiveHeartbeat.ts
@@ -95,8 +95,8 @@ pipe.ltrim(historyKey, 0, 99)
 
 ### 改進項目
 
-- [ ] 實作可配置的歷史記錄上限
-- [ ] 新增記憶體內快取過期機制
+- [ ] 實作可配置的歷史記錄上限（目前硬編碼為 100）
+- [x] 新增記憶體內快取過期機制
 - [ ] 優化大型 payload 的序列化
 - [ ] 實作日誌抽樣機制（高流量時）
 
@@ -157,9 +157,9 @@ private getSystemCpuUsage() {
 
 ### 改進項目
 
-- [ ] 實作指標快取機制
-- [ ] 減少不必要的系統呼叫
-- [ ] 支援指標收集節流
+- [x] 實作指標快取機制
+- [x] 減少不必要的系統呼叫
+- [x] 支援指標收集節流
 
 ```typescript
 // probes/CachedNodeProbe.ts
@@ -211,9 +211,9 @@ await this.transportRedis.set(key, JSON.stringify(payload), 'EX', 30)
 
 ### 改進項目
 
-- [ ] 使用 Pipeline 合併多個 Redis 操作
+- [x] 使用 Pipeline 合併多個 Redis 操作
 - [ ] 實作非阻塞的指標發送
-- [ ] 支援連線複用與連線池
+- [x] 支援連線複用與連線池
 - [ ] 優化序列化格式（考慮 MessagePack）
 
 ```typescript
@@ -271,7 +271,7 @@ export class RedisBatcher {
 
 ### 改進項目
 
-- [ ] 收集 Agent 內部指標
+- [x] 收集 Agent 內部指標
 - [ ] 支援指標匯出（Prometheus 格式）
 - [ ] 記錄關鍵操作耗時
 
@@ -346,9 +346,9 @@ await this.monitorRedis.connect()
 
 ### 改進項目
 
-- [ ] 實作延遲連線（lazy connect）
-- [ ] 支援平行初始化
-- [ ] 優化模組載入順序
+- [x] 實作延遲連線（lazy connect）
+- [x] 支援平行初始化
+- [x] 優化模組載入順序
 
 ```typescript
 // QuasarAgent.ts
@@ -378,11 +378,11 @@ private async initTransport(): Promise<void> {
 
 ## 驗收標準
 
-- [ ] 心跳機制支援自適應間隔
-- [ ] 高流量場景下記憶體使用穩定
-- [ ] Redis 操作批次化處理
+- [x] 心跳機制支援自適應間隔
+- [ ] 高流量場景下記憶體使用穩定（需實作 LogSampler）
+- [x] Redis 操作批次化處理
 - [ ] 內部監控指標可匯出
-- [ ] 啟動時間減少 30% 以上
+- [ ] 啟動時間減少 30% 以上（待測試）
 - [ ] 效能測試通過並記錄基準數據
 
 ## 相依性

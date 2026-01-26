@@ -1,6 +1,6 @@
 # Phase 2：功能擴展
 
-> 狀態：📋 規劃中
+> 狀態：✅ 已完成
 > 優先級：中
 > 預估工作量：大
 > 前置條件：Phase 1 完成
@@ -23,9 +23,9 @@
 
 #### 2.1.1 Bull v3/v4 Bridge
 
-- [ ] 實作 `BullBridge` 類別
-- [ ] 支援 `completed`、`failed`、`progress` 事件
-- [ ] 處理 Bull 與 BullMQ 事件 API 差異
+- [x] 實作 `BullBridge` 類別
+- [x] 支援 `completed`、`failed`、`progress` 事件
+- [x] 處理 Bull 與 BullMQ 事件 API 差異
 
 ```typescript
 // bridges/BullBridge.ts
@@ -41,9 +41,9 @@ export class BullBridge extends BaseZenithBridge {
 
 #### 2.1.2 Agenda Bridge
 
-- [ ] 實作 `AgendaBridge` 類別
-- [ ] 支援 MongoDB-based 任務排程
-- [ ] 處理 Agenda 特有的任務生命週期事件
+- [x] 實作 `AgendaBridge` 類別
+- [x] 支援 MongoDB-based 任務排程
+- [x] 處理 Agenda 特有的任務生命週期事件
 
 ```typescript
 // bridges/AgendaBridge.ts
@@ -58,9 +58,9 @@ export class AgendaBridge extends BaseZenithBridge {
 
 #### 2.1.3 Generic EventEmitter Bridge
 
-- [ ] 實作通用 Bridge 基底類別
-- [ ] 支援自訂事件映射配置
-- [ ] 便於使用者快速整合自訂佇列系統
+- [x] 實作通用 Bridge 基底類別
+- [x] 支援自訂事件映射配置
+- [x] 便於使用者快速整合自訂佇列系統
 
 ```typescript
 // bridges/GenericBridge.ts
@@ -104,9 +104,9 @@ export class GenericBridge extends BaseZenithBridge {
 
 #### 2.2.1 RabbitMQ Probe
 
-- [ ] 實作 `RabbitMQProbe` 類別
-- [ ] 透過 Management API 取得佇列統計
-- [ ] 支援多個 vhost 監控
+- [x] 實作 `RabbitMQProbe` 類別
+- [x] 透過 Management API 取得佇列統計
+- [x] 支援多個 vhost 監控
 
 ```typescript
 // probes/RabbitMQProbe.ts
@@ -131,9 +131,9 @@ export class RabbitMQProbe implements QueueProbe {
 
 #### 2.2.2 SQS Probe
 
-- [ ] 實作 `SQSProbe` 類別
-- [ ] 使用 AWS SDK v3
-- [ ] 支援多區域監控
+- [x] 實作 `SQSProbe` 類別
+- [x] 使用 AWS SDK v3
+- [x] 支援多區域監控
 
 ```typescript
 // probes/SQSProbe.ts
@@ -161,9 +161,9 @@ export class SQSProbe implements QueueProbe {
 
 #### 2.2.3 Kafka Consumer Group Probe
 
-- [ ] 實作 `KafkaProbe` 類別
-- [ ] 監控 Consumer Group Lag
-- [ ] 支援多主題監控
+- [x] 實作 `KafkaProbe` 類別
+- [x] 監控 Consumer Group Lag
+- [x] 支援多主題監控
 
 ### 預期效益
 
@@ -183,10 +183,10 @@ export class SQSProbe implements QueueProbe {
 
 ### 改進項目
 
-- [ ] 實作 `PauseQueueExecutor` - 暫停佇列處理
-- [ ] 實作 `ResumeQueueExecutor` - 恢復佇列處理
-- [ ] 實作 `CleanQueueExecutor` - 清理特定狀態的任務
-- [ ] 實作 `PrioritizeJobExecutor` - 調整任務優先級
+- [x] 實作 `PauseQueueExecutor` - 暫停佇列處理
+- [x] 實作 `ResumeQueueExecutor` - 恢復佇列處理
+- [x] 實作 `CleanQueueExecutor` - 清理特定狀態的任務
+- [x] 實作 `PrioritizeJobExecutor` - 調整任務優先級
 
 ```typescript
 // executors/PauseQueueExecutor.ts
@@ -222,10 +222,10 @@ export class PauseQueueExecutor extends BaseExecutor {
 
 ### 改進項目
 
-- [ ] 實作滾動視窗指標聚合
-- [ ] 支援自訂聚合週期
-- [ ] 提供吞吐量計算（jobs/min）
-- [ ] 支援告警閾值配置
+- [x] 實作滾動視窗指標聚合
+- [x] 支援自訂聚合週期
+- [x] 提供吞吐量計算（jobs/min）
+- [x] 支援告警閾值配置
 
 ```typescript
 // metrics/MetricsAggregator.ts
@@ -280,9 +280,9 @@ await this.redis.publish(`${this.prefix}logs`, JSON.stringify(fullPayload))
 
 ### 改進項目
 
-- [ ] 實作日誌批次緩衝
-- [ ] 支援配置批次大小與發送間隔
-- [ ] 實作優雅關閉時的緩衝區清空
+- [x] 實作日誌批次緩衝
+- [x] 支援配置批次大小與發送間隔
+- [x] 實作優雅關閉時的緩衝區清空
 
 ```typescript
 // bridges/LogBuffer.ts
@@ -337,9 +337,9 @@ export class LogBuffer {
 
 ### 改進項目
 
-- [ ] 提供可選的 HTTP 健康檢查端點
-- [ ] 報告 Agent 狀態與連線狀態
-- [ ] 支援 Kubernetes Liveness/Readiness 探針
+- [x] 提供可選的 HTTP 健康檢查端點
+- [x] 報告 Agent 狀態與連線狀態
+- [x] 支援 Kubernetes Liveness/Readiness 探針
 
 ```typescript
 // health/HealthServer.ts
@@ -380,12 +380,12 @@ export class HealthServer {
 
 ## 驗收標準
 
-- [ ] 至少新增 2 種 Bridge 支援
-- [ ] 至少新增 1 種 Probe 支援
-- [ ] 批次日誌功能實作並通過效能測試
-- [ ] 健康檢查端點可正常運作
-- [ ] 所有新功能具備完整測試
-- [ ] 更新文件與範例程式
+- [x] 至少新增 2 種 Bridge 支援
+- [x] 至少新增 1 種 Probe 支援
+- [x] 批次日誌功能實作並通過效能測試
+- [x] 健康檢查端點可正常運作
+- [x] 所有新功能具備完整測試
+- [x] 更新文件與範例程式
 
 ## 相依性
 
