@@ -1,6 +1,19 @@
+/**
+ * Supported project profiles defining the set of included orbits and default drivers.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export type ProfileType = 'core' | 'scale' | 'enterprise'
 
+/**
+ * Resolved configuration for a project profile.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface ProfileConfig {
+  /** Map of default service drivers. */
   drivers: {
     database: string
     cache: string
@@ -8,9 +21,20 @@ export interface ProfileConfig {
     storage: string
     session: string
   }
+  /** List of enabled features and orbits. */
   features: string[]
 }
 
+/**
+ * ProfileResolver manages the resolution of project profiles and feature add-ons.
+ *
+ * It maps high-level profiles (Core, Scale, Enterprise) to specific sets of
+ * service drivers and orbits, and handles the conditional inclusion of
+ * additional features.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class ProfileResolver {
   private static readonly DEFAULTS: Record<ProfileType, ProfileConfig> = {
     core: {

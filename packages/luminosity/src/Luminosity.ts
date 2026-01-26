@@ -6,20 +6,41 @@ import { RobotsTxtBuilder } from './robots/RobotsTxtBuilder'
 import { SitemapIndexBuilder } from './xml/SitemapIndexBuilder'
 import { XmlStreamBuilder } from './xml/XmlStreamBuilder'
 
+/**
+ * Options for configuring the `Luminosity` sitemap generator.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface LuminosityOptions {
-  /** Output directory path (default: ./public) */
+  /** Output directory path. @default './public' */
   path?: string
-  /** Base URL for sitemaps (e.g., https://example.com) to be used in index and entries */
+  /** Base URL for sitemaps (e.g., 'https://example.com') to be used in index and entries. */
   hostname?: string
-  /** Max URLs per sitemap file (default: 50000) */
+  /** Maximum number of URLs per sitemap file. @default 50000 */
   maxEntriesPerFile?: number
-  /** Enable gzip compression */
+  /** Whether to enable gzip compression for sitemap files. @default false */
   gzip?: boolean
 }
 
 /**
- * The main entry point for the Luminosity Sitemap Engine.
- * Provides a high-level, streaming API for generating sitemaps.
+ * Luminosity is the core sitemap generation engine for Gravito.
+ *
+ * It provides a high-level, streaming API for generating SEO-compliant
+ * sitemaps. It automatically handles file sharding, gzip compression,
+ * and sitemap index generation.
+ *
+ * @example
+ * ```typescript
+ * const engine = new Luminosity({
+ *   hostname: 'https://example.com',
+ *   path: './dist'
+ * });
+ * await engine.generate(myEntries);
+ * ```
+ *
+ * @public
+ * @since 3.0.0
  */
 export class Luminosity {
   private config: LuminosityOptions
@@ -31,7 +52,19 @@ export class Luminosity {
   /**
    * Generates sitemaps based on the provided entries using a highly efficient stream.
    *
+   * Processes large datasets by streaming entries to disk, automatically splitting
+   * files when the entry limit is reached, and compressing output if enabled.
+   *
    * @param entries - An array of entries, an async generator, or a resolver function.
+   * @throws {Error} If file writing fails.
+   *
+   * @example
+   * ```typescript
+   * await engine.generate(async function* () {
+   *   yield { url: '/page1' };
+   *   yield { url: '/page2' };
+   * });
+   * ```
    */
   async generate(
     entries: SitemapEntry[] | AsyncIterable<SitemapEntry> | (() => Promise<SitemapEntry[]>)
@@ -145,6 +178,18 @@ export class Luminosity {
 
   /**
    * Create a Robots.txt builder.
+   *
+   * Returns a builder instance for constructing a `robots.txt` file programmatically.
+   *
+   * @returns A new RobotsTxtBuilder instance.
+   *
+   * @example
+   * ```typescript
+   * const robots = engine.robots()
+   *   .allow('/public')
+   *   .disallow('/admin')
+   *   .build();
+   * ```
    */
   robots(): RobotsTxtBuilder {
     return new RobotsTxtBuilder()

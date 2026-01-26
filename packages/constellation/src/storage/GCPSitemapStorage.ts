@@ -1,21 +1,48 @@
 import type { SitemapStorage } from '../types'
 
+/**
+ * Options for configuring the `GCPSitemapStorage`.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface GCPSitemapStorageOptions {
+  /** The Google Cloud Storage bucket name. */
   bucket: string
+  /** Optional prefix (folder path) within the bucket. */
   prefix?: string
+  /** Optional base URL for resolving sitemap locations. Defaults to the standard GCS public URL. */
   baseUrl?: string
+  /** Configuration for staging files before atomic deployment. */
   shadow?: {
+    /** Whether shadow processing is enabled. */
     enabled: boolean
+    /** Deployment mode: 'atomic' or 'versioned'. */
     mode: 'atomic' | 'versioned'
   }
-  // GCP 認證配置（可選，使用環境變數或預設認證）
+  /** Path to the service account key file. */
   keyFilename?: string
+  /** The Google Cloud Project ID. */
   projectId?: string
 }
 
 /**
- * Google Cloud Storage 儲存實作
- * 支援影子處理和版本化
+ * GCPSitemapStorage persists sitemap files to Google Cloud Storage.
+ *
+ * It supports atomic deployments via shadow processing and file versioning,
+ * allowing for reliable updates in high-traffic cloud environments.
+ *
+ * @example
+ * ```typescript
+ * const storage = new GCPSitemapStorage({
+ *   bucket: 'my-sitemaps',
+ *   prefix: 'prod/',
+ *   shadow: { enabled: true, mode: 'atomic' }
+ * });
+ * ```
+ *
+ * @public
+ * @since 3.0.0
  */
 export class GCPSitemapStorage implements SitemapStorage {
   private bucket: string
@@ -64,6 +91,12 @@ export class GCPSitemapStorage implements SitemapStorage {
     return cleanPrefix ? `${cleanPrefix}/${filename}` : filename
   }
 
+  /**
+   * Writes sitemap content to a Google Cloud Storage object.
+   *
+   * @param filename - The name of the file to write.
+   * @param content - The XML or JSON content.
+   */
   async write(filename: string, content: string): Promise<void> {
     const { bucket } = await this.getStorageClient()
     const key = this.getKey(filename)
@@ -77,6 +110,12 @@ export class GCPSitemapStorage implements SitemapStorage {
     })
   }
 
+  /**
+   * Reads sitemap content from a Google Cloud Storage object.
+   *
+   * @param filename - The name of the file to read.
+   * @returns A promise resolving to the file content as a string, or null if not found.
+   */
   async read(filename: string): Promise<string | null> {
     try {
       const { bucket } = await this.getStorageClient()
@@ -98,6 +137,45 @@ export class GCPSitemapStorage implements SitemapStorage {
     }
   }
 
+  /**
+   * Returns a readable stream for a Google Cloud Storage object.
+   *
+   * @param filename - The name of the file to stream.
+   * @returns A promise resolving to an async iterable of file chunks, or null if not found.
+   */
+  async readStream(filename: string): Promise<AsyncIterable<string> | null> {
+    try {
+      const { bucket } = await this.getStorageClient()
+      const key = this.getKey(filename)
+      const file = bucket.file(key)
+
+      const [exists] = await file.exists()
+      if (!exists) {
+        return null
+      }
+
+      const stream = file.createReadStream()
+      return (async function* () {
+        const decoder = new TextDecoder()
+        for await (const chunk of stream) {
+          yield decoder.decode(chunk, { stream: true })
+        }
+        yield decoder.decode()
+      })()
+    } catch (error: any) {
+      if (error.code === 404) {
+        return null
+      }
+      throw error
+    }
+  }
+
+  /**
+   * Checks if a Google Cloud Storage object exists.
+   *
+   * @param filename - The name of the file to check.
+   * @returns A promise resolving to true if the file exists, false otherwise.
+   */
   async exists(filename: string): Promise<boolean> {
     try {
       const { bucket } = await this.getStorageClient()
@@ -111,20 +189,32 @@ export class GCPSitemapStorage implements SitemapStorage {
     }
   }
 
+  /**
+   * Returns the full public URL for a Google Cloud Storage object.
+   *
+   * @param filename - The name of the sitemap file.
+   * @returns The public URL as a string.
+   */
   getUrl(filename: string): string {
     const key = this.getKey(filename)
     const base = this.baseUrl.endsWith('/') ? this.baseUrl.slice(0, -1) : this.baseUrl
     return `${base}/${key}`
   }
 
-  // 影子處理方法
+  /**
+   * Writes content to a shadow (staged) location in Google Cloud Storage.
+   *
+   * @param filename - The name of the file to write.
+   * @param content - The XML or JSON content.
+   * @param shadowId - Optional unique session identifier.
+   */
   async writeShadow(filename: string, content: string, shadowId?: string): Promise<void> {
     if (!this.shadowEnabled) {
       return this.write(filename, content)
     }
 
     const { bucket } = await this.getStorageClient()
-    const id = shadowId || `shadow-${Date.now()}-${Math.random().toString(36).substring(7)}`
+    const id = shadowId || `shadow-${Date.now()}-${crypto.randomUUID()}`
     const shadowKey = this.getKey(`${filename}.shadow.${id}`)
     const file = bucket.file(shadowKey)
 
@@ -136,6 +226,11 @@ export class GCPSitemapStorage implements SitemapStorage {
     })
   }
 
+  /**
+   * Commits all staged shadow objects in a session to production in Google Cloud Storage.
+   *
+   * @param shadowId - The identifier of the session to commit.
+   */
   async commitShadow(shadowId: string): Promise<void> {
     if (!this.shadowEnabled) {
       return
@@ -144,43 +239,47 @@ export class GCPSitemapStorage implements SitemapStorage {
     const { bucket } = await this.getStorageClient()
     const prefix = this.prefix ? `${this.prefix}/` : ''
 
-    // 列出所有檔案
+    // List all files
     const [files] = await bucket.getFiles({ prefix })
 
-    // 找到對應的影子檔案
+    // Find matching shadow files
     const shadowFiles = files.filter((file: any) => {
       const name = file.name
       return name.includes(`.shadow.${shadowId}`)
     })
 
     for (const shadowFile of shadowFiles) {
-      // 提取原始檔名（移除 .shadow.{id} 部分）
+      // Extract original key (remove .shadow.{id} part)
       const originalKey = shadowFile.name.replace(/\.shadow\.[^/]+$/, '')
       const _originalFilename = originalKey.replace(prefix, '')
 
       if (this.shadowMode === 'atomic') {
-        // 原子切換：複製影子檔案到目標位置
+        // Atomic switch: copy shadow file to target
         await shadowFile.copy(bucket.file(originalKey))
 
-        // 刪除影子檔案
         await shadowFile.delete()
       } else {
-        // 版本化模式：保留舊版本，切換到新版本
+        // Versioned mode: keep old versions, switch to new
         const version = shadowId
         const versionedKey = `${originalKey}.v${version}`
 
-        // 複製到版本化位置
+        // Copy to versioned location
         await shadowFile.copy(bucket.file(versionedKey))
 
-        // 複製到主位置
+        // Copy to main location
         await shadowFile.copy(bucket.file(originalKey))
 
-        // 刪除影子檔案
         await shadowFile.delete()
       }
     }
   }
 
+  /**
+   * Lists all archived versions of a specific sitemap in Google Cloud Storage.
+   *
+   * @param filename - The sitemap filename.
+   * @returns A promise resolving to an array of version identifiers.
+   */
   async listVersions(filename: string): Promise<string[]> {
     if (this.shadowMode !== 'versioned') {
       return []
@@ -193,7 +292,7 @@ export class GCPSitemapStorage implements SitemapStorage {
 
       const [files] = await bucket.getFiles({ prefix })
 
-      // 提取版本號
+      // Extract version IDs
       const versions: string[] = []
       for (const file of files) {
         const match = file.name.match(/\.v([^/]+)$/)
@@ -208,6 +307,12 @@ export class GCPSitemapStorage implements SitemapStorage {
     }
   }
 
+  /**
+   * Reverts a sitemap to a previously archived version in Google Cloud Storage.
+   *
+   * @param filename - The sitemap filename.
+   * @param version - The version identifier to switch to.
+   */
   async switchVersion(filename: string, version: string): Promise<void> {
     if (this.shadowMode !== 'versioned') {
       throw new Error('Version switching is only available in versioned mode')
@@ -218,13 +323,13 @@ export class GCPSitemapStorage implements SitemapStorage {
     const versionedKey = `${key}.v${version}`
     const versionedFile = bucket.file(versionedKey)
 
-    // 檢查版本是否存在
+    // Check if version exists
     const [exists] = await versionedFile.exists()
     if (!exists) {
       throw new Error(`Version ${version} not found for ${filename}`)
     }
 
-    // 複製版本化檔案到主位置
+    // Copy versioned file to main location
     await versionedFile.copy(bucket.file(key))
   }
 }

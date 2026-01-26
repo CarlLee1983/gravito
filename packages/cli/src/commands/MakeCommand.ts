@@ -4,6 +4,29 @@ import path from 'node:path'
 import { Scaffold } from '@gravito/scaffold'
 import pc from 'picocolors'
 
+/**
+ * Command for generating code artifacts from stubs.
+ *
+ * Provides `make:*` commands to scaffold controllers, models,
+ * middleware, seeders, and other common application components.
+ *
+ * @example
+ * ```typescript
+ * const make = new MakeCommand()
+ *
+ * // Generate a controller
+ * await make.run('controller', 'UserController')
+ *
+ * // Generate a resource controller
+ * await make.run('controller', 'PostController', { resource: true })
+ *
+ * // Generate a model with migration
+ * await make.run('model', 'User', { migration: true })
+ * ```
+ *
+ * @since 3.0.0
+ * @public
+ */
 export class MakeCommand {
   private stubsPath: string
 
@@ -120,7 +143,11 @@ export class MakeCommand {
   }
 
   /**
-   * 專門處理 Satellite 的生成邏輯
+   * Run the generator for Satellite (plugin) artifacts.
+   *
+   * @param name - The name of the satellite.
+   * @param options - Generation options (e.g., internal).
+   * @private
    */
   private async runSatellite(name: string, options: any) {
     const isInternal = options.internal || false
@@ -158,6 +185,7 @@ export class MakeCommand {
    * @param name - The normalized name object.
    * @returns The absolute path to the target file.
    * @throws {Error} If the type is unknown.
+   * @private
    */
   private resolveTargetPath(type: string, name: NormalizedName): string {
     const cwd = process.cwd()
@@ -184,6 +212,7 @@ export class MakeCommand {
    * @param type - The artifact type.
    * @param rawName - The raw input name.
    * @returns An object containing PascalCase and camelCase versions of the name.
+   * @private
    */
   private normalizeName(type: string, rawName: string): NormalizedName {
     const pascalRaw = this.toPascalCase(rawName)
@@ -201,14 +230,36 @@ export class MakeCommand {
     }
   }
 
+  /**
+   * Strip a suffix from a string if it exists.
+   *
+   * @param value - The string to process.
+   * @param suffix - The suffix to remove.
+   * @returns The processed string.
+   * @private
+   */
   private stripSuffix(value: string, suffix: string): string {
     return value.endsWith(suffix) ? value.slice(0, -suffix.length) : value
   }
 
+  /**
+   * Ensure that a directory exists, creating it if necessary.
+   *
+   * @param dir - The directory path.
+   * @private
+   */
   private async ensureDirectory(dir: string) {
     await fs.mkdir(dir, { recursive: true })
   }
 
+  /**
+   * Write content to a file, ensuring it does not already exist.
+   *
+   * @param filepath - The path to the file.
+   * @param content - The content to write.
+   * @throws {Error} If the file already exists.
+   * @private
+   */
   private async writeFile(filepath: string, content: string) {
     // Check if exists
     try {
@@ -225,6 +276,13 @@ export class MakeCommand {
     await fs.writeFile(filepath, content, 'utf-8')
   }
 
+  /**
+   * Convert a string to PascalCase.
+   *
+   * @param str - The input string.
+   * @returns The PascalCase version of the string.
+   * @private
+   */
   private toPascalCase(str: string): string {
     // Remove special chars, split by space/hyphen/underscore
     return str
@@ -233,17 +291,38 @@ export class MakeCommand {
       .join('')
   }
 
+  /**
+   * Convert a string to camelCase.
+   *
+   * @param str - The input string.
+   * @returns The camelCase version of the string.
+   * @private
+   */
   private toCamelCase(str: string): string {
     const pascal = this.toPascalCase(str)
     return pascal.charAt(0).toLowerCase() + pascal.slice(1)
   }
 
+  /**
+   * Get the relative path from the current working directory.
+   *
+   * @param fullpath - The absolute path.
+   * @returns The relative path.
+   * @private
+   */
   private getRelativePath(fullpath: string): string {
     return path.relative(process.cwd(), fullpath)
   }
 }
 
+/**
+ * Normalized name object containing different case versions.
+ *
+ * @public
+ */
 interface NormalizedName {
+  /** PascalCase version of the name. */
   pascal: string
+  /** camelCase version of the name. */
   camel: string
 }

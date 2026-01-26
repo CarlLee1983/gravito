@@ -3,7 +3,7 @@
     "private": true,
     "scripts": {
         "dev": "bun run src/index.ts",
-        "build": "tsc --noEmit",
+        "build": "bun tsc --noEmit",
         "start": "bun run src/index.ts"
     },
     "dependencies": {
@@ -29,5 +29,5 @@
             "biome check --write"
         ]
     },
-    "version": "0.5.2"
+    "version": "0.5.4"
 }

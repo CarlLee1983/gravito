@@ -3,10 +3,16 @@ import type { GravitoHandler, GravitoMiddleware, HttpMethod, ProxyOptions } from
 import type { PlanetCore } from './PlanetCore'
 import { Route } from './Route'
 
-// Type for Controller Class Constructor
+/**
+ * Type for Controller Class Constructor
+ * @public
+ */
 export type ControllerClass = new (core: PlanetCore) => Record<string, unknown>
 
-// Handler can be a function or [Class, 'methodName']
+/**
+ * Handler can be a function or [Class, 'methodName']
+ * @public
+ */
 export type RouteHandler = GravitoHandler | [ControllerClass, string]
 
 /**
@@ -16,11 +22,16 @@ export type RouteHandler = GravitoHandler | [ControllerClass, string]
 export interface FormRequestLike {
   schema: unknown
   source?: string
+  /**
+   * Validate the request context.
+   * @param ctx - The request context
+   */
   validate?(ctx: unknown): Promise<{ success: boolean; data?: unknown; error?: unknown }>
 }
 
 /**
  * Type for FormRequest class constructor
+ * @public
  */
 export type FormRequestClass = new () => FormRequestLike
 
@@ -28,29 +39,49 @@ export type FormRequestClass = new () => FormRequestLike
  * Symbol to mark FormRequest classes for fast identification.
  * FormRequest classes from @gravito/impulse should set this symbol.
  */
+/**
+ * Symbol to mark FormRequest classes for fast identification.
+ * FormRequest classes from @gravito/impulse should set this symbol.
+ * @public
+ */
 export const FORM_REQUEST_SYMBOL = Symbol.for('gravito.formRequest')
 
 /**
  * WeakMap cache for FormRequest class detection results.
  * Avoids re-instantiating classes on repeated checks.
  */
+// biome-ignore lint/complexity/noBannedTypes: generic Function type needed here
 const formRequestCache = new WeakMap<Function, boolean>()
 
 /**
+ * WeakMap cache for FormRequest instances.
+ * Stores singleton instances to avoid re-instantiation on every request.
+ * Using WeakMap allows garbage collection when the class is no longer referenced.
+ */
+const formRequestInstances = new WeakMap<FormRequestClass, FormRequestLike>()
+
+/**
  * Check if a value is a FormRequest class.
- * Optimized with Symbol check and caching to avoid repeated instantiation.
+ * Optimized with Symbol check, prototype check, and caching.
+ * @internal
  */
 function isFormRequestClass(value: unknown): value is FormRequestClass {
   if (typeof value !== 'function') {
     return false
   }
 
-  // Fast path: Check for Symbol marker (set by @gravito/impulse)
+  // Fast path 1: Check for Symbol marker (set by @gravito/impulse)
   if ((value as { [FORM_REQUEST_SYMBOL]?: boolean })[FORM_REQUEST_SYMBOL] === true) {
     return true
   }
 
-  // Check cache to avoid re-instantiation
+  // Fast path 2: Filter out arrow functions (middleware)
+  // Arrow functions do not have a prototype property
+  if (!value.prototype) {
+    return false
+  }
+
+  // Check cache to avoid re-computation
   const cached = formRequestCache.get(value)
   if (cached !== undefined) {
     return cached
@@ -58,6 +89,12 @@ function isFormRequestClass(value: unknown): value is FormRequestClass {
 
   // Slow path: Duck-type check with instantiation
   try {
+    // Check prototype first to avoid instantiation if possible
+    if ('validate' in value.prototype && typeof value.prototype.validate === 'function') {
+      formRequestCache.set(value, true)
+      return true
+    }
+
     const instance = new (value as new () => unknown)()
     const isFormRequest =
       instance !== null &&
@@ -69,22 +106,47 @@ function isFormRequestClass(value: unknown): value is FormRequestClass {
     // Cache the result
     formRequestCache.set(value, isFormRequest)
     return isFormRequest
-  } catch {
+  } catch (error) {
+    // Handle different error types for better diagnostics
+    if (error instanceof TypeError) {
+      // Constructor doesn't exist or has wrong signature
+      // This is expected for non-constructable values
+    } else if (error instanceof ReferenceError) {
+      // Missing dependencies - unlikely but possible
+      console.warn('[Router] FormRequest detection failed: Missing dependencies', error)
+    } else {
+      // Unexpected error - log for debugging
+      console.warn('[Router] Unexpected error during FormRequest detection:', error)
+    }
     formRequestCache.set(value, false)
     return false
   }
 }
 
 /**
- * Convert a FormRequest class to middleware
+ * Convert a FormRequest class to middleware.
+ * Uses instance caching to avoid re-instantiation on every request.
+ * @internal
  */
 function formRequestToMiddleware(RequestClass: FormRequestClass): GravitoMiddleware {
-  return async (ctx, next) => {
-    const request = new RequestClass()
+  // Get or create cached instance
+  let request = formRequestInstances.get(RequestClass)
+  if (!request) {
+    request = new RequestClass()
     if (typeof request.validate !== 'function') {
       throw new Error('Invalid FormRequest: validate() is missing.')
     }
-    const result = await request.validate(ctx)
+    formRequestInstances.set(RequestClass, request)
+  }
+
+  return async (ctx, next) => {
+    const result = await request?.validate?.(ctx)
+
+    if (!result) {
+      // No validation result, continue
+      await next()
+      return undefined
+    }
 
     if (!result.success) {
       // Determine status code based on error type
@@ -100,15 +162,27 @@ function formRequestToMiddleware(RequestClass: FormRequestClass): GravitoMiddlew
   }
 }
 
+/**
+ * Options for route definitions
+ * @public
+ */
 export interface RouteOptions {
+  /** Route prefix path */
   prefix?: string
+  /** Domain/Hostname constraint */
   domain?: string
+  /** Middleware stack for the route */
   middleware?: GravitoMiddleware[]
 }
 
 /**
  * RouteGroup
  * Helper class for chained route configuration (prefix, domain, etc.)
+ */
+/**
+ * RouteGroup
+ * Helper class for chained route configuration (prefix, domain, etc.)
+ * @public
  */
 export class RouteGroup {
   constructor(
@@ -341,6 +415,7 @@ export class Router {
 
   /**
    * Compile all registered routes into a flat array for caching or manifest generation.
+   * Optimized: O(n) complexity using Set for lookups instead of O(n²) with Array.some()
    */
   compile() {
     const compiled: Array<{
@@ -356,23 +431,29 @@ export class Router {
       nameMap.set(`${info.method.toUpperCase()}:${info.path}`, name)
     }
 
+    // Use Set to track compiled routes for O(1) lookup
+    const compiledKeys = new Set<string>()
+
+    // First pass: compile registered routes
     for (const route of this.routes) {
       const method = route.method.toUpperCase()
+      const key = `${method}:${route.path}`
+
+      compiledKeys.add(key)
       compiled.push({
         method,
         path: route.path,
         domain: route.domain,
-        name: nameMap.get(`${method}:${route.path}`),
+        name: nameMap.get(key),
       })
     }
 
-    // Also include named routes that might not be in this.routes (e.g. from loaded manifest)
-    // but only if they are not already there
+    // Second pass: include named routes that might not be in this.routes (e.g. from loaded manifest)
+    // Now using O(1) Set lookup instead of O(n) Array.some()
     for (const [name, info] of this.namedRoutes) {
-      const exists = compiled.some(
-        (r) => r.method === info.method.toUpperCase() && r.path === info.path
-      )
-      if (!exists) {
+      const key = `${info.method.toUpperCase()}:${info.path}`
+
+      if (!compiledKeys.has(key)) {
         compiled.push({
           name,
           method: info.method.toUpperCase(),
@@ -485,19 +566,20 @@ export class Router {
     this.core.adapter.useGlobal(async (c, next) => {
       // Early exit if no bindings registered
       if (this.bindings.size === 0) {
-        await next()
-        return undefined
+        return await next()
       }
 
       const routeModels = (c.get('routeModels') ?? {}) as Record<string, unknown>
       let hasResolvedModels = false
 
-      // Iterate over registered bindings
-      // Optimization: Only resolve params that exist in the current route
-      for (const [param, resolver] of this.bindings) {
-        const value = c.req.param(param)
-        // Skip if param not present in this route
-        if (!value) {
+      // Iterate over request params (O(P)) instead of bindings (O(B))
+      // This is significantly faster when there are many bindings but few params in current route
+      const params = c.req.params()
+
+      for (const [param, value] of Object.entries(params)) {
+        const resolver = this.bindings.get(param)
+
+        if (!resolver) {
           continue
         }
 
@@ -519,8 +601,7 @@ export class Router {
         c.set('routeModels', routeModels)
       }
 
-      await next()
-      return undefined
+      return await next()
     })
   }
 
@@ -743,6 +824,7 @@ export class Router {
   ): Route {
     // 1. Resolve Path
     const fullPath = (options.prefix || '') + path
+    console.log(`[Router] Registering ${method.toUpperCase()} ${fullPath}`)
 
     // 2. Determine if FormRequest or Middleware is provided
     let formRequestMiddleware: GravitoMiddleware | null = null
@@ -838,8 +920,16 @@ export class Router {
   }
 }
 
+/**
+ * Standard RESTful resource action names.
+ * @public
+ */
 export type ResourceAction = 'index' | 'create' | 'store' | 'show' | 'edit' | 'update' | 'destroy'
 
+/**
+ * Options for resource route registration.
+ * @public
+ */
 export interface ResourceOptions {
   only?: ResourceAction[]
   except?: ResourceAction[]

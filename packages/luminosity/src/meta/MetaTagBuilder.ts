@@ -1,8 +1,22 @@
 import type { MetaConfig } from './interfaces'
 
+/**
+ * MetaTagBuilder generates standard HTML SEO tags.
+ *
+ * It supports standard titles, descriptions, keywords, canonical links,
+ * and robots directives.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class MetaTagBuilder {
   constructor(private config: MetaConfig) {}
 
+  /**
+   * Generates the standard HTML meta tags.
+   *
+   * @returns A string containing title, description, keywords, canonical, and robots tags.
+   */
   build(): string {
     const tags: string[] = []
 

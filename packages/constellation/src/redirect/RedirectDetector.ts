@@ -1,40 +1,95 @@
 import type { RedirectRule } from '../types'
 
+/**
+ * Options for automatic redirect detection via HTTP probes.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface AutoDetectOptions {
+  /** Whether automatic HTTP detection is enabled. */
   enabled: boolean
-  timeout?: number // 超時時間（毫秒），預設 5000
-  maxConcurrent?: number // 最大並發數，預設 10
-  cache?: boolean // 是否快取結果
-  cacheTtl?: number // 快取 TTL（秒），預設 3600
+  /** HTTP request timeout in milliseconds. @default 5000 */
+  timeout?: number
+  /** Maximum number of concurrent HTTP probes. @default 10 */
+  maxConcurrent?: number
+  /** Whether to cache detection results in memory. @default false */
+  cache?: boolean
+  /** Cache time-to-live in seconds. @default 3600 */
+  cacheTtl?: number
 }
 
+/**
+ * Options for redirect detection from a database table.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface DatabaseDetectOptions {
+  /** Whether database detection is enabled. */
   enabled: boolean
+  /** The name of the table containing redirect rules. */
   table: string
+  /** Column mapping for the redirect table. */
   columns: {
     from: string
     to: string
     type: string
   }
-  connection: any // 資料庫連接
+  /** Database connection instance (e.g., Knex, Atlas). */
+  connection: any
 }
 
+/**
+ * Options for redirect detection from a static configuration file.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface ConfigDetectOptions {
+  /** Whether configuration file detection is enabled. */
   enabled: boolean
+  /** Path to the JSON configuration file. */
   path: string
-  watch?: boolean // 是否監聽檔案變更
+  /** Whether to watch the file for changes. @default false */
+  watch?: boolean
 }
 
+/**
+ * Options for configuring the `RedirectDetector`.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface RedirectDetectorOptions {
+  /** The base URL of the site being scanned. */
   baseUrl: string
+  /** Configuration for automatic HTTP probing. */
   autoDetect?: AutoDetectOptions
+  /** Configuration for database-driven detection. */
   database?: DatabaseDetectOptions
+  /** Configuration for file-driven detection. */
   config?: ConfigDetectOptions
 }
 
 /**
- * 轉址偵測器
- * 支援多種偵測方式：自動偵測、資料庫、設定檔
+ * RedirectDetector identifies 301 and 302 redirects for URLs.
+ *
+ * It supports multiple detection strategies including database lookups,
+ * static configuration files, and live HTTP probing. This ensures that
+ * sitemaps always point to final destination URLs, improving SEO efficiency.
+ *
+ * @example
+ * ```typescript
+ * const detector = new RedirectDetector({
+ *   baseUrl: 'https://example.com',
+ *   autoDetect: { enabled: true }
+ * });
+ * const rule = await detector.detect('/old-path');
+ * ```
+ *
+ * @public
+ * @since 3.0.0
  */
 export class RedirectDetector {
   private options: RedirectDetectorOptions
@@ -45,10 +100,13 @@ export class RedirectDetector {
   }
 
   /**
-   * 偵測單一 URL 的轉址
+   * Detects redirects for a single URL using multiple strategies.
+   *
+   * @param url - The URL path to probe for redirects.
+   * @returns A promise resolving to a `RedirectRule` if a redirect is found, or null.
    */
   async detect(url: string): Promise<RedirectRule | null> {
-    // 檢查快取
+    // Check cache
     if (this.options.autoDetect?.cache) {
       const cached = this.cache.get(url)
       if (cached && cached.expires > Date.now()) {
@@ -58,7 +116,7 @@ export class RedirectDetector {
 
     let rule: RedirectRule | null = null
 
-    // 1. 嘗試從資料庫讀取
+    // 1. Try reading from database
     if (this.options.database?.enabled) {
       rule = await this.detectFromDatabase(url)
       if (rule) {
@@ -67,7 +125,7 @@ export class RedirectDetector {
       }
     }
 
-    // 2. 嘗試從設定檔讀取
+    // 2. Try reading from config file
     if (this.options.config?.enabled) {
       rule = await this.detectFromConfig(url)
       if (rule) {
@@ -76,7 +134,7 @@ export class RedirectDetector {
       }
     }
 
-    // 3. 自動偵測
+    // 3. Auto-detect via HTTP
     if (this.options.autoDetect?.enabled) {
       rule = await this.detectAuto(url)
       this.cacheResult(url, rule)
@@ -87,12 +145,15 @@ export class RedirectDetector {
   }
 
   /**
-   * 批次偵測轉址
+   * Batch detects redirects for multiple URLs with concurrency control.
+   *
+   * @param urls - An array of URL paths to probe.
+   * @returns A promise resolving to a Map of URLs to their respective `RedirectRule` or null.
    */
   async detectBatch(urls: string[]): Promise<Map<string, RedirectRule | null>> {
     const results = new Map<string, RedirectRule | null>()
 
-    // 使用並發控制
+    // Use concurrency control
     const maxConcurrent = this.options.autoDetect?.maxConcurrent || 10
     const batches: string[][] = []
 
@@ -113,7 +174,7 @@ export class RedirectDetector {
   }
 
   /**
-   * 從資料庫偵測
+   * Detects a redirect from the configured database table.
    */
   private async detectFromDatabase(url: string): Promise<RedirectRule | null> {
     const { database } = this.options
@@ -134,7 +195,7 @@ export class RedirectDetector {
       return {
         from: row[columns.from],
         to: row[columns.to],
-        type: parseInt(row[columns.type], 10) as 301 | 302,
+        type: Number.parseInt(row[columns.type], 10) as 301 | 302,
       }
     } catch {
       return null
@@ -142,7 +203,7 @@ export class RedirectDetector {
   }
 
   /**
-   * 從設定檔偵測
+   * Detects a redirect from a static JSON configuration file.
    */
   private async detectFromConfig(url: string): Promise<RedirectRule | null> {
     const { config } = this.options
@@ -163,7 +224,7 @@ export class RedirectDetector {
   }
 
   /**
-   * 自動偵測（透過 HTTP 請求）
+   * Auto-detects a redirect by sending an HTTP HEAD request.
    */
   private async detectAuto(url: string): Promise<RedirectRule | null> {
     const { autoDetect, baseUrl } = this.options
@@ -175,7 +236,7 @@ export class RedirectDetector {
       const fullUrl = url.startsWith('http') ? url : `${baseUrl}${url}`
       const timeout = autoDetect.timeout || 5000
 
-      // 發送 HEAD 請求
+      // Send HEAD request
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), timeout)
 
@@ -183,7 +244,7 @@ export class RedirectDetector {
         const response = await fetch(fullUrl, {
           method: 'HEAD',
           signal: controller.signal,
-          redirect: 'manual', // 手動處理轉址
+          redirect: 'manual', // Handle redirects manually
         })
 
         clearTimeout(timeoutId)
@@ -205,14 +266,14 @@ export class RedirectDetector {
         }
       }
     } catch {
-      // 忽略錯誤
+      // Ignore errors
     }
 
     return null
   }
 
   /**
-   * 快取結果
+   * Caches the detection result for a URL.
    */
   private cacheResult(url: string, rule: RedirectRule | null): void {
     if (!this.options.autoDetect?.cache) {

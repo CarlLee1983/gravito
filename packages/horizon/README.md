@@ -1,13 +1,18 @@
 # @gravito/horizon
 
-Enterprise-grade distributed task scheduler for Gravito framework.
+Enterprise-grade distributed task scheduler for the Gravito framework.
+
+`@gravito/horizon` provides a robust, fluent, and highly configurable system for managing scheduled tasks (Cron jobs) in a distributed environment. It supports multiple locking mechanisms to prevent duplicate execution, node role filtering, retries, and comprehensive monitoring hooks.
 
 ## Features
 
-- **Fluent API**: Expressive syntax for defining task schedules (e.g. `.daily().at('14:00')`).
-- **Distributed Locking**: Prevents duplicate task execution across multiple servers (supports Memory, Cache, Redis).
-- **Cron Integration**: Designed to be triggered by a single system cron entry.
-- **Hooks**: Events for task success/failure.
+- **Fluent API**: Human-readable syntax for defining task schedules (e.g., `.daily().at('14:00')`).
+- **Distributed Locking**: Prevents duplicate task execution across multiple servers (supports Memory, Cache, and Redis).
+- **Node Role Awareness**: Restrict tasks to specific nodes (e.g., only run on `worker` nodes) or broadcast maintenance tasks to all matching nodes.
+- **Reliability Features**: Built-in support for task timeouts and automatic retries with configurable delays.
+- **Shell Command Support**: Schedule raw shell commands alongside TypeScript callbacks.
+- **Lazy Cron Parsing**: Lightweight `SimpleCronParser` for standard expressions, with `cron-parser` only loaded when complex logic is required.
+- **Comprehensive Hooks**: Lifecycle events for monitoring task success, failure, retries, and scheduler activity.
 
 ## Installation
 
@@ -15,127 +20,115 @@ Enterprise-grade distributed task scheduler for Gravito framework.
 bun add @gravito/horizon
 ```
 
+### Peer Dependencies
+- `@gravito/core` (Required)
+- `@gravito/stasis` (Optional, for Cache/Redis distributed locking)
+
 ## Quick Start
 
-1. Register the orbit in your application boot:
+### 1. Register the Orbit
+
+Initialize Horizon in your application bootstrap process:
 
 ```typescript
+import { PlanetCore } from '@gravito/core'
 import { OrbitHorizon } from '@gravito/horizon'
-import { OrbitCache } from '@gravito/stasis' // Optional, for cache lock
+import { OrbitCache } from '@gravito/stasis' // Optional, for distributed locking
 
 await PlanetCore.boot({
   config: {
     scheduler: {
-      lock: { driver: 'cache' },
-      nodeRole: 'worker' // 'api', 'web', etc.
+      lock: { driver: 'cache' }, // Uses @gravito/stasis cache
+      nodeRole: process.env.NODE_ROLE || 'worker'
     }
   },
   orbits: [
-    OrbitCache,      // Load cache first if using cache driver
+    OrbitCache,
     OrbitHorizon
   ]
 })
 ```
 
-2. Schedule tasks:
+### 2. Schedule Tasks
+
+Define tasks in your service providers or bootstrap files:
 
 ```typescript
-// Access scheduler from core services or context
-const scheduler = core.services.get('scheduler')
+import { SchedulerManager } from '@gravito/horizon'
 
+const scheduler = core.services.get<SchedulerManager>('scheduler')
+
+// Basic callback task
 scheduler.task('daily-cleanup', async () => {
-    await db.cleanup()
+  await db.cleanup()
 })
-.daily()
-.at('02:00')
+.dailyAt('02:00')
 .onOneServer() // Distributed lock
+
+// Shell command execution
+scheduler.exec('sync-storage', 'aws s3 sync ./local s3://bucket')
+  .everyFiveMinutes()
+  .onNode('worker')
+  .retry(3, 5000) // Retry 3 times with 5s delay
 ```
 
-## Distributed Locking
+## Scheduling API
 
-To prevent tasks from running simultaneously on multiple servers, use `onOneServer()` (or `withoutOverlapping()`).
-The default lock driver is `memory` (single server), but you should configure `cache` or `redis` for distributed setups.
+### Frequency Methods
+- `everyMinute()`: Every minute (`* * * * *`)
+- `everyFiveMinutes()`, `everyTenMinutes()`, `everyFifteenMinutes()`, `everyThirtyMinutes()`
+- `hourly()`, `hourlyAt(minute)`: Every hour at a specific minute.
+- `daily()`, `dailyAt('HH:mm')`: Once per day.
+- `weekly()`, `weeklyOn(day, 'HH:mm')`: Once per week (0=Sunday).
+- `monthly()`, `monthlyOn(date, 'HH:mm')`: Once per month.
+- `cron('expression')`: Custom 5-part cron expression.
+
+### Constraints & Constraints
+- `timezone('Asia/Taipei')`: Set execution timezone (defaults to UTC).
+- `onOneServer(lockTtl?)`: Ensure only one instance of this task runs globally at a time.
+- `onNode(role)`: Only run this task if the current node's role matches.
+- `runInBackground()`: Don't wait for task completion in the main scheduler loop.
+
+### Reliability & Lifecycle
+- `timeout(ms)`: Set maximum execution time (defaults to 1 hour).
+- `retry(attempts, delayMs)`: Number of retries on failure.
+- `onSuccess(callback)`: Execute a callback when the task succeeds.
+- `onFailure(callback)`: Execute a callback when the task fails.
 
 ## CLI Usage
 
-The Gravito CLI provides commands to run and manage your scheduled tasks.
+The Gravito CLI allows you to manage and run your scheduler:
 
-### List Tasks
-View all registered tasks and their schedules:
+### List Registered Tasks
 ```bash
 bun run gravito schedule:list
 ```
 
 ### Run (Cron Mode)
-Add this command to your system's crontab (e.g., `crontab -e`) to run every minute:
+Add this to your system crontab to trigger the scheduler every minute:
 ```bash
-* * * * * cd /path/to/project && bun run gravito schedule:run
+* * * * * cd /app && bun run gravito schedule:run
 ```
 
 ### Run (Daemon Mode)
-If you prefer a long-running process (e.g., in Docker or specific worker environments):
+Poll every minute in a long-running process (ideal for Docker):
 ```bash
 bun run gravito schedule:work
 ```
-This will poll every minute to execute due tasks.
 
-### Entry Point
-By default, commands look for `src/index.ts`. If your bootstrap file is elsewhere, use `--entry`:
-```bash
-gravito schedule:list --entry src/bootstrap.ts
-```
+## Monitoring Hooks
 
-## Performance Monitoring
-
-The scheduler emits hooks providing execution metrics. You can listen to these events via `core.hooks`:
+Subscribe to hooks via `core.hooks` to build monitoring dashboards or alerts:
 
 | Hook | Payload | Description |
 |------|---------|-------------|
-| `scheduler:run:start` | `{ date }` | Scheduler checks started |
-| `scheduler:run:complete` | `{ date, dueCount }` | Scheduler checks completed |
-| `scheduler:task:start` | `{ name, startTime }` | Individual task execution started |
-| `scheduler:task:success` | `{ name, duration }` | Task completed successfully |
-| `scheduler:task:failure` | `{ name, error, duration }` | Task failed |
+| `scheduler:run:start` | `{ date }` | Scheduler evaluation started. |
+| `scheduler:run:complete` | `{ date, dueCount }` | Scheduler evaluation finished. |
+| `scheduler:task:start` | `{ name, startTime }` | Individual task started. |
+| `scheduler:task:retry` | `{ name, attempt, error }` | Task failed and is retrying. |
+| `scheduler:task:success` | `{ name, duration, attempts }` | Task finished successfully. |
+| `scheduler:task:failure` | `{ name, error, duration }` | Task failed after all retries. |
 
-## Optimizations
+## License
 
-### Lightweight Execution
-This package includes a lightweight, dependency-free cron parser (`SimpleCronParser`) for standard cron expressions (e.g. `* * * * *`, `0 0 * * *`). The heavy `cron-parser` library is only lazy-loaded when complex expressions are encountered, keeping your runtime memory footprint minimal.
-
-## Process Execution & Node Roles
-
-You can also run shell commands and restrict tasks to specific node roles (e.g., `api` vs `worker`).
-
-### Configuration
-
-Add `nodeRole` to your configuration:
-
-```typescript
-config: {
-  scheduler: {
-    nodeRole: 'worker'
-  }
-}
-```
-
-### Mode A: Broadcast (Maintenance)
-
-Run on EVERY node that matches the role. Useful for machine-specific maintenance.
-
-```typescript
-// Clean temp files on ALL 'api' nodes
-scheduler.exec('clean-tmp', 'rm -rf /tmp/*')
-  .daily()
-  .onNode('api')
-```
-
-### Mode B: Single-point (Task)
-
-Run on ONE matching node only. Useful for centralized jobs like DB migrations or reports.
-
-```typescript
-// Run migration on ONE 'worker' node
-scheduler.exec('migrate', 'bun run db:migrate')
-  .onNode('worker')
-  .onOneServer()
-```
+MIT

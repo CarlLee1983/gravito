@@ -1,21 +1,46 @@
 import type { RedirectManager, RedirectRule, SitemapEntry } from '../types'
 
+/**
+ * Strategies for handling URLs that have redirects in the sitemap.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export type RedirectHandlingStrategy =
-  | 'remove_old_add_new' // 移除舊 URL，加入新 URL（預設）
-  | 'keep_relation' // 保留關聯，使用 canonical link
-  | 'update_url' // 僅更新 URL
-  | 'dual_mark' // 雙重標記
+  /** Replace the old URL with the final destination URL. (Default) */
+  | 'remove_old_add_new'
+  /** Keep the old URL in the sitemap but mark the final destination as canonical. */
+  | 'keep_relation'
+  /** Silently update the URL to the destination without extra metadata. */
+  | 'update_url'
+  /** Include both the original and destination URLs in the sitemap. */
+  | 'dual_mark'
 
+/**
+ * Options for configuring the `RedirectHandler`.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface RedirectHandlerOptions {
+  /** The redirect manager used to resolve rules. */
   manager: RedirectManager
+  /** The strategy to use when a redirect is found. */
   strategy: RedirectHandlingStrategy
+  /** Whether to follow redirect chains to the final destination. @default false */
   followChains?: boolean
+  /** Maximum number of redirect jumps to follow. @default 5 */
   maxChainLength?: number
 }
 
 /**
- * 轉址處理器
- * 處理 sitemap entries 中的轉址
+ * RedirectHandler processes sitemap entries to ensure they handle 301/302 redirects correctly.
+ *
+ * It uses a `RedirectManager` to resolve final destinations and applies one of
+ * the supported `RedirectHandlingStrategy` options to the entry list.
+ *
+ * @public
+ * @since 3.0.0
  */
 export class RedirectHandler {
   private options: RedirectHandlerOptions
@@ -25,14 +50,17 @@ export class RedirectHandler {
   }
 
   /**
-   * 處理 entries 中的轉址
+   * Processes a list of sitemap entries and handles redirects according to the configured strategy.
+   *
+   * @param entries - The original list of sitemap entries.
+   * @returns A promise resolving to the processed list of entries.
    */
   async processEntries(entries: SitemapEntry[]): Promise<SitemapEntry[]> {
     const { manager, strategy, followChains, maxChainLength } = this.options
     const _processedEntries: SitemapEntry[] = []
     const redirectMap = new Map<string, RedirectRule>()
 
-    // 1. 解析所有轉址
+    // 1. Resolve all redirects
     for (const entry of entries) {
       const redirectTarget = await manager.resolve(entry.url, followChains, maxChainLength)
       if (redirectTarget && entry.url !== redirectTarget) {
@@ -44,7 +72,7 @@ export class RedirectHandler {
       }
     }
 
-    // 2. 根據策略處理
+    // 2. Handle according to strategy
     switch (strategy) {
       case 'remove_old_add_new':
         return this.handleRemoveOldAddNew(entries, redirectMap)
@@ -60,7 +88,7 @@ export class RedirectHandler {
   }
 
   /**
-   * 策略一：移除舊 URL，加入新 URL
+   * Strategy 1: Remove old URL and add the new destination URL.
    */
   private handleRemoveOldAddNew(
     entries: SitemapEntry[],
@@ -72,9 +100,9 @@ export class RedirectHandler {
     for (const entry of entries) {
       const redirect = redirectMap.get(entry.url)
       if (redirect) {
-        // 標記為已處理
+        // Mark as processed
         redirectedUrls.add(entry.url)
-        // 創建新 entry
+        // Create new entry
         processed.push({
           ...entry,
           url: redirect.to,
@@ -85,7 +113,7 @@ export class RedirectHandler {
           },
         })
       } else if (!redirectedUrls.has(entry.url)) {
-        // 只添加未轉址的 entry
+        // Only add non-redirected entries
         processed.push(entry)
       }
     }
@@ -94,7 +122,7 @@ export class RedirectHandler {
   }
 
   /**
-   * 策略二：保留關聯，使用 canonical link
+   * Strategy 2: Keep the original URL but mark the destination as canonical.
    */
   private handleKeepRelation(
     entries: SitemapEntry[],
@@ -105,7 +133,7 @@ export class RedirectHandler {
     for (const entry of entries) {
       const redirect = redirectMap.get(entry.url)
       if (redirect) {
-        // 保留舊 URL，但標記 canonical
+        // Keep old URL but mark canonical
         processed.push({
           ...entry,
           redirect: {
@@ -124,7 +152,7 @@ export class RedirectHandler {
   }
 
   /**
-   * 策略三：僅更新 URL
+   * Strategy 3: Silently update the URL to the destination.
    */
   private handleUpdateUrl(
     entries: SitemapEntry[],
@@ -148,7 +176,7 @@ export class RedirectHandler {
   }
 
   /**
-   * 策略四：雙重標記
+   * Strategy 4: Include both the original and destination URLs.
    */
   private handleDualMark(
     entries: SitemapEntry[],
@@ -160,7 +188,7 @@ export class RedirectHandler {
     for (const entry of entries) {
       const redirect = redirectMap.get(entry.url)
       if (redirect) {
-        // 保留舊 URL（標記轉址）
+        // Keep old URL (marked as redirect)
         processed.push({
           ...entry,
           redirect: {
@@ -170,7 +198,7 @@ export class RedirectHandler {
           },
         })
 
-        // 添加新 URL（如果尚未添加）
+        // Add new URL (if not already added)
         if (!addedUrls.has(redirect.to)) {
           processed.push({
             ...entry,

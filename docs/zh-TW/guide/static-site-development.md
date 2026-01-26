@@ -325,6 +325,9 @@ import {
   generateRedirects,
   generateLocalizedRoutes,
   generateSitemapEntries,
+  generateSitemapXml,
+  generateRobotsTxt,
+  generate404Html,
 } from '@gravito/freeze'
 import { freezeConfig } from './freeze.config'
 
@@ -357,7 +360,18 @@ async function build() {
   // 5. 生成 Sitemap
   console.log(' 生成 Sitemap...')
   const sitemapEntries = generateSitemapEntries(routes, freezeConfig)
-  // ... 渲染 sitemap XML
+  const sitemapXml = generateSitemapXml(sitemapEntries, freezeConfig.baseUrl)
+  await writeFile(join(outputDir, 'sitemap.xml'), sitemapXml)
+
+  // 6. 生成 Robots.txt
+  console.log(' 生成 Robots.txt...')
+  const robotsTxt = generateRobotsTxt(freezeConfig.baseUrl)
+  await writeFile(join(outputDir, 'robots.txt'), robotsTxt)
+
+  // 7. 生成 404 頁面
+  console.log(' 生成 404.html...')
+  const html404 = generate404Html(freezeConfig)
+  await writeFile(join(outputDir, '404.html'), html404)
   
   console.log('[Complete] SSG 建置完成！')
 }
@@ -437,6 +451,9 @@ bun run build:preview
 | `generateLocalizedRoutes(routes, locales)` | 建立本地化路由 |
 | `inferRedirects(locales, default, routes)` | 自動推斷重導向 |
 | `generateSitemapEntries(routes, config)` | 建立含 i18n 的 Sitemap |
+| `generateSitemapXml(entries, baseUrl)` | 生成 Sitemap XML |
+| `generateRobotsTxt(baseUrl)` | 生成 Robots.txt |
+| `generate404Html(config)` | 生成 404.html |
 
 ---
 

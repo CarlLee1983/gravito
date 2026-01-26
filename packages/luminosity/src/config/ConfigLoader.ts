@@ -2,10 +2,32 @@ import { existsSync } from 'node:fs'
 import { isAbsolute, join, resolve } from 'node:path'
 import type { SeoConfig } from '../types'
 
+/**
+ * ConfigLoader is responsible for discovering and loading Luminosity
+ * configuration files.
+ *
+ * It searches for standard configuration filenames (`gravito.seo.config.ts`, etc.)
+ * in the current working directory or loads a specific file from a provided path.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class ConfigLoader {
   /**
-   * Load configuration from file
-   * Supports .ts, .js, .mjs chunks
+   * Load configuration from file.
+   *
+   * Supports .ts, .js, and .mjs files. Prioritizes the provided `configPath`
+   * if given, otherwise searches default paths.
+   *
+   * @param configPath - Optional explicit path to the configuration file.
+   * @returns The loaded and validated configuration.
+   * @throws {Error} If the file is not found or is invalid.
+   *
+   * @example
+   * ```typescript
+   * const loader = new ConfigLoader();
+   * const config = await loader.load('./seo.config.ts');
+   * ```
    */
   async load(configPath?: string): Promise<SeoConfig> {
     const cwd = process.cwd()

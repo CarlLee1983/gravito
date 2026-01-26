@@ -1,11 +1,19 @@
 import { GravitoException } from './GravitoException'
 
+/**
+ * Structure of a validation error
+ * @public
+ */
 export interface ValidationError {
   field: string
   message: string
   code?: string
 }
 
+/**
+ * Exception thrown when data validation fails.
+ * @public
+ */
 export class ValidationException extends GravitoException {
   public readonly errors: ValidationError[]
   public redirectTo?: string

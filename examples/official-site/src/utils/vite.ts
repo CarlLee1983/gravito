@@ -9,10 +9,8 @@ export function setupViteProxy(core: PlanetCore): void {
     try {
       const url = new URL(c.req.url)
 
-      // Fix: When proxying, we might need to adjust the path if Photon's router captured differently
-      // But for global middleware or wildcard, url.pathname is correct.
-
-      const viteUrl = `http://127.0.0.1:5174${url.pathname}${url.search}`
+      const pathname = url.pathname.replace(/\/+/g, '/')
+      const viteUrl = `http://127.0.0.1:5174${pathname}${url.search}`
 
       // Pass original headers (important for Accept, etc.)
       const headers = new Headers(c.req.header())
@@ -26,6 +24,7 @@ export function setupViteProxy(core: PlanetCore): void {
           response = await fetch(viteUrl, {
             headers,
             method: c.req.method,
+            redirect: 'follow',
           })
           break // Success
         } catch (e) {
@@ -37,11 +36,13 @@ export function setupViteProxy(core: PlanetCore): void {
         }
       }
 
+      if (response.status === 404) {
+        // DEBUG: Return explicit 404 to verify connectivity
+        return c.text(`[Vite Debug] 404 Not Found from Vite at ${viteUrl}`, 404)
+      }
+
       if (!response.ok && response.status !== 304) {
-        // Only log if it's not a 404
-        if (response.status !== 404) {
-          core.logger.warn(`[Vite Proxy] ${response.status} for: ${url.pathname}`)
-        }
+        core.logger.warn(`[Vite Proxy] ${response.status} for: ${pathname}`)
         // Forward the error response from Vite
         return c.body(await response.arrayBuffer(), response.status as never)
       }
@@ -73,13 +74,27 @@ export function setupViteProxy(core: PlanetCore): void {
         }
       })
 
-      // Force correct Content-Type for JS modules
+      // Force correct Content-Type for JS modules and CSS
       const p = url.pathname
       const isViteSpecial = p.startsWith('/@')
       const isJSAsset = /\.(ts|tsx|js|jsx)$/.test(p) || p.includes('react-refresh')
+      const isCSS = /\.css$/.test(p)
 
       if (isViteSpecial || isJSAsset) {
         responseHeaders.set('Content-Type', 'application/javascript')
+      } else if (isCSS) {
+        // In Vite dev mode, CSS imports are transformed to JS modules with HMR
+        // So we should preserve the original Content-Type from Vite (usually text/javascript)
+        // Only override if Vite returns something completely wrong
+        const originalContentType = response.headers.get('content-type')
+        if (
+          !originalContentType ||
+          (!originalContentType.includes('javascript') && !originalContentType.includes('css'))
+        ) {
+          // Fallback: if Vite doesn't provide a valid type, use text/javascript for CSS imports in dev mode
+          responseHeaders.set('Content-Type', 'text/javascript')
+        }
+        // Otherwise, preserve Vite's Content-Type (usually text/javascript for CSS imports in dev mode)
       }
 
       // Return a RAW Web Response to bypass any Photon/Adapter body-shaping that defaults to octet-stream
@@ -94,38 +109,54 @@ export function setupViteProxy(core: PlanetCore): void {
   }
 
   // Intercept all requests that look like Vite assets
-  // We use a global middleware pattern but conditionally execute to avoid interfering with API/HTML routes if possible.
-  // However, Photon's order matters. This is installed AFTER static files but BEFORE other routes in bootstrap.
-
   core.adapter.use('*', async (c: GravitoContext, next: GravitoNext) => {
-    const url = new URL(c.req.url)
-    const p = url.pathname
+    try {
+      const url = new URL(c.req.url)
+      const p = url.pathname
 
-    // Identifiers for Vite requests
-    const isViteSpecial = p.startsWith('/@') // /@vite, /@react-refresh, /@fs, /@id
-    const isNodeModules = p.startsWith('/node_modules')
-    const isClientSource = p.startsWith('/src/client') || p.startsWith('/src') // general src
-    const isClientRoot = p === '/app.tsx' || p === '/styles.css'
+      if (p.startsWith('/static/') || p === '/favicon.ico') {
+        if (next) {
+          return await next()
+        }
+        return undefined
+      }
 
-    // Extensions often requested by Vite
-    const hasExtension = /\.(ts|tsx|js|jsx|css|json|wasm|png|jpg|jpeg|gif|svg|ico)$/.test(p)
+      // Identifiers for Vite requests
+      const isViteSpecial = p.startsWith('/@') // /@vite, /@react-refresh, /@fs, /@id
+      const isNodeModules = p.startsWith('/node_modules')
+      const isClientSource = p.startsWith('/src/client') || p.startsWith('/src') // general src
+      const isClientRoot = p === '/app.tsx' || p === '/styles.css' || p === '/freeze.config.ts'
 
-    // Specific HMR helper
-    const isReactRefresh = p.includes('react-refresh')
+      // Extensions often requested by Vite
+      const hasExtension = /\.(ts|tsx|js|jsx|css|json|wasm|png|jpg|jpeg|gif|svg|ico)$/.test(p)
 
-    if (
-      isViteSpecial ||
-      isNodeModules ||
-      isClientSource ||
-      isClientRoot ||
-      hasExtension ||
-      isReactRefresh
-    ) {
-      // If it overlaps with a registered route (like /api), we might want to be careful.
-      // But in this architecture, client assets take precedence in dev mode if they exist in Vite.
-      return proxyToVite(c)
+      // Specific HMR helper
+      const isReactRefresh = p.includes('react-refresh')
+
+      const shouldProxy =
+        isViteSpecial ||
+        isNodeModules ||
+        isClientSource ||
+        isClientRoot ||
+        hasExtension ||
+        isReactRefresh ||
+        p.endsWith('.tsx') ||
+        p.endsWith('.ts') ||
+        p.endsWith('.js')
+
+      if (shouldProxy) {
+        const result = await proxyToVite(c)
+        if (result) {
+          return result
+        }
+      }
+    } catch (e) {
+      console.error(`[Vite Proxy] Middleware error:`, e)
     }
 
-    await next()
+    if (next) {
+      return await next()
+    }
+    return undefined
   })
 }

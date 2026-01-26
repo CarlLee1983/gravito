@@ -1,38 +1,79 @@
-import type { ChangeTracker, SitemapChange, SitemapEntry } from '../types'
+import type { ChangeTracker, ShardManifest, SitemapChange, SitemapEntry } from '../types'
+import { Mutex } from '../utils/Mutex'
 import { DiffCalculator } from './DiffCalculator'
 import type { SitemapGenerator, SitemapGeneratorOptions } from './SitemapGenerator'
 import { SitemapGenerator as SitemapGeneratorImpl } from './SitemapGenerator'
+import { SitemapParser } from './SitemapParser'
+import { SitemapStream } from './SitemapStream'
 
+/**
+ * Options for configuring the `IncrementalGenerator`.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface IncrementalGeneratorOptions extends SitemapGeneratorOptions {
+  /** The change tracker used to retrieve and record structural site changes. */
   changeTracker: ChangeTracker
+  /** Optional diff calculator to identify added, updated, or removed entries. */
   diffCalculator?: DiffCalculator
-  autoTrack?: boolean // 自動追蹤變更，預設 true
+  /** Whether to automatically track new entries discovered during full generation. @default true */
+  autoTrack?: boolean
 }
 
 /**
- * 增量生成器
- * 只生成變更的 URL，不重新生成整個 sitemap
+ * IncrementalGenerator manages partial updates to the sitemap based on detected changes.
+ *
+ * It provides methods for performing both full and incremental generations,
+ * using a `ChangeTracker` to determine which parts of the sitemap need updating.
+ * This is particularly efficient for large sites where full regeneration is costly.
+ *
+ * @public
+ * @since 3.0.0
  */
 export class IncrementalGenerator {
   private options: IncrementalGeneratorOptions
   private changeTracker: ChangeTracker
   private diffCalculator: DiffCalculator
   private generator: SitemapGenerator
+  private mutex = new Mutex()
 
   constructor(options: IncrementalGeneratorOptions) {
-    this.options = options
-    this.changeTracker = options.changeTracker
-    this.diffCalculator = options.diffCalculator || new DiffCalculator()
-    this.generator = new SitemapGeneratorImpl(options)
+    this.options = {
+      autoTrack: true,
+      generateManifest: true,
+      ...options,
+    }
+    this.changeTracker = this.options.changeTracker
+    this.diffCalculator = this.options.diffCalculator || new DiffCalculator()
+    this.generator = new SitemapGeneratorImpl(this.options)
   }
 
   /**
-   * 生成完整的 sitemap（首次生成）
+   * Performs a full sitemap generation and optionally records all entries in the change tracker.
    */
   async generateFull(): Promise<void> {
+    return this.mutex.runExclusive(() => this.performFullGeneration())
+  }
+
+  /**
+   * Performs an incremental sitemap update based on changes recorded since a specific time.
+   *
+   * If the number of changes exceeds a certain threshold (e.g., 30% of total URLs),
+   * a full generation is triggered instead to ensure consistency.
+   *
+   * @param since - Optional start date for the incremental update.
+   */
+  async generateIncremental(since?: Date): Promise<void> {
+    return this.mutex.runExclusive(() => this.performIncrementalGeneration(since))
+  }
+
+  /**
+   * Internal implementation of full sitemap generation.
+   */
+  private async performFullGeneration(): Promise<void> {
     await this.generator.run()
 
-    // 如果啟用自動追蹤，記錄所有 entries 為新增
     if (this.options.autoTrack) {
       const { providers } = this.options
       for (const provider of providers) {
@@ -52,84 +93,182 @@ export class IncrementalGenerator {
   }
 
   /**
-   * 增量生成（只更新變更的部分）
+   * Internal implementation of incremental sitemap generation.
    */
-  async generateIncremental(since?: Date): Promise<void> {
-    // 1. 獲取變更記錄
+  private async performIncrementalGeneration(since?: Date): Promise<void> {
     const changes = await this.changeTracker.getChanges(since)
-
     if (changes.length === 0) {
-      return // 沒有變更，不需要更新
+      return
     }
 
-    // 2. 從現有 sitemap 讀取基礎狀態
-    const baseEntries = await this.loadBaseEntries()
-
-    // 3. 計算差異
-    const diff = this.diffCalculator.calculateFromChanges(baseEntries, changes)
-
-    // 4. 生成增量 sitemap
-    await this.generateDiff(diff)
-
-    // 5. 更新變更追蹤（標記已處理）
-    // 這裡可以選擇清除已處理的變更，或保留歷史記錄
-  }
-
-  /**
-   * 手動追蹤變更
-   */
-  async trackChange(change: SitemapChange): Promise<void> {
-    await this.changeTracker.track(change)
-  }
-
-  /**
-   * 獲取變更記錄
-   */
-  async getChanges(since?: Date): Promise<SitemapChange[]> {
-    return this.changeTracker.getChanges(since)
-  }
-
-  /**
-   * 載入基礎 entries（從現有 sitemap）
-   */
-  private async loadBaseEntries(): Promise<SitemapEntry[]> {
-    // 這裡需要從儲存讀取現有的 sitemap
-    // 簡化實作：從 providers 重新獲取（實際應用中應該從 sitemap 檔案解析）
-    const entries: SitemapEntry[] = []
-    const { providers } = this.options
-
-    for (const provider of providers) {
-      const providerEntries = await provider.getEntries()
-      const entriesArray = Array.isArray(providerEntries)
-        ? providerEntries
-        : await this.toArray(providerEntries)
-      entries.push(...entriesArray)
+    const manifest = await this.loadManifest()
+    if (!manifest) {
+      await this.performFullGeneration()
+      return
     }
 
-    return entries
+    const totalCount = manifest.shards.reduce((acc, s) => acc + s.count, 0)
+    const changeRatio = totalCount > 0 ? changes.length / totalCount : 1
+
+    // If more than 30% URLs changed, trigger full generation
+    if (changeRatio > 0.3) {
+      await this.performFullGeneration()
+      return
+    }
+
+    const affectedShards = this.getAffectedShards(manifest, changes)
+    // If more than 50% shards are affected, trigger full generation
+    if (affectedShards.size / manifest.shards.length > 0.5) {
+      await this.performFullGeneration()
+      return
+    }
+
+    await this.updateShards(manifest, affectedShards)
   }
 
   /**
-   * 生成差異部分
+   * Normalizes a URL to an absolute URL using the base URL.
    */
-  private async generateDiff(_diff: {
-    added: SitemapEntry[]
-    updated: SitemapEntry[]
-    removed: string[]
-  }): Promise<void> {
-    // 這裡需要實作增量更新邏輯
-    // 簡化實作：重新生成整個 sitemap（實際應用中應該只更新變更的部分）
-    // 對於企業級應用，應該：
-    // 1. 只更新變更的 shard 檔案
-    // 2. 更新 sitemap index
-    // 3. 處理刪除的 URL
-
-    // 暫時使用完整生成
-    await this.generator.run()
+  private normalizeUrl(url: string): string {
+    if (url.startsWith('http')) {
+      return url
+    }
+    const { baseUrl } = this.options
+    const normalizedBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl
+    const normalizedPath = url.startsWith('/') ? url : `/${url}`
+    return normalizedBase + normalizedPath
   }
 
   /**
-   * 將 AsyncIterable 轉換為陣列
+   * Loads the sitemap shard manifest from storage.
+   */
+  private async loadManifest(): Promise<ShardManifest | null> {
+    const filename =
+      this.options.filename?.replace(/\.xml$/, '-manifest.json') || 'sitemap-manifest.json'
+    const content = await this.options.storage.read(filename)
+    if (!content) {
+      return null
+    }
+    try {
+      return JSON.parse(content)
+    } catch {
+      return null
+    }
+  }
+
+  /**
+   * Identifies which shards are affected by the given set of changes.
+   */
+  private getAffectedShards(
+    manifest: ShardManifest,
+    changes: SitemapChange[]
+  ): Map<string, SitemapChange[]> {
+    const affected = new Map<string, SitemapChange[]>()
+
+    for (const change of changes) {
+      const normalizedUrl = this.normalizeUrl(change.url)
+      let shard = manifest.shards.find((s) => {
+        return normalizedUrl >= s.from && normalizedUrl <= s.to
+      })
+
+      if (!shard) {
+        shard = manifest.shards.find((s) => normalizedUrl <= s.to)
+        if (!shard) {
+          shard = manifest.shards[manifest.shards.length - 1]
+        }
+      }
+
+      if (shard) {
+        const shardChanges = affected.get(shard.filename) || []
+        shardChanges.push(change)
+        affected.set(shard.filename, shardChanges)
+      }
+    }
+
+    return affected
+  }
+
+  /**
+   * Updates the affected shards in storage.
+   */
+  private async updateShards(
+    manifest: ShardManifest,
+    affectedShards: Map<string, SitemapChange[]>
+  ): Promise<void> {
+    for (const [filename, shardChanges] of affectedShards) {
+      const entries: SitemapEntry[] = []
+      const stream = await this.options.storage.readStream?.(filename)
+
+      if (stream) {
+        for await (const entry of SitemapParser.parseStream(stream)) {
+          entries.push(entry)
+        }
+      } else {
+        const xml = await this.options.storage.read(filename)
+        if (!xml) {
+          continue
+        }
+        entries.push(...SitemapParser.parse(xml))
+      }
+
+      const updatedEntries = this.applyChanges(entries, shardChanges)
+
+      const outStream = new SitemapStream({
+        baseUrl: this.options.baseUrl,
+        pretty: this.options.pretty,
+      })
+      outStream.addAll(updatedEntries)
+
+      const newXml = outStream.toXML()
+      await this.options.storage.write(filename, newXml)
+
+      const shardInfo = manifest.shards.find((s) => s.filename === filename)
+      if (shardInfo) {
+        shardInfo.count = updatedEntries.length
+        shardInfo.lastmod = new Date()
+        shardInfo.from = this.normalizeUrl(updatedEntries[0].url)
+        shardInfo.to = this.normalizeUrl(updatedEntries[updatedEntries.length - 1].url)
+      }
+    }
+
+    const manifestFilename =
+      this.options.filename?.replace(/\.xml$/, '-manifest.json') || 'sitemap-manifest.json'
+    await this.options.storage.write(
+      manifestFilename,
+      JSON.stringify(manifest, null, this.options.pretty ? 2 : 0)
+    )
+  }
+
+  /**
+   * Applies changes to a set of sitemap entries and returns the updated, sorted list.
+   */
+  private applyChanges(entries: SitemapEntry[], changes: SitemapChange[]): SitemapEntry[] {
+    const entryMap = new Map<string, SitemapEntry>()
+    for (const entry of entries) {
+      entryMap.set(this.normalizeUrl(entry.url), entry)
+    }
+
+    for (const change of changes) {
+      const normalizedUrl = this.normalizeUrl(change.url)
+      if (change.type === 'add' || change.type === 'update') {
+        if (change.entry) {
+          entryMap.set(normalizedUrl, {
+            ...change.entry,
+            url: normalizedUrl,
+          })
+        }
+      } else if (change.type === 'remove') {
+        entryMap.delete(normalizedUrl)
+      }
+    }
+
+    return Array.from(entryMap.values()).sort((a, b) =>
+      this.normalizeUrl(a.url).localeCompare(this.normalizeUrl(b.url))
+    )
+  }
+
+  /**
+   * Helper to convert an async iterable into an array.
    */
   private async toArray<T>(iterable: AsyncIterable<T>): Promise<T[]> {
     const array: T[] = []

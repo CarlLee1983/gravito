@@ -2,47 +2,29 @@ import type { Notifiable } from './types'
 
 /**
  * Marker interface for notifications that should be queued.
+ *
+ * Implementing this interface will cause the notification to be dispatched
+ * to a background queue automatically by the `NotificationManager`.
+ *
+ * @public
+ * @since 3.0.0
  */
 export interface ShouldQueue {
-  /**
-   * Queue name (optional).
-   */
+  /** The name of the queue to push this notification to. */
   queue?: string | undefined
+  /** The connection name (e.g., 'redis', 'database') to use for queuing. */
   connection?: string | undefined
+  /** Delay in seconds before the notification is delivered. */
   delay?: number | undefined
 }
 
 /**
  * Base Notification class.
  *
- * All notifications should extend this class.
- * Notifications can be delivered via multiple channels (mail, database, broadcast, Slack, SMS, etc.).
+ * All application notifications should extend this class.
  *
- * @example
- * ```typescript
- * class InvoicePaid extends Notification {
- *   constructor(private invoice: Invoice) {
- *     super()
- *   }
- *
- *   via(user: User): string[] {
- *     return ['mail', 'database']
- *   }
- *
- *   toMail(user: User): MailMessage {
- *     return new MailMessage()
- *       .subject('Invoice Paid')
- *       .view('emails.invoice-paid', { invoice: this.invoice })
- *   }
- *
- *   toDatabase(user: User): DatabaseNotification {
- *     return {
- *       type: 'invoice-paid',
- *       data: { invoice_id: this.invoice.id }
- *     }
- *   }
- * }
- * ```
+ * @public
+ * @since 3.0.0
  */
 export abstract class Notification {
   /**

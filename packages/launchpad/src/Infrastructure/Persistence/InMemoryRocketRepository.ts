@@ -2,6 +2,15 @@ import type { IRocketRepository } from '../../Domain/Interfaces'
 import type { Rocket } from '../../Domain/Rocket'
 import { RocketStatus } from '../../Domain/RocketStatus'
 
+/**
+ * InMemoryRocketRepository implements the `IRocketRepository` interface using an in-memory Map.
+ *
+ * This repository is suitable for testing or development environments where
+ * persistence across restarts is not required.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class InMemoryRocketRepository implements IRocketRepository {
   private rockets = new Map<string, Rocket>()
 

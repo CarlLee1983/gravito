@@ -25,6 +25,9 @@ export default defineConfig(({ command }) => ({
     port: 5173,
     strictPort: true,
     cors: true,
+    hmr: {
+      port: 5173,
+    },
   },
   resolve: {
     alias: {

@@ -1,8 +1,21 @@
 import type { AnalyticsConfig } from './interfaces'
 
+/**
+ * AnalyticsBuilder generates tracking scripts for various analytics providers.
+ *
+ * It currently supports Google Analytics (gtag.js), Meta Pixel, and Baidu Tongji.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class AnalyticsBuilder {
   constructor(private config: AnalyticsConfig) {}
 
+  /**
+   * Generates analytics tracking scripts.
+   *
+   * @returns A string containing the configured analytics scripts.
+   */
   build(): string {
     const parts: string[] = []
 

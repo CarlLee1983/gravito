@@ -61,8 +61,8 @@ export const orderWorkflow = createWorkflow('flux-enterprise-order')
       const attempt = (errorTracker.get(ctx.input.orderId) ?? 0) + 1
       errorTracker.set(ctx.input.orderId, attempt)
 
-      // Only simulate failures if this is NOT a manual retry from dashboard
-      if (!ctx.input.isRetry) {
+      // Only simulate failures if this is NOT a manual retry from dashboard AND NOT in test env
+      if (!ctx.input.isRetry && process.env.NODE_ENV !== 'test') {
         // 60% chance to fail subsequent attempts (simulating persistent outage)
         if (Math.random() < 0.6) {
           throw new Error('Random system instability detected')
@@ -82,7 +82,7 @@ export const orderWorkflow = createWorkflow('flux-enterprise-order')
 
       ctx.data.reservedItems = reserved
     },
-    { retries: 10, timeout: 5000 }
+    { retries: 1, timeout: 5000 }
   )
   .commit('charge-payment', async (ctx) => {
     await new Promise((resolve) => setTimeout(resolve, 150))

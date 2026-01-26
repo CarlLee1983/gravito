@@ -4,6 +4,15 @@ import nodemailer from 'nodemailer'
 import type { AlertConfig, AlertEvent, AlertRule, PulseNode } from '../../shared/types'
 import type { WorkerReport } from './QueueService'
 
+/**
+ * AlertService monitors system telemetry and triggers notifications.
+ *
+ * It evaluates rules against real-time data from Quasar agents and
+ * dispatches alerts via Slack, Discord, or Email when thresholds are exceeded.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class AlertService {
   private redis: Redis
   private rules: AlertRule[] = []

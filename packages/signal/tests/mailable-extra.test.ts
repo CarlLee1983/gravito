@@ -1,61 +1,68 @@
-import { describe, expect, it, mock } from 'bun:test'
-import { DevMailbox } from '../src/dev/DevMailbox'
+import { describe, expect, it } from 'bun:test'
 import { Mailable } from '../src/Mailable'
-import { OrbitSignal } from '../src/OrbitSignal'
-import { MemoryTransport } from '../src/transports/MemoryTransport'
 
-class DemoMail extends Mailable {
+class TestMailable extends Mailable {
   build() {
-    return this.from('from@example.com')
-      .to('to@example.com')
-      .cc('cc@example.com')
-      .bcc('bcc@example.com')
-      .replyTo('reply@example.com')
-      .subject('Hello')
-      .emailPriority('high')
-      .html('<p>Hello World</p>')
+    return this
   }
 }
 
-describe('Mailable', () => {
-  it('builds envelopes and renders content', async () => {
-    const mail = new DemoMail()
-    const envelope = await mail.buildEnvelope({
-      from: { address: 'default@example.com' },
-      translator: (key: string) => `t:${key}`,
-    })
-
-    expect(envelope.from?.address).toBe('from@example.com')
-    expect(envelope.cc?.[0]?.address).toBe('cc@example.com')
-    expect(envelope.bcc?.[0]?.address).toBe('bcc@example.com')
-    expect(envelope.replyTo?.address).toBe('reply@example.com')
-
-    const content = await mail.renderContent()
-    expect(content.html).toContain('<p>Hello World</p>')
-    expect(content.text).toBe('Hello World')
-    expect(mail.t('hello')).toBe('t:hello')
+describe('Mailable Extras', () => {
+  it('should handle attachments', () => {
+    const mail = new TestMailable()
+    mail.attach({ filename: 'test.txt', content: 'hello' })
+    expect((mail as any).envelope.attachments).toHaveLength(1)
+    expect((mail as any).envelope.attachments[0].filename).toBe('test.txt')
   })
 
-  it('queues mailables via OrbitSignal', async () => {
-    const queueMock = mock(async () => {})
-    const orbit = new OrbitSignal({
-      transport: new MemoryTransport(new DevMailbox()),
-    })
+  it('should set view logic', () => {
+    const mail = new TestMailable()
+    mail.view('emails/welcome', { user: 'Carl' })
+    expect((mail as any).renderer).toBeDefined()
+    expect((mail as any).renderData.user).toBe('Carl')
+  })
 
-    // 模擬容器中的隊列服務
-    ;(orbit as any).core = {
-      container: {
-        make: (key: string) => {
-          if (key === 'queue') {
-            return { push: queueMock }
-          }
-          return null
-        },
-      },
-    }
+  it('should handle queue options', () => {
+    const mail = new TestMailable()
+    mail.onQueue('low').onConnection('redis').delay(60).withPriority('high')
 
-    const mail = new DemoMail()
-    await orbit.queue(mail)
-    expect(queueMock).toHaveBeenCalled()
+    expect(mail.queueName).toBe('low')
+    expect(mail.connectionName).toBe('redis')
+    expect(mail.delaySeconds).toBe(60)
+    expect(mail.priority).toBe('high')
+  })
+
+  it('should handle locale', () => {
+    const mail = new TestMailable()
+    mail.locale('zh-TW')
+    expect((mail as any).currentLocale).toBe('zh-TW')
+  })
+
+  it('should support i18n helper', () => {
+    const mail = new TestMailable()
+    mail.setTranslator((key) => key.toUpperCase())
+
+    expect(mail.t('hello')).toBe('HELLO')
+  })
+
+  it('should safely fail queue() if app not available', async () => {
+    const mail = new TestMailable()
+    // We are not mocking @gravito/core, so it should hit the catch block and log warning
+    // We just ensure it doesn't throw
+    await expect(mail.queue()).resolves.toBeUndefined()
+  })
+
+  it('should support React renderer builder', async () => {
+    const mail = new TestMailable()
+    // Mock import mechanics? Hard to test dynamic import in this unit test without mocking module system.
+    // Instead we test the builder method sets the resolver.
+    mail.react('MyComponent', { prop: 1 })
+    expect((mail as any).rendererResolver).toBeDefined()
+  })
+
+  it('should support Vue renderer builder', async () => {
+    const mail = new TestMailable()
+    mail.vue('MyComponent', { prop: 1 })
+    expect((mail as any).rendererResolver).toBeDefined()
   })
 })

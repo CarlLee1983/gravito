@@ -3,12 +3,23 @@
  * @description DDL generation for SQLite
  */
 
+import type { Blueprint } from '../Blueprint'
 import type { ColumnDefinition } from '../ColumnDefinition'
 import type { IndexDefinition } from '../ForeignKeyDefinition'
 import { SchemaGrammar } from './SchemaGrammar'
 
+/**
+ * SQLite Schema Grammar
+ * Generates SQL DDL statements specifically for SQLite databases.
+ * @internal
+ */
 export class SQLiteSchemaGrammar extends SchemaGrammar {
   protected wrapChar = '"'
+
+  override compileCreate(blueprint: Blueprint): string {
+    const sql = super.compileCreate(blueprint)
+    return sql.replace('CREATE TABLE', 'CREATE TABLE IF NOT EXISTS')
+  }
 
   wrapTable(table: string): string {
     return `${this.wrapChar}${table}${this.wrapChar}`

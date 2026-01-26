@@ -1,30 +1,69 @@
 import type { ChangeTracker, SitemapChange } from '../types'
 
+/**
+ * Options for configuring the `MemoryChangeTracker`.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface MemoryChangeTrackerOptions {
-  maxChanges?: number // 最大變更記錄數，預設 100000
+  /** Maximum number of changes to keep in memory. @default 100000 */
+  maxChanges?: number
 }
 
 /**
- * 記憶體變更追蹤器實作
- * 適用於單一進程或開發環境
+ * MemoryChangeTracker is a simple, in-memory implementation of the `ChangeTracker`.
+ *
+ * It is suitable for single-process applications or development environments where
+ * persistence of change history across restarts is not required.
+ *
+ * @public
+ * @since 3.0.0
  */
 export class MemoryChangeTracker implements ChangeTracker {
   private changes: SitemapChange[] = []
+  private urlIndex = new Map<string, SitemapChange[]>()
   private maxChanges: number
 
   constructor(options: MemoryChangeTrackerOptions = {}) {
     this.maxChanges = options.maxChanges || 100000
   }
 
+  /**
+   * Record a new site structure change in memory.
+   *
+   * @param change - The change event to record.
+   */
   async track(change: SitemapChange): Promise<void> {
     this.changes.push(change)
 
-    // 如果超過最大數量，移除最舊的變更
+    const urlChanges = this.urlIndex.get(change.url) || []
+    urlChanges.push(change)
+    this.urlIndex.set(change.url, urlChanges)
+
     if (this.changes.length > this.maxChanges) {
-      this.changes = this.changes.slice(-this.maxChanges)
+      const removed = this.changes.shift()
+      if (removed) {
+        const changes = this.urlIndex.get(removed.url)
+        if (changes) {
+          const index = changes.indexOf(removed)
+          if (index > -1) {
+            changes.splice(index, 1)
+          }
+          if (changes.length === 0) {
+            this.urlIndex.delete(removed.url)
+          }
+        }
+      }
     }
   }
 
+  /**
+   * Retrieve all changes recorded in memory since a specific time.
+   *
+   * @param since - Optional start date for the query.
+   * @returns An array of change events.
+   */
   async getChanges(since?: Date): Promise<SitemapChange[]> {
     if (!since) {
       return [...this.changes]
@@ -33,29 +72,62 @@ export class MemoryChangeTracker implements ChangeTracker {
     return this.changes.filter((change) => change.timestamp >= since)
   }
 
+  /**
+   * Retrieve the full change history for a specific URL from memory.
+   *
+   * @param url - The URL to query history for.
+   * @returns An array of change events.
+   */
   async getChangesByUrl(url: string): Promise<SitemapChange[]> {
-    return this.changes.filter((change) => change.url === url)
+    return this.urlIndex.get(url) || []
   }
 
+  /**
+   * Purge old change records from memory storage.
+   *
+   * @param since - If provided, only records older than this date will be cleared.
+   */
   async clear(since?: Date): Promise<void> {
     if (!since) {
       this.changes = []
+      this.urlIndex.clear()
       return
     }
 
     this.changes = this.changes.filter((change) => change.timestamp < since)
+    this.urlIndex.clear()
+    for (const change of this.changes) {
+      const urlChanges = this.urlIndex.get(change.url) || []
+      urlChanges.push(change)
+      this.urlIndex.set(change.url, urlChanges)
+    }
   }
 }
 
+/**
+ * Options for configuring the `RedisChangeTracker`.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface RedisChangeTrackerOptions {
-  client: any // Redis 客戶端
+  /** The Redis client instance. */
+  client: any
+  /** Prefix for Redis keys to avoid collisions. @default 'sitemap:changes:' */
   keyPrefix?: string
-  ttl?: number // TTL（秒），預設 7 天
+  /** Time-to-live for change records in seconds. @default 604800 (7 days) */
+  ttl?: number
 }
 
 /**
- * Redis 變更追蹤器實作
- * 適用於分散式環境或多進程
+ * RedisChangeTracker provides a distributed implementation of the `ChangeTracker`.
+ *
+ * It uses Redis to store change records, making it suitable for multi-process
+ * or distributed environments where multiple instances of Gravito need to
+ * share change history.
+ *
+ * @public
+ * @since 3.0.0
  */
 export class RedisChangeTracker implements ChangeTracker {
   private client: any
@@ -65,7 +137,7 @@ export class RedisChangeTracker implements ChangeTracker {
   constructor(options: RedisChangeTrackerOptions) {
     this.client = options.client
     this.keyPrefix = options.keyPrefix || 'sitemap:changes:'
-    this.ttl = options.ttl || 604800 // 7 天
+    this.ttl = options.ttl || 604800 // 7 days
   }
 
   private getKey(url: string): string {
@@ -76,20 +148,31 @@ export class RedisChangeTracker implements ChangeTracker {
     return `${this.keyPrefix}list`
   }
 
+  /**
+   * Record a new site structure change in Redis.
+   *
+   * @param change - The change event to record.
+   */
   async track(change: SitemapChange): Promise<void> {
     const key = this.getKey(change.url)
     const listKey = this.getListKey()
     const data = JSON.stringify(change)
 
-    // 儲存變更
+    // Save change
     await this.client.set(key, data, 'EX', this.ttl)
 
-    // 添加到時間序列列表
+    // Add to time series list
     const score = change.timestamp.getTime()
     await this.client.zadd(listKey, score, change.url)
     await this.client.expire(listKey, this.ttl)
   }
 
+  /**
+   * Retrieve all changes recorded in Redis since a specific time.
+   *
+   * @param since - Optional start date for the query.
+   * @returns An array of change events.
+   */
   async getChanges(since?: Date): Promise<SitemapChange[]> {
     try {
       const listKey = this.getListKey()
@@ -113,6 +196,12 @@ export class RedisChangeTracker implements ChangeTracker {
     }
   }
 
+  /**
+   * Retrieve the full change history for a specific URL from Redis.
+   *
+   * @param url - The URL to query history for.
+   * @returns An array of change events.
+   */
   async getChangesByUrl(url: string): Promise<SitemapChange[]> {
     try {
       const key = this.getKey(url)
@@ -128,19 +217,24 @@ export class RedisChangeTracker implements ChangeTracker {
     }
   }
 
+  /**
+   * Purge old change records from Redis storage.
+   *
+   * @param since - If provided, only records older than this date will be cleared.
+   */
   async clear(since?: Date): Promise<void> {
     try {
       const listKey = this.getListKey()
 
       if (!since) {
-        // 清除所有
+        // Clear all
         const urls = await this.client.zrange(listKey, 0, -1)
         for (const url of urls) {
           await this.client.del(this.getKey(url))
         }
         await this.client.del(listKey)
       } else {
-        // 清除指定時間之前的
+        // Clear before specified time
         const maxScore = since.getTime()
         const urls = await this.client.zrangebyscore(listKey, 0, maxScore)
         for (const url of urls) {
@@ -149,7 +243,7 @@ export class RedisChangeTracker implements ChangeTracker {
         }
       }
     } catch {
-      // 忽略錯誤
+      // Ignore errors
     }
   }
 }

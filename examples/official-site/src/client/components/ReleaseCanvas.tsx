@@ -24,8 +24,6 @@ export const ReleaseCanvas: React.FC = () => {
     const _brandColor = 'rgba(0, 240, 255, 0.4)'
     const _secondaryColor = 'rgba(147, 51, 234, 0.3)'
 
-    const mouse = { x: 0, y: 0, active: false }
-
     class Particle {
       x: number
       y: number
@@ -50,21 +48,6 @@ export const ReleaseCanvas: React.FC = () => {
       }
 
       update() {
-        // Mouse interaction (gravity/repulsion)
-        if (mouse.active) {
-          const dx = mouse.x - this.x
-          const dy = mouse.y - this.y
-          const distance = Math.sqrt(dx * dx + dy * dy)
-          const forceDirectionX = dx / distance
-          const forceDirectionY = dy / distance
-          const maxDistance = 150
-          const force = (maxDistance - distance) / maxDistance
-          if (distance < maxDistance) {
-            this.x -= forceDirectionX * force * 5
-            this.y -= forceDirectionY * force * 5
-          }
-        }
-
         this.x += this.speedX
         this.y += this.speedY
 
@@ -153,19 +136,7 @@ export const ReleaseCanvas: React.FC = () => {
       init()
     }
 
-    const handleMouseMove = (e: MouseEvent) => {
-      mouse.x = e.clientX
-      mouse.y = e.clientY
-      mouse.active = true
-    }
-
-    const handleMouseLeave = () => {
-      mouse.active = false
-    }
-
     window.addEventListener('resize', handleResize)
-    window.addEventListener('mousemove', handleMouseMove)
-    window.addEventListener('mouseleave', handleMouseLeave)
 
     return () => {
       window.removeEventListener('resize', handleResize)

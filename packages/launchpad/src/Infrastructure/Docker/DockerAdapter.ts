@@ -1,12 +1,21 @@
 import { getRuntimeAdapter } from '@gravito/core'
 import type { IDockerAdapter } from '../../Domain/Interfaces'
 
+/**
+ * DockerAdapter implements the `IDockerAdapter` interface using the Docker CLI.
+ *
+ * It manages the lifecycle of Docker containers used as "Rockets" in Launchpad,
+ * including creation, command execution, file copying, and metrics collection.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class DockerAdapter implements IDockerAdapter {
   private baseImage = 'oven/bun:1.0-slim'
   private runtime = getRuntimeAdapter()
 
   async createBaseContainer(): Promise<string> {
-    const rocketId = `rocket-${Math.random().toString(36).substring(2, 9)}`
+    const rocketId = `rocket-${crypto.randomUUID()}`
 
     const proc = this.runtime.spawn([
       'docker',

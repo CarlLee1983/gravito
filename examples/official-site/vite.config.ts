@@ -21,7 +21,7 @@ export default defineConfig({
   server: {
     host: '127.0.0.1',
     port: 5174,
-    strictPort: true,
+    strictPort: true, // Ensure port consistency for proxy
     hmr: {
       port: 5174,
     },

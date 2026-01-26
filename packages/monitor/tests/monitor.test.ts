@@ -26,8 +26,14 @@ const createJsonContext = () => ({
 describe('MonitorOrbit', () => {
   test('registers services and routes', async () => {
     const routes = new Map<string, (c: unknown) => Promise<Response> | Response>()
+    const instances = new Map<string, unknown>()
     const core = {
-      services: new Map<string, unknown>(),
+      container: {
+        instance: (key: string, instance: unknown) => {
+          instances.set(key, instance)
+        },
+        make: (key: string) => instances.get(key),
+      },
       router: {
         get: (path: string, handler: (c: unknown) => Promise<Response> | Response) => {
           routes.set(path, handler)
@@ -43,10 +49,10 @@ describe('MonitorOrbit', () => {
 
     await orbit.install(core as any)
 
-    expect(core.services.get('monitor')).toBeDefined()
-    expect(core.services.get('health')).toBeDefined()
-    expect(core.services.get('metrics')).toBeDefined()
-    expect(core.services.get('tracing')).toBeDefined()
+    expect(instances.get('monitor')).toBeDefined()
+    expect(instances.get('health')).toBeDefined()
+    expect(instances.get('metrics')).toBeDefined()
+    expect(instances.get('tracing')).toBeDefined()
     expect(routes.has('/health')).toBe(true)
     expect(routes.has('/ready')).toBe(true)
     expect(routes.has('/live')).toBe(true)

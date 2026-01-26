@@ -1,4 +1,13 @@
+/**
+ * Path segment (key) in a data structure.
+ * @public
+ */
 export type PathSegment = string | number
+
+/**
+ * Path to a value (dot notation or array of segments).
+ * @public
+ */
 export type DataPath = string | readonly PathSegment[]
 
 function parsePath(path: DataPath | null | undefined): PathSegment[] {
@@ -61,6 +70,11 @@ function setChild(current: unknown, key: PathSegment, next: unknown): void {
     throw new TypeError('dataSet target cannot be null or undefined.')
   }
 
+  // Prevent prototype pollution
+  if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+    return
+  }
+
   if (current instanceof Map) {
     current.set(key, next)
     return
@@ -75,6 +89,10 @@ function setChild(current: unknown, key: PathSegment, next: unknown): void {
   throw new TypeError('dataSet target must be object-like.')
 }
 
+/**
+ * Retrieve a value from a deep object using dot notation.
+ * @public
+ */
 export function dataGet<TDefault = undefined>(
   target: unknown,
   path: DataPath | null | undefined,
@@ -96,6 +114,10 @@ export function dataGet<TDefault = undefined>(
   return current
 }
 
+/**
+ * Check if a key exists in a deep object using dot notation.
+ * @public
+ */
 export function dataHas(target: unknown, path: DataPath | null | undefined): boolean {
   const segments = parsePath(path)
   if (segments.length === 0) {
@@ -113,6 +135,10 @@ export function dataHas(target: unknown, path: DataPath | null | undefined): boo
   return true
 }
 
+/**
+ * Set a value in a deep object using dot notation.
+ * @public
+ */
 export function dataSet(
   target: unknown,
   path: DataPath,

@@ -51,7 +51,7 @@ await Schema.table('users', (table: Blueprint) => {
 Seeders are used to populate the database with initial data.
 
 ```ts
-import { Seeder } from '@gravito/atlas'
+import { DB, Seeder } from '@gravito/atlas'
 
 export default class UserSeeder extends Seeder {
   async run() {
@@ -85,10 +85,40 @@ await UserFactory.count(10).create() // Create 10 records
 
 You can execute them via CLI or code:
 
-```ts
-// Run all pending migrations
-await DB.migrate()
+### Via CLI
 
-// Run a specific Seeder
-await DB.seed(UserSeeder)
+```bash
+# Run all pending migrations
+bun orbit migrate
+
+# Run all seeders
+bun orbit seed
+
+# Rollback migrations
+bun orbit migrate:rollback
+
+# Fresh migration (drop all tables and re-run)
+bun orbit migrate:fresh
+```
+
+### Via Code
+
+```ts
+import { Migrator, SeederRunner } from '@gravito/atlas'
+import path from 'node:path'
+
+// Run all pending migrations
+const migrator = new Migrator({
+  path: path.join(__dirname, 'database/migrations')
+})
+await migrator.run()
+
+// Run all seeders
+const seederRunner = new SeederRunner({
+  path: path.join(__dirname, 'database/seeders')
+})
+await seederRunner.run()
+
+// Run a specific seeder by name
+await seederRunner.call('UserSeeder')
 ```

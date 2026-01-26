@@ -1,11 +1,24 @@
 import type { RedirectManager, RedirectRule } from '../types'
 
+/**
+ * Options for configuring the `MemoryRedirectManager`.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface MemoryRedirectManagerOptions {
-  maxRules?: number // 最大規則數，預設 100000
+  /** Maximum number of rules to keep in memory. @default 100000 */
+  maxRules?: number
 }
 
 /**
- * 記憶體轉址管理器實作
+ * MemoryRedirectManager is a fast, in-memory implementation of the `RedirectManager`.
+ *
+ * It is suitable for development environments or small sites where redirect
+ * rules do not need to persist across application restarts.
+ *
+ * @public
+ * @since 3.0.0
  */
 export class MemoryRedirectManager implements RedirectManager {
   private rules = new Map<string, RedirectRule>()
@@ -15,10 +28,15 @@ export class MemoryRedirectManager implements RedirectManager {
     this.maxRules = options.maxRules || 100000
   }
 
+  /**
+   * Registers a single redirect rule in memory.
+   *
+   * @param redirect - The redirect rule to add.
+   */
   async register(redirect: RedirectRule): Promise<void> {
     this.rules.set(redirect.from, redirect)
 
-    // 如果超過最大數量，移除最舊的規則（簡化實作）
+    // If limit exceeded, remove the oldest rule (FIFO)
     if (this.rules.size > this.maxRules) {
       const firstKey = this.rules.keys().next().value
       if (firstKey) {
@@ -27,20 +45,44 @@ export class MemoryRedirectManager implements RedirectManager {
     }
   }
 
+  /**
+   * Registers multiple redirect rules in memory.
+   *
+   * @param redirects - An array of redirect rules.
+   */
   async registerBatch(redirects: RedirectRule[]): Promise<void> {
     for (const redirect of redirects) {
       await this.register(redirect)
     }
   }
 
+  /**
+   * Retrieves a specific redirect rule by its source path from memory.
+   *
+   * @param from - The source path.
+   * @returns A promise resolving to the redirect rule, or null if not found.
+   */
   async get(from: string): Promise<RedirectRule | null> {
     return this.rules.get(from) || null
   }
 
+  /**
+   * Retrieves all registered redirect rules from memory.
+   *
+   * @returns A promise resolving to an array of all redirect rules.
+   */
   async getAll(): Promise<RedirectRule[]> {
     return Array.from(this.rules.values())
   }
 
+  /**
+   * Resolves a URL to its final destination through the redirect table.
+   *
+   * @param url - The URL to resolve.
+   * @param followChains - Whether to recursively resolve chained redirects.
+   * @param maxChainLength - Maximum depth for chain resolution.
+   * @returns A promise resolving to the final destination URL.
+   */
   async resolve(url: string, followChains = false, maxChainLength = 5): Promise<string | null> {
     let current = url
     let chainLength = 0
@@ -63,14 +105,30 @@ export class MemoryRedirectManager implements RedirectManager {
   }
 }
 
+/**
+ * Options for configuring the `RedisRedirectManager`.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface RedisRedirectManagerOptions {
-  client: any // Redis 客戶端
+  /** The Redis client instance. */
+  client: any
+  /** Prefix for Redis keys to avoid collisions. @default 'sitemap:redirects:' */
   keyPrefix?: string
-  ttl?: number // TTL（秒），預設永久
+  /** Time-to-live for redirect rules in seconds. If not set, rules are permanent. */
+  ttl?: number
 }
 
 /**
- * Redis 轉址管理器實作
+ * RedisRedirectManager provides a persistent, distributed implementation of the `RedirectManager`.
+ *
+ * It uses Redis to store redirect rules, making it suitable for production
+ * environments where multiple application instances need to share the same
+ * redirect configuration.
+ *
+ * @public
+ * @since 3.0.0
  */
 export class RedisRedirectManager implements RedirectManager {
   private client: any
@@ -91,6 +149,11 @@ export class RedisRedirectManager implements RedirectManager {
     return `${this.keyPrefix}list`
   }
 
+  /**
+   * Registers a single redirect rule in Redis.
+   *
+   * @param redirect - The redirect rule to add.
+   */
   async register(redirect: RedirectRule): Promise<void> {
     const key = this.getKey(redirect.from)
     const listKey = this.getListKey()
@@ -102,16 +165,27 @@ export class RedisRedirectManager implements RedirectManager {
       await this.client.set(key, data)
     }
 
-    // 添加到列表
+    // Add to list
     await this.client.sadd(listKey, redirect.from)
   }
 
+  /**
+   * Registers multiple redirect rules in Redis.
+   *
+   * @param redirects - An array of redirect rules.
+   */
   async registerBatch(redirects: RedirectRule[]): Promise<void> {
     for (const redirect of redirects) {
       await this.register(redirect)
     }
   }
 
+  /**
+   * Retrieves a specific redirect rule by its source path from Redis.
+   *
+   * @param from - The source path.
+   * @returns A promise resolving to the redirect rule, or null if not found.
+   */
   async get(from: string): Promise<RedirectRule | null> {
     try {
       const key = this.getKey(from)
@@ -129,6 +203,11 @@ export class RedisRedirectManager implements RedirectManager {
     }
   }
 
+  /**
+   * Retrieves all registered redirect rules from Redis.
+   *
+   * @returns A promise resolving to an array of all redirect rules.
+   */
   async getAll(): Promise<RedirectRule[]> {
     try {
       const listKey = this.getListKey()
@@ -148,6 +227,14 @@ export class RedisRedirectManager implements RedirectManager {
     }
   }
 
+  /**
+   * Resolves a URL to its final destination through the Redis redirect table.
+   *
+   * @param url - The URL to resolve.
+   * @param followChains - Whether to recursively resolve chained redirects.
+   * @param maxChainLength - Maximum depth for chain resolution.
+   * @returns A promise resolving to the final destination URL.
+   */
   async resolve(url: string, followChains = false, maxChainLength = 5): Promise<string | null> {
     let current = url
     let chainLength = 0

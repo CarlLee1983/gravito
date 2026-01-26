@@ -33,7 +33,7 @@ const handleMouseLeave = () => {
       class="pointer-events-none absolute -inset-px transition-opacity duration-300 z-0"
       :style="{
         opacity: opacity,
-        background: `radial-gradient(600px circle at ${position.x}px ${position.y}px, rgba(0, 240, 255, 0.1), transparent 40%)`
+        background: `radial-gradient(600px circle at ${position.x}px ${position.y}px, rgba(16, 185, 129, 0.1), transparent 40%)`
       }"
     />
     

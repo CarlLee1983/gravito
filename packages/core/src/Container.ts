@@ -3,20 +3,27 @@
  */
 export type Factory<T> = (container: Container) => T
 
+export type BindingKey = string | symbol
+
 interface Binding<T = unknown> {
   factory: Factory<T>
   shared: boolean // true for singleton
 }
 
+/**
+ * Container - Simple Dependency Injection Container.
+ * Manages service bindings and singleton instances.
+ * @public
+ */
 export class Container {
-  private bindings = new Map<string, Binding>()
-  private instances = new Map<string, unknown>()
+  private bindings = new Map<BindingKey, Binding>()
+  private instances = new Map<BindingKey, unknown>()
 
   /**
    * Bind a service to the container.
    * New instance will be created on each resolution.
    */
-  bind<T>(key: string, factory: Factory<T>): void {
+  bind<T>(key: BindingKey, factory: Factory<T>): void {
     this.bindings.set(key, { factory: factory as Factory<unknown>, shared: false })
   }
 
@@ -24,21 +31,21 @@ export class Container {
    * Bind a shared service to the container (Singleton).
    * Same instance will be returned on each resolution.
    */
-  singleton<T>(key: string, factory: Factory<T>): void {
+  singleton<T>(key: BindingKey, factory: Factory<T>): void {
     this.bindings.set(key, { factory: factory as Factory<unknown>, shared: true })
   }
 
   /**
    * Register an existing instance as shared service.
    */
-  instance<T>(key: string, instance: T): void {
+  instance<T>(key: BindingKey, instance: T): void {
     this.instances.set(key, instance)
   }
 
   /**
    * Resolve a service from the container.
    */
-  make<T>(key: string): T {
+  make<T>(key: BindingKey): T {
     // 1. Check shared instances
     if (this.instances.has(key)) {
       return this.instances.get(key) as T
@@ -47,7 +54,7 @@ export class Container {
     // 2. Check bindings
     const binding = this.bindings.get(key)
     if (!binding) {
-      throw new Error(`Service '${key}' not found in container`)
+      throw new Error(`Service '${String(key)}' not found in container`)
     }
 
     // 3. Create instance
@@ -64,7 +71,7 @@ export class Container {
   /**
    * Check if a service is bound.
    */
-  has(key: string): boolean {
+  has(key: BindingKey): boolean {
     return this.bindings.has(key) || this.instances.has(key)
   }
 
@@ -79,7 +86,7 @@ export class Container {
   /**
    * Forget a specific instance (but keep binding)
    */
-  forget(key: string): void {
+  forget(key: BindingKey): void {
     this.instances.delete(key)
   }
 }

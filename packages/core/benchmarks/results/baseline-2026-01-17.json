@@ -1,0 +1,36 @@
+{
+  "date": "2026-01-17",
+  "environment": {
+    "cpu": "Apple M4",
+    "runtime": "Bun 1.3.4",
+    "os": "darwin"
+  },
+  "micro_benchmarks": {
+    "context_creation": {
+      "fast_context_pooled": "760 ns",
+      "minimal_context_new": "1.75 ns",
+      "photon_proxy": "53 ns"
+    },
+    "proxy_overhead": {
+      "property_access_direct": "346 ps",
+      "property_access_proxy": "30 ns",
+      "method_call_direct": "95 ps",
+      "method_call_proxy": "2.14 ns"
+    },
+    "middleware": {
+      "dynamic_3mw": "1.16 us",
+      "precompiled_3mw": "625 ns"
+    },
+    "url_parsing": {
+      "new_url": "432 ns",
+      "extract_path": "21 ns"
+    }
+  },
+  "http_benchmarks": {
+    "empty_route_rps": 109974,
+    "static_route_rps": 103911,
+    "dynamic_route_rps": 97428,
+    "three_middleware_rps": 98004,
+    "photon_adapter_rps": 102741
+  }
+}

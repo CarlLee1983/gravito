@@ -1,5 +1,34 @@
 # @examples/blog-mvc
 
+## 0.2.4
+
+### Patch Changes
+
+- Updated dependencies [6234dab]
+  - @gravito/prism@3.0.2
+  - @gravito/signal@3.0.3
+
+## 0.2.3
+
+### Patch Changes
+
+- @gravito/signal@3.0.2
+
+## 0.2.2
+
+### Patch Changes
+
+- Updated dependencies
+- Updated dependencies
+  - @gravito/atlas@2.1.0
+  - @gravito/core@1.2.1
+  - @gravito/ion@3.0.1
+  - @gravito/prism@3.0.1
+  - @gravito/pulsar@3.0.1
+  - @gravito/sentinel@3.0.1
+  - @gravito/signal@3.0.1
+  - @gravito/stasis@3.0.1
+
 ## 0.2.1
 
 ### Patch Changes

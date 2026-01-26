@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import type { GravitoContext, PlanetCore } from '@gravito/core'
+import type { GravitoContext, GravitoOrbit, PlanetCore } from '@gravito/core'
 import { IncrementalGenerator } from './core/IncrementalGenerator'
 import { ProgressTracker } from './core/ProgressTracker'
 import { SitemapGenerator } from './core/SitemapGenerator'
@@ -32,43 +32,112 @@ function sanitizeFilename(value: string): string | null {
   return value
 }
 
+/**
+ * Configuration for a dynamically generated sitemap that is built upon request.
+ *
+ * Useful for small to medium sites where fresh data is critical. Dynamic sitemaps
+ * are generated on-the-fly and can be cached at the HTTP level.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface DynamicSitemapOptions extends SitemapStreamOptions {
-  path?: string | undefined // default: '/sitemap.xml'
+  /** The URL path where the sitemap will be exposed. @default '/sitemap.xml' */
+  path?: string | undefined
+  /** List of sitemap entry providers to scan for content. */
   providers: SitemapProvider[]
+  /** Cache duration in seconds for the HTTP response. @default undefined (no-cache) */
   cacheSeconds?: number | undefined
+  /** Persistence backend for cached XML files. Defaults to MemorySitemapStorage. */
   storage?: SitemapStorage | undefined
+  /** Optional distributed lock to prevent "cache stampede" during heavy generation. */
   lock?: SitemapLock | undefined
 }
 
+/**
+ * Configuration for a statically pre-generated sitemap.
+ *
+ * Recommended for large sites or high-traffic applications. Static sitemaps
+ * are built (usually as part of a build process) and served as static files.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface StaticSitemapOptions extends SitemapStreamOptions {
+  /** Local directory where generated XML files will be saved. */
   outDir: string
-  filename?: string | undefined // default: 'sitemap.xml'
+  /** The name of the root sitemap file. @default 'sitemap.xml' */
+  filename?: string | undefined
+  /** List of sitemap entry providers to scan for content. */
   providers: SitemapProvider[]
+  /** Custom storage backend. Defaults to DiskSitemapStorage using `outDir`. */
   storage?: SitemapStorage | undefined
-  // 增量生成配置
+  /** Optional incremental generation settings to only update changed URLs. */
   incremental?: {
+    /** Whether to enable incremental builds. */
     enabled: boolean
+    /** Backend for tracking structural site changes. */
     changeTracker: ChangeTracker
+    /** Whether to automatically record new changes during scan. @default false */
     autoTrack?: boolean
   }
-  // 301 轉址配置
+  /** Optional SEO redirect orchestration settings. */
   redirect?: {
+    /** Whether to automatically handle 301/302 redirects found in sitemap. */
     enabled: boolean
+    /** Backend for managing and resolving redirect rules. */
     manager: RedirectManager
+    /** Strategy for resolving conflicting or chained redirects. @default 'remove_old_add_new' */
     strategy?: 'remove_old_add_new' | 'keep_relation' | 'update_url' | 'dual_mark'
+    /** Whether to resolve redirect chains into a single jump. @default false */
     followChains?: boolean
+    /** Maximum number of redirect jumps to follow. @default 5 */
     maxChainLength?: number
   }
-  // 影子處理配置
+  /** Deployment settings for atomic sitemap updates via shadow staging. */
   shadow?: {
+    /** Whether to enable "shadow" (atomic staging) mode. */
     enabled: boolean
+    /** The update strategy: 'atomic' (full swap) or 'versioned' (archived). @default 'atomic' */
     mode: 'atomic' | 'versioned'
   }
-  // 進度追蹤配置
+  /** Persistence backend for long-running job progress tracking. */
   progressStorage?: SitemapProgressStorage
 }
 
-export class OrbitSitemap {
+/**
+ * OrbitSitemap is the enterprise SEO orchestration module for Gravito.
+ *
+ * It provides advanced sitemap generation supporting large-scale indexing,
+ * automatic 301/302 redirect handling, and atomic sitemap deployments.
+ *
+ * It can operate in two modes:
+ * 1. **Dynamic**: Sitemaps are generated on-the-fly and cached.
+ * 2. **Static**: Sitemaps are pre-built (e.g., during CI/CD) and served from disk or cloud storage.
+ *
+ * @example Dynamic Mode
+ * ```typescript
+ * const sitemap = OrbitSitemap.dynamic({
+ *   baseUrl: 'https://example.com',
+ *   providers: [new PostSitemapProvider()]
+ * });
+ * core.addOrbit(sitemap);
+ * ```
+ *
+ * @example Static Mode
+ * ```typescript
+ * const sitemap = OrbitSitemap.static({
+ *   baseUrl: 'https://example.com',
+ *   outDir: './public',
+ *   shadow: { enabled: true, mode: 'atomic' }
+ * });
+ * await sitemap.generate();
+ * ```
+ *
+ * @public
+ * @since 3.0.0
+ */
+export class OrbitSitemap implements GravitoOrbit {
   private options: DynamicSitemapOptions | StaticSitemapOptions
   private mode: 'dynamic' | 'static'
 
@@ -107,7 +176,7 @@ export class OrbitSitemap {
   }
 
   /**
-   * Install the sitemap module into PlanetCore.
+   * Installs the sitemap module into PlanetCore.
    *
    * @param core - The PlanetCore instance.
    */
@@ -117,10 +186,13 @@ export class OrbitSitemap {
     } else {
       // Static generation is usually triggered via a build script,
       // but we can also expose a route to trigger it or just log usage.
-      console.log('[OrbitSitemap] Static mode configured. Use generate() to build sitemaps.')
+      core.logger.info('[OrbitSitemap] Static mode configured. Use generate() to build sitemaps.')
     }
   }
 
+  /**
+   * Internal method to set up dynamic sitemap routes.
+   */
   private installDynamic(core: PlanetCore) {
     const opts = this.options as DynamicSitemapOptions
     const storage = opts.storage ?? new MemorySitemapStorage(opts.baseUrl)
@@ -198,7 +270,7 @@ export class OrbitSitemap {
   }
 
   /**
-   * Generate the sitemap (static mode only).
+   * Generates the sitemap (static mode only).
    *
    * @returns A promise that resolves when generation is complete.
    * @throws {Error} If called in dynamic mode.
@@ -216,7 +288,7 @@ export class OrbitSitemap {
       storage = new DiskSitemapStorage(opts.outDir, opts.baseUrl)
     }
 
-    // 處理轉址（如果啟用）
+    // Handle redirects (if enabled)
     let providers = opts.providers
     if (opts.redirect?.enabled && opts.redirect.manager) {
       const handler = new RedirectHandler({
@@ -226,7 +298,7 @@ export class OrbitSitemap {
         maxChainLength: opts.redirect.maxChainLength,
       })
 
-      // 包裝 providers 以處理轉址
+      // Wrap providers to handle redirects
       providers = opts.providers.map((provider) => ({
         getEntries: async () => {
           const entries = await provider.getEntries()
@@ -250,7 +322,7 @@ export class OrbitSitemap {
   }
 
   /**
-   * Generate incremental sitemap updates (static mode only).
+   * Generates incremental sitemap updates (static mode only).
    *
    * @param since - Only include items modified since this date.
    * @returns A promise that resolves when incremental generation is complete.
@@ -287,7 +359,7 @@ export class OrbitSitemap {
   }
 
   /**
-   * Generate sitemap asynchronously in the background (static mode only).
+   * Generates sitemap asynchronously in the background (static mode only).
    *
    * @param options - Options for the async generation job.
    * @returns A promise resolving to the job ID.
@@ -313,7 +385,7 @@ export class OrbitSitemap {
       storage = new DiskSitemapStorage(opts.outDir, opts.baseUrl)
     }
 
-    // 處理轉址（如果啟用）
+    // Handle redirects (if enabled)
     let providers = opts.providers
     if (opts.redirect?.enabled && opts.redirect.manager) {
       const handler = new RedirectHandler({
@@ -332,7 +404,7 @@ export class OrbitSitemap {
       }))
     }
 
-    // 建立進度追蹤器
+    // Create progress tracker
     let progressTracker: ProgressTracker | undefined
     if (opts.progressStorage) {
       progressTracker = new ProgressTracker({
@@ -340,7 +412,7 @@ export class OrbitSitemap {
       })
     }
 
-    // 建立背景任務
+    // Create background job
     const job = new GenerateSitemapJob({
       jobId,
       generatorOptions: {
@@ -356,9 +428,7 @@ export class OrbitSitemap {
       onError: options?.onError,
     })
 
-    // 如果配置了 queue，推送到 queue；否則直接執行
-    // 這裡假設有 queue 可用（需要從 core 取得）
-    // 簡化實作：直接執行
+    // Execute job asynchronously
     job.handle().catch((error) => {
       if (options?.onError) {
         options.onError(error)
@@ -369,7 +439,7 @@ export class OrbitSitemap {
   }
 
   /**
-   * Install API endpoints for triggering and monitoring sitemap generation.
+   * Installs API endpoints for triggering and monitoring sitemap generation.
    *
    * @param core - The PlanetCore instance.
    * @param basePath - The base path for the API endpoints (default: '/admin/sitemap').
@@ -377,7 +447,7 @@ export class OrbitSitemap {
   installApiEndpoints(core: PlanetCore, basePath = '/admin/sitemap'): void {
     const opts = this.options as StaticSitemapOptions
 
-    // 觸發生成
+    // Trigger generation
     core.router.post(`${basePath}/generate`, async (ctx: GravitoContext) => {
       try {
         const body = (await ctx.req.json().catch(() => ({}))) as {
@@ -395,7 +465,7 @@ export class OrbitSitemap {
       }
     })
 
-    // 查詢進度
+    // Query progress
     core.router.get(`${basePath}/status/:jobId`, async (ctx: GravitoContext) => {
       const jobId = ctx.req.param('jobId')
       if (!opts.progressStorage) {
@@ -413,7 +483,7 @@ export class OrbitSitemap {
       return ctx.json(progress)
     })
 
-    // 查詢歷史記錄
+    // Query history
     core.router.get(`${basePath}/history`, async (ctx: GravitoContext) => {
       if (!opts.progressStorage) {
         return ctx.json({ error: 'Progress tracking is not enabled' }, 400)

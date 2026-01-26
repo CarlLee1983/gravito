@@ -1,16 +1,39 @@
 import type { SitemapEntry } from '../interfaces'
 import { GRAVITO_WATERMARK } from './watermark'
 
+/**
+ * Options for configuring the `XmlStreamBuilder`.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface BuilderOptions {
+  /** Base URL used to resolve relative sitemap entries. */
   baseUrl: string
+  /** Whether to include the Gravito branding watermark in the XML. @default true */
   branding?: boolean
 }
 
+/**
+ * XmlStreamBuilder handles the low-level generation of sitemap XML content.
+ *
+ * It provides methods to start the XML document, add individual URL entries
+ * (including images and videos), and end the document. It also includes
+ * a helper for full XML generation.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class XmlStreamBuilder {
   constructor(private options: BuilderOptions) {}
 
   /**
-   * Generates the XML Header
+   * Generates the XML Header.
+   *
+   * Creates the standard XML declaration and opens the `<urlset>` tag with
+   * necessary namespaces (XHTML, Image, Video).
+   *
+   * @returns The XML header string.
    */
   start(): string {
     let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`
@@ -27,7 +50,13 @@ export class XmlStreamBuilder {
   }
 
   /**
-   * Generates a single URL entry
+   * Generates a single URL entry.
+   *
+   * Converts a `SitemapEntry` object into its XML string representation,
+   * including handling all optional extensions (images, videos, alternates).
+   *
+   * @param item - The sitemap entry to convert.
+   * @returns The XML string for this entry.
    */
   entry(item: SitemapEntry): string {
     const loc = item.url.startsWith('http')
@@ -129,14 +158,23 @@ export class XmlStreamBuilder {
   }
 
   /**
-   * Generates the XML Footer
+   * Generates the XML Footer.
+   *
+   * Closes the `<urlset>` tag.
+   *
+   * @returns The XML footer string.
    */
   end(): string {
     return `</urlset>`
   }
 
   /**
-   * Helper to build full XML at once
+   * Helper to build full XML at once.
+   *
+   * Combines `start()`, `entry()`, and `end()` to generate a complete sitemap.
+   *
+   * @param entries - The list of sitemap entries.
+   * @returns The complete XML document string.
    */
   buildFull(entries: SitemapEntry[]): string {
     let xml = this.start()

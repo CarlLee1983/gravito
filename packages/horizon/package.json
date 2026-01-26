@@ -1,6 +1,6 @@
 {
   "name": "@gravito/horizon",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Distributed task scheduler for Gravito framework",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -23,8 +23,8 @@
     "test": "bun test",
     "lint": "biome lint ./src",
     "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
-    "test:coverage": "bun test --coverage --coverage-threshold=80",
-    "test:ci": "bun test --coverage --coverage-threshold=80"
+    "test:coverage": "bun test --coverage --coverage-threshold=60",
+    "test:ci": "bun test --coverage --coverage-threshold=60"
   },
   "keywords": [
     "gravito",

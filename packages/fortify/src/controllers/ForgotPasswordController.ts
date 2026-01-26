@@ -4,8 +4,11 @@ import {
   InMemoryPasswordResetTokenRepository,
   PasswordBroker,
 } from '@gravito/sentinel'
+import type { OrbitSignal } from '@gravito/signal'
 import type { FortifyConfig } from '../config'
 import { ensureCsrfToken } from '../csrf'
+import { ResetPasswordMail } from '../mail'
+import type { RateLimiter } from '../services/RateLimiter'
 import type { ViewService } from '../types'
 
 /**
@@ -14,7 +17,10 @@ import type { ViewService } from '../types'
 export class ForgotPasswordController {
   private broker: PasswordBroker
 
-  constructor(private config: FortifyConfig) {
+  constructor(
+    private config: FortifyConfig,
+    private rateLimiter?: RateLimiter
+  ) {
     // In production, use a database-backed repository
     this.broker = new PasswordBroker(new InMemoryPasswordResetTokenRepository(), new HashManager())
   }
@@ -52,6 +58,26 @@ export class ForgotPasswordController {
       return c.redirect('/forgot-password?error=validation')
     }
 
+    // Check rate limit if available
+    if (this.rateLimiter) {
+      const clientIp = c.req.header('x-forwarded-for') ?? c.req.header('x-real-ip') ?? 'unknown'
+      const rateLimitKey = `password-reset:${clientIp}`
+
+      const rateLimitResult = await this.rateLimiter.checkAttempt(rateLimitKey)
+      if (!rateLimitResult.allowed) {
+        if (this.config.jsonMode) {
+          return c.json(
+            {
+              error: 'Too many password reset attempts. Please try again later.',
+              retryAfter: rateLimitResult.retryAfter,
+            },
+            429
+          )
+        }
+        return c.redirect('/forgot-password?error=rate_limit')
+      }
+    }
+
     try {
       // Get User model from config
       const UserModel = this.config.userModel()
@@ -63,12 +89,36 @@ export class ForgotPasswordController {
       if (user) {
         const token = await this.broker.createToken(body.email)
 
-        // TODO: Send email with reset link
-        // In production, integrate with @gravito/orbit-mail
-        console.log(`[Fortify] Password reset token for ${body.email}: ${token}`)
-        console.log(
-          `[Fortify] Reset URL: /reset-password/${token}?email=${encodeURIComponent(body.email)}`
-        )
+        // Generate reset URL
+        const baseUrl = process.env.APP_URL ?? `${c.req.header('host') ?? 'localhost'}`
+        const protocol = baseUrl.startsWith('localhost') ? 'http' : 'https'
+        const resetUrl = `${protocol}://${baseUrl}/reset-password/${token}?email=${encodeURIComponent(body.email)}`
+
+        // Send password reset email
+        try {
+          const mailService = c.get('mail') as OrbitSignal | undefined
+          if (mailService) {
+            const mail = new ResetPasswordMail(
+              { email: body.email, name: user.name },
+              resetUrl,
+              60 // 60 minutes expiration
+            )
+            await mailService.send(mail)
+          } else {
+            // Fallback: log to console if mail service not configured
+            console.log(`[Fortify] Password reset email for ${body.email}`)
+            console.log(`[Fortify] Reset URL: ${resetUrl}`)
+          }
+        } catch (mailError) {
+          console.error('[Fortify] Failed to send password reset email:', mailError)
+          // Continue anyway - don't fail the request due to email issues
+        }
+
+        // Record successful attempt if rate limiter is available
+        if (this.rateLimiter) {
+          const clientIp = c.req.header('x-forwarded-for') ?? c.req.header('x-real-ip') ?? 'unknown'
+          this.rateLimiter.recordSuccess(`password-reset:${clientIp}`)
+        }
       }
 
       if (this.config.jsonMode) {

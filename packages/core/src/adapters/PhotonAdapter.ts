@@ -22,6 +22,12 @@ import type {
   ProxyOptions,
   StatusCode,
 } from '../http/types'
+import type {
+  PhotonContextExtended,
+  PhotonRequestExtended,
+  ResponseWithFlash,
+  SessionWithFlash,
+} from './photon-types'
 import type { AdapterConfig, HttpAdapter, RouteDefinition } from './types'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -32,15 +38,33 @@ import type { AdapterConfig, HttpAdapter, RouteDefinition } from './types'
  * Wraps Photon's request object to implement GravitoRequest
  */
 class PhotonRequestWrapper implements GravitoRequest {
-  constructor(public readonly photonCtx: Context) {}
+  public photonCtx!: Context
+
+  /**
+   * Reset the wrapper for pooling
+   */
+  reset(photonCtx: Context): void {
+    this.photonCtx = photonCtx
+  }
 
   /**
    * Create a proxied instance to delegate to Photon's request
    */
   static create(photonCtx: Context): PhotonRequestWrapper {
-    const instance = new PhotonRequestWrapper(photonCtx)
+    const instance = new PhotonRequestWrapper()
+    instance.reset(photonCtx)
+    return PhotonRequestWrapper.wrap(instance)
+  }
+
+  /**
+   * Internal proxy wrapper
+   */
+  static wrap(instance: PhotonRequestWrapper): PhotonRequestWrapper {
     return new Proxy(instance, {
       get(target, prop, receiver) {
+        if (prop === 'reset') {
+          return target.reset.bind(target)
+        }
         if (prop in target) {
           const value = Reflect.get(target, prop, receiver)
           if (typeof value === 'function') {
@@ -49,8 +73,8 @@ class PhotonRequestWrapper implements GravitoRequest {
           return value
         }
 
-        // Delegate to Photon's native request
-        const nativeReq = target.photonCtx.req as any
+        // Delegate to Photon's native request (with extended properties)
+        const nativeReq = target.photonCtx.req as Context['req'] & PhotonRequestExtended
         if (prop in nativeReq) {
           const value = nativeReq[prop]
           if (typeof value === 'function') {
@@ -66,10 +90,11 @@ class PhotonRequestWrapper implements GravitoRequest {
         if (prop in target) {
           return Reflect.set(target, prop, value)
         }
-        ;(target.photonCtx.req as any)[prop] = value
+        const extendedReq = target.photonCtx.req as Context['req'] & PhotonRequestExtended
+        extendedReq[prop as string] = value
         return true
       },
-    }) as any
+    }) as PhotonRequestWrapper
   }
 
   get url(): string {
@@ -110,7 +135,7 @@ class PhotonRequestWrapper implements GravitoRequest {
   }
 
   async json<T = unknown>(): Promise<T> {
-    const ctx = this.photonCtx as any
+    const ctx = this.photonCtx as PhotonContextExtended
     if (ctx._cachedJsonBody !== undefined) {
       return ctx._cachedJsonBody as T
     }
@@ -140,7 +165,8 @@ class PhotonRequestWrapper implements GravitoRequest {
   }
 
   valid<T = unknown>(target: string): T {
-    return (this.photonCtx.req as any).valid(target)
+    const extendedReq = this.photonCtx.req as Context['req'] & PhotonRequestExtended
+    return extendedReq.valid<T>(target)
   }
 }
 
@@ -154,22 +180,45 @@ class PhotonRequestWrapper implements GravitoRequest {
 class PhotonContextWrapper<V extends GravitoVariables = GravitoVariables>
   implements GravitoContext<V>
 {
-  private _req: PhotonRequestWrapper
+  private _req!: PhotonRequestWrapper
+  private photonCtx!: Context
 
-  constructor(private photonCtx: Context) {
-    this._req = PhotonRequestWrapper.create(photonCtx)
+  public route!: (name: string, params?: Record<string, any>, query?: Record<string, any>) => string
+
+  /**
+   * Reset the wrapper for pooling
+   */
+  reset(photonCtx: Context): void {
+    this.photonCtx = photonCtx
+    if (!this._req) {
+      this._req = PhotonRequestWrapper.create(photonCtx)
+    } else {
+      this._req.reset(photonCtx)
+    }
   }
 
   /**
    * Create a proxied instance to enable object destructuring of context variables
-   * This allows: async list({ userService }: Context)
    */
   static create<V extends GravitoVariables = GravitoVariables>(
     photonCtx: Context
   ): GravitoContext<V> {
-    const instance = new PhotonContextWrapper<V>(photonCtx)
+    const instance = new PhotonContextWrapper<V>()
+    instance.reset(photonCtx)
+    return PhotonContextWrapper.wrap(instance)
+  }
+
+  /**
+   * Internal proxy wrapper
+   */
+  static wrap<V extends GravitoVariables = GravitoVariables>(
+    instance: PhotonContextWrapper<V>
+  ): GravitoContext<V> {
     return new Proxy(instance, {
       get(target, prop, receiver) {
+        if (prop === 'reset') {
+          return target.reset.bind(target)
+        }
         // 1. If property exists on the instance (method, property), return it
         if (prop in target) {
           const value = Reflect.get(target, prop, receiver)
@@ -181,12 +230,12 @@ class PhotonContextWrapper<V extends GravitoVariables = GravitoVariables>
 
         // 2. If not, try to fetch from Photon context variables
         if (typeof prop === 'string') {
-          return target.get(prop as any)
+          return target.get(prop as keyof V)
         }
 
         return undefined
       },
-    }) as any
+    }) as GravitoContext<V>
   }
 
   get req(): GravitoRequest {
@@ -201,12 +250,12 @@ class PhotonContextWrapper<V extends GravitoVariables = GravitoVariables>
     return this._req.queries()
   }
 
-  get data(): any {
-    return this.get('data' as any)
+  get data(): unknown {
+    return this.get('data' as keyof V)
   }
 
-  set data(value: any) {
-    this.set('data' as any, value)
+  set data(value: unknown) {
+    this.set('data' as keyof V, value as V[keyof V])
   }
 
   back(status: 301 | 302 | 303 | 307 | 308 = 302): Response {
@@ -238,13 +287,14 @@ class PhotonContextWrapper<V extends GravitoVariables = GravitoVariables>
   redirect(url: string, status: 301 | 302 | 303 | 307 | 308 = 302): Response {
     const response = this.photonCtx.redirect(url, status)
     // Add .with() helper for flash messages and compatibility
-    const anyRes = response as any
-    anyRes.with = (key: string, value: any) => {
-      const session = this.get('session' as any) as any
-      if (session) {
+    // We cast to unknown first, then to the extended type to avoid type errors
+    const extendedRes = response as unknown as ResponseWithFlash
+    extendedRes.with = (key: string, value: unknown) => {
+      const session = this.get('session' as keyof V) as SessionWithFlash | undefined
+      if (session && typeof session.flash === 'function') {
         session.flash(key, value)
       }
-      return anyRes
+      return extendedRes
     }
     return response
   }
@@ -393,11 +443,39 @@ class PhotonContextWrapper<V extends GravitoVariables = GravitoVariables>
       method: this.req.method,
       headers,
       body: this.req.method !== 'GET' && this.req.method !== 'HEAD' ? this.req.raw.body : null,
-      // @ts-expect-error - Bun/Fetch specific for streaming bodies
       duplex: 'half',
-    })
+    } as RequestInit & { duplex?: string })
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Context Pooling
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Object pool for Photon Context Wrappers
+ */
+class PhotonAdapterContextPool {
+  private pool: GravitoContext<any>[] = []
+  private maxSize = 256
+
+  acquire<V extends GravitoVariables>(photonCtx: Context): GravitoContext<V> {
+    const wrapper = this.pool.pop()
+    if (wrapper) {
+      ;(wrapper as any).reset(photonCtx)
+      return wrapper as GravitoContext<V>
+    }
+    return PhotonContextWrapper.create<V>(photonCtx)
+  }
+
+  release(wrapper: GravitoContext<any>): void {
+    if (this.pool.length < this.maxSize) {
+      this.pool.push(wrapper)
+    }
+  }
+}
+
+const contextPool = new PhotonAdapterContextPool()
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Handler Conversion Utilities
@@ -408,8 +486,12 @@ class PhotonContextWrapper<V extends GravitoVariables = GravitoVariables>
  */
 function toPhotonHandler<V extends GravitoVariables>(handler: GravitoHandler<V>): Handler {
   return async (c: Context): Promise<Response> => {
-    const ctx = PhotonContextWrapper.create<V>(c)
-    return handler(ctx)
+    const ctx = contextPool.acquire<V>(c)
+    try {
+      return await handler(ctx)
+    } finally {
+      contextPool.release(ctx)
+    }
   }
 }
 
@@ -420,12 +502,16 @@ function toPhotonMiddleware<V extends GravitoVariables>(
   middleware: GravitoMiddleware<V>
 ): MiddlewareHandler {
   return async (c: Context, next: Next): Promise<Response | undefined> => {
-    // console.log('[PhotonAdapter] Wrapping context')
-    const ctx = PhotonContextWrapper.create<V>(c)
-    const gravitoNext: GravitoNext = async () => {
-      return (await next()) as unknown as Response | undefined
+    const ctx = contextPool.acquire<V>(c)
+    try {
+      const gravitoNext: GravitoNext = async () => {
+        return (await next()) as unknown as Response | undefined
+      }
+      const result = await middleware(ctx, gravitoNext)
+      return result as Response | undefined
+    } finally {
+      contextPool.release(ctx)
     }
-    return middleware(ctx, gravitoNext) as any
   }
 }
 
@@ -436,8 +522,12 @@ function toPhotonErrorHandler<V extends GravitoVariables>(
   handler: GravitoErrorHandler<V>
 ): (err: Error, c: Context) => Response | Promise<Response> {
   return async (err: Error, c: Context): Promise<Response> => {
-    const ctx = PhotonContextWrapper.create<V>(c)
-    return handler(err, ctx)
+    const ctx = contextPool.acquire<V>(c)
+    try {
+      return await handler(err, ctx)
+    } finally {
+      contextPool.release(ctx)
+    }
   }
 }
 
@@ -509,6 +599,9 @@ export class PhotonAdapter<V extends GravitoVariables = GravitoVariables>
     ...handlers: (GravitoHandler<V> | GravitoMiddleware<V>)[]
   ): void {
     const fullPath = (this.config.basePath || '') + path
+    console.log(
+      `[PhotonAdapter] Registering ${method.toUpperCase()} ${fullPath} with ${handlers.length} handlers`
+    )
     // We treat all handlers as potential middleware (accepting next)
     const photonHandlers = handlers.map((h) => toPhotonMiddleware<V>(h as GravitoMiddleware<V>))
 
@@ -574,6 +667,18 @@ export class PhotonAdapter<V extends GravitoVariables = GravitoVariables>
     })
   }
 
+  /**
+   * Predictive Route Warming (JIT Optimization)
+   */
+  async warmup(paths: string[]): Promise<void> {
+    const dummyReqOpts = { headers: { 'User-Agent': 'Gravito-Warmup/1.0' } }
+
+    for (const path of paths) {
+      const req = new Request(`http://localhost${path}`, dummyReqOpts)
+      await this.fetch(req)
+    }
+  }
+
   fetch = (request: Request, server?: unknown): Response | Promise<Response> => {
     return this.app.fetch(request, server)
   }
@@ -624,6 +729,10 @@ export { PhotonContextWrapper, PhotonRequestWrapper, toPhotonHandler, toPhotonMi
  * @category Rebranding
  */
 export const GravitoAdapter = PhotonAdapter
+/**
+ * Rebranded alias for PhotonAdapter type.
+ * @category Rebranding
+ */
 export type GravitoAdapter<V extends GravitoVariables = GravitoVariables> = PhotonAdapter<V>
 
 /**

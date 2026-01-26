@@ -1,6 +1,19 @@
+/**
+ * Callback function for filters (transforms values).
+ * @public
+ */
 export type FilterCallback<T = unknown> = (value: T, ...args: unknown[]) => Promise<T> | T
+
+/**
+ * Callback function for actions (side effects).
+ * @public
+ */
 export type ActionCallback<TArgs = unknown> = (args: TArgs) => Promise<void> | void
 
+/**
+ * Manager for WordPress-style hooks (actions and filters).
+ * @public
+ */
 export class HookManager {
   private filters: Map<string, FilterCallback[]> = new Map()
   private actions: Map<string, ActionCallback[]> = new Map()

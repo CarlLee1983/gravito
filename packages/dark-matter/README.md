@@ -42,6 +42,10 @@ await Mongo.disconnect()
 - 🔍 **Query Builder** - Type-safe query building
 - 📊 **Aggregation Pipeline** - Fluent aggregation API
 - 🔌 **Multi-connection** - Named connections support
+- 🛡️ **Transactions** - ACID transactions with convenient API
+- 📦 **GridFS** - Handle large file uploads/downloads
+- ⚡ **Change Streams** - Real-time database event listening
+- ✅ **Schema Validation** - JSON Schema enforcement
 
 ## API Reference
 
@@ -111,6 +115,12 @@ await Mongo.collection('users')
 await Mongo.collection('users')
   .where('status', 'deleted')
   .deleteMany()
+
+// Bulk Write
+await Mongo.collection('logs').bulkWrite([
+  { insertOne: { document: { event: 'login' } } },
+  { deleteOne: { filter: { status: 'old' } } }
+])
 ```
 
 ### Aggregation Pipeline
@@ -140,42 +150,90 @@ const ordersWithCustomers = await Mongo.collection('orders')
   })
   .unwind('$customer')
   .get()
-
-// Project specific fields
-const projected = await Mongo.collection('users')
-  .aggregate()
-  .project({
-    name: 1,
-    email: 1,
-    fullName: { $concat: ['$firstName', ' ', '$lastName'] }
-  })
-  .get()
 ```
 
-### Multiple Connections
+### Advanced Features
+
+#### Transactions
 
 ```typescript
+await Mongo.connection().withTransaction(async (session) => {
+  // Deduct from sender
+  await session.collection('accounts')
+    .where('_id', senderId)
+    .update({ $inc: { balance: -100 } })
+
+  // Add to receiver
+  await session.collection('accounts')
+    .where('_id', receiverId)
+    .update({ $inc: { balance: 100 } })
+})
+```
+
+#### Change Streams
+
+```typescript
+const stream = Mongo.collection('orders').watch(
+  [{ $match: { 'fullDocument.amount': { $gt: 1000 } } }]
+)
+
+for await (const event of stream) {
+  console.log('High value order:', event.fullDocument)
+}
+```
+
+#### GridFS (File Storage)
+
+```typescript
+const grid = new MongoGridFS(Mongo.database())
+
+// Upload
+const fileId = await grid.upload(Buffer.from('Hello'), { filename: 'hello.txt' })
+
+// Download
+const content = await grid.download(fileId)
+```
+
+#### Schema Validation
+
+```typescript
+await Mongo.database().createCollection('users', {
+  schema: {
+    validator: {
+      $jsonSchema: {
+        required: ['username'],
+        properties: { username: { bsonType: 'string' } }
+      }
+    },
+    validationAction: 'error'
+  }
+})
+```
+
+### Connection Management
+
+```typescript
+// Configure multiple connections
 Mongo.configure({
   default: 'main',
   connections: {
-    main: { uri: 'mongodb://localhost:27017', database: 'app' },
-    analytics: { uri: 'mongodb://analytics.example.com:27017', database: 'analytics' }
+    main: { uri: 'mongodb://localhost:27017/app' },
+    analytics: { uri: 'mongodb://stats-db:27017/stats' }
   }
 })
 
-// Use specific connection
-const data = await Mongo.connection('analytics')
-  .collection('events')
-  .where('type', 'pageview')
-  .get()
+// Check health
+const health = await Mongo.connection().getHealthStatus()
+console.log(health.latencyMs) // e.g. 15
 ```
 
 ## Roadmap
 
-- [ ] Schema validation
-- [ ] Transactions
-- [ ] Change streams
-- [ ] GridFS support
+- [x] Connection retry & health check
+- [x] Transactions
+- [x] Schema validation
+- [x] Change streams
+- [x] GridFS support
 
 ## License
 

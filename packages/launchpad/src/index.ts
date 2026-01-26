@@ -26,10 +26,8 @@ export * from './Domain/RocketStatus'
 class LaunchpadServiceProvider extends ServiceProvider {
   register(container: Container): void {
     if (!container.has('cache')) {
-      const cacheFromServices = this.core?.services?.get('cache')
-      if (cacheFromServices) {
-        container.instance('cache', cacheFromServices)
-      }
+      // 在新的架構中，如果 core 有預設綁定，可以直接通過 container.make 獲取
+      // 這裡如果只是想從父容器繼承，通常不需要額外操作，除非是在不同的 instance 中。
     }
 
     container.singleton('launchpad.docker', () => new DockerAdapter())
@@ -101,11 +99,24 @@ class LaunchpadServiceProvider extends ServiceProvider {
 }
 
 /**
- * Gravito Launchpad Orbit
+ * LaunchpadOrbit provides automated deployment and preview capabilities for Gravito.
+ * It integrates with Docker and GitHub to provide "Preview Deployments" for Pull Requests.
+ *
+ * @public
  */
 export class LaunchpadOrbit implements GravitoOrbit {
+  /**
+   * Create a new LaunchpadOrbit instance.
+   * @param ripple - Ripple instance for real-time telemetry communication.
+   */
   constructor(private ripple: OrbitRipple) {}
 
+  /**
+   * Install the Launchpad orbit into PlanetCore.
+   * Registers the service provider and sets up webhook routes for deployment.
+   *
+   * @param core - The PlanetCore instance.
+   */
   async install(core: PlanetCore): Promise<void> {
     core.register(new LaunchpadServiceProvider())
 
@@ -139,7 +150,7 @@ export class LaunchpadOrbit implements GravitoOrbit {
 
           const ctrl = core.container.make<MissionControl>('launchpad.ctrl')
           const rocketId = await ctrl.launch(mission, (type, data) => {
-            // 修正：使用正確的 broadcast 方法
+            // Correctly broadcast telemetry data via Ripple
             this.ripple.getServer().broadcast('telemetry', 'telemetry.data', { type, data })
           })
 
@@ -188,7 +199,12 @@ export class LaunchpadOrbit implements GravitoOrbit {
 }
 
 /**
- * 一鍵啟動 Launchpad 應用程式
+ * Bootstrap the Launchpad application.
+ * Initializes PlanetCore with necessary orbits (Cache, Ripple, Launchpad)
+ * and returns the configuration for the server entry point.
+ *
+ * @returns Server configuration object including port and fetch handler.
+ * @public
  */
 export async function bootstrapLaunchpad() {
   const ripple = new OrbitRipple({ path: '/ws' })
@@ -199,11 +215,7 @@ export async function bootstrapLaunchpad() {
       PORT: 4000,
       CACHE_DRIVER: 'file',
     },
-    orbits: [
-      new OrbitCache(),
-      ripple,
-      new LaunchpadOrbit(ripple), // 傳入實例
-    ],
+    orbits: [new OrbitCache(), ripple, new LaunchpadOrbit(ripple)],
   })
 
   await core.bootstrap()

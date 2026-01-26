@@ -46,6 +46,14 @@ export class NextScanner implements RouteScanner {
 
   constructor(private options: NextScannerOptions = {}) {}
 
+  /**
+   * Scans the Next.js project for routes.
+   *
+   * Checks for both App Router and Pages Router directories and extracts
+   * route paths, handling dynamic segments like `[slug]`.
+   *
+   * @returns A promise resolving to the list of scanned routes.
+   */
   async scan(): Promise<ScannedRoute[]> {
     const routes: ScannedRoute[] = []
     const cwd = this.options.cwd ?? process.cwd()

@@ -2,7 +2,7 @@
  * Advanced Eager Loading Tests
  */
 
-import { beforeEach, describe, expect, it, spyOn } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, it, spyOn } from 'bun:test'
 import { DB, Model } from '../src'
 import { PostgresGrammar } from '../src/grammar/PostgresGrammar'
 import { BelongsTo, getRelationships, HasMany } from '../src/orm'
@@ -83,8 +83,10 @@ function createMockConnection(responses: MockResponses): ConnectionContract {
     getName: () => 'test',
     getDriver: () => mockDriver,
     getConfig: () => ({ driver: 'postgres' }),
+    getGrammar: () => grammar,
     table: (tableName: string) => new QueryBuilder(connection, grammar, tableName),
     raw: async (sql: string, bindings?: unknown[]) => mockDriver.query(sql, bindings),
+    execute: async (sql: string, bindings?: unknown[]) => mockDriver.execute(sql, bindings),
     transaction: async <T>(cb: (conn: ConnectionContract) => Promise<T>) => cb(connection),
     disconnect: async () => undefined,
   }
@@ -93,9 +95,19 @@ function createMockConnection(responses: MockResponses): ConnectionContract {
 }
 
 describe('Advanced Eager Loading', () => {
+  let connectionSpy: ReturnType<typeof spyOn> | null = null
+
   beforeEach(() => {
     // @ts-expect-error - access private static property for reset
     DB.initialized = true
+  })
+
+  afterEach(() => {
+    // 清理 spy，確保不影響其他測試
+    if (connectionSpy) {
+      connectionSpy.mockRestore()
+      connectionSpy = null
+    }
   })
 
   it('should have relationships registered', () => {
@@ -110,7 +122,7 @@ describe('Advanced Eager Loading', () => {
       posts: [{ id: 10, user_id: 1, title: 'Post 1' }],
     }
     const mockConn = createMockConnection(responses)
-    spyOn(DB, 'connection').mockReturnValue(mockConn)
+    connectionSpy = spyOn(DB, 'connection').mockReturnValue(mockConn)
 
     const users = await User.with('posts').get()
 
@@ -126,7 +138,7 @@ describe('Advanced Eager Loading', () => {
       comments: [{ id: 100, post_id: 10, body: 'Nice!' }],
     }
     const mockConn = createMockConnection(responses)
-    spyOn(DB, 'connection').mockReturnValue(mockConn)
+    connectionSpy = spyOn(DB, 'connection').mockReturnValue(mockConn)
 
     const users = await User.with('posts.comments').get()
 
@@ -159,7 +171,7 @@ describe('Advanced Eager Loading', () => {
       }
     )
 
-    spyOn(DB, 'connection').mockReturnValue(mockConn)
+    connectionSpy = spyOn(DB, 'connection').mockReturnValue(mockConn)
 
     await User.with({
       posts: (q) => q.where('status', 'published'),
@@ -174,7 +186,7 @@ describe('Advanced Eager Loading', () => {
       posts: [{ id: 10, user_id: 1, title: 'Post' }],
     }
     const mockConn = createMockConnection(responses)
-    spyOn(DB, 'connection').mockReturnValue(mockConn)
+    connectionSpy = spyOn(DB, 'connection').mockReturnValue(mockConn)
 
     const users = await User.with(['posts']).get()
     expect(users[0].posts).toBeDefined()

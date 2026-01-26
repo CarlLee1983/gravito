@@ -5,6 +5,11 @@
  */
 import { getRuntimeEnv } from './runtime'
 
+/**
+ * ConfigManager - Central configuration store.
+ * Supports loading from environment variables and initial objects.
+ * @public
+ */
 export class ConfigManager {
   private config: Map<string, unknown> = new Map()
 

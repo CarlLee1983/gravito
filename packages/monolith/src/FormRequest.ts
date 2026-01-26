@@ -2,6 +2,15 @@ import type { GravitoContext, GravitoNext } from '@gravito/core'
 import { type TSchema, validate } from '@gravito/mass'
 import { Sanitizer } from './Sanitizer.js'
 
+/**
+ * Base class for Monolith Form Requests.
+ *
+ * Provides a structured way to handle request validation and authorization
+ * for the Monolith architecture.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export abstract class FormRequest {
   protected context!: GravitoContext
 

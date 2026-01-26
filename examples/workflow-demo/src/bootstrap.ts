@@ -13,7 +13,7 @@ function resolveDatabaseConfig(rawUrl?: string) {
     const pathPart = url.slice('sqlite:'.length)
     if (pathPart === ':memory:') {
       return {
-        driver: 'sqlite',
+        driver: 'sqlite' as const,
         database: ':memory:',
       }
     }
@@ -21,7 +21,7 @@ function resolveDatabaseConfig(rawUrl?: string) {
     const database = normalizedPath === '' ? './demo.db' : normalizedPath
     const normalized = database.startsWith('/') ? database : join(process.cwd(), database)
     return {
-      driver: 'sqlite',
+      driver: 'sqlite' as const,
       database: normalized,
     }
   }
@@ -34,8 +34,15 @@ function resolveDatabaseConfig(rawUrl?: string) {
     }
 
     const database = parsed.pathname ? parsed.pathname.replace(/^\//, '') : undefined
-    const config: Record<string, unknown> = {
-      driver,
+    const config = {
+      driver: driver as 'sqlite' | 'postgres' | 'mysql',
+    } as {
+      driver: 'sqlite' | 'postgres' | 'mysql'
+      database?: string
+      host?: string
+      port?: number
+      username?: string
+      password?: string
     }
 
     if (database) {
@@ -57,7 +64,7 @@ function resolveDatabaseConfig(rawUrl?: string) {
     return config
   } catch {
     return {
-      driver: 'sqlite',
+      driver: 'sqlite' as const,
       database: join(process.cwd(), 'demo.db'),
     }
   }

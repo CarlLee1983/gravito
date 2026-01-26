@@ -36,19 +36,38 @@ routes.post('/user', StoreUserRequest, [UserController, 'store']);
 
 ## 取得驗證過的數據
 
-在控制器中，您可以安全地取得驗證後的數據：
+在控制器中，您可以透過 `c.get('validated')` 取得經過驗證的數據。這是最推薦的方式，因為它整合了 Impulse 的型別推斷：
 
 ```typescript
-async store(c: Context) {
-  // 取得驗證過且帶有正確型別的數據
-  const data = c.req.valid('json');
+import type { GravitoContext } from '@gravito/core';
+
+async store(c: GravitoContext) {
+  // 取得驗證過的數據
+  const data = c.get('validated') as { name: string; email: string };
   
   const user = await User.create(data);
   return c.json(user, 201);
 }
 ```
 
+或者，您也可以直接從請求對象取得：
+
+```typescript
+const data = c.req.valid('json');
+```
+
 注意：`Model.create()` 是非同步且會立即寫入資料庫。若只需要記憶體中的實例，請使用 `Model.make()`，再自行呼叫 `save()`。
+
+## 效能 (Performance)
+
+Gravito 的驗證系統（由 Impulse 驅動）內建多層快取機制，確保高效能表現：
+
+- **Schema 編譯快取**：Zod 與 Valibot Schema 會被編譯為最佳化的驗證函數並進行快取。
+- **實例重複利用**：FormRequest 實例會在請求間重複利用，大幅減少記憶體分配。
+- **高效型別偵測**：系統自動偵測並快取 Schema 類型（Zod 或 Valibot），具備 O(1) 查找速度。
+- **資料快取**：請求內容（Body）解析結果會被快取，避免重複操作。
+
+即使是複雜的驗證規則，這些優化也能讓驗證過程極致快速。
 
 ## 自定義驗證行為
 

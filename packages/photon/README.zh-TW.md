@@ -72,12 +72,16 @@ export default core.liftoff()
 
 | 匯出路徑 | 說明 |
 |--------|-------------|
-| `@gravito/photon` | 主要 Photon 類別和核心工具 |
+| `@gravito/photon` | 主要 Photon 類別、核心工具和內建中介軟體 |
 | `@gravito/photon/client` | 型別安全 RPC 客戶端（由 `@gravito/beam` 使用） |
 | `@gravito/photon/jwt` | JWT 認證工具 |
 | `@gravito/photon/bun` | Bun 專用適配器（例如 `serveStatic`） |
 | `@gravito/photon/logger` | 日誌中介軟體 |
 | `@gravito/photon/http-exception` | HTTP 例外處理 |
+
+**內建中介軟體**（從主套件匯出）：
+- `htmxMiddleware()` - HTMX 請求檢測和標頭存取
+- `binaryMiddleware()` - 自動將 JSON 回應編碼為 CBOR
 
 ## 🔧 API 參考
 
@@ -141,6 +145,68 @@ app.use('/protected/*', jwt({ secret: 'your-secret' }))
 const token = await sign({ sub: 'user123' }, 'secret')
 const payload = await verify(token, 'secret')
 const decoded = decode(token)
+```
+
+### 內建中介軟體
+
+Photon 包含多個內建中介軟體，用於常見的使用場景。
+
+#### HTMX 中介軟體
+
+自動檢測 HTMX 請求，並提供便捷的方式存取 HTMX 專用標頭。
+
+```typescript
+import { Photon, htmxMiddleware } from '@gravito/photon'
+
+const app = new Photon()
+app.use(htmxMiddleware())
+
+app.get('/search', async (c) => {
+  // 檢查請求是否來自 HTMX
+  if (c.get('htmx')) {
+    // 為 HTMX 返回 HTML 片段
+    return c.html('<div>搜尋結果...</div>')
+  }
+  
+  // 為一般請求返回完整頁面
+  return c.html('<html>...</html>')
+})
+```
+
+中介軟體會自動將 HTMX 狀態和標頭存儲在上下文中：
+- `c.get('htmx')` - 布林值，表示請求是否來自 HTMX
+- `c.get('htmx.target')` - 目標元素 ID
+- `c.get('htmx.trigger')` - 觸發元素 ID
+- `c.get('htmx.boosted')` - 請求是否被增強
+- 以及其他 HTMX 專用標頭
+
+#### 二進位中介軟體 (CBOR)
+
+當客戶端請求時，自動將 JSON 回應編碼為 CBOR 格式。
+
+```typescript
+import { Photon, binaryMiddleware } from '@gravito/photon'
+
+const app = new Photon()
+app.use(binaryMiddleware())
+
+app.get('/api/data', (c) => c.json({ items: [...] }))
+// 當存在 Accept: application/cbor 標頭時，自動返回 CBOR
+```
+
+**效能優勢：**
+- CBOR 編碼比 JSON.stringify 快約 2-3 倍（大型物件）
+- 二進位格式平均減少 20-40% 的負載大小
+- 建議用於高頻率的 API 呼叫和大數據集
+
+**客戶端使用：**
+```typescript
+import { decode } from 'cborg'
+
+const res = await fetch('/api/data', {
+  headers: { Accept: 'application/cbor' }
+})
+const data = decode(new Uint8Array(await res.arrayBuffer()))
 ```
 
 ## 🏗️ 架構

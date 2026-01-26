@@ -1,0 +1,248 @@
+import type { Operator } from '../../types'
+
+/**
+ * Where Condition Interface
+ * @description Represents a single WHERE condition or a group of nested conditions
+ */
+export interface WhereCondition {
+  /** Type of the condition */
+  type: 'basic' | 'nested' | 'in' | 'null' | 'not_null'
+  /** Column name for the condition */
+  column?: string
+  /** Comparison operator (e.g., '=', '!=', 'LIKE') */
+  operator?: Operator
+  /** Value to compare against (for basic conditions) */
+  value?: unknown
+  /** Logical connector to the previous condition ('and' or 'or') */
+  boolean?: 'and' | 'or'
+  /** Array of nested conditions (for 'nested' type) */
+  conditions?: WhereCondition[]
+  /** Array of values (for 'in' type) */
+  values?: unknown[]
+  /** Whether to negate the condition (e.g., NOT IN, IS NOT NULL) */
+  not?: boolean
+}
+
+/**
+ * Where Clause
+ * @description Handles the construction of WHERE clauses with support for complex nested conditions
+ */
+export class WhereClause {
+  /** Internal storage for WHERE conditions */
+  private wheres: WhereCondition[] = []
+
+  /**
+   * Add a basic WHERE condition
+   *
+   * @param column - Column name
+   * @param operator - Comparison operator
+   * @param value - Value to compare
+   * @param boolean - Logical connector ('and' or 'or')
+   * @example
+   * ```typescript
+   * clause.add('status', '=', 'active')
+   * ```
+   */
+  add(column: string, operator: Operator, value: unknown, boolean: 'and' | 'or' = 'and'): void {
+    this.wheres.push({
+      type: 'basic',
+      column,
+      operator,
+      value,
+      boolean,
+    })
+  }
+
+  /**
+   * Add a group of nested WHERE conditions
+   *
+   * @param conditions - Array of nested conditions
+   * @param boolean - Logical connector for the group
+   * @example
+   * ```typescript
+   * clause.addNested([
+   *   { type: 'basic', column: 'age', operator: '>', value: 18 },
+   *   { type: 'basic', column: 'status', operator: '=', value: 'active', boolean: 'or' }
+   * ])
+   * ```
+   */
+  addNested(conditions: WhereCondition[], boolean: 'and' | 'or' = 'and'): void {
+    this.wheres.push({
+      type: 'nested',
+      conditions,
+      boolean,
+    })
+  }
+
+  /**
+   * Add a WHERE IN condition
+   *
+   * @param column - Column name
+   * @param values - Array of values to check against
+   * @param boolean - Logical connector
+   * @param not - Whether to use NOT IN
+   * @example
+   * ```typescript
+   * clause.addIn('id', [1, 2, 3])
+   * ```
+   */
+  addIn(column: string, values: unknown[], boolean: 'and' | 'or' = 'and', not = false): void {
+    this.wheres.push({
+      type: 'in',
+      column,
+      values,
+      boolean,
+      not,
+    })
+  }
+
+  /**
+   * Add a WHERE NULL condition
+   *
+   * @param column - Column name
+   * @param boolean - Logical connector
+   * @param not - Whether to use IS NOT NULL
+   * @example
+   * ```typescript
+   * clause.addNull('deleted_at')
+   * ```
+   */
+  addNull(column: string, boolean: 'and' | 'or' = 'and', not = false): void {
+    this.wheres.push({
+      type: 'null',
+      column,
+      boolean,
+      not,
+    })
+  }
+
+  /**
+   * Add a WHERE NOT NULL condition
+   *
+   * @param column - Column name
+   * @param boolean - Logical connector
+   */
+  addNotNull(column: string, boolean: 'and' | 'or' = 'and'): void {
+    this.addNull(column, boolean, true)
+  }
+
+  /**
+   * Get all registered WHERE conditions
+   *
+   * @returns Array of conditions
+   */
+  getWheres(): WhereCondition[] {
+    return this.wheres
+  }
+
+  /**
+   * Extract all values from the conditions for use as query bindings
+   *
+   * @returns Array of binding values
+   */
+  getValues(): unknown[] {
+    const values: unknown[] = []
+
+    for (const where of this.wheres) {
+      if (where.type === 'basic') {
+        values.push(where.value)
+      } else if (where.type === 'in') {
+        values.push(...(where.values || []))
+      }
+    }
+
+    return values
+  }
+
+  /**
+   * Compile the WHERE clause to SQL
+   *
+   * @returns SQL string for the clause
+   */
+  toSQL(): string {
+    if (this.wheres.length === 0) {
+      return ''
+    }
+
+    const parts: string[] = []
+
+    for (let i = 0; i < this.wheres.length; i++) {
+      const where = this.wheres[i]
+      let sql = ''
+
+      if (i > 0) {
+        sql += ` ${where.boolean?.toUpperCase() || 'AND'} `
+      }
+
+      if (where.type === 'basic') {
+        sql += `"${where.column}" ${where.operator || '='} ?`
+      } else if (where.type === 'nested') {
+        sql += `(${this.compileNested(where.conditions || [])})`
+      } else if (where.type === 'in') {
+        const placeholders = where.values?.map(() => '?').join(', ') || ''
+        const not = where.not ? 'NOT ' : ''
+        sql += `"${where.column}" ${not}IN (${placeholders})`
+      } else if (where.type === 'null') {
+        const not = where.not ? 'NOT ' : ''
+        sql += `"${where.column}" IS ${not}NULL`
+      }
+
+      parts.push(sql)
+    }
+
+    return `WHERE ${parts.join('')}`
+  }
+
+  /**
+   * Recursively compile nested conditions to SQL
+   *
+   * @param conditions - Array of nested conditions
+   * @returns Compiled SQL string for the nested group
+   * @internal
+   */
+  private compileNested(conditions: WhereCondition[]): string {
+    const parts: string[] = []
+
+    for (let i = 0; i < conditions.length; i++) {
+      const where = conditions[i]
+      let sql = ''
+
+      if (i > 0) {
+        sql += ` ${where.boolean?.toUpperCase() || 'AND'} `
+      }
+
+      if (where.type === 'basic') {
+        sql += `"${where.column}" ${where.operator || '='} ?`
+      } else if (where.type === 'in') {
+        const placeholders = where.values?.map(() => '?').join(', ') || ''
+        const not = where.not ? 'NOT ' : ''
+        sql += `"${where.column}" ${not}IN (${placeholders})`
+      } else if (where.type === 'null') {
+        const not = where.not ? 'NOT ' : ''
+        sql += `"${where.column}" IS ${not}NULL`
+      } else if (where.type === 'nested') {
+        sql += `(${this.compileNested(where.conditions || [])})`
+      }
+
+      parts.push(sql)
+    }
+
+    return parts.join('')
+  }
+
+  /**
+   * Reset the clause state
+   */
+  reset(): void {
+    this.wheres = []
+  }
+
+  /**
+   * Check if the clause has any conditions registered
+   *
+   * @returns True if conditions exist
+   */
+  hasConditions(): boolean {
+    return this.wheres.length > 0
+  }
+}

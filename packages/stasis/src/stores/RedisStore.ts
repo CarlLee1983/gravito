@@ -10,11 +10,28 @@ import {
   ttlToExpiresAt,
 } from '../types'
 
+/**
+ * Options for configuring the `RedisStore`.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export type RedisStoreOptions = {
+  /** The name of the Redis connection to use. */
   connection?: string
-  prefix?: string // Redis-level prefix (though CacheRepository also handles prefix)
+  /** Optional Redis-level prefix for keys. */
+  prefix?: string
 }
 
+/**
+ * RedisStore implements the `CacheStore` interface using Redis.
+ *
+ * It provides a distributed, persistent cache backend with support for
+ * atomic increments/decrements, tagging, and distributed locking.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class RedisStore implements CacheStore, TaggableStore {
   private connectionName?: string
 
@@ -84,18 +101,25 @@ export class RedisStore implements CacheStore, TaggableStore {
 
   async forget(key: CacheKey): Promise<boolean> {
     const normalized = normalizeCacheKey(key)
-    const count = await this.client.del(normalized)
 
-    // Also remove from any tags?
-    // We don't know which tags it belongs to (one-way link).
-    // This implies that if we delete a key directly, it might remain in tag sets.
-    // That's a common trade-off in simple Redis tagging.
-    // A robust implementation uses "tag sets" + "key sets" (SADD tag:xyz key)
-    // When flushing tag:xyz, we SMEMBERS tag:xyz and DEL keys.
-    // If we just DEL key, it stays in SMEMBERS. This is "zombie" entries in tag set.
-    // We could clean them up lazily or ignore them (DEL on non-existent key is fine).
+    const luaScript = `
+      local key = KEYS[1]
+      local tag_prefix = ARGV[1]
+      local tags = redis.call('SMEMBERS', key .. ':tags')
+      local del_result = redis.call('DEL', key)
+      for _, tag in ipairs(tags) do
+        redis.call('SREM', tag_prefix .. tag, key)
+      end
+      redis.call('DEL', key .. ':tags')
+      return del_result
+    `
 
-    return count > 0
+    const client = this.client as unknown as {
+      eval(script: string, numKeys: number, ...args: string[]): Promise<number>
+    }
+
+    const result = await client.eval(luaScript, 1, normalized, 'tag:')
+    return result > 0
   }
 
   async flush(): Promise<void> {
@@ -134,16 +158,33 @@ export class RedisStore implements CacheStore, TaggableStore {
     }
 
     const pipeline = this.client.pipeline()
+
+    pipeline.sadd(`${taggedKey}:tags`, ...tags)
+
     for (const tag of tags) {
       const tagSetKey = `tag:${tag}`
       pipeline.sadd(tagSetKey, taggedKey)
     }
+
     await pipeline.exec()
   }
 
-  async tagIndexRemove(_taggedKey: string): Promise<void> {
-    // We can't efficiently remove a key from all tags without knowing which tags it has.
-    // In this simple implementation, we accept that tag sets might contain deleted keys.
+  async tagIndexRemove(taggedKey: string): Promise<void> {
+    const luaScript = `
+      local key = KEYS[1]
+      local tag_prefix = ARGV[1]
+      local tags = redis.call('SMEMBERS', key .. ':tags')
+      for _, tag in ipairs(tags) do
+        redis.call('SREM', tag_prefix .. tag, key)
+      end
+      redis.call('DEL', key .. ':tags')
+    `
+
+    const client = this.client as unknown as {
+      eval(script: string, numKeys: number, ...args: string[]): Promise<number>
+    }
+
+    await client.eval(luaScript, 1, taggedKey, 'tag:')
   }
 
   async flushTags(tags: readonly string[]): Promise<void> {
@@ -186,6 +227,12 @@ export class RedisStore implements CacheStore, TaggableStore {
   // Locks
   // ============================================================================
 
+  async ttl(key: CacheKey): Promise<number | null> {
+    const normalized = normalizeCacheKey(key)
+    const result = await this.client.ttl(normalized)
+    return result < 0 ? null : result
+  }
+
   lock(name: string, seconds = 10): CacheLock {
     const lockKey = `lock:${normalizeCacheKey(name)}`
     const owner = randomUUID()
@@ -200,25 +247,71 @@ export class RedisStore implements CacheStore, TaggableStore {
       },
 
       async release(): Promise<void> {
-        // Lua script to safely release only if owner matches
-        // But for now, simple get/del or assuming ioredis is fine.
-        // Actually, race condition if we just GET then DEL.
-        // Let's just DEL for now, or check value.
-        const current = await client.get(lockKey)
-        if (current === owner) {
-          await client.del(lockKey)
+        const luaScript = `
+          local current = redis.call('GET', KEYS[1])
+          if current == ARGV[1] then
+            return redis.call('DEL', KEYS[1])
+          else
+            return 0
+          end
+        `
+
+        const evalClient = client as unknown as {
+          eval(script: string, numKeys: number, ...args: string[]): Promise<number>
         }
+
+        await evalClient.eval(luaScript, 1, lockKey, owner)
+      },
+
+      async extend(extensionSeconds: number): Promise<boolean> {
+        const luaScript = `
+          local current = redis.call('GET', KEYS[1])
+          if current == ARGV[1] then
+            return redis.call('EXPIRE', KEYS[1], ARGV[2])
+          else
+            return 0
+          end
+        `
+
+        const evalClient = client as unknown as {
+          eval(script: string, numKeys: number, ...args: string[]): Promise<number>
+        }
+
+        const result = await evalClient.eval(
+          luaScript,
+          1,
+          lockKey,
+          owner,
+          extensionSeconds.toString()
+        )
+        return result === 1
+      },
+
+      async getRemainingTime(): Promise<number> {
+        return await client.ttl(lockKey)
       },
 
       async block<T>(
         secondsToWait: number,
         callback: () => Promise<T> | T,
-        options?: { sleepMillis?: number }
+        options?: {
+          retryInterval?: number
+          maxRetries?: number
+          signal?: AbortSignal
+          sleepMillis?: number
+        }
       ): Promise<T> {
+        const retryInterval = options?.retryInterval ?? options?.sleepMillis ?? 100
+        const maxRetries = options?.maxRetries ?? Number.POSITIVE_INFINITY
+        const signal = options?.signal
         const deadline = Date.now() + Math.max(0, secondsToWait) * 1000
-        const sleepMillis = options?.sleepMillis ?? 150
+        let attempt = 0
 
-        while (Date.now() <= deadline) {
+        while (Date.now() <= deadline && attempt < maxRetries) {
+          if (signal?.aborted) {
+            throw new Error(`Lock acquisition for '${name}' was aborted`)
+          }
+
           if (await this.acquire()) {
             try {
               return await callback()
@@ -226,7 +319,10 @@ export class RedisStore implements CacheStore, TaggableStore {
               await this.release()
             }
           }
-          await sleep(sleepMillis)
+
+          attempt++
+          const delay = Math.min(retryInterval * 1.5 ** Math.min(attempt, 10), 1000)
+          await sleep(delay)
         }
 
         throw new LockTimeoutError(

@@ -2,6 +2,14 @@
  * Model Module Index
  */
 
+export {
+  applyMixins,
+  HasAttributes,
+  HasEvents,
+  HasPersistence,
+  HasRelationships,
+  HasSerialization,
+} from './concerns'
 export { DirtyTracker } from './DirtyTracker'
 export { column, SoftDeletes } from './decorators'
 export {

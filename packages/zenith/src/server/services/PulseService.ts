@@ -1,22 +1,71 @@
 import { Redis } from 'ioredis'
 import type { PulseNode } from '../../shared/types'
 
+/**
+ * PulseService manages the discovery and health monitoring of system nodes.
+ *
+ * This service acts as the heartbeat of the distributed system, scanning Redis
+ * for ephemeral keys emitted by active Quasar agents. It aggregates these
+ * signals to provide a real-time view of the cluster topology, grouping nodes
+ * by their service roles.
+ *
+ * It is essential for:
+ * - Visualizing cluster health and scale.
+ * - Detecting silent node failures via heartbeat expiry.
+ * - Providing metadata for alerting systems.
+ *
+ * @public
+ * @since 3.0.0
+ *
+ * @example
+ * ```typescript
+ * const pulse = new PulseService('redis://localhost:6379');
+ * await pulse.connect();
+ * const nodes = await pulse.getNodes();
+ * ```
+ */
 export class PulseService {
   private redis: Redis
   private prefix = 'gravito:quasar:node:'
 
+  /**
+   * Creates a new instance of PulseService.
+   *
+   * @param redisUrl - Connection string for the Redis instance used for coordination.
+   */
   constructor(redisUrl: string) {
     this.redis = new Redis(redisUrl, {
       lazyConnect: true,
     })
   }
 
+  /**
+   * Establishes the connection to Redis.
+   *
+   * Must be called before any other operations.
+   *
+   * @returns Promise that resolves when connected.
+   * @throws {Error} If connection fails.
+   */
   async connect() {
     await this.redis.connect()
   }
 
   /**
-   * Discovers active Pulse nodes using SCAN.
+   * Discovers active Pulse nodes across the cluster.
+   *
+   * Uses Redis SCAN to find all keys matching the heartbeat pattern.
+   * Nodes are grouped by service name to facilitate dashboard rendering.
+   * Stale nodes (older than 60s) are filtered out to ensure data freshness.
+   *
+   * @returns A map of service names to their active node instances.
+   * @throws {Error} If Redis operations fail.
+   *
+   * @example
+   * ```typescript
+   * const map = await pulse.getNodes();
+   * console.log(map['worker-service']); // Array of worker nodes
+   * ```
    */
   async getNodes(): Promise<Record<string, PulseNode[]>> {
     const nodes: PulseNode[] = []
@@ -72,7 +121,24 @@ export class PulseService {
   }
 
   /**
-   * Manually record a heartbeat (for this Zenith server itself).
+   * Manually records a heartbeat for the current process.
+   *
+   * This is typically used when Zenith itself needs to appear in the node list.
+   * The heartbeat is stored with a short TTL (30s) to ensure auto-removal
+   * upon crash or shutdown.
+   *
+   * @param node - The node metadata to broadcast.
+   * @returns Promise resolving when the heartbeat is saved.
+   * @throws {Error} If Redis write fails.
+   *
+   * @example
+   * ```typescript
+   * await pulse.recordHeartbeat({
+   *   id: 'zenith-1',
+   *   service: 'dashboard',
+   *   // ...other props
+   * });
+   * ```
    */
   async recordHeartbeat(node: PulseNode): Promise<void> {
     const key = `${this.prefix}${node.service}:${node.id}`

@@ -4,6 +4,15 @@
 
 import type { CapturedLog, CapturedQuery, CapturedRequest } from '../types'
 
+/**
+ * Interface for Spectrum storage backends.
+ *
+ * Implement this interface to provide custom storage for captured telemetry
+ * data (requests, logs, queries).
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface SpectrumStorage {
   /**
    * Initialize storage driver

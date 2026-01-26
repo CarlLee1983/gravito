@@ -26,6 +26,15 @@ interface QueueStats {
   paused?: boolean
 }
 
+/**
+ * Queue Management Page.
+ *
+ * Provides detailed monitoring and management controls for message queues,
+ * including job inspection, pausing/resuming queues, and bulk retry/purge actions.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export function QueuesPage() {
   const [selectedQueue, setSelectedQueue] = React.useState<string | null>(null)
   const [searchQuery, setSearchQuery] = React.useState('')

@@ -6,7 +6,7 @@ import { OrbitPrism } from '@gravito/prism'
 import { OrbitPulsar } from '@gravito/pulsar'
 import { CallbackUserProvider, OrbitSentinel } from '@gravito/sentinel'
 import { OrbitStasis } from '@gravito/stasis'
-import { User } from '../src/Models'
+import { User } from '../src/models'
 import { sql } from '../src/utils/db'
 
 export const orbits = [
@@ -27,7 +27,12 @@ export const orbits = [
   new OrbitStasis(),
 
   // Asset management and Vite directives (Required by OrbitIon for initial load)
-  new OrbitPrism(),
+  new OrbitPrism({
+    cache: {
+      enabled: process.env.NODE_ENV === 'production',
+      maxSize: 1000,
+    },
+  }),
 
   // Session management
   new OrbitPulsar({

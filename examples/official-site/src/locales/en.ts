@@ -162,6 +162,8 @@ export default {
     home: 'Home',
     lux: 'Luminosity (Lux)',
     lux_note: 'Luminosity (Lux) — The sitemap engine built on Gravito Core.',
+    photon: 'Photon',
+    photon_note: 'Photon — Ultra-Fast HTTP Engine built on Hono.',
     atlas: 'Atlas (ORM)',
     atlas_note: 'Atlas (ORM) — High-Performance Bun-Native ORM.',
     zenith: 'Zenith',

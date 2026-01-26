@@ -1,11 +1,11 @@
 {
   "name": "@gravito/example-commerce-fullstack",
-  "version": "1.0.4",
+  "version": "1.0.8",
   "private": true,
   "scripts": {
     "dev": "bun run src/entry-server.ts",
     "build": "bun build ./src/entry-server.ts --outdir ./dist --target node",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "bun tsc --noEmit --skipLibCheck"
   },
   "dependencies": {
     "@gravito/core": "workspace:*",
@@ -27,6 +27,15 @@
     "@gravito/satellite-support": "workspace:*",
     "@gravito/satellite-announcement": "workspace:*",
     "@gravito/satellite-news": "workspace:*",
-    "@gravito/satellite-ad": "workspace:*"
+    "@gravito/satellite-ad": "workspace:*",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-router-dom": "^7.0.0",
+    "lucide-react": "^0.562.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "typescript": "^5.9.3"
   }
 }

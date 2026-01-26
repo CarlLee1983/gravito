@@ -15,6 +15,15 @@ interface ThroughputPoint {
   count: number
 }
 
+/**
+ * Real-time throughput visualization component.
+ *
+ * Displays a live-updating area chart of the number of jobs processed
+ * per minute across the system.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export function ThroughputChart() {
   // Initial fetch via React Query
   const { data: initialData } = useQuery({

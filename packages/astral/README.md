@@ -1,4 +1,4 @@
-# @gravito/astral
+# @gravito/astral 🌌
 
 **Shadow-Contract OpenAPI Generator for Gravito.**
 
@@ -87,11 +87,18 @@ Navigate to `http://localhost:3000/docs` to see your Swagger UI!
 
 ## ✨ Key Features
 
-- **Zero Purity Loss**: No decorators or JSDoc in your Controllers.
-- **Type Inference**: Automatically converts Zod schemas and Impulse FormRequests to OpenAPI components.
-- **Dynamic Updates**: Your documentation always matches your DTOs in real-time.
-- **Built-in UI**: Integrated Swagger UI powered by CDN.
+- **🚀 Performance-First**: Highly optimized specification generation with internal schema caching.
+- **🛡️ Zero Purity Loss**: No decorators or JSDoc in your Controllers. Keep your business logic clean.
+- **🔄 Type Inference**: Automatically converts Zod schemas and Impulse FormRequests to OpenAPI components.
+- **📂 Shadow Contracts**: Define documentation in separate files, allowing for clean separation of concerns.
+- **📡 Dynamic Updates**: Your documentation always matches your DTOs in real-time.
+- **🎨 Built-in UI**: Integrated Swagger UI powered by CDN for a zero-config setup.
+
+## 📚 Documentation
+
+- [API Reference](./docs/API.md) - Detailed guide on configuration, interfaces, and helpers.
+- [Advanced Usage](./docs/ADVANCED.md) - Learn about security schemes, reusable components, and custom error handling.
 
 ## 📄 License
 
-MIT
+MIT © Carl Lee

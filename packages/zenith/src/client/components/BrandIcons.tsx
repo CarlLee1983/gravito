@@ -1,5 +1,10 @@
 import type { SVGProps } from 'react'
 
+/**
+ * SVG icon for Node.js runtime.
+ * @public
+ * @since 3.0.0
+ */
 export function NodeIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg
@@ -19,6 +24,11 @@ export function NodeIcon(props: SVGProps<SVGSVGElement>) {
   )
 }
 
+/**
+ * SVG icon for Bun runtime.
+ * @public
+ * @since 3.0.0
+ */
 export function BunIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg
@@ -49,6 +59,11 @@ export function BunIcon(props: SVGProps<SVGSVGElement>) {
   )
 }
 
+/**
+ * SVG icon for Deno runtime.
+ * @public
+ * @since 3.0.0
+ */
 export function DenoIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg
@@ -69,6 +84,11 @@ export function DenoIcon(props: SVGProps<SVGSVGElement>) {
   )
 }
 
+/**
+ * SVG icon for PHP runtime.
+ * @public
+ * @since 3.0.0
+ */
 export function PhpIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg
@@ -95,6 +115,11 @@ export function PhpIcon(props: SVGProps<SVGSVGElement>) {
   )
 }
 
+/**
+ * SVG icon for Go runtime.
+ * @public
+ * @since 3.0.0
+ */
 export function GoIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg
@@ -115,6 +140,11 @@ export function GoIcon(props: SVGProps<SVGSVGElement>) {
   )
 }
 
+/**
+ * SVG icon for Python runtime.
+ * @public
+ * @since 3.0.0
+ */
 export function PythonIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg

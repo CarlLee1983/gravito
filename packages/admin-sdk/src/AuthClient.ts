@@ -1,6 +1,15 @@
 import type { ApiBridge } from './ApiBridge'
 import type { IAdminUser, IAuthResponse } from './types'
 
+/**
+ * AuthClient handles authentication against the Gravito Admin API.
+ *
+ * It manages user sessions, provides login/logout functionality, and
+ * maintains the current user's state using local storage for persistence.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class AuthClient {
   private user: IAdminUser | null = null
 

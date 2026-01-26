@@ -3,6 +3,37 @@ import { join } from 'node:path'
 import { getRuntimeAdapter } from '@gravito/core'
 import type { SessionId, SessionRecord, SessionStore } from '../types'
 
+/**
+ * File-based session store for development and small-scale production.
+ *
+ * Stores each session as a separate JSON file in the specified directory.
+ * Provides transparent debugging (you can inspect session files directly) but
+ * lacks automatic expiration and is slower than memory/Redis due to disk I/O.
+ *
+ * **Performance Characteristics:**
+ * - ✅ Simple and transparent (plain JSON files you can inspect)
+ * - ✅ No external dependencies or complex setup
+ * - ✅ Good for debugging (can view session files directly)
+ * - ⚠️  Slower than memory/Redis due to disk I/O on every operation
+ * - ⚠️  No automatic expiration (manual cleanup needed)
+ * - ❌ Not suitable for high-traffic sites (file system overhead)
+ *
+ * **Best For:** Development, debugging, small single-instance apps, learning environments
+ *
+ * @example
+ * ```typescript
+ * const store = new FileSessionStore('./storage/sessions')
+ * await store.set('session-id', {
+ *   data: { userId: '123' },
+ *   createdAt: Date.now(),
+ *   lastActivityAt: Date.now()
+ * }, 3600)
+ * const session = await store.get('session-id')
+ * ```
+ *
+ * @since 3.0.0
+ * @public
+ */
 export class FileSessionStore implements SessionStore {
   private runtime = getRuntimeAdapter()
 
@@ -10,9 +41,35 @@ export class FileSessionStore implements SessionStore {
     mkdirSync(this.path, { recursive: true })
   }
 
+  /**
+   * Sanitize and validate session ID to prevent path traversal attacks.
+   *
+   * Only allows alphanumeric characters, underscores, and hyphens.
+   * This prevents attackers from using session IDs like "../../../etc/passwd"
+   * to access files outside the session directory.
+   *
+   * @param sessionId - The session ID to validate
+   * @returns The sanitized session ID (same as input if valid)
+   * @throws {Error} If session ID is empty after sanitization
+   * @throws {Error} If session ID contains illegal characters
+   * @private
+   */
+  private sanitizeSessionId(sessionId: string): string {
+    const sanitized = sessionId.replace(/[^a-zA-Z0-9_-]/g, '')
+
+    if (sanitized.length === 0) {
+      throw new Error('Invalid session ID: no valid characters')
+    }
+
+    if (sanitized !== sessionId) {
+      throw new Error(`Invalid session ID: contains illegal characters`)
+    }
+
+    return sanitized
+  }
+
   private getFilePath(id: string): string {
-    // Basic sanitization
-    const safeId = id.replace(/[^a-zA-Z0-9_-]/g, '')
+    const safeId = this.sanitizeSessionId(id)
     return join(this.path, `${safeId}.json`)
   }
 

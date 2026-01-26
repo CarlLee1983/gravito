@@ -1,5 +1,21 @@
 import type { Message, Transport } from '../types'
 
+/**
+ * Log transport for development and testing.
+ *
+ * Logs email details to the console instead of sending them.
+ * Useful for debugging and local development.
+ *
+ * @example
+ * ```typescript
+ * const transport = new LogTransport()
+ * await transport.send(message)
+ * // Outputs email details to console
+ * ```
+ *
+ * @since 3.0.0
+ * @public
+ */
 export class LogTransport implements Transport {
   async send(message: Message): Promise<void> {
     console.log('\n📧 [OrbitSignal] Email Sent (Simulated):')

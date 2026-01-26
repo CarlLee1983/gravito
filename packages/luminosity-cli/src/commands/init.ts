@@ -29,6 +29,12 @@ const config: SeoConfig = {
 export default config
 `
 
+/**
+ * Dependencies for the `init` command, supporting dependency injection for testing.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface InitCommandDeps {
   createInterface?: typeof readline.createInterface
   writeFile?: typeof writeFile

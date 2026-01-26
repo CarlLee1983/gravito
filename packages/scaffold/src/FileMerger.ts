@@ -1,5 +1,14 @@
 import { deepMerge } from './utils/deepMerge'
 
+/**
+ * FileMerger handles the intelligent merging of file contents during scaffolding.
+ *
+ * It understands different file formats (JSON, ENV) and applies appropriate
+ * merging strategies instead of simple overwriting.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class FileMerger {
   /**
    * Merge content of two files based on their type.

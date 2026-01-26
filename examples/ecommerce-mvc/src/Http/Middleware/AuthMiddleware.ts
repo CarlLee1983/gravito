@@ -5,7 +5,7 @@
  */
 
 import type { GravitoContext, GravitoNext } from '@gravito/core'
-import type { InertiaService } from '@gravito/ion'
+import type { InertiaHelper } from '@gravito/ion'
 import type { AuthManager } from '@gravito/sentinel'
 
 export async function AuthMiddleware(ctx: GravitoContext, next: GravitoNext) {
@@ -13,7 +13,7 @@ export async function AuthMiddleware(ctx: GravitoContext, next: GravitoNext) {
 
   if (!(await auth.check())) {
     // Check if Inertia request
-    const inertia = ctx.get('inertia') as InertiaService | undefined
+    const inertia = ctx.get('inertia') as unknown as InertiaHelper | undefined
     if (inertia && ctx.req.header('X-Inertia')) {
       // Inertia redirect
       return ctx.redirect('/login', 303)

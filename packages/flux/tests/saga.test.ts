@@ -76,10 +76,89 @@ describe('FluxEngine Saga Pattern', () => {
 
     // If compensation fails, the whole workflow fails (critical failure)
     expect(result.status).toBe('failed')
-    expect(result.history[0].status).toBe('compensating') // Stuck in compensating or failed?
-    // Types set it to compensating before call. Engine catches error and sets WF to failed.
-    // Step status remains 'compensating' in memory if using MemoryStorage ref,
-    // or whatever the implementation decides.
-    // Let's check status.
+    // When compensation fails, the engine catches the error and marks the workflow as failed,
+    // but the step status in history remains 'compensating' as set before the compensation attempt.
+    expect(result.history[0].status).toBe('compensating')
+  })
+
+  test('should handle nested saga compensations with data persistence', async () => {
+    // This test simulates a complex order process:
+    // 1. Reserve Inventory (Compensate: Release Inventory)
+    // 2. Charge Payment (Compensate: Refund Payment)
+    // 3. Generate Shipping Label (Fails -> triggers rollback)
+
+    const inventory = [] as string[]
+    const payments = [] as number[]
+    const logs = [] as string[]
+
+    const workflow = createWorkflow('complex-saga')
+      .input<{ productId: string; price: number }>()
+      .step(
+        'reserve-inventory',
+        async (ctx) => {
+          inventory.push(ctx.input.productId)
+          ctx.data.reservationId = 'res-' + ctx.input.productId
+          logs.push('reserve')
+        },
+        {
+          compensate: async (ctx) => {
+            const index = inventory.indexOf(ctx.input.productId)
+            if (index > -1) inventory.splice(index, 1)
+            logs.push('release-' + ctx.data.reservationId)
+          },
+        }
+      )
+      .step(
+        'charge-payment',
+        async (ctx) => {
+          payments.push(ctx.input.price)
+          ctx.data.transactionId = 'tx-' + Date.now()
+          logs.push('charge')
+        },
+        {
+          compensate: async (ctx) => {
+            const index = payments.indexOf(ctx.input.price)
+            if (index > -1) payments.splice(index, 1)
+            logs.push('refund-' + ctx.data.transactionId)
+          },
+        }
+      )
+      .step('ship', async () => {
+        logs.push('ship-attempt')
+        throw new Error('Shipping Service Unavailable')
+      })
+
+    const engine = new FluxEngine({
+      storage: new MemoryStorage(),
+      defaultRetries: 0,
+    })
+
+    const result = await engine.execute(workflow, { productId: 'iphone-15', price: 999 })
+
+    expect(result.status).toBe('rolled_back')
+
+    // Verify execution order
+    // 1. reserve
+    // 2. charge
+    // 3. ship-attempt (failed)
+    // 4. refund (compensation for charge)
+    // 5. release (compensation for reserve)
+
+    expect(logs).toEqual([
+      'reserve',
+      'charge',
+      'ship-attempt',
+      expect.stringMatching(/^refund-tx-/),
+      'release-res-iphone-15',
+    ])
+
+    // Verify side effects were reversed
+    expect(inventory).toHaveLength(0)
+    expect(payments).toHaveLength(0)
+
+    // Verify history status
+    expect(result.history.find((h) => h.name === 'reserve-inventory')?.status).toBe('compensated')
+    expect(result.history.find((h) => h.name === 'charge-payment')?.status).toBe('compensated')
+    expect(result.history.find((h) => h.name === 'ship')?.status).toBe('failed')
   })
 })

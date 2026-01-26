@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=Open+Sans:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,7 +6,27 @@
 
 @layer base {
     body {
-        @apply antialiased text-gray-200 bg-void font-sans selection:bg-singularity/30 selection:text-white;
+        @apply antialiased text-zinc-300 bg-void font-body selection:bg-singularity/30 selection:text-white;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+        @apply font-heading text-white;
+    }
+
+    /* Custom Scrollbar for OLED Black */
+    ::-webkit-scrollbar {
+        width: 10px;
+    }
+    ::-webkit-scrollbar-track {
+        @apply bg-void;
+    }
+    ::-webkit-scrollbar-thumb {
+        @apply bg-zinc-800 border-2 border-void rounded-full hover:bg-zinc-700 transition-colors;
+    }
+
+    /* Focus Ring Styles */
+    :focus-visible {
+        @apply outline-none ring-2 ring-singularity ring-offset-2 ring-offset-void;
     }
 }
 

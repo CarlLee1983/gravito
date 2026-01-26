@@ -1,8 +1,22 @@
 import type { TwitterCardConfig } from './interfaces'
 
+/**
+ * TwitterCardBuilder generates `<meta name="twitter:...">` tags.
+ *
+ * It supports Twitter Card properties including card type, site handle,
+ * creator handle, titles, descriptions, and images.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class TwitterCardBuilder {
   constructor(private config: TwitterCardConfig) {}
 
+  /**
+   * Generates the Twitter Card meta tags.
+   *
+   * @returns A string containing all Twitter meta tags.
+   */
   build(): string {
     const tags: string[] = []
 

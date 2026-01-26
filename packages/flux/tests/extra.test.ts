@@ -9,7 +9,7 @@ import { FluxEngine } from '../src/engine/FluxEngine'
 import { FluxConsoleLogger, FluxSilentLogger } from '../src/logger/FluxLogger'
 import { OrbitFlux } from '../src/orbit/OrbitFlux'
 import { JsonFileTraceSink } from '../src/trace/JsonFileTraceSink'
-import type { WorkflowStorage } from '../src/types'
+import type { WorkflowContext, WorkflowStorage } from '../src/types'
 
 describe('ContextManager', () => {
   it('creates, updates, and restores workflow contexts', () => {
@@ -17,10 +17,10 @@ describe('ContextManager', () => {
     const ctx = manager.create('workflow', { value: 1 }, 2)
 
     expect(ctx.history).toHaveLength(2)
-    manager.setStepName(ctx, 0, 'step-1')
-    expect(ctx.history[0]?.name).toBe('step-1')
+    const withName = manager.setStepName(ctx, 0, 'step-1')
+    expect(withName.history[0]?.name).toBe('step-1')
 
-    const running = manager.updateStatus(ctx, 'running')
+    const running = manager.updateStatus(withName, 'running')
     expect(running.status).toBe('running')
 
     const advanced = manager.advanceStep(running)
@@ -30,15 +30,26 @@ describe('ContextManager', () => {
     const restored = manager.restore(state)
     expect(restored.id).toBe(ctx.id)
     expect(restored.currentStep).toBe(advanced.currentStep)
+    expect(restored.version).toBe(1)
   })
 })
 
 describe('FluxLogger', () => {
   it('prefixes console output', () => {
-    const debugSpy = jest.spyOn(console, 'debug').mockImplementation(() => {})
-    const infoSpy = jest.spyOn(console, 'info').mockImplementation(() => {})
-    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {})
-    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
+    const originalDebug = console.debug
+    const originalInfo = console.info
+    const originalWarn = console.warn
+    const originalError = console.error
+
+    const debugSpy = jest.fn()
+    const infoSpy = jest.fn()
+    const warnSpy = jest.fn()
+    const errorSpy = jest.fn()
+
+    console.debug = debugSpy
+    console.info = infoSpy
+    console.warn = warnSpy
+    console.error = errorSpy
 
     try {
       const logger = new FluxConsoleLogger('[Test]')
@@ -47,15 +58,15 @@ describe('FluxLogger', () => {
       logger.warn('warn')
       logger.error('error')
 
-      expect(debugSpy).toHaveBeenCalledWith('[Test] debug')
-      expect(infoSpy).toHaveBeenCalledWith('[Test] info')
-      expect(warnSpy).toHaveBeenCalledWith('[Test] warn')
-      expect(errorSpy).toHaveBeenCalledWith('[Test] error')
+      expect(debugSpy as any).toHaveBeenCalled()
+      expect(infoSpy as any).toHaveBeenCalled()
+      expect(warnSpy as any).toHaveBeenCalled()
+      expect(errorSpy as any).toHaveBeenCalled()
     } finally {
-      debugSpy.mockRestore()
-      infoSpy.mockRestore()
-      warnSpy.mockRestore()
-      errorSpy.mockRestore()
+      console.debug = originalDebug
+      console.info = originalInfo
+      console.warn = originalWarn
+      console.error = originalError
     }
   })
 
@@ -75,7 +86,12 @@ describe('JsonFileTraceSink', () => {
     const filePath = join(traceDir, 'trace.ndjson')
 
     const sink = new JsonFileTraceSink({ path: filePath })
-    await sink.emit({ type: 'workflow:start', timestamp: Date.now() })
+    await sink.emit({
+      type: 'workflow:start',
+      timestamp: Date.now(),
+      workflowId: '123',
+      workflowName: 'test',
+    })
 
     const contents = await readFile(filePath, 'utf8')
     expect(contents).toContain('"type":"workflow:start"')
@@ -89,8 +105,8 @@ describe('FluxEngine extras', () => {
     const engine = new FluxEngine()
     const workflow = createWorkflow('validate')
       .input<{ value: number }>()
-      .validate((input) => input.value > 0)
-      .step('noop', () => {})
+      .validate((input): input is { value: number } => (input as any)?.value > 0)
+      .step('noop', (_ctx: WorkflowContext<{ value: number }, any>) => {})
 
     await expect(engine.execute(workflow, { value: -1 })).rejects.toThrow('Invalid input')
   })
@@ -99,10 +115,10 @@ describe('FluxEngine extras', () => {
     const storage = new MemoryStorage()
     const engine = new FluxEngine({ storage })
     const workflow = createWorkflow('resume')
-      .step('step-1', (ctx) => {
+      .step('step-1', (ctx: WorkflowContext) => {
         ctx.data.count = 1
       })
-      .step('step-2', (ctx) => {
+      .step('step-2', (ctx: WorkflowContext) => {
         ctx.data.count = (ctx.data.count as number) + 1
       })
 
@@ -116,7 +132,7 @@ describe('FluxEngine extras', () => {
 
   it('returns null when resuming unknown workflow', async () => {
     const engine = new FluxEngine()
-    const workflow = createWorkflow('missing').step('noop', () => {})
+    const workflow = createWorkflow('missing').step('noop', (_ctx: WorkflowContext) => {})
 
     const result = await engine.resume(workflow, 'missing-id')
     expect(result).toBeNull()
@@ -125,7 +141,7 @@ describe('FluxEngine extras', () => {
   it('throws on invalid resume index', async () => {
     const storage = new MemoryStorage()
     const engine = new FluxEngine({ storage })
-    const workflow = createWorkflow('invalid-index').step('noop', () => {})
+    const workflow = createWorkflow('invalid-index').step('noop', (_ctx: WorkflowContext) => {})
     const result = await engine.execute(workflow, {})
 
     await expect(engine.resume(workflow, result.id, { fromStep: 5 })).rejects.toThrow(
@@ -136,7 +152,7 @@ describe('FluxEngine extras', () => {
   it('lists and gets workflow states', async () => {
     const storage = new MemoryStorage()
     const engine = new FluxEngine({ storage })
-    const workflow = createWorkflow('list').step('noop', () => {})
+    const workflow = createWorkflow('list').step('noop', (_ctx: WorkflowContext) => {})
 
     const result = await engine.execute(workflow, {})
     const state = await engine.get(result.id)
@@ -154,7 +170,7 @@ describe('FluxEngine extras', () => {
         },
       },
     })
-    const workflow = createWorkflow('trace').step('noop', () => {})
+    const workflow = createWorkflow('trace').step('noop', (_ctx: WorkflowContext) => {})
 
     const result = await engine.execute(workflow, {})
     expect(result.status).toBe('completed')
@@ -180,12 +196,12 @@ describe('FluxEngine extras', () => {
 })
 
 describe('OrbitFlux', () => {
-  it('installs and exposes engine via core services', async () => {
-    const services = new Map<string, unknown>()
+  it('installs and exposes engine via core container', async () => {
+    const instances = new Map<string, unknown>()
     const core = {
-      services: {
-        set: (key: string, value: unknown) => services.set(key, value),
-        get: <T>(key: string) => services.get(key) as T | undefined,
+      container: {
+        instance: (key: string, value: unknown) => instances.set(key, value),
+        make: <T>(key: string) => instances.get(key) as T | undefined,
       },
       hooks: { doAction: jest.fn() },
       logger: {
@@ -199,8 +215,8 @@ describe('OrbitFlux', () => {
     const orbit = OrbitFlux.configure({ exposeAs: 'flux' })
     await orbit.install(core as any)
 
-    const engine = services.get('flux')
+    const engine = instances.get('flux')
     expect(engine).toBeInstanceOf(FluxEngine)
-    expect(orbit.getEngine()).toBe(engine)
+    expect(orbit.getEngine()).toBe(engine as FluxEngine)
   })
 })

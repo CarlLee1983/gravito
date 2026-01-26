@@ -7,23 +7,25 @@ export default {
   theme: {
     extend: {
       colors: {
-        background: "#05070A",
+        background: "#000000",
         foreground: "#FFFFFF",
         zenith: {
-          void: '#05070A', // Ultra deep background
-          stellar: '#9B51E0', // Celestial purple
-          pulse: '#3B82F6', // Tech blue (Pulsar)
-          abyss: '#0A0A14',
-          surface: '#11111F',
-          900: '#0a0a1f', 
-          800: '#14143a',
-          500: '#6366f1', 
-          400: '#818cf8',
-          accent: '#00f0ff', // Cyan neon
+          void: '#000000', // True OLED Black
+          stellar: '#8B5CF6', // Refined Purple (Violet 500)
+          pulse: '#3B82F6', // Blue 500
+          abyss: '#09090B', // Zinc 950
+          surface: '#18181B', // Zinc 900
+          900: '#09090B', 
+          800: '#18181B',
+          500: '#71717A', // Zinc 500
+          400: '#A1A1AA', // Zinc 400
+          accent: '#00FBFF', // Brighter Cyan
+          orange: '#F97316', // High-contrast CTA
         }
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        heading: ['Poppins', 'system-ui', 'sans-serif'],
+        body: ['Open Sans', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'Roboto Mono', 'monospace'],
       },
       animation: {

@@ -27,8 +27,27 @@ export function isStaticSite(): boolean {
     return false
   }
 
-  const staticDomains = ['gravito.dev', 'gravito-framework.github.io']
-  return staticDomains.includes(hostname)
+  // 支援子網域匹配 (例如 zenith.gravito.dev)
+  const staticDomains = ['zenith.gravito.dev', 'gravito.dev', 'github.io', 'vercel.app', 'netlify.app', 'pages.dev']
+  return staticDomains.some(
+    (domain) => hostname === domain || hostname.endsWith(`.${domain}`)
+  )
+}
+
+/**
+ * 獲獲取當前語系
+ */
+export function getCurrentLocale(): string {
+  if (typeof window === 'undefined') {
+    return 'en'
+  }
+
+  const pathname = window.location.pathname
+  if (pathname.startsWith('/zh-TW/') || pathname === '/zh-TW') {
+    return 'zh-TW'
+  }
+
+  return 'en'
 }
 
 /**
@@ -50,19 +69,46 @@ export function getBasePath(): string {
 
 interface StaticLinkProps {
   href: string | undefined | null
+  locale?: string // 新增：可選語系覆寫
   children: React.ReactNode
   className?: string
   onClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void
   [key: string]: unknown
 }
 
-export function StaticLink({ href, children, className, onClick, ...props }: StaticLinkProps) {
+export function StaticLink({
+  href,
+  locale: forcedLocale,
+  children,
+  className,
+  onClick,
+  ...props
+}: StaticLinkProps) {
   const isStatic = isStaticSite()
   const basePath = getBasePath()
+  const currentLocale = getCurrentLocale()
 
-  // 處理路徑前綴
+  // 決定目標語系：如果有傳入則用傳入的，否則用當前的
+  const targetLocale = forcedLocale || currentLocale
+
+  // 處理路徑
+  let processedHref = href || ''
+
+  // 1. 如果是絕對路徑，先移除現有的語系前綴（以便重新套用）
+  if (processedHref.startsWith('/zh-TW/') || processedHref === '/zh-TW') {
+    processedHref = processedHref === '/zh-TW' ? '/' : processedHref.replace('/zh-TW', '')
+  }
+
+  // 2. 套用目標語系前綴（en 是預設，不加前綴）
+  if (targetLocale === 'zh-TW') {
+    processedHref = processedHref === '/' ? '/zh-TW' : `/zh-TW${processedHref}`
+  }
+
+  // 3. 處理基礎路徑 (GitHub Pages 等)
   const finalHref =
-    href?.startsWith('/') && !href.startsWith(`${basePath}/`) ? `${basePath}${href}` : href
+    processedHref.startsWith('/') && !processedHref.startsWith(`${basePath}/`)
+      ? `${basePath}${processedHref}`
+      : processedHref
 
   if (isStatic) {
     const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {

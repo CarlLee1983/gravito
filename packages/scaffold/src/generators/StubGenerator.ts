@@ -23,37 +23,44 @@ import path from 'node:path'
 import Handlebars from 'handlebars'
 
 /**
- * Variables passed to stub templates.
+ * Variables passed to stub templates during processing.
+ *
+ * @public
+ * @since 3.0.0
  */
 export interface StubVariables {
   [key: string]: unknown
 }
 
 /**
- * Configuration for StubGenerator.
+ * Configuration for the `StubGenerator`.
+ *
+ * @public
+ * @since 3.0.0
  */
 export interface StubConfig {
-  /**
-   * Directory containing stub templates
-   */
+  /** Directory containing the raw stub templates. */
   stubsDir: string
 
-  /**
-   * Output directory for generated files
-   */
+  /** Root directory for all generated files. */
   outputDir: string
 
-  /**
-   * Default variables applied to all templates
-   */
+  /** Default variables available to all templates. */
   defaultVariables?: StubVariables
 
-  /**
-   * Custom Handlebars helpers
-   */
+  /** Optional custom Handlebars helper implementations. */
   helpers?: Record<string, Handlebars.HelperDelegate>
 }
 
+/**
+ * StubGenerator processes template stubs using the Handlebars engine.
+ *
+ * It provides a rich set of built-in helpers for string manipulation
+ * (camelCase, PascalCase, etc.) and handles file reading and writing.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class StubGenerator {
   private config: StubConfig
   private handlebars: typeof Handlebars

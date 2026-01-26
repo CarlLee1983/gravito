@@ -1,6 +1,15 @@
 import type { Redis } from 'ioredis'
 import type { QueueProbe, QueueSnapshot } from '../types'
 
+/**
+ * LaravelProbe monitors queues managed by the Laravel PHP framework.
+ *
+ * It understands Laravel's default Redis queue structure, including
+ * waiting lists, reserved (active) sets, and delayed sets.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class LaravelProbe implements QueueProbe {
   constructor(
     private redis: Redis,

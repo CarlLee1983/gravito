@@ -1,5 +1,22 @@
 import type { SitemapIndexEntry, SitemapStreamOptions } from '../types'
 
+/**
+ * SitemapIndex handles the generation of sitemap index files.
+ *
+ * A sitemap index is used when a site has multiple sitemap files, usually
+ * because the number of URLs exceeds the 50,000 limit per sitemap.
+ *
+ * @example
+ * ```typescript
+ * const index = new SitemapIndex({ baseUrl: 'https://example.com' });
+ * index.add('sitemap-posts.xml');
+ * index.add({ url: 'sitemap-pages.xml', lastmod: new Date() });
+ * const xml = index.toXML();
+ * ```
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class SitemapIndex {
   private options: SitemapStreamOptions
   private entries: SitemapIndexEntry[] = []
@@ -11,6 +28,12 @@ export class SitemapIndex {
     }
   }
 
+  /**
+   * Adds a single entry to the sitemap index.
+   *
+   * @param entry - A sitemap filename or a `SitemapIndexEntry` object.
+   * @returns The `SitemapIndex` instance for chaining.
+   */
   add(entry: string | SitemapIndexEntry): this {
     if (typeof entry === 'string') {
       this.entries.push({ url: entry })
@@ -20,6 +43,12 @@ export class SitemapIndex {
     return this
   }
 
+  /**
+   * Adds multiple entries to the sitemap index.
+   *
+   * @param entries - An array of sitemap filenames or `SitemapIndexEntry` objects.
+   * @returns The `SitemapIndex` instance for chaining.
+   */
   addAll(entries: (string | SitemapIndexEntry)[]): this {
     for (const entry of entries) {
       this.add(entry)
@@ -27,6 +56,11 @@ export class SitemapIndex {
     return this
   }
 
+  /**
+   * Generates the sitemap index XML content.
+   *
+   * @returns The complete XML string for the sitemap index.
+   */
   toXML(): string {
     const { baseUrl, pretty } = this.options
 
@@ -61,6 +95,9 @@ export class SitemapIndex {
     return xml
   }
 
+  /**
+   * Escapes special XML characters in a string.
+   */
   private escape(str: string): string {
     return str
       .replace(/&/g, '&amp;')

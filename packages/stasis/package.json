@@ -1,6 +1,6 @@
 {
   "name": "@gravito/stasis",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "publishConfig": {
     "access": "public"
   },
@@ -24,6 +24,8 @@
   "scripts": {
     "build": "tsup src/index.ts --format esm,cjs --dts",
     "test": "bun test",
+    "test:coverage": "bun test --coverage --coverage-threshold=80",
+    "test:ci": "bun test --coverage --coverage-threshold=80",
     "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck"
   },
   "keywords": [

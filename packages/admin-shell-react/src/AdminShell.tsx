@@ -2,6 +2,15 @@ import { Outlet } from 'react-router-dom'
 import { useAdmin } from './AdminContext'
 import { Sidebar } from './Sidebar'
 
+/**
+ * The primary layout wrapper for the Gravito Admin environment.
+ *
+ * It handles authentication checks, loading states, and provides the
+ * core UI structure including the Sidebar and Topbar.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export function AdminShell() {
   const { user, isAuthenticated, isLoading } = useAdmin()
 

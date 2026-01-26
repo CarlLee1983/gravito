@@ -1,0 +1,33 @@
+{
+    "compilerOptions": {
+        "target": "ESNext",
+        "module": "ESNext",
+        "moduleResolution": "bundler",
+        "lib": [
+            "ESNext",
+            "DOM",
+            "DOM.Iterable"
+        ],
+        "jsx": "preserve",
+        "jsxImportSource": "vue",
+        "types": [
+            "bun-types",
+            "vite/client"
+        ],
+        "strict": true,
+        "experimentalDecorators": true,
+        "emitDecoratorMetadata": true,
+        "skipLibCheck": true,
+        "esModuleInterop": true,
+        "allowSyntheticDefaultImports": true,
+        "resolveJsonModule": true,
+        "noEmit": true
+    },
+    "include": [
+        "src/**/*",
+        "src/**/*.vue"
+    ],
+    "exclude": [
+        "node_modules"
+    ]
+}

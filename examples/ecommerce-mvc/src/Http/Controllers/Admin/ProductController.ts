@@ -6,9 +6,9 @@
 
 import { DB } from '@gravito/atlas'
 import type { GravitoContext } from '@gravito/core'
-import type { InertiaService } from '@gravito/ion'
+import type { InertiaHelper } from '@gravito/ion'
 import type { SessionService } from '@gravito/pulsar'
-import { Product } from '../../../Models'
+import { Product } from '../../../models'
 import { FALSE, sql, TRUE } from '../../../utils/db'
 
 export class AdminProductController {
@@ -16,7 +16,7 @@ export class AdminProductController {
    * Product list
    */
   static async index(ctx: GravitoContext) {
-    const inertia = ctx.get('inertia') as InertiaService
+    const inertia = ctx.get('inertia') as unknown as InertiaHelper
 
     const page = parseInt(ctx.req.query('page') || '1', 10)
     const search = ctx.req.query('search') || ''
@@ -64,7 +64,7 @@ export class AdminProductController {
    * Create product form
    */
   static async create(ctx: GravitoContext) {
-    const inertia = ctx.get('inertia') as InertiaService
+    const inertia = ctx.get('inertia') as unknown as InertiaHelper
 
     const categoriesResult = await DB.raw(
       sql(`SELECT id, name FROM categories WHERE is_active = ${TRUE} ORDER BY name`)
@@ -139,7 +139,7 @@ export class AdminProductController {
    * Edit product form
    */
   static async edit(ctx: GravitoContext) {
-    const inertia = ctx.get('inertia') as InertiaService
+    const inertia = ctx.get('inertia') as unknown as InertiaHelper
 
     const id = parseInt(ctx.req.param('id') || '0', 10)
     const productResult = await DB.raw(sql('SELECT * FROM products WHERE id = ?'), [id])

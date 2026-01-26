@@ -1,5 +1,5 @@
 import type { GravitoContext, PlanetCore } from '@gravito/core'
-import type { InertiaService } from '@gravito/ion'
+import type { InertiaHelper } from '@gravito/ion'
 import { getTranslation } from '../services/I18nService'
 
 export class HomeController {
@@ -8,7 +8,7 @@ export class HomeController {
   constructor(private core: PlanetCore) {}
 
   index = async (ctx: GravitoContext) => {
-    const inertia = ctx.get('inertia') as InertiaService
+    const inertia = ctx.get('inertia') as InertiaHelper
     const locale = (ctx.get('locale') as string) || 'en'
     const t = getTranslation(locale)
 
@@ -20,7 +20,7 @@ export class HomeController {
   }
 
   about = async (ctx: GravitoContext) => {
-    const inertia = ctx.get('inertia') as InertiaService
+    const inertia = ctx.get('inertia') as InertiaHelper
     const locale = (ctx.get('locale') as string) || 'en'
     const t = getTranslation(locale)
 
@@ -32,7 +32,7 @@ export class HomeController {
   }
 
   features = async (ctx: GravitoContext) => {
-    const inertia = ctx.get('inertia') as InertiaService
+    const inertia = ctx.get('inertia') as InertiaHelper
     const locale = (ctx.get('locale') as string) || 'en'
     const t = getTranslation(locale)
 
@@ -44,7 +44,7 @@ export class HomeController {
   }
 
   integrations = async (ctx: GravitoContext) => {
-    const inertia = ctx.get('inertia') as InertiaService
+    const inertia = ctx.get('inertia') as InertiaHelper
     const locale = (ctx.get('locale') as string) || 'en'
     const t = getTranslation(locale)
 
@@ -56,7 +56,7 @@ export class HomeController {
   }
 
   privacy = async (ctx: GravitoContext) => {
-    const inertia = ctx.get('inertia') as InertiaService
+    const inertia = ctx.get('inertia') as InertiaHelper
     const locale = (ctx.get('locale') as string) || 'en'
     const t = getTranslation(locale)
 
@@ -68,7 +68,7 @@ export class HomeController {
   }
 
   terms = async (ctx: GravitoContext) => {
-    const inertia = ctx.get('inertia') as InertiaService
+    const inertia = ctx.get('inertia') as InertiaHelper
     const locale = (ctx.get('locale') as string) || 'en'
     const t = getTranslation(locale)
 
@@ -80,7 +80,7 @@ export class HomeController {
   }
 
   contact = async (ctx: GravitoContext) => {
-    const inertia = ctx.get('inertia') as InertiaService
+    const inertia = ctx.get('inertia') as InertiaHelper
     const locale = (ctx.get('locale') as string) || 'en'
     const t = getTranslation(locale)
 

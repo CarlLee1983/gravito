@@ -3,6 +3,15 @@ import { NavLink } from 'react-router-dom'
 import { useAdmin } from './AdminContext'
 import { cn } from './utils' // 稍後建立
 
+/**
+ * Sidebar component for the Admin Shell.
+ *
+ * Automatically renders navigation items based on the registered modules
+ * and filters them according to the current user's permissions.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export function Sidebar() {
   const { menu, permissions } = useAdmin()
 

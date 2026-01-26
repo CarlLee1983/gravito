@@ -1,4 +1,4 @@
-import { Controller } from '@gravito/core'
+import { Controller } from '@gravito/monolith'
 import { Product } from '../models/Product'
 import type { CreateProductRequest } from '../requests/CreateProductRequest'
 

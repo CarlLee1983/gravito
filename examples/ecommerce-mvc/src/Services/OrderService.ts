@@ -5,8 +5,8 @@
  */
 
 import { DB } from '@gravito/atlas'
-import type { ShippingAddress } from '../Models'
-import { Order, OrderItem, OrderStatus } from '../Models'
+import type { ShippingAddress } from '../models'
+import { Order, OrderItem, OrderStatus } from '../models'
 import { sql } from '../utils/db'
 
 export interface CreateOrderInput {

@@ -1,0 +1,20 @@
+import type { GravitoContext, PlanetCore } from '@gravito/core'
+import type { InertiaService } from '@gravito/ion'
+
+export class HomeController {
+  constructor(private core: PlanetCore) {}
+
+  index = async (ctx: GravitoContext) => {
+    const inertia = ctx.get('inertia') as InertiaService
+
+    return inertia.render('Home', {
+      msg: 'Hello from Gravito Vue Backend!',
+      version: this.core.config.get('APP_VERSION'),
+    })
+  }
+
+  about = async (ctx: GravitoContext) => {
+    const inertia = ctx.get('inertia') as InertiaService
+    return inertia.render('About')
+  }
+}

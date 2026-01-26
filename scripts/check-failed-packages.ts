@@ -136,10 +136,9 @@ async function diagnosePackage(pkgName: string) {
     const isAlpha = pkg.version.includes('alpha')
     const tag = isBeta ? 'beta' : isAlpha ? 'alpha' : 'latest'
 
-    const { stdout, stderr } = await execAsync(
-      `npm publish --access public --tag ${tag} --dry-run`,
-      { cwd: pkgDir }
-    )
+    const { stdout } = await execAsync(`npm publish --access public --tag ${tag} --dry-run`, {
+      cwd: pkgDir,
+    })
 
     if (stdout.includes(`+ ${pkg.name}`)) {
       console.log(`✅ dry-run 成功`)

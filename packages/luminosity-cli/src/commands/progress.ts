@@ -1,5 +1,11 @@
 import pc from 'picocolors'
 
+/**
+ * Options for the `progress` command.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface ProgressCommandOptions {
   jobId: string
   storage?: 'memory' | 'redis'

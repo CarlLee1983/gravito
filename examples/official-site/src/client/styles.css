@@ -7,22 +7,41 @@
  */
 
 @layer base {
+    :root {
+        --core-glow: #6366f1;
+        --core-glow-rgb: 99, 102, 241;
+        --bg-deep: #020305;
+        --stellar-white: #f8fafc;
+        --stellar-muted: #94a3b8;
+        
+        /* Cosmic Theme Variables */
+        --color-void: #030303;
+        --color-singularity: #00F0FF;
+        --color-event: #7000FF;
+        --color-panel: #1A1A1A;
+    }
+
     body {
         @apply antialiased text-gray-900 bg-void;
         /* 
          * Smooth Entry:
          * Removed translateY(5px) to eliminate the "pop" jump effect reported by the user.
          */
-        animation: fadeIn 0.3s ease-in-out;
+        animation: fadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        font-feature-settings: "ss01", "ss02", "cv01", "cv02";
     }
 
     @keyframes fadeIn {
         from {
             opacity: 0;
+            transform: translateY(10px);
+            filter: blur(10px);
         }
 
         to {
             opacity: 1;
+            transform: translateY(0);
+            filter: blur(0);
         }
     }
 
@@ -35,7 +54,7 @@
     /* Dark mode support needs to be handled via media query or selector in v4 if not using variant */
     @media (prefers-color-scheme: dark) {
         body {
-            @apply bg-gray-900 text-gray-100;
+            @apply bg-void text-gray-100;
         }
     }
 
@@ -98,8 +117,9 @@
 
     /* Styles specifically for INLINE code (not inside pre) */
     .prose :not(pre)>code {
-        @apply text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded font-bold border border-cyan-500/10;
-        font-size: 0.9em;
+        @apply text-cyan-400 bg-cyan-500/10 px-1.5 py-0.5 rounded font-mono border border-cyan-500/20;
+        font-size: 0.85em;
+        vertical-align: middle;
     }
 
     .prose :not(pre)>code::before,
@@ -127,6 +147,36 @@
         font-size: inherit !important;
         font-weight: inherit !important;
         font-style: inherit !important;
+    }
+
+    /* 
+     * 🌌 Singularity Paradox: Aggressive Visual Effects
+     */
+    .glitch-text {
+        mix-blend-mode: difference;
+        letter-spacing: -0.06em;
+        position: relative;
+    }
+
+    .space-grid-warp {
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        perspective: 1000px;
+        pointer-events: none;
+        background: var(--bg-deep);
+    }
+
+    .grid-warp-inner {
+        position: absolute;
+        inset: -100%;
+        background-image: 
+            linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+        background-size: 80px 80px;
+        transform: rotateX(20deg);
+        mask-image: radial-gradient(circle at center, black 0%, transparent 80%);
+        -webkit-mask-image: radial-gradient(circle at center, black 0%, transparent 80%);
     }
 
     /* 
@@ -254,7 +304,7 @@
      * Improving readability for property/type/description tables
      */
     .docs-table-wrapper {
-        @apply my-12 overflow-hidden rounded-[2.5rem] border border-white/5 bg-panel/30 backdrop-blur-2xl transition-all duration-700 hover:border-white/10;
+        @apply my-12 overflow-hidden rounded-[2rem] border border-white/5 bg-panel/30 backdrop-blur-2xl transition-all duration-700 hover:border-white/10;
         box-shadow: 0 32px 64px -16px rgba(0, 0, 0, 0.6);
     }
 
@@ -263,11 +313,11 @@
     }
 
     .docs-table th {
-        @apply border-b border-white/10 bg-white/[0.05] backdrop-blur-xl px-8 py-6 text-[10px] font-black uppercase tracking-[0.4em] text-white/40;
+        @apply border-b border-white/10 bg-white/[0.05] backdrop-blur-xl px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/40;
     }
 
     .docs-table td {
-        @apply border-b border-white/[0.04] px-8 py-8 text-[15px] leading-relaxed text-gray-400 align-top transition-all duration-500;
+        @apply border-b border-white/[0.04] px-8 py-6 text-[15px] leading-relaxed text-gray-400 align-top transition-all duration-500;
     }
 
     .docs-table tr:last-child td {
@@ -281,12 +331,12 @@
     /* Column 1: Property Name - Architectural separation */
     .docs-table td:first-child,
     .docs-table th:first-child {
-        @apply w-[30%] min-w-[200px] font-mono font-bold text-[15px] text-singularity/90 tracking-tight border-r border-white/[0.03] break-all;
+        @apply w-[25%] min-w-[180px] font-mono font-bold text-[14px] text-singularity/90 tracking-tight border-r border-white/[0.03] break-all;
     }
 
     /* Column 2: Type Definition - Technical styling */
     .docs-table .type-cell {
-        @apply w-[30%] min-w-[220px] font-mono text-[13px] text-purple-400/90 break-words;
+        @apply w-[25%] min-w-[180px] font-mono text-[13px] text-purple-400/90 break-words;
     }
 
     /* Column 3: Description */
