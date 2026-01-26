@@ -1,4 +1,4 @@
-import { type ModelStatic, SchemaRegistry } from '@gravito/atlas'
+import { getRelationships, type Model, type ModelStatic, SchemaRegistry } from '@gravito/atlas'
 import type { GraphQLSchema } from 'graphql'
 import { createSchema } from 'graphql-yoga'
 
@@ -68,10 +68,11 @@ function mapAtlasTypeToGraphQL(type: string): string {
  * 2.  Mapping SQL column types to GraphQL types.
  * 3.  Generating a GraphQL Object Type for each model.
  * 4.  Creating basic `Query` operations (`get<Model>` and `list<Model>s`) with resolvers.
+ * 5.  Creating `Mutation` operations (`create`, `update`, `delete`) with input types and resolvers.
  *
  * @remarks
  * This is the implementation of Phase 3 (Atlas Integration) of the GraphQL RFC.
- * It currently supports schema discovery, type mapping, and basic read operations.
+ * It currently supports schema discovery, type mapping, basic read operations, and CRUD mutations.
  *
  * @param options - Configuration options containing the models to expose and optional custom resolvers.
  * @returns A promise resolving to a `GraphQLSchema` instance compatible with GraphQL Yoga.
@@ -110,7 +111,9 @@ export async function createAtlasSchema(options: AtlasGraphQLOptions): Promise<G
       // We pass connection if defined, otherwise default
       const schema = await registry.get(table, model.connection)
 
-      const fields: string[] = []
+      const outputFields: string[] = []
+      const inputFields: string[] = []
+      const updateFields: string[] = []
 
       for (const [colName, colDef] of schema.columns) {
         // Skip hidden fields (needs Model metadata, for now strict schema mapping)
@@ -129,15 +132,64 @@ export async function createAtlasSchema(options: AtlasGraphQLOptions): Promise<G
           gqlType = mapAtlasTypeToGraphQL(colDef.type)
         }
 
-        const outputRequired = colDef.nullable ? '' : '!'
+        const isAutoManaged =
+          colName === model.primaryKey || colName === 'created_at' || colName === 'updated_at'
 
-        fields.push(`${colName}: ${gqlType}${outputRequired}`)
+        const outputRequired = colDef.nullable ? '' : '!'
+        const inputRequired = colDef.nullable ? '' : '!'
+
+        outputFields.push(`${colName}: ${gqlType}${outputRequired}`)
+
+        if (!isAutoManaged) {
+          // Create Input: Respect database nullability
+          inputFields.push(`${colName}: ${gqlType}${inputRequired}`)
+          // Update Input: All fields optional
+          updateFields.push(`${colName}: ${gqlType}`)
+        }
       }
 
-      // 2. Generate Type Definition
+      // Relationships
+      const relations = getRelationships(model as unknown as typeof Model)
+      for (const [relName, meta] of relations) {
+        const RelatedClass = meta.related?.()
+        if (!RelatedClass) continue
+
+        const relatedName = RelatedClass.name
+        // Check if related model is exposed in the schema
+        const isExposed = options.models.some((m) => m.name === relatedName)
+        if (!isExposed) continue
+
+        if (meta.type === 'hasMany' || meta.type === 'belongsToMany' || meta.type === 'morphMany') {
+          outputFields.push(`${relName}: [${relatedName}]`)
+        } else {
+          outputFields.push(`${relName}: ${relatedName}`)
+        }
+
+        // Add resolver to prevent default resolver from calling the relationship function
+        // biome-ignore lint/suspicious/noExplicitAny: Generic resolver
+        resolvers[modelName] = resolvers[modelName] || {}
+        // biome-ignore lint/suspicious/noExplicitAny: Generic resolver
+        resolvers[modelName][relName] = async (parent: any) => {
+          return await parent[relName]
+        }
+      }
+
+      // 2. Generate Type Definitions
       typeDefs.push(`
         type ${modelName} {
-          ${fields.join('\n          ')}
+          ${outputFields.join('\n          ')}
+        }
+      `)
+
+      typeDefs.push(`
+        input Create${modelName}Input {
+          ${inputFields.join('\n          ')}
+        }
+      `)
+
+      typeDefs.push(`
+        input Update${modelName}Input {
+          ${updateFields.join('\n          ')}
         }
       `)
 
@@ -149,16 +201,70 @@ export async function createAtlasSchema(options: AtlasGraphQLOptions): Promise<G
         }
       `)
 
+      typeDefs.push(`
+        extend type Mutation {
+          create${modelName}(input: Create${modelName}Input!): ${modelName}
+          update${modelName}(id: ID!, input: Update${modelName}Input!): ${modelName}
+          delete${modelName}(id: ID!): Boolean
+        }
+      `)
+
       // 4. Generate Resolvers
+
+      // Query: Find
       // biome-ignore lint/suspicious/noExplicitAny: Generic resolver args
       resolvers.Query[`${modelName.toLowerCase()}`] = async (_: any, { id }: { id: any }) => {
         // biome-ignore lint/suspicious/noExplicitAny: Missing types in ModelStatic
         return (model as any).find(id)
       }
 
+      // Query: List
       resolvers.Query[`${modelName.toLowerCase()}s`] = async () => {
         // biome-ignore lint/suspicious/noExplicitAny: Missing types in ModelStatic
         return (model as any).all()
+      }
+
+      // Mutation: Create
+      // biome-ignore lint/suspicious/noExplicitAny: Generic resolver args
+      resolvers.Mutation[`create${modelName}`] = async (_: any, { input }: { input: any }) => {
+        // biome-ignore lint/suspicious/noExplicitAny: Missing types in ModelStatic
+        return (model as any).create(input)
+      }
+
+      // Mutation: Update
+      resolvers.Mutation[`update${modelName}`] = async (
+        // biome-ignore lint/suspicious/noExplicitAny: Generic resolver args
+        _: any,
+        // biome-ignore lint/suspicious/noExplicitAny: Generic input
+        { id, input }: { id: any; input: any }
+      ) => {
+        // biome-ignore lint/suspicious/noExplicitAny: Missing types in ModelStatic
+        const instance = await (model as any).find(id)
+        if (!instance) {
+          throw new Error(`${modelName} with ID ${id} not found`)
+        }
+        // biome-ignore lint/suspicious/noExplicitAny: Missing types in Model instance
+        if (typeof instance.fill === 'function') {
+          instance.fill(input)
+        } else {
+          for (const [key, value] of Object.entries(input)) {
+            instance[key] = value
+          }
+        }
+        await instance.save()
+        return instance
+      }
+
+      // Mutation: Delete
+      // biome-ignore lint/suspicious/noExplicitAny: Generic resolver args
+      resolvers.Mutation[`delete${modelName}`] = async (_: any, { id }: { id: any }) => {
+        // biome-ignore lint/suspicious/noExplicitAny: Missing types in ModelStatic
+        const instance = await (model as any).find(id)
+        if (!instance) {
+          return false
+        }
+        await instance.delete()
+        return true
       }
     } catch (error) {
       console.warn(`[OrbitGraphQL] Failed to generate schema for model ${modelName}:`, error)
