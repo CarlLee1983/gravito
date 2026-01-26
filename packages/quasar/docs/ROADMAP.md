@@ -88,6 +88,18 @@ Quasar 是 Gravito 生態系統中的通用監控代理，負責：
   - [ ] **Webhook Notifications**：支援任務失敗或佇列積壓時，由 Agent 直接觸發外部 Webhook。
   - [ ] **Plug-and-Play Middleware**：提供中間件支援，讓開發者能在指標送出前進行攔截或二次加工。
 
+### 5.4 極限效能優化 (Extreme Performance)
+- **目標**：在高吞吐量的任務環境中，儘可能降低序列化開銷與網路頻寬佔用。
+- **改進項目**：
+  - [ ] **二進位序列化協定 (Binary Protocol)**：
+    - [x] **MessagePack** 支援 (已完成核心實作)。
+    - [ ] **CBOR (Concise Binary Object Representation)** 整合：提供比 JSON 更緊湊且解析更快的格式。
+    - [ ] **Protobuf (Protocol Buffers)** 選項：針對固定結構指標提供最極致的體積壓縮。
+  - [ ] **智慧壓縮 (Smart Compression)**：
+    - [ ] 針對大型 Payload (如巨大的錯誤堆疊) 自動啟用 **Zstd** 或 **Brotli** 壓縮。
+    - [ ] 實作動態閾值：僅在節省的頻寬大於 CPU 壓縮成本時啟用。
+  - [ ] **Zero-allocation Logging**：優化內部日誌快取區，減少高併發下的 GC 壓力。
+
 ## 改進重點摘要
 
 ### 高優先級
