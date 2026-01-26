@@ -72,4 +72,74 @@ describe('@gravito/beam', () => {
       expect(client.api).toBeDefined()
     })
   })
+
+  describe('Backward Compatibility', () => {
+    test('existing createBeam usage should work unchanged', () => {
+      const client = createBeam<TestAppType>('http://localhost:3000')
+      expect(client).toBeDefined()
+      expect(client.hello).toBeDefined()
+    })
+
+    test('createGravitoClient alias should work unchanged', () => {
+      const client = createGravitoClient<TestAppType>('http://localhost:3000')
+      expect(client).toBeDefined()
+      expect(client.hello).toBeDefined()
+    })
+
+    test('should work without any options', () => {
+      const client = createBeam<TestAppType>('http://localhost:3000')
+      expect(client).toBeDefined()
+    })
+
+    test('should work with only headers option', () => {
+      const client = createBeam<TestAppType>('http://localhost:3000', {
+        headers: { 'X-Custom': 'value' },
+      })
+      expect(client).toBeDefined()
+    })
+
+    test('should work with dynamic headers function', () => {
+      const client = createBeam<TestAppType>('http://localhost:3000', {
+        headers: () => ({ 'X-Token': 'abc123' }),
+      })
+      expect(client).toBeDefined()
+    })
+
+    test('new options should be optional', () => {
+      // 測試新選項是可選的，不傳入時不會出錯
+      const client1 = createBeam<TestAppType>('http://localhost:3000', {
+        timeout: 5000,
+      })
+      expect(client1).toBeDefined()
+
+      const client2 = createBeam<TestAppType>('http://localhost:3000', {
+        retry: { count: 3 },
+      })
+      expect(client2).toBeDefined()
+
+      const client3 = createBeam<TestAppType>('http://localhost:3000', {
+        onRequest: async (config) => config,
+      })
+      expect(client3).toBeDefined()
+
+      const client4 = createBeam<TestAppType>('http://localhost:3000', {
+        onResponse: async (response) => response,
+      })
+      expect(client4).toBeDefined()
+
+      const client5 = createBeam<TestAppType>('http://localhost:3000', {
+        onError: async () => {},
+      })
+      expect(client5).toBeDefined()
+    })
+
+    test('should work with combination of old and new options', () => {
+      const client = createBeam<TestAppType>('http://localhost:3000', {
+        headers: { 'X-Custom': 'value' },
+        timeout: 5000,
+        retry: { count: 3 },
+      })
+      expect(client).toBeDefined()
+    })
+  })
 })
