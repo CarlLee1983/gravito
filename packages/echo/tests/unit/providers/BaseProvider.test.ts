@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test'
-import { BaseProvider } from '../src/providers/base/BaseProvider'
-import { getHeader, getHeaders, hasHeader } from '../src/providers/base/HeaderUtils'
-import type { WebhookVerificationResult } from '../src/types'
+import { BaseProvider } from '../../../src/providers/base/BaseProvider'
+import { getHeader, getHeaders, hasHeader } from '../../../src/providers/base/HeaderUtils'
+import type { WebhookVerificationResult } from '../../../src/types'
 
 describe('HeaderUtils', () => {
   describe('getHeader', () => {
@@ -47,7 +47,6 @@ describe('HeaderUtils', () => {
   })
 })
 
-// Concrete implementation for testing abstract class
 class TestProvider extends BaseProvider {
   readonly name = 'test'
 
