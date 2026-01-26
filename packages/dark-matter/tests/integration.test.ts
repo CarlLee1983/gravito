@@ -61,6 +61,31 @@ describeIntegration('Integration Tests', () => {
 
       expect(result.deletedCount).toBeGreaterThan(0)
     })
+
+    it('should perform bulkWrite', async () => {
+      await Mongo.collection('bulk_items').insertMany([
+        { _id: '1', status: 'A' },
+        { _id: '2', status: 'B' },
+      ])
+
+      const result = await Mongo.collection('bulk_items').bulkWrite([
+        { insertOne: { document: { _id: '3', status: 'C' } } },
+        { updateOne: { filter: { _id: '1' }, update: { $set: { status: 'X' } } } },
+        { deleteOne: { filter: { _id: '2' } } },
+      ])
+
+      expect(result.insertedCount).toBe(1)
+      expect(result.modifiedCount).toBe(1)
+      expect(result.deletedCount).toBe(1)
+
+      const items = await Mongo.collection('bulk_items').get()
+      expect(items.length).toBe(2)
+      expect(items.find((i) => i._id === '3')).toBeDefined()
+      expect(items.find((i) => i._id === '1')?.status).toBe('X')
+      expect(items.find((i) => i._id === '2')).toBeUndefined()
+
+      await Mongo.collection('bulk_items').deleteMany()
+    })
   })
 
   describe('Aggregation', () => {

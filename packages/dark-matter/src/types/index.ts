@@ -39,6 +39,22 @@ export interface MongoConfig {
 }
 
 /**
+ * Transaction options
+ */
+export interface TransactionOptions {
+  readConcern?: { level: 'local' | 'majority' | 'linearizable' | 'snapshot' }
+  writeConcern?: { w: number | 'majority'; j?: boolean; wtimeout?: number }
+  readPreference?: 'primary' | 'primaryPreferred' | 'secondary' | 'secondaryPreferred' | 'nearest'
+}
+
+/**
+ * MongoDB session wrapper
+ */
+export interface MongoSession {
+  collection<T = Document>(name: string): MongoCollectionContract<T>
+}
+
+/**
  * Retry configuration for connection
  */
 export interface RetryConfig {
@@ -145,6 +161,30 @@ export interface DeleteResult {
   acknowledged: boolean
 }
 
+/**
+ * Bulk write operation
+ */
+export interface BulkWriteOperation<T = Document> {
+  insertOne?: { document: Partial<T> }
+  updateOne?: { filter: FilterDocument; update: UpdateDocument; upsert?: boolean }
+  updateMany?: { filter: FilterDocument; update: UpdateDocument; upsert?: boolean }
+  deleteOne?: { filter: FilterDocument }
+  deleteMany?: { filter: FilterDocument }
+  replaceOne?: { filter: FilterDocument; replacement: Partial<T>; upsert?: boolean }
+}
+
+/**
+ * Bulk write result
+ */
+export interface BulkWriteResult {
+  insertedCount: number
+  matchedCount: number
+  modifiedCount: number
+  deletedCount: number
+  upsertedCount: number
+  acknowledged: boolean
+}
+
 // ============================================================================
 // Contract Interfaces
 // ============================================================================
@@ -194,6 +234,7 @@ export interface MongoCollectionContract<T = Document> {
   updateMany(update: UpdateDocument): Promise<UpdateResult>
   delete(): Promise<DeleteResult>
   deleteMany(): Promise<DeleteResult>
+  bulkWrite(operations: BulkWriteOperation<T>[]): Promise<BulkWriteResult>
 
   // Aggregation
   aggregate(): MongoAggregateContract<T>
@@ -250,6 +291,10 @@ export interface MongoClientContract {
     latencyMs: number | null
     serverInfo: Record<string, unknown> | null
   }>
+  withTransaction<T>(
+    callback: (session: MongoSession) => Promise<T>,
+    options?: TransactionOptions
+  ): Promise<T>
   database(name?: string): MongoDatabaseContract
   collection<T = Document>(name: string): MongoCollectionContract<T>
 }

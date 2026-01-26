@@ -10,7 +10,9 @@ import type {
   MongoCollectionContract,
   MongoConfig,
   MongoDatabaseContract,
+  MongoSession,
   RetryConfig,
+  TransactionOptions,
 } from './types'
 
 /**
@@ -159,6 +161,37 @@ export class MongoClient implements MongoClientContract {
   }
 
   /**
+   * Execute a transaction.
+   */
+  async withTransaction<T>(
+    callback: (session: MongoSession) => Promise<T>,
+    options?: TransactionOptions
+  ): Promise<T> {
+    const client = this.getClient()
+    const session = client.startSession()
+
+    try {
+      let result: T | undefined
+      await session.withTransaction(async () => {
+        const sessionWrapper: MongoSession = {
+          collection: <U = Document>(name: string) => {
+            const nativeCollection = this.getDatabase().collection(name)
+            return new MongoQueryBuilder<U>(
+              nativeCollection as unknown as MongoNativeCollection,
+              name,
+              session // Pass session to builder
+            )
+          },
+        }
+        result = await callback(sessionWrapper)
+      }, options)
+      return result!
+    } finally {
+      await session.endSession()
+    }
+  }
+
+  /**
    * Get a database instance.
    *
    * @param name - The name of the database (optional). Defaults to the connected database.
@@ -294,19 +327,26 @@ interface MongoClientOptions {
 }
 
 // biome-ignore lint/suspicious/noExplicitAny: MongoDB native client has complex types
-interface NativeMongoClient extends Record<string, any> {
+interface NativeMongoClient {
   connect(): Promise<void>
   close(): Promise<void>
   db(name?: string): NativeMongoDatabase
+  startSession(): NativeMongoSession
+}
+
+interface NativeMongoSession {
+  withTransaction(callback: () => Promise<void>, options?: TransactionOptions): Promise<void>
+  endSession(): Promise<void>
 }
 
 // biome-ignore lint/suspicious/noExplicitAny: MongoDB native database has complex types
-interface NativeMongoDatabase extends Record<string, any> {
+interface NativeMongoDatabase {
   collection(name: string): NativeMongoCollection
   listCollections(): { toArray(): Promise<Array<{ name: string }>> }
   dropCollection(name: string): Promise<boolean>
   createCollection(name: string): Promise<void>
+  command(command: Record<string, unknown>): Promise<Record<string, unknown>>
 }
 
 // biome-ignore lint/suspicious/noExplicitAny: MongoDB native collection has complex types
-type NativeMongoCollection = Record<string, any>
+type NativeMongoCollection = MongoNativeCollection

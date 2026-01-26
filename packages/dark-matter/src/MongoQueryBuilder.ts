@@ -4,6 +4,8 @@
  */
 
 import type {
+  BulkWriteOperation,
+  BulkWriteResult,
   DeleteResult,
   Document,
   FilterDocument,
@@ -19,7 +21,32 @@ import type {
 
 /**
  * MongoDB Query Builder
- * Provides a fluent interface for MongoDB queries
+ *
+ * Provides a Laravel-style Fluent API for MongoDB query operations.
+ * Supports chaining, condition filtering, sorting, pagination, etc.
+ *
+ * @typeParam T - Document type, defaults to generic Document
+ *
+ * @example Basic Query
+ * ```typescript
+ * const users = await Mongo.collection<User>('users')
+ *   .where('status', 'active')
+ *   .orderBy('createdAt', 'desc')
+ *   .limit(10)
+ *   .get()
+ * ```
+ *
+ * @example Composite Conditions
+ * ```typescript
+ * const results = await Mongo.collection('orders')
+ *   .where('status', 'pending')
+ *   .where('amount', '>', 100)
+ *   .whereIn('category', ['electronics', 'clothing'])
+ *   .get()
+ * ```
+ *
+ * @public
+ * @since 1.0.0
  */
 export class MongoQueryBuilder<T = Document> implements MongoCollectionContract<T> {
   private static ObjectIdCtor: MongoObjectIdConstructor | null = null
@@ -32,7 +59,8 @@ export class MongoQueryBuilder<T = Document> implements MongoCollectionContract<
 
   constructor(
     private readonly nativeCollection: MongoNativeCollection,
-    private readonly collectionName: string
+    private readonly collectionName: string,
+    private readonly session?: unknown
   ) {}
 
   // ============================================================================
@@ -45,7 +73,18 @@ export class MongoQueryBuilder<T = Document> implements MongoCollectionContract<
    * @param field - The field to filter on.
    * @param operatorOrValue - The operator (e.g., '>', '=', 'in') or the value for equality check.
    * @param value - The value if an operator was provided.
-   * @returns The query builder instance.
+   * @returns The query builder instance (supports chaining).
+   *
+   * @example Equality comparison
+   * ```typescript
+   * builder.where('name', 'John')
+   * ```
+   *
+   * @example Using operator
+   * ```typescript
+   * builder.where('age', '>', 18)
+   * builder.where('status', '!=', 'deleted')
+   * ```
    */
   where(field: string, operatorOrValue: FilterOperator | unknown, value?: unknown): this {
     if (value === undefined) {
@@ -266,6 +305,7 @@ export class MongoQueryBuilder<T = Document> implements MongoCollectionContract<
       sort: Object.keys(this.sortSpec).length > 0 ? this.sortSpec : undefined,
       limit: this.limitCount,
       skip: this.skipCount,
+      session: this.session,
     })
     return (await cursor.toArray()) as T[]
   }
@@ -279,6 +319,7 @@ export class MongoQueryBuilder<T = Document> implements MongoCollectionContract<
     const result = await this.nativeCollection.findOne(this.toFilter(), {
       projection: Object.keys(this.projection).length > 0 ? this.projection : undefined,
       sort: Object.keys(this.sortSpec).length > 0 ? this.sortSpec : undefined,
+      session: this.session,
     })
     return result as T | null
   }
@@ -293,7 +334,10 @@ export class MongoQueryBuilder<T = Document> implements MongoCollectionContract<
     const ObjectId = await this.getObjectId()
     const result = await this.nativeCollection.findOne(
       { _id: new ObjectId(id) },
-      { projection: Object.keys(this.projection).length > 0 ? this.projection : undefined }
+      {
+        projection: Object.keys(this.projection).length > 0 ? this.projection : undefined,
+        session: this.session,
+      }
     )
     return result as T | null
   }
@@ -304,7 +348,9 @@ export class MongoQueryBuilder<T = Document> implements MongoCollectionContract<
    * @returns A promise resolving to the count.
    */
   async count(): Promise<number> {
-    return await this.nativeCollection.countDocuments(this.toFilter())
+    return await this.nativeCollection.countDocuments(this.toFilter(), {
+      session: this.session,
+    })
   }
 
   /**
@@ -313,7 +359,10 @@ export class MongoQueryBuilder<T = Document> implements MongoCollectionContract<
    * @returns A promise resolving to true if any document exists.
    */
   async exists(): Promise<boolean> {
-    const count = await this.nativeCollection.countDocuments(this.toFilter(), { limit: 1 })
+    const count = await this.nativeCollection.countDocuments(this.toFilter(), {
+      limit: 1,
+      session: this.session,
+    })
     return count > 0
   }
 
@@ -324,7 +373,9 @@ export class MongoQueryBuilder<T = Document> implements MongoCollectionContract<
    * @returns A promise resolving to an array of distinct values.
    */
   async distinct(field: string): Promise<unknown[]> {
-    return await this.nativeCollection.distinct(field, this.toFilter())
+    return await this.nativeCollection.distinct(field, this.toFilter(), {
+      session: this.session,
+    })
   }
 
   // ============================================================================
@@ -338,7 +389,9 @@ export class MongoQueryBuilder<T = Document> implements MongoCollectionContract<
    * @returns A promise resolving to the insert result.
    */
   async insert(document: Partial<T>): Promise<InsertResult> {
-    const result = await this.nativeCollection.insertOne(document as MongoDocument)
+    const result = await this.nativeCollection.insertOne(document as MongoDocument, {
+      session: this.session,
+    })
     return {
       insertedId: result.insertedId.toString(),
       acknowledged: result.acknowledged,
@@ -352,7 +405,9 @@ export class MongoQueryBuilder<T = Document> implements MongoCollectionContract<
    * @returns A promise resolving to the insert many result.
    */
   async insertMany(documents: Partial<T>[]): Promise<InsertManyResult> {
-    const result = await this.nativeCollection.insertMany(documents as MongoDocument[])
+    const result = await this.nativeCollection.insertMany(documents as MongoDocument[], {
+      session: this.session,
+    })
     return {
       insertedIds: Object.values(result.insertedIds).map((id) => id.toString()),
       insertedCount: result.insertedCount,
@@ -368,7 +423,9 @@ export class MongoQueryBuilder<T = Document> implements MongoCollectionContract<
    */
   async update(update: UpdateDocument): Promise<UpdateResult> {
     const updateDoc = this.normalizeUpdate(update)
-    const result = await this.nativeCollection.updateOne(this.toFilter(), updateDoc)
+    const result = await this.nativeCollection.updateOne(this.toFilter(), updateDoc, {
+      session: this.session,
+    })
     return {
       matchedCount: result.matchedCount,
       modifiedCount: result.modifiedCount,
@@ -385,7 +442,9 @@ export class MongoQueryBuilder<T = Document> implements MongoCollectionContract<
    */
   async updateMany(update: UpdateDocument): Promise<UpdateResult> {
     const updateDoc = this.normalizeUpdate(update)
-    const result = await this.nativeCollection.updateMany(this.toFilter(), updateDoc)
+    const result = await this.nativeCollection.updateMany(this.toFilter(), updateDoc, {
+      session: this.session,
+    })
     return {
       matchedCount: result.matchedCount,
       modifiedCount: result.modifiedCount,
@@ -400,7 +459,9 @@ export class MongoQueryBuilder<T = Document> implements MongoCollectionContract<
    * @returns A promise resolving to the delete result.
    */
   async delete(): Promise<DeleteResult> {
-    const result = await this.nativeCollection.deleteOne(this.toFilter())
+    const result = await this.nativeCollection.deleteOne(this.toFilter(), {
+      session: this.session,
+    })
     return {
       deletedCount: result.deletedCount,
       acknowledged: result.acknowledged,
@@ -413,9 +474,32 @@ export class MongoQueryBuilder<T = Document> implements MongoCollectionContract<
    * @returns A promise resolving to the delete result.
    */
   async deleteMany(): Promise<DeleteResult> {
-    const result = await this.nativeCollection.deleteMany(this.toFilter())
+    const result = await this.nativeCollection.deleteMany(this.toFilter(), {
+      session: this.session,
+    })
     return {
       deletedCount: result.deletedCount,
+      acknowledged: result.acknowledged,
+    }
+  }
+
+  /**
+   * Execute bulk write operations.
+   *
+   * @param operations - The bulk write operations to execute.
+   * @returns A promise resolving to the bulk write result.
+   */
+  async bulkWrite(operations: BulkWriteOperation<T>[]): Promise<BulkWriteResult> {
+    const result = (await this.nativeCollection.bulkWrite(operations as unknown[], {
+      session: this.session,
+    })) as BulkWriteResult
+
+    return {
+      insertedCount: result.insertedCount,
+      matchedCount: result.matchedCount,
+      modifiedCount: result.modifiedCount,
+      deletedCount: result.deletedCount,
+      upsertedCount: result.upsertedCount,
       acknowledged: result.acknowledged,
     }
   }
@@ -467,7 +551,11 @@ export class MongoQueryBuilder<T = Document> implements MongoCollectionContract<
    * @returns A new independent instance of the query builder.
    */
   clone(): MongoCollectionContract<T> {
-    const cloned = new MongoQueryBuilder<T>(this.nativeCollection, this.collectionName)
+    const cloned = new MongoQueryBuilder<T>(
+      this.nativeCollection,
+      this.collectionName,
+      this.session
+    )
     cloned.filters = { ...this.filters }
     cloned.orFilters = [...this.orFilters]
     cloned.projection = { ...this.projection }
@@ -627,22 +715,47 @@ export class MongoAggregateBuilder<T = Document> implements MongoAggregateContra
  * @public
  * @since 3.0.0
  */
-export interface MongoNativeCollection extends Record<string, any> {
+export interface MongoNativeCollection {
   find(filter: FilterDocument, options?: Record<string, unknown>): MongoCursor
   findOne(filter: FilterDocument, options?: Record<string, unknown>): Promise<unknown>
-  insertOne(doc: MongoDocument): Promise<{ insertedId: MongoObjectId; acknowledged: boolean }>
-  insertMany(docs: MongoDocument[]): Promise<{
+  insertOne(
+    doc: MongoDocument,
+    options?: Record<string, unknown>
+  ): Promise<{ insertedId: MongoObjectId; acknowledged: boolean }>
+  insertMany(
+    docs: MongoDocument[],
+    options?: Record<string, unknown>
+  ): Promise<{
     insertedIds: Record<number, MongoObjectId>
     insertedCount: number
     acknowledged: boolean
   }>
-  updateOne(filter: FilterDocument, update: UpdateDocument): Promise<MongoUpdateResult>
-  updateMany(filter: FilterDocument, update: UpdateDocument): Promise<MongoUpdateResult>
-  deleteOne(filter: FilterDocument): Promise<{ deletedCount: number; acknowledged: boolean }>
-  deleteMany(filter: FilterDocument): Promise<{ deletedCount: number; acknowledged: boolean }>
+  updateOne(
+    filter: FilterDocument,
+    update: UpdateDocument,
+    options?: Record<string, unknown>
+  ): Promise<MongoUpdateResult>
+  updateMany(
+    filter: FilterDocument,
+    update: UpdateDocument,
+    options?: Record<string, unknown>
+  ): Promise<MongoUpdateResult>
+  deleteOne(
+    filter: FilterDocument,
+    options?: Record<string, unknown>
+  ): Promise<{ deletedCount: number; acknowledged: boolean }>
+  deleteMany(
+    filter: FilterDocument,
+    options?: Record<string, unknown>
+  ): Promise<{ deletedCount: number; acknowledged: boolean }>
   countDocuments(filter: FilterDocument, options?: Record<string, unknown>): Promise<number>
-  distinct(field: string, filter: FilterDocument): Promise<unknown[]>
+  distinct(
+    field: string,
+    filter: FilterDocument,
+    options?: Record<string, unknown>
+  ): Promise<unknown[]>
   aggregate(pipeline: Record<string, unknown>[]): MongoCursor
+  bulkWrite(operations: unknown[], options?: Record<string, unknown>): Promise<unknown>
 }
 
 interface MongoCursor {
