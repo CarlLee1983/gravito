@@ -15,8 +15,8 @@
   "scripts": {
     "build": "bun run build.ts",
     "test": "bun test",
-    "test:coverage": "bun test --coverage --coverage-threshold=80",
-    "test:ci": "bun test --coverage --coverage-threshold=80",
+    "test:coverage": "bun test --coverage --coverage-reporter=lcov && bun scripts/coverage-report.ts",
+    "test:ci": "bun test --coverage --coverage-reporter=lcov && bun scripts/coverage-report.ts",
     "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck"
   },
   "dependencies": {

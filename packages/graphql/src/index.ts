@@ -18,7 +18,15 @@ interface BunServerLike {
 }
 
 /**
- * Custom Error for GraphQL Configuration issues
+ * Custom error thrown when the GraphQL Orbit encounters invalid configuration.
+ *
+ * This error typically occurs during the installation phase if the schema cannot be resolved
+ * from the file system (when using Bun) or if no schema is provided via config/container.
+ *
+ * @example
+ * ```typescript
+ * throw new GraphQLConfigError('Schema file not found');
+ * ```
  */
 export class GraphQLConfigError extends Error {
   constructor(message: string) {
@@ -28,20 +36,33 @@ export class GraphQLConfigError extends Error {
 }
 
 /**
- * GraphQL Context, containing Yoga initial context and Gravito extension.
+ * Extended GraphQL execution context including Gravito-specific properties.
  *
- * Note: gravito is injected via the second argument of yoga.fetch(),
- * not created in the context function of createYoga.
+ * This interface bridges the gap between GraphQL Yoga's standard context and
+ * the Gravito ecosystem, allowing resolvers to access core services.
+ *
+ * @remarks
+ * The `gravito` property is injected via the second argument of `yoga.fetch()`,
+ * ensuring it's available for every request processed by the Orbit.
  */
 export interface GraphQLContext extends YogaInitialContext {
-  /** Gravito HTTP Context, accessible for req/res/services etc. */
+  /**
+   * Gravito HTTP Context containing request/response objects and service container.
+   * Use this to access services like Auth, Database, or Logger within resolvers.
+   */
   gravito: GravitoContext
-  /** DataLoaders injected via config */
+  /**
+   * Per-request DataLoaders for efficient batch data fetching.
+   * Populated only if `dataLoaders` factory is defined in the config.
+   */
   loaders?: Record<string, unknown>
 }
 
 /**
- * CORS Configuration
+ * Configuration options for Cross-Origin Resource Sharing (CORS).
+ *
+ * Defines how the GraphQL server should handle requests from different origins,
+ * essential for securing APIs consumed by browsers.
  */
 export interface CorsConfig {
   origin?: string | string[]
@@ -53,109 +74,151 @@ export interface CorsConfig {
 }
 
 /**
- * Configuration for the GraphQL orbit.
- * @public
+ * Comprehensive configuration for the OrbitGraphQL module.
+ *
+ * Controls all aspects of the GraphQL server, including schema resolution,
+ * security limits, performance caching, and subscription handling.
+ *
+ * @example
+ * ```typescript
+ * const config: GraphQLConfig = {
+ *   path: '/api/graphql',
+ *   schema: mySchema,
+ *   security: { depthLimit: 5 },
+ *   graphiql: process.env.NODE_ENV === 'development'
+ * };
+ * ```
  */
 export interface GraphQLConfig {
   /**
-   * Optional pre-built GraphQLSchema. If not provided, the orbit will
-   * attempt to resolve 'GRAPHQL_SCHEMA' from the container or config.
+   * The GraphQL schema definition.
    *
-   * If using Bun, this can also be a string path to a .graphql file.
+   * If provided as a string (Bun only), it treats it as a file path to load.
+   * If omitted, the Orbit attempts to resolve 'GRAPHQL_SCHEMA' from the Gravito container.
    */
   schema?: GraphQLSchema | string
   /**
-   * The URL path where the GraphQL endpoint will be mounted.
-   * Default: '/graphql'
+   * The HTTP path where the GraphQL endpoint will be mounted.
+   * @default '/graphql'
    */
   path?: string
   /**
-   * Enable GraphiQL
+   * Controls the availability of the GraphiQL IDE.
+   * Useful to disable in production for security.
    * @default true
    */
   graphiql?: boolean
   /**
-   * CORS Configuration
+   * CORS settings to control browser access policies.
+   * Can be a boolean to enable/disable defaults, or a detailed config object.
    */
   cors?: CorsConfig | boolean
   /**
-   * Yoga Plugins array
+   * Array of GraphQL Yoga plugins to extend functionality.
+   * Use this to add custom behaviors like logging, tracing, or third-party extensions.
    */
   plugins?: Plugin[]
   /**
-   * Custom error formatting function
+   * Custom error formatter to sanitize or transform errors before sending to client.
+   * Useful for hiding implementation details or adhering to specific error specs.
    */
   formatError?: (error: GraphQLError, context: GraphQLContext) => GraphQLFormattedError
   /**
-   * Whether to mask error details in production
+   * Determines if error stack traces and internal details should be masked.
+   * Recommended to be `true` in production to prevent information leakage.
    * @default true
    */
   maskErrors?: boolean
   /**
-   * Require authentication for all GraphQL requests
+   * Enforces authentication for all GraphQL operations.
+   * If true, checks Gravito's Auth service before executing any query.
    * @default false
    */
   requireAuth?: boolean
   /**
-   * Custom handler for authentication failure
+   * Custom response handler when authentication fails.
+   * Allows returning specific HTTP status codes or JSON error responses.
    */
   onAuthFailure?: (context: GraphQLContext) => Response | undefined
   /**
-   * Subscription Configuration (WebSocket)
+   * Configuration for real-time GraphQL Subscriptions over WebSocket.
    */
   subscriptions?: {
-    /** Whether to enable subscriptions @default false */
+    /**
+     * Enables WebSocket listener for subscriptions.
+     * @default false
+     */
     enabled?: boolean
-    /** WebSocket path @default '/graphql/ws' */
+    /**
+     * The path for the WebSocket endpoint.
+     * @default '/graphql/ws'
+     */
     path?: string
   }
   /**
-   * Security Configurations
+   * Security constraints to protect against malicious queries.
    */
   security?: {
-    /** Max Query Depth @default undefined (no limit) */
+    /**
+     * Maximum allowed depth of a query selection set.
+     * Prevents deep nesting attacks.
+     * @default undefined (unlimited)
+     */
     depthLimit?: number
-    /** Max Query Complexity @default undefined (no limit) */
+    /**
+     * Maximum allowed complexity score for a query.
+     * Prevents resource exhaustion attacks.
+     * @default undefined (unlimited)
+     */
     complexityLimit?: number
   }
   /**
-   * Performance Configurations
+   * Performance optimization settings.
    */
   performance?: {
-    /** Response Cache Config */
+    /**
+     * Response caching configuration.
+     * Caches full query results to improve throughput for read-heavy APIs.
+     */
     cache?: {
-      /** Whether to enable response caching @default false */
+      /** @default false */
       enabled?: boolean
-      /** Cache TTL in milliseconds @default 2000 */
+      /** Cache duration in milliseconds. @default 2000 */
       ttl?: number
-      /** Whether to include the HTTP Authorization header in the cache key @default false */
+      /** Whether to cache responses per user (Authorization header). @default false */
       includeAuthorization?: boolean
     }
-    /** Automatic Persisted Queries Config */
+    /**
+     * Automatic Persisted Queries (APQ) configuration.
+     * Reduces network payload size by sending query hashes instead of full text.
+     */
     persistedQueries?: {
-      /** Whether to enable APQ @default false */
+      /** @default false */
       enabled?: boolean
       /**
-       * Store for persisted operations.
-       * Can be a Map, or an object with get/set methods (like Redis client wrapper).
-       * Defaults to in-memory Map if not provided.
+       * Custom storage for persisted queries (e.g., Redis).
+       * Defaults to in-memory Map if unspecified.
        */
       // biome-ignore lint/suspicious/noExplicitAny: Store type is flexible (Map or Cache Interface)
       store?: any
     }
   }
   /**
-   * Factory function to create DataLoaders for each request
+   * Factory function to instantiate DataLoaders for each request.
+   * Solves the N+1 query problem by batching database calls.
    */
   dataLoaders?: (context: GravitoContext) => Record<string, unknown>
 }
 
 /**
  * OrbitGraphQL integrates GraphQL Yoga into the Gravito ecosystem.
- * It provides a seamless way to build type-safe APIs with standard
- * GraphQL tools, automatically exposing the Gravito context to resolvers.
+ *
+ * It acts as a bridge, mounting a fully-featured GraphQL server onto Gravito's
+ * router and dependency injection system. It handles request lifecycle,
+ * context injection, and provides built-in support for security and performance best practices.
  *
  * @example
+ * Basic usage with a schema:
  * ```typescript
  * const graphql = new OrbitGraphQL({
  *   path: '/api/graphql',
@@ -163,6 +226,7 @@ export interface GraphQLConfig {
  * });
  * core.addOrbit(graphql);
  * ```
+ *
  * @public
  */
 export class OrbitGraphQL implements GravitoOrbit {
@@ -172,6 +236,18 @@ export class OrbitGraphQL implements GravitoOrbit {
 
   constructor(private config: GraphQLConfig = {}) {}
 
+  /**
+   * Installs the GraphQL Orbit into the PlanetCore application.
+   *
+   * This method:
+   * 1. Resolves the GraphQL Schema (from config, file, or container).
+   * 2. Configures the Yoga server with plugins (APQ, Cache, Security).
+   * 3. Sets up WebSocket subscriptions if enabled.
+   * 4. Mounts HTTP routes for the GraphQL endpoint.
+   *
+   * @param core - The PlanetCore instance to attach to.
+   * @throws {GraphQLConfigError} If the schema file cannot be read (Bun only) or no schema is found.
+   */
   async install(core: PlanetCore) {
     const container = core.container
 
