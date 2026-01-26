@@ -80,11 +80,13 @@ Quasar 是 Gravito 生態系統中的通用監控代理，負責：
   - [ ] 提供 `QuasarPlugin` SDK。
   - [ ] 支援社群驅動的 Probe/Bridge 貢獻。
 
-### 5.3 Web UI 整合增強
-- **目標**：提供本地化的輕量級監控儀表板。
+### 5.3 開放 API 與整合鉤子 (Open API & Hooks)
+- **目標**：與其內建封閉的 UI，不如開放標準介面讓開發者自由整合至自有的監控面板。
 - **改進項目**：
-  - [ ] 內建基於 WebSocket 的即時日誌檢視器。
-  - [ ] 提供單機版簡易統計頁面。
+  - [ ] **RESTful Metrics API**：在 HealthServer 基礎上擴充，提供 JSON 格式的即時指標接口。
+  - [ ] **WebSocket Stream API**：開放原始事件流，允許前端或第三方服務直接訂閱任務日誌。
+  - [ ] **Webhook Notifications**：支援任務失敗或佇列積壓時，由 Agent 直接觸發外部 Webhook。
+  - [ ] **Plug-and-Play Middleware**：提供中間件支援，讓開發者能在指標送出前進行攔截或二次加工。
 
 ## 改進重點摘要
 
