@@ -1,9 +1,5 @@
 /**
- * @fileoverview GitHub webhook provider
- *
- * Implements GitHub's webhook signature verification.
- * @see https://docs.github.com/en/webhooks/using-webhooks/validating-webhook-deliveries
- *
+ * GitHub webhook provider.
  * @module @gravito/echo/providers
  */
 
@@ -12,19 +8,29 @@ import type { WebhookVerificationResult } from '../types'
 import { BaseProvider } from './base/BaseProvider'
 
 /**
- * GitHub webhook provider
+ * GitHub webhook provider.
  *
- * Verifies GitHub webhook signatures using the X-Hub-Signature-256 header.
+ * Verifies GitHub webhook signatures using the `X-Hub-Signature-256` header.
+ * @see {@link https://docs.github.com/en/webhooks/using-webhooks/validating-webhook-deliveries | GitHub Webhook Validation}
  *
  * @example
  * ```typescript
- * const provider = new GitHubProvider()
- * const result = await provider.verify(body, headers, process.env.GITHUB_WEBHOOK_SECRET)
+ * const provider = new GitHubProvider();
+ * const result = await provider.verify(body, headers, process.env.GITHUB_WEBHOOK_SECRET);
  * ```
  */
 export class GitHubProvider extends BaseProvider {
   readonly name = 'github'
 
+  /**
+   * Verifies the GitHub webhook signature.
+   *
+   * @param payload - Raw request body.
+   * @param headers - Request headers.
+   * @param secret - GitHub webhook secret.
+   * @returns Verification result.
+   * @throws Error if signature computation fails.
+   */
   async verify(
     payload: string | Buffer,
     headers: Record<string, string | string[] | undefined>,
@@ -63,6 +69,9 @@ export class GitHubProvider extends BaseProvider {
     })
   }
 
+  /**
+   * Extracts the action from the GitHub payload if available.
+   */
   override parseEventType(payload: unknown): string | undefined {
     if (typeof payload === 'object' && payload !== null && 'action' in payload) {
       return (payload as { action: string }).action

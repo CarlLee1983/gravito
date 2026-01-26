@@ -1,7 +1,9 @@
 /**
- * @fileoverview @gravito/echo - Enterprise Webhook Module
+ * @fileoverview \@gravito/echo - Enterprise Webhook Module
  *
  * Secure webhook receiving and reliable webhook sending for Gravito.
+ * Provides a unified orchestration layer for handling third-party webhooks
+ * and dispatching outgoing events with robust retry logic.
  *
  * @example Receiving webhooks
  * ```typescript

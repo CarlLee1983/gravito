@@ -3,8 +3,16 @@ import type { WebhookVerificationResult } from '../types'
 import { BaseProvider, type ProviderOptions } from './base/BaseProvider'
 
 /**
- * Twilio webhook provider
- * @see https://www.twilio.com/docs/usage/security#validating-requests
+ * Twilio webhook provider.
+ *
+ * Verifies Twilio webhook signatures using the `X-Twilio-Signature` header.
+ * @see {@link https://www.twilio.com/docs/usage/security#validating-requests | Twilio Request Validation}
+ *
+ * @example
+ * ```typescript
+ * const provider = new TwilioProvider({ baseUrl: 'https://api.example.com/webhooks/twilio' });
+ * const result = await provider.verify(body, headers, process.env.TWILIO_AUTH_TOKEN);
+ * ```
  */
 export class TwilioProvider extends BaseProvider {
   readonly name = 'twilio'
@@ -16,6 +24,15 @@ export class TwilioProvider extends BaseProvider {
     this.baseUrl = options.baseUrl
   }
 
+  /**
+   * Verifies the Twilio webhook signature.
+   *
+   * @param payload - Raw request body (URL-encoded).
+   * @param headers - Request headers.
+   * @param secret - Twilio Auth Token.
+   * @returns Verification result.
+   * @throws Error if signature computation fails.
+   */
   async verify(
     payload: string | Buffer,
     headers: Record<string, string | string[] | undefined>,

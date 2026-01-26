@@ -7,12 +7,29 @@ import type { WebhookVerificationResult } from '../types'
 import { BaseProvider } from './base/BaseProvider'
 
 /**
- * Slack webhook provider
- * @see https://api.slack.com/authentication/verifying-requests-from-slack
+ * Slack webhook provider.
+ *
+ * Verifies Slack webhook signatures using the `X-Slack-Signature` and `X-Slack-Request-Timestamp` headers.
+ * @see {@link https://api.slack.com/authentication/verifying-requests-from-slack | Slack Request Verification}
+ *
+ * @example
+ * ```typescript
+ * const provider = new SlackProvider();
+ * const result = await provider.verify(body, headers, process.env.SLACK_SIGNING_SECRET);
+ * ```
  */
 export class SlackProvider extends BaseProvider {
   readonly name = 'slack'
 
+  /**
+   * Verifies the Slack webhook signature.
+   *
+   * @param payload - Raw request body.
+   * @param headers - Request headers.
+   * @param secret - Slack signing secret.
+   * @returns Verification result.
+   * @throws Error if signature computation fails.
+   */
   async verify(
     payload: string | Buffer,
     headers: Record<string, string | string[] | undefined>,

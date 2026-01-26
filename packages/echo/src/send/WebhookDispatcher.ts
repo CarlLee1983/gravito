@@ -26,7 +26,7 @@ import type {
 } from '../types'
 
 /**
- * Default retry configuration
+ * Default retry configuration for outgoing webhooks.
  */
 const DEFAULT_RETRY_CONFIG: Required<RetryConfig> = {
   maxAttempts: 3,
@@ -37,23 +37,31 @@ const DEFAULT_RETRY_CONFIG: Required<RetryConfig> = {
 }
 
 /**
- * Webhook Dispatcher
+ * WebhookDispatcher handles the reliable delivery of webhooks to external targets.
  *
- * Sends webhooks with signature and retry support.
+ * It supports HMAC-SHA256 signing of payloads, exponential backoff retries,
+ * and integration with Dead Letter Queues (DLQ) for failed deliveries.
  *
  * @example
  * ```typescript
  * const dispatcher = new WebhookDispatcher({
  *   secret: 'my-webhook-secret',
  *   retry: { maxAttempts: 5 }
- * })
+ * });
  *
+ * // Send a single webhook
  * const result = await dispatcher.dispatch({
  *   url: 'https://example.com/webhook',
  *   event: 'order.created',
  *   data: { orderId: 123 }
- * })
+ * });
+ *
+ * if (result.success) {
+ *   console.log('Delivered!');
+ * }
  * ```
+ *
+ * @public
  */
 export class WebhookDispatcher {
   private secret: string
@@ -64,6 +72,11 @@ export class WebhookDispatcher {
   private metrics: MetricsProvider = new NoopMetricsProvider()
   private tracer: Tracer = new NoopTracer()
 
+  /**
+   * Initializes the dispatcher with the provided configuration.
+   *
+   * @param config - The configuration for signing, retries, and timeouts.
+   */
   constructor(config: WebhookDispatcherConfig) {
     this.secret = config.secret
     this.retryConfig = { ...DEFAULT_RETRY_CONFIG, ...config.retry }
@@ -72,7 +85,10 @@ export class WebhookDispatcher {
   }
 
   /**
-   * Set Dead Letter Queue
+   * Configures the Dead Letter Queue for failed delivery attempts.
+   *
+   * @param dlq - The DeadLetterQueue implementation to use.
+   * @returns The dispatcher instance for chaining.
    */
   setDeadLetterQueue(dlq: DeadLetterQueue): this {
     this.dlq = dlq
@@ -80,7 +96,10 @@ export class WebhookDispatcher {
   }
 
   /**
-   * Set Metrics Provider
+   * Configures the metrics provider for observability.
+   *
+   * @param metrics - The MetricsProvider implementation to use.
+   * @returns The dispatcher instance for chaining.
    */
   setMetrics(metrics: MetricsProvider): this {
     this.metrics = metrics
@@ -88,7 +107,10 @@ export class WebhookDispatcher {
   }
 
   /**
-   * Set Tracer
+   * Configures the tracer for distributed tracing.
+   *
+   * @param tracer - The Tracer implementation to use.
+   * @returns The dispatcher instance for chaining.
    */
   setTracer(tracer: Tracer): this {
     this.tracer = tracer
@@ -96,7 +118,14 @@ export class WebhookDispatcher {
   }
 
   /**
-   * Dispatch a webhook with retries
+   * Dispatches a webhook to the specified URL with automatic retries.
+   *
+   * This method signs the payload, attempts delivery, and retries based on
+   * the configured retry strategy if the delivery fails.
+   *
+   * @param payload - The webhook payload including target URL and data.
+   * @returns A promise resolving to the delivery result.
+   * @throws Error if signing or network operations encounter an unrecoverable failure.
    */
   async dispatch<T = unknown>(payload: WebhookPayload<T>): Promise<WebhookDeliveryResult> {
     return this.tracer.withSpan('echo.dispatch_webhook', async (span) => {
@@ -158,6 +187,12 @@ export class WebhookDispatcher {
     })
   }
 
+  /**
+   * Internal method to handle the retry loop for webhook delivery.
+   *
+   * @param payload - The webhook payload.
+   * @returns A promise resolving to the final delivery result.
+   */
   private async dispatchInternal<T = unknown>(
     payload: WebhookPayload<T>
   ): Promise<WebhookDeliveryResult> {
@@ -207,7 +242,11 @@ export class WebhookDispatcher {
   }
 
   /**
-   * Dispatch a batch of webhooks
+   * Dispatches a batch of webhooks concurrently.
+   *
+   * @param payloads - An array of webhook payloads to send.
+   * @param options - Options for concurrency and failure handling.
+   * @returns A promise resolving to the batch dispatch result.
    */
   async dispatchBatch<T = unknown>(
     payloads: WebhookPayload<T>[],
@@ -267,7 +306,10 @@ export class WebhookDispatcher {
   }
 
   /**
-   * Retry an event from DLQ
+   * Retries a failed delivery from the Dead Letter Queue.
+   *
+   * @param id - The unique identifier of the DLQ entry.
+   * @returns A promise resolving to the delivery result or null if not found.
    */
   async retryFromDlq(id: string): Promise<WebhookDeliveryResult | null> {
     if (!this.dlq) return null
@@ -296,7 +338,11 @@ export class WebhookDispatcher {
   }
 
   /**
-   * Attempt a single delivery
+   * Performs a single delivery attempt.
+   *
+   * @param payload - The webhook payload.
+   * @param attempt - The current attempt number.
+   * @returns A promise resolving to the delivery result.
    */
   private async attemptDelivery<T = unknown>(
     payload: WebhookPayload<T>,
@@ -368,7 +414,10 @@ export class WebhookDispatcher {
   }
 
   /**
-   * Check if we should retry based on result
+   * Determines if a delivery should be retried based on the result.
+   *
+   * @param result - The delivery result to evaluate.
+   * @returns True if the delivery should be retried.
    */
   private shouldRetry(result: WebhookDeliveryResult): boolean {
     if (!result.statusCode) {
@@ -380,7 +429,10 @@ export class WebhookDispatcher {
   }
 
   /**
-   * Calculate delay for exponential backoff
+   * Calculates the delay for the next retry attempt using exponential backoff.
+   *
+   * @param attempt - The current attempt number.
+   * @returns The delay in milliseconds.
    */
   private calculateDelay(attempt: number): number {
     const delay =
@@ -390,12 +442,21 @@ export class WebhookDispatcher {
   }
 
   /**
-   * Sleep helper
+   * Helper method to pause execution.
+   *
+   * @param ms - The number of milliseconds to sleep.
+   * @returns A promise that resolves after the delay.
    */
   private sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms))
   }
 
+  /**
+   * Categorizes delivery errors for metrics reporting.
+   *
+   * @param result - The delivery result to categorize.
+   * @returns A string representing the error category.
+   */
   private categorizeError(result: WebhookDeliveryResult): string {
     if (!result.statusCode) return 'network_error'
     if (result.statusCode >= 500) return 'server_error'

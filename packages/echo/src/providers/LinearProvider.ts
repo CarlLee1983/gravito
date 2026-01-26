@@ -3,12 +3,29 @@ import type { WebhookVerificationResult } from '../types'
 import { BaseProvider } from './base/BaseProvider'
 
 /**
- * Linear webhook provider
- * @see https://developers.linear.app/docs/graphql/webhooks#signature-verification
+ * Linear webhook provider.
+ *
+ * Verifies Linear webhook signatures using the `Linear-Signature` header.
+ * @see {@link https://developers.linear.app/docs/graphql/webhooks#signature-verification | Linear Webhook Verification}
+ *
+ * @example
+ * ```typescript
+ * const provider = new LinearProvider();
+ * const result = await provider.verify(body, headers, process.env.LINEAR_WEBHOOK_SECRET);
+ * ```
  */
 export class LinearProvider extends BaseProvider {
   readonly name = 'linear'
 
+  /**
+   * Verifies the Linear webhook signature.
+   *
+   * @param payload - Raw request body.
+   * @param headers - Request headers.
+   * @param secret - Linear webhook secret.
+   * @returns Verification result.
+   * @throws Error if signature computation fails.
+   */
   async verify(
     payload: string | Buffer,
     headers: Record<string, string | string[] | undefined>,

@@ -1,15 +1,41 @@
 import type { WebhookDispatcher } from '../send/WebhookDispatcher'
 import type { OutgoingWebhookRecord, WebhookStore } from '../storage/WebhookStore'
-import type { ReplayOptions, ReplayResult, WebhookDeliveryResult } from '../types'
+import type { ReplayOptions, ReplayResult } from '../types'
 
+/**
+ * Service responsible for re-sending previously dispatched webhook events.
+ * This is useful for recovering from downstream outages or re-syncing data.
+ *
+ * @example
+ * ```typescript
+ * const replayService = new WebhookReplayService(store, dispatcher);
+ * const result = await replayService.replay({
+ *   timeRange: { from: new Date('2023-01-01'), to: new Date('2023-01-02') },
+ *   provider: 'stripe'
+ * });
+ * ```
+ */
 export class WebhookReplayService {
+  /**
+   * Creates an instance of WebhookReplayService.
+   *
+   * @param store - The storage backend to query historical events.
+   * @param dispatcher - The dispatcher used to re-send events.
+   */
   constructor(
     private store: WebhookStore,
     private dispatcher: WebhookDispatcher
   ) {}
 
+  /**
+   * Replays webhook events based on the provided options.
+   *
+   * @param options - Criteria for selecting events and execution mode (e.g., dry run).
+   * @returns A summary of the replay operation, including success and failure counts.
+   * @throws {Error} If the storage query fails.
+   */
   async replay(options: ReplayOptions): Promise<ReplayResult> {
-    // 查詢符合條件的事件
+    // Query events matching the criteria
     const events = await this.store.queryEvents({
       direction: 'outgoing',
       provider: options.provider,
@@ -18,7 +44,7 @@ export class WebhookReplayService {
       to: options.timeRange?.to,
     })
 
-    // 如果有指定 ID，過濾出這些事件
+    // Filter by specific IDs if provided
     const targetEvents = options.eventIds
       ? events.filter((e) => options.eventIds!.includes(e.id!))
       : events

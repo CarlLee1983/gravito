@@ -34,25 +34,30 @@ import type {
 type ProviderClass = new (options?: any) => WebhookProvider
 
 /**
- * Webhook Receiver
+ * WebhookReceiver manages the lifecycle of incoming webhooks.
  *
- * Manages webhook providers and routes incoming webhooks to handlers.
+ * It is responsible for registering providers, verifying signatures,
+ * persisting events for audit trails, and routing validated events
+ * to registered handlers.
  *
  * @example
  * ```typescript
- * const receiver = new WebhookReceiver()
+ * const receiver = new WebhookReceiver();
  *
- * // Register provider
- * receiver.registerProvider('stripe', process.env.STRIPE_WEBHOOK_SECRET!)
+ * // Register a provider with its secret
+ * receiver.registerProvider('stripe', 'whsec_...');
  *
- * // Register handler
+ * // Register a handler for a specific event type
  * receiver.on('stripe', 'payment_intent.succeeded', async (event) => {
- *   console.log('Payment received:', event.payload)
- * })
+ *   const { id, amount } = event.payload;
+ *   // Process payment...
+ * });
  *
- * // Handle incoming webhook
- * const result = await receiver.handle('stripe', body, headers)
+ * // Manually handle an incoming request (usually done by OrbitEcho middleware)
+ * const result = await receiver.handle('stripe', rawBody, headers);
  * ```
+ *
+ * @public
  */
 export class WebhookReceiver {
   private providers = new Map<string, { provider: WebhookProvider; secret: string }>()
@@ -63,6 +68,9 @@ export class WebhookReceiver {
   private tracer: Tracer = new NoopTracer()
   private logger: EchoLogger = new ConsoleEchoLogger()
 
+  /**
+   * Initializes the receiver and registers built-in providers.
+   */
   constructor() {
     // Register built-in providers
     this.registerProviderType('generic', GenericProvider as ProviderClass)
@@ -79,7 +87,10 @@ export class WebhookReceiver {
   private providerTypes = new Map<string, ProviderClass>()
 
   /**
-   * Set storage backend
+   * Configures the storage backend for persisting incoming events.
+   *
+   * @param store - The WebhookStore implementation to use.
+   * @returns The receiver instance for chaining.
    */
   setStore(store: WebhookStore): this {
     this.store = store
@@ -87,7 +98,10 @@ export class WebhookReceiver {
   }
 
   /**
-   * Set Metrics Provider
+   * Configures the metrics provider for observability.
+   *
+   * @param metrics - The MetricsProvider implementation to use.
+   * @returns The receiver instance for chaining.
    */
   setMetrics(metrics: MetricsProvider): this {
     this.metrics = metrics
@@ -95,7 +109,10 @@ export class WebhookReceiver {
   }
 
   /**
-   * Set Tracer
+   * Configures the tracer for distributed tracing.
+   *
+   * @param tracer - The Tracer implementation to use.
+   * @returns The receiver instance for chaining.
    */
   setTracer(tracer: Tracer): this {
     this.tracer = tracer
@@ -103,7 +120,10 @@ export class WebhookReceiver {
   }
 
   /**
-   * Set Logger
+   * Configures the logger for diagnostic output.
+   *
+   * @param logger - The EchoLogger implementation to use.
+   * @returns The receiver instance for chaining.
    */
   setLogger(logger: EchoLogger): this {
     this.logger = logger
@@ -111,7 +131,11 @@ export class WebhookReceiver {
   }
 
   /**
-   * Register a custom provider type
+   * Registers a custom provider class that implements the WebhookProvider interface.
+   *
+   * @param name - The unique name for this provider type.
+   * @param ProviderCls - The class constructor for the provider.
+   * @returns The receiver instance for chaining.
    */
   registerProviderType(name: string, ProviderCls: ProviderClass): this {
     this.providerTypes.set(name, ProviderCls)
@@ -119,7 +143,13 @@ export class WebhookReceiver {
   }
 
   /**
-   * Register a provider with its secret
+   * Registers a provider instance with a specific secret and options.
+   *
+   * @param name - The unique name for this provider instance.
+   * @param secret - The secret key used for signature verification.
+   * @param options - Optional configuration like provider type and timestamp tolerance.
+   * @returns The receiver instance for chaining.
+   * @throws Error if the specified provider type is not registered.
    */
   registerProvider(
     name: string,
@@ -139,7 +169,12 @@ export class WebhookReceiver {
   }
 
   /**
-   * Register an event handler
+   * Registers a handler for a specific event type from a provider.
+   *
+   * @param providerName - The name of the provider instance.
+   * @param eventType - The type of event to handle (e.g., 'checkout.session.completed').
+   * @param handler - The callback function to execute when the event is received.
+   * @returns The receiver instance for chaining.
    */
   on<T = unknown>(providerName: string, eventType: string, handler: WebhookHandler<T>): this {
     if (!this.handlers.has(providerName)) {
@@ -156,7 +191,11 @@ export class WebhookReceiver {
   }
 
   /**
-   * Register a handler for all events from a provider
+   * Registers a handler for all events from a specific provider.
+   *
+   * @param providerName - The name of the provider instance.
+   * @param handler - The callback function to execute for every valid event from this provider.
+   * @returns The receiver instance for chaining.
    */
   onAll<T = unknown>(providerName: string, handler: WebhookHandler<T>): this {
     if (!this.globalHandlers.has(providerName)) {
@@ -168,7 +207,16 @@ export class WebhookReceiver {
   }
 
   /**
-   * Handle an incoming webhook
+   * Processes an incoming webhook request.
+   *
+   * This method performs verification, persists the event if a store is configured,
+   * and executes all matching handlers.
+   *
+   * @param providerName - The name of the provider instance.
+   * @param body - The raw request body.
+   * @param headers - The incoming HTTP headers.
+   * @returns A promise resolving to the verification result and processing status.
+   * @throws Error if any handler fails or if storage operations encounter an error.
    */
   async handle(
     providerName: string,
@@ -340,6 +388,12 @@ export class WebhookReceiver {
     })
   }
 
+  /**
+   * Categorizes verification errors for metrics reporting.
+   *
+   * @param error - The error message to categorize.
+   * @returns A string representing the error category.
+   */
   private categorizeError(error?: string): string {
     if (!error) return 'unknown'
     if (error.includes('Missing')) return 'missing_header'
@@ -349,7 +403,14 @@ export class WebhookReceiver {
   }
 
   /**
-   * Verify a webhook without handling
+   * Verifies a webhook signature without triggering any handlers or storage.
+   *
+   * Useful for pre-validation or custom routing logic.
+   *
+   * @param providerName - The name of the provider instance.
+   * @param body - The raw request body.
+   * @param headers - The incoming HTTP headers.
+   * @returns A promise resolving to the verification result.
    */
   async verify(
     providerName: string,

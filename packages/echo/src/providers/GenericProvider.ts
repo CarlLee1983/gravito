@@ -1,8 +1,5 @@
 /**
- * @fileoverview Generic webhook provider
- *
- * Simple HMAC-SHA256 signature verification.
- *
+ * Generic webhook provider.
  * @module @gravito/echo/providers
  */
 
@@ -14,22 +11,36 @@ import {
 import type { WebhookVerificationResult } from '../types'
 import { BaseProvider, type ProviderOptions } from './base/BaseProvider'
 
+/**
+ * Configuration options for the generic provider.
+ */
 export interface GenericProviderOptions extends ProviderOptions {
+  /**
+   * Custom header name for the signature.
+   * @defaultValue 'x-webhook-signature'
+   */
   signatureHeader?: string
+  /**
+   * Custom header name for the timestamp.
+   * @defaultValue 'x-webhook-timestamp'
+   */
   timestampHeader?: string
 }
 
 /**
- * Generic webhook provider using HMAC-SHA256
+ * Generic webhook provider using HMAC-SHA256 for signature verification.
  *
  * Expected headers:
- * - X-Webhook-Signature: HMAC-SHA256 hex signature
- * - X-Webhook-Timestamp: Unix timestamp (optional)
+ * - X-Webhook-Signature: HMAC-SHA256 hex signature.
+ * - X-Webhook-Timestamp: Unix timestamp (optional, used for replay protection).
  *
  * @example
  * ```typescript
- * const provider = new GenericProvider()
- * const result = await provider.verify(body, headers, secret)
+ * const provider = new GenericProvider({
+ *   signatureHeader: 'X-Custom-Sig',
+ *   tolerance: 600
+ * });
+ * const result = await provider.verify(body, headers, secret);
  * ```
  */
 export class GenericProvider extends BaseProvider {
@@ -44,18 +55,25 @@ export class GenericProvider extends BaseProvider {
     this.timestampHeader = options.timestampHeader ?? 'x-webhook-timestamp'
   }
 
+  /**
+   * Verifies the webhook using HMAC-SHA256.
+   *
+   * @param payload - Raw request body.
+   * @param headers - Request headers.
+   * @param secret - Secret key for HMAC computation.
+   * @returns Verification result.
+   * @throws Error if signature computation fails.
+   */
   async verify(
     payload: string | Buffer,
     headers: Record<string, string | string[] | undefined>,
     secret: string
   ): Promise<WebhookVerificationResult> {
-    // Get signature from headers
     const signature = this.getHeader(headers, this.signatureHeader)
     if (!signature) {
       return this.createFailure(`Missing signature header: ${this.signatureHeader}`)
     }
 
-    // Validate timestamp if present
     const timestampStr = this.getHeader(headers, this.timestampHeader)
     if (timestampStr) {
       const timestamp = parseInt(timestampStr, 10)
@@ -64,16 +82,13 @@ export class GenericProvider extends BaseProvider {
       }
     }
 
-    // Compute expected signature
     const payloadStr = this.payloadToString(payload)
     const expectedSignature = await computeHmacSha256(payloadStr, secret)
 
-    // Compare signatures
     if (!timingSafeEqual(signature.toLowerCase(), expectedSignature.toLowerCase())) {
       return this.createFailure('Signature verification failed')
     }
 
-    // Parse payload
     const parseResult = this.safeParseJson(payloadStr)
     if (!parseResult.success) {
       return this.createSuccess(payloadStr)

@@ -1,23 +1,35 @@
 /**
- * Webhook Header 處理工具
+ * Utilities for handling webhook headers.
  * @module @gravito/echo/providers/base
  */
 
 /**
- * 從 headers 物件中取得指定 header 的值
- * 支援大小寫不敏感的查找
+ * Retrieves a header value from a headers object.
+ * Supports case-insensitive lookup by checking the original name and its lowercase version.
+ *
+ * @param headers - The headers object from the request.
+ * @param name - The name of the header to retrieve.
+ * @returns The first value of the header if found, otherwise undefined.
+ *
+ * @example
+ * ```typescript
+ * const sig = getHeader(headers, 'X-Webhook-Signature');
+ * ```
  */
 export function getHeader(
   headers: Record<string, string | string[] | undefined>,
   name: string
 ): string | undefined {
-  // 先嘗試原始名稱，再嘗試小寫
   const value = headers[name] ?? headers[name.toLowerCase()]
   return Array.isArray(value) ? value[0] : value
 }
 
 /**
- * 取得多個 header 值
+ * Retrieves multiple header values at once.
+ *
+ * @param headers - The headers object from the request.
+ * @param names - An array of header names to retrieve.
+ * @returns A record mapping each requested name to its value or undefined.
  */
 export function getHeaders(
   headers: Record<string, string | string[] | undefined>,
@@ -31,7 +43,11 @@ export function getHeaders(
 }
 
 /**
- * 檢查是否存在指定 header
+ * Checks if a specific header exists in the headers object.
+ *
+ * @param headers - The headers object from the request.
+ * @param name - The name of the header to check.
+ * @returns True if the header exists and is not undefined.
  */
 export function hasHeader(
   headers: Record<string, string | string[] | undefined>,

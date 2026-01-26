@@ -3,12 +3,29 @@ import type { WebhookVerificationResult } from '../types'
 import { BaseProvider } from './base/BaseProvider'
 
 /**
- * Shopify webhook provider
- * @see https://shopify.dev/docs/apps/webhooks/configuration/https#verify-webhook
+ * Shopify webhook provider.
+ *
+ * Verifies Shopify webhook signatures using the `X-Shopify-Hmac-Sha256` header.
+ * @see {@link https://shopify.dev/docs/apps/webhooks/configuration/https#verify-webhook | Shopify Webhook Verification}
+ *
+ * @example
+ * ```typescript
+ * const provider = new ShopifyProvider();
+ * const result = await provider.verify(body, headers, process.env.SHOPIFY_WEBHOOK_SECRET);
+ * ```
  */
 export class ShopifyProvider extends BaseProvider {
   readonly name = 'shopify'
 
+  /**
+   * Verifies the Shopify webhook signature.
+   *
+   * @param payload - Raw request body.
+   * @param headers - Request headers.
+   * @param secret - Shopify webhook secret.
+   * @returns Verification result.
+   * @throws Error if signature computation fails.
+   */
   async verify(
     payload: string | Buffer,
     headers: Record<string, string | string[] | undefined>,

@@ -6,4 +6,5 @@
 - [Providers](./Providers.md)
 - [Storage](./Storage.md)
 - [DLQ](./DLQ.md)
+- [Replay](./Replay.md)
 - [Observability](./Observability.md)

@@ -28,7 +28,19 @@ export async function computeHmacSha256(payload: string | Buffer, secret: string
 }
 
 /**
- * 計算 HMAC-SHA256 並輸出 base64
+ * Computes an HMAC-SHA256 signature and returns it as a base64 encoded string.
+ *
+ * Used by providers that require base64 encoding for their signatures (e.g., Shopify).
+ *
+ * @param payload - The raw data to sign.
+ * @param secret - The shared secret key.
+ * @returns The base64 encoded HMAC-SHA256 signature.
+ * @throws Error if the crypto operations fail.
+ *
+ * @example
+ * ```typescript
+ * const sig = await computeHmacSha256Base64('data', 'secret');
+ * ```
  */
 export async function computeHmacSha256Base64(
   payload: string | Buffer,
@@ -73,7 +85,20 @@ export async function computeHmacSha1(payload: string | Buffer, secret: string):
 }
 
 /**
- * 計算 HMAC-SHA1 並輸出 base64（用於 Twilio 等傳統服務）
+ * Computes an HMAC-SHA1 signature and returns it as a base64 encoded string.
+ *
+ * Primarily used for legacy services or specific providers like Twilio that
+ * still rely on SHA1-based HMAC for their webhook verification.
+ *
+ * @param payload - The raw data to sign.
+ * @param secret - The shared secret key.
+ * @returns The base64 encoded HMAC-SHA1 signature.
+ * @throws Error if the crypto operations fail.
+ *
+ * @example
+ * ```typescript
+ * const sig = await computeHmacSha1Base64('data', 'secret');
+ * ```
  */
 export async function computeHmacSha1Base64(
   payload: string | Buffer,

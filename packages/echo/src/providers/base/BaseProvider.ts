@@ -1,23 +1,42 @@
 /**
- * Webhook Provider 抽象基礎類別
+ * Abstract base class for webhook providers.
  * @module @gravito/echo/providers/base
  */
 
 import type { WebhookProvider, WebhookVerificationResult } from '../../types'
 import { getHeader, hasHeader } from './HeaderUtils'
 
+/**
+ * Configuration options for webhook providers.
+ */
 export interface ProviderOptions {
-  /** 時間戳容許誤差（秒），預設 300 */
+  /**
+   * Maximum allowed age of the webhook request in seconds to prevent replay attacks.
+   * @defaultValue 300
+   */
   tolerance?: number
 }
 
 /**
- * 所有 Provider 的抽象基礎類別
- * 提供通用的 header 處理與錯誤格式化
+ * Base implementation for all webhook providers.
+ * Handles common header extraction, payload conversion, and result formatting.
+ *
+ * @example
+ * ```typescript
+ * class MyProvider extends BaseProvider {
+ *   readonly name = 'my-provider';
+ *   async verify(payload, headers, secret) {
+ *     // Implementation logic
+ *     return this.createSuccess(JSON.parse(payload));
+ *   }
+ * }
+ * ```
  */
 export abstract class BaseProvider implements WebhookProvider {
+  /** Unique identifier for the provider. */
   abstract readonly name: string
 
+  /** Time tolerance for timestamp validation. */
   protected tolerance: number
 
   constructor(options: ProviderOptions = {}) {
@@ -25,8 +44,13 @@ export abstract class BaseProvider implements WebhookProvider {
   }
 
   /**
-   * 驗證 webhook 請求
-   * 子類別必須實作此方法
+   * Verifies the authenticity of a webhook request.
+   *
+   * @param payload - Raw request body.
+   * @param headers - Request headers.
+   * @param secret - Provider-specific secret key.
+   * @returns Verification result containing the parsed payload or error message.
+   * @throws Error if verification logic encounters an unrecoverable failure.
    */
   abstract verify(
     payload: string | Buffer,
@@ -35,16 +59,19 @@ export abstract class BaseProvider implements WebhookProvider {
   ): Promise<WebhookVerificationResult>
 
   /**
-   * 解析事件類型（可選覆寫）
+   * Extracts the event type from the verified payload.
+   *
+   * @param payload - The parsed webhook payload.
+   * @returns The event type string if found.
    */
   parseEventType?(payload: unknown): string | undefined
 
   // ─────────────────────────────────────────────
-  // Protected 輔助方法
+  // Protected Helpers
   // ─────────────────────────────────────────────
 
   /**
-   * 取得 header 值
+   * Retrieves a header value in a case-insensitive manner.
    */
   protected getHeader(
     headers: Record<string, string | string[] | undefined>,
@@ -54,7 +81,7 @@ export abstract class BaseProvider implements WebhookProvider {
   }
 
   /**
-   * 檢查 header 是否存在
+   * Checks if a specific header exists.
    */
   protected hasHeader(
     headers: Record<string, string | string[] | undefined>,
@@ -64,14 +91,14 @@ export abstract class BaseProvider implements WebhookProvider {
   }
 
   /**
-   * 建立驗證失敗結果
+   * Creates a failed verification result.
    */
   protected createFailure(error: string): WebhookVerificationResult {
     return { valid: false, error }
   }
 
   /**
-   * 建立驗證成功結果
+   * Creates a successful verification result.
    */
   protected createSuccess(
     payload: unknown,
@@ -86,14 +113,14 @@ export abstract class BaseProvider implements WebhookProvider {
   }
 
   /**
-   * 將 payload 轉換為字串
+   * Ensures the payload is a string.
    */
   protected payloadToString(payload: string | Buffer): string {
     return typeof payload === 'string' ? payload : payload.toString('utf-8')
   }
 
   /**
-   * 安全解析 JSON
+   * Safely parses a JSON string without throwing.
    */
   protected safeParseJson(
     str: string

@@ -170,6 +170,8 @@ receiver.registerProvider('custom', 'secret', { type: 'my-provider' })
 
 ## Configuration
 
+For detailed API information, please refer to the [API Documentation](./docs/api/README.md).
+
 ### WebhookDispatcher
 
 ```typescript

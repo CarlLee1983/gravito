@@ -7,12 +7,29 @@ import type { WebhookVerificationResult } from '../types'
 import { BaseProvider } from './base/BaseProvider'
 
 /**
- * Paddle webhook provider
- * @see https://developer.paddle.com/webhooks/signature-verification
+ * Paddle webhook provider.
+ *
+ * Verifies Paddle webhook signatures using the `Paddle-Signature` header.
+ * @see {@link https://developer.paddle.com/webhooks/signature-verification | Paddle Signature Verification}
+ *
+ * @example
+ * ```typescript
+ * const provider = new PaddleProvider();
+ * const result = await provider.verify(body, headers, process.env.PADDLE_WEBHOOK_SECRET);
+ * ```
  */
 export class PaddleProvider extends BaseProvider {
   readonly name = 'paddle'
 
+  /**
+   * Verifies the Paddle webhook signature.
+   *
+   * @param payload - Raw request body.
+   * @param headers - Request headers.
+   * @param secret - Paddle webhook secret.
+   * @returns Verification result.
+   * @throws Error if signature computation fails.
+   */
   async verify(
     payload: string | Buffer,
     headers: Record<string, string | string[] | undefined>,
@@ -54,6 +71,9 @@ export class PaddleProvider extends BaseProvider {
     })
   }
 
+  /**
+   * Parses the Paddle-Signature header into timestamp and signature components.
+   */
   private parsePaddleSignature(header: string): { timestamp: number; signature: string } | null {
     const parts = header.split(';')
     let timestamp: number | undefined

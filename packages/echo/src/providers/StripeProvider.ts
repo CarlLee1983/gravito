@@ -1,9 +1,5 @@
 /**
- * @fileoverview Stripe webhook provider
- *
- * Implements Stripe's webhook signature verification.
- * @see https://stripe.com/docs/webhooks/signatures
- *
+ * Stripe webhook provider.
  * @module @gravito/echo/providers
  */
 
@@ -17,14 +13,15 @@ import type { WebhookVerificationResult } from '../types'
 import { BaseProvider } from './base/BaseProvider'
 
 /**
- * Stripe webhook provider
+ * Stripe webhook provider.
  *
  * Verifies Stripe webhook signatures using their standard format.
+ * @see {@link https://stripe.com/docs/webhooks/signatures | Stripe Webhook Signatures}
  *
  * @example
  * ```typescript
- * const provider = new StripeProvider()
- * const result = await provider.verify(body, headers, process.env.STRIPE_WEBHOOK_SECRET)
+ * const provider = new StripeProvider();
+ * const result = await provider.verify(body, headers, process.env.STRIPE_WEBHOOK_SECRET);
  * ```
  */
 export class StripeProvider extends BaseProvider {
@@ -34,6 +31,15 @@ export class StripeProvider extends BaseProvider {
     super(options)
   }
 
+  /**
+   * Verifies the Stripe webhook signature.
+   *
+   * @param payload - Raw request body.
+   * @param headers - Request headers.
+   * @param secret - Stripe webhook secret (signing secret).
+   * @returns Verification result.
+   * @throws Error if signature computation fails.
+   */
   async verify(
     payload: string | Buffer,
     headers: Record<string, string | string[] | undefined>,
@@ -79,6 +85,9 @@ export class StripeProvider extends BaseProvider {
     })
   }
 
+  /**
+   * Extracts the event type from the Stripe payload.
+   */
   override parseEventType(payload: unknown): string | undefined {
     if (typeof payload === 'object' && payload !== null && 'type' in payload) {
       return (payload as { type: string }).type
