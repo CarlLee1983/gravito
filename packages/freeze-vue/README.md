@@ -1,6 +1,16 @@
 # @gravito/freeze-vue
 
-> 🍃 Vue 3 adapter for @gravito/freeze SSG module
+> 🍃 Vue 3 adapter for @gravito/freeze SSG module.
+
+`@gravito/freeze-vue` provides a seamless bridge between your Vue 3 application and the `@gravito/freeze` static site generation (SSG) engine. It enables hybrid mode development where you can switch between a dynamic SPA (using Inertia.js) and a fully localized static site with zero code changes in your components.
+
+## Core Features
+
+- 🌓 **Hybrid Mode**: Automatically detects environment and switches between Static (native `<a>`) and Dynamic (Inertia `<Link>`) navigation.
+- 🌍 **Locale Awareness**: Deep integration with `@gravito/freeze` for automatic path localization and locale switching.
+- 🧩 **Smart Components**: Provides `<StaticLink>` and `<LocaleSwitcher>` for effortless SEO-friendly navigation.
+- ⚓ **Vue 3 Composables**: Exposes `useFreeze()` for reactive access to current locale and navigation utilities.
+- 🔄 **Re-exports**: Full access to `@gravito/freeze` core utilities (config, detectors, redirect generators).
 
 ## Installation
 
@@ -12,11 +22,12 @@ bun add @gravito/freeze-vue
 
 ### 1. Install the Plugin
 
+Configure the plugin in your entry file (e.g., `main.ts`).
+
 ```typescript
-// main.ts
 import { createApp } from 'vue'
 import { FreezePlugin, defineConfig } from '@gravito/freeze-vue'
-import { Link } from '@inertiajs/vue3'
+import { Link } from '@inertiajs/vue3' // Optional: for dynamic mode
 import App from './App.vue'
 
 const config = defineConfig({
@@ -27,11 +38,16 @@ const config = defineConfig({
 })
 
 const app = createApp(App)
+
+// LinkComponent is optional; if omitted, native <a> will always be used
 app.use(FreezePlugin, { config, LinkComponent: Link })
+
 app.mount('#app')
 ```
 
 ### 2. Use StaticLink for Navigation
+
+`<StaticLink>` automatically prepends the current locale to paths and handles SPA vs. Static behavior.
 
 ```vue
 <!-- Navigation.vue -->
@@ -41,137 +57,100 @@ import { StaticLink } from '@gravito/freeze-vue'
 
 <template>
   <nav>
+    <StaticLink href="/">Home</StaticLink>
     <StaticLink href="/about">About</StaticLink>
-    <StaticLink href="/docs/guide">Guide</StaticLink>
+    <!-- skipLocalization bypasses locale prefixing -->
+    <StaticLink href="/external-resource" skipLocalization>External</StaticLink>
   </nav>
 </template>
 ```
 
 ### 3. Add Locale Switcher
 
+`<LocaleSwitcher>` preserves the current path while changing the language.
+
 ```vue
-<!-- Header.vue -->
+<!-- LanguageSelector.vue -->
 <script setup>
 import { LocaleSwitcher } from '@gravito/freeze-vue'
 </script>
 
 <template>
-  <header>
+  <div>
     <LocaleSwitcher locale="en">English</LocaleSwitcher>
-    <LocaleSwitcher locale="zh">Chinese</LocaleSwitcher>
-  </header>
+    <LocaleSwitcher locale="zh">繁體中文</LocaleSwitcher>
+  </div>
 </template>
 ```
 
-### 4. Use the Composable for Custom Logic
+### 4. Custom Logic with `useFreeze`
+
+Access the SSG state reactively in any component.
 
 ```vue
-<!-- CustomComponent.vue -->
 <script setup>
 import { useFreeze } from '@gravito/freeze-vue'
 
-const { isStatic, locale, getLocalizedPath, navigateToLocale } = useFreeze()
+const { 
+  isStatic, 
+  locale, 
+  getLocalizedPath, 
+  navigateToLocale 
+} = useFreeze()
 </script>
 
 <template>
   <div>
-    <p>Mode: {{ isStatic ? 'Static' : 'Dynamic' }}</p>
-    <p>Locale: {{ locale }}</p>
-    <a :href="getLocalizedPath('/about')">About</a>
-    <button @click="navigateToLocale('zh')">Switch to Chinese</button>
+    <p>Running in: {{ isStatic ? 'Static SSG Mode' : 'Dynamic SPA Mode' }}</p>
+    <p>Current Language: {{ locale }}</p>
+    
+    <button @click="navigateToLocale('en')">Switch to English</button>
   </div>
 </template>
 ```
 
 ## API Reference
 
-### Plugin
+### Plugin: `FreezePlugin`
 
-#### `FreezePlugin`
+Install via `app.use(FreezePlugin, options)`.
 
-Vue 3 plugin for SSG functionality.
-
-```typescript
-app.use(FreezePlugin, { config, LinkComponent: Link })
-```
+| Option | Type | Description |
+|---|---|---|
+| `config` | `FreezeConfig` | Configuration object from `defineConfig`. |
+| `LinkComponent` | `Component` | (Optional) SPA Link component (e.g., Inertia Link). |
 
 ### Components
 
 #### `<StaticLink>`
-
-Smart link component.
-
-```vue
-<StaticLink href="/about" class="link">About</StaticLink>
-```
-
-| Prop | Type | Description |
-|------|------|-------------|
-| `href` | `string` | Target path (auto-localized) |
-| `skipLocalization` | `boolean?` | Skip auto-localization |
+| Prop | Type | Default | Description |
+|---|---|---|---|
+| `href` | `string` | **Required** | The target path. |
+| `skipLocalization` | `boolean` | `false` | If true, does not prepend locale. |
 
 #### `<LocaleSwitcher>`
+| Prop | Type | Default | Description |
+|---|---|---|---|
+| `locale` | `string` | **Required** | The target locale code. |
 
-Locale switching link.
+### Composable: `useFreeze()`
 
-```vue
-<LocaleSwitcher locale="zh">Chinese</LocaleSwitcher>
-```
+Returns the following reactive properties and methods:
 
-| Prop | Type | Description |
-|------|------|-------------|
-| `locale` | `string` | Target locale |
+- `isStatic`: `ComputedRef<boolean>` - True if running on a static domain.
+- `locale`: `ComputedRef<string>` - Current active locale.
+- `getLocalizedPath(path, locale?)`: Returns a localized string.
+- `switchLocale(newLocale)`: Returns the current path with a new locale prefix.
+- `navigateToLocale(newLocale)`: Performs a hard redirect to the new locale path.
 
-### Composable
+## Static vs Dynamic Behavior
 
-#### `useFreeze()`
-
-Access SSG utilities in components.
-
-```typescript
-const {
-  isStatic,         // ComputedRef<boolean> - static mode flag
-  locale,           // ComputedRef<string> - current locale
-  getLocalizedPath, // (path, locale?) => string
-  switchLocale,     // (locale) => string
-  getLocaleFromPath,// (path) => string
-  navigateToLocale, // (locale) => void
-} = useFreeze()
-```
-
-### Helper Function
-
-#### `provideFreeze({ config, LinkComponent })`
-
-Manually provide freeze context (for SSR or custom setups).
-
-```typescript
-import { provideFreeze, defineConfig } from '@gravito/freeze-vue'
-import { Link } from '@inertiajs/vue3'
-
-const config = defineConfig({ ... })
-provideFreeze({ config, LinkComponent: Link })
-```
-
-### Re-exports from @gravito/freeze
-
-All exports from `@gravito/freeze` are available:
-
-- `defineConfig`
-- `createDetector`
-- `generateRedirectHtml`
-- `generateRedirects`
-- `generateLocalizedRoutes`
-- `inferRedirects`
-- `generateSitemapEntries`
-
-## Static vs Dynamic Mode
-
-| Feature | Static Mode | Dynamic Mode |
+| Feature | Static Mode (Production) | Dynamic Mode (Development/SSR) |
 |---------|-------------|--------------|
-| `<StaticLink>` | Renders `<a>` | Renders Inertia `<Link>` |
-| Navigation | Full page reload | SPA transition |
-| Detected when | Production domains, port 4173 | localhost:3000/5173 |
+| **Link Rendering** | Native `<a>` | Inertia `<Link>` (or provided component) |
+| **Localization** | Path-based (`/zh/about`) | Path-based (`/zh/about`) |
+| **Navigation** | Browser Page Load | SPA Client-side Transition |
+| **Detection** | Matches `staticDomains` or production ports | Default fallback |
 
 ## License
 
