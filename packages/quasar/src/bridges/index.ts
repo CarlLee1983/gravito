@@ -1,4 +1,7 @@
+export * from './AgendaBridge'
 export * from './BaseZenithBridge'
 export * from './BeeQueueBridge'
+export * from './BullBridge'
 export * from './BullMQBridge'
+export * from './GenericBridge'
 export * from './types'

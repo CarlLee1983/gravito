@@ -52,13 +52,72 @@ export interface LaravelActionCommand {
   }
 }
 
+export interface PauseQueueCommand {
+  type: 'PAUSE_QUEUE'
+  id: string
+  targetNodeId: string
+  timestamp: number
+  issuer: string
+  payload: {
+    queue: string
+    driver: QueueDriver
+  }
+}
+
+export interface ResumeQueueCommand {
+  type: 'RESUME_QUEUE'
+  id: string
+  targetNodeId: string
+  timestamp: number
+  issuer: string
+  payload: {
+    queue: string
+    driver: QueueDriver
+  }
+}
+
+export interface CleanQueueCommand {
+  type: 'CLEAN_QUEUE'
+  id: string
+  targetNodeId: string
+  timestamp: number
+  issuer: string
+  payload: {
+    queue: string
+    driver: QueueDriver
+    status: 'completed' | 'failed' | 'delayed' | 'active' | 'wait' | 'paused'
+    limit?: number
+  }
+}
+
+export interface PrioritizeJobCommand {
+  type: 'PRIORITIZE_JOB'
+  id: string
+  targetNodeId: string
+  timestamp: number
+  issuer: string
+  payload: {
+    queue: string
+    jobId: string
+    driver: QueueDriver
+    priority: number
+  }
+}
+
 /**
  * A command sent from Zenith to a Quasar agent for remote management.
  *
  * @public
  * @since 3.0.0
  */
-export type QuasarCommand = RetryJobCommand | DeleteJobCommand | LaravelActionCommand
+export type QuasarCommand =
+  | RetryJobCommand
+  | DeleteJobCommand
+  | LaravelActionCommand
+  | PauseQueueCommand
+  | ResumeQueueCommand
+  | CleanQueueCommand
+  | PrioritizeJobCommand
 
 /**
  * Command types that Zenith can send to Quasar agents.

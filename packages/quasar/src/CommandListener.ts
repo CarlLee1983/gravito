@@ -1,5 +1,9 @@
 import type { Redis } from 'ioredis'
+import { CleanQueueExecutor } from './executors/CleanQueueExecutor'
 import { DeleteJobExecutor } from './executors/DeleteJobExecutor'
+import { PauseQueueExecutor } from './executors/PauseQueueExecutor'
+import { PrioritizeJobExecutor } from './executors/PrioritizeJobExecutor'
+import { ResumeQueueExecutor } from './executors/ResumeQueueExecutor'
 import { RetryJobExecutor } from './executors/RetryJobExecutor'
 import type { CommandExecutor, CommandResult, CommandType, QuasarCommand } from './types'
 import type { Logger } from './utils/logger'
@@ -21,7 +25,14 @@ export class CommandListener {
   private logger: Logger
 
   // Security: Hardcoded allowlist
-  private readonly ALLOWED_COMMANDS: CommandType[] = ['RETRY_JOB', 'DELETE_JOB']
+  private readonly ALLOWED_COMMANDS: CommandType[] = [
+    'RETRY_JOB',
+    'DELETE_JOB',
+    'PAUSE_QUEUE',
+    'RESUME_QUEUE',
+    'CLEAN_QUEUE',
+    'PRIORITIZE_JOB',
+  ]
 
   /**
    * @param subscriberRedis - Dedicated Redis connection for SUBSCRIBE
@@ -39,6 +50,10 @@ export class CommandListener {
     this.executors = new Map()
     this.registerExecutor(new RetryJobExecutor())
     this.registerExecutor(new DeleteJobExecutor())
+    this.registerExecutor(new PauseQueueExecutor())
+    this.registerExecutor(new ResumeQueueExecutor())
+    this.registerExecutor(new CleanQueueExecutor())
+    this.registerExecutor(new PrioritizeJobExecutor())
   }
 
   private registerExecutor(executor: CommandExecutor): void {

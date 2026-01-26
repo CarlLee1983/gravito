@@ -1,6 +1,9 @@
 import { Redis } from 'ioredis'
+import { AgendaBridge } from './bridges/AgendaBridge'
 import { BeeQueueBridge } from './bridges/BeeQueueBridge'
+import { BullBridge } from './bridges/BullBridge'
 import { BullMQBridge } from './bridges/BullMQBridge'
+import { type EventMapping, GenericBridge } from './bridges/GenericBridge'
 import type { QueueBridge } from './bridges/types'
 import { CommandListener } from './CommandListener'
 import { BeeQueueProbe } from './probes/BeeQueueProbe'
@@ -195,6 +198,19 @@ export class QuasarAgent {
     this.logger.info(`[Quasar] Agent stopped`)
   }
 
+  /**
+   * Get the current agent status.
+   */
+  getStatus() {
+    return {
+      nodeId: this.nodeId,
+      service: this.service,
+      started: !!this.timer,
+      transport: this.transportRedis.status,
+      monitor: this.monitorRedis?.status || 'not_configured',
+    }
+  }
+
   monitorQueue(
     name: string,
     type: 'redis' | 'laravel' | 'bull' | 'bullmq' | 'bee-queue' = 'redis'
@@ -219,11 +235,22 @@ export class QuasarAgent {
   }
 
   /**
+   * Add a custom queue probe.
+   * Useful for probes that require specific configuration (RabbitMQ, SQS, etc).
+   *
+   * @param probe - Instantiated QueueProbe
+   */
+  addQueueProbe(probe: QueueProbe) {
+    this.queueProbes.push(probe)
+  }
+
+  /**
    * Attach a bridge to monitor job lifecycle events.
    * This enables real-time job execution logs and error tracking.
    *
-   * @param worker - BullMQ Worker or Bee-Queue instance
-   * @param type - Queue type ('bullmq' or 'bee-queue')
+   * @param target - BullMQ Worker, Bee-Queue instance, Bull Queue, or EventEmitter
+   * @param type - Queue type ('bullmq', 'bee-queue', 'bull', 'agenda', 'generic')
+   * @param options - Additional options for generic bridges
    *
    * @example
    * ```typescript
@@ -233,7 +260,11 @@ export class QuasarAgent {
    * agent.attachBridge(worker, 'bullmq')
    * ```
    */
-  attachBridge(worker: any, type: 'bullmq' | 'bee-queue'): void {
+  attachBridge(
+    target: any,
+    type: 'bullmq' | 'bee-queue' | 'bull' | 'agenda' | 'generic',
+    options?: { eventMapping?: EventMapping; queueName?: string }
+  ): void {
     if (!this.transportRedis) {
       this.logger.warn('[Quasar] Cannot attach bridge: transport connection required')
       return
@@ -246,12 +277,28 @@ export class QuasarAgent {
       bridge = new BullMQBridge(this.transportRedis, 'flux_console:', workerId)
     } else if (type === 'bee-queue') {
       bridge = new BeeQueueBridge(this.transportRedis, 'flux_console:', workerId)
+    } else if (type === 'bull') {
+      bridge = new BullBridge(this.transportRedis, 'flux_console:', workerId)
+    } else if (type === 'agenda') {
+      bridge = new AgendaBridge(this.transportRedis, 'flux_console:', workerId)
+    } else if (type === 'generic') {
+      if (!options?.eventMapping) {
+        this.logger.warn('[Quasar] Generic bridge requires eventMapping option')
+        return
+      }
+      bridge = new GenericBridge(
+        this.transportRedis,
+        'flux_console:',
+        workerId,
+        options.eventMapping,
+        options.queueName
+      )
     } else {
       this.logger.warn(`[Quasar] Unknown bridge type: ${type}`)
       return
     }
 
-    bridge.attach(worker)
+    bridge.attach(target)
     this.bridges.push(bridge)
     this.logger.info(`[Quasar] 🔗 Attached ${type} bridge to worker`)
   }

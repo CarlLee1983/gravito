@@ -1,4 +1,5 @@
 import type { Redis } from 'ioredis'
+import { LogBuffer } from './LogBuffer'
 import type { QueueBridge, ZenithLogPayload } from './types'
 
 /**
@@ -7,41 +8,31 @@ import type { QueueBridge, ZenithLogPayload } from './types'
  */
 export abstract class BaseZenithBridge implements QueueBridge {
   protected listeners: Array<{ target: any; event: string; handler: Function }> = []
+  protected logBuffer: LogBuffer
 
   constructor(
     protected redis: Redis,
     protected prefix = 'flux_console:',
-    protected workerId?: string
-  ) {}
+    protected workerId?: string,
+    options: { batchSize?: number; flushInterval?: number } = {}
+  ) {
+    this.logBuffer = new LogBuffer(redis, prefix, {
+      batchSize: options.batchSize ?? 100,
+      flushInterval: options.flushInterval ?? 1000,
+    })
+  }
 
   /**
    * Publish a log message to Zenith.
    */
   protected async publishLog(payload: ZenithLogPayload): Promise<void> {
-    try {
-      const fullPayload = {
-        ...payload,
-        workerId: payload.workerId || this.workerId,
-        timestamp: payload.timestamp || new Date().toISOString(),
-      }
-
-      // Publish to Redis channel
-      await this.redis.publish(`${this.prefix}logs`, JSON.stringify(fullPayload))
-
-      // Also store in history list (capped at 100)
-      const historyKey = `${this.prefix}logs:history`
-      if (typeof (this.redis as any).pipeline === 'function') {
-        const pipe = (this.redis as any).pipeline()
-        pipe.lpush(historyKey, JSON.stringify(fullPayload))
-        pipe.ltrim(historyKey, 0, 99)
-        await pipe.exec()
-      } else {
-        await this.redis.lpush(historyKey, JSON.stringify(fullPayload))
-      }
-    } catch (err) {
-      // Silently fail to avoid breaking the application
-      console.error('[BaseZenithBridge] Failed to publish log:', err)
+    const fullPayload = {
+      ...payload,
+      workerId: payload.workerId || this.workerId,
+      timestamp: payload.timestamp || new Date().toISOString(),
     }
+
+    this.logBuffer.add(fullPayload)
   }
 
   /**
@@ -65,5 +56,6 @@ export abstract class BaseZenithBridge implements QueueBridge {
       }
     }
     this.listeners = []
+    this.logBuffer.stop()
   }
 }
