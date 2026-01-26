@@ -26,13 +26,31 @@ export interface FastContext {
   html(html: string, status?: number): Response
   redirect(url: string, status?: 301 | 302 | 303 | 307 | 308): Response
   body(data: BodyInit | null, status?: number): Response
+  stream(stream: ReadableStream, status?: number): Response
+  notFound(message?: string): Response
+  forbidden(message?: string): Response
+  unauthorized(message?: string): Response
+  badRequest(message?: string): Response
+  forward(target: string, options?: any): Promise<Response>
 
   /** Header management */
+  header(name: string): string | undefined
   header(name: string, value: string): void
   status(code: number): void
 
-  /** Internal reset for pooling */
-  reset(request: Request, params?: Record<string, string>): this
+  /** Context Variables */
+  get<T>(key: string): T
+  set(key: string, value: any): void
+
+  /** Lifecycle helpers */
+  route: (name: string, params?: any, query?: any) => string
+  readonly native: any
+
+  /** Internal initialization for pooling */
+  init(request: Request, params?: Record<string, string>, path?: string): this
+
+  /** Internal cleanup for pooling */
+  reset(): void
 }
 
 /**
@@ -111,6 +129,22 @@ export type NotFoundHandler = (ctx: FastContext) => Response | Promise<Response>
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
+ * Route metadata for middleware management
+ */
+export interface RouteMetadata {
+  handler: Handler
+  middleware: Middleware[]
+  compiled?: CompiledHandler
+  useMinimal?: boolean
+  compiledVersion?: number
+}
+
+/**
+ * Compiled handler function
+ */
+export type CompiledHandler = (ctx: FastContext) => Promise<Response>
+
+/**
  * Route match result from router
  */
 export interface RouteMatch {
@@ -122,6 +156,9 @@ export interface RouteMatch {
 
   /** Middleware to execute */
   middleware: Middleware[]
+
+  /** Optional stable route pattern for caching */
+  routePattern?: string
 }
 
 /**

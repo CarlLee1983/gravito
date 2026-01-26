@@ -35,6 +35,16 @@ interface Worker {
   }
 }
 
+/**
+ * Worker Nodes Dashboard Page.
+ *
+ * Provides a detailed view of all active and inactive worker nodes in the
+ * cluster, including their resource usage, monitored queues, and Laravel
+ * worker status.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export function WorkersPage() {
   const queryClient = useQueryClient()
   const { isPending, error, data } = useQuery<{ workers: Worker[] }>({

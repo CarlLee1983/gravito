@@ -2,6 +2,10 @@ import { PhotonAdapter } from './adapters/PhotonAdapter'
 import { type GravitoConfig, PlanetCore } from './PlanetCore'
 import { ServiceProvider } from './ServiceProvider'
 
+/**
+ * Manifest describing a Gravito application structure.
+ * @public
+ */
 export interface GravitoManifest {
   name: string
   version?: string
@@ -9,6 +13,10 @@ export interface GravitoManifest {
   config?: GravitoConfig
 }
 
+/**
+ * Function type for asynchronous module resolution.
+ * @public
+ */
 export type ModuleResolver = () => Promise<any>
 
 /**
@@ -60,8 +68,9 @@ export class GravitoServer {
 
         core.register(instance)
         console.log(`   ✅ 模組點火成功: [${moduleId}]`)
-      } catch (error: any) {
-        console.error(`   ❌ 模組 [${moduleId}] 點火失敗: ${error.message}`)
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : String(error)
+        console.error(`   ❌ 模組 [${moduleId}] 點火失敗: ${message}`)
       }
     }
 

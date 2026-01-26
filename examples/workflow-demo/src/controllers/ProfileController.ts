@@ -9,7 +9,7 @@ export class ProfileController {
   }
 
   update = async (ctx: GravitoContext) => {
-    const payload = await ctx.req.json()
+    const payload = (await ctx.req.json()) as { name?: string }
     const user = ctx.get('user') as DemoUser | undefined
     const { name } = payload
     if (!name) {

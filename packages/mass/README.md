@@ -1,23 +1,29 @@
-# @gravito/mass
+# @gravito/mass ⚖️
 
-TypeBox-based validation for Gravito. High-performance schema validation with full TypeScript support.
+> High-performance, TypeBox-powered schema validation for Gravito Galaxy Architecture.
 
-## Features
+`@gravito/mass` provides the "weight" of data integrity to your Gravito applications. Built on top of **TypeBox**, it offers ultra-fast runtime validation with full TypeScript type inference, designed to work seamlessly with the **Photon** HTTP engine.
 
-- **Fast validation**: TypeBox-powered validators with strong runtime performance
-- **Full TypeScript support**: Type inference without manual typings
-- **Photon integration**: Works seamlessly with Photon validation middleware
-- **Multiple sources**: Validate JSON, query, params, and form data
+## 🌟 Key Features
 
-## Installation
+- **🚀 Performance-First**: Leverages TypeBox's build-time validator generation for near-zero runtime overhead.
+- **🛡️ Full Type Safety**: Automatic TypeScript type inference—no need to manually maintain interfaces and schemas separately.
+- **🔌 Photon Integration**: Native middleware for `@gravito/photon` to validate JSON, query, params, and form data.
+- **🛠️ Schema Utilities**: Advanced helpers like `partial()` for easy creation of PATCH schemas.
+- **🪝 Extensible Hooks**: Intercept validation results to provide custom error responses or logging.
+- **📦 Galaxy-Ready**: Follows Gravito's modular philosophy for lean, efficient dependency management.
+
+## 📦 Installation
 
 ```bash
 bun add @gravito/mass
 ```
 
-## Quick Start
+## 🚀 Quick Start
 
-### JSON validation
+### Basic JSON Validation
+
+Define a schema using `Schema` and apply it to your routes using the `validate` middleware.
 
 ```typescript
 import { Photon } from '@gravito/photon'
@@ -25,40 +31,39 @@ import { Schema, validate } from '@gravito/mass'
 
 const app = new Photon()
 
-app.post('/login',
-  validate('json', Schema.Object({
-    username: Schema.String(),
-    password: Schema.String()
-  })),
+const CreateUserSchema = Schema.Object({
+  username: Schema.String({ minLength: 3 }),
+  email: Schema.String({ format: 'email' }),
+  age: Schema.Number({ minimum: 18 })
+})
+
+app.post('/users', 
+  validate('json', CreateUserSchema), 
   (c) => {
-    const { username } = c.req.valid('json')
-    return c.json({ success: true, message: `Welcome ${username}` })
+    // Data is fully typed as { username: string; email: string; age: number }
+    const user = c.req.valid('json')
+    return c.json({ success: true, data: user })
   }
 )
 ```
 
-### Query validation
+### Validating Different Sources
+
+Mass can validate data from various parts of the HTTP request:
 
 ```typescript
-app.get('/search',
-  validate('query', Schema.Object({
-    q: Schema.String(),
-    page: Schema.Optional(Schema.Number())
-  })),
+// Query Parameters
+app.get('/search', 
+  validate('query', Schema.Object({ q: Schema.String() })),
   (c) => {
-    const { q, page } = c.req.valid('query')
-    return c.json({ query: q, page: page ?? 1 })
+    const { q } = c.req.valid('query')
+    return c.text(`Searching for: ${q}`)
   }
 )
-```
 
-### Route param validation
-
-```typescript
+// URL Parameters
 app.get('/users/:id',
-  validate('param', Schema.Object({
-    id: Schema.String({ pattern: '^[0-9]+$' })
-  })),
+  validate('param', Schema.Object({ id: Schema.Number() })),
   (c) => {
     const { id } = c.req.valid('param')
     return c.json({ userId: id })
@@ -66,65 +71,68 @@ app.get('/users/:id',
 )
 ```
 
-## Schema Builder
+## ⏳ Advanced Patterns
 
-`Schema` exposes TypeBox constructors:
+### Partial Updates (PATCH)
 
-```typescript
-import { Schema } from '@gravito/mass'
-
-Schema.String()
-Schema.Number()
-Schema.Boolean()
-Schema.Array(Schema.String())
-
-Schema.Object({
-  name: Schema.String(),
-  age: Schema.Number()
-})
-
-Schema.Optional(Schema.String())
-Schema.String({ default: 'hello' })
-Schema.String({ minLength: 2, maxLength: 100 })
-Schema.Number({ minimum: 0, maximum: 100 })
-Schema.String({ format: 'email' })
-```
-
-## Beam Client Integration
-
-When you compose routes with `app.route()`, you get full type inference for the client:
+Use the `partial()` utility to make all properties of a schema optional, perfect for update endpoints.
 
 ```typescript
-// app.ts
-import { Photon } from '@gravito/photon'
-import { userRoute } from './routes/user'
+import { partial } from '@gravito/mass'
 
-const app = new Photon()
-const routes = app.route('/api/users', userRoute)
+const UpdateUserSchema = partial(CreateUserSchema)
 
-export default app
-export type AppRoutes = typeof routes
+app.patch('/users/:id', 
+  validate('json', UpdateUserSchema), 
+  (c) => {
+    const updates = c.req.valid('json')
+    return c.json({ updated: updates })
+  }
+)
 ```
+
+### Custom Error Handling
+
+Override the default 400 response with your own error format using the validation hook.
 
 ```typescript
-// client.ts
-import { createBeam } from '@gravito/beam'
-import type { AppRoutes } from './types'
-
-export const createClient = (baseUrl: string) => {
-  return createBeam<AppRoutes>(baseUrl)
-}
-
-const client = createClient('http://localhost:3000')
-const result = await client.api.users.login.$post({
-  json: { username: 'user', password: 'pass' }
-})
+app.post('/strict-endpoint',
+  validate('json', schema, (result, c) => {
+    if (!result.success) {
+      return c.json({
+        code: 'VAL_ERR',
+        errors: result.errors.map(e => ({ field: e.path, msg: e.message }))
+      }, 422)
+    }
+  }),
+  (c) => c.text('Success')
+)
 ```
 
-## Performance Notes
+## 🧩 API Reference
 
-TypeBox generates validators at build-time for faster runtime performance, smaller bundles, and strong TypeScript inference.
+### `validate(source, schema, hook?)`
+Main middleware for schema enforcement.
+- `source`: `'json' | 'query' | 'param' | 'form'`
+- `schema`: A TypeBox schema instance.
+- `hook`: `(result, context) => Response | undefined`
 
-## License
+### `Schema`
+The central builder for defining data structures. Re-exports all TypeBox builders.
+- `Schema.String()`
+- `Schema.Number()`
+- `Schema.Boolean()`
+- `Schema.Object({ ... })`
+- `Schema.Array(...)`
+- `Schema.Optional(...)`
 
-MIT
+### `partial(schema)`
+Recursively makes all properties in an object schema optional.
+
+## 🤝 Contributing
+
+We welcome contributions! Please see our [Contributing Guide](../../CONTRIBUTING.md) for details.
+
+## 📄 License
+
+MIT © Carl Lee

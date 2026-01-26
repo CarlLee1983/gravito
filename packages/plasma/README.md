@@ -1,147 +1,194 @@
 # @gravito/plasma
 
-> Redis client for Gravito - Bun native, Laravel-style API
+> High-performance Redis Orbit for Galaxy Architecture. Bun-native, multi-connection, and Laravel-style API.
 
-## Installation
+[![npm version](https://img.shields.io/npm/v/@gravito/plasma.svg)](https://www.npmjs.com/package/@gravito/plasma)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
+[![Bun](https://img.shields.io/badge/Bun-1.0+-black.svg)](https://bun.sh/)
+
+**@gravito/plasma** is the standard Redis integration for Gravito applications. Built on the **Orbit** pattern, it provides a unified abstraction layer that leverages **Bun.redis** for maximum performance while offering a familiar, fluent API inspired by Laravel.
+
+## ✨ Features
+
+- 🪐 **Orbit Integration** - Seamlessly plugs into the PlanetCore micro-kernel.
+- 🚀 **Bun Native** - Uses `Bun.redis` by default for zero-overhead TCP/Unix socket communication.
+- 🎯 **Laravel-style API** - Familiar fluent interface for all Redis data structures.
+- 🔌 **Multi-connection** - Manage multiple named Redis connections (e.g., `cache`, `session`, `queue`).
+- 🔄 **Auto Fallback** - Automatically falls back to `ioredis` if `Bun.redis` is unavailable (e.g., in Node.js environments).
+- 🔄 **Pipeline Support** - Batch multiple commands in a single round-trip for higher throughput.
+- 📡 **Pub/Sub** - Real-time messaging with a simple subscription API.
+- 💓 **Health Check** - Built-in connection verification and status monitoring.
+- 🛡️ **Reliability** - Automatic reconnection with exponential backoff and graceful shutdown.
+- 🏢 **Enterprise Ready** - Context-aware middleware and IoC container registration.
+
+## 📦 Installation
 
 ```bash
+# Recommended for Bun environments (no external dependencies needed)
+bun add @gravito/plasma
+
+# Optional: Add ioredis as a fallback for Node.js or specific features
 bun add @gravito/plasma ioredis
 ```
 
-## Quick Start
+## 🚀 Quick Start
+
+### 1. Initialize with PlanetCore
+
+Register Plasma as an Orbit in your application bootstrap:
 
 ```typescript
-import { Redis } from '@gravito/plasma'
+import { PlanetCore } from '@gravito/core';
+import { OrbitPlasma } from '@gravito/plasma';
 
-// Configure
+const core = new PlanetCore();
+
+// Register the orbit
+core.addOrbit(new OrbitPlasma({
+  connections: {
+    default: { host: 'localhost', port: 6379 }
+  },
+  exposeAs: 'redis' // Default is 'redis'
+}));
+
+await core.bootstrap();
+```
+
+### 2. Use in Routes (Middleware)
+
+Plasma automatically injects the Redis client into the request context:
+
+```typescript
+core.app.get('/cache-test', async (c) => {
+  const redis = c.get('redis'); // Resolved from context
+  
+  await redis.set('greet', 'Hello Galaxy!', { ex: 60 });
+  const val = await redis.get('greet');
+  
+  return c.json({ val });
+});
+```
+
+### 3. Standalone Usage (Facade)
+
+You can also use the `Redis` facade directly:
+
+```typescript
+import { Redis } from '@gravito/plasma';
+
+// Configure manually
 Redis.configure({
-  default: 'main',
   connections: {
     main: { host: 'localhost', port: 6379 }
   }
-})
+});
 
-// Connect
-await Redis.connect()
-
-// Use
-await Redis.set('user:123', JSON.stringify({ name: 'John' }), { ex: 3600 })
-const user = await Redis.get('user:123')
-
-// Disconnect
-await Redis.disconnect()
+await Redis.set('foo', 'bar');
+const bar = await Redis.get('foo');
 ```
 
-## Features
+## 🔧 Multi-Connection
 
-- 🚀 **Bun Native** - Optimized for Bun runtime
-- 🎯 **Laravel-style API** - Familiar fluent interface
-- 📦 **Full Data Types** - String, Hash, List, Set, Sorted Set
-- 🔄 **Pipeline Support** - Batch operations
-- 📡 **Pub/Sub** - Real-time messaging
-- 🔌 **Multi-connection** - Named connections support
-
-## API Reference
-
-### String Operations
+Define multiple connections and switch between them easily:
 
 ```typescript
-await Redis.set('key', 'value')
-await Redis.set('key', 'value', { ex: 3600 })  // TTL in seconds
-await Redis.set('key', 'value', { nx: true })  // Only if not exists
+const plasma = new OrbitPlasma({
+  default: 'cache',
+  connections: {
+    cache: { host: 'cache-server', port: 6379 },
+    session: { host: 'session-server', port: 6379, db: 1 }
+  }
+});
 
-const value = await Redis.get('key')
-await Redis.del('key')
-await Redis.incr('counter')
-await Redis.decr('counter')
+// Using context
+const cache = c.get('redis'); // uses default 'cache'
+const session = c.get('redis').connection('session');
+
+await session.set('sid_123', data);
 ```
 
-### Hash Operations
+## 📖 API Reference
+
+### Common Operations
 
 ```typescript
-await Redis.hset('user:123', { name: 'John', email: 'john@example.com' })
-const name = await Redis.hget('user:123', 'name')
-const user = await Redis.hgetall('user:123')
-await Redis.hincrby('user:123', 'visits', 1)
-```
+// Strings
+await redis.set('key', 'value', { ex: 3600, nx: true });
+const val = await redis.get('key');
+await redis.incr('counter');
 
-### List Operations
+// Hashes
+await redis.hset('user:1', { name: 'John', age: 30 });
+const user = await redis.hgetall('user:1');
 
-```typescript
-await Redis.lpush('queue', 'job1', 'job2')
-const job = await Redis.rpop('queue')
-const jobs = await Redis.lrange('queue', 0, -1)
-```
+// Lists
+await redis.lpush('queue', 'task1');
+const task = await redis.rpop('queue');
 
-### Set Operations
-
-```typescript
-await Redis.sadd('tags', 'typescript', 'redis', 'bun')
-const tags = await Redis.smembers('tags')
-const isMember = await Redis.sismember('tags', 'redis')
-```
-
-### Sorted Set Operations
-
-```typescript
-await Redis.zadd('leaderboard', { score: 100, member: 'player1' })
-const top10 = await Redis.zrevrange('leaderboard', 0, 9)
-const rank = await Redis.zrank('leaderboard', 'player1')
-```
-
-### TTL Management
-
-```typescript
-await Redis.expire('session', 3600)
-const ttl = await Redis.ttl('session')
-await Redis.persist('session')  // Remove TTL
+// Sets & Sorted Sets
+await redis.sadd('tags', 'news', 'tech');
+await redis.zadd('ranks', { score: 10, member: 'alice' });
 ```
 
 ### Pipeline
 
+Group commands to reduce network latency:
+
 ```typescript
-const results = await Redis.pipeline()
-  .set('key1', 'value1')
-  .set('key2', 'value2')
+const [val1, val2, counter] = await redis.pipeline()
   .get('key1')
+  .get('key2')
   .incr('counter')
-  .exec()
+  .exec();
 ```
 
 ### Pub/Sub
 
 ```typescript
-// Publisher
-await Redis.publish('notifications', JSON.stringify({ type: 'alert', message: 'Hello!' }))
+// Subscribe
+await redis.subscribe('events', (msg) => {
+  console.log('Received:', msg);
+});
 
-// Subscriber
-await Redis.subscribe('notifications', (message, channel) => {
-  console.log(`Received on ${channel}:`, message)
-})
+// Publish
+await redis.publish('events', 'Hello!');
 ```
 
-### Multiple Connections
+## 🪝 Hooks & Events
+
+Plasma emits events via standard EventEmitter API:
+
+```typescript
+const redis = Redis.connection();
+
+redis.on('connect', () => console.log('Redis connected'));
+redis.on('error', (err) => console.error('Redis error', err));
+```
+
+## 🔌 Client Type Selection
+
+Manually specify the underlying driver if needed:
 
 ```typescript
 Redis.configure({
-  default: 'main',
   connections: {
-    main: { host: 'localhost', port: 6379 },
-    cache: { host: 'cache.example.com', port: 6379, db: 1 }
+    main: { 
+      host: 'localhost', 
+      port: 6379,
+      clientType: 'bun' // Force Bun.redis
+      // clientType: 'ioredis' // Force ioredis
+      // clientType: 'auto' // Default: Bun.redis -> ioredis fallback
+    }
   }
-})
-
-// Use specific connection
-await Redis.connection('cache').set('cached-data', data)
+});
 ```
 
-## Roadmap
+## 🤝 Contributing
 
-- [ ] Redis Cluster support
-- [ ] Sentinel support
-- [ ] Redis Streams
-- [ ] Lua scripting
+Contributions, issues and feature requests are welcome!
+Feel free to check the [issues page](https://github.com/gravito-framework/gravito/issues).
 
-## License
+## 📝 License
 
-MIT
+MIT © [Carl Lee](https://github.com/gravito-framework/gravito)

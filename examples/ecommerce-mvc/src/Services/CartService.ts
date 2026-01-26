@@ -5,7 +5,7 @@
  */
 
 import { DB } from '@gravito/atlas'
-import { Cart, CartItem } from '../Models'
+import { Cart, CartItem } from '../models'
 import { sql, TRUE } from '../utils/db'
 
 export class CartService {

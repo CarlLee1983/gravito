@@ -72,6 +72,8 @@ onMounted(() => {
             class="w-full h-full object-cover animate-pulse-slow scale-110 blur-[2px] sm:blur-none"
             loading="eager"
             fetchpriority="high"
+            formatNegotiation
+            usePicture
             style="mask-image: radial-gradient(circle at center, black 30%, transparent 80%);"
           />
         </div>

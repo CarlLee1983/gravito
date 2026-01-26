@@ -1,142 +1,61 @@
-import { mkdir } from 'node:fs/promises'
-import { isAbsolute, normalize, resolve, sep } from 'node:path'
-import {
-  type GravitoContext,
-  type GravitoNext,
-  type GravitoOrbit,
-  getRuntimeAdapter,
-  type PlanetCore,
-} from '@gravito/core'
+import type { GravitoContext, GravitoNext, GravitoOrbit, PlanetCore } from '@gravito/core'
+import { StorageManager } from './StorageManager'
+import type { StorageStore } from './store'
+import { LocalStore } from './stores/LocalStore'
+import { MemoryStore } from './stores/MemoryStore'
+import { NullStore } from './stores/NullStore'
+import type { OrbitNebulaOptions, StorageHooks } from './types'
 
-export interface StorageProvider {
-  put(key: string, data: Blob | Buffer | string): Promise<void>
-  get(key: string): Promise<Blob | null>
-  delete(key: string): Promise<void>
-  getUrl(key: string): string
-}
+export * from './StorageManager'
+export * from './StorageRepository'
+export * from './store'
+export * from './stores/LocalStore'
+export * from './stores/MemoryStore'
+export * from './stores/NullStore'
+export * from './types'
 
-/**
- * Local storage provider implementation.
- */
-export class LocalStorageProvider implements StorageProvider {
-  private rootDir: string
-  private baseUrl: string
-  private runtime = getRuntimeAdapter()
+/** @deprecated Use StorageStore instead */
+export type StorageProvider = StorageStore
 
-  /**
-   * Create a new LocalStorageProvider.
-   *
-   * @param rootDir - The root directory for storage.
-   * @param baseUrl - The base URL for accessing stored files.
-   */
-  constructor(rootDir: string, baseUrl = '/storage') {
-    this.rootDir = rootDir
-    this.baseUrl = baseUrl
-  }
-
-  /**
-   * Store data in a file.
-   *
-   * @param key - The storage key (path).
-   * @param data - The data to store.
-   */
-  async put(key: string, data: Blob | Buffer | string): Promise<void> {
-    const path = this.resolveKeyPath(key)
-    // Ensure dir exists
-    const dir = path.substring(0, path.lastIndexOf('/'))
-    if (dir && dir !== this.rootDir) {
-      await mkdir(dir, { recursive: true })
-    }
-    await this.runtime.writeFile(path, data)
-  }
-
-  /**
-   * Retrieve a file.
-   *
-   * @param key - The storage key.
-   * @returns A promise resolving to the file Blob or null if not found.
-   */
-  async get(key: string): Promise<Blob | null> {
-    const path = this.resolveKeyPath(key)
-    if (!(await this.runtime.exists(path))) {
-      return null
-    }
-    return await this.runtime.readFileAsBlob(path)
-  }
-
-  /**
-   * Delete a file.
-   *
-   * @param key - The storage key.
-   */
-  async delete(key: string): Promise<void> {
-    await this.runtime.deleteFile(this.resolveKeyPath(key))
-  }
-
-  /**
-   * Get the public URL for a file.
-   *
-   * @param key - The storage key.
-   * @returns The public URL string.
-   */
-  getUrl(key: string): string {
-    const safeKey = this.normalizeKey(key)
-    return `${this.baseUrl}/${safeKey}`
-  }
-
-  private normalizeKey(key: string): string {
-    if (!key || key.includes('\0')) {
-      throw new Error('Invalid storage key.')
-    }
-    const normalized = normalize(key).replace(/^[/\\]+/, '')
-    if (
-      normalized === '.' ||
-      normalized === '..' ||
-      normalized.startsWith(`..${sep}`) ||
-      isAbsolute(normalized)
-    ) {
-      throw new Error('Invalid storage key.')
-    }
-    return normalized.replace(/\\/g, '/')
-  }
-
-  private resolveKeyPath(key: string): string {
-    const normalized = this.normalizeKey(key)
-    const root = resolve(this.rootDir)
-    const resolved = resolve(root, normalized)
-    const rootPrefix = root.endsWith(sep) ? root : `${root}${sep}`
-    if (!resolved.startsWith(rootPrefix) && resolved !== root) {
-      throw new Error('Invalid storage key.')
-    }
-    return resolved
-  }
-}
-
-export interface OrbitNebulaOptions {
-  provider?: StorageProvider
-  exposeAs?: string // Default: 'storage'
-  local?: {
-    root: string
-    baseUrl?: string
-  }
-}
+/** @deprecated Use LocalStore instead */
+export { LocalStore as LocalStorageProvider }
 
 /** @deprecated Use OrbitNebulaOptions instead */
 export type OrbitStorageOptions = OrbitNebulaOptions
 
 /**
- * OrbitNebula - Storage Orbit
+ * OrbitNebula provides a unified file storage abstraction for Gravito.
  *
- * Provides file storage functionality for Gravito applications.
+ * It implements the Galaxy Architecture's Orbit pattern, acting as a bridge between
+ * the PlanetCore micro-kernel and various storage backends. It manages the lifecycle
+ * of the StorageManager and integrates with the core's hook system.
+ *
+ * @example
+ * ```typescript
+ * const nebula = new OrbitNebula({
+ *   default: 'local',
+ *   disks: {
+ *     local: { driver: 'local', root: './uploads' }
+ *   }
+ * });
+ * core.addOrbit(nebula);
+ * ```
+ *
+ * @public
  */
 export class OrbitNebula implements GravitoOrbit {
+  private manager?: StorageManager
+
   constructor(private options?: OrbitNebulaOptions) {}
 
   /**
-   * Install storage service into PlanetCore.
+   * Bootstraps the storage service and registers it with PlanetCore.
    *
-   * @param core - The PlanetCore instance.
-   * @throws {Error} If configuration or provider is missing.
+   * This method initializes the StorageManager, configures the default disk,
+   * and registers the storage service in the IoC container and middleware.
+   *
+   * @param core - The PlanetCore instance to install into
+   * @throws {Error} If configuration is missing or default disk cannot be initialized
    */
   install(core: PlanetCore): void {
     const config = this.options || core.config.get('storage')
@@ -148,96 +67,125 @@ export class OrbitNebula implements GravitoOrbit {
     }
 
     const { exposeAs = 'storage' } = config
-    const logger = core.logger
+    core.logger.info(`[OrbitNebula] Initializing Storage (Exposed as: ${exposeAs})`)
 
-    logger.info(`[OrbitNebula] Initializing Storage (Exposed as: ${exposeAs})`)
-
-    let provider = config.provider
-
-    // Default to LocalStorage if not provided and local options are present
-    if (!provider && config.local) {
-      logger.info(`[OrbitNebula] Using LocalStorageProvider at ${config.local.root}`)
-      provider = new LocalStorageProvider(config.local.root, config.local.baseUrl)
+    let defaultDisk = config.default
+    if (!defaultDisk) {
+      if (config.local) defaultDisk = 'local'
+      else if (config.provider) defaultDisk = 'custom'
+      else defaultDisk = 'local'
     }
 
-    if (!provider) {
-      throw new Error(
-        '[OrbitNebula] No provider configured. Please provide a provider instance or local configuration.'
-      )
+    const managerOptions = {
+      default: defaultDisk,
     }
 
-    const storageService: StorageProvider = {
-      put: async (key: string, data: Blob | Buffer | string) => {
-        // Hook: storage:upload
-        const finalData = await core.hooks.applyFilters('storage:upload', data, { key })
-        await provider?.put(key, finalData)
-        // Action: storage:uploaded
-        await core.hooks.doAction('storage:uploaded', { key })
-      },
-      get: (key: string) => provider?.get(key),
-      delete: (key: string) => provider?.delete(key),
-      getUrl: (key: string) => provider?.getUrl(key),
+    const storageHooks: StorageHooks = {
+      applyFilter: (h, v, c) => core.hooks.applyFilters(h, v, c),
+      doAction: (h, c) => core.hooks.doAction(h, c),
     }
 
-    // Inject helper into context
+    const storeFactory = this.createStoreFactory(config)
+    this.manager = new StorageManager(storeFactory, managerOptions, storageHooks)
+
+    // Validate default disk configuration immediately
+    this.manager.disk()
+
+    core.container.instance(exposeAs, this.manager)
+
     core.adapter.use('*', async (c: GravitoContext, next: GravitoNext) => {
-      c.set(exposeAs, storageService)
+      c.set(exposeAs, this.manager)
       await next()
       return undefined
     })
 
-    // Action: Storage Initialized
-    core.hooks.doAction('storage:init', storageService)
+    core.hooks.doAction('storage:init', { manager: this.manager })
+  }
+
+  /**
+   * Retrieves the initialized StorageManager instance.
+   *
+   * Use this to access storage operations directly from the orbit instance
+   * after it has been installed.
+   *
+   * @returns The active StorageManager instance
+   * @throws {Error} If called before the orbit is installed
+   */
+  getStorage(): StorageManager {
+    if (!this.manager) {
+      throw new Error('[OrbitNebula] StorageManager not initialized. Call install() first.')
+    }
+    return this.manager
+  }
+
+  private createStoreFactory(options: OrbitNebulaOptions) {
+    return (name: string): StorageStore => {
+      const config = options.disks?.[name]
+
+      if (config) {
+        if (config.driver === 'local') {
+          return new LocalStore(config.root, config.baseUrl)
+        }
+        if (config.driver === 'memory') {
+          return new MemoryStore()
+        }
+        if (config.driver === 'null') {
+          return new NullStore()
+        }
+        if (config.driver === 'custom') {
+          return config.store
+        }
+      }
+
+      if (name === 'local' && options.local) {
+        return new LocalStore(options.local.root, options.local.baseUrl)
+      }
+
+      if (options.provider) {
+        if (name === 'custom' || (!options.disks && !options.local)) {
+          return options.provider
+        }
+      }
+
+      throw new Error(`[OrbitNebula] Driver not configured for disk: ${name}`)
+    }
   }
 }
 
 /**
- * Functional API for installing OrbitNebula.
+ * Factory function for quick OrbitNebula installation.
  *
- * @param core - The PlanetCore instance.
- * @param options - Storage options.
- * @returns The configured storage provider wrapper.
- * @throws {Error} If provider is not configured.
+ * Provides a functional approach to adding storage capabilities to a Gravito application.
+ *
+ * @param core - The PlanetCore instance
+ * @param options - Storage configuration options
+ * @returns The initialized StorageManager instance
+ *
+ * @example
+ * ```typescript
+ * const storage = orbitStorage(core, {
+ *   default: 'local',
+ *   disks: {
+ *     local: { driver: 'local', root: './uploads' }
+ *   }
+ * });
+ * ```
  */
-export default function orbitStorage(core: PlanetCore, options: OrbitNebulaOptions) {
+export default function orbitStorage(
+  core: PlanetCore,
+  options: OrbitNebulaOptions
+): StorageManager {
   const orbit = new OrbitNebula(options)
   orbit.install(core)
-
-  // NOTE: Functional wrapper requires specific return implementation which can't be easily extracted from void install()
-  // Re-implementing minimal return logic for backward compatibility
-  // This duplicates the service creation/wrapping logic - acceptable for legacy support
-  let provider = options.provider
-  if (!provider && options.local) {
-    provider = new LocalStorageProvider(options.local.root, options.local.baseUrl)
-  }
-
-  // Notice: The class version adds hooks wrapper, we should probably do the same here to be consistent
-  // Or simply rely on the fact that hooks/actions were registered inside install()
-  // But wait, user gets the RETURNED object. If we return the raw provider, hooks in 'put' won't fire
-  // unless user calls c.get('storage').
-  // If user calls returnedService.put(), it bypasses the hooks wrapper created inside install().
-
-  // To fix this without massive duplication, let's just return a proxy that delegates to Context?
-  // No, context is per request.
-
-  // Let's accept that the "Returned Object" from functional API is the raw provider wrapped.
-  // We duplicate the wrapper logic here for safety.
-
-  if (!provider) {
-    throw new Error('[OrbitNebula] No provider configured.')
-  }
-
-  return {
-    put: async (key: string, data: Blob | Buffer | string) => {
-      const finalData = await core.hooks.applyFilters('storage:upload', data, { key })
-      await provider?.put(key, finalData)
-      await core.hooks.doAction('storage:uploaded', { key })
-    },
-    get: (key: string) => provider?.get(key),
-    delete: (key: string) => provider?.delete(key),
-    getUrl: (key: string) => provider?.getUrl(key),
-  }
+  return orbit.getStorage()
 }
 
 /** @deprecated Use OrbitNebula instead */
 export const OrbitStorage = OrbitNebula
+
+declare module '@gravito/core' {
+  interface GravitoVariables {
+    /** File storage service */
+    storage: StorageManager
+  }
+}

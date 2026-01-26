@@ -70,7 +70,7 @@ describe('Notification', () => {
     })
   })
 
-  it('throws for unimplemented channel methods', () => {
+  it('does not have default implementations for channel methods', () => {
     class BasicNotification extends Notification {
       via(_notifiable: Notifiable): string[] {
         return []
@@ -78,8 +78,8 @@ describe('Notification', () => {
     }
 
     const notification = new BasicNotification()
-    expect(() => notification.toMail?.(notifiable)).toThrow('toMail method not implemented')
-    expect(() => notification.toDatabase?.(notifiable)).toThrow('toDatabase method not implemented')
+    expect(notification.toMail).toBeUndefined()
+    expect(notification.toDatabase).toBeUndefined()
   })
 })
 
@@ -87,6 +87,7 @@ describe('NotificationManager', () => {
   it('sends notifications through channels and logs errors', async () => {
     const core = {
       logger: { warn: jest.fn(), error: jest.fn() },
+      hooks: { emit: jest.fn() },
     }
     const manager = new NotificationManager(core as any)
 
@@ -125,6 +126,7 @@ describe('NotificationManager', () => {
   it('queues notifications when queue manager is set', async () => {
     const core = {
       logger: { warn: jest.fn(), error: jest.fn() },
+      hooks: { emit: jest.fn() },
     }
     const manager = new NotificationManager(core as any)
     const queuePush = jest.fn(async () => {})
@@ -148,8 +150,12 @@ describe('NotificationManager', () => {
     await manager.send(notifiable, new QueuedNotification())
 
     expect(queuePush).toHaveBeenCalledTimes(1)
-    const job = queuePush.mock.calls[0][0]
-    await job.handle()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const calls = queuePush.mock.calls as any[][]
+    const job = calls[0]?.[0]
+    if (job) {
+      await job.handle()
+    }
   })
 })
 
@@ -265,22 +271,26 @@ describe('Channels', () => {
 
 describe('OrbitFlare', () => {
   it('registers notification manager and queue integration', async () => {
-    const services = new Map<string, unknown>()
-    services.set('mail', { send: async () => {} })
-    services.set('db', { insertNotification: async () => {} })
-    services.set('broadcast', { broadcast: async () => {} })
+    const instances = new Map<string, unknown>()
+    instances.set('mail', { send: async () => {} })
+    instances.set('db', { insertNotification: async () => {} })
+    instances.set('broadcast', { broadcast: async () => {} })
     const queue = { push: jest.fn(async () => {}) }
-    services.set('queue', queue)
+    instances.set('queue', queue)
 
     const core = {
-      services,
+      container: {
+        make: (key: string) => instances.get(key),
+        instance: (key: string, instance: unknown) => instances.set(key, instance),
+      },
       logger: { warn: jest.fn(), info: jest.fn() },
+      hooks: { emit: jest.fn() },
     }
 
     const orbit = new OrbitFlare()
     await orbit.install(core as any)
 
-    const manager = services.get('notifications') as NotificationManager
+    const manager = instances.get('notifications') as NotificationManager
     expect(manager).toBeInstanceOf(NotificationManager)
 
     class QueuedNotification extends Notification {
@@ -301,28 +311,56 @@ describe('OrbitFlare', () => {
   })
 
   it('logs warnings when services are missing', async () => {
+    const instances = new Map<string, unknown>()
     const core = {
-      services: new Map(),
+      container: {
+        make: (key: string) => instances.get(key),
+        instance: (key: string, instance: unknown) => instances.set(key, instance),
+      },
       logger: { warn: jest.fn(), info: jest.fn() },
+      hooks: { emit: jest.fn() },
     }
 
-    const orbit = OrbitFlare.configure({ enableSlack: true, enableSms: true })
+    const orbit = OrbitFlare.configure({
+      enableSlack: true,
+      enableSms: true,
+      channels: {
+        slack: { webhookUrl: 'https://example.com' },
+        sms: { provider: 'twilio' },
+      },
+    } as any)
     await orbit.install(core as any)
 
     expect(core.logger.warn).toHaveBeenCalledWith(
-      '[OrbitFlare] Mail service not found, mail channel disabled'
+      '[OrbitFlare] Mail service not found or invalid, mail channel disabled'
     )
     expect(core.logger.warn).toHaveBeenCalledWith(
-      '[OrbitFlare] Database service not found, database channel disabled'
+      '[OrbitFlare] Database service not found or invalid, database channel disabled'
     )
     expect(core.logger.warn).toHaveBeenCalledWith(
-      '[OrbitFlare] Broadcast service not found, broadcast channel disabled'
+      '[OrbitFlare] Broadcast service not found or invalid, broadcast channel disabled'
     )
-    expect(core.logger.warn).toHaveBeenCalledWith(
-      '[OrbitFlare] Slack configuration not found, slack channel disabled'
-    )
-    expect(core.logger.warn).toHaveBeenCalledWith(
-      '[OrbitFlare] SMS configuration not found, sms channel disabled'
-    )
+  })
+
+  it('validates configuration options', () => {
+    expect(() =>
+      OrbitFlare.configure({
+        enableSlack: true,
+      })
+    ).toThrow(/webhookUrl not provided/)
+
+    expect(() =>
+      OrbitFlare.configure({
+        enableSlack: true,
+        channels: { slack: { webhookUrl: 'invalid-url' } },
+      })
+    ).toThrow(/Invalid Slack webhook URL/)
+
+    expect(() =>
+      OrbitFlare.configure({
+        enableSms: true,
+        channels: { sms: { provider: 'unknown' } },
+      })
+    ).toThrow(/Unsupported SMS provider/)
   })
 })

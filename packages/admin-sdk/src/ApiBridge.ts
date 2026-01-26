@@ -3,10 +3,22 @@
  * Handles standardized HTTP communication with the backend.
  */
 
+/**
+ * Options for configuring an API request.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface ApiRequestOptions extends RequestInit {
   params?: Record<string, string>
 }
 
+/**
+ * Represents an error returned by the Gravito Admin API.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class ApiError extends Error {
   constructor(
     public override message: string,
@@ -19,6 +31,15 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * ApiBridge handles the standardized HTTP communication with the Gravito backend.
+ *
+ * It automatically injects authentication tokens, sets appropriate headers,
+ * and parses structured API errors.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class ApiBridge {
   constructor(private baseUrl: string) {}
 

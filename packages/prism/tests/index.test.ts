@@ -10,6 +10,10 @@ describe('OrbitPrism', () => {
       config: {
         get: (_key: string, fallback?: string) => fallback,
       },
+      container: {
+        instance: mock(() => {}),
+        singleton: mock(() => {}),
+      },
       adapter: {
         use: mock((_path: string, handler: typeof middleware) => {
           middleware = handler

@@ -1,10 +1,12 @@
 /**
- * Inertia React View Templates for Gravito Fortify
+ * Default Login Page template for Inertia React.
  *
- * These are stub files that can be copied to your project.
- * Install with: bun gravito fortify:install --stack=react
+ * Provides a modern, responsive login form with email, password, and
+ * "remember me" functionality.
+ *
+ * @public
+ * @since 3.0.0
  */
-
 export const LoginPage = `
 import { useForm, Head, Link } from '@inertiajs/react'
 import { FormEvent } from 'react'
@@ -60,7 +62,7 @@ export default function Login({ status, canResetPassword = true }: LoginProps) {
             </div>
 
             <div className="mb-4">
-              <label htmlFor="password" className="block text-sm text-gray-400 mb-2">
+              <label htmlFor="password" disabled={processing} className="block text-sm text-gray-400 mb-2">
                 Password
               </label>
               <input
@@ -114,6 +116,14 @@ export default function Login({ status, canResetPassword = true }: LoginProps) {
 }
 `
 
+/**
+ * Default Register Page template for Inertia React.
+ *
+ * Provides a registration form with name, email, and password confirmation.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export const RegisterPage = `
 import { useForm, Head, Link } from '@inertiajs/react'
 import { FormEvent } from 'react'
@@ -174,7 +184,7 @@ export default function Register() {
             </div>
 
             <div className="mb-4">
-              <label htmlFor="password" className="block text-sm text-gray-400 mb-2">
+              <label htmlFor="password" disabled={processing} className="block text-sm text-gray-400 mb-2">
                 Password
               </label>
               <input
@@ -224,6 +234,14 @@ export default function Register() {
 }
 `
 
+/**
+ * Default Forgot Password Page template for Inertia React.
+ *
+ * Provides a simple form to request a password reset link.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export const ForgotPasswordPage = `
 import { useForm, Head, Link } from '@inertiajs/react'
 import { FormEvent } from 'react'

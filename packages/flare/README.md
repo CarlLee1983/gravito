@@ -2,15 +2,17 @@
 
 > Lightweight, high-performance notifications for Gravito with multi-channel delivery (mail, database, broadcast, Slack, SMS).
 
-**Status**: v0.1.0 - core features complete with multiple channel support.
+**Status**: v3.3.0 - Production ready with advanced features (Retries, Metrics, Batching).
 
 ## Features
 
 - **Zero runtime overhead**: Pure type wrappers that delegate to channel drivers
-- **Multi-channel delivery**: Mail, database, broadcast, Slack, SMS
-- **Modular by design**: Install only the channels you need
+- **Multi-channel delivery**: Mail, database, broadcast, Slack, SMS (Twilio & AWS SNS)
+- **High Performance**: Parallel channel execution and batch sending capabilities
+- **Reliability**: Built-in retry mechanism with exponential backoff
+- **Observability**: Comprehensive metrics with Prometheus support
+- **Developer Experience**: Strong typing, lifecycle hooks, and template system
 - **Queue support**: Works with `@gravito/stream` for async delivery
-- **AI-friendly**: Strong typing, clear JSDoc, and predictable APIs
 
 ## Installation
 
@@ -20,14 +22,43 @@ bun add @gravito/flare
 
 ## Quick Start
 
-### 1. Create a notification
+### 1. Configure OrbitFlare
+
+```typescript
+import { PlanetCore } from '@gravito/core'
+import { OrbitFlare } from '@gravito/flare'
+
+const core = await PlanetCore.boot({
+  orbits: [
+    OrbitFlare.configure({
+      enableMail: true,
+      enableDatabase: true,
+      channels: {
+        slack: { webhookUrl: process.env.SLACK_WEBHOOK_URL },
+        sms: {
+          provider: 'aws-sns', // or 'twilio'
+          region: 'us-east-1'
+        }
+      },
+      // Optional: Global retry policy
+      retry: {
+        maxAttempts: 3,
+        backoff: 'exponential',
+        baseDelay: 1000
+      }
+    }),
+  ],
+})
+```
+
+### 2. Create a notification
 
 ```typescript
 import { Notification } from '@gravito/flare'
-import type { MailMessage, DatabaseNotification, Notifiable } from '@gravito/flare'
+import type { MailMessage, Notifiable } from '@gravito/flare'
 
-class InvoicePaid extends Notification {
-  constructor(private invoice: Invoice) {
+class WelcomeNotification extends Notification {
+  constructor(private name: string) {
     super()
   }
 
@@ -37,191 +68,99 @@ class InvoicePaid extends Notification {
 
   toMail(user: Notifiable): MailMessage {
     return {
-      subject: 'Invoice Paid',
-      view: 'emails.invoice-paid',
-      data: { invoice: this.invoice },
+      subject: 'Welcome!',
+      view: 'emails.welcome',
+      data: { name: this.name },
       to: user.email,
     }
   }
 
-  toDatabase(user: Notifiable): DatabaseNotification {
-    return {
-      type: 'invoice-paid',
-      data: {
-        invoice_id: this.invoice.id,
-        amount: this.invoice.amount,
-      },
-    }
+  // Define per-notification retry logic
+  retry = {
+    maxAttempts: 5,
+    backoff: 'linear' as const
   }
 }
-```
-
-### 2. Configure OrbitFlare
-
-```typescript
-import { PlanetCore } from '@gravito/core'
-import { OrbitFlare } from '@gravito/flare'
-import { OrbitSignal } from '@gravito/signal'
-import { OrbitStream } from '@gravito/stream'
-
-const core = await PlanetCore.boot({
-  orbits: [
-    OrbitSignal.configure({ /* ... */ }),
-    OrbitStream.configure({ /* ... */ }),
-    OrbitFlare.configure({
-      enableMail: true,
-      enableDatabase: true,
-      enableBroadcast: true,
-      channels: {
-        slack: {
-          webhookUrl: 'https://hooks.slack.com/services/...',
-        },
-      },
-    }),
-  ],
-})
 ```
 
 ### 3. Send a notification
 
 ```typescript
-// In a controller
 const notifications = c.get('notifications') as NotificationManager
 
-await notifications.send(user, new InvoicePaid(invoice))
-```
+// Simple send
+const result = await notifications.send(user, new WelcomeNotification('Alice'))
 
-## Queueing Notifications
-
-```typescript
-import { Notification, ShouldQueue } from '@gravito/flare'
-
-class SendEmailNotification extends Notification implements ShouldQueue {
-  queue = 'notifications'
-  delay = 60 // delay by 60 seconds
-
-  via(user: Notifiable): string[] {
-    return ['mail']
-  }
-
-  toMail(user: Notifiable): MailMessage {
-    return {
-      subject: 'Welcome!',
-      to: user.email,
-      view: 'emails.welcome',
-    }
-  }
+if (result.failed.length > 0) {
+  console.error('Some channels failed:', result.failed)
 }
 
-await notifications.send(user, new SendEmailNotification())
+// Batch send (high performance)
+await notifications.sendBatch(users, new SystemUpdateNotification())
 ```
 
-## Channels
+## Advanced Features
 
-### Mail
-
-Requires `@gravito/signal`:
+### Retries
+Configure retries globally or per-notification:
 
 ```typescript
-via(user: Notifiable): string[] {
-  return ['mail']
-}
-
-toMail(user: Notifiable): MailMessage {
-  return {
-    subject: 'Subject',
-    view: 'emails.template',
-    data: { /* ... */ },
-    to: user.email,
+// Per-notification
+class CriticalAlert extends Notification {
+  shouldRetry(attempt: number, error: Error): boolean {
+    return attempt < 5 && isRetryable(error)
   }
 }
 ```
 
-### Database
-
-Requires database support:
+### Metrics
+Enable metrics to track success rates and latency:
 
 ```typescript
-via(user: Notifiable): string[] {
-  return ['database']
-}
+const metrics = new NotificationMetricsCollector()
+notifications.setMetricsCollector(metrics)
 
-toDatabase(user: Notifiable): DatabaseNotification {
-  return {
-    type: 'notification-type',
-    data: { /* ... */ },
-  }
-}
+// Export to Prometheus
+const promData = toPrometheusFormat(metrics.getSummary())
 ```
 
-### Broadcast
-
-Requires `@gravito/radiance`:
+### Hooks
+Listen to lifecycle events:
 
 ```typescript
-via(user: Notifiable): string[] {
-  return ['broadcast']
-}
-
-toBroadcast(user: Notifiable): BroadcastNotification {
-  return {
-    type: 'notification-type',
-    data: { /* ... */ },
-  }
-}
+notifications.on('notification:failed', ({ notification, error }) => {
+  logger.error('Notification failed completely', error)
+})
 ```
 
-### Slack
+### Templates
+Use `TemplatedNotification` for consistent messaging:
 
 ```typescript
-via(user: Notifiable): string[] {
-  return ['slack']
-}
-
-toSlack(user: Notifiable): SlackMessage {
-  return {
-    text: 'Notification message',
-    channel: '#notifications',
-  }
-}
-```
-
-### SMS
-
-```typescript
-via(user: Notifiable): string[] {
-  return ['sms']
-}
-
-toSms(user: Notifiable): SmsMessage {
-  return {
-    to: user.phone,
-    message: 'Notification message',
+class OrderShipped extends TemplatedNotification {
+  constructor(order: Order) {
+    super('order-shipped', { orderId: order.id })
   }
 }
 ```
 
 ## API Reference
 
-### Notification
-
-Every notification should extend `Notification`.
-
-#### Methods
-
-- `via(notifiable: Notifiable): string[]` - Choose delivery channels (required)
-- `toMail(notifiable: Notifiable): MailMessage` - Mail payload (optional)
-- `toDatabase(notifiable: Notifiable): DatabaseNotification` - Database payload (optional)
-- `toBroadcast(notifiable: Notifiable): BroadcastNotification` - Broadcast payload (optional)
-- `toSlack(notifiable: Notifiable): SlackMessage` - Slack payload (optional)
-- `toSms(notifiable: Notifiable): SmsMessage` - SMS payload (optional)
-
 ### NotificationManager
 
 #### Methods
 
-- `send(notifiable: Notifiable, notification: Notification): Promise<void>` - Send notification
-- `channel(name: string, channel: NotificationChannel): void` - Register a custom channel
+- `send(notifiable: Notifiable, notification: Notification, options?: SendOptions): Promise<NotificationResult>`
+- `sendBatch(notifiables: Notifiable[], notification: Notification): Promise<BatchResult>`
+- `sendBatchStream(iterator: AsyncIterator<Notifiable>, notification: Notification): Promise<BatchResult>`
+
+### Notification
+
+#### Methods
+
+- `via(notifiable: Notifiable): string[]` - Choose delivery channels
+- `toMail`, `toDatabase`, `toBroadcast`, `toSlack`, `toSms` - Channel payloads
+- `shouldRetry(attempt: number, error: Error): boolean` - Custom retry logic
 
 ## License
 

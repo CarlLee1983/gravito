@@ -30,6 +30,8 @@ const props = defineProps<Props>()
  * 檢測是否在靜態網站環境中（GitHub Pages、Vercel、Netlify 等）
  * 在靜態環境中，沒有後端伺服器處理 Inertia 的 AJAX 請求，
  * 因此需要使用普通的 <a> 標籤進行完整頁面導航
+ *
+ * 從環境變數 VITE_STATIC_SITE_DOMAINS 讀取生產環境域名列表
  */
 function isStaticSite(): boolean {
   if (typeof window === 'undefined') {
@@ -49,20 +51,11 @@ function isStaticSite(): boolean {
     return false
   }
 
-  // Production domains that should use hard reloads for safety on static CDNs
-  const staticDomains = ['gravito.dev', 'gravito-framework.github.io']
-
-  // Also check common static hosting patterns
-  if (
-    hostname.includes('github.io') ||
-    hostname.includes('vercel.app') ||
-    hostname.includes('netlify.app') ||
-    hostname.includes('pages.dev')
-  ) {
-    return true
-  }
-
-  return staticDomains.includes(hostname)
+  // 支援子網域匹配 (例如 zenith.gravito.dev)
+  const staticDomains = ['gravito.dev', 'github.io', 'vercel.app', 'netlify.app', 'pages.dev']
+  return staticDomains.some(
+    (domain) => hostname === domain || hostname.endsWith(`.${domain}`)
+  )
 }
 
 const isStatic = isStaticSite()

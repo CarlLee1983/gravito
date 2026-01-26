@@ -1,4 +1,4 @@
-import type { GravitoOrbit, PlanetCore } from '@gravito/core'
+import type { GravitoContext, GravitoNext, GravitoOrbit, PlanetCore } from '@gravito/core'
 import { DevMailbox } from './dev/DevMailbox'
 import { DevServer } from './dev/DevServer'
 import type { Mailable } from './Mailable'
@@ -6,6 +6,37 @@ import { LogTransport } from './transports/LogTransport'
 import { MemoryTransport } from './transports/MemoryTransport'
 import type { MailConfig, Message } from './types'
 
+/**
+ * OrbitSignal - Mail service orbit for Gravito framework.
+ *
+ * Provides email sending capabilities with support for multiple transports,
+ * development mode with email preview UI, and queue integration.
+ *
+ * @example
+ * ```typescript
+ * import { OrbitSignal } from '@gravito/signal'
+ * import { SmtpTransport } from '@gravito/signal'
+ *
+ * const app = new Application({
+ *   orbits: [
+ *     new OrbitSignal({
+ *       transport: new SmtpTransport({
+ *         host: 'smtp.example.com',
+ *         port: 587,
+ *         auth: { user: 'user', pass: 'pass' }
+ *       }),
+ *       from: { name: 'App', email: 'noreply@example.com' }
+ *     })
+ *   ]
+ * })
+ *
+ * // In route handler
+ * await c.get('mail').send(new WelcomeEmail(user))
+ * ```
+ *
+ * @since 3.0.0
+ * @public
+ */
 export class OrbitSignal implements GravitoOrbit {
   private config: MailConfig
   private devMailbox?: DevMailbox
@@ -43,10 +74,10 @@ export class OrbitSignal implements GravitoOrbit {
     }
 
     // 3. Register in container
-    core.container.singleton('mail', () => this)
+    core.container.instance('mail', this)
 
     // 4. Inject mail service into context for easy access in routes
-    core.adapter.use('*', async (c: any, next) => {
+    core.adapter.use('*', async (c: GravitoContext, next: GravitoNext) => {
       c.set('mail', this)
       return await next()
     })
@@ -54,10 +85,6 @@ export class OrbitSignal implements GravitoOrbit {
 
   /**
    * Send a mailable instance
-   *
-   * @param mailable - The mailable object to send.
-   * @returns A promise that resolves when the email is sent.
-   * @throws {Error} If the message is missing "from" or "to" addresses, or if no transport is configured.
    */
   async send(mailable: Mailable): Promise<void> {
     // 1. Build envelope and get configuration
@@ -112,5 +139,13 @@ export class OrbitSignal implements GravitoOrbit {
 
     // Fallback: 直接發送
     await this.send(mailable)
+  }
+}
+
+// Module augmentation for GravitoVariables
+declare module '@gravito/core' {
+  interface GravitoVariables {
+    /** Mail service for sending emails */
+    mail?: OrbitSignal
   }
 }

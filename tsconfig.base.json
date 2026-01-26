@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "declaration": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "jsx": "react-jsx",
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    
+    /* 嚴格檢查選項 - 防止未使用的代碼導致跨包依賴問題 */
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": false,
+    
+    /* 路徑映射 */
+    "baseUrl": ".",
+    "paths": {
+      "@gravito/core": ["packages/core/src/index.ts"],
+      "@gravito/core/*": ["packages/core/src/*"],
+      "@gravito/monolith": ["packages/monolith/src/index.ts"],
+      "@gravito/atlas": ["packages/atlas/src/index.ts"],
+      "@gravito/mass": ["packages/mass/src/index.ts"],
+      "@gravito/enterprise": ["packages/enterprise/src/index.ts"],
+      "@gravito/stasis": ["packages/stasis/src/index.ts"],
+      "@gravito/stream": ["packages/stream/src/index.ts"],
+      "@gravito/astral": ["packages/astral/src/index.ts"],
+      "@gravito/impulse": ["packages/impulse/src/index.ts"]
+    }
+  },
+  "exclude": [
+    "node_modules",
+    "**/dist/**",
+    "**/node_modules/**"
+  ]
+}

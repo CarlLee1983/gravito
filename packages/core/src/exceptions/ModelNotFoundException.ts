@@ -1,5 +1,9 @@
 import { GravitoException } from './GravitoException'
 
+/**
+ * Exception thrown when a database model is not found.
+ * @public
+ */
 export class ModelNotFoundException extends GravitoException {
   public readonly model: string
   public readonly id?: string | number

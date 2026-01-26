@@ -5,6 +5,12 @@
  * they access, allowing for optimized code paths.
  */
 
+/**
+ * Represents the results of a static analysis performed on a handler function.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface HandlerAnalysis {
   usesHeaders: boolean
   usesQuery: boolean

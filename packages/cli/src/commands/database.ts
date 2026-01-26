@@ -5,6 +5,14 @@ import { AtlasMigrationDriver } from './AtlasMigrationDriver'
 import { DrizzleMigrationDriver } from './DrizzleMigrationDriver'
 import type { MigrationDriver, MigrationResult } from './MigrationDriver'
 
+/**
+ * Detect and resolve the appropriate migration driver based on the project configuration.
+ *
+ * Checks for `drizzle.config.ts` to select the Drizzle driver, otherwise defaults to Atlas.
+ *
+ * @returns A promise that resolves with the migration driver.
+ * @private
+ */
 async function getMigrationDriver(): Promise<MigrationDriver> {
   const configPath = path.join(process.cwd(), 'drizzle.config.ts')
   try {
@@ -16,7 +24,11 @@ async function getMigrationDriver(): Promise<MigrationDriver> {
 }
 
 /**
- * Generate a new migration file
+ * Generate a new database migration file.
+ *
+ * @param name - The name of the migration to create.
+ * @returns A promise that resolves when the migration is generated.
+ * @public
  */
 export async function makeMigration(name: string) {
   const driver = await getMigrationDriver()
@@ -31,7 +43,12 @@ export async function makeMigration(name: string) {
 }
 
 /**
- * Run pending migrations
+ * Run pending database migrations.
+ *
+ * @param options - Migration options.
+ * @param options.fresh - Whether to drop all tables before running migrations.
+ * @returns A promise that resolves when the migrations have finished running.
+ * @public
  */
 export async function migrate(options: { fresh?: boolean }) {
   console.log(pc.cyan('🔄 Running migrations...'))
@@ -58,7 +75,10 @@ export async function migrate(options: { fresh?: boolean }) {
 }
 
 /**
- * Show migration status
+ * Display the current status of all migrations.
+ *
+ * @returns A promise that resolves when the status has been displayed.
+ * @public
  */
 export async function migrateStatus() {
   const driver = await getMigrationDriver()
@@ -87,7 +107,12 @@ export async function migrateStatus() {
 }
 
 /**
- * Run database seeders
+ * Run database seeders.
+ *
+ * @param options - Seeder options.
+ * @param options.class - The specific seeder class to run.
+ * @returns A promise that resolves when seeding is complete.
+ * @public
  */
 export async function dbSeed(options: { class?: string }) {
   console.log(pc.cyan('🌱 Running seeders...'))
@@ -133,6 +158,15 @@ export async function dbSeed(options: { class?: string }) {
 
 /**
  * Deploy database (health check + migrations).
+ *
+ * @param options - Deployment options.
+ * @param options.entry - Entry file to load core from.
+ * @param options.noMigrations - Whether to skip migrations.
+ * @param options.seeds - Whether to run seeds.
+ * @param options.skipHealthCheck - Whether to skip post-deploy health check.
+ * @param options.noValidate - Whether to skip pre-deploy validation.
+ * @returns A promise that resolves when deployment is complete.
+ * @public
  */
 export async function dbDeploy(options: {
   entry?: string
@@ -152,7 +186,7 @@ export async function dbDeploy(options: {
       throw new Error('Could not find core instance')
     }
 
-    const db = core.services.get('db') || core.container.make('db')
+    const db = core.container.make('db')
     if (!db) {
       throw new Error('Database service not found')
     }
@@ -182,7 +216,13 @@ export async function dbDeploy(options: {
 }
 
 /**
- * Generate schema lock file by scanning models
+ * Generate schema lock file by scanning models.
+ *
+ * @param options - Lock generation options.
+ * @param options.entry - Entry file to load core from.
+ * @param options.lockPath - Path to save the lock file.
+ * @returns A promise that resolves when the lock file is generated.
+ * @public
  */
 export async function schemaLock(options: { entry?: string; lockPath?: string }) {
   console.log(pc.cyan('🔒 Generating schema lock...'))
@@ -235,7 +275,12 @@ export async function schemaLock(options: { entry?: string; lockPath?: string })
 }
 
 /**
- * Refresh schema cache for all models
+ * Refresh schema cache for all models.
+ *
+ * @param options - Refresh options.
+ * @param options.entry - Entry file to load core from.
+ * @returns A promise that resolves when the schema cache is refreshed.
+ * @public
  */
 export async function schemaRefresh(options: { entry?: string }) {
   console.log(pc.cyan('🔄 Refreshing schemas...'))
@@ -261,6 +306,13 @@ export async function schemaRefresh(options: { entry?: string }) {
   }
 }
 
+/**
+ * Run a specific seeder file.
+ *
+ * @param filepath - The absolute path to the seeder file.
+ * @returns A promise that resolves when the seeder has finished running.
+ * @private
+ */
 async function runSeeder(filepath: string) {
   const filename = path.basename(filepath)
   console.log(pc.gray(`  Running ${filename}...`))
@@ -274,7 +326,7 @@ async function runSeeder(filepath: string) {
       throw new Error('Could not find core instance')
     }
 
-    const db = core.services.get('db') || core.container.make('db')
+    const db = core.container.make('db')
     if (!db) {
       throw new Error('Database service not found')
     }

@@ -51,55 +51,86 @@ import { astral } from '@gravito/astral'
 import { CreateUserRequest, UserDTO } from '../dtos'
 
 export const UserContract = astral.resource('/api/users', {
+
   tags: ['User Management'],
+
   operations: {
+
     index: {
+
       summary: 'List all users',
+
       description: 'Returns a paginated list of users.',
+
       output: [UserDTO] // Automatically infers array response
+
     },
+
     store: {
+
       summary: 'Register a new user',
+
       input: CreateUserRequest, // Extracts schema from FormRequest
-      output: UserDTO,
-      status: 201
-    },
-    show: {
-      summary: 'Get user details',
-      params: { id: z.string().uuid() }, // Define URL params
+
       output: UserDTO
+
     }
+
   }
+
 })
+
 ```
+
+
 
 ### 3. Register the Orbit
 
+
+
 Mount the `OrbitAstral` in your application boot process. Pass your contracts to the configuration.
 
+
+
 ```typescript
+
 // src/bootstrap.ts
+
 import { defineConfig, PlanetCore } from '@gravito/core'
+
 import { OrbitAstral } from '@gravito/astral'
+
 import { UserContract } from './contracts/UserContract'
 
+
+
 const config = defineConfig({
+
   orbits: [
+
     // ... other orbits
+
     OrbitAstral.configure({
+
       title: 'My Galaxy API',
+
       version: '1.0.0',
+
       description: 'Documentation for the Galaxy API service.',
+
       contracts: [UserContract],
-      path: '/docs',
-      specPath: '/docs/json'
+
+      uiPath: '/docs',
+
+      jsonPath: '/openapi.json'
+
     })
+
   ]
+
 })
 
-const app = await PlanetCore.boot(config)
-export default app.liftoff()
-```
+
 
 Now, navigate to `http://localhost:3000/docs` to explore your API!
 

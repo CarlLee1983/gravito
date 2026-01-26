@@ -9,21 +9,35 @@ import type {
   Logger,
   PlanetCore,
 } from '@gravito/core'
+import { getCsrfToken } from '@gravito/core'
 import { MemoryStorage } from './storage/MemoryStorage'
 import type { SpectrumStorage } from './storage/types'
 import type { CapturedLog, CapturedRequest } from './types'
 
+/**
+ * Configuration options for the Spectrum observability orbit.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface SpectrumConfig {
+  /** The URL path where the dashboard UI will be served. @default '/gravito/spectrum' */
   path?: string
+  /** Maximum number of records to keep in memory/disk per category. @default 100 */
   maxItems?: number
+  /** Whether the spectrum capture is enabled. @default true */
   enabled?: boolean
+  /** Custom storage backend for captured data. Defaults to MemoryStorage. */
   storage?: SpectrumStorage
   /**
-   * Authorization gate. Return true to allow access.
+   * Authorization gate for accessing the dashboard and its API.
+   * Return true to allow access, false to block.
    */
   gate?: (c: GravitoContext) => boolean | Promise<boolean>
   /**
-   * Sample rate (0.0 to 1.0). Default: 1.0 (100%)
+   * Probability sample rate (0.0 to 1.0).
+   * 1.0 captures everything, 0.0 captures nothing.
+   * @default 1.0
    */
   sampleRate?: number
 }
@@ -33,7 +47,32 @@ interface SpectrumOrbitDeps {
   loadAtlas?: () => Promise<{ Connection?: { queryListeners: Array<(query: any) => void> } } | null>
 }
 
+/**
+ * SpectrumOrbit is the official observability and debug dashboard for Gravito.
+ *
+ * It automatically captures HTTP requests, application logs, and database queries,
+ * providing a real-time view of your application's internals. It includes a
+ * built-in web dashboard for exploring and replaying captured data.
+ *
+ * @example
+ * ```typescript
+ * import { SpectrumOrbit } from '@gravito/spectrum';
+ *
+ * const spectrum = new SpectrumOrbit({
+ *   gate: (ctx) => ctx.get('auth')?.user?.isAdmin
+ * });
+ * core.addOrbit(spectrum);
+ * ```
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class SpectrumOrbit implements GravitoOrbit {
+  /**
+   * Global instance of SpectrumOrbit.
+   *
+   * Used for internal access and singleton patterns within the framework.
+   */
   static instance: SpectrumOrbit | undefined
   readonly name = 'spectrum'
   private config: Required<Pick<SpectrumConfig, 'path' | 'maxItems' | 'enabled' | 'sampleRate'>> & {
@@ -43,10 +82,22 @@ export class SpectrumOrbit implements GravitoOrbit {
 
   // Event listeners for SSE
   private listeners: Set<(data: string) => void> = new Set()
+  private currentRequestId: string | null = null
 
   private warnedSecurity = false
   private deps: SpectrumOrbitDeps
 
+  /**
+   * Initializes a new instance of SpectrumOrbit.
+   *
+   * @param config - Configuration options for behavior and storage
+   * @param deps - Internal dependencies for integration with other orbits
+   *
+   * @example
+   * ```typescript
+   * const spectrum = new SpectrumOrbit({ path: '/debug' });
+   * ```
+   */
   constructor(config: SpectrumConfig = {}, deps: SpectrumOrbitDeps = {}) {
     this.config = {
       path: config.path || '/gravito/spectrum',
@@ -60,6 +111,11 @@ export class SpectrumOrbit implements GravitoOrbit {
     SpectrumOrbit.instance = this
   }
 
+  /**
+   * Checks if the current operation should be captured based on sample rate.
+   *
+   * @returns True if capture is allowed
+   */
   private shouldCapture(): boolean {
     if (this.config.sampleRate >= 1.0) {
       return true
@@ -67,6 +123,12 @@ export class SpectrumOrbit implements GravitoOrbit {
     return Math.random() < this.config.sampleRate
   }
 
+  /**
+   * Broadcasts telemetry data to all connected SSE clients.
+   *
+   * @param type - The category of the data
+   * @param data - The telemetry payload
+   */
   private broadcast(type: 'request' | 'log' | 'query', data: any) {
     // Basic throttling could go here, but sampling is handled at capture time
     const payload = JSON.stringify({ type, data })
@@ -75,6 +137,20 @@ export class SpectrumOrbit implements GravitoOrbit {
     }
   }
 
+  /**
+   * Installs the Spectrum orbit into the Gravito core.
+   *
+   * Sets up collection listeners, initializes storage, and registers API/UI routes.
+   *
+   * @param core - The planet core instance
+   * @returns Resolves when installation is complete
+   * @throws {Error} If storage initialization fails
+   *
+   * @example
+   * ```typescript
+   * await spectrum.install(core);
+   * ```
+   */
   async install(core: PlanetCore): Promise<void> {
     if (!this.config.enabled) {
       return
@@ -82,6 +158,8 @@ export class SpectrumOrbit implements GravitoOrbit {
 
     // Initialize Storage
     await this.config.storage.init()
+    // Apply maxItems configuration to storage
+    await this.config.storage.prune(this.config.maxItems)
 
     // 1. Setup Data Collection
     this.setupHttpCollection(core)
@@ -94,6 +172,11 @@ export class SpectrumOrbit implements GravitoOrbit {
     core.logger.info(`[Spectrum] Debug Dashboard initialized at ${this.config.path}`)
   }
 
+  /**
+   * Configures collection of database queries from Atlas orbit.
+   *
+   * @param core - The planet core instance
+   */
   private setupDatabaseCollection(core: PlanetCore) {
     // Dynamically check if Atlas is available and try to hook into it
     const attachListener = (atlas: {
@@ -109,6 +192,7 @@ export class SpectrumOrbit implements GravitoOrbit {
         const data = {
           id: crypto.randomUUID(),
           ...query,
+          requestId: this.currentRequestId || undefined,
         }
         this.config.storage.storeQuery(data)
         this.broadcast('query', data)
@@ -148,12 +232,19 @@ export class SpectrumOrbit implements GravitoOrbit {
     }
   }
 
+  /**
+   * Configures interception of HTTP requests and responses.
+   *
+   * @param core - The planet core instance
+   */
   private setupHttpCollection(core: PlanetCore) {
     const middleware: GravitoMiddleware = async (c, next) => {
-      // Skip spectrum's own API calls
       if (c.req.path.startsWith(this.config.path)) {
         return await next()
       }
+
+      const requestId = crypto.randomUUID()
+      this.currentRequestId = requestId
 
       const startTime = performance.now()
       const startTimestamp = Date.now()
@@ -161,6 +252,7 @@ export class SpectrumOrbit implements GravitoOrbit {
       const res = (await next()) as Response | undefined
 
       const duration = performance.now() - startTime
+      this.currentRequestId = null
 
       if (!this.shouldCapture()) {
         return res
@@ -169,7 +261,7 @@ export class SpectrumOrbit implements GravitoOrbit {
       const finalRes = res || ((c as any).res as Response | undefined)
 
       const request: CapturedRequest = {
-        id: crypto.randomUUID(),
+        id: requestId,
         method: c.req.method,
         path: c.req.path,
         url: c.req.url,
@@ -180,6 +272,7 @@ export class SpectrumOrbit implements GravitoOrbit {
         userAgent: c.req.header('user-agent'),
         requestHeaders: Object.fromEntries((c.req.raw.headers as any).entries()),
         responseHeaders: finalRes ? Object.fromEntries((finalRes.headers as any).entries()) : {},
+        requestId,
       }
 
       this.config.storage.storeRequest(request)
@@ -190,6 +283,13 @@ export class SpectrumOrbit implements GravitoOrbit {
     core.adapter.use('*', middleware)
   }
 
+  /**
+   * Configures interception of application logs.
+   *
+   * Wraps the core logger to capture all log calls.
+   *
+   * @param core - The planet core instance
+   */
   private setupLogCollection(core: PlanetCore) {
     const originalLogger = core.logger
 
@@ -215,6 +315,13 @@ export class SpectrumOrbit implements GravitoOrbit {
     core.logger = spectrumLogger
   }
 
+  /**
+   * Processes and stores a captured log entry.
+   *
+   * @param level - Log severity level
+   * @param message - Primary message string
+   * @param args - Additional log arguments
+   */
   private captureLog(level: any, message: string, args: any[]) {
     if (!this.shouldCapture()) {
       return
@@ -225,11 +332,17 @@ export class SpectrumOrbit implements GravitoOrbit {
       message,
       args,
       timestamp: Date.now(),
+      requestId: this.currentRequestId || undefined,
     }
     this.config.storage.storeLog(log)
     this.broadcast('log', log)
   }
 
+  /**
+   * Registers all API and UI routes for the Spectrum dashboard.
+   *
+   * @param core - The planet core instance
+   */
   private registerRoutes(core: PlanetCore) {
     const router = core.router
     const apiPath = `${this.config.path}/api`
@@ -285,8 +398,16 @@ export class SpectrumOrbit implements GravitoOrbit {
     router.post(
       `${apiPath}/clear`,
       wrap(async (c) => {
-        await this.config.storage.clear()
+        if (c.req && typeof c.req.header === 'function') {
+          const token = c.req.header('x-csrf-token') || (await c.req.parseBody())?._csrf
+          const expectedToken = getCsrfToken(c)
 
+          if (expectedToken && (!token || token !== expectedToken)) {
+            return c.json({ error: 'Invalid CSRF token' }, 419)
+          }
+        }
+
+        await this.config.storage.clear()
         return c.json({ success: true })
       })
     )
@@ -297,45 +418,45 @@ export class SpectrumOrbit implements GravitoOrbit {
       `${apiPath}/events`,
       wrap((_c) => {
         const { readable, writable } = new TransformStream()
-
         const writer = writable.getWriter()
-
         const encoder = new TextEncoder()
 
-        const send = (payload: string) => {
-          try {
-            writer.write(encoder.encode(`data: ${payload}\n\n`))
-          } catch (_e) {
-            // Listener probably disconnected
+        let isClosed = false
 
-            this.listeners.delete(send)
+        const cleanup = () => {
+          if (isClosed) return
+          isClosed = true
+          clearInterval(heartbeat)
+          this.listeners.delete(send)
+          if (typeof writer.close === 'function') {
+            writer.close().catch(() => {})
           }
+        }
+
+        const send = (payload: string) => {
+          if (isClosed) return
+          Promise.resolve()
+            .then(() => writer.write(encoder.encode(`data: ${payload}\n\n`)))
+            .catch(() => {
+              cleanup()
+            })
         }
 
         this.listeners.add(send)
 
-        // Keep-alive heartbeat every 30 seconds
-
         const heartbeat = setInterval(() => {
-          try {
-            writer.write(encoder.encode(': heartbeat\n\n'))
-          } catch (_e) {
-            clearInterval(heartbeat)
-
-            this.listeners.delete(send)
-          }
+          if (isClosed) return
+          Promise.resolve()
+            .then(() => writer.write(encoder.encode(': heartbeat\n\n')))
+            .catch(() => {
+              cleanup()
+            })
         }, 30000)
-
-        // Handle disconnection if the adapter supports it,
-
-        // or rely on writer.write failure.
 
         return new Response(readable, {
           headers: {
             'Content-Type': 'text/event-stream',
-
             'Cache-Control': 'no-cache',
-
             Connection: 'keep-alive',
           },
         })
@@ -346,6 +467,15 @@ export class SpectrumOrbit implements GravitoOrbit {
     router.post(
       `${apiPath}/replay/:id`,
       wrap(async (c) => {
+        if (c.req && typeof c.req.header === 'function') {
+          const token = c.req.header('x-csrf-token') || (await c.req.parseBody())?._csrf
+          const expectedToken = getCsrfToken(c)
+
+          if (expectedToken && (!token || token !== expectedToken)) {
+            return c.json({ error: 'Invalid CSRF token' }, 419)
+          }
+        }
+
         const id = c.req.param('id')
         if (!id) {
           return c.json({ error: 'ID required' }, 400)
@@ -356,18 +486,12 @@ export class SpectrumOrbit implements GravitoOrbit {
           return c.json({ error: 'Request not found' }, 404)
         }
 
-        // Execute replay
         try {
-          // Construct a new request based on captured data
           const replayReq = new Request(req.url, {
             method: req.method,
             headers: req.requestHeaders,
-            // Body logic would be needed here (if captured)
           })
 
-          // Use core.fetch to dispatch internally without networking overhead if possible,
-          // or just fetch() to hit localhost.
-          // core.adapter.fetch is better for internal dispatch.
           const res = await core.adapter.fetch(replayReq)
 
           return c.json({
@@ -520,7 +644,8 @@ export class SpectrumOrbit implements GravitoOrbit {
                   logs: [],
                   queries: [],
                   connected: false,
-                  eventSource: null
+                  eventSource: null,
+                  csrfToken: this.getCsrfTokenFromCookie()
                 }
               },
               computed: {
@@ -541,6 +666,14 @@ export class SpectrumOrbit implements GravitoOrbit {
               mounted() {
                 this.fetchData();
                 this.initRealtime();
+              },
+              unmounted() {
+                // Cleanup EventSource to prevent memory leaks
+                if (this.eventSource) {
+                  this.eventSource.close();
+                  this.eventSource = null;
+                  this.connected = false;
+                }
               },
               methods: {
                 initRealtime() {
@@ -580,13 +713,35 @@ export class SpectrumOrbit implements GravitoOrbit {
                 },
                 async clearData() {
                   if (confirm('Are you sure you want to clear all debug data?')) {
-                    await fetch('${apiPath}/clear', { method: 'POST' });
-                    this.fetchData();
+                    try {
+                      const res = await fetch('${apiPath}/clear', { 
+                        method: 'POST',
+                        headers: {
+                          'X-CSRF-Token': this.csrfToken
+                        }
+                      });
+                      if (res.status === 419) {
+                        alert('CSRF token invalid. Please refresh the page.');
+                        return;
+                      }
+                      this.fetchData();
+                    } catch (e) {
+                      alert('Failed to clear data: ' + e.message);
+                    }
                   }
                 },
                 async replayRequest(id) {
                    try {
-                     const res = await fetch('${apiPath}/replay/' + id, { method: 'POST' });
+                     const res = await fetch('${apiPath}/replay/' + id, { 
+                       method: 'POST',
+                       headers: {
+                         'X-CSRF-Token': this.csrfToken
+                       }
+                     });
+                     if (res.status === 419) {
+                       alert('CSRF token invalid. Please refresh the page.');
+                       return;
+                     }
                      const data = await res.json();
                      if (data.success) {
                        alert('Replay successful! Status: ' + data.status);
@@ -625,6 +780,10 @@ export class SpectrumOrbit implements GravitoOrbit {
                     'debug': 'text-slate-500'
                   };
                   return map[l] || 'text-slate-400';
+                },
+                getCsrfTokenFromCookie() {
+                  const match = document.cookie.match(/csrf_token=([^;]+)/);
+                  return match ? match[1] : '';
                 }
               }
             }).mount('#app')

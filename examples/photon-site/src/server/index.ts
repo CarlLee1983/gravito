@@ -1,16 +1,23 @@
+/// <reference types="bun-types" />
 import path from 'node:path'
-import { Gravito } from '@gravito/core/engine'
 import { InertiaService } from '@gravito/ion'
+import { Photon } from '@gravito/photon'
+import { serveStatic } from '@gravito/photon/bun'
 import { TemplateEngine } from '@gravito/prism'
 
-export const app = new Gravito()
+export const app = new Photon()
 
-// Add global middleware to ensure FastContext is used for all routes.
-// This is required for Inertia as it needs to set the X-Inertia header,
-// which is not supported in the ultra-optimized MinimalContext.
+// Global middleware for all routes
 app.use(async (_, next) => {
   return await next()
 })
+
+const isDev = process.env.NODE_ENV === 'development'
+
+if (!isDev) {
+  // Serve static assets in production
+  app.use('/*', serveStatic({ root: './dist/static' }))
+}
 
 // Explicit static routes for known assets
 app.get('/favicon.svg', () => {
@@ -19,7 +26,187 @@ app.get('/favicon.svg', () => {
   })
 })
 
-const isDev = process.env.NODE_ENV === 'development'
+// Vite proxy for development mode
+if (isDev) {
+  // Health check endpoint to test Vite connection
+  app.get('/__vite_health', async (c) => {
+    try {
+      const response = await fetch('http://127.0.0.1:5173/@vite/client', {
+        method: 'HEAD',
+        signal: AbortSignal.timeout(2000),
+      })
+      return c.json({
+        status: 'ok',
+        vite: {
+          available: response.ok,
+          status: response.status,
+          url: 'http://127.0.0.1:5173',
+        },
+        message: 'Vite dev server is running',
+      })
+    } catch (error: any) {
+      return c.json(
+        {
+          status: 'error',
+          vite: {
+            available: false,
+            url: 'http://127.0.0.1:5173',
+          },
+          error: error.message,
+          message: 'Vite dev server is not available. Please run: bun run dev:vite',
+        },
+        503
+      )
+    }
+  })
+
+  const proxyToVite = async (c: any) => {
+    try {
+      const url = new URL(c.req.url)
+      const viteUrl = `http://127.0.0.1:5173${url.pathname}${url.search}`
+
+      const headers = new Headers(c.req.header())
+      headers.delete('host') // Let fetch set the correct host
+
+      // Simple retry logic for when Vite is just starting up
+      let response: Response
+      let retries = 0
+      const maxRetries = 3
+      let _lastError: Error | null = null
+
+      while (true) {
+        try {
+          response = await fetch(viteUrl, {
+            headers,
+            method: c.req.method,
+            body: c.req.method !== 'GET' && c.req.method !== 'HEAD' ? c.req.raw.body : null,
+            signal: AbortSignal.timeout(5000), // 5 second timeout
+          })
+          break // Success
+        } catch (e: any) {
+          _lastError = e
+          retries++
+          if (retries > maxRetries) {
+            const errorMsg = e.message || 'Connection failed'
+            const errorName = e.name || 'Error'
+
+            console.error(
+              `[Vite Proxy] ❌ Failed to connect to Vite dev server after ${maxRetries} retries`
+            )
+            console.error(`[Vite Proxy] Requested URL: ${viteUrl}`)
+            console.error(`[Vite Proxy] Error: ${errorName}: ${errorMsg}`)
+            console.error(
+              `[Vite Proxy] 💡 Solution: Run 'bun run dev:vite' in the photon-site directory`
+            )
+            console.error(`[Vite Proxy] 💡 Check health: http://localhost:3333/__vite_health`)
+
+            // Return HTML error page for better visibility in browser
+            return c.html(
+              `<!DOCTYPE html>
+<html>
+<head>
+  <title>Vite Dev Server Not Available</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
+    h1 { color: #e11d48; }
+    code { background: #f3f4f6; padding: 2px 6px; border-radius: 3px; }
+    pre { background: #1f2937; color: #f9fafb; padding: 15px; border-radius: 5px; overflow-x: auto; }
+    .solution { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0; }
+  </style>
+</head>
+<body>
+  <h1>⚠️ Vite Dev Server Not Available</h1>
+  <p>The backend proxy cannot connect to the Vite development server.</p>
+  
+  <div class="solution">
+    <h3>🔧 Solution:</h3>
+    <ol>
+      <li>Open a terminal in the <code>photon-site</code> directory</li>
+      <li>Run: <code>bun run dev:vite</code></li>
+      <li>Wait for Vite to start (you should see "Local: http://localhost:5173/")</li>
+      <li>Refresh this page</li>
+    </ol>
+  </div>
+  
+  <h3>📋 Details:</h3>
+  <ul>
+    <li><strong>Error:</strong> ${errorName}: ${errorMsg}</li>
+    <li><strong>Requested URL:</strong> <code>${viteUrl}</code></li>
+    <li><strong>Retries:</strong> ${maxRetries}</li>
+  </ul>
+  
+  <h3>🔍 Diagnostic:</h3>
+  <p>Check the health endpoint: <a href="/__vite_health">/__vite_health</a></p>
+  
+  <h3>💡 Quick Fix:</h3>
+  <pre>cd examples/photon-site
+pkill -f vite
+bun run dev:vite</pre>
+</body>
+</html>`,
+              503
+            )
+          }
+          // Wait 100ms before retry
+          await new Promise((resolve) => setTimeout(resolve, 100))
+        }
+      }
+
+      if (!response.ok && response.status !== 304) {
+        // Only log if it's not a 404 (404s are normal for some Vite requests)
+        if (response.status !== 404) {
+          console.warn(`[Vite Proxy] ${response.status} for: ${url.pathname}`)
+        }
+        // Forward the error response from Vite
+        return c.body(await response.arrayBuffer(), response.status as never)
+      }
+
+      // If 304, we don't need to read the body
+      if (response.status === 304) {
+        return new Response(null, {
+          status: 304,
+          headers: response.headers,
+        })
+      }
+
+      // Forward response with proper headers
+      const responseHeaders = new Headers(response.headers)
+      responseHeaders.set('Access-Control-Allow-Origin', '*')
+      responseHeaders.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+      responseHeaders.set('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+
+      return new Response(response.body, {
+        status: response.status,
+        headers: responseHeaders,
+      })
+    } catch (error: any) {
+      console.error('[Vite Proxy] Unexpected error:', error)
+      return c.text(
+        `Vite proxy error: ${error.message}\n\nPlease ensure Vite dev server is running: bun run dev:vite`,
+        503
+      )
+    }
+  }
+
+  // Proxy Vite requests (must be before other routes)
+  app.use('*', async (c, next) => {
+    const url = new URL(c.req.url)
+    const p = url.pathname
+
+    // Proxy Vite special paths and client source files
+    if (
+      p.startsWith('/@') || // /@vite, /@react-refresh, /@fs, /@id
+      p.startsWith('/src/client') ||
+      p.startsWith('/node_modules') ||
+      ((p.endsWith('.tsx') || p.endsWith('.ts') || p.endsWith('.jsx') || p.endsWith('.js')) &&
+        p.startsWith('/src'))
+    ) {
+      return proxyToVite(c)
+    }
+
+    await next()
+  })
+}
 
 const viewsDir = path.join(process.cwd(), 'src/views')
 const engine = new TemplateEngine(viewsDir)
@@ -29,7 +216,7 @@ const renderInertia = async (c: any, component: string, props: any) => {
   const store = new Map<string, any>()
   store.set('view', engine)
 
-  // Bridge FastContext to support Inertia requirements
+  // Bridge context to support Inertia requirements
   const bridge = Object.assign(c, {
     set: (key: string, val: any) => store.set(key, val),
     get: (key: string) => store.get(key),
@@ -171,9 +358,15 @@ const legalContent: Record<string, Record<string, any>> = {
 }
 
 // Routes
-app.get('/', (c) => renderInertia(c, 'Home', { version: '1.2.0' }))
+const supportedLangs = ['en', 'zh-TW']
 
-app.get('/patterns', (c) => renderInertia(c, 'Patterns', {}))
+app.get('/', (c) => renderInertia(c, 'Home', { version: '1.2.0', lang: 'en' }))
+
+app.get('/patterns', (c) => {
+  const queryLang = c.req.query('lang')
+  const lang = queryLang === 'zh-TW' ? 'zh-TW' : 'en'
+  return renderInertia(c, 'Patterns', { lang })
+})
 
 app.get('/ecosystem', (c) => {
   const queryLang = c.req.query('lang')
@@ -183,31 +376,26 @@ app.get('/ecosystem', (c) => {
 
 app.get('/docs/:page', async (c) => {
   const pageParam = c.req.param('page') || 'intro'
-  // Support ?lang=zh-TW
-  const queryLang = c.req.query('lang')
-  const lang = queryLang === 'zh-TW' ? 'zh-TW' : 'en'
 
-  // Try dynamic first
+  const queryLang = c.req.query('lang') || ''
+  const pathLang = queryLang || c.req.url.split('/')[1]?.split('?')[0] || 'en'
+  const lang = pathLang === 'zh-TW' ? 'zh-TW' : 'en'
+
   let doc = await getDocContent(lang, pageParam)
 
-  // If missing in requested language (e.g. zh-TW), fallback to English
   if (!doc && lang !== 'en') {
     doc = await getDocContent('en', pageParam)
   }
 
-  // Fallback to intro if nothing found
   if (!doc) {
-    // If not found in English, try fallback to intro in requested lang
     doc = await getDocContent(lang, 'intro')
-    // If still not found, try intro in English
     if (!doc) {
       doc = await getDocContent('en', 'intro')
     }
   }
 
-  // Last resort
   if (!doc && pageParam !== 'intro') {
-    return c.redirect(`/docs/intro?lang=${lang}`)
+    return c.redirect(`/docs/intro?lang=${queryLang || lang}`)
   }
 
   return await renderInertia(c, 'Docs', { ...doc, slug: pageParam, lang })
@@ -216,11 +404,17 @@ app.get('/docs/:page', async (c) => {
 app.get('/docs/:lang/:page', async (c) => {
   const pageParam = c.req.param('page') || ''
   const langParam = c.req.param('lang') || ''
-  const lang = langParam === 'zh-TW' ? 'zh-TW' : 'en'
+
+  const queryLang = c.req.query('lang') || ''
+
+  let lang = langParam === 'zh-TW' ? 'zh-TW' : 'en'
+
+  if (queryLang) {
+    lang = queryLang === 'zh-TW' ? 'zh-TW' : 'en'
+  }
 
   let doc = await getDocContent(lang, pageParam)
 
-  // Fallback to English if not found in requested language
   if (!doc && lang !== 'en') {
     doc = await getDocContent('en', pageParam)
   }
@@ -246,6 +440,81 @@ app.get('/legal/:page', (c) => {
 
   return renderInertia(c, 'Legal', { ...content, slug: pageParam, lang })
 })
+
+// --- Localized Routes (Must be after static routes) ---
+
+// Localized Docs Root Redirect
+app.get('/:lang/docs', (c) => {
+  const lang = c.req.param('lang')
+  if (!supportedLangs.includes(lang)) return c.notFound()
+  return c.redirect(`/${lang}/docs/intro`)
+})
+
+// Localized Docs
+app.get('/:lang/docs/:page', async (c) => {
+  const langParam = c.req.param('lang') || ''
+  const pageParam = c.req.param('page') || ''
+  const lang = langParam === 'zh-TW' ? 'zh-TW' : 'en'
+
+  let doc = await getDocContent(lang, pageParam)
+
+  // Fallback to English if not found in requested language
+  if (!doc && lang !== 'en') {
+    doc = await getDocContent('en', pageParam)
+  }
+
+  if (!doc) {
+    return c.redirect(`/${lang}/docs/intro`)
+  }
+
+  return await renderInertia(c, 'Docs', { ...doc, slug: pageParam, lang })
+})
+
+// Localized Patterns
+app.get('/:lang/patterns', (c) => {
+  const lang = c.req.param('lang')
+  if (!supportedLangs.includes(lang)) return c.notFound()
+  return renderInertia(c, 'Patterns', { lang })
+})
+
+// Localized Ecosystem
+app.get('/:lang/ecosystem', (c) => {
+  const lang = c.req.param('lang')
+  if (!supportedLangs.includes(lang)) return c.notFound()
+  return renderInertia(c, 'Ecosystem', { lang })
+})
+
+// Localized Legal
+app.get('/:lang/legal/:page', (c) => {
+  const lang = c.req.param('lang')
+  if (!supportedLangs.includes(lang)) return c.notFound()
+
+  const pageParam = c.req.param('page')
+  const pageData = (legalContent as any)[pageParam || '']
+  if (!pageData) return c.redirect(`/${lang}`)
+
+  const content = pageData[lang] || pageData.en
+  return renderInertia(c, 'Legal', { ...content, slug: pageParam, lang })
+})
+
+// Localized Root (Matches /en, /zh-TW) - Catch-all for 1 segment
+app.get('/zh-TW', (c) => renderInertia(c, 'Home', { version: '1.2.0', lang: 'zh-TW' }))
+app.get('/:lang', (c) => {
+  const pathLang = c.req.param('lang')
+  const queryLang = c.req.query('lang')
+
+  const lang = queryLang || pathLang || 'en'
+
+  if (!supportedLangs.includes(lang)) return c.notFound()
+
+  return renderInertia(c, 'Home', { version: '1.2.0', lang })
+})
+
+// ----------------------------------------------------------------------------
+// Lifecycle
+// ----------------------------------------------------------------------------
+// Note: Photon (based on Hono) doesn't require explicit warmup.
+// Bun's JIT compiler will optimize hot paths automatically.
 
 export default {
   port: 3333,

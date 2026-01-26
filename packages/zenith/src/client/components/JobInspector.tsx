@@ -21,11 +21,29 @@ interface Job {
   _archivedAt?: string
 }
 
+/**
+ * Props for the JobInspector component.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface JobInspectorProps {
+  /** The name of the queue to inspect. */
   queueName: string
+  /** Callback triggered when the inspector is closed. */
   onClose: () => void
 }
 
+/**
+ * A detailed view for inspecting jobs within a specific queue.
+ *
+ * It provides tabs for viewing waiting, delayed, and failed jobs,
+ * as well as an archive search. Users can perform bulk actions like
+ * deleting or retrying jobs.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export function JobInspector({ queueName, onClose }: JobInspectorProps) {
   const [view, setView] = React.useState<'waiting' | 'delayed' | 'failed' | 'archive'>('waiting')
   const [page, setPage] = React.useState(1)

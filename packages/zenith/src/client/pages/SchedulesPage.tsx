@@ -44,6 +44,15 @@ interface QueueListItem {
   paused: boolean
 }
 
+/**
+ * Task Schedules Page.
+ *
+ * View and manage all recurring jobs and cron tasks. Users can register new
+ * schedules, manually trigger execution, or delete existing schedules.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export function SchedulesPage() {
   const queryClient = useQueryClient()
   const [isModalOpen, setIsModalOpen] = useState(false)

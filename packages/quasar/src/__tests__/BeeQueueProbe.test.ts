@@ -1,28 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
-import { Redis } from 'ioredis'
 import { BeeQueueProbe } from '../probes/BeeQueueProbe'
+import { MockRedis } from './mock-redis'
 
 describe('BeeQueueProbe', () => {
-  let redis: Redis
+  let redis: any
   const queueName = 'test-bee-queue'
   const prefix = 'bq'
 
   beforeEach(async () => {
-    redis = new Redis('redis://localhost:6379')
-    // Clean up any existing test data
-    const keys = await redis.keys(`${prefix}:${queueName}:*`)
-    if (keys.length > 0) {
-      await redis.del(...keys)
-    }
+    redis = new MockRedis()
   })
 
   afterEach(async () => {
-    // Clean up
-    const keys = await redis.keys(`${prefix}:${queueName}:*`)
-    if (keys.length > 0) {
-      await redis.del(...keys)
-    }
-    await redis.quit()
+    // No cleanup needed
   })
 
   it('should return correct snapshot for empty queue', async () => {
@@ -70,9 +60,6 @@ describe('BeeQueueProbe', () => {
     const snapshot = await probe.getSnapshot()
 
     expect(snapshot.size.waiting).toBe(2)
-
-    // Clean up custom prefix
-    await redis.del(`${customPrefix}:${queueName}:waiting`)
   })
 
   it('should always return 0 for delayed jobs', async () => {

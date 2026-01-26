@@ -41,7 +41,10 @@ export type ForeignKeyAction = 'cascade' | 'restrict' | 'no action' | 'set null'
 
 /**
  * Column Definition
- * Fluent interface for defining column properties
+ *
+ * The ColumnDefinition class represents a column in a database table.
+ * It provides a fluent interface for defining column properties such as
+ * nullability, default values, indexes, and foreign key constraints.
  */
 export class ColumnDefinition {
   /** Column name */
@@ -79,7 +82,10 @@ export class ColumnDefinition {
   // ============================================================================
 
   /**
-   * Allow NULL values
+   * Allow NULL values to be stored in the column.
+   *
+   * @param value Whether the column should be nullable (defaults to true).
+   * @returns The ColumnDefinition instance for chaining.
    */
   nullable(value = true): this {
     this._nullable = value
@@ -87,7 +93,10 @@ export class ColumnDefinition {
   }
 
   /**
-   * Set default value
+   * Set the default value for the column.
+   *
+   * @param value The default value.
+   * @returns The ColumnDefinition instance for chaining.
    */
   default(value: unknown): this {
     this._default = value
@@ -96,7 +105,9 @@ export class ColumnDefinition {
   }
 
   /**
-   * Add UNIQUE constraint
+   * Add a UNIQUE constraint to the column.
+   *
+   * @returns The ColumnDefinition instance for chaining.
    */
   unique(): this {
     this._unique = true
@@ -112,7 +123,9 @@ export class ColumnDefinition {
   }
 
   /**
-   * Set as PRIMARY KEY
+   * Set the column as a PRIMARY KEY.
+   *
+   * @returns The ColumnDefinition instance for chaining.
    */
   primary(): this {
     this._primary = true
@@ -172,7 +185,15 @@ export class ColumnDefinition {
   // ============================================================================
 
   /**
-   * Create foreign key constraint (for foreignId columns)
+   * Define a foreign key constraint for the column.
+   *
+   * @param table The name of the referenced table (inferred from column name if not provided).
+   * @returns The ColumnDefinition instance for chaining.
+   *
+   * @example
+   * ```typescript
+   * table.foreignId('user_id').constrained('users')
+   * ```
    */
   constrained(table?: string): this {
     const referencedTable = table ?? this.inferTableName()
@@ -187,7 +208,10 @@ export class ColumnDefinition {
   }
 
   /**
-   * Set ON DELETE action
+   * Set the ON DELETE action for the foreign key constraint.
+   *
+   * @param action The action to perform (e.g., 'cascade', 'set null').
+   * @returns The ColumnDefinition instance for chaining.
    */
   onDelete(action: ForeignKeyAction): this {
     if (this._foreignKey) {

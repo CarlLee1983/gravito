@@ -3,17 +3,21 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Gravito Atlas</title>
+    <title>Gravito Atlas - Page Not Found</title>
     <script>
       (function() {
-        var base = '/atlas-site-dist/';
-        var path = window.location.pathname.replace(base, '/');
+        // Redirect to index.html with path parameters for SPA routing
+        var path = window.location.pathname;
         var search = window.location.search;
         var hash = window.location.hash;
-        var target = base + '?p=' + encodeURIComponent(path) + '&q=' + encodeURIComponent(search) + '&h=' + encodeURIComponent(hash);
+        var target = '/?p=' + encodeURIComponent(path) + '&q=' + encodeURIComponent(search) + '&h=' + encodeURIComponent(hash);
         window.location.replace(target);
       })();
     </script>
   </head>
-  <body></body>
+  <body>
+    <div style="display: flex; align-items: center; justify-content: center; height: 100vh; font-family: system-ui, sans-serif;">
+      <p>Redirecting...</p>
+    </div>
+  </body>
 </html>

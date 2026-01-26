@@ -5,6 +5,22 @@ import { MetaTagBuilder } from './MetaTagBuilder'
 import { OpenGraphBuilder } from './OpenGraphBuilder'
 import { TwitterCardBuilder } from './TwitterCardBuilder'
 
+/**
+ * SeoMetadata orchestrates the generation of various SEO-related HTML tags.
+ *
+ * It combines standard meta tags, Open Graph, Twitter Cards, JSON-LD, and
+ * analytics scripts into a single coherent output. It also handles fallback
+ * logic between different tag sets (e.g., meta title -> OG title).
+ *
+ * @example
+ * ```typescript
+ * const metadata = new SeoMetadata(pageConfig);
+ * const html = metadata.toString();
+ * ```
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class SeoMetadata {
   private metaBuilder: MetaTagBuilder
   private ogBuilder?: OpenGraphBuilder
@@ -45,6 +61,11 @@ export class SeoMetadata {
     }
   }
 
+  /**
+   * Generates the complete SEO HTML block.
+   *
+   * @returns A string containing all configured SEO tags.
+   */
   toString(): string {
     const parts: string[] = []
 

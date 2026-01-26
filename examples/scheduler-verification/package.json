@@ -1,10 +1,11 @@
 {
   "name": "example-scheduler-verification",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "private": true,
   "type": "module",
   "scripts": {
-    "worker": "bun run src/index.ts"
+    "worker": "bun run src/index.ts",
+    "demo:validation": "bun run src/validation-demo.ts"
   },
   "dependencies": {
     "@gravito/core": "workspace:*",

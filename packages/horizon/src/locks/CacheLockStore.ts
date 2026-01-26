@@ -1,6 +1,21 @@
 import type { CacheManager } from '@gravito/stasis'
 import type { LockStore } from './LockStore'
 
+/**
+ * Cache-based lock store using Gravito Stasis.
+ *
+ * Stores locks in the cache system for distributed locking
+ * across multiple application instances.
+ *
+ * @example
+ * ```typescript
+ * const store = new CacheLockStore(cacheManager, 'locks:')
+ * const acquired = await store.acquire('task-123', 300)
+ * ```
+ *
+ * @since 3.0.0
+ * @public
+ */
 export class CacheLockStore implements LockStore {
   constructor(
     private cache: CacheManager,

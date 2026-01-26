@@ -9,7 +9,7 @@
  */
 
 import { PhotonAdapter } from './adapters/PhotonAdapter'
-import type { HttpAdapter } from './adapters/types'
+import { type HttpAdapter, isHttpAdapter } from './adapters/types'
 import { ConfigManager } from './ConfigManager'
 import { Container } from './Container'
 import { ErrorHandler } from './ErrorHandler'
@@ -36,10 +36,18 @@ export interface CacheService {
   remember<T>(key: string, ttl: number, callback: () => Promise<T>): Promise<T>
 }
 
+/**
+ * Interface for View Rendering Service
+ * @public
+ */
 export interface ViewService {
   render(view: string, data?: Record<string, unknown>, options?: Record<string, unknown>): string
 }
 
+/**
+ * Context passed to error handlers
+ * @public
+ */
 export type ErrorHandlerContext = {
   core: PlanetCore
   c: GravitoContext
@@ -57,14 +65,18 @@ export type ErrorHandlerContext = {
   }
 }
 
-// Photon Variables Type for Context Injection
-type RouteParams = Record<string, string | number>
-type RouteQuery = Record<string, string | number | boolean | null | undefined>
-
+/**
+ * Interface for Gravito Orbit (Plugin/Module)
+ * @public
+ */
 export interface GravitoOrbit {
   install(core: PlanetCore): void | Promise<void>
 }
 
+/**
+ * Configuration for booting PlanetCore
+ * @public
+ */
 export type GravitoConfig = {
   logger?: Logger
   config?: Record<string, unknown>
@@ -74,6 +86,13 @@ export type GravitoConfig = {
    * @since 2.0.0
    */
   adapter?: HttpAdapter
+  /**
+   * Dependency Injection Container. If provided, PlanetCore will use this
+   * container instead of creating a new one. This allows sharing a container
+   * between Application and PlanetCore.
+   * @since 2.0.0
+   */
+  container?: Container
 }
 
 import { BunNativeAdapter } from './adapters/bun/BunNativeAdapter'
@@ -83,6 +102,13 @@ import { Router } from './Router'
 import { Encrypter } from './security/Encrypter'
 import { BunHasher } from './security/Hasher'
 
+/**
+ * PlanetCore - The Heart of Gravito Framework
+ *
+ * The micro-kernel that orchestrates the entire Galaxy Architecture.
+ * Manages HTTP routing, middleware, error handling, and orbit integration.
+ * @public
+ */
 export class PlanetCore {
   /**
    * The HTTP adapter used by this core instance.
@@ -111,7 +137,7 @@ export class PlanetCore {
   public hooks: HookManager
   public events: EventManager
   public router: Router
-  public container: Container = new Container()
+  public container: Container
   /** @deprecated Use core.container instead */
   public services: Map<string, unknown> = new Map()
 
@@ -172,6 +198,14 @@ export class PlanetCore {
     // Phase 3: Boot all providers
     for (const provider of this.providers) {
       await this.bootProvider(provider)
+    }
+
+    // Phase 4: Bind global error handler (swappable via container)
+    // We bind this late to allow ServiceProviders to override 'error.handler'
+    if (this.container.has('error.handler')) {
+      const errorHandler = this.container.make<ErrorHandler>('error.handler')
+      this.adapter.onError(errorHandler.handleError.bind(errorHandler))
+      this.adapter.onNotFound(errorHandler.handleNotFound.bind(errorHandler))
     }
   }
 
@@ -241,12 +275,16 @@ export class PlanetCore {
       logger?: Logger
       config?: Record<string, unknown>
       adapter?: HttpAdapter
+      container?: Container
     } = {}
   ) {
     this.logger = options.logger ?? new ConsoleLogger()
     this.config = new ConfigManager(options.config ?? {})
     this.hooks = new HookManager()
     this.events = new EventManager(this)
+
+    // Use provided container or create a new one
+    this.container = options.container ?? new Container()
 
     this.hasher = new BunHasher()
 
@@ -288,24 +326,32 @@ export class PlanetCore {
       c.set('cookieJar', cookieJar)
 
       // Add route helper
-      // @ts-expect-error
-      c.route = (name: string, params?: RouteParams, query?: RouteQuery) =>
-        this.router.url(name, params, query)
+      c.route = (name: string, params?: any, query?: any) => this.router.url(name, params, query)
 
-      return await next()
+      const result = await next()
+
+      // Automatically attach queued cookies to response
+      cookieJar.attach(c)
+
+      return result
     })
     // Router depends on `core.app` for route registration and optional global middleware.
     this.router = new Router(this)
 
-    // Standard Error Handling - Delegated to ErrorHandler
-    const errorHandler = new ErrorHandler({
-      logger: this.logger,
-      hooks: this.hooks,
-      getCore: () => this,
+    // Register Default Error Handler
+    // Can be overridden by binding 'error.handler' in a ServiceProvider
+    this.container.singleton('error.handler', () => {
+      return new ErrorHandler({
+        logger: this.logger,
+        hooks: this.hooks,
+        getCore: () => this,
+      })
     })
 
-    this.adapter.onError(errorHandler.handleError.bind(errorHandler))
-    this.adapter.onNotFound(errorHandler.handleNotFound.bind(errorHandler))
+    // Bind default handlers immediately so basic usage and tests work without explicit bootstrap()
+    const defaultHandler = this.container.make<ErrorHandler>('error.handler')
+    this.adapter.onError(defaultHandler.handleError.bind(defaultHandler))
+    this.adapter.onNotFound(defaultHandler.handleNotFound.bind(defaultHandler))
   }
 
   /**
@@ -357,6 +403,17 @@ export class PlanetCore {
   }
 
   /**
+   * Predictive Route Warming (JIT Optimization)
+   *
+   * @param paths List of paths to warm up
+   */
+  async warmup(paths: string[]): Promise<void> {
+    if (this.adapter.warmup) {
+      await this.adapter.warmup(paths)
+    }
+  }
+
+  /**
    * Boot the application with a configuration object (IoC style default entry)
    *
    * @param config - The Gravito configuration object.
@@ -372,6 +429,7 @@ export class PlanetCore {
       ...(config.logger && { logger: config.logger }),
       ...(config.config && { config: config.config }),
       ...(config.adapter && { adapter: config.adapter }),
+      ...(config.container && { container: config.container }),
     })
 
     if (config.orbits) {
@@ -392,34 +450,28 @@ export class PlanetCore {
   }
 
   /**
-   * Mount an Orbit (a Photon app) to a path.
+   * Mount an Orbit (a PlanetCore instance or native app) to a path.
    *
    * @param path - The URL path to mount the orbit at.
-   * @param orbitApp - The Photon application instance.
+   * @param orbitApp - The application instance (PlanetCore, HttpAdapter, or native app).
    */
   mountOrbit(path: string, orbitApp: unknown): void {
     this.logger.info(`Mounting orbit at path: ${path}`)
-    // Should reuse this.adapter.mount logic if possible, or fallback.
-    // PhotonAdapter has special mount. BunNativeAdapter might not fully support mounting Photon apps yet.
-    // For now, assume orbitApp is Photon and we are likely in an environment where Photon might be used.
-    // BUT if we are in BunNativeAdapter, this.app is BunNativeAdapter.
-    // BunNativeAdapter.mount() implementation warned it's not fully implemented.
-    // If we want to support Orbits, we need to fix mount in BunNativeAdapter.
-    // For now, let's just call adapter.mount.
-    // But adapter.mount signature expects HttpAdapter, not Photon.
-    // The current code expects a Photon instance.
-    // This is a break.
-    // Temporary fix: Check adapter type or wrap orbitApp.
-    if (this.adapter.name === 'photon') {
-      ;(this.adapter.native as any).route(path, orbitApp)
+
+    let subAdapter: HttpAdapter
+
+    if (orbitApp instanceof PlanetCore) {
+      subAdapter = orbitApp.adapter
+    } else if (isHttpAdapter(orbitApp)) {
+      subAdapter = orbitApp
     } else {
-      // Warn or try to mount if adapter supports it?
-      // BunNativeAdapter "mount" takes HttpAdapter.
-      // orbitApp is Photon. We can wrap orbitApp in PhotonAdapter!
-      // NOTE: We assume 'orbitApp' is a Photon instance compatible with PhotonAdapter
-      const subAdapter = new PhotonAdapter({}, orbitApp as any)
-      this.adapter.mount(path, subAdapter)
+      // It's likely a native app instance (e.g. Hono)
+      // Wrap it in PhotonAdapter to conform to HttpAdapter interface.
+      // PhotonAdapter.mount() will handle optimization if the parent is also Photon.
+      subAdapter = new PhotonAdapter({}, orbitApp)
     }
+
+    this.adapter.mount(path, subAdapter)
   }
 
   /**
@@ -439,6 +491,7 @@ export class PlanetCore {
     port: number
     fetch: (request: Request, server?: unknown) => Response | Promise<Response>
     core: PlanetCore
+    websocket?: HttpAdapter['websocket']
   } {
     // Priority: argument > config > default
     const finalPort = port ?? this.config.get<number>('PORT', 3000)
@@ -452,6 +505,7 @@ export class PlanetCore {
       port: finalPort,
       fetch: this.adapter.fetch.bind(this.adapter), // Ensure we bind to adapter not app
       core: this,
+      websocket: this.adapter.websocket,
     }
   }
 }

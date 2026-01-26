@@ -13,12 +13,12 @@ async function runProfile() {
 
   // Prepare Payload
   const payload = {
+    orderId: `profile-${Date.now()}`,
     userId: 'profile-user',
     items: [
-      { productId: 'widget-a', quantity: 1 },
-      { productId: 'widget-b', quantity: 2 },
+      { productId: 'widget-a', qty: 1 },
+      { productId: 'widget-b', qty: 2 },
     ],
-    totalAmount: 300,
   }
 
   console.log('🚀 Running profile...')

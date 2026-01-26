@@ -46,29 +46,15 @@ function isStaticSite(): boolean {
     return true
   }
 
-  // 🔥 Development mode with Inertia backend (port 3000/5173)
   if (hostname === 'localhost' || hostname === '127.0.0.1') {
     return false
   }
 
-  // 從環境變數讀取靜態網站域名列表
-  const staticDomainsEnv = import.meta.env.VITE_STATIC_SITE_DOMAINS || ''
-  const staticDomains = staticDomainsEnv
-    .split(',')
-    .map((d: string) => d.trim())
-    .filter((d: string) => d.length > 0)
-
-  // 如果沒有配置環境變數，檢查常見的靜態託管域名模式
-  if (staticDomains.length === 0) {
-    return (
-      hostname.includes('github.io') ||
-      hostname.includes('vercel.app') ||
-      hostname.includes('netlify.app') ||
-      hostname.includes('pages.dev')
-    )
-  }
-
-  return staticDomains.includes(hostname)
+  // 支援子網域匹配 (例如 zenith.gravito.dev)
+  const staticDomains = ['gravito.dev', 'github.io', 'vercel.app', 'netlify.app', 'pages.dev']
+  return staticDomains.some(
+    (domain) => hostname === domain || hostname.endsWith(`.${domain}`)
+  )
 }
 
 const isStatic = isStaticSite()

@@ -1,12 +1,12 @@
 {
     "name": "atlas-site",
     "private": true,
-    "version": "1.0.1",
+    "version": "1.0.2",
     "type": "module",
     "scripts": {
         "dev": "vite",
         "dev:server": "bun run src/server/index.ts",
-        "build": "vite build",
+        "build": "vite build && bun run scripts/generate-spa-routes.ts",
         "preview": "vite preview",
         "check": "bun vue-tsc --noEmit"
     },

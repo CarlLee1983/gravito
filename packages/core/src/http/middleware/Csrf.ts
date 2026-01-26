@@ -1,7 +1,11 @@
 import crypto from 'node:crypto'
-import type { CookieOptions } from '../CookieJar'
+import { CookieJar, type CookieOptions } from '../CookieJar'
 import type { GravitoContext, GravitoMiddleware } from '../types'
 
+/**
+ * Configuration for CSRF Protection
+ * @public
+ */
 export type CsrfOptions = {
   cookieName?: string
   headerName?: string
@@ -11,23 +15,6 @@ export type CsrfOptions = {
 }
 
 const defaultSafeMethods = ['GET', 'HEAD', 'OPTIONS']
-
-function parseCookies(header: string): Record<string, string> {
-  const out: Record<string, string> = {}
-  if (!header) {
-    return out
-  }
-  for (const part of header.split(';')) {
-    const [rawKey, ...rest] = part.trim().split('=')
-    if (!rawKey) {
-      continue
-    }
-    const key = rawKey.trim()
-    const value = rest.join('=')
-    out[key] = decodeURIComponent(value)
-  }
-  return out
-}
 
 function timingSafeEqual(a: string, b: string): boolean {
   const bufA = Buffer.from(a)
@@ -81,10 +68,14 @@ function setCookieHeader(c: GravitoContext, name: string, value: string, options
   c.header('Set-Cookie', parts.join('; '), { append: true })
 }
 
+/**
+ * Generate (or retrieve existing) CSRF token for the session.
+ * @public
+ */
 export function getCsrfToken(c: GravitoContext, options: CsrfOptions = {}): string {
   const cookieName = options.cookieName ?? 'gravito_csrf'
   const cookieHeader = c.req.header('Cookie') || ''
-  const cookies = parseCookies(cookieHeader)
+  const cookies = CookieJar.parseCookies(cookieHeader)
   let token = cookies[cookieName]
 
   if (!token) {
@@ -101,6 +92,10 @@ export function getCsrfToken(c: GravitoContext, options: CsrfOptions = {}): stri
   return token
 }
 
+/**
+ * Middleware that validates CSRF tokens on unsafe requests.
+ * @public
+ */
 export function csrfProtection(options: CsrfOptions = {}): GravitoMiddleware {
   const cookieName = options.cookieName ?? 'gravito_csrf'
   const headerName = (options.headerName ?? 'X-CSRF-Token').toLowerCase()
@@ -110,7 +105,7 @@ export function csrfProtection(options: CsrfOptions = {}): GravitoMiddleware {
   return async (c, next) => {
     const method = c.req.method.toUpperCase()
     const cookieHeader = c.req.header('Cookie') || ''
-    const cookies = parseCookies(cookieHeader)
+    const cookies = CookieJar.parseCookies(cookieHeader)
     const token = cookies[cookieName] || getCsrfToken(c, options)
 
     if (safeMethods.includes(method)) {

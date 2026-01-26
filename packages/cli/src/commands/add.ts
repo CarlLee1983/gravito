@@ -8,6 +8,15 @@ import { confirm, note, spinner } from '@clack/prompts'
 import { getRuntimeAdapter } from '@gravito/core'
 import pc from 'picocolors'
 
+/**
+ * Command to install and configure the Spectrum debug dashboard.
+ *
+ * This function handles package installation and automatically patches the
+ * application's bootstrap file to register the SpectrumOrbit.
+ *
+ * @returns A promise that resolves when Spectrum is installed and configured.
+ * @public
+ */
 export async function addSpectrumCommand() {
   const s = spinner()
   const cwd = process.cwd()
@@ -72,7 +81,10 @@ export async function addSpectrumCommand() {
         patched = true
         s.stop(`Successfully configured ${entry}!`)
         break
-      } catch (_e) {}
+      } catch {
+        // Intentionally ignored: Try next entry point if this one doesn't exist or fails to read.
+        // The loop will try all possible entry points.
+      }
     }
 
     if (!patched) {
@@ -92,6 +104,13 @@ Run your app and visit: ${pc.underline('http://localhost:3000/gravito/spectrum')
   }
 }
 
+/**
+ * Detect the package manager used in the specified directory.
+ *
+ * @param cwd - The directory to check.
+ * @returns A promise that resolves with the detected package manager name ('bun', 'pnpm', or 'npm').
+ * @private
+ */
 async function detectPackageManager(cwd: string): Promise<string> {
   try {
     await fs.access(path.join(cwd, 'bun.lockb'))
@@ -108,6 +127,13 @@ async function detectPackageManager(cwd: string): Promise<string> {
   return 'bun' // Default to bun
 }
 
+/**
+ * Patch the application bootstrap content to include SpectrumOrbit registration.
+ *
+ * @param content - The original bootstrap file content.
+ * @returns The patched bootstrap content.
+ * @private
+ */
 function patchBootstrap(content: string): string {
   // Add Import
   let newContent = `import { SpectrumOrbit } from '@gravito/spectrum'

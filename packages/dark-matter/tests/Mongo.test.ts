@@ -32,6 +32,7 @@ const createDbMock = () => ({
 class MongoClientMock {
   public uri: string
   public options?: MongoClientOptions
+  static shouldFailConnectTimes = 0
 
   constructor(uri: string, options?: MongoClientOptions) {
     this.uri = uri
@@ -39,7 +40,12 @@ class MongoClientMock {
     createdClients.push({ uri, options, instance: this })
   }
 
-  async connect() {}
+  async connect() {
+    if (MongoClientMock.shouldFailConnectTimes > 0) {
+      MongoClientMock.shouldFailConnectTimes--
+      throw new Error('Connection failed')
+    }
+  }
 
   async close() {}
 
@@ -66,6 +72,7 @@ beforeAll(async () => {
 
 beforeEach(() => {
   createdClients.length = 0
+  MongoClientMock.shouldFailConnectTimes = 0
 })
 
 describe('Mongo', () => {
@@ -185,6 +192,21 @@ describe('MongoClient', () => {
     expect(collections).toEqual(['users', 'posts'])
     expect(await db.dropCollection('users')).toBe(true)
     await db.createCollection('logs')
+  })
+
+  it('retries on connection failure and fails if maxRetries exceeded', async () => {
+    const client = new MongoClient({ uri: 'mongodb://localhost:27017' })
+    MongoClientMock.shouldFailConnectTimes = 3
+    await expect(client.connect({ maxRetries: 2, retryDelayMs: 1 })).rejects.toThrow(
+      /Failed to connect/
+    )
+  })
+
+  it('retries on connection failure and succeeds if within maxRetries', async () => {
+    const client = new MongoClient({ uri: 'mongodb://localhost:27017' })
+    MongoClientMock.shouldFailConnectTimes = 1
+    await client.connect({ maxRetries: 2, retryDelayMs: 1 })
+    expect(client.isConnected()).toBe(true)
   })
 })
 

@@ -29,9 +29,9 @@ describe('Image component', () => {
       className: 'hero',
     } as any)
 
-    const html = (element as any).props.dangerouslySetInnerHTML.__html as string
-    expect(html).toContain('<img')
-    expect(html).toContain('class="hero"')
-    expect(html).toContain('alt="Hero"')
+    expect(element.type).toBe('img')
+    expect(element.props.src).toBe('/static/hero.jpg')
+    expect(element.props.className).toBe('hero')
+    expect(element.props.alt).toBe('Hero')
   })
 })

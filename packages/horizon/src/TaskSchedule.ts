@@ -1,17 +1,46 @@
 import type { ActionCallback } from '@gravito/core'
+import {
+  parseTime,
+  validateDayOfMonth,
+  validateDayOfWeek,
+  validateMinute,
+} from './utils/validation'
 
+/**
+ * Represents a configuration for a scheduled task (Cron job).
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface ScheduledTask {
+  /** Unique name for the task */
   name: string
+  /** Standard cron expression mapping the frequency */
   expression: string
+  /** Timezone for evaluating the cron expression (default: UTC) */
   timezone: string
+  /** The function or task to execute */
   callback: () => void | Promise<void>
+  /** If true, uses a distributed lock to ensure only one server runs the task */
   shouldRunOnOneServer: boolean
-  lockTtl: number // seconds
+  /** Time-to-live for the distributed lock in seconds (default: 300) */
+  lockTtl: number
+  /** If true, the task runs in the background and doesn't block the scheduler loop */
   background: boolean
+  /** Optional node role required to run this task (e.g., 'worker') */
   nodeRole?: string
+  /** Command string if the task was registered via a shell command */
   command?: string
+  /** Task execution timeout in milliseconds (default: 3600000 - 1 hour) */
+  timeout?: number
+  /** Maximum number of retry attempts on failure (default: 0 - no retry) */
+  retries?: number
+  /** Delay between retry attempts in milliseconds (default: 1000) */
+  retryDelay?: number
 
+  /** Callbacks executed after successful task completion */
   onSuccessCallbacks: ActionCallback[]
+  /** Callbacks executed after task failure */
   onFailureCallbacks: ActionCallback[]
 }
 
@@ -19,10 +48,15 @@ export interface ScheduledTask {
  * Fluent API for defining task schedules.
  *
  * @example
+ * ```typescript
  * scheduler.task('backup')
  *   .daily()
  *   .at('02:00')
- *   .onOneServer()
+ *   .onOneServer();
+ * ```
+ *
+ * @public
+ * @since 3.0.0
  */
 export class TaskSchedule {
   private task: ScheduledTask
@@ -56,6 +90,26 @@ export class TaskSchedule {
    * @returns The TaskSchedule instance.
    */
   cron(expression: string): this {
+    const parts = expression.trim().split(/\s+/)
+
+    if (parts.length !== 5) {
+      throw new Error(
+        `Invalid cron expression: "${expression}". ` +
+          `Expected 5 parts (minute hour day month weekday), got ${parts.length}.`
+      )
+    }
+
+    const pattern = /^[0-9,\-/*?L#A-Za-z]+$/
+
+    for (let i = 0; i < 5; i++) {
+      if (!pattern.test(parts[i])) {
+        throw new Error(
+          `Invalid cron expression: "${expression}". ` +
+            `Part ${i + 1} ("${parts[i]}") contains invalid characters.`
+        )
+      }
+    }
+
     this.task.expression = expression
     return this
   }
@@ -121,6 +175,7 @@ export class TaskSchedule {
    * @returns The TaskSchedule instance.
    */
   hourlyAt(minute: number): this {
+    validateMinute(minute)
     return this.cron(`${minute} * * * *`)
   }
 
@@ -140,8 +195,8 @@ export class TaskSchedule {
    * @returns The TaskSchedule instance.
    */
   dailyAt(time: string): this {
-    const [hour, minute] = time.split(':')
-    return this.cron(`${Number(minute)} ${Number(hour)} * * *`)
+    const { hour, minute } = parseTime(time)
+    return this.cron(`${minute} ${hour} * * *`)
   }
 
   /**
@@ -161,8 +216,9 @@ export class TaskSchedule {
    * @returns The TaskSchedule instance.
    */
   weeklyOn(day: number, time = '00:00'): this {
-    const [hour, minute] = time.split(':')
-    return this.cron(`${Number(minute)} ${Number(hour)} * * ${day}`)
+    validateDayOfWeek(day)
+    const { hour, minute } = parseTime(time)
+    return this.cron(`${minute} ${hour} * * ${day}`)
   }
 
   /**
@@ -182,19 +238,28 @@ export class TaskSchedule {
    * @returns The TaskSchedule instance.
    */
   monthlyOn(day: number, time = '00:00'): this {
-    const [hour, minute] = time.split(':')
-    return this.cron(`${Number(minute)} ${Number(hour)} ${day} * *`)
+    validateDayOfMonth(day)
+    const { hour, minute } = parseTime(time)
+    return this.cron(`${minute} ${hour} ${day} * *`)
   }
 
   // --- Constraints ---
 
   /**
-   * Set the timezone for the task execution.
+   * Set timezone for evaluating cron expressions.
    *
    * @param timezone - Timezone identifier (e.g., "Asia/Taipei", "UTC")
    * @returns The TaskSchedule instance.
    */
   timezone(timezone: string): this {
+    try {
+      new Date().toLocaleString('en-US', { timeZone: timezone })
+    } catch {
+      throw new Error(
+        `Invalid timezone: "${timezone}". ` +
+          'See https://en.wikipedia.org/wiki/List_of_tz_database_time_zones for valid values.'
+      )
+    }
     this.task.timezone = timezone
     return this
   }
@@ -207,11 +272,11 @@ export class TaskSchedule {
    * @returns The TaskSchedule instance.
    */
   at(time: string): this {
-    const [hour, minute] = time.split(':')
+    const { hour, minute } = parseTime(time)
     const parts = this.task.expression.split(' ')
     if (parts.length >= 5) {
-      parts[0] = String(Number(minute))
-      parts[1] = String(Number(hour))
+      parts[0] = String(minute)
+      parts[1] = String(hour)
       this.task.expression = parts.join(' ')
     }
     return this
@@ -261,6 +326,39 @@ export class TaskSchedule {
    */
   onNode(role: string): this {
     this.task.nodeRole = role
+    return this
+  }
+
+  /**
+   * Set task execution timeout.
+   *
+   * @param ms - Timeout in milliseconds
+   * @returns The TaskSchedule instance.
+   */
+  timeout(ms: number): this {
+    if (ms <= 0) {
+      throw new Error('Timeout must be a positive number')
+    }
+    this.task.timeout = ms
+    return this
+  }
+
+  /**
+   * Set retry configuration for the task.
+   *
+   * @param attempts - Maximum number of retry attempts (default: 3)
+   * @param delayMs - Delay between retries in milliseconds (default: 1000)
+   * @returns The TaskSchedule instance.
+   */
+  retry(attempts = 3, delayMs = 1000): this {
+    if (attempts < 0) {
+      throw new Error('Retry attempts must be non-negative')
+    }
+    if (delayMs < 0) {
+      throw new Error('Retry delay must be non-negative')
+    }
+    this.task.retries = attempts
+    this.task.retryDelay = delayMs
     return this
   }
 

@@ -4,6 +4,7 @@
  */
 
 import { DB } from '../../DB'
+import type { QueryBuilderContract } from '../../types'
 import type { Model, ModelConstructor } from './Model'
 import { ModelRegistry } from './ModelRegistry'
 
@@ -20,13 +21,39 @@ export type RelationType =
   | 'morphTo'
 
 /**
- * Relationship Options
+ * Options for defining relationships between models.
  */
 export interface RelationshipOptions {
+  /**
+   * The foreign key column name.
+   * - For `HasOne`/`HasMany`: Defaults to `parent_table_id` on the related table.
+   * - For `BelongsTo`: Defaults to `related_table_id` on the local table.
+   * - For `BelongsToMany`: Defaults to `parent_table_id` on the pivot table.
+   */
   foreignKey?: string
+
+  /**
+   * The local key column name.
+   * - For `HasOne`/`HasMany`: Defaults to the primary key of the local table.
+   * - For `BelongsTo`: Defaults to the primary key of the related table.
+   */
   localKey?: string
+
+  /**
+   * The name of the pivot table for many-to-many relationships.
+   * Defaults to an alphabetical concatenation of the two table names (e.g., `roles_users`).
+   */
   pivotTable?: string
+
+  /**
+   * The related key column name in the pivot table.
+   * Defaults to `related_table_id`.
+   */
   relatedKey?: string
+
+  /**
+   * Additional columns to select from the pivot table.
+   */
   pivotColumns?: string[]
 }
 
@@ -97,11 +124,18 @@ export function defineRelationship(
 
 /**
  * HasOne Relationship Decorator
+ *
+ * Defines a one-to-one relationship where the related model's table
+ * contains the foreign key.
+ *
+ * @param related - A factory function that returns the related Model class.
+ * @param options - Configuration for the relationship.
+ *
  * @example
  * ```typescript
  * class User extends Model {
  *   @HasOne(() => Profile)
- *   profile!: Profile
+ *   declare profile: Profile
  * }
  * ```
  */
@@ -123,11 +157,18 @@ export function HasOne(
 
 /**
  * HasMany Relationship Decorator
+ *
+ * Defines a one-to-many relationship where the related model's table
+ * contains the foreign key.
+ *
+ * @param related - A factory function that returns the related Model class.
+ * @param options - Configuration for the relationship.
+ *
  * @example
  * ```typescript
  * class User extends Model {
  *   @HasMany(() => Post)
- *   posts!: Post[]
+ *   declare posts: Post[]
  * }
  * ```
  */
@@ -149,11 +190,18 @@ export function HasMany(
 
 /**
  * BelongsTo Relationship Decorator
+ *
+ * Defines an inverse relationship where the local model's table
+ * contains the foreign key.
+ *
+ * @param related - A factory function that returns the related Model class.
+ * @param options - Configuration for the relationship.
+ *
  * @example
  * ```typescript
  * class Post extends Model {
  *   @BelongsTo(() => User)
- *   author!: User
+ *   declare author: User
  * }
  * ```
  */
@@ -175,11 +223,17 @@ export function BelongsTo(
 
 /**
  * BelongsToMany Relationship Decorator
+ *
+ * Defines a many-to-many relationship using a pivot table.
+ *
+ * @param related - A factory function that returns the related Model class.
+ * @param options - Configuration for the relationship, including pivot table details.
+ *
  * @example
  * ```typescript
  * class User extends Model {
  *   @BelongsToMany(() => Role, { pivotTable: 'user_roles' })
- *   roles!: Role[]
+ *   declare roles: Role[]
  * }
  * ```
  */
@@ -204,11 +258,18 @@ export function BelongsToMany(
 
 /**
  * MorphOne Relationship Decorator
+ *
+ * Defines a polymorphic one-to-one relationship.
+ *
+ * @param related - A factory function that returns the related Model class.
+ * @param name - The name of the polymorphic relationship (e.g., 'imageable').
+ * @param options - Configuration for the relationship.
+ *
  * @example
  * ```typescript
  * class Post extends Model {
  *   @MorphOne(() => Image, 'imageable')
- *   image!: Image
+ *   declare image: Image
  * }
  * ```
  */
@@ -232,11 +293,18 @@ export function MorphOne(
 
 /**
  * MorphMany Relationship Decorator
+ *
+ * Defines a polymorphic one-to-many relationship.
+ *
+ * @param related - A factory function that returns the related Model class.
+ * @param name - The name of the polymorphic relationship (e.g., 'commentable').
+ * @param options - Configuration for the relationship.
+ *
  * @example
  * ```typescript
  * class Post extends Model {
  *   @MorphMany(() => Comment, 'commentable')
- *   comments!: Comment[]
+ *   declare comments: Comment[]
  * }
  * ```
  */
@@ -260,11 +328,16 @@ export function MorphMany(
 
 /**
  * MorphTo Relationship Decorator
+ *
+ * Defines the inverse of a polymorphic relationship.
+ *
+ * @param options - Configuration for the polymorphic relationship.
+ *
  * @example
  * ```typescript
  * class Comment extends Model {
  *   @MorphTo()
- *   commentable!: Post | Video
+ *   declare commentable: Post | Video
  * }
  * ```
  */
@@ -285,17 +358,52 @@ export function MorphTo(
 }
 
 // ============================================================================
-// Eager Loading
+// Helpers
 // ============================================================================
+
+function resolveForeignKey(
+  type: RelationType,
+  Related: (ModelConstructor<Model> & typeof Model) | undefined,
+  parentModel: typeof Model,
+  morphName?: string
+): string | undefined {
+  if (type === 'belongsTo' && Related) {
+    const relatedTable = Related.getTable()
+    return `${relatedTable.replace(/s$/, '')}_id`
+  }
+  if (type === 'hasMany' || type === 'hasOne') {
+    const parentTable = parentModel.getTable()
+    return `${parentTable.replace(/s$/, '')}_id`
+  }
+  if (type === 'belongsToMany') {
+    const parentTable = parentModel.getTable()
+    return `${parentTable.replace(/s$/, '')}_id`
+  }
+  if (type === 'morphMany' || type === 'morphOne') {
+    return `${morphName}_id`
+  }
+  return undefined
+}
+
+function resolveLocalKey(
+  type: RelationType,
+  Related: (ModelConstructor<Model> & typeof Model) | undefined,
+  parentModel: typeof Model
+): string | undefined {
+  if (type === 'belongsTo') {
+    return Related?.primaryKey
+  }
+  return parentModel.primaryKey
+}
 
 /**
  * Load related models for a collection of parent models
  * Uses batch queries to avoid N+1 problem
  */
-export async function eagerLoad<T extends Model>(
+export async function eagerLoad<T extends Model, R extends Model = Model>(
   parents: T[],
   relationName: string,
-  callback?: (query: any) => void
+  callback?: (query: QueryBuilderContract<R>) => void
 ): Promise<void> {
   if (parents.length === 0) {
     return
@@ -327,31 +435,16 @@ export async function eagerLoad<T extends Model>(
   let { type, foreignKey, localKey, morphName, morphTypeField, morphIdField } = relationMeta
 
   // Resolve defaults if missing
-  if (!foreignKey) {
-    if (type === 'belongsTo') {
-      const relatedTable = (Related as any).getTable()
-      foreignKey = `${relatedTable.replace(/s$/, '')}_id`
-    } else if (type === 'hasMany' || type === 'hasOne') {
-      const parentTable = (parentModel as any).getTable()
-      foreignKey = `${parentTable.replace(/s$/, '')}_id`
-    } else if (type === 'belongsToMany') {
-      const parentTable = (parentModel as any).getTable()
-      foreignKey = `${parentTable.replace(/s$/, '')}_id`
-    } else if (type === 'morphMany' || type === 'morphOne') {
-      foreignKey = `${morphName}_id`
-    }
+  if (!foreignKey && Related) {
+    foreignKey = resolveForeignKey(type, Related, parentModel, morphName)
   }
 
   if (type === 'morphMany' || type === 'morphOne') {
     morphTypeField = morphTypeField ?? `${morphName}_type`
   }
 
-  if (!localKey) {
-    if (type === 'belongsTo') {
-      localKey = Related?.primaryKey
-    } else {
-      localKey = parentModel.primaryKey
-    }
+  if (!localKey && Related) {
+    localKey = resolveLocalKey(type, Related, parentModel)
   }
 
   // Ensure they are strings now for non-morphTo (morphTo handles its own)
@@ -360,7 +453,7 @@ export async function eagerLoad<T extends Model>(
   }
 
   // Get parent keys
-  const parentKeys = localKey ? parents.map((p) => (p as any)[localKey!]) : []
+  const parentKeys = localKey ? parents.map((p) => getValue(p, localKey!)) : []
   const validParentKeys = parentKeys.filter((k) => k !== undefined && k !== null)
 
   if (type !== 'morphTo' && validParentKeys.length === 0) {
@@ -388,7 +481,7 @@ export async function eagerLoad<T extends Model>(
       const useLateral =
         query.hasLimitOrOffset() && grammar && typeof grammar.compileLateralEagerLoad === 'function'
 
-      let models: any[] = []
+      let models: R[] = []
 
       if (useLateral) {
         const compiled = query.getCompiledQuery()
@@ -399,7 +492,7 @@ export async function eagerLoad<T extends Model>(
           compiled
         )
         const result = await (connection as any).raw(sql, bindings)
-        models = result.rows.map((row: any) => Related?.hydrate(row))
+        models = result.rows.map((row: Record<string, unknown>) => Related?.hydrate(row) as R)
       } else {
         // Fallback to whereIn
         query.whereIn(foreignKey!, validParentKeys)
@@ -414,7 +507,7 @@ export async function eagerLoad<T extends Model>(
       // Map results back to parents
       const relatedByFk = new Map<unknown, any[]>()
       for (const model of models) {
-        const fk = (model as any)[foreignKey!]
+        const fk = getValue(model, foreignKey!)
         if (!relatedByFk.has(fk)) {
           relatedByFk.set(fk, [])
         }
@@ -423,15 +516,15 @@ export async function eagerLoad<T extends Model>(
 
       // Assign to parents
       for (const parent of parents) {
-        const pk = (parent as any)[localKey!]
+        const pk = getValue(parent, localKey!)
         // Handle MongoDB _id vs id mapping in results
         const items =
           relatedByFk.get(pk) ?? (typeof pk === 'string' ? relatedByFk.get(pk) : undefined) ?? []
 
         if (type === 'hasOne') {
-          ;(parent as any)[currentRelation] = items[0] ?? null
+          setRelationValue(parent, currentRelation, items[0] ?? null)
         } else {
-          ;(parent as any)[currentRelation] = items
+          setRelationValue(parent, currentRelation, items)
         }
       }
       break
@@ -462,7 +555,7 @@ export async function eagerLoad<T extends Model>(
       // Map results
       const relatedByFk = new Map<unknown, any[]>()
       for (const model of models) {
-        const fk = (model as any)[foreignKey!]
+        const fk = getValue(model, foreignKey!)
         if (!relatedByFk.has(fk)) {
           relatedByFk.set(fk, [])
         }
@@ -471,13 +564,13 @@ export async function eagerLoad<T extends Model>(
 
       // Assign to parents
       for (const parent of parents) {
-        const pk = (parent as any)[localKey!]
+        const pk = getValue(parent, localKey!)
         const items = relatedByFk.get(pk) ?? []
 
         if (type === 'morphOne') {
-          ;(parent as any)[currentRelation] = items[0] ?? null
+          setRelationValue(parent, currentRelation, items[0] ?? null)
         } else {
-          ;(parent as any)[currentRelation] = items
+          setRelationValue(parent, currentRelation, items)
         }
       }
       break
@@ -487,8 +580,8 @@ export async function eagerLoad<T extends Model>(
       // Group parents by type
       const parentsByType = new Map<string, T[]>()
       for (const parent of parents) {
-        const typeValue = (parent as any)[morphTypeField!]
-        if (typeValue) {
+        const typeValue = getValue<string>(parent, morphTypeField!)
+        if (typeValue && typeof typeValue === 'string') {
           if (!parentsByType.has(typeValue)) {
             parentsByType.set(typeValue, [])
           }
@@ -503,7 +596,7 @@ export async function eagerLoad<T extends Model>(
           continue
         }
 
-        const ids = typeParents.map((p) => (p as any)[morphIdField!]).filter((id) => id !== null)
+        const ids = typeParents.map((p) => getValue(p, morphIdField!)).filter((id) => id !== null)
 
         if (ids.length === 0) {
           continue
@@ -529,12 +622,12 @@ export async function eagerLoad<T extends Model>(
         // Map it back
         const relatedByPk = new Map<unknown, any>()
         for (const rm of relatedModels) {
-          relatedByPk.set((rm as any)[CurrentModel.primaryKey], rm)
+          relatedByPk.set(getValue(rm, CurrentModel.primaryKey), rm)
         }
 
         for (const parent of typeParents) {
-          const id = (parent as any)[morphIdField!]
-          ;(parent as any)[currentRelation] = relatedByPk.get(id) ?? null
+          const id = getValue(parent, morphIdField!)
+          setRelationValue(parent, currentRelation, relatedByPk.get(id) ?? null)
         }
       }
       break
@@ -543,7 +636,7 @@ export async function eagerLoad<T extends Model>(
     case 'belongsTo': {
       // Get foreign keys from parents
       const fks = parents
-        .map((p) => (p as any)[foreignKey!])
+        .map((p) => getValue(p, foreignKey!))
         .filter((k) => k !== undefined && k !== null)
 
       if (fks.length === 0) {
@@ -568,14 +661,14 @@ export async function eagerLoad<T extends Model>(
       // Map results
       const relatedByPk = new Map<unknown, any>()
       for (const model of models) {
-        relatedByPk.set((model as any)[localKey!], model)
+        relatedByPk.set(getValue(model, localKey!), model)
       }
 
       // Assign to parents
       for (const parent of parents) {
-        const fk = (parent as any)[foreignKey!]
+        const fk = getValue(parent, foreignKey!)
         const row = relatedByPk.get(fk)
-        ;(parent as any)[currentRelation] = row ?? null
+        setRelationValue(parent, currentRelation, row ?? null)
       }
       break
     }
@@ -631,7 +724,7 @@ export async function eagerLoad<T extends Model>(
       // Map related by primary key
       const relatedByPk = new Map<unknown, any>()
       for (const model of models) {
-        relatedByPk.set((model as any)[localKey!], model)
+        relatedByPk.set(getValue(model, localKey!), model)
       }
 
       // Map pivots by parent FK
@@ -646,29 +739,62 @@ export async function eagerLoad<T extends Model>(
 
       // Assign to parents
       for (const parent of parents) {
-        const pk = (parent as any)[localKey!]
+        const pk = getValue(parent, localKey!)
         const relatedPks = pivotsByParent.get(pk) ?? []
         const relatedModels = relatedPks
           .map((rpk) => relatedByPk.get(rpk))
           .filter((r): r is any => r !== undefined)
 
-        ;(parent as any)[currentRelation] = relatedModels
+        setRelationValue(parent, currentRelation, relatedModels)
       }
       break
     }
   }
 }
 
+function getValue<T = unknown>(obj: Model | Record<string, unknown>, key: string): T {
+  const objWithAttrs = obj as Model & { _attributes?: Record<string, unknown> }
+  if (
+    objWithAttrs &&
+    '_attributes' in objWithAttrs &&
+    objWithAttrs._attributes &&
+    key in objWithAttrs._attributes
+  ) {
+    return objWithAttrs._attributes[key] as T
+  }
+  return (obj as Record<string, unknown>)[key] as T
+}
+
+function setRelationValue<T = unknown>(
+  model: Model | Record<string, unknown>,
+  name: string,
+  value: T
+): void {
+  const modelWithAttrs = model as Model & { _attributes?: Record<string, unknown> }
+  if (modelWithAttrs && '_attributes' in modelWithAttrs && modelWithAttrs._attributes) {
+    modelWithAttrs._attributes[name] = value
+  } else {
+    ;(model as Record<string, unknown>)[name] = value
+  }
+}
+
 /**
  * Load multiple relationships
  */
-export async function eagerLoadMany<T extends Model>(
+export async function eagerLoadMany<T extends Model, R extends Model = Model>(
   parents: T[],
-  relations: string[] | Record<string, any> | Map<string, (query: any) => void>
+  relations:
+    | string[]
+    | Record<string, unknown>
+    | Map<string, (query: QueryBuilderContract<R>) => void>
 ): Promise<void> {
   if (relations instanceof Map) {
     for (const [rel, callback] of relations.entries()) {
-      await eagerLoad(parents, rel, callback)
+      if (typeof callback === 'function') {
+        await eagerLoad(parents, rel, callback as (query: QueryBuilderContract<R>) => void)
+      } else {
+        await eagerLoad(parents, rel)
+      }
     }
   } else if (Array.isArray(relations)) {
     for (const rel of relations) {
@@ -677,7 +803,7 @@ export async function eagerLoadMany<T extends Model>(
   } else {
     for (const [rel, callbackOrLimit] of Object.entries(relations)) {
       if (typeof callbackOrLimit === 'function') {
-        await eagerLoad(parents, rel, callbackOrLimit)
+        await eagerLoad(parents, rel, callbackOrLimit as (query: QueryBuilderContract<R>) => void)
       } else if (typeof callbackOrLimit === 'number') {
         await eagerLoad(parents, rel, (q) => q.limit(callbackOrLimit))
       } else {

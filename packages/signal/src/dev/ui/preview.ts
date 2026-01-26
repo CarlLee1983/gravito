@@ -1,6 +1,15 @@
 import type { MailboxEntry } from '../DevMailbox'
 import { layout } from './shared'
 
+/**
+ * Generates the HTML for the email preview page.
+ *
+ * @param entry - Mailbox entry to preview
+ * @param prefix - Base URL prefix for the dev server
+ * @returns HTML string for the preview UI
+ *
+ * @internal
+ */
 export function getPreviewHtml(entry: MailboxEntry, prefix: string): string {
   const from = entry.envelope.from
     ? `${entry.envelope.from.name || ''} &lt;${entry.envelope.from.address}&gt;`

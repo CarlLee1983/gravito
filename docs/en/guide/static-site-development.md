@@ -325,6 +325,9 @@ import {
   generateRedirects,
   generateLocalizedRoutes,
   generateSitemapEntries,
+  generateSitemapXml,
+  generateRobotsTxt,
+  generate404Html,
 } from '@gravito/freeze'
 import { freezeConfig } from './freeze.config'
 
@@ -357,7 +360,18 @@ async function build() {
   // 5. Generate sitemap
   console.log(' Generating sitemap...')
   const sitemapEntries = generateSitemapEntries(routes, freezeConfig)
-  // ... render sitemap XML
+  const sitemapXml = generateSitemapXml(sitemapEntries, freezeConfig.baseUrl)
+  await writeFile(join(outputDir, 'sitemap.xml'), sitemapXml)
+
+  // 6. Generate Robots.txt
+  console.log(' Generating Robots.txt...')
+  const robotsTxt = generateRobotsTxt(freezeConfig.baseUrl)
+  await writeFile(join(outputDir, 'robots.txt'), robotsTxt)
+
+  // 7. Generate 404 page
+  console.log(' Generating 404.html...')
+  const html404 = generate404Html(freezeConfig)
+  await writeFile(join(outputDir, '404.html'), html404)
   
   console.log('[Complete] SSG Build Complete!')
 }
@@ -437,6 +451,9 @@ Create a detector instance for runtime checks.
 | `generateLocalizedRoutes(routes, locales)` | Create localized routes |
 | `inferRedirects(locales, default, routes)` | Auto-infer redirects |
 | `generateSitemapEntries(routes, config)` | Create sitemap with i18n |
+| `generateSitemapXml(entries, baseUrl)` | Generate Sitemap XML |
+| `generateRobotsTxt(baseUrl)` | Generate Robots.txt |
+| `generate404Html(config)` | Generate 404.html |
 
 ---
 

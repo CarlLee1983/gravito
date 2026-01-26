@@ -3,161 +3,92 @@
  */
 
 /**
- * File input for processing
+ * Represents a raw file input for processing by Forge.
+ * Supports file paths, Blobs, and File objects.
+ * @public
  */
 export interface FileInput {
-  /**
-   * File path or Blob/File object
-   */
+  /** The source location of the file or the file data itself */
   source: string | Blob | File
-
-  /**
-   * Original filename
-   */
+  /** Original filename for preservation or reference */
   filename?: string
-
-  /**
-   * MIME type
-   */
+  /** The MIME type of the input file (e.g., 'image/jpeg') */
   mimeType?: string
-
-  /**
-   * File size in bytes
-   */
+  /** The size of the input file in bytes */
   size?: number
 }
 
 /**
- * File output after processing
+ * Represents the final artifact produced by a Forge processing pipeline.
+ * @public
  */
 export interface FileOutput {
-  /**
-   * Output file path or URL
-   */
+  /** Publicly accessible URL for the processed file */
   url: string
-
-  /**
-   * Output file path (local)
-   */
+  /** Absolute local filesystem path to the processed file */
   path?: string
-
-  /**
-   * File size in bytes
-   */
+  /** The size of the resulting file in bytes */
   size: number
-
-  /**
-   * MIME type
-   */
+  /** The MIME type of the processed file */
   mimeType: string
-
-  /**
-   * Processing metadata
-   */
+  /** Any technical metadata extracted during processing (e.g., resolution, EXIF) */
   metadata?: Record<string, unknown>
 }
 
 /**
- * Processing options
+ * Configuration for the file transformation process.
+ * Used for resizing images, transcoding videos, etc.
+ * @public
  */
 export interface ProcessOptions {
-  /**
-   * Output format
-   */
+  /** Target file format/extension (e.g., 'webp', 'mp4') */
   format?: string
-
-  /**
-   * Quality (0-100 for images, crf for video)
-   */
+  /** Output quality (0-100 for images; CRF value for video) */
   quality?: number
-
-  /**
-   * Width for resize
-   */
+  /** Target width in pixels for resizing */
   width?: number
-
-  /**
-   * Height for resize
-   */
+  /** Target height in pixels for resizing */
   height?: number
-
-  /**
-   * Rotation angle (90, 180, 270)
-   */
+  /** Clockwise rotation angle in degrees */
   rotate?: number
-
-  /**
-   * Video codec
-   */
+  /** Specific media codec to use for encoding (e.g., 'h264', 'av1') */
   codec?: string
-
-  /**
-   * Additional processor-specific options
-   */
+  /** Additional specialized options for specific processors */
   [key: string]: unknown
 }
 
 /**
- * Processing progress
+ * Real-time feedback for a long-running media processing task.
+ * @public
  */
 export interface ProcessingProgress {
-  /**
-   * Progress percentage (0-100)
-   */
+  /** Completion percentage from 0 to 100 */
   progress: number
-
-  /**
-   * Status message
-   */
+  /** Human-readable description of the current action */
   message?: string
-
-  /**
-   * Current processing stage
-   */
+  /** Internal identifier for the current processing pipeline stage */
   stage?: string
 }
 
 /**
- * Processing status
+ * The complete state record for a Forge processing job.
+ * @public
  */
 export interface ProcessingStatus {
-  /**
-   * Job ID
-   */
+  /** Unique job identifier */
   jobId: string
-
-  /**
-   * Processing status
-   */
+  /** Current state of the job in the lifecycle */
   status: 'pending' | 'processing' | 'completed' | 'failed'
-
-  /**
-   * Progress percentage (0-100)
-   */
+  /** Current progress percentage (0-100) */
   progress: number
-
-  /**
-   * Status message
-   */
+  /** Status message or stage description */
   message?: string
-
-  /**
-   * Processing result
-   */
+  /** The output artifact if the job reached 'completed' status */
   result?: FileOutput
-
-  /**
-   * Error message (if failed)
-   */
+  /** Error details if the job reached 'failed' status */
   error?: string
-
-  /**
-   * Created timestamp
-   */
+  /** Timestamp when the job was created */
   createdAt: number
-
-  /**
-   * Updated timestamp
-   */
+  /** Timestamp when the status was last updated */
   updatedAt: number
 }

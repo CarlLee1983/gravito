@@ -1,0 +1,16 @@
+{
+  "name": "astral-verification",
+  "version": "1.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "bun src/index.ts",
+    "verify": "bun verify.ts"
+  },
+  "dependencies": {
+    "@gravito/core": "workspace:*",
+    "@gravito/astral": "workspace:*",
+    "@gravito/impulse": "workspace:*",
+    "zod": "^3.23.0"
+  }
+}

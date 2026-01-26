@@ -349,6 +349,15 @@ function QueueList({
   )
 }
 
+/**
+ * System Overview Dashboard Page.
+ *
+ * Provides a high-level, real-time view of all processing pipelines,
+ * including job counts, worker status, and live operational logs.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export function OverviewPage() {
   const [selectedQueue, setSelectedQueue] = React.useState<string | null>(null)
   const [hoveredWorkerId, setHoveredWorkerId] = React.useState<string | null>(null)

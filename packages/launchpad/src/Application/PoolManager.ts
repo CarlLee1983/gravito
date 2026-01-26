@@ -3,6 +3,15 @@ import type { Mission } from '../Domain/Mission'
 import { Rocket } from '../Domain/Rocket'
 import type { RefurbishUnit } from './RefurbishUnit'
 
+/**
+ * PoolManager handles the lifecycle and pooling of Rocket containers.
+ *
+ * It manages a pool of pre-warmed containers to ensure fast deployment of
+ * new missions. It also handles rocket assignment and recycling (refurbishment).
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class PoolManager {
   constructor(
     private dockerAdapter: IDockerAdapter,
@@ -26,7 +35,7 @@ export class PoolManager {
 
     for (let i = 0; i < needed; i++) {
       const containerId = await this.dockerAdapter.createBaseContainer()
-      const rocketId = `rocket-${Math.random().toString(36).substring(2, 9)}`
+      const rocketId = `rocket-${crypto.randomUUID()}`
       const rocket = new Rocket(rocketId, containerId)
       await this.rocketRepository.save(rocket)
     }

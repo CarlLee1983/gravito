@@ -19,7 +19,11 @@ export function isStaticSite(): boolean {
   const hostname = window.location.hostname
   const port = window.location.port
 
-  if ((hostname === 'localhost' || hostname === '127.0.0.1') && port === '4173') {
+  // Local preview ports (Vite default 4173, Custom Preview 4174/4175)
+  if (
+    (hostname === 'localhost' || hostname === '127.0.0.1') &&
+    ['4173', '4174', '4175'].includes(port)
+  ) {
     return true
   }
 
@@ -27,8 +31,11 @@ export function isStaticSite(): boolean {
     return false
   }
 
-  const staticDomains = ['gravito.dev', 'gravito-framework.github.io']
-  return staticDomains.includes(hostname)
+  // 支援靜態託管匹配
+  const staticDomains = ['gravito.dev', 'github.io', 'vercel.app', 'netlify.app', 'pages.dev']
+  return staticDomains.some(
+    (domain) => hostname === domain || hostname.endsWith(`.${domain}`)
+  )
 }
 
 /**

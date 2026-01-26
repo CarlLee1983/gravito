@@ -1,7 +1,15 @@
 import type { GravitoContext, GravitoMiddleware } from '../types'
 
+/**
+ * Allowed origin(s) configuration.
+ * @public
+ */
 export type CorsOrigin = string | string[] | ((origin: string | undefined) => string | false)
 
+/**
+ * Options for CORS middleware
+ * @public
+ */
 export type CorsOptions = {
   origin?: CorsOrigin
   methods?: string[]
@@ -28,6 +36,10 @@ function resolveOrigin(
   return origin(requestOrigin)
 }
 
+/**
+ * Middleware handling Cross-Origin Resource Sharing (CORS).
+ * @public
+ */
 export function cors(options: CorsOptions = {}): GravitoMiddleware {
   const methods = (
     options.methods ?? ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']

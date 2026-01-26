@@ -1,7 +1,17 @@
+/**
+ * Represents a summarized view of a page's SEO metadata.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface MetaPreview {
+  /** The standard HTML title. */
   title?: string
+  /** The standard meta description. */
   description?: string
+  /** The URL of the page. */
   url?: string
+  /** Extracted Open Graph metadata. */
   og?: {
     title?: string
     description?: string
@@ -9,6 +19,7 @@ export interface MetaPreview {
     type?: string
     site_name?: string
   }
+  /** Extracted Twitter Card metadata. */
   twitter?: {
     card?: string
     site?: string
@@ -16,7 +27,33 @@ export interface MetaPreview {
   }
 }
 
+/**
+ * MetaInspector fetches and parses SEO metadata from any public URL.
+ *
+ * It extracts standard meta tags, Open Graph properties, and Twitter Cards
+ * to provide a summary of how a page will appear when shared on social media
+ * or indexed by search engines.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class MetaInspector {
+  /**
+   * Fetches metadata for a given URL.
+   *
+   * Sends an HTTP GET request to the URL, retrieves the HTML content,
+   * and extracts SEO metadata.
+   *
+   * @param url - The URL to inspect.
+   * @returns A promise that resolves to the metadata preview.
+   * @throws {Error} If the network request fails or returns a non-200 status.
+   *
+   * @example
+   * ```typescript
+   * const inspector = new MetaInspector();
+   * const preview = await inspector.inspect('https://example.com');
+   * ```
+   */
   async inspect(url: string): Promise<MetaPreview> {
     try {
       const response = await fetch(url)
@@ -33,6 +70,13 @@ export class MetaInspector {
     }
   }
 
+  /**
+   * Parses HTML content to extract metadata.
+   *
+   * @param html - The raw HTML string.
+   * @param url - The URL being parsed (for context).
+   * @returns The extracted metadata preview.
+   */
   parse(html: string, url: string): MetaPreview {
     const preview: MetaPreview = { url }
 

@@ -35,8 +35,21 @@ export type ModelConstructor<T extends Model> = new () => T
 export interface ModelStatic<T extends Model> {
   new (): T
   table: string
+  tableName?: string
   primaryKey: string
   connection?: string
+  name: string
+  getTable(): string
+  find(key: unknown): Promise<T | null>
+  findOrFail(key: unknown): Promise<T>
+  all(): Promise<T[]>
+  create(attributes?: Partial<ModelAttributes>): Promise<T>
+  query(): QueryBuilderContract<T>
+  where(
+    column: string | Record<string, unknown>,
+    operatorOrValue?: any,
+    value?: unknown
+  ): QueryBuilderContract<T>
 }
 
 /**
@@ -553,7 +566,7 @@ export abstract class Model {
         }
       }
 
-      this._schema = await SchemaRegistry.getInstance().get(table)
+      this._schema = await SchemaRegistry.getInstance().get(table, modelCtor.connection)
     }
     return this._schema
   }
@@ -1529,6 +1542,16 @@ export abstract class Model {
   // ============================================================================
   // JSON Serialization
   // ============================================================================
+
+  /**
+   * Fill the model with an array of attributes
+   */
+  fill(attributes: Partial<ModelAttributes>): this {
+    for (const [key, value] of Object.entries(attributes)) {
+      this._setAttribute(key, value)
+    }
+    return this
+  }
 
   /**
    * Convert to JSON

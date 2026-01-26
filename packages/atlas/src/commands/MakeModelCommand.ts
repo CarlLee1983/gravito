@@ -3,6 +3,10 @@ import { join } from 'node:path'
 import { Command } from './Command'
 import { MakeMigrationCommand } from './MakeMigrationCommand'
 
+/**
+ * Command to scaffold a new Eloquent model.
+ * @internal
+ */
 export class MakeModelCommand extends Command {
   signature = 'make:model <name>'
   description = 'Create a new Eloquent model class'
@@ -23,7 +27,7 @@ export class MakeModelCommand extends Command {
     const content = `import { Model, column } from '@gravito/atlas'
 
 export default class ${name} extends Model {
-  static tableName = '${name.toLowerCase()}s'
+  static table = '${name.toLowerCase()}s'
 
   @column({ isPrimary: true })
   declare id: number

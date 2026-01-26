@@ -1,20 +1,58 @@
 import nodemailer from 'nodemailer'
 import type { Address, Message, Transport } from '../types'
 
+/**
+ * Configuration for SMTP email transport.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface SmtpConfig {
+  /** SMTP server hostname */
   host: string
+  /** SMTP server port (typically 25, 465, or 587) */
   port: number
+  /** Use TLS/SSL connection (true for port 465) */
   secure?: boolean
+  /** Authentication credentials */
   auth?: {
+    /** SMTP username */
     user: string
+    /** SMTP password */
     pass: string
   }
+  /** TLS options */
   tls?: {
+    /** Reject unauthorized certificates */
     rejectUnauthorized?: boolean
+    /** Cipher suite */
     ciphers?: string
   }
 }
 
+/**
+ * SMTP email transport.
+ *
+ * Sends emails using standard SMTP protocol with support for
+ * authentication, TLS/SSL, attachments, and all email features.
+ *
+ * @example
+ * ```typescript
+ * const transport = new SmtpTransport({
+ *   host: 'smtp.gmail.com',
+ *   port: 587,
+ *   secure: false,
+ *   auth: {
+ *     user: 'user@gmail.com',
+ *     pass: 'app-password'
+ *   }
+ * })
+ * await transport.send(message)
+ * ```
+ *
+ * @since 3.0.0
+ * @public
+ */
 export class SmtpTransport implements Transport {
   private transporter: nodemailer.Transporter
 

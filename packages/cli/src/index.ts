@@ -1,3 +1,16 @@
+/**
+ * @fileoverview Gravito CLI - Command Line Tool for the Gravito Ecosystem
+ *
+ * Provides a set of commands for project initialization, process management,
+ * scheduled task execution, and maintenance utilities.
+ *
+ * Commands:
+ * - create: Bootstrap a new Gravito project
+ * - schedule:run/work: Task scheduling management
+ * - dev: Optimized development workflow
+ * - maintenance: System health and diagnostic tools
+ */
+
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { cancel, intro, isCancel, note, outro, select, spinner, text } from '@clack/prompts'
@@ -11,9 +24,15 @@ import cac from 'cac'
 import { downloadTemplate } from 'giget'
 import pc from 'picocolors'
 
+/**
+ * Configuration for a new project being created.
+ */
 interface ProjectConfig {
+  /** The name of the project. */
   name: string
+  /** The template to use for scaffolding. */
   template: string
+  /** Additional dynamic configuration properties. */
   [key: string]: unknown
 }
 
@@ -40,7 +59,7 @@ cli
         process.exit(1)
       }
 
-      const scheduler = core.services.get('scheduler')
+      const scheduler = core.container.make('scheduler')
       if (!scheduler) {
         console.error(pc.yellow('⚠️ Orbit Scheduler is not installed in this planet.'))
         process.exit(1)
@@ -69,7 +88,7 @@ cli
         process.exit(1)
       }
 
-      const scheduler = core.services.get('scheduler')
+      const scheduler = core.container.make('scheduler')
       if (!scheduler) {
         console.error(pc.yellow('⚠️ Orbit Scheduler is not installed.'))
         process.exit(1)
@@ -115,7 +134,7 @@ cli
         process.exit(1)
       }
 
-      const scheduler = core.services.get('scheduler')
+      const scheduler = core.container.make('scheduler')
       if (!scheduler) {
         console.error(pc.yellow('⚠️ Orbit Scheduler is not installed.'))
         process.exit(1)
@@ -286,6 +305,11 @@ cli
               label: '🟢 Vue 3',
               hint: 'Composition API with TypeScript',
             },
+            {
+              value: 'svelte',
+              label: '🔶 Svelte',
+              hint: 'Lightweight and reactive',
+            },
           ],
         })
 
@@ -315,41 +339,154 @@ cli
         force: true, // Allow overwriting empty dir
       })
 
+      // --- Skill Injection (The Freeze Engine & Friends) ---
+      const TEMPLATE_SKILLS: Record<string, string[]> = {
+        'static-site': ['static-site-generator'],
+        'inertia-react': ['mvc-master', 'ui-ux-pro-max', 'clean-architect'],
+        basic: ['fortify-security'],
+      }
+
+      const skillsToInject = TEMPLATE_SKILLS[project.template as string] || []
+      if (skillsToInject.length > 0) {
+        // Try to locate local .skills if running inside monorepo
+        // Root .skills is at ../../../.skills relative to packages/cli/src
+        const localSkillsRoot = path.resolve(import.meta.dirname, '../../../.skills')
+        const hasLocalSkills = await fs
+          .access(localSkillsRoot)
+          .then(() => true)
+          .catch(() => false)
+
+        for (const skill of skillsToInject) {
+          const skillDest = path.join(targetDir, '.skills', skill)
+
+          // Determine source and injection method
+          let skillSource = `github:gravito-framework/gravito/.skills/${skill}#main`
+          let isLocal = false
+
+          if (hasLocalSkills) {
+            const localPath = path.join(localSkillsRoot, skill)
+            const exists = await fs
+              .access(localPath)
+              .then(() => true)
+              .catch(() => false)
+            if (exists) {
+              skillSource = localPath
+              isLocal = true
+            }
+          }
+
+          try {
+            if (isLocal) {
+              await fs.mkdir(path.dirname(skillDest), { recursive: true })
+              await fs.cp(skillSource, skillDest, { recursive: true })
+            } else {
+              await downloadTemplate(skillSource, {
+                dir: skillDest,
+                force: true,
+              })
+            }
+          } catch (skillErr) {
+            console.warn(pc.yellow(`⚠️  Failed to inject skill '${skill}':`), skillErr)
+          }
+        }
+      }
+      // ----------------------------------------------------
+
+      // Rename stubs
+      const biomeStubPath = path.join(process.cwd(), targetDir, 'biome.json.stub')
+      const biomePath = path.join(process.cwd(), targetDir, 'biome.json')
+      try {
+        await fs.rename(biomeStubPath, biomePath)
+      } catch {
+        // stub might not exist
+      }
+
       // Handle framework-specific files for static-site template
       if (project.template === 'static-site' && framework) {
         const clientDir = path.join(process.cwd(), targetDir, 'src', 'client')
 
         if (framework === 'react') {
-          // Remove Vue files and keep React files
+          // Remove Vue and Svelte files and keep React files
           try {
             await fs.unlink(path.join(clientDir, 'app.vue.ts'))
+            await fs.unlink(path.join(clientDir, 'app.svelte.ts'))
             await fs.unlink(path.join(clientDir, 'components', 'StaticLink.vue'))
+            await fs.unlink(path.join(clientDir, 'components', 'StaticLink.svelte'))
             await fs.unlink(path.join(clientDir, 'components', 'Layout.vue'))
+            await fs.unlink(path.join(clientDir, 'components', 'Layout.svelte'))
             await fs.unlink(path.join(clientDir, 'pages', 'Home.vue'))
+            await fs.unlink(path.join(clientDir, 'pages', 'Home.svelte'))
             await fs.unlink(path.join(clientDir, 'pages', 'About.vue'))
+            await fs.unlink(path.join(clientDir, 'pages', 'About.svelte'))
           } catch {
             // Files might not exist, ignore
           }
 
-          // Update package.json to remove Vue dependencies
+          // Remove Svelte-specific files
+          try {
+            await fs.unlink(path.join(process.cwd(), targetDir, 'vitest.config.ts'))
+            await fs.unlink(path.join(process.cwd(), targetDir, 'svelte.config.js'))
+            const testsDir = path.join(clientDir, 'components', '__tests__')
+            const files = await fs.readdir(testsDir)
+            for (const file of files) {
+              await fs.unlink(path.join(testsDir, file))
+            }
+            await fs.rmdir(testsDir)
+          } catch {
+            // Files might not exist, ignore
+          }
+
+          // Update package.json to remove Vue/Svelte dependencies
           const pkgPath = path.join(process.cwd(), targetDir, 'package.json')
           const pkg = JSON.parse(await fs.readFile(pkgPath, 'utf-8'))
           if (pkg.dependencies) {
             delete pkg.dependencies['@inertiajs/vue3']
+            delete pkg.dependencies['@inertiajs/svelte']
             delete pkg.dependencies.vue
+            delete pkg.dependencies.svelte
           }
           if (pkg.devDependencies) {
             delete pkg.devDependencies['@vitejs/plugin-vue']
+            delete pkg.devDependencies['@sveltejs/vite-plugin-svelte']
+            delete pkg.devDependencies['svelte-check']
+            delete pkg.devDependencies.vitest
+            delete pkg.devDependencies['@vitest/ui']
+            delete pkg.devDependencies['@testing-library/svelte']
+            delete pkg.devDependencies['@testing-library/jest-dom']
+            delete pkg.devDependencies.jsdom
+          }
+          if (pkg.scripts) {
+            delete pkg.scripts.test
+            delete pkg.scripts['test:ui']
           }
           await fs.writeFile(pkgPath, JSON.stringify(pkg, null, 2))
         } else if (framework === 'vue') {
-          // Remove React files and keep Vue files
+          // Remove React and Svelte files and keep Vue files
           try {
             await fs.unlink(path.join(clientDir, 'app.tsx'))
+            await fs.unlink(path.join(clientDir, 'app.svelte.ts'))
             await fs.unlink(path.join(clientDir, 'components', 'StaticLink.tsx'))
+            await fs.unlink(path.join(clientDir, 'components', 'StaticLink.svelte'))
             await fs.unlink(path.join(clientDir, 'components', 'Layout.tsx'))
+            await fs.unlink(path.join(clientDir, 'components', 'Layout.svelte'))
             await fs.unlink(path.join(clientDir, 'pages', 'Home.tsx'))
+            await fs.unlink(path.join(clientDir, 'pages', 'Home.svelte'))
             await fs.unlink(path.join(clientDir, 'pages', 'About.tsx'))
+            await fs.unlink(path.join(clientDir, 'pages', 'About.svelte'))
+          } catch {
+            // Files might not exist, ignore
+          }
+
+          // Remove Svelte-specific files
+          try {
+            await fs.unlink(path.join(process.cwd(), targetDir, 'vitest.config.ts'))
+            await fs.unlink(path.join(process.cwd(), targetDir, 'svelte.config.js'))
+            const testsDir = path.join(clientDir, 'components', '__tests__')
+            const files = await fs.readdir(testsDir)
+            for (const file of files) {
+              await fs.unlink(path.join(testsDir, file))
+            }
+            await fs.rmdir(testsDir)
           } catch {
             // Files might not exist, ignore
           }
@@ -365,13 +502,15 @@ cli
             // File might not exist, ignore
           }
 
-          // Update package.json to remove React dependencies and add Vue
+          // Update package.json to remove React/Svelte dependencies and add Vue
           const pkgPath = path.join(process.cwd(), targetDir, 'package.json')
           const pkg = JSON.parse(await fs.readFile(pkgPath, 'utf-8'))
           if (pkg.dependencies) {
             delete pkg.dependencies['@inertiajs/react']
+            delete pkg.dependencies['@inertiajs/svelte']
             delete pkg.dependencies.react
             delete pkg.dependencies['react-dom']
+            delete pkg.dependencies.svelte
             if (!pkg.dependencies['@inertiajs/vue3']) {
               pkg.dependencies['@inertiajs/vue3'] = '^1.0.0'
             }
@@ -383,9 +522,20 @@ cli
             delete pkg.devDependencies['@vitejs/plugin-react']
             delete pkg.devDependencies['@types/react']
             delete pkg.devDependencies['@types/react-dom']
+            delete pkg.devDependencies['@sveltejs/vite-plugin-svelte']
+            delete pkg.devDependencies['svelte-check']
+            delete pkg.devDependencies.vitest
+            delete pkg.devDependencies['@vitest/ui']
+            delete pkg.devDependencies['@testing-library/svelte']
+            delete pkg.devDependencies['@testing-library/jest-dom']
+            delete pkg.devDependencies.jsdom
             if (!pkg.devDependencies['@vitejs/plugin-vue']) {
               pkg.devDependencies['@vitejs/plugin-vue'] = '^5.0.0'
             }
+          }
+          if (pkg.scripts) {
+            delete pkg.scripts.test
+            delete pkg.scripts['test:ui']
           }
           await fs.writeFile(pkgPath, JSON.stringify(pkg, null, 2))
 
@@ -400,6 +550,97 @@ cli
             .replace('plugins: [react()]', 'plugins: [vue()]')
             .replace("input: './src/client/app.tsx'", "input: './src/client/app.ts'")
           await fs.writeFile(viteConfigPath, vueViteConfig)
+        } else if (framework === 'svelte') {
+          // Remove React and Vue files, keep only Svelte files
+          try {
+            await fs.unlink(path.join(clientDir, 'app.tsx'))
+            await fs.unlink(path.join(clientDir, 'app.vue.ts'))
+            await fs.unlink(path.join(clientDir, 'components', 'StaticLink.tsx'))
+            await fs.unlink(path.join(clientDir, 'components', 'StaticLink.vue'))
+            await fs.unlink(path.join(clientDir, 'components', 'Layout.tsx'))
+            await fs.unlink(path.join(clientDir, 'components', 'Layout.vue'))
+            await fs.unlink(path.join(clientDir, 'pages', 'Home.tsx'))
+            await fs.unlink(path.join(clientDir, 'pages', 'Home.vue'))
+            await fs.unlink(path.join(clientDir, 'pages', 'About.tsx'))
+            await fs.unlink(path.join(clientDir, 'pages', 'About.vue'))
+          } catch {
+            // Files might not exist, ignore
+          }
+
+          // Rename app.svelte.ts to app.ts (Svelte entry point)
+          const appSveltePath = path.join(clientDir, 'app.svelte.ts')
+          const appTsPath = path.join(clientDir, 'app.ts')
+          try {
+            const content = await fs.readFile(appSveltePath, 'utf-8')
+            await fs.writeFile(appTsPath, content)
+            await fs.unlink(appSveltePath)
+          } catch {
+            // File might not exist, ignore
+          }
+
+          // Update package.json to remove React/Vue and add Svelte
+          const pkgPath = path.join(process.cwd(), targetDir, 'package.json')
+          const pkg = JSON.parse(await fs.readFile(pkgPath, 'utf-8'))
+          if (pkg.dependencies) {
+            delete pkg.dependencies['@inertiajs/react']
+            delete pkg.dependencies['@inertiajs/vue3']
+            delete pkg.dependencies.react
+            delete pkg.dependencies['react-dom']
+            delete pkg.dependencies.vue
+            if (!pkg.dependencies['@inertiajs/svelte']) {
+              pkg.dependencies['@inertiajs/svelte'] = '^1.0.0'
+            }
+            if (!pkg.dependencies.svelte) {
+              pkg.dependencies.svelte = '^5.0.0'
+            }
+          }
+          if (pkg.devDependencies) {
+            delete pkg.devDependencies['@vitejs/plugin-react']
+            delete pkg.devDependencies['@vitejs/plugin-vue']
+            delete pkg.devDependencies['@types/react']
+            delete pkg.devDependencies['@types/react-dom']
+            if (!pkg.devDependencies['@sveltejs/vite-plugin-svelte']) {
+              pkg.devDependencies['@sveltejs/vite-plugin-svelte'] = '^6.0.0'
+            }
+            if (!pkg.devDependencies['svelte-check']) {
+              pkg.devDependencies['svelte-check'] = '^3.6.0'
+            }
+            if (!pkg.devDependencies.vitest) {
+              pkg.devDependencies.vitest = '^3.0.0'
+            }
+            if (!pkg.devDependencies['@vitest/ui']) {
+              pkg.devDependencies['@vitest/ui'] = '^3.0.0'
+            }
+            if (!pkg.devDependencies['@testing-library/svelte']) {
+              pkg.devDependencies['@testing-library/svelte'] = '^5.3.0'
+            }
+            if (!pkg.devDependencies['@testing-library/jest-dom']) {
+              pkg.devDependencies['@testing-library/jest-dom'] = '^6.6.3'
+            }
+            if (!pkg.devDependencies.jsdom) {
+              pkg.devDependencies.jsdom = '^25.0.0'
+            }
+          }
+          if (pkg.scripts?.typecheck) {
+            pkg.scripts.typecheck = 'svelte-check --tsconfig ./tsconfig.json'
+          }
+          if (pkg.scripts && !pkg.scripts.test) {
+            pkg.scripts.test = 'vitest'
+            pkg.scripts['test:ui'] = 'vitest --ui'
+          }
+          await fs.writeFile(pkgPath, JSON.stringify(pkg, null, 2))
+
+          // Update vite.config.ts for Svelte
+          const viteConfigPath = path.join(process.cwd(), targetDir, 'vite.config.ts')
+          const viteConfig = await fs.readFile(viteConfigPath, 'utf-8')
+          const svelteViteConfig = viteConfig
+            .replace(
+              "import react from '@vitejs/plugin-react'",
+              "import { svelte } from '@sveltejs/vite-plugin-svelte'"
+            )
+            .replace('plugins: [react()]', 'plugins: [svelte()]')
+            .replace("input: './src/client/app.tsx'", "input: './src/client/app.ts'")
+          await fs.writeFile(viteConfigPath, svelteViteConfig)
         }
       }
 
@@ -414,11 +655,15 @@ cli
 
       // Replace workspace:* with actual versions
       const versionMap: Record<string, string> = {
-        '@gravito/core': '^1.0.0-beta.1',
-        '@gravito/beam': '^1.0.0-alpha.1',
-        '@gravito/prism': '^1.0.0-beta.1',
-        '@gravito/stasis': '^1.0.0-beta.1',
-        default: '^1.0.0-alpha.1', // Fallback for other orbits still in alpha
+        '@gravito/core': '^1.2.1',
+        '@gravito/beam': '^1.0.0-alpha.2',
+        '@gravito/photon': '^1.0.0-beta.1',
+        '@gravito/prism': '^3.0.2',
+        '@gravito/stasis': '^3.0.1',
+        '@gravito/ion': '^3.0.1',
+        '@gravito/atlas': '^2.1.0',
+        '@gravito/constellation': '^3.0.2',
+        default: '^1.0.0', // Fallback for other orbits
       }
 
       if (pkg.dependencies) {
@@ -465,7 +710,7 @@ cli
 
       const frameworkNote =
         project.template === 'static-site' && framework
-          ? `\nFramework: ${framework === 'react' ? '⚛️ React' : '🟢 Vue 3'}`
+          ? `\nFramework: ${framework === 'react' ? '⚛️ React' : framework === 'vue' ? '🟢 Vue 3' : '🔶 Svelte'}`
           : ''
 
       const profileNote = `\nProfile: ${options.profile}`
@@ -478,8 +723,8 @@ cli
 
       const nextSteps =
         project.template === 'static-site'
-          ? `\n  cd ${pc.cyan(project.name)}\n  bun install\n  ${pc.yellow('# Edit .env and configure STATIC_SITE_DOMAINS')}\n  bun run dev`
-          : `\n  cd ${pc.cyan(project.name)}\n  bun install\n  bun run dev`
+          ? `\n  cd ${pc.cyan(targetDir)}\n  bun install\n  ${pc.yellow('# Edit .env and configure STATIC_SITE_DOMAINS')}\n  bun run dev\n\n  ${pc.gray('Available commands:')}\n  bun run lint       ${pc.gray('// Check code style')}\n  bun run typecheck  ${pc.gray('// Check types')}`
+          : `\n  cd ${pc.cyan(targetDir)}\n  bun install\n  bun run dev\n\n  ${pc.gray('Available commands:')}\n  bun run lint       ${pc.gray('// Check code style')}\n  bun run typecheck  ${pc.gray('// Check types')}`
 
       outro(`You're all set! ${nextSteps}`)
     } catch (err: unknown) {
@@ -490,6 +735,12 @@ cli
     }
   })
 
+/**
+ * Execute a group of interactive prompts and return the results as a structured object.
+ *
+ * @param prompts - A record of prompt functions to execute.
+ * @returns A promise that resolves with the results of the prompts.
+ */
 async function group<T extends Record<string, unknown>>(
   prompts: Record<string, () => Promise<unknown>>
 ): Promise<T> {

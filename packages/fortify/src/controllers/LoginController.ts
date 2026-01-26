@@ -2,46 +2,38 @@ import type { GravitoContext } from '@gravito/core'
 import type { AuthManager } from '@gravito/sentinel'
 import type { FortifyConfig } from '../config'
 import { ensureCsrfToken } from '../csrf'
+import type { AuthLogger } from '../services/AuthLogger'
+import type { RateLimiter } from '../services/RateLimiter'
 import type { ViewService } from '../types'
+import { getClientInfo } from '../utils/request'
 
-/**
- * LoginController handles user authentication
- */
 export class LoginController {
-  constructor(private config: FortifyConfig) {}
+  constructor(
+    private config: FortifyConfig,
+    private rateLimiter?: RateLimiter,
+    private authLogger?: AuthLogger
+  ) {}
 
-  /**
-   * Show login form
-   * GET /login
-   */
   async show(c: GravitoContext): Promise<Response> {
-    // Check if already authenticated
     const auth = c.get('auth') as AuthManager
     if (auth && (await auth.check())) {
       return c.redirect(this.config.redirects.login ?? '/dashboard')
     }
 
-    // For JSON mode (SPA), return a simple response
     if (this.config.jsonMode) {
       return c.json({ view: 'login' })
     }
 
     const csrfToken = ensureCsrfToken(c, this.config)
 
-    // Render view if view service is available
     const view = c.get('view') as ViewService | undefined
     if (view?.render && this.config.views?.login) {
       return c.html(view.render(this.config.views.login, { csrfToken }))
     }
 
-    // Default: return basic HTML form
     return c.html(this.defaultLoginHtml(csrfToken ?? undefined))
   }
 
-  /**
-   * Handle login attempt
-   * POST /login
-   */
   async store(c: GravitoContext): Promise<Response> {
     const auth = c.get('auth') as AuthManager
     if (!auth) {
@@ -62,24 +54,164 @@ export class LoginController {
       [passwordField]: body.password ?? body[passwordField as keyof typeof body],
     }
 
+    const identifier = credentials[username] as string
     const remember = body.remember ?? false
+    const clientInfo = getClientInfo(c)
+
+    if (this.rateLimiter && identifier) {
+      const rateLimitResult = await this.rateLimiter.checkAttempt(identifier, 'login')
+
+      if (!rateLimitResult.allowed) {
+        if (this.config.jsonMode) {
+          return c.json(
+            {
+              error:
+                rateLimitResult.reason === 'account_locked'
+                  ? 'Account locked'
+                  : 'Too many attempts',
+              retryAfter: rateLimitResult.retryAfter,
+            },
+            429
+          )
+        }
+        return c.redirect('/login?error=too_many_attempts')
+      }
+    }
+
+    const UserModel = this.config.userModel() as any
+    const user = await UserModel.query().where(username, identifier).first()
+
+    if (user) {
+      const lockoutConfig = this.config.security?.lockout
+      const isLockoutEnabled = lockoutConfig?.enabled ?? true
+
+      if (isLockoutEnabled && user.locked_until) {
+        const lockedUntil = new Date(user.locked_until)
+        if (lockedUntil > new Date()) {
+          const retryAfter = Math.ceil((lockedUntil.getTime() - Date.now()) / 1000)
+
+          await this.authLogger?.log({
+            type: 'account_locked',
+            userId: user.id,
+            email: identifier,
+            success: false,
+            ip: clientInfo.ip,
+            userAgent: clientInfo.userAgent,
+            metadata: { lockedUntil: lockedUntil.toISOString(), retryAfter },
+          })
+
+          if (this.config.jsonMode) {
+            return c.json({ error: 'Account locked', retryAfter }, 423)
+          }
+          return c.redirect('/login?error=account_locked')
+        } else {
+          await user.update({ locked_until: null, failed_login_attempts: 0 })
+        }
+      }
+    }
 
     try {
+      await this.authLogger?.log({
+        type: 'login_attempt',
+        userId: user?.id,
+        email: identifier,
+        success: false,
+        ip: clientInfo.ip,
+        userAgent: clientInfo.userAgent,
+      })
+
       const success = await auth.attempt(credentials, remember)
 
       if (!success) {
+        if (user) {
+          const lockoutConfig = this.config.security?.lockout
+          const isLockoutEnabled = lockoutConfig?.enabled ?? true
+          const lockoutThreshold = lockoutConfig?.threshold ?? 5
+          const lockoutDuration = lockoutConfig?.duration ?? 30
+
+          if (isLockoutEnabled) {
+            const newAttempts = (user.failed_login_attempts ?? 0) + 1
+
+            if (newAttempts >= lockoutThreshold) {
+              const lockedUntil = new Date(Date.now() + lockoutDuration * 60 * 1000)
+              await user.update({
+                failed_login_attempts: newAttempts,
+                locked_until: lockedUntil,
+              })
+            } else {
+              await user.update({ failed_login_attempts: newAttempts })
+            }
+          }
+        }
+
+        await this.authLogger?.log({
+          type: 'login_failure',
+          userId: user?.id,
+          email: identifier,
+          success: false,
+          ip: clientInfo.ip,
+          userAgent: clientInfo.userAgent,
+          metadata: { reason: 'invalid_credentials' },
+        })
+
         if (this.config.jsonMode) {
           return c.json({ error: 'Invalid credentials' }, 401)
         }
-        // Redirect back with error (in real app, use session flash)
         return c.redirect('/login?error=invalid_credentials')
       }
 
+      if (this.config.features.twoFactorAuthentication) {
+        const currentUser = (await auth.user()) as any
+
+        if (currentUser?.two_factor_secret && currentUser.two_factor_confirmed_at) {
+          await auth.logout()
+
+          const session = c.get('session') as any
+          if (session) {
+            await session.set('two_factor_user_id', currentUser.id)
+            await session.set('two_factor_remember', remember)
+          }
+
+          if (this.config.jsonMode) {
+            return c.json({
+              two_factor: true,
+              redirect: '/two-factor/challenge',
+            })
+          }
+          return c.redirect('/two-factor/challenge')
+        }
+      }
+
+      if (user && user.failed_login_attempts > 0) {
+        await user.update({ failed_login_attempts: 0, locked_until: null })
+      }
+
+      if (this.rateLimiter && identifier) {
+        await this.rateLimiter.recordSuccess(identifier, 'login')
+      }
+
+      const shouldRegenerateSession = this.config.security?.session?.regenerateOnLogin ?? true
+      if (shouldRegenerateSession) {
+        const session = c.get('session') as any
+        if (session?.regenerate) {
+          await session.regenerate()
+        }
+      }
+
+      await this.authLogger?.log({
+        type: 'login_success',
+        userId: user?.id,
+        email: identifier,
+        success: true,
+        ip: clientInfo.ip,
+        userAgent: clientInfo.userAgent,
+      })
+
       if (this.config.jsonMode) {
-        const user = await auth.user()
+        const currentUser = await auth.user()
         return c.json({
           message: 'Login successful',
-          user,
+          user: currentUser,
           redirect: this.config.redirects.login ?? '/dashboard',
         })
       }
@@ -87,6 +219,17 @@ export class LoginController {
       return c.redirect(this.config.redirects.login ?? '/dashboard')
     } catch (error) {
       console.error('[Fortify] Login error:', error)
+
+      await this.authLogger?.log({
+        type: 'login_failure',
+        userId: user?.id,
+        email: identifier,
+        success: false,
+        ip: clientInfo.ip,
+        userAgent: clientInfo.userAgent,
+        metadata: { reason: 'server_error', error: String(error) },
+      })
+
       if (this.config.jsonMode) {
         return c.json({ error: 'Authentication failed' }, 500)
       }

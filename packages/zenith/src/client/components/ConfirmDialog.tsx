@@ -2,18 +2,42 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { createPortal } from 'react-dom'
 import { cn } from '../utils'
 
+/**
+ * Props for the ConfirmDialog component.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface ConfirmDialogProps {
+  /** Whether the dialog is visible. */
   open: boolean
+  /** Dialog title text. */
   title: string
+  /** Detailed confirmation message. */
   message: string
+  /** Text for the confirmation button. @default 'Confirm' */
   confirmText?: string
+  /** Text for the cancel button. @default 'Cancel' */
   cancelText?: string
+  /** Callback triggered when user confirms the action. */
   onConfirm: () => void
+  /** Callback triggered when user cancels the action. */
   onCancel: () => void
+  /** Visual style of the confirmation button. @default 'danger' */
   variant?: 'danger' | 'warning' | 'info'
+  /** Whether an action is currently in progress (shows a spinner). @default false */
   isProcessing?: boolean
 }
 
+/**
+ * A modal dialog used for user confirmation before performing sensitive actions.
+ *
+ * It provides a consistent UI for confirmations across the Zenith dashboard
+ * and supports different visual variants.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export function ConfirmDialog({
   open,
   title,

@@ -15,6 +15,15 @@ import {
 import React from 'react'
 import { cn } from '../utils'
 
+/**
+ * System Settings Page.
+ *
+ * Allows administrators to configure dashboard appearance, monitoring alerts,
+ * and data retention policies. It also provides system-level information.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export function SettingsPage() {
   const queryClient = useQueryClient()
   const [showAddRule, setShowAddRule] = React.useState(false)

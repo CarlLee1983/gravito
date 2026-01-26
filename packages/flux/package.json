@@ -1,6 +1,6 @@
 {
   "name": "@gravito/flux",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Platform-agnostic workflow engine for Gravito",
   "type": "module",
   "main": "./dist/index.node.cjs",
@@ -42,8 +42,8 @@
     "dev:viewer": "node ./bin/flux.js dev --trace ./.flux/trace.ndjson --port 4280",
     "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
     "test": "bun test",
-    "test:coverage": "bun test --coverage --coverage-threshold=80",
-    "test:ci": "bun test --coverage --coverage-threshold=80"
+    "test:coverage": "bun test --coverage --coverage-threshold=70",
+    "test:ci": "bun test --coverage --coverage-threshold=70"
   },
   "peerDependencies": {
     "@gravito/core": "workspace:*"

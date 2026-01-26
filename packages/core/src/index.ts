@@ -10,6 +10,10 @@
 import packageJson from '../package.json'
 import type { GravitoConfig } from './PlanetCore'
 
+/**
+ * Current version of @gravito/core.
+ * @public
+ */
 export const VERSION = packageJson.version
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -17,6 +21,7 @@ export const VERSION = packageJson.version
 // These types enable swapping out the underlying HTTP engine.
 // ─────────────────────────────────────────────────────────────────────────────
 
+export { GravitoEngineAdapter } from './adapters/GravitoEngineAdapter'
 export {
   createGravitoAdapter,
   createPhotonAdapter,
@@ -80,6 +85,7 @@ export { HookManager } from './HookManager'
 export * from './helpers'
 // HTTP / Security utilities
 export { CookieJar, type CookieOptions } from './http/CookieJar'
+export { deleteCookie, getCookie, setCookie } from './http/cookie'
 export { type BodySizeLimitOptions, bodySizeLimit } from './http/middleware/BodySizeLimit'
 export { type CorsOptions, type CorsOrigin, cors } from './http/middleware/Cors'
 export { type CsrfOptions, csrfProtection, getCsrfToken } from './http/middleware/Csrf'

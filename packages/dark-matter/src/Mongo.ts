@@ -11,6 +11,7 @@ import type {
   MongoConfig,
   MongoDatabaseContract,
   MongoManagerConfig,
+  RetryConfig,
 } from './types'
 
 // Singleton manager instance
@@ -18,30 +19,21 @@ const manager = new MongoManager()
 
 /**
  * MongoDB Facade
- * Provides static methods for MongoDB operations
+ *
+ * Provides static methods for MongoDB operations with support for multiple
+ * named connections, automated connection management, and a fluent query builder.
  *
  * @example
  * ```typescript
- * import { Mongo } from '@gravito/dark-matter'
+ * import { Mongo } from '@gravito/dark-matter';
  *
- * // Configure
- * Mongo.configure({
- *   default: 'main',
- *   connections: {
- *     main: { uri: 'mongodb://localhost:27017', database: 'myapp' }
- *   }
- * })
- *
- * // Connect
- * await Mongo.connect()
- *
- * // Use
  * const users = await Mongo.collection('users')
  *   .where('status', 'active')
- *   .orderBy('createdAt', 'desc')
- *   .limit(10)
- *   .get()
+ *   .get();
  * ```
+ *
+ * @public
+ * @since 3.0.0
  */
 export class Mongo {
   // ============================================================================
@@ -49,29 +41,53 @@ export class Mongo {
   // ============================================================================
 
   /**
-   * Configure MongoDB connections.
+   * Configures the global MongoDB connection settings.
    *
-   * @param config - The MongoDB manager configuration.
+   * Sets up the connection manager with named connections and a default.
+   *
+   * @param config - The configuration object.
+   *
+   * @example
+   * ```typescript
+   * Mongo.configure({
+   *   default: 'main',
+   *   connections: {
+   *     main: { uri: 'mongodb://localhost/main' },
+   *     analytics: { uri: 'mongodb://localhost/analytics' }
+   *   }
+   * });
+   * ```
    */
   static configure(config: MongoManagerConfig): void {
     manager.configure(config)
   }
 
   /**
-   * Add a named connection.
+   * Adds a new named connection to the global manager.
    *
-   * @param name - The name of the connection.
-   * @param config - The connection configuration.
+   * @param name - Unique name for the connection.
+   * @param config - Connection options.
+   *
+   * @example
+   * ```typescript
+   * Mongo.addConnection('logs', { uri: 'mongodb://logging-server/logs' });
+   * ```
    */
   static addConnection(name: string, config: MongoConfig): void {
     manager.addConnection(name, config)
   }
 
   /**
-   * Get a specific connection.
+   * Retrieves a specific MongoDB connection instance.
    *
-   * @param name - The name of the connection (optional). Defaults to 'default'.
-   * @returns The MongoClientContract instance.
+   * @param name - Optional connection name. Uses 'default' if omitted.
+   * @returns The requested connection instance.
+   * @throws {Error} If the connection is not configured.
+   *
+   * @example
+   * ```typescript
+   * const logsDb = Mongo.connection('logs');
+   * ```
    */
   static connection(name?: string): MongoClientContract {
     return manager.connection(name)
@@ -82,36 +98,37 @@ export class Mongo {
   // ============================================================================
 
   /**
-   * Connect to the default MongoDB server.
+   * Connects to the default MongoDB server.
    *
-   * @returns A promise that resolves when connected.
+   * @param retryConfig - Optional retry policy.
+   * @returns Promise resolving when connected.
    */
-  static async connect(): Promise<void> {
-    await manager.getDefault().connect()
+  static async connect(retryConfig?: RetryConfig): Promise<void> {
+    await manager.getDefault().connect(retryConfig)
   }
 
   /**
-   * Connect all configured connections.
+   * Establishes connections for all configured databases.
    *
-   * @returns A promise that resolves when all connections are established.
+   * @returns Promise resolving when all connections are active.
    */
   static async connectAll(): Promise<void> {
     await manager.connectAll()
   }
 
   /**
-   * Disconnect from the default MongoDB server.
+   * Disconnects the default connection.
    *
-   * @returns A promise that resolves when disconnected.
+   * @returns Promise resolving when disconnected.
    */
   static async disconnect(): Promise<void> {
     await manager.getDefault().disconnect()
   }
 
   /**
-   * Disconnect all connections.
+   * Disconnects all active connections.
    *
-   * @returns A promise that resolves when all connections are closed.
+   * @returns Promise resolving when all connections are closed.
    */
   static async disconnectAll(): Promise<void> {
     await manager.disconnectAll()
@@ -131,20 +148,26 @@ export class Mongo {
   // ============================================================================
 
   /**
-   * Get a database instance from the default connection.
+   * Retrieves a database instance from the default connection.
    *
-   * @param name - The name of the database (optional). Defaults to the configured database.
-   * @returns The MongoDatabaseContract instance.
+   * @param name - Optional database name override.
+   * @returns A `MongoDatabaseContract` instance.
    */
   static database(name?: string): MongoDatabaseContract {
     return manager.getDefault().database(name)
   }
 
   /**
-   * Get a collection with query builder from the default connection.
+   * Creates a query builder for a specific collection on the default connection.
    *
+   * @typeParam T - The document type.
    * @param name - The name of the collection.
-   * @returns A MongoCollectionContract instance with fluent query builder.
+   * @returns A query builder instance.
+   *
+   * @example
+   * ```typescript
+   * const users = await Mongo.collection('users').get();
+   * ```
    */
   static collection<T = Document>(name: string): MongoCollectionContract<T> {
     return manager.getDefault().collection<T>(name)

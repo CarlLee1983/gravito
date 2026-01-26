@@ -215,6 +215,31 @@ export interface HttpAdapter<V extends GravitoVariables = GravitoVariables> {
    */
   fetch(request: Request, server?: unknown): Response | Promise<Response>
 
+  /**
+   * Predictive Route Warming (JIT Optimization)
+   *
+   * Simulates requests to specified routes to trigger JIT compilation (FTL)
+   * before real traffic arrives.
+   *
+   * @param paths List of paths to warm up (e.g. ['/api/users', '/health'])
+   * @since 2.1.0
+   */
+  warmup?(paths: string[]): Promise<void>
+
+  /**
+   * WebSocket Handler for Bun.serve
+   *
+   * @since 2.2.0
+   */
+  websocket?: {
+    open?(ws: unknown): void | Promise<void>
+    message?(ws: unknown, message: string | Buffer | Uint8Array): void | Promise<void>
+    close?(ws: unknown, code: number, message: string): void | Promise<void>
+    drain?(ws: unknown): void | Promise<void>
+    // Allow any other Bun websocket properties
+    [key: string]: unknown
+  }
+
   // ─────────────────────────────────────────────
   // Lifecycle
   // ─────────────────────────────────────────────

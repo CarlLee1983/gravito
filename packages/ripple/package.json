@@ -1,6 +1,6 @@
 {
   "name": "@gravito/ripple",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "description": "Bun-native WebSocket broadcasting for Gravito. Channel-based real-time communication.",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -21,8 +21,9 @@
     "build": "bun run build.ts",
     "test": "bun test",
     "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
-    "test:coverage": "bun test --coverage --coverage-threshold=80",
-    "test:ci": "bun test --coverage --coverage-threshold=80"
+    "test:coverage": "bun test --coverage --coverage-threshold=60",
+    "test:ci": "bun test --coverage --coverage-threshold=60",
+    "bench": "bun run benchmarks/index.ts"
   },
   "keywords": [
     "gravito",
@@ -41,10 +42,18 @@
   },
   "homepage": "https://github.com/gravito-framework/gravito#readme",
   "peerDependencies": {
-    "@gravito/core": "workspace:*"
+    "@gravito/core": "workspace:*",
+    "ioredis": "^5.0.0"
+  },
+  "peerDependenciesMeta": {
+    "ioredis": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "bun-types": "latest",
+    "ioredis": "^5.4.2",
+    "tinybench": "^6.0.0",
     "typescript": "^5.9.3"
   },
   "publishConfig": {

@@ -102,10 +102,15 @@ const _listener = Bun.serve({
           }
         )
       } catch (error) {
-        return new Response(JSON.stringify({ error: String(error) }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        })
+        return new Response(
+          JSON.stringify({
+            error: env.isProduction ? 'Internal Server Error' : String(error),
+          }),
+          {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        )
       }
     }
 
@@ -132,10 +137,15 @@ const _listener = Bun.serve({
           headers: { 'Content-Type': 'application/json' },
         })
       } catch (e) {
-        return new Response(JSON.stringify({ error: String(e) }), {
-          status: 500,
-          headers: { 'Content-Type': 'application/json' },
-        })
+        return new Response(
+          JSON.stringify({
+            error: env.isProduction ? 'Internal Server Error' : String(e),
+          }),
+          {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        )
       }
     }
 
@@ -174,10 +184,16 @@ const _listener = Bun.serve({
         })
       } catch (e) {
         // If queue is down or other error
-        return new Response(JSON.stringify({ backlog: -1, error: String(e) }), {
-          status: 200, // Return 200 so UI handles it gracefully
-          headers: { 'Content-Type': 'application/json' },
-        })
+        return new Response(
+          JSON.stringify({
+            backlog: -1,
+            error: env.isProduction ? 'Internal Server Error' : String(e),
+          }),
+          {
+            status: 200, // Return 200 so UI handles it gracefully
+            headers: { 'Content-Type': 'application/json' },
+          }
+        )
       }
     }
 

@@ -1,5 +1,15 @@
 # example-realtime-verification
 
+## 1.0.4
+
+### Patch Changes
+
+- Updated dependencies
+  - @gravito/core@1.2.1
+  - @gravito/echo@3.0.1
+  - @gravito/radiance@1.0.3
+  - @gravito/ripple@3.0.1
+
 ## 1.0.3
 
 ### Patch Changes

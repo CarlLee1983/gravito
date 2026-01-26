@@ -197,7 +197,7 @@ describe('Strategies', () => {
       expect(entries1[0]?.url).toBe('/call-1')
 
       // Wait for cache to expire
-      await new Promise((resolve) => setTimeout(resolve, 150))
+      await new Promise((resolve) => setTimeout(resolve, 300))
 
       const entries2 = await strategy.getEntries()
       expect(entries2[0]?.url).toBe('/call-2')

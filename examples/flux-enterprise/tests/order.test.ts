@@ -31,7 +31,7 @@ it('fails when stock is insufficient', async () => {
   const result = await engine.execute(orderWorkflow, {
     orderId: 'bad-order',
     userId: 'tester',
-    items: [{ productId: 'widget-a', qty: 100 }],
+    items: [{ productId: 'widget-a', qty: 2000 }],
   })
 
   expect(result.status).toBe('failed')

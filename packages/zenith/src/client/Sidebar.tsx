@@ -18,6 +18,15 @@ interface SidebarProps {
   toggleCollapse: () => void
 }
 
+/**
+ * Sidebar navigation component for the Zenith dashboard.
+ *
+ * Provides links to various sections of the dashboard and supports
+ * a collapsible state to maximize screen space.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export function Sidebar({ className, collapsed, toggleCollapse }: SidebarProps) {
   const location = useLocation()
 

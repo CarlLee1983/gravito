@@ -6,7 +6,7 @@
 
 import Stripe from 'stripe'
 import { stripeConfig } from '../../config/stripe'
-import type { Order } from '../Models'
+import type { Order } from '../models'
 
 export class StripeService {
   private stripe: Stripe

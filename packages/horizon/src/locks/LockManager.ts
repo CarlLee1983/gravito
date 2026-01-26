@@ -3,6 +3,34 @@ import { CacheLockStore } from './CacheLockStore'
 import type { LockStore } from './LockStore'
 import { MemoryLockStore } from './MemoryLockStore'
 
+/**
+ * Manager for distributed locks to prevent concurrent task execution.
+ *
+ * Supports multiple storage backends (memory, cache, custom) and provides
+ * a unified interface for acquiring and releasing locks.
+ *
+ * @example
+ * ```typescript
+ * // Using memory store
+ * const locks = new LockManager('memory')
+ *
+ * // Using cache store
+ * const locks = new LockManager('cache', { cache: cacheManager })
+ *
+ * // Acquire a lock
+ * const acquired = await locks.acquire('task:send-emails', 300)
+ * if (acquired) {
+ *   try {
+ *     // Execute task
+ *   } finally {
+ *     await locks.release('task:send-emails')
+ *   }
+ * }
+ * ```
+ *
+ * @since 3.0.0
+ * @public
+ */
 export class LockManager {
   private store: LockStore
 

@@ -1,6 +1,10 @@
 import type { Encrypter } from '../security/Encrypter'
 import type { GravitoContext } from './types'
 
+/**
+ * Options for setting cookies
+ * @public
+ */
 export interface CookieOptions {
   path?: string
   domain?: string
@@ -12,10 +16,36 @@ export interface CookieOptions {
   encrypt?: boolean
 }
 
+/**
+ * Utility for managing cookies (request/response/encryption).
+ * @public
+ */
 export class CookieJar {
   private queued: Map<string, { value: string; options: CookieOptions }> = new Map()
 
   constructor(private encrypter?: Encrypter) {}
+
+  /**
+   * Parse cookies from a Cookie header string
+   * @param header - The Cookie header value
+   * @returns Parsed cookies as key-value pairs
+   */
+  static parseCookies(header: string): Record<string, string> {
+    const out: Record<string, string> = {}
+    if (!header) {
+      return out
+    }
+    for (const part of header.split(';')) {
+      const [rawKey, ...rest] = part.trim().split('=')
+      if (!rawKey) {
+        continue
+      }
+      const key = rawKey.trim()
+      const value = rest.join('=')
+      out[key] = decodeURIComponent(value)
+    }
+    return out
+  }
 
   /**
    * Queue a cookie to be sent with the response

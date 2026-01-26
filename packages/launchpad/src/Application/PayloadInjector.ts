@@ -1,6 +1,15 @@
 import type { IDockerAdapter, IGitAdapter } from '../Domain/Interfaces'
 import type { Rocket } from '../Domain/Rocket'
 
+/**
+ * PayloadInjector is responsible for deploying application code into Rocket containers.
+ *
+ * It clones the repository, copies files into the container, installs
+ * dependencies (using Bun), and starts the application.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class PayloadInjector {
   constructor(
     private docker: IDockerAdapter,

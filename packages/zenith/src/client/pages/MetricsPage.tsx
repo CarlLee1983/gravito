@@ -25,6 +25,15 @@ import {
 } from 'recharts'
 import { cn } from '../utils'
 
+/**
+ * System Metrics Page.
+ *
+ * Displays detailed performance analytics, throughput trends, and queue
+ * distribution charts using interactive visualizations.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export function MetricsPage() {
   const [timeRange, setTimeRange] = React.useState<'15m' | '1h' | '6h' | '24h'>('15m')
 

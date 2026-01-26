@@ -1,5 +1,5 @@
 import type { GravitoContext } from '@gravito/core'
-import type { InertiaService } from '@gravito/ion'
+import type { InertiaHelper } from '@gravito/ion'
 import { Post } from '../models/Post'
 
 export class BlogController {
@@ -7,7 +7,7 @@ export class BlogController {
    * Home page - list all posts
    */
   async index(ctx: GravitoContext) {
-    const inertia = ctx.get('inertia') as InertiaService
+    const inertia = ctx.get('inertia') as InertiaHelper
     const query = ctx.req.query('search')
     const categorySlug = ctx.req.query('category')
     const page = Number(ctx.req.query('page') || 1)
@@ -48,7 +48,7 @@ export class BlogController {
    * Post detail page
    */
   async show(ctx: GravitoContext) {
-    const inertia = ctx.get('inertia') as InertiaService
+    const inertia = ctx.get('inertia') as InertiaHelper
     const slug = ctx.req.param('slug')
 
     const post = await Post.query().where('slug', slug).with('category').with('tags').first()

@@ -9,8 +9,20 @@
  */
 
 import type { DirectoryNode } from '../types'
+import { ConfigGenerator } from '../utils/ConfigGenerator'
+import { ServiceProviderGenerator } from '../utils/ServiceProviderGenerator'
 import { BaseGenerator, type GeneratorContext } from './BaseGenerator'
 
+/**
+ * CleanArchitectureGenerator implements Uncle Bob's Clean Architecture pattern.
+ *
+ * It generates a strictly layered structure including Domain, Application,
+ * Infrastructure, and Interface layers, ensuring business logic is isolated
+ * from framework and external dependencies.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class CleanArchitectureGenerator extends BaseGenerator {
   get architectureType() {
     return 'clean' as const
@@ -264,62 +276,27 @@ export class CleanArchitectureGenerator extends BaseGenerator {
   }
 
   // ─────────────────────────────────────────────────────────────
-  // Config Generators (similar to MVC but simplified)
+  // Config Generators (using shared ConfigGenerator)
   // ─────────────────────────────────────────────────────────────
 
   private generateAppConfig(context: GeneratorContext): string {
-    return `export default {
-  name: process.env.APP_NAME ?? '${context.name}',
-  env: process.env.APP_ENV ?? 'development',
-  debug: process.env.APP_DEBUG === 'true',
-  url: process.env.APP_URL ?? 'http://localhost:3000',
-  key: process.env.APP_KEY,
-}
-`
+    return ConfigGenerator.generateSimpleAppConfig(context)
   }
 
   private generateDatabaseConfig(): string {
-    return `export default {
-  default: process.env.DB_CONNECTION ?? 'sqlite',
-  connections: {
-    sqlite: {
-      driver: 'sqlite',
-      database: process.env.DB_DATABASE ?? 'database/database.sqlite',
-    },
-  },
-}
-`
+    return ConfigGenerator.generateSimpleDatabaseConfig()
   }
 
   private generateAuthConfig(): string {
-    return `export default {
-  defaults: { guard: 'web' },
-  guards: {
-    web: { driver: 'session', provider: 'users' },
-    api: { driver: 'token', provider: 'users' },
-  },
-}
-`
+    return ConfigGenerator.generateAuthConfig()
   }
 
   private generateCacheConfig(): string {
-    return `export default {
-  default: process.env.CACHE_DRIVER ?? 'memory',
-  stores: {
-    memory: { driver: 'memory' },
-  },
-}
-`
+    return ConfigGenerator.generateCacheConfig()
   }
 
   private generateLoggingConfig(): string {
-    return `export default {
-  default: process.env.LOG_CHANNEL ?? 'console',
-  channels: {
-    console: { driver: 'console', level: process.env.LOG_LEVEL ?? 'debug' },
-  },
-}
-`
+    return ConfigGenerator.generateLoggingConfig()
   }
 
   private generateUserEntity(): string {
@@ -658,107 +635,34 @@ export class MailService implements IMailService {
   }
 
   private generateAppServiceProvider(context: GeneratorContext): string {
-    return `/**
- * App Service Provider
- */
-
-import { ServiceProvider, type Container, type PlanetCore } from '@gravito/core'
-
-export class AppServiceProvider extends ServiceProvider {
-  register(_container: Container): void {
-    // Register application services
-  }
-
-  boot(_core: PlanetCore): void {
-    console.log('${context.name} (Clean Architecture) booted!')
-  }
-}
-`
+    return ServiceProviderGenerator.generateAppServiceProvider(context, 'Clean Architecture')
   }
 
   private generateRepositoryServiceProvider(): string {
-    return `/**
- * Repository Service Provider
- *
- * Binds repository interfaces to implementations.
- */
-
-import { ServiceProvider, type Container } from '@gravito/core'
-import { UserRepository } from '../Persistence/Repositories/UserRepository'
-import { MailService } from '../ExternalServices/MailService'
-
-export class RepositoryServiceProvider extends ServiceProvider {
-  register(container: Container): void {
-    // Bind repositories
-    container.singleton('userRepository', () => new UserRepository())
-
-    // Bind external services
-    container.singleton('mailService', () => new MailService())
-  }
-}
-`
+    return ServiceProviderGenerator.generateRepositoryServiceProvider(
+      ['UserRepository'],
+      ['MailService']
+    )
   }
 
   private generateProvidersIndex(): string {
-    return `/**
- * Application Service Providers
- */
-
-export { AppServiceProvider } from './AppServiceProvider'
-export { RepositoryServiceProvider } from './RepositoryServiceProvider'
-export { MiddlewareProvider } from './MiddlewareProvider'
-export { RouteProvider } from './RouteProvider'
-`
+    return ServiceProviderGenerator.generateProvidersIndex([
+      'AppServiceProvider',
+      'RepositoryServiceProvider',
+      'MiddlewareProvider',
+      'RouteProvider',
+    ])
   }
 
   private generateMiddlewareProvider(): string {
-    return `/**
- * Middleware Service Provider
- */
-
-import {
-  ServiceProvider,
-  type Container,
-  type PlanetCore,
-  bodySizeLimit,
-  securityHeaders,
-} from '@gravito/core'
-
-export class MiddlewareProvider extends ServiceProvider {
-  register(_container: Container): void {}
-
-  boot(core: PlanetCore): void {
-    const isDev = process.env.NODE_ENV !== 'production'
-
-    core.adapter.use('*', securityHeaders({
-      contentSecurityPolicy: isDev ? false : undefined,
-    }))
-
-    core.adapter.use('*', bodySizeLimit(10 * 1024 * 1024))
-
-    core.logger.info('🛡️ Middleware registered')
-  }
-}
-`
+    return ServiceProviderGenerator.generateMiddlewareProvider()
   }
 
   private generateRouteProvider(): string {
-    return `/**
- * Route Service Provider
- */
-
-import { ServiceProvider, type Container, type PlanetCore } from '@gravito/core'
-import { registerApiRoutes } from '../../Interface/Http/Routes/api'
-
-export class RouteProvider extends ServiceProvider {
-  register(_container: Container): void {}
-
-  boot(core: PlanetCore): void {
-    registerApiRoutes(core.router)
-    core.logger.info('🛤️ Routes registered')
-  }
-}
-`
+    return ServiceProviderGenerator.generateRouteProvider(
+      '../../Interface/Http/Routes/api',
+      'named'
+    )
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -988,7 +892,7 @@ Created with ❤️ using Gravito Framework
         build: 'bun build ./src/bootstrap.ts --outdir ./dist --target bun',
         start: 'bun run dist/bootstrap.js',
         test: 'bun test',
-        typecheck: 'tsc --noEmit',
+        typecheck: 'bun tsc --noEmit',
         check: 'bun run typecheck && bun run test',
         'check:deps': 'bun run scripts/check-dependencies.ts',
         validate: 'bun run check && bun run check:deps',
@@ -1003,7 +907,7 @@ Created with ❤️ using Gravito Framework
       },
       devDependencies: {
         'bun-types': 'latest',
-        typescript: '^5.0.0',
+        typescript: '^5.9.3',
       },
     }
 

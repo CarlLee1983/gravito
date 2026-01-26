@@ -36,6 +36,10 @@ describe('OrbitPlasma', async () => {
 
     const core = {
       config: { get: () => config },
+      container: {
+        instance: mock(() => {}),
+        make: mock(() => {}),
+      },
       logger: {
         warn: mock(() => {}),
         info: mock(() => {}),

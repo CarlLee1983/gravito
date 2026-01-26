@@ -6,10 +6,10 @@
 
 import type { OrbitAtlas } from '@gravito/atlas'
 import type { GravitoContext } from '@gravito/core'
-import type { InertiaService } from '@gravito/ion'
+import type { InertiaHelper } from '@gravito/ion'
 import type { AuthManager } from '@gravito/sentinel'
-import type { ShippingAddress } from '../../Models'
-import { OrderStatus } from '../../Models'
+import type { ShippingAddress } from '../../models'
+import { OrderStatus } from '../../models'
 import { CartService, OrderService, StripeService } from '../../Services'
 
 export class CheckoutController {
@@ -17,8 +17,8 @@ export class CheckoutController {
    * Show checkout page
    */
   static async show(ctx: GravitoContext) {
-    const inertia = ctx.get('inertia') as InertiaService
-    const atlas = ctx.get('atlas') as OrbitAtlas
+    const inertia = ctx.get('inertia') as unknown as InertiaHelper
+    const _atlas = ctx.get('atlas') as OrbitAtlas
     const auth = ctx.get('auth') as AuthManager
 
     const user = await auth.user()
@@ -27,7 +27,7 @@ export class CheckoutController {
     }
 
     const userId = user.getAuthIdentifier() as number
-    const cartService = new CartService(atlas)
+    const cartService = new CartService()
     const cart = await cartService.getOrCreateCart(userId)
 
     if (cart.getItemCount() === 0) {
@@ -55,7 +55,7 @@ export class CheckoutController {
    * Process checkout - Create order and Stripe session
    */
   static async process(ctx: GravitoContext) {
-    const atlas = ctx.get('atlas') as OrbitAtlas
+    const _atlas = ctx.get('atlas') as OrbitAtlas
     const auth = ctx.get('auth') as AuthManager
 
     const user = await auth.user()
@@ -69,8 +69,8 @@ export class CheckoutController {
     }
 
     const userId = user.getAuthIdentifier() as number
-    const cartService = new CartService(atlas)
-    const orderService = new OrderService(atlas)
+    const cartService = new CartService()
+    const orderService = new OrderService()
     const _stripeService = new StripeService()
 
     // Get cart
@@ -108,15 +108,15 @@ export class CheckoutController {
    * Checkout success page
    */
   static async success(ctx: GravitoContext) {
-    const inertia = ctx.get('inertia') as InertiaService
-    const atlas = ctx.get('atlas') as OrbitAtlas
+    const inertia = ctx.get('inertia') as unknown as InertiaHelper
+    const _atlas = ctx.get('atlas') as OrbitAtlas
 
     const sessionId = ctx.req.query('session_id')
     if (!sessionId) {
       return ctx.redirect('/')
     }
 
-    const orderService = new OrderService(atlas)
+    const orderService = new OrderService()
     const order = await orderService.getOrderByStripeSession(sessionId)
 
     if (!order) {
@@ -157,7 +157,7 @@ export class CheckoutController {
    * Checkout cancel page
    */
   static async cancel(ctx: GravitoContext) {
-    const inertia = ctx.get('inertia') as InertiaService
+    const inertia = ctx.get('inertia') as unknown as InertiaHelper
     return inertia.render('Checkout/Cancel')
   }
 
@@ -165,9 +165,9 @@ export class CheckoutController {
    * Stripe webhook handler
    */
   static async handleWebhook(ctx: GravitoContext) {
-    const atlas = ctx.get('atlas') as OrbitAtlas
+    const _atlas = ctx.get('atlas') as OrbitAtlas
     const stripeService = new StripeService()
-    const orderService = new OrderService(atlas)
+    const orderService = new OrderService()
 
     const signature = ctx.req.header('stripe-signature')
     if (!signature) {

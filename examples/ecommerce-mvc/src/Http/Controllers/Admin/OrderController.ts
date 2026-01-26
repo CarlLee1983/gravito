@@ -6,8 +6,8 @@
 
 import { DB } from '@gravito/atlas'
 import type { GravitoContext } from '@gravito/core'
-import type { InertiaService } from '@gravito/ion'
-import { OrderStatus } from '../../../Models'
+import type { InertiaHelper } from '@gravito/ion'
+import { OrderStatus } from '../../../models'
 import { OrderService } from '../../../Services'
 import { sql } from '../../../utils/db'
 
@@ -16,7 +16,7 @@ export class AdminOrderController {
    * Order list
    */
   static async index(ctx: GravitoContext) {
-    const inertia = ctx.get('inertia') as InertiaService
+    const inertia = ctx.get('inertia') as unknown as InertiaHelper
 
     const page = parseInt(ctx.req.query('page') || '1', 10)
     const status = ctx.req.query('status') || ''
@@ -71,7 +71,7 @@ export class AdminOrderController {
    * Order details
    */
   static async show(ctx: GravitoContext) {
-    const inertia = ctx.get('inertia') as InertiaService
+    const inertia = ctx.get('inertia') as unknown as InertiaHelper
 
     const orderId = parseInt(ctx.req.param('id') || '0', 10)
     const orderService = new OrderService()

@@ -1,14 +1,40 @@
 import { randomUUID } from 'node:crypto'
 import type { Envelope, Message } from '../types'
 
+/**
+ * Represents a captured email in the development mailbox.
+ *
+ * @public
+ */
 export interface MailboxEntry {
+  /** Unique identifier for the email */
   id: string
+  /** Email envelope information (from, to, subject, etc.) */
   envelope: Envelope
+  /** HTML content of the email */
   html: string
+  /** Plain text content of the email (optional) */
   text?: string
+  /** Timestamp when the email was captured */
   sentAt: Date
 }
 
+/**
+ * In-memory mailbox for capturing emails during development.
+ *
+ * Stores up to 50 recent emails and provides methods to list,
+ * retrieve, and delete captured messages.
+ *
+ * @example
+ * ```typescript
+ * const mailbox = new DevMailbox()
+ * mailbox.add(message)
+ * const emails = mailbox.list()
+ * ```
+ *
+ * @since 3.0.0
+ * @public
+ */
 export class DevMailbox {
   private entries: MailboxEntry[] = []
   private maxEntries = 50

@@ -1,14 +1,10 @@
-import { FormRequest, z } from '@gravito/impulse'
+import { FormRequest } from '@gravito/impulse'
+import { BaseOrderSchema } from './schemas'
 
 export class StoreOrderRequest extends FormRequest {
-  schema = z.object({
-    productId: z.string().min(1),
-    quantity: z.number().int().positive(),
-    email: z.string().email(),
-    paymentToken: z.string().min(1),
-  })
+  // Use the base schema as is for creation (all fields required)
+  schema = BaseOrderSchema
 
-  // Optional: custom validation logic
   async authorize(): Promise<boolean> {
     return true
   }

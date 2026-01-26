@@ -1,28 +1,19 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
-import { Redis } from 'ioredis'
 import { BullMQProbe } from '../probes/BullMQProbe'
+import { MockRedis } from './mock-redis'
 
 describe('BullMQProbe', () => {
-  let redis: Redis
+  let redis: any // MockRedis typed as any to satisfy Redis interface
   const queueName = 'test-bullmq-queue'
   const prefix = 'bull'
 
   beforeEach(async () => {
-    redis = new Redis('redis://localhost:6379')
-    // Clean up any existing test data
-    const keys = await redis.keys(`${prefix}:${queueName}:*`)
-    if (keys.length > 0) {
-      await redis.del(...keys)
-    }
+    redis = new MockRedis()
+    // MockRedis starts empty, no need to clean
   })
 
   afterEach(async () => {
-    // Clean up
-    const keys = await redis.keys(`${prefix}:${queueName}:*`)
-    if (keys.length > 0) {
-      await redis.del(...keys)
-    }
-    await redis.quit()
+    // No cleanup needed for in-memory mock
   })
 
   it('should return correct snapshot for empty queue', async () => {
@@ -71,8 +62,5 @@ describe('BullMQProbe', () => {
     const snapshot = await probe.getSnapshot()
 
     expect(snapshot.size.waiting).toBe(1)
-
-    // Clean up custom prefix
-    await redis.del(`${customPrefix}:${queueName}:wait`)
   })
 })

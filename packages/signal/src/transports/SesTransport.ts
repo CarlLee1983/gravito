@@ -2,12 +2,40 @@ import { SESClient, SendRawEmailCommand } from '@aws-sdk/client-ses'
 import nodemailer from 'nodemailer'
 import type { Address, Message, Transport } from '../types'
 
+/**
+ * Configuration for AWS SES email transport.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface SesConfig {
+  /** AWS region (e.g., 'us-east-1') */
   region: string
+  /** AWS access key ID (optional, uses default credentials if not provided) */
   accessKeyId?: string
+  /** AWS secret access key (optional, uses default credentials if not provided) */
   secretAccessKey?: string
 }
 
+/**
+ * AWS SES (Simple Email Service) transport.
+ *
+ * Sends emails using Amazon SES with support for attachments,
+ * HTML/text content, and all standard email features.
+ *
+ * @example
+ * ```typescript
+ * const transport = new SesTransport({
+ *   region: 'us-east-1',
+ *   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+ *   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+ * })
+ * await transport.send(message)
+ * ```
+ *
+ * @since 3.0.0
+ * @public
+ */
 export class SesTransport implements Transport {
   private transporter: nodemailer.Transporter
 

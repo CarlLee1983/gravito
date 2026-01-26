@@ -11,7 +11,12 @@ import { mailConfig } from './mail'
 export const orbits = [
   new OrbitCache(),
   new OrbitAtlas(),
-  new OrbitPrism(),
+  new OrbitPrism({
+    cache: {
+      enabled: process.env.NODE_ENV === 'production',
+      maxSize: 500,
+    },
+  }),
   new OrbitIon(),
   new OrbitPulsar({
     driver: 'memory',

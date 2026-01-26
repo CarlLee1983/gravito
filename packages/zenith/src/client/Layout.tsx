@@ -42,6 +42,16 @@ interface CommandItem {
   category: 'Navigation' | 'System' | 'Action'
 }
 
+/**
+ * The main layout wrapper for the Zenith dashboard.
+ *
+ * It manages global state for the dashboard, including theme switching,
+ * the command palette (Ctrl+K), real-time event streaming (SSE),
+ * and the overall responsive structure.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export function Layout({ children }: LayoutProps) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()

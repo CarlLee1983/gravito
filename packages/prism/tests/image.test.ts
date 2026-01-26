@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test'
+import { TemplateEngine } from '../src/engine/TemplateEngine'
 import { createImageHelper } from '../src/helpers/image'
-import { type ImageOptions, ImageService } from '../src/ImageService'
-import { TemplateEngine } from '../src/TemplateEngine'
+import { type ImageOptions, ImageService } from '../src/image/ImageService'
 
 describe('ImageService', () => {
   const imageService = new ImageService()

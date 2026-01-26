@@ -1,9 +1,11 @@
 /**
- * Default HTML View Templates for Gravito Fortify
+ * Default HTML Login Page template.
  *
- * These can be used as a starting point for customization.
+ * A standalone HTML template with embedded CSS for the login page.
+ *
+ * @public
+ * @since 3.0.0
  */
-
 export const loginHtml = `
 <!DOCTYPE html>
 <html lang="en">
@@ -58,6 +60,14 @@ export const loginHtml = `
 </html>
 `
 
+/**
+ * Default HTML Register Page template.
+ *
+ * A standalone HTML template with embedded CSS for the registration page.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export const registerHtml = `
 <!DOCTYPE html>
 <html lang="en">
@@ -112,6 +122,14 @@ export const registerHtml = `
 </html>
 `
 
+/**
+ * Default HTML Forgot Password Page template.
+ *
+ * A standalone HTML template with embedded CSS for the forgot password page.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export const forgotPasswordHtml = `
 <!DOCTYPE html>
 <html lang="en">

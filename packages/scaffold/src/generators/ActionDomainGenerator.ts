@@ -11,6 +11,16 @@
 import type { DirectoryNode } from '../types'
 import { BaseGenerator, type GeneratorContext } from './BaseGenerator'
 
+/**
+ * ActionDomainGenerator implements the Action-Domain architectural pattern.
+ *
+ * This pattern focuses on single-responsibility "Action" units for business logic,
+ * thin controllers for HTTP handling, and clear separation between request/response
+ * types and domain models.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class ActionDomainGenerator extends BaseGenerator {
   get architectureType() {
     return 'action-domain' as const
@@ -223,6 +233,9 @@ export class ActionDomainGenerator extends BaseGenerator {
 
 import { Model, column } from '@gravito/atlas'
 
+/**
+ * Represents a user in the system.
+ */
 export class User extends Model {
   static table = 'users'
 
@@ -248,6 +261,11 @@ export class User extends Model {
   // Action Generators
   // ─────────────────────────────────────────────────────────────
 
+  /**
+   * Generates the base Action class source code.
+   *
+   * @returns The complete source code for the abstract Action class.
+   */
   private generateActionBase(): string {
     return `/**
  * Action Base Class
@@ -265,6 +283,11 @@ export abstract class Action<TInput = unknown, TOutput = unknown> {
 `
   }
 
+  /**
+   * Generates the GetServerStatusAction source code.
+   *
+   * @returns The complete source code for the example action.
+   */
   private generateGetServerStatusAction(): string {
     return `/**
  * Get Server Status Action
@@ -289,6 +312,11 @@ export class GetServerStatusAction extends Action<void, ServerStatusResponse> {
   // Controller Generators
   // ─────────────────────────────────────────────────────────────
 
+  /**
+   * Generates the Server Controller source code.
+   *
+   * @returns The complete source code for the ServerController class.
+   */
   private generateServerController(): string {
     return `/**
  * Server Controller
@@ -318,6 +346,11 @@ export class ServerController {
   // Type Generators
   // ─────────────────────────────────────────────────────────────
 
+  /**
+   * Generates the ServerStatusResponse type definition.
+   *
+   * @returns The complete source code for the response interface.
+   */
   private generateServerStatusResponse(): string {
     return `/**
  * Server Status Response Type
@@ -335,6 +368,11 @@ export interface ServerStatusResponse {
   // Routes & Bootstrap
   // ─────────────────────────────────────────────────────────────
 
+  /**
+   * Generates the API routes registration function.
+   *
+   * @returns The complete source code for the api.ts routes file.
+   */
   private generateApiRoutes(): string {
     return `/**
  * API Routes Registration
@@ -354,6 +392,12 @@ export function registerApiRoutes(router: Router) {
 `
   }
 
+  /**
+   * Generates the App Service Provider source code.
+   *
+   * @param context - The generator context containing project details.
+   * @returns The complete source code for AppServiceProvider.
+   */
   private generateAppServiceProvider(context: GeneratorContext): string {
     return `/**
  * App Service Provider
@@ -384,6 +428,11 @@ export { RouteProvider } from './RouteProvider'
 `
   }
 
+  /**
+   * Generates the Middleware Service Provider source code.
+   *
+   * @returns The complete source code for MiddlewareProvider.
+   */
   private generateMiddlewareProvider(): string {
     return `/**
  * Middleware Service Provider
@@ -409,6 +458,11 @@ export class MiddlewareProvider extends ServiceProvider {
 `
   }
 
+  /**
+   * Generates the Route Service Provider source code.
+   *
+   * @returns The complete source code for RouteProvider.
+   */
   private generateRouteProvider(): string {
     return `/**
  * Route Service Provider
@@ -523,7 +577,7 @@ Created with ❤️ using Gravito Framework
         build: 'bun build ./src/bootstrap.ts --outdir ./dist --target bun',
         start: 'bun run dist/bootstrap.js',
         test: 'bun test',
-        typecheck: 'tsc --noEmit',
+        typecheck: 'bun tsc --noEmit',
         check: 'bun run typecheck && bun run test',
         'check:deps': 'bun run scripts/check-dependencies.ts',
         validate: 'bun run check && bun run check:deps',
@@ -536,7 +590,7 @@ Created with ❤️ using Gravito Framework
       },
       devDependencies: {
         'bun-types': 'latest',
-        typescript: '^5.0.0',
+        typescript: '^5.9.3',
       },
     }
 
