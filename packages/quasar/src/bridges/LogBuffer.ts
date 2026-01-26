@@ -11,6 +11,7 @@ export class LogBuffer {
     private options: {
       batchSize: number
       flushInterval: number
+      maxHistorySize?: number
     } = { batchSize: 100, flushInterval: 1000 }
   ) {
     this.startTimer()
@@ -24,7 +25,9 @@ export class LogBuffer {
   }
 
   async flush(): Promise<void> {
-    if (this.buffer.length === 0) return
+    if (this.buffer.length === 0) {
+      return
+    }
 
     const logs = this.buffer.splice(0)
 
@@ -39,8 +42,9 @@ export class LogBuffer {
 
       if (logs.length > 0) {
         const serializedLogs = logs.map((l) => JSON.stringify(l))
+        const maxHistorySize = this.options.maxHistorySize ?? 100
         pipeline.lpush(historyKey, ...serializedLogs)
-        pipeline.ltrim(historyKey, 0, 99)
+        pipeline.ltrim(historyKey, 0, maxHistorySize - 1)
       }
 
       await pipeline.exec()
@@ -49,14 +53,16 @@ export class LogBuffer {
     }
   }
 
-  private startTimer() {
-    if (this.timer) clearInterval(this.timer)
+  private startTimer(): void {
+    if (this.timer) {
+      clearInterval(this.timer)
+    }
     this.timer = setInterval(() => {
       this.flush()
     }, this.options.flushInterval)
   }
 
-  stop() {
+  stop(): void {
     if (this.timer) {
       clearInterval(this.timer)
       this.timer = null

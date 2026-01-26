@@ -14,11 +14,12 @@ export abstract class BaseZenithBridge implements QueueBridge {
     protected redis: Redis,
     protected prefix = 'flux_console:',
     protected workerId?: string,
-    options: { batchSize?: number; flushInterval?: number } = {}
+    options: { batchSize?: number; flushInterval?: number; maxHistorySize?: number } = {}
   ) {
     this.logBuffer = new LogBuffer(redis, prefix, {
       batchSize: options.batchSize ?? 100,
       flushInterval: options.flushInterval ?? 1000,
+      maxHistorySize: options.maxHistorySize,
     })
   }
 
