@@ -20,12 +20,13 @@ interface BunServerLike {
 /**
  * Custom error thrown when the GraphQL Orbit encounters invalid configuration.
  *
- * This error typically occurs during the installation phase if the schema cannot be resolved
- * from the file system (when using Bun) or if no schema is provided via config/container.
+ * Typically thrown during the installation phase if the schema cannot be resolved
+ * from the file system (when using Bun) or if no schema is provided via configuration
+ * or the service container.
  *
  * @example
  * ```typescript
- * throw new GraphQLConfigError('Schema file not found');
+ * throw new GraphQLConfigError('Schema file not found: ./schema.graphql');
  * ```
  */
 export class GraphQLConfigError extends Error {
@@ -38,22 +39,23 @@ export class GraphQLConfigError extends Error {
 /**
  * Extended GraphQL execution context including Gravito-specific properties.
  *
- * This interface bridges the gap between GraphQL Yoga's standard context and
- * the Gravito ecosystem, allowing resolvers to access core services.
+ * Bridges the gap between GraphQL Yoga's standard context and the Gravito ecosystem,
+ * allowing resolvers to access core services like authentication, database connections,
+ * and request information.
  *
  * @remarks
  * The `gravito` property is injected via the second argument of `yoga.fetch()`,
- * ensuring it's available for every request processed by the Orbit.
+ * ensuring it is available for every request processed by the Orbit.
  */
 export interface GraphQLContext extends YogaInitialContext {
   /**
-   * Gravito HTTP Context containing request/response objects and service container.
-   * Use this to access services like Auth, Database, or Logger within resolvers.
+   * Gravito HTTP Context containing request/response objects and the service container.
+   * Use this to access services (e.g., Auth, Database, Logger) within resolvers.
    */
   gravito: GravitoContext
   /**
    * Per-request DataLoaders for efficient batch data fetching.
-   * Populated only if `dataLoaders` factory is defined in the config.
+   * Populated only if a `dataLoaders` factory is defined in the configuration.
    */
   loaders?: Record<string, unknown>
 }
@@ -62,14 +64,33 @@ export interface GraphQLContext extends YogaInitialContext {
  * Configuration options for Cross-Origin Resource Sharing (CORS).
  *
  * Defines how the GraphQL server should handle requests from different origins,
- * essential for securing APIs consumed by browsers.
+ * which is essential for securing APIs consumed by browsers.
  */
 export interface CorsConfig {
+  /**
+   * Allowed origin(s) for Cross-Origin requests.
+   * Can be a single string, an array of strings, or a boolean.
+   */
   origin?: string | string[]
+  /**
+   * Indicates whether the request can be made using credentials (cookies, HTTP authentication).
+   */
   credentials?: boolean
+  /**
+   * HTTP methods allowed for Cross-Origin requests (e.g., GET, POST).
+   */
   methods?: string[]
+  /**
+   * HTTP headers allowed in the actual request.
+   */
   allowedHeaders?: string[]
+  /**
+   * HTTP headers exposed to the browser.
+   */
   exposedHeaders?: string[]
+  /**
+   * How long the results of a preflight request can be cached (in seconds).
+   */
   maxAge?: number
 }
 
@@ -104,7 +125,7 @@ export interface GraphQLConfig {
   path?: string
   /**
    * Controls the availability of the GraphiQL IDE.
-   * Useful to disable in production for security.
+   * Useful for disabling the playground in production for security.
    * @default true
    */
   graphiql?: boolean
@@ -119,8 +140,8 @@ export interface GraphQLConfig {
    */
   plugins?: Plugin[]
   /**
-   * Custom error formatter to sanitize or transform errors before sending to client.
-   * Useful for hiding implementation details or adhering to specific error specs.
+   * Custom error formatter to sanitize or transform errors before sending them to the client.
+   * Useful for hiding implementation details or adhering to specific error specifications.
    */
   formatError?: (error: GraphQLError, context: GraphQLContext) => GraphQLFormattedError
   /**
@@ -161,13 +182,13 @@ export interface GraphQLConfig {
   security?: {
     /**
      * Maximum allowed depth of a query selection set.
-     * Prevents deep nesting attacks.
+     * Prevents deep nesting attacks (e.g., recursive queries).
      * @default undefined (unlimited)
      */
     depthLimit?: number
     /**
      * Maximum allowed complexity score for a query.
-     * Prevents resource exhaustion attacks.
+     * Prevents resource exhaustion attacks by limiting query cost.
      * @default undefined (unlimited)
      */
     complexityLimit?: number
@@ -181,11 +202,20 @@ export interface GraphQLConfig {
      * Caches full query results to improve throughput for read-heavy APIs.
      */
     cache?: {
-      /** @default false */
+      /**
+       * Enables response caching.
+       * @default false
+       */
       enabled?: boolean
-      /** Cache duration in milliseconds. @default 2000 */
+      /**
+       * Cache duration in milliseconds.
+       * @default 2000
+       */
       ttl?: number
-      /** Whether to cache responses per user (Authorization header). @default false */
+      /**
+       * Whether to cache responses per user (based on Authorization header).
+       * @default false
+       */
       includeAuthorization?: boolean
       /**
        * Custom storage for response cache (e.g., Redis).
@@ -199,7 +229,10 @@ export interface GraphQLConfig {
      * Reduces network payload size by sending query hashes instead of full text.
      */
     persistedQueries?: {
-      /** @default false */
+      /**
+       * Enables Automatic Persisted Queries.
+       * @default false
+       */
       enabled?: boolean
       /**
        * Custom storage for persisted queries (e.g., Redis).
@@ -219,8 +252,8 @@ export interface GraphQLConfig {
 /**
  * OrbitGraphQL integrates GraphQL Yoga into the Gravito ecosystem.
  *
- * It acts as a bridge, mounting a fully-featured GraphQL server onto Gravito's
- * router and dependency injection system. It handles request lifecycle,
+ * Acts as a bridge, mounting a fully-featured GraphQL server onto Gravito's
+ * router and dependency injection system. It handles the request lifecycle,
  * context injection, and provides built-in support for security and performance best practices.
  *
  * @example
@@ -245,19 +278,7 @@ export class OrbitGraphQL implements GravitoOrbit {
   /**
    * Installs the GraphQL Orbit into the PlanetCore application.
    *
-   * This method:
-   * 1. Resolves the GraphQL Schema (from config, file, or container).
-   * 2. Configures the Yoga server with plugins (APQ, Cache, Security).
-   * 3. Sets up WebSocket subscriptions if enabled.
-   * 4. Mounts HTTP routes for the GraphQL endpoint.
-   *
-   * @param core - The PlanetCore instance to attach to.
-   * @throws {GraphQLConfigError} If the schema file cannot be read (Bun only) or no schema is found.
-   */
-  /**
-   * Installs the GraphQL Orbit into the PlanetCore application.
-   *
-   * This method:
+   * This method performs the following initialization steps:
    * 1. Resolves the GraphQL Schema (from config, file, or container).
    * 2. Configures the Yoga server with plugins (APQ, Cache, Security).
    * 3. Sets up WebSocket subscriptions if enabled.
