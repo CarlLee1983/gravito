@@ -6,21 +6,29 @@ import type { EchoConfig } from './types'
 /**
  * OrbitEcho is the official webhook orchestration module for Gravito.
  *
- * It provides a secure way to receive incoming webhooks (e.g., from Stripe, GitHub)
- * and a reliable way to dispatch outgoing webhooks to third-party services.
+ * It acts as a central hub for managing both incoming webhook reception
+ * and outgoing webhook dispatching. It integrates with Gravito's PlanetCore
+ * to provide a unified interface for webhook-related operations.
  *
  * @example
  * ```typescript
+ * import { PlanetCore } from '@gravito/core';
+ * import { OrbitEcho } from '@gravito/echo';
+ *
+ * const core = new PlanetCore();
  * const echo = new OrbitEcho({
  *   providers: {
  *     stripe: { name: 'stripe', secret: 'whsec_...' }
+ *   },
+ *   dispatcher: {
+ *     secret: 'my_outgoing_secret'
  *   }
  * });
- * core.addOrbit(echo);
+ *
+ * core.install(echo);
  * ```
  *
  * @public
- * @since 3.0.0
  */
 export class OrbitEcho implements GravitoOrbit {
   private receiver: WebhookReceiver
@@ -28,9 +36,13 @@ export class OrbitEcho implements GravitoOrbit {
   private echoConfig: EchoConfig
 
   /**
-   * Create a new OrbitEcho instance.
+   * Initializes the Echo module with the provided configuration.
    *
-   * @param config - The configuration object for providers and dispatcher.
+   * Sets up the receiver with registered providers and initializes the
+   * dispatcher if configuration is provided. Also configures observability
+   * and storage backends.
+   *
+   * @param config - The configuration for providers, dispatcher, and observability.
    */
   constructor(config: EchoConfig = {}) {
     this.echoConfig = config
@@ -49,15 +61,42 @@ export class OrbitEcho implements GravitoOrbit {
     // Create dispatcher
     if (config.dispatcher) {
       this.dispatcher = new WebhookDispatcher(config.dispatcher)
+      if (config.deadLetterQueue) {
+        this.dispatcher.setDeadLetterQueue(config.deadLetterQueue)
+      }
+    }
+
+    // Set storage
+    if (config.store) {
+      this.receiver.setStore(config.store)
+    }
+
+    // Set observability
+    if (config.observability) {
+      const { metrics, tracer, logger } = config.observability
+      if (metrics) {
+        this.receiver.setMetrics(metrics)
+        this.dispatcher?.setMetrics(metrics)
+      }
+      if (tracer) {
+        this.receiver.setTracer(tracer)
+        this.dispatcher?.setTracer(tracer)
+      }
+      if (logger) {
+        this.receiver.setLogger(logger)
+      }
     }
   }
 
   /**
-   * Install into PlanetCore
+   * Installs the Echo module into the Gravito PlanetCore.
    *
-   * Registers the OrbitEcho instance and its components into the service container.
+   * Binds the Echo instance and its components (receiver, dispatcher) to the
+   * service container and registers a middleware to inject the Echo instance
+   * into the request context.
    *
-   * @param core - The PlanetCore instance.
+   * @param core - The PlanetCore instance to install into.
+   * @throws Error if the core adapter is not initialized.
    */
   install(core: PlanetCore): void {
     // Bind instances to container
@@ -77,21 +116,31 @@ export class OrbitEcho implements GravitoOrbit {
   }
 
   /**
-   * Get webhook receiver
+   * Returns the webhook receiver instance.
+   *
+   * Use this to register event handlers or manually handle incoming webhooks.
+   *
+   * @returns The WebhookReceiver instance.
    */
   getReceiver(): WebhookReceiver {
     return this.receiver
   }
 
   /**
-   * Get webhook dispatcher
+   * Returns the webhook dispatcher instance, if configured.
+   *
+   * Use this to send webhooks to external services.
+   *
+   * @returns The WebhookDispatcher instance or undefined if not configured.
    */
   getDispatcher(): WebhookDispatcher | undefined {
     return this.dispatcher
   }
 
   /**
-   * Get configuration
+   * Returns the current configuration of the Echo module.
+   *
+   * @returns The EchoConfig object.
    */
   getConfig(): EchoConfig {
     return this.echoConfig

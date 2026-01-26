@@ -1,7 +1,9 @@
 /**
- * @fileoverview @gravito/echo - Enterprise Webhook Module
+ * @fileoverview \@gravito/echo - Enterprise Webhook Module
  *
  * Secure webhook receiving and reliable webhook sending for Gravito.
+ * Provides a unified orchestration layer for handling third-party webhooks
+ * and dispatching outgoing events with robust retry logic.
  *
  * @example Receiving webhooks
  * ```typescript
@@ -39,12 +41,32 @@
  * @module @gravito/echo
  */
 
+export type { DeadLetterEvent, DeadLetterQueue } from './dlq/DeadLetterQueue'
+// DLQ
+export { MemoryDeadLetterQueue } from './dlq/MemoryDeadLetterQueue'
 // Core
 export { OrbitEcho } from './OrbitEcho'
+export type { EchoLogEvent, EchoLogger } from './observability/logging'
+export { ConsoleEchoLogger } from './observability/logging'
+export type { MetricsProvider, WebhookMetricLabels } from './observability/metrics'
+// Observability
+export {
+  EchoMetrics,
+  NoopMetricsProvider,
+  PrometheusMetricsProvider,
+} from './observability/metrics'
+export type { Span, SpanOptions, Tracer } from './observability/tracing'
+export { NoopSpan, NoopTracer, SpanStatusCode } from './observability/tracing'
 // Providers
+export { BaseProvider, type ProviderOptions } from './providers/base/BaseProvider'
 export { GenericProvider } from './providers/GenericProvider'
 export { GitHubProvider } from './providers/GitHubProvider'
+export { LinearProvider } from './providers/LinearProvider'
+export { PaddleProvider } from './providers/PaddleProvider'
+export { ShopifyProvider } from './providers/ShopifyProvider'
+export { SlackProvider } from './providers/SlackProvider'
 export { StripeProvider } from './providers/StripeProvider'
+export { TwilioProvider } from './providers/TwilioProvider'
 export {
   computeHmacSha1,
   computeHmacSha256,
@@ -54,13 +76,17 @@ export {
 } from './receive/SignatureValidator'
 // Receiving
 export { WebhookReceiver } from './receive/WebhookReceiver'
-// Sending
-export { WebhookDispatcher } from './send/WebhookDispatcher'
+// Replay
+export { WebhookReplayService } from './replay/WebhookReplayService'
 
 // Types
 export type {
   // Config
   EchoConfig,
+  EchoObservabilityConfig,
+  // Replay
+  ReplayOptions,
+  ReplayResult,
   RetryConfig,
   WebhookDeliveryResult,
   WebhookDispatcherConfig,

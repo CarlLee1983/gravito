@@ -18,7 +18,7 @@ export interface BunSQLiteStorageOptions {
 
 /**
  * BunSQLiteStorage provides a persistent storage backend for Flux workflows using Bun's native SQLite module.
- * 
+ *
  * It handles automatic table creation, indexing for performance, and serialization of workflow state
  * into a relational format.
  *
@@ -38,7 +38,7 @@ export class BunSQLiteStorage implements WorkflowStorage {
 
   /**
    * Creates a new instance of BunSQLiteStorage.
-   * 
+   *
    * @param options - Configuration for the database connection and table naming.
    */
   constructor(options: BunSQLiteStorageOptions = {}) {
@@ -48,9 +48,9 @@ export class BunSQLiteStorage implements WorkflowStorage {
 
   /**
    * Initializes the database schema and required indexes.
-   * 
+   *
    * This method is idempotent and will be called automatically by other operations if not invoked manually.
-   * 
+   *
    * @throws {Error} If the database schema cannot be created or indexes fail to initialize.
    */
   async init(): Promise<void> {
@@ -93,9 +93,9 @@ export class BunSQLiteStorage implements WorkflowStorage {
 
   /**
    * Persists or updates a workflow state in the database.
-   * 
+   *
    * Uses an "INSERT OR REPLACE" strategy to ensure the latest state is always stored for a given ID.
-   * 
+   *
    * @param state - The current state of the workflow to be saved.
    * @throws {Error} If the database write operation fails or serialization errors occur.
    */
@@ -126,7 +126,7 @@ export class BunSQLiteStorage implements WorkflowStorage {
 
   /**
    * Retrieves a workflow state by its unique identifier.
-   * 
+   *
    * @param id - The unique ID of the workflow to load.
    * @returns The reconstructed workflow state, or null if no record is found.
    * @throws {Error} If the database query fails or deserialization of stored JSON fails.
@@ -149,9 +149,9 @@ export class BunSQLiteStorage implements WorkflowStorage {
 
   /**
    * Lists workflow states based on the provided filtering criteria.
-   * 
+   *
    * Results are returned in descending order of creation time.
-   * 
+   *
    * @param filter - Criteria for filtering and paginating the results.
    * @returns An array of workflow states matching the filter.
    * @throws {Error} If the database query fails.
@@ -200,7 +200,7 @@ export class BunSQLiteStorage implements WorkflowStorage {
 
   /**
    * Deletes a workflow state from the database.
-   * 
+   *
    * @param id - The unique ID of the workflow to delete.
    * @throws {Error} If the database deletion fails.
    */
@@ -216,7 +216,7 @@ export class BunSQLiteStorage implements WorkflowStorage {
 
   /**
    * Closes the database connection and resets the initialization state.
-   * 
+   *
    * @throws {Error} If the database connection cannot be closed cleanly.
    */
   async close(): Promise<void> {
@@ -226,7 +226,7 @@ export class BunSQLiteStorage implements WorkflowStorage {
 
   /**
    * Converts a raw database row into a structured WorkflowState object.
-   * 
+   *
    * @param row - The raw SQLite row data.
    * @returns The parsed workflow state.
    * @private
@@ -250,9 +250,9 @@ export class BunSQLiteStorage implements WorkflowStorage {
 
   /**
    * Provides direct access to the underlying Bun SQLite Database instance.
-   * 
+   *
    * Useful for performing custom queries or maintenance tasks.
-   * 
+   *
    * @returns The raw Database instance.
    */
   getDatabase(): Database {
@@ -261,7 +261,7 @@ export class BunSQLiteStorage implements WorkflowStorage {
 
   /**
    * Performs a VACUUM operation to reclaim unused space and defragment the database.
-   * 
+   *
    * @throws {Error} If the VACUUM operation fails.
    */
   vacuum(): void {
