@@ -10,8 +10,7 @@ export interface AtlasGraphQLOptions {
    * The Atlas models to include in the generated GraphQL schema.
    * These models will be scanned to generate types and resolvers automatically.
    */
-  // biome-ignore lint/suspicious/noExplicitAny: ModelStatic is generic
-  models: ModelStatic<any>[]
+  models: ModelStatic<Model>[]
   /**
    * Custom resolvers to merge with the auto-generated ones.
    * Use this to override default behavior or add new fields/queries.
@@ -20,23 +19,12 @@ export interface AtlasGraphQLOptions {
   resolvers?: any
 }
 
-/**
- * Maps Atlas database column types to their corresponding GraphQL Scalar types.
- *
- * This function determines the appropriate GraphQL type (e.g., 'Int', 'Float', 'Boolean', 'String')
- * for a given database column type defined in Atlas.
- *
- * @param type - The Atlas column type string (e.g., 'integer', 'varchar', 'boolean').
- * @returns The name of the GraphQL Scalar type as a string.
- */
 function mapAtlasTypeToGraphQL(type: string): string {
   switch (type) {
     case 'integer':
     case 'smallInteger':
       return 'Int'
     case 'bigInteger':
-      // GraphQL Int is 32-bit (signed). BigInts (64-bit) can overflow standard Ints.
-      // We map them to String to preserve precision and prevent overflow errors on the client.
       return 'String'
     case 'decimal':
     case 'float':
@@ -45,84 +33,89 @@ function mapAtlasTypeToGraphQL(type: string): string {
       return 'Boolean'
     case 'json':
     case 'jsonb':
-      // Currently mapped to String.
-      // TODO: Support a dedicated JSON Scalar for structured data.
       return 'String'
     case 'date':
     case 'dateTime':
     case 'timestamp':
-      // Currently mapped to String (ISO format).
-      // TODO: Support a dedicated DateTime Scalar for better validation.
       return 'String'
     default:
-      // Fallback for unknown types (e.g., text, uuid, enum)
       return 'String'
   }
 }
 
-/**
- * Generates a fully functional GraphQL Schema from a set of Atlas Models.
- *
- * This utility automates the creation of a GraphQL API by:
- * 1.  Discovering the database schema for each provided model using `SchemaRegistry`.
- * 2.  Mapping SQL column types to GraphQL types.
- * 3.  Generating a GraphQL Object Type for each model.
- * 4.  Creating basic `Query` operations (`get<Model>` and `list<Model>s`) with resolvers.
- * 5.  Creating `Mutation` operations (`create`, `update`, `delete`) with input types and resolvers.
- *
- * @remarks
- * This is the implementation of Phase 3 (Atlas Integration) of the GraphQL RFC.
- * It currently supports schema discovery, type mapping, basic read operations, and CRUD mutations.
- *
- * @param options - Configuration options containing the models to expose and optional custom resolvers.
- * @returns A promise resolving to a `GraphQLSchema` instance compatible with GraphQL Yoga.
- *
- * @example
- * ```typescript
- * import { User, Post } from './models';
- * import { createAtlasSchema } from '@gravito/graphql';
- *
- * const schema = await createAtlasSchema({
- *   models: [User, Post],
- *   resolvers: {
- *     Query: {
- *       // Custom resolver override or addition
- *       me: () => { ... }
- *     }
- *   }
- * });
- * ```
- */
+function getFilterType(gqlType: string): string {
+  switch (gqlType) {
+    case 'Int':
+      return 'IntFilter'
+    case 'Float':
+      return 'FloatFilter'
+    case 'Boolean':
+      return 'BooleanFilter'
+    case 'ID':
+      return 'IDFilter'
+    default:
+      return 'StringFilter'
+  }
+}
+
+const BASE_TYPE_DEFS = `
+  input IntFilter {
+    eq: Int
+    gt: Int
+    lt: Int
+    gte: Int
+    lte: Int
+    in: [Int]
+  }
+  input FloatFilter {
+    eq: Float
+    gt: Float
+    lt: Float
+    gte: Float
+    lte: Float
+    in: [Float]
+  }
+  input StringFilter {
+    eq: String
+    like: String
+    in: [String]
+  }
+  input BooleanFilter {
+    eq: Boolean
+  }
+  input IDFilter {
+    eq: ID
+    in: [ID]
+  }
+  enum SortOrder {
+    ASC
+    DESC
+  }
+`
+
 export async function createAtlasSchema(options: AtlasGraphQLOptions): Promise<GraphQLSchema> {
-  const typeDefs: string[] = []
+  const typeDefs: string[] = [BASE_TYPE_DEFS]
   // biome-ignore lint/suspicious/noExplicitAny: Resolvers accumulator
   const resolvers: any = { Query: {}, Mutation: {} }
   const registry = SchemaRegistry.getInstance()
-
-  // Ensure registry is ready (if JIT mode)
-  // In AOT mode, it should be pre-loaded, but accessing .get() handles it.
 
   for (const model of options.models) {
     const modelName = model.name
     const table = model.table
 
     try {
-      // 1. Discover Schema
-      // We pass connection if defined, otherwise default
       const schema = await registry.get(table, model.connection)
 
       const outputFields: string[] = []
       const inputFields: string[] = []
       const updateFields: string[] = []
+      const whereFields: string[] = []
+      const orderByFields: string[] = []
 
       for (const [colName, colDef] of schema.columns) {
-        // Skip hidden fields (needs Model metadata, for now strict schema mapping)
-        // TODO: Check Model.hidden
-
         let gqlType: string
 
-        // Check overrides from Model casts first
-        // biome-ignore lint/suspicious/noExplicitAny: Missing types in ModelStatic
+        // biome-ignore lint/suspicious/noExplicitAny: Property access on static
         const castType = (model as any).casts?.[colName]
         if (castType) {
           gqlType = mapAtlasTypeToGraphQL(castType)
@@ -140,10 +133,12 @@ export async function createAtlasSchema(options: AtlasGraphQLOptions): Promise<G
 
         outputFields.push(`${colName}: ${gqlType}${outputRequired}`)
 
+        // Where & OrderBy inputs
+        whereFields.push(`${colName}: ${getFilterType(gqlType)}`)
+        orderByFields.push(`${colName}: SortOrder`)
+
         if (!isAutoManaged) {
-          // Create Input: Respect database nullability
           inputFields.push(`${colName}: ${gqlType}${inputRequired}`)
-          // Update Input: All fields optional
           updateFields.push(`${colName}: ${gqlType}`)
         }
       }
@@ -155,7 +150,6 @@ export async function createAtlasSchema(options: AtlasGraphQLOptions): Promise<G
         if (!RelatedClass) continue
 
         const relatedName = RelatedClass.name
-        // Check if related model is exposed in the schema
         const isExposed = options.models.some((m) => m.name === relatedName)
         if (!isExposed) continue
 
@@ -165,39 +159,43 @@ export async function createAtlasSchema(options: AtlasGraphQLOptions): Promise<G
           outputFields.push(`${relName}: ${relatedName}`)
         }
 
-        // Add resolver to prevent default resolver from calling the relationship function
-        // biome-ignore lint/suspicious/noExplicitAny: Generic resolver
+        // biome-ignore lint/suspicious/noExplicitAny: Parent is model instance
         resolvers[modelName] = resolvers[modelName] || {}
-        // biome-ignore lint/suspicious/noExplicitAny: Generic resolver
+        // biome-ignore lint/suspicious/noExplicitAny: Parent is model instance
         resolvers[modelName][relName] = async (parent: any) => {
           return await parent[relName]
         }
       }
 
-      // 2. Generate Type Definitions
+      // Generate Types
       typeDefs.push(`
         type ${modelName} {
           ${outputFields.join('\n          ')}
         }
-      `)
-
-      typeDefs.push(`
         input Create${modelName}Input {
           ${inputFields.join('\n          ')}
         }
-      `)
-
-      typeDefs.push(`
         input Update${modelName}Input {
           ${updateFields.join('\n          ')}
         }
+        input ${modelName}WhereInput {
+          ${whereFields.join('\n          ')}
+        }
+        input ${modelName}OrderByInput {
+          ${orderByFields.join('\n          ')}
+        }
       `)
 
-      // 3. Generate Operations
+      // Generate Operations
       typeDefs.push(`
         extend type Query {
           ${modelName.toLowerCase()}(id: ID!): ${modelName}
-          ${modelName.toLowerCase()}s: [${modelName}]
+          ${modelName.toLowerCase()}s(
+            limit: Int
+            offset: Int
+            where: ${modelName}WhereInput
+            orderBy: ${modelName}OrderByInput
+          ): [${modelName}]
         }
       `)
 
@@ -209,57 +207,111 @@ export async function createAtlasSchema(options: AtlasGraphQLOptions): Promise<G
         }
       `)
 
-      // 4. Generate Resolvers
+      // Resolvers
 
-      // Query: Find
-      // biome-ignore lint/suspicious/noExplicitAny: Generic resolver args
-      resolvers.Query[`${modelName.toLowerCase()}`] = async (_: any, { id }: { id: any }) => {
-        // biome-ignore lint/suspicious/noExplicitAny: Missing types in ModelStatic
-        return (model as any).find(id)
-      }
-
-      // Query: List
-      resolvers.Query[`${modelName.toLowerCase()}s`] = async () => {
-        // biome-ignore lint/suspicious/noExplicitAny: Missing types in ModelStatic
-        return (model as any).all()
-      }
-
-      // Mutation: Create
-      // biome-ignore lint/suspicious/noExplicitAny: Generic resolver args
-      resolvers.Mutation[`create${modelName}`] = async (_: any, { input }: { input: any }) => {
-        // biome-ignore lint/suspicious/noExplicitAny: Missing types in ModelStatic
-        return (model as any).create(input)
-      }
-
-      // Mutation: Update
-      resolvers.Mutation[`update${modelName}`] = async (
-        // biome-ignore lint/suspicious/noExplicitAny: Generic resolver args
-        _: any,
-        // biome-ignore lint/suspicious/noExplicitAny: Generic input
-        { id, input }: { id: any; input: any }
+      // Find
+      // biome-ignore lint/suspicious/noExplicitAny: GraphQL Resolver
+      resolvers.Query[`${modelName.toLowerCase()}`] = async (
+        _: unknown,
+        { id }: { id: unknown }
       ) => {
-        // biome-ignore lint/suspicious/noExplicitAny: Missing types in ModelStatic
-        const instance = await (model as any).find(id)
+        return model.find(id)
+      }
+
+      // List with Filters
+      // biome-ignore lint/suspicious/noExplicitAny: GraphQL Resolver
+      resolvers.Query[`${modelName.toLowerCase()}s`] = async (_: unknown, args: any) => {
+        const query = model.query()
+
+        if (args.limit) {
+          query.limit(args.limit)
+        }
+        if (args.offset) {
+          query.offset(args.offset)
+        }
+
+        if (args.where) {
+          // biome-ignore lint/suspicious/noExplicitAny: Filters
+          for (const [col, filters] of Object.entries(args.where) as [string, any][]) {
+            if (!filters) continue
+
+            for (const [op, val] of Object.entries(filters)) {
+              if (val === undefined || val === null) continue
+
+              switch (op) {
+                case 'eq':
+                  query.where(col, val)
+                  break
+                case 'gt':
+                  query.where(col, '>', val)
+                  break
+                case 'gte':
+                  query.where(col, '>=', val)
+                  break
+                case 'lt':
+                  query.where(col, '<', val)
+                  break
+                case 'lte':
+                  query.where(col, '<=', val)
+                  break
+                case 'like':
+                  query.where(col, 'like', val)
+                  break
+                case 'in':
+                  query.whereIn(col, val as unknown[])
+                  break
+              }
+            }
+          }
+        }
+
+        if (args.orderBy) {
+          // biome-ignore lint/suspicious/noExplicitAny: Sorting
+          for (const [col, dir] of Object.entries(args.orderBy) as [string, any][]) {
+            query.orderBy(col, dir.toLowerCase())
+          }
+        }
+
+        return query.get()
+      }
+
+      // Create
+      // biome-ignore lint/suspicious/noExplicitAny: GraphQL Resolver
+      resolvers.Mutation[`create${modelName}`] = async (
+        _: unknown,
+        { input }: { input: unknown }
+      ) => {
+        // biome-ignore lint/suspicious/noExplicitAny: Cast input
+        return model.create(input as any)
+      }
+
+      // Update
+      resolvers.Mutation[`update${modelName}`] = async (
+        _: unknown,
+        { id, input }: { id: unknown; input: Record<string, unknown> }
+      ) => {
+        const instance = await model.find(id)
         if (!instance) {
           throw new Error(`${modelName} with ID ${id} not found`)
         }
-        // biome-ignore lint/suspicious/noExplicitAny: Missing types in Model instance
         if (typeof instance.fill === 'function') {
-          instance.fill(input)
+          // biome-ignore lint/suspicious/noExplicitAny: Cast input
+          instance.fill(input as any)
         } else {
+          // Fallback if fill is missing
           for (const [key, value] of Object.entries(input)) {
-            instance[key] = value
+            // biome-ignore lint/suspicious/noExplicitAny: Dynamic property access
+            ;(instance as any)[key] = value
           }
         }
         await instance.save()
         return instance
       }
 
-      // Mutation: Delete
-      // biome-ignore lint/suspicious/noExplicitAny: Generic resolver args
-      resolvers.Mutation[`delete${modelName}`] = async (_: any, { id }: { id: any }) => {
-        // biome-ignore lint/suspicious/noExplicitAny: Missing types in ModelStatic
-        const instance = await (model as any).find(id)
+      // Delete
+      // biome-ignore lint/suspicious/noExplicitAny: GraphQL Resolver
+      resolvers.Mutation[`delete${modelName}`] = async (_: unknown, { id }: { id: unknown }) => {
+        const instance = await model.find(id)
         if (!instance) {
           return false
         }
@@ -268,7 +320,6 @@ export async function createAtlasSchema(options: AtlasGraphQLOptions): Promise<G
       }
     } catch (error) {
       console.warn(`[OrbitGraphQL] Failed to generate schema for model ${modelName}:`, error)
-      // Continue to next model or throw? Warning is safer for now.
     }
   }
 

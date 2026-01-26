@@ -244,4 +244,136 @@ describe('Atlas Integration', () => {
     const user = await DB.table('users').where('id', 2).first()
     expect(user).toBeNull()
   })
+
+  it('should support pagination and filtering', async () => {
+    const schema = await createAtlasSchema({
+      models: [User],
+    })
+
+    const yoga = createYoga({ schema })
+
+    // Create more users for pagination test
+    // Current DB: Alice(1), Charlie(3). Bob(2) was deleted.
+    await DB.table('users').insert({
+      name: 'Dave',
+      age: 40,
+      active: true,
+      created_at: new Date(),
+      updated_at: new Date(),
+    })
+    await DB.table('users').insert({
+      name: 'Eve',
+      age: 20,
+      active: true,
+      created_at: new Date(),
+      updated_at: new Date(),
+    })
+
+    // Total Users: Alice, Charlie, Dave, Eve (4 users)
+
+    // Test Pagination
+    const resPage = await yoga.fetch('http://localhost/graphql', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        query: `
+          query {
+            users(limit: 2, offset: 0) {
+              name
+            }
+          }
+        `,
+      }),
+    })
+
+    // biome-ignore lint/suspicious/noExplicitAny: Test result
+    const resultPage: any = await resPage.json()
+    expect(resultPage.errors).toBeUndefined()
+    expect(resultPage.data.users).toHaveLength(2)
+
+    // Test Filtering (active: true)
+    const resFilter = await yoga.fetch('http://localhost/graphql', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        query: `
+          query {
+            users(where: { active: { eq: true } }) {
+              name
+            }
+          }
+        `,
+      }),
+    })
+
+    // biome-ignore lint/suspicious/noExplicitAny: Test result
+    const resultFilter: any = await resFilter.json()
+    expect(resultFilter.errors).toBeUndefined()
+    // Should be 4 active users
+    expect(resultFilter.data.users).toHaveLength(4)
+  })
+
+  it('should support advanced filtering and sorting', async () => {
+    const schema = await createAtlasSchema({
+      models: [User],
+    })
+
+    const yoga = createYoga({ schema })
+
+    // DB has Alice(30), Bob(25 - deleted?), Charlie(35), Dave(40), Eve(20)
+    // Bob was deleted in previous test? No, 'delete a user' test deleted ID 2 (Bob).
+    // So active users: Alice(30), Charlie(35), Dave(40), Eve(20).
+
+    // Test 1: Age > 25 (Alice, Charlie, Dave) -> 3 users
+    const resGt = await yoga.fetch('http://localhost/graphql', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        query: `
+          query {
+            users(
+              where: { age: { gt: 25 } }
+              orderBy: { age: ASC }
+            ) {
+              name
+              age
+            }
+          }
+        `,
+      }),
+    })
+
+    // biome-ignore lint/suspicious/noExplicitAny: Test result
+    const jsonGt: any = await resGt.json()
+    expect(jsonGt.errors).toBeUndefined()
+    expect(jsonGt.data.users).toHaveLength(3)
+    // Ordered by Age ASC: Alice(30), Charlie(35), Dave(40)
+    expect(jsonGt.data.users[0].name).toBe('Alice')
+    expect(jsonGt.data.users[2].name).toBe('Dave')
+
+    // Test 2: Name LIKE "%e%" (Alice, Charlie, Dave, Eve) -> All 4
+    // Wait, Alice(e), Charlie(e), Dave(e), Eve(e). All have 'e'.
+    // Let's try LIKE "A%" (Alice)
+    const resLike = await yoga.fetch('http://localhost/graphql', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        query: `
+          query {
+            users(
+              where: { name: { like: "A%" } }
+            ) {
+              name
+            }
+          }
+        `,
+      }),
+    })
+
+    // biome-ignore lint/suspicious/noExplicitAny: Test result
+    const jsonLike: any = await resLike.json()
+    expect(jsonLike.errors).toBeUndefined()
+    expect(jsonLike.data.users).toHaveLength(1)
+    expect(jsonLike.data.users[0].name).toBe('Alice')
+  })
 })
