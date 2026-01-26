@@ -185,8 +185,32 @@ export interface BulkWriteResult {
   acknowledged: boolean
 }
 
+/**
+ * Change stream options
+ */
+export interface ChangeStreamOptions {
+  fullDocument?: 'default' | 'updateLookup' | 'whenAvailable' | 'required'
+  resumeAfter?: unknown
+  startAtOperationTime?: Date
+}
+
+/**
+ * Change stream event
+ */
+export interface ChangeEvent<T = Document> {
+  operationType: 'insert' | 'update' | 'replace' | 'delete' | 'invalidate' | 'drop'
+  documentKey: { _id: string }
+  fullDocument?: T
+  updateDescription?: {
+    updatedFields: Record<string, unknown>
+    removedFields: string[]
+  }
+  clusterTime: Date
+}
+
 // ============================================================================
 // Contract Interfaces
+
 // ============================================================================
 
 /**
@@ -235,6 +259,7 @@ export interface MongoCollectionContract<T = Document> {
   delete(): Promise<DeleteResult>
   deleteMany(): Promise<DeleteResult>
   bulkWrite(operations: BulkWriteOperation<T>[]): Promise<BulkWriteResult>
+  watch(pipeline?: PipelineStage[], options?: ChangeStreamOptions): AsyncIterable<ChangeEvent<T>>
 
   // Aggregation
   aggregate(): MongoAggregateContract<T>
@@ -306,7 +331,8 @@ export interface MongoDatabaseContract {
   collection<T = Document>(name: string): MongoCollectionContract<T>
   listCollections(): Promise<string[]>
   dropCollection(name: string): Promise<boolean>
-  createCollection(name: string): Promise<void>
+  createCollection(name: string, options?: { schema?: SchemaValidationOptions }): Promise<void>
+  setValidation(collectionName: string, schema: SchemaValidationOptions): Promise<void>
 }
 
 /**

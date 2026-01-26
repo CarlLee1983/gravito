@@ -6,6 +6,7 @@
 // Main exports
 export { Mongo } from './Mongo'
 export { MongoClient } from './MongoClient'
+export { MongoGridFS } from './MongoGridFS'
 export { MongoManager } from './MongoManager'
 export { MongoPoolMonitor } from './MongoPoolMetrics'
 export { MongoAggregateBuilder, MongoQueryBuilder } from './MongoQueryBuilder'
@@ -18,6 +19,8 @@ export type {
   Document,
   FilterDocument,
   FilterOperator,
+  GridFSFile,
+  GridFSUploadOptions,
   InsertManyResult,
   InsertResult,
   LookupOptions,

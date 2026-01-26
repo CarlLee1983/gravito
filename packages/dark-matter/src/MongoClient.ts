@@ -12,6 +12,7 @@ import type {
   MongoDatabaseContract,
   MongoSession,
   RetryConfig,
+  SchemaValidationOptions,
   TransactionOptions,
 } from './types'
 
@@ -306,8 +307,28 @@ class MongoDatabaseWrapper implements MongoDatabaseContract {
     return await this.db.dropCollection(name)
   }
 
-  async createCollection(name: string): Promise<void> {
-    await this.db.createCollection(name)
+  async createCollection(
+    name: string,
+    options?: { schema?: SchemaValidationOptions }
+  ): Promise<void> {
+    const createOptions: Record<string, unknown> = {}
+
+    if (options?.schema) {
+      createOptions.validator = options.schema.validator
+      createOptions.validationLevel = options.schema.validationLevel ?? 'strict'
+      createOptions.validationAction = options.schema.validationAction ?? 'error'
+    }
+
+    await this.db.createCollection(name, createOptions)
+  }
+
+  async setValidation(collectionName: string, schema: SchemaValidationOptions): Promise<void> {
+    await this.db.command({
+      collMod: collectionName,
+      validator: schema.validator,
+      validationLevel: schema.validationLevel ?? 'strict',
+      validationAction: schema.validationAction ?? 'error',
+    })
   }
 }
 
@@ -344,7 +365,7 @@ interface NativeMongoDatabase {
   collection(name: string): NativeMongoCollection
   listCollections(): { toArray(): Promise<Array<{ name: string }>> }
   dropCollection(name: string): Promise<boolean>
-  createCollection(name: string): Promise<void>
+  createCollection(name: string, options?: Record<string, unknown>): Promise<void>
   command(command: Record<string, unknown>): Promise<Record<string, unknown>>
 }
 

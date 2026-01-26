@@ -4,16 +4,12 @@
  */
 
 import type {
-  BulkWriteOperation,
-  BulkWriteResult,
-  DeleteResult,
-  Document,
-  FilterDocument,
   FilterOperator,
   InsertManyResult,
   InsertResult,
   MongoAggregateContract,
   MongoCollectionContract,
+  PipelineStage,
   SortDirection,
   UpdateDocument,
   UpdateResult,
@@ -504,6 +500,37 @@ export class MongoQueryBuilder<T = Document> implements MongoCollectionContract<
     }
   }
 
+  /**
+   * Watch for changes on the collection.
+   *
+   * @param pipeline - The aggregation pipeline to filter changes.
+   * @param options - The change stream options.
+   * @returns An async iterable of change events.
+   */
+  watch(pipeline?: PipelineStage[], options?: ChangeStreamOptions): AsyncIterable<ChangeEvent<T>> {
+    const changeStream = this.nativeCollection.watch(
+      (pipeline ?? []) as Record<string, unknown>[],
+      options as Record<string, unknown>
+    )
+
+    return {
+      [Symbol.asyncIterator]: () => ({
+        next: async () => {
+          const hasNext = await changeStream.hasNext()
+          if (!hasNext) {
+            return { done: true, value: undefined }
+          }
+          const event = await changeStream.next()
+          return { done: false, value: event as ChangeEvent<T> }
+        },
+        return: async () => {
+          await changeStream.close()
+          return { done: true, value: undefined }
+        },
+      }),
+    }
+  }
+
   // ============================================================================
   // Aggregation
   // ============================================================================
@@ -756,6 +783,13 @@ export interface MongoNativeCollection {
   ): Promise<unknown[]>
   aggregate(pipeline: Record<string, unknown>[]): MongoCursor
   bulkWrite(operations: unknown[], options?: Record<string, unknown>): Promise<unknown>
+  watch(pipeline: Record<string, unknown>[], options?: Record<string, unknown>): MongoChangeStream
+}
+
+interface MongoChangeStream {
+  hasNext(): Promise<boolean>
+  next(): Promise<unknown>
+  close(): Promise<void>
 }
 
 interface MongoCursor {
