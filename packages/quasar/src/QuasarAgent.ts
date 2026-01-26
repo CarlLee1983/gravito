@@ -18,9 +18,12 @@ import { RedisListProbe } from './probes/RedisListProbe'
 import type { Probe, QueueProbe } from './types'
 import { AdaptiveHeartbeat } from './utils/AdaptiveHeartbeat'
 import { ConsoleLogger, type Logger, type LogLevel } from './utils/logger'
+import { RedisBatcher } from './utils/RedisBatcher'
 import { DefaultRedisConnectionManager, type RedisConnectionManager } from './utils/redis'
+import { JsonSerializer, MsgPackSerializer, type Serializer } from './utils/Serializer'
 
 /**
+
  * Configuration for a Redis connection used by Quasar.
  *
  * @public
@@ -62,6 +65,7 @@ export interface QuasarOptions {
   logger?: Logger
   /** Log level for default console logger. @default 'info' */
   logLevel?: LogLevel
+  useMsgPack?: boolean
 }
 
 /**
@@ -98,6 +102,8 @@ export class QuasarAgent {
   private bridges: QueueBridge[] = []
   private heartbeat: AdaptiveHeartbeat
   private prefix = QUASAR_KEYS.NODE_PREFIX
+  private transportBatcher?: RedisBatcher
+  private serializer: Serializer
 
   // Cached node ID (computed on first tick)
   private nodeId?: string
@@ -163,6 +169,8 @@ export class QuasarAgent {
       jitter: 0.1,
       backoffMultiplier: 1.5,
     })
+
+    this.serializer = options.useMsgPack ? new MsgPackSerializer() : new JsonSerializer()
   }
 
   /**
@@ -186,6 +194,12 @@ export class QuasarAgent {
 
     await Promise.all(promises)
 
+    this.transportBatcher = new RedisBatcher(this.transportRedis, {
+      maxBatchSize: 10,
+      flushInterval: 500,
+      serializer: this.serializer,
+    })
+
     this.logger.info(`[Quasar] Agent started for service: ${this.service}`)
 
     this.heartbeat.start()
@@ -199,6 +213,11 @@ export class QuasarAgent {
    */
   async stop() {
     this.heartbeat.stop()
+
+    if (this.transportBatcher) {
+      await this.transportBatcher.stop()
+      this.transportBatcher = undefined
+    }
 
     // Stop command listener if active
     if (this.commandListener) {
@@ -431,7 +450,11 @@ export class QuasarAgent {
       }
 
       const key = `${this.prefix}${this.service}:${id}`
-      await this.transportRedis.set(key, JSON.stringify(payload), 'EX', 30)
+      if (this.transportBatcher) {
+        this.transportBatcher.set(key, payload, 'EX', 30)
+      } else {
+        await this.transportRedis.set(key, this.serializer.serialize(payload), 'EX', 30)
+      }
     } catch (err) {
       this.logger.error('[Quasar] Heartbeat failed', err)
     }

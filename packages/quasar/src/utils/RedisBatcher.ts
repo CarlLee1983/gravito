@@ -1,4 +1,5 @@
 import type { Redis } from 'ioredis'
+import { JsonSerializer, type Serializer } from './Serializer'
 
 interface PendingOperation {
   operation: 'set' | 'publish' | 'lpush' | 'del' | 'expire'
@@ -8,11 +9,13 @@ interface PendingOperation {
 export interface RedisBatcherOptions {
   maxBatchSize: number
   flushInterval: number
+  serializer?: Serializer
 }
 
 export class RedisBatcher {
   private pending: PendingOperation[] = []
   private timer: Timer | null = null
+  private serializer: Serializer
 
   constructor(
     private redis: Redis,
@@ -21,21 +24,27 @@ export class RedisBatcher {
       flushInterval: 100,
     }
   ) {
+    this.serializer = options.serializer ?? new JsonSerializer()
     this.startTimer()
   }
 
-  set(key: string, value: string, ...args: any[]): void {
-    this.pending.push({ operation: 'set', args: [key, value, ...args] })
+  set(key: string, value: any, ...args: any[]): void {
+    const serialized = typeof value === 'string' ? value : this.serializer.serialize(value)
+    this.pending.push({ operation: 'set', args: [key, serialized, ...args] })
     this.maybeFlush()
   }
 
-  publish(channel: string, message: string): void {
-    this.pending.push({ operation: 'publish', args: [channel, message] })
+  publish(channel: string, message: any): void {
+    const serialized = typeof message === 'string' ? message : this.serializer.serialize(message)
+    this.pending.push({ operation: 'publish', args: [channel, serialized] })
     this.maybeFlush()
   }
 
-  lpush(key: string, ...values: string[]): void {
-    this.pending.push({ operation: 'lpush', args: [key, ...values] })
+  lpush(key: string, ...values: any[]): void {
+    const serializedValues = values.map((v) =>
+      typeof v === 'string' ? v : this.serializer.serialize(v)
+    )
+    this.pending.push({ operation: 'lpush', args: [key, ...serializedValues] })
     this.maybeFlush()
   }
 
@@ -59,10 +68,32 @@ export class RedisBatcher {
     if (this.pending.length === 0) return
 
     const batch = this.pending.splice(0)
-    const pipeline = this.redis.pipeline()
+    const pipeline =
+      this.redis && typeof this.redis.pipeline === 'function' ? this.redis.pipeline() : null
+
+    if (!pipeline || typeof pipeline.exec !== 'function') {
+      for (const { operation, args } of batch) {
+        if (this.redis && typeof (this.redis as any)[operation] === 'function') {
+          ;(this.redis as any)[operation](...args)
+        } else if (this.redis) {
+          const lowerOp = operation.toLowerCase()
+          if (typeof (this.redis as any)[lowerOp] === 'function') {
+            ;(this.redis as any)[lowerOp](...args)
+          }
+        }
+      }
+      return
+    }
 
     for (const { operation, args } of batch) {
-      ;(pipeline as any)[operation](...args)
+      if (typeof (pipeline as any)[operation] === 'function') {
+        ;(pipeline as any)[operation](...args)
+      } else {
+        const lowerOp = operation.toLowerCase()
+        if (typeof (pipeline as any)[lowerOp] === 'function') {
+          ;(pipeline as any)[lowerOp](...args)
+        }
+      }
     }
 
     try {

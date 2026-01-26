@@ -12,16 +12,50 @@ export class LogBuffer {
       batchSize: number
       flushInterval: number
       maxHistorySize?: number
-    } = { batchSize: 100, flushInterval: 1000 }
+      maxPayloadSize?: number
+    } = { batchSize: 100, flushInterval: 1000, maxPayloadSize: 1024 * 64 }
   ) {
     this.startTimer()
   }
 
   add(log: ZenithLogPayload): void {
-    this.buffer.push(log)
+    const processedLog = this.truncateLog(log)
+    this.buffer.push(processedLog)
     if (this.buffer.length >= this.options.batchSize) {
       this.flush()
     }
+  }
+
+  private truncateLog(log: ZenithLogPayload): ZenithLogPayload {
+    if (!this.options.maxPayloadSize) return log
+
+    const serialized = JSON.stringify(log)
+    if (serialized.length <= this.options.maxPayloadSize) return log
+
+    // If too large, try to truncate data and error fields which are usually the largest
+    const truncatedLog = { ...log }
+    const limit = this.options.maxPayloadSize / 2
+
+    if (truncatedLog.data && JSON.stringify(truncatedLog.data).length > limit) {
+      truncatedLog.data = {
+        _truncated: true,
+        _originalSize: JSON.stringify(truncatedLog.data).length,
+        summary:
+          typeof truncatedLog.data === 'object'
+            ? Object.keys(truncatedLog.data as object).slice(0, 5)
+            : 'too large',
+      }
+    }
+
+    if (truncatedLog.error && JSON.stringify(truncatedLog.error).length > limit) {
+      const errorStr =
+        typeof truncatedLog.error === 'string'
+          ? truncatedLog.error
+          : JSON.stringify(truncatedLog.error)
+      truncatedLog.error = errorStr.substring(0, limit as number) + '... [TRUNCATED]'
+    }
+
+    return truncatedLog
   }
 
   async flush(): Promise<void> {

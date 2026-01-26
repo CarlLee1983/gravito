@@ -97,7 +97,7 @@ describe('QuasarAgent', () => {
       })
 
       await agent.start()
-      // Heartbeat set is called during tick
+      await new Promise((resolve) => setTimeout(resolve, 600))
       expect(mockTransportRedis.set).toHaveBeenCalled()
 
       await agent.stop()
