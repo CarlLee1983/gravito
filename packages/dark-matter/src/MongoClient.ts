@@ -33,12 +33,22 @@ export class MongoClient implements MongoClientContract {
   // ============================================================================
 
   /**
-   * Connect to the MongoDB server.
+   * Establishes a connection to the MongoDB server.
    *
-   * Initializes the MongoDB client and establishes a connection.
+   * Initializes the MongoDB client with the configured options and attempts to connect.
+   * Supports exponential backoff for retries if the connection fails.
    *
-   * @param retryConfig - Optional retry configuration
-   * @returns A promise that resolves when connected.
+   * @param retryConfig - Configuration for connection retry behavior (retries, delay, backoff).
+   * @returns Promise that resolves when the connection is successfully established.
+   * @throws {Error} If connection fails after all retry attempts.
+   *
+   * @example
+   * ```typescript
+   * await client.connect({
+   *   maxRetries: 5,
+   *   retryDelayMs: 500
+   * });
+   * ```
    */
   async connect(retryConfig?: RetryConfig): Promise<void> {
     if (this.connected) {
@@ -91,11 +101,12 @@ export class MongoClient implements MongoClientContract {
   }
 
   /**
-   * Disconnect from the MongoDB server.
+   * Closes the connection to the MongoDB server.
    *
-   * Closes the connection and resets the client state.
+   * Gracefully closes the client connection and resets internal state.
+   * Should be called when the application is shutting down.
    *
-   * @returns A promise that resolves when disconnected.
+   * @returns Promise that resolves when the connection is closed.
    */
   async disconnect(): Promise<void> {
     if (this.client) {
@@ -107,16 +118,21 @@ export class MongoClient implements MongoClientContract {
   }
 
   /**
-   * Check if the client is connected.
+   * Checks if the client is currently connected.
    *
-   * @returns True if connected, false otherwise.
+   * @returns `true` if the client is connected and active, `false` otherwise.
    */
   isConnected(): boolean {
     return this.connected && this.client !== null
   }
 
   /**
-   * Ensure connection is available, retry if disconnected
+   * Verifies connection health and attempts reconnection if needed.
+   *
+   * Performs a lightweight 'ping' command. If the ping fails or the client
+   * is known to be disconnected, it triggers a reconnection attempt.
+   *
+   * @returns Promise resolving when a connection is confirmed or re-established.
    */
   async ensureConnected(): Promise<void> {
     if (!this.connected || !this.client) {
@@ -135,7 +151,19 @@ export class MongoClient implements MongoClientContract {
   }
 
   /**
-   * Get connection health status
+   * Retrieves detailed health status of the connection.
+   *
+   * Measures latency and retrieves server information via a 'ping' command.
+   *
+   * @returns Object containing connection status, latency in ms, and server info.
+   *
+   * @example
+   * ```typescript
+   * const health = await client.getHealthStatus();
+   * if (health.connected) {
+   *   console.log(`Latency: ${health.latencyMs}ms`);
+   * }
+   * ```
    */
   async getHealthStatus(): Promise<{
     connected: boolean
@@ -162,7 +190,24 @@ export class MongoClient implements MongoClientContract {
   }
 
   /**
-   * Execute a transaction.
+   * Executes a callback within a MongoDB transaction.
+   *
+   * Manages the session lifecycle, including starting the session, committing the transaction,
+   * or aborting it in case of errors.
+   *
+   * @typeParam T - The return type of the callback.
+   * @param callback - The function to execute within the transaction. Receives a session-aware `MongoSession` object.
+   * @param options - Transaction configuration options (read/write concern).
+   * @returns Promise resolving to the return value of the callback.
+   * @throws {Error} If the transaction fails or commits fail.
+   *
+   * @example
+   * ```typescript
+   * await client.withTransaction(async (session) => {
+   *   await session.collection('accounts').where('id', 'A').update({ $inc: { balance: -100 } });
+   *   await session.collection('accounts').where('id', 'B').update({ $inc: { balance: 100 } });
+   * });
+   * ```
    */
   async withTransaction<T>(
     callback: (session: MongoSession) => Promise<T>,
@@ -193,10 +238,11 @@ export class MongoClient implements MongoClientContract {
   }
 
   /**
-   * Get a database instance.
+   * Retrieves a database instance.
    *
-   * @param name - The name of the database (optional). Defaults to the connected database.
-   * @returns The MongoDatabaseContract instance.
+   * @param name - Optional database name. Uses the default database from config if omitted.
+   * @returns A `MongoDatabaseContract` instance for database-level operations.
+   * @throws {Error} If the client is not connected.
    */
   database(name?: string): MongoDatabaseContract {
     const client = this.getClient()
@@ -205,10 +251,17 @@ export class MongoClient implements MongoClientContract {
   }
 
   /**
-   * Get a collection with query builder.
+   * Retrieves a collection instance with query builder capabilities.
    *
+   * @typeParam T - The type of documents in the collection.
    * @param name - The name of the collection.
-   * @returns A MongoCollectionContract instance.
+   * @returns A `MongoCollectionContract` instance for querying the collection.
+   * @throws {Error} If the client is not connected.
+   *
+   * @example
+   * ```typescript
+   * const users = client.collection<User>('users');
+   * ```
    */
   collection<T = Document>(name: string): MongoCollectionContract<T> {
     const db = this.getDatabase()

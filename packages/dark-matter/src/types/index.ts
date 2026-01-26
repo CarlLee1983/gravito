@@ -10,7 +10,11 @@
  * MongoDB connection configuration
  */
 export interface MongoConfig {
-  /** MongoDB connection URI */
+  /**
+   * The MongoDB connection URI.
+   * If provided, other connection parameters (host, port, etc.) are ignored.
+   * @example "mongodb://user:pass@localhost:27017/db"
+   */
   uri?: string
   /** Database name */
   database?: string
@@ -42,7 +46,20 @@ export interface MongoConfig {
  * Transaction options
  */
 export interface TransactionOptions {
+  /**
+   * Read concern level.
+   * - 'local': Data available on current node.
+   * - 'majority': Data committed to majority of nodes.
+   * - 'linearizable': Linearizable consistency.
+   * - 'snapshot': Snapshot isolation (requires read concern 'majority').
+   */
   readConcern?: { level: 'local' | 'majority' | 'linearizable' | 'snapshot' }
+  /**
+   * Write concern options.
+   * - w: Number of nodes required to acknowledge write.
+   * - j: Whether to wait for journal sync.
+   * - wtimeout: Timeout in milliseconds.
+   */
   writeConcern?: { w: number | 'majority'; j?: boolean; wtimeout?: number }
   readPreference?: 'primary' | 'primaryPreferred' | 'secondary' | 'secondaryPreferred' | 'nearest'
 }
@@ -58,8 +75,11 @@ export interface MongoSession {
  * Retry configuration for connection
  */
 export interface RetryConfig {
+  /** Maximum number of retry attempts */
   maxRetries: number
+  /** Initial delay between retries in milliseconds */
   retryDelayMs: number
+  /** Multiplier for exponential backoff */
   backoffMultiplier: number
 }
 
@@ -67,9 +87,9 @@ export interface RetryConfig {
  * MongoDB manager configuration
  */
 export interface MongoManagerConfig {
-  /** Default connection name */
+  /** Default connection name (defaults to 'default' if not specified) */
   default?: string
-  /** Named connections */
+  /** Named connections map */
   connections: Record<string, MongoConfig>
 }
 
@@ -189,8 +209,17 @@ export interface BulkWriteResult {
  * Change stream options
  */
 export interface ChangeStreamOptions {
+  /**
+   * Return full document:
+   * - 'default': Only for replace/insert/update
+   * - 'updateLookup': Fetch full document for update
+   * - 'whenAvailable': If available
+   * - 'required': Error if not available
+   */
   fullDocument?: 'default' | 'updateLookup' | 'whenAvailable' | 'required'
+  /** Resume token to start after */
   resumeAfter?: unknown
+  /** Operation time to start at */
   startAtOperationTime?: Date
 }
 
@@ -206,6 +235,63 @@ export interface ChangeEvent<T = Document> {
     removedFields: string[]
   }
   clusterTime: Date
+}
+
+/**
+ * Schema validation options
+ */
+export interface SchemaValidationOptions {
+  /** JSON Schema validator object */
+  validator: Record<string, unknown>
+  /** Validation level: 'off', 'strict', or 'moderate' */
+  validationLevel?: 'off' | 'strict' | 'moderate'
+  /** Validation action: 'error' or 'warn' */
+  validationAction?: 'error' | 'warn'
+}
+
+/**
+ * Schema validation options
+ */
+export interface SchemaValidationOptions {
+  /** JSON Schema validator object */
+  validator: Record<string, unknown>
+  /** Validation level: 'off', 'strict', or 'moderate' */
+  validationLevel?: 'off' | 'strict' | 'moderate'
+  /** Validation action: 'error' or 'warn' */
+  validationAction?: 'error' | 'warn'
+}
+
+/**
+ * MongoDB connection pool metrics
+ */
+export interface PoolMetrics {
+  totalConnections: number
+  availableConnections: number
+  waitQueueSize: number
+  currentCheckedOutCount: number
+}
+
+/**
+ * GridFS upload options
+ */
+export interface GridFSUploadOptions {
+  filename: string
+  chunkSizeBytes?: number
+  metadata?: Record<string, unknown>
+  contentType?: string
+}
+
+/**
+ * GridFS file metadata
+ */
+export interface GridFSFile {
+  _id: string
+  filename: string
+  length: number
+  chunkSize: number
+  uploadDate: Date
+  metadata?: Record<string, unknown>
+  contentType?: string
 }
 
 // ============================================================================

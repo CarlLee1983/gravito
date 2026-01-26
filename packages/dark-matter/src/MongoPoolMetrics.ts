@@ -1,29 +1,47 @@
 import type { MongoClient } from './MongoClient'
-
-/**
- * MongoDB connection pool metrics
- */
-export interface PoolMetrics {
-  totalConnections: number
-  availableConnections: number
-  waitQueueSize: number
-  currentCheckedOutCount: number
-}
+import type { PoolMetrics } from './types'
 
 /**
  * MongoDB Pool Monitor
- * Provides metrics about the connection pool
+ *
+ * Provides real-time metrics about the MongoDB connection pool.
+ * Useful for monitoring application health and diagnosing connection leaks.
+ *
+ * @example
+ * ```typescript
+ * const monitor = new MongoPoolMonitor(client);
+ * const metrics = monitor.getMetrics();
+ * console.log(`Available connections: ${metrics.availableConnections}`);
+ * ```
  */
 export class MongoPoolMonitor {
   private client: MongoClient
 
+  /**
+   * Creates a new Pool Monitor.
+   *
+   * @param client - The MongoClient instance to monitor.
+   */
   constructor(client: MongoClient) {
     this.client = client
   }
 
   /**
-   * Get pool metrics
-   * Note: Requires mongodb driver 4.0+
+   * Retrieves current connection pool metrics.
+   *
+   * Inspects the internal state of the MongoDB driver to gather pool statistics.
+   * Note: This relies on internal driver properties and requires mongodb driver 4.0+.
+   *
+   * @returns A PoolMetrics object containing connection counts, or null if not connected.
+   *
+   * @example
+   * ```typescript
+   * const metrics = monitor.getMetrics();
+   * if (metrics) {
+   *   console.log('Total:', metrics.totalConnections);
+   *   console.log('Waiting:', metrics.waitQueueSize);
+   * }
+   * ```
    */
   getMetrics(): PoolMetrics | null {
     // biome-ignore lint/suspicious/noExplicitAny: Accessing internal properties for monitoring

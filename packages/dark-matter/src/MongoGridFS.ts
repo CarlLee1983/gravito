@@ -1,32 +1,29 @@
-import type { FilterDocument } from './types'
+import type { FilterDocument, GridFSFile, GridFSUploadOptions } from './types'
 
 // biome-ignore lint/suspicious/noExplicitAny: MongoDB native database has complex types
 type NativeMongoDatabase = any
 
-export interface GridFSUploadOptions {
-  filename: string
-  chunkSizeBytes?: number
-  metadata?: Record<string, unknown>
-  contentType?: string
-}
-
-export interface GridFSFile {
-  _id: string
-  filename: string
-  length: number
-  chunkSize: number
-  uploadDate: Date
-  metadata?: Record<string, unknown>
-  contentType?: string
-}
-
 /**
  * MongoDB GridFS Wrapper
- * Provides simple API for file storage
+ *
+ * Provides a simplified abstraction for MongoDB GridFS, allowing storage and retrieval
+ * of files exceeding the BSON document size limit (16MB).
+ *
+ * @example
+ * ```typescript
+ * const grid = new MongoGridFS(db);
+ * const fileId = await grid.upload(buffer, { filename: 'report.pdf' });
+ * ```
  */
 export class MongoGridFS {
   private bucket: any
 
+  /**
+   * Creates a new GridFS instance.
+   *
+   * @param db - The native MongoDB database instance.
+   * @param bucketName - The name of the bucket (default: 'fs').
+   */
   constructor(db: NativeMongoDatabase, bucketName = 'fs') {
     // We'll load GridFSBucket dynamically to avoid hard dependency on 'mongodb' package
     // if the user hasn't installed it (though it's a peer dep).
@@ -40,7 +37,22 @@ export class MongoGridFS {
   }
 
   /**
-   * Upload a file
+   * Uploads a file to GridFS.
+   *
+   * Supports both Buffer and ReadableStream sources.
+   *
+   * @param source - The file content as a Buffer or ReadableStream.
+   * @param options - Upload configuration including filename and metadata.
+   * @returns Promise resolving to the file ID (string).
+   * @throws {Error} If the upload stream fails or bucket initialization is incomplete.
+   *
+   * @example Upload from Buffer
+   * ```typescript
+   * const id = await grid.upload(myBuffer, {
+   *   filename: 'image.png',
+   *   contentType: 'image/png'
+   * });
+   * ```
    */
   async upload(source: Buffer | ReadableStream, options: GridFSUploadOptions): Promise<string> {
     await this.ensureBucket()
@@ -73,7 +85,19 @@ export class MongoGridFS {
   }
 
   /**
-   * Download a file
+   * Downloads a file from GridFS.
+   *
+   * Retrieves the entire file content into a Buffer.
+   * Note: For very large files, consider adding a streaming API in the future.
+   *
+   * @param fileId - The unique ID of the file to download.
+   * @returns Promise resolving to the file content as a Buffer.
+   * @throws {Error} If the file is not found or download fails.
+   *
+   * @example
+   * ```typescript
+   * const buffer = await grid.download('507f1f77bcf86cd799439011');
+   * ```
    */
   async download(fileId: string): Promise<Buffer> {
     await this.ensureBucket()
@@ -89,7 +113,16 @@ export class MongoGridFS {
   }
 
   /**
-   * Delete a file
+   * Deletes a file from GridFS.
+   *
+   * @param fileId - The unique ID of the file to delete.
+   * @returns Promise resolving when deletion is complete.
+   * @throws {Error} If the file does not exist.
+   *
+   * @example
+   * ```typescript
+   * await grid.delete('507f1f77bcf86cd799439011');
+   * ```
    */
   async delete(fileId: string): Promise<void> {
     await this.ensureBucket()
@@ -98,7 +131,15 @@ export class MongoGridFS {
   }
 
   /**
-   * List files
+   * Lists files matching a filter criteria.
+   *
+   * @param filter - Optional MongoDB filter to select files.
+   * @returns Promise resolving to an array of file metadata.
+   *
+   * @example
+   * ```typescript
+   * const pdfs = await grid.list({ contentType: 'application/pdf' });
+   * ```
    */
   async list(filter?: FilterDocument): Promise<GridFSFile[]> {
     await this.ensureBucket()
