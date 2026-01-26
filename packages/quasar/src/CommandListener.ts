@@ -1,4 +1,5 @@
 import type { Redis } from 'ioredis'
+import { QUASAR_CHANNELS, QUASAR_KEYS } from './constants'
 import { CleanQueueExecutor } from './executors/CleanQueueExecutor'
 import { DeleteJobExecutor } from './executors/DeleteJobExecutor'
 import { PauseQueueExecutor } from './executors/PauseQueueExecutor'
@@ -67,11 +68,11 @@ export class CommandListener {
    * Also listens to broadcast channel: gravito:quasar:cmd:{service}:*
    */
   private getChannelPattern(): string {
-    return `gravito:quasar:cmd:${this.service}:${this.nodeId}`
+    return `${QUASAR_KEYS.COMMAND_PREFIX}${this.service}:${this.nodeId}`
   }
 
   private getBroadcastChannel(): string {
-    return `gravito:quasar:cmd:${this.service}:*`
+    return `${QUASAR_KEYS.COMMAND_PREFIX}${this.service}:${QUASAR_CHANNELS.BROADCAST_SUFFIX}`
   }
 
   /**

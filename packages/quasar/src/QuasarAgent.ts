@@ -6,6 +6,7 @@ import { BullMQBridge } from './bridges/BullMQBridge'
 import { type EventMapping, GenericBridge } from './bridges/GenericBridge'
 import type { QueueBridge } from './bridges/types'
 import { CommandListener } from './CommandListener'
+import { QUASAR_DEFAULTS, QUASAR_KEYS } from './constants'
 import { InternalMetrics, MetricsCollector } from './metrics/InternalMetrics'
 import { BeeQueueProbe } from './probes/BeeQueueProbe'
 import { BullMQProbe } from './probes/BullMQProbe'
@@ -16,7 +17,7 @@ import { NodeProbe } from './probes/NodeProbe'
 import { RedisListProbe } from './probes/RedisListProbe'
 import type { Probe, QueueProbe } from './types'
 import { AdaptiveHeartbeat } from './utils/AdaptiveHeartbeat'
-import { ConsoleLogger, type Logger } from './utils/logger'
+import { ConsoleLogger, type Logger, type LogLevel } from './utils/logger'
 import { DefaultRedisConnectionManager, type RedisConnectionManager } from './utils/redis'
 
 /**
@@ -59,6 +60,8 @@ export interface QuasarOptions {
   probe?: Probe
   /** Custom logger instance. */
   logger?: Logger
+  /** Log level for default console logger. @default 'info' */
+  logLevel?: LogLevel
 }
 
 /**
@@ -94,7 +97,7 @@ export class QuasarAgent {
   private queueProbes: QueueProbe[] = []
   private bridges: QueueBridge[] = []
   private heartbeat: AdaptiveHeartbeat
-  private prefix = 'gravito:quasar:node:'
+  private prefix = QUASAR_KEYS.NODE_PREFIX
 
   // Cached node ID (computed on first tick)
   private nodeId?: string
@@ -111,7 +114,7 @@ export class QuasarAgent {
   constructor(options: QuasarOptions) {
     this.service = options.service
     this.name = options.name
-    this.logger = options.logger || new ConsoleLogger()
+    this.logger = options.logger || new ConsoleLogger(options.logLevel)
     this.metricsCollector = new MetricsCollector()
 
     // 1. Setup Transport Manager
@@ -122,7 +125,7 @@ export class QuasarAgent {
         this.logger
       )
     } else {
-      const url = options.transport?.url || options.redisUrl || 'redis://localhost:6379'
+      const url = options.transport?.url || options.redisUrl || QUASAR_DEFAULTS.REDIS_URL
       this.transportManager = new DefaultRedisConnectionManager(
         url,
         options.transport?.options,
@@ -147,9 +150,11 @@ export class QuasarAgent {
       }
     }
 
-    this.interval = options.interval || 10000 // 10s default
+    this.interval = options.interval || QUASAR_DEFAULTS.HEARTBEAT_INTERVAL
     const baseProbe = options.probe || new NodeProbe()
-    this.probe = new CachedNodeProbe(baseProbe, { cacheTimeout: 1000 })
+    this.probe = new CachedNodeProbe(baseProbe, {
+      cacheTimeout: QUASAR_DEFAULTS.PROBE_CACHE_TIMEOUT,
+    })
 
     this.heartbeat = new AdaptiveHeartbeat(async () => this.tick(), {
       baseInterval: this.interval,
@@ -283,16 +288,17 @@ export class QuasarAgent {
     }
 
     const workerId = this.nodeId || `${this.service}-${process.pid}`
+    const prefix = QUASAR_KEYS.ZENITH_LOG_PREFIX
 
     let bridge: QueueBridge
     if (type === 'bullmq') {
-      bridge = new BullMQBridge(this.transportRedis, 'flux_console:', workerId)
+      bridge = new BullMQBridge(this.transportRedis, prefix, workerId)
     } else if (type === 'bee-queue') {
-      bridge = new BeeQueueBridge(this.transportRedis, 'flux_console:', workerId)
+      bridge = new BeeQueueBridge(this.transportRedis, prefix, workerId)
     } else if (type === 'bull') {
-      bridge = new BullBridge(this.transportRedis, 'flux_console:', workerId)
+      bridge = new BullBridge(this.transportRedis, prefix, workerId)
     } else if (type === 'agenda') {
-      bridge = new AgendaBridge(this.transportRedis, 'flux_console:', workerId)
+      bridge = new AgendaBridge(this.transportRedis, prefix, workerId)
     } else if (type === 'generic') {
       if (!options?.eventMapping) {
         this.logger.warn('[Quasar] Generic bridge requires eventMapping option')
@@ -300,7 +306,7 @@ export class QuasarAgent {
       }
       bridge = new GenericBridge(
         this.transportRedis,
-        'flux_console:',
+        prefix,
         workerId,
         options.eventMapping,
         options.queueName
@@ -346,7 +352,7 @@ export class QuasarAgent {
     // Redis requires a separate connection for SUBSCRIBE
     const redisUrl = this.transportRedis.options?.host
       ? `redis://${this.transportRedis.options.host}:${this.transportRedis.options.port || 6379}`
-      : 'redis://localhost:6379'
+      : QUASAR_DEFAULTS.REDIS_URL
 
     this.subscriberRedis = new Redis(redisUrl, {
       lazyConnect: true,

@@ -86,10 +86,13 @@ export class DeleteJobExecutor extends BaseExecutor {
     ]
 
     // Try List first
-    const waitingRemoved = await redis.lrem(locations[0], 1, jobKey)
-    if (waitingRemoved > 0) {
-      console.log(`[Quasar] Deleted Laravel job from waiting queue`)
-      return this.success(commandId, `Job deleted from ${locations[0]}`)
+    const listKey = locations[0]
+    if (listKey) {
+      const waitingRemoved = await redis.lrem(listKey, 1, jobKey)
+      if (waitingRemoved > 0) {
+        console.log(`[Quasar] Deleted Laravel job from waiting queue`)
+        return this.success(commandId, `Job deleted from ${listKey}`)
+      }
     }
 
     // Try ZSets (reserved/delayed)
@@ -102,12 +105,14 @@ export class DeleteJobExecutor extends BaseExecutor {
     }
 
     // Try partial match in waiting queue
-    const jobs = await redis.lrange(locations[0], 0, -1)
-    const matchingJob = jobs.find((j) => j.includes(jobKey))
-    if (matchingJob) {
-      await redis.lrem(locations[0], 1, matchingJob)
-      console.log(`[Quasar] Deleted Laravel job (partial match)`)
-      return this.success(commandId, `Job deleted from ${locations[0]}`)
+    if (listKey) {
+      const jobs = await redis.lrange(listKey, 0, -1)
+      const matchingJob = jobs.find((j) => j.includes(jobKey))
+      if (matchingJob) {
+        await redis.lrem(listKey, 1, matchingJob)
+        console.log(`[Quasar] Deleted Laravel job (partial match)`)
+        return this.success(commandId, `Job deleted from ${listKey}`)
+      }
     }
 
     return this.failed(commandId, `Job not found in Laravel queue`)

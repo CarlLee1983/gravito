@@ -59,6 +59,9 @@ export class RetryJobExecutor extends BaseExecutor {
     }
 
     const job = jobData[jobIndex]
+    if (!job) {
+      return this.failed(commandId, `Job data corrupted or missing`)
+    }
 
     // Use MULTI for atomicity
     const pipeline = redis.multi()

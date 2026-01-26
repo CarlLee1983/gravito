@@ -28,10 +28,10 @@ describe('Integration: Full Monitoring Flow', () => {
 
     await new Promise((resolve) => setTimeout(resolve, 100))
 
-    const store = mockTransport.getStore()
+    const store = mockTransport.getStore() as Map<string, string>
     const keys = Array.from(store.keys())
 
-    const heartbeatKey = keys.find((k: string) => k.startsWith('gravito:quasar:node:test-service'))
+    const heartbeatKey = keys.find((k) => k.startsWith('gravito:quasar:node:test-service'))
     expect(heartbeatKey).toBeDefined()
 
     if (heartbeatKey) {
