@@ -28,6 +28,13 @@ describe('PusherDriver', () => {
     const driver = new PusherDriver({ appId: 'app', key: 'key', secret: 'secret' })
     await driver.broadcast({ name: 'room', type: 'public' }, 'Event', { ok: true })
 
+    // Verify MD5 usage
+    const callArgs = (globalThis.fetch as any).mock.calls[0]
+    const url = callArgs[0]
+    expect(url).toContain('body_md5=')
+    // MD5 hex is 32 chars
+    expect(url).toMatch(/body_md5=[a-f0-9]{32}/)
+
     const auth = await driver.authorizeChannel('presence-room', 'socket-1', 'user-1')
     expect(auth.auth).toContain('key:')
     expect(auth.channel_data).toContain('user-1')
@@ -59,7 +66,7 @@ describe('RedisDriver', () => {
 })
 
 describe('WebSocketDriver', () => {
-  it('broadcasts to open connections and ignores failures', async () => {
+  it('broadcasts to open connections and logs failures via logger', async () => {
     const sent: string[] = []
     const connections = [
       {
@@ -85,18 +92,24 @@ describe('WebSocketDriver', () => {
       },
     ]
 
+    const logger = {
+      info: mock(() => {}),
+      warn: mock(() => {}),
+      error: mock(() => {}),
+      debug: mock(() => {}),
+    } as any
+
     const driver = new WebSocketDriver({
       getConnections: () => connections,
       filterConnectionsByChannel: (channel) => connections.filter(() => channel === 'room'),
+      logger,
     })
-
-    const originalError = console.error
-    console.error = mock(() => {})
 
     await driver.broadcast({ name: 'room', type: 'public' }, 'Event', { ok: true })
 
-    console.error = originalError
     expect(sent.length).toBe(1)
     expect(sent[0]).toContain('"event":"Event"')
+    expect(logger.warn).toHaveBeenCalled()
+    expect(logger.warn.mock.calls[0][0]).toBe('WebSocket broadcast failed')
   })
 })

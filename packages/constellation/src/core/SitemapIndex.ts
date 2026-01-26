@@ -28,6 +28,12 @@ export class SitemapIndex {
     }
   }
 
+  /**
+   * Adds a single entry to the sitemap index.
+   *
+   * @param entry - A sitemap filename or a `SitemapIndexEntry` object.
+   * @returns The `SitemapIndex` instance for chaining.
+   */
   add(entry: string | SitemapIndexEntry): this {
     if (typeof entry === 'string') {
       this.entries.push({ url: entry })
@@ -37,6 +43,12 @@ export class SitemapIndex {
     return this
   }
 
+  /**
+   * Adds multiple entries to the sitemap index.
+   *
+   * @param entries - An array of sitemap filenames or `SitemapIndexEntry` objects.
+   * @returns The `SitemapIndex` instance for chaining.
+   */
   addAll(entries: (string | SitemapIndexEntry)[]): this {
     for (const entry of entries) {
       this.add(entry)
@@ -44,6 +56,11 @@ export class SitemapIndex {
     return this
   }
 
+  /**
+   * Generates the sitemap index XML content.
+   *
+   * @returns The complete XML string for the sitemap index.
+   */
   toXML(): string {
     const { baseUrl, pretty } = this.options
 
@@ -78,6 +95,9 @@ export class SitemapIndex {
     return xml
   }
 
+  /**
+   * Escapes special XML characters in a string.
+   */
   private escape(str: string): string {
     return str
       .replace(/&/g, '&amp;')

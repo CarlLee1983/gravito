@@ -6,12 +6,31 @@ import { SitemapGenerator as SitemapGeneratorImpl } from './SitemapGenerator'
 import { SitemapParser } from './SitemapParser'
 import { SitemapStream } from './SitemapStream'
 
+/**
+ * Options for configuring the `IncrementalGenerator`.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface IncrementalGeneratorOptions extends SitemapGeneratorOptions {
+  /** The change tracker used to retrieve and record structural site changes. */
   changeTracker: ChangeTracker
+  /** Optional diff calculator to identify added, updated, or removed entries. */
   diffCalculator?: DiffCalculator
+  /** Whether to automatically track new entries discovered during full generation. @default true */
   autoTrack?: boolean
 }
 
+/**
+ * IncrementalGenerator manages partial updates to the sitemap based on detected changes.
+ *
+ * It provides methods for performing both full and incremental generations,
+ * using a `ChangeTracker` to determine which parts of the sitemap need updating.
+ * This is particularly efficient for large sites where full regeneration is costly.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class IncrementalGenerator {
   private options: IncrementalGeneratorOptions
   private changeTracker: ChangeTracker
@@ -30,14 +49,28 @@ export class IncrementalGenerator {
     this.generator = new SitemapGeneratorImpl(this.options)
   }
 
+  /**
+   * Performs a full sitemap generation and optionally records all entries in the change tracker.
+   */
   async generateFull(): Promise<void> {
     return this.mutex.runExclusive(() => this.performFullGeneration())
   }
 
+  /**
+   * Performs an incremental sitemap update based on changes recorded since a specific time.
+   *
+   * If the number of changes exceeds a certain threshold (e.g., 30% of total URLs),
+   * a full generation is triggered instead to ensure consistency.
+   *
+   * @param since - Optional start date for the incremental update.
+   */
   async generateIncremental(since?: Date): Promise<void> {
     return this.mutex.runExclusive(() => this.performIncrementalGeneration(since))
   }
 
+  /**
+   * Internal implementation of full sitemap generation.
+   */
   private async performFullGeneration(): Promise<void> {
     await this.generator.run()
 
@@ -59,6 +92,9 @@ export class IncrementalGenerator {
     }
   }
 
+  /**
+   * Internal implementation of incremental sitemap generation.
+   */
   private async performIncrementalGeneration(since?: Date): Promise<void> {
     const changes = await this.changeTracker.getChanges(since)
     if (changes.length === 0) {
@@ -74,12 +110,14 @@ export class IncrementalGenerator {
     const totalCount = manifest.shards.reduce((acc, s) => acc + s.count, 0)
     const changeRatio = totalCount > 0 ? changes.length / totalCount : 1
 
+    // If more than 30% URLs changed, trigger full generation
     if (changeRatio > 0.3) {
       await this.performFullGeneration()
       return
     }
 
     const affectedShards = this.getAffectedShards(manifest, changes)
+    // If more than 50% shards are affected, trigger full generation
     if (affectedShards.size / manifest.shards.length > 0.5) {
       await this.performFullGeneration()
       return
@@ -88,6 +126,9 @@ export class IncrementalGenerator {
     await this.updateShards(manifest, affectedShards)
   }
 
+  /**
+   * Normalizes a URL to an absolute URL using the base URL.
+   */
   private normalizeUrl(url: string): string {
     if (url.startsWith('http')) {
       return url
@@ -98,6 +139,9 @@ export class IncrementalGenerator {
     return normalizedBase + normalizedPath
   }
 
+  /**
+   * Loads the sitemap shard manifest from storage.
+   */
   private async loadManifest(): Promise<ShardManifest | null> {
     const filename =
       this.options.filename?.replace(/\.xml$/, '-manifest.json') || 'sitemap-manifest.json'
@@ -112,6 +156,9 @@ export class IncrementalGenerator {
     }
   }
 
+  /**
+   * Identifies which shards are affected by the given set of changes.
+   */
   private getAffectedShards(
     manifest: ShardManifest,
     changes: SitemapChange[]
@@ -141,6 +188,9 @@ export class IncrementalGenerator {
     return affected
   }
 
+  /**
+   * Updates the affected shards in storage.
+   */
   private async updateShards(
     manifest: ShardManifest,
     affectedShards: Map<string, SitemapChange[]>
@@ -189,6 +239,9 @@ export class IncrementalGenerator {
     )
   }
 
+  /**
+   * Applies changes to a set of sitemap entries and returns the updated, sorted list.
+   */
   private applyChanges(entries: SitemapEntry[], changes: SitemapChange[]): SitemapEntry[] {
     const entryMap = new Map<string, SitemapEntry>()
     for (const entry of entries) {
@@ -214,6 +267,9 @@ export class IncrementalGenerator {
     )
   }
 
+  /**
+   * Helper to convert an async iterable into an array.
+   */
   private async toArray<T>(iterable: AsyncIterable<T>): Promise<T[]> {
     const array: T[] = []
     for await (const item of iterable) {

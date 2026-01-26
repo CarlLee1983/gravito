@@ -26,8 +26,8 @@ export interface OrbitPrismOptions {
  * OrbitPrism provides a flexible template rendering engine for Gravito.
  *
  * It integrates with PlanetCore to provide a full-featured view engine with:
- * - Blade-like syntax (@extends, @section, @yield).
- * - Component-based UI building (<x-component>).
+ * - Blade-like syntax (`@extends`, `@section`, `@yield`).
+ * - Component-based UI building (`<x-component>`).
  * - Built-in performance optimizations for images.
  * - Automatic middleware injection (exposed as `c.get('view')`).
  *

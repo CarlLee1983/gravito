@@ -1,27 +1,37 @@
 /**
  * Select Clause
- *
- * Handles SELECT and DISTINCT functionality
+ * @description Handles the construction of SELECT and DISTINCT clauses for SQL queries
  */
-
 export class SelectClause {
+  /** Array of columns to select, defaults to all columns ('*') */
   private columns: string[] = ['*']
+  /** Whether to apply the DISTINCT keyword to the query */
   private distinct = false
+  /** Reference to the query's bindings list for raw expressions */
+  private bindingsList?: unknown[]
 
   /**
-   * Set columns to select
+   * Set the columns to be selected
    *
-   * @param columns - Column names
+   * @param columns - List of column names
+   * @example
+   * ```typescript
+   * clause.setColumns('id', 'name', 'email')
+   * ```
    */
   setColumns(...columns: string[]): void {
     this.columns = columns.length > 0 ? columns : ['*']
   }
 
   /**
-   * Add a raw SELECT expression
+   * Add a raw SQL expression to the SELECT clause
    *
-   * @param expression - SQL expression
+   * @param expression - Raw SQL string
    * @param bindings - Bindings for the expression
+   * @example
+   * ```typescript
+   * clause.addRaw('COUNT(*) as total')
+   * ```
    */
   addRaw(expression: string, bindings: unknown[] = []): void {
     this.columns.push(expression)
@@ -31,30 +41,34 @@ export class SelectClause {
   }
 
   /**
-   * Set DISTINCT flag
+   * Enable the DISTINCT keyword for the query
    */
   setDistinct(): void {
     this.distinct = true
   }
 
   /**
-   * Get selected columns
+   * Get the list of selected columns
+   *
+   * @returns Array of column names or expressions
    */
   getColumns(): string[] {
     return this.columns
   }
 
   /**
-   * Check if DISTINCT is set
+   * Check if the DISTINCT keyword is enabled
+   *
+   * @returns True if distinct is set
    */
   isDistinct(): boolean {
     return this.distinct
   }
 
   /**
-   * Compile to SQL
+   * Compile the SELECT clause to SQL
    *
-   * @returns SELECT clause SQL
+   * @returns SQL string for the clause
    */
   toSQL(): string {
     let sql = 'SELECT'
@@ -76,7 +90,7 @@ export class SelectClause {
   }
 
   /**
-   * Reset clause state
+   * Reset the clause state to its default values
    */
   reset(): void {
     this.columns = ['*']
@@ -84,18 +98,21 @@ export class SelectClause {
   }
 
   /**
-   * Get bindings
+   * Get the bindings associated with this clause
+   *
+   * @returns Array of bindings
    */
   getBindings(): unknown[] {
     return this.bindingsList || []
   }
 
   /**
-   * Set bindings list reference
+   * Set the reference to the query's bindings list
+   *
+   * @param bindings - Bindings array
+   * @internal
    */
   setBindingsList(bindings: unknown[]): void {
     this.bindingsList = bindings
   }
-
-  private bindingsList?: unknown[]
 }

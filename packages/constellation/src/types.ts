@@ -183,7 +183,10 @@ export interface SitemapProvider {
  * @since 3.0.0
  */
 export interface SitemapStreamOptions {
-  /** Base domain used to normalize relative URLs. */
+  /**
+   * Base domain used to normalize relative URLs.
+   * Example: 'https://example.com'
+   */
   baseUrl: string
   /** Whether to output formatted and indented XML. @default false */
   pretty?: boolean | undefined

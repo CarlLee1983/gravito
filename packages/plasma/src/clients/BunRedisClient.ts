@@ -1,8 +1,3 @@
-/**
- * Bun Redis Client
- * @description Native Bun.redis implementation for Gravito Plasma
- */
-
 import { EventEmitter } from 'node:events'
 import { RedisError } from '../errors'
 import type {
@@ -18,8 +13,21 @@ import type {
 } from '../types'
 
 /**
- * Bun Redis Client
- * Native implementation using Bun.redis API
+ * Native Bun.redis Client Implementation
+ *
+ * High-performance Redis client leveraging Bun's native TCP implementation
+ * for optimal throughput and memory efficiency. Automatically selected in
+ * 'auto' mode when running on Bun runtime with Bun.redis support.
+ *
+ * Features exponential backoff retry logic and comprehensive error normalization.
+ *
+ * @example
+ * ```typescript
+ * const client = new BunRedisClient({ host: 'localhost', port: 6379 });
+ * await client.connect();
+ * await client.set('key', 'value', { ex: 60 });
+ * await client.disconnect();
+ * ```
  */
 export class BunRedisClient implements RedisClientContract {
   private client: RedisClient | null = null
@@ -35,11 +43,19 @@ export class BunRedisClient implements RedisClientContract {
   // ============================================================================
 
   /**
-   * Connect to the Redis server.
+   * Establish connection with automatic retry.
    *
-   * Initializes the Bun.redis client and establishes a connection.
+   * Uses exponential backoff with jitter to gracefully handle transient
+   * network failures. Emits 'connect' and 'ready' events on success.
    *
-   * @returns A promise that resolves when connected.
+   * @returns Promise resolving when Redis handshake completes.
+   * @throws {RedisError} When max retries exceeded or authentication fails.
+   *
+   * @example
+   * ```typescript
+   * const client = new BunRedisClient({ host: 'localhost', maxRetries: 5 });
+   * await client.connect();
+   * ```
    */
   async connect(): Promise<void> {
     if (this.connected) {
@@ -69,7 +85,13 @@ export class BunRedisClient implements RedisClientContract {
   }
 
   /**
-   * Retry with exponential backoff
+   * Execute operation with exponential backoff retry strategy.
+   *
+   * Implements truncated exponential backoff with random jitter to prevent
+   * thundering herd during Redis server restarts or network partitions.
+   *
+   * @param operation - Async function to retry on failure.
+   * @throws {Error} When all retry attempts exhausted.
    */
   private async retryWithBackoff(operation: () => Promise<void>): Promise<void> {
     const maxRetries = this.config.maxRetries ?? 10
@@ -94,11 +116,17 @@ export class BunRedisClient implements RedisClientContract {
   }
 
   /**
-   * Disconnect from the Redis server.
+   * Terminate connection and release resources.
    *
-   * Closes the connection and resets the client state.
+   * Closes both main client and Pub/Sub subscriber sockets, emits 'close'
+   * and 'end' events, and clears subscription registry.
    *
-   * @returns A promise that resolves when disconnected.
+   * @returns Promise resolving when all cleanup complete.
+   *
+   * @example
+   * ```typescript
+   * await client.disconnect();
+   * ```
    */
   async disconnect(): Promise<void> {
     if (this.subscriber) {
@@ -164,7 +192,12 @@ export class BunRedisClient implements RedisClientContract {
   // ============================================================================
 
   /**
-   * Build connection URL from config
+   * Construct Redis URL from configuration.
+   *
+   * Assembles redis:// or rediss:// URL with embedded authentication
+   * and database selection for Bun.redis connection string.
+   *
+   * @returns Formatted connection URL (e.g., rediss://:password@host:port/db).
    */
   private buildConnectionUrl(): string {
     const host = this.config.host ?? 'localhost'
@@ -253,7 +286,15 @@ export class BunRedisClient implements RedisClientContract {
   }
 
   /**
-   * Send a raw command to Redis
+   * Execute raw Redis protocol command.
+   *
+   * Low-level interface for commands not exposed by typed API,
+   * useful for Redis modules or future protocol additions.
+   *
+   * @param command - Redis command name (uppercase recommended).
+   * @param args - Command arguments as string array.
+   * @returns Command-specific response (string, number, array, etc.).
+   * @throws {RedisError} On protocol errors or network failures.
    */
   private async sendCommand(command: string, args: string[] = []): Promise<unknown> {
     try {
@@ -266,7 +307,14 @@ export class BunRedisClient implements RedisClientContract {
   }
 
   /**
-   * Handle errors and normalize to RedisError
+   * Normalize errors to RedisError type.
+   *
+   * Ensures consistent error handling across Bun.redis and ioredis by wrapping
+   * native exceptions with command context and original error preservation.
+   *
+   * @param error - Exception from Bun.redis or network layer.
+   * @param command - Redis command that triggered the error.
+   * @returns Standardized RedisError instance.
    */
   private handleException(error: unknown, command?: string): RedisError {
     if (error instanceof RedisError) {
@@ -980,6 +1028,14 @@ export class BunRedisClient implements RedisClientContract {
 
   pipeline(): RedisPipelineContract {
     return new BunRedisPipeline(this)
+  }
+
+  async eval(script: string, numKeys: number, ...args: string[]): Promise<unknown> {
+    try {
+      return await this.sendCommand('EVAL', [script, numKeys.toString(), ...args])
+    } catch (error) {
+      throw this.handleException(error, 'EVAL')
+    }
   }
 }
 

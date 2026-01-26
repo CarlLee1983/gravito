@@ -43,6 +43,6 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/gravito-framework/gravito.git",
-    "directory": "packages/client"
+    "directory": "packages/beam"
   }
 }

@@ -28,10 +28,15 @@ export class MemoryRedirectManager implements RedirectManager {
     this.maxRules = options.maxRules || 100000
   }
 
+  /**
+   * Registers a single redirect rule in memory.
+   *
+   * @param redirect - The redirect rule to add.
+   */
   async register(redirect: RedirectRule): Promise<void> {
     this.rules.set(redirect.from, redirect)
 
-    // 如果超過最大數量，移除最舊的規則（簡化實作）
+    // If limit exceeded, remove the oldest rule (FIFO)
     if (this.rules.size > this.maxRules) {
       const firstKey = this.rules.keys().next().value
       if (firstKey) {
@@ -40,20 +45,44 @@ export class MemoryRedirectManager implements RedirectManager {
     }
   }
 
+  /**
+   * Registers multiple redirect rules in memory.
+   *
+   * @param redirects - An array of redirect rules.
+   */
   async registerBatch(redirects: RedirectRule[]): Promise<void> {
     for (const redirect of redirects) {
       await this.register(redirect)
     }
   }
 
+  /**
+   * Retrieves a specific redirect rule by its source path from memory.
+   *
+   * @param from - The source path.
+   * @returns A promise resolving to the redirect rule, or null if not found.
+   */
   async get(from: string): Promise<RedirectRule | null> {
     return this.rules.get(from) || null
   }
 
+  /**
+   * Retrieves all registered redirect rules from memory.
+   *
+   * @returns A promise resolving to an array of all redirect rules.
+   */
   async getAll(): Promise<RedirectRule[]> {
     return Array.from(this.rules.values())
   }
 
+  /**
+   * Resolves a URL to its final destination through the redirect table.
+   *
+   * @param url - The URL to resolve.
+   * @param followChains - Whether to recursively resolve chained redirects.
+   * @param maxChainLength - Maximum depth for chain resolution.
+   * @returns A promise resolving to the final destination URL.
+   */
   async resolve(url: string, followChains = false, maxChainLength = 5): Promise<string | null> {
     let current = url
     let chainLength = 0
@@ -120,6 +149,11 @@ export class RedisRedirectManager implements RedirectManager {
     return `${this.keyPrefix}list`
   }
 
+  /**
+   * Registers a single redirect rule in Redis.
+   *
+   * @param redirect - The redirect rule to add.
+   */
   async register(redirect: RedirectRule): Promise<void> {
     const key = this.getKey(redirect.from)
     const listKey = this.getListKey()
@@ -131,16 +165,27 @@ export class RedisRedirectManager implements RedirectManager {
       await this.client.set(key, data)
     }
 
-    // 添加到列表
+    // Add to list
     await this.client.sadd(listKey, redirect.from)
   }
 
+  /**
+   * Registers multiple redirect rules in Redis.
+   *
+   * @param redirects - An array of redirect rules.
+   */
   async registerBatch(redirects: RedirectRule[]): Promise<void> {
     for (const redirect of redirects) {
       await this.register(redirect)
     }
   }
 
+  /**
+   * Retrieves a specific redirect rule by its source path from Redis.
+   *
+   * @param from - The source path.
+   * @returns A promise resolving to the redirect rule, or null if not found.
+   */
   async get(from: string): Promise<RedirectRule | null> {
     try {
       const key = this.getKey(from)
@@ -158,6 +203,11 @@ export class RedisRedirectManager implements RedirectManager {
     }
   }
 
+  /**
+   * Retrieves all registered redirect rules from Redis.
+   *
+   * @returns A promise resolving to an array of all redirect rules.
+   */
   async getAll(): Promise<RedirectRule[]> {
     try {
       const listKey = this.getListKey()
@@ -177,6 +227,14 @@ export class RedisRedirectManager implements RedirectManager {
     }
   }
 
+  /**
+   * Resolves a URL to its final destination through the Redis redirect table.
+   *
+   * @param url - The URL to resolve.
+   * @param followChains - Whether to recursively resolve chained redirects.
+   * @param maxChainLength - Maximum depth for chain resolution.
+   * @returns A promise resolving to the final destination URL.
+   */
   async resolve(url: string, followChains = false, maxChainLength = 5): Promise<string | null> {
     let current = url
     let chainLength = 0

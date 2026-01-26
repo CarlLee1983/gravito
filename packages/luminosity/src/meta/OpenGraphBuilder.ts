@@ -12,6 +12,11 @@ import type { OpenGraphConfig } from './interfaces'
 export class OpenGraphBuilder {
   constructor(private config: OpenGraphConfig) {}
 
+  /**
+   * Generates the Open Graph meta tags.
+   *
+   * @returns A string containing all OG meta tags.
+   */
   build(): string {
     const tags: string[] = []
 

@@ -1,23 +1,34 @@
-/**
- * Where Clause
- *
- * Handles WHERE conditions with support for AND/OR logic
- */
-
 import type { Operator } from '../../types'
 
+/**
+ * Where Condition Interface
+ * @description Represents a single WHERE condition or a group of nested conditions
+ */
 export interface WhereCondition {
+  /** Type of the condition */
   type: 'basic' | 'nested' | 'in' | 'null' | 'not_null'
+  /** Column name for the condition */
   column?: string
+  /** Comparison operator (e.g., '=', '!=', 'LIKE') */
   operator?: Operator
+  /** Value to compare against (for basic conditions) */
   value?: unknown
+  /** Logical connector to the previous condition ('and' or 'or') */
   boolean?: 'and' | 'or'
+  /** Array of nested conditions (for 'nested' type) */
   conditions?: WhereCondition[]
+  /** Array of values (for 'in' type) */
   values?: unknown[]
+  /** Whether to negate the condition (e.g., NOT IN, IS NOT NULL) */
   not?: boolean
 }
 
+/**
+ * Where Clause
+ * @description Handles the construction of WHERE clauses with support for complex nested conditions
+ */
 export class WhereClause {
+  /** Internal storage for WHERE conditions */
   private wheres: WhereCondition[] = []
 
   /**
@@ -26,7 +37,11 @@ export class WhereClause {
    * @param column - Column name
    * @param operator - Comparison operator
    * @param value - Value to compare
-   * @param boolean - AND or OR
+   * @param boolean - Logical connector ('and' or 'or')
+   * @example
+   * ```typescript
+   * clause.add('status', '=', 'active')
+   * ```
    */
   add(column: string, operator: Operator, value: unknown, boolean: 'and' | 'or' = 'and'): void {
     this.wheres.push({
@@ -39,10 +54,17 @@ export class WhereClause {
   }
 
   /**
-   * Add a nested WHERE condition (callback)
+   * Add a group of nested WHERE conditions
    *
-   * @param conditions - Nested conditions
-   * @param boolean - AND or OR
+   * @param conditions - Array of nested conditions
+   * @param boolean - Logical connector for the group
+   * @example
+   * ```typescript
+   * clause.addNested([
+   *   { type: 'basic', column: 'age', operator: '>', value: 18 },
+   *   { type: 'basic', column: 'status', operator: '=', value: 'active', boolean: 'or' }
+   * ])
+   * ```
    */
   addNested(conditions: WhereCondition[], boolean: 'and' | 'or' = 'and'): void {
     this.wheres.push({
@@ -56,9 +78,13 @@ export class WhereClause {
    * Add a WHERE IN condition
    *
    * @param column - Column name
-   * @param values - Array of values
-   * @param boolean - AND or OR
-   * @param not - True for NOT IN
+   * @param values - Array of values to check against
+   * @param boolean - Logical connector
+   * @param not - Whether to use NOT IN
+   * @example
+   * ```typescript
+   * clause.addIn('id', [1, 2, 3])
+   * ```
    */
   addIn(column: string, values: unknown[], boolean: 'and' | 'or' = 'and', not = false): void {
     this.wheres.push({
@@ -74,8 +100,12 @@ export class WhereClause {
    * Add a WHERE NULL condition
    *
    * @param column - Column name
-   * @param boolean - AND or OR
-   * @param not - True for NOT NULL
+   * @param boolean - Logical connector
+   * @param not - Whether to use IS NOT NULL
+   * @example
+   * ```typescript
+   * clause.addNull('deleted_at')
+   * ```
    */
   addNull(column: string, boolean: 'and' | 'or' = 'and', not = false): void {
     this.wheres.push({
@@ -90,25 +120,25 @@ export class WhereClause {
    * Add a WHERE NOT NULL condition
    *
    * @param column - Column name
-   * @param boolean - AND or OR
+   * @param boolean - Logical connector
    */
   addNotNull(column: string, boolean: 'and' | 'or' = 'and'): void {
     this.addNull(column, boolean, true)
   }
 
   /**
-   * Get all WHERE conditions
+   * Get all registered WHERE conditions
    *
-   * @returns Array of WHERE conditions
+   * @returns Array of conditions
    */
   getWheres(): WhereCondition[] {
     return this.wheres
   }
 
   /**
-   * Get values from conditions (for bindings)
+   * Extract all values from the conditions for use as query bindings
    *
-   * @returns Array of values
+   * @returns Array of binding values
    */
   getValues(): unknown[] {
     const values: unknown[] = []
@@ -125,9 +155,9 @@ export class WhereClause {
   }
 
   /**
-   * Compile to SQL
+   * Compile the WHERE clause to SQL
    *
-   * @returns WHERE clause SQL
+   * @returns SQL string for the clause
    */
   toSQL(): string {
     if (this.wheres.length === 0) {
@@ -164,10 +194,11 @@ export class WhereClause {
   }
 
   /**
-   * Compile nested conditions
+   * Recursively compile nested conditions to SQL
    *
-   * @param conditions - Nested conditions
-   * @returns Compiled SQL
+   * @param conditions - Array of nested conditions
+   * @returns Compiled SQL string for the nested group
+   * @internal
    */
   private compileNested(conditions: WhereCondition[]): string {
     const parts: string[] = []
@@ -200,14 +231,16 @@ export class WhereClause {
   }
 
   /**
-   * Reset clause state
+   * Reset the clause state
    */
   reset(): void {
     this.wheres = []
   }
 
   /**
-   * Check if clause has conditions
+   * Check if the clause has any conditions registered
+   *
+   * @returns True if conditions exist
    */
   hasConditions(): boolean {
     return this.wheres.length > 0

@@ -1,47 +1,70 @@
 import type { Job } from './Job'
 
 /**
- * Worker options.
+ * Configuration options for the Worker.
+ *
+ * Controls the execution behavior of jobs, including retry limits and timeouts.
+ *
+ * @example
+ * ```typescript
+ * const options: WorkerOptions = {
+ *   maxAttempts: 3,
+ *   timeout: 30
+ * };
+ * ```
  */
 export interface WorkerOptions {
   /**
-   * Maximum retry attempts.
+   * The maximum number of attempts for a job before it is marked as failed.
+   *
+   * This value serves as a default fallback if the job itself does not specify `maxAttempts`.
    */
   maxAttempts?: number
 
   /**
-   * Job timeout (seconds).
+   * The maximum execution time for a job in seconds.
+   *
+   * If the job exceeds this duration, it will be timed out and marked as failed.
    */
   timeout?: number
 
   /**
-   * Failure callback.
+   * Callback function triggered when a job permanently fails.
+   *
+   * This allows for custom error reporting or cleanup logic outside of the job class.
    */
   onFailed?: (job: Job, error: Error) => Promise<void>
 }
 
 /**
- * Base Worker.
+ * Executes background jobs.
  *
- * Responsible for executing `Job` instances.
- * Provides error handling, retry logic, and timeout support.
+ * The Worker is responsible for running the `handle()` method of a job, managing its lifecycle,
+ * enforcing timeouts, and handling retries or failures.
  *
  * @example
  * ```typescript
  * const worker = new Worker({
  *   maxAttempts: 3,
  *   timeout: 60
- * })
+ * });
  *
- * await worker.process(job)
+ * await worker.process(job);
  * ```
  */
 export class Worker {
   constructor(private options: WorkerOptions = {}) {}
 
   /**
-   * Process a Job.
-   * @param job - Job instance
+   * Processes a single job instance.
+   *
+   * 1. Checks attempt counts.
+   * 2. Enforces execution timeout (if configured).
+   * 3. Runs `job.handle()`.
+   * 4. Catches errors and invokes failure handlers if max attempts are reached.
+   *
+   * @param job - The job to process.
+   * @throws {Error} If the job execution fails (to trigger retry logic in the consumer).
    */
   async process(job: Job): Promise<void> {
     const maxAttempts = job.maxAttempts ?? this.options.maxAttempts ?? 3
@@ -82,7 +105,12 @@ export class Worker {
   }
 
   /**
-   * Handle failure.
+   * Handles the permanent failure of a job.
+   *
+   * Invokes the job's `failed()` method and any global `onFailed` callback.
+   *
+   * @param job - The failed job.
+   * @param error - The error that caused the failure.
    */
   private async handleFailure(job: Job, error: Error): Promise<void> {
     // Call job.failed()

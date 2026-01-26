@@ -8,6 +8,12 @@ import type { SitemapEntry } from '../types'
  * @since 3.0.1
  */
 export class SitemapParser {
+  /**
+   * Parses a sitemap XML string into an array of entries.
+   *
+   * @param xml - The raw sitemap XML content.
+   * @returns An array of `SitemapEntry` objects.
+   */
   static parse(xml: string): SitemapEntry[] {
     const entries: SitemapEntry[] = []
     const urlRegex = /<url>([\s\S]*?)<\/url>/g
@@ -23,6 +29,14 @@ export class SitemapParser {
     return entries
   }
 
+  /**
+   * Parses a sitemap XML stream into an async iterable of entries.
+   *
+   * Useful for large sitemap files that should not be fully loaded into memory.
+   *
+   * @param stream - An async iterable of XML chunks.
+   * @returns An async iterable of `SitemapEntry` objects.
+   */
   static async *parseStream(stream: AsyncIterable<string>): AsyncIterable<SitemapEntry> {
     let buffer = ''
     const urlRegex = /<url>([\s\S]*?)<\/url>/g
@@ -48,6 +62,9 @@ export class SitemapParser {
     }
   }
 
+  /**
+   * Parses a single `<url>` tag content into a `SitemapEntry`.
+   */
   private static parseEntry(urlContent: string): SitemapEntry | null {
     const entry: SitemapEntry = { url: '' }
 
@@ -76,6 +93,12 @@ export class SitemapParser {
     return entry
   }
 
+  /**
+   * Parses a sitemap index XML string into an array of sitemap URLs.
+   *
+   * @param xml - The raw sitemap index XML content.
+   * @returns An array of sub-sitemap URLs.
+   */
   static parseIndex(xml: string): string[] {
     const urls: string[] = []
     const sitemapRegex = /<sitemap>([\s\S]*?)<\/sitemap>/g
@@ -92,6 +115,9 @@ export class SitemapParser {
     return urls
   }
 
+  /**
+   * Unescapes special XML entities in a string.
+   */
   private static unescape(str: string): string {
     return str
       .replace(/&amp;/g, '&')

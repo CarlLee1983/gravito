@@ -144,19 +144,42 @@ type CreateUserBody = InferInput<typeof UserResource.operations.store>;
 type UserResponse = InferOutput<typeof UserResource.operations.show>;
 ```
 
+## Utility Objects
+
+### `astral`
+
+A fluent utility for defining API resource contracts.
+
+#### Methods
+
+- **`resource(path: string, options: Omit<AstralResource, 'path'>): AstralResource`**
+  Define a resource contract with named operations.
+
+```typescript
+import { astral } from '@gravito/astral';
+
+const UserContract = astral.resource('/users', {
+  operations: {
+    index: { summary: 'List users' }
+  }
+});
+```
+
 ## Classes
 
 ### OrbitAstral
 
 The main entry point for integrating Astral with the Gravito application.
 
+#### Static Methods
+
+- **`configure(config: AstralConfig): OrbitAstral`**
+  Fluent configuration helper for creating an OrbitAstral instance.
+
 #### Methods
 
 - **`constructor(config: AstralConfig)`**
   Initialize Astral with configuration.
 
-- **`resource(path: string, contract: Omit<AstralResource, 'path'>): this`**
-  Register a new resource contract dynamically.
-
-- **`install(app: Application): Promise<void>`**
-  Installs the Swagger UI and OpenAPI JSON routes into the application.
+- **`install(core: PlanetCore): Promise<void>`**
+  Installs the Swagger UI and OpenAPI JSON routes into the framework.

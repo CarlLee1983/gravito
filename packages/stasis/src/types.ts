@@ -1,5 +1,7 @@
 /**
- * Represents a unique identifier for a cached item.
+ * Unique identifier for a cached item.
+ *
+ * Used to reference and retrieve specific data entries within the cache storage.
  *
  * @public
  * @since 3.0.0
@@ -9,10 +11,11 @@ export type CacheKey = string
 /**
  * Time-to-live (TTL) configuration for cache entries.
  *
- * - `number`: Seconds from now.
- * - `Date`: Absolute expiry time.
- * - `null`: Cache forever.
- * - `undefined`: Use the store/repository default.
+ * Defines the duration or point in time when a cache entry becomes invalid.
+ * - `number`: Relative duration in seconds from the current time.
+ * - `Date`: Absolute point in time for expiration.
+ * - `null`: Persistent storage that never expires automatically.
+ * - `undefined`: Fallback to the default TTL configured in the store or repository.
  *
  * @public
  * @since 3.0.0
@@ -20,8 +23,9 @@ export type CacheKey = string
 export type CacheTtl = number | Date | null | undefined
 
 /**
- * Result of a cache retrieval.
- * Returns the value of type `T` or `null` if not found or expired.
+ * Result of a cache retrieval operation.
+ *
+ * Represents the cached data of type `T`, or `null` if the entry is missing or has expired.
  *
  * @public
  * @since 3.0.0
@@ -29,11 +33,18 @@ export type CacheTtl = number | Date | null | undefined
 export type CacheValue<T = unknown> = T | null
 
 /**
- * Normalize a cache key to ensure it is valid.
+ * Validates and prepares a cache key for storage operations.
  *
- * @param key - The raw cache key.
- * @returns The normalized cache key.
- * @throws {Error} If the key is empty.
+ * Ensures the key meets the minimum requirements for cache storage, such as being non-empty.
+ *
+ * @param key - The raw string to be used as a cache key.
+ * @returns The validated cache key.
+ * @throws {Error} Thrown if the provided key is an empty string or falsy.
+ *
+ * @example
+ * ```typescript
+ * const key = normalizeCacheKey('user_profile_123');
+ * ```
  *
  * @public
  * @since 3.0.0
@@ -46,11 +57,23 @@ export function normalizeCacheKey(key: string): string {
 }
 
 /**
- * Convert a CacheTtl value to an absolute epoch timestamp.
+ * Converts a flexible TTL definition into an absolute Unix epoch timestamp.
  *
- * @param ttl - The TTL value to convert.
- * @param now - Optional current timestamp in milliseconds.
- * @returns The expiration timestamp in milliseconds, null for forever, or undefined.
+ * Normalizes various TTL formats into a consistent millisecond-based timestamp
+ * used for expiration checks.
+ *
+ * @param ttl - The TTL configuration to convert.
+ * @param now - Reference timestamp in milliseconds for relative calculations. Defaults to current time.
+ * @returns The expiration timestamp in milliseconds, `null` for permanent storage, or `undefined` for default behavior.
+ *
+ * @example
+ * ```typescript
+ * // Relative TTL (60 seconds)
+ * const expiresAt = ttlToExpiresAt(60);
+ *
+ * // Absolute Date
+ * const expiresAtDate = ttlToExpiresAt(new Date('2026-12-31'));
+ * ```
  *
  * @public
  * @since 3.0.0
@@ -79,11 +102,20 @@ export function ttlToExpiresAt(ttl: CacheTtl, now = Date.now()): number | null |
 }
 
 /**
- * Determine if a specific expiration timestamp has passed.
+ * Evaluates whether a cache entry has exceeded its expiration time.
  *
- * @param expiresAt - The expiration timestamp in milliseconds (or null for forever).
- * @param now - Optional current timestamp in milliseconds.
- * @returns `true` if expired, `false` otherwise.
+ * Compares the provided expiration timestamp against a reference time to determine
+ * if the cached data should be considered stale.
+ *
+ * @param expiresAt - The expiration timestamp in milliseconds, or `null`/`undefined` for non-expiring entries.
+ * @param now - Reference timestamp in milliseconds for the comparison. Defaults to current time.
+ * @returns `true` if the current time has passed the expiration point; otherwise `false`.
+ *
+ * @example
+ * ```typescript
+ * const expired = isExpired(Date.now() - 1000); // true
+ * const persistent = isExpired(null); // false
+ * ```
  *
  * @public
  * @since 3.0.0

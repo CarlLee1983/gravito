@@ -25,6 +25,14 @@ import pc from 'picocolors'
  * @public
  */
 export class MaintenanceCommand {
+  /**
+   * Run a comprehensive health check on the project.
+   *
+   * Validates the presence of the lock file, configuration files, and dependencies.
+   *
+   * @returns A promise that resolves when the health check is complete.
+   * @public
+   */
   async doctor() {
     const s = spinner()
     s.start('Running health check...')
@@ -81,6 +89,12 @@ export class MaintenanceCommand {
     this.report(issues)
   }
 
+  /**
+   * Report identified issues to the console.
+   *
+   * @param issues - A list of issue messages.
+   * @private
+   */
   private report(issues: string[]) {
     if (issues.length === 0) {
       outro(pc.green('All systems operational. No issues found.'))
@@ -91,6 +105,15 @@ export class MaintenanceCommand {
     }
   }
 
+  /**
+   * Add a new feature to the project.
+   *
+   * Updates the lock file and configuration for the specified feature.
+   *
+   * @param feature - The name of the feature to add.
+   * @returns A promise that resolves when the feature has been added.
+   * @public
+   */
   async addFeature(feature: string) {
     const s = spinner()
     s.start(`Adding feature: ${feature}...`)

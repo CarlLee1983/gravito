@@ -57,3 +57,14 @@ const data = c.req.valid('json');
 ```
 
 Note: `Model.create()` is async and persists immediately. Use `Model.make()` if you need an in-memory instance before calling `save()`.
+
+## Performance
+
+Gravito's validation system (powered by Impulse) includes built-in multi-layer caching to ensure high performance:
+
+- **Schema Compilation**: Zod and Valibot schemas are compiled into optimized validator functions and cached.
+- **Instance Reuse**: FormRequest instances are reused across requests, reducing memory allocation.
+- **Efficient Type Detection**: The system automatically detects and caches schema types (Zod vs Valibot) with O(1) lookup.
+- **Data Caching**: Request body parsing is cached to prevent redundant operations.
+
+These optimizations make validation extremely fast even for complex schemas.

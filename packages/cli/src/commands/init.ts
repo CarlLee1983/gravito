@@ -11,14 +11,34 @@ import { getRuntimeAdapter } from '@gravito/core'
 import { type ArchitectureType, Scaffold } from '@gravito/scaffold'
 import pc from 'picocolors'
 
+/**
+ * Options for initializing a new Gravito Enterprise project.
+ *
+ * @public
+ */
 interface InitOptions {
+  /** The name of the project. */
   name?: string
+  /** The architecture pattern to use. */
   architecture?: ArchitectureType
+  /** The package manager to use. */
   packageManager?: 'bun' | 'npm' | 'yarn' | 'pnpm'
+  /** Whether to skip dependency installation. */
   skipInstall?: boolean
+  /** Whether to skip git initialization. */
   skipGit?: boolean
 }
 
+/**
+ * Execute the project initialization command.
+ *
+ * Provides an interactive flow to name the project, select an architecture,
+ * and configure basic settings.
+ *
+ * @param options - Initialization options.
+ * @returns A promise that resolves when the project is initialized.
+ * @public
+ */
 export async function initCommand(options: InitOptions = {}) {
   console.clear()
 

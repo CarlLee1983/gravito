@@ -1,6 +1,8 @@
 /**
  * Standard HTML SEO metadata configuration.
  *
+ * Defines the core metadata used by search engines to index the page.
+ *
  * @public
  * @since 3.0.0
  */
@@ -19,6 +21,8 @@ export interface MetaConfig {
 
 /**
  * Open Graph metadata configuration for social sharing.
+ *
+ * Used by Facebook, LinkedIn, Discord, etc., to generate rich previews.
  *
  * @public
  * @since 3.0.0
@@ -45,6 +49,8 @@ export interface OpenGraphConfig {
 /**
  * Twitter Card metadata configuration.
  *
+ * Used by Twitter (X) to generate summary cards for shared links.
+ *
  * @public
  * @since 3.0.0
  */
@@ -66,6 +72,9 @@ export interface TwitterCardConfig {
 /**
  * JSON-LD structured data configuration.
  *
+ * Used to provide search engines with detailed information about the page content
+ * (e.g., product details, organization info).
+ *
  * @public
  * @since 3.0.0
  */
@@ -78,6 +87,8 @@ export interface JsonLdConfig {
 
 /**
  * Configuration for various web analytics tracking pixels and scripts.
+ *
+ * Allows injecting tracking codes for popular analytics platforms.
  *
  * @public
  * @since 3.0.0
@@ -93,6 +104,8 @@ export interface AnalyticsConfig {
 
 /**
  * Combined SEO configuration for a single page.
+ *
+ * Aggregates all SEO-related configurations into a single object for easy management.
  *
  * @public
  * @since 3.0.0

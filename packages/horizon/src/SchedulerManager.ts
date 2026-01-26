@@ -5,7 +5,30 @@ import { Process } from './process'
 import { type ScheduledTask, TaskSchedule } from './TaskSchedule'
 
 /**
- * Core Scheduler Manager responsible for managing and executing tasks.
+ * Central registry and execution engine for scheduled tasks.
+ *
+ * Manages task definitions, evaluates cron expressions for due tasks, orchestrates
+ * distributed locking, handles retries/timeouts, and emits lifecycle hooks for monitoring.
+ *
+ * Design considerations:
+ * - Tasks run in parallel (fire-and-forget) to prevent blocking
+ * - Lock keys are scoped to minute precision to prevent duplicate runs
+ * - Node role filtering happens before lock acquisition to reduce contention
+ *
+ * @example
+ * ```typescript
+ * const scheduler = new SchedulerManager(lockManager, logger, hooks, 'worker')
+ *
+ * scheduler.task('backup-db', async () => {
+ *   await db.backup()
+ * })
+ * .daily()
+ * .at('03:00')
+ * .onOneServer()
+ * .retry(3, 5000)
+ * ```
+ *
+ * @public
  */
 export class SchedulerManager {
   private tasks: TaskSchedule[] = []
@@ -18,11 +41,20 @@ export class SchedulerManager {
   ) {}
 
   /**
-   * Define a new scheduled task.
+   * Registers a callback-based scheduled task.
    *
-   * @param name - Unique name for the task
-   * @param callback - Function to execute
-   * @returns The newly created TaskSchedule.
+   * @param name - Unique identifier for task (used in logs, hooks, and lock keys)
+   * @param callback - Async function to execute when cron expression matches
+   * @returns Fluent TaskSchedule interface for chaining frequency/constraint methods
+   *
+   * @example
+   * ```typescript
+   * scheduler.task('send-reports', async () => {
+   *   await emailService.sendWeeklyReports()
+   * })
+   * .weekly()
+   * .onOneServer()
+   * ```
    */
   task(name: string, callback: () => void | Promise<void>): TaskSchedule {
     const task = new TaskSchedule(name, callback)
@@ -31,11 +63,21 @@ export class SchedulerManager {
   }
 
   /**
-   * Define a new scheduled command execution task.
+   * Registers a shell command as a scheduled task.
    *
-   * @param name - Unique name for the task
-   * @param command - Shell command to execute
-   * @returns The newly created TaskSchedule.
+   * @param name - Unique task identifier
+   * @param command - Shell command string (executed via `sh -c`)
+   * @returns Fluent TaskSchedule interface
+   *
+   * @throws {Error} When command execution fails (non-zero exit code)
+   *
+   * @example
+   * ```typescript
+   * scheduler.exec('backup-db', 'pg_dump mydb > /backups/$(date +%Y%m%d).sql')
+   *   .daily()
+   *   .at('02:00')
+   *   .onNode('worker')
+   * ```
    */
   exec(name: string, command: string): TaskSchedule {
     const task = new TaskSchedule(name, async () => {
@@ -50,29 +92,32 @@ export class SchedulerManager {
   }
 
   /**
-   * Add a pre-configured task schedule object.
+   * Registers a pre-configured TaskSchedule instance.
    *
-   * @param schedule - The task schedule to add.
+   * Useful for building task definitions in separate modules and importing them.
+   *
+   * @param schedule - Fully configured TaskSchedule instance
    */
   add(schedule: TaskSchedule) {
     this.tasks.push(schedule)
   }
 
   /**
-   * Get all registered task definitions.
+   * Retrieves all registered tasks as serializable objects.
    *
-   * @returns An array of scheduled tasks.
+   * @returns Array of task configurations (used by CLI for `schedule:list`)
    */
   getTasks(): ScheduledTask[] {
     return this.tasks.map((t) => t.getTask())
   }
 
   /**
-   * Trigger the scheduler to check and run due tasks.
-   * This is typically called every minute by a system cron or worker loop.
+   * Evaluates all registered tasks and executes those matching current time.
    *
-   * @param date - The current reference date (default: now)
-   * @returns A promise that resolves when the scheduler run is complete.
+   * Designed to be invoked every minute by system cron or daemon loop.
+   * Emits `scheduler:run:start` and `scheduler:run:complete` hooks for monitoring.
+   *
+   * @param date - Reference time for cron evaluation (defaults to current time)
    */
   async run(date: Date = new Date()): Promise<void> {
     await this.hooks?.doAction('scheduler:run:start', { date })
@@ -109,9 +154,17 @@ export class SchedulerManager {
   }
 
   /**
-   * Execute a specific task with locking logic.
+   * Executes individual task with node role filtering and distributed locking.
    *
-   * @param task - The task to execute.
+   * Workflow:
+   * 1. Check node role match (skip if mismatch)
+   * 2. Attempt lock acquisition (skip if already locked)
+   * 3. Execute task (foreground or background based on configuration)
+   * 4. Lock auto-expires after TTL (not manually released to prevent re-runs)
+   *
+   * @param task - Task configuration to execute
+   * @param date - Reference time for lock key generation
+   *
    * @internal
    */
   async runTask(task: ScheduledTask, date: Date = new Date()): Promise<void> {
@@ -157,9 +210,12 @@ export class SchedulerManager {
   }
 
   /**
-   * Execute the task callback and handle hooks.
+   * Runs task callback with timeout, retry logic, and lifecycle hooks.
    *
-   * @param task - The task to execute.
+   * Emits hooks: `task:start`, `task:retry`, `task:success`, `task:failure`.
+   * Retries are sequential with configurable delay between attempts.
+   *
+   * @param task - Task to execute
    */
   private async executeTask(task: ScheduledTask) {
     const startTime = Date.now()

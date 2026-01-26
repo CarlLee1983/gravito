@@ -25,6 +25,13 @@ import pc from 'picocolors'
  * @public
  */
 export class UpgradeCommand {
+  /**
+   * Run the upgrade process to a target profile.
+   *
+   * @param targetProfile - The profile to upgrade the project to.
+   * @returns A promise that resolves when the upgrade plan is generated.
+   * @public
+   */
   async run(targetProfile: ProfileType) {
     const s = spinner()
     s.start('Analyzing project structure...')

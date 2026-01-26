@@ -1,25 +1,61 @@
 /**
- * @gravito/photon - High-performance web framework for Gravito.
+ * @gravito/photon - High-performance web engine for the Gravito Galaxy Architecture.
  *
- * Photon is the primary web engine for Gravito, providing a fast,
- * flexible, and standard-compliant API for building web applications.
- * It includes enterprise-grade middleware and utilities designed
- * for the Gravito ecosystem.
+ * Photon serves as the foundational HTTP layer for Gravito, providing an ultra-fast,
+ * type-safe routing system based on Hono. It is designed to be the "light" that
+ * connects Satellites (domain plugins) and Orbits (infrastructure) within the ecosystem.
+ *
+ * Key features:
+ * - Zero-overhead routing and middleware.
+ * - Full TypeScript inference for request parameters and body.
+ * - Built-in support for HTMX and binary (CBOR) protocols.
  *
  * @example
  * ```typescript
  * import { Photon } from '@gravito/photon'
+ *
  * const app = new Photon()
- * app.get('/', (c) => c.text('Hello!'))
+ *
+ * app.get('/welcome', (c) => c.text('Welcome to the Galaxy!'))
+ *
+ * export default app
  * ```
+ * @packageDocumentation
  */
+
 export * from 'hono'
+
+/**
+ * The primary application class for Photon.
+ *
+ * An alias for `Hono`, providing the core routing and middleware capabilities.
+ * Use this to define your API structure and mount domain-specific Satellites.
+ *
+ * @example
+ * ```typescript
+ * const app = new Photon()
+ * app.get('/api/health', (c) => c.json({ status: 'ok' }))
+ * ```
+ * @public
+ */
 export { Hono as Photon } from 'hono'
+
 /**
  * Binary-related middleware for Photon.
+ *
+ * Provides utilities for handling binary data formats like CBOR,
+ * optimizing payload size and serialization speed for high-performance APIs.
+ *
+ * @public
  */
 export * from './middleware/binary'
+
 /**
  * HTMX-related middleware for Photon.
+ *
+ * Enhances Photon with first-class support for HTMX, including
+ * automatic request detection and simplified header access for hypermedia-driven UIs.
+ *
+ * @public
  */
 export * from './middleware/htmx'

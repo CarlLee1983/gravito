@@ -23,12 +23,35 @@ export interface HashConfig {
 }
 
 /**
- * Manages password hashing and verification using different drivers (bcrypt, argon2).
+ * Manager class for password hashing and verification.
+ *
+ * This class provides a unified interface for various hashing algorithms
+ * (bcrypt, argon2id) via the PlanetCore password adapter. It handles
+ * configuration-based hashing and provides utilities for re-hashing
+ * passwords when security requirements change.
+ *
  * @public
+ * @example
+ * ```typescript
+ * const manager = new HashManager({ algorithm: 'bcrypt' });
+ * const hashed = await manager.make('password');
+ * const isValid = await manager.check('password', hashed);
+ * ```
  */
 export class HashManager {
+  /**
+   * Create a new hash manager instance.
+   *
+   * @param config - Hashing configuration options
+   */
   constructor(private readonly config: HashConfig = {}) {}
 
+  /**
+   * Create a hash for the given plain text value.
+   *
+   * @param value - The plain text string to hash
+   * @returns A promise resolving to the hashed string
+   */
   async make(value: string): Promise<string> {
     const algorithm = this.config.algorithm ?? 'bcrypt'
     const password = getPasswordAdapter()
@@ -50,11 +73,24 @@ export class HashManager {
     })
   }
 
+  /**
+   * Verify a plain text value against a hashed string.
+   *
+   * @param value - The plain text string to check
+   * @param hashed - The hashed string to verify against
+   * @returns True if the value is correct
+   */
   async check(value: string, hashed: string): Promise<boolean> {
     const password = getPasswordAdapter()
     return await password.verify(value, hashed)
   }
 
+  /**
+   * Determine if a hashed string needs to be re-hashed based on current config.
+   *
+   * @param hashed - The hashed string to check
+   * @returns True if re-hashing is required
+   */
   needsRehash(hashed: string): boolean {
     const algorithm = this.config.algorithm ?? 'bcrypt'
 

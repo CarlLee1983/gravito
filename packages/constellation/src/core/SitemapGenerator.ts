@@ -70,7 +70,7 @@ export class SitemapGenerator {
       ...options,
     }
 
-    // 初始化影子處理器
+    // Initialize shadow processor
     if (this.options.shadow?.enabled) {
       this.shadowProcessor = new ShadowProcessorImpl({
         storage: this.options.storage,
@@ -80,6 +80,12 @@ export class SitemapGenerator {
     }
   }
 
+  /**
+   * Orchestrates the sitemap generation process.
+   *
+   * This method scans all providers, handles sharding, generates the XML files,
+   * and optionally creates a sitemap index and manifest.
+   */
   async run(): Promise<void> {
     let shardIndex = 1
     let currentCount = 0
@@ -226,6 +232,9 @@ export class SitemapGenerator {
     }
   }
 
+  /**
+   * Normalizes a URL to an absolute URL using the base URL.
+   */
   private normalizeUrl(url: string): string {
     if (url.startsWith('http')) {
       return url
@@ -237,7 +246,7 @@ export class SitemapGenerator {
   }
 
   /**
-   * 獲取影子處理器（如果啟用）
+   * Returns the shadow processor instance if enabled.
    */
   getShadowProcessor(): ShadowProcessor | null {
     return this.shadowProcessor

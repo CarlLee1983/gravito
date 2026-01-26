@@ -13,13 +13,27 @@ import pc from 'picocolors'
  */
 export type FortifyStack = 'html' | 'react' | 'vue'
 
+/**
+ * Options for installing Fortify authentication scaffolding.
+ *
+ * @public
+ */
 interface FortifyInstallOptions {
+  /** The frontend stack to use (html, react, or vue). */
   stack: FortifyStack
+  /** Whether to overwrite existing files. */
   force?: boolean
 }
 
 /**
- * Install Fortify authentication scaffolding
+ * Install Fortify authentication scaffolding into the project.
+ *
+ * This command generates the necessary configuration, migrations,
+ * views, and models to set up a full-featured authentication system.
+ *
+ * @param options - Installation options.
+ * @returns A promise that resolves when installation is complete.
+ * @public
  */
 export async function installFortify(options: FortifyInstallOptions): Promise<void> {
   const cwd = process.cwd()
@@ -46,6 +60,14 @@ export async function installFortify(options: FortifyInstallOptions): Promise<vo
   console.log(pc.dim('  3. Visit /login to test authentication\n'))
 }
 
+/**
+ * Generate the Fortify configuration file.
+ *
+ * @param cwd - The project root directory.
+ * @param force - Whether to overwrite an existing config file.
+ * @returns A promise that resolves when the config is generated.
+ * @private
+ */
 async function generateConfig(cwd: string, force: boolean): Promise<void> {
   const configPath = path.join(cwd, 'config', 'fortify.ts')
 
@@ -89,6 +111,14 @@ export default definefortifyConfig({
   console.log(pc.green('  ✓ Created config/fortify.ts'))
 }
 
+/**
+ * Generate database migrations for Fortify (users and password reset tokens).
+ *
+ * @param cwd - The project root directory.
+ * @param force - Whether to overwrite existing migrations.
+ * @returns A promise that resolves when migrations are generated.
+ * @private
+ */
 async function generateMigrations(cwd: string, force: boolean): Promise<void> {
   const migrationsDir = path.join(cwd, 'src', 'database', 'migrations')
   await ensureDir(migrationsDir)
@@ -154,6 +184,15 @@ export default class CreatePasswordResetTokensTable extends Migration {
   }
 }
 
+/**
+ * Generate authentication views for the specified stack.
+ *
+ * @param cwd - The project root directory.
+ * @param stack - The frontend stack to use.
+ * @param force - Whether to overwrite existing views.
+ * @returns A promise that resolves when views are generated.
+ * @private
+ */
 async function generateViews(cwd: string, stack: FortifyStack, force: boolean): Promise<void> {
   if (stack === 'html') {
     console.log(pc.dim('  ℹ HTML stack uses built-in templates, no view files generated'))
@@ -170,6 +209,15 @@ async function generateViews(cwd: string, stack: FortifyStack, force: boolean): 
   }
 }
 
+/**
+ * Generate React-based authentication views.
+ *
+ * @param pagesDir - The directory where views will be saved.
+ * @param cwd - The project root directory.
+ * @param force - Whether to overwrite existing views.
+ * @returns A promise that resolves when views are generated.
+ * @private
+ */
 async function generateReactViews(pagesDir: string, cwd: string, force: boolean): Promise<void> {
   const views = [
     { name: 'Login.tsx', content: getReactLoginPage() },
@@ -188,6 +236,15 @@ async function generateReactViews(pagesDir: string, cwd: string, force: boolean)
   }
 }
 
+/**
+ * Generate Vue-based authentication views.
+ *
+ * @param pagesDir - The directory where views will be saved.
+ * @param cwd - The project root directory.
+ * @param force - Whether to overwrite existing views.
+ * @returns A promise that resolves when views are generated.
+ * @private
+ */
 async function generateVueViews(pagesDir: string, cwd: string, force: boolean): Promise<void> {
   const views = [
     { name: 'Login.vue', content: getVueLoginPage() },
@@ -206,6 +263,14 @@ async function generateVueViews(pagesDir: string, cwd: string, force: boolean): 
   }
 }
 
+/**
+ * Generate the User model if it does not already exist.
+ *
+ * @param cwd - The project root directory.
+ * @param force - Whether to overwrite the existing User model.
+ * @returns A promise that resolves when the model is generated.
+ * @private
+ */
 async function generateUserModel(cwd: string, force: boolean): Promise<void> {
   const modelPath = path.join(cwd, 'src', 'models', 'User.ts')
 
@@ -257,7 +322,13 @@ export class User extends Model {
   console.log(pc.green(`  ✓ Created ${path.relative(cwd, modelPath)}`))
 }
 
-// Helper functions
+/**
+ * Check if a file exists.
+ *
+ * @param filepath - The path to the file.
+ * @returns A promise that resolves with a boolean indicating if the file exists.
+ * @private
+ */
 async function fileExists(filepath: string): Promise<boolean> {
   try {
     await fs.access(filepath)
@@ -267,6 +338,13 @@ async function fileExists(filepath: string): Promise<boolean> {
   }
 }
 
+/**
+ * Ensure a directory exists.
+ *
+ * @param dir - The directory path.
+ * @returns A promise that resolves when the directory is ensured.
+ * @private
+ */
 async function ensureDir(dir: string): Promise<void> {
   await fs.mkdir(dir, { recursive: true })
 }

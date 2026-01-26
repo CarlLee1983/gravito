@@ -1,85 +1,145 @@
 import type { Env, Photon, Schema } from '@gravito/photon'
 import { hc as beamClient } from '@gravito/photon/client'
+import { BeamError, BeamNetworkError } from './errors'
 import type { BeamOptions } from './types'
+import { createFetchWithTimeout, executeWithRetry, resolveHeaders } from './utils'
 
 /**
  * Orbit Beam - Lightweight type-safe RPC client for Gravito applications.
  *
- * This function wraps the Beam client to provide a seamless, type-safe development experience
- * similar to tRPC but with zero runtime overhead. It directly delegates to the Photon client, maintaining
- * maximum performance and minimal bundle size.
+ * This function creates a type-safe API client by wrapping the underlying Beam client.
+ * It provides a seamless development experience similar to tRPC but with **zero runtime overhead**.
+ * The client directly delegates to Photon's high-performance HTTP engine.
  *
- * **Zero Runtime Overhead**: This is a pure type wrapper that delegates directly to the Beam client.
- * No additional abstraction layers or middleware are added.
+ * ### Key Features
+ * - **Zero Runtime Overhead**: Pure type wrapper, no additional abstraction layers.
+ * - **Type Safety**: Automatically infers types from your backend `AppType` or `AppRoutes`.
+ * - **IntelliSense**: Full autocomplete for routes, methods, and request/response bodies.
  *
- * **Type Support**: Supports both `AppType` (simple Photon instance) and `AppRoutes` (from `app.route()`).
- * Both are Photon instances and work seamlessly with this function.
+ * @template T - The generic type parameter representing your Photon app or routes.
+ *   - `AppType`: `typeof app` - For direct route definitions.
+ *   - `AppRoutes`: `ReturnType<typeof createApp>` - For modular app.route() chains.
  *
- * @template T - The type of your Photon app. Can be either:
- *   - `AppType`: `typeof app` - Direct type from Photon instance (simple scenarios)
- *   - `AppRoutes`: `ReturnType<typeof _createTypeOnlyApp>` - Type from `app.route()` chain (recommended, matches template usage)
- * @param baseUrl - The base URL of your API server (e.g., 'http://localhost:3000')
- * @param options - Optional configuration including fetch options (headers, etc.)
- * @returns A fully typed Beam client instance that provides IntelliSense for all routes
+ * @param baseUrl - The root URL of your API server (e.g., `'http://localhost:3000'`).
+ * @param options - Optional configuration for the client (headers, credentials, etc.).
+ * @returns A fully typed Beam client proxy for your API.
  *
  * @example
- * **Using AppType (simple scenario):**
  * ```typescript
- * // server/app.ts
- * const app = new Photon()
- *   .post('/post', validate('json', PostSchema), (c) => {
- *     return c.json({ id: 1, title: 'Hello' })
- *   })
- *
- * export type AppType = typeof app
- *
- * // client.ts
  * import { createBeam } from '@gravito/beam'
- * import type { AppType } from '../server/app'
+ * import type { AppType } from './server'
  *
  * const client = createBeam<AppType>('http://localhost:3000')
  *
- * // Fully typed request - TypeScript will autocomplete and validate
- * const res = await client.post.$post({
- *   json: { title: 'Gravito' } // ✅ Type checked!
- * })
+ * // Fully typed GET request
+ * const res = await client.hello.$get()
+ * const data = await res.json()
  * ```
  *
- * @example
- * **Using AppRoutes (recommended, matches template usage):**
- * ```typescript
- * // server/app.ts
- * const routes = app
- *   .route('/api/users', userRoute)
- *   .route('/api', apiRoute)
- *
- * export type AppRoutes = typeof routes
- *
- * // client.ts
- * import { createBeam } from '@gravito/beam'
- * import type { AppRoutes } from '../server/types'
- *
- * const client = createBeam<AppRoutes>('http://localhost:3000')
- *
- * // Fully typed request with nested routes
- * const res = await client.api.users.login.$post({
- *   json: { username: 'user', password: 'pass' } // ✅ Type checked!
- * })
- * ```
+ * @public
  */
 export function createBeam<T extends Photon<Env, Schema, string>>(
   baseUrl: string,
   options?: BeamOptions
 ): ReturnType<typeof beamClient<T>> {
-  // We explicitly cast the return type to match what the Beam client provides.
-  // The Photon client returns a proxy that provides typed access based on T.
-  return beamClient<T>(baseUrl, options)
+  // Fast path: delegate directly when no advanced options are used (zero overhead)
+  if (
+    !options?.timeout &&
+    !options?.retry &&
+    !options?.onRequest &&
+    !options?.onResponse &&
+    !options?.onError
+  ) {
+    return beamClient<T>(baseUrl, options)
+  }
+
+  // Advanced path: wrap fetch to support new features
+  const wrappedFetch = createEnhancedFetch(options)
+
+  return beamClient<T>(baseUrl, {
+    ...options,
+    fetch: wrappedFetch,
+  })
 }
 
 /**
- * Backward compatible alias for createBeam
- * @deprecated Use createBeam instead
+ * Creates an enhanced fetch function with support for timeout, retry, and interceptors
+ */
+function createEnhancedFetch(options: BeamOptions) {
+  return async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+    try {
+      let config = init || {}
+
+      // 1. Resolve dynamic headers
+      const headers = await resolveHeaders(options.headers)
+      if (headers) {
+        // Safely merge headers (supports Headers instance or object)
+        const mergedHeaders = new Headers(config.headers)
+        Object.entries(headers).forEach(([key, value]) => {
+          mergedHeaders.set(key, value)
+        })
+        config = {
+          ...config,
+          headers: Object.fromEntries(mergedHeaders.entries()),
+        }
+      }
+
+      // 2. Execute onRequest interceptor
+      if (options.onRequest) {
+        config = await options.onRequest(config)
+      }
+
+      // 3. Create fetch function (with possible timeout)
+      const fetchFn = options.timeout
+        ? createFetchWithTimeout(options.timeout)
+        : fetch.bind(globalThis)
+
+      // 4. Execute request (with possible retry)
+      let response = await (options.retry
+        ? executeWithRetry(() => fetchFn(input, config), options.retry)
+        : fetchFn(input, config))
+
+      // 5. Execute onResponse interceptor
+      if (options.onResponse) {
+        response = await options.onResponse(response)
+      }
+
+      return response
+    } catch (error) {
+      // 6. Execute onError interceptor
+      const beamError =
+        error instanceof BeamError ? error : new BeamNetworkError('Request failed', error)
+
+      if (options.onError) {
+        await options.onError(beamError)
+      }
+
+      throw beamError
+    }
+  }
+}
+
+/**
+ * Backward compatible alias for {@link createBeam}.
+ *
+ * @deprecated Use {@link createBeam} instead. This alias will be removed in future versions.
+ * @public
  */
 export const createGravitoClient = createBeam
 
-export type { BeamOptions, BeamOptions as GravitoClientOptions } from './types'
+export {
+  BeamError,
+  BeamHttpError,
+  BeamNetworkError,
+  BeamTimeoutError,
+} from './errors'
+export {
+  createAuthenticatedBeam,
+  safeResponse,
+  unwrapResponse,
+} from './helpers'
+export type {
+  BeamOptions,
+  BeamOptions as GravitoClientOptions,
+  RetryOptions,
+} from './types'

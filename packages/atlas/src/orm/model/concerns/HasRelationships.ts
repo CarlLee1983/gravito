@@ -1,24 +1,25 @@
-/**
- * HasRelationships Concern
- *
- * Provides relationship management functionality including:
- * - Defining relationships
- * - Loading relationships
- * - Eager loading
- */
-
 import type { QueryBuilderContract } from '../../../types'
 import type { Model, ModelConstructor } from '../Model'
 import { getRelationships } from '../relationships'
 
+/**
+ * HasRelationships Concern
+ * @description Provides relationship management functionality including defining and loading relationships.
+ */
 export class HasRelationships {
   /**
-   * Define a hasMany relationship
+   * Define a one-to-many relationship.
    *
-   * @param related - Related model class
-   * @param foreignKey - Foreign key on related model
-   * @param localKey - Local key on this model
-   * @returns Query builder for relationship
+   * @template T - The related model type
+   * @param related - The related model constructor
+   * @param foreignKey - The foreign key on the related model (defaults to this model name + _id)
+   * @param localKey - The local key on this model (defaults to primary key)
+   * @returns A query builder for the related model
+   *
+   * @example
+   * ```typescript
+   * user.hasMany(Post, 'user_id')
+   * ```
    */
   hasMany<T extends Model>(
     related: ModelConstructor<T>,
@@ -41,12 +42,18 @@ export class HasRelationships {
   }
 
   /**
-   * Define a belongsTo relationship
+   * Define an inverse one-to-one or one-to-many relationship.
    *
-   * @param related - Related model class
-   * @param foreignKey - Foreign key on this model
-   * @param ownerKey - Owner key on related model
-   * @returns Query builder for relationship
+   * @template T - The related model type
+   * @param related - The related model constructor
+   * @param foreignKey - The foreign key on this model (defaults to related model name + _id)
+   * @param ownerKey - The owner key on the related model (defaults to its primary key)
+   * @returns A query builder for the related model
+   *
+   * @example
+   * ```typescript
+   * post.belongsTo(User, 'user_id')
+   * ```
    */
   belongsTo<T extends Model>(
     related: ModelConstructor<T>,
@@ -67,13 +74,19 @@ export class HasRelationships {
   }
 
   /**
-   * Define a belongsToMany relationship (many-to-many)
+   * Define a many-to-many relationship.
    *
-   * @param related - Related model class
-   * @param foreignPivotKey - Foreign key on pivot table for related model
-   * @param relatedPivotKey - Foreign key on pivot table for this model
-   * @param table - Pivot table name
-   * @returns Query builder for relationship
+   * @template T - The related model type
+   * @param related - The related model constructor
+   * @param foreignPivotKey - The foreign key on the pivot table for the related model
+   * @param relatedPivotKey - The foreign key on the pivot table for this model
+   * @param table - The pivot table name (defaults to alphabetical order of both tables)
+   * @returns A query builder for the related model
+   *
+   * @example
+   * ```typescript
+   * user.belongsToMany(Role, 'role_id', 'user_id', 'user_roles')
+   * ```
    */
   belongsToMany<T extends Model>(
     related: ModelConstructor<T>,
@@ -105,13 +118,14 @@ export class HasRelationships {
   }
 
   /**
-   * Define a morphOne relationship
+   * Define a polymorphic one-to-one relationship.
    *
-   * @param related - Related model class
-   * @param name - Relationship name
-   * @param type - Type field name
-   * @param id - ID field name
-   * @returns Query builder for relationship
+   * @template T - The related model type
+   * @param related - The related model constructor
+   * @param _name - The relationship name
+   * @param type - The type field name on the related model
+   * @param id - The ID field name on the related model
+   * @returns A query builder for the related model
    */
   morphOne<T extends Model>(
     related: ModelConstructor<T>,
@@ -134,13 +148,14 @@ export class HasRelationships {
   }
 
   /**
-   * Define a morphMany relationship
+   * Define a polymorphic one-to-many relationship.
    *
-   * @param related - Related model class
-   * @param name - Relationship name
-   * @param type - Type field name
-   * @param id - ID field name
-   * @returns Query builder for relationship
+   * @template T - The related model type
+   * @param related - The related model constructor
+   * @param _name - The relationship name
+   * @param type - The type field name on the related model
+   * @param id - The ID field name on the related model
+   * @returns A query builder for the related model
    */
   morphMany<T extends Model>(
     related: ModelConstructor<T>,
@@ -163,12 +178,12 @@ export class HasRelationships {
   }
 
   /**
-   * Define a morphTo relationship
+   * Define a polymorphic inverse relationship.
    *
-   * @param name - Relationship name
-   * @param type - Type field name
-   * @param id - ID field name
-   * @returns Query builder for the relationship
+   * @param name - The relationship name
+   * @param type - The type field name on this model
+   * @param id - The ID field name on this model
+   * @returns A query builder for the resolved model, or null if not resolvable
    */
   morphTo(_name: string, type: string, id: string): QueryBuilderContract<Model> | null {
     const typeName = (this as Model & Record<string, unknown>)[type] as string | undefined
@@ -184,10 +199,15 @@ export class HasRelationships {
   }
 
   /**
-   * Eager load relationship(s)
+   * Lazy load one or more relationships onto the model instance.
    *
-   * @param relations - Relationship name(s)
-   * @returns This model instance
+   * @param relation - The relationship name or an array of names
+   * @returns A promise that resolves to the model instance
+   *
+   * @example
+   * ```typescript
+   * await user.load('posts')
+   * ```
    */
   async load(relation: string | string[]): Promise<this> {
     const relations = Array.isArray(relation) ? relation : [relation]
@@ -218,10 +238,10 @@ export class HasRelationships {
   }
 
   /**
-   * Load relationships and return new instance
+   * Alias for load(), used for fluent eager loading on an instance.
    *
-   * @param relations - Relationship name(s)
-   * @returns New model instance with loaded relationships
+   * @param relation - The relationship name or an array of names
+   * @returns A promise that resolves to the model instance
    */
   async with(relation: string | string[]): Promise<this> {
     return this.load(relation)

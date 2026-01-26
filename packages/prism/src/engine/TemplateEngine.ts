@@ -9,8 +9,8 @@ export type { HelperFunction, RenderContext }
 /**
  * Options for rendering templates.
  *
- * Provides configuration for the rendering process, including layout specification
- * and dynamic data injection.
+ * Configures the rendering context, including data injection and legacy layout support.
+ * Used to pass dynamic data to templates and control layout inheritance.
  *
  * @example
  * ```typescript
@@ -25,9 +25,9 @@ export type { HelperFunction, RenderContext }
  * @since 3.0.0
  */
 export interface RenderOptions {
-  /** Legacy layout support - specifies a layout file to use */
-  layout?: string // Legacy layout support
-  /** Additional data to pass to the template */
+  /** Legacy layout file to extend (optional). Prefer `@extends` directive in templates. */
+  layout?: string
+  /** Dynamic data to be available as variables in the template. */
   [key: string]: unknown
 }
 
@@ -37,14 +37,17 @@ export interface RenderOptions {
 const EXTENDS_REGEX = /^\s*@extends\s*\(\s*['"](.+?)['"]\s*\)/m
 
 /**
- * TemplateEngine is the core rendering engine for Gravito Prism.
+ * Core template rendering engine for Gravito Prism.
  *
- * It implements a Blade-like syntax with support for inheritance, components, and custom helpers.
- * Key features include:
- * - Layout inheritance with `@extends`, `@section`, and `@yield`.
- * - Content stacks with `@push` and `@stack`.
- * - Reusable components using `<x-component>` syntax.
- * - Dynamic data interpolation and control structures (`@if`, `@foreach`).
+ * Implements a Blade-inspired syntax for server-side rendering.
+ *
+ * Key features:
+ * - **Inheritance**: Master layouts with `@extends`, `@section`, and `@yield`.
+ * - **Components**: Reusable UI blocks with `<x-component>` syntax.
+ * - **Directives**: Control structures like `@if`, `@foreach`, `@push`, and `@stack`.
+ * - **Extensibility**: Custom helper registration.
+ *
+ * Designed for performance with built-in caching and optimized compilation.
  *
  * @example
  * ```typescript
@@ -72,8 +75,10 @@ export class TemplateEngine {
   /**
    * Create a new TemplateEngine instance.
    *
-   * @param viewsDir - Absolute path to the views directory containing template files
-   * @param cacheOptions - Optional cache configuration for template optimization
+   * Initializes the engine with a specific views directory and optional caching configuration.
+   *
+   * @param viewsDir - Absolute path to the directory containing template files.
+   * @param cacheOptions - Configuration for the internal LRU cache.
    *
    * @example
    * ```typescript
@@ -95,11 +100,11 @@ export class TemplateEngine {
   /**
    * Register a custom helper function.
    *
-   * Helpers can be invoked from templates using `{{helperName arg=value}}` syntax.
-   * They receive arguments as key-value pairs and must return a string.
+   * Helpers extend the template engine's capabilities, allowing custom logic to be invoked
+   * from within templates using `{{helperName arg=value}}`.
    *
-   * @param name - Helper name (must be alphanumeric with underscores, no spaces)
-   * @param fn - Helper function that takes arguments and returns HTML string
+   * @param name - Unique identifier for the helper (alphanumeric, underscores allowed).
+   * @param fn - The function to execute when the helper is invoked.
    *
    * @example
    * ```typescript
@@ -108,8 +113,7 @@ export class TemplateEngine {
    *   return date.toLocaleDateString();
    * });
    *
-   * // In template:
-   * // {{formatDate date="2024-01-01"}}
+   * // Usage in template: {{formatDate date="2024-01-01"}}
    * ```
    *
    * @public
@@ -122,7 +126,9 @@ export class TemplateEngine {
   /**
    * Unregister a previously registered helper function.
    *
-   * @param name - Name of the helper to remove
+   * Removes a helper from the registry, making it unavailable in subsequent renders.
+   *
+   * @param name - The name of the helper to remove.
    *
    * @example
    * ```typescript
@@ -139,23 +145,23 @@ export class TemplateEngine {
   /**
    * Render a template with data.
    *
-   * Processes the template through the full rendering pipeline including:
-   * - Layout inheritance (`@extends`)
-   * - Sections and yields (`@section`, `@yield`)
-   * - Content stacks (`@push`, `@stack`)
-   * - Components (`<x-component>`)
-   * - Includes (`@include`)
-   * - Control structures (`@if`, `@foreach`)
-   * - Variable interpolation (`{{ var }}`)
+   * Compiles and executes a template file, resolving all directives, components,
+   * inheritance chains, and variable interpolations.
    *
-   * @param view - Template name (relative to viewsDir, without .html extension)
-   * @param data - Data to pass to the template
-   * @param options - Render options including legacy layout support
-   * @returns Rendered HTML string
+   * The rendering pipeline includes:
+   * 1. **Inheritance resolution**: resolving `@extends` and layouts.
+   * 2. **Section extraction**: processing `@section` and `@yield`.
+   * 3. **Stack processing**: handling `@push` and `@stack`.
+   * 4. **Component expansion**: rendering `<x-component>` tags.
+   * 5. **Directives & Logic**: executing `@if`, `@foreach`, etc.
    *
-   * @throws {Error} If template file is not found
-   * @throws {Error} If maximum component depth (10) is exceeded
-   * @throws {Error} If maximum include depth (50) is exceeded
+   * @param view - Template name relative to `viewsDir` (without `.html` extension).
+   * @param data - Key-value pairs to inject as variables into the template.
+   * @param options - Additional render options (e.g., legacy layout override).
+   * @returns The fully rendered HTML string.
+   *
+   * @throws {Error} If the template file is not found in `viewsDir`.
+   * @throws {Error} If maximum recursion depth is exceeded for components (10) or includes (50).
    *
    * @example
    * ```typescript
@@ -204,7 +210,11 @@ export class TemplateEngine {
   }
 
   /**
-   * Read template from file system with caching
+   * Read template from file system with caching.
+   *
+   * @param name - Template name.
+   * @returns Template content.
+   * @throws {Error} If file does not exist.
    */
   private readTemplate(name: string): string {
     const cached = this.cache.getSource(name)
@@ -223,9 +233,18 @@ export class TemplateEngine {
   }
 
   /**
-   * Get cache statistics
+   * Get current cache statistics.
    *
-   * @returns Cache statistics object
+   * Useful for performance monitoring and debugging cache efficiency.
+   *
+   * @returns Object containing hits, misses, evictions, and total size.
+   *
+   * @example
+   * ```typescript
+   * const stats = engine.getCacheStats();
+   * console.log(`Cache hit rate: ${stats.hits / (stats.hits + stats.misses)}`);
+   * ```
+   *
    * @public
    * @since 3.1.0
    */
@@ -234,7 +253,15 @@ export class TemplateEngine {
   }
 
   /**
-   * Clear template cache
+   * Clear the entire template cache.
+   *
+   * Forces a reload of all templates from disk on next render.
+   * Useful during development or when deploying updates without restarting.
+   *
+   * @example
+   * ```typescript
+   * engine.clearCache();
+   * ```
    *
    * @public
    * @since 3.1.0

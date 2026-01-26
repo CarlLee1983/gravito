@@ -1,5 +1,16 @@
 # @gravito/atlas
 
+## 2.1.1
+
+### Documentation Improvements
+
+- **Comprehensive JSDoc Enhancement**: Added detailed JSDoc documentation across the entire `@packages/atlas` codebase.
+  - **Core ORM**: Detailed documentation for `Model` class and all mixins (`HasAttributes`, `HasRelationships`, etc.) with usage examples.
+  - **Query Builder**: Improved JSDoc for `QueryBuilder` and all clause implementations, including complex where/join examples.
+  - **Type Safety**: Fully documented central types and contracts in `types/index.ts` to provide superior IDE IntelliSense.
+  - **Database Layer**: Added documentation for `DB` facade, `Connection` management, database `Drivers`, and SQL `Grammars`.
+  - **Schema & Migrations**: Enhanced JSDoc for `Schema`, `Blueprint`, and `Migrator` tools.
+
 ## 2.1.0
 
 ### Minor Changes

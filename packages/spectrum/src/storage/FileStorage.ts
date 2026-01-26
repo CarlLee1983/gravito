@@ -43,12 +43,28 @@ export class FileStorage implements SpectrumStorage {
     queries: [] as CapturedQuery[],
   }
 
+  /**
+   * Initializes a new instance of FileStorage.
+   *
+   * @param config - Configuration including the target directory for JSONL files
+   *
+   * @example
+   * ```typescript
+   * const storage = new FileStorage({ directory: './storage' });
+   * ```
+   */
   constructor(private config: FileStorageConfig) {
     this.requestsPath = join(config.directory, 'spectrum-requests.jsonl')
     this.logsPath = join(config.directory, 'spectrum-logs.jsonl')
     this.queriesPath = join(config.directory, 'spectrum-queries.jsonl')
   }
 
+  /**
+   * Initializes the storage by creating the directory and loading existing files into memory.
+   *
+   * @returns Resolves when initialization is complete
+   * @throws {Error} If directory creation fails
+   */
   async init(): Promise<void> {
     if (!existsSync(this.config.directory)) {
       mkdirSync(this.config.directory, { recursive: true })
@@ -59,6 +75,12 @@ export class FileStorage implements SpectrumStorage {
     this.loadCache(this.queriesPath, this.cache.queries)
   }
 
+  /**
+   * Loads newline-delimited JSON data from a file into a target array.
+   *
+   * @param path - The absolute path to the JSONL file
+   * @param target - The array to populate with parsed objects
+   */
   private loadCache(path: string, target: any[]) {
     if (!existsSync(path)) {
       return
@@ -78,6 +100,13 @@ export class FileStorage implements SpectrumStorage {
     }
   }
 
+  /**
+   * Internal helper to append data to both the in-memory cache and the JSONL file.
+   *
+   * @param path - File path to append to
+   * @param data - The telemetry object
+   * @param list - The cache array
+   */
   private async append(path: string, data: any, list: any[]) {
     // Add to memory
     list.unshift(data)
@@ -90,34 +119,79 @@ export class FileStorage implements SpectrumStorage {
     }
   }
 
+  /**
+   * Persists a captured HTTP request.
+   *
+   * @param req - The request snapshot
+   */
   async storeRequest(req: CapturedRequest): Promise<void> {
     await this.append(this.requestsPath, req, this.cache.requests)
   }
 
+  /**
+   * Persists a captured log entry.
+   *
+   * @param log - The log snapshot
+   */
   async storeLog(log: CapturedLog): Promise<void> {
     await this.append(this.logsPath, log, this.cache.logs)
   }
 
+  /**
+   * Persists a captured database query.
+   *
+   * @param query - The query snapshot
+   */
   async storeQuery(query: CapturedQuery): Promise<void> {
     await this.append(this.queriesPath, query, this.cache.queries)
   }
 
+  /**
+   * Retrieves recent HTTP requests from storage.
+   *
+   * @param limit - Maximum number of items to return
+   * @param offset - Pagination offset
+   * @returns Array of requests
+   */
   async getRequests(limit = 100, offset = 0): Promise<CapturedRequest[]> {
     return this.cache.requests.slice(offset, offset + limit)
   }
 
+  /**
+   * Retrieves a specific HTTP request by its unique ID.
+   *
+   * @param id - The snapshot ID
+   * @returns The request or null if not found
+   */
   async getRequest(id: string): Promise<CapturedRequest | null> {
     return this.cache.requests.find((r) => r.id === id) || null
   }
 
+  /**
+   * Retrieves recent logs from storage.
+   *
+   * @param limit - Maximum number of items to return
+   * @param offset - Pagination offset
+   * @returns Array of logs
+   */
   async getLogs(limit = 100, offset = 0): Promise<CapturedLog[]> {
     return this.cache.logs.slice(offset, offset + limit)
   }
 
+  /**
+   * Retrieves recent database queries from storage.
+   *
+   * @param limit - Maximum number of items to return
+   * @param offset - Pagination offset
+   * @returns Array of queries
+   */
   async getQueries(limit = 100, offset = 0): Promise<CapturedQuery[]> {
     return this.cache.queries.slice(offset, offset + limit)
   }
 
+  /**
+   * Wipes all data from both cache and files.
+   */
   async clear(): Promise<void> {
     this.cache.requests = []
     this.cache.logs = []
@@ -128,16 +202,34 @@ export class FileStorage implements SpectrumStorage {
     writeFileSync(this.queriesPath, '')
   }
 
+  /**
+   * Truncates the storage to stay within the specified limit.
+   *
+   * @param maxItems - The maximum allowed records per category
+   */
   async prune(maxItems: number): Promise<void> {
     if (this.cache.requests.length > maxItems) {
       this.cache.requests = this.cache.requests.slice(0, maxItems)
-      // Rewrite file
       this.rewrite(this.requestsPath, this.cache.requests)
     }
-    // Similar logic for logs and queries... implementation simplified for brevity
-    // Real pruning should happen less frequently as it requires file rewrite
+
+    if (this.cache.logs.length > maxItems) {
+      this.cache.logs = this.cache.logs.slice(0, maxItems)
+      this.rewrite(this.logsPath, this.cache.logs)
+    }
+
+    if (this.cache.queries.length > maxItems) {
+      this.cache.queries = this.cache.queries.slice(0, maxItems)
+      this.rewrite(this.queriesPath, this.cache.queries)
+    }
   }
 
+  /**
+   * Overwrites the file content with the current in-memory data.
+   *
+   * @param path - File path to overwrite
+   * @param data - The array of data objects
+   */
   private rewrite(path: string, data: any[]) {
     const content = `${data
       .slice()

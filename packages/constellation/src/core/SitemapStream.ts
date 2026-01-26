@@ -38,6 +38,12 @@ export class SitemapStream {
     }
   }
 
+  /**
+   * Adds a single entry to the sitemap stream.
+   *
+   * @param entry - A URL string or a complete `SitemapEntry` object.
+   * @returns The `SitemapStream` instance for chaining.
+   */
   add(entry: string | SitemapEntry): this {
     const e = typeof entry === 'string' ? { url: entry } : entry
     this.entries.push(e)
@@ -58,6 +64,12 @@ export class SitemapStream {
     return this
   }
 
+  /**
+   * Adds multiple entries to the sitemap stream.
+   *
+   * @param entries - An array of URL strings or `SitemapEntry` objects.
+   * @returns The `SitemapStream` instance for chaining.
+   */
   addAll(entries: (string | SitemapEntry)[]): this {
     for (const entry of entries) {
       this.add(entry)
@@ -65,6 +77,14 @@ export class SitemapStream {
     return this
   }
 
+  /**
+   * Generates the sitemap XML content.
+   *
+   * Automatically includes the necessary XML namespaces for images, videos, news,
+   * and internationalization if the entries contain such metadata.
+   *
+   * @returns The complete XML string for the sitemap.
+   */
   toXML(): string {
     const { baseUrl, pretty } = this.options
     const parts: string[] = []
@@ -96,6 +116,9 @@ export class SitemapStream {
     return parts.join('')
   }
 
+  /**
+   * Renders a single sitemap entry into its XML representation.
+   */
   private renderUrl(entry: SitemapEntry, baseUrl: string, pretty?: boolean): string {
     const indent = pretty ? '  ' : ''
     const subIndent = pretty ? '    ' : ''
@@ -279,6 +302,9 @@ export class SitemapStream {
     return parts.join('')
   }
 
+  /**
+   * Escapes special XML characters in a string.
+   */
   private escape(str: string): string {
     return str
       .replace(/&/g, '&amp;')
@@ -288,6 +314,11 @@ export class SitemapStream {
       .replace(/'/g, '&apos;')
   }
 
+  /**
+   * Returns all entries currently in the stream.
+   *
+   * @returns An array of `SitemapEntry` objects.
+   */
   getEntries(): SitemapEntry[] {
     return this.entries
   }

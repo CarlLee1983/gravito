@@ -23,11 +23,25 @@ export class CachedStrategy implements SeoStrategy {
     this.cache = new MemoryCache(ttl)
   }
 
+  /**
+   * Initializes the strategy.
+   *
+   * @returns A promise that resolves when initialization is complete.
+   */
   async init(): Promise<void> {
     // Optional: Pre-warm cache?
     // For now, lazy load.
   }
 
+  /**
+   * Retrieves sitemap entries, utilizing the cache.
+   *
+   * Implements the "Cache Stampede" protection pattern (Mutex) to prevent
+   * multiple concurrent requests from regenerating the sitemap simultaneously.
+   *
+   * @returns A promise that resolves to the array of sitemap entries.
+   * @throws {Error} If fetching entries fails.
+   */
   async getEntries(): Promise<SitemapEntry[]> {
     // 1. Check Cache
     const cached = this.cache.get()
@@ -60,12 +74,22 @@ export class CachedStrategy implements SeoStrategy {
     }
   }
 
+  /**
+   * Manually adds a sitemap entry.
+   *
+   * @param _entry - The entry to add.
+   */
   async add(_entry: SitemapEntry): Promise<void> {
     console.warn(
       '[GravitoSeo] CachedStrategy does not support manual add(). It reflects dynamic data with TTL.'
     )
   }
 
+  /**
+   * Manually removes a sitemap entry.
+   *
+   * @param _url - The URL to remove.
+   */
   async remove(_url: string): Promise<void> {
     console.warn(
       '[GravitoSeo] CachedStrategy does not support manual remove(). It reflects dynamic data with TTL.'

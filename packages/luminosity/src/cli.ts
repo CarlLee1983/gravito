@@ -7,6 +7,20 @@ const command = args[0]
 
 console.log(`✨ Luminosity CLI Beta`)
 
+/**
+ * Luminosity CLI Beta
+ *
+ * Provides command-line tools for managing SEO infrastructure, including
+ * sitemap generation, status checks, and meta tag inspection.
+ *
+ * @example
+ * ```bash
+ * lux generate
+ * lux stats
+ * lux inspect https://example.com
+ * ```
+ */
+
 async function main() {
   switch (command) {
     case 'stats':
@@ -37,6 +51,20 @@ async function main() {
   }
 }
 
+/**
+ * Inspects a URL for SEO meta tags and provides a preview.
+ *
+ * Fetches the URL and extracts metadata to simulate how it appears on
+ * Google Search and social media platforms (OpenGraph).
+ *
+ * @param url - The URL to inspect.
+ * @throws {Error} If fetching or parsing fails.
+ *
+ * @example
+ * ```typescript
+ * await inspectUrl('https://example.com');
+ * ```
+ */
 async function inspectUrl(url: string) {
   const { MetaInspector } = await import('./meta/Inspector')
   const inspector = new MetaInspector()
@@ -94,6 +122,19 @@ async function inspectUrl(url: string) {
   }
 }
 
+/**
+ * Repairs corrupted storage logs.
+ *
+ * Scans the Write-Ahead Log (WAL) for corruption and removes invalid entries
+ * using the Compactor.
+ *
+ * @throws {Error} If filesystem operations fail.
+ *
+ * @example
+ * ```typescript
+ * await repairStorage();
+ * ```
+ */
 async function repairStorage() {
   const { JsonlLogger } = await import('./storage/JsonlLogger')
   const { Compactor } = await import('./storage/Compactor')
@@ -117,6 +158,18 @@ async function repairStorage() {
   }
 }
 
+/**
+ * Shows current status and statistics.
+ *
+ * Reads the `.luminosity/meta.json` index to display update times and URL counts.
+ *
+ * @throws {Error} If reading the stats file fails.
+ *
+ * @example
+ * ```typescript
+ * await showStats();
+ * ```
+ */
 async function showStats() {
   // Try to find .luminosity directory in CWD
   const metaPath = join(process.cwd(), '.luminosity', 'meta.json')

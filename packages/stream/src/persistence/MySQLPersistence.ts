@@ -4,7 +4,15 @@ import type { JobRow, PersistenceAdapter, SerializedJob } from '../types'
 
 /**
  * MySQL Persistence Adapter.
- * Archives jobs into a MySQL table for long-term auditing.
+ *
+ * Implements the `PersistenceAdapter` interface for MySQL databases.
+ * Stores job history and logs in relational tables for long-term retention and auditing.
+ *
+ * @public
+ * @example
+ * ```typescript
+ * const persistence = new MySQLPersistence(dbConnection);
+ * ```
  */
 export class MySQLPersistence implements PersistenceAdapter {
   /**
@@ -20,6 +28,9 @@ export class MySQLPersistence implements PersistenceAdapter {
     _options: { maxBufferSize?: number; flushInterval?: number } = {}
   ) {}
 
+  /**
+   * Archives a single job.
+   */
   async archive(
     queue: string,
     job: SerializedJob,
@@ -28,6 +39,9 @@ export class MySQLPersistence implements PersistenceAdapter {
     await this.archiveMany([{ queue, job, status }])
   }
 
+  /**
+   * Archives multiple jobs in a batch.
+   */
   async archiveMany(
     jobs: Array<{
       queue: string
@@ -60,10 +74,16 @@ export class MySQLPersistence implements PersistenceAdapter {
     }
   }
 
+  /**
+   * No-op. Use BufferedPersistence if flushing is needed.
+   */
   async flush(): Promise<void> {
     // No-op: Buffering removed. Use BufferedPersistence if buffering is needed.
   }
 
+  /**
+   * Finds an archived job by ID.
+   */
   async find(queue: string, id: string): Promise<SerializedJob | null> {
     const row = await this.db.table(this.table).where('queue', queue).where('job_id', id).first()
 
@@ -133,6 +153,9 @@ export class MySQLPersistence implements PersistenceAdapter {
 
   /**
    * Search jobs from the archive.
+   *
+   * @param query - Search string (matches ID, payload, or error).
+   * @param options - Filter options.
    */
   async search(
     query: string,
@@ -171,7 +194,7 @@ export class MySQLPersistence implements PersistenceAdapter {
   }
 
   /**
-   * Archive a system log message (buffered).
+   * Archive a system log message.
    */
   async archiveLog(log: {
     level: string
@@ -184,7 +207,7 @@ export class MySQLPersistence implements PersistenceAdapter {
   }
 
   /**
-   * Archive multiple log messages (direct batch write).
+   * Archive multiple log messages.
    */
   async archiveLogMany(
     logs: Array<{
@@ -350,7 +373,7 @@ export class MySQLPersistence implements PersistenceAdapter {
   }
 
   /**
-   * Help script to create the necessary table.
+   * Helper to create necessary tables if they don't exist.
    */
   async setupTable(): Promise<void> {
     await Promise.all([this.setupJobsTable(), this.setupLogsTable()])

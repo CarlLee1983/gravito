@@ -7,6 +7,8 @@ import type { QueueDriver } from './QueueDriver'
 export interface KafkaDriverConfig {
   /**
    * Kafka client instance (kafkajs).
+   *
+   * Must provide producer, admin, and consumer factories compatible with KafkaJS.
    */
   client: {
     producer: () => {
@@ -40,30 +42,23 @@ export interface KafkaDriverConfig {
   }
 
   /**
-   * Consumer group ID (for consuming messages).
+   * Consumer group ID used for reading messages.
+   * @default 'gravito-workers'
    */
   consumerGroupId?: string
 }
 
 /**
- * Kafka Driver
+ * Kafka-backed queue driver.
  *
- * Uses Apache Kafka as the queue backend.
- * Supports topic management, consumer groups, and batch operations.
+ * Uses Apache Kafka topics as queues. Designed for high-throughput streaming
+ * rather than traditional job queue semantics (pop/delete).
+ * Supports push-based consumption via `subscribe()`.
  *
- * Requires `kafkajs`.
- *
+ * @public
  * @example
  * ```typescript
- * import { Kafka } from 'kafkajs'
- *
- * const kafka = new Kafka({
- *   brokers: ['localhost:9092'],
- *   clientId: 'gravito-app'
- * })
- *
- * const driver = new KafkaDriver({ client: kafka, consumerGroupId: 'workers' })
- * await driver.push('default', serializedJob)
+ * const driver = new KafkaDriver({ client: kafka, consumerGroupId: 'my-app' });
  * ```
  */
 export class KafkaDriver implements QueueDriver {
@@ -104,7 +99,10 @@ export class KafkaDriver implements QueueDriver {
   }
 
   /**
-   * Push a job to a topic.
+   * Pushes a job to a Kafka topic.
+   *
+   * @param queue - The topic name.
+   * @param job - The job to publish.
    */
   async push(queue: string, job: SerializedJob): Promise<void> {
     const producer = await this.ensureProducer()
@@ -131,9 +129,11 @@ export class KafkaDriver implements QueueDriver {
   }
 
   /**
-   * Pop is not supported for Kafka.
+   * Pop is not supported for Kafka (Push-based).
    *
-   * Note: Kafka uses a push-based model, so you should use `subscribe()`.
+   * Kafka consumers typically stream messages. Use `subscribe()` instead.
+   *
+   * @throws {Error} Always throws as Kafka does not support polling individual messages in this manner.
    */
   async pop(_queue: string): Promise<SerializedJob | null> {
     // Kafka is push-based; use subscribe() instead.
@@ -141,9 +141,9 @@ export class KafkaDriver implements QueueDriver {
   }
 
   /**
-   * Kafka does not provide a direct queue size.
+   * Returns 0 as Kafka does not expose a simple "queue size".
    *
-   * Returns 0; use Kafka tooling/metrics for lag/size insights.
+   * Monitoring lag requires external tools or Admin API checks not implemented here.
    */
   async size(_queue: string): Promise<number> {
     // Kafka does not directly support queue size.
@@ -151,7 +151,9 @@ export class KafkaDriver implements QueueDriver {
   }
 
   /**
-   * Clear a queue by deleting the topic.
+   * Clears a queue by deleting the topic.
+   *
+   * @param queue - The topic name.
    */
   async clear(queue: string): Promise<void> {
     const admin = await this.ensureAdmin()
@@ -159,7 +161,10 @@ export class KafkaDriver implements QueueDriver {
   }
 
   /**
-   * Push multiple jobs.
+   * Pushes multiple jobs to a Kafka topic.
+   *
+   * @param queue - The topic name.
+   * @param jobs - Array of jobs.
    */
   async pushMany(queue: string, jobs: SerializedJob[]): Promise<void> {
     if (jobs.length === 0) {
@@ -192,7 +197,10 @@ export class KafkaDriver implements QueueDriver {
   }
 
   /**
-   * Create a topic.
+   * Creates a new Kafka topic.
+   *
+   * @param topic - The topic name.
+   * @param options - Config for partitions/replication.
    */
   async createTopic(topic: string, options?: TopicOptions): Promise<void> {
     const admin = await this.ensureAdmin()
@@ -208,14 +216,21 @@ export class KafkaDriver implements QueueDriver {
   }
 
   /**
-   * Delete a topic.
+   * Deletes a Kafka topic.
+   *
+   * @param topic - The topic name.
    */
   async deleteTopic(topic: string): Promise<void> {
     await this.clear(topic)
   }
 
   /**
-   * Subscribe to a topic (push-based model).
+   * Subscribes to a topic for streaming jobs.
+   *
+   * Starts a Kafka consumer group and processes messages as they arrive.
+   *
+   * @param queue - The topic name.
+   * @param callback - Function to handle the job.
    */
   async subscribe(queue: string, callback: (job: SerializedJob) => Promise<void>): Promise<void> {
     const consumer = this.client.consumer({ groupId: this.consumerGroupId })

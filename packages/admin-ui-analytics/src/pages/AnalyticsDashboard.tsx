@@ -10,7 +10,8 @@ function cn(...inputs: ClassValue[]) {
 }
 
 /**
- * 框體核心：Widget 註冊結構
+ * Core widget registration structure for the analytics dashboard.
+ * Defines the configuration for a pluggable metric component.
  */
 export interface AnalyticsWidget {
   id: string

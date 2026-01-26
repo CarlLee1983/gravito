@@ -46,14 +46,49 @@ export class OrbitPlasma implements GravitoOrbit {
   constructor(private options: OrbitPlasmaOptions = {}) {}
 
   /**
-   * Static configuration helper.
+   * Factory method for fluent configuration.
+   *
+   * Provides a chainable API for instantiating OrbitPlasma with configuration,
+   * commonly used in application bootstrap files.
+   *
+   * @param options - Orbit configuration including connections and expose settings.
+   * @returns Configured OrbitPlasma instance ready for installation.
+   *
+   * @example
+   * ```typescript
+   * const plasma = OrbitPlasma.configure({
+   *   connections: {
+   *     default: { host: 'localhost', port: 6379 }
+   *   },
+   *   exposeAs: 'redis',
+   *   autoConnect: true
+   * });
+   * core.addOrbit(plasma);
+   * ```
    */
   static configure(options: OrbitPlasmaOptions): OrbitPlasma {
     return new OrbitPlasma(options)
   }
 
   /**
-   * Install into PlanetCore.
+   * Lifecycle hook for Gravito orbit registration.
+   *
+   * Integrates Redis into the framework by:
+   * - Configuring connection pool from core config or orbit options
+   * - Injecting client into request context for controller access
+   * - Registering shutdown hooks for graceful disconnection
+   *
+   * @param core - PlanetCore instance providing config, container, and hooks.
+   *
+   * @example
+   * ```typescript
+   * // Automatically called by Gravito when registering the orbit
+   * core.addOrbit(new OrbitPlasma({
+   *   connections: {
+   *     default: { host: 'localhost', port: 6379 }
+   *   }
+   * }));
+   * ```
    */
   install(core: PlanetCore): void {
     const { exposeAs = 'redis' } = this.options
@@ -127,7 +162,15 @@ export class OrbitPlasma implements GravitoOrbit {
   }
 
   /**
-   * Disconnect from Redis.
+   * Gracefully close Redis connections.
+   *
+   * Ensures all pending commands complete before terminating TCP sockets,
+   * preventing data loss during application shutdown.
+   *
+   * @example
+   * ```typescript
+   * await plasma.disconnect();
+   * ```
    */
   async disconnect(): Promise<void> {
     if (this.client && this.connected) {
@@ -137,14 +180,39 @@ export class OrbitPlasma implements GravitoOrbit {
   }
 
   /**
-   * Get the Redis client instance.
+   * Access the underlying Redis client.
+   *
+   * Useful for direct client operations outside request context,
+   * such as CLI commands or background jobs.
+   *
+   * @returns The active client instance, or undefined if not yet initialized.
+   *
+   * @example
+   * ```typescript
+   * const client = plasma.getClient();
+   * if (client) {
+   *   await client.flushdb();
+   * }
+   * ```
    */
   getClient(): RedisClientContract | undefined {
     return this.client
   }
 
   /**
-   * Check if connected.
+   * Verify connection health.
+   *
+   * Checks both internal connection state and client socket status
+   * to ensure Redis is reachable.
+   *
+   * @returns True if connected and ready for commands.
+   *
+   * @example
+   * ```typescript
+   * if (!plasma.isConnected()) {
+   *   console.warn('Redis unavailable, using fallback cache');
+   * }
+   * ```
    */
   isConnected(): boolean {
     return this.connected && (this.client?.isConnected() ?? false)

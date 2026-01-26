@@ -491,6 +491,7 @@ export class PlanetCore {
     port: number
     fetch: (request: Request, server?: unknown) => Response | Promise<Response>
     core: PlanetCore
+    websocket?: HttpAdapter['websocket']
   } {
     // Priority: argument > config > default
     const finalPort = port ?? this.config.get<number>('PORT', 3000)
@@ -504,6 +505,7 @@ export class PlanetCore {
       port: finalPort,
       fetch: this.adapter.fetch.bind(this.adapter), // Ensure we bind to adapter not app
       core: this,
+      websocket: this.adapter.websocket,
     }
   }
 }

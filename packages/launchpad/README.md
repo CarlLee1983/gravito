@@ -12,26 +12,31 @@
 - **♻️ Auto-Recycling**: Containers are automatically refurbished and returned to the pool after missions.
 - **🤖 GitHub Integration**: Built-in webhook handler for PR previews and automated comments.
 - **🛡️ Secure Isolation**: Each deployment runs in an isolated container environment.
+- **📡 Real-time Telemetry**: Integrated with `@gravito/ripple` for live deployment progress updates via WebSockets.
+- **🕸️ Dynamic Proxying**: High-performance routing to active deployments using Bun's native HTTP capabilities.
 
 ## 🏗️ Architecture Overview
 
-Launchpad follows **Clean Architecture** principles:
+Launchpad follows **Clean Architecture** principles and is implemented as a **Gravito Orbit**:
 
-### Domain Layer
-- **Rocket**: The aggregate root representing a container instance.
-- **Mission**: Represents a deployment task (repo, commit, branch).
-- **Status Machine**: Strictly manages transitions (Idle -> Assigned -> Deployed -> Recycling).
+### Domain Layer (`src/Domain`)
+- **Rocket**: The aggregate root representing a container instance and its lifecycle state.
+- **Mission**: Represents a deployment task (repository URL, commit SHA, branch).
+- **Status Machine**: Strictly manages transitions (`Idle` -> `Assigned` -> `Deployed` -> `Recycling`).
+- **Events**: Domain events for tracking lifecycle changes.
 
-### Application Layer
+### Application Layer (`src/Application`)
 - **PoolManager**: Orchestrates the lifecycle of Rockets (warmup, assignment, recycling).
-- **PayloadInjector**: Handles the git clone and code injection process.
-- **MissionControl**: High-level facade for launching missions.
-- **RefurbishUnit**: Cleans up used containers for reuse.
+- **MissionControl**: High-level facade for launching missions and coordinating injection.
+- **PayloadInjector**: Handles the git operations and the physical injection of code into containers.
+- **RefurbishUnit**: Cleans up and resets used containers for return to the pool.
 
-### Infrastructure Layer
-- **DockerAdapter**: Low-level communication with Docker daemon.
+### Infrastructure Layer (`src/Infrastructure`)
+- **DockerAdapter**: Low-level communication with the Docker daemon.
 - **ShellGitAdapter**: Git operations via shell commands.
-- **BunProxyAdapter**: Manages reverse proxying to active containers.
+- **OctokitGitHubAdapter**: Interaction with GitHub API for status updates and PR comments.
+- **CachedRocketRepository**: Persistent storage for Rocket states using `@gravito/stasis`.
+- **BunProxyAdapter**: Manages reverse proxying to active containers with sub-millisecond overhead.
 
 ## 🚀 Quick Start
 
@@ -41,55 +46,58 @@ Launchpad follows **Clean Architecture** principles:
 bun add @gravito/launchpad
 ```
 
-### Basic Usage
+### Basic Usage (As an Orbit)
+
+The most common way to use Launchpad is as part of a Gravito application:
 
 ```typescript
-import { PoolManager, PayloadInjector, Mission } from '@gravito/launchpad'
-import { DockerAdapter, ShellGitAdapter, InMemoryRocketRepository } from '@gravito/launchpad/infra'
+import { PlanetCore } from '@gravito/core'
+import { OrbitCache } from '@gravito/stasis'
+import { OrbitRipple } from '@gravito/ripple'
+import { LaunchpadOrbit } from '@gravito/launchpad'
 
-// Initialize adapters
-const docker = new DockerAdapter()
-const repo = new InMemoryRocketRepository()
-const manager = new PoolManager(docker, repo)
+const ripple = new OrbitRipple({ path: '/ws' })
 
-// 1. Warmup the pool (Create 3 idle containers)
-await manager.warmup(3)
-
-// 2. Create a mission
-const mission = Mission.create({
-  id: 'mission-1',
-  repoUrl: 'https://github.com/user/repo.git',
-  commitSha: 'latest'
+const core = await PlanetCore.boot({
+  orbits: [
+    new OrbitCache(), 
+    ripple, 
+    new LaunchpadOrbit(ripple)
+  ],
 })
 
-// 3. Launch! (Assigns a rocket and injects code)
-const rocket = await manager.assignMission(mission)
-const injector = new PayloadInjector(docker, new ShellGitAdapter())
-await injector.deploy(rocket)
-
-console.log(`Mission deployed to http://localhost:${rocket.port}`)
+await core.bootstrap()
 ```
 
-### Running as a Service (Orbit)
-
-Launchpad can run as a Gravito Orbit, providing a REST API and Webhook support.
+### Manual Mission Launch
 
 ```typescript
-import { bootstrapLaunchpad } from '@gravito/launchpad'
+import { MissionControl, Mission } from '@gravito/launchpad'
 
-const { port } = await bootstrapLaunchpad()
-console.log(`Launchpad Server running on port ${port}`)
+// Assuming container is available via Gravito Core
+const ctrl = container.make<MissionControl>('launchpad.ctrl')
+
+const mission = Mission.create({
+  id: 'mission-123',
+  repoUrl: 'https://github.com/example/repo.git',
+  branch: 'main'
+})
+
+const rocketId = await ctrl.launch(mission, (type, data) => {
+  console.log(`[Telemetry] ${type}:`, data)
+})
 ```
 
 ## ⚙️ Configuration
 
-Launchpad relies on Docker. Ensure Docker is installed and running.
+Launchpad relies on a working Docker environment.
 
 | Environment Variable | Description | Default |
 |----------------------|-------------|---------|
 | `GITHUB_TOKEN` | Token for GitHub API access | (Required for PR comments) |
 | `GITHUB_WEBHOOK_SECRET` | Secret for verifying webhooks | (Optional) |
 | `POOL_SIZE` | Target number of pre-warmed containers | `3` |
+| `CACHE_DRIVER` | Storage driver for Rocket states | `file` |
 
 ## 🧪 Testing
 
