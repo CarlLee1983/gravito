@@ -38,6 +38,28 @@ export interface ModelStatic<T extends Model> {
   table: string
   primaryKey: string
   connection?: string
+  /** Find a model by primary key */
+  find(key: any): Promise<T | null>
+  /** Find a model or throw */
+  findOrFail(key: any): Promise<T>
+  /** Get all models */
+  all(): Promise<T[]>
+  /** Create a new model and save it */
+  create(attributes: Partial<ModelAttributes>): Promise<T>
+  /** Instantiate a new model instance */
+  make(attributes: Partial<ModelAttributes>): T
+  /** Get a query builder */
+  query(): QueryBuilderContract<T>
+  /** Start a query with where clause */
+  where(
+    column: string | Record<string, unknown>,
+    operatorOrValue?: any,
+    value?: any
+  ): QueryBuilderContract<T>
+  /** Count records */
+  count(): Promise<number>
+  /** Check if records exist */
+  exists(): Promise<boolean>
 }
 
 /**
@@ -561,6 +583,19 @@ export abstract class Model {
   // ============================================================================
   // Attribute Management
   // ============================================================================
+
+  /**
+   * Fill the model with an object of attributes.
+   *
+   * @param attributes - Key-value pairs of attributes to set
+   * @returns The model instance
+   */
+  fill(attributes: Partial<ModelAttributes>): this {
+    for (const [key, value] of Object.entries(attributes)) {
+      this._setAttribute(key, value)
+    }
+    return this
+  }
 
   /**
    * Set attribute with validation (Smart Guard).

@@ -61,10 +61,12 @@ export const OrbitCloudflare = {
 export type CloudflareBindings<T extends Record<string, unknown>> = T
 
 /**
- * Configuration for the Cloudflare Worker handler.
+ * Configuration options for the Cloudflare Worker handler adapter.
+ *
+ * Currently serves as a placeholder for future configuration options such as
+ * KV caching strategies, Durable Object namespaces, or custom fetch handlers.
  *
  * @public
- * @since 3.0.0
  */
 // biome-ignore lint/complexity/noBannedTypes: Placeholder
 export type CloudflareOptions = {}

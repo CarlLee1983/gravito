@@ -1,5 +1,12 @@
 import pc from 'picocolors'
 
+/**
+ * ASCII Art representation of the Gravito/Luminosity Logo.
+ * Used for CLI branding and welcome screens.
+ * Includes ANSI color codes via `picocolors`.
+ *
+ * @internal
+ */
 export const LOGO_ASCII = `
    ____                 _ _        
   / ___|_ __ __ ___   _(_) |_ ___  

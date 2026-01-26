@@ -226,6 +226,20 @@ export interface HttpAdapter<V extends GravitoVariables = GravitoVariables> {
    */
   warmup?(paths: string[]): Promise<void>
 
+  /**
+   * WebSocket Handler for Bun.serve
+   *
+   * @since 2.2.0
+   */
+  websocket?: {
+    open?(ws: unknown): void | Promise<void>
+    message?(ws: unknown, message: string | Buffer | Uint8Array): void | Promise<void>
+    close?(ws: unknown, code: number, message: string): void | Promise<void>
+    drain?(ws: unknown): void | Promise<void>
+    // Allow any other Bun websocket properties
+    [key: string]: unknown
+  }
+
   // ─────────────────────────────────────────────
   // Lifecycle
   // ─────────────────────────────────────────────
