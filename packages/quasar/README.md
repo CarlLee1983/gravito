@@ -5,9 +5,10 @@ Universal system monitoring agent for Gravito Zenith. Provides comprehensive mon
 ## Features
 
 ### 🔍 System Monitoring
-- CPU, memory, and process metrics
-- Automatic heartbeat reporting
+- CPU, memory, and process metrics (cached for performance)
+- Automatic heartbeat reporting with adaptive interval
 - Multi-runtime support (Node.js, Bun, Deno)
+- Internal agent health monitoring
 
 ### 📊 Queue Monitoring (Probes)
 Monitor queue statistics from various queue systems:
@@ -16,13 +17,36 @@ Monitor queue statistics from various queue systems:
 - **Bee-Queue**
 - **Laravel Queues**
 - **Redis Lists** (generic)
+- **RabbitMQ** (via Management API)
+- **AWS SQS**
+- **Kafka** (Consumer Group Lag)
 
 ### 📝 Real-time Job Tracking (Bridges)
 Track individual job execution with detailed logs:
+- **BullMQ**
+- **Bull** (v3/v4)
+- **Bee-Queue**
+- **Agenda**
+- **Generic EventEmitter** (Custom integration)
+
+Features:
 - Job lifecycle events (started, completed, failed)
 - Error stack traces
 - Progress updates
 - Execution context
+- **Batch log buffering** for high performance
+
+### 🎮 Remote Control
+Execute management commands from Zenith dashboard:
+- Retry failed jobs
+- Delete jobs
+- Pause/Resume queues
+- Clean queues
+- Prioritize jobs
+
+### 🏥 Health Check
+- Built-in HTTP health check server
+- Kubernetes Liveness/Readiness probe support
 
 ## Installation
 
@@ -30,6 +54,11 @@ Track individual job execution with detailed logs:
 npm install @gravito/quasar ioredis
 # or
 bun add @gravito/quasar ioredis
+```
+
+Optional dependencies for specific probes:
+```bash
+bun add @aws-sdk/client-sqs # For SQS
 ```
 
 ## Quick Start
@@ -63,6 +92,10 @@ agent.monitorQueue('emails', 'bullmq')
 agent.monitorQueue('notifications', 'bee-queue')
 agent.monitorQueue('default', 'laravel')
 
+// RabbitMQ
+import { RabbitMQProbe } from '@gravito/quasar/probes'
+agent.addQueueProbe(new RabbitMQProbe({ url: 'http://localhost:15672' }, 'my-queue'))
+
 await agent.start()
 ```
 
@@ -90,33 +123,18 @@ agent.attachBridge(worker, 'bullmq')
 await agent.start()
 ```
 
-### Complete Monitoring Setup
-
-For **full visibility**, combine both Probes (statistics) and Bridges (execution logs):
+### Health Check Server
 
 ```typescript
-import { QuasarAgent } from '@gravito/quasar'
-import { Worker } from 'bullmq'
+import { HealthServer } from '@gravito/quasar/health'
 
-const agent = new QuasarAgent({
-  service: 'my-app',
-  transport: { url: 'redis://zenith-server:6379' },
-  monitor: { url: 'redis://localhost:6379' }
-})
-
-// 1. Monitor queue statistics (Probe)
-agent.monitorQueue('emails', 'bullmq')
-
-// 2. Monitor job execution (Bridge)
-const worker = new Worker('emails', async (job) => { /* ... */ })
-agent.attachBridge(worker, 'bullmq')
-
+const agent = new QuasarAgent({ ... })
 await agent.start()
-```
 
-This gives you:
-- ✅ **Queue statistics** (waiting, active, failed counts)
-- ✅ **Job execution logs** (started, completed, errors with stack traces)
+const healthServer = new HealthServer(agent, 9999)
+await healthServer.start()
+// GET http://localhost:9999/health
+```
 
 ## Configuration
 
@@ -149,54 +167,11 @@ interface QuasarOptions {
   
   // Custom system probe (optional)
   probe?: Probe
+  
+  // Custom Logger
+  logger?: Logger
 }
 ```
-
-### Dual Redis Connections
-
-Quasar uses two separate Redis connections:
-
-1. **Transport Redis**: Connects to Zenith server to send metrics and logs
-2. **Monitor Redis**: Connects to your application's Redis to inspect queues
-
-This separation allows monitoring local queues while reporting to a remote Zenith instance.
-
-## Supported Queue Systems
-
-### Probes (Statistics)
-
-| Queue System | Type | Keys Monitored |
-|--------------|------|----------------|
-| BullMQ v5+ | `'bullmq'` | `wait`, `active`, `delayed`, `failed` |
-| Bull v3/v4 | `'bull'` | `waiting`, `active`, `delayed`, `failed` |
-| Bee-Queue | `'bee-queue'` | `waiting`, `active`, `failed` |
-| Laravel | `'laravel'` | `queues:*`, `queues:*:delayed`, `queues:*:reserved` |
-| Generic Redis | `'redis'` | Custom list key |
-
-### Bridges (Execution Logs)
-
-| Queue System | Type | Events Tracked |
-|--------------|------|----------------|
-| BullMQ | `'bullmq'` | `active`, `completed`, `failed`, `progress` |
-| Bee-Queue | `'bee-queue'` | `job succeeded`, `job failed`, `job progress` |
-
-## Remote Control
-
-Enable remote control to allow Zenith UI to execute commands:
-
-```typescript
-const agent = new QuasarAgent({ /* ... */ })
-
-await agent.start()
-
-// Enable after start (requires nodeId)
-await agent.enableRemoteControl()
-```
-
-Supported commands:
-- Retry failed jobs
-- Delete jobs
-- Laravel-specific actions (restart workers, retry all)
 
 ## Advanced Usage
 
@@ -226,6 +201,22 @@ const agent = new QuasarAgent({
 })
 ```
 
+### Generic Bridge (EventEmitter)
+
+```typescript
+import { EventEmitter } from 'events'
+const myQueue = new EventEmitter()
+
+agent.attachBridge(myQueue, 'generic', {
+  eventMapping: {
+    started: 'job:start',
+    completed: 'job:done',
+    failed: 'job:fail'
+  },
+  queueName: 'custom-queue'
+})
+```
+
 ## Architecture
 
 ### Probes vs Bridges
@@ -233,100 +224,13 @@ const agent = new QuasarAgent({
 | Feature | Probe | Bridge |
 |---------|-------|--------|
 | **Purpose** | Queue statistics | Job execution tracking |
-| **Data source** | Redis keys (external scan) | Worker events (internal hooks) |
+| **Data source** | Redis/API (external scan) | Worker events (internal hooks) |
 | **What you see** | "5 jobs waiting" | "Job X failed with error Y" |
-| **Update frequency** | Every 10s (configurable) | Real-time (milliseconds) |
+| **Update frequency** | Every 10s (configurable) | Real-time (buffered) |
 | **Setup** | `agent.monitorQueue()` | `agent.attachBridge()` |
-| **Performance impact** | Minimal (periodic scan) | Minimal (event-driven) |
+| **Performance impact** | Minimal (periodic scan) | Optimized (batch sending) |
 
 **Recommendation**: Use both for complete visibility.
-
-## Bridge Examples
-
-### BullMQ Bridge
-
-```typescript
-import { QuasarAgent } from '@gravito/quasar'
-import { Worker } from 'bullmq'
-
-// Create Quasar agent
-const agent = new QuasarAgent({
-  service: 'my-app',
-  transport: { url: 'redis://zenith-server:6379' },
-  monitor: { url: 'redis://localhost:6379' },
-})
-
-// Create BullMQ worker
-const worker = new Worker('emails', async (job) => {
-  console.log(`Processing email to ${job.data.to}`)
-  // ... your job logic
-})
-
-// Attach bridge for real-time monitoring
-agent.attachBridge(worker, 'bullmq')
-
-// Start agent
-await agent.start()
-```
-
-### Bee-Queue Bridge
-
-```typescript
-import { QuasarAgent } from '@gravito/quasar'
-import Queue from 'bee-queue'
-
-const agent = new QuasarAgent({
-  service: 'my-app',
-  transport: { url: 'redis://zenith-server:6379' },
-})
-
-const queue = new Queue('emails')
-
-// Attach bridge
-agent.attachBridge(queue, 'bee-queue')
-
-// Process jobs
-queue.process(async (job) => {
-  // ... your job logic
-})
-
-await agent.start()
-```
-
-### Direct Bridge Usage (Advanced)
-
-You can also use bridges directly without QuasarAgent:
-
-```typescript
-import { bridges } from '@gravito/quasar'
-import { Redis } from 'ioredis'
-import { Worker } from 'bullmq'
-
-const redis = new Redis('redis://zenith-server:6379')
-const worker = new Worker('emails', async (job) => { ... })
-
-const bridge = new bridges.BullMQBridge(redis, 'flux_console:', 'worker-1')
-bridge.attach(worker)
-
-// Later, to cleanup:
-bridge.detach()
-```
-
-## TypeScript Support
-
-Fully typed with TypeScript. All interfaces and types are exported:
-
-```typescript
-import type {
-  QuasarOptions,
-  Probe,
-  QueueProbe,
-  SystemMetrics,
-  QueueSnapshot,
-  QueueBridge,
-  ZenithLogPayload
-} from '@gravito/quasar'
-```
 
 ## License
 

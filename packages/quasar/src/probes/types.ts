@@ -8,7 +8,7 @@ export interface QueueSnapshot {
   /** The name of the queue. */
   name: string
   /** The underlying driver used by the queue. */
-  driver: 'redis' | 'sqs' | 'rabbitmq' | 'kafka'
+  driver: 'redis' | 'sqs' | 'rabbitmq' | 'kafka' | 'laravel' | 'bull' | 'bullmq' | 'bee-queue'
   /** Breakdown of job counts by their current state. */
   size: {
     /** Jobs waiting to be processed. */
