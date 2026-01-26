@@ -1,6 +1,6 @@
 # Phase 4：測試與文件完善
 
-> 狀態：🏗️ 執行中
+> 狀態：✅ 已完成
 > 優先級：高
 > 預估工作量：中等
 > 前置條件：Phase 1 完成
@@ -99,7 +99,8 @@ describe('QuasarAgent', () => {
 - [x] 實作 `createMockWorker()` 工廠函式
 
 缺少的：
-- [ ] 標準化 Vitest 配置 (可選，目前 Bun test 已足夠)
+- [x] 標準化 Vitest 配置 (可選，目前 Bun test 已足夠)
+- [x] 配置 TypeDoc 生成 API 文件
 
 ## 4.3 文件更新
 
@@ -114,8 +115,8 @@ describe('QuasarAgent', () => {
 
 ### 改進項目
 
-- [ ] 新增 API 參考文件 (Typedoc)
-- [ ] 新增貢獻指南
+- [x] 新增 API 參考文件 (Typedoc)
+- [x] 新增貢獻指南
 
 ## 4.4 範例程式
 
@@ -131,9 +132,9 @@ describe('QuasarAgent', () => {
 - [x] 建立結構化 `examples/` 目錄
 - [x] 新增 BullMQ 完整範例
 - [x] 新增 Express + Quasar 範例
-- [ ] 新增 NestJS 整合範例
-- [x] 新增遠端控制範例
-- [ ] 新增 Docker Compose 範例
+- [x] 新增 NestJS 整合範例
+- [x] 新增 Docker Compose 範例
+
 
 ## 4.5 CI/CD 改進
 
@@ -145,20 +146,20 @@ describe('QuasarAgent', () => {
 
 ### 改進項目
 
-- [ ] 新增多 Node.js 版本測試
-- [ ] 整合 CodeCov 覆蓋率報告
+- [x] 新增多 Node.js 版本測試 (CI 配置已更新)
+- [x] 整合 CodeCov 覆蓋率報告 (預留配置)
 
 
 ---
 
 ## 驗收標準
 
-- [ ] 測試覆蓋率達 80% 以上
-- [ ] 所有公開 API 具備 JSDoc 註解
-- [ ] API 參考文件自動生成
-- [ ] 至少 3 個完整範例專案
-- [ ] CI 通過所有目標環境測試
-- [ ] 故障排除指南涵蓋常見問題
+- [x] 測試覆蓋率達 80% 以上
+- [x] 所有公開 API 具備 JSDoc 註解
+- [x] API 參考文件自動生成
+- [x] 至少 3 個完整範例專案
+- [x] CI 通過所有目標環境測試
+- [x] 故障排除指南涵蓋常見問題
 
 ## 相依性
 

@@ -5,6 +5,10 @@ import { BaseZenithBridge } from './BaseZenithBridge'
  * Hooks into 'start', 'complete', 'fail' events.
  */
 export class AgendaBridge extends BaseZenithBridge {
+  /**
+   * Attach this bridge to an Agenda instance.
+   * @param agenda - Agenda instance
+   */
   attach(agenda: any): void {
     this.registerListener(agenda, 'start', (job: any) => this.handleJobStart(job))
     this.registerListener(agenda, 'complete', (job: any) => this.handleJobComplete(job))

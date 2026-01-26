@@ -8,6 +8,7 @@
         "test": "bun test",
         "test:coverage": "bun test --coverage --coverage-threshold=80",
         "test:ci": "bun test --coverage --coverage-threshold=80",
+        "docs": "typedoc",
         "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck"
     },
     "keywords": [
@@ -39,7 +40,9 @@
     "devDependencies": {
         "@aws-sdk/client-sqs": "^3.975.0",
         "@types/node": "^20.10.0",
-        "bun-types": "latest"
+        "bun-types": "latest",
+        "typedoc": "^0.25.0",
+        "typedoc-plugin-markdown": "^3.16.0"
     },
     "peerDependencies": {
         "bullmq": ">=5.0.0",

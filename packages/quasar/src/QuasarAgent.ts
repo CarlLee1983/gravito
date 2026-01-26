@@ -173,6 +173,10 @@ export class QuasarAgent {
     return this.nodeId
   }
 
+  /**
+   * Start the Quasar agent.
+   * Connects to Redis and begins heartbeat reporting.
+   */
   async start() {
     const promises = [this.transportManager.connect()]
 
@@ -189,6 +193,10 @@ export class QuasarAgent {
     await this.tick()
   }
 
+  /**
+   * Stop the Quasar agent.
+   * Disconnects from Redis and stops the heartbeat timer.
+   */
   async stop() {
     this.heartbeat.stop()
 
@@ -228,6 +236,12 @@ export class QuasarAgent {
     }
   }
 
+  /**
+   * Register a queue for statistics monitoring.
+   *
+   * @param name - Name of the queue
+   * @param type - Type of the queue system ('redis', 'laravel', 'bull', 'bullmq', 'bee-queue')
+   */
   monitorQueue(
     name: string,
     type: 'redis' | 'laravel' | 'bull' | 'bullmq' | 'bee-queue' = 'redis'

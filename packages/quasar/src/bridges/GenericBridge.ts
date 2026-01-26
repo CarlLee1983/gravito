@@ -23,6 +23,10 @@ export class GenericBridge extends BaseZenithBridge {
     super(redis, prefix, workerId)
   }
 
+  /**
+   * Attach this bridge to an EventEmitter.
+   * @param emitter - EventEmitter instance
+   */
   attach(emitter: any): void {
     if (this.eventMapping.started) {
       this.setupListener(emitter, this.eventMapping.started, 'job_started')

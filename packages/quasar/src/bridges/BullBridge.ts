@@ -5,6 +5,10 @@ import { BaseZenithBridge } from './BaseZenithBridge'
  * Hooks into 'completed', 'failed', 'active', 'progress' events.
  */
 export class BullBridge extends BaseZenithBridge {
+  /**
+   * Attach this bridge to a Bull v3/v4 queue.
+   * @param queue - Bull queue instance
+   */
   attach(queue: any): void {
     // Bull v3/v4 uses global events on the queue instance
     this.registerListener(queue, 'completed', (job: any, result: any) =>
