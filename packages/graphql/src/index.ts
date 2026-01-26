@@ -187,6 +187,12 @@ export interface GraphQLConfig {
       ttl?: number
       /** Whether to cache responses per user (Authorization header). @default false */
       includeAuthorization?: boolean
+      /**
+       * Custom storage for response cache (e.g., Redis).
+       * Defaults to in-memory store if unspecified.
+       */
+      // biome-ignore lint/suspicious/noExplicitAny: Store type is flexible (Cache Interface)
+      store?: any
     }
     /**
      * Automatic Persisted Queries (APQ) configuration.
@@ -236,6 +242,18 @@ export class OrbitGraphQL implements GravitoOrbit {
 
   constructor(private config: GraphQLConfig = {}) {}
 
+  /**
+   * Installs the GraphQL Orbit into the PlanetCore application.
+   *
+   * This method:
+   * 1. Resolves the GraphQL Schema (from config, file, or container).
+   * 2. Configures the Yoga server with plugins (APQ, Cache, Security).
+   * 3. Sets up WebSocket subscriptions if enabled.
+   * 4. Mounts HTTP routes for the GraphQL endpoint.
+   *
+   * @param core - The PlanetCore instance to attach to.
+   * @throws {GraphQLConfigError} If the schema file cannot be read (Bun only) or no schema is found.
+   */
   /**
    * Installs the GraphQL Orbit into the PlanetCore application.
    *
@@ -356,6 +374,7 @@ export class OrbitGraphQL implements GravitoOrbit {
             return null
           },
           ttl: this.config.performance.cache.ttl ?? 2000,
+          cache: this.config.performance.cache.store,
         }) as unknown as Plugin
       )
     }
@@ -368,6 +387,7 @@ export class OrbitGraphQL implements GravitoOrbit {
       cors: this.config.cors as any,
       plugins,
       maskedErrors: this.config.maskErrors,
+      formatError: this.config.formatError,
       // Inject Gravito Context
       context: (initialContext) => {
         const gravito = {

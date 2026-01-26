@@ -625,7 +625,7 @@ bunx @gravito/graphql codegen --output ./types.ts
 
 ## 🎉 Phase 1-5 完成總結
 
-**完成日期**：2026-01-25
+**完成日期**：2026-01-26 (更新)
 
 ### 已完成項目
 
@@ -637,30 +637,24 @@ bunx @gravito/graphql codegen --output ./types.ts
 #### ✅ Phase 2: 功能擴展 (100%)
 - WebSocket Subscription 支援
 - Plugin 系統整合
-- 錯誤處理增強
+- 錯誤處理增強 (支援 `formatError`)
 - CORS 配置
 - 驗證整合
 - Bun 原生 API 整合
 
-#### ✅ Phase 3: 效能優化 (100%)
+#### ✅ Phase 3: 效能優化 (100+)
 - 查詢複雜度限制 (Query Complexity)
-- 查詢快取 (Response Cache)
+- 查詢快取 (Response Cache) - **新增支援自訂 Store (Redis/SQLite 等)**
 - DataLoader 整合範例
 - APQ (Automatic Persisted Queries)
 - 查詢深度限制 (Depth Limit)
-
-#### ✅ Phase 4: 測試完善 (100%)
-- Schema 解析優先順序測試
-- 錯誤處理測試
-- 效能基準測試 (8 scenarios, 29 tests)
-- 邊界條件測試
-- **測試覆蓋率：100% (189/189 lines, 12/12 functions)**
-
+====
 #### ✅ Phase 5: 開發體驗提升 (100%)
 - 完整 JSDoc 文檔
 - 自訂錯誤類別
 - Pothos 整合指南 (`docs/POTHOS_INTEGRATION.md`)
 - README 範例與最佳實踐
+- **Atlas 整合初步啟動 (`src/atlas.ts`)**
 - CLI 工具評估完成（決定不實作，理由：與現有工具重複）
 
 ### 關鍵成果
@@ -696,8 +690,8 @@ bunx @gravito/graphql codegen --output ./types.ts
 
 ### 未來規劃 (v2.1.0+)
 
-- [ ] Atlas ORM 整合 (RFC Phase 3)
-- [ ] 進階快取策略 (Redis/SQLite)
+- [x] 進階快取策略 (Redis/SQLite) - **已支援自訂 Store**
+- [ ] Atlas ORM 整合 (RFC Phase 3) - **初步實作於 `src/atlas.ts`**
 - [ ] GraphQL Federation 支援（如有需求）
 
 ---

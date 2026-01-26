@@ -33,6 +33,7 @@
     "typescript": "^5.0.0"
   },
   "devDependencies": {
+    "@gravito/atlas": "workspace:*",
     "@types/node": "^20.11.0",
     "bun-types": "latest",
     "tsup": "^8.0.1",
