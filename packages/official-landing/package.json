@@ -7,7 +7,7 @@
         "dev": "vite",
         "build": "vite build",
         "preview": "vite preview",
-        "typecheck": "bun vue-tsc --noEmit --skipLibCheck"
+        "typecheck": "bunx vue-tsc --noEmit --skipLibCheck"
     },
     "dependencies": {
         "vue": "^3.4.0",
@@ -18,6 +18,6 @@
         "@vitejs/plugin-vue": "^5.2.1",
         "typescript": "^5.9.3",
         "vite": "^5.4.14",
-        "vue-tsc": "^3.2.2"
+        "vue-tsc": "^2.2.12"
     }
 }

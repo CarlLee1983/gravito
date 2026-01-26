@@ -35,8 +35,15 @@ export type ModelConstructor<T extends Model> = new () => T
 export interface ModelStatic<T extends Model> {
   new (): T
   table: string
+  tableName?: string
   primaryKey: string
   connection?: string
+  getTable(): string
+  hydrate<T extends Model>(row: ModelAttributes): T
+  find<T extends Model>(key: unknown): Promise<T | null>
+  findOrFail<T extends Model>(key: unknown): Promise<T>
+  create<T extends Model>(attributes?: Partial<ModelAttributes>): Promise<T>
+  query<T extends Model>(): QueryBuilderContract<T>
 }
 
 /**
@@ -121,6 +128,16 @@ export abstract class Model {
 
   constructor() {
     this._dirtyTracker = new DirtyTracker()
+  }
+
+  /**
+   * Fill the model with an array of attributes
+   */
+  fill(attributes: Partial<ModelAttributes>): this {
+    for (const [key, value] of Object.entries(attributes)) {
+      this._setAttribute(key, value)
+    }
+    return this
   }
 
   // ============================================================================

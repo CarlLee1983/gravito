@@ -34,6 +34,7 @@ export class Connection implements ConnectionContract {
   protected driver: DriverContract
   protected grammar: GrammarContract
   protected connected = false
+  protected proxy: Connection | null = null
 
   /**
    * Static query listeners for global observation (e.g. debugging)
@@ -57,7 +58,7 @@ export class Connection implements ConnectionContract {
 
     // Proxy driver methods (e.g. redis.set, mongodb.collection)
     // biome-ignore lint/correctness/noConstructorReturn: This proxy is intentional for dynamic driver method access
-    return new Proxy(this, {
+    const proxy = new Proxy(this, {
       get(target: Connection, prop: string | symbol) {
         if (prop in target) {
           return Reflect.get(target, prop)
@@ -76,6 +77,17 @@ export class Connection implements ConnectionContract {
         return undefined
       },
     })
+
+    this.proxy = proxy
+    // biome-ignore lint/correctness/noConstructorReturn: This proxy is intentional for dynamic driver method access
+    return proxy
+  }
+
+  /**
+   * Set proxy instance
+   */
+  setProxy(proxy: any): void {
+    this.proxy = proxy
   }
 
   /**
@@ -110,7 +122,7 @@ export class Connection implements ConnectionContract {
    * Create a new query builder for a table
    */
   table<T = Record<string, unknown>>(tableName: string): QueryBuilderContract<T> {
-    return new QueryBuilder<T>(this, this.grammar, tableName)
+    return new QueryBuilder<T>(this.proxy || this, this.grammar, tableName)
   }
 
   /**
@@ -153,6 +165,43 @@ export class Connection implements ConnectionContract {
   }
 
   /**
+   * Execute write query (INSERT, UPDATE, DELETE)
+   */
+  async execute<T = Record<string, unknown>>(
+    sql: string,
+    bindings: unknown[] = []
+  ): Promise<QueryResult<T>> {
+    await this.ensureConnected()
+
+    const startTime = performance.now()
+    const timestamp = Date.now()
+
+    // Most drivers handle execute and query the same, but BunSQL separates them
+    const result =
+      typeof (this.driver as any).execute === 'function'
+        ? await (this.driver as any).execute(sql, bindings)
+        : await this.driver.query<T>(sql, bindings)
+
+    const duration = performance.now() - startTime
+
+    // Fire listeners
+    if (Connection.queryListeners.length > 0) {
+      const queryData = {
+        connection: this.name,
+        sql,
+        bindings,
+        duration,
+        timestamp,
+      }
+      for (const listener of Connection.queryListeners) {
+        listener(queryData)
+      }
+    }
+
+    return result
+  }
+
+  /**
    * Run a callback within a transaction
    */
   async transaction<T>(callback: (connection: ConnectionContract) => Promise<T>): Promise<T> {
@@ -160,7 +209,7 @@ export class Connection implements ConnectionContract {
     await this.driver.beginTransaction()
 
     try {
-      const result = await callback(this)
+      const result = await callback(this.proxy || this)
       await this.driver.commit()
       return result
     } catch (error) {
