@@ -2,15 +2,15 @@ import { BeamNetworkError, BeamTimeoutError } from './errors'
 import type { RetryOptions } from './types'
 
 /**
- * 預設可重試的 HTTP 狀態碼
+ * Default HTTP status codes that should be retried
  */
 const DEFAULT_RETRY_STATUS_CODES = [408, 429, 500, 502, 503, 504]
 
 /**
- * 建立帶超時的 fetch 函式
+ * Creates a fetch function with timeout support
  *
- * @param timeout - 超時時間（毫秒）
- * @returns 帶超時功能的 fetch 函式
+ * @param timeout - Timeout duration in milliseconds
+ * @returns A fetch function with timeout capability
  */
 export function createFetchWithTimeout(
   timeout: number
@@ -37,11 +37,11 @@ export function createFetchWithTimeout(
 }
 
 /**
- * 執行帶重試的請求
+ * Executes a request with retry logic
  *
- * @param fetchFn - 執行請求的函式
- * @param options - 重試配置選項
- * @returns 請求響應
+ * @param fetchFn - Function to execute the request
+ * @param options - Retry configuration options
+ * @returns The request response
  */
 export async function executeWithRetry(
   fetchFn: () => Promise<Response>,
@@ -56,20 +56,20 @@ export async function executeWithRetry(
     try {
       const response = await fetchFn()
 
-      // 如果狀態碼不需要重試，或已達到最大重試次數，直接返回
+      // If status code does not require retry or max attempts reached, return directly
       if (!statusCodes.includes(response.status) || attempts === count) {
         return response
       }
 
-      // 需要重試 - 消費 response body 以釋放連線
+      // Need retry - consume response body to release connection
       await response.text().catch(() => {
-        // 忽略消費錯誤
+        // Ignore consumption errors
       })
       lastError = new Error(`HTTP ${response.status}`)
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error))
 
-      // 如果已達到最大重試次數，拋出錯誤
+      // If max retry count reached, throw error
       if (attempts === count) {
         throw lastError
       }
@@ -77,30 +77,30 @@ export async function executeWithRetry(
 
     attempts++
     if (attempts <= count) {
-      // 計算延遲時間（指數退避）
+      // Calculate delay duration (exponential backoff)
       const waitTime = delay * backoff ** (attempts - 1)
       await sleep(waitTime)
     }
   }
 
-  // 理論上不會執行到這裡，但為了類型安全
+  // Theoretically should not reach here, but for type safety
   throw lastError || new Error('Request failed')
 }
 
 /**
- * 延遲指定時間
+ * Delay for a specified duration
  *
- * @param ms - 延遲時間（毫秒）
+ * @param ms - Duration in milliseconds
  */
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
 /**
- * 解析 headers（支援靜態物件或動態函式）
+ * Resolves headers (supports static object or dynamic function)
  *
- * @param headers - headers 配置
- * @returns 解析後的 headers 物件
+ * @param headers - Headers configuration
+ * @returns Resolved headers object
  */
 export async function resolveHeaders(
   headers?:

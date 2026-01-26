@@ -4,32 +4,32 @@ import { createBeam } from './index'
 import type { BeamOptions } from './types'
 
 /**
- * 建立帶有認證的 Beam 客戶端
+ * Create a Beam client with authentication
  *
- * 這是一個便利函式，用於創建自動附加 Bearer token 的客戶端。
- * Token 可以是靜態字串或動態函式，支援每次請求時刷新 token。
+ * A convenience function for creating a client that automatically attaches a Bearer token.
+ * The token can be a static string or a dynamic function, supporting token refresh on each request.
  *
- * @template T - Photon 應用程式類型
- * @param baseUrl - API 伺服器的基礎 URL
- * @param getToken - 取得 token 的函式（支援同步或非同步）
- * @param options - 其他 Beam 配置選項（不包含 headers）
- * @returns 已配置認證的 Beam 客戶端
+ * @template T - Photon application type
+ * @param baseUrl - Base URL of the API server
+ * @param getToken - Function to retrieve the token (supports sync or async)
+ * @param options - Other Beam configuration options (excluding headers)
+ * @returns An authenticated Beam client
  *
  * @example
  * ```typescript
- * // 靜態 token
+ * // Static token
  * const client = createAuthenticatedBeam<AppType>(
  *   'https://api.example.com',
  *   () => 'my-static-token'
  * )
  *
- * // 動態 token（從 localStorage 讀取）
+ * // Dynamic token (read from localStorage)
  * const client = createAuthenticatedBeam<AppType>(
  *   'https://api.example.com',
  *   () => localStorage.getItem('authToken') || ''
  * )
  *
- * // 非同步 token（從 API 刷新）
+ * // Async token (refreshed via API)
  * const client = createAuthenticatedBeam<AppType>(
  *   'https://api.example.com',
  *   async () => {
@@ -56,21 +56,21 @@ export function createAuthenticatedBeam<T extends Photon<Env, Schema, string>>(
 }
 
 /**
- * 解析響應並提取 JSON 資料，失敗時拋出錯誤
+ * Parse response and extract JSON data, throwing an error on failure
  *
- * 這是一個便利函式，用於自動檢查響應狀態並解析 JSON。
- * 如果響應狀態不是 2xx，會拋出 BeamError。
+ * A convenience function for automatically checking the response status and parsing JSON.
+ * Throws a BeamError if the response status is not 2xx.
  *
- * @template T - 預期的響應資料類型
- * @param response - Fetch Response 物件
- * @returns 解析後的 JSON 資料
- * @throws {BeamError} 當響應狀態不是 2xx 時
+ * @template T - Expected response data type
+ * @param response - Fetch Response object
+ * @returns Parsed JSON data
+ * @throws {BeamError} When the response status is not 2xx
  *
  * @example
  * ```typescript
  * const res = await client.users.$get()
  * const data = await unwrapResponse<User[]>(res)
- * // 如果請求失敗，會自動拋出 BeamError
+ * // Automatically throws BeamError if the request fails
  * ```
  *
  * @public
@@ -80,7 +80,7 @@ export async function unwrapResponse<T>(response: Response): Promise<T> {
     throw new BeamError(`Request failed with status ${response.status}`, response.status)
   }
 
-  // 處理空響應（例如 204 No Content）
+  // Handle empty response (e.g., 204 No Content)
   const text = await response.text()
   if (!text) {
     return undefined as T
@@ -90,14 +90,14 @@ export async function unwrapResponse<T>(response: Response): Promise<T> {
 }
 
 /**
- * 安全地解析響應，不拋出錯誤
+ * Safely parse response without throwing errors
  *
- * 這個函式提供類似 Rust/Go 的錯誤處理模式，回傳一個包含 data 或 error 的物件。
- * 不會拋出錯誤，適合用於需要明確處理錯誤的場景。
+ * Provides a Rust/Go style error handling pattern, returning an object containing either data or error.
+ * Does not throw errors, suitable for scenarios where explicit error handling is required.
  *
- * @template T - 預期的響應資料類型
- * @param response - Fetch Response 物件
- * @returns 包含 data 或 error 的物件
+ * @template T - Expected response data type
+ * @param response - Fetch Response object
+ * @returns Object containing either data or error
  *
  * @example
  * ```typescript
@@ -125,7 +125,7 @@ export async function safeResponse<T>(
       }
     }
 
-    // 處理空響應（例如 204 No Content）
+    // Handle empty response (e.g., 204 No Content)
     const text = await response.text()
     if (!text) {
       return { data: undefined as T, error: null }

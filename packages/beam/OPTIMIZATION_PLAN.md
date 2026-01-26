@@ -262,13 +262,13 @@ export function useUserProfile(userId: string) {
 
 | 階段 | 項目 | 狀態 |
 |------|------|------|
-| Phase 1.1 | 增強錯誤處理 | 待開始 |
-| Phase 1.2 | 擴展配置選項 | 待開始 |
-| Phase 1.3 | 提升測試覆蓋率 | 待開始 |
-| Phase 2.1 | 新增工具函式 | 待開始 |
-| Phase 2.2 | React 整合範例 | 待開始 |
-| Phase 3.1 | 擴展 README | 待開始 |
-| Phase 3.2 | 繁體中文文件 | 待開始 |
+| Phase 1.1 | 增強錯誤處理 | 已完成 |
+| Phase 1.2 | 擴展配置選項 | 已完成 |
+| Phase 1.3 | 提升測試覆蓋率 | 已完成 |
+| Phase 2.1 | 新增工具函式 | 已完成 |
+| Phase 2.2 | React 整合範例 | 已完成 |
+| Phase 3.1 | 擴展 README | 已完成 |
+| Phase 3.2 | 繁體中文文件 | 已完成 |
 
 ---
 

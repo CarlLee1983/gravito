@@ -42,7 +42,7 @@ export function createBeam<T extends Photon<Env, Schema, string>>(
   baseUrl: string,
   options?: BeamOptions
 ): ReturnType<typeof beamClient<T>> {
-  // 快速路徑：無進階選項時，直接委託（零開銷）
+  // Fast path: delegate directly when no advanced options are used (zero overhead)
   if (
     !options?.timeout &&
     !options?.retry &&
@@ -53,7 +53,7 @@ export function createBeam<T extends Photon<Env, Schema, string>>(
     return beamClient<T>(baseUrl, options)
   }
 
-  // 進階路徑：包裝 fetch 以支援新功能
+  // Advanced path: wrap fetch to support new features
   const wrappedFetch = createEnhancedFetch(options)
 
   return beamClient<T>(baseUrl, {
@@ -63,17 +63,17 @@ export function createBeam<T extends Photon<Env, Schema, string>>(
 }
 
 /**
- * 建立增強的 fetch 函式，支援超時、重試和攔截器
+ * Creates an enhanced fetch function with support for timeout, retry, and interceptors
  */
 function createEnhancedFetch(options: BeamOptions) {
   return async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
     try {
       let config = init || {}
 
-      // 1. 解析動態 headers
+      // 1. Resolve dynamic headers
       const headers = await resolveHeaders(options.headers)
       if (headers) {
-        // 安全地合併 headers（支援 Headers 實例或物件）
+        // Safely merge headers (supports Headers instance or object)
         const mergedHeaders = new Headers(config.headers)
         Object.entries(headers).forEach(([key, value]) => {
           mergedHeaders.set(key, value)
@@ -84,29 +84,29 @@ function createEnhancedFetch(options: BeamOptions) {
         }
       }
 
-      // 2. 執行 onRequest 攔截器
+      // 2. Execute onRequest interceptor
       if (options.onRequest) {
         config = await options.onRequest(config)
       }
 
-      // 3. 建立 fetch 函式（可能帶超時）
+      // 3. Create fetch function (with possible timeout)
       const fetchFn = options.timeout
         ? createFetchWithTimeout(options.timeout)
         : fetch.bind(globalThis)
 
-      // 4. 執行請求（可能帶重試）
+      // 4. Execute request (with possible retry)
       let response = await (options.retry
         ? executeWithRetry(() => fetchFn(input, config), options.retry)
         : fetchFn(input, config))
 
-      // 5. 執行 onResponse 攔截器
+      // 5. Execute onResponse interceptor
       if (options.onResponse) {
         response = await options.onResponse(response)
       }
 
       return response
     } catch (error) {
-      // 6. 執行 onError 攔截器
+      // 6. Execute onError interceptor
       const beamError =
         error instanceof BeamError ? error : new BeamNetworkError('Request failed', error)
 

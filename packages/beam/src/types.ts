@@ -1,28 +1,28 @@
 import type { BeamError } from './errors'
 
 /**
- * 重試配置選項
+ * Retry configuration options
  *
  * @public
  */
 export interface RetryOptions {
   /**
-   * 最大重試次數，預設 0（不重試）
+   * Maximum number of retries, default is 0 (no retry)
    */
   count?: number
 
   /**
-   * 重試延遲（毫秒），預設 1000
+   * Retry delay (milliseconds), default is 1000
    */
   delay?: number
 
   /**
-   * 應該重試的狀態碼，預設 [408, 429, 500, 502, 503, 504]
+   * Status codes that should trigger a retry, default is [408, 429, 500, 502, 503, 504]
    */
   statusCodes?: number[]
 
   /**
-   * 指數退避因子，預設 2
+   * Exponential backoff factor, default is 2
    */
   backoff?: number
 }
@@ -62,22 +62,22 @@ export interface BeamOptions extends Omit<RequestInit, 'headers'> {
     | (() => Record<string, string> | Promise<Record<string, string>>)
 
   /**
-   * 請求超時時間（毫秒）
+   * Request timeout duration (milliseconds)
    *
-   * 如果請求超過此時間，將拋出 BeamTimeoutError
-   * 預設無超時限制
+   * If the request exceeds this duration, it will throw a BeamTimeoutError.
+   * No timeout limit by default.
    *
    * @example
    * ```typescript
-   * timeout: 5000  // 5 秒超時
+   * timeout: 5000  // 5 second timeout
    * ```
    */
   timeout?: number
 
   /**
-   * 重試配置
+   * Retry configuration
    *
-   * 配置自動重試邏輯，適用於臨時性錯誤（如 5xx、429 等）
+   * Configures automatic retry logic for transient errors (e.g., 5xx, 429, etc.)
    *
    * @example
    * ```typescript
@@ -91,12 +91,12 @@ export interface BeamOptions extends Omit<RequestInit, 'headers'> {
   retry?: RetryOptions
 
   /**
-   * 請求前攔截器
+   * Request interceptor
    *
-   * 在發送請求前呼叫，可用於修改請求配置（如添加認證 token）
+   * Called before sending the request, can be used to modify request configuration (e.g., adding auth token)
    *
-   * @param config - 請求配置
-   * @returns 修改後的請求配置
+   * @param config - Request configuration
+   * @returns Modified request configuration
    *
    * @example
    * ```typescript
@@ -112,12 +112,12 @@ export interface BeamOptions extends Omit<RequestInit, 'headers'> {
   onRequest?: (config: RequestInit) => RequestInit | Promise<RequestInit>
 
   /**
-   * 響應後攔截器
+   * Response interceptor
    *
-   * 在收到響應後呼叫，可用於統一處理響應（如日誌記錄）
+   * Called after receiving the response, can be used for unified response handling (e.g., logging)
    *
-   * @param response - 響應物件
-   * @returns 原始或修改後的響應物件
+   * @param response - Response object
+   * @returns Original or modified response object
    *
    * @example
    * ```typescript
@@ -130,12 +130,12 @@ export interface BeamOptions extends Omit<RequestInit, 'headers'> {
   onResponse?: (response: Response) => Response | Promise<Response>
 
   /**
-   * 錯誤攔截器
+   * Error interceptor
    *
-   * 當請求發生錯誤時呼叫，可用於統一錯誤處理（如錯誤上報）
-   * 注意：此攔截器不會阻止錯誤拋出，錯誤仍會被重新拋出
+   * Called when a request error occurs, can be used for unified error handling (e.g., error reporting)
+   * Note: This interceptor will not prevent the error from being thrown; the error will still be re-thrown.
    *
-   * @param error - BeamError 實例
+   * @param error - BeamError instance
    *
    * @example
    * ```typescript

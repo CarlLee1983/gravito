@@ -1,14 +1,14 @@
 /**
- * 基礎 Beam 錯誤類別
+ * Base Beam Error class
  *
- * 所有 Beam 相關錯誤的基礎類別，提供統一的錯誤格式
+ * Base class for all Beam related errors, providing a unified error format
  */
 export class BeamError extends Error {
   /**
-   * @param message - 錯誤訊息
-   * @param status - HTTP 狀態碼（可選）
-   * @param code - 錯誤代碼（可選）
-   * @param cause - 原始錯誤（可選）
+   * @param message - Error message
+   * @param status - HTTP status code (optional)
+   * @param code - Error code (optional)
+   * @param cause - Original error (optional)
    */
   constructor(
     message: string,
@@ -18,20 +18,20 @@ export class BeamError extends Error {
   ) {
     super(message)
     this.name = 'BeamError'
-    // 修復 TypeScript 繼承 Error 的原型鏈問題
+    // Fix prototype chain issue when extending Error in TypeScript
     Object.setPrototypeOf(this, new.target.prototype)
   }
 }
 
 /**
- * 網路錯誤
+ * Network Error
  *
- * 當網路連線失敗時拋出（例如：DNS 查詢失敗、連線被拒絕等）
+ * Thrown when a network connection fails (e.g., DNS lookup failure, connection refused, etc.)
  */
 export class BeamNetworkError extends BeamError {
   /**
-   * @param message - 錯誤訊息
-   * @param cause - 原始錯誤（可選）
+   * @param message - Error message
+   * @param cause - Original error (optional)
    */
   constructor(message: string, cause?: unknown) {
     super(message, undefined, 'NETWORK_ERROR', cause)
@@ -41,13 +41,13 @@ export class BeamNetworkError extends BeamError {
 }
 
 /**
- * 超時錯誤
+ * Timeout Error
  *
- * 當請求超過指定的超時時間時拋出
+ * Thrown when a request exceeds the specified timeout duration
  */
 export class BeamTimeoutError extends BeamError {
   /**
-   * @param timeout - 超時時間（毫秒）
+   * @param timeout - Timeout duration (milliseconds)
    */
   constructor(timeout: number) {
     super(`Request timed out after ${timeout}ms`, undefined, 'TIMEOUT')
@@ -57,15 +57,15 @@ export class BeamTimeoutError extends BeamError {
 }
 
 /**
- * HTTP 錯誤
+ * HTTP Error
  *
- * 當伺服器回傳 4xx 或 5xx 狀態碼時拋出
+ * Thrown when the server returns a 4xx or 5xx status code
  */
 export class BeamHttpError extends BeamError {
   /**
-   * @param message - 錯誤訊息
-   * @param status - HTTP 狀態碼
-   * @param response - 響應內容（可選）
+   * @param message - Error message
+   * @param status - HTTP status code
+   * @param response - Response body (optional)
    */
   constructor(
     message: string,
