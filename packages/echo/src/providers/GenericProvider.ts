@@ -11,7 +11,13 @@ import {
   timingSafeEqual,
   validateTimestamp,
 } from '../receive/SignatureValidator'
-import type { WebhookProvider, WebhookVerificationResult } from '../types'
+import type { WebhookVerificationResult } from '../types'
+import { BaseProvider, type ProviderOptions } from './base/BaseProvider'
+
+export interface GenericProviderOptions extends ProviderOptions {
+  signatureHeader?: string
+  timestampHeader?: string
+}
 
 /**
  * Generic webhook provider using HMAC-SHA256
@@ -26,23 +32,16 @@ import type { WebhookProvider, WebhookVerificationResult } from '../types'
  * const result = await provider.verify(body, headers, secret)
  * ```
  */
-export class GenericProvider implements WebhookProvider {
+export class GenericProvider extends BaseProvider {
   readonly name = 'generic'
 
   private signatureHeader: string
   private timestampHeader: string
-  private tolerance: number
 
-  constructor(
-    options: {
-      signatureHeader?: string
-      timestampHeader?: string
-      tolerance?: number
-    } = {}
-  ) {
+  constructor(options: GenericProviderOptions = {}) {
+    super(options)
     this.signatureHeader = options.signatureHeader ?? 'x-webhook-signature'
     this.timestampHeader = options.timestampHeader ?? 'x-webhook-timestamp'
-    this.tolerance = options.tolerance ?? 300
   }
 
   async verify(
@@ -53,10 +52,7 @@ export class GenericProvider implements WebhookProvider {
     // Get signature from headers
     const signature = this.getHeader(headers, this.signatureHeader)
     if (!signature) {
-      return {
-        valid: false,
-        error: `Missing signature header: ${this.signatureHeader}`,
-      }
+      return this.createFailure(`Missing signature header: ${this.signatureHeader}`)
     }
 
     // Validate timestamp if present
@@ -64,47 +60,29 @@ export class GenericProvider implements WebhookProvider {
     if (timestampStr) {
       const timestamp = parseInt(timestampStr, 10)
       if (Number.isNaN(timestamp) || !validateTimestamp(timestamp, this.tolerance)) {
-        return {
-          valid: false,
-          error: 'Timestamp validation failed',
-        }
+        return this.createFailure('Timestamp validation failed')
       }
     }
 
     // Compute expected signature
-    const payloadStr = typeof payload === 'string' ? payload : payload.toString('utf-8')
+    const payloadStr = this.payloadToString(payload)
     const expectedSignature = await computeHmacSha256(payloadStr, secret)
 
     // Compare signatures
     if (!timingSafeEqual(signature.toLowerCase(), expectedSignature.toLowerCase())) {
-      return {
-        valid: false,
-        error: 'Signature verification failed',
-      }
+      return this.createFailure('Signature verification failed')
     }
 
     // Parse payload
-    try {
-      const parsed = JSON.parse(payloadStr)
-      return {
-        valid: true,
-        payload: parsed,
-        eventType: parsed.type ?? parsed.event ?? parsed.eventType,
-        webhookId: parsed.id ?? parsed.webhookId,
-      }
-    } catch {
-      return {
-        valid: true,
-        payload: payloadStr,
-      }
+    const parseResult = this.safeParseJson(payloadStr)
+    if (!parseResult.success) {
+      return this.createSuccess(payloadStr)
     }
-  }
 
-  private getHeader(
-    headers: Record<string, string | string[] | undefined>,
-    name: string
-  ): string | undefined {
-    const value = headers[name] ?? headers[name.toLowerCase()]
-    return Array.isArray(value) ? value[0] : value
+    const parsed = parseResult.data as Record<string, unknown>
+    return this.createSuccess(parsed, {
+      eventType: (parsed.type ?? parsed.event ?? parsed.eventType) as string | undefined,
+      webhookId: (parsed.id ?? parsed.webhookId) as string | undefined,
+    })
   }
 }

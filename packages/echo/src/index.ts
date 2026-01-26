@@ -42,6 +42,7 @@
 // Core
 export { OrbitEcho } from './OrbitEcho'
 // Providers
+export { BaseProvider, type ProviderOptions } from './providers/base/BaseProvider'
 export { GenericProvider } from './providers/GenericProvider'
 export { GitHubProvider } from './providers/GitHubProvider'
 export { StripeProvider } from './providers/StripeProvider'
