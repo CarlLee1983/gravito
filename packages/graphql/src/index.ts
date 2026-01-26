@@ -386,8 +386,13 @@ export class OrbitGraphQL implements GravitoOrbit {
       // biome-ignore lint/suspicious/noExplicitAny: Temporary cast to avoid strict type mismatch with Yoga's CORS types
       cors: this.config.cors as any,
       plugins,
-      maskedErrors: this.config.maskErrors,
-      formatError: this.config.formatError,
+      maskedErrors: (this.config.maskErrors === false
+        ? false
+        : {
+            formatError: this.config.formatError,
+            ...(typeof this.config.maskErrors === 'object' ? this.config.maskErrors : {}),
+            // biome-ignore lint/suspicious/noExplicitAny: Bypass strict Yoga types for formatError
+          }) as any,
       // Inject Gravito Context
       context: (initialContext) => {
         const gravito = {
@@ -518,6 +523,8 @@ export class OrbitGraphQL implements GravitoOrbit {
     core.logger.info(`[OrbitGraphQL] Mounted at ${endpoint}`)
   }
 }
+
+export * from './atlas'
 
 // Module augmentation for GravitoVariables
 declare module '@gravito/core' {
