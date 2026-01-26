@@ -6,13 +6,16 @@ import { BullMQBridge } from './bridges/BullMQBridge'
 import { type EventMapping, GenericBridge } from './bridges/GenericBridge'
 import type { QueueBridge } from './bridges/types'
 import { CommandListener } from './CommandListener'
+import { InternalMetrics, MetricsCollector } from './metrics/InternalMetrics'
 import { BeeQueueProbe } from './probes/BeeQueueProbe'
 import { BullMQProbe } from './probes/BullMQProbe'
 import { BullProbe } from './probes/BullProbe'
+import { CachedNodeProbe } from './probes/CachedNodeProbe'
 import { LaravelProbe } from './probes/LaravelProbe'
 import { NodeProbe } from './probes/NodeProbe'
 import { RedisListProbe } from './probes/RedisListProbe'
 import type { Probe, QueueProbe } from './types'
+import { AdaptiveHeartbeat } from './utils/AdaptiveHeartbeat'
 import { ConsoleLogger, type Logger } from './utils/logger'
 import { DefaultRedisConnectionManager, type RedisConnectionManager } from './utils/redis'
 
@@ -82,6 +85,7 @@ export class QuasarAgent {
   private subscriberRedis?: Redis // Dedicated connection for Pub/Sub
   private commandListener?: CommandListener
   private logger: Logger
+  private metricsCollector: MetricsCollector
 
   private service: string
   private name?: string
@@ -89,7 +93,7 @@ export class QuasarAgent {
   private probe: Probe
   private queueProbes: QueueProbe[] = []
   private bridges: QueueBridge[] = []
-  private timer: Timer | null = null
+  private heartbeat: AdaptiveHeartbeat
   private prefix = 'gravito:quasar:node:'
 
   // Cached node ID (computed on first tick)
@@ -108,6 +112,7 @@ export class QuasarAgent {
     this.service = options.service
     this.name = options.name
     this.logger = options.logger || new ConsoleLogger()
+    this.metricsCollector = new MetricsCollector()
 
     // 1. Setup Transport Manager
     if (options.transport?.client) {
@@ -143,7 +148,16 @@ export class QuasarAgent {
     }
 
     this.interval = options.interval || 10000 // 10s default
-    this.probe = options.probe || new NodeProbe()
+    const baseProbe = options.probe || new NodeProbe()
+    this.probe = new CachedNodeProbe(baseProbe, { cacheTimeout: 1000 })
+
+    this.heartbeat = new AdaptiveHeartbeat(async () => this.tick(), {
+      baseInterval: this.interval,
+      minInterval: Math.max(1000, this.interval / 2),
+      maxInterval: this.interval * 3,
+      jitter: 0.1,
+      backoffMultiplier: 1.5,
+    })
   }
 
   /**
@@ -155,26 +169,23 @@ export class QuasarAgent {
   }
 
   async start() {
-    // Connect transport
-    await this.transportManager.connect()
+    const promises = [this.transportManager.connect()]
 
-    // Connect monitor if exists
     if (this.monitorManager) {
-      await this.monitorManager.connect()
+      promises.push(this.monitorManager.connect())
     }
+
+    await Promise.all(promises)
 
     this.logger.info(`[Quasar] Agent started for service: ${this.service}`)
 
-    this.timer = setInterval(() => this.tick(), this.interval)
+    this.heartbeat.start()
     // Initial tick
     await this.tick()
   }
 
   async stop() {
-    if (this.timer) {
-      clearInterval(this.timer)
-      this.timer = null
-    }
+    this.heartbeat.stop()
 
     // Stop command listener if active
     if (this.commandListener) {
@@ -205,9 +216,10 @@ export class QuasarAgent {
     return {
       nodeId: this.nodeId,
       service: this.service,
-      started: !!this.timer,
+      started: true, // If we are here, we are likely started or instantiated. But we can track isRunning.
       transport: this.transportRedis.status,
       monitor: this.monitorRedis?.status || 'not_configured',
+      metrics: this.metricsCollector.getMetrics(),
     }
   }
 
