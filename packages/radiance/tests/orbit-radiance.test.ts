@@ -47,6 +47,62 @@ describe('OrbitRadiance', () => {
     expect(instances.get('broadcast')).toBeInstanceOf(BroadcastManager)
   })
 
+  it('installs PusherDriver', async () => {
+    const { core, instances } = createCore()
+    const orbit = OrbitRadiance.configure({
+      driver: 'pusher',
+      config: { appId: 'id', key: 'key', secret: 'secret' },
+    })
+
+    await orbit.install(core as any)
+
+    expect(instances.get('broadcast')).toBeInstanceOf(BroadcastManager)
+    expect(core.logger.info).toHaveBeenCalledWith(expect.stringContaining('pusher'))
+  })
+
+  it('installs AblyDriver', async () => {
+    const { core, instances } = createCore()
+    const orbit = OrbitRadiance.configure({
+      driver: 'ably',
+      config: { apiKey: 'key' },
+    })
+
+    await orbit.install(core as any)
+
+    expect(instances.get('broadcast')).toBeInstanceOf(BroadcastManager)
+    expect(core.logger.info).toHaveBeenCalledWith(expect.stringContaining('ably'))
+  })
+
+  it('handles missing Redis client gracefully', async () => {
+    const { core, instances } = createCore()
+    // No redis in container
+    const orbit = new OrbitRadiance({
+      driver: 'redis',
+      config: {},
+    })
+
+    await orbit.install(core as any)
+    expect(instances.get('broadcast')).toBeInstanceOf(BroadcastManager)
+    // Driver is installed but client not set; verification happens at broadcast time
+  })
+
+  it('integrates with EventManager', async () => {
+    const { core } = createCore()
+    const orbit = OrbitRadiance.configure({
+      driver: 'websocket',
+      config: { getConnections: () => [] },
+    })
+
+    await orbit.install(core as any)
+
+    expect(core.events.setBroadcastManager).toHaveBeenCalled()
+    const callback = (core.events.setBroadcastManager as any).mock.calls[0][0].broadcast
+    expect(callback).toBeTypeOf('function')
+
+    // We can't easily test the callback execution without mocking BroadcastManager inside the closure
+    // but verifying it's registered is sufficient for installation test.
+  })
+
   it('throws on unsupported driver', async () => {
     const { core } = createCore()
     const orbit = new OrbitRadiance({

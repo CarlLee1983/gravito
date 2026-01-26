@@ -6,12 +6,31 @@ import type { UserProvider } from '../contracts/UserProvider'
 
 /**
  * Guard implementation for JWT-based authentication.
+ *
+ * This guard authenticates requests based on JSON Web Tokens provided in the
+ * Authorization header as a Bearer token or as a query parameter.
+ *
  * @public
+ * @example
+ * ```typescript
+ * const guard = new JwtGuard(provider, ctx, 'my-secret');
+ * const user = await guard.user();
+ * ```
  */
 export class JwtGuard<User extends Authenticatable = Authenticatable> implements Guard<User> {
   protected userInstance: User | null = null
   private verifyToken: typeof verify
 
+  /**
+   * Create a new JWT guard instance.
+   *
+   * @param provider - User provider instance
+   * @param ctx - Gravito request context
+   * @param secret - Secret key for token verification
+   * @param algo - Algorithm used for signing the token
+   * @param allowQueryToken - Whether to allow tokens in query string
+   * @param deps - Optional dependencies for testing (e.g., mock verify)
+   */
   constructor(
     protected provider: UserProvider<User>,
     protected ctx: GravitoContext,
@@ -23,14 +42,29 @@ export class JwtGuard<User extends Authenticatable = Authenticatable> implements
     this.verifyToken = deps.verify ?? verify
   }
 
+  /**
+   * Determine if the current user is authenticated.
+   *
+   * @returns True if token is valid and user exists, false otherwise
+   */
   async check(): Promise<boolean> {
     return (await this.user()) !== null
   }
 
+  /**
+   * Determine if the current user is a guest.
+   *
+   * @returns True if not authenticated, false otherwise
+   */
   async guest(): Promise<boolean> {
     return !(await this.check())
   }
 
+  /**
+   * Get the currently authenticated user instance.
+   *
+   * @returns The user instance or null if token is invalid or user not found
+   */
   async user(): Promise<User | null> {
     if (this.userInstance) {
       return this.userInstance
@@ -51,32 +85,58 @@ export class JwtGuard<User extends Authenticatable = Authenticatable> implements
         this.userInstance = await this.provider.retrieveById(payload.sub as string)
       }
     } catch (_e) {
-      // Token expired or invalid
       return null
     }
 
     return this.userInstance
   }
 
+  /**
+   * Get the unique identifier for the authenticated user.
+   *
+   * @returns The user ID or null
+   */
   async id(): Promise<string | number | null> {
     const user = await this.user()
     return user ? user.getAuthIdentifier() : null
   }
 
+  /**
+   * Validate a user's credentials.
+   *
+   * @param credentials - Authentication credentials
+   * @returns True if valid, false otherwise
+   */
   async validate(credentials: Record<string, unknown>): Promise<boolean> {
     const user = await this.provider.retrieveByCredentials(credentials)
     return user ? await this.provider.validateCredentials(user, credentials) : false
   }
 
+  /**
+   * Set the current user.
+   *
+   * @param user - The user instance
+   * @returns The guard instance
+   */
   setUser(user: User): this {
     this.userInstance = user
     return this
   }
 
+  /**
+   * Get the user provider.
+   *
+   * @returns The user provider instance
+   */
   getProvider(): UserProvider<User> {
     return this.provider
   }
 
+  /**
+   * Set the user provider.
+   *
+   * @param provider - The user provider instance
+   */
   setProvider(provider: UserProvider<User>): void {
     this.provider = provider
   }

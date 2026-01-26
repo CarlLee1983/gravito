@@ -1,187 +1,92 @@
-# @gravito/freeze
+# @gravito/freeze 🧊
 
-> 🧊 Static Site Generation (SSG) core module for Gravito Framework
+> **High-performance Static Site Generation (SSG) core for the Gravito Framework.**
 
-## Overview
+`@gravito/freeze` is the backbone of Gravito's static site capabilities. It provides the essential logic for environment detection, locale-aware routing, and build-time asset generation, enabling you to build SEO-friendly, blazing-fast static websites from your Gravito applications.
 
-`@gravito/freeze` provides the core utilities for building static sites from Gravito applications. It handles environment detection, locale-aware routing, and build-time generation.
+## 🌟 Features
 
-## Installation
+- **⚡️ Smart Detection**: Automatically detects whether your application is running as a static site or a dynamic application.
+- **🌍 Locale-Aware Routing**: First-class support for multi-language sites with automatic localized path generation and redirection.
+- **🏗️ Build-Time Utilities**:
+  - **Sitemap Generation**: Automatic `sitemap.xml` with `hreflang` support.
+  - **Robots Management**: Programmatic `robots.txt` generation.
+  - **Redirect Logic**: Generate HTML-based redirects for serverless static hosting (GitHub Pages, Vercel, etc.).
+- **🔍 SEO Optimized**: Designed with search engines in mind, ensuring your static content is perfectly indexed.
+- **🔌 Framework Agnostic**: The core logic is pure TypeScript, with official adapters available for React and Vue.
+- **🛠️ Config Driven**: Sensible defaults with deep customization options for domains, locales, and output paths.
+
+## 📦 Installation
 
 ```bash
 bun add @gravito/freeze
 ```
 
-## Quick Start
+## 🚀 Quick Start
+
+Define your configuration and initialize the detector:
 
 ```typescript
 import { defineConfig, createDetector } from '@gravito/freeze'
 
-// Define your SSG configuration
 const config = defineConfig({
-  staticDomains: ['example.com', 'example.github.io'],
-  locales: ['en', 'zh'],
+  baseUrl: 'https://gravito.dev',
+  locales: ['en', 'zh-TW', 'ja'],
   defaultLocale: 'en',
-  baseUrl: 'https://example.com',
+  staticDomains: ['gravito.dev', 'gravito-framework.github.io'],
   redirects: [
-    { from: '/docs', to: '/en/docs/guide/getting-started' },
-    { from: '/about', to: '/en/about' },
-  ],
+    { from: '/docs', to: '/en/docs/introduction' }
+  ]
 })
 
-// Create a detector instance
 const detector = createDetector(config)
 
-// Check if running in static mode
+// Use the detector to decide rendering behavior
 if (detector.isStaticSite()) {
-  console.log('Using static mode - native <a> tags')
-} else {
-  console.log('Using dynamic mode - Inertia <Link>')
+  // Logic for static site (e.g., direct <a> tags)
 }
 ```
 
-## API Reference
+## ⚙️ Core Concepts
 
-### Configuration
+### 1. Environment Detection
+The `FreezeDetector` uses domain matching and environment variables to determine if the application is being served as a static site. This allows your components to adjust their behavior (like navigation) automatically.
 
-#### `defineConfig(config)`
+### 2. Localization (I18n)
+Freeze handles the complexity of localized paths:
+- `/about` → `/en/about`
+- `/zh-TW/docs` → `/ja/docs` (Switching)
+It also generates the necessary metadata for search engines to understand the relationship between translated pages.
 
-Define SSG configuration with sensible defaults.
+### 3. Static Hosting Redirects
+Since many static hosts don't support server-side redirects, Freeze can generate physical `index.html` files with `<meta http-equiv="refresh">` and JavaScript fallbacks to handle legacy paths or root-to-locale redirection.
 
-```typescript
-const config = defineConfig({
-  staticDomains: ['example.com'],
-  previewPort: 4173,        // default
-  locales: ['en', 'zh'],
-  defaultLocale: 'en',      // default
-  outputDir: 'dist-static', // default
-  baseUrl: 'https://example.com',
-  redirects: [],
-})
-```
+## 🛠️ API Reference
 
-### Runtime Detection
+### Configuration: `defineConfig`
 
-#### `FreezeDetector`
-
-The main detector class for runtime environment checks.
-
-```typescript
-const detector = createDetector(config)
-
-// Check if static site
-detector.isStaticSite() // boolean
-
-// Get locale from URL path
-detector.getLocaleFromPath('/en/docs') // 'en'
-
-// Get localized path
-detector.getLocalizedPath('/about', 'zh') // '/zh/about'
-
-// Switch locale
-detector.switchLocale('/en/docs', 'zh') // '/zh/docs'
-
-// Check redirect rules
-detector.needsRedirect('/docs') // { from: '/docs', to: '/en/docs/...' }
-
-// Get current locale (browser only)
-detector.getCurrentLocale() // 'en'
-```
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `baseUrl` | `string` | Required | The production URL of your site. |
+| `locales` | `string[]` | `['en']` | Supported language codes. |
+| `defaultLocale` | `string` | `'en'` | The fallback language. |
+| `outputDir` | `string` | `'dist-static'` | Target directory for generated files. |
+| `staticDomains` | `string[]` | `[]` | List of domains that trigger static mode. |
 
 ### Build Utilities
 
-#### `generateSitemapXml(entries, baseUrl)`
+- `generateSitemapXml`: Creates a valid XML sitemap with alternate links.
+- `generateRobotsTxt`: Creates a standard `robots.txt`.
+- `generateRedirects`: Generates a map of file paths to redirect HTML content.
+- `generate404Html`: Creates a standard 404 page for static hosts.
 
-Generate a standard sitemap.xml with hreflang alternates.
+## 🔌 Framework Adapters
 
-```typescript
-import { generateSitemapEntries, generateSitemapXml } from '@gravito/freeze'
+For seamless integration with your favorite UI library, use our official adapters:
 
-const entries = generateSitemapEntries(config, ['/about', '/products'])
-const xml = generateSitemapXml(entries, 'https://example.com')
-```
+- **React**: `@gravito/freeze-react` (Hooks like `useLocale`, `useLocalizedPath`)
+- **Vue**: `@gravito/freeze-vue` (Composables for the same functionality)
 
-#### `generateRobotsTxt(baseUrl, sitemap = true)`
+## 📄 License
 
-Generate a standard robots.txt file.
-
-```typescript
-import { generateRobotsTxt } from '@gravito/freeze'
-
-const robots = generateRobotsTxt('https://example.com')
-```
-
-#### `generate404Html(config)`
-
-Generate a generic 404.html for static hosting.
-
-```typescript
-import { generate404Html } from '@gravito/freeze'
-
-const html = generate404Html(config)
-```
-
-#### `validateRoutes(routes)`
-
-Ensure all routes start with a forward slash.
-
-```typescript
-import { validateRoutes } from '@gravito/freeze'
-
-validateRoutes(['/about', 'invalid']) // Throws Error
-```
-
-#### `generateRedirectHtml(targetUrl)`
-
-Generate redirect HTML for abstract routes.
-
-```typescript
-import { generateRedirectHtml } from '@gravito/freeze'
-
-const html = generateRedirectHtml('/en/about')
-// Returns HTML with meta refresh and JS redirect
-```
-
-#### `generateRedirects(config)`
-
-Generate all redirect HTML files based on config.
-
-```typescript
-import { generateRedirects } from '@gravito/freeze'
-
-const redirectMap = generateRedirects(config)
-// Map<'about/index.html', html>
-```
-
-#### `generateLocalizedRoutes(routes, locales)`
-
-Generate localized routes from abstract paths.
-
-```typescript
-import { generateLocalizedRoutes } from '@gravito/freeze'
-
-const routes = generateLocalizedRoutes(['/docs', '/about'], ['en', 'zh'])
-// ['/en/docs', '/zh/docs', '/en/about', '/zh/about']
-```
-
-#### `inferRedirects(locales, defaultLocale, routes)`
-
-Automatically infer redirects for common routes.
-
-```typescript
-import { inferRedirects } from '@gravito/freeze'
-
-const redirects = inferRedirects(['en', 'zh'], 'en', ['/docs', '/about'])
-// [{ from: '/docs', to: '/en/docs' }, ...]
-```
-
-## Framework Adapters
-
-For framework-specific integrations, use:
-
-- `@gravito/freeze-react` - React components and hooks
-- `@gravito/freeze-vue` - Vue components and composables
-
-## License
-
-MIT © Gravito Framework
+MIT © Carl Lee

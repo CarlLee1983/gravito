@@ -1,161 +1,147 @@
 # @gravito/luminosity
 
-The intelligent core of the Gravito SmartMap Engine™. Provides incremental sitemap generation, robots.txt management, and dynamic meta tag building. Sitemap generation is powered by Constellation under the hood.
+The intelligent core of the Gravito SmartMap Engine™. Luminosity provides a comprehensive suite of SEO tools including high-performance sitemap generation, programmable `robots.txt` management, dynamic meta tag building, and advanced SEO analytics integration.
 
-## Features
+## 🌟 Key Features
 
-- **Tri-Mode Architecture**: Dynamic, Cached (Mutex), and Incremental (LSM) modes.
-- **RouteScanner**: Automatic route discovery for modern frameworks.
-- **Sitemap Generation**: High-performance XML stream builder with **Gzip support**.
-- **Robots.txt**: Programmable crawler directives.
-- **Meta Tags**: Builder for Meta, OpenGraph, Twitter Cards, and JSON-LD.
-- **Framework Agnostic**: Core logic decoupled from HTTP layers.
-- **Rich Media**: Support for **Image** and **Video** sitemaps.
-- **Cloud Ready**: S3 storage adapter support for serverless environments.
+- **Tri-Mode Architecture**:
+  - **Dynamic**: Real-time generation for small to medium sites.
+  - **Cached (Mutex)**: Thread-safe caching for high-traffic environments.
+  - **Incremental (LSM)**: Database-grade Write-Ahead Logging (WAL) and Log-Structured Merge-Tree (LSM) engine for massive-scale sites (1M+ pages).
+- **RouteScanner**: Automatic route discovery with native adapters for:
+  - **Gravito**, **Hono**, **Express**, **Fastify**, **Next.js**, **Nuxt**, **Remix**, **SvelteKit**, and **Astro**.
+- **High-Performance Sitemaps**:
+  - Streaming XML builder with **Gzip compression**.
+  - Automatic **Sitemap Indexing** and pagination (50,000 URLs limit).
+  - Support for **Rich Media** (Images and Videos).
+  - Built-in **i18n (hreflang)** support with `createAlternates` helper.
+- **Programmable Robots.txt**: Fluent API for constructing crawler directives.
+- **Dynamic SEO Metadata**:
+  - Builders for **OpenGraph**, **Twitter Cards**, and **JSON-LD**.
+  - **SeoRenderer** for easy integration with frontend frameworks.
+- **SEO Analytics**: One-line integration for **Google Analytics (gtag)**, **Meta Pixel**, and **Baidu Tongji**.
+- **Cloud Native**: Unified `StorageAdapter` with built-in support for **Local File System** and **AWS S3**.
+- **Diagnostic Tools**: **MetaInspector** for fetching and parsing SEO tags from any public URL.
 
-## Installation
+## 📦 Installation
 
 ```bash
 bun add @gravito/luminosity
 ```
 
-## CLI Tools
+## 🚀 Quick Start
 
-Luminosity comes with a powerful CLI for managing your SEO infrastructure.
+### Basic Sitemap Generation
 
-```bash
-# Generate sitemaps manually
-lux generate
-
-# Repair corrupted LSM logs
-lux repair
-
-# Inspect a URL for SEO meta tags (Preview Google/OG results)
-lux inspect https://example.com/blog/my-post
-```
-
-## Configuration
-
-The engine is controlled via a `SeoConfig` object, typically defined in `gravito.seo.config.ts`.
-
-### Basic Config
 ```typescript
-import type { SeoConfig } from '@gravito/luminosity';
+import { Luminosity } from '@gravito/luminosity';
 
-const config: SeoConfig = {
-  mode: 'incremental', // 'dynamic' | 'cached' | 'incremental'
-  baseUrl: 'https://example.com',
-  resolvers: [ /* ... */ ],
-  
-  // Required for 'incremental' mode
-  incremental: {
-    logDir: './storage/seo', // Directory to store LSM logs and snapshots
-    compactInterval: 3600000 // Autosave/Compact every 1 hour (in ms)
-  },
-  
-  // Enable Gzip compression (sitemap.xml.gz)
+const engine = new Luminosity({
+  hostname: 'https://example.com',
+  path: './public',
   gzip: true
-};
+});
+
+await engine.generate([
+  { url: '/', lastmod: new Date(), changefreq: 'daily', priority: 1.0 },
+  { url: '/about', priority: 0.8 }
+]);
 ```
 
-## RouteScanner (Automatic Route Discovery)
-
-Luminosity includes a powerful **RouteScanner** system that automatically discovers routes from various frameworks.
-
-### Supported Frameworks
-
-| Framework | Scanner | Usage |
-|-----------|---------|-------|
-| **Gravito** | `GravitoScanner` | `new GravitoScanner(core)` |
-| **Hono** | `HonoScanner` | `new HonoScanner(app)` |
-| **Express** | `ExpressScanner` | `new ExpressScanner(app)` |
-| **Fastify** | `FastifyScanner` | `app.addHook('onRoute', scanner.collect)` |
-| **Next.js** | `NextScanner` | `new NextScanner({ appDir: './app' })` |
-| **Nuxt** | `NuxtScanner` | `new NuxtScanner({ pagesDir: './pages' })` |
-| **Remix** | `RemixScanner` | `new RemixScanner({ routesDir: './app/routes' })` |
-| **SvelteKit** | `SvelteKitScanner` | `new SvelteKitScanner({ routesDir: './src/routes' })` |
-| **Astro** | `AstroScanner` | `new AstroScanner({ pagesDir: './src/pages' })` |
-
-### Usage Example (Remix)
+### Programmable Robots.txt
 
 ```typescript
-import { SitemapBuilder, RemixScanner } from '@gravito/luminosity'
+const robots = engine.robots()
+  .userAgent('*')
+  .allow('/')
+  .disallow('/admin')
+  .sitemap('https://example.com/sitemap-index.xml')
+  .build();
+```
+
+## 🛠️ Advanced Configuration
+
+### The SEO Engine (Server-Side)
+
+The `SeoEngine` acts as the orchestrator for all SEO features, managing the lifecycle of your chosen strategy.
+
+```typescript
+import { SeoEngine } from '@gravito/luminosity';
+
+const config = {
+  mode: 'incremental',
+  baseUrl: 'https://example.com',
+  incremental: {
+    logDir: './storage/seo',
+    compactInterval: 3600000 // 1 hour
+  }
+};
+
+const seo = new SeoEngine(config);
+await seo.init();
+
+// Middleware usage example (Express/Hono)
+const content = await seo.render('/sitemap.xml');
+```
+
+### Route Scanning
+
+Automatically discover routes from your framework:
+
+```typescript
+import { SitemapBuilder, NextScanner } from '@gravito/luminosity';
 
 const builder = new SitemapBuilder({
-  scanner: new RemixScanner({ routesDir: './app/routes' }),
+  scanner: new NextScanner({ appDir: './app' }),
   hostname: 'https://example.com'
-})
+});
 
-const entries = await builder.build()
+const entries = await builder.build();
 ```
 
-## Rich Media Sitemaps
+### SEO Metadata & Analytics
 
-Luminosity supports Google's Image and Video extensions.
+Generate meta tags and tracking scripts dynamically:
 
 ```typescript
-const entry: SitemapEntry = {
-  url: '/gallery/summer-vacation',
-  images: [
-    {
-      url: 'https://example.com/img/summer.jpg',
-      title: 'Summer Fun',
-      caption: 'Best vacation ever',
-      license: 'https://creativecommons.org/licenses/by/4.0/'
-    }
-  ],
-  videos: [
-    {
-      thumbnail_loc: 'https://example.com/thumbs/v1.jpg',
-      title: 'Surfing Lesson',
-      description: 'Learn to surf in 5 minutes',
-      player_loc: 'https://example.com/embed/v1',
-      duration: 300,
-      publication_date: new Date('2023-06-01')
-    }
-  ]
-}
+import { MetaTagBuilder, AnalyticsBuilder } from '@gravito/luminosity';
+
+// Meta Tags
+const meta = new MetaTagBuilder()
+  .title('My Awesome Page')
+  .description('This is a description')
+  .openGraph({ type: 'website', image: '/og.png' })
+  .build();
+
+// Analytics
+const analytics = new AnalyticsBuilder({ gtag: 'G-XXXXXXXXXX' }).build();
 ```
 
-## Cloud Storage (S3)
+## ☁️ Storage Adapters
 
-For serverless deployments (like Vercel, AWS Lambda), you can swap the file system storage for S3.
+Luminosity is framework-agnostic and cloud-ready. Swap storage backends with ease:
+
+### S3 Storage (Serverless)
 
 ```typescript
 import { S3Adapter } from '@gravito/luminosity';
 import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
 
-const s3Client = new S3Client({ region: 'us-east-1' });
-
-const config: SeoConfig = {
-  mode: 'incremental',
-  incremental: {
-    logDir: 'seo-logs', // S3 Key prefix
-    storage: new S3Adapter({
-      bucket: 'my-seo-bucket',
-      client: s3Client,
-      commands: {
-        PutObjectCommand,
-        GetObjectCommand,
-        DeleteObjectCommand,
-        HeadObjectCommand
-      }
-    })
-  }
-};
+const storage = new S3Adapter({
+  bucket: 'my-bucket',
+  client: new S3Client({ region: 'us-east-1' }),
+  commands: { PutObjectCommand, GetObjectCommand, DeleteObjectCommand, HeadObjectCommand }
+});
 ```
 
-## Advanced Strategies
+## 🔍 CLI Tools (`lux`)
 
-### Incremental Mode (LSM-Tree Engine)
-Designed for large-scale sites (1M+ pages), this mode uses a **Log-Structured Merge-Tree** approach similar to databases like Cassandra or LevelDB.
+Luminosity includes a powerful CLI for managing your SEO infrastructure:
 
-1. **Write-Optimized**: New URLs are appended to a sequential log file (`sitemap.ops.jsonl`). fast writing with zero lock contention.
-2. **Read-Optimized**: Serving the sitemap merges the memory snapshot with the latest ops log.
-3. **Background Compaction**: The engine automatically merges logs into the main snapshot (`sitemap.snapshot.json`) in the background based on `compactInterval`.
+- `lux generate`: Manually trigger sitemap generation.
+- `lux repair`: Fix corrupted LSM logs.
+- `lux inspect <url>`: Preview how a URL appears to search engines and social media.
 
-### Sitemap Indexing & Pagination
-Gravito automatically handles the Google/Sitemap protocol limit of **50,000 URLs**.
-- If your sitemap exceeds 50k URLs, the engine automatically renders a **Sitemap Index** (`<sitemapindex>`).
-- It paginates the actual entries into sub-sitemaps (e.g., `sitemap.xml?page=1`, `sitemap.xml?page=2`).
-- This happens transparently—no extra configuration needed.
+## 📄 License
+
+MIT © Carl Lee

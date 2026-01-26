@@ -15,6 +15,10 @@ describe('SessionGuard', () => {
         regenerate: mock(() => {}),
       }),
       set: mock(() => {}),
+      header: mock(() => {}),
+      req: {
+        header: mock(() => null),
+      },
     }
 
     const provider = {
@@ -41,6 +45,10 @@ describe('SessionGuard', () => {
         regenerate: mock(() => {}),
       }),
       set: mock(() => {}),
+      header: mock(() => {}),
+      req: {
+        header: mock(() => null),
+      },
     }
 
     const provider = {
