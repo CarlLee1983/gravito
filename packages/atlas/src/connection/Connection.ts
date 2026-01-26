@@ -20,6 +20,7 @@ import type {
   ConnectionConfig,
   ConnectionContract,
   DriverContract,
+  ExecuteResult,
   GrammarContract,
   PostgresConfig,
   QueryBuilderContract,
@@ -34,6 +35,7 @@ export class Connection implements ConnectionContract {
   protected driver: DriverContract
   protected grammar: GrammarContract
   protected connected = false
+  protected proxy?: ConnectionContract
 
   /**
    * Static query listeners for global observation (e.g. debugging)
@@ -79,6 +81,13 @@ export class Connection implements ConnectionContract {
   }
 
   /**
+   * Set the proxy instance for this connection
+   */
+  setProxy(proxy: ConnectionContract): void {
+    this.proxy = proxy
+  }
+
+  /**
    * Get connection name
    */
   getName(): string {
@@ -110,7 +119,7 @@ export class Connection implements ConnectionContract {
    * Create a new query builder for a table
    */
   table<T = Record<string, unknown>>(tableName: string): QueryBuilderContract<T> {
-    return new QueryBuilder<T>(this, this.grammar, tableName)
+    return new QueryBuilder<T>(this.proxy || this, this.grammar, tableName)
   }
 
   /**
@@ -153,6 +162,35 @@ export class Connection implements ConnectionContract {
   }
 
   /**
+   * Execute raw SQL statement (INSERT/UPDATE/DELETE)
+   */
+  async execute(sql: string, bindings: unknown[] = []): Promise<ExecuteResult> {
+    await this.ensureConnected()
+
+    const startTime = performance.now()
+    const timestamp = Date.now()
+    const result = await this.driver.execute(sql, bindings)
+
+    const duration = performance.now() - startTime
+
+    // Fire listeners
+    if (Connection.queryListeners.length > 0) {
+      const queryData = {
+        connection: this.name,
+        sql,
+        bindings,
+        duration,
+        timestamp,
+      }
+      for (const listener of Connection.queryListeners) {
+        listener(queryData)
+      }
+    }
+
+    return result
+  }
+
+  /**
    * Run a callback within a transaction
    */
   async transaction<T>(callback: (connection: ConnectionContract) => Promise<T>): Promise<T> {
@@ -160,7 +198,7 @@ export class Connection implements ConnectionContract {
     await this.driver.beginTransaction()
 
     try {
-      const result = await callback(this)
+      const result = await callback(this.proxy || this)
       await this.driver.commit()
       return result
     } catch (error) {

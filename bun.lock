@@ -1096,7 +1096,7 @@
       },
       "peerDependencies": {
         "@gravito/core": "workspace:*",
-        "typescript": "^5.0.0",
+        "typescript": "^5.9.3",
       },
     },
     "packages/horizon": {
@@ -1215,7 +1215,7 @@
         "typescript": "^5.9.3",
       },
       "peerDependencies": {
-        "typescript": "^5.0.0",
+        "typescript": "^5.9.3",
       },
     },
     "packages/luminosity-adapter-express": {
