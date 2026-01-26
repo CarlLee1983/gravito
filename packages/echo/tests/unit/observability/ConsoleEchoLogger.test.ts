@@ -4,7 +4,9 @@ import { ConsoleEchoLogger } from '../../../src/observability/logging/ConsoleEch
 describe('ConsoleEchoLogger', () => {
   it('should log info', () => {
     const logger = new ConsoleEchoLogger()
-    const spy = jest.spyOn(console, 'info').mockImplementation(() => {})
+    const spy = jest.spyOn(console, 'info').mockImplementation(() => {
+      // Mock implementation
+    })
 
     logger.info('test')
 

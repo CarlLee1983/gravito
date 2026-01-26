@@ -12,7 +12,13 @@ import type { MetricsProvider } from './MetricsProvider'
  * ```
  */
 export class NoopMetricsProvider implements MetricsProvider {
-  increment(): void {}
-  histogram(): void {}
-  gauge(): void {}
+  increment(): void {
+    // No-op
+  }
+  histogram(): void {
+    // No-op
+  }
+  gauge(): void {
+    // No-op
+  }
 }

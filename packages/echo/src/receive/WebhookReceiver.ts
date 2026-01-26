@@ -31,7 +31,7 @@ import type {
 } from '../types'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type ProviderClass = new (options?: any) => WebhookProvider
+type ProviderClass = new (options?: Record<string, unknown>) => WebhookProvider
 
 /**
  * WebhookReceiver manages the lifecycle of incoming webhooks.
@@ -181,7 +181,13 @@ export class WebhookReceiver {
       this.handlers.set(providerName, new Map())
     }
 
-    const providerHandlers = this.handlers.get(providerName)!
+    const providerHandlers = this.handlers.get(providerName)
+    if (!providerHandlers) {
+      const newHandlers = new Map()
+      this.handlers.set(providerName, newHandlers)
+      return this.on(providerName, eventType, handler)
+    }
+
     if (!providerHandlers.has(eventType)) {
       providerHandlers.set(eventType, [])
     }
@@ -395,10 +401,18 @@ export class WebhookReceiver {
    * @returns A string representing the error category.
    */
   private categorizeError(error?: string): string {
-    if (!error) return 'unknown'
-    if (error.includes('Missing')) return 'missing_header'
-    if (error.includes('Signature')) return 'signature_invalid'
-    if (error.includes('Timestamp')) return 'timestamp_invalid'
+    if (!error) {
+      return 'unknown'
+    }
+    if (error.includes('Missing')) {
+      return 'missing_header'
+    }
+    if (error.includes('Signature')) {
+      return 'signature_invalid'
+    }
+    if (error.includes('Timestamp')) {
+      return 'timestamp_invalid'
+    }
     return 'other'
   }
 

@@ -17,7 +17,9 @@ export class NoopSpan implements Span {
   setStatus(): this {
     return this
   }
-  end(): void {}
+  end(): void {
+    // No-op
+  }
 }
 
 /**

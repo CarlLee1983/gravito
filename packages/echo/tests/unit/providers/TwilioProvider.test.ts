@@ -23,6 +23,6 @@ describe('TwilioProvider', () => {
     )
 
     expect(result.valid).toBe(true)
-    expect((result.payload as any).Body).toBe('hello')
+    expect((result.payload as Record<string, unknown>).Body).toBe('hello')
   })
 })

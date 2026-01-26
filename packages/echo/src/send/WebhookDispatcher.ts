@@ -238,7 +238,11 @@ export class WebhookDispatcher {
       })
     }
 
-    return lastResult!
+    if (!lastResult) {
+      throw new Error('No delivery attempts were made')
+    }
+
+    return lastResult
   }
 
   /**
@@ -312,12 +316,16 @@ export class WebhookDispatcher {
    * @returns A promise resolving to the delivery result or null if not found.
    */
   async retryFromDlq(id: string): Promise<WebhookDeliveryResult | null> {
-    if (!this.dlq) return null
+    if (!this.dlq) {
+      return null
+    }
 
     const events = await this.dlq.peek(100)
     const event = events.find((e) => e.id === id)
 
-    if (!event || event.type !== 'outgoing') return null
+    if (!event || event.type !== 'outgoing') {
+      return null
+    }
 
     const outgoing = event.originalEvent as OutgoingWebhookRecord
 
@@ -458,9 +466,15 @@ export class WebhookDispatcher {
    * @returns A string representing the error category.
    */
   private categorizeError(result: WebhookDeliveryResult): string {
-    if (!result.statusCode) return 'network_error'
-    if (result.statusCode >= 500) return 'server_error'
-    if (result.statusCode >= 400) return 'client_error'
+    if (!result.statusCode) {
+      return 'network_error'
+    }
+    if (result.statusCode >= 500) {
+      return 'server_error'
+    }
+    if (result.statusCode >= 400) {
+      return 'client_error'
+    }
     return 'other'
   }
 }

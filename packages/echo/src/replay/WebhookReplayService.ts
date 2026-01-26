@@ -1,5 +1,5 @@
 import type { WebhookDispatcher } from '../send/WebhookDispatcher'
-import type { OutgoingWebhookRecord, WebhookStore } from '../storage/WebhookStore'
+import type { OutgoingWebhookRecord, WebhookRecord, WebhookStore } from '../storage/WebhookStore'
 import type { ReplayOptions, ReplayResult } from '../types'
 
 /**
@@ -46,7 +46,7 @@ export class WebhookReplayService {
 
     // Filter by specific IDs if provided
     const targetEvents = options.eventIds
-      ? events.filter((e) => options.eventIds!.includes(e.id!))
+      ? events.filter((e: WebhookRecord) => options.eventIds?.includes(e.id ?? ''))
       : events
 
     const result: ReplayResult = {
@@ -61,7 +61,7 @@ export class WebhookReplayService {
       if (event.direction !== 'outgoing') {
         result.skipped++
         result.events.push({
-          eventId: event.id!,
+          eventId: event.id ?? 'unknown',
           status: 'skipped',
           error: 'Not an outgoing event',
         })
@@ -73,7 +73,7 @@ export class WebhookReplayService {
       if (options.dryRun) {
         result.replayed++
         result.events.push({
-          eventId: event.id!,
+          eventId: event.id ?? 'unknown',
           status: 'replayed',
         })
         continue
@@ -89,14 +89,14 @@ export class WebhookReplayService {
         if (dispatchResult.success) {
           result.replayed++
           result.events.push({
-            eventId: event.id!,
+            eventId: event.id ?? 'unknown',
             status: 'replayed',
             result: dispatchResult,
           })
         } else {
           result.failed++
           result.events.push({
-            eventId: event.id!,
+            eventId: event.id ?? 'unknown',
             status: 'failed',
             result: dispatchResult,
             error: dispatchResult.error,
@@ -105,7 +105,7 @@ export class WebhookReplayService {
       } catch (error) {
         result.failed++
         result.events.push({
-          eventId: event.id!,
+          eventId: event.id ?? 'unknown',
           status: 'failed',
           error: String(error),
         })

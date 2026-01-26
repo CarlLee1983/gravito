@@ -43,7 +43,7 @@ describe('OrbitEcho', () => {
       },
     }
 
-    echo.install(core as any)
+    echo.install(core as unknown as Parameters<OrbitEcho['install']>[0])
 
     expect(core.container.instance).toHaveBeenCalledWith('echo', echo)
     expect(core.container.instance).toHaveBeenCalledWith('echo.receiver', echo.getReceiver())

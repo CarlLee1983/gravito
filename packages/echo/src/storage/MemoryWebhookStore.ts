@@ -50,15 +50,17 @@ export class MemoryWebhookStore implements WebhookStore {
       results = results.filter((e) => e.status === filter.status)
     }
     if (filter.from) {
+      const from = filter.from
       results = results.filter((e) => {
         const date = 'receivedAt' in e ? e.receivedAt : e.createdAt
-        return date >= filter.from!
+        return date >= from
       })
     }
     if (filter.to) {
+      const to = filter.to
       results = results.filter((e) => {
         const date = 'receivedAt' in e ? e.receivedAt : e.createdAt
-        return date <= filter.to!
+        return date <= to
       })
     }
 

@@ -51,9 +51,9 @@ class TestProvider extends BaseProvider {
   readonly name = 'test'
 
   async verify(
-    payload: string | Buffer,
-    headers: Record<string, string | string[] | undefined>,
-    secret: string
+    _payload: string | Buffer,
+    _headers: Record<string, string | string[] | undefined>,
+    _secret: string
   ): Promise<WebhookVerificationResult> {
     return this.createSuccess({ received: true })
   }
@@ -63,7 +63,7 @@ class TestProvider extends BaseProvider {
     return this.createFailure(error)
   }
 
-  public testCreateSuccess(payload: unknown, options?: any) {
+  public testCreateSuccess(payload: unknown, options?: { eventType?: string; webhookId?: string }) {
     return this.createSuccess(payload, options)
   }
 
