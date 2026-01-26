@@ -1,48 +1,27 @@
+import { bench, describe } from 'bun:test'
 import { DirtyTracker } from '../../src/orm/model/DirtyTracker'
 
-function bench(name: string, fn: () => void, iterations = 10000) {
-  const start = performance.now()
-  for (let i = 0; i < iterations; i++) {
-    fn()
-  }
-  const end = performance.now()
-  const duration = end - start
-  console.log(`${name}: ${duration.toFixed(2)}ms (${(duration / iterations).toFixed(4)}ms/op)`)
-}
+describe('DirtyTracker Performance', () => {
+  const tracker = new DirtyTracker()
+  const data = generateLargeObject(100)
+  tracker.setOriginal(data)
 
-console.log('--- DirtyTracker Benchmark ---')
+  bench('mark dirty - 100 attributes', () => {
+    tracker.mark('prop0', 'New Value')
+    tracker.mark('prop0', 'value0') // Revert
+  })
 
-const tracker = new DirtyTracker()
-const data = generateLargeObject(100)
-tracker.setOriginal(data)
-
-bench(
-  'mark dirty (100 attrs)',
-  () => {
-    tracker.mark('prop50', 'New Value')
-  },
-  5000
-)
-
-const obj1 = { nested: { deep: { value: 'test' } } }
-const obj2 = { nested: { deep: { value: 'test' } } }
-
-bench(
-  'isEqual (deep)',
-  () => {
+  bench('isEqual - deep objects (shallow)', () => {
+    const obj1 = { a: 1, b: 2, c: 3 }
+    const obj2 = { a: 1, b: 2, c: 3 }
     ;(tracker as any).isEqual(obj1, obj2)
-  },
-  5000
-)
+  })
 
-const largeObj = generateLargeObject(100)
-bench(
-  'cloneValue (large obj)',
-  () => {
-    ;(tracker as any).cloneValue(largeObj)
-  },
-  5000
-)
+  bench('cloneValue - large object', () => {
+    const obj = generateLargeObject(100)
+    ;(tracker as any).cloneValue(obj)
+  })
+})
 
 function generateLargeObject(size: number): Record<string, unknown> {
   const obj: Record<string, unknown> = {}
