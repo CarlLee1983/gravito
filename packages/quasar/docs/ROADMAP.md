@@ -44,22 +44,22 @@ Quasar 是 Gravito 生態系統中的通用監控代理，負責：
 ## 階段規劃
 
 ### Phase 1：程式碼品質與結構優化
-- 狀態：📋 規劃中
+- 狀態：✅ 已完成
 - 預期目標：提升程式碼可維護性與一致性
 - 詳細內容：[Phase 1 詳細計劃](./improvement-plans/phase-1-code-quality.md)
 
 ### Phase 2：功能擴展
-- 狀態：📋 規劃中
+- 狀態：✅ 已完成
 - 預期目標：新增更多佇列系統支援與功能
 - 詳細內容：[Phase 2 詳細計劃](./improvement-plans/phase-2-feature-expansion.md)
 
 ### Phase 3：效能與監控改進
-- 狀態：📋 規劃中
+- 狀態：✅ 已完成
 - 預期目標：優化效能並增強監控能力
 - 詳細內容：[Phase 3 詳細計劃](./improvement-plans/phase-3-performance.md)
 
 ### Phase 4：測試與文件完善
-- 狀態：📋 規劃中
+- 狀態：✅ 已完成
 - 預期目標：提升測試覆蓋率與文件品質
 - 詳細內容：[Phase 4 詳細計劃](./improvement-plans/phase-4-testing.md)
 
