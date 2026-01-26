@@ -107,7 +107,7 @@ describe('Atlas Integration', () => {
     })
 
     // biome-ignore lint/suspicious/noExplicitAny: Test result
-    const result: any = await res.json()
+    const result: unknown = await res.json()
     expect(result.errors).toBeUndefined()
     expect(result.data.user.name).toBe('Alice')
     expect(result.data.user.posts).toHaveLength(2)
@@ -137,7 +137,7 @@ describe('Atlas Integration', () => {
     })
 
     // biome-ignore lint/suspicious/noExplicitAny: Test result
-    const result: any = await res.json()
+    const result: unknown = await res.json()
     expect(result.errors).toBeUndefined()
     expect(result.data.user.name).toBe('Alice')
   })
@@ -168,7 +168,7 @@ describe('Atlas Integration', () => {
     })
 
     // biome-ignore lint/suspicious/noExplicitAny: Test result
-    const result: any = await res.json()
+    const result: unknown = await res.json()
     expect(result.errors).toBeUndefined()
     expect(result.data.createUser.name).toBe('Charlie')
     expect(result.data.createUser.age).toBe(35)
@@ -205,7 +205,7 @@ describe('Atlas Integration', () => {
     })
 
     // biome-ignore lint/suspicious/noExplicitAny: Test result
-    const result: any = await res.json()
+    const result: unknown = await res.json()
     expect(result.errors).toBeUndefined()
     expect(result.data.updateUser.name).toBe('Alice')
     expect(result.data.updateUser.age).toBe(31)
@@ -236,7 +236,7 @@ describe('Atlas Integration', () => {
     })
 
     // biome-ignore lint/suspicious/noExplicitAny: Test result
-    const result: any = await res.json()
+    const result: unknown = await res.json()
     expect(result.errors).toBeUndefined()
     expect(result.data.deleteUser).toBe(true)
 
@@ -287,7 +287,7 @@ describe('Atlas Integration', () => {
     })
 
     // biome-ignore lint/suspicious/noExplicitAny: Test result
-    const resultPage: any = await resPage.json()
+    const resultPage: unknown = await resPage.json()
     expect(resultPage.errors).toBeUndefined()
     expect(resultPage.data.users).toHaveLength(2)
 
@@ -307,7 +307,7 @@ describe('Atlas Integration', () => {
     })
 
     // biome-ignore lint/suspicious/noExplicitAny: Test result
-    const resultFilter: any = await resFilter.json()
+    const resultFilter: unknown = await resFilter.json()
     expect(resultFilter.errors).toBeUndefined()
     // Should be 4 active users
     expect(resultFilter.data.users).toHaveLength(4)
@@ -344,7 +344,7 @@ describe('Atlas Integration', () => {
     })
 
     // biome-ignore lint/suspicious/noExplicitAny: Test result
-    const jsonGt: any = await resGt.json()
+    const jsonGt: unknown = await resGt.json()
     expect(jsonGt.errors).toBeUndefined()
     expect(jsonGt.data.users).toHaveLength(3)
     // Ordered by Age ASC: Alice(30), Charlie(35), Dave(40)
@@ -371,7 +371,7 @@ describe('Atlas Integration', () => {
     })
 
     // biome-ignore lint/suspicious/noExplicitAny: Test result
-    const jsonLike: any = await resLike.json()
+    const jsonLike: unknown = await resLike.json()
     expect(jsonLike.errors).toBeUndefined()
     expect(jsonLike.data.users).toHaveLength(1)
     expect(jsonLike.data.users[0].name).toBe('Alice')

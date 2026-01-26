@@ -1,6 +1,8 @@
 import { getRelationships, type Model, type ModelStatic, SchemaRegistry } from '@gravito/atlas'
 import type { GraphQLSchema } from 'graphql'
 import { createSchema } from 'graphql-yoga'
+import { SCALAR_RESOLVERS, SCALAR_TYPE_DEFS } from './scalars'
+import { extractAppendFields, extractModelMetadata } from './utils/model-metadata'
 
 /**
  * Configuration options for the Atlas to GraphQL integration.
@@ -19,30 +21,50 @@ export interface AtlasGraphQLOptions {
   resolvers?: any
 }
 
+/**
+ * 將 Atlas 資料類型映射到 GraphQL 類型
+ * 使用自定義純量處理複雜類型
+ */
 function mapAtlasTypeToGraphQL(type: string): string {
   switch (type) {
+    // 整數類型
     case 'integer':
     case 'smallInteger':
       return 'Int'
+
+    // 大整數 -> 使用 BigInt 自定義純量
     case 'bigInteger':
-      return 'String'
+      return 'BigInt'
+
+    // 浮點數類型
     case 'decimal':
     case 'float':
       return 'Float'
+
+    // 布林類型
     case 'boolean':
       return 'Boolean'
+
+    // JSON 類型 -> 使用 JSON 自定義純量
     case 'json':
     case 'jsonb':
-      return 'String'
+      return 'JSON'
+
+    // 日期時間類型 -> 使用 DateTime 自定義純量
     case 'date':
     case 'dateTime':
     case 'timestamp':
-      return 'String'
+      return 'DateTime'
+
+    // 預設為字串
     default:
       return 'String'
   }
 }
 
+/**
+ * 根據 GraphQL 類型取得對應的過濾器類型
+ */
 function getFilterType(gqlType: string): string {
   switch (gqlType) {
     case 'Int':
@@ -53,6 +75,13 @@ function getFilterType(gqlType: string): string {
       return 'BooleanFilter'
     case 'ID':
       return 'IDFilter'
+    // 自定義純量使用對應的過濾器
+    case 'BigInt':
+      return 'BigIntFilter'
+    case 'DateTime':
+      return 'DateTimeFilter'
+    case 'JSON':
+      return 'JSONFilter'
     default:
       return 'StringFilter'
   }
@@ -87,6 +116,25 @@ const BASE_TYPE_DEFS = `
     eq: ID
     in: [ID]
   }
+  input BigIntFilter {
+    eq: BigInt
+    gt: BigInt
+    lt: BigInt
+    gte: BigInt
+    lte: BigInt
+    in: [BigInt]
+  }
+  input DateTimeFilter {
+    eq: DateTime
+    gt: DateTime
+    lt: DateTime
+    gte: DateTime
+    lte: DateTime
+    in: [DateTime]
+  }
+  input JSONFilter {
+    eq: JSON
+  }
   enum SortOrder {
     ASC
     DESC
@@ -106,6 +154,11 @@ export async function createAtlasSchema(options: AtlasGraphQLOptions): Promise<G
     try {
       const schema = await registry.get(table, model.connection)
 
+      // 提取 Model 元數據 (hidden, appends)
+      const metadata = extractModelMetadata(model)
+      const hiddenSet = new Set(metadata.hidden)
+      const appendFields = extractAppendFields(model)
+
       const outputFields: string[] = []
       const inputFields: string[] = []
       const updateFields: string[] = []
@@ -113,6 +166,11 @@ export async function createAtlasSchema(options: AtlasGraphQLOptions): Promise<G
       const orderByFields: string[] = []
 
       for (const [colName, colDef] of schema.columns) {
+        // 跳過 hidden 欄位
+        if (hiddenSet.has(colName)) {
+          continue
+        }
+
         let gqlType: string
 
         // biome-ignore lint/suspicious/noExplicitAny: Property access on static
@@ -137,9 +195,17 @@ export async function createAtlasSchema(options: AtlasGraphQLOptions): Promise<G
         whereFields.push(`${colName}: ${getFilterType(gqlType)}`)
         orderByFields.push(`${colName}: SortOrder`)
 
+        // Input 欄位也不應包含 hidden 欄位（已在迴圈開始時過濾）
         if (!isAutoManaged) {
           inputFields.push(`${colName}: ${gqlType}${inputRequired}`)
           updateFields.push(`${colName}: ${gqlType}`)
+        }
+      }
+
+      // 處理 appends 欄位 - 添加到 output 類型
+      for (const appendField of appendFields) {
+        if (appendField.hasAccessor) {
+          outputFields.push(`${appendField.name}: ${appendField.graphqlType}`)
         }
       }
 
@@ -164,6 +230,26 @@ export async function createAtlasSchema(options: AtlasGraphQLOptions): Promise<G
         // biome-ignore lint/suspicious/noExplicitAny: Parent is model instance
         resolvers[modelName][relName] = async (parent: any) => {
           return await parent[relName]
+        }
+      }
+
+      // 為 appends 欄位添加 resolver
+      for (const appendField of appendFields) {
+        if (appendField.hasAccessor) {
+          resolvers[modelName] = resolvers[modelName] || {}
+          // biome-ignore lint/suspicious/noExplicitAny: Parent is model instance
+          resolvers[modelName][appendField.name] = (parent: any) => {
+            // 呼叫 accessor 方法: get{PropertyName}Attribute
+            const accessorName = `get${appendField.name
+              .split('_')
+              .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+              .join('')}Attribute`
+            if (typeof parent[accessorName] === 'function') {
+              return parent[accessorName]()
+            }
+            // 直接存取屬性作為 fallback
+            return parent[appendField.name]
+          }
         }
       }
 
@@ -324,8 +410,14 @@ export async function createAtlasSchema(options: AtlasGraphQLOptions): Promise<G
   }
 
   return createSchema({
-    typeDefs: ['type Query { _empty: String }', 'type Mutation { _empty: String }', ...typeDefs],
+    typeDefs: [
+      'type Query { _empty: String }',
+      'type Mutation { _empty: String }',
+      SCALAR_TYPE_DEFS,
+      ...typeDefs,
+    ],
     resolvers: {
+      ...SCALAR_RESOLVERS,
       ...resolvers,
       ...options.resolvers,
     },
