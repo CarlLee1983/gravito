@@ -73,46 +73,46 @@ function LiveLogs({
           </h2>
         </div>
         <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={onSearchArchive}
-              aria-label="Search Logs Archive"
-              className="flex items-center gap-1.5 px-2 py-1 hover:bg-muted rounded-md text-[10px] font-black uppercase tracking-tighter text-muted-foreground transition-all"
-            >
-              <Search size={12} />
-              Search Archive
-            </button>
-            <div className="flex gap-1">
-              <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
-              <div className="w-1.5 h-1.5 rounded-full bg-green-500/40"></div>
-            </div>
+          <button
+            type="button"
+            onClick={onSearchArchive}
+            aria-label="Search Logs Archive"
+            className="flex items-center gap-1.5 px-2 py-1 hover:bg-muted rounded-md text-[10px] font-black uppercase tracking-tighter text-muted-foreground transition-all"
+          >
+            <Search size={12} />
+            Search Archive
+          </button>
+          <div className="flex gap-1">
+            <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+            <div className="w-1.5 h-1.5 rounded-full bg-green-500/40"></div>
           </div>
         </div>
-        <ul
-          ref={scrollRef}
-          className="flex-1 min-h-0 overflow-y-auto p-4 font-mono text-[10px] space-y-2 scrollbar-thin scroll-smooth bg-black/20"
-        >
-          {logs.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-muted-foreground/20 gap-2">
-              <Activity size={24} className="animate-pulse opacity-50" />
-              <p className="font-bold uppercase tracking-[0.3em] text-[8px]">Scanning spectrum...</p>
-            </div>
-          ) : (
-            logs.map((log, i) => (
-              <li
-                key={i}
-                onMouseEnter={() => onWorkerHover?.(log.workerId)}
-                onMouseLeave={() => onWorkerHover?.(null)}
-                className="group flex gap-3 hover:bg-white/[0.03] -mx-2 px-3 py-1 rounded transition-all animate-in fade-in slide-in-from-left-1 duration-200 cursor-default border-l-2 border-transparent hover:border-primary/40"
-              >
-                <span className="text-muted-foreground/60 shrink-0 tabular-nums select-none opacity-60 group-hover:opacity-100 transition-opacity">
-                  {new Date(log.timestamp).toLocaleTimeString([], {
-                    hour12: false,
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit',
-                  })}
-                </span>
+      </div>
+      <ul
+        ref={scrollRef}
+        className="flex-1 min-h-0 overflow-y-auto p-4 font-mono text-[10px] space-y-2 scrollbar-thin scroll-smooth bg-black/20"
+      >
+        {logs.length === 0 ? (
+          <div className="h-full flex flex-col items-center justify-center text-muted-foreground/20 gap-2">
+            <Activity size={24} className="animate-pulse opacity-50" />
+            <p className="font-bold uppercase tracking-[0.3em] text-[8px]">Scanning spectrum...</p>
+          </div>
+        ) : (
+          logs.map((log, i) => (
+            <li
+              key={i}
+              onMouseEnter={() => onWorkerHover?.(log.workerId)}
+              onMouseLeave={() => onWorkerHover?.(null)}
+              className="group flex gap-3 hover:bg-white/[0.03] -mx-2 px-3 py-1 rounded transition-all animate-in fade-in slide-in-from-left-1 duration-200 cursor-default border-l-2 border-transparent hover:border-primary/40"
+            >
+              <span className="text-muted-foreground/60 shrink-0 tabular-nums select-none opacity-60 group-hover:opacity-100 transition-opacity">
+                {new Date(log.timestamp).toLocaleTimeString([], {
+                  hour12: false,
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  second: '2-digit',
+                })}
+              </span>
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-0.5">
                   <span

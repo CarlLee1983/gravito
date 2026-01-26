@@ -112,7 +112,9 @@ export function WorkerStatus({
             <div
               className={cn(
                 'absolute left-0 top-0 bottom-0 w-1 transition-all',
-                worker.status === 'online' ? 'bg-emerald-500 shadow-[0_0_10px_#10B981]' : 'bg-muted-foreground/20'
+                worker.status === 'online'
+                  ? 'bg-emerald-500 shadow-[0_0_10px_#10B981]'
+                  : 'bg-muted-foreground/20'
               )}
             />
 
@@ -146,14 +148,23 @@ export function WorkerStatus({
               {worker.metrics && (
                 <>
                   <div className="hidden sm:flex flex-col items-end gap-1 w-10">
-                    <span className="text-[8px] font-black text-muted-foreground/40 uppercase font-mono">CPU</span>
-                    <span className={cn("text-[10px] font-black font-mono tracking-tighter", worker.metrics.cpu > 80 ? 'text-red-500' : 'text-primary')}>
+                    <span className="text-[8px] font-black text-muted-foreground/40 uppercase font-mono">
+                      CPU
+                    </span>
+                    <span
+                      className={cn(
+                        'text-[10px] font-black font-mono tracking-tighter',
+                        worker.metrics.cpu > 80 ? 'text-red-500' : 'text-primary'
+                      )}
+                    >
                       {worker.metrics.cpu.toFixed(0)}%
                     </span>
                   </div>
 
                   <div className="hidden sm:flex flex-col items-end gap-1 w-12">
-                    <span className="text-[8px] font-black text-muted-foreground/40 uppercase font-mono">RAM</span>
+                    <span className="text-[8px] font-black text-muted-foreground/40 uppercase font-mono">
+                      RAM
+                    </span>
                     <span className="text-[10px] font-black font-mono tracking-tighter text-white/80">
                       {formatBytes(worker.metrics.ram.rss).split(' ')[0]}
                     </span>
@@ -162,7 +173,9 @@ export function WorkerStatus({
               )}
 
               <div className="flex flex-col items-end gap-1 w-10">
-                <span className="text-[8px] font-black text-muted-foreground/40 uppercase font-mono">UP</span>
+                <span className="text-[8px] font-black text-muted-foreground/40 uppercase font-mono">
+                  UP
+                </span>
                 <p className="text-[10px] font-black tracking-tighter font-mono text-foreground/60 tabular-nums">
                   {worker.uptime > 3600
                     ? `${(worker.uptime / 3600).toFixed(1)}H`

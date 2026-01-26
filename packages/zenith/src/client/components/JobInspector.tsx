@@ -200,7 +200,6 @@ export function JobInspector({ queueName, onClose }: JobInspectorProps) {
     })
   }
 
-
   return createPortal(
     <div className="fixed inset-0 z-[1001] flex items-center justify-end p-4 sm:p-6 outline-none pointer-events-none">
       <motion.div
@@ -283,8 +282,7 @@ export function JobInspector({ queueName, onClose }: JobInspectorProps) {
                 aria-label="Select all jobs"
                 className="w-4 h-4 rounded border-white/10 bg-black/40 text-primary focus:ring-primary/20"
                 checked={
-                  selectedIndices.size ===
-                    data.jobs.filter((j) => j._raw && !j._archived).length &&
+                  selectedIndices.size === data.jobs.filter((j) => j._raw && !j._archived).length &&
                   selectedIndices.size > 0
                 }
                 onChange={toggleSelectAll}

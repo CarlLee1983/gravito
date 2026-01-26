@@ -277,7 +277,9 @@ export function QueuesPage() {
                                 : 'text-muted-foreground hover:bg-amber-500/10 hover:text-amber-500'
                             )}
                             title={queue.paused ? 'Resume Queue' : 'Pause Queue'}
-                            aria-label={queue.paused ? `Resume ${queue.name}` : `Pause ${queue.name}`}
+                            aria-label={
+                              queue.paused ? `Resume ${queue.name}` : `Pause ${queue.name}`
+                            }
                           >
                             {queue.paused ? <Play size={14} /> : <Pause size={14} />}
                           </button>
@@ -285,21 +287,22 @@ export function QueuesPage() {
                           <div className="w-px h-4 bg-white/5 mx-1" />
 
                           {queue.delayed > 0 && (
-                                                          <button
-                                                            type="button"
-                                                            onClick={() =>
-                                                              fetch(`/api/queues/${queue.name}/retry-all`, {
-                                                                method: 'POST',
-                                                              }).then(() =>
-                                                                queryClient.invalidateQueries({ queryKey: ['queues'] })
-                                                              )
-                                                            }
-                                                            className="p-2 text-amber-500 hover:bg-amber-500/10 rounded-lg transition-all"
-                                                            title="Retry All Delayed"
-                                                            aria-label={`Retry all delayed jobs in ${queue.name}`}
-                                                          >
-                                                            <RefreshCcw size={14} />
-                                                          </button>                          )}
+                            <button
+                              type="button"
+                              onClick={() =>
+                                fetch(`/api/queues/${queue.name}/retry-all`, {
+                                  method: 'POST',
+                                }).then(() =>
+                                  queryClient.invalidateQueries({ queryKey: ['queues'] })
+                                )
+                              }
+                              className="p-2 text-amber-500 hover:bg-amber-500/10 rounded-lg transition-all"
+                              title="Retry All Delayed"
+                              aria-label={`Retry all delayed jobs in ${queue.name}`}
+                            >
+                              <RefreshCcw size={14} />
+                            </button>
+                          )}
                           {queue.failed > 0 && (
                             <>
                               <button
