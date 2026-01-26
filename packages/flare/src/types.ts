@@ -122,3 +122,146 @@ export interface SmsMessage {
   /** Sender ID or phone number */
   from?: string
 }
+
+/**
+ * Result of a single channel delivery attempt.
+ * @public
+ */
+export interface SendResult {
+  success: boolean
+  channel: string
+  error?: Error
+  duration?: number
+}
+
+/**
+ * Aggregated result of a notification delivery.
+ * @public
+ */
+export interface NotificationResult {
+  notification: string
+  notifiable: string | number
+  results: SendResult[]
+  allSuccess: boolean
+  timestamp: Date
+}
+
+/**
+ * Options for sending notifications.
+ * @public
+ */
+export interface SendOptions {
+  /** If true, throws an AggregateError when any channel fails */
+  throwOnError?: boolean
+  /** Whether to send to channels in parallel (default: true) */
+  parallel?: boolean
+  /** Maximum number of concurrent channel sends (default: unlimited) */
+  concurrency?: number
+  /** Retry configuration */
+  retry?: Partial<RetryConfig> | boolean
+}
+
+/**
+ * Retry configuration options.
+ * @public
+ */
+export interface RetryConfig {
+  /** Maximum number of retry attempts (default: 3) */
+  maxAttempts: number
+  /** Base delay in milliseconds (default: 1000) */
+  baseDelay: number
+  /** Backoff strategy: 'fixed' | 'linear' | 'exponential' (default: 'exponential') */
+  backoff: 'fixed' | 'linear' | 'exponential'
+  /** Maximum delay in milliseconds (default: 30000) */
+  maxDelay: number
+  /** Function to determine if an error is retryable */
+  retryableErrors?: (error: Error) => boolean
+}
+
+/**
+ * Interface for notifications that should retry on failure.
+ * @public
+ */
+export interface ShouldRetry {
+  /** Retry configuration for this notification */
+  retry?: Partial<RetryConfig>
+}
+
+/**
+ * Result of a batch notification delivery.
+ * @public
+ */
+export interface BatchResult {
+  total: number
+  success: number
+  failed: number
+  results: NotificationResult[]
+  duration: number
+}
+
+// Hook Payloads
+
+export interface NotificationHookPayload {
+  notification: Notification
+  notifiable: Notifiable
+  channels: string[]
+}
+
+export interface ChannelHookPayload {
+  notification: Notification
+  notifiable: Notifiable
+  channel: string
+}
+
+export interface ChannelSuccessPayload extends ChannelHookPayload {
+  duration: number
+}
+
+export interface ChannelFailurePayload extends ChannelHookPayload {
+  error: Error
+  duration: number
+}
+
+export interface NotificationCompletePayload {
+  notification: Notification
+  notifiable: Notifiable
+  results: SendResult[]
+  allSuccess: boolean
+  totalDuration: number
+}
+
+export interface NotificationBatchStartPayload {
+  notification: Notification
+  count: number
+}
+
+export interface NotificationBatchCompletePayload {
+  notification: Notification
+  total: number
+  success: number
+  failed: number
+  duration: number
+}
+
+// Service Interfaces (for OrbitFlare type safety)
+
+export interface MailService {
+  send(message: MailMessage): Promise<void>
+}
+
+export interface DatabaseService {
+  insertNotification(data: {
+    notifiableId: string | number
+    notifiableType: string
+    type: string
+    data: Record<string, unknown>
+  }): Promise<void>
+}
+
+export interface BroadcastService {
+  broadcast(channel: string, event: string, data: Record<string, unknown>): Promise<void>
+}
+
+export interface QueueService {
+  push(job: unknown, queue?: string, connection?: string, delay?: number): Promise<void>
+}
