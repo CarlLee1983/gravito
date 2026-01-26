@@ -6,6 +6,14 @@
  * @module @gravito/echo/receive
  */
 
+import { ConsoleEchoLogger, type EchoLogger } from '../observability/logging'
+import {
+  EchoMetrics,
+  type MetricsProvider,
+  NoopMetricsProvider,
+  type WebhookMetricLabels,
+} from '../observability/metrics'
+import { NoopTracer, SpanStatusCode, type Tracer } from '../observability/tracing'
 import { GenericProvider } from '../providers/GenericProvider'
 import { GitHubProvider } from '../providers/GitHubProvider'
 import { LinearProvider } from '../providers/LinearProvider'
@@ -51,6 +59,9 @@ export class WebhookReceiver {
   private handlers = new Map<string, Map<string, WebhookHandler[]>>()
   private globalHandlers = new Map<string, WebhookHandler[]>()
   private store?: WebhookStore
+  private metrics: MetricsProvider = new NoopMetricsProvider()
+  private tracer: Tracer = new NoopTracer()
+  private logger: EchoLogger = new ConsoleEchoLogger()
 
   constructor() {
     // Register built-in providers
@@ -72,6 +83,30 @@ export class WebhookReceiver {
    */
   setStore(store: WebhookStore): this {
     this.store = store
+    return this
+  }
+
+  /**
+   * Set Metrics Provider
+   */
+  setMetrics(metrics: MetricsProvider): this {
+    this.metrics = metrics
+    return this
+  }
+
+  /**
+   * Set Tracer
+   */
+  setTracer(tracer: Tracer): this {
+    this.tracer = tracer
+    return this
+  }
+
+  /**
+   * Set Logger
+   */
+  setLogger(logger: EchoLogger): this {
+    this.logger = logger
     return this
   }
 
@@ -140,86 +175,177 @@ export class WebhookReceiver {
     body: string | Buffer,
     headers: Record<string, string | string[] | undefined>
   ): Promise<WebhookVerificationResult & { handled: boolean; eventId?: string }> {
-    const config = this.providers.get(providerName)
-    if (!config) {
-      return {
-        valid: false,
-        error: `Provider not registered: ${providerName}`,
-        handled: false,
-      }
-    }
+    return this.tracer.withSpan('echo.receive_webhook', async (span) => {
+      const startTime = performance.now()
+      const labels: WebhookMetricLabels = { provider: providerName }
 
-    const { provider, secret } = config
-
-    // Verify webhook
-    const result = await provider.verify(body, headers, secret)
-    if (!result.valid) {
-      return { ...result, handled: false }
-    }
-
-    // 儲存事件（如果有設定 store）
-    let eventId: string | undefined
-    if (this.store) {
-      eventId = await this.store.saveIncomingEvent({
-        provider: providerName,
-        eventType: result.eventType ?? 'unknown',
-        payload: result.payload,
-        headers: Object.fromEntries(
-          Object.entries(headers).map(([k, v]) => [k, Array.isArray(v) ? v[0] : v])
-        ),
-        rawBody: typeof body === 'string' ? body : body.toString('utf-8'),
-        receivedAt: new Date(),
-        status: 'pending',
+      span.setAttributes({
+        'echo.provider': providerName,
+        'echo.direction': 'incoming',
       })
-    }
 
-    // Create event object
-    const event: WebhookEvent = {
-      provider: providerName,
-      type: result.eventType ?? 'unknown',
-      payload: result.payload,
-      headers,
-      rawBody: typeof body === 'string' ? body : body.toString('utf-8'),
-      receivedAt: new Date(),
-      id: result.webhookId,
-    }
+      this.logger.debug('Webhook received', {
+        component: 'receiver',
+        provider: providerName,
+      })
 
-    try {
-      // Call handlers
-      let handled = false
-
-      // Call event-specific handlers
-      const providerHandlers = this.handlers.get(providerName)
-      if (providerHandlers) {
-        const eventHandlers = providerHandlers.get(event.type)
-        if (eventHandlers) {
-          for (const handler of eventHandlers) {
-            await handler(event)
-            handled = true
+      try {
+        const config = this.providers.get(providerName)
+        if (!config) {
+          const error = `Provider not registered: ${providerName}`
+          this.logger.warn('Webhook provider not registered', {
+            component: 'receiver',
+            provider: providerName,
+          })
+          span.setStatus({ code: SpanStatusCode.ERROR, message: error })
+          return {
+            valid: false,
+            error,
+            handled: false,
           }
         }
-      }
 
-      // Call global handlers
-      const globalHandlers = this.globalHandlers.get(providerName)
-      if (globalHandlers) {
-        for (const handler of globalHandlers) {
-          await handler(event)
-          handled = true
+        const { provider, secret } = config
+
+        // Verify webhook
+        span.addEvent('verification_start')
+        const result = await provider.verify(body, headers, secret)
+
+        if (!result.valid) {
+          span.setStatus({ code: SpanStatusCode.ERROR, message: result.error })
+          span.setAttribute('echo.error', result.error ?? 'unknown')
+
+          this.metrics.increment(EchoMetrics.INCOMING_VERIFICATION_FAILURES, {
+            provider: providerName,
+            error_type: this.categorizeError(result.error),
+          })
+
+          this.logger.warn('Webhook verification failed', {
+            component: 'receiver',
+            provider: providerName,
+            error: result.error,
+          })
+
+          return { ...result, handled: false }
         }
-      }
 
-      if (this.store && eventId) {
-        await this.store.markProcessed(eventId)
-      }
+        span.addEvent('verification_success')
+        span.setAttributes({
+          'echo.event_type': result.eventType ?? 'unknown',
+          'echo.webhook_id': result.webhookId ?? '',
+        })
 
-      return { ...result, handled, eventId }
-    } catch (error) {
-      if (this.store && eventId) {
-        await this.store.markFailed(eventId, String(error))
+        this.logger.info('Webhook verified successfully', {
+          component: 'receiver',
+          provider: providerName,
+          eventType: result.eventType,
+          webhookId: result.webhookId,
+        })
+
+        labels.event_type = result.eventType
+        labels.status = 'success'
+
+        // Store event
+        let eventId: string | undefined
+        if (this.store) {
+          eventId = await this.store.saveIncomingEvent({
+            provider: providerName,
+            eventType: result.eventType ?? 'unknown',
+            payload: result.payload,
+            headers: Object.fromEntries(
+              Object.entries(headers).map(([k, v]) => [k, Array.isArray(v) ? v[0] : v])
+            ),
+            rawBody: typeof body === 'string' ? body : body.toString('utf-8'),
+            receivedAt: new Date(),
+            status: 'pending',
+          })
+        }
+
+        // Create event object
+        const event: WebhookEvent = {
+          provider: providerName,
+          type: result.eventType ?? 'unknown',
+          payload: result.payload,
+          headers,
+          rawBody: typeof body === 'string' ? body : body.toString('utf-8'),
+          receivedAt: new Date(),
+          id: result.webhookId,
+        }
+
+        try {
+          // Call handlers
+          let handled = false
+          let handlerCount = 0
+
+          span.addEvent('handlers_start')
+
+          // Call event-specific handlers
+          const providerHandlers = this.handlers.get(providerName)
+          if (providerHandlers) {
+            const eventHandlers = providerHandlers.get(event.type)
+            if (eventHandlers) {
+              for (const handler of eventHandlers) {
+                await handler(event)
+                handled = true
+                handlerCount++
+              }
+            }
+          }
+
+          // Call global handlers
+          const globalHandlers = this.globalHandlers.get(providerName)
+          if (globalHandlers) {
+            for (const handler of globalHandlers) {
+              await handler(event)
+              handled = true
+              handlerCount++
+            }
+          }
+
+          span.addEvent('handlers_complete', { handler_count: handlerCount })
+
+          if (this.store && eventId) {
+            await this.store.markProcessed(eventId)
+          }
+
+          this.logger.debug('Webhook processing complete', {
+            component: 'receiver',
+            provider: providerName,
+            eventType: result.eventType,
+            handlersInvoked: handlerCount,
+          })
+
+          span.setStatus({ code: SpanStatusCode.OK })
+          return { ...result, handled, eventId }
+        } catch (error) {
+          if (this.store && eventId) {
+            await this.store.markFailed(eventId, String(error))
+          }
+          throw error
+        }
+      } catch (error) {
+        labels.status = 'failure'
+        labels.error_type = error instanceof Error ? error.name : 'unknown'
+        span.setStatus({ code: SpanStatusCode.ERROR, message: String(error) })
+        throw error
+      } finally {
+        const duration = (performance.now() - startTime) / 1000
+        this.metrics.increment(EchoMetrics.INCOMING_TOTAL, labels as Record<string, string>)
+        this.metrics.histogram(
+          EchoMetrics.INCOMING_DURATION,
+          duration,
+          labels as Record<string, string>
+        )
       }
-      throw error
-    }
+    })
+  }
+
+  private categorizeError(error?: string): string {
+    if (!error) return 'unknown'
+    if (error.includes('Missing')) return 'missing_header'
+    if (error.includes('Signature')) return 'signature_invalid'
+    if (error.includes('Timestamp')) return 'timestamp_invalid'
+    return 'other'
   }
 
   /**

@@ -44,6 +44,17 @@ export type { DeadLetterEvent, DeadLetterQueue } from './dlq/DeadLetterQueue'
 export { MemoryDeadLetterQueue } from './dlq/MemoryDeadLetterQueue'
 // Core
 export { OrbitEcho } from './OrbitEcho'
+export type { EchoLogEvent, EchoLogger } from './observability/logging'
+export { ConsoleEchoLogger } from './observability/logging'
+export type { MetricsProvider, WebhookMetricLabels } from './observability/metrics'
+// Observability
+export {
+  EchoMetrics,
+  NoopMetricsProvider,
+  PrometheusMetricsProvider,
+} from './observability/metrics'
+export type { Span, SpanOptions, Tracer } from './observability/tracing'
+export { NoopSpan, NoopTracer, SpanStatusCode } from './observability/tracing'
 // Providers
 export { BaseProvider, type ProviderOptions } from './providers/base/BaseProvider'
 export { GenericProvider } from './providers/GenericProvider'
@@ -65,24 +76,12 @@ export {
 export { WebhookReceiver } from './receive/WebhookReceiver'
 // Replay
 export { WebhookReplayService } from './replay/WebhookReplayService'
-// Sending
-export { WebhookDispatcher } from './send/WebhookDispatcher'
-// Storage
-export { MemoryWebhookStore } from './storage/MemoryWebhookStore'
-export type {
-  EventQueryFilter,
-  IncomingWebhookRecord,
-  OutgoingWebhookRecord,
-  WebhookRecord,
-  WebhookStore,
-} from './storage/WebhookStore'
 
 // Types
 export type {
-  BatchDispatchOptions,
-  BatchDispatchResult,
   // Config
   EchoConfig,
+  EchoObservabilityConfig,
   // Replay
   ReplayOptions,
   ReplayResult,

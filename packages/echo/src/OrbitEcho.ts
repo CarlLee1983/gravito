@@ -58,6 +58,22 @@ export class OrbitEcho implements GravitoOrbit {
     if (config.store) {
       this.receiver.setStore(config.store)
     }
+
+    // Set observability
+    if (config.observability) {
+      const { metrics, tracer, logger } = config.observability
+      if (metrics) {
+        this.receiver.setMetrics(metrics)
+        this.dispatcher?.setMetrics(metrics)
+      }
+      if (tracer) {
+        this.receiver.setTracer(tracer)
+        this.dispatcher?.setTracer(tracer)
+      }
+      if (logger) {
+        this.receiver.setLogger(logger)
+      }
+    }
   }
 
   /**

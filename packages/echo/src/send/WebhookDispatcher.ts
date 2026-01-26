@@ -7,6 +7,13 @@
  */
 
 import type { DeadLetterQueue } from '../dlq/DeadLetterQueue'
+import {
+  EchoMetrics,
+  type MetricsProvider,
+  NoopMetricsProvider,
+  type WebhookMetricLabels,
+} from '../observability/metrics'
+import { NoopTracer, SpanStatusCode, type Tracer } from '../observability/tracing'
 import { computeHmacSha256 } from '../receive/SignatureValidator'
 import type { OutgoingWebhookRecord } from '../storage/WebhookStore'
 import type {
@@ -54,6 +61,8 @@ export class WebhookDispatcher {
   private timeout: number
   private userAgent: string
   private dlq?: DeadLetterQueue
+  private metrics: MetricsProvider = new NoopMetricsProvider()
+  private tracer: Tracer = new NoopTracer()
 
   constructor(config: WebhookDispatcherConfig) {
     this.secret = config.secret
@@ -71,9 +80,87 @@ export class WebhookDispatcher {
   }
 
   /**
+   * Set Metrics Provider
+   */
+  setMetrics(metrics: MetricsProvider): this {
+    this.metrics = metrics
+    return this
+  }
+
+  /**
+   * Set Tracer
+   */
+  setTracer(tracer: Tracer): this {
+    this.tracer = tracer
+    return this
+  }
+
+  /**
    * Dispatch a webhook with retries
    */
   async dispatch<T = unknown>(payload: WebhookPayload<T>): Promise<WebhookDeliveryResult> {
+    return this.tracer.withSpan('echo.dispatch_webhook', async (span) => {
+      const startTime = performance.now()
+      const labels: WebhookMetricLabels = { event_type: payload.event }
+
+      span.setAttributes({
+        'echo.direction': 'outgoing',
+        'echo.event': payload.event,
+        'echo.url': payload.url,
+        'http.method': 'POST',
+        'http.url': payload.url,
+      })
+
+      const result = await this.dispatchInternal(payload)
+
+      const duration = (performance.now() - startTime) / 1000
+      labels.status = result.success ? 'success' : 'failure'
+      labels.status_code = result.statusCode?.toString()
+
+      this.metrics.increment(EchoMetrics.OUTGOING_TOTAL, labels as Record<string, string>)
+      this.metrics.histogram(
+        EchoMetrics.OUTGOING_DURATION,
+        duration,
+        labels as Record<string, string>
+      )
+
+      if (result.attempt > 1) {
+        this.metrics.increment(EchoMetrics.OUTGOING_RETRIES, {
+          event_type: payload.event,
+        })
+      }
+
+      span.setAttributes({
+        'echo.success': result.success,
+        'echo.attempt': result.attempt,
+        'echo.duration_ms': result.duration,
+      })
+
+      if (result.statusCode) {
+        span.setAttribute('http.status_code', result.statusCode)
+      }
+
+      if (result.success) {
+        span.setStatus({ code: SpanStatusCode.OK })
+      } else {
+        span.setStatus({
+          code: SpanStatusCode.ERROR,
+          message: result.error,
+        })
+
+        this.metrics.increment(EchoMetrics.OUTGOING_FAILURES, {
+          event_type: payload.event,
+          error_type: this.categorizeError(result),
+        })
+      }
+
+      return result
+    })
+  }
+
+  private async dispatchInternal<T = unknown>(
+    payload: WebhookPayload<T>
+  ): Promise<WebhookDeliveryResult> {
     let lastResult: WebhookDeliveryResult | null = null
 
     for (let attempt = 1; attempt <= this.retryConfig.maxAttempts; attempt++) {
@@ -307,5 +394,12 @@ export class WebhookDispatcher {
    */
   private sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms))
+  }
+
+  private categorizeError(result: WebhookDeliveryResult): string {
+    if (!result.statusCode) return 'network_error'
+    if (result.statusCode >= 500) return 'server_error'
+    if (result.statusCode >= 400) return 'client_error'
+    return 'other'
   }
 }

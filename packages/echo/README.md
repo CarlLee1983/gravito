@@ -123,6 +123,16 @@ await replayService.replay({
   timeRange: { from: new Date(Date.now() - 86400000), to: new Date() },
   dryRun: true 
 })
+
+// Observability
+const echoWithObservability = new OrbitEcho({
+  providers: { /* ... */ },
+  observability: {
+    logger: new ConsoleEchoLogger(),
+    metrics: new PrometheusMetricsProvider(),
+    // tracer: opentelemetryTracer
+  }
+})
 ```
 
 ## Providers

@@ -1,4 +1,7 @@
 import type { DeadLetterQueue } from './dlq/DeadLetterQueue'
+import type { EchoLogger } from './observability/logging'
+import type { MetricsProvider } from './observability/metrics'
+import type { Tracer } from './observability/tracing'
 import type { WebhookStore } from './storage/WebhookStore'
 
 /**
@@ -245,6 +248,15 @@ export interface ReplayResult {
 // Echo Module Configuration
 // ─────────────────────────────────────────────────────────────
 
+export interface EchoObservabilityConfig {
+  /** Metrics 收集器 */
+  metrics?: MetricsProvider
+  /** 分散式追蹤器 */
+  tracer?: Tracer
+  /** Logger */
+  logger?: EchoLogger
+}
+
 /**
  * Full configuration for the OrbitEcho module.
  * @public
@@ -271,4 +283,7 @@ export interface EchoConfig {
 
   /** Default batch dispatch options */
   batch?: BatchDispatchOptions
+
+  /** 可觀測性設定 */
+  observability?: EchoObservabilityConfig
 }
