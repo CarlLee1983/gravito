@@ -11,6 +11,7 @@ import type {
   MongoConfig,
   MongoDatabaseContract,
   MongoManagerConfig,
+  RetryConfig,
 } from './types'
 
 // Singleton manager instance
@@ -75,10 +76,11 @@ export class Mongo {
   /**
    * Connect to the default MongoDB server.
    *
+   * @param retryConfig - Optional retry configuration.
    * @returns A promise that resolves when connected.
    */
-  static async connect(): Promise<void> {
-    await manager.getDefault().connect()
+  static async connect(retryConfig?: RetryConfig): Promise<void> {
+    await manager.getDefault().connect(retryConfig)
   }
 
   /**

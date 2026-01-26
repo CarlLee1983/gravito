@@ -22,6 +22,7 @@ import type {
  * Provides a fluent interface for MongoDB queries
  */
 export class MongoQueryBuilder<T = Document> implements MongoCollectionContract<T> {
+  private static ObjectIdCtor: MongoObjectIdConstructor | null = null
   private filters: FilterDocument = {}
   private orFilters: FilterDocument[] = []
   private projection: Record<string, 0 | 1> = {}
@@ -289,7 +290,7 @@ export class MongoQueryBuilder<T = Document> implements MongoCollectionContract<
    * @returns A promise resolving to the document or null if not found.
    */
   async find(id: string): Promise<T | null> {
-    const { ObjectId } = await this.loadObjectId()
+    const ObjectId = await this.getObjectId()
     const result = await this.nativeCollection.findOne(
       { _id: new ObjectId(id) },
       { projection: Object.keys(this.projection).length > 0 ? this.projection : undefined }
@@ -442,8 +443,17 @@ export class MongoQueryBuilder<T = Document> implements MongoCollectionContract<
    * @returns The MongoDB filter document.
    */
   toFilter(): FilterDocument {
-    if (this.orFilters.length === 0) {
+    const hasMainFilters = Object.keys(this.filters).length > 0
+    const hasOrFilters = this.orFilters.length > 0
+
+    if (!hasOrFilters) {
       return { ...this.filters }
+    }
+
+    if (!hasMainFilters) {
+      return {
+        $or: this.orFilters,
+      }
     }
 
     return {
@@ -507,9 +517,13 @@ export class MongoQueryBuilder<T = Document> implements MongoCollectionContract<
     return { $set: update }
   }
 
-  private async loadObjectId(): Promise<{ ObjectId: MongoObjectIdConstructor }> {
-    const mongodb = await import('mongodb')
-    return mongodb
+  private async getObjectId(): Promise<MongoObjectIdConstructor> {
+    if (MongoQueryBuilder.ObjectIdCtor) {
+      return MongoQueryBuilder.ObjectIdCtor
+    }
+    const { ObjectId } = await import('mongodb')
+    MongoQueryBuilder.ObjectIdCtor = ObjectId as unknown as MongoObjectIdConstructor
+    return MongoQueryBuilder.ObjectIdCtor
   }
 }
 

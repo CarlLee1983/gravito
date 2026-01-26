@@ -10,6 +10,7 @@ import type {
   MongoCollectionContract,
   MongoConfig,
   MongoDatabaseContract,
+  RetryConfig,
 } from './types'
 
 /**
@@ -33,11 +34,18 @@ export class MongoClient implements MongoClientContract {
    *
    * Initializes the MongoDB client and establishes a connection.
    *
+   * @param retryConfig - Optional retry configuration
    * @returns A promise that resolves when connected.
    */
-  async connect(): Promise<void> {
+  async connect(retryConfig?: RetryConfig): Promise<void> {
     if (this.connected) {
       return
+    }
+
+    const config: RetryConfig = {
+      maxRetries: retryConfig?.maxRetries ?? 3,
+      retryDelayMs: retryConfig?.retryDelayMs ?? 1000,
+      backoffMultiplier: retryConfig?.backoffMultiplier ?? 2,
     }
 
     this.mongodb = await this.loadMongoDBModule()
@@ -56,11 +64,27 @@ export class MongoClient implements MongoClientContract {
     }
 
     this.client = new this.mongodb.MongoClient(uri, options)
-    await this.client.connect()
 
-    const dbName = this.config.database ?? 'test'
-    this.db = this.client.db(dbName)
-    this.connected = true
+    let lastError: Error | null = null
+    for (let attempt = 0; attempt <= config.maxRetries; attempt++) {
+      try {
+        await this.client.connect()
+        const dbName = this.config.database ?? 'test'
+        this.db = this.client.db(dbName)
+        this.connected = true
+        return
+      } catch (error) {
+        lastError = error as Error
+        if (attempt < config.maxRetries) {
+          const delay = config.retryDelayMs * config.backoffMultiplier ** attempt
+          await new Promise((resolve) => setTimeout(resolve, delay))
+        }
+      }
+    }
+
+    throw new Error(
+      `Failed to connect to MongoDB after ${config.maxRetries + 1} attempts: ${lastError?.message}`
+    )
   }
 
   /**
@@ -86,6 +110,52 @@ export class MongoClient implements MongoClientContract {
    */
   isConnected(): boolean {
     return this.connected && this.client !== null
+  }
+
+  /**
+   * Ensure connection is available, retry if disconnected
+   */
+  async ensureConnected(): Promise<void> {
+    if (!this.connected || !this.client) {
+      await this.connect()
+      return
+    }
+
+    try {
+      // Execute ping command to check connection
+      await this.db?.command({ ping: 1 })
+    } catch {
+      // Connection lost, try to reconnect
+      this.connected = false
+      await this.connect()
+    }
+  }
+
+  /**
+   * Get connection health status
+   */
+  async getHealthStatus(): Promise<{
+    connected: boolean
+    latencyMs: number | null
+    serverInfo: Record<string, unknown> | null
+  }> {
+    if (!this.connected || !this.db) {
+      return { connected: false, latencyMs: null, serverInfo: null }
+    }
+
+    try {
+      const start = performance.now()
+      const result = await this.db.command({ ping: 1 })
+      const latencyMs = performance.now() - start
+
+      return {
+        connected: true,
+        latencyMs: Math.round(latencyMs * 100) / 100,
+        serverInfo: result,
+      }
+    } catch {
+      return { connected: false, latencyMs: null, serverInfo: null }
+    }
   }
 
   /**

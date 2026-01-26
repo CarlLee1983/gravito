@@ -39,6 +39,15 @@ export interface MongoConfig {
 }
 
 /**
+ * Retry configuration for connection
+ */
+export interface RetryConfig {
+  maxRetries: number
+  retryDelayMs: number
+  backoffMultiplier: number
+}
+
+/**
  * MongoDB manager configuration
  */
 export interface MongoManagerConfig {
@@ -232,9 +241,15 @@ export interface LookupOptions {
  * MongoDB Client Contract
  */
 export interface MongoClientContract {
-  connect(): Promise<void>
+  connect(retryConfig?: RetryConfig): Promise<void>
   disconnect(): Promise<void>
   isConnected(): boolean
+  ensureConnected(): Promise<void>
+  getHealthStatus(): Promise<{
+    connected: boolean
+    latencyMs: number | null
+    serverInfo: Record<string, unknown> | null
+  }>
   database(name?: string): MongoDatabaseContract
   collection<T = Document>(name: string): MongoCollectionContract<T>
 }
