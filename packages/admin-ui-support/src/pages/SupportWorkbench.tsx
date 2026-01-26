@@ -18,6 +18,15 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+/**
+ * Support Ticket Workbench Page.
+ *
+ * A unified interface for support agents to view, manage, and respond to
+ * customer support tickets.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export function SupportWorkbench() {
   const { sdk } = useAdmin()
   const [sessions, setSessions] = useState<any[]>([])

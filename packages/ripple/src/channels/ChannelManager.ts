@@ -10,7 +10,37 @@ import type { PresenceUserInfo, RippleWebSocket } from '../types'
 import { CHANNEL_PREFIXES } from './Channel'
 
 /**
- * Manages all channel subscriptions and presence tracking
+ * Manages all channel subscriptions and presence tracking.
+ *
+ * The ChannelManager is the central coordinator for WebSocket channel subscriptions.
+ * It maintains mappings between clients, channels, and presence information, providing
+ * efficient lookups for broadcasting and presence tracking.
+ *
+ * **Internal Use**: This class is primarily used internally by RippleServer. Most developers
+ * interact with channels through RippleServer's public API instead.
+ *
+ * @example
+ * ```typescript
+ * // Typically used internally by RippleServer
+ * const manager = new ChannelManager()
+ *
+ * // Add a client when they connect
+ * manager.addClient(ws)
+ *
+ * // Subscribe them to a channel
+ * manager.subscribe(ws.data.id, 'news')
+ *
+ * // Get all subscribers for broadcasting
+ * const subscribers = manager.getSubscribers('news')
+ * subscribers.forEach(ws => ws.send(message))
+ *
+ * // For presence channels with user info
+ * manager.subscribe(ws.data.id, 'presence-chat.room1', {
+ *   id: 'user-123',
+ *   info: { name: 'John Doe', avatar: '/avatars/john.jpg' }
+ * })
+ * const members = manager.getPresenceMembers('presence-chat.room1')
+ * ```
  */
 export class ChannelManager {
   /** Map of channel name -> Set of client IDs */
@@ -27,14 +57,50 @@ export class ChannelManager {
   // ─────────────────────────────────────────────────────────────
 
   /**
-   * Register a new client connection
+   * Register a new client WebSocket connection.
+   *
+   * Adds the client to the internal clients map, making it available for channel subscriptions
+   * and broadcasts. This should be called immediately when a WebSocket connection is established.
+   *
+   * @param ws - The WebSocket connection with client data
+   *
+   * @example
+   * ```typescript
+   * // Called internally by RippleServer on connection
+   * private handleOpen(ws: RippleWebSocket): void {
+   *   this.channels.addClient(ws)
+   *   // ... other connection logic
+   * }
+   * ```
    */
   addClient(ws: RippleWebSocket): void {
     this.clients.set(ws.data.id, ws)
   }
 
   /**
-   * Remove a client and all its subscriptions
+   * Remove a client and unsubscribe from all channels.
+   *
+   * Performs cleanup when a client disconnects, removing them from all channel subscriptions
+   * and the client registry. Returns the list of channels the client was subscribed to,
+   * useful for sending presence leave events.
+   *
+   * @param clientId - The unique client identifier (ws.data.id)
+   * @returns Array of channel names the client was subscribed to before removal
+   *
+   * @example
+   * ```typescript
+   * // Called internally by RippleServer on disconnect
+   * private handleClose(ws: RippleWebSocket): void {
+   *   const leftChannels = this.channels.removeClient(ws.data.id)
+   *
+   *   // Notify presence channels about user leaving
+   *   for (const channel of leftChannels) {
+   *     if (channel.startsWith('presence-')) {
+   *       this.broadcast(channel, 'presence', { event: 'leave', data: ... })
+   *     }
+   *   }
+   * }
+   * ```
    */
   removeClient(clientId: string): string[] {
     const ws = this.clients.get(clientId)
@@ -55,14 +121,19 @@ export class ChannelManager {
   }
 
   /**
-   * Get a client by ID
+   * Get a client WebSocket by ID.
+   *
+   * @param clientId - The client identifier
+   * @returns The WebSocket connection, or undefined if not found
    */
   getClient(clientId: string): RippleWebSocket | undefined {
     return this.clients.get(clientId)
   }
 
   /**
-   * Get all connected clients
+   * Get all currently connected WebSocket clients.
+   *
+   * @returns Array of all connected WebSocket instances
    */
   getAllClients(): RippleWebSocket[] {
     return Array.from(this.clients.values())
@@ -73,7 +144,12 @@ export class ChannelManager {
   // ─────────────────────────────────────────────────────────────
 
   /**
-   * Subscribe a client to a channel
+   * Subscribe a client to a channel.
+   *
+   * @param clientId - The client identifier
+   * @param channel - The channel name
+   * @param userInfo - User information for presence channels (required for presence-* channels)
+   * @returns true if subscription succeeded, false if client not found
    */
   subscribe(clientId: string, channel: string, userInfo?: PresenceUserInfo): boolean {
     const ws = this.clients.get(clientId)
@@ -101,7 +177,11 @@ export class ChannelManager {
   }
 
   /**
-   * Unsubscribe a client from a channel
+   * Unsubscribe a client from a channel.
+   *
+   * @param clientId - The client identifier
+   * @param channel - The channel name
+   * @returns true if unsubscription succeeded, false if client not found
    */
   unsubscribe(clientId: string, channel: string): boolean {
     const ws = this.clients.get(clientId)
@@ -130,7 +210,10 @@ export class ChannelManager {
   }
 
   /**
-   * Get all subscribers of a channel
+   * Get all WebSocket subscribers of a channel.
+   *
+   * @param channel - The channel name
+   * @returns Array of WebSocket connections subscribed to the channel
    */
   getSubscribers(channel: string): RippleWebSocket[] {
     const clientIds = this.subscriptions.get(channel)
@@ -144,7 +227,11 @@ export class ChannelManager {
   }
 
   /**
-   * Check if a client is subscribed to a channel
+   * Check if a client is subscribed to a channel.
+   *
+   * @param clientId - The client identifier
+   * @param channel - The channel name
+   * @returns true if subscribed, false otherwise
    */
   isSubscribed(clientId: string, channel: string): boolean {
     const channelSubs = this.subscriptions.get(channel)
@@ -179,7 +266,10 @@ export class ChannelManager {
   }
 
   /**
-   * Get all members of a presence channel
+   * Get all members of a presence channel.
+   *
+   * @param channel - The presence channel name
+   * @returns Array of user information for all members in the channel
    */
   getPresenceMembers(channel: string): PresenceUserInfo[] {
     const members = this.presenceMembers.get(channel)
@@ -187,7 +277,10 @@ export class ChannelManager {
   }
 
   /**
-   * Get member count for a channel
+   * Get subscriber count for a channel.
+   *
+   * @param channel - The channel name
+   * @returns Number of clients subscribed to the channel
    */
   getMemberCount(channel: string): number {
     return this.subscriptions.get(channel)?.size ?? 0
@@ -198,7 +291,9 @@ export class ChannelManager {
   // ─────────────────────────────────────────────────────────────
 
   /**
-   * Get channel statistics
+   * Get comprehensive channel statistics.
+   *
+   * @returns Statistics object containing total clients, channels, and per-channel subscriber counts
    */
   getStats(): {
     totalClients: number

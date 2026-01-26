@@ -1,11 +1,19 @@
 import crypto from 'node:crypto'
 
+/**
+ * Payload structure for email verification tokens.
+ * @public
+ */
 export interface EmailVerificationPayload {
   id: string | number
   email: string
   expiresAt: number
 }
 
+/**
+ * Configuration options for email verification.
+ * @public
+ */
 export interface EmailVerificationOptions {
   ttlSeconds?: number
 }
@@ -25,9 +33,30 @@ function parseKey(key: string): Buffer {
   return Buffer.from(key)
 }
 
+/**
+ * Service for managing secure email verification tokens.
+ *
+ * This service generates signed, time-limited tokens that can be sent to
+ * users via email to verify their email address. It uses HMAC-SHA256 for
+ * security to ensure tokens cannot be tampered with.
+ *
+ * @public
+ * @example
+ * ```typescript
+ * const service = new EmailVerificationService('my-secret');
+ * const token = service.createToken({ id: 1, email: 'user@example.com' });
+ * const payload = service.verifyToken(token);
+ * ```
+ */
 export class EmailVerificationService {
   private readonly key: Buffer
 
+  /**
+   * Create a new email verification service.
+   *
+   * @param secret - The key used to sign tokens
+   * @param options - Configuration options
+   */
   constructor(
     secret: string,
     private readonly options: EmailVerificationOptions = {}
@@ -35,6 +64,12 @@ export class EmailVerificationService {
     this.key = parseKey(secret)
   }
 
+  /**
+   * Create a signed verification token for the given payload.
+   *
+   * @param payload - The user data to be encoded in the token
+   * @returns A base64url encoded token string
+   */
   createToken(payload: Omit<EmailVerificationPayload, 'expiresAt'>): string {
     const ttlSeconds = this.options.ttlSeconds ?? 3600
     const expiresAt = Date.now() + ttlSeconds * 1000
@@ -45,6 +80,12 @@ export class EmailVerificationService {
     return `${encoded}.${sig}`
   }
 
+  /**
+   * Verify and decode a verification token.
+   *
+   * @param token - The token string to verify
+   * @returns The original payload or null if invalid or expired
+   */
   verifyToken(token: string): EmailVerificationPayload | null {
     const [encoded, sig] = token.split('.', 2)
     if (!encoded || !sig) {

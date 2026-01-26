@@ -1,10 +1,12 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'bun:test'
 import { BelongsTo, column, DB, HasMany, Model, Schema, UniqueConstraintError } from '../src/index'
 
+const CONNECTION_NAME = `sqlite_integration_${Math.random().toString(36).slice(2)}`
+
 // 1. Define Test Models
 class User extends Model {
+  static connection = CONNECTION_NAME
   static table = 'users'
-  static tableName = 'users'
   @column({ isPrimary: true }) declare id: number
   @column() declare name: string
   @column() declare email: string
@@ -14,8 +16,8 @@ class User extends Model {
 }
 
 class Post extends Model {
+  static connection = CONNECTION_NAME
   static table = 'posts'
-  static tableName = 'posts'
   @column({ isPrimary: true }) declare id: number
   @column() declare title: string
   @column() declare user_id: number
@@ -24,24 +26,19 @@ class Post extends Model {
 
 describe('Atlas Exhaustive Integration Test', () => {
   const ensureSqlite = () => {
-    if (!DB.getConnectionConfig('sqlite')) {
-      DB.configure({
-        default: 'sqlite',
-        connections: {
-          sqlite: { driver: 'sqlite', database: ':memory:' },
-        },
+    if (!DB.hasConnection(CONNECTION_NAME)) {
+      DB.addConnection(CONNECTION_NAME, {
+        driver: 'sqlite',
+        database: ':memory:',
       })
     }
-    if (DB.getDefaultConnection() !== 'sqlite') {
-      DB.setDefaultConnection('sqlite')
-    }
-    Schema.connection('sqlite')
+    Schema.connection(CONNECTION_NAME)
   }
 
   beforeAll(async () => {
     ensureSqlite()
 
-    await Schema.create('users', (t) => {
+    await Schema.connection(CONNECTION_NAME).create('users', (t) => {
       t.id()
       t.string('name')
       t.string('email').unique()
@@ -50,7 +47,7 @@ describe('Atlas Exhaustive Integration Test', () => {
       t.timestamps()
     })
 
-    await Schema.create('posts', (t) => {
+    await Schema.connection(CONNECTION_NAME).create('posts', (t) => {
       t.id()
       t.string('title')
       t.integer('user_id').unsigned()
@@ -63,7 +60,7 @@ describe('Atlas Exhaustive Integration Test', () => {
   })
 
   afterAll(async () => {
-    await DB.disconnectAll()
+    await DB.disconnect(CONNECTION_NAME)
   })
 
   test('1. Basic CRUD & Model Logic', async () => {

@@ -15,6 +15,15 @@ interface ThroughputPoint {
   count: number
 }
 
+/**
+ * Real-time throughput visualization component.
+ *
+ * Displays a live-updating area chart of the number of jobs processed
+ * per minute across the system.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export function ThroughputChart() {
   // Initial fetch via React Query
   const { data: initialData } = useQuery({
@@ -61,21 +70,23 @@ export function ThroughputChart() {
       <div className="flex justify-between items-start mb-6 z-10">
         <div>
           <div className="flex items-center gap-2">
-            <h3 className="text-xl font-bold tracking-tight">System Throughput</h3>
-            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-green-500/10 text-green-500 text-[8px] font-black uppercase tracking-widest rounded-full border border-green-500/20">
-              <span className="w-1 h-1 bg-green-500 rounded-full animate-ping"></span>
+            <h3 className="text-xl font-black tracking-tight font-heading">System Throughput</h3>
+            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-primary/10 text-primary text-[8px] font-black uppercase tracking-widest rounded-full border border-primary/20">
+              <span className="w-1 h-1 bg-primary rounded-full animate-ping"></span>
               Live
             </div>
           </div>
-          <p className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] font-bold mt-1">
+          <p className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] font-black mt-1">
             Jobs processed per minute
           </p>
         </div>
         <div className="text-right">
-          <p className="text-2xl font-black text-foreground">
+          <p className="text-3xl font-black text-foreground font-mono">
             {chartData[chartData.length - 1]?.value || 0}
           </p>
-          <p className="text-[8px] text-muted-foreground uppercase font-bold">Current Rate</p>
+          <p className="text-[8px] text-muted-foreground uppercase font-black tracking-tighter">
+            Current Rate
+          </p>
         </div>
       </div>
 
@@ -84,7 +95,7 @@ export function ThroughputChart() {
           <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
             <defs>
               <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
+                <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.5} />
                 <stop offset="50%" stopColor="hsl(var(--primary))" stopOpacity={0.1} />
                 <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
               </linearGradient>
@@ -93,38 +104,50 @@ export function ThroughputChart() {
               strokeDasharray="3 3"
               vertical={false}
               stroke="hsl(var(--border))"
-              opacity={0.5}
+              opacity={0.3}
             />
             <XAxis
               dataKey="time"
               axisLine={false}
               tickLine={false}
-              tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))', fontWeight: 600 }}
+              tick={{
+                fontSize: 9,
+                fill: 'hsl(var(--muted-foreground))',
+                fontWeight: 700,
+                fontFamily: 'Fira Code',
+              }}
               dy={10}
             />
             <YAxis
               axisLine={false}
               tickLine={false}
-              tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))', fontWeight: 600 }}
+              tick={{
+                fontSize: 9,
+                fill: 'hsl(var(--muted-foreground))',
+                fontWeight: 700,
+                fontFamily: 'Fira Code',
+              }}
             />
             <Tooltip
               cursor={{ stroke: 'hsl(var(--primary))', strokeWidth: 1, strokeDasharray: '4 4' }}
               contentStyle={{
-                backgroundColor: 'hsl(var(--card))',
-                border: '1px solid hsl(var(--border))',
-                borderRadius: '16px',
-                fontSize: '12px',
-                boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
+                backgroundColor: 'rgba(9, 9, 11, 0.9)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                borderRadius: '12px',
+                fontSize: '11px',
+                fontFamily: 'Fira Code',
+                boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.5)',
+                backdropFilter: 'blur(8px)',
               }}
               itemStyle={{ fontWeight: 'bold', color: 'hsl(var(--primary))' }}
             />
             <Area
-              type="stepAfter"
+              type="monotone"
               dataKey="value"
               stroke="hsl(var(--primary))"
               fillOpacity={1}
               fill="url(#colorValue)"
-              strokeWidth={2.5}
+              strokeWidth={3}
               animationDuration={1500}
             />
           </AreaChart>

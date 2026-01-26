@@ -441,7 +441,10 @@ describe('VerifyEmailController', () => {
 describe('LogoutController', () => {
   it('logs out and redirects', async () => {
     const controller = new LogoutController(baseConfig())
-    const auth = { logout: async () => {} }
+    const auth = {
+      logout: async () => {},
+      user: async () => ({ id: 1, email: 'test@example.com' }),
+    }
     const response = await controller.destroy(makeContext({ auth }) as any)
     const data = await response.json()
     expect(data.message).toBe('Logged out successfully')

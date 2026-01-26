@@ -36,7 +36,7 @@ export default function Privacy() {
             <h1 className="text-5xl lg:text-6xl font-bold tracking-tighter mb-4 text-glow">
               {trans('privacy.title')}
             </h1>
-            <p className="text-gray-500 font-mono text-xs uppercase tracking-widest">
+            <p className="text-zinc-500 font-mono text-xs uppercase tracking-widest">
               {trans('privacy.lastUpdated')}
             </p>
           </motion.div>
@@ -89,7 +89,7 @@ function LegalSection({
         </div>
         <div>
           <h2 className="text-2xl font-bold mb-4 text-white/90">{title}</h2>
-          <p className="text-gray-400 leading-relaxed font-light">{content}</p>
+          <p className="text-zinc-400 leading-relaxed font-light">{content}</p>
         </div>
       </div>
     </motion.div>

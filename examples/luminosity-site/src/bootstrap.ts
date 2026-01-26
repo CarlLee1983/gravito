@@ -26,8 +26,10 @@ export async function bootstrap(options: { port?: number } = {}) {
   const defaultCsp = [
     "default-src 'self'",
     "script-src 'self' 'unsafe-inline'",
-    "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data:",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "font-src 'self' https://fonts.gstatic.com",
+    "img-src 'self' data: *",
+    "connect-src 'self' ws://localhost:3000 ws://127.0.0.1:5173",
     "object-src 'none'",
     "base-uri 'self'",
     "frame-ancestors 'none'",

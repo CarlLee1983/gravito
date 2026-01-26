@@ -11,6 +11,11 @@ import { BunContext } from './BunContext'
 import type { BunRequest } from './BunRequest'
 import { RadixRouter } from './RadixRouter'
 
+/**
+ * Native Bun-optimized HTTP Adapter for Gravito.
+ * Uses Bun's standard Request/Response classes and efficient router.
+ * @public
+ */
 export class BunNativeAdapter implements HttpAdapter {
   public readonly name = 'bun-native'
   public readonly version = '0.0.1'
@@ -93,6 +98,18 @@ export class BunNativeAdapter implements HttpAdapter {
 
   onNotFound(handler: GravitoNotFoundHandler): void {
     this.notFoundHandler = handler
+  }
+
+  /**
+   * Predictive Route Warming (JIT Optimization)
+   */
+  async warmup(paths: string[]): Promise<void> {
+    const dummyReqOpts = { headers: { 'User-Agent': 'Gravito-Warmup/1.0' } }
+
+    for (const path of paths) {
+      const req = new Request(`http://localhost${path}`, dummyReqOpts)
+      await this.fetch(req)
+    }
   }
 
   async fetch(request: Request, _server?: unknown): Promise<Response> {

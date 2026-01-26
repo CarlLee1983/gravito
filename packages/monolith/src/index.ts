@@ -7,11 +7,20 @@ declare module '@gravito/core' {
   }
 }
 
+/**
+ * Configuration for Orbit Monolith (Content Engine).
+ * @public
+ */
 export interface ContentConfig {
   root?: string // Defaults to process.cwd()
   collections?: Record<string, CollectionConfig>
 }
 
+/**
+ * Orbit Monolith Service.
+ * Provides flat-file CMS capabilities to Gravito applications.
+ * @public
+ */
 export class OrbitMonolith implements GravitoOrbit {
   constructor(private config: ContentConfig = {}) {}
 

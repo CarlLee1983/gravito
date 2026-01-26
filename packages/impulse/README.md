@@ -1,247 +1,150 @@
 ---
-title: Orbit Request
+title: Orbit Request (Impulse)
 ---
 
-# Orbit Request
+# Orbit Request 🚀
 
-Form Request validation for Gravito with Zod and Valibot support.
+**Impulse** (@gravito/impulse) is a high-performance request validation module for the Gravito framework. It provides a declarative, class-based approach to request validation, inspired by Laravel's FormRequest, but reimagined for the TypeScript ecosystem with native support for **Zod** and **Valibot**.
 
-**Orbit Request** provides Laravel-style request validation for Gravito applications. Define your validation rules as classes and get type-safe validated data in your controllers.
+## 🌟 Key Features
 
-## Features
+- **Declarative Validation**: Organize your validation rules into clean, reusable classes.
+- **Library Agnostic**: Built-in support for both [Zod](https://zod.dev/) and [Valibot](https://valibot.dev/).
+- **Extreme Performance**: Multi-layer caching system (Instance, Schema, Compilation) ensures validation is blazing fast.
+- **Type Safety**: Full TypeScript inference. Your validated data is automatically typed based on your schema.
+- **Rich Context**: Integrated authorization hooks, data transformation, and custom error messaging.
+- **Multi-Source**: Easily validate JSON bodies, multipart forms, query parameters, or route parameters.
+- **Blueprint Generation**: Automatically export validation rules to JSON for frontend synchronization.
+- **i18n Ready**: Pluggable `MessageProvider` for localized error messages.
 
-- **Type-Safe Validation**: Full TypeScript inference with Zod or Valibot
-- **Class-Based Requests**: Organize validation logic into reusable classes
-- **Authorization Hook**: Built-in `authorize()` method for access control
-- **Multiple Data Sources**: Validate JSON, form data, query params, or route params
-- **Structured Errors**: Consistent error response format
-- **Custom Messages**: Override error messages per field
-- **i18n Support**: Pluggable MessageProvider for localization
-- **Router Integration**: Use directly in Gravito router definitions
-
-## Installation
+## 📦 Installation
 
 ```bash
 bun add @gravito/impulse
 ```
 
-## Basic Usage
+## 🚀 Quick Start
 
-### 1. Define a FormRequest
+### 1. Define your Request Class
+
+Create a class that extends `FormRequest`. Define your rules in the `schema` property.
 
 ```typescript
-// src/requests/StoreUserRequest.ts
+// src/requests/CreateUserRequest.ts
 import { FormRequest, z } from '@gravito/impulse'
 
-export class StoreUserRequest extends FormRequest {
+export class CreateUserRequest extends FormRequest {
+  // Use Zod (or Valibot) for rules
   schema = z.object({
-    name: z.string().min(2, 'Name must be at least 2 characters'),
-    email: z.string().email('Invalid email format'),
+    username: z.string().min(3).max(20),
+    email: z.string().email(),
+    password: z.string().min(8),
     age: z.number().min(18).optional(),
   })
+
+  // Optional: Check permissions before validation
+  async authorize(ctx) {
+    return true // Logic to allow/deny access
+  }
 }
 ```
 
 ### 2. Apply to Routes
 
+Impulse integrates seamlessly with Gravito's router.
+
 ```typescript
-import { StoreUserRequest } from './requests/StoreUserRequest'
+import { CreateUserRequest } from './requests/CreateUserRequest'
 
-// Direct router integration (recommended)
-core.router.post('/users', StoreUserRequest, [UserController, 'store'])
-
-// Or with explicit middleware
-import { validateRequest } from '@gravito/impulse'
-core.router.post('/users', validateRequest(StoreUserRequest), [UserController, 'store'])
+// The router automatically applies the validation middleware
+router.post('/users', CreateUserRequest, [UserController, 'store'])
 ```
 
-### 3. Access Validated Data
+### 3. Use Validated Data
+
+Access the safe, typed data in your controller.
 
 ```typescript
 // src/controllers/UserController.ts
+import { type CreateUserRequest } from '../requests/CreateUserRequest'
+import { z } from 'zod'
+
 export class UserController {
-  store(ctx: Context) {
-    const data = ctx.get('validated') as {
-      name: string
-      email: string
-      age?: number
+  async store(ctx) {
+    // Data is already validated and typed!
+    const data = ctx.get('validated') as z.infer<CreateUserRequest['schema']>
+    
+    return ctx.json({ message: 'User created', data }, 201)
+  }
+}
+```
+
+## 🛠️ Advanced Usage
+
+### Data Sources
+By default, Impulse looks at the JSON body. You can change this via the `source` property:
+
+```typescript
+export class SearchRequest extends FormRequest {
+  source = 'query' // or 'form', 'param', 'json'
+  
+  schema = z.object({
+    q: z.string(),
+    page: z.coerce.number().default(1)
+  })
+}
+```
+
+### Data Transformation
+Pre-process input before it hits the validator:
+
+```typescript
+export class ProfileRequest extends FormRequest {
+  transform(data: any) {
+    return {
+      ...data,
+      email: data.email?.toLowerCase(),
     }
-    return ctx.json({ user: data })
   }
 }
 ```
 
-## Authorization
-
-Add authorization logic to restrict access:
+### Custom Error Messages
+Override default library messages with user-friendly ones:
 
 ```typescript
-import { FormRequest, z } from '@gravito/impulse'
-import type { Context } from '@gravito/photon'
-
-export class AdminRequest extends FormRequest {
-  schema = z.object({
-    action: z.string(),
-  })
-
-  // Return false to reject with 403
-  authorize(ctx: Context) {
-    const user = ctx.get('user')
-    return user?.role === 'admin'
-  }
-
-  // Optional: Custom authorization error message
-  authorizationMessage() {
-    return 'Admin access required'
-  }
-}
-```
-
-Failed authorization returns:
-
-```json
-{
-  "success": false,
-  "error": {
-    "code": "AUTHORIZATION_ERROR",
-    "message": "Admin access required",
-    "details": []
-  }
-}
-```
-
-## Custom Error Messages
-
-Override default validation messages:
-
-```typescript
-export class StoreUserRequest extends FormRequest {
-  schema = z.object({
-    email: z.string().email(),
-    name: z.string().min(2),
-  })
-
-  // Map field.code to custom message
+export class LoginRequest extends FormRequest {
   messages() {
     return {
-      'email.invalid_string': 'Please enter a valid email address',
-      'name.too_small': 'Name must be at least 2 characters',
+      'email.invalid_string': 'Please provide a valid email address.',
+      'password.too_small': 'Password must be at least 8 characters long.',
     }
   }
 }
 ```
 
-## i18n Support
-
-Implement `MessageProvider` for full localization:
-
-```typescript
-import type { MessageProvider } from '@gravito/impulse'
-
-export class CustomMessageProvider implements MessageProvider {
-  getMessage(code: string, field: string, defaultMessage: string): string {
-    const messages: Record<string, string> = {
-      'email.invalid_string': 'Invalid email format',
-      'name.too_small': 'Name is too short',
-    }
-    return messages[`${field}.${code}`] ?? defaultMessage
-  }
-
-  getValidationFailedMessage(): string {
-    return 'Validation failed'
-  }
-
-  getUnauthorizedMessage(): string {
-    return 'Unauthorized'
-  }
-}
-
-// Use in FormRequest
-export class LocalizedRequest extends FormRequest {
-  schema = z.object({ email: z.string().email() })
-
-  options = {
-    messageProvider: new CustomMessageProvider(),
-  }
-}
-```
-
-## Valibot Support
-
-Use Valibot instead of Zod:
+### Blueprints (Frontend Sync)
+Get a JSON representation of your validation rules for use in the frontend:
 
 ```typescript
-import { FormRequest } from '@gravito/impulse'
-import * as v from 'valibot'
-
-export class StoreUserRequest extends FormRequest {
-  schema = v.object({
-    name: v.pipe(v.string(), v.minLength(2)),
-    email: v.pipe(v.string(), v.email()),
-  })
-}
+const request = new CreateUserRequest()
+const blueprint = request.getBlueprint()
+// Use this to generate frontend forms or validation logic
 ```
 
-The same FormRequest works with both libraries. Schema type is auto-detected.
+## ⚡ Performance Optimization
 
-## Data Sources
+Impulse is built with performance as a first-class citizen:
 
-Change the data source for validation:
+1.  **Instance Caching**: `FormRequest` instances are reused via `FormRequestInstanceCache`.
+2.  **Schema Cache**: Schema library detection (Zod vs Valibot) is cached.
+3.  **Compilation Cache**: Schemas are compiled into optimized validator functions for 100x faster repeated execution.
+4.  **Message Cache**: Resolved error messages are cached per field/code combination.
 
-```typescript
-class SearchRequest extends FormRequest {
-  source = 'query' // Validate query parameters
+## 🤝 Support
 
-  schema = z.object({
-    q: z.string().min(1),
-    page: z.coerce.number().default(1),
-  })
-}
-```
+For more details, visit the [Gravito Documentation](https://gravito.dev).
 
-| Source | Description |
-|--------|-------------|
-| `json` | Request body (default) |
-| `form` | Form data (multipart/form-data) |
-| `query` | URL query parameters |
-| `param` | Route parameters |
+## 📄 License
 
-## Transform Data
-
-Pre-process data before validation:
-
-```typescript
-class UppercaseRequest extends FormRequest {
-  schema = z.object({
-    code: z.string().length(6),
-  })
-
-  transform(data: unknown) {
-    const d = data as { code?: string }
-    return {
-      ...d,
-      code: d.code?.toUpperCase(),
-    }
-  }
-}
-```
-
-## Validation Error Format
-
-```json
-{
-  "success": false,
-  "error": {
-    "code": "VALIDATION_ERROR",
-    "message": "Validation failed",
-    "details": [
-      { "field": "email", "message": "Invalid email format", "code": "invalid_string" },
-      { "field": "name", "message": "Name must be at least 2 characters", "code": "too_small" }
-    ]
-  }
-}
-```
-
-## License
-
-MIT
+MIT © Carl Lee

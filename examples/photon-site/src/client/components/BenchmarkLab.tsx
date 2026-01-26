@@ -1,41 +1,15 @@
 import { motion } from 'framer-motion'
-import { Activity, BarChart3, RotateCcw, Zap } from 'lucide-react'
-import React, { useEffect, useState } from 'react'
+import { Activity, BarChart3, RotateCcw } from 'lucide-react'
+import { useState } from 'react'
+import { labTranslations } from '../locales/lab'
+import { getTranslation } from '../locales/types'
 
 export const BenchmarkLab = ({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) => {
   const [routes, setRoutes] = useState(100)
   const [middleware, setMiddleware] = useState(5)
   const [active, setActive] = useState(false)
 
-  const t = {
-    en: {
-      title: 'The Stress Lab',
-      subtitle:
-        'Adjust the complexity parameters to simulate how Photon maintains throughput under heavy architectural loads compared to generic frameworks.',
-      btn_active: 'SYSTEM_STRESS_ACTIVE',
-      btn_start: 'START_SIMULATION',
-      route_count: 'Route_Count',
-      middleware_layers: 'Middleware_Layers',
-      photon_core: 'PHOTON_CORE',
-      generic_engine: 'GENERIC_ENGINE',
-      efficiency_prefix: '// PHOTON IS ',
-      efficiency_suffix: '% MORE EFFICIENT AT THIS SCALE',
-      init: '// INITIALIZING_COMPARATIVE_STRESS_TEST',
-    },
-    'zh-TW': {
-      title: '效能壓力實驗室',
-      subtitle: '調整複雜度參數，模擬 Photon 在高負載架構下的吞吐量表現，並與通用框架進行對比。',
-      btn_active: '系統壓力測試中',
-      btn_start: '開始模擬測試',
-      route_count: '路由數量',
-      middleware_layers: '中介軟體層級',
-      photon_core: 'PHOTON 核心',
-      generic_engine: '通用引擎',
-      efficiency_prefix: '// PHOTON 在此規模下領跑 ',
-      efficiency_suffix: '% 的效能效率',
-      init: '// 正在初始化比較壓力測試',
-    },
-  }[lang]
+  const t = getTranslation(labTranslations, lang)
 
   // Simulation Algorithm: Photon is less affected by complexity than generic frameworks
   const calculateRPS = (base: number, r: number, m: number, factor: number) => {
@@ -82,7 +56,7 @@ export const BenchmarkLab = ({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) => {
               min="1"
               max="2000"
               value={routes}
-              onChange={(e) => setRoutes(parseInt(e.target.value))}
+              onChange={(e) => setRoutes(parseInt(e.target.value, 10))}
               className="w-full h-1 bg-white/5 appearance-none cursor-pointer accent-photon-gold"
             />
           </div>
@@ -96,7 +70,7 @@ export const BenchmarkLab = ({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) => {
               min="0"
               max="50"
               value={middleware}
-              onChange={(e) => setMiddleware(parseInt(e.target.value))}
+              onChange={(e) => setMiddleware(parseInt(e.target.value, 10))}
               className="w-full h-1 bg-white/5 appearance-none cursor-pointer accent-photon-gold"
             />
           </div>

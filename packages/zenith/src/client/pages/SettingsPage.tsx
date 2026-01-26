@@ -1,14 +1,12 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Bell,
-  Clock,
   Database,
   ExternalLink,
   Info,
   Monitor,
   Moon,
   Palette,
-  RefreshCcw,
   Server,
   Shield,
   Sun,
@@ -17,6 +15,15 @@ import {
 import React from 'react'
 import { cn } from '../utils'
 
+/**
+ * System Settings Page.
+ *
+ * Allows administrators to configure dashboard appearance, monitoring alerts,
+ * and data retention policies. It also provides system-level information.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export function SettingsPage() {
   const queryClient = useQueryClient()
   const [showAddRule, setShowAddRule] = React.useState(false)
@@ -73,43 +80,48 @@ export function SettingsPage() {
       </div>
 
       {/* Appearance Section */}
-      <section className="card-premium p-6">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-            <Palette size={20} />
+      <section className="card-premium p-6 border-l-4 border-primary">
+        <div className="flex items-center gap-4 mb-8">
+          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20 shadow-[0_0_15px_rgba(0,240,255,0.1)]">
+            <Palette size={24} />
           </div>
           <div>
-            <h2 className="text-lg font-bold">Appearance</h2>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
-              Customize the look and feel
+            <h2 className="text-xl font-black font-heading tracking-tight">
+              Appearance Architecture
+            </h2>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] font-black opacity-50 mt-0.5">
+              Customize Visual Interface
             </p>
           </div>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-6">
           <div>
-            <label htmlFor="theme-select" className="text-sm font-bold mb-3 block">
-              Theme
+            <label
+              htmlFor="theme-select"
+              className="text-[10px] font-black uppercase tracking-widest mb-4 block text-muted-foreground ml-1"
+            >
+              Interface Mode
             </label>
-            <div id="theme-select" className="flex gap-3">
+            <div id="theme-select" className="flex gap-4">
               {[
-                { value: 'light', icon: Sun, label: 'Light' },
-                { value: 'dark', icon: Moon, label: 'Dark' },
-                { value: 'system', icon: Monitor, label: 'System' },
+                { value: 'light', icon: Sun, label: 'Standard' },
+                { value: 'dark', icon: Moon, label: 'Quantum' },
+                { value: 'system', icon: Monitor, label: 'Auto' },
               ].map(({ value, icon: Icon, label }) => (
                 <button
                   type="button"
                   key={value}
                   onClick={() => handleThemeChange(value as 'light' | 'dark' | 'system')}
                   className={cn(
-                    'flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border transition-all',
+                    'flex-1 flex items-center justify-center gap-3 px-4 py-4 rounded-xl border transition-all font-heading uppercase text-[11px] font-black tracking-widest',
                     theme === value
-                      ? 'bg-primary text-primary-foreground border-primary'
-                      : 'bg-muted/40 border-border/50 hover:border-primary/30'
+                      ? 'bg-primary text-black border-primary shadow-[0_0_30px_rgba(0,240,255,0.2)] scale-[1.02]'
+                      : 'bg-zinc-900/40 border-white/5 hover:border-primary/30 text-muted-foreground hover:text-foreground'
                   )}
                 >
                   <Icon size={18} />
-                  <span className="font-bold text-sm">{label}</span>
+                  <span>{label}</span>
                 </button>
               ))}
             </div>
@@ -118,119 +130,107 @@ export function SettingsPage() {
       </section>
 
       {/* Connection Info Section */}
-      <section className="card-premium p-6">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-500">
-            <Database size={20} />
+      <section className="card-premium p-6 border-l-4 border-indigo-500/40">
+        <div className="flex items-center gap-4 mb-8">
+          <div className="w-12 h-12 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 border border-indigo-500/20 shadow-[0_0_15px_rgba(99,102,241,0.1)]">
+            <Database size={24} />
           </div>
           <div>
-            <h2 className="text-lg font-bold">Connection Status</h2>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
-              Redis and system connectivity
+            <h2 className="text-xl font-black font-heading tracking-tight">Quantum Connectivity</h2>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] font-black opacity-50 mt-0.5">
+              Infrastructure Bridge Status
             </p>
           </div>
         </div>
 
-        <div className="space-y-4">
-          <div className="flex items-center justify-between py-3 border-b border-border/30">
+        <div className="space-y-2 font-mono">
+          <div className="flex items-center justify-between py-4 border-b border-white/5 group">
             <div className="flex items-center gap-3">
-              <Server size={16} className="text-muted-foreground" />
-              <span className="font-medium">Redis Connection</span>
+              <Server
+                size={16}
+                className="text-muted-foreground group-hover:text-primary transition-colors"
+              />
+              <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                Redis Protocol
+              </span>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-              <span className="text-sm font-bold text-green-500">Connected</span>
+            <div className="flex items-center gap-3">
+              <span className="w-2 h-2 bg-emerald-500 rounded-full glow-pulse shadow-[0_0_10px_#10B981]"></span>
+              <span className="text-xs font-black text-emerald-500 uppercase tracking-[0.2em]">
+                Established
+              </span>
             </div>
           </div>
 
-          <div className="flex items-center justify-between py-3 border-b border-border/30">
+          <div className="flex items-center justify-between py-4 border-b border-white/5 group">
             <div className="flex items-center gap-3">
-              <Database size={16} className="text-muted-foreground" />
-              <span className="font-medium">Redis URL</span>
+              <Database
+                size={16}
+                className="text-muted-foreground group-hover:text-primary transition-colors"
+              />
+              <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                Endpoint URI
+              </span>
             </div>
-            <code className="text-sm bg-muted px-2 py-1 rounded font-mono">
+            <code className="text-[11px] bg-black/40 px-3 py-1.5 rounded-lg border border-white/5 text-primary">
               {systemStatus?.redisUrl || 'redis://localhost:6379'}
             </code>
-          </div>
-
-          <div className="flex items-center justify-between py-3 border-b border-border/30">
-            <div className="flex items-center gap-3">
-              <Clock size={16} className="text-muted-foreground" />
-              <span className="font-medium">Service Uptime</span>
-            </div>
-            <span className="text-sm font-mono font-bold">
-              {systemStatus?.uptime ? formatUptime(systemStatus.uptime) : 'Loading...'}
-            </span>
-          </div>
-
-          <div className="flex items-center justify-between py-3">
-            <div className="flex items-center gap-3">
-              <RefreshCcw size={16} className="text-muted-foreground" />
-              <span className="font-medium">Engine Version</span>
-            </div>
-            <span className="text-sm font-bold">{systemStatus?.engine || 'Loading...'}</span>
           </div>
         </div>
       </section>
 
       {/* System Info Section */}
-      <section className="card-premium p-6">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center text-green-500">
-            <Info size={20} />
+      <section className="card-premium p-6 border-l-4 border-emerald-500/40">
+        <div className="flex items-center gap-4 mb-8">
+          <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 border border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.1)]">
+            <Info size={24} />
           </div>
           <div>
-            <h2 className="text-lg font-bold">System Information</h2>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
-              Runtime and memory details
+            <h2 className="text-xl font-black font-heading tracking-tight">Quantum Runtime</h2>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] font-black opacity-50 mt-0.5">
+              Kernel Environment & Metrics
             </p>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div className="bg-muted/20 rounded-xl p-4">
-            <p className="text-[10px] font-black text-muted-foreground/50 uppercase tracking-widest mb-1">
-              Node.js Version
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="bg-black/40 rounded-xl p-5 border border-white/5 group hover:border-primary/20 transition-all flex flex-col justify-between">
+            <p className="text-[9px] font-black text-muted-foreground/40 uppercase tracking-widest mb-2">
+              Runtime Engine
             </p>
-            <p className="text-lg font-mono font-bold">{systemStatus?.node || '...'}</p>
+            <p className="text-lg font-mono font-black text-primary/80">
+              {systemStatus?.node || '...'}
+            </p>
           </div>
-          <div className="bg-muted/20 rounded-xl p-4">
-            <p className="text-[10px] font-black text-muted-foreground/50 uppercase tracking-widest mb-1">
-              Environment
+          <div className="bg-black/40 rounded-xl p-5 border border-white/5 group hover:border-primary/20 transition-all flex flex-col justify-between">
+            <p className="text-[9px] font-black text-muted-foreground/40 uppercase tracking-widest mb-2">
+              Namespace
             </p>
-            <p className="text-lg font-mono font-bold">{systemStatus?.env || '...'}</p>
+            <p className="text-sm font-mono font-black text-white/60 uppercase truncate">
+              {systemStatus?.env || '...'}
+            </p>
           </div>
-          <div className="bg-muted/20 rounded-xl p-4">
-            <p className="text-[10px] font-black text-muted-foreground/50 uppercase tracking-widest mb-1">
-              Memory (RSS)
+          <div className="bg-black/40 rounded-xl p-5 border border-white/5 group hover:border-primary/20 transition-all flex flex-col justify-between">
+            <p className="text-[9px] font-black text-muted-foreground/40 uppercase tracking-widest mb-2">
+              Memory Footprint
             </p>
-            <p className="text-lg font-mono font-bold">{systemStatus?.memory?.rss || '...'}</p>
-          </div>
-          <div className="bg-muted/20 rounded-xl p-4">
-            <p className="text-[10px] font-black text-muted-foreground/50 uppercase tracking-widest mb-1">
-              Heap Used
+            <p className="text-lg font-mono font-black text-white/80 tracking-tighter">
+              {systemStatus?.memory?.rss || '...'}
             </p>
-            <p className="text-lg font-mono font-bold">{systemStatus?.memory?.heapUsed || '...'}</p>
-          </div>
-          <div className="bg-muted/20 rounded-xl p-4">
-            <p className="text-[10px] font-black text-muted-foreground/50 uppercase tracking-widest mb-1">
-              Total System RAM
-            </p>
-            <p className="text-lg font-mono font-bold">{systemStatus?.memory?.total || '...'}</p>
           </div>
         </div>
       </section>
 
       {/* Alerting Section */}
-      <section className="card-premium p-6">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-500">
-            <Bell size={20} />
+      <section className="card-premium p-6 border-l-4 border-orange-500/60">
+        <div className="flex items-center gap-4 mb-8">
+          <div className="w-12 h-12 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-500 border border-orange-500/20 shadow-[0_0_15px_rgba(249,115,22,0.1)]">
+            <Bell size={24} />
           </div>
           <div>
-            <h2 className="text-lg font-bold">Alerting & Notifications</h2>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
-              System health and failure monitoring
+            <h2 className="text-xl font-black font-heading tracking-tight">Signal Monitoring</h2>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] font-black opacity-50 mt-0.5">
+              Automated Incident Alerting
             </p>
           </div>
         </div>
@@ -238,21 +238,23 @@ export function SettingsPage() {
         <div className="space-y-8">
           {/* Notification Channels */}
           <div className="space-y-4">
-            <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground/60 mb-2">
-              Notification Channels
+            <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/40 mb-4 ml-1">
+              Communication Transports
             </h3>
 
             {/* Slack */}
-            <div className="p-4 bg-muted/20 rounded-xl border border-border/10">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-[#4A154B]/10 flex items-center justify-center text-[#4A154B] dark:text-[#E01E5A]">
-                    <Bell size={16} />
+            <div className="p-5 bg-zinc-900/40 rounded-2xl border border-white/5 group hover:border-primary/20 transition-all">
+              <div className="flex items-center justify-between mb-5">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-white/60 group-hover:text-primary transition-colors">
+                    <Bell size={18} />
                   </div>
                   <div>
-                    <h4 className="text-sm font-bold">Slack</h4>
-                    <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-tighter">
-                      Standard notification webhook
+                    <h4 className="text-sm font-black font-heading text-white tracking-widest uppercase">
+                      Slack Bridge
+                    </h4>
+                    <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-tighter opacity-40">
+                      Standard Event Webhook
                     </p>
                   </div>
                 </div>
@@ -275,19 +277,19 @@ export function SettingsPage() {
                     queryClient.invalidateQueries({ queryKey: ['alerts-config'] })
                   }}
                   className={cn(
-                    'px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest transition-all',
+                    'px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all border font-mono',
                     alertConfig?.config?.channels?.slack?.enabled
-                      ? 'bg-green-500 text-white shadow-lg shadow-green-500/20'
-                      : 'bg-muted-foreground/20 text-muted-foreground'
+                      ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.1)]'
+                      : 'bg-zinc-800 text-muted-foreground border-transparent opacity-40 hover:opacity-100'
                   )}
                 >
-                  {alertConfig?.config?.channels?.slack?.enabled ? 'Enabled' : 'Disabled'}
+                  {alertConfig?.config?.channels?.slack?.enabled ? 'Online' : 'Offline'}
                 </button>
               </div>
               <div className="flex gap-3">
                 <input
                   type="password"
-                  placeholder="https://hooks.slack.com/services/..."
+                  placeholder="SLACK_WEBHOOK_URL"
                   defaultValue={alertConfig?.config?.channels?.slack?.webhookUrl || ''}
                   onBlur={async (e) => {
                     const val = e.target.value
@@ -310,22 +312,24 @@ export function SettingsPage() {
                     })
                     queryClient.invalidateQueries({ queryKey: ['alerts-config'] })
                   }}
-                  className="flex-1 bg-background/50 border border-border/50 rounded-lg px-3 py-2 text-xs font-mono outline-none focus:ring-1 focus:ring-primary/30"
+                  className="flex-1 bg-black/40 border border-white/5 rounded-lg px-4 py-3 text-[11px] font-mono outline-none focus:ring-1 focus:ring-primary/30 text-primary/80 placeholder:text-white/5"
                 />
               </div>
             </div>
 
             {/* Discord */}
-            <div className="p-4 bg-muted/20 rounded-xl border border-border/10">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-[#5865F2]/10 flex items-center justify-center text-[#5865F2]">
-                    <Monitor size={16} />
+            <div className="p-5 bg-zinc-900/40 rounded-2xl border border-white/5 group hover:border-primary/20 transition-all">
+              <div className="flex items-center justify-between mb-5">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-white/60 group-hover:text-[#5865F2] transition-colors">
+                    <Monitor size={18} />
                   </div>
                   <div>
-                    <h4 className="text-sm font-bold">Discord</h4>
-                    <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-tighter">
-                      Webhook integration for servers
+                    <h4 className="text-sm font-black font-heading text-white tracking-widest uppercase">
+                      Discord Relay
+                    </h4>
+                    <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-tighter opacity-40">
+                      Webhook Cluster Transport
                     </p>
                   </div>
                 </div>
@@ -348,19 +352,19 @@ export function SettingsPage() {
                     queryClient.invalidateQueries({ queryKey: ['alerts-config'] })
                   }}
                   className={cn(
-                    'px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest transition-all',
+                    'px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all border font-mono',
                     alertConfig?.config?.channels?.discord?.enabled
-                      ? 'bg-green-500 text-white shadow-lg shadow-green-500/20'
-                      : 'bg-muted-foreground/20 text-muted-foreground'
+                      ? 'bg-[#5865F2]/10 text-[#5865F2] border-[#5865F2]/40 shadow-[0_0_15px_rgba(88,101,242,0.1)]'
+                      : 'bg-zinc-800 text-muted-foreground border-transparent opacity-40 hover:opacity-100'
                   )}
                 >
-                  {alertConfig?.config?.channels?.discord?.enabled ? 'Enabled' : 'Disabled'}
+                  {alertConfig?.config?.channels?.discord?.enabled ? 'Online' : 'Offline'}
                 </button>
               </div>
               <div className="flex gap-3">
                 <input
                   type="password"
-                  placeholder="https://discord.com/api/webhooks/..."
+                  placeholder="DISCORD_WEBHOOK_URL"
                   defaultValue={alertConfig?.config?.channels?.discord?.webhookUrl || ''}
                   onBlur={async (e) => {
                     const val = e.target.value
@@ -383,7 +387,7 @@ export function SettingsPage() {
                     })
                     queryClient.invalidateQueries({ queryKey: ['alerts-config'] })
                   }}
-                  className="flex-1 bg-background/50 border border-border/50 rounded-lg px-3 py-2 text-xs font-mono outline-none focus:ring-1 focus:ring-primary/30"
+                  className="flex-1 bg-black/40 border border-white/5 rounded-lg px-4 py-3 text-[11px] font-mono outline-none focus:ring-1 focus:ring-primary/30 text-primary/80 placeholder:text-white/5"
                 />
               </div>
             </div>
@@ -994,18 +998,4 @@ export function SettingsPage() {
       </section>
     </div>
   )
-}
-
-function formatUptime(seconds: number): string {
-  const days = Math.floor(seconds / 86400)
-  const hours = Math.floor((seconds % 86400) / 3600)
-  const minutes = Math.floor((seconds % 3600) / 60)
-
-  if (days > 0) {
-    return `${days}d ${hours}h ${minutes}m`
-  }
-  if (hours > 0) {
-    return `${hours}h ${minutes}m`
-  }
-  return `${minutes}m ${Math.floor(seconds % 60)}s`
 }

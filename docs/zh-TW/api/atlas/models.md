@@ -11,7 +11,7 @@ title: Models
 定義模型時需繼承 `Model` 類別，並指定 `table` 名稱。
 
 ```ts
-import { Model } from '@gravito/atlas'
+import { Model, column } from '@gravito/atlas'
 
 export class User extends Model {
   // 設定資料表名稱
@@ -20,10 +20,17 @@ export class User extends Model {
   // 主鍵（預設為 'id'）
   static primaryKey = 'id'
 
-  // 欄位型別標註（用於開發時的智慧提示）
+  // 使用 @column 裝飾器定義資料庫欄位
+  @column({ isPrimary: true })
   declare id: number
+
+  @column()
   declare name: string
+
+  @column()
   declare email: string
+
+  @column()
   declare active: boolean
 }
 ```

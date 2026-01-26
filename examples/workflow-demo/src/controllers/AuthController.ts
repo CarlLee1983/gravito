@@ -8,7 +8,7 @@ export class AuthController {
   private readonly service = authService
 
   register = async (ctx: GravitoContext) => {
-    const body = await ctx.req.json()
+    const body = (await ctx.req.json()) as { name?: string; email?: string; password?: string }
     const { name, email, password } = body
     if (!name || !email || !password) {
       return ctx.json({ error: 'Missing fields' }, 400)
@@ -24,13 +24,13 @@ export class AuthController {
   }
 
   login = async (ctx: GravitoContext) => {
-    const body = await ctx.req.json()
+    const body = (await ctx.req.json()) as { email?: string; password?: string }
     const { email, password } = body
-    const token = await this.service.login(email, password)
+    const token = await this.service.login(email ?? '', password ?? '')
     if (!token) {
       return ctx.json({ error: 'Invalid credentials' }, 401)
     }
-    const user = await this.service.findByEmail(email)
+    const user = await this.service.findByEmail(email ?? '')
     return ctx.json({ token, user })
   }
 
@@ -43,7 +43,8 @@ export class AuthController {
     }
     ctx.set('user', user)
     await next()
+    return undefined
   }
 
-  getUser = (ctx: GravitoContext) => ctx.state.user
+  getUser = (ctx: GravitoContext) => ctx.get('user')
 }

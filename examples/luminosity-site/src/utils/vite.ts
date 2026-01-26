@@ -85,10 +85,14 @@ export function setupViteProxy(core: PlanetCore): void {
     const isNodeModules = p.startsWith('/node_modules')
     const isClientSource = p.startsWith('/src/client')
     const isClientRoot = p === '/app.ts' || p === '/styles.css'
+    const isFavicon = p.includes('favicon')
     const hasExtension =
       /\.(ts|tsx|js|jsx|css|vue|json|wasm|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|otf|eot)$/.test(p)
 
-    if (isViteSpecial || isNodeModules || isClientSource || isClientRoot || hasExtension) {
+    if (
+      (isViteSpecial || isNodeModules || isClientSource || isClientRoot || hasExtension) &&
+      !isFavicon
+    ) {
       return proxyToVite(c)
     }
 

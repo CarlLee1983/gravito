@@ -1,6 +1,6 @@
 import type { PlanetCore } from '@gravito/core'
 import type { Context } from '@gravito/core/compat'
-import type { InertiaService } from '@gravito/ion'
+import type { InertiaHelper } from '@gravito/ion'
 import { getTranslation } from '../services/I18nService'
 
 export class HomeController {
@@ -12,66 +12,67 @@ export class HomeController {
   }
 
   index = async (c: Context) => {
-    const inertia = c.get('inertia') as InertiaService
+    console.log('[HomeController] index hit')
+    const inertia = c.get('inertia') as unknown as InertiaHelper
     const locale = (c.get('locale') as string) || 'en'
     const t = getTranslation(locale)
     const { generateSeoHtml } = await import('../utils/seo')
     const seoHtml = generateSeoHtml(locale)
 
-    return inertia.render('Home', { t, locale }, { seoHtml })
+    return inertia.render('Home', { t, locale }, { seoHtml, locale })
   }
 
   about = async (c: Context) => {
-    const inertia = c.get('inertia') as InertiaService
+    const inertia = c.get('inertia') as unknown as InertiaHelper
     const locale = (c.get('locale') as string) || 'en'
     const t = getTranslation(locale)
     const { generateSeoHtml } = await import('../utils/seo')
     const seoHtml = generateSeoHtml(locale, `${t.nav.about} | ${t.site.title}`)
 
-    return inertia.render('About', { t, locale }, { seoHtml })
+    return inertia.render('About', { t, locale }, { seoHtml, locale })
   }
 
   features = async (c: Context) => {
-    const inertia = c.get('inertia') as InertiaService
+    const inertia = c.get('inertia') as unknown as InertiaHelper
     const locale = (c.get('locale') as string) || 'en'
     const t = getTranslation(locale)
     const { generateSeoHtml } = await import('../utils/seo')
     const seoHtml = generateSeoHtml(locale, `${t.nav.features} | ${t.site.title}`)
 
-    return inertia.render('Features', { t, locale }, { seoHtml })
+    return inertia.render('Features', { t, locale }, { seoHtml, locale })
   }
 
   releases = async (c: Context) => {
-    const inertia = c.get('inertia') as InertiaService
+    const inertia = c.get('inertia') as unknown as InertiaHelper
     const locale = (c.get('locale') as string) || 'en'
     const t = getTranslation(locale)
     const { generateSeoHtml } = await import('../utils/seo')
     const title = locale === 'zh' ? '更新日誌' : 'Releases'
     const seoHtml = generateSeoHtml(locale, `${title} | ${t.site.title}`)
 
-    return inertia.render('Releases', { t, locale }, { seoHtml })
+    return inertia.render('Releases', { t, locale }, { seoHtml, locale })
   }
 
   privacy = async (c: Context) => {
-    const inertia = c.get('inertia') as InertiaService
+    const inertia = c.get('inertia') as unknown as InertiaHelper
     const locale = (c.get('locale') as string) || 'en'
     const t = getTranslation(locale)
     const { generateSeoHtml } = await import('../utils/seo')
     const title = (t as any).legal?.privacy?.title || 'Privacy Policy'
     const seoHtml = generateSeoHtml(locale, `${title} | ${t.site.title}`)
 
-    return inertia.render('Privacy', { t, locale }, { seoHtml })
+    return inertia.render('Privacy', { t, locale }, { seoHtml, locale })
   }
 
   terms = async (c: Context) => {
-    const inertia = c.get('inertia') as InertiaService
+    const inertia = c.get('inertia') as unknown as InertiaHelper
     const locale = (c.get('locale') as string) || 'en'
     const t = getTranslation(locale)
     const { generateSeoHtml } = await import('../utils/seo')
     const title = (t as any).legal?.terms?.title || 'Terms of Service'
     const seoHtml = generateSeoHtml(locale, `${title} | ${t.site.title}`)
 
-    return inertia.render('Terms', { t, locale }, { seoHtml })
+    return inertia.render('Terms', { t, locale }, { seoHtml, locale })
   }
 
   subscribe = async (c: Context) => {

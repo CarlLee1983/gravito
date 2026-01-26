@@ -2,6 +2,15 @@ import { createHmac, timingSafeEqual } from 'node:crypto'
 import { Octokit } from '@octokit/rest'
 import type { IGitHubAdapter } from '../../Domain/Interfaces'
 
+/**
+ * OctokitGitHubAdapter implements the `IGitHubAdapter` interface using the Octokit library.
+ *
+ * It provides methods for verifying GitHub webhook signatures and interacting with
+ * the GitHub API, such as posting comments on Pull Requests.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class OctokitGitHubAdapter implements IGitHubAdapter {
   private octokit: Octokit
 

@@ -1,18 +1,40 @@
 import type { SitemapChange, SitemapEntry } from '../types'
 
+/**
+ * Result of a sitemap difference calculation.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface DiffResult {
+  /** Entries that are present in the new set but not in the old one. */
   added: SitemapEntry[]
+  /** Entries that are present in both sets but have different metadata. */
   updated: SitemapEntry[]
+  /** URLs that were present in the old set but are missing from the new one. */
   removed: string[] // URLs
 }
 
+/**
+ * Options for configuring the `DiffCalculator`.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface DiffCalculatorOptions {
-  batchSize?: number // 分批處理大小，預設 10000
+  /** Batch size for processing large datasets. @default 10000 */
+  batchSize?: number
 }
 
 /**
- * 差異計算器
- * 比較兩個 sitemap 狀態，計算差異
+ * DiffCalculator compares two sets of sitemap entries to identify changes.
+ *
+ * It is used for incremental sitemap generation, allowing the system to
+ * update only the parts of the sitemap that have actually changed (added,
+ * updated, or removed).
+ *
+ * @public
+ * @since 3.0.0
  */
 export class DiffCalculator {
   private batchSize: number
@@ -22,18 +44,22 @@ export class DiffCalculator {
   }
 
   /**
-   * 計算兩個 sitemap 狀態的差異
+   * Calculates the difference between two sets of sitemap entries.
+   *
+   * @param oldEntries - The previous set of sitemap entries.
+   * @param newEntries - The current set of sitemap entries.
+   * @returns A DiffResult containing added, updated, and removed entries.
    */
   calculate(oldEntries: SitemapEntry[], newEntries: SitemapEntry[]): DiffResult {
     const oldMap = new Map<string, SitemapEntry>()
     const newMap = new Map<string, SitemapEntry>()
 
-    // 建立舊狀態的映射
+    // Create mapping of old state
     for (const entry of oldEntries) {
       oldMap.set(entry.url, entry)
     }
 
-    // 建立新狀態的映射
+    // Create mapping of new state
     for (const entry of newEntries) {
       newMap.set(entry.url, entry)
     }
@@ -42,7 +68,7 @@ export class DiffCalculator {
     const updated: SitemapEntry[] = []
     const removed: string[] = []
 
-    // 找出新增和更新的
+    // Identify added and updated entries
     for (const [url, newEntry] of newMap) {
       const oldEntry = oldMap.get(url)
       if (!oldEntry) {
@@ -52,7 +78,7 @@ export class DiffCalculator {
       }
     }
 
-    // 找出刪除的
+    // Identify removed entries
     for (const [url] of oldMap) {
       if (!newMap.has(url)) {
         removed.push(url)
@@ -63,7 +89,11 @@ export class DiffCalculator {
   }
 
   /**
-   * 批次計算差異（用於大量 URL）
+   * Batch calculates differences for large datasets using async iterables.
+   *
+   * @param oldEntries - An async iterable of the previous sitemap entries.
+   * @param newEntries - An async iterable of the current sitemap entries.
+   * @returns A promise resolving to the DiffResult.
    */
   async calculateBatch(
     oldEntries: AsyncIterable<SitemapEntry>,
@@ -72,12 +102,12 @@ export class DiffCalculator {
     const oldMap = new Map<string, SitemapEntry>()
     const newMap = new Map<string, SitemapEntry>()
 
-    // 批次讀取舊狀態
+    // Read old state in batches
     for await (const entry of oldEntries) {
       oldMap.set(entry.url, entry)
     }
 
-    // 批次讀取新狀態
+    // Read new state in batches
     for await (const entry of newEntries) {
       newMap.set(entry.url, entry)
     }
@@ -86,17 +116,21 @@ export class DiffCalculator {
   }
 
   /**
-   * 從變更記錄計算差異
+   * Calculates differences based on a sequence of change records.
+   *
+   * @param baseEntries - The base set of sitemap entries.
+   * @param changes - An array of change records to apply to the base set.
+   * @returns A DiffResult comparing the base set with the applied changes.
    */
   calculateFromChanges(baseEntries: SitemapEntry[], changes: SitemapChange[]): DiffResult {
     const entryMap = new Map<string, SitemapEntry>()
 
-    // 建立基礎狀態的映射
+    // Create mapping of base state
     for (const entry of baseEntries) {
       entryMap.set(entry.url, entry)
     }
 
-    // 應用變更
+    // Apply changes
     for (const change of changes) {
       if (change.type === 'add' && change.entry) {
         entryMap.set(change.url, change.entry)
@@ -107,16 +141,20 @@ export class DiffCalculator {
       }
     }
 
-    // 計算差異
+    // Calculate diff
     const newEntries = Array.from(entryMap.values())
     return this.calculate(baseEntries, newEntries)
   }
 
   /**
-   * 檢查 entry 是否有變更
+   * Checks if a sitemap entry has changed by comparing its key properties.
+   *
+   * @param oldEntry - The previous sitemap entry.
+   * @param newEntry - The current sitemap entry.
+   * @returns True if the entry has changed, false otherwise.
    */
   private hasChanged(oldEntry: SitemapEntry, newEntry: SitemapEntry): boolean {
-    // 比較關鍵欄位
+    // Compare key fields
     if (oldEntry.lastmod !== newEntry.lastmod) {
       return true
     }
@@ -127,7 +165,7 @@ export class DiffCalculator {
       return true
     }
 
-    // 比較 alternates（簡化比較）
+    // Compare alternates (simplified comparison)
     const oldAlternates = JSON.stringify(oldEntry.alternates || [])
     const newAlternates = JSON.stringify(newEntry.alternates || [])
     if (oldAlternates !== newAlternates) {

@@ -1,46 +1,61 @@
-import type { GravitoOrbit, PlanetCore } from '@gravito/core'
+import type { GravitoContext, GravitoNext, GravitoOrbit, PlanetCore } from '@gravito/core'
 import type { ConsumerOptions } from './Consumer'
 import { Consumer } from './Consumer'
 import { QueueManager } from './QueueManager'
 import type { QueueConfig } from './types'
 
 /**
- * Orbit Queue configuration options.
+ * Configuration options for the OrbitStream extension.
+ *
+ * Extends the standard `QueueConfig` with specific options for integration into
+ * the Gravito lifecycle, such as auto-starting workers in development environments.
+ *
+ * @public
+ * @example
+ * ```typescript
+ * const options: OrbitStreamOptions = {
+ *   default: 'redis',
+ *   autoStartWorker: true
+ * };
+ * ```
  */
 export interface OrbitStreamOptions extends QueueConfig {
   /**
-   * Whether to auto-start an embedded worker in development.
+   * Automatically start an embedded worker process.
+   *
+   * If set to `true`, a background worker will be spawned within the main process.
+   * This is recommended for development or simple deployments but should be
+   * avoided in high-scale production to keep web servers stateless.
    */
   autoStartWorker?: boolean
 
   /**
-   * Embedded worker options.
+   * Configuration options for the embedded worker.
+   *
+   * Only used if `autoStartWorker` is true. Defines concurrency, polling intervals, etc.
    */
   workerOptions?: ConsumerOptions
 }
 
 /**
- * Orbit Queue
+ * The Queue Orbit (Plugin) for Gravito Framework.
  *
- * Gravito Orbit implementation providing queue functionality.
- * Integrates with PlanetCore and injects a `queue` service into the Photon Context.
+ * This class acts as the integration layer between the `@gravito/stream` package
+ * and the Gravito core system (`PlanetCore`). It registers the `QueueManager`
+ * service, injects it into the request context, and manages the lifecycle of
+ * embedded workers.
  *
+ * @public
  * @example
  * ```typescript
- * const core = await PlanetCore.boot({
- *   orbits: [
- *     OrbitStream.configure({
- *       default: 'database',
- *       connections: {
- *         database: { driver: 'database', table: 'jobs' }
- *       }
- *     })
- *   ]
- * })
+ * const stream = OrbitStream.configure({
+ *   default: 'redis',
+ *   connections: {
+ *     redis: { driver: 'redis', client: redis }
+ *   }
+ * });
  *
- * // Use in a controller/handler
- * const queue = c.get('queue')
- * await queue.push(new SendEmail('user@example.com'))
+ * await PlanetCore.boot({ orbits: [stream] });
  * ```
  */
 export class OrbitStream implements GravitoOrbit {
@@ -50,23 +65,43 @@ export class OrbitStream implements GravitoOrbit {
   constructor(private options: OrbitStreamOptions = {}) {}
 
   /**
-   * Static configuration helper.
+   * Factory method for creating and configuring an OrbitStream instance.
+   *
+   * Provides a fluent way to instantiate the orbit during application bootstrap.
+   *
+   * @param options - Configuration options.
+   * @returns A new OrbitStream instance.
+   *
+   * @example
+   * ```typescript
+   * const orbit = OrbitStream.configure({ default: 'memory' });
+   * ```
    */
   static configure(options: OrbitStreamOptions): OrbitStream {
     return new OrbitStream(options)
   }
 
   /**
-   * Install into PlanetCore.
+   * Installs the Queue system into the Gravito PlanetCore.
+   *
+   * This lifecycle method:
+   * 1. Initializes the `QueueManager`.
+   * 2. Registers the `queue` service in the dependency injection container.
+   * 3. Sets up a global middleware to inject `QueueManager` into the request context (`c.get('queue')`).
+   * 4. Automatically detects and registers database connections if available in the context.
+   * 5. Starts the embedded worker if configured.
+   *
+   * @param core - The PlanetCore instance.
    */
   install(core: PlanetCore): void {
     // Create QueueManager.
-    // Note: for the database driver, dbService can be resolved dynamically from Context on first request.
     this.queueManager = new QueueManager(this.options)
 
+    // Register in core container for global access (CLI, Jobs)
+    core.container.instance('queue', this.queueManager)
+
     // Inject queue service into Context.
-    // If a database connection is configured without dbService, it will be resolved from Context on first use.
-    core.adapter.use('*', async (c, next) => {
+    core.adapter.use('*', async (c: GravitoContext, next: GravitoNext) => {
       // Resolve dbService dynamically for database connections
       if (this.queueManager && this.options.connections) {
         for (const [name, config] of Object.entries(this.options.connections)) {
@@ -113,7 +148,18 @@ export class OrbitStream implements GravitoOrbit {
   }
 
   /**
-   * Start embedded worker.
+   * Starts the embedded worker process.
+   *
+   * Launches a `Consumer` instance to process jobs in the background.
+   * Throws an error if `QueueManager` is not initialized or if a worker is already running.
+   *
+   * @param options - Consumer configuration options.
+   * @throws {Error} If QueueManager is missing or worker is already active.
+   *
+   * @example
+   * ```typescript
+   * orbit.startWorker({ queues: ['default'] });
+   * ```
    */
   startWorker(options: ConsumerOptions): void {
     if (!this.queueManager) {
@@ -131,7 +177,16 @@ export class OrbitStream implements GravitoOrbit {
   }
 
   /**
-   * Stop embedded worker.
+   * Stops the embedded worker process.
+   *
+   * Gracefully shuts down the consumer, waiting for active jobs to complete.
+   *
+   * @returns A promise that resolves when the worker has stopped.
+   *
+   * @example
+   * ```typescript
+   * await orbit.stopWorker();
+   * ```
    */
   async stopWorker(): Promise<void> {
     if (this.consumer) {
@@ -140,7 +195,14 @@ export class OrbitStream implements GravitoOrbit {
   }
 
   /**
-   * Get QueueManager instance.
+   * Retrieves the underlying QueueManager instance.
+   *
+   * @returns The active QueueManager, or undefined if not installed.
+   *
+   * @example
+   * ```typescript
+   * const manager = orbit.getQueueManager();
+   * ```
    */
   getQueueManager(): QueueManager | undefined {
     return this.queueManager

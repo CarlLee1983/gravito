@@ -32,7 +32,7 @@ gravito create my-app --template inertia-react
 gravito create my-app --template static-site
 ```
 
-When using the `static-site` template, you'll be prompted to choose between React or Vue 3 for the frontend framework.
+When using the `static-site` template, you'll be prompted to choose between React, Vue, or Svelte for the frontend framework.
 
 ### Scaffolding (Make Commands)
 
@@ -64,7 +64,7 @@ gravito tinker
 |----------|-------------|
 | `basic` | Minimal setup with PlanetCore + Gravito Core. Great for APIs and simple backends. |
 | `inertia-react` | Full-stack monolith with Inertia.js + React + Vite. Build modern SPAs with server-side routing. |
-| `static-site` | Pre-configured static site generator for GitHub Pages, Vercel, Netlify. Supports React or Vue 3. Perfect for documentation sites, blogs, and marketing pages. |
+| `static-site` | Pre-configured static site generator for GitHub Pages, Vercel, Netlify. Supports React, Vue, or Svelte. Perfect for documentation sites, blogs, and marketing pages. |
 
 ## Development
 

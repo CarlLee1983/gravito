@@ -101,7 +101,10 @@ export async function bootstrap(options: AppConfig = {}) {
           ? 'image/png'
           : 'image/x-icon'
 
-      return c.body(Bun.file(filePath), 200, { 'Content-Type': contentType })
+      return new Response(Bun.file(filePath), {
+        status: 200,
+        headers: { 'Content-Type': contentType },
+      })
     }
     await next()
     return undefined

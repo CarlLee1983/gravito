@@ -4,6 +4,7 @@
 
 import { describe, expect, it } from 'bun:test'
 import { Gravito } from '../Gravito'
+import type { Handler } from '../types'
 
 describe('Gravito Engine', () => {
   describe('Basic Routing', () => {
@@ -64,6 +65,42 @@ describe('Gravito Engine', () => {
     })
   })
 
+  describe('Route Mounting', () => {
+    it('should mount sub-application routes', async () => {
+      const api = new Gravito()
+      api.get('/users', (c) => c.json({ users: [] }))
+
+      const app = new Gravito()
+      app.route('/api', api)
+
+      const req = new Request('http://localhost/api/users')
+      const res = await app.fetch(req)
+
+      expect(res.status).toBe(200)
+      const data = await res.json()
+      expect(data).toEqual({ users: [] })
+    })
+
+    it('should mount sub-application with middleware', async () => {
+      const sub = new Gravito()
+      sub.use(async (c, next) => {
+        c.header('X-Sub', 'true')
+        return await next()
+      })
+      sub.get('/test', (c) => c.text('ok'))
+
+      const app = new Gravito()
+      app.route('/sub', sub)
+
+      const req = new Request('http://localhost/sub/test')
+      const res = await app.fetch(req)
+
+      expect(res.status).toBe(200)
+      expect(res.headers.get('X-Sub')).toBe('true')
+      expect(await res.text()).toBe('ok')
+    })
+  })
+
   describe('Middleware', () => {
     it('should execute global middleware', async () => {
       const app = new Gravito()
@@ -71,7 +108,7 @@ describe('Gravito Engine', () => {
 
       app.use(async (_c, next) => {
         calls.push('middleware')
-        await next()
+        return await next()
       })
 
       app.get('/', (c) => {
@@ -91,12 +128,12 @@ describe('Gravito Engine', () => {
 
       app.use(async (_c, next) => {
         calls.push(1)
-        await next()
+        return await next()
       })
 
       app.use(async (_c, next) => {
         calls.push(2)
-        await next()
+        return await next()
       })
 
       app.get('/', (c) => {
@@ -116,10 +153,10 @@ describe('Gravito Engine', () => {
 
       app.get(
         '/protected',
-        async (_c, next) => {
+        (async (_c: any, next: any) => {
           calls.push('auth')
-          await next()
-        },
+          return await next()
+        }) as unknown as Handler,
         (c) => {
           calls.push('handler')
           return c.json({ ok: true })

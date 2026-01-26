@@ -38,10 +38,10 @@ export async function runFeaturesScenario() {
   })
 
   console.log('✨ Creating Data...')
-  const user = new User()
-  user.name = 'Benchmark User'
-  user.email = 'bench@example.com'
-  await user.save()
+  const user = await User.createAndSave({
+    name: 'Benchmark User',
+    email: 'bench@example.com',
+  })
 
   // Relationship Create
   // (Assuming active record style relationship create isn't strictly necessary for test, manual for now)

@@ -1,79 +1,98 @@
 /**
- * Queueable interface.
+ * Defines the contract for queueable items (jobs) with fluent configuration.
  *
- * Classes implementing this interface can be pushed to a queue for execution.
- * Provides a fluent API for queue/connection/delay configuration.
+ * This interface enables method chaining for configuring job properties such as
+ * target queue, connection, delay, and priority before dispatching. It ensures
+ * consistent API surface across different job implementations.
  *
+ * @public
  * @example
  * ```typescript
  * class MyJob implements Queueable {
  *   queueName?: string
- *   connectionName?: string
- *   delaySeconds?: number
- *
+ *   // ... implementation
  *   onQueue(queue: string): this {
  *     this.queueName = queue
  *     return this
  *   }
- *
- *   onConnection(connection: string): this {
- *     this.connectionName = connection
- *     return this
- *   }
- *
- *   delay(seconds: number): this {
- *     this.delaySeconds = seconds
- *     return this
- *   }
+ *   // ...
  * }
  * ```
  */
 export interface Queueable {
   /**
-   * Queue name where the job should be pushed.
+   * The specific queue name where the job should be processed.
+   *
+   * If not set, the default queue for the connection will be used.
    */
   queueName?: string
 
   /**
-   * Connection name the job should use.
+   * The connection name (e.g., 'redis', 'sqs') to use for this job.
+   *
+   * If not set, the default connection configured in QueueManager will be used.
    */
   connectionName?: string
 
   /**
-   * Delay before execution (seconds).
+   * The number of seconds to delay the job execution.
    */
   delaySeconds?: number
 
   /**
-   * Job priority.
+   * The priority level of the job.
    */
   priority?: string | number
 
   /**
-   * Set target queue.
-   * @param queue - Queue name
-   * @returns Self for fluent chaining
+   * Sets the target queue for the job.
+   *
+   * @param queue - The name of the queue to push the job to.
+   * @returns The instance for method chaining.
+   *
+   * @example
+   * ```typescript
+   * job.onQueue('notifications');
+   * ```
    */
   onQueue(queue: string): this
 
   /**
-   * Set target connection.
-   * @param connection - Connection name
-   * @returns Self for fluent chaining
+   * Sets the target connection for the job.
+   *
+   * @param connection - The name of the connection to use.
+   * @returns The instance for method chaining.
+   *
+   * @example
+   * ```typescript
+   * job.onConnection('sqs');
+   * ```
    */
   onConnection(connection: string): this
 
   /**
-   * Set job priority.
-   * @param priority - Priority level
-   * @returns Self for fluent chaining
+   * Sets the priority of the job.
+   *
+   * @param priority - The priority level (e.g., 'high', 'low', 10).
+   * @returns The instance for method chaining.
+   *
+   * @example
+   * ```typescript
+   * job.withPriority('critical');
+   * ```
    */
   withPriority(priority: string | number): this
 
   /**
-   * Set delay (seconds).
-   * @param delay - Delay seconds
-   * @returns Self for fluent chaining
+   * Sets a delay before the job is available for processing.
+   *
+   * @param delay - The delay in seconds.
+   * @returns The instance for method chaining.
+   *
+   * @example
+   * ```typescript
+   * job.delay(300); // 5 minutes
+   * ```
    */
   delay(delay: number): this
 }

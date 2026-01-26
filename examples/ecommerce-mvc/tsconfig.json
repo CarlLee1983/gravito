@@ -4,7 +4,11 @@
     "moduleResolution": "bundler",
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "types": [
+      "vite/client",
+      "bun-types"
+    ]
   },
   "include": [
     "src/**/*"

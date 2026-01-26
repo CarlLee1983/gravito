@@ -1,21 +1,25 @@
 import type { Notification } from '../Notification'
-import type { Notifiable, NotificationChannel } from '../types'
+import type { Notifiable, NotificationChannel, SmsMessage } from '../types'
 
 /**
  * SMS channel configuration.
  */
 export interface SmsChannelConfig {
   provider: string
+  // Twilio
   apiKey?: string
   apiSecret?: string
   from?: string
+  // AWS SNS
+  region?: string
+  accessKeyId?: string
+  secretAccessKey?: string
 }
 
 /**
  * SMS channel.
  *
  * Sends notifications via an SMS provider.
- * Only a basic interface is provided; real implementations should be extended per provider.
  */
 export class SmsChannel implements NotificationChannel {
   constructor(private config: SmsChannelConfig) {}
@@ -43,7 +47,7 @@ export class SmsChannel implements NotificationChannel {
   /**
    * Send SMS via Twilio.
    */
-  private async sendViaTwilio(message: import('../types').SmsMessage): Promise<void> {
+  private async sendViaTwilio(message: SmsMessage): Promise<void> {
     if (!this.config.apiKey || !this.config.apiSecret) {
       throw new Error('Twilio API key and secret are required')
     }
@@ -76,9 +80,53 @@ export class SmsChannel implements NotificationChannel {
   /**
    * Send SMS via AWS SNS.
    */
-  private async sendViaAwsSns(_message: import('../types').SmsMessage): Promise<void> {
-    // AWS SNS implementation requires AWS SDK.
-    // This is only a placeholder; install `@aws-sdk/client-sns` and implement it.
-    throw new Error('AWS SNS SMS provider not yet implemented. Please install @aws-sdk/client-sns')
+  private async sendViaAwsSns(message: SmsMessage): Promise<void> {
+    // Lazy load AWS SDK
+    let SNSClient: typeof import('@aws-sdk/client-sns').SNSClient
+    let PublishCommand: typeof import('@aws-sdk/client-sns').PublishCommand
+
+    try {
+      const awsSns = await import('@aws-sdk/client-sns')
+      SNSClient = awsSns.SNSClient
+      PublishCommand = awsSns.PublishCommand
+    } catch {
+      throw new Error(
+        'AWS SNS SMS requires @aws-sdk/client-sns. ' +
+          'Install it with: bun add @aws-sdk/client-sns'
+      )
+    }
+
+    const client = new SNSClient({
+      region: this.config.region || 'us-east-1',
+      credentials:
+        this.config.accessKeyId && this.config.secretAccessKey
+          ? {
+              accessKeyId: this.config.accessKeyId,
+              secretAccessKey: this.config.secretAccessKey,
+            }
+          : undefined, // Use environment variables or IAM role
+    })
+
+    const command = new PublishCommand({
+      PhoneNumber: message.to,
+      Message: message.message,
+      MessageAttributes: {
+        'AWS.SNS.SMS.SenderID': {
+          DataType: 'String',
+          StringValue: message.from || this.config.from || 'GRAVITO',
+        },
+        'AWS.SNS.SMS.SMSType': {
+          DataType: 'String',
+          StringValue: 'Transactional', // Or 'Promotional'
+        },
+      },
+    })
+
+    try {
+      await client.send(command)
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error))
+      throw new Error(`Failed to send SMS via AWS SNS: ${err.message}`)
+    }
   }
 }

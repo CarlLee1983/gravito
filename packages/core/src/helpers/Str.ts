@@ -18,6 +18,11 @@ function capitalize(word: string): string {
   return word.charAt(0).toUpperCase() + word.slice(1)
 }
 
+/**
+ * String Helper Utilities.
+ * Provides methods for string manipulation, case conversion, and UUID generation.
+ * @public
+ */
 export const Str = {
   lower(value: string): string {
     return value.toLowerCase()

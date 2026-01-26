@@ -42,11 +42,15 @@
  * ```
  */
 
+export type { AtlasConfig } from './config'
+// Configuration
+export { autoConfigure, defineConfig, fromEnv, loadConfig, loadConfigFile } from './config'
 // Connection
 export { Connection } from './connection/Connection'
 export { ConnectionManager } from './connection/ConnectionManager'
 // Main DB Facade
 export { DB } from './DB'
+export { BunSQLDriver } from './drivers/BunSQLDriver'
 // Drivers
 export { PostgresDriver } from './drivers/PostgresDriver'
 export { SQLiteDriver } from './drivers/SQLiteDriver'
@@ -79,6 +83,8 @@ export type {
   ModelAttributes,
   ModelConstructor,
   ModelStatic,
+  RelationshipMeta,
+  RelationType,
   SchemaLock,
   SchemaMode,
   SchemaRegistryOptions,
@@ -91,6 +97,7 @@ export {
   ColumnNotFoundError,
   column,
   DirtyTracker,
+  getRelationships,
   HasMany,
   HasOne,
   Model,
@@ -120,7 +127,6 @@ export {
 export type { FactoryDefinition, Seeder, SeederFile, SeederRunnerOptions } from './seed'
 // Seed
 export { Factory, factory, SeederRunner } from './seed'
-
 // Types
 export type {
   BooleanOperator,

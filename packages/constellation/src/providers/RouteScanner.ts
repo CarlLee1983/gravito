@@ -11,13 +11,39 @@ function matchGlob(str: string, pattern: string): boolean {
   return regex.test(str)
 }
 
+/**
+ * Options for configuring the `RouteScanner`.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface RouteScannerOptions {
+  /** Glob patterns of routes to explicitly include. */
   include?: string[] | undefined
+  /** Glob patterns of routes to exclude from the sitemap. */
   exclude?: string[] | undefined
+  /** Default change frequency for scanned routes. @default 'weekly' */
   defaultChangefreq?: ChangeFreq | undefined
+  /** Default priority for scanned routes (0.0 to 1.0). @default 0.5 */
   defaultPriority?: number | undefined
 }
 
+/**
+ * RouteScanner automatically discovers static GET routes from the Gravito router.
+ *
+ * It filters out routes with parameters (e.g., /user/:id) and non-GET routes
+ * by default, ensuring that only crawlable pages are included in the sitemap.
+ *
+ * @example
+ * ```typescript
+ * const scanner = new RouteScanner(app.router, {
+ *   exclude: ['/admin/*', '/internal/*']
+ * });
+ * ```
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class RouteScanner implements SitemapProvider {
   private router: any // Using any to key access internal routes
   private options: RouteScannerOptions
@@ -31,6 +57,14 @@ export class RouteScanner implements SitemapProvider {
     }
   }
 
+  /**
+   * Scans the router and returns discovered static GET routes as sitemap entries.
+   *
+   * This method iterates through all registered routes in the Gravito router,
+   * applying inclusion/exclusion filters and defaulting metadata for matching routes.
+   *
+   * @returns An array of `SitemapEntry` objects.
+   */
   getEntries(): SitemapEntry[] {
     const entries: SitemapEntry[] = []
 
@@ -105,6 +139,16 @@ export class RouteScanner implements SitemapProvider {
   }
 }
 
+/**
+ * Functional factory for creating a `RouteScanner`.
+ *
+ * @param router - The Gravito router instance.
+ * @param options - Optional scanner configuration.
+ * @returns A new RouteScanner instance.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export function routeScanner(router: any, options?: RouteScannerOptions): RouteScanner {
   return new RouteScanner(router, options)
 }

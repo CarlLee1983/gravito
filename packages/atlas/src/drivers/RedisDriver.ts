@@ -17,12 +17,19 @@ import type {
  * Redis Driver
  * Provides a key-value interface via DB.connection('redis')
  */
+import type { RedisClient } from './types'
+
 export class RedisDriver implements DriverContract {
   private config: RedisConfig
-  private client: any | null = null
-  private RedisCtor: any
+  private client: RedisClient | null = null
+  private RedisCtor?: new (
+    config: Record<string, unknown>
+  ) => RedisClient
 
-  constructor(config: ConnectionConfig, deps?: { Redis?: any }) {
+  constructor(
+    config: ConnectionConfig,
+    deps?: { Redis?: new (config: Record<string, unknown>) => RedisClient }
+  ) {
     if (config.driver !== 'redis') {
       throw new Error(`Invalid driver type '${config.driver}' for RedisDriver`)
     }
@@ -50,7 +57,9 @@ export class RedisDriver implements DriverContract {
         db: this.config.db ?? 0,
         lazyConnect: true,
       })
-      await this.client.connect()
+      if (this.client) {
+        await this.client.connect()
+      }
     } catch (error) {
       throw new ConnectionError('Could not connect to Redis host', error)
     }
@@ -144,7 +153,7 @@ export class RedisDriver implements DriverContract {
   /**
    * Get the raw ioredis client for advanced operations
    */
-  getRawClient(): any {
+  getRawClient(): RedisClient | null {
     if (!this.client) {
       throw new Error('Redis client not connected')
     }

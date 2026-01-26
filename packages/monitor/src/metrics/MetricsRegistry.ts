@@ -6,6 +6,10 @@
 
 import type { MetricOptions, MetricsConfig } from '../config'
 
+/**
+ * Represents a single metric data point with labels.
+ * @public
+ */
 export interface MetricValue {
   value: number
   labels: Record<string, string>

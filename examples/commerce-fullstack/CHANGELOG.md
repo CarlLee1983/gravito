@@ -1,5 +1,49 @@
 # @gravito/example-commerce-fullstack
 
+## 1.0.8
+
+### Patch Changes
+
+- @gravito/satellite-commerce@0.1.5
+
+## 1.0.7
+
+### Patch Changes
+
+- @gravito/signal@3.0.3
+- @gravito/satellite-catalog@0.1.7
+- @gravito/satellite-membership@0.1.7
+
+## 1.0.6
+
+### Patch Changes
+
+- @gravito/signal@3.0.2
+- @gravito/satellite-catalog@0.1.6
+- @gravito/satellite-membership@0.1.6
+
+## 1.0.5
+
+### Patch Changes
+
+- Updated dependencies
+- Updated dependencies
+  - @gravito/atlas@2.1.0
+  - @gravito/core@1.2.1
+  - @gravito/satellite-ad@0.1.4
+  - @gravito/satellite-announcement@0.1.4
+  - @gravito/satellite-cart@0.1.4
+  - @gravito/satellite-catalog@0.1.5
+  - @gravito/satellite-commerce@0.1.4
+  - @gravito/satellite-membership@0.1.5
+  - @gravito/satellite-news@0.1.4
+  - @gravito/satellite-payment@0.1.4
+  - @gravito/satellite-support@0.1.4
+  - @gravito/monolith@3.0.1
+  - @gravito/signal@3.0.1
+  - @gravito/stasis@3.0.1
+  - @gravito/satellite-analytics@0.1.4
+
 ## 1.0.4
 
 ### Patch Changes

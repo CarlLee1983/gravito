@@ -16,16 +16,64 @@ export type DriverType = 'postgres' | 'mysql' | 'mariadb' | 'sqlite' | 'mongodb'
  * Base connection interface
  */
 export interface BaseConnectionConfig {
+  /**
+   * The database driver to use
+   */
   driver: DriverType
+
+  /**
+   * Database host address
+   * @default 'localhost'
+   */
   host?: string
+
+  /**
+   * Database port number
+   */
   port?: number
+
+  /**
+   * Database name
+   */
   database?: string
+
+  /**
+   * Database username
+   */
   username?: string
+
+  /**
+   * Database password
+   */
   password?: string
+
+  /**
+   * Database character set
+   * @default 'utf8mb4'
+   */
   charset?: string
+
+  /**
+   * Database timezone
+   * @default 'UTC'
+   */
   timezone?: string
+
+  /**
+   * Connection pool configuration
+   */
   pool?: PoolConfig
+
+  /**
+   * SSL configuration for secure connections
+   */
   ssl?: SSLConfig | boolean
+
+  /**
+   * Whether to use the native driver (e.g., Bun.sql) if available
+   * @default false
+   */
+  useNativeDriver?: boolean
 }
 
 /**
@@ -43,8 +91,20 @@ export type ConnectionConfig =
  * PostgreSQL specific configuration
  */
 export interface PostgresConfig extends BaseConnectionConfig {
+  /**
+   * Driver identifier
+   */
   driver: 'postgres'
+
+  /**
+   * Default database schema
+   * @default 'public'
+   */
   schema?: string
+
+  /**
+   * Application name for connection tracking
+   */
   applicationName?: string
 }
 
@@ -52,8 +112,20 @@ export interface PostgresConfig extends BaseConnectionConfig {
  * MySQL/MariaDB specific configuration
  */
 export interface MySQLConfig extends BaseConnectionConfig {
+  /**
+   * Driver identifier
+   */
   driver: 'mysql' | 'mariadb'
+
+  /**
+   * Path to Unix domain socket
+   */
   socketPath?: string
+
+  /**
+   * Whether to allow multiple SQL statements in a single query
+   * @default false
+   */
   multipleStatements?: boolean
 }
 
@@ -61,17 +133,46 @@ export interface MySQLConfig extends BaseConnectionConfig {
  * SQLite specific configuration
  */
 export interface SQLiteConfig {
+  /**
+   * Driver identifier
+   */
   driver: 'sqlite'
-  database: string // file path or ':memory:'
+
+  /**
+   * Database file path or ':memory:' for in-memory database
+   */
+  database: string
+
+  /**
+   * Whether to open the database in read-only mode
+   * @default false
+   */
   readonly?: boolean
+
+  /**
+   * Whether to use the native driver (e.g., Bun.sql) if available
+   * @default false
+   */
+  useNativeDriver?: boolean
 }
 
 /**
  * MongoDB specific configuration
  */
 export interface MongoDBConfig extends BaseConnectionConfig {
+  /**
+   * Driver identifier
+   */
   driver: 'mongodb'
+
+  /**
+   * MongoDB connection URI
+   */
   uri: string
+
+  /**
+   * Additional MongoDB driver options
+   */
   options?: Record<string, unknown>
 }
 
@@ -79,10 +180,31 @@ export interface MongoDBConfig extends BaseConnectionConfig {
  * Redis specific configuration
  */
 export interface RedisConfig extends BaseConnectionConfig {
+  /**
+   * Driver identifier
+   */
   driver: 'redis'
+
+  /**
+   * Redis server host
+   */
   host: string
+
+  /**
+   * Redis server port
+   * @default 6379
+   */
   port?: number
+
+  /**
+   * Redis server password
+   */
   password?: string
+
+  /**
+   * Redis database index
+   * @default 0
+   */
   db?: number
 }
 
@@ -90,10 +212,29 @@ export interface RedisConfig extends BaseConnectionConfig {
  * Connection pool configuration
  */
 export interface PoolConfig {
+  /**
+   * Minimum number of connections in the pool
+   */
   min?: number
+
+  /**
+   * Maximum number of connections in the pool
+   */
   max?: number
+
+  /**
+   * Maximum time (ms) to wait for a connection from the pool
+   */
   acquireTimeout?: number
+
+  /**
+   * Maximum time (ms) a connection can be idle before being released
+   */
   idleTimeout?: number
+
+  /**
+   * Interval (ms) to check for idle connections to reap
+   */
   reapInterval?: number
 }
 
@@ -101,9 +242,24 @@ export interface PoolConfig {
  * SSL configuration
  */
 export interface SSLConfig {
+  /**
+   * Whether to reject unauthorized connections
+   */
   rejectUnauthorized?: boolean
+
+  /**
+   * Certificate Authority (CA) certificate
+   */
   ca?: string
+
+  /**
+   * Client private key
+   */
   key?: string
+
+  /**
+   * Client certificate
+   */
   cert?: string
 }
 
@@ -151,15 +307,54 @@ export type JoinType = 'inner' | 'left' | 'right' | 'cross' | 'full'
  * WHERE clause structure
  */
 export interface WhereClause {
+  /**
+   * Type of the where clause
+   */
   type: 'basic' | 'nested' | 'in' | 'null' | 'between' | 'raw' | 'exists' | 'column'
+
+  /**
+   * Column name
+   */
   column?: string
+
+  /**
+   * Comparison operator
+   */
   operator?: Operator
+
+  /**
+   * Value for basic comparison
+   */
   value?: unknown
+
+  /**
+   * Values for IN or BETWEEN clauses
+   */
   values?: unknown[]
+
+  /**
+   * Boolean operator (AND/OR)
+   */
   boolean: BooleanOperator
+
+  /**
+   * Whether to negate the clause (NOT)
+   */
   not?: boolean
+
+  /**
+   * Nested query builder for subqueries
+   */
   query?: QueryBuilderContract
+
+  /**
+   * Raw SQL for raw clauses
+   */
   sql?: string
+
+  /**
+   * Bindings for raw clauses
+   */
   bindings?: unknown[]
 }
 
@@ -167,7 +362,14 @@ export interface WhereClause {
  * ORDER BY clause structure
  */
 export interface OrderClause {
+  /**
+   * Column name
+   */
   column: string
+
+  /**
+   * Sort direction
+   */
   direction: OrderDirection
 }
 
@@ -175,10 +377,29 @@ export interface OrderClause {
  * JOIN clause structure
  */
 export interface JoinClause {
+  /**
+   * Type of join
+   */
   type: JoinType
+
+  /**
+   * Table to join
+   */
   table: string
+
+  /**
+   * First column for join condition
+   */
   first: string
+
+  /**
+   * Operator for join condition
+   */
   operator: string
+
+  /**
+   * Second column for join condition
+   */
   second: string
 }
 
@@ -186,12 +407,39 @@ export interface JoinClause {
  * HAVING clause structure
  */
 export interface HavingClause {
+  /**
+   * Type of having clause
+   */
   type: 'basic' | 'raw'
+
+  /**
+   * Column name
+   */
   column?: string
+
+  /**
+   * Comparison operator
+   */
   operator?: Operator
+
+  /**
+   * Value for comparison
+   */
   value?: unknown
+
+  /**
+   * Boolean operator (AND/OR)
+   */
   boolean: BooleanOperator
+
+  /**
+   * Raw SQL for raw clauses
+   */
   sql?: string
+
+  /**
+   * Bindings for raw clauses
+   */
   bindings?: unknown[]
 }
 
@@ -203,8 +451,19 @@ export interface HavingClause {
  * Query execution result
  */
 export interface QueryResult<T = Record<string, unknown>> {
+  /**
+   * Result rows
+   */
   rows: T[]
+
+  /**
+   * Number of rows returned
+   */
   rowCount: number
+
+  /**
+   * Field metadata
+   */
   fields?: FieldInfo[]
 }
 
@@ -212,8 +471,19 @@ export interface QueryResult<T = Record<string, unknown>> {
  * Field information from query result
  */
 export interface FieldInfo {
+  /**
+   * Field name
+   */
   name: string
+
+  /**
+   * Data type name
+   */
   dataType?: string | undefined
+
+  /**
+   * Table ID (if available)
+   */
   tableId?: number | undefined
 }
 
@@ -221,8 +491,19 @@ export interface FieldInfo {
  * Execution result (INSERT/UPDATE/DELETE)
  */
 export interface ExecuteResult {
+  /**
+   * Number of affected rows
+   */
   affectedRows: number
+
+  /**
+   * Last inserted ID (for INSERT)
+   */
   insertId?: number | bigint | string | undefined
+
+  /**
+   * Number of changed rows (for UPDATE)
+   */
   changedRows?: number | undefined
 }
 
@@ -230,16 +511,61 @@ export interface ExecuteResult {
  * Pagination result
  */
 export interface PaginateResult<T> {
+  /**
+   * Paginated data
+   */
   data: T[]
+
+  /**
+   * Pagination metadata
+   */
   pagination: {
+    /**
+     * Current page number
+     */
     page: number
+
+    /**
+     * Number of items per page
+     */
     perPage: number
+
+    /**
+     * Total number of items
+     */
     total: number
+
+    /**
+     * Total number of pages
+     */
     totalPages: number
+
+    /**
+     * Whether there is a next page
+     */
     hasNext: boolean
+
+    /**
+     * Whether there is a previous page
+     */
     hasPrev: boolean
   }
 }
+
+// ============================================================================
+// Model Types (forward declarations to avoid circular dependencies)
+// ============================================================================
+
+/**
+ * Model base class (forward declaration)
+ * Actual implementation in src/orm/model/Model.ts
+ */
+export type Model = import('../orm/model/Model').Model
+
+/**
+ * Model constructor type (forward declaration)
+ */
+export type ModelConstructor<T extends Model> = import('../orm/model/Model').ModelConstructor<T>
 
 // ============================================================================
 // Contracts (Interfaces)
@@ -320,27 +646,32 @@ export interface ConnectionContract {
   getConfig(): ConnectionConfig
 
   /**
-   * Create a new query builder
+   * Create a new query builder for the given table
    */
   table<T = Record<string, unknown>>(tableName: string): QueryBuilderContract<T>
 
   /**
-   * Execute raw SQL
+   * Execute raw SQL query and return results
    */
   raw<T = Record<string, unknown>>(sql: string, bindings?: unknown[]): Promise<QueryResult<T>>
 
   /**
-   * Run a callback within a transaction
+   * Execute raw SQL statement (INSERT/UPDATE/DELETE)
+   */
+  execute(sql: string, bindings?: unknown[]): Promise<ExecuteResult>
+
+  /**
+   * Execute a callback within a database transaction
    */
   transaction<T>(callback: (connection: ConnectionContract) => Promise<T>): Promise<T>
 
   /**
-   * Disconnect
+   * Disconnect from the database
    */
   disconnect(): Promise<void>
 
   /**
-   * Get the grammar instance
+   * Get the grammar instance for this connection
    */
   getGrammar(): GrammarContract
 }
@@ -349,94 +680,337 @@ export interface ConnectionContract {
  * Query Builder Contract
  */
 export interface QueryBuilderContract<T = Record<string, unknown>> {
+  // SETTINGS
+  /**
+   * Set the model for hydration
+   */
+  setModel<M extends Model = Model>(model: ModelConstructor<M>): this
+
+  /**
+   * Get the current model
+   */
+  getModel<M extends Model = Model>(): ModelConstructor<M> | undefined
+
   // SELECT
+  /**
+   * Select columns for the query
+   */
   select(...columns: string[]): this
+
+  /**
+   * Add a raw select expression
+   */
   selectRaw(sql: string, bindings?: unknown[]): this
+
+  /**
+   * Force the query to return distinct results
+   */
   distinct(): this
 
   // WHERE
+  /**
+   * Add a basic where clause
+   */
   where(column: string, value: unknown): this
   where(column: string, operator: Operator, value: unknown): this
   where(callback: (query: QueryBuilderContract<T>) => void): this
   where(conditions: Record<string, unknown>): this
+
+  /**
+   * Add an "or where" clause
+   */
   orWhere(column: string, value: unknown): this
   orWhere(column: string, operator: Operator, value: unknown): this
   orWhere(callback: (query: QueryBuilderContract<T>) => void): this
+
+  /**
+   * Add a "where in" clause
+   */
   whereIn(column: string, values: unknown[]): this
+
+  /**
+   * Add a "where not in" clause
+   */
   whereNotIn(column: string, values: unknown[]): this
+
+  /**
+   * Add an "or where in" clause
+   */
   orWhereIn(column: string, values: unknown[]): this
+
+  /**
+   * Add an "or where not in" clause
+   */
   orWhereNotIn(column: string, values: unknown[]): this
+
+  /**
+   * Add a "where null" clause
+   */
   whereNull(column: string): this
+
+  /**
+   * Add a "where not null" clause
+   */
   whereNotNull(column: string): this
+
+  /**
+   * Add an "or where null" clause
+   */
   orWhereNull(column: string): this
+
+  /**
+   * Add an "or where not null" clause
+   */
   orWhereNotNull(column: string): this
+
+  /**
+   * Add a "where between" clause
+   */
   whereBetween(column: string, values: [unknown, unknown]): this
+
+  /**
+   * Add a "where not between" clause
+   */
   whereNotBetween(column: string, values: [unknown, unknown]): this
+
+  /**
+   * Add a raw where clause
+   */
   whereRaw(sql: string, bindings?: unknown[]): this
+
+  /**
+   * Add a raw "or where" clause
+   */
   orWhereRaw(sql: string, bindings?: unknown[]): this
+
+  /**
+   * Add a "where column" clause (comparing two columns)
+   */
   whereColumn(first: string, operator: Operator, second: string): this
 
   // JSON
+  /**
+   * Add a where clause for JSON fields
+   */
   whereJson(column: string, value: unknown): this
+
+  /**
+   * Add an "or where" clause for JSON fields
+   */
   orWhereJson(column: string, value: unknown): this
+
+  /**
+   * Add a "where json contains" clause
+   */
   whereJsonContains(column: string, value: unknown): this
+
+  /**
+   * Add an "or where json contains" clause
+   */
   orWhereJsonContains(column: string, value: unknown): this
 
   // JOIN
+  /**
+   * Add an inner join clause
+   */
   join(table: string, first: string, operator: string, second: string): this
+
+  /**
+   * Add a left join clause
+   */
   leftJoin(table: string, first: string, operator: string, second: string): this
+
+  /**
+   * Add a right join clause
+   */
   rightJoin(table: string, first: string, operator: string, second: string): this
+
+  /**
+   * Add a cross join clause
+   */
   crossJoin(table: string): this
 
   // GROUP BY & HAVING
+  /**
+   * Add a group by clause
+   */
   groupBy(...columns: string[]): this
+
+  /**
+   * Add a having clause
+   */
   having(column: string, operator: Operator, value: unknown): this
+
+  /**
+   * Add a raw having clause
+   */
   havingRaw(sql: string, bindings?: unknown[]): this
 
   // ORDER BY
+  /**
+   * Add an order by clause
+   */
   orderBy(column: string, direction?: OrderDirection): this
+
+  /**
+   * Add a descending order by clause
+   */
   orderByDesc(column: string): this
+
+  /**
+   * Add a raw order by clause
+   */
   orderByRaw(sql: string, bindings?: unknown[]): this
+
+  /**
+   * Order by the latest record (created_at by default)
+   */
   latest(column?: string): this
+
+  /**
+   * Order by the oldest record (created_at by default)
+   */
   oldest(column?: string): this
 
   // LIMIT & OFFSET
+  /**
+   * Set the limit for the query
+   */
   limit(value: number): this
+
+  /**
+   * Set the offset for the query
+   */
   offset(value: number): this
+
+  /**
+   * Alias for offset
+   */
   skip(value: number): this
+
+  /**
+   * Alias for limit
+   */
   take(value: number): this
 
   // EXECUTION - Read
+  /**
+   * Execute the query and get all results
+   */
   get(): Promise<T[]>
+
+  /**
+   * Get the first result
+   */
   first(): Promise<T | null>
+
+  /**
+   * Get the first result or throw an error
+   */
   firstOrFail(): Promise<T>
+
+  /**
+   * Find a record by its primary key
+   */
   find(id: unknown, primaryKey?: string): Promise<T | null>
+
+  /**
+   * Find a record by its primary key or throw an error
+   */
   findOrFail(id: unknown, primaryKey?: string): Promise<T>
+
+  /**
+   * Get a single value from the first record
+   */
   value<V = unknown>(column: string): Promise<V | null>
+
+  /**
+   * Get an array of values from a single column
+   */
   pluck<V = unknown>(column: string): Promise<V[]>
+
+  /**
+   * Check if any records exist matching the query
+   */
   exists(): Promise<boolean>
+
+  /**
+   * Check if no records exist matching the query
+   */
   doesntExist(): Promise<boolean>
 
   // EXECUTION - Aggregates
+  /**
+   * Get the count of records
+   */
   count(column?: string): Promise<number>
+
+  /**
+   * Get the maximum value of a column
+   */
   max<V = number>(column: string): Promise<V | null>
+
+  /**
+   * Get the minimum value of a column
+   */
   min<V = number>(column: string): Promise<V | null>
+
+  /**
+   * Get the average value of a column
+   */
   avg(column: string): Promise<number | null>
+
+  /**
+   * Get the sum of a column
+   */
   sum(column: string): Promise<number>
 
   // EXECUTION - Write
+  /**
+   * Insert new records
+   */
   insert(data: Partial<T> | Partial<T>[]): Promise<T[]>
+
+  /**
+   * Insert a record and get its ID
+   */
   insertGetId(data: Partial<T>, primaryKey?: string): Promise<number | bigint>
+
+  /**
+   * Update existing records
+   */
   update(data: Partial<T>): Promise<number>
+
+  /**
+   * Update a JSON field
+   */
   updateJson(column: string, value: unknown): Promise<number>
+
+  /**
+   * Delete records
+   */
   delete(): Promise<number>
+
+  /**
+   * Truncate the table
+   */
   truncate(): Promise<void>
 
   // EXECUTION - Increment/Decrement
+  /**
+   * Increment a column's value
+   */
   increment(column: string, amount?: number, extra?: Partial<T>): Promise<number>
+
+  /**
+   * Decrement a column's value
+   */
   decrement(column: string, amount?: number, extra?: Partial<T>): Promise<number>
 
   // EXECUTION - Upsert
+  /**
+   * Insert or update records
+   */
   upsert(
     data: Partial<T> | Partial<T>[],
     uniqueBy: string | string[],
@@ -444,19 +1018,47 @@ export interface QueryBuilderContract<T = Record<string, unknown>> {
   ): Promise<number>
 
   // PAGINATION
+  /**
+   * Paginate the query results
+   */
   paginate(perPage?: number, page?: number): Promise<PaginateResult<T>>
+
+  /**
+   * Simple pagination (no total count)
+   */
   simplePaginate(perPage?: number, page?: number): Promise<PaginateResult<T>>
 
   // CHUNKING
+  /**
+   * Chunk the query results for processing large datasets
+   */
   chunk(size: number, callback: (results: T[]) => Promise<undefined | boolean>): Promise<void>
 
   // DEBUGGING
+  /**
+   * Get the compiled SQL string
+   */
   toSql(): string
+
+  /**
+   * Get the query bindings
+   */
   getBindings(): unknown[]
+
+  /**
+   * Dump the query SQL and bindings
+   */
   dump(): this
+
+  /**
+   * Dump the query SQL and bindings and terminate execution
+   */
   dd(): never
 
   // CLONING
+  /**
+   * Clone the query builder instance
+   */
   clone(): QueryBuilderContract<T>
 
   /**
@@ -465,29 +1067,64 @@ export interface QueryBuilderContract<T = Record<string, unknown>> {
   readonly(value?: boolean): this
 
   // INTERNAL/ADVANCED
+  /**
+   * Get the compiled query structure
+   */
   getCompiledQuery(): CompiledQuery
+
+  /**
+   * Check if the query has a limit or offset
+   */
   hasLimitOrOffset(): boolean
 
+  /**
+   * Eager load relationships
+   */
   with(
-    relation: string | string[] | Record<string, (query: QueryBuilderContract<any>) => void>
+    relation: string | string[] | Record<string, (query: QueryBuilderContract<unknown>) => void>
   ): this
 
   /**
    * Add a WHERE HAS relationship existence clause
    */
-  whereHas(relation: string, callback?: (query: QueryBuilderContract<any>) => void): this
+  whereHas(relation: string, callback?: (query: QueryBuilderContract<unknown>) => void): this
 
   // SOFT DELETES
+  /**
+   * Include soft-deleted records in the query
+   */
   withTrashed(): this
+
+  /**
+   * Only include soft-deleted records in the query
+   */
   onlyTrashed(): this
+
+  /**
+   * Restore soft-deleted records
+   */
   restore(): Promise<number>
+
+  /**
+   * Permanently delete records (bypass soft deletes)
+   */
   forceDelete(): Promise<number>
 
   // SCOPES
+  /**
+   * Apply a query scope
+   */
   applyScope(name: string, callback: (query: QueryBuilderContract<T>) => void): this
+
+  /**
+   * Remove a global scope
+   */
   withoutGlobalScope(name: string): this
 
   // CACHING
+  /**
+   * Cache the query results
+   */
   cache(ttl: number, key?: string): this
 }
 

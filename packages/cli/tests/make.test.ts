@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, it, spyOn } from 'bun:test'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { MakeCommand } from '../src/commands/MakeCommand'
@@ -19,6 +19,19 @@ describe('MakeCommand', () => {
   // MakeCommand uses process.cwd(). Let's chdir.
 
   const originalCwd = process.cwd()
+  let exitSpy: any
+
+  beforeEach(() => {
+    // Mock process.exit to prevent killing the test runner
+    exitSpy = spyOn(process, 'exit').mockImplementation(() => undefined as never)
+  })
+
+  afterEach(async () => {
+    // Cleanup
+    process.chdir(originalCwd)
+    await fs.rm(TEST_DIR, { recursive: true, force: true })
+    exitSpy.mockRestore()
+  })
 
   it('should create a controller', async () => {
     // Setup

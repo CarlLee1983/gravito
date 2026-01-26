@@ -1,3 +1,7 @@
+/**
+ * CSS styles for the development mail UI.
+ * @internal
+ */
 export const styles = `
 :root {
   --primary: #6366f1;
@@ -30,6 +34,15 @@ body { background: var(--bg-dark); color: var(--text); font-family: -apple-syste
 .empty { padding: 40px; text-align: center; color: var(--text-muted); }
 `
 
+/**
+ * HTML layout wrapper for dev mail UI pages.
+ *
+ * @param title - Page title
+ * @param content - HTML content to inject
+ * @returns Complete HTML document
+ *
+ * @internal
+ */
 export const layout = (title: string, content: string) => `
 <!DOCTYPE html>
 <html>

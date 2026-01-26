@@ -1,11 +1,18 @@
-import { type ImageOptions, ImageService } from '../ImageService'
-import type { HelperFunction } from '../TemplateEngine'
+import type { HelperFunction } from '../engine/TemplateEngine'
+import { type ImageOptions, ImageService } from '../image/ImageService'
 
 /**
- * Image helper function.
+ * Creates an image helper for the TemplateEngine.
  *
- * Usage in templates:
- * {{image src="/static/hero.jpg" width=800 height=600 alt="Hero image" loading="lazy"}}
+ * This provides the `{{image ...}}` tag in templates, generating
+ * optimized `<img>` tags that follow performance best practices.
+ *
+ * @example
+ * ```handlebars
+ * {{image src="/static/hero.jpg" width=800 alt="Hero"}}
+ * ```
+ * @returns A HelperFunction for the TemplateEngine.
+ * @public
  */
 export function createImageHelper(): HelperFunction {
   const imageService = new ImageService()
@@ -74,7 +81,33 @@ export function createImageHelper(): HelperFunction {
       }
     }
 
-    // Generate <img> tag
+    if (args.formatNegotiation !== undefined) {
+      options.formatNegotiation = Boolean(args.formatNegotiation)
+    }
+
+    if (args.usePicture !== undefined) {
+      options.usePicture = Boolean(args.usePicture)
+    }
+
+    if (args.placeholder !== undefined) {
+      const placeholder = String(args.placeholder)
+      if (['none', 'blur', 'color'].includes(placeholder)) {
+        options.placeholder = placeholder as 'none' | 'blur' | 'color'
+      }
+    }
+
+    if (args.blurDataURL !== undefined) {
+      options.blurDataURL = String(args.blurDataURL)
+    }
+
+    if (args.dominantColor !== undefined) {
+      options.dominantColor = String(args.dominantColor)
+    }
+
+    if (options.usePicture || options.formatNegotiation || options.artDirection) {
+      return imageService.generatePictureElement(options)
+    }
+
     return imageService.generateImageTag(options)
   }
 }

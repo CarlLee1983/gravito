@@ -1,6 +1,6 @@
 {
   "name": "@gravito/atlas",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "The Standard Database Orbit - Custom Query Builder & ORM for Gravito",
   "type": "module",
   "main": "./dist/index.js",
@@ -38,7 +38,9 @@
   ],
   "author": "Gravito Team",
   "license": "MIT",
-  "dependencies": {},
+  "dependencies": {
+    "lru-cache": "^11.0.2"
+  },
   "peerDependencies": {
     "better-sqlite3": "^11.0.0",
     "ioredis": "^5.8.2",

@@ -6,76 +6,102 @@ import type { Notification } from './Notification'
 
 /**
  * Notification channel interface.
+ * @public
  */
 export interface NotificationChannel {
   /**
-   * Send a notification.
-   * @param notification - Notification instance
-   * @param notifiable - Recipient
+   * Send a notification through the specified channel.
+   *
+   * @param notification - The notification instance containing data.
+   * @param notifiable - The recipient of the notification.
    */
   send(notification: Notification, notifiable: Notifiable): Promise<void>
 }
 
 /**
- * Notifiable (notification recipient) interface.
+ * Interface for recipients that can receive notifications.
+ * @public
  */
 export interface Notifiable {
   /**
-   * Recipient identifier (usually an ID).
+   * Unique identifier for the recipient (e.g., User ID).
    */
   getNotifiableId(): string | number
 
   /**
-   * Recipient type (optional, for polymorphic relations).
+   * Optional recipient type (useful for polymorphic notifications).
    */
   getNotifiableType?(): string
 
   /**
-   * Preferred channels (optional).
+   * Optional list of preferred channels for this specific recipient.
    */
   preferredNotificationChannels?(): string[]
 }
 
 /**
- * Mail message payload.
+ * Payload for email notifications.
+ * @public
  */
 export interface MailMessage {
+  /** Email subject line */
   subject: string
+  /** View template path */
   view?: string
+  /** Data to pass to the view template */
   data?: Record<string, unknown>
+  /** Inline HTML content */
   html?: string
+  /** Plain text content */
   text?: string
+  /** Sender address */
   from?: string
+  /** Target recipient(s) */
   to?: string | string[]
+  /** Carbon copy recipient(s) */
   cc?: string | string[]
+  /** Blind carbon copy recipient(s) */
   bcc?: string | string[]
 }
 
 /**
- * Database notification payload.
+ * Payload for database-stored notifications.
+ * @public
  */
 export interface DatabaseNotification {
+  /** Type identifier for the notification */
   type: string
+  /** JSON-serializable data payload */
   data: Record<string, unknown>
+  /** Timestamp when the notification was marked as read */
   readAt?: Date | null
 }
 
 /**
- * Broadcast notification payload.
+ * Payload for real-time broadcast notifications.
+ * @public
  */
 export interface BroadcastNotification {
+  /** Event/Type identifier for the broadcast */
   type: string
+  /** Data to be broadcasted to subscribers */
   data: Record<string, unknown>
 }
 
 /**
- * Slack message payload.
+ * Payload for Slack channel notifications.
+ * @public
  */
 export interface SlackMessage {
+  /** Main message text */
   text: string
+  /** Target Slack channel */
   channel?: string
+  /** Custom bot username */
   username?: string
+  /** Icon emoji for the bot */
   iconEmoji?: string
+  /** Array of Slack attachments for rich formatting */
   attachments?: Array<{
     color?: string
     title?: string
@@ -85,10 +111,157 @@ export interface SlackMessage {
 }
 
 /**
- * SMS message payload.
+ * Payload for SMS notifications.
+ * @public
  */
 export interface SmsMessage {
+  /** Recipient phone number */
   to: string
+  /** Message content */
   message: string
+  /** Sender ID or phone number */
   from?: string
+}
+
+/**
+ * Result of a single channel delivery attempt.
+ * @public
+ */
+export interface SendResult {
+  success: boolean
+  channel: string
+  error?: Error
+  duration?: number
+}
+
+/**
+ * Aggregated result of a notification delivery.
+ * @public
+ */
+export interface NotificationResult {
+  notification: string
+  notifiable: string | number
+  results: SendResult[]
+  allSuccess: boolean
+  timestamp: Date
+}
+
+/**
+ * Options for sending notifications.
+ * @public
+ */
+export interface SendOptions {
+  /** If true, throws an AggregateError when any channel fails */
+  throwOnError?: boolean
+  /** Whether to send to channels in parallel (default: true) */
+  parallel?: boolean
+  /** Maximum number of concurrent channel sends (default: unlimited) */
+  concurrency?: number
+  /** Retry configuration */
+  retry?: Partial<RetryConfig> | boolean
+}
+
+/**
+ * Retry configuration options.
+ * @public
+ */
+export interface RetryConfig {
+  /** Maximum number of retry attempts (default: 3) */
+  maxAttempts: number
+  /** Base delay in milliseconds (default: 1000) */
+  baseDelay: number
+  /** Backoff strategy: 'fixed' | 'linear' | 'exponential' (default: 'exponential') */
+  backoff: 'fixed' | 'linear' | 'exponential'
+  /** Maximum delay in milliseconds (default: 30000) */
+  maxDelay: number
+  /** Function to determine if an error is retryable */
+  retryableErrors?: (error: Error) => boolean
+}
+
+/**
+ * Interface for notifications that should retry on failure.
+ * @public
+ */
+export interface ShouldRetry {
+  /** Retry configuration for this notification */
+  retry?: Partial<RetryConfig>
+}
+
+/**
+ * Result of a batch notification delivery.
+ * @public
+ */
+export interface BatchResult {
+  total: number
+  success: number
+  failed: number
+  results: NotificationResult[]
+  duration: number
+}
+
+// Hook Payloads
+
+export interface NotificationHookPayload {
+  notification: Notification
+  notifiable: Notifiable
+  channels: string[]
+}
+
+export interface ChannelHookPayload {
+  notification: Notification
+  notifiable: Notifiable
+  channel: string
+}
+
+export interface ChannelSuccessPayload extends ChannelHookPayload {
+  duration: number
+}
+
+export interface ChannelFailurePayload extends ChannelHookPayload {
+  error: Error
+  duration: number
+}
+
+export interface NotificationCompletePayload {
+  notification: Notification
+  notifiable: Notifiable
+  results: SendResult[]
+  allSuccess: boolean
+  totalDuration: number
+}
+
+export interface NotificationBatchStartPayload {
+  notification: Notification
+  count: number
+}
+
+export interface NotificationBatchCompletePayload {
+  notification: Notification
+  total: number
+  success: number
+  failed: number
+  duration: number
+}
+
+// Service Interfaces (for OrbitFlare type safety)
+
+export interface MailService {
+  send(message: MailMessage): Promise<void>
+}
+
+export interface DatabaseService {
+  insertNotification(data: {
+    notifiableId: string | number
+    notifiableType: string
+    type: string
+    data: Record<string, unknown>
+  }): Promise<void>
+}
+
+export interface BroadcastService {
+  broadcast(channel: string, event: string, data: Record<string, unknown>): Promise<void>
+}
+
+export interface QueueService {
+  push(job: unknown, queue?: string, connection?: string, delay?: number): Promise<void>
 }

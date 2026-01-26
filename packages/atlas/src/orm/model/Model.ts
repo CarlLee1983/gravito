@@ -35,8 +35,21 @@ export type ModelConstructor<T extends Model> = new () => T
 export interface ModelStatic<T extends Model> {
   new (): T
   table: string
+  tableName?: string
   primaryKey: string
   connection?: string
+  name: string
+  getTable(): string
+  find(key: unknown): Promise<T | null>
+  findOrFail(key: unknown): Promise<T>
+  all(): Promise<T[]>
+  create(attributes?: Partial<ModelAttributes>): Promise<T>
+  query(): QueryBuilderContract<T>
+  where(
+    column: string | Record<string, unknown>,
+    operatorOrValue?: any,
+    value?: unknown
+  ): QueryBuilderContract<T>
 }
 
 /**
@@ -553,7 +566,7 @@ export abstract class Model {
         }
       }
 
-      this._schema = await SchemaRegistry.getInstance().get(table)
+      this._schema = await SchemaRegistry.getInstance().get(table, modelCtor.connection)
     }
     return this._schema
   }
@@ -1244,8 +1257,12 @@ export abstract class Model {
   ): AsyncGenerator<T[], void, unknown> {
     const connection = DB.connection(this.connection)
     let offset = 0
+    let safetyCounter = 0
+    const MAX_CHUNKS = 10000 // Safety limit: 10M records max for cursor
 
-    while (true) {
+    let lastFirstId: any = null
+
+    while (safetyCounter < MAX_CHUNKS) {
       const rows = await connection
         .table<ModelAttributes>(this.getTable())
         .orderBy(this.primaryKey) // Deterministic ordering
@@ -1257,10 +1274,13 @@ export abstract class Model {
         break
       }
 
-      // Log progress for large streams
-      if (offset > 0 && offset % 5000 === 0) {
-        process.stdout.write(` [${offset}...] `)
+      // Detect stuck cursor (offset ignored by driver)
+      const currentFirstId = rows[0][this.primaryKey]
+      if (lastFirstId !== null && currentFirstId === lastFirstId) {
+        // console.warn(`Cursor stuck at offset ${offset}. Offset might be ignored by driver.`)
+        break
       }
+      lastFirstId = currentFirstId
 
       yield rows.map((row) => this.hydrate<T>(row))
 
@@ -1268,6 +1288,7 @@ export abstract class Model {
         break
       }
       offset += chunkSize
+      safetyCounter++
     }
   }
 
@@ -1521,6 +1542,16 @@ export abstract class Model {
   // ============================================================================
   // JSON Serialization
   // ============================================================================
+
+  /**
+   * Fill the model with an array of attributes
+   */
+  fill(attributes: Partial<ModelAttributes>): this {
+    for (const [key, value] of Object.entries(attributes)) {
+      this._setAttribute(key, value)
+    }
+    return this
+  }
 
   /**
    * Convert to JSON

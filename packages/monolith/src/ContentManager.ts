@@ -3,6 +3,10 @@ import { join, parse } from 'node:path'
 import matter from 'gray-matter'
 import { marked } from 'marked'
 
+/**
+ * Represents a single content item (file).
+ * @public
+ */
 export interface ContentItem {
   slug: string
   body: string // The HTML content
@@ -12,10 +16,18 @@ export interface ContentItem {
   raw: string // The raw markdown
 }
 
+/**
+ * Configuration for a content collection.
+ * @public
+ */
 export interface CollectionConfig {
   path: string // e.g., 'resources/content/docs'
 }
 
+/**
+ * Manages fetching, parsing, and caching of filesystem-based content.
+ * @public
+ */
 export class ContentManager {
   private collections = new Map<string, CollectionConfig>()
   // Simple memory cache: collection:locale:slug -> ContentItem

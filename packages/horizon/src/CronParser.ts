@@ -1,12 +1,20 @@
 import { SimpleCronParser } from './SimpleCronParser'
 
+interface CacheEntry {
+  result: boolean
+  timestamp: number
+}
+
+/**
+ * Advanced cron expression parser with fallback support and LRU caching.
+ */
 export class CronParser {
+  private static cache = new Map<string, CacheEntry>()
+  private static readonly CACHE_TTL = 60000
+  private static readonly MAX_CACHE_SIZE = 500
+
   /**
    * Get the next execution date based on a cron expression.
-   *
-   * @param expression - Cron expression
-   * @param timezone - Timezone identifier
-   * @param currentDate - Reference date
    */
   static async nextDate(
     expression: string,
@@ -27,29 +35,52 @@ export class CronParser {
 
   /**
    * Check if the cron expression is due to run at the current time (minute precision).
-   *
-   * @param expression - Cron expression
-   * @param timezone - Timezone identifier
-   * @param currentDate - Reference date
    */
   static async isDue(
     expression: string,
     timezone = 'UTC',
     currentDate: Date = new Date()
   ): Promise<boolean> {
-    // Try SimpleCronParser first (Synchronous and fast)
+    const minuteKey = `${expression}:${timezone}:${Math.floor(currentDate.getTime() / 60000)}`
+    const now = Date.now()
+
+    const cached = this.cache.get(minuteKey)
+    if (cached) {
+      if (now - cached.timestamp < this.CACHE_TTL) {
+        // LRU: Refresh position
+        this.cache.delete(minuteKey)
+        this.cache.set(minuteKey, cached)
+        return cached.result
+      }
+      // Expired
+      this.cache.delete(minuteKey)
+    }
+
+    const result = await this.computeIsDue(expression, timezone, currentDate)
+
+    this.cache.set(minuteKey, {
+      result,
+      timestamp: now,
+    })
+
+    this.cleanupCache()
+
+    return result
+  }
+
+  private static async computeIsDue(
+    expression: string,
+    timezone: string,
+    currentDate: Date
+  ): Promise<boolean> {
     try {
       return SimpleCronParser.isDue(expression, timezone, currentDate)
     } catch (_e) {
-      // Fallback to heavy cron-parser if expression is complex/unsupported
-      // or if calculation fails
+      // ignore
     }
 
     try {
-      // Check from 1 minute ago to see if the next scheduled time is "now"
-      // This assumes the scheduler runs every minute
       const previousMinute = new Date(currentDate.getTime() - 60000)
-
       const parser = await import('cron-parser')
       const interval = parser.default.parseExpression(expression, {
         currentDate: previousMinute,
@@ -57,12 +88,26 @@ export class CronParser {
       })
 
       const nextRun = interval.next().toDate()
-
-      // Compare down to the minute
       return this.minuteMatches(nextRun, currentDate)
     } catch (_err) {
       return false
     }
+  }
+
+  private static cleanupCache(): void {
+    if (this.cache.size <= this.MAX_CACHE_SIZE) return
+
+    // Map iterates in insertion order, so the first key is the oldest (LRU)
+    // We only need to remove one item because we check after every insertion
+    const iterator = this.cache.keys()
+    const oldestKey = iterator.next().value
+    if (oldestKey) {
+      this.cache.delete(oldestKey)
+    }
+  }
+
+  static clearCache(): void {
+    this.cache.clear()
   }
 
   private static minuteMatches(date1: Date, date2: Date): boolean {

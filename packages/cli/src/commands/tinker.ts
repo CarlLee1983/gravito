@@ -1,6 +1,14 @@
 import path from 'node:path'
 import { getRuntimeAdapter } from '@gravito/core'
 
+/**
+ * Start an interactive REPL environment for the Gravito application.
+ *
+ * Preloads the application's bootstrap environment using Bun's REPL mode.
+ *
+ * @returns A promise that resolves when the tinker session ends.
+ * @public
+ */
 export async function tinker() {
   const bootstrapPath = path.resolve(__dirname, '../../stubs/tinker-bootstrap.ts')
 

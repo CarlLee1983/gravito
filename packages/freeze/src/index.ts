@@ -35,17 +35,26 @@
  */
 
 export type { SitemapEntry } from './builder'
-// Build Utilities
 export {
+  generate404Html,
   generateLocalizedRoutes,
   generateRedirectHtml,
   generateRedirects,
+  generateRobotsTxt,
   generateSitemapEntries,
+  generateSitemapXml,
   inferRedirects,
+  validateRoutes,
 } from './builder'
 export type { FreezeConfig, RedirectRule } from './config'
-// Configuration
 export { defaultConfig, defineConfig } from './config'
 export type { RedirectInfo } from './detector'
-// Runtime Detection
 export { createDetector, FreezeDetector } from './detector'
+export {
+  addLocalePrefix,
+  getLocaleFromPath,
+  getLocalizedPath,
+  isLocalizedPath,
+  stripLocalePrefix,
+} from './path-utils'
+export * from './types'

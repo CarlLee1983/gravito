@@ -3,17 +3,45 @@ import { appendFile, mkdir, readFile, rename, stat, unlink, writeFile } from 'no
 import { dirname } from 'node:path'
 import type { StorageAdapter } from './adapter'
 
+/**
+ * FileSystemAdapter implements the `StorageAdapter` interface for the local file system.
+ *
+ * It provides standard file operations (read, write, delete, etc.) using
+ * Node.js or Bun's native file system modules.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class FileSystemAdapter implements StorageAdapter {
+  /**
+   * Appends content to a file.
+   *
+   * @param path - The file path.
+   * @param content - The content to append.
+   */
   async append(path: string, content: string): Promise<void> {
     await this.ensureDir(path)
     await appendFile(path, content, 'utf-8')
   }
 
+  /**
+   * Writes content to a file.
+   *
+   * @param path - The file path.
+   * @param content - The content to write.
+   */
   async write(path: string, content: string): Promise<void> {
     await this.ensureDir(path)
     await writeFile(path, content, 'utf-8')
   }
 
+  /**
+   * Reads content from a file.
+   *
+   * @param path - The file path.
+   * @returns The file content.
+   * @throws {Error} If the file does not exist.
+   */
   async read(path: string): Promise<string> {
     if (!existsSync(path)) {
       throw new Error(`File not found: ${path}`)
@@ -21,20 +49,43 @@ export class FileSystemAdapter implements StorageAdapter {
     return readFile(path, 'utf-8')
   }
 
+  /**
+   * Checks if a file exists.
+   *
+   * @param path - The file path.
+   * @returns True if the file exists.
+   */
   async exists(path: string): Promise<boolean> {
     return existsSync(path)
   }
 
+  /**
+   * Deletes a file.
+   *
+   * @param path - The file path.
+   */
   async delete(path: string): Promise<void> {
     if (existsSync(path)) {
       await unlink(path)
     }
   }
 
+  /**
+   * Renames a file.
+   *
+   * @param oldPath - The current path.
+   * @param newPath - The new path.
+   */
   async rename(oldPath: string, newPath: string): Promise<void> {
     await rename(oldPath, newPath)
   }
 
+  /**
+   * Gets the size of a file.
+   *
+   * @param path - The file path.
+   * @returns The file size in bytes.
+   */
   async size(path: string): Promise<number> {
     try {
       const stats = await stat(path)
@@ -44,6 +95,11 @@ export class FileSystemAdapter implements StorageAdapter {
     }
   }
 
+  /**
+   * Ensures the directory for a file exists.
+   *
+   * @param path - The file path.
+   */
   async ensureDir(path: string): Promise<void> {
     const dir = dirname(path)
     if (!existsSync(dir)) {

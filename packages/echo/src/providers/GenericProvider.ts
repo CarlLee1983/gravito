@@ -1,8 +1,5 @@
 /**
- * @fileoverview Generic webhook provider
- *
- * Simple HMAC-SHA256 signature verification.
- *
+ * Generic webhook provider.
  * @module @gravito/echo/providers
  */
 
@@ -11,100 +8,96 @@ import {
   timingSafeEqual,
   validateTimestamp,
 } from '../receive/SignatureValidator'
-import type { WebhookProvider, WebhookVerificationResult } from '../types'
+import type { WebhookVerificationResult } from '../types'
+import { BaseProvider, type ProviderOptions } from './base/BaseProvider'
 
 /**
- * Generic webhook provider using HMAC-SHA256
+ * Configuration options for the generic provider.
+ */
+export interface GenericProviderOptions extends ProviderOptions {
+  /**
+   * Custom header name for the signature.
+   * @defaultValue 'x-webhook-signature'
+   */
+  signatureHeader?: string
+  /**
+   * Custom header name for the timestamp.
+   * @defaultValue 'x-webhook-timestamp'
+   */
+  timestampHeader?: string
+}
+
+/**
+ * Generic webhook provider using HMAC-SHA256 for signature verification.
  *
  * Expected headers:
- * - X-Webhook-Signature: HMAC-SHA256 hex signature
- * - X-Webhook-Timestamp: Unix timestamp (optional)
+ * - X-Webhook-Signature: HMAC-SHA256 hex signature.
+ * - X-Webhook-Timestamp: Unix timestamp (optional, used for replay protection).
  *
  * @example
  * ```typescript
- * const provider = new GenericProvider()
- * const result = await provider.verify(body, headers, secret)
+ * const provider = new GenericProvider({
+ *   signatureHeader: 'X-Custom-Sig',
+ *   tolerance: 600
+ * });
+ * const result = await provider.verify(body, headers, secret);
  * ```
  */
-export class GenericProvider implements WebhookProvider {
+export class GenericProvider extends BaseProvider {
   readonly name = 'generic'
 
   private signatureHeader: string
   private timestampHeader: string
-  private tolerance: number
 
-  constructor(
-    options: {
-      signatureHeader?: string
-      timestampHeader?: string
-      tolerance?: number
-    } = {}
-  ) {
+  constructor(options: GenericProviderOptions = {}) {
+    super(options)
     this.signatureHeader = options.signatureHeader ?? 'x-webhook-signature'
     this.timestampHeader = options.timestampHeader ?? 'x-webhook-timestamp'
-    this.tolerance = options.tolerance ?? 300
   }
 
+  /**
+   * Verifies the webhook using HMAC-SHA256.
+   *
+   * @param payload - Raw request body.
+   * @param headers - Request headers.
+   * @param secret - Secret key for HMAC computation.
+   * @returns Verification result.
+   * @throws Error if signature computation fails.
+   */
   async verify(
     payload: string | Buffer,
     headers: Record<string, string | string[] | undefined>,
     secret: string
   ): Promise<WebhookVerificationResult> {
-    // Get signature from headers
     const signature = this.getHeader(headers, this.signatureHeader)
     if (!signature) {
-      return {
-        valid: false,
-        error: `Missing signature header: ${this.signatureHeader}`,
-      }
+      return this.createFailure(`Missing signature header: ${this.signatureHeader}`)
     }
 
-    // Validate timestamp if present
     const timestampStr = this.getHeader(headers, this.timestampHeader)
     if (timestampStr) {
       const timestamp = parseInt(timestampStr, 10)
       if (Number.isNaN(timestamp) || !validateTimestamp(timestamp, this.tolerance)) {
-        return {
-          valid: false,
-          error: 'Timestamp validation failed',
-        }
+        return this.createFailure('Timestamp validation failed')
       }
     }
 
-    // Compute expected signature
-    const payloadStr = typeof payload === 'string' ? payload : payload.toString('utf-8')
+    const payloadStr = this.payloadToString(payload)
     const expectedSignature = await computeHmacSha256(payloadStr, secret)
 
-    // Compare signatures
     if (!timingSafeEqual(signature.toLowerCase(), expectedSignature.toLowerCase())) {
-      return {
-        valid: false,
-        error: 'Signature verification failed',
-      }
+      return this.createFailure('Signature verification failed')
     }
 
-    // Parse payload
-    try {
-      const parsed = JSON.parse(payloadStr)
-      return {
-        valid: true,
-        payload: parsed,
-        eventType: parsed.type ?? parsed.event ?? parsed.eventType,
-        webhookId: parsed.id ?? parsed.webhookId,
-      }
-    } catch {
-      return {
-        valid: true,
-        payload: payloadStr,
-      }
+    const parseResult = this.safeParseJson(payloadStr)
+    if (!parseResult.success) {
+      return this.createSuccess(payloadStr)
     }
-  }
 
-  private getHeader(
-    headers: Record<string, string | string[] | undefined>,
-    name: string
-  ): string | undefined {
-    const value = headers[name] ?? headers[name.toLowerCase()]
-    return Array.isArray(value) ? value[0] : value
+    const parsed = parseResult.data as Record<string, unknown>
+    return this.createSuccess(parsed, {
+      eventType: (parsed.type ?? parsed.event ?? parsed.eventType) as string | undefined,
+      webhookId: (parsed.id ?? parsed.webhookId) as string | undefined,
+    })
   }
 }

@@ -1,29 +1,84 @@
 import type { BroadcastDriver } from './BroadcastDriver'
 
 /**
- * Pusher driver configuration.
+ * Configuration for the Pusher broadcast driver.
  */
 export interface PusherDriverConfig {
+  /**
+   * The application ID provided by Pusher.
+   */
   appId: string
+
+  /**
+   * The public application key.
+   */
   key: string
+
+  /**
+   * The secret key for signing requests.
+   */
   secret: string
+
+  /**
+   * The Pusher cluster to connect to (e.g., 'mt1', 'eu').
+   * @defaultValue 'mt1'
+   */
   cluster?: string
+
+  /**
+   * Whether to force TLS (HTTPS) for API requests.
+   * @defaultValue true
+   */
   useTLS?: boolean
 }
 
 /**
- * Pusher driver.
+ * Pusher broadcast driver implementation.
  *
- * Broadcasts through the Pusher service.
+ * Interacts with the Pusher HTTP API to trigger events on channels.
+ * It handles request signing, authentication generation for private channels,
+ * and HTTP communication using the native Fetch API.
+ *
+ * @remarks
+ * This driver avoids heavy dependencies by implementing the necessary crypto
+ * signatures (HMAC-SHA256 and MD5) using standard Web Crypto or Bun APIs.
+ *
+ * @example
+ * ```typescript
+ * const driver = new PusherDriver({
+ *   appId: '123456',
+ *   key: 'my-app-key',
+ *   secret: 'my-app-secret',
+ *   cluster: 'us2'
+ * });
+ * ```
  */
 export class PusherDriver implements BroadcastDriver {
   private baseUrl: string
 
+  /**
+   * Creates a new PusherDriver instance.
+   *
+   * @param config - The Pusher connection configuration.
+   */
   constructor(private config: PusherDriverConfig) {
     const cluster = this.config.cluster || 'mt1'
     this.baseUrl = `https://api-${cluster}.pusher.com`
   }
 
+  /**
+   * Broadcast an event to a channel via the Pusher API.
+   *
+   * @param channel - The target channel metadata.
+   * @param event - The name of the event.
+   * @param data - The event payload.
+   * @throws {Error} If the Pusher API returns a non-200 response.
+   *
+   * @example
+   * ```typescript
+   * await driver.broadcast({ name: 'news', type: 'public' }, 'BreakingNews', { title: 'Hello' });
+   * ```
+   */
   async broadcast(
     channel: { name: string; type: string },
     event: string,
@@ -63,6 +118,19 @@ export class PusherDriver implements BroadcastDriver {
     }
   }
 
+  /**
+   * Generate an authorization signature for private or presence channels.
+   *
+   * @param channel - The name of the channel.
+   * @param socketId - The client's socket ID.
+   * @param userId - The user ID (required for presence channels).
+   * @returns The auth object expected by Pusher client libraries.
+   *
+   * @example
+   * ```typescript
+   * const auth = await driver.authorizeChannel('private-user.1', '123.456');
+   * ```
+   */
   async authorizeChannel(
     channel: string,
     socketId: string,
@@ -106,8 +174,9 @@ export class PusherDriver implements BroadcastDriver {
     return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('')
   }
 
-  private md5(text: string): string {
-    // Simplified MD5 implementation (production should use a proper MD5 implementation).
-    return btoa(text).replace(/[+/=]/g, '').substring(0, 32)
+  private md5(str: string): string {
+    const hasher = new Bun.CryptoHasher('md5')
+    hasher.update(str)
+    return hasher.digest('hex')
   }
 }

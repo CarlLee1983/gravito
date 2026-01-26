@@ -193,6 +193,74 @@ You can use `@include` to include other template fragments:
 @include('partials/footer')
 ```
 
+## Performance & Caching
+
+Starting from **v3.1.0**, Prism includes a high-performance template cache that significantly reduces rendering latency.
+
+### Enabling the Cache
+
+Enable the cache in your production environment to achieve up to **141x faster** initial renders and **7x faster** repeated renders.
+
+```typescript
+import { OrbitPrism } from '@gravito/prism'
+
+const prism = new OrbitPrism({
+  cache: {
+    enabled: process.env.NODE_ENV === 'production',
+    maxSize: 500,      // Max number of templates to store
+    development: false // Set to true to bypass cache during development
+  }
+})
+```
+
+### How It Works
+
+1.  **Hash-based Invalidation**: Prism generates a content hash for every template. If the file changes, the cache is automatically invalidated.
+2.  **LRU Eviction**: When the `maxSize` is reached, the Least Recently Used templates are removed to prevent memory bloat.
+3.  **Nano-overhead**: The caching layer is designed for extreme speed, handling 10,000 renders in just 35ms.
+
+---
+
+## Static Site Generation (SSG)
+
+Prism provides a built-in `StaticSiteGenerator` for exporting your dynamic templates into high-performance static HTML.
+
+### Incremental Builds
+
+Save time by only rebuilding pages that have changed. Prism tracks content hashes in a `.build-manifest.json` file.
+
+```typescript
+const ssg = core.container.resolve('ssg')
+
+await ssg.exportIncremental('./dist-static', {
+  baseUrl: 'https://example.com',
+  incremental: true
+})
+```
+
+### Dynamic Routes
+
+Generate static pages for dynamic paths like `/blog/[slug]`.
+
+```typescript
+import { DynamicRouteResolver } from '@gravito/prism'
+
+const dynamicRoutes = [
+  {
+    pattern: '/blog/[slug]',
+    getStaticPaths: async () => {
+      const posts = await fetchPosts()
+      return posts.map(post => ({
+        params: { slug: post.slug },
+        data: post
+      }))
+    }
+  }
+]
+
+await ssg.exportDynamic(dynamicRoutes, './dist-static')
+```
+
 ---
 
 ## Controller Usage

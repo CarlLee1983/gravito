@@ -20,6 +20,10 @@ import { ConsoleLogger } from './Logger'
 import { PlanetCore } from './PlanetCore'
 import type { ServiceProvider } from './ServiceProvider'
 
+/**
+ * Application Config options for the Application class.
+ * @public
+ */
 export interface ApplicationConfig {
   /**
    * Base path of the application
@@ -145,15 +149,13 @@ export class Application {
     this.container = new Container()
     this.config = new ConfigManager(options.config ?? {})
 
-    // Initialize core with shared instances
+    // Initialize core with shared container
+    // Now PlanetCore uses the same container instance as Application
     this.core = new PlanetCore({
       logger: this.logger,
       config: options.config,
+      container: this.container,
     })
-
-    // Share container reference
-    // Note: PlanetCore creates its own container, so we need to use that
-    // In future, we might want to inject the container into PlanetCore
 
     this.events = this.core.events
 
@@ -236,8 +238,17 @@ export class Application {
 
           this.config.set(key, value)
           this.logger.info(`📋 Loaded config: ${key}`)
-        } catch (err) {
-          this.logger.warn(`Failed to load config ${file}:`, err)
+        } catch (error) {
+          // Enhanced error handling with type guards
+          if (error instanceof SyntaxError) {
+            this.logger.error(`Syntax error in config file ${file}:`, error.message)
+          } else if (error instanceof Error) {
+            this.logger.warn(`Failed to load config ${file}: ${error.message}`, {
+              stack: error.stack,
+            })
+          } else {
+            this.logger.warn(`Failed to load config ${file}:`, error)
+          }
         }
       }
     } catch {
@@ -285,8 +296,19 @@ export class Application {
             this.core.register(provider)
             this.logger.info(`🔌 Registered provider: ${ProviderClass.name}`)
           }
-        } catch (err) {
-          this.logger.warn(`Failed to load provider ${file}:`, err)
+        } catch (error) {
+          // Enhanced error handling with type guards
+          if (error instanceof SyntaxError) {
+            this.logger.error(`Syntax error in provider file ${file}:`, error.message)
+          } else if (error instanceof TypeError) {
+            this.logger.warn(`Invalid provider class in ${file}: ${error.message}`)
+          } else if (error instanceof Error) {
+            this.logger.warn(`Failed to load provider ${file}: ${error.message}`, {
+              stack: error.stack,
+            })
+          } else {
+            this.logger.warn(`Failed to load provider ${file}:`, error)
+          }
         }
       }
     } catch {
@@ -301,7 +323,8 @@ export class Application {
    * @returns The resolved service
    */
   make<T>(key: string): T {
-    return this.core.container.make<T>(key)
+    // Now uses the shared container instance
+    return this.container.make<T>(key)
   }
 
   /**
@@ -311,7 +334,8 @@ export class Application {
    * @returns True if bound
    */
   has(key: string): boolean {
-    return this.core.container.has(key)
+    // Now uses the shared container instance
+    return this.container.has(key)
   }
 
   /**

@@ -182,7 +182,23 @@ export class DocsService {
     const fsLocale = locale === 'zh' ? 'zh-TW' : 'en'
 
     // Construct file path: docs/{locale}/{slug}.md
-    const filePath = path.join(DOCS_ROOT, fsLocale, `${slug}.md`)
+    let filePath = path.join(DOCS_ROOT, fsLocale, `${slug}.md`)
+
+    // Fallback logic
+    try {
+      await fs.access(filePath)
+    } catch {
+      if (fsLocale !== 'en') {
+        // Fallback to English
+        const fallbackPath = path.join(DOCS_ROOT, 'en', `${slug}.md`)
+        try {
+          await fs.access(fallbackPath)
+          filePath = fallbackPath
+        } catch {
+          // Both missing, return null (handled by catch below)
+        }
+      }
+    }
 
     try {
       const raw = await fs.readFile(filePath, 'utf-8')
@@ -213,8 +229,38 @@ export class DocsService {
           .replace(/'/g, '&#039;')
       }
 
-      // Add custom renderer for code blocks and links
+      // Add custom renderer for code blocks, links, and images
       const renderer = new marked.Renderer()
+
+      // Use ImageService for optimized markdown images
+      const imageService = await import('@gravito/prism').then((m) => new m.ImageService())
+
+      renderer.image = ({
+        href,
+        title,
+        text,
+      }: {
+        href: string
+        title?: string | null
+        text: string
+      }) => {
+        try {
+          // If it's a local path, try to optimize it
+          if (!href.startsWith('http') && !href.startsWith('//')) {
+            return imageService.generateImageTag({
+              src: href,
+              alt: text,
+              usePicture: true,
+              formatNegotiation: true,
+            })
+          }
+        } catch (e) {
+          console.warn(`[DocsService] Failed to optimize image: ${href}`, e)
+        }
+
+        // Fallback to standard img tag
+        return `<img src="${href}" alt="${text}"${title ? ` title="${title}"` : ''} />`
+      }
 
       // Transform Markdown links to SPA routes
       renderer.link = ({
@@ -431,6 +477,7 @@ export class DocsService {
             i18n: '國際化 (I18n)',
             deployment: '正式環境部署',
             enterprise_integration: '企業級整合',
+            official_site_arch: '官方網站架構',
             monitor: '觀察者系統 (Monitor)',
             cli: 'CLI 指令',
             plugins: '插件開發',
@@ -523,6 +570,7 @@ export class DocsService {
             i18n: 'Internationalization',
             deployment: 'Production Deployment',
             enterprise_integration: 'Enterprise Integration',
+            official_site_arch: 'Official Site Architecture',
             monitor: 'Monitoring (Monitor)',
             cli: 'CLI Commands',
             plugins: 'Plugin Development',
@@ -556,6 +604,7 @@ export class DocsService {
         path: '#',
         children: [
           { title: trans.architecture, path: `${prefix}/guide/core-concepts` },
+          { title: trans.official_site_arch, path: `${prefix}/guide/official-site-architecture` },
           { title: trans.ecosystem, path: `${prefix}/guide/ecosystem` },
           // Placeholder for now
           // { title: trans.lifecycle, path: `${prefix}/guide/lifecycle` },

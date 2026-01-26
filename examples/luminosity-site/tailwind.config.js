@@ -9,13 +9,17 @@ export default {
     theme: {
         extend: {
             colors: {
-                void: '#030303',
-                singularity: '#00F0FF',
-                event: '#7000FF',
-                panel: '#1A1A1A',
+                void: '#000000', 
+                singularity: '#10B981', // Emerald 500 - The core brand green
+                event: '#059669', // Darker emerald for gradients
+                accent: '#F97316', // Keeping orange for high-contrast CTA
+                panel: '#09090B',
+                surface: '#18181B',
             },
             fontFamily: {
-                sans: ['Inter', 'system-ui', 'sans-serif'],
+                heading: ['Poppins', 'system-ui', 'sans-serif'],
+                body: ['Open Sans', 'system-ui', 'sans-serif'],
+                mono: ['JetBrains Mono', 'monospace'],
             },
         },
     },

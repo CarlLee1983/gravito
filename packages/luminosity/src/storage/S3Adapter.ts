@@ -1,46 +1,69 @@
 import type { StorageAdapter } from './adapter'
 
+/**
+ * Minimal interface for an S3-compatible client.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface S3ClientLike {
+  /** Send a command to the S3 service. */
   send(command: any): Promise<any>
 }
 
+/**
+ * Configuration for the `S3Adapter`.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface S3AdapterConfig {
+  /** The S3 bucket name. */
   bucket: string
+  /** Optional AWS region. */
   region?: string
+  /** The S3 client instance. */
   client: S3ClientLike
-  // Minimal set of AWS SDK commands needed
+  /** Constructors for the required AWS SDK commands. */
   commands: {
     PutObjectCommand: new (args: any) => any
     GetObjectCommand: new (args: any) => any
     HeadObjectCommand: new (args: any) => any
-    DeleteObjectCommand: new (
-      args: any
-    ) => any
-    // For append, we might need to read -> concat -> write, or use multipart upload (complex)
-    // S3 doesn't support native append.
-    // Simulating append by reading + writing is slow for WAL.
-    // Alternative: Each log entry is a separate object? No, too many objects.
-    // Alternative: Use Kinesis/Firehose? Too complex.
-    // Alternative: Append to a buffer in memory and flush periodically?
+    DeleteObjectCommand: new (args: any) => any
   }
 }
 
 /**
- * S3 Storage Adapter
+ * S3Adapter implements the `StorageAdapter` interface for AWS S3.
  *
- * Note: S3 does not support atomic append.
- * This adapter implements 'append' by reading the full object and re-uploading it.
- * THIS IS NOT RECOMMENDED FOR HIGH WRITE VOLUME.
- * For high volume, use a database or a service that supports append (like Redis streams).
+ * Note: Since S3 does not support atomic appends, this adapter simulates
+ * 'append' by reading the entire object, concatenating the new content,
+ * and re-uploading the whole file. This is inefficient for large files
+ * or high write volumes.
+ *
+ * @public
+ * @since 3.0.0
  */
 export class S3Adapter implements StorageAdapter {
   constructor(private config: S3AdapterConfig) {}
 
+  /**
+   * Appends content to a file in S3.
+   *
+   * @param path - The S3 object key.
+   * @param content - The content to append.
+   */
   async append(path: string, content: string): Promise<void> {
     const current = await this.read(path).catch(() => '')
     await this.write(path, current + content)
   }
 
+  /**
+   * Writes content to an S3 object.
+   *
+   * @param path - The S3 object key.
+   * @param content - The content to write.
+   */
   async write(path: string, content: string): Promise<void> {
     const { PutObjectCommand } = this.config.commands
     await this.config.client.send(
@@ -53,6 +76,13 @@ export class S3Adapter implements StorageAdapter {
     )
   }
 
+  /**
+   * Reads content from an S3 object.
+   *
+   * @param path - The S3 object key.
+   * @returns The content as a string.
+   * @throws {Error} If the object cannot be read.
+   */
   async read(path: string): Promise<string> {
     const { GetObjectCommand } = this.config.commands
     try {
@@ -71,6 +101,12 @@ export class S3Adapter implements StorageAdapter {
     }
   }
 
+  /**
+   * Checks if an S3 object exists.
+   *
+   * @param path - The S3 object key.
+   * @returns True if the object exists.
+   */
   async exists(path: string): Promise<boolean> {
     const { HeadObjectCommand } = this.config.commands
     try {
@@ -86,6 +122,11 @@ export class S3Adapter implements StorageAdapter {
     }
   }
 
+  /**
+   * Deletes an S3 object.
+   *
+   * @param path - The S3 object key.
+   */
   async delete(path: string): Promise<void> {
     const { DeleteObjectCommand } = this.config.commands
     await this.config.client.send(
@@ -96,6 +137,14 @@ export class S3Adapter implements StorageAdapter {
     )
   }
 
+  /**
+   * Renames (moves) an S3 object.
+   *
+   * Implemented as a copy operation followed by a delete operation.
+   *
+   * @param oldPath - The source key.
+   * @param newPath - The destination key.
+   */
   async rename(oldPath: string, newPath: string): Promise<void> {
     // S3 Rename = Copy + Delete
     const content = await this.read(oldPath)
@@ -103,6 +152,12 @@ export class S3Adapter implements StorageAdapter {
     await this.delete(oldPath)
   }
 
+  /**
+   * Gets the size of an S3 object.
+   *
+   * @param path - The S3 object key.
+   * @returns The size in bytes.
+   */
   async size(path: string): Promise<number> {
     const { HeadObjectCommand } = this.config.commands
     try {
@@ -118,6 +173,11 @@ export class S3Adapter implements StorageAdapter {
     }
   }
 
+  /**
+   * No-op for S3 as directories are virtual.
+   *
+   * @param _path - The path.
+   */
   async ensureDir(_path: string): Promise<void> {
     // S3 is flat, no directories needed
   }

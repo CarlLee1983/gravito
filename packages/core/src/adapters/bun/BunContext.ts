@@ -7,6 +7,10 @@ import type {
 } from '../../http/types'
 import { BunRequest } from './BunRequest'
 
+/**
+ * Bun-optimized implementation of GravitoContext.
+ * @internal
+ */
 export class BunContext<V extends GravitoVariables = GravitoVariables>
   implements GravitoContext<V>
 {
@@ -15,6 +19,11 @@ export class BunContext<V extends GravitoVariables = GravitoVariables>
 
   // Context variables
   private _variables: Map<string, unknown> = new Map()
+
+  /**
+   * URL generator helper
+   */
+  public route!: (name: string, params?: Record<string, any>, query?: Record<string, any>) => string
 
   // Response state
   private _status: StatusCode = 200

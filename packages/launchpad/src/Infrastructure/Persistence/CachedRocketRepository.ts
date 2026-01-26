@@ -2,6 +2,15 @@ import type { CacheService } from '@gravito/core'
 import type { IRocketRepository } from '../../Domain/Interfaces'
 import { Rocket } from '../../Domain/Rocket'
 
+/**
+ * CachedRocketRepository implements the `IRocketRepository` interface using Gravito's `CacheService`.
+ *
+ * It provides a persistent (depending on cache driver) storage for Rocket
+ * metadata, allowing Launchpad to track container states across requests.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class CachedRocketRepository implements IRocketRepository {
   private CACHE_KEY = 'launchpad:rockets'
 

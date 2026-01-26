@@ -1,10 +1,19 @@
 import crypto from 'node:crypto'
 
+/**
+ * Options for the Encrypter class.
+ * @public
+ */
 export interface EncrypterOptions {
   key: string
   cipher?: string
 }
 
+/**
+ * Service for OpenSSL encryption/decryption.
+ * Compatible with Laravel's encryption format.
+ * @public
+ */
 export class Encrypter {
   private algorithm: string
   private key: Buffer

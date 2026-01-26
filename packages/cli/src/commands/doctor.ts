@@ -5,31 +5,77 @@ import path from 'node:path'
 
 import pc from 'picocolors'
 
+/**
+ * Options for the Gravito Doctor diagnostic command.
+ *
+ * @public
+ */
 type DoctorOptions = {
+  /** Whether to attempt automatic repairs for detected issues. */
   fix?: boolean
 }
 
+/**
+ * A diagnostic check function.
+ *
+ * @param context - The diagnostic context.
+ * @returns A promise that resolves with the diagnostic result.
+ * @private
+ */
 type DoctorCheck = (context: DoctorContext) => Promise<DoctorResult>
 
+/**
+ * Context provided to diagnostic checks.
+ *
+ * @public
+ */
 interface DoctorContext {
+  /** The current working directory. */
   cwd: string
+  /** The path to the .env file. */
   envPath?: string
+  /** Function to retrieve current environment variables. */
   getEnv: () => Record<string, string>
+  /** Function to reload environment variables from disk. */
   refreshEnv: () => Promise<void>
 }
 
+/**
+ * Result of a diagnostic check.
+ *
+ * @public
+ */
 interface DoctorResult {
+  /** The name of the check. */
   name: string
+  /** Whether the check passed. */
   ok: boolean
+  /** The severity of the issue if the check failed. */
   severity: 'info' | 'warning' | 'error'
+  /** A concise summary of the result. */
   summary: string
+  /** The root cause of the issue if the check failed. */
   rootCause?: string
+  /** The impact of the issue if the check failed. */
   impact?: string
+  /** A suggested command to fix the issue manually. */
   fixCommand?: string
+  /** A function to automatically fix the issue. */
   autoFix?: () => Promise<string>
+  /** A note about the fix that was applied. */
   fixNote?: string
 }
 
+/**
+ * Run Gravito health checks and diagnostics.
+ *
+ * Scans the project for common configuration issues, version mismatches,
+ * and environmental problems. Optionally attempts to fix identified issues.
+ *
+ * @param options - Diagnostic options.
+ * @returns A promise that resolves when the diagnostics are complete.
+ * @public
+ */
 export async function doctor(options: DoctorOptions = {}) {
   const cwd = process.cwd()
   let envState = await loadEnvFile(cwd)
@@ -89,6 +135,14 @@ export async function doctor(options: DoctorOptions = {}) {
   process.exit(issues.length > 0 ? 1 : 0)
 }
 
+/**
+ * Print a summary of diagnostic results to the console.
+ *
+ * @param successes - A list of successful check summaries.
+ * @param issues - A list of identified issues.
+ * @param autoFixEnabled - Whether auto-fix mode was enabled.
+ * @private
+ */
 function printSummary(successes: string[], issues: DoctorResult[], autoFixEnabled?: boolean) {
   console.log(pc.bold('\n🌡️  Gravito Doctor'))
 
@@ -129,6 +183,13 @@ function printSummary(successes: string[], issues: DoctorResult[], autoFixEnable
   }
 }
 
+/**
+ * Load and parse the .env file from the specified directory.
+ *
+ * @param cwd - The directory containing the .env file.
+ * @returns A promise that resolves with the parsed environment and the file path.
+ * @private
+ */
 async function loadEnvFile(cwd: string): Promise<{ env: Record<string, string>; path: string }> {
   const envPath = path.join(cwd, '.env')
   try {
@@ -139,6 +200,13 @@ async function loadEnvFile(cwd: string): Promise<{ env: Record<string, string>; 
   }
 }
 
+/**
+ * Parse a raw environment file string into a record of key-value pairs.
+ *
+ * @param raw - The raw .env file content.
+ * @returns A record of environment variables.
+ * @private
+ */
 function parseEnv(raw: string): Record<string, string> {
   const env: Record<string, string> = {}
 
@@ -164,6 +232,13 @@ function parseEnv(raw: string): Record<string, string> {
   return env
 }
 
+/**
+ * Diagnostic check for the presence of the .env file.
+ *
+ * @param context - The diagnostic context.
+ * @returns A promise that resolves with the diagnostic result.
+ * @private
+ */
 async function checkEnvFile(context: DoctorContext): Promise<DoctorResult> {
   const envPath = path.join(context.cwd, '.env')
   try {

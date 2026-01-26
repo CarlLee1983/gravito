@@ -1,6 +1,7 @@
-import { Head, Link } from '@inertiajs/react'
+import { Head } from '@inertiajs/react'
 import React from 'react'
 import Layout from '../components/Layout'
+import { StaticLink } from '../components/StaticLink'
 
 export default function Home({ msg, version }: { msg: string; version: string }) {
   const [count, setCount] = React.useState(0)
@@ -39,9 +40,9 @@ export default function Home({ msg, version }: { msg: string; version: string })
           <p style={{ color: 'var(--color-text-muted)', marginBottom: '1rem' }}>
             Click below to verify Inertia's client-side routing (no full reload):
           </p>
-          <Link href="/about" className="endpoint">
+          <StaticLink href="/about" className="endpoint">
             Go to About Page &rarr;
-          </Link>
+          </StaticLink>
         </div>
       </div>
     </Layout>

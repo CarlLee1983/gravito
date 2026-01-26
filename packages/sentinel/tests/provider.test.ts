@@ -21,24 +21,17 @@ describe('CallbackUserProvider', () => {
     expect(valid).toBe(true)
   })
 
-  it('falls back when callbacks are missing', async () => {
-    const originalLog = console.log
-    console.log = mock(() => {})
-
-    ;(global as any).MOCK_USERS = [{ id: 2, email: 'test@example.com' }]
-
+  it('returns null when callbacks are missing', async () => {
     const provider = new CallbackUserProvider(
       async (id) => ({ id, getAuthIdentifier: () => id }),
       async () => true
     )
 
     const user = await provider.retrieveByCredentials({ email: 'test@example.com' })
-    expect(user?.getAuthIdentifier()).toBe(2)
+    expect(user).toBeNull()
 
-    const valid = await provider.validateCredentials(user as any, { password: 'ignored' })
+    const valid = await provider.validateCredentials({} as any, { password: 'ignored' })
     expect(valid).toBe(true)
-
-    console.log = originalLog
   })
 
   it('handles missing token callback and remember token updates', async () => {

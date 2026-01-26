@@ -6,7 +6,7 @@
 
 import { DB } from '@gravito/atlas'
 import type { GravitoContext } from '@gravito/core'
-import type { InertiaService } from '@gravito/ion'
+import type { InertiaHelper } from '@gravito/ion'
 import { SeoMetadata } from '@gravito/luminosity'
 import { sql, TRUE } from '../../utils/db'
 
@@ -15,7 +15,7 @@ export class ShopController {
    * Home page - featured products and categories
    */
   static async index(ctx: GravitoContext) {
-    const inertia = ctx.get('inertia') as InertiaService
+    const inertia = ctx.get('inertia') as unknown as InertiaHelper
 
     // Get featured products
     const featuredResult = await DB.raw(
@@ -96,7 +96,7 @@ export class ShopController {
         },
       },
       twitter: {
-        card: 'summary_large_image',
+        card: 'summary_large_image' as const,
         site: '@gravito_dev',
       },
     }
@@ -120,7 +120,7 @@ export class ShopController {
    * Product listing with optional search
    */
   static async products(ctx: GravitoContext) {
-    const inertia = ctx.get('inertia') as InertiaService
+    const inertia = ctx.get('inertia') as unknown as InertiaHelper
 
     const search = ctx.req.query('search') || ''
     const categorySlug = ctx.req.query('category') || ''
@@ -195,7 +195,7 @@ export class ShopController {
    * Single product page
    */
   static async show(ctx: GravitoContext) {
-    const inertia = ctx.get('inertia') as InertiaService
+    const inertia = ctx.get('inertia') as unknown as InertiaHelper
 
     const slug = ctx.req.param('slug')
 
@@ -294,7 +294,7 @@ export class ShopController {
    * Category page
    */
   static async category(ctx: GravitoContext) {
-    const inertia = ctx.get('inertia') as InertiaService
+    const inertia = ctx.get('inertia') as unknown as InertiaHelper
 
     const slug = ctx.req.param('slug')
     const sort = ctx.req.query('sort') || 'latest'
@@ -376,7 +376,7 @@ export class ShopController {
    * Search page
    */
   static async search(ctx: GravitoContext) {
-    const inertia = ctx.get('inertia') as InertiaService
+    const inertia = ctx.get('inertia') as unknown as InertiaHelper
 
     const query = ctx.req.query('q') || ''
     const page = parseInt(ctx.req.query('page') || '1', 10)

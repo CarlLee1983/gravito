@@ -1,10 +1,10 @@
 import type { GravitoContext, GravitoNext } from '@gravito/core'
-import type { InertiaService } from '@gravito/ion'
+import type { InertiaHelper } from '@gravito/ion'
 import type { SessionService } from '@gravito/pulsar'
 import type { AuthManager } from '@gravito/sentinel'
 
 export async function handleInertiaRequests(ctx: GravitoContext, next: GravitoNext) {
-  const inertia = ctx.get('inertia') as InertiaService
+  const inertia = ctx.get('inertia') as InertiaHelper
   const auth = ctx.get('auth') as AuthManager
   const session = ctx.get('session') as SessionService
 

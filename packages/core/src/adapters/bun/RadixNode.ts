@@ -1,6 +1,10 @@
 import type { HttpMethod } from '../../http/types'
 import { NodeType, type RouteHandler } from './types'
 
+/**
+ * Node in the Radix Router tree.
+ * @internal
+ */
 export class RadixNode {
   // Path segment for this node (e.g., "users", ":id")
   public segment: string

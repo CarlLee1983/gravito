@@ -29,6 +29,10 @@ export interface Span {
   events: SpanEvent[]
 }
 
+/**
+ * Event recorded within a span.
+ * @public
+ */
 export interface SpanEvent {
   name: string
   timestamp: number

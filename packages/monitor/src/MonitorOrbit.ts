@@ -89,10 +89,10 @@ export class MonitorOrbit implements GravitoOrbit {
       tracing: this.tracingManager,
     }
 
-    core.services.set('monitor', monitorService)
-    core.services.set('health', this.healthRegistry)
-    core.services.set('metrics', this.metricsRegistry)
-    core.services.set('tracing', this.tracingManager)
+    core.container.instance('monitor', monitorService)
+    core.container.instance('health', this.healthRegistry)
+    core.container.instance('metrics', this.metricsRegistry)
+    core.container.instance('tracing', this.tracingManager)
 
     // Register routes
     const router = core.router

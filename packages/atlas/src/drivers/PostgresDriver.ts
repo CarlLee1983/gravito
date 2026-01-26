@@ -28,6 +28,8 @@ export class PostgresDriver implements DriverContract {
   private connected = false
   private transactionActive = false
   private transactionClient: PgClient | null = null
+  private preparedStatements = new Map<string, string>()
+  private statementCounter = 0
 
   constructor(private readonly config: PostgresConfig) {}
 
@@ -92,6 +94,7 @@ export class PostgresDriver implements DriverContract {
 
     this.connected = false
     this.transactionActive = false
+    this.preparedStatements.clear()
   }
 
   /**
@@ -162,6 +165,86 @@ export class PostgresDriver implements DriverContract {
       }
     } catch (error) {
       throw this.normalizeError(error, sql, bindings)
+    } finally {
+      if (!this.transactionActive && client !== this.transactionClient) {
+        ;(client as PgPoolClient).release?.()
+      }
+    }
+  }
+
+  /**
+   * Prepare a statement for repeated execution
+   */
+  async prepare(sql: string): Promise<string> {
+    // Check if already prepared
+    if (this.preparedStatements.has(sql)) {
+      return this.preparedStatements.get(sql)!
+    }
+
+    const name = `stmt_${++this.statementCounter}`
+    const client = await this.getClient()
+
+    try {
+      // Postgres PREPARE syntax: PREPARE name AS query
+      await client.query(`PREPARE ${name} AS ${sql}`)
+      this.preparedStatements.set(sql, name)
+      return name
+    } finally {
+      if (!this.transactionActive && client !== this.transactionClient) {
+        ;(client as PgPoolClient).release?.()
+      }
+    }
+  }
+
+  /**
+   * Execute a prepared statement
+   */
+  async executePrepared<T>(name: string, bindings: unknown[] = []): Promise<QueryResult<T>> {
+    const client = await this.getClient()
+    const params = bindings.map((b) => (b === undefined ? null : b))
+
+    try {
+      // EXECUTE name(params)
+      const placeholders = params.map((_, i) => `$${i + 1}`).join(', ')
+      const executeSql = `EXECUTE ${name}${placeholders ? `(${placeholders})` : ''}`
+
+      const result = await client.query(executeSql, params)
+
+      const fields = result.fields?.map((f: PgFieldInfo) => ({
+        name: f.name,
+        dataType: f.dataTypeID?.toString(),
+        tableId: f.tableID,
+      }))
+
+      return {
+        rows: result.rows as T[],
+        rowCount: result.rowCount ?? 0,
+        ...(fields ? { fields } : {}),
+      }
+    } catch (error) {
+      throw this.normalizeError(error, `EXECUTE ${name}`, bindings)
+    } finally {
+      if (!this.transactionActive && client !== this.transactionClient) {
+        ;(client as PgPoolClient).release?.()
+      }
+    }
+  }
+
+  /**
+   * Clear all prepared statements
+   */
+  async clearPreparedStatements(): Promise<void> {
+    const client = await this.getClient()
+
+    try {
+      for (const name of this.preparedStatements.values()) {
+        try {
+          await client.query(`DEALLOCATE ${name}`)
+        } catch {
+          // Ignore error if already deallocated
+        }
+      }
+      this.preparedStatements.clear()
     } finally {
       if (!this.transactionActive && client !== this.transactionClient) {
         ;(client as PgPoolClient).release?.()
@@ -244,24 +327,26 @@ export class PostgresDriver implements DriverContract {
   /**
    * Normalize PostgreSQL errors
    */
-  private normalizeError(error: any, sql: string, bindings: unknown[]): DatabaseError {
+  private normalizeError(error: unknown, sql: string, bindings: unknown[]): DatabaseError {
     // Postgres error codes: https://www.postgresql.org/docs/current/errcodes-appendix.html
-    const code = error.code
+    const err = error as { code?: string; message?: string }
+    const code = err.code
+    const message = err.message || String(error)
 
     if (code === '23505') {
-      return new UniqueConstraintError(error.message, error, sql, bindings)
+      return new UniqueConstraintError(message, error, sql, bindings)
     }
     if (code === '23503') {
-      return new ForeignKeyConstraintError(error.message, error, sql, bindings)
+      return new ForeignKeyConstraintError(message, error, sql, bindings)
     }
     if (code === '23502') {
-      return new NotNullConstraintError(error.message, error, sql, bindings)
+      return new NotNullConstraintError(message, error, sql, bindings)
     }
     if (code === '42P01') {
-      return new TableNotFoundError(error.message, error, sql, bindings)
+      return new TableNotFoundError(message, error, sql, bindings)
     }
 
-    return new DatabaseError(error.message, error, sql, bindings)
+    return new DatabaseError(message, error, sql, bindings)
   }
 
   /**

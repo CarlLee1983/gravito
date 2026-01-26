@@ -2,18 +2,42 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { createPortal } from 'react-dom'
 import { cn } from '../utils'
 
+/**
+ * Props for the ConfirmDialog component.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface ConfirmDialogProps {
+  /** Whether the dialog is visible. */
   open: boolean
+  /** Dialog title text. */
   title: string
+  /** Detailed confirmation message. */
   message: string
+  /** Text for the confirmation button. @default 'Confirm' */
   confirmText?: string
+  /** Text for the cancel button. @default 'Cancel' */
   cancelText?: string
+  /** Callback triggered when user confirms the action. */
   onConfirm: () => void
+  /** Callback triggered when user cancels the action. */
   onCancel: () => void
+  /** Visual style of the confirmation button. @default 'danger' */
   variant?: 'danger' | 'warning' | 'info'
+  /** Whether an action is currently in progress (shows a spinner). @default false */
   isProcessing?: boolean
 }
 
+/**
+ * A modal dialog used for user confirmation before performing sensitive actions.
+ *
+ * It provides a consistent UI for confirmations across the Zenith dashboard
+ * and supports different visual variants.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export function ConfirmDialog({
   open,
   title,
@@ -36,16 +60,21 @@ export function ConfirmDialog({
           onKeyDown={(e) => e.stopPropagation()}
         >
           <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.9, opacity: 0 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="bg-card border rounded-2xl p-6 max-w-md shadow-2xl"
+            initial={{ scale: 0.95, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.95, opacity: 0, y: 20 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            className="bg-zinc-900 border border-white/10 rounded-3xl p-8 max-w-md shadow-[0_0_50px_rgba(0,0,0,0.8)] scanline overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-xl font-black mb-2">{title}</h3>
-            <p className="text-sm text-muted-foreground mb-6 whitespace-pre-line">{message}</p>
-            <div className="flex gap-3 justify-end">
+            <h3 className="text-2xl font-black mb-3 font-heading tracking-tight text-white uppercase italic italic">
+              {title}
+            </h3>
+            <div className="h-px w-full bg-white/5 mb-6" />
+            <p className="text-[13px] font-bold text-muted-foreground mb-8 leading-relaxed uppercase tracking-wide opacity-80">
+              {message}
+            </p>
+            <div className="flex gap-4 justify-end">
               <button
                 type="button"
                 onClick={(e) => {
@@ -53,7 +82,7 @@ export function ConfirmDialog({
                   onCancel()
                 }}
                 disabled={isProcessing}
-                className="px-4 py-2 bg-muted text-foreground rounded-lg hover:bg-muted/80 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-6 py-3 bg-zinc-800 text-white/60 rounded-xl hover:bg-zinc-700 transition-all disabled:opacity-20 disabled:cursor-not-allowed text-[10px] font-black uppercase tracking-[0.2em] font-heading border border-white/5"
               >
                 {cancelText}
               </button>
@@ -65,10 +94,13 @@ export function ConfirmDialog({
                 }}
                 disabled={isProcessing}
                 className={cn(
-                  'px-4 py-2 rounded-lg text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2',
-                  variant === 'danger' && 'bg-red-500 hover:bg-red-600',
-                  variant === 'warning' && 'bg-amber-500 hover:bg-amber-600',
-                  variant === 'info' && 'bg-blue-500 hover:bg-blue-600'
+                  'px-6 py-3 rounded-xl text-black transition-all disabled:opacity-20 disabled:cursor-not-allowed flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] font-heading shadow-lg',
+                  variant === 'danger' &&
+                    'bg-red-500 shadow-[0_0_20px_rgba(239,68,68,0.3)] hover:bg-red-400',
+                  variant === 'warning' &&
+                    'bg-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.3)] hover:bg-amber-400',
+                  variant === 'info' &&
+                    'bg-primary shadow-[0_0_20px_rgba(0,240,255,0.3)] hover:bg-primary/80'
                 )}
               >
                 {isProcessing && (
@@ -90,7 +122,7 @@ export function ConfirmDialog({
                     />
                   </svg>
                 )}
-                {isProcessing ? 'Processing...' : confirmText}
+                {isProcessing ? 'Executing...' : confirmText}
               </button>
             </div>
           </motion.div>

@@ -3,5 +3,5 @@
 peer = true
 
 [test]
-# Enable coverage by default
 coverage = false
+coverageSkipTestFiles = true

@@ -118,8 +118,7 @@ describe('Polymorphic Relationships', () => {
     })
     spyOn(DB, 'connection').mockReturnValue(mockConn)
 
-    // @ts-expect-error - testing lazy load property
-    const post = await comment.commentable
+    const post = (await comment.commentable) as Post
     expect(post).toBeInstanceOf(Post)
     expect(post.title).toBe('Atlas Rocks')
   })
@@ -137,8 +136,7 @@ describe('Polymorphic Relationships', () => {
     })
     spyOn(DB, 'connection').mockReturnValue(mockConn)
 
-    // @ts-expect-error - testing lazy load property
-    const video = await comment.commentable
+    const video = (await comment.commentable) as Video
     expect(video).toBeInstanceOf(Video)
     expect(video.url).toBe('http://video.com')
   })

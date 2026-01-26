@@ -21,27 +21,20 @@ const manager = new RedisManager()
 
 /**
  * Redis Facade
- * Provides static methods for Redis operations
+ *
+ * Provides static methods for Redis operations with support for multiple
+ * named connections and automated connection management.
  *
  * @example
  * ```typescript
- * import { Redis } from '@gravito/plasma'
+ * import { Redis } from '@gravito/plasma';
  *
- * // Configure
- * Redis.configure({
- *   default: 'main',
- *   connections: {
- *     main: { host: 'localhost', port: 6379 }
- *   }
- * })
- *
- * // Connect
- * await Redis.connect()
- *
- * // Use
- * await Redis.set('key', 'value', { ex: 3600 })
- * const value = await Redis.get('key')
+ * await Redis.set('user:1', JSON.stringify({ name: 'John' }), { ex: 3600 });
+ * const val = await Redis.get('user:1');
  * ```
+ *
+ * @public
+ * @since 3.0.0
  */
 export class Redis {
   // ============================================================================
@@ -133,6 +126,27 @@ export class Redis {
    */
   static async ping(): Promise<string> {
     return await manager.getDefault().ping()
+  }
+
+  /**
+   * Remove a connection.
+   *
+   * Disconnects the connection if active and removes its configuration.
+   *
+   * @param name - The name of the connection.
+   */
+  static async removeConnection(name: string): Promise<void> {
+    await manager.removeConnection(name)
+  }
+
+  /**
+   * Check if a connection exists.
+   *
+   * @param name - The name of the connection.
+   * @returns True if configured, false otherwise.
+   */
+  static hasConnection(name: string): boolean {
+    return manager.hasConnection(name)
   }
 
   // ============================================================================

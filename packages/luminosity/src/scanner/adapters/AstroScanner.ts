@@ -3,41 +3,56 @@ import { extname, join } from 'node:path'
 import type { RouteScanner, ScannedRoute } from '../types'
 import { extractParams, isDynamicRoute, matchesPatterns, normalizePath } from '../utils'
 
+/**
+ * Options for configuring the `AstroScanner`.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface AstroScannerOptions {
-  /** Pages directory path (default: ./src/pages) */
+  /** Path to the Astro pages directory. @default './src/pages' */
   pagesDir?: string
 
-  /** Exclude certain route patterns from scanning */
+  /** An array of patterns (strings or RegExps) to exclude from the sitemap. */
   excludePatterns?: (string | RegExp)[]
 
-  /** Only include routes matching these patterns */
+  /** If provided, only routes matching these patterns will be included. */
   includePatterns?: (string | RegExp)[]
 
-  /** Current working directory (default: process.cwd()) */
+  /** The current working directory for resolving relative paths. @default process.cwd() */
   cwd?: string
 }
 
 /**
- * AstroScanner
+ * AstroScanner automatically discovers routes from an Astro project's filesystem.
  *
- * Scans routes from Astro file system (src/pages).
- * Supports .astro, .md, .mdx, .ts, .js files.
+ * It scans the `src/pages` directory and handles `.astro`, `.md`, `.mdx`, `.ts`,
+ * and `.js` files, converting Astro's dynamic segment syntax (e.g., `[slug].astro`)
+ * into standard route parameters.
  *
  * @example
  * ```typescript
- * import { AstroScanner, SitemapBuilder } from '@gravito/luminosity'
+ * import { AstroScanner } from '@gravito/luminosity/scanner';
  *
- * const builder = new SitemapBuilder({
- *   scanner: new AstroScanner({ pagesDir: './src/pages' }),
- *   hostname: 'https://example.com'
- * })
+ * const scanner = new AstroScanner({
+ *   excludePatterns: ['/admin/**']
+ * });
+ * const routes = await scanner.scan();
  * ```
+ *
+ * @public
+ * @since 3.0.0
  */
 export class AstroScanner implements RouteScanner {
   readonly framework = 'astro'
 
   constructor(private options: AstroScannerOptions = {}) {}
 
+  /**
+   * Scans the Astro pages directory for routes.
+   *
+   * @returns A promise resolving to the list of scanned routes.
+   */
   async scan(): Promise<ScannedRoute[]> {
     const routes: ScannedRoute[] = []
     const cwd = this.options.cwd ?? process.cwd()

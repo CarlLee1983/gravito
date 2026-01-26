@@ -4,6 +4,8 @@
  * React hook for accessing SSG utilities.
  */
 
+import type { AbsolutePath, Locale } from '@gravito/freeze'
+import { asAbsolutePath } from '@gravito/freeze'
 import { useCallback } from 'react'
 import { useFreezeContext } from './provider'
 
@@ -14,15 +16,15 @@ export interface UseFreezeReturn {
   /** Whether currently in static site mode */
   isStatic: boolean
   /** Current locale */
-  locale: string
+  locale: Locale
   /** Get localized path */
-  getLocalizedPath: (path: string, locale?: string) => string
+  getLocalizedPath: (path: string | AbsolutePath, locale?: string | Locale) => AbsolutePath
   /** Switch locale while preserving path */
-  switchLocale: (newLocale: string) => string
+  switchLocale: (newLocale: string | Locale) => AbsolutePath
   /** Get current path locale */
-  getLocaleFromPath: (path: string) => string
+  getLocaleFromPath: (path: string | AbsolutePath) => Locale
   /** Navigate to a different locale */
-  navigateToLocale: (newLocale: string) => void
+  navigateToLocale: (newLocale: string | Locale) => void
 }
 
 /**
@@ -64,9 +66,16 @@ export function useFreeze(): UseFreezeReturn {
   const switchLocale = useCallback(
     (newLocale: string) => {
       if (typeof window === 'undefined') {
-        return `/${newLocale}`
+        return asAbsolutePath(`/${newLocale}`)
       }
-      return detector.switchLocale(window.location.pathname, newLocale)
+
+      // Preserve existing query parameters but remove 'lang' to avoid conflicts
+      const params = new URLSearchParams(window.location.search)
+      params.delete('lang')
+      const search = params.toString()
+
+      const newPath = detector.switchLocale(window.location.pathname, newLocale)
+      return search ? asAbsolutePath(`${newPath}?${search}`) : newPath
     },
     [detector]
   )

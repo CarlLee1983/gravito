@@ -1,6 +1,12 @@
 import { ConfigLoader, IncrementalStrategy, SeoEngine } from '@gravito/luminosity'
 import pc from 'picocolors'
 
+/**
+ * Dependencies for the `compact` command, supporting dependency injection for testing.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface CompactCommandDeps {
   ConfigLoader?: typeof ConfigLoader
   SeoEngine?: typeof SeoEngine

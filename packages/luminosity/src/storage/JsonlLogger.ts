@@ -2,13 +2,32 @@ import type { SitemapEntry } from '../interfaces'
 import type { StorageAdapter } from './adapter'
 import { FileSystemAdapter } from './FileSystemAdapter'
 
+/**
+ * Represents a single operation in the incremental sitemap log.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface LogEntry {
+  /** The operation type: 'add' (includes update) or 'remove'. */
   op: 'add' | 'remove'
+  /** Epoch timestamp in milliseconds. */
   timestamp: number
+  /** The sitemap entry data (required for 'add' operations). */
   entry?: SitemapEntry
-  url?: string // For remove op
+  /** The target URL (required for 'remove' operations). */
+  url?: string
 }
 
+/**
+ * JsonlLogger implements a Write-Ahead Log (WAL) using newline-delimited JSON.
+ *
+ * It provides durable storage for incremental sitemap updates, allowing
+ * for atomic appends and full log replays during compaction.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class JsonlLogger {
   private adapter: StorageAdapter
 
@@ -20,7 +39,9 @@ export class JsonlLogger {
   }
 
   /**
-   * Append a single operation to the log
+   * Append a single operation to the log.
+   *
+   * @param entry - The operation to log.
    */
   async append(entry: LogEntry): Promise<void> {
     const line = `${JSON.stringify(entry)}\n`
@@ -28,7 +49,11 @@ export class JsonlLogger {
   }
 
   /**
-   * Read all entries from log
+   * Read all entries from the log.
+   *
+   * Parses the file line by line. Skips any lines that fail to parse as JSON.
+   *
+   * @returns A promise resolving to an array of log entries.
    */
   async readAll(): Promise<LogEntry[]> {
     if (!(await this.adapter.exists(this.logPath))) {
@@ -49,17 +74,29 @@ export class JsonlLogger {
       .filter((x) => x !== null) as LogEntry[]
   }
 
+  /**
+   * Get the current size of the log file.
+   *
+   * @returns The size in bytes.
+   */
   async getSize(): Promise<number> {
     return this.adapter.size(this.logPath)
   }
 
+  /**
+   * Delete the log file.
+   */
   async delete(): Promise<void> {
     await this.adapter.delete(this.logPath)
   }
 
   /**
-   * Filter out corrupted lines and rewrite the log file
-   * @returns number of corrupted lines removed
+   * Filter out corrupted lines and rewrite the log file.
+   *
+   * Reads the entire file, filters out invalid JSON lines, and writes it back.
+   * This is an atomic operation using a temporary file and rename.
+   *
+   * @returns A promise resolving to the number of corrupted lines removed.
    */
   async repairWAL(): Promise<number> {
     if (!(await this.adapter.exists(this.logPath))) {

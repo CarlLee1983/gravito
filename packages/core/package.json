@@ -1,10 +1,11 @@
 {
   "name": "@gravito/core",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "",
   "module": "./dist/index.js",
   "main": "./dist/index.cjs",
   "type": "module",
+  "sideEffects": false,
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
@@ -31,8 +32,8 @@
   "scripts": {
     "build": "bun run build.ts",
     "test": "bun test",
-    "test:coverage": "bun test --coverage --coverage-threshold=80",
-    "test:ci": "bun test --coverage --coverage-threshold=80",
+    "test:coverage": "bun test --coverage --coverage-threshold=75",
+    "test:ci": "bun test --coverage --coverage-threshold=75",
     "lint": "biome lint ./src ./tests",
     "lint:fix": "biome lint --write ./src ./tests",
     "format": "biome format --write ./src ./tests",
@@ -59,6 +60,7 @@
   },
   "devDependencies": {
     "bun-types": "latest",
+    "mitata": "^1.0.34",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3"
   },

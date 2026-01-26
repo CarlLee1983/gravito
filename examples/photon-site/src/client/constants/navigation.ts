@@ -43,8 +43,8 @@ export const navGroups: NavGroup[] = [
   {
     category: 'TECHNICAL_ARCHITECTURE',
     items: [
-      { id: 'patterns', label: 'PATTERN_GALLERY', icon: Layers, href: '/patterns' },
       { id: 'routing', label: 'ROUTING_SYSTEM', icon: Share2, href: '/docs/routing' },
+      { id: 'patterns', label: 'PATTERN_GALLERY', icon: Layers, href: '/patterns' },
       { id: 'proxy', label: 'PROXIES_GATEWAY', icon: Globe, href: '/docs/proxy' },
       { id: 'cbor', label: 'CBOR_PROTOCOL', icon: Cpu, href: '/docs/cbor' },
       { id: 'htmx', label: 'HTMX_PRISM_HDA', icon: Layers, href: '/docs/htmx' },

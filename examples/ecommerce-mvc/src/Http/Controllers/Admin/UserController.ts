@@ -6,7 +6,7 @@
 
 import { DB } from '@gravito/atlas'
 import type { GravitoContext } from '@gravito/core'
-import type { InertiaService } from '@gravito/ion'
+import type { InertiaHelper } from '@gravito/ion'
 import { FALSE, sql, TRUE } from '../../../utils/db'
 
 export class AdminUserController {
@@ -14,7 +14,7 @@ export class AdminUserController {
    * User list
    */
   static async index(ctx: GravitoContext) {
-    const inertia = ctx.get('inertia') as InertiaService
+    const inertia = ctx.get('inertia') as unknown as InertiaHelper
 
     const page = parseInt(ctx.req.query('page') || '1', 10)
     const search = ctx.req.query('search') || ''
@@ -124,7 +124,7 @@ export class AdminUserController {
    * View user details with orders
    */
   static async show(ctx: GravitoContext) {
-    const inertia = ctx.get('inertia') as InertiaService
+    const inertia = ctx.get('inertia') as unknown as InertiaHelper
 
     const id = parseInt(ctx.req.param('id') || '0', 10)
 

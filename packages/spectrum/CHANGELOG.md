@@ -1,5 +1,24 @@
 # @gravito/spectrum
 
+## 3.0.2
+
+### Patch Changes
+
+- Fixed config consistency: `maxItems` now properly passed to storage backends during initialization
+- Enhanced FileStorage.prune() to handle logs and queries in addition to requests
+- Added request-log-query correlation via `requestId` field for better debugging
+- Improved SSE connection cleanup to prevent memory leaks from disconnected clients
+- Added CSRF protection for POST endpoints (`/clear`, `/replay`) for enhanced security
+- Added EventSource cleanup in Vue dashboard via `unmounted` lifecycle hook
+- Updated dashboard UI to send CSRF tokens with POST requests and handle validation errors
+
+## 3.0.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @gravito/core@1.2.1
+
 ## 3.0.0
 
 ### Patch Changes

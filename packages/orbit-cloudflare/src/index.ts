@@ -7,10 +7,26 @@ import type { Gravito } from '@gravito/core/engine'
  * Automatically binds Cloudflare Worker environment variables (KV, R2, etc.)
  * to the Gravito context and service container.
  */
+/**
+ * OrbitCloudflare provides seamless integration with the Cloudflare Workers runtime.
+ * It automatically maps Cloudflare Environment Bindings (KV, R2, D1, Durable Objects)
+ * to the Gravito context, allowing you to access them via `ctx.get('BINDING_NAME')`.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export const OrbitCloudflare = {
+  /** The unique name of the orbit */
   name: 'cloudflare',
+  /** Current version of the orbit */
   version: '1.0.0',
 
+  /**
+   * Initializes the orbit by registering a global middleware that
+   * injects Cloudflare environment bindings into the request context.
+   *
+   * @param core - The PlanetCore instance.
+   */
   async boot(core: any) {
     // 1. Register global middleware to map ctx.env -> ctx variables
     core.adapter.useGlobal(async (ctx: GravitoContext, next: GravitoNext) => {
@@ -28,27 +44,45 @@ export const OrbitCloudflare = {
 }
 
 /**
- * Helper to define Cloudflare bindings in GravitoVariables
+ * Utility type helper for defining standard Cloudflare bindings in Gravito's type system.
  *
  * @example
+ * ```typescript
  * declare module '@gravito/core' {
  *   interface GravitoVariables extends CloudflareBindings<{
- *     MY_KV: KVNamespace
- *     MY_BUCKET: R2Bucket
+ *     USERS_KV: KVNamespace;
+ *     DOCS_BUCKET: R2Bucket;
  *   }> {}
  * }
+ * ```
+ * @public
+ * @since 3.0.0
  */
 export type CloudflareBindings<T extends Record<string, unknown>> = T
 
+/**
+ * Configuration options for the Cloudflare Worker handler adapter.
+ *
+ * Currently serves as a placeholder for future configuration options such as
+ * KV caching strategies, Durable Object namespaces, or custom fetch handlers.
+ *
+ * @public
+ */
 // biome-ignore lint/complexity/noBannedTypes: Placeholder
 export type CloudflareOptions = {}
 
 /**
- * Standard Cloudflare Worker handler for Gravito
+ * A specialized factory that creates a standard Cloudflare Worker entry point
+ * (fetch handler) for a Gravito application.
+ *
+ * @param app - The Gravito application instance.
+ * @param _options - Additional Cloudflare-specific options.
+ * @returns An object compatible with Cloudflare Worker's default export.
+ * @public
  */
 export const handle = (app: Gravito, _options: CloudflareOptions = {}) => {
   return {
-    fetch: async (request: Request, env: any, _executionCtx: ExecutionContext) => {
+    fetch: async (request: Request, _env: any, _executionCtx: ExecutionContext) => {
       // In a real implementation, the adapter would handle env/executionCtx
       // For now, we assume Gravito.fetch is the entry point
       return app.fetch(request)

@@ -1,21 +1,64 @@
-import type { SitemapProvider, SitemapStorage, SitemapStreamOptions } from '../types'
+import type {
+  ShardInfo,
+  ShardManifest,
+  SitemapEntry,
+  SitemapProvider,
+  SitemapStorage,
+  SitemapStreamOptions,
+} from '../types'
 import type { ShadowProcessor } from './ShadowProcessor'
 import { ShadowProcessor as ShadowProcessorImpl } from './ShadowProcessor'
 import { SitemapIndex } from './SitemapIndex'
 import { SitemapStream } from './SitemapStream'
 
+/**
+ * Options for configuring the `SitemapGenerator`.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface SitemapGeneratorOptions extends SitemapStreamOptions {
+  /** The storage backend where the sitemap files will be written. */
   storage: SitemapStorage
+  /** An array of providers that supply the entries to be included in the sitemap. */
   providers: SitemapProvider[]
-  maxEntriesPerFile?: number // Default 50000
-  filename?: string // Default 'sitemap.xml' (index)
+  /** Maximum number of entries per individual sitemap file. @default 50000 */
+  maxEntriesPerFile?: number
+  /** The name of the main sitemap or sitemap index file. @default 'sitemap.xml' */
+  filename?: string
+  /** Whether to generate a shard manifest file. @default false */
+  generateManifest?: boolean
+  /** Configuration for staging files before atomic deployment. */
   shadow?: {
+    /** Whether shadow processing is enabled. */
     enabled: boolean
+    /** Deployment mode: 'atomic' or 'versioned'. */
     mode: 'atomic' | 'versioned'
   }
+  /** Optional callback to track generation progress. */
   onProgress?: (progress: { processed: number; total: number; percentage: number }) => void
 }
 
+/**
+ * SitemapGenerator is the primary orchestrator for creating sitemaps in Gravito.
+ *
+ * It coordinates multiple `SitemapProvider`s, handles file sharding when
+ * URL limits are reached, and uses a `ShadowProcessor` for atomic deployments.
+ * It automatically generates a sitemap index if multiple files are produced.
+ *
+ * @example
+ * ```typescript
+ * const generator = new SitemapGenerator({
+ *   baseUrl: 'https://example.com',
+ *   storage: new DiskSitemapStorage('./public'),
+ *   providers: [new RouteScanner()]
+ * });
+ * await generator.run();
+ * ```
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class SitemapGenerator {
   private options: SitemapGeneratorOptions
   private shadowProcessor: ShadowProcessor | null = null
@@ -27,7 +70,7 @@ export class SitemapGenerator {
       ...options,
     }
 
-    // 初始化影子處理器
+    // Initialize shadow processor
     if (this.options.shadow?.enabled) {
       this.shadowProcessor = new ShadowProcessorImpl({
         storage: this.options.storage,
@@ -37,6 +80,12 @@ export class SitemapGenerator {
     }
   }
 
+  /**
+   * Orchestrates the sitemap generation process.
+   *
+   * This method scans all providers, handles sharding, generates the XML files,
+   * and optionally creates a sitemap index and manifest.
+   */
   async run(): Promise<void> {
     let shardIndex = 1
     let currentCount = 0
@@ -50,7 +99,7 @@ export class SitemapGenerator {
       pretty: this.options.pretty,
     })
 
-    // 用於標記是否已進入多分片模式
+    const shards: ShardInfo[] = []
     let isMultiFile = false
 
     const flushShard = async () => {
@@ -59,8 +108,16 @@ export class SitemapGenerator {
       const baseName = this.options.filename?.replace(/\.xml$/, '')
       const filename = `${baseName}-${shardIndex}.xml`
       const xml = currentStream.toXML()
+      const entries = currentStream.getEntries()
 
-      // 使用影子處理器（如果啟用）
+      shards.push({
+        filename,
+        from: this.normalizeUrl(entries[0].url),
+        to: this.normalizeUrl(entries[entries.length - 1].url),
+        count: entries.length,
+        lastmod: new Date(),
+      })
+
       if (this.shadowProcessor) {
         await this.shadowProcessor.addOperation({ filename, content: xml })
       } else {
@@ -107,29 +164,59 @@ export class SitemapGenerator {
       }
     }
 
-    // 判斷是否需要生成索引文件
+    const writeManifest = async () => {
+      if (!this.options.generateManifest) return
+
+      const manifest: ShardManifest = {
+        version: 1,
+        generatedAt: new Date(),
+        baseUrl: this.options.baseUrl,
+        maxEntriesPerShard: this.options.maxEntriesPerFile!,
+        sort: 'url-lex',
+        shards,
+      }
+
+      const manifestFilename =
+        this.options.filename?.replace(/\.xml$/, '-manifest.json') || 'sitemap-manifest.json'
+      const content = JSON.stringify(manifest, null, this.options.pretty ? 2 : 0)
+
+      if (this.shadowProcessor) {
+        await this.shadowProcessor.addOperation({ filename: manifestFilename, content })
+      } else {
+        await this.options.storage.write(manifestFilename, content)
+      }
+    }
+
     if (!isMultiFile) {
-      // 單文件模式：直接將當前流寫入目標文件 (sitemap.xml)
       const xml = currentStream.toXML()
+      const entries = currentStream.getEntries()
+
+      shards.push({
+        filename: this.options.filename!,
+        from: entries[0] ? this.normalizeUrl(entries[0].url) : '',
+        to: entries[entries.length - 1] ? this.normalizeUrl(entries[entries.length - 1].url) : '',
+        count: entries.length,
+        lastmod: new Date(),
+      })
 
       if (this.shadowProcessor) {
         await this.shadowProcessor.addOperation({
           filename: this.options.filename!,
           content: xml,
         })
+        await writeManifest()
         await this.shadowProcessor.commit()
       } else {
         await this.options.storage.write(this.options.filename!, xml)
+        await writeManifest()
       }
       return
     }
 
-    // 多文件模式：處理剩餘項目並生成索引
     if (currentCount > 0) {
       await flushShard()
     }
 
-    // Write Index
     const indexXml = index.toXML()
 
     if (this.shadowProcessor) {
@@ -137,14 +224,29 @@ export class SitemapGenerator {
         filename: this.options.filename!,
         content: indexXml,
       })
+      await writeManifest()
       await this.shadowProcessor.commit()
     } else {
       await this.options.storage.write(this.options.filename!, indexXml)
+      await writeManifest()
     }
   }
 
   /**
-   * 獲取影子處理器（如果啟用）
+   * Normalizes a URL to an absolute URL using the base URL.
+   */
+  private normalizeUrl(url: string): string {
+    if (url.startsWith('http')) {
+      return url
+    }
+    const { baseUrl } = this.options
+    const normalizedBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl
+    const normalizedPath = url.startsWith('/') ? url : `/${url}`
+    return normalizedBase + normalizedPath
+  }
+
+  /**
+   * Returns the shadow processor instance if enabled.
    */
   getShadowProcessor(): ShadowProcessor | null {
     return this.shadowProcessor

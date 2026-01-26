@@ -1,5 +1,9 @@
 import type { GravitoMiddleware } from '../types'
 
+/**
+ * Options for body size limiting
+ * @public
+ */
 export type BodySizeLimitOptions = {
   methods?: string[]
   requireContentLength?: boolean
@@ -7,6 +11,12 @@ export type BodySizeLimitOptions = {
 
 const defaultMethods = ['POST', 'PUT', 'PATCH', 'DELETE']
 
+/**
+ * Middleware to limit request body size.
+ * @param maxBytes - Maximum allowed size in bytes
+ * @param options - Configuration options
+ * @public
+ */
 export function bodySizeLimit(
   maxBytes: number,
   options: BodySizeLimitOptions = {}

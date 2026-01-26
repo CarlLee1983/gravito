@@ -1,5 +1,38 @@
 # example-ecommerce-mvc
 
+## 1.1.4
+
+### Patch Changes
+
+- Updated dependencies [6234dab]
+  - @gravito/prism@3.0.2
+
+## 1.1.3
+
+### Patch Changes
+
+- Updated dependencies [7711324]
+  - @gravito/constellation@3.0.2
+
+## 1.1.2
+
+### Patch Changes
+
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies
+  - @gravito/atlas@2.1.0
+  - @gravito/constellation@3.0.1
+  - @gravito/core@1.2.1
+  - @gravito/cosmos@3.0.1
+  - @gravito/ion@3.0.1
+  - @gravito/mass@3.0.1
+  - @gravito/monolith@3.0.1
+  - @gravito/prism@3.0.1
+  - @gravito/pulsar@3.0.1
+  - @gravito/sentinel@3.0.1
+  - @gravito/stasis@3.0.1
+
 ## 1.1.1
 
 ### Patch Changes

@@ -1,3 +1,12 @@
+/**
+ * Interface for distributed lock storage backends.
+ *
+ * Provides methods for acquiring, releasing, and managing
+ * distributed locks to prevent concurrent task execution.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface LockStore {
   /**
    * Attempt to acquire a lock

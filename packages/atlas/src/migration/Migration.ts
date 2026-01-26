@@ -5,10 +5,15 @@
 
 /**
  * Migration Interface
- * All migration classes must implement this interface
+ *
+ * All database migration classes must implement this interface.
+ * The `up` method is used to apply changes (e.g., create tables),
+ * while the `down` method is used to reverse those changes.
  *
  * @example
  * ```typescript
+ * import { Migration, Schema } from '@gravito/atlas'
+ *
  * export default class CreateUsersTable implements Migration {
  *   async up(): Promise<void> {
  *     await Schema.create('users', (table) => {
