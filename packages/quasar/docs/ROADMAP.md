@@ -2,7 +2,7 @@
 
 > 版本：v1.0.0
 > 最後更新：2025-01-26
-> 狀態：規劃中
+> 狀態：已發佈 (v1.0.0 Stable)
 
 ## 概述
 
@@ -36,9 +36,9 @@ Quasar 是 Gravito 生態系統中的通用監控代理，負責：
 
 | 類別 | 支援項目 |
 |------|----------|
-| **Probes** | BullMQ, Bull, Bee-Queue, Laravel, Redis List |
-| **Bridges** | BullMQ, Bee-Queue |
-| **Executors** | RetryJob, DeleteJob |
+| **Probes** | BullMQ, Bull, Bee-Queue, Laravel, Redis List, RabbitMQ, SQS, Kafka |
+| **Bridges** | BullMQ, Bull, Bee-Queue, Agenda, Generic (EventEmitter) |
+| **Executors** | RetryJob, DeleteJob, PauseQueue, ResumeQueue, CleanQueue, PrioritizeJob |
 | **系統探測** | Node.js, Bun, Deno |
 
 ## 階段規劃
@@ -62,6 +62,29 @@ Quasar 是 Gravito 生態系統中的通用監控代理，負責：
 - 狀態：✅ 已完成
 - 預期目標：提升測試覆蓋率與文件品質
 - 詳細內容：[Phase 4 詳細計劃](./improvement-plans/phase-4-testing.md)
+
+## 未來演進：Phase 5 (Next Generation)
+
+### 5.1 OpenTelemetry Tracing 深度整合
+- **目標**：提供分散式追蹤能力，串聯從生產者到消費者的完整路徑。
+- **改進項目**：
+  - [ ] 實作 `QuasarTracingInstrumentation` 自動注入 Trace Context。
+  - [ ] 支援將 Bridge 事件轉換為 OTel Spans。
+  - [ ] 支援導出至 OTLP 相容後端 (Jaeger, Honeycomb, Tempo)。
+  - [ ] 佇列延遲與處理時間的 Trace 視覺化整合。
+
+### 5.2 外掛系統與生態擴展
+- **目標**：允許使用者無需修改核心即可擴展 Quasar。
+- **改進項目**：
+  - [ ] 實作動態載入的外掛載入器。
+  - [ ] 提供 `QuasarPlugin` SDK。
+  - [ ] 支援社群驅動的 Probe/Bridge 貢獻。
+
+### 5.3 Web UI 整合增強
+- **目標**：提供本地化的輕量級監控儀表板。
+- **改進項目**：
+  - [ ] 內建基於 WebSocket 的即時日誌檢視器。
+  - [ ] 提供單機版簡易統計頁面。
 
 ## 改進重點摘要
 
