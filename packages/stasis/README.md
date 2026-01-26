@@ -1,13 +1,18 @@
-# @gravito/stasis
+# @gravito/stasis 🧊
 
-> The Standard Cache Orbit for Galaxy Architecture.
+> High-performance caching and rate-limiting Orbit for Gravito.
 
-Provides a Laravel-like cache layer with:
+`@gravito/stasis` provides a robust, developer-friendly caching layer for the Gravito framework. Inspired by Laravel's cache system, it offers a unified API for multiple storage backends, distributed locking, and integrated rate limiting.
 
-- `CacheManager` + `CacheRepository` API (`get/put/add/remember/forever/increment/decrement/pull`)
-- Multiple stores (`memory`, `file`, `null`, `custom`)
-- Tags (memory store) and Locks (`lock().block()`)
-- Hook events (`cache:hit`, `cache:miss`, `cache:write`, `cache:forget`, `cache:flush`, `cache:init`)
+## 🌟 Key Features
+
+- **🚀 Unified Cache API**: Simple `get`, `put`, `remember`, and `forever` methods across all drivers.
+- **💾 Multiple Storage Drivers**: Native support for Memory, Redis, File-based, and Null storage.
+- **🔒 Distributed Locks**: Prevent race conditions with atomic, cross-process locks.
+- **⚡ Flexible Caching (SWR)**: Stale-While-Revalidate support to serve data fast while refreshing in the background.
+- **🚦 Integrated Rate Limiting**: Throttling mechanism built directly on top of your cache infrastructure.
+- **🏷️ Cache Tagging**: Group related items for bulk invalidation (supported in Memory driver).
+- **🪝 Hook System**: Lifecycle events for monitoring cache hits, misses, and writes.
 
 ## 📦 Installation
 
@@ -15,113 +20,96 @@ Provides a Laravel-like cache layer with:
 bun add @gravito/stasis
 ```
 
-## 🚀 Usage
+## 🚀 Quick Start
+
+### 1. Register the Orbit
 
 ```typescript
-import { PlanetCore } from '@gravito/core';
-import orbitCache from '@gravito/stasis';
+import { PlanetCore, defineConfig } from '@gravito/core'
+import { OrbitStasis } from '@gravito/stasis'
 
-const core = new PlanetCore();
-
-// Initialize Cache Orbit (Laravel-like config)
-const cache = orbitCache(core, {
-  exposeAs: 'cache',
-  default: 'memory',
-  prefix: 'app_cache:',
-  defaultTtl: 60, // seconds
-  // Low-overhead hook dispatch (default: 'async')
-  // Use 'sync' + throwOnEventError for development/debug.
-  eventsMode: 'async',
-  stores: {
-    memory: { driver: 'memory', maxItems: 10_000 },
-    file: { driver: 'file', directory: './tmp/cache' },
-    null: { driver: 'null' },
+const config = defineConfig({
+  config: {
+    cache: {
+      default: 'memory',
+      stores: {
+        memory: { driver: 'memory', maxItems: 5000 },
+        redis: { driver: 'redis', connection: 'default' }
+      }
+    }
   },
-});
+  orbits: [new OrbitStasis()]
+})
 
-// Use in routes
-core.app.get('/heavy-data', async (c) => {
-  // Either use the manager returned from orbitCache(...) or request-scoped access:
-  // const cache = c.get('cache');
-
-  const data = await cache.remember('heavy_key', 300, async () => {
-    // Expensive computation...
-    return { result: 42 };
-  });
-  
-  return c.json(data);
-});
+const core = await PlanetCore.boot(config)
 ```
 
-### Tags (memory store)
+### 2. Basic Caching
 
-```ts
-const cache = c.get('cache');
-await cache.tags(['users']).set('user:1', { id: 1 }, 60);
-await cache.tags(['users']).clear(); // flush only tagged keys
+```typescript
+const cache = core.container.make('cache')
+
+// Simple storage
+await cache.put('stats:total', 100, 3600) // Store for 1 hour
+
+// "Remember" pattern (Get or Set)
+const users = await cache.remember('users:all', 300, async () => {
+  return await db.users.findMany()
+})
 ```
 
-### Locks
+### 3. Distributed Locking
 
-```ts
-const cache = c.get('cache');
-await cache.lock('jobs:rebuild', 10).block(5, async () => {
-  // exclusive section
-});
-```
+```typescript
+const lock = cache.lock('process-invoice:123', 10)
 
-### Flexible Cache (Stale-While-Revalidate)
-
-Serve stale data while refreshing in the background.
-
-```ts
-// TTL: 60s, Stale: 30s (Serve stale for up to 30s after expiry)
-const value = await cache.flexible('stats:daily', 60, 30, async () => {
-  return await fetchDailyStats();
-});
-```
-
-Configure background refresh behavior:
-
-```ts
-const cache = orbitCache(core, {
-  // ...
-  refreshTimeout: 10_000, // 10s timeout
-  maxRetries: 2,          // Retry twice on failure
-  retryDelay: 100,        // 100ms delay between retries
-});
-
-// Get stats about background refreshes
-const stats = cache.getFlexibleStats();
-console.log(stats); // { refreshCount: 5, refreshFailures: 0, avgRefreshTime: 120 }
-```
-
-### Memory Store Stats
-
-When using the `memory` driver, you can inspect cache usage:
-
-```ts
-import { MemoryStore } from '@gravito/stasis';
-
-const memoryStore = cache.getStore();
-// Note: You might need to cast or check instanceof if using typescript
-if (memoryStore instanceof MemoryStore) {
-  console.log(memoryStore.getStats());
-  // { hits: 100, misses: 20, size: 500, evictions: 10 }
+if (await lock.get()) {
+  try {
+    // Perform critical task...
+  } finally {
+    await lock.release()
+  }
 }
 ```
 
-## 🪝 Hooks
+## 🚦 Rate Limiting
 
-- `cache:miss` - Fired when data is not found in cache.
-- `cache:hit` - Fired when data is retrieved from cache.
-- `cache:write` - Fired when writing cache.
-- `cache:forget` - Fired when forgetting cache.
-- `cache:flush` - Fired when flushing cache.
-- `cache:init` - Fired when the orbit is installed.
+Easily throttle requests or actions using your cache backend.
 
-By default, hook events run in `async` mode and never block cache reads/writes. For debug, set:
+```typescript
+const limiter = cache.limiter()
 
-```ts
-orbitCache(core, { eventsMode: 'sync', throwOnEventError: true });
+if (await limiter.tooManyAttempts('login:127.0.0.1', 5)) {
+  const seconds = await limiter.availableIn('login:127.0.0.1')
+  throw new Error(`Too many attempts. Try again in ${seconds}s.`)
+}
+
+await limiter.hit('login:127.0.0.1', 60) // Decay in 60s
 ```
+
+## 🛠️ Supported Drivers
+
+| Driver | Best For | Features |
+|---|---|---|
+| **Memory** | Local dev & Small apps | Fast, Tags, LRU |
+| **Redis** | Distributed production | Multi-node, Locks, Persistent |
+| **File** | Simple persistence | No external deps |
+| **Null** | Testing / Disabling cache | No-op |
+
+## 🧩 API Reference
+
+### `CacheManager`
+- `cache.get(key, default?)`: Retrieve an item.
+- `cache.put(key, value, ttl?)`: Store an item.
+- `cache.remember(key, ttl, callback)`: Get or execute callback and store.
+- `cache.flexible(key, ttl, stale, callback)`: Stale-While-Revalidate.
+- `cache.increment / decrement`: Atomic numeric updates.
+- `cache.tags(['tag1']).flush()`: Invalidate by tag.
+
+## 🤝 Contributing
+
+We welcome contributions! Please see our [Contributing Guide](../../CONTRIBUTING.md) for details.
+
+## 📄 License
+
+MIT © Carl Lee

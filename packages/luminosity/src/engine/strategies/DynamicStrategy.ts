@@ -15,10 +15,20 @@ import type { SeoStrategy } from '../interfaces'
 export class DynamicStrategy implements SeoStrategy {
   constructor(private config: SeoConfig) {}
 
+  /**
+   * Initializes the strategy.
+   *
+   * @returns A promise that resolves immediately.
+   */
   async init(): Promise<void> {
     // No initialization needed for dynamic mode
   }
 
+  /**
+   * Fetches the latest entries from all configured resolvers.
+   *
+   * @returns A promise that resolves to an array of sitemap entries.
+   */
   async getEntries(): Promise<SitemapEntry[]> {
     const resolvers = this.config.resolvers as SeoResolver[]
     if (!resolvers || resolvers.length === 0) {
@@ -47,12 +57,22 @@ export class DynamicStrategy implements SeoStrategy {
     return results.flat()
   }
 
+  /**
+   * Manually adds a sitemap entry.
+   *
+   * @param _entry - The entry to add.
+   */
   async add(_entry: SitemapEntry): Promise<void> {
     console.warn(
       '[GravitoSeo] DynamicStrategy does not support manual add(). Update your data source instead.'
     )
   }
 
+  /**
+   * Manually removes a sitemap entry.
+   *
+   * @param _url - The URL to remove.
+   */
   async remove(_url: string): Promise<void> {
     console.warn(
       '[GravitoSeo] DynamicStrategy does not support manual remove(). Update your data source instead.'

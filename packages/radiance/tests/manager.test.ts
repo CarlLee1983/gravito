@@ -34,6 +34,21 @@ describe('BroadcastManager', () => {
     expect(core.logger.error).toHaveBeenCalled()
   })
 
+  it('suppresses driver errors when configured', async () => {
+    const core = createCore()
+    const manager = new BroadcastManager(core as any)
+    manager.setThrowOnError(false)
+    manager.setDriver({
+      broadcast: async () => {
+        throw new Error('boom')
+      },
+    })
+
+    await manager.broadcast({}, { name: 'public', type: 'public' }, { ok: true }, 'Event')
+
+    expect(core.logger.error).toHaveBeenCalled()
+  })
+
   it('authorizes channels with callback and driver', async () => {
     const core = createCore()
     const manager = new BroadcastManager(core as any)

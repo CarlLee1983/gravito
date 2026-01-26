@@ -47,11 +47,23 @@ export interface S3AdapterConfig {
 export class S3Adapter implements StorageAdapter {
   constructor(private config: S3AdapterConfig) {}
 
+  /**
+   * Appends content to a file in S3.
+   *
+   * @param path - The S3 object key.
+   * @param content - The content to append.
+   */
   async append(path: string, content: string): Promise<void> {
     const current = await this.read(path).catch(() => '')
     await this.write(path, current + content)
   }
 
+  /**
+   * Writes content to an S3 object.
+   *
+   * @param path - The S3 object key.
+   * @param content - The content to write.
+   */
   async write(path: string, content: string): Promise<void> {
     const { PutObjectCommand } = this.config.commands
     await this.config.client.send(
@@ -64,6 +76,13 @@ export class S3Adapter implements StorageAdapter {
     )
   }
 
+  /**
+   * Reads content from an S3 object.
+   *
+   * @param path - The S3 object key.
+   * @returns The content as a string.
+   * @throws {Error} If the object cannot be read.
+   */
   async read(path: string): Promise<string> {
     const { GetObjectCommand } = this.config.commands
     try {
@@ -82,6 +101,12 @@ export class S3Adapter implements StorageAdapter {
     }
   }
 
+  /**
+   * Checks if an S3 object exists.
+   *
+   * @param path - The S3 object key.
+   * @returns True if the object exists.
+   */
   async exists(path: string): Promise<boolean> {
     const { HeadObjectCommand } = this.config.commands
     try {
@@ -97,6 +122,11 @@ export class S3Adapter implements StorageAdapter {
     }
   }
 
+  /**
+   * Deletes an S3 object.
+   *
+   * @param path - The S3 object key.
+   */
   async delete(path: string): Promise<void> {
     const { DeleteObjectCommand } = this.config.commands
     await this.config.client.send(
@@ -107,6 +137,14 @@ export class S3Adapter implements StorageAdapter {
     )
   }
 
+  /**
+   * Renames (moves) an S3 object.
+   *
+   * Implemented as a copy operation followed by a delete operation.
+   *
+   * @param oldPath - The source key.
+   * @param newPath - The destination key.
+   */
   async rename(oldPath: string, newPath: string): Promise<void> {
     // S3 Rename = Copy + Delete
     const content = await this.read(oldPath)
@@ -114,6 +152,12 @@ export class S3Adapter implements StorageAdapter {
     await this.delete(oldPath)
   }
 
+  /**
+   * Gets the size of an S3 object.
+   *
+   * @param path - The S3 object key.
+   * @returns The size in bytes.
+   */
   async size(path: string): Promise<number> {
     const { HeadObjectCommand } = this.config.commands
     try {
@@ -129,6 +173,11 @@ export class S3Adapter implements StorageAdapter {
     }
   }
 
+  /**
+   * No-op for S3 as directories are virtual.
+   *
+   * @param _path - The path.
+   */
   async ensureDir(_path: string): Promise<void> {
     // S3 is flat, no directories needed
   }

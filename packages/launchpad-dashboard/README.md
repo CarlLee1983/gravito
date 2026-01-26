@@ -1,73 +1,61 @@
-# React + TypeScript + Vite
+# 🚀 Launchpad Dashboard
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+> Gravito Ground Station - Real-time mission control and telemetry dashboard.
 
-Currently, two official plugins are available:
+**Launchpad Dashboard** (@gravito/launchpad-dashboard) is a high-tech, industrial-grade monitoring interface designed for Gravito's telemetry data. It provides a real-time, "Mission Control" style view of your distributed systems, services, and modules.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## ✨ Features
 
-## React Compiler
+- **📡 Real-time Telemetry**: Secure uplink stream visualization for active modules and services.
+- **🖥️ Mission Control UI**: A highly immersive, CRT-inspired interface with scanlines and industrial data readouts.
+- **📊 Resource Monitoring**: Live tracking of CPU usage (Propulsion), memory allocation (Payload), and system latency.
+- **📟 Terminal Log Stream**: Integrated terminal for each module showing live execution logs with CRT effects.
+- **🔗 Global Command Log**: A centralized terminal at the bottom for global system events and assignments.
+- **⚡ Performance Oriented**: Built with React 19 and Vite for lightning-fast HMR and minimal overhead.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 📦 Installation
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+# In the launchpad-dashboard package directory
+bun install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 🚀 Usage
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Development
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+To start the dashboard in development mode with Hot Module Replacement (HMR):
+
+```bash
+bun run dev
 ```
+
+### Build
+
+To create an optimized production build:
+
+```bash
+bun run build
+```
+
+## 🛠️ Technical Stack
+
+- **Framework**: React 19
+- **Build Tool**: Vite
+- **Styling**: Tailwind CSS
+- **Icons**: Lucide React
+- **Typography**: Space Mono & Inter (Industrial aesthetic)
+
+## 🏗️ Architecture
+
+- **`src/App.tsx`**: The main dashboard layout including Houston header, mission grid, and global terminal.
+- **`src/hooks/useTelemetry.ts`**: Handles the logic for receiving and processing live telemetry data.
+- **`src/utils.ts`**: Styling utilities and tailwind-merge configuration.
+
+## 🛡️ Telemetry Security
+
+Launchpad Dashboard uses a secure uplink status indicator to ensure that you are always viewing verified data from your Ground Station.
+
+## 📝 License
+
+MIT © Carl Lee

@@ -68,6 +68,14 @@ export class ExpressScanner implements RouteScanner {
     private options: ExpressScannerOptions = {}
   ) {}
 
+  /**
+   * Scans the Express application for registered routes.
+   *
+   * Traverses the internal `_router.stack` to discover routes, including those
+   * in mounted routers.
+   *
+   * @returns A promise resolving to the list of scanned routes.
+   */
   async scan(): Promise<ScannedRoute[]> {
     const routes: ScannedRoute[] = []
 

@@ -5,10 +5,8 @@ import { MailChannel } from './channels/MailChannel'
 import { SlackChannel } from './channels/SlackChannel'
 import { SmsChannel } from './channels/SmsChannel'
 import { NotificationManager } from './NotificationManager'
+import type { BroadcastService, DatabaseService, MailService, QueueService } from './types'
 
-/**
- * OrbitFlare options.
- */
 /**
  * Options for configuring OrbitFlare.
  * @public
@@ -50,6 +48,7 @@ export class OrbitFlare implements GravitoOrbit {
   private options: OrbitFlareOptions
 
   constructor(options: OrbitFlareOptions = {}) {
+    this.validateOptions(options)
     this.options = {
       enableMail: true,
       enableDatabase: true,
@@ -70,6 +69,47 @@ export class OrbitFlare implements GravitoOrbit {
     return new OrbitFlare(options)
   }
 
+  private validateOptions(options: OrbitFlareOptions): void {
+    if (options.enableSlack) {
+      const slack = options.channels?.slack as { webhookUrl?: string } | undefined
+      if (!slack?.webhookUrl) {
+        throw new Error(
+          '[OrbitFlare] Slack channel enabled but webhookUrl not provided. ' +
+            'Configure channels.slack.webhookUrl or set enableSlack to false.'
+        )
+      }
+      if (!this.isValidUrl(slack.webhookUrl)) {
+        throw new Error(`[OrbitFlare] Invalid Slack webhook URL: ${slack.webhookUrl}`)
+      }
+    }
+
+    if (options.enableSms) {
+      const sms = options.channels?.sms as { provider?: string } | undefined
+      if (!sms?.provider) {
+        throw new Error(
+          '[OrbitFlare] SMS channel enabled but provider not specified. ' +
+            'Configure channels.sms.provider or set enableSms to false.'
+        )
+      }
+      const supportedProviders = ['twilio', 'aws-sns']
+      if (!supportedProviders.includes(sms.provider)) {
+        throw new Error(
+          `[OrbitFlare] Unsupported SMS provider: ${sms.provider}. ` +
+            `Supported providers: ${supportedProviders.join(', ')}`
+        )
+      }
+    }
+  }
+
+  private isValidUrl(url: string): boolean {
+    try {
+      new URL(url)
+      return true
+    } catch {
+      return false
+    }
+  }
+
   /**
    * Install OrbitFlare into PlanetCore.
    *
@@ -80,65 +120,78 @@ export class OrbitFlare implements GravitoOrbit {
 
     // Register default channels.
     if (this.options.enableMail) {
-      const mail = core.container.make('mail') as
-        | {
-            send(message: import('./types').MailMessage): Promise<void>
-          }
-        | undefined
-
-      if (mail) {
-        manager.channel('mail', new MailChannel(mail))
-      } else {
-        core.logger.warn('[OrbitFlare] Mail service not found, mail channel disabled')
-      }
+      this.setupMailChannel(core, manager)
     }
 
     if (this.options.enableDatabase) {
-      const db = core.container.make('db') as
-        | {
-            insertNotification(data: {
-              notifiableId: string | number
-              notifiableType: string
-              type: string
-              data: Record<string, unknown>
-            }): Promise<void>
-          }
-        | undefined
-
-      if (db) {
-        manager.channel('database', new DatabaseChannel(db))
-      } else {
-        core.logger.warn('[OrbitFlare] Database service not found, database channel disabled')
-      }
+      this.setupDatabaseChannel(core, manager)
     }
 
     if (this.options.enableBroadcast) {
-      const broadcast = core.container.make('broadcast') as
-        | {
-            broadcast(channel: string, event: string, data: Record<string, unknown>): Promise<void>
-          }
-        | undefined
-
-      if (broadcast) {
-        manager.channel('broadcast', new BroadcastChannel(broadcast))
-      } else {
-        core.logger.warn('[OrbitFlare] Broadcast service not found, broadcast channel disabled')
-      }
+      this.setupBroadcastChannel(core, manager)
     }
 
     if (this.options.enableSlack) {
-      const slack = this.options.channels?.slack as
-        | {
-            webhookUrl: string
-            defaultChannel?: string
-          }
-        | undefined
+      this.setupSlackChannel(core, manager)
+    }
 
-      if (slack) {
-        manager.channel('slack', new SlackChannel(slack))
-      } else {
-        core.logger.warn('[OrbitFlare] Slack configuration not found, slack channel disabled')
-      }
+    if (this.options.enableSms) {
+      this.setupSmsChannel(core, manager)
+    }
+
+    // Register into core container
+    core.container.instance('notifications', manager)
+
+    // Try to integrate with queue system.
+    this.setupQueueIntegration(core, manager)
+
+    core.logger.info('[OrbitFlare] Installed')
+  }
+
+  private setupMailChannel(core: PlanetCore, manager: NotificationManager): void {
+    const mail = core.container.make<MailService>('mail')
+
+    if (mail && this.isMailService(mail)) {
+      manager.channel('mail', new MailChannel(mail))
+    } else {
+      core.logger.warn('[OrbitFlare] Mail service not found or invalid, mail channel disabled')
+    }
+  }
+
+  private setupDatabaseChannel(core: PlanetCore, manager: NotificationManager): void {
+    const db = core.container.make<DatabaseService>('db')
+
+    if (db && this.isDatabaseService(db)) {
+      manager.channel('database', new DatabaseChannel(db))
+    } else {
+      core.logger.warn(
+        '[OrbitFlare] Database service not found or invalid, database channel disabled'
+      )
+    }
+  }
+
+  private setupBroadcastChannel(core: PlanetCore, manager: NotificationManager): void {
+    const broadcast = core.container.make<BroadcastService>('broadcast')
+
+    if (broadcast && this.isBroadcastService(broadcast)) {
+      manager.channel('broadcast', new BroadcastChannel(broadcast))
+    } else {
+      core.logger.warn(
+        '[OrbitFlare] Broadcast service not found or invalid, broadcast channel disabled'
+      )
+    }
+  }
+
+  private setupSlackChannel(core: PlanetCore, manager: NotificationManager): void {
+    const slack = this.options.channels?.slack as
+      | {
+          webhookUrl: string
+          defaultChannel?: string
+        }
+      | undefined
+
+    if (slack) {
+      manager.channel('slack', new SlackChannel(slack))
     }
 
     if (this.options.enableSms) {
@@ -153,30 +206,73 @@ export class OrbitFlare implements GravitoOrbit {
 
       if (sms) {
         manager.channel('sms', new SmsChannel(sms))
-      } else {
-        core.logger.warn('[OrbitFlare] SMS configuration not found, sms channel disabled')
       }
     }
+  }
 
-    // Register into core container
-    core.container.instance('notifications', manager)
-
-    // Try to integrate with queue system.
-    const queue = core.container.make('queue') as
+  private setupSmsChannel(core: PlanetCore, manager: NotificationManager): void {
+    const sms = this.options.channels?.sms as
       | {
-          push(job: unknown, queue?: string, connection?: string, delay?: number): Promise<void>
+          provider: string
+          apiKey?: string
+          apiSecret?: string
+          from?: string
         }
       | undefined
 
-    if (queue) {
+    if (sms) {
+      manager.channel('sms', new SmsChannel(sms))
+    } else {
+      core.logger.warn('[OrbitFlare] SMS configuration not found, sms channel disabled')
+    }
+  }
+
+  private setupQueueIntegration(core: PlanetCore, manager: NotificationManager): void {
+    const queue = core.container.make<QueueService>('queue')
+
+    if (queue && this.isQueueService(queue)) {
       manager.setQueueManager({
         push: async (job, queueName, connection, delay) => {
           await queue.push(job, queueName, connection, delay)
         },
       })
     }
+  }
 
-    core.logger.info('[OrbitFlare] Installed')
+  private isMailService(service: unknown): service is MailService {
+    return (
+      typeof service === 'object' &&
+      service !== null &&
+      'send' in service &&
+      typeof (service as MailService).send === 'function'
+    )
+  }
+
+  private isDatabaseService(service: unknown): service is DatabaseService {
+    return (
+      typeof service === 'object' &&
+      service !== null &&
+      'insertNotification' in service &&
+      typeof (service as DatabaseService).insertNotification === 'function'
+    )
+  }
+
+  private isBroadcastService(service: unknown): service is BroadcastService {
+    return (
+      typeof service === 'object' &&
+      service !== null &&
+      'broadcast' in service &&
+      typeof (service as BroadcastService).broadcast === 'function'
+    )
+  }
+
+  private isQueueService(service: unknown): service is QueueService {
+    return (
+      typeof service === 'object' &&
+      service !== null &&
+      'push' in service &&
+      typeof (service as QueueService).push === 'function'
+    )
   }
 }
 

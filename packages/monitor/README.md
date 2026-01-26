@@ -1,14 +1,15 @@
-# @gravito/monitor
+# @gravito/monitor 🛰️
 
-Lightweight observability module for Gravito - Health Checks, Metrics, and Tracing.
+Lightweight observability module for Gravito - Health Checks, Metrics, and Tracing. Built on top of the **Galaxy Architecture**, this Orbit provides essential infrastructure for monitoring your planet's health.
 
-## Features
+## 🚀 Features
 
-- 🏥 **Health Checks** - Kubernetes-ready `/health`, `/ready`, `/live` endpoints
-- 📊 **Metrics** - Prometheus-compatible `/metrics` endpoint
-- 🔍 **Tracing** - OpenTelemetry OTLP support (via external Collector)
+- 🏥 **Health Checks** - Kubernetes-ready `/health`, `/ready`, `/live` endpoints with custom check support.
+- 📊 **Metrics** - Prometheus-compatible `/metrics` endpoint with built-in Node.js runtime and HTTP metrics.
+- 🔍 **Tracing** - OpenTelemetry OTLP support for distributed tracing across services.
+- 🛡️ **Kubernetes Native** - Seamless integration with probe configurations and Prometheus ServiceMonitors.
 
-## Installation
+## 📦 Installation
 
 ```bash
 bun add @gravito/monitor
@@ -20,7 +21,9 @@ For OpenTelemetry tracing (optional):
 bun add @opentelemetry/sdk-node @opentelemetry/exporter-trace-otlp-http
 ```
 
-## Quick Start
+## 🌌 Quick Start
+
+Enable observability by adding the `MonitorOrbit` to your `PlanetCore`.
 
 ```typescript
 import { PlanetCore } from '@gravito/core'
@@ -32,274 +35,136 @@ core.orbit(new MonitorOrbit({
   health: {
     enabled: true,
     path: '/health',
-    readyPath: '/ready',
-    livePath: '/live',
   },
   metrics: {
     enabled: true,
-    path: '/metrics',
     prefix: 'myapp_',
   },
   tracing: {
-    enabled: true,
-    serviceName: 'my-gravito-app',
-    endpoint: 'http://localhost:4318/v1/traces',
+    enabled: process.env.NODE_ENV === 'production',
+    serviceName: 'order-service',
   },
 }))
 
 await core.liftoff()
 ```
 
-## Health Checks
+## 🏥 Health Checks
 
-### Default Endpoints
+The health system provides three distinct probes following Kubernetes best practices:
 
-| Endpoint | Description |
-|----------|-------------|
-| `GET /health` | Full health check with all registered checks |
-| `GET /ready` | Kubernetes readiness probe |
-| `GET /live` | Kubernetes liveness probe |
+- **Liveness (`/live`)**: Indicates if the process is running.
+- **Readiness (`/ready`)**: Indicates if the app is ready to serve traffic (waits for all checks to pass).
+- **Health (`/health`)**: Full aggregated report of all registered checks.
 
 ### Registering Custom Checks
+
+You can register custom health checks via the `monitor` service.
 
 ```typescript
 const monitor = core.services.get('monitor')
 
-// Register a database check
+// Simple check
 monitor.health.register('database', async () => {
-  const isConnected = await db.ping()
-  return isConnected 
-    ? { status: 'healthy' }
-    : { status: 'unhealthy', message: 'Database disconnected' }
+  const isOk = await db.ping()
+  return isOk ? { status: 'healthy' } : { status: 'unhealthy', message: 'DB down' }
 })
 
-// Register a Redis check
-monitor.health.register('redis', async () => {
-  const result = await redis.ping()
-  return { status: result === 'PONG' ? 'healthy' : 'unhealthy' }
-})
-```
-
-### Built-in Check Factories
-
-```typescript
-import { 
-  createDatabaseCheck, 
-  createRedisCheck, 
-  createMemoryCheck,
-  createHttpCheck 
-} from '@gravito/monitor'
-
-// Database check
-monitor.health.register('db', createDatabaseCheck(() => db.isConnected()))
-
-// Memory check (warns at 90% heap usage)
-monitor.health.register('memory', createMemoryCheck({ maxHeapUsedPercent: 90 }))
-
-// External service check
-monitor.health.register('api', createHttpCheck('https://api.example.com/health'))
-```
-
-### Health Response Format
-
-```json
-{
-  "status": "healthy",
-  "timestamp": "2024-12-25T12:00:00Z",
-  "uptime": 3600,
-  "checks": {
-    "database": { "status": "healthy", "latency": 5 },
-    "redis": { "status": "healthy", "latency": 2 },
-    "memory": { 
-      "status": "healthy", 
-      "details": { "heapUsedPercent": "45.2" } 
-    }
+// Detailed check
+monitor.health.register('disk_space', () => {
+  const usage = getDiskUsage()
+  return {
+    status: usage < 90 ? 'healthy' : 'degraded',
+    details: { usage: `${usage}%` }
   }
-}
+})
 ```
 
-## Metrics
+## 📊 Metrics
 
-### Prometheus Endpoint
+Metrics are exposed in Prometheus text format at `/metrics`. 
 
-The `/metrics` endpoint exposes metrics in Prometheus text format:
-
-```
-# HELP myapp_http_requests_total Total HTTP requests
-# TYPE myapp_http_requests_total counter
-myapp_http_requests_total{method="GET",path="/api/users",status="200"} 150
-
-# HELP myapp_http_request_duration_seconds HTTP request duration
-# TYPE myapp_http_request_duration_seconds histogram
-myapp_http_request_duration_seconds_bucket{le="0.01"} 50
-myapp_http_request_duration_seconds_bucket{le="0.1"} 120
-myapp_http_request_duration_seconds_sum 12.5
-myapp_http_request_duration_seconds_count 150
-```
+### Built-in Metrics
+- **Runtime**: Heap usage, uptime, active handles.
+- **HTTP**: Request total (`http_requests_total`), duration histogram (`http_request_duration_seconds`).
 
 ### Custom Metrics
 
 ```typescript
 const monitor = core.services.get('monitor')
 
-// Counter
-const requestCounter = monitor.metrics.counter({
-  name: 'api_requests_total',
-  help: 'Total API requests',
-  labels: ['endpoint', 'status'],
+// 1. Counter (Monotonically increasing)
+const orders = monitor.metrics.counter({
+  name: 'orders_total',
+  help: 'Total orders processed',
+  labels: ['status']
 })
-requestCounter.inc({ endpoint: '/users', status: '200' })
+orders.inc({ status: 'completed' })
 
-// Gauge
-const activeConnections = monitor.metrics.gauge({
-  name: 'active_connections',
-  help: 'Current active connections',
+// 2. Gauge (Can go up and down)
+const activeUsers = monitor.metrics.gauge({
+  name: 'active_users',
+  help: 'Current active users'
 })
-activeConnections.set(42)
-activeConnections.inc()
-activeConnections.dec()
+activeUsers.set(42)
 
-// Histogram
-const responseTime = monitor.metrics.histogram({
-  name: 'response_time_seconds',
-  help: 'Response time in seconds',
-  labels: ['endpoint'],
-  buckets: [0.01, 0.05, 0.1, 0.5, 1],
+// 3. Histogram (Value distribution)
+const processTime = monitor.metrics.histogram({
+  name: 'order_processing_seconds',
+  help: 'Time to process orders',
+  buckets: [0.1, 0.5, 1, 2, 5]
 })
-responseTime.observe(0.125, { endpoint: '/users' })
-
-// Timer helper
-const stopTimer = responseTime.startTimer({ endpoint: '/users' })
-// ... do work ...
-stopTimer() // Records duration automatically
+const stop = processTime.startTimer()
+// ... logic ...
+stop()
 ```
 
-## Tracing
+## 🔍 Tracing
 
-### OpenTelemetry Integration
-
-@gravito/monitor uses the **OTLP (OpenTelemetry Protocol)** standard. To send traces to different backends:
-
-| Backend | Method |
-|---------|--------|
-| **Jaeger** | OTLP Collector → Jaeger |
-| **Zipkin** | OTLP Collector → Zipkin |
-| **AWS X-Ray** | AWS ADOT Collector |
-| **Google Cloud Trace** | GCP OTLP Collector |
-| **Datadog** | Datadog Agent (OTLP) |
+Distributed tracing is powered by OpenTelemetry (OTLP). It automatically propagates trace context via W3C `traceparent` headers.
 
 ### Configuration
-
 ```typescript
-new MonitorOrbit({
-  tracing: {
-    enabled: true,
-    serviceName: 'my-app',
-    serviceVersion: '1.0.0',
-    endpoint: 'http://localhost:4318/v1/traces', // OTLP HTTP
-    sampleRate: 1.0, // 100% sampling
-    resourceAttributes: {
-      'deployment.environment': 'production',
-    },
-  },
-})
-```
-
-### Manual Spans
-
-```typescript
-const tracer = core.services.get('tracing')
-
-// Start a span
-const span = tracer.startSpan('process-order', {
-  attributes: { 'order.id': '12345' },
-})
-
-try {
-  // Do work...
-  tracer.addEvent(span, 'payment-processed')
-  tracer.setAttribute(span, 'order.total', 99.99)
-  tracer.endSpan(span, 'ok')
-} catch (error) {
-  tracer.endSpan(span, 'error')
-  throw error
+tracing: {
+  enabled: true,
+  serviceName: 'gateway',
+  endpoint: 'http://otel-collector:4318/v1/traces',
+  sampleRate: 0.1, // Sample 10% of requests
+  resourceAttributes: {
+    env: 'production'
+  }
 }
 ```
 
-### Trace Context Propagation
+### Manual Spans
+```typescript
+const tracer = core.services.get('tracing')
 
-The tracing middleware automatically:
-- Extracts `traceparent` header from incoming requests
-- Injects trace context into outgoing requests
-- Records HTTP method, path, status code
-
-## Kubernetes Integration
-
-### Deployment Example
-
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: my-gravito-app
-spec:
-  template:
-    spec:
-      containers:
-        - name: app
-          image: my-app:latest
-          ports:
-            - containerPort: 3000
-          livenessProbe:
-            httpGet:
-              path: /live
-              port: 3000
-            initialDelaySeconds: 5
-            periodSeconds: 10
-          readinessProbe:
-            httpGet:
-              path: /ready
-              port: 3000
-            initialDelaySeconds: 5
-            periodSeconds: 5
+const span = tracer.startSpan('compute_heavy_logic')
+try {
+  // ... work ...
+  tracer.setAttribute(span, 'items_count', 100)
+  tracer.endSpan(span, 'ok')
+} catch (e) {
+  tracer.endSpan(span, 'error')
+}
 ```
 
-### ServiceMonitor for Prometheus
-
-```yaml
-apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
-metadata:
-  name: my-gravito-app
-spec:
-  selector:
-    matchLabels:
-      app: my-gravito-app
-  endpoints:
-    - port: http
-      path: /metrics
-      interval: 15s
-```
-
-## Configuration Reference
+## ⚙️ Configuration Reference
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `health.enabled` | boolean | `true` | Enable health endpoints |
-| `health.path` | string | `/health` | Full health check path |
-| `health.readyPath` | string | `/ready` | Readiness probe path |
-| `health.livePath` | string | `/live` | Liveness probe path |
-| `health.timeout` | number | `5000` | Check timeout (ms) |
-| `health.cacheTtl` | number | `0` | Cache duration (ms) |
-| `metrics.enabled` | boolean | `true` | Enable metrics endpoint |
-| `metrics.path` | string | `/metrics` | Metrics endpoint path |
-| `metrics.prefix` | string | `gravito_` | Metric name prefix |
-| `metrics.defaultMetrics` | boolean | `true` | Collect default metrics |
-| `tracing.enabled` | boolean | `false` | Enable tracing |
-| `tracing.serviceName` | string | `gravito-app` | Service name |
-| `tracing.endpoint` | string | `http://localhost:4318/v1/traces` | OTLP endpoint |
-| `tracing.sampleRate` | number | `1.0` | Sample rate (0.0-1.0) |
+| `health.enabled` | `boolean` | `true` | Enable health endpoints |
+| `health.path` | `string` | `/health` | Path for aggregated health check |
+| `health.timeout` | `number` | `5000` | Timeout for checks in ms |
+| `health.cacheTtl` | `number` | `0` | Cache results in ms (0 = disabled) |
+| `metrics.enabled` | `boolean` | `true` | Enable Prometheus endpoint |
+| `metrics.prefix` | `string` | `gravito_` | Metric name prefix |
+| `metrics.defaultMetrics` | `boolean` | `true` | Collect Node.js runtime metrics |
+| `tracing.enabled` | `boolean` | `false` | Enable OpenTelemetry tracing |
+| `tracing.endpoint` | `string` | `http://localhost:4318/v1/traces` | OTLP Collector URL |
+| `tracing.sampleRate` | `number` | `1.0` | Probability sampling (0.0 - 1.0) |
 
-## License
+## 📄 License
 
-MIT
+MIT © Carl Lee

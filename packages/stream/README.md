@@ -1,351 +1,167 @@
 # @gravito/stream
 
-Lightweight, high-performance queueing for Gravito. Supports multiple storage drivers, embedded and standalone workers, and flexible job serialization.
+> Lightweight, high-performance queue and background job system for Galaxy Architecture.
 
-**Status**: v0.1.0 - core features complete with Memory, Database, Redis, Kafka, and SQS drivers.
+[![npm version](https://img.shields.io/npm/v/@gravito/stream.svg)](https://www.npmjs.com/package/@gravito/stream)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
+[![Bun](https://img.shields.io/badge/Bun-1.0+-black.svg)](https://bun.sh/)
 
-## Features
+**@gravito/stream** is the standard background processing unit for Gravito applications. Built on the **Orbit** pattern, it provides a unified abstraction for various message brokers and queue systems, allowing you to scale from simple in-memory tasks to distributed event-driven architectures with zero friction.
 
-- **Zero runtime overhead**: Thin wrappers that delegate to drivers
-- **Multi-driver support**: Memory, Database, Redis, Kafka, SQS, RabbitMQ
-- **Modular**: Install only the driver you need (core < 50KB)
-- **Embedded or standalone workers**: Run in-process during development or standalone in production
-- **AI-friendly**: Strong typing, clear JSDoc, and predictable APIs
-- **Custom Retry Strategies**: Built-in exponential backoff with per-job overrides
-- **Dead Letter Queue (DLQ)**: Automatic handling of permanently failed jobs, with retry and clear operations
-- **Priority Queues**: Assign priority (critical, high, low) to any job
-- **Rate Limiting**: Control job consumption rate per queue (requires Redis)
+## ✨ Features
 
-## Installation
+- 🪐 **Orbit Integration** - Native integration with PlanetCore micro-kernel and dependency injection.
+- 🔌 **Multi-Broker Support** - Built-in drivers for **Redis**, **SQS**, **Kafka**, **RabbitMQ**, **Database** (SQL), and **Memory**.
+- 🛠️ **Job-Based API** - Clean, class-based job definitions with built-in serialization and failure handling.
+- 🚀 **High Throughput** - Optimized for **Bun**, supporting batch consumption, concurrent processing, and adaptive polling.
+- 🛡️ **Reliability** - Built-in exponential backoff retries, Dead Letter Queues (DLQ), and sequential job grouping.
+- 📝 **Audit & Persistence** - Optional SQL-based persistence layer for archiving job history and providing complete audit trails.
+- 🕒 **Scheduler** - Built-in CRON-based task scheduling for recurring jobs.
+- 🏢 **Worker Modes** - Run embedded workers during development or standalone worker processes in production.
+
+## 📦 Installation
 
 ```bash
 bun add @gravito/stream
 ```
 
-## Quick Start
+## 🚀 Quick Start
 
-### 1. Define a job
+### 1. Define a Job
+
+Create a class extending `Job` and implement the `handle` logic:
 
 ```typescript
-import { Job } from '@gravito/stream'
+import { Job } from '@gravito/stream';
 
-export class SendWelcomeEmail extends Job {
-  constructor(private userId: string) {
-    super()
+export class ProcessOrder extends Job {
+  constructor(private orderId: string) {
+    super();
   }
 
   async handle(): Promise<void> {
-    const user = await User.find(this.userId)
-    await mail.send(new WelcomeEmail(user))
+    // Business logic: process the order
+    console.log(`Processing order: ${this.orderId}`);
+  }
+
+  async failed(error: Error): Promise<void> {
+    // Optional: cleanup or notify on permanent failure
+    console.error(`Order ${this.orderId} failed: ${error.message}`);
   }
 }
 ```
 
-### 3. Rate Limit & Priority (Optional)
+### 2. Initialize OrbitStream
+
+Register the orbit in your application bootstrap:
 
 ```typescript
-const queue = c.get('queue')
+import { PlanetCore } from '@gravito/core';
+import { OrbitStream } from '@gravito/stream';
 
-// High priority job
-await queue.push(new SendWelcomeEmail(user.id))
-  .onQueue('emails')
-  .withPriority('high') // 'critical' | 'high' | 'default' | 'low'
+const core = new PlanetCore();
 
-// Configure rate limits in Consumer
-const consumer = new Consumer(manager, {
-  rateLimits: {
-    emails: { limit: 10, window: 60 } // Max 10 jobs per minute
-  }
-})
+core.addOrbit(OrbitStream.configure({
+  default: 'redis',
+  connections: {
+    redis: {
+      driver: 'redis',
+      host: 'localhost',
+      port: 6379
+    }
+  },
+  autoStartWorker: process.env.NODE_ENV === 'development',
+  workerOptions: { queues: ['default'] }
+}));
+
+await core.bootstrap();
 ```
 
-### 4. Concurrency & Groups
+### 3. Enqueue Jobs
+
+Access the `queue` service from the request context or container:
 
 ```typescript
-const consumer = new Consumer(manager, {
-  queues: ['default'],
-  concurrency: 5,           // Process up to 5 jobs concurrently
-  groupJobsSequential: true // Ensure jobs with same groupId run sequentially (default: true)
-})
+core.app.post('/orders', async (c) => {
+  const { id } = await c.req.json();
+  const queue = c.get('queue');
+
+  // Push with fluent configuration
+  await queue.push(new ProcessOrder(id))
+    .onQueue('high-priority')
+    .delay(30)
+    .backoff(5, 2); // Start with 5s delay, then double for each retry
+
+  return c.json({ success: true });
+});
 ```
 
-Jobs with the same `groupId` will always be processed in order, even with high concurrency. Jobs from different groups (or no group) will run in parallel.
+## 🔧 Advanced Configuration
 
-### 5. Polling & Batching Optimization
+### Multi-Queue & Concurrency
 
-```typescript
-const consumer = new Consumer(manager, {
-  queues: ['default'],
-  // Polling Strategy
-  pollInterval: 1000,       // Initial poll interval
-  minPollInterval: 100,     // Adaptive: reduce to 100ms when jobs found
-  maxPollInterval: 5000,    // Adaptive: backoff up to 5s when idle
-  backoffMultiplier: 1.5,   // Exponential backoff factor
-  
-  // Batch Consumption
-  batchSize: 10,            // Fetch 10 jobs at once (requires concurrency > 1 for parallel processing)
-  concurrency: 10,
-  
-  // Blocking Pop (Redis/SQS)
-  useBlocking: true,        // Use BLPOP when batchSize=1 (reduces CPU usage)
-  blockingTimeout: 5        // Block for 5 seconds
-})
-```
-
-### 6. Monitoring & Stats
-
-```typescript
-const stats = consumer.getStats()
-console.log(`Processed: ${stats.processed}, Failed: ${stats.failed}`)
-
-// Metrics are also included in the heartbeat if monitor is enabled
-```
-
-### 2. Enqueue a job
-
-```typescript
-const queue = c.get('queue')
-
-await queue.push(new SendWelcomeEmail(user.id))
-  .onQueue('emails')
-  .delay(60)
-```
-
-### 3. Configure OrbitStream (Memory driver)
-
-```typescript
-import { OrbitStream } from '@gravito/stream'
-
-const core = await PlanetCore.boot({
-  orbits: [
-    OrbitStream.configure({
-      default: 'memory',
-      connections: {
-        memory: { driver: 'memory' }
-      },
-      autoStartWorker: true,
-      workerOptions: {
-        queues: ['default', 'emails']
-      }
-    })
-  ]
-})
-```
-
-### 5. Polling & Batching Optimization
+Configure the consumer to handle multiple queues with different priorities and concurrency levels:
 
 ```typescript
 const consumer = new Consumer(manager, {
-  queues: ['default'],
-  // Polling Strategy
-  pollInterval: 1000,       // Initial poll interval
-  minPollInterval: 100,     // Adaptive: reduce to 100ms when jobs found
-  maxPollInterval: 5000,    // Adaptive: backoff up to 5s when idle
-  backoffMultiplier: 1.5,   // Exponential backoff factor
-  
-  // Batch Consumption
-  batchSize: 10,            // Fetch 10 jobs at once (requires concurrency > 1 for parallel processing)
-  concurrency: 10,
-  
-  // Blocking Pop (Redis/SQS)
-  useBlocking: true,        // Use BLPOP when batchSize=1 (reduces CPU usage)
-  blockingTimeout: 5        // Block for 5 seconds
-})
+  queues: ['critical', 'default', 'low'],
+  concurrency: 10,           // Max 10 concurrent jobs
+  groupJobsSequential: true, // Process jobs with same groupId in strict order
+  batchSize: 5,              // Fetch 5 jobs per poll
+});
 ```
 
-## Database Driver Example
+### Persistence & Audit Trail
 
-```typescript
-import { OrbitStream } from '@gravito/stream'
-
-// Create a database service adapter that implements DatabaseService interface
-const dbService = {
-  execute: async (sql, bindings) => yourDbClient.query(sql, bindings),
-  transaction: async (callback) => yourDbClient.transaction(callback),
-}
-
-const core = await PlanetCore.boot({
-  orbits: [
-    OrbitStream.configure({
-      default: 'database',
-      connections: {
-        database: {
-          driver: 'database',
-          table: 'jobs',
-          dbService: dbService // Pass your database service
-        }
-      }
-    })
-  ]
-})
-```
-
-## RabbitMQ Driver Example
-
-```typescript
-import { OrbitStream } from '@gravito/stream'
-import amqp from 'amqplib'
-
-const connection = await amqp.connect('amqp://localhost')
-
-const core = await PlanetCore.boot({
-  orbits: [
-    OrbitStream.configure({
-      default: 'rabbitmq',
-      connections: {
-        rabbitmq: {
-          driver: 'rabbitmq',
-          client: connection,
-          exchange: 'gravito.events',
-          exchangeType: 'fanout'
-        }
-      }
-    })
-  ]
-})
-```
-
-## Database Schema
-
-```sql
-CREATE TABLE jobs (
-  id BIGSERIAL PRIMARY KEY,
-  queue VARCHAR(255) NOT NULL,
-  payload TEXT NOT NULL,
-  attempts INT DEFAULT 0,
-  reserved_at TIMESTAMP,
-  available_at TIMESTAMP NOT NULL,
-  created_at TIMESTAMP NOT NULL DEFAULT NOW()
-);
-
--- Optimized index for batch popping with SKIP LOCKED
-CREATE INDEX idx_jobs_queue_available_reserved ON jobs(queue, available_at, reserved_at);
-CREATE INDEX idx_jobs_reserved ON jobs(reserved_at);
-```
-
-## Persistence and Audit Mode
-
-The `@gravito/stream` package supports an optional persistence layer (using SQLite or MySQL) for archiving job history and providing an audit trail.
-
-### Configuration
+Keep a history of all jobs (completed, failed, or enqueued):
 
 ```typescript
 OrbitStream.configure({
-  // ... other config
+  // ... connections
   persistence: {
-    adapter: new SQLitePersistence(DB), // or MySQLPersistence
-    archiveCompleted: true, // Archive jobs when they complete successfully
-    archiveFailed: true,    // Archive jobs when they fail permanently
-    archiveEnqueued: true,  // (Audit Mode) Archive jobs immediately when pushed
-    bufferSize: 100,        // (Optional) Batch size for buffered writes. Recommended: 50-200. Default: 0 (disabled)
-    flushInterval: 1000     // (Optional) Max time (ms) to wait before flushing buffer. Default: 0
+    adapter: new SQLitePersistence(db),
+    archiveCompleted: true,
+    archiveFailed: true,
+    archiveEnqueued: true, // Audit Mode: Log immediately when pushed
+    bufferSize: 100        // Batch writes for performance
   }
-})
+});
 ```
 
-### Audit Mode (`archiveEnqueued: true`)
+## 📖 API Reference
 
-When Audit Mode is enabled, every job pushed to the queue is immediately written to the SQL archive with a `waiting` status. This happens in parallel with the main queue operation (Fire-and-Forget).
+### `QueueManager`
 
-- **Benefit**: Provides a complete audit trail. Even if the queue driver (e.g., Redis) crashes and loses data, the SQL archive will contain the record of the job being enqueued.
-- **Performance**: Designed to be non-blocking. The SQL write happens asynchronously and does not delay the `push()` operation.
+Accessed via `c.get('queue')` or `core.container.make('queue')`.
 
-## Standalone Worker
+- **`push(job)`**: Dispatch a job to the queue.
+- **`pushMany(jobs)`**: Dispatch multiple jobs efficiently.
+- **`size(queue?)`**: Get the number of jobs in a queue.
+- **`clear(queue?)`**: Remove all jobs from a queue.
 
-```bash
-bun run packages/stream/cli/queue-worker.ts \
-  --connection=database \
-  --queues=default,emails \
-  --workers=4
-```
+### `Job` Fluent Methods
 
-## Debugging & Monitoring
+- **`onQueue(name)`**: Specify target queue.
+- **`onConnection(name)`**: Use a specific broker connection.
+- **`delay(seconds)`**: Set initial delay.
+- **`backoff(seconds, multiplier?)`**: Configure retry strategy.
+- **`withPriority(priority)`**: Set job priority.
 
-### Enable Debug Mode
+## 🔌 Supported Drivers
 
-Enable verbose logging to see detailed information about job lifecycle events (enqueue, process, complete, fail).
+- **Redis** - Feature-rich (DLQ, Rate limiting, Priorities).
+- **SQS** - AWS managed queue (Standard/FIFO).
+- **Kafka** - High-throughput distributed streams.
+- **RabbitMQ** - Traditional AMQP broker.
+- **Database** - Simple SQL-based persistence (PostgreSQL, MySQL, SQLite).
+- **Memory** - Fast, zero-config for local development/testing.
 
-```typescript
-OrbitStream.configure({
-  debug: true, // Enable debug logging
-  // ...
-})
-```
+## 🤝 Contributing
 
-```typescript
-const consumer = new Consumer(manager, {
-  debug: true, // Enable consumer debug logging
-  // ...
-})
-```
+Contributions, issues and feature requests are welcome!
+Feel free to check the [issues page](https://github.com/gravito-framework/gravito/issues).
 
-### Monitoring
+## 📝 License
 
-The Consumer emits events that you can listen to for custom monitoring:
-
-```typescript
-consumer.on('job:started', ({ job, queue }) => {
-  console.log(`Job ${job.id} started on ${queue}`)
-})
-
-consumer.on('job:failed', ({ job, error }) => {
-  console.error(`Job ${job.id} failed: ${error.message}`)
-})
-```
-
-## API Reference
-
-### Job
-
-```typescript
-abstract class Job implements Queueable {
-  abstract handle(): Promise<void>
-  async failed(error: Error): Promise<void>
-
-  onQueue(queue: string): this
-  onConnection(connection: string): this
-  delay(seconds: number): this
-  
-  /**
-   * Set retry backoff strategy.
-   * @param seconds - Initial delay in seconds
-   * @param multiplier - Multiplier for each subsequent attempt (default: 2)
-   */
-  backoff(seconds: number, multiplier = 2): this
-}
-```
-
-### QueueManager
-
-```typescript
-class QueueManager {
-  async push<T extends Job>(job: T): Promise<T>
-  async pushMany<T extends Job>(jobs: T[]): Promise<void>
-  async pop(queue?: string, connection?: string): Promise<Job | null>
-  async size(queue?: string, connection?: string): Promise<number>
-  async clear(queue?: string, connection?: string): Promise<void>
-  async complete(job: Job): Promise<void>
-  async fail(job: Job, error: Error): Promise<void>
-  registerJobClasses(jobClasses: Array<new (...args: unknown[]) => Job>): void
-}
-```
-
-## Implemented Drivers
-
-- **MemoryDriver** - in-memory (development)
-- **DatabaseDriver** - PostgreSQL/MySQL/SQLite
-- **RedisDriver** - delayed jobs, priority queues, rate limiting, and DLQ support
-- **KafkaDriver** - topics and consumer groups
-- **SQSDriver** - standard/FIFO queues and long polling
-- **RabbitMQDriver** - exchanges, queues, and advanced confirm mode
-
-## Best Practices
-
-1.  **Idempotency**: Ensure your jobs are idempotent. Jobs may be retried if they fail or if the worker crashes.
-2.  **Granularity**: Keep jobs small and focused. Large jobs can block workers and increase memory usage.
-3.  **Timeouts**: Set appropriate timeouts for your jobs to prevent them from hanging indefinitely.
-4.  **Error Handling**: Use the `failed` method or throw errors to trigger retries. Avoid swallowing errors unless you want to suppress retries.
-
-## License
-
-MIT
+MIT © [Carl Lee](https://github.com/gravito-framework/gravito)

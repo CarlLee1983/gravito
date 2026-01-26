@@ -3,7 +3,7 @@ import { useTrans } from '../hooks/useTrans'
 import { StaticLink } from './StaticLink'
 
 export function Footer() {
-  const { trans, locale } = useTrans()
+  const { trans } = useTrans()
 
   return (
     <footer className="border-t border-white/5 py-16 bg-zenith-void relative overflow-hidden">

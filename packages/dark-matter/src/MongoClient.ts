@@ -10,6 +10,10 @@ import type {
   MongoCollectionContract,
   MongoConfig,
   MongoDatabaseContract,
+  MongoSession,
+  RetryConfig,
+  SchemaValidationOptions,
+  TransactionOptions,
 } from './types'
 
 /**
@@ -29,15 +33,32 @@ export class MongoClient implements MongoClientContract {
   // ============================================================================
 
   /**
-   * Connect to the MongoDB server.
+   * Establishes a connection to the MongoDB server.
    *
-   * Initializes the MongoDB client and establishes a connection.
+   * Initializes the MongoDB client with the configured options and attempts to connect.
+   * Supports exponential backoff for retries if the connection fails.
    *
-   * @returns A promise that resolves when connected.
+   * @param retryConfig - Configuration for connection retry behavior (retries, delay, backoff).
+   * @returns Promise that resolves when the connection is successfully established.
+   * @throws {Error} If connection fails after all retry attempts.
+   *
+   * @example
+   * ```typescript
+   * await client.connect({
+   *   maxRetries: 5,
+   *   retryDelayMs: 500
+   * });
+   * ```
    */
-  async connect(): Promise<void> {
+  async connect(retryConfig?: RetryConfig): Promise<void> {
     if (this.connected) {
       return
+    }
+
+    const config: RetryConfig = {
+      maxRetries: retryConfig?.maxRetries ?? 3,
+      retryDelayMs: retryConfig?.retryDelayMs ?? 1000,
+      backoffMultiplier: retryConfig?.backoffMultiplier ?? 2,
     }
 
     this.mongodb = await this.loadMongoDBModule()
@@ -56,19 +77,36 @@ export class MongoClient implements MongoClientContract {
     }
 
     this.client = new this.mongodb.MongoClient(uri, options)
-    await this.client.connect()
 
-    const dbName = this.config.database ?? 'test'
-    this.db = this.client.db(dbName)
-    this.connected = true
+    let lastError: Error | null = null
+    for (let attempt = 0; attempt <= config.maxRetries; attempt++) {
+      try {
+        await this.client.connect()
+        const dbName = this.config.database ?? 'test'
+        this.db = this.client.db(dbName)
+        this.connected = true
+        return
+      } catch (error) {
+        lastError = error as Error
+        if (attempt < config.maxRetries) {
+          const delay = config.retryDelayMs * config.backoffMultiplier ** attempt
+          await new Promise((resolve) => setTimeout(resolve, delay))
+        }
+      }
+    }
+
+    throw new Error(
+      `Failed to connect to MongoDB after ${config.maxRetries + 1} attempts: ${lastError?.message}`
+    )
   }
 
   /**
-   * Disconnect from the MongoDB server.
+   * Closes the connection to the MongoDB server.
    *
-   * Closes the connection and resets the client state.
+   * Gracefully closes the client connection and resets internal state.
+   * Should be called when the application is shutting down.
    *
-   * @returns A promise that resolves when disconnected.
+   * @returns Promise that resolves when the connection is closed.
    */
   async disconnect(): Promise<void> {
     if (this.client) {
@@ -80,19 +118,131 @@ export class MongoClient implements MongoClientContract {
   }
 
   /**
-   * Check if the client is connected.
+   * Checks if the client is currently connected.
    *
-   * @returns True if connected, false otherwise.
+   * @returns `true` if the client is connected and active, `false` otherwise.
    */
   isConnected(): boolean {
     return this.connected && this.client !== null
   }
 
   /**
-   * Get a database instance.
+   * Verifies connection health and attempts reconnection if needed.
    *
-   * @param name - The name of the database (optional). Defaults to the connected database.
-   * @returns The MongoDatabaseContract instance.
+   * Performs a lightweight 'ping' command. If the ping fails or the client
+   * is known to be disconnected, it triggers a reconnection attempt.
+   *
+   * @returns Promise resolving when a connection is confirmed or re-established.
+   */
+  async ensureConnected(): Promise<void> {
+    if (!this.connected || !this.client) {
+      await this.connect()
+      return
+    }
+
+    try {
+      // Execute ping command to check connection
+      await this.db?.command({ ping: 1 })
+    } catch {
+      // Connection lost, try to reconnect
+      this.connected = false
+      await this.connect()
+    }
+  }
+
+  /**
+   * Retrieves detailed health status of the connection.
+   *
+   * Measures latency and retrieves server information via a 'ping' command.
+   *
+   * @returns Object containing connection status, latency in ms, and server info.
+   *
+   * @example
+   * ```typescript
+   * const health = await client.getHealthStatus();
+   * if (health.connected) {
+   *   console.log(`Latency: ${health.latencyMs}ms`);
+   * }
+   * ```
+   */
+  async getHealthStatus(): Promise<{
+    connected: boolean
+    latencyMs: number | null
+    serverInfo: Record<string, unknown> | null
+  }> {
+    if (!this.connected || !this.db) {
+      return { connected: false, latencyMs: null, serverInfo: null }
+    }
+
+    try {
+      const start = performance.now()
+      const result = await this.db.command({ ping: 1 })
+      const latencyMs = performance.now() - start
+
+      return {
+        connected: true,
+        latencyMs: Math.round(latencyMs * 100) / 100,
+        serverInfo: result,
+      }
+    } catch {
+      return { connected: false, latencyMs: null, serverInfo: null }
+    }
+  }
+
+  /**
+   * Executes a callback within a MongoDB transaction.
+   *
+   * Manages the session lifecycle, including starting the session, committing the transaction,
+   * or aborting it in case of errors.
+   *
+   * @typeParam T - The return type of the callback.
+   * @param callback - The function to execute within the transaction. Receives a session-aware `MongoSession` object.
+   * @param options - Transaction configuration options (read/write concern).
+   * @returns Promise resolving to the return value of the callback.
+   * @throws {Error} If the transaction fails or commits fail.
+   *
+   * @example
+   * ```typescript
+   * await client.withTransaction(async (session) => {
+   *   await session.collection('accounts').where('id', 'A').update({ $inc: { balance: -100 } });
+   *   await session.collection('accounts').where('id', 'B').update({ $inc: { balance: 100 } });
+   * });
+   * ```
+   */
+  async withTransaction<T>(
+    callback: (session: MongoSession) => Promise<T>,
+    options?: TransactionOptions
+  ): Promise<T> {
+    const client = this.getClient()
+    const session = client.startSession()
+
+    try {
+      let result: T | undefined
+      await session.withTransaction(async () => {
+        const sessionWrapper: MongoSession = {
+          collection: <U = Document>(name: string) => {
+            const nativeCollection = this.getDatabase().collection(name)
+            return new MongoQueryBuilder<U>(
+              nativeCollection as unknown as MongoNativeCollection,
+              name,
+              session // Pass session to builder
+            )
+          },
+        }
+        result = await callback(sessionWrapper)
+      }, options)
+      return result!
+    } finally {
+      await session.endSession()
+    }
+  }
+
+  /**
+   * Retrieves a database instance.
+   *
+   * @param name - Optional database name. Uses the default database from config if omitted.
+   * @returns A `MongoDatabaseContract` instance for database-level operations.
+   * @throws {Error} If the client is not connected.
    */
   database(name?: string): MongoDatabaseContract {
     const client = this.getClient()
@@ -101,10 +251,17 @@ export class MongoClient implements MongoClientContract {
   }
 
   /**
-   * Get a collection with query builder.
+   * Retrieves a collection instance with query builder capabilities.
    *
+   * @typeParam T - The type of documents in the collection.
    * @param name - The name of the collection.
-   * @returns A MongoCollectionContract instance.
+   * @returns A `MongoCollectionContract` instance for querying the collection.
+   * @throws {Error} If the client is not connected.
+   *
+   * @example
+   * ```typescript
+   * const users = client.collection<User>('users');
+   * ```
    */
   collection<T = Document>(name: string): MongoCollectionContract<T> {
     const db = this.getDatabase()
@@ -203,8 +360,28 @@ class MongoDatabaseWrapper implements MongoDatabaseContract {
     return await this.db.dropCollection(name)
   }
 
-  async createCollection(name: string): Promise<void> {
-    await this.db.createCollection(name)
+  async createCollection(
+    name: string,
+    options?: { schema?: SchemaValidationOptions }
+  ): Promise<void> {
+    const createOptions: Record<string, unknown> = {}
+
+    if (options?.schema) {
+      createOptions.validator = options.schema.validator
+      createOptions.validationLevel = options.schema.validationLevel ?? 'strict'
+      createOptions.validationAction = options.schema.validationAction ?? 'error'
+    }
+
+    await this.db.createCollection(name, createOptions)
+  }
+
+  async setValidation(collectionName: string, schema: SchemaValidationOptions): Promise<void> {
+    await this.db.command({
+      collMod: collectionName,
+      validator: schema.validator,
+      validationLevel: schema.validationLevel ?? 'strict',
+      validationAction: schema.validationAction ?? 'error',
+    })
   }
 }
 
@@ -224,19 +401,26 @@ interface MongoClientOptions {
 }
 
 // biome-ignore lint/suspicious/noExplicitAny: MongoDB native client has complex types
-interface NativeMongoClient extends Record<string, any> {
+interface NativeMongoClient {
   connect(): Promise<void>
   close(): Promise<void>
   db(name?: string): NativeMongoDatabase
+  startSession(): NativeMongoSession
+}
+
+interface NativeMongoSession {
+  withTransaction(callback: () => Promise<void>, options?: TransactionOptions): Promise<void>
+  endSession(): Promise<void>
 }
 
 // biome-ignore lint/suspicious/noExplicitAny: MongoDB native database has complex types
-interface NativeMongoDatabase extends Record<string, any> {
+interface NativeMongoDatabase {
   collection(name: string): NativeMongoCollection
   listCollections(): { toArray(): Promise<Array<{ name: string }>> }
   dropCollection(name: string): Promise<boolean>
-  createCollection(name: string): Promise<void>
+  createCollection(name: string, options?: Record<string, unknown>): Promise<void>
+  command(command: Record<string, unknown>): Promise<Record<string, unknown>>
 }
 
 // biome-ignore lint/suspicious/noExplicitAny: MongoDB native collection has complex types
-type NativeMongoCollection = Record<string, any>
+type NativeMongoCollection = MongoNativeCollection

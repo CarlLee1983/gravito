@@ -57,6 +57,11 @@ export class GravitoScanner implements RouteScanner {
     private options: GravitoScannerOptions = {}
   ) {}
 
+  /**
+   * Scans the PlanetCore application for registered routes.
+   *
+   * @returns A promise resolving to the list of scanned routes.
+   */
   async scan(): Promise<ScannedRoute[]> {
     const routes: ScannedRoute[] = []
 

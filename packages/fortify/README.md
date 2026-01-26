@@ -1,27 +1,37 @@
-# @gravito/fortify
+# @gravito/fortify 🛡️
 
 End-to-End Authentication Workflows for the Gravito Framework.
 
-Inspired by Laravel Fortify and Breeze, this package provides ready-to-use authentication features:
+`@gravito/fortify` is a headless authentication backend for Gravito, providing robust, secure, and highly-configurable authentication features. Inspired by Laravel Fortify and Breeze, it handles all the heavy lifting of authentication logic while allowing you to maintain full control over your user interface.
 
-- ✅ User Registration
-- ✅ Login / Logout
-- ✅ Password Reset
-- ✅ Email Verification
-- ✅ API Tokens (Sanctum-style)
-- ✅ OAuth / Social Login (Google, GitHub)
-- ✅ Magic Link Login
-- ✅ Two-Factor Authentication (TOTP)
+## 🚀 Key Features
 
-## Installation
+Fortify comes packed with everything you need for modern application authentication:
+
+- **User Registration**: Customizable registration flow with password strength validation and email verification.
+- **Authentication**: Secure login/logout with session management and "Remember Me" support.
+- **Two-Factor Authentication (2FA)**: TOTP-based 2FA with recovery codes.
+- **OAuth / Social Login**: Built-in support for Google and GitHub, extensible to other providers.
+- **API Tokens**: Sanctum-style personal access tokens for stateless API authentication.
+- **Magic Link Login**: Passwordless authentication via secure email links.
+- **Security Features**:
+  - **Rate Limiting**: Sliding window rate limiter for login, password resets, and verification requests.
+  - **Account Lockout**: Automatic temporary or permanent lockout after multiple failed attempts.
+  - **Security Headers**: Automatic injection of CSP, HSTS, XSS-Protection, and Frame Options.
+  - **Password Strength**: Rule-based password validation (length, character types, common password prevention).
+  - **Event Logging**: Detailed audit logs for authentication events (Login, Failed Login, 2FA enabled, etc.).
+
+## 📦 Installation
 
 ```bash
 bun add @gravito/fortify @gravito/sentinel
 ```
 
-## Quick Start
+## 🛠️ Quick Start
 
-### 1. Configure Fortify
+### 1. Configure Fortify Orbit
+
+Add `FortifyOrbit` to your Gravito configuration.
 
 ```typescript
 // gravito.config.ts
@@ -36,6 +46,8 @@ export default {
         registration: true,
         resetPasswords: true,
         emailVerification: true,
+        twoFactorAuthentication: true,
+        apiTokens: true,
       },
       redirects: {
         login: '/dashboard',
@@ -48,16 +60,17 @@ export default {
 
 ### 2. Run Migrations
 
+Fortify requires several tables to manage tokens, OAuth identities, and 2FA data.
+
 ```bash
 bun gravito migrate
 ```
 
-### 3. You're Done!
+## 🗺️ Routes
 
-Visit `/login`, `/register`, or `/forgot-password` to see auth pages.
+When enabled, Fortify automatically registers the following routes:
 
-## Routes
-
+### Standard Auth
 | Method | URI | Description |
 |--------|-----|-------------|
 | GET | `/login` | Show login form |
@@ -65,6 +78,10 @@ Visit `/login`, `/register`, or `/forgot-password` to see auth pages.
 | POST | `/logout` | Handle logout |
 | GET | `/register` | Show registration form |
 | POST | `/register` | Handle registration |
+
+### Password & Verification
+| Method | URI | Description |
+|--------|-----|-------------|
 | GET | `/forgot-password` | Show forgot password form |
 | POST | `/forgot-password` | Send reset link |
 | GET | `/reset-password/:token` | Show reset form |
@@ -72,64 +89,48 @@ Visit `/login`, `/register`, or `/forgot-password` to see auth pages.
 | GET | `/verify-email` | Show verification notice |
 | GET | `/verify-email/:id/:hash` | Verify email |
 | POST | `/email/verification-notification` | Resend verification |
-| GET | `/tokens` | List all tokens |
-| POST | `/tokens` | Create a new token |
-| DELETE | `/tokens/:id` | Revoke a token |
-| DELETE | `/tokens` | Revoke all tokens |
 
+### Advanced Features
+| Method | URI | Description |
+|--------|-----|-------------|
+| POST | `/two-factor-authentication` | Enable 2FA |
+| DELETE | `/two-factor-authentication` | Disable 2FA |
+| GET | `/two-factor-qr-code` | Get 2FA QR code |
+| GET | `/two-factor-recovery-codes` | Get recovery codes |
 | GET | `/oauth/:provider` | Redirect to OAuth provider |
 | GET | `/oauth/:provider/callback` | Handle OAuth callback |
-
 | POST | `/magic-link` | Send magic link email |
-| GET | `/magic-link/:token` | Verify magic link and login |
+| GET | `/magic-link/:token` | Magic link login |
 
-## Configuration
+## ⚙️ Configuration
+
+Fortify is highly configurable. You can customize features, security rules, and redirects.
 
 ```typescript
 interface FortifyConfig {
-  // Feature toggles
   features: {
-    registration?: boolean      // Default: true
-    resetPasswords?: boolean    // Default: true
-    emailVerification?: boolean // Default: false
-    apiTokens?: boolean         // Default: false
-    oauth?: boolean             // Default: false
-    magicLink?: boolean         // Default: false
+    registration?: boolean
+    resetPasswords?: boolean
+    emailVerification?: boolean
+    twoFactorAuthentication?: boolean
+    apiTokens?: boolean
+    oauth?: boolean
+    magicLink?: boolean
   }
-  
-  // OAuth configuration
-  oauth?: {
-    providers: {
-      [key: string]: {
-        clientId: string
-        clientSecret: string
-        redirectUri: string
-        scopes?: string[]
-      }
-    }
+  security?: {
+    rateLimit?: RateLimitConfig      // Custom rate limits
+    lockout?: LockoutConfig          // Failed attempts threshold
+    passwordRules?: PasswordRules    // Min length, symbols, etc.
+    securityHeaders?: HeadersConfig  // CSP, HSTS settings
   }
-  
-  // Redirect paths
-  redirects: {
-    login?: string       // Default: '/dashboard'
-    logout?: string      // Default: '/'
-    register?: string    // Default: '/dashboard'
-  }
-  
-  // User model factory
-  userModel: () => typeof Model
-  
-  // Use JSON responses (for SPA mode)
-  jsonMode?: boolean
-  
-  // Route prefix
-  prefix?: string
+  jsonMode?: boolean                 // Return JSON for SPA (no redirects)
+  prefix?: string                    // Route prefix (e.g., '/auth')
 }
 ```
 
-## SPA / API Mode
+## 📱 SPA / API Mode
 
-For single-page applications, enable `jsonMode`:
+For Single Page Applications, enable `jsonMode`. All endpoints will return JSON objects with status and data instead of performing redirects or rendering HTML.
 
 ```typescript
 new FortifyOrbit({
@@ -138,112 +139,29 @@ new FortifyOrbit({
 })
 ```
 
-All endpoints will return JSON responses instead of redirects.
+## 🔒 Middleware
 
-## Custom Views
+Fortify provides several middleware to protect your routes:
 
-### HTML Templates
-
-Copy templates from `@gravito/fortify/views/html` and customize.
-
-### Inertia (React)
-
-```bash
-bun gravito fortify:install --stack=react
-```
-
-### Inertia (Vue)
-
-```bash
-bun gravito fortify:install --stack=vue
-```
-
-## Middleware
-
-### Verified Email
+- `verified`: Ensures the user's email is verified.
+- `bearerTokenAuth`: Authenticates requests using Personal Access Tokens.
 
 ```typescript
 import { verified } from '@gravito/fortify'
 
 router.middleware(verified).group((r) => {
-  r.get('/dashboard', dashboardHandler)
+  r.get('/dashboard', (c) => c.text('Welcome!'))
 })
 ```
 
-## API Tokens
+## 🏗️ Architecture
 
-Fortify includes a simple token authentication system for APIs (Sanctum-style).
+Fortify is built on the **Galaxy Architecture**. It operates as an **Orbit** that integrates services into the Gravito core.
 
-### Enable Feature
+- **Controllers**: Handlers for auth logic, inheriting from `BaseController` for unified error and response handling.
+- **Services**: Domain logic for OAuth, 2FA, Magic Links, and Tokens.
+- **Events**: Dispatches events like `auth:login` and `auth:register` that you can listen to in your application.
 
-```typescript
-new FortifyOrbit({
-  // ...
-  features: {
-    apiTokens: true,
-  },
-})
-```
+## 📄 License
 
-### Usage
-
-1. **Create Token**: POST to `/tokens` with JSON body `{ "name": "My Token" }`.
-   Response includes `plain_text_token` (e.g. `1|abcdef...`). Store this securely!
-
-2. **Authenticate**: Add header to requests:
-   ```
-   Authorization: Bearer 1|abcdef...
-   ```
-
-### Middleware
-
-```typescript
-import { bearerTokenAuth } from '@gravito/fortify'
-
-// Middleware is automatically applied to /tokens routes when enabled.
-// Use it in your own API routes:
-router.get('/api/user', bearerTokenAuth(fortify.tokenService), (c) => {
-  return c.json(c.get('auth:user'))
-})
-```
-
-## OAuth / Social Login
-
-Fortify supports OAuth authentication (Google, GitHub).
-
-### Enable Feature
-
-```typescript
-new FortifyOrbit({
-  // ...
-  features: {
-    oauth: true,
-  },
-  oauth: {
-    providers: {
-      google: {
-        clientId: process.env.GOOGLE_CLIENT_ID,
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        redirectUri: 'https://your-app.com/auth/oauth/google/callback'
-      },
-      github: {
-        clientId: process.env.GITHUB_CLIENT_ID,
-        clientSecret: process.env.GITHUB_CLIENT_SECRET,
-        redirectUri: 'https://your-app.com/auth/oauth/github/callback'
-      }
-    }
-  }
-})
-```
-
-### Flow
-
-1. User visits `/auth/oauth/google`
-2. User is redirected to Google
-3. User approves and redirects back to `/auth/oauth/google/callback`
-4. Fortify creates/links user and logs them in
-5. User is redirected to dashboard
-
-## License
-
-MIT
+MIT © Carl Lee

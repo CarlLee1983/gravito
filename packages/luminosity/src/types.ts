@@ -1,6 +1,10 @@
 /**
  * Operational modes for the Luminosity SEO engine.
  *
+ * - `dynamic`: Generates sitemaps on-the-fly for every request.
+ * - `cached`: Generates sitemaps and caches them for a TTL period.
+ * - `incremental`: Updates sitemaps using a Write-Ahead Log (WAL) and compaction strategy.
+ *
  * @public
  * @since 3.0.0
  */
@@ -9,6 +13,8 @@ export type SeoMode = 'dynamic' | 'cached' | 'incremental'
 /**
  * Supported change frequency values for sitemap entries.
  *
+ * Indicates to search engines how often the content at a URL is expected to change.
+ *
  * @public
  * @since 3.0.0
  */
@@ -16,6 +22,9 @@ export type ChangeFreq = 'always' | 'hourly' | 'daily' | 'weekly' | 'monthly' | 
 
 /**
  * Configuration for the Luminosity SEO engine.
+ *
+ * Defines the operational behavior, storage locations, and output formats for
+ * sitemap and robots.txt generation.
  *
  * @public
  * @since 3.0.0

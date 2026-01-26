@@ -38,41 +38,31 @@ export abstract class Notification {
    * Get mail message (optional).
    * Implement this if the notification will be sent via the mail channel.
    */
-  toMail?(_notifiable: Notifiable): import('./types').MailMessage {
-    throw new Error('toMail method not implemented')
-  }
+  toMail?(notifiable: Notifiable): import('./types').MailMessage
 
   /**
    * Get database notification (optional).
    * Implement this if the notification will be stored via the database channel.
    */
-  toDatabase?(_notifiable: Notifiable): import('./types').DatabaseNotification {
-    throw new Error('toDatabase method not implemented')
-  }
+  toDatabase?(notifiable: Notifiable): import('./types').DatabaseNotification
 
   /**
    * Get broadcast notification (optional).
    * Implement this if the notification will be sent via the broadcast channel.
    */
-  toBroadcast?(_notifiable: Notifiable): import('./types').BroadcastNotification {
-    throw new Error('toBroadcast method not implemented')
-  }
+  toBroadcast?(notifiable: Notifiable): import('./types').BroadcastNotification
 
   /**
    * Get Slack message (optional).
    * Implement this if the notification will be sent via the Slack channel.
    */
-  toSlack?(_notifiable: Notifiable): import('./types').SlackMessage {
-    throw new Error('toSlack method not implemented')
-  }
+  toSlack?(notifiable: Notifiable): import('./types').SlackMessage
 
   /**
    * Get SMS message (optional).
    * Implement this if the notification will be sent via the SMS channel.
    */
-  toSms?(_notifiable: Notifiable): import('./types').SmsMessage {
-    throw new Error('toSms method not implemented')
-  }
+  toSms?(notifiable: Notifiable): import('./types').SmsMessage
 
   /**
    * Check whether this notification should be queued.

@@ -22,7 +22,6 @@ bun add better-sqlite3  # SQLite (非 Bun 環境)
 
 ### 1. 配置連線
 
-**方式 1：程式化配置**
 ```typescript
 import { DB } from '@gravito/atlas'
 
@@ -38,45 +37,6 @@ DB.configure({
     }
   }
 })
-```
-
-**方式 2：環境變數（v2.0 新增）**
-```typescript
-import { DB } from '@gravito/atlas'
-
-// 使用 DATABASE_URL
-// DATABASE_URL=postgres://user:password@localhost:5432/myapp
-DB.configureFromEnv()
-
-// 或使用個別變數
-// DB_DRIVER=postgres
-// DB_HOST=localhost
-// DB_DATABASE=myapp
-// DB_USERNAME=postgres
-// DB_PASSWORD=password
-DB.configureFromEnv()
-```
-
-**方式 3：配置檔案（v2.0 新增）**
-```typescript
-// config/database.ts
-import { defineConfig } from '@gravito/atlas'
-
-export default defineConfig({
-  default: 'postgres',
-  connections: {
-    postgres: {
-      driver: 'postgres',
-      host: process.env.DB_HOST || 'localhost',
-      database: process.env.DB_DATABASE || 'myapp',
-      // ...
-    }
-  }
-})
-
-// 然後在應用程式中
-import { DB } from '@gravito/atlas'
-await DB.configureFromFile()
 ```
 
 ### 2. 使用 Query Builder
@@ -115,17 +75,6 @@ await user.save()
 
 // 預加載關聯 (Eager Loading)
 const usersWithPosts = await User.with('posts').get()
-
-// 分頁
-const { data, pagination } = await User.query()
-  .where('status', 'active')
-  .paginate(15, 1)
-
-// 事務
-await DB.transaction(async (trx) => {
-  await trx.table('accounts').where('id', 1).decrement('balance', 100)
-  await trx.table('accounts').where('id', 2).increment('balance', 100)
-})
 ```
 
 ## ✨ 核心特性
@@ -201,26 +150,7 @@ Atlas 專為邊緣運算 (Edge) 設計。在基準測試中，它達到了：
 *   每秒 **42,000+** 次完整的 Active Record 模型水合 (Hydration)。
 *   在巨量資料流處理中保持 **恆定的記憶體佔用**。
 
-### 🚀 性能優化 (v2.0)
-
-v2.0 版本包含顯著的性能改進：
-
-- **Model Hydration**：↑300-500% 更快，透過優化的 Proxy 快取
-- **DirtyTracker**：↑50x 更快，透過淺層比較優化
-- **查詢編譯**：↑50-100% 更快，透過 LRU 快取（80%+ 命中率）
-- **記憶體使用**：↓40-60% 減少（大型資料集）
-- **QueryBuilder Clone**：優化的獨立查詢構建
-
 [閱讀完整效能白皮書](../../docs/ATLAS_PERFORMANCE_WHITEPAPER.md)
-
-## 🔄 從 v1.x 升級
-
-詳見 [升級指南](./IMPLEMENTATION_PLAN/10-upgrade-guide.md) 以獲取詳細的遷移說明。
-
-**主要變更：**
-- DirtyTracker 現在預設使用淺層比較（使用 `setDeepComparison(true)` 進行深層比較）
-- Grammar 快取現在預設為全局（多租戶應用設置 `Grammar.cacheScope = 'instance'`）
-- Eager loading 預設啟用 chunking（使用 `setEagerLoadChunking(false)` 禁用）
 
 ## 📄 授權
 

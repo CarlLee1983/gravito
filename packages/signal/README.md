@@ -1,42 +1,58 @@
+# @gravito/signal 🛰️
 
-# Orbit Mail
+`@gravito/signal` is the powerful, multi-driver email framework for the Gravito ecosystem. It provides a clean, fluent API for building and sending emails with support for multiple rendering engines and transport drivers.
 
-A powerful, multi-driver email framework for Gravito applications. Supports HTML, Template, React, and Vue renderers, with built-in development tools.
+## 🌟 Features
 
-## Features
-
-- **Multi-Driver Transport**: SMTP, AWS SES, Log, Memory.
-- **Content Renderers**:
+- **Fluent API**: Expressive `Mailable` classes for building email messages.
+- **Multi-Driver Transport**: Support for SMTP (Nodemailer), AWS SES, Log (console), and Memory.
+- **Flexible Rendering**: Render email content using:
   - Raw HTML
-  - OrbitPrism Templates
-  - React Components (lazy-loaded)
-  - Vue Components (lazy-loaded)
-- **Development Mode**: Intercept emails and view them in a built-in UI (`/__mail`).
-- **Flexible API**: Fluent interface for building emails.
-- **Queue Support**: Built-in `Queueable` interface for async sending.
+  - **Prism** (Edge-optimized view engine)
+  - **React** Components (via `react-dom/server`)
+  - **Vue** Components (via `@vue/server-renderer`)
+- **Development Experience**:
+  - **Dev Mode**: Intercept emails locally and view them in a built-in UI.
+  - **Mailbox UI**: Access intercepted emails at `/__mail` during development.
+- **Queue Integration**: Built-in support for asynchronous email sending via `@gravito/stream`.
+- **Internationalization**: Integrated I18n support for localized email content.
+- **Type-Safe**: Written in TypeScript with full type safety for configuration and usage.
 
-## Installation
+## 📦 Installation
 
 ```bash
 bun add @gravito/signal
 ```
 
-For AWS SES support:
+### Optional Dependencies
+
+Depending on your transport or renderer choice, you may need additional packages:
+
 ```bash
+# For AWS SES
 bun add @aws-sdk/client-ses
+
+# For React components
+bun add react react-dom
+
+# For Vue components
+bun add vue @vue/server-renderer
 ```
 
-## Basic Usage
+## 🚀 Quick Start
 
-### Configuration
+### 1. Configure the Orbit
 
-Configure OrbitSignal in your generic startup or creation logic:
+Register `OrbitSignal` in your Gravito application:
 
 ```typescript
+import { PlanetCore } from '@gravito/core';
 import { OrbitSignal, SmtpTransport } from '@gravito/signal';
 
-const mail = OrbitSignal.configure({
-  from: { name: 'My App', address: 'noreply@myapp.com' },
+const core = new PlanetCore();
+
+const mail = new OrbitSignal({
+  from: { name: 'Gravito Support', address: 'support@example.com' },
   transport: new SmtpTransport({
     host: 'smtp.mailtrap.io',
     port: 2525,
@@ -45,19 +61,18 @@ const mail = OrbitSignal.configure({
   devMode: process.env.NODE_ENV === 'development',
 });
 
-// Install into PlanetCore
 mail.install(core);
 ```
 
-### Creating Mailables
+### 2. Create a Mailable
 
-Extend the `Mailable` class to create email definitions.
+Extend the `Mailable` class to define your email:
 
 ```typescript
 import { Mailable } from '@gravito/signal';
 
 export class WelcomeEmail extends Mailable {
-  constructor(private user: User) {
+  constructor(private user: { name: string; email: string }) {
     super();
   }
 
@@ -70,60 +85,74 @@ export class WelcomeEmail extends Mailable {
 }
 ```
 
-### Sending Email
+### 3. Send the Email
+
+Access the mail service via the Gravito context:
 
 ```typescript
-import { WelcomeEmail } from './mail/WelcomeEmail';
-
-// In a controller/handler
-await new WelcomeEmail(user).renderContent(); // Validate content
-await context.get('mail').send(new WelcomeEmail(user));
+// In your route handler
+const mail = c.get('mail');
+await mail.send(new WelcomeEmail(user));
 ```
 
-### Queueing Email
+## 🛠️ Advanced Usage
 
-OrbitSignal supports queuing mail for background processing.
+### React & Vue Rendering
+
+You can use modern frontend frameworks to design your emails:
+
+```typescript
+// React example
+export class MonthlyReport extends Mailable {
+  build() {
+    return this
+      .subject('Your Monthly Report')
+      .react(ReportComponent, { data: this.data });
+  }
+}
+
+// Vue example
+export class InvoiceEmail extends Mailable {
+  build() {
+    return this
+      .subject('Invoice #12345')
+      .vue(InvoiceTemplate, { total: 100 });
+  }
+}
+```
+
+### Queueing Emails
+
+For better performance, send emails asynchronously:
 
 ```typescript
 const email = new WelcomeEmail(user)
-  .onQueue('high-priority')
-  .delay(60);
+  .onQueue('notifications')
+  .delay(60); // Send after 60 seconds
 
-// Queue the email
 await email.queue();
 ```
 
-## Transports
+### Development Mailbox
 
-### SMTP
-Standard SMTP transport using `nodemailer`.
+When `devMode` is enabled, `OrbitSignal` intercepts all outgoing emails and stores them in memory. You can view them by navigating to `/__mail` (or your configured `devUiPrefix`) in your browser. This UI provides:
+- A list of all intercepted emails.
+- Preview of HTML and Plain Text content.
+- Metadata view (Subject, To, From, etc.).
 
-### AWS SES
-Send via Amazon SES API.
+## 🔧 Configuration Options
 
-```typescript
-import { SesTransport } from '@gravito/signal';
+The `MailConfig` object supports the following options:
 
-const transport = new SesTransport({
-  region: 'us-east-1',
-  accessKeyId: '...', // Optional if using environment variables
-  secretAccessKey: '...'
-});
-```
+| Option | Type | Description |
+|---|---|---|
+| `from` | `Address` | Default sender address. |
+| `transport` | `Transport` | The transport driver to use. |
+| `devMode` | `boolean` | Enable/disable email interception. |
+| `viewsDir` | `string` | Path to template directory. |
+| `devUiPrefix`| `string` | URL prefix for Dev UI (default: `/__mail`). |
+| `translator` | `Function` | I18n translation function. |
 
-### Log
-Logs email content to the console (useful for debugging).
+## 📄 License
 
-### Memory
-Stores emails in memory (used by Dev Mode).
-
-## Renderers
-
-- **html(string)**: Raw HTML string.
-- **view(template, data)**: Uses generic template engine.
-- **react(Component, props)**: Renders a React component to HTML.
-- **vue(Component, props)**: Renders a Vue component to HTML.
-
-## License
-
-MIT
+MIT © Carl Lee

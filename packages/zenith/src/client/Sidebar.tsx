@@ -56,17 +56,17 @@ export function Sidebar({ className, collapsed, toggleCollapse }: SidebarProps) 
               key={i}
               to={item.path}
               className={cn(
-                'w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all text-muted-foreground group/item relative overflow-hidden',
+                'w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all text-muted-foreground/60 group/item relative overflow-hidden font-heading',
                 isActive
-                  ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:scale-[1.02]'
-                  : 'hover:bg-muted font-medium hover:text-foreground active:scale-95'
+                  ? 'bg-primary/10 text-primary shadow-[0_0_20px_rgba(0,240,255,0.1)] border border-primary/20'
+                  : 'hover:bg-white/[0.03] font-medium hover:text-foreground active:scale-95'
               )}
             >
               <item.icon
-                size={22}
+                size={20}
                 className={cn(
                   'transition-all shrink-0',
-                  isActive ? 'scale-110' : 'group-hover/item:scale-110'
+                  isActive ? 'scale-110 text-primary' : 'group-hover/item:scale-110'
                 )}
               />
               <motion.span
@@ -75,14 +75,14 @@ export function Sidebar({ className, collapsed, toggleCollapse }: SidebarProps) 
                   opacity: collapsed ? 0 : 1,
                   display: collapsed ? 'none' : 'block',
                 }}
-                className="font-semibold whitespace-nowrap tracking-tight"
+                className="font-black whitespace-nowrap tracking-tight uppercase text-[11px]"
               >
                 {item.label}
               </motion.span>
               {isActive && (
                 <motion.div
                   layoutId="active-pill"
-                  className="absolute left-0 w-1 h-6 bg-primary-foreground rounded-r-full"
+                  className="absolute left-0 w-1 h-5 bg-primary rounded-r-full shadow-[0_0_10px_#00F0FF]"
                 />
               )}
             </NavLink>
