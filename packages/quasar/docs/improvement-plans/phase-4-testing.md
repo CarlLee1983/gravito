@@ -26,21 +26,21 @@
 - [x] `integration/full-flow.test.ts` (基礎)
 
 缺少的測試：
-- `QuasarAgent` 生命週期與配置測試
-- `BullProbe` 單元測試
-- `RedisListProbe` 單元測試
-- `BeeQueueBridge` 測試
-- 完整端對端測試
+- [x] `QuasarAgent` 生命週期與配置測試
+- [x] `BullProbe` 單元測試
+- [x] `RedisListProbe` 單元測試
+- [x] `BeeQueueBridge` 測試
+- [x] 完整端對端測試 (整合測試)
 
 ### 改進項目
 
 #### 4.1.1 QuasarAgent 測試
 
-- [ ] 建構與配置測試
-- [ ] 生命週期測試（start/stop）
-- [ ] 佇列監控註冊測試
+- [x] 建構與配置測試
+- [x] 生命週期測試（start/stop）
+- [x] 佇列監控註冊測試
 - [x] Bridge 附加測試
-- [ ] 遠端控制啟用測試
+- [x] 遠端控制啟用測試
 
 ```typescript
 // __tests__/QuasarAgent.test.ts
@@ -79,14 +79,15 @@ describe('QuasarAgent', () => {
 
 - [x] NodeProbe 單元測試
 - [x] LaravelProbe 測試
-- [ ] BullProbe 測試
-- [ ] RedisListProbe 測試
+- [x] BullProbe 測試
+- [x] RedisListProbe 測試
 
 #### 4.1.3 整合測試
 
 - [x] 基礎流程測試（Agent → Probe → Redis 心跳）
-- [ ] Bridge 事件流測試
-- [ ] 遠端控制命令執行測試
+- [x] Bridge 事件流測試
+- [x] 遠端控制命令執行測試
+
 
 ## 4.2 測試基礎設施改進
 
@@ -108,7 +109,8 @@ describe('QuasarAgent', () => {
 - [x] `README.md` - 架構圖與使用說明已更新
 - [x] `docs/advanced-usage.md` - 進階使用指南
 - [x] `docs/troubleshooting.md` - 故障排除指南
-- [ ] `CHANGELOG.md` - 變更記錄
+- [x] `CHANGELOG.md` - 變更記錄
+- [x] `CONTRIBUTING.md` - 貢獻指南
 
 ### 改進項目
 
@@ -120,13 +122,17 @@ describe('QuasarAgent', () => {
 ### 現況分析
 
 - [x] `examples/basic.ts` - 基本範例
+- [x] `examples/bullmq/` - BullMQ 監控範例
+- [x] `examples/express/` - Express + Health Check 範例
+- [x] `examples/remote-control/` - 遠端控制啟用範例
 
 ### 改進項目
 
-- [ ] 建立結構化 `examples/` 目錄
-- [ ] 新增 BullMQ 完整範例
-- [ ] 新增 Express + Quasar 範例
+- [x] 建立結構化 `examples/` 目錄
+- [x] 新增 BullMQ 完整範例
+- [x] 新增 Express + Quasar 範例
 - [ ] 新增 NestJS 整合範例
+- [x] 新增遠端控制範例
 - [ ] 新增 Docker Compose 範例
 
 ## 4.5 CI/CD 改進

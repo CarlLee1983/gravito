@@ -348,15 +348,20 @@ export class QuasarAgent {
       return true
     }
 
-    // Create a dedicated subscriber connection (clone from transport)
-    // Redis requires a separate connection for SUBSCRIBE
-    const redisUrl = this.transportRedis.options?.host
-      ? `redis://${this.transportRedis.options.host}:${this.transportRedis.options.port || 6379}`
+    const transportClient = this.transportRedis
+    const redisUrl = transportClient.options?.host
+      ? `redis://${transportClient.options.host}:${transportClient.options.port || 6379}`
       : QUASAR_DEFAULTS.REDIS_URL
 
-    this.subscriberRedis = new Redis(redisUrl, {
-      lazyConnect: true,
-    })
+    if (transportClient.options?.mock) {
+      // If we are using a mock, use the same client (or a compatible mock)
+      // For testing, we can use a simpler approach if the client supports duplicating
+      this.subscriberRedis = transportClient as any
+    } else {
+      this.subscriberRedis = new Redis(redisUrl, {
+        lazyConnect: true,
+      })
+    }
 
     try {
       await this.subscriberRedis.connect()

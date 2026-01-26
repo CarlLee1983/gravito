@@ -3,9 +3,11 @@ import { EventEmitter } from 'events'
 export function createMockRedis() {
   const store = new Map<string, string>()
   const lists = new Map<string, string[]>()
+  const handlers = new Map<string, Function[]>()
 
   return {
     status: 'ready',
+    options: { mock: true },
     async connect() {},
     async quit() {},
     async set(key: string, value: string) {
@@ -35,7 +37,35 @@ export function createMockRedis() {
     async publish(channel: string, message: string) {
       return 0
     },
-    on: () => {},
+    async subscribe(channel: string) {},
+    async psubscribe(pattern: string) {},
+    async unsubscribe() {},
+    async punsubscribe() {},
+    async lrem(key: string, count: number, element: string) {
+      const list = lists.get(key) || []
+      const index = list.indexOf(element)
+      if (index > -1) {
+        list.splice(index, 1)
+        lists.set(key, list)
+        return 1
+      }
+      return 0
+    },
+    async lrange(key: string, start: number, stop: number) {
+      const list = lists.get(key) || []
+      return list.slice(start, stop === -1 ? undefined : stop + 1)
+    },
+    on(event: string, callback: Function) {
+      if (!handlers.has(event)) {
+        handlers.set(event, [])
+      }
+      handlers.get(event)!.push(callback)
+    },
+    emitMessage(channel: string, message: string) {
+      handlers.get('message')?.forEach((cb) => {
+        cb(channel, message)
+      })
+    },
     pipeline() {
       const commands: Array<{ cmd: string; args: any[] }> = []
       const pipeline = {
@@ -64,10 +94,20 @@ export function createMockRedis() {
           return pipeline
         },
         async exec() {
-          return commands.map(({ cmd }) => [
-            null,
-            cmd === 'llen' ? 0 : cmd === 'zcard' ? 0 : cmd === 'scard' ? 0 : 'OK',
-          ])
+          const results = commands.map(({ cmd, args }) => {
+            if (cmd === 'lpush') {
+              const [key, ...values] = args
+              const list = lists.get(key) || []
+              list.unshift(...values)
+              lists.set(key, list)
+            } else if (cmd === 'ltrim') {
+              const [key, start, stop] = args
+              const list = lists.get(key) || []
+              lists.set(key, list.slice(start, stop + 1))
+            }
+            return [null, cmd === 'llen' ? 0 : cmd === 'zcard' ? 0 : cmd === 'scard' ? 0 : 'OK']
+          })
+          return results
         },
       }
       return pipeline

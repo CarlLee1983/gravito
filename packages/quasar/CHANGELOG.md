@@ -1,6 +1,26 @@
 # Changelog
 
-## 1.2.0
+## [1.2.1] - 2026-01-26
+
+### Added - Testing & Documentation Improvements
+
+#### Testing
+- **QuasarAgent**: Added lifecycle tests (`start`/`stop`), configuration validation, and monitor registration logic.
+- **BullProbe**: Added comprehensive unit tests for Bull (v3/v4) statistics monitoring.
+- **RedisListProbe**: Added unit tests for basic Redis list monitoring.
+- **BeeQueueBridge**: Added unit tests for job event tracking.
+- **InternalMetrics**: Added tests for internal performance tracking and Prometheus output.
+- **Integration Tests**: Added `bridge-flow.test.ts` and `remote-control.test.ts` for end-to-end event and command verification.
+
+#### Technical
+- **MockRedis**: Enhanced test helper with Pub/Sub support, Pipeline execution logic, and case-insensitive command handling.
+- **QuasarAgent**: Updated `enableRemoteControl` to support mock mode for easier testing.
+
+#### Documentation
+- **CONTRIBUTING.md**: Added new contribution guide with architecture overview and testing instructions.
+- **Phase 4 Plan**: Updated progress tracking for testing milestones.
+
+## [1.2.0]
 
 ### Minor Changes
 

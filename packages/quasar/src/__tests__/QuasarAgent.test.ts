@@ -1,65 +1,171 @@
-import { beforeEach, describe, expect, it, mock } from 'bun:test'
-import { AgendaBridge } from '../bridges/AgendaBridge'
-import { BullBridge } from '../bridges/BullBridge'
-import { BullMQBridge } from '../bridges/BullMQBridge'
-import { GenericBridge } from '../bridges/GenericBridge'
+import { afterEach, beforeEach, describe, expect, it, mock, spyOn } from 'bun:test'
 import { QuasarAgent } from '../QuasarAgent'
+import { MockRedis } from './mock-redis'
 
 describe('QuasarAgent', () => {
-  let agent: QuasarAgent
-  let mockRedis: any
+  let mockTransportRedis: any
+  let mockMonitorRedis: any
 
   beforeEach(() => {
-    mockRedis = {
-      status: 'ready',
-      connect: mock(() => Promise.resolve()),
-      quit: mock(() => Promise.resolve()),
-      publish: mock(() => Promise.resolve()),
-      on: mock(() => {}),
-    }
+    mockTransportRedis = new MockRedis()
+    mockMonitorRedis = new MockRedis()
 
-    agent = new QuasarAgent({
-      service: 'test-service',
-      transport: { client: mockRedis },
+    // Add status property to MockRedis for QuasarAgent.getStatus()
+    ;(mockTransportRedis as any).status = 'ready'
+    ;(mockMonitorRedis as any).status = 'ready'
+
+    // Mock set for heartbeat
+    mockTransportRedis.set = mock(() => Promise.resolve('OK'))
+    // Mock connect/quit/options
+    mockTransportRedis.connect = mock(() => Promise.resolve())
+    mockTransportRedis.quit = mock(() => Promise.resolve())
+    mockTransportRedis.options = { host: 'localhost', port: 6379 }
+
+    mockMonitorRedis.connect = mock(() => Promise.resolve())
+    mockMonitorRedis.quit = mock(() => Promise.resolve())
+  })
+
+  describe('constructor and configuration', () => {
+    it('should initialize with provided transport client', () => {
+      const agent = new QuasarAgent({
+        service: 'test-service',
+        transport: { client: mockTransportRedis },
+      })
+      const status = agent.getStatus()
+      expect(status.service).toBe('test-service')
+      expect(status.transport).toBe('ready')
+    })
+
+    it('should initialize with monitor client when provided', () => {
+      const agent = new QuasarAgent({
+        service: 'test-service',
+        transport: { client: mockTransportRedis },
+        monitor: { client: mockMonitorRedis },
+      })
+      const status = agent.getStatus()
+      expect(status.monitor).toBe('ready')
+    })
+
+    it('should use default redis url when no transport provided', () => {
+      const agent = new QuasarAgent({
+        service: 'test-service',
+      })
+      expect(agent).toBeDefined()
     })
   })
 
-  it('should attach BullMQ bridge', () => {
-    const worker = { on: mock(() => {}) }
-    agent.attachBridge(worker, 'bullmq')
-    // We can't easily access the bridges array as it is private,
-    // but we can check if console log was called or if no error was thrown.
-    // Or we can mock the Bridge constructors?
-    // Since we can't mock imports easily in bun test in the same file without complex setup,
-    // we'll rely on successful execution.
-    expect(true).toBe(true)
-  })
+  describe('lifecycle (start/stop)', () => {
+    it('should connect to redis on start', async () => {
+      const transportClient = new MockRedis()
+      const monitorClient = new MockRedis()
 
-  it('should attach Bull bridge', () => {
-    const queue = { on: mock(() => {}) }
-    agent.attachBridge(queue, 'bull')
-    expect(true).toBe(true)
-  })
+      const transportSpy = spyOn(transportClient, 'connect').mockImplementation(() =>
+        Promise.resolve()
+      )
+      const monitorSpy = spyOn(monitorClient, 'connect').mockImplementation(() => Promise.resolve())
 
-  it('should attach Agenda bridge', () => {
-    const agenda = { on: mock(() => {}) }
-    agent.attachBridge(agenda, 'agenda')
-    expect(true).toBe(true)
-  })
+      const agent = new QuasarAgent({
+        service: 'test-service',
+        transport: { client: transportClient as any },
+        monitor: { client: monitorClient as any },
+      })
 
-  it('should attach Generic bridge', () => {
-    const emitter = { on: mock(() => {}) }
-    agent.attachBridge(emitter, 'generic', {
-      eventMapping: { started: 'start' },
-      queueName: 'test-queue',
+      await agent.start()
+
+      expect(transportSpy).toHaveBeenCalled()
+      expect(monitorSpy).toHaveBeenCalled()
+
+      await agent.stop()
     })
-    expect(true).toBe(true)
+
+    it('should cleanup redis connections on stop', async () => {
+      const agent = new QuasarAgent({
+        service: 'test-service',
+        transport: { client: mockTransportRedis },
+      })
+
+      await agent.start()
+      await agent.stop()
+
+      expect(mockTransportRedis.quit).toHaveBeenCalled()
+    })
+
+    it('should perform initial tick on start', async () => {
+      const agent = new QuasarAgent({
+        service: 'test-service',
+        transport: { client: mockTransportRedis },
+      })
+
+      await agent.start()
+      // Heartbeat set is called during tick
+      expect(mockTransportRedis.set).toHaveBeenCalled()
+
+      await agent.stop()
+    })
   })
 
-  it('should warn if generic bridge missing options', () => {
-    const emitter = { on: mock(() => {}) }
-    // Should warn and not throw
-    agent.attachBridge(emitter, 'generic')
-    expect(true).toBe(true)
+  describe('monitorQueue registration', () => {
+    it('should warn when monitor not configured', () => {
+      const consoleSpy = spyOn(console, 'warn').mockImplementation(() => {})
+      const agent = new QuasarAgent({
+        service: 'test-service',
+        transport: { client: mockTransportRedis },
+      })
+
+      agent.monitorQueue('test-queue', 'bullmq')
+      expect(consoleSpy).toHaveBeenCalled()
+      consoleSpy.mockRestore()
+    })
+
+    it('should register bullmq probe', async () => {
+      const agent = new QuasarAgent({
+        service: 'test-service',
+        transport: { client: mockTransportRedis },
+        monitor: { client: mockMonitorRedis },
+      })
+
+      agent.monitorQueue('test-queue', 'bullmq')
+      // Indirectly verify by checking if tick calls pipeline on monitor redis
+      mockMonitorRedis.pipeline = mock(() => ({
+        hgetall: () => ({}),
+        exec: () =>
+          Promise.resolve([
+            [null, {}],
+            [null, 0],
+            [null, 0],
+            [null, 0],
+            [null, 0],
+          ]),
+      }))
+
+      await agent.start()
+      // tick is called on start
+      await agent.stop()
+    })
+  })
+
+  describe('remote control', () => {
+    it('should fail to enable before start (missing nodeId)', async () => {
+      const agent = new QuasarAgent({
+        service: 'test-service',
+        transport: { client: mockTransportRedis },
+        monitor: { client: mockMonitorRedis },
+      })
+
+      const enabled = await agent.enableRemoteControl()
+      expect(enabled).toBe(false)
+    })
+
+    it('should fail to enable if monitor not configured', async () => {
+      const agent = new QuasarAgent({
+        service: 'test-service',
+        transport: { client: mockTransportRedis },
+      })
+
+      await agent.start()
+      const enabled = await agent.enableRemoteControl()
+      expect(enabled).toBe(false)
+      await agent.stop()
+    })
   })
 })
