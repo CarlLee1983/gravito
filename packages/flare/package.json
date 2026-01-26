@@ -40,7 +40,8 @@
   "author": "Carl Lee <carllee0520@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "@gravito/core": "workspace:*"
+    "@gravito/core": "workspace:*",
+    "@aws-sdk/client-sns": "^3.734.0"
   },
   "peerDependencies": {
     "@gravito/stream": "workspace:*",
