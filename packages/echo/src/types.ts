@@ -1,3 +1,6 @@
+import type { DeadLetterQueue } from './dlq/DeadLetterQueue'
+import type { WebhookStore } from './storage/WebhookStore'
+
 /**
  * @fileoverview Core types for @gravito/echo webhook module
  * @module @gravito/echo
@@ -170,6 +173,74 @@ export interface WebhookDispatcherConfig {
   userAgent?: string
 }
 
+/**
+ * Options for batch dispatching webhooks
+ * @public
+ */
+export interface BatchDispatchOptions {
+  /** Maximum number of concurrent requests (default: 5) */
+  concurrency?: number
+  /** Whether to stop processing on the first failure (default: false) */
+  stopOnFirstFailure?: boolean
+}
+
+/**
+ * Result of a batch dispatch operation
+ * @public
+ */
+export interface BatchDispatchResult {
+  /** Total number of webhooks in the batch */
+  total: number
+  /** Number of successfully delivered webhooks */
+  succeeded: number
+  /** Number of failed webhooks */
+  failed: number
+  /** Individual results for each webhook */
+  results: Array<{
+    payload: WebhookPayload
+    result: WebhookDeliveryResult
+  }>
+}
+
+/**
+ * Options for replaying events
+ * @public
+ */
+export interface ReplayOptions {
+  /** List of event IDs to replay */
+  eventIds?: string[]
+  /** Filter by time range */
+  timeRange?: {
+    from: Date
+    to: Date
+  }
+  /** Filter by provider */
+  provider?: string
+  /** Filter by event type */
+  eventType?: string
+  /** Dry run mode (do not actually send) */
+  dryRun?: boolean
+  /** Override target URL */
+  targetUrl?: string
+}
+
+/**
+ * Result of a replay operation
+ * @public
+ */
+export interface ReplayResult {
+  total: number
+  replayed: number
+  skipped: number
+  failed: number
+  events: Array<{
+    eventId: string
+    status: 'replayed' | 'skipped' | 'failed'
+    result?: WebhookDeliveryResult
+    error?: string
+  }>
+}
+
 // ─────────────────────────────────────────────────────────────
 // Echo Module Configuration
 // ─────────────────────────────────────────────────────────────
@@ -191,4 +262,13 @@ export interface EchoConfig {
    * Default: '/webhooks'
    */
   basePath?: string
+
+  /** Persistence store for events */
+  store?: WebhookStore
+
+  /** Dead letter queue for failed events */
+  deadLetterQueue?: DeadLetterQueue
+
+  /** Default batch dispatch options */
+  batch?: BatchDispatchOptions
 }

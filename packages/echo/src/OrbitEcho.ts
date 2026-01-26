@@ -49,6 +49,14 @@ export class OrbitEcho implements GravitoOrbit {
     // Create dispatcher
     if (config.dispatcher) {
       this.dispatcher = new WebhookDispatcher(config.dispatcher)
+      if (config.deadLetterQueue) {
+        this.dispatcher.setDeadLetterQueue(config.deadLetterQueue)
+      }
+    }
+
+    // Set storage
+    if (config.store) {
+      this.receiver.setStore(config.store)
     }
   }
 

@@ -6,8 +6,12 @@
  * @module @gravito/echo/send
  */
 
+import type { DeadLetterQueue } from '../dlq/DeadLetterQueue'
 import { computeHmacSha256 } from '../receive/SignatureValidator'
+import type { OutgoingWebhookRecord } from '../storage/WebhookStore'
 import type {
+  BatchDispatchOptions,
+  BatchDispatchResult,
   RetryConfig,
   WebhookDeliveryResult,
   WebhookDispatcherConfig,
@@ -49,12 +53,21 @@ export class WebhookDispatcher {
   private retryConfig: Required<RetryConfig>
   private timeout: number
   private userAgent: string
+  private dlq?: DeadLetterQueue
 
   constructor(config: WebhookDispatcherConfig) {
     this.secret = config.secret
     this.retryConfig = { ...DEFAULT_RETRY_CONFIG, ...config.retry }
     this.timeout = config.timeout ?? 30000
     this.userAgent = config.userAgent ?? 'Gravito-Echo/1.0'
+  }
+
+  /**
+   * Set Dead Letter Queue
+   */
+  setDeadLetterQueue(dlq: DeadLetterQueue): this {
+    this.dlq = dlq
+    return this
   }
 
   /**
@@ -82,10 +95,117 @@ export class WebhookDispatcher {
       }
 
       // Don't retry if status is not retryable
-      return result
+      break
+    }
+
+    // If we exhausted retries or hit non-retryable error, check DLQ
+    if (this.dlq && lastResult && !lastResult.success) {
+      await this.dlq.enqueue({
+        type: 'outgoing',
+        originalEvent: {
+          url: payload.url,
+          event: payload.event,
+          payload: payload.data,
+          createdAt: new Date(),
+          status: 'failed',
+          attempts: [], // Store will track attempts separately, or we can add this attempt here
+        } as OutgoingWebhookRecord,
+        failureReason: lastResult.error ?? 'Unknown error',
+        failedAt: new Date(),
+        retryCount: lastResult.attempt,
+      })
     }
 
     return lastResult!
+  }
+
+  /**
+   * Dispatch a batch of webhooks
+   */
+  async dispatchBatch<T = unknown>(
+    payloads: WebhookPayload<T>[],
+    options: BatchDispatchOptions = {}
+  ): Promise<BatchDispatchResult> {
+    const concurrency = options.concurrency ?? 5
+    const stopOnFirstFailure = options.stopOnFirstFailure ?? false
+
+    const results: BatchDispatchResult['results'] = []
+    let succeeded = 0
+    let failed = 0
+    let stopped = false
+
+    // Process in chunks
+    for (let i = 0; i < payloads.length && !stopped; i += concurrency) {
+      const chunk = payloads.slice(i, i + concurrency)
+
+      const chunkResults = await Promise.all(
+        chunk.map(async (payload) => {
+          if (stopped) {
+            return {
+              payload,
+              result: {
+                success: false,
+                attempt: 0,
+                duration: 0,
+                deliveredAt: new Date(),
+                error: 'Batch dispatch stopped',
+              } as WebhookDeliveryResult,
+            }
+          }
+
+          const result = await this.dispatch(payload)
+
+          if (result.success) {
+            succeeded++
+          } else {
+            failed++
+            if (stopOnFirstFailure) {
+              stopped = true
+            }
+          }
+
+          return { payload, result }
+        })
+      )
+
+      results.push(...chunkResults)
+    }
+
+    return {
+      total: payloads.length,
+      succeeded,
+      failed,
+      results,
+    }
+  }
+
+  /**
+   * Retry an event from DLQ
+   */
+  async retryFromDlq(id: string): Promise<WebhookDeliveryResult | null> {
+    if (!this.dlq) return null
+
+    const events = await this.dlq.peek(100)
+    const event = events.find((e) => e.id === id)
+
+    if (!event || event.type !== 'outgoing') return null
+
+    const outgoing = event.originalEvent as OutgoingWebhookRecord
+
+    const result = await this.dispatch({
+      url: outgoing.url,
+      event: outgoing.event,
+      data: outgoing.payload,
+    })
+
+    if (result.success) {
+      await this.dlq.dequeue(id)
+    } else {
+      event.retryCount++
+      event.lastRetryAt = new Date()
+    }
+
+    return result
   }
 
   /**

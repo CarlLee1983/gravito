@@ -90,6 +90,39 @@ if (result.success) {
 } else {
   console.error('Delivery failed:', result.error)
 }
+
+// Batch sending
+const batchResult = await dispatcher.dispatchBatch([
+  { url: 'https://a.com', event: 'e1', data: { id: 1 } },
+  { url: 'https://b.com', event: 'e1', data: { id: 2 } }
+], { concurrency: 5 })
+```
+
+### Persistence & Reliability
+
+Echo supports persistence for audit logs and Dead Letter Queues (DLQ) for failed deliveries.
+
+```typescript
+import { 
+  OrbitEcho, 
+  MemoryWebhookStore, 
+  MemoryDeadLetterQueue 
+} from '@gravito/echo'
+
+const echo = new OrbitEcho({
+  providers: { /* ... */ },
+  dispatcher: { /* ... */ },
+  // Configure persistence
+  store: new MemoryWebhookStore(), // Or your DB implementation
+  deadLetterQueue: new MemoryDeadLetterQueue()
+})
+
+// Replay failed events
+const replayService = new WebhookReplayService(echo.getConfig().store!, echo.getDispatcher()!)
+await replayService.replay({ 
+  timeRange: { from: new Date(Date.now() - 86400000), to: new Date() },
+  dryRun: true 
+})
 ```
 
 ## Providers

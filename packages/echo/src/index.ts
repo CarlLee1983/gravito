@@ -39,6 +39,9 @@
  * @module @gravito/echo
  */
 
+export type { DeadLetterEvent, DeadLetterQueue } from './dlq/DeadLetterQueue'
+// DLQ
+export { MemoryDeadLetterQueue } from './dlq/MemoryDeadLetterQueue'
 // Core
 export { OrbitEcho } from './OrbitEcho'
 // Providers
@@ -60,13 +63,29 @@ export {
 } from './receive/SignatureValidator'
 // Receiving
 export { WebhookReceiver } from './receive/WebhookReceiver'
+// Replay
+export { WebhookReplayService } from './replay/WebhookReplayService'
 // Sending
 export { WebhookDispatcher } from './send/WebhookDispatcher'
+// Storage
+export { MemoryWebhookStore } from './storage/MemoryWebhookStore'
+export type {
+  EventQueryFilter,
+  IncomingWebhookRecord,
+  OutgoingWebhookRecord,
+  WebhookRecord,
+  WebhookStore,
+} from './storage/WebhookStore'
 
 // Types
 export type {
+  BatchDispatchOptions,
+  BatchDispatchResult,
   // Config
   EchoConfig,
+  // Replay
+  ReplayOptions,
+  ReplayResult,
   RetryConfig,
   WebhookDeliveryResult,
   WebhookDispatcherConfig,

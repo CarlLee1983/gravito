@@ -14,6 +14,7 @@ import { ShopifyProvider } from '../providers/ShopifyProvider'
 import { SlackProvider } from '../providers/SlackProvider'
 import { StripeProvider } from '../providers/StripeProvider'
 import { TwilioProvider } from '../providers/TwilioProvider'
+import type { WebhookStore } from '../storage/WebhookStore'
 import type {
   WebhookEvent,
   WebhookHandler,
@@ -49,6 +50,7 @@ export class WebhookReceiver {
   private providers = new Map<string, { provider: WebhookProvider; secret: string }>()
   private handlers = new Map<string, Map<string, WebhookHandler[]>>()
   private globalHandlers = new Map<string, WebhookHandler[]>()
+  private store?: WebhookStore
 
   constructor() {
     // Register built-in providers
@@ -64,6 +66,14 @@ export class WebhookReceiver {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private providerTypes = new Map<string, ProviderClass>()
+
+  /**
+   * Set storage backend
+   */
+  setStore(store: WebhookStore): this {
+    this.store = store
+    return this
+  }
 
   /**
    * Register a custom provider type
@@ -129,7 +139,7 @@ export class WebhookReceiver {
     providerName: string,
     body: string | Buffer,
     headers: Record<string, string | string[] | undefined>
-  ): Promise<WebhookVerificationResult & { handled: boolean }> {
+  ): Promise<WebhookVerificationResult & { handled: boolean; eventId?: string }> {
     const config = this.providers.get(providerName)
     if (!config) {
       return {
@@ -147,6 +157,22 @@ export class WebhookReceiver {
       return { ...result, handled: false }
     }
 
+    // 儲存事件（如果有設定 store）
+    let eventId: string | undefined
+    if (this.store) {
+      eventId = await this.store.saveIncomingEvent({
+        provider: providerName,
+        eventType: result.eventType ?? 'unknown',
+        payload: result.payload,
+        headers: Object.fromEntries(
+          Object.entries(headers).map(([k, v]) => [k, Array.isArray(v) ? v[0] : v])
+        ),
+        rawBody: typeof body === 'string' ? body : body.toString('utf-8'),
+        receivedAt: new Date(),
+        status: 'pending',
+      })
+    }
+
     // Create event object
     const event: WebhookEvent = {
       provider: providerName,
@@ -158,31 +184,42 @@ export class WebhookReceiver {
       id: result.webhookId,
     }
 
-    // Call handlers
-    let handled = false
+    try {
+      // Call handlers
+      let handled = false
 
-    // Call event-specific handlers
-    const providerHandlers = this.handlers.get(providerName)
-    if (providerHandlers) {
-      const eventHandlers = providerHandlers.get(event.type)
-      if (eventHandlers) {
-        for (const handler of eventHandlers) {
+      // Call event-specific handlers
+      const providerHandlers = this.handlers.get(providerName)
+      if (providerHandlers) {
+        const eventHandlers = providerHandlers.get(event.type)
+        if (eventHandlers) {
+          for (const handler of eventHandlers) {
+            await handler(event)
+            handled = true
+          }
+        }
+      }
+
+      // Call global handlers
+      const globalHandlers = this.globalHandlers.get(providerName)
+      if (globalHandlers) {
+        for (const handler of globalHandlers) {
           await handler(event)
           handled = true
         }
       }
-    }
 
-    // Call global handlers
-    const globalHandlers = this.globalHandlers.get(providerName)
-    if (globalHandlers) {
-      for (const handler of globalHandlers) {
-        await handler(event)
-        handled = true
+      if (this.store && eventId) {
+        await this.store.markProcessed(eventId)
       }
-    }
 
-    return { ...result, handled }
+      return { ...result, handled, eventId }
+    } catch (error) {
+      if (this.store && eventId) {
+        await this.store.markFailed(eventId, String(error))
+      }
+      throw error
+    }
   }
 
   /**
