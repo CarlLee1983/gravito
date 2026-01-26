@@ -261,6 +261,11 @@ export class User extends Model {
   // Action Generators
   // ─────────────────────────────────────────────────────────────
 
+  /**
+   * Generates the base Action class source code.
+   *
+   * @returns The complete source code for the abstract Action class.
+   */
   private generateActionBase(): string {
     return `/**
  * Action Base Class
@@ -278,6 +283,11 @@ export abstract class Action<TInput = unknown, TOutput = unknown> {
 `
   }
 
+  /**
+   * Generates the GetServerStatusAction source code.
+   *
+   * @returns The complete source code for the example action.
+   */
   private generateGetServerStatusAction(): string {
     return `/**
  * Get Server Status Action
@@ -302,6 +312,11 @@ export class GetServerStatusAction extends Action<void, ServerStatusResponse> {
   // Controller Generators
   // ─────────────────────────────────────────────────────────────
 
+  /**
+   * Generates the Server Controller source code.
+   *
+   * @returns The complete source code for the ServerController class.
+   */
   private generateServerController(): string {
     return `/**
  * Server Controller
@@ -331,6 +346,11 @@ export class ServerController {
   // Type Generators
   // ─────────────────────────────────────────────────────────────
 
+  /**
+   * Generates the ServerStatusResponse type definition.
+   *
+   * @returns The complete source code for the response interface.
+   */
   private generateServerStatusResponse(): string {
     return `/**
  * Server Status Response Type
@@ -348,6 +368,11 @@ export interface ServerStatusResponse {
   // Routes & Bootstrap
   // ─────────────────────────────────────────────────────────────
 
+  /**
+   * Generates the API routes registration function.
+   *
+   * @returns The complete source code for the api.ts routes file.
+   */
   private generateApiRoutes(): string {
     return `/**
  * API Routes Registration
@@ -367,6 +392,12 @@ export function registerApiRoutes(router: Router) {
 `
   }
 
+  /**
+   * Generates the App Service Provider source code.
+   *
+   * @param context - The generator context containing project details.
+   * @returns The complete source code for AppServiceProvider.
+   */
   private generateAppServiceProvider(context: GeneratorContext): string {
     return `/**
  * App Service Provider
@@ -397,6 +428,11 @@ export { RouteProvider } from './RouteProvider'
 `
   }
 
+  /**
+   * Generates the Middleware Service Provider source code.
+   *
+   * @returns The complete source code for MiddlewareProvider.
+   */
   private generateMiddlewareProvider(): string {
     return `/**
  * Middleware Service Provider
@@ -422,6 +458,11 @@ export class MiddlewareProvider extends ServiceProvider {
 `
   }
 
+  /**
+   * Generates the Route Service Provider source code.
+   *
+   * @returns The complete source code for RouteProvider.
+   */
   private generateRouteProvider(): string {
     return `/**
  * Route Service Provider
