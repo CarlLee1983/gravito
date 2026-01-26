@@ -193,6 +193,74 @@ Prism 支援完整的佈局繼承模式，這與 Laravel Blade 非常相似。
 @include('partials/footer')
 ```
 
+## 效能與快取 (Performance & Caching)
+
+從 **v3.1.0** 開始，Prism 內建了高效能的樣板快取機制，能顯著降低渲染延遲。
+
+### 啟用快取
+
+在正式環境中啟用快取，最高可獲得 **141 倍** 的初始渲染提升，以及 **7 倍** 的重複渲染加速。
+
+```typescript
+import { OrbitPrism } from '@gravito/prism'
+
+const prism = new OrbitPrism({
+  cache: {
+    enabled: process.env.NODE_ENV === 'production',
+    maxSize: 500,      // 最大快取樣板數量
+    development: false // 設定為 true 則在開發環境也強制檢查快取
+  }
+})
+```
+
+### 運作原理
+
+1.  **基於雜湊的失效機制 (Hash-based Invalidation)**：Prism 會為每個樣板生成內容雜湊 (Hash)。如果檔案內容變動，快取將自動失效。
+2.  **LRU 淘汰演算法**：當快取達到 `maxSize` 時，會自動移除最少使用的樣板，以防止記憶體過度消耗。
+3.  **極低開銷**：快取層經過極致優化，處理 10,000 次渲染僅需 35ms。
+
+---
+
+## 靜態網站生成 (SSG)
+
+Prism 提供內建的 `StaticSiteGenerator`，可將您的動態樣板匯出為高效能的靜態 HTML 檔案。
+
+### 增量建置 (Incremental Builds)
+
+透過僅重新建置有變動的頁面來節省時間。Prism 會在 `.build-manifest.json` 中追蹤內容雜湊。
+
+```typescript
+const ssg = core.container.resolve('ssg')
+
+await ssg.exportIncremental('./dist-static', {
+  baseUrl: 'https://example.com',
+  incremental: true
+})
+```
+
+### 動態路由 (Dynamic Routes)
+
+為 `/blog/[slug]` 等動態路徑生成靜態頁面。
+
+```typescript
+import { DynamicRouteResolver } from '@gravito/prism'
+
+const dynamicRoutes = [
+  {
+    pattern: '/blog/[slug]',
+    getStaticPaths: async () => {
+      const posts = await fetchPosts()
+      return posts.map(post => ({
+        params: { slug: post.slug },
+        data: post
+      }))
+    }
+  }
+]
+
+await ssg.exportDynamic(dynamicRoutes, './dist-static')
+```
+
 ---
 
 ## 控制器用法

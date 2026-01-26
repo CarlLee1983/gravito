@@ -1,0 +1,42 @@
+name: Flux Quality Gates
+
+on:
+  pull_request:
+    paths:
+      - 'packages/flux/**'
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+
+      - name: Install dependencies
+        run: bun install --ignore-scripts
+
+      - name: Type check
+        run: bun run typecheck
+        working-directory: packages/flux
+
+      - name: Run tests with coverage
+        run: bun run test:coverage
+        working-directory: packages/flux
+
+      - name: Check coverage thresholds
+        run: |
+          # Verify coverage >= 90%
+          bun test --coverage --coverage-threshold=90
+        working-directory: packages/flux
+
+      - name: Check file sizes
+        run: |
+          # Verify FluxEngine <= 400 lines (Refactored size)
+          [ $(wc -l < src/engine/FluxEngine.ts) -le 400 ]
+        working-directory: packages/flux
+
+      - name: Run benchmarks
+        run: bun run tests/benchmark.ts
+        working-directory: packages/flux

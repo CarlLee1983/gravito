@@ -2,13 +2,17 @@ import type { GravitoContext } from '@gravito/core'
 import { type AuthManager, HashManager } from '@gravito/sentinel'
 import type { FortifyConfig } from '../config'
 import { ensureCsrfToken } from '../csrf'
+import type { AuthLogger } from '../services/AuthLogger'
+import type { StrengthValidator } from '../services/StrengthValidator'
 import type { ViewService } from '../types'
+import { getClientInfo } from '../utils/request'
 
-/**
- * RegisterController handles user registration
- */
 export class RegisterController {
-  constructor(private config: FortifyConfig) {}
+  constructor(
+    private config: FortifyConfig,
+    private strengthValidator?: StrengthValidator,
+    private authLogger?: AuthLogger
+  ) {}
 
   /**
    * Show registration form
@@ -38,10 +42,6 @@ export class RegisterController {
     return c.html(this.defaultRegisterHtml(csrfToken ?? undefined))
   }
 
-  /**
-   * Handle registration
-   * POST /register
-   */
   async store(c: GravitoContext): Promise<Response> {
     const auth = c.get('auth') as AuthManager
     if (!auth) {
@@ -55,7 +55,8 @@ export class RegisterController {
       password_confirmation?: string
     }>()
 
-    // Basic validation
+    const clientInfo = getClientInfo(c)
+
     if (!body.email || !body.password) {
       if (this.config.jsonMode) {
         return c.json({ error: 'Email and password are required' }, 422)
@@ -70,11 +71,20 @@ export class RegisterController {
       return c.redirect('/register?error=password_mismatch')
     }
 
+    if (this.strengthValidator) {
+      const validation = this.strengthValidator.check(body.password)
+      if (!validation.valid) {
+        const errorMsg = validation.errors.join(', ')
+        if (this.config.jsonMode) {
+          return c.json({ error: errorMsg, errors: validation.errors }, 422)
+        }
+        return c.redirect(`/register?error=weak_password&message=${encodeURIComponent(errorMsg)}`)
+      }
+    }
+
     try {
-      // Get User model from config
       const UserModel = this.config.userModel()
 
-      // Check if user already exists
       const existingUser = await (UserModel as any).query().where('email', body.email).first()
       if (existingUser) {
         if (this.config.jsonMode) {
@@ -83,19 +93,25 @@ export class RegisterController {
         return c.redirect('/register?error=email_exists')
       }
 
-      // Hash password
       const hasher = new HashManager()
       const hashedPassword = await hasher.make(body.password)
 
-      // Create user
       const user = await (UserModel as any).create({
         name: body.name ?? '',
         email: body.email,
         password: hashedPassword,
       })
 
-      // Log the user in
       await auth.login(user)
+
+      await this.authLogger?.log({
+        type: 'register',
+        userId: user.id,
+        email: body.email,
+        success: true,
+        ip: clientInfo.ip,
+        userAgent: clientInfo.userAgent,
+      })
 
       if (this.config.jsonMode) {
         return c.json(
@@ -111,6 +127,17 @@ export class RegisterController {
       return c.redirect(this.config.redirects.register ?? '/dashboard')
     } catch (error) {
       console.error('[Fortify] Registration error:', error)
+
+      await this.authLogger?.log({
+        type: 'register',
+        userId: undefined,
+        email: body.email,
+        success: false,
+        ip: clientInfo.ip,
+        userAgent: clientInfo.userAgent,
+        metadata: { error: String(error) },
+      })
+
       if (this.config.jsonMode) {
         return c.json({ error: 'Registration failed' }, 500)
       }

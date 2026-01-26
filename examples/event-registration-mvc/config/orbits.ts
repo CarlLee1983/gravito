@@ -1,4 +1,4 @@
-import { DB, OrbitAtlas } from '@gravito/atlas'
+import { OrbitAtlas } from '@gravito/atlas'
 import { OrbitCosmos } from '@gravito/cosmos'
 import { OrbitIon } from '@gravito/ion'
 import { OrbitMonolith } from '@gravito/monolith'
@@ -6,7 +6,7 @@ import { OrbitPrism } from '@gravito/prism'
 import { OrbitPulsar } from '@gravito/pulsar'
 import { CallbackUserProvider, OrbitSentinel } from '@gravito/sentinel'
 import { OrbitSignal } from '@gravito/signal'
-import type { User } from '../src/Models/User'
+import { User } from '../src/Models/User'
 import { en, zhTW } from './locales'
 
 export const orbits = [
@@ -26,7 +26,7 @@ export const orbits = [
     // Required for session guard
     driver: 'memory',
     csrf: {
-      enabled: true,
+      enabled: process.env.NODE_ENV !== 'test',
     },
   }),
   new OrbitSentinel({
@@ -49,12 +49,12 @@ export const orbits = [
         users: () =>
           new CallbackUserProvider(
             async (id) => {
-              return await DB.table<User>('users').where('id', id).first()
+              return await User.find(id)
             },
             async () => true, // validateCredentials - handled by controller for now
             undefined, // retrieveByToken
             async (credentials) => {
-              return await DB.table<User>('users').where('email', credentials.email).first()
+              return await User.where('email', credentials.email).first()
             }
           ),
       },

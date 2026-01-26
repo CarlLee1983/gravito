@@ -4,7 +4,10 @@ import type { OrbitSignal } from '@gravito/signal'
 import type { FortifyConfig } from '../config'
 import { ensureCsrfToken } from '../csrf'
 import { VerifyEmailMail } from '../mail'
+import type { AuthLogger } from '../services/AuthLogger'
+import type { RateLimiter } from '../services/RateLimiter'
 import type { ViewService } from '../types'
+import { getClientInfo } from '../utils/request'
 
 /**
  * VerifyEmailController handles email verification
@@ -12,7 +15,11 @@ import type { ViewService } from '../types'
 export class VerifyEmailController {
   private verificationService: EmailVerificationService
 
-  constructor(private config: FortifyConfig) {
+  constructor(
+    private config: FortifyConfig,
+    private rateLimiter?: RateLimiter,
+    private authLogger?: AuthLogger
+  ) {
     // In production, use a proper secret from config
     const secret = process.env.APP_KEY ?? 'gravito-fortify-secret-key'
     this.verificationService = new EmailVerificationService(secret)
@@ -54,6 +61,7 @@ export class VerifyEmailController {
   async verify(c: GravitoContext): Promise<Response> {
     const id = c.req.param('id')
     const hash = c.req.param('hash')
+    const { ip, userAgent } = getClientInfo(c)
 
     if (!id || !hash) {
       if (this.config.jsonMode) {
@@ -88,6 +96,18 @@ export class VerifyEmailController {
       user.email_verified_at = new Date()
       await user.save()
 
+      // Log email verified event
+      if (this.authLogger) {
+        await this.authLogger.log({
+          type: 'email_verified',
+          userId: user.id,
+          email: user.email,
+          ip,
+          userAgent,
+          success: true,
+        })
+      }
+
       if (this.config.jsonMode) {
         return c.json({
           message: 'Email verified successfully',
@@ -111,12 +131,33 @@ export class VerifyEmailController {
    */
   async send(c: GravitoContext): Promise<Response> {
     const auth = c.get('auth') as AuthManager
+    const { ip, userAgent } = getClientInfo(c)
 
     if (!auth || !(await auth.check())) {
       if (this.config.jsonMode) {
         return c.json({ error: 'Unauthenticated' }, 401)
       }
       return c.redirect('/login')
+    }
+
+    // Check rate limit if available
+    if (this.rateLimiter) {
+      const user = (await auth.user()) as any
+      const rateLimitKey = `email-verification:${user.id}`
+
+      const rateLimitResult = await this.rateLimiter.checkAttempt(rateLimitKey)
+      if (!rateLimitResult.allowed) {
+        if (this.config.jsonMode) {
+          return c.json(
+            {
+              error: 'Too many verification email requests. Please try again later.',
+              retryAfter: rateLimitResult.retryAfter,
+            },
+            429
+          )
+        }
+        return c.redirect('/verify-email?error=rate_limit')
+      }
     }
 
     try {
@@ -154,6 +195,23 @@ export class VerifyEmailController {
       } catch (mailError) {
         console.error('[Fortify] Failed to send verification email:', mailError)
         // Continue anyway - don't fail the request due to email issues
+      }
+
+      // Record successful attempt if rate limiter is available
+      if (this.rateLimiter) {
+        this.rateLimiter.recordSuccess(`email-verification:${user.id}`)
+      }
+
+      // Log email verification sent event
+      if (this.authLogger) {
+        await this.authLogger.log({
+          type: 'email_verification_sent',
+          userId: user.id,
+          email: user.email,
+          ip,
+          userAgent,
+          success: true,
+        })
       }
 
       if (this.config.jsonMode) {

@@ -1,5 +1,4 @@
 import { DB } from '@gravito/atlas'
-import type { GravitoContext } from '@gravito/core'
 import { type Event, EventStatus } from '../../../Models/Event'
 import { Controller } from '../Controller'
 
@@ -17,7 +16,7 @@ export class EventController extends Controller {
   async store(ctx: any) {
     const data = ctx.get('data') as any
 
-    const event = await DB.table<Event>('events').insert({
+    const _event = await DB.table<Event>('events').insert({
       title: data.title,
       description: data.description,
       location: data.location,
@@ -31,7 +30,7 @@ export class EventController extends Controller {
   }
 
   async edit(ctx: any) {
-    const eventId = parseInt(ctx.params.id)
+    const eventId = parseInt(ctx.params.id, 10)
     const event = await DB.table<Event>('events').where('id', eventId).first()
 
     if (!event) {
@@ -42,7 +41,7 @@ export class EventController extends Controller {
   }
 
   async update(ctx: any) {
-    const eventId = parseInt(ctx.params.id)
+    const eventId = parseInt(ctx.params.id, 10)
     const data = ctx.get('data') as any
 
     await DB.table<Event>('events')
@@ -61,7 +60,7 @@ export class EventController extends Controller {
   }
 
   async destroy(ctx: any) {
-    const eventId = parseInt(ctx.params.id)
+    const eventId = parseInt(ctx.params.id, 10)
     await DB.table<Event>('events').where('id', eventId).delete()
 
     return ctx.redirect('/admin/events').with('success', 'Event deleted successfully')

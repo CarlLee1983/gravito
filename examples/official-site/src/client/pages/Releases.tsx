@@ -21,6 +21,25 @@ interface ReleaseEntry {
 // Release data - can be moved to a separate data file or CMS later
 const releasesZh: ReleaseEntry[] = [
   {
+    id: 'photon-site-launch',
+    date: '2026-01-22',
+    type: 'announcement',
+    title: 'Photon 官網正式上線',
+    description:
+      'Gravito Photon 引擎的官方網站現已正式發布！深入了解專為 Bun 打造的極致效能 HTTP 引擎。',
+    highlights: [
+      '超高效能：展示基於 Hono 基礎優化的 Photon 引擎測試數據',
+      '全新視覺：採用 Gravito 引力核心設計語言',
+      '完整文檔：包含安裝、路由、中間件與 SSG 支援等詳細指南',
+      '動態體驗：結合 Canvas 物理引擎的互動式網頁設計',
+    ],
+    links: [
+      { label: '訪問 Photon 官網', url: 'https://photon.gravito.dev' },
+      { label: '查看文檔', url: 'https://photon.gravito.dev/docs/intro' },
+    ],
+    featured: true,
+  },
+  {
     id: 'zenith-launch',
     date: '2026-01-13',
     type: 'release',
@@ -130,6 +149,25 @@ const releasesZh: ReleaseEntry[] = [
 ]
 
 const releasesEn: ReleaseEntry[] = [
+  {
+    id: 'photon-site-launch',
+    date: '2026-01-22',
+    type: 'announcement',
+    title: 'Photon Official Site Launched',
+    description:
+      'The official documentation and showcase site for Gravito Photon engine is now live! Explore the high-performance HTTP engine built for Bun.',
+    highlights: [
+      'Ultra Performance: View benchmarks of the optimized Photon engine',
+      'Modern Visuals: Powered by the Gravito "Gravity Core" design language',
+      'Full Documentation: Detailed guides for routing, middleware, and SSG',
+      'Interactive DX: Dynamic web design with Canvas physics integration',
+    ],
+    links: [
+      { label: 'Visit Photon Site', url: 'https://photon.gravito.dev' },
+      { label: 'Read Docs', url: 'https://photon.gravito.dev/docs/intro' },
+    ],
+    featured: true,
+  },
   {
     id: 'zenith-launch',
     date: '2026-01-13',

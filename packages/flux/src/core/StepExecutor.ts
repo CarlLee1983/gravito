@@ -13,11 +13,19 @@ import type {
   StepResult,
   WorkflowContext,
 } from '../types'
+import { updateStepExecution } from './executionUpdater'
 
 /**
- * Step Executor
+ * Handles the isolated execution of a single workflow step.
  *
- * Executes individual workflow steps with retry and timeout support.
+ * The StepExecutor manages the operational aspects of step execution, including
+ * condition checking, retry logic with exponential backoff, and timeout enforcement.
+ *
+ * @example
+ * ```typescript
+ * const executor = new StepExecutor({ defaultRetries: 3 });
+ * const { result } = await executor.execute(stepDef, ctx, executionRecord);
+ * ```
  */
 export class StepExecutor {
   private defaultRetries: number
@@ -30,6 +38,11 @@ export class StepExecutor {
     maxRetries: number
   ) => void | Promise<void>
 
+  /**
+   * Creates a new StepExecutor with global defaults.
+   *
+   * @param options - Configuration for default behavior and lifecycle hooks.
+   */
   constructor(
     options: {
       defaultRetries?: number
@@ -49,33 +62,53 @@ export class StepExecutor {
   }
 
   /**
-   * Execute a step with retry and timeout
+   * Executes a step definition against a workflow context.
+   *
+   * This method performs the following sequence:
+   * 1. Evaluates the `when` condition (if present).
+   * 2. Initiates the execution loop with retries.
+   * 3. Enforces timeouts for each attempt.
+   * 4. Handles suspension signals (`flux_wait`).
+   * 5. Updates the execution history record.
+   *
+   * @param step - The definition of the step to execute.
+   * @param ctx - The current workflow context.
+   * @param execution - The current execution record for this step.
+   * @returns The result of the execution and the updated execution record.
+   *
+   * @throws {Error} If the step handler throws an unrecoverable error or times out.
    */
-  async execute<TInput, TData>(
+  async execute<TInput, TData extends Record<string, any>>(
     step: StepDefinition<TInput, TData>,
     ctx: WorkflowContext<TInput, TData>,
     execution: StepExecution
-  ): Promise<StepResult> {
+  ): Promise<{ result: StepResult; execution: StepExecution }> {
     const maxRetries = step.retries ?? this.defaultRetries
     const timeout = step.timeout ?? this.defaultTimeout
     const startTime = Date.now()
+    let currentExecution = execution
 
     // Check condition
     if (step.when && !step.when(ctx)) {
-      execution.status = 'skipped'
+      currentExecution = updateStepExecution(currentExecution, { status: 'skipped' })
       return {
-        success: true,
-        duration: 0,
+        result: {
+          success: true,
+          duration: 0,
+        },
+        execution: currentExecution,
       }
     }
 
-    execution.status = 'running'
-    execution.startedAt = new Date()
+    currentExecution = updateStepExecution(currentExecution, {
+      status: 'running',
+      startedAt: new Date(),
+    })
 
     let lastError: Error | undefined
 
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
-      execution.retries = attempt
+      currentExecution = updateStepExecution(currentExecution, { retries: attempt })
 
       try {
         // Execute with timeout
@@ -87,26 +120,38 @@ export class StepExecutor {
           '__kind' in result &&
           result.__kind === 'flux_wait'
         ) {
-          execution.status = 'suspended'
-          execution.waitingFor = result.signal
-          execution.suspendedAt = new Date()
-          execution.duration = Date.now() - startTime
+          const duration = Date.now() - startTime
+          currentExecution = updateStepExecution(currentExecution, {
+            status: 'suspended',
+            waitingFor: result.signal,
+            suspendedAt: new Date(),
+            duration,
+          })
 
           return {
-            success: true,
-            suspended: true,
-            waitingFor: result.signal,
-            duration: execution.duration,
+            result: {
+              success: true,
+              suspended: true,
+              waitingFor: result.signal,
+              duration,
+            },
+            execution: currentExecution,
           }
         }
 
-        execution.status = 'completed'
-        execution.completedAt = new Date()
-        execution.duration = Date.now() - startTime
+        const duration = Date.now() - startTime
+        currentExecution = updateStepExecution(currentExecution, {
+          status: 'completed',
+          completedAt: new Date(),
+          duration,
+        })
 
         return {
-          success: true,
-          duration: execution.duration,
+          result: {
+            success: true,
+            duration,
+          },
+          execution: currentExecution,
         }
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error))
@@ -121,25 +166,35 @@ export class StepExecutor {
     }
 
     // All retries failed
-    execution.status = 'failed'
-    execution.completedAt = new Date()
-    execution.duration = Date.now() - startTime
-    execution.error = lastError?.message
+    const duration = Date.now() - startTime
+    currentExecution = updateStepExecution(currentExecution, {
+      status: 'failed',
+      completedAt: new Date(),
+      duration,
+      error: lastError?.message,
+    })
 
     return {
-      success: false,
-      error: lastError,
-      duration: execution.duration,
+      result: {
+        success: false,
+        error: lastError,
+        duration,
+      },
+      execution: currentExecution,
     }
   }
 
   /**
-   * Execute handler with timeout
+   * Wraps the step handler in a timeout race.
+   *
+   * @param handler - The user-defined step handler.
+   * @param ctx - The workflow context.
+   * @param timeout - Maximum time allowed for execution in milliseconds.
+   * @returns The handler result or a suspension signal.
+   * @throws {Error} If the timeout is reached before the handler completes.
    */
-  private async executeWithTimeout<TInput, TData>(
-    handler: (
-      ctx: WorkflowContext<TInput, TData>
-    ) => void | Promise<void | undefined | FluxWaitResult> | undefined | FluxWaitResult,
+  private async executeWithTimeout<TInput, TData extends Record<string, any>>(
+    handler: StepDefinition<TInput, TData>['handler'],
     ctx: WorkflowContext<TInput, TData>,
     timeout: number
   ): Promise<void | undefined | FluxWaitResult> {
@@ -158,7 +213,9 @@ export class StepExecutor {
   }
 
   /**
-   * Sleep helper
+   * Pauses execution for a specified duration.
+   *
+   * @param ms - Milliseconds to sleep.
    */
   private sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms))

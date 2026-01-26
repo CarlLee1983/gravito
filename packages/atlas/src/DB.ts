@@ -4,6 +4,7 @@
  */
 
 import { ConnectionManager } from './connection/ConnectionManager'
+import { Grammar } from './grammar/Grammar'
 import type {
   CacheInterface,
   ConnectionConfig,
@@ -46,6 +47,14 @@ export class DB {
   private static manager: ConnectionManager = new ConnectionManager()
   private static initialized = false
   private static cache: CacheInterface | undefined
+  private static _debug = false
+  private static _queryLog: Array<{
+    sql: string
+    bindings: unknown[]
+    duration: number
+    timestamp: number
+  }> = []
+  private static readonly MAX_LOG_SIZE = 1000
 
   /**
    * Set global cache provider
@@ -62,6 +71,119 @@ export class DB {
   }
 
   /**
+   * Enable/disable debug mode with query logging
+   */
+  static debug(enabled = true): void {
+    this._debug = enabled
+    if (!enabled) {
+      this._queryLog = []
+    }
+  }
+
+  /**
+   * Check if debug mode is enabled
+   */
+  static isDebug(): boolean {
+    return this._debug
+  }
+
+  /**
+   * Get the last executed query
+   */
+  static getLastQuery(): string | null {
+    const last = this._queryLog[this._queryLog.length - 1]
+    return last ? this.interpolateBindings(last.sql, last.bindings) : null
+  }
+
+  /**
+   * Get query log
+   */
+  static getQueryLog(): typeof this._queryLog {
+    return [...this._queryLog]
+  }
+
+  /**
+   * Clear query log
+   */
+  static clearQueryLog(): void {
+    this._queryLog = []
+  }
+
+  /**
+   * Log a query (internal use)
+   */
+  static logQuery(sql: string, bindings: unknown[], duration: number): void {
+    if (!this._debug) {
+      return
+    }
+
+    this._queryLog.push({
+      sql,
+      bindings,
+      duration,
+      timestamp: Date.now(),
+    })
+
+    // Prevent memory leak - keep only last N queries
+    if (this._queryLog.length > this.MAX_LOG_SIZE) {
+      this._queryLog.shift()
+    }
+  }
+
+  /**
+   * Interpolate bindings into SQL (for display only, not execution)
+   */
+  private static interpolateBindings(sql: string, bindings: unknown[]): string {
+    let index = 0
+    return sql.replace(/\?/g, () => {
+      if (index >= bindings.length) {
+        return '?'
+      }
+      const binding = bindings[index++]
+
+      if (binding === null || binding === undefined) {
+        return 'NULL'
+      }
+      if (typeof binding === 'string') {
+        return `'${binding.replace(/'/g, "''")}'`
+      }
+      if (binding instanceof Date) {
+        return `'${binding.toISOString()}'`
+      }
+      return String(binding)
+    })
+  }
+
+  /**
+   * Pretend mode: capture queries without executing
+   */
+  static async pretend<T>(callback: () => Promise<T>): Promise<{ queries: string[]; result?: T }> {
+    const originalDebug = this._debug
+    this._debug = true
+    this._queryLog = []
+
+    const driver = this.connection().getDriver()
+    const originalExecute = driver.execute.bind(driver)
+    const queries: string[] = []
+
+    // Intercept execute calls
+    driver.execute = async (sql: string, bindings?: unknown[]) => {
+      queries.push(this.interpolateBindings(sql, bindings || []))
+      // Return empty result
+      return { rows: [], affectedRows: 0 }
+    }
+
+    try {
+      await callback()
+    } finally {
+      driver.execute = originalExecute
+      this._debug = originalDebug
+    }
+
+    return { queries }
+  }
+
+  /**
    * Prevent instantiation
    */
   private constructor() {}
@@ -71,7 +193,31 @@ export class DB {
   // ============================================================================
 
   /**
-   * Configure the database with connections
+   * Get cache statistics
+   */
+  static getCacheStats(): { size: number; maxSize: number; hitRate: number } {
+    return Grammar.getCacheStats()
+  }
+
+  /**
+   * Configure the database with connections.
+   * This is the primary way to initialize Atlas.
+   *
+   * @param config - Configuration object containing default connection name and connection settings.
+   *
+   * @example
+   * ```typescript
+   * DB.configure({
+   *   default: 'postgres',
+   *   connections: {
+   *     postgres: {
+   *       driver: 'postgres',
+   *       host: 'localhost',
+   *       database: 'myapp'
+   *     }
+   *   }
+   * })
+   * ```
    */
   static configure(config: {
     default?: string
@@ -85,11 +231,102 @@ export class DB {
   }
 
   /**
-   * Add a single connection
+   * Configure database from environment variables
+   * Supports DATABASE_URL or individual DB_* variables
+   *
+   * @example
+   * ```typescript
+   * // Using DATABASE_URL
+   * DB.configureFromEnv()
+   *
+   * // Using individual variables
+   * // DB_DRIVER=postgres
+   * // DB_HOST=localhost
+   * // DB_DATABASE=myapp
+   * DB.configureFromEnv()
+   * ```
+   */
+  static configureFromEnv(connectionName = 'default'): void {
+    const { fromEnv } = require('./config/defineConfig')
+    const config = fromEnv(connectionName)
+    DB.configure(config)
+  }
+
+  /**
+   * Configure database from config file
+   * Tries to load from config/database.ts, config/database.js, etc.
+   *
+   * @example
+   * ```typescript
+   * // config/database.ts
+   * import { defineConfig } from '@gravito/atlas'
+   *
+   * export default defineConfig({
+   *   default: 'default',
+   *   connections: {
+   *     default: {
+   *       driver: 'postgres',
+   *       host: 'localhost',
+   *       database: 'myapp'
+   *     }
+   *   }
+   * })
+   *
+   * // Then in your app
+   * await DB.configureFromFile()
+   * ```
+   */
+  static async configureFromFile(configPath?: string): Promise<void> {
+    const { loadConfigFile } = await import('./config/loadConfig')
+    const config = await loadConfigFile(configPath)
+    DB.configure(config)
+  }
+
+  /**
+   * Auto-configure database from config file or environment
+   * Tries config file first, then falls back to environment variables
+   *
+   * @example
+   * ```typescript
+   * // Will try config/database.ts first, then environment variables
+   * await DB.autoConfigure()
+   * ```
+   */
+  static async autoConfigure(configPath?: string): Promise<void> {
+    const { autoConfigure: autoConfigureImpl } = await import('./config/loadConfig')
+    await autoConfigureImpl(configPath)
+  }
+
+  /**
+   * Add a single connection configuration to the manager.
+   *
+   * @param name - Unique name for the connection.
+   * @param config - Connection configuration settings.
    */
   static addConnection(name: string, config: ConnectionConfig): void {
     DB.manager.addConnection(name, config)
     DB.initialized = true
+  }
+
+  /**
+   * Add connection from environment variables with prefix
+   * Useful for multiple connections from different env vars
+   *
+   * @example
+   * ```typescript
+   * // READ_DB_DRIVER=postgres
+   * // READ_DB_HOST=read-replica.example.com
+   * // READ_DB_DATABASE=myapp
+   * DB.addConnectionFromEnv('read', 'READ')
+   * ```
+   */
+  static addConnectionFromEnv(name: string, prefix = ''): void {
+    const { fromEnv } = require('./config/defineConfig')
+    const config = fromEnv(name, prefix)
+    DB.manager.addConnection(name, config.connections[name])
+    if (!DB.initialized) {
+      DB.initialized = true
+    }
   }
 
   /**
@@ -111,7 +348,12 @@ export class DB {
   // ============================================================================
 
   /**
-   * Get a connection by name
+   * Get a connection instance by name.
+   * If no name is provided, the default connection is returned.
+   *
+   * @param name - Optional connection name.
+   * @returns The connection instance implementing ConnectionContract.
+   * @throws Error if the connection is not configured.
    */
   static connection(name?: string): ConnectionContract {
     DB.ensureConfigured()
@@ -160,7 +402,8 @@ export class DB {
    * ```
    */
   static table<T = Record<string, unknown>>(tableName: string): QueryBuilderContract<T> {
-    return DB.connection().table<T>(tableName)
+    DB.ensureConfigured()
+    return DB.manager.connection().table<T>(tableName)
   }
 
   /**
@@ -235,7 +478,14 @@ export class DB {
    */
   static async beginTransaction(connectionName?: string): Promise<ConnectionContract> {
     const connection = DB.connection(connectionName)
-    await connection.getDriver().beginTransaction()
+    const driver = connection.getDriver()
+
+    if ('beginTransaction' in driver && typeof driver.beginTransaction === 'function') {
+      await driver.beginTransaction()
+    } else {
+      throw new Error(`Driver '${driver.getDriverName()}' does not support transactions`)
+    }
+
     return connection
   }
 
@@ -253,8 +503,19 @@ export class DB {
   /**
    * Disconnect from all connections
    */
+  /**
+   * Disconnect all connections
+   */
   static async disconnectAll(): Promise<void> {
     await DB.manager.disconnectAll()
+  }
+
+  /**
+   * Shutdown the database manager (disconnect all and stop cleanup)
+   * Use this when shutting down the application
+   */
+  static async shutdown(): Promise<void> {
+    await DB.manager.shutdown()
   }
 
   /**

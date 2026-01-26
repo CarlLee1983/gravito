@@ -3,40 +3,44 @@ import type { SerializedJob } from '../types'
 import type { JobSerializer } from './JobSerializer'
 
 /**
- * Class name serializer (Laravel-style).
+ * Class Name Serializer (Laravel-style).
  *
- * Stores the class name and properties, then recreates an instance at runtime.
- * This is the recommended serializer because it can restore class instances correctly.
+ * Serializes jobs by storing their class name along with their properties.
+ * During deserialization, it looks up the registered class constructor and creates a new instance,
+ * populating it with the stored properties.
  *
- * Requirement: Job classes must be dynamically loadable (by class name).
+ * This is the recommended serializer for most use cases as it preserves the behavior (methods)
+ * of the job class.
  *
+ * @public
  * @example
  * ```typescript
- * const serializer = new ClassNameSerializer()
- * const serialized = serializer.serialize(new SendEmail('user@example.com'))
- * // serialized.data contains class name and properties
+ * const serializer = new ClassNameSerializer();
+ * serializer.register(SendEmailJob);
  *
- * const job = serializer.deserialize(serialized)
- * // job is an instance of SendEmail
+ * const serialized = serializer.serialize(new SendEmailJob('foo@bar.com'));
+ * const job = serializer.deserialize(serialized); // instanceof SendEmailJob
  * ```
  */
 export class ClassNameSerializer implements JobSerializer {
   /**
-   * Job class registry (for resolving classes by name).
+   * Registry of job classes, mapped by class name.
    */
   private jobClasses = new Map<string, new (...args: unknown[]) => Job>()
 
   /**
-   * Register a Job class.
-   * @param jobClass - Job class
+   * Registers a Job class for serialization.
+   *
+   * @param jobClass - The job class constructor.
    */
   register(jobClass: new (...args: unknown[]) => Job): void {
     this.jobClasses.set(jobClass.name, jobClass)
   }
 
   /**
-   * Register multiple Job classes.
-   * @param jobClasses - Job class array
+   * Registers multiple Job classes at once.
+   *
+   * @param jobClasses - An array of job class constructors.
    */
   registerMany(jobClasses: Array<new (...args: unknown[]) => Job>): void {
     for (const jobClass of jobClasses) {
@@ -45,10 +49,14 @@ export class ClassNameSerializer implements JobSerializer {
   }
 
   /**
-   * Serialize a Job.
+   * Serializes a Job instance.
+   *
+   * Captures the class name and all enumerable properties.
+   *
+   * @param job - The job to serialize.
    */
   serialize(job: Job): SerializedJob {
-    const id = job.id || `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
+    const id = job.id || `${Date.now()}-${crypto.randomUUID()}`
     const className = job.constructor.name
 
     // Extract properties (exclude methods)
@@ -66,10 +74,7 @@ export class ClassNameSerializer implements JobSerializer {
       id,
       type: 'class',
       className,
-      data: JSON.stringify({
-        class: className,
-        properties,
-      }),
+      data: JSON.stringify(properties),
       createdAt: Date.now(),
       ...(job.delaySeconds !== undefined ? { delaySeconds: job.delaySeconds } : {}),
       attempts: job.attempts ?? 0,
@@ -82,7 +87,12 @@ export class ClassNameSerializer implements JobSerializer {
   }
 
   /**
-   * Deserialize a Job.
+   * Deserializes a Job instance.
+   *
+   * Instantiates the class matching `className` and assigns properties.
+   *
+   * @param serialized - The serialized job.
+   * @throws {Error} If the job class is not registered.
    */
   deserialize(serialized: SerializedJob): Job {
     if (serialized.type !== 'class') {
@@ -100,12 +110,12 @@ export class ClassNameSerializer implements JobSerializer {
       )
     }
 
-    const parsed = JSON.parse(serialized.data)
+    const properties = JSON.parse(serialized.data)
     const job = new JobClass()
 
     // Restore properties
-    if (parsed.properties) {
-      Object.assign(job, parsed.properties)
+    if (properties) {
+      Object.assign(job, properties)
     }
 
     // Restore metadata

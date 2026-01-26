@@ -1,5 +1,6 @@
 /**
- * Query Exports
+ * Query Module
+ * @description Exports all query building and execution components
  */
 
 export {

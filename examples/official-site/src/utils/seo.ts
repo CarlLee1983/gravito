@@ -6,12 +6,15 @@ export function generateSeoHtml(locale: string, title?: string, description?: st
 
   const seo = new SeoMetadata({
     meta: {
-      title: title || t.site.title,
-      description: description || t.site.description,
-      keywords: t.site.keywords.split(',').map((k: string) => k.trim()),
+      title: title || t?.site?.title || 'Gravito Framework',
+      description: description || t?.site?.description || '',
+      keywords: (t?.site?.keywords || '')
+        .split(',')
+        .map((k: string) => k.trim())
+        .filter(Boolean),
     },
     og: {
-      title: title || t.site.title,
+      title: title || t?.site?.title || 'Gravito Framework',
       type: 'website',
       siteName: 'Gravito Framework',
     },
@@ -19,7 +22,7 @@ export function generateSeoHtml(locale: string, title?: string, description?: st
       card: 'summary_large_image',
     },
     analytics: {
-      gtag: process.env.GA_MEASUREMENT_ID, // E.g., G-XXXXXXXXXX
+      gtag: process.env.GA_MEASUREMENT_ID || process.env.VITE_GA_ID,
     },
   })
 

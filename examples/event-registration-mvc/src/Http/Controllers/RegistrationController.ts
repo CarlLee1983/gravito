@@ -1,7 +1,5 @@
 import { DB } from '@gravito/atlas'
-import type { GravitoContext } from '@gravito/core'
 import type { Registration } from '../../Models/Registration'
-import { RegistrationService } from '../../Services/RegistrationService'
 import { Controller } from './Controller'
 
 export class RegistrationController extends Controller {
@@ -17,7 +15,7 @@ export class RegistrationController extends Controller {
       const registrationService = core.container.make('registrationService')
       await registrationService.createRegistration({
         user_id: userId,
-        session_id: parseInt(session_id),
+        session_id: parseInt(session_id, 10),
         field_values,
         notes,
       })
@@ -33,7 +31,7 @@ export class RegistrationController extends Controller {
    */
   async destroy(ctx: any) {
     const userId = ctx.session.get('user_id')
-    const registrationId = parseInt(ctx.params.id)
+    const registrationId = parseInt(ctx.params.id, 10)
 
     try {
       const registration = await DB.table<Registration>('registrations')

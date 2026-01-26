@@ -115,6 +115,12 @@ export class S3SitemapStorage implements SitemapStorage {
     return cleanPrefix ? `${cleanPrefix}/${filename}` : filename
   }
 
+  /**
+   * Writes sitemap content to an S3 object.
+   *
+   * @param filename - The name of the file to write.
+   * @param content - The XML or JSON content.
+   */
   async write(filename: string, content: string): Promise<void> {
     const s3 = await this.getS3Client()
     const key = this.getKey(filename)
@@ -129,6 +135,12 @@ export class S3SitemapStorage implements SitemapStorage {
     )
   }
 
+  /**
+   * Reads sitemap content from an S3 object.
+   *
+   * @param filename - The name of the file to read.
+   * @returns A promise resolving to the file content as a string, or null if not found.
+   */
   async read(filename: string): Promise<string | null> {
     try {
       const s3 = await this.getS3Client()
@@ -145,7 +157,6 @@ export class S3SitemapStorage implements SitemapStorage {
         return null
       }
 
-      // 將 stream 轉換為 string
       const chunks: Uint8Array[] = []
       for await (const chunk of response.Body as any) {
         chunks.push(chunk)
@@ -160,6 +171,50 @@ export class S3SitemapStorage implements SitemapStorage {
     }
   }
 
+  /**
+   * Returns a readable stream for an S3 object.
+   *
+   * @param filename - The name of the file to stream.
+   * @returns A promise resolving to an async iterable of file chunks, or null if not found.
+   */
+  async readStream(filename: string): Promise<AsyncIterable<string> | null> {
+    try {
+      const s3 = await this.getS3Client()
+      const key = this.getKey(filename)
+
+      const response = await s3.client.send(
+        new s3.GetObjectCommand({
+          Bucket: this.bucket,
+          Key: key,
+        })
+      )
+
+      if (!response.Body) {
+        return null
+      }
+
+      const body = response.Body
+      return (async function* () {
+        const decoder = new TextDecoder()
+        for await (const chunk of body as any) {
+          yield decoder.decode(chunk, { stream: true })
+        }
+        yield decoder.decode()
+      })()
+    } catch (error: any) {
+      if (error.name === 'NoSuchKey' || error.$metadata?.httpStatusCode === 404) {
+        return null
+      }
+      throw error
+    }
+  }
+
+  /**
+   * Checks if an S3 object exists.
+   *
+   * @param filename - The name of the file to check.
+   * @returns A promise resolving to true if the file exists, false otherwise.
+   */
   async exists(filename: string): Promise<boolean> {
     try {
       const s3 = await this.getS3Client()
@@ -180,20 +235,32 @@ export class S3SitemapStorage implements SitemapStorage {
     }
   }
 
+  /**
+   * Returns the full public URL for an S3 object.
+   *
+   * @param filename - The name of the sitemap file.
+   * @returns The public URL as a string.
+   */
   getUrl(filename: string): string {
     const key = this.getKey(filename)
     const base = this.baseUrl.endsWith('/') ? this.baseUrl.slice(0, -1) : this.baseUrl
     return `${base}/${key}`
   }
 
-  // 影子處理方法
+  /**
+   * Writes content to a shadow (staged) location in S3.
+   *
+   * @param filename - The name of the file to write.
+   * @param content - The XML or JSON content.
+   * @param shadowId - Optional unique session identifier.
+   */
   async writeShadow(filename: string, content: string, shadowId?: string): Promise<void> {
     if (!this.shadowEnabled) {
       return this.write(filename, content)
     }
 
     const s3 = await this.getS3Client()
-    const id = shadowId || `shadow-${Date.now()}-${Math.random().toString(36).substring(7)}`
+    const id = shadowId || `shadow-${Date.now()}-${crypto.randomUUID()}`
     const shadowKey = this.getKey(`${filename}.shadow.${id}`)
 
     await s3.client.send(
@@ -206,6 +273,11 @@ export class S3SitemapStorage implements SitemapStorage {
     )
   }
 
+  /**
+   * Commits all staged shadow objects in a session to production.
+   *
+   * @param shadowId - The identifier of the session to commit.
+   */
   async commitShadow(shadowId: string): Promise<void> {
     if (!this.shadowEnabled) {
       return
@@ -213,7 +285,7 @@ export class S3SitemapStorage implements SitemapStorage {
 
     const s3 = await this.getS3Client()
 
-    // 列出所有影子檔案
+    // List all shadow files
     const prefix = this.prefix ? `${this.prefix}/` : ''
     const listResponse = await s3.client.send(
       new s3.ListObjectsV2Command({
@@ -226,7 +298,7 @@ export class S3SitemapStorage implements SitemapStorage {
       return
     }
 
-    // 找到對應的影子檔案
+    // Find matching shadow files
     const shadowFiles = listResponse.Contents.filter((obj: any) =>
       obj.Key?.includes(`.shadow.${shadowId}`)
     )
@@ -236,12 +308,12 @@ export class S3SitemapStorage implements SitemapStorage {
         continue
       }
 
-      // 提取原始檔名（移除 .shadow.{id} 部分）
+      // Extract original key (remove .shadow.{id} part)
       const originalKey = shadowFile.Key.replace(/\.shadow\.[^/]+$/, '')
       const _originalFilename = originalKey.replace(prefix, '')
 
       if (this.shadowMode === 'atomic') {
-        // 原子切換：複製影子檔案到目標位置
+        // Atomic switch: copy shadow file to target
         await s3.client.send(
           new s3.CopyObjectCommand({
             Bucket: this.bucket,
@@ -251,7 +323,6 @@ export class S3SitemapStorage implements SitemapStorage {
           })
         )
 
-        // 刪除影子檔案
         await s3.client.send(
           new s3.DeleteObjectCommand({
             Bucket: this.bucket,
@@ -259,11 +330,11 @@ export class S3SitemapStorage implements SitemapStorage {
           })
         )
       } else {
-        // 版本化模式：保留舊版本，切換到新版本
+        // Versioned mode: keep old versions, switch to new
         const version = shadowId
         const versionedKey = `${originalKey}.v${version}`
 
-        // 複製到版本化位置
+        // Copy to versioned location
         await s3.client.send(
           new s3.CopyObjectCommand({
             Bucket: this.bucket,
@@ -273,7 +344,7 @@ export class S3SitemapStorage implements SitemapStorage {
           })
         )
 
-        // 複製到主位置
+        // Copy to main location
         await s3.client.send(
           new s3.CopyObjectCommand({
             Bucket: this.bucket,
@@ -283,7 +354,6 @@ export class S3SitemapStorage implements SitemapStorage {
           })
         )
 
-        // 刪除影子檔案
         await s3.client.send(
           new s3.DeleteObjectCommand({
             Bucket: this.bucket,
@@ -294,6 +364,12 @@ export class S3SitemapStorage implements SitemapStorage {
     }
   }
 
+  /**
+   * Lists all archived versions of a specific sitemap in S3.
+   *
+   * @param filename - The sitemap filename.
+   * @returns A promise resolving to an array of version identifiers.
+   */
   async listVersions(filename: string): Promise<string[]> {
     if (this.shadowMode !== 'versioned') {
       return []
@@ -315,7 +391,7 @@ export class S3SitemapStorage implements SitemapStorage {
         return []
       }
 
-      // 提取版本號
+      // Extract version IDs
       const versions: string[] = []
       for (const obj of listResponse.Contents) {
         if (!obj.Key) {
@@ -333,6 +409,12 @@ export class S3SitemapStorage implements SitemapStorage {
     }
   }
 
+  /**
+   * Reverts a sitemap to a previously archived version in S3.
+   *
+   * @param filename - The sitemap filename.
+   * @param version - The version identifier to switch to.
+   */
   async switchVersion(filename: string, version: string): Promise<void> {
     if (this.shadowMode !== 'versioned') {
       throw new Error('Version switching is only available in versioned mode')
@@ -342,13 +424,13 @@ export class S3SitemapStorage implements SitemapStorage {
     const key = this.getKey(filename)
     const versionedKey = `${key}.v${version}`
 
-    // 檢查版本是否存在
+    // Check if version exists
     const exists = await this.exists(versionedKey.replace(this.prefix ? `${this.prefix}/` : '', ''))
     if (!exists) {
       throw new Error(`Version ${version} not found for ${filename}`)
     }
 
-    // 複製版本化檔案到主位置
+    // Copy versioned file to main location
     await s3.client.send(
       new s3.CopyObjectCommand({
         Bucket: this.bucket,

@@ -35,7 +35,7 @@ export class PoolManager {
 
     for (let i = 0; i < needed; i++) {
       const containerId = await this.dockerAdapter.createBaseContainer()
-      const rocketId = `rocket-${Math.random().toString(36).substring(2, 9)}`
+      const rocketId = `rocket-${crypto.randomUUID()}`
       const rocket = new Rocket(rocketId, containerId)
       await this.rocketRepository.save(rocket)
     }

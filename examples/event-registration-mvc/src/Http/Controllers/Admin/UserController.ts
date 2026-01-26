@@ -1,5 +1,4 @@
 import { DB } from '@gravito/atlas'
-import type { GravitoContext } from '@gravito/core'
 import type { User } from '../../../Models/User'
 import { Controller } from '../Controller'
 

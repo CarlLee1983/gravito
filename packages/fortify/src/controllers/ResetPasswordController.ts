@@ -6,6 +6,7 @@ import {
 } from '@gravito/sentinel'
 import type { FortifyConfig } from '../config'
 import { ensureCsrfToken } from '../csrf'
+import type { StrengthValidator } from '../services/StrengthValidator'
 import type { ViewService } from '../types'
 
 /**
@@ -15,7 +16,10 @@ export class ResetPasswordController {
   private broker: PasswordBroker
   private hasher: HashManager
 
-  constructor(private config: FortifyConfig) {
+  constructor(
+    private config: FortifyConfig,
+    private strengthValidator?: StrengthValidator
+  ) {
     this.hasher = new HashManager()
     // In production, use a database-backed repository (shared with ForgotPasswordController)
     this.broker = new PasswordBroker(new InMemoryPasswordResetTokenRepository(), this.hasher)
@@ -68,6 +72,20 @@ export class ResetPasswordController {
         return c.json({ error: 'Passwords do not match' }, 422)
       }
       return c.redirect(`/reset-password/${body.token}?email=${body.email}&error=password_mismatch`)
+    }
+
+    // Validate password strength if validator is available
+    if (this.strengthValidator) {
+      const validation = this.strengthValidator.check(body.password)
+      if (!validation.valid) {
+        const errorMsg = validation.errors.join(', ')
+        if (this.config.jsonMode) {
+          return c.json({ error: errorMsg, errors: validation.errors }, 422)
+        }
+        return c.redirect(
+          `/reset-password/${body.token}?email=${body.email}&error=weak_password&message=${encodeURIComponent(errorMsg)}`
+        )
+      }
     }
 
     try {

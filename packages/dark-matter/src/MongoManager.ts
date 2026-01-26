@@ -16,9 +16,20 @@ export class MongoManager {
   private configs = new Map<string, MongoConfig>()
 
   /**
-   * Configure the MongoDB manager.
+   * Configures the manager with connection settings.
    *
-   * @param config - The configuration object.
+   * @param config - The configuration object defining named connections and default selection.
+   *
+   * @example
+   * ```typescript
+   * manager.configure({
+   *   default: 'app',
+   *   connections: {
+   *     app: { uri: 'mongodb://localhost/app' },
+   *     logs: { uri: 'mongodb://localhost/logs' }
+   *   }
+   * });
+   * ```
    */
   configure(config: MongoManagerConfig): void {
     this.defaultConnection = config.default ?? 'default'
@@ -29,21 +40,31 @@ export class MongoManager {
   }
 
   /**
-   * Add a connection configuration.
+   * Registers a new named connection configuration.
    *
-   * @param name - The name of the connection.
-   * @param config - The connection configuration.
+   * Useful for dynamically adding connections at runtime.
+   *
+   * @param name - The unique identifier for this connection.
+   * @param config - The MongoDB connection options.
    */
   addConnection(name: string, config: MongoConfig): void {
     this.configs.set(name, config)
   }
 
   /**
-   * Get a connection by name.
+   * Retrieves a connection instance by name.
    *
-   * @param name - The name of the connection (optional). Defaults to the configured default connection.
-   * @returns The MongoClientContract instance.
-   * @throws {Error} If the connection is not configured.
+   * If the connection has not been instantiated yet, it will be created lazily
+   * based on the stored configuration.
+   *
+   * @param name - The name of the connection to retrieve. Defaults to the configured default.
+   * @returns The requested `MongoClientContract` instance.
+   * @throws {Error} If the requested connection name is not configured.
+   *
+   * @example
+   * ```typescript
+   * const analyticsDb = manager.connection('analytics');
+   * ```
    */
   connection(name?: string): MongoClientContract {
     const connectionName = name ?? this.defaultConnection
@@ -60,18 +81,23 @@ export class MongoManager {
   }
 
   /**
-   * Get the default connection.
+   * Retrieves the default connection instance.
    *
-   * @returns The default MongoClientContract instance.
+   * Shortcut for `connection()`.
+   *
+   * @returns The default `MongoClientContract` instance.
+   * @throws {Error} If the default connection is not configured.
    */
   getDefault(): MongoClientContract {
     return this.connection(this.defaultConnection)
   }
 
   /**
-   * Connect all configured connections.
+   * Initializes connections for all configured databases.
    *
-   * @returns A promise that resolves when all connections are established.
+   * Pre-connects to all defined sources. Useful during application startup warmup.
+   *
+   * @returns Promise that resolves when all connections are established.
    */
   async connectAll(): Promise<void> {
     for (const [name] of this.configs) {
@@ -81,9 +107,11 @@ export class MongoManager {
   }
 
   /**
-   * Disconnect all connections.
+   * Closes all active connections.
    *
-   * @returns A promise that resolves when all connections are closed.
+   * Should be called during graceful shutdown to ensure no open handles remain.
+   *
+   * @returns Promise that resolves when all connections are disconnected.
    */
   async disconnectAll(): Promise<void> {
     for (const client of this.connections.values()) {
@@ -93,21 +121,22 @@ export class MongoManager {
   }
 
   /**
-   * Check if a connection exists.
+   * Verifies if a connection configuration exists.
    *
-   * @param name - The name of the connection.
-   * @returns True if configured, false otherwise.
+   * @param name - The connection name to check.
+   * @returns `true` if the connection is configured, `false` otherwise.
    */
   hasConnection(name: string): boolean {
     return this.configs.has(name)
   }
 
   /**
-   * Remove a connection.
+   * Removes and disconnects a named connection.
    *
-   * Disconnects the connection if active and removes its configuration.
+   * If the connection is currently active, it will be disconnected before removal.
    *
-   * @param name - The name of the connection.
+   * @param name - The name of the connection to remove.
+   * @returns Promise resolving when the connection is removed.
    */
   async removeConnection(name: string): Promise<void> {
     const client = this.connections.get(name)

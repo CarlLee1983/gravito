@@ -10,7 +10,6 @@
 
 import type { DirectoryNode } from '../types'
 import { ConfigGenerator } from '../utils/ConfigGenerator'
-import { ServiceProviderGenerator } from '../utils/ServiceProviderGenerator'
 import { BaseGenerator, type GeneratorContext } from './BaseGenerator'
 
 /**

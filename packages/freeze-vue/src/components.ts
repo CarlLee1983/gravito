@@ -6,8 +6,9 @@
  * we provide renderless components using h() function.
  */
 
-import { defineComponent, h, type PropType } from 'vue'
-import { useFreeze } from './composables'
+import type { AbsolutePath, Locale } from '@gravito/freeze'
+import { defineComponent, h, inject, type PropType } from 'vue'
+import { FREEZE_KEY, useFreeze } from './composables'
 
 /**
  * StaticLink Component.
@@ -37,7 +38,7 @@ export const StaticLink = defineComponent({
   name: 'StaticLink',
   props: {
     href: {
-      type: String,
+      type: String as PropType<string | AbsolutePath>,
       required: true,
     },
     skipLocalization: {
@@ -47,27 +48,19 @@ export const StaticLink = defineComponent({
   },
   setup(props, { slots, attrs }) {
     const { isStatic, getLocalizedPath } = useFreeze()
-
-    // Try to get Inertia Link
-    let InertiaLink: ReturnType<typeof defineComponent> | null = null
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const inertia = require('@inertiajs/vue3')
-      InertiaLink = inertia.Link
-    } catch {
-      // Inertia not available
-    }
+    const context = inject(FREEZE_KEY)
 
     return () => {
       const finalHref = props.skipLocalization ? props.href : getLocalizedPath(props.href)
+      const InertiaLink = context?.LinkComponent
 
-      // In static mode or if Inertia is not available, use native <a>
+      // In static mode or if no Inertia Link is provided, use native <a>
       if (isStatic.value || !InertiaLink) {
         return h('a', { href: finalHref, ...attrs }, slots.default?.())
       }
 
       // In SSR mode with Inertia, use Link component
-      return h(InertiaLink, { href: finalHref, ...attrs }, slots.default)
+      return h(InertiaLink as any, { href: finalHref, ...attrs }, slots.default)
     }
   },
 })
@@ -98,7 +91,7 @@ export const LocaleSwitcher = defineComponent({
   name: 'LocaleSwitcher',
   props: {
     locale: {
-      type: String as PropType<string>,
+      type: String as PropType<string | Locale>,
       required: true,
     },
   },
@@ -116,7 +109,7 @@ export const LocaleSwitcher = defineComponent({
           'aria-current': isActive ? 'page' : undefined,
           ...attrs,
         },
-        slots.default?.() ?? props.locale.toUpperCase()
+        slots.default?.() ?? (props.locale as string).toUpperCase()
       )
     }
   },

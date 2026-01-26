@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.3.10/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.3.11/schema.json",
   "vcs": {
     "enabled": true,
     "clientKind": "git",
@@ -63,7 +63,7 @@
         "noUnsafeFinally": "error",
         "noUnsafeOptionalChaining": "error",
         "noUnusedLabels": "error",
-        "noUnusedVariables": "warn",
+        "noUnusedVariables": "error",
         "useIsNan": "error",
         "useValidForDirection": "error",
         "noInvalidBuiltinInstantiation": "error"

@@ -361,6 +361,16 @@ async function build() {
       await cp(join(staticDir, 'favicon.ico'), join(outputDir, 'favicon.ico'))
       await cp(join(staticDir, 'favicon.svg'), join(outputDir, 'favicon.svg'))
     } catch {}
+
+    // Copy Cloudflare Pages config files to root
+    try {
+      await cp(join(staticDir, '_headers'), join(outputDir, '_headers'))
+      console.log('✅ Copied _headers')
+    } catch {}
+    try {
+      await cp(join(staticDir, '_redirects'), join(outputDir, '_redirects'))
+      console.log('✅ Copied _redirects')
+    } catch {}
   } catch (_e) {
     console.warn('⚠️  No static directory found or failed to copy.')
   }

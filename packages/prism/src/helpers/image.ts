@@ -1,5 +1,5 @@
-import { type ImageOptions, ImageService } from '../ImageService'
-import type { HelperFunction } from '../TemplateEngine'
+import type { HelperFunction } from '../engine/TemplateEngine'
+import { type ImageOptions, ImageService } from '../image/ImageService'
 
 /**
  * Creates an image helper for the TemplateEngine.
@@ -81,7 +81,33 @@ export function createImageHelper(): HelperFunction {
       }
     }
 
-    // Generate <img> tag
+    if (args.formatNegotiation !== undefined) {
+      options.formatNegotiation = Boolean(args.formatNegotiation)
+    }
+
+    if (args.usePicture !== undefined) {
+      options.usePicture = Boolean(args.usePicture)
+    }
+
+    if (args.placeholder !== undefined) {
+      const placeholder = String(args.placeholder)
+      if (['none', 'blur', 'color'].includes(placeholder)) {
+        options.placeholder = placeholder as 'none' | 'blur' | 'color'
+      }
+    }
+
+    if (args.blurDataURL !== undefined) {
+      options.blurDataURL = String(args.blurDataURL)
+    }
+
+    if (args.dominantColor !== undefined) {
+      options.dominantColor = String(args.dominantColor)
+    }
+
+    if (options.usePicture || options.formatNegotiation || options.artDirection) {
+      return imageService.generatePictureElement(options)
+    }
+
     return imageService.generateImageTag(options)
   }
 }

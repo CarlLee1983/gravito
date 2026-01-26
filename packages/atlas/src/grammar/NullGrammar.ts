@@ -82,7 +82,7 @@ export class NullGrammar implements GrammarContract {
     return column
   }
 
-  compileUpdateJson(_query: any, column: string, _value: unknown): string {
+  compileUpdateJson(_query: CompiledQuery, column: string, _value: unknown): string {
     return column
   }
 }

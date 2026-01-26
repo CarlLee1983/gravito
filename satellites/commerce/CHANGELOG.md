@@ -1,5 +1,24 @@
 # @gravito/satellite-commerce
 
+## 0.1.5
+
+### Patch Changes
+
+- Updated dependencies [1e7f7d6]
+  - @gravito/impulse@1.1.0
+
+## 0.1.4
+
+### Patch Changes
+
+- Updated dependencies
+- Updated dependencies
+  - @gravito/atlas@2.1.0
+  - @gravito/core@1.2.1
+  - @gravito/enterprise@1.0.3
+  - @gravito/impulse@1.0.3
+  - @gravito/stasis@3.0.1
+
 ## 0.1.3
 
 ### Patch Changes

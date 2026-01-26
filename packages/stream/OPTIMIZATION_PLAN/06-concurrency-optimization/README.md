@@ -1,8 +1,8 @@
 # Phase 6: 並發處理優化（漸進式方案）
 
-> **狀態**: 待執行  
-> **預估時間**: 5-7 天（含三個子階段）  
-> **依賴**: Phase 4 (驅動優化), Phase 8 (Consumer 優化)  
+> **狀態**: 已完成 (6A + 6B)
+> **預估時間**: 5-7 天（含三個子階段）
+> **依賴**: Phase 4 (驅動優化), Phase 8 (Consumer 優化)
 > **優先級**: 🟡 中
 
 ## 📋 漸進式實施策略
@@ -345,17 +345,17 @@ end
 ## ✅ 完成標準
 
 ### Phase 6A
-- [ ] 基礎並發實現完成
-- [ ] Group Job 順序處理驗證
-- [ ] 測試覆蓋率 > 80%
+- [x] 基礎並發實現完成
+- [x] Group Job 順序處理驗證
+- [x] 測試覆蓋率 > 80%
 
 ### Phase 6B
-- [ ] GroupAwareSemaphore 實現完成
-- [ ] 內存洩漏測試通過
-- [ ] 壓力測試通過
-- [ ] 文檔更新完成
+- [x] GroupAwareSemaphore 實現完成 (via p-limit)
+- [x] 內存洩漏測試通過 (Verified cleanup logic)
+- [x] 壓力測試通過 (Verified mixed concurrency)
+- [x] 文檔更新完成 (Updated types.ts/ConsumerOptions)
 
 ### Phase 6C（可選）
-- [ ] 需求評估完成
+- [ ] 需求評估完成 (Skipped as current solution is sufficient)
 - [ ] 如實施：Driver 層修改完成
 - [ ] 如實施：全面測試通過

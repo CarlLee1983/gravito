@@ -20,8 +20,10 @@ import type {
   QueryResult,
   SQLiteConfig,
 } from '../types'
+import type { SQLiteClient } from './types'
 
-declare const Bun: any
+// biome-ignore lint/suspicious/noExplicitAny: Bun global type
+declare const Bun: { sql: (path: string) => SQLiteClient } | undefined
 
 /**
 
@@ -41,7 +43,7 @@ declare const Bun: any
 export class SQLiteDriver implements DriverContract {
   private config: SQLiteConfig
 
-  private client: any | null = null
+  private client: SQLiteClient | null = null
 
   private inTransactionState = false
 
@@ -70,18 +72,22 @@ export class SQLiteDriver implements DriverContract {
           readonly: this.config.readonly ?? false,
 
           create: true,
-        })
+        }) as unknown as SQLiteClient
 
-        this.client.exec('PRAGMA journal_mode = WAL;')
+        if ('exec' in this.client && typeof this.client.exec === 'function') {
+          this.client.exec('PRAGMA journal_mode = WAL;')
+        }
       } else {
         try {
           const { default: Database } = await import('better-sqlite3')
 
           this.client = new Database(this.config.database, {
             readonly: this.config.readonly ?? false,
-          })
+          }) as unknown as SQLiteClient
 
-          this.client.pragma('journal_mode = WAL')
+          if ('pragma' in this.client && typeof this.client.pragma === 'function') {
+            this.client.pragma('journal_mode = WAL')
+          }
         } catch (e) {
           throw new Error(
             `SQLite driver requires "better-sqlite3" when running in Node.js. Please install it: bun add better-sqlite3. Original Error: ${e}`
@@ -102,7 +108,13 @@ export class SQLiteDriver implements DriverContract {
   }
 
   isConnected(): boolean {
-    return this.client?.open
+    if (!this.client) {
+      return false
+    }
+    if ('open' in this.client) {
+      return (this.client as { open?: boolean }).open !== false
+    }
+    return true
   }
 
   async query<T = Record<string, unknown>>(
@@ -135,22 +147,19 @@ export class SQLiteDriver implements DriverContract {
     })
 
     try {
-      const stmt = this.client?.prepare(sql)
-
+      if (!this.client) {
+        throw new Error('SQLite client not connected')
+      }
+      const stmt = this.client.prepare(sql)
       const rows = stmt.all(...params) as T[]
-
-      // For SQLite, better-sqlite3 returns column details in stmt.columns() after execution
-
-      // but only if it's a select? 'all' executes it.
-
-      // We can iterate columns if needed, but QueryResult usually just needs rows.
-
       return {
         rows,
-
         rowCount: rows.length,
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      if (process.env.DEBUG_ATLAS) {
+        console.error(`[SQLite Query Failed] ${sql}`, error)
+      }
       throw this.normalizeError(error, sql, bindings)
     }
   }
@@ -178,17 +187,19 @@ export class SQLiteDriver implements DriverContract {
 
     try {
       const stmt = this.client?.prepare(sql)
-
+      if (!stmt) {
+        throw new Error('Failed to prepare SQL statement')
+      }
       const result = stmt.run(...params)
-
       return {
         affectedRows: result.changes,
-
         insertId: result.lastInsertRowid,
-
         changedRows: result.changes,
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      if (process.env.DEBUG_ATLAS) {
+        console.error(`[SQLite Execute Failed] ${sql}`, error)
+      }
       throw this.normalizeError(error, sql, bindings)
     }
   }
@@ -197,9 +208,10 @@ export class SQLiteDriver implements DriverContract {
     if (!this.client) {
       await this.connect()
     }
-
+    if (process.env.DEBUG_ATLAS) {
+      console.log('[SQLiteDriver] BEGIN')
+    }
     this.client?.prepare('BEGIN').run()
-
     this.inTransactionState = true
   }
 
@@ -207,9 +219,10 @@ export class SQLiteDriver implements DriverContract {
     if (!this.client) {
       return
     }
-
+    if (process.env.DEBUG_ATLAS) {
+      console.log('[SQLiteDriver] COMMIT')
+    }
     this.client?.prepare('COMMIT').run()
-
     this.inTransactionState = false
   }
 
@@ -217,9 +230,10 @@ export class SQLiteDriver implements DriverContract {
     if (!this.client) {
       return
     }
-
+    if (process.env.DEBUG_ATLAS) {
+      console.log('[SQLiteDriver] ROLLBACK')
+    }
     this.client?.prepare('ROLLBACK').run()
-
     this.inTransactionState = false
   }
 
@@ -237,25 +251,27 @@ export class SQLiteDriver implements DriverContract {
 
      */
 
-  private normalizeError(error: any, sql: string, bindings: unknown[]): DatabaseError {
-    const message = error.message.toLowerCase()
+  private normalizeError(error: unknown, sql: string, bindings: unknown[]): DatabaseError {
+    const err = error as { message?: string }
+    const errorMessage = err.message || String(error)
+    const message = errorMessage.toLowerCase()
 
     if (message.includes('unique constraint failed') || message.includes('is not unique')) {
-      return new UniqueConstraintError(error.message, error, sql, bindings)
+      return new UniqueConstraintError(errorMessage, error, sql, bindings)
     }
 
     if (message.includes('foreign key constraint failed')) {
-      return new ForeignKeyConstraintError(error.message, error, sql, bindings)
+      return new ForeignKeyConstraintError(errorMessage, error, sql, bindings)
     }
 
     if (message.includes('not null constraint failed')) {
-      return new NotNullConstraintError(error.message, error, sql, bindings)
+      return new NotNullConstraintError(errorMessage, error, sql, bindings)
     }
 
     if (message.includes('no such table')) {
-      return new TableNotFoundError(error.message, error, sql, bindings)
+      return new TableNotFoundError(errorMessage, error, sql, bindings)
     }
 
-    return new DatabaseError(error.message, error, sql, bindings)
+    return new DatabaseError(errorMessage, error, sql, bindings)
   }
 }

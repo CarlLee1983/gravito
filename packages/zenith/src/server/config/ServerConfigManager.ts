@@ -43,7 +43,10 @@ export class ServerConfigManager {
     if (dbDriver === 'sqlite' || process.env.DB_HOST) {
       this.setupDatabase(dbDriver, dbConfig)
 
-      const adapter = dbDriver === 'sqlite' ? new SQLitePersistence(DB) : new MySQLPersistence(DB)
+      const adapter =
+        dbDriver === 'sqlite'
+          ? new SQLitePersistence(DB.connection())
+          : new MySQLPersistence(DB.connection())
       adapter
         .setupTable()
         .catch((err) => console.error('[FluxConsole] SQL Archive Setup Error:', err))

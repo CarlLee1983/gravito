@@ -1,5 +1,26 @@
 # example-mesh-verification
 
+## 1.0.7
+
+### Patch Changes
+
+- @gravito/flare@3.0.3
+
+## 1.0.6
+
+### Patch Changes
+
+- @gravito/flare@3.0.2
+
+## 1.0.5
+
+### Patch Changes
+
+- Updated dependencies
+  - @gravito/core@1.2.1
+  - @gravito/flare@3.0.1
+  - @gravito/monitor@3.0.1
+
 ## 1.0.4
 
 ### Patch Changes

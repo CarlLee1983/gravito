@@ -1,34 +1,34 @@
-/**
- * @fileoverview Bun SQLite Storage Adapter
- *
- * High-performance storage using Bun's built-in SQLite.
- *
- * @module @gravito/flux/storage
- */
-
 import { Database } from 'bun:sqlite'
 import type { WorkflowFilter, WorkflowState, WorkflowStorage } from '../types'
 
 /**
- * SQLite Storage Options
+ * Configuration options for the Bun SQLite storage adapter.
  */
 export interface BunSQLiteStorageOptions {
-  /** Database file path (default: ':memory:') */
+  /**
+   * Path to the SQLite database file.
+   * Use ':memory:' for an ephemeral in-memory database.
+   */
   path?: string
-  /** Table name (default: 'flux_workflows') */
+  /**
+   * Name of the table used to store workflow states.
+   */
   tableName?: string
 }
 
 /**
- * Bun SQLite Storage
+ * BunSQLiteStorage provides a persistent storage backend for Flux workflows using Bun's native SQLite module.
  *
- * High-performance storage adapter using Bun's built-in SQLite.
+ * It handles automatic table creation, indexing for performance, and serialization of workflow state
+ * into a relational format.
  *
  * @example
  * ```typescript
- * const engine = new FluxEngine({
- *   storage: new BunSQLiteStorage({ path: './data/flux.db' })
- * })
+ * const storage = new BunSQLiteStorage({
+ *   path: './workflows.db',
+ *   tableName: 'my_workflows'
+ * });
+ * await storage.init();
  * ```
  */
 export class BunSQLiteStorage implements WorkflowStorage {
@@ -36,13 +36,22 @@ export class BunSQLiteStorage implements WorkflowStorage {
   private tableName: string
   private initialized = false
 
+  /**
+   * Creates a new instance of BunSQLiteStorage.
+   *
+   * @param options - Configuration for the database connection and table naming.
+   */
   constructor(options: BunSQLiteStorageOptions = {}) {
     this.db = new Database(options.path ?? ':memory:')
     this.tableName = options.tableName ?? 'flux_workflows'
   }
 
   /**
-   * Initialize storage (create tables)
+   * Initializes the database schema and required indexes.
+   *
+   * This method is idempotent and will be called automatically by other operations if not invoked manually.
+   *
+   * @throws {Error} If the database schema cannot be created or indexes fail to initialize.
    */
   async init(): Promise<void> {
     if (this.initialized) {
@@ -61,11 +70,11 @@ export class BunSQLiteStorage implements WorkflowStorage {
         error TEXT,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
-        completed_at TEXT
+        completed_at TEXT,
+        version INTEGER NOT NULL DEFAULT 1
       )
     `)
 
-    // Create indexes for common queries
     this.db.run(`
       CREATE INDEX IF NOT EXISTS idx_${this.tableName}_name 
       ON ${this.tableName}(name)
@@ -83,15 +92,20 @@ export class BunSQLiteStorage implements WorkflowStorage {
   }
 
   /**
-   * Save workflow state
+   * Persists or updates a workflow state in the database.
+   *
+   * Uses an "INSERT OR REPLACE" strategy to ensure the latest state is always stored for a given ID.
+   *
+   * @param state - The current state of the workflow to be saved.
+   * @throws {Error} If the database write operation fails or serialization errors occur.
    */
   async save(state: WorkflowState): Promise<void> {
     await this.init()
 
     const stmt = this.db.prepare(`
       INSERT OR REPLACE INTO ${this.tableName} 
-      (id, name, status, input, data, current_step, history, error, created_at, updated_at, completed_at)
-      VALUES ($id, $name, $status, $input, $data, $currentStep, $history, $error, $createdAt, $updatedAt, $completedAt)
+      (id, name, status, input, data, current_step, history, error, created_at, updated_at, completed_at, version)
+      VALUES ($id, $name, $status, $input, $data, $currentStep, $history, $error, $createdAt, $updatedAt, $completedAt, $version)
     `)
 
     stmt.run({
@@ -106,11 +120,16 @@ export class BunSQLiteStorage implements WorkflowStorage {
       $createdAt: state.createdAt.toISOString(),
       $updatedAt: state.updatedAt.toISOString(),
       $completedAt: state.completedAt?.toISOString() ?? null,
+      $version: state.version,
     })
   }
 
   /**
-   * Load workflow state by ID
+   * Retrieves a workflow state by its unique identifier.
+   *
+   * @param id - The unique ID of the workflow to load.
+   * @returns The reconstructed workflow state, or null if no record is found.
+   * @throws {Error} If the database query fails or deserialization of stored JSON fails.
    */
   async load(id: string): Promise<WorkflowState | null> {
     await this.init()
@@ -129,7 +148,13 @@ export class BunSQLiteStorage implements WorkflowStorage {
   }
 
   /**
-   * List workflow states with optional filter
+   * Lists workflow states based on the provided filtering criteria.
+   *
+   * Results are returned in descending order of creation time.
+   *
+   * @param filter - Criteria for filtering and paginating the results.
+   * @returns An array of workflow states matching the filter.
+   * @throws {Error} If the database query fails.
    */
   async list(filter?: WorkflowFilter): Promise<WorkflowState[]> {
     await this.init()
@@ -168,14 +193,16 @@ export class BunSQLiteStorage implements WorkflowStorage {
     }
 
     const stmt = this.db.prepare(query)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const rows = stmt.all(params as any) as SQLiteRow[]
+    const rows = stmt.all(params as Record<string, any>) as SQLiteRow[]
 
     return rows.map((row) => this.rowToState(row))
   }
 
   /**
-   * Delete workflow state
+   * Deletes a workflow state from the database.
+   *
+   * @param id - The unique ID of the workflow to delete.
+   * @throws {Error} If the database deletion fails.
    */
   async delete(id: string): Promise<void> {
     await this.init()
@@ -188,7 +215,9 @@ export class BunSQLiteStorage implements WorkflowStorage {
   }
 
   /**
-   * Close database connection
+   * Closes the database connection and resets the initialization state.
+   *
+   * @throws {Error} If the database connection cannot be closed cleanly.
    */
   async close(): Promise<void> {
     this.db.close()
@@ -196,7 +225,11 @@ export class BunSQLiteStorage implements WorkflowStorage {
   }
 
   /**
-   * Convert SQLite row to WorkflowState
+   * Converts a raw database row into a structured WorkflowState object.
+   *
+   * @param row - The raw SQLite row data.
+   * @returns The parsed workflow state.
+   * @private
    */
   private rowToState(row: SQLiteRow): WorkflowState {
     return {
@@ -211,18 +244,25 @@ export class BunSQLiteStorage implements WorkflowStorage {
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at),
       completedAt: row.completed_at ? new Date(row.completed_at) : undefined,
+      version: row.version,
     }
   }
 
   /**
-   * Get raw database (for advanced usage)
+   * Provides direct access to the underlying Bun SQLite Database instance.
+   *
+   * Useful for performing custom queries or maintenance tasks.
+   *
+   * @returns The raw Database instance.
    */
   getDatabase(): Database {
     return this.db
   }
 
   /**
-   * Run a vacuum to optimize database
+   * Performs a VACUUM operation to reclaim unused space and defragment the database.
+   *
+   * @throws {Error} If the VACUUM operation fails.
    */
   vacuum(): void {
     this.db.run('VACUUM')
@@ -230,7 +270,7 @@ export class BunSQLiteStorage implements WorkflowStorage {
 }
 
 /**
- * SQLite row type
+ * Internal representation of a workflow record in the SQLite database.
  */
 interface SQLiteRow {
   id: string
@@ -244,4 +284,5 @@ interface SQLiteRow {
   created_at: string
   updated_at: string
   completed_at: string | null
+  version: number
 }

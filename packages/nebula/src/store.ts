@@ -1,0 +1,147 @@
+/**
+ * StorageStore defines the low-level contract for storage backends.
+ *
+ * All storage drivers (Local, S3, Memory, etc.) must implement this interface.
+ * It focuses on raw I/O operations without higher-level logic like hooks.
+ *
+ * @public
+ */
+export interface StorageStore {
+  // ==================== 基本操作 ====================
+
+  /**
+   * Persists data to the storage backend.
+   *
+   * 儲存檔案
+   * @param key - Unique identifier or path for the file
+   * @param data - Content to be stored
+   * @throws {Error} If the backend fails to write the data
+   */
+  put(key: string, data: Blob | Buffer | string): Promise<void>
+
+  /**
+   * Retrieves data from the storage backend.
+   *
+   * 讀取檔案
+   * @param key - Unique identifier or path for the file
+   * @returns The file content as a Blob, or null if the key does not exist
+   */
+  get(key: string): Promise<Blob | null>
+
+  /**
+   * Removes data from the storage backend.
+   *
+   * 刪除檔案
+   * @param key - Unique identifier or path for the file
+   * @returns True if the file was successfully deleted, false if it didn't exist
+   */
+  delete(key: string): Promise<boolean>
+
+  /**
+   * Verifies the existence of a file.
+   *
+   * 檢查檔案是否存在
+   * @param key - Unique identifier or path for the file
+   * @returns True if the file exists, false otherwise
+   */
+  exists(key: string): Promise<boolean>
+
+  // ==================== 進階操作 ====================
+
+  /**
+   * Duplicates a file within the same storage backend.
+   *
+   * 複製檔案
+   * @param from - Source identifier
+   * @param to - Destination identifier
+   * @throws {Error} If the source file is missing or copy fails
+   */
+  copy(from: string, to: string): Promise<void>
+
+  /**
+   * Relocates or renames a file within the same storage backend.
+   *
+   * 移動/重命名檔案
+   * @param from - Current identifier
+   * @param to - New identifier
+   * @throws {Error} If the source file is missing or move fails
+   */
+  move(from: string, to: string): Promise<void>
+
+  /**
+   * Enumerates files and directories.
+   *
+   * 列出檔案 (可選實作，需要 RuntimeAdapter 支援)
+   * @param prefix - Optional path prefix to filter results
+   * @returns An async iterable of storage items
+   */
+  list?(prefix?: string): AsyncIterable<StorageItem>
+
+  // ==================== 元資料 ====================
+
+  /**
+   * Retrieves technical information about a file.
+   *
+   * 取得檔案元資料
+   * @param key - Unique identifier or path for the file
+   * @returns Metadata object or null if file not found
+   */
+  getMetadata(key: string): Promise<StorageMetadata | null>
+
+  // ==================== URL ====================
+
+  /**
+   * Generates a publicly accessible URL for the file.
+   *
+   * 取得公開 URL
+   * @param key - Unique identifier or path for the file
+   * @returns The URL string
+   */
+  getUrl(key: string): string
+
+  /**
+   * Generates a time-limited, authorized URL.
+   *
+   * 取得有時效的簽名 URL (可選實作)
+   * @param key - Unique identifier or path for the file
+   * @param expiresIn - Duration in seconds until the URL expires
+   * @returns A promise resolving to the signed URL string
+   */
+  getSignedUrl?(key: string, expiresIn: number): Promise<string>
+}
+
+/**
+ * StorageMetadata represents technical details of a stored file.
+ *
+ * 檔案元資料
+ * @public
+ */
+export interface StorageMetadata {
+  /** 檔案路徑 */
+  key: string
+  /** 檔案大小 (bytes) */
+  size: number
+  /** MIME 類型 */
+  mimeType?: string
+  /** 最後修改時間 */
+  lastModified?: Date
+  /** ETag (用於快取驗證) */
+  etag?: string
+}
+
+/**
+ * StorageItem represents an entry in a file listing.
+ *
+ * 檔案清單項目
+ * @public
+ */
+export interface StorageItem {
+  /** 檔案路徑 */
+  key: string
+  /** 是否為目錄 */
+  isDirectory: boolean
+  /** 檔案大小 (目錄為 undefined) */
+  size?: number
+  /** 最後修改時間 */
+  lastModified?: Date
+}

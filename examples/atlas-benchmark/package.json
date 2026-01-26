@@ -5,7 +5,8 @@
   "scripts": {
     "start": "bun run src/index.ts",
     "test:memory": "bun run src/scenarios/memory.ts",
-    "test:features": "bun run src/scenarios/features.ts"
+    "test:features": "bun run src/scenarios/features.ts",
+    "typecheck": "bun tsc --noEmit"
   },
   "dependencies": {
     "@gravito/atlas": "workspace:*",
@@ -16,6 +17,6 @@
   "devDependencies": {
     "@types/pg": "^8.11.0",
     "@types/node": "^20.0.0",
-    "typescript": "^5.0.0"
+    "typescript": "^5.9.3"
   }
 }

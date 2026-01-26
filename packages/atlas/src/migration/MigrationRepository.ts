@@ -9,7 +9,10 @@ import type { MigrationRecord } from './Migration'
 
 /**
  * Migration Repository
- * Manages the migrations database table to track which migrations have been executed
+ *
+ * The MigrationRepository class manages the database table that tracks
+ * which migrations have been executed. It provides methods for logging
+ * migrations, retrieving the list of ran migrations, and managing batches.
  */
 export class MigrationRepository {
   private tableName = 'migrations'

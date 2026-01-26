@@ -12,6 +12,12 @@ import type { JsonLdConfig } from './interfaces'
 export class JsonLdBuilder {
   constructor(private config: JsonLdConfig | JsonLdConfig[]) {}
 
+  /**
+   * Generates the `<script>` tag containing JSON-LD data.
+   *
+   * @returns The HTML script tag.
+   * @throws {Error} If JSON serialization fails.
+   */
   build(): string {
     const payload = Array.isArray(this.config)
       ? this.config.map((c) => this.format(c))

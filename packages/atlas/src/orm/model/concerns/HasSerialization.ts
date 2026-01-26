@@ -1,26 +1,32 @@
 /**
  * HasSerialization Concern
- *
- * Provides serialization functionality including:
- * - Converting to JSON
- * - Converting to array/object
- * - Hiding/appending attributes
+ * @description Provides serialization functionality including converting to JSON, array/object, and handling hidden/appended attributes.
  */
-
 export class HasSerialization {
   /**
-   * Convert model to JSON
+   * Convert the model instance to a JSON string.
    *
-   * @returns JSON string
+   * @returns A JSON string representation of the model
+   *
+   * @example
+   * ```typescript
+   * const json = user.toJSON()
+   * ```
    */
   toJSON(): string {
     return JSON.stringify(this.toArray())
   }
 
   /**
-   * Convert model to array
+   * Convert the model instance to a plain JavaScript object.
+   * Respects `visible`, `hidden`, and `appends` static configurations.
    *
-   * @returns Model as array
+   * @returns A plain object representation of the model
+   *
+   * @example
+   * ```typescript
+   * const data = user.toArray()
+   * ```
    */
   toArray(): Record<string, unknown> {
     const modelCtor = this.constructor as any
@@ -67,28 +73,31 @@ export class HasSerialization {
   }
 
   /**
-   * Convert model to object
+   * Convert the model instance to a plain JavaScript object.
+   * Alias for `toArray()`.
    *
-   * @returns Model as object
+   * @returns A plain object representation of the model
    */
   toObject(): Record<string, unknown> {
     return this.toArray()
   }
 
   /**
-   * Get attributes
+   * Get all attributes currently set on the model.
    *
-   * @returns All attributes
+   * @returns An object containing all model attributes
+   * @internal
    */
   getAttributes(): Record<string, unknown> {
     return (this as any)._attributes || {}
   }
 
   /**
-   * Get attribute value
+   * Get a specific attribute value.
    *
-   * @param key - Attribute key
-   * @returns Attribute value
+   * @param key - The attribute name
+   * @returns The attribute value
+   * @internal
    */
   getAttribute(key: string): unknown {
     const attributes = (this as any)._attributes || {}
@@ -96,9 +105,9 @@ export class HasSerialization {
   }
 
   /**
-   * String representation
+   * Get the string representation of the model.
    *
-   * @returns JSON string
+   * @returns A JSON string representation of the model
    */
   toString(): string {
     return this.toJSON()

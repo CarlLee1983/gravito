@@ -11,6 +11,11 @@ import type { AnalyticsConfig } from './interfaces'
 export class AnalyticsBuilder {
   constructor(private config: AnalyticsConfig) {}
 
+  /**
+   * Generates analytics tracking scripts.
+   *
+   * @returns A string containing the configured analytics scripts.
+   */
   build(): string {
     const parts: string[] = []
 

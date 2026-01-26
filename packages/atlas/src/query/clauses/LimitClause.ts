@@ -1,53 +1,61 @@
 /**
  * Limit Clause
- *
- * Handles LIMIT and OFFSET functionality
+ * @description Handles the construction of LIMIT and OFFSET clauses for SQL queries
  */
-
 export class LimitClause {
+  /** The maximum number of records to return */
   private limitValue?: number
+  /** The number of records to skip before starting to return results */
   private offsetValue?: number
 
   /**
-   * Set LIMIT value
+   * Set the LIMIT value
    *
-   * @param value - Limit value
+   * @param value - Maximum number of records
+   * @example
+   * ```typescript
+   * clause.setLimit(10)
+   * ```
    */
   setLimit(value: number): void {
     this.limitValue = value
   }
 
   /**
-   * Set OFFSET value
+   * Set the OFFSET value
    *
-   * @param value - Offset value
+   * @param value - Number of records to skip
+   * @example
+   * ```typescript
+   * clause.setOffset(20)
+   * ```
    */
   setOffset(value: number): void {
     this.offsetValue = value
   }
 
   /**
-   * Get LIMIT value
+   * Get the current LIMIT value
    *
-   * @returns Limit value
+   * @returns The limit value or undefined if not set
    */
   getLimit(): number | undefined {
     return this.limitValue
   }
 
   /**
-   * Get OFFSET value
+   * Get the current OFFSET value
    *
-   * @returns Offset value
+   * @returns The offset value or undefined if not set
    */
   getOffset(): number | undefined {
     return this.offsetValue
   }
 
   /**
-   * Compile to SQL
+   * Compile the LIMIT/OFFSET clause to SQL
    *
-   * @returns LIMIT/OFFSET clause SQL
+   * @returns SQL string for the clause
    */
   toSQL(): string {
     const parts: string[] = []
@@ -64,7 +72,7 @@ export class LimitClause {
   }
 
   /**
-   * Reset clause state
+   * Reset the clause state
    */
   reset(): void {
     this.limitValue = undefined
@@ -72,28 +80,36 @@ export class LimitClause {
   }
 
   /**
-   * Check if clause has LIMIT
+   * Check if the clause has a LIMIT value set
+   *
+   * @returns True if limit is set
    */
   hasLimit(): boolean {
     return this.limitValue !== undefined
   }
 
   /**
-   * Check if clause has OFFSET
+   * Check if the clause has an OFFSET value set
+   *
+   * @returns True if offset is set
    */
   hasOffset(): boolean {
     return this.offsetValue !== undefined
   }
 
   /**
-   * Set take (alias for limit)
+   * Set the number of records to take (alias for limit)
+   *
+   * @param value - Number of records
    */
   take(value: number): void {
     this.setLimit(value)
   }
 
   /**
-   * Set skip (alias for offset)
+   * Set the number of records to skip (alias for offset)
+   *
+   * @param value - Number of records
    */
   skip(value: number): void {
     this.setOffset(value)

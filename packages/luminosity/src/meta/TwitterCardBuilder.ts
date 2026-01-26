@@ -12,6 +12,11 @@ import type { TwitterCardConfig } from './interfaces'
 export class TwitterCardBuilder {
   constructor(private config: TwitterCardConfig) {}
 
+  /**
+   * Generates the Twitter Card meta tags.
+   *
+   * @returns A string containing all Twitter meta tags.
+   */
   build(): string {
     const tags: string[] = []
 

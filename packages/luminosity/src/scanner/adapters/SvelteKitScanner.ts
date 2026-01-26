@@ -49,6 +49,14 @@ export class SvelteKitScanner implements RouteScanner {
 
   constructor(private options: SvelteKitScannerOptions = {}) {}
 
+  /**
+   * Scans the SvelteKit routes directory.
+   *
+   * Identifies page routes by looking for `+page.svelte` (or `.js`/.`ts`) files,
+   * correctly handling route groups and dynamic parameters.
+   *
+   * @returns A promise resolving to the list of scanned routes.
+   */
   async scan(): Promise<ScannedRoute[]> {
     const routes: ScannedRoute[] = []
     const cwd = this.options.cwd ?? process.cwd()

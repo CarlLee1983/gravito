@@ -61,6 +61,11 @@ export class SeoMetadata {
     }
   }
 
+  /**
+   * Generates the complete SEO HTML block.
+   *
+   * @returns A string containing all configured SEO tags.
+   */
   toString(): string {
     const parts: string[] = []
 

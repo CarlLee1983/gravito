@@ -39,7 +39,9 @@ export class JsonlLogger {
   }
 
   /**
-   * Append a single operation to the log
+   * Append a single operation to the log.
+   *
+   * @param entry - The operation to log.
    */
   async append(entry: LogEntry): Promise<void> {
     const line = `${JSON.stringify(entry)}\n`
@@ -47,7 +49,11 @@ export class JsonlLogger {
   }
 
   /**
-   * Read all entries from log
+   * Read all entries from the log.
+   *
+   * Parses the file line by line. Skips any lines that fail to parse as JSON.
+   *
+   * @returns A promise resolving to an array of log entries.
    */
   async readAll(): Promise<LogEntry[]> {
     if (!(await this.adapter.exists(this.logPath))) {
@@ -68,17 +74,29 @@ export class JsonlLogger {
       .filter((x) => x !== null) as LogEntry[]
   }
 
+  /**
+   * Get the current size of the log file.
+   *
+   * @returns The size in bytes.
+   */
   async getSize(): Promise<number> {
     return this.adapter.size(this.logPath)
   }
 
+  /**
+   * Delete the log file.
+   */
   async delete(): Promise<void> {
     await this.adapter.delete(this.logPath)
   }
 
   /**
-   * Filter out corrupted lines and rewrite the log file
-   * @returns number of corrupted lines removed
+   * Filter out corrupted lines and rewrite the log file.
+   *
+   * Reads the entire file, filters out invalid JSON lines, and writes it back.
+   * This is an atomic operation using a temporary file and rename.
+   *
+   * @returns A promise resolving to the number of corrupted lines removed.
    */
   async repairWAL(): Promise<number> {
     if (!(await this.adapter.exists(this.logPath))) {

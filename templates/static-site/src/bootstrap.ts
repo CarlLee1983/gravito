@@ -30,7 +30,16 @@ export async function bootstrap(options: AppConfig = {}) {
       VIEW_DIR: 'src/views',
     },
     // Add OrbitIon for static site generation
-    orbits: [OrbitCache, OrbitPrism, OrbitIon],
+    orbits: [
+      new OrbitCache(),
+      new OrbitPrism({
+        cache: {
+          enabled: process.env.NODE_ENV === 'production',
+          maxSize: 500,
+        },
+      }),
+      new OrbitIon(),
+    ],
   })
 
   // 2. Boot

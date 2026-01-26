@@ -58,9 +58,12 @@ export class RouteScanner implements SitemapProvider {
   }
 
   /**
-   * Scan the router and return discovered entries.
+   * Scans the router and returns discovered static GET routes as sitemap entries.
    *
-   * @returns An array of sitemap entries.
+   * This method iterates through all registered routes in the Gravito router,
+   * applying inclusion/exclusion filters and defaulting metadata for matching routes.
+   *
+   * @returns An array of `SitemapEntry` objects.
    */
   getEntries(): SitemapEntry[] {
     const entries: SitemapEntry[] = []

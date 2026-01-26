@@ -72,78 +72,115 @@ export type CacheProvider = CacheStorageProvider
  */
 export interface CacheService {
   /**
-   * Retrieve an item from the cache.
+   * Retrieves an item from the cache.
    *
-   * @param key - The unique cache key.
-   * @returns The cached value, or null if not found or expired.
+   * @param key - The unique identifier for the cached item.
+   * @returns The cached value, or `null` if the item is missing or has expired.
+   *
+   * @example
+   * const user = await cache.get<User>('user:123');
    */
   get<T = unknown>(key: string): Promise<T | null>
 
   /**
-   * Store an item in the cache with an optional TTL.
+   * Stores an item in the cache with an optional time-to-live.
    *
-   * @param key - The unique cache key.
-   * @param value - The value to store.
-   * @param ttl - Time-to-live in seconds or an absolute Date.
+   * @param key - The unique identifier for the item.
+   * @param value - The value to store (must be serializable).
+   * @param ttl - Time-to-live in seconds or as a `Date` object. If omitted, uses the default TTL.
+   *
+   * @example
+   * await cache.set('key', 'value', 60);
    */
   set(key: string, value: unknown, ttl?: CacheTtl): Promise<void>
 
   /**
-   * Determine if an item exists in the cache and is not expired.
+   * Checks if an item exists in the cache and has not expired.
    *
    * @param key - The cache key to check.
-   * @returns True if the item exists and is valid.
+   * @returns `true` if the item exists and is valid, `false` otherwise.
+   *
+   * @example
+   * if (await cache.has('lock:processing')) {
+   *   return;
+   * }
    */
   has(key: string): Promise<boolean>
 
   /**
-   * Store an item in the cache only if it doesn't already exist.
+   * Stores an item in the cache only if it does not already exist.
    *
-   * @param key - The unique cache key.
+   * @param key - The unique identifier for the item.
    * @param value - The value to store.
-   * @param ttl - Time-to-live.
-   * @returns True if the item was added, false otherwise.
+   * @param ttl - Time-to-live in seconds or as a `Date` object.
+   * @returns `true` if the item was added, `false` if it already existed.
+   *
+   * @example
+   * const acquired = await cache.add('lock:job:1', true, 60);
    */
   add(key: string, value: unknown, ttl?: CacheTtl): Promise<boolean>
 
   /**
-   * Remove an item from the cache.
+   * Removes an item from the cache.
    *
    * @param key - The cache key to remove.
-   * @returns True if the item existed and was removed.
+   * @returns `true` if the item was successfully removed, `false` otherwise.
+   *
+   * @example
+   * await cache.delete('user:session:1');
    */
   delete(key: string): Promise<boolean>
 
   /**
-   * Retrieve an item from the cache and then delete it.
+   * Retrieves an item from the cache and then removes it.
    *
-   * @param key - The cache key.
-   * @param defaultValue - Optional value to return if not found.
-   * @returns The cached value or the default.
+   * This operation is atomic depending on the underlying driver support.
+   *
+   * @param key - The cache key to pull.
+   * @param defaultValue - Optional value to return if the item is missing.
+   * @returns The cached value (before deletion) or the default value.
+   *
+   * @example
+   * const otp = await cache.pull('otp:user:1');
    */
   pull<T = unknown>(key: string, defaultValue?: T): Promise<T | null>
 
   /**
-   * Get an item from the cache, or execute the given callback and store the result.
+   * Retrieves an item from the cache, or executes the callback and stores the result.
+   *
+   * This is a "read-through" cache pattern.
    *
    * @param key - The cache key.
-   * @param ttl - Time-to-live if the item needs to be fetched.
-   * @param callback - Closure to execute if the item is missing.
-   * @returns The cached or fetched value.
+   * @param ttl - Time-to-live to use if the item is fetched from the callback.
+   * @param callback - Function to retrieve the value if missing. Can be async.
+   * @returns The cached or newly fetched value.
+   *
+   * @example
+   * const user = await cache.remember('user:1', 300, async () => {
+   *   return await db.findUser(1);
+   * });
    */
   remember<T>(key: string, ttl: CacheTtl, callback: () => Promise<T> | T): Promise<T>
 
   /**
-   * Store an item in the cache indefinitely.
+   * Stores an item in the cache indefinitely (or until manually removed).
    *
    * @param key - The unique cache key.
-   * @param callback - Closure to execute if the item is missing.
+   * @param callback - Function to retrieve the value if missing.
    * @returns The cached or fetched value.
+   *
+   * @example
+   * const settings = await cache.rememberForever('app:settings', () => loadSettings());
    */
   rememberForever<T>(key: string, callback: () => Promise<T> | T): Promise<T>
 
   /**
-   * Clear the entire cache.
+   * Clears all items from the cache.
+   *
+   * @warning This will wipe the entire cache storage for the current context.
+   *
+   * @example
+   * await cache.clear();
    */
   clear(): Promise<void>
 }

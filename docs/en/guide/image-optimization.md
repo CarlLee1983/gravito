@@ -113,6 +113,77 @@ If you are using our built-in template engine, use the `image` helper.
 </x-card>
 ```
 
+## Modern Formats & Picture Element
+
+Starting from **v3.1.0**, the `Image` component supports the `<picture>` element for advanced format negotiation.
+
+```handlebars
+{{image 
+  src="/hero.jpg" 
+  alt="Hero" 
+  width=1920 
+  height=1080
+  formatNegotiation=true
+  usePicture=true
+}}
+```
+
+This will automatically generate a `<picture>` tag with optimized `AVIF` and `WebP` sources, falling back to the original `JPG`.
+
+---
+
+## CDN Integration
+
+Prism integrates seamlessly with popular image CDNs. This allows you to offload image processing to specialized services while keeping your codebase clean.
+
+```typescript
+import { ImageService } from '@gravito/prism'
+import { createCloudinaryLoader } from '@gravito/prism/image/loaders/cloudinary'
+
+const loader = createCloudinaryLoader({ cloudName: 'your-cloud-name' })
+
+// In your template or component
+<Image 
+  src="/products/shoes.jpg" 
+  alt="Shoes" 
+  width={800} 
+  height={600} 
+  loader={loader}
+/>
+```
+
+**Supported Loaders:**
+- **Cloudinary**: `createCloudinaryLoader({ cloudName })`
+- **imgix**: `createImgixLoader({ domain })`
+- **Vercel**: `vercelLoader`
+
+---
+
+## LQIP (Low Quality Image Placeholder)
+
+To improve Largest Contentful Paint (LCP) and provide a better user experience, Prism supports **Low Quality Image Placeholders (LQIP)**.
+
+```handlebars
+{{image 
+  src="/hero.jpg" 
+  alt="Hero"
+  width=1440
+  height=810
+  placeholder="blur"
+  blurDataURL="data:image/jpeg;base64,..."
+}}
+```
+
+### Generating Placeholders
+
+You can use the built-in utilities to calculate optimal placeholder sizes that comply with Chrome's LCP standards (0.05 Bits Per Pixel).
+
+```typescript
+import { calculateMinLQIPSize } from '@gravito/prism'
+
+const minSizeKB = calculateMinLQIPSize(1440, 810) // Returns ~8KB
+```
+
 ---
 
 ## Core Web Vitals Checklist

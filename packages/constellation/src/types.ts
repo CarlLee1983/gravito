@@ -183,7 +183,10 @@ export interface SitemapProvider {
  * @since 3.0.0
  */
 export interface SitemapStreamOptions {
-  /** Base domain used to normalize relative URLs. */
+  /**
+   * Base domain used to normalize relative URLs.
+   * Example: 'https://example.com'
+   */
   baseUrl: string
   /** Whether to output formatted and indented XML. @default false */
   pretty?: boolean | undefined
@@ -214,6 +217,8 @@ export interface SitemapStorage {
    * @returns The XML content as a string, or null if not found.
    */
   read(filename: string): Promise<string | null>
+
+  readStream?(filename: string): Promise<AsyncIterable<string> | null>
 
   /**
    * Check if a sitemap file exists in storage.
@@ -473,6 +478,35 @@ export interface RedirectRule {
   type: 301 | 302
   /** Timestamp when the redirect rule was created. */
   createdAt?: Date
+}
+
+/**
+ * Represents a manifest file that tracks URL-to-shard mappings.
+ *
+ * @public
+ * @since 3.0.1
+ */
+export interface ShardManifest {
+  version: number
+  generatedAt: Date | string
+  baseUrl: string
+  maxEntriesPerShard: number
+  sort: string
+  shards: ShardInfo[]
+}
+
+/**
+ * Metadata about a single sitemap shard.
+ *
+ * @public
+ * @since 3.0.1
+ */
+export interface ShardInfo {
+  filename: string
+  from: string
+  to: string
+  count: number
+  lastmod: Date | string
 }
 
 /**

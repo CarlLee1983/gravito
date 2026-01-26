@@ -1,13 +1,11 @@
-/**
- * @fileoverview Tests for @gravito/flux
- */
-
 import { beforeEach, describe, expect, it } from 'bun:test'
-import { createWorkflow, FluxEngine, MemoryStorage, StateMachine } from '../src'
-
-// ─────────────────────────────────────────────────────────────
-// StateMachine Tests
-// ─────────────────────────────────────────────────────────────
+import {
+  createWorkflow,
+  FluxEngine,
+  MemoryStorage,
+  StateMachine,
+  type WorkflowContext,
+} from '../src'
 
 describe('StateMachine', () => {
   it('should start with pending status', () => {
@@ -55,10 +53,6 @@ describe('StateMachine', () => {
   })
 })
 
-// ─────────────────────────────────────────────────────────────
-// WorkflowBuilder Tests
-// ─────────────────────────────────────────────────────────────
-
 describe('WorkflowBuilder', () => {
   it('should create empty workflow', () => {
     const builder = createWorkflow('test')
@@ -68,15 +62,15 @@ describe('WorkflowBuilder', () => {
 
   it('should add steps', () => {
     const builder = createWorkflow('test')
-      .step('step1', async () => {})
-      .step('step2', async () => {})
+      .step('step1', async (_ctx: WorkflowContext<any, any>) => {})
+      .step('step2', async (_ctx: WorkflowContext<any, any>) => {})
 
     expect(builder.stepCount).toBe(2)
   })
 
   it('should build workflow definition', () => {
     const def = createWorkflow('test')
-      .step('step1', async () => {})
+      .step('step1', async (_ctx: WorkflowContext<any, any>) => {})
       .build()
 
     expect(def.name).toBe('test')
@@ -90,18 +84,14 @@ describe('WorkflowBuilder', () => {
 
   it('should mark commit steps', () => {
     const def = createWorkflow('test')
-      .step('normal', async () => {})
-      .commit('commit', async () => {})
+      .step('normal', async (_ctx: WorkflowContext<any, any>) => {})
+      .commit('commit', async (_ctx: WorkflowContext<any, any>) => {})
       .build()
 
     expect(def.steps[0]?.commit).toBe(false)
     expect(def.steps[1]?.commit).toBe(true)
   })
 })
-
-// ─────────────────────────────────────────────────────────────
-// MemoryStorage Tests
-// ─────────────────────────────────────────────────────────────
 
 describe('MemoryStorage', () => {
   let storage: MemoryStorage
@@ -121,6 +111,7 @@ describe('MemoryStorage', () => {
       history: [],
       createdAt: new Date(),
       updatedAt: new Date(),
+      version: 1,
     }
 
     await storage.save(state)
@@ -147,6 +138,7 @@ describe('MemoryStorage', () => {
       history: [],
       createdAt: new Date(),
       updatedAt: new Date(),
+      version: 1,
     })
 
     await storage.save({
@@ -159,6 +151,7 @@ describe('MemoryStorage', () => {
       history: [],
       createdAt: new Date(),
       updatedAt: new Date(),
+      version: 1,
     })
 
     const completed = await storage.list({ status: 'completed' })
@@ -177,6 +170,7 @@ describe('MemoryStorage', () => {
       history: [],
       createdAt: new Date(),
       updatedAt: new Date(),
+      version: 1,
     })
 
     await storage.delete('delete-me')
@@ -184,17 +178,13 @@ describe('MemoryStorage', () => {
   })
 })
 
-// ─────────────────────────────────────────────────────────────
-// FluxEngine Tests
-// ─────────────────────────────────────────────────────────────
-
 describe('FluxEngine', () => {
   it('should execute simple workflow', async () => {
     const engine = new FluxEngine()
 
     const workflow = createWorkflow('simple')
       .input<{ value: number }>()
-      .step('double', (ctx) => {
+      .step('double', (ctx: WorkflowContext<{ value: number }, any>) => {
         ctx.data.result = ctx.input.value * 2
       })
 
@@ -209,10 +199,10 @@ describe('FluxEngine', () => {
 
     const workflow = createWorkflow('multi')
       .input<{ numbers: number[] }>()
-      .step('sum', (ctx) => {
+      .step('sum', (ctx: WorkflowContext<{ numbers: number[] }, any>) => {
         ctx.data.sum = ctx.input.numbers.reduce((a, b) => a + b, 0)
       })
-      .step('average', (ctx) => {
+      .step('average', (ctx: WorkflowContext<{ numbers: number[] }, any>) => {
         ctx.data.avg = (ctx.data.sum as number) / ctx.input.numbers.length
       })
 
@@ -228,7 +218,7 @@ describe('FluxEngine', () => {
       defaultRetries: 0,
     })
 
-    const workflow = createWorkflow('failing').step('fail', () => {
+    const workflow = createWorkflow('failing').step('fail', (_ctx: WorkflowContext<any, any>) => {
       throw new Error('Intentional failure')
     })
 
@@ -242,8 +232,8 @@ describe('FluxEngine', () => {
     const engine = new FluxEngine()
 
     const workflow = createWorkflow('history')
-      .step('step1', () => {})
-      .step('step2', () => {})
+      .step('step1', (_ctx: WorkflowContext<any, any>) => {})
+      .step('step2', (_ctx: WorkflowContext<any, any>) => {})
 
     const result = await engine.execute(workflow, {})
 
@@ -267,7 +257,7 @@ describe('FluxEngine', () => {
       },
     })
 
-    const workflow = createWorkflow('events').step('test', () => {})
+    const workflow = createWorkflow('events').step('test', (_ctx: WorkflowContext<any, any>) => {})
 
     await engine.execute(workflow, {})
 

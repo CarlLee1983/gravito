@@ -13,26 +13,8 @@
 
 import { RadixRouter } from '../adapters/bun/RadixRouter'
 import type { HttpMethod } from '../http/types'
-import type { Handler, Middleware, RouteMatch } from './types'
+import type { Handler, Middleware, RouteMatch, RouteMetadata } from './types'
 
-/**
- * Route metadata for middleware management
- */
-/**
- * Route metadata for middleware management
- */
-export interface RouteMetadata {
-  handler: Handler
-  middleware: Middleware[]
-  /**
-   * Optimization flag: use minimal context for pure static routes
-   */
-  useMinimal?: boolean
-}
-
-/**
- * AOT Router - Optimized for Bun
- *
 /**
  * Route definition for re-playing routes (mounting)
  */
@@ -45,11 +27,6 @@ interface RouteDefinition {
 
 /**
  * AOT Router - Optimized for Bun
- *
- * Performance characteristics:
- * - Static routes: O(1) lookup via Map
- * - Dynamic routes: O(log n) via Radix Tree
- * - Middleware: O(m) where m = number of matching middleware
  */
 export class AOTRouter {
   // Static route cache: "METHOD:PATH" -> RouteMetadata
@@ -70,6 +47,10 @@ export class AOTRouter {
   // Path-based middleware: pattern -> middleware[]
   /** @internal */
   public readonly pathMiddleware = new Map<string, Middleware[]>()
+
+  private middlewareCache = new Map<string, { data: Middleware[]; version: number }>()
+  private cacheMaxSize = 1000
+  private version = 0
 
   /**
    * Register a route
@@ -122,7 +103,9 @@ export class AOTRouter {
     // 2. Transfer pattern-based middleware
     for (const [pattern, mws] of other.pathMiddleware) {
       // Skip internal dynamic route entries (contain ':')
-      if (pattern.includes(':')) continue
+      if (pattern.includes(':')) {
+        continue
+      }
 
       // Normalize pattern
       let newPattern: string
@@ -162,6 +145,7 @@ export class AOTRouter {
    */
   use(...middleware: Middleware[]): void {
     this.globalMiddleware.push(...middleware)
+    this.version++
   }
 
   /**
@@ -173,8 +157,14 @@ export class AOTRouter {
    * @param middleware - Middleware functions
    */
   usePattern(pattern: string, ...middleware: Middleware[]): void {
-    const existing = this.pathMiddleware.get(pattern) ?? []
-    this.pathMiddleware.set(pattern, [...existing, ...middleware])
+    // Special case: '*' pattern should be treated as global middleware
+    if (pattern === '*') {
+      this.globalMiddleware.push(...middleware)
+    } else {
+      const existing = this.pathMiddleware.get(pattern) ?? []
+      this.pathMiddleware.set(pattern, [...existing, ...middleware])
+    }
+    this.version++
   }
 
   /**
@@ -198,6 +188,7 @@ export class AOTRouter {
         handler: staticRoute.handler,
         params: {},
         middleware: this.collectMiddleware(path, staticRoute.middleware),
+        routePattern: path,
       }
     }
 
@@ -213,6 +204,7 @@ export class AOTRouter {
         handler,
         params: match.params,
         middleware: this.collectMiddleware(path, routeMiddleware),
+        routePattern: routeKey ?? undefined,
       }
     }
 
@@ -250,6 +242,12 @@ export class AOTRouter {
       return []
     }
 
+    const cacheKey = `${path}:${routeMiddleware.length}`
+    const cached = this.middlewareCache.get(cacheKey)
+    if (cached !== undefined && cached.version === this.version) {
+      return cached.data
+    }
+
     const middleware: Middleware[] = []
 
     // 1. Global middleware
@@ -271,9 +269,12 @@ export class AOTRouter {
       }
     }
 
-    // 3. Route-specific middleware
     if (routeMiddleware.length > 0) {
       middleware.push(...routeMiddleware)
+    }
+
+    if (this.middlewareCache.size < this.cacheMaxSize) {
+      this.middlewareCache.set(cacheKey, { data: middleware, version: this.version })
     }
 
     return middleware

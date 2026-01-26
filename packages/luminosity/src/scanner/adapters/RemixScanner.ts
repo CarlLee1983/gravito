@@ -49,6 +49,13 @@ export class RemixScanner implements RouteScanner {
 
   constructor(private options: RemixScannerOptions = {}) {}
 
+  /**
+   * Scans the Remix routes directory.
+   *
+   * Uses Remix's file naming conventions (Flat Routes) to deduce route paths.
+   *
+   * @returns A promise resolving to the list of scanned routes.
+   */
   async scan(): Promise<ScannedRoute[]> {
     const routes: ScannedRoute[] = []
     const cwd = this.options.cwd ?? process.cwd()

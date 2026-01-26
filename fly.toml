@@ -9,7 +9,7 @@ primary_region = "hkg" # Hong Kong for low latency in Asia
 [build]
 
 [http_service]
-  internal_port = 3000
+  internal_port = 3333
   force_https = true
   auto_stop_machines = true
   auto_start_machines = true

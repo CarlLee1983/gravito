@@ -27,7 +27,7 @@ export class MakeModelCommand extends Command {
     const content = `import { Model, column } from '@gravito/atlas'
 
 export default class ${name} extends Model {
-  static tableName = '${name.toLowerCase()}s'
+  static table = '${name.toLowerCase()}s'
 
   @column({ isPrimary: true })
   declare id: number

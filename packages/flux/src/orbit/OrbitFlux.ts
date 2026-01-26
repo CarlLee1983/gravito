@@ -5,47 +5,56 @@ import { MemoryStorage } from '../storage/MemoryStorage'
 import type { FluxConfig, FluxLogger, WorkflowStorage } from '../types'
 
 /**
- * OrbitFlux configuration options
+ * Configuration options for the OrbitFlux extension.
+ *
+ * Defines how the workflow engine should be initialized and integrated into the Gravito core.
  */
 export interface OrbitFluxOptions {
   /**
-   * Storage driver: 'memory' | 'sqlite' | custom WorkflowStorage
-   * @default 'memory'
+   * Specifies the storage driver to use for persisting workflow states.
+   *
+   * - 'memory': Volatile in-memory storage (default).
+   * - 'sqlite': Persistent SQLite storage (Bun only).
+   * - WorkflowStorage: A custom implementation of the storage interface.
    */
   storage?: 'memory' | 'sqlite' | WorkflowStorage
 
   /**
-   * SQLite database path (only used if storage is 'sqlite')
-   * @default ':memory:'
+   * The file system path for the SQLite database.
+   *
+   * Only applicable when `storage` is set to 'sqlite'.
    */
   dbPath?: string
 
   /**
-   * Service name in core.services
-   * @default 'flux'
+   * The key under which the FluxEngine will be registered in the core service container.
    */
   exposeAs?: string
 
   /**
-   * Custom logger
+   * A custom logger implementation for the workflow engine.
+   *
+   * If not provided, the engine will use a wrapper around the core logger.
    */
   logger?: FluxLogger
 
   /**
-   * Default retry count for steps
-   * @default 3
+   * The default number of times a workflow step should be retried upon failure.
    */
   defaultRetries?: number
 
   /**
-   * Default timeout for steps (ms)
-   * @default 30000
+   * The default timeout in milliseconds for workflow steps.
    */
   defaultTimeout?: number
 }
 
 /**
- * OrbitFlux - Gravito Workflow Integration
+ * OrbitFlux integrates the Flux workflow engine into the Gravito Galaxy Architecture.
+ *
+ * It acts as an "Orbit" (infrastructure extension) that provides a managed `FluxEngine`
+ * instance to the core application and other satellites. It also bridges engine events
+ * to the core hook system.
  *
  * @example
  * ```typescript
@@ -53,19 +62,26 @@ export interface OrbitFluxOptions {
  *
  * const core = await PlanetCore.boot({
  *   orbits: [
- *     new OrbitFlux({ storage: 'sqlite', dbPath: './data/workflows.db' })
+ *     new OrbitFlux({
+ *       storage: 'sqlite',
+ *       dbPath: './data/workflows.db'
+ *     })
  *   ]
  * })
  *
- * // Access via container
+ * // Access the engine from the container
  * const flux = core.container.make<FluxEngine>('flux')
- * await flux.execute(myWorkflow, input)
  * ```
  */
 export class OrbitFlux implements GravitoOrbit {
   private options: OrbitFluxOptions
   private engine?: FluxEngine
 
+  /**
+   * Initializes a new OrbitFlux instance with the given options.
+   *
+   * @param options - Configuration for the workflow engine integration.
+   */
   constructor(options: OrbitFluxOptions = {}) {
     this.options = {
       storage: 'memory',
@@ -77,16 +93,23 @@ export class OrbitFlux implements GravitoOrbit {
   }
 
   /**
-   * Create OrbitFlux with configuration
+   * Static factory method to create and configure an OrbitFlux instance.
+   *
+   * @param options - Configuration for the workflow engine integration.
+   * @returns A configured OrbitFlux instance.
    */
   static configure(options: OrbitFluxOptions = {}): OrbitFlux {
     return new OrbitFlux(options)
   }
 
   /**
-   * Install into PlanetCore
+   * Installs the Flux workflow engine into the Gravito core.
    *
-   * @param core - The PlanetCore instance
+   * This method resolves the storage adapter, initializes it, configures the engine
+   * with core-integrated logging and hooks, and registers the engine in the IoC container.
+   *
+   * @param core - The PlanetCore instance being booted.
+   * @throws {Error} If storage initialization fails or engine registration conflicts occur.
    */
   async install(core: PlanetCore): Promise<void> {
     const { storage, dbPath, exposeAs, defaultRetries, defaultTimeout, logger } = this.options
@@ -151,9 +174,24 @@ export class OrbitFlux implements GravitoOrbit {
   }
 
   /**
-   * Get the FluxEngine instance
+   * Retrieves the managed FluxEngine instance.
+   *
+   * @returns The FluxEngine instance, or undefined if the orbit has not been installed.
    */
   getEngine(): FluxEngine | undefined {
     return this.engine
+  }
+
+  /**
+   * Performs cleanup operations when the core is shutting down.
+   *
+   * Closes the underlying workflow engine and its storage connections.
+   *
+   * @throws {Error} If the engine fails to close cleanly.
+   */
+  async cleanup(): Promise<void> {
+    if (this.engine) {
+      await this.engine.close()
+    }
   }
 }

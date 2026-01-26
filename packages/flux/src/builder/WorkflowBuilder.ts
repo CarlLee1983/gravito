@@ -1,78 +1,75 @@
-/**
- * @fileoverview Workflow Builder - Fluent API for defining workflows
- *
- * Type-safe, chainable workflow definition.
- *
- * @module @gravito/flux/builder
- */
-
 import type {
   FluxWaitResult,
   StepDefinition,
   StepDescriptor,
+  StepHandlerResult,
   WorkflowContext,
   WorkflowDefinition,
   WorkflowDescriptor,
 } from '../types'
 
 /**
- * Options for configuring a single step in a workflow.
- * @public
+ * Configuration options for a workflow step.
+ * Allows fine-tuning of execution behavior such as retries, timeouts, and conditional logic.
  */
-export interface StepOptions<TInput = any, TData = any> {
-  /** Maximum number of automatic retries on failure (default: 0) */
+export interface StepOptions<TInput = unknown, TData = Record<string, any>> {
+  /** Maximum number of retry attempts on failure. */
   retries?: number
-  /** Maximum execution time in milliseconds before timeout error */
+  /** Execution time limit in milliseconds. */
   timeout?: number
-  /** Predicate to determine if the step should be executed or skipped */
+  /** Predicate to determine if the step should execute based on current context. */
   when?: (ctx: WorkflowContext<TInput, TData>) => boolean
-  /** Logic to undo the effects of this step if a later step fails */
+  /** Logic to execute for rolling back changes if a subsequent step fails. */
   compensate?: (ctx: WorkflowContext<TInput, TData>) => Promise<void> | void
 }
 
 /**
- * WorkflowBuilder provides a fluent, type-safe API for defining sequential logic.
+ * A fluent API for defining workflows in a type-safe manner.
+ * The builder pattern ensures that workflows are constructed with all necessary components
+ * before being passed to the execution engine.
  *
  * @example
  * ```typescript
- * const myFlow = createWorkflow('process-order')
- *   .input<{ orderId: string }>()
- *   .step('validate', async (ctx) => { ... })
- *   .step('charge', async (ctx) => { ... }, { compensate: async (ctx) => { ... } })
- *   .commit('ship', async (ctx) => { ... });
+ * const flow = new WorkflowBuilder('order-process')
+ *   .input<{ id: string }>()
+ *   .step('validate', (ctx) => { ... })
+ *   .build();
  * ```
- * @public
  */
-export class WorkflowBuilder<TInput = unknown, TData = Record<string, unknown>> {
-  drum: any = null // No!
+export class WorkflowBuilder<TInput = unknown, TData = Record<string, any>> {
   private _name: string
   private _steps: StepDefinition[] = []
   private _validateInput?: (input: unknown) => input is TInput
 
+  /**
+   * Initializes a new workflow builder with a unique name.
+   * @param name - The identifier for this workflow definition.
+   */
   constructor(name: string) {
     this._name = name
   }
 
   /**
-   * Define input type
-   *
-   * This method is used for TypeScript type inference.
+   * Defines the expected input type for the workflow.
+   * This is a type-only operation that enables compile-time safety for subsequent steps.
+   * @returns A builder instance with the specified input type.
    */
   input<T>(): WorkflowBuilder<T, TData> {
     return this as unknown as WorkflowBuilder<T, TData>
   }
 
   /**
-   * Define workflow data (state) type
-   *
-   * This method is used for TypeScript type inference.
+   * Defines the structure of the shared data object used across steps.
+   * @returns A builder instance with the specified data type.
    */
-  data<T>(): WorkflowBuilder<TInput, T> {
+  data<T extends Record<string, any>>(): WorkflowBuilder<TInput, T> {
     return this as unknown as WorkflowBuilder<TInput, T>
   }
 
   /**
-   * Add input validator
+   * Attaches a runtime validator for the workflow input.
+   * @param validator - A type guard function to verify input integrity.
+   * @returns The builder instance for chaining.
    */
   validate(validator: (input: unknown) => input is TInput): this {
     this._validateInput = validator
@@ -80,20 +77,22 @@ export class WorkflowBuilder<TInput = unknown, TData = Record<string, unknown>> 
   }
 
   /**
-   * Add a step to the workflow
+   * Adds a standard processing step to the workflow.
+   * Standard steps are subject to compensation if the workflow fails later.
+   *
+   * @param name - Unique name for the step.
+   * @param handler - The business logic to execute.
+   * @param options - Optional execution configuration.
+   * @returns The builder instance for chaining.
    */
   step(
     name: string,
-    handler: (
-      ctx: WorkflowContext<TInput, TData>
-    ) => void | Promise<void | undefined | FluxWaitResult> | undefined | FluxWaitResult,
+    handler: (ctx: WorkflowContext<TInput, TData>) => StepHandlerResult,
     options?: StepOptions<TInput, TData>
   ): this {
     this._steps.push({
       name,
-      handler: handler as (
-        ctx: WorkflowContext
-      ) => void | Promise<void | undefined | FluxWaitResult> | undefined | FluxWaitResult,
+      handler: handler as (ctx: WorkflowContext) => StepHandlerResult,
       retries: options?.retries,
       timeout: options?.timeout,
       when: options?.when as ((ctx: WorkflowContext) => boolean) | undefined,
@@ -106,10 +105,14 @@ export class WorkflowBuilder<TInput = unknown, TData = Record<string, unknown>> 
   }
 
   /**
-   * Add a commit step (always executes, even on replay)
+   * Adds a "commit" step that represents a permanent side-effect.
+   * Commit steps are intended for operations that should not be rolled back
+   * or re-executed during certain replay scenarios.
    *
-   * Commit steps are for side effects that should not be skipped,
-   * such as database writes or external API calls.
+   * @param name - Unique name for the step.
+   * @param handler - The side-effect logic to execute.
+   * @param options - Optional execution configuration (compensation is not allowed).
+   * @returns The builder instance for chaining.
    */
   commit(
     name: string,
@@ -118,7 +121,7 @@ export class WorkflowBuilder<TInput = unknown, TData = Record<string, unknown>> 
   ): this {
     this._steps.push({
       name,
-      handler: handler as unknown as StepDefinition['handler'],
+      handler: handler as (ctx: WorkflowContext) => StepHandlerResult,
       retries: options?.retries,
       timeout: options?.timeout,
       when: options?.when as ((ctx: WorkflowContext) => boolean) | undefined,
@@ -128,7 +131,9 @@ export class WorkflowBuilder<TInput = unknown, TData = Record<string, unknown>> 
   }
 
   /**
-   * Build the workflow definition
+   * Finalizes the workflow definition.
+   * @returns A complete workflow blueprint ready for execution.
+   * @throws Error if the workflow has no steps defined.
    */
   build(): WorkflowDefinition<TInput, TData> {
     if (this._steps.length === 0) {
@@ -137,13 +142,14 @@ export class WorkflowBuilder<TInput = unknown, TData = Record<string, unknown>> 
 
     return {
       name: this._name,
-      steps: [...this._steps],
+      steps: [...this._steps] as StepDefinition<TInput, TData>[],
       validateInput: this._validateInput,
     }
   }
 
   /**
-   * Describe workflow (serializable metadata)
+   * Generates a structural description of the workflow for introspection.
+   * @returns A descriptor containing step metadata.
    */
   describe(): WorkflowDescriptor {
     const steps: StepDescriptor[] = this._steps.map((step) => ({
@@ -160,37 +166,28 @@ export class WorkflowBuilder<TInput = unknown, TData = Record<string, unknown>> 
     }
   }
 
-  /**
-   * Get workflow name
-   */
+  /** The name of the workflow being built. */
   get name(): string {
     return this._name
   }
 
-  /**
-   * Get step count
-   */
+  /** The number of steps currently defined in the workflow. */
   get stepCount(): number {
     return this._steps.length
   }
 }
 
 /**
- * Create a new workflow builder
+ * Factory function to initiate a new workflow definition.
  *
- * @param name - Unique workflow name
- * @returns WorkflowBuilder instance
+ * @param name - The unique name for the workflow.
+ * @returns A new WorkflowBuilder instance.
  *
  * @example
  * ```typescript
- * const uploadFlow = createWorkflow('image-upload')
- *   .input<{ file: Buffer }>()
- *   .step('resize', async (ctx) => {
- *     ctx.data.resized = await sharp(ctx.input.file).resize(200).toBuffer()
- *   })
- *   .commit('save', async (ctx) => {
- *     await storage.put(ctx.data.resized)
- *   })
+ * const flow = createWorkflow('my-flow')
+ *   .step('hello', () => console.log('world'))
+ *   .build();
  * ```
  */
 export function createWorkflow(name: string): WorkflowBuilder {

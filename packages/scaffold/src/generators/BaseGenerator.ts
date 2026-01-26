@@ -65,7 +65,9 @@ export abstract class BaseGenerator {
       if (node.type === 'directory') {
         await fs.mkdir(fullPath, { recursive: true })
         this.log(`📁 Created directory: ${node.name}`)
-        if (node.children) await this.createStructure(fullPath, node.children, context)
+        if (node.children) {
+          await this.createStructure(fullPath, node.children, context)
+        }
       } else {
         await fs.mkdir(path.dirname(fullPath), { recursive: true })
         let content = ''
@@ -239,11 +241,11 @@ dist
         build: 'bun build ./src/bootstrap.ts --outdir ./dist --target bun',
         start: 'bun run dist/bootstrap.js',
         test: 'bun test',
-        typecheck: 'tsc --noEmit',
+        typecheck: 'bun tsc --noEmit',
         validate: 'bun run typecheck && bun run test',
       },
       dependencies: deps,
-      devDependencies: { 'bun-types': 'latest', typescript: '^5.0.0' },
+      devDependencies: { 'bun-types': 'latest', typescript: '^5.9.3' },
     }
     return JSON.stringify(pkg, null, 2)
   }
@@ -277,7 +279,9 @@ dist
   }
 
   protected log(message: string): void {
-    if (this.config.verbose) console.log(message)
+    if (this.config.verbose) {
+      console.log(message)
+    }
   }
 
   static createContext(

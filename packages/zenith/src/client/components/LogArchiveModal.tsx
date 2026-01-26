@@ -353,10 +353,18 @@ export function LogArchiveModal({ isOpen, onClose }: LogArchiveModalProps) {
                       // Trigger export
                       const format = e.target.value
                       const url = new URL('/api/logs/export', window.location.href)
-                      if (search) url.searchParams.set('search', search)
-                      if (status !== 'all') url.searchParams.set('status', status)
-                      if (dateRange.start) url.searchParams.set('startTime', dateRange.start)
-                      if (dateRange.end) url.searchParams.set('endTime', dateRange.end)
+                      if (search) {
+                        url.searchParams.set('search', search)
+                      }
+                      if (status !== 'all') {
+                        url.searchParams.set('status', status)
+                      }
+                      if (dateRange.start) {
+                        url.searchParams.set('startTime', dateRange.start)
+                      }
+                      if (dateRange.end) {
+                        url.searchParams.set('endTime', dateRange.end)
+                      }
                       url.searchParams.set('format', format)
 
                       // For now, just open in new tab to trigger download

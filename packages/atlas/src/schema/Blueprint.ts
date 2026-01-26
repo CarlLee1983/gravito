@@ -8,7 +8,20 @@ import type { ForeignKeyDefinition, IndexDefinition } from './ForeignKeyDefiniti
 
 /**
  * Blueprint
- * Provides a fluent interface to define table columns and indexes
+ *
+ * The Blueprint class provides a fluent interface for defining table schema.
+ * It is used within the `Schema.create` and `Schema.table` callbacks to
+ * define columns, indexes, and foreign keys.
+ *
+ * @example
+ * ```typescript
+ * Schema.create('users', (table) => {
+ *   table.id()
+ *   table.string('email').unique()
+ *   table.string('password')
+ *   table.timestamps()
+ * })
+ * ```
  */
 export class Blueprint {
   /** Table name */
@@ -41,14 +54,20 @@ export class Blueprint {
   // ============================================================================
 
   /**
-   * Auto-incrementing BIGINT primary key
+   * Create a new auto-incrementing BIGINT primary key column.
+   *
+   * @param name The name of the column (defaults to 'id').
+   * @returns The ColumnDefinition instance for further modification.
    */
   id(name = 'id'): ColumnDefinition {
     return this.bigInteger(name).unsigned().autoIncrement().primary()
   }
 
   /**
-   * UUID primary key
+   * Create a new UUID primary key column.
+   *
+   * @param name The name of the column (defaults to 'id').
+   * @returns The ColumnDefinition instance for further modification.
    */
   uuid(name = 'id'): ColumnDefinition {
     return this.addColumn(name, 'uuid')
@@ -59,7 +78,10 @@ export class Blueprint {
   // ============================================================================
 
   /**
-   * INTEGER column
+   * Create a new integer column.
+   *
+   * @param name The name of the column.
+   * @returns The ColumnDefinition instance for further modification.
    */
   integer(name: string): ColumnDefinition {
     return this.addColumn(name, 'integer')
@@ -105,7 +127,11 @@ export class Blueprint {
   // ============================================================================
 
   /**
-   * VARCHAR column
+   * Create a new string (VARCHAR) column.
+   *
+   * @param name The name of the column.
+   * @param length The maximum length of the string (defaults to 255).
+   * @returns The ColumnDefinition instance for further modification.
    */
   string(name: string, length = 255): ColumnDefinition {
     return this.addColumn(name, 'string', { length })
@@ -186,7 +212,7 @@ export class Blueprint {
   }
 
   /**
-   * created_at and updated_at TIMESTAMP columns
+   * Add `created_at` and `updated_at` TIMESTAMP columns to the table.
    */
   timestamps(): void {
     this.timestamp('created_at').nullable()
@@ -277,14 +303,30 @@ export class Blueprint {
   // ============================================================================
 
   /**
-   * BIGINT UNSIGNED column for foreign key
+   * Create a new BIGINT UNSIGNED column for a foreign key.
+   *
+   * @param name The name of the column.
+   * @returns The ColumnDefinition instance for further modification.
+   *
+   * @example
+   * ```typescript
+   * table.foreignId('user_id').constrained().onDelete('cascade')
+   * ```
    */
   foreignId(name: string): ColumnDefinition {
     return this.bigInteger(name).unsigned()
   }
 
   /**
-   * Add a standalone foreign key constraint
+   * Add a standalone foreign key constraint to the table.
+   *
+   * @param column The name of the local column.
+   * @returns A ForeignKeyBuilder instance to define the reference.
+   *
+   * @example
+   * ```typescript
+   * table.foreign('user_id').references('id').on('users')
+   * ```
    */
   foreign(column: string): ForeignKeyBuilder {
     return new ForeignKeyBuilder(this, column)
@@ -308,7 +350,11 @@ export class Blueprint {
   }
 
   /**
-   * Add UNIQUE index
+   * Add a UNIQUE index to the table.
+   *
+   * @param columns The column(s) to include in the index.
+   * @param name The name of the index (optional).
+   * @returns The Blueprint instance for chaining.
    */
   unique(columns: string | string[], name?: string): this {
     const cols = Array.isArray(columns) ? columns : [columns]
@@ -321,7 +367,11 @@ export class Blueprint {
   }
 
   /**
-   * Add INDEX
+   * Add a basic index to the table.
+   *
+   * @param columns The column(s) to include in the index.
+   * @param name The name of the index (optional).
+   * @returns The Blueprint instance for chaining.
    */
   index(columns: string | string[], name?: string): this {
     const cols = Array.isArray(columns) ? columns : [columns]

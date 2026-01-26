@@ -8,9 +8,13 @@ export class MockRedis {
   // Helper to get raw data container (auto-create if needed)
   private getContainer(key: string, type: 'list' | 'set' | 'zset'): any {
     if (!this.data.has(key)) {
-      if (type === 'list') this.data.set(key, [])
-      else if (type === 'set') this.data.set(key, new Set())
-      else if (type === 'zset') this.data.set(key, []) // ZSet modeled as array for simplicity
+      if (type === 'list') {
+        this.data.set(key, [])
+      } else if (type === 'set') {
+        this.data.set(key, new Set())
+      } else if (type === 'zset') {
+        this.data.set(key, []) // ZSet modeled as array for simplicity
+      }
     }
     return this.data.get(key)
   }
@@ -19,14 +23,16 @@ export class MockRedis {
   async keys(pattern: string): Promise<string[]> {
     // Simple prefix matching for tests (e.g. "bull:queue:*")
     // Converts glob "*" to regex ".*"
-    const regex = new RegExp('^' + pattern.replace(/\*/g, '.*') + '$')
+    const regex = new RegExp(`^${pattern.replace(/\*/g, '.*')}$`)
     return Array.from(this.data.keys()).filter((k) => regex.test(k))
   }
 
   async del(...keys: string[]): Promise<number> {
     let count = 0
     for (const key of keys) {
-      if (this.data.delete(key)) count++
+      if (this.data.delete(key)) {
+        count++
+      }
     }
     return count
   }
@@ -36,7 +42,7 @@ export class MockRedis {
   }
 
   // --- Pub/Sub ---
-  async publish(channel: string, message: string): Promise<number> {
+  async publish(_channel: string, _message: string): Promise<number> {
     // Mock implementation: just return 1 subscriber received it
     return 1
   }
@@ -56,13 +62,17 @@ export class MockRedis {
 
   async llen(key: string): Promise<number> {
     const val = this.data.get(key)
-    if (!val || !Array.isArray(val)) return 0
+    if (!val || !Array.isArray(val)) {
+      return 0
+    }
     return val.length
   }
 
   async lrange(key: string, start: number, stop: number): Promise<any[]> {
     const list = this.data.get(key) as any[]
-    if (!list || !Array.isArray(list)) return []
+    if (!list || !Array.isArray(list)) {
+      return []
+    }
     // Redis LRANGE is inclusive on both ends
     const end = stop === -1 ? undefined : stop + 1
     return list.slice(start, end)
@@ -70,12 +80,14 @@ export class MockRedis {
 
   async lrem(key: string, count: number, element: string): Promise<number> {
     const list = this.data.get(key) as any[]
-    if (!list || !Array.isArray(list)) return 0
+    if (!list || !Array.isArray(list)) {
+      return 0
+    }
 
     let removed = 0
     // Simple implementation: remove all occurrences for test purposes if count != 0
     // Real Redis logic is more complex with count > 0, < 0, = 0
-    const originalLength = list.length
+    const _originalLength = list.length
     const filtered = list.filter((item) => {
       // If element matches, we might remove it
       if (item === element) {
@@ -110,7 +122,9 @@ export class MockRedis {
 
   async scard(key: string): Promise<number> {
     const val = this.data.get(key)
-    if (val instanceof Set) return val.size
+    if (val instanceof Set) {
+      return val.size
+    }
     return 0
   }
 
@@ -124,11 +138,13 @@ export class MockRedis {
 
   async zcard(key: string): Promise<number> {
     const val = this.data.get(key)
-    if (!val || !Array.isArray(val)) return 0
+    if (!val || !Array.isArray(val)) {
+      return 0
+    }
     return val.length
   }
 
-  async zrange(key: string, min: number, max: number): Promise<any[]> {
+  async zrange(key: string, _min: number, _max: number): Promise<any[]> {
     // Mock return members
     const val = (this.data.get(key) as any[]) || []
     return val.map((v) => v.member)

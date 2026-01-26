@@ -1,6 +1,6 @@
 {
   "id": "11",
-  "title": "AOT 編譯",
-  "content": "<p>AOT (Ahead-of-Time，預編譯) 程序發生在引擎的啟動序列期間。Photon 並非在運行時動態匹配路由，而是預先計算最佳執行路徑。</p><h2>編譯管道</h2><p>當您啟動伺服器時，Photon 會分析您的路由樹並將靜態路徑轉換為高速 Hash Map。這保證了無論您有數千條路由，靜態路由調度都能達到 O(1) 時間複雜度。</p><pre><code>// 編譯日誌範例\n[PHOTON] 正在編譯 42 條路由...\n[PHOTON] 靜態 Map 已生成：28 個節點\n[PHOTON] Radix Tree 已生成：14 個動態節點</code></pre>",
+  "title": "路由架構",
+  "content": "<p>Photon 使用高效的路由系統，採用基數樹（Radix Tree）資料結構進行快速路由匹配。當您定義路由時，路由會被註冊，路由器會建立一個優化的樹狀結構進行匹配。</p><h2>路由架構</h2><p>路由器使用基數樹（也稱為 trie）進行路由匹配。這提供了：</p><ul><li><strong>快速靜態路由匹配:</strong> 靜態路由可以高效匹配。</li><li><strong>動態參數提取:</strong> 像 <code>:id</code> 這樣的路由參數在匹配過程中會被提取。</li><li><strong>萬用字元支援:</strong> 支援像 <code>/api/*</code> 這樣的萬用字元路由。</li></ul><h2>路由註冊</h2><p>當您調用 <code>app.get()</code> 或 <code>app.post()</code> 等方法時，路由會立即被註冊：</p><pre><code>const app = new Photon()\n\n// 路由會立即註冊\napp.get('/users', handler)\napp.get('/users/:id', handler)\napp.post('/users', handler)\n\n// 路由器會建立一個優化的樹狀結構\n// 以便在請求時進行高效匹配</code></pre>",
   "meta": { "lastUpdated": "2026-01-15", "complexity": "HARDCORE", "category": "ARCHITECTURE" }
 }

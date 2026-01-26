@@ -140,7 +140,13 @@ function formRequestToMiddleware(RequestClass: FormRequestClass): GravitoMiddlew
   }
 
   return async (ctx, next) => {
-    const result = await request!.validate!(ctx)
+    const result = await request?.validate?.(ctx)
+
+    if (!result) {
+      // No validation result, continue
+      await next()
+      return undefined
+    }
 
     if (!result.success) {
       // Determine status code based on error type
@@ -560,8 +566,7 @@ export class Router {
     this.core.adapter.useGlobal(async (c, next) => {
       // Early exit if no bindings registered
       if (this.bindings.size === 0) {
-        await next()
-        return undefined
+        return await next()
       }
 
       const routeModels = (c.get('routeModels') ?? {}) as Record<string, unknown>
@@ -596,8 +601,7 @@ export class Router {
         c.set('routeModels', routeModels)
       }
 
-      await next()
-      return undefined
+      return await next()
     })
   }
 
@@ -820,6 +824,7 @@ export class Router {
   ): Route {
     // 1. Resolve Path
     const fullPath = (options.prefix || '') + path
+    console.log(`[Router] Registering ${method.toUpperCase()} ${fullPath}`)
 
     // 2. Determine if FormRequest or Middleware is provided
     let formRequestMiddleware: GravitoMiddleware | null = null

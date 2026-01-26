@@ -62,6 +62,7 @@ examples/*/dist/
 **/.tmp-*/
 **/tests/**/*.bin
 packages/*/tests/.tmp-*
+test-dist-incremental/
 
 # Claude CLI
 .claude/examples/benchmarks/results/*.json
@@ -72,3 +73,6 @@ examples/benchmarks/results/*.json
 # Temporary error files
 **/lint_error.txt
 **/*_error.txt
+
+# Example storage
+examples/**/storage/

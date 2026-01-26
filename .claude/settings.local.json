@@ -13,7 +13,21 @@
       "Bash(bun install)",
       "Bash(git restore:*)",
       "Bash(find:*)",
-      "Bash(bun pm:*)"
+      "Bash(bun pm:*)",
+      "Bash(mkdir:*)",
+      "Bash(mv:*)",
+      "Bash(bunx madge:*)",
+      "Bash(git fetch:*)",
+      "Bash(bun run build:*)",
+      "Bash(bun run test:coverage:*)",
+      "Bash(bun run test)",
+      "Bash(bun test:coverage:*)",
+      "Skill(skill-creator)",
+      "Bash(touch:*)"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "pencil",
+    "context7"
+  ]
 }

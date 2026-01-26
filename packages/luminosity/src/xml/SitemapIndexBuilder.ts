@@ -36,6 +36,11 @@ export interface IndexBuilderOptions {
 export class SitemapIndexBuilder {
   constructor(private options: IndexBuilderOptions) {}
 
+  /**
+   * Generates the XML Header for a sitemap index.
+   *
+   * @returns The XML header string.
+   */
   start(): string {
     let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`
 
@@ -47,6 +52,12 @@ export class SitemapIndexBuilder {
     return xml
   }
 
+  /**
+   * Generates a single sitemap entry for the index.
+   *
+   * @param item - The sitemap index entry.
+   * @returns The XML string for this entry.
+   */
   entry(item: SitemapIndexEntry): string {
     let xml = `  <sitemap>\n`
     xml += `    <loc>${item.url}</loc>\n`
@@ -60,10 +71,21 @@ export class SitemapIndexBuilder {
     return xml
   }
 
+  /**
+   * Generates the XML Footer for a sitemap index.
+   *
+   * @returns The XML footer string.
+   */
   end(): string {
     return `</sitemapindex>`
   }
 
+  /**
+   * Helper to build a full sitemap index XML at once.
+   *
+   * @param entries - The list of sitemap index entries.
+   * @returns The complete XML document string.
+   */
   buildFull(entries: SitemapIndexEntry[]): string {
     let xml = this.start()
     for (const entry of entries) {

@@ -98,6 +98,29 @@ describe('ChannelManager', () => {
     const stats = manager.getStats()
     expect(stats.totalClients).toBe(0)
     expect(stats.totalChannels).toBe(0)
+    expect(stats.channels).toEqual([])
+  })
+
+  it('should track stats with active subscriptions', () => {
+    const ws1 = {
+      data: { id: 'client-1', channels: new Set<string>() },
+    } as any
+    const ws2 = {
+      data: { id: 'client-2', channels: new Set<string>() },
+    } as any
+
+    manager.addClient(ws1)
+    manager.addClient(ws2)
+    manager.subscribe('client-1', 'channel-a')
+    manager.subscribe('client-2', 'channel-a')
+    manager.subscribe('client-1', 'channel-b')
+
+    const stats = manager.getStats()
+    expect(stats.totalClients).toBe(2)
+    expect(stats.totalChannels).toBe(2)
+    expect(stats.channels).toHaveLength(2)
+    expect(stats.channels.find((c) => c.name === 'channel-a')?.subscribers).toBe(2)
+    expect(stats.channels.find((c) => c.name === 'channel-b')?.subscribers).toBe(1)
   })
 
   it('manages subscriptions and presence members', () => {

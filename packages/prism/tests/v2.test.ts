@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import { join } from 'node:path'
-import { TemplateEngine } from '../src/TemplateEngine'
+import { TemplateEngine } from '../src/engine/TemplateEngine'
 
 describe('Orbit Prism V2', () => {
   const viewsDir = join(__dirname, 'fixtures/v2')

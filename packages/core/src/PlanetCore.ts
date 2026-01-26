@@ -328,7 +328,12 @@ export class PlanetCore {
       // Add route helper
       c.route = (name: string, params?: any, query?: any) => this.router.url(name, params, query)
 
-      return await next()
+      const result = await next()
+
+      // Automatically attach queued cookies to response
+      cookieJar.attach(c)
+
+      return result
     })
     // Router depends on `core.app` for route registration and optional global middleware.
     this.router = new Router(this)
@@ -395,6 +400,17 @@ export class PlanetCore {
     options: Omit<RegisterGlobalErrorHandlersOptions, 'core'> = {}
   ): () => void {
     return registerGlobalErrorHandlers({ ...options, core: this })
+  }
+
+  /**
+   * Predictive Route Warming (JIT Optimization)
+   *
+   * @param paths List of paths to warm up
+   */
+  async warmup(paths: string[]): Promise<void> {
+    if (this.adapter.warmup) {
+      await this.adapter.warmup(paths)
+    }
   }
 
   /**
