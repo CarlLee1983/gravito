@@ -566,7 +566,7 @@ export abstract class Model {
         }
       }
 
-      this._schema = await SchemaRegistry.getInstance().get(table)
+      this._schema = await SchemaRegistry.getInstance().get(table, modelCtor.connection)
     }
     return this._schema
   }
