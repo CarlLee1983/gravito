@@ -86,8 +86,6 @@ export class SmsChannel implements NotificationChannel {
     let PublishCommand: typeof import('@aws-sdk/client-sns').PublishCommand
 
     try {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-expect-error
       const awsSns = await import('@aws-sdk/client-sns')
       SNSClient = awsSns.SNSClient
       PublishCommand = awsSns.PublishCommand
