@@ -31,18 +31,75 @@ export abstract class Grammar implements GrammarContract {
 
   /**
    * Cache for pre-compiled SQL statements
-   * Shared across all grammar instances
+   * Shared across all Grammar instances
    */
   private static compilationCache = new LRUCache<string, string>({
-    max: 500, // Max 500 compiled queries
+    max: 500, // Max 500 compiled queries (~50KB typical)
     ttl: 1000 * 60 * 5, // 5 minute TTL
-    updateAgeOnGet: true,
+    updateAgeOnGet: true, // Refresh TTL on access (LRU behavior)
+    allowStale: false,
   })
 
   /**
    * Toggle for compilation cache
    */
   public static useCache = true
+
+  /**
+   * Cache scope
+   */
+  public static cacheScope: 'global' | 'instance' = 'global'
+
+  // Instance-level cache for isolated scope
+  private _instanceCache?: LRUCache<string, string>
+
+  /**
+   * Get cache statistics (for monitoring)
+   */
+  static getCacheStats() {
+    return {
+      size: Grammar.compilationCache.size,
+      maxSize: Grammar.compilationCache.max,
+      hitRate: Grammar.compilationCache.calculatedSize / (Grammar.compilationCache.max || 1),
+    }
+  }
+
+  /**
+   * Clear compilation cache (useful for tests)
+   */
+  static clearCache(): void {
+    Grammar.compilationCache.clear()
+  }
+
+  /**
+   * Configure cache size
+   */
+  static setCacheSize(max: number): void {
+    Grammar.compilationCache = new LRUCache({
+      max,
+      ttl: 1000 * 60 * 5,
+      updateAgeOnGet: true,
+      allowStale: false,
+    })
+  }
+
+  /**
+   * Get the appropriate cache instance
+   */
+  protected getCompilationCache(): LRUCache<string, string> {
+    if (Grammar.cacheScope === 'instance') {
+      if (!this._instanceCache) {
+        this._instanceCache = new LRUCache<string, string>({
+          max: Grammar.compilationCache.max,
+          ttl: Grammar.compilationCache.ttl,
+          updateAgeOnGet: true,
+          allowStale: false,
+        })
+      }
+      return this._instanceCache
+    }
+    return Grammar.compilationCache
+  }
 
   // ============================================================================
   // Abstract Methods (Must be implemented by subclasses)
@@ -74,7 +131,7 @@ export abstract class Grammar implements GrammarContract {
     let cacheKey = ''
     if (Grammar.useCache) {
       cacheKey = this.getStructuralKey(query)
-      const cached = Grammar.compilationCache.get(cacheKey)
+      const cached = this.getCompilationCache().get(cacheKey)
       if (cached) {
         return cached
       }
@@ -122,38 +179,15 @@ export abstract class Grammar implements GrammarContract {
     if (query.offset !== undefined) {
       parts.push(this.compileOffset(query))
     }
+
     const sql = parts.filter(Boolean).join(' ')
 
     // 2. Store in cache
     if (Grammar.useCache && cacheKey) {
-      Grammar.compilationCache.set(cacheKey, sql)
+      this.getCompilationCache().set(cacheKey, sql)
     }
 
     return sql
-  }
-
-  /**
-   * Clear the compilation cache
-   */
-  public static clearCache(): void {
-    Grammar.compilationCache.clear()
-  }
-
-  /**
-   * Get cache statistics
-   */
-  public static getCacheStats() {
-    return {
-      size: Grammar.compilationCache.size,
-      max: Grammar.compilationCache.max,
-    }
-  }
-
-  /**
-   * Set cache size
-   */
-  public static setCacheSize(max: number): void {
-    ;(Grammar.compilationCache as any).max = max
   }
 
   /**
@@ -174,7 +208,7 @@ export abstract class Grammar implements GrammarContract {
       .join('|')
 
     return [
-      this.constructor.name, // Isolation between grammar types
+      this.constructor.name,
       query.table,
       query.columns.join(','),
       query.distinct ? '1' : '0',

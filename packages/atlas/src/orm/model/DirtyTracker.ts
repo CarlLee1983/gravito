@@ -10,6 +10,15 @@
 export class DirtyTracker<T extends Record<string, unknown>> {
   private original: Map<keyof T, unknown> = new Map()
   private dirty: Set<keyof T> = new Set()
+  private useDeepComparison = false
+
+  /**
+   * Enable deep comparison for nested objects
+   * Note: Slower, only use if you modify nested objects
+   */
+  setDeepComparison(enabled: boolean): void {
+    this.useDeepComparison = enabled
+  }
 
   /**
    * Set the original values (from database)
@@ -106,7 +115,6 @@ export class DirtyTracker<T extends Record<string, unknown>> {
 
   /**
    * Check if values are equal
-   * Fast shallow comparison (covers 99% of ORM use cases)
    */
   private isEqual(a: unknown, b: unknown): boolean {
     // Fast path: reference equality or primitive values
@@ -115,6 +123,13 @@ export class DirtyTracker<T extends Record<string, unknown>> {
     }
     if (a == null || b == null) {
       return a === b
+    }
+
+    // Deep comparison fallback (only if explicitly enabled)
+    if (this.useDeepComparison) {
+      if (typeof a === 'object' && typeof b === 'object') {
+        return JSON.stringify(a) === JSON.stringify(b)
+      }
     }
 
     // Type mismatch
@@ -161,7 +176,6 @@ export class DirtyTracker<T extends Record<string, unknown>> {
 
   /**
    * Clone value for storage
-   * Uses native structuredClone or fast shallow copy
    */
   private cloneValue(value: unknown): unknown {
     // Primitive values can be returned directly
@@ -170,15 +184,6 @@ export class DirtyTracker<T extends Record<string, unknown>> {
     }
     if (typeof value !== 'object') {
       return value
-    }
-
-    // Use native structuredClone if available
-    if (typeof structuredClone !== 'undefined') {
-      try {
-        return structuredClone(value)
-      } catch {
-        // fallback to manual cloning
-      }
     }
 
     // Fast path: shallow copy (sufficient for most ORM cases)
