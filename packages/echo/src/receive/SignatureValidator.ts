@@ -28,6 +28,30 @@ export async function computeHmacSha256(payload: string | Buffer, secret: string
 }
 
 /**
+ * 計算 HMAC-SHA256 並輸出 base64
+ */
+export async function computeHmacSha256Base64(
+  payload: string | Buffer,
+  secret: string
+): Promise<string> {
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  )
+
+  const payloadBuffer =
+    typeof payload === 'string'
+      ? new TextEncoder().encode(payload)
+      : new Uint8Array(payload.buffer, payload.byteOffset, payload.byteLength)
+
+  const signature = await crypto.subtle.sign('HMAC', key, payloadBuffer as BufferSource)
+  return Buffer.from(signature).toString('base64')
+}
+
+/**
  * Compute HMAC-SHA1 signature (for legacy providers)
  */
 export async function computeHmacSha1(payload: string | Buffer, secret: string): Promise<string> {
@@ -46,6 +70,30 @@ export async function computeHmacSha1(payload: string | Buffer, secret: string):
 
   const signature = await crypto.subtle.sign('HMAC', key, payloadBuffer as BufferSource)
   return Buffer.from(signature).toString('hex')
+}
+
+/**
+ * 計算 HMAC-SHA1 並輸出 base64（用於 Twilio 等傳統服務）
+ */
+export async function computeHmacSha1Base64(
+  payload: string | Buffer,
+  secret: string
+): Promise<string> {
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(secret),
+    { name: 'HMAC', hash: 'SHA-1' },
+    false,
+    ['sign']
+  )
+
+  const payloadBuffer =
+    typeof payload === 'string'
+      ? new TextEncoder().encode(payload)
+      : new Uint8Array(payload.buffer, payload.byteOffset, payload.byteLength)
+
+  const signature = await crypto.subtle.sign('HMAC', key, payloadBuffer as BufferSource)
+  return Buffer.from(signature).toString('base64')
 }
 
 /**

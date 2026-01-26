@@ -45,7 +45,12 @@ export { OrbitEcho } from './OrbitEcho'
 export { BaseProvider, type ProviderOptions } from './providers/base/BaseProvider'
 export { GenericProvider } from './providers/GenericProvider'
 export { GitHubProvider } from './providers/GitHubProvider'
+export { LinearProvider } from './providers/LinearProvider'
+export { PaddleProvider } from './providers/PaddleProvider'
+export { ShopifyProvider } from './providers/ShopifyProvider'
+export { SlackProvider } from './providers/SlackProvider'
 export { StripeProvider } from './providers/StripeProvider'
+export { TwilioProvider } from './providers/TwilioProvider'
 export {
   computeHmacSha1,
   computeHmacSha256,

@@ -8,7 +8,12 @@
 
 import { GenericProvider } from '../providers/GenericProvider'
 import { GitHubProvider } from '../providers/GitHubProvider'
+import { LinearProvider } from '../providers/LinearProvider'
+import { PaddleProvider } from '../providers/PaddleProvider'
+import { ShopifyProvider } from '../providers/ShopifyProvider'
+import { SlackProvider } from '../providers/SlackProvider'
 import { StripeProvider } from '../providers/StripeProvider'
+import { TwilioProvider } from '../providers/TwilioProvider'
 import type {
   WebhookEvent,
   WebhookHandler,
@@ -50,6 +55,11 @@ export class WebhookReceiver {
     this.registerProviderType('generic', GenericProvider as ProviderClass)
     this.registerProviderType('stripe', StripeProvider as ProviderClass)
     this.registerProviderType('github', GitHubProvider as ProviderClass)
+    this.registerProviderType('shopify', ShopifyProvider as ProviderClass)
+    this.registerProviderType('twilio', TwilioProvider as ProviderClass)
+    this.registerProviderType('slack', SlackProvider as ProviderClass)
+    this.registerProviderType('paddle', PaddleProvider as ProviderClass)
+    this.registerProviderType('linear', LinearProvider as ProviderClass)
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

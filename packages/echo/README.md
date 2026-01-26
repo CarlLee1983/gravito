@@ -101,6 +101,11 @@ if (result.success) {
 | `stripe` | HMAC-SHA256 + Timestamp | `Stripe-Signature` |
 | `github` | HMAC-SHA256 | `X-Hub-Signature-256` |
 | `generic` | HMAC-SHA256 | `X-Webhook-Signature` |
+| `shopify` | HMAC-SHA256 (base64) | `X-Shopify-Hmac-Sha256` |
+| `twilio` | HMAC-SHA1 (base64) | `X-Twilio-Signature` |
+| `slack` | HMAC-SHA256 + Timestamp | `X-Slack-Signature` |
+| `paddle` | HMAC-SHA256 + Timestamp | `Paddle-Signature` |
+| `linear` | HMAC-SHA256 | `Linear-Signature` |
 
 ### Custom Provider
 
