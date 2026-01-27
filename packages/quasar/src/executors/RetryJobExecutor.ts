@@ -14,7 +14,11 @@ export class RetryJobExecutor extends BaseExecutor {
   readonly supportedType: CommandType = 'RETRY_JOB'
 
   async execute(command: QuasarCommand, redis: Redis): Promise<CommandResult> {
-    const { queue, jobKey, driver = 'redis' } = command.payload
+    if (command.type !== 'RETRY_JOB') {
+      return this.notAllowed(command.id)
+    }
+
+    const { queue, jobKey, driver } = command.payload
 
     if (!queue || !jobKey) {
       return this.failed(command.id, 'Missing queue or jobKey in payload')
@@ -55,6 +59,9 @@ export class RetryJobExecutor extends BaseExecutor {
     }
 
     const job = jobData[jobIndex]
+    if (!job) {
+      return this.failed(commandId, `Job data corrupted or missing`)
+    }
 
     // Use MULTI for atomicity
     const pipeline = redis.multi()

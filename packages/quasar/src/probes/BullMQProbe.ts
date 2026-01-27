@@ -47,6 +47,9 @@ export class BullMQProbe implements QueueProbe {
 
     // Parse results
     // Each result is [err, value]
+    if (!results[0] || !results[1] || !results[2] || !results[3]) {
+      throw new Error('Redis pipeline returned incomplete results')
+    }
     const [_waitErr, waiting] = results[0]
     const [_activeErr, active] = results[1]
     const [_delayedErr, delayed] = results[2]

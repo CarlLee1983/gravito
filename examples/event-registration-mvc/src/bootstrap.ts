@@ -53,7 +53,7 @@ export async function bootstrap(): Promise<PlanetCore> {
           body = await ctx.req.parseBody()
         }
         anyCtx.data = body
-      } catch (e) {
+      } catch (_e) {
         anyCtx.data = {}
       }
     } else {

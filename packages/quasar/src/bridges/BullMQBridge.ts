@@ -24,6 +24,7 @@ export class BullMQBridge extends BaseZenithBridge {
     // - 'progress': job progress update (optional)
 
     const onActive = async (job: any) => {
+      this.startJobSpan(job.id, job.data)
       await this.publishLog({
         level: 'info',
         message: `Processing job: ${job.name || job.id}`,
@@ -45,6 +46,7 @@ export class BullMQBridge extends BaseZenithBridge {
           result: typeof result === 'object' ? JSON.stringify(result) : result,
         },
       })
+      this.endJobSpan(job.id)
     }
 
     const onFailed = async (job: any, error: Error) => {
@@ -58,6 +60,7 @@ export class BullMQBridge extends BaseZenithBridge {
           stack: error.stack,
         },
       })
+      this.endJobSpan(job?.id)
     }
 
     const onProgress = async (job: any, progress: number | object) => {
