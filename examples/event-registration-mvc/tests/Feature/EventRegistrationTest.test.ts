@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'bun:test'
 import { DB } from '@gravito/atlas'
+import type { HashManager } from '@gravito/sentinel'
 import { EventStatus } from '../../src/Models/Event'
 import { RegistrationStatus } from '../../src/Models/Registration'
-import { itHasTestCase } from '../TestCase'
+import { itHasTestCase, TestCase } from '../TestCase'
 
 describe('Event Registration', () => {
   itHasTestCase((t) => {
@@ -90,9 +91,7 @@ describe('Event Registration', () => {
 
       const registration = await DB.table('registrations').where('user_id', userId).first()
       expect(registration).toBeDefined()
-      if (!registration) {
-        throw new Error('Registration not found')
-      }
+      if (!registration) throw new Error('Registration not found')
 
       expect(registration.session_id).toBe(sessionId)
       expect(registration.status).toBe(RegistrationStatus.CONFIRMED)
@@ -102,9 +101,7 @@ describe('Event Registration', () => {
         .where('field_id', fieldId)
         .first()
       expect(value).toBeDefined()
-      if (!value) {
-        throw new Error('Registration value not found')
-      }
+      if (!value) throw new Error('Registration value not found')
       expect(value.value).toBe('L')
     })
   })

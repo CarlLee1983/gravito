@@ -144,6 +144,7 @@ jobs:
             if ! sed -i "s|<!-- Google Analytics Placeholder -->|$GA_SCRIPT|g" index.html; then
               echo "⚠️ Failed to inject GA script (first attempt)"
             fi
+            
             # Support legacy or alternate placeholder
             sed -i "s|{{VITE_GA_MEASUREMENT_ID}}|$GA_ID|g" index.html || true
             echo "✅ GA script injected"
