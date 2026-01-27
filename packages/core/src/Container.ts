@@ -23,7 +23,7 @@ export type Factory<T> = (container: Container) => T
 export type ServiceMap = {}
 
 // biome-ignore lint/complexity/noBannedTypes: needed for string autocomplete hack
-export type BindingKey = keyof ServiceMap | (string & {}) | symbol
+export type ServiceKey = keyof ServiceMap | (string & {}) | symbol
 
 interface Binding<T = unknown> {
   factory: Factory<T>
@@ -36,9 +36,9 @@ interface Binding<T = unknown> {
  * @public
  */
 export class Container {
-  private bindings = new Map<BindingKey, Binding>()
-  private instances = new Map<BindingKey, unknown>()
-  private resolutionStack: BindingKey[] = []
+  private bindings = new Map<ServiceKey, Binding>()
+  private instances = new Map<ServiceKey, unknown>()
+  private resolutionStack: ServiceKey[] = []
 
   /**
    * Bind a service to the container.
@@ -55,7 +55,7 @@ export class Container {
    * container.bind('logger', (c) => new ConsoleLogger());
    * ```
    */
-  bind<T>(key: BindingKey, factory: Factory<T>): void {
+  bind<T>(key: ServiceKey, factory: Factory<T>): void {
     this.bindings.set(key, { factory: factory as Factory<unknown>, shared: false })
   }
 
@@ -74,14 +74,14 @@ export class Container {
    * container.singleton('db', (c) => new DatabaseConnection());
    * ```
    */
-  singleton<T>(key: BindingKey, factory: Factory<T>): void {
+  singleton<T>(key: ServiceKey, factory: Factory<T>): void {
     this.bindings.set(key, { factory: factory as Factory<unknown>, shared: true })
   }
 
   /**
    * Register an existing instance as shared service.
    */
-  instance<T>(key: BindingKey, instance: T): void {
+  instance<T>(key: ServiceKey, instance: T): void {
     this.instances.set(key, instance)
   }
 
@@ -101,8 +101,8 @@ export class Container {
    * ```
    */
   make<K extends keyof ServiceMap>(key: K): ServiceMap[K]
-  make<T>(key: BindingKey): T
-  make<T>(key: BindingKey): T {
+  make<T>(key: ServiceKey): T
+  make<T>(key: ServiceKey): T {
     // 1. Check shared instances
     if (this.instances.has(key)) {
       return this.instances.get(key) as T
@@ -139,7 +139,7 @@ export class Container {
   /**
    * Check if a service is bound.
    */
-  has(key: BindingKey): boolean {
+  has(key: ServiceKey): boolean {
     return this.bindings.has(key) || this.instances.has(key)
   }
 
@@ -154,7 +154,7 @@ export class Container {
   /**
    * Forget a specific instance (but keep binding)
    */
-  forget(key: BindingKey): void {
+  forget(key: ServiceKey): void {
     this.instances.delete(key)
   }
 }
