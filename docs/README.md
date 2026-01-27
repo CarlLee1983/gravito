@@ -1,31 +1,42 @@
-# Gravito Documentation
+# Gravito Documentation Hub
 
-Welcome to the Gravito documentation hub.
+Welcome to the official documentation for the **Gravito Galaxy Architecture**.
+
+## 🌌 Galaxy Architecture 1.0
+
+Gravito is a modular, high-performance framework built on the principles of **Domain-Driven Design (DDD)** and **Clean Architecture**.
+
+### Core Pillars
+- **PlanetCore**: The micro-kernel managing the application lifecycle.
+- **Orbits**: Strategic infrastructure extensions (ORM, Auth, Mail).
+- **Satellites**: Self-contained business domain modules.
+
+---
 
 ## 📚 Guides & Specifications
 
-### General
-- [1.0 Integration Guide](./GUIDE_1.0_INTEGRATION.md) - Architecture overview and integration patterns.
-- [Agents Guide](./AGENTS.md) - Instructions for AI agents working on this repo.
+### 🚀 Getting Started & Architecture
+- [1.0 Integration Guide](./GUIDE_1.0_INTEGRATION.md) - Deep dive into the Galaxy Architecture and MDD.
+- [Satellite Specification](./SATELLITE_SPEC.md) - Standards for building domain modules.
+- [Migration from Hono](./MIGRATION_FROM_HONO.md) - Transitioning your Bun app to Gravito.
 
-### Infrastructure & Operations
-- [NPM Publishing Guide](./NPM_PUBLISHING_GUIDE.md) - Complete guide for publishing packages.
-- [Monorepo / Turborepo](./TURBOREPO_INTEGRATION_GUIDE.md) - Guide to the monorepo tooling.
-- [Local CI Validation](./LOCAL_CI_VALIDATION.md) - How to run CI checks locally.
+### 🛠️ Infrastructure & Development
+- [Development Guide](./DEVELOPMENT_GUIDE.md) - Best practices for contributing to the monorepo.
+- [Monorepo / Turborepo](./TURBOREPO_INTEGRATION_GUIDE.md) - Tooling and build system guide.
+- [Agents Guide](./AGENTS.md) - Instructions for AI agents.
+
+### 📦 Operations & Release
 - [Version Strategy](./VERSION_STRATEGY.md) - Versioning rules and release lifecycle.
+- [NPM Publishing Guide](./NPM_PUBLISHING_GUIDE.md) - Comprehensive package publishing workflow.
+- [Local CI Validation](./LOCAL_CI_VALIDATION.md) - Verifying changes before pushing.
 
-### Domain & Performance
-- [Atlas Performance Whitepaper](./ATLAS_PERFORMANCE_WHITEPAPER.md) - Performance benchmarks for the Atlas ORM.
-- [Satellite Specification](./SATELLITE_SPEC.md) - Standard specification for domain satellites.
-- [Static Site Standardization](./STATIC_SITE_STANDARDIZATION.md) - Standards for building static sites with `@gravito/freeze`.
- 
- ### Engine (Core)
- - [Standalone Engine RFC](./STANDALONE_ENGINE_RFC.md) - Architecture and vision for the high-performance engine.
- - [Migration from Hono](./MIGRATION_FROM_HONO.md) - **New!** Guide for migrating from Hono to Gravito.
- - [Benchmark Status](./BENCHMARK_STATUS.md) - Performance benchmarks and optimization records.
+### ⚡ Performance & Specialized
+- [Atlas Performance Whitepaper](./ATLAS_PERFORMANCE_WHITEPAPER.md) - Benchmarks for the custom ORM.
+- [Static Site Standardization](./STATIC_SITE_STANDARDIZATION.md) - Standards for SSG with `@gravito/freeze`.
+- [Benchmark Status](./BENCHMARK_STATUS.md) - Historical performance records.
 
-## 📂 Sub-directories
+---
 
-- `en/` - English documentation (under migration).
-- `zh-TW/` - Traditional Chinese documentation.
-- `launchpad/` - Specific docs for the Launchpad deployment system.
+## 📂 Multi-language Support
+- `zh-TW/` - [繁體中文文檔](./zh-TW/guide/introduction.md)
+- `en/` - [English Documentation](./en/guide/introduction.md) (WIP)

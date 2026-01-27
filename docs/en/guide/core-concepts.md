@@ -30,21 +30,20 @@ Welcome to Gravito Core. A backend framework built for extreme performance and a
 
 In the Gravito worldview, a system is treated as a micro-galaxy:
 
-- **The Singularity**: Every request is optimized into a single path jump, eliminating framework overhead.
-- **The Core Gravity**: The Kernel maintains system health and coordination without interfering with specific business logic.
-- **Kinetic Modules**: Specialized infrastructure modules that extend the core functionalities, completely decoupled.
+- **PlanetCore (Micro-kernel)**: The Kernel maintains system health and coordination without interfering with specific business logic.
+- **Orbits**: Infrastructure modules (e.g., Atlas, Signal) that orbit the core, providing essential resources.
+- **Satellites**: Business logic hubs that encapsulate domain logic using DDD patterns.
 
 ### Four Pillars of Excellence
 
-- **High Performance**: Built on Bun with adapter-agnostic HTTP layer for microsecond routing.
-- **Zero Overhead**: Boot-time resolution of routes and dependencies avoids runtime scanning.
-- **Micro-kernel**: A tiny core of just a few KBs; features are purely opt-in.
-- **AI-First**: Clear interface contracts and type inference make tools like Copilot/Cursor significantly smarter.
-- **Future-Proof**: HTTP abstraction layer enables swapping underlying engine without code changes.
+- **High Performance**: Built on Bun for microsecond routing and low-overhead request handling.
+- **MDD (Manifest-Driven)**: Rapidly assemble systems via declarative configuration.
+- **Micro-kernel**: A core of just a few KBs; functionalities are strictly opt-in.
+- **AI-First**: Use the UseCase pattern and strict typing to ensure high-quality AI code generation.
 
 ---
 
-## Singularity Architecture
+## Galaxy Architecture
 
 ### 1. PlanetCore (The Micro-kernel)
 
@@ -54,31 +53,21 @@ The gravitational center. A minimal, high-efficiency foundation responsible for:
 - **Hook System**: Non-intrusive extension via Filters and Actions.
 - **Dependency Injection**: A lightweight, high-performance IoC container.
 
-```typescript
-import { PlanetCore } from '@gravito/core'
+### 2. Orbits (Infrastructure)
 
-const core = await PlanetCore.boot({
-  modules: [Ion, Luminosity], // Load only v1.0 stable modules
-})
-
-export default core.liftoff() // Ignition for liftoff
-```
-
-### 2. Kinetic Modules
-
-These modules extend the core functionalities in a plug-in manner. For decoupling and performance, the core does not contain any business logic; all functionalities (such as database, authentication, full-stack bridging) are provided by kinetic modules.
-
-> Learn more: [Kinetic Ecosystem](./ecosystem.md)
+These modules extend core functionalities in a plug-in manner. The core contains no business logic; all foundation services (such as the `Atlas` database or `Signal` event bus) are provided by Orbits.
 
 ### 3. Satellites (Business Logic)
 
-This is your territory. All Controllers, Services, and business logic are encapsulated in Satellites, mounting seamlessly onto the Core or specialized modules.
+This is your territory. All UseCases, Controllers, and domain logic are encapsulated in Satellites.
 
 ---
 
 ## Core Features
 
-### Content Negotiation
+### Manifest-Driven Development (MDD)
+
+Enable features with a single entry in `gravito.config.ts`. The framework handles provider discovery and route mounting automatically.
 
 Gravito features built-in smart negotiation, allowing a single Controller to automatically switch response types:
 
@@ -126,7 +115,8 @@ export default app.liftoff()
 - [HTTP Abstraction Migration](./migration-http-abstraction.md)
 - [Deployment Guide](./deployment.md)
 - [Routing System](./routing.md)
-- [ORM Practice (Drizzle)](./orm-usage.md) 
+- [ORM Practice (Atlas)](./orm-usage.md)
+
 
 ---
 

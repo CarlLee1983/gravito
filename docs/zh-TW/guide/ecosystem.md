@@ -3,9 +3,9 @@ title: 動力生態系 (Ecosystem)
 description: 探索 Gravito 的 Kinetic Modules，從數據庫到實時通訊的完整動力支援。
 ---
 
-# 動力生態系 (Kinetic Ecosystem)
+# 銀河生態系 (Ecosystem)
 
-Gravito 是一個由眾多 **動力模組 (Kinetic Modules)** 組成的龐大銀河系。這些模組高度解耦，您可以根據實際需求，像拼湊積木般自由組合。
+Gravito 是一個由 **微核心 (PlanetCore)**、**基礎設施軌道 (Orbits)** 與 **領域衛星 (Satellites)** 組成的龐大銀河系。這些組件高度解耦，您可以透過 `gravito.config.ts` 自由組合。
 
 ---
 
@@ -15,7 +15,7 @@ Gravito 是一個由眾多 **動力模組 (Kinetic Modules)** 組成的龐大銀
 <div class="ecosystem-grid">
   <div class="module-card group">
     <div class="card-accent"></div>
-    <span class="module-code">SINGULARITY</span>
+    <span class="module-code">KERNEL</span>
     <h3 class="module-title">PlanetCore</h3>
     <code class="module-pkg">@gravito/core</code>
     <p class="module-desc">銀河系的引力中心。提供極致輕量的 IoC 容器、生命週期管理與外掛系統。</p>
@@ -26,7 +26,7 @@ Gravito 是一個由眾多 **動力模組 (Kinetic Modules)** 組成的龐大銀
     <span class="module-code">PHOTON</span>
     <h3 class="module-title">Photon HTTP</h3>
     <code class="module-pkg">@gravito/photon</code>
-    <p class="module-desc">光子。自主研發的高效能原生 HTTP 引擎，專為零抽象開銷與超低延遲請求處理而設計。</p>
+    <p class="module-desc">光子。高性能 HTTP 引擎，提供極致的路由效能與中間件支援。</p>
   </div>
 
   <div class="module-card group">
@@ -34,35 +34,63 @@ Gravito 是一個由眾多 **動力模組 (Kinetic Modules)** 組成的龐大銀
     <span class="module-code">PULSE</span>
     <h3 class="module-title">Pulse CLI</h3>
     <code class="module-pkg">@gravito/pulse</code>
-    <p class="module-desc">開發者的脈搏。結合 Bun 性能的高效能指令工具，處理腳手架生成與自動化任務。</p>
-  </div>
-
-  <div class="module-card group">
-    <div class="card-accent"></div>
-    <span class="module-code">BEAM</span>
-    <h3 class="module-title">Beam Client</h3>
-    <code class="module-pkg">@gravito/beam</code>
-    <p class="module-desc">粒子束。輕量級客戶端通訊工具，為前端提供類型安全的 API 調用介面。</p>
-  </div>
-
-  <div class="module-card group">
-    <div class="card-accent"></div>
-    <span class="module-code">ORBIT</span>
-    <h3 class="module-title">GraphQL</h3>
-    <code class="module-pkg">@gravito/graphql</code>
-    <p class="module-desc">軌道。由 Yoga 驅動的零配置 GraphQL 整合，為您的銀河系帶來現代化的 API 能力。</p>
+    <p class="module-desc">開發者的脈搏。結合 Bun 性能的高效能指令工具，處理自動化任務與 Scaffolding。</p>
   </div>
 </div>
 
-## 數據與存儲 (Data & Storage)
+## 基礎設施軌道 (Orbits)
 <div class="ecosystem-grid">
   <div class="module-card data group">
     <div class="card-accent"></div>
-    <span class="module-code">MATTER</span>
+    <span class="module-code">ATLAS</span>
     <h3 class="module-title">Atlas ORM</h3>
     <code class="module-pkg">@gravito/atlas</code>
-    <p class="module-desc">物質。企業級 ORM，支持 Drizzle-like 語法與極致的類型推斷。</p>
+    <p class="module-desc">物質。企業級 ORM，支持 Active Record 模式與原生 Bun.sql 效能。</p>
   </div>
+
+  <div class="module-card data group">
+    <div class="card-accent"></div>
+    <span class="module-code">SIGNAL</span>
+    <h3 class="module-title">Signal</h3>
+    <code class="module-pkg">@gravito/signal</code>
+    <p class="module-desc">信號。整合事件總線與專業級郵件發送系統。</p>
+  </div>
+
+  <div class="module-card data group">
+    <div class="card-accent"></div>
+    <span class="module-code">STREAM</span>
+    <h3 class="module-title">Stream Queue</h3>
+    <code class="module-pkg">@gravito/stream</code>
+    <p class="module-desc">異步任務處理引擎，支援 Redis、SQS 等多種驅動。</p>
+  </div>
+
+  <div class="module-card frontend group">
+    <div class="card-accent"></div>
+    <span class="module-code">ION</span>
+    <h3 class="module-title">Ion Bridge</h3>
+    <code class="module-pkg">@gravito/ion</code>
+    <p class="module-desc">動量。全棧單體橋接器 (Inertia)，消弭前端與後端界限。</p>
+  </div>
+</div>
+
+## 領域衛星 (Satellites)
+<div class="ecosystem-grid">
+  <div class="module-card group">
+    <div class="card-accent"></div>
+    <span class="module-code">CATALOG</span>
+    <h3 class="module-title">Catalog</h3>
+    <code class="module-pkg">@gravito/satellite-catalog</code>
+    <p class="module-desc">商品目錄、分類與庫存管理。</p>
+  </div>
+
+  <div class="module-card group">
+    <div class="card-accent"></div>
+    <span class="module-code">MEMBERSHIP</span>
+    <h3 class="module-title">Membership</h3>
+    <code class="module-pkg">@gravito/satellite-membership</code>
+    <p class="module-desc">會員系統、多守衛認證與權限控管。</p>
+  </div>
+</div>
 
   <div class="module-card data group">
     <div class="card-accent"></div>

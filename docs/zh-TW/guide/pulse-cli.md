@@ -5,7 +5,14 @@ description: 了解如何使用 Gravito 的命令列工具 Pulse。
 
 # Pulse CLI
 
-> `gravito`（或 `pulse`）是 Gravito 內建的交互式命令行工具，靈感來自 Laravel Artisan。
+> `gravito`（或 `pulse`）是 Gravito 內建的交互式命令行工具，靈感來自 Laravel Artisan。它是開發、管理與部署 Gravito 應用程式的核心工具。
+
+## 全域選項
+
+| 選項 | 描述 |
+| :--- | :--- |
+| `--help`, `-h` | 顯示該指令的幫助訊息。 |
+| `--version`, `-v` | 顯示當前 CLI 版本。 |
 
 ## 常見指令
 
@@ -20,6 +27,9 @@ gravito route:list
 
 # 進入互動式 REPL
 gravito tinker
+
+# 診斷配置與環境問題
+gravito doctor
 ```
 
 ### 程式碼生成 (Make)
@@ -31,6 +41,9 @@ gravito make:controller UserController
 # 建立中間件
 gravito make:middleware AuthGuard
 
+# 建立 UseCase (需要 @gravito/enterprise)
+gravito make:use-case CreateUser
+
 # 建立 Job (需要 @gravito/stream)
 gravito make:job ProcessPayment
 ```
@@ -40,6 +53,7 @@ gravito make:job ProcessPayment
 ```bash
 # 執行資料庫遷移 (需要 @gravito/atlas)
 gravito migrate
+gravito migrate:status
 
 # 執行任務排程 (需要 @gravito/horizon)
 gravito schedule:run

@@ -5,7 +5,39 @@ description: Understand Gravito's core architecture, including the IoC container
 
 # Architecture Overview
 
-> Gravito employs a "Micro-kernel + Orbit" Galaxy Architecture, offering extreme extensibility and decoupling.
+> Gravito employs a "Micro-kernel + Orbit + Satellite" Galaxy Architecture, providing ultimate extensibility and decoupling.
+
+## Galaxy Architecture
+
+Inspired by celestial mechanics, Gravito organizes the system into three layers:
+
+1. **PlanetCore (Micro-kernel)**:
+   The gravitational center. Responsible for the IoC container, lifecycle management (Hook system), and basic Request/Response flow. The core remains zero-dependency and extremely lightweight.
+
+2. **Orbits (Infrastructure)**:
+   Infrastructure modules orbiting the core.
+   - `OrbitAtlas`: Powerful ORM system.
+   - `OrbitSignal`: Event bus and mail system.
+   - `OrbitIon`: Inertia.js monolith bridge.
+   - `OrbitStream`: High-performance job queues.
+
+3. **Satellites (Domain Modules)**:
+   Business logic mounted on the system. Each Satellite is a self-contained domain (e.g., Catalog, Order) following DDD and Clean Architecture specifications.
+
+## Manifest-Driven Development (MDD)
+
+In Gravito 1.0, we introduced the MDD paradigm. You assemble your application by simply declaring the required modules in `gravito.config.ts`, and the framework handles all the wiring automatically.
+
+```typescript
+// gravito.config.ts
+export default {
+  name: 'Flagship Store',
+  modules: [
+    'catalog',    // Auto-mounts the Catalog Satellite
+    'membership', // Auto-mounts the Membership Satellite
+  ]
+}
+```
 
 ## Request Lifecycle
 

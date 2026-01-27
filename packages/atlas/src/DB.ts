@@ -101,7 +101,24 @@ export class DB {
         this.queryListener = undefined
       }
       this._queryLog = []
+      Connection.queryListeners = Connection.queryListeners.filter(
+        (l) => l !== this.globalQueryListener
+      )
     }
+
+    if (enabled) {
+      if (!Connection.queryListeners.includes(this.globalQueryListener)) {
+        Connection.queryListeners.push(this.globalQueryListener)
+      }
+    }
+  }
+
+  private static globalQueryListener = (query: {
+    sql: string
+    bindings: unknown[]
+    duration: number
+  }) => {
+    DB.logQuery(query.sql, query.bindings, query.duration)
   }
 
   /**
