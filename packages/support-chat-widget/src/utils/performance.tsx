@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react'
 import type { ComponentType } from 'react'
+import { useEffect, useRef } from 'react'
 
 /**
  * 開發環境下的效能監控 HOC
@@ -59,12 +59,12 @@ export function withPerformanceTracking<P extends object>(
  * ```
  */
 export function useRenderTracking(componentName: string): void {
+  const renderCount = useRef(0)
+  const lastRenderTime = useRef(Date.now())
+
   if (process.env.NODE_ENV !== 'development') {
     return
   }
-
-  const renderCount = useRef(0)
-  const lastRenderTime = useRef(Date.now())
 
   renderCount.current++
   const now = Date.now()
@@ -95,10 +95,7 @@ export function useRenderTracking(componentName: string): void {
  * )
  * ```
  */
-export function measurePerformance<T extends (...args: any[]) => any>(
-  fn: T,
-  label: string
-): T {
+export function measurePerformance<T extends (...args: any[]) => any>(fn: T, label: string): T {
   if (process.env.NODE_ENV !== 'development') {
     return fn
   }
