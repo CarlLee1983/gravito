@@ -1,4 +1,4 @@
-import { cleanup, renderHook, waitFor } from '@testing-library/react'
+import { act, cleanup, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useWebSocket } from '../../../src/hooks/useWebSocket'
 import type { ChatMessage } from '../../../src/types'
@@ -57,7 +57,9 @@ describe('useWebSocket', () => {
       })
     )
 
-    await result.current.connect()
+    await act(async () => {
+      await result.current.connect()
+    })
 
     await waitFor(() => {
       expect(result.current.status).toBe('connected')
@@ -81,7 +83,10 @@ describe('useWebSocket', () => {
       })
     )
 
-    const connectPromise = result.current.connect()
+    let connectPromise: Promise<void>
+    await act(async () => {
+      connectPromise = result.current.connect()
+    })
 
     // 等待狀態更新為 connecting
     await waitFor(() => {
@@ -90,7 +95,9 @@ describe('useWebSocket', () => {
 
     expect(onStatusChange).toHaveBeenCalledWith('connecting')
 
-    await connectPromise
+    await act(async () => {
+      await connectPromise
+    })
 
     // 最終應該是 connected
     await waitFor(() => {
@@ -110,7 +117,9 @@ describe('useWebSocket', () => {
     )
 
     // connect() 內部會 catch 錯誤，所以不需要 await 拋出的 Promise
-    await result.current.connect().catch(() => {})
+    await act(async () => {
+      await result.current.connect().catch(() => {})
+    })
 
     await waitFor(() => {
       expect(result.current.status).toBe('error')
@@ -126,7 +135,9 @@ describe('useWebSocket', () => {
       })
     )
 
-    await result.current.connect()
+    await act(async () => {
+      await result.current.connect()
+    })
 
     await waitFor(() => {
       expect(mockPrivate).toHaveBeenCalledWith(`support.conversation.${conversationId}`)
@@ -143,7 +154,9 @@ describe('useWebSocket', () => {
       })
     )
 
-    await result.current.connect()
+    await act(async () => {
+      await result.current.connect()
+    })
 
     await waitFor(() => {
       expect(result.current.status).toBe('connected')
@@ -169,7 +182,9 @@ describe('useWebSocket', () => {
       })
     )
 
-    await result.current.connect()
+    await act(async () => {
+      await result.current.connect()
+    })
 
     await waitFor(() => {
       expect(messageHandler).toBeDefined()
@@ -184,7 +199,9 @@ describe('useWebSocket', () => {
       createdAt: new Date(),
     }
 
-    messageHandler?.(mockMessage)
+    await act(async () => {
+      messageHandler?.(mockMessage)
+    })
 
     expect(onMessage).toHaveBeenCalledWith(mockMessage)
   })
@@ -198,13 +215,17 @@ describe('useWebSocket', () => {
       })
     )
 
-    await result.current.connect()
+    await act(async () => {
+      await result.current.connect()
+    })
 
     await waitFor(() => {
       expect(result.current.status).toBe('connected')
     })
 
-    result.current.disconnect()
+    await act(async () => {
+      result.current.disconnect()
+    })
 
     await waitFor(() => {
       expect(result.current.status).toBe('disconnected')
@@ -225,7 +246,9 @@ describe('useWebSocket', () => {
       }
     )
 
-    await result.current.connect()
+    await act(async () => {
+      await result.current.connect()
+    })
 
     // 等待連接建立和頻道訂閱
     await waitFor(() => {
@@ -237,7 +260,9 @@ describe('useWebSocket', () => {
     })
 
     // 更改會話 ID
-    rerender({ convId: 'CONV-2' })
+    await act(async () => {
+      rerender({ convId: 'CONV-2' })
+    })
 
     await waitFor(() => {
       expect(mockLeave).toHaveBeenCalledWith('support.conversation.CONV-1')
@@ -254,9 +279,13 @@ describe('useWebSocket', () => {
       })
     )
 
-    await result.current.connect()
+    await act(async () => {
+      await result.current.connect()
+    })
 
-    unmount()
+    await act(async () => {
+      unmount()
+    })
 
     expect(mockDisconnect).toHaveBeenCalled()
   })
@@ -270,9 +299,11 @@ describe('useWebSocket', () => {
       })
     )
 
-    await result.current.connect()
-    await result.current.connect()
-    await result.current.connect()
+    await act(async () => {
+      await result.current.connect()
+      await result.current.connect()
+      await result.current.connect()
+    })
 
     // 應該只調用一次
     expect(mockConnect).toHaveBeenCalledTimes(1)
