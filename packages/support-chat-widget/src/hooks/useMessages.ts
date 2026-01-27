@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createSupportApi } from '../api/supportApi'
 import type { ChatMessage, UseMessagesOptions, UseMessagesReturn } from '../types'
 
@@ -40,7 +40,7 @@ export function useMessages(options: UseMessagesOptions): UseMessagesReturn {
   const [nextCursor, setNextCursor] = useState<string | undefined>()
 
   // Initialize API client
-  const api = createSupportApi({ baseUrl: apiBaseUrl })
+  const api = useMemo(() => createSupportApi({ baseUrl: apiBaseUrl }), [apiBaseUrl])
 
   /**
    * Loads the initial set of messages for the current conversation.

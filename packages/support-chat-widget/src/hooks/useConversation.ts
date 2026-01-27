@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createSupportApi } from '../api/supportApi'
 import type { Conversation, UseConversationOptions, UseConversationReturn } from '../types'
 import { secureStorage } from '../utils/storage'
@@ -37,7 +37,7 @@ export function useConversation(options: UseConversationOptions): UseConversatio
   const [error, setError] = useState<Error | null>(null)
 
   // Initialize API client
-  const api = createSupportApi({ baseUrl: apiBaseUrl })
+  const api = useMemo(() => createSupportApi({ baseUrl: apiBaseUrl }), [apiBaseUrl])
 
   /**
    * Creates a new conversation session on the server.
