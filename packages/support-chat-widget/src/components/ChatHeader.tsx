@@ -1,5 +1,5 @@
-import { memo } from 'react'
 import { Headset, X } from 'lucide-react'
+import { memo } from 'react'
 import type { ChatHeaderProps } from '../types'
 
 /**

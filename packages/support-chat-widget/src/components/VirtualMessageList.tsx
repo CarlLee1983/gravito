@@ -1,7 +1,7 @@
 import { memo, useCallback, useEffect, useRef, useState } from 'react'
 import { useVirtualScroll } from '../hooks/useVirtualScroll'
-import { ChatMessage } from './ChatMessage'
 import type { ChatMessage as ChatMessageType } from '../types'
+import { ChatMessage } from './ChatMessage'
 
 /**
  * VirtualMessageList 組件的 Props
@@ -64,12 +64,13 @@ export const VirtualMessageList = memo(function VirtualMessageList({
   /**
    * 使用虛擬滾動
    */
-  const { virtualItems, totalHeight, scrollToIndex, containerProps, containerRef } = useVirtualScroll({
-    itemCount: messages.length,
-    itemHeight: getItemHeight,
-    containerHeight,
-    overscan: 3,
-  })
+  const { virtualItems, totalHeight, scrollToIndex, containerProps, containerRef } =
+    useVirtualScroll({
+      itemCount: messages.length,
+      itemHeight: getItemHeight,
+      containerHeight,
+      overscan: 3,
+    })
 
   /**
    * 測量元素實際高度

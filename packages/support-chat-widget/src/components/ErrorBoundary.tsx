@@ -63,9 +63,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
           }}
         >
           <h3 style={{ margin: '0 0 10px 0', color: '#c00' }}>發生錯誤</h3>
-          <p style={{ margin: 0, color: '#600' }}>
-            {this.state.error?.message || '未知錯誤'}
-          </p>
+          <p style={{ margin: 0, color: '#600' }}>{this.state.error?.message || '未知錯誤'}</p>
         </div>
       )
     }
