@@ -123,7 +123,6 @@ export function useChannel<T = unknown>(
     const ch = client.channel(channelName)
     channel.value = ch
 
-    // @ts-expect-error
     ch.listen(eventName, (eventData: unknown) => {
       data.value = eventData as T
     })

@@ -23,12 +23,7 @@ export class Channel<Name extends string = string> {
    * @param callback - Function to execute when the event is received.
    * @returns The Channel instance for chaining.
    */
-  listen<E extends keyof ChannelEventMap[Name & keyof ChannelEventMap]>(
-    event: E,
-    callback: EventCallback<ChannelEventMap[Name & keyof ChannelEventMap][E]>
-  ): this
-  listen<T = unknown>(event: string, callback: EventCallback<T>): this
-  listen<T = unknown>(event: string, callback: EventCallback<T>): this {
+  listen<T = any>(event: string, callback: EventCallback<T>): this {
     if (!this.listeners.has(event)) {
       this.listeners.set(event, new Set())
     }

@@ -123,7 +123,6 @@ export function useChannel<T = unknown>(
     const ch = client.channel(channelName)
     setChannel(ch)
 
-    // @ts-expect-error - generic matching is hard at runtime implementation
     ch.listen(eventName, (eventData) => {
       setData(eventData as T)
     })
