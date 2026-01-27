@@ -78,35 +78,35 @@ bun gravito tinker # 進入互動式 REPL
 
 ### 剛才發生了什麼？
 Gravito 同時啟動了兩個同步運作的引擎：
-1. **Gravito 核心引擎**：處理您的路由、控制器與商業邏輯。
-2. **Vite 前端**：驅動 React/Inertia 介面，並提供閃擊般的震動熱更新 (HMR)。
+1. **Gravito 核心引擎**：由 `PlanetCore` 驅動，處理您的路由、UseCase 與商業邏輯。
+2. **Vite 前端**：驅動 React/Inertia 介面，並提供閃擊般的熱更新 (HMR)。
 
 ## 進行第一次修改
 
-Gravito 的核心是 **「引擎不可知 (Engine Agnostic)」** 的。您可以根據專案需求，選擇最適合的 UI 建構方式。請打開 `src/controllers/HomeController.ts` 並嘗試這三種路徑：
+Gravito 的核心是 **「引擎不可知 (Engine Agnostic)」** 的。請打開 `src/controllers/HomeController.ts` 並嘗試這三種路徑：
 
-### 路徑 A：現代全端 SPA (Inertia + React)
-這是 Gravito 官方網站的預設方式。它能提供如絲綢般順滑的單頁應用程式體驗，且無需處理 API 層。
+### 路徑 A：現代全端單體 (Orbit Ion)
+這是 Gravito 1.0 的標準開發方式。它能提供如絲綢般順滑的單頁應用程式體驗，且無需手動處理 API 層。
 
 ```typescript
 // src/controllers/HomeController.ts
 export class HomeController {
-  index(c: Context) {
+  async index(c: Context) {
     const inertia = c.get('inertia')
     return inertia.render('Home', { greeting: '哈囉！來自 React 的問候' })
   }
 }
 ```
 
-### 路徑 B：經典多頁應用 MPA (Gravito-View 樣板)
-如果您偏好 Laravel 風格的後端渲染，這絕對是首選。使用 Handlebars/Mustache 風格的樣板，獲得極致的 SEO 表現與開發簡潔度。
+### 路徑 B：經典 MPA (Orbit Prism)
+如果您偏好 Laravel 風格的後端渲染，這絕對是首選。使用高性能的樣板引擎，獲得極致的 SEO 表現。
 
 ```typescript
 // src/controllers/HomeController.ts
 export class HomeController {
-  index(c: Context) {
+  async index(c: Context) {
     const view = c.get('view')
-    return view.render('welcome', { greeting: '哈囉！來自樣板引擎的問候' })
+    return view.render('welcome', { greeting: '哈囉！來自 Prism 的問候' })
   }
 }
 ```
