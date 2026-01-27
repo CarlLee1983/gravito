@@ -118,24 +118,7 @@ export class DB {
         this.queryListener = undefined
       }
       this._queryLog = []
-      Connection.queryListeners = Connection.queryListeners.filter(
-        (l) => l !== this.globalQueryListener
-      )
     }
-
-    if (enabled) {
-      if (!Connection.queryListeners.includes(this.globalQueryListener)) {
-        Connection.queryListeners.push(this.globalQueryListener)
-      }
-    }
-  }
-
-  private static globalQueryListener = (query: {
-    sql: string
-    bindings: unknown[]
-    duration: number
-  }) => {
-    DB.logQuery(query.sql, query.bindings, query.duration)
   }
 
   /**
@@ -198,9 +181,6 @@ export class DB {
     }
   }
 
-  /**
-   * Interpolate bindings into SQL (for display only, not execution)
-   */
   private static interpolateBindings(sql: string, bindings: unknown[]): string {
     let index = 0
     return sql.replace(/\?/g, () => {

@@ -318,11 +318,7 @@ export class OrbitGraphQL implements GravitoOrbit {
                 },
               },
             })
-          } catch (e) {
-            core.logger.error(
-              `[OrbitGraphQL] Failed to load schema from file: ${this.config.schema}`,
-              e
-            )
+          } catch {
             throw new GraphQLConfigError(`Failed to load schema from file: ${this.config.schema}`)
           }
         } else {
