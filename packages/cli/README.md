@@ -44,6 +44,9 @@ gravito make:controller UserController
 
 # Create a Middleware
 gravito make:middleware EnsureAdmin
+
+# Create a Command
+gravito make:command GreetCommand
 ```
 
 ### Development Utilities
