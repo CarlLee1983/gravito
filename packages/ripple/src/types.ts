@@ -688,6 +688,16 @@ export interface RippleConfig {
     enabled: boolean
     path?: string
   }
+
+  /**
+   * Rate limiting configuration.
+   */
+  rateLimit?: {
+    /** Max whispers per interval */
+    whisperMax?: number
+    /** Interval in milliseconds for whisper limit (default: 1000) */
+    whisperInterval?: number
+  }
 }
 
 // ─────────────────────────────────────────────────────────────

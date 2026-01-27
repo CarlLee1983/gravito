@@ -1,5 +1,6 @@
 export * from './AuthenticationException'
 export * from './AuthorizationException'
+export * from './CircularDependencyException'
 export * from './GravitoException'
 export * from './HttpException'
 export * from './ModelNotFoundException'

@@ -1,3 +1,5 @@
+import { CircularDependencyException } from './exceptions/CircularDependencyException'
+
 /**
  * Factory type for creating service instances
  */
@@ -36,6 +38,7 @@ interface Binding<T = unknown> {
 export class Container {
   private bindings = new Map<BindingKey, Binding>()
   private instances = new Map<BindingKey, unknown>()
+  private resolutionStack: BindingKey[] = []
 
   /**
    * Bind a service to the container.
@@ -105,21 +108,32 @@ export class Container {
       return this.instances.get(key) as T
     }
 
-    // 2. Check bindings
+    // 2. Check for circular dependencies
+    if (this.resolutionStack.includes(key)) {
+      throw new CircularDependencyException(key, this.resolutionStack)
+    }
+
+    // 3. Check bindings
     const binding = this.bindings.get(key)
     if (!binding) {
       throw new Error(`Service '${String(key)}' not found in container`)
     }
 
-    // 3. Create instance
-    const instance = binding.factory(this)
+    // 4. Resolve instance
+    this.resolutionStack.push(key)
 
-    // 4. Cache if shared
-    if (binding.shared) {
-      this.instances.set(key, instance)
+    try {
+      const instance = binding.factory(this)
+
+      // 5. Cache if shared
+      if (binding.shared) {
+        this.instances.set(key, instance)
+      }
+
+      return instance as T
+    } finally {
+      this.resolutionStack.pop()
     }
-
-    return instance as T
   }
 
   /**

@@ -25,6 +25,7 @@ import type {
   WebSocketHandlerConfig,
 } from './types'
 import { MessageSerializer } from './utils/MessageSerializer'
+import { TokenBucket } from './utils/TokenBucket'
 
 /**
  * Ripple WebSocket Server
@@ -60,6 +61,7 @@ export class RippleServer {
   private tracker: ConnectionTracker
   private healthChecker: HealthChecker
   private serializer: MessageSerializer
+  private whisperLimiters: Map<string, TokenBucket> = new Map()
 
   readonly config: Required<Pick<RippleConfig, 'path' | 'authEndpoint' | 'pingInterval'>> &
     RippleConfig
@@ -563,7 +565,25 @@ export class RippleServer {
   }
 
   private handleWhisper(ws: RippleWebSocket, channel: string, event: string, data: unknown): void {
-    // Trigger server-side listeners
+    // 1. Rate Limiting
+    if (this.config.rateLimit?.whisperMax) {
+      let limiter = this.whisperLimiters.get(ws.data.id)
+      if (!limiter) {
+        limiter = new TokenBucket(
+          this.config.rateLimit.whisperMax,
+          this.config.rateLimit.whisperMax / (this.config.rateLimit.whisperInterval ?? 1000)
+        )
+        this.whisperLimiters.set(ws.data.id, limiter)
+      }
+
+      if (!limiter.consume()) {
+        this.logger.warn('Whisper rate limit exceeded', { clientId: ws.data.id, channel })
+        this.send(ws, { type: 'error', message: 'Rate limit exceeded' })
+        return
+      }
+    }
+
+    // 2. Trigger server-side listeners
     const listeners = this.eventListeners.get(event)
     if (listeners && listeners.length > 0) {
       listeners.forEach((handler) => {
@@ -571,7 +591,7 @@ export class RippleServer {
       })
     }
 
-    // Whispers are client-to-client messages, excluding sender
+    // 3. Whispers are client-to-client messages, excluding sender
     if (!this.channels.isSubscribed(ws.data.id, channel)) {
       this.logger.warn('Whisper to non-subscribed channel', {
         clientId: ws.data.id,
