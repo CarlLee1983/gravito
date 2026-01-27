@@ -1,13 +1,20 @@
 import { GraphQLScalarType, Kind, type ValueNode } from 'graphql'
 
 /**
- * 將 GraphQL AST 節點解析為 JavaScript 值
- * 支援遞迴解析巢狀物件和陣列
+ * Parses a GraphQL AST node into a plain JavaScript value.
+ *
+ * Recursively traverses object and list nodes to reconstruct the original data structure.
+ *
+ * @param ast - The GraphQL AST node to parse
+ * @param variables - Optional variables for resolving referenced variables in the AST
+ * @returns The parsed JavaScript value (object, array, string, number, etc.)
+ * @throws {Error} If an unsupported AST node kind is encountered
+ *
+ * @internal
  */
-function parseLiteralValue(ast: ValueNode, variables: Record<string, unknown> | null): unknown {
+function parseLiteralValue(ast: ValueNode, variables?: Record<string, unknown> | null): unknown {
   switch (ast.kind) {
     case Kind.STRING:
-      // 嘗試解析 JSON 字串
       try {
         return JSON.parse(ast.value)
       } catch {
@@ -41,28 +48,32 @@ function parseLiteralValue(ast: ValueNode, variables: Record<string, unknown> | 
       return variables?.[ast.name.value]
 
     default:
-      throw new Error(`JSON Scalar: 不支援的 AST 節點類型: ${ast.kind}`)
+      throw new Error(`JSON Scalar: Unsupported AST node kind: ${ast.kind}`)
   }
 }
 
 /**
- * JSON 自定義純量
+ * Custom JSON scalar type for Gravito.
  *
- * 用於處理任意 JSON 資料，支援：
- * - 物件、陣列、字串、數字、布林值、null
- * - 巢狀結構
- * - JSON 字串自動解析
+ * Handles arbitrary JSON structures including nested objects and arrays.
+ * Automatically attempts to parse strings as JSON for better compatibility
+ * with various database drivers.
+ *
+ * @example
+ * ```graphql
+ * mutation {
+ *   updateSettings(data: { theme: "dark", notifications: true })
+ * }
+ * ```
  */
 export const JSONScalar = new GraphQLScalarType({
   name: 'JSON',
-  description: '任意 JSON 值，可以是物件、陣列、字串、數字、布林值或 null',
+  description: 'Arbitrary JSON value (object, array, string, number, boolean, or null)',
 
   /**
-   * 序列化：將內部值轉換為輸出格式
-   * 從資料庫或程式碼中的值 -> GraphQL 回應
+   * Serializes an internal value into a JSON-compatible format for output.
    */
   serialize(value: unknown): unknown {
-    // 如果是字串，嘗試解析為 JSON
     if (typeof value === 'string') {
       try {
         return JSON.parse(value)
@@ -74,11 +85,9 @@ export const JSONScalar = new GraphQLScalarType({
   },
 
   /**
-   * 解析值：將變數輸入轉換為內部值
-   * GraphQL 變數 -> 程式碼中的值
+   * Parses an external variable value into its internal representation.
    */
   parseValue(value: unknown): unknown {
-    // 如果是字串，嘗試解析為 JSON
     if (typeof value === 'string') {
       try {
         return JSON.parse(value)
@@ -90,10 +99,9 @@ export const JSONScalar = new GraphQLScalarType({
   },
 
   /**
-   * 解析字面值：將 AST 字面值轉換為內部值
-   * GraphQL 查詢中的字面值 -> 程式碼中的值
+   * Parses a GraphQL literal value from the AST.
    */
-  parseLiteral(ast: ValueNode, variables: Record<string, unknown> | null): unknown {
+  parseLiteral(ast: ValueNode, variables?: Record<string, unknown> | null): unknown {
     return parseLiteralValue(ast, variables)
   },
 })

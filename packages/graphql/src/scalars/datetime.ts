@@ -1,12 +1,18 @@
 import { GraphQLError, GraphQLScalarType, Kind, type ValueNode } from 'graphql'
 
 /**
- * 驗證並建立 Date 物件
- * @throws GraphQLError 如果日期無效
+ * Validates and creates a JavaScript Date object from various input types.
+ *
+ * @param value - The value to validate (Date, string, or number)
+ * @param context - Label for error reporting (e.g., 'serialize', 'parseValue')
+ * @returns A valid Date object
+ * @throws {GraphQLError} If the value is invalid or cannot be converted to a Date
+ *
+ * @internal
  */
 function validateAndCreateDate(value: unknown, context: string): Date {
   if (value === null || value === undefined) {
-    throw new GraphQLError(`DateTime ${context}: 值不能為 null 或 undefined`)
+    throw new GraphQLError(`DateTime ${context}: Value cannot be null or undefined`)
   }
 
   let date: Date
@@ -18,34 +24,40 @@ function validateAndCreateDate(value: unknown, context: string): Date {
   } else if (typeof value === 'number') {
     date = new Date(value)
   } else {
-    throw new GraphQLError(`DateTime ${context}: 預期為 Date、字串或數字，但收到 ${typeof value}`)
+    throw new GraphQLError(
+      `DateTime ${context}: Expected Date, string, or number, but received ${typeof value}`
+    )
   }
 
-  // 檢查日期是否有效
   if (Number.isNaN(date.getTime())) {
-    throw new GraphQLError(`DateTime ${context}: 無效的日期值 "${value}"`)
+    throw new GraphQLError(`DateTime ${context}: Invalid date value "${value}"`)
   }
 
   return date
 }
 
 /**
- * DateTime 自定義純量
+ * Custom DateTime scalar type for Gravito.
  *
- * 用於處理日期時間資料，支援：
- * - Date 物件
- * - ISO 8601 格式字串
- * - Unix 時間戳（毫秒）
+ * Handles date and time information as ISO-8601 strings.
+ * Supports Date objects, ISO strings, and Unix timestamps (ms) as input.
+ * Always serializes to an ISO-8601 string.
  *
- * 輸出格式：ISO 8601 字串 (如: 2024-01-15T10:30:00.000Z)
+ * @example
+ * ```graphql
+ * query {
+ *   posts(where: { created_at: { gt: "2024-01-01T00:00:00Z" } }) {
+ *     title
+ *   }
+ * }
+ * ```
  */
 export const DateTimeScalar = new GraphQLScalarType({
   name: 'DateTime',
-  description: 'ISO 8601 格式的日期時間，如 2024-01-15T10:30:00.000Z',
+  description: 'ISO-8601 compliant date-time string, e.g., 2024-01-15T10:30:00.000Z',
 
   /**
-   * 序列化：將內部值轉換為 ISO 字串輸出
-   * 從資料庫或程式碼中的 Date -> GraphQL 回應中的字串
+   * Serializes an internal Date object or timestamp into an ISO-8601 string.
    */
   serialize(value: unknown): string {
     const date = validateAndCreateDate(value, 'serialize')
@@ -53,28 +65,27 @@ export const DateTimeScalar = new GraphQLScalarType({
   },
 
   /**
-   * 解析值：將變數輸入轉換為 Date 物件
-   * GraphQL 變數 -> 程式碼中的 Date
+   * Parses an external variable value (ISO string or timestamp) into a Date object.
    */
   parseValue(value: unknown): Date {
     return validateAndCreateDate(value, 'parseValue')
   },
 
   /**
-   * 解析字面值：將 AST 字面值轉換為 Date 物件
-   * GraphQL 查詢中的字面值 -> 程式碼中的 Date
+   * Parses a GraphQL literal value from the AST into a Date object.
    */
-  parseLiteral(ast: ValueNode, _variables: Record<string, unknown> | null): Date {
+  parseLiteral(ast: ValueNode, _variables?: Record<string, unknown> | null): Date {
     switch (ast.kind) {
       case Kind.STRING:
         return validateAndCreateDate(ast.value, 'parseLiteral')
 
       case Kind.INT:
-        // 解析為時間戳
         return validateAndCreateDate(parseInt(ast.value, 10), 'parseLiteral')
 
       default:
-        throw new GraphQLError(`DateTime parseLiteral: 預期為字串或整數，但收到 ${ast.kind}`)
+        throw new GraphQLError(
+          `DateTime parseLiteral: Expected string or integer, but received ${ast.kind}`
+        )
     }
   },
 })

@@ -9,7 +9,8 @@ The `@gravito/graphql` package (OrbitGraphQL) brings the modern GraphQL ecosyste
 - **Zero-Config Start:** Mount the orbit and get a working GraphQL server with GraphiQL immediately.
 - **High Performance:** Built on `graphql-yoga` and optimized for Bun.
 - **Seamless Integration:** Full access to `GravitoContext` (User, Request, Container) within your resolvers.
-- **Standard Compliant:** Supports all standard GraphQL features (Queries, Mutations, Subscriptions).
+- **Automated Schema Generation:** Generate full CRUD schemas directly from your Atlas models.
+- **Advanced Filtering:** Built-in support for nested logical operators and relational attribute filtering.
 
 ## Installation
 
@@ -41,36 +42,107 @@ export default app.liftoff()
 
 That's it! Your application now has a GraphQL endpoint at `/graphql`. You can open your browser to `http://localhost:3000/graphql` to access the GraphiQL playground.
 
-### 2. Define Your Schema
+### 2. Automated Schema with Atlas
 
-By default, Gravito provides a sample "Hello World" schema. You can provide your own schema using the `GRAPHQL_SCHEMA` configuration key.
+One of the most powerful features of Gravito GraphQL is its ability to generate a complete schema from your [Atlas Models](../api/atlas/models.md).
 
 ```typescript
-import { createSchema } from 'graphql-yoga'
+import { OrbitGraphQL, createAtlasSchema } from '@gravito/graphql'
+import { User, Post } from './models'
 
-const schema = createSchema({
-  typeDefs: `
-    type Query {
-      hello(name: String): String
-      version: String
-    }
-  `,
-  resolvers: {
-    Query: {
-      hello: (_, { name }) => `Hello, ${name || 'Gravito'}!`,
-      version: () => '1.0.0'
-    }
-  }
+const schema = await createAtlasSchema({
+  models: [User, Post]
 })
 
 const config = defineConfig({
   config: {
-    // Inject your schema here
     GRAPHQL_SCHEMA: schema
   },
   orbits: [OrbitGraphQL]
 })
 ```
+
+This automatically generates:
+- **Types**: `User` and `Post` types based on your database schema.
+- **Queries**: `user(id: ID!)` and `users(where: UserWhereInput, orderBy: UserOrderByInput, limit: Int, offset: Int)`.
+- **Mutations**: `createUser`, `updateUser`, `deleteUser`.
+- **Relationships**: Automatically resolves links between models (e.g., `User.posts`).
+
+## Advanced Filtering
+
+Gravito GraphQL provides enterprise-grade filtering capabilities out of the box when using `createAtlasSchema`.
+
+### Logical Operators
+
+Combine multiple conditions using `_and`, `_or`, and `_not`.
+
+```graphql
+query {
+  users(where: {
+    _or: [
+      { name: { startsWith: "Admin" } },
+      { email: { contains: "@company.com" } }
+    ],
+    _not: { status: { eq: "banned" } }
+  }) {
+    id
+    name
+  }
+}
+```
+
+### Relational Filtering
+
+Filter models based on the attributes of their related entities.
+
+```graphql
+query {
+  # Find users who have posts containing "GraphQL" in the title
+  users(where: {
+    posts: {
+      title: { contains: "GraphQL" }
+    }
+  }) {
+    name
+    posts {
+      title
+    }
+  }
+}
+```
+
+### Automatic Batching (DataLoader)
+
+Gravito automatically solves the N+1 query problem for relationships when using `createAtlasSchema`. It includes a built-in DataLoader factory that batches relationship loading into a single `WHERE IN` query.
+
+To enable it, simply use the `createAtlasLoaders` utility in your context:
+
+```typescript
+import { createAtlasLoaders } from '@gravito/graphql'
+import { User, Post } from './models'
+
+const models = [User, Post]
+
+const config = defineConfig({
+  orbits: [
+    new OrbitGraphQL({
+      dataLoaders: (ctx) => createAtlasLoaders(models)
+    })
+  ]
+})
+```
+
+Once configured, any relational access like `users { posts { title } }` will result in exactly two database queries, regardless of the number of users.
+
+### Available Scalar Filters
+
+| Scalar | Supported Operators |
+|---|---|
+| **String** | `eq`, `like`, `in`, `contains`, `startsWith`, `endsWith`, `match` (Regex) |
+| **Int / Float** | `eq`, `gt`, `lt`, `gte`, `lte`, `in`, `between` |
+| **DateTime** | `eq`, `gt`, `lt`, `gte`, `lte`, `in`, `between` |
+| **Boolean** | `eq` |
+| **JSON** | `eq` |
 
 ## Advanced Usage
 
@@ -97,59 +169,22 @@ const resolvers = {
 }
 ```
 
-### Custom Endpoint
+### Custom Scalars
 
-You can customize the GraphQL endpoint path by passing options to the `OrbitGraphQL` constructor.
+The framework includes built-in support for common complex types:
+- `JSON`: Safe handling of JSON objects.
+- `DateTime`: ISO-8601 compliant date strings.
+- `BigInt`: Safe handling of 64-bit integers.
 
-```typescript
-const config = defineConfig({
-  orbits: [
-    new OrbitGraphQL({ 
-      path: '/api/v1/query' // Custom path
-    })
-  ]
-})
-```
+These are automatically used by `createAtlasSchema` when it detects corresponding column types in your database.
 
-### Service Provider Pattern
+### Performance & Security
 
-For larger applications, you might want to bind your schema within a Service Provider instead of the config object. This allows you to build your schema dynamically using services from the container.
+OrbitGraphQL includes built-in protections and optimizations:
 
-```typescript
-// app/providers/GraphQLServiceProvider.ts
-import { ServiceProvider } from '@gravito/core'
-import { createSchema } from 'graphql-yoga'
+- **Complexity Limiting**: Prevent DoS attacks from expensive queries.
+- **Depth Limiting**: Restrict query nesting depth.
+- **APQ**: Automatic Persisted Queries for reduced bandwidth.
+- **Response Caching**: Built-in TTL-based response cache.
 
-export class GraphQLServiceProvider extends ServiceProvider {
-  async register(container) {
-    const schema = createSchema({ /* ... */ })
-    
-    // Bind to the specific key expected by OrbitGraphQL
-    container.instance('GRAPHQL_SCHEMA', schema)
-  }
-}
-```
-
-## Code-First Schema
-
-While Gravito works great with standard Schema-First design (SDL), we highly recommend using libraries like **Pothos** or **TypeGraphQL** for a type-safe, Code-First experience. Since `graphql-yoga` accepts any standard `GraphQLSchema`, you can use any schema builder you prefer.
-
-Example with Pothos:
-
-```typescript
-import SchemaBuilder from '@pothos/core'
-
-const builder = new SchemaBuilder({})
-
-builder.queryType({
-  fields: (t) => ({
-    hello: t.string({
-      resolve: () => 'Hello from Pothos!',
-    }),
-  }),
-})
-
-const schema = builder.toSchema()
-
-// Pass this schema to Gravito config
-```
+See the [Optimization Guide](./performance.md) for more details on tuning these settings.

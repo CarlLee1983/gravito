@@ -1,6 +1,7 @@
 import { getRelationships, type Model, type ModelStatic, SchemaRegistry } from '@gravito/atlas'
 import type { GraphQLSchema } from 'graphql'
 import { createSchema } from 'graphql-yoga'
+import { applyFilter, applyLogicalOperators } from './filters'
 import { SCALAR_RESOLVERS, SCALAR_TYPE_DEFS } from './scalars'
 import { extractAppendFields, extractModelMetadata } from './utils/model-metadata'
 
@@ -22,48 +23,53 @@ export interface AtlasGraphQLOptions {
 }
 
 /**
- * 將 Atlas 資料類型映射到 GraphQL 類型
- * 使用自定義純量處理複雜類型
+ * Maps Atlas data types to GraphQL scalar types.
+ *
+ * Facilitates the translation of database column types to their GraphQL counterparts,
+ * ensuring correct serialization and validation in the API layer.
+ *
+ * @param type - The Atlas schema type string
+ * @returns The corresponding GraphQL scalar name
+ *
+ * @internal
  */
 function mapAtlasTypeToGraphQL(type: string): string {
   switch (type) {
-    // 整數類型
     case 'integer':
     case 'smallInteger':
       return 'Int'
 
-    // 大整數 -> 使用 BigInt 自定義純量
     case 'bigInteger':
       return 'BigInt'
 
-    // 浮點數類型
     case 'decimal':
     case 'float':
       return 'Float'
 
-    // 布林類型
     case 'boolean':
       return 'Boolean'
 
-    // JSON 類型 -> 使用 JSON 自定義純量
     case 'json':
     case 'jsonb':
       return 'JSON'
 
-    // 日期時間類型 -> 使用 DateTime 自定義純量
     case 'date':
     case 'dateTime':
     case 'timestamp':
       return 'DateTime'
 
-    // 預設為字串
     default:
       return 'String'
   }
 }
 
 /**
- * 根據 GraphQL 類型取得對應的過濾器類型
+ * Determines the appropriate input filter type for a given GraphQL scalar.
+ *
+ * @param gqlType - The GraphQL scalar type name
+ * @returns The name of the generated input filter type
+ *
+ * @internal
  */
 function getFilterType(gqlType: string): string {
   switch (gqlType) {
@@ -75,7 +81,6 @@ function getFilterType(gqlType: string): string {
       return 'BooleanFilter'
     case 'ID':
       return 'IDFilter'
-    // 自定義純量使用對應的過濾器
     case 'BigInt':
       return 'BigIntFilter'
     case 'DateTime':
@@ -87,6 +92,9 @@ function getFilterType(gqlType: string): string {
   }
 }
 
+/**
+ * Shared type definitions for common GraphQL inputs like filters and sort orders.
+ */
 const BASE_TYPE_DEFS = `
   input IntFilter {
     eq: Int
@@ -95,6 +103,11 @@ const BASE_TYPE_DEFS = `
     gte: Int
     lte: Int
     in: [Int]
+    between: IntRange
+  }
+  input IntRange {
+    from: Int!
+    to: Int!
   }
   input FloatFilter {
     eq: Float
@@ -103,11 +116,20 @@ const BASE_TYPE_DEFS = `
     gte: Float
     lte: Float
     in: [Float]
+    between: FloatRange
+  }
+  input FloatRange {
+    from: Float!
+    to: Float!
   }
   input StringFilter {
     eq: String
     like: String
     in: [String]
+    contains: String
+    startsWith: String
+    endsWith: String
+    match: String
   }
   input BooleanFilter {
     eq: Boolean
@@ -123,6 +145,11 @@ const BASE_TYPE_DEFS = `
     gte: BigInt
     lte: BigInt
     in: [BigInt]
+    between: BigIntRange
+  }
+  input BigIntRange {
+    from: BigInt!
+    to: BigInt!
   }
   input DateTimeFilter {
     eq: DateTime
@@ -131,6 +158,11 @@ const BASE_TYPE_DEFS = `
     gte: DateTime
     lte: DateTime
     in: [DateTime]
+    between: DateTimeRange
+  }
+  input DateTimeRange {
+    from: DateTime!
+    to: DateTime!
   }
   input JSONFilter {
     eq: JSON
@@ -141,6 +173,23 @@ const BASE_TYPE_DEFS = `
   }
 `
 
+/**
+ * Automatically generates a complete GraphQL schema from Atlas models.
+ *
+ * Scans provided models for columns, relationships, and metadata to produce
+ * a CRUD-capable schema including advanced filtering, pagination, and sorting.
+ *
+ * @param options - Configuration including models and optional custom resolvers
+ * @returns A promise resolving to the generated GraphQLSchema
+ * @throws {Error} If schema generation fails for critical components
+ *
+ * @example
+ * ```typescript
+ * const schema = await createAtlasSchema({
+ *   models: [User, Post]
+ * });
+ * ```
+ */
 export async function createAtlasSchema(options: AtlasGraphQLOptions): Promise<GraphQLSchema> {
   const typeDefs: string[] = [BASE_TYPE_DEFS]
   // biome-ignore lint/suspicious/noExplicitAny: Resolvers accumulator
@@ -154,7 +203,7 @@ export async function createAtlasSchema(options: AtlasGraphQLOptions): Promise<G
     try {
       const schema = await registry.get(table, model.connection)
 
-      // 提取 Model 元數據 (hidden, appends)
+      // Extract model metadata (hidden, appends)
       const metadata = extractModelMetadata(model)
       const hiddenSet = new Set(metadata.hidden)
       const appendFields = extractAppendFields(model)
@@ -166,7 +215,7 @@ export async function createAtlasSchema(options: AtlasGraphQLOptions): Promise<G
       const orderByFields: string[] = []
 
       for (const [colName, colDef] of schema.columns) {
-        // 跳過 hidden 欄位
+        // Skip hidden fields
         if (hiddenSet.has(colName)) {
           continue
         }
@@ -195,14 +244,14 @@ export async function createAtlasSchema(options: AtlasGraphQLOptions): Promise<G
         whereFields.push(`${colName}: ${getFilterType(gqlType)}`)
         orderByFields.push(`${colName}: SortOrder`)
 
-        // Input 欄位也不應包含 hidden 欄位（已在迴圈開始時過濾）
+        // Input fields should not contain auto-managed fields
         if (!isAutoManaged) {
           inputFields.push(`${colName}: ${gqlType}${inputRequired}`)
           updateFields.push(`${colName}: ${gqlType}`)
         }
       }
 
-      // 處理 appends 欄位 - 添加到 output 類型
+      // Handle appends fields - add to output type
       for (const appendField of appendFields) {
         if (appendField.hasAccessor) {
           outputFields.push(`${appendField.name}: ${appendField.graphqlType}`)
@@ -210,7 +259,11 @@ export async function createAtlasSchema(options: AtlasGraphQLOptions): Promise<G
       }
 
       // Relationships
-      const relations = getRelationships(model as unknown as typeof Model)
+      const getRelations =
+        ((globalThis as unknown as Record<string, unknown>).__G_TEST_RELATIONS_FUNC__ as
+          | typeof getRelationships
+          | undefined) || getRelationships
+      const relations = getRelations(model as unknown as typeof Model)
       for (const [relName, meta] of relations) {
         const RelatedClass = meta.related?.()
         if (!RelatedClass) continue
@@ -221,25 +274,34 @@ export async function createAtlasSchema(options: AtlasGraphQLOptions): Promise<G
 
         if (meta.type === 'hasMany' || meta.type === 'belongsToMany' || meta.type === 'morphMany') {
           outputFields.push(`${relName}: [${relatedName}]`)
+          whereFields.push(`${relName}: ${relatedName}WhereInput`)
         } else {
           outputFields.push(`${relName}: ${relatedName}`)
+          whereFields.push(`${relName}: ${relatedName}WhereInput`)
         }
 
-        // biome-ignore lint/suspicious/noExplicitAny: Parent is model instance
         resolvers[modelName] = resolvers[modelName] || {}
-        // biome-ignore lint/suspicious/noExplicitAny: Parent is model instance
-        resolvers[modelName][relName] = async (parent: any) => {
-          return await parent[relName]
+        resolvers[modelName][relName] = async (
+          parent: Record<string, unknown>,
+          _args: unknown,
+          context: import('./index').GraphQLContext
+        ) => {
+          const loaderKey = `${modelName}.${relName}`
+          if (context.loaders?.[loaderKey]) {
+            // biome-ignore lint/suspicious/noExplicitAny: DataLoader is generic
+            return (context.loaders[loaderKey] as any).load(parent)
+          }
+          return await (parent as unknown as Model)[relName as keyof Model]
         }
       }
 
-      // 為 appends 欄位添加 resolver
+      // Add resolvers for appends fields
       for (const appendField of appendFields) {
         if (appendField.hasAccessor) {
           resolvers[modelName] = resolvers[modelName] || {}
           // biome-ignore lint/suspicious/noExplicitAny: Parent is model instance
           resolvers[modelName][appendField.name] = (parent: any) => {
-            // 呼叫 accessor 方法: get{PropertyName}Attribute
+            // Call accessor method: get{PropertyName}Attribute
             const accessorName = `get${appendField.name
               .split('_')
               .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
@@ -247,7 +309,7 @@ export async function createAtlasSchema(options: AtlasGraphQLOptions): Promise<G
             if (typeof parent[accessorName] === 'function') {
               return parent[accessorName]()
             }
-            // 直接存取屬性作為 fallback
+            // Direct attribute access as fallback
             return parent[appendField.name]
           }
         }
@@ -265,6 +327,9 @@ export async function createAtlasSchema(options: AtlasGraphQLOptions): Promise<G
           ${updateFields.join('\n          ')}
         }
         input ${modelName}WhereInput {
+          _and: [${modelName}WhereInput]
+          _or: [${modelName}WhereInput]
+          _not: ${modelName}WhereInput
           ${whereFields.join('\n          ')}
         }
         input ${modelName}OrderByInput {
@@ -317,38 +382,52 @@ export async function createAtlasSchema(options: AtlasGraphQLOptions): Promise<G
         }
 
         if (args.where) {
-          // biome-ignore lint/suspicious/noExplicitAny: Filters
-          for (const [col, filters] of Object.entries(args.where) as [string, any][]) {
-            if (!filters) continue
+          const schemaColumns = schema.columns
+          const applyFieldFilter = (q: unknown, col: string, filters: unknown) => {
+            const colDef = schemaColumns.get(col)
+            if (colDef) {
+              let colType: 'string' | 'number' | 'date' = 'string'
+              const castType = (model as unknown as { casts?: Record<string, string> }).casts?.[col]
+              const type = castType || colDef.type
 
-            for (const [op, val] of Object.entries(filters)) {
-              if (val === undefined || val === null) continue
+              if (['integer', 'smallInteger', 'bigInteger', 'decimal', 'float'].includes(type)) {
+                colType = 'number'
+              } else if (['date', 'dateTime', 'timestamp'].includes(type)) {
+                colType = 'date'
+              }
 
-              switch (op) {
-                case 'eq':
-                  query.where(col, val)
-                  break
-                case 'gt':
-                  query.where(col, '>', val)
-                  break
-                case 'gte':
-                  query.where(col, '>=', val)
-                  break
-                case 'lt':
-                  query.where(col, '<', val)
-                  break
-                case 'lte':
-                  query.where(col, '<=', val)
-                  break
-                case 'like':
-                  query.where(col, 'like', val)
-                  break
-                case 'in':
-                  query.whereIn(col, val as unknown[])
-                  break
+              // biome-ignore lint/suspicious/noExplicitAny: Recursive apply
+              applyFilter(q as any, col, filters as any, colType)
+            } else {
+              const relation = relations.get(col)
+              if (relation) {
+                const RelatedClass = relation.related?.()
+                if (RelatedClass) {
+                  const { applyRelationFilter } = require('./filters/relation-filters')
+
+                  const relationConfig = {
+                    modelTable: model.table,
+                    modelPrimaryKey: model.primaryKey,
+                    relationTable: RelatedClass.table,
+                    relationForeignKey: relation.foreignKey,
+                    relationType: relation.type,
+                    localKey: (relation as unknown as { localKey?: string }).localKey,
+                    pivotTable: (relation as unknown as { pivotTable?: string }).pivotTable,
+                    pivotForeignKey: (relation as unknown as { pivotForeignKey?: string })
+                      .pivotForeignKey,
+                    pivotRelatedKey: (relation as unknown as { pivotRelatedKey?: string })
+                      .pivotRelatedKey,
+                  }
+
+                  // biome-ignore lint/suspicious/noExplicitAny: Recursive apply
+                  applyRelationFilter(q, relationConfig, filters as any)
+                }
               }
             }
           }
+
+          // biome-ignore lint/suspicious/noExplicitAny: Recursive apply
+          applyLogicalOperators(query as any, args.where, applyFieldFilter)
         }
 
         if (args.orderBy) {

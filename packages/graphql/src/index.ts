@@ -546,6 +546,7 @@ export class OrbitGraphQL implements GravitoOrbit {
 }
 
 export * from './atlas'
+export * from './dataloaders/atlas-loader'
 
 // Module augmentation for GravitoVariables
 declare module '@gravito/core' {

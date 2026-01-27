@@ -494,9 +494,6 @@ export async function eagerLoad<T extends Model, R extends Model = Model>(
         const result = await (connection as any).raw(sql, bindings)
         models = result.rows.map((row: Record<string, unknown>) => Related?.hydrate(row) as R)
       } else {
-        // Fallback to whereIn
-        query.whereIn(foreignKey!, validParentKeys)
-
         if (nestedRelation) {
           query.with(nestedRelation)
         }
