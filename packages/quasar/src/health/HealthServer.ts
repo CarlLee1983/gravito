@@ -41,7 +41,7 @@ export class HealthServer {
               })
             )
           })
-          .catch((err) => {
+          .catch((_err) => {
             res.writeHead(500)
             res.end(JSON.stringify({ error: 'Failed to fetch cluster status' }))
           })

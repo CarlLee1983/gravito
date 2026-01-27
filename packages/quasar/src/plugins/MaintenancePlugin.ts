@@ -36,12 +36,12 @@ export class MaintenancePlugin implements QuasarPlugin {
     this.agent = agent
   }
 
-  onStart(agent: QuasarAgent): Promise<void> {
+  onStart(_agent: QuasarAgent): Promise<void> {
     this.timer = setInterval(() => this.runMaintenance(), this.interval)
     return Promise.resolve()
   }
 
-  onStop(agent: QuasarAgent): Promise<void> {
+  onStop(_agent: QuasarAgent): Promise<void> {
     if (this.timer) {
       clearInterval(this.timer)
       this.timer = undefined

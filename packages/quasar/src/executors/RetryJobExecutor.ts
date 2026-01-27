@@ -1,5 +1,5 @@
 import type { Redis } from 'ioredis'
-import type { CommandResult, CommandType, QuasarCommand, RetryJobCommand } from '../types'
+import type { CommandResult, CommandType, QuasarCommand } from '../types'
 import { BaseExecutor } from './BaseExecutor'
 
 /**

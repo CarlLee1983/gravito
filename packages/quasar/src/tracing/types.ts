@@ -1,5 +1,3 @@
-import type { Context, Span, Tracer } from '@opentelemetry/api'
-
 export interface TracingOptions {
   enabled?: boolean
   serviceName?: string

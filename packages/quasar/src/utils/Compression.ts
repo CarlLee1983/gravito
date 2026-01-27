@@ -1,5 +1,4 @@
 import { brotliCompressSync, brotliDecompressSync, gunzipSync, gzipSync } from 'node:zlib'
-import { BufferPool } from './BufferPool'
 
 export interface CompressionOptions {
   threshold?: number

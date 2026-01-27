@@ -41,7 +41,7 @@ export class TrendPlugin implements QuasarPlugin {
     return Promise.resolve()
   }
 
-  onStop(agent: QuasarAgent): Promise<void> {
+  onStop(_agent: QuasarAgent): Promise<void> {
     return Promise.resolve()
   }
 
@@ -50,11 +50,11 @@ export class TrendPlugin implements QuasarPlugin {
    *
    * Allows adjusting the EMA alpha smoothing factor without a plugin restart.
    *
-   * @param agent - The QuasarAgent instance.
+   * @param _agent - The QuasarAgent instance.
    * @param options - Partial configuration options.
    * @since 9.0.0
    */
-  onConfigUpdate(agent: QuasarAgent, options: any): void {
+  onConfigUpdate(_agent: QuasarAgent, options: any): void {
     if (options.plugins?.trend?.emaAlpha) {
       this.emaAlpha = options.plugins.trend.emaAlpha
     }

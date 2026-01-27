@@ -20,7 +20,7 @@ export class SentryPlugin implements QuasarPlugin {
     })
   }
 
-  async onStart(agent: QuasarAgent): Promise<void> {
+  async onStart(_agent: QuasarAgent): Promise<void> {
     console.log(`[SentryPlugin] Initializing with DSN: ${this.options.dsn}`)
     this.sentry = {
       captureException: (err: any, context: any) => {
