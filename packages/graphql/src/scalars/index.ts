@@ -1,17 +1,17 @@
-/**
- * GraphQL 自定義純量模組
- *
- * 提供三種常用的自定義純量：
- * - JSON：任意 JSON 資料
- * - DateTime：ISO 8601 日期時間
- * - BigInt：大整數
- */
+import { BigIntScalar } from './bigint'
+import { DateTimeScalar } from './datetime'
+import { EmailScalar } from './email'
+import { JSONScalar } from './json'
+import { URLScalar } from './url'
+import { UUIDScalar } from './uuid'
 
 export { BigIntScalar } from './bigint'
 export { DateTimeScalar } from './datetime'
+export { EmailScalar } from './email'
 export { JSONScalar } from './json'
+export { URLScalar } from './url'
+export { UUIDScalar } from './uuid'
 
-// 類型定義（供 schema 使用）
 export const SCALAR_TYPE_DEFS = `
   """任意 JSON 值，可以是物件、陣列、字串、數字、布林值或 null"""
   scalar JSON
@@ -21,15 +21,22 @@ export const SCALAR_TYPE_DEFS = `
 
   """大整數純量，用於處理超出 JavaScript Number 安全範圍的整數值。以字串形式傳輸以保持精度。"""
   scalar BigInt
-`
 
-import { BigIntScalar } from './bigint'
-import { DateTimeScalar } from './datetime'
-// Resolvers 物件（供 schema 使用）
-import { JSONScalar } from './json'
+  """符合 RFC 4122 標準的 UUID 格式字串。"""
+  scalar UUID
+
+  """符合標準網路電子郵件格式的字串。"""
+  scalar Email
+
+  """符合標準 URL 格式的字串。"""
+  scalar URL
+`
 
 export const SCALAR_RESOLVERS = {
   JSON: JSONScalar,
   DateTime: DateTimeScalar,
   BigInt: BigIntScalar,
+  UUID: UUIDScalar,
+  Email: EmailScalar,
+  URL: URLScalar,
 }

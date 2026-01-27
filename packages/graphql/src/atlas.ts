@@ -2,7 +2,9 @@ import { getRelationships, type Model, type ModelStatic, SchemaRegistry } from '
 import type { GraphQLSchema } from 'graphql'
 import { createSchema } from 'graphql-yoga'
 import { applyFilter, applyLogicalOperators } from './filters'
+import { AtlasMutationFactory } from './mutations/atlas-mutations'
 import { SCALAR_RESOLVERS, SCALAR_TYPE_DEFS } from './scalars'
+import { createSubscriptionResolver, SUBSCRIPTION_TYPE_DEFS } from './subscriptions'
 import { extractAppendFields, extractModelMetadata } from './utils/model-metadata'
 
 /**
@@ -58,6 +60,9 @@ function mapAtlasTypeToGraphQL(type: string): string {
     case 'timestamp':
       return 'DateTime'
 
+    case 'uuid':
+      return 'UUID'
+
     default:
       return 'String'
   }
@@ -87,6 +92,12 @@ function getFilterType(gqlType: string): string {
       return 'DateTimeFilter'
     case 'JSON':
       return 'JSONFilter'
+    case 'UUID':
+      return 'UUIDFilter'
+    case 'Email':
+      return 'StringFilter'
+    case 'URL':
+      return 'StringFilter'
     default:
       return 'StringFilter'
   }
@@ -137,6 +148,10 @@ const BASE_TYPE_DEFS = `
   input IDFilter {
     eq: ID
     in: [ID]
+  }
+  input UUIDFilter {
+    eq: UUID
+    in: [UUID]
   }
   input BigIntFilter {
     eq: BigInt
@@ -191,9 +206,9 @@ const BASE_TYPE_DEFS = `
  * ```
  */
 export async function createAtlasSchema(options: AtlasGraphQLOptions): Promise<GraphQLSchema> {
-  const typeDefs: string[] = [BASE_TYPE_DEFS]
+  const typeDefs: string[] = [BASE_TYPE_DEFS, SUBSCRIPTION_TYPE_DEFS]
   // biome-ignore lint/suspicious/noExplicitAny: Resolvers accumulator
-  const resolvers: any = { Query: {}, Mutation: {} }
+  const resolvers: any = { Query: {}, Mutation: {}, Subscription: {} }
   const registry = SchemaRegistry.getInstance()
 
   for (const model of options.models) {
@@ -295,6 +310,11 @@ export async function createAtlasSchema(options: AtlasGraphQLOptions): Promise<G
         }
       }
 
+      resolvers.Subscription = {
+        ...resolvers.Subscription,
+        ...createSubscriptionResolver(modelName),
+      }
+
       // Add resolvers for appends fields
       for (const appendField of appendFields) {
         if (appendField.hasAccessor) {
@@ -353,8 +373,15 @@ export async function createAtlasSchema(options: AtlasGraphQLOptions): Promise<G
       typeDefs.push(`
         extend type Mutation {
           create${modelName}(input: Create${modelName}Input!): ${modelName}
+          create${modelName}Batch(input: [Create${modelName}Input!]!): [${modelName}]
           update${modelName}(id: ID!, input: Update${modelName}Input!): ${modelName}
           delete${modelName}(id: ID!): Boolean
+        }
+      `)
+
+      typeDefs.push(`
+        extend type Subscription {
+          ${modelName.toLowerCase()}Created: ${modelName}
         }
       `)
 
@@ -440,48 +467,32 @@ export async function createAtlasSchema(options: AtlasGraphQLOptions): Promise<G
         return query.get()
       }
 
-      // Create
-      // biome-ignore lint/suspicious/noExplicitAny: GraphQL Resolver
       resolvers.Mutation[`create${modelName}`] = async (
         _: unknown,
-        { input }: { input: unknown }
+        { input }: { input: Record<string, unknown> }
       ) => {
-        // biome-ignore lint/suspicious/noExplicitAny: Cast input
-        return model.create(input as any)
+        return AtlasMutationFactory.create(model, input)
       }
 
-      // Update
+      resolvers.Mutation[`create${modelName}Batch`] = async (
+        _: unknown,
+        { input }: { input: Record<string, unknown>[] }
+      ) => {
+        return AtlasMutationFactory.createBatch(model, input)
+      }
+
       resolvers.Mutation[`update${modelName}`] = async (
         _: unknown,
-        { id, input }: { id: unknown; input: Record<string, unknown> }
+        { id, input }: { id: string | number; input: Record<string, unknown> }
       ) => {
-        const instance = await model.find(id)
-        if (!instance) {
-          throw new Error(`${modelName} with ID ${id} not found`)
-        }
-        if (typeof instance.fill === 'function') {
-          // biome-ignore lint/suspicious/noExplicitAny: Cast input
-          instance.fill(input as any)
-        } else {
-          // Fallback if fill is missing
-          for (const [key, value] of Object.entries(input)) {
-            // biome-ignore lint/suspicious/noExplicitAny: Dynamic property access
-            ;(instance as any)[key] = value
-          }
-        }
-        await instance.save()
-        return instance
+        return AtlasMutationFactory.update(model, id, input)
       }
 
-      // Delete
-      // biome-ignore lint/suspicious/noExplicitAny: GraphQL Resolver
-      resolvers.Mutation[`delete${modelName}`] = async (_: unknown, { id }: { id: unknown }) => {
-        const instance = await model.find(id)
-        if (!instance) {
-          return false
-        }
-        await instance.delete()
-        return true
+      resolvers.Mutation[`delete${modelName}`] = async (
+        _: unknown,
+        { id }: { id: string | number }
+      ) => {
+        return AtlasMutationFactory.delete(model, id)
       }
     } catch (error) {
       console.warn(`[OrbitGraphQL] Failed to generate schema for model ${modelName}:`, error)
