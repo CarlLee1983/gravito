@@ -13,7 +13,7 @@ export function registerHooks(core: PlanetCore): void {
 
   // Add metadata to all API responses
   core.hooks.addFilter('api:response', async (data) => ({
-    ...data,
+    ...(data as any),
     _meta: {
       timestamp: new Date().toISOString(),
       poweredBy: 'Gravito',

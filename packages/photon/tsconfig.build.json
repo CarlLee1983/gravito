@@ -1,26 +1,19 @@
 {
-    "compilerOptions": {
-        "target": "ESNext",
-        "module": "ESNext",
-        "moduleResolution": "bundler",
-        "baseUrl": ".",
-        "outDir": "./dist",
-        "rootDir": "./src",
-        "declaration": true,
-        "emitDeclarationOnly": true,
-        "skipLibCheck": true,
-        "types": ["bun-types"],
-        "paths": {
-            "hono/*": [
-                "../../node_modules/hono/dist/types/*"
-            ]
-        }
-    },
-    "include": [
-        "src/**/*"
-    ],
-    "exclude": [
-        "node_modules",
-        "dist"
-    ]
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "baseUrl": ".",
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "skipLibCheck": true,
+    "types": ["bun-types"],
+    "paths": {
+      "hono/*": ["../../node_modules/hono/dist/types/*"]
+    }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
 }

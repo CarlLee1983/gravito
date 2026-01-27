@@ -4,7 +4,6 @@ import type {
   GravitoErrorHandler,
   GravitoHandler,
   GravitoMiddleware,
-  GravitoNext,
   GravitoNotFoundHandler,
   GravitoVariables,
   HttpMethod,

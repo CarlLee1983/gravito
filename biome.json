@@ -16,6 +16,15 @@
           }
         }
       }
+    },
+    {
+      "includes": ["**/views/emails/**/*.html", "**/*.html"],
+      "linter": {
+        "enabled": false
+      },
+      "formatter": {
+        "enabled": false
+      }
     }
   ],
   "linter": {

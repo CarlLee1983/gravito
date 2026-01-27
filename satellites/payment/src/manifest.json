@@ -3,13 +3,7 @@
   "id": "payment",
   "version": "0.1.0",
   "description": "A Gravito Satellite",
-  "capabilities": [
-    "create-payment"
-  ],
-  "requirements": [
-    "cache"
-  ],
-  "hooks": [
-    "payment:created"
-  ]
+  "capabilities": ["create-payment"],
+  "requirements": ["cache"],
+  "hooks": ["payment:created"]
 }
