@@ -1,12 +1,14 @@
 import { beforeEach, describe, expect, it, mock } from 'bun:test'
 import { CommandListener } from '../CommandListener'
 import type { QuasarCommand } from '../types'
+import { ConsoleLogger } from '../utils/logger'
 
 describe('CommandListener', () => {
   let mockSubscriber: any
   let mockMonitorRedis: any
   let messageHandlers: Map<string, (channel: string, message: string) => void>
   let patternHandlers: Map<string, (pattern: string, channel: string, message: string) => void>
+  const logger = new ConsoleLogger()
 
   beforeEach(() => {
     messageHandlers = new Map()
@@ -39,7 +41,7 @@ describe('CommandListener', () => {
   })
 
   it('should subscribe to correct channel pattern', async () => {
-    const listener = new CommandListener(mockSubscriber, 'worker-orders', 'node-123')
+    const listener = new CommandListener(mockSubscriber, 'worker-orders', 'node-123', logger)
     await listener.start(mockMonitorRedis)
 
     expect(mockSubscriber.subscribe).toHaveBeenCalledWith(
@@ -48,21 +50,21 @@ describe('CommandListener', () => {
   })
 
   it('should subscribe to broadcast pattern', async () => {
-    const listener = new CommandListener(mockSubscriber, 'worker-orders', 'node-123')
+    const listener = new CommandListener(mockSubscriber, 'worker-orders', 'node-123', logger)
     await listener.start(mockMonitorRedis)
 
     expect(mockSubscriber.psubscribe).toHaveBeenCalledWith('gravito:quasar:cmd:worker-orders:*')
   })
 
   it('should register message handler', async () => {
-    const listener = new CommandListener(mockSubscriber, 'worker-orders', 'node-123')
+    const listener = new CommandListener(mockSubscriber, 'worker-orders', 'node-123', logger)
     await listener.start(mockMonitorRedis)
 
     expect(messageHandlers.has('message')).toBe(true)
   })
 
   it('should unsubscribe on stop', async () => {
-    const listener = new CommandListener(mockSubscriber, 'worker-orders', 'node-123')
+    const listener = new CommandListener(mockSubscriber, 'worker-orders', 'node-123', logger)
     await listener.start(mockMonitorRedis)
     await listener.stop()
 
@@ -71,21 +73,21 @@ describe('CommandListener', () => {
   })
 
   it('should reject commands with disallowed type', async () => {
-    const listener = new CommandListener(mockSubscriber, 'worker-orders', 'node-123')
+    const listener = new CommandListener(mockSubscriber, 'worker-orders', 'node-123', logger)
     await listener.start(mockMonitorRedis)
 
     const handler = messageHandlers.get('message')
     expect(handler).toBeDefined()
 
     // Simulate receiving a disallowed command
-    const invalidCommand: QuasarCommand = {
+    const invalidCommand = {
       id: 'cmd-1',
       type: 'UNKNOWN_CMD' as any, // Not in allowlist
       targetNodeId: 'node-123',
       payload: { queue: 'test' },
       timestamp: Date.now(),
       issuer: 'zenith',
-    }
+    } as QuasarCommand
 
     // This should be silently ignored (logged as warning)
     await handler?.('gravito:quasar:cmd:worker-orders:node-123', JSON.stringify(invalidCommand))
@@ -95,7 +97,7 @@ describe('CommandListener', () => {
   })
 
   it('should reject commands for different node', async () => {
-    const listener = new CommandListener(mockSubscriber, 'worker-orders', 'node-123')
+    const listener = new CommandListener(mockSubscriber, 'worker-orders', 'node-123', logger)
     await listener.start(mockMonitorRedis)
 
     const handler = messageHandlers.get('message')
@@ -105,7 +107,7 @@ describe('CommandListener', () => {
       id: 'cmd-2',
       type: 'RETRY_JOB',
       targetNodeId: 'different-node', // Not our node
-      payload: { queue: 'test', jobKey: 'job-1' },
+      payload: { queue: 'test', jobKey: 'job-1', driver: 'redis' },
       timestamp: Date.now(),
       issuer: 'zenith',
     }
@@ -118,7 +120,7 @@ describe('CommandListener', () => {
   })
 
   it('should handle malformed JSON gracefully', async () => {
-    const listener = new CommandListener(mockSubscriber, 'worker-orders', 'node-123')
+    const listener = new CommandListener(mockSubscriber, 'worker-orders', 'node-123', logger)
     await listener.start(mockMonitorRedis)
 
     const handler = messageHandlers.get('message')

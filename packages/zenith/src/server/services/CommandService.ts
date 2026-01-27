@@ -35,7 +35,7 @@ export class CommandService {
     service: string,
     nodeId: string,
     type: CommandType,
-    payload: QuasarCommand['payload']
+    payload: any
   ): Promise<string> {
     const commandId = crypto.randomUUID()
 
@@ -46,7 +46,7 @@ export class CommandService {
       payload,
       timestamp: Date.now(),
       issuer: 'zenith',
-    }
+    } as any
 
     const channel = `gravito:quasar:cmd:${service}:${nodeId}`
 
@@ -64,7 +64,7 @@ export class CommandService {
     nodeId: string,
     queue: string,
     jobKey: string,
-    driver: 'redis' | 'laravel' = 'redis'
+    driver: 'redis' | 'laravel' | 'bullmq' | 'bull' | 'bee-queue' = 'redis'
   ): Promise<string> {
     return this.sendCommand(service, nodeId, 'RETRY_JOB', {
       queue,
@@ -81,7 +81,7 @@ export class CommandService {
     nodeId: string,
     queue: string,
     jobKey: string,
-    driver: 'redis' | 'laravel' = 'redis'
+    driver: 'redis' | 'laravel' | 'bullmq' | 'bull' | 'bee-queue' = 'redis'
   ): Promise<string> {
     return this.sendCommand(service, nodeId, 'DELETE_JOB', {
       queue,
@@ -97,7 +97,7 @@ export class CommandService {
     service: string,
     queue: string,
     jobKey: string,
-    driver: 'redis' | 'laravel' = 'redis'
+    driver: 'redis' | 'laravel' | 'bullmq' | 'bull' | 'bee-queue' = 'redis'
   ): Promise<string> {
     return this.retryJob(service, '*', queue, jobKey, driver)
   }
@@ -109,7 +109,7 @@ export class CommandService {
     service: string,
     queue: string,
     jobKey: string,
-    driver: 'redis' | 'laravel' = 'redis'
+    driver: 'redis' | 'laravel' | 'bullmq' | 'bull' | 'bee-queue' = 'redis'
   ): Promise<string> {
     return this.deleteJob(service, '*', queue, jobKey, driver)
   }
@@ -121,13 +121,12 @@ export class CommandService {
     service: string,
     nodeId: string,
     action: 'retry-all' | 'restart' | 'retry',
-    jobId?: string
+    _jobId?: string
   ): Promise<string> {
     return this.sendCommand(service, nodeId, 'LARAVEL_ACTION', {
       queue: 'default',
-      jobKey: '*',
       action,
-      jobId,
+      driver: 'laravel',
     })
   }
 

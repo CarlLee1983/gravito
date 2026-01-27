@@ -1,9 +1,9 @@
-// Bridges (for advanced usage)
 export * as bridges from './bridges'
 export * from './CommandListener'
 export * from './executors'
-export * from './probes/BeeQueueProbe'
-export * from './probes/BullMQProbe'
-export * from './probes/NodeProbe'
+export * from './health/HealthServer'
+export * from './metrics'
+export * as plugins from './plugins'
+export * as probes from './probes'
 export * from './QuasarAgent'
 export * from './types'

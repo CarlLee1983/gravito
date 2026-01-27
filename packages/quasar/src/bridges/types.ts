@@ -24,5 +24,15 @@ export interface ZenithLogPayload {
   jobId?: string
   workerId?: string
   timestamp?: string
+  traceId?: string
+  spanId?: string
+  parentSpanId?: string
   context?: Record<string, any>
+}
+
+/**
+ * Middleware for transforming or filtering logs before they are sent.
+ */
+export interface LogMiddleware {
+  process(log: ZenithLogPayload): ZenithLogPayload | Promise<ZenithLogPayload>
 }

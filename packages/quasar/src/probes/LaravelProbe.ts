@@ -46,7 +46,7 @@ export class LaravelProbe implements QueueProbe {
 
     return {
       name: this.queueName,
-      driver: 'redis',
+      driver: 'laravel',
       size: {
         waiting,
         active, // "reserved" in Laravel terms

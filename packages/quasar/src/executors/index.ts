@@ -1,3 +1,7 @@
 export * from './BaseExecutor'
+export * from './CleanQueueExecutor'
 export * from './DeleteJobExecutor'
+export * from './PauseQueueExecutor'
+export * from './PrioritizeJobExecutor'
+export * from './ResumeQueueExecutor'
 export * from './RetryJobExecutor'

@@ -48,6 +48,9 @@ export class BeeQueueProbe implements QueueProbe {
 
     // Parse results
     // Each result is [err, value]
+    if (!results[0] || !results[1] || !results[2]) {
+      throw new Error('Redis pipeline returned incomplete results')
+    }
     const [_waitingErr, waiting] = results[0]
     const [_activeErr, active] = results[1]
     const [_failedErr, failed] = results[2]

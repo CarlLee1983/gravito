@@ -33,6 +33,7 @@ describe('RetryJobExecutor', () => {
       payload: {
         queue: '', // Missing queue
         jobKey: 'job-123',
+        driver: 'redis',
       },
       timestamp: Date.now(),
       issuer: 'zenith',
@@ -51,6 +52,7 @@ describe('RetryJobExecutor', () => {
       payload: {
         queue: 'orders',
         jobKey: '', // Missing jobKey
+        driver: 'redis',
       },
       timestamp: Date.now(),
       issuer: 'zenith',
