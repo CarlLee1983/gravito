@@ -3,6 +3,7 @@
  * @description Static entry point for database operations (Laravel-style)
  */
 
+import { Connection } from './connection/Connection'
 import { ConnectionManager } from './connection/ConnectionManager'
 import { Grammar } from './grammar/Grammar'
 import type {
@@ -55,6 +56,13 @@ export class DB {
     timestamp: number
   }> = []
   private static readonly MAX_LOG_SIZE = 1000
+  private static queryListener?: (query: {
+    connection: string
+    sql: string
+    bindings: unknown[]
+    duration: number
+    timestamp: number
+  }) => void
 
   /**
    * Set global cache provider
@@ -75,7 +83,23 @@ export class DB {
    */
   static debug(enabled = true): void {
     this._debug = enabled
-    if (!enabled) {
+    if (enabled) {
+      // Set up query listener to log queries
+      if (!this.queryListener) {
+        this.queryListener = (query) => {
+          this.logQuery(query.sql, query.bindings, query.duration)
+        }
+        Connection.queryListeners.push(this.queryListener)
+      }
+    } else {
+      // Remove query listener and clear log
+      if (this.queryListener) {
+        const index = Connection.queryListeners.indexOf(this.queryListener)
+        if (index > -1) {
+          Connection.queryListeners.splice(index, 1)
+        }
+        this.queryListener = undefined
+      }
       this._queryLog = []
     }
   }
