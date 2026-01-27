@@ -220,11 +220,30 @@ export class StaticSiteGenerator {
   /**
    * Run a full static export.
    *
-   * Legacy method for full export. Consolidates routes and triggers export.
+   * Crawls all registered GET routes in the application router and renders them
+   * to static HTML files in the specified output directory.
    *
-   * @param outputDir - Output directory.
-   * @param baseUrl - Site base URL.
-   * @param extraPaths - Additional paths.
+   * This method performs a complete export, including:
+   * 1. Route discovery and deduplication.
+   * 2. Concurrent page rendering.
+   * 3. Sitemap generation.
+   * 4. robots.txt generation.
+   *
+   * @param outputDir - Absolute path to the directory where static files will be written.
+   * @param baseUrl - The public URL where the site will be hosted (used for sitemap).
+   * @param extraPaths - Additional relative paths to export that are not registered in the router.
+   *
+   * @throws {Error} If the output directory cannot be created or written to.
+   * @throws {Error} If the application router cannot be accessed.
+   *
+   * @example
+   * ```typescript
+   * const ssg = new StaticSiteGenerator(core);
+   * await ssg.export('./dist', 'https://example.com', ['/404', '/offline']);
+   * ```
+   *
+   * @public
+   * @since 3.0.0
    */
   async export(
     outputDir: string,

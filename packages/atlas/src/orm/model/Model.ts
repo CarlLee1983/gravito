@@ -141,7 +141,11 @@ export abstract class Model {
   // ============================================================================
 
   /**
-   * Instantiate a new model instance (non-saving)
+   * Instantiate a new model instance without persisting it to the database.
+   *
+   * @template T - The model type.
+   * @param attributes - Initial attribute values.
+   * @returns A proxied model instance.
    */
   static make<T extends Model>(
     this: ModelConstructor<T>,
@@ -152,7 +156,11 @@ export abstract class Model {
   }
 
   /**
-   * Create a new model and save it to the database
+   * Create a new model instance and persist it to the database immediately.
+   *
+   * @template T - The model type.
+   * @param attributes - Initial attribute values.
+   * @returns Promise resolving to the saved model instance.
    */
   static async create<T extends Model>(
     this: ModelConstructor<T>,
@@ -164,7 +172,12 @@ export abstract class Model {
   }
 
   /**
-   * Hydrate a model from database row
+   * Create a model instance from a raw database row.
+   * Marks the model as existing and syncs the dirty tracker.
+   *
+   * @template T - The model type.
+   * @param row - Raw data from the database.
+   * @returns A proxied model instance.
    */
   static hydrate<T extends Model>(this: ModelConstructor<T>, row: ModelAttributes): T {
     const instance = new this()
@@ -576,42 +589,54 @@ export abstract class Model {
   // ============================================================================
 
   /**
-   * Check if model exists in database
+   * Check if the model instance exists in the database.
+   *
+   * @returns True if the model has been persisted or hydrated from the DB.
    */
   get exists(): boolean {
     return this._exists
   }
 
   /**
-   * Check if model is dirty
+   * Check if any attributes have been modified since the last sync.
+   *
+   * @returns True if the model is dirty.
    */
   get isDirty(): boolean {
     return this._dirtyTracker.isDirty()
   }
 
   /**
-   * Get dirty attributes
+   * Get the attributes that have been modified.
+   *
+   * @returns Object containing only dirty attributes and their current values.
    */
   getDirty(): Partial<ModelAttributes> {
     return this._dirtyTracker.getDirtyValues(this._attributes)
   }
 
   /**
-   * Get original values
+   * Get the original attribute values as they were when the model was last synced.
+   *
+   * @returns Object containing original attribute values.
    */
   getOriginal(): Partial<ModelAttributes> {
     return this._dirtyTracker.getOriginals()
   }
 
   /**
-   * Get all attributes
+   * Get all current attribute values.
+   *
+   * @returns A shallow copy of the attributes object.
    */
   getAttributes(): ModelAttributes {
     return { ...this._attributes }
   }
 
   /**
-   * Get primary key value
+   * Get the value of the model's primary key.
+   *
+   * @returns The primary key value.
    */
   getKey(): unknown {
     const modelCtor = this.constructor as typeof Model
@@ -623,10 +648,17 @@ export abstract class Model {
   // ============================================================================
 
   /**
-   * Define a hasMany relationship that returns a QueryBuilder
+   * Define a one-to-many relationship.
+   * Returns a QueryBuilder scoped to the related records.
+   *
+   * @template R - The related model type.
+   * @param related - The related model constructor.
+   * @param foreignKey - The foreign key on the related table.
+   * @param localKey - The local key on this table.
+   * @returns A QueryBuilder for the related model.
    * @example
    * ```typescript
-   * const posts = await user.hasMany(Post, 'user_id').where('published', true).get()
+   * const posts = await user.hasMany(Post).where('published', true).get()
    * ```
    */
   hasMany<R extends Model>(
@@ -654,7 +686,13 @@ export abstract class Model {
   }
 
   /**
-   * Define a hasOne relationship that returns a QueryBuilder
+   * Define a one-to-one relationship.
+   *
+   * @template R - The related model type.
+   * @param related - The related model constructor.
+   * @param foreignKey - The foreign key on the related table.
+   * @param localKey - The local key on this table.
+   * @returns A QueryBuilder for the related model, limited to 1 result.
    */
   hasOne<R extends Model>(
     related: ModelConstructor<R> & typeof Model,
@@ -665,10 +703,16 @@ export abstract class Model {
   }
 
   /**
-   * Define a belongsTo relationship that returns a QueryBuilder
+   * Define an inverse one-to-one or one-to-many relationship.
+   *
+   * @template R - The related model type.
+   * @param related - The related model constructor.
+   * @param foreignKey - The foreign key on this table.
+   * @param ownerKey - The owner key on the related table.
+   * @returns A QueryBuilder for the related model.
    * @example
    * ```typescript
-   * const author = await post.belongsTo(User, 'user_id').first()
+   * const user = await post.belongsTo(User).first()
    * ```
    */
   belongsTo<R extends Model>(
@@ -695,11 +739,16 @@ export abstract class Model {
   }
 
   /**
-   * Define a belongsToMany relationship (through pivot table)
-   * @example
-   * ```typescript
-   * const roles = await user.belongsToMany(Role, 'user_roles', 'user_id', 'role_id').get()
-   * ```
+   * Define a many-to-many relationship through a pivot table.
+   *
+   * @template R - The related model type.
+   * @param related - The related model constructor.
+   * @param pivotTable - The name of the join table.
+   * @param foreignPivotKey - The key on the pivot table pointing to this model.
+   * @param relatedPivotKey - The key on the pivot table pointing to the related model.
+   * @param localKey - The local key on this table.
+   * @param relatedKey - The related key on the related table.
+   * @returns Promise resolving to an array of related models.
    */
   async belongsToMany<R extends Model>(
     related: ModelConstructor<R> & typeof Model,
@@ -787,7 +836,14 @@ export abstract class Model {
   }
 
   /**
-   * Define a polymorphic hasOne relationship
+   * Define a polymorphic one-to-one relationship.
+   *
+   * @template R - The related model type.
+   * @param related - The related model constructor.
+   * @param name - The polymorphic relationship name (used to derive type and id fields).
+   * @param foreignKey - Optional explicit foreign key.
+   * @param localKey - Optional explicit local key.
+   * @returns A QueryBuilder for the related model.
    */
   morphOne<R extends Model>(
     related: ModelConstructor<R> & typeof Model,
@@ -803,7 +859,14 @@ export abstract class Model {
   }
 
   /**
-   * Define a polymorphic hasMany relationship
+   * Define a polymorphic one-to-many relationship.
+   *
+   * @template R - The related model type.
+   * @param related - The related model constructor.
+   * @param name - The polymorphic relationship name.
+   * @param foreignKey - Optional explicit foreign key.
+   * @param localKey - Optional explicit local key.
+   * @returns A QueryBuilder for the related model.
    */
   morphMany<R extends Model>(
     related: ModelConstructor<R> & typeof Model,
@@ -819,7 +882,13 @@ export abstract class Model {
   }
 
   /**
-   * Define a polymorphic belongsTo relationship
+   * Define a polymorphic inverse relationship.
+   *
+   * @template R - The related model type.
+   * @param name - The polymorphic relationship name.
+   * @param typeField - Optional explicit type field name.
+   * @param idField - Optional explicit ID field name.
+   * @returns A QueryBuilder for the resolved related model, or null if not resolvable.
    */
   morphTo<R extends Model>(name: string, typeField?: string, idField?: string) {
     const tf = typeField ?? `${name}_type`
@@ -854,7 +923,13 @@ export abstract class Model {
   // ============================================================================
 
   /**
-   * Save the model (insert or update)
+   * Persist the model's current state to the database.
+   * Performs an INSERT if the model is new, or an UPDATE if it already exists.
+   *
+   * @returns Promise resolving to the saved model instance.
+   * @throws ColumnNotFoundError if strict mode is enabled and an unknown column is set.
+   * @throws NullableConstraintError if a non-nullable column is set to null.
+   * @throws TypeMismatchError if an attribute value does not match the schema type.
    */
   async save(): Promise<this> {
     // Trigger saving event
@@ -979,7 +1054,10 @@ export abstract class Model {
   }
 
   /**
-   * Delete the model
+   * Delete the model from the database.
+   * If soft deletes are enabled, the record is marked as deleted instead of being physically removed.
+   *
+   * @returns Promise resolving to true if the operation was successful.
    */
   async delete(): Promise<boolean> {
     if (!this._exists) {
@@ -1014,7 +1092,9 @@ export abstract class Model {
   }
 
   /**
-   * Restore a soft deleted model
+   * Restore a soft-deleted model instance.
+   *
+   * @returns Promise resolving to true if restored.
    */
   async restore(): Promise<boolean> {
     const modelCtor = this.constructor as any
@@ -1030,7 +1110,9 @@ export abstract class Model {
   }
 
   /**
-   * Force delete a soft deleted model physically
+   * Physically delete a model from the database, bypassing soft deletes.
+   *
+   * @returns Promise resolving to true if the record was deleted.
    */
   async forceDelete(): Promise<boolean> {
     const modelCtor = this.constructor as any
@@ -1061,7 +1143,9 @@ export abstract class Model {
   }
 
   /**
-   * Register a model observer
+   * Register a model observer to listen for lifecycle events.
+   *
+   * @param observer - An object containing lifecycle hooks (creating, created, saving, saved, etc.).
    */
   static observe(observer: any) {
     if (!Object.hasOwn(this, 'observers')) {
@@ -1071,7 +1155,10 @@ export abstract class Model {
   }
 
   /**
-   * Emit a model event
+   * Emit a model lifecycle event and trigger corresponding hooks and observers.
+   *
+   * @param event - The event name.
+   * @internal
    */
   protected async emit(event: string): Promise<void> {
     const modelCtor = this.constructor as typeof Model
@@ -1093,7 +1180,9 @@ export abstract class Model {
   }
 
   /**
-   * Refresh the model from database
+   * Reload the model's attributes from the database.
+   *
+   * @returns Promise resolving to the refreshed model instance.
    */
   async refresh(): Promise<this> {
     if (!this._exists) {
@@ -1121,7 +1210,10 @@ export abstract class Model {
   // ============================================================================
 
   /**
-   * Get the first record
+   * Get the first record matching the current query.
+   *
+   * @template T - The model type.
+   * @returns Promise resolving to the first model instance or null.
    */
   static async first<T extends Model>(this: ModelConstructor<T> & typeof Model): Promise<T | null> {
     const result = await this.query().first()
@@ -1129,7 +1221,11 @@ export abstract class Model {
   }
 
   /**
-   * Find a model by primary key
+   * Find a model instance by its primary key.
+   *
+   * @template T - The model type.
+   * @param key - The primary key value.
+   * @returns Promise resolving to the model instance or null.
    */
   static async find<T extends Model>(
     this: ModelConstructor<T> & typeof Model,
@@ -1150,7 +1246,12 @@ export abstract class Model {
   }
 
   /**
-   * Find a model or throw
+   * Find a model instance by its primary key or throw an error if not found.
+   *
+   * @template T - The model type.
+   * @param key - The primary key value.
+   * @returns Promise resolving to the model instance.
+   * @throws ModelNotFoundError if no record is found.
    */
   static async findOrFail<T extends Model>(
     this: ModelConstructor<T> & typeof Model,
@@ -1164,7 +1265,11 @@ export abstract class Model {
   }
 
   /**
-   * Get all models
+   * Retrieve all records for this model.
+   * Note: This method includes a safety limit of 1000 records. Use `cursor()` for larger datasets.
+   *
+   * @template T - The model type.
+   * @returns Promise resolving to an array of model instances.
    */
   static async all<T extends Model>(this: ModelConstructor<T> & typeof Model): Promise<T[]> {
     const connection = DB.connection(this.connection)
@@ -1544,7 +1649,10 @@ export abstract class Model {
   // ============================================================================
 
   /**
-   * Fill the model with an array of attributes
+   * Fill the model instance with an object of attributes.
+   *
+   * @param attributes - Object containing attribute values.
+   * @returns The current model instance for chaining.
    */
   fill(attributes: Partial<ModelAttributes>): this {
     for (const [key, value] of Object.entries(attributes)) {
@@ -1554,10 +1662,10 @@ export abstract class Model {
   }
 
   /**
-   * Convert to JSON
-   */
-  /**
-   * Convert model to plain object via toJSON
+   * Convert the model instance to a plain JavaScript object.
+   * Respects `visible`, `hidden`, and `appends` configurations.
+   *
+   * @returns A plain object representation of the model.
    */
   toJSON(): any {
     const modelCtor = this.constructor as typeof Model

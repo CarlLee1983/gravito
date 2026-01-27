@@ -31,10 +31,23 @@ export * from 'hono'
  * An alias for `Hono`, providing the core routing and middleware capabilities.
  * Use this to define your API structure and mount domain-specific Satellites.
  *
+ * @remarks
+ * Photon extends Hono's capabilities with Gravito-specific optimizations.
+ * It serves as the entry point for defining routes, applying middleware,
+ * and handling the request-response lifecycle.
+ *
  * @example
  * ```typescript
  * const app = new Photon()
+ *
+ * // Basic routing
  * app.get('/api/health', (c) => c.json({ status: 'ok' }))
+ *
+ * // Middleware integration
+ * app.use('/api/*', myMiddleware)
+ *
+ * // Mounting sub-routers
+ * app.route('/v1', v1Router)
  * ```
  * @public
  */

@@ -149,7 +149,10 @@ export class PlanetCore {
   private bootedProviders: Set<ServiceProvider> = new Set()
 
   /**
-   * Register a service provider.
+   * Register a service provider to the core.
+   *
+   * Service providers are the central place to configure your application.
+   * They bind services to the container and bootstrap application features.
    *
    * @param provider - The ServiceProvider instance to register.
    * @returns The PlanetCore instance for chaining.
@@ -179,12 +182,19 @@ export class PlanetCore {
   /**
    * Bootstrap the application by registering and booting providers.
    *
-   * This method must be called before the application starts handling requests.
-   * It calls `register()` on all providers first, then `boot()` on all providers.
+   * This method orchestrates the two-phase startup sequence:
+   * 1. Registration: Calls `register()` on all providers to bind services.
+   * 2. Booting: Calls `boot()` on all providers once all bindings are ready.
    *
-   * Supports async register() methods.
+   * This method must be called before the application starts handling requests.
    *
    * @returns Promise that resolves when bootstrapping is complete.
+   * @throws Error if a deferred provider has an asynchronous register method.
+   *
+   * @example
+   * ```typescript
+   * await core.bootstrap();
+   * ```
    */
   async bootstrap(): Promise<void> {
     // Phase 1: Register all bindings (supports async)
@@ -396,6 +406,22 @@ export class PlanetCore {
     return this
   }
 
+  /**
+   * Register a global error handler for process-level exceptions.
+   *
+   * Captures `unhandledRejection` and `uncaughtException` to prevent process crashes
+   * and allow for graceful shutdown or error reporting.
+   *
+   * @param options - Configuration for global error handling.
+   * @returns A function to unregister the global error handlers.
+   *
+   * @example
+   * ```typescript
+   * const unregister = core.registerGlobalErrorHandlers({
+   *   exitOnFatal: true
+   * });
+   * ```
+   */
   registerGlobalErrorHandlers(
     options: Omit<RegisterGlobalErrorHandlersOptions, 'core'> = {}
   ): () => void {
@@ -403,9 +429,18 @@ export class PlanetCore {
   }
 
   /**
-   * Predictive Route Warming (JIT Optimization)
+   * Predictive Route Warming (JIT Optimization).
    *
-   * @param paths List of paths to warm up
+   * Pre-compiles or warms up the specified paths in the HTTP adapter to reduce
+   * latency for the first request to these endpoints.
+   *
+   * @param paths - List of paths to warm up.
+   * @returns Promise that resolves when warming is complete.
+   *
+   * @example
+   * ```typescript
+   * await core.warmup(['/api/v1/products', '/api/v1/categories']);
+   * ```
    */
   async warmup(paths: string[]): Promise<void> {
     if (this.adapter.warmup) {
@@ -450,10 +485,19 @@ export class PlanetCore {
   }
 
   /**
-   * Mount an Orbit (a PlanetCore instance or native app) to a path.
+   * Mount an Orbit (a PlanetCore instance or native app) to a specific URL path.
+   *
+   * This allows for micro-service like composition where different parts of the
+   * application can be developed as independent Orbits and mounted together.
    *
    * @param path - The URL path to mount the orbit at.
    * @param orbitApp - The application instance (PlanetCore, HttpAdapter, or native app).
+   *
+   * @example
+   * ```typescript
+   * const blogOrbit = new PlanetCore();
+   * core.mountOrbit('/blog', blogOrbit);
+   * ```
    */
   mountOrbit(path: string, orbitApp: unknown): void {
     this.logger.info(`Mounting orbit at path: ${path}`)
