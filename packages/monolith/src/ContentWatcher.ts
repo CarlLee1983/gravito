@@ -12,6 +12,7 @@ export class ContentWatcher {
 
   constructor(
     private contentManager: ContentManager,
+    private rootDir: string,
     private options: WatcherOptions = {}
   ) {}
 
@@ -22,8 +23,7 @@ export class ContentWatcher {
       return
     }
 
-    const rootDir = this.contentManager.rootDir
-    const watchPath = join(rootDir, config.path)
+    const watchPath = join(this.rootDir, config.path)
 
     try {
       const watcher = watch(watchPath, { recursive: true }, (_eventType, filename) => {

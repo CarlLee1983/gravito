@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'bun:test'
 import { join } from 'node:path'
 import { ContentManager } from '../src/ContentManager'
+import { LocalDriver } from '../src/driver/LocalDriver'
 
 describe('ContentManager Cache Invalidation', () => {
   it('should invalidate cache by key', async () => {
     const root = join(import.meta.dir, 'fixtures')
-    const manager = new ContentManager(root)
+    const manager = new ContentManager(new LocalDriver(root))
 
     // @ts-expect-error - private access for testing
     manager.cache.set('docs:en:hello', { slug: 'hello' } as any)
@@ -19,7 +20,7 @@ describe('ContentManager Cache Invalidation', () => {
 
   it('should clear all cache', async () => {
     const root = join(import.meta.dir, 'fixtures')
-    const manager = new ContentManager(root)
+    const manager = new ContentManager(new LocalDriver(root))
 
     // @ts-expect-error - private access
     manager.cache.set('a', {} as any)

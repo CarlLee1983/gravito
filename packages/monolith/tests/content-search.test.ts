@@ -3,6 +3,7 @@ import { existsSync } from 'node:fs'
 import { mkdir, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { ContentManager } from '../src/ContentManager'
+import { LocalDriver } from '../src/driver/LocalDriver'
 
 const TMP_DIR = join(import.meta.dir, 'tmp_search')
 
@@ -27,7 +28,7 @@ describe('ContentManager Search', () => {
   })
 
   it('should find items by keyword', async () => {
-    const manager = new ContentManager(TMP_DIR)
+    const manager = new ContentManager(new LocalDriver(TMP_DIR))
     manager.defineCollection('docs', { path: 'docs' })
     manager.defineCollection('blog', { path: 'blog' })
 
@@ -45,7 +46,7 @@ describe('ContentManager Search', () => {
   })
 
   it('should support multiple terms (OR logic)', async () => {
-    const manager = new ContentManager(TMP_DIR)
+    const manager = new ContentManager(new LocalDriver(TMP_DIR))
     manager.defineCollection('docs', { path: 'docs' })
     manager.defineCollection('blog', { path: 'blog' })
 
@@ -57,7 +58,7 @@ describe('ContentManager Search', () => {
   })
 
   it('should filter by collection', async () => {
-    const manager = new ContentManager(TMP_DIR)
+    const manager = new ContentManager(new LocalDriver(TMP_DIR))
     manager.defineCollection('docs', { path: 'docs' })
     manager.defineCollection('blog', { path: 'blog' })
 

@@ -1,7 +1,7 @@
-import { readdir, readFile, stat } from 'node:fs/promises'
 import { join, parse } from 'node:path'
 import matter from 'gray-matter'
 import { marked } from 'marked'
+import type { ContentDriver } from './driver/ContentDriver'
 
 /**
  * Represents a single content item (file).
@@ -80,9 +80,9 @@ export class ContentManager {
   /**
    * Create a new ContentManager instance.
    *
-   * @param rootDir - The root directory of the application.
+   * @param driver - The content driver to use.
    */
-  constructor(public readonly rootDir: string) {}
+  constructor(private readonly driver: ContentDriver) {}
 
   /**
    * Register a new content collection.
@@ -122,18 +122,16 @@ export class ContentManager {
     }
 
     // Determine path strategy
-    // Strategy: {root}/{path}/{locale}/{slug}.md
-    const filePath = join(this.rootDir, config.path, safeLocale, `${safeSlug}.md`)
+    // Strategy: {path}/{locale}/{slug}.md
+    const filePath = join(config.path, safeLocale, `${safeSlug}.md`)
 
     try {
-      const exists = await stat(filePath)
-        .then(() => true)
-        .catch(() => false)
+      const exists = await this.driver.exists(filePath)
       if (!exists) {
         return null
       }
 
-      const fileContent = await readFile(filePath, 'utf-8')
+      const fileContent = await this.driver.read(filePath)
       const { data, content, excerpt } = matter(fileContent)
 
       const html = await marked.parse(content, { renderer: this.renderer })
@@ -175,10 +173,10 @@ export class ContentManager {
       return []
     }
 
-    const dirPath = join(this.rootDir, config.path, safeLocale)
+    const dirPath = join(config.path, safeLocale)
 
     try {
-      const files = await readdir(dirPath)
+      const files = await this.driver.list(dirPath)
       const items: ContentItem[] = []
 
       for (const file of files) {

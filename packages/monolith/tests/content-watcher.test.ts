@@ -4,6 +4,7 @@ import { mkdir, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { ContentManager } from '../src/ContentManager'
 import { ContentWatcher } from '../src/ContentWatcher'
+import { LocalDriver } from '../src/driver/LocalDriver'
 
 const TMP_DIR = join(import.meta.dir, 'tmp_watch')
 
@@ -19,7 +20,7 @@ describe('ContentWatcher', () => {
   })
 
   it('should invalidate cache on file change', async () => {
-    const manager = new ContentManager(TMP_DIR)
+    const manager = new ContentManager(new LocalDriver(TMP_DIR))
     manager.defineCollection('docs', { path: 'docs' })
 
     // Prime cache
@@ -27,7 +28,7 @@ describe('ContentWatcher', () => {
     // @ts-expect-error
     expect(manager.cache.size).toBe(1)
 
-    const watcher = new ContentWatcher(manager, { debounceMs: 10 })
+    const watcher = new ContentWatcher(manager, TMP_DIR, { debounceMs: 10 })
     watcher.watch('docs')
 
     // Simulate change

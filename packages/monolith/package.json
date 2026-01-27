@@ -29,9 +29,10 @@
   "author": "Carl Lee <carllee0520@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "marked": "^11.1.1",
+    "@gravito/mass": "workspace:*",
+    "@octokit/rest": "^22.0.1",
     "gray-matter": "^4.0.3",
-    "@gravito/mass": "workspace:*"
+    "marked": "^11.1.1"
   },
   "peerDependencies": {
     "@gravito/core": "workspace:*"
