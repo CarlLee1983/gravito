@@ -53,7 +53,6 @@ export async function bootstrap(options: AppConfig = {}): Promise<PlanetCore> {
 
   // 4. Set isDev flag for development mode (Vite proxy will be set up later)
   if (process.env.NODE_ENV !== 'production') {
-    const app = core.app as any
     // Use .use('*') to register as middleware, not route handler
     app.use('*', async (c: any, next: any) => {
       c.set('isDev', true)

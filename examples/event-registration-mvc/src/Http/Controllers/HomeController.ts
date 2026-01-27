@@ -1,3 +1,4 @@
+import type { GravitoContext } from '@gravito/core'
 import { Controller } from './Controller'
 
 export class HomeController extends Controller {

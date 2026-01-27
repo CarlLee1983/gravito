@@ -1,24 +1,18 @@
 {
-    "extends": "../../tsconfig.json",
-    "compilerOptions": {
-        "outDir": "./dist",
-        "baseUrl": ".",
-        "skipLibCheck": true,
-        "types": ["bun-types"],
-        "paths": {
-            "@gravito/core": ["../../packages/core/src/index.ts"],
-            "@gravito/*": ["../../packages/*/src/index.ts"]
-        },
-        /* 啟用未使用變數檢查，確保被其他包依賴時不會導致 CI 失敗 */
-        "noUnusedLocals": true,
-        "noUnusedParameters": true
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "baseUrl": ".",
+    "skipLibCheck": true,
+    "types": ["bun-types"],
+    "paths": {
+      "@gravito/core": ["../../packages/core/src/index.ts"],
+      "@gravito/*": ["../../packages/*/src/index.ts"]
     },
-    "include": [
-        "src/**/*"
-    ],
-    "exclude": [
-        "node_modules",
-        "dist",
-        "**/*.test.ts"
-    ]
+    /* 啟用未使用變數檢查，確保被其他包依賴時不會導致 CI 失敗 */
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts"]
 }

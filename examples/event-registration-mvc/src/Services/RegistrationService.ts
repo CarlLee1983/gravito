@@ -56,7 +56,7 @@ export class RegistrationService {
         for (const [fieldId, value] of Object.entries(data.field_values)) {
           await DB.table<RegistrationValue>('registration_values').insert({
             registration_id: registration.id,
-            field_id: parseInt(fieldId, 10),
+            field_id: parseInt(fieldId),
             value,
           })
         }

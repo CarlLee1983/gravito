@@ -1,5 +1,7 @@
 import { DB } from '@gravito/atlas'
+import type { GravitoContext } from '@gravito/core'
 import type { Registration } from '../../Models/Registration'
+import { RegistrationService } from '../../Services/RegistrationService'
 import { Controller } from './Controller'
 
 export class CheckinController extends Controller {

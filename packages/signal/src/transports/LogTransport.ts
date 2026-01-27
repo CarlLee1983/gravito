@@ -3,20 +3,42 @@ import type { Message, Transport } from '../types'
 /**
  * Log transport for development and testing.
  *
- * Logs email details to the console instead of sending them.
- * Useful for debugging and local development.
+ * This transport outputs email details directly to the console instead of performing
+ * actual delivery. It is essential for local development to avoid sending real emails
+ * while still being able to verify the content, recipients, and subject of outgoing mail.
  *
  * @example
  * ```typescript
- * const transport = new LogTransport()
- * await transport.send(message)
- * // Outputs email details to console
+ * import { LogTransport } from '@gravito/signal';
+ *
+ * const transport = new LogTransport();
+ * await transport.send({
+ *   from: { address: 'dev@localhost' },
+ *   to: [{ address: 'user@example.com' }],
+ *   subject: 'Test Email',
+ *   html: '<h1>Hello</h1>'
+ * });
  * ```
  *
- * @since 3.0.0
  * @public
  */
 export class LogTransport implements Transport {
+  /**
+   * Outputs the message details to the system console.
+   *
+   * Formats the email metadata (From, To, Subject) and content size into a readable
+   * block in the console output.
+   *
+   * @param message - The message to log.
+   * @returns A promise that resolves immediately after logging.
+   *
+   * @example
+   * ```typescript
+   * const transport = new LogTransport();
+   * await transport.send(message);
+   * // Console: 📧 [OrbitSignal] Email Sent (Simulated)...
+   * ```
+   */
   async send(message: Message): Promise<void> {
     console.log('\n📧 [OrbitSignal] Email Sent (Simulated):')
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')

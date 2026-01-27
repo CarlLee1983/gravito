@@ -15,7 +15,8 @@
         "@gravito/beam": "workspace:*",
         "@gravito/stasis": "workspace:*",
         "@gravito/prism": "workspace:*",
-        "@gravito/photon": "workspace:*"
+        "@gravito/photon": "workspace:*",
+        "@gravito/mass": "workspace:*"
     },
     "devDependencies": {
         "@biomejs/biome": "1.9.4",

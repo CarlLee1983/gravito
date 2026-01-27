@@ -102,9 +102,7 @@ export class RegistrationField extends Model {
 
   // Helper methods
   getOptions(): string[] {
-    if (!this.options) {
-      return []
-    }
+    if (!this.options) return []
     try {
       return JSON.parse(this.options)
     } catch {

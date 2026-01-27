@@ -33,6 +33,6 @@ import type { AppRoutes } from './types'
  * }
  * ```
  */
-export const createClient = (baseUrl: string, options?: RequestInit) => {
+export const createClient = (baseUrl: string, options?: any) => {
   return createBeam<AppRoutes>(baseUrl, options)
 }

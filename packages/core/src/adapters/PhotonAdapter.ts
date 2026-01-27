@@ -76,7 +76,7 @@ class PhotonRequestWrapper implements GravitoRequest {
         // Delegate to Photon's native request (with extended properties)
         const nativeReq = target.photonCtx.req as Context['req'] & PhotonRequestExtended
         if (prop in nativeReq) {
-          const value = nativeReq[prop]
+          const value = Reflect.get(nativeReq, prop)
           if (typeof value === 'function') {
             return value.bind(nativeReq)
           }
@@ -91,8 +91,7 @@ class PhotonRequestWrapper implements GravitoRequest {
           return Reflect.set(target, prop, value)
         }
         const extendedReq = target.photonCtx.req as Context['req'] & PhotonRequestExtended
-        extendedReq[prop as string] = value
-        return true
+        return Reflect.set(extendedReq, prop, value)
       },
     }) as PhotonRequestWrapper
   }
@@ -220,7 +219,7 @@ class PhotonContextWrapper<V extends GravitoVariables = GravitoVariables>
           return target.reset.bind(target)
         }
         // 1. If property exists on the instance (method, property), return it
-        if (prop in target) {
+        if (Reflect.has(target, prop)) {
           const value = Reflect.get(target, prop, receiver)
           if (typeof value === 'function') {
             return value.bind(target) // Ensure 'this' points to instance

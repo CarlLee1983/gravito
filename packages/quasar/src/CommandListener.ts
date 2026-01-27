@@ -1,7 +1,14 @@
+import { createHmac } from 'crypto'
 import type { Redis } from 'ioredis'
+import { QUASAR_CHANNELS, QUASAR_KEYS } from './constants'
+import { CleanQueueExecutor } from './executors/CleanQueueExecutor'
 import { DeleteJobExecutor } from './executors/DeleteJobExecutor'
+import { PauseQueueExecutor } from './executors/PauseQueueExecutor'
+import { PrioritizeJobExecutor } from './executors/PrioritizeJobExecutor'
+import { ResumeQueueExecutor } from './executors/ResumeQueueExecutor'
 import { RetryJobExecutor } from './executors/RetryJobExecutor'
 import type { CommandExecutor, CommandResult, CommandType, QuasarCommand } from './types'
+import type { Logger } from './utils/logger'
 
 /**
  * CommandListener subscribes to Redis Pub/Sub for incoming commands from Zenith.
@@ -17,24 +24,47 @@ export class CommandListener {
   private service: string
   private executors: Map<CommandType, CommandExecutor>
   private isListening = false
+  private logger: Logger
+  private secret?: string
 
   // Security: Hardcoded allowlist
-  private readonly ALLOWED_COMMANDS: CommandType[] = ['RETRY_JOB', 'DELETE_JOB']
+  private readonly ALLOWED_COMMANDS: CommandType[] = [
+    'RETRY_JOB',
+    'DELETE_JOB',
+    'PAUSE_QUEUE',
+    'RESUME_QUEUE',
+    'CLEAN_QUEUE',
+    'PRIORITIZE_JOB',
+  ]
 
   /**
    * @param subscriberRedis - Dedicated Redis connection for SUBSCRIBE
    * @param service - Service name (for channel pattern)
    * @param nodeId - This agent's unique ID
+   * @param logger - Logger instance
+   * @param secret - Optional HMAC secret for command verification
    */
-  constructor(subscriberRedis: Redis, service: string, nodeId: string) {
+  constructor(
+    subscriberRedis: Redis,
+    service: string,
+    nodeId: string,
+    logger: Logger,
+    secret?: string
+  ) {
     this.subscriber = subscriberRedis
     this.service = service
     this.nodeId = nodeId
+    this.logger = logger
+    this.secret = secret
 
     // Register all executors
     this.executors = new Map()
     this.registerExecutor(new RetryJobExecutor())
     this.registerExecutor(new DeleteJobExecutor())
+    this.registerExecutor(new PauseQueueExecutor())
+    this.registerExecutor(new ResumeQueueExecutor())
+    this.registerExecutor(new CleanQueueExecutor())
+    this.registerExecutor(new PrioritizeJobExecutor())
   }
 
   private registerExecutor(executor: CommandExecutor): void {
@@ -48,11 +78,11 @@ export class CommandListener {
    * Also listens to broadcast channel: gravito:quasar:cmd:{service}:*
    */
   private getChannelPattern(): string {
-    return `gravito:quasar:cmd:${this.service}:${this.nodeId}`
+    return `${QUASAR_KEYS.COMMAND_PREFIX}${this.service}:${this.nodeId}`
   }
 
   private getBroadcastChannel(): string {
-    return `gravito:quasar:cmd:${this.service}:*`
+    return `${QUASAR_KEYS.COMMAND_PREFIX}${this.service}:${QUASAR_CHANNELS.BROADCAST_SUFFIX}`
   }
 
   /**
@@ -61,7 +91,7 @@ export class CommandListener {
    */
   async start(monitorRedis: Redis): Promise<void> {
     if (this.isListening) {
-      console.warn('[Quasar] CommandListener already started')
+      this.logger.warn('[Quasar] CommandListener already started')
       return
     }
 
@@ -70,7 +100,7 @@ export class CommandListener {
 
     // Subscribe to both specific channel and broadcast pattern
     await this.subscriber.subscribe(channel)
-    console.log(`[Quasar] 📡 Listening for commands on: ${channel}`)
+    this.logger.info(`[Quasar] 📡 Listening for commands on: ${channel}`)
 
     // Listen for messages
     this.subscriber.on('message', async (ch: string, message: string) => {
@@ -82,7 +112,7 @@ export class CommandListener {
         const command = JSON.parse(message) as QuasarCommand
         await this.handleCommand(command, monitorRedis)
       } catch (err) {
-        console.error('[Quasar] Failed to parse command:', err)
+        this.logger.error('[Quasar] Failed to parse command', err)
       }
     })
 
@@ -101,7 +131,7 @@ export class CommandListener {
           await this.handleCommand(command, monitorRedis)
         }
       } catch (err) {
-        console.error('[Quasar] Failed to parse broadcast command:', err)
+        this.logger.error('[Quasar] Failed to parse broadcast command', err)
       }
     })
 
@@ -112,24 +142,32 @@ export class CommandListener {
    * Handle an incoming command.
    */
   private async handleCommand(command: QuasarCommand, redis: Redis): Promise<void> {
-    console.log(`[Quasar] 📥 Received command: ${command.type} (id: ${command.id})`)
+    this.logger.info(`[Quasar] 📥 Received command: ${command.type} (id: ${command.id})`)
+
+    // HMAC Verification
+    if (this.secret) {
+      if (!this.verifySignature(command)) {
+        this.logger.warn(`[Quasar] 🛡️ HMAC verification failed for command: ${command.id}`)
+        return
+      }
+    }
 
     // Security check: Is this command type allowed?
     if (!this.ALLOWED_COMMANDS.includes(command.type)) {
-      console.warn(`[Quasar] ⚠️ Command type not allowed: ${command.type}`)
+      this.logger.warn(`[Quasar] ⚠️ Command type not allowed: ${command.type}`)
       return
     }
 
     // Security check: Is this command for us?
     if (command.targetNodeId !== this.nodeId && command.targetNodeId !== '*') {
-      console.warn(`[Quasar] ⚠️ Command not for this node: ${command.targetNodeId}`)
+      this.logger.warn(`[Quasar] ⚠️ Command not for this node: ${command.targetNodeId}`)
       return
     }
 
     // Get executor
     const executor = this.executors.get(command.type)
     if (!executor) {
-      console.warn(`[Quasar] ⚠️ No executor for command type: ${command.type}`)
+      this.logger.warn(`[Quasar] ⚠️ No executor for command type: ${command.type}`)
       return
     }
 
@@ -137,13 +175,31 @@ export class CommandListener {
     const result: CommandResult = await executor.execute(command, redis)
 
     if (result.status === 'success') {
-      console.log(`[Quasar] ✅ Command executed: ${command.type} - ${result.message}`)
+      this.logger.info(`[Quasar] ✅ Command executed: ${command.type} - ${result.message}`)
     } else {
-      console.error(`[Quasar] ❌ Command failed: ${command.type} - ${result.message}`)
+      this.logger.error(`[Quasar] ❌ Command failed: ${command.type} - ${result.message}`)
     }
 
     // Note: We don't publish the result back to Redis (async state observation).
     // The caller observes job state changes directly.
+  }
+
+  private verifySignature(command: QuasarCommand): boolean {
+    if (!command.signature || !this.secret) return false
+
+    const { signature, ...rest } = command
+    // Simple canonicalization: sort keys
+    const sortedRest = Object.keys(rest)
+      .sort()
+      .reduce((acc: any, key) => {
+        acc[key] = (rest as any)[key]
+        return acc
+      }, {})
+
+    const data = JSON.stringify(sortedRest)
+    const expected = createHmac('sha256', this.secret).update(data).digest('hex')
+
+    return signature === expected
   }
 
   /**
@@ -158,9 +214,9 @@ export class CommandListener {
       await this.subscriber.unsubscribe()
       await this.subscriber.punsubscribe()
       this.isListening = false
-      console.log('[Quasar] CommandListener stopped')
+      this.logger.info('[Quasar] CommandListener stopped')
     } catch (err) {
-      console.error('[Quasar] Error stopping CommandListener:', err)
+      this.logger.error('[Quasar] Error stopping CommandListener', err)
     }
   }
 }
