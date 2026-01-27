@@ -41,6 +41,15 @@ export abstract class Grammar implements GrammarContract {
   })
 
   /**
+   * Cache statistics for monitoring
+   */
+  private static cacheStats = {
+    hits: 0,
+    misses: 0,
+    sets: 0,
+  }
+
+  /**
    * Toggle for compilation cache
    */
   public static useCache = true
@@ -53,14 +62,107 @@ export abstract class Grammar implements GrammarContract {
   // Instance-level cache for isolated scope
   private _instanceCache?: LRUCache<string, string>
 
+  // Instance-level cache statistics
+  private _instanceCacheStats = {
+    hits: 0,
+    misses: 0,
+    sets: 0,
+  }
+
   /**
-   * Get cache statistics (for monitoring)
+   * Retrieves comprehensive cache statistics for monitoring and optimization.
+   *
+   * Provides detailed metrics including hit/miss rates, total requests,
+   * and cache utilization. Useful for identifying query patterns and
+   * tuning cache size for optimal performance.
+   *
+   * @returns Cache statistics object with hit/miss rates and utilization metrics
+   *
+   * @example
+   * ```typescript
+   * const stats = Grammar.getCacheStats();
+   * console.log(`Hit rate: ${stats.hitRate * 100}%`);
+   * console.log(`Cache utilization: ${stats.utilization * 100}%`);
+   * ```
    */
   static getCacheStats() {
+    const cache = Grammar.compilationCache
+    const total = Grammar.cacheStats.hits + Grammar.cacheStats.misses
+    const hitRate = total > 0 ? Grammar.cacheStats.hits / total : 0
+
     return {
-      size: Grammar.compilationCache.size,
-      maxSize: Grammar.compilationCache.max,
-      hitRate: Grammar.compilationCache.calculatedSize / (Grammar.compilationCache.max || 1),
+      size: cache.size,
+      maxSize: cache.max,
+      hits: Grammar.cacheStats.hits,
+      misses: Grammar.cacheStats.misses,
+      sets: Grammar.cacheStats.sets,
+      hitRate: hitRate,
+      missRate: total > 0 ? Grammar.cacheStats.misses / total : 0,
+      totalRequests: total,
+      utilization: cache.size / (cache.max || 1),
+    }
+  }
+
+  /**
+   * Retrieves cache statistics for instance-level cache.
+   *
+   * Returns null if instance-level caching is not enabled. Provides
+   * the same metrics as `getCacheStats()` but scoped to this specific
+   * Grammar instance.
+   *
+   * @returns Cache statistics object or null if instance cache not enabled
+   *
+   * @example
+   * ```typescript
+   * const grammar = new PostgresGrammar();
+   * Grammar.cacheScope = 'instance';
+   * // ... perform queries ...
+   * const stats = grammar.getInstanceCacheStats();
+   * if (stats) {
+   *   console.log(`Instance hit rate: ${stats.hitRate * 100}%`);
+   * }
+   * ```
+   */
+  getInstanceCacheStats() {
+    if (!this._instanceCache) {
+      return null
+    }
+
+    const cache = this._instanceCache
+    const total = this._instanceCacheStats.hits + this._instanceCacheStats.misses
+    const hitRate = total > 0 ? this._instanceCacheStats.hits / total : 0
+
+    return {
+      size: cache.size,
+      maxSize: cache.max,
+      hits: this._instanceCacheStats.hits,
+      misses: this._instanceCacheStats.misses,
+      sets: this._instanceCacheStats.sets,
+      hitRate: hitRate,
+      missRate: total > 0 ? this._instanceCacheStats.misses / total : 0,
+      totalRequests: total,
+      utilization: cache.size / (cache.max || 1),
+    }
+  }
+
+  /**
+   * Resets all cache statistics counters to zero.
+   *
+   * Useful for benchmarking or starting a new measurement period.
+   * Does not clear the cache contents, only resets the counters.
+   *
+   * @example
+   * ```typescript
+   * Grammar.resetCacheStats();
+   * // ... perform operations ...
+   * const stats = Grammar.getCacheStats(); // Fresh statistics
+   * ```
+   */
+  static resetCacheStats(): void {
+    Grammar.cacheStats = {
+      hits: 0,
+      misses: 0,
+      sets: 0,
     }
   }
 
@@ -131,9 +233,23 @@ export abstract class Grammar implements GrammarContract {
     let cacheKey = ''
     if (Grammar.useCache) {
       cacheKey = this.getStructuralKey(query)
-      const cached = this.getCompilationCache().get(cacheKey)
+      const cache = this.getCompilationCache()
+      const cached = cache.get(cacheKey)
+
+      // 追蹤統計資訊
       if (cached) {
+        if (Grammar.cacheScope === 'instance' && this._instanceCache) {
+          this._instanceCacheStats.hits++
+        } else {
+          Grammar.cacheStats.hits++
+        }
         return cached
+      } else {
+        if (Grammar.cacheScope === 'instance' && this._instanceCache) {
+          this._instanceCacheStats.misses++
+        } else {
+          Grammar.cacheStats.misses++
+        }
       }
     }
 
@@ -185,44 +301,91 @@ export abstract class Grammar implements GrammarContract {
     // 2. Store in cache
     if (Grammar.useCache && cacheKey) {
       this.getCompilationCache().set(cacheKey, sql)
+      // 追蹤統計資訊
+      if (Grammar.cacheScope === 'instance' && this._instanceCache) {
+        this._instanceCacheStats.sets++
+      } else {
+        Grammar.cacheStats.sets++
+      }
     }
 
     return sql
   }
 
   /**
-   * Generate a unique structural key for a query (excluding values)
+   * Generates a unique cache key for a query structure (excluding bindings).
+   *
+   * Creates a deterministic key based on query structure (table, columns,
+   * wheres, joins, etc.) without including actual values. This allows
+   * caching compiled SQL for queries with different bindings but same structure.
+   *
+   * Optimized to use array building and join operations instead of string
+   * concatenation for better performance with large queries.
+   *
+   * @param query - Compiled query structure to generate key for
+   * @returns Unique string key representing the query structure
+   * @internal
    */
   protected getStructuralKey(query: CompiledQuery): string {
-    const wheres = query.wheres
-      .map(
-        (w) =>
-          `${w.type}:${w.column}:${w.operator}:${w.boolean}:${w.not}:${w.sql}:${w.values?.length ?? 0}`
-      )
-      .join('|')
+    // 使用陣列構建 key 部分，比字串拼接更高效
+    const keyParts: string[] = [this.constructor.name, query.table]
 
-    const joins = query.joins
-      .map((j) => `${j.type}:${j.table}:${j.first}:${j.operator}:${j.second}`)
-      .join('|')
+    // Columns
+    keyParts.push(query.columns.length > 0 ? query.columns.join(',') : '*')
 
-    const orders = query.orders.map((o) => `${o.column}:${o.direction}`).join('|')
-    const havings = query.havings
-      .map((h) => `${h.type}:${h.column}:${h.operator}:${h.boolean}`)
-      .join('|')
+    // Distinct flag
+    keyParts.push(query.distinct ? '1' : '0')
 
-    return [
-      this.constructor.name,
-      query.table,
-      query.columns.join(','),
-      query.distinct ? '1' : '0',
-      wheres,
-      joins,
-      query.groups.join(','),
-      havings,
-      orders,
-      query.limit !== undefined ? `L${query.limit}` : 'X',
-      query.offset !== undefined ? `O${query.offset}` : 'X',
-    ].join('_')
+    // Wheres - 優化：只在有 wheres 時才構建字串
+    if (query.wheres.length > 0) {
+      const wheres = query.wheres
+        .map(
+          (w) =>
+            `${w.type}:${w.column ?? ''}:${w.operator ?? ''}:${w.boolean ?? ''}:${w.not ? '1' : '0'}:${w.sql ?? ''}:${w.values?.length ?? 0}`
+        )
+        .join('|')
+      keyParts.push(wheres)
+    } else {
+      keyParts.push('')
+    }
+
+    // Joins
+    if (query.joins.length > 0) {
+      const joins = query.joins
+        .map((j) => `${j.type}:${j.table}:${j.first}:${j.operator}:${j.second}`)
+        .join('|')
+      keyParts.push(joins)
+    } else {
+      keyParts.push('')
+    }
+
+    // Groups
+    keyParts.push(query.groups.length > 0 ? query.groups.join(',') : '')
+
+    // Havings
+    if (query.havings.length > 0) {
+      const havings = query.havings
+        .map((h) => `${h.type}:${h.column ?? ''}:${h.operator ?? ''}:${h.boolean ?? ''}`)
+        .join('|')
+      keyParts.push(havings)
+    } else {
+      keyParts.push('')
+    }
+
+    // Orders
+    if (query.orders.length > 0) {
+      const orders = query.orders.map((o) => `${o.column}:${o.direction}`).join('|')
+      keyParts.push(orders)
+    } else {
+      keyParts.push('')
+    }
+
+    // Limit & Offset
+    keyParts.push(query.limit !== undefined ? `L${query.limit}` : 'X')
+    keyParts.push(query.offset !== undefined ? `O${query.offset}` : 'X')
+
+    // 使用 join 比字串拼接更高效
+    return keyParts.join('_')
   }
 
   /**

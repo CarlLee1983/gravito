@@ -42,12 +42,22 @@ export class TypeMismatchError extends Error {
     public readonly table: string,
     public readonly column: string,
     public readonly expectedType: string,
-    public readonly actualType: string
+    public readonly actualType: string,
+    public readonly value?: unknown
   ) {
-    super(
-      `Type mismatch for column "${column}" on table "${table}". ` +
-        `Expected ${expectedType}, got ${actualType}.`
-    )
+    let message = `Type mismatch for column "${column}" on table "${table}".\n`
+    message += `   Expected: ${expectedType}\n`
+    message += `   Got: ${actualType}`
+
+    if (value !== undefined) {
+      const valuePreview =
+        typeof value === 'string' && value.length > 50 ? `${value.slice(0, 50)}...` : String(value)
+      message += `\n   Value: ${valuePreview}`
+    }
+
+    message += `\n\n💡 Tip: Check your model's casts configuration or ensure the value matches the expected type.`
+
+    super(message)
     this.name = 'TypeMismatchError'
   }
 }
@@ -61,7 +71,11 @@ export class NullableConstraintError extends Error {
     public readonly table: string,
     public readonly column: string
   ) {
-    super(`Column "${column}" on table "${table}" cannot be null.`)
+    const message =
+      `Column "${column}" on table "${table}" cannot be null.\n\n` +
+      `💡 Tip: Either provide a non-null value or modify the column definition to allow null values.`
+
+    super(message)
     this.name = 'NullableConstraintError'
   }
 }
@@ -75,7 +89,12 @@ export class ModelNotFoundError extends Error {
     public readonly model: string,
     public readonly key: unknown
   ) {
-    super(`${model} with key "${key}" not found.`)
+    const message =
+      `${model} with key "${key}" not found.\n\n` +
+      `💡 Tip: Use findOrFail() if you want to throw an error when a model is not found, ` +
+      `or check the key value and ensure the record exists in the database.`
+
+    super(message)
     this.name = 'ModelNotFoundError'
   }
 }

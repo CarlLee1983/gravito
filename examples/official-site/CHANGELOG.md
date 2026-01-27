@@ -1,5 +1,14 @@
 # gravito-official-site
 
+## 0.1.8
+
+### Patch Changes
+
+- **Atlas 1.4.0 Integration**:
+  - Updated version references to reflect Atlas ORM v1.4.0 performance optimizations.
+  - Added release notes for v1.4.0 highlighting major performance improvements.
+  - Updated localization strings to mention v1.4.0 release.
+
 ## 0.1.7
 
 ### Patch Changes

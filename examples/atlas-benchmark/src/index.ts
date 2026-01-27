@@ -2,6 +2,7 @@ import { DB } from '@gravito/atlas'
 import { setupDB } from './config.js'
 import { runFeaturesScenario } from './scenarios/features.js'
 import { runMemoryScenario } from './scenarios/memory.js'
+import { runOptimizationsScenario } from './scenarios/optimizations.js'
 import { runPerformanceScenario } from './scenarios/performance.js'
 
 async function main() {
@@ -32,6 +33,9 @@ async function main() {
 
         // 3. Memory Safety
         await runMemoryScenario()
+
+        // 4. Performance Optimizations (v1.4.0)
+        await runOptimizationsScenario()
       } catch (e: any) {
         console.error(`❌ Driver [${driver}] (${mode.name}) Failed:`, e.message)
         if (e.message.includes('not yet implemented')) {

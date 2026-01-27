@@ -283,7 +283,9 @@ export class HasAttributes {
     if (!column) {
       if (modelCtor.strictMode) {
         const { ColumnNotFoundError } = await import('../errors')
-        throw new ColumnNotFoundError(table, key)
+        // 提供可用欄位列表以改善錯誤訊息
+        const availableColumns = Array.from(schema.columns.keys())
+        throw new ColumnNotFoundError(table, key, availableColumns)
       }
       return
     }
@@ -307,7 +309,7 @@ export class HasAttributes {
 
       if (!expectedTypes.includes(jsType)) {
         const { TypeMismatchError } = await import('../errors')
-        throw new TypeMismatchError(table, key, expectedTypes.join(' | '), jsType)
+        throw new TypeMismatchError(table, key, expectedTypes.join(' | '), jsType, value)
       }
     }
   }
