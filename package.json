@@ -1,66 +1,66 @@
 {
-    "name": "gravito-monorepo",
-    "private": true,
-    "workspaces": [
-        "satellites/*",
-        "packages/*",
-        "templates/*",
-        "examples/*"
-    ],
-    "scripts": {
-        "build": "turbo run build --filter='./packages/*' --filter='./satellites/*'",
-        "test": "turbo run test --filter='./packages/*' --filter='./satellites/*'",
-        "test:coverage": "turbo run test:coverage --filter='./packages/*' --filter='./satellites/*'",
-        "test:ci": "turbo run test:coverage --filter='./packages/*' --filter='./satellites/*'",
-        "lint": "biome lint .",
-        "format": "biome format --write .",
-        "check": "biome check . --diagnostic-level=error",
-        "typecheck": "turbo run typecheck --filter='./packages/*' --filter='./satellites/*'",
-        "typecheck:full": "turbo run typecheck --filter='./packages/*' --filter='./satellites/*' --force",
-        "typecheck:validate": "bun run scripts/check-typecheck-config.ts",
-        "typecheck:verify": "bun run scripts/verify-bunx-typecheck.ts",
-        "version:check": "bun run scripts/check-versions.ts",
-        "changeset": "changeset",
-        "ci:version": "changeset version",
-        "ci:publish": "bun scripts/ci-publish.js",
-        "pub:beta": "bun scripts/ci-publish.js --tag beta",
-        "pub:snapshot": "bun scripts/ci-publish.js --tag snapshot",
-        "launchpad:up": "bun scripts/start-launchpad.ts",
-        "launchpad:compose": "docker-compose -f docker-compose.launchpad.yml up --build -d",
-        "ci:simulate": "bash scripts/ci-simulation.sh",
-        "ci:test": "bash scripts/test-ci-local-direct.sh",
-        "ci:test:act": "bash scripts/test-ci-local.sh"
-    },
-    "devDependencies": {
-        "@biomejs/biome": "^2.3.10",
-        "@changesets/cli": "^2.29.8",
-        "@msgpack/msgpack": "^3.1.3",
-        "@types/node": "^25.0.8",
-        "@types/pug": "^2.0.10",
-        "bun-types": "latest",
-        "elysia": "^1.4.21",
-        "handlebars": "^4.7.8",
-        "hono": "^4.11.3",
-        "pug": "^3.0.3",
-        "simple-git-hooks": "^2.13.1",
-        "turbo": "latest",
-        "typescript": "^5.9.3"
-    },
-    "simple-git-hooks": {
-        "pre-commit": "export PATH=\"$HOME/.bun/bin:$PATH\" && bunx lint-staged",
-        "pre-push": "cd \"$(git rev-parse --show-toplevel)\" && export PATH=\"$HOME/.bun/bin:$PATH\" && bun scripts/validate-affected-packages.ts"
-    },
-    "lint-staged": {
-        "*.{js,ts,cjs,mjs}": [
-            "biome check --write --diagnostic-level=error"
-        ]
-    },
-    "version": "0.5.0-alpha",
-    "packageManager": "bun@1.3.4",
-    "dependencies": {
-        "@envelop/rate-limiter": "^10.0.0",
-        "canvas": "^3.2.1",
-        "graphql-rate-limit-directive": "^2.0.6",
-        "p-limit": "^7.2.0"
-    }
+  "name": "gravito-monorepo",
+  "private": true,
+  "workspaces": [
+    "satellites/*",
+    "packages/*",
+    "templates/*",
+    "examples/*"
+  ],
+  "scripts": {
+    "build": "turbo run build --filter='./packages/*' --filter='./satellites/*'",
+    "test": "turbo run test --filter='./packages/*' --filter='./satellites/*'",
+    "test:coverage": "turbo run test:coverage --filter='./packages/*' --filter='./satellites/*'",
+    "test:ci": "turbo run test:coverage --filter='./packages/*' --filter='./satellites/*'",
+    "lint": "biome lint .",
+    "format": "biome format --write .",
+    "check": "biome check . --diagnostic-level=error",
+    "typecheck": "turbo run typecheck --filter='./packages/*' --filter='./satellites/*'",
+    "typecheck:full": "turbo run typecheck --filter='./packages/*' --filter='./satellites/*' --force",
+    "typecheck:validate": "bun run scripts/check-typecheck-config.ts",
+    "typecheck:verify": "bun run scripts/verify-bunx-typecheck.ts",
+    "version:check": "bun run scripts/check-versions.ts",
+    "changeset": "changeset",
+    "ci:version": "changeset version",
+    "ci:publish": "bun scripts/ci-publish.js",
+    "pub:beta": "bun scripts/ci-publish.js --tag beta",
+    "pub:snapshot": "bun scripts/ci-publish.js --tag snapshot",
+    "launchpad:up": "bun scripts/start-launchpad.ts",
+    "launchpad:compose": "docker-compose -f docker-compose.launchpad.yml up --build -d",
+    "ci:simulate": "bash scripts/ci-simulation.sh",
+    "ci:test": "bash scripts/test-ci-local-direct.sh",
+    "ci:test:act": "bash scripts/test-ci-local.sh"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.3.10",
+    "@changesets/cli": "^2.29.8",
+    "@msgpack/msgpack": "^3.1.3",
+    "@types/node": "^25.0.8",
+    "@types/pug": "^2.0.10",
+    "bun-types": "latest",
+    "elysia": "^1.4.21",
+    "handlebars": "^4.7.8",
+    "hono": "^4.11.3",
+    "pug": "^3.0.3",
+    "simple-git-hooks": "^2.13.1",
+    "turbo": "latest",
+    "typescript": "^5.9.3"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "export PATH=\"$HOME/.bun/bin:$PATH\" && bunx lint-staged",
+    "pre-push": "cd \"$(git rev-parse --show-toplevel)\" && export PATH=\"$HOME/.bun/bin:$PATH\" && bun scripts/validate-affected-packages.ts"
+  },
+  "lint-staged": {
+    "*.{js,ts,cjs,mjs}": [
+      "biome check --write --diagnostic-level=error"
+    ]
+  },
+  "version": "1.0.0",
+  "packageManager": "bun@1.3.4",
+  "dependencies": {
+    "@envelop/rate-limiter": "^10.0.0",
+    "canvas": "^3.2.1",
+    "graphql-rate-limit-directive": "^2.0.6",
+    "p-limit": "^7.2.0"
+  }
 }
