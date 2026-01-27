@@ -90,8 +90,8 @@ Ripple 不會啟動自己的 HTTP 伺服器，而是掛載在現有的 `Bun.serv
 ## 5. 後續優化建議
 
 ### 短期 (v1.1)
-1. **Binary Support**：支援發送 `ArrayBuffer`，優化二進制數據傳輸。
-2. **Rate Limiting**：針對 `whisper` (客戶端互傳) 實作頻率限制，防止濫用。
+1. **Binary Support (Completed)**：支援發送 `ArrayBuffer`，優化二進制數據傳輸。
+2. **Rate Limiting (Completed)**：針對 `whisper` (客戶端互傳) 實作頻率限制，防止濫用。
 
 ### 中期 (v1.2)
 1. **NATS / Kafka Driver**：提供比 Redis 更高吞吐量的後端驅動。

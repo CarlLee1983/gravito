@@ -112,7 +112,7 @@ Gravito Engine 採用獨特的優化策略：
 ### 4.2 循環依賴
 -   **問題**：`Container` 未檢測循環依賴。
 -   **風險**：A 依賴 B，B 依賴 A 導致 Stack Overflow。
--   **建議**：加入解析堆疊追蹤 (Resolution Stack) 偵測機制。
+-   **解決方案**：v1.2 加入解析堆疊追蹤 (Resolution Stack) 偵測機制，當檢測到循環時拋出 `CircularDependencyException`。
 
 ---
 
@@ -130,10 +130,10 @@ Gravito Engine 採用獨特的優化策略：
 
 ## 6. 後續優化建議
 
-1.  **CLI 整合** (Priority: High)
-    -   增加 `CommandKernel`，讓 CLI 命令復用相同的 Container 與 Provider。
+1.  **CLI 整合** (Completed v1.2)
+    -   新增 `CommandKernel`，讓 CLI 命令復用相同的 Container 與 Provider。
 
-2.  **增加循環依賴檢測** (Priority: Low)
+2.  **增加循環依賴檢測** (Completed v1.2)
     -   在 Container 中實作解析鎖與檢測邏輯。
 
 3.  **強化 IoC 型別推導** (Completed v1.1)

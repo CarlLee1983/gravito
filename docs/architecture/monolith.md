@@ -87,7 +87,7 @@ Markdown 渲染預設開啟了 HTML 轉義。
 2.  **Custom Renderer**：允許使用者注入自定義的 `marked` Renderer 或外掛 (Plugins)。
 
 ### 中期 (v1.2)
-1. **Search Index**：在啟動時建立簡易的全文索引 (In-Memory Search)，支援 `search(query)` API。
+1.  **Search Index (Completed)**：在啟動時建立簡易的全文索引 (In-Memory Search)，支援 `search(query)` API。
 
 ### 長期 (v2.0)
 1. **Git Backend**：支援直接從 GitHub/GitLab API 讀取內容，實現無頭 CMS (Headless CMS) 架構。
