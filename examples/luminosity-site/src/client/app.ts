@@ -18,8 +18,8 @@ createInertiaApp({
   },
   setup({ el, App, props, plugin }) {
     const freezeConfig = defineConfig({
-      locales: ['en', 'zh'],
-      defaultLocale: 'en',
+      locales: ['en', 'zh'] as any,
+      defaultLocale: 'en' as any,
       baseUrl: 'https://lux.gravito.dev',
     })
 

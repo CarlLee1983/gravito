@@ -3,13 +3,7 @@
   "id": "cart",
   "version": "0.1.0",
   "description": "A Gravito Satellite",
-  "capabilities": [
-    "create-cart"
-  ],
-  "requirements": [
-    "cache"
-  ],
-  "hooks": [
-    "cart:created"
-  ]
+  "capabilities": ["create-cart"],
+  "requirements": ["cache"],
+  "hooks": ["cart:created"]
 }

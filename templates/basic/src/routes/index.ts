@@ -23,7 +23,7 @@ export function registerRoutes(core: PlanetCore): void {
   // Example inline middleware for API logging
   const apiLogger = async (ctx: GravitoContext, next: GravitoNext) => {
     console.log(`[API] ${ctx.req.method} ${ctx.req.url}`)
-    await next()
+    return await next()
   }
 
   router

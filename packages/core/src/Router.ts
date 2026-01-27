@@ -7,7 +7,7 @@ import { Route } from './Route'
  * Type for Controller Class Constructor
  * @public
  */
-export type ControllerClass = new (core: PlanetCore) => Record<string, unknown>
+export type ControllerClass = new (core: PlanetCore) => any
 
 /**
  * Handler can be a function or [Class, 'methodName']
@@ -405,7 +405,7 @@ export class Router {
   public routes: Array<{ method: string; path: string; domain?: string }> = []
 
   // Singleton cache for controllers
-  private controllers = new Map<ControllerClass, Record<string, unknown>>()
+  private controllers = new Map<ControllerClass, any>()
 
   private namedRoutes = new Map<
     string,
@@ -908,7 +908,7 @@ export class Router {
       this.controllers.set(CtrlClass, instance)
     }
 
-    const handler = instance[methodName]
+    const handler = (instance as any)[methodName]
     if (typeof handler !== 'function') {
       throw new Error(`Method '${methodName}' not found in controller '${CtrlClass.name}'`)
     }

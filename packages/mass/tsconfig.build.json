@@ -4,7 +4,13 @@
     "noEmit": false,
     "declaration": true,
     "declarationMap": true,
-    "outDir": "./dist"
-  }
+    "outDir": "./dist",
+    "baseUrl": ".",
+    "paths": {
+      "@gravito/core": ["../../packages/core/dist/index.d.ts"],
+      "@gravito/*": ["../../packages/*/dist/index.d.ts"]
+    }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts"]
 }
-

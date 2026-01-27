@@ -18,10 +18,8 @@
         "@gravito/stasis": "workspace:*",
         "@gravito/prism": "workspace:*",
         "@gravito/ion": "workspace:*",
-        "@inertiajs/react": "^1.0.0",
-        "react": "^19.0.0",
-        "react-dom": "^19.0.0",
-        "@gravito/photon": "workspace:*"
+        "@gravito/sentinel": "workspace:*",
+        "@gravito/mass": "workspace:*"
     },
     "devDependencies": {
         "@biomejs/biome": "1.9.4",
