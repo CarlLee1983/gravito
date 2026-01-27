@@ -1,5 +1,29 @@
 # Changelog
 
+## [1.3.0] - 2026-01-27
+
+### Added - Quasar Improvement Plan (Phases 6-10)
+
+#### Distributed Coordination (Phase 6)
+- **LeaderElection**: Redis-based leader election for cluster-wide task coordination.
+- **MaintenancePlugin**: Leader-only tasks for global log trimming and stale node cleanup.
+
+#### Security Hardening (Phase 7)
+- **TLS Support**: Automatic TLS support for `rediss://` connections.
+- **HMAC Verification**: SHA256 signature verification for remote management commands.
+
+#### Advanced Analytics (Phase 8)
+- **TrendPlugin**: Exponential Moving Average (EMA) calculation for queue smoothing.
+- **Custom Gauges**: Support for collecting and exporting custom gauge metrics.
+
+#### Ecosystem Integrations (Phase 9)
+- **ContextExtractor**: Cross-language OpenTelemetry context extraction (supports Laravel metadata).
+- **Dynamic Config**: `updateOptions` method for runtime configuration changes without restarts.
+
+#### Production Readiness (Phase 10)
+- **DiagnosticPlugin**: Internal health monitoring (Pool usage, Event Loop Lag, Buffer status).
+- **Documentation**: Comprehensive TSDoc/JSDoc overhaul for all public APIs.
+
 ## [1.2.1] - 2026-01-26
 
 ### Added - Testing & Documentation Improvements
