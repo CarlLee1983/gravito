@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
-import { Activity, Cpu, Database, HelpCircle, Laptop, RotateCw, Server, Trash2 } from 'lucide-react'
+import { Activity, Cpu, Database, HelpCircle, Laptop, RotateCw, Server } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { PulseNode } from '../../shared/types'
 import { BunIcon, DenoIcon, GoIcon, NodeIcon, PhpIcon, PythonIcon } from '../components/BrandIcons'
@@ -81,14 +81,17 @@ function NodeCard({ node }: { node: PulseNode }) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
+      initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="bg-card border border-border/50 rounded-xl p-4 shadow-sm relative overflow-hidden group"
+      className="card-premium p-5 relative overflow-hidden group border-l-4"
+      style={{
+        borderLeftColor: isHealthy ? '#10B981' : isWarning ? '#F59E0B' : '#EF4444',
+      }}
     >
       {/* Background Pulse Effect */}
       <div
         className={cn(
-          'absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl opacity-10 rounded-bl-full transition-all duration-500',
+          'absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl opacity-5 rounded-bl-full transition-all duration-700',
           isHealthy
             ? 'from-emerald-500 to-transparent'
             : isWarning
@@ -97,27 +100,28 @@ function NodeCard({ node }: { node: PulseNode }) {
         )}
       />
 
-      <div className="flex items-start justify-between mb-4 relative z-10">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-white dark:bg-card border border-border/20 shadow-sm shrink-0">
+      <div className="flex items-start justify-between mb-5 relative z-10">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-white dark:bg-zinc-800/50 border border-white/10 shadow-xl shrink-0">
             {renderIcon()}
           </div>
           <div>
-            <h3 className="font-bold text-foreground text-sm flex items-center gap-2">
+            <h3 className="font-black text-foreground text-base flex items-center gap-2 font-heading tracking-tight">
               {node.id}
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground uppercase tracking-wider">
+              <span className="text-[9px] px-2 py-0.5 rounded-md bg-primary/10 text-primary uppercase font-mono border border-primary/20">
                 {node.platform}
               </span>
             </h3>
-            <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-              <Laptop size={10} /> {node.hostname} <span className="opacity-30">|</span> PID:{' '}
-              {node.pid}
+            <div className="text-[10px] text-muted-foreground font-bold flex items-center gap-1.5 mt-1 uppercase tracking-wider opacity-60">
+              <Laptop size={12} className="opacity-40" /> {node.hostname}{' '}
+              <span className="opacity-20">/</span> PID:{' '}
+              <span className="font-mono">{node.pid}</span>
             </div>
           </div>
         </div>
         <div
           className={cn(
-            'w-2.5 h-2.5 rounded-full shadow-[0_0_10px_currentColor]',
+            'w-3 h-3 rounded-full glow-pulse',
             isHealthy
               ? 'bg-emerald-500 text-emerald-500'
               : isWarning
@@ -128,14 +132,14 @@ function NodeCard({ node }: { node: PulseNode }) {
       </div>
 
       {/* Metrics Grid - Vertical Stack */}
-      <div className="space-y-3">
+      <div className="space-y-4 font-mono">
         {/* Laravel Specific Tools (if detected) */}
         {laravel && laravel.workerCount > 0 && (
-          <div className="bg-amber-500/5 rounded-lg p-2.5 border border-amber-500/20">
-            <div className="flex items-center justify-between text-xs mb-2">
-              <div className="flex items-center gap-2 font-bold text-amber-600 dark:text-amber-400">
-                <PhpIcon className="w-3 h-3" />
-                Laravel Workers ({laravel.workerCount})
+          <div className="bg-amber-500/5 rounded-xl p-3 border border-amber-500/10">
+            <div className="flex items-center justify-between text-[10px] mb-3">
+              <div className="flex items-center gap-2 font-black text-amber-500 uppercase tracking-widest">
+                <PhpIcon className="w-4 h-4" />
+                Laravel Ecosystem ({laravel.workerCount})
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -148,9 +152,9 @@ function NodeCard({ node }: { node: PulseNode }) {
                     sendCommand(node.service, node.id, 'LARAVEL_ACTION', 'default', 'retry-all')
                   }
                 }}
-                className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 px-2 py-1 rounded text-[10px] font-black uppercase flex items-center gap-1 transition-all border border-amber-500/10"
+                className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase flex items-center gap-2 transition-all border border-amber-500/20"
               >
-                <RotateCw size={10} /> Retry All
+                <RotateCw size={12} /> Retry All
               </button>
               <button
                 type="button"
@@ -163,207 +167,124 @@ function NodeCard({ node }: { node: PulseNode }) {
                     sendCommand(node.service, node.id, 'LARAVEL_ACTION', 'default', 'restart')
                   }
                 }}
-                className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 px-2 py-1 rounded text-[10px] font-black uppercase flex items-center gap-1 transition-all border border-amber-500/10"
+                className="bg-white/5 hover:bg-white/10 text-foreground/80 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase flex items-center gap-2 transition-all border border-white/5"
               >
-                <RotateCw size={10} /> Restart Workers
+                <RotateCw size={12} /> Restart
               </button>
             </div>
-            {laravel.roots?.length > 0 && (
-              <div className="mt-2 text-[9px] text-muted-foreground font-mono opacity-60 truncate">
-                Root: {laravel.roots[0]}
-              </div>
-            )}
           </div>
         )}
 
         {/* Queues Section (if present) */}
         {node.queues && node.queues.length > 0 && (
-          <div className="bg-muted/30 rounded-lg p-2.5 border border-border/50">
-            <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
-              <div className="flex items-center gap-2 font-bold text-foreground">
-                <span
-                  className={cn(
-                    'w-1.5 h-1.5 rounded-full',
-                    node.queues.some((q) => q.size.failed > 0)
-                      ? 'bg-red-500 animate-pulse'
-                      : 'bg-emerald-500'
-                  )}
-                />
-                Queues ({node.queues.length})
+          <div className="bg-zinc-900/50 rounded-xl p-3 border border-white/5">
+            <div className="flex items-center justify-between text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 mb-3">
+              <div className="flex items-center gap-2">
+                <Database size={12} />
+                Monitored Pipelines
               </div>
+              <span className="bg-white/5 px-1.5 rounded">{node.queues.length} ACTIVE</span>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-3">
               {node.queues.map((q) => (
-                <div key={q.name} className="flex flex-col gap-1 text-xs">
-                  <div className="flex justify-between items-center">
-                    <span className="font-mono text-muted-foreground">{q.name}</span>
-                    <div className="flex gap-2 font-mono items-center">
+                <div key={q.name} className="flex flex-col gap-2">
+                  <div className="flex justify-between items-center text-[11px]">
+                    <span className="font-bold text-foreground/80 tracking-tighter">{q.name}</span>
+                    <div className="flex gap-3 items-center">
                       {q.size.failed > 0 && (
-                        <>
-                          <span className="text-red-500 font-bold">{q.size.failed} fail</span>
-                          {/* Action Buttons for Failed Jobs */}
-                          <div className="flex gap-1 ml-1">
-                            <button
-                              type="button"
-                              onClick={async () => {
-                                if (q.driver === 'redis' && node.language === 'php') {
-                                  // For PHP + Redis, provide option to use artisan
-                                  if (confirm('Use php artisan queue:retry for precision?')) {
-                                    await sendCommand(
-                                      node.service,
-                                      node.id,
-                                      'LARAVEL_ACTION',
-                                      q.name,
-                                      'retry-all'
-                                    )
-                                    return
-                                  }
-                                }
-                                sendCommand(node.service, node.id, 'RETRY_JOB', q.name)
-                              }}
-                              className="p-1 rounded hover:bg-emerald-500/20 text-emerald-500 transition-colors"
-                              title="Retry all failed jobs"
-                            >
-                              <RotateCw size={12} />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                sendCommand(node.service, node.id, 'DELETE_JOB', q.name)
-                              }
-                              className="p-1 rounded hover:bg-red-500/20 text-red-400 transition-colors"
-                              title="Delete all failed jobs"
-                            >
-                              <Trash2 size={12} />
-                            </button>
-                          </div>
-                        </>
+                        <div className="flex items-center gap-1">
+                          <span className="text-red-500 font-black">{q.size.failed} FAIL</span>
+                          <button
+                            type="button"
+                            onClick={() => sendCommand(node.service, node.id, 'RETRY_JOB', q.name)}
+                            className="p-1 rounded bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all"
+                          >
+                            <RotateCw size={10} />
+                          </button>
+                        </div>
                       )}
-                      {q.size.active > 0 && (
-                        <span className="text-emerald-500">{q.size.active} act</span>
-                      )}
-                      <span
-                        className={cn(
-                          q.size.waiting > 100 ? 'text-yellow-500' : 'text-muted-foreground'
-                        )}
-                      >
-                        {q.size.waiting} wait
-                      </span>
+                      <span className="text-muted-foreground/60">{q.size.waiting} WAIT</span>
                     </div>
                   </div>
-                  {/* Mini Progress bar for Queue Health (Failed vs Total) */}
-                  {q.size.waiting + q.size.active + q.size.failed > 0 && (
-                    <div className="h-1 w-full bg-muted rounded-full overflow-hidden flex">
-                      <div
-                        className="bg-red-500 h-full transition-all"
-                        style={{
-                          width: `${(q.size.failed / (q.size.waiting + q.size.active + q.size.failed)) * 100}%`,
-                        }}
-                      />
-                      <div
-                        className="bg-yellow-500 h-full transition-all"
-                        style={{
-                          width: `${(q.size.waiting / (q.size.waiting + q.size.active + q.size.failed)) * 100}%`,
-                        }}
-                      />
-                      <div
-                        className="bg-emerald-500 h-full transition-all"
-                        style={{
-                          width: `${(q.size.active / (q.size.waiting + q.size.active + q.size.failed)) * 100}%`,
-                        }}
-                      />
-                    </div>
-                  )}
+                  <div className="h-1.5 w-full bg-black/40 rounded-full overflow-hidden flex border border-white/5">
+                    <div
+                      className="bg-red-500 h-full transition-all"
+                      style={{
+                        width: `${(q.size.failed / Math.max(1, q.size.waiting + q.size.active + q.size.failed)) * 100}%`,
+                      }}
+                    />
+                    <div
+                      className="bg-emerald-500 h-full transition-all shadow-[0_0_10px_#10B981]"
+                      style={{
+                        width: `${(q.size.active / Math.max(1, q.size.waiting + q.size.active + q.size.failed)) * 100}%`,
+                      }}
+                    />
+                  </div>
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        {/* CPU */}
-        <div className="bg-muted/30 rounded-lg p-2.5 border border-border/50">
-          <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
-            <div className="flex items-center gap-2">
-              <Cpu size={12} /> CPU Usage
+        {/* System Load */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-zinc-900/50 rounded-xl p-3 border border-white/5 flex flex-col justify-between">
+            <div className="flex justify-between items-center text-[9px] font-black uppercase text-muted-foreground/40 mb-2">
+              <span className="flex items-center gap-1.5">
+                <Cpu size={10} /> CPU
+              </span>
+              <span>{node.cpu.cores}C</span>
             </div>
-            <span className="text-[10px]">{node.cpu.cores} cores</span>
-          </div>
-          <div className="flex items-baseline gap-1">
-            <span className="text-xl font-bold text-foreground">{node.cpu.process}%</span>
-            <span className="text-xs text-muted-foreground ml-1">proc</span>
-          </div>
-          {/* Mini Bar */}
-          <div className="h-2 w-full bg-muted rounded-full mt-2 overflow-hidden relative">
-            {/* Process Usage */}
-            <div
-              className={cn(
-                'h-full rounded-full transition-all duration-500 absolute top-0 left-0 z-20 shadow-sm',
-                node.cpu.process > 80 ? 'bg-red-500' : 'bg-primary'
-              )}
-              style={{ width: `${Math.min(node.cpu.process, 100)}%` }}
-            />
-            {/* System Load Background (Darker) */}
-            <div
-              className="h-full rounded-full transition-all duration-500 absolute top-0 left-0 bg-muted-foreground/30 z-10"
-              style={{ width: `${Math.min(node.cpu.system, 100)}%` }}
-            />
-          </div>
-          <div className="flex justify-between text-[9px] text-muted-foreground mt-1 font-mono">
-            <span className="text-primary font-bold">Proc: {node.cpu.process}%</span>
-            <span>Sys: {node.cpu.system}%</span>
-          </div>
-        </div>
-
-        {/* Memory */}
-        <div className="bg-muted/30 rounded-lg p-2.5 border border-border/50">
-          <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
-            <div className="flex items-center gap-2">
-              <Database size={12} /> RAM Usage
+            <div className="flex items-baseline gap-1">
+              <span className="text-2xl font-black text-primary tracking-tighter">
+                {node.cpu.process.toFixed(0)}%
+              </span>
+              <span className="text-[10px] font-bold opacity-40 uppercase">Load</span>
+            </div>
+            <div className="h-1 w-full bg-black/40 rounded-full mt-3 overflow-hidden">
+              <div
+                className={cn(
+                  'h-full transition-all duration-1000',
+                  node.cpu.process > 80
+                    ? 'bg-red-500 shadow-[0_0_10px_#EF4444]'
+                    : 'bg-primary shadow-[0_0_10px_#00F0FF]'
+                )}
+                style={{ width: `${node.cpu.process}%` }}
+              />
             </div>
           </div>
-          <div className="flex items-baseline gap-1">
-            <span className="text-xl font-bold text-foreground">
-              {formatBytes(node.memory.process.rss)}
-            </span>
-            <span className="text-xs text-muted-foreground ml-1">RSS</span>
-          </div>
 
-          {/* RAM Bar */}
-          <div className="h-2 w-full bg-muted rounded-full mt-2 overflow-hidden relative">
-            {/* Process Usage */}
-            <div
-              className="h-full rounded-full transition-all duration-500 absolute top-0 left-0 z-20 shadow-sm bg-indigo-500"
-              style={{
-                width: `${Math.min((node.memory.process.rss / node.memory.system.total) * 100, 100)}%`,
-              }}
-            />
-            {/* System Usage */}
-            <div
-              className="h-full rounded-full transition-all duration-500 absolute top-0 left-0 bg-muted-foreground/30 z-10"
-              style={{
-                width: `${Math.min((node.memory.system.used / node.memory.system.total) * 100, 100)}%`,
-              }}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-2 text-[10px] text-muted-foreground mt-3 border-t border-border/30 pt-2 font-mono">
-            <div className="flex flex-col">
-              <span className="opacity-70">Heap</span>
-              <span className="font-bold">{formatBytes(node.memory.process.heapUsed)}</span>
+          <div className="bg-zinc-900/50 rounded-xl p-3 border border-white/5 flex flex-col justify-between">
+            <div className="flex justify-between items-center text-[9px] font-black uppercase text-muted-foreground/40 mb-2">
+              <span className="flex items-center gap-1.5">
+                <Database size={10} /> RAM
+              </span>
+              <span>RSS</span>
             </div>
-            <div className="flex flex-col text-right">
-              <span className="opacity-70">Sys Free</span>
-              <span className="">{formatBytes(node.memory.system.free)}</span>
+            <div className="flex items-baseline gap-1">
+              <span className="text-2xl font-black text-white tracking-tighter">
+                {formatBytes(node.memory.process.rss).split(' ')[0]}
+              </span>
+              <span className="text-[10px] font-bold opacity-40 uppercase">
+                {formatBytes(node.memory.process.rss).split(' ')[1]}
+              </span>
+            </div>
+            <div className="h-1 w-full bg-black/40 rounded-full mt-3 overflow-hidden">
+              <div
+                className="bg-indigo-500 h-full transition-all duration-1000 shadow-[0_0_10px_#6366F1]"
+                style={{ width: `${(node.memory.process.rss / node.memory.system.total) * 100}%` }}
+              />
             </div>
           </div>
         </div>
       </div>
 
-      <div className="mt-3 pt-3 border-t border-border/50 flex items-center justify-between text-[10px] text-muted-foreground">
-        <span className="flex items-center gap-1.5">
-          <Server size={10} /> {node.runtime.framework}
+      <div className="mt-5 pt-4 border-t border-white/5 flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-muted-foreground/40">
+        <span className="flex items-center gap-2">
+          <Server size={12} className="text-primary/40" />
+          {node.runtime.framework} <span className="opacity-20">•</span> v{node.version}
         </span>
-        <span>Ups: {Math.floor(node.runtime.uptime / 60)}m</span>
+        <span className="font-mono tabular-nums">UP: {Math.floor(node.runtime.uptime / 60)}M</span>
       </div>
     </motion.div>
   )

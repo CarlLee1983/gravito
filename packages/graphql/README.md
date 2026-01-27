@@ -63,7 +63,11 @@ The `GraphQLConfig` object supports the following options:
 | Option | Type | Default | Description |
 |---|---|---|---|
 | `path` | `string` | `'/graphql'` | The URL path where the GraphQL endpoint will be mounted. |
-| `schema` | `GraphQLSchema` | `undefined` | A pre-built GraphQL schema instance. |
+| `schema` | `GraphQLSchema \| string` | `undefined` | A pre-built GraphQL schema instance, OR a file path (Bun only). |
+| `subscriptions` | `object` | `{ enabled: false }` | WebSocket subscription configuration. |
+| `security` | `object` | `{ depthLimit: undefined }` | Security options like Query Depth Limit. |
+| `performance` | `object` | `{ cache: { enabled: false } }` | Performance options like Response Cache. |
+| `dataLoaders` | `function` | `undefined` | Factory function to create per-request DataLoaders. |
 
 ## 🔌 Accessing Gravito Context
 
@@ -95,6 +99,144 @@ core.container.singleton('GRAPHQL_SCHEMA', () => {
 // The orbit will automatically find and use the registered schema
 await core.orbit(new OrbitGraphQL());
 ```
+
+## 🏗️ Code-First Schema (Pothos)
+
+We recommend using Pothos for building type-safe schemas.
+See the [Pothos Integration Guide](./docs/POTHOS_INTEGRATION.md).
+
+## ⚡️ Advanced Performance Optimizations
+
+`@gravito/graphql` includes enterprise-grade performance features:
+
+### 🔒 Query Complexity Limiting
+
+Prevent resource exhaustion from malicious or overly complex queries:
+
+```typescript
+await core.orbit(new OrbitGraphQL({
+  schema,
+  security: {
+    complexityLimit: 1000,
+  }
+}));
+```
+
+Queries exceeding the complexity limit will be rejected before execution, protecting your server from denial-of-service attacks.
+
+### 📦 Automatic Persisted Queries (APQ)
+
+Reduce bandwidth and improve performance by caching queries:
+
+```typescript
+await core.orbit(new OrbitGraphQL({
+  schema,
+  performance: {
+    persistedQueries: {
+      enabled: true,
+    }
+  }
+}));
+```
+
+**How it works:**
+1. Client sends query + SHA256 hash on first request
+2. Server caches the query by hash
+3. Subsequent requests send only the hash (75%+ bandwidth reduction)
+
+### 💾 Response Caching
+
+Cache GraphQL responses to avoid redundant computations:
+
+```typescript
+await core.orbit(new OrbitGraphQL({
+  schema,
+  performance: {
+    cache: {
+      enabled: true,
+      ttl: 60,
+    }
+  }
+}));
+```
+
+Identical queries will return cached responses for the specified TTL (in seconds).
+
+### 🔄 DataLoader Integration
+
+Solve the N+1 query problem with automatic batching:
+
+```typescript
+import DataLoader from 'dataloader';
+
+await core.orbit(new OrbitGraphQL({
+  schema,
+  dataLoaders: (context) => ({
+    user: new DataLoader(async (ids) => {
+      return db.users.findByIds(ids);
+    }),
+  })
+}));
+```
+
+Access loaders in your resolvers:
+
+```typescript
+resolvers: {
+  Post: {
+    author: async (post, args, context) => {
+      return context.loaders.user.load(post.authorId);
+    }
+  }
+}
+```
+
+### 🛡️ Query Depth Limiting
+
+Prevent deeply nested queries that could harm performance:
+
+```typescript
+await core.orbit(new OrbitGraphQL({
+  schema,
+  security: {
+    depthLimit: 10,
+  }
+}));
+```
+
+Queries exceeding 10 levels of nesting will be rejected.
+
+### 🚀 All Optimizations Combined
+
+For production environments, enable all optimizations:
+
+```typescript
+import { OrbitGraphQL } from '@gravito/graphql';
+import DataLoader from 'dataloader';
+
+await core.orbit(new OrbitGraphQL({
+  schema,
+  security: {
+    depthLimit: 10,
+    complexityLimit: 1000,
+  },
+  performance: {
+    cache: {
+      enabled: true,
+      ttl: 60,
+    },
+    persistedQueries: {
+      enabled: true,
+    }
+  },
+  dataLoaders: (context) => ({
+    user: new DataLoader(async (ids) => db.users.findByIds(ids)),
+    post: new DataLoader(async (ids) => db.posts.findByIds(ids)),
+  })
+}));
+```
+
+See [OPTIMIZATION_PLAN.md](./OPTIMIZATION_PLAN.md) for implementation details and benchmarks.
 
 ## 📄 License
 

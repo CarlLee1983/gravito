@@ -10,7 +10,11 @@
  * MongoDB connection configuration
  */
 export interface MongoConfig {
-  /** MongoDB connection URI */
+  /**
+   * The MongoDB connection URI.
+   * If provided, other connection parameters (host, port, etc.) are ignored.
+   * @example "mongodb://user:pass@localhost:27017/db"
+   */
   uri?: string
   /** Database name */
   database?: string
@@ -39,12 +43,53 @@ export interface MongoConfig {
 }
 
 /**
+ * Transaction options
+ */
+export interface TransactionOptions {
+  /**
+   * Read concern level.
+   * - 'local': Data available on current node.
+   * - 'majority': Data committed to majority of nodes.
+   * - 'linearizable': Linearizable consistency.
+   * - 'snapshot': Snapshot isolation (requires read concern 'majority').
+   */
+  readConcern?: { level: 'local' | 'majority' | 'linearizable' | 'snapshot' }
+  /**
+   * Write concern options.
+   * - w: Number of nodes required to acknowledge write.
+   * - j: Whether to wait for journal sync.
+   * - wtimeout: Timeout in milliseconds.
+   */
+  writeConcern?: { w: number | 'majority'; j?: boolean; wtimeout?: number }
+  readPreference?: 'primary' | 'primaryPreferred' | 'secondary' | 'secondaryPreferred' | 'nearest'
+}
+
+/**
+ * MongoDB session wrapper
+ */
+export interface MongoSession {
+  collection<T = Document>(name: string): MongoCollectionContract<T>
+}
+
+/**
+ * Retry configuration for connection
+ */
+export interface RetryConfig {
+  /** Maximum number of retry attempts */
+  maxRetries: number
+  /** Initial delay between retries in milliseconds */
+  retryDelayMs: number
+  /** Multiplier for exponential backoff */
+  backoffMultiplier: number
+}
+
+/**
  * MongoDB manager configuration
  */
 export interface MongoManagerConfig {
-  /** Default connection name */
+  /** Default connection name (defaults to 'default' if not specified) */
   default?: string
-  /** Named connections */
+  /** Named connections map */
   connections: Record<string, MongoConfig>
 }
 
@@ -136,8 +181,122 @@ export interface DeleteResult {
   acknowledged: boolean
 }
 
+/**
+ * Bulk write operation
+ */
+export interface BulkWriteOperation<T = Document> {
+  insertOne?: { document: Partial<T> }
+  updateOne?: { filter: FilterDocument; update: UpdateDocument; upsert?: boolean }
+  updateMany?: { filter: FilterDocument; update: UpdateDocument; upsert?: boolean }
+  deleteOne?: { filter: FilterDocument }
+  deleteMany?: { filter: FilterDocument }
+  replaceOne?: { filter: FilterDocument; replacement: Partial<T>; upsert?: boolean }
+}
+
+/**
+ * Bulk write result
+ */
+export interface BulkWriteResult {
+  insertedCount: number
+  matchedCount: number
+  modifiedCount: number
+  deletedCount: number
+  upsertedCount: number
+  acknowledged: boolean
+}
+
+/**
+ * Change stream options
+ */
+export interface ChangeStreamOptions {
+  /**
+   * Return full document:
+   * - 'default': Only for replace/insert/update
+   * - 'updateLookup': Fetch full document for update
+   * - 'whenAvailable': If available
+   * - 'required': Error if not available
+   */
+  fullDocument?: 'default' | 'updateLookup' | 'whenAvailable' | 'required'
+  /** Resume token to start after */
+  resumeAfter?: unknown
+  /** Operation time to start at */
+  startAtOperationTime?: Date
+}
+
+/**
+ * Change stream event
+ */
+export interface ChangeEvent<T = Document> {
+  operationType: 'insert' | 'update' | 'replace' | 'delete' | 'invalidate' | 'drop'
+  documentKey: { _id: string }
+  fullDocument?: T
+  updateDescription?: {
+    updatedFields: Record<string, unknown>
+    removedFields: string[]
+  }
+  clusterTime: Date
+}
+
+/**
+ * Schema validation options
+ */
+export interface SchemaValidationOptions {
+  /** JSON Schema validator object */
+  validator: Record<string, unknown>
+  /** Validation level: 'off', 'strict', or 'moderate' */
+  validationLevel?: 'off' | 'strict' | 'moderate'
+  /** Validation action: 'error' or 'warn' */
+  validationAction?: 'error' | 'warn'
+}
+
+/**
+ * Schema validation options
+ */
+export interface SchemaValidationOptions {
+  /** JSON Schema validator object */
+  validator: Record<string, unknown>
+  /** Validation level: 'off', 'strict', or 'moderate' */
+  validationLevel?: 'off' | 'strict' | 'moderate'
+  /** Validation action: 'error' or 'warn' */
+  validationAction?: 'error' | 'warn'
+}
+
+/**
+ * MongoDB connection pool metrics
+ */
+export interface PoolMetrics {
+  totalConnections: number
+  availableConnections: number
+  waitQueueSize: number
+  currentCheckedOutCount: number
+}
+
+/**
+ * GridFS upload options
+ */
+export interface GridFSUploadOptions {
+  filename: string
+  chunkSizeBytes?: number
+  metadata?: Record<string, unknown>
+  contentType?: string
+}
+
+/**
+ * GridFS file metadata
+ */
+export interface GridFSFile {
+  _id: string
+  filename: string
+  length: number
+  chunkSize: number
+  uploadDate: Date
+  metadata?: Record<string, unknown>
+  contentType?: string
+}
+
 // ============================================================================
 // Contract Interfaces
+
 // ============================================================================
 
 /**
@@ -185,6 +344,8 @@ export interface MongoCollectionContract<T = Document> {
   updateMany(update: UpdateDocument): Promise<UpdateResult>
   delete(): Promise<DeleteResult>
   deleteMany(): Promise<DeleteResult>
+  bulkWrite(operations: BulkWriteOperation<T>[]): Promise<BulkWriteResult>
+  watch(pipeline?: PipelineStage[], options?: ChangeStreamOptions): AsyncIterable<ChangeEvent<T>>
 
   // Aggregation
   aggregate(): MongoAggregateContract<T>
@@ -232,9 +393,19 @@ export interface LookupOptions {
  * MongoDB Client Contract
  */
 export interface MongoClientContract {
-  connect(): Promise<void>
+  connect(retryConfig?: RetryConfig): Promise<void>
   disconnect(): Promise<void>
   isConnected(): boolean
+  ensureConnected(): Promise<void>
+  getHealthStatus(): Promise<{
+    connected: boolean
+    latencyMs: number | null
+    serverInfo: Record<string, unknown> | null
+  }>
+  withTransaction<T>(
+    callback: (session: MongoSession) => Promise<T>,
+    options?: TransactionOptions
+  ): Promise<T>
   database(name?: string): MongoDatabaseContract
   collection<T = Document>(name: string): MongoCollectionContract<T>
 }
@@ -246,7 +417,8 @@ export interface MongoDatabaseContract {
   collection<T = Document>(name: string): MongoCollectionContract<T>
   listCollections(): Promise<string[]>
   dropCollection(name: string): Promise<boolean>
-  createCollection(name: string): Promise<void>
+  createCollection(name: string, options?: { schema?: SchemaValidationOptions }): Promise<void>
+  setValidation(collectionName: string, schema: SchemaValidationOptions): Promise<void>
 }
 
 /**

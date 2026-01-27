@@ -1,6 +1,8 @@
 import type { Env, Photon, Schema } from '@gravito/photon'
 import { hc as beamClient } from '@gravito/photon/client'
+import { BeamError, BeamNetworkError } from './errors'
 import type { BeamOptions } from './types'
+import { createFetchWithTimeout, executeWithRetry, resolveHeaders } from './utils'
 
 /**
  * Orbit Beam - Lightweight type-safe RPC client for Gravito applications.
@@ -40,9 +42,81 @@ export function createBeam<T extends Photon<Env, Schema, string>>(
   baseUrl: string,
   options?: BeamOptions
 ): ReturnType<typeof beamClient<T>> {
-  // We explicitly cast the return type to match what the Beam client provides.
-  // The Photon client returns a proxy that provides typed access based on T.
-  return beamClient<T>(baseUrl, options)
+  // Fast path: delegate directly when no advanced options are used (zero overhead)
+  if (
+    !options?.timeout &&
+    !options?.retry &&
+    !options?.onRequest &&
+    !options?.onResponse &&
+    !options?.onError
+  ) {
+    return beamClient<T>(baseUrl, options)
+  }
+
+  // Advanced path: wrap fetch to support new features
+  const wrappedFetch = createEnhancedFetch(options)
+
+  return beamClient<T>(baseUrl, {
+    ...options,
+    fetch: wrappedFetch,
+  })
+}
+
+/**
+ * Creates an enhanced fetch function with support for timeout, retry, and interceptors
+ */
+function createEnhancedFetch(options: BeamOptions) {
+  return async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+    try {
+      let config = init || {}
+
+      // 1. Resolve dynamic headers
+      const headers = await resolveHeaders(options.headers)
+      if (headers) {
+        // Safely merge headers (supports Headers instance or object)
+        const mergedHeaders = new Headers(config.headers)
+        Object.entries(headers).forEach(([key, value]) => {
+          mergedHeaders.set(key, value)
+        })
+        config = {
+          ...config,
+          headers: Object.fromEntries(mergedHeaders.entries()),
+        }
+      }
+
+      // 2. Execute onRequest interceptor
+      if (options.onRequest) {
+        config = await options.onRequest(config)
+      }
+
+      // 3. Create fetch function (with possible timeout)
+      const fetchFn = options.timeout
+        ? createFetchWithTimeout(options.timeout)
+        : fetch.bind(globalThis)
+
+      // 4. Execute request (with possible retry)
+      let response = await (options.retry
+        ? executeWithRetry(() => fetchFn(input, config), options.retry)
+        : fetchFn(input, config))
+
+      // 5. Execute onResponse interceptor
+      if (options.onResponse) {
+        response = await options.onResponse(response)
+      }
+
+      return response
+    } catch (error) {
+      // 6. Execute onError interceptor
+      const beamError =
+        error instanceof BeamError ? error : new BeamNetworkError('Request failed', error)
+
+      if (options.onError) {
+        await options.onError(beamError)
+      }
+
+      throw beamError
+    }
+  }
 }
 
 /**
@@ -53,4 +127,19 @@ export function createBeam<T extends Photon<Env, Schema, string>>(
  */
 export const createGravitoClient = createBeam
 
-export type { BeamOptions, BeamOptions as GravitoClientOptions } from './types'
+export {
+  BeamError,
+  BeamHttpError,
+  BeamNetworkError,
+  BeamTimeoutError,
+} from './errors'
+export {
+  createAuthenticatedBeam,
+  safeResponse,
+  unwrapResponse,
+} from './helpers'
+export type {
+  BeamOptions,
+  BeamOptions as GravitoClientOptions,
+  RetryOptions,
+} from './types'

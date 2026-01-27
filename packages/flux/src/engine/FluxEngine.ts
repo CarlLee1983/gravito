@@ -1,7 +1,6 @@
-import { WorkflowBuilder } from '../builder/WorkflowBuilder'
+import type { WorkflowBuilder } from '../builder/WorkflowBuilder'
 import { ContextManager } from '../core/ContextManager'
 import { StateMachine } from '../core/StateMachine'
-import { StepExecutor } from '../core/StepExecutor'
 import * as Errors from '../errors'
 import { MemoryStorage } from '../storage/MemoryStorage'
 import type {
@@ -12,6 +11,14 @@ import type {
   WorkflowState,
   WorkflowStorage,
 } from '../types'
+import {
+  createStepExecutor,
+  handleExecutionResult,
+  persistContext,
+  resetHistoryFrom,
+  resolveDefinition,
+  resolveStartIndex,
+} from './FluxEngineHelpers'
 import { RollbackManager } from './RollbackManager'
 import { updateWorkflowContext } from './stateUpdater'
 import { TraceEmitter } from './TraceEmitter'
@@ -51,26 +58,7 @@ export class FluxEngine {
     this.contextManager = new ContextManager()
     this.traceEmitter = new TraceEmitter(config.trace)
 
-    const stepExecutor = new StepExecutor({
-      defaultRetries: config.defaultRetries,
-      defaultTimeout: config.defaultTimeout,
-      onRetry: async (step, ctx, error, attempt, maxRetries) => {
-        await this.traceEmitter.emit({
-          type: 'step:retry',
-          timestamp: Date.now(),
-          workflowId: ctx.id,
-          workflowName: ctx.name,
-          stepName: step.name,
-          stepIndex: ctx.currentStep,
-          commit: Boolean(step.commit),
-          retries: attempt,
-          maxRetries,
-          error: error.message,
-          status: 'running',
-        })
-      },
-    })
-
+    const stepExecutor = createStepExecutor(config, this.traceEmitter)
     const persist = (ctx: WorkflowContext<any, any>) => this.persist(ctx)
 
     this.executor = new WorkflowExecutor(
@@ -93,28 +81,16 @@ export class FluxEngine {
   /**
    * Starts the execution of a workflow from the beginning.
    *
-   * This method creates a new workflow instance, validates the input, and
-   * orchestrates the execution of all defined steps.
-   *
    * @param workflow - The workflow definition or builder to execute.
    * @param input - The initial data required by the workflow.
    * @returns A promise that resolves to the final result of the workflow execution.
-   * @throws {FluxError} If the input validation fails or if a concurrent modification is detected during persistence.
-   *
-   * @example
-   * ```typescript
-   * const result = await engine.execute(orderWorkflow, { orderId: 'ORD-001' });
-   * if (result.status === 'completed') {
-   *   console.log('Order processed:', result.data);
-   * }
-   * ```
    */
   async execute<TInput, TData extends Record<string, any> = Record<string, any>>(
     workflow: WorkflowBuilder<TInput, TData> | WorkflowDefinition<TInput, TData>,
     input: TInput
   ): Promise<FluxResult<TData>> {
     const startTime = Date.now()
-    const definition = this.resolveDefinition(workflow)
+    const definition = resolveDefinition(workflow)
 
     if (definition.validateInput && !definition.validateInput(input)) {
       throw Errors.invalidInput(definition.name)
@@ -126,42 +102,29 @@ export class FluxEngine {
       definition.steps.length
     ) as WorkflowContext<TInput, TData>
 
-    const stateMachine = new StateMachine()
-
     ctx = await this.persist(ctx)
 
-    const result = await this.executor.execute(definition, ctx, stateMachine, startTime, 0)
-    return this.handleResult(definition, ctx, result)
+    const result = await this.executor.execute(definition, ctx, new StateMachine(), startTime, 0)
+    return handleExecutionResult(definition, ctx, result, this.contextManager, this.rollbackManager)
   }
 
   /**
    * Resumes a previously interrupted or failed workflow.
    *
-   * This is useful for recovering from system crashes or manual interventions.
-   * The engine will reload the state from storage and continue from the specified step.
-   *
    * @param workflow - The workflow definition or builder.
    * @param workflowId - The unique identifier of the workflow instance to resume.
    * @param options - Optional parameters to specify the starting point.
    * @returns The result of the resumed execution, or null if the workflow state is not found.
-   * @throws {FluxError} If the workflow name mismatches or the definition has changed since the last save.
-   *
-   * @example
-   * ```typescript
-   * await engine.resume(orderWorkflow, 'workflow-id-123', { fromStep: 'payment' });
-   * ```
    */
   async resume<TInput, TData extends Record<string, any> = Record<string, any>>(
     workflow: WorkflowBuilder<TInput, TData> | WorkflowDefinition<TInput, TData>,
     workflowId: string,
     options?: { fromStep?: number | string }
   ): Promise<FluxResult<TData> | null> {
-    const definition = this.resolveDefinition(workflow)
+    const definition = resolveDefinition(workflow)
     const state = await this.storage.load(workflowId)
-    if (!state) {
-      return null
-    }
-    if (state.name !== definition.name) {
+    if (!state || state.name !== definition.name) {
+      if (!state) return null
       throw Errors.workflowNameMismatch(definition.name, state.name)
     }
     if (state.history.length !== definition.steps.length) {
@@ -171,11 +134,8 @@ export class FluxEngine {
     let ctx = this.contextManager.restore<TInput, TData>(
       state as unknown as WorkflowState<TInput, TData>
     )
-    const stateMachine = new StateMachine()
-    stateMachine.forceStatus('pending')
-
-    const startIndex = this.resolveStartIndex(definition, options?.fromStep, ctx.currentStep)
-    this.resetHistoryFrom(ctx, startIndex)
+    const startIndex = resolveStartIndex(definition, options?.fromStep, ctx.currentStep)
+    resetHistoryFrom(ctx, startIndex)
     ctx = updateWorkflowContext(ctx, { status: 'pending', currentStep: startIndex })
 
     ctx = await this.persist(ctx)
@@ -183,7 +143,7 @@ export class FluxEngine {
     const result = await this.executor.execute(
       definition,
       ctx,
-      stateMachine,
+      new StateMachine(),
       Date.now(),
       startIndex,
       {
@@ -191,26 +151,17 @@ export class FluxEngine {
         fromStep: startIndex,
       }
     )
-    return this.handleResult(definition, ctx, result)
+    return handleExecutionResult(definition, ctx, result, this.contextManager, this.rollbackManager)
   }
 
   /**
    * Sends an external signal to a suspended workflow.
-   *
-   * Used to resume workflows that are waiting for external events like manual approvals
-   * or webhook callbacks.
    *
    * @param workflow - The workflow definition or builder.
    * @param workflowId - The unique identifier of the suspended workflow.
    * @param signalName - The name of the signal the workflow is waiting for.
    * @param payload - Optional data to pass along with the signal.
    * @returns The result of the workflow execution after receiving the signal.
-   * @throws {FluxError} If the workflow is not found, not suspended, or waiting for a different signal.
-   *
-   * @example
-   * ```typescript
-   * await engine.signal(orderWorkflow, 'id-123', 'payment_received', { amount: 100 });
-   * ```
    */
   async signal<TInput, TData extends Record<string, any> = Record<string, any>>(
     workflow: WorkflowBuilder<TInput, TData> | WorkflowDefinition<TInput, TData>,
@@ -218,14 +169,10 @@ export class FluxEngine {
     signalName: string,
     payload?: any
   ): Promise<FluxResult<TData>> {
-    const definition = this.resolveDefinition(workflow)
+    const definition = resolveDefinition(workflow)
     const state = await this.storage.load(workflowId)
-    if (!state) {
-      throw Errors.workflowNotFound(workflowId)
-    }
-    if (state.status !== 'suspended') {
-      throw Errors.workflowNotSuspended(state.status)
-    }
+    if (!state) throw Errors.workflowNotFound(workflowId)
+    if (state.status !== 'suspended') throw Errors.workflowNotSuspended(state.status)
 
     let ctx = this.contextManager.restore<TInput, TData>(
       state as unknown as WorkflowState<TInput, TData>
@@ -233,32 +180,21 @@ export class FluxEngine {
     const currentStepIndex = ctx.currentStep
     let execution = ctx.history[currentStepIndex]
 
-    if (!execution || execution.status !== 'suspended') {
+    if (!execution || execution.status !== 'suspended' || execution.waitingFor !== signalName) {
       throw new Errors.FluxError(
-        'Workflow state invalid: no suspended step found',
-        Errors.FluxErrorCode.STEP_NOT_FOUND
-      )
-    }
-    if (execution.waitingFor !== signalName) {
-      throw new Errors.FluxError(
-        `Workflow waiting for signal "${execution.waitingFor}", received "${signalName}"`,
-        Errors.FluxErrorCode.INVALID_STATE_TRANSITION
+        !execution || execution.status !== 'suspended'
+          ? 'Workflow state invalid: no suspended step found'
+          : `Workflow waiting for signal "${execution.waitingFor}", received "${signalName}"`,
+        !execution || execution.status !== 'suspended'
+          ? Errors.FluxErrorCode.STEP_NOT_FOUND
+          : Errors.FluxErrorCode.INVALID_STATE_TRANSITION
       )
     }
 
-    execution = {
-      ...execution,
-      status: 'completed',
-      completedAt: new Date(),
-      output: payload,
-    }
-
+    execution = { ...execution, status: 'completed', completedAt: new Date(), output: payload }
     ctx = updateWorkflowContext(ctx, {
       history: ctx.history.map((h, i) => (i === currentStepIndex ? execution : h)),
     })
-
-    const stateMachine = new StateMachine()
-    stateMachine.forceStatus('suspended')
 
     await this.traceEmitter.emit({
       type: 'signal:received',
@@ -270,11 +206,10 @@ export class FluxEngine {
     })
 
     const nextStepIndex = currentStepIndex + 1
-
     const result = await this.executor.execute(
       definition,
       ctx,
-      stateMachine,
+      new StateMachine(),
       Date.now(),
       nextStepIndex,
       {
@@ -282,59 +217,42 @@ export class FluxEngine {
         fromStep: nextStepIndex,
       }
     )
-    return this.handleResult(definition, ctx, result)
+    return handleExecutionResult(definition, ctx, result, this.contextManager, this.rollbackManager)
   }
 
   /**
    * Retries a specific step in a failed or suspended workflow.
    *
-   * This allows for targeted recovery of specific failures without necessarily
-   * resuming from the very last saved state.
-   *
    * @param workflow - The workflow definition or builder.
    * @param workflowId - The unique identifier of the workflow.
    * @param stepName - The name of the step to retry.
    * @returns The result of the execution after the retry, or null if the workflow is not found.
-   * @throws {FluxError} If the workflow definition has changed or the step name is invalid.
-   *
-   * @example
-   * ```typescript
-   * await engine.retryStep(orderWorkflow, 'id-123', 'shipping');
-   * ```
    */
   async retryStep<TInput, TData extends Record<string, any> = Record<string, any>>(
     workflow: WorkflowBuilder<TInput, TData> | WorkflowDefinition<TInput, TData>,
     workflowId: string,
     stepName: string
   ): Promise<FluxResult<TData> | null> {
-    const definition = this.resolveDefinition(workflow)
+    const definition = resolveDefinition(workflow)
     const state = await this.storage.load(workflowId)
-    if (!state) {
-      return null
-    }
-    if (state.name !== definition.name) {
+    if (!state || state.name !== definition.name) {
+      if (!state) return null
       throw Errors.workflowNameMismatch(definition.name, state.name)
     }
-    if (state.history.length !== definition.steps.length) {
-      throw Errors.workflowDefinitionChanged()
-    }
+    if (state.history.length !== definition.steps.length) throw Errors.workflowDefinitionChanged()
 
     let ctx = this.contextManager.restore<TInput, TData>(
       state as unknown as WorkflowState<TInput, TData>
     )
-    const stateMachine = new StateMachine()
-    stateMachine.forceStatus('pending')
-
-    const startIndex = this.resolveStartIndex(definition, stepName, ctx.currentStep)
-    this.resetHistoryFrom(ctx, startIndex)
+    const startIndex = resolveStartIndex(definition, stepName, ctx.currentStep)
+    resetHistoryFrom(ctx, startIndex)
     ctx = updateWorkflowContext(ctx, { status: 'pending', currentStep: startIndex })
-
     ctx = await this.persist(ctx)
 
     const result = await this.executor.execute(
       definition,
       ctx,
-      stateMachine,
+      new StateMachine(),
       Date.now(),
       startIndex,
       {
@@ -342,7 +260,7 @@ export class FluxEngine {
         fromStep: startIndex,
       }
     )
-    return this.handleResult(definition, ctx, result)
+    return handleExecutionResult(definition, ctx, result, this.contextManager, this.rollbackManager)
   }
 
   /**
@@ -350,12 +268,6 @@ export class FluxEngine {
    *
    * @param workflowId - The unique identifier of the workflow.
    * @returns A promise resolving to the workflow state or null if not found.
-   *
-   * @example
-   * ```typescript
-   * const state = await engine.get('workflow-id-123');
-   * console.log('Current status:', state?.status);
-   * ```
    */
   async get<TInput = any, TData = any>(
     workflowId: string
@@ -365,8 +277,6 @@ export class FluxEngine {
 
   /**
    * Manually saves a workflow state to storage.
-   *
-   * Performs a version check to prevent concurrent modifications.
    *
    * @param state - The workflow state to persist.
    * @throws {FluxError} If a concurrent modification is detected.
@@ -396,8 +306,6 @@ export class FluxEngine {
 
   /**
    * Initializes the engine and its underlying storage.
-   *
-   * Should be called before any execution if the storage requires setup.
    */
   async init(): Promise<void> {
     await this.storage.init?.()
@@ -410,98 +318,9 @@ export class FluxEngine {
     await this.storage.close?.()
   }
 
-  private resolveDefinition<TInput, TData>(
-    workflow: WorkflowBuilder<TInput, TData> | WorkflowDefinition<TInput, TData>
-  ): WorkflowDefinition<TInput, TData> {
-    return workflow instanceof WorkflowBuilder ? workflow.build() : workflow
-  }
-
-  private resolveStartIndex<TInput, TData>(
-    definition: WorkflowDefinition<TInput, TData>,
-    fromStep: number | string | undefined,
-    fallback: number
-  ): number {
-    if (typeof fromStep === 'number') {
-      if (fromStep < 0 || fromStep >= definition.steps.length) {
-        throw Errors.invalidStepIndex(fromStep)
-      }
-      return fromStep
-    }
-    if (typeof fromStep === 'string') {
-      const index = definition.steps.findIndex((step) => step.name === fromStep)
-      if (index === -1) {
-        throw Errors.stepNotFound(fromStep)
-      }
-      return index
-    }
-    return Math.max(0, Math.min(fallback, definition.steps.length - 1))
-  }
-
-  private resetHistoryFrom<TInput, TData>(
-    ctx: WorkflowContext<TInput, TData>,
-    startIndex: number
-  ): void {
-    for (let i = startIndex; i < ctx.history.length; i++) {
-      const entry = ctx.history[i]
-      if (!entry) {
-        continue
-      }
-      entry.status = 'pending'
-      entry.startedAt = undefined
-      entry.completedAt = undefined
-      entry.duration = undefined
-      entry.error = undefined
-      entry.retries = 0
-    }
-  }
-
-  private async handleResult<TInput, TData extends Record<string, any>>(
-    definition: WorkflowDefinition<TInput, TData>,
-    ctx: WorkflowContext<TInput, TData>,
-    result: FluxResult<TData>
-  ): Promise<FluxResult<TData>> {
-    if (result.status === 'failed' && result.error) {
-      const failedIndex = result.history.findIndex((h) => h.status === 'failed')
-      if (failedIndex !== -1) {
-        const restoredCtx = this.contextManager.restore({
-          ...this.contextManager.toState(ctx),
-          history: result.history,
-          data: result.data,
-          status: 'failed',
-          version: result.version,
-        })
-        const rolledBackCtx = await this.rollbackManager.rollback(
-          definition,
-          restoredCtx,
-          failedIndex,
-          result.error
-        )
-
-        return {
-          ...result,
-          status: rolledBackCtx.status as any,
-          history: rolledBackCtx.history,
-          data: rolledBackCtx.data as TData,
-        }
-      }
-    }
-
-    return result
-  }
-
   private async persist<TInput, TData extends Record<string, any>>(
     ctx: WorkflowContext<TInput, TData>
   ): Promise<WorkflowContext<TInput, TData>> {
-    const state = this.contextManager.toState(ctx)
-    const stored = await this.storage.load(state.id)
-    if (stored && stored.version !== state.version) {
-      throw new Errors.FluxError(
-        'Concurrent modification detected',
-        Errors.FluxErrorCode.CONCURRENT_MODIFICATION
-      )
-    }
-    const nextVersion = state.version + 1
-    await this.storage.save({ ...state, version: nextVersion })
-    return updateWorkflowContext(ctx, { version: nextVersion })
+    return persistContext(ctx, this.storage, this.contextManager)
   }
 }
