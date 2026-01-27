@@ -360,7 +360,7 @@ export class RippleServer {
         const listeners = this.eventListeners.get(event)
         if (listeners && listeners.length > 0) {
           for (const handler of listeners) {
-            handler(ws, payload.buffer)
+            handler(ws, payload.buffer as ArrayBuffer)
           }
         }
 
@@ -369,7 +369,7 @@ export class RippleServer {
           return
         }
 
-        this.broadcastBinaryToChannel(channel, event, payload.buffer, ws.data.id)
+        this.broadcastBinaryToChannel(channel, event, payload.buffer as ArrayBuffer, ws.data.id)
       }
     } catch (e) {
       this.logger.error('Failed to parse binary message header', { error: (e as any).message })
