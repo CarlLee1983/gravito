@@ -2,25 +2,17 @@
 title: ORM Usage Guide
 ---
 
-# ORM Usage Guide
+# ORM Usage Guide (Atlas)
 
-> Complete Atlas ORM guide covering features and use cases. Atlas delivers a Laravel Eloquent-like experience with Bun-native performance, inspired by Prisma and Drizzle.
+> Atlas is the standard database and ORM Orbit within the Gravito ecosystem. It provides a Laravel Eloquent-like Active Record experience, deeply optimized for Bun's performance and TypeScript's type safety.
 
-## Beta Notes
+## Core Design Philosophy
 
-Atlas targets Gravito 1.0.0-beta and Bun 1.3.4+. The CLI wraps `drizzle-kit` for migrations while Atlas keeps a familiar Active Record API on top.
+Atlas aims to eliminate the barrier between objects and databases. It is not just a query builder, but a complete data modeling and governance system:
 
-## Table of Contents
-
-1. [Basic Setup](#basic-setup)
-2. [Defining Models](#defining-models)
-3. [CRUD Operations](#crud-operations)
-4. [Relationships](#relationships)
-5. [Query Builder](#query-builder)
-6. [Pagination](#pagination)
-7. [Transactions](#transactions)
-8. [Migrations and Seeders](#migrations-and-seeders)
-9. [Best Practices](#best-practices)
+- **Active Record**: Models are not just data containers, but the center of data operations.
+- **Type-First**: Leverages TypeScript 5.x decorators and `declare` syntax for perfect type hints.
+- **Bun Native**: Deeply integrated with `Bun.sql` for microsecond data access.
 
 ## Basic Setup
 
@@ -28,82 +20,43 @@ Atlas targets Gravito 1.0.0-beta and Bun 1.3.4+. The CLI wraps `drizzle-kit` for
 
 ```bash
 bun add @gravito/atlas
-
-# ⚠️ Important: You must install the driver for your database manually
-# Atlas 1.1+ does not bundle drivers to keep installation size small.
-
-# PostgreSQL
-bun add pg
-
-# MySQL / MariaDB
-bun add mysql2
-
-# SQLite
-# No install needed if using Bun runtime!
-# For Node.js:
-bun add better-sqlite3
-
-# MongoDB
-bun add mongodb
-
-# Redis
-bun add ioredis
 ```
 
-### 2. Initialize Database Connection
+### 2. Initialize Connection
 
-Configure `DB` during bootstrap (e.g., `bootstrap.ts`).
-
-```typescript
-import { DB } from '@gravito/atlas'
-
-DB.configure({
-  default: 'postgres',
-  connections: {
-    postgres: {
-      driver: 'postgres',
-      host: process.env.DB_HOST || 'localhost',
-      database: process.env.DB_NAME || 'gravito',
-      username: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
-    },
-  },
-})
-```
-
-### 3. Use in Routes
+We recommend configuring `OrbitAtlas` in `gravito.config.ts` or during `bootstrap.ts`:
 
 ```typescript
-import { DB } from '@gravito/atlas'
+import { OrbitAtlas } from '@gravito/atlas';
 
-core.app.get('/users', async (c) => {
-  const users = await DB.table('users').get()
-  return c.json({ users })
-})
+const core = new PlanetCore({
+  orbits: [new OrbitAtlas({
+    default: 'sqlite',
+    connections: {
+      sqlite: { driver: 'sqlite', database: 'database.sqlite' }
+    }
+  })]
+});
 ```
 
 ## Defining Models
 
-Atlas uses the Active Record pattern. Extend `Model` and set the table name.
+Atlas uses decorators to define database mappings.
 
 ```typescript
-import { Model } from '@gravito/atlas'
+import { Model, column } from '@gravito/atlas';
 
 export class User extends Model {
-  static table = 'users'
-  static primaryKey = 'id'
+  static table = 'users';
 
   @column({ isPrimary: true })
-  declare id: number
+  declare id: number;
 
   @column()
-  declare name: string
+  declare name: string;
 
   @column()
-  declare email: string
-
-  @column()
-  declare active: boolean
+  declare email: string;
 }
 ```
 
