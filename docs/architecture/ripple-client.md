@@ -9,6 +9,7 @@
 Ripple Client 旨在提供一個通用的 WebSocket 客戶端，連接 Gravito 的後端廣播系統 (`@gravito/ripple` 或 `@gravito/radiance`)。
 - **Universal JS**：可在瀏覽器、Node.js、Bun 或 React Native 環境運行。
 - **Robustness**：內建自動重連、心跳檢測與身份驗證重試。
+- **Type-Safe** (v1.1)：透過 `ChannelEventMap` 提供完整的事件類型推斷。
 - **DX Optimized**：提供 React Hook (`useChannel`) 與 Vue Composable (`usePresence`)，讓整合變得無感。
 
 ---
@@ -22,6 +23,7 @@ Ripple Client 旨在提供一個通用的 WebSocket 客戶端，連接 Gravito �
 - **機制**：
   - **Socket ID**：連接成功後，伺服器會下發唯一的 `socket_id`，用於私有頻道簽名。
   - **Reconnection**：採用指數退避 (Exponential Backoff) 策略，防止伺服器重啟時遭受連線風暴。
+  - **State Management** (v1.1)：`ConnectionStateManager` 提供訂閱模式的狀態變更通知 (`onStateChange`)。
 
 ### 2.2 Channel System
 - **職責**：管理訂閱與事件分發。

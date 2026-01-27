@@ -56,8 +56,9 @@ Monolith 採用結構化的檔案路徑來映射 URL：
 
 ### 3.2 快取機制
 為了效能，`ContentManager` 會在第一次讀取後將結果快取在記憶體中。
-- **限制**：目前沒有實作快取失效 (Cache Invalidation) 或檔案變更監聽 (Watch Mode)。
-- **場景**：適合「構建一次，隨處運行」的靜態部署或容器化環境。開發模式下需重啟伺服器才能看到變更。
+-   **限制**：目前沒有實作快取失效 (Cache Invalidation) 或檔案變更監聽 (Watch Mode)。
+-   **場景**：適合「構建一次，隨處運行」的靜態部署或容器化環境。
+-   **開發模式 (v1.1)**：在 `NODE_ENV=development` 時，會自動啟動 `ContentWatcher` 監聽檔案變更並清除快取，提供即時預覽體驗。
 
 ### 3.3 安全性 (Sanitization)
 Markdown 渲染預設開啟了 HTML 轉義。
@@ -74,16 +75,16 @@ Markdown 渲染預設開啟了 HTML 轉義。
 
 ### 4.2 缺乏熱重載 (Hot Reload)
 目前的實作在檔案變更後不會自動更新快取。
-- **影響**：開發體驗稍差。
-- **優化**：未來應整合 `fs.watch` 或在開發模式下禁用快取。
+-   **影響**：開發體驗稍差。
+-   **優化**：v1.1 已在開發模式下整合 `node:fs` watch，實現自動快取清除。
 
 ---
 
 ## 5. 後續優化建議
 
 ### 短期 (v1.1)
-1. **Dev Mode Watcher**：在 `NODE_ENV=development` 時監聽檔案變更並清除快取。
-2. **Custom Renderer**：允許使用者注入自定義的 `marked` Renderer 或外掛 (Plugins)。
+1.  **Dev Mode Watcher (Completed)**：在 `NODE_ENV=development` 時監聽檔案變更並清除快取。
+2.  **Custom Renderer**：允許使用者注入自定義的 `marked` Renderer 或外掛 (Plugins)。
 
 ### 中期 (v1.2)
 1. **Search Index**：在啟動時建立簡易的全文索引 (In-Memory Search)，支援 `search(query)` API。

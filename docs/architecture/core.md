@@ -99,7 +99,15 @@ Gravito Engine 採用獨特的優化策略：
 ### 4.1 容器型別安全
 -   **問題**：`container.make<T>('key')` 依賴開發者手動指定泛型。
 -   **風險**：Key 字串錯誤或型別不符僅在 Runtime 報錯。
--   **建議**：引入 `ServiceMap` 介面擴展，支援自動型別推導。
+-   **解決方案**：v1.1 引入 `ServiceMap` 介面擴展，支援自動型別推導。
+    ```typescript
+    declare module '@gravito/core' {
+      interface ServiceMap {
+        logger: Logger;
+      }
+    }
+    const logger = container.make('logger'); // inferred as Logger
+    ```
 
 ### 4.2 循環依賴
 -   **問題**：`Container` 未檢測循環依賴。
@@ -122,11 +130,11 @@ Gravito Engine 採用獨特的優化策略：
 
 ## 6. 後續優化建議
 
-1.  **強化 IoC 型別推導** (Priority: Medium)
-    -   利用 TypeScript Interface Merging 建立全域服務對照表。
-
-2.  **CLI 整合** (Priority: High)
+1.  **CLI 整合** (Priority: High)
     -   增加 `CommandKernel`，讓 CLI 命令復用相同的 Container 與 Provider。
 
-3.  **增加循環依賴檢測** (Priority: Low)
+2.  **增加循環依賴檢測** (Priority: Low)
     -   在 Container 中實作解析鎖與檢測邏輯。
+
+3.  **強化 IoC 型別推導** (Completed v1.1)
+    -   利用 TypeScript Interface Merging 建立全域服務對照表。
