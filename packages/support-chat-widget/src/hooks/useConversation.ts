@@ -4,24 +4,28 @@ import type { Conversation, UseConversationOptions, UseConversationReturn } from
 import { secureStorage } from '../utils/storage'
 
 /**
- * 會話管理 Hook
+ * A hook for managing the lifecycle of a support conversation.
  *
- * 處理會話的建立、恢復、驗證和結束，包含 localStorage 持久化。
+ * It handles creating new conversations, restoring existing ones from persistent storage,
+ * validating session status with the server, and ending sessions. It ensures that
+ * conversation state is maintained across page reloads using secure local storage.
  *
- * @param options - 會話管理選項
- * @returns 會話狀態和操作方法
+ * @param options - Configuration options for conversation management.
+ * @returns An object containing the conversation state, initialization status, and control methods.
  *
  * @example
  * ```tsx
- * const { conversation, conversationId, createConversation } = useConversation({
+ * const { conversation, conversationId, createConversation, endConversation } = useConversation({
  *   apiBaseUrl: 'https://api.gravito.io',
  *   context: { type: 'ORDER', id: 'ORD-123' }
- * })
+ * });
  *
- * // 建立新會話
- * if (!conversation) {
- *   await createConversation()
- * }
+ * // Create a new session if none exists
+ * const startChat = async () => {
+ *   if (!conversationId) {
+ *     await createConversation();
+ *   }
+ * };
  * ```
  */
 export function useConversation(options: UseConversationOptions): UseConversationReturn {
@@ -32,11 +36,13 @@ export function useConversation(options: UseConversationOptions): UseConversatio
   const [isInitializing, setIsInitializing] = useState(true)
   const [error, setError] = useState<Error | null>(null)
 
-  // 建立 API 客戶端
+  // Initialize API client
   const api = createSupportApi({ baseUrl: apiBaseUrl })
 
   /**
-   * 建立新會話
+   * Creates a new conversation session on the server.
+   *
+   * @throws {Error} If the API request fails or returns an error.
    */
   const createConversation = useCallback(async () => {
     setIsInitializing(true)
@@ -49,9 +55,9 @@ export function useConversation(options: UseConversationOptions): UseConversatio
         setConversation(result.data)
         setConversationId(result.data.id)
 
-        // 持久化會話 ID
+        // Persist conversation ID for 7 days
         secureStorage.set(storageKey, result.data.id, {
-          expiry: 7 * 24 * 60 * 60 * 1000, // 7 天過期
+          expiry: 7 * 24 * 60 * 60 * 1000,
         })
       } else if (result.error) {
         setError(new Error(result.error.message))
@@ -64,7 +70,12 @@ export function useConversation(options: UseConversationOptions): UseConversatio
   }, [api, context, storageKey])
 
   /**
-   * 恢復已存在的會話
+   * Restores an existing conversation session by its ID.
+   *
+   * If the session is invalid or expired on the server, it will be cleared from local storage.
+   *
+   * @param id - The unique identifier of the conversation to restore.
+   * @throws {Error} If the restoration process encounters an unexpected error.
    */
   const restoreConversation = useCallback(
     async (id: string) => {
@@ -75,17 +86,17 @@ export function useConversation(options: UseConversationOptions): UseConversatio
         const result = await api.getConversation(id)
 
         if (result.success && result.data) {
-          // 會話有效
+          // Session is valid
           setConversation(result.data)
           setConversationId(result.data.id)
         } else {
-          // 會話不存在或無效，清除本地存儲
+          // Session not found or invalid, clear local storage
           secureStorage.remove(storageKey)
           setConversationId(null)
           setConversation(null)
         }
       } catch (err) {
-        // 恢復失敗，清除本地存儲
+        // Restoration failed, clear local storage as a safety measure
         secureStorage.remove(storageKey)
         setConversationId(null)
         setConversation(null)
@@ -98,10 +109,10 @@ export function useConversation(options: UseConversationOptions): UseConversatio
   )
 
   /**
-   * 結束會話
+   * Ends the current conversation session and clears all local state and storage.
    */
   const endConversation = useCallback(async () => {
-    // 清除本地存儲
+    // Clear local storage and state
     secureStorage.remove(storageKey)
     setConversationId(null)
     setConversation(null)
@@ -109,16 +120,16 @@ export function useConversation(options: UseConversationOptions): UseConversatio
   }, [storageKey])
 
   /**
-   * 初始化：嘗試從 localStorage 恢復會話
+   * Initialization: Attempt to restore session from localStorage on mount.
    */
   useEffect(() => {
     const savedId = secureStorage.get<string>(storageKey)
 
     if (savedId) {
-      // 嘗試恢復已存在的會話
+      // Attempt to restore existing session
       restoreConversation(savedId)
     } else {
-      // 無已存在的會話，可能需要建立新會話
+      // No existing session found
       setIsInitializing(false)
     }
   }, [storageKey, restoreConversation])

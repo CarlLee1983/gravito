@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect } from 'react'
 import type { UseChatWidgetOptions, UseChatWidgetReturn } from '../types'
 import { useConversation } from './useConversation'
 import { useCrossTabSync } from './useCrossTabSync'
@@ -9,12 +9,32 @@ import { useTypingStatus } from './useTypingStatus'
 import { useWebSocket } from './useWebSocket'
 
 /**
- * 聊天小工具整合 Hook
+ * Main integration hook for the Support Chat Widget.
  *
- * 整合所有子 Hooks，提供統一的狀態管理和操作介面。
+ * Orchestrates multiple specialized hooks to provide a unified interface for
+ * conversation management, real-time messaging, offline support, and error handling.
+ * This hook serves as the primary state manager for the chat UI.
  *
- * @param options - 聊天小工具選項
- * @returns 完整的狀態和操作方法
+ * @param options - Configuration options for the chat widget.
+ * @returns A comprehensive object containing the widget's state and action methods.
+ *
+ * @throws {Error} If conversation creation or WebSocket connection fails.
+ *
+ * @example
+ * ```tsx
+ * const {
+ *   isOpen,
+ *   messages,
+ *   connectionStatus,
+ *   open,
+ *   close,
+ *   sendMessage
+ * } = useChatWidget({
+ *   apiBaseUrl: 'https://api.gravito.io',
+ *   wsUrl: 'wss://ws.gravito.io',
+ *   context: { type: 'GENERAL' }
+ * });
+ * ```
  */
 export function useChatWidget(options: UseChatWidgetOptions): UseChatWidgetReturn {
   const {
@@ -26,32 +46,32 @@ export function useChatWidget(options: UseChatWidgetOptions): UseChatWidgetRetur
     onConnectionChange,
   } = options
 
-  // 跨 Tab 同步開啟狀態
+  // Synchronize open state across multiple browser tabs
   const [isOpen, setIsOpen] = useCrossTabSync('chat_is_open', defaultOpen)
 
-  // 會話管理
+  // Manage conversation lifecycle (creation, ending, persistence)
   const { conversation, conversationId, createConversation, endConversation } = useConversation({
     apiBaseUrl,
     context,
   })
 
-  // 錯誤處理
+  // Centralized error state and retry logic
   const { error, handleError, clearError, retry } = useErrorHandler()
 
-  // 離線支援
+  // Provide offline capabilities and message queuing
   const { isOnline, queueMessage, pendingCount, syncPending } = useOfflineSupport({
     apiConfig: { baseUrl: apiBaseUrl },
     conversationId,
     onSyncSuccess: () => {
-      console.log('離線訊息同步成功')
+      console.log('Offline messages synced successfully')
     },
     onSyncError: (err) => {
-      console.error('離線訊息同步失敗', err)
+      console.error('Failed to sync offline messages', err)
       handleError(err)
     },
   })
 
-  // 訊息管理
+  // Manage message history and pagination
   const {
     messages,
     isLoading,
@@ -63,7 +83,7 @@ export function useChatWidget(options: UseChatWidgetOptions): UseChatWidgetRetur
     conversationId,
   })
 
-  // WebSocket 連線
+  // Real-time communication via WebSocket
   const {
     status: connectionStatus,
     connect,
@@ -74,13 +94,13 @@ export function useChatWidget(options: UseChatWidgetOptions): UseChatWidgetRetur
     wsUrl,
     conversationId,
     onMessage: (message) => {
-      // WebSocket 接收到的訊息由 useMessages 內部的監聽或是狀態更新處理
+      // Messages received via WebSocket are handled by useMessages internal listeners
       console.log('[useChatWidget] Received message:', message)
     },
     onStatusChange: onConnectionChange,
   })
 
-  // 輸入狀態
+  // Track and notify typing status
   const { isAgentTyping, notifyTyping } = useTypingStatus({
     conversationId,
     emit,
@@ -88,14 +108,16 @@ export function useChatWidget(options: UseChatWidgetOptions): UseChatWidgetRetur
   })
 
   /**
-   * 開啟聊天視窗
+   * Opens the chat window and initializes the session.
+   *
+   * If no active conversation exists, it attempts to create one. It also
+   * establishes the WebSocket connection and synchronizes any pending offline messages.
    */
-
   const open = useCallback(async () => {
     setIsOpen(true)
     onOpenChange?.(true)
 
-    // 如果沒有會話，建立新會話
+    // Create a new conversation if one doesn't exist
     if (!conversationId) {
       try {
         await createConversation()
@@ -104,12 +126,12 @@ export function useChatWidget(options: UseChatWidgetOptions): UseChatWidgetRetur
       }
     }
 
-    // 連接 WebSocket
+    // Connect to the real-time server
     if (conversationId) {
       await connect()
     }
 
-    // 嘗試同步離線訊息
+    // Attempt to sync messages queued while offline
     if (pendingCount > 0 && isOnline) {
       await syncPending()
     }
@@ -126,18 +148,18 @@ export function useChatWidget(options: UseChatWidgetOptions): UseChatWidgetRetur
   ])
 
   /**
-   * 關閉聊天視窗
+   * Closes the chat window and terminates the real-time connection.
    */
   const close = useCallback(() => {
     setIsOpen(false)
     onOpenChange?.(false)
 
-    // 斷開 WebSocket
+    // Disconnect WebSocket to save resources
     disconnect()
   }, [disconnect, onOpenChange, setIsOpen])
 
   /**
-   * 切換開啟狀態
+   * Toggles the visibility of the chat window.
    */
   const toggle = useCallback(() => {
     if (isOpen) {
@@ -148,7 +170,12 @@ export function useChatWidget(options: UseChatWidgetOptions): UseChatWidgetRetur
   }, [isOpen, open, close])
 
   /**
-   * 發送訊息
+   * Sends a message to the current conversation.
+   *
+   * If the user is offline, the message is queued for later delivery.
+   * Otherwise, it is sent immediately via the API.
+   *
+   * @param content - The textual content of the message.
    */
   const sendMessage = useCallback(
     async (content: string) => {
@@ -168,7 +195,9 @@ export function useChatWidget(options: UseChatWidgetOptions): UseChatWidgetRetur
     [sendMessageApi, handleError, clearError, isOnline, queueMessage, notifyTyping]
   )
 
-  // 監聽連線狀態，自動重連或同步
+  /**
+   * Automatically triggers synchronization when the connection is restored.
+   */
   useEffect(() => {
     if (connectionStatus === 'connected' && pendingCount > 0) {
       syncPending()

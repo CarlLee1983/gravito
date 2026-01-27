@@ -3,26 +3,30 @@ import { createSupportApi } from '../api/supportApi'
 import type { ChatMessage, UseMessagesOptions, UseMessagesReturn } from '../types'
 
 /**
- * 訊息管理 Hook
+ * A hook for managing chat messages within a conversation.
  *
- * 處理訊息的載入、發送、分頁等功能，包含樂觀更新和錯誤處理。
+ * It handles loading message history, sending new messages with optimistic updates,
+ * pagination (loading more messages), and error handling. It provides a reactive
+ * list of messages that updates as the user interacts with the chat.
  *
- * @param options - 訊息管理選項
- * @returns 訊息狀態和操作方法
+ * @param options - Configuration options for message management.
+ * @returns An object containing the message list, loading state, and methods to interact with messages.
  *
  * @example
  * ```tsx
- * const { messages, sendMessage, loadMore, hasMore } = useMessages({
+ * const { messages, sendMessage, loadMore, hasMore, isLoading } = useMessages({
  *   apiBaseUrl: 'https://api.gravito.io',
  *   conversationId: 'CONV-123'
- * })
+ * });
  *
- * // 發送訊息
- * await sendMessage('Hello!')
+ * // Send a message
+ * const handleSend = async (text: string) => {
+ *   await sendMessage(text);
+ * };
  *
- * // 載入更多訊息
- * if (hasMore) {
- *   await loadMore()
+ * // Load older messages when scrolling up
+ * if (hasMore && !isLoading) {
+ *   await loadMore();
  * }
  * ```
  */
@@ -35,11 +39,11 @@ export function useMessages(options: UseMessagesOptions): UseMessagesReturn {
   const [hasMore, setHasMore] = useState(false)
   const [nextCursor, setNextCursor] = useState<string | undefined>()
 
-  // 建立 API 客戶端
+  // Initialize API client
   const api = createSupportApi({ baseUrl: apiBaseUrl })
 
   /**
-   * 載入歷史訊息
+   * Loads the initial set of messages for the current conversation.
    */
   const loadMessages = useCallback(async () => {
     if (!conversationId) return
@@ -65,7 +69,7 @@ export function useMessages(options: UseMessagesOptions): UseMessagesReturn {
   }, [api, conversationId])
 
   /**
-   * 載入更多訊息（分頁）
+   * Loads the next page of older messages (pagination).
    */
   const loadMore = useCallback(async () => {
     if (!conversationId || !hasMore || !nextCursor || isLoading) return
@@ -81,7 +85,7 @@ export function useMessages(options: UseMessagesOptions): UseMessagesReturn {
       })
 
       if (result.success && result.data) {
-        // 將新訊息添加到列表前面（因為是載入更早的訊息）
+        // Prepend older messages to the list
         setMessages((prev) => [...result.data!.messages, ...prev])
         setHasMore(result.data.hasMore)
         setNextCursor(result.data.nextCursor)
@@ -96,7 +100,13 @@ export function useMessages(options: UseMessagesOptions): UseMessagesReturn {
   }, [api, conversationId, hasMore, nextCursor, isLoading])
 
   /**
-   * 發送訊息（帶樂觀更新）
+   * Sends a new message to the conversation with optimistic UI updates.
+   *
+   * The message is immediately added to the local state with a 'sending' status.
+   * If the server request fails, the status is updated to 'failed'.
+   *
+   * @param content - The text content of the message to send.
+   * @throws {Error} If no active conversation ID is provided or if the API request fails.
    */
   const sendMessage = useCallback(
     async (content: string) => {
@@ -104,7 +114,7 @@ export function useMessages(options: UseMessagesOptions): UseMessagesReturn {
         throw new Error('No active conversation')
       }
 
-      // 樂觀更新：立即顯示訊息（狀態為 sending）
+      // Optimistic update: Add message with 'sending' status
       const optimisticMessage: ChatMessage = {
         id: `temp-${Date.now()}`,
         conversationId,
@@ -121,12 +131,12 @@ export function useMessages(options: UseMessagesOptions): UseMessagesReturn {
         const result = await api.sendMessage(conversationId, content)
 
         if (result.success && result.data) {
-          // 用真實訊息取代樂觀訊息
+          // Replace optimistic message with the real one from server
           setMessages((prev) =>
             prev.map((msg) => (msg.id === optimisticMessage.id ? result.data! : msg))
           )
         } else if (result.error) {
-          // 發送失敗，標記為 failed
+          // Mark as failed on server error
           setMessages((prev) =>
             prev.map((msg) =>
               msg.id === optimisticMessage.id ? { ...msg, status: 'failed' as const } : msg
@@ -135,7 +145,7 @@ export function useMessages(options: UseMessagesOptions): UseMessagesReturn {
           setError(new Error(result.error.message))
         }
       } catch (err) {
-        // 發送失敗，標記為 failed
+        // Mark as failed on network error
         setMessages((prev) =>
           prev.map((msg) =>
             msg.id === optimisticMessage.id ? { ...msg, status: 'failed' as const } : msg
@@ -149,13 +159,14 @@ export function useMessages(options: UseMessagesOptions): UseMessagesReturn {
   )
 
   /**
-   * 添加接收到的訊息（從 WebSocket）
+   * Internal helper to add a message (e.g., from a WebSocket event).
    *
-   * @internal 保留供未來 WebSocket 整合使用
+   * @param message - The message object to add.
+   * @internal
    */
   const _addMessage = useCallback((message: ChatMessage) => {
     setMessages((prev) => {
-      // 檢查是否已存在（避免重複）
+      // Prevent duplicates
       if (prev.some((msg) => msg.id === message.id)) {
         return prev
       }
@@ -164,13 +175,13 @@ export function useMessages(options: UseMessagesOptions): UseMessagesReturn {
   }, [])
 
   /**
-   * 會話 ID 改變時重新載入訊息
+   * Effect: Reload messages when the conversation ID changes.
    */
   useEffect(() => {
     if (conversationId) {
       loadMessages()
     } else {
-      // 沒有會話時清空訊息
+      // Clear state when no conversation is active
       setMessages([])
       setHasMore(false)
       setNextCursor(undefined)
