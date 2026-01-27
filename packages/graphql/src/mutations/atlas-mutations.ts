@@ -6,7 +6,8 @@ export const AtlasMutationFactory = {
   },
 
   createBatch: async (model: ModelStatic<Model>, inputs: Record<string, unknown>[]) => {
-    return await DB.transaction(async () => {
+    const connection = DB.connection(model.connection)
+    return await connection.transaction(async () => {
       const results: Model[] = []
       for (const input of inputs) {
         results.push(await model.create(input))
@@ -40,7 +41,8 @@ export const AtlasMutationFactory = {
     model: ModelStatic<Model>,
     inputs: { id: string | number; input: Record<string, unknown> }[]
   ) => {
-    return await DB.transaction(async () => {
+    const connection = DB.connection(model.connection)
+    return await connection.transaction(async () => {
       const results: Model[] = []
       for (const { id, input } of inputs) {
         results.push(await AtlasMutationFactory.update(model, id, input))

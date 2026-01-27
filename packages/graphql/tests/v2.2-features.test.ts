@@ -11,6 +11,7 @@ import { createAtlasSchema } from '../src/atlas'
 
 class V22Model extends Model {
   static table = 'v22_models'
+  static connection = 'v22'
   static timestamps = false
 
   @column({ isPrimary: true })
@@ -31,8 +32,8 @@ class V22Model extends Model {
 
 describe('GraphQL V2.2 Features', () => {
   beforeAll(async () => {
-    if (!DB.getConnectionNames().includes('default')) {
-      DB.addConnection('default', {
+    if (!DB.getConnectionNames().includes('v22')) {
+      DB.addConnection('v22', {
         driver: 'sqlite',
         database: ':memory:',
       })
@@ -44,7 +45,7 @@ describe('GraphQL V2.2 Features', () => {
       SchemaRegistry.init({ mode: 'jit' })
     }
 
-    await Schema.create('v22_models', (t) => {
+    await Schema.connection('v22').create('v22_models', (t) => {
       t.id()
       t.string('name')
       t.string('email')

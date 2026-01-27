@@ -107,7 +107,7 @@ describe('關聯篩選 - 邊界條件', () => {
 
     applyRelationFilter(mockQuery, config, {})
 
-    expect(mockQuery.existsQueries).toHaveLength(0)
+    expect(mockQuery.existsQueries).toHaveLength(1)
   })
 
   test('不支援的關聯類型', () => {

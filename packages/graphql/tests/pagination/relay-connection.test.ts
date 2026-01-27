@@ -52,6 +52,12 @@ describe('Relay Connection - Resolver', () => {
         this.limitValue = value
         return this
       },
+      orderBy(field: string, direction: string) {
+        return this
+      },
+      async count() {
+        return 100
+      },
       async get() {
         return [
           { id: 1, name: 'User 1', getKey: () => 1 },
@@ -84,6 +90,12 @@ describe('Relay Connection - Resolver', () => {
       limit(value: number) {
         this.limitValue = value
         return this
+      },
+      orderBy(field: string, direction: string) {
+        return this
+      },
+      async count() {
+        return 100
       },
       async get() {
         return [

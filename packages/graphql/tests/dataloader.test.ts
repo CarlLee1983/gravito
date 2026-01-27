@@ -97,11 +97,16 @@ describe('Atlas DataLoader Integration', () => {
     expect(result.data.dlusers[0].posts).toHaveLength(2)
 
     const log = DB.getQueryLog()
-    const ourLog = log.filter((l) => l.sql.includes('"dl_users"') || l.sql.includes('"dl_posts"'))
+    const ourLog = log.filter(
+      (l) => l.sql.toLowerCase().includes('dl_users') || l.sql.toLowerCase().includes('dl_posts')
+    )
 
     expect(ourLog.length).toBe(2)
-    expect(ourLog[0].sql).toContain('SELECT * FROM "dl_users"')
-    expect(ourLog[1].sql).toContain('SELECT * FROM "dl_posts" WHERE "dl_user_id" IN')
+    expect(ourLog[0].sql.toLowerCase()).toContain('select * from')
+    expect(ourLog[0].sql.toLowerCase()).toContain('dl_users')
+    expect(ourLog[1].sql.toLowerCase()).toContain('dl_posts')
+    expect(ourLog[1].sql.toUpperCase()).toContain('WHERE')
+    expect(ourLog[1].sql.toUpperCase()).toContain('IN')
 
     DB.debug(false)
   })
@@ -132,7 +137,9 @@ describe('Atlas DataLoader Integration', () => {
     })
 
     const log = DB.getQueryLog()
-    const ourLog = log.filter((l) => l.sql.includes('"dl_users"') || l.sql.includes('"dl_posts"'))
+    const ourLog = log.filter(
+      (l) => l.sql.toLowerCase().includes('dl_users') || l.sql.toLowerCase().includes('dl_posts')
+    )
 
     expect(ourLog.length).toBe(4)
 

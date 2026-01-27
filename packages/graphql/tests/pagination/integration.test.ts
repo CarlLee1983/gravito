@@ -5,6 +5,7 @@ import { createAtlasSchema } from '../../src/atlas'
 
 class User extends Model {
   static table = 'users'
+  static connection = 'pag_int'
   static casts = {
     age: 'integer',
   }
@@ -12,14 +13,20 @@ class User extends Model {
 
 describe('Pagination Integration', () => {
   beforeAll(async () => {
-    DB.addConnection('default', {
-      driver: 'sqlite',
-      database: ':memory:',
-    })
+    if (!DB.getConnectionNames().includes('pag_int')) {
+      DB.addConnection('pag_int', {
+        driver: 'sqlite',
+        database: ':memory:',
+      })
+    }
 
-    SchemaRegistry.init({ mode: 'jit' })
+    try {
+      SchemaRegistry.getInstance()
+    } catch {
+      SchemaRegistry.init({ mode: 'jit' })
+    }
 
-    await Schema.create('users', (t) => {
+    await Schema.connection('pag_int').create('users', (t) => {
       t.id()
       t.string('name')
       t.integer('age')
@@ -28,12 +35,14 @@ describe('Pagination Integration', () => {
 
     // Insert 15 users
     for (let i = 1; i <= 15; i++) {
-      await DB.table('users').insert({
-        name: `User ${i}`,
-        age: 20 + i,
-        created_at: new Date(),
-        updated_at: new Date(),
-      })
+      await DB.connection('pag_int')
+        .table('users')
+        .insert({
+          name: `User ${i}`,
+          age: 20 + i,
+          created_at: new Date(),
+          updated_at: new Date(),
+        })
     }
   })
 

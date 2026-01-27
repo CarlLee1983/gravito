@@ -60,8 +60,8 @@ describe('Scalars Module', () => {
       expect(SCALAR_RESOLVERS.BigInt).toBe(BigIntScalar)
     })
 
-    it('should have exactly 3 resolvers', () => {
-      expect(Object.keys(SCALAR_RESOLVERS)).toHaveLength(3)
+    it('should have exactly 6 resolvers', () => {
+      expect(Object.keys(SCALAR_RESOLVERS)).toHaveLength(6)
     })
   })
 })

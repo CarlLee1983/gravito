@@ -1,13 +1,13 @@
+import { afterAll, describe, expect, test } from 'bun:test'
+import { Model, SchemaRegistry } from '@gravito/atlas'
+import { createAtlasSchema } from '../../src/atlas'
+
 // Mocking internal Atlas function MUST be done before importing atlas.ts
 const relationshipsMap = new Map()
 // biome-ignore lint/suspicious/noExplicitAny: Mocking internal Atlas function
 ;(globalThis as any).__G_TEST_RELATIONS_FUNC__ = (model: any) => {
   return relationshipsMap.get(model) || new Map()
 }
-
-import { describe, expect, test } from 'bun:test'
-import { Model, SchemaRegistry } from '@gravito/atlas'
-import { createAtlasSchema } from '../../src/atlas'
 
 class Post extends Model {
   static table = 'posts'
@@ -20,6 +20,11 @@ class User extends Model {
 }
 
 describe('Atlas GraphQL Advanced Filtering Integration', () => {
+  afterAll(() => {
+    // biome-ignore lint/suspicious/noExplicitAny: Clean up global mock
+    ;(globalThis as any).__G_TEST_RELATIONS_FUNC__ = undefined
+  })
+
   test('createAtlasSchema generates advanced filter types', async () => {
     // Setup registry manually by manipulating the internal cache for testing
     const registry = SchemaRegistry.getInstance()

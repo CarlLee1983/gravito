@@ -5,6 +5,7 @@ import { createAtlasSchema } from '../../src/atlas'
 
 class User extends Model {
   static table = 'users'
+  static connection = 'fed_int'
   static casts = {
     age: 'integer',
   }
@@ -12,21 +13,27 @@ class User extends Model {
 
 describe('Federation Integration', () => {
   beforeAll(async () => {
-    DB.addConnection('default', {
-      driver: 'sqlite',
-      database: ':memory:',
-    })
+    if (!DB.getConnectionNames().includes('fed_int')) {
+      DB.addConnection('fed_int', {
+        driver: 'sqlite',
+        database: ':memory:',
+      })
+    }
 
-    SchemaRegistry.init({ mode: 'jit' })
+    try {
+      SchemaRegistry.getInstance()
+    } catch {
+      SchemaRegistry.init({ mode: 'jit' })
+    }
 
-    await Schema.create('users', (t) => {
+    await Schema.connection('fed_int').create('users', (t) => {
       t.id()
       t.string('name')
       t.integer('age')
       t.timestamps()
     })
 
-    await DB.table('users').insert({
+    await DB.connection('fed_int').table('users').insert({
       name: 'Alice',
       age: 30,
       created_at: new Date(),
