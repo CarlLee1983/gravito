@@ -47,11 +47,39 @@ export class ContentManager {
   })()
 
   /**
+   * Clear all cached content.
+   * Useful for hot reload during development.
+   */
+  clearCache(): void {
+    this.cache.clear()
+  }
+
+  /**
+   * Invalidate a specific content item.
+   * @param collection - The collection name.
+   * @param slug - The file slug.
+   * @param locale - The locale. Defaults to 'en'.
+   */
+  invalidate(collection: string, slug: string, locale = 'en'): void {
+    const safeSlug = this.sanitizeSegment(slug)
+    const safeLocale = this.sanitizeSegment(locale)
+
+    if (safeSlug && safeLocale) {
+      const cacheKey = `${collection}:${safeLocale}:${safeSlug}`
+      this.cache.delete(cacheKey)
+    }
+  }
+
+  getCollectionConfig(name: string): CollectionConfig | undefined {
+    return this.collections.get(name)
+  }
+
+  /**
    * Create a new ContentManager instance.
    *
    * @param rootDir - The root directory of the application.
    */
-  constructor(private rootDir: string) {}
+  constructor(public readonly rootDir: string) {}
 
   /**
    * Register a new content collection.

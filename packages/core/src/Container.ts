@@ -3,7 +3,25 @@
  */
 export type Factory<T> = (container: Container) => T
 
-export type BindingKey = string | symbol
+/**
+ * ServiceMap interface for type-safe IoC resolution.
+ *
+ * Extend this interface via module augmentation to get type inference:
+ * @example
+ * ```typescript
+ * declare module '@gravito/core' {
+ *   interface ServiceMap {
+ *     logger: Logger
+ *     db: DatabaseConnection
+ *   }
+ * }
+ * ```
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export type ServiceMap = {}
+
+// biome-ignore lint/complexity/noBannedTypes: needed for string autocomplete hack
+export type BindingKey = keyof ServiceMap | (string & {}) | symbol
 
 interface Binding<T = unknown> {
   factory: Factory<T>
@@ -79,6 +97,8 @@ export class Container {
    * const logger = container.make<Logger>('logger');
    * ```
    */
+  make<K extends keyof ServiceMap>(key: K): ServiceMap[K]
+  make<T>(key: BindingKey): T
   make<T>(key: BindingKey): T {
     // 1. Check shared instances
     if (this.instances.has(key)) {

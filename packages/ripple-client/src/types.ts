@@ -60,6 +60,23 @@ export type ServerMessage =
 // ─────────────────────────────────────────────────────────────
 
 /**
+ * Channel event map for type-safe event listening.
+ *
+ * @example
+ * ```typescript
+ * declare module '@gravito/ripple-client' {
+ *   interface ChannelEventMap {
+ *     news: {
+ *       'ArticlePublished': { title: string }
+ *     }
+ *   }
+ * }
+ * ```
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export type ChannelEventMap = {}
+
+/**
  * Event callback type
  */
 export type EventCallback<T = unknown> = (data: T) => void

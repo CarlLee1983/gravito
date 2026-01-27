@@ -6,7 +6,7 @@
 import { type InjectionKey, inject, onMounted, onUnmounted, provide, type Ref, ref } from 'vue'
 import type { Channel, PresenceChannel, PrivateChannel } from './Channel'
 import { type ConnectionState, RippleClient } from './RippleClient'
-import type { PresenceUser, RippleClientConfig } from './types'
+import type { ChannelEventMap, PresenceUser, RippleClientConfig } from './types'
 
 // ─────────────────────────────────────────────────────────────
 // Injection Key
@@ -61,20 +61,23 @@ export function useRippleClient(): RippleClient {
  */
 export function useRipple(config: RippleClientConfig) {
   const client = new RippleClient(config)
-  const state = ref<ConnectionState>('disconnected')
+  const state = ref<ConnectionState>(client.getState())
+
+  // Sync state
+  client.onStateChange((s) => {
+    state.value = s
+  })
 
   const connect = async () => {
     try {
       await client.connect()
-      state.value = 'connected'
     } catch {
-      state.value = 'disconnected'
+      // State is handled by onStateChange
     }
   }
 
   const disconnect = () => {
     client.disconnect()
-    state.value = 'disconnected'
   }
 
   return { client, state, connect, disconnect }
@@ -98,6 +101,16 @@ export function useRipple(config: RippleClientConfig) {
  * </template>
  * ```
  */
+export function useChannel<C extends keyof ChannelEventMap, E extends keyof ChannelEventMap[C]>(
+  channelName: C,
+  eventName: E
+): { channel: Ref<Channel<C> | null>; data: Ref<ChannelEventMap[C][E] | null> }
+
+export function useChannel<T = unknown>(
+  channelName: string,
+  eventName: string
+): { channel: Ref<Channel | null>; data: Ref<T | null> }
+
 export function useChannel<T = unknown>(
   channelName: string,
   eventName: string
@@ -110,8 +123,9 @@ export function useChannel<T = unknown>(
     const ch = client.channel(channelName)
     channel.value = ch
 
-    ch.listen<T>(eventName, (eventData) => {
-      data.value = eventData
+    // @ts-expect-error
+    ch.listen(eventName, (eventData: unknown) => {
+      data.value = eventData as T
     })
   })
 

@@ -3,16 +3,16 @@
  * @module @gravito/ripple-client
  */
 
-import type { EventCallback, PresenceCallbacks, PresenceUser } from './types'
+import type { ChannelEventMap, EventCallback, PresenceCallbacks, PresenceUser } from './types'
 
 /**
  * Base channel class for event subscription
  */
-export class Channel {
+export class Channel<Name extends string = string> {
   protected listeners = new Map<string, Set<EventCallback>>()
 
   constructor(
-    public readonly name: string,
+    public readonly name: Name,
     protected sendMessage: (msg: object) => void
   ) {}
 
@@ -23,6 +23,11 @@ export class Channel {
    * @param callback - Function to execute when the event is received.
    * @returns The Channel instance for chaining.
    */
+  listen<E extends keyof ChannelEventMap[Name & keyof ChannelEventMap]>(
+    event: E,
+    callback: EventCallback<ChannelEventMap[Name & keyof ChannelEventMap][E]>
+  ): this
+  listen<T = unknown>(event: string, callback: EventCallback<T>): this
   listen<T = unknown>(event: string, callback: EventCallback<T>): this {
     if (!this.listeners.has(event)) {
       this.listeners.set(event, new Set())

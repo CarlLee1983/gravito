@@ -8,7 +8,26 @@
 - **React Hooks** - `useChannel`, `usePresence`, `usePrivateChannel`
 - **Vue Composables** - Same API patterns for Vue 3
 - **Auto Reconnect** - Handles disconnections gracefully
-- **TypeScript First** - Full type safety
+- **TypeScript First** - Full type safety with ChannelEventMap
+
+## Type Safety
+
+Define your channel events:
+
+```typescript
+declare module '@gravito/ripple-client' {
+  interface ChannelEventMap {
+    news: {
+      'ArticlePublished': { title: string }
+    }
+  }
+}
+
+// Now channel() is typed:
+client.channel('news').listen('ArticlePublished', (data) => {
+  console.log(data.title) // Typed!
+})
+```
 
 ## Installation
 

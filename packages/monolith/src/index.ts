@@ -1,5 +1,6 @@
 import type { GravitoOrbit, PlanetCore } from '@gravito/core'
 import { type CollectionConfig, ContentManager } from './ContentManager'
+import { ContentWatcher } from './ContentWatcher'
 
 declare module '@gravito/core' {
   interface Variables {
@@ -43,6 +44,16 @@ export class OrbitMonolith implements GravitoOrbit {
       c.set('content', manager)
       return await next()
     })
+
+    if (process.env.NODE_ENV === 'development') {
+      const watcher = new ContentWatcher(manager)
+      if (this.config.collections) {
+        for (const name of Object.keys(this.config.collections)) {
+          watcher.watch(name)
+        }
+      }
+      core.logger.info('Orbit Monolith Hot Reload Active 🔥')
+    }
 
     core.logger.info('Orbit Monolith installed ⬛️')
   }
