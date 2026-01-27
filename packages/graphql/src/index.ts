@@ -1,4 +1,5 @@
 import { useDepthLimit } from '@envelop/depth-limit'
+import { useRateLimiter } from '@envelop/rate-limiter'
 import { useResponseCache } from '@envelop/response-cache'
 import { useAPQ } from '@graphql-yoga/plugin-apq'
 import type { GravitoContext, GravitoOrbit, PlanetCore } from '@gravito/core'
@@ -192,6 +193,15 @@ export interface GraphQLConfig {
      * @default undefined (unlimited)
      */
     complexityLimit?: number
+    /**
+     * Rate limiting configuration (Token Bucket).
+     */
+    rateLimit?: {
+      /** Max number of requests allowed in the time window */
+      max: number
+      /** Time window in milliseconds */
+      window: number
+    }
   }
   /**
    * Performance optimization settings.
@@ -372,6 +382,24 @@ export class OrbitGraphQL implements GravitoOrbit {
         },
       } as Plugin)
     }
+
+    if (this.config.security?.rateLimit) {
+      const { max, window } = this.config.security.rateLimit
+      plugins.push(
+        // biome-ignore lint/suspicious/noExplicitAny: Plugin typing
+        useRateLimiter({
+          identifyFn: (context) => {
+            // Identify by IP or User ID
+            const req = (context as unknown as YogaInitialContext).request
+            return req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown'
+          },
+          rateLimitDirective_options: {
+            defaultLimit: `rateLimit(max: ${max}, window: ${window})`,
+          },
+        }) as unknown as Plugin
+      )
+    }
+
     // Add Performance Plugins
     if (this.config.performance?.persistedQueries?.enabled) {
       const store = this.config.performance.persistedQueries.store || new Map<string, string>()
