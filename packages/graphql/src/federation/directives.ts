@@ -100,3 +100,18 @@ export const providesDirective = new GraphQLDirective({
 export function getFederationDirectives(): GraphQLDirective[] {
   return [keyDirective, shareableDirective, externalDirective, requiresDirective, providesDirective]
 }
+
+/**
+ * 获取 Federation 指令的 SDL 定义
+ */
+export function getFederationDirectivesSDL(): string {
+  return `
+    scalar _FieldSet
+
+    directive @key(fields: _FieldSet!, resolvable: Boolean = true) repeatable on OBJECT | INTERFACE
+    directive @shareable on FIELD_DEFINITION | OBJECT
+    directive @external on FIELD_DEFINITION | OBJECT
+    directive @requires(fields: _FieldSet!) on FIELD_DEFINITION
+    directive @provides(fields: _FieldSet!) on FIELD_DEFINITION
+  `
+}

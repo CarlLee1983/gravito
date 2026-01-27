@@ -44,7 +44,7 @@ interface QueryBuilder {
   /** Adds a WHERE NOT EXISTS clause */
   whereNotExists(fn: (query: QueryBuilder) => void): this
   /** Compares two columns for equality */
-  whereColumn(first: string, second: string): this
+  whereColumn(first: string, operator: string, second: string): this
   /** Sets the FROM clause for subqueries */
   from(table: string): this
   /** Applies a WHERE IN clause */
@@ -85,12 +85,10 @@ export function applyRelationFilter(
   config: RelationFilterConfig,
   filter: WhereCondition
 ): void {
-  const filterEntries = Object.entries(filter)
-  if (filterEntries.length === 0) {
-    return
-  }
+  // biome-ignore lint/suspicious/noExplicitAny: QueryBuilder cast
+  const qb = query as QueryBuilder
 
-  ;(query as QueryBuilder).whereExists((subQuery: QueryBuilder) => {
+  qb.whereExists((subQuery: QueryBuilder) => {
     switch (config.relationType) {
       case 'hasOne':
       case 'hasMany':
@@ -100,6 +98,7 @@ export function applyRelationFilter(
           .from(config.relationTable)
           .whereColumn(
             `${config.relationTable}.${config.relationForeignKey}`,
+            '=',
             `${config.modelTable}.${config.modelPrimaryKey}`
           )
         break
@@ -109,6 +108,7 @@ export function applyRelationFilter(
           .from(config.relationTable)
           .whereColumn(
             `${config.relationTable}.${config.relationForeignKey}`,
+            '=',
             `${config.modelTable}.${config.localKey}`
           )
         break
@@ -118,6 +118,7 @@ export function applyRelationFilter(
           .from(config.pivotTable!)
           .whereColumn(
             `${config.pivotTable}.${config.pivotForeignKey}`,
+            '=',
             `${config.modelTable}.${config.modelPrimaryKey}`
           )
 
@@ -126,6 +127,7 @@ export function applyRelationFilter(
             .from(config.relationTable)
             .whereColumn(
               `${config.relationTable}.${config.modelPrimaryKey}`,
+              '=',
               `${config.pivotTable}.${config.pivotRelatedKey}`
             )
 

@@ -1,8 +1,16 @@
 import { getRelationships, type Model, type ModelStatic, SchemaRegistry } from '@gravito/atlas'
 import type { GraphQLSchema } from 'graphql'
 import { createSchema } from 'graphql-yoga'
+import { getFederationDirectivesSDL } from './federation/directives'
+import { createEntitiesResolver } from './federation/entities'
 import { applyFilter, applyLogicalOperators } from './filters'
 import { AtlasMutationFactory } from './mutations/atlas-mutations'
+import {
+  type ConnectionArgs,
+  createConnectionResolver,
+  generateConnectionQuery,
+  generateConnectionTypes,
+} from './pagination/relay-connection'
 import { SCALAR_RESOLVERS, SCALAR_TYPE_DEFS } from './scalars'
 import { createSubscriptionResolver, SUBSCRIPTION_TYPE_DEFS } from './subscriptions'
 import { extractAppendFields, extractModelMetadata } from './utils/model-metadata'
@@ -22,6 +30,19 @@ export interface AtlasGraphQLOptions {
    */
   // biome-ignore lint/suspicious/noExplicitAny: Resolvers can be any shape
   resolvers?: any
+
+  /**
+   * Enable Apollo Federation support.
+   * If true, generates a subgraph schema compatible with Apollo Federation.
+   */
+  federation?: {
+    enabled: boolean
+    /**
+     * Map of model name to federation key fields.
+     * Defaults to using the primary key if not specified.
+     */
+    keys?: Record<string, string>
+  }
 }
 
 /**
@@ -211,6 +232,26 @@ export async function createAtlasSchema(options: AtlasGraphQLOptions): Promise<G
   const resolvers: any = { Query: {}, Mutation: {}, Subscription: {} }
   const registry = SchemaRegistry.getInstance()
 
+  // Track types for Federation
+  const isFederationEnabled = options.federation?.enabled ?? false
+  const federationModels = new Map<string, ModelStatic<Model>>()
+  const entityTypes: string[] = []
+
+  // Add PageInfo type for Pagination
+  typeDefs.push(`
+    type PageInfo {
+      hasNextPage: Boolean!
+      hasPreviousPage: Boolean!
+      startCursor: String
+      endCursor: String
+    }
+  `)
+
+  if (isFederationEnabled) {
+    // Add Federation Directives
+    typeDefs.push(getFederationDirectivesSDL())
+  }
+
   for (const model of options.models) {
     const modelName = model.name
     const table = model.table
@@ -349,9 +390,26 @@ export async function createAtlasSchema(options: AtlasGraphQLOptions): Promise<G
       }
 
       // Generate Types
+      let modelDirectives = ''
+      if (isFederationEnabled) {
+        const keyField = options.federation?.keys?.[modelName] || 'id'
+        modelDirectives = ` @key(fields: "${keyField}")`
+        federationModels.set(modelName, model)
+        entityTypes.push(modelName)
+      }
+
       typeDefs.push(`
-        type ${modelName} {
+        type ${modelName}${modelDirectives} {
           ${outputFields.join('\n          ')}
+        }
+        type ${modelName}Edge {
+          node: ${modelName}!
+          cursor: String!
+        }
+        type ${modelName}Connection {
+          edges: [${modelName}Edge!]!
+          pageInfo: PageInfo!
+          totalCount: Int
         }
         input Create${modelName}Input {
           ${inputFields.join('\n          ')}
@@ -380,6 +438,7 @@ export async function createAtlasSchema(options: AtlasGraphQLOptions): Promise<G
             where: ${modelName}WhereInput
             orderBy: ${modelName}OrderByInput
           ): [${modelName}]
+          ${generateConnectionQuery(modelName)}
         }
       `)
 
@@ -459,6 +518,23 @@ export async function createAtlasSchema(options: AtlasGraphQLOptions): Promise<G
                       .pivotRelatedKey,
                   }
 
+                  // Default key resolution logic (matching Atlas QueryBuilder)
+                  if (!relationConfig.relationForeignKey) {
+                    if (relation.type === 'belongsTo') {
+                      relationConfig.relationForeignKey = `${RelatedClass.table.replace(/s$/, '')}_id`
+                    } else {
+                      relationConfig.relationForeignKey = `${model.table.replace(/s$/, '')}_id`
+                    }
+                  }
+
+                  if (!relationConfig.localKey) {
+                    if (relation.type === 'belongsTo') {
+                      relationConfig.localKey = RelatedClass.primaryKey
+                    } else {
+                      relationConfig.localKey = model.primaryKey
+                    }
+                  }
+
                   // biome-ignore lint/suspicious/noExplicitAny: Recursive apply
                   applyRelationFilter(q, relationConfig, filters as any)
                 }
@@ -479,6 +555,10 @@ export async function createAtlasSchema(options: AtlasGraphQLOptions): Promise<G
 
         return query.get()
       }
+
+      // Connection Resolver
+      const connectionQueryName = `${modelName.charAt(0).toLowerCase() + modelName.slice(1)}Connection`
+      resolvers.Query[connectionQueryName] = createConnectionResolver(model)
 
       resolvers.Mutation[`create${modelName}`] = async (
         _: unknown,
@@ -509,6 +589,41 @@ export async function createAtlasSchema(options: AtlasGraphQLOptions): Promise<G
       }
     } catch (error) {
       console.warn(`[OrbitGraphQL] Failed to generate schema for model ${modelName}:`, error)
+    }
+  }
+
+  if (isFederationEnabled) {
+    if (entityTypes.length > 0) {
+      typeDefs.push(`union _Entity = ${entityTypes.join(' | ')}`)
+    } else {
+      typeDefs.push('scalar _Entity')
+    }
+
+    typeDefs.push('scalar _Any')
+    typeDefs.push(`
+      type _Service {
+        sdl: String
+      }
+      extend type Query {
+        _entities(representations: [_Any!]!): [_Entity]!
+        _service: _Service!
+      }
+    `)
+
+    resolvers.Query._entities = createEntitiesResolver({
+      models: federationModels,
+      keys: options.federation?.keys,
+    })
+
+    resolvers.Query._service = () => {
+      return { sdl: typeDefs.join('\n') }
+    }
+
+    resolvers._Entity = {
+      // biome-ignore lint/suspicious/noExplicitAny: Type resolution
+      __resolveType(obj: any) {
+        return obj.constructor?.name || null
+      },
     }
   }
 
