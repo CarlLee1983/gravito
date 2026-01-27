@@ -11,6 +11,7 @@ export interface RetryJobCommand {
   targetNodeId: string
   timestamp: number
   issuer: string
+  signature?: string
   payload: {
     queue: string
     jobId?: string
@@ -28,6 +29,7 @@ export interface DeleteJobCommand {
   targetNodeId: string
   timestamp: number
   issuer: string
+  signature?: string
   payload: {
     queue: string
     jobId?: string
@@ -45,6 +47,7 @@ export interface LaravelActionCommand {
   targetNodeId: string
   timestamp: number
   issuer: string
+  signature?: string
   payload: {
     queue: string
     action: string
@@ -58,6 +61,7 @@ export interface PauseQueueCommand {
   targetNodeId: string
   timestamp: number
   issuer: string
+  signature?: string
   payload: {
     queue: string
     driver: QueueDriver
@@ -70,6 +74,7 @@ export interface ResumeQueueCommand {
   targetNodeId: string
   timestamp: number
   issuer: string
+  signature?: string
   payload: {
     queue: string
     driver: QueueDriver
@@ -82,6 +87,7 @@ export interface CleanQueueCommand {
   targetNodeId: string
   timestamp: number
   issuer: string
+  signature?: string
   payload: {
     queue: string
     driver: QueueDriver
@@ -96,6 +102,7 @@ export interface PrioritizeJobCommand {
   targetNodeId: string
   timestamp: number
   issuer: string
+  signature?: string
   payload: {
     queue: string
     jobId: string

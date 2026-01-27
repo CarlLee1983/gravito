@@ -3,7 +3,7 @@
  * Supports basic List, Set, Sorted Set operations and Pipelining.
  */
 export class MockRedis {
-  private data = new Map<string, any[] | Set<any>>()
+  private data = new Map<string, any>()
 
   // Helper to get raw data container (auto-create if needed)
   private getContainer(key: string, type: 'list' | 'set' | 'zset'): any {
@@ -13,7 +13,7 @@ export class MockRedis {
       } else if (type === 'set') {
         this.data.set(key, new Set())
       } else if (type === 'zset') {
-        this.data.set(key, []) // ZSet modeled as array for simplicity
+        this.data.set(key, [])
       }
     }
     return this.data.get(key)
@@ -222,7 +222,7 @@ export class MockRedis {
 
   async hgetall(key: string): Promise<Record<string, string>> {
     const val = this.data.get(key)
-    if (!val || typeof val !== 'object' || Array.isArray(val)) {
+    if (!val || typeof val !== 'object' || Array.isArray(val) || val instanceof Set) {
       return {}
     }
     return val
@@ -233,7 +233,9 @@ export class MockRedis {
       this.data.set(key, {})
     }
     const hash = this.data.get(key)
-    hash[field] = value
+    if (hash && typeof hash === 'object' && !Array.isArray(hash) && !(hash instanceof Set)) {
+      hash[field] = value
+    }
     return 1
   }
 

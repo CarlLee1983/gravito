@@ -89,6 +89,10 @@ export function createMockRedis() {
           commands.push({ cmd: 'ltrim', args: [key, start, stop] })
           return pipeline
         },
+        set: (key: string, value: string, ...args: any[]) => {
+          commands.push({ cmd: 'set', args: [key, value, ...args] })
+          return pipeline
+        },
         publish: (channel: string, message: string) => {
           commands.push({ cmd: 'publish', args: [channel, message] })
           return pipeline
@@ -104,6 +108,9 @@ export function createMockRedis() {
               const [key, start, stop] = args
               const list = lists.get(key) || []
               lists.set(key, list.slice(start, stop + 1))
+            } else if (cmd === 'set') {
+              const [key, value] = args
+              store.set(key, value)
             }
             return [null, cmd === 'llen' ? 0 : cmd === 'zcard' ? 0 : cmd === 'scard' ? 0 : 'OK']
           })

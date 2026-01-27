@@ -28,6 +28,35 @@ export class HealthServer {
 
         res.writeHead(statusCode, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify(status))
+      } else if (req.url === '/cluster') {
+        this.agent
+          .getClusterStatus()
+          .then((cluster) => {
+            res.writeHead(200, { 'Content-Type': 'application/json' })
+            res.end(
+              JSON.stringify({
+                nodes: cluster,
+                isLeader: this.agent.isLeader(),
+                timestamp: Date.now(),
+              })
+            )
+          })
+          .catch((err) => {
+            res.writeHead(500)
+            res.end(JSON.stringify({ error: 'Failed to fetch cluster status' }))
+          })
+      } else if (req.url === '/metrics') {
+        const status = this.agent.getStatus()
+        const metrics = status.metrics
+
+        if (req.headers.accept?.includes('application/json')) {
+          res.writeHead(200, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify(metrics))
+        } else {
+          res.writeHead(200, { 'Content-Type': 'text/plain' })
+          const prometheusMetrics = this.agent.getPrometheusMetrics()
+          res.end(prometheusMetrics)
+        }
       } else {
         res.writeHead(404)
         res.end()

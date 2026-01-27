@@ -1,9 +1,16 @@
 import type { Redis } from 'ioredis'
-import type { ZenithLogPayload } from './types'
+import { SmartCompressor } from '../utils/Compression'
+import type { LogSampler } from '../utils/LogSampler'
+import { JsonSerializer, type Serializer } from '../utils/Serializer'
+import type { LogMiddleware, ZenithLogPayload } from './types'
 
 export class LogBuffer {
   private buffer: ZenithLogPayload[] = []
   private timer: Timer | null = null
+  private compressor?: SmartCompressor
+  private serializer: Serializer
+  private sampler?: LogSampler
+  private middlewares: LogMiddleware[] = []
 
   constructor(
     private redis: Redis,
@@ -13,46 +20,85 @@ export class LogBuffer {
       flushInterval: number
       maxHistorySize?: number
       maxPayloadSize?: number
+      useCompression?: boolean
+      compressionThreshold?: number
+      serializer?: Serializer
+      sampler?: LogSampler
+      middlewares?: LogMiddleware[]
     } = { batchSize: 100, flushInterval: 1000, maxPayloadSize: 1024 * 64 }
   ) {
+    this.serializer = this.options.serializer || new JsonSerializer()
+    this.sampler = this.options.sampler
+    this.middlewares = this.options.middlewares || []
+    if (this.options.useCompression) {
+      this.compressor = new SmartCompressor({
+        threshold: this.options.compressionThreshold ?? 2048,
+      })
+    }
     this.startTimer()
   }
 
-  add(log: ZenithLogPayload): void {
-    const processedLog = this.truncateLog(log)
+  async add(log: ZenithLogPayload): Promise<void> {
+    if (this.sampler && !this.sampler.shouldLog(log.level)) {
+      return
+    }
+
+    let processedLog = log
+    for (const middleware of this.middlewares) {
+      processedLog = await middleware.process(processedLog)
+    }
+
+    processedLog = this.truncateLog(processedLog)
     this.buffer.push(processedLog)
     if (this.buffer.length >= this.options.batchSize) {
-      this.flush()
+      await this.flush()
     }
   }
 
-  private truncateLog(log: ZenithLogPayload): ZenithLogPayload {
-    if (!this.options.maxPayloadSize) return log
+  /**
+   * Update the log sampler at runtime.
+   *
+   * Allows changing sampling strategies (e.g., in response to system load)
+   * without needing to recreate the log buffer.
+   *
+   * @param sampler - The new LogSampler instance.
+   * @since 9.0.0
+   *
+   * @example
+   * ```typescript
+   * buffer.setSampler(new LogSampler({ threshold: 500 }));
+   * ```
+   */
+  setSampler(sampler: LogSampler): void {
+    this.sampler = sampler
+  }
 
-    const serialized = JSON.stringify(log)
+  private truncateLog(log: ZenithLogPayload): ZenithLogPayload {
+    if (!this.options.maxPayloadSize || !log.context) return log
+
+    const serialized = this.serializer.serialize(log)
     if (serialized.length <= this.options.maxPayloadSize) return log
 
-    // If too large, try to truncate data and error fields which are usually the largest
-    const truncatedLog = { ...log }
+    const truncatedLog = { ...log, context: { ...log.context } }
     const limit = this.options.maxPayloadSize / 2
 
-    if (truncatedLog.data && JSON.stringify(truncatedLog.data).length > limit) {
-      truncatedLog.data = {
+    if (truncatedLog.context.data && JSON.stringify(truncatedLog.context.data).length > limit) {
+      truncatedLog.context.data = {
         _truncated: true,
-        _originalSize: JSON.stringify(truncatedLog.data).length,
+        _originalSize: JSON.stringify(truncatedLog.context.data).length,
         summary:
-          typeof truncatedLog.data === 'object'
-            ? Object.keys(truncatedLog.data as object).slice(0, 5)
+          typeof truncatedLog.context.data === 'object'
+            ? Object.keys(truncatedLog.context.data as object).slice(0, 5)
             : 'too large',
       }
     }
 
-    if (truncatedLog.error && JSON.stringify(truncatedLog.error).length > limit) {
+    if (truncatedLog.context.error && JSON.stringify(truncatedLog.context.error).length > limit) {
       const errorStr =
-        typeof truncatedLog.error === 'string'
-          ? truncatedLog.error
-          : JSON.stringify(truncatedLog.error)
-      truncatedLog.error = errorStr.substring(0, limit as number) + '... [TRUNCATED]'
+        typeof truncatedLog.context.error === 'string'
+          ? truncatedLog.context.error
+          : JSON.stringify(truncatedLog.context.error)
+      truncatedLog.context.error = errorStr.substring(0, limit as number) + '... [TRUNCATED]'
     }
 
     return truncatedLog
@@ -69,15 +115,32 @@ export class LogBuffer {
       const pipeline = this.redis.pipeline()
 
       for (const log of logs) {
-        pipeline.publish(`${this.prefix}logs`, JSON.stringify(log))
+        const serialized = this.serializer.serialize(log)
+        const channel = `${this.prefix}logs`
+
+        if (this.compressor) {
+          const result = this.compressor.compress(serialized)
+          if (result.compressed) {
+            const wrapped = {
+              _c: result.algorithm === 'brotli' ? 'br' : 'gz',
+              _d: result.data.toString('base64'),
+              _s: this.serializer.contentType,
+            }
+            pipeline.publish(channel, JSON.stringify(wrapped))
+          } else {
+            pipeline.publish(channel, serialized)
+          }
+        } else {
+          pipeline.publish(channel, serialized)
+        }
       }
 
       const historyKey = `${this.prefix}logs:history`
 
       if (logs.length > 0) {
-        const serializedLogs = logs.map((l) => JSON.stringify(l))
+        const serializedLogs = logs.map((l) => this.serializer.serialize(l))
         const maxHistorySize = this.options.maxHistorySize ?? 100
-        pipeline.lpush(historyKey, ...serializedLogs)
+        pipeline.lpush(historyKey, ...(serializedLogs as any))
         pipeline.ltrim(historyKey, 0, maxHistorySize - 1)
       }
 

@@ -126,17 +126,23 @@ describe('QuasarAgent', () => {
 
       agent.monitorQueue('test-queue', 'bullmq')
       // Indirectly verify by checking if tick calls pipeline on monitor redis
-      mockMonitorRedis.pipeline = mock(() => ({
-        hgetall: () => ({}),
-        exec: () =>
-          Promise.resolve([
-            [null, {}],
-            [null, 0],
-            [null, 0],
-            [null, 0],
-            [null, 0],
-          ]),
-      }))
+      mockMonitorRedis.pipeline = mock(() => {
+        const p = {
+          hgetall: () => p,
+          llen: () => p,
+          scard: () => p,
+          zcard: () => p,
+          exec: () =>
+            Promise.resolve([
+              [null, {}],
+              [null, 0],
+              [null, 0],
+              [null, 0],
+              [null, 0],
+            ]),
+        }
+        return p
+      })
 
       await agent.start()
       // tick is called on start

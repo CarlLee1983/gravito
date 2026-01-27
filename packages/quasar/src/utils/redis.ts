@@ -21,9 +21,12 @@ export class DefaultRedisConnectionManager implements RedisConnectionManager {
   constructor(urlOrClient: string | Redis, options: RedisOptions = {}, logger?: Logger) {
     this.logger = logger
     if (typeof urlOrClient === 'string') {
-      this.client = new Redis(urlOrClient, {
+      const url = urlOrClient
+      const isTls = url.startsWith('rediss://')
+      this.client = new Redis(url, {
         lazyConnect: true,
         ...options,
+        tls: isTls ? options.tls || {} : options.tls,
         retryStrategy: (times) => {
           const delay = Math.min(times * 50, 2000)
           return delay

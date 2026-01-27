@@ -35,15 +35,22 @@
         "BRIDGES.md"
     ],
     "dependencies": {
+        "@opentelemetry/api": "^1.9.0",
+        "cborg": "^4.5.8",
         "ioredis": "^5.4.2",
-        "msgpackr": "^1.11.8"
+        "msgpackr": "^1.11.8",
+        "protobufjs": "^8.0.0",
+        "ws": "^8.18.0"
     },
     "devDependencies": {
         "@aws-sdk/client-sqs": "^3.975.0",
         "@types/node": "^20.10.0",
+        "@types/protobufjs": "^6.0.0",
+        "@types/ws": "^8.5.10",
         "bun-types": "latest",
         "typedoc": "^0.25.0",
-        "typedoc-plugin-markdown": "^3.16.0"
+        "typedoc-plugin-markdown": "^3.16.0",
+        "vitest": "^4.0.18"
     },
     "peerDependencies": {
         "bullmq": ">=5.0.0",

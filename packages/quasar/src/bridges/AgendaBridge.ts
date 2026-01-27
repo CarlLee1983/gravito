@@ -24,6 +24,7 @@ export class AgendaBridge extends BaseZenithBridge {
     const jobName = job.attrs?.name || job.name || 'unknown'
     const jobId = job.attrs?._id?.toString() || job.id || 'unknown'
 
+    this.startJobSpan(jobId, job.attrs?.data || {})
     this.publishLog({
       level: 'info',
       message: `Job ${jobName} started`,
@@ -50,6 +51,7 @@ export class AgendaBridge extends BaseZenithBridge {
         data: job.attrs?.result || {},
       },
     })
+    this.endJobSpan(jobId)
   }
 
   private handleJobFail(job: any, error: Error): void {
@@ -67,5 +69,6 @@ export class AgendaBridge extends BaseZenithBridge {
         data: job.attrs?.data || {},
       },
     })
+    this.endJobSpan(jobId)
   }
 }

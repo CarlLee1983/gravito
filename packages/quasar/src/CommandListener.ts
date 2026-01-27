@@ -1,3 +1,4 @@
+import { createHmac } from 'crypto'
 import type { Redis } from 'ioredis'
 import { QUASAR_CHANNELS, QUASAR_KEYS } from './constants'
 import { CleanQueueExecutor } from './executors/CleanQueueExecutor'
@@ -24,6 +25,7 @@ export class CommandListener {
   private executors: Map<CommandType, CommandExecutor>
   private isListening = false
   private logger: Logger
+  private secret?: string
 
   // Security: Hardcoded allowlist
   private readonly ALLOWED_COMMANDS: CommandType[] = [
@@ -40,12 +42,20 @@ export class CommandListener {
    * @param service - Service name (for channel pattern)
    * @param nodeId - This agent's unique ID
    * @param logger - Logger instance
+   * @param secret - Optional HMAC secret for command verification
    */
-  constructor(subscriberRedis: Redis, service: string, nodeId: string, logger: Logger) {
+  constructor(
+    subscriberRedis: Redis,
+    service: string,
+    nodeId: string,
+    logger: Logger,
+    secret?: string
+  ) {
     this.subscriber = subscriberRedis
     this.service = service
     this.nodeId = nodeId
     this.logger = logger
+    this.secret = secret
 
     // Register all executors
     this.executors = new Map()
@@ -134,6 +144,14 @@ export class CommandListener {
   private async handleCommand(command: QuasarCommand, redis: Redis): Promise<void> {
     this.logger.info(`[Quasar] 📥 Received command: ${command.type} (id: ${command.id})`)
 
+    // HMAC Verification
+    if (this.secret) {
+      if (!this.verifySignature(command)) {
+        this.logger.warn(`[Quasar] 🛡️ HMAC verification failed for command: ${command.id}`)
+        return
+      }
+    }
+
     // Security check: Is this command type allowed?
     if (!this.ALLOWED_COMMANDS.includes(command.type)) {
       this.logger.warn(`[Quasar] ⚠️ Command type not allowed: ${command.type}`)
@@ -164,6 +182,24 @@ export class CommandListener {
 
     // Note: We don't publish the result back to Redis (async state observation).
     // The caller observes job state changes directly.
+  }
+
+  private verifySignature(command: QuasarCommand): boolean {
+    if (!command.signature || !this.secret) return false
+
+    const { signature, ...rest } = command
+    // Simple canonicalization: sort keys
+    const sortedRest = Object.keys(rest)
+      .sort()
+      .reduce((acc: any, key) => {
+        acc[key] = (rest as any)[key]
+        return acc
+      }, {})
+
+    const data = JSON.stringify(sortedRest)
+    const expected = createHmac('sha256', this.secret).update(data).digest('hex')
+
+    return signature === expected
   }
 
   /**

@@ -34,9 +34,13 @@ describe('Performance Optimizations', () => {
 
       const largeData = 'a'.repeat(200)
       const log = {
+        level: 'info' as const,
+        message: 'test',
         jobId: '123',
-        event: 'completed',
-        data: { payload: largeData },
+        context: {
+          event: 'completed',
+          data: { payload: largeData },
+        },
         timestamp: new Date().toISOString(),
       }
 
@@ -44,8 +48,8 @@ describe('Performance Optimizations', () => {
       const processed = buffer.truncateLog(log)
 
       expect(JSON.stringify(processed).length).toBeLessThan(JSON.stringify(log).length)
-      expect(processed.data._truncated).toBe(true)
-      expect(processed.data.summary).toBeDefined()
+      expect(processed.context?.data._truncated).toBe(true)
+      expect(processed.context?.data.summary).toBeDefined()
     })
 
     it('should truncate large error field', async () => {
@@ -58,17 +62,21 @@ describe('Performance Optimizations', () => {
 
       const largeError = 'Error: ' + 'x'.repeat(200)
       const log = {
+        level: 'error' as const,
+        message: 'test',
         jobId: '123',
-        event: 'failed',
-        error: largeError,
+        context: {
+          event: 'failed',
+          error: largeError,
+        },
         timestamp: new Date().toISOString(),
       }
 
       // @ts-expect-error
       const processed = buffer.truncateLog(log)
 
-      expect(processed.error).toContain('[TRUNCATED]')
-      expect(processed.error.length).toBeLessThan(largeError.length + 20)
+      expect(processed.context?.error).toContain('[TRUNCATED]')
+      expect(processed.context?.error.length).toBeLessThan(largeError.length + 20)
     })
   })
 })

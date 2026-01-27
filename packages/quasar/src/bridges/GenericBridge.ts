@@ -18,9 +18,16 @@ export class GenericBridge extends BaseZenithBridge {
     prefix: string,
     workerId: string,
     private eventMapping: EventMapping,
-    private queueName = 'generic'
+    private queueName = 'generic',
+    options: {
+      batchSize?: number
+      flushInterval?: number
+      maxHistorySize?: number
+      useCompression?: boolean
+      compressionThreshold?: number
+    } = {}
   ) {
-    super(redis, prefix, workerId)
+    super(redis, prefix, workerId, options)
   }
 
   /**
@@ -49,6 +56,11 @@ export class GenericBridge extends BaseZenithBridge {
       const job = args[0] || {}
       const error = args.find((arg) => arg instanceof Error)
       const result = args.length > 1 && !error ? args[1] : undefined
+      const jobId = String(job.id || job._id || 'unknown')
+
+      if (logType === 'job_started') {
+        this.startJobSpan(jobId, job.data || job.attrs?.data || job)
+      }
 
       const level =
         logType.includes('failed') || logType.includes('error')
@@ -60,7 +72,7 @@ export class GenericBridge extends BaseZenithBridge {
       this.publishLog({
         level: level as 'info' | 'success' | 'error',
         message: `Job event ${logType} on ${this.queueName}`,
-        jobId: String(job.id || job._id || 'unknown'),
+        jobId: jobId,
         context: {
           event: logType,
           queue: this.queueName,
@@ -69,6 +81,10 @@ export class GenericBridge extends BaseZenithBridge {
           stack: error?.stack,
         },
       })
+
+      if (logType === 'job_completed' || logType === 'job_failed') {
+        this.endJobSpan(jobId)
+      }
     }
 
     this.registerListener(emitter, eventName, handler)

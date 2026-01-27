@@ -21,6 +21,8 @@ export const QUASAR_KEYS = {
   COMMAND_PREFIX: 'gravito:quasar:cmd:',
   /** Prefix for Zenith console logs (legacy support) */
   ZENITH_LOG_PREFIX: 'flux_console:',
+  /** Prefix for leader election keys */
+  LEADER_PREFIX: 'gravito:quasar:leader:',
 } as const
 
 export const QUASAR_CHANNELS = {

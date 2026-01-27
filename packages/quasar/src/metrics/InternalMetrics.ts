@@ -15,6 +15,7 @@ export interface InternalMetrics {
     eventsDropped: number
     avgPublishDuration: number
   }
+  custom?: Record<string, number>
 }
 
 export class MetricsCollector {
@@ -24,9 +25,20 @@ export class MetricsCollector {
     bridges: { eventsProcessed: 0, eventsDropped: 0, avgPublishDuration: 0 },
   }
 
-  private heartbeatDurations: number[] = []
-  private probeDurations: number[] = []
-  private publishDurations: number[] = []
+  private customGauges: Record<string, number> = {}
+
+  private readonly maxSamples = 100
+  private heartbeatDurations = new Float64Array(this.maxSamples)
+  private heartbeatIdx = 0
+  private heartbeatCount = 0
+
+  private probeDurations = new Float64Array(this.maxSamples)
+  private probeIdx = 0
+  private probeCount = 0
+
+  private publishDurations = new Float64Array(this.maxSamples)
+  private publishIdx = 0
+  private publishCount = 0
 
   recordHeartbeat(success: boolean, duration?: number): void {
     this.metrics.heartbeats.total++
@@ -34,8 +46,13 @@ export class MetricsCollector {
     else this.metrics.heartbeats.failed++
 
     if (duration !== undefined) {
-      this.heartbeatDurations.push(duration)
-      this.metrics.heartbeats.avgDuration = this.calculateAverage(this.heartbeatDurations)
+      this.heartbeatDurations[this.heartbeatIdx] = duration
+      this.heartbeatIdx = (this.heartbeatIdx + 1) % this.maxSamples
+      if (this.heartbeatCount < this.maxSamples) this.heartbeatCount++
+      this.metrics.heartbeats.avgDuration = this.calculateAverage(
+        this.heartbeatDurations,
+        this.heartbeatCount
+      )
     }
   }
 
@@ -44,8 +61,10 @@ export class MetricsCollector {
     if (!success) this.metrics.probes.errors++
 
     if (duration !== undefined) {
-      this.probeDurations.push(duration)
-      this.metrics.probes.avgDuration = this.calculateAverage(this.probeDurations)
+      this.probeDurations[this.probeIdx] = duration
+      this.probeIdx = (this.probeIdx + 1) % this.maxSamples
+      if (this.probeCount < this.maxSamples) this.probeCount++
+      this.metrics.probes.avgDuration = this.calculateAverage(this.probeDurations, this.probeCount)
     }
   }
 
@@ -54,25 +73,34 @@ export class MetricsCollector {
     else this.metrics.bridges.eventsDropped++
 
     if (duration !== undefined) {
-      this.publishDurations.push(duration)
-      this.metrics.bridges.avgPublishDuration = this.calculateAverage(this.publishDurations)
+      this.publishDurations[this.publishIdx] = duration
+      this.publishIdx = (this.publishIdx + 1) % this.maxSamples
+      if (this.publishCount < this.maxSamples) this.publishCount++
+      this.metrics.bridges.avgPublishDuration = this.calculateAverage(
+        this.publishDurations,
+        this.publishCount
+      )
     }
+  }
+
+  setGauge(name: string, value: number): void {
+    this.customGauges[name] = value
   }
 
   getMetrics(): InternalMetrics {
-    return { ...this.metrics }
+    return {
+      ...this.metrics,
+      custom: { ...this.customGauges },
+    }
   }
 
-  private calculateAverage(durations: number[]): number {
-    if (durations.length === 0) return 0
-
-    const maxSamples = 100
-    if (durations.length > maxSamples) {
-      durations.splice(0, durations.length - maxSamples)
+  private calculateAverage(durations: Float64Array, count: number): number {
+    if (count === 0) return 0
+    let sum = 0
+    for (let i = 0; i < count; i++) {
+      sum += durations[i]
     }
-
-    const sum = durations.reduce((acc, d) => acc + d, 0)
-    return Math.round(sum / durations.length)
+    return Math.round(sum / count)
   }
 
   toPrometheus(): string {

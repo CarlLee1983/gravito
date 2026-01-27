@@ -1,29 +1,33 @@
+import { EventEmitter } from 'events'
 import { Redis } from 'ioredis'
-import { AgendaBridge } from './bridges/AgendaBridge'
-import { BeeQueueBridge } from './bridges/BeeQueueBridge'
-import { BullBridge } from './bridges/BullBridge'
-import { BullMQBridge } from './bridges/BullMQBridge'
-import { type EventMapping, GenericBridge } from './bridges/GenericBridge'
-import type { QueueBridge } from './bridges/types'
+import type { EventMapping } from './bridges/GenericBridge'
+import { LogBuffer } from './bridges/LogBuffer'
+import type { LogMiddleware, QueueBridge } from './bridges/types'
 import { CommandListener } from './CommandListener'
 import { QUASAR_DEFAULTS, QUASAR_KEYS } from './constants'
 import { InternalMetrics, MetricsCollector } from './metrics/InternalMetrics'
-import { BeeQueueProbe } from './probes/BeeQueueProbe'
-import { BullMQProbe } from './probes/BullMQProbe'
-import { BullProbe } from './probes/BullProbe'
+import { CorePlugin } from './plugins/CorePlugin'
+import { PluginRegistry, type QuasarPlugin } from './plugins/QuasarPlugin'
 import { CachedNodeProbe } from './probes/CachedNodeProbe'
-import { LaravelProbe } from './probes/LaravelProbe'
 import { NodeProbe } from './probes/NodeProbe'
-import { RedisListProbe } from './probes/RedisListProbe'
+import { QuasarTracing } from './tracing/QuasarTracing'
 import type { Probe, QueueProbe } from './types'
 import { AdaptiveHeartbeat } from './utils/AdaptiveHeartbeat'
+import { BufferPool } from './utils/BufferPool'
+import { LeaderElection } from './utils/LeaderElection'
+import { LogSampler, type SamplingOptions } from './utils/LogSampler'
 import { ConsoleLogger, type Logger, type LogLevel } from './utils/logger'
 import { RedisBatcher } from './utils/RedisBatcher'
 import { DefaultRedisConnectionManager, type RedisConnectionManager } from './utils/redis'
-import { JsonSerializer, MsgPackSerializer, type Serializer } from './utils/Serializer'
+import {
+  CborSerializer,
+  JsonSerializer,
+  MsgPackSerializer,
+  ProtobufSerializer,
+  type Serializer,
+} from './utils/Serializer'
 
 /**
-
  * Configuration for a Redis connection used by Quasar.
  *
  * @public
@@ -66,6 +70,43 @@ export interface QuasarOptions {
   /** Log level for default console logger. @default 'info' */
   logLevel?: LogLevel
   useMsgPack?: boolean
+  useCbor?: boolean
+  useProtobuf?: boolean
+  useCompression?: boolean
+  compressionThreshold?: number
+
+  /**
+   * OpenTelemetry tracing options.
+   * @since 5.1.0
+   */
+  tracing?: {
+    enabled?: boolean
+    /** Custom trace exporter endpoint. */
+    endpoint?: string
+    /** Sample rate (0.0 to 1.0). */
+    sampleRate?: number
+  }
+  plugins?: QuasarPlugin[]
+  sampling?: SamplingOptions
+  /**
+   * Distributed coordination options.
+   * @since 6.0.0
+   */
+  coordination?: {
+    enabled?: boolean
+    /** TTL for the leader lock in ms. @default 15000 */
+    ttl?: number
+    /** Interval to refresh/retry leadership in ms. @default 5000 */
+    interval?: number
+  }
+  /**
+   * Security options for hardening the agent.
+   * @since 7.0.0
+   */
+  security?: {
+    /** Secret key used for HMAC signing of remote control commands. */
+    secret?: string
+  }
 }
 
 /**
@@ -87,6 +128,7 @@ export interface QuasarOptions {
  * @since 3.0.0
  */
 export class QuasarAgent {
+  private events = new EventEmitter()
   private transportManager: RedisConnectionManager
   private monitorManager?: RedisConnectionManager
   private subscriberRedis?: Redis // Dedicated connection for Pub/Sub
@@ -104,6 +146,16 @@ export class QuasarAgent {
   private prefix = QUASAR_KEYS.NODE_PREFIX
   private transportBatcher?: RedisBatcher
   private serializer: Serializer
+  private tracing: QuasarTracing
+  private useCompression?: boolean
+  private compressionThreshold?: number
+
+  private pluginRegistry: PluginRegistry = new PluginRegistry()
+  private plugins: QuasarPlugin[] = []
+  private sampler: LogSampler
+  private leaderElection?: LeaderElection
+  private coordinationOptions?: QuasarOptions['coordination']
+  private securityOptions?: QuasarOptions['security']
 
   // Cached node ID (computed on first tick)
   private nodeId?: string
@@ -162,6 +214,13 @@ export class QuasarAgent {
       cacheTimeout: QUASAR_DEFAULTS.PROBE_CACHE_TIMEOUT,
     })
 
+    this.tracing = new QuasarTracing({
+      enabled: options.tracing?.enabled,
+      serviceName: options.service,
+      endpoint: options.tracing?.endpoint,
+      sampleRate: options.tracing?.sampleRate,
+    })
+
     this.heartbeat = new AdaptiveHeartbeat(async () => this.tick(), {
       baseInterval: this.interval,
       minInterval: Math.max(1000, this.interval / 2),
@@ -171,6 +230,97 @@ export class QuasarAgent {
     })
 
     this.serializer = options.useMsgPack ? new MsgPackSerializer() : new JsonSerializer()
+    if (options.useCbor) {
+      this.serializer = new CborSerializer()
+    }
+    if (options.useProtobuf) {
+      this.serializer = new ProtobufSerializer()
+    }
+    this.useCompression = options.useCompression
+    this.compressionThreshold = options.compressionThreshold
+
+    this.sampler = new LogSampler(options.sampling)
+    this.coordinationOptions = options.coordination
+    this.securityOptions = options.security
+
+    BufferPool.prewarm([1024, 2048, 4096, 8192])
+
+    this.use(new CorePlugin())
+    if (options.plugins) {
+      for (const plugin of options.plugins) {
+        this.use(plugin)
+      }
+    }
+  }
+
+  use(plugin: QuasarPlugin): this {
+    this.plugins.push(plugin)
+    if (plugin.onRegister) {
+      plugin.onRegister(this)
+    }
+    return this
+  }
+
+  /**
+   * Update the agent configuration at runtime.
+   *
+   * Allows changing parameters like heartbeat intervals, sampling rates, or security
+   * secrets without restarting the agent. Notifies all registered plugins of the change.
+   *
+   * @param options - Partial options containing fields to update.
+   * @since 9.0.0
+   *
+   * @example
+   * ```typescript
+   * agent.updateOptions({ interval: 5000, sampling: { threshold: 200 } });
+   * ```
+   */
+  updateOptions(options: Partial<QuasarOptions>): void {
+    if (options.interval) {
+      this.interval = options.interval
+      this.heartbeat.updateInterval(this.interval)
+    }
+
+    if (options.sampling) {
+      this.sampler = new LogSampler(options.sampling)
+      for (const bridge of this.bridges) {
+        if (typeof (bridge as any).setSampler === 'function') {
+          ;(bridge as any).setSampler(this.sampler)
+        }
+      }
+    }
+
+    if (options.security?.secret) {
+      this.securityOptions = { ...this.securityOptions, secret: options.security.secret }
+      if (this.commandListener) {
+        ;(this.commandListener as any).secret = options.security.secret
+      }
+    }
+
+    for (const plugin of this.plugins) {
+      if (plugin.onConfigUpdate) {
+        plugin.onConfigUpdate(this, options)
+      }
+    }
+
+    this.logger.info('[Quasar] Agent configuration updated')
+  }
+
+  getPluginRegistry(): PluginRegistry {
+    return this.pluginRegistry
+  }
+
+  on(event: string, handler: (...args: any[]) => void): this {
+    this.events.on(event, handler)
+    return this
+  }
+
+  emit(event: string, ...args: any[]): boolean {
+    return this.events.emit(event, ...args)
+  }
+
+  getEmitter(): EventEmitter {
+    return this.events
   }
 
   /**
@@ -179,6 +329,45 @@ export class QuasarAgent {
    */
   getNodeId(): string | undefined {
     return this.nodeId
+  }
+
+  /**
+   * Returns true if this node is currently the cluster leader.
+   */
+  isLeader(): boolean {
+    return this.leaderElection?.isLeader() || false
+  }
+
+  /**
+   * Returns true if distributed coordination is enabled.
+   */
+  isCoordinationEnabled(): boolean {
+    return !!this.leaderElection
+  }
+
+  /**
+   * Get the current status of all nodes in the cluster for this service.
+   * Only returns full data if this node is the leader or has access to all node keys.
+   */
+  async getClusterStatus(): Promise<any[]> {
+    const redis = this.transportRedis
+    const prefix = `${this.prefix}${this.service}:*`
+    const keys = await redis.keys(prefix)
+
+    if (keys.length === 0) return []
+
+    const values = await redis.mget(...keys)
+    return values
+      .filter((v): v is string => v !== null)
+      .map((v) => {
+        try {
+          return this.serializer.deserialize(v)
+        } catch (err) {
+          this.logger.error('[Quasar] Failed to deserialize node status', err)
+          return null
+        }
+      })
+      .filter((v) => v !== null)
   }
 
   /**
@@ -194,6 +383,10 @@ export class QuasarAgent {
 
     await Promise.all(promises)
 
+    await Promise.all(
+      this.plugins.map((plugin) => (plugin.onStart ? plugin.onStart(this) : Promise.resolve()))
+    )
+
     this.transportBatcher = new RedisBatcher(this.transportRedis, {
       maxBatchSize: 10,
       flushInterval: 500,
@@ -201,6 +394,27 @@ export class QuasarAgent {
     })
 
     this.logger.info(`[Quasar] Agent started for service: ${this.service}`)
+
+    // Calculate node ID early
+    const metrics = await this.probe.getMetrics()
+    this.nodeId = `${this.name || metrics.hostname}-${metrics.pid}`
+
+    if (this.coordinationOptions?.enabled) {
+      this.leaderElection = new LeaderElection(
+        this.transportRedis,
+        {
+          service: this.service,
+          nodeId: this.nodeId,
+          ttl: this.coordinationOptions.ttl,
+          interval: this.coordinationOptions.interval,
+        },
+        this.logger
+      )
+
+      this.leaderElection.on('leader', () => this.emit('leader'))
+      this.leaderElection.on('follower', () => this.emit('follower'))
+      this.leaderElection.start()
+    }
 
     this.heartbeat.start()
     // Initial tick
@@ -213,6 +427,15 @@ export class QuasarAgent {
    */
   async stop() {
     this.heartbeat.stop()
+
+    if (this.leaderElection) {
+      await this.leaderElection.stop()
+      this.leaderElection = undefined
+    }
+
+    await Promise.all(
+      this.plugins.map((plugin) => (plugin.onStop ? plugin.onStop(this) : Promise.resolve()))
+    )
 
     if (this.transportBatcher) {
       await this.transportBatcher.stop()
@@ -255,6 +478,10 @@ export class QuasarAgent {
     }
   }
 
+  getPrometheusMetrics(): string {
+    return this.metricsCollector.toPrometheus()
+  }
+
   /**
    * Register a queue for statistics monitoring.
    *
@@ -271,16 +498,11 @@ export class QuasarAgent {
       return
     }
 
-    if (type === 'redis') {
-      this.queueProbes.push(new RedisListProbe(monitorClient, name))
-    } else if (type === 'laravel') {
-      this.queueProbes.push(new LaravelProbe(monitorClient, name))
-    } else if (type === 'bull') {
-      this.queueProbes.push(new BullProbe(monitorClient, name))
-    } else if (type === 'bullmq') {
-      this.queueProbes.push(new BullMQProbe(monitorClient, name))
-    } else if (type === 'bee-queue') {
-      this.queueProbes.push(new BeeQueueProbe(monitorClient, name))
+    const probe = this.pluginRegistry.getProbe(type, monitorClient, name)
+    if (probe) {
+      this.queueProbes.push(probe)
+    } else {
+      this.logger.warn(`[Quasar] No probe registered for type: ${type}`)
     }
   }
 
@@ -313,7 +535,13 @@ export class QuasarAgent {
   attachBridge(
     target: any,
     type: 'bullmq' | 'bee-queue' | 'bull' | 'agenda' | 'generic',
-    options?: { eventMapping?: EventMapping; queueName?: string }
+    options?: {
+      eventMapping?: EventMapping
+      queueName?: string
+      batchSize?: number
+      flushInterval?: number
+      middlewares?: LogMiddleware[]
+    }
   ): void {
     if (!this.transportRedis) {
       this.logger.warn('[Quasar] Cannot attach bridge: transport connection required')
@@ -323,35 +551,30 @@ export class QuasarAgent {
     const workerId = this.nodeId || `${this.service}-${process.pid}`
     const prefix = QUASAR_KEYS.ZENITH_LOG_PREFIX
 
-    let bridge: QueueBridge
-    if (type === 'bullmq') {
-      bridge = new BullMQBridge(this.transportRedis, prefix, workerId)
-    } else if (type === 'bee-queue') {
-      bridge = new BeeQueueBridge(this.transportRedis, prefix, workerId)
-    } else if (type === 'bull') {
-      bridge = new BullBridge(this.transportRedis, prefix, workerId)
-    } else if (type === 'agenda') {
-      bridge = new AgendaBridge(this.transportRedis, prefix, workerId)
-    } else if (type === 'generic') {
-      if (!options?.eventMapping) {
-        this.logger.warn('[Quasar] Generic bridge requires eventMapping option')
-        return
-      }
-      bridge = new GenericBridge(
-        this.transportRedis,
-        prefix,
-        workerId,
-        options.eventMapping,
-        options.queueName
-      )
-    } else {
-      this.logger.warn(`[Quasar] Unknown bridge type: ${type}`)
-      return
+    const bridgeOptions = {
+      batchSize: options?.batchSize,
+      flushInterval: options?.flushInterval,
+      useCompression: this.useCompression,
+      compressionThreshold: this.compressionThreshold,
+      tracing: this.tracing,
+      emitter: this.events,
+      serializer: this.serializer,
+      sampler: this.sampler,
+      middlewares: options?.middlewares,
     }
 
-    bridge.attach(target)
-    this.bridges.push(bridge)
-    this.logger.info(`[Quasar] 🔗 Attached ${type} bridge to worker`)
+    const bridge = this.pluginRegistry.getBridge(type, this.transportRedis, prefix, workerId, {
+      ...bridgeOptions,
+      ...options,
+    })
+
+    if (bridge) {
+      bridge.attach(target)
+      this.bridges.push(bridge)
+      this.logger.info(`[Quasar] 🔗 Attached ${type} bridge to worker`)
+    } else {
+      this.logger.warn(`[Quasar] No bridge registered for type: ${type}`)
+    }
   }
 
   /**
@@ -382,11 +605,12 @@ export class QuasarAgent {
     }
 
     const transportClient = this.transportRedis
-    const redisUrl = transportClient.options?.host
-      ? `redis://${transportClient.options.host}:${transportClient.options.port || 6379}`
+    const redisOptions = transportClient.options as any
+    const redisUrl = redisOptions?.host
+      ? `redis://${redisOptions.host}:${redisOptions.port || 6379}`
       : QUASAR_DEFAULTS.REDIS_URL
 
-    if (transportClient.options?.mock) {
+    if (redisOptions?.mock) {
       // If we are using a mock, use the same client (or a compatible mock)
       // For testing, we can use a simpler approach if the client supports duplicating
       this.subscriberRedis = transportClient as any
@@ -397,13 +621,16 @@ export class QuasarAgent {
     }
 
     try {
-      await this.subscriberRedis.connect()
+      if (this.subscriberRedis) {
+        await this.subscriberRedis.connect()
+      }
 
       this.commandListener = new CommandListener(
-        this.subscriberRedis,
+        this.subscriberRedis!,
         this.service,
         this.nodeId,
-        this.logger
+        this.logger,
+        this.securityOptions?.secret
       )
 
       await this.commandListener.start(monitorClient)
@@ -423,10 +650,15 @@ export class QuasarAgent {
     try {
       const metrics = await this.probe.getMetrics()
       const hostname = this.name || metrics.hostname
-      const id = `${hostname}-${metrics.pid}`
+      const id = this.nodeId!
 
-      // Cache nodeId for remote control
-      this.nodeId = id
+      if (metrics.cpu?.system !== undefined) {
+        if (metrics.cpu.system > 80) {
+          this.sampler.updateThreshold(100)
+        } else if (metrics.cpu.system < 40) {
+          this.sampler.updateThreshold(500)
+        }
+      }
 
       // Collect queue snapshots
       const queues = await Promise.all(this.queueProbes.map((p) => p.getSnapshot()))
@@ -453,8 +685,11 @@ export class QuasarAgent {
       if (this.transportBatcher) {
         this.transportBatcher.set(key, payload, 'EX', 30)
       } else {
-        await this.transportRedis.set(key, this.serializer.serialize(payload), 'EX', 30)
+        const serialized = this.serializer.serialize(payload)
+        await this.transportRedis.set(key, serialized, 'EX', 30)
       }
+
+      this.emit('tick', payload)
     } catch (err) {
       this.logger.error('[Quasar] Heartbeat failed', err)
     }

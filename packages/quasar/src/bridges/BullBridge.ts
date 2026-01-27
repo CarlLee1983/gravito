@@ -30,6 +30,7 @@ export class BullBridge extends BaseZenithBridge {
   }
 
   private handleJobActive(job: any): void {
+    this.startJobSpan(String(job.id), job.data)
     this.publishLog({
       level: 'info',
       message: `Job ${job.id} started`,
@@ -53,6 +54,7 @@ export class BullBridge extends BaseZenithBridge {
         data: result,
       },
     })
+    this.endJobSpan(String(job.id))
   }
 
   private handleJobFailed(job: any, error: Error): void {
@@ -67,6 +69,7 @@ export class BullBridge extends BaseZenithBridge {
         data: job.data,
       },
     })
+    this.endJobSpan(String(job.id))
   }
 
   private handleJobProgress(job: any, progress: number): void {

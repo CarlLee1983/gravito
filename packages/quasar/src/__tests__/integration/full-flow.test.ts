@@ -26,7 +26,7 @@ describe('Integration: Full Monitoring Flow', () => {
   it('should publish heartbeat to redis', async () => {
     await agent.start()
 
-    await new Promise((resolve) => setTimeout(resolve, 100))
+    await new Promise((resolve) => setTimeout(resolve, 800))
 
     const store = mockTransport.getStore() as Map<string, string>
     const keys = Array.from(store.keys())

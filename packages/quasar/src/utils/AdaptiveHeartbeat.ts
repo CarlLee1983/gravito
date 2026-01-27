@@ -39,6 +39,25 @@ export class AdaptiveHeartbeat {
     }
   }
 
+  /**
+   * Update the base interval at runtime.
+   *
+   * Resets the current interval to the new base value. The adaptive mechanism
+   * will continue to adjust from this new baseline.
+   *
+   * @param newInterval - The new base interval in milliseconds.
+   * @since 9.0.0
+   *
+   * @example
+   * ```typescript
+   * heartbeat.updateInterval(5000);
+   * ```
+   */
+  updateInterval(newInterval: number) {
+    this.options.baseInterval = newInterval
+    this.currentInterval = newInterval
+  }
+
   private scheduleNext() {
     if (!this.isRunning) return
 
