@@ -1,64 +1,64 @@
 {
-    "timestamp": "2026-01-19T15:45:00Z",
-    "environment": {
-        "cpu": "Apple M4",
-        "runtime": "bun 1.3.4 (arm64-darwin)",
-        "redis": "6.2 (Docker)"
+  "timestamp": "2026-01-19T15:45:00Z",
+  "environment": {
+    "cpu": "Apple M4",
+    "runtime": "bun 1.3.4 (arm64-darwin)",
+    "redis": "6.2 (Docker)"
+  },
+  "results": [
+    {
+      "name": "Redis: push - single",
+      "avg_ns": 391040,
+      "p75_ns": 427790,
+      "p99_ns": 2580000
     },
-    "results": [
-        {
-            "name": "Redis: push - single",
-            "avg_ns": 391040,
-            "p75_ns": 427790,
-            "p99_ns": 2580000
-        },
-        {
-            "name": "Redis: pushMany - 100",
-            "avg_ns": 668390,
-            "p75_ns": 675460,
-            "p99_ns": 4150000
-        },
-        {
-            "name": "Redis: pop - single",
-            "avg_ns": 674020,
-            "p75_ns": 397540,
-            "p99_ns": 9550000
-        },
-        {
-            "name": "Redis: popMany - 100",
-            "avg_ns": 1820000,
-            "p75_ns": 615830,
-            "p99_ns": 15400000
-        },
-        {
-            "name": "Redis: pop - with priority (Lua)",
-            "avg_ns": 2220000,
-            "p75_ns": 945290,
-            "p99_ns": 20670000
-        },
-        {
-            "name": "Memory: push - single",
-            "avg_ns": 3890,
-            "p75_ns": 2580,
-            "p99_ns": 27210
-        },
-        {
-            "name": "Memory: pushMany - 100",
-            "avg_ns": 217510,
-            "p75_ns": 205210,
-            "p99_ns": 1260000
-        },
-        {
-            "name": "Memory: pop - single",
-            "avg_ns": 1380,
-            "p75_ns": 708,
-            "p99_ns": 8880
-        },
-        {
-            "name": "Memory: popMany - 100",
-            "avg_ns": 630.34,
-            "p75_ns": 685.90,
-            "p99_ns": 1510
-        }
-    ]
+    {
+      "name": "Redis: pushMany - 100",
+      "avg_ns": 668390,
+      "p75_ns": 675460,
+      "p99_ns": 4150000
+    },
+    {
+      "name": "Redis: pop - single",
+      "avg_ns": 674020,
+      "p75_ns": 397540,
+      "p99_ns": 9550000
+    },
+    {
+      "name": "Redis: popMany - 100",
+      "avg_ns": 1820000,
+      "p75_ns": 615830,
+      "p99_ns": 15400000
+    },
+    {
+      "name": "Redis: pop - with priority (Lua)",
+      "avg_ns": 2220000,
+      "p75_ns": 945290,
+      "p99_ns": 20670000
+    },
+    {
+      "name": "Memory: push - single",
+      "avg_ns": 3890,
+      "p75_ns": 2580,
+      "p99_ns": 27210
+    },
+    {
+      "name": "Memory: pushMany - 100",
+      "avg_ns": 217510,
+      "p75_ns": 205210,
+      "p99_ns": 1260000
+    },
+    {
+      "name": "Memory: pop - single",
+      "avg_ns": 1380,
+      "p75_ns": 708,
+      "p99_ns": 8880
+    },
+    {
+      "name": "Memory: popMany - 100",
+      "avg_ns": 630.34,
+      "p75_ns": 685.9,
+      "p99_ns": 1510
+    }
+  ]
 }

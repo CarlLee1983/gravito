@@ -1,37 +1,37 @@
 {
-    "name": "@gravito/orbit-cloudflare",
-    "version": "1.0.1",
-    "publishConfig": {
-        "access": "public"
-    },
-    "description": "Cloudflare Workers bindings Orbit for Gravito Core",
-    "main": "./dist/index.cjs",
-    "module": "./dist/index.js",
-    "type": "module",
-    "types": "./dist/index.d.ts",
-    "exports": {
-        ".": {
-            "types": "./dist/index.d.ts",
-            "import": "./dist/index.js",
-            "require": "./dist/index.cjs"
-        }
-    },
-    "files": [
-        "dist",
-        "README.md"
-    ],
-    "scripts": {
-        "build": "tsup src/index.ts --format cjs,esm --dts --clean",
-        "test:ci": "echo \"No unit tests for orbit-cloudflare\" && exit 0",
-        "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck"
-    },
-    "peerDependencies": {
-        "@gravito/core": "workspace:*"
-    },
-    "devDependencies": {
-        "@gravito/core": "workspace:*",
-        "@cloudflare/workers-types": "^4.20250109.0",
-        "tsup": "^8.3.5",
-        "typescript": "^5.9.3"
+  "name": "@gravito/orbit-cloudflare",
+  "version": "1.0.1",
+  "publishConfig": {
+    "access": "public"
+  },
+  "description": "Cloudflare Workers bindings Orbit for Gravito Core",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
     }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts --clean",
+    "test:ci": "echo \"No unit tests for orbit-cloudflare\" && exit 0",
+    "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck"
+  },
+  "peerDependencies": {
+    "@gravito/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@gravito/core": "workspace:*",
+    "@cloudflare/workers-types": "^4.20250109.0",
+    "tsup": "^8.3.5",
+    "typescript": "^5.9.3"
+  }
 }

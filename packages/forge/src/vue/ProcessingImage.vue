@@ -51,8 +51,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
-import type { ProcessingStatus, FileOutput } from '../types'
+import { onMounted, onUnmounted, ref } from 'vue'
+import type { FileOutput, ProcessingStatus } from '../types'
 
 interface Props {
   jobId: string
@@ -72,8 +72,7 @@ const imageSrc = ref<string | null>(props.placeholder || null)
 let eventSource: EventSource | null = null
 
 onMounted(() => {
-  const endpoint =
-    props.statusEndpoint || `/forge/status/${props.jobId}/stream`
+  const endpoint = props.statusEndpoint || `/forge/status/${props.jobId}/stream`
   eventSource = new EventSource(endpoint)
 
   eventSource.onmessage = (event) => {

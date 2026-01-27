@@ -2,21 +2,10 @@ import { Schema, validate } from '@gravito/mass'
 import { Photon } from '@gravito/photon'
 import { logger } from '@gravito/photon/logger'
 
-/**
- * User route module.
- *
- * Important: use Photon's `.route()` to compose modules. This is required to preserve full
- * TypeScript type inference.
- */
 const userRoute = new Photon()
 
-// Use logger middleware
 userRoute.use('*', logger())
 
-/**
- * Login
- * POST /api/users/login
- */
 userRoute.post(
   '/login',
   validate(
@@ -27,7 +16,7 @@ userRoute.post(
     })
   ),
   (c) => {
-    const { username } = c.req.valid('json')
+    const { username } = (c as any).req.valid('json')
     return c.json({
       success: true,
       token: 'fake-jwt-token',
@@ -36,10 +25,6 @@ userRoute.post(
   }
 )
 
-/**
- * Get user info
- * GET /api/users/:id
- */
 userRoute.get(
   '/:id',
   validate(
@@ -49,7 +34,7 @@ userRoute.get(
     })
   ),
   (c) => {
-    const { id } = c.req.valid('param')
+    const { id } = (c as any).req.valid('param')
     return c.json({
       success: true,
       user: {
@@ -61,10 +46,6 @@ userRoute.get(
   }
 )
 
-/**
- * Search users
- * GET /api/users/search?q=keyword&page=1
- */
 userRoute.get(
   '/search',
   validate(
@@ -75,7 +56,7 @@ userRoute.get(
     })
   ),
   (c) => {
-    const { q, page } = c.req.valid('query')
+    const { q, page } = (c as any).req.valid('query')
     return c.json({
       success: true,
       query: q,

@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Poppins:wght@400;500;600;700;800;900&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Poppins:wght@400;500;600;700;800;900&display=swap");
 
 @layer base {
   :root {
@@ -63,7 +63,8 @@
   }
 
   .dark body {
-    background-image: radial-gradient(at 50% 0%, hsla(238, 83%, 66%, 0.05) 0%, transparent 50%),
+    background-image:
+      radial-gradient(at 50% 0%, hsla(238, 83%, 66%, 0.05) 0%, transparent 50%),
       radial-gradient(at 100% 100%, hsla(238, 83%, 66%, 0.02) 0%, transparent 50%);
     background-attachment: fixed;
   }
@@ -100,9 +101,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(to bottom,
-        transparent 50%,
-        rgba(var(--primary), 0.02) 50%);
+    background: linear-gradient(to bottom, transparent 50%, rgba(var(--primary), 0.02) 50%);
     background-size: 100% 4px;
     z-index: 2;
     pointer-events: none;
@@ -124,7 +123,6 @@
   }
 
   @keyframes glow-pulse {
-
     0%,
     100% {
       opacity: 0.3;

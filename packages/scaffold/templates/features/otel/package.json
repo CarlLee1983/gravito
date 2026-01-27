@@ -1,7 +1,7 @@
 {
-    "dependencies": {
-        "@opentelemetry/sdk-node": "^0.45.0",
-        "@opentelemetry/exporter-trace-otlp-http": "^0.45.0",
-        "@gravito/telemetry": "workspace:*"
-    }
+  "dependencies": {
+    "@opentelemetry/sdk-node": "^0.45.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.45.0",
+    "@gravito/telemetry": "workspace:*"
+  }
 }

@@ -3,13 +3,7 @@
   "id": "catalog",
   "version": "0.1.0",
   "description": "A Gravito Satellite",
-  "capabilities": [
-    "create-catalog"
-  ],
-  "requirements": [
-    "cache"
-  ],
-  "hooks": [
-    "catalog:created"
-  ]
+  "capabilities": ["create-catalog"],
+  "requirements": ["cache"],
+  "hooks": ["catalog:created"]
 }

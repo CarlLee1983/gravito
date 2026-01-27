@@ -27,7 +27,7 @@ userRoute.post(
     })
   ),
   (c) => {
-    const { username } = c.req.valid('json')
+    const { username } = (c as any).req.valid('json')
     return c.json({
       success: true,
       token: 'fake-jwt-token',
@@ -49,7 +49,7 @@ userRoute.get(
     })
   ),
   (c) => {
-    const { id } = c.req.valid('param')
+    const { id } = (c as any).req.valid('param')
     return c.json({
       success: true,
       user: {
@@ -75,7 +75,7 @@ userRoute.get(
     })
   ),
   (c) => {
-    const { q, page } = c.req.valid('query')
+    const { q, page } = (c as any).req.valid('query')
     return c.json({
       success: true,
       query: q,

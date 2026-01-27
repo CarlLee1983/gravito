@@ -41,7 +41,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import type { ProcessingStatus } from '../types'
 
 interface Props {
@@ -55,8 +55,7 @@ const status = ref<ProcessingStatus | null>(null)
 let eventSource: EventSource | null = null
 
 onMounted(() => {
-  const endpoint =
-    props.statusEndpoint || `/forge/status/${props.jobId}/stream`
+  const endpoint = props.statusEndpoint || `/forge/status/${props.jobId}/stream`
   eventSource = new EventSource(endpoint)
 
   eventSource.onmessage = (event) => {
@@ -64,10 +63,7 @@ onMounted(() => {
       const newStatus = JSON.parse(event.data) as ProcessingStatus
       status.value = newStatus
 
-      if (
-        newStatus.status === 'completed' ||
-        newStatus.status === 'failed'
-      ) {
+      if (newStatus.status === 'completed' || newStatus.status === 'failed') {
         eventSource?.close()
       }
     } catch (error) {
