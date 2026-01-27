@@ -201,7 +201,8 @@ export default {
     orbitTitle: 'Kinetic Modules',
     galaxy_desc:
       'Want React? Add Ion. Want Vue? Add Ion. Want HTML? Add Prism. Want SEO? Add Luminosity. Need a Database? Add Atlas. Load only what you need, when you need it.',
-    galaxy_atlas_stable: 'Atlas (ORM) — High-Performance Bun-Native ORM (v1.1.0 released).',
+    galaxy_atlas_stable:
+      'Atlas (ORM) — High-Performance Bun-Native ORM (v1.4.0 released with major performance optimizations).',
     scaleTitle: 'Infinite Scalability',
     scaleDesc:
       "From a single-file API to a global enterprise system, the architecture adapts dynamically to your project's gravity.",

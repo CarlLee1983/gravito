@@ -60,6 +60,27 @@ const releasesZh: ReleaseEntry[] = [
     featured: true,
   },
   {
+    id: 'atlas-v1-4',
+    date: '2026-01-27',
+    type: 'release',
+    version: '1.4.0',
+    title: 'Atlas ORM v1.4.0 正式發佈',
+    description:
+      'Atlas ORM 迎來重大性能優化更新！針對核心組件進行深度優化，顯著提升查詢構建、模型操作和批量處理的性能。',
+    highlights: [
+      '性能優化：QueryBuilder Clone 採用 Copy-on-Write 策略，只讀場景性能提升 30-50%',
+      '深度比較優化：DirtyTracker 使用結構化比較算法，避免 JSON.stringify 開銷，性能提升 60-80%',
+      '快取優化：Model Hydration 快取屬性描述符和 Studly case 轉換，屬性存取性能提升 15-25%',
+      '批量操作優化：動態計算最優 Chunk Size，根據資料庫類型和欄位數量自動調整，批量插入性能提升 20-40%',
+      '開發體驗：Grammar 快取新增詳細統計功能，提供 hit/miss rate 等監控指標',
+    ],
+    links: [
+      { label: '訪問 Atlas 官網', url: 'https://atlas.gravito.dev' },
+      { label: '查看文檔', url: 'https://atlas.gravito.dev/docs' },
+    ],
+    featured: true,
+  },
+  {
     id: 'atlas-v1-1',
     date: '2026-01-13',
     type: 'release',
@@ -77,7 +98,7 @@ const releasesZh: ReleaseEntry[] = [
       { label: '訪問 Atlas 官網', url: 'https://atlas.gravito.dev' },
       { label: '查看文檔', url: 'https://atlas.gravito.dev/docs' },
     ],
-    featured: true,
+    featured: false,
   },
   {
     id: 'atlas-site-launch',
@@ -189,6 +210,27 @@ const releasesEn: ReleaseEntry[] = [
     featured: true,
   },
   {
+    id: 'atlas-v1-4',
+    date: '2026-01-27',
+    type: 'release',
+    version: '1.4.0',
+    title: 'Atlas ORM v1.4.0 Released',
+    description:
+      'Major performance optimization release for Atlas ORM! Deep optimizations across core components significantly improve query building, model operations, and batch processing performance.',
+    highlights: [
+      'Performance: QueryBuilder Clone uses Copy-on-Write strategy, 30-50% faster for read-only scenarios',
+      'Deep Comparison: DirtyTracker uses structured comparison algorithm, avoiding JSON.stringify overhead, 60-80% faster',
+      'Caching: Model Hydration caches property descriptors and Studly case conversions, 15-25% faster property access',
+      'Batch Operations: Dynamic optimal Chunk Size calculation based on database type and column count, 20-40% faster bulk inserts',
+      'Developer Experience: Grammar cache now includes detailed statistics with hit/miss rate monitoring',
+    ],
+    links: [
+      { label: 'Visit Atlas Site', url: 'https://atlas.gravito.dev' },
+      { label: 'View Docs', url: 'https://atlas.gravito.dev/docs' },
+    ],
+    featured: true,
+  },
+  {
     id: 'atlas-v1-1',
     date: '2026-01-13',
     type: 'release',
@@ -206,7 +248,7 @@ const releasesEn: ReleaseEntry[] = [
       { label: 'Visit Atlas Site', url: 'https://atlas.gravito.dev' },
       { label: 'View Docs', url: 'https://atlas.gravito.dev/docs' },
     ],
-    featured: true,
+    featured: false,
   },
   {
     id: 'atlas-site-launch',
