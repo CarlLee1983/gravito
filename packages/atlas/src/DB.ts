@@ -3,6 +3,7 @@
  * @description Static entry point for database operations (Laravel-style)
  */
 
+import { Connection } from './connection/Connection'
 import { ConnectionManager } from './connection/ConnectionManager'
 import { Grammar } from './grammar/Grammar'
 import type {
@@ -77,7 +78,22 @@ export class DB {
     this._debug = enabled
     if (!enabled) {
       this._queryLog = []
+      Connection.queryListeners = Connection.queryListeners.filter(
+        (l) => l !== this.globalQueryListener
+      )
+    } else {
+      if (!Connection.queryListeners.includes(this.globalQueryListener)) {
+        Connection.queryListeners.push(this.globalQueryListener)
+      }
     }
+  }
+
+  private static globalQueryListener = (query: {
+    sql: string
+    bindings: unknown[]
+    duration: number
+  }) => {
+    DB.logQuery(query.sql, query.bindings, query.duration)
   }
 
   /**
