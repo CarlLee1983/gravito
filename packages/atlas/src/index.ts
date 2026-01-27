@@ -97,6 +97,8 @@ export {
   ColumnNotFoundError,
   column,
   DirtyTracker,
+  eagerLoad,
+  eagerLoadMany,
   getRelationships,
   HasMany,
   HasOne,

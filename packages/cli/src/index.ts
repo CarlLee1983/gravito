@@ -795,6 +795,7 @@ cli
   .option('-m, --migration', 'Create a new migration file for the model')
   .option('-c, --controller', 'Create a new controller for the model')
   .option('-r, --request', 'Create a new form request for the model')
+  .option('-g, --graphql', 'Create a model configured for GraphQL automation')
   .option('-a, --all', 'Create a migration, controller, and form request for the model')
   .action(async (name, options) => {
     // 1. Make the model

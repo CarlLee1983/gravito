@@ -6,6 +6,7 @@ import { createAtlasSchema } from '../src/atlas'
 // Define models
 class Post extends Model {
   static table = 'posts'
+  static connection = 'atlas_int'
   static casts = {
     title: 'string',
   }
@@ -13,6 +14,7 @@ class Post extends Model {
 
 class User extends Model {
   static table = 'users'
+  static connection = 'atlas_int'
   static casts = {
     active: 'boolean',
     age: 'integer',
@@ -27,15 +29,21 @@ BelongsTo(() => User)(Post.prototype, 'user')
 describe('Atlas Integration', () => {
   beforeAll(async () => {
     // Setup Atlas (In-Memory SQLite)
-    DB.addConnection('default', {
-      driver: 'sqlite',
-      database: ':memory:',
-    })
+    if (!DB.getConnectionNames().includes('atlas_int')) {
+      DB.addConnection('atlas_int', {
+        driver: 'sqlite',
+        database: ':memory:',
+      })
+    }
 
     // Initialize SchemaRegistry in JIT mode
-    SchemaRegistry.init({ mode: 'jit' })
+    try {
+      SchemaRegistry.getInstance()
+    } catch {
+      SchemaRegistry.init({ mode: 'jit' })
+    }
 
-    await Schema.create('users', (t) => {
+    await Schema.connection('atlas_int').create('users', (t) => {
       t.id()
       t.string('name')
       t.integer('age')
@@ -43,7 +51,7 @@ describe('Atlas Integration', () => {
       t.timestamps()
     })
 
-    await Schema.create('posts', (t) => {
+    await Schema.connection('atlas_int').create('posts', (t) => {
       t.id()
       t.string('title')
       t.integer('user_id')
@@ -51,14 +59,14 @@ describe('Atlas Integration', () => {
     })
 
     // Populate data
-    await DB.table('users').insert({
+    await DB.connection('atlas_int').table('users').insert({
       name: 'Alice',
       age: 30,
       active: true,
       created_at: new Date(),
       updated_at: new Date(),
     })
-    await DB.table('users').insert({
+    await DB.connection('atlas_int').table('users').insert({
       name: 'Bob',
       age: 25,
       active: false,
@@ -67,13 +75,13 @@ describe('Atlas Integration', () => {
     })
 
     // Create posts for Alice (ID 1)
-    await DB.table('posts').insert({
+    await DB.connection('atlas_int').table('posts').insert({
       title: 'First Post',
       user_id: 1,
       created_at: new Date(),
       updated_at: new Date(),
     })
-    await DB.table('posts').insert({
+    await DB.connection('atlas_int').table('posts').insert({
       title: 'Second Post',
       user_id: 1,
       created_at: new Date(),
@@ -107,7 +115,7 @@ describe('Atlas Integration', () => {
     })
 
     // biome-ignore lint/suspicious/noExplicitAny: Test result
-    const result: any = await res.json()
+    const result: unknown = await res.json()
     expect(result.errors).toBeUndefined()
     expect(result.data.user.name).toBe('Alice')
     expect(result.data.user.posts).toHaveLength(2)
@@ -137,7 +145,7 @@ describe('Atlas Integration', () => {
     })
 
     // biome-ignore lint/suspicious/noExplicitAny: Test result
-    const result: any = await res.json()
+    const result: unknown = await res.json()
     expect(result.errors).toBeUndefined()
     expect(result.data.user.name).toBe('Alice')
   })
@@ -168,14 +176,14 @@ describe('Atlas Integration', () => {
     })
 
     // biome-ignore lint/suspicious/noExplicitAny: Test result
-    const result: any = await res.json()
+    const result: unknown = await res.json()
     expect(result.errors).toBeUndefined()
     expect(result.data.createUser.name).toBe('Charlie')
     expect(result.data.createUser.age).toBe(35)
     expect(result.data.createUser.active).toBe(true)
 
     // Verify DB
-    const user = await DB.table('users').where('name', 'Charlie').first()
+    const user = await DB.connection('atlas_int').table('users').where('name', 'Charlie').first()
     expect(user).toBeDefined()
     expect(user.age).toBe(35)
   })
@@ -211,7 +219,7 @@ describe('Atlas Integration', () => {
     expect(result.data.updateUser.age).toBe(31)
 
     // Verify DB
-    const user = await DB.table('users').where('id', 1).first()
+    const user = await DB.connection('atlas_int').table('users').where('id', 1).first()
     expect(user.age).toBe(31)
   })
 
@@ -241,7 +249,7 @@ describe('Atlas Integration', () => {
     expect(result.data.deleteUser).toBe(true)
 
     // Verify DB
-    const user = await DB.table('users').where('id', 2).first()
+    const user = await DB.connection('atlas_int').table('users').where('id', 2).first()
     expect(user).toBeNull()
   })
 
@@ -254,14 +262,14 @@ describe('Atlas Integration', () => {
 
     // Create more users for pagination test
     // Current DB: Alice(1), Charlie(3). Bob(2) was deleted.
-    await DB.table('users').insert({
+    await DB.connection('atlas_int').table('users').insert({
       name: 'Dave',
       age: 40,
       active: true,
       created_at: new Date(),
       updated_at: new Date(),
     })
-    await DB.table('users').insert({
+    await DB.connection('atlas_int').table('users').insert({
       name: 'Eve',
       age: 20,
       active: true,
@@ -287,7 +295,7 @@ describe('Atlas Integration', () => {
     })
 
     // biome-ignore lint/suspicious/noExplicitAny: Test result
-    const resultPage: any = await resPage.json()
+    const resultPage: unknown = await resPage.json()
     expect(resultPage.errors).toBeUndefined()
     expect(resultPage.data.users).toHaveLength(2)
 
@@ -307,7 +315,7 @@ describe('Atlas Integration', () => {
     })
 
     // biome-ignore lint/suspicious/noExplicitAny: Test result
-    const resultFilter: any = await resFilter.json()
+    const resultFilter: unknown = await resFilter.json()
     expect(resultFilter.errors).toBeUndefined()
     // Should be 4 active users
     expect(resultFilter.data.users).toHaveLength(4)
@@ -344,7 +352,7 @@ describe('Atlas Integration', () => {
     })
 
     // biome-ignore lint/suspicious/noExplicitAny: Test result
-    const jsonGt: any = await resGt.json()
+    const jsonGt: unknown = await resGt.json()
     expect(jsonGt.errors).toBeUndefined()
     expect(jsonGt.data.users).toHaveLength(3)
     // Ordered by Age ASC: Alice(30), Charlie(35), Dave(40)
@@ -371,7 +379,7 @@ describe('Atlas Integration', () => {
     })
 
     // biome-ignore lint/suspicious/noExplicitAny: Test result
-    const jsonLike: any = await resLike.json()
+    const jsonLike: unknown = await resLike.json()
     expect(jsonLike.errors).toBeUndefined()
     expect(jsonLike.data.users).toHaveLength(1)
     expect(jsonLike.data.users[0].name).toBe('Alice')

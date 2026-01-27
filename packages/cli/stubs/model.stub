@@ -1,14 +1,14 @@
-import { Model, Column, PrimaryKey } from '@gravito/atlas'
+import { Model, column } from '@gravito/atlas'
 
 export class {{ Name }} extends Model {
   static table = '{{ name }}s'
 
-  @PrimaryKey()
-  id!: number
+  @column({ isPrimary: true })
+  declare id: number
 
-  @Column()
-  name!: string
+  @column()
+  declare name: string
 
-  // @Column()
-  // createdAt!: Date
+  // @column()
+  // declare createdAt: Date
 }

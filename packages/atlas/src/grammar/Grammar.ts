@@ -195,7 +195,10 @@ export abstract class Grammar implements GrammarContract {
    */
   protected getStructuralKey(query: CompiledQuery): string {
     const wheres = query.wheres
-      .map((w) => `${w.type}:${w.column}:${w.operator}:${w.boolean}:${w.not}:${w.sql}`)
+      .map(
+        (w) =>
+          `${w.type}:${w.column}:${w.operator}:${w.boolean}:${w.not}:${w.sql}:${w.values?.length ?? 0}`
+      )
       .join('|')
 
     const joins = query.joins

@@ -179,6 +179,18 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   }
 
   /**
+   * Set the table for the query
+   *
+   * @param table - The table name
+   * @returns The current QueryBuilder instance
+   */
+  from(table: string): this {
+    this.ensureOwnState()
+    this.tableName = table
+    return this
+  }
+
+  /**
    * Add a raw SELECT expression to the query
    *
    * @param sql - The raw SQL string or Expression instance
@@ -595,6 +607,34 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
       boolean: 'and',
     })
     return this
+  }
+
+  /**
+   * Add a WHERE EXISTS clause
+   *
+   * @param callback - Callback receiving a new QueryBuilder instance
+   * @returns The current QueryBuilder instance
+   */
+  whereExists(callback: (query: QueryBuilderContract<any>) => void): this {
+    this.ensureOwnState()
+    const subQuery = new QueryBuilder(this.connection, this.grammar, '')
+    callback(subQuery)
+    const sql = subQuery.toSql()
+    return this.whereRaw(`EXISTS (${sql})`, subQuery.getBindings())
+  }
+
+  /**
+   * Add a WHERE NOT EXISTS clause
+   *
+   * @param callback - Callback receiving a new QueryBuilder instance
+   * @returns The current QueryBuilder instance
+   */
+  whereNotExists(callback: (query: QueryBuilderContract<any>) => void): this {
+    this.ensureOwnState()
+    const subQuery = new QueryBuilder(this.connection, this.grammar, '')
+    callback(subQuery)
+    const sql = subQuery.toSql()
+    return this.whereRaw(`NOT EXISTS (${sql})`, subQuery.getBindings())
   }
 
   // ============================================================================
