@@ -2,25 +2,17 @@
 title: ORM 使用指南
 ---
 
-# ORM 使用指南
+# ORM 使用指南 (Atlas)
 
-> 完整的 Atlas ORM 使用說明，涵蓋所有功能和使用場景。Atlas 提供了類似 Laravel Eloquent 的體驗，Bun 原生效能，底層驅動靈感來自 Prisma 與 Drizzle。
+> Atlas 是 Gravito 生態系中的標準資料庫與 ORM 軌道 (Orbit)。它提供了類似 Laravel Eloquent 的 Active Record 體驗，並針對 Bun 的高效能與 TypeScript 的型別安全進行了深度優化。
 
-## Beta 說明
+## 核心設計理念
 
-Atlas 為 Gravito 1.0.0-beta 設計，建議使用 Bun 1.3.4+。CLI 的 migration 流程封裝 `drizzle-kit`，並在上層維持熟悉的 Active Record 操作體驗。
+Atlas 旨在消弭物件與資料庫之間的隔閡。它不只是一個查詢建構器，更是一套完整的資料建模與治理系統：
 
-## 目錄
-
-1. [基本設定](#基本設定)
-2. [定義 Model](#定義-model)
-3. [CRUD 操作](#crud-操作)
-4. [查詢構造器 (Query Builder)](#查詢構造器-query-builder)
-5. [關聯 (Relationships)](#關聯-relationships)
-6. [分頁](#分頁)
-7. [事務操作](#事務操作)
-8. [遷移和 Seeder](#遷移和-seeder)
-9. [最佳實踐](#最佳實踐)
+- **Active Record**: 模型 (Model) 不僅是資料載體，也是資料操作的中心。
+- **類型先行 (Type-First)**: 利用 TypeScript 5.x 裝飾器與 `declare` 語法，提供完美的型別提示。
+- **Bun 原生**: 深度整合 `Bun.sql`，實現微秒級的資料存取。
 
 ## 基本設定
 
@@ -28,79 +20,35 @@ Atlas 為 Gravito 1.0.0-beta 設計，建議使用 Bun 1.3.4+。CLI 的 migratio
 
 ```bash
 bun add @gravito/atlas
-
-# ⚠️ 重要：您必須手動安裝資料庫驅動
-# Atlas 1.1+ 不再綑綁驅動程式，以保持安裝體積輕量。
-
-# PostgreSQL
-bun add pg
-
-# MySQL / MariaDB
-bun add mysql2
-
-# SQLite
-# 如果使用 Bun runtime 則無需安裝！
-# 若是 Node.js 環境：
-bun add better-sqlite3
-
-# MongoDB
-bun add mongodb
-
-# Redis
-bun add ioredis
 ```
 
-### 2. 初始化資料庫連接
+### 2. 初始化連接
 
-推薦在應用程式的引導階段（`bootstrap.ts`）配置 `DB`。
+推薦透過 `gravito.config.ts` 或在 `bootstrap.ts` 中配置 `OrbitAtlas`：
 
 ```typescript
-import { DB } from '@gravito/atlas';
+import { OrbitAtlas } from '@gravito/atlas';
 
-// 配置 Atlas
-DB.configure({
-  default: 'postgres',
-  connections: {
-    postgres: {
-      driver: 'postgres',
-      host: process.env.DB_HOST || 'localhost',
-      database: process.env.DB_NAME || 'gravito',
-      username: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
+const core = new PlanetCore({
+  orbits: [new OrbitAtlas({
+    default: 'sqlite',
+    connections: {
+      sqlite: { driver: 'sqlite', database: 'database.sqlite' }
     }
-  }
-});
-```
-
-### 3. 在路由中使用
-
-```typescript
-import { DB } from '@gravito/atlas';
-
-core.app.get('/users', async (c) => {
-  // 直接使用 DB 門面
-  const users = await DB.table('users').get();
-  return c.json({ users });
+  })]
 });
 ```
 
 ## 定義 Model
 
-Atlas 使用 Active Record 模式。定義模型時，只需繼承 `Model` 並設定 `table` 名稱。
-
-### 定義 User Model
+Atlas 使用裝飾器來定義資料庫對應關係。
 
 ```typescript
 import { Model, column } from '@gravito/atlas';
 
 export class User extends Model {
-  // 設定資料表名稱
   static table = 'users';
-  
-  // 主鍵（預設為 'id'）
-  static primaryKey = 'id';
 
-  // 使用 @column 裝飾器定義資料庫欄位
   @column({ isPrimary: true })
   declare id: number;
 
@@ -109,9 +57,6 @@ export class User extends Model {
 
   @column()
   declare email: string;
-
-  @column()
-  declare active: boolean;
 }
 ```
 

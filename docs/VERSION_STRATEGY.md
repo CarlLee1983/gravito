@@ -12,14 +12,12 @@
 - `@gravito/luminosity-adapter-photon`
 - `@gravito/stasis`
 
-### Alpha 版本 (`1.0.0-alpha.*`)
+### 領域衛星 (`1.0.0-alpha.*`)
 
-**功能模組與工具**，仍在積極開發或測試階段：
-
-- 資料與儲存：`@gravito/atlas`, `@gravito/dark-matter`, `@gravito/nebula`, `@gravito/plasma`
-- 系統功能：`@gravito/sentinel` (Auth), `@gravito/impulse`, `@gravito/ion`, `@gravito/pulsar`
-- 視圖層：`@gravito/freeze` 系列, `@gravito/prism`
-- 工具：`@gravito/cli`, `@gravito/client`, `@gravito/atlas`, `@gravito/constellation`
+- `@gravito/satellite-catalog`
+- `@gravito/satellite-membership`
+- `@gravito/satellite-commerce`
+- `@gravito/satellite-support`
 
 ## 版本更新流程
 

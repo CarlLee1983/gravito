@@ -1,0 +1,10 @@
+import { Command } from '@gravito/pulse'
+
+export default class {{ Name }} extends Command {
+  static signature = '{{ command }}'
+  static description = 'Command description'
+
+  async handle() {
+    this.info('{{ Name }} executed successfully!')
+  }
+}

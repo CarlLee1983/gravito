@@ -824,6 +824,11 @@ cli
   .action((name) => make.run('request', name))
 
 cli
+  .command('make:command <name>', 'Create a new custom CLI command')
+  .option('--command <command>', 'The signature of the command (e.g. app:greet)')
+  .action((name, options) => make.run('command', name, options))
+
+cli
   .command('make:satellite <name>', 'Create a new Gravito Satellite (Plugin)')
   .option('--internal', 'Create as an internal official satellite in satellites/ directory')
   .action((name, options) => make.run('satellite', name, options))

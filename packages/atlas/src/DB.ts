@@ -91,6 +91,10 @@ export class DB {
         }
         Connection.queryListeners.push(this.queryListener)
       }
+
+      if (!Connection.queryListeners.includes(this.globalQueryListener)) {
+        Connection.queryListeners.push(this.globalQueryListener)
+      }
     } else {
       // Remove query listener and clear log
       if (this.queryListener) {
@@ -101,7 +105,18 @@ export class DB {
         this.queryListener = undefined
       }
       this._queryLog = []
+      Connection.queryListeners = Connection.queryListeners.filter(
+        (l) => l !== this.globalQueryListener
+      )
     }
+  }
+
+  private static globalQueryListener = (query: {
+    sql: string
+    bindings: unknown[]
+    duration: number
+  }) => {
+    DB.logQuery(query.sql, query.bindings, query.duration)
   }
 
   /**

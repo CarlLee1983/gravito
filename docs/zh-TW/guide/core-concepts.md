@@ -29,16 +29,16 @@ title: Gravito 核心概念
 
 在 Gravito 的世界觀中，系統被視為一個微型銀河系：
 
-- **單一奇點 (Singularity)**：所有的請求最終都優化為單一的路徑跳轉，消弭框架開銷。
-- **核心引力 (Gravity)**：Kernel 僅負責維持系統的運作與協調，而不干涉具體業務。
-- **動力模組 (Kinetic Modules)**：基礎設施模組以外掛化方式擴展核心功能，完全解耦。
+- **微核心 (PlanetCore)**：Kernel 僅負責維持系統的運作與協調，不干涉具體業務。
+- **軌道 (Orbits)**：基礎設施模組（如 Atlas, Signal）環繞核心，提供強大功能。
+- **衛星 (Satellites)**：業務邏輯中心，採用 DDD 模式封裝領域邏輯。
 
 ### 四大核心價值
 
-- **高效能 (Performance)**：基於自研核心 & Bun，實現微秒級的路由轉發。
-- **零損耗 (Zero Overhead)**：啟動時解析路由與依賴，避免執行時的過度掃描。
+- **高性能 (Performance)**：基於 Bun 實現微秒級的路由轉發。
+- **MDD (Manifest-Driven)**：透過清單宣告快速組裝系統。
 - **微核心 (Micro-kernel)**：核心僅有幾 KB，功能完全按需引入。
-- **AI 友善 (AI-First)**：透過嚴格的介面契約與型別推導，讓 Copilot/Cursor 更聰明。
+- **AI 友善 (AI-First)**：透過 UseCase 模式與嚴格型別，讓 AI 生成的程式碼更穩定。
 
 ---
 
@@ -52,33 +52,22 @@ title: Gravito 核心概念
 - **Hook 系統**：透過 Filter 與 Action 實現非侵入式擴展。
 - **依賴注入**：輕量級的 IoC 容器。
 
-```typescript
-import { PlanetCore } from '@gravito/core'
+### 2. Orbits (軌道)
 
-const core = await PlanetCore.boot({
-  modules: [Ion, Luminosity], // 僅加載 1.0 穩定模組
-})
-
-export default core.liftoff() // 點火升空
-```
-
-### 2. 動力模組 (Kinetic Modules)
-
-這些模組以外掛化方式擴展核心功能。為了解耦與效能，核心不包含任何業務邏輯，所有的功能（如資料庫、身份驗證、前端橋接）都由動力模組提供。
-
-> 了解更多：[動力生態系 (Kinetic Ecosystem)](./ecosystem.md)
+這些模組以外掛化方式擴展核心功能。核心不包含任何業務邏輯，所有的基礎功能（如資料庫 `Atlas`、事件匯流排 `Signal`）都由 Orbits 提供。
 
 ### 3. Satellites (業務衛星)
 
-這是你的領地。所有 Controller、Service 與業務邏輯都封裝在 Satellites 中，掛載於核心或專屬動力模組之上。
+這是你的領地。所有 UseCase、Controller 與領域邏輯都封裝在 Satellites 中。
 
 ---
 
 ## 核心特性
 
-### 內容協商 (Content Negotiation)
+### 清單驅動開發 (MDD)
 
-Gravito 內建智慧型內容協商，同一個 Controller 能根據請求標頭自動切換回應類型：
+透過 `gravito.config.ts` 一鍵啟用功能，框架自動處理 Provider 發現與路由掛載。
+
 
 ```typescript
 export class UserController {
@@ -177,7 +166,7 @@ export class HeavyServiceProvider extends ServiceProvider {
 
 - [佈署指南 (Deployment Guide)](./deployment.md)
 - [路由系統 (Routing)](./routing.md)
-- [ORM 實踐 (Drizzle)](./orm-usage.md)
+- [ORM 實踐 (Atlas)](./orm-usage.md)
 
 ---
 

@@ -3,9 +3,9 @@ title: Kinetic Ecosystem
 description: Explore Gravito's Kinetic Modules, from database to real-time communication support.
 ---
 
-# Kinetic Ecosystem
+# Galaxy Ecosystem
 
-Gravito is a vast galaxy composed of numerous **Kinetic Modules**. These modules are highly decoupled, allowing you to freely combine them like building blocks according to your needs.
+Gravito is a vast galaxy composed of **PlanetCore (Micro-kernel)**, **Orbits (Infrastructure)**, and **Satellites (Domain)**. These components are highly decoupled, allowing you to freely combine them via `gravito.config.ts`.
 
 ---
 
@@ -15,7 +15,7 @@ Gravito is a vast galaxy composed of numerous **Kinetic Modules**. These modules
 <div class="ecosystem-grid">
   <div class="module-card group">
     <div class="card-accent"></div>
-    <span class="module-code">SINGULARITY</span>
+    <span class="module-code">KERNEL</span>
     <h3 class="module-title">PlanetCore</h3>
     <code class="module-pkg">@gravito/core</code>
     <p class="module-desc">The gravitational center. An ultra-lightweight IoC container and lifecycle manager that hosts all kinetic modules.</p>
@@ -26,7 +26,7 @@ Gravito is a vast galaxy composed of numerous **Kinetic Modules**. These modules
     <span class="module-code">PHOTON</span>
     <h3 class="module-title">Photon HTTP</h3>
     <code class="module-pkg">@gravito/photon</code>
-    <p class="module-desc">Our self-developed high-performance native HTTP engine. Precision-engineered for ultra-low latency request handling with zero abstraction overhead.</p>
+    <p class="module-desc">High-performance HTTP engine. Engineered for ultra-low latency request handling with zero abstraction overhead.</p>
   </div>
 
   <div class="module-card group">
@@ -36,33 +36,61 @@ Gravito is a vast galaxy composed of numerous **Kinetic Modules**. These modules
     <code class="module-pkg">@gravito/pulse</code>
     <p class="module-desc">The developer's heartbeat. A high-efficiency CLI tool powered by Bun, handling everything from scaffolding to migrations.</p>
   </div>
-
-  <div class="module-card group">
-    <div class="card-accent"></div>
-    <span class="module-code">BEAM</span>
-    <h3 class="module-title">Beam Client</h3>
-    <code class="module-pkg">@gravito/beam</code>
-    <p class="module-desc">The Particle Beam. A lightweight client communication tool providing type-safe API call interfaces for the frontend.</p>
-  </div>
-
-  <div class="module-card group">
-    <div class="card-accent"></div>
-    <span class="module-code">ORBIT</span>
-    <h3 class="module-title">GraphQL</h3>
-    <code class="module-pkg">@gravito/graphql</code>
-    <p class="module-desc">The Orbit. Zero-config GraphQL integration powered by Yoga, bringing modern API capabilities to your galaxy.</p>
-  </div>
 </div>
 
-## Data & Storage
+## Infrastructure Orbits
 <div class="ecosystem-grid">
   <div class="module-card data group">
     <div class="card-accent"></div>
-    <span class="module-code">MATTER</span>
+    <span class="module-code">ATLAS</span>
     <h3 class="module-title">Atlas ORM</h3>
     <code class="module-pkg">@gravito/atlas</code>
-    <p class="module-desc">The physical form of data. An enterprise ORM that optimizes complex relational logic into clean, Eloquent-style syntax.</p>
+    <p class="module-desc">Physical form of data. Enterprise ORM supporting Active Record patterns and native Bun.sql performance.</p>
   </div>
+
+  <div class="module-card data group">
+    <div class="card-accent"></div>
+    <span class="module-code">SIGNAL</span>
+    <h3 class="module-title">Signal</h3>
+    <code class="module-pkg">@gravito/signal</code>
+    <p class="module-desc">Strategic communication. Integrates the central Event Bus with a professional mail delivery system.</p>
+  </div>
+
+  <div class="module-card data group">
+    <div class="card-accent"></div>
+    <span class="module-code">STREAM</span>
+    <h3 class="module-title">Stream Queue</h3>
+    <code class="module-pkg">@gravito/stream</code>
+    <p class="module-desc">High-performance job queues with multi-driver support (Redis, SQS, etc.).</p>
+  </div>
+
+  <div class="module-card frontend group">
+    <div class="card-accent"></div>
+    <span class="module-code">ION</span>
+    <h3 class="module-title">Ion Bridge</h3>
+    <code class="module-pkg">@gravito/ion</code>
+    <p class="module-desc">Momentum transfer. A full-stack bridge (Inertia) that dissolves the boundary between frontend and backend.</p>
+  </div>
+</div>
+
+## Domain Satellites
+<div class="ecosystem-grid">
+  <div class="module-card group">
+    <div class="card-accent"></div>
+    <span class="module-code">CATALOG</span>
+    <h3 class="module-title">Catalog</h3>
+    <code class="module-pkg">@gravito/satellite-catalog</code>
+    <p class="module-desc">Product management, categories, and inventory management.</p>
+  </div>
+
+  <div class="module-card group">
+    <div class="card-accent"></div>
+    <span class="module-code">MEMBERSHIP</span>
+    <h3 class="module-title">Membership</h3>
+    <code class="module-pkg">@gravito/satellite-membership</code>
+    <p class="module-desc">Multi-guard authentication, roles, and permission control.</p>
+  </div>
+</div>
 
   <div class="module-card data group">
     <div class="card-accent"></div>

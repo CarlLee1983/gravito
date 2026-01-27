@@ -1,49 +1,60 @@
 # Gravito Framework: AI Agent Implementation Guide
 
-> **Version**: 1.0.0 (Post-Dogfooding Fixes)
-> **Architecture**: Action Domain (ADR)
-> **Purpose**: Rapid onboarding for AI Agents to generate production-ready Gravito code.
+> **Version**: 1.0.0 (Galaxy Architecture)
+> **Architecture**: Core-Orbit-Satellite (Galaxy)
+> **Purpose**: Rapid onboarding for AI Agents to generate production-ready Gravito 1.0 code.
 
 ---
 
-## 1. Project Structure (Action Domain)
+## 1. Galaxy Architecture & MDD
 
-We strictly follow the **Action-Domain-Responder (ADR)** pattern variant.
+Gravito 1.0 follows the **Galaxy Architecture** and **Manifest-Driven Development (MDD)**.
+
+### A. The Hierarchy
+- **PlanetCore (@gravito/core)**: The micro-kernel (IoC, Lifecycle, Hooks).
+- **Orbits (Infrastructure)**: Strategic extensions (Database, Auth, View Engine). 
+  - e.g., `OrbitAtlas` (DB), `OrbitIon` (Inertia), `OrbitSignal` (Mail).
+- **Satellites (Domain)**: Self-contained business modules (Catalog, Cart, Membership).
+
+### B. The Manifest (`gravito.config.ts`)
+The single source of truth for application composition.
+```typescript
+export default {
+  name: 'My Store',
+  modules: [
+    'catalog',    // Auto-mounts Catalog Satellite
+    'membership', // Auto-mounts Membership Satellite
+  ],
+  settings: { locale: 'en-US' }
+}
+```
+
+---
+
+## 2. Project Structure (Domain-Driven)
+
+We strictly follow a modular, domain-driven structure within Satellites or local source.
 
 ```
 src/
-├── actions/           # Business Logic (Single Responsibility)
-│   ├── Action.ts      # Base Abstract Class
-│   └── [Domain]/      # e.g., player, wallet, game
-│       └── CreatePlayerAction.ts
-├── models/            # Database Entities (Atlas ORM)
-│   ├── User.ts
-│   └── Wallet.ts
-├── repositories/      # Data Access Layer
-│   └── UserRepository.ts
-├── controllers/       # HTTP Transport Layer
-│   └── api/v1/        # Versioned Controllers
-│       └── PlayerController.ts
-├── middleware/        # Request Interceptors (Auth, Logging)
-│   └── VerifySignature.ts
-├── routes/            # Route Definitions
-│   └── api.ts
-├── types/             # TypeScript Definitions
-│   ├── requests/
-│   └── responses/
-├── integrations/      # External Service Drivers (Factory Pattern)
-│   ├── GameProvider.ts
-│   ├── GameProviderFactory.ts
-│   └── drivers/
-└── bootstrap.ts       # Application Entry Point
+├── config/             # Configuration files (gravito.config.ts)
+├── controllers/        # HTTP Transport Layer (Photon/Ion)
+├── use-cases/          # Business Logic (Application Layer)
+│   └── [Domain]/       # e.g., catalog, order
+├── models/             # Database Entities (Atlas ORM)
+├── repositories/       # Data Access Layer
+├── middleware/         # Request Interceptors
+├── views/              # Root HTML templates (Prism)
+├── client/             # Frontend SPA (React/Vue/Svelte)
+└── entry-server.ts     # Application Entry Point
 ```
 
 ---
 
-## 2. Core Components & Patterns
+## 3. Core Components & Patterns
 
 ### A. Models (Atlas ORM)
-**Rule**: Use `@gravito/atlas`. Always define `static table`. Use `@column` decorators.
+**Rule**: Use `@gravito/atlas`. Define `static table`. Use `@column` decorators.
 
 ```typescript
 import { Model, column, HasMany } from '@gravito/atlas'
@@ -58,39 +69,19 @@ export class User extends Model {
   @column()
   name!: string
 
-  // Relationships
   @HasMany(() => Wallet)
   wallets!: Wallet[]
 }
 ```
 
-### B. Repositories
-**Rule**: Encapsulate all DB queries here. Do not write queries in Controllers.
+### B. Use Cases (Business Logic)
+**Rule**: Extend `UseCase<Input, Output>` from `@gravito/enterprise`. One class per operation.
 
 ```typescript
-import { User } from '../models/User'
-
-export class UserRepository {
-  async findByAccount(account: string): Promise<User | null> {
-    return await User.query().where('name', account).first()
-  }
-
-  async create(data: Partial<User>): Promise<User> {
-    const results = await User.query().insert(data)
-    return results[0]! // Atlas returns array for inserts
-  }
-}
-```
-
-### C. Actions (Business Logic)
-**Rule**: One class per action. Extend `Action<Input, Output>`. Handle Transactions here.
-
-```typescript
-import { Action } from '../Action'
+import { UseCase } from '@gravito/enterprise'
 import { DB } from '@gravito/atlas'
-// ... imports
 
-export class CreateUserAction extends Action<CreateUserInput, User> {
+export class CreateUserUseCase extends UseCase<CreateUserInput, User> {
   constructor(private userRepo = new UserRepository()) { super() }
 
   async execute(input: CreateUserInput): Promise<User> {
@@ -102,112 +93,63 @@ export class CreateUserAction extends Action<CreateUserInput, User> {
 }
 ```
 
-### D. Controllers (HTTP Layer)
-**Rule**: Thin layer. Parse request -> Call Action -> Return JSON.
-**Critical**: Use `c.req.query('key')` for single params.
+### C. Controllers (Inertia/Ion)
+**Rule**: Return `inertia.render` for SPA pages or `c.json` for APIs.
 
 ```typescript
-import type { GravitoContext } from '@gravito/core'
-import { CreateUserAction } from '../../../actions/user/CreateUserAction'
+import { Context } from '@gravito/photon'
+import { InertiaService } from '@gravito/ion'
+import { CreateUserUseCase } from '../use-cases/user/CreateUserUseCase'
 
 export class UserController {
-  async create(c: GravitoContext) {
-    try {
-      // Best Practice: Get body from middleware cache if available
-      const body = (c.get('parsed_body') || await c.req.json()) as any
-      
-      const action = new CreateUserAction()
-      const result = await action.execute({ 
-        name: body.name 
-      })
+  async index(c: Context) {
+    const inertia = c.get('inertia') as InertiaService
+    return inertia.render('User/List', { users: await User.all() })
+  }
 
-      return c.json({ success: true, data: result })
-    } catch (e: any) {
-      return c.json({ success: false, message: e.message }, 500)
-    }
+  async store(c: Context) {
+    const body = c.get('parsed_body') || await c.req.json()
+    const result = await new CreateUserUseCase().execute(body)
+    return c.json({ success: true, data: result })
   }
 }
 ```
 
-### E. Routes
-**Rule**: Use `router.prefix().group()`. Do NOT use `router.group()` directly.
-
-```typescript
-import type { Router } from '@gravito/core'
-import { UserController } from '../controllers/api/v1/UserController'
-
-export function registerApiRoutes(router: Router) {
-  const user = new UserController()
-
-  router.prefix('/v1').group((group) => {
-    group.post('/users', (c) => user.create(c))
-  })
-}
-```
-
 ---
 
-## 3. Critical Best Practices (Gotchas)
+## 4. Critical Best Practices (Gotchas)
 
-### 1. Request Body Caching (The "Body already used" Fix)
-In Middleware, after parsing the body, store it in the context to avoid stream consumption errors in Controllers.
-
-**Middleware Implementation:**
+### 1. Request Body Caching
+To avoid "Body already used" errors, store parsed body in middleware.
 ```typescript
-// src/middleware/SomeMiddleware.ts
-try {
-  const body = await c.req.json()
-  c.set('parsed_body', body) // Store for controller
-  // ... validation logic
-} catch (e) { /* ignore if no body */ }
+const body = (c.get('parsed_body') || await c.req.json())
 ```
 
-**Controller Usage:**
+### 2. Numeric Comparisons (SQLite)
+SQLite returns decimals as strings. **Always cast to Number**.
 ```typescript
-const body = (c.get('parsed_body') || await c.req.json()) as any
-```
-
-### 2. Database Transactions
-Always wrap multi-step DB operations in `DB.transaction`.
-```typescript
-return await DB.transaction(async () => {
-  await repo1.update()
-  await repo2.create()
-})
-```
-
-### 3. Numeric Comparisons with SQLite
-Atlas/SQLite returns decimals as strings. **Always cast to Number** before comparing.
-```typescript
-// BAD
-if (wallet.balance < amount) // "1000" < 500 might behave unexpectedly
-
-// GOOD
 if (Number(wallet.balance) < amount)
 ```
 
-### 4. Integration Driver Pattern
-For external services (Games, SMS), use **Factory + Interface**.
-*   **Interface**: `src/integrations/GameProvider.ts`
-*   **Factory**: `src/integrations/GameProviderFactory.ts`
-*   **Driver**: `src/integrations/drivers/PGSoftDriver.ts`
+### 3. Service Auto-Discovery
+Use `Application` class to leverage auto-discovery of providers.
 
 ---
 
-## 4. Bootstrapping
-Ensure `OrbitAtlas` is installed in `bootstrap.ts` to initialize the DB connection.
+## 5. Bootstrapping (1.0 Standard)
 
 ```typescript
-import { OrbitAtlas } from '@gravito/atlas'
-import databaseConfig from '../config/database'
+import { Application } from '@gravito/core'
 
-const core = new PlanetCore({
-  config: { database: databaseConfig }
+const app = new Application({
+  basePath: import.meta.dir,
 })
 
-await core.orbit(new OrbitAtlas()) // CRITICAL
+await app.boot()
+export default app.core.liftoff()
 ```
 
 ---
 
-*Generated by Gravito Architect Agent based on Hub-ADR implementation.*
+*Last Updated: 2026-01-27 | Galaxy Architecture 1.0*
+
