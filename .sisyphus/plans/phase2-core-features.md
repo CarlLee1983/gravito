@@ -24,9 +24,9 @@ Gravito Core 改進路線圖的第二階段，專注於填補核心功能缺口�
 6. `packages/ripple-client/src/RippleClient.ts` - 處理 ArrayBuffer
 
 ### 完成定義
-- [ ] `CommandKernel.handle(argv)` 可正確解析並執行命令
-- [ ] `contentManager.search('query')` 回傳匹配的 ContentItem[]
-- [ ] 可透過 WebSocket 傳送/接收 ArrayBuffer 資料
+- [x] `CommandKernel.handle(argv)` 可正確解析並執行命令
+- [x] `contentManager.search('query')` 回傳匹配的 ContentItem[]
+- [x] 可透過 WebSocket 傳送/接收 ArrayBuffer 資料
 
 ---
 
@@ -43,39 +43,39 @@ Gravito Core 改進路線圖的第二階段，專注於填補核心功能缺口�
 
 ### Sub-project 1: Core CommandKernel
 
-- [ ] 1.1 定義 CommandKernel 類型介面
+- [x] 1.1 定義 CommandKernel 類型介面
   - **File**: `packages/core/src/CommandKernel.ts`
   - **Action**: 定義 `CommandHandler` 類型與 `CommandKernelOptions` 介面。
 
-- [ ] 1.2 實作 CommandKernel 類別
+- [x] 1.2 實作 CommandKernel 類別
   - **File**: `packages/core/src/CommandKernel.ts`
   - **Action**: 實作 `register` 與 `handle` 方法。
 
-- [ ] 1.3 匯出 CommandKernel
+- [x] 1.3 匯出 CommandKernel
   - **File**: `packages/core/src/index.ts`
   - **Action**: 匯出類別與型別。
 
 ### Sub-project 2: Monolith Search
 
-- [ ] 2.1 建立搜尋索引結構
+- [x] 2.1 建立搜尋索引結構
   - **File**: `packages/monolith/src/ContentManager.ts`
   - **Action**: 新增 `searchIndex` 屬性與 `buildSearchIndex` 方法。
 
-- [ ] 2.2 實作 search() 方法
+- [x] 2.2 實作 search() 方法
   - **File**: `packages/monolith/src/ContentManager.ts`
   - **Action**: 實作 `search` 方法，支援基本關鍵字過濾。
 
 ### Sub-project 3: Ripple Binary Support
 
-- [ ] 3.1 擴展 Server 訊息類型
+- [x] 3.1 擴展 Server 訊息類型
   - **File**: `packages/ripple/src/types.ts`
   - **Action**: 新增 `binary` 訊息類型定義。
 
-- [ ] 3.2 更新 RippleServer 處理邏輯
+- [x] 3.2 更新 RippleServer 處理邏輯
   - **File**: `packages/ripple/src/RippleServer.ts`
   - **Action**: 修改 `handleMessage` 判斷 Buffer/ArrayBuffer。
 
-- [ ] 3.3 更新 RippleClient 支援二進位
+- [x] 3.3 更新 RippleClient 支援二進位
   - **File**: `packages/ripple-client/src/RippleClient.ts`, `packages/ripple-client/src/types.ts`
   - **Action**: 同步訊息類型，實作 `onmessage` 的 ArrayBuffer 處理。
 

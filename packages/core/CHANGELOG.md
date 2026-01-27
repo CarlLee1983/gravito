@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.3.0
+
+### Minor Changes
+
+- feat: implement ServiceMap for type-safe IoC resolution
+- feat: implement CommandKernel for structured CLI command handling
+- feat: implement circular dependency detection in Container
+
 ## 1.2.1
 
 ### Patch Changes

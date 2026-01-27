@@ -24,11 +24,12 @@ Monolith 是 Gravito 的「永恆知識模塊」，旨在提供一個高效、�
   - 註冊中介軟體，將 `content` 服務注入到 `ctx` 中。
 
 ### 2.2 ContentManager (Engine)
-- **職責**：負責讀取、解析與快取檔案內容。
+- **職責**：負責讀取、解析與快取檔案內容，並提供全文搜尋功能。
 - **位置**：`src/ContentManager.ts`
 - **技術棧**：
   - **Parsing**: `gray-matter` (YAML Frontmatter) + `marked` (Markdown to HTML)。
   - **Caching**: 簡單的記憶體快取 (`Map<string, ContentItem>`)，以 `collection:locale:slug` 為鍵。
+  - **Search**: 內建輕量級全文索引 (In-Memory)，支援 `search(query)` 方法進行關鍵字檢索。
   - **Security**: 內建 `renderer` 實作了基本的 HTML 轉義與連結檢查。
 
 ### 2.3 Controller (MVC Base)
@@ -58,7 +59,7 @@ Monolith 採用結構化的檔案路徑來映射 URL：
 為了效能，`ContentManager` 會在第一次讀取後將結果快取在記憶體中。
 -   **限制**：目前沒有實作快取失效 (Cache Invalidation) 或檔案變更監聽 (Watch Mode)。
 -   **場景**：適合「構建一次，隨處運行」的靜態部署或容器化環境。
--   **開發模式 (v1.1)**：在 `NODE_ENV=development` 時，會自動啟動 `ContentWatcher` 監聽檔案變更並清除快取，提供即時預覽體驗。
+-   **開發模式 (v3.1)**：在 `NODE_ENV=development` 時，會自動啟動 `ContentWatcher` 監聽檔案變更並清除快取，提供即時預覽體驗。
 
 ### 3.3 安全性 (Sanitization)
 Markdown 渲染預設開啟了 HTML 轉義。
@@ -76,21 +77,21 @@ Markdown 渲染預設開啟了 HTML 轉義。
 ### 4.2 缺乏熱重載 (Hot Reload)
 目前的實作在檔案變更後不會自動更新快取。
 -   **影響**：開發體驗稍差。
--   **優化**：v1.1 已在開發模式下整合 `node:fs` watch，實現自動快取清除。
+-   **優化**：v3.1 已在開發模式下整合 `node:fs` watch，實現自動快取清除。
 
 ---
 
 ## 5. 後續優化建議
 
-### 短期 (v1.1)
+### 短期 (v3.2)
 1.  **Dev Mode Watcher (Completed)**：在 `NODE_ENV=development` 時監聽檔案變更並清除快取。
 2.  **Custom Renderer**：允許使用者注入自定義的 `marked` Renderer 或外掛 (Plugins)。
 
-### 中期 (v1.2)
+### 中期 (v3.2)
 1.  **Search Index (Completed)**：在啟動時建立簡易的全文索引 (In-Memory Search)，支援 `search(query)` API。
 
 ### 長期 (v2.0)
-1. **Git Backend**：支援直接從 GitHub/GitLab API 讀取內容，實現無頭 CMS (Headless CMS) 架構。
+1. **Git Backend (Research Completed)**：支援直接從 GitHub/GitLab API 讀取內容，實現無頭 CMS (Headless CMS) 架構。詳細方案請參閱 [技術研究報告](../research/monolith-git-backend.md)。
 
 ---
 *Created by Gravito Architect.*

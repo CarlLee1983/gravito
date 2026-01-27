@@ -23,9 +23,9 @@ Gravito Core 改進路線圖的第三階段，專注於系統的健壯性與未�
 5. `docs/research/monolith-git-backend.md` - 技術研究文件。
 
 ### 完成定義
-- [ ] Container 解析循環依賴時拋出例外。
-- [ ] `whisper` 請求超過限制時返回錯誤。
-- [ ] 研究文件詳述了 API 整合方案與所需的介面變動。
+- [x] Container 解析循環依賴時拋出例外。
+- [x] `whisper` 請求超過限制時返回錯誤。
+- [x] 研究文件詳述了 API 整合方案與所需的介面變動。
 
 ---
 
@@ -42,11 +42,11 @@ Gravito Core 改進路線圖的第三階段，專注於系統的健壯性與未�
 
 ### Sub-project 1: Core Circular Dependency Detection
 
-- [ ] 1.1 建立 `CircularDependencyException`
+- [x] 1.1 建立 `CircularDependencyException`
   - **File**: `packages/core/src/exceptions/CircularDependencyException.ts`
   - **Action**: 建立一個繼承自 `Error` 的類別，記錄產生循環的鍵名路徑。
 
-- [ ] 1.2 在 `Container.make()` 實作堆疊追蹤
+- [x] 1.2 在 `Container.make()` 實作堆疊追蹤
   - **File**: `packages/core/src/Container.ts`
   - **Action**: 
     - 新增 `private resolutionStack = new Set<BindingKey>()`。
@@ -55,11 +55,11 @@ Gravito Core 改進路線圖的第三階段，專注於系統的健壯性與未�
 
 ### Sub-project 2: Ripple Rate Limiting
 
-- [ ] 2.1 實作 `TokenBucket` 限流器
+- [x] 2.1 實作 `TokenBucket` 限流器
   - **File**: `packages/ripple/src/utils/TokenBucket.ts`
   - **Action**: 實作一個簡單的令牌桶算法類別。
 
-- [ ] 2.2 在 `RippleServer` 整合限流
+- [x] 2.2 在 `RippleServer` 整合限流
   - **File**: `packages/ripple/src/RippleServer.ts`, `packages/ripple/src/types.ts`
   - **Action**: 
     - 更新 `RippleConfig` 加入 `rateLimit` 配置（如 `whisper: { max: 10, interval: '1s' }`）。
@@ -67,7 +67,7 @@ Gravito Core 改進路線圖的第三階段，專注於系統的健壯性與未�
 
 ### Sub-project 3: Monolith Git Backend Research
 
-- [ ] 3.1 撰寫技術研究文件
+- [x] 3.1 撰寫技術研究文件
   - **File**: `docs/research/monolith-git-backend.md`
   - **Action**: 
     - 分析 GitHub/GitLab Content API。

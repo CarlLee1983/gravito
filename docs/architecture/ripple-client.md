@@ -23,6 +23,7 @@ Ripple Client 旨在提供一個通用的 WebSocket 客戶端，連接 Gravito �
 - **機制**：
   - **Socket ID**：連接成功後，伺服器會下發唯一的 `socket_id`，用於私有頻道簽名。
   - **Reconnection**：採用指數退避 (Exponential Backoff) 策略，防止伺服器重啟時遭受連線風暴。
+  - **Binary Support** (v1.1)：支援發送與接收 `ArrayBuffer` 資料。
   - **State Management** (v1.1)：`ConnectionStateManager` 提供訂閱模式的狀態變更通知 (`onStateChange`)。
 
 ### 2.2 Channel System
@@ -78,9 +79,7 @@ Ripple Client 旨在提供一個通用的 WebSocket 客戶端，連接 Gravito �
 ### 短期 (v1.1)
 1. **Batch Auth**：支援一次請求認證多個頻道，減少 HTTP 往返。
 2. **Offline Buffer**：在斷線期間緩衝 `whisper` (客戶端訊息)，連線後自動發送。
-
-### 中期 (v1.2)
-1. **Binary Support**：支援接收 `ArrayBuffer` 或 `Blob` 數據。
+3. **Binary Support (Completed)**：支援接收 `ArrayBuffer` 或 `Blob` 數據。
 
 ### 長期 (v2.0)
 1. **End-to-End Encryption**：支援在客戶端進行端對端加密 (E2EE)，確保訊息即使經過伺服器也是密文。

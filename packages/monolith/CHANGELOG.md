@@ -1,5 +1,12 @@
 # @gravito/monolith
 
+## 3.1.0
+
+### Minor Changes
+
+- feat: implement ContentWatcher for hot reload during development
+- feat: implement in-memory full-text search index in ContentManager
+
 ## 3.0.1
 
 ### Patch Changes
