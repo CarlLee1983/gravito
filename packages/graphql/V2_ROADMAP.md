@@ -36,7 +36,7 @@
 
 ### 2. 性能與安全性增強
 - [x] **分頁標準化**：支援 Relay 規範的 `Connection` 模式 (Cursor-based pagination)。
-- [ ] **自動限流**：整合成本分析 (Query Cost) 到速率限制 (Rate Limiting) 策略中。
+- [x] **自動限流**：整合成本分析 (Query Cost) 到速率限制 (Rate Limiting) 策略中。
 
 ---
 
