@@ -1,41 +1,83 @@
 /**
- * Relay Connection 實作
- * 符合 Relay 規範的 Cursor-based pagination
+ * Relay Connection Implementation.
+ *
+ * Implements the Relay Cursor-based Pagination specification, enabling efficient
+ * navigation through large datasets using opaque cursors.
+ *
+ * @see {@link https://relay.dev/graphql/connections.htm}
  */
 
 import type { Model, ModelStatic } from '@gravito/atlas'
 import { applyFilter, applyLogicalOperators } from '../filters'
 import { decodeCursor, encodeCursor } from './cursor'
 
+/**
+ * Standard arguments for a Relay Connection query.
+ */
 export interface ConnectionArgs {
+  /** The number of items to return after the `after` cursor. */
   first?: number
+  /** The opaque cursor pointing to the item after which results should be returned. */
   after?: string
+  /** The number of items to return before the `before` cursor. */
   last?: number
+  /** The opaque cursor pointing to the item before which results should be returned. */
   before?: string
+  /** Complex filtering conditions to apply to the query. */
   where?: Record<string, unknown>
+  /** Sorting order for the result set. */
   orderBy?: Record<string, 'asc' | 'desc'>
 }
 
+/**
+ * An edge in a connection, representing a single node and its cursor.
+ */
 export interface Edge<T> {
+  /** The actual data object. */
   node: T
+  /** The opaque cursor for this specific node. */
   cursor: string
 }
 
+/**
+ * Information about pagination in a connection.
+ */
 export interface PageInfo {
+  /** Indicates if there are more items after the current set. */
   hasNextPage: boolean
+  /** Indicates if there are more items before the current set. */
   hasPreviousPage: boolean
+  /** The cursor for the first item in the edges list. */
   startCursor: string | null
+  /** The cursor for the last item in the edges list. */
   endCursor: string | null
 }
 
+/**
+ * A connection object containing a list of edges and pagination metadata.
+ */
 export interface Connection<T> {
+  /** A list of edges containing the nodes and cursors. */
   edges: Edge<T>[]
+  /** Metadata for the current page of results. */
   pageInfo: PageInfo
+  /** The total number of items matching the query across all pages. */
   totalCount: number
 }
 
 /**
- * 生成 Connection 類型定義
+ * Generates the SDL for Relay Connection types for a specific model.
+ *
+ * This includes the Edge, Connection, and shared PageInfo types required
+ * by the Relay specification.
+ *
+ * @param modelName - The name of the Atlas model.
+ * @returns The GraphQL type definitions as a string.
+ *
+ * @example
+ * ```typescript
+ * const sdl = generateConnectionTypes('User');
+ * ```
  */
 export function generateConnectionTypes(modelName: string): string {
   return `
@@ -60,7 +102,15 @@ export function generateConnectionTypes(modelName: string): string {
 }
 
 /**
- * 生成 Connection 查詢定義
+ * Generates the SDL for a Relay Connection query field.
+ *
+ * @param modelName - The name of the Atlas model.
+ * @returns The GraphQL query field definition.
+ *
+ * @example
+ * ```typescript
+ * const query = generateConnectionQuery('User');
+ * ```
  */
 export function generateConnectionQuery(modelName: string): string {
   const lowercaseName = modelName.charAt(0).toLowerCase() + modelName.slice(1)
@@ -78,7 +128,18 @@ export function generateConnectionQuery(modelName: string): string {
 }
 
 /**
- * 創建 Connection Resolver
+ * Creates a resolver function for a Relay Connection.
+ *
+ * The generated resolver handles cursor decoding/encoding, limit/offset
+ * calculation, filtering, and total count fetching automatically.
+ *
+ * @param model - The Atlas model static class.
+ * @returns A GraphQL resolver function.
+ *
+ * @example
+ * ```typescript
+ * const resolver = createConnectionResolver(User);
+ * ```
  */
 export function createConnectionResolver<T extends Model>(
   model: ModelStatic<T>

@@ -17,29 +17,53 @@ import { extractAppendFields, extractModelMetadata } from './utils/model-metadat
 
 /**
  * Configuration options for the Atlas to GraphQL integration.
+ *
+ * This interface defines how Atlas models are mapped to the GraphQL schema,
+ * including federation settings and custom resolver overrides.
+ *
+ * @example
+ * ```typescript
+ * const options: AtlasGraphQLOptions = {
+ *   models: [User, Post],
+ *   federation: { enabled: true }
+ * };
+ * ```
  */
 export interface AtlasGraphQLOptions {
   /**
    * The Atlas models to include in the generated GraphQL schema.
-   * These models will be scanned to generate types and resolvers automatically.
+   *
+   * These models are inspected to generate corresponding GraphQL types,
+   * queries, mutations, and subscriptions automatically.
    */
   models: ModelStatic<Model>[]
+
   /**
    * Custom resolvers to merge with the auto-generated ones.
-   * Use this to override default behavior or add new fields/queries.
+   *
+   * Use this to extend the schema with manual implementations or to
+   * override the default behavior of auto-generated fields.
    */
   // biome-ignore lint/suspicious/noExplicitAny: Resolvers can be any shape
   resolvers?: any
 
   /**
    * Enable Apollo Federation support.
-   * If true, generates a subgraph schema compatible with Apollo Federation.
+   *
+   * When enabled, the generated schema will include federation directives
+   * and entity resolvers, allowing it to act as a subgraph in a federated architecture.
    */
   federation?: {
+    /**
+     * Whether federation is enabled for this schema.
+     */
     enabled: boolean
+
     /**
      * Map of model name to federation key fields.
-     * Defaults to using the primary key if not specified.
+     *
+     * Defines the fields used to uniquely identify an entity across subgraphs.
+     * Defaults to the primary key defined in the Atlas model.
      */
     keys?: Record<string, string>
   }
@@ -214,6 +238,7 @@ const BASE_TYPE_DEFS = `
  *
  * Scans provided models for columns, relationships, and metadata to produce
  * a CRUD-capable schema including advanced filtering, pagination, and sorting.
+ * It also supports Apollo Federation if configured in the options.
  *
  * @param options - Configuration including models and optional custom resolvers
  * @returns A promise resolving to the generated GraphQLSchema
