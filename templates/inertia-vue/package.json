@@ -12,16 +12,15 @@
     "lint": "biome check .",
     "format": "biome format --write ."
   },
-  "dependencies": {
-    "@gravito/core": "workspace:*",
-    "@gravito/beam": "workspace:*",
-    "@gravito/stasis": "workspace:*",
-    "@gravito/prism": "workspace:*",
-    "@gravito/ion": "workspace:*",
-    "@inertiajs/vue3": "^1.0.0",
-    "vue": "^3.4.0",
-    "@gravito/photon": "workspace:*"
-  },
+    "dependencies": {
+        "@gravito/core": "workspace:*",
+        "@gravito/beam": "workspace:*",
+        "@gravito/stasis": "workspace:*",
+        "@gravito/prism": "workspace:*",
+        "@gravito/ion": "workspace:*",
+        "@gravito/sentinel": "workspace:*",
+        "@gravito/mass": "workspace:*"
+    },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
     "@vitejs/plugin-vue": "^5.0.0",

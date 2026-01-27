@@ -698,6 +698,11 @@ export interface QueryBuilderContract<T = Record<string, unknown>> {
   select(...columns: string[]): this
 
   /**
+   * Set the table for the query
+   */
+  from(table: string): this
+
+  /**
    * Add a raw select expression
    */
   selectRaw(sql: string, bindings?: unknown[]): this
@@ -787,6 +792,16 @@ export interface QueryBuilderContract<T = Record<string, unknown>> {
    * Add a "where column" clause (comparing two columns)
    */
   whereColumn(first: string, operator: Operator, second: string): this
+
+  /**
+   * Add a "where exists" clause
+   */
+  whereExists(callback: (query: QueryBuilderContract<unknown>) => void): this
+
+  /**
+   * Add a "where not exists" clause
+   */
+  whereNotExists(callback: (query: QueryBuilderContract<unknown>) => void): this
 
   // JSON
   /**

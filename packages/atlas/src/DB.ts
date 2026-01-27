@@ -3,6 +3,7 @@
  * @description Static entry point for database operations (Laravel-style)
  */
 
+import { Connection } from './connection/Connection'
 import { ConnectionManager } from './connection/ConnectionManager'
 import { Grammar } from './grammar/Grammar'
 import type {
@@ -55,40 +56,101 @@ export class DB {
     timestamp: number
   }> = []
   private static readonly MAX_LOG_SIZE = 1000
+  private static queryListener?: (query: {
+    connection: string
+    sql: string
+    bindings: unknown[]
+    duration: number
+    timestamp: number
+  }) => void
 
   /**
-   * Set global cache provider
+   * Set the global cache provider for query result caching.
+   *
+   * @param cache - The cache implementation to use.
+   * @example
+   * ```typescript
+   * DB.setCache(new RedisCache())
+   * ```
    */
   static setCache(cache: CacheInterface) {
     DB.cache = cache
   }
 
   /**
-   * Get global cache provider
+   * Get the current global cache provider.
+   *
+   * @returns The cache provider or undefined if not set.
    */
   static getCache(): CacheInterface | undefined {
     return DB.cache
   }
 
   /**
-   * Enable/disable debug mode with query logging
+   * Enable or disable debug mode.
+   * When enabled, all executed queries are logged with their bindings and duration.
+   *
+   * @param enabled - Whether to enable debug mode.
+   * @example
+   * ```typescript
+   * DB.debug(true)
+   * // ... run queries ...
+   * console.log(DB.getQueryLog())
+   * ```
    */
   static debug(enabled = true): void {
     this._debug = enabled
-    if (!enabled) {
+    if (enabled) {
+      // Set up query listener to log queries
+      if (!this.queryListener) {
+        this.queryListener = (query) => {
+          this.logQuery(query.sql, query.bindings, query.duration)
+        }
+        Connection.queryListeners.push(this.queryListener)
+      }
+    } else {
+      // Remove query listener and clear log
+      if (this.queryListener) {
+        const index = Connection.queryListeners.indexOf(this.queryListener)
+        if (index > -1) {
+          Connection.queryListeners.splice(index, 1)
+        }
+        this.queryListener = undefined
+      }
       this._queryLog = []
+      Connection.queryListeners = Connection.queryListeners.filter(
+        (l) => l !== this.globalQueryListener
+      )
+    }
+
+    if (enabled) {
+      if (!Connection.queryListeners.includes(this.globalQueryListener)) {
+        Connection.queryListeners.push(this.globalQueryListener)
+      }
     }
   }
 
+  private static globalQueryListener = (query: {
+    sql: string
+    bindings: unknown[]
+    duration: number
+  }) => {
+    DB.logQuery(query.sql, query.bindings, query.duration)
+  }
+
   /**
-   * Check if debug mode is enabled
+   * Check if debug mode is currently enabled.
+   *
+   * @returns True if debug mode is active.
    */
   static isDebug(): boolean {
     return this._debug
   }
 
   /**
-   * Get the last executed query
+   * Get the SQL string of the last executed query with bindings interpolated.
+   *
+   * @returns The interpolated SQL string or null if no queries have been logged.
    */
   static getLastQuery(): string | null {
     const last = this._queryLog[this._queryLog.length - 1]
@@ -96,21 +158,27 @@ export class DB {
   }
 
   /**
-   * Get query log
+   * Get the full history of executed queries in the current session.
+   *
+   * @returns Array of query log entries.
    */
   static getQueryLog(): typeof this._queryLog {
     return [...this._queryLog]
   }
 
   /**
-   * Clear query log
+   * Clear the current query log history.
    */
   static clearQueryLog(): void {
     this._queryLog = []
   }
 
   /**
-   * Log a query (internal use)
+   * Log a query execution (Internal use).
+   *
+   * @param sql - The raw SQL string.
+   * @param bindings - The values bound to the query.
+   * @param duration - Execution time in milliseconds.
    */
   static logQuery(sql: string, bindings: unknown[], duration: number): void {
     if (!this._debug) {
@@ -155,7 +223,18 @@ export class DB {
   }
 
   /**
-   * Pretend mode: capture queries without executing
+   * Execute a callback in "pretend" mode.
+   * Queries will be captured and logged but NOT executed against the database.
+   *
+   * @param callback - The async operations to pretend.
+   * @returns Object containing the captured queries.
+   * @example
+   * ```typescript
+   * const { queries } = await DB.pretend(async () => {
+   *   await DB.table('users').where('id', 1).update({ name: 'New Name' })
+   * })
+   * console.log(queries) // ['UPDATE "users" SET "name" = \'New Name\' WHERE "id" = 1']
+   * ```
    */
   static async pretend<T>(callback: () => Promise<T>): Promise<{ queries: string[]; result?: T }> {
     const originalDebug = this._debug
@@ -193,7 +272,9 @@ export class DB {
   // ============================================================================
 
   /**
-   * Get cache statistics
+   * Get current cache performance statistics from the Grammar layer.
+   *
+   * @returns Object containing size, maxSize, and hitRate.
    */
   static getCacheStats(): { size: number; maxSize: number; hitRate: number } {
     return Grammar.getCacheStats()
@@ -298,10 +379,14 @@ export class DB {
   }
 
   /**
-   * Add a single connection configuration to the manager.
+   * Add a new connection configuration to the manager.
    *
-   * @param name - Unique name for the connection.
-   * @param config - Connection configuration settings.
+   * @param name - Unique identifier for the connection.
+   * @param config - Connection settings (driver, host, etc.).
+   * @example
+   * ```typescript
+   * DB.addConnection('read-replica', { driver: 'postgres', host: 'replica.db.com' })
+   * ```
    */
   static addConnection(name: string, config: ConnectionConfig): void {
     DB.manager.addConnection(name, config)
@@ -309,15 +394,14 @@ export class DB {
   }
 
   /**
-   * Add connection from environment variables with prefix
-   * Useful for multiple connections from different env vars
+   * Add a connection by reading specific environment variables with a prefix.
    *
+   * @param name - Unique identifier for the connection.
+   * @param prefix - Environment variable prefix (e.g., 'READ_DB').
    * @example
    * ```typescript
-   * // READ_DB_DRIVER=postgres
-   * // READ_DB_HOST=read-replica.example.com
-   * // READ_DB_DATABASE=myapp
-   * DB.addConnectionFromEnv('read', 'READ')
+   * // Reads READ_DB_DRIVER, READ_DB_HOST, etc.
+   * DB.addConnectionFromEnv('read', 'READ_DB')
    * ```
    */
   static addConnectionFromEnv(name: string, prefix = ''): void {
@@ -330,14 +414,18 @@ export class DB {
   }
 
   /**
-   * Set the default connection name
+   * Set the name of the default connection to use when none is specified.
+   *
+   * @param name - The connection name.
    */
   static setDefaultConnection(name: string): void {
     DB.manager.setDefaultConnection(name)
   }
 
   /**
-   * Get the default connection name
+   * Get the name of the current default connection.
+   *
+   * @returns The default connection name.
    */
   static getDefaultConnection(): string {
     return DB.manager.getDefaultConnection()
@@ -361,21 +449,29 @@ export class DB {
   }
 
   /**
-   * Check if a connection exists
+   * Check if a connection with the given name exists.
+   *
+   * @param name - The connection name to check.
+   * @returns True if configured.
    */
   static hasConnection(name: string): boolean {
     return DB.manager.hasConnection(name)
   }
 
   /**
-   * Get all connection names
+   * Get a list of all configured connection names.
+   *
+   * @returns Array of connection names.
    */
   static getConnectionNames(): string[] {
     return DB.manager.getConnectionNames()
   }
 
   /**
-   * Get connection configuration
+   * Get the configuration object for a specific connection.
+   *
+   * @param name - Optional connection name (defaults to default connection).
+   * @returns The connection configuration or undefined.
    */
   static getConnectionConfig(name?: string): ConnectionConfig | undefined {
     const connectionName = name ?? DB.manager.getDefaultConnection()
@@ -433,7 +529,12 @@ export class DB {
    */
   /**
    * Execute a raw SQL query against the database.
-   * Alias for raw() to match Laravel Artisan/Eloquent style sometimes used in JS
+   * Alias for `raw()` to match Laravel/Eloquent style.
+   *
+   * @template T - The expected return type of the rows.
+   * @param sql - The raw SQL string.
+   * @param bindings - Array of values to bind.
+   * @returns The raw query result.
    */
   static async rawQuery<T = Record<string, unknown>>(
     sql: string,
@@ -473,8 +574,21 @@ export class DB {
   }
 
   /**
-   * Begin a transaction manually
-   * @returns Transaction connection
+   * Manually begin a database transaction.
+   *
+   * @param connectionName - Optional connection name.
+   * @returns A connection instance scoped to the transaction.
+   * @throws Error if the driver does not support transactions.
+   * @example
+   * ```typescript
+   * const trx = await DB.beginTransaction()
+   * try {
+   *   await trx.table('users').insert({ name: 'John' })
+   *   await trx.commit()
+   * } catch (e) {
+   *   await trx.rollback()
+   * }
+   * ```
    */
   static async beginTransaction(connectionName?: string): Promise<ConnectionContract> {
     const connection = DB.connection(connectionName)
@@ -494,39 +608,43 @@ export class DB {
   // ============================================================================
 
   /**
-   * Disconnect from a specific connection
+   * Close a specific database connection.
+   *
+   * @param name - Optional connection name.
    */
   static async disconnect(name?: string): Promise<void> {
     await DB.manager.disconnect(name)
   }
 
   /**
-   * Disconnect from all connections
-   */
-  /**
-   * Disconnect all connections
+   * Close all active database connections.
    */
   static async disconnectAll(): Promise<void> {
     await DB.manager.disconnectAll()
   }
 
   /**
-   * Shutdown the database manager (disconnect all and stop cleanup)
-   * Use this when shutting down the application
+   * Shutdown the database manager, disconnecting all connections and stopping cleanup tasks.
+   * Should be called when the application is shutting down.
    */
   static async shutdown(): Promise<void> {
     await DB.manager.shutdown()
   }
 
   /**
-   * Reconnect to a connection
+   * Force a reconnection to a specific connection.
+   *
+   * @param name - Optional connection name.
+   * @returns The new connection instance.
    */
   static async reconnect(name?: string): Promise<ConnectionContract> {
     return DB.manager.reconnect(name)
   }
 
   /**
-   * Purge a connection from cache
+   * Remove a connection instance from the manager's internal cache.
+   *
+   * @param name - Optional connection name.
    */
   static purge(name?: string): void {
     DB.manager.purge(name)
@@ -537,7 +655,12 @@ export class DB {
   // ============================================================================
 
   /**
-   * Select records from a table
+   * Begin a fluent query with a pre-selected set of columns.
+   *
+   * @template T - The record type.
+   * @param tableName - The table to query.
+   * @param columns - Array of column names (defaults to ['*']).
+   * @returns A QueryBuilder instance.
    */
   static select<T = Record<string, unknown>>(
     tableName: string,
@@ -547,7 +670,12 @@ export class DB {
   }
 
   /**
-   * Insert records into a table
+   * Quickly insert one or more records into a table.
+   *
+   * @template T - The record type.
+   * @param tableName - The table name.
+   * @param data - Single record or array of records.
+   * @returns Promise resolving to the inserted records.
    */
   static async insert<T = Record<string, unknown>>(
     tableName: string,
@@ -557,7 +685,13 @@ export class DB {
   }
 
   /**
-   * Update records in a table
+   * Quickly update records in a table matching a set of conditions.
+   *
+   * @template T - The record type.
+   * @param tableName - The table name.
+   * @param where - Object containing equality conditions.
+   * @param data - The attributes to update.
+   * @returns Promise resolving to the number of affected rows.
    */
   static async update<T = Record<string, unknown>>(
     tableName: string,
@@ -572,7 +706,11 @@ export class DB {
   }
 
   /**
-   * Delete records from a table
+   * Quickly delete records from a table matching a set of conditions.
+   *
+   * @param tableName - The table name.
+   * @param where - Object containing equality conditions.
+   * @returns Promise resolving to the number of affected rows.
    */
   static async delete(tableName: string, where: Record<string, unknown>): Promise<number> {
     let query = DB.table(tableName)
@@ -587,7 +725,9 @@ export class DB {
   // ============================================================================
 
   /**
-   * Ensure the database is configured
+   * Ensure the database manager has been configured.
+   *
+   * @throws Error if not initialized.
    */
   private static ensureConfigured(): void {
     if (!DB.initialized) {
@@ -596,7 +736,10 @@ export class DB {
   }
 
   /**
-   * Reset the facade (for testing)
+   * Reset the DB facade state and disconnect all connections.
+   * Primarily used for testing purposes.
+   *
+   * @internal
    */
   static async _reset(): Promise<void> {
     await DB.manager.disconnectAll()

@@ -111,7 +111,7 @@ if (isDev) {
     h1 { color: #e11d48; }
     code { background: #f3f4f6; padding: 2px 6px; border-radius: 3px; }
     pre { background: #1f2937; color: #f9fafb; padding: 15px; border-radius: 5px; overflow-x: auto; }
-    .solution { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0; }
+    .solution { background: #f59e0b; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0; }
   </style>
 </head>
 <body>
@@ -511,10 +511,20 @@ app.get('/:lang', (c) => {
 })
 
 // ----------------------------------------------------------------------------
-// Lifecycle
+// Lifecycle & Warmup
 // ----------------------------------------------------------------------------
-// Note: Photon (based on Hono) doesn't require explicit warmup.
-// Bun's JIT compiler will optimize hot paths automatically.
+if (process.env.NODE_ENV === 'production' && (app as any).warmup) {
+  // Pre-warming hot paths to trigger Bun's JIT FTL compiler.
+  // This reduces latency for the first few hundred requests.
+  await (app as any).warmup([
+    '/',
+    '/patterns',
+    '/ecosystem',
+    '/docs/intro',
+    '/docs/quickstart',
+    '/docs/benchmarks',
+  ])
+}
 
 export default {
   port: 3333,

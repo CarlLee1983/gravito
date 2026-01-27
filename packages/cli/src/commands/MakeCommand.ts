@@ -81,6 +81,10 @@ export class MakeCommand {
         stubName = 'controller.resource.stub'
       }
 
+      if (type === 'model' && options.graphql) {
+        stubName = 'model.graphql.stub'
+      }
+
       const stubContent = await this.readStub(stubName)
 
       if (!stubContent) {
@@ -91,7 +95,8 @@ export class MakeCommand {
       const content = this.replaceVariables(
         stubContent,
         normalizedName.pascal,
-        normalizedName.camel
+        normalizedName.camel,
+        options.command || normalizedName.camel
       )
       const targetPath = this.resolveTargetPath(type, normalizedName)
 
@@ -130,16 +135,16 @@ export class MakeCommand {
     }
   }
 
-  /**
-   * Replace variables in the stub content.
-   *
-   * @param content - The stub content.
-   * @param pascal - The PascalCase name.
-   * @param camel - The camelCase name.
-   * @returns The processed content with variables replaced.
-   */
-  private replaceVariables(content: string, pascal: string, camel: string): string {
-    return content.replace(/\{\{ Name \}\}/g, pascal).replace(/\{\{ name \}\}/g, camel)
+  private replaceVariables(
+    content: string,
+    pascal: string,
+    camel: string,
+    command: string
+  ): string {
+    return content
+      .replace(/\{\{ Name \}\}/g, pascal)
+      .replace(/\{\{ name \}\}/g, camel)
+      .replace(/\{\{ command \}\}/g, command)
   }
 
   /**
@@ -197,6 +202,7 @@ export class MakeCommand {
       middleware: `src/middleware/${name.camel}.ts`,
       seeder: `src/database/seeders/${name.pascal}Seeder.ts`,
       request: `src/requests/${name.pascal}Request.ts`,
+      command: `src/commands/${name.pascal}Command.ts`,
     }
 
     if (!map[type]) {
@@ -222,7 +228,9 @@ export class MakeCommand {
         ? this.stripSuffix(pascalRaw, 'Controller')
         : type === 'seeder'
           ? this.stripSuffix(pascalRaw, 'Seeder')
-          : pascalRaw
+          : type === 'command'
+            ? this.stripSuffix(pascalRaw, 'Command')
+            : pascalRaw
 
     return {
       pascal,

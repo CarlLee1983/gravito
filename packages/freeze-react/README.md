@@ -2,6 +2,15 @@
 
 > ⚛️ React adapter for @gravito/freeze SSG module
 
+`@gravito/freeze-react` provides a seamless bridge between your React application and the Gravito Freeze SSG engine. It enables intelligent environment detection, automatic path localization, and hybrid navigation support for projects using Inertia.js or standard React.
+
+## Key Features
+
+- 🌍 **Automatic Localization**: Seamlessly prepends locale prefixes to paths based on context.
+- 🔄 **Hybrid Navigation**: Automatically switches between native `<a>` tags for static deployments and Inertia `<Link>` for dynamic development.
+- 🧩 **Context-Aware Hooks**: Access locale state and localization utilities from anywhere in your component tree.
+- ⚙️ **Unified Config**: Shares the same `FreezeConfig` as the core module for consistent behavior across server and client.
+
 ## Installation
 
 ```bash
@@ -10,7 +19,9 @@ bun add @gravito/freeze-react
 
 ## Quick Start
 
-### 1. Wrap Your App with FreezeProvider
+### 1. Wrap Your App with `FreezeProvider`
+
+The provider initializes the SSG detector and manages the current locale state. In dynamic mode (e.g., development), it can integrate with Inertia.js for SPA-like transitions.
 
 ```tsx
 // App.tsx
@@ -18,22 +29,24 @@ import { FreezeProvider, defineConfig } from '@gravito/freeze-react'
 import { Link } from '@inertiajs/react'
 
 const config = defineConfig({
-  staticDomains: ['example.com', 'example.github.io'],
-  locales: ['en', 'zh'],
+  staticDomains: ['example.com'],
+  locales: ['en', 'zh-TW'],
   defaultLocale: 'en',
   baseUrl: 'https://example.com',
 })
 
-function App() {
+function App({ locale }) {
   return (
-    <FreezeProvider config={config} LinkComponent={Link}>
+    <FreezeProvider config={config} locale={locale} LinkComponent={Link}>
       <Layout>...</Layout>
     </FreezeProvider>
   )
 }
 ```
 
-### 2. Use StaticLink for Navigation
+### 2. Use `StaticLink` for Navigation
+
+`StaticLink` is the core component for internal navigation. It intelligently handles path prefixing and chooses the correct underlying tag based on whether the site is currently running as a static export or a dynamic app.
 
 ```tsx
 // Navigation.tsx
@@ -42,14 +55,19 @@ import { StaticLink } from '@gravito/freeze-react'
 function Navigation() {
   return (
     <nav>
+      {/* Automatically becomes /zh-TW/about if locale is zh-TW */}
       <StaticLink href="/about">About</StaticLink>
-      <StaticLink href="/docs/guide">Guide</StaticLink>
+      
+      {/* Skip localization for specific paths */}
+      <StaticLink href="/manifest.json" skipLocalization>Manifest</StaticLink>
     </nav>
   )
 }
 ```
 
-### 3. Add Locale Switcher
+### 3. Add `LocaleSwitcher`
+
+Renders a link that switches the site's locale while preserving the current path and query parameters.
 
 ```tsx
 // Header.tsx
@@ -59,13 +77,15 @@ function Header() {
   return (
     <header>
       <LocaleSwitcher locale="en">English</LocaleSwitcher>
-      <LocaleSwitcher locale="zh">Chinese</LocaleSwitcher>
+      <LocaleSwitcher locale="zh-TW">繁體中文</LocaleSwitcher>
     </header>
   )
 }
 ```
 
-### 4. Use the Hook for Custom Logic
+### 4. Use `useFreeze` Hook
+
+Access SSG utilities for programmatic control or custom component logic.
 
 ```tsx
 // CustomComponent.tsx
@@ -76,10 +96,12 @@ function CustomComponent() {
 
   return (
     <div>
-      <p>Mode: {isStatic ? 'Static' : 'Dynamic'}</p>
-      <p>Locale: {locale}</p>
-      <a href={getLocalizedPath('/about')}>About</a>
-    <button onClick={() => navigateToLocale('zh')}>Switch to Chinese</button>
+      <p>Deployment Mode: <strong>{isStatic ? 'Static (SSG)' : 'Dynamic (SSR)'}</strong></p>
+      <p>Current Locale: <strong>{locale}</strong></p>
+      
+      <button onClick={() => navigateToLocale('zh-TW')}>
+        Switch to Traditional Chinese
+      </button>
     </div>
   )
 }
@@ -91,86 +113,56 @@ function CustomComponent() {
 
 #### `<FreezeProvider>`
 
-Context provider for SSG functionality.
-
-```tsx
-<FreezeProvider config={config} locale="en" LinkComponent={Link}>
-  {children}
-</FreezeProvider>
-```
+The root context provider.
 
 | Prop | Type | Description |
 |------|------|-------------|
-| `config` | `FreezeConfig` | SSG configuration |
-| `locale` | `string?` | Override current locale |
-| `LinkComponent` | `Component?` | Optional Inertia Link component |
-| `children` | `ReactNode` | Child components |
+| `config` | `FreezeConfig` | SSG configuration object. |
+| `locale` | `string?` | Manually override the current locale (useful for SSR). |
+| `LinkComponent` | `Component?` | React component to use for dynamic navigation (e.g., Inertia Link). |
+| `children` | `ReactNode` | Your application. |
 
 #### `<StaticLink>`
 
-Smart link component.
-
-```tsx
-<StaticLink href="/about" className="link">About</StaticLink>
-```
-
 | Prop | Type | Description |
 |------|------|-------------|
-| `href` | `string` | Target path (auto-localized) |
-| `className` | `string?` | CSS class |
-| `skipLocalization` | `boolean?` | Skip auto-localization |
-| `children` | `ReactNode` | Link content |
+| `href` | `string` | Target path. Automatically localized. |
+| `skipLocalization` | `boolean?` | If true, the `href` will be used as-is. |
+| `className` | `string?` | CSS class for the generated element. |
+| `...props` | `any` | Any other props are passed to the underlying element. |
 
 #### `<LocaleSwitcher>`
 
-Locale switching link.
-
-```tsx
-<LocaleSwitcher locale="zh">Chinese</LocaleSwitcher>
-```
-
 | Prop | Type | Description |
 |------|------|-------------|
-| `locale` | `string` | Target locale |
-| `className` | `string?` | CSS class |
-| `children` | `ReactNode?` | Link content (defaults to locale code) |
+| `locale` | `string` | Target locale to switch to. |
+| `className` | `string?` | CSS class. |
+| `children` | `ReactNode?` | Defaults to uppercase locale code. |
 
-### Hook
+### Hooks
 
 #### `useFreeze()`
 
-Access SSG utilities in components.
+Returns an object with the following properties:
 
-```tsx
-const {
-  isStatic,         // boolean - static mode flag
-  locale,           // string - current locale
-  getLocalizedPath, // (path, locale?) => string
-  switchLocale,     // (locale) => string
-  getLocaleFromPath,// (path) => string
-  navigateToLocale, // (locale) => void
-} = useFreeze()
-```
+- `isStatic`: `boolean` - `true` if running on a production static domain.
+- `locale`: `string` - The currently active locale.
+- `getLocalizedPath(path, locale?)`: Returns the path with the appropriate locale prefix.
+- `switchLocale(newLocale)`: Returns the current URL path adapted for a new locale.
+- `navigateToLocale(newLocale)`: Programmatically triggers a location change to the new locale.
 
-### Re-exports from @gravito/freeze
+## Static vs Dynamic Behavior
 
-All exports from `@gravito/freeze` are available:
+| Scenario | Mode | `<StaticLink>` Result | Navigation |
+|----------|------|------------------------|------------|
+| **Production (SSG)** | Static | Native `<a>` | Full Page Reload |
+| **Development (SSR)** | Dynamic | Inertia `<Link>`* | SPA Transition |
 
-- `defineConfig`
-- `createDetector`
-- `generateRedirectHtml`
-- `generateRedirects`
-- `generateLocalizedRoutes`
-- `inferRedirects`
-- `generateSitemapEntries`
+*\*Only if `LinkComponent` is provided to `FreezeProvider`.*
 
-## Static vs Dynamic Mode
+## Re-exports
 
-| Feature | Static Mode | Dynamic Mode |
-|---------|-------------|--------------|
-| `<StaticLink>` | Renders `<a>` | Renders Inertia `<Link>` |
-| Navigation | Full page reload | SPA transition |
-| Detected when | Production domains, port 4173 | localhost:3000/5173 |
+For convenience, `@gravito/freeze-react` re-exports the entire `@gravito/freeze` core API, including `defineConfig`.
 
 ## License
 

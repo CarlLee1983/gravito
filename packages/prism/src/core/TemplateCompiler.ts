@@ -112,17 +112,42 @@ export class TemplateCompiler {
   /**
    * Compile template source to rendered HTML.
    *
-   * Runs the full compilation pipeline on the provided template string.
+   * Executes the full compilation pipeline, transforming a raw template string
+   * into final HTML by processing includes, inheritance, components, directives,
+   * and variable interpolation.
    *
-   * @param template - Raw template source string.
-   * @param data - Data context for variable interpolation.
-   * @param ctx - Render context for sections and stacks.
-   * @param helpers - Map of registered helper functions.
-   * @param readTemplate - Callback to read included/component templates from disk.
+   * The pipeline order is critical for correct rendering:
+   * 1. **Includes**: Resolves `@include` and `{{include}}` recursively.
+   * 2. **Inheritance**: Resolves `@yield` and `@stack` placeholders.
+   * 3. **Components**: Expands `<x-component>` tags into their respective templates.
+   * 4. **Directives**: Transforms `@if`, `@foreach`, etc., into internal logic.
+   * 5. **Helpers**: Executes custom helper functions.
+   * 6. **Interpolation**: Replaces `{{var}}` and `{{{raw}}}` with data values.
+   *
+   * @param template - Raw template source string to compile.
+   * @param data - Data context containing variables available to the template.
+   * @param ctx - Render context for managing shared state like sections and stacks.
+   * @param helpers - Registry of custom helper functions.
+   * @param readTemplate - Callback function to retrieve template source by name.
    * @returns The fully rendered HTML string.
    *
-   * @throws {Error} If max recursion depth is exceeded for components or includes.
-   * @throws {Error} If template syntax is invalid.
+   * @throws {Error} If maximum recursion depth (10) is exceeded for includes or components.
+   * @throws {Error} If a component template cannot be found.
+   *
+   * @example
+   * ```typescript
+   * const compiler = new TemplateCompiler();
+   * const html = compiler.compile(
+   *   '<div>{{ message }}</div>',
+   *   { message: 'Hello World' },
+   *   { sections: new Map(), stacks: new Map() },
+   *   new Map(),
+   *   (name) => fs.readFileSync(`${name}.html`, 'utf-8')
+   * );
+   * ```
+   *
+   * @public
+   * @since 3.1.0
    */
   compile(
     template: string,

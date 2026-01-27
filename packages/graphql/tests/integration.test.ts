@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 import { defineConfig, GravitoAdapter, PlanetCore } from '@gravito/core'
 import { createSchema } from 'graphql-yoga'
-import { OrbitGraphQL } from '../src/index'
+import { type GraphQLContext, OrbitGraphQL } from '../src/index'
 
 describe('GraphQL Integration', () => {
   it('should serve GraphQL playground/queries via PlanetCore', async () => {
@@ -31,7 +31,7 @@ describe('GraphQL Integration', () => {
     })
 
     const response = await fetch(request)
-    const result = (await response.json()) as any
+    const result = (await response.json()) as { data: { hello: string; gravito: string } }
 
     // 3. Verify Results
     expect(response.status).toBe(200)
@@ -63,7 +63,7 @@ describe('GraphQL Integration', () => {
     })
 
     const response = await fetch(request)
-    const result = (await response.json()) as any
+    const result = (await response.json()) as { data: { ping: string } }
 
     expect(result.data.ping).toBe('pong')
   })
@@ -73,7 +73,7 @@ describe('GraphQL Integration', () => {
       typeDefs: 'type Query { userAgent: String }',
       resolvers: {
         Query: {
-          userAgent: (_: unknown, __: unknown, context: any) => {
+          userAgent: (_: unknown, __: unknown, context: GraphQLContext) => {
             return context.gravito.req.header('User-Agent')
           },
         },
@@ -99,7 +99,7 @@ describe('GraphQL Integration', () => {
     })
 
     const response = await fetch(request)
-    const result = (await response.json()) as any
+    const result = (await response.json()) as { data: { userAgent: string } }
 
     expect(result.data.userAgent).toBe('Gravito-Test-Agent')
   })
@@ -159,7 +159,7 @@ describe('GraphQL Integration', () => {
     })
 
     const response = await fetch(request)
-    const result = (await response.json()) as any
+    const result = (await response.json()) as { data: { version: string } }
 
     expect(result.data.version).toBe('1.0.0')
   })

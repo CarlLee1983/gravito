@@ -41,10 +41,7 @@ export function Navbar() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-2">
-              <StaticLink
-                href="/"
-                className="flex items-center gap-2 group"
-              >
+              <StaticLink href="/" className="flex items-center gap-2 group">
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-zenith-500 to-zenith-accent flex items-center justify-center group-hover:scale-110 transition-transform shadow-[0_0_15px_rgba(0,251,255,0.3)]">
                   <LayoutDashboard className="w-5 h-5 text-black" />
                 </div>

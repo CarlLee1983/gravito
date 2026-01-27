@@ -192,7 +192,7 @@ export default {
     orbitTitle: '動力模組',
     galaxy_desc:
       '想要 React？加入 Ion。想要 Vue？加入 Ion。想要 HTML？加入 Prism。想要 SEO？加入 Luminosity。需要資料庫？加入 Atlas。根據需求加載模組，杜絕任何不必要的資源浪費。',
-    galaxy_atlas_stable: 'Atlas (ORM) — 高性能 Bun 原生 ORM (v1.1.0 已發佈)。',
+    galaxy_atlas_stable: 'Atlas (ORM) — 高性能 Bun 原生 ORM (v1.4.0 已發佈，包含重大性能優化)。',
     scaleTitle: '無限擴展能力',
     scaleDesc: '從單一文件的微型 API 到全球級企業系統，架構會根據項目的「引力」自動適配。',
     aiTitle: 'AI 優先的開發合約',

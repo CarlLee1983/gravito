@@ -22,7 +22,7 @@
       },
       "accessor_access": {
         "iterations": 1000,
-        "total_time_ms": 1.10,
+        "total_time_ms": 1.1,
         "avg_time_ms_per_op": 0.0011,
         "notes": "10000 accessor access operations"
       }
@@ -48,7 +48,7 @@
       "clone_50_wheres": {
         "iterations": 10000,
         "total_time_ms": 9.78,
-        "avg_time_ms_per_op": 0.0010
+        "avg_time_ms_per_op": 0.001
       },
       "cloned_where_modification": {
         "iterations": 10000,

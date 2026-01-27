@@ -74,6 +74,34 @@ describe('MakeCommand', () => {
     expect(content).toContain('class Product extends Model')
   })
 
+  it('should create a command with default signature', async () => {
+    await fs.mkdir(TEST_DIR, { recursive: true })
+    process.chdir(TEST_DIR)
+
+    await cmd.run('command', 'GreetCommand')
+
+    const file = path.join(TEST_DIR, 'src/commands/GreetCommand.ts')
+    expect(await fs.exists(file)).toBe(true)
+
+    const content = await fs.readFile(file, 'utf-8')
+    expect(content).toContain('class Greet extends Command')
+    expect(content).toContain("static signature = 'greet'")
+  })
+
+  it('should create a command with custom signature', async () => {
+    await fs.mkdir(TEST_DIR, { recursive: true })
+    process.chdir(TEST_DIR)
+
+    await cmd.run('command', 'TestCommand', { command: 'app:test' })
+
+    const file = path.join(TEST_DIR, 'src/commands/TestCommand.ts')
+    expect(await fs.exists(file)).toBe(true)
+
+    const content = await fs.readFile(file, 'utf-8')
+    expect(content).toContain('class Test extends Command')
+    expect(content).toContain("static signature = 'app:test'")
+  })
+
   afterEach(async () => {
     // Cleanup
     process.chdir(originalCwd)

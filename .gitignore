@@ -75,4 +75,6 @@ examples/benchmarks/results/*.json
 **/*_error.txt
 
 # Example storage
-**/storage/
+examples/**/storage/
+**/*.html
+**/views/emails/**

@@ -795,6 +795,7 @@ cli
   .option('-m, --migration', 'Create a new migration file for the model')
   .option('-c, --controller', 'Create a new controller for the model')
   .option('-r, --request', 'Create a new form request for the model')
+  .option('-g, --graphql', 'Create a model configured for GraphQL automation')
   .option('-a, --all', 'Create a migration, controller, and form request for the model')
   .action(async (name, options) => {
     // 1. Make the model
@@ -821,6 +822,11 @@ cli
 cli
   .command('make:request <name>', 'Create a new form request class')
   .action((name) => make.run('request', name))
+
+cli
+  .command('make:command <name>', 'Create a new custom CLI command')
+  .option('--command <command>', 'The signature of the command (e.g. app:greet)')
+  .action((name, options) => make.run('command', name, options))
 
 cli
   .command('make:satellite <name>', 'Create a new Gravito Satellite (Plugin)')

@@ -20,7 +20,7 @@ export class AppServiceProvider extends ServiceProvider {
     })
   }
 
-  boot(_core: PlanetCore): void {
+  boot(core: PlanetCore): void {
     // Services are ready
   }
 }

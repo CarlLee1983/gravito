@@ -90,6 +90,49 @@ if (result.success) {
 } else {
   console.error('Delivery failed:', result.error)
 }
+
+// Batch sending
+const batchResult = await dispatcher.dispatchBatch([
+  { url: 'https://a.com', event: 'e1', data: { id: 1 } },
+  { url: 'https://b.com', event: 'e1', data: { id: 2 } }
+], { concurrency: 5 })
+```
+
+### Persistence & Reliability
+
+Echo supports persistence for audit logs and Dead Letter Queues (DLQ) for failed deliveries.
+
+```typescript
+import { 
+  OrbitEcho, 
+  MemoryWebhookStore, 
+  MemoryDeadLetterQueue 
+} from '@gravito/echo'
+
+const echo = new OrbitEcho({
+  providers: { /* ... */ },
+  dispatcher: { /* ... */ },
+  // Configure persistence
+  store: new MemoryWebhookStore(), // Or your DB implementation
+  deadLetterQueue: new MemoryDeadLetterQueue()
+})
+
+// Replay failed events
+const replayService = new WebhookReplayService(echo.getConfig().store!, echo.getDispatcher()!)
+await replayService.replay({ 
+  timeRange: { from: new Date(Date.now() - 86400000), to: new Date() },
+  dryRun: true 
+})
+
+// Observability
+const echoWithObservability = new OrbitEcho({
+  providers: { /* ... */ },
+  observability: {
+    logger: new ConsoleEchoLogger(),
+    metrics: new PrometheusMetricsProvider(),
+    // tracer: opentelemetryTracer
+  }
+})
 ```
 
 ## Providers
@@ -101,6 +144,11 @@ if (result.success) {
 | `stripe` | HMAC-SHA256 + Timestamp | `Stripe-Signature` |
 | `github` | HMAC-SHA256 | `X-Hub-Signature-256` |
 | `generic` | HMAC-SHA256 | `X-Webhook-Signature` |
+| `shopify` | HMAC-SHA256 (base64) | `X-Shopify-Hmac-Sha256` |
+| `twilio` | HMAC-SHA1 (base64) | `X-Twilio-Signature` |
+| `slack` | HMAC-SHA256 + Timestamp | `X-Slack-Signature` |
+| `paddle` | HMAC-SHA256 + Timestamp | `Paddle-Signature` |
+| `linear` | HMAC-SHA256 | `Linear-Signature` |
 
 ### Custom Provider
 
@@ -121,6 +169,8 @@ receiver.registerProvider('custom', 'secret', { type: 'my-provider' })
 ```
 
 ## Configuration
+
+For detailed API information, please refer to the [API Documentation](./docs/api/README.md).
 
 ### WebhookDispatcher
 

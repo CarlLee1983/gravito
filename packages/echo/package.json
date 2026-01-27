@@ -20,9 +20,11 @@
   "scripts": {
     "build": "bun run build.ts",
     "test": "bun test",
+    "test:unit": "bun test tests/unit",
+    "test:integration": "bun test tests/integration",
     "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
-    "test:coverage": "bun test --coverage --coverage-threshold=80",
-    "test:ci": "bun test --coverage --coverage-threshold=80"
+    "test:coverage": "bun test --coverage --coverage-threshold=90",
+    "test:ci": "bun test --coverage --coverage-threshold=90"
   },
   "keywords": [
     "gravito",

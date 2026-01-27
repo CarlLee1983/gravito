@@ -5,31 +5,33 @@ description: Understand Gravito's core ideas, architecture, and why it fits mode
 
 # Introduction
 
-> **Gravito** (from Gravity) is a Bun-native, planet-scale full-stack framework. It blends Laravel-style developer experience with the performance profile of modern JavaScript runtimes.
+> **Gravito** is a planet-scale, high-performance framework designed for modern developers. Built on Bun, it blends Laravel's artistic development experience with the extreme extensibility of the **Galaxy Architecture**.
 
 ## What is Gravito?
 
-Gravito is not just another web framework. It is a **full-stack gravitational field** for your application. In the JavaScript/TypeScript ecosystem, toolchains are often fragmented. Gravito aims to deliver a **batteries-included** experience similar to Laravel, while leveraging **Bun** for fast startup and high throughput.
+Gravito is more than just a web framework; it is your **full-stack gravitational field**. In the JavaScript/TypeScript ecosystem, developers often face fragmented toolchain choices. Gravito aims to provide a **batteries-included** experience similar to **Laravel**, while leveraging the millisecond startup and native high performance of **Bun**.
 
-- **Orbits (Modules)**: Official modules that orbit the core (Atlas for database, Sentinel for security). You can attach or detach them as your product grows.
+- **Galaxy Architecture**:
+  - **PlanetCore (Core)**: An ultra-lightweight micro-kernel responsible for lifecycle and hook management.
+  - **Orbits (Infrastructure)**: Strategic infrastructure modules orbiting the core (e.g., Atlas for Database, Signal for Events/Mail, Ion for Frontend Bridge).
+  - **Satellites (Satellites)**: Self-contained business domain modules (e.g., Catalog, Membership) implemented using DDD and Clean Architecture.
 
-## Why Gravito?
+## Why Choose Gravito?
 
-### 1. Evolved Developer Experience
-If you enjoy Laravel, Ruby on Rails, or Django, Gravito will feel familiar. Routing, controller injection, and query tooling are designed to be clean and direct.
-For a concrete breakdown, see [Better Than Laravel: Five DX Pillars](./dx-pillars.md).
+### 1. Evolved Developer Experience (DX)
+If you love Laravel, Ruby on Rails, or Django, you'll find Gravito's API extremely welcoming. We advocate for **Manifest-Driven Development (MDD)**, allowing you to assemble complex systems simply through `gravito.config.ts`.
 
-### 2. Sustainable Performance
-Powered by [Bun](https://bun.sh/), Gravito keeps memory overhead low and request throughput high. That means more concurrency with less infrastructure cost.
+### 2. Sustainable High Performance
+Powered by the [Bun](https://bun.sh/) runtime, Gravito maintains extremely low memory overhead and astonishing request processing speeds. This means your servers can handle more concurrency while significantly reducing cloud computing costs.
 
-### 3. Three Frontend Paths
-Gravito is **frontend agnostic**. You can mix and match modes by page:
-- **Modern SPA (Inertia.js)**: React or Vue with SPA UX, without API overhead.
-- **Classic MPA (Template Engine)**: SSR-friendly rendering for SEO-first pages.
-- **Static Generation (SSG)**: Freeze a site into static files for GitHub Pages or Vercel.
+### 3. Three-Dimensional Frontend Development
+Gravito is **"Frontend Agnostic"**. We provide built-in support for three major application architectures:
+- **Modern Monolith (Orbit Ion)**: Combine React or Vue (Inertia.js) for fluid SPA experiences without the need to develop complex APIs.
+- **Classic MPA (Orbit Prism)**: High-performance server-side rendering for perfect SEO and developer intuition.
+- **Static Site Generation (SSG)**: One-click "freeze" your application into a static site, suitable for deployment to GitHub Pages or Vercel.
 
-### 4. Enterprise-Ready Expansion
-The core stays lean, while **Kinetic modules** let you add caching, queues, i18n, SEO automation, and more when needed.
+### 4. Enterprise-Grade Extensibility
+While the core is lightweight, you can easily add caching, queues, internationalization (I18n), SEO automation, and more through the **Orbits system**.
 
 ## Gravito vs Others
 

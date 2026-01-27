@@ -75,35 +75,35 @@ bun gravito tinker # Enter the interactive REPL
 
 ### What just happened?
 Gravito started two synchronized engines:
-1. **Gravito Core Engine**: Handling your routes, controllers, and logic.
+1. **Gravito Core Engine**: Driven by `PlanetCore`, handling your routes, UseCases, and business logic.
 2. **Vite Frontend**: Powering the React/Inertia interface with blazing-fast Hot Module Replacement (HMR).
 
 ## Make Your First Change
 
-Gravito is **Engine Agnostic**. You can choose your preferred way to build the UI. open `src/controllers/HomeController.ts` and try these three paths:
+Gravito is **Engine Agnostic**. open `src/controllers/HomeController.ts` and try these three paths:
 
-### Option A: The Modern SPA (Inertia + React)
-This is the default for our official site. It delivers a fluid Single Page Application experience.
+### Option A: Modern Monolith (Orbit Ion)
+This is the standard for Gravito 1.0. It delivers a fluid Single Page Application experience without the need to manually develop and manage API layers.
 
 ```typescript
 // src/controllers/HomeController.ts
 export class HomeController {
-  index(c: Context) {
+  async index(c: Context) {
     const inertia = c.get('inertia')
     return inertia.render('Home', { greeting: 'Hello from React!' })
   }
 }
 ```
 
-### Option B: The Classic MPA (Gravito-View)
-Prefer Laravel-style server-side templates? Use Handlebars/Mustache style templates for maximum SEO and simplicity.
+### Option B: Classic MPA (Orbit Prism)
+Prefer Laravel-style server-side rendering? This is your best choice. Use the high-performance template engine for ultimate SEO and simplicity.
 
 ```typescript
 // src/controllers/HomeController.ts
 export class HomeController {
-  index(c: Context) {
+  async index(c: Context) {
     const view = c.get('view')
-    return view.render('welcome', { greeting: 'Hello from Templates!' })
+    return view.render('welcome', { greeting: 'Hello from Prism!' })
   }
 }
 ```

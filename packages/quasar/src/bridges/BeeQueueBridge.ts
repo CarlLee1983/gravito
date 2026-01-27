@@ -34,6 +34,7 @@ export class BeeQueueBridge extends BaseZenithBridge {
           result: typeof result === 'object' ? JSON.stringify(result) : result,
         },
       })
+      this.endJobSpan(job.id)
     }
 
     const onFailed = async (job: any, error: Error) => {
@@ -47,6 +48,7 @@ export class BeeQueueBridge extends BaseZenithBridge {
           stack: error.stack,
         },
       })
+      this.endJobSpan(job.id)
     }
 
     const onProgress = async (job: any, progress: number) => {
@@ -65,10 +67,16 @@ export class BeeQueueBridge extends BaseZenithBridge {
     queue.on('job succeeded', onSucceeded)
     queue.on('job failed', onFailed)
     queue.on('job progress', onProgress)
+    queue.on('active', (job: any) => {
+      this.startJobSpan(job.id, job.data)
+    })
 
     // Register for cleanup
     this.registerListener(queue, 'job succeeded', onSucceeded)
     this.registerListener(queue, 'job failed', onFailed)
     this.registerListener(queue, 'job progress', onProgress)
+    this.registerListener(queue, 'active', (job: any) => {
+      this.startJobSpan(job.id, job.data)
+    })
   }
 }

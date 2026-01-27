@@ -5,7 +5,14 @@ description: Learn how to use Pulse, Gravito's command-line tool.
 
 # Pulse CLI
 
-> `gravito` (or `pulse`) is Gravito's built-in interactive command-line tool, inspired by Laravel Artisan.
+> `gravito` (or `pulse`) is Gravito's built-in interactive command-line tool, inspired by Laravel Artisan. It is your primary tool for developing, managing, and deploying Gravito applications.
+
+## Global Options
+
+| Option | Description |
+| :--- | :--- |
+| `--help`, `-h` | Display help for the given command. |
+| `--version`, `-v` | Display the current CLI version. |
 
 ## Common Commands
 
@@ -20,6 +27,9 @@ gravito route:list
 
 # Enter interactive REPL
 gravito tinker
+
+# Diagnose configuration and environment issues
+gravito doctor
 ```
 
 ### Code Generation (Make)
@@ -31,6 +41,12 @@ gravito make:controller UserController
 # Create middleware
 gravito make:middleware AuthGuard
 
+# Create a Command
+gravito make:command GreetCommand --command app:greet
+
+# Create a UseCase (requires @gravito/enterprise)
+gravito make:use-case CreateUser
+
 # Create a job (requires @gravito/stream)
 gravito make:job ProcessPayment
 ```
@@ -40,6 +56,7 @@ gravito make:job ProcessPayment
 ```bash
 # Run database migrations (requires @gravito/atlas)
 gravito migrate
+gravito migrate:status
 
 # Run task scheduling (requires @gravito/horizon)
 gravito schedule:run
@@ -47,13 +64,19 @@ gravito schedule:run
 
 ## Custom Commands
 
-You can define your own CLI commands by creating a simple class.
+You can define your own CLI commands by creating a simple class. The easiest way to get started is using the `make:command` generator:
+
+```bash
+gravito make:command WelcomeCommand --command app:welcome
+```
+
+This will create a command class in `src/commands/WelcomeCommand.ts`.
 
 ```typescript
 import { Command } from '@gravito/pulse'
 
 export default class WelcomeCommand extends Command {
-  static signature = 'greet {name}'
+  static signature = 'app:welcome {name}'
   static description = 'Greet a user'
 
   async handle() {

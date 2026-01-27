@@ -66,9 +66,7 @@ const renderStatus = (events) => {
     return
   }
 
-  const lastWorkflow = [...events]
-    .reverse()
-    .find((event) => event.type.startsWith('workflow:'))
+  const lastWorkflow = [...events].reverse().find((event) => event.type.startsWith('workflow:'))
 
   const status = lastWorkflow?.status ?? 'unknown'
   const badgeClass = status === 'completed' ? 'ok' : status === 'failed' ? 'fail' : ''

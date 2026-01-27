@@ -138,7 +138,17 @@ export class OrbitIon implements GravitoOrbit {
   /**
    * Registers the Inertia middleware and service factory into PlanetCore.
    *
+   * This method sets up the `InertiaService` for each request and attaches
+   * the `InertiaHelper` proxy to the context, allowing controllers to
+   * easily render components or share data.
+   *
    * @param core - The micro-kernel instance
+   *
+   * @example
+   * ```typescript
+   * const ion = new OrbitIon({ version: '1.0' });
+   * ion.install(core);
+   * ```
    */
   install(core: PlanetCore): void {
     core.logger.info('🛰️ Orbit Inertia installed (Callable Interface)')

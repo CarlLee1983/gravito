@@ -5,7 +5,7 @@ import './styles.css'
 createInertiaApp({
   resolve: (name) => {
     const pages = import.meta.glob('./pages/**/*.tsx', { eager: true })
-    return pages[`./pages/${name}.tsx`]
+    return pages[`./pages/${name}.tsx`] as any
   },
   setup({ el, App, props }) {
     createRoot(el).render(<App {...props} />)

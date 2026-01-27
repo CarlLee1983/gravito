@@ -97,11 +97,15 @@ export abstract class ServiceProvider {
   // ─────────────────────────────────────────────────────────────
 
   /**
-   * Merge configuration from a file into the application config.
+   * Merge configuration from a value into the application config.
    *
-   * @param config - The ConfigManager instance
-   * @param key - The configuration key to set
-   * @param value - The configuration value or object
+   * If the configuration key already exists and both the existing value and
+   * the new value are objects, they will be shallow-merged. Otherwise, the
+   * new value will overwrite the existing one.
+   *
+   * @param config - The ConfigManager instance.
+   * @param key - The configuration key to set (supports dot notation).
+   * @param value - The configuration value or object to merge.
    *
    * @example
    * ```typescript
@@ -162,11 +166,13 @@ export abstract class ServiceProvider {
   private static publishables: Map<string, Map<string, string>> = new Map()
 
   /**
-   * Register paths to be published.
-   * Used by CLI commands like `gravito vendor:publish`.
+   * Register paths to be published by the CLI.
    *
-   * @param paths - Map of source to destination paths
-   * @param group - Optional group name for selective publishing
+   * Used by CLI commands like `gravito vendor:publish` to copy configuration,
+   * views, or assets from the package to the application directory.
+   *
+   * @param paths - A record mapping source paths to destination paths.
+   * @param group - Optional group name for selective publishing (e.g., 'config', 'views').
    *
    * @example
    * ```typescript

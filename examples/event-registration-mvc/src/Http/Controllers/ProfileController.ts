@@ -1,4 +1,5 @@
 import { DB } from '@gravito/atlas'
+import type { GravitoContext } from '@gravito/core'
 import type { Registration } from '../../Models/Registration'
 import { QrCodeService } from '../../Services/QrCodeService'
 import { Controller } from './Controller'
@@ -26,7 +27,7 @@ export class ProfileController extends Controller {
    */
   async showRegistration(ctx: any) {
     const userId = ctx.session.get('user_id')
-    const registrationId = parseInt(ctx.params.id, 10)
+    const registrationId = parseInt(ctx.params.id)
 
     const registration = await DB.table<Registration>('registrations')
       .where('id', registrationId)
