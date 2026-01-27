@@ -130,24 +130,26 @@ export class DirtyTracker<T extends Record<string, unknown>> {
     if (a === b) {
       return true
     }
-    if (a == null || b == null) {
-      return a === b
-    }
 
-    // Type mismatch - check before object type checks
-    const typeA = typeof a
-    const typeB = typeof b
-    if (typeA !== typeB) {
-      return false
-    }
-
-    // Special object types - check before general object comparison
+    // Special object types - check before null checks to handle Date vs null correctly
     // This handles Date vs null, Date vs Date, etc.
     if (a instanceof Date) {
       return b instanceof Date && a.getTime() === b.getTime()
     }
     if (b instanceof Date) {
       return false // a is not Date but b is
+    }
+
+    // Null/undefined check after Date check
+    if (a == null || b == null) {
+      return a === b
+    }
+
+    // Type mismatch - check before general object comparison
+    const typeA = typeof a
+    const typeB = typeof b
+    if (typeA !== typeB) {
+      return false
     }
 
     // Primitive types already handled by ===

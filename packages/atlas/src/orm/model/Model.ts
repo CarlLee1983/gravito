@@ -193,10 +193,20 @@ export abstract class Model {
    * @returns Property descriptor if found, undefined otherwise
    * @internal
    */
+  /**
+   * 屬性名稱：不快取 descriptor，以免測試中 spyOn 時仍取到舊引用
+   */
+  private static _descriptorCacheSkip = new Set<string | symbol>(['save', 'delete', 'restore'])
+
   private static _getDescriptorFromPrototype(
     proto: object,
     prop: string | symbol
   ): PropertyDescriptor | undefined {
+    // 測試常用 spy 的屬性不快取，避免 spyOn 後仍取到舊 descriptor
+    if (Model._descriptorCacheSkip.has(prop)) {
+      return Object.getOwnPropertyDescriptor(proto, prop)
+    }
+
     // 檢查快取
     let protoCache = Model._descriptorCache.get(proto)
     if (protoCache?.has(prop)) {
