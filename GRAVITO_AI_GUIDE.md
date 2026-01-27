@@ -240,20 +240,21 @@ CMD ["/app/server"]
 ```
 @gravito/core/
 ├── packages/                 # 核心模組 (Monorepo)
-│   ├── pulse/                # 命令列工具 (Orbit Pulse)
 │   ├── core/                 # PlanetCore (核心 IoC 容器 + 生命週期)
-│   ├── sentinel/             # 身分驗證軌道 (Sentinel)
-│   ├── stasis/               # 快取軌道 (Stasis)
-│   ├── atlas/                # 資料庫軌道 (Atlas)
+│   ├── photon/               # 高效能 HTTP 引擎
+│   ├── atlas/                # 資料庫軌道 (Atlas ORM)
+│   ├── signal/               # 事件總線與郵件軌道 (Signal)
+│   ├── stream/               # 異步任務隊列軌道 (Stream)
 │   ├── ion/                  # Inertia.js 整合軌道 (Ion)
-│   ├── nebula/               # 雲端儲存軌道 (Nebula)
+│   ├── zenith/               # 運維控制台 (Zenith)
 │   └── prism/                # 模板與圖片優化軌道 (Prism)
 │
-├── templates/                # 專案模板
-│   ├── basic/                # 基礎 MVC 模板 (純 HTML)
-│   └── inertia-react/        # Inertia + React SPA 模板
+├── satellites/               # 領域衛星模組 (Domain Satellites)
+│   ├── catalog/              # 商品目錄
+│   ├── membership/           # 會員與權限
+│   └── commerce/             # 交易與訂單
 │
-├── docs/                     # 文件
+├── templates/                # 專案模板
 ├── examples/                 # 範例專案
 └── GRAVITO_AI_GUIDE.md       # 本文件
 ```
@@ -265,20 +266,16 @@ CMD ["/app/server"]
 ### TypeScript 規範
 
 ```typescript
-// 建議：使用 Interface 定義合約
-interface UserService {
-  find(id: string): Promise<User>
-  create(data: CreateUserDTO): Promise<User>
+// 建議：使用 UseCase 定義業務邏輯
+export class CreateUserUseCase extends UseCase<Input, Output> {
+  async execute(input: Input) {
+    // ...
+  }
 }
 
-// 建議：Controller 依賴 Interface
+// 建議：Controller 依賴 UseCase 或 Interface
 export class UserController {
-  constructor(private userService: UserService) {}
-}
-
-// 避免：直接依賴具體實作
-export class UserController {
-  private userService = new ConcreteUserService() // Bad
+  constructor(private createUser: CreateUserUseCase) {}
 }
 ```
 

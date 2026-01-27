@@ -1,13 +1,81 @@
 # Gravito 生態系統技術白皮書
-**版本 1.0.0**
+**版本 1.0.0 (銀河架構)**
 
 ## 引言
 
-Gravito 是一個專為 TypeScript 時代設計的現代化、開發者優先的異步任務處理生態系統。它由兩個共生的核心支柱組成：
-1.  **Gravito Stream**：高效能、原子性的隊列處理引擎。
-2.  **Gravito Zenith**：集中式的運維控制平面與監控系統。
+Gravito 是一個專為現代 Web 開發設計的、高性能的 TypeScript 模組化框架。它已從專門的任務處理系統進化為基於 **銀河架構 (Galaxy Architecture)** 的全面應用生態系統。
 
-本白皮書詳細介紹了 Gravito 的架構決策、技術棧以及實作模式，闡述我們如何提供企業級的可靠性與零配置的極致開發者體驗。
+該生態系統建立在三大支柱之上：
+1.  **PlanetCore**：極輕量級的微核心，強制執行領域驅動設計 (DDD)。
+2.  **Gravito Stream**：高效能、原子性的異步任務引擎。
+3.  **Gravito Zenith**：集中式的運維控制平面與監控系統。
+
+---
+
+# 第一部分：銀河架構 (Galaxy Architecture)
+
+**設計哲學**：「嚴謹的核心，靈活的周邊 (Rigorous Core, Flexible Perimeter)」。
+
+## 1. 微核心 (PlanetCore)
+*   **技術**：IoC 容器 + Hook 系統。
+*   **實作細節**：零依賴的核心，負責管理應用程式生命週期。它採用 **啟動時解析 (Boot-time Resolution)** 機制，在啟動時編譯路由與依賴關係，確保執行期 (Runtime) 是唯讀且經過效能最佳化的。
+
+## 2. 軌道 (Orbits) 與 衛星 (Satellites)
+*   **軌道 (Orbits - 基礎設施)**：策略性擴展，如 `OrbitAtlas` (資料庫/ORM)、`OrbitSignal` (事件總線/郵件) 與 `OrbitIon` (Inertia.js)，它們「環繞」核心以提供必要資源。
+*   **衛星 (Satellites - 領域)**：自包含的業務模組（如商品目錄、會員系統、電子商務），使用整潔架構 (Clean Architecture) 實作特定領域邏輯。
+
+## 3. 清單驅動開發 (MDD)
+*   **功能**：透過 `gravito.config.ts` 進行高階系統組裝。
+*   **成果**：開發者只需宣告所需的「衛星」，即可組裝出功能齊全的企業級系統。框架會處理底層連接、自動掛載控制器並串接領域事件。
+
+---
+
+# 第二部分：Gravito Stream (異步任務引擎)
+
+**設計哲學**：「極速下的原子級可靠性 (Atomic Reliability at Speed)」。
+Stream 是銀河架構下的標準背景處理單元，確保不會因 Race Condition 而遺失任何資料。
+
+## 1. 智能隊列路由與存儲
+*   **技術**：Redis Lists (O(1)) 與 命名空間分區 (Namespace Partitioning)。
+*   **實作細節**：
+    *   **標準任務**：存儲於標準 Redis Lists (`RPUSH` / `LPOP`)。
+    *   **優先級任務**：透過 **隱式分區 (Implicit Partitioning)** 實作。高優先級任務路由至 `queue:name:critical`。Consumer 嚴格按順序輪詢。
+*   **成果**：實現了優先級處理，但沒有單一 Sorted Set 帶來的效能損失。
+
+## 2. 原子性保證
+*   **技術**：Redis Lua Scripting (`EVAL`)。
+*   **實作細節**：所有關鍵狀態流轉（如速率限制、任務獲取）都在 Redis 伺服器端原子性地完成，防止數百個 Worker 並發時的 Race Condition。
+
+## 3. 彈性機制：優雅重試與指數退避
+*   **技術**：排程存儲 (Redis ZSET)。
+*   **實作細節**：Worker 將執行封裝在彈性層中。失敗時，任務會根據公式 `initial * (multiplier ^ attempts)` 計算退避時間，重新調度至 `Delayed` 集合。
+
+## 4. 死信隊列 (DLQ) 管理
+*   **技術**：原子性 `RPOPLPUSH`。
+*   **實作細節**：有毒任務被隔離至 `failed` 列表。透過原子操作確保任務在移動過程中「零遺失」，並支持手動檢視與重播。
+
+---
+
+# 第三部分：Gravito Zenith (控制平面)
+
+**設計哲學**：「最大化可見性，最小化開銷 (Maximum Visibility, Minimum Overhead)」。
+Zenith 為整個銀河生態系統提供即時洞察。
+
+## 1. 即時遙測 (Real-Time Telemetry)
+*   **技術**：Server-Sent Events (SSE) + Redis Pub/Sub。
+*   **實作細節**：Worker 透過 Redis Pub/Sub 發送事件；Zenith 橋接器將其轉發為 SSE 流，在 React 儀表板中提供延遲低於 100ms 的日誌可見性。
+
+## 2. 分佈式 Worker 健康監控
+*   **技術**：帶 TTL 的臨時 Key。
+*   **實作細節**：Worker 自主寫入包含 CPU/RAM/Heap 指標的心跳 Key。儀表板通過掃描這些 Key 實現自動發現。
+
+## 3. 混合持久化 (Audit Layer)
+*   **技術**：多語言持久化 (Redis + SQL)。
+*   **實作細節**：Redis 作為「熱緩衝區」。已完成或失敗的任務會異步歸檔至 SQL (SQLite/MySQL)，支持長期搜尋且不佔用昂貴的 RAM。
+
+## 4. UI/UX 架構
+*   **技術**：React 19, TailwindCSS, Framer Motion。
+*   **實作細節**：樂觀 UI 更新與虛擬化列表，確保頂級且流暢的運維管理體驗。
 
 ---
 

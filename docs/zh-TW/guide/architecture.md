@@ -5,7 +5,39 @@ description: 了解 Gravito 的核心架構，包含 IoC 容器、服務提供�
 
 # 架構概覽 (Architecture Overview)
 
-> Gravito 採用「微內核 + 軌道 (Orbit)」的銀河架構，提供極致的擴展性與解耦能力。
+> Gravito 採用「微核心 + 軌道 (Orbit) + 衛星 (Satellite)」的銀河架構，提供極致的擴展性與解耦能力。
+
+## 銀河架構 (Galaxy Architecture)
+
+Gravito 的設計深受天體力學啟發，將系統分為三個層次：
+
+1. **PlanetCore (微核心)**：
+   引力中心。負責 IoC 容器、生命週期管理 (Hook 系統) 與 請求/回應 的基本流轉。核心保持零依賴且極度輕量。
+
+2. **Orbits (軌道 - 基礎設施)**：
+   圍繞核心運行的基礎設施模組。
+   - `OrbitAtlas`: 強大的 ORM 系統。
+   - `OrbitSignal`: 事件總線與郵件系統。
+   - `OrbitIon`: Inertia.js 單體橋接器。
+   - `OrbitStream`: 高性能任務隊列。
+
+3. **Satellites (衛星 - 領域模組)**：
+   掛載於系統之上的業務邏輯。每個 Satellite 都是一個自包含的領域（如 Catalog, Order），遵循 DDD 與整潔架構規範。
+
+## 清單驅動開發 (Manifest-Driven Development)
+
+在 Gravito 1.0 中，我們引入了 MDD 模式。您只需在 `gravito.config.ts` 中宣告所需的模組，框架會自動完成所有組裝工作。
+
+```typescript
+// gravito.config.ts
+export default {
+  name: 'Flagship Store',
+  modules: [
+    'catalog',    // 自動掛載商品衛星
+    'membership', // 自動掛載會員衛星
+  ]
+}
+```
 
 ## 請求生命週期 (Request Lifecycle)
 

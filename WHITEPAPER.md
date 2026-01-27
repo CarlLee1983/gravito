@@ -1,98 +1,78 @@
 # Gravito Ecosystem Technical Whitepaper
-**Version 1.0.0**
+**Version 1.0.0 (Galaxy Architecture)**
 
 ## Introduction
 
-Gravito is a modern, developer-first asynchronous task processing ecosystem designed for the TypeScript era. It consists of two symbiotic pillars:
-1.  **Gravito Stream**: The high-performance, atomic queue processing engine.
-2.  **Gravito Zenith**: The centralized operational control plane and monitoring system.
+Gravito is a modular, high-performance TypeScript framework built for the modern web. It transitions from a specialized task processing system to a comprehensive application ecosystem based on the **Galaxy Architecture**.
 
-This whitepaper details the architectural decisions, technology stack, and implementation patterns that enable Gravito to deliver enterprise-grade reliability with zero-config developer experience.
+The ecosystem is founded on three pillars:
+1.  **PlanetCore**: The ultra-lightweight micro-kernel that enforces Domain-Driven Design (DDD).
+2.  **Gravito Stream**: The high-performance, atomic asynchronous engine.
+3.  **Gravito Zenith**: The centralized operational control plane and monitoring system.
 
 ---
 
-# Part 1: Gravito Stream (The Engine)
+# Part 1: The Galaxy Architecture
+
+**Design Philosophy**: "Rigorous Core, Flexible Perimeter."
+
+## 1. Micro-Kernel (PlanetCore)
+*   **Technology**: IoC Container + Hook System.
+*   **Implementation**: A zero-dependency kernel that manages the application lifecycle. It uses **Boot-time Resolution** to compile routes and dependencies at startup, ensuring that the runtime is read-only and optimized for speed.
+
+## 2. Orbits & Satellites
+*   **Orbits (Infrastructure)**: Strategic extensions like `OrbitAtlas` (Database), `OrbitSignal` (Event Bus/Mail), and `OrbitIon` (Inertia.js) that "orbit" the core to provide resources.
+*   **Satellites (Domain)**: Self-contained business modules (Catalog, Membership, Commerce) that implement specific domains using Clean Architecture.
+
+## 3. Manifest-Driven Development (MDD)
+*   **Feature**: High-level system assembly via `gravito.config.ts`.
+*   **Outcome**: Developers can assemble a full-featured enterprise system by simply declaring satellites. The framework handles the low-level wiring, auto-mounting controllers, and connecting domain events.
+
+---
+
+# Part 2: Gravito Stream (The Asynchronous Engine)
 
 **Design Philosophy**: "Atomic Reliability at Speed".
-Stream is built to handle high throughput while ensuring no data is ever lost due to race conditions or crashes.
+Stream is the standard background processing unit for the Galaxy Architecture, ensuring no data is ever lost due to race conditions.
 
 ## 1. Smart Queue Routing & Storage
-*   **Feature**: Multi-Strategy Queue Routing (Priority & Standard)
 *   **Technology**: Redis Lists (O(1)) & Namespace Partitioning.
 *   **Implementation**:
-    *   Instead of using heavy Sorted Sets (O(log N)) for everything, Stream optimizes for the common case.
-    *   **Standard Jobs**: Stored in standard Redis Lists (`RPUSH` / `LPOP`) for maximum throughput.
-    *   **Priority Jobs**: Implemented via **Implicit Partitioning**. A "High Priority" job is simply routed to a distinct key (`queue:name:critical`). The Consumer is programmed to strictly poll these keys in order (`critical` > `high` > `default` > `low`).
-*   **Outcome**: We achieve priority processing without the performance penalty of managing a single sorted set for all jobs.
+    *   **Standard Jobs**: Stored in standard Redis Lists (`RPUSH` / `LPOP`).
+    *   **Priority Jobs**: Implemented via **Implicit Partitioning**. A "High Priority" job is routed to `queue:name:critical`. The Consumer strictly polls these keys in order.
+*   **Outcome**: Priority processing without the performance penalty of single sorted sets.
 
-## 2. Guaranteed Atomicity & Concurrency Control
-*   **Feature**: Race-Condition Free Rate Limiting
+## 2. Guaranteed Atomicity
 *   **Technology**: Redis Lua Scripting (`EVAL`).
-*   **Implementation**:
-    *   All critical state transitions happen server-side within Redis.
-    *   **Rate Limiting**: When a worker requests a job, a Lua script atomically:
-        1. Checks the current window counter (Fixed Window strategy).
-        2. If under limit: Increments counter and executes `LPOP`.
-        3. If over limit: Returns null immediately.
-*   **Outcome**: Hundreds of workers can hammer the queue simultaneously without ever exceeding the rate limit or processing a job twice.
+*   **Implementation**: All critical state transitions (Rate Limiting, Job Popping) happen server-side within Redis to prevent race conditions across hundreds of workers.
 
 ## 3. Resilience: Graceful Retry & Exponential Backoff
-*   **Feature**: Self-Healing Job Pipelines
-*   **Technology**: Client-Side Intelligence + Scheduled Storage (ZSET).
-*   **Implementation**:
-    *   Unlike primitive queues that just "fail", Stream Workers wrap execution in a resilience layer.
-    *   **On Failure**: The worker catches the error, calculates the next retry time using the formula `delay = initial * (multiplier ^ attempts)`.
-    *   **Action**: The job is **not** discarded. It is re-dispatched to the `Delayed` set with a new timestamp score.
-*   **Outcome**: Transient errors (API timeouts, DB locks) heal themselves without human intervention, preventing alarm fatigue.
+*   **Technology**: Scheduled Storage (ZSET).
+*   **Implementation**: Workers wrap execution in a resilience layer. On failure, jobs are re-dispatched to the `Delayed` set with a calculated backoff timestamp (`initial * (multiplier ^ attempts)`).
 
 ## 4. Dead Letter Queue (DLQ) Management
-*   **Feature**: Toxic Job Isolation
-*   **Technology**: Dedicated Redis Lists (`queue:name:failed`).
-*   **Implementation**:
-    *   When a job exhausts its `maxAttempts`, it is atomically moved to a `failed` list.
-    *   **Zero-Loss Guarantee**: We use `RPOPLPUSH` (or its Lua equivalent) to ensure there is no millisecond where the job exists in neither the active queue nor the failed queue.
-    *   **Manual Replay**: System provides an API to batch-move jobs from `failed` back to `waiting`, effectively resetting their attempt counters.
-*   **Outcome**: Bad data doesn't block the queue. Developers can inspect failed payloads, fix the bug, and replay the jobs.
+*   **Technology**: Atomic `RPOPLPUSH`.
+*   **Implementation**: Toxic jobs are isolated to `failed` lists with a zero-loss guarantee, allowing manual inspection and replay without blocking healthy queues.
 
 ---
 
-# Part 2: Gravito Zenith (The Control Plane)
+# Part 3: Gravito Zenith (The Control Plane)
 
 **Design Philosophy**: "Maximum Visibility, Minimum Overhead".
-Zenith is designed to provide real-time insights without degrading the performance of the queue engine.
+Zenith provides real-time insights into the entire Galaxy ecosystem.
 
 ## 1. Real-Time Telemetry
-*   **Feature**: Live matrix-style logs and metrics.
 *   **Technology**: Server-Sent Events (SSE) + Redis Pub/Sub.
-*   **Implementation**:
-    *   **Producer**: Workers emit opaque events via `PUBLISH flux:logs`.
-    *   **Bridge**: The Zenith Server subscribes to Redis and forwards these messages into an HTTP SSE Stream.
-    *   **Frontend**: React (Vite) connects to `/api/logs/stream` and updates the State Store (TanStack Query/Zustand) in real-time.
-*   **Outcome**: Developers see what's happening *as it happens* (sub-100ms latency) without refreshing the page.
+*   **Implementation**: Workers emit events via Redis Pub/Sub; the Zenith bridge forwards these into an SSE stream for sub-100ms log visibility in the React dashboard.
 
 ## 2. Distributed Worker Health
-*   **Feature**: Worker auto-discovery and resource monitoring.
-*   **Technology**: Ephemeral Keys with TTL (Time-To-Live).
-*   **Implementation**:
-    *   **Heartbeat**: Every worker process autonomously writes a key `worker:{uuid}` every 5 seconds with a 15-second expiration (TTL).
-    *   **Payload**: Includes robust process metrics: CPU Load Average, RSS Memory Usage, and Heap Statistics.
-    *   **Discovery**: The Console simply scans for these keys. If a worker crashes hard (no heartbeat), the key expires automatically.
-*   **Outcome**: No central registry needed. The system accurately reflects active capacity and automatically cleans up stale worker records.
+*   **Technology**: Ephemeral Keys with TTL.
+*   **Implementation**: Workers autonomously write heartbeat keys containing CPU/RAM/Heap metrics. The dashboard scans these keys for auto-discovery.
 
 ## 3. Hybrid Persistence (The Audit Layer)
-*   **Feature**: Long-term history search without Redis memory costs.
 *   **Technology**: Polyglot Persistence (Redis + SQL).
-*   **Implementation**:
-    *   Redis is expensive RAM. We treat it as a "Hot Buffer".
-    *   **Fire-and-Forget Archiving**: When a job completes (Success or Fail), an asynchronous hook writes the full job payload and result to an SQL database (SQLite/MySQL).
-    *   **Separation**: The active queue (Redis) remains lean and fast. The history (SQL) grows indefinitely on cheap disk storage.
-*   **Outcome**: You can search millions of past jobs to debug an issue from 3 months ago without slowing down today's processing.
+*   **Implementation**: Redis acts as the "Hot Buffer." Completed/Failed jobs are asynchronously archived to SQL (SQLite/MySQL) for long-term search without impacting RAM.
 
 ## 4. UI/UX Architecture
-*   **Feature**: Premium, App-Like Experience.
-*   **Technology**: React 19, TailwindCSS, Framer Motion, Lucide Icons.
-*   **Implementation**:
-    *   **Optimistic UI**: Buttons (Pause/Resume, Retry) update the UI state immediately while the API call happens in the background.
-    *   **Virtualization**: Lists can render thousands of job rows smoothly.
-    *   **Aesthetics**: Glassmorphism and micro-interactions provide a modern, professional feel that enhances developer trust.
-*   **Outcome**: A tool that developers *enjoy* using, reducing the friction of maintaining background infrastructure.
+*   **Technology**: React 19, TailwindCSS, Framer Motion.
+*   **Implementation**: Optimistic UI updates and virtualized lists ensure a premium, high-performance management experience.

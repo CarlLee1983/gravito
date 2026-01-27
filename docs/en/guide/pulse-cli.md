@@ -5,7 +5,14 @@ description: Learn how to use Pulse, Gravito's command-line tool.
 
 # Pulse CLI
 
-> `gravito` (or `pulse`) is Gravito's built-in interactive command-line tool, inspired by Laravel Artisan.
+> `gravito` (or `pulse`) is Gravito's built-in interactive command-line tool, inspired by Laravel Artisan. It is your primary tool for developing, managing, and deploying Gravito applications.
+
+## Global Options
+
+| Option | Description |
+| :--- | :--- |
+| `--help`, `-h` | Display help for the given command. |
+| `--version`, `-v` | Display the current CLI version. |
 
 ## Common Commands
 
@@ -20,6 +27,9 @@ gravito route:list
 
 # Enter interactive REPL
 gravito tinker
+
+# Diagnose configuration and environment issues
+gravito doctor
 ```
 
 ### Code Generation (Make)
@@ -31,6 +41,9 @@ gravito make:controller UserController
 # Create middleware
 gravito make:middleware AuthGuard
 
+# Create a UseCase (requires @gravito/enterprise)
+gravito make:use-case CreateUser
+
 # Create a job (requires @gravito/stream)
 gravito make:job ProcessPayment
 ```
@@ -40,6 +53,7 @@ gravito make:job ProcessPayment
 ```bash
 # Run database migrations (requires @gravito/atlas)
 gravito migrate
+gravito migrate:status
 
 # Run task scheduling (requires @gravito/horizon)
 gravito schedule:run
