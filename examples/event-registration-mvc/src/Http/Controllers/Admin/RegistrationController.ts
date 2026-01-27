@@ -1,5 +1,7 @@
 import { DB } from '@gravito/atlas'
-import type { Registration } from '../../../Models/Registration'
+import type { GravitoContext } from '@gravito/core'
+import { type Registration, RegistrationStatus } from '../../../Models/Registration'
+import { NotificationService } from '../../../Services/NotificationService'
 import { Controller } from '../Controller'
 
 export class RegistrationController extends Controller {
@@ -30,7 +32,7 @@ export class RegistrationController extends Controller {
   }
 
   async show(ctx: any) {
-    const registrationId = parseInt(ctx.params.id, 10)
+    const registrationId = parseInt(ctx.params.id)
 
     const registration = await DB.table<Registration>('registrations')
       .where('id', registrationId)
@@ -45,7 +47,7 @@ export class RegistrationController extends Controller {
   }
 
   async updateStatus(ctx: any) {
-    const registrationId = parseInt(ctx.params.id, 10)
+    const registrationId = parseInt(ctx.params.id)
     const { status } = ctx.get('data') as any
 
     await DB.table<Registration>('registrations').where('id', registrationId).update({ status })
@@ -54,7 +56,7 @@ export class RegistrationController extends Controller {
   }
 
   async resendEmail(ctx: any) {
-    const registrationId = parseInt(ctx.params.id, 10)
+    const registrationId = parseInt(ctx.params.id)
 
     const registration = await DB.table<Registration>('registrations')
       .where('id', registrationId)

@@ -36,7 +36,11 @@ describe('BullMQBridge', () => {
   })
 
   it('should publish log when job becomes active', async () => {
-    const bridge = new BullMQBridge(redis, 'flux_console:', 'test-worker')
+    // Disable batching for test
+    const bridge = new BullMQBridge(redis, 'flux_console:', 'test-worker', {
+      batchSize: 1,
+      flushInterval: 1000,
+    })
     bridge.attach(mockWorker)
 
     // Get the 'active' event handler
@@ -59,7 +63,11 @@ describe('BullMQBridge', () => {
   })
 
   it('should publish error log when job fails', async () => {
-    const bridge = new BullMQBridge(redis, 'flux_console:', 'test-worker')
+    // Disable batching for test
+    const bridge = new BullMQBridge(redis, 'flux_console:', 'test-worker', {
+      batchSize: 1,
+      flushInterval: 1000,
+    })
     bridge.attach(mockWorker)
 
     // Get the 'failed' event handler

@@ -10,7 +10,7 @@ const external = ['@gravito/core', '@gravito/stream', '@gravito/signal', '@gravi
 // Use tsup for multi-format build
 const tsup = spawn(
   [
-    'npx',
+    'bunx',
     'tsup',
     'src/index.ts',
     '--format',

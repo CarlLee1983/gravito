@@ -1,4 +1,4 @@
-import { randomBytes } from 'node:crypto'
+import { randomBytes } from 'crypto'
 import QRCode from 'qrcode'
 
 export class QrCodeService {

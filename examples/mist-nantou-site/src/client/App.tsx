@@ -13,7 +13,7 @@ import Visit from './pages/Visit'
 
 // Scroll to top on route change
 const ScrollToTop = () => {
-  const { pathname: _pathname } = useLocation()
+  const { pathname } = useLocation()
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [])

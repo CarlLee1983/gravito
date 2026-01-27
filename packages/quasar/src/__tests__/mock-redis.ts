@@ -3,7 +3,7 @@
  * Supports basic List, Set, Sorted Set operations and Pipelining.
  */
 export class MockRedis {
-  private data = new Map<string, any[] | Set<any>>()
+  private data = new Map<string, any>()
 
   // Helper to get raw data container (auto-create if needed)
   private getContainer(key: string, type: 'list' | 'set' | 'zset'): any {
@@ -13,7 +13,7 @@ export class MockRedis {
       } else if (type === 'set') {
         this.data.set(key, new Set())
       } else if (type === 'zset') {
-        this.data.set(key, []) // ZSet modeled as array for simplicity
+        this.data.set(key, [])
       }
     }
     return this.data.get(key)
@@ -37,8 +37,78 @@ export class MockRedis {
     return count
   }
 
-  async quit(): Promise<void> {
-    // No-op
+  options: any = { mock: true }
+
+  constructor(options: any = { mock: true }) {
+    this.options = options
+  }
+
+  // --- Pub/Sub ---
+  private subscribers = new Map<string, Function[]>()
+  private psubscribers = new Map<string, Function[]>()
+
+  async subscribe(channel: string): Promise<void> {
+    if (!this.subscribers.has(channel)) {
+      this.subscribers.set(channel, [])
+    }
+  }
+
+  async psubscribe(pattern: string): Promise<void> {
+    if (!this.psubscribers.has(pattern)) {
+      this.psubscribers.set(pattern, [])
+    }
+  }
+
+  async unsubscribe(channel?: string): Promise<void> {
+    if (channel) {
+      this.subscribers.delete(channel)
+    } else {
+      this.subscribers.clear()
+    }
+  }
+
+  async punsubscribe(pattern?: string): Promise<void> {
+    if (pattern) {
+      this.psubscribers.delete(pattern)
+    } else {
+      this.psubscribers.clear()
+    }
+  }
+
+  // Method to simulate receiving a message
+  emitMessage(channel: string, message: string): void {
+    // Standard subscription
+    this.handlers.get('message')?.forEach((cb) => {
+      cb(channel, message)
+    })
+
+    // Pattern subscription
+    this.psubscribers.forEach((_cbs, pattern) => {
+      const regex = new RegExp(`^${pattern.replace(/\*/g, '.*')}$`)
+      if (regex.test(channel)) {
+        this.handlers.get('pmessage')?.forEach((cb) => {
+          cb(pattern, channel, message)
+        })
+      }
+    })
+  }
+
+  // --- Events ---
+  private handlers = new Map<string, Function[]>()
+
+  on(event: string, callback: Function): void {
+    if (!this.handlers.has(event)) {
+      this.handlers.set(event, [])
+    }
+    this.handlers.get(event)!.push(callback)
+  }
+
+  once(_event: string, _callback: Function): void {
+    // Mock implementation for one-time event registration
+  }
+
+  off(_event: string, _callback: Function): void {
+    // Mock implementation for event removal
   }
 
   // --- Pub/Sub ---
@@ -150,47 +220,91 @@ export class MockRedis {
     return val.map((v) => v.member)
   }
 
-  async zrem(key: string, ...members: string[]): Promise<number> {
-    const list = (this.data.get(key) as any[]) || []
-    const originalLen = list.length
-    const filtered = list.filter((item) => !members.includes(item.member))
-    this.data.set(key, filtered)
-    return originalLen - filtered.length
+  async hgetall(key: string): Promise<Record<string, string>> {
+    const val = this.data.get(key)
+    if (!val || typeof val !== 'object' || Array.isArray(val) || val instanceof Set) {
+      return {}
+    }
+    return val
+  }
+
+  async hset(key: string, field: string, value: string): Promise<number> {
+    if (!this.data.has(key)) {
+      this.data.set(key, {})
+    }
+    const hash = this.data.get(key)
+    if (hash && typeof hash === 'object' && !Array.isArray(hash) && !(hash instanceof Set)) {
+      hash[field] = value
+    }
+    return 1
+  }
+
+  async set(key: string, value: string, ..._args: any[]): Promise<'OK'> {
+    this.data.set(key, value)
+    return 'OK'
+  }
+
+  async quit(): Promise<void> {
+    // No-op
+  }
+
+  async connect(): Promise<void> {
+    // No-op
   }
 
   // --- Pipeline ---
   pipeline() {
     const commands: (() => Promise<any>)[] = []
 
+    // Map common redis methods to their lowercase implementation
+    const methodMap: Record<string, string> = {
+      LLEN: 'llen',
+      ZCARD: 'zcard',
+      SCARD: 'scard',
+      KEYS: 'keys',
+      DEL: 'del',
+      HGETALL: 'hgetall',
+      // Add others as needed
+    }
+
     // Proxy handler to capture all method calls
     const proxy = new Proxy(this, {
       get: (target, prop) => {
-        if (prop === 'exec') {
-          return async () => {
-            const results = []
-            for (const cmd of commands) {
-              try {
-                const res = await cmd()
-                results.push([null, res])
-              } catch (e) {
-                results.push([e, null])
+        if (typeof prop === 'string') {
+          const lowerProp = prop.toLowerCase()
+          if (prop === 'exec') {
+            return async () => {
+              const results = []
+              for (const cmd of commands) {
+                try {
+                  const res = await cmd()
+                  results.push([null, res])
+                } catch (e) {
+                  results.push([e, null])
+                }
               }
+              return results
             }
-            return results
           }
-        }
 
-        // Return a function that queues the command
-        return (...args: any[]) => {
-          // @ts-expect-error
-          if (typeof target[prop] === 'function') {
-            commands.push(async () => {
-              // @ts-expect-error
-              return target[prop].apply(target, args)
-            })
+          // Return a function that queues the command
+          return (...args: any[]) => {
+            // @ts-expect-error
+            const targetMethod = target[prop] || target[lowerProp] || target[methodMap[prop]]
+            if (typeof targetMethod === 'function') {
+              commands.push(async () => {
+                return targetMethod.apply(target, args)
+              })
+            } else {
+              // Mock implementation for missing methods in pipeline
+              commands.push(async () => {
+                return null
+              })
+            }
+            return proxy // Return proxy for chaining
           }
-          return proxy // Return proxy for chaining
         }
+        return (target as any)[prop]
       },
     })
 
