@@ -12,11 +12,13 @@ export { ChatInput } from './components/ChatInput'
 export { ChatTrigger } from './components/ChatTrigger'
 export { ConnectionStatus } from './components/ConnectionStatus'
 export { ErrorBoundary } from './components/ErrorBoundary'
+export { VirtualMessageList } from './components/VirtualMessageList'
 
 // 導出 Hooks
 export { useWebSocket } from './hooks/useWebSocket'
 export { useMessages } from './hooks/useMessages'
 export { useErrorHandler } from './hooks/useErrorHandler'
+export { useVirtualScroll } from './hooks/useVirtualScroll'
 
 // 導出工具函數
 export { cn } from './utils/cn'

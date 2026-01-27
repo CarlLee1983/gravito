@@ -69,6 +69,9 @@ describe('useWebSocket', () => {
   it('連接時應該更新狀態為 connecting', async () => {
     const onStatusChange = vi.fn()
 
+    // 延遲 connect 完成，以便捕獲 'connecting' 狀態
+    mockConnect.mockImplementationOnce(() => new Promise((resolve) => setTimeout(resolve, 100)))
+
     const { result } = renderHook(() =>
       useWebSocket({
         wsUrl,
@@ -80,11 +83,19 @@ describe('useWebSocket', () => {
 
     const connectPromise = result.current.connect()
 
-    // 應該立即變成 connecting
-    expect(result.current.status).toBe('connecting')
+    // 等待狀態更新為 connecting
+    await waitFor(() => {
+      expect(result.current.status).toBe('connecting')
+    })
+
     expect(onStatusChange).toHaveBeenCalledWith('connecting')
 
     await connectPromise
+
+    // 最終應該是 connected
+    await waitFor(() => {
+      expect(result.current.status).toBe('connected')
+    })
   })
 
   it('連接失敗時應該設置狀態為 error', async () => {
@@ -98,7 +109,8 @@ describe('useWebSocket', () => {
       })
     )
 
-    await result.current.connect()
+    // connect() 內部會 catch 錯誤，所以不需要 await 拋出的 Promise
+    await result.current.connect().catch(() => {})
 
     await waitFor(() => {
       expect(result.current.status).toBe('error')
@@ -187,13 +199,17 @@ describe('useWebSocket', () => {
     )
 
     await result.current.connect()
+
+    await waitFor(() => {
+      expect(result.current.status).toBe('connected')
+    })
+
     result.current.disconnect()
 
     await waitFor(() => {
       expect(result.current.status).toBe('disconnected')
+      expect(mockDisconnect).toHaveBeenCalled()
     })
-
-    expect(mockDisconnect).toHaveBeenCalled()
   })
 
   it('會話 ID 改變時應該重新訂閱', async () => {
@@ -210,6 +226,11 @@ describe('useWebSocket', () => {
     )
 
     await result.current.connect()
+
+    // 等待連接建立和頻道訂閱
+    await waitFor(() => {
+      expect(result.current.status).toBe('connected')
+    })
 
     await waitFor(() => {
       expect(mockPrivate).toHaveBeenCalledWith('support.conversation.CONV-1')

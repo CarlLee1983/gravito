@@ -1,7 +1,13 @@
+import { memo } from 'react'
 import { Headset, X } from 'lucide-react'
 import type { ChatHeaderProps } from '../types'
 
-export function ChatHeader({ onClose, connectionStatus }: ChatHeaderProps) {
+/**
+ * 聊天視窗標題列組件
+ *
+ * 使用 React.memo 進行記憶化優化。
+ */
+export const ChatHeader = memo(function ChatHeader({ onClose, connectionStatus }: ChatHeaderProps) {
   return (
     <header className="bg-indigo-600 p-5 text-white flex items-center justify-between">
       <div className="flex items-center gap-3">
@@ -29,4 +35,4 @@ export function ChatHeader({ onClose, connectionStatus }: ChatHeaderProps) {
       </button>
     </header>
   )
-}
+})

@@ -1,20 +1,28 @@
 import { beforeEach, vi } from 'vitest'
 import '@testing-library/jest-dom/vitest'
 
-// Mock localStorage
+// Mock localStorage with actual storage behavior
+const storage = new Map<string, string>()
+
 const localStorageMock = {
-  getItem: vi.fn(),
-  setItem: vi.fn(),
-  removeItem: vi.fn(),
-  clear: vi.fn(),
-  length: 0,
-  key: vi.fn(),
+  getItem: vi.fn((key: string) => storage.get(key) ?? null),
+  setItem: vi.fn((key: string, value: string) => storage.set(key, value)),
+  removeItem: vi.fn((key: string) => storage.delete(key)),
+  clear: vi.fn(() => storage.clear()),
+  get length() {
+    return storage.size
+  },
+  key: vi.fn((index: number) => {
+    const keys = Array.from(storage.keys())
+    return keys[index] ?? null
+  }),
 }
 
 beforeEach(() => {
-  // 重置所有 mocks
+  // 清除存儲內容
+  storage.clear()
+  // 重置 mock 呼叫記錄
   vi.clearAllMocks()
-  localStorageMock.getItem.mockReturnValue(null)
 })
 
 // 確保 window 存在（jsdom 環境）

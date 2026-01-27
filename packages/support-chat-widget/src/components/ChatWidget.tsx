@@ -1,95 +1,92 @@
-import { useState } from 'react'
+import { useMemo } from 'react'
+import { useChatWidget } from '../hooks/useChatWidget'
 import type { ChatWidgetProps } from '../types'
-import { ChatTrigger } from './ChatTrigger'
-import { ChatHeader } from './ChatHeader'
-import { ChatMessages } from './ChatMessages'
-import { ChatInput } from './ChatInput'
-import { ContextBanner } from './ContextBanner'
-import { useWebSocket } from '../hooks/useWebSocket'
-import { useMessages } from '../hooks/useMessages'
-import { useErrorHandler } from '../hooks/useErrorHandler'
-import { secureStorage } from '../utils/storage'
 import { cn } from '../utils/cn'
+import { ChatHeader } from './ChatHeader'
+import { ChatInput } from './ChatInput'
+import { ChatMessages } from './ChatMessages'
+import { ChatTrigger } from './ChatTrigger'
+import { ConnectionStatus } from './ConnectionStatus'
+import { ContextBanner } from './ContextBanner'
 
 /**
  * 客服聊天小工具主組件
+ *
+ * 使用 useChatWidget 整合 Hook，簡化組件邏輯。
  */
 export function SupportChatWidget(props: ChatWidgetProps) {
-  const { apiBaseUrl, wsUrl, context, className, defaultOpen = false, onOpenChange, onConnectionChange } = props
+  const { className, context } = props
 
-  const [isOpen, setIsOpen] = useState(defaultOpen)
-  const [conversationId, setConversationId] = useState<string | null>(() =>
-    secureStorage.get<string>('conversation_id')
-  )
+  // 使用整合 Hook
+  const {
+    isOpen,
+    messages,
+    connectionStatus,
+    isLoading,
+    error,
+    isTyping,
+    close,
+    toggle,
+    sendMessage,
+    clearError,
+    retry,
+    hasMore,
+    loadMore,
+  } = useChatWidget(props)
 
-  const { error, handleError, clearError } = useErrorHandler()
-
-  const { messages, sendMessage, isLoading } = useMessages({
-    apiBaseUrl,
-    conversationId,
-  })
-
-  const { status: connectionStatus, connect } = useWebSocket({
-    wsUrl,
-    conversationId,
-    onMessage: (message) => {
-      // 訊息會透過 WebSocket 實時接收
-      console.log('接收到訊息:', message)
-    },
-    onStatusChange: onConnectionChange,
-  })
-
-  const handleToggle = () => {
-    const newState = !isOpen
-    setIsOpen(newState)
-    onOpenChange?.(newState)
-
-    // 開啟時連接 WebSocket
-    if (newState && conversationId) {
-      connect()
-    }
-  }
-
-  const handleSend = async (content: string) => {
-    try {
-      await sendMessage(content)
-    } catch (err) {
-      handleError(err as Error)
-    }
-  }
+  // 記憶化排序後的訊息列表
+  const sortedMessages = useMemo(() => {
+    return [...messages].sort(
+      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    )
+  }, [messages])
 
   return (
     <div className={cn('fixed bottom-6 right-6 z-[9999] font-sans', className)}>
       {/* 聊天視窗 */}
       {isOpen && (
-        <div className="absolute bottom-20 right-0 w-[380px] h-[520px] bg-white rounded-3xl shadow-2xl border border-slate-100 flex flex-col overflow-hidden">
+        <div
+          data-testid="chat-window"
+          className="absolute bottom-20 right-0 w-[380px] h-[520px] bg-white rounded-3xl shadow-2xl border border-slate-100 flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 duration-200"
+        >
           <ChatHeader
-            onClose={handleToggle}
+            onClose={close}
             connectionStatus={connectionStatus}
+            agentName={isTyping ? '客服輸入中...' : undefined}
           />
 
           {context && <ContextBanner context={context} />}
 
+          {connectionStatus === 'error' && (
+            <div className="px-4 py-2 bg-red-50 border-b border-red-100">
+              <ConnectionStatus status={connectionStatus} onRetry={retry} />
+            </div>
+          )}
+
           <ChatMessages
-            messages={messages}
+            messages={sortedMessages}
             isLoading={isLoading}
-            hasMore={false}
+            hasMore={hasMore}
+            onLoadMore={loadMore}
           />
 
           {error && (
-            <div className="px-4 py-2 bg-red-50 text-red-600 text-sm">
-              {error.message}
-              <button onClick={clearError} className="ml-2 underline">
+            <div className="px-4 py-2 bg-red-50 text-red-600 text-sm flex justify-between items-center">
+              <span>{error.message}</span>
+              <button onClick={clearError} className="text-red-700 underline text-xs" type="button">
                 關閉
               </button>
             </div>
           )}
 
-          <ChatInput onSend={handleSend} />
+          <ChatInput
+            onSend={sendMessage}
+            disabled={connectionStatus === 'disconnected' && isLoading}
+          />
         </div>
       )}
 
-      <ChatTrigger onClick={handleToggle} hasUnread={false} isOpen={isOpen} />
+      <ChatTrigger onClick={toggle} hasUnread={false} isOpen={isOpen} />
     </div>
   )
 }

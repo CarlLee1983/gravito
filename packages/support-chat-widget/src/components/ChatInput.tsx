@@ -1,18 +1,31 @@
-import { useState } from 'react'
 import { Send } from 'lucide-react'
+import { memo, useCallback, useState } from 'react'
 import type { ChatInputProps } from '../types'
 import { cn } from '../utils/cn'
 
-export function ChatInput({ onSend, disabled, placeholder = '輸入您的訊息...', maxLength = 2000 }: ChatInputProps) {
+/**
+ * 聊天輸入框組件
+ *
+ * 使用 React.memo 和 useCallback 進行記憶化優化。
+ */
+export const ChatInput = memo(function ChatInput({
+  onSend,
+  disabled,
+  placeholder = '輸入您的訊息...',
+  maxLength = 2000,
+}: ChatInputProps) {
   const [text, setText] = useState('')
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (text.trim() && !disabled) {
-      onSend(text.trim())
-      setText('')
-    }
-  }
+  const handleSubmit = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault()
+      if (text.trim() && !disabled) {
+        onSend(text.trim())
+        setText('')
+      }
+    },
+    [text, disabled, onSend]
+  )
 
   return (
     <footer className="p-4 bg-white border-t border-slate-100">
@@ -22,6 +35,7 @@ export function ChatInput({ onSend, disabled, placeholder = '輸入您的訊息.
             value={text}
             onChange={(e) => setText(e.target.value)}
             type="text"
+            data-testid="chat-input"
             placeholder={placeholder}
             maxLength={maxLength}
             disabled={disabled}
@@ -29,6 +43,7 @@ export function ChatInput({ onSend, disabled, placeholder = '輸入您的訊息.
           />
           <button
             type="submit"
+            data-testid="chat-send"
             disabled={!text.trim() || disabled}
             className={cn(
               'w-8 h-8 rounded-xl flex items-center justify-center transition-all',
@@ -46,4 +61,4 @@ export function ChatInput({ onSend, disabled, placeholder = '輸入您的訊息.
       </div>
     </footer>
   )
-}
+})
