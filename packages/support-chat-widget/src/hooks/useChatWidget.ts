@@ -59,16 +59,23 @@ export function useChatWidget(options: UseChatWidgetOptions): UseChatWidgetRetur
   const { error, handleError, clearError, retry } = useErrorHandler()
 
   // Provide offline capabilities and message queuing
-  const { isOnline, queueMessage, pendingCount, syncPending } = useOfflineSupport({
-    apiConfig: { baseUrl: apiBaseUrl },
-    conversationId,
-    onSyncSuccess: () => {
-      console.log('Offline messages synced successfully')
-    },
-    onSyncError: (err) => {
+  const handleSyncSuccess = useCallback(() => {
+    console.log('Offline messages synced successfully')
+  }, [])
+
+  const handleSyncError = useCallback(
+    (err: Error) => {
       console.error('Failed to sync offline messages', err)
       handleError(err)
     },
+    [handleError]
+  )
+
+  const { isOnline, queueMessage, pendingCount, syncPending } = useOfflineSupport({
+    apiConfig: { baseUrl: apiBaseUrl },
+    conversationId,
+    onSyncSuccess: handleSyncSuccess,
+    onSyncError: handleSyncError,
   })
 
   // Manage message history and pagination
@@ -83,6 +90,18 @@ export function useChatWidget(options: UseChatWidgetOptions): UseChatWidgetRetur
     conversationId,
   })
 
+  const handleWebSocketMessage = useCallback((message: any) => {
+    // Messages received via WebSocket are handled by useMessages internal listeners
+    console.log('[useChatWidget] Received message:', message)
+  }, [])
+
+  const handleConnectionChange = useCallback(
+    (status: any) => {
+      onConnectionChange?.(status)
+    },
+    [onConnectionChange]
+  )
+
   // Real-time communication via WebSocket
   const {
     status: connectionStatus,
@@ -93,11 +112,8 @@ export function useChatWidget(options: UseChatWidgetOptions): UseChatWidgetRetur
   } = useWebSocket({
     wsUrl,
     conversationId,
-    onMessage: (message) => {
-      // Messages received via WebSocket are handled by useMessages internal listeners
-      console.log('[useChatWidget] Received message:', message)
-    },
-    onStatusChange: onConnectionChange,
+    onMessage: handleWebSocketMessage,
+    onStatusChange: handleConnectionChange,
   })
 
   // Track and notify typing status
