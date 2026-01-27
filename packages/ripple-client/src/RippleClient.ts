@@ -91,6 +91,7 @@ export class RippleClient {
 
       try {
         this.ws = new WebSocket(this.config.host)
+        this.ws.binaryType = 'arraybuffer'
 
         this.ws.onopen = () => {
           this.stateManager.setState('connected')
@@ -99,6 +100,10 @@ export class RippleClient {
         }
 
         this.ws.onmessage = (event) => {
+          if (event.data instanceof ArrayBuffer) {
+            this.handleBinaryMessage(event.data)
+            return
+          }
           this.handleMessage(event.data)
           // Resolve on first successful connection
           if (this.socketId && this.stateManager.getState() === 'connected') {
@@ -179,8 +184,9 @@ export class RippleClient {
    * @returns A Channel instance.
    */
   channel<N extends string = string>(name: N): Channel<N> {
-    if (this.channels.has(name)) {
-      return this.channels.get(name)! as Channel<N>
+    const cached = this.channels.get(name)
+    if (cached) {
+      return cached as Channel<N>
     }
 
     const channel = new Channel(name, (msg) => this.send(msg))
@@ -266,7 +272,13 @@ export class RippleClient {
 
     // Get auth signature from server
     try {
-      const response = await fetch(this.config.authEndpoint!, {
+      const endpoint = this.config.authEndpoint
+      if (!endpoint) {
+        console.error('[Ripple] Auth endpoint not configured')
+        return
+      }
+
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -300,6 +312,59 @@ export class RippleClient {
   private send(message: object): void {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(message))
+    }
+  }
+
+  /**
+   * Send binary data to a channel.
+   *
+   * @param channel - The channel name.
+   * @param event - The event name.
+   * @param data - The binary data (ArrayBuffer).
+   */
+  sendBinary(channel: string, event: string, data: ArrayBuffer): void {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      const header = JSON.stringify({ type: 'binary', channel, event })
+      const encoder = new TextEncoder()
+      const headerBuffer = encoder.encode(header)
+
+      const totalBuffer = new Uint8Array(4 + headerBuffer.length + data.byteLength)
+      const dv = new DataView(totalBuffer.buffer)
+      dv.setInt32(0, headerBuffer.length, true)
+
+      totalBuffer.set(headerBuffer, 4)
+      totalBuffer.set(new Uint8Array(data), 4 + headerBuffer.length)
+
+      this.ws.send(totalBuffer)
+    }
+  }
+
+  private handleBinaryMessage(data: ArrayBuffer): void {
+    if (data.byteLength < 4) {
+      return
+    }
+
+    const dv = new DataView(data)
+    const headerLength = dv.getInt32(0, true)
+
+    if (data.byteLength < 4 + headerLength) {
+      return
+    }
+
+    try {
+      const decoder = new TextDecoder()
+      const headerRaw = decoder.decode(data.slice(4, 4 + headerLength))
+      const header = JSON.parse(headerRaw)
+      const payload = data.slice(4 + headerLength)
+
+      if (header.type === 'binary') {
+        const channel = this.channels.get(header.channel)
+        if (channel) {
+          channel._dispatch(header.event, payload)
+        }
+      }
+    } catch (e) {
+      console.error('[Ripple] Failed to parse binary message header', e)
     }
   }
 

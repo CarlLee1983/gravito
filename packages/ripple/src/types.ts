@@ -272,6 +272,7 @@ export type ClientMessage =
   | { type: 'unsubscribe'; channel: string }
   | { type: 'whisper'; channel: string; event: string; data: unknown }
   | { type: 'ping' }
+  | { type: 'binary'; channel: string; event: string; data: ArrayBuffer }
 
 /**
  * Error codes for Ripple WebSocket protocol.
@@ -361,6 +362,7 @@ export type ServerMessage =
   | { type: 'presence'; channel: string; event: 'join' | 'leave' | 'members'; data: unknown }
   | { type: 'pong' }
   | { type: 'connected'; socketId: string }
+  | { type: 'binary'; channel: string; event: string; data: ArrayBuffer }
 
 /**
  * Driver health status information.
@@ -413,6 +415,7 @@ export const SERVER_MESSAGE_TYPES = {
   PRESENCE: 'presence',
   PONG: 'pong',
   CONNECTED: 'connected',
+  BINARY: 'binary',
 } as const
 
 /**
@@ -436,6 +439,7 @@ export const CLIENT_MESSAGE_TYPES = {
   UNSUBSCRIBE: 'unsubscribe',
   WHISPER: 'whisper',
   PING: 'ping',
+  BINARY: 'binary',
 } as const
 
 // ─────────────────────────────────────────────────────────────

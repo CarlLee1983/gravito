@@ -288,8 +288,16 @@ export class RippleServer {
     })
   }
 
-  private async handleMessage(ws: RippleWebSocket, message: string | Buffer): Promise<void> {
+  private async handleMessage(
+    ws: RippleWebSocket,
+    message: string | Buffer | ArrayBuffer
+  ): Promise<void> {
     try {
+      if (message instanceof ArrayBuffer || Buffer.isBuffer(message)) {
+        await this.handleBinaryMessage(ws, message)
+        return
+      }
+
       const data: ClientMessage = JSON.parse(message.toString())
 
       switch (data.type) {
@@ -320,6 +328,88 @@ export class RippleServer {
         message: error instanceof Error ? error.message : 'Invalid message',
       })
     }
+  }
+
+  private async handleBinaryMessage(
+    ws: RippleWebSocket,
+    message: Buffer | ArrayBuffer
+  ): Promise<void> {
+    const buffer = Buffer.isBuffer(message) ? message : Buffer.from(message)
+
+    // Protocol: [JSON Header Length (4 bytes)] [JSON Header] [Binary Payload]
+    if (buffer.length < 4) {
+      return
+    }
+
+    const headerLength = buffer.readInt32LE(0)
+    if (buffer.length < 4 + headerLength) {
+      return
+    }
+
+    try {
+      const headerRaw = buffer.subarray(4, 4 + headerLength).toString()
+      const header = JSON.parse(headerRaw)
+      const payload = buffer.subarray(4 + headerLength)
+
+      if (header.type === 'binary') {
+        const { channel, event } = header
+
+        // Trigger server-side listeners
+        const listeners = this.eventListeners.get(event)
+        if (listeners && listeners.length > 0) {
+          for (const handler of listeners) {
+            handler(ws, payload.buffer)
+          }
+        }
+
+        if (!this.channels.isSubscribed(ws.data.id, channel)) {
+          this.send(ws, { type: 'error', message: 'Not subscribed to channel', channel })
+          return
+        }
+
+        this.broadcastBinaryToChannel(channel, event, payload.buffer, ws.data.id)
+      }
+    } catch (e) {
+      this.logger.error('Failed to parse binary message header', { error: (e as any).message })
+    }
+  }
+
+  private broadcastBinaryToChannel(
+    channel: string,
+    event: string,
+    data: ArrayBuffer,
+    excludeClientId?: string
+  ): void {
+    const subscribers = this.channels.getSubscribers(channel)
+    if (subscribers.length === 0) {
+      return
+    }
+
+    const header = JSON.stringify({ type: 'binary', channel, event })
+    const headerBuffer = Buffer.from(header)
+    const totalBuffer = Buffer.allocUnsafe(4 + headerBuffer.length + data.byteLength)
+
+    totalBuffer.writeInt32LE(headerBuffer.length, 0)
+    headerBuffer.copy(totalBuffer, 4)
+    Buffer.from(data).copy(totalBuffer, 4 + headerBuffer.length)
+
+    for (const ws of subscribers) {
+      if (excludeClientId && ws.data.id === excludeClientId) {
+        continue
+      }
+      ws.send(totalBuffer)
+    }
+  }
+
+  /**
+   * Broadcast binary data to all subscribers of a channel.
+   *
+   * @param channel - The channel name.
+   * @param event - The event name.
+   * @param data - The binary data (ArrayBuffer).
+   */
+  broadcastBinary(channel: string, event: string, data: ArrayBuffer): void {
+    this.broadcastBinaryToChannel(channel, event, data)
   }
 
   private handleClose(ws: RippleWebSocket, code: number, reason: string): void {

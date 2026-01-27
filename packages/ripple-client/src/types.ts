@@ -42,6 +42,7 @@ export type ClientMessage =
   | { type: 'unsubscribe'; channel: string }
   | { type: 'whisper'; channel: string; event: string; data: unknown }
   | { type: 'ping' }
+  | { type: 'binary'; channel: string; event: string; data: ArrayBuffer }
 
 /**
  * Server-to-client message types
@@ -54,6 +55,7 @@ export type ServerMessage =
   | { type: 'presence'; channel: string; event: 'join' | 'leave' | 'members'; data: unknown }
   | { type: 'pong' }
   | { type: 'connected'; socketId: string }
+  | { type: 'binary'; channel: string; event: string; data: ArrayBuffer }
 
 // ─────────────────────────────────────────────────────────────
 // Event Handlers

@@ -56,6 +56,7 @@ export type {
 
 // Application (Enterprise Container)
 export { Application, type ApplicationConfig } from './Application'
+export { type CommandHandler, CommandKernel } from './CommandKernel'
 export { ConfigManager } from './ConfigManager'
 export { Container, type Factory, type ServiceKey, type ServiceMap } from './Container'
 // Error Handler (extracted from PlanetCore for SRP)

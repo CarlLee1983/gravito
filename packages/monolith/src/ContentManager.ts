@@ -32,6 +32,8 @@ export class ContentManager {
   private collections = new Map<string, CollectionConfig>()
   // Simple memory cache: collection:locale:slug -> ContentItem
   private cache = new Map<string, ContentItem>()
+  // In-memory search index: term -> Set<cacheKey>
+  private searchIndex = new Map<string, Set<string>>()
   private renderer = (() => {
     const renderer = new marked.Renderer()
     renderer.html = (html: string) => this.escapeHtml(html)
@@ -52,6 +54,7 @@ export class ContentManager {
    */
   clearCache(): void {
     this.cache.clear()
+    this.searchIndex.clear()
   }
 
   /**
@@ -113,8 +116,9 @@ export class ContentManager {
     }
 
     const cacheKey = `${collectionName}:${locale}:${slug}`
-    if (this.cache.has(cacheKey)) {
-      return this.cache.get(cacheKey)!
+    const cachedItem = this.cache.get(cacheKey)
+    if (cachedItem) {
+      return cachedItem
     }
 
     // Determine path strategy
@@ -143,6 +147,7 @@ export class ContentManager {
       }
 
       this.cache.set(cacheKey, item)
+      this.buildSearchIndex(cacheKey, item)
       return item
     } catch (e) {
       console.error(`[Orbit-Content] Error reading file: ${filePath}`, e)
@@ -191,6 +196,65 @@ export class ContentManager {
     } catch (_e) {
       // Directory likely doesn't exist for this locale
       return []
+    }
+  }
+
+  /**
+   * Search for content items across collections and locales.
+   *
+   * @param query - The search query.
+   * @param options - Optional filters for collection and locale.
+   * @returns An array of matching ContentItems.
+   */
+  search(query: string, options: { collection?: string; locale?: string } = {}): ContentItem[] {
+    const terms = query.toLowerCase().split(/\s+/).filter(Boolean)
+    if (terms.length === 0) {
+      return []
+    }
+
+    const matches = new Set<string>()
+
+    for (const term of terms) {
+      const keys = this.searchIndex.get(term)
+      if (keys) {
+        for (const key of keys) {
+          matches.add(key)
+        }
+      }
+    }
+
+    const results: ContentItem[] = []
+    for (const key of matches) {
+      const item = this.cache.get(key)
+      if (!item) {
+        continue
+      }
+
+      const [collection, locale] = key.split(':')
+
+      if (options.collection && options.collection !== collection) {
+        continue
+      }
+      if (options.locale && options.locale !== locale) {
+        continue
+      }
+
+      results.push(item)
+    }
+
+    return results
+  }
+
+  private buildSearchIndex(cacheKey: string, item: ContentItem): void {
+    const text =
+      `${item.slug} ${item.meta.title || ''} ${item.raw} ${item.excerpt || ''}`.toLowerCase()
+    const terms = text.split(/[^\w\d]+/).filter((t) => t.length > 2)
+
+    for (const term of terms) {
+      if (!this.searchIndex.has(term)) {
+        this.searchIndex.set(term, new Set())
+      }
+      this.searchIndex.get(term)?.add(cacheKey)
     }
   }
 
