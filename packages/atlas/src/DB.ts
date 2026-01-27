@@ -108,10 +108,6 @@ export class DB {
         }
         Connection.queryListeners.push(this.queryListener)
       }
-
-      if (!Connection.queryListeners.includes(this.globalQueryListener)) {
-        Connection.queryListeners.push(this.globalQueryListener)
-      }
     } else {
       // Remove query listener and clear log
       if (this.queryListener) {
@@ -125,6 +121,12 @@ export class DB {
       Connection.queryListeners = Connection.queryListeners.filter(
         (l) => l !== this.globalQueryListener
       )
+    }
+
+    if (enabled) {
+      if (!Connection.queryListeners.includes(this.globalQueryListener)) {
+        Connection.queryListeners.push(this.globalQueryListener)
+      }
     }
   }
 
