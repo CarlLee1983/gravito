@@ -1,22 +1,23 @@
 /**
- * 清理 HTML 內容，防止 XSS 攻擊
+ * Cleans HTML content to prevent Cross-Site Scripting (XSS) attacks.
  *
- * 移除所有 HTML 標籤和潛在危險字符
+ * Removes all HTML tags and escapes potentially dangerous characters.
+ * Also strips control characters that could be used for obfuscation.
  *
- * @param input - 輸入字串
- * @returns 清理後的字串
+ * @param input - The raw string to sanitize.
+ * @returns A safe, plain-text string with escaped HTML entities.
  *
  * @example
  * ```ts
- * sanitizeHtml('<script>alert("xss")</script>Hello')
- * // => 'Hello'
+ * sanitizeHtml('<script>alert("xss")</script>Hello'); // Returns 'Hello'
+ * sanitizeHtml('<b>Bold</b> & Brave'); // Returns 'Bold &amp; Brave'
  * ```
  */
 export function sanitizeHtml(input: string): string {
-  // 移除 HTML 標籤
+  // Strip HTML tags
   let cleaned = input.replace(/<[^>]*>/g, '')
 
-  // 轉義特殊字符
+  // Escape HTML special characters
   cleaned = cleaned
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -25,18 +26,24 @@ export function sanitizeHtml(input: string): string {
     .replace(/'/g, '&#x27;')
     .replace(/\//g, '&#x2F;')
 
-  // 移除控制字符（\u0000-\u001F 和 \u007F）
-  // biome-ignore lint/suspicious/noControlCharactersInRegex: 需要移除所有控制字符以防止安全問題
+  // Remove control characters (\u0000-\u001F and \u007F)
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: Mandatory removal for security
   cleaned = cleaned.replace(/[\x00-\x1F\x7F]/g, '')
 
   return cleaned.trim()
 }
 
 /**
- * 清理 URL，只允許 http 和 https 協議
+ * Sanitizes a URL, allowing only 'http' and 'https' protocols.
  *
- * @param url - URL 字串
- * @returns 清理後的 URL，如果無效則回傳空字串
+ * @param url - The URL string to validate and clean.
+ * @returns The original URL if safe, or an empty string if invalid or unsafe.
+ *
+ * @example
+ * ```ts
+ * sanitizeUrl('https://gravito.io'); // Returns 'https://gravito.io'
+ * sanitizeUrl('javascript:alert(1)'); // Returns ''
+ * ```
  */
 export function sanitizeUrl(url: string): string {
   try {
@@ -45,7 +52,7 @@ export function sanitizeUrl(url: string): string {
       return url
     }
   } catch {
-    // 無效的 URL
+    // Return empty string for invalid URL formats
   }
   return ''
 }

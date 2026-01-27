@@ -3,32 +3,35 @@ import type { ValidationResult } from '../types'
 import { sanitizeHtml } from './sanitize'
 
 /**
- * 訊息內容驗證 Schema
+ * Zod schema for validating message content.
+ * Ensures the message is not empty, does not exceed 2000 characters,
+ * and automatically sanitizes HTML to prevent XSS.
  */
 export const messageContentSchema = z
   .string()
-  .min(1, '訊息不能為空')
-  .max(2000, '訊息長度不能超過 2000 字')
+  .min(1, 'Message cannot be empty')
+  .max(2000, 'Message length cannot exceed 2000 characters')
   .transform(sanitizeHtml)
 
 /**
- * 會話 ID 驗證 Schema
+ * Zod schema for validating conversation IDs.
+ * Matches alphanumeric strings with hyphens, between 8 and 64 characters.
  */
-export const conversationIdSchema = z.string().regex(/^[a-zA-Z0-9-]{8,64}$/, '無效的會話 ID')
+export const conversationIdSchema = z
+  .string()
+  .regex(/^[a-zA-Z0-9-]{8,64}$/, 'Invalid conversation ID')
 
 /**
- * 驗證訊息內容
+ * Validates the text content of a chat message.
  *
- * @param content - 訊息內容
- * @returns 驗證結果
+ * @param content - The raw message text to validate.
+ * @returns An object containing the success status, sanitized data, or an error message.
  *
  * @example
  * ```ts
- * const result = validateMessageContent('Hello!')
+ * const result = validateMessageContent('Hello, support!');
  * if (result.success) {
- *   console.log('清理後的內容:', result.data)
- * } else {
- *   console.error('驗證失敗:', result.error)
+ *   console.log(`Clean content: ${result.data}`);
  * }
  * ```
  */
@@ -44,15 +47,23 @@ export function validateMessageContent(content: string): ValidationResult {
 
   return {
     success: false,
-    error: result.error.issues[0]?.message || '驗證失敗',
+    error: result.error.issues[0]?.message || 'Validation failed',
   }
 }
 
 /**
- * 驗證會話 ID
+ * Validates a conversation identifier string.
  *
- * @param id - 會話 ID
- * @returns 驗證結果
+ * @param id - The conversation ID to validate.
+ * @returns An object containing the validation result.
+ *
+ * @example
+ * ```ts
+ * const result = validateConversationId('CONV-12345678');
+ * if (!result.success) {
+ *   showError(result.error);
+ * }
+ * ```
  */
 export function validateConversationId(id: string): ValidationResult {
   const result = conversationIdSchema.safeParse(id)
@@ -66,6 +77,6 @@ export function validateConversationId(id: string): ValidationResult {
 
   return {
     success: false,
-    error: result.error.issues[0]?.message || '驗證失敗',
+    error: result.error.issues[0]?.message || 'Validation failed',
   }
 }

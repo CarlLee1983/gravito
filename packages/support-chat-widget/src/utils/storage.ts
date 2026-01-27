@@ -1,38 +1,44 @@
 import type { StorageOptions } from '../types'
 
-/** localStorage 鍵名前綴 */
+/** Prefix for all keys stored in localStorage by this module */
 const STORAGE_KEY_PREFIX = 'gravito_support_'
 
 /**
- * 儲存項目的資料結構
+ * Internal structure for stored items, including metadata for expiration.
+ *
+ * @template T - The type of the value being stored.
  */
 interface StorageItem<T> {
-  /** 實際儲存的值 */
+  /** The actual data value */
   value: T
-  /** 儲存時的時間戳 */
+  /** Timestamp of when the item was created/updated */
   timestamp: number
-  /** 過期時間（毫秒），可選 */
+  /** Optional duration in milliseconds until the item expires */
   expiry?: number
 }
 
 /**
- * 安全的 localStorage 封裝
+ * A secure and typed wrapper around localStorage.
  *
- * 提供類型安全、過期機制、錯誤處理的存儲功能
+ * Provides type-safe access, automatic key prefixing, and an expiration mechanism.
+ * Errors are caught and handled gracefully (e.g., in private browsing modes).
  */
 export const secureStorage = {
   /**
-   * 讀取儲存的值
+   * Retrieves a value from storage by its key.
    *
-   * @template T - 值的類型
-   * @param key - 鍵名（會自動加上前綴）
-   * @returns 儲存的值，如果不存在或已過期則回傳 null
+   * Automatically handles key prefixing and checks for expiration.
+   * If the item is expired, it is removed and null is returned.
+   *
+   * @template T - Expected type of the stored value.
+   * @param key - The base key name (prefix will be added).
+   * @returns The stored value, or null if not found, expired, or invalid.
    *
    * @example
    * ```ts
-   * const user = secureStorage.get<User>('user')
+   * const user = secureStorage.get<User>('user');
    * if (user) {
-   *   console.log(user.name)
+   *   console.log(`Found user: ${user.name}`);
    * }
    * ```
    */
@@ -47,13 +53,13 @@ export const secureStorage = {
 
       const parsed = JSON.parse(item) as StorageItem<T>
 
-      // 檢查是否過期
+      // Check for expiration
       if (parsed.expiry) {
         const now = Date.now()
         const elapsed = now - parsed.timestamp
 
         if (elapsed > parsed.expiry) {
-          // 過期了，自動刪除
+          // Auto-remove expired item
           this.remove(key)
           return null
         }
@@ -61,23 +67,23 @@ export const secureStorage = {
 
       return parsed.value
     } catch {
-      // 解析失敗或其他錯誤，回傳 null
+      // Return null for parsing failures or storage errors
       return null
     }
   },
 
   /**
-   * 儲存值
+   * Stores a value in localStorage with optional expiration.
    *
-   * @template T - 值的類型
-   * @param key - 鍵名（會自動加上前綴）
-   * @param value - 要儲存的值
-   * @param options - 儲存選項
+   * @template T - Type of the value being stored.
+   * @param key - The base key name.
+   * @param value - The value to store.
+   * @param options - Additional options like expiry time.
    *
    * @example
    * ```ts
-   * // 儲存用戶資料，5 分鐘後過期
-   * secureStorage.set('user', userData, { expiry: 5 * 60 * 1000 })
+   * // Store session data that expires in 1 hour
+   * secureStorage.set('session', data, { expiry: 60 * 60 * 1000 });
    * ```
    */
   set<T>(key: string, value: T, options?: StorageOptions): void {
@@ -94,20 +100,19 @@ export const secureStorage = {
 
       localStorage.setItem(fullKey, JSON.stringify(item))
     } catch (error) {
-      // localStorage 可能不可用（隱私模式、配額超出等）
-      // 靜默失敗，不影響應用程式運行
+      // Quietly fail for storage quota exceeded or private mode
       console.warn('Failed to save to localStorage:', error)
     }
   },
 
   /**
-   * 刪除儲存的值
+   * Removes an item from storage.
    *
-   * @param key - 鍵名（會自動加上前綴）
+   * @param key - The base key name to remove.
    *
    * @example
    * ```ts
-   * secureStorage.remove('user')
+   * secureStorage.remove('user_session');
    * ```
    */
   remove(key: string): void {
@@ -120,18 +125,18 @@ export const secureStorage = {
   },
 
   /**
-   * 清除所有 gravito_support_ 前綴的項目
+   * Clears all items from localStorage that match the module's prefix.
    *
    * @example
    * ```ts
-   * secureStorage.clear()
+   * secureStorage.clear();
    * ```
    */
   clear(): void {
     try {
       const keysToRemove: string[] = []
 
-      // 收集所有需要刪除的鍵
+      // Identify all keys with the specific prefix
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i)
         if (key?.startsWith(STORAGE_KEY_PREFIX)) {
@@ -139,10 +144,10 @@ export const secureStorage = {
         }
       }
 
-      // 刪除收集到的鍵
-      keysToRemove.forEach((key) => {
+      // Remove identified keys
+      for (const key of keysToRemove) {
         localStorage.removeItem(key)
-      })
+      }
     } catch (error) {
       console.warn('Failed to clear localStorage:', error)
     }

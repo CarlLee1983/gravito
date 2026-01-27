@@ -3,70 +3,52 @@ import type { ChatMessage, ConversationContext } from '../types'
 import { secureStorage } from './storage'
 
 /**
- * 持久化狀態結構
+ * Data structure for the persisted chat state.
+ *
+ * This object is stored in localStorage to allow session recovery across page refreshes
+ * and provides the basis for offline support.
  */
 export interface PersistedState {
-  /** 會話 ID */
+  /** The current active conversation ID */
   readonly conversationId: string | null
-  /** 最近的訊息（最多 50 條） */
+  /** Recent messages (limited to latest 50) */
   readonly messages: readonly ChatMessage[]
-  /** 待發送訊息（離線時暫存） */
+  /** Messages queued while offline */
   readonly pendingMessages: readonly ChatMessage[]
-  /** 最後同步時間 */
+  /** Unix timestamp of the last synchronization with the server */
   readonly lastSyncAt: number
-  /** 會話上下文 */
+  /** Associated business context (e.g., order ID) */
   readonly context?: ConversationContext
 }
 
-/**
- * 持久化存儲 Key
- */
+/** The key used for storing chat state in secureStorage */
 const STORAGE_KEY = 'chat_state'
 
-/**
- * 最大訊息數量限制
- */
+/** Maximum number of messages to keep in persistent storage to prevent overflow */
 const MAX_MESSAGES = 50
 
 /**
- * 聊天狀態持久化工具
+ * Utility for persisting and restoring chat state.
  *
- * 提供會話狀態的存儲、載入和同步功能。
- *
- * @example
- * ```tsx
- * // 儲存狀態
- * chatPersistence.save({
- *   conversationId: 'CONV-123',
- *   messages: [...],
- *   pendingMessages: [],
- *   lastSyncAt: Date.now()
- * })
- *
- * // 載入狀態
- * const state = chatPersistence.load()
- * if (state) {
- *   console.log('已恢復會話:', state.conversationId)
- * }
- * ```
+ * Provides methods for saving the current conversation state, loading it on mount,
+ * and synchronizing messages that were queued during offline periods.
  */
 export const chatPersistence = {
   /**
-   * 儲存聊天狀態
+   * Saves the current chat state to persistent storage.
+   * Automatically trims the message list to the most recent 50 messages.
    *
-   * @param state - 要儲存的狀態
+   * @param state - The state object to persist.
    */
   save(state: PersistedState): void {
     try {
-      // 限制訊息數量（保留最新的 N 條）
       const limitedState: PersistedState = {
         ...state,
         messages: state.messages.slice(-MAX_MESSAGES),
       }
 
-      // 序列化並存儲
       secureStorage.set(STORAGE_KEY, limitedState, {
-        expiry: 7 * 24 * 60 * 60 * 1000, // 7 天過期
+        expiry: 7 * 24 * 60 * 60 * 1000, // 7 days expiry
       })
     } catch (error) {
       console.error('[Persistence] Failed to save state:', error)
@@ -74,9 +56,9 @@ export const chatPersistence = {
   },
 
   /**
-   * 載入聊天狀態
+   * Loads the persisted chat state from storage.
    *
-   * @returns 載入的狀態，如果不存在或無效則返回 null
+   * @returns The loaded state or null if no valid state exists or it has expired.
    */
   load(): PersistedState | null {
     try {
@@ -86,7 +68,7 @@ export const chatPersistence = {
         return null
       }
 
-      // 驗證資料完整性
+      // Validate data integrity before returning
       if (!this._validateState(state)) {
         console.warn('[Persistence] Invalid state detected, clearing...')
         this.clear()
@@ -101,13 +83,16 @@ export const chatPersistence = {
   },
 
   /**
-   * 同步待發送訊息
+   * Synchronizes messages that were queued locally while the user was offline.
    *
-   * 在重新連線後，將離線時暫存的訊息發送到伺服器。
+   * Iterates through the pending queue and sends each message to the server.
+   * Clears the queue upon successful completion of the entire batch.
    *
-   * @param config - API 配置
-   * @param conversationId - 會話 ID
-   * @returns Promise
+   * @param config - API configuration (base URL, etc.).
+   * @param conversationId - The ID of the conversation to sync to.
+   * @returns A promise that resolves when the sync attempt is finished.
+   *
+   * @throws {Error} If the API client fails to initialize or a critical network error occurs.
    */
   async syncPendingMessages(config: SupportApiConfig, conversationId: string): Promise<void> {
     const state = this.load()
@@ -120,17 +105,17 @@ export const chatPersistence = {
       const { createSupportApi } = await import('../api/supportApi')
       const api = createSupportApi(config)
 
-      // 逐一發送待發送訊息
+      // Send each message in the queue
       for (const message of state.pendingMessages) {
         try {
           await api.sendMessage(conversationId, message.content)
         } catch (error) {
           console.error('[Persistence] Failed to sync message:', error)
-          // 繼續嘗試發送其他訊息
+          // Continue attempting remaining messages even if one fails
         }
       }
 
-      // 清空待發送佇列
+      // Clear the pending queue after sync attempt
       this.save({
         ...state,
         pendingMessages: [],
@@ -143,17 +128,17 @@ export const chatPersistence = {
   },
 
   /**
-   * 清除持久化狀態
+   * Permanently removes all persisted chat data from storage.
    */
   clear(): void {
     secureStorage.remove(STORAGE_KEY)
   },
 
   /**
-   * 驗證狀態資料完整性
+   * Validates the structure and content of a state object.
    *
-   * @param state - 要驗證的狀態
-   * @returns 是否有效
+   * @param state - The object to validate.
+   * @returns True if the object matches the PersistedState interface.
    * @internal
    */
   _validateState(state: unknown): state is PersistedState {
@@ -163,7 +148,7 @@ export const chatPersistence = {
 
     const s = state as Record<string, unknown>
 
-    // 檢查必要欄位
+    // Required field checks
     if (
       typeof s.lastSyncAt !== 'number' ||
       !Array.isArray(s.messages) ||
@@ -172,12 +157,12 @@ export const chatPersistence = {
       return false
     }
 
-    // conversationId 可以是 null
+    // conversationId can be null but must be a string if present
     if (s.conversationId !== null && typeof s.conversationId !== 'string') {
       return false
     }
 
-    // 檢查時間戳是否合理（不能是未來時間）
+    // Sanity check: sync time cannot be in the future
     if (s.lastSyncAt > Date.now()) {
       return false
     }
