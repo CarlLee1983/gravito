@@ -1,5 +1,5 @@
 export const SUBSCRIPTION_TYPE_DEFS = `
-  extend type Subscription {
+  type Subscription {
     _empty: String
   }
 `

@@ -1,0 +1,44 @@
+import { Model, Column, PrimaryKey, HasMany, type HasManyRelation } from '@gravito/atlas'
+
+/**
+ * {{ Name }} Model
+ * 
+ * This model is configured for automatic GraphQL schema generation.
+ */
+export class {{ Name }} extends Model {
+  static table = '{{ name }}s'
+
+  /**
+   * Fields that should be hidden from both JSON and GraphQL output.
+   */
+  static hidden = ['password']
+
+  /**
+   * Virtual fields to be appended to the model and exposed in GraphQL.
+   * Make sure to implement the corresponding getter: get[FieldName]Attribute().
+   */
+  static appends = ['full_name']
+
+  @PrimaryKey()
+  id!: number
+
+  @Column()
+  name!: string
+
+  @Column()
+  email!: string
+
+  /**
+   * Example relationship definition.
+   * Atlas will automatically resolve this, and OrbitGraphQL will expose it.
+   */
+  // @HasMany(() => OtherModel)
+  // declare others: HasManyRelation<OtherModel>
+
+  /**
+   * Accessor for the 'full_name' virtual field.
+   */
+  getFullNameAttribute(): string {
+    return `${this.name} (Virtual)`
+  }
+}

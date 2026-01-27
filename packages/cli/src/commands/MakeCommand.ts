@@ -81,6 +81,10 @@ export class MakeCommand {
         stubName = 'controller.resource.stub'
       }
 
+      if (type === 'model' && options.graphql) {
+        stubName = 'model.graphql.stub'
+      }
+
       const stubContent = await this.readStub(stubName)
 
       if (!stubContent) {

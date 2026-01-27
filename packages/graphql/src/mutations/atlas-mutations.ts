@@ -1,4 +1,4 @@
-import type { Model, ModelStatic } from '@gravito/atlas'
+import { DB, type Model, type ModelStatic } from '@gravito/atlas'
 
 export const AtlasMutationFactory = {
   create: async (model: ModelStatic<Model>, input: Record<string, unknown>) => {
@@ -6,11 +6,13 @@ export const AtlasMutationFactory = {
   },
 
   createBatch: async (model: ModelStatic<Model>, inputs: Record<string, unknown>[]) => {
-    const results: Model[] = []
-    for (const input of inputs) {
-      results.push(await model.create(input))
-    }
-    return results
+    return await DB.transaction(async () => {
+      const results: Model[] = []
+      for (const input of inputs) {
+        results.push(await model.create(input))
+      }
+      return results
+    })
   },
 
   update: async (
@@ -32,6 +34,19 @@ export const AtlasMutationFactory = {
     }
     await instance.save()
     return instance
+  },
+
+  updateBatch: async (
+    model: ModelStatic<Model>,
+    inputs: { id: string | number; input: Record<string, unknown> }[]
+  ) => {
+    return await DB.transaction(async () => {
+      const results: Model[] = []
+      for (const { id, input } of inputs) {
+        results.push(await AtlasMutationFactory.update(model, id, input))
+      }
+      return results
+    })
   },
 
   delete: async (model: ModelStatic<Model>, id: string | number) => {

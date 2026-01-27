@@ -245,6 +245,19 @@ export async function createAtlasSchema(options: AtlasGraphQLOptions): Promise<G
           gqlType = 'ID'
         } else {
           gqlType = mapAtlasTypeToGraphQL(colDef.type)
+
+          if (gqlType === 'String') {
+            if (colName.toLowerCase().includes('email')) {
+              gqlType = 'Email'
+            } else if (
+              colName.toLowerCase().includes('url') ||
+              colName.toLowerCase().includes('website')
+            ) {
+              gqlType = 'URL'
+            } else if (colName.toLowerCase().includes('uuid')) {
+              gqlType = 'UUID'
+            }
+          }
         }
 
         const isAutoManaged =

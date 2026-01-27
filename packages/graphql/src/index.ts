@@ -447,7 +447,34 @@ export class OrbitGraphQL implements GravitoOrbit {
 
       const websocketHandler = makeHandler({
         schema,
-        // Hooks for onConnect/onSubscribe can be added here
+        context: (ctx) => {
+          const req = ctx.extra.request as unknown as Request
+          return {
+            gravito: {
+              req,
+              env: {},
+              get: (name: string) => core.container.make(name),
+            },
+            loaders: this.config.dataLoaders
+              ? this.config.dataLoaders({
+                  req,
+                  get: (name: string) => core.container.make(name),
+                } as unknown as GravitoContext)
+              : {},
+          } as unknown as GraphQLContext
+        },
+        onConnect: async (ctx) => {
+          if (this.config.requireAuth) {
+            const req = ctx.extra.request as unknown as Request
+            const token =
+              (ctx.connectionParams?.Authorization as string) || req.headers.get('authorization')
+
+            if (!token) {
+              return false
+            }
+          }
+          return true
+        },
       })
 
       if (core.adapter.websocket) {
