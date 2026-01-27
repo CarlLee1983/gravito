@@ -264,6 +264,16 @@ export interface UseTypingStatusOptions {
 }
 
 /**
+ * Return type for the typing status hook.
+ */
+export interface UseTypingStatusReturn {
+  /** Indicates if the support agent is currently typing. */
+  readonly isAgentTyping: boolean
+  /** Notifies the agent that the user is typing. */
+  readonly notifyTyping: () => void
+}
+
+/**
  * Configuration for the messages hook.
  */
 export interface UseMessagesOptions {
