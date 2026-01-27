@@ -162,6 +162,7 @@ export class TemplateEngine {
    *
    * @throws {Error} If the template file is not found in `viewsDir`.
    * @throws {Error} If maximum recursion depth is exceeded for components (10) or includes (50).
+   * @throws {Error} If a syntax error occurs during template compilation.
    *
    * @example
    * ```typescript

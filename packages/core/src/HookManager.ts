@@ -21,10 +21,11 @@ export class HookManager {
   /**
    * Register a filter hook.
    *
-   * Filters are used to transform a value (input/output).
+   * Filters are used to transform a value (input/output) through a chain of
+   * callbacks. Each callback must return the modified value.
    *
    * @template T - The type of value being filtered.
-   * @param hook - The name of the hook.
+   * @param hook - The unique name of the hook.
    * @param callback - The callback function to execute.
    *
    * @example
@@ -77,10 +78,11 @@ export class HookManager {
   /**
    * Register an action hook.
    *
-   * Actions are for side effects (no return value).
+   * Actions are used to trigger side effects (e.g., logging, sending emails)
+   * at specific points in the application lifecycle.
    *
    * @template TArgs - The type of arguments passed to the action.
-   * @param hook - The name of the hook.
+   * @param hook - The unique name of the hook.
    * @param callback - The callback function to execute.
    *
    * @example

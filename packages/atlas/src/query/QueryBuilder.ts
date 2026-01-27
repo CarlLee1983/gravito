@@ -163,10 +163,10 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   // ============================================================================
 
   /**
-   * Set the columns to be selected
+   * Set the columns to be retrieved by the query.
    *
-   * @param columns - List of column names
-   * @returns The current QueryBuilder instance
+   * @param columns - List of column names or raw expressions.
+   * @returns The current QueryBuilder instance for chaining.
    * @example
    * ```typescript
    * query.select('id', 'name', 'email')
@@ -179,10 +179,10 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   }
 
   /**
-   * Set the table for the query
+   * Set the source table for the query.
    *
-   * @param table - The table name
-   * @returns The current QueryBuilder instance
+   * @param table - The table name.
+   * @returns The current QueryBuilder instance for chaining.
    */
   from(table: string): this {
     this.ensureOwnState()
@@ -191,11 +191,11 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   }
 
   /**
-   * Add a raw SELECT expression to the query
+   * Add a raw SQL expression to the SELECT clause.
    *
-   * @param sql - The raw SQL string or Expression instance
-   * @param bindings - Optional array of bindings
-   * @returns The current QueryBuilder instance
+   * @param sql - The raw SQL string or Expression instance.
+   * @param bindings - Optional array of values to bind to the expression.
+   * @returns The current QueryBuilder instance for chaining.
    * @example
    * ```typescript
    * query.selectRaw('COUNT(*) as total')
@@ -246,12 +246,12 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   // ============================================================================
 
   /**
-   * Add a basic WHERE clause to the query
+   * Add a basic WHERE clause to the query.
    *
-   * @param column - Column name, callback for nested wheres, or object of conditions
-   * @param operatorOrValue - Comparison operator or value
-   * @param value - Value to compare against
-   * @returns The current QueryBuilder instance
+   * @param column - Column name, callback for nested wheres, or object of conditions.
+   * @param operatorOrValue - Comparison operator (e.g., '>', '<=', 'LIKE') or the value if using '='.
+   * @param value - The value to compare against if an operator was provided.
+   * @returns The current QueryBuilder instance for chaining.
    * @example
    * ```typescript
    * query.where('id', 1)
@@ -304,12 +304,12 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   }
 
   /**
-   * Add an OR WHERE clause to the query
+   * Add an OR WHERE clause to the query.
    *
-   * @param column - Column name or callback for nested wheres
-   * @param operatorOrValue - Comparison operator or value
-   * @param value - Value to compare against
-   * @returns The current QueryBuilder instance
+   * @param column - Column name or callback for nested wheres.
+   * @param operatorOrValue - Comparison operator or value.
+   * @param value - Value to compare against.
+   * @returns The current QueryBuilder instance for chaining.
    */
   orWhere(
     column: string | ((query: QueryBuilderContract<T>) => void),
@@ -345,11 +345,11 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   }
 
   /**
-   * Add a WHERE IN clause to the query
+   * Add a WHERE IN clause to the query.
    *
-   * @param column - Column name
-   * @param values - Array of values
-   * @returns The current QueryBuilder instance
+   * @param column - Column name.
+   * @param values - Array of values to match.
+   * @returns The current QueryBuilder instance for chaining.
    */
   whereIn(column: string, values: unknown[]): this {
     this.ensureOwnState()
@@ -365,11 +365,11 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   }
 
   /**
-   * Add a WHERE NOT IN clause to the query
+   * Add a WHERE NOT IN clause to the query.
    *
-   * @param column - Column name
-   * @param values - Array of values
-   * @returns The current QueryBuilder instance
+   * @param column - Column name.
+   * @param values - Array of values to exclude.
+   * @returns The current QueryBuilder instance for chaining.
    */
   whereNotIn(column: string, values: unknown[]): this {
     this.ensureOwnState()
@@ -385,11 +385,11 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   }
 
   /**
-   * Add an OR WHERE IN clause to the query
+   * Add an OR WHERE IN clause to the query.
    *
-   * @param column - Column name
-   * @param values - Array of values
-   * @returns The current QueryBuilder instance
+   * @param column - Column name.
+   * @param values - Array of values to match.
+   * @returns The current QueryBuilder instance for chaining.
    */
   orWhereIn(column: string, values: unknown[]): this {
     this.ensureOwnState()
@@ -405,11 +405,11 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   }
 
   /**
-   * Add an OR WHERE NOT IN clause to the query
+   * Add an OR WHERE NOT IN clause to the query.
    *
-   * @param column - Column name
-   * @param values - Array of values
-   * @returns The current QueryBuilder instance
+   * @param column - Column name.
+   * @param values - Array of values to exclude.
+   * @returns The current QueryBuilder instance for chaining.
    */
   orWhereNotIn(column: string, values: unknown[]): this {
     this.ensureOwnState()
@@ -425,10 +425,10 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   }
 
   /**
-   * Add a WHERE NULL clause to the query
+   * Add a WHERE NULL clause to the query.
    *
-   * @param column - Column name
-   * @returns The current QueryBuilder instance
+   * @param column - Column name.
+   * @returns The current QueryBuilder instance for chaining.
    */
   whereNull(column: string): this {
     this.ensureOwnState()
@@ -442,10 +442,10 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   }
 
   /**
-   * Add a WHERE NOT NULL clause to the query
+   * Add a WHERE NOT NULL clause to the query.
    *
-   * @param column - Column name
-   * @returns The current QueryBuilder instance
+   * @param column - Column name.
+   * @returns The current QueryBuilder instance for chaining.
    */
   whereNotNull(column: string): this {
     this.ensureOwnState()
@@ -459,10 +459,10 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   }
 
   /**
-   * Add an OR WHERE NULL clause to the query
+   * Add an OR WHERE NULL clause to the query.
    *
-   * @param column - Column name
-   * @returns The current QueryBuilder instance
+   * @param column - Column name.
+   * @returns The current QueryBuilder instance for chaining.
    */
   orWhereNull(column: string): this {
     this.ensureOwnState()
@@ -476,10 +476,10 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   }
 
   /**
-   * Add an OR WHERE NOT NULL clause to the query
+   * Add an OR WHERE NOT NULL clause to the query.
    *
-   * @param column - Column name
-   * @returns The current QueryBuilder instance
+   * @param column - Column name.
+   * @returns The current QueryBuilder instance for chaining.
    */
   orWhereNotNull(column: string): this {
     this.ensureOwnState()
@@ -728,49 +728,49 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   // ============================================================================
 
   /**
-   * Add an INNER JOIN to the query
+   * Add an INNER JOIN to the query.
    *
-   * @param table - Table to join
-   * @param first - First column for the ON condition
-   * @param operator - Join operator
-   * @param second - Second column for the ON condition
-   * @returns The current QueryBuilder instance
+   * @param table - Table to join.
+   * @param first - First column for the ON condition.
+   * @param operator - Join operator.
+   * @param second - Second column for the ON condition.
+   * @returns The current QueryBuilder instance for chaining.
    */
   join(table: string, first: string, operator: string, second: string): this {
     return this.addJoin('inner', table, first, operator, second)
   }
 
   /**
-   * Add a LEFT JOIN to the query
+   * Add a LEFT JOIN to the query.
    *
-   * @param table - Table to join
-   * @param first - First column for the ON condition
-   * @param operator - Join operator
-   * @param second - Second column for the ON condition
-   * @returns The current QueryBuilder instance
+   * @param table - Table to join.
+   * @param first - First column for the ON condition.
+   * @param operator - Join operator.
+   * @param second - Second column for the ON condition.
+   * @returns The current QueryBuilder instance for chaining.
    */
   leftJoin(table: string, first: string, operator: string, second: string): this {
     return this.addJoin('left', table, first, operator, second)
   }
 
   /**
-   * Add a RIGHT JOIN to the query
+   * Add a RIGHT JOIN to the query.
    *
-   * @param table - Table to join
-   * @param first - First column for the ON condition
-   * @param operator - Join operator
-   * @param second - Second column for the ON condition
-   * @returns The current QueryBuilder instance
+   * @param table - Table to join.
+   * @param first - First column for the ON condition.
+   * @param operator - Join operator.
+   * @param second - Second column for the ON condition.
+   * @returns The current QueryBuilder instance for chaining.
    */
   rightJoin(table: string, first: string, operator: string, second: string): this {
     return this.addJoin('right', table, first, operator, second)
   }
 
   /**
-   * Add a CROSS JOIN to the query
+   * Add a CROSS JOIN to the query.
    *
-   * @param table - Table to join
-   * @returns The current QueryBuilder instance
+   * @param table - Table to join.
+   * @returns The current QueryBuilder instance for chaining.
    */
   crossJoin(table: string): this {
     this.joins.push({
@@ -1014,9 +1014,9 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   }
 
   /**
-   * Execute the query and get all results
+   * Execute the query and retrieve all matching records.
    *
-   * @returns Promise resolving to an array of results
+   * @returns Promise resolving to an array of results.
    */
   async get(): Promise<T[]> {
     const sql = this.grammar.compileSelect(this.getCompiledQuery())
@@ -1044,9 +1044,9 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   }
 
   /**
-   * Get the first result of the query
+   * Retrieve the first record matching the query.
    *
-   * @returns Promise resolving to the first result or null
+   * @returns Promise resolving to the first result or null if none found.
    */
   async first(): Promise<T | null> {
     this.limit(1)
@@ -1055,10 +1055,10 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   }
 
   /**
-   * Get the first result or throw a RecordNotFoundError
+   * Retrieve the first record matching the query or throw an error.
    *
-   * @returns Promise resolving to the first result
-   * @throws RecordNotFoundError
+   * @returns Promise resolving to the first result.
+   * @throws RecordNotFoundError if no record matches the query.
    */
   async firstOrFail(): Promise<T> {
     const result = await this.first()
@@ -1069,23 +1069,23 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   }
 
   /**
-   * Find a record by its primary key value
+   * Find a record by its primary key value.
    *
-   * @param id - The ID value
-   * @param primaryKey - The name of the primary key column
-   * @returns Promise resolving to the record or null
+   * @param id - The primary key value to search for.
+   * @param primaryKey - The name of the primary key column (defaults to 'id').
+   * @returns Promise resolving to the record or null.
    */
   async find(id: unknown, primaryKey = 'id'): Promise<T | null> {
     return this.where(primaryKey, '=', id).first()
   }
 
   /**
-   * Find a record by its primary key or throw a RecordNotFoundError
+   * Find a record by its primary key or throw an error.
    *
-   * @param id - The ID value
-   * @param primaryKey - The name of the primary key column
-   * @returns Promise resolving to the record
-   * @throws RecordNotFoundError
+   * @param id - The primary key value.
+   * @param primaryKey - The name of the primary key column.
+   * @returns Promise resolving to the record.
+   * @throws RecordNotFoundError if no record is found.
    */
   async findOrFail(id: unknown, primaryKey = 'id'): Promise<T> {
     const result = await this.find(id, primaryKey)
@@ -1219,10 +1219,10 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   // ============================================================================
 
   /**
-   * Insert one or more records into the table
+   * Insert one or more records into the database.
    *
-   * @param data - Record object or array of record objects
-   * @returns Promise resolving to the inserted records (with generated IDs if supported)
+   * @param data - A single record object or an array of record objects.
+   * @returns Promise resolving to the inserted records (including generated IDs if supported).
    */
   async insert(data: Partial<T> | Partial<T>[]): Promise<T[]> {
     const values = Array.isArray(data) ? data : [data]
@@ -1262,12 +1262,12 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   }
 
   /**
-   * Insert a record and return its generated ID
+   * Insert a record and retrieve its auto-generated primary key.
    *
-   * @param data - Record object
-   * @param primaryKey - Name of the primary key column
-   * @returns Promise resolving to the generated ID
-   * @throws QueryBuilderError if ID retrieval fails
+   * @param data - The record object to insert.
+   * @param primaryKey - The name of the primary key column.
+   * @returns Promise resolving to the generated ID.
+   * @throws QueryBuilderError if the ID could not be retrieved.
    */
   async insertGetId(data: Partial<T>, primaryKey = 'id'): Promise<number | bigint> {
     const values = Object.values(data as Record<string, unknown>)
@@ -1285,10 +1285,10 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   }
 
   /**
-   * Update records matching the query
+   * Update records matching the current query conditions.
    *
-   * @param data - Object containing column-value pairs to update
-   * @returns Promise resolving to the number of affected rows
+   * @param data - Object containing column-value pairs to update.
+   * @returns Promise resolving to the number of affected rows.
    */
   async update(data: Partial<T>): Promise<number> {
     const values: unknown[] = []

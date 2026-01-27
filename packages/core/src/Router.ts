@@ -480,6 +480,21 @@ export class Router {
 
   /**
    * Generate a URL from a named route.
+   *
+   * Replaces route parameters (e.g., `:id`) with provided values and appends
+   * query parameters to the URL.
+   *
+   * @param name - The name of the route.
+   * @param params - Key-value pairs for route parameters.
+   * @param query - Key-value pairs for query string parameters.
+   * @returns The generated URL string.
+   * @throws Error if the named route is not found or if a required parameter is missing.
+   *
+   * @example
+   * ```typescript
+   * const url = router.url('users.show', { id: 1 }, { tab: 'profile' });
+   * // Result: "/users/1?tab=profile"
+   * ```
    */
   url(
     name: string,
@@ -533,6 +548,17 @@ export class Router {
 
   /**
    * Register a route model binding.
+   *
+   * Automatically resolves a route parameter to an object using the provided
+   * resolver function. The resolved object is then available in the request context.
+   *
+   * @param param - The name of the route parameter to bind.
+   * @param resolver - An async function that resolves the parameter value to an object.
+   *
+   * @example
+   * ```typescript
+   * router.bind('user', async (id) => await User.find(id));
+   * ```
    */
   bind(param: string, resolver: (id: string) => Promise<unknown>) {
     this.bindings.set(param, resolver)
@@ -764,7 +790,19 @@ export class Router {
   }
 
   /**
-   * Register a resource route (Laravel-style).
+   * Register a resource route (RESTful).
+   *
+   * Automatically creates multiple routes for a resource (index, create, store,
+   * show, edit, update, destroy) mapping to specific controller methods.
+   *
+   * @param name - The resource name (e.g., 'users').
+   * @param controller - The controller class handling the resource.
+   * @param options - Optional constraints (only/except) for resource actions.
+   *
+   * @example
+   * ```typescript
+   * router.resource('photos', PhotoController);
+   * ```
    */
   resource(name: string, controller: ControllerClass, options: ResourceOptions = {}): void {
     const actions: ResourceAction[] = [

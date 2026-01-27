@@ -20,6 +20,10 @@ const ensure =
  * It automatically extracts the token from the Authorization header (Bearer scheme)
  * and validates it against the provided secret or public key.
  *
+ * @remarks
+ * This middleware is the primary way to secure Photon routes. It integrates
+ * with Hono's JWT implementation but is optimized for the Gravito ecosystem.
+ *
  * @param options - Configuration for JWT validation including secret, alg, and cookie name.
  * @returns A Hono middleware handler.
  * @throws {Error} If the `hono/jwt` helper is not available in the current environment.
@@ -32,11 +36,11 @@ const ensure =
  * const app = new Photon()
  *
  * // Protect all routes under /api/private
- * app.use('/api/private/*', jwt({ secret: 'shhhh' }))
+ * app.use('/api/private/*', jwt({ secret: 'your-secure-secret' }))
  *
  * app.get('/api/private/profile', (c) => {
  *   const payload = c.get('jwtPayload')
- *   return c.json(payload)
+ *   return c.json({ user: payload.sub })
  * })
  * ```
  * @public
@@ -48,6 +52,10 @@ export const jwt = ensure(honoJwt.jwt, 'jwt')
  *
  * Ensures the token is authentic and has not expired using the provided secret or key.
  * This is the primary way to manually validate tokens outside of middleware.
+ *
+ * @remarks
+ * Use this function when you need to manually verify a token, such as in
+ * WebSocket connections or custom authentication flows.
  *
  * @param token - The JWT string to verify.
  * @param secret - The secret key or public key for signature verification.
@@ -63,7 +71,7 @@ export const jwt = ensure(honoJwt.jwt, 'jwt')
  *   const payload = await verify(token, 'my-secret')
  *   console.log('Valid token for user:', payload.sub)
  * } catch (e) {
- *   console.error('Invalid token')
+ *   console.error('Invalid token:', e.message)
  * }
  * ```
  * @public
@@ -74,6 +82,10 @@ export const verify = ensure(honoJwt.verify, 'verify')
  * Decode a JWT token without verifying its signature.
  *
  * Useful for inspecting payload data (like `exp` or `sub`) before verification.
+ *
+ * @remarks
+ * This function is useful for debugging or for extracting information from
+ * a token before deciding how to verify it.
  *
  * @warning This does NOT validate the token. Never trust the data returned
  * by this function for security-critical decisions without subsequent verification.
@@ -88,6 +100,7 @@ export const verify = ensure(honoJwt.verify, 'verify')
  *
  * const { header, payload } = decode(token)
  * console.log('Token algorithm:', header.alg)
+ * console.log('User ID:', payload.sub)
  * ```
  * @public
  */
@@ -97,6 +110,10 @@ export const decode = ensure(honoJwt.decode, 'decode')
  * Sign a payload to create a new JWT token.
  *
  * Generates a cryptographically signed string containing the provided claims.
+ *
+ * @remarks
+ * Use this function to issue new tokens after a successful login or for
+ * inter-service communication.
  *
  * @param payload - The data to include in the token.
  * @param secret - The secret key or private key for signing.
@@ -108,7 +125,10 @@ export const decode = ensure(honoJwt.decode, 'decode')
  * ```typescript
  * import { sign } from '@gravito/photon/jwt'
  *
- * const token = await sign({ sub: 'user_123', role: 'admin' }, 'my-secret')
+ * const token = await sign(
+ *   { sub: 'user_123', role: 'admin', exp: Math.floor(Date.now() / 1000) + 3600 },
+ *   'my-secret'
+ * )
  * ```
  * @public
  */
@@ -119,6 +139,10 @@ export const sign = ensure(honoJwt.sign, 'sign')
  *
  * Ideal for verifying tokens issued by OIDC providers (like Auth0, AWS Cognito, or Google)
  * where public keys are rotated and published at a JWKS endpoint.
+ *
+ * @remarks
+ * This function automatically handles key rotation by fetching the latest
+ * public keys from the specified JWKS URI.
  *
  * @param token - The JWT string to verify.
  * @param options - JWKS configuration including the JWKS URI.

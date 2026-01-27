@@ -178,7 +178,8 @@ export class Schema {
   /**
    * Drop a table from the schema.
    *
-   * @param table The name of the table to drop.
+   * @param table - The name of the table to drop.
+   * @throws Error if the table does not exist.
    */
   static async drop(table: string): Promise<void> {
     const grammar = Schema.getGrammar()
@@ -187,9 +188,9 @@ export class Schema {
   }
 
   /**
-   * Drop a table from the schema if it exists.
+   * Drop a table from the schema only if it exists.
    *
-   * @param table The name of the table to drop.
+   * @param table - The name of the table to drop.
    */
   static async dropIfExists(table: string): Promise<void> {
     const grammar = Schema.getGrammar()
@@ -198,10 +199,10 @@ export class Schema {
   }
 
   /**
-   * Rename a table on the schema.
+   * Rename an existing table on the schema.
    *
-   * @param from The current name of the table.
-   * @param to The new name for the table.
+   * @param from - The current name of the table.
+   * @param to - The new name for the table.
    */
   static async rename(from: string, to: string): Promise<void> {
     const grammar = Schema.getGrammar()
@@ -214,10 +215,10 @@ export class Schema {
   // ============================================================================
 
   /**
-   * Determine if the given table exists.
+   * Determine if the given table exists in the database.
    *
-   * @param table The name of the table to check.
-   * @returns True if the table exists, false otherwise.
+   * @param table - The name of the table to check.
+   * @returns Promise resolving to true if the table exists.
    */
   static async hasTable(table: string): Promise<boolean> {
     const grammar = Schema.getGrammar()
@@ -238,11 +239,11 @@ export class Schema {
   }
 
   /**
-   * Determine if the given table has a given column.
+   * Determine if the given table has a specific column.
    *
-   * @param table The name of the table.
-   * @param column The name of the column.
-   * @returns True if the column exists, false otherwise.
+   * @param table - The name of the table.
+   * @param column - The name of the column.
+   * @returns Promise resolving to true if the column exists.
    */
   static async hasColumn(table: string, column: string): Promise<boolean> {
     const grammar = Schema.getGrammar()
@@ -262,9 +263,9 @@ export class Schema {
   }
 
   /**
-   * Get all table names for the current connection.
+   * Get a list of all table names for the current database connection.
    *
-   * @returns An array of table names.
+   * @returns Promise resolving to an array of table names.
    */
   static async getTables(): Promise<string[]> {
     const grammar = Schema.getGrammar()

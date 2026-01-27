@@ -21,7 +21,18 @@ export class Container {
 
   /**
    * Bind a service to the container.
-   * New instance will be created on each resolution.
+   *
+   * A new instance will be created by the factory function every time the
+   * service is resolved from the container.
+   *
+   * @template T - The type of the service being bound.
+   * @param key - The unique identifier for the service.
+   * @param factory - The factory function that creates the service instance.
+   *
+   * @example
+   * ```typescript
+   * container.bind('logger', (c) => new ConsoleLogger());
+   * ```
    */
   bind<T>(key: BindingKey, factory: Factory<T>): void {
     this.bindings.set(key, { factory: factory as Factory<unknown>, shared: false })
@@ -29,7 +40,18 @@ export class Container {
 
   /**
    * Bind a shared service to the container (Singleton).
-   * Same instance will be returned on each resolution.
+   *
+   * The factory function will be called only once, and the same instance
+   * will be returned on every subsequent resolution.
+   *
+   * @template T - The type of the service being bound.
+   * @param key - The unique identifier for the service.
+   * @param factory - The factory function that creates the service instance.
+   *
+   * @example
+   * ```typescript
+   * container.singleton('db', (c) => new DatabaseConnection());
+   * ```
    */
   singleton<T>(key: BindingKey, factory: Factory<T>): void {
     this.bindings.set(key, { factory: factory as Factory<unknown>, shared: true })
@@ -43,7 +65,19 @@ export class Container {
   }
 
   /**
-   * Resolve a service from the container.
+   * Resolve a service instance from the container.
+   *
+   * Automatically handles singleton caching and factory execution.
+   *
+   * @template T - The expected type of the service.
+   * @param key - The unique identifier for the service.
+   * @returns The resolved service instance.
+   * @throws Error if the service key is not found in the container.
+   *
+   * @example
+   * ```typescript
+   * const logger = container.make<Logger>('logger');
+   * ```
    */
   make<T>(key: BindingKey): T {
     // 1. Check shared instances

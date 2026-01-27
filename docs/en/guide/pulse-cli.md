@@ -41,6 +41,9 @@ gravito make:controller UserController
 # Create middleware
 gravito make:middleware AuthGuard
 
+# Create a Command
+gravito make:command GreetCommand --command app:greet
+
 # Create a UseCase (requires @gravito/enterprise)
 gravito make:use-case CreateUser
 
@@ -61,13 +64,19 @@ gravito schedule:run
 
 ## Custom Commands
 
-You can define your own CLI commands by creating a simple class.
+You can define your own CLI commands by creating a simple class. The easiest way to get started is using the `make:command` generator:
+
+```bash
+gravito make:command WelcomeCommand --command app:welcome
+```
+
+This will create a command class in `src/commands/WelcomeCommand.ts`.
 
 ```typescript
 import { Command } from '@gravito/pulse'
 
 export default class WelcomeCommand extends Command {
-  static signature = 'greet {name}'
+  static signature = 'app:welcome {name}'
   static description = 'Greet a user'
 
   async handle() {

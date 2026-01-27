@@ -41,6 +41,9 @@ gravito make:controller UserController
 # 建立中間件
 gravito make:middleware AuthGuard
 
+# 建立指令 (Command)
+gravito make:command GreetCommand --command app:greet
+
 # 建立 UseCase (需要 @gravito/enterprise)
 gravito make:use-case CreateUser
 
@@ -61,13 +64,19 @@ gravito schedule:run
 
 ## 自定義指令
 
-您可以透過簡單的類別定義自己的 CLI 指令。
+您可以透過簡單的類別定義自己的 CLI 指令。最簡單的方法是使用 `make:command` 生成器：
+
+```bash
+gravito make:command WelcomeCommand --command app:welcome
+```
+
+這將在 `src/commands/WelcomeCommand.ts` 中建立一個指令類別。
 
 ```typescript
 import { Command } from '@gravito/pulse'
 
 export default class WelcomeCommand extends Command {
-  static signature = 'greet {name}'
+  static signature = 'app:welcome {name}'
   static description = '向使用者打招呼'
 
   async handle() {

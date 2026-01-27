@@ -272,9 +272,15 @@ export class InertiaService {
    * Registers a piece of data to be shared with all Inertia responses.
    *
    * Shared props are automatically merged with component props during render.
+   * This is useful for global data like authenticated user info or flash messages.
    *
    * @param key - Identifier for the shared prop
    * @param value - Value to share (must be JSON serializable)
+   *
+   * @example
+   * ```typescript
+   * inertia.share('auth', { user: 'Carl' });
+   * ```
    */
   public share(key: string, value: unknown): void {
     this.sharedProps[key] = value
@@ -283,7 +289,17 @@ export class InertiaService {
   /**
    * Shares multiple props in a single operation.
    *
+   * Merges the provided object into the existing shared props state.
+   *
    * @param props - Object containing props to merge into the shared state
+   *
+   * @example
+   * ```typescript
+   * inertia.shareAll({
+   *   appName: 'Gravito Store',
+   *   version: '1.0.0'
+   * });
+   * ```
    */
   public shareAll(props: Record<string, unknown>): void {
     Object.assign(this.sharedProps, props)
@@ -292,7 +308,15 @@ export class InertiaService {
   /**
    * Returns a copy of the current shared props.
    *
+   * Useful for debugging or inspecting the state before rendering.
+   *
    * @returns Current shared props dictionary
+   *
+   * @example
+   * ```typescript
+   * const currentShared = inertia.getSharedProps();
+   * console.log(currentShared.auth);
+   * ```
    */
   public getSharedProps(): Record<string, unknown> {
     return { ...this.sharedProps }

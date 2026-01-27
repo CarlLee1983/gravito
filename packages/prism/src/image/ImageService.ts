@@ -218,17 +218,27 @@ export class ImageService {
   /**
    * Generate a complete HTML `<img>` tag string.
    *
+   * Constructs a self-closing `<img>` tag with all necessary attributes for
+   * performance and accessibility. This is the primary method for generating
+   * standard image markup.
+   *
    * @param options - Configuration options for the image.
-   * @returns A fully formed HTML string, e.g., `<img src="..." ... />`.
+   * @returns A fully formed HTML string, e.g., `<img src="..." alt="..." width="..." height="..." loading="lazy" />`.
+   *
+   * @throws {Error} If the `alt` attribute is missing or empty.
    *
    * @example
    * ```typescript
    * const html = service.generateImageTag({
    *   src: 'photo.jpg',
-   *   alt: 'A beautiful photo',
-   *   width: 800
+   *   alt: 'A beautiful sunset over the ocean',
+   *   width: 800,
+   *   height: 450
    * });
    * ```
+   *
+   * @public
+   * @since 3.0.0
    */
   public generateImageTag(options: ImageOptions): string {
     const attrs = this.generateImageAttributes(options)

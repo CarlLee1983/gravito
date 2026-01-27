@@ -167,15 +167,21 @@ export class Application {
   }
 
   /**
-   * Boot the application.
+   * Boot the application and its dependencies.
    *
-   * This will:
-   * 1. Load configuration files
-   * 2. Auto-discover providers (if enabled)
-   * 3. Register all providers
-   * 4. Bootstrap the core
+   * This method orchestrates the full application lifecycle:
+   * 1. Configuration: Loads all config files from the config directory.
+   * 2. Discovery: Auto-discovers ServiceProviders from the providers directory.
+   * 3. Registration: Registers all discovered and explicit providers.
+   * 4. Bootstrapping: Triggers the PlanetCore bootstrap sequence.
    *
-   * @returns Promise that resolves when boot is complete
+   * @returns Promise that resolves to the application instance for chaining.
+   *
+   * @example
+   * ```typescript
+   * const app = new Application({ basePath: import.meta.dir });
+   * await app.boot();
+   * ```
    */
   async boot(): Promise<this> {
     if (this.booted) {
@@ -317,10 +323,19 @@ export class Application {
   }
 
   /**
-   * Get a service from the container.
+   * Resolve a service instance from the IoC container.
    *
-   * @param key - The service key
-   * @returns The resolved service
+   * This is a convenience wrapper around `container.make()`.
+   *
+   * @template T - The expected type of the service.
+   * @param key - The unique identifier or class name of the service.
+   * @returns The resolved service instance.
+   * @throws Error if the service is not bound in the container.
+   *
+   * @example
+   * ```typescript
+   * const db = app.make<Database>('db');
+   * ```
    */
   make<T>(key: string): T {
     // Now uses the shared container instance
@@ -339,21 +354,32 @@ export class Application {
   }
 
   /**
-   * Get a configuration value.
+   * Retrieve a configuration value using dot notation.
    *
-   * @param key - The config key (supports dot notation)
-   * @param defaultValue - Default value if not found
-   * @returns The config value
+   * @template T - The expected type of the configuration value.
+   * @param key - The configuration key (e.g., 'app.name', 'database.connections.mysql').
+   * @param defaultValue - Optional value to return if the key is not found.
+   * @returns The configuration value or the default value.
+   *
+   * @example
+   * ```typescript
+   * const port = app.getConfig<number>('app.port', 3000);
+   * ```
    */
   getConfig<T>(key: string, defaultValue?: T): T {
     return this.config.get<T>(key, defaultValue)
   }
 
   /**
-   * Create application path helper.
+   * Resolve an absolute path relative to the application base path.
    *
-   * @param segments - Path segments relative to base path
-   * @returns Absolute path
+   * @param segments - Path segments to join with the base path.
+   * @returns The absolute path string.
+   *
+   * @example
+   * ```typescript
+   * const storagePath = app.path('storage', 'logs');
+   * ```
    */
   path(...segments: string[]): string {
     return path.resolve(this.basePath, ...segments)
