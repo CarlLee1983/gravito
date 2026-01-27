@@ -1,5 +1,12 @@
 # atlas-site
 
+## 1.0.2
+
+### Patch Changes
+
+- Updated dependencies
+  - @gravito/atlas@2.1.0
+
 ## 1.0.1
 
 ### Patch Changes

@@ -210,4 +210,67 @@ describe('OrbitPulsar middleware', () => {
 
     expect(core.hooks.doAction).toHaveBeenCalledWith('session:regenerated', expect.any(Object))
   })
+
+  it('isStarted returns correct state', async () => {
+    const core = createCore()
+    const orbit = new OrbitPulsar({ csrf: { enabled: false } })
+    orbit.install(core as any)
+
+    const c1 = createContext()
+    await core.middleware?.(c1, async () => {
+      const session = c1.get('session') as any
+      expect(session.isStarted()).toBe(false)
+      session.put('foo', 'bar')
+    })
+
+    const sessionCookie = getCookieValue(c1.setCookies, 'gravito_session')
+    const c2 = createContext({ cookie: `gravito_session=${sessionCookie}` })
+    await core.middleware?.(c2, async () => {
+      const session = c2.get('session') as any
+      expect(session.isStarted()).toBe(true)
+    })
+  })
+
+  it('pull retrieves and removes value', async () => {
+    const core = createCore()
+    const orbit = new OrbitPulsar({ csrf: { enabled: false } })
+    orbit.install(core as any)
+
+    const c = createContext()
+    await core.middleware?.(c, async () => {
+      const session = c.get('session') as any
+      session.put('temp', 'value')
+
+      expect(session.pull('temp')).toBe('value')
+      expect(session.get('temp')).toBeUndefined()
+
+      expect(session.pull('missing', 'default')).toBe('default')
+    })
+  })
+
+  it('reflash re-flashes all current flash data', async () => {
+    const core = createCore()
+    const orbit = new OrbitPulsar({ csrf: { enabled: false } })
+    orbit.install(core as any)
+
+    const c1 = createContext()
+    await core.middleware?.(c1, async () => {
+      const session = c1.get('session') as any
+      session.flash('notice', 'hello')
+    })
+
+    const sessionCookie = getCookieValue(c1.setCookies, 'gravito_session')
+
+    const c2 = createContext({ cookie: `gravito_session=${sessionCookie}` })
+    await core.middleware?.(c2, async () => {
+      const session = c2.get('session') as any
+      session.reflash()
+    })
+
+    const c3 = createContext({ cookie: `gravito_session=${sessionCookie}` })
+    await core.middleware?.(c3, async () => {
+      const session = c3.get('session') as any
+      expect(session.getFlash('notice')).toBe('hello')
+    })
+  })
 })

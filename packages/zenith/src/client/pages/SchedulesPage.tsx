@@ -3,7 +3,6 @@ import { format } from 'date-fns'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   Activity,
-  AlertCircle,
   ArrowRight,
   Calendar,
   CheckCircle2,
@@ -45,6 +44,15 @@ interface QueueListItem {
   paused: boolean
 }
 
+/**
+ * Task Schedules Page.
+ *
+ * View and manage all recurring jobs and cron tasks. Users can register new
+ * schedules, manually trigger execution, or delete existing schedules.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export function SchedulesPage() {
   const queryClient = useQueryClient()
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -167,57 +175,59 @@ export function SchedulesPage() {
 
       {/* Stats Overview */}
       <div className="grid grid-cols-3 gap-6">
-        <div className="card-premium p-6 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+        <div className="card-premium p-5 flex items-center gap-5 border-l-4 border-primary">
+          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20 shadow-[0_0_15px_rgba(0,240,255,0.1)]">
             <Activity size={24} />
           </div>
           <div>
-            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+            <p className="text-[9px] font-black text-muted-foreground/60 uppercase tracking-[0.2em] font-heading mb-0.5">
               Active Schedules
             </p>
-            <p className="text-2xl font-black">{isLoading ? '...' : schedules.length}</p>
+            <p className="text-2xl font-black font-mono tracking-tighter">
+              {isLoading ? '...' : schedules.length}
+            </p>
           </div>
         </div>
-        <div className="card-premium p-6 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-500">
+        <div className="card-premium p-5 flex items-center gap-5 border-l-4 border-indigo-500/40">
+          <div className="w-12 h-12 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 border border-indigo-500/20 shadow-[0_0_15px_rgba(99,102,241,0.1)]">
             <Calendar size={24} />
           </div>
           <div>
-            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+            <p className="text-[9px] font-black text-muted-foreground/60 uppercase tracking-[0.2em] font-heading mb-0.5">
               Total Executions
             </p>
-            <p className="text-2xl font-black">---</p>
+            <p className="text-2xl font-black font-mono tracking-tighter">---</p>
           </div>
         </div>
-        <div className="card-premium p-6 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-green-500/10 flex items-center justify-center text-green-500">
+        <div className="card-premium p-5 flex items-center gap-5 border-l-4 border-emerald-500/40">
+          <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 border border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.1)]">
             <CheckCircle2 size={24} />
           </div>
           <div>
-            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+            <p className="text-[9px] font-black text-muted-foreground/60 uppercase tracking-[0.2em] font-heading mb-0.5">
               Health Score
             </p>
-            <p className="text-2xl font-black text-green-500">99.8%</p>
+            <p className="text-2xl font-black text-emerald-500 font-mono tracking-tighter">99.8%</p>
           </div>
         </div>
       </div>
 
       {/* Toolbar */}
-      <div className="flex gap-4 items-center">
+      <div className="card-premium p-3 flex gap-4 items-center">
         <div className="relative flex-1">
           <Search
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50"
+            className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/30"
             size={18}
           />
           <input
             type="text"
             placeholder="Search schedules by name, cron or ID..."
-            className="w-full bg-muted/40 border-border/50 rounded-xl pl-12 pr-4 py-3 text-sm focus:ring-1 focus:ring-primary/30 outline-none transition-all"
+            className="w-full bg-black/20 border border-white/5 rounded-xl pl-12 pr-4 py-3 text-xs font-bold font-mono placeholder:text-white/10 focus:ring-1 focus:ring-primary/30 outline-none transition-all"
           />
         </div>
         <button
           type="button"
-          className="p-3 bg-muted/40 border border-border/50 rounded-xl hover:bg-muted/60 transition-all"
+          className="p-3 bg-zinc-900/40 border border-white/5 rounded-xl hover:bg-zinc-800 transition-all text-muted-foreground/60"
         >
           <Filter size={18} />
         </button>
@@ -250,30 +260,30 @@ export function SchedulesPage() {
         {schedules.map((schedule: ScheduleInfo) => (
           <div
             key={schedule.id}
-            className="card-premium p-6 group hover:border-primary/30 transition-all"
+            className="card-premium p-6 group hover:border-primary/20 transition-all border-l-4 border-l-zinc-800 hover:border-l-primary"
           >
             <div className="flex items-start justify-between">
-              <div className="flex gap-5">
-                <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-all">
-                  <Clock size={28} />
+              <div className="flex gap-6">
+                <div className="w-16 h-16 rounded-2xl bg-zinc-900 border border-white/5 flex items-center justify-center text-muted-foreground/40 group-hover:text-primary group-hover:border-primary/20 group-hover:shadow-[0_0_20px_rgba(0,240,255,0.1)] transition-all">
+                  <Clock size={32} />
                 </div>
-                <div className="space-y-1">
+                <div className="space-y-2">
                   <div className="flex items-center gap-3">
-                    <h3 className="text-lg font-bold">{schedule.id}</h3>
-                    <span className="px-2 py-0.5 bg-green-500/10 text-green-500 text-[10px] font-black uppercase tracking-widest rounded">
-                      Enabled
+                    <h3 className="text-xl font-black font-heading tracking-tight text-white/90">
+                      {schedule.id}
+                    </h3>
+                    <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase tracking-widest rounded border border-emerald-500/20">
+                      Active
                     </span>
                   </div>
-                  <div className="flex items-center gap-4 text-xs font-bold text-muted-foreground">
-                    <span className="flex items-center gap-1.5">
-                      <Clock size={12} /> {schedule.cron}
+                  <div className="flex items-center gap-5 text-[11px] font-bold text-muted-foreground/60 font-mono uppercase tracking-tighter">
+                    <span className="flex items-center gap-2 bg-black/40 px-2 py-0.5 rounded border border-white/5">
+                      <Clock size={12} className="text-primary/60" /> {schedule.cron}
                     </span>
-                    <span className="flex items-center gap-1.5">
-                      <ArrowRight size={12} /> {schedule.queue}
+                    <span className="flex items-center gap-2 bg-black/40 px-2 py-0.5 rounded border border-white/5">
+                      <ArrowRight size={12} className="text-primary/60" /> {schedule.queue}
                     </span>
-                    <span className="px-2 py-0.5 bg-muted rounded font-mono text-[10px] uppercase font-black">
-                      {schedule.job.className}
-                    </span>
+                    <span className="text-primary/40">{schedule.job.className}</span>
                   </div>
                 </div>
               </div>
@@ -283,61 +293,55 @@ export function SchedulesPage() {
                   type="button"
                   disabled={runMutation.isPending}
                   onClick={() => setConfirmRunId(schedule.id)}
-                  className="px-4 py-2 bg-muted hover:bg-primary hover:text-primary-foreground rounded-lg text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 flex items-center gap-2 disabled:opacity-50"
+                  className="px-5 py-2.5 bg-primary/10 hover:bg-primary text-primary hover:text-black rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all active:scale-95 flex items-center gap-2 disabled:opacity-50 border border-primary/20 font-heading shadow-lg shadow-transparent hover:shadow-primary/20"
                 >
                   {runMutation.isPending && runMutation.variables === schedule.id ? (
                     <>
-                      <RefreshCcw size={12} className="animate-spin" />
-                      Running...
+                      <RefreshCcw size={14} className="animate-spin" />
+                      Triggering...
                     </>
                   ) : (
-                    'Run Now'
+                    'Execute Now'
                   )}
                 </button>
                 <button
                   type="button"
-                  className="p-2 hover:bg-muted rounded-lg transition-all text-muted-foreground"
-                >
-                  <AlertCircle size={18} />
-                </button>
-                <button
-                  type="button"
                   onClick={() => setConfirmDeleteId(schedule.id)}
-                  className="p-2 hover:bg-red-500/10 hover:text-red-500 rounded-lg transition-all text-muted-foreground"
+                  className="p-2.5 bg-red-500/5 hover:bg-red-500 hover:text-white rounded-xl transition-all text-red-500/60 border border-transparent hover:border-red-500/20"
                 >
                   <Trash2 size={18} />
                 </button>
               </div>
             </div>
 
-            <div className="mt-6 grid grid-cols-2 gap-4 pt-6 border-t border-border/30">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-muted-foreground/60">
-                  <Calendar size={14} />
+            <div className="mt-8 grid grid-cols-2 gap-6 pt-6 border-t border-white/5">
+              <div className="flex items-center gap-4 group/stat">
+                <div className="w-10 h-10 rounded-xl bg-zinc-900 border border-white/5 flex items-center justify-center text-muted-foreground/20 group-hover/stat:text-primary transition-colors">
+                  <Calendar size={16} />
                 </div>
                 <div>
-                  <p className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-widest leading-none mb-1">
-                    Last Run
+                  <p className="text-[9px] font-black text-muted-foreground/40 uppercase tracking-[0.2em] mb-1 font-heading">
+                    Previous Burst
                   </p>
-                  <p className="text-xs font-bold">
+                  <p className="text-xs font-black font-mono text-white/60 tabular-nums">
                     {schedule.lastRun
-                      ? format(new Date(schedule.lastRun), 'HH:mm:ss MMM dd')
-                      : 'Never'}
+                      ? format(new Date(schedule.lastRun), 'HH:mm:ss / MMM dd')
+                      : 'N/A'}
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-                  <Play size={14} />
+              <div className="flex items-center gap-4 group/stat">
+                <div className="w-10 h-10 rounded-xl bg-primary/5 border border-primary/10 flex items-center justify-center text-primary/40 group-hover/stat:text-primary transition-colors">
+                  <Play size={16} />
                 </div>
                 <div>
-                  <p className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-widest leading-none mb-1">
-                    Next Run
+                  <p className="text-[9px] font-black text-primary/40 uppercase tracking-[0.2em] mb-1 font-heading">
+                    Next Sequence
                   </p>
-                  <p className="text-xs font-bold">
+                  <p className="text-xs font-black font-mono text-primary/80 tabular-nums uppercase">
                     {schedule.nextRun
-                      ? format(new Date(schedule.nextRun), 'HH:mm:ss MMM dd')
-                      : 'Scheduled'}
+                      ? format(new Date(schedule.nextRun), 'HH:mm:ss / MMM dd')
+                      : 'Pending'}
                   </p>
                 </div>
               </div>

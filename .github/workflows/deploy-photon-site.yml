@@ -1,0 +1,58 @@
+name: Deploy Photon Site
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'examples/photon-site/**'
+      - 'packages/photon/**'
+      - 'packages/core/**'
+      - 'packages/ion/**'
+      - 'packages/prism/**'
+      - 'packages/freeze/**'
+      - 'packages/freeze-react/**'
+      - '.github/workflows/deploy-photon-site.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  deployments: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+        env:
+          SKIP_INSTALL_SIMPLE_GIT_HOOKS: 1
+
+      - name: Build Dependencies
+        # Build core packages that photon-site depends on
+        run: bunx turbo run build --filter=@gravito/core --filter=@gravito/photon --filter=@gravito/ion --filter=@gravito/prism --filter=@gravito/freeze --filter=@gravito/freeze-react
+
+      - name: Build Photon Site
+        working-directory: examples/photon-site
+        # This runs the new 'build' script: vite build + build-static
+        run: bun run build
+        env:
+          NODE_ENV: production
+          GA_PHOTON_SITE: ${{ secrets.GA_PHOTON_SITE }}
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: photon-site
+          directory: examples/photon-site/dist/static
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}

@@ -1,68 +1,106 @@
 import type { GravitoContext, GravitoNext, GravitoOrbit, PlanetCore } from '@gravito/core'
 import { setRippleServer } from './events/Broadcaster'
+import { BroadcastManager } from './events/BroadcastManager'
 import { RippleServer } from './RippleServer'
 import type { RippleConfig } from './types'
 
 /**
- * OrbitRipple - Gravito module for real-time WebSocket communication
+ * OrbitRipple integrates the Ripple WebSocket module into the Gravito framework.
+ *
+ * It handles the registration of the RippleServer in the IoC container,
+ * adds middleware for context access, and manages the server lifecycle.
+ *
+ * @example
+ * ```typescript
+ * import { PlanetCore } from '@gravito/core'
+ * import { OrbitRipple } from '@gravito/ripple'
+ *
+ * const core = new PlanetCore()
+ *
+ * // Install Ripple as an Orbit
+ * core.install(new OrbitRipple({
+ *   path: '/ws',
+ *   authorizer: async (channel, userId) => userId !== undefined
+ * }))
+ * ```
  */
 export class OrbitRipple implements GravitoOrbit {
   private server: RippleServer
   private config: RippleConfig
 
+  /**
+   * Create a new OrbitRipple.
+   *
+   * @param config - Ripple configuration options
+   */
   constructor(config: RippleConfig = {}) {
     this.config = config
     this.server = new RippleServer(config)
   }
 
   /**
-   * Install the module into PlanetCore
+   * Install the orbit into the Gravito core.
+   *
+   * - Registers 'ripple' (RippleServer) and 'broadcast' (BroadcastManager) in the container.
+   * - Adds middleware to inject 'ripple' and 'broadcast' into GravitoContext.
+   * - Initializes the server and registers shutdown hooks.
+   *
+   * @param core - The PlanetCore instance
    */
   install(core: PlanetCore): void {
     core.logger.info('🌊 Orbit Ripple installed')
 
-    // Store reference globally for broadcast() function
+    // Set static reference for helper functions
     setRippleServer(this.server)
 
-    // Register in core container for global access (CLI, Jobs)
+    // Register in IoC container
     core.container.instance('ripple', this.server)
 
-    // Expose Ripple server via context variable
+    const broadcastManager = new BroadcastManager(this.server)
+    core.container.instance('broadcast', broadcastManager)
+
+    // Middleware to inject into context
     core.adapter.use('*', async (ctx: GravitoContext, next: GravitoNext) => {
-      ctx.set('ripple' as any, this.server)
+      ctx.set('ripple', this.server)
+      ctx.set('broadcast', broadcastManager)
       return await next()
     })
 
-    // Initialize server immediately
+    // Async initialization
     this.server.init().then(() => {
       core.logger.info(`🌊 Ripple WebSocket ready at ${this.config.path || '/ws'}`)
     })
 
-    // Register shutdown hook
+    // Lifecycle: Graceful shutdown
     core.hooks.doAction('core:shutdown', async () => {
       await this.server.shutdown()
     })
   }
 
   /**
-   * Get the underlying RippleServer instance
+   * Get the underlying RippleServer instance.
+   *
+   * @returns The RippleServer instance
    */
   getServer(): RippleServer {
     return this.server
   }
 
   /**
-   * Get WebSocket handler for Bun.serve integration
+   * Get the WebSocket handler for Bun.serve.
+   *
+   * @returns The WebSocket handler object
    */
   getHandler() {
     return this.server.getHandler()
   }
 }
 
-// Module augmentation for GravitoVariables
 declare module '@gravito/core' {
   interface GravitoVariables {
-    /** Ripple WebSocket server */
+    /** RippleServer instance available in context */
     ripple?: RippleServer
+    /** BroadcastManager instance available in context */
+    broadcast?: BroadcastManager
   }
 }

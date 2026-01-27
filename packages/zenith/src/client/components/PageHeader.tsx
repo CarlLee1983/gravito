@@ -10,6 +10,15 @@ interface PageHeaderProps {
   className?: string
 }
 
+/**
+ * Reusable header component for Zenith dashboard pages.
+ *
+ * Provides a consistent layout for the page title, icon, description,
+ * and optional action buttons.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export function PageHeader({
   icon: Icon,
   title,

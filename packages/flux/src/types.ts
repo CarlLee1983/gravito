@@ -1,17 +1,6 @@
 /**
- * @fileoverview Core type definitions for @gravito/flux
- *
- * Platform-agnostic workflow engine types.
- *
- * @module @gravito/flux
- */
-
-// ─────────────────────────────────────────────────────────────
-// Workflow Status
-// ─────────────────────────────────────────────────────────────
-
-/**
- * Workflow execution status
+ * Represents the current lifecycle state of a workflow instance.
+ * Used to track progress and determine valid state transitions.
  */
 export type WorkflowStatus =
   | 'pending'
@@ -23,35 +12,53 @@ export type WorkflowStatus =
   | 'rolling_back'
   | 'rolled_back'
 
-// ─────────────────────────────────────────────────────────────
-// Step Definitions
-// ─────────────────────────────────────────────────────────────
-
 /**
- * Result of Flux.wait()
+ * Signal payload returned by a step to pause execution until an external event occurs.
+ * This enables long-running workflows that wait for human approval or webhooks.
  */
 export interface FluxWaitResult {
   __kind: 'flux_wait'
+  /** The unique identifier for the signal this workflow is waiting for. */
   signal: string
 }
 
 /**
- * Step execution result
+ * The possible return values from a step handler.
+ * Supports synchronous results, promises, and suspension signals.
+ */
+export type StepHandlerResult =
+  | void
+  | undefined
+  | FluxWaitResult
+  | Promise<void | undefined | FluxWaitResult>
+
+/**
+ * Internal representation of a step's execution outcome.
+ * Captures performance metrics and state for persistence and observability.
  */
 export interface StepResult<T = unknown> {
+  /** Indicates if the step completed without unhandled exceptions. */
   success: boolean
+  /** The data produced by the step, if any. */
   data?: T
+  /** The error encountered during execution, if success is false. */
   error?: Error
+  /** Execution time in milliseconds. */
   duration: number
+  /** Whether the step requested workflow suspension. */
   suspended?: boolean
+  /** The signal name if the step is suspended. */
   waitingFor?: string
 }
 
 /**
- * Step execution history entry
+ * Audit log entry for a single step execution within a workflow.
+ * Provides a historical record for debugging and compliance.
  */
 export interface StepExecution {
+  /** The unique name of the step as defined in the workflow. */
   name: string
+  /** The execution outcome status. */
   status:
     | 'pending'
     | 'running'
@@ -61,199 +68,201 @@ export interface StepExecution {
     | 'suspended'
     | 'compensated'
     | 'compensating'
+  /** ISO timestamp when the step started. */
   startedAt?: Date
+  /** ISO timestamp when the step finished. */
   completedAt?: Date
+  /** ISO timestamp when the step was suspended. */
   suspendedAt?: Date
+  /** ISO timestamp when compensation logic finished. */
   compensatedAt?: Date
+  /** The signal name if currently suspended. */
   waitingFor?: string
+  /** Total execution time in milliseconds. */
   duration?: number
+  /** Serialized output data from the step. */
   output?: any
+  /** Error message if the step failed. */
   error?: string
+  /** Number of retry attempts performed. */
   retries: number
 }
 
 /**
- * Step definition
+ * Configuration for a single unit of work within a workflow.
+ * Defines the business logic, error handling, and execution conditions.
  */
-export interface StepDefinition<TInput = any, TData = any> {
-  /** Step name (unique within workflow) */
+export interface StepDefinition<TInput = unknown, TData = Record<string, any>> {
+  /** Unique identifier for the step within the workflow. */
   name: string
-
-  /** Step handler function */
-  handler: (
-    ctx: WorkflowContext<TInput, TData>
-  ) => void | Promise<void | undefined | FluxWaitResult> | undefined | FluxWaitResult
-
-  /** Compensation handler to undo effects */
+  /**
+   * The core business logic for this step.
+   * @param ctx - The current workflow execution context.
+   * @returns A result indicating completion or suspension.
+   */
+  handler: (ctx: WorkflowContext<TInput, TData>) => StepHandlerResult
+  /**
+   * Logic to execute if a subsequent step fails, enabling the Saga pattern.
+   * @param ctx - The current workflow execution context.
+   */
   compensate?: (ctx: WorkflowContext<TInput, TData>) => Promise<void> | void
-
-  /** Number of retries on failure */
+  /** Maximum number of times to retry on failure before giving up. */
   retries?: number
-
-  /** Timeout in milliseconds */
+  /** Maximum execution time in milliseconds before timing out. */
   timeout?: number
-
-  /** Condition to skip this step */
+  /**
+   * Predicate to determine if this step should be executed.
+   * @param ctx - The current workflow execution context.
+   * @returns True if the step should run.
+   */
   when?: (ctx: WorkflowContext<TInput, TData>) => boolean
-
-  /** Mark as commit step (always executes even on replay) */
+  /** If true, the step is considered a side-effect that should not be re-run on replay. */
   commit?: boolean
 }
 
-// ─────────────────────────────────────────────────────────────
-// Workflow Context
-// ─────────────────────────────────────────────────────────────
-
 /**
- * Workflow execution context
- *
- * Passed to each step handler with accumulated data.
+ * Shared state and utilities provided to every step during execution.
+ * Acts as the "source of truth" for the current workflow run.
  */
-export interface WorkflowContext<TInput = unknown, TData = Record<string, unknown>> {
-  /** Unique workflow instance ID */
+export interface WorkflowContext<TInput = unknown, TData = Record<string, any>> {
+  /** Unique UUID for this specific workflow instance. */
   readonly id: string
-
-  /** Workflow definition name */
+  /** The name of the workflow definition. */
   readonly name: string
-
-  /** Original input data */
+  /** Immutable input data provided when the workflow started. */
   readonly input: TInput
-
-  /** Accumulated step data (mutable) */
+  /** Mutable state shared across all steps in the workflow. */
   data: TData
-
-  /** Current workflow status */
+  /** Current lifecycle status of the workflow. */
   readonly status: WorkflowStatus
-
-  /** Current step index */
+  /** Zero-based index of the step currently being executed. */
   readonly currentStep: number
-
-  /** Step execution history */
+  /** Full history of all steps executed so far. */
   readonly history: StepExecution[]
+  /** Optimistic locking version to prevent concurrent modification issues. */
+  readonly version: number
 }
 
-// ─────────────────────────────────────────────────────────────
-// Workflow State (Serializable)
-// ─────────────────────────────────────────────────────────────
-
 /**
- * Serializable workflow state for persistence
+ * Persistable representation of a workflow's entire state.
+ * This structure is what storage adapters save and load.
  */
-export interface WorkflowState<TInput = any, TData = any> {
+export interface WorkflowState<TInput = unknown, TData = Record<string, any>> {
+  /** Unique UUID for the workflow instance. */
   id: string
+  /** Name of the workflow definition. */
   name: string
+  /** Current lifecycle status. */
   status: WorkflowStatus
+  /** Original input data. */
   input: TInput
+  /** Current accumulated data. */
   data: TData
+  /** Index of the next step to execute. */
   currentStep: number
+  /** Audit trail of step executions. */
   history: StepExecution[]
+  /** When the instance was first created. */
   createdAt: Date
+  /** When the instance was last modified. */
   updatedAt: Date
+  /** When the workflow reached a terminal state. */
   completedAt?: Date
+  /** Final error message if the workflow failed. */
   error?: string
+  /** Version number for concurrency control. */
+  version: number
 }
 
-// ─────────────────────────────────────────────────────────────
-// Workflow Definition
-// ─────────────────────────────────────────────────────────────
-
 /**
- * Workflow definition (immutable blueprint)
+ * The blueprint for a workflow, containing its name and ordered steps.
  */
-export interface WorkflowDefinition<TInput = unknown, TData = Record<string, unknown>> {
-  /** Workflow name */
+export interface WorkflowDefinition<TInput = unknown, TData = Record<string, any>> {
+  /** Unique name for this workflow type. */
   name: string
-
-  /** Step definitions in order */
+  /** Ordered list of steps to execute. */
   steps: StepDefinition<TInput, TData>[]
-
-  /** Input schema validator (optional) */
+  /** Optional runtime validation for the workflow input. */
   validateInput?: (input: unknown) => input is TInput
 }
 
 /**
- * Workflow descriptor (serializable metadata)
+ * Metadata describing a workflow's structure for UI or documentation.
  */
 export interface WorkflowDescriptor {
+  /** Name of the workflow. */
   name: string
+  /** Metadata for each step in the workflow. */
   steps: StepDescriptor[]
 }
 
 /**
- * Step descriptor (serializable metadata)
+ * Metadata describing a single step's configuration.
  */
 export interface StepDescriptor {
+  /** Name of the step. */
   name: string
+  /** Whether the step is marked as a commit. */
   commit: boolean
+  /** Configured retry limit. */
   retries?: number
+  /** Configured timeout in milliseconds. */
   timeout?: number
+  /** Whether the step has a conditional execution predicate. */
   hasCondition: boolean
 }
 
-// ─────────────────────────────────────────────────────────────
-// Storage Interface
-// ─────────────────────────────────────────────────────────────
-
 /**
- * Workflow storage adapter interface
+ * Interface for implementing custom persistence layers.
+ * Allows workflows to survive process restarts and scale across nodes.
  */
 export interface WorkflowStorage {
   /**
-   * Save workflow state
+   * Persists the current state of a workflow.
+   * @param state - The state to save.
+   * @throws If the storage operation fails or version conflict occurs.
    */
   save(state: WorkflowState): Promise<void>
-
   /**
-   * Load workflow state by ID
+   * Retrieves a workflow state by its unique ID.
+   * @param id - The workflow instance ID.
+   * @returns The state if found, otherwise null.
    */
   load(id: string): Promise<WorkflowState | null>
-
   /**
-   * List workflow states with optional filter
+   * Queries workflow instances based on filters.
+   * @param filter - Criteria for selecting workflows.
+   * @returns A list of matching workflow states.
    */
   list(filter?: WorkflowFilter): Promise<WorkflowState[]>
-
   /**
-   * Delete workflow state
+   * Permanently removes a workflow instance from storage.
+   * @param id - The workflow instance ID.
    */
   delete(id: string): Promise<void>
-
-  /**
-   * Initialize storage (create tables, etc.)
-   */
+  /** Optional initialization logic for the storage provider. */
   init?(): Promise<void>
-
-  /**
-   * Cleanup storage resources
-   */
+  /** Optional cleanup logic for the storage provider. */
   close?(): Promise<void>
 }
 
 /**
- * Workflow filter options
+ * Criteria for filtering workflow instances in storage queries.
  */
 export interface WorkflowFilter {
+  /** Filter by workflow definition name. */
   name?: string
+  /** Filter by one or more lifecycle statuses. */
   status?: WorkflowStatus | WorkflowStatus[]
+  /** Maximum number of results to return. */
   limit?: number
+  /** Number of results to skip for pagination. */
   offset?: number
 }
 
-// ─────────────────────────────────────────────────────────────
-// Logger Interface
-// ─────────────────────────────────────────────────────────────
-
 /**
- * Logger interface for FluxEngine
- *
- * Implement this to create custom loggers.
- *
- * @example
- * ```typescript
- * const engine = new FluxEngine({
- *   logger: new FluxConsoleLogger()
- * })
- * ```
+ * Generic logging interface for the Flux engine.
+ * Allows integration with various logging libraries (Pino, Winston, etc.).
  */
 export interface FluxLogger {
   debug(message: string, ...args: unknown[]): void
@@ -262,10 +271,10 @@ export interface FluxLogger {
   error(message: string, ...args: unknown[]): void
 }
 
-// ─────────────────────────────────────────────────────────────
-// Trace Types
-// ─────────────────────────────────────────────────────────────
-
+/**
+ * Enumeration of all observable events emitted by the engine.
+ * Used for tracing, monitoring, and debugging.
+ */
 export type FluxTraceEventType =
   | 'workflow:start'
   | 'workflow:complete'
@@ -281,55 +290,70 @@ export type FluxTraceEventType =
   | 'step:compensate'
   | 'signal:received'
 
+/**
+ * A single telemetry event captured during workflow execution.
+ */
 export interface FluxTraceEvent {
+  /** The type of event being recorded. */
   type: FluxTraceEventType
+  /** Unix timestamp in milliseconds. */
   timestamp: number
+  /** ID of the workflow instance. */
   workflowId: string
+  /** Name of the workflow definition. */
   workflowName: string
+  /** Name of the step, if applicable. */
   stepName?: string
+  /** Index of the step, if applicable. */
   stepIndex?: number
+  /** Whether the step was a commit. */
   commit?: boolean
+  /** Current retry attempt number. */
   retries?: number
+  /** Maximum allowed retries. */
   maxRetries?: number
+  /** Duration of the operation in milliseconds. */
   duration?: number
+  /** Error message if the event represents a failure. */
   error?: string
+  /** Current status of the workflow or step. */
   status?: WorkflowStatus | StepExecution['status']
+  /** Input data associated with the event. */
   input?: unknown
+  /** Current workflow data associated with the event. */
   data?: Record<string, unknown>
+  /** Additional contextual metadata. */
   meta?: Record<string, unknown>
 }
 
+/**
+ * Destination for trace events, such as OpenTelemetry, ELK, or a simple console.
+ */
 export interface FluxTraceSink {
+  /**
+   * Processes a trace event.
+   * @param event - The event to record.
+   */
   emit(event: FluxTraceEvent): void | Promise<void>
 }
 
-// ─────────────────────────────────────────────────────────────
-// Engine Configuration
-// ─────────────────────────────────────────────────────────────
-
 /**
- * Workflow engine configuration
+ * Global configuration for the Flux engine instance.
  */
 export interface FluxConfig {
-  /** Storage adapter */
+  /** Persistence provider for workflow states. */
   storage?: WorkflowStorage
-
-  /** Logger instance */
+  /** Logger for internal engine operations. */
   logger?: FluxLogger
-
-  /** Trace sink for workflow events */
+  /** Telemetry sink for execution events. */
   trace?: FluxTraceSink
-
-  /** Default retry count for steps */
+  /** Default retry limit for steps that don't specify one. */
   defaultRetries?: number
-
-  /** Default timeout for steps (ms) */
+  /** Default timeout in milliseconds for steps that don't specify one. */
   defaultTimeout?: number
-
-  /** Enable parallel execution for independent steps */
+  /** Whether to allow parallel execution of independent workflows (if supported). */
   parallel?: boolean
-
-  /** Event handlers */
+  /** Lifecycle hooks for custom logic at specific execution points. */
   on?: {
     stepStart?: (step: string, ctx: WorkflowContext) => void
     stepComplete?: (step: string, ctx: WorkflowContext, result: StepResult) => void
@@ -339,29 +363,22 @@ export interface FluxConfig {
   }
 }
 
-// ─────────────────────────────────────────────────────────────
-// Execution Result
-// ─────────────────────────────────────────────────────────────
-
 /**
- * Workflow execution result
+ * The final outcome of a workflow execution.
  */
-export interface FluxResult<TData = Record<string, unknown>> {
-  /** Workflow instance ID */
+export interface FluxResult<TData = Record<string, any>> {
+  /** Unique ID of the workflow instance. */
   id: string
-
-  /** Final status */
+  /** Final lifecycle status. */
   status: WorkflowStatus
-
-  /** Accumulated data from all steps */
+  /** Final state of the workflow data. */
   data: TData
-
-  /** Step execution history */
+  /** Full execution history. */
   history: StepExecution[]
-
-  /** Total execution duration (ms) */
+  /** Total execution time in milliseconds. */
   duration: number
-
-  /** Error if failed */
+  /** The error that caused failure, if any. */
   error?: Error
+  /** Final version of the workflow state. */
+  version: number
 }

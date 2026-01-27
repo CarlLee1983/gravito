@@ -2,333 +2,149 @@
 title: Constellation
 ---
 
-# Constellation
+# Constellation 🛰️
 
-Dynamic and static sitemap generation for Gravito applications. Constellation can be used standalone or as the sitemap and route-scanning engine for Luminosity.
+Powerful, high-performance SEO and Sitemap orchestration module for **Gravito applications**. Built for enterprise-scale indexing, intelligent redirect management, and atomic deployments.
 
-**Constellation** provides a flexible way to generate XML sitemaps for your Gravito application, supporting both dynamic generation (via routes) and static generation (for build time). It includes support for Google Sitemap extensions like Images, Videos, News, and i18n alternates.
+**Constellation** provides a flexible way to manage your site's search engine visibility, supporting both dynamic on-the-fly generation and static build-time generation with cloud storage integration.
 
-## Features
+---
 
-- **Dynamic Generation**: Serve `sitemap.xml` directly from your application
-- **Static Generation**: Generate files for static hosting
-- **Auto Scanning**: Automatically scan registered routes
-- **Sitemap Extensions**: Support for Images, Videos, News, and i18n
-- **Sitemap Index**: Generators for large sites (Phase 1/2)
-- **Enterprise Features**:
-  - **Cloud Storage**: AWS S3 and Google Cloud Storage support
-  - **Shadow Processing**: Atomic switching and versioning for safe deployments
-  - **Background Jobs**: Non-blocking generation with progress tracking
-  - **Incremental Generation**: Only update changed URLs, not the entire sitemap
-  - **301 Redirect Handling**: Comprehensive redirect detection and processing
-  - **Progress Tracking**: Real-time progress monitoring via API
+## 🌟 Key Features
 
-## Installation
+### 🚀 High Performance & Scalability
+- **Streaming Generation**: Uses `SitemapStream` for memory-efficient XML building.
+- **Auto-Sharding**: Automatically splits large sitemaps into multiple files (50,000 URLs limit) and generates sitemap indexes.
+- **Async Iterators**: Support for streaming data directly from databases via async generators.
+- **Distributed Locking**: Prevents "cache stampedes" in distributed environments (e.g., Kubernetes) using Redis locks.
+
+### 🏢 Enterprise SEO Orchestration
+- **Incremental Generation**: Only update modified URLs instead of regenerating the entire sitemap.
+- **Shadow Processing**: Atomic "blue-green" deployments for sitemaps using temporary staging and swapping.
+- **301/302 Redirect Handling**: Intelligent detection and removal/replacement of redirected URLs to ensure search engines only see canonical links.
+- **Cloud Storage Integration**: Built-in support for AWS S3 and Google Cloud Storage (GCS).
+
+### 🛠️ Advanced Capabilities
+- **Rich Extensions**: Support for Images, Videos, News, and i18n alternate links (hreflang).
+- **Background Jobs**: Non-blocking generation with persistent progress tracking.
+- **Admin API**: Built-in endpoints for triggering generation and monitoring status.
+- **Auto Route Scanning**: Automatically extracts URLs from Gravito's router.
+
+---
+
+## 📦 Installation
 
 ```bash
 bun add @gravito/constellation
 ```
 
-## Usage
+---
 
-### 1. Dynamic Sitemap (Runtime)
+## 🚀 Quick Start
 
-Integrate directly into your Gravito app:
+### 1. Dynamic Mode (Runtime)
+Ideal for small to medium sites where data changes frequently.
 
 ```typescript
-// gravito.config.ts or index.ts
 import { OrbitSitemap, routeScanner } from '@gravito/constellation'
 
-OrbitSitemap.dynamic({
+const sitemap = OrbitSitemap.dynamic({
   baseUrl: 'https://example.com',
   providers: [
-    // Automatically scan routes
+    // Automatically scan Gravito routes
     routeScanner(core.router, {
       exclude: ['/api/*', '/admin/*'],
       defaultChangefreq: 'daily'
     }),
     
-    // Custom provider (e.g. from database)
+    // Custom database provider
     {
       async getEntries() {
-        const posts = await db.query('SELECT slug, updated_at FROM posts')
+        const posts = await db.posts.findMany()
         return posts.map(post => ({
           url: `/blog/${post.slug}`,
-          lastmod: post.updated_at
+          lastmod: post.updatedAt
         }))
       }
     }
   ],
-  cacheSeconds: 3600 // Cache for 1 hour
-}).install(core)
+  cacheSeconds: 3600 // HTTP cache headers
+})
+
+sitemap.install(core)
 ```
 
-### 2. Static Generation (Build Time)
-
-Generate files during build:
+### 2. Static Mode (Build Time)
+Recommended for large-scale sites or when serving from a CDN.
 
 ```typescript
-import { OrbitSitemap, routeScanner } from '@gravito/constellation'
+import { OrbitSitemap, DiskSitemapStorage } from '@gravito/constellation'
 
 const sitemap = OrbitSitemap.static({
   baseUrl: 'https://example.com',
-  outDir: './dist',
-  providers: [
-    routeScanner(core.router),
-    // ...
-  ]
-})
-
-await sitemap.generate()
-```
-
-### 3. Manual Usage (SitemapStream)
-
-Use the low-level API for custom needs:
-
-```typescript
-import { SitemapStream } from '@gravito/constellation'
-
-const sitemap = new SitemapStream({ baseUrl: 'https://example.com' })
-
-sitemap.add('/')
-sitemap.add({
-  url: '/about',
-  changefreq: 'monthly',
-  priority: 0.8,
-  alternates: [
-    { lang: 'en', url: '/about' },
-    { lang: 'zh-TW', url: '/zh/about' }
-  ],
-  images: [
-    { loc: '/img/team.jpg', title: 'Our Team' }
-  ]
-})
-
-console.log(sitemap.toXML())
-```
-
-## Extensions
-
-### Video Sitemap
-```typescript
-sitemap.add({
-  url: '/video-page',
-  videos: [{
-    thumbnail_loc: 'https://...',
-    title: 'Video Title',
-    description: 'Description',
-    player_loc: 'https://...',
-    duration: 600
-  }]
-})
-```
-
-### News Sitemap
-```typescript
-sitemap.add({
-  url: '/news/article',
-  news: {
-    publication: { name: 'The Daily', language: 'en' },
-    publication_date: '2024-01-01',
-    title: 'Article Title'
-  }
-})
-```
-
-## Scaling & Distributed (Advanced)
-
-### Large Scale Sharding
-Orbit Sitemap automatically handles large datasets by splitting them into multiple files (default 50,000 URLs per file).
-
-```typescript
-OrbitSitemap.dynamic({
-  // ...
-  maxEntriesPerFile: 10000, // Custom split limit
-  storage: new RedisSitemapStorage({ ... }) // Store generated files in Redis/S3
-})
-```
-
-### Async Iterators (Streaming)
-For large datasets, use Async Generators in your providers to stream URLs without loading them all into memory.
-
-```typescript
-{
-  async *getEntries() {
-    for await (const row of db.cursor('SELECT * FROM massive_table')) {
-      yield { url: `/item/${row.id}` }
-    }
-  }
-}
-```
-
-### Distributed Locking
-In a distributed environment (e.g. Kubernetes), use `lock` to prevent concurrent sitemap generation.
-
-```typescript
-OrbitSitemap.dynamic({
-  // ...
-  lock: new RedisSitemapLock(redisClient),
-  storage: new S3SitemapStorage(bucket)
-})
-```
-
-## Enterprise Features
-
-### Cloud Storage (S3 / GCP)
-
-Store sitemaps directly in cloud storage with shadow processing:
-
-```typescript
-import { OrbitSitemap, S3SitemapStorage } from '@gravito/constellation'
-
-const sitemap = OrbitSitemap.static({
-  baseUrl: 'https://example.com',
-  storage: new S3SitemapStorage({
-    bucket: 'my-sitemap-bucket',
-    region: 'us-east-1',
-    shadow: {
-      enabled: true,
-      mode: 'atomic' // or 'versioned'
-    }
-  }),
+  outDir: './dist/sitemaps',
+  storage: new DiskSitemapStorage('./dist/sitemaps'),
+  shadow: { enabled: true, mode: 'atomic' }, // Safe deployment
   providers: [...]
 })
-```
 
-### Shadow Processing
-
-Generate sitemaps safely with atomic switching or versioning:
-
-```typescript
-const sitemap = OrbitSitemap.static({
-  // ...
-  shadow: {
-    enabled: true,
-    mode: 'atomic' // Atomic switch: generate to temp, then swap
-    // or 'versioned' // Versioning: keep old versions, switch when ready
-  }
-})
-```
-
-### Background Generation with Progress Tracking
-
-Generate sitemaps asynchronously without blocking:
-
-```typescript
-import { OrbitSitemap, MemoryProgressStorage } from '@gravito/constellation'
-
-const sitemap = OrbitSitemap.static({
-  // ...
-  progressStorage: new MemoryProgressStorage()
-})
-
-// Trigger background generation
-const jobId = await sitemap.generateAsync({
-  onProgress: (progress) => {
-    console.log(`${progress.percentage}% (${progress.processed}/${progress.total})`)
-  },
-  onComplete: () => {
-    console.log('Generation completed!')
-  }
-})
-
-// Query progress via API
-// GET /admin/sitemap/status/:jobId
-```
-
-### Incremental Generation
-
-Only update changed URLs, perfect for large sites:
-
-```typescript
-import { OrbitSitemap, MemoryChangeTracker } from '@gravito/constellation'
-
-const sitemap = OrbitSitemap.static({
-  // ...
-  incremental: {
-    enabled: true,
-    changeTracker: new MemoryChangeTracker(),
-    autoTrack: true
-  }
-})
-
-// Full generation (first time)
 await sitemap.generate()
-
-// Incremental update (only changed URLs)
-await sitemap.generateIncremental(new Date('2024-01-01'))
 ```
 
-### 301 Redirect Handling
+---
 
-Automatically handle URL redirects in your sitemap:
+## 🏗️ Architecture & Modules
 
+Constellation is composed of several specialized sub-modules:
+
+| Component | Responsibility |
+|---|---|
+| **SitemapGenerator** | Core engine for building XML files and indexes. |
+| **IncrementalGenerator** | Handles partial updates based on change tracking. |
+| **RedirectHandler** | Processes URL lists against redirect rules. |
+| **ShadowProcessor** | Manages atomic staging and versioning of files. |
+| **RouteScanner** | Integrates with Gravito router for auto-discovery. |
+| **SitemapStorage** | Abstraction for Local Disk, S3, GCS, or Memory. |
+
+---
+
+## 💎 Advanced Usage
+
+### Cloud Storage (AWS S3)
 ```typescript
-import { OrbitSitemap, MemoryRedirectManager, RedirectDetector } from '@gravito/constellation'
-
-const redirectManager = new MemoryRedirectManager()
-const detector = new RedirectDetector({
-  baseUrl: 'https://example.com',
-  autoDetect: {
-    enabled: true,
-    timeout: 5000,
-    cache: true
-  }
-})
-
-// Auto-detect redirects
-const redirects = await detector.detectBatch(['/old-page', '/another-old'])
-
-// Register redirects
-for (const [from, rule] of redirects) {
-  if (rule) {
-    await redirectManager.register(rule)
-  }
-}
+import { S3SitemapStorage } from '@gravito/constellation'
 
 const sitemap = OrbitSitemap.static({
+  storage: new S3SitemapStorage({
+    bucket: 'my-bucket',
+    region: 'us-west-2'
+  }),
   // ...
-  redirect: {
-    enabled: true,
-    manager: redirectManager,
-    strategy: 'remove_old_add_new', // or 'keep_relation', 'update_url', 'dual_mark'
-    followChains: true,
-    maxChainLength: 5
-  }
 })
+```
+
+### Background Progress Tracking
+```typescript
+import { MemoryProgressStorage } from '@gravito/constellation'
+
+const sitemap = OrbitSitemap.static({
+  progressStorage: new MemoryProgressStorage(),
+  // ...
+})
+
+// Trigger background job
+const jobId = await sitemap.generateAsync()
 ```
 
 ### API Endpoints
-
-Install API endpoints for triggering generation and querying progress:
-
+Install admin routes to manage sitemaps remotely:
 ```typescript
-const sitemap = OrbitSitemap.static({ ... })
-
-// Install API endpoints
-sitemap.installApiEndpoints(core, '/admin/sitemap')
-
-// Available endpoints:
-// POST /admin/sitemap/generate - Trigger generation
-// GET /admin/sitemap/status/:jobId - Query progress
-// GET /admin/sitemap/history - List generation history
+sitemap.installApiEndpoints(core, '/admin/seo/sitemap')
+// POST /admin/seo/sitemap/generate
+// GET  /admin/seo/sitemap/status/:jobId
 ```
 
-### Creating Custom Storage/Lock
-Implement `SitemapStorage` and `SitemapLock` interfaces:
+---
 
-```typescript
-import { SitemapStorage, SitemapLock } from '@gravito/constellation'
-
-class MyStorage implements SitemapStorage { ... }
-class MyLock implements SitemapLock { ... }
-```
-
-## Type Reference
-
-See `dist/index.d.ts` for full type definitions including `SitemapEntry`, `SitemapImage`, `SitemapVideo`, etc.
-
-## License
-
-MIT
+## 📄 License
+MIT © Carl Lee

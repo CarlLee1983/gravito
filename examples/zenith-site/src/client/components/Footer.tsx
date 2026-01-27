@@ -3,7 +3,7 @@ import { useTrans } from '../hooks/useTrans'
 import { StaticLink } from './StaticLink'
 
 export function Footer() {
-  const { trans, locale } = useTrans()
+  const { trans } = useTrans()
 
   return (
     <footer className="border-t border-white/5 py-16 bg-zenith-void relative overflow-hidden">
@@ -23,22 +23,13 @@ export function Footer() {
             </div>
           </div>
           <div className="flex gap-8 text-zinc-400 text-sm font-medium">
-            <StaticLink
-              href={locale === 'zh-TW' ? '/zh-TW/privacy' : '/privacy'}
-              className="hover:text-zenith-accent transition-colors"
-            >
+            <StaticLink href="/privacy" className="hover:text-zenith-accent transition-colors">
               {trans('footer.privacy')}
             </StaticLink>
-            <StaticLink
-              href={locale === 'zh-TW' ? '/zh-TW/terms' : '/terms'}
-              className="hover:text-zenith-accent transition-colors"
-            >
+            <StaticLink href="/terms" className="hover:text-zenith-accent transition-colors">
               {trans('footer.terms')}
             </StaticLink>
-            <StaticLink
-              href={locale === 'zh-TW' ? '/zh-TW/contact' : '/contact'}
-              className="hover:text-zenith-accent transition-colors"
-            >
+            <StaticLink href="/contact" className="hover:text-zenith-accent transition-colors">
               {trans('footer.contact')}
             </StaticLink>
           </div>

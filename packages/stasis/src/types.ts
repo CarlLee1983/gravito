@@ -1,16 +1,54 @@
+/**
+ * Unique identifier for a cached item.
+ *
+ * Used to reference and retrieve specific data entries within the cache storage.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export type CacheKey = string
 
 /**
- * Laravel-like TTL:
- * - `number` = seconds from now
- * - `Date` = absolute expiry time
- * - `null` = forever
- * - `undefined` = store default / repository default (when applicable)
+ * Time-to-live (TTL) configuration for cache entries.
+ *
+ * Defines the duration or point in time when a cache entry becomes invalid.
+ * - `number`: Relative duration in seconds from the current time.
+ * - `Date`: Absolute point in time for expiration.
+ * - `null`: Persistent storage that never expires automatically.
+ * - `undefined`: Fallback to the default TTL configured in the store or repository.
+ *
+ * @public
+ * @since 3.0.0
  */
 export type CacheTtl = number | Date | null | undefined
 
+/**
+ * Result of a cache retrieval operation.
+ *
+ * Represents the cached data of type `T`, or `null` if the entry is missing or has expired.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export type CacheValue<T = unknown> = T | null
 
+/**
+ * Validates and prepares a cache key for storage operations.
+ *
+ * Ensures the key meets the minimum requirements for cache storage, such as being non-empty.
+ *
+ * @param key - The raw string to be used as a cache key.
+ * @returns The validated cache key.
+ * @throws {Error} Thrown if the provided key is an empty string or falsy.
+ *
+ * @example
+ * ```typescript
+ * const key = normalizeCacheKey('user_profile_123');
+ * ```
+ *
+ * @public
+ * @since 3.0.0
+ */
 export function normalizeCacheKey(key: string): string {
   if (!key) {
     throw new Error('Cache key cannot be empty.')
@@ -18,6 +56,28 @@ export function normalizeCacheKey(key: string): string {
   return key
 }
 
+/**
+ * Converts a flexible TTL definition into an absolute Unix epoch timestamp.
+ *
+ * Normalizes various TTL formats into a consistent millisecond-based timestamp
+ * used for expiration checks.
+ *
+ * @param ttl - The TTL configuration to convert.
+ * @param now - Reference timestamp in milliseconds for relative calculations. Defaults to current time.
+ * @returns The expiration timestamp in milliseconds, `null` for permanent storage, or `undefined` for default behavior.
+ *
+ * @example
+ * ```typescript
+ * // Relative TTL (60 seconds)
+ * const expiresAt = ttlToExpiresAt(60);
+ *
+ * // Absolute Date
+ * const expiresAtDate = ttlToExpiresAt(new Date('2026-12-31'));
+ * ```
+ *
+ * @public
+ * @since 3.0.0
+ */
 export function ttlToExpiresAt(ttl: CacheTtl, now = Date.now()): number | null | undefined {
   if (ttl === undefined) {
     return undefined
@@ -41,6 +101,25 @@ export function ttlToExpiresAt(ttl: CacheTtl, now = Date.now()): number | null |
   return undefined
 }
 
+/**
+ * Evaluates whether a cache entry has exceeded its expiration time.
+ *
+ * Compares the provided expiration timestamp against a reference time to determine
+ * if the cached data should be considered stale.
+ *
+ * @param expiresAt - The expiration timestamp in milliseconds, or `null`/`undefined` for non-expiring entries.
+ * @param now - Reference timestamp in milliseconds for the comparison. Defaults to current time.
+ * @returns `true` if the current time has passed the expiration point; otherwise `false`.
+ *
+ * @example
+ * ```typescript
+ * const expired = isExpired(Date.now() - 1000); // true
+ * const persistent = isExpired(null); // false
+ * ```
+ *
+ * @public
+ * @since 3.0.0
+ */
 export function isExpired(expiresAt: number | null | undefined, now = Date.now()): boolean {
   if (expiresAt === null) {
     return false

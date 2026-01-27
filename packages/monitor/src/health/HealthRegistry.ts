@@ -6,6 +6,10 @@
 
 import type { HealthCheckFn, HealthCheckResult, HealthConfig } from '../config'
 
+/**
+ * Aggregated health check report.
+ * @public
+ */
 export interface HealthReport {
   status: 'healthy' | 'unhealthy' | 'degraded'
   timestamp: string

@@ -147,26 +147,33 @@ const CoreDetailSection = ({ t }: { t: Translation }) => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1, duration: 0.6 }}
-                className="p-8 rounded-[24px] bg-white/[0.03] border border-white/10 hover:border-white/20 transition-all hover:bg-white/[0.05] group"
+                className="p-8 rounded-[24px] bg-white/[0.03] border border-white/10 hover:border-singularity/30 transition-all hover:bg-white/[0.05] group relative overflow-hidden"
               >
-                <div className="flex items-start gap-6">
+                <div className="absolute inset-0 bg-gradient-to-r from-singularity/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                <div className="flex items-start gap-6 relative z-10">
                   <div
-                    className={`p-4 rounded-xl ${point.color} group-hover:scale-110 transition-transform`}
+                    className={`p-4 rounded-2xl ${point.color} group-hover:scale-110 transition-transform shadow-lg ring-1 ring-white/10`}
                   >
                     <point.icon size={28} />
                   </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-white mb-2">{point.title}</h3>
-                    <p className="text-gray-400 text-sm leading-relaxed mb-4">{point.desc}</p>
+                  <div className="flex-1">
+                    <h3 className="text-xl font-bold text-white mb-2 group-hover:text-singularity transition-colors">
+                      {point.title}
+                    </h3>
+                    <p className="text-gray-400 text-sm leading-relaxed mb-4 font-medium">
+                      {point.desc}
+                    </p>
                     <StaticLink
                       href={getLocalizedPath('/docs')}
-                      className="text-[10px] font-black uppercase tracking-widest text-singularity hover:text-white flex items-center gap-1 group/btn"
+                      className="text-[10px] font-black uppercase tracking-widest text-singularity hover:text-white flex items-center gap-2 group/btn py-2"
                     >
-                      Learn More
-                      <ArrowRight
-                        size={10}
-                        className="group-hover/btn:translate-x-1 transition-transform"
-                      />
+                      Explore Module
+                      <div className="w-6 h-6 rounded-full bg-singularity/10 flex items-center justify-center group-hover/btn:bg-singularity group-hover/btn:text-black transition-all">
+                        <ArrowRight
+                          size={12}
+                          className="group-hover/btn:translate-x-0.5 transition-transform"
+                        />
+                      </div>
                     </StaticLink>
                   </div>
                 </div>
@@ -445,7 +452,7 @@ const GalaxyComparisonSection = ({ t }: { t: Translation }) => {
   )
 }
 
-export default function Features({ t, locale }: { t: Translation; locale: string }) {
+export default function Features({ t }: { t: Translation }) {
   return (
     <Layout>
       <Head>

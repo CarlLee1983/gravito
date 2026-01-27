@@ -31,6 +31,9 @@ export type ConnectionState = 'connecting' | 'connected' | 'disconnected' | 'rec
  *     console.log('New article:', data)
  *   })
  * ```
+ *
+ * @public
+ * @since 3.0.0
  */
 export class RippleClient {
   private ws: WebSocket | null = null

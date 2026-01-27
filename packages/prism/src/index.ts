@@ -6,38 +6,100 @@ import type {
   PlanetCore,
   ViewService,
 } from '@gravito/core'
+import { type CacheOptions, TemplateEngine } from './engine/TemplateEngine'
 import { createImageHelper } from './helpers/image'
-import { TemplateEngine } from './TemplateEngine'
+import { StaticSiteGenerator } from './ssg/StaticSiteGenerator'
 
+export interface SSGOptions {
+  concurrency?: number
+  timeout?: number
+  incremental?: boolean
+  manifestPath?: string
+}
+
+export interface OrbitPrismOptions {
+  cache?: CacheOptions
+  ssg?: SSGOptions
+}
+
+/**
+ * OrbitPrism provides a flexible template rendering engine for Gravito.
+ *
+ * It integrates with PlanetCore to provide a full-featured view engine with:
+ * - Blade-like syntax (`@extends`, `@section`, `@yield`).
+ * - Component-based UI building (`<x-component>`).
+ * - Built-in performance optimizations for images.
+ * - Automatic middleware injection (exposed as `c.get('view')`).
+ *
+ * @example
+ * ```typescript
+ * import { OrbitPrism } from '@gravito/prism';
+ *
+ * const prism = new OrbitPrism();
+ * core.addOrbit(prism);
+ * ```
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class OrbitPrism implements GravitoOrbit {
+  private options?: OrbitPrismOptions
+
   /**
-   * Install the orbit into the PlanetCore
+   * Create a new OrbitPrism instance.
+   *
+   * @param options - Optional configuration for the orbit
+   *
+   * @example
+   * ```typescript
+   * const prism = new OrbitPrism({
+   *   cache: {
+   *     maxSize: 1000,
+   *     enabled: process.env.NODE_ENV === 'production'
+   *   }
+   * });
+   * ```
+   *
+   * @public
+   * @since 3.0.0
+   */
+  constructor(options?: OrbitPrismOptions) {
+    this.options = options
+  }
+
+  /**
+   * Install the orbit into PlanetCore.
+   *
+   * This method is called by PlanetCore during the boot sequence.
+   * It initializes the template engine, registers helpers, and sets up middleware.
+   *
+   * @param core - The PlanetCore instance
+   *
+   * @public
+   * @since 3.0.0
    */
   install(core: PlanetCore): void {
     core.logger.info('[OrbitPrism] Initializing View Engine (Exposed as: view)')
 
-    // 1. Resolve Views Directory
-    // Default to 'src/views' relative to CWD
     const configuredPath = core.config.get<string>('VIEW_DIR', 'src/views')
     const viewsDir = resolve(process.cwd(), configuredPath)
 
-    // 2. Initialize Engine
-    const engine = new TemplateEngine(viewsDir)
+    const engine = new TemplateEngine(viewsDir, this.options?.cache)
 
-    // 3. Register Built-in Helpers
     engine.registerHelper('image', createImageHelper())
 
-    // 4. Inject into Context via Middleware
     core.adapter.use('*', async (c: GravitoContext, next: GravitoNext) => {
       c.set('view', engine)
       return await next()
     })
 
-    // 5. Register in core container for global access (CLI, Jobs)
     core.container.instance('view', engine)
 
-    // 6. Trigger hook for additional helper registration
     core.hooks.doAction('view:helpers:register', engine)
+
+    const ssg = new StaticSiteGenerator(core)
+    core.container.singleton('ssg', () => ssg)
+    core.logger.info('[OrbitPrism] SSG registered (Exposed as: ssg)')
   }
 }
 
@@ -49,9 +111,60 @@ declare module '@gravito/core' {
   }
 }
 
-export type { ViewService }
+// ============================================
+// Core exports (backward compatible)
+// ============================================
+export type { ViewService, CacheOptions }
 export { TemplateEngine }
+
+// ============================================
+// Image exports
+// ============================================
 export { Image, type ImageProps } from './components/Image'
+export type { CacheStats } from './core/TemplateCache'
+// ============================================
+// New exports (Phase 1-5)
+// ============================================
+export { TemplateCache } from './core/TemplateCache'
+export type { CompiledMetadata, CompilerOptions } from './core/TemplateCompiler'
+export { TemplateCompiler } from './core/TemplateCompiler'
+export type { HelperFunction, RenderContext } from './engine/TemplateEngine'
 export { createImageHelper } from './helpers/image'
-export { type ImageOptions, ImageService } from './ImageService'
-export { StaticSiteGenerator } from './SSG'
+export { defaultLoader, type ImageCDNLoader, type TransformOptions } from './image/ImageCDNLoader'
+export {
+  calculateLQIPDimensions,
+  calculateMinLQIPSize,
+  generateColorPlaceholder,
+  generatePlaceholderStyles,
+  hexToRGB,
+} from './image/ImagePlaceholder'
+export { type ImageOptions, ImageService } from './image/ImageService'
+export {
+  type DynamicRoute,
+  DynamicRouteResolver,
+  type ResolvedRoute,
+} from './ssg/DynamicRouteResolver'
+export { IncrementalBuilder } from './ssg/IncrementalBuilder'
+// ============================================
+// SSG exports
+// ============================================
+export { type ExportOptions, StaticSiteGenerator } from './ssg/StaticSiteGenerator'
+export type {
+  ArtDirectionConfig,
+  CDNLoaderOptions,
+  PlaceholderOptions,
+} from './types/image'
+export type {
+  BuildManifest,
+  DynamicRouteConfig,
+  PageEntry,
+  ResolvedRouteConfig,
+  SSGExportOptions,
+} from './types/ssg'
+// ============================================
+// Type re-exports (unified types)
+// ============================================
+export type {
+  CompiledMetadata as TemplateMetadata,
+  RenderOptions,
+} from './types/template'

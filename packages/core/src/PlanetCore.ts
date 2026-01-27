@@ -36,10 +36,18 @@ export interface CacheService {
   remember<T>(key: string, ttl: number, callback: () => Promise<T>): Promise<T>
 }
 
+/**
+ * Interface for View Rendering Service
+ * @public
+ */
 export interface ViewService {
   render(view: string, data?: Record<string, unknown>, options?: Record<string, unknown>): string
 }
 
+/**
+ * Context passed to error handlers
+ * @public
+ */
 export type ErrorHandlerContext = {
   core: PlanetCore
   c: GravitoContext
@@ -57,10 +65,18 @@ export type ErrorHandlerContext = {
   }
 }
 
+/**
+ * Interface for Gravito Orbit (Plugin/Module)
+ * @public
+ */
 export interface GravitoOrbit {
   install(core: PlanetCore): void | Promise<void>
 }
 
+/**
+ * Configuration for booting PlanetCore
+ * @public
+ */
 export type GravitoConfig = {
   logger?: Logger
   config?: Record<string, unknown>
@@ -86,6 +102,13 @@ import { Router } from './Router'
 import { Encrypter } from './security/Encrypter'
 import { BunHasher } from './security/Hasher'
 
+/**
+ * PlanetCore - The Heart of Gravito Framework
+ *
+ * The micro-kernel that orchestrates the entire Galaxy Architecture.
+ * Manages HTTP routing, middleware, error handling, and orbit integration.
+ * @public
+ */
 export class PlanetCore {
   /**
    * The HTTP adapter used by this core instance.
@@ -305,7 +328,12 @@ export class PlanetCore {
       // Add route helper
       c.route = (name: string, params?: any, query?: any) => this.router.url(name, params, query)
 
-      return await next()
+      const result = await next()
+
+      // Automatically attach queued cookies to response
+      cookieJar.attach(c)
+
+      return result
     })
     // Router depends on `core.app` for route registration and optional global middleware.
     this.router = new Router(this)
@@ -463,6 +491,7 @@ export class PlanetCore {
     port: number
     fetch: (request: Request, server?: unknown) => Response | Promise<Response>
     core: PlanetCore
+    websocket?: HttpAdapter['websocket']
   } {
     // Priority: argument > config > default
     const finalPort = port ?? this.config.get<number>('PORT', 3000)
@@ -476,6 +505,7 @@ export class PlanetCore {
       port: finalPort,
       fetch: this.adapter.fetch.bind(this.adapter), // Ensure we bind to adapter not app
       core: this,
+      websocket: this.adapter.websocket,
     }
   }
 }

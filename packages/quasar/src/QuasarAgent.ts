@@ -11,27 +11,64 @@ import { NodeProbe } from './probes/NodeProbe'
 import { RedisListProbe } from './probes/RedisListProbe'
 import type { Probe, QueueProbe } from './types'
 
+/**
+ * Configuration for a Redis connection used by Quasar.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface RedisConfig {
+  /** Redis URL (e.g., 'redis://localhost:6379'). */
   url?: string
+  /** Existing Redis client instance (ioredis). */
   client?: Redis
-  options?: any // ioredis options
+  /** Additional ioredis connection options. */
+  options?: any
 }
 
+/**
+ * Options for initializing the Quasar agent.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface QuasarOptions {
+  /** Name of the service being monitored (e.g., 'auth-api'). */
   service: string
+  /** Optional human-readable name for this specific node. Defaults to hostname. */
   name?: string
 
-  // Connection to Zenith (for Heartbeat/Transport)
+  /** Redis connection used for sending heartbeats and telemetry to Zenith. */
   transport?: RedisConfig
-  // Connection to Local App (for Queue Monitoring)
+  /** Redis connection used for monitoring local queue data (if different from transport). */
   monitor?: RedisConfig
-  // Legacy shorthand for transport
+  /** Shorthand for simple transport URL. */
   redisUrl?: string
 
+  /** Heartbeat interval in milliseconds. @default 10000 */
   interval?: number
+  /** Custom metrics probe for gathering system data. */
   probe?: Probe
 }
 
+/**
+ * QuasarAgent is the telemetry and remote management agent for the Gravito Ecosystem.
+ *
+ * It runs as a sidecar or background service within your application, collecting
+ * system metrics (CPU, Memory), monitoring message queues (BullMQ, Laravel, etc.),
+ * and reporting real-time data back to Zenith. It also supports remote control
+ * commands for queue management.
+ *
+ * @example
+ * ```typescript
+ * const agent = new QuasarAgent({ service: 'orders-worker' });
+ * agent.monitorQueue('default', 'bullmq');
+ * await agent.start();
+ * ```
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class QuasarAgent {
   private transportRedis: Redis
   private monitorRedis?: Redis // Optional, only if monitoring queues

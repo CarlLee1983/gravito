@@ -46,7 +46,15 @@ function compileMiddlewareChain(middleware: Middleware[], handler: Handler): Com
     const mw = middleware[i]!
     const nextHandler = compiled
     compiled = async (ctx) => {
-      return (await mw(ctx, () => nextHandler(ctx))) as Response
+      let nextResult: Response | undefined
+      const next = async (): Promise<Response | undefined> => {
+        nextResult = (await nextHandler(ctx)) as Response
+        return nextResult
+      }
+
+      const result = await mw(ctx, next)
+      // If middleware returns undefined, fall back to the result of next()
+      return (result ?? nextResult) as Response
     }
   }
 
@@ -63,7 +71,8 @@ export class Gravito {
   private notFoundHandler?: NotFoundHandler
 
   // Direct reference to static routes Map (O(1) access)
-  private staticRoutes!: Map<string, RouteMetadata>
+  /** @internal */
+  public staticRoutes!: Map<string, RouteMetadata>
   // Flag: pure static app (no middleware at all) allows ultra-fast path
   private isPureStaticApp = true
 
@@ -204,8 +213,13 @@ export class Gravito {
   /**
    * Mount a sub-application at a path prefix
    */
-  route(_path: string, _app: Gravito): this {
-    console.warn('route() method is not yet fully implemented')
+  route(path: string, app: Gravito): this {
+    // Mount the sub-application's router using the AOTRouter optimization
+    this.router.mount(path, app.router)
+
+    // Re-compile routes to update the static route map and optimizations
+    this.compileRoutes()
+
     return this
   }
 
@@ -253,7 +267,7 @@ export class Gravito {
   /**
    * Handle an incoming request
    */
-  fetch = (request: Request): Response | Promise<Response> => {
+  fetch = async (request: Request): Promise<Response> => {
     // Fast path: extract pathname without creating URL object
     const path = extractPath(request.url)
     const method = request.method.toLowerCase()
@@ -273,18 +287,18 @@ export class Gravito {
           if (result instanceof Response) {
             return result
           }
-          return result as Promise<Response>
+          return await result
         } catch (error) {
           return this.handleErrorSync(error as Error, request, path)
         }
       }
 
       // Has middleware, or needs FastContext: use pooled context
-      return this.handleWithMiddleware(request, path, staticRoute) as any
+      return await this.handleWithMiddleware(request, path, staticRoute)
     }
 
     // Dynamic route: use Radix Tree
-    return this.handleDynamicRoute(request, method, path) as any
+    return await this.handleDynamicRoute(request, method, path)
   }
 
   /**
@@ -351,7 +365,7 @@ export class Gravito {
     const execute = async (): Promise<Response> => {
       try {
         ctx.init(request, match.params, path)
-        return await entry!.compiled(ctx)
+        return await entry?.compiled(ctx)
       } catch (error) {
         return await this.handleError(error as Error, ctx)
       } finally {

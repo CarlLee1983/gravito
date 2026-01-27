@@ -10,6 +10,11 @@ interface Binding<T = unknown> {
   shared: boolean // true for singleton
 }
 
+/**
+ * Container - Simple Dependency Injection Container.
+ * Manages service bindings and singleton instances.
+ * @public
+ */
 export class Container {
   private bindings = new Map<BindingKey, Binding>()
   private instances = new Map<BindingKey, unknown>()

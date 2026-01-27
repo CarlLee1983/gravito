@@ -35,6 +35,16 @@ interface Worker {
   }
 }
 
+/**
+ * Worker Nodes Dashboard Page.
+ *
+ * Provides a detailed view of all active and inactive worker nodes in the
+ * cluster, including their resource usage, monitored queues, and Laravel
+ * worker status.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export function WorkersPage() {
   const queryClient = useQueryClient()
   const { isPending, error, data } = useQuery<{ workers: Worker[] }>({
@@ -65,7 +75,6 @@ export function WorkersPage() {
   const totalCpu = workers.reduce((acc, w) => acc + (w.metrics?.cpu || 0), 0)
   const avgCpu = workers.length > 0 ? totalCpu / workers.length : 0
   const totalRam = workers.reduce((acc, w) => acc + (w.metrics?.ram?.rss || 0), 0)
-  const totalCapacity = workers.reduce((acc, w) => acc + (w.metrics?.ram?.total || 0), 0)
 
   if (isPending) {
     return (
@@ -110,58 +119,60 @@ export function WorkersPage() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="card-premium p-6 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-20 h-20 bg-green-500/10 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform duration-500" />
+        <div className="card-premium p-5 relative overflow-hidden group border-l-4 border-emerald-500">
           <div className="relative">
-            <div className="flex items-center gap-2 mb-2">
-              <Server size={16} className="text-green-500" />
-              <p className="text-[10px] font-black text-muted-foreground/50 uppercase tracking-widest">
-                Online Nodes
+            <div className="flex items-center gap-2 mb-3">
+              <Server size={14} className="text-emerald-500" />
+              <p className="text-[9px] font-black text-muted-foreground/60 uppercase tracking-[0.2em] font-heading">
+                Operational Nodes
               </p>
             </div>
-            <p className="text-3xl font-black text-green-500">{onlineWorkers.length}</p>
+            <p className="text-3xl font-black text-white font-mono tracking-tighter">
+              {onlineWorkers.length}
+            </p>
           </div>
         </div>
-        <div className="card-premium p-6 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-20 h-20 bg-muted/20 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform duration-500" />
+        <div className="card-premium p-5 relative overflow-hidden group border-l-4 border-white/10">
           <div className="relative">
-            <div className="flex items-center gap-2 mb-2">
-              <Zap size={16} className="text-muted-foreground" />
-              <p className="text-[10px] font-black text-muted-foreground/50 uppercase tracking-widest">
-                Offline Nodes
+            <div className="flex items-center gap-2 mb-3">
+              <Zap size={14} className="text-white/20" />
+              <p className="text-[9px] font-black text-muted-foreground/60 uppercase tracking-[0.2em] font-heading">
+                Standby Nodes
               </p>
             </div>
-            <p className="text-3xl font-black text-muted-foreground">{offlineWorkers.length}</p>
+            <p className="text-3xl font-black text-white/40 font-mono tracking-tighter">
+              {offlineWorkers.length}
+            </p>
           </div>
         </div>
-        <div className="card-premium p-6 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-20 h-20 bg-primary/10 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform duration-500" />
+        <div className="card-premium p-5 relative overflow-hidden group border-l-4 border-primary/40">
           <div className="relative">
-            <div className="flex items-center gap-2 mb-2">
-              <Gauge size={16} className="text-primary" />
-              <p className="text-[10px] font-black text-muted-foreground/50 uppercase tracking-widest">
-                Avg Load
+            <div className="flex items-center gap-2 mb-3">
+              <Gauge size={14} className="text-primary" />
+              <p className="text-[9px] font-black text-muted-foreground/60 uppercase tracking-[0.2em] font-heading">
+                Compute Load
               </p>
             </div>
-            <p className="text-3xl font-black">{avgCpu.toFixed(2)}</p>
+            <p className="text-3xl font-black text-white font-mono tracking-tighter">
+              {avgCpu.toFixed(2)}
+            </p>
           </div>
         </div>
-        <div className="card-premium p-6 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-20 h-20 bg-indigo-500/10 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform duration-500" />
+        <div className="card-premium p-5 relative overflow-hidden group border-l-4 border-indigo-500/40">
           <div className="relative">
-            <div className="flex items-center gap-2 mb-2">
-              <MemoryStick size={16} className="text-indigo-500" />
-              <p className="text-[10px] font-black text-muted-foreground/50 uppercase tracking-widest">
-                Cluster RAM
+            <div className="flex items-center gap-2 mb-3">
+              <MemoryStick size={14} className="text-indigo-400" />
+              <p className="text-[9px] font-black text-muted-foreground/60 uppercase tracking-[0.2em] font-heading">
+                Cluster Memory
               </p>
             </div>
             <div className="flex items-baseline gap-1">
-              <p className="text-3xl font-black text-indigo-500">{(totalRam / 1024).toFixed(2)}</p>
-              {totalCapacity > 0 && (
-                <span className="text-sm font-bold text-muted-foreground opacity-50">
-                  / {(totalCapacity / 1024).toFixed(0)} GB
-                </span>
-              )}
+              <p className="text-3xl font-black text-white font-mono tracking-tighter">
+                {(totalRam / 1024).toFixed(1)}
+              </p>
+              <span className="text-[10px] font-black text-white/20 uppercase tracking-tighter">
+                GB
+              </span>
             </div>
           </div>
         </div>
@@ -170,66 +181,55 @@ export function WorkersPage() {
       {/* Workers Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {workers.length === 0 && (
-          <div className="col-span-full py-20 text-center text-muted-foreground/30">
-            <Cpu size={48} className="mx-auto mb-4 opacity-20 animate-pulse" />
-            <p className="text-sm font-bold uppercase tracking-widest">No worker nodes connected</p>
-            <p className="text-xs opacity-60 mt-2">Start a worker to see it appear here</p>
+          <div className="col-span-full py-32 text-center text-muted-foreground/20">
+            <Cpu size={48} className="mx-auto mb-4 opacity-30 animate-pulse" />
+            <p className="text-[10px] font-black uppercase tracking-[0.3em]">
+              Awaiting signal from constellation...
+            </p>
           </div>
         )}
         {workers.map((worker, index) => (
           <motion.div
             key={worker.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-            className="card-premium p-6 relative overflow-hidden group"
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: index * 0.05 }}
+            className="card-premium p-6 relative overflow-hidden group border-l-4"
+            style={{ borderLeftColor: worker.status === 'online' ? '#10B981' : '#27272A' }}
           >
-            {/* Status indicator bar */}
-            <div
-              className={cn(
-                'absolute left-0 top-0 bottom-0 w-1.5 transition-all',
-                worker.status === 'online' ? 'bg-green-500' : 'bg-muted-foreground/30'
-              )}
-            />
-
             {/* Header */}
-            <div className="flex items-start justify-between mb-6">
+            <div className="flex items-start justify-between mb-8">
               <div className="flex items-center gap-4">
                 <div className="relative">
                   <div
                     className={cn(
-                      'w-12 h-12 rounded-2xl flex items-center justify-center transition-all',
+                      'w-12 h-12 rounded-xl flex items-center justify-center transition-all border border-white/5',
                       worker.status === 'online'
-                        ? 'bg-green-500/10 text-green-500'
-                        : 'bg-muted text-muted-foreground'
+                        ? 'bg-emerald-500/10 text-emerald-500'
+                        : 'bg-zinc-800 text-muted-foreground/40'
                     )}
                   >
                     <Cpu size={24} />
                   </div>
-                  <div
-                    className={cn(
-                      'absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-card',
-                      worker.status === 'online'
-                        ? 'bg-green-500 animate-pulse'
-                        : 'bg-muted-foreground'
-                    )}
-                  />
+                  {worker.status === 'online' && (
+                    <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-4 border-zinc-950 bg-emerald-500 animate-pulse shadow-[0_0_10px_#10B981]" />
+                  )}
                 </div>
                 <div>
-                  <h3 className="font-black tracking-tight text-lg group-hover:text-primary transition-colors">
+                  <h3 className="font-black tracking-tight text-base group-hover:text-primary transition-colors font-heading uppercase italic">
                     {worker.id}
                   </h3>
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                  <p className="text-[9px] font-bold text-muted-foreground/40 uppercase tracking-[0.2em] font-mono mt-1">
                     PID: {worker.pid}
                   </p>
                 </div>
               </div>
               <span
                 className={cn(
-                  'px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border',
+                  'px-2 py-1 rounded-md text-[8px] font-black uppercase tracking-widest border transition-all',
                   worker.status === 'online'
-                    ? 'bg-green-500/10 text-green-500 border-green-500/20'
-                    : 'bg-muted/40 text-muted-foreground border-transparent'
+                    ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.1)]'
+                    : 'bg-zinc-800/50 text-muted-foreground/40 border-transparent'
                 )}
               >
                 {worker.status}
@@ -238,39 +238,37 @@ export function WorkersPage() {
 
             {/* Metrics */}
             {worker.metrics && (
-              <div className="space-y-4">
+              <div className="space-y-5 font-mono">
                 {/* CPU */}
                 <div>
-                  <div className="flex justify-between text-[10px] font-black uppercase tracking-widest mb-2">
-                    <span className="text-muted-foreground">
-                      Load (Cap: {worker.metrics.cores || '-'})
-                    </span>
+                  <div className="flex justify-between text-[9px] font-black uppercase tracking-widest mb-2.5">
+                    <span className="text-muted-foreground/60">CPU Compute Power</span>
                     <span
                       className={cn(
                         worker.metrics.cpu > (worker.metrics.cores || 4)
                           ? 'text-red-500'
                           : worker.metrics.cpu > (worker.metrics.cores || 4) * 0.7
-                            ? 'text-amber-500'
-                            : 'text-green-500'
+                            ? 'text-amber-500 font-black'
+                            : 'text-primary font-black'
                       )}
                     >
-                      {worker.metrics.cpu.toFixed(2)}
+                      {worker.metrics.cpu.toFixed(2)}%
                     </span>
                   </div>
-                  <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                  <div className="h-1.5 w-full bg-black/40 rounded-full overflow-hidden border border-white/5">
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{
                         width: `${Math.min(100, (worker.metrics.cpu / (worker.metrics.cores || 1)) * 100)}%`,
                       }}
-                      transition={{ duration: 0.5 }}
+                      transition={{ duration: 1 }}
                       className={cn(
-                        'h-full transition-colors',
+                        'h-full transition-colors relative',
                         worker.metrics.cpu > (worker.metrics.cores || 4)
                           ? 'bg-red-500'
                           : worker.metrics.cpu > (worker.metrics.cores || 4) * 0.7
                             ? 'bg-amber-500'
-                            : 'bg-green-500'
+                            : 'bg-primary shadow-[0_0_10px_#00F0FF]'
                       )}
                     />
                   </div>
@@ -278,24 +276,20 @@ export function WorkersPage() {
 
                 {/* RAM */}
                 <div>
-                  <div className="flex justify-between text-[10px] font-black uppercase tracking-widest mb-2">
-                    <span className="text-muted-foreground">Memory (RSS / Total)</span>
-                    <span className="text-indigo-500">
-                      {(worker.metrics.ram.rss / 1024).toFixed(2)} GB /{' '}
-                      {worker.metrics.ram.total
-                        ? (worker.metrics.ram.total / 1024).toFixed(0)
-                        : '-'}{' '}
-                      GB
+                  <div className="flex justify-between text-[9px] font-black uppercase tracking-widest mb-2.5">
+                    <span className="text-muted-foreground/60">Memory Integrity</span>
+                    <span className="text-white/80 font-black">
+                      {(worker.metrics.ram.rss / 1024).toFixed(2)} GB
                     </span>
                   </div>
-                  <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                  <div className="h-1.5 w-full bg-black/40 rounded-full overflow-hidden border border-white/5">
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{
                         width: `${Math.min(100, (worker.metrics.ram.rss / (worker.metrics.ram.total || 2048)) * 100)}%`,
                       }}
-                      transition={{ duration: 0.5 }}
-                      className="h-full bg-indigo-500"
+                      transition={{ duration: 1 }}
+                      className="h-full bg-indigo-500 shadow-[0_0_10px_#6366F1]"
                     />
                   </div>
                 </div>
@@ -303,35 +297,33 @@ export function WorkersPage() {
             )}
 
             {/* Laravel & Queue Info (New) */}
-            <div className="mt-6 space-y-3">
+            <div className="mt-8 space-y-3">
               {/* Monitored Queues */}
               {worker.queues && worker.queues.length > 0 && (
-                <div className="bg-muted/10 p-3 rounded-xl border border-border/50">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-1.5 h-1.5 bg-orange-500 rounded-full" />
-                    <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">
-                      Monitored Queues
+                <div className="bg-white/[0.02] p-4 rounded-xl border border-white/5">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-1.5 h-1.5 bg-primary rounded-full shadow-[0_0_8px_#00F0FF]" />
+                    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 font-heading">
+                      Pipeline Access
                     </span>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {worker.queues.map((q, i) => (
                       <div
                         key={i}
-                        className="flex items-center gap-1.5 text-xs font-bold text-foreground/80 bg-background/80 px-2 py-1 rounded-md shadow-sm border border-border/50"
+                        className="flex items-center gap-2 text-[10px] font-black text-foreground/60 bg-black/40 px-2 py-1 rounded border border-white/5 font-mono"
                       >
-                        <span className="opacity-70">{q.name}</span>
+                        <span className="opacity-40">{q.name}</span>
                         {(q.size.waiting > 0 || q.size.failed > 0) && (
                           <span
                             className={cn(
-                              'px-1 rounded bg-muted text-[9px]',
+                              'px-1 rounded text-[8px] border',
                               q.size.failed > 0
-                                ? 'text-red-500 bg-red-500/10'
-                                : 'text-amber-500 bg-amber-500/10'
+                                ? 'text-red-500 bg-red-500/10 border-red-500/20'
+                                : 'text-primary bg-primary/10 border-primary/20'
                             )}
                           >
-                            {q.size.failed > 0
-                              ? `${q.size.failed} failed`
-                              : `${q.size.waiting} wait`}
+                            {q.size.failed > 0 ? `! FAIL` : `${q.size.waiting}W`}
                           </span>
                         )}
                       </div>
@@ -342,27 +334,31 @@ export function WorkersPage() {
 
               {/* Laravel Workers Info */}
               {worker.meta?.laravel && (
-                <div className="flex items-center justify-between p-3 bg-red-500/5 border border-red-500/10 rounded-xl">
+                <div className="flex items-center justify-between p-4 bg-red-500/5 border border-red-500/10 rounded-xl">
                   <div className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-red-500/80">
-                      Laravel Workers
+                    <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_#EF4444]" />
+                    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-red-500/80 font-heading">
+                      Laravel Threading
                     </span>
                   </div>
-                  <span className="font-mono text-sm font-black text-red-500">
-                    {worker.meta.laravel.workerCount || 0}
+                  <span className="font-mono text-sm font-black text-red-500 tabular-nums tracking-tighter">
+                    {worker.meta.laravel.workerCount || 0} PHP
                   </span>
                 </div>
               )}
             </div>
 
             {/* Uptime */}
-            <div className="mt-4 pt-4 border-t border-border/30 flex items-center justify-between">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Clock size={14} />
-                <span className="text-[10px] font-bold uppercase tracking-widest">Uptime</span>
+            <div className="mt-6 pt-5 border-t border-white/5 flex items-center justify-between">
+              <div className="flex items-center gap-2 text-muted-foreground/40 font-heading">
+                <Clock size={12} />
+                <span className="text-[9px] font-black uppercase tracking-[0.2em]">
+                  Quantum Uptime
+                </span>
               </div>
-              <span className="font-mono text-sm font-bold">{formatUptime(worker.uptime)}</span>
+              <span className="font-mono text-[11px] font-black text-white/60 tabular-nums">
+                {formatUptime(worker.uptime)}
+              </span>
             </div>
           </motion.div>
         ))}

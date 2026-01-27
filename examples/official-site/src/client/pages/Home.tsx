@@ -1,13 +1,5 @@
 import { Head } from '@inertiajs/react'
-import {
-  motion,
-  useInView,
-  useMotionTemplate,
-  useMotionValue,
-  useScroll,
-  useSpring,
-  useTransform,
-} from 'framer-motion'
+import { motion, useInView, useScroll, useTransform } from 'framer-motion'
 import {
   Activity,
   ArrowRight,
@@ -22,8 +14,6 @@ import {
   Rocket,
   Server,
   Shield,
-  ShieldAlert,
-  Terminal,
   Zap,
 } from 'lucide-react'
 import React, { useRef, useState } from 'react'
@@ -43,19 +33,7 @@ const AdvancedHero = ({ t, locale }: { t: Translation; locale: string }) => {
   const opacity = useTransform(scrollY, [0, 300], [1, 0])
   const heroRef = useRef<HTMLDivElement>(null)
 
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
-
-  React.useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      const x = (e.clientX / window.innerWidth - 0.5) * 100
-      const y = (e.clientY / window.innerHeight - 0.5) * 100
-      setMousePos({ x, y })
-    }
-    window.addEventListener('mousemove', handleMouseMove)
-    return () => window.removeEventListener('mousemove', handleMouseMove)
-  }, [])
-
-  const titleCharItems = (t.hero.title || 'GRAVITO').split('').map((char, index) => ({
+  const _titleCharItems = (t.hero.title || 'GRAVITO').split('').map((char, index) => ({
     id: `hero-char-${index}-${char}`,
     index,
     char,
@@ -71,33 +49,11 @@ const AdvancedHero = ({ t, locale }: { t: Translation; locale: string }) => {
     <section
       ref={heroRef}
       className="relative h-[120vh] flex items-center justify-center overflow-hidden bg-void"
-      style={
-        {
-          '--mx': `${mousePos.x}px`,
-          '--my': `${mousePos.y}px`,
-        } as React.CSSProperties
-      }
     >
       {/* 0. Gravitational Warp Grid */}
       <div className="space-grid-warp">
-        <div
-          className="grid-warp-inner"
-          style={{ perspectiveOrigin: `${50 + mousePos.x * 0.2}% ${50 + mousePos.y * 0.2}%` }}
-        />
+        <div className="grid-warp-inner" />
       </div>
-
-      {/* Event Horizon: A liquid glow that follows the mouse */}
-      <div
-        className="absolute w-[600px] h-[600px] rounded-full pointer-events-none transition-all duration-1000 ease-out"
-        style={{
-          background: `radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%)`,
-          left: `calc(50% + ${mousePos.x * 5}px)`,
-          top: `calc(50% + ${mousePos.y * 5}px)`,
-          transform: 'translate(-50%, -50%)',
-          filter: 'blur(60px)',
-          zIndex: 5,
-        }}
-      />
 
       {/* Hero Background & Stars (WebGL) */}
       <motion.div style={{ opacity }} className="absolute inset-0 z-0">
@@ -109,33 +65,43 @@ const AdvancedHero = ({ t, locale }: { t: Translation; locale: string }) => {
         <div className="absolute inset-0 bg-gradient-to-b from-void/20 via-transparent to-void" />
       </motion.div>
 
-      {/* 1. 浮動文字層 (Magnetic Title) */}
-      <div className="relative z-30 flex flex-col items-center">
-        <div className="flex flex-wrap justify-center overflow-hidden pb-4 px-4">
+      {/* 1. 浮動文字層 */}
+      <div className="relative z-30 flex flex-col items-center max-w-[90vw]">
+        <div className="flex flex-wrap justify-center overflow-hidden pb-4 px-4 select-none">
           {(t.hero.title || 'GRAVITO').split('').map((char, i) => (
             <motion.span
               key={i}
-              className="glitch-text text-6xl sm:text-7xl md:text-[10rem] font-black italic tracking-tighter text-white uppercase inline-block cursor-default"
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 + i * 0.1, duration: 0.8, ease: 'easeOut' }}
+              className="glitch-text text-6xl sm:text-8xl md:text-[11rem] font-black italic tracking-tighter text-white uppercase inline-block cursor-default"
               style={{
-                x: mousePos.x * (0.1 + i * 0.02),
-                y: mousePos.y * (0.1 + i * 0.02),
-                rotateX: mousePos.y * -0.1,
-                rotateY: mousePos.x * 0.1,
+                textShadow: '0 20px 50px rgba(0,0,0,0.5)',
               }}
-              transition={{ type: 'spring', stiffness: 150, damping: 15 }}
             >
-              {char}
+              <span
+                className={
+                  i === 0 || i === 3
+                    ? 'text-transparent bg-clip-text bg-gradient-to-br from-white via-white to-gray-400'
+                    : 'text-white'
+                }
+              >
+                {char}
+              </span>
             </motion.span>
           ))}
         </div>
-        <motion.p
+        <motion.div
           initial={{ opacity: 0, letterSpacing: '1.5em' }}
           animate={{ opacity: 1, letterSpacing: '0.5em' }}
           transition={{ delay: 1, duration: 1.5 }}
-          className="mt-6 text-cyan-200/80 uppercase text-xs md:text-sm font-bold text-center w-full"
+          className="mt-8 flex flex-col items-center gap-4"
         >
-          {t.hero.tagline}
-        </motion.p>
+          <div className="h-[1px] w-24 bg-gradient-to-r from-transparent via-singularity to-transparent" />
+          <p className="text-cyan-200/80 uppercase text-xs md:text-sm font-bold text-center w-full tracking-[0.5em] drop-shadow-[0_0_10px_rgba(0,240,255,0.5)]">
+            {t.hero.tagline}
+          </p>
+        </motion.div>
 
         {/* 2. CTA Buttons */}
         <motion.div
@@ -820,25 +786,6 @@ const FeatureCard3D: React.FC<FeatureCard3DProps> = ({
 }) => {
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, margin: '-100px' })
-  const x = useMotionValue(0)
-  const y = useMotionValue(0)
-
-  const mouseX = useSpring(x, { stiffness: 150, damping: 20 })
-  const mouseY = useSpring(y, { stiffness: 150, damping: 20 })
-
-  const rotateX = useTransform(mouseY, [-0.5, 0.5], [10, -10])
-  const rotateY = useTransform(mouseX, [-0.5, 0.5], [-10, 10])
-
-  const highlightXPercent = useTransform(mouseX, [-0.5, 0.5], [0, 100])
-  const highlightYPercent = useTransform(mouseY, [-0.5, 0.5], [0, 100])
-
-  const highlightBackground = useMotionTemplate`radial-gradient(circle at ${highlightXPercent}% ${highlightYPercent}%, rgba(99, 102, 241, 0.15), transparent 80%)`
-
-  function handleMouseMove(e: React.MouseEvent<HTMLDivElement>) {
-    const rect = e.currentTarget.getBoundingClientRect()
-    x.set((e.clientX - rect.left) / rect.width - 0.5)
-    y.set((e.clientY - rect.top) / rect.height - 0.5)
-  }
 
   return (
     <motion.div
@@ -846,20 +793,14 @@ const FeatureCard3D: React.FC<FeatureCard3DProps> = ({
       initial={{ opacity: 0, y: 50 }}
       animate={isInView ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.6, delay }}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={() => {
-        x.set(0)
-        y.set(0)
-      }}
-      style={{ rotateX, rotateY, transformStyle: 'preserve-3d', perspective: 1000 }}
-      className="relative h-96 w-full rounded-[2.5rem] bg-void/40 border border-white/5 p-8 backdrop-blur-xl cursor-pointer group overflow-hidden"
+      className="relative h-96 w-full rounded-[2.5rem] bg-white/[0.02] border border-white/5 p-8 backdrop-blur-xl cursor-pointer group overflow-hidden shadow-2xl hover:border-singularity/30 transition-colors duration-500"
     >
       {/* Dynamic Grid Background inside card */}
-      <div className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-700 bg-[radial-gradient(rgba(255,255,255,0.1)_1px,transparent_1px)] [background-size:20px_20px]" />
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-700 bg-[radial-gradient(rgba(0,240,255,0.2)_1px,transparent_1px)] [background-size:20px_20px]" />
 
-      <div style={{ transform: 'translateZ(60px)' }} className="flex flex-col h-full relative z-10">
+      <div className="flex flex-col h-full relative z-10">
         {/* Tech Icon with Glow */}
-        <div className="mb-8 w-20 h-20 rounded-2xl bg-black/50 flex items-center justify-center border border-white/5 group-hover:border-singularity/50 shadow-[0_0_40px_rgba(0,0,0,0.5)] group-hover:shadow-singularity/20 transition-all duration-700">
+        <div className="mb-8 w-20 h-20 rounded-2xl bg-black/50 flex items-center justify-center border border-white/5 group-hover:border-singularity/50 shadow-[0_0_40px_rgba(0,0,0,0.5)] group-hover:shadow-[0_0_60px_rgba(0,240,255,0.15)] transition-all duration-700">
           <Icon
             className="text-gray-500 group-hover:text-singularity transition-colors duration-500"
             size={36}
@@ -874,19 +815,19 @@ const FeatureCard3D: React.FC<FeatureCard3DProps> = ({
         <h3 className="text-3xl font-bold text-white mb-4 italic tracking-tighter transition-transform group-hover:translate-x-2">
           {title}
         </h3>
-        <p className="text-gray-500 group-hover:text-gray-300 text-sm leading-relaxed transition-colors">
+        <p className="text-gray-400 group-hover:text-gray-300 text-sm leading-relaxed transition-colors font-medium">
           {description}
         </p>
 
         {/* Technical Data Bits */}
-        <div className="mt-auto flex justify-between items-end">
-          <div className="text-[9px] font-mono text-white/10 group-hover:text-singularity/40 transition-colors">
+        <div className="mt-auto flex justify-between items-end border-t border-white/5 pt-6 group-hover:border-singularity/20 transition-colors">
+          <div className="text-[9px] font-mono text-white/20 group-hover:text-singularity/60 transition-colors">
             PROTOCOL_V1 {/* OPTIMIZED_STACK */}
           </div>
-          <div className="w-12 h-12 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-singularity group-hover:text-black transition-all duration-500">
             <ArrowRight
-              className="text-white/5 group-hover:text-singularity group-hover:translate-x-1 transition-all"
-              size={20}
+              className="text-white/40 group-hover:text-black group-hover:translate-x-0.5 transition-all"
+              size={16}
             />
           </div>
         </div>
@@ -894,15 +835,9 @@ const FeatureCard3D: React.FC<FeatureCard3DProps> = ({
 
       {/* Edge Beam Effect */}
       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700">
-        <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-singularity to-transparent" />
-        <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-singularity to-transparent" />
+        <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-singularity/50 to-transparent" />
+        <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-singularity/50 to-transparent" />
       </div>
-
-      {/* Floating Highlight */}
-      <motion.div
-        style={{ background: highlightBackground }}
-        className="absolute inset-0 pointer-events-none"
-      />
     </motion.div>
   )
 }

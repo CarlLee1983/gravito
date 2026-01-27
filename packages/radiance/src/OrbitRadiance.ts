@@ -11,33 +11,66 @@ import type { WebSocketDriverConfig } from './drivers/WebSocketDriver'
 import { WebSocketDriver } from './drivers/WebSocketDriver'
 
 /**
- * OrbitRadiance options.
+ * Configuration options for the Radiance broadcasting orbit.
+ *
+ * Defines the delivery provider, its specific credentials, and optional
+ * hooks for security and error handling.
+ *
+ * @public
  */
 export interface OrbitRadianceOptions {
   /**
-   * Driver type.
+   * The underlying delivery service provider.
+   *
+   * - pusher: Industry standard WebSocket service
+   * - ably: High-reliability global edge network
+   * - redis: Pub/Sub for internal microservices
+   * - websocket: Direct server-to-client communication
    */
   driver: 'pusher' | 'ably' | 'redis' | 'websocket'
 
   /**
-   * Driver configuration.
+   * Provider-specific connection and authentication settings.
    */
   config: PusherDriverConfig | AblyDriverConfig | RedisDriverConfig | WebSocketDriverConfig
 
   /**
-   * Channel authorization callback (optional).
+   * Hook for implementing custom channel access control.
+   *
+   * @param channel - The name of the channel being accessed
+   * @param socketId - The unique client connection identifier
+   * @param userId - The authenticated user's identifier
+   * @returns True if the subscription request should be granted
    */
   authorizeChannel?: (
     channel: string,
     socketId: string,
     userId?: string | number
   ) => Promise<boolean>
+
+  /**
+   * Control whether broadcast failures should interrupt the execution flow.
+   * @defaultValue true
+   */
+  throwOnError?: boolean
 }
 
 /**
- * Broadcasting Orbit
+ * OrbitRadiance provides real-time event broadcasting capabilities.
  *
- * Provides broadcasting capabilities with multiple drivers (Pusher, Ably, Redis, WebSocket).
+ * It abstracts various delivery providers (Pusher, Ably, etc.) and integrates
+ * seamlessly with Gravito's Event system. When installed, it enables automatic
+ * broadcasting of events that implement the `ShouldBroadcast` interface.
+ *
+ * @example
+ * ```typescript
+ * const radiance = OrbitRadiance.configure({
+ *   driver: 'pusher',
+ *   config: { appId: '...', key: '...', secret: '...' }
+ * });
+ * core.addOrbit(radiance);
+ * ```
+ * @public
  */
 export class OrbitRadiance implements GravitoOrbit {
   private options: OrbitRadianceOptions
@@ -47,14 +80,41 @@ export class OrbitRadiance implements GravitoOrbit {
   }
 
   /**
-   * Configure OrbitRadiance.
+   * Create a new OrbitRadiance instance with the specified configuration.
+   *
+   * This static factory method is the preferred way to initialize the orbit
+   * before adding it to the PlanetCore.
+   *
+   * @param options - The configuration settings for the broadcaster
+   * @returns A configured OrbitRadiance instance
+   *
+   * @example
+   * ```typescript
+   * const orbit = OrbitRadiance.configure({
+   *   driver: 'redis',
+   *   config: { url: 'redis://localhost:6379' }
+   * });
+   * ```
    */
   static configure(options: OrbitRadianceOptions): OrbitRadiance {
     return new OrbitRadiance(options)
   }
 
+  /**
+   * Initialize and register the broadcasting system into the core.
+   *
+   * Sets up the BroadcastManager, initializes the selected driver, and
+   * hooks into the EventManager to enable automatic event broadcasting.
+   *
+   * @param core - The PlanetCore instance where the orbit is being installed
+   * @throws {Error} If an unsupported driver is specified in options
+   */
   async install(core: PlanetCore): Promise<void> {
     const manager = new BroadcastManager(core)
+
+    if (this.options.throwOnError !== undefined) {
+      manager.setThrowOnError(this.options.throwOnError)
+    }
 
     // Create and set driver.
     let driver: BroadcastDriver
@@ -77,9 +137,14 @@ export class OrbitRadiance implements GravitoOrbit {
         }
         break
       }
-      case 'websocket':
-        driver = new WebSocketDriver(this.options.config as WebSocketDriverConfig)
+      case 'websocket': {
+        const wsConfig = this.options.config as WebSocketDriverConfig
+        if (!wsConfig.logger) {
+          wsConfig.logger = core.logger
+        }
+        driver = new WebSocketDriver(wsConfig)
         break
+      }
       default:
         throw new Error(`Unsupported broadcast driver: ${this.options.driver}`)
     }

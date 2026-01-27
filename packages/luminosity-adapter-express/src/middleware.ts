@@ -1,9 +1,18 @@
 import { RobotsBuilder, type SeoConfig, SeoEngine, SeoRenderer } from '@gravito/luminosity'
 import type { NextFunction, Request, Response } from 'express'
 
+/**
+ * Dependencies for the Gravito SEO middleware, supporting dependency injection for testing.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface GravitoSeoDeps {
+  /** Override for the RobotsBuilder implementation. */
   RobotsBuilder?: typeof RobotsBuilder
+  /** Override for the SeoEngine implementation. */
   SeoEngine?: typeof SeoEngine
+  /** Override for the SeoRenderer implementation. */
   SeoRenderer?: typeof SeoRenderer
 }
 

@@ -6,6 +6,10 @@ import { JwtGuard } from './guards/JwtGuard'
 import { SessionGuard } from './guards/SessionGuard'
 import { TokenGuard } from './guards/TokenGuard'
 
+/**
+ * Complete configuration for the authentication system.
+ * @public
+ */
 export interface AuthConfig {
   defaults: {
     guard: string
@@ -29,7 +33,16 @@ export interface AuthConfig {
   >
 }
 
+/**
+ * Resolver function type for user providers.
+ * @public
+ */
 export type UserProviderResolver = (config: Record<string, unknown>) => UserProvider
+
+/**
+ * Resolver function type for custom guards.
+ * @public
+ */
 export type GuardResolver = (
   ctx: GravitoContext,
   name: string,
@@ -37,20 +50,25 @@ export type GuardResolver = (
   provider?: UserProvider
 ) => Guard
 
+/**
+ * Central manager for authentication in Gravito.
+ * Handles guard resolution, user providers, and authentication state.
+ * @public
+ * @since 1.0.0
+ */
 export class AuthManager {
   protected guards: Map<string, Guard> = new Map()
   protected customGuardCreators: Map<string, GuardResolver> = new Map()
   protected customProviderCreators: Map<string, UserProviderResolver> = new Map()
+  private defaultGuardResolved = false
 
-  // Cache resolved providers to share across guards if needed
   protected resolvedProviders: Map<string, UserProvider> = new Map()
 
   /**
    * Create a new AuthManager instance.
-   *
-   * @param ctx - The request context.
-   * @param config - The authentication configuration.
-   * @param providerResolvers - A map of custom provider resolvers.
+   * @param ctx - The request context
+   * @param config - The auth configuration
+   * @param providerResolvers - Optional user provider resolvers
    */
   constructor(
     protected ctx: GravitoContext,
@@ -60,9 +78,7 @@ export class AuthManager {
 
   /**
    * Set the default guard for the current request.
-   *
-   * @param name - The name of the guard to use as default.
-   * @returns The AuthManager instance.
+   * @param name - Guard name
    */
   public shouldUse(name: string): this {
     this.config.defaults.guard = name
@@ -70,13 +86,21 @@ export class AuthManager {
   }
 
   /**
-   * Get a guard instance by name.
+   * Resolve and return a guard instance by name.
    *
-   * @param name - The name of the guard (optional). Defaults to the configured default guard.
-   * @returns The guard instance.
+   * This method resolves the guard configuration, creates the appropriate
+   * guard instance (Session, JWT, or Token), and caches it for subsequent calls.
+   *
+   * @param name - The name of the guard defined in AuthConfig
+   * @returns The resolved guard instance
+   * @throws {Error} If the guard is not defined or driver is unsupported
    */
   public guard<T extends Guard = Guard>(name?: string): T {
     const guardName = name || this.config.defaults.guard
+
+    if (!name && !this.defaultGuardResolved) {
+      this.defaultGuardResolved = true
+    }
 
     if (!this.guards.has(guardName)) {
       this.guards.set(guardName, this.resolve(guardName))
@@ -86,37 +110,37 @@ export class AuthManager {
   }
 
   /**
-   * Get the currently authenticated user.
+   * Get the currently authenticated user from the default guard.
    *
-   * @returns A promise resolving to the authenticatable user or null.
+   * @returns A promise resolving to the authenticatable user or null
    */
   public async user<T extends Authenticatable = Authenticatable>(): Promise<T | null> {
     return this.guard().user() as Promise<T | null>
   }
 
   /**
-   * Get the ID of the currently authenticated user.
+   * Get the unique identifier of the currently authenticated user.
    *
-   * @returns A promise resolving to the user ID or null.
+   * @returns A promise resolving to the user ID or null
    */
   public async id(): Promise<string | number | null> {
     return this.guard().id()
   }
 
   /**
-   * Check if the user is authenticated.
+   * Check if the user is authenticated via the default guard.
    *
-   * @returns A promise resolving to true if authenticated, false otherwise.
+   * @returns A promise resolving to true if authenticated
    */
   public async check(): Promise<boolean> {
     return this.guard().check()
   }
 
   /**
-   * Authenticate the user and return the user instance.
+   * Authenticate the user or throw an exception if not authenticated.
    *
-   * @returns A promise resolving to the authenticatable user.
-   * @throws {AuthenticationException} If the user is not authenticated.
+   * @returns A promise resolving to the authenticated user instance
+   * @throws {AuthenticationException} If the user is not authenticated
    */
   public async authenticate(): Promise<Authenticatable> {
     const user = await this.user()
@@ -127,11 +151,13 @@ export class AuthManager {
   }
 
   /**
-   * Attempt to authenticate using the default driver.
+   * Attempt to authenticate using credentials via the default guard.
    *
-   * @param credentials - The credentials to authenticate with.
-   * @param remember - Whether to remember the user (if supported).
-   * @returns A promise resolving to true if authentication was successful.
+   * If the guard is stateful, it will also log the user in.
+   *
+   * @param credentials - Key-value pairs for authentication
+   * @param remember - Whether to start a persistent session
+   * @returns A promise resolving to true if authentication succeeded
    */
   public async attempt(credentials: Record<string, unknown>, remember = false): Promise<boolean> {
     const guard = this.guard()
@@ -142,11 +168,10 @@ export class AuthManager {
   }
 
   /**
-   * Log the user into the application.
+   * Log a specific user instance into the application via the default guard.
    *
-   * @param user - The user to login.
-   * @param remember - Whether to remember the user.
-   * @returns A promise that resolves when the user is logged in.
+   * @param user - The user instance to log in
+   * @param remember - Whether to start a persistent session
    */
   public async login(user: Authenticatable, remember = false): Promise<void> {
     const guard = this.guard()
@@ -156,9 +181,7 @@ export class AuthManager {
   }
 
   /**
-   * Log the user out of the application.
-   *
-   * @returns A promise that resolves when the user is logged out.
+   * Log the user out of the application via the default guard.
    */
   public async logout(): Promise<void> {
     const guard = this.guard()
@@ -167,6 +190,9 @@ export class AuthManager {
     }
   }
 
+  /**
+   * Resolve a guard instance based on configuration.
+   */
   protected resolve(name: string): Guard {
     const config = this.config.guards[name]
 
@@ -202,6 +228,9 @@ export class AuthManager {
     throw new Error(`Auth driver [${config.driver}] for guard [${name}] is not supported.`)
   }
 
+  /**
+   * Create a session-based guard instance.
+   */
   protected createSessionGuard(
     name: string,
     config: {
@@ -214,6 +243,9 @@ export class AuthManager {
     return new SessionGuard(name, provider, this.ctx, config.sessionKey)
   }
 
+  /**
+   * Create a JWT-based guard instance.
+   */
   protected createJwtGuard(
     _name: string,
     config: {
@@ -234,6 +266,9 @@ export class AuthManager {
     )
   }
 
+  /**
+   * Create an API token-based guard instance.
+   */
   protected createTokenGuard(
     _name: string,
     config: {
@@ -257,11 +292,11 @@ export class AuthManager {
   }
 
   /**
-   * Create a user provider instance.
+   * Create a user provider instance by name.
    *
-   * @param name - The name of the provider (optional). Defaults to the configured default password provider.
-   * @returns The user provider instance.
-   * @throws {Error} If the provider is not defined or not supported.
+   * @param name - Provider name (defaults to default passwords provider)
+   * @returns The resolved user provider instance
+   * @throws {Error} If the provider is not defined or unsupported
    */
   public createUserProvider(name?: string): UserProvider {
     const providerName = name || this.config.defaults.passwords || 'users'
@@ -311,9 +346,8 @@ export class AuthManager {
   /**
    * Register a custom guard creator.
    *
-   * @param driver - The driver name.
-   * @param callback - The callback to create the guard.
-   * @returns The AuthManager instance.
+   * @param driver - Driver name
+   * @param callback - Factory function for the guard
    */
   public extend(driver: string, callback: GuardResolver): this {
     this.customGuardCreators.set(driver, callback)
@@ -323,9 +357,8 @@ export class AuthManager {
   /**
    * Register a custom provider creator.
    *
-   * @param name - The name of the provider.
-   * @param callback - The callback to create the provider.
-   * @returns The AuthManager instance.
+   * @param name - Driver name
+   * @param callback - Factory function for the provider
    */
   public provider(name: string, callback: UserProviderResolver): this {
     this.customProviderCreators.set(name, callback)

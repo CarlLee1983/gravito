@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react'
 import type React from 'react'
+import { StaticLink } from './StaticLink'
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   // Determine active link based on current path
@@ -10,16 +11,16 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     <div className="app-layout">
       <header className="main-header">
         <div className="container">
-          <Link href="/" className="brand">
+          <StaticLink href="/" className="brand">
             🚀 Gravito
-          </Link>
+          </StaticLink>
           <nav>
-            <Link href="/" className={path === '/' ? 'active' : ''}>
+            <StaticLink href="/" className={path === '/' ? 'active' : ''}>
               Home
-            </Link>
-            <Link href="/about" className={path.startsWith('/about') ? 'active' : ''}>
+            </StaticLink>
+            <StaticLink href="/about" className={path.startsWith('/about') ? 'active' : ''}>
               About
-            </Link>
+            </StaticLink>
           </nav>
         </div>
       </header>

@@ -2,6 +2,7 @@ import { bodySizeLimit, PlanetCore, securityHeaders } from '@gravito/core'
 import { FluxEngine } from '@gravito/flux'
 import { Schema, validate } from '@gravito/mass'
 import { StoreOrderRequest } from './requests/StoreOrderRequest'
+import { UpdateOrderRequest } from './requests/UpdateOrderRequest'
 import { OrderWorkflow } from './workflows/OrderWorkflow'
 
 const port = parseInt(process.env.PORT || '3006', 10)
@@ -84,6 +85,20 @@ core.router.post('/orders', StoreOrderRequest, async (c) => {
     console.error('[Server] Workflow execution failed:', e)
     return c.json({ success: false, error: e.message }, 500)
   }
+})
+
+core.router.patch('/orders/:id', UpdateOrderRequest, async (c) => {
+  const input = c.get('validated' as any)
+  const id = c.req.param('id')
+
+  // In a real app, we would update the order here.
+  // For verification, we just echo back the valid data.
+  return c.json({
+    success: true,
+    message: 'Order updated',
+    id,
+    updates: input,
+  })
 })
 
 // Start

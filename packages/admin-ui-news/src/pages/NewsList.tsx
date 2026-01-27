@@ -18,6 +18,14 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+/**
+ * News and Content Management Page.
+ *
+ * Manage blog posts, news articles, and other content updates.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export function NewsList() {
   const { sdk } = useAdmin()
   const [items, setItems] = useState<any[]>([])

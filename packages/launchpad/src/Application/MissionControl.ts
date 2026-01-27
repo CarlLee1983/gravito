@@ -3,6 +3,15 @@ import type { Mission } from '../Domain/Mission'
 import type { PayloadInjector } from './PayloadInjector'
 import type { PoolManager } from './PoolManager'
 
+/**
+ * MissionControl orchestrates the high-level process of launching missions.
+ *
+ * it coordinates between the `PoolManager`, `PayloadInjector`, and `DockerAdapter`
+ * to deploy code into containers, assign domains, and monitor execution.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class MissionControl {
   constructor(
     private poolManager: PoolManager,

@@ -101,7 +101,7 @@ defineProps<{
         <div class="bg-white/5 border border-white/5 rounded-[40px] p-8 md:p-14 backdrop-blur-2xl shadow-2xl relative overflow-hidden font-body">
           <header class="mb-14 font-heading">
             <nav class="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-10">
-              <a href="/" class="hover:text-white transition-colors">LUMINOSITY</a>
+              <StaticLink href="/" class="hover:text-white transition-colors">LUMINOSITY</StaticLink>
               <ChevronRight :size="10" class="opacity-20" />
               <span class="text-singularity/60">DOCS</span>
               <ChevronRight :size="10" class="opacity-20" />

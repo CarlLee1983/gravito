@@ -81,7 +81,7 @@ const core = await PlanetCore.boot({
   ],
 })
 
-const scheduler = core.services.get('scheduler')
+const scheduler = core.container.make<any>('scheduler')
 
 console.log(`[${INSTANCE_NAME}] 🚀 排程服務已啟動，角色: ${core.config.get('scheduler.nodeRole')}`)
 

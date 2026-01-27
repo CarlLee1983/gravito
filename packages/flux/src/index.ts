@@ -80,13 +80,27 @@ export type {
 } from './types'
 
 /**
- * Flux helper utilities
+ * Flux helper utilities for workflow control flow.
+ *
+ * Provides methods to interact with the workflow engine's special behaviors,
+ * such as suspending execution to wait for external signals.
  */
 export const Flux = {
   /**
-   * Suspend workflow execution and wait for a signal
+   * Suspends workflow execution until a specific signal is received.
    *
-   * @param signal - Signal name to wait for
+   * When a handler returns this result, the engine saves the current state
+   * and stops execution. The workflow can be resumed later using `engine.signal()`.
+   *
+   * @param signal - The unique identifier for the signal to wait for.
+   * @returns A special result object that instructs the engine to suspend.
+   *
+   * @example
+   * ```typescript
+   * .step('wait-for-approval', async (ctx) => {
+   *   return Flux.wait('manager-approval');
+   * })
+   * ```
    */
   wait: (signal: string): import('./types').FluxWaitResult => ({
     __kind: 'flux_wait',

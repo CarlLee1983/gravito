@@ -51,7 +51,7 @@ await Schema.table('users', (table: Blueprint) => {
 Seeder 用於向資料庫填充初始數據。
 
 ```ts
-import { Seeder } from '@gravito/atlas'
+import { DB, Seeder } from '@gravito/atlas'
 
 export default class UserSeeder extends Seeder {
   async run() {
@@ -85,11 +85,41 @@ await UserFactory.count(10).create() // 建立 10 筆
 
 你可以透過 CLI 或程式碼執行：
 
-```ts
-// 執行所有未執行的遷移
-await DB.migrate()
+### 透過 CLI
 
-// 執行指定 Seeder
-await DB.seed(UserSeeder)
+```bash
+# 執行所有未執行的遷移
+bun orbit migrate
+
+# 執行所有 Seeders
+bun orbit seed
+
+# 回滾遷移
+bun orbit migrate:rollback
+
+# 重新執行遷移（刪除所有資料表並重新執行）
+bun orbit migrate:fresh
+```
+
+### 透過程式碼
+
+```ts
+import { Migrator, SeederRunner } from '@gravito/atlas'
+import path from 'node:path'
+
+// 執行所有未執行的遷移
+const migrator = new Migrator({
+  path: path.join(__dirname, 'database/migrations')
+})
+await migrator.run()
+
+// 執行所有 Seeders
+const seederRunner = new SeederRunner({
+  path: path.join(__dirname, 'database/seeders')
+})
+await seederRunner.run()
+
+// 執行指定的 Seeder（依名稱）
+await seederRunner.call('UserSeeder')
 ```
 

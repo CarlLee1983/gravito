@@ -1,93 +1,58 @@
-# 🌌 My Gravito App
+# 🌌 My Gravito Inertia App
 
-A web application built with [Gravito](https://github.com/gravito-framework/gravito) - A micro-kernel framework for modular backend applications.
+A modern full-stack web application built with [Gravito](https://github.com/gravito-framework/gravito), Inertia.js, and React.
 
-## Quick Start
+## 🚀 Quick Start
 
 ```bash
 # Install dependencies
 bun install
 
-# Start development server (with hot reload)
+# Start development server
+# In one terminal:
 bun run dev
+# In another terminal (for Vite HMR):
+bun x vite src/client
+
+# Run type checking
+bun run typecheck
+
+# Lint and format code
+bun run lint
+bun run format
+
+# Build for production
+bun run build
 
 # Start production server
 bun run start
 ```
 
-## Project Structure
+## 📂 Project Structure
 
 ```
 src/
-├── index.ts           # App entry point (configure here)
+├── index.ts           # App entry point
 ├── bootstrap.ts       # Framework initialization
-├── routes/
-│   ├── home.ts        # Page routes (GET /)
-│   └── api.ts         # API routes (GET /api/*)
-├── hooks/
-│   └── index.ts       # Application hooks
-├── utils/
-│   └── template.ts    # Template engine
+├── app.ts             # App factory
+├── routes/            # Route modules
+├── controllers/       # Controller classes
+├── client/            # React Frontend
+│   ├── app.tsx        # Inertia entry point
+│   ├── components/    # Reusable components
+│   └── pages/         # Inertia page components
 └── views/
-    ├── layout.html    # Base HTML layout
-    └── home.html      # Home page template
+    └── app.html       # Root HTML template
 ```
 
-## Customization
+## 🛠 Features
 
-### Add a New Route
+- **Inertia.js Integration**: The classic monolith feel with SPA speed.
+- **Orbit System**: Modular plugin architecture.
+- **Type-Safe API**: End-to-end type safety between server and client.
+- **Vite & React**: Modern frontend development experience.
+- **Biome**: Fast linting and formatting.
 
-Create a new file in `src/routes/`:
-
-```typescript
-// src/routes/users.ts
-import type { PlanetCore } from '@gravito/core'
-
-export function registerUserRoutes(core: PlanetCore): void {
-  core.app.get('/api/users', (c) => {
-    return c.json({ users: [] })
-  })
-}
-```
-
-Then register it in `src/bootstrap.ts`:
-
-```typescript
-import { registerUserRoutes } from './routes/users'
-
-// In bootstrap function:
-registerUserRoutes(core)
-```
-
-### Add a Hook
-
-Edit `src/hooks/index.ts`:
-
-```typescript
-// Log all requests
-core.hooks.addAction('request:start', (args) => {
-  console.log(`Request: ${args.method} ${args.path}`)
-})
-```
-
-### Add a New Page
-
-1. Create `src/views/about.html`
-2. In your route, use `render('about', { data }, { title: 'About' })`
-
-## Available Orbits
-
-- `@gravito/stasis` - In-memory caching
-- `@gravito/atlas` - Database integration
-- `@gravito/sentinel` - Authentication
-- `@gravito/nebula` - File storage
-
-## Learn More
-
-- [Gravito Documentation](https://github.com/gravito-framework/gravito#readme)
-- [Photon Documentation](https://gravito.dev/photon)
-- [Bun Documentation](https://bun.sh)
-
-## License
+## 📄 License
 
 MIT

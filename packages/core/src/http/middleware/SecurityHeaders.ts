@@ -1,11 +1,19 @@
 import type { GravitoContext, GravitoMiddleware } from '../types'
 
+/**
+ * HSTS Configuration
+ * @public
+ */
 export type HstsOptions = {
   maxAge: number
   includeSubDomains?: boolean
   preload?: boolean
 }
 
+/**
+ * Options for Security Headers middleware
+ * @public
+ */
 export type SecurityHeadersOptions = {
   contentSecurityPolicy?: string | false | ((c: GravitoContext) => string | false)
   frameOptions?: string | false
@@ -39,6 +47,10 @@ function buildHstsHeader(options: HstsOptions): string {
   return parts.join('; ')
 }
 
+/**
+ * Apply common security headers to responses (Helmet-style).
+ * @public
+ */
 export function securityHeaders(options: SecurityHeadersOptions = {}): GravitoMiddleware {
   const defaults: Required<Omit<SecurityHeadersOptions, 'contentSecurityPolicy' | 'hsts'>> = {
     frameOptions: 'DENY',

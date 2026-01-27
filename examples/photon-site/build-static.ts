@@ -55,6 +55,9 @@ async function build() {
     // Filter for JSON files
     const validFiles = files.filter((f) => f.endsWith('.json'))
 
+    // Add localized root for docs (redirects to intro)
+    docRoutes.push(`/${lang}/docs`)
+
     validFiles.forEach((file) => {
       const slug = file.replace('.json', '')
 
@@ -63,8 +66,8 @@ async function build() {
         docRoutes.push(`/docs/${slug}`)
       }
 
-      // We always support the explicit localized path /docs/:lang/:slug
-      docRoutes.push(`/docs/${lang}/${slug}`)
+      // We always support the explicit localized path /:lang/docs/:slug
+      docRoutes.push(`/${lang}/docs/${slug}`)
     })
   }
 
@@ -75,17 +78,86 @@ async function build() {
   // 2. Legal Routes (Static)
   const legalRoutes = ['privacy', 'terms'].map((p) => `/legal/${p}`)
 
+  // 3. Core Pages
+  const coreRoutes = ['/', '/ecosystem', '/patterns']
+
+  // 4. Localized Variants
+  // We want to generate /zh-TW, /zh-TW/ecosystem, /zh-TW/legal/privacy etc.
+  // We exclude 'en' because it's the default locale mapped to root paths.
+  const localizedRoutes: string[] = []
+  const nonDefaultLangs = langDirs.filter((l) => l !== 'en')
+
+  nonDefaultLangs.forEach((lang) => {
+    // Root
+    localizedRoutes.push(`/${lang}`)
+
+    // Core pages (excluding root)
+    ;['ecosystem', 'patterns'].forEach((page) => {
+      localizedRoutes.push(`/${lang}/${page}`)
+    })
+
+    // Legal pages
+    ;['privacy', 'terms'].forEach((page) => {
+      localizedRoutes.push(`/${lang}/legal/${page}`)
+    })
+  })
+
   // Combine manual dynamic routes
-  const extraPaths = [...docRoutes, ...legalRoutes]
+  const extraPaths = [...coreRoutes, ...docRoutes, ...legalRoutes, ...localizedRoutes]
 
   // Export content
   // This will crawl all GET routes, render them to HTML, and generate Sitemap + Robots.txt
   // The 'extraPaths' are merged into the crawlers queue and will be present in the sitemap.
-  await ssg.export(outputDir, 'https://photon.gravito.dev', extraPaths)
+  const baseUrl = (
+    process.env.BASE_URL ||
+    process.env.CF_PAGES_URL ||
+    'https://photon.gravito.dev'
+  ).replace(/\/$/, '')
 
-  console.log('✅ Build complete.')
+  try {
+    await ssg.exportIncremental(outputDir, {
+      baseUrl,
+      incremental: true,
+      extraPaths,
+    })
+  } catch (err) {
+    console.error('❌ CRITICAL SSG ERROR:', err)
+  }
 
-  // 3. Copy Public Assets
+  // Manual fallback for sitemap.xml and robots.txt if SSG failed to generate them
+  const { existsSync } = await import('node:fs')
+  const { writeFile } = await import('node:fs/promises')
+
+  if (!existsSync(path.join(outputDir, 'sitemap.xml'))) {
+    console.warn('⚠️ SSG failed to generate sitemap.xml. Generating manually...')
+    const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+${extraPaths
+  .map((route) => {
+    const loc = `${baseUrl}${route === '/' ? '' : route}`
+    return `  <url>
+    <loc>${loc}</loc>
+    <changefreq>weekly</changefreq>
+    <priority>${route === '/' ? '1.0' : '0.8'}</priority>
+  </url>`
+  })
+  .join('\n')}
+</urlset>`.trim()
+    await writeFile(path.join(outputDir, 'sitemap.xml'), sitemap, 'utf-8')
+    console.log('✅ Manual sitemap.xml generated.')
+  }
+
+  if (!existsSync(path.join(outputDir, 'robots.txt'))) {
+    console.warn('⚠️ SSG failed to generate robots.txt. Generating manually...')
+    const robots = `User-agent: *
+Allow: /
+
+Sitemap: ${baseUrl}/sitemap.xml`.trim()
+    await writeFile(path.join(outputDir, 'robots.txt'), robots, 'utf-8')
+    console.log('✅ Manual robots.txt generated.')
+  }
+
+  console.log('✅ Build complete.') // 3. Copy Public Assets
   console.log('📦 Copying public assets...')
   const publicDir = path.join(process.cwd(), 'public')
   try {
@@ -105,8 +177,6 @@ async function build() {
   } catch (e) {
     console.warn('⚠️ Could not copy public assets (directory might be empty or missing):', e)
   }
-
-  process.exit(0)
 }
 
 build().catch((err) => {

@@ -1,5 +1,9 @@
 import type { GravitoRequest, ValidationTarget } from '../../http/types'
 
+/**
+ * Bun-optimized implementation of GravitoRequest.
+ * @internal
+ */
 export class BunRequest implements GravitoRequest {
   private _url: URL
   private _params: Record<string, string> = {}

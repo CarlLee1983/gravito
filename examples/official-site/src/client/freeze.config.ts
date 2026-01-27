@@ -1,9 +1,9 @@
-import { defineConfig } from '@gravito/freeze'
+import { asLocale, defineConfig } from '@gravito/freeze'
 
 export const freezeConfig = defineConfig({
   staticDomains: ['gravito.dev'],
-  locales: ['en', 'zh'],
-  defaultLocale: 'en',
+  locales: [asLocale('en'), asLocale('zh')],
+  defaultLocale: asLocale('en'),
   baseUrl: 'https://gravito.dev',
   redirects: [],
 })

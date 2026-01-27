@@ -1,10 +1,11 @@
 {
   "name": "@gravito/cosmos",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "description": "Internationalization orbit for Gravito framework",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "type": "module",
+  "sideEffects": false,
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
@@ -34,7 +35,9 @@
   },
   "devDependencies": {
     "bun-types": "latest",
-    "tsup": "^8.5.1"
+    "mitata": "^1.0.34",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3"
   },
   "publishConfig": {
     "access": "public"

@@ -3,6 +3,14 @@ import { Check, Loader2, Power, PowerOff, Shield, UserPlus, X } from 'lucide-rea
 import type React from 'react'
 import { useCallback, useEffect, useState } from 'react'
 
+/**
+ * Admin User Management Page.
+ *
+ * Manage administrative users, their roles, and permissions.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export function AdminUserList() {
   const { sdk } = useAdmin()
   const [users, setUsers] = useState<any[]>([])

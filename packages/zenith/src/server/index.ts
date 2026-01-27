@@ -51,7 +51,10 @@ if (dbDriver === 'sqlite' || process.env.DB_HOST) {
     })
   }
 
-  const adapter = dbDriver === 'sqlite' ? new SQLitePersistence(DB) : new MySQLPersistence(DB)
+  const adapter =
+    dbDriver === 'sqlite'
+      ? new SQLitePersistence(DB.connection())
+      : new MySQLPersistence(DB.connection())
   adapter.setupTable().catch((err) => console.error('[FluxConsole] SQL Archive Setup Error:', err))
 
   persistence = {
@@ -769,19 +772,20 @@ api.get('/alerts/config', async (c) => {
   return c.json({
     rules: queueService.alerts.getRules(),
     config: queueService.alerts.getConfig(),
-    maintenance: await queueService.getMaintenanceConfig(),
+    // maintenance: await queueService.getMaintenanceConfig(),
   })
 })
 
-api.post('/maintenance/config', async (c) => {
-  const config = await c.req.json()
-  try {
-    await queueService.saveMaintenanceConfig(config)
-    return c.json({ success: true })
-  } catch (_err) {
-    return c.json({ error: 'Failed to save maintenance config' }, 500)
-  }
-})
+// Maintenance API temporarily disabled - requires ServerConfigManager enhancement
+// api.post('/maintenance/config', async (c) => {
+//   const config = await c.req.json()
+//   try {
+//     // await queueService.saveMaintenanceConfig(config)
+//     return c.json({ success: true })
+//   } catch (_err) {
+//     return c.json({ error: 'Failed to save maintenance config' }, 500)
+//   }
+// })
 
 api.post('/alerts/config', async (c) => {
   const config = await c.req.json()

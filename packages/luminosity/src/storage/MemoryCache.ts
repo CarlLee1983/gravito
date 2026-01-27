@@ -5,6 +5,15 @@ interface CacheItem {
   expiresAt: number
 }
 
+/**
+ * MemoryCache provides a simple TTL-based in-memory cache for sitemap entries.
+ *
+ * It includes a primitive locking mechanism to prevent "cache stampede"
+ * (multiple simultaneous requests triggering identical heavy generation tasks).
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class MemoryCache {
   private cache: CacheItem | null = null
   private locked = false
@@ -13,7 +22,9 @@ export class MemoryCache {
   constructor(private ttlSeconds: number) {}
 
   /**
-   * Get cached entries if valid
+   * Get cached entries if valid.
+   *
+   * @returns The cached entries, or null if cache is empty or expired.
    */
   get(): SitemapEntry[] | null {
     if (!this.cache) {
@@ -27,7 +38,9 @@ export class MemoryCache {
   }
 
   /**
-   * Set cache
+   * Set cache with entries and calculate expiration based on TTL.
+   *
+   * @param entries - The sitemap entries to cache.
    */
   set(entries: SitemapEntry[]) {
     this.cache = {
@@ -37,14 +50,17 @@ export class MemoryCache {
   }
 
   /**
-   * Clear cache
+   * Clear the cache manually.
    */
   clear() {
     this.cache = null
   }
 
   /**
-   * Acquire a lock to prevent cache stampede
+   * Acquire a lock to prevent cache stampede.
+   *
+   * @returns A promise resolving to `true` if the lock was acquired (you must populate cache),
+   *          or `false` if you waited and should check the cache again.
    */
   async lock(): Promise<boolean> {
     if (!this.locked) {
@@ -59,7 +75,7 @@ export class MemoryCache {
   }
 
   /**
-   * Release lock
+   * Release lock and wake up the next waiter.
    */
   unlock() {
     this.locked = false

@@ -1,4 +1,4 @@
-import { describe, expect, it, mock, spyOn } from 'bun:test'
+import { describe, expect, it, mock } from 'bun:test'
 import type { GravitoContext } from '@gravito/core'
 import type { Authenticatable } from '../src/contracts/Authenticatable'
 import type { UserProvider } from '../src/contracts/UserProvider'

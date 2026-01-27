@@ -297,7 +297,7 @@ export class FastContext implements IFastContext {
     return this.text(message, 400)
   }
 
-  async forward(target: string, options: any = {}): Promise<Response> {
+  async forward(target: string, _options: any = {}): Promise<Response> {
     this.checkReleased()
     // Minimal implementation of forwarding
     const url = new URL(this.req.url)
@@ -326,7 +326,7 @@ export class FastContext implements IFastContext {
 
   header(name: string): string | undefined
   header(name: string, value: string): void
-  header(name: string, value?: string): string | undefined | void {
+  header(name: string, value?: string): string | undefined | undefined {
     this.checkReleased()
     if (value !== undefined) {
       this._headers.set(name, value)

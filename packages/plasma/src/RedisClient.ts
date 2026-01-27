@@ -1,8 +1,3 @@
-/**
- * Redis Client
- * @description Low-level Redis client wrapper for ioredis
- */
-
 import type {
   PipelineResult,
   RedisClientContract,
@@ -16,8 +11,20 @@ import type {
 } from './types'
 
 /**
- * Redis Client
- * Provides a type-safe wrapper around ioredis
+ * ioredis-based Redis Client Implementation
+ *
+ * Provides a type-safe, contract-compliant wrapper around the ioredis library
+ * for environments where Bun.redis is unavailable (Node.js, legacy Bun versions).
+ * Offers full Redis protocol support with connection pooling and Pub/Sub.
+ *
+ * @example
+ * ```typescript
+ * const client = new RedisClient({ host: 'localhost', port: 6379 });
+ * await client.connect();
+ * await client.set('key', 'value', { ex: 60 });
+ * const value = await client.get('key');
+ * await client.disconnect();
+ * ```
  */
 export class RedisClient implements RedisClientContract {
   private client: IORedisClient | null = null
@@ -33,11 +40,19 @@ export class RedisClient implements RedisClientContract {
   // ============================================================================
 
   /**
-   * Connect to the Redis server.
+   * Establish TCP connection to Redis server.
    *
-   * Initializes the ioredis client and establishes a connection.
+   * Dynamically loads ioredis library and initializes client with retry logic.
+   * Connection is established lazily to allow configuration before network I/O.
    *
-   * @returns A promise that resolves when connected.
+   * @returns Promise resolving when handshake completes.
+   * @throws {Error} When ioredis package is not installed or connection fails.
+   *
+   * @example
+   * ```typescript
+   * const client = new RedisClient({ host: 'localhost', port: 6379 });
+   * await client.connect();
+   * ```
    */
   async connect(): Promise<void> {
     if (this.connected) {
@@ -79,11 +94,17 @@ export class RedisClient implements RedisClientContract {
   }
 
   /**
-   * Disconnect from the Redis server.
+   * Gracefully terminate connection.
    *
-   * Closes the connection and resets the client state.
+   * Waits for pending commands to complete, closes Pub/Sub subscriber
+   * if active, and releases socket resources. Safe to call multiple times.
    *
-   * @returns A promise that resolves when disconnected.
+   * @returns Promise resolving when all resources are released.
+   *
+   * @example
+   * ```typescript
+   * await client.disconnect();
+   * ```
    */
   async disconnect(): Promise<void> {
     if (this.subscriber) {
@@ -119,8 +140,19 @@ export class RedisClient implements RedisClientContract {
   }
 
   /**
-   * Health check
-   * Verifies the connection is active and responsive
+   * Perform connection health check.
+   *
+   * Issues a PING command to verify network connectivity and server responsiveness.
+   * Used for readiness probes in containerized deployments.
+   *
+   * @returns True if PING receives PONG response, false otherwise.
+   *
+   * @example
+   * ```typescript
+   * if (!(await client.checkHealth())) {
+   *   console.error('Redis health check failed');
+   * }
+   * ```
    */
   async checkHealth(): Promise<boolean> {
     try {
@@ -142,10 +174,13 @@ export class RedisClient implements RedisClientContract {
   }
 
   /**
-   * Load ioredis module dynamically.
+   * Lazy-load ioredis dependency.
    *
-   * @returns A promise resolving to the ioredis module.
-   * @throws {Error} If ioredis is not installed.
+   * Defers ioredis import until connection time to reduce startup overhead
+   * and allow applications using Bun.redis exclusively to skip installing ioredis.
+   *
+   * @returns Loaded ioredis module with constructor.
+   * @throws {Error} When ioredis package is not found in node_modules.
    */
   private async loadIORedis(): Promise<IORedisModule> {
     try {
@@ -159,10 +194,13 @@ export class RedisClient implements RedisClientContract {
   }
 
   /**
-   * Get the Redis client, throw if not connected.
+   * Access internal client with connection guard.
    *
-   * @returns The IORedisClient instance.
-   * @throws {Error} If not connected.
+   * Prevents command execution before connection establishment,
+   * ensuring all operations occur on a valid socket.
+   *
+   * @returns Active ioredis client instance.
+   * @throws {Error} When called before connect() completes.
    */
   private getClient(): IORedisClient {
     if (!this.client) {
@@ -684,6 +722,10 @@ export class RedisClient implements RedisClientContract {
 
   pipeline(): RedisPipelineContract {
     return new RedisPipeline(this.getClient().pipeline())
+  }
+
+  async eval(script: string, numKeys: number, ...args: string[]): Promise<unknown> {
+    return await this.getClient().eval(script, numKeys, ...args)
   }
 }
 

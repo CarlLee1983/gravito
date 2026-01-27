@@ -15,13 +15,8 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    "types": ["bun-types", "vite/client", "node"],
-    "baseUrl": ".",
-    "paths": {
-      "@gravito/prism": ["../../packages/prism/src/index.ts"],
-      "@gravito/photon/*": ["../../packages/photon/src/*"],
-      "@gravito/core": ["../../packages/core/src/index.ts"]
-    }
+    "types": ["vite/client", "node"],
+    "baseUrl": "."
   },
   "include": ["src", "build-static.ts"]
 }

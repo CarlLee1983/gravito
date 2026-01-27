@@ -1,6 +1,15 @@
 import type { Redis } from 'ioredis'
 import type { QueueProbe, QueueSnapshot } from '../types'
 
+/**
+ * BullProbe monitors queues managed by the Bull (v3/v4) Node.js library.
+ *
+ * It retrieves metrics for waiting, active, delayed, and failed jobs by
+ * querying the specific Redis data structures used by Bull.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class BullProbe implements QueueProbe {
   constructor(
     private redis: Redis,

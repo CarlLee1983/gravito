@@ -56,6 +56,26 @@ class DocsServiceImpl {
       const highlighter = await this.getHighlighter()
 
       const renderer = new marked.Renderer()
+
+      // Use ImageService for optimized markdown images
+      const imageService = await import('@gravito/prism').then((m) => new m.ImageService())
+
+      renderer.image = ({ href, text }: { href: string; text: string }) => {
+        try {
+          if (!href.startsWith('http') && !href.startsWith('//')) {
+            return imageService.generateImageTag({
+              src: href,
+              alt: text,
+              usePicture: true,
+              formatNegotiation: true,
+            })
+          }
+        } catch (e) {
+          console.warn(`[DocsService] Failed to optimize image: ${href}`, e)
+        }
+        return `<img src="${href}" alt="${text}" />`
+      }
+
       // marked 17.x passes an object { text, lang, escaped } to renderer.code
       renderer.code = ({ text, lang }: { text: string; lang?: string; escaped?: boolean }) => {
         const language = lang || 'text'

@@ -1,6 +1,6 @@
 {
   "name": "@gravito/flux",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Platform-agnostic workflow engine for Gravito",
   "type": "module",
   "main": "./dist/index.node.cjs",

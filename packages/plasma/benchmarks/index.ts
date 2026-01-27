@@ -60,7 +60,7 @@ async function run() {
     }
   })
 
-  console.log('\n--- Pipeline SET (Batch: ' + PIPELINE_BATCH + ') ---')
+  console.log(`\n--- Pipeline SET (Batch: ${PIPELINE_BATCH}) ---`)
   const batches = ITERATIONS / PIPELINE_BATCH
 
   await benchmark('BunRedisClient (Pipeline)', async () => {

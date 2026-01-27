@@ -76,7 +76,7 @@ class PhotonRequestWrapper implements GravitoRequest {
         // Delegate to Photon's native request (with extended properties)
         const nativeReq = target.photonCtx.req as Context['req'] & PhotonRequestExtended
         if (prop in nativeReq) {
-          const value = nativeReq[prop]
+          const value = Reflect.get(nativeReq, prop)
           if (typeof value === 'function') {
             return value.bind(nativeReq)
           }
@@ -91,8 +91,7 @@ class PhotonRequestWrapper implements GravitoRequest {
           return Reflect.set(target, prop, value)
         }
         const extendedReq = target.photonCtx.req as Context['req'] & PhotonRequestExtended
-        extendedReq[prop as string] = value
-        return true
+        return Reflect.set(extendedReq, prop, value)
       },
     }) as PhotonRequestWrapper
   }
@@ -220,7 +219,7 @@ class PhotonContextWrapper<V extends GravitoVariables = GravitoVariables>
           return target.reset.bind(target)
         }
         // 1. If property exists on the instance (method, property), return it
-        if (prop in target) {
+        if (Reflect.has(target, prop)) {
           const value = Reflect.get(target, prop, receiver)
           if (typeof value === 'function') {
             return value.bind(target) // Ensure 'this' points to instance
@@ -443,9 +442,8 @@ class PhotonContextWrapper<V extends GravitoVariables = GravitoVariables>
       method: this.req.method,
       headers,
       body: this.req.method !== 'GET' && this.req.method !== 'HEAD' ? this.req.raw.body : null,
-      // @ts-expect-error - Bun/Fetch specific for streaming bodies
       duplex: 'half',
-    })
+    } as RequestInit & { duplex?: string })
   }
 }
 
@@ -600,6 +598,9 @@ export class PhotonAdapter<V extends GravitoVariables = GravitoVariables>
     ...handlers: (GravitoHandler<V> | GravitoMiddleware<V>)[]
   ): void {
     const fullPath = (this.config.basePath || '') + path
+    console.log(
+      `[PhotonAdapter] Registering ${method.toUpperCase()} ${fullPath} with ${handlers.length} handlers`
+    )
     // We treat all handlers as potential middleware (accepting next)
     const photonHandlers = handlers.map((h) => toPhotonMiddleware<V>(h as GravitoMiddleware<V>))
 
@@ -727,6 +728,10 @@ export { PhotonContextWrapper, PhotonRequestWrapper, toPhotonHandler, toPhotonMi
  * @category Rebranding
  */
 export const GravitoAdapter = PhotonAdapter
+/**
+ * Rebranded alias for PhotonAdapter type.
+ * @category Rebranding
+ */
 export type GravitoAdapter<V extends GravitoVariables = GravitoVariables> = PhotonAdapter<V>
 
 /**

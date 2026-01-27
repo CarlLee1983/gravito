@@ -10,11 +10,11 @@ describe('MemoryStore', () => {
     expect(await store.get('immediate')).toBeNull()
 
     await store.put('soon', 'value', 1)
-    expect(await store.get('soon')).toBe('value')
+    expect(await store.get<string>('soon')).toBe('value')
 
     expect(await store.add('soon', 'next', 60)).toBe(false)
     expect(await store.add('fresh', 'ok', 60)).toBe(true)
-    expect(await store.get('fresh')).toBe('ok')
+    expect(await store.get<string>('fresh')).toBe('ok')
   })
 
   it('supports increment/decrement and flush', async () => {
@@ -25,7 +25,7 @@ describe('MemoryStore', () => {
 
     await store.put('a', 1, 60)
     await store.flush()
-    expect(await store.get('a')).toBeNull()
+    expect(await store.get<number>('a')).toBeNull()
   })
 
   it('supports locks and block timeout', async () => {
@@ -51,11 +51,11 @@ describe('MemoryStore', () => {
     const taggedKey = store.tagKey('item', ['a', 'b'])
 
     await store.put(taggedKey, 'value', 60)
-    expect(await store.get(taggedKey)).toBe('value')
+    expect(await store.get<string>(taggedKey)).toBe('value')
 
     store.tagIndexAdd(['a', 'b'], taggedKey)
     await store.flushTags(['a'])
-    expect(await store.get(taggedKey)).toBeNull()
+    expect(await store.get<string>(taggedKey)).toBeNull()
   })
 
   it('exposes sleep helper', async () => {

@@ -1,13 +1,26 @@
 import type { SitemapProgress, SitemapProgressStorage } from '../types'
 
+/**
+ * Options for configuring the `ProgressTracker`.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface ProgressTrackerOptions {
+  /** The storage backend used to persist progress information. */
   storage: SitemapProgressStorage
-  updateInterval?: number // 更新間隔（毫秒），預設 1000ms
+  /** Update interval in milliseconds. @default 1000 */
+  updateInterval?: number
 }
 
 /**
- * 進度追蹤器
- * 追蹤 sitemap 生成進度
+ * ProgressTracker monitors and persists the progress of sitemap generation jobs.
+ *
+ * It provides methods to initialize, update, and complete progress tracking,
+ * ensuring that long-running generation tasks can be monitored via the storage backend.
+ *
+ * @public
+ * @since 3.0.0
  */
 export class ProgressTracker {
   private storage: SitemapProgressStorage
@@ -21,7 +34,10 @@ export class ProgressTracker {
   }
 
   /**
-   * 初始化進度追蹤
+   * Initializes progress tracking for a new job.
+   *
+   * @param jobId - Unique identifier for the generation job.
+   * @param total - Total number of entries to be processed.
    */
   async init(jobId: string, total: number): Promise<void> {
     this.currentProgress = {
@@ -37,7 +53,13 @@ export class ProgressTracker {
   }
 
   /**
-   * 更新進度
+   * Updates the current progress of the job.
+   *
+   * Updates are debounced and flushed to storage at regular intervals
+   * specified by `updateInterval` to avoid excessive write operations.
+   *
+   * @param processed - Number of entries processed so far.
+   * @param status - Optional new status for the job.
    */
   async update(processed: number, status?: SitemapProgress['status']): Promise<void> {
     if (!this.currentProgress) {
@@ -53,7 +75,7 @@ export class ProgressTracker {
       this.currentProgress.status = 'processing'
     }
 
-    // 定期更新到儲存（避免過於頻繁的寫入）
+    // Regularly update to storage (avoid too frequent writes)
     if (!this.updateTimer) {
       this.updateTimer = setInterval(() => {
         this.flush().catch((err) => {
@@ -64,7 +86,7 @@ export class ProgressTracker {
   }
 
   /**
-   * 完成進度追蹤
+   * Marks the current job as successfully completed.
    */
   async complete(): Promise<void> {
     if (!this.currentProgress) {
@@ -80,7 +102,9 @@ export class ProgressTracker {
   }
 
   /**
-   * 標記為失敗
+   * Marks the current job as failed with an error message.
+   *
+   * @param error - The error message describing why the job failed.
    */
   async fail(error: string): Promise<void> {
     if (!this.currentProgress) {
@@ -96,7 +120,7 @@ export class ProgressTracker {
   }
 
   /**
-   * 刷新進度到儲存
+   * Flushes the current progress state to the storage backend.
    */
   private async flush(): Promise<void> {
     if (!this.currentProgress) {
@@ -113,7 +137,7 @@ export class ProgressTracker {
   }
 
   /**
-   * 停止更新計時器
+   * Stops the periodic update timer.
    */
   private stop(): void {
     if (this.updateTimer) {
@@ -123,7 +147,9 @@ export class ProgressTracker {
   }
 
   /**
-   * 獲取當前進度
+   * Returns a copy of the current progress state.
+   *
+   * @returns The current SitemapProgress object, or null if no job is active.
    */
   getCurrentProgress(): SitemapProgress | null {
     return this.currentProgress ? { ...this.currentProgress } : null

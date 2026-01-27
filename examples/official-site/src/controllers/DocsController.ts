@@ -14,17 +14,20 @@ export class DocsController {
 
   show = async (c: Context) => {
     const inertia = c.get('inertia') as unknown as InertiaHelper
-    const locale = (c.get('locale') as string) || 'en'
+    const path = c.req.path
 
-    let slug = c.req.path
-
-    if (locale === 'zh') {
-      slug = slug.replace(/^\/(zh|zh-TW)\/docs\//, '')
-    } else if (locale === 'en' && slug.startsWith('/en/')) {
-      slug = slug.replace(/^\/en\/docs\//, '')
+    // Improved locale detection: prioritize path prefix
+    let locale = 'en'
+    if (path.startsWith('/zh/') || path.startsWith('/zh-TW/')) {
+      locale = 'zh'
     } else {
-      slug = slug.replace(/^\/docs\//, '')
+      locale = (c.get('locale') as string) || 'en'
     }
+
+    // Clean slug: remove locale and /docs/ prefix
+    let slug = path
+    slug = slug.replace(/^\/(en|zh|zh-TW)\/docs\//, '')
+    slug = slug.replace(/^\/docs\//, '')
 
     const t = getTranslation(locale)
     const page = await DocsService.getPage(locale, slug)
@@ -61,7 +64,7 @@ export class DocsController {
         currentPath: c.req.path,
         editUrl,
       },
-      { seoHtml }
+      { seoHtml, locale }
     )
   }
 }

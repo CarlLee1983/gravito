@@ -5,9 +5,18 @@ import { createRequire } from 'node:module'
 const require = createRequire(import.meta.url)
 
 /**
- * This is a thin wrapper around @gravito/cli to support 'bun create gravito-app'
+ * Main entry point for the 'create-gravito-app' initializer.
+ * Orchestrates the project bootstrapping by delegating to the '@gravito/cli' create command.
+ *
+ * @param {Object} [options] - Execution options for the runner.
+ * @param {string[]} [options.argv] - Command line arguments passed to the CLI.
+ * @param {Function} [options.resolve] - Dependency resolver function.
+ * @param {Function} [options.spawnFn] - Process spawn function.
+ * @param {Function} [options.exit] - Process exit function.
+ * @param {Object} [options.env] - Environment variables.
+ * @returns {Promise<import('node:child_process').ChildProcess | null>} The spawned CLI process.
+ * @public
  */
-
 export async function run(options = {}) {
     const {
         argv = process.argv.slice(2),

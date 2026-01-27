@@ -8,6 +8,18 @@ import type { SeoConfig } from '../../types'
 import type { SeoStrategy } from '../interfaces'
 import { DynamicStrategy } from './DynamicStrategy'
 
+/**
+ * IncrementalStrategy manages sitemap updates using a Write-Ahead Log (WAL).
+ *
+ * It stores an initial snapshot of all sitemap entries and appends any
+ * subsequent changes (additions or removals) to a persistent log file (.jsonl).
+ * When retrieving entries, it replays the log onto the snapshot to provide
+ * the current state. It also handles automatic log compaction to keep the
+ * system efficient.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class IncrementalStrategy implements SeoStrategy {
   private logger: JsonlLogger
   private compactor: Compactor
@@ -37,6 +49,15 @@ export class IncrementalStrategy implements SeoStrategy {
     this.compactInterval = config.incremental.compactInterval
   }
 
+  /**
+   * Initializes the strategy.
+   *
+   * Checks for an existing snapshot. If none is found, it performs an initial
+   * population from the configured resolvers. Also starts the auto-compaction timer.
+   *
+   * @returns A promise that resolves when initialization is complete.
+   * @throws {Error} If filesystem operations fail.
+   */
   async init(): Promise<void> {
     // Check if snapshot exists
     if (!(await this.adapter.exists(this.snapshotPath))) {
@@ -49,6 +70,11 @@ export class IncrementalStrategy implements SeoStrategy {
     this.startAutoCompact()
   }
 
+  /**
+   * Shuts down the strategy.
+   *
+   * Stops the auto-compaction timer to allow the process to exit cleanly.
+   */
   async shutdown(): Promise<void> {
     this.stopAutoCompact()
   }
@@ -72,6 +98,15 @@ export class IncrementalStrategy implements SeoStrategy {
     }
   }
 
+  /**
+   * Retrieves the current sitemap entries.
+   *
+   * Loads the latest snapshot and merges it with any pending operations
+   * from the WAL (Write-Ahead Log) in memory.
+   *
+   * @returns A promise that resolves to the merged array of sitemap entries.
+   * @throws {Error} If reading or parsing files fails.
+   */
   async getEntries(): Promise<SitemapEntry[]> {
     // 1. Load Snapshot
     const snapshot = await this.loadSnapshot()
@@ -88,6 +123,12 @@ export class IncrementalStrategy implements SeoStrategy {
     return current
   }
 
+  /**
+   * Appends a new entry to the Write-Ahead Log (WAL).
+   *
+   * @param entry - The sitemap entry to add.
+   * @throws {Error} If writing to the log fails.
+   */
   async add(entry: SitemapEntry): Promise<void> {
     await this.logger.append({
       op: 'add',
@@ -96,6 +137,12 @@ export class IncrementalStrategy implements SeoStrategy {
     })
   }
 
+  /**
+   * Appends a removal operation to the Write-Ahead Log (WAL).
+   *
+   * @param url - The URL of the entry to remove.
+   * @throws {Error} If writing to the log fails.
+   */
   async remove(url: string): Promise<void> {
     await this.logger.append({
       op: 'remove',
@@ -105,7 +152,12 @@ export class IncrementalStrategy implements SeoStrategy {
   }
 
   /**
-   * Force compaction: Merge logs into snapshot and clear logs
+   * Force compaction: Merge logs into snapshot and clear logs.
+   *
+   * This operation makes all pending changes permanent in the snapshot file
+   * and truncates the WAL.
+   *
+   * @throws {Error} If filesystem operations fail.
    */
   async compact(): Promise<void> {
     const snapshot = await this.loadSnapshot()

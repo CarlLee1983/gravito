@@ -29,8 +29,10 @@ const isStaticSite = (): boolean => {
   }
 
   // 檢查是否在 GitHub Pages 或特定靜態 Domain
-  const staticDomains = ['gravito.dev', 'gravito-framework.github.io']
-  return staticDomains.includes(hostname)
+  const staticDomains = ['gravito.dev', 'github.io', 'vercel.app', 'netlify.app', 'pages.dev']
+  return staticDomains.some(
+    (domain) => hostname === domain || hostname.endsWith(`.${domain}`)
+  )
 }
 
 const target = computed(() => props.to || props.href || '#')

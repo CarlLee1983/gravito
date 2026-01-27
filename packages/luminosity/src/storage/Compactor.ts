@@ -1,15 +1,28 @@
 import type { SitemapEntry } from '../interfaces'
 import type { JsonlLogger } from './JsonlLogger'
 
+/**
+ * Compactor merges incremental log entries (WAL) into a clean, unified state.
+ *
+ * It replays all logged operations ('add', 'remove') starting from an initial
+ * snapshot to produce a deduplicated and sorted list of sitemap entries.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export class Compactor {
   constructor(private logger: JsonlLogger) {}
 
   /**
-   * Merge all log entries into a clean state
-   * - Apply 'add' operations
-   * - Apply 'remove' operations
-   * - Deduplicate by URL (keep latest)
-   * - Output sorted, clean entries
+   * Merge all log entries into a clean state.
+   *
+   * - Applies 'add' operations to update or insert entries.
+   * - Applies 'remove' operations to delete entries.
+   * - Deduplicates entries by URL (keeping the latest).
+   * - Returns a sorted, clean list of entries.
+   *
+   * @param initialEntries - The starting snapshot of entries.
+   * @returns A promise resolving to the compacted list of entries.
    */
   async compact(initialEntries: SitemapEntry[] = []): Promise<SitemapEntry[]> {
     const logs = await this.logger.readAll()
@@ -34,7 +47,11 @@ export class Compactor {
   }
 
   /**
-   * Repair corrupted log entries
+   * Repair corrupted log entries.
+   *
+   * Scans the log file for invalid JSON lines and removes them.
+   *
+   * @returns A promise resolving to the number of corrupted lines removed.
    */
   async repairLogs(): Promise<number> {
     return this.logger.repairWAL()

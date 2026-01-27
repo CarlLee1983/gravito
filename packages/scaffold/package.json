@@ -1,6 +1,6 @@
 {
   "name": "@gravito/scaffold",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Project scaffolding engine for Gravito - Generate enterprise-grade architecture templates",
   "type": "module",
   "main": "dist/index.js",

@@ -1,6 +1,31 @@
+import { stripHtml } from '../utils/html'
 import type { Renderer, RenderResult } from './Renderer'
 
+/**
+ * Renderer for React component-based emails.
+ *
+ * Renders React components to static HTML using server-side rendering (SSR).
+ * It lazily loads React and ReactDOM dependencies only when needed, preventing
+ * unnecessary bundle bloat for users who do not use React renderers.
+ *
+ * @example
+ * ```typescript
+ * const renderer = new ReactRenderer(MyComponent, { title: 'Welcome' });
+ * const result = await renderer.render({ name: 'John' });
+ * ```
+ *
+ * @typeParam P - Props type for the React component.
+ * @public
+ * @since 3.0.0
+ */
 export class ReactRenderer<P extends object = object> implements Renderer {
+  /**
+   * Creates an instance of ReactRenderer.
+   *
+   * @param component - The React component to render.
+   * @param props - Initial props for the component.
+   * @param deps - Optional dependency injection for testing.
+   */
   constructor(
     private component: any, // Use any to avoid hard React dependency in types
     private props?: P,
@@ -10,6 +35,16 @@ export class ReactRenderer<P extends object = object> implements Renderer {
     } = {}
   ) {}
 
+  /**
+   * Renders the React component to a static HTML string.
+   *
+   * This method performs dynamic imports of `react` and `react-dom/server`
+   * to ensure they are only loaded if this renderer is actually used.
+   *
+   * @param data - Runtime data to be merged with initial props.
+   * @returns A promise resolving to the rendered content.
+   * @throws {Error} If React dependencies cannot be loaded or rendering fails.
+   */
   async render(data: Record<string, unknown>): Promise<RenderResult> {
     // Dynamic imports to avoid hard dependencies on react/react-dom
     const createElement = this.deps.createElement ?? (await import('react')).createElement
@@ -25,17 +60,7 @@ export class ReactRenderer<P extends object = object> implements Renderer {
 
     return {
       html: fullHtml,
-      text: this.stripHtml(html),
+      text: stripHtml(html),
     }
-  }
-
-  private stripHtml(html: string): string {
-    return html
-      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-      .replace(/<[^>]+>/g, '')
-      .replace(/&nbsp;/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim()
   }
 }

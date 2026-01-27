@@ -6,9 +6,45 @@ import type { MigrationDriver, MigrationResult, MigrationStatus } from './Migrat
 
 const DEFAULT_DATABASE_URL = 'sqlite:./demo.db'
 
+/**
+ * Migration driver for Gravito Atlas ORM.
+ *
+ * Manages database migrations using the Atlas ORM migration system.
+ * Supports SQLite, PostgreSQL, MySQL, and MongoDB databases.
+ *
+ * @example
+ * ```typescript
+ * const driver = new AtlasMigrationDriver('src/database/migrations')
+ *
+ * // Generate a new migration
+ * await driver.generate('create_users_table')
+ *
+ * // Run pending migrations
+ * await driver.migrate()
+ *
+ * // Check migration status
+ * const status = await driver.status()
+ * console.log('Pending:', status.pending)
+ * console.log('Applied:', status.applied)
+ * ```
+ *
+ * @since 3.0.0
+ * @public
+ */
 export class AtlasMigrationDriver implements MigrationDriver {
+  /**
+   * Create a new AtlasMigrationDriver instance.
+   *
+   * @param migrationsDir - Path to the migrations directory.
+   */
   constructor(private migrationsDir = 'src/database/migrations') {}
 
+  /**
+   * Generate a new migration file.
+   *
+   * @param name - The name of the migration.
+   * @returns A promise that resolves with the migration result.
+   */
   async generate(name: string): Promise<MigrationResult> {
     const timestamp = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14)
     const filename = `${timestamp}_${name}.ts`
@@ -38,6 +74,11 @@ export default class ${className} {
     }
   }
 
+  /**
+   * Run all pending migrations.
+   *
+   * @returns A promise that resolves with the migration result.
+   */
   async migrate(): Promise<MigrationResult> {
     try {
       this.ensureDatabaseConfigured()
@@ -57,6 +98,11 @@ export default class ${className} {
     }
   }
 
+  /**
+   * Drop all tables and re-run migrations.
+   *
+   * @returns A promise that resolves with the migration result.
+   */
   async fresh(): Promise<MigrationResult> {
     try {
       this.ensureDatabaseConfigured()
@@ -76,6 +122,36 @@ export default class ${className} {
     }
   }
 
+  /**
+   * Rollback the last N migrations.
+   *
+   * @param steps - The number of migrations to rollback (default: 1).
+   * @returns A promise that resolves with the migration result.
+   */
+  async rollback(steps = 1): Promise<MigrationResult> {
+    try {
+      this.ensureDatabaseConfigured()
+      const migrator = new Migrator({ path: this.migrationsDir })
+      const result = await migrator.rollback(steps)
+      const message =
+        result.migrations.length === 0
+          ? 'No migrations rolled back'
+          : `Rolled back ${result.migrations.length} migration(s)`
+      return { success: true, message }
+    } catch (err: unknown) {
+      return {
+        success: false,
+        message: 'Rollback failed',
+        error: err instanceof Error ? err.message : String(err),
+      }
+    }
+  }
+
+  /**
+   * Get the current status of migrations.
+   *
+   * @returns A promise that resolves with the migration status.
+   */
   async status(): Promise<MigrationStatus> {
     this.ensureDatabaseConfigured()
     const migrator = new Migrator({ path: this.migrationsDir })
@@ -86,6 +162,11 @@ export default class ${className} {
     }
   }
 
+  /**
+   * Ensure that the database is configured for the Atlas ORM.
+   *
+   * @private
+   */
   private ensureDatabaseConfigured() {
     DB.configure({
       default: 'default',
@@ -95,6 +176,12 @@ export default class ${className} {
     })
   }
 
+  /**
+   * Build the database connection configuration from the environment.
+   *
+   * @returns The database connection configuration.
+   * @private
+   */
   private buildConnectionConfig(): ConnectionConfig {
     const url = (process.env.DATABASE_URL ?? DEFAULT_DATABASE_URL).trim()
 
@@ -121,6 +208,9 @@ export default class ${className} {
       let driver = parsed.protocol.replace(':', '')
       if (driver === 'postgresql') {
         driver = 'postgres'
+      } else if (driver.startsWith('mongodb')) {
+        // Handle mongodb and mongodb+srv
+        driver = 'mongodb'
       }
 
       const database = parsed.pathname ? parsed.pathname.replace(/^\//, '') : undefined
@@ -144,7 +234,6 @@ export default class ${className} {
         config.password = decodeURIComponent(parsed.password)
       }
 
-      // TODO: Improve config typing for MongoDB
       return config as unknown as ConnectionConfig
     } catch {
       return {
@@ -154,6 +243,13 @@ export default class ${className} {
     }
   }
 
+  /**
+   * Build a class name for the migration.
+   *
+   * @param name - The name of the migration.
+   * @returns The generated class name.
+   * @private
+   */
   private buildClassName(name: string) {
     const segments = name.split(/[^0-9a-zA-Z]+/).filter(Boolean)
     const pascal = segments.map((segment) => segment[0].toUpperCase() + segment.slice(1)).join('')

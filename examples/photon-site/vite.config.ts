@@ -5,11 +5,24 @@ import { defineConfig } from 'vite'
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  define: {
+    'process.env.BASE_URL': JSON.stringify(
+      (process.env.BASE_URL || process.env.CF_PAGES_URL || 'https://photon.gravito.dev').replace(
+        /\/$/,
+        ''
+      )
+    ),
+  },
   build: {
     outDir: 'dist/client',
     rollupOptions: {
       input: {
         app: path.resolve(__dirname, 'src/client/app.tsx'),
+      },
+      output: {
+        entryFileNames: 'assets/[name].js',
+        chunkFileNames: 'assets/[name].js',
+        assetFileNames: 'assets/[name].[ext]',
       },
     },
   },

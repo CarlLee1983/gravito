@@ -1,20 +1,47 @@
 import type React from 'react'
-import type { ImageOptions } from '../ImageService'
-import { ImageService } from '../ImageService'
+import type { ImageCDNLoader } from '../image/ImageCDNLoader'
+import type { ArtDirectionConfig, ImageOptions } from '../image/ImageService'
+import { ImageService } from '../image/ImageService'
 
 /**
  * Props for the `Image` component.
+ * @public
  */
 export interface ImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
+  /** Source URL or path of the image */
   src: string
+  /** Alternative text for accessibility (Required) */
   alt: string
+  /** Fixed width in pixels (prevents CLS) */
   width?: number
+  /** Fixed height in pixels (prevents CLS) */
   height?: number
+  /** Loading strategy (default: 'lazy') */
   loading?: 'lazy' | 'eager'
+  /** Responsive sizes attribute string */
   sizes?: string
+  /** Custom widths for srcset or boolean to toggle default auto-generation */
   srcset?: boolean | number[]
+  /** Decoding strategy (default: 'async') */
   decoding?: 'async' | 'auto' | 'sync'
-  fetchpriority?: 'high' | 'low' | 'auto'
+  /** Fetch priority hint for LCP optimization */
+  fetchPriority?: 'high' | 'low' | 'auto'
+  /** Enable format negotiation (AVIF/WebP) */
+  formatNegotiation?: boolean
+  /** Target formats for format negotiation */
+  formats?: ('avif' | 'webp' | 'original')[]
+  /** Use <picture> element */
+  usePicture?: boolean
+  /** Art direction configuration */
+  artDirection?: ArtDirectionConfig[]
+  /** Placeholder type */
+  placeholder?: 'none' | 'blur' | 'color'
+  /** Base64 encoded blur image (for LQIP) */
+  blurDataURL?: string
+  /** Dominant color (for color placeholder) */
+  dominantColor?: string
+  /** CDN Loader */
+  loader?: ImageCDNLoader
 }
 
 /**
@@ -34,12 +61,19 @@ export function Image({
   className,
   style,
   decoding,
-  fetchpriority,
+  fetchPriority,
+  formatNegotiation,
+  formats,
+  usePicture,
+  artDirection,
+  placeholder,
+  blurDataURL,
+  dominantColor,
+  loader,
   ...rest
 }: ImageProps): React.JSX.Element {
   const imageService = new ImageService()
 
-  // Convert React props to ImageOptions
   const options: ImageOptions = {
     src,
     alt,
@@ -51,13 +85,25 @@ export function Image({
     class: className,
     style: typeof style === 'string' ? style : undefined,
     decoding,
-    fetchpriority,
+    fetchpriority: fetchPriority,
+    formatNegotiation,
+    formats,
+    usePicture,
+    artDirection,
+    placeholder,
+    blurDataURL,
+    dominantColor,
+    loader,
   }
 
-  // Generate optimized attributes using the core service
+  if (usePicture || formatNegotiation || artDirection) {
+    const html = imageService.generatePictureElement(options)
+    // biome-ignore lint/security/noDangerouslySetInnerHtml: Required for rendering <picture> elements in React
+    return <div dangerouslySetInnerHTML={{ __html: html }} {...rest} />
+  }
+
   const imgAttrs = imageService.generateImageAttributes(options)
 
-  // Map optimized attributes back to React props
   const {
     class: _cls,
     srcset: generatedSrcset,
@@ -71,7 +117,7 @@ export function Image({
       className={className}
       alt={alt}
       srcSet={generatedSrcset}
-      fetchPriority={fetchpriority}
+      fetchPriority={fetchPriority}
       style={style as React.CSSProperties}
       {...coreAttrs}
       {...rest}
@@ -79,5 +125,4 @@ export function Image({
   )
 }
 
-// Default export
 export default Image

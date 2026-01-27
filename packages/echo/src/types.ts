@@ -1,6 +1,16 @@
+import type { DeadLetterQueue } from './dlq/DeadLetterQueue'
+import type { EchoLogger } from './observability/logging'
+import type { MetricsProvider } from './observability/metrics'
+import type { Tracer } from './observability/tracing'
+import type { WebhookStore } from './storage/WebhookStore'
+
 /**
- * @fileoverview Core types for @gravito/echo webhook module
- * @module @gravito/echo
+ * Core types for the Echo module.
+ *
+ * This module defines the fundamental structures for both receiving and sending webhooks,
+ * ensuring a consistent interface across different providers and delivery targets.
+ *
+ * @packageDocumentation
  */
 
 // ─────────────────────────────────────────────────────────────
@@ -8,44 +18,92 @@
 // ─────────────────────────────────────────────────────────────
 
 /**
- * Webhook provider configuration
+ * Configuration for a specific webhook provider.
+ *
+ * Used to define how Echo should identify and verify incoming requests from
+ * external services like Stripe, GitHub, or custom implementations.
+ *
+ * @public
  */
 export interface WebhookProviderConfig {
-  /** Provider name (e.g., 'stripe', 'github', 'generic') */
+  /**
+   * The unique name of the provider.
+   */
   name: string
-  /** Secret for signature verification */
+  /**
+   * The shared secret used to verify incoming webhook signatures.
+   */
   secret: string
-  /** Signature header name */
+  /**
+   * The name of the HTTP header containing the signature.
+   *
+   * @example 'stripe-signature'
+   */
   signatureHeader?: string
-  /** Timestamp validation tolerance in seconds (default: 300) */
+  /**
+   * Maximum allowed time drift in seconds for timestamp validation.
+   *
+   * Prevents replay attacks by ensuring the request was sent recently.
+   * @defaultValue 300
+   */
   tolerance?: number
 }
 
 /**
- * Result of webhook verification
+ * The result of verifying an incoming webhook request.
+ *
+ * Encapsulates the outcome of signature and timestamp validation,
+ * providing the parsed payload if successful.
+ *
+ * @public
  */
 export interface WebhookVerificationResult {
-  /** Whether the webhook is valid */
+  /**
+   * Indicates if the signature is valid and the timestamp is within tolerance.
+   */
   valid: boolean
-  /** Error message if invalid */
+  /**
+   * Descriptive error message if the verification failed.
+   */
   error?: string
-  /** Parsed payload */
+  /**
+   * The parsed JSON payload from the request body.
+   */
   payload?: unknown
-  /** Event type (if available) */
+  /**
+   * The specific event name extracted from the payload or headers.
+   */
   eventType?: string
-  /** Webhook ID (if available) */
+  /**
+   * The unique identifier for this webhook message, if provided by the source.
+   */
   webhookId?: string
 }
 
 /**
- * Webhook provider interface
+ * Interface that all webhook provider implementations must follow.
+ *
+ * Providers encapsulate the service-specific logic for verifying signatures
+ * and parsing event types (e.g., Stripe's HMAC-SHA256 vs GitHub's X-Hub-Signature).
+ *
+ * @public
  */
 export interface WebhookProvider {
-  /** Provider name */
+  /**
+   * Uniquely identifies the provider type.
+   *
+   * @example 'stripe'
+   */
   readonly name: string
 
   /**
-   * Verify webhook signature
+   * Validates the integrity and authenticity of an incoming request.
+   *
+   * @param payload - The raw request body.
+   * @param headers - The incoming HTTP headers.
+   * @param secret - The secret key used for verification.
+   * @returns A promise resolving to the verification result.
+   * @throws Error if verification logic encounters an unrecoverable failure.
    */
   verify(
     payload: string | Buffer,
@@ -54,33 +112,59 @@ export interface WebhookProvider {
   ): Promise<WebhookVerificationResult>
 
   /**
-   * Parse the event type from payload
+   * Determines the event type from the validated payload.
+   *
+   * @param payload - The parsed JSON body.
+   * @returns The event type string or undefined if not found.
    */
   parseEventType?(payload: unknown): string | undefined
 }
 
 /**
- * Webhook event handler
+ * A callback function triggered when a valid webhook event is received.
+ *
+ * @public
  */
 export type WebhookHandler<T = unknown> = (event: WebhookEvent<T>) => void | Promise<void>
 
 /**
- * Webhook event
+ * Represents a normalized webhook event processed by Echo.
+ *
+ * Provides a consistent interface regardless of the source provider,
+ * allowing handlers to be provider-agnostic where possible.
+ *
+ * @public
  */
 export interface WebhookEvent<T = unknown> {
-  /** Provider name */
+  /**
+   * Name of the provider that sent the event.
+   */
   provider: string
-  /** Event type */
+  /**
+   * The type of event.
+   *
+   * @example 'payment_intent.succeeded'
+   */
   type: string
-  /** Event payload */
+  /**
+   * The parsed and type-safe data payload.
+   */
   payload: T
-  /** Raw request headers */
+  /**
+   * The original HTTP headers received with the request.
+   */
   headers: Record<string, string | string[] | undefined>
-  /** Raw body */
+  /**
+   * The raw, unparsed request body string.
+   */
   rawBody: string
-  /** Timestamp when received */
+  /**
+   * The local system time when the webhook was received.
+   */
   receivedAt: Date
-  /** Webhook ID (if available) */
+  /**
+   * Unique ID for the event, if provided by the source.
+   */
   id?: string
 }
 
@@ -89,69 +173,239 @@ export interface WebhookEvent<T = unknown> {
 // ─────────────────────────────────────────────────────────────
 
 /**
- * Outgoing webhook payload
+ * Data structure for sending a webhook to an external service.
+ *
+ * @public
  */
 export interface WebhookPayload<T = unknown> {
-  /** Target URL */
+  /**
+   * The destination URL where the webhook should be POSTed.
+   */
   url: string
-  /** Event type */
+  /**
+   * The name of the event being dispatched.
+   */
   event: string
-  /** Payload data */
+  /**
+   * The data to be JSON-encoded and sent in the body.
+   */
   data: T
-  /** Optional webhook ID */
+  /**
+   * Optional unique identifier for this specific delivery attempt.
+   */
   id?: string
-  /** Optional timestamp */
+  /**
+   * Optional timestamp representing when the event occurred.
+   */
   timestamp?: Date
 }
 
 /**
- * Webhook delivery result
+ * Summary of a webhook delivery attempt.
+ *
+ * @public
  */
 export interface WebhookDeliveryResult {
-  /** Whether delivery was successful */
+  /**
+   * Indicates if the destination returned a 2xx status code.
+   */
   success: boolean
-  /** HTTP status code */
+  /**
+   * The HTTP status code returned by the destination server.
+   */
   statusCode?: number
-  /** Response body */
+  /**
+   * The raw response body from the destination server.
+   */
   body?: string
-  /** Error message if failed */
+  /**
+   * Error message if the request failed.
+   */
   error?: string
-  /** Attempt number */
+  /**
+   * Which attempt number this was.
+   */
   attempt: number
-  /** Time taken in ms */
+  /**
+   * Total time elapsed for the request in milliseconds.
+   */
   duration: number
-  /** Timestamp */
+  /**
+   * Timestamp when the delivery attempt was recorded.
+   */
   deliveredAt: Date
 }
 
 /**
- * Retry strategy configuration
+ * Strategy for retrying failed webhook deliveries with exponential backoff.
+ *
+ * @public
  */
 export interface RetryConfig {
-  /** Maximum retry attempts (default: 3) */
+  /**
+   * Maximum number of delivery attempts.
+   * @defaultValue 3
+   */
   maxAttempts?: number
-  /** Initial delay in ms (default: 1000) */
+  /**
+   * Initial delay before the first retry in milliseconds.
+   * @defaultValue 1000
+   */
   initialDelay?: number
-  /** Backoff multiplier (default: 2) */
+  /**
+   * Multiplier for the delay between subsequent retries.
+   * @defaultValue 2
+   */
   backoffMultiplier?: number
-  /** Maximum delay in ms (default: 300000 = 5 minutes) */
+  /**
+   * Upper bound for the retry delay in milliseconds.
+   * @defaultValue 300000
+   */
   maxDelay?: number
-  /** HTTP status codes to retry (default: [408, 429, 500, 502, 503, 504]) */
+  /**
+   * List of HTTP status codes that should trigger a retry.
+   *
+   * @example [502, 503, 504]
+   */
   retryableStatuses?: number[]
 }
 
 /**
- * Webhook dispatcher configuration
+ * Configuration for the outgoing webhook dispatcher.
+ *
+ * @public
  */
 export interface WebhookDispatcherConfig {
-  /** Secret for signing outgoing webhooks */
+  /**
+   * Secret key used to sign outgoing webhook payloads for security.
+   */
   secret: string
-  /** Retry configuration */
+  /**
+   * Optional retry strategy for failed deliveries.
+   */
   retry?: RetryConfig
-  /** Request timeout in ms (default: 30000) */
+  /**
+   * Maximum time in milliseconds to wait for a response.
+   * @defaultValue 30000
+   */
   timeout?: number
-  /** User agent string */
+  /**
+   * Custom User-Agent header for the outgoing request.
+   */
   userAgent?: string
+}
+
+/**
+ * Options for batch dispatching webhooks.
+ *
+ * @public
+ */
+export interface BatchDispatchOptions {
+  /**
+   * Maximum number of concurrent requests.
+   * @defaultValue 5
+   */
+  concurrency?: number
+  /**
+   * Whether to stop processing on the first failure.
+   * @defaultValue false
+   */
+  stopOnFirstFailure?: boolean
+}
+
+/**
+ * Result of a batch dispatch operation.
+ *
+ * @public
+ */
+export interface BatchDispatchResult {
+  /**
+   * Total number of webhooks in the batch.
+   */
+  total: number
+  /**
+   * Number of successfully delivered webhooks.
+   */
+  succeeded: number
+  /**
+   * Number of failed webhooks.
+   */
+  failed: number
+  /**
+   * Individual results for each webhook.
+   */
+  results: Array<{
+    payload: WebhookPayload
+    result: WebhookDeliveryResult
+  }>
+}
+
+/**
+ * Options for replaying events.
+ *
+ * @public
+ */
+export interface ReplayOptions {
+  /**
+   * List of event IDs to replay.
+   */
+  eventIds?: string[]
+  /**
+   * Filter by time range.
+   */
+  timeRange?: {
+    from: Date
+    to: Date
+  }
+  /**
+   * Filter by provider.
+   */
+  provider?: string
+  /**
+   * Filter by event type.
+   */
+  eventType?: string
+  /**
+   * Dry run mode (do not actually send).
+   */
+  dryRun?: boolean
+  /**
+   * Override target URL.
+   */
+  targetUrl?: string
+}
+
+/**
+ * Result of a replay operation.
+ *
+ * @public
+ */
+export interface ReplayResult {
+  /**
+   * Total number of events considered for replay.
+   */
+  total: number
+  /**
+   * Number of events successfully replayed.
+   */
+  replayed: number
+  /**
+   * Number of events skipped based on filters.
+   */
+  skipped: number
+  /**
+   * Number of events that failed during replay.
+   */
+  failed: number
+  /**
+   * Detailed status for each event.
+   */
+  events: Array<{
+    eventId: string
+    status: 'replayed' | 'skipped' | 'failed'
+    result?: WebhookDeliveryResult
+    error?: string
+  }>
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -159,15 +413,69 @@ export interface WebhookDispatcherConfig {
 // ─────────────────────────────────────────────────────────────
 
 /**
- * OrbitEcho module configuration
+ * Observability configuration for Echo.
+ *
+ * Allows plugging in custom metrics, tracing, and logging providers
+ * to monitor webhook activity.
+ *
+ * @public
+ */
+export interface EchoObservabilityConfig {
+  /**
+   * Metrics provider for collecting performance and error data.
+   */
+  metrics?: MetricsProvider
+  /**
+   * Distributed tracer for request tracking.
+   */
+  tracer?: Tracer
+  /**
+   * Logger for diagnostic information.
+   */
+  logger?: EchoLogger
+}
+
+/**
+ * Full configuration for the OrbitEcho module.
+ *
+ * @public
  */
 export interface EchoConfig {
-  /** Registered webhook providers */
+  /**
+   * Map of named provider configurations for receiving webhooks.
+   */
   providers?: Record<string, WebhookProviderConfig>
 
-  /** Dispatcher configuration for outgoing webhooks */
+  /**
+   * Settings for sending webhooks to other services.
+   */
   dispatcher?: WebhookDispatcherConfig
 
-  /** Base path for webhook endpoints (default: '/webhooks') */
+  /**
+   * The URL prefix for the automatically generated webhook endpoints.
+   *
+   * @example '/webhooks' will create '/webhooks/:provider'
+   * @defaultValue '/webhooks'
+   */
   basePath?: string
+
+  /**
+   * Persistence store for events.
+   */
+  store?: WebhookStore
+
+  /**
+   * Dead letter queue for failed events.
+   */
+  deadLetterQueue?: DeadLetterQueue
+
+  /**
+   * Default batch dispatch options.
+   */
+  batch?: BatchDispatchOptions
+
+  /**
+   * Observability settings.
+   */
+  observability?: EchoObservabilityConfig
 }

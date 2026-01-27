@@ -3,11 +3,63 @@ import type { CacheManager } from '@gravito/stasis'
 import { LockManager } from './locks'
 import { SchedulerManager } from './SchedulerManager'
 
+/**
+ * Enterprise task scheduler orbit enabling distributed cron-based job execution.
+ *
+ * Provides the infrastructure for defining scheduled tasks with distributed locking,
+ * preventing duplicate execution across multi-server deployments. Integrates seamlessly
+ * with Gravito's orbit system to expose the scheduler in both the IoC container and
+ * request context.
+ *
+ * Design rationale: Uses pluggable lock backends (memory/cache) to support both
+ * development (single-node) and production (multi-node) environments without code changes.
+ *
+ * @throws {Error} When cache driver is configured but OrbitCache is not loaded first
+ *
+ * @example
+ * Single-node development setup:
+ * ```typescript
+ * await PlanetCore.boot({
+ *   config: {
+ *     scheduler: {
+ *       lock: { driver: 'memory' }
+ *     }
+ *   },
+ *   orbits: [OrbitHorizon]
+ * })
+ * ```
+ *
+ * @example
+ * Multi-node production with distributed locking:
+ * ```typescript
+ * import { OrbitCache } from '@gravito/stasis'
+ *
+ * await PlanetCore.boot({
+ *   config: {
+ *     scheduler: {
+ *       lock: { driver: 'cache' },
+ *       nodeRole: 'worker'
+ *     }
+ *   },
+ *   orbits: [
+ *     OrbitCache,      // Must load before Horizon
+ *     OrbitHorizon
+ *   ]
+ * })
+ * ```
+ *
+ * @public
+ */
 export class OrbitHorizon implements GravitoOrbit {
   /**
-   * Install the Horizon Orbit into PlanetCore.
+   * Integrates Horizon scheduler into PlanetCore lifecycle.
    *
-   * @param core - The PlanetCore instance.
+   * Initializes lock backend (memory/cache), registers SchedulerManager in IoC container,
+   * and injects scheduler instance into request context for controller access.
+   *
+   * @param core - PlanetCore instance providing config, container, and adapter
+   *
+   * @throws {Error} Implicitly via LockManager when cache driver is requested but unavailable
    */
   install(core: PlanetCore): void {
     const config = core.config.get<{

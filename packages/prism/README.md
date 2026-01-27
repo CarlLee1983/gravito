@@ -1,88 +1,131 @@
-# @gravito/prism (Orbit View)
+# @gravito/prism 💎
 
-Standard view orbit for Gravito. A simple server-side template engine with image optimization built for Core Web Vitals.
+> High-performance template engine & image optimization orbit for Gravito.
 
-## Features
+`@gravito/prism` is the standard view orbit for the Gravito framework. It features a Blade-inspired server-side template engine combined with a powerful image optimization service designed to achieve perfect Core Web Vitals scores.
 
-- **Template engine**: Variables, conditionals, loops, and partials
-- **Image component**: Zero client dependencies with optimized output
-- **Helper registry**: Extendable helper registration
-- **Core Web Vitals**: Automatic image loading optimizations
-- **Two modes**: HTML templates and optional React components
-- **Type-safe**: Full TypeScript support
+## 🌟 Key Features
 
-## Installation
+- **🚀 Performance-First Rendering**: LRU template caching with hash-based invalidation (140x faster renders).
+- **🖼️ Advanced Image Optimization**: Automatic AVIF/WebP conversion, responsive `srcset` generation, and LQIP blur placeholders.
+- **🏗️ Static Site Generation (SSG)**: Full site export with incremental build support (only rebuilds changed pages).
+- **🧩 Component System**: Build UI using clean `<x-component>` syntax.
+- **⚡ Core Web Vitals Ready**: Automatic CLS prevention, lazy loading, and priority hints.
+- **🔌 Multi-Framework Support**: Optional React and Vue components for seamless integration.
+
+## 📦 Installation
 
 ```bash
 bun add @gravito/prism
 ```
 
-Optional React support:
+## 🚀 Quick Start
 
-```bash
-bun add react react-dom
-```
-
-## Quick Start
-
-### 1. Register the orbit
+### 1. Register the Orbit
 
 ```typescript
-import { defineConfig, PlanetCore } from '@gravito/core'
+import { PlanetCore } from '@gravito/core'
 import { OrbitPrism } from '@gravito/prism'
 
-const config = defineConfig({
-  config: {
-    VIEW_DIR: 'src/views',
-  },
-  orbits: [OrbitPrism],
+const core = await PlanetCore.boot({
+  config: { VIEW_DIR: 'src/views' },
+  orbits: [new OrbitPrism()]
 })
-
-const core = await PlanetCore.boot(config)
 ```
 
-### 2. Render a template
+### 2. Render Templates
+
+Prism supports a rich set of directives:
+
+```handlebars
+{{-- src/views/home.html --}}
+@extends('layout')
+
+@section('content')
+  <h1>Welcome, {{ user.name }}</h1>
+  
+  @if(items.length > 0)
+    <ul>
+      @foreach(item in items)
+        <li>{{ item.name }}</li>
+      @endforeach
+    </ul>
+  @endif
+
+  <x-alert type="success">Operation completed!</x-alert>
+@endsection
+```
 
 ```typescript
-import { Context } from '@gravito/photon'
+const view = core.container.resolve('view')
+const html = view.render('home', { user: { name: 'Carl' }, items: [] })
+```
 
-export class HomeController {
-  index = async (c: Context) => {
-    const view = c.get('view')
+### 3. Image Optimization
 
-    return c.html(
-      view.render('home', {
-        title: 'Welcome',
-        visitors: 1000,
-        version: '1.0.0'
-      })
-    )
+Use the built-in `{{image}}` helper to generate highly optimized tags:
+
+```handlebars
+{{image 
+  src="/hero.jpg" 
+  alt="Hero Image" 
+  width=1200 
+  height=630
+  placeholder="blur"
+  formatNegotiation=true
+}}
+```
+
+## ⏳ Advanced Features
+
+### Static Site Generation (SSG)
+
+Prism can crawl your routes and generate a fully static site:
+
+```typescript
+const ssg = core.container.resolve('ssg')
+
+// Full export
+await ssg.export('./dist', 'https://example.com')
+
+// Incremental export (fast rebuilds)
+await ssg.exportIncremental('./dist', { incremental: true })
+```
+
+### Dynamic Route Resolution
+
+Handle static generation for dynamic paths like `/blog/[slug]`:
+
+```typescript
+await ssg.exportDynamic([
+  {
+    pattern: '/blog/[slug]',
+    getStaticPaths: async () => {
+      const posts = await db.getPosts()
+      return posts.map(p => ({ params: { slug: p.slug } }))
+    }
   }
-}
+], './dist')
 ```
 
-### 3. Use the image helper
+## 🛠️ Supported Image CDNs
 
-```html
-{{image src="/assets/hero.jpg" alt="Hero" width=1200 height=630 loading="eager"}}
-```
+Prism integrates with popular CDNs for on-the-fly transformations:
+- **Cloudinary**: `createCloudinaryLoader({ cloudName: '...' })`
+- **imgix**: `createImgixLoader({ domain: '...' })`
+- **Vercel**: `vercelLoader` (built-in)
 
-## React Component (Optional)
+## 🧩 API Reference
 
-```tsx
-import { Image } from '@gravito/prism/react'
+- `view.render(name, data)`: Render a template file.
+- `view.registerHelper(name, fn)`: Add custom template helpers.
+- `ssg.export(outDir, baseUrl)`: Export site to static files.
+- `ImageService`: Core logic for generating optimized image tags.
 
-export const Hero = () => (
-  <Image
-    src="/assets/hero.jpg"
-    alt="Hero"
-    width={1200}
-    height={630}
-    loading="eager"
-  />
-)
-```
+## 🤝 Contributing
 
-## License
+We welcome contributions! Please see our [Contributing Guide](../../CONTRIBUTING.md) for details.
 
-MIT
+## 📄 License
+
+MIT © Carl Lee

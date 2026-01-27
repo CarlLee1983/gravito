@@ -3,15 +3,33 @@ import { dirname, join } from 'node:path'
 import { ConfigLoader, SeoEngine, XmlStreamBuilder } from '@gravito/luminosity'
 import pc from 'picocolors'
 
+/**
+ * Options for the `generate` command.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface GenerateCommandOptions {
+  /** Path to the configuration file. */
   config?: string
+  /** Explicit output path for the generated sitemap. */
   out?: string
+  /** Whether to run the generation in the background. @default false */
   background?: boolean
+  /** Whether to run asynchronously. @default false */
   async?: boolean
+  /** Whether to perform an incremental generation. @default false */
   incremental?: boolean
+  /** Only include items modified since this date (ISO string). */
   since?: string
 }
 
+/**
+ * Dependencies for the `generate` command, supporting dependency injection for testing.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export interface GenerateCommandDeps {
   ConfigLoader?: typeof ConfigLoader
   SeoEngine?: typeof SeoEngine

@@ -10,7 +10,7 @@ app.get('/health', (c: FastContext) => c.text('ok'))
 // 2. Static route with FastContext (middleware triggers FastContext)
 app.get(
   '/api/status',
-  (async (c: FastContext, next: any) => {
+  (async (_c: FastContext, next: any) => {
     await next()
   }) as any,
   (c: FastContext) => c.json({ status: 'ok' })

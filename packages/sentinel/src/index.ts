@@ -1,8 +1,10 @@
 /**
- * @fileoverview Orbit Auth - Authentication & Authorization for Gravito
+ * @fileoverview Orbit Sentinel - Comprehensive Authentication & Authorization for Gravito.
  *
- * Provides comprehensive authentication with multiple guards, password
- * reset, email verification, and authorization gates.
+ * This module provides a robust, multi-guard authentication system inspired by
+ * Laravel's auth architecture. It supports session-based, JWT-based, and token-based
+ * authentication, along with authorization gates, password management, and email
+ * verification.
  *
  * @module @gravito/sentinel
  * @since 1.0.0
@@ -36,32 +38,66 @@ export * from './middleware/guest'
 export * from './PasswordBroker'
 export * from './providers/CallbackUserProvider'
 
+/**
+ * Options for configuring the OrbitSentinel service.
+ * @public
+ */
 export interface OrbitSentinelOptions extends AuthConfig {
+  /** Property name used to expose AuthManager in the context */
   exposeAs?: string
+  /** Property name used to expose Gate in the context */
   exposeGateAs?: string
+  /** Property name used to expose HashManager in the context */
   exposeHashAs?: string
+  /** Property name used to expose PasswordBroker in the context */
   exposePasswordBrokerAs?: string
+  /** Property name used to expose EmailVerificationService in the context */
   exposeEmailVerificationAs?: string
 
+  /** Hashing configuration */
   hash?: HashConfig
+  /** Password reset configuration */
   passwordReset?: {
     enabled?: boolean
     repository?: PasswordResetTokenRepository
   } & PasswordBrokerOptions
+  /** Email verification configuration */
   emailVerification?: { enabled?: boolean; secret?: string } & EmailVerificationOptions
 
+  /** Custom dependency bindings */
   bindings?: {
+    /** Map of user provider factory functions */
     providers?: Record<string, UserProviderResolver>
   }
 }
 
+/**
+ * OrbitSentinel Service - The main entry point for Gravito authentication.
+ *
+ * This class implements the GravitoOrbit interface and is responsible for
+ * initializing and mounting the authentication and authorization services
+ * into the PlanetCore application.
+ *
+ * @public
+ * @example
+ * ```typescript
+ * const auth = new OrbitSentinel(config);
+ * auth.install(core);
+ * ```
+ */
 export class OrbitSentinel implements GravitoOrbit {
+  /** The global authorization gate instance */
   public readonly gate: Gate
 
   constructor(private options: OrbitSentinelOptions) {
     this.gate = new Gate()
   }
 
+  /**
+   * Install the Sentinel service into the core application.
+   *
+   * @param core - The PlanetCore instance
+   */
   install(core: PlanetCore): void {
     const {
       exposeAs = 'auth',
@@ -157,7 +193,10 @@ declare module '@gravito/core' {
 }
 
 /**
- * Functional style plugin (if needed)
+ * Functional style plugin for registering Sentinel.
+ *
+ * @param core - The PlanetCore instance
+ * @param options - Configuration options
  */
 export default function orbitAuth(core: PlanetCore, options: OrbitSentinelOptions) {
   new OrbitSentinel(options).install(core)

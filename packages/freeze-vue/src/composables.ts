@@ -4,8 +4,22 @@
  * Vue 3 plugin and composables for SSG functionality.
  */
 
-import { createDetector, type FreezeConfig, type FreezeDetector } from '@gravito/freeze'
-import { type App, type ComputedRef, computed, type InjectionKey, inject, provide } from 'vue'
+import {
+  type AbsolutePath,
+  createDetector,
+  type FreezeConfig,
+  type FreezeDetector,
+  type Locale,
+} from '@gravito/freeze'
+import {
+  type App,
+  type Component,
+  type ComputedRef,
+  computed,
+  type InjectionKey,
+  inject,
+  provide,
+} from 'vue'
 
 /**
  * Freeze context value
@@ -13,7 +27,9 @@ import { type App, type ComputedRef, computed, type InjectionKey, inject, provid
 export interface FreezeContext {
   config: FreezeConfig
   detector: FreezeDetector
-  currentLocale: ComputedRef<string>
+  currentLocale: ComputedRef<Locale>
+  /** Optional Inertia Link component */
+  LinkComponent?: Component
 }
 
 /**
@@ -31,6 +47,7 @@ export const FREEZE_KEY: InjectionKey<FreezeContext> = Symbol('freeze')
  * // main.ts
  * import { createApp } from 'vue'
  * import { FreezePlugin, defineConfig } from '@gravito/freeze-vue'
+ * import { Link } from '@inertiajs/vue3'
  *
  * const config = defineConfig({
  *   staticDomains: ['example.com'],
@@ -40,7 +57,7 @@ export const FREEZE_KEY: InjectionKey<FreezeContext> = Symbol('freeze')
  * })
  *
  * const app = createApp(App)
- * app.use(FreezePlugin, config)
+ * app.use(FreezePlugin, { config, LinkComponent: Link })
  * app.mount('#app')
  * ```
  */
@@ -49,22 +66,38 @@ export const FreezePlugin = {
    * Plugin installation function.
    *
    * @param app - The Vue application instance.
-   * @param config - The Freeze configuration.
+   * @param options - Plugin options. Can be a FreezeConfig or an object containing it.
    */
-  install(app: App, config: FreezeConfig) {
+  install(app: App, options?: { config: FreezeConfig; LinkComponent?: Component } | FreezeConfig) {
+    if (!options) {
+      throw new Error(
+        'FreezePlugin requires a configuration. Please pass FreezeConfig or { config: FreezeConfig }.'
+      )
+    }
+
+    const config = 'config' in options ? options.config : options
+    const LinkComponent = 'config' in options ? options.LinkComponent : undefined
+
+    if (!config || !config.locales) {
+      throw new Error(
+        'FreezePlugin requires a valid configuration. Ensure you are passing FreezeConfig.'
+      )
+    }
+
     const detector = createDetector(config)
 
     const currentLocale = computed(() => {
       if (typeof window === 'undefined') {
         return config.defaultLocale
       }
-      return detector.getLocaleFromPath(window.location.pathname)
+      return detector.getCurrentLocale()
     })
 
     const context: FreezeContext = {
       config,
       detector,
       currentLocale,
+      LinkComponent,
     }
 
     app.provide(FREEZE_KEY, context)
@@ -78,7 +111,7 @@ export interface UseFreezeReturn {
   /** Whether currently in static site mode */
   isStatic: ComputedRef<boolean>
   /** Current locale code */
-  locale: ComputedRef<string>
+  locale: ComputedRef<Locale>
   /**
    * Get localized path for a given path and locale.
    *
@@ -86,27 +119,27 @@ export interface UseFreezeReturn {
    * @param locale - The target locale (defaults to current locale).
    * @returns The localized path.
    */
-  getLocalizedPath: (path: string, locale?: string) => string
+  getLocalizedPath: (path: string | AbsolutePath, locale?: string | Locale) => AbsolutePath
   /**
    * Switch locale while preserving the current URL path.
    *
    * @param newLocale - The locale to switch to.
    * @returns The new localized path.
    */
-  switchLocale: (newLocale: string) => string
+  switchLocale: (newLocale: string | Locale) => AbsolutePath
   /**
    * Extract locale from a URL path.
    *
    * @param path - The URL pathname.
    * @returns The locale code.
    */
-  getLocaleFromPath: (path: string) => string
+  getLocaleFromPath: (path: string | AbsolutePath) => Locale
   /**
    * Navigate to a different locale.
    *
    * @param newLocale - The locale to switch to.
    */
-  navigateToLocale: (newLocale: string) => void
+  navigateToLocale: (newLocale: string | Locale) => void
 }
 
 /**
@@ -141,22 +174,25 @@ export function useFreeze(): UseFreezeReturn {
 
   const isStatic = computed(() => detector.isStaticSite())
 
-  const getLocalizedPath = (path: string, locale?: string): string => {
+  const getLocalizedPath = (
+    path: string | AbsolutePath,
+    locale?: string | Locale
+  ): AbsolutePath => {
     return detector.getLocalizedPath(path, locale ?? currentLocale.value)
   }
 
-  const switchLocale = (newLocale: string): string => {
+  const switchLocale = (newLocale: string | Locale): AbsolutePath => {
     if (typeof window === 'undefined') {
-      return `/${newLocale}`
+      return `/${newLocale}` as AbsolutePath
     }
     return detector.switchLocale(window.location.pathname, newLocale)
   }
 
-  const getLocaleFromPath = (path: string): string => {
+  const getLocaleFromPath = (path: string | AbsolutePath): Locale => {
     return detector.getLocaleFromPath(path)
   }
 
-  const navigateToLocale = (newLocale: string): void => {
+  const navigateToLocale = (newLocale: string | Locale): void => {
     if (typeof window !== 'undefined') {
       const newPath = switchLocale(newLocale)
       window.location.href = newPath
@@ -178,23 +214,36 @@ export function useFreeze(): UseFreezeReturn {
  *
  * Useful for SSR, testing, or custom setup scenarios where the plugin isn't used.
  *
- * @param config - The Freeze configuration.
+ * @param options - Provision options. Can be a FreezeConfig or an object containing it.
+ * @param options.config - The Freeze configuration.
+ * @param options.LinkComponent - Optional Inertia Link component.
  * @returns The created `FreezeContext`.
  */
-export function provideFreeze(config: FreezeConfig): FreezeContext {
+export function provideFreeze(
+  options:
+    | {
+        config: FreezeConfig
+        LinkComponent?: Component
+      }
+    | FreezeConfig
+): FreezeContext {
+  const config = 'config' in options ? options.config : options
+  const LinkComponent = 'config' in options ? options.LinkComponent : undefined
+
   const detector = createDetector(config)
 
   const currentLocale = computed(() => {
     if (typeof window === 'undefined') {
       return config.defaultLocale
     }
-    return detector.getLocaleFromPath(window.location.pathname)
+    return detector.getCurrentLocale()
   })
 
   const context: FreezeContext = {
     config,
     detector,
     currentLocale,
+    LinkComponent,
   }
 
   provide(FREEZE_KEY, context)

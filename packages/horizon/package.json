@@ -1,6 +1,6 @@
 {
   "name": "@gravito/horizon",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Distributed task scheduler for Gravito framework",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",

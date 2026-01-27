@@ -13,6 +13,8 @@ export default {
     desc: '專為現代 Web 打造的高效能資料庫引擎。統一 SQL 與 NoSQL 工作流程，為 Bun 與 Gravito 生態系優化的精確流暢 API。',
     demo_label: '即時主控台',
     demo_comment: '// 連接數據流並執行查詢',
+    version_badge: 'V1.3.0 軌道部署完成',
+    data_engine: '資料引擎',
     benchmark: {
       raw_read: '原生吞吐量',
       raw_read_sub: '零開銷執行',
@@ -51,7 +53,7 @@ export default {
       '與無狀態的映射器不同，Atlas 模型能追蹤內部狀態變更。系統僅會將「已修改」的欄位同步至資料庫，大幅減少 I/O 損耗並防止意外覆寫。',
     orm_title: 'Eloquent 風格模型',
     orm_desc:
-      'Atlas 將 Active Record 模式帶入了 TypeScript 環境。透過 @column 裝飾器定義模型、管理生命週期掛鉤 (Hooks)，並享受強大的關聯處理 (hasMany, belongsTo) 能力。',
+      "Atlas 將 Active Record 模式帶入了 TypeScript 環境。透過 {'@'}column 裝飾器定義模型、管理生命週期掛鉤 (Hooks)，並享受強大的關聯處理 (hasMany, belongsTo) 能力。",
     query_title: '流暢軌道建構器 (Orbit Builder)',
     query_desc:
       '使用鏈式 API 建構複雜查詢。原生支援預載入 (with)、分頁以及資料庫交易 (Transactions)，提供極致的可讀性。',
@@ -105,7 +107,7 @@ export default {
     switching_desc: 'atlas.connection("redis").set(...) — 絕對的呼叫自由，零冗餘程式碼。',
     bun_engine_title: 'Bun.sql 原生支援',
     bun_engine_desc:
-      '啟用 `useNativeDriver: true` 選項即可解鎖 Bun 的高速統一 SQL API，在現代執行環境中體驗亞毫秒級查詢效能。',
+      "啟用 'useNativeDriver: true' 選項即可解鎖 Bun 的高速統一 SQL API，在現代執行環境中體驗亞毫秒級查詢效能。",
     view_guide: '查看驅動程式指南',
   },
   installation: {

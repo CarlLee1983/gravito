@@ -1,20 +1,22 @@
 # @gravito/forge
 
-File Processing Orbit for Gravito - Video and Image Processing with Real-time Status Tracking
+File Processing Orbit for Gravito - Video and Image Processing with Real-time Status Tracking.
 
 ## Overview
 
-`@gravito/forge` is a high-performance file processing module for the Gravito framework. It provides video and image processing capabilities (resize, rotate, transcode) with real-time status tracking via Server-Sent Events (SSE).
+`@gravito/forge` is a high-performance file processing module for the Gravito framework. It provides video and image processing capabilities (resize, rotate, transcode) with real-time status tracking via Server-Sent Events (SSE). It's designed to be used as an "Orbit" within the Gravito Galaxy Architecture.
 
 ## Features
 
-- **Video Processing**: Resize, rotate, transcode using FFmpeg
-- **Image Processing**: Resize, rotate, format conversion using ImageMagick
-- **Synchronous & Asynchronous Processing**: Support both sync and async modes
-- **Real-time Status Tracking**: SSE-based progress updates
-- **Storage Integration**: Automatic upload to Nebula storage
-- **Queue Integration**: Async processing via Stream
-- **Frontend Components**: React and Vue components for displaying processing status
+- **Video Processing**: Resize, rotate, transcode using FFmpeg.
+- **Image Processing**: Resize, rotate, format conversion using ImageMagick.
+- **Fluent Pipeline API**: Chain processing operations with ease.
+- **Synchronous & Asynchronous Processing**: 
+  - **Synchronous**: Immediate processing for small files or blocking operations.
+  - **Asynchronous**: Offload heavy tasks to a background queue (integration with `@gravito/stream`).
+- **Real-time Status Tracking**: Built-in SSE (Server-Sent Events) support for tracking processing progress.
+- **Storage Integration**: Automatic upload of processed files to `@gravito/nebula` storage.
+- **Framework Components**: First-class React and Vue components to display processing status out-of-the-box.
 
 ## Installation
 
@@ -24,7 +26,7 @@ bun add @gravito/forge
 
 ## Prerequisites
 
-- **FFmpeg**: Required for video processing
+- **FFmpeg**: Required for video processing.
   ```bash
   # macOS
   brew install ffmpeg
@@ -33,7 +35,7 @@ bun add @gravito/forge
   sudo apt-get install ffmpeg
   ```
 
-- **ImageMagick**: Required for image processing
+- **ImageMagick**: Required for image processing.
   ```bash
   # macOS
   brew install imagemagick
@@ -45,6 +47,8 @@ bun add @gravito/forge
 ## Quick Start
 
 ### 1. Install Orbit
+
+Configure `OrbitForge` within your `PlanetCore` boot process.
 
 ```typescript
 import { PlanetCore } from '@gravito/core'
@@ -70,259 +74,134 @@ const core = await PlanetCore.boot({
 })
 ```
 
-### 2. Synchronous Processing
+### 2. Basic Processing
+
+#### Synchronous Processing
+Ideal for simple operations that can complete within an HTTP request lifecycle.
 
 ```typescript
 app.post('/upload', async (c) => {
   const forge = c.get('forge')
   const file = await c.req.file()
   
-  if (!file) {
-    return c.json({ error: 'No file uploaded' }, 400)
-  }
-
   const result = await forge.process(
-    {
-      source: file,
-      filename: file.name,
-      mimeType: file.type,
-    },
-    {
-      width: 1920,
-      height: 1080,
-      format: 'mp4',
-    }
+    { source: file, filename: file.name, mimeType: file.type },
+    { width: 1920, height: 1080, format: 'mp4' }
   )
 
   return c.json({ url: result.url })
 })
 ```
 
-### 3. Asynchronous Processing
+#### Asynchronous Processing with Progress
+Best for long-running video transcoding or batch image resizing.
 
 ```typescript
-app.post('/upload', async (c) => {
+app.post('/upload-async', async (c) => {
   const forge = c.get('forge')
-  const queue = c.get('queue')
   const file = await c.req.file()
   
-  if (!file) {
-    return c.json({ error: 'No file uploaded' }, 400)
-  }
-
-  // Start async processing
+  // 1. Create a job ID and initial status
   const job = await forge.processAsync(
-    {
-      source: file,
-      filename: file.name,
-      mimeType: file.type,
-    },
-    {
-      width: 1920,
-      height: 1080,
-      format: 'mp4',
-    }
+    { source: file, filename: file.name, mimeType: file.type },
+    { width: 1920, height: 1080, format: 'mp4' }
   )
 
-  // Push to queue
+  // 2. Dispatch the actual work to a queue
+  const queue = c.get('queue')
   await queue.push(new ProcessFileJob({
     jobId: job.id,
-    input: {
-      source: file,
-      filename: file.name,
-      mimeType: file.type,
-    },
-    options: {
-      width: 1920,
-      height: 1080,
-      format: 'mp4',
-    },
-    forgeService: forge,
-    statusStore: forge.getStatusStore(),
-    storage: c.get('storage'),
+    // ... input and options
   }))
 
   return c.json({ jobId: job.id })
 })
 ```
 
-### 4. Using Processing Pipelines
+### 3. Using Pipelines
+
+Pipelines provide a fluent API for complex processing chains.
 
 ```typescript
-const forge = c.get('forge')
-
-// Video pipeline
-const videoPipeline = forge.createVideoPipeline()
-  .resize(1920, 1080)
+// Video: Resize -> Rotate -> Transcode
+const results = await forge.createVideoPipeline()
+  .resize(1280, 720)
   .rotate(90)
-  .transcode('mp4', 'h264', 23)
+  .transcode('mp4')
+  .execute(fileInput)
 
-const results = await videoPipeline.execute({
-  source: file,
-  filename: file.name,
-  mimeType: 'video/mp4',
-})
-
-// Image pipeline
-const imagePipeline = forge.createImagePipeline()
-  .resize(800, 600)
-  .rotate(90)
-  .format('webp', 85)
-
-const imageResults = await imagePipeline.execute({
-  source: imageFile,
-  filename: imageFile.name,
-  mimeType: 'image/jpeg',
-})
+// Image: Resize -> Format
+const imageResults = await forge.createImagePipeline()
+  .resize(400, 400)
+  .format('webp')
+  .execute(imageInput)
 ```
 
 ## Frontend Components
 
+Forge includes components for popular frameworks to handle status polling and SSE updates automatically.
+
 ### React
-
 ```tsx
-import { ProcessingImage, ProcessingVideo } from '@gravito/forge/react'
+import { ProcessingImage } from '@gravito/forge/react'
 
-function MyComponent() {
-  const [jobId, setJobId] = useState<string | null>(null)
-
-  const handleUpload = async (file: File) => {
-    const formData = new FormData()
-    formData.append('file', file)
-    
-    const res = await fetch('/upload', {
-      method: 'POST',
-      body: formData,
-    })
-    
-    const { jobId } = await res.json()
-    setJobId(jobId)
-  }
-
-  return (
-    <div>
-      {jobId && (
-        <ProcessingImage
-          jobId={jobId}
-          placeholder="/placeholder.jpg"
-          onComplete={(result) => {
-            console.log('Processing complete:', result.url)
-          }}
-          onError={(error) => {
-            console.error('Processing failed:', error)
-          }}
-        />
-      )}
-    </div>
-  )
-}
+<ProcessingImage
+  jobId={jobId}
+  placeholder="/loading.gif"
+  onComplete={(res) => console.log(res.url)}
+/>
 ```
 
 ### Vue
-
 ```vue
 <template>
-  <div>
-    <ProcessingImage
-      v-if="jobId"
-      :job-id="jobId"
-      placeholder="/placeholder.jpg"
-      @complete="handleComplete"
-      @error="handleError"
-    />
-  </div>
+  <ProcessingVideo :job-id="jobId" @complete="onComplete" />
 </template>
 
-<script setup lang="ts">
-import { ref } from 'vue'
-import { ProcessingImage } from '@gravito/forge/vue'
-
-const jobId = ref<string | null>(null)
-
-const handleComplete = (result: FileOutput) => {
-  console.log('Processing complete:', result.url)
-}
-
-const handleError = (error: Error) => {
-  console.error('Processing failed:', error)
-}
+<script setup>
+import { ProcessingVideo } from '@gravito/forge/vue'
+const onComplete = (res) => console.log(res.url)
 </script>
 ```
+
+## API Architecture
+
+### `ForgeService`
+The main entry point. Orchestrates processors, pipelines, and storage.
+
+- `process()`: Sync processing.
+- `processAsync()`: Prepares a job for async execution.
+- `createVideoPipeline()` / `createImagePipeline()`: Returns a pipeline builder.
+
+### `Pipelines`
+Abstraction layer for chaining commands.
+- `VideoPipeline`: Supports `resize`, `rotate`, `transcode`, `bitrate`, `fps`.
+- `ImagePipeline`: Supports `resize`, `rotate`, `format`, `quality`, `crop`.
+
+### `Processors`
+Low-level adapters for external tools.
+- `VideoProcessor`: Interface for FFmpeg.
+- `ImageProcessor`: Interface for ImageMagick.
 
 ## Configuration
 
 ```typescript
 interface ForgeConfig {
-  // Storage configuration (from Nebula)
-  storage?: {
-    provider?: StorageProvider
-    local?: { root: string; baseUrl?: string }
-  }
-  
-  // Processor configuration
   processors?: {
-    video?: {
-      ffmpegPath?: string
-      maxConcurrent?: number
-      tempDir?: string
-    }
-    image?: {
-      imagemagickPath?: string
-      maxConcurrent?: number
-      tempDir?: string
-    }
+    video?: { ffmpegPath?: string; tempDir?: string }
+    image?: { imagemagickPath?: string; tempDir?: string }
   }
-  
-  // Status tracking configuration
   status?: {
     store?: 'memory' | 'redis'
-    ttl?: number
+    ttl?: number // TTL for job status (default 24h)
   }
-  
-  // SSE configuration
   sse?: {
     enabled?: boolean
-    path?: string // Default: /forge/status/:jobId/stream
+    path?: string // Route for SSE stream (default: /forge/status/:jobId/stream)
   }
 }
 ```
 
-## API Reference
-
-### ForgeService
-
-#### `process(input, options)`
-
-Process a file synchronously.
-
-**Parameters:**
-- `input: FileInput` - File to process
-- `options: ProcessOptions` - Processing options
-
-**Returns:** `Promise<FileOutput>`
-
-#### `processAsync(input, options)`
-
-Start asynchronous processing.
-
-**Parameters:**
-- `input: FileInput` - File to process
-- `options: ProcessOptions` - Processing options
-
-**Returns:** `Promise<ProcessingJob>`
-
-#### `createVideoPipeline()`
-
-Create a video processing pipeline.
-
-**Returns:** `VideoPipeline`
-
-#### `createImagePipeline()`
-
-Create an image processing pipeline.
-
-**Returns:** `ImagePipeline`
-
 ## License
 
-MIT
+MIT © Gravito Team

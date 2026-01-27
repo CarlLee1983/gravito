@@ -1,6 +1,10 @@
 import type { Encrypter } from '../security/Encrypter'
 import type { GravitoContext } from './types'
 
+/**
+ * Options for setting cookies
+ * @public
+ */
 export interface CookieOptions {
   path?: string
   domain?: string
@@ -12,6 +16,10 @@ export interface CookieOptions {
   encrypt?: boolean
 }
 
+/**
+ * Utility for managing cookies (request/response/encryption).
+ * @public
+ */
 export class CookieJar {
   private queued: Map<string, { value: string; options: CookieOptions }> = new Map()
 

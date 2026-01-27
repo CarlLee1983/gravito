@@ -1,3 +1,14 @@
+/**
+ * Abstract base class for Domain Value Objects.
+ *
+ * Value objects are objects that have no conceptual identity. They are defined
+ * solely by their attributes and are considered immutable.
+ *
+ * @template T - The type of the properties held by the value object.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export abstract class ValueObject<T> {
   protected readonly props: T
 

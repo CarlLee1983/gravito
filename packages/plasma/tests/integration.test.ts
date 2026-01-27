@@ -21,7 +21,7 @@ describe('BunRedisClient Integration', () => {
     try {
       await client.connect()
       await client.flushall()
-    } catch (error) {
+    } catch (_error) {
       console.warn('Skipping integration tests: Redis available but connection failed')
     }
   })
@@ -37,12 +37,16 @@ describe('BunRedisClient Integration', () => {
   // Bun test doesn't have explicit "skip suite if" easily, so we check inside
 
   it('should ping the server', async () => {
-    if (!client.isConnected()) return
+    if (!client.isConnected()) {
+      return
+    }
     expect(await client.ping()).toBe('PONG')
   })
 
   it('should perform basic string operations', async () => {
-    if (!client.isConnected()) return
+    if (!client.isConnected()) {
+      return
+    }
 
     await client.set('foo', 'bar')
     expect(await client.get('foo')).toBe('bar')
@@ -53,7 +57,9 @@ describe('BunRedisClient Integration', () => {
   })
 
   it('should handle TTLs', async () => {
-    if (!client.isConnected()) return
+    if (!client.isConnected()) {
+      return
+    }
 
     await client.set('expire_me', 'val', { ex: 1 }) // 1 second
     expect(await client.get('expire_me')).toBe('val')
@@ -63,7 +69,9 @@ describe('BunRedisClient Integration', () => {
   })
 
   it('should handle hash operations', async () => {
-    if (!client.isConnected()) return
+    if (!client.isConnected()) {
+      return
+    }
 
     await client.hset('user:1', { name: 'Alice', age: '30' })
     const all = await client.hgetall('user:1')
@@ -73,7 +81,9 @@ describe('BunRedisClient Integration', () => {
   })
 
   it('should handle list operations', async () => {
-    if (!client.isConnected()) return
+    if (!client.isConnected()) {
+      return
+    }
 
     await client.lpush('list:1', 'a', 'b')
     expect(await client.rpop('list:1')).toBe('a')
@@ -82,7 +92,9 @@ describe('BunRedisClient Integration', () => {
   })
 
   it('should handle set operations', async () => {
-    if (!client.isConnected()) return
+    if (!client.isConnected()) {
+      return
+    }
 
     await client.sadd('set:1', 'm1', 'm2')
     expect(await client.sismember('set:1', 'm1')).toBe(1)
@@ -93,7 +105,9 @@ describe('BunRedisClient Integration', () => {
   })
 
   it('should handle sorted set operations', async () => {
-    if (!client.isConnected()) return
+    if (!client.isConnected()) {
+      return
+    }
 
     await client.zadd('zset:1', { score: 1, member: 'one' }, { score: 2, member: 'two' })
 
@@ -106,7 +120,9 @@ describe('BunRedisClient Integration', () => {
   })
 
   it('should execute pipeline', async () => {
-    if (!client.isConnected()) return
+    if (!client.isConnected()) {
+      return
+    }
 
     const pipeline = client.pipeline()
     pipeline.set('p:1', 'v1')

@@ -4,15 +4,31 @@ import { getRuntimeAdapter } from '@gravito/core'
 import type { MigrationDriver, MigrationResult } from './MigrationDriver'
 
 /**
- * Drizzle Kit Migration Driver
- * Wraps drizzle-kit CLI commands
+ * Drizzle Kit Migration Driver.
+ *
+ * Wraps `drizzle-kit` CLI commands to manage migrations for Drizzle ORM projects.
+ *
+ * @public
+ * @since 3.0.0
  */
 export class DrizzleMigrationDriver implements MigrationDriver {
+  /**
+   * Create a new DrizzleMigrationDriver instance.
+   *
+   * @param configPath - Path to the drizzle.config.ts file.
+   * @param migrationsDir - Path to the migrations directory.
+   */
   constructor(
     private configPath = 'drizzle.config.ts',
     private migrationsDir = 'src/database/migrations'
   ) {}
 
+  /**
+   * Generate a new migration file.
+   *
+   * @param name - The name of the migration.
+   * @returns A promise that resolves with the migration result.
+   */
   async generate(name: string): Promise<MigrationResult> {
     const timestamp = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14)
     const filename = `${timestamp}_${name}.ts`
@@ -41,6 +57,11 @@ export class DrizzleMigrationDriver implements MigrationDriver {
     }
   }
 
+  /**
+   * Run all pending migrations.
+   *
+   * @returns A promise that resolves with the migration result.
+   */
   async migrate(): Promise<MigrationResult> {
     try {
       const runtime = getRuntimeAdapter()
@@ -76,6 +97,11 @@ export class DrizzleMigrationDriver implements MigrationDriver {
     }
   }
 
+  /**
+   * Drop all tables and re-run migrations.
+   *
+   * @returns A promise that resolves with the migration result.
+   */
   async fresh(): Promise<MigrationResult> {
     try {
       const runtime = getRuntimeAdapter()
@@ -96,6 +122,24 @@ export class DrizzleMigrationDriver implements MigrationDriver {
     }
   }
 
+  /**
+   * Rollback the last migration.
+   *
+   * @returns A promise that resolves with the migration result.
+   */
+  async rollback(): Promise<MigrationResult> {
+    return {
+      success: false,
+      message:
+        'Rollback is not supported by the Drizzle driver. Please use manual SQL or snapshots.',
+    }
+  }
+
+  /**
+   * Get the current status of migrations.
+   *
+   * @returns A promise that resolves with the migration status.
+   */
   async status(): Promise<{ pending: string[]; applied: string[] }> {
     try {
       const migrationsPath = path.join(process.cwd(), this.migrationsDir)
@@ -111,6 +155,12 @@ export class DrizzleMigrationDriver implements MigrationDriver {
     }
   }
 
+  /**
+   * Extract error message from an unknown error.
+   *
+   * @param err - The unknown error.
+   * @returns The extracted error message.
+   */
   private static getErrorMessage(err: unknown): string {
     if (err instanceof Error) {
       return err.message

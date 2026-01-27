@@ -1,0 +1,1 @@
+export { MessageSerializer } from './MessageSerializer'

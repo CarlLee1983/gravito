@@ -1,5 +1,8 @@
 /**
- * Architecture types supported by the scaffolding system.
+ * Architecture patterns supported by the scaffolding engine.
+ *
+ * @public
+ * @since 3.0.0
  */
 export type ArchitectureType =
   | 'enterprise-mvc'
@@ -10,88 +13,80 @@ export type ArchitectureType =
   | 'standalone-engine'
 
 /**
- * Options for scaffolding a new project.
+ * Configuration options for creating a new project via Scaffold.
+ *
+ * @public
+ * @since 3.0.0
  */
 export interface ScaffoldOptions {
-  /**
-   * Project name
-   */
+  /** The name of the new project (e.g., 'my-api'). */
   name: string
 
-  /**
-   * Target directory (absolute path)
-   */
+  /** Absolute path where the project files should be generated. */
   targetDir: string
 
-  /**
-   * Architecture type
-   */
+  /** The primary architectural pattern to apply. */
   architecture: ArchitectureType
 
-  /**
-   * Package manager to use
-   * @default 'bun'
-   */
+  /** Preferred package manager for dependency installation. @default 'bun' */
   packageManager?: 'bun' | 'npm' | 'yarn' | 'pnpm'
 
-  /**
-   * Whether to initialize git
-   * @default true
-   */
+  /** Whether to run `git init` in the target directory. @default true */
   initGit?: boolean
 
-  /**
-   * Whether to install dependencies
-   * @default true
-   */
+  /** Whether to automatically run `install` after file generation. @default true */
   installDeps?: boolean
 
-  /**
-   * Whether to include Spectrum debug dashboard
-   * @default false
-   */
+  /** If true, includes the Spectrum observability dashboard in the scaffolded app. */
   withSpectrum?: boolean
 
-  /**
-   * Whether this is an internal official satellite
-   * @default false
-   */
+  /** Internal flag for official Gravito satellite projects. */
   isInternal?: boolean
 
-  /**
-   * Profile preset (Core, Scale, Enterprise)
-   * @default 'core'
-   */
+  /** Selected project profile determining the set of included orbits/packages. */
   profile?: 'core' | 'scale' | 'enterprise'
 
-  /**
-   * Feature add-ons (e.g. 'redis', 'queue', 'otel')
-   */
+  /** List of additional feature orbits to include (e.g., 'redis', 'queue', 'otel'). */
   features?: string[]
 
-  /**
-   * Additional context variables for templates
-   */
+  /** Additional template variables to be used during file generation. */
   context?: Record<string, unknown>
 }
 
 /**
- * Result of scaffolding operation.
+ * The outcome of a scaffolding operation.
+ *
+ * @public
+ * @since 3.0.0
  */
 export interface ScaffoldResult {
+  /** True if the operation completed without fatal errors. */
   success: boolean
+  /** The absolute path where the project was created. */
   targetDir: string
+  /** List of relative file paths that were successfully generated. */
   filesCreated: string[]
+  /** Any non-fatal error messages encountered during generation. */
   errors?: string[]
 }
 
 /**
- * Directory structure node.
+ * Represents a node in the project file structure blueprint.
+ *
+ * Used to define the skeleton of a new project before generation.
+ *
+ * @public
+ * @since 3.0.0
  */
 export interface DirectoryNode {
+  /** The type of node (file vs folder). */
   type: 'file' | 'directory'
+  /** The name of the file or directory. */
   name: string
+  /** Literal string content if this is a file node. */
   content?: string
+  /** The name or path of a template to use for this file's content. */
   template?: string
+  /** Nested nodes if this is a directory. */
   children?: DirectoryNode[]
 }

@@ -31,35 +31,46 @@ export function registerHooks(core: PlanetCore): void {
     // args[0] is ErrorHandlerContext, not Context directly
     const context = args[0] as { c: Context }
     const c = context.c
-    const inertia = c.get('inertia') as InertiaService
+    const inertia = c.get('inertia') as InertiaService | undefined
 
     // Only intercept if this is an Inertia request or we want to render HTML
     // But OrbitIon typically handles all HTML requests if installed
     if (inertia) {
-      return inertia.render('Error', { status: 404 })
+      return inertia.render('Error', { status: 404 }, {}, 404)
     }
+
+    // Return null to use default error handling
+    return null
   })
 
   // Handle 500 Internal Server Error
   core.hooks.addFilter('error:render', async (_initial, ...args) => {
     const context = args[0] as { c: Context; error: unknown }
     const c = context.c
-    const inertia = c.get('inertia') as InertiaService
+    const inertia = c.get('inertia') as InertiaService | undefined
 
     // Optionally extract status from error if available in context
     const error = context.error as { status?: number; message?: string } | undefined
     const status = typeof error?.status === 'number' ? error.status : 500
 
     if (inertia) {
-      return inertia.render('Error', {
-        status,
-        message:
-          process.env.NODE_ENV === 'production'
-            ? undefined
-            : error?.message ||
-              (error instanceof Error ? error.message : undefined) ||
-              'Unknown distortion in space-time',
-      })
+      return inertia.render(
+        'Error',
+        {
+          status,
+          message:
+            process.env.NODE_ENV === 'production'
+              ? undefined
+              : error?.message ||
+                (error instanceof Error ? error.message : undefined) ||
+                'Unknown distortion in space-time',
+        },
+        {},
+        status
+      )
     }
+
+    // Return null to use default error handling
+    return null
   })
 }

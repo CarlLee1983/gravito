@@ -20,6 +20,10 @@ import { ConsoleLogger } from './Logger'
 import { PlanetCore } from './PlanetCore'
 import type { ServiceProvider } from './ServiceProvider'
 
+/**
+ * Application Config options for the Application class.
+ * @public
+ */
 export interface ApplicationConfig {
   /**
    * Base path of the application

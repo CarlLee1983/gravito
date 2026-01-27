@@ -4,7 +4,6 @@ import { ArrowUpRight, Book, Github, Home as HomeIcon, Menu, Rocket, Zap } from 
 import { useEffect, useState } from 'react'
 import { useTrans } from '../hooks/useTrans'
 import Logo from './Logo'
-import { MagneticCursor } from './MagneticCursor'
 import { getBasePath, StaticLink } from './StaticLink'
 
 interface LayoutProps {
@@ -86,10 +85,7 @@ export default function Layout({ children, noPadding = false }: LayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-void text-white font-sans selection:bg-singularity/30 relative flex flex-col cursor-none-if-needed">
-      {/* Custom Cursor */}
-      <MagneticCursor />
-
+    <div className="min-h-screen bg-void text-white font-sans selection:bg-singularity/30 relative flex flex-col">
       {/* Background Decor */}
       <div className="fixed inset-0 bg-hex-grid opacity-10 pointer-events-none z-0" />
       <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-singularity/5 rounded-full blur-[200px] pointer-events-none z-0" />
@@ -286,6 +282,28 @@ export default function Layout({ children, noPadding = false }: LayoutProps) {
                     </span>
                     <span className="text-[10px] text-gray-600 group-hover:text-gray-500 font-mono uppercase tracking-widest mt-0.5">
                       Atomic Sitemap Engine
+                    </span>
+                  </div>
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://photon.gravito.dev"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="group flex items-center gap-3 p-3 -mx-3 rounded-2xl transition-all duration-300 hover:bg-white/5 border border-transparent hover:border-white/5"
+                >
+                  <div className="relative w-10 h-10 rounded-xl bg-gradient-to-tr from-orange-600 to-red-400 flex items-center justify-center overflow-hidden border border-white/20 shadow-[0_0_20px_rgba(251,146,60,0.3)] transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3">
+                    <div className="w-1/2 h-1/2 rounded-full bg-void shadow-inner flex items-center justify-center">
+                      <div className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" />
+                    </div>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-bold text-gray-300 group-hover:text-white transition-colors">
+                      {trans('footer.photon', 'Photon')}
+                    </span>
+                    <span className="text-[10px] text-gray-600 group-hover:text-gray-500 font-mono uppercase tracking-widest mt-0.5">
+                      Ultra-Fast HTTP Engine
                     </span>
                   </div>
                 </a>

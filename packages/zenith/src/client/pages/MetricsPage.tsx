@@ -25,6 +25,15 @@ import {
 } from 'recharts'
 import { cn } from '../utils'
 
+/**
+ * System Metrics Page.
+ *
+ * Displays detailed performance analytics, throughput trends, and queue
+ * distribution charts using interactive visualizations.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export function MetricsPage() {
   const [timeRange, setTimeRange] = React.useState<'15m' | '1h' | '6h' | '24h'>('15m')
 
@@ -204,7 +213,7 @@ export function MetricsPage() {
             <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
               <defs>
                 <linearGradient id="colorThroughput" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
+                  <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.5} />
                   <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
                 </linearGradient>
               </defs>
@@ -212,25 +221,37 @@ export function MetricsPage() {
                 strokeDasharray="3 3"
                 vertical={false}
                 stroke="hsl(var(--border))"
-                opacity={0.5}
+                opacity={0.3}
               />
               <XAxis
                 dataKey="time"
                 axisLine={false}
                 tickLine={false}
-                tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))', fontWeight: 600 }}
+                tick={{
+                  fontSize: 10,
+                  fill: 'hsl(var(--muted-foreground))',
+                  fontWeight: 700,
+                  fontFamily: 'Fira Code',
+                }}
               />
               <YAxis
                 axisLine={false}
                 tickLine={false}
-                tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))', fontWeight: 600 }}
+                tick={{
+                  fontSize: 10,
+                  fill: 'hsl(var(--muted-foreground))',
+                  fontWeight: 700,
+                  fontFamily: 'Fira Code',
+                }}
               />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: 'hsl(var(--card))',
-                  border: '1px solid hsl(var(--border))',
+                  backgroundColor: 'rgba(9, 9, 11, 0.95)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
                   borderRadius: '12px',
-                  fontSize: '12px',
+                  fontSize: '11px',
+                  fontFamily: 'Fira Code',
+                  backdropFilter: 'blur(8px)',
                 }}
               />
               <Area
@@ -239,7 +260,7 @@ export function MetricsPage() {
                 stroke="hsl(var(--primary))"
                 fillOpacity={1}
                 fill="url(#colorThroughput)"
-                strokeWidth={2}
+                strokeWidth={3}
               />
             </AreaChart>
           </ResponsiveContainer>
@@ -270,37 +291,39 @@ export function MetricsPage() {
                   dataKey="name"
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))', fontWeight: 600 }}
+                  tick={{
+                    fontSize: 9,
+                    fill: 'hsl(var(--muted-foreground))',
+                    fontWeight: 700,
+                    fontFamily: 'Fira Code',
+                  }}
                   angle={-45}
                   textAnchor="end"
                 />
                 <YAxis
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))', fontWeight: 600 }}
+                  tick={{
+                    fontSize: 10,
+                    fill: 'hsl(var(--muted-foreground))',
+                    fontWeight: 700,
+                    fontFamily: 'Fira Code',
+                  }}
                 />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: 'hsl(var(--card))',
-                    border: '1px solid hsl(var(--border))',
+                    backgroundColor: 'rgba(9, 9, 11, 0.95)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
                     borderRadius: '12px',
-                    fontSize: '12px',
+                    fontSize: '11px',
+                    fontFamily: 'Fira Code',
+                    backdropFilter: 'blur(8px)',
                   }}
                 />
-                <Legend />
-                <Bar
-                  dataKey="waiting"
-                  fill="hsl(45, 93%, 47%)"
-                  name="Waiting"
-                  radius={[4, 4, 0, 0]}
-                />
-                <Bar
-                  dataKey="delayed"
-                  fill="hsl(217, 91%, 60%)"
-                  name="Delayed"
-                  radius={[4, 4, 0, 0]}
-                />
-                <Bar dataKey="failed" fill="hsl(0, 84%, 60%)" name="Failed" radius={[4, 4, 0, 0]} />
+                <Legend iconType="circle" />
+                <Bar dataKey="waiting" fill="#F59E0B" name="Waiting" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="delayed" fill="#3B82F6" name="Delayed" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="failed" fill="#EF4444" name="Failed" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -382,26 +405,40 @@ interface StatCardProps {
 
 function StatCard({ icon: Icon, label, value, color }: StatCardProps) {
   const colorClasses = {
-    amber: 'text-amber-500 bg-amber-500/10',
-    blue: 'text-blue-500 bg-blue-500/10',
-    green: 'text-green-500 bg-green-500/10',
-    red: 'text-red-500 bg-red-500/10',
-    indigo: 'text-indigo-500 bg-indigo-500/10',
-    primary: 'text-primary bg-primary/10',
+    amber:
+      'text-amber-500 bg-amber-500/10 border-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.05)]',
+    blue: 'text-blue-500 bg-blue-500/10 border-blue-500/20 shadow-[0_0_15px_rgba(59,130,246,0.05)]',
+    green:
+      'text-emerald-500 bg-emerald-500/10 border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.05)]',
+    red: 'text-red-500 bg-red-500/10 border-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.05)]',
+    indigo:
+      'text-indigo-400 bg-indigo-500/10 border-indigo-500/20 shadow-[0_0_15px_rgba(99,102,241,0.05)]',
+    primary: 'text-primary bg-primary/10 border-primary/20 shadow-[0_0_15px_rgba(0,240,255,0.05)]',
   }
 
   return (
-    <div className="card-premium p-4 flex items-center gap-3">
+    <div
+      className={cn(
+        'card-premium p-4 flex items-center gap-4 border-l-4',
+        colorClasses[color]
+          .split(' ')
+          .find((c) => c.startsWith('border-'))
+          ?.replace('border-', 'border-l-')
+      )}
+    >
       <div
-        className={cn('w-10 h-10 rounded-xl flex items-center justify-center', colorClasses[color])}
+        className={cn(
+          'w-10 h-10 rounded-xl flex items-center justify-center border transition-transform group-hover:scale-110',
+          colorClasses[color]
+        )}
       >
         <Icon size={20} />
       </div>
       <div>
-        <p className="text-[9px] font-black text-muted-foreground/50 uppercase tracking-widest">
+        <p className="text-[9px] font-black text-muted-foreground/60 uppercase tracking-[0.2em] font-heading mb-0.5">
           {label}
         </p>
-        <p className="text-xl font-black">{value.toLocaleString()}</p>
+        <p className="text-xl font-black font-mono tracking-tighter">{value.toLocaleString()}</p>
       </div>
     </div>
   )

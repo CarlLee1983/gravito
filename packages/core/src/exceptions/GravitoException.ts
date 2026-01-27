@@ -1,5 +1,9 @@
 import type { ContentfulStatusCode } from '../http/types'
 
+/**
+ * Options for creating a GravitoException
+ * @public
+ */
 export interface ExceptionOptions {
   message?: string
   cause?: unknown
@@ -7,6 +11,10 @@ export interface ExceptionOptions {
   i18nParams?: Record<string, string | number>
 }
 
+/**
+ * Base exception class for consistent error handling.
+ * @public
+ */
 export abstract class GravitoException extends Error {
   public readonly status: ContentfulStatusCode
   public readonly code: string

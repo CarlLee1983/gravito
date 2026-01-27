@@ -1,5 +1,10 @@
 import { type DataPath, dataGet, dataHas, dataSet } from './data'
 
+/**
+ * Array and Collection Helpers.
+ * Provides utility methods for array manipulation and deep object access.
+ * @public
+ */
 export const Arr = {
   get<TDefault = undefined>(
     target: unknown,

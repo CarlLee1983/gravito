@@ -11,6 +11,14 @@ import {
 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 
+/**
+ * Invoice Management Page.
+ *
+ * View and manage billing invoices, payment status, and financial records.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export function InvoiceList() {
   const { sdk } = useAdmin()
   const [invoices, setInvoices] = useState<any[]>([])

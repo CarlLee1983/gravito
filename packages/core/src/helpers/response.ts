@@ -1,10 +1,18 @@
 import type { ContentfulStatusCode, GravitoContext } from '../http/types'
 
+/**
+ * Standard API Success Response Structure
+ * @public
+ */
 export type ApiSuccess<T> = {
   success: true
   data: T
 }
 
+/**
+ * Standard API Failure Response Structure
+ * @public
+ */
 export type ApiFailure = {
   success: false
   error: {
@@ -14,10 +22,18 @@ export type ApiFailure = {
   }
 }
 
+/**
+ * Create a success response object.
+ * @public
+ */
 export function ok<T>(data: T): ApiSuccess<T> {
   return { success: true, data }
 }
 
+/**
+ * Create a failure response object.
+ * @public
+ */
 export function fail(message: string, code?: string, details?: unknown): ApiFailure {
   const error: ApiFailure['error'] = { message }
   if (code !== undefined) {
@@ -29,6 +45,10 @@ export function fail(message: string, code?: string, details?: unknown): ApiFail
   return { success: false, error }
 }
 
+/**
+ * Return a JSON response with standard success structure.
+ * @public
+ */
 export function jsonSuccess<T>(
   c: GravitoContext,
   data: T,
@@ -37,6 +57,10 @@ export function jsonSuccess<T>(
   return c.json(ok(data), status)
 }
 
+/**
+ * Return a JSON response with standard failure structure.
+ * @public
+ */
 export function jsonFail(
   c: GravitoContext,
   message: string,

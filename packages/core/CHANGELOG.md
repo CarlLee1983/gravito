@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.1
+
+### Patch Changes
+
+- 修復 Router.ts 中可能的 undefined 問題
+
 ## 1.2.0
 
 ### Minor Changes

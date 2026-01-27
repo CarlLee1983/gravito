@@ -51,7 +51,7 @@ describe('BunRedisClient Error Handling', () => {
 
   it('should wrap connection errors in RedisError', async () => {
     // We can test this by forcing handleException on a fake error
-    const client = new BunRedisClient({ host: 'localhost', port: 9999, maxRetries: 0 })
+    const _client = new BunRedisClient({ host: 'localhost', port: 9999, maxRetries: 0 })
     // We don't call connect() here as it would timeout, instead we test the normalization logic
     // if we want to be 100% unit-testy.
     // However, the original test tried to connect to a bad port.

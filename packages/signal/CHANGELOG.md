@@ -1,5 +1,28 @@
 # @gravito/signal
 
+## 3.0.3
+
+### Patch Changes
+
+- Updated dependencies [6234dab]
+  - @gravito/prism@3.0.2
+
+## 3.0.2
+
+### Patch Changes
+
+- Updated dependencies [905588f]
+  - @gravito/stream@2.0.1
+
+## 3.0.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @gravito/core@1.2.1
+  - @gravito/stream@1.0.3
+  - @gravito/prism@3.0.1
+
 ## 3.0.0
 
 ### Patch Changes

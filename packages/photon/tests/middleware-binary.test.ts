@@ -287,7 +287,7 @@ describe('binaryMiddleware', () => {
         c.json({
           integer: 42,
           negative: -100,
-          float: 3.14159,
+          float: Math.PI,
           zero: 0,
         })
       )
@@ -301,7 +301,7 @@ describe('binaryMiddleware', () => {
       expect(decoded).toEqual({
         integer: 42,
         negative: -100,
-        float: 3.14159,
+        float: Math.PI,
         zero: 0,
       })
     })

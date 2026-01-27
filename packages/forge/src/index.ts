@@ -10,35 +10,47 @@ import { SSEHandler } from './status/SSEHandler'
 import { MemoryStatusStore } from './status/StatusStore'
 
 /**
- * Forge configuration options
+ * Full configuration for the Forge file processing orbit.
+ * @public
  */
 export interface ForgeConfig extends ForgeServiceConfig {
   /**
-   * Expose service as (default: 'forge')
+   * The key used to expose the service in the context (default: 'forge').
+   * Allows accessing the service via `ctx.get('forge')`.
    */
   exposeAs?: string
 
-  /**
-   * Status store type
-   */
+  /** Configuration for the job status persistence layer */
   status?: {
+    /** The storage backend type (default: 'memory') */
     store?: 'memory' | 'redis'
+    /** Time-to-live for status records in seconds */
     ttl?: number
   }
 
-  /**
-   * SSE configuration
-   */
+  /** Server-Sent Events (SSE) configuration for real-time progress tracking */
   sse?: {
+    /** Whether to enable the SSE status endpoint (default: true) */
     enabled?: boolean
-    path?: string // Default: /forge/status/:jobId/stream
+    /** Custom URL path for status streaming. Use ':jobId' as a placeholder. */
+    path?: string
   }
 }
 
 /**
- * OrbitForge - File Processing Orbit
+ * OrbitForge is the official asset processing and media engine for Gravito.
+ * It provides a unified API for image manipulation, video transcoding, and
+ * document processing with integrated real-time status tracking via SSE.
  *
- * Provides file processing capabilities with real-time status tracking.
+ * @example
+ * ```typescript
+ * const forge = new OrbitForge({
+ *   image: { driver: 'sharp' },
+ *   video: { driver: 'ffmpeg' }
+ * });
+ * core.addOrbit(forge);
+ * ```
+ * @public
  */
 export class OrbitForge implements GravitoOrbit {
   constructor(private options?: ForgeConfig) {}

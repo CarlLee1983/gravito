@@ -28,6 +28,42 @@ export async function computeHmacSha256(payload: string | Buffer, secret: string
 }
 
 /**
+ * Computes an HMAC-SHA256 signature and returns it as a base64 encoded string.
+ *
+ * Used by providers that require base64 encoding for their signatures (e.g., Shopify).
+ *
+ * @param payload - The raw data to sign.
+ * @param secret - The shared secret key.
+ * @returns The base64 encoded HMAC-SHA256 signature.
+ * @throws Error if the crypto operations fail.
+ *
+ * @example
+ * ```typescript
+ * const sig = await computeHmacSha256Base64('data', 'secret');
+ * ```
+ */
+export async function computeHmacSha256Base64(
+  payload: string | Buffer,
+  secret: string
+): Promise<string> {
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  )
+
+  const payloadBuffer =
+    typeof payload === 'string'
+      ? new TextEncoder().encode(payload)
+      : new Uint8Array(payload.buffer, payload.byteOffset, payload.byteLength)
+
+  const signature = await crypto.subtle.sign('HMAC', key, payloadBuffer as BufferSource)
+  return Buffer.from(signature).toString('base64')
+}
+
+/**
  * Compute HMAC-SHA1 signature (for legacy providers)
  */
 export async function computeHmacSha1(payload: string | Buffer, secret: string): Promise<string> {
@@ -46,6 +82,43 @@ export async function computeHmacSha1(payload: string | Buffer, secret: string):
 
   const signature = await crypto.subtle.sign('HMAC', key, payloadBuffer as BufferSource)
   return Buffer.from(signature).toString('hex')
+}
+
+/**
+ * Computes an HMAC-SHA1 signature and returns it as a base64 encoded string.
+ *
+ * Primarily used for legacy services or specific providers like Twilio that
+ * still rely on SHA1-based HMAC for their webhook verification.
+ *
+ * @param payload - The raw data to sign.
+ * @param secret - The shared secret key.
+ * @returns The base64 encoded HMAC-SHA1 signature.
+ * @throws Error if the crypto operations fail.
+ *
+ * @example
+ * ```typescript
+ * const sig = await computeHmacSha1Base64('data', 'secret');
+ * ```
+ */
+export async function computeHmacSha1Base64(
+  payload: string | Buffer,
+  secret: string
+): Promise<string> {
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(secret),
+    { name: 'HMAC', hash: 'SHA-1' },
+    false,
+    ['sign']
+  )
+
+  const payloadBuffer =
+    typeof payload === 'string'
+      ? new TextEncoder().encode(payload)
+      : new Uint8Array(payload.buffer, payload.byteOffset, payload.byteLength)
+
+  const signature = await crypto.subtle.sign('HMAC', key, payloadBuffer as BufferSource)
+  return Buffer.from(signature).toString('base64')
 }
 
 /**

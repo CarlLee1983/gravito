@@ -26,4 +26,6 @@ export const env = {
   rabbitQueue: getString('RABBITMQ_QUEUE', 'orders.workflow'),
   tracePath: getString('TRACE_PATH', '.flux-enterprise/trace.ndjson'),
   queueDriver: getString('QUEUE_DRIVER', 'rabbitmq'),
+  nodeEnv: getString('NODE_ENV', 'development'),
+  isProduction: getString('NODE_ENV', 'development') === 'production',
 }

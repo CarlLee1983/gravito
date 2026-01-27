@@ -28,6 +28,12 @@ const config: GravitoConfig = {
   ],
 }
 
+/**
+ * The initialized PlanetCore instance for the official Gravito site.
+ *
+ * @public
+ * @since 3.0.0
+ */
 export const app = await PlanetCore.boot(config)
 
 const defaultCsp = [

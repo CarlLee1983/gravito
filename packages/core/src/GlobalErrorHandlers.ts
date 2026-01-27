@@ -1,8 +1,16 @@
 import type { Logger } from './Logger'
 import type { PlanetCore } from './PlanetCore'
 
+/**
+ * Type of process-level error
+ * @public
+ */
 export type GlobalProcessErrorKind = 'unhandledRejection' | 'uncaughtException'
 
+/**
+ * Context payload for global error handler filters/actions
+ * @public
+ */
 export type GlobalProcessErrorHandlerContext = {
   core?: PlanetCore
   kind: GlobalProcessErrorKind
@@ -16,8 +24,16 @@ export type GlobalProcessErrorHandlerContext = {
   gracePeriodMs?: number
 }
 
+/**
+ * Error handling strategy
+ * @public
+ */
 export type GlobalErrorHandlersMode = 'log' | 'exit' | 'exitInProduction'
 
+/**
+ * Options for registering global handlers
+ * @public
+ */
 export type RegisterGlobalErrorHandlersOptions = {
   core?: PlanetCore
   logger?: Logger

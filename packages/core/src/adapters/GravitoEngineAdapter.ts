@@ -4,6 +4,7 @@ import type {
   GravitoErrorHandler,
   GravitoHandler,
   GravitoMiddleware,
+  GravitoNext,
   GravitoNotFoundHandler,
   GravitoVariables,
   HttpMethod,
@@ -82,7 +83,7 @@ export class GravitoEngineAdapter<V extends GravitoVariables = GravitoVariables>
     await this.engine.warmup(paths)
   }
 
-  createContext(request: Request): GravitoContext<V> {
+  createContext(_request: Request): GravitoContext<V> {
     // Gravito engine has its own internal context management
     throw new Error('GravitoEngineAdapter manages context internally through pooling.')
   }

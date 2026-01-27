@@ -4,7 +4,34 @@ import { note, outro, spinner } from '@clack/prompts'
 import { LockGenerator, ProfileResolver, type ProfileType } from '@gravito/scaffold'
 import pc from 'picocolors'
 
+/**
+ * Command for upgrading projects between architecture profiles.
+ *
+ * Manages transitions between core, scale, and enterprise profiles
+ * by generating migration checklists and updating lock files.
+ *
+ * @example
+ * ```typescript
+ * const upgrade = new UpgradeCommand()
+ *
+ * // Upgrade from core to scale profile
+ * await upgrade.run('scale')
+ *
+ * // Upgrade to enterprise profile
+ * await upgrade.run('enterprise')
+ * ```
+ *
+ * @since 3.0.0
+ * @public
+ */
 export class UpgradeCommand {
+  /**
+   * Run the upgrade process to a target profile.
+   *
+   * @param targetProfile - The profile to upgrade the project to.
+   * @returns A promise that resolves when the upgrade plan is generated.
+   * @public
+   */
   async run(targetProfile: ProfileType) {
     const s = spinner()
     s.start('Analyzing project structure...')

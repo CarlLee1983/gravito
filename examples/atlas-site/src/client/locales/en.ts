@@ -13,6 +13,8 @@ export default {
     desc: 'The high-performance database engine for the modern web. Unify SQL and NoSQL workflows with a precise, fluent API optimized for Bun and the Gravito ecosystem.',
     demo_label: 'LIVE CONSOLE',
     demo_comment: '// Connect to the data stream and query',
+    version_badge: 'V1.3.0 ORBITAL DEPLOYED',
+    data_engine: 'DATA ENGINE',
     benchmark: {
       raw_read: 'Native Throughput',
       raw_read_sub: 'Zero-overhead execution',
@@ -52,7 +54,7 @@ export default {
       'Unlike stateless mappers, Atlas models track changes internally. Only modified fields are sent to the database, drastically reducing I/O and preventing accidental overwrites.',
     orm_title: 'Eloquent-Style Models',
     orm_desc:
-      'Atlas brings the Active Record pattern to TypeScript. Define models with @column decorators, manage lifecycle hooks, and enjoy powerful relationship handling (hasMany, belongsTo) that mirrors the best parts of Laravel Eloquent.',
+      "Atlas brings the Active Record pattern to TypeScript. Define models with {'@'}column decorators, manage lifecycle hooks, and enjoy powerful relationship handling (hasMany, belongsTo) that mirrors the best parts of Laravel Eloquent.",
     query_title: 'Fluent Orbit Builder',
     query_desc:
       'Build complex queries with a chainable API. Supports eager loading (with), pagination, and database transactions, with an API designed for maximum readability for PHP artisans moving to the edge.',
@@ -109,7 +111,7 @@ export default {
       'atlas.connection("redis").set(...) — Absolute freedom to invoke any target with zero boilerplate.',
     bun_engine_title: 'Bun.sql Native Support',
     bun_engine_desc:
-      "Enable `useNativeDriver: true` to unlock Bun's high-speed, unified SQL API. Experience sub-millisecond query execution on a modern runtime.",
+      "Enable 'useNativeDriver: true' to unlock Bun's high-speed, unified SQL API. Experience sub-millisecond query execution on a modern runtime.",
     view_guide: 'View Driver Guide',
   },
   installation: {

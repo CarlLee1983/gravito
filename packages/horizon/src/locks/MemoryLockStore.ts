@@ -1,5 +1,24 @@
 import type { LockStore } from './LockStore'
 
+/**
+ * In-memory lock store for single-instance deployments.
+ *
+ * Stores locks in memory with automatic expiration.
+ * Not suitable for multi-instance deployments.
+ *
+ * @example
+ * ```typescript
+ * const store = new MemoryLockStore()
+ * const acquired = await store.acquire('task-123', 300)
+ * if (acquired) {
+ *   // Execute task
+ *   await store.release('task-123')
+ * }
+ * ```
+ *
+ * @since 3.0.0
+ * @public
+ */
 export class MemoryLockStore implements LockStore {
   private locks = new Map<string, number>()
 
