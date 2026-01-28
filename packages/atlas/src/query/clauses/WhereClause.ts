@@ -198,7 +198,26 @@ export class WhereClause {
    * @returns Array of conditions
    */
   getWheres(): WhereCondition[] {
-    return this.wheres
+    return this.deepCopyConditions(this.wheres)
+  }
+
+  /**
+   * Helper to perform deep copy of conditions
+   */
+  private deepCopyConditions(conditions: WhereCondition[]): WhereCondition[] {
+    return conditions.map((w) => {
+      const copy = { ...w }
+      if (w.conditions) {
+        copy.conditions = this.deepCopyConditions(w.conditions)
+      }
+      if (w.values) {
+        copy.values = [...w.values]
+      }
+      if (w.bindings) {
+        copy.bindings = [...w.bindings]
+      }
+      return copy
+    })
   }
 
   /**
@@ -211,22 +230,23 @@ export class WhereClause {
 
     for (const where of this.wheres) {
       if (where.type === 'basic') {
-        values.push(where.value)
+        if (where.value instanceof Object && 'getCompiledQuery' in where.value) {
+          // SubQuery as value
+          values.push(...(where.value as any).getBindings())
+        } else {
+          values.push(where.value)
+        }
       } else if (where.type === 'in' || where.type === 'between') {
-        values.push(...(where.values || []))
+        for (const val of where.values || []) {
+          if (val instanceof Object && 'getCompiledQuery' in val) {
+            values.push(...(val as any).getBindings())
+          } else {
+            values.push(val)
+          }
+        }
       } else if (where.type === 'raw' || where.type === 'exists') {
         values.push(...(where.bindings || []))
       } else if (where.type === 'nested') {
-        // Recursive? No, compileNested handles SQL, but bindings need to be extracted recursively?
-        // QueryBuilder.whereNested creates a new builder, and we push bindings from it.
-        // Wait, whereNested in QueryBuilder:
-        // this.wheres.push({ type: 'nested', bindings: nestedQuery.bindingsList })
-        // But WhereClause stores 'nested' with 'conditions'.
-        // If we store 'conditions', we need to recursively extract bindings from them.
-        // BUT my QueryBuilder implementation passes `bindings: nestedQuery.bindingsList` to WhereClause?
-        // No, `whereNested` in QueryBuilder calls `this.whereClause.addNested(nestedConditions)`.
-        // So `nestedConditions` are WhereConditions.
-        // So we need to recurse.
         values.push(...this.getNestedValues(where.conditions || []))
       }
     }
@@ -238,9 +258,20 @@ export class WhereClause {
     const values: unknown[] = []
     for (const where of conditions) {
       if (where.type === 'basic') {
-        values.push(where.value)
+        if (where.value instanceof Object && 'getCompiledQuery' in where.value) {
+          // SubQuery as value
+          values.push(...(where.value as any).getBindings())
+        } else {
+          values.push(where.value)
+        }
       } else if (where.type === 'in' || where.type === 'between') {
-        values.push(...(where.values || []))
+        for (const val of where.values || []) {
+          if (val instanceof Object && 'getCompiledQuery' in val) {
+            values.push(...(val as any).getBindings())
+          } else {
+            values.push(val)
+          }
+        }
       } else if (where.type === 'raw' || where.type === 'exists') {
         values.push(...(where.bindings || []))
       } else if (where.type === 'nested') {

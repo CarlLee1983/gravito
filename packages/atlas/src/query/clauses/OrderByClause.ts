@@ -53,7 +53,7 @@ export class OrderByClause {
    * @returns Array of order clauses
    */
   getOrders(): OrderClauseType[] {
-    return this.orders
+    return this.orders.map((o) => ({ ...o }))
   }
 
   /**
@@ -62,7 +62,7 @@ export class OrderByClause {
    * @returns Array of bindings
    */
   getBindings(): unknown[] {
-    return this.bindings
+    return [...this.bindings]
   }
 
   /**

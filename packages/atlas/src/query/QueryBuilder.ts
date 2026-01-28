@@ -331,12 +331,13 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * Add a WHERE IN clause to the query.
    *
    * @param column - Column name.
-   * @param values - Array of values to match.
+   * @param values - Array of values or a subquery.
    * @returns The current QueryBuilder instance for chaining.
    */
-  whereIn(column: string, values: unknown[]): this {
+  whereIn(column: string, values: unknown[] | QueryBuilderContract<any>): this {
     this.ensureOwnState()
-    this.whereClause.addIn(column, values, 'and', false)
+    const finalValues = Array.isArray(values) ? values : [values]
+    this.whereClause.addIn(column, finalValues, 'and', false)
     return this
   }
 
@@ -344,12 +345,13 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * Add a WHERE NOT IN clause to the query.
    *
    * @param column - Column name.
-   * @param values - Array of values to exclude.
+   * @param values - Array of values or a subquery.
    * @returns The current QueryBuilder instance for chaining.
    */
-  whereNotIn(column: string, values: unknown[]): this {
+  whereNotIn(column: string, values: unknown[] | QueryBuilderContract<any>): this {
     this.ensureOwnState()
-    this.whereClause.addIn(column, values, 'and', true)
+    const finalValues = Array.isArray(values) ? values : [values]
+    this.whereClause.addIn(column, finalValues, 'and', true)
     return this
   }
 
@@ -357,12 +359,13 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * Add an OR WHERE IN clause to the query.
    *
    * @param column - Column name.
-   * @param values - Array of values to match.
+   * @param values - Array of values or a subquery.
    * @returns The current QueryBuilder instance for chaining.
    */
-  orWhereIn(column: string, values: unknown[]): this {
+  orWhereIn(column: string, values: unknown[] | QueryBuilderContract<any>): this {
     this.ensureOwnState()
-    this.whereClause.addIn(column, values, 'or', false)
+    const finalValues = Array.isArray(values) ? values : [values]
+    this.whereClause.addIn(column, finalValues, 'or', false)
     return this
   }
 
@@ -370,12 +373,13 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * Add an OR WHERE NOT IN clause to the query.
    *
    * @param column - Column name.
-   * @param values - Array of values to exclude.
+   * @param values - Array of values or a subquery.
    * @returns The current QueryBuilder instance for chaining.
    */
-  orWhereNotIn(column: string, values: unknown[]): this {
+  orWhereNotIn(column: string, values: unknown[] | QueryBuilderContract<any>): this {
     this.ensureOwnState()
-    this.whereClause.addIn(column, values, 'or', true)
+    const finalValues = Array.isArray(values) ? values : [values]
+    this.whereClause.addIn(column, finalValues, 'or', true)
     return this
   }
 
@@ -788,9 +792,11 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   }
 
   /**
-   * Execute the query and retrieve all matching records.
+   * Execute the query and retrieve all matching records as raw objects.
+   * This bypasses model hydration and is used for performance-critical paths.
+   * @internal
    */
-  async get(): Promise<T[]> {
+  async getRawResults(): Promise<Record<string, unknown>[]> {
     const compiled = this.getCompiledQuery()
     const sql = this.grammar.compileSelect(compiled)
     const bindings = compiled.bindings
@@ -801,13 +807,13 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
 
     if (cache && this._cache) {
       cacheKey = this._cache.key ?? `orbit:query:${sql}:${JSON.stringify(bindings)}`
-      const cached = await cache.get<T[]>(cacheKey)
+      const cached = await cache.get<Record<string, unknown>[]>(cacheKey)
       if (cached) {
         return cached
       }
     }
 
-    const result = await this.connection.raw<T>(sql, bindings)
+    const result = await this.connection.raw<Record<string, unknown>>(sql, bindings)
 
     // Store cache
     if (cache && this._cache && cacheKey) {
@@ -815,6 +821,14 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
     }
 
     return result.rows
+  }
+
+  /**
+   * Execute the query and retrieve all matching records.
+   */
+  async get(): Promise<T[]> {
+    const rows = await this.getRawResults()
+    return rows as unknown as T[]
   }
 
   /**
@@ -1211,12 +1225,31 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    */
   async upsert(
     data: Partial<T> | Partial<T>[],
-    _uniqueBy: string | string[],
-    _update?: string[]
+    uniqueBy: string | string[],
+    update?: string[]
   ): Promise<number> {
-    const values = Array.isArray(data) ? data : [data]
-    const result = await this.insert(values)
-    return result.length
+    const values = (Array.isArray(data) ? data : [data]) as Record<string, unknown>[]
+    if (values.length === 0) {
+      return 0
+    }
+
+    const uniqueByArray = Array.isArray(uniqueBy) ? uniqueBy : [uniqueBy]
+    const updateArray = update || Object.keys(values[0]).filter((k) => !uniqueByArray.includes(k))
+
+    const allBindings: unknown[] = []
+    for (const row of values) {
+      allBindings.push(...Object.values(row))
+    }
+
+    const sql = this.grammar.compileUpsert(
+      this.getCompiledQuery(),
+      values,
+      uniqueByArray,
+      updateArray
+    )
+    const result = await this.connection.getDriver().execute(sql, allBindings)
+
+    return result.affectedRows
   }
 
   // ============================================================================
@@ -1374,6 +1407,11 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * @internal
    */
   protected getRawCompiledQuery(): CompiledQuery {
+    const selectBindings = this.selectClause.getBindings()
+    const whereBindings = this.whereClause.getValues()
+    const havingBindings = this.havingClause.getBindings()
+    const orderBindings = this.orderByClause.getBindings()
+
     return {
       table: this.tableName,
       columns: this.selectClause.getColumns(),
@@ -1385,7 +1423,14 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
       joins: this.joinManager.getJoins(),
       limit: this.limitClause.getLimit(),
       offset: this.limitClause.getOffset(),
-      bindings: this.getBindings(),
+      bindings: [...selectBindings, ...whereBindings, ...havingBindings, ...orderBindings],
+      bindingCounts: {
+        select: selectBindings.length,
+        where: whereBindings.length,
+        join: 0, // JoinManager currently doesn't support bindings
+        having: havingBindings.length,
+        order: orderBindings.length,
+      },
     }
   }
 

@@ -31,7 +31,7 @@ export class GroupByClause {
    * @returns Array of column names
    */
   getGroups(): string[] {
-    return this.groups
+    return [...this.groups]
   }
 
   /**

@@ -83,7 +83,7 @@ export class JoinManager {
    * @returns Array of joins
    */
   getJoins(): JoinClause[] {
-    return this.joins
+    return this.joins.map((j) => ({ ...j }))
   }
 
   /**

@@ -45,7 +45,7 @@ export class MySQLGrammar extends Grammar {
   /**
    * MySQL-specific: Compile UPSERT using ON DUPLICATE KEY UPDATE
    */
-  compileUpsert(
+  override compileUpsert(
     query: CompiledQuery,
     values: Record<string, unknown>[],
     _uniqueBy: string[],

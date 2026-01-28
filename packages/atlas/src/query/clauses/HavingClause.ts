@@ -71,7 +71,7 @@ export class HavingClause {
    * @returns Array of having clauses
    */
   getHavings(): HavingClauseType[] {
-    return this.havings
+    return this.havings.map((h) => ({ ...h }))
   }
 
   /**
@@ -80,7 +80,7 @@ export class HavingClause {
    * @returns Array of bindings
    */
   getBindings(): unknown[] {
-    return this.bindings
+    return [...this.bindings]
   }
 
   /**

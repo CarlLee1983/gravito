@@ -152,6 +152,7 @@ export abstract class Model {
 
   /** Cached schema */
   private _schema?: TableSchema
+  private _schemaPromise?: Promise<TableSchema>
 
   constructor() {
     this._dirtyTracker = new DirtyTracker()
@@ -662,10 +663,18 @@ export abstract class Model {
   }
 
   /**
-   * Get cached schema
+   * Get cached schema with race condition protection
    */
   protected async _getSchema(): Promise<TableSchema> {
-    if (!this._schema) {
+    if (this._schema) {
+      return this._schema
+    }
+
+    if (this._schemaPromise) {
+      return this._schemaPromise
+    }
+
+    this._schemaPromise = (async () => {
       const modelCtor = this.constructor as any
       const connection = DB.connection(modelCtor.connection)
       const table = modelCtor.getTable()
@@ -676,17 +685,20 @@ export abstract class Model {
         typeof driver.getDriverName === 'function' &&
         (driver.getDriverName() === 'mongodb' || driver.getDriverName() === 'redis')
       ) {
-        return {
+        this._schema = {
           table: table,
           columns: new Map(),
           primaryKey: [modelCtor.primaryKey],
           capturedAt: Date.now(),
         }
+        return this._schema
       }
 
       this._schema = await SchemaRegistry.getInstance().get(table, modelCtor.connection)
-    }
-    return this._schema
+      return this._schema
+    })()
+
+    return this._schemaPromise
   }
 
   // ============================================================================
@@ -828,16 +840,13 @@ export abstract class Model {
     this: ModelConstructor<T> & typeof Model,
     chunkSize = 1000
   ): AsyncGenerator<ModelAttributes[], void, unknown> {
-    const connection = DB.connection(this.connection)
     let offset = 0
 
     while (true) {
-      const rows = await connection
-        .table<ModelAttributes>(this.getTable())
-        .orderBy(this.primaryKey)
-        .limit(chunkSize)
-        .offset(offset)
-        .get()
+      const query = this.query().orderBy(this.primaryKey).limit(chunkSize).offset(offset)
+
+      // Use raw results from the query builder
+      const rows = (await (query as any).getRawResults?.()) || (await query.get())
 
       if (rows.length === 0) {
         break
@@ -871,7 +880,6 @@ export abstract class Model {
     this: ModelConstructor<T> & typeof Model,
     chunkSize = 1000
   ): AsyncGenerator<T[], void, unknown> {
-    const connection = DB.connection(this.connection)
     let offset = 0
     let safetyCounter = 0
     const MAX_CHUNKS = 10000 // Safety limit: 10M records max for cursor
@@ -879,26 +887,25 @@ export abstract class Model {
     let lastFirstId: any = null
 
     while (safetyCounter < MAX_CHUNKS) {
-      const rows = await connection
-        .table<ModelAttributes>(this.getTable())
+      const rows = (await this.query()
         .orderBy(this.primaryKey) // Deterministic ordering
         .limit(chunkSize)
         .offset(offset)
-        .get()
+        .get()) as T[]
 
       if (rows.length === 0) {
         break
       }
 
       // Detect stuck cursor (offset ignored by driver)
-      const currentFirstId = rows[0][this.primaryKey]
+      const currentFirstId = (rows[0] as any)[this.primaryKey]
       if (lastFirstId !== null && currentFirstId === lastFirstId) {
         // console.warn(`Cursor stuck at offset ${offset}. Offset might be ignored by driver.`)
         break
       }
       lastFirstId = currentFirstId
 
-      yield rows.map((row) => this.hydrate<T>(row))
+      yield rows
 
       if (rows.length < chunkSize) {
         break

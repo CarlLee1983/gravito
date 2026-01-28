@@ -274,8 +274,27 @@ export class HasPersistence {
 
     const column = softDeletes.column || 'deleted_at'
     ;(this as any)._setAttribute(column, null)
-    await this.save()
-    return true
+    // We must use withTrashed() here because otherwise save() -> _performUpdate()
+    // will use query() which filters out soft-deleted records.
+    const query = modelCtor
+      .query()
+      .withTrashed()
+      .where(modelCtor.primaryKey, (this as any).getKey())
+
+    // Manual update to bypass the standard save() which might have versioning conflicts or scope issues
+    const affected = await query.update({ [column]: null })
+
+    if (affected > 0) {
+      this._exists = true
+      const dirtyTracker = (this as any)._dirtyTracker
+      if (dirtyTracker) {
+        dirtyTracker.sync((this as any)._attributes)
+      }
+      await (this as any).emit('restored')
+      return true
+    }
+
+    return false
   }
 
   /**

@@ -51,7 +51,7 @@ export class SelectClause {
    * @returns Array of column names or expressions
    */
   getColumns(): string[] {
-    return this.columns
+    return [...this.columns]
   }
 
   /**
@@ -102,7 +102,7 @@ export class SelectClause {
    * @returns Array of bindings
    */
   getBindings(): unknown[] {
-    return this.bindings
+    return [...this.bindings]
   }
 
   /**

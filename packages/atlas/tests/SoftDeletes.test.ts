@@ -119,14 +119,10 @@ describe('SoftDeletes', () => {
 
   test('restore clears deleted_at', async () => {
     const user = SoftUser.hydrate<SoftUser>({ id: 1, name: 'Carl', deleted_at: new Date() })
-    const saveSpy = spyOn(Model.prototype, 'save').mockResolvedValue(user)
 
     await user.restore()
 
     expect(user.deleted_at).toBeNull()
-    expect(saveSpy).toHaveBeenCalled()
-
-    saveSpy.mockRestore()
   })
 
   test('forceDelete performs physical delete', async () => {
