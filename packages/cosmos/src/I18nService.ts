@@ -5,6 +5,7 @@
  */
 
 import type { GravitoMiddleware } from '@gravito/core'
+import { LRUCache } from 'lru-cache'
 import { loadLocale } from './loader'
 
 /**
@@ -418,11 +419,13 @@ export class I18nManager<Schema = TranslationMap> implements I18nService<Schema>
   /** Map of translation bundles indexed by locale. */
   public translations: Record<string, TranslationMap> = {}
   /** Internal cache for resolved translation strings. */
-  private cache = new Map<string, string>()
+  private cache: LRUCache<string, string>
   /** Cache for Intl.PluralRules instances. */
   private pluralRules = new Map<string, Intl.PluralRules>()
   /** Set of locales that have been successfully loaded. */
   private loadedLocales = new Set<string>()
+  /** Map of pending locale load promises for coalescing. */
+  private loadingPromises = new Map<string, Promise<void>>()
   /** Counter for cache hits. */
   private cacheHits = 0
   /** Counter for cache misses. */
@@ -439,6 +442,10 @@ export class I18nManager<Schema = TranslationMap> implements I18nService<Schema>
     if (config.translations) {
       this.translations = config.translations
     }
+    this.cache = new LRUCache<string, string>({
+      max: 10000,
+      ttl: 1000 * 60 * 60, // 1 hour
+    })
     this.globalInstance = new I18nInstance(this, config.defaultLocale)
   }
 
@@ -555,12 +562,26 @@ export class I18nManager<Schema = TranslationMap> implements I18nService<Schema>
       return
     }
 
-    // Attempt to load
-    const translations = await loadLocale(this.config.lazyLoad.baseDir, locale)
-    if (translations) {
-      this.addResource(locale, translations)
-      this.loadedLocales.add(locale)
+    // Check for pending load promise to coalesce requests
+    if (this.loadingPromises.has(locale)) {
+      return this.loadingPromises.get(locale)
     }
+
+    // Create a new load promise
+    const loadPromise = (async () => {
+      try {
+        const translations = await loadLocale(this.config.lazyLoad!.baseDir, locale)
+        if (translations) {
+          this.addResource(locale, translations)
+          this.loadedLocales.add(locale)
+        }
+      } finally {
+        this.loadingPromises.delete(locale)
+      }
+    })()
+
+    this.loadingPromises.set(locale, loadPromise)
+    return loadPromise
   }
 
   // --- Manager Internal API ---
@@ -601,6 +622,11 @@ export class I18nManager<Schema = TranslationMap> implements I18nService<Schema>
    */
   private invalidateCache(locale?: string) {
     if (locale) {
+      // LRUCache doesn't support iterating keys efficiently in all versions,
+      // but newer versions (v7+) are Map-like.
+      // However, iterating over cache to delete by prefix is expensive.
+      // For now, we clear everything for simplicity and correctness, or we assume keys are iterable.
+      // lru-cache v11 (installed) supports keys().
       for (const key of this.cache.keys()) {
         if (key.startsWith(`${locale}:`)) {
           this.cache.delete(key)

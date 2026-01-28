@@ -47,5 +47,8 @@
     "type": "git",
     "url": "git+https://github.com/gravito-framework/gravito.git",
     "directory": "packages/cosmos"
+  },
+  "dependencies": {
+    "lru-cache": "^11.2.5"
   }
 }
