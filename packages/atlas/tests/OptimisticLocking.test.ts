@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
+import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'bun:test'
 import { DB } from '../src/DB'
 import { column, version } from '../src/orm/model/decorators'
 import { StaleModelError } from '../src/orm/model/errors'
@@ -23,20 +23,20 @@ class VersionedUser extends Model {
 }
 
 describe('Optimistic Locking', () => {
-  beforeEach(async () => {
-    Schema.reset()
-    SchemaRegistry.reset()
+  beforeAll(() => {
     // Force JIT mode for tests to avoid "Table not found in schema lock" errors in CI
-    SchemaRegistry.init({ mode: 'jit', connection: CONNECTION_NAME })
+    // We do this once to avoid disrupting other tests
+    SchemaRegistry.init({ mode: 'jit' })
 
-    DB.configure({
-      default: CONNECTION_NAME,
-      connections: {
-        [CONNECTION_NAME]: {
-          driver: 'sqlite',
-          database: ':memory:',
-        },
-      },
+    if (!DB.initialized) {
+      DB.configure({ connections: {} })
+    }
+  })
+
+  beforeEach(async () => {
+    DB.addConnection(CONNECTION_NAME, {
+      driver: 'sqlite',
+      database: ':memory:',
     })
 
     await Schema.connection(CONNECTION_NAME).create('versioned_users', (table) => {
@@ -48,7 +48,8 @@ describe('Optimistic Locking', () => {
   })
 
   afterEach(async () => {
-    await DB.disconnect()
+    await DB.disconnect(CONNECTION_NAME)
+    Schema.reset() // Only resets connectionName and grammar, safe-ish
   })
 
   it('should auto-increment version on update', async () => {

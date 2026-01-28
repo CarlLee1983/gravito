@@ -2,21 +2,18 @@ import { beforeAll, describe, expect, it } from 'bun:test'
 import { DB } from '../src/DB'
 import { QueryBuilder } from '../src/query/QueryBuilder'
 
+const CONNECTION_NAME = `db_test_${Math.random().toString(36).slice(2)}`
+
 describe('DB', () => {
   beforeAll(() => {
-    DB.configure({
-      default: 'test',
-      connections: {
-        test: {
-          driver: 'sqlite',
-          database: ':memory:',
-        },
-      },
+    DB.addConnection(CONNECTION_NAME, {
+      driver: 'sqlite',
+      database: ':memory:',
     })
   })
 
   it('should return a query builder for a table', () => {
-    const builder = DB.table('users')
+    const builder = DB.connection(CONNECTION_NAME).table('users')
     expect(builder).toBeInstanceOf(QueryBuilder)
   })
 
@@ -37,10 +34,15 @@ describe('DB', () => {
   })
 
   it('should handle pretend mode', async () => {
+    const oldDefault = DB.getDefaultConnection()
+    DB.setDefaultConnection(CONNECTION_NAME)
+
     await DB.connection().getDriver().execute('CREATE TABLE users (id INTEGER PRIMARY KEY)')
     const { queries } = await DB.pretend(async () => {
       await DB.table('users').where('id', 1).get()
     })
     expect(queries).toContain('SELECT * FROM "users" WHERE "id" = 1')
+
+    DB.setDefaultConnection(oldDefault)
   })
 })

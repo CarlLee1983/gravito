@@ -53,7 +53,6 @@ describe('Model Observers', () => {
   afterEach(async () => {
     connectionSpy.mockRestore()
     registrySpy.mockRestore()
-    await DB._reset()
   })
 
   test('it registers observer', () => {

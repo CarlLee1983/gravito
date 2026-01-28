@@ -110,7 +110,10 @@ describe('DirtyTracker', () => {
 
 describe('Model', () => {
   beforeEach(() => {
-    SchemaRegistry.reset()
+    // We rely on the global singleton being initialized or we initialize it once
+    if (!SchemaRegistry.getInstance().isInitialized) {
+      SchemaRegistry.init({ mode: 'jit' })
+    }
   })
 
   describe('create', () => {

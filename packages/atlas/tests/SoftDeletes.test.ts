@@ -67,7 +67,6 @@ describe('SoftDeletes', () => {
   afterEach(async () => {
     connectionSpy.mockRestore()
     registrySpy.mockRestore()
-    await DB._reset()
   })
 
   test('it appends deleted_at IS NULL by default', async () => {

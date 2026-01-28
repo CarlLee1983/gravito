@@ -90,7 +90,6 @@ describe('ModelEvents', () => {
   afterEach(async () => {
     connectionSpy.mockRestore()
     registrySpy.mockRestore()
-    await DB._reset()
   })
 
   test('it triggers creating and saving events on insert', async () => {
