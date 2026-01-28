@@ -756,18 +756,9 @@ export abstract class Model {
     this: ModelConstructor<T> & typeof Model,
     key: unknown
   ): Promise<T | null> {
-    const connection = DB.connection(this.connection)
+    const result = await this.query().where(this.primaryKey, key).first()
 
-    const row = await connection
-      .table<ModelAttributes>(this.getTable())
-      .where(this.primaryKey, key)
-      .first()
-
-    if (!row) {
-      return null
-    }
-
-    return this.hydrate<T>(row)
+    return result as T | null
   }
 
   /**
@@ -797,14 +788,9 @@ export abstract class Model {
    * @returns Promise resolving to an array of model instances.
    */
   static async all<T extends Model>(this: ModelConstructor<T> & typeof Model): Promise<T[]> {
-    const connection = DB.connection(this.connection)
-
-    const rows = await connection
-      .table<ModelAttributes>(this.getTable())
+    return this.query()
       .limit(1000) // Auto-chunking defense
-      .get()
-
-    return rows.map((row) => this.hydrate<T>(row))
+      .get() as Promise<T[]>
   }
 
   /**
@@ -1156,17 +1142,14 @@ export abstract class Model {
    * Count records
    */
   static async count(this: ModelConstructor<Model> & typeof Model): Promise<number> {
-    const connection = DB.connection(this.connection)
-    const table = this.getTable()
-    const result = await connection.table(table).count()
-    return typeof result === 'number' ? result : 0
+    return this.query().count()
   }
 
   /**
    * Check if any records exist
    */
   static async exists(this: ModelConstructor<Model> & typeof Model): Promise<boolean> {
-    return (await this.count()) > 0
+    return this.query().exists()
   }
 }
 

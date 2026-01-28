@@ -38,18 +38,18 @@ describe('Model Extra Coverage', () => {
         .mockResolvedValueOnce(rowsBatch2)
         .mockResolvedValueOnce([]) // End
 
+      const fluentMock = {
+        setModel: mock(() => fluentMock),
+        where: mock(() => fluentMock),
+        orderBy: mock(() => fluentMock),
+        limit: mock(() => fluentMock),
+        offset: mock(() => fluentMock),
+        get: getMock,
+        first: mock(() => Promise.resolve(null)),
+      }
+
       spyOn(DB, 'connection').mockReturnValue({
-        table: () => ({
-          where: () => ({
-            orderBy: () => ({
-              limit: () => ({
-                offset: () => ({
-                  get: getMock,
-                }),
-              }),
-            }),
-          }),
-        }),
+        table: () => fluentMock,
       } as any)
 
       const batches = []
@@ -77,15 +77,16 @@ describe('Model Extra Coverage', () => {
 
       const firstMock = mock(async () => ({ id: 10, name: 'Morph User' }))
 
+      const fluentMock = {
+        setModel: mock(() => fluentMock),
+        get: mock(() => Promise.resolve([])),
+        first: firstMock,
+        where: mock(() => fluentMock),
+        limit: mock(() => fluentMock),
+      }
+
       spyOn(DB, 'connection').mockReturnValue({
-        table: () => ({
-          setModel: mock(),
-          get: mock(),
-          first: mock(),
-          where: () => ({
-            first: firstMock,
-          }),
-        }),
+        table: () => fluentMock,
       } as any)
 
       const relation = image.morphTo('imageable')

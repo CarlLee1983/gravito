@@ -120,14 +120,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
       this.selectClause = this.selectClause.clone()
       this.whereClause = this.whereClause.clone()
       this.joinManager = this.joinManager.clone()
-
-      const newGroupBy = new GroupByClause()
-      // Use any cast to access private groups array since clone() is missing
-      if ((this.groupByClause as any).groups) {
-        newGroupBy.groupBy(...(this.groupByClause as any).groups)
-      }
-      this.groupByClause = newGroupBy
-
+      this.groupByClause = this.groupByClause.clone()
       this.havingClause = this.havingClause.clone()
       this.orderByClause = this.orderByClause.clone()
       this.limitClause = this.limitClause.clone()
@@ -141,14 +134,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
       this.selectClause = this.selectClause.clone()
       this.whereClause = this.whereClause.clone()
       this.joinManager = this.joinManager.clone()
-
-      const newGroupBy = new GroupByClause()
-      // Use any cast
-      if ((this.groupByClause as any).groups) {
-        newGroupBy.groupBy(...(this.groupByClause as any).groups)
-      }
-      this.groupByClause = newGroupBy
-
+      this.groupByClause = this.groupByClause.clone()
       this.havingClause = this.havingClause.clone()
       this.orderByClause = this.orderByClause.clone()
       this.limitClause = this.limitClause.clone()
@@ -476,12 +462,11 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    */
   whereRaw(sql: string | Expression, bindings: unknown[] = []): this {
     this.ensureOwnState()
-    ;(this.whereClause as any).wheres.push({
-      type: 'raw',
-      sql: sql instanceof Expression ? sql.getValue() : sql,
-      bindings: sql instanceof Expression ? sql.getBindings() : bindings,
-      boolean: 'and',
-    })
+    if (sql instanceof Expression) {
+      this.whereClause.addRaw(sql.getValue(), sql.getBindings(), 'and')
+    } else {
+      this.whereClause.addRaw(sql, bindings, 'and')
+    }
     return this
   }
 
@@ -494,12 +479,11 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    */
   orWhereRaw(sql: string | Expression, bindings: unknown[] = []): this {
     this.ensureOwnState()
-    ;(this.whereClause as any).wheres.push({
-      type: 'raw',
-      sql: sql instanceof Expression ? sql.getValue() : sql,
-      bindings: sql instanceof Expression ? sql.getBindings() : bindings,
-      boolean: 'or',
-    })
+    if (sql instanceof Expression) {
+      this.whereClause.addRaw(sql.getValue(), sql.getBindings(), 'or')
+    } else {
+      this.whereClause.addRaw(sql, bindings, 'or')
+    }
     return this
   }
 
@@ -513,12 +497,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    */
   whereColumn(first: string, operator: Operator, second: string): this {
     this.ensureOwnState()
-    ;(this.whereClause as any).wheres.push({
-      type: 'column',
-      operator,
-      values: [first, second],
-      boolean: 'and',
-    })
+    this.whereClause.addColumn(first, operator, second, 'and')
     return this
   }
 
@@ -791,7 +770,9 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * Execute the query using a prepared statement
    */
   async getPrepared(): Promise<T[]> {
-    const sql = this.grammar.compileSelect(this.getCompiledQuery())
+    const compiled = this.getCompiledQuery()
+    const sql = this.grammar.compileSelect(compiled)
+    const bindings = compiled.bindings
     const driver = this.connection.getDriver()
 
     if (
@@ -799,7 +780,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
       typeof (driver as any).executePrepared === 'function'
     ) {
       const stmtName = await (driver as any).prepare(sql)
-      const result = await (driver as any).executePrepared(stmtName, this.getBindings())
+      const result = await (driver as any).executePrepared(stmtName, bindings)
       return result.rows as T[]
     }
 
@@ -810,8 +791,9 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * Execute the query and retrieve all matching records.
    */
   async get(): Promise<T[]> {
-    const sql = this.grammar.compileSelect(this.getCompiledQuery())
-    const bindings = this.getBindings()
+    const compiled = this.getCompiledQuery()
+    const sql = this.grammar.compileSelect(compiled)
+    const bindings = compiled.bindings
 
     // Check cache
     const cache = DB.getCache()
@@ -896,8 +878,9 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * Check if any records exist matching the query
    */
   async exists(): Promise<boolean> {
-    const sql = this.grammar.compileExists(this.getCompiledQuery())
-    const result = await this.connection.raw<{ exists: boolean }>(sql, this.getBindings())
+    const compiled = this.getCompiledQuery()
+    const sql = this.grammar.compileExists(compiled)
+    const result = await this.connection.raw<{ exists: boolean }>(sql, compiled.bindings)
     return result.rows[0]?.exists ?? false
   }
 
@@ -952,8 +935,9 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * Internal helper to execute an aggregate function
    */
   protected async aggregate(func: string, column: string): Promise<number | null> {
-    const sql = this.grammar.compileAggregate(this.getCompiledQuery(), { function: func, column })
-    const result = await this.connection.raw<{ aggregate: number | null }>(sql, this.getBindings())
+    const compiled = this.getCompiledQuery()
+    const sql = this.grammar.compileAggregate(compiled, { function: func, column })
+    const result = await this.connection.raw<{ aggregate: number | null }>(sql, compiled.bindings)
     const value = result.rows[0]?.aggregate
     return value === null || value === undefined ? null : Number(value)
   }

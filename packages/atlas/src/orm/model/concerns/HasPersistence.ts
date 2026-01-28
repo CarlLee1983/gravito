@@ -148,7 +148,6 @@ export class HasPersistence {
    */
   protected async _performUpdate(): Promise<this> {
     const modelCtor = this.constructor as any
-    const connection = DB.connection(modelCtor.connection)
 
     // Trigger 'updating' event
     await (this as any).emit('updating')
@@ -188,9 +187,7 @@ export class HasPersistence {
       return this
     }
 
-    const query = connection
-      .table(modelCtor.getTable())
-      .where(modelCtor.primaryKey, (this as any).getKey())
+    const query = modelCtor.query().where(modelCtor.primaryKey, (this as any).getKey())
 
     // Add version check
     if (versionKey && currentVersion !== undefined) {
@@ -328,8 +325,7 @@ export class HasPersistence {
     }
 
     // Fetch from database
-    const connection = DB.connection(modelCtor.connection)
-    const row = await connection.table(modelCtor.getTable()).where(primaryKey, primaryValue).first()
+    const row = await modelCtor.query().where(primaryKey, primaryValue).first()
 
     if (row) {
       // Update attributes (from HasAttributes concern)

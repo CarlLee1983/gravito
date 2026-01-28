@@ -32,17 +32,8 @@ export class HasRelationships {
     const lk = localKey ?? modelCtor.primaryKey
     const localValue = (this as any)._attributes[lk]
 
-    const connection = DB.connection(related.connection)
-    const builder = connection.table<ModelAttributes>(related.getTable()).where(fk, localValue)
-
-    // Wrap get to hydrate
-    const originalGet = builder.get.bind(builder)
-    ;(builder as unknown as { get: () => Promise<R[]> }).get = async (): Promise<R[]> => {
-      const rows = await originalGet()
-      return rows.map((row) => related.hydrate<R>(row)) as R[]
-    }
-
-    return builder
+    const builder = related.query().where(fk, localValue)
+    return builder as any
   }
 
   /**
@@ -85,17 +76,8 @@ export class HasRelationships {
     const ok = ownerKey ?? related.primaryKey
     const foreignValue = (this as any)._attributes[fk]
 
-    const connection = DB.connection(related.connection)
-    const builder = connection.table<ModelAttributes>(table).where(ok, foreignValue)
-
-    // Wrap first to hydrate
-    const originalFirst = builder.first.bind(builder)
-    builder.first = (async (): Promise<R | null> => {
-      const row = await originalFirst()
-      return row ? related.hydrate<R>(row) : null
-    }) as typeof builder.first
-
-    return builder
+    const builder = related.query().where(ok, foreignValue)
+    return builder as any
   }
 
   /**
@@ -140,9 +122,7 @@ export class HasRelationships {
     }
 
     // Get related models
-    const rows = await connection.table<ModelAttributes>(relatedTable).whereIn(rk, pivots).get()
-
-    return rows.map((row) => related.hydrate<R>(row)) as R[]
+    return (await related.query().whereIn(rk, pivots).get()) as R[]
   }
 
   /**
@@ -170,23 +150,17 @@ export class HasRelationships {
     const lk = localKey ?? modelCtor.primaryKey
     const localValue = (this as any)._attributes[lk]
 
-    const connection = DB.connection(related.connection)
+    const query = related.query().where(fk, localValue).orderBy(related.primaryKey)
     let offset = 0
 
     while (true) {
-      const rows = await connection
-        .table<ModelAttributes>(related.getTable())
-        .where(fk, localValue)
-        .orderBy(related.primaryKey)
-        .limit(chunkSize)
-        .offset(offset)
-        .get()
+      const rows = (await query.limit(chunkSize).offset(offset).get()) as R[]
 
       if (rows.length === 0) {
         break
       }
 
-      yield rows.map((row) => related.hydrate<R>(row)) as R[]
+      yield rows
 
       if (rows.length < chunkSize) {
         break

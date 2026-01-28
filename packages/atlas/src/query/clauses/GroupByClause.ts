@@ -66,4 +66,15 @@ export class GroupByClause {
   hasGroups(): boolean {
     return this.groups.length > 0
   }
+
+  /**
+   * Clone the clause
+   *
+   * @returns A deep copy of the clause
+   */
+  clone(): GroupByClause {
+    const clone = new GroupByClause()
+    clone.groups = [...this.groups]
+    return clone
+  }
 }
