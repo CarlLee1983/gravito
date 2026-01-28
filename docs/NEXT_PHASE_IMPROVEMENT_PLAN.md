@@ -30,13 +30,9 @@
 *   **目標**: 解決並發載入語言檔時的 "Thundering Herd" 問題，並引入 LRU 快取。
 *   **狀態**: 已完成。實作了 `loadingPromises` 進行請求合併，並引入 `lru-cache` 進行翻譯快取。
 
-### 5. Photon OpenAPI 整合
+### 5. Photon OpenAPI 整合 ✅ 已完成
 *   **目標**: 整合 `zod-openapi` 至 `@gravito/photon`。
-*   **預期效益**: 
-    *   從 TypeScript 型別與 Zod Schema 自動生成 Swagger/OpenAPI 文檔。
-    *   提升開發者體驗 (DX)。
-*   **關鍵行動**:
-    *   實作輔助函數，將 Hono 路由轉換為 OpenAPI 規格。
+*   **狀態**: 已完成。新增 `openapi.ts` 導出 `PhotonOpenAPI`, `createRoute`, `z`，測試通過。
 
 ### 6. Atlas 樂觀鎖 (Optimistic Locking) ✅ 已完成
 *   **目標**: 在 Atlas ORM 中實作基於 `version` 欄位的並發控制。
