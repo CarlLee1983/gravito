@@ -21,13 +21,19 @@ export interface SoftDeletesOptions {
  * Metadata key for Soft Deletes configuration.
  * @internal
  */
-export const SOFT_DELETES_KEY = Symbol('soft_deletes')
+export const SOFT_DELETES_KEY = Symbol.for('gravito:atlas:soft_deletes')
 
 /**
  * Metadata key for Column definitions.
  * @internal
  */
-export const COLUMN_KEY = Symbol('column')
+export const COLUMN_KEY = Symbol.for('gravito:atlas:column')
+
+/**
+ * Metadata key for Version column.
+ * @internal
+ */
+export const VERSION_KEY = Symbol.for('gravito:atlas:version')
 
 /**
  * Soft Deletes Decorator
@@ -133,4 +139,27 @@ export function column(options: ColumnOptions = {}): PropertyDecorator {
 // Add type-specific helpers (chaining/static methods style)
 ;(column as any).dateTime = (options: ColumnOptions = {}) => {
   return column(options)
+}
+
+/**
+ * Version Decorator for Optimistic Locking
+ *
+ * Marks a property as a version column for optimistic locking.
+ * When a model updates, it checks if the version matches the one in the database.
+ *
+ * @param options - Configuration for the column (same as @column)
+ */
+export function version(options: ColumnOptions = {}): PropertyDecorator {
+  return (target: object, propertyKey: string | symbol) => {
+    // Also apply regular column decorator logic
+    column(options)(target, propertyKey)
+
+    const ctor = (target as { constructor: Function }).constructor as unknown as Record<
+      string | symbol,
+      unknown
+    >
+
+    // Mark this property as the version column
+    ctor[VERSION_KEY] = propertyKey
+  }
 }

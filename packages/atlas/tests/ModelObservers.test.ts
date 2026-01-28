@@ -23,9 +23,16 @@ describe('Model Observers', () => {
     // Clear observers
     ;(User as any).observers = []
 
+    const fluentMock = () => mockConnection
     mockConnection = {
-      table: () => mockConnection,
-      where: () => mockConnection,
+      table: fluentMock,
+      where: fluentMock,
+      whereNull: fluentMock,
+      setModel: fluentMock,
+      applyScope: fluentMock,
+      limit: fluentMock,
+      get: () => Promise.resolve([]),
+      first: () => Promise.resolve(null),
       insert: () => Promise.resolve([1]),
       update: () => Promise.resolve(1),
       getGrammar: () => ({
@@ -53,7 +60,6 @@ describe('Model Observers', () => {
   afterEach(async () => {
     connectionSpy.mockRestore()
     registrySpy.mockRestore()
-    await DB._reset()
   })
 
   test('it registers observer', () => {

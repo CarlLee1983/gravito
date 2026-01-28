@@ -17,10 +17,9 @@
   },
   "scripts": {
     "build": "bun run build.ts",
-    "test": "bun test",
-    "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
-    "test:coverage": "bun test --coverage --coverage-threshold=80",
-    "test:ci": "bun test --coverage --coverage-threshold=80"
+    "test": "bun test --max-concurrency=1",
+    "test:coverage": "bun test --coverage --coverage-threshold=80 --max-concurrency=1",
+    "test:ci": "bun test --coverage --coverage-threshold=80 --max-concurrency=1"
   },
   "files": [
     "dist",

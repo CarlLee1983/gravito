@@ -1,4 +1,5 @@
-# Photon HTTP Engine 架構技術規格書
+title: Photon HTTP Engine 架構技術規格書
+# Photon HTTP Engine 架構技術規格書 (v1.0.0-beta.1)
 
 ## 1. 模組概覽
 
@@ -8,6 +9,7 @@
 - **HTTP Engine**：基於 Web Standards (Request/Response) 的高效能伺服器封裝。
 - **Routing System**：支援參數化路徑、巢狀路由與路由分組（Trie/RegExp Router）。
 - **Middleware Pipeline**：洋蔥式（Onion Model）中介軟體執行機制。
+- **OpenAPI Integration**：內建 OpenAPI 支援，自動生成 API 規格文件。
 - **Type-Safe RPC**：提供端到端（End-to-End）型別安全的客戶端生成能力 (`hc`)。
 
 ---
@@ -99,8 +101,9 @@ const res = await client.hello.$get() // Fully Typed!
 
 ## 6. 後續優化建議
 
-1.  **增強 OpenAPI 整合** (Priority: High)
-    -   整合 `hono-openapi` 或 `zod-openapi`，從型別定義自動生成 Swagger 文檔。
+1.  **增強 OpenAPI 整合** (Completed v1.0.0-beta.1)
+    -   整合 `zod-openapi` 到核心 API 流程。
+    -   新增 `openapi.ts` 導出 `PhotonOpenAPI`, `createRoute`, `z` 等工具。
 
 2.  **Orbit 級別的 Middleware 隔離** (Priority: Medium)
     -   實作輔助函數，確保中介軟體只作用於特定 Orbit 子樹。

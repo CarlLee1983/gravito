@@ -2,6 +2,8 @@ import { ModelNotFoundException } from './exceptions/ModelNotFoundException'
 import type { GravitoHandler, GravitoMiddleware, HttpMethod, ProxyOptions } from './http/types'
 import type { PlanetCore } from './PlanetCore'
 import { Route } from './Route'
+import { ControllerDispatcher } from './router/ControllerDispatcher'
+import { RequestValidator } from './router/RequestValidator'
 
 /**
  * Type for Controller Class Constructor
@@ -45,122 +47,6 @@ export type FormRequestClass = new () => FormRequestLike
  * @public
  */
 export const FORM_REQUEST_SYMBOL = Symbol.for('gravito.formRequest')
-
-/**
- * WeakMap cache for FormRequest class detection results.
- * Avoids re-instantiating classes on repeated checks.
- */
-// biome-ignore lint/complexity/noBannedTypes: generic Function type needed here
-const formRequestCache = new WeakMap<Function, boolean>()
-
-/**
- * WeakMap cache for FormRequest instances.
- * Stores singleton instances to avoid re-instantiation on every request.
- * Using WeakMap allows garbage collection when the class is no longer referenced.
- */
-const formRequestInstances = new WeakMap<FormRequestClass, FormRequestLike>()
-
-/**
- * Check if a value is a FormRequest class.
- * Optimized with Symbol check, prototype check, and caching.
- * @internal
- */
-function isFormRequestClass(value: unknown): value is FormRequestClass {
-  if (typeof value !== 'function') {
-    return false
-  }
-
-  // Fast path 1: Check for Symbol marker (set by @gravito/impulse)
-  if ((value as { [FORM_REQUEST_SYMBOL]?: boolean })[FORM_REQUEST_SYMBOL] === true) {
-    return true
-  }
-
-  // Fast path 2: Filter out arrow functions (middleware)
-  // Arrow functions do not have a prototype property
-  if (!value.prototype) {
-    return false
-  }
-
-  // Check cache to avoid re-computation
-  const cached = formRequestCache.get(value)
-  if (cached !== undefined) {
-    return cached
-  }
-
-  // Slow path: Duck-type check with instantiation
-  try {
-    // Check prototype first to avoid instantiation if possible
-    if ('validate' in value.prototype && typeof value.prototype.validate === 'function') {
-      formRequestCache.set(value, true)
-      return true
-    }
-
-    const instance = new (value as new () => unknown)()
-    const isFormRequest =
-      instance !== null &&
-      typeof instance === 'object' &&
-      'schema' in instance &&
-      'validate' in instance &&
-      typeof (instance as FormRequestLike).validate === 'function'
-
-    // Cache the result
-    formRequestCache.set(value, isFormRequest)
-    return isFormRequest
-  } catch (error) {
-    // Handle different error types for better diagnostics
-    if (error instanceof TypeError) {
-      // Constructor doesn't exist or has wrong signature
-      // This is expected for non-constructable values
-    } else if (error instanceof ReferenceError) {
-      // Missing dependencies - unlikely but possible
-      console.warn('[Router] FormRequest detection failed: Missing dependencies', error)
-    } else {
-      // Unexpected error - log for debugging
-      console.warn('[Router] Unexpected error during FormRequest detection:', error)
-    }
-    formRequestCache.set(value, false)
-    return false
-  }
-}
-
-/**
- * Convert a FormRequest class to middleware.
- * Uses instance caching to avoid re-instantiation on every request.
- * @internal
- */
-function formRequestToMiddleware(RequestClass: FormRequestClass): GravitoMiddleware {
-  // Get or create cached instance
-  let request = formRequestInstances.get(RequestClass)
-  if (!request) {
-    request = new RequestClass()
-    if (typeof request.validate !== 'function') {
-      throw new Error('Invalid FormRequest: validate() is missing.')
-    }
-    formRequestInstances.set(RequestClass, request)
-  }
-
-  return async (ctx, next) => {
-    const result = await request?.validate?.(ctx)
-
-    if (!result) {
-      // No validation result, continue
-      await next()
-      return undefined
-    }
-
-    if (!result.success) {
-      // Determine status code based on error type
-      const errorCode = (result.error as { error?: { code?: string } })?.error?.code
-      const status = errorCode === 'AUTHORIZATION_ERROR' ? 403 : 422
-      return ctx.json(result.error, status)
-    }
-
-    // Store validated data in context
-    ctx.set('validated', result.data)
-    await next()
-    return undefined
-  }
-}
 
 /**
  * Options for route definitions
@@ -404,8 +290,7 @@ export class Router {
   // Internal list of all registered routes (for scanning and debugging)
   public routes: Array<{ method: string; path: string; domain?: string }> = []
 
-  // Singleton cache for controllers
-  private controllers = new Map<ControllerClass, any>()
+  private dispatcher: ControllerDispatcher
 
   private namedRoutes = new Map<
     string,
@@ -587,6 +472,8 @@ export class Router {
   }
 
   constructor(private core: PlanetCore) {
+    this.dispatcher = new ControllerDispatcher(core)
+
     // Register global middleware for bindings
     // Optimized: Only resolve bindings for params that exist in the current route
     this.core.adapter.useGlobal(async (c, next) => {
@@ -871,8 +758,10 @@ export class Router {
 
     if (handler !== undefined) {
       // Three arguments: (path, middleware/request, handler)
-      if (isFormRequestClass(requestOrHandlerOrMiddleware)) {
-        formRequestMiddleware = formRequestToMiddleware(requestOrHandlerOrMiddleware)
+      if (RequestValidator.isFormRequestClass(requestOrHandlerOrMiddleware)) {
+        formRequestMiddleware = RequestValidator.formRequestToMiddleware(
+          requestOrHandlerOrMiddleware
+        )
       } else {
         // Assume middleware (single or array)
         const middleware = requestOrHandlerOrMiddleware as GravitoMiddleware | GravitoMiddleware[]
@@ -894,7 +783,7 @@ export class Router {
 
     if (Array.isArray(finalRouteHandler)) {
       const [CtrlClass, methodName] = finalRouteHandler
-      resolvedHandler = this.resolveControllerHandler(CtrlClass, methodName)
+      resolvedHandler = this.dispatcher.resolve(CtrlClass, methodName)
     } else {
       resolvedHandler = finalRouteHandler as GravitoHandler
     }
@@ -934,27 +823,6 @@ export class Router {
     this.core.adapter.route(method, fullPath, ...(handlers as any[]))
 
     return new Route(this, method, fullPath, options)
-  }
-
-  /**
-   * Resolve Controller Instance and Method
-   */
-  private resolveControllerHandler(CtrlClass: ControllerClass, methodName: string): GravitoHandler {
-    let instance = this.controllers.get(CtrlClass)
-    if (!instance) {
-      instance = new CtrlClass(this.core)
-      this.controllers.set(CtrlClass, instance)
-    }
-
-    const handler = (instance as any)[methodName]
-    if (typeof handler !== 'function') {
-      throw new Error(`Method '${methodName}' not found in controller '${CtrlClass.name}'`)
-    }
-
-    // The handler in the controller should match GravitoHandler signature (ctx) => Response
-    // If it expects (ctx, next), it's middleware.
-    // Usually controllers are final endpoints.
-    return handler.bind(instance) as GravitoHandler
   }
 }
 

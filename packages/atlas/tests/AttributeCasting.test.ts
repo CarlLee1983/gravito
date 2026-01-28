@@ -44,7 +44,7 @@ describe('Attribute Casting', () => {
   })
 
   afterEach(async () => {
-    await DB._reset()
+    // No-op - we don't want to reset global DB state
   })
 
   test('it casts boolean on set', () => {

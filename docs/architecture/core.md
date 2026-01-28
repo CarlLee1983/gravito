@@ -1,4 +1,5 @@
-# PlanetCore 架構技術規格書
+title: PlanetCore 架構技術規格書
+# PlanetCore 架構技術規格書 (v1.5.0)
 
 ## 1. 模組概覽
 
@@ -8,6 +9,7 @@
 - **Lifecycle Management**：應用程式啟動（Bootstrapping）、服務提供者（Service Provider）註冊與啟動。
 - **IoC Container**：輕量級依賴注入容器，支援單例（Singleton）與瞬態（Transient）綁定。
 - **High-Performance Engine**：內建專為 Bun 優化的 Web 引擎 (`Gravito Engine`)，提供極致效能。
+- **Router System**：經過重構的路由系統，職責清晰，支援 `RequestValidator` 與 `ControllerDispatcher`。
 - **Hook System**：類似 WordPress 的 Filters/Actions 機制，實現高度可擴展性。
 - **Orbit System**：微服務架構的基礎，支援將多個應用掛載到同一核心。
 
@@ -94,6 +96,20 @@ Gravito Engine 採用獨特的優化策略：
 **原因**：
 -   依賴註冊通常只需操作記憶體，應快速完成。
 -   啟動邏輯（如連線資料庫）需要 Async/Await。
+
+### 3.4 Router 重構與職責分離
+**決策**：將 `Router.ts` 的龐大邏輯拆解為獨立組件。
+**原因**：原始 `Router.ts` 過於臃腫（超過 900 行），難以維護且難以進行單元測試。
+**實作**：
+-   **RequestValidator**：專門負責請求數據的驗證邏輯。
+-   **ControllerDispatcher**：專門負責將請求派發至對應的控制器。
+-   **效果**：`Router.ts` 代碼量顯著減少，且核心邏輯更為集中。
+
+### 3.5 類型安全性提升
+**決策**：大幅減少 `any` 類型的使用，改用泛型與精確類型。
+**原因**：提升開發時的錯誤偵測能力。
+**實作**：
+-   重構 `Router` 與 `Container` 的內部實現，將 `any` 使用量從 ~55 處降至 4 處。
 
 ---
 

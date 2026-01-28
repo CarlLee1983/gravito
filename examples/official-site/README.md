@@ -1,4 +1,4 @@
-# 🌌 Gravito Official Website (v1.0.0-rc)
+# 🌌 Gravito Official Website (v1.0.0)
 > **Singularity** Project Code: `gravito-official-site`
 
 Welcome to the official website repository for **Gravito** - The micro-kernel framework for the next generation of backend applications.

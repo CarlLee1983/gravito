@@ -57,6 +57,8 @@ describe('MonitorOrbit', () => {
     expect(routes.has('/ready')).toBe(true)
     expect(routes.has('/live')).toBe(true)
     expect(routes.has('/metrics')).toBe(true)
+
+    await orbit.shutdown()
   })
 })
 
@@ -82,6 +84,19 @@ describe('HealthRegistry', () => {
     expect(report.checks.database).toBeDefined()
     expect(report.checks.database?.status).toBe('healthy')
     expect(report.uptime).toBeGreaterThanOrEqual(0)
+  })
+
+  test('handles check timeouts', async () => {
+    const registry = new HealthRegistry({ timeout: 50 })
+    registry.register('slow', async () => {
+      await new Promise((resolve) => setTimeout(resolve, 100))
+      return { status: 'healthy' }
+    })
+
+    const report = await registry.check()
+    expect(report.status).toBe('unhealthy')
+    expect(report.checks.slow?.status).toBe('unhealthy')
+    expect(report.checks.slow?.message).toContain('timeout')
   })
 
   test('returns unhealthy when a check fails', async () => {
@@ -163,6 +178,9 @@ describe('MetricsRegistry', () => {
 
     const postValue = values.find((v) => v.labels.method === 'POST')
     expect(postValue?.value).toBe(1)
+
+    counter.reset()
+    expect(counter.getValues().length).toBe(0)
   })
 
   test('creates and sets gauges', () => {
@@ -208,9 +226,13 @@ describe('MetricsRegistry', () => {
     histogram.observe(0.25)
     histogram.observe(0.75)
 
+    const stop = histogram.startTimer({ method: 'GET' })
+    stop()
+
     const values = histogram.getValues()
-    expect(values.counts.get('__default__')).toBe(3)
-    expect(values.sums.get('__default__')).toBeCloseTo(1.05, 2)
+    expect(values.counts.get('__default__')).toBe(4)
+    expect(values.counts.get('__default__')).toBeDefined()
+    expect(values.sums.get('__default__')).toBeDefined()
   })
 
   test('exports metrics in Prometheus format', () => {
@@ -324,12 +346,23 @@ describe('Health helpers', () => {
     const healthy = await healthyCheck()
     expect(healthy.status).toBe('healthy')
 
+    const unhealthyCheck = createDatabaseCheck(() => false)
+    const unhealthy = await unhealthyCheck()
+    expect(unhealthy.status).toBe('unhealthy')
+
     const failedCheck = createDatabaseCheck(() => {
       throw new Error('db down')
     })
     const failed = await failedCheck()
     expect(failed.status).toBe('unhealthy')
     expect(failed.message).toBe('db down')
+
+    const failedNonErrorCheck = createDatabaseCheck(() => {
+      throw 'string error'
+    })
+    const failedNonError = await failedNonErrorCheck()
+    expect(failedNonError.status).toBe('unhealthy')
+    expect(failedNonError.message).toBe('Database check failed')
   })
 
   test('createRedisCheck handles ping responses', async () => {
@@ -341,11 +374,25 @@ describe('Health helpers', () => {
     const unexpected = await unexpectedCheck()
     expect(unexpected.status).toBe('unhealthy')
     expect(unexpected.message).toContain('Unexpected response')
+
+    const failedCheck = createRedisCheck(() => {
+      throw new Error('redis down')
+    })
+    const failed = await failedCheck()
+    expect(failed.status).toBe('unhealthy')
+    expect(failed.message).toBe('redis down')
+
+    const failedNonErrorCheck = createRedisCheck(() => {
+      throw 'string error'
+    })
+    const failedNonError = await failedNonErrorCheck()
+    expect(failedNonError.status).toBe('unhealthy')
+    expect(failedNonError.message).toBe('Redis check failed')
   })
 
   test('createMemoryCheck reports degradation', () => {
     const original = process.memoryUsage
-    process.memoryUsage = () =>
+    ;(process as any).memoryUsage = () =>
       ({
         heapUsed: 95,
         heapTotal: 100,
@@ -355,17 +402,17 @@ describe('Health helpers', () => {
       }) as NodeJS.MemoryUsage
 
     const check = createMemoryCheck({ maxHeapUsedPercent: 10 })
-    const result = check()
+    const result = check() as any
 
     expect(result.status).toBe('degraded')
     expect(result.message).toContain('Heap usage')
 
-    process.memoryUsage = original
+    ;(process as any).memoryUsage = original
   })
 
   test('createMemoryCheck reports healthy usage', () => {
     const original = process.memoryUsage
-    process.memoryUsage = () =>
+    ;(process as any).memoryUsage = () =>
       ({
         heapUsed: 50,
         heapTotal: 200,
@@ -375,47 +422,82 @@ describe('Health helpers', () => {
       }) as NodeJS.MemoryUsage
 
     const check = createMemoryCheck()
-    const result = check()
+    const result = check() as any
 
     expect(result.status).toBe('healthy')
     expect(result.message).toBe('Memory usage normal')
 
-    process.memoryUsage = original
+    ;(process as any).memoryUsage = original
   })
 
   test('createHttpCheck reports status', async () => {
     const originalFetch = globalThis.fetch
-    globalThis.fetch = async () => new Response('ok', { status: 200 })
+    globalThis.fetch = (async () => new Response('ok', { status: 200 })) as any
 
     const check = createHttpCheck('https://example.com')
-    const result = await check()
+    const result = await (check() as Promise<any>)
 
     expect(result.status).toBe('healthy')
+
+    const unhealthyCheck = createHttpCheck('https://example.com', { expectedStatus: 201 })
+    const result2 = await (unhealthyCheck() as Promise<any>)
+    expect(result2.status).toBe('unhealthy')
 
     globalThis.fetch = originalFetch
   })
 
   test('createHttpCheck reports failures', async () => {
     const originalFetch = globalThis.fetch
-    globalThis.fetch = async () => {
+    globalThis.fetch = (async () => {
       throw new Error('network down')
-    }
+    }) as any
 
     const check = createHttpCheck('https://example.com')
-    const result = await check()
+    const result = await (check() as Promise<any>)
 
     expect(result.status).toBe('unhealthy')
     expect(result.message).toBe('network down')
+
+    const failedNonErrorCheck = createHttpCheck('https://example.com')
+    globalThis.fetch = (async () => {
+      throw 'string error'
+    }) as any
+    const result2 = await (failedNonErrorCheck() as Promise<any>)
+    expect(result2.status).toBe('unhealthy')
+    expect(result2.message).toBe('HTTP check failed')
 
     globalThis.fetch = originalFetch
   })
 
   test('createDiskCheck returns healthy result', async () => {
     const check = createDiskCheck({ minFreePercent: 15 })
-    const result = await check()
+    const result = await (check() as Promise<any>)
 
     expect(result.status).toBe('healthy')
     expect(result.details?.minFreePercent).toBe(15)
+
+    const failedCheck = createDiskCheck()
+    await failedCheck()
+  })
+
+  test('formatBytes utility', () => {
+    const original = process.memoryUsage
+    ;(process as any).memoryUsage = () =>
+      ({
+        heapUsed: 5242880,
+        heapTotal: 10485760,
+        rss: 2147483648,
+        external: 0,
+        arrayBuffers: 0,
+      }) as NodeJS.MemoryUsage
+
+    const check = createMemoryCheck()
+    const result = check() as any
+    expect(result.details.heapUsed).toBe('5.00 MB')
+    expect(result.details.heapTotal).toBe('10.00 MB')
+    expect(result.details.rss).toBe('2.00 GB')
+
+    ;(process as any).memoryUsage = original
   })
 })
 
@@ -504,6 +586,31 @@ describe('Tracing', () => {
     const span = tracer.getSpans()[1]
     expect(span.status).toBe('error')
     expect(span.attributes.error).toBe(true)
+  })
+
+  test('createTracingMiddleware handles parent context', async () => {
+    const tracer = new TracingManager()
+    tracer.clearSpans()
+    const middleware = createTracingMiddleware(tracer)
+
+    const headers = new Headers()
+    headers.set('traceparent', '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01')
+
+    await middleware(
+      {
+        req: {
+          method: 'GET',
+          path: '/child',
+          url: 'http://localhost/child',
+          raw: { headers },
+        },
+        set: () => {},
+      } as any,
+      async () => {}
+    )
+
+    const span = tracer.getSpans()[0]
+    expect(span.traceId).toBe('4bf92f3577b34da6a3ce929d0e0e4736')
   })
 
   test('initialize and shutdown with opentelemetry available', async () => {

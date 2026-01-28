@@ -1,3 +1,7 @@
+import { DB } from '../../../DB'
+import { COLUMN_KEY, SOFT_DELETES_KEY, VERSION_KEY } from '../decorators'
+import { StaleModelError } from '../errors'
+
 /**
  * HasPersistence Concern
  * @description Provides database persistence functionality including saving, deleting, and refreshing.
@@ -14,7 +18,7 @@ export class HasPersistence {
    *
    * @returns True if the model has been persisted
    */
-  exists(): boolean {
+  get exists(): boolean {
     return this._exists
   }
 
@@ -29,11 +33,32 @@ export class HasPersistence {
    * ```
    */
   async save(): Promise<this> {
-    if (this._exists) {
-      return this._performUpdate()
-    } else {
-      return this._performInsert()
+    // Trigger saving event
+    await (this as any).emit('saving')
+
+    // Validate all dirty attributes
+    const dirtyTracker = (this as any)._dirtyTracker
+    if (dirtyTracker) {
+      const dirtyKeys = dirtyTracker.getDirty()
+      const attributes = (this as any)._attributes || {}
+      for (const key of dirtyKeys) {
+        const validateAttribute = (this as any)._validateAttribute
+        if (validateAttribute) {
+          await validateAttribute.call(this, key as string, attributes[key as string])
+        }
+      }
     }
+
+    let result: this
+    if (this._exists) {
+      result = await this._performUpdate()
+    } else {
+      result = await this._performInsert()
+    }
+
+    // Trigger saved event
+    await (this as any).emit('saved')
+    return result
   }
 
   /**
@@ -44,47 +69,73 @@ export class HasPersistence {
    */
   protected async _performInsert(): Promise<this> {
     const modelCtor = this.constructor as any
+    const connection = DB.connection(modelCtor.connection)
 
     // Trigger 'creating' event
-    await this.emit('creating')
+    await (this as any).emit('creating')
 
-    // Get attributes to insert (from HasAttributes concern)
-    const getDirtyAttributes = (this as any).getDirtyAttributes || (() => ({}) as any)
-    const attributes = getDirtyAttributes.call(this)
-
-    // Auto-manage timestamps
+    // Handle Timestamps
     if (modelCtor.timestamps) {
       const now = new Date()
-      if (modelCtor.timestamps !== 'created_only') {
-        attributes[modelCtor.updatedAtColumn] = now
+      if (!(this as any)._attributes[modelCtor.createdAtColumn]) {
+        ;(this as any)._setAttribute(modelCtor.createdAtColumn, now)
       }
-      attributes[modelCtor.createdAtColumn] = now
+      // Only set updated_at if timestamps is not 'created_only'
+      if (
+        modelCtor.timestamps !== 'created_only' &&
+        !(this as any)._attributes[modelCtor.updatedAtColumn]
+      ) {
+        ;(this as any)._setAttribute(modelCtor.updatedAtColumn, now)
+      }
     }
 
-    // Build query
-    const primaryKey = modelCtor.primaryKey || 'id'
-    const { DB } = await import('../../../DB')
-
-    // Insert
-    const result = await DB.table(modelCtor.table).insert(attributes)
-
-    // Set primary key if returned
-    if (result?.[primaryKey]) {
-      ;(this as any)[primaryKey] = result[primaryKey]
+    // Handle @column(autoCreate)
+    const columns = (modelCtor as any)[COLUMN_KEY]
+    if (columns) {
+      for (const [prop, options] of Object.entries(columns)) {
+        if ((options as any).autoCreate && !(this as any)._attributes[prop]) {
+          ;(this as any)._setAttribute(prop, new Date())
+        }
+      }
     }
 
-    // Mark as existing
+    const versionKey = (modelCtor as any)[VERSION_KEY] as string | undefined
+    if (versionKey && (this as any)._attributes[versionKey] === undefined) {
+      ;(this as any)._setAttribute(versionKey, 1)
+    }
+
+    const result = await connection.table(modelCtor.getTable()).insert((this as any)._attributes)
+
+    // Set primary key from result
+    if (Array.isArray(result) && result.length > 0) {
+      const pk = result[0]
+      if (typeof pk === 'object' && pk !== null) {
+        // Merge all returned attributes (e.g. version, timestamps)
+        Object.assign((this as any)._attributes, pk)
+      } else {
+        ;(this as any)._attributes[modelCtor.primaryKey] = pk
+      }
+    } else if ((this as any)._attributes[modelCtor.primaryKey] === undefined) {
+      // Fallback: If result is empty but we don't have an ID, try to get it
+      // This helps with drivers that don't support RETURNING or return empty results
+      try {
+        const lastId = await connection.table(modelCtor.getTable()).max(modelCtor.primaryKey)
+        if (lastId) {
+          ;(this as any)._attributes[modelCtor.primaryKey] = lastId
+        }
+      } catch (_e) {
+        // Ignore fallback errors
+      }
+    }
+
     this._exists = true
-
-    // Sync dirty tracker
     const dirtyTracker = (this as any)._dirtyTracker
     if (dirtyTracker) {
-      const getAttributes = (this as any).getAttributes || (() => ({}) as any)
-      dirtyTracker.sync(getAttributes.call(this))
+      dirtyTracker.sync((this as any)._attributes)
     }
 
     // Trigger 'created' event
-    await this.emit('created')
+    await (this as any).emit('created')
 
     return this
   }
@@ -98,41 +149,65 @@ export class HasPersistence {
   protected async _performUpdate(): Promise<this> {
     const modelCtor = this.constructor as any
 
-    // Get attributes to update
-    const getDirtyAttributes = (this as any).getDirtyAttributes || (() => ({}) as any)
-    const attributes = getDirtyAttributes.call(this)
+    // Trigger 'updating' event
+    await (this as any).emit('updating')
 
-    // Skip if no changes
-    if (Object.keys(attributes).length === 0) {
+    // Handle Timestamps
+    // Only update updated_at if timestamps is enabled and not 'created_only'
+    if (modelCtor.timestamps && modelCtor.timestamps !== 'created_only') {
+      ;(this as any)._setAttribute(modelCtor.updatedAtColumn, new Date())
+    }
+
+    // Handle @column(autoUpdate)
+    const columns = (modelCtor as any)[COLUMN_KEY]
+    if (columns) {
+      for (const [prop, options] of Object.entries(columns)) {
+        if ((options as any).autoUpdate) {
+          ;(this as any)._setAttribute(prop, new Date())
+        }
+      }
+    }
+
+    const versionKey = (modelCtor as any)[VERSION_KEY] as string | undefined
+    let currentVersion: unknown
+
+    if (versionKey) {
+      currentVersion = (this as any)._attributes[versionKey]
+      if (currentVersion === undefined || currentVersion === null) {
+        currentVersion = 1
+      }
+      if (typeof currentVersion === 'number') {
+        ;(this as any)._setAttribute(versionKey, currentVersion + 1)
+      }
+    }
+
+    const getDirty = (this as any).getDirty || (() => ({}) as any)
+    const dirty = getDirty.call(this)
+    if (Object.keys(dirty).length === 0) {
       return this
     }
 
-    // Trigger 'updating' event
-    await this.emit('updating')
+    const query = modelCtor.query().where(modelCtor.primaryKey, (this as any).getKey())
 
-    // Auto-manage timestamps
-    if (modelCtor.timestamps && modelCtor.timestamps !== 'created_only') {
-      attributes[modelCtor.updatedAtColumn] = new Date()
+    // Add version check
+    if (versionKey && currentVersion !== undefined) {
+      query.where(versionKey, currentVersion)
     }
 
-    // Build query
-    const primaryKey = modelCtor.primaryKey || 'id'
-    const { DB } = await import('../../../DB')
+    const affected = await query.update(dirty)
 
-    // Update
-    await DB.table(modelCtor.table)
-      .where(primaryKey, (this as any)[primaryKey])
-      .update(attributes)
+    // Check for Stale Object
+    if (versionKey && affected === 0) {
+      throw new StaleModelError(modelCtor.name, (this as any).getKey())
+    }
 
-    // Sync dirty tracker
     const dirtyTracker = (this as any)._dirtyTracker
     if (dirtyTracker) {
-      const getAttributes = (this as any).getAttributes || (() => ({}) as any)
-      dirtyTracker.sync(getAttributes.call(this))
+      dirtyTracker.sync((this as any)._attributes)
     }
 
     // Trigger 'updated' event
-    await this.emit('updated')
+    await (this as any).emit('updated')
 
     return this
   }
@@ -149,71 +224,35 @@ export class HasPersistence {
    * ```
    */
   async delete(): Promise<boolean> {
-    const modelCtor = this.constructor as any
+    if (!this._exists) {
+      return false
+    }
 
-    // Check if soft deletes are enabled
-    const softDeletes = modelCtor.softDeletes || false
+    await (this as any).emit('deleting')
+
+    const modelCtor = this.constructor as any
+    const softDeletes = modelCtor[SOFT_DELETES_KEY]
+    let result: boolean
 
     if (softDeletes) {
-      return this._performSoftDelete()
+      const column = softDeletes.column || 'deleted_at'
+      ;(this as any)._setAttribute(column, new Date())
+      await this.save()
+      result = true
     } else {
-      return this._performHardDelete()
+      const connection = DB.connection(modelCtor.connection)
+      const affected = await connection
+        .table(modelCtor.getTable())
+        .where(modelCtor.primaryKey, (this as any).getKey())
+        .delete()
+      result = affected > 0
     }
-  }
+    if (result) {
+      this._exists = !softDeletes
+      await (this as any).emit('deleted')
+    }
 
-  /**
-   * Perform a soft delete operation.
-   *
-   * @returns A promise that resolves to true
-   * @internal
-   */
-  protected async _performSoftDelete(): Promise<boolean> {
-    const modelCtor = this.constructor as any
-
-    // Trigger 'deleting' event
-    await this.emit('deleting')
-
-    // Set deleted at timestamp
-    const deletedAtColumn = modelCtor.deletedAtColumn || 'deleted_at'
-    ;(this as any)[deletedAtColumn] = new Date()
-
-    // Update record
-    await this.save()
-
-    // Trigger 'deleted' event
-    await this.emit('deleted')
-
-    return true
-  }
-
-  /**
-   * Perform a hard delete operation (physical removal).
-   *
-   * @returns A promise that resolves to true
-   * @internal
-   */
-  protected async _performHardDelete(): Promise<boolean> {
-    const modelCtor = this.constructor as any
-
-    // Trigger 'deleting' event
-    await this.emit('deleting')
-
-    // Build query
-    const primaryKey = modelCtor.primaryKey || 'id'
-    const { DB } = await import('../../../DB')
-
-    // Delete
-    await DB.table(modelCtor.table)
-      .where(primaryKey, (this as any)[primaryKey])
-      .delete()
-
-    // Mark as not existing
-    this._exists = false
-
-    // Trigger 'deleted' event
-    await this.emit('deleted')
-
-    return true
+    return result
   }
 
   /**
@@ -228,15 +267,34 @@ export class HasPersistence {
    */
   async restore(): Promise<boolean> {
     const modelCtor = this.constructor as any
+    const softDeletes = modelCtor[SOFT_DELETES_KEY]
+    if (!softDeletes) {
+      return false
+    }
 
-    // Set deleted at to null
-    const deletedAtColumn = modelCtor.deletedAtColumn || 'deleted_at'
-    ;(this as any)[deletedAtColumn] = null
+    const column = softDeletes.column || 'deleted_at'
+    ;(this as any)._setAttribute(column, null)
+    // We must use withTrashed() here because otherwise save() -> _performUpdate()
+    // will use query() which filters out soft-deleted records.
+    const query = modelCtor
+      .query()
+      .withTrashed()
+      .where(modelCtor.primaryKey, (this as any).getKey())
 
-    // Save
-    await this.save()
+    // Manual update to bypass the standard save() which might have versioning conflicts or scope issues
+    const affected = await query.update({ [column]: null })
 
-    return true
+    if (affected > 0) {
+      this._exists = true
+      const dirtyTracker = (this as any)._dirtyTracker
+      if (dirtyTracker) {
+        dirtyTracker.sync((this as any)._attributes)
+      }
+      await (this as any).emit('restored')
+      return true
+    }
+
+    return false
   }
 
   /**
@@ -250,7 +308,20 @@ export class HasPersistence {
    * ```
    */
   async forceDelete(): Promise<boolean> {
-    return this._performHardDelete()
+    const modelCtor = this.constructor as any
+    const connection = DB.connection(modelCtor.connection)
+    const affected = await connection
+      .table(modelCtor.getTable())
+      .where(modelCtor.primaryKey, (this as any).getKey())
+      .forceDelete()
+
+    if (affected > 0) {
+      this._exists = false
+      await (this as any).emit('deleted')
+      return true
+    }
+
+    return false
   }
 
   /**
@@ -273,8 +344,7 @@ export class HasPersistence {
     }
 
     // Fetch from database
-    const { DB } = await import('../../../DB')
-    const row = await DB.table(modelCtor.table).where(primaryKey, primaryValue).first()
+    const row = await modelCtor.query().where(primaryKey, primaryValue).first()
 
     if (row) {
       // Update attributes (from HasAttributes concern)
@@ -292,22 +362,5 @@ export class HasPersistence {
     }
 
     return this
-  }
-
-  /**
-   * Emit a model lifecycle event.
-   *
-   * @param event - The event name
-   * @internal
-   */
-  protected async emit(event: string): Promise<void> {
-    const modelCtor = this.constructor as any
-    const observers = modelCtor.observers || []
-
-    for (const observer of observers) {
-      if (typeof observer[event] === 'function') {
-        await observer[event](this)
-      }
-    }
   }
 }

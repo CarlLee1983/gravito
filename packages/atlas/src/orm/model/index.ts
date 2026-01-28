@@ -11,7 +11,7 @@ export {
   HasSerialization,
 } from './concerns'
 export { DirtyTracker } from './DirtyTracker'
-export { column, SoftDeletes } from './decorators'
+export { column, SoftDeletes, version } from './decorators'
 export {
   ColumnNotFoundError,
   ModelNotFoundError,

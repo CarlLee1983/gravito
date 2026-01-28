@@ -48,7 +48,7 @@ describe('QueryScopes', () => {
   })
 
   afterEach(async () => {
-    await DB._reset()
+    // No-op
   })
 
   test('local scope works via proxy', () => {

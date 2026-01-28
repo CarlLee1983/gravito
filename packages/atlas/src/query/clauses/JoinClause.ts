@@ -4,32 +4,15 @@
  * Handles JOIN operations
  */
 
-import type { JoinClause as JoinClauseType, JoinType } from '../../types'
+import type { JoinClause, JoinType } from '../../types'
 
 /**
- * Join Condition Interface
- * @description Represents a single JOIN condition in a SQL query
- */
-export interface JoinCondition {
-  /** Join type (INNER, LEFT, RIGHT, FULL, CROSS) */
-  type: JoinType
-  /** Table to join with */
-  table: string
-  /** First column in the ON condition (usually from the primary table) */
-  first: string
-  /** Comparison operator (e.g., '=', '!=', '>', '<') */
-  operator: string
-  /** Second column in the ON condition (usually from the joined table) */
-  second: string
-}
-
-/**
- * Join Clause Builder
+ * Join Manager
  * @description Handles the construction of JOIN clauses for SQL queries
  */
-export class JoinClauseBuilder {
+export class JoinManager {
   /** Internal storage for join conditions */
-  private joins: JoinClauseType[] = []
+  private joins: JoinClause[] = []
 
   /**
    * Add a JOIN condition to the query
@@ -41,7 +24,7 @@ export class JoinClauseBuilder {
    * @param second - Second column for the ON condition
    * @example
    * ```typescript
-   * builder.add('inner', 'posts', 'users.id', '=', 'posts.user_id')
+   * manager.add('inner', 'posts', 'users.id', '=', 'posts.user_id')
    * ```
    */
   add(type: JoinType, table: string, first: string, operator: string, second: string): void {
@@ -63,7 +46,7 @@ export class JoinClauseBuilder {
    * @param second - Second column for the ON condition
    * @example
    * ```typescript
-   * builder.left('posts', 'users.id', '=', 'posts.user_id')
+   * manager.left('posts', 'users.id', '=', 'posts.user_id')
    * ```
    */
   left(table: string, first: string, operator: string, second: string): void {
@@ -99,8 +82,8 @@ export class JoinClauseBuilder {
    *
    * @returns Array of joins
    */
-  getJoins(): JoinClauseType[] {
-    return this.joins
+  getJoins(): JoinClause[] {
+    return this.joins.map((j) => ({ ...j }))
   }
 
   /**
@@ -120,6 +103,10 @@ export class JoinClauseBuilder {
         const first = join.first.includes('(') ? join.first : `"${join.first}"`
         const second = join.second.includes('(') ? join.second : `"${join.second}"`
 
+        // CROSS JOINs usually don't have ON clauses in standard SQL if they are pure cross products,
+        // but here we are passing first/operator/second.
+        // If it's a true CROSS JOIN, the API shouldn't require first/op/second, but the add() method does.
+        // We'll stick to the current implementation.
         return `${type} JOIN ${table} ON ${first} ${join.operator} ${second}`
       })
       .join(' ')
@@ -140,139 +127,15 @@ export class JoinClauseBuilder {
   hasJoins(): boolean {
     return this.joins.length > 0
   }
-}
-
-/**
- * Join Clause
- * @description Represents a collection of JOIN operations in a query
- */
-export class JoinClause {
-  /** Internal storage for join conditions */
-  private joins: JoinClauseType[] = []
 
   /**
-   * Add a JOIN condition
+   * Clone the clause
    *
-   * @param type - Join type
-   * @param table - Table to join
-   * @param first - First column
-   * @param operator - Join operator
-   * @param second - Second column
+   * @returns A deep copy of the clause
    */
-  add(type: JoinType, table: string, first: string, operator: string, second: string): void {
-    this.joins.push({
-      type,
-      table,
-      first,
-      operator,
-      second,
-    })
-  }
-
-  /**
-   * Add a LEFT JOIN condition
-   *
-   * @param table - Table to join
-   * @param first - First column
-   * @param operator - Join operator
-   * @param second - Second column
-   */
-  left(table: string, first: string, operator: string, second: string): void {
-    this.add('left', table, first, operator, second)
-  }
-
-  /**
-   * Add a RIGHT JOIN condition
-   *
-   * @param table - Table to join
-   * @param first - First column
-   * @param operator - Join operator
-   * @param second - Second column
-   */
-  right(table: string, first: string, operator: string, second: string): void {
-    this.add('right', table, first, operator, second)
-  }
-
-  /**
-   * Add a CROSS JOIN condition
-   *
-   * @param table - Table to join
-   * @param first - First column
-   * @param operator - Join operator
-   * @param second - Second column
-   */
-  cross(table: string, first: string, operator: string, second: string): void {
-    this.add('cross', table, first, operator, second)
-  }
-
-  /**
-   * Add a LEFT OUTER JOIN condition
-   *
-   * @param table - Table to join
-   * @param first - First column
-   * @param operator - Join operator
-   * @param second - Second column
-   */
-  leftOuter(table: string, first: string, operator: string, second: string): void {
-    this.add('left', table, first, operator, second)
-  }
-
-  /**
-   * Add a RIGHT OUTER JOIN condition
-   *
-   * @param table - Table to join
-   * @param first - First column
-   * @param operator - Join operator
-   * @param second - Second column
-   */
-  rightOuter(table: string, first: string, operator: string, second: string): void {
-    this.add('right', table, first, operator, second)
-  }
-
-  /**
-   * Get all joins
-   *
-   * @returns Array of joins
-   */
-  getJoins(): JoinClauseType[] {
-    return this.joins
-  }
-
-  /**
-   * Compile the JOIN clause to SQL
-   *
-   * @returns JOIN clause SQL string
-   */
-  toSQL(): string {
-    if (this.joins.length === 0) {
-      return ''
-    }
-
-    return this.joins
-      .map((join) => {
-        const type = join.type.toUpperCase()
-        const table = join.table.includes('(') ? join.table : `"${join.table}"`
-        const first = join.first.includes('(') ? join.first : `"${join.first}"`
-        const second = join.second.includes('(') ? join.second : `"${join.second}"`
-
-        return `${type} JOIN ${table} ON ${first} ${join.operator} ${second}`
-      })
-      .join(' ')
-  }
-
-  /**
-   * Reset the clause state
-   */
-  reset(): void {
-    this.joins = []
-  }
-
-  /**
-   * Check if the clause has any joins
-   *
-   * @returns True if joins exist
-   */
-  hasJoins(): boolean {
-    return this.joins.length > 0
+  clone(): JoinManager {
+    const clone = new JoinManager()
+    clone.joins = [...this.joins]
+    return clone
   }
 }

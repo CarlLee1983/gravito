@@ -223,19 +223,25 @@ export class DB {
 
     const driver = this.connection().getDriver()
     const originalExecute = driver.execute.bind(driver)
+    const originalQuery = driver.query.bind(driver)
     const queries: string[] = []
 
     // Intercept execute calls
     driver.execute = async (sql: string, bindings?: unknown[]) => {
       queries.push(this.interpolateBindings(sql, bindings || []))
-      // Return empty result
       return { rows: [], affectedRows: 0 }
+    }
+
+    driver.query = async (sql: string, bindings?: unknown[]) => {
+      queries.push(this.interpolateBindings(sql, bindings || []))
+      return { rows: [], rowCount: 0 } as any
     }
 
     try {
       await callback()
     } finally {
       driver.execute = originalExecute
+      driver.query = originalQuery
       this._debug = originalDebug
     }
 

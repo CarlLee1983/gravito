@@ -1,4 +1,5 @@
-# 🌌 Pulsar Architecture 技術架構規格書 (v1.0)
+title: Pulsar Architecture 技術架構規格書
+# Pulsar Architecture 技術架構規格書 (v3.0.1)
 
 本文件詳述 `@gravito/pulsar` 的內部架構、Session 生命週期管理以及安全防護機制。
 
@@ -20,15 +21,16 @@ Pulsar 旨在為無狀態的 HTTP 協議提供一個安全、高效的狀態管�
 - **位置**：`src/index.ts` -> `session` object
 - **機制**：
   - 每個請求創建一個獨立的 Session 物件。
+  - **Flash Data (Implemented)**：支援 `flash()`, `getFlash()`, `reflash()`, `keep()`，用於跨請求的一次性數據傳遞。
   - **Dot Notation**：支援 `session.put('user.profile.name', 'Carl')` 的巢狀存取，並內建 Prototype Pollution 防護。
   - **Lazy Save**：僅在 `dirty` 標記為真或達到 `touchInterval` 時才寫回存儲。
 
 ### 2.2 Flash Data Lifecycle
 - **職責**：管理跨請求的一次性訊息。
 - **位置**：`src/types.ts` (`SessionRecord.flash`) 與 `src/index.ts`
-- **演算法** (Two-Phase Rotation)：
+- **演算法** (Two-Phase Rotation - Implemented)：
   1. **Request Start**：將 `next` 移至 `now` (使上個請求的 Flash 可讀)，清空 `next`。
-  2. **During Request**：`flash()`寫入 `next`，`getFlash()` 讀取 `now`。
+  2. **During Request**：`flash()` 寫入 `next`，`getFlash()` 讀取 `now`。
   3. **Request End**：`now` 被丟棄，`next` 被持久化。
 
 ### 2.3 CSRF Service

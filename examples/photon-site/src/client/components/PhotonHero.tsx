@@ -53,7 +53,7 @@ export const PhotonHero = ({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) => {
           >
             <div className="w-2.5 h-2.5 rounded-full bg-photon-gold animate-pulse shadow-[0_0_10px_rgba(255,184,0,1)]" />
             <span className="text-[10px] md:text-[11px] font-technical tracking-[0.4em] md:tracking-[0.6em] text-photon-gold uppercase font-black">
-              {t.badge} {/* v1.2.0 */}
+              {t.badge} {/* v1.5.0 */}
             </span>
           </motion.div>
 

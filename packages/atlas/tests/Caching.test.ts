@@ -81,7 +81,6 @@ describe('Caching Integration', () => {
 
   afterEach(() => {
     vi.restoreAllMocks()
-    DB._reset()
   })
 
   class User extends Model {

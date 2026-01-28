@@ -10,16 +10,21 @@ import type {
   CompiledQuery,
   ConnectionContract,
   GrammarContract,
-  HavingClause,
-  JoinClause,
   JoinType,
   Operator,
-  OrderClause,
   OrderDirection,
   PaginateResult,
   QueryBuilderContract,
-  WhereClause,
 } from '../types'
+import {
+  GroupByClause,
+  HavingClause,
+  JoinManager,
+  LimitClause,
+  OrderByClause,
+  SelectClause,
+  WhereClause,
+} from './clauses'
 import { Expression } from './Expression'
 
 /**
@@ -54,26 +59,16 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   protected tableName: string
   /** Optional model class associated with the query */
   protected modelClass?: ModelConstructor<Model>
-  /** Array of columns to select */
-  protected columns: string[] = ['*']
-  /** Whether to apply the DISTINCT keyword */
-  protected distinctValue = false
-  /** Array of WHERE clauses */
-  protected wheres: WhereClause[] = []
-  /** Array of ORDER BY clauses */
-  protected orders: OrderClause[] = []
-  /** Array of GROUP BY columns */
-  protected groups: string[] = []
-  /** Array of HAVING clauses */
-  protected havings: HavingClause[] = []
-  /** Array of JOIN clauses */
-  protected joins: JoinClause[] = []
-  /** Maximum number of records to return */
-  protected limitValue: number | undefined = undefined
-  /** Number of records to skip */
-  protected offsetValue: number | undefined = undefined
-  /** List of query bindings */
-  protected bindingsList: unknown[] = []
+
+  // Clauses
+  protected selectClause = new SelectClause()
+  protected whereClause = new WhereClause()
+  protected joinManager = new JoinManager()
+  protected groupByClause = new GroupByClause()
+  protected havingClause = new HavingClause()
+  protected orderByClause = new OrderByClause()
+  protected limitClause = new LimitClause()
+
   /** Whether the query is in read-only mode */
   protected isReadOnly = false
   /** Map of relationships to eager load */
@@ -121,35 +116,30 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    */
   protected ensureOwnState(): void {
     if (this._isClone && !this._isModified) {
-      // First access/modification - perform actual copy of shared arrays
-      // This ensures the clone has its own independent state
-      this.columns = [...this.columns]
-      this.wheres = [...this.wheres]
-      this.orders = [...this.orders]
-      this.groups = [...this.groups]
-      this.havings = [...this.havings]
-      this.joins = [...this.joins]
-      this.bindingsList = [...this.bindingsList]
-      // Note: Maps and Sets are already copied in clone() since they're mutable
-      // and shared references would cause issues even for read-only operations
+      // First access/modification - perform actual copy of shared clauses
+      this.selectClause = this.selectClause.clone()
+      this.whereClause = this.whereClause.clone()
+      this.joinManager = this.joinManager.clone()
+      this.groupByClause = this.groupByClause.clone()
+      this.havingClause = this.havingClause.clone()
+      this.orderByClause = this.orderByClause.clone()
+      this.limitClause = this.limitClause.clone()
 
       // Mark as modified so we don't copy again
       this._isModified = true
       // Clear clone flag since we now have our own state
       this._isClone = false
     } else if (!this._isClone && this._cloneCount > 0 && !this._isModified) {
-      // Original query is being modified for the first time and has clones sharing its arrays
-      // We need to copy arrays so clones remain independent
-      // Only do this once (when _isModified is false) to avoid repeated copying
-      this.columns = [...this.columns]
-      this.wheres = [...this.wheres]
-      this.orders = [...this.orders]
-      this.groups = [...this.groups]
-      this.havings = [...this.havings]
-      this.joins = [...this.joins]
-      this.bindingsList = [...this.bindingsList]
+      // Original query is being modified for the first time and has clones
+      this.selectClause = this.selectClause.clone()
+      this.whereClause = this.whereClause.clone()
+      this.joinManager = this.joinManager.clone()
+      this.groupByClause = this.groupByClause.clone()
+      this.havingClause = this.havingClause.clone()
+      this.orderByClause = this.orderByClause.clone()
+      this.limitClause = this.limitClause.clone()
 
-      // Mark as modified and clear clone count since arrays are now independent
+      // Mark as modified and clear clone count
       this._isModified = true
       this._cloneCount = 0
     }
@@ -176,6 +166,14 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
     return this.modelClass as ModelConstructor<M> | undefined
   }
 
+  /**
+   * Get the wheres from the where clause (compatibility getter)
+   * @internal
+   */
+  get wheres(): import('./clauses/WhereClause').WhereCondition[] {
+    return this.whereClause.getWheres()
+  }
+
   // ============================================================================
   // SELECT Methods
   // ============================================================================
@@ -185,14 +183,10 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    *
    * @param columns - List of column names or raw expressions.
    * @returns The current QueryBuilder instance for chaining.
-   * @example
-   * ```typescript
-   * query.select('id', 'name', 'email')
-   * ```
    */
   select(...columns: string[]): this {
     this.ensureOwnState()
-    this.columns = columns.length > 0 ? columns : ['*']
+    this.selectClause.setColumns(...columns)
     return this
   }
 
@@ -214,19 +208,13 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * @param sql - The raw SQL string or Expression instance.
    * @param bindings - Optional array of values to bind to the expression.
    * @returns The current QueryBuilder instance for chaining.
-   * @example
-   * ```typescript
-   * query.selectRaw('COUNT(*) as total')
-   * ```
    */
   selectRaw(sql: string | Expression, bindings: unknown[] = []): this {
     this.ensureOwnState()
     if (sql instanceof Expression) {
-      this.columns.push(sql.getValue())
-      this.bindingsList.push(...sql.getBindings())
+      this.selectClause.addRaw(sql.getValue(), sql.getBindings())
     } else {
-      this.columns.push(new Expression(sql, bindings).getValue())
-      this.bindingsList.push(...bindings)
+      this.selectClause.addRaw(sql, bindings)
     }
     return this
   }
@@ -238,7 +226,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    */
   distinct(): this {
     this.ensureOwnState()
-    this.distinctValue = true
+    this.selectClause.setDistinct()
     return this
   }
 
@@ -270,13 +258,6 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * @param operatorOrValue - Comparison operator (e.g., '>', '<=', 'LIKE') or the value if using '='.
    * @param value - The value to compare against if an operator was provided.
    * @returns The current QueryBuilder instance for chaining.
-   * @example
-   * ```typescript
-   * query.where('id', 1)
-   * query.where('age', '>', 18)
-   * query.where({ status: 'active', type: 'user' })
-   * query.where(q => q.where('id', 1).orWhere('id', 2))
-   * ```
    */
   where(
     column: string | ((query: QueryBuilderContract<T>) => void) | Record<string, unknown>,
@@ -309,15 +290,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
       finalValue = value
     }
 
-    this.wheres.push({
-      type: 'basic',
-      column,
-      operator,
-      value: finalValue,
-      boolean: 'and',
-    })
-    this.bindingsList.push(finalValue)
-
+    this.whereClause.add(column, operator, finalValue, 'and')
     return this
   }
 
@@ -350,15 +323,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
       finalValue = value
     }
 
-    this.wheres.push({
-      type: 'basic',
-      column,
-      operator,
-      value: finalValue,
-      boolean: 'or',
-    })
-    this.bindingsList.push(finalValue)
-
+    this.whereClause.add(column, operator, finalValue, 'or')
     return this
   }
 
@@ -366,19 +331,13 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * Add a WHERE IN clause to the query.
    *
    * @param column - Column name.
-   * @param values - Array of values to match.
+   * @param values - Array of values or a subquery.
    * @returns The current QueryBuilder instance for chaining.
    */
-  whereIn(column: string, values: unknown[]): this {
+  whereIn(column: string, values: unknown[] | QueryBuilderContract<any>): this {
     this.ensureOwnState()
-    this.wheres.push({
-      type: 'in',
-      column,
-      values,
-      boolean: 'and',
-      not: false,
-    })
-    this.bindingsList.push(...values)
+    const finalValues = Array.isArray(values) ? values : [values]
+    this.whereClause.addIn(column, finalValues, 'and', false)
     return this
   }
 
@@ -386,19 +345,13 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * Add a WHERE NOT IN clause to the query.
    *
    * @param column - Column name.
-   * @param values - Array of values to exclude.
+   * @param values - Array of values or a subquery.
    * @returns The current QueryBuilder instance for chaining.
    */
-  whereNotIn(column: string, values: unknown[]): this {
+  whereNotIn(column: string, values: unknown[] | QueryBuilderContract<any>): this {
     this.ensureOwnState()
-    this.wheres.push({
-      type: 'in',
-      column,
-      values,
-      boolean: 'and',
-      not: true,
-    })
-    this.bindingsList.push(...values)
+    const finalValues = Array.isArray(values) ? values : [values]
+    this.whereClause.addIn(column, finalValues, 'and', true)
     return this
   }
 
@@ -406,19 +359,13 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * Add an OR WHERE IN clause to the query.
    *
    * @param column - Column name.
-   * @param values - Array of values to match.
+   * @param values - Array of values or a subquery.
    * @returns The current QueryBuilder instance for chaining.
    */
-  orWhereIn(column: string, values: unknown[]): this {
+  orWhereIn(column: string, values: unknown[] | QueryBuilderContract<any>): this {
     this.ensureOwnState()
-    this.wheres.push({
-      type: 'in',
-      column,
-      values,
-      boolean: 'or',
-      not: false,
-    })
-    this.bindingsList.push(...values)
+    const finalValues = Array.isArray(values) ? values : [values]
+    this.whereClause.addIn(column, finalValues, 'or', false)
     return this
   }
 
@@ -426,19 +373,13 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * Add an OR WHERE NOT IN clause to the query.
    *
    * @param column - Column name.
-   * @param values - Array of values to exclude.
+   * @param values - Array of values or a subquery.
    * @returns The current QueryBuilder instance for chaining.
    */
-  orWhereNotIn(column: string, values: unknown[]): this {
+  orWhereNotIn(column: string, values: unknown[] | QueryBuilderContract<any>): this {
     this.ensureOwnState()
-    this.wheres.push({
-      type: 'in',
-      column,
-      values,
-      boolean: 'or',
-      not: true,
-    })
-    this.bindingsList.push(...values)
+    const finalValues = Array.isArray(values) ? values : [values]
+    this.whereClause.addIn(column, finalValues, 'or', true)
     return this
   }
 
@@ -450,12 +391,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    */
   whereNull(column: string): this {
     this.ensureOwnState()
-    this.wheres.push({
-      type: 'null',
-      column,
-      boolean: 'and',
-      not: false,
-    })
+    this.whereClause.addNull(column, 'and', false)
     return this
   }
 
@@ -467,12 +403,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    */
   whereNotNull(column: string): this {
     this.ensureOwnState()
-    this.wheres.push({
-      type: 'null',
-      column,
-      boolean: 'and',
-      not: true,
-    })
+    this.whereClause.addNull(column, 'and', true)
     return this
   }
 
@@ -484,12 +415,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    */
   orWhereNull(column: string): this {
     this.ensureOwnState()
-    this.wheres.push({
-      type: 'null',
-      column,
-      boolean: 'or',
-      not: false,
-    })
+    this.whereClause.addNull(column, 'or', false)
     return this
   }
 
@@ -501,12 +427,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    */
   orWhereNotNull(column: string): this {
     this.ensureOwnState()
-    this.wheres.push({
-      type: 'null',
-      column,
-      boolean: 'or',
-      not: true,
-    })
+    this.whereClause.addNull(column, 'or', true)
     return this
   }
 
@@ -519,14 +440,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    */
   whereBetween(column: string, values: [unknown, unknown]): this {
     this.ensureOwnState()
-    this.wheres.push({
-      type: 'between',
-      column,
-      values,
-      boolean: 'and',
-      not: false,
-    })
-    this.bindingsList.push(...values)
+    this.whereClause.addBetween(column, values, 'and', false)
     return this
   }
 
@@ -539,14 +453,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    */
   whereNotBetween(column: string, values: [unknown, unknown]): this {
     this.ensureOwnState()
-    this.wheres.push({
-      type: 'between',
-      column,
-      values,
-      boolean: 'and',
-      not: true,
-    })
-    this.bindingsList.push(...values)
+    this.whereClause.addBetween(column, values, 'and', true)
     return this
   }
 
@@ -560,21 +467,9 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   whereRaw(sql: string | Expression, bindings: unknown[] = []): this {
     this.ensureOwnState()
     if (sql instanceof Expression) {
-      this.wheres.push({
-        type: 'raw',
-        sql: sql.getValue(),
-        bindings: sql.getBindings(),
-        boolean: 'and',
-      })
-      this.bindingsList.push(...sql.getBindings())
+      this.whereClause.addRaw(sql.getValue(), sql.getBindings(), 'and')
     } else {
-      this.wheres.push({
-        type: 'raw',
-        sql,
-        bindings,
-        boolean: 'and',
-      })
-      this.bindingsList.push(...bindings)
+      this.whereClause.addRaw(sql, bindings, 'and')
     }
     return this
   }
@@ -589,21 +484,9 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   orWhereRaw(sql: string | Expression, bindings: unknown[] = []): this {
     this.ensureOwnState()
     if (sql instanceof Expression) {
-      this.wheres.push({
-        type: 'raw',
-        sql: sql.getValue(),
-        bindings: sql.getBindings(),
-        boolean: 'or',
-      })
-      this.bindingsList.push(...sql.getBindings())
+      this.whereClause.addRaw(sql.getValue(), sql.getBindings(), 'or')
     } else {
-      this.wheres.push({
-        type: 'raw',
-        sql,
-        bindings,
-        boolean: 'or',
-      })
-      this.bindingsList.push(...bindings)
+      this.whereClause.addRaw(sql, bindings, 'or')
     }
     return this
   }
@@ -618,12 +501,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    */
   whereColumn(first: string, operator: Operator, second: string): this {
     this.ensureOwnState()
-    this.wheres.push({
-      type: 'column',
-      operator,
-      values: [first, second],
-      boolean: 'and',
-    })
+    this.whereClause.addColumn(first, operator, second, 'and')
     return this
   }
 
@@ -665,10 +543,6 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * @param column - JSON column path (e.g., 'data->user->id')
    * @param value - Value to compare against
    * @returns The current QueryBuilder instance
-   * @example
-   * ```typescript
-   * query.whereJson('settings->theme', 'dark')
-   * ```
    */
   whereJson(column: string, value: unknown): this {
     return this.whereRaw(this.grammar.compileJsonPath(column, value), [value])
@@ -722,20 +596,11 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
     const nestedQuery = new QueryBuilder<T>(this.connection, this.grammar, this.tableName)
     callback(nestedQuery)
 
-    if (nestedQuery.wheres.length > 0) {
-      // Compile the nested wheres
-      const compiled = nestedQuery.getCompiledQuery()
-      const nestedSql = this.grammar
-        .compileSelect(compiled)
-        .replace(/^SELECT \* FROM .+ WHERE /, '')
+    // Extract nested conditions from the nested query's WhereClause
+    const nestedConditions = nestedQuery.whereClause.getWheres()
 
-      this.wheres.push({
-        type: 'nested',
-        sql: nestedSql,
-        bindings: nestedQuery.bindingsList,
-        boolean,
-      })
-      this.bindingsList.push(...nestedQuery.bindingsList)
+    if (nestedConditions.length > 0) {
+      this.whereClause.addNested(nestedConditions, boolean)
     }
 
     return this
@@ -747,12 +612,6 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
 
   /**
    * Add an INNER JOIN to the query.
-   *
-   * @param table - Table to join.
-   * @param first - First column for the ON condition.
-   * @param operator - Join operator.
-   * @param second - Second column for the ON condition.
-   * @returns The current QueryBuilder instance for chaining.
    */
   join(table: string, first: string, operator: string, second: string): this {
     return this.addJoin('inner', table, first, operator, second)
@@ -760,12 +619,6 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
 
   /**
    * Add a LEFT JOIN to the query.
-   *
-   * @param table - Table to join.
-   * @param first - First column for the ON condition.
-   * @param operator - Join operator.
-   * @param second - Second column for the ON condition.
-   * @returns The current QueryBuilder instance for chaining.
    */
   leftJoin(table: string, first: string, operator: string, second: string): this {
     return this.addJoin('left', table, first, operator, second)
@@ -773,12 +626,6 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
 
   /**
    * Add a RIGHT JOIN to the query.
-   *
-   * @param table - Table to join.
-   * @param first - First column for the ON condition.
-   * @param operator - Join operator.
-   * @param second - Second column for the ON condition.
-   * @returns The current QueryBuilder instance for chaining.
    */
   rightJoin(table: string, first: string, operator: string, second: string): this {
     return this.addJoin('right', table, first, operator, second)
@@ -786,30 +633,15 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
 
   /**
    * Add a CROSS JOIN to the query.
-   *
-   * @param table - Table to join.
-   * @returns The current QueryBuilder instance for chaining.
    */
   crossJoin(table: string): this {
-    this.joins.push({
-      type: 'cross',
-      table,
-      first: '',
-      operator: '',
-      second: '',
-    })
+    this.ensureOwnState()
+    this.joinManager.cross(table, '', '', '')
     return this
   }
 
   /**
    * Internal helper to add a JOIN clause
-   *
-   * @param type - Join type
-   * @param table - Table to join
-   * @param first - First column
-   * @param operator - Join operator
-   * @param second - Second column
-   * @returns The current QueryBuilder instance
    * @internal
    */
   protected addJoin(
@@ -820,7 +652,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
     second: string
   ): this {
     this.ensureOwnState()
-    this.joins.push({ type, table, first, operator, second })
+    this.joinManager.add(type, table, first, operator, second)
     return this
   }
 
@@ -830,63 +662,28 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
 
   /**
    * Add GROUP BY columns to the query
-   *
-   * @param columns - List of column names
-   * @returns The current QueryBuilder instance
    */
   groupBy(...columns: string[]): this {
     this.ensureOwnState()
-    this.groups.push(...columns)
+    this.groupByClause.groupBy(...columns)
     return this
   }
 
   /**
    * Add a HAVING clause to the query
-   *
-   * @param column - Column name
-   * @param operator - Comparison operator
-   * @param value - Value to compare against
-   * @returns The current QueryBuilder instance
    */
   having(column: string, operator: Operator, value: unknown): this {
     this.ensureOwnState()
-    this.havings.push({
-      type: 'basic',
-      column,
-      operator,
-      value,
-      boolean: 'and',
-    })
-    this.bindingsList.push(value)
+    this.havingClause.having(column, operator, value)
     return this
   }
 
   /**
    * Add a raw HAVING clause to the query
-   *
-   * @param sql - Raw SQL string or Expression instance
-   * @param bindings - Optional array of bindings
-   * @returns The current QueryBuilder instance
    */
   havingRaw(sql: string | Expression, bindings: unknown[] = []): this {
     this.ensureOwnState()
-    if (sql instanceof Expression) {
-      this.havings.push({
-        type: 'raw',
-        sql: sql.getValue(),
-        bindings: sql.getBindings(),
-        boolean: 'and',
-      })
-      this.bindingsList.push(...sql.getBindings())
-    } else {
-      this.havings.push({
-        type: 'raw',
-        sql,
-        bindings,
-        boolean: 'and',
-      })
-      this.bindingsList.push(...bindings)
-    }
+    this.havingClause.havingRaw(sql, bindings)
     return this
   }
 
@@ -896,22 +693,15 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
 
   /**
    * Add an ORDER BY clause to the query
-   *
-   * @param column - Column name
-   * @param direction - Sort direction ('asc' or 'desc')
-   * @returns The current QueryBuilder instance
    */
   orderBy(column: string, direction: OrderDirection = 'asc'): this {
     this.ensureOwnState()
-    this.orders.push({ column, direction })
+    this.orderByClause.orderBy(column, direction)
     return this
   }
 
   /**
    * Add an ORDER BY DESC clause to the query
-   *
-   * @param column - Column name
-   * @returns The current QueryBuilder instance
    */
   orderByDesc(column: string): this {
     return this.orderBy(column, 'desc')
@@ -919,28 +709,15 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
 
   /**
    * Add a raw ORDER BY clause to the query
-   *
-   * @param sql - Raw SQL string or Expression instance
-   * @param bindings - Optional array of bindings
-   * @returns The current QueryBuilder instance
    */
   orderByRaw(sql: string | Expression, bindings: unknown[] = []): this {
     this.ensureOwnState()
-    if (sql instanceof Expression) {
-      this.orders.push({ column: sql.getValue(), direction: 'asc' })
-      this.bindingsList.push(...sql.getBindings())
-    } else {
-      this.orders.push({ column: new Expression(sql, bindings).getValue(), direction: 'asc' })
-      this.bindingsList.push(...bindings)
-    }
+    this.orderByClause.orderByRaw(sql, bindings)
     return this
   }
 
   /**
    * Order the results by the latest records (created_at DESC)
-   *
-   * @param column - Column name to use for ordering
-   * @returns The current QueryBuilder instance
    */
   latest(column = 'created_at'): this {
     return this.orderBy(column, 'desc')
@@ -948,9 +725,6 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
 
   /**
    * Order the results by the oldest records (created_at ASC)
-   *
-   * @param column - Column name to use for ordering
-   * @returns The current QueryBuilder instance
    */
   oldest(column = 'created_at'): this {
     return this.orderBy(column, 'asc')
@@ -962,33 +736,24 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
 
   /**
    * Set the maximum number of records to return
-   *
-   * @param value - Limit value
-   * @returns The current QueryBuilder instance
    */
   limit(value: number): this {
     this.ensureOwnState()
-    this.limitValue = value
+    this.limitClause.setLimit(value)
     return this
   }
 
   /**
    * Set the number of records to skip
-   *
-   * @param value - Offset value
-   * @returns The current QueryBuilder instance
    */
   offset(value: number): this {
     this.ensureOwnState()
-    this.offsetValue = value
+    this.limitClause.setOffset(value)
     return this
   }
 
   /**
    * Alias for offset()
-   *
-   * @param value - Number of records to skip
-   * @returns The current QueryBuilder instance
    */
   skip(value: number): this {
     return this.offset(value)
@@ -996,9 +761,6 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
 
   /**
    * Alias for limit()
-   *
-   * @param value - Maximum number of records
-   * @returns The current QueryBuilder instance
    */
   take(value: number): this {
     return this.limit(value)
@@ -1010,12 +772,11 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
 
   /**
    * Execute the query using a prepared statement
-   * Useful for repeated queries with different bindings
-   *
-   * @returns Promise resolving to an array of results
    */
   async getPrepared(): Promise<T[]> {
-    const sql = this.grammar.compileSelect(this.getCompiledQuery())
+    const compiled = this.getCompiledQuery()
+    const sql = this.grammar.compileSelect(compiled)
+    const bindings = compiled.bindings
     const driver = this.connection.getDriver()
 
     if (
@@ -1023,35 +784,36 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
       typeof (driver as any).executePrepared === 'function'
     ) {
       const stmtName = await (driver as any).prepare(sql)
-      const result = await (driver as any).executePrepared(stmtName, this.bindingsList)
+      const result = await (driver as any).executePrepared(stmtName, bindings)
       return result.rows as T[]
     }
 
-    // Fallback to normal execution
     return this.get()
   }
 
   /**
-   * Execute the query and retrieve all matching records.
-   *
-   * @returns Promise resolving to an array of results.
+   * Execute the query and retrieve all matching records as raw objects.
+   * This bypasses model hydration and is used for performance-critical paths.
+   * @internal
    */
-  async get(): Promise<T[]> {
-    const sql = this.grammar.compileSelect(this.getCompiledQuery())
+  async getRawResults(): Promise<Record<string, unknown>[]> {
+    const compiled = this.getCompiledQuery()
+    const sql = this.grammar.compileSelect(compiled)
+    const bindings = compiled.bindings
 
     // Check cache
     const cache = DB.getCache()
     let cacheKey: string | undefined
 
     if (cache && this._cache) {
-      cacheKey = this._cache.key ?? `orbit:query:${sql}:${JSON.stringify(this.bindingsList)}`
-      const cached = await cache.get<T[]>(cacheKey)
+      cacheKey = this._cache.key ?? `orbit:query:${sql}:${JSON.stringify(bindings)}`
+      const cached = await cache.get<Record<string, unknown>[]>(cacheKey)
       if (cached) {
         return cached
       }
     }
 
-    const result = await this.connection.raw<T>(sql, this.bindingsList)
+    const result = await this.connection.raw<Record<string, unknown>>(sql, bindings)
 
     // Store cache
     if (cache && this._cache && cacheKey) {
@@ -1062,9 +824,15 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   }
 
   /**
+   * Execute the query and retrieve all matching records.
+   */
+  async get(): Promise<T[]> {
+    const rows = await this.getRawResults()
+    return rows as unknown as T[]
+  }
+
+  /**
    * Retrieve the first record matching the query.
-   *
-   * @returns Promise resolving to the first result or null if none found.
    */
   async first(): Promise<T | null> {
     this.limit(1)
@@ -1074,9 +842,6 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
 
   /**
    * Retrieve the first record matching the query or throw an error.
-   *
-   * @returns Promise resolving to the first result.
-   * @throws RecordNotFoundError if no record matches the query.
    */
   async firstOrFail(): Promise<T> {
     const result = await this.first()
@@ -1088,10 +853,6 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
 
   /**
    * Find a record by its primary key value.
-   *
-   * @param id - The primary key value to search for.
-   * @param primaryKey - The name of the primary key column (defaults to 'id').
-   * @returns Promise resolving to the record or null.
    */
   async find(id: unknown, primaryKey = 'id'): Promise<T | null> {
     return this.where(primaryKey, '=', id).first()
@@ -1099,11 +860,6 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
 
   /**
    * Find a record by its primary key or throw an error.
-   *
-   * @param id - The primary key value.
-   * @param primaryKey - The name of the primary key column.
-   * @returns Promise resolving to the record.
-   * @throws RecordNotFoundError if no record is found.
    */
   async findOrFail(id: unknown, primaryKey = 'id'): Promise<T> {
     const result = await this.find(id, primaryKey)
@@ -1115,10 +871,6 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
 
   /**
    * Get a single column value from the first result
-   *
-   * @template V - The type of the value
-   * @param column - Column name
-   * @returns Promise resolving to the value or null
    */
   async value<V = unknown>(column: string): Promise<V | null> {
     const result = await this.select(column).first()
@@ -1130,10 +882,6 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
 
   /**
    * Get an array of values from a single column for all results
-   *
-   * @template V - The type of the values
-   * @param column - Column name
-   * @returns Promise resolving to an array of values
    */
   async pluck<V = unknown>(column: string): Promise<V[]> {
     const results = await this.select(column).get()
@@ -1142,19 +890,16 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
 
   /**
    * Check if any records exist matching the query
-   *
-   * @returns Promise resolving to true if records exist
    */
   async exists(): Promise<boolean> {
-    const sql = this.grammar.compileExists(this.getCompiledQuery())
-    const result = await this.connection.raw<{ exists: boolean }>(sql, this.bindingsList)
+    const compiled = this.getCompiledQuery()
+    const sql = this.grammar.compileExists(compiled)
+    const result = await this.connection.raw<{ exists: boolean }>(sql, compiled.bindings)
     return result.rows[0]?.exists ?? false
   }
 
   /**
    * Check if no records exist matching the query
-   *
-   * @returns Promise resolving to true if no records exist
    */
   async doesntExist(): Promise<boolean> {
     return !(await this.exists())
@@ -1166,9 +911,6 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
 
   /**
    * Get the count of records matching the query
-   *
-   * @param column - Column to count (defaults to '*')
-   * @returns Promise resolving to the count
    */
   async count(column = '*'): Promise<number> {
     const result = await this.aggregate('count', column)
@@ -1177,10 +919,6 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
 
   /**
    * Get the maximum value of a column
-   *
-   * @template V - The type of the value
-   * @param column - Column name
-   * @returns Promise resolving to the maximum value or null
    */
   async max<V = number>(column: string): Promise<V | null> {
     return this.aggregate('max', column) as Promise<V | null>
@@ -1188,10 +926,6 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
 
   /**
    * Get the minimum value of a column
-   *
-   * @template V - The type of the value
-   * @param column - Column name
-   * @returns Promise resolving to the minimum value or null
    */
   async min<V = number>(column: string): Promise<V | null> {
     return this.aggregate('min', column) as Promise<V | null>
@@ -1199,9 +933,6 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
 
   /**
    * Get the average value of a column
-   *
-   * @param column - Column name
-   * @returns Promise resolving to the average value or null
    */
   async avg(column: string): Promise<number | null> {
     return this.aggregate('avg', column)
@@ -1209,9 +940,6 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
 
   /**
    * Get the sum of values in a column
-   *
-   * @param column - Column name
-   * @returns Promise resolving to the sum
    */
   async sum(column: string): Promise<number> {
     return (await this.aggregate('sum', column)) ?? 0
@@ -1219,15 +947,11 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
 
   /**
    * Internal helper to execute an aggregate function
-   *
-   * @param func - Aggregate function name (e.g., 'count', 'sum')
-   * @param column - Column name
-   * @returns Promise resolving to the aggregate value or null
-   * @internal
    */
   protected async aggregate(func: string, column: string): Promise<number | null> {
-    const sql = this.grammar.compileAggregate(this.getCompiledQuery(), { function: func, column })
-    const result = await this.connection.raw<{ aggregate: number | null }>(sql, this.bindingsList)
+    const compiled = this.getCompiledQuery()
+    const sql = this.grammar.compileAggregate(compiled, { function: func, column })
+    const result = await this.connection.raw<{ aggregate: number | null }>(sql, compiled.bindings)
     const value = result.rows[0]?.aggregate
     return value === null || value === undefined ? null : Number(value)
   }
@@ -1238,9 +962,6 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
 
   /**
    * Insert one or more records into the database.
-   *
-   * @param data - A single record object or an array of record objects.
-   * @returns Promise resolving to the inserted records (including generated IDs if supported).
    */
   async insert(data: Partial<T> | Partial<T>[]): Promise<T[]> {
     const values = Array.isArray(data) ? data : [data]
@@ -1248,12 +969,10 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
       return []
     }
 
-    // 動態計算 chunk size，根據資料庫類型和欄位數量
     const chunkSize = this.calculateOptimalChunkSize(values)
     const results: T[] = []
 
     if (values.length > chunkSize) {
-      // Run in a transaction if we are doing multiple chunks to ensure atomicity
       return await this.connection.transaction(async (trx) => {
         for (let i = 0; i < values.length; i += chunkSize) {
           const chunk = values.slice(i, i + chunkSize)
@@ -1264,7 +983,6 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
       })
     }
 
-    // Original single-batch logic
     const allBindings: unknown[] = []
     for (const row of values) {
       allBindings.push(...Object.values(row as Record<string, unknown>))
@@ -1280,11 +998,6 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
 
   /**
    * Insert a record and retrieve its auto-generated primary key.
-   *
-   * @param data - The record object to insert.
-   * @param primaryKey - The name of the primary key column.
-   * @returns Promise resolving to the generated ID.
-   * @throws QueryBuilderError if the ID could not be retrieved.
    */
   async insertGetId(data: Partial<T>, primaryKey = 'id'): Promise<number | bigint> {
     const values = Object.values(data as Record<string, unknown>)
@@ -1303,9 +1016,6 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
 
   /**
    * Update records matching the current query conditions.
-   *
-   * @param data - Object containing column-value pairs to update.
-   * @returns Promise resolving to the number of affected rows.
    */
   async update(data: Partial<T>): Promise<number> {
     const values: unknown[] = []
@@ -1317,7 +1027,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
       }
     }
 
-    const allBindings = [...values, ...this.bindingsList]
+    const allBindings = [...values, ...this.getBindings()]
 
     const compiled = this.getCompiledQuery()
     compiled.bindings = allBindings
@@ -1329,33 +1039,24 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
 
   /**
    * Partially update a JSON column
-   *
-   * @param column - JSON column path
-   * @param value - New value for the path
-   * @returns Promise resolving to the number of affected rows
    */
   async updateJson(column: string, value: unknown): Promise<number> {
     const sql = this.grammar.compileUpdateJson(this.getCompiledQuery(), column, value)
-    // For JSON updates, the value is often embedded in SQL or passed as a single binding
-    const result = await this.connection.getDriver().execute(sql, [value, ...this.bindingsList])
+    const result = await this.connection.getDriver().execute(sql, [value, ...this.getBindings()])
     return result.affectedRows
   }
 
   /**
    * Delete records matching the query
-   *
-   * @returns Promise resolving to the number of affected rows
    */
   async delete(): Promise<number> {
     const sql = this.grammar.compileDelete(this.getCompiledQuery())
-    const result = await this.connection.getDriver().execute(sql, this.bindingsList)
+    const result = await this.connection.getDriver().execute(sql, this.getBindings())
     return result.affectedRows
   }
 
   /**
    * Truncate the table (remove all records and reset auto-increment)
-   *
-   * @returns Promise resolving when finished
    */
   async truncate(): Promise<void> {
     const sql = this.grammar.compileTruncate(this.getCompiledQuery())
@@ -1363,55 +1064,15 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   }
 
   // ============================================================================
-  // INCREMENT/DECREMENT Methods
+  // EAGER LOADING Methods
   // ============================================================================
 
   /**
-   * Increment a column's value
-   *
-   * @param column - Column name
-   * @param amount - Amount to increment by (defaults to 1)
-   * @param extra - Optional additional columns to update
-   * @returns Promise resolving to the number of affected rows
-   */
-  async increment(column: string, amount = 1, extra: Partial<T> = {}): Promise<number> {
-    const data = {
-      ...extra,
-      [column]: new Expression(`${this.grammar.wrapColumn(column)} + ${amount}`),
-    } as Partial<T>
-    return this.update(data)
-  }
-
-  /**
-   * Decrement a column's value
-   *
-   * @param column - Column name
-   * @param amount - Amount to decrement by (defaults to 1)
-   * @param extra - Optional additional columns to update
-   * @returns Promise resolving to the number of affected rows
-   */
-  async decrement(column: string, amount = 1, extra: Partial<T> = {}): Promise<number> {
-    const data = {
-      ...extra,
-      [column]: new Expression(`${this.grammar.wrapColumn(column)} - ${amount}`),
-    } as Partial<T>
-    return this.update(data)
-  }
-
-  /**
    * Specify relationships to be eager loaded with the query results
-   *
-   * @param relation - Relationship name, array of names, or object with callbacks
-   * @returns The current QueryBuilder instance
-   * @example
-   * ```typescript
-   * query.with('posts', 'profile')
-   * query.with({ posts: q => q.where('active', true) })
-   * ```
    */
   with(
     // biome-ignore lint/suspicious/noExplicitAny: Eager loads need any for flexibility
-    relation: string | string[] | Record<string, (query: QueryBuilderContract<any>) => void>
+    relation: string | string[] | Record<string, (query: QueryBuilderContract<unknown>) => void>
   ): this {
     this.ensureOwnState()
     if (typeof relation === 'string') {
@@ -1426,7 +1087,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
       }
     } else {
       for (const [rel, callback] of Object.entries(relation)) {
-        this.eagerLoads.set(rel, callback)
+        this.eagerLoads.set(rel, callback as any)
       }
     }
     return this
@@ -1434,19 +1095,15 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
 
   /**
    * Add a WHERE clause checking for the existence of a relationship
-   *
-   * @param relation - Relationship name
-   * @param callback - Optional callback to further filter the related records
-   * @returns The current QueryBuilder instance
-   * @throws Error if called without a model context or relationship not found
    */
-  whereHas(relation: string, callback?: (query: QueryBuilderContract<any>) => void): this {
+  whereHas(relation: string, callback?: (query: QueryBuilderContract<unknown>) => void): this {
     if (!this.modelClass) {
       throw new Error(
         `whereHas() requires a model context. Ensure you are calling it from User.query().`
       )
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { getRelationships } = require('../orm/model/relationships')
     const relations = getRelationships(this.modelClass)
     const meta = relations.get(relation)
@@ -1486,16 +1143,15 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
       callback(subQuery)
     }
 
-    return this.whereRaw(`EXISTS (${subQuery.selectRaw('1').toSql()})`, subQuery.getBindings())
+    // Use whereRaw with EXISTS
+    this.whereClause.addRaw(`EXISTS (${subQuery.selectRaw('1').toSql()})`, subQuery.getBindings())
+    return this
   }
 
   /**
    * Get the map of relationships to be eager loaded
-   *
-   * @returns Map of relationship names to callbacks
    * @internal
    */
-  // biome-ignore lint/suspicious/noExplicitAny: Eager loads need any for flexibility
   getEagerLoads(): Map<string, (query: QueryBuilderContract<any>) => void> {
     return this.eagerLoads
   }
@@ -1506,8 +1162,6 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
 
   /**
    * Include soft-deleted records in the query results
-   *
-   * @returns The current QueryBuilder instance
    */
   withTrashed(): this {
     return this.withoutGlobalScope('softDeletes')
@@ -1515,8 +1169,6 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
 
   /**
    * Filter the query to only include soft-deleted records
-   *
-   * @returns The current QueryBuilder instance
    */
   onlyTrashed(): this {
     this.withTrashed()
@@ -1526,8 +1178,6 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
 
   /**
    * Restore soft-deleted records matching the query
-   *
-   * @returns Promise resolving to the number of restored rows
    */
   async restore(): Promise<number> {
     return this.withTrashed().update({ deleted_at: null } as never)
@@ -1535,11 +1185,35 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
 
   /**
    * Physically delete records matching the query (bypassing soft deletes)
-   *
-   * @returns Promise resolving to the number of affected rows
    */
   async forceDelete(): Promise<number> {
     return this.withTrashed().delete()
+  }
+
+  // ============================================================================
+  // INCREMENT/DECREMENT Methods
+  // ============================================================================
+
+  /**
+   * Increment a column's value
+   */
+  async increment(column: string, amount = 1, extra: Partial<T> = {}): Promise<number> {
+    const data = {
+      ...extra,
+      [column]: new Expression(`${this.grammar.wrapColumn(column)} + ${amount}`),
+    } as Partial<T>
+    return this.update(data)
+  }
+
+  /**
+   * Decrement a column's value
+   */
+  async decrement(column: string, amount = 1, extra: Partial<T> = {}): Promise<number> {
+    const data = {
+      ...extra,
+      [column]: new Expression(`${this.grammar.wrapColumn(column)} - ${amount}`),
+    } as Partial<T>
+    return this.update(data)
   }
 
   // ============================================================================
@@ -1548,22 +1222,34 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
 
   /**
    * Insert or update records (UPSERT)
-   *
-   * @param data - Record or array of records
-   * @param _uniqueBy - Columns that define uniqueness
-   * @param _update - Columns to update on conflict
-   * @returns Promise resolving to the number of affected rows
    */
   async upsert(
     data: Partial<T> | Partial<T>[],
-    _uniqueBy: string | string[],
-    _update?: string[]
+    uniqueBy: string | string[],
+    update?: string[]
   ): Promise<number> {
-    // This is a simplified implementation
-    // Full implementation would use database-specific UPSERT syntax
-    const values = Array.isArray(data) ? data : [data]
-    const result = await this.insert(values)
-    return result.length
+    const values = (Array.isArray(data) ? data : [data]) as Record<string, unknown>[]
+    if (values.length === 0) {
+      return 0
+    }
+
+    const uniqueByArray = Array.isArray(uniqueBy) ? uniqueBy : [uniqueBy]
+    const updateArray = update || Object.keys(values[0]).filter((k) => !uniqueByArray.includes(k))
+
+    const allBindings: unknown[] = []
+    for (const row of values) {
+      allBindings.push(...Object.values(row))
+    }
+
+    const sql = this.grammar.compileUpsert(
+      this.getCompiledQuery(),
+      values,
+      uniqueByArray,
+      updateArray
+    )
+    const result = await this.connection.getDriver().execute(sql, allBindings)
+
+    return result.affectedRows
   }
 
   // ============================================================================
@@ -1572,11 +1258,6 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
 
   /**
    * Alias for paginate()
-   *
-   * @param perPage - Records per page
-   * @param page - Current page number
-   * @param primaryKey - Primary key for deterministic ordering
-   * @returns Promise resolving to pagination results
    */
   async simplePaginate(perPage = 15, page = 1, primaryKey = 'id'): Promise<PaginateResult<T>> {
     return this.paginate(perPage, page, primaryKey)
@@ -1584,10 +1265,6 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
 
   /**
    * Chunk the results of the query and execute a callback for each chunk
-   *
-   * @param size - Number of records per chunk
-   * @param callback - Callback receiving the chunk results
-   * @returns Promise resolving when all chunks are processed
    */
   async chunk(
     size: number,
@@ -1616,20 +1293,12 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
 
   /**
    * Paginate the query results
-   *
-   * @param perPage - Records per page (defaults to 15)
-   * @param page - Current page number (defaults to 1)
-   * @param primaryKey - Primary key for deterministic ordering
-   * @returns Promise resolving to pagination results including data and metadata
    */
   async paginate(perPage = 15, page = 1, primaryKey = 'id'): Promise<PaginateResult<T>> {
-    // Ensure deterministic ordering for stable pagination
     this.ensureDeterministicOrder(primaryKey)
 
-    // Get total count
     const total = await this.clone().count()
 
-    // Get paginated data
     const data = await this.limit(perPage)
       .offset((page - 1) * perPage)
       .get()
@@ -1651,68 +1320,16 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
 
   /**
    * Ensure deterministic ordering for stable pagination
-   * Appends primary key to ORDER BY if not already present
-   *
-   * This prevents row duplication/skipping when paginating on non-unique columns
-   * @param primaryKey - The primary key column name
-   * @returns The current QueryBuilder instance
-   * @example Without deterministic order: ORDER BY created_at (rows may shift)
-   * @example With deterministic order: ORDER BY created_at, id (stable pagination)
    */
   ensureDeterministicOrder(primaryKey = 'id'): this {
-    // Check if primary key is already in the ORDER BY
-    const hasIdOrder = this.orders.some((order) => order.column === primaryKey)
+    const hasIdOrder = this.orderByClause.getOrders().some((order) => order.column === primaryKey)
 
     if (!hasIdOrder) {
       this.ensureOwnState()
-      // Append primary key as tie-breaker
-      this.orders.push({ column: primaryKey, direction: 'asc' })
+      this.orderByClause.orderBy(primaryKey, 'asc')
     }
 
     return this
-  }
-
-  // ============================================================================
-  // DEBUGGING Methods
-  // ============================================================================
-
-  /**
-   * Get the compiled SQL string for the current query state
-   *
-   * @returns The SQL string
-   */
-  toSql(): string {
-    return this.grammar.compileSelect(this.getCompiledQuery())
-  }
-
-  /**
-   * Get the current query bindings
-   *
-   * @returns Array of bindings
-   */
-  getBindings(): unknown[] {
-    return [...this.bindingsList]
-  }
-
-  /**
-   * Log the current SQL and bindings to the console
-   *
-   * @returns The current QueryBuilder instance
-   */
-  dump(): this {
-    console.log('SQL:', this.toSql())
-    console.log('Bindings:', this.getBindings())
-    return this
-  }
-
-  /**
-   * Log the current SQL and bindings, then terminate the process
-   *
-   * @returns never
-   */
-  dd(): never {
-    this.dump()
-    process.exit(1)
   }
 
   // ============================================================================
@@ -1721,9 +1338,6 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
 
   /**
    * Set the query to read-only mode
-   *
-   * @param value - Whether to enable read-only mode
-   * @returns The current QueryBuilder instance
    */
   readonly(value = true): this {
     this.ensureOwnState()
@@ -1733,8 +1347,6 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
 
   /**
    * Check if the query is in read-only mode
-   *
-   * @returns True if read-only
    * @internal
    */
   getIsReadOnly(): boolean {
@@ -1743,78 +1355,87 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
 
   /**
    * Create an independent clone of the current QueryBuilder instance
-   *
-   * @returns A new QueryBuilder instance with the same state
    */
   clone(): QueryBuilderContract<T> {
     const cloned = new QueryBuilder<T>(this.connection, this.grammar, this.tableName)
 
     // Copy-on-write optimization: share array references initially
-    // Arrays will be copied on first modification via ensureOwnState()
-    // This reduces clone overhead by 50-70% for read-only scenarios
-    cloned.columns = this.columns
-    cloned.wheres = this.wheres
-    cloned.orders = this.orders
-    cloned.groups = this.groups
-    cloned.havings = this.havings
-    cloned.joins = this.joins
-    cloned.bindingsList = this.bindingsList
+    cloned.selectClause = this.selectClause
+    cloned.whereClause = this.whereClause
+    cloned.joinManager = this.joinManager
+    cloned.groupByClause = this.groupByClause
+    cloned.havingClause = this.havingClause
+    cloned.orderByClause = this.orderByClause
+    cloned.limitClause = this.limitClause
 
-    // Copy primitive values (these are immutable)
-    cloned.distinctValue = this.distinctValue
-    cloned.limitValue = this.limitValue
-    cloned.offsetValue = this.offsetValue
-    cloned.isReadOnly = this.isReadOnly
-
-    // Maps and Sets must be copied immediately (they're mutable and can be modified
-    // even in read-only scenarios, so sharing would cause issues)
-    cloned.globalScopes = new Map(this.globalScopes)
-    cloned.removedScopes = new Set(this.removedScopes)
-    cloned.eagerLoads = new Map(this.eagerLoads)
-
-    // Reference types (shared is safe, they're not mutated directly)
     cloned.modelClass = this.modelClass
+    cloned.isReadOnly = this.isReadOnly
+    cloned.eagerLoads = new Map(this.eagerLoads)
     cloned._cache = this._cache
 
-    // Mark as clone - arrays will be copied on first modification
-    cloned._isClone = true
-    cloned._isModified = false
+    cloned.globalScopes = new Map(this.globalScopes)
+    cloned.removedScopes = new Set(this.removedScopes)
 
-    // Track clone count in the original query so we can handle modifications
-    // Using a simple counter is more efficient than tracking individual clones
+    cloned._isClone = true
     this._cloneCount++
 
     return cloned
   }
 
+  // ============================================================================
+  // INTERNAL/ADVANCED
+  // ============================================================================
+
   /**
-   * Apply a global scope to the query
-   *
-   * @param name - Unique name for the scope
-   * @param callback - Callback receiving the QueryBuilder instance
-   * @returns The current QueryBuilder instance
+   * Get the compiled query structure
    */
-  applyScope(name: string, callback: (query: QueryBuilderContract<T>) => void): this {
-    this.ensureOwnState()
-    this.globalScopes.set(name, callback)
-    return this
+  getCompiledQuery(): CompiledQuery {
+    // Apply global scopes before compilation
+    // We clone first to avoid modifying the original query instance
+    // unless we are already applying scopes
+    if (this._isApplyingScopes) {
+      return this.getRawCompiledQuery()
+    }
+
+    const query = this.clone() as QueryBuilder<T>
+    query.applyGlobalScopes()
+    return query.getRawCompiledQuery()
   }
 
   /**
-   * Explicitly remove a global scope from the query
-   *
-   * @param name - Name of the scope to remove
-   * @returns The current QueryBuilder instance
+   * Get the raw compiled query without applying scopes again
+   * @internal
    */
-  withoutGlobalScope(name: string): this {
-    this.ensureOwnState()
-    this.removedScopes.add(name)
-    return this
+  protected getRawCompiledQuery(): CompiledQuery {
+    const selectBindings = this.selectClause.getBindings()
+    const whereBindings = this.whereClause.getValues()
+    const havingBindings = this.havingClause.getBindings()
+    const orderBindings = this.orderByClause.getBindings()
+
+    return {
+      table: this.tableName,
+      columns: this.selectClause.getColumns(),
+      distinct: this.selectClause.isDistinct(),
+      wheres: this.whereClause.getWheres(),
+      orders: this.orderByClause.getOrders(),
+      groups: this.groupByClause.getGroups(),
+      havings: this.havingClause.getHavings(),
+      joins: this.joinManager.getJoins(),
+      limit: this.limitClause.getLimit(),
+      offset: this.limitClause.getOffset(),
+      bindings: [...selectBindings, ...whereBindings, ...havingBindings, ...orderBindings],
+      bindingCounts: {
+        select: selectBindings.length,
+        where: whereBindings.length,
+        join: 0, // JoinManager currently doesn't support bindings
+        having: havingBindings.length,
+        order: orderBindings.length,
+      },
+    }
   }
 
   /**
-   * Apply all registered global scopes to the query
-   *
+   * Apply all global scopes to the query
    * @internal
    */
   protected applyGlobalScopes(): void {
@@ -1822,133 +1443,83 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
       return
     }
 
-    // Ensure we have our own state before applying scopes
-    // Scopes may modify the query (e.g., add where clauses)
-    this.ensureOwnState()
-
     this._isApplyingScopes = true
 
-    for (const [name, callback] of this.globalScopes) {
+    for (const [name, scope] of this.globalScopes) {
       if (!this.removedScopes.has(name)) {
-        callback(this as unknown as QueryBuilderContract<T>)
+        scope(this)
       }
     }
 
     this._isApplyingScopes = false
   }
 
-  // ============================================================================
-  // INTERNAL Methods
-  // ============================================================================
-
   /**
-   * Get the compiled query structure for the SQL grammar
-   *
-   * @returns CompiledQuery object
-   * @internal
+   * Get all bindings from clauses in SQL order
    */
-  getCompiledQuery(): CompiledQuery {
-    this.applyGlobalScopes()
-    return {
-      table: this.tableName,
-      columns: this.columns,
-      distinct: this.distinctValue,
-      wheres: this.wheres,
-      orders: this.orders,
-      groups: this.groups,
-      havings: this.havings,
-      joins: this.joins,
-      limit: this.limitValue,
-      offset: this.offsetValue,
-      bindings: this.bindingsList,
-    }
+  getBindings(): unknown[] {
+    return [
+      ...this.selectClause.getBindings(),
+      ...this.whereClause.getValues(),
+      ...this.havingClause.getBindings(),
+      ...this.orderByClause.getBindings(),
+    ]
   }
 
   /**
-   * Calculates optimal chunk size for batch insert operations.
-   *
-   * Dynamically determines the best chunk size based on database type and
-   * column count to maximize performance while respecting database-specific
-   * parameter limits. Different databases have different constraints:
-   * - PostgreSQL: Supports large batches (up to 5000 rows)
-   * - MySQL/MariaDB: Limited by max_allowed_packet (up to 2000 rows)
-   * - SQLite: Conservative limits for better performance (up to 1000 rows)
-   *
-   * Formula: max_params / column_count, with reasonable upper and lower bounds
-   * to ensure optimal performance across various table structures.
-   *
-   * @param values - Array of records to insert (assumes all have same structure)
-   * @returns Calculated optimal chunk size for batch operations
-   * @internal
-   *
-   * @example
-   * ```typescript
-   * const values = Array(10000).fill({ name: 'test', email: 'test@example.com' });
-   * const chunkSize = this.calculateOptimalChunkSize(values);
-   * // For PostgreSQL with 2 columns: returns ~5000
-   * // For MySQL with 2 columns: returns ~1000
-   * ```
-   */
-  protected calculateOptimalChunkSize(values: Partial<T>[]): number {
-    if (values.length === 0) {
-      return 1000
-    }
-
-    // 獲取第一個記錄的欄位數量（假設所有記錄結構相同）
-    const firstRecord = values[0] as Record<string, unknown>
-    const columnCount = Object.keys(firstRecord).length
-
-    // 獲取資料庫類型
-    const driver = this.connection.getDriver()
-    const driverName = driver.getDriverName()
-
-    // 根據資料庫類型和欄位數量計算 chunk size
-    // 公式：max_params / column_count，但設定合理的上下限
-    let baseChunkSize: number
-
-    switch (driverName) {
-      case 'postgres':
-        // PostgreSQL 理論上支援大量參數，但為了性能建議不超過 10000
-        // 考慮到每個欄位一個參數，計算：10000 / columnCount
-        baseChunkSize = Math.floor(10000 / columnCount)
-        // 設定上限和下限
-        baseChunkSize = Math.min(baseChunkSize, 5000) // 上限 5000
-        baseChunkSize = Math.max(baseChunkSize, 100) // 下限 100
-        break
-
-      case 'mysql':
-      case 'mariadb':
-        // MySQL/MariaDB 有 max_allowed_packet 限制，通常建議較小
-        // 預設 max_allowed_packet 通常是 16MB，但為了安全使用較小的值
-        baseChunkSize = Math.floor(2000 / columnCount)
-        baseChunkSize = Math.min(baseChunkSize, 2000) // 上限 2000
-        baseChunkSize = Math.max(baseChunkSize, 100) // 下限 100
-        break
-
-      case 'sqlite':
-        // SQLite 建議使用較小的 chunk size
-        baseChunkSize = Math.floor(1000 / columnCount)
-        baseChunkSize = Math.min(baseChunkSize, 1000) // 上限 1000
-        baseChunkSize = Math.max(baseChunkSize, 50) // 下限 50
-        break
-
-      default:
-        // 其他資料庫使用保守的預設值
-        baseChunkSize = Math.floor(1000 / columnCount)
-        baseChunkSize = Math.min(baseChunkSize, 1000)
-        baseChunkSize = Math.max(baseChunkSize, 100)
-    }
-
-    return baseChunkSize
-  }
-
-  /**
-   * Check if the query has a limit or offset set
-   *
-   * @returns True if limit or offset exists
-   * @internal
+   * Check if the query has a limit or offset
    */
   hasLimitOrOffset(): boolean {
-    return this.limitValue !== undefined || this.offsetValue !== undefined
+    return this.limitClause.hasLimit() || this.limitClause.hasOffset()
+  }
+
+  /**
+   * Dump the query SQL and bindings
+   */
+  toSql(): string {
+    return this.grammar.compileSelect(this.getCompiledQuery())
+  }
+
+  /**
+   * Log the current SQL and bindings to the console
+   */
+  dump(): this {
+    console.log('SQL:', this.toSql())
+    console.log('Bindings:', this.getBindings())
+    return this
+  }
+
+  /**
+   * Log the current SQL and bindings, then terminate the process
+   */
+  dd(): never {
+    this.dump()
+    process.exit(1)
+  }
+
+  applyScope(name: string, callback: (query: QueryBuilderContract<T>) => void): this {
+    this.ensureOwnState()
+    // Cast to any because Map value type mismatch (unknown vs any in previous edits)
+    this.globalScopes.set(name, callback as any)
+    return this
+  }
+
+  withoutGlobalScope(name: string): this {
+    this.ensureOwnState()
+    this.removedScopes.add(name)
+    return this
+  }
+
+  /**
+   * Helper to calculate optimal chunk size based on data volume
+   * @internal
+   */
+  private calculateOptimalChunkSize(values: Partial<T>[]): number {
+    const MAX_BINDINGS = 65000
+    const columnsCount = Object.keys(values[0] || {}).length || 1
+
+    const safeChunkSize = Math.floor(MAX_BINDINGS / columnsCount)
+
+    return Math.min(safeChunkSize, 1000)
   }
 }

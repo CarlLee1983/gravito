@@ -57,6 +57,15 @@ export class Schema {
   }
 
   /**
+   * Reset the schema facade state (primarily for testing).
+   * @internal
+   */
+  static reset(): void {
+    Schema.connectionName = undefined
+    Schema.grammar = null
+  }
+
+  /**
    * Get the grammar instance for the current connection
    */
   private static getGrammar(): SchemaGrammar {

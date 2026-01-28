@@ -63,7 +63,7 @@ export class PostgresGrammar extends Grammar {
   /**
    * PostgreSQL-specific: Compile UPSERT using ON CONFLICT
    */
-  compileUpsert(
+  override compileUpsert(
     query: CompiledQuery,
     values: Record<string, unknown>[],
     uniqueBy: string[],

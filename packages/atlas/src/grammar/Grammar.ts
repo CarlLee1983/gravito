@@ -257,6 +257,7 @@ export abstract class Grammar implements GrammarContract {
 
     // SELECT [DISTINCT] columns
     parts.push(this.compileColumns(query))
+    let currentBindingOffset = query.bindingCounts?.select ?? 0
 
     // FROM table
     parts.push(this.compileFrom(query))
@@ -264,11 +265,13 @@ export abstract class Grammar implements GrammarContract {
     // JOINs
     if (query.joins.length > 0) {
       parts.push(this.compileJoins(query))
+      currentBindingOffset += query.bindingCounts?.join ?? 0
     }
 
     // WHERE
     if (query.wheres.length > 0) {
-      parts.push(this.compileWheres(query))
+      parts.push(this.compileWheres(query, currentBindingOffset))
+      currentBindingOffset += query.bindingCounts?.where ?? this.countAllWhereBindings(query.wheres)
     }
 
     // GROUP BY
@@ -278,7 +281,7 @@ export abstract class Grammar implements GrammarContract {
 
     // HAVING
     if (query.havings.length > 0) {
-      parts.push(this.compileHavings(query))
+      parts.push(this.compileHavings(query, currentBindingOffset))
     }
 
     // ORDER BY
@@ -473,8 +476,36 @@ export abstract class Grammar implements GrammarContract {
   protected compileWhereBasicWithOffset(where: WhereClause, offset: number): string {
     const column = this.wrapColumn(where.column ?? '')
     const operator = where.operator ?? '='
+
+    if (where.value instanceof Object && 'getCompiledQuery' in where.value) {
+      const subQuery = (where.value as any).getCompiledQuery()
+      return `${column} ${operator} (${this.compileSelect(subQuery)})`
+    }
+
     const placeholder = this.getPlaceholder(offset)
     return `${column} ${operator} ${placeholder}`
+  }
+
+  /**
+   * Compile a WHERE IN clause with offset
+   */
+  protected compileWhereInWithOffset(where: WhereClause, offset: number): string {
+    const column = this.wrapColumn(where.column ?? '')
+    const values = where.values ?? []
+    const not = where.not ? 'NOT ' : ''
+
+    // Handle SubQuery in WHERE IN
+    if (
+      values.length === 1 &&
+      values[0] instanceof Object &&
+      'getCompiledQuery' in (values[0] as any)
+    ) {
+      const subQuery = (values[0] as any).getCompiledQuery()
+      return `${column} ${not}IN (${this.compileSelect(subQuery)})`
+    }
+
+    const placeholders = values.map((_, i) => this.getPlaceholder(offset + i))
+    return `${column} ${not}IN (${placeholders.join(', ')})`
   }
 
   /**
@@ -484,17 +515,6 @@ export abstract class Grammar implements GrammarContract {
     // The nested query's wheres are compiled separately
     const nestedSql = where.sql ?? ''
     return `(${nestedSql})`
-  }
-
-  /**
-   * Compile a WHERE IN clause with offset
-   */
-  protected compileWhereInWithOffset(where: WhereClause, offset: number): string {
-    const column = this.wrapColumn(where.column ?? '')
-    const values = where.values ?? []
-    const placeholders = values.map((_, i) => this.getPlaceholder(offset + i))
-    const not = where.not ? 'NOT ' : ''
-    return `${column} ${not}IN (${placeholders.join(', ')})`
   }
 
   /**
@@ -570,14 +590,11 @@ export abstract class Grammar implements GrammarContract {
   /**
    * Compile HAVING clauses
    */
-  protected compileHavings(query: CompiledQuery): string {
-    // Calculate bindings used by WHERE clauses
-    let whereBindingsCount = 0
-    for (const where of query.wheres) {
-      whereBindingsCount += this.countWhereBindings(where)
-    }
+  protected compileHavings(query: CompiledQuery, bindingOffset?: number): string {
+    let currentOffset =
+      bindingOffset ??
+      query.wheres.reduce((count, where) => count + this.countWhereBindings(where), 0)
 
-    let currentOffset = whereBindingsCount
     const clauses = query.havings.map((having, index) => {
       const { sql, bindingsUsed } = this.compileHavingWithOffset(having, currentOffset)
       currentOffset += bindingsUsed
@@ -585,6 +602,13 @@ export abstract class Grammar implements GrammarContract {
     })
 
     return `HAVING ${clauses.join(' ')}`
+  }
+
+  /**
+   * Count all bindings in an array of WHERE clauses
+   */
+  protected countAllWhereBindings(wheres: WhereClause[]): number {
+    return wheres.reduce((count, where) => count + this.countWhereBindings(where), 0)
   }
 
   /**
@@ -933,5 +957,17 @@ export abstract class Grammar implements GrammarContract {
    */
   compileUpdateJson(_query: CompiledQuery, _column: string, _value: unknown): string {
     throw new Error('Partial JSON updates are not supported by this database driver.')
+  }
+
+  /**
+   * Compile an UPSERT statement
+   */
+  compileUpsert(
+    _query: CompiledQuery,
+    _values: Record<string, unknown>[],
+    _uniqueBy: string[],
+    _update: string[]
+  ): string {
+    throw new Error('UPSERT is not supported by this database driver.')
   }
 }

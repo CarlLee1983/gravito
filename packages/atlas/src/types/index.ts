@@ -462,6 +462,11 @@ export interface QueryResult<T = Record<string, unknown>> {
   rowCount: number
 
   /**
+   * Last inserted ID (if available)
+   */
+  insertId?: number | bigint | string | undefined
+
+  /**
    * Field metadata
    */
   fields?: FieldInfo[]
@@ -716,37 +721,37 @@ export interface QueryBuilderContract<T = Record<string, unknown>> {
   /**
    * Add a basic where clause
    */
-  where(column: string, value: unknown): this
-  where(column: string, operator: Operator, value: unknown): this
+  where(column: string, value: unknown | QueryBuilderContract<any>): this
+  where(column: string, operator: Operator, value: unknown | QueryBuilderContract<any>): this
   where(callback: (query: QueryBuilderContract<T>) => void): this
-  where(conditions: Record<string, unknown>): this
+  where(conditions: Record<string, unknown | QueryBuilderContract<any>>): this
 
   /**
    * Add an "or where" clause
    */
-  orWhere(column: string, value: unknown): this
-  orWhere(column: string, operator: Operator, value: unknown): this
+  orWhere(column: string, value: unknown | QueryBuilderContract<any>): this
+  orWhere(column: string, operator: Operator, value: unknown | QueryBuilderContract<any>): this
   orWhere(callback: (query: QueryBuilderContract<T>) => void): this
 
   /**
    * Add a "where in" clause
    */
-  whereIn(column: string, values: unknown[]): this
+  whereIn(column: string, values: unknown[] | QueryBuilderContract<any>): this
 
   /**
    * Add a "where not in" clause
    */
-  whereNotIn(column: string, values: unknown[]): this
+  whereNotIn(column: string, values: unknown[] | QueryBuilderContract<any>): this
 
   /**
    * Add an "or where in" clause
    */
-  orWhereIn(column: string, values: unknown[]): this
+  orWhereIn(column: string, values: unknown[] | QueryBuilderContract<any>): this
 
   /**
    * Add an "or where not in" clause
    */
-  orWhereNotIn(column: string, values: unknown[]): this
+  orWhereNotIn(column: string, values: unknown[] | QueryBuilderContract<any>): this
 
   /**
    * Add a "where null" clause
@@ -1248,6 +1253,16 @@ export interface GrammarContract {
    * Compile a JSON update statement
    */
   compileUpdateJson(query: CompiledQuery, column: string, value: unknown): string
+
+  /**
+   * Compile an UPSERT statement
+   */
+  compileUpsert(
+    query: CompiledQuery,
+    values: Record<string, unknown>[],
+    uniqueBy: string[],
+    update: string[]
+  ): string
 }
 
 /**
@@ -1265,4 +1280,11 @@ export interface CompiledQuery {
   limit?: number | undefined
   offset?: number | undefined
   bindings: unknown[]
+  bindingCounts?: {
+    select: number
+    where: number
+    join: number
+    having: number
+    order: number
+  }
 }

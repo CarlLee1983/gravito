@@ -1,13 +1,15 @@
-/**
- * Model Base Class
- * @description Active Record style ORM with Proxy-based Smart Guard
- */
-
 import { DB } from '../../DB'
 import { Factory } from '../../seed/Factory'
 import type { QueryBuilderContract } from '../../types'
 import { SchemaRegistry } from '../schema/SchemaRegistry'
 import type { ColumnType, TableSchema } from '../schema/types'
+import {
+  applyMixins,
+  HasEvents,
+  HasPersistence,
+  HasRelationships,
+  HasSerialization,
+} from './concerns'
 import { DirtyTracker } from './DirtyTracker'
 import { COLUMN_KEY, SOFT_DELETES_KEY } from './decorators'
 import {
@@ -16,7 +18,6 @@ import {
   NullableConstraintError,
   TypeMismatchError,
 } from './errors'
-import { ModelRegistry } from './ModelRegistry'
 import { getRelationships } from './relationships'
 
 /**
@@ -82,6 +83,10 @@ export interface ModelStatic<T extends Model> {
  * await found.delete()
  * ```
  */
+// biome-ignore lint/suspicious/noUnsafeDeclarationMerging: Intentional for Mixin pattern
+export interface Model extends HasPersistence, HasEvents, HasRelationships, HasSerialization {}
+
+// biome-ignore lint/suspicious/noUnsafeDeclarationMerging: Intentional for Mixin pattern
 export abstract class Model {
   // ============================================================================
   // Static Configuration
@@ -145,11 +150,9 @@ export abstract class Model {
   /** Dirty tracker */
   protected _dirtyTracker: DirtyTracker<ModelAttributes>
 
-  /** Whether the model exists in database */
-  protected _exists = false
-
   /** Cached schema */
   private _schema?: TableSchema
+  private _schemaPromise?: Promise<TableSchema>
 
   constructor() {
     this._dirtyTracker = new DirtyTracker()
@@ -301,7 +304,7 @@ export abstract class Model {
 
     // Set initial state
     this._attributes = castedAttributes
-    this._exists = exists
+    ;(this as any)._exists = exists
 
     if (exists) {
       this._dirtyTracker.setOriginal(attributes)
@@ -436,8 +439,16 @@ export abstract class Model {
         }
 
         // 3. Prioritize setting attributes/relations
-        // If it's already an attribute, or if it's not in the target (instance), treat as attribute
-        if (!(prop in target) || (typeof prop === 'string' && prop in model._attributes)) {
+        // Check if it's a defined column
+        const columns = (model.constructor as any)[COLUMN_KEY]
+        const isColumn = columns && typeof prop === 'string' && prop in columns
+
+        // If it's a column, or already an attribute, or if it's not in the target (instance), treat as attribute
+        if (
+          isColumn ||
+          !(prop in target) ||
+          (typeof prop === 'string' && prop in model._attributes)
+        ) {
           model._setAttribute(prop as string, value)
           return true
         }
@@ -652,10 +663,18 @@ export abstract class Model {
   }
 
   /**
-   * Get cached schema
+   * Get cached schema with race condition protection
    */
   protected async _getSchema(): Promise<TableSchema> {
-    if (!this._schema) {
+    if (this._schema) {
+      return this._schema
+    }
+
+    if (this._schemaPromise) {
+      return this._schemaPromise
+    }
+
+    this._schemaPromise = (async () => {
       const modelCtor = this.constructor as any
       const connection = DB.connection(modelCtor.connection)
       const table = modelCtor.getTable()
@@ -666,31 +685,25 @@ export abstract class Model {
         typeof driver.getDriverName === 'function' &&
         (driver.getDriverName() === 'mongodb' || driver.getDriverName() === 'redis')
       ) {
-        return {
+        this._schema = {
           table: table,
           columns: new Map(),
           primaryKey: [modelCtor.primaryKey],
           capturedAt: Date.now(),
         }
+        return this._schema
       }
 
       this._schema = await SchemaRegistry.getInstance().get(table, modelCtor.connection)
-    }
-    return this._schema
+      return this._schema
+    })()
+
+    return this._schemaPromise
   }
 
   // ============================================================================
   // Accessors
   // ============================================================================
-
-  /**
-   * Check if the model instance exists in the database.
-   *
-   * @returns True if the model has been persisted or hydrated from the DB.
-   */
-  get exists(): boolean {
-    return this._exists
-  }
 
   /**
    * Check if any attributes have been modified since the last sync.
@@ -720,15 +733,6 @@ export abstract class Model {
   }
 
   /**
-   * Get all current attribute values.
-   *
-   * @returns A shallow copy of the attributes object.
-   */
-  getAttributes(): ModelAttributes {
-    return { ...this._attributes }
-  }
-
-  /**
    * Get the value of the model's primary key.
    *
    * @returns The primary key value.
@@ -736,568 +740,6 @@ export abstract class Model {
   getKey(): unknown {
     const modelCtor = this.constructor as typeof Model
     return this._attributes[modelCtor.primaryKey]
-  }
-
-  // ============================================================================
-  // Queryable Relations (P2)
-  // ============================================================================
-
-  /**
-   * Define a one-to-many relationship.
-   * Returns a QueryBuilder scoped to the related records.
-   *
-   * @template R - The related model type.
-   * @param related - The related model constructor.
-   * @param foreignKey - The foreign key on the related table.
-   * @param localKey - The local key on this table.
-   * @returns A QueryBuilder for the related model.
-   * @example
-   * ```typescript
-   * const posts = await user.hasMany(Post).where('published', true).get()
-   * ```
-   */
-  hasMany<R extends Model>(
-    related: ModelConstructor<R> & typeof Model,
-    foreignKey?: string,
-    localKey?: string
-  ) {
-    const modelCtor = this.constructor as typeof Model
-    const table = modelCtor.getTable()
-    const fk = foreignKey ?? `${table.replace(/s$/, '')}_id`
-    const lk = localKey ?? modelCtor.primaryKey
-    const localValue = this._attributes[lk]
-
-    const connection = DB.connection(related.connection)
-    const builder = connection.table<ModelAttributes>(related.getTable()).where(fk, localValue)
-
-    // Wrap get to hydrate
-    const originalGet = builder.get.bind(builder)
-    ;(builder as unknown as { get: () => Promise<R[]> }).get = async (): Promise<R[]> => {
-      const rows = await originalGet()
-      return rows.map((row) => related.hydrate<R>(row)) as R[]
-    }
-
-    return builder
-  }
-
-  /**
-   * Define a one-to-one relationship.
-   *
-   * @template R - The related model type.
-   * @param related - The related model constructor.
-   * @param foreignKey - The foreign key on the related table.
-   * @param localKey - The local key on this table.
-   * @returns A QueryBuilder for the related model, limited to 1 result.
-   */
-  hasOne<R extends Model>(
-    related: ModelConstructor<R> & typeof Model,
-    foreignKey?: string,
-    localKey?: string
-  ) {
-    return this.hasMany(related, foreignKey, localKey).limit(1)
-  }
-
-  /**
-   * Define an inverse one-to-one or one-to-many relationship.
-   *
-   * @template R - The related model type.
-   * @param related - The related model constructor.
-   * @param foreignKey - The foreign key on this table.
-   * @param ownerKey - The owner key on the related table.
-   * @returns A QueryBuilder for the related model.
-   * @example
-   * ```typescript
-   * const user = await post.belongsTo(User).first()
-   * ```
-   */
-  belongsTo<R extends Model>(
-    related: ModelConstructor<R> & typeof Model,
-    foreignKey?: string,
-    ownerKey?: string
-  ) {
-    const table = related.getTable()
-    const fk = foreignKey ?? `${table.replace(/s$/, '')}_id`
-    const ok = ownerKey ?? related.primaryKey
-    const foreignValue = this._attributes[fk]
-
-    const connection = DB.connection(related.connection)
-    const builder = connection.table<ModelAttributes>(table).where(ok, foreignValue)
-
-    // Wrap first to hydrate
-    const originalFirst = builder.first.bind(builder)
-    builder.first = (async (): Promise<R | null> => {
-      const row = await originalFirst()
-      return row ? related.hydrate<R>(row) : null
-    }) as typeof builder.first
-
-    return builder
-  }
-
-  /**
-   * Define a many-to-many relationship through a pivot table.
-   *
-   * @template R - The related model type.
-   * @param related - The related model constructor.
-   * @param pivotTable - The name of the join table.
-   * @param foreignPivotKey - The key on the pivot table pointing to this model.
-   * @param relatedPivotKey - The key on the pivot table pointing to the related model.
-   * @param localKey - The local key on this table.
-   * @param relatedKey - The related key on the related table.
-   * @returns Promise resolving to an array of related models.
-   */
-  async belongsToMany<R extends Model>(
-    related: ModelConstructor<R> & typeof Model,
-    pivotTable: string,
-    foreignPivotKey?: string,
-    relatedPivotKey?: string,
-    localKey?: string,
-    relatedKey?: string
-  ): Promise<R[]> {
-    const modelCtor = this.constructor as typeof Model
-    const table = modelCtor.getTable()
-    const relatedTable = related.getTable()
-    const fpk = foreignPivotKey ?? `${table.replace(/s$/, '')}_id`
-    const rpk = relatedPivotKey ?? `${relatedTable.replace(/s$/, '')}_id`
-    const lk = localKey ?? modelCtor.primaryKey
-    const rk = relatedKey ?? related.primaryKey
-    const localValue = this._attributes[lk]
-
-    const connection = DB.connection(related.connection)
-
-    // Get related IDs from pivot table
-    const pivots = await connection
-      .table<Record<string, unknown>>(pivotTable)
-      .where(fpk, localValue)
-      .pluck<unknown>(rpk)
-
-    if (pivots.length === 0) {
-      return []
-    }
-
-    // Get related models
-    const rows = await connection.table<ModelAttributes>(relatedTable).whereIn(rk, pivots).get()
-
-    return rows.map((row) => related.hydrate<R>(row)) as R[]
-  }
-
-  /**
-   * Stream hasMany relationship with cursor-based iteration
-   * Memory-safe for large relationship sets
-   *
-   * @example
-   * ```typescript
-   * for await (const posts of user.hasManyStream(Post, 'user_id', 100)) {
-   *   for (const post of posts) {
-   *     await processPost(post)
-   *   }
-   * }
-   * ```
-   */
-  async *hasManyStream<R extends Model>(
-    related: ModelConstructor<R> & typeof Model,
-    foreignKey?: string,
-    chunkSize = 1000,
-    localKey?: string
-  ): AsyncGenerator<R[], void, unknown> {
-    const modelCtor = this.constructor as typeof Model
-    const table = modelCtor.getTable()
-    const fk = foreignKey ?? `${table.replace(/s$/, '')}_id`
-    const lk = localKey ?? modelCtor.primaryKey
-    const localValue = this._attributes[lk]
-
-    const connection = DB.connection(related.connection)
-    let offset = 0
-
-    while (true) {
-      const rows = await connection
-        .table<ModelAttributes>(related.getTable())
-        .where(fk, localValue)
-        .orderBy(related.primaryKey)
-        .limit(chunkSize)
-        .offset(offset)
-        .get()
-
-      if (rows.length === 0) {
-        break
-      }
-
-      yield rows.map((row) => related.hydrate<R>(row)) as R[]
-
-      if (rows.length < chunkSize) {
-        break
-      }
-      offset += chunkSize
-    }
-  }
-
-  /**
-   * Define a polymorphic one-to-one relationship.
-   *
-   * @template R - The related model type.
-   * @param related - The related model constructor.
-   * @param name - The polymorphic relationship name (used to derive type and id fields).
-   * @param foreignKey - Optional explicit foreign key.
-   * @param localKey - Optional explicit local key.
-   * @returns A QueryBuilder for the related model.
-   */
-  morphOne<R extends Model>(
-    related: ModelConstructor<R> & typeof Model,
-    name: string,
-    foreignKey?: string,
-    localKey?: string
-  ) {
-    const fk = foreignKey ?? `${name}_id`
-    const typeField = `${name}_type`
-    const modelCtor = this.constructor as typeof Model
-
-    return this.hasMany(related, fk, localKey).where(typeField, modelCtor.name).limit(1)
-  }
-
-  /**
-   * Define a polymorphic one-to-many relationship.
-   *
-   * @template R - The related model type.
-   * @param related - The related model constructor.
-   * @param name - The polymorphic relationship name.
-   * @param foreignKey - Optional explicit foreign key.
-   * @param localKey - Optional explicit local key.
-   * @returns A QueryBuilder for the related model.
-   */
-  morphMany<R extends Model>(
-    related: ModelConstructor<R> & typeof Model,
-    name: string,
-    foreignKey?: string,
-    localKey?: string
-  ) {
-    const fk = foreignKey ?? `${name}_id`
-    const typeField = `${name}_type`
-    const modelCtor = this.constructor as typeof Model
-
-    return this.hasMany(related, fk, localKey).where(typeField, modelCtor.name)
-  }
-
-  /**
-   * Define a polymorphic inverse relationship.
-   *
-   * @template R - The related model type.
-   * @param name - The polymorphic relationship name.
-   * @param typeField - Optional explicit type field name.
-   * @param idField - Optional explicit ID field name.
-   * @returns A QueryBuilder for the resolved related model, or null if not resolvable.
-   */
-  morphTo<R extends Model>(name: string, typeField?: string, idField?: string) {
-    const tf = typeField ?? `${name}_type`
-    const ifld = idField ?? `${name}_id`
-
-    const typeValue = (this as any)[tf]
-    const idValue = (this as any)[ifld]
-
-    if (!typeValue || !idValue) {
-      return null
-    }
-
-    const RelatedModel = ModelRegistry.get(typeValue)
-    if (!RelatedModel) {
-      return null
-    }
-
-    const builder = (RelatedModel as any).query().where(RelatedModel.primaryKey, idValue)
-
-    // Wrap first to hydrate (similar to belongsTo)
-    const originalFirst = builder.first.bind(builder)
-    builder.first = (async (): Promise<R | null> => {
-      const row = await originalFirst()
-      return row ? (RelatedModel as any).hydrate(row) : null
-    }) as any
-
-    return builder
-  }
-
-  // ============================================================================
-  // CRUD Operations
-  // ============================================================================
-
-  /**
-   * Persist the model's current state to the database.
-   * Performs an INSERT if the model is new, or an UPDATE if it already exists.
-   *
-   * @returns Promise resolving to the saved model instance.
-   * @throws ColumnNotFoundError if strict mode is enabled and an unknown column is set.
-   * @throws NullableConstraintError if a non-nullable column is set to null.
-   * @throws TypeMismatchError if an attribute value does not match the schema type.
-   */
-  async save(): Promise<this> {
-    // Trigger saving event
-    await this.emit('saving')
-
-    // Validate all dirty attributes
-    for (const key of this._dirtyTracker.getDirty()) {
-      await this._validateAttribute(key as string, this._attributes[key as string])
-    }
-
-    let result: this
-    if (this._exists) {
-      result = await this._performUpdate()
-    } else {
-      result = await this._performInsert()
-    }
-
-    // Trigger saved event
-    await this.emit('saved')
-    return result
-  }
-
-  /**
-   * Perform insert
-   */
-  protected async _performInsert(): Promise<this> {
-    const modelCtor = this.constructor as typeof Model
-    const connection = DB.connection(modelCtor.connection)
-
-    // Trigger creating event
-    await this.emit('creating')
-
-    // Handle Timestamps
-    if (modelCtor.timestamps) {
-      const now = new Date()
-      if (!this._attributes[modelCtor.createdAtColumn]) {
-        this._setAttribute(modelCtor.createdAtColumn, now)
-      }
-      // Only set updated_at if timestamps is not 'created_only'
-      if (modelCtor.timestamps !== 'created_only' && !this._attributes[modelCtor.updatedAtColumn]) {
-        this._setAttribute(modelCtor.updatedAtColumn, now)
-      }
-    }
-
-    // Handle @column(autoCreate)
-    const columns = (modelCtor as any)[COLUMN_KEY]
-    if (columns) {
-      for (const [prop, options] of Object.entries(columns)) {
-        if ((options as any).autoCreate && !this._attributes[prop]) {
-          this._setAttribute(prop, new Date())
-        }
-      }
-    }
-
-    const result = await connection
-      .table<ModelAttributes>(modelCtor.getTable())
-      .insert(this._attributes)
-
-    // Set primary key from result
-    if (Array.isArray(result) && result.length > 0) {
-      const pk = result[0]
-      if (typeof pk === 'object' && pk !== null) {
-        this._attributes[modelCtor.primaryKey] = (pk as Record<string, unknown>)[
-          modelCtor.primaryKey
-        ]
-      } else {
-        this._attributes[modelCtor.primaryKey] = pk
-      }
-    }
-
-    this._exists = true
-    this._dirtyTracker.sync(this._attributes)
-
-    // Trigger created event
-    await this.emit('created')
-
-    return this
-  }
-
-  /**
-   * Perform update
-   */
-  protected async _performUpdate(): Promise<this> {
-    const modelCtor = this.constructor as typeof Model
-    const connection = DB.connection(modelCtor.connection)
-
-    // Trigger updating event
-    await this.emit('updating')
-
-    // Handle Timestamps
-    // Only update updated_at if timestamps is enabled and not 'created_only'
-    if (modelCtor.timestamps && modelCtor.timestamps !== 'created_only') {
-      this._setAttribute(modelCtor.updatedAtColumn, new Date())
-    }
-
-    // Handle @column(autoUpdate)
-    const columns = (modelCtor as any)[COLUMN_KEY]
-    if (columns) {
-      for (const [prop, options] of Object.entries(columns)) {
-        if ((options as any).autoUpdate) {
-          this._setAttribute(prop, new Date())
-        }
-      }
-    }
-
-    const dirty = this.getDirty()
-    if (Object.keys(dirty).length === 0) {
-      return this // Nothing to update
-    }
-
-    await connection
-      .table(modelCtor.getTable())
-      .where(modelCtor.primaryKey, this.getKey())
-      .update(dirty)
-
-    this._dirtyTracker.sync(this._attributes)
-
-    // Trigger updated event
-    await this.emit('updated')
-
-    return this
-  }
-
-  /**
-   * Delete the model from the database.
-   * If soft deletes are enabled, the record is marked as deleted instead of being physically removed.
-   *
-   * @returns Promise resolving to true if the operation was successful.
-   */
-  async delete(): Promise<boolean> {
-    if (!this._exists) {
-      return false
-    }
-
-    await this.emit('deleting')
-
-    const modelCtor = this.constructor as any
-    const softDeletes = modelCtor[SOFT_DELETES_KEY]
-    let result: boolean
-
-    if (softDeletes) {
-      const column = softDeletes.column || 'deleted_at'
-      this._setAttribute(column, new Date())
-      await this.save()
-      result = true
-    } else {
-      const connection = DB.connection(modelCtor.connection)
-      const affected = await connection
-        .table(modelCtor.getTable())
-        .where(modelCtor.primaryKey, this.getKey())
-        .delete()
-      result = affected > 0
-    }
-    if (result) {
-      this._exists = !softDeletes
-      await this.emit('deleted')
-    }
-
-    return result
-  }
-
-  /**
-   * Restore a soft-deleted model instance.
-   *
-   * @returns Promise resolving to true if restored.
-   */
-  async restore(): Promise<boolean> {
-    const modelCtor = this.constructor as any
-    const softDeletes = modelCtor[SOFT_DELETES_KEY]
-    if (!softDeletes) {
-      return false
-    }
-
-    const column = softDeletes.column || 'deleted_at'
-    this._setAttribute(column, null)
-    await this.save()
-    return true
-  }
-
-  /**
-   * Physically delete a model from the database, bypassing soft deletes.
-   *
-   * @returns Promise resolving to true if the record was deleted.
-   */
-  async forceDelete(): Promise<boolean> {
-    const modelCtor = this.constructor as any
-    const connection = DB.connection(modelCtor.connection)
-    const affected = await connection
-      .table(modelCtor.getTable())
-      .where(modelCtor.primaryKey, this.getKey())
-      .forceDelete()
-
-    if (affected > 0) {
-      this._exists = false
-      await this.emit('deleted')
-      return true
-    }
-
-    return false
-  }
-
-  /**
-   * Lazy load relationships for the current model
-   * @example await user.load('posts')
-   */
-  async load(relation: string | string[]): Promise<this> {
-    const { eagerLoadMany } = await import('./relationships')
-    const relations = Array.isArray(relation) ? relation : [relation]
-    await eagerLoadMany([this], relations)
-    return this
-  }
-
-  /**
-   * Register a model observer to listen for lifecycle events.
-   *
-   * @param observer - An object containing lifecycle hooks (creating, created, saving, saved, etc.).
-   */
-  static observe(observer: any) {
-    if (!Object.hasOwn(this, 'observers')) {
-      this.observers = []
-    }
-    this.observers.push(observer)
-  }
-
-  /**
-   * Emit a model lifecycle event and trigger corresponding hooks and observers.
-   *
-   * @param event - The event name.
-   * @internal
-   */
-  protected async emit(event: string): Promise<void> {
-    const modelCtor = this.constructor as typeof Model
-
-    // 1. Instance method hooks (existing logic)
-    const methodName = `on${event.charAt(0).toUpperCase()}${event.slice(1)}`
-    if (typeof (this as any)[methodName] === 'function') {
-      await (this as any)[methodName]()
-    }
-
-    // 2. Observers
-    if (modelCtor.observers && modelCtor.observers.length > 0) {
-      for (const observer of modelCtor.observers) {
-        if (typeof observer[event] === 'function') {
-          await observer[event](this)
-        }
-      }
-    }
-  }
-
-  /**
-   * Reload the model's attributes from the database.
-   *
-   * @returns Promise resolving to the refreshed model instance.
-   */
-  async refresh(): Promise<this> {
-    if (!this._exists) {
-      return this
-    }
-
-    const modelCtor = this.constructor as typeof Model
-    const connection = DB.connection(modelCtor.connection)
-
-    const row = await connection
-      .table<ModelAttributes>(modelCtor.getTable())
-      .where(modelCtor.primaryKey, this.getKey())
-      .first()
-
-    if (row) {
-      this._attributes = row
-      this._dirtyTracker.sync(row)
-    }
-
-    return this
   }
 
   // ============================================================================
@@ -1326,18 +768,9 @@ export abstract class Model {
     this: ModelConstructor<T> & typeof Model,
     key: unknown
   ): Promise<T | null> {
-    const connection = DB.connection(this.connection)
+    const result = await this.query().where(this.primaryKey, key).first()
 
-    const row = await connection
-      .table<ModelAttributes>(this.getTable())
-      .where(this.primaryKey, key)
-      .first()
-
-    if (!row) {
-      return null
-    }
-
-    return this.hydrate<T>(row)
+    return result as T | null
   }
 
   /**
@@ -1367,14 +800,9 @@ export abstract class Model {
    * @returns Promise resolving to an array of model instances.
    */
   static async all<T extends Model>(this: ModelConstructor<T> & typeof Model): Promise<T[]> {
-    const connection = DB.connection(this.connection)
-
-    const rows = await connection
-      .table<ModelAttributes>(this.getTable())
+    return this.query()
       .limit(1000) // Auto-chunking defense
-      .get()
-
-    return rows.map((row) => this.hydrate<T>(row))
+      .get() as Promise<T[]>
   }
 
   /**
@@ -1412,16 +840,13 @@ export abstract class Model {
     this: ModelConstructor<T> & typeof Model,
     chunkSize = 1000
   ): AsyncGenerator<ModelAttributes[], void, unknown> {
-    const connection = DB.connection(this.connection)
     let offset = 0
 
     while (true) {
-      const rows = await connection
-        .table<ModelAttributes>(this.getTable())
-        .orderBy(this.primaryKey)
-        .limit(chunkSize)
-        .offset(offset)
-        .get()
+      const query = this.query().orderBy(this.primaryKey).limit(chunkSize).offset(offset)
+
+      // Use raw results from the query builder
+      const rows = (await (query as any).getRawResults?.()) || (await query.get())
 
       if (rows.length === 0) {
         break
@@ -1455,7 +880,6 @@ export abstract class Model {
     this: ModelConstructor<T> & typeof Model,
     chunkSize = 1000
   ): AsyncGenerator<T[], void, unknown> {
-    const connection = DB.connection(this.connection)
     let offset = 0
     let safetyCounter = 0
     const MAX_CHUNKS = 10000 // Safety limit: 10M records max for cursor
@@ -1463,26 +887,25 @@ export abstract class Model {
     let lastFirstId: any = null
 
     while (safetyCounter < MAX_CHUNKS) {
-      const rows = await connection
-        .table<ModelAttributes>(this.getTable())
+      const rows = (await this.query()
         .orderBy(this.primaryKey) // Deterministic ordering
         .limit(chunkSize)
         .offset(offset)
-        .get()
+        .get()) as T[]
 
       if (rows.length === 0) {
         break
       }
 
       // Detect stuck cursor (offset ignored by driver)
-      const currentFirstId = rows[0][this.primaryKey]
+      const currentFirstId = (rows[0] as any)[this.primaryKey]
       if (lastFirstId !== null && currentFirstId === lastFirstId) {
         // console.warn(`Cursor stuck at offset ${offset}. Offset might be ignored by driver.`)
         break
       }
       lastFirstId = currentFirstId
 
-      yield rows.map((row) => this.hydrate<T>(row))
+      yield rows
 
       if (rows.length < chunkSize) {
         break
@@ -1726,98 +1149,18 @@ export abstract class Model {
    * Count records
    */
   static async count(this: ModelConstructor<Model> & typeof Model): Promise<number> {
-    const connection = DB.connection(this.connection)
-    const table = this.getTable()
-    const result = await connection.table(table).count()
-    return typeof result === 'number' ? result : 0
+    return this.query().count()
   }
 
   /**
    * Check if any records exist
    */
   static async exists(this: ModelConstructor<Model> & typeof Model): Promise<boolean> {
-    return (await this.count()) > 0
-  }
-
-  // ============================================================================
-  // JSON Serialization
-  // ============================================================================
-
-  /**
-   * Fill the model instance with an object of attributes.
-   *
-   * @param attributes - Object containing attribute values.
-   * @returns The current model instance for chaining.
-   */
-  fill(attributes: Partial<ModelAttributes>): this {
-    for (const [key, value] of Object.entries(attributes)) {
-      this._setAttribute(key, value)
-    }
-    return this
-  }
-
-  /**
-   * Convert the model instance to a plain JavaScript object.
-   * Respects `visible`, `hidden`, and `appends` configurations.
-   *
-   * @returns A plain object representation of the model.
-   */
-  toJSON(): any {
-    const modelCtor = this.constructor as typeof Model
-    const attributes = { ...this._attributes }
-    const result: any = {}
-
-    // 1. Process attributes (trigger accessors)
-    for (const key of Object.keys(attributes)) {
-      if (key.startsWith('_')) {
-        continue
-      }
-      result[key] = (this as any)[key]
-    }
-
-    // 2. Process appends
-    for (const key of modelCtor.appends) {
-      result[key] = (this as any)[key]
-    }
-
-    // 3. Process relations (eager loaded on instance)
-    const instanceKeys = Object.keys(this)
-    for (const key of instanceKeys) {
-      if (key.startsWith('_')) {
-        continue
-      }
-      if (key in result) {
-        continue // already processed
-      }
-
-      const value = (this as any)[key]
-      // Check if it's a Model or Array of Models (simple heuristic)
-      if (
-        value instanceof Model ||
-        (Array.isArray(value) && value.length > 0 && value[0] instanceof Model) ||
-        (Array.isArray(value) && value.length === 0) // Empty relation array
-      ) {
-        result[key] = value
-      }
-    }
-
-    // 4. Filter visible/hidden
-    if (modelCtor.visible.length > 0) {
-      const filtered: any = {}
-      for (const key of modelCtor.visible) {
-        if (key in result) {
-          filtered[key] = result[key]
-        }
-      }
-      return filtered
-    }
-
-    if (modelCtor.hidden.length > 0) {
-      for (const key of modelCtor.hidden) {
-        delete result[key]
-      }
-    }
-
-    return result
+    return this.query().exists()
   }
 }
+
+/**
+ * Apply mixins to the Model class for composition-based behavior
+ */
+applyMixins(Model as any, [HasEvents, HasPersistence, HasRelationships, HasSerialization])

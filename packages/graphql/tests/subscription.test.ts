@@ -77,6 +77,7 @@ describe('GraphQL Subscriptions', () => {
       url,
       webSocketImpl: WebSocket, // Bun's native WebSocket
       retryAttempts: 0,
+      lazy: false, // Ensure connection is established immediately
     })
 
     const received: number[] = []

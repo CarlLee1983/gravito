@@ -113,6 +113,7 @@ export {
   SchemaSniffer,
   SoftDeletes,
   TypeMismatchError,
+  version,
 } from './orm'
 export { Expression, raw } from './query/Expression'
 // Query Builder
