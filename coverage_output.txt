@@ -1,0 +1,18 @@
+bun test v1.3.4 (5eb2145b)
+
+packages/atlas/tests/integration/Transaction.test.ts:
+[Test] Starting nested transaction test on trx_test_26295_z9e8v with table users_26295
+[SQLiteDriver] BEGIN
+[Test] Outer transaction started
+[Test] User 1 inserted via raw SQL
+[SQLiteDriver] BEGIN
+[Test] Inner transaction failed as expected: cannot start a transaction within a transaction
+[Test] Checking User count after inner rollback
+[Test] User count: 1
+[SQLiteDriver] COMMIT
+[Test] Outer transaction committed
+
+ 404 pass
+ 0 fail
+ 786 expect() calls
+Ran 404 tests across 55 files. [442.00ms]

@@ -1,6 +1,6 @@
-import type { QueryBuilderContract } from '../../../types'
-import type { Model, ModelConstructor } from '../Model'
-import { getRelationships } from '../relationships'
+import { DB } from '../../../DB'
+import type { Model, ModelAttributes, ModelConstructor } from '../Model'
+import { ModelRegistry } from '../ModelRegistry'
 
 /**
  * HasRelationships Concern
@@ -9,231 +9,283 @@ import { getRelationships } from '../relationships'
 export class HasRelationships {
   /**
    * Define a one-to-many relationship.
+   * Returns a QueryBuilder scoped to the related records.
    *
-   * @template T - The related model type
-   * @param related - The related model constructor
-   * @param foreignKey - The foreign key on the related model (defaults to this model name + _id)
-   * @param localKey - The local key on this model (defaults to primary key)
-   * @returns A query builder for the related model
-   *
+   * @template R - The related model type.
+   * @param related - The related model constructor.
+   * @param foreignKey - The foreign key on the related table.
+   * @param localKey - The local key on this table.
+   * @returns A QueryBuilder for the related model.
    * @example
    * ```typescript
-   * user.hasMany(Post, 'user_id')
+   * const posts = await user.hasMany(Post).where('published', true).get()
    * ```
    */
-  hasMany<T extends Model>(
-    related: ModelConstructor<T>,
+  hasMany<R extends Model>(
+    related: ModelConstructor<R> & typeof Model,
     foreignKey?: string,
     localKey?: string
-  ): QueryBuilderContract<T> {
-    const relatedModel = new related()
-    const relatedCtor = relatedModel.constructor as ModelConstructor<T> &
-      typeof import('../Model').Model
+  ) {
+    const modelCtor = this.constructor as typeof Model
+    const table = modelCtor.getTable()
+    const fk = foreignKey ?? `${table.replace(/s$/, '')}_id`
+    const lk = localKey ?? modelCtor.primaryKey
+    const localValue = (this as any)._attributes[lk]
 
-    const foreign = foreignKey ?? `${this.constructor.name.toLowerCase()}_id`
-    const local = localKey ?? (this.constructor as typeof import('../Model').Model).primaryKey
+    const connection = DB.connection(related.connection)
+    const builder = connection.table<ModelAttributes>(related.getTable()).where(fk, localValue)
 
-    return relatedCtor
-      .query()
-      .where(
-        foreign,
-        (this as Model & Record<string, unknown>)[local] as unknown
-      ) as QueryBuilderContract<T>
+    // Wrap get to hydrate
+    const originalGet = builder.get.bind(builder)
+    ;(builder as unknown as { get: () => Promise<R[]> }).get = async (): Promise<R[]> => {
+      const rows = await originalGet()
+      return rows.map((row) => related.hydrate<R>(row)) as R[]
+    }
+
+    return builder
+  }
+
+  /**
+   * Define a one-to-one relationship.
+   *
+   * @template R - The related model type.
+   * @param related - The related model constructor.
+   * @param foreignKey - The foreign key on the related table.
+   * @param localKey - The local key on this table.
+   * @returns A QueryBuilder for the related model, limited to 1 result.
+   */
+  hasOne<R extends Model>(
+    related: ModelConstructor<R> & typeof Model,
+    foreignKey?: string,
+    localKey?: string
+  ) {
+    return this.hasMany(related, foreignKey, localKey).limit(1)
   }
 
   /**
    * Define an inverse one-to-one or one-to-many relationship.
    *
-   * @template T - The related model type
-   * @param related - The related model constructor
-   * @param foreignKey - The foreign key on this model (defaults to related model name + _id)
-   * @param ownerKey - The owner key on the related model (defaults to its primary key)
-   * @returns A query builder for the related model
-   *
+   * @template R - The related model type.
+   * @param related - The related model constructor.
+   * @param foreignKey - The foreign key on this table.
+   * @param ownerKey - The owner key on the related table.
+   * @returns A QueryBuilder for the related model.
    * @example
    * ```typescript
-   * post.belongsTo(User, 'user_id')
+   * const user = await post.belongsTo(User).first()
    * ```
    */
-  belongsTo<T extends Model>(
-    related: ModelConstructor<T>,
+  belongsTo<R extends Model>(
+    related: ModelConstructor<R> & typeof Model,
     foreignKey?: string,
     ownerKey?: string
-  ): QueryBuilderContract<T> {
-    const relatedModel = new related()
-    const relatedCtor = relatedModel.constructor as ModelConstructor<T> &
-      typeof import('../Model').Model
+  ) {
+    const table = related.getTable()
+    const fk = foreignKey ?? `${table.replace(/s$/, '')}_id`
+    const ok = ownerKey ?? related.primaryKey
+    const foreignValue = (this as any)._attributes[fk]
 
-    const foreign = foreignKey ?? `${relatedModel.constructor.name.toLowerCase()}_id`
-    const owner = ownerKey ?? relatedCtor.primaryKey
+    const connection = DB.connection(related.connection)
+    const builder = connection.table<ModelAttributes>(table).where(ok, foreignValue)
 
-    return relatedCtor.where(
-      owner,
-      (this as Model & Record<string, unknown>)[foreign] as unknown
-    ) as QueryBuilderContract<T>
+    // Wrap first to hydrate
+    const originalFirst = builder.first.bind(builder)
+    builder.first = (async (): Promise<R | null> => {
+      const row = await originalFirst()
+      return row ? related.hydrate<R>(row) : null
+    }) as typeof builder.first
+
+    return builder
   }
 
   /**
-   * Define a many-to-many relationship.
+   * Define a many-to-many relationship through a pivot table.
    *
-   * @template T - The related model type
-   * @param related - The related model constructor
-   * @param foreignPivotKey - The foreign key on the pivot table for the related model
-   * @param relatedPivotKey - The foreign key on the pivot table for this model
-   * @param table - The pivot table name (defaults to alphabetical order of both tables)
-   * @returns A query builder for the related model
+   * @template R - The related model type.
+   * @param related - The related model constructor.
+   * @param pivotTable - The name of the join table.
+   * @param foreignPivotKey - The key on the pivot table pointing to this model.
+   * @param relatedPivotKey - The key on the pivot table pointing to the related model.
+   * @param localKey - The local key on this table.
+   * @param relatedKey - The related key on the related table.
+   * @returns Promise resolving to an array of related models.
+   */
+  async belongsToMany<R extends Model>(
+    related: ModelConstructor<R> & typeof Model,
+    pivotTable: string,
+    foreignPivotKey?: string,
+    relatedPivotKey?: string,
+    localKey?: string,
+    relatedKey?: string
+  ): Promise<R[]> {
+    const modelCtor = this.constructor as typeof Model
+    const table = modelCtor.getTable()
+    const relatedTable = related.getTable()
+    const fpk = foreignPivotKey ?? `${table.replace(/s$/, '')}_id`
+    const rpk = relatedPivotKey ?? `${relatedTable.replace(/s$/, '')}_id`
+    const lk = localKey ?? modelCtor.primaryKey
+    const rk = relatedKey ?? related.primaryKey
+    const localValue = (this as any)._attributes[lk]
+
+    const connection = DB.connection(related.connection)
+
+    // Get related IDs from pivot table
+    const pivots = await connection
+      .table<Record<string, unknown>>(pivotTable)
+      .where(fpk, localValue)
+      .pluck<unknown>(rpk)
+
+    if (pivots.length === 0) {
+      return []
+    }
+
+    // Get related models
+    const rows = await connection.table<ModelAttributes>(relatedTable).whereIn(rk, pivots).get()
+
+    return rows.map((row) => related.hydrate<R>(row)) as R[]
+  }
+
+  /**
+   * Stream hasMany relationship with cursor-based iteration
+   * Memory-safe for large relationship sets
    *
    * @example
    * ```typescript
-   * user.belongsToMany(Role, 'role_id', 'user_id', 'user_roles')
+   * for await (const posts of user.hasManyStream(Post, 'user_id', 100)) {
+   *   for (const post of posts) {
+   *     await processPost(post)
+   *   }
+   * }
    * ```
    */
-  belongsToMany<T extends Model>(
-    related: ModelConstructor<T>,
-    foreignPivotKey?: string,
-    relatedPivotKey?: string,
-    table?: string
-  ): QueryBuilderContract<T> {
-    const relatedModel = new related()
-    const relatedCtor = relatedModel.constructor as ModelConstructor<T> &
-      typeof import('../Model').Model
+  async *hasManyStream<R extends Model>(
+    related: ModelConstructor<R> & typeof Model,
+    foreignKey?: string,
+    chunkSize = 1000,
+    localKey?: string
+  ): AsyncGenerator<R[], void, unknown> {
+    const modelCtor = this.constructor as typeof Model
+    const table = modelCtor.getTable()
+    const fk = foreignKey ?? `${table.replace(/s$/, '')}_id`
+    const lk = localKey ?? modelCtor.primaryKey
+    const localValue = (this as any)._attributes[lk]
 
-    const thisCtor = this.constructor as typeof import('../Model').Model
-    const thisPivotKey = relatedPivotKey ?? `${thisCtor.name.toLowerCase()}_id`
-    const relatedPivot = foreignPivotKey ?? `${relatedModel.constructor.name.toLowerCase()}_id`
-    const pivotTable = table ?? `${thisCtor.table}_${relatedCtor.table}`
+    const connection = DB.connection(related.connection)
+    let offset = 0
 
-    return relatedCtor
-      .query()
-      .join(
-        pivotTable,
-        `${pivotTable}.${relatedPivot}`,
-        '=',
-        `${relatedCtor.table}.${relatedCtor.primaryKey}`
-      )
-      .where(
-        `${pivotTable}.${thisPivotKey}`,
-        (this as Model & Record<string, unknown>)[thisCtor.primaryKey] as unknown
-      ) as QueryBuilderContract<T>
+    while (true) {
+      const rows = await connection
+        .table<ModelAttributes>(related.getTable())
+        .where(fk, localValue)
+        .orderBy(related.primaryKey)
+        .limit(chunkSize)
+        .offset(offset)
+        .get()
+
+      if (rows.length === 0) {
+        break
+      }
+
+      yield rows.map((row) => related.hydrate<R>(row)) as R[]
+
+      if (rows.length < chunkSize) {
+        break
+      }
+      offset += chunkSize
+    }
   }
 
   /**
    * Define a polymorphic one-to-one relationship.
    *
-   * @template T - The related model type
-   * @param related - The related model constructor
-   * @param _name - The relationship name
-   * @param type - The type field name on the related model
-   * @param id - The ID field name on the related model
-   * @returns A query builder for the related model
+   * @template R - The related model type.
+   * @param related - The related model constructor.
+   * @param name - The polymorphic relationship name (used to derive type and id fields).
+   * @param foreignKey - Optional explicit foreign key.
+   * @param localKey - Optional explicit local key.
+   * @returns A QueryBuilder for the related model.
    */
-  morphOne<T extends Model>(
-    related: ModelConstructor<T>,
-    _name: string,
-    type: string,
-    id: string
-  ): QueryBuilderContract<T> {
-    const relatedModel = new related()
-    const relatedCtor = relatedModel.constructor as ModelConstructor<T> &
-      typeof import('../Model').Model
+  morphOne<R extends Model>(
+    related: ModelConstructor<R> & typeof Model,
+    name: string,
+    foreignKey?: string,
+    localKey?: string
+  ) {
+    const fk = foreignKey ?? `${name}_id`
+    const typeField = `${name}_type`
+    const modelCtor = this.constructor as typeof Model
 
-    const thisCtor = this.constructor as typeof import('../Model').Model
-    return relatedCtor
-      .query()
-      .where(type, thisCtor.name)
-      .where(
-        id,
-        (this as Model & Record<string, unknown>)[thisCtor.primaryKey] as unknown
-      ) as QueryBuilderContract<T>
+    return this.hasMany(related, fk, localKey).where(typeField, modelCtor.name).limit(1)
   }
 
   /**
    * Define a polymorphic one-to-many relationship.
    *
-   * @template T - The related model type
-   * @param related - The related model constructor
-   * @param _name - The relationship name
-   * @param type - The type field name on the related model
-   * @param id - The ID field name on the related model
-   * @returns A query builder for the related model
+   * @template R - The related model type.
+   * @param related - The related model constructor.
+   * @param name - The polymorphic relationship name.
+   * @param foreignKey - Optional explicit foreign key.
+   * @param localKey - Optional explicit local key.
+   * @returns A QueryBuilder for the related model.
    */
-  morphMany<T extends Model>(
-    related: ModelConstructor<T>,
-    _name: string,
-    type: string,
-    id: string
-  ): QueryBuilderContract<T> {
-    const relatedModel = new related()
-    const relatedCtor = relatedModel.constructor as ModelConstructor<T> &
-      typeof import('../Model').Model
+  morphMany<R extends Model>(
+    related: ModelConstructor<R> & typeof Model,
+    name: string,
+    foreignKey?: string,
+    localKey?: string
+  ) {
+    const fk = foreignKey ?? `${name}_id`
+    const typeField = `${name}_type`
+    const modelCtor = this.constructor as typeof Model
 
-    const thisCtor = this.constructor as typeof import('../Model').Model
-    return relatedCtor
-      .query()
-      .where(type, thisCtor.name)
-      .where(
-        id,
-        (this as Model & Record<string, unknown>)[thisCtor.primaryKey] as unknown
-      ) as QueryBuilderContract<T>
+    return this.hasMany(related, fk, localKey).where(typeField, modelCtor.name)
   }
 
   /**
    * Define a polymorphic inverse relationship.
    *
-   * @param name - The relationship name
-   * @param type - The type field name on this model
-   * @param id - The ID field name on this model
-   * @returns A query builder for the resolved model, or null if not resolvable
+   * @template R - The related model type.
+   * @param name - The polymorphic relationship name.
+   * @param typeField - Optional explicit type field name.
+   * @param idField - Optional explicit ID field name.
+   * @returns A QueryBuilder for the resolved related model, or null if not resolvable.
    */
-  morphTo(_name: string, type: string, id: string): QueryBuilderContract<Model> | null {
-    const typeName = (this as Model & Record<string, unknown>)[type] as string | undefined
-    const idValue = (this as Model & Record<string, unknown>)[id] as unknown
+  morphTo<R extends Model>(name: string, typeField?: string, idField?: string) {
+    const tf = typeField ?? `${name}_type`
+    const ifld = idField ?? `${name}_id`
 
-    if (!typeName || !idValue) {
+    const typeValue = (this as any)[tf]
+    const idValue = (this as any)[ifld]
+
+    if (!typeValue || !idValue) {
       return null
     }
 
-    // This would need to resolve the actual model class from type
-    // For now, return a placeholder
-    return null
+    const RelatedModel = ModelRegistry.get(typeValue)
+    if (!RelatedModel) {
+      return null
+    }
+
+    const builder = (RelatedModel as any).query().where(RelatedModel.primaryKey, idValue)
+
+    // Wrap first to hydrate (similar to belongsTo)
+    const originalFirst = builder.first.bind(builder)
+    builder.first = (async (): Promise<R | null> => {
+      const row = await originalFirst()
+      return row ? (RelatedModel as any).hydrate(row) : null
+    }) as any
+
+    return builder
   }
 
   /**
-   * Lazy load one or more relationships onto the model instance.
-   *
-   * @param relation - The relationship name or an array of names
-   * @returns A promise that resolves to the model instance
-   *
-   * @example
-   * ```typescript
-   * await user.load('posts')
-   * ```
+   * Lazy load relationships for the current model
+   * @example await user.load('posts')
    */
   async load(relation: string | string[]): Promise<this> {
+    const { eagerLoadMany } = await import('../relationships')
     const relations = Array.isArray(relation) ? relation : [relation]
-    const modelCtor = this.constructor as any
-
-    for (const rel of relations) {
-      const relationships = getRelationships(modelCtor)
-      if (relationships.has(rel)) {
-        // Build and execute the relationship query
-        // This is a simplified implementation
-        const builderFn = (this as any)[rel]
-        if (typeof builderFn === 'function') {
-          const query = builderFn.call(this)
-          const results = await query.get()
-
-          // For hasMany, set as array
-          if (Array.isArray(results)) {
-            ;(this as any)._attributes[rel] = results
-          } else {
-            // For hasOne/belongsTo, set as single value
-            ;(this as any)._attributes[rel] = results[0] || null
-          }
-        }
-      }
-    }
-
+    await eagerLoadMany([this as unknown as any], relations)
     return this
   }
 
