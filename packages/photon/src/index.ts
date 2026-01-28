@@ -72,3 +72,9 @@ export * from './middleware/binary'
  * @public
  */
 export * from './middleware/htmx'
+
+/**
+ * OpenAPI utilities
+ * @public
+ */
+export * from './openapi'
