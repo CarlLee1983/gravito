@@ -533,7 +533,7 @@ export class PlanetCore {
    */
   liftoff(port?: number): {
     port: number
-    fetch: (request: Request, server?: unknown) => Response | Promise<Response>
+    fetch: (request: Request, server?: any) => Response | Promise<Response>
     core: PlanetCore
     websocket?: HttpAdapter['websocket']
   } {

@@ -678,7 +678,7 @@ export class PhotonAdapter<V extends GravitoVariables = GravitoVariables>
     }
   }
 
-  fetch = (request: Request, server?: unknown): Response | Promise<Response> => {
+  fetch = (request: Request, server?: any): Response | Promise<Response> => {
     return this.app.fetch(request, server)
   }
 

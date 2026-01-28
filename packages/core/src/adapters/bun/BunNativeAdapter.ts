@@ -112,7 +112,7 @@ export class BunNativeAdapter implements HttpAdapter {
     }
   }
 
-  async fetch(request: Request, _server?: unknown): Promise<Response> {
+  async fetch(request: Request, _server?: any): Promise<Response> {
     const ctx = BunContext.create(request)
 
     try {

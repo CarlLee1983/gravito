@@ -36,7 +36,7 @@ async function main() {
   })
 
   const liftoff = core.liftoff()
-  Bun.serve(liftoff)
+  Bun.serve(core.liftoff() as any)
   console.log(`🚀 Astral Demo running at http://localhost:${liftoff.port}/docs`)
 }
 

@@ -34,6 +34,15 @@ export class NullGrammar implements GrammarContract {
     throw new Error('Method not implemented for this driver.')
   }
 
+  compileUpsert(
+    _query: CompiledQuery,
+    _values: Record<string, unknown>[],
+    _uniqueBy: string[],
+    _update: string[]
+  ): string {
+    throw new Error('Method not implemented for this driver.')
+  }
+
   compileTruncate(_query: CompiledQuery): string {
     throw new Error('Method not implemented for this driver.')
   }
