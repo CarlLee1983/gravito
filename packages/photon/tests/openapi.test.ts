@@ -34,6 +34,17 @@ describe('Photon OpenAPI', () => {
     })
 
     expect(doc.openapi).toBe('3.1.0')
-    expect(doc.paths['/hello'].get.responses['200'].description).toBe('Respond a message')
+    expect((doc.paths as any)['/hello'].get.responses['200'].description).toBe('Respond a message')
+  })
+
+  it('should expose static route helper', () => {
+    const route = PhotonOpenAPI.route({
+      method: 'get',
+      path: '/test',
+      responses: {
+        200: { description: 'test' },
+      },
+    })
+    expect(route.path).toBe('/test')
   })
 })
