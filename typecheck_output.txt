@@ -1,0 +1,876 @@
+• turbo 2.7.6
+• Packages in scope: @examples/astral-site, @examples/blog-mvc, @examples/mist-nantou-site, @examples/zenith-site, @gravito/admin-sdk, @gravito/admin-shell-react, @gravito/admin-ui-access, @gravito/admin-ui-ad, @gravito/admin-ui-analytics, @gravito/admin-ui-announcement, @gravito/admin-ui-catalog, @gravito/admin-ui-dashboard, @gravito/admin-ui-invoice, @gravito/admin-ui-marketing, @gravito/admin-ui-news, @gravito/admin-ui-order, @gravito/admin-ui-support, @gravito/astral, @gravito/atlas, @gravito/beam, @gravito/constellation, @gravito/core, @gravito/cosmos, @gravito/dark-matter, @gravito/echo, @gravito/enterprise, @gravito/example-commerce-fullstack, @gravito/example-event-registration-mvc, @gravito/example-rest-api, @gravito/flare, @gravito/flux, @gravito/forge, @gravito/fortify, @gravito/freeze, @gravito/freeze-react, @gravito/freeze-vue, @gravito/graphql, @gravito/horizon, @gravito/impulse, @gravito/impulse-bridge, @gravito/ion, @gravito/launchpad, @gravito/launchpad-dashboard, @gravito/luminosity, @gravito/luminosity-adapter-express, @gravito/luminosity-adapter-photon, @gravito/luminosity-cli, @gravito/mass, @gravito/monitor, @gravito/monolith, @gravito/nebula, @gravito/orbit-cloudflare, @gravito/photon, @gravito/plasma, @gravito/prism, @gravito/pulsar, @gravito/pulse, @gravito/quasar, @gravito/radiance, @gravito/ripple, @gravito/ripple-client, @gravito/satellite-ad, @gravito/satellite-analytics, @gravito/satellite-announcement, @gravito/satellite-cart, @gravito/satellite-catalog, @gravito/satellite-commerce, @gravito/satellite-invoice, @gravito/satellite-logistics, @gravito/satellite-marketing, @gravito/satellite-membership, @gravito/satellite-news, @gravito/satellite-payment, @gravito/satellite-support, @gravito/scaffold, @gravito/sentinel, @gravito/signal, @gravito/site, @gravito/spectrum, @gravito/stasis, @gravito/stream, @gravito/support-chat-widget, @gravito/zenith, astral-verification, atlas-benchmark, atlas-site, create-gravito-app, example-auth-verification, example-ecommerce-mvc, example-engine-atlas-microservice, example-i18n-verification, example-mesh-verification, example-realtime-verification, example-scheduler-verification, example-spectrum-verification, example-workflow-verification, flux-enterprise, gravito-official-site, image-verification-example, luminosity-benchmark, luminosity-marketing-site, luminosity-node-example, my-gravito-app, my-gravito-inertia-app, my-gravito-inertia-vue-app, my-gravito-static-site, photon-site, route-scanner-test, workflow-demo
+• Running typecheck in 109 packages
+• Remote caching disabled
+@gravito/dark-matter:typecheck: cache hit, replaying logs 192f79e537a9867f
+@gravito/dark-matter:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+@gravito/cosmos:build: cache hit, replaying logs 8b94e6e89a1b6de3
+@gravito/cosmos:build: $ bun run build.ts
+@gravito/cosmos:build: Building @gravito/cosmos...
+@gravito/cosmos:build: CLI Building entry: src/index.ts
+@gravito/cosmos:build: CLI Using tsconfig: tsconfig.json
+@gravito/cosmos:build: CLI tsup v8.5.1
+@gravito/cosmos:build: CLI Target: esnext
+@gravito/cosmos:build: ESM Build start
+@gravito/cosmos:build: CJS Build start
+@gravito/cosmos:build: ESM You have emitDecoratorMetadata enabled but @swc/core was not installed, skipping swc plugin
+@gravito/cosmos:build: CJS You have emitDecoratorMetadata enabled but @swc/core was not installed, skipping swc plugin
+@gravito/cosmos:build: ESM dist/index.js 14.38 KB
+@gravito/cosmos:build: ESM ⚡️ Build success in 154ms
+@gravito/cosmos:build: CJS dist/index.cjs 15.87 KB
+@gravito/cosmos:build: CJS ⚡️ Build success in 154ms
+@gravito/cosmos:build: DTS Build start
+@gravito/cosmos:build: DTS ⚡️ Build success in 3242ms
+@gravito/cosmos:build: DTS dist/index.d.ts  19.15 KB
+@gravito/cosmos:build: DTS dist/index.d.cts 19.15 KB
+@gravito/cosmos:build: ✅ Build complete!
+@gravito/cosmos:typecheck: cache hit, replaying logs 8ff8d45601de99f9
+@gravito/cosmos:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+@gravito/freeze:build: cache hit, replaying logs 77a0d072a98636bf
+@gravito/freeze:build: $ tsup
+@gravito/freeze:build: CLI Building entry: src/index.ts
+@gravito/freeze:build: CLI Using tsconfig: tsconfig.json
+@gravito/freeze:build: CLI tsup v8.5.1
+@gravito/freeze:build: CLI Using tsup config: /Users/carl/Dev/Carl/gravito-core/packages/freeze/tsup.config.ts
+@gravito/freeze:build: CLI Target: node18
+@gravito/freeze:build: CLI Cleaning output folder
+@gravito/freeze:build: ESM Build start
+@gravito/freeze:build: ESM You have emitDecoratorMetadata enabled but @swc/core was not installed, skipping swc plugin
+@gravito/freeze:build: ESM dist/index.js     15.16 KB
+@gravito/freeze:build: ESM dist/index.js.map 43.15 KB
+@gravito/freeze:build: ESM ⚡️ Build success in 481ms
+@gravito/freeze:build: DTS Build start
+@gravito/freeze:build: DTS ⚡️ Build success in 10686ms
+@gravito/freeze:build: DTS dist/index.d.ts 23.86 KB
+@gravito/scaffold:build: cache hit, replaying logs 8388d40ad05c66eb
+@gravito/scaffold:build: $ bun run build.ts
+@gravito/scaffold:build: Building @gravito/scaffold...
+@gravito/scaffold:build: CLI Building entry: src/index.ts
+@gravito/scaffold:build: CLI Using tsconfig: tsconfig.json
+@gravito/scaffold:build: CLI tsup v8.5.1
+@gravito/scaffold:build: CLI Target: esnext
+@gravito/scaffold:build: CLI Cleaning output folder
+@gravito/scaffold:build: ESM Build start
+@gravito/scaffold:build: CJS Build start
+@gravito/scaffold:build: ESM You have emitDecoratorMetadata enabled but @swc/core was not installed, skipping swc plugin
+@gravito/scaffold:build: CJS You have emitDecoratorMetadata enabled but @swc/core was not installed, skipping swc plugin
+@gravito/scaffold:build: CJS dist/index.cjs 139.14 KB
+@gravito/scaffold:build: CJS ⚡️ Build success in 657ms
+@gravito/scaffold:build: ESM dist/index.js 136.08 KB
+@gravito/scaffold:build: ESM ⚡️ Build success in 660ms
+@gravito/scaffold:build: DTS Build start
+@gravito/scaffold:build: DTS ⚡️ Build success in 11838ms
+@gravito/scaffold:build: DTS dist/index.d.ts  19.38 KB
+@gravito/scaffold:build: DTS dist/index.d.cts 19.38 KB
+@gravito/scaffold:build: ✅ Build complete!
+@gravito/scaffold:typecheck: cache hit, replaying logs 765d90b111e80c33
+@gravito/scaffold:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+@gravito/ripple-client:typecheck: cache hit, replaying logs db9c20f9176984a6
+@gravito/ripple-client:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+@gravito/freeze:typecheck: cache hit, replaying logs d610b596918d9dd4
+@gravito/freeze:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+@gravito/plasma:typecheck: cache hit, replaying logs 874be9c2bd205bd1
+@gravito/plasma:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+@gravito/ripple:typecheck: cache hit, replaying logs c3d0d2ca0e8fb30b
+@gravito/ripple:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+@gravito/luminosity:typecheck: cache hit, replaying logs 7425c7b853009af3
+@gravito/luminosity:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+@gravito/plasma:build: cache hit, replaying logs 7eee0199a59ebf91
+@gravito/plasma:build: $ node_modules/.bin/tsup || bunx tsup
+@gravito/plasma:build: CLI Building entry: src/index.ts
+@gravito/plasma:build: CLI Using tsconfig: tsconfig.json
+@gravito/plasma:build: CLI tsup v8.5.1
+@gravito/plasma:build: CLI Using tsup config: /Users/carl/Dev/Carl/gravito-core/packages/plasma/tsup.config.ts
+@gravito/plasma:build: CLI Target: esnext
+@gravito/plasma:build: CLI Cleaning output folder
+@gravito/plasma:build: ESM Build start
+@gravito/plasma:build: CJS Build start
+@gravito/plasma:build: ESM You have emitDecoratorMetadata enabled but @swc/core was not installed, skipping swc plugin
+@gravito/plasma:build: CJS You have emitDecoratorMetadata enabled but @swc/core was not installed, skipping swc plugin
+@gravito/plasma:build: CJS dist/index.cjs 76.38 KB
+@gravito/plasma:build: CJS ⚡️ Build success in 246ms
+@gravito/plasma:build: ESM dist/index.js 74.65 KB
+@gravito/plasma:build: ESM ⚡️ Build success in 247ms
+@gravito/plasma:build: DTS Build start
+@gravito/plasma:build: DTS ⚡️ Build success in 30931ms
+@gravito/plasma:build: DTS dist/index.d.ts  98.59 KB
+@gravito/plasma:build: DTS dist/index.d.cts 98.59 KB
+@gravito/admin-sdk:typecheck: cache hit, replaying logs 671c89168e10fac5
+@gravito/quasar:typecheck: cache hit, replaying logs d06f495f142c2dfa
+@gravito/admin-sdk:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+@gravito/quasar:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+@gravito/admin-sdk:build: cache hit, replaying logs 6eddd637ae137158
+@gravito/admin-sdk:build: $ tsup src/index.ts --format esm --dts
+@gravito/admin-sdk:build: CLI Building entry: src/index.ts
+@gravito/admin-sdk:build: CLI Using tsconfig: tsconfig.json
+@gravito/admin-sdk:build: CLI tsup v8.5.1
+@gravito/admin-sdk:build: CLI Target: esnext
+@gravito/admin-sdk:build: ESM Build start
+@gravito/admin-sdk:build: ESM dist/index.js 4.53 KB
+@gravito/admin-sdk:build: ESM ⚡️ Build success in 238ms
+@gravito/admin-sdk:build: DTS Build start
+@gravito/admin-sdk:build: DTS ⚡️ Build success in 11694ms
+@gravito/admin-sdk:build: DTS dist/index.d.ts 7.63 KB
+@gravito/atlas:build: cache miss, executing 6f7be48659c2a71d
+@gravito/luminosity:build: cache hit, replaying logs 1c51fdf22ee82fd2
+@gravito/luminosity:build: $ bun run build.ts
+@gravito/luminosity:build: Building @gravito/luminosity...
+@gravito/photon:typecheck: cache hit, replaying logs b4e672ed958806cd
+@gravito/photon:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+@gravito/luminosity:build: CLI Building entry: src/cli.ts, src/index.ts
+@gravito/luminosity:build: CLI Using tsconfig: tsconfig.json
+@gravito/luminosity:build: CLI tsup v8.5.1
+@gravito/luminosity:build: CLI Target: esnext
+@gravito/luminosity:build: ESM Build start
+@gravito/luminosity:build: CJS Build start
+@gravito/luminosity:build: ESM You have emitDecoratorMetadata enabled but @swc/core was not installed, skipping swc plugin
+@gravito/luminosity:build: CJS You have emitDecoratorMetadata enabled but @swc/core was not installed, skipping swc plugin
+@gravito/luminosity:build: CJS dist/cli.cjs   14.47 KB
+@gravito/luminosity:build: CJS dist/index.cjs 80.86 KB
+@gravito/luminosity:build: CJS ⚡️ Build success in 88ms
+@gravito/luminosity:build: ESM dist/chunk-GUTDVDE3.js       4.34 KB
+@gravito/luminosity:build: ESM dist/Inspector-7LHSDNQJ.js   2.13 KB
+@gravito/luminosity:build: ESM dist/cli.js                  4.13 KB
+@gravito/luminosity:build: ESM dist/index.js                71.95 KB
+@gravito/luminosity:build: ESM dist/Compactor-AUTK3YW6.js   75.00 B
+@gravito/luminosity:build: ESM dist/chunk-VDXAM4F6.js       1.29 KB
+@gravito/photon:build: cache hit, replaying logs 01454e725a28a393
+@gravito/luminosity:build: ESM dist/JsonlLogger-IT7FNDLJ.js 79.00 B
+@gravito/luminosity:build: ESM ⚡️ Build success in 89ms
+@gravito/luminosity:build: DTS Build start
+@gravito/luminosity:build: DTS ⚡️ Build success in 3096ms
+@gravito/luminosity:build: DTS dist/cli.d.ts    19.00 B
+@gravito/luminosity:build: DTS dist/index.d.ts  67.66 KB
+@gravito/luminosity:build: DTS dist/cli.d.cts   19.00 B
+@gravito/luminosity:build: DTS dist/index.d.cts 67.66 KB
+@gravito/luminosity:build: ✅ Build complete!
+@gravito/photon:build: $ bun run build.ts
+@gravito/photon:build: 📝 Generating type declarations...
+@gravito/photon:build: ✅ Photon build completed
+@gravito/echo:typecheck: cache hit, replaying logs 5a3440c9f320720a
+@gravito/echo:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+@gravito/freeze-react:typecheck: cache hit, replaying logs d8977c92c03e3298
+@gravito/freeze-react:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+@gravito/pulse:typecheck: cache hit, replaying logs bb12818ab73673ef
+@gravito/freeze-vue:build: cache hit, replaying logs e8d3d8c50c953e55
+@gravito/freeze-react:build: cache hit, replaying logs 26ad345bc0b07e24
+@gravito/freeze-react:build: $ tsup
+@gravito/freeze-react:build: CLI Building entry: src/index.ts
+@gravito/freeze-react:build: CLI Using tsconfig: tsconfig.json
+@gravito/freeze-react:build: CLI tsup v8.5.1
+@gravito/freeze-react:build: CLI Using tsup config: /Users/carl/Dev/Carl/gravito-core/packages/freeze-react/tsup.config.ts
+@gravito/freeze-react:build: CLI Target: node18
+@gravito/freeze-react:build: CLI Cleaning output folder
+@gravito/freeze-react:build: ESM Build start
+@gravito/freeze-react:build: ESM dist/index.js     4.54 KB
+@gravito/freeze-react:build: ESM dist/index.js.map 14.89 KB
+@gravito/freeze-react:build: ESM ⚡️ Build success in 188ms
+@gravito/freeze-react:build: DTS Build start
+@gravito/freeze-react:build: DTS ⚡️ Build success in 8004ms
+@gravito/freeze-react:build: DTS dist/index.d.ts 5.29 KB
+@gravito/freeze-vue:typecheck: cache hit, replaying logs 2425faf3e72787c4
+@gravito/pulse:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+@gravito/freeze-vue:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+@gravito/beam:typecheck: cache hit, replaying logs b2a9168c0f27d07f
+@gravito/freeze-vue:build: $ tsup
+@gravito/ripple-client:build: cache hit, replaying logs c221374d94d68184
+@gravito/freeze-vue:build: CLI Building entry: src/index.ts
+@gravito/freeze-vue:build: CLI Using tsconfig: tsconfig.json
+@gravito/freeze-vue:build: CLI tsup v8.5.1
+@gravito/freeze-vue:build: CLI Using tsup config: /Users/carl/Dev/Carl/gravito-core/packages/freeze-vue/tsup.config.ts
+@gravito/freeze-vue:build: CLI Target: node18
+@gravito/freeze-vue:build: CLI Cleaning output folder
+@gravito/freeze-vue:build: ESM Build start
+@gravito/freeze-vue:build: ESM dist/index.js     4.31 KB
+@gravito/freeze-vue:build: ESM dist/index.js.map 13.88 KB
+@gravito/freeze-vue:build: ESM ⚡️ Build success in 114ms
+@gravito/freeze-vue:build: DTS Build start
+@gravito/freeze-vue:build: DTS ⚡️ Build success in 8301ms
+@gravito/freeze-vue:build: DTS dist/index.d.ts 6.33 KB
+@gravito/admin-shell-react:typecheck: cache hit, replaying logs 6672061a188fa3eb
+@gravito/admin-shell-react:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+@gravito/admin-shell-react:build: cache hit, replaying logs d0bad63d64b4c251
+@gravito/admin-shell-react:build: $ tsup src/index.ts --format esm --dts
+@gravito/admin-shell-react:build: CLI Building entry: src/index.ts
+@gravito/admin-shell-react:build: CLI Using tsconfig: tsconfig.json
+@gravito/admin-shell-react:build: CLI tsup v8.5.1
+@gravito/admin-shell-react:build: CLI Target: esnext
+@gravito/admin-shell-react:build: ESM Build start
+@gravito/admin-shell-react:build: ESM dist/index.js 10.82 KB
+@gravito/admin-shell-react:build: ESM ⚡️ Build success in 193ms
+@gravito/admin-shell-react:build: DTS Build start
+@gravito/admin-shell-react:build: DTS ⚡️ Build success in 20631ms
+@gravito/admin-shell-react:build: DTS dist/index.d.ts 2.16 KB
+@gravito/beam:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+@gravito/ripple-client:build: $ bun run build.ts
+@gravito/ripple-client:build: ✅ @gravito/ripple-client built successfully
+@gravito/core:typecheck: cache hit, replaying logs bd0ac5033fae16dd
+@gravito/core:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+@gravito/mass:typecheck: cache hit, replaying logs 6ddcd8206624b281
+@gravito/mass:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+@gravito/pulse:build: cache hit, replaying logs 3c0d95be15dcbfb9
+@gravito/pulse:build: $ bun build ./src/index.ts --outdir ./dist --target bun --external giget --external cac --external @clack/prompts --external picocolors
+@gravito/pulse:build: Bundled 764 modules in 782ms
+@gravito/pulse:build: 
+@gravito/pulse:build:   index.js  3.97 MB  (entry point)
+@gravito/pulse:build: 
+@gravito/luminosity-adapter-photon:typecheck: cache hit, replaying logs 6dc661cfc11b2874
+@gravito/luminosity-adapter-photon:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+@gravito/mass:build: cache hit, replaying logs 5494e5475118c081
+@gravito/mass:build: $ bun run build.ts
+@gravito/mass:build: Building @gravito/mass...
+@gravito/mass:build: 📝 Generating type declarations...
+@gravito/mass:build: ✅ Build complete!
+@gravito/luminosity-cli:typecheck: cache hit, replaying logs 04087c41e35f85ba
+@gravito/luminosity-cli:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+@gravito/luminosity-adapter-express:build: cache hit, replaying logs 59b186b7aaf9a158
+@gravito/luminosity-adapter-express:build: $ bun run build.ts
+@gravito/luminosity-adapter-express:build: Building @gravito/luminosity-adapter-express...
+@gravito/luminosity-adapter-express:build: CLI Building entry: src/index.ts
+@gravito/luminosity-adapter-express:build: CLI Using tsconfig: tsconfig.json
+@gravito/luminosity-adapter-express:build: CLI tsup v8.5.1
+@gravito/luminosity-adapter-express:build: CLI Target: esnext
+@gravito/luminosity-adapter-express:build: ESM Build start
+@gravito/luminosity-adapter-express:build: CJS Build start
+@gravito/luminosity-adapter-express:build: ESM You have emitDecoratorMetadata enabled but @swc/core was not installed, skipping swc plugin
+@gravito/luminosity-adapter-express:build: CJS You have emitDecoratorMetadata enabled but @swc/core was not installed, skipping swc plugin
+@gravito/luminosity-adapter-express:build: CJS dist/index.cjs 2.76 KB
+@gravito/luminosity-adapter-express:build: CJS ⚡️ Build success in 158ms
+@gravito/luminosity-adapter-express:build: ESM dist/index.js 1.73 KB
+@gravito/luminosity-adapter-express:build: ESM ⚡️ Build success in 158ms
+@gravito/luminosity-adapter-express:build: DTS Build start
+@gravito/luminosity-adapter-express:build: DTS ⚡️ Build success in 4817ms
+@gravito/luminosity-adapter-express:build: DTS dist/index.d.ts  1.31 KB
+@gravito/luminosity-adapter-express:build: DTS dist/index.d.cts 1.31 KB
+@gravito/luminosity-adapter-express:build: ✅ Build complete!
+@gravito/beam:build: cache hit, replaying logs da04e372d353a31c
+@gravito/beam:build: $ bun run build.ts
+@gravito/beam:build: 📝 Generating type declarations...
+@gravito/beam:build: ✅ Build completed
+@gravito/core:build: cache hit, replaying logs 5c27a48bce1be572
+@gravito/core:build: $ bun run build.ts
+@gravito/core:build: Building @gravito/core...
+@gravito/core:build: CLI Building entry: src/compat.ts, src/index.ts
+@gravito/core:build: CLI Using tsconfig: tsconfig.json
+@gravito/core:build: CLI tsup v8.5.1
+@gravito/core:build: CLI Target: esnext
+@gravito/core:build: ESM Build start
+@gravito/core:build: CJS Build start
+@gravito/core:build: ESM You have emitDecoratorMetadata enabled but @swc/core was not installed, skipping swc plugin
+@gravito/core:build: CJS You have emitDecoratorMetadata enabled but @swc/core was not installed, skipping swc plugin
+@gravito/core:build: ESM dist/compat.js 0 B
+@gravito/core:build: ESM dist/index.js  184.59 KB
+@gravito/core:build: ESM ⚡️ Build success in 180ms
+@gravito/core:build: 
+@gravito/core:build:  WARN  [33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1m"import.meta" is not available with the "cjs" output format and will be empty[0m [empty-import-meta]
+@gravito/core:build: 
+@gravito/core:build:     src/runtime.ts:237:34:
+@gravito/core:build: [37m      237 │     const require = createRequire([32mimport.meta[37m.url)
+@gravito/core:build:           ╵                                   [32m~~~~~~~~~~~[0m
+@gravito/core:build: 
+@gravito/core:build:   You need to set the output format to "esm" for "import.meta" to work correctly.
+@gravito/core:build: 
+@gravito/core:build: 
+@gravito/core:build: 
+@gravito/core:build: CJS dist/compat.cjs 761.00 B
+@gravito/core:build: CJS dist/index.cjs  189.46 KB
+@gravito/core:build: CJS ⚡️ Build success in 237ms
+@gravito/core:build: DTS Build start
+@gravito/core:build: DTS ⚡️ Build success in 12177ms
+@gravito/core:build: DTS dist/index.d.ts            113.16 KB
+@gravito/core:build: DTS dist/compat.d.ts           385.00 B
+@gravito/core:build: DTS dist/compat-Bwc4KojE.d.ts  9.68 KB
+@gravito/core:build: DTS dist/index.d.cts           113.16 KB
+@gravito/core:build: DTS dist/compat.d.cts          386.00 B
+@gravito/core:build: DTS dist/compat-Bwc4KojE.d.cts 9.68 KB
+@gravito/core:build: Building @gravito/core/engine...
+@gravito/core:build: CLI Building entry: src/engine/index.ts
+@gravito/core:build: CLI Using tsconfig: tsconfig.json
+@gravito/core:build: CLI tsup v8.5.1
+@gravito/core:build: CLI Target: esnext
+@gravito/core:build: ESM Build start
+@gravito/core:build: CJS Build start
+@gravito/core:build: ESM You have emitDecoratorMetadata enabled but @swc/core was not installed, skipping swc plugin
+@gravito/core:build: CJS You have emitDecoratorMetadata enabled but @swc/core was not installed, skipping swc plugin
+@gravito/core:build: ESM dist/engine/index.js 39.40 KB
+@gravito/core:build: ESM ⚡️ Build success in 216ms
+@gravito/core:build: CJS dist/engine/index.cjs 40.56 KB
+@gravito/core:build: CJS ⚡️ Build success in 217ms
+@gravito/core:build: DTS Build start
+@gravito/core:build: DTS ⚡️ Build success in 5065ms
+@gravito/core:build: DTS dist/engine/index.d.ts  20.22 KB
+@gravito/core:build: DTS dist/engine/index.d.cts 20.22 KB
+@gravito/core:build: ✅ Build complete!
+@gravito/admin-ui-news:typecheck: cache hit, replaying logs 39ca69a4d27c116a
+@gravito/admin-ui-news:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+@gravito/luminosity-adapter-express:typecheck: cache hit, replaying logs 6c22497ea94da86a
+@gravito/luminosity-adapter-express:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+@gravito/admin-ui-analytics:typecheck: cache hit, replaying logs 18fbd2ffd19c8137
+@gravito/admin-ui-analytics:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+@gravito/admin-ui-announcement:typecheck: cache hit, replaying logs 8f970d238521eab5
+@gravito/admin-ui-announcement:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+@gravito/admin-ui-ad:typecheck: cache hit, replaying logs b1466bb452231673
+@gravito/admin-ui-ad:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+@gravito/admin-ui-order:typecheck: cache hit, replaying logs d2e50ee224ecfa1b
+@gravito/admin-ui-order:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+@gravito/admin-ui-catalog:typecheck: cache hit, replaying logs e647f8fc273a0a53
+@gravito/admin-ui-catalog:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+@gravito/admin-ui-analytics:build: cache hit, replaying logs 8fb116d3dcab82e2
+@gravito/admin-ui-analytics:build: $ tsup src/index.tsx --format esm --dts
+@gravito/admin-ui-analytics:build: CLI Building entry: src/index.tsx
+@gravito/admin-ui-analytics:build: CLI Using tsconfig: tsconfig.json
+@gravito/admin-ui-analytics:build: CLI tsup v8.5.1
+@gravito/admin-ui-analytics:build: CLI Target: esnext
+@gravito/admin-ui-analytics:build: ESM Build start
+@gravito/admin-ui-analytics:build: ESM dist/index.js 8.43 KB
+@gravito/admin-ui-analytics:build: ESM ⚡️ Build success in 41ms
+@gravito/admin-ui-analytics:build: DTS Build start
+@gravito/admin-ui-analytics:build: DTS ⚡️ Build success in 10064ms
+@gravito/admin-ui-analytics:build: DTS dist/index.d.ts 202.00 B
+@gravito/admin-ui-catalog:build: cache hit, replaying logs 95ef1b306cbfdcdd
+@gravito/admin-ui-catalog:build: $ tsup src/index.tsx --format esm --dts
+@gravito/admin-ui-catalog:build: CLI Building entry: src/index.tsx
+@gravito/admin-ui-catalog:build: CLI Using tsconfig: tsconfig.json
+@gravito/admin-ui-catalog:build: CLI tsup v8.5.1
+@gravito/admin-ui-catalog:build: CLI Target: esnext
+@gravito/admin-ui-catalog:build: ESM Build start
+@gravito/admin-ui-catalog:build: ESM dist/index.js 8.25 KB
+@gravito/admin-ui-catalog:build: ESM ⚡️ Build success in 255ms
+@gravito/admin-ui-catalog:build: DTS Build start
+@gravito/admin-ui-catalog:build: DTS ⚡️ Build success in 10601ms
+@gravito/admin-ui-catalog:build: DTS dist/index.d.ts 195.00 B
+@gravito/admin-ui-announcement:build: cache hit, replaying logs 625857d9d39f8d99
+@gravito/admin-ui-announcement:build: $ tsup src/index.tsx --format esm --dts
+@gravito/admin-ui-announcement:build: CLI Building entry: src/index.tsx
+@gravito/admin-ui-announcement:build: CLI Using tsconfig: tsconfig.json
+@gravito/admin-ui-announcement:build: CLI tsup v8.5.1
+@gravito/admin-ui-announcement:build: CLI Target: esnext
+@gravito/admin-ui-announcement:build: ESM Build start
+@gravito/admin-ui-announcement:build: ESM dist/index.js 7.56 KB
+@gravito/admin-ui-announcement:build: ESM ⚡️ Build success in 349ms
+@gravito/admin-ui-announcement:build: DTS Build start
+@gravito/admin-ui-announcement:build: DTS ⚡️ Build success in 10780ms
+@gravito/admin-ui-announcement:build: DTS dist/index.d.ts 213.00 B
+@gravito/admin-ui-marketing:typecheck: cache hit, replaying logs 65ff9af8b863a70f
+@gravito/admin-ui-marketing:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+@gravito/admin-ui-invoice:typecheck: cache hit, replaying logs 996534eea25f6372
+@gravito/admin-ui-invoice:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+@gravito/echo:build: cache hit, replaying logs 4aa284ab13cf87d7
+@gravito/atlas:build: $ bun run build.ts
+@gravito/echo:build: $ bun run build.ts
+@gravito/echo:build: ✅ @gravito/echo built successfully
+@gravito/luminosity-adapter-photon:build: cache hit, replaying logs 98d34458d8e63410
+@gravito/luminosity-adapter-photon:build: $ bun run build.ts
+@gravito/luminosity-adapter-photon:build: 📝 Generating type declarations...
+@gravito/luminosity-adapter-photon:build: ✅ Build completed
+@gravito/ripple:build: cache hit, replaying logs 0b1dc42b19a12ffc
+@gravito/ripple:build: $ bun run build.ts
+@gravito/ripple:build: ✅ @gravito/ripple built successfully
+@gravito/admin-ui-access:typecheck: cache hit, replaying logs 5d1904ccde4f5150
+@gravito/admin-ui-access:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+@gravito/admin-ui-dashboard:typecheck: cache hit, replaying logs e71c4f2eac17e6c3
+@gravito/admin-ui-dashboard:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+@gravito/support-chat-widget:typecheck: cache hit, replaying logs de1225bed67f9449
+@gravito/support-chat-widget:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+@gravito/admin-ui-support:typecheck: cache hit, replaying logs aecbc8f9e48e9c56
+@gravito/admin-ui-support:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+create-gravito-app:typecheck: cache hit, replaying logs 66bd62920a51f6b3
+create-gravito-app:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+@gravito/launchpad-dashboard:typecheck: cache hit, replaying logs 4fe7855da3d0eba0
+@gravito/launchpad-dashboard:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+@gravito/monolith:typecheck: cache hit, replaying logs 965541f5354447c6
+@gravito/monolith:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+@gravito/ion:typecheck: cache hit, replaying logs 71f2aa7e0b670adf
+@gravito/ion:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+@gravito/ion:build: cache miss, executing b0141130538dcc93
+@gravito/impulse:build: cache hit, replaying logs cdc62abcabb5cf28
+@gravito/impulse:build: $ bun run build.ts
+@gravito/impulse:build: Building @gravito/impulse...
+@gravito/impulse:build: CLI Building entry: src/index.ts
+@gravito/impulse:build: CLI Using tsconfig: tsconfig.json
+@gravito/impulse:build: CLI tsup v8.5.1
+@gravito/impulse:build: CLI Target: esnext
+@gravito/impulse:build: ESM Build start
+@gravito/impulse:build: CJS Build start
+@gravito/impulse:build: ESM You have emitDecoratorMetadata enabled but @swc/core was not installed, skipping swc plugin
+@gravito/impulse:build: CJS You have emitDecoratorMetadata enabled but @swc/core was not installed, skipping swc plugin
+@gravito/impulse:build: CJS dist/index.cjs 46.80 KB
+@gravito/impulse:build: CJS ⚡️ Build success in 137ms
+@gravito/impulse:build: ESM dist/index.js 45.95 KB
+@gravito/impulse:build: ESM ⚡️ Build success in 138ms
+@gravito/impulse:build: DTS Build start
+@gravito/impulse:build: DTS ⚡️ Build success in 6319ms
+@gravito/impulse:build: DTS dist/index.d.ts  55.52 KB
+@gravito/impulse:build: DTS dist/index.d.cts 55.52 KB
+@gravito/impulse:build: ✅ Build complete!
+@gravito/monitor:build: cache miss, executing bcf8f48c065e5e4c
+@gravito/enterprise:build: cache hit, replaying logs 223bf8ccb6dd0651
+@gravito/enterprise:build: $ tsup src/index.ts --format cjs,esm --dts
+@gravito/enterprise:build: CLI Building entry: src/index.ts
+@gravito/enterprise:build: CLI Using tsconfig: tsconfig.json
+@gravito/enterprise:build: CLI tsup v8.5.1
+@gravito/enterprise:build: CLI Target: esnext
+@gravito/enterprise:build: CJS Build start
+@gravito/enterprise:build: ESM Build start
+@gravito/enterprise:build: CJS You have emitDecoratorMetadata enabled but @swc/core was not installed, skipping swc plugin
+@gravito/enterprise:build: ESM You have emitDecoratorMetadata enabled but @swc/core was not installed, skipping swc plugin
+@gravito/enterprise:build: ESM dist/index.mjs 2.08 KB
+@gravito/enterprise:build: ESM ⚡️ Build success in 551ms
+@gravito/enterprise:build: CJS dist/index.js 3.25 KB
+@gravito/enterprise:build: CJS ⚡️ Build success in 551ms
+@gravito/enterprise:build: DTS Build start
+@gravito/enterprise:build: DTS ⚡️ Build success in 16374ms
+@gravito/enterprise:build: DTS dist/index.d.ts  4.57 KB
+@gravito/enterprise:build: DTS dist/index.d.mts 4.57 KB
+@gravito/flare:build: cache hit, replaying logs 8916aaa1555e6e52
+@gravito/flare:build: $ bun run build.ts
+@gravito/flare:build: Building @gravito/flare...
+@gravito/flare:build: CLI Building entry: src/index.ts
+@gravito/flare:build: CLI Using tsconfig: tsconfig.json
+@gravito/flare:build: CLI tsup v8.5.1
+@gravito/flare:build: CLI Target: esnext
+@gravito/flare:build: ESM Build start
+@gravito/flare:build: CJS Build start
+@gravito/flare:build: ESM You have emitDecoratorMetadata enabled but @swc/core was not installed, skipping swc plugin
+@gravito/flare:build: CJS You have emitDecoratorMetadata enabled but @swc/core was not installed, skipping swc plugin
+@gravito/flare:build: ESM dist/index.js 30.10 KB
+@gravito/flare:build: ESM ⚡️ Build success in 586ms
+@gravito/flare:build: CJS dist/index.cjs 32.12 KB
+@gravito/flare:build: CJS ⚡️ Build success in 587ms
+@gravito/flare:build: DTS Build start
+@gravito/flare:build: DTS ⚡️ Build success in 46002ms
+@gravito/flare:build: DTS dist/index.d.ts  17.83 KB
+@gravito/flare:build: DTS dist/index.d.cts 17.83 KB
+@gravito/flare:build: ✅ Build complete!
+@gravito/enterprise:typecheck: cache hit, replaying logs 50228c0f4bb972cb
+@gravito/enterprise:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+@gravito/stasis:build: cache hit, replaying logs a52e6e6862683c80
+@gravito/stasis:build: $ tsup src/index.ts --format esm,cjs --dts
+@gravito/stasis:build: CLI Building entry: src/index.ts
+@gravito/stasis:build: CLI Using tsconfig: tsconfig.json
+@gravito/stasis:build: CLI tsup v8.5.1
+@gravito/stasis:build: CLI Target: esnext
+@gravito/stasis:build: ESM Build start
+@gravito/stasis:build: CJS Build start
+@gravito/stasis:build: ESM You have emitDecoratorMetadata enabled but @swc/core was not installed, skipping swc plugin
+@gravito/stasis:build: CJS You have emitDecoratorMetadata enabled but @swc/core was not installed, skipping swc plugin
+@gravito/stasis:build: ESM dist/index.js 82.64 KB
+@gravito/stasis:build: ESM ⚡️ Build success in 617ms
+@gravito/stasis:build: CJS dist/index.cjs 84.78 KB
+@gravito/stasis:build: CJS ⚡️ Build success in 658ms
+@gravito/stasis:build: DTS Build start
+@gravito/stasis:build: DTS ⚡️ Build success in 48598ms
+@gravito/stasis:build: DTS dist/index.d.ts  82.15 KB
+@gravito/stasis:build: DTS dist/index.d.cts 82.15 KB
+@gravito/ion:build: $ bun run build.ts
+@gravito/nebula:typecheck: cache hit, replaying logs 7a3e8fd66dae2397
+@gravito/nebula:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+@gravito/monitor:typecheck: cache hit, replaying logs a93f0b279cb0bfca
+@gravito/monitor:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+@gravito/nebula:build: cache hit, replaying logs 028dd6a3cea93e8e
+@gravito/nebula:build: $ bun run build.ts
+@gravito/nebula:build: Building @gravito/nebula...
+@gravito/nebula:build: CLI Building entry: src/index.ts
+@gravito/nebula:build: CLI Using tsconfig: tsconfig.json
+@gravito/nebula:build: CLI tsup v8.5.1
+@gravito/nebula:build: CLI Target: esnext
+@gravito/nebula:build: ESM Build start
+@gravito/nebula:build: CJS Build start
+@gravito/nebula:build: ESM You have emitDecoratorMetadata enabled but @swc/core was not installed, skipping swc plugin
+@gravito/nebula:build: CJS You have emitDecoratorMetadata enabled but @swc/core was not installed, skipping swc plugin
+@gravito/nebula:build: CJS dist/index.cjs 21.42 KB
+@gravito/nebula:build: CJS ⚡️ Build success in 220ms
+@gravito/nebula:build: ESM dist/index.js 19.98 KB
+@gravito/nebula:build: ESM ⚡️ Build success in 222ms
+@gravito/nebula:build: DTS Build start
+@gravito/nebula:build: DTS ⚡️ Build success in 14680ms
+@gravito/nebula:build: DTS dist/index.d.ts  22.74 KB
+@gravito/nebula:build: DTS dist/index.d.cts 22.74 KB
+@gravito/nebula:build: ✅ Build complete!
+@gravito/pulsar:typecheck: cache hit, replaying logs ff43452fda725237
+@gravito/pulsar:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+@gravito/prism:build: cache hit, replaying logs 63263b9e77fcefa1
+@gravito/prism:build: $ bun run build.ts
+@gravito/prism:build: Building @gravito/prism...
+@gravito/prism:build: CLI Building entry: src/index.ts, src/vue.ts
+@gravito/prism:build: CLI Using tsconfig: tsconfig.json
+@gravito/prism:build: CLI tsup v8.5.1
+@gravito/prism:build: CLI Target: esnext
+@gravito/prism:build: ESM Build start
+@gravito/prism:build: CJS Build start
+@gravito/prism:build: ESM You have emitDecoratorMetadata enabled but @swc/core was not installed, skipping swc plugin
+@gravito/prism:build: CJS You have emitDecoratorMetadata enabled but @swc/core was not installed, skipping swc plugin
+@gravito/prism:build: CJS dist/vue.cjs   12.93 KB
+@gravito/prism:build: CJS dist/index.cjs 62.77 KB
+@gravito/prism:build: CJS ⚡️ Build success in 369ms
+@gravito/prism:build: ESM dist/index.js          51.15 KB
+@gravito/prism:build: ESM dist/vue.js            2.40 KB
+@gravito/prism:build: ESM dist/chunk-WF3E5BAX.js 9.59 KB
+@gravito/prism:build: ESM ⚡️ Build success in 371ms
+@gravito/prism:build: DTS Build start
+@gravito/prism:build: DTS ⚡️ Build success in 21120ms
+@gravito/prism:build: DTS dist/index.d.ts                  36.56 KB
+@gravito/prism:build: DTS dist/vue.d.ts                    4.30 KB
+@gravito/prism:build: DTS dist/ImageService-Ch3JMqkC.d.ts  10.04 KB
+@gravito/prism:build: DTS dist/index.d.cts                 36.57 KB
+@gravito/prism:build: DTS dist/vue.d.cts                   4.30 KB
+@gravito/prism:build: DTS dist/ImageService-Ch3JMqkC.d.cts 10.04 KB
+@gravito/prism:build: ✅ Build complete!
+@gravito/flare:typecheck: cache hit, replaying logs 72f531d69e6f1a2c
+@gravito/flare:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+@gravito/sentinel:build: cache hit, replaying logs 2fb8c056fd9b3234
+@gravito/monitor:build: $ bun run build.ts
+@gravito/sentinel:build: $ bun run build.ts
+@gravito/sentinel:build: Building @gravito/sentinel...
+@gravito/sentinel:build: CLI Building entry: src/index.ts
+@gravito/sentinel:build: CLI Using tsconfig: tsconfig.json
+@gravito/sentinel:build: CLI tsup v8.5.1
+@gravito/sentinel:build: CLI Target: esnext
+@gravito/sentinel:build: ESM Build start
+@gravito/sentinel:build: CJS Build start
+@gravito/sentinel:build: ESM You have emitDecoratorMetadata enabled but @swc/core was not installed, skipping swc plugin
+@gravito/sentinel:build: CJS You have emitDecoratorMetadata enabled but @swc/core was not installed, skipping swc plugin
+@gravito/sentinel:build: CJS dist/index.cjs 38.69 KB
+@gravito/sentinel:build: CJS ⚡️ Build success in 539ms
+@gravito/sentinel:build: ESM dist/index.js 36.52 KB
+@gravito/sentinel:build: ESM ⚡️ Build success in 546ms
+@gravito/sentinel:build: DTS Build start
+@gravito/sentinel:build: DTS ⚡️ Build success in 15563ms
+@gravito/sentinel:build: DTS dist/index.d.ts  38.07 KB
+@gravito/sentinel:build: DTS dist/index.d.cts 38.07 KB
+@gravito/sentinel:build: ✅ Build complete!
+@gravito/monolith:build: cache hit, replaying logs e4d29e16f6012037
+@gravito/monolith:build: $ tsup src/index.ts --format esm,cjs --dts
+@gravito/monolith:build: CLI Building entry: src/index.ts
+@gravito/monolith:build: CLI Using tsconfig: tsconfig.json
+@gravito/monolith:build: CLI tsup v8.5.1
+@gravito/monolith:build: CLI Target: esnext
+@gravito/monolith:build: ESM Build start
+@gravito/monolith:build: CJS Build start
+@gravito/monolith:build: ESM You have emitDecoratorMetadata enabled but @swc/core was not installed, skipping swc plugin
+@gravito/monolith:build: CJS You have emitDecoratorMetadata enabled but @swc/core was not installed, skipping swc plugin
+@gravito/monolith:build: ESM dist/index.js 17.83 KB
+@gravito/monolith:build: ESM ⚡️ Build success in 250ms
+@gravito/monolith:build: CJS dist/index.cjs 20.09 KB
+@gravito/monolith:build: CJS ⚡️ Build success in 251ms
+@gravito/monolith:build: DTS Build start
+@gravito/monolith:build: DTS ⚡️ Build success in 47355ms
+@gravito/monolith:build: DTS dist/index.d.ts  7.61 KB
+@gravito/monolith:build: DTS dist/index.d.cts 7.61 KB
+@gravito/spectrum:build: cache miss, executing bb1574038e9cfe13
+@gravito/orbit-cloudflare:typecheck: cache hit, replaying logs 6fd56e39d2ae0a6d
+@gravito/orbit-cloudflare:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+@gravito/spectrum:typecheck: cache hit, replaying logs 866b3e4ffa480c47
+@gravito/spectrum:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+@gravito/pulsar:build: cache miss, executing 7b302c1f73fbe0b9
+@gravito/spectrum:build: $ bun run build.ts
+@gravito/stasis:typecheck: cache hit, replaying logs ca4c98eda49a4d5f
+@gravito/stasis:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+@gravito/satellite-analytics:build: cache hit, replaying logs c47f836fa0251d19
+@gravito/satellite-analytics:build: $ tsup src/index.ts --format esm --dts
+@gravito/satellite-analytics:build: CLI Building entry: src/index.ts
+@gravito/satellite-analytics:build: CLI Using tsconfig: tsconfig.json
+@gravito/satellite-analytics:build: CLI tsup v8.5.1
+@gravito/satellite-analytics:build: CLI Target: esnext
+@gravito/satellite-analytics:build: ESM Build start
+@gravito/satellite-analytics:build: ESM You have emitDecoratorMetadata enabled but @swc/core was not installed, skipping swc plugin
+@gravito/satellite-analytics:build: ESM dist/index.js 1.76 KB
+@gravito/satellite-analytics:build: ESM ⚡️ Build success in 91ms
+@gravito/satellite-analytics:build: DTS Build start
+@gravito/satellite-analytics:build: DTS ⚡️ Build success in 33699ms
+@gravito/satellite-analytics:build: DTS dist/index.d.ts 275.00 B
+@gravito/radiance:typecheck: cache hit, replaying logs 74445943b657e556
+@gravito/radiance:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+@gravito/radiance:build: cache hit, replaying logs 63822130f6b8c0dd
+@gravito/radiance:build: $ bun run build.ts
+@gravito/prism:typecheck: cache hit, replaying logs 4b272161195750f0
+@gravito/prism:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+@gravito/impulse:typecheck: cache hit, replaying logs 5da0de29f5879f5f
+@gravito/impulse:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+@gravito/sentinel:typecheck: cache hit, replaying logs 6f273bbdf459a9ea
+@gravito/sentinel:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+@gravito/satellite-analytics:typecheck: cache hit, replaying logs 04048713bc714b00
+@gravito/satellite-analytics:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+@gravito/flux:typecheck: cache hit, replaying logs 75d6cda36ca8bad3
+@gravito/flux:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+@gravito/pulsar:build: $ bun run build.ts
+@gravito/astral:build: cache hit, replaying logs ac425cef15473f79
+@gravito/astral:typecheck: cache hit, replaying logs d3244b13546bf479
+@gravito/astral:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+@gravito/astral:build: $ tsup src/index.ts --format esm,cjs --dts
+@gravito/astral:build: CLI Building entry: src/index.ts
+@gravito/astral:build: CLI Using tsconfig: tsconfig.json
+@gravito/astral:build: CLI tsup v8.5.1
+@gravito/astral:build: CLI Target: esnext
+@gravito/astral:build: ESM Build start
+@gravito/astral:build: CJS Build start
+@gravito/astral:build: ESM You have emitDecoratorMetadata enabled but @swc/core was not installed, skipping swc plugin
+@gravito/astral:build: CJS You have emitDecoratorMetadata enabled but @swc/core was not installed, skipping swc plugin
+@gravito/astral:build: ESM dist/index.js 24.97 KB
+@gravito/astral:build: ESM ⚡️ Build success in 125ms
+@gravito/astral:build: CJS dist/index.cjs 26.37 KB
+@gravito/astral:build: CJS ⚡️ Build success in 127ms
+@gravito/astral:build: DTS Build start
+@gravito/astral:build: DTS ⚡️ Build success in 3628ms
+@gravito/astral:build: DTS dist/index.d.ts  16.43 KB
+@gravito/astral:build: DTS dist/index.d.cts 16.43 KB
+@gravito/launchpad:typecheck: cache hit, replaying logs 58f265e0ac5d3a61
+@gravito/launchpad:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+@gravito/impulse-bridge:typecheck: cache hit, replaying logs ca3833c10853ad46
+@gravito/impulse-bridge:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+@gravito/horizon:build: cache miss, executing 25fa40cd40987bc3
+my-gravito-app:typecheck: cache miss, executing f42f10d3e5287424
+@gravito/horizon:typecheck: cache hit, replaying logs a188a3c731983795
+@gravito/horizon:typecheck: $ bun tsc -p tsconfig.json --noEmit --skipLibCheck
+@examples/astral-site:typecheck: cache hit, replaying logs 592839900d51ca40
+@examples/astral-site:typecheck: $ bun tsc --noEmit
+@gravito/horizon:build: $ bun run build.ts
+@gravito/flux:build: cache hit, replaying logs 5ea6912febf4d0c3
+@gravito/flux:build: $ tsup
+@gravito/flux:build: ▲ [WARNING] The condition "types" here will never be used as it comes after both "import" and "require" [package.json]
+@gravito/flux:build: 
+@gravito/flux:build:     package.json:18:8:
+@gravito/flux:build:       18 │         "types": "./dist/index.node.d.ts"
+@gravito/flux:build:          ╵         ~~~~~~~
+@gravito/flux:build: 
+@gravito/flux:build:   The "import" condition comes earlier and will be used for all "import" statements:
+@gravito/flux:build: 
+@gravito/flux:build:     package.json:16:8:
+@gravito/flux:build:       16 │         "import": "./dist/index.node.js",
+@gravito/flux:build:          ╵         ~~~~~~~~
+@gravito/flux:build: 
+@gravito/flux:build:   The "require" condition comes earlier and will be used for all "require" calls:
+@gravito/flux:build: 
+@gravito/flux:build:     package.json:17:8:
+@gravito/flux:build:       17 │         "require": "./dist/index.node.cjs",
+@gravito/flux:build:          ╵         ~~~~~~~~~
+@gravito/flux:build: 
+@gravito/flux:build: CLI Building entry: src/bun.ts, src/index.node.ts, src/index.ts
+@gravito/flux:build: CLI Using tsconfig: tsconfig.json
+@gravito/flux:build: CLI tsup v8.5.1
+@gravito/flux:build: CLI Using tsup config: /Users/carl/Dev/Carl/gravito-core/packages/flux/tsup.config.ts
+@gravito/flux:build: CLI Target: node18
+@gravito/flux:build: CLI Cleaning output folder
+@gravito/flux:build: ESM Build start
+@gravito/flux:build: CJS Build start
+@gravito/flux:build: ESM You have emitDecoratorMetadata enabled but @swc/core was not installed, skipping swc plugin
+@gravito/flux:build: ESM You have emitDecoratorMetadata enabled but @swc/core was not installed, skipping swc plugin
+@gravito/flux:build: 
+@gravito/flux:build:  WARN  [33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mThe condition "types" here will never be used as it comes after both "import" and "require"[0m [package.json]
+@gravito/flux:build: 
+@gravito/flux:build:     package.json:18:8:
+@gravito/flux:build: [37m      18 │         [32m"types"[37m: "./dist/index.node.d.ts"
+@gravito/flux:build:          ╵         [32m~~~~~~~[0m
+@gravito/flux:build: 
+@gravito/flux:build:   The "import" condition comes earlier and will be used for all "import" statements:
+@gravito/flux:build: 
+@gravito/flux:build:     package.json:16:8:
+@gravito/flux:build: [37m      16 │         [32m"import"[37m: "./dist/index.node.js",
+@gravito/flux:build:          ╵         [32m~~~~~~~~[0m
+@gravito/flux:build: 
+@gravito/flux:build:   The "require" condition comes earlier and will be used for all "require" calls:
+@gravito/flux:build: 
+@gravito/flux:build:     package.json:17:8:
+@gravito/flux:build: [37m      17 │         [32m"require"[37m: "./dist/index.node.cjs",
+@gravito/flux:build:          ╵         [32m~~~~~~~~~[0m
+@gravito/flux:build: 
+@gravito/flux:build: 
+@gravito/flux:build: 
+@gravito/flux:build: 
+@gravito/flux:build:  WARN  [33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mThe condition "types" here will never be used as it comes after both "import" and "require"[0m [package.json]
+@gravito/flux:build: 
+@gravito/flux:build:     package.json:18:8:
+@gravito/flux:build: [37m      18 │         [32m"types"[37m: "./dist/index.node.d.ts"
+@gravito/flux:build:          ╵         [32m~~~~~~~[0m
+@gravito/flux:build: 
+@gravito/flux:build:   The "import" condition comes earlier and will be used for all "import" statements:
+@gravito/flux:build: 
+@gravito/flux:build:     package.json:16:8:
+@gravito/flux:build: [37m      16 │         [32m"import"[37m: "./dist/index.node.js",
+@gravito/flux:build:          ╵         [32m~~~~~~~~[0m
+@gravito/flux:build: 
+@gravito/flux:build:   The "require" condition comes earlier and will be used for all "require" calls:
+@gravito/flux:build: 
+@gravito/flux:build:     package.json:17:8:
+@gravito/flux:build: [37m      17 │         [32m"require"[37m: "./dist/index.node.cjs",
+@gravito/flux:build:          ╵         [32m~~~~~~~~~[0m
+@gravito/flux:build: 
+@gravito/flux:build: 
+@gravito/flux:build: 
+@gravito/flux:build: ESM dist/index.node.js         503.00 B
+@gravito/flux:build: ESM dist/chunk-NP6MT6MA.js     49.44 KB
+@gravito/flux:build: ESM dist/index.js              5.50 KB
+@gravito/flux:build: ESM dist/chunk-47TOPHPH.js     6.41 KB
+@gravito/flux:build: ESM dist/bun.js                120.00 B
+@gravito/flux:build: ESM dist/index.node.js.map     71.00 B
+@gravito/flux:build: ESM dist/chunk-NP6MT6MA.js.map 101.23 KB
+@gravito/flux:build: ESM dist/index.js.map          12.93 KB
+@gravito/flux:build: ESM dist/chunk-47TOPHPH.js.map 11.29 KB
+@gravito/flux:build: ESM dist/bun.js.map            71.00 B
+@gravito/flux:build: ESM ⚡️ Build success in 1457ms
+@gravito/flux:build: CJS dist/index.cjs              6.99 KB
+@gravito/flux:build: CJS dist/chunk-I36NEQAU.cjs     52.39 KB
+@gravito/flux:build: CJS dist/bun.cjs                229.00 B
+@gravito/flux:build: CJS dist/index.node.cjs         865.00 B
+@gravito/flux:build: CJS dist/chunk-O6A75NBT.cjs     7.56 KB
+@gravito/flux:build: CJS dist/index.cjs.map          14.57 KB
+@gravito/flux:build: CJS dist/bun.cjs.map            226.00 B
+@gravito/flux:build: CJS dist/chunk-I36NEQAU.cjs.map 93.27 KB
+@gravito/flux:build: CJS dist/index.node.cjs.map     354.00 B
+@gravito/flux:build: CJS dist/chunk-O6A75NBT.cjs.map 12.02 KB
+@gravito/flux:build: CJS ⚡️ Build success in 1921ms
+@gravito/flux:build: DTS Build start
+@gravito/flux:build: DTS ⚡️ Build success in 54291ms
+@gravito/flux:build: DTS dist/index.d.ts           5.57 KB
+@gravito/flux:build: DTS dist/bun.d.ts             3.81 KB
+@gravito/flux:build: DTS dist/index.node.d.ts      27.61 KB
+@gravito/flux:build: DTS dist/types-DGhPcAtx.d.ts  12.58 KB
+@gravito/flux:build: DTS dist/index.d.cts          5.58 KB
+@gravito/flux:build: DTS dist/bun.d.cts            3.81 KB
+@gravito/flux:build: DTS dist/index.node.d.cts     27.62 KB
+@gravito/flux:build: DTS dist/types-DGhPcAtx.d.cts 12.58 KB
+my-gravito-app:typecheck: $ bun tsc --noEmit
+@gravito/monitor:build: Building @gravito/monitor...
+@gravito/atlas:build: Building @gravito/atlas...
+@gravito/ion:build: Building @gravito/ion...
+@gravito/spectrum:build: Building @gravito/spectrum...
+@gravito/pulsar:build: Building @gravito/pulsar...
+@gravito/horizon:build: Building @gravito/horizon...
+@gravito/monitor:build: CLI Building entry: src/index.ts
+@gravito/monitor:build: CLI Using tsconfig: tsconfig.json
+@gravito/monitor:build: CLI tsup v8.5.1
+@gravito/monitor:build: CLI Target: esnext
+@gravito/monitor:build: ESM Build start
+@gravito/monitor:build: CJS Build start
+@gravito/monitor:build: ESM You have emitDecoratorMetadata enabled but @swc/core was not installed, skipping swc plugin
+@gravito/monitor:build: CJS You have emitDecoratorMetadata enabled but @swc/core was not installed, skipping swc plugin
+@gravito/horizon:build: CLI Building entry: src/index.ts
+@gravito/horizon:build: CLI Using tsconfig: tsconfig.json
+@gravito/horizon:build: CLI tsup v8.5.1
+@gravito/monitor:build: ESM dist/index.js 27.01 KB
+@gravito/monitor:build: ESM ⚡️ Build success in 360ms
+@gravito/monitor:build: CJS dist/index.cjs 29.27 KB
+@gravito/monitor:build: CJS ⚡️ Build success in 361ms
+@gravito/horizon:build: CLI Target: esnext
+@gravito/horizon:build: ESM Build start
+@gravito/horizon:build: CJS Build start
+@gravito/horizon:build: ESM You have emitDecoratorMetadata enabled but @swc/core was not installed, skipping swc plugin
+@gravito/horizon:build: CJS You have emitDecoratorMetadata enabled but @swc/core was not installed, skipping swc plugin
+@gravito/pulsar:build: CLI Building entry: src/index.ts
+@gravito/pulsar:build: CLI Using tsconfig: tsconfig.json
+@gravito/pulsar:build: CLI tsup v8.5.1
+@gravito/pulsar:build: CLI Target: esnext
+@gravito/pulsar:build: ESM Build start
+@gravito/pulsar:build: CJS Build start
+@gravito/pulsar:build: ESM You have emitDecoratorMetadata enabled but @swc/core was not installed, skipping swc plugin
+@gravito/pulsar:build: CJS You have emitDecoratorMetadata enabled but @swc/core was not installed, skipping swc plugin
+@gravito/ion:build: CLI Building entry: src/index.ts
+@gravito/ion:build: CLI Using tsconfig: tsconfig.json
+@gravito/ion:build: CLI tsup v8.5.1
+@gravito/ion:build: CLI Target: esnext
+@gravito/ion:build: ESM Build start
+@gravito/ion:build: CJS Build start
+@gravito/pulsar:build: CJS dist/index.cjs 19.70 KB
+@gravito/pulsar:build: CJS ⚡️ Build success in 105ms
+@gravito/pulsar:build: ESM dist/index.js 18.39 KB
+@gravito/pulsar:build: ESM ⚡️ Build success in 117ms
+@gravito/horizon:build: CJS dist/index.cjs 321.07 KB
+@gravito/horizon:build: CJS ⚡️ Build success in 359ms
+@gravito/horizon:build: ESM dist/parser-EEVME3L3.js 293.68 KB
+@gravito/horizon:build: ESM dist/index.js           25.38 KB
+@gravito/horizon:build: ESM dist/chunk-MCKGQKYU.js  615.00 B
+@gravito/horizon:build: ESM ⚡️ Build success in 364ms
+@gravito/ion:build: ESM You have emitDecoratorMetadata enabled but @swc/core was not installed, skipping swc plugin
+@gravito/ion:build: CJS You have emitDecoratorMetadata enabled but @swc/core was not installed, skipping swc plugin
+@gravito/ion:build: ESM dist/index.js 11.73 KB
+@gravito/ion:build: ESM ⚡️ Build success in 421ms
+@gravito/ion:build: CJS dist/index.cjs 12.85 KB
+@gravito/ion:build: CJS ⚡️ Build success in 422ms
+@gravito/atlas:build: CLI Building entry: src/index.ts
+@gravito/atlas:build: CLI Using tsconfig: tsconfig.json
+@gravito/atlas:build: CLI tsup v8.5.1
+@gravito/atlas:build: CLI Target: esnext
+@gravito/atlas:build: ESM Build start
+@gravito/atlas:build: CJS Build start
+@gravito/monitor:build: DTS Build start
+@gravito/horizon:build: DTS Build start
+@gravito/spectrum:build: CLI Building entry: src/index.ts
+@gravito/spectrum:build: CLI Using tsconfig: tsconfig.json
+@gravito/spectrum:build: CLI tsup v8.5.1
+@gravito/atlas:build: ESM dist/relationships-FLKYYKEM.js  471.00 B
+@gravito/atlas:build: ESM dist/SchemaRegistry-7MOA63KP.js 175.00 B
+@gravito/atlas:build: ESM dist/chunk-ZGD3Y4TL.js          4.14 KB
+@gravito/atlas:build: ESM dist/errors-S5JJHG2C.js         303.00 B
+@gravito/atlas:build: ESM dist/chunk-MYM3NSN3.js          3.94 KB
+@gravito/atlas:build: ESM dist/chunk-Q6T2EWK5.js          1.03 KB
+@gravito/atlas:build: ESM dist/loadConfig-SER2EE2F.js     245.00 B
+@gravito/atlas:build: ESM dist/index.js                   115.02 KB
+@gravito/atlas:build: ESM dist/DB-2XRISSID.js             143.00 B
+@gravito/atlas:build: ESM dist/chunk-FYQKTVJZ.js          1.98 KB
+@gravito/atlas:build: ESM dist/chunk-XXGKBIRV.js          204.49 KB
+@gravito/atlas:build: ESM dist/chunk-YEAPCTZM.js          16.49 KB
+@gravito/atlas:build: ESM ⚡️ Build success in 1630ms
+@gravito/spectrum:build: CLI Target: esnext
+@gravito/spectrum:build: ESM Build start
+@gravito/spectrum:build: CJS Build start
+@gravito/pulsar:build: DTS Build start
+@gravito/atlas:build: CJS dist/index.cjs 351.38 KB
+@gravito/atlas:build: CJS ⚡️ Build success in 1661ms
+@gravito/spectrum:build: ESM You have emitDecoratorMetadata enabled but @swc/core was not installed, skipping swc plugin
+@gravito/spectrum:build: CJS You have emitDecoratorMetadata enabled but @swc/core was not installed, skipping swc plugin
+@gravito/spectrum:build: ESM dist/index.js 32.54 KB
+@gravito/spectrum:build: ESM ⚡️ Build success in 402ms
+@gravito/spectrum:build: CJS dist/index.cjs 34.43 KB
+@gravito/spectrum:build: CJS ⚡️ Build success in 403ms
+@gravito/ion:build: DTS Build start
+@gravito/atlas:build: DTS Build start
+@gravito/spectrum:build: DTS Build start
+@gravito/ion:build: DTS ⚡️ Build success in 30250ms
+@gravito/ion:build: DTS dist/index.d.ts  12.96 KB
+@gravito/ion:build: DTS dist/index.d.cts 12.96 KB
+@gravito/ion:build: ✅ Build complete!
+my-gravito-inertia-vue-app:typecheck: cache miss, executing e5ff69be9479c50d
+photon-site:typecheck: cache miss, executing c7673fcbbc277483
+my-gravito-inertia-app:typecheck: cache miss, executing 3355ab648d7d07b5
+luminosity-marketing-site:typecheck: cache miss, executing 94d830666e5d4641
+my-gravito-inertia-vue-app:typecheck: $ vue-tsc --noEmit
+photon-site:typecheck: $ bun tsc --noEmit
+luminosity-marketing-site:typecheck: $ bun tsc --noEmit
+my-gravito-inertia-app:typecheck: $ bun tsc --noEmit
+@gravito/monitor:build: DTS ⚡️ Build success in 38429ms
+@gravito/monitor:build: DTS dist/index.d.ts  13.02 KB
+@gravito/monitor:build: DTS dist/index.d.cts 13.02 KB
+@gravito/monitor:build: ✅ Build complete!
+@gravito/pulsar:build: DTS ⚡️ Build success in 38514ms
+@gravito/pulsar:build: DTS dist/index.d.ts  17.03 KB
+@gravito/pulsar:build: DTS dist/index.d.cts 17.03 KB
+@gravito/pulsar:build: ✅ Build complete!
+@gravito/horizon:build: DTS ⚡️ Build success in 39818ms
+@gravito/horizon:build: DTS dist/index.d.ts  18.53 KB
+@gravito/horizon:build: DTS dist/index.d.cts 18.53 KB
+@gravito/horizon:build: ✅ Build complete!
+@gravito/spectrum:build: DTS ⚡️ Build success in 45358ms
+@gravito/spectrum:build: DTS dist/index.d.ts  15.02 KB
+@gravito/spectrum:build: DTS dist/index.d.cts 15.02 KB
+@gravito/spectrum:build: ✅ Build complete!
+@gravito/atlas:build: src/orm/model/concerns/HasRelationships.ts(2,22): error TS6196: 'ModelAttributes' is declared but never used.
+@gravito/atlas:build: 
+@gravito/atlas:build: Error: error occurred in dts build
+@gravito/atlas:build:     at Worker.<anonymous> (/Users/carl/Dev/Carl/gravito-core/node_modules/.bun/tsup@8.5.1+856d20fa6d86c632/node_modules/tsup/dist/index.js:1545:26)
+@gravito/atlas:build:     at Worker.emit (node:events:518:28)
+@gravito/atlas:build:     at MessagePort.<anonymous> (node:internal/worker:268:53)
+@gravito/atlas:build:     at [nodejs.internal.kHybridDispatch] (node:internal/event_target:827:20)
+@gravito/atlas:build:     at MessagePort.<anonymous> (node:internal/per_context/messageport:23:28)
+@gravito/atlas:build: DTS Build error
+@gravito/atlas:build: ❌ tsup build failed
+@gravito/atlas:build: error: script "build" exited with code 1
+@gravito/atlas:build: ERROR: command finished with error: command (/Users/carl/Dev/Carl/gravito-core/packages/atlas) /Users/carl/.bun/bin/bun run build exited (1)
+@gravito/atlas#build: command (/Users/carl/Dev/Carl/gravito-core/packages/atlas) /Users/carl/.bun/bin/bun run build exited (1)
+
+ Tasks:    97 successful, 102 total
+Cached:    91 cached, 102 total
+  Time:    1m38.998s 
+Failed:    @gravito/atlas#build
+
+ WARNING  no output files found for task my-gravito-app#typecheck. Please check your `outputs` key in `turbo.json`
+ ERROR  run failed: command  exited (1)

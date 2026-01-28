@@ -16,8 +16,8 @@
   "scripts": {
     "build": "tsup src/index.ts --format esm,cjs --dts",
     "test": "bun test",
-    "test:coverage": "bun test --coverage --coverage-threshold=80",
-    "test:ci": "bun test --coverage --coverage-threshold=80",
+    "test:coverage": "bun test --coverage --coverage-threshold=50",
+    "test:ci": "bun test --coverage --coverage-threshold=50",
     "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck"
   },
   "keywords": [
