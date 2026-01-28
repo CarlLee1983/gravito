@@ -1,10 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 import { join } from 'node:path'
 import { ContentManager } from '../src/ContentManager'
+import { LocalDriver } from '../src/driver/LocalDriver'
 
 describe('Orbit Content Manager', () => {
   const rootDir = join(import.meta.dir, 'fixtures')
-  const manager = new ContentManager(rootDir)
+  const manager = new ContentManager(new LocalDriver(rootDir))
 
   manager.defineCollection('docs', {
     path: 'docs',

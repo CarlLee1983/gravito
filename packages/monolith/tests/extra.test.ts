@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { ContentManager } from '../src/ContentManager'
 import { Controller } from '../src/Controller'
+import { LocalDriver } from '../src/driver/LocalDriver'
 import { OrbitMonolith } from '../src/index'
 import { Sanitizer } from '../src/Sanitizer'
 
@@ -82,7 +83,7 @@ describe('ContentManager security helpers', () => {
     const markdown = `---\ntitle: Safe\n---\n\n<link>\n\n[bad](javascript:alert(1))\n\n[good](https://example.com "Title")`
     writeFileSync(join(base, 'safe.md'), markdown)
 
-    const manager = new ContentManager(root)
+    const manager = new ContentManager(new LocalDriver(root))
     manager.defineCollection('docs', { path: 'content/docs' })
 
     expect(await manager.find('docs', '../hack', 'en')).toBeNull()

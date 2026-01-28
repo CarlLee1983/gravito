@@ -1,6 +1,6 @@
 {
   "name": "@gravito/monolith",
-  "version": "3.0.1",
+  "version": "3.2.0",
   "description": "Enterprise monolith framework for Gravito Galaxy",
   "main": "dist/index.cjs",
   "module": "dist/index.js",
@@ -29,9 +29,10 @@
   "author": "Carl Lee <carllee0520@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "marked": "^11.1.1",
+    "@gravito/mass": "workspace:*",
+    "@octokit/rest": "^22.0.1",
     "gray-matter": "^4.0.3",
-    "@gravito/mass": "workspace:*"
+    "marked": "^11.1.1"
   },
   "peerDependencies": {
     "@gravito/core": "workspace:*"

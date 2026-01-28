@@ -182,9 +182,27 @@ core.hooks.addAction('processError:report', async (ctx) => {
 
 - **`bind(key, factory)`**: Register a transient binding.
 - **`singleton(key, factory)`**: Register a shared binding.
-- **`make<T>(key)`**: Resolve a service instance.
+- **`make(key)`**: Resolve a service instance. Supports automatic type inference via `ServiceMap` augmentation.
 - **`instance(key, instance)`**: Register an existing object instance.
 - **`has(key)`**: Check if a service is bound.
+
+#### Type Safety (ServiceMap)
+
+You can extend the `ServiceMap` interface to get automatic type inference for `container.make()`:
+
+```typescript
+// types.d.ts
+import { Logger } from './Logger';
+
+declare module '@gravito/core' {
+  interface ServiceMap {
+    logger: Logger;
+  }
+}
+
+// usage.ts
+const logger = container.make('logger'); // inferred as Logger
+```
 
 ### `HookManager`
 

@@ -7,6 +7,7 @@
  */
 
 import { Channel, PresenceChannel, PrivateChannel } from './Channel'
+import { ConnectionStateManager } from './ConnectionStateManager'
 import type { RippleClientConfig, ServerMessage } from './types'
 
 /**
@@ -38,7 +39,7 @@ export type ConnectionState = 'connecting' | 'connected' | 'disconnected' | 'rec
 export class RippleClient {
   private ws: WebSocket | null = null
   private socketId: string | null = null
-  private state: ConnectionState = 'disconnected'
+  private stateManager = new ConnectionStateManager()
   private reconnectAttempts = 0
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -81,26 +82,31 @@ export class RippleClient {
    */
   connect(): Promise<void> {
     return new Promise((resolve, reject) => {
-      if (this.state === 'connected') {
+      if (this.stateManager.getState() === 'connected') {
         resolve()
         return
       }
 
-      this.state = 'connecting'
+      this.stateManager.setState('connecting')
 
       try {
         this.ws = new WebSocket(this.config.host)
+        this.ws.binaryType = 'arraybuffer'
 
         this.ws.onopen = () => {
-          this.state = 'connected'
+          this.stateManager.setState('connected')
           this.reconnectAttempts = 0
           // Wait for 'connected' message with socketId
         }
 
         this.ws.onmessage = (event) => {
+          if (event.data instanceof ArrayBuffer) {
+            this.handleBinaryMessage(event.data)
+            return
+          }
           this.handleMessage(event.data)
           // Resolve on first successful connection
-          if (this.socketId && this.state === 'connected') {
+          if (this.socketId && this.stateManager.getState() === 'connected') {
             resolve()
           }
         }
@@ -110,13 +116,13 @@ export class RippleClient {
         }
 
         this.ws.onerror = (error) => {
-          if (this.state === 'connecting') {
+          if (this.stateManager.getState() === 'connecting') {
             reject(new Error('Failed to connect'))
           }
           console.error('[Ripple] WebSocket error:', error)
         }
       } catch (error) {
-        this.state = 'disconnected'
+        this.stateManager.setState('disconnected')
         reject(error)
       }
     })
@@ -128,7 +134,7 @@ export class RippleClient {
    * Closes the active WebSocket connection and clears all state.
    */
   disconnect(): void {
-    this.state = 'disconnected'
+    this.stateManager.setState('disconnected')
     this.clearReconnectTimer()
     this.ws?.close()
     this.ws = null
@@ -143,7 +149,17 @@ export class RippleClient {
    * @returns The connection state string.
    */
   getState(): ConnectionState {
-    return this.state
+    return this.stateManager.getState()
+  }
+
+  /**
+   * Subscribe to connection state changes.
+   *
+   * @param callback - Function to execute on state change.
+   * @returns Unsubscribe function.
+   */
+  onStateChange(callback: (state: ConnectionState, prev: ConnectionState) => void): () => void {
+    return this.stateManager.onStateChange(callback)
   }
 
   /**
@@ -167,15 +183,16 @@ export class RippleClient {
    * @param name - The name of the channel.
    * @returns A Channel instance.
    */
-  channel(name: string): Channel {
-    if (this.channels.has(name)) {
-      return this.channels.get(name)!
+  channel<N extends string = string>(name: N): Channel<N> {
+    const cached = this.channels.get(name)
+    if (cached) {
+      return cached as Channel<N>
     }
 
     const channel = new Channel(name, (msg) => this.send(msg))
     this.channels.set(name, channel)
     this.subscribe(name)
-    return channel
+    return channel as Channel<N>
   }
 
   /**
@@ -239,7 +256,7 @@ export class RippleClient {
   // ─────────────────────────────────────────────────────────────
 
   private subscribe(channel: string): void {
-    if (this.state !== 'connected') {
+    if (this.stateManager.getState() !== 'connected') {
       this.pendingSubscriptions.add(channel)
       return
     }
@@ -248,14 +265,20 @@ export class RippleClient {
   }
 
   private async subscribePrivate(channel: string): Promise<void> {
-    if (this.state !== 'connected' || !this.socketId) {
+    if (this.stateManager.getState() !== 'connected' || !this.socketId) {
       this.pendingSubscriptions.add(channel)
       return
     }
 
     // Get auth signature from server
     try {
-      const response = await fetch(this.config.authEndpoint!, {
+      const endpoint = this.config.authEndpoint
+      if (!endpoint) {
+        console.error('[Ripple] Auth endpoint not configured')
+        return
+      }
+
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -289,6 +312,59 @@ export class RippleClient {
   private send(message: object): void {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(message))
+    }
+  }
+
+  /**
+   * Send binary data to a channel.
+   *
+   * @param channel - The channel name.
+   * @param event - The event name.
+   * @param data - The binary data (ArrayBuffer).
+   */
+  sendBinary(channel: string, event: string, data: ArrayBuffer): void {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      const header = JSON.stringify({ type: 'binary', channel, event })
+      const encoder = new TextEncoder()
+      const headerBuffer = encoder.encode(header)
+
+      const totalBuffer = new Uint8Array(4 + headerBuffer.length + data.byteLength)
+      const dv = new DataView(totalBuffer.buffer)
+      dv.setInt32(0, headerBuffer.length, true)
+
+      totalBuffer.set(headerBuffer, 4)
+      totalBuffer.set(new Uint8Array(data), 4 + headerBuffer.length)
+
+      this.ws.send(totalBuffer)
+    }
+  }
+
+  private handleBinaryMessage(data: ArrayBuffer): void {
+    if (data.byteLength < 4) {
+      return
+    }
+
+    const dv = new DataView(data)
+    const headerLength = dv.getInt32(0, true)
+
+    if (data.byteLength < 4 + headerLength) {
+      return
+    }
+
+    try {
+      const decoder = new TextDecoder()
+      const headerRaw = decoder.decode(data.slice(4, 4 + headerLength))
+      const header = JSON.parse(headerRaw)
+      const payload = data.slice(4 + headerLength)
+
+      if (header.type === 'binary') {
+        const channel = this.channels.get(header.channel)
+        if (channel) {
+          channel._dispatch(header.event, payload)
+        }
+      }
+    } catch (e) {
+      console.error('[Ripple] Failed to parse binary message header', e)
     }
   }
 
@@ -340,8 +416,8 @@ export class RippleClient {
   }
 
   private handleDisconnect(): void {
-    const wasConnected = this.state === 'connected'
-    this.state = 'disconnected'
+    const wasConnected = this.stateManager.getState() === 'connected'
+    this.stateManager.setState('disconnected')
     this.socketId = null
 
     if (wasConnected && this.config.autoReconnect) {
@@ -355,7 +431,7 @@ export class RippleClient {
       return
     }
 
-    this.state = 'reconnecting'
+    this.stateManager.setState('reconnecting')
     this.reconnectAttempts++
 
     const delay = this.config.reconnectDelay * 2 ** (this.reconnectAttempts - 1)

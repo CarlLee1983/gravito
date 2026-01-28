@@ -29,9 +29,12 @@ PlanetCore 採用模組化設計，由以下關鍵元件組成：
 3.  **Application (Facade)** (`src/Application.ts`)
     -   企業級應用封裝，提供 Convention-over-Configuration。
     -   自動掃描並載入 `config/` 與 `src/Providers/`。
-4.  **Container (IoC)** (`src/Container.ts`)
+4.  **CommandKernel (CLI)** (`src/CommandKernel.ts`)
+    -   管理 CLI 命令註冊與執行。
+    -   支援重用應用程式容器 (Container) 與服務提供者 (Providers)。
+5.  **Container (IoC)** (`src/Container.ts`)
     -   負責服務的註冊 (`bind`, `singleton`) 與解析 (`make`)。
-5.  **HookManager** (`src/HookManager.ts`)
+6.  **HookManager** (`src/HookManager.ts`)
     -   **Filters**: 數據轉換鏈 (`applyFilters`)。
     -   **Actions**: 副作用觸發 (`doAction`)。
 
@@ -99,34 +102,26 @@ Gravito Engine 採用獨特的優化策略：
 ### 4.1 容器型別安全
 -   **問題**：`container.make<T>('key')` 依賴開發者手動指定泛型。
 -   **風險**：Key 字串錯誤或型別不符僅在 Runtime 報錯。
--   **建議**：引入 `ServiceMap` 介面擴展，支援自動型別推導。
+-   **解決方案**：v1.5 引入 `ServiceMap` 介面擴展，支援自動型別推導。
+    ```typescript
+    declare module '@gravito/core' {
+      interface ServiceMap {
+        logger: Logger;
+      }
+    }
+    const logger = container.make('logger'); // inferred as Logger
+    ```
 
 ### 4.2 循環依賴
 -   **問題**：`Container` 未檢測循環依賴。
 -   **風險**：A 依賴 B，B 依賴 A 導致 Stack Overflow。
--   **建議**：加入解析堆疊追蹤 (Resolution Stack) 偵測機制。
+-   **解決方案**：v1.5 加入解析堆疊追蹤 (Resolution Stack) 偵測機制，當檢測到循環時拋出 `CircularDependencyException`。
+...
+1.  **CLI 整合** (Completed v1.4)
+    -   新增 `CommandKernel`，讓 CLI 命令復用相同的 Container 與 Provider。
 
----
-
-## 5. 效能與擴展性
-
-### 5.1 Object Pooling
--   **機制**：`Gravito` 引擎維護 `FastContext` 的物件池 (`contextPool`)。
--   **效益**：每個請求重複使用 Context 物件，大幅減少 GC 壓力與記憶體分配（< 1KB/req）。
-
-### 5.2 延遲載入 (Deferred Providers)
--   **機制**：只有在 `make` 呼叫時才實例化服務。
--   **效益**：顯著降低冷啟動時間。
-
----
-
-## 6. 後續優化建議
-
-1.  **強化 IoC 型別推導** (Priority: Medium)
-    -   利用 TypeScript Interface Merging 建立全域服務對照表。
-
-2.  **CLI 整合** (Priority: High)
-    -   增加 `CommandKernel`，讓 CLI 命令復用相同的 Container 與 Provider。
-
-3.  **增加循環依賴檢測** (Priority: Low)
+2.  **增加循環依賴檢測** (Completed v1.5)
     -   在 Container 中實作解析鎖與檢測邏輯。
+
+3.  **強化 IoC 型別推導** (Completed v1.5)
+    -   利用 TypeScript Interface Merging 建立全域服務對照表。

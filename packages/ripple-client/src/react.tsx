@@ -6,7 +6,7 @@
 import { createContext, type ReactNode, useContext, useEffect, useState } from 'react'
 import type { Channel, PresenceChannel, PrivateChannel } from './Channel'
 import { type ConnectionState, RippleClient } from './RippleClient'
-import type { PresenceUser, RippleClientConfig } from './types'
+import type { ChannelEventMap, PresenceUser, RippleClientConfig } from './types'
 
 // ─────────────────────────────────────────────────────────────
 // Context
@@ -63,20 +63,23 @@ export function useRippleClient(): RippleClient {
  */
 export function useRipple(config: RippleClientConfig) {
   const [client] = useState(() => new RippleClient(config))
-  const [state, setState] = useState<ConnectionState>('disconnected')
+  const [state, setState] = useState<ConnectionState>(client.getState())
+
+  useEffect(() => {
+    // Sync state
+    return client.onStateChange((s) => setState(s))
+  }, [client])
 
   const connect = async () => {
     try {
       await client.connect()
-      setState('connected')
     } catch {
-      setState('disconnected')
+      // State is handled by onStateChange
     }
   }
 
   const disconnect = () => {
     client.disconnect()
-    setState('disconnected')
   }
 
   return { client, state, connect, disconnect }
@@ -98,6 +101,16 @@ export function useRipple(config: RippleClientConfig) {
  * }
  * ```
  */
+export function useChannel<C extends keyof ChannelEventMap, E extends keyof ChannelEventMap[C]>(
+  channelName: C,
+  eventName: E
+): { channel: Channel<C> | null; data: ChannelEventMap[C][E] | null }
+
+export function useChannel<T = unknown>(
+  channelName: string,
+  eventName: string
+): { channel: Channel | null; data: T | null }
+
 export function useChannel<T = unknown>(
   channelName: string,
   eventName: string
@@ -110,8 +123,8 @@ export function useChannel<T = unknown>(
     const ch = client.channel(channelName)
     setChannel(ch)
 
-    ch.listen<T>(eventName, (eventData) => {
-      setData(eventData)
+    ch.listen(eventName, (eventData) => {
+      setData(eventData as T)
     })
 
     return () => {

@@ -42,6 +42,7 @@ export type ClientMessage =
   | { type: 'unsubscribe'; channel: string }
   | { type: 'whisper'; channel: string; event: string; data: unknown }
   | { type: 'ping' }
+  | { type: 'binary'; channel: string; event: string; data: ArrayBuffer }
 
 /**
  * Server-to-client message types
@@ -54,10 +55,28 @@ export type ServerMessage =
   | { type: 'presence'; channel: string; event: 'join' | 'leave' | 'members'; data: unknown }
   | { type: 'pong' }
   | { type: 'connected'; socketId: string }
+  | { type: 'binary'; channel: string; event: string; data: ArrayBuffer }
 
 // ─────────────────────────────────────────────────────────────
 // Event Handlers
 // ─────────────────────────────────────────────────────────────
+
+/**
+ * Channel event map for type-safe event listening.
+ *
+ * @example
+ * ```typescript
+ * declare module '@gravito/ripple-client' {
+ *   interface ChannelEventMap {
+ *     news: {
+ *       'ArticlePublished': { title: string }
+ *     }
+ *   }
+ * }
+ * ```
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export type ChannelEventMap = {}
 
 /**
  * Event callback type

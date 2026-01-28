@@ -1,7 +1,7 @@
-import { readdir, readFile, stat } from 'node:fs/promises'
 import { join, parse } from 'node:path'
 import matter from 'gray-matter'
 import { marked } from 'marked'
+import type { ContentDriver } from './driver/ContentDriver'
 
 /**
  * Represents a single content item (file).
@@ -32,6 +32,8 @@ export class ContentManager {
   private collections = new Map<string, CollectionConfig>()
   // Simple memory cache: collection:locale:slug -> ContentItem
   private cache = new Map<string, ContentItem>()
+  // In-memory search index: term -> Set<cacheKey>
+  private searchIndex = new Map<string, Set<string>>()
   private renderer = (() => {
     const renderer = new marked.Renderer()
     renderer.html = (html: string) => this.escapeHtml(html)
@@ -47,11 +49,40 @@ export class ContentManager {
   })()
 
   /**
+   * Clear all cached content.
+   * Useful for hot reload during development.
+   */
+  clearCache(): void {
+    this.cache.clear()
+    this.searchIndex.clear()
+  }
+
+  /**
+   * Invalidate a specific content item.
+   * @param collection - The collection name.
+   * @param slug - The file slug.
+   * @param locale - The locale. Defaults to 'en'.
+   */
+  invalidate(collection: string, slug: string, locale = 'en'): void {
+    const safeSlug = this.sanitizeSegment(slug)
+    const safeLocale = this.sanitizeSegment(locale)
+
+    if (safeSlug && safeLocale) {
+      const cacheKey = `${collection}:${safeLocale}:${safeSlug}`
+      this.cache.delete(cacheKey)
+    }
+  }
+
+  getCollectionConfig(name: string): CollectionConfig | undefined {
+    return this.collections.get(name)
+  }
+
+  /**
    * Create a new ContentManager instance.
    *
-   * @param rootDir - The root directory of the application.
+   * @param driver - The content driver to use.
    */
-  constructor(private rootDir: string) {}
+  constructor(private readonly driver: ContentDriver) {}
 
   /**
    * Register a new content collection.
@@ -85,23 +116,22 @@ export class ContentManager {
     }
 
     const cacheKey = `${collectionName}:${locale}:${slug}`
-    if (this.cache.has(cacheKey)) {
-      return this.cache.get(cacheKey)!
+    const cachedItem = this.cache.get(cacheKey)
+    if (cachedItem) {
+      return cachedItem
     }
 
     // Determine path strategy
-    // Strategy: {root}/{path}/{locale}/{slug}.md
-    const filePath = join(this.rootDir, config.path, safeLocale, `${safeSlug}.md`)
+    // Strategy: {path}/{locale}/{slug}.md
+    const filePath = join(config.path, safeLocale, `${safeSlug}.md`)
 
     try {
-      const exists = await stat(filePath)
-        .then(() => true)
-        .catch(() => false)
+      const exists = await this.driver.exists(filePath)
       if (!exists) {
         return null
       }
 
-      const fileContent = await readFile(filePath, 'utf-8')
+      const fileContent = await this.driver.read(filePath)
       const { data, content, excerpt } = matter(fileContent)
 
       const html = await marked.parse(content, { renderer: this.renderer })
@@ -115,6 +145,7 @@ export class ContentManager {
       }
 
       this.cache.set(cacheKey, item)
+      this.buildSearchIndex(cacheKey, item)
       return item
     } catch (e) {
       console.error(`[Orbit-Content] Error reading file: ${filePath}`, e)
@@ -142,10 +173,10 @@ export class ContentManager {
       return []
     }
 
-    const dirPath = join(this.rootDir, config.path, safeLocale)
+    const dirPath = join(config.path, safeLocale)
 
     try {
-      const files = await readdir(dirPath)
+      const files = await this.driver.list(dirPath)
       const items: ContentItem[] = []
 
       for (const file of files) {
@@ -163,6 +194,65 @@ export class ContentManager {
     } catch (_e) {
       // Directory likely doesn't exist for this locale
       return []
+    }
+  }
+
+  /**
+   * Search for content items across collections and locales.
+   *
+   * @param query - The search query.
+   * @param options - Optional filters for collection and locale.
+   * @returns An array of matching ContentItems.
+   */
+  search(query: string, options: { collection?: string; locale?: string } = {}): ContentItem[] {
+    const terms = query.toLowerCase().split(/\s+/).filter(Boolean)
+    if (terms.length === 0) {
+      return []
+    }
+
+    const matches = new Set<string>()
+
+    for (const term of terms) {
+      const keys = this.searchIndex.get(term)
+      if (keys) {
+        for (const key of keys) {
+          matches.add(key)
+        }
+      }
+    }
+
+    const results: ContentItem[] = []
+    for (const key of matches) {
+      const item = this.cache.get(key)
+      if (!item) {
+        continue
+      }
+
+      const [collection, locale] = key.split(':')
+
+      if (options.collection && options.collection !== collection) {
+        continue
+      }
+      if (options.locale && options.locale !== locale) {
+        continue
+      }
+
+      results.push(item)
+    }
+
+    return results
+  }
+
+  private buildSearchIndex(cacheKey: string, item: ContentItem): void {
+    const text =
+      `${item.slug} ${item.meta.title || ''} ${item.raw} ${item.excerpt || ''}`.toLowerCase()
+    const terms = text.split(/[^\w\d]+/).filter((t) => t.length > 2)
+
+    for (const term of terms) {
+      if (!this.searchIndex.has(term)) {
+        this.searchIndex.set(term, new Set())
+      }
+      this.searchIndex.get(term)?.add(cacheKey)
     }
   }
 

@@ -1,5 +1,12 @@
 # @gravito/ripple
 
+## 3.2.0
+
+### Minor Changes
+
+- feat: implement binary message support (ArrayBuffer)
+- feat: implement TokenBucket rate limiting for whisper events
+
 ## 3.0.1
 
 ### Patch Changes

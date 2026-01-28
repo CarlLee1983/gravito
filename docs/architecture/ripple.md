@@ -20,8 +20,9 @@ Ripple 是專為 Bun 設計的高效能廣播系統。
 - **位置**：`src/RippleServer.ts`
 - **關鍵方法**：
   - `upgrade(req)`: 處理 HTTP Upgrade 請求，進行初始握手。
-  - `handleMessage()`: 解析客戶端指令 (`subscribe`, `whisper`)。
+  - `handleMessage()`: 解析客戶端指令 (`subscribe`, `whisper`)，並支援二進位訊息 (`binary`) 處理。
   - `broadcast()`: 將訊息推送到指定頻道的所有訂閱者。
+  - `broadcastBinary()`: 廣播 `ArrayBuffer` 數據至特定頻道。
 
 ### 2.2 ChannelManager (State)
 - **職責**：維護 `Client <-> Channel` 的多對多關係。
@@ -89,9 +90,9 @@ Ripple 不會啟動自己的 HTTP 伺服器，而是掛載在現有的 `Bun.serv
 
 ## 5. 後續優化建議
 
-### 短期 (v1.1)
-1. **Binary Support**：支援發送 `ArrayBuffer`，優化二進制數據傳輸。
-2. **Rate Limiting**：針對 `whisper` (客戶端互傳) 實作頻率限制，防止濫用。
+### 短期 (v3.4)
+1. **Binary Support (Completed)**：支援發送 `ArrayBuffer`，優化二進制數據傳輸。
+2. **Rate Limiting (Completed)**：針對 `whisper` (客戶端互傳) 實作頻率限制，防止濫用。
 
 ### 中期 (v1.2)
 1. **NATS / Kafka Driver**：提供比 Redis 更高吞吐量的後端驅動。

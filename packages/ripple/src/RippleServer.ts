@@ -25,6 +25,7 @@ import type {
   WebSocketHandlerConfig,
 } from './types'
 import { MessageSerializer } from './utils/MessageSerializer'
+import { TokenBucket } from './utils/TokenBucket'
 
 /**
  * Ripple WebSocket Server
@@ -60,6 +61,7 @@ export class RippleServer {
   private tracker: ConnectionTracker
   private healthChecker: HealthChecker
   private serializer: MessageSerializer
+  private whisperLimiters: Map<string, TokenBucket> = new Map()
 
   readonly config: Required<Pick<RippleConfig, 'path' | 'authEndpoint' | 'pingInterval'>> &
     RippleConfig
@@ -288,8 +290,16 @@ export class RippleServer {
     })
   }
 
-  private async handleMessage(ws: RippleWebSocket, message: string | Buffer): Promise<void> {
+  private async handleMessage(
+    ws: RippleWebSocket,
+    message: string | Buffer | ArrayBuffer
+  ): Promise<void> {
     try {
+      if (message instanceof ArrayBuffer || Buffer.isBuffer(message)) {
+        await this.handleBinaryMessage(ws, message)
+        return
+      }
+
       const data: ClientMessage = JSON.parse(message.toString())
 
       switch (data.type) {
@@ -320,6 +330,88 @@ export class RippleServer {
         message: error instanceof Error ? error.message : 'Invalid message',
       })
     }
+  }
+
+  private async handleBinaryMessage(
+    ws: RippleWebSocket,
+    message: Buffer | ArrayBuffer
+  ): Promise<void> {
+    const buffer = Buffer.isBuffer(message) ? message : Buffer.from(message)
+
+    // Protocol: [JSON Header Length (4 bytes)] [JSON Header] [Binary Payload]
+    if (buffer.length < 4) {
+      return
+    }
+
+    const headerLength = buffer.readInt32LE(0)
+    if (buffer.length < 4 + headerLength) {
+      return
+    }
+
+    try {
+      const headerRaw = buffer.subarray(4, 4 + headerLength).toString()
+      const header = JSON.parse(headerRaw)
+      const payload = buffer.subarray(4 + headerLength)
+
+      if (header.type === 'binary') {
+        const { channel, event } = header
+
+        // Trigger server-side listeners
+        const listeners = this.eventListeners.get(event)
+        if (listeners && listeners.length > 0) {
+          for (const handler of listeners) {
+            handler(ws, payload.buffer as ArrayBuffer)
+          }
+        }
+
+        if (!this.channels.isSubscribed(ws.data.id, channel)) {
+          this.send(ws, { type: 'error', message: 'Not subscribed to channel', channel })
+          return
+        }
+
+        this.broadcastBinaryToChannel(channel, event, payload.buffer as ArrayBuffer, ws.data.id)
+      }
+    } catch (e) {
+      this.logger.error('Failed to parse binary message header', { error: (e as any).message })
+    }
+  }
+
+  private broadcastBinaryToChannel(
+    channel: string,
+    event: string,
+    data: ArrayBuffer,
+    excludeClientId?: string
+  ): void {
+    const subscribers = this.channels.getSubscribers(channel)
+    if (subscribers.length === 0) {
+      return
+    }
+
+    const header = JSON.stringify({ type: 'binary', channel, event })
+    const headerBuffer = Buffer.from(header)
+    const totalBuffer = Buffer.allocUnsafe(4 + headerBuffer.length + data.byteLength)
+
+    totalBuffer.writeInt32LE(headerBuffer.length, 0)
+    headerBuffer.copy(totalBuffer, 4)
+    Buffer.from(data).copy(totalBuffer, 4 + headerBuffer.length)
+
+    for (const ws of subscribers) {
+      if (excludeClientId && ws.data.id === excludeClientId) {
+        continue
+      }
+      ws.send(totalBuffer)
+    }
+  }
+
+  /**
+   * Broadcast binary data to all subscribers of a channel.
+   *
+   * @param channel - The channel name.
+   * @param event - The event name.
+   * @param data - The binary data (ArrayBuffer).
+   */
+  broadcastBinary(channel: string, event: string, data: ArrayBuffer): void {
+    this.broadcastBinaryToChannel(channel, event, data)
   }
 
   private handleClose(ws: RippleWebSocket, code: number, reason: string): void {
@@ -473,7 +565,25 @@ export class RippleServer {
   }
 
   private handleWhisper(ws: RippleWebSocket, channel: string, event: string, data: unknown): void {
-    // Trigger server-side listeners
+    // 1. Rate Limiting
+    if (this.config.rateLimit?.whisperMax) {
+      let limiter = this.whisperLimiters.get(ws.data.id)
+      if (!limiter) {
+        limiter = new TokenBucket(
+          this.config.rateLimit.whisperMax,
+          this.config.rateLimit.whisperMax / (this.config.rateLimit.whisperInterval ?? 1000)
+        )
+        this.whisperLimiters.set(ws.data.id, limiter)
+      }
+
+      if (!limiter.consume()) {
+        this.logger.warn('Whisper rate limit exceeded', { clientId: ws.data.id, channel })
+        this.send(ws, { type: 'error', message: 'Rate limit exceeded' })
+        return
+      }
+    }
+
+    // 2. Trigger server-side listeners
     const listeners = this.eventListeners.get(event)
     if (listeners && listeners.length > 0) {
       listeners.forEach((handler) => {
@@ -481,7 +591,7 @@ export class RippleServer {
       })
     }
 
-    // Whispers are client-to-client messages, excluding sender
+    // 3. Whispers are client-to-client messages, excluding sender
     if (!this.channels.isSubscribed(ws.data.id, channel)) {
       this.logger.warn('Whisper to non-subscribed channel', {
         clientId: ws.data.id,
