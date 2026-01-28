@@ -9,8 +9,7 @@ import * as loader from '../../src/loader'
 describe('I18n Loading', () => {
   describe('Loading Coalescing', () => {
     it('should coalesce concurrent load requests', async () => {
-      // We use spyOn instead of mock.module to avoid affecting other tests in same process if bun test runs them together
-      const loadLocaleSpy = spyOn(loader, 'loadLocale').mockImplementation(async () => {
+      const mockLoader = mock(async () => {
         await new Promise((resolve) => setTimeout(resolve, 50))
         return { title: 'Loaded' }
       })
@@ -18,7 +17,10 @@ describe('I18n Loading', () => {
       const manager = new I18nManager({
         defaultLocale: 'en',
         supportedLocales: ['en'],
-        lazyLoad: { baseDir: '/tmp' },
+        lazyLoad: {
+          baseDir: '/tmp',
+          loader: mockLoader,
+        },
       })
 
       const p1 = manager.ensureLocale('en')
@@ -26,8 +28,7 @@ describe('I18n Loading', () => {
 
       await Promise.all([p1, p2])
 
-      expect(loadLocaleSpy).toHaveBeenCalledTimes(1)
-      loadLocaleSpy.mockRestore()
+      expect(mockLoader).toHaveBeenCalledTimes(1)
     })
   })
 

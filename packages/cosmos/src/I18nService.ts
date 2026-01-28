@@ -61,6 +61,11 @@ export interface LazyLoadConfig {
   baseDir: string
   /** Optional list of locales to preload on startup. */
   preload?: string[]
+  /**
+   * Custom loader function for testing or specialized loading strategies.
+   * If not provided, defaults to the filesystem loader.
+   */
+  loader?: (baseDir: string, locale: string) => Promise<Record<string, string> | null>
 }
 
 /**
@@ -570,7 +575,8 @@ export class I18nManager<Schema = TranslationMap> implements I18nService<Schema>
     // Create a new load promise
     const loadPromise = (async () => {
       try {
-        const translations = await loadLocale(this.config.lazyLoad!.baseDir, locale)
+        const loaderFn = this.config.lazyLoad!.loader || loadLocale
+        const translations = await loaderFn(this.config.lazyLoad!.baseDir, locale)
         if (translations) {
           this.addResource(locale, translations)
           this.loadedLocales.add(locale)
