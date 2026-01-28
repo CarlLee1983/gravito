@@ -24,6 +24,7 @@
         "simple-git-hooks": "^2.13.1",
         "turbo": "latest",
         "typescript": "^5.9.3",
+        "yaml": "^2.8.2",
       },
     },
     "examples/astral-site": {
