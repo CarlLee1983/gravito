@@ -1,7 +1,11 @@
-import { describe, expect, it } from 'bun:test'
+import { beforeAll, describe, expect, it, mock } from 'bun:test'
 import { EmailVerificationService } from '../src/EmailVerification'
 import { HashManager } from '../src/HashManager'
 import { InMemoryPasswordResetTokenRepository, PasswordBroker } from '../src/PasswordBroker'
+
+beforeAll(() => {
+  mock.restore()
+})
 
 describe('OrbitSentinel Security Utilities', () => {
   it('HashManager should hash and verify', async () => {

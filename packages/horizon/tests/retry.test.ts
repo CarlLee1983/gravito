@@ -19,7 +19,11 @@ describe('P3: Retry Mechanism', () => {
 
     await scheduler.run()
 
-    await new Promise((resolve) => setTimeout(resolve, 100))
+    // Wait for retries to complete (max 1s)
+    const start = Date.now()
+    while (attemptCount < 3 && Date.now() - start < 1000) {
+      await new Promise((r) => setTimeout(r, 10))
+    }
 
     expect(attemptCount).toBe(3)
     expect(failingTask).toHaveBeenCalledTimes(3)
@@ -39,7 +43,11 @@ describe('P3: Retry Mechanism', () => {
 
     await scheduler.run()
 
-    await new Promise((resolve) => setTimeout(resolve, 200))
+    // Wait for retries to complete (max 1s)
+    const start = Date.now()
+    while (timestamps.length < 3 && Date.now() - start < 1000) {
+      await new Promise((r) => setTimeout(r, 10))
+    }
 
     expect(timestamps.length).toBe(3)
 
@@ -66,7 +74,11 @@ describe('P3: Retry Mechanism', () => {
 
     await scheduler.run()
 
-    await new Promise((resolve) => setTimeout(resolve, 100))
+    // Wait for retries to complete (max 1s)
+    const start = Date.now()
+    while (attemptCount < 2 && Date.now() - start < 1000) {
+      await new Promise((r) => setTimeout(r, 10))
+    }
 
     expect(attemptCount).toBe(2)
     expect(recoveringTask).toHaveBeenCalledTimes(2)
@@ -86,7 +98,11 @@ describe('P3: Retry Mechanism', () => {
 
     await scheduler.run()
 
-    await new Promise((resolve) => setTimeout(resolve, 50))
+    // Wait for task to run (max 500ms)
+    const start = Date.now()
+    while (attemptCount < 1 && Date.now() - start < 500) {
+      await new Promise((r) => setTimeout(r, 10))
+    }
 
     expect(attemptCount).toBe(1)
     expect(failingTask).toHaveBeenCalledTimes(1)
@@ -124,7 +140,14 @@ describe('P3: Retry Mechanism', () => {
 
     await scheduler.run()
 
-    await new Promise((resolve) => setTimeout(resolve, 50))
+    // Wait for scheduler:task:retry hook to be called (max 1s)
+    const start = Date.now()
+    const hasRetryHook = () =>
+      hooks.doAction.mock.calls.some((c) => c[0] === 'scheduler:task:retry')
+
+    while (!hasRetryHook() && Date.now() - start < 1000) {
+      await new Promise((r) => setTimeout(r, 10))
+    }
 
     expect(hooks.doAction).toHaveBeenCalledWith(
       'scheduler:task:retry',

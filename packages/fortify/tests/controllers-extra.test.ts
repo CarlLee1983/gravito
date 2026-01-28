@@ -1,8 +1,14 @@
-import { beforeEach, describe, expect, test } from 'bun:test'
+import { afterAll, beforeEach, describe, expect, test } from 'bun:test'
 
 class HashManager {
   async make(value: string): Promise<string> {
     return `hashed:${value}`
+  }
+  async check(value: string, hashed: string): Promise<boolean> {
+    return hashed === `hashed:${value}`
+  }
+  needsRehash(hashed: string): boolean {
+    return true
   }
 }
 
@@ -20,11 +26,14 @@ class PasswordBroker {
 }
 
 class EmailVerificationService {
-  static verifyPayload: { id: string } | null = { id: '1' }
+  static verifyPayload: { id: string; email?: string } | null = {
+    id: '1',
+    email: 'user@example.com',
+  }
   createToken(payload: { id: string; email: string }): string {
     return `token-${payload.id}`
   }
-  verifyToken(_hash: string): { id: string } | null {
+  verifyToken(_hash: string): { id: string; email?: string } | null {
     return EmailVerificationService.verifyPayload
   }
 }
@@ -172,6 +181,10 @@ beforeEach(() => {
   MockUser.reset()
   PasswordBroker.verifyResult = true
   EmailVerificationService.verifyPayload = { id: '1' }
+})
+
+afterAll(() => {
+  mock.restore()
 })
 
 describe('Fortify controllers', () => {

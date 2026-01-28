@@ -1,8 +1,15 @@
-import { beforeAll, describe, expect, it, jest, mock } from 'bun:test'
+import { afterAll, beforeAll, describe, expect, it, jest, mock } from 'bun:test'
 
 class HashManager {
   async make(value: string): Promise<string> {
     return `hashed:${value}`
+  }
+  async check(value: string, hashed: string): Promise<boolean> {
+    return hashed === `hashed:${value}`
+  }
+  needsRehash(hashed: string): boolean {
+    // Simulating rehash needed for sentinel tests
+    return true
   }
 }
 
@@ -20,11 +27,14 @@ class PasswordBroker {
 }
 
 class EmailVerificationService {
-  static verifyPayload: { id: string } | null = { id: '1' }
+  static verifyPayload: { id: string; email?: string } | null = {
+    id: '1',
+    email: 'user@example.com',
+  }
   createToken(payload: { id: string; email: string }): string {
     return `token-${payload.id}`
   }
-  verifyToken(_hash: string): { id: string } | null {
+  verifyToken(_hash: string): { id: string; email?: string } | null {
     return EmailVerificationService.verifyPayload
   }
 }
@@ -65,6 +75,10 @@ beforeAll(async () => {
   ;({ VerifyEmailController } = await import('../src/controllers/VerifyEmailController'))
   ;({ LogoutController } = await import('../src/controllers/LogoutController'))
   ;({ verified } = await import('../src/middleware/verified'))
+})
+
+afterAll(() => {
+  mock.restore()
 })
 
 class MockUser {

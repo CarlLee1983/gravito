@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'bun:test'
+import { join } from 'path'
 import { TemplateCache } from '../src/core/TemplateCache'
 import { TemplateEngine } from '../src/engine/TemplateEngine'
 
 describe('Performance Benchmarks', () => {
-  const engine = new TemplateEngine('./tests/fixtures/perf')
+  const fixturesDir = join(import.meta.dir, 'fixtures/perf')
+  const engine = new TemplateEngine(fixturesDir)
 
   it('should render simple template 10000 times under 5000ms', () => {
     const data = { title: 'Hello', count: 100 }
@@ -31,7 +33,7 @@ describe('Performance Benchmarks', () => {
     }
     const cachedDuration = performance.now() - start
 
-    const freshEngine = new TemplateEngine('./tests/fixtures/perf', { enabled: false })
+    const freshEngine = new TemplateEngine(fixturesDir, { enabled: false })
     const freshStart = performance.now()
     for (let i = 0; i < 1000; i++) {
       freshEngine.render('simple', data)
