@@ -6,7 +6,7 @@ import type { Operator } from '../../types'
  */
 export interface WhereCondition {
   /** Type of the condition */
-  type: 'basic' | 'nested' | 'in' | 'null' | 'not_null'
+  type: 'basic' | 'nested' | 'in' | 'null' | 'between' | 'raw' | 'exists' | 'column'
   /** Column name for the condition */
   column?: string
   /** Comparison operator (e.g., '=', '!=', 'LIKE') */
@@ -14,13 +14,17 @@ export interface WhereCondition {
   /** Value to compare against (for basic conditions) */
   value?: unknown
   /** Logical connector to the previous condition ('and' or 'or') */
-  boolean?: 'and' | 'or'
+  boolean: 'and' | 'or'
   /** Array of nested conditions (for 'nested' type) */
   conditions?: WhereCondition[]
   /** Array of values (for 'in' type) */
   values?: unknown[]
   /** Whether to negate the condition (e.g., NOT IN, IS NOT NULL) */
   not?: boolean
+  /** Raw SQL for raw clauses */
+  sql?: string
+  /** Bindings for raw clauses */
+  bindings?: unknown[]
 }
 
 /**
@@ -127,6 +131,68 @@ export class WhereClause {
   }
 
   /**
+   * Add a WHERE BETWEEN condition
+   *
+   * @param column - Column name
+   * @param values - [min, max] values
+   * @param boolean - Logical connector
+   * @param not - Negate condition
+   */
+  addBetween(
+    column: string,
+    values: [unknown, unknown],
+    boolean: 'and' | 'or' = 'and',
+    not = false
+  ): void {
+    this.wheres.push({
+      type: 'between',
+      column,
+      values,
+      boolean,
+      not,
+    })
+  }
+
+  /**
+   * Add a raw WHERE condition
+   *
+   * @param sql - SQL string
+   * @param bindings - Bindings array
+   * @param boolean - Logical connector
+   */
+  addRaw(sql: string, bindings: unknown[], boolean: 'and' | 'or' = 'and'): void {
+    this.wheres.push({
+      type: 'raw',
+      sql,
+      bindings,
+      boolean,
+    })
+  }
+
+  /**
+   * Add a column comparison condition
+   *
+   * @param first - First column
+   * @param operator - Operator
+   * @param second - Second column
+   * @param boolean - Logical connector
+   */
+  addColumn(
+    first: string,
+    operator: Operator,
+    second: string,
+    boolean: 'and' | 'or' = 'and'
+  ): void {
+    this.wheres.push({
+      type: 'column',
+      column: first,
+      operator,
+      value: second,
+      boolean,
+    })
+  }
+
+  /**
    * Get all registered WHERE conditions
    *
    * @returns Array of conditions
@@ -146,11 +212,41 @@ export class WhereClause {
     for (const where of this.wheres) {
       if (where.type === 'basic') {
         values.push(where.value)
-      } else if (where.type === 'in') {
+      } else if (where.type === 'in' || where.type === 'between') {
         values.push(...(where.values || []))
+      } else if (where.type === 'raw' || where.type === 'exists') {
+        values.push(...(where.bindings || []))
+      } else if (where.type === 'nested') {
+        // Recursive? No, compileNested handles SQL, but bindings need to be extracted recursively?
+        // QueryBuilder.whereNested creates a new builder, and we push bindings from it.
+        // Wait, whereNested in QueryBuilder:
+        // this.wheres.push({ type: 'nested', bindings: nestedQuery.bindingsList })
+        // But WhereClause stores 'nested' with 'conditions'.
+        // If we store 'conditions', we need to recursively extract bindings from them.
+        // BUT my QueryBuilder implementation passes `bindings: nestedQuery.bindingsList` to WhereClause?
+        // No, `whereNested` in QueryBuilder calls `this.whereClause.addNested(nestedConditions)`.
+        // So `nestedConditions` are WhereConditions.
+        // So we need to recurse.
+        values.push(...this.getNestedValues(where.conditions || []))
       }
     }
 
+    return values
+  }
+
+  private getNestedValues(conditions: WhereCondition[]): unknown[] {
+    const values: unknown[] = []
+    for (const where of conditions) {
+      if (where.type === 'basic') {
+        values.push(where.value)
+      } else if (where.type === 'in' || where.type === 'between') {
+        values.push(...(where.values || []))
+      } else if (where.type === 'raw' || where.type === 'exists') {
+        values.push(...(where.bindings || []))
+      } else if (where.type === 'nested') {
+        values.push(...this.getNestedValues(where.conditions || []))
+      }
+    }
     return values
   }
 
@@ -185,6 +281,13 @@ export class WhereClause {
       } else if (where.type === 'null') {
         const not = where.not ? 'NOT ' : ''
         sql += `"${where.column}" IS ${not}NULL`
+      } else if (where.type === 'between') {
+        const not = where.not ? 'NOT ' : ''
+        sql += `"${where.column}" ${not}BETWEEN ? AND ?`
+      } else if (where.type === 'raw') {
+        sql += where.sql
+      } else if (where.type === 'column') {
+        sql += `"${where.column}" ${where.operator} "${where.value}"`
       }
 
       parts.push(sql)
@@ -222,6 +325,13 @@ export class WhereClause {
         sql += `"${where.column}" IS ${not}NULL`
       } else if (where.type === 'nested') {
         sql += `(${this.compileNested(where.conditions || [])})`
+      } else if (where.type === 'between') {
+        const not = where.not ? 'NOT ' : ''
+        sql += `"${where.column}" ${not}BETWEEN ? AND ?`
+      } else if (where.type === 'raw') {
+        sql += where.sql
+      } else if (where.type === 'column') {
+        sql += `"${where.column}" ${where.operator} "${where.value}"`
       }
 
       parts.push(sql)
@@ -244,5 +354,23 @@ export class WhereClause {
    */
   hasConditions(): boolean {
     return this.wheres.length > 0
+  }
+
+  /**
+   * Clone the clause
+   *
+   * @returns A deep copy of the clause
+   */
+  clone(): WhereClause {
+    const clone = new WhereClause()
+    // We need a deep copy if we modify the condition objects, but we generally don't.
+    // However, nested arrays should be copied.
+    clone.wheres = this.wheres.map((w) => {
+      if (w.type === 'nested' && w.conditions) {
+        return { ...w, conditions: [...w.conditions] }
+      }
+      return { ...w }
+    })
+    return clone
   }
 }

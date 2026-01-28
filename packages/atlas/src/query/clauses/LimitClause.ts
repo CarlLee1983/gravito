@@ -114,4 +114,22 @@ export class LimitClause {
   skip(value: number): void {
     this.setOffset(value)
   }
+
+  /**
+   * Clone the clause
+   *
+   * @returns A deep copy of the clause
+   */
+  clone(): LimitClause {
+    const clone = new LimitClause()
+    clone.setLimit(this.limitValue!)
+    clone.setOffset(this.offsetValue!)
+    // If undefined, setLimit/setOffset might set it to undefined or strict number?
+    // My implementation: setLimit(value: number).
+    // So I should check if defined.
+    // Actually, I can access private properties directly.
+    clone.limitValue = this.limitValue
+    clone.offsetValue = this.offsetValue
+    return clone
+  }
 }

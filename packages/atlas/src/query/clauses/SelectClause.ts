@@ -7,8 +7,8 @@ export class SelectClause {
   private columns: string[] = ['*']
   /** Whether to apply the DISTINCT keyword to the query */
   private distinct = false
-  /** Reference to the query's bindings list for raw expressions */
-  private bindingsList?: unknown[]
+  /** Bindings for raw expressions */
+  private bindings: unknown[] = []
 
   /**
    * Set the columns to be selected
@@ -35,9 +35,7 @@ export class SelectClause {
    */
   addRaw(expression: string, bindings: unknown[] = []): void {
     this.columns.push(expression)
-    for (const b of bindings) {
-      this.bindingsList?.push(b)
-    }
+    this.bindings.push(...bindings)
   }
 
   /**
@@ -81,7 +79,7 @@ export class SelectClause {
       if (col === '*') {
         return '*'
       }
-      return col.includes('(') ? col : `"${col}"`
+      return col.includes('(') || col.includes(' as ') || col.includes(' AS ') ? col : `"${col}"`
     })
 
     sql += ` ${columns.join(', ')}`
@@ -95,6 +93,7 @@ export class SelectClause {
   reset(): void {
     this.columns = ['*']
     this.distinct = false
+    this.bindings = []
   }
 
   /**
@@ -103,16 +102,19 @@ export class SelectClause {
    * @returns Array of bindings
    */
   getBindings(): unknown[] {
-    return this.bindingsList || []
+    return this.bindings
   }
 
   /**
-   * Set the reference to the query's bindings list
+   * Clone the clause
    *
-   * @param bindings - Bindings array
-   * @internal
+   * @returns A deep copy of the clause
    */
-  setBindingsList(bindings: unknown[]): void {
-    this.bindingsList = bindings
+  clone(): SelectClause {
+    const clone = new SelectClause()
+    clone.columns = [...this.columns]
+    clone.distinct = this.distinct
+    clone.bindings = [...this.bindings]
+    return clone
   }
 }
