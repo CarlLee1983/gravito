@@ -125,6 +125,34 @@ describe('SchemaRegistry', () => {
       expect(registry.getTables()).toContain('users')
     })
   })
+
+  describe('JIT mode operations', () => {
+    it('should invalidate table cache', () => {
+      const registry = SchemaRegistry.init({ mode: 'jit' })
+      ;(registry as any).cache.set('test', { table: 'test' })
+      expect(registry.has('test')).toBe(true)
+      registry.invalidate('test')
+      expect(registry.has('test')).toBe(false)
+    })
+  })
+
+  describe('getColumn and hasColumn', () => {
+    it('should return column schema if exists', async () => {
+      const registry = SchemaRegistry.init({ mode: 'jit' })
+      const mockSchema = {
+        table: 'users',
+        columns: new Map([['id', { name: 'id', type: 'integer' }]]),
+        primaryKey: ['id'],
+        capturedAt: Date.now(),
+      }
+      ;(registry as any).cache.set('users', mockSchema)
+
+      expect(await registry.hasColumn('users', 'id')).toBe(true)
+      expect(await registry.hasColumn('users', 'email')).toBe(false)
+      const column = await registry.getColumn('users', 'id')
+      expect(column?.type).toBe('integer')
+    })
+  })
 })
 
 describe('SchemaSniffer', () => {

@@ -1154,12 +1154,14 @@ export abstract class Model {
       }
     }
 
-    // Handle Optimistic Locking
     const versionKey = (modelCtor as any)[VERSION_KEY] as string | undefined
     let currentVersion: unknown
 
     if (versionKey) {
       currentVersion = this._attributes[versionKey]
+      if (currentVersion === undefined || currentVersion === null) {
+        currentVersion = 1
+      }
       if (typeof currentVersion === 'number') {
         this._setAttribute(versionKey, currentVersion + 1)
       }

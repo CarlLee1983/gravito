@@ -3,9 +3,13 @@ import { DB } from '../src/DB'
 import { column, version } from '../src/orm/model/decorators'
 import { StaleModelError } from '../src/orm/model/errors'
 import { Model } from '../src/orm/model/Model'
+import { SchemaRegistry } from '../src/orm/schema/SchemaRegistry'
 import { Schema } from '../src/schema/Schema'
 
+const CONNECTION_NAME = `opt_lock_${Math.random().toString(36).slice(2)}`
+
 class VersionedUser extends Model {
+  static connection = CONNECTION_NAME
   static table = 'versioned_users'
 
   @column({ isPrimary: true })
@@ -20,17 +24,22 @@ class VersionedUser extends Model {
 
 describe('Optimistic Locking', () => {
   beforeEach(async () => {
+    Schema.reset()
+    SchemaRegistry.reset()
+    // Force JIT mode for tests to avoid "Table not found in schema lock" errors in CI
+    SchemaRegistry.init({ mode: 'jit', connection: CONNECTION_NAME })
+
     DB.configure({
-      default: 'sqlite',
+      default: CONNECTION_NAME,
       connections: {
-        sqlite: {
+        [CONNECTION_NAME]: {
           driver: 'sqlite',
           database: ':memory:',
         },
       },
     })
 
-    await Schema.create('versioned_users', (table) => {
+    await Schema.connection(CONNECTION_NAME).create('versioned_users', (table) => {
       table.id()
       table.string('name')
       table.integer('version').default(1)
