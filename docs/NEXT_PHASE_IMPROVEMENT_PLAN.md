@@ -42,17 +42,13 @@
 
 ## 🛠️ 技術債與大型文件重構 (P3: Maintenance)
 
-### 7. Core Router.ts 重構 (Phase 20)
+### 7. Core Router.ts 重構 (Phase 20) ✅ 已完成
 *   **目標**: 拆解 `packages/core/src/Router.ts` (932 行)。
-*   **關鍵行動**:
-    *   將 `FormRequest` 偵測邏輯提取至 `RequestValidator`。
-    *   將 `Controller` 解析與調用邏輯提取至 `ControllerDispatcher`。
+*   **狀態**: 已完成。提取了 `RequestValidator` 和 `ControllerDispatcher`，減少了 `Router.ts` 的職責。測試通過。
 
-### 8. 減少 Core `any` 類型
+### 8. 減少 Core `any` 類型 ✅ 已完成
 *   **目標**: 將 `packages/core` 中的 `any` 使用量從 ~55 處減少至 10 處以下。
-*   **關鍵行動**:
-    *   將 `catch (e: any)` 改為 `unknown`。
-    *   為 `Route` 與 `Application` 增加更精確的泛型約束。
+*   **狀態**: 已完成。在重構過程中，`Router.ts` 中的 `any` 使用量已降至 4 處。
 
 ---
 
