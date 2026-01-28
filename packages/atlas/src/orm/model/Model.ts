@@ -9,11 +9,12 @@ import type { QueryBuilderContract } from '../../types'
 import { SchemaRegistry } from '../schema/SchemaRegistry'
 import type { ColumnType, TableSchema } from '../schema/types'
 import { DirtyTracker } from './DirtyTracker'
-import { COLUMN_KEY, SOFT_DELETES_KEY } from './decorators'
+import { COLUMN_KEY, SOFT_DELETES_KEY, VERSION_KEY } from './decorators'
 import {
   ColumnNotFoundError,
   ModelNotFoundError,
   NullableConstraintError,
+  StaleModelError,
   TypeMismatchError,
 } from './errors'
 import { ModelRegistry } from './ModelRegistry'
@@ -436,8 +437,16 @@ export abstract class Model {
         }
 
         // 3. Prioritize setting attributes/relations
-        // If it's already an attribute, or if it's not in the target (instance), treat as attribute
-        if (!(prop in target) || (typeof prop === 'string' && prop in model._attributes)) {
+        // Check if it's a defined column
+        const columns = (model.constructor as any)[COLUMN_KEY]
+        const isColumn = columns && typeof prop === 'string' && prop in columns
+
+        // If it's a column, or already an attribute, or if it's not in the target (instance), treat as attribute
+        if (
+          isColumn ||
+          !(prop in target) ||
+          (typeof prop === 'string' && prop in model._attributes)
+        ) {
           model._setAttribute(prop as string, value)
           return true
         }
@@ -1087,9 +1096,8 @@ export abstract class Model {
     if (Array.isArray(result) && result.length > 0) {
       const pk = result[0]
       if (typeof pk === 'object' && pk !== null) {
-        this._attributes[modelCtor.primaryKey] = (pk as Record<string, unknown>)[
-          modelCtor.primaryKey
-        ]
+        // Merge all returned attributes (e.g. version, timestamps)
+        Object.assign(this._attributes, pk)
       } else {
         this._attributes[modelCtor.primaryKey] = pk
       }
@@ -1130,15 +1138,35 @@ export abstract class Model {
       }
     }
 
-    const dirty = this.getDirty()
-    if (Object.keys(dirty).length === 0) {
-      return this // Nothing to update
+    // Handle Optimistic Locking
+    const versionKey = (modelCtor as any)[VERSION_KEY] as string | undefined
+    let currentVersion: unknown
+
+    if (versionKey) {
+      currentVersion = this._attributes[versionKey]
+      if (typeof currentVersion === 'number') {
+        this._setAttribute(versionKey, currentVersion + 1)
+      }
     }
 
-    await connection
-      .table(modelCtor.getTable())
-      .where(modelCtor.primaryKey, this.getKey())
-      .update(dirty)
+    const dirty = this.getDirty()
+    if (Object.keys(dirty).length === 0) {
+      return this
+    }
+
+    const query = connection.table(modelCtor.getTable()).where(modelCtor.primaryKey, this.getKey())
+
+    // Add version check
+    if (versionKey && currentVersion !== undefined) {
+      query.where(versionKey, currentVersion)
+    }
+
+    const affected = await query.update(dirty)
+
+    // Check for Stale Object
+    if (versionKey && affected === 0) {
+      throw new StaleModelError(modelCtor.name, this.getKey())
+    }
 
     this._dirtyTracker.sync(this._attributes)
 

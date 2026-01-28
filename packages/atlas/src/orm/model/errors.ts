@@ -98,3 +98,21 @@ export class ModelNotFoundError extends Error {
     this.name = 'ModelNotFoundError'
   }
 }
+
+/**
+ * Stale Model Error
+ * Thrown when an optimistic lock check fails (concurrent update)
+ */
+export class StaleModelError extends Error {
+  constructor(
+    public readonly model: string,
+    public readonly key: unknown
+  ) {
+    const message =
+      `Stale model "${model}" with key "${key}".\n\n` +
+      `The record has been modified by another process since it was loaded.`
+
+    super(message)
+    this.name = 'StaleModelError'
+  }
+}
