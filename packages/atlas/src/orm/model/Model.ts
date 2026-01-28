@@ -1088,6 +1088,11 @@ export abstract class Model {
       }
     }
 
+    const versionKey = (modelCtor as any)[VERSION_KEY] as string | undefined
+    if (versionKey && this._attributes[versionKey] === undefined) {
+      this._setAttribute(versionKey, 1)
+    }
+
     const result = await connection
       .table<ModelAttributes>(modelCtor.getTable())
       .insert(this._attributes)
@@ -1100,6 +1105,17 @@ export abstract class Model {
         Object.assign(this._attributes, pk)
       } else {
         this._attributes[modelCtor.primaryKey] = pk
+      }
+    } else if (this._attributes[modelCtor.primaryKey] === undefined) {
+      // Fallback: If result is empty but we don't have an ID, try to get it
+      // This helps with drivers that don't support RETURNING or return empty results
+      try {
+        const lastId = await connection.table(modelCtor.getTable()).max(modelCtor.primaryKey)
+        if (lastId) {
+          this._attributes[modelCtor.primaryKey] = lastId
+        }
+      } catch (_e) {
+        // Ignore fallback errors
       }
     }
 

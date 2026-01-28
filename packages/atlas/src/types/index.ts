@@ -462,6 +462,11 @@ export interface QueryResult<T = Record<string, unknown>> {
   rowCount: number
 
   /**
+   * Last inserted ID (if available)
+   */
+  insertId?: number | bigint | string | undefined
+
+  /**
    * Field metadata
    */
   fields?: FieldInfo[]

@@ -21,19 +21,19 @@ export interface SoftDeletesOptions {
  * Metadata key for Soft Deletes configuration.
  * @internal
  */
-export const SOFT_DELETES_KEY = Symbol('soft_deletes')
+export const SOFT_DELETES_KEY = Symbol.for('gravito:atlas:soft_deletes')
 
 /**
  * Metadata key for Column definitions.
  * @internal
  */
-export const COLUMN_KEY = Symbol('column')
+export const COLUMN_KEY = Symbol.for('gravito:atlas:column')
 
 /**
  * Metadata key for Version column.
  * @internal
  */
-export const VERSION_KEY = Symbol('version')
+export const VERSION_KEY = Symbol.for('gravito:atlas:version')
 
 /**
  * Soft Deletes Decorator
