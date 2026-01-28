@@ -1089,8 +1089,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
       }
     } else {
       for (const [rel, callback] of Object.entries(relation)) {
-        // @ts-expect-error - Mismatch between unknown and any in Map value type
-        this.eagerLoads.set(rel, callback)
+        this.eagerLoads.set(rel, callback as any)
       }
     }
     return this
