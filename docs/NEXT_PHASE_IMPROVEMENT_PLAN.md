@@ -2,7 +2,7 @@
 
 **日期**: 2026-01-28  
 **分支**: `next-phase-improvement-plan-v2`  
-**狀態**: 📋 規劃中
+**狀態**: 🚀 實作中 (Phase 19, Ripple, Pulsar, Cosmos, Atlas Locking 已完成)
 
 本文件彙整了基於 Gravito 1.0 銀河架構 (Galaxy Architecture) 的下一階段優化與功能增強項目。這些任務旨在解決現有的技術債、提升系統效能，並強化核心組件的企業級功能。
 
@@ -10,45 +10,25 @@
 
 ## 🎯 核心優先任務 (P1: High Priority)
 
-### 1. Atlas QueryBuilder 重構集成 (Phase 19)
+### 1. Atlas QueryBuilder 重構集成 (Phase 19) ✅ 已完成
 *   **目標**: 將已開發的 `SelectClause`, `WhereClause`, `JoinClause`, `LimitClause` 正式集成至 `packages/atlas/src/query/QueryBuilder.ts`。
-*   **預期效益**: 
-    *   將 `QueryBuilder.ts` 從 1300+ 行減少至 800 行以下。
-    *   提升程式碼的可維護性與可測試性。
-*   **關鍵行動**:
-    *   修復 `JoinClause` 的類型衝突。
-    *   實作其餘子句（`GroupBy`, `Having`, `OrderBy`）。
-    *   更新 `QueryBuilder` 以使用組合模式 (Composition) 調用這些子句。
+*   **狀態**: 已完成。所有子句已實作並集成，`QueryBuilder` 現使用組合模式。測試全部通過。
 
-### 2. Ripple RedisDriver 實現 (分布式 WebSocket)
+### 2. Ripple RedisDriver 實現 (分布式 WebSocket) ✅ 已完成
 *   **目標**: 實作 `@gravito/ripple` 的 `RedisDriver`。
-*   **預期效益**: 
-    *   支援橫向擴展 (Horizontal Scaling) 的 WebSocket 架構。
-    *   實現跨實例的訊息廣播。
-*   **關鍵行動**:
-    *   基於 Redis Pub/Sub 實作 `RippleDriver` 介面。
-    *   在 `RippleServer` 中加入驅動切換邏輯。
+*   **狀態**: 已完成。`RedisDriver` 已實作並包含在發布版本中，測試通過。
 
-### 3. Pulsar Flash Data 實作
+### 3. Pulsar Flash Data 實作 ✅ 已完成
 *   **目標**: 在 `@gravito/pulsar` 中實作一次性會話訊息 (Flash Data) 的持久化。
-*   **預期效益**: 
-    *   支援傳統 Web 應用常見的「重定向後顯示成功訊息」模式。
-*   **關鍵行動**:
-    *   實作 `ctx.session.flash()` 與自動清除機制。
-    *   確保 Flash 資料能正確序列化至 Session Store。
+*   **狀態**: 已完成。`flash()`, `getFlash()`, `reflash()`, `keep()` 均已實作並測試通過。
 
 ---
 
 ## ⚡ 性能與架構增強 (P2: Medium Priority)
 
-### 4. Cosmos i18n 效能優化
+### 4. Cosmos i18n 效能優化 ✅ 已完成
 *   **目標**: 解決並發載入語言檔時的 "Thundering Herd" 問題，並引入 LRU 快取。
-*   **預期效益**: 
-    *   減少高並發下的檔案系統 I/O 壓力。
-    *   降低長期運行應用的記憶體佔用。
-*   **關鍵行動**:
-    *   實作 `Loading Coalescing` (Promise 鎖)。
-    *   為翻譯結果快取加入 LRU 淘汰機制。
+*   **狀態**: 已完成。實作了 `loadingPromises` 進行請求合併，並引入 `lru-cache` 進行翻譯快取。
 
 ### 5. Photon OpenAPI 整合
 *   **目標**: 整合 `zod-openapi` 至 `@gravito/photon`。
@@ -58,13 +38,9 @@
 *   **關鍵行動**:
     *   實作輔助函數，將 Hono 路由轉換為 OpenAPI 規格。
 
-### 6. Atlas 樂觀鎖 (Optimistic Locking)
+### 6. Atlas 樂觀鎖 (Optimistic Locking) ✅ 已完成
 *   **目標**: 在 Atlas ORM 中實作基於 `version` 欄位的並發控制。
-*   **預期效益**: 
-    *   防止分散式環境下的資料覆蓋風險 (Lost Update)。
-*   **關鍵行動**:
-    *   在 `Model` 中加入 `@version` 裝飾器。
-    *   更新時自動檢查並增加版本號。
+*   **狀態**: 已完成。新增 `@version` 裝飾器與 `StaleModelError`，`Model` 自動處理版本檢查與遞增。
 
 ---
 
@@ -86,9 +62,9 @@
 
 ## 📅 實施計劃 (Timeline)
 
-1.  **Week 1**: Atlas Phase 19 集成 + Ripple RedisDriver。
-2.  **Week 2**: Pulsar Flash Data + Cosmos 效能優化。
-3.  **Week 3**: Photon OpenAPI + Atlas 樂觀鎖。
+1.  **Week 1**: Atlas Phase 19 集成 + Ripple RedisDriver (Done)。
+2.  **Week 2**: Pulsar Flash Data + Cosmos 效能優化 + Atlas 樂觀鎖 (Done)。
+3.  **Week 3**: Photon OpenAPI。
 4.  **Week 4**: Core Router 重構 + 類型安全提升。
 
 ---
