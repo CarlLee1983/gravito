@@ -201,7 +201,7 @@ export default function Ecosystem({ lang = 'en' }: { lang?: 'en' | 'zh-TW' }) {
         <div className="absolute -top-24 -left-24 w-64 h-64 bg-photon-gold/5 blur-[100px] rounded-full pointer-events-none" />
         <div className="flex items-center gap-3 mb-8">
           <div className="px-3 py-1 bg-photon-gold/10 border border-photon-gold/20 rounded-full text-[10px] text-photon-gold font-technical tracking-[0.2em] uppercase shadow-[0_0_15px_rgba(255,184,0,0.1)]">
-            Registry_v1.2.0_LATEST
+            Registry_v1.5.0_LATEST
           </div>
           <div className="flex items-center gap-1.5 px-3 py-1 bg-green-500/10 border border-green-500/20 rounded-full text-[10px] text-green-500 font-technical tracking-[0.1em] uppercase">
             <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />

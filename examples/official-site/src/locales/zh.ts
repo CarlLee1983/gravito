@@ -156,7 +156,7 @@ export default {
     lux: 'Luminosity (Lux)',
     lux_note: 'Luminosity (Lux) — 基於 Gravito Core 的 Sitemap 引擎。',
     photon: 'Photon',
-    photon_note: 'Photon — 基於 Hono 的超高速 HTTP 引擎。',
+    photon_note: 'Photon (Beta) — 基於 Hono 的超高速 HTTP 引擎。',
     atlas: 'Atlas (ORM)',
     atlas_note: 'Atlas (ORM) — 高性能 Bun 原生 ORM。',
     zenith: 'Zenith',

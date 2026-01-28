@@ -1,4 +1,5 @@
-# 🌌 Cosmos Architecture 技術架構規格書 (v1.0)
+title: Cosmos Architecture 技術架構規格書
+# Cosmos Architecture 技術架構規格書 (v3.1.0)
 
 本文件詳述 `@gravito/cosmos` 的內部架構、國際化 (i18n) 實作機制以及請求範疇 (Request-Scoped) 的設計策略。
 
@@ -10,6 +11,7 @@ Cosmos 是 Gravito 框架的國際化引擎，其設計目標是在高效能與�
 - **Request-Scoped State**：採用「全局資源、請求狀態」的分離模式。翻譯資源由全域 Manager 管理，而每個 HTTP 請求擁有獨立的輕量級 Instance 來追蹤當前語言。
 - **Type Safety**：利用 TypeScript 的模板文字類型 (Template Literal Types) 實現翻譯鍵值的強型別檢查與自動補全。
 - **Lazy Loading**：翻譯檔案僅在需要時從檔案系統載入，顯著降低應用啟動時間與記憶體初始佔用。
+- **Performance Optimized**：引入 LRU 快取與並發載入合併機制，解決高效能場景下的瓶頸。
 
 ---
 
@@ -27,7 +29,8 @@ Cosmos 是 Gravito 框架的國際化引擎，其設計目標是在高效能與�
 - **位置**：`src/I18nService.ts`
 - **關鍵行為**：
   - **Resource Holding**：儲存所有已載入的翻譯包 (`TranslationMap`)。
-  - **Caching**：維護解析後的翻譯字串快取 (`locale:key` -> string)，避免重複遍歷物件樹。
+  - **Caching**：維護解析後的翻譯字串快取 (`locale:key` -> string)，採用 **LRU (Least Recently Used)** 策略防止記憶體洩漏。
+  - **Request Coalescing**：透過 `loadingPromises` Map 實現並發請求合併，避免 "Thundering Herd" 問題。
   - **Pluralization**：快取 `Intl.PluralRules` 實例，處理複數邏輯。
   - **Loading**：協調檔案系統讀取 (`loader.ts`)。
 
@@ -72,15 +75,12 @@ Cosmos 遵循 `Intl` 標準而非自定義邏輯。
 ## 4. 潛在風險與效能評估
 
 ### 4.1 快取無限增長 (Memory Leak Risk)
-`I18nManager` 的 `cache` (`Map<string, string>`) 目前沒有實作淘汰機制 (Eviction Policy)。
-- **風險**：若應用長期運行且擁有海量動態鍵值或語言，快取可能佔用過多記憶體。
-- **緩解**：目前的設計假設翻譯鍵值是靜態且有限的。若動態生成翻譯鍵，需特別注意。
+- **現況**：✅ 已實作 LRU 快取淘汰機制。
+- **機制**：`I18nManager` 使用 `lru-cache` 限制翻譯字串的快取數量，確保記憶體佔用可控。
 
 ### 4.2 並發載入 (Thundering Herd)
-`ensureLocale` 中的檔案讀取是異步的。
-- **場景**：當伺服器剛啟動，數百個請求同時要求 'fr' 語言。
-- **問題**：雖然有 `loadedLocales` 檢查，但在 `await loadLocale` 完成前，後續請求可能會重複觸發讀取。
-- **建議**：應引入 Promise 鎖或 `loadingPromises` Map 來合併同一語言的並發載入請求。
+- **現況**：✅ 已實作 Request Coalescing。
+- **機制**：`ensureLocale` 會檢查 `loadingPromises`，若該語言正在載入中，則返回現有的 Promise，確保檔案系統僅被讀取一次。
 
 ---
 

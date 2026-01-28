@@ -1,4 +1,5 @@
-# 🌌 Ripple Architecture 技術架構規格書 (v1.0)
+title: Ripple Architecture 技術架構規格書
+# Ripple Architecture 技術架構規格書 (v3.4.0)
 
 本文件詳述 `@gravito/ripple` 的內部架構、Bun 原生 WebSocket 實作以及分散式廣播機制。
 
@@ -35,8 +36,9 @@ Ripple 是專為 Bun 設計的高效能廣播系統。
 ### 2.3 Drivers (Scaling)
 - **職責**：負責跨節點訊息同步。
 - **位置**：`src/drivers/`
-- **RedisDriver**：
-  - **Publisher**：當 A 節點廣播訊息時，發布到 Redis Channel `ripple:{channel}`。
+- **RedisDriver (Implemented)**：
+  - **機制**：利用 Redis 的 Pub/Sub 機制實現跨伺服器通訊。
+  - **Publisher**：當 A 節點廣播訊息時，發佈到 Redis Channel `ripple:{channel}`。
   - **Subscriber**：B 節點收到 Redis 訊息後，轉發給本地的 WebSocket 客戶端。
   - **LocalDriver**：僅在單機記憶體內廣播，適合開發環境。
 
@@ -96,7 +98,7 @@ Ripple 不會啟動自己的 HTTP 伺服器，而是掛載在現有的 `Bun.serv
 
 ### 中期 (v1.2)
 1. **NATS / Kafka Driver**：提供比 Redis 更高吞吐量的後端驅動。
-2. **Client SDK**：發布 `@gravito/ripple-client` (類似 `laravel-echo`)，提供自動重連與頻道訂閱封裝。
+2. **Client SDK**：發佈 `@gravito/ripple-client` (類似 `laravel-echo`)，提供自動重連與頻道訂閱封裝。
 
 ### 長期 (v2.0)
 1. **uWebSockets.js**：探索在 Node.js 環境下使用 `uWebSockets.js` 作為底層，實現跨 Runtime 的高效能支援。

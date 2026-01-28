@@ -1,12 +1,13 @@
-# Atlas ORM 架構技術規格書
+title: Atlas ORM 架構技術規格書
+# Atlas ORM 架構技術規格書 (v1.4.0)
 
 ## 1. 模組概覽
 
 **Atlas** 是 Gravito 框架中的核心資料庫層（Orbit），提供高效能的 Query Builder 與 Active Record ORM 實作。其設計目標是在保持開發者體驗（DX）的同時，最大化執行效能與記憶體安全性。
 
 ### 核心職責
-- **Fluent Query Builder**：提供類型安全的鏈式 SQL 建構介面，支援複雜查詢（如巢狀 Where、JSON 操作）。
-- **Active Record ORM**：基於 Proxy 的模型層，支援髒檢查（Dirty Checking）、生命週期鉤子與關聯管理。
+- **Fluent Query Builder**：提供類型安全的鏈式 SQL 建構介面，支援複雜查詢（如巢狀 Where、JSON 操作）。採用組合模式重構，支持模組化子句。
+- **Active Record ORM**：基於 Proxy 的模型層，支援髒檢查（Dirty Checking）、生命週期鉤子、關聯管理與**樂觀鎖（Optimistic Locking）**。
 - **Connection Management**：支援多資料庫連線池、斷線重連與懶加載（Lazy Initialization）。
 - **Migration & Schema**：資料庫版本控制與結構定義（支援 `Schema.create`, `table.softDeletes` 等）。
 
@@ -22,9 +23,11 @@ Atlas 採用經典的四層架構設計，確保關注點分離：
     -   使用 ES6 Proxy 攔截屬性存取。
     -   負責業務邏輯封裝、資料驗證與關聯定義。
     -   提供 `find`, `save`, `delete` 等 Active Record 方法。
+    -   **併發控制**：透過 `@version` 裝飾器實現樂觀鎖，自動處理版本檢查。
 2.  **Query Layer (Builder)** (`packages/atlas/src/query/QueryBuilder.ts`)
     -   負責 SQL 語法樹的建構。
     -   實現 Fluent Interface（`where`, `select`, `join`, `orderBy`）。
+    -   **關鍵重構**：使用組合模式（Composition Pattern）將 `SelectClause`, `WhereClause`, `JoinClause`, `LimitClause` 拆分為獨立組件，提升代碼可維護性。
     -   **關鍵優化**：Copy-on-Write (CoW) 機制，減少 clone 成本。
 3.  **Connection Layer** (`packages/atlas/src/connection/ConnectionManager.ts`)
     -   管理連線生命週期。
@@ -87,14 +90,21 @@ graph LR
 **實作**：
 -   `chunk` 方法內部自動分頁，回調函數處理完一批數據後釋放記憶體。
 
+### 3.4 樂觀鎖 (Optimistic Locking)
+**決策**：在 `Model` 層級實作基於版本的並發控制。
+**原因**：防止多個請求同時更新同一筆資料導致的「遺失更新」問題。
+**實作**：
+-   使用 `@version` 裝飾器標記版本欄位。
+-   `Model.save()` 時自動將版本號加入 `WHERE` 子句並在成功後遞增。
+-   若受影響行數為 0，拋出 `StaleModelError`。
+
 ---
 
 ## 4. 風險分析與潛在問題
 
 ### 4.1 併發更新風險 (Race Condition)
--   **問題**：`update` 操作僅依賴 `primaryKey` 進行更新，未檢查數據版本。
--   **風險**：若兩個請求同時讀取同一筆資料並修改不同欄位，後寫入者會覆蓋先寫入者的變更（Lost Update）。
--   **建議**：需實作樂觀鎖（Optimistic Locking），在 schema 中增加 `version` 欄位，更新時檢查 `version` 是否一致。
+-   **現況**：✅ 已實作樂觀鎖（Optimistic Locking）。
+-   **機制**：開發者只需在 Model 中定義 `@version` 欄位，系統即自動處理衝突檢測。
 
 ### 4.2 N+1 查詢問題
 -   **現況**：
