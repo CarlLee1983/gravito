@@ -1,6 +1,7 @@
 /**
  * Bun Native SQL Driver
  * @description Driver implementation using Bun's native unified SQL API (Bun.sql)
+ * Enhanced with prepared statements, streaming, and connection pool management
  */
 
 import {
@@ -14,14 +15,17 @@ import type {
   DriverContract,
   DriverType,
   ExecuteResult,
+  PoolStats,
   QueryResult,
 } from '../types'
+import { BunSQLPreparedStatementManager } from './BunSQLPreparedStatement'
+import type { BunSQLClient } from './types'
 
 export class BunSQLDriver implements DriverContract {
-  // biome-ignore lint/suspicious/noExplicitAny: Client type is dynamic
-  private client: any | null = null
+  private client: BunSQLClient | null = null
   private connected = false
   private transactionActive = false
+  private preparedManager?: BunSQLPreparedStatementManager
 
   constructor(private readonly config: ConnectionConfig) {}
 
@@ -61,15 +65,22 @@ export class BunSQLDriver implements DriverContract {
   }
 
   /**
-   * Disconnect
+   * Disconnect and clean up resources
    */
   async disconnect(): Promise<void> {
+    // Clean up prepared statements
+    if (this.preparedManager) {
+      await this.preparedManager.destroy()
+      this.preparedManager = undefined
+    }
+
+    // Close client connection
     if (this.client) {
-      // Bun.sql connection pool closing
       if (typeof this.client.close === 'function') await this.client.close()
       else if (typeof this.client.end === 'function') await this.client.end()
       this.client = null
     }
+
     this.connected = false
     this.transactionActive = false
   }
@@ -82,7 +93,8 @@ export class BunSQLDriver implements DriverContract {
   }
 
   /**
-   * Execute a query
+   * Execute a query using Bun.sql
+   * Prioritizes the `unsafe()` method for optimal performance with dynamic SQL
    */
   async query<T = Record<string, unknown>>(
     sql: string,
@@ -91,42 +103,47 @@ export class BunSQLDriver implements DriverContract {
     await this.ensureConnection()
 
     try {
-      // The definitive Bun 1.3 way to run dynamic SQL strings with parameters:
-      // Using Bun.sql.raw or the instance's unsafe method.
-      // If the client itself is not callable, we must find the execution method.
-
       let result: any
-      if (typeof this.client === 'function') {
-        // If it's a callable template function, we try to use it with raw
+
+      // Priority 1: Use unsafe() for dynamic SQL (recommended for Bun 1.3+)
+      if (this.client?.unsafe) {
+        result = await this.client.unsafe(sql, bindings)
+      }
+      // Priority 2: Use query() method if available
+      else if (this.client?.query) {
+        result = await this.client.query(sql, bindings)
+      }
+      // Priority 3: Try callable template function
+      else if (typeof this.client === 'function') {
         result = await this.client(sql, ...bindings)
-      } else {
-        // Look for common execution methods in Bun's SQL Query instance
-        const exec = this.client.query || this.client.unsafe || this.client.all || this.client.run
+      }
+      // Priority 4: Fallback to other execution methods
+      else {
+        const exec = this.client?.all || this.client?.run
         if (typeof exec === 'function') {
           result = await exec.call(this.client, sql, bindings)
         } else {
-          // Absolute fallback: If Bun.sql is strictly tagged template, we can't easily
-          // use it with dynamic strings without Bun.sql.raw (which is unsafe for production)
-          // or a more complex template reconstruction.
-          throw new Error(
-            'Native Bun.sql does not support dynamic string execution in this version.'
-          )
+          throw new Error('Bun.sql does not support dynamic query execution in this environment')
         }
       }
 
+      // Normalize result to rows array
       let rows: T[] = []
       if (Array.isArray(result)) {
         rows = result
       } else if (result && typeof result === 'object') {
-        rows = (result.rows || result) as T[]
-        if (!Array.isArray(rows) && typeof (rows as any)[Symbol.iterator] === 'function') {
-          rows = Array.from(rows as any)
+        // Handle iterable results
+        if (typeof result[Symbol.iterator] === 'function') {
+          rows = Array.from(result)
+        } else {
+          rows = (result.rows || result) as T[]
         }
       }
 
       return {
         rows,
         rowCount: result?.rowCount ?? result?.count ?? rows.length,
+        insertId: result?.lastInsertRowid,
       }
     } catch (error) {
       throw this.normalizeError(error, sql, bindings)
@@ -185,9 +202,12 @@ export class BunSQLDriver implements DriverContract {
     }
   }
 
+  /**
+   * Build connection URL with pool and SSL configuration
+   */
   private getConnectionUrl(): string {
     // biome-ignore lint/suspicious/noExplicitAny: Config is dynamic
-    const { driver, host, port, database, username, password } = this.config as any
+    const { driver, host, port, database, username, password, ssl, pool } = this.config as any
     const protocol =
       driver === 'postgres'
         ? 'postgres'
@@ -199,11 +219,167 @@ export class BunSQLDriver implements DriverContract {
       return `sqlite:${database}`
     }
 
-    const auth = username ? (password ? `${username}:${password}@` : `${username}@`) : ''
+    const auth = username
+      ? password
+        ? `${username}:${encodeURIComponent(password)}@`
+        : `${username}@`
+      : ''
     const hostPart = host ?? 'localhost'
     const portPart = port ? `:${port}` : ''
 
-    return `${protocol}://${auth}${hostPart}${portPart}/${database}`
+    // Build query parameters
+    const params = new URLSearchParams()
+
+    // SSL configuration
+    if (ssl) {
+      params.set('sslmode', typeof ssl === 'object' ? 'require' : ssl ? 'require' : 'disable')
+    }
+
+    // Pool configuration
+    if (pool?.max) {
+      params.set('max', String(pool.max))
+    }
+    if (pool?.idleTimeout) {
+      params.set('idle_timeout', String(pool.idleTimeout))
+    }
+
+    const queryString = params.toString()
+    return `${protocol}://${auth}${hostPart}${portPart}/${database}${queryString ? '?' + queryString : ''}`
+  }
+
+  // ============================================================================
+  // Advanced Features (Bun.sql 1.3+ enhancements)
+  // ============================================================================
+
+  /**
+   * Prepare a statement for repeated execution
+   * @param sql - SQL query to prepare
+   * @returns Prepared statement identifier
+   */
+  async prepare(sql: string): Promise<string> {
+    await this.ensureConnection()
+
+    if (!this.client?.prepare) {
+      throw new Error('Prepared statements are not supported by this Bun.sql version')
+    }
+
+    if (!this.preparedManager) {
+      this.preparedManager = new BunSQLPreparedStatementManager(this.client)
+    }
+
+    return this.preparedManager.prepare(sql)
+  }
+
+  /**
+   * Execute a prepared statement
+   * @param name - Prepared statement identifier
+   * @param bindings - Query parameters
+   * @returns Query result
+   */
+  async executePrepared<T = Record<string, unknown>>(
+    name: string,
+    bindings: unknown[] = []
+  ): Promise<QueryResult<T>> {
+    if (!this.preparedManager) {
+      throw new Error('No prepared statements available. Call prepare() first.')
+    }
+
+    try {
+      const rows = await this.preparedManager.execute<T>(name, bindings)
+      return {
+        rows,
+        rowCount: rows.length,
+      }
+    } catch (error) {
+      throw this.normalizeError(error, `[Prepared: ${name}]`, bindings)
+    }
+  }
+
+  /**
+   * Clear all prepared statements from cache
+   */
+  async clearPreparedStatements(): Promise<void> {
+    if (this.preparedManager) {
+      await this.preparedManager.clear()
+    }
+  }
+
+  /**
+   * Stream query results for processing large datasets
+   * @param sql - SQL query
+   * @param bindings - Query parameters
+   * @returns Async iterable of result rows
+   */
+  async *stream<T = Record<string, unknown>>(
+    sql: string,
+    bindings: unknown[] = []
+  ): AsyncIterable<T> {
+    await this.ensureConnection()
+
+    try {
+      // Execute query and get iterable result
+      let result: any
+
+      if (this.client?.unsafe) {
+        result = await this.client.unsafe(sql, bindings)
+      } else if (this.client?.query) {
+        result = await this.client.query(sql, bindings)
+      } else {
+        throw new Error('Bun.sql does not support streaming in this environment')
+      }
+
+      // Bun.sql results are natively iterable
+      if (result && typeof result[Symbol.iterator] === 'function') {
+        for (const row of result) {
+          yield row as T
+        }
+      } else if (result?.rows && Array.isArray(result.rows)) {
+        for (const row of result.rows) {
+          yield row as T
+        }
+      } else if (Array.isArray(result)) {
+        for (const row of result) {
+          yield row as T
+        }
+      } else {
+        throw new Error('Query result is not iterable')
+      }
+    } catch (error) {
+      throw this.normalizeError(error, sql, bindings)
+    }
+  }
+
+  /**
+   * Get connection pool statistics
+   * @returns Pool statistics or null if not available
+   */
+  getPoolStats(): PoolStats | null {
+    // biome-ignore lint/suspicious/noExplicitAny: Pool config is dynamic
+    const poolConfig = (this.config as any).pool
+
+    if (!this.client) {
+      return {
+        idle: 0,
+        pending: 0,
+        active: 0,
+        total: 0,
+        max: poolConfig?.max ?? 10,
+      }
+    }
+
+    // Bun.sql exposes connection pool statistics
+    const connections = this.client.connections
+    if (connections) {
+      return {
+        idle: connections.idle,
+        pending: connections.pending,
+        active: connections.active,
+        total: connections.total,
+        max: poolConfig?.max ?? 10,
+      }
+    }
+
+    return null
   }
 
   // biome-ignore lint/suspicious/noExplicitAny: Error handling generic

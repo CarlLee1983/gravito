@@ -832,6 +832,48 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
   }
 
   /**
+   * Stream query results for processing large datasets
+   * Returns an async iterator that yields records one at a time,
+   * which is memory-efficient for large result sets.
+   *
+   * @example
+   * ```typescript
+   * for await (const user of User.query().where('active', true).stream()) {
+   *   await processUser(user)
+   * }
+   * ```
+   */
+  async *stream(): AsyncIterable<T> {
+    const compiled = this.getCompiledQuery()
+    const sql = this.grammar.compileSelect(compiled)
+    const bindings = compiled.bindings
+
+    // Access stream from connection if available
+    const conn = this.connection as ConnectionContract & {
+      stream?: <U>(sql: string, bindings: unknown[]) => AsyncIterable<U>
+    }
+
+    if (typeof conn.stream === 'function') {
+      // Use native streaming if available
+      for await (const row of conn.stream<T>(sql, bindings)) {
+        // Hydrate row if model is set and not in readonly mode
+        if (this._model && !this._readonly) {
+          const model = this._model.hydrate([row])[0]
+          yield model as unknown as T
+        } else {
+          yield row
+        }
+      }
+    } else {
+      // Fallback to regular query
+      const rows = await this.get()
+      for (const row of rows) {
+        yield row
+      }
+    }
+  }
+
+  /**
    * Retrieve the first record matching the query.
    */
   async first(): Promise<T | null> {

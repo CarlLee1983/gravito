@@ -1,18 +1,18 @@
 ---
 title: Atlas ORM 架構技術規格書
-version: 1.4.0
+version: 1.5.0
 status: Stable
 tier: A
-last_updated: 2026-01-28
+last_updated: 2026-01-29
 dependencies:
-  bun: ">=1.0.0"
+  bun: ">=1.3.0"
   core: "^1.5.0"
 related_orbits:
   - photon
   - core
 ---
 
-# Atlas ORM 架構技術規格書 (v1.4.0)
+# Atlas ORM 架構技術規格書 (v1.5.0)
 
 ## 📖 目錄
 
@@ -420,7 +420,7 @@ async function updateStock(productId: number, quantity: number) {
 }
 ```
 
-### 範例 5：大數據處理（分塊查詢）
+### 範例 5：大數據處理（分塊查詢與串流）
 
 ```typescript
 // 避免記憶體溢位，使用 chunk 分批處理
@@ -435,13 +435,19 @@ await User.query()
     console.log(`Processed ${users.length} users`)
   })
 
-// 使用游標串流處理超大資料集
-const stream = User.query()
-  .where('created_at', '<', oldDate)
-  .stream()
-
-for await (const user of stream) {
+// 🆕 使用串流處理超大資料集（記憶體友善）
+// 支援 Bun.sql Native Driver 的高效能串流查詢
+for await (const user of User.query().where('created_at', '<', oldDate).stream()) {
   await archiveUser(user)
+}
+
+// 串流支援複雜查詢
+for await (const post of Post.query()
+  .join('users', 'posts.user_id', '=', 'users.id')
+  .where('posts.status', 'published')
+  .orderBy('posts.created_at', 'desc')
+  .stream()) {
+  await processPost(post)
 }
 ```
 
@@ -581,6 +587,75 @@ const explainResult = await User.query()
   .where('age', '>', 18)
   .explain()
 console.log(explainResult)
+```
+
+### 範例 11：Bun.sql Native Driver 進階功能 🆕
+
+```typescript
+import { Atlas } from '@gravito/atlas'
+
+// 啟用 Native Driver（自動偵測 Bun.sql）
+const atlas = new Atlas({
+  driver: 'postgres',
+  host: 'localhost',
+  database: 'myapp',
+  // useNativeDriver 預設為 true（當 Bun.sql 可用時）
+  useNativeDriver: true,
+  pool: {
+    max: 20,
+    idleTimeout: 60000,
+  },
+})
+
+// 1. Prepared Statement（查詢效能優化）
+const driver = atlas.connection().getDriver()
+
+// 準備語句
+const stmtId = await driver.prepare!('SELECT * FROM users WHERE id = ?')
+
+// 重複執行（利用快取優化）
+const user1 = await driver.executePrepared!(stmtId, [1])
+const user2 = await driver.executePrepared!(stmtId, [2])
+const user3 = await driver.executePrepared!(stmtId, [3])
+
+// 清除快取
+await driver.clearPreparedStatements!()
+
+// 2. 串流查詢（記憶體友善的大數據處理）
+// Connection 層級串流
+const conn = atlas.connection()
+for await (const row of conn.stream('SELECT * FROM large_table')) {
+  await processRow(row)
+}
+
+// QueryBuilder 層級串流
+for await (const user of User.query().where('active', true).stream()) {
+  await sendEmail(user.email)
+}
+
+// 3. 連線池統計
+const poolStats = driver.getPoolStats!()
+console.log('Pool Statistics:', {
+  idle: poolStats.idle,       // 閒置連線數
+  active: poolStats.active,   // 活躍連線數
+  total: poolStats.total,     // 總連線數
+  max: poolStats.max,         // 最大連線數
+})
+
+// 4. SSL 與連線池配置
+const secureAtlas = new Atlas({
+  driver: 'postgres',
+  host: 'prod-db.example.com',
+  database: 'production',
+  ssl: {
+    rejectUnauthorized: true,
+    ca: process.env.DB_SSL_CA,
+  },
+  pool: {
+    max: 50,
+    idleTimeout: 30000,
+  },
+})
 ```
 
 ---
@@ -1195,8 +1270,14 @@ await transaction(async (trx) => {
 
 ## 後續優化建議
 
-1. **完善 Native Driver 支援** (Priority: High)
+1. ✅ **完善 Native Driver 支援** (Priority: High) - **已完成 v1.5.0**
    - 加強對 `Bun.sql` 原生驅動的整合，利用其高效能特性。
+   - **已實作功能：**
+     - Prepared Statement 快取與重用
+     - 串流查詢支援（QueryBuilder, Connection, Driver 層）
+     - 連線池統計
+     - 改進的連線 URL 建構（支援 SSL、Pool 配置）
+     - 自動偵測並優先使用 Native Driver
 
 2. **增加子查詢物件支援** (Priority: Medium)
    - 增強 `where` 方法對 `SubQuery` 物件的支援，使複雜查詢更直觀。
@@ -1209,5 +1290,25 @@ await transaction(async (trx) => {
 
 ---
 
-*最後更新：2026-01-28*
-*版本：v1.4.0*
+*最後更新：2026-01-29*
+*版本：v1.5.0*
+
+## 版本歷史
+
+### v1.5.0 (2026-01-29)
+- ✨ **新功能：完善 Native Driver 支援**
+  - Prepared Statement 快取與重用機制
+  - 串流查詢支援（QueryBuilder, Connection, Driver 層）
+  - 連線池統計 API
+  - 改進的連線 URL 建構（支援 SSL、Pool 配置）
+  - 自動偵測並優先使用 Bun.sql Native Driver
+- 🔧 **優化：查詢執行效能**
+  - 優先使用 `unsafe()` API 進行動態 SQL 執行
+  - Prepared Statement 的 LRU 快取與閒置超時清理
+- 📝 **文檔：新增完整使用範例**
+  - Native Driver 進階功能範例
+  - 串流查詢最佳實踐
+
+### v1.4.0 (2026-01-28)
+- 🔧 核心 ORM 重構與架構優化
+- 📝 完善技術規格文檔

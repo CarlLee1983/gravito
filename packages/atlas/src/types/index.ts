@@ -557,6 +557,36 @@ export interface PaginateResult<T> {
   }
 }
 
+/**
+ * Connection pool statistics
+ */
+export interface PoolStats {
+  /**
+   * Number of idle connections in the pool
+   */
+  idle: number
+
+  /**
+   * Number of connections waiting to be acquired
+   */
+  pending: number
+
+  /**
+   * Number of active connections currently in use
+   */
+  active: number
+
+  /**
+   * Total number of connections in the pool
+   */
+  total: number
+
+  /**
+   * Maximum number of connections allowed
+   */
+  max: number
+}
+
 // ============================================================================
 // Model Types (forward declarations to avoid circular dependencies)
 // ============================================================================
@@ -629,6 +659,52 @@ export interface DriverContract {
    * Check if currently in a transaction
    */
   inTransaction(): boolean
+
+  // ============================================================================
+  // Advanced Features (Optional - for drivers that support them)
+  // ============================================================================
+
+  /**
+   * Prepare a statement for repeated execution
+   * @optional Only implemented by drivers that support prepared statements
+   * @param sql - SQL query to prepare
+   * @returns Prepared statement identifier
+   */
+  prepare?(sql: string): Promise<string>
+
+  /**
+   * Execute a prepared statement
+   * @optional Only implemented by drivers that support prepared statements
+   * @param name - Prepared statement identifier
+   * @param bindings - Query parameters
+   * @returns Query result
+   */
+  executePrepared?<T = Record<string, unknown>>(
+    name: string,
+    bindings?: unknown[]
+  ): Promise<QueryResult<T>>
+
+  /**
+   * Clear all prepared statements from cache
+   * @optional Only implemented by drivers that support prepared statements
+   */
+  clearPreparedStatements?(): Promise<void>
+
+  /**
+   * Stream query results for processing large datasets
+   * @optional Only implemented by drivers that support streaming
+   * @param sql - SQL query
+   * @param bindings - Query parameters
+   * @returns Async iterable of result rows
+   */
+  stream?<T = Record<string, unknown>>(sql: string, bindings?: unknown[]): AsyncIterable<T>
+
+  /**
+   * Get connection pool statistics
+   * @optional Only implemented by drivers that support connection pooling
+   * @returns Pool statistics or null if not supported
+   */
+  getPoolStats?(): PoolStats | null
 }
 
 /**
@@ -918,6 +994,19 @@ export interface QueryBuilderContract<T = Record<string, unknown>> {
    * Execute the query and get all results
    */
   get(): Promise<T[]>
+
+  /**
+   * Stream query results for processing large datasets
+   * Returns an async iterator that yields records one at a time
+   *
+   * @example
+   * ```typescript
+   * for await (const user of User.query().where('active', true).stream()) {
+   *   await processUser(user)
+   * }
+   * ```
+   */
+  stream(): AsyncIterable<T>
 
   /**
    * Get the first result

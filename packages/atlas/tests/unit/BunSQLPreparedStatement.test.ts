@@ -1,0 +1,230 @@
+/**
+ * BunSQLPreparedStatement Manager Unit Tests
+ * @description Tests for prepared statement caching and lifecycle management
+ */
+
+import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test'
+// Import the manager (will be implemented)
+import { BunSQLPreparedStatementManager } from '../../src/drivers/BunSQLPreparedStatement'
+import type { BunSQLClient, BunSQLPreparedStatement } from '../../src/drivers/types'
+
+describe('BunSQLPreparedStatementManager', () => {
+  let mockClient: BunSQLClient
+  let mockPreparedStmt: BunSQLPreparedStatement
+  let manager: BunSQLPreparedStatementManager
+
+  beforeEach(() => {
+    // Mock prepared statement
+    mockPreparedStmt = {
+      run: mock(async (...params: unknown[]) => ({
+        rows: [{ id: 1, name: 'Test' }],
+        rowCount: 1,
+        [Symbol.iterator]: function* () {
+          yield { id: 1, name: 'Test' }
+        },
+      })),
+      all: mock(async (...params: unknown[]) => [{ id: 1, name: 'Test' }]),
+      get: mock(async (...params: unknown[]) => ({ id: 1, name: 'Test' })),
+      finalize: mock(() => {}),
+    }
+
+    // Mock Bun.sql client
+    mockClient = Object.assign(
+      mock(async (strings: TemplateStringsArray, ...values: unknown[]) => ({
+        rows: [],
+        rowCount: 0,
+        [Symbol.iterator]: function* () {},
+      })),
+      {
+        prepare: mock((sql: string) => mockPreparedStmt),
+        unsafe: mock(async (sql: string, bindings?: unknown[]) => ({
+          rows: [],
+          rowCount: 0,
+          [Symbol.iterator]: function* () {},
+        })),
+      }
+    ) as BunSQLClient
+
+    manager = new BunSQLPreparedStatementManager(mockClient)
+  })
+
+  afterEach(async () => {
+    await manager.clear()
+  })
+
+  describe('prepare()', () => {
+    it('應該準備 SQL 語句並返回標識符', async () => {
+      const sql = 'SELECT * FROM users WHERE id = ?'
+      const name = await manager.prepare(sql)
+
+      expect(name).toBeDefined()
+      expect(typeof name).toBe('string')
+      expect(mockClient.prepare).toHaveBeenCalledWith(sql)
+    })
+
+    it('應該快取已準備的語句', async () => {
+      const sql = 'SELECT * FROM users WHERE id = ?'
+
+      const name1 = await manager.prepare(sql)
+      const name2 = await manager.prepare(sql)
+
+      expect(name1).toBe(name2)
+      expect(mockClient.prepare).toHaveBeenCalledTimes(1)
+    })
+
+    it('應該為不同的 SQL 生成不同的標識符', async () => {
+      const sql1 = 'SELECT * FROM users WHERE id = ?'
+      const sql2 = 'SELECT * FROM posts WHERE id = ?'
+
+      const name1 = await manager.prepare(sql1)
+      const name2 = await manager.prepare(sql2)
+
+      expect(name1).not.toBe(name2)
+      expect(mockClient.prepare).toHaveBeenCalledTimes(2)
+    })
+  })
+
+  describe('execute()', () => {
+    it('應該執行準備好的語句並返回結果', async () => {
+      const sql = 'SELECT * FROM users WHERE id = ?'
+      const name = await manager.prepare(sql)
+      const bindings = [1]
+
+      const result = await manager.execute<{ id: number; name: string }>(name, bindings)
+
+      expect(result).toEqual([{ id: 1, name: 'Test' }])
+      expect(mockPreparedStmt.all).toHaveBeenCalledWith(...bindings)
+    })
+
+    it('應該拋出錯誤如果語句不存在', async () => {
+      const invalidName = 'non_existent_stmt'
+
+      await expect(manager.execute(invalidName, [])).rejects.toThrow('Prepared statement not found')
+    })
+
+    it('應該更新語句的使用統計', async () => {
+      const sql = 'SELECT * FROM users WHERE id = ?'
+      const name = await manager.prepare(sql)
+
+      await manager.execute(name, [1])
+      await manager.execute(name, [2])
+
+      const stats = manager.getStats(name)
+      expect(stats?.useCount).toBe(2)
+      expect(stats?.lastUsed).toBeGreaterThan(0)
+    })
+  })
+
+  describe('clear()', () => {
+    it('應該清除所有準備好的語句', async () => {
+      const sql1 = 'SELECT * FROM users WHERE id = ?'
+      const sql2 = 'SELECT * FROM posts WHERE id = ?'
+
+      await manager.prepare(sql1)
+      await manager.prepare(sql2)
+
+      await manager.clear()
+
+      expect(mockPreparedStmt.finalize).toHaveBeenCalledTimes(2)
+    })
+
+    it('清除後應該能夠重新準備語句', async () => {
+      const sql = 'SELECT * FROM users WHERE id = ?'
+      await manager.prepare(sql)
+
+      await manager.clear()
+
+      const name2 = await manager.prepare(sql)
+      expect(name2).toBeDefined()
+      // 應該生成新的標識符
+      expect(mockClient.prepare).toHaveBeenCalledTimes(2)
+    })
+  })
+
+  describe('語句快取限制', () => {
+    it('應該限制快取的語句數量', async () => {
+      const maxStatements = 100
+
+      // 準備超過限制的語句
+      for (let i = 0; i < maxStatements + 10; i++) {
+        await manager.prepare(`SELECT * FROM users WHERE id = ${i}`)
+      }
+
+      const size = manager.getSize()
+      expect(size).toBeLessThanOrEqual(maxStatements)
+    })
+
+    it('應該移除最少使用的語句當達到限制時', async () => {
+      const maxStatements = 100
+
+      // 準備大量語句
+      const names: string[] = []
+      for (let i = 0; i < maxStatements + 5; i++) {
+        const name = await manager.prepare(`SELECT * FROM users WHERE id = ${i}`)
+        names.push(name)
+      }
+
+      // 第一個語句應該被移除
+      await expect(manager.execute(names[0], [])).rejects.toThrow('Prepared statement not found')
+    })
+  })
+
+  describe('閒置超時清理', () => {
+    it('應該清理閒置超時的語句', async () => {
+      // 設定較短的超時時間用於測試
+      const managerWithShortTimeout = new BunSQLPreparedStatementManager(mockClient, {
+        maxStatements: 100,
+        idleTimeout: 100, // 100ms
+      })
+
+      const sql = 'SELECT * FROM users WHERE id = ?'
+      const name = await managerWithShortTimeout.prepare(sql)
+
+      // 等待超過閒置超時時間
+      await new Promise((resolve) => setTimeout(resolve, 150))
+
+      // 觸發清理
+      await managerWithShortTimeout.cleanup()
+
+      // 語句應該已經被清理
+      await expect(managerWithShortTimeout.execute(name, [])).rejects.toThrow(
+        'Prepared statement not found'
+      )
+
+      await managerWithShortTimeout.clear()
+    })
+  })
+
+  describe('getStats()', () => {
+    it('應該返回語句的統計資訊', async () => {
+      const sql = 'SELECT * FROM users WHERE id = ?'
+      const name = await manager.prepare(sql)
+
+      await manager.execute(name, [1])
+      await manager.execute(name, [2])
+
+      const stats = manager.getStats(name)
+
+      expect(stats).toBeDefined()
+      expect(stats?.useCount).toBe(2)
+      expect(stats?.lastUsed).toBeGreaterThan(0)
+    })
+
+    it('應該返回 null 如果語句不存在', () => {
+      const stats = manager.getStats('non_existent')
+      expect(stats).toBeNull()
+    })
+  })
+
+  describe('getSize()', () => {
+    it('應該返回當前快取的語句數量', async () => {
+      expect(manager.getSize()).toBe(0)
+
+      await manager.prepare('SELECT * FROM users WHERE id = ?')
+      expect(manager.getSize()).toBe(1)
+
+      await manager.prepare('SELECT * FROM posts WHERE id = ?')
+      expect(manager.getSize()).toBe(2)
+    })
+  })
+})

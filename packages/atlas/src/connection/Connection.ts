@@ -22,6 +22,7 @@ import type {
   DriverContract,
   ExecuteResult,
   GrammarContract,
+  PoolStats,
   PostgresConfig,
   QueryBuilderContract,
   QueryResult,
@@ -208,6 +209,47 @@ export class Connection implements ConnectionContract {
   }
 
   /**
+   * Stream query results for processing large datasets
+   * @param sql - SQL query
+   * @param bindings - Query parameters
+   * @returns Async iterable of result rows
+   */
+  async *stream<T = Record<string, unknown>>(
+    sql: string,
+    bindings: unknown[] = []
+  ): AsyncIterable<T> {
+    await this.ensureConnected()
+
+    // Check if driver supports streaming
+    const driver = this.driver as DriverContract & { stream?: typeof this.stream }
+
+    if (typeof driver.stream === 'function') {
+      // Use native driver streaming
+      yield* driver.stream<T>(sql, bindings)
+    } else {
+      // Fallback: execute query and yield rows sequentially
+      const result = await this.raw<T>(sql, bindings)
+      for (const row of result.rows) {
+        yield row
+      }
+    }
+  }
+
+  /**
+   * Get connection pool statistics (if supported by driver)
+   * @returns Pool statistics or null if not supported
+   */
+  getPoolStats(): PoolStats | null {
+    const driver = this.driver as DriverContract & { getPoolStats?: () => PoolStats | null }
+
+    if (typeof driver.getPoolStats === 'function') {
+      return driver.getPoolStats()
+    }
+
+    return null
+  }
+
+  /**
    * Disconnect from the database
    */
   async disconnect(): Promise<void> {
@@ -238,21 +280,26 @@ export class Connection implements ConnectionContract {
 
   /**
    * Create the driver instance based on config
+   * Automatically prefers Bun.sql native driver when available (unless explicitly disabled)
    */
   protected createDriver(): DriverContract {
-    // Check for Bun Native Driver override
+    // Check for Bun Native Driver availability
     const g = globalThis as any
     // biome-ignore lint/complexity/useLiteralKeys: Intentionally using bracket notation to hide 'Bun' symbol from tsc
     const bunSql = g['Bun']?.sql
 
-    if (
-      this.config.useNativeDriver === true &&
+    // Auto-detect: prefer native driver when available and not explicitly disabled
+    const useNative =
+      this.config.useNativeDriver !== false &&
       bunSql &&
       ['postgres', 'mysql', 'mariadb', 'sqlite'].includes(this.config.driver)
-    ) {
+
+    if (useNative) {
+      console.debug?.(`[Atlas] Using Bun.sql native driver for ${this.config.driver}`)
       return new BunSQLDriver(this.config)
     }
 
+    // Fallback to traditional drivers
     switch (this.config.driver) {
       case 'postgres':
         return new PostgresDriver(this.config as PostgresConfig)
