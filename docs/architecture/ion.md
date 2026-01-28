@@ -978,13 +978,13 @@ inertia.version(() => version)
 
 ```typescript
 // 普通 Props
-{ user: { id: 1, name: 'Test' } }
+const normalProps = { user: { id: 1, name: 'Test' } }
 
 // Lazy Props
-{ posts: () => Post.all() }
+const lazyProps = { posts: () => Post.all() }
 
 // Async Lazy Props
-{ posts: async () => await Post.all() }
+const asyncLazyProps = { posts: async () => await Post.all() }
 ```
 
 ---

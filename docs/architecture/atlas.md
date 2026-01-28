@@ -1139,41 +1139,41 @@ console.log(User.lastQuery())
 
 ```typescript
 // 基本查詢
-.select('column1', 'column2')
-.where('column', 'value')
-.where('column', '>', value)
-.orWhere('column', 'value')
-.whereIn('column', [values])
-.whereNotIn('column', [values])
-.whereBetween('column', [min, max])
-.whereNull('column')
-.whereNotNull('column')
+Model.query().select('column1', 'column2')
+Model.query().where('column', 'value')
+Model.query().where('column', '>', value)
+Model.query().orWhere('column', 'value')
+Model.query().whereIn('column', [values])
+Model.query().whereNotIn('column', [values])
+Model.query().whereBetween('column', [min, max])
+Model.query().whereNull('column')
+Model.query().whereNotNull('column')
 
 // 排序與分頁
-.orderBy('column', 'asc|desc')
-.groupBy('column')
-.having('column', '>', value)
-.limit(10)
-.offset(20)
+Model.query().orderBy('column', 'asc' | 'desc')
+Model.query().groupBy('column')
+Model.query().having('column', '>', value)
+Model.query().limit(10)
+Model.query().offset(20)
 
 // JOIN
-.join('table', 'column1', '=', 'column2')
-.leftJoin('table', 'column1', '=', 'column2')
-.rightJoin('table', 'column1', '=', 'column2')
+Model.query().join('table', 'column1', '=', 'column2')
+Model.query().leftJoin('table', 'column1', '=', 'column2')
+Model.query().rightJoin('table', 'column1', '=', 'column2')
 
 // 聚合
-.count()
-.sum('column')
-.avg('column')
-.min('column')
-.max('column')
+Model.query().count()
+Model.query().sum('column')
+Model.query().avg('column')
+Model.query().min('column')
+Model.query().max('column')
 
 // 執行
-.get() // 取得所有結果
-.first() // 取得第一筆
-.find(id) // 依 ID 查詢
-.findBy('column', value) // 依欄位查詢
-.pluck('column') // 取得單一欄位陣列
+Model.query().get() // 取得所有結果
+Model.query().first() // 取得第一筆
+Model.find(id) // 依 ID 查詢
+Model.findBy('column', value) // 依欄位查詢
+Model.query().pluck('column') // 取得單一欄位陣列
 ```
 
 ### 模型方法
@@ -1187,17 +1187,17 @@ Model.insertMany([data1, data2])
 Model.find(id)
 Model.findBy('column', value)
 Model.all()
-Model.query().where(...).get()
+Model.query().where('column', 'value').get()
 
 // 更新
 model.save()
-Model.query().where(...).update(data)
+Model.query().where('column', 'value').update(data)
 
 // 刪除
 model.delete()
 model.softDelete()
 model.restore()
-Model.query().where(...).delete()
+Model.query().where('column', 'value').delete()
 
 // 關聯
 model.relation().get()

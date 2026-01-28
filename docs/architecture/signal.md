@@ -66,13 +66,15 @@ sequenceDiagram
 `Mailable` 實作了 `Queueable` 介面，允許信件非同步發送。
 
 ```typescript
-// 示意圖
-async queue() {
-  const queue = this.core.container.make('queue'); // @gravito/stream
-  if (queue) {
-    await queue.push(this);
-  } else {
-    await this.send(); // Fallback to sync
+// 示意圖 - Mailable 類別中的方法
+class Mailable {
+  async queue() {
+    const queue = this.core.container.make('queue'); // @gravito/stream
+    if (queue) {
+      await queue.push(this);
+    } else {
+      await this.send(); // Fallback to sync
+    }
   }
 }
 ```

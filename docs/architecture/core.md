@@ -1144,7 +1144,7 @@ app.get("/users/:id", async (c) => {
   // 嘗試從快取取得
   let user = await cache.get(`user:${id}`)
 
-  if (\!user) {
+  if (!user) {
     // 快取未命中，從資料庫查詢
     user = await db.users.find(id)
     await cache.set(`user:${id}`, user, 3600) // 快取 1 小時
