@@ -855,15 +855,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
 
     if (typeof conn.stream === 'function') {
       // Use native streaming if available
-      for await (const row of conn.stream<T>(sql, bindings)) {
-        // Hydrate row if model is set and not in readonly mode
-        if (this._model && !this._readonly) {
-          const model = this._model.hydrate([row])[0]
-          yield model as unknown as T
-        } else {
-          yield row
-        }
-      }
+      yield* conn.stream<T>(sql, bindings)
     } else {
       // Fallback to regular query
       const rows = await this.get()

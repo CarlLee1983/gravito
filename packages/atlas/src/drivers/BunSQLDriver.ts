@@ -103,6 +103,7 @@ export class BunSQLDriver implements DriverContract {
     await this.ensureConnection()
 
     try {
+      // biome-ignore lint/suspicious/noExplicitAny: Result type varies by driver
       let result: any
 
       // Priority 1: Use unsafe() for dynamic SQL (recommended for Bun 1.3+)
@@ -113,18 +114,13 @@ export class BunSQLDriver implements DriverContract {
       else if (this.client?.query) {
         result = await this.client.query(sql, bindings)
       }
-      // Priority 3: Try callable template function
-      else if (typeof this.client === 'function') {
-        result = await this.client(sql, ...bindings)
-      }
-      // Priority 4: Fallback to other execution methods
-      else {
-        const exec = this.client?.all || this.client?.run
-        if (typeof exec === 'function') {
-          result = await exec.call(this.client, sql, bindings)
-        } else {
-          throw new Error('Bun.sql does not support dynamic query execution in this environment')
-        }
+      // Priority 3: Fallback to other execution methods
+      else if (this.client?.all) {
+        result = await this.client.all(sql, bindings)
+      } else if (this.client?.run) {
+        result = await this.client.run(sql, bindings)
+      } else {
+        throw new Error('Bun.sql does not support dynamic query execution in this environment')
       }
 
       // Normalize result to rows array

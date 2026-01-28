@@ -221,7 +221,9 @@ export class Connection implements ConnectionContract {
     await this.ensureConnected()
 
     // Check if driver supports streaming
-    const driver = this.driver as DriverContract & { stream?: typeof this.stream }
+    const driver = this.driver as DriverContract & {
+      stream?: <U>(sql: string, bindings: unknown[]) => AsyncIterable<U>
+    }
 
     if (typeof driver.stream === 'function') {
       // Use native driver streaming
