@@ -23,7 +23,6 @@ import type { BunSQLClient } from './types'
 
 export class BunSQLDriver implements DriverContract {
   private client: BunSQLClient | null = null
-  private bunSqlFunction: any = null // Store the Bun.sql function for tagged template calls
   private connected = false
   private transactionActive = false
   private preparedManager?: BunSQLPreparedStatementManager
@@ -56,8 +55,7 @@ export class BunSQLDriver implements DriverContract {
       }
 
       const url = this.getConnectionUrl()
-      // Store both the function and the client instance
-      this.bunSqlFunction = bunSql
+      // Initialize Bun.sql client
       this.client = bunSql(url)
 
       this.connected = true

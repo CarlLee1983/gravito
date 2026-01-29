@@ -151,6 +151,7 @@ export interface BunSQLClient {
   query?(sql: string, bindings?: unknown[]): Promise<BunSQLResult>
   all?(sql: string, bindings?: unknown[]): Promise<unknown[]>
   run?(sql: string, bindings?: unknown[]): Promise<BunSQLResult>
+  simple?(strings: TemplateStringsArray, ...values: unknown[]): Promise<BunSQLResult>
 
   // Prepared statement support
   prepare?(sql: string): BunSQLPreparedStatement
