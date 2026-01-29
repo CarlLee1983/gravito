@@ -37,7 +37,7 @@ export class BunSQLDriver implements DriverContract {
   }
 
   /**
-   * Connect to the database using Bun.sql
+   * Connect to the database using Bun.SQL
    */
   async connect(): Promise<void> {
     if (this.connected) {
@@ -48,19 +48,19 @@ export class BunSQLDriver implements DriverContract {
       // Access via bracket notation to completely bypass tsc checks for the global Bun object
       const g = globalThis as any
       // biome-ignore lint/complexity/useLiteralKeys: Intentionally using bracket notation to hide 'Bun' symbol from tsc
-      const bunSql = g['Bun']?.sql
+      const SQL = g['Bun']?.SQL
 
-      if (!bunSql) {
-        throw new Error('Bun.sql is not available in this environment')
+      if (!SQL) {
+        throw new Error('Bun.SQL is not available in this environment')
       }
 
       const url = this.getConnectionUrl()
-      // Initialize Bun.sql client
-      this.client = bunSql(url)
+      // Initialize Bun.SQL client using the SQL class constructor
+      this.client = new SQL(url)
 
       this.connected = true
     } catch (error) {
-      throw new ConnectionError(`Could not connect to ${this.config.driver} using Bun.sql`, error)
+      throw new ConnectionError(`Could not connect to ${this.config.driver} using Bun.SQL`, error)
     }
   }
 
@@ -94,7 +94,7 @@ export class BunSQLDriver implements DriverContract {
 
   /**
    * Execute a query using Bun.sql
-   * Prioritizes the `unsafe()` method for optimal performance with dynamic SQL
+   * Uses the `unsafe()` method for dynamic SQL with parameterized queries
    */
   async query<T = Record<string, unknown>>(
     sql: string,
@@ -106,47 +106,28 @@ export class BunSQLDriver implements DriverContract {
       // biome-ignore lint/suspicious/noExplicitAny: Result type varies by driver
       let result: any
 
-      // Bun.sql requires tagged template literals and doesn't support dynamic SQL
-      // We need to safely interpolate parameters into the SQL string
-      if (this.client) {
-        // Safely escape and interpolate parameters
-        let processedSql = sql
-        for (let i = 0; i < bindings.length; i++) {
-          const value = bindings[i]
-          let replacement: string
-
-          if (value === null || value === undefined) {
-            replacement = 'NULL'
-          } else if (typeof value === 'string') {
-            // Escape single quotes by doubling them (SQL standard)
-            replacement = `'${value.replace(/'/g, "''")}'`
-          } else if (typeof value === 'boolean') {
-            replacement = value ? '1' : '0'
-          } else if (typeof value === 'number') {
-            replacement = String(value)
-          } else if (value instanceof Date) {
-            replacement = `'${value.toISOString()}'`
-          } else if (typeof value === 'object') {
-            // Handle JSON objects
-            replacement = `'${JSON.stringify(value).replace(/'/g, "''")}'`
-          } else {
-            replacement = String(value)
-          }
-
-          // Replace the first occurrence of ?
-          processedSql = processedSql.replace('?', replacement)
+      // Normalize bindings to supported types
+      const normalizedBindings = bindings.map((binding) => {
+        // Convert Date objects to ISO strings
+        if (binding instanceof Date) {
+          return binding.toISOString()
         }
-
-        // Execute using simple() method with fully interpolated SQL
-        // simple() is designed for non-parameterized queries
-        if (typeof this.client.simple === 'function') {
-          // Create a proper tagged template for simple()
-          const parts = [processedSql]
-          const templateStrings = Object.assign(parts, { raw: parts })
-          result = await this.client.simple(templateStrings)
-        } else {
-          throw new Error('Bun.sql does not support simple() method')
+        // Convert undefined to null
+        if (binding === undefined) {
+          return null
         }
+        // Convert objects to JSON strings
+        if (typeof binding === 'object' && binding !== null) {
+          return JSON.stringify(binding)
+        }
+        return binding
+      })
+
+      // Use unsafe() method for dynamic SQL with bindings
+      if (this.client?.unsafe) {
+        result = await this.client.unsafe(sql, normalizedBindings)
+      } else if (this.client?.query) {
+        result = await this.client.query(sql, normalizedBindings)
       } else {
         throw new Error('Bun.sql is not available or not connected')
       }

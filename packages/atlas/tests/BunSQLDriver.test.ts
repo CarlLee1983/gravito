@@ -2,12 +2,12 @@ import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test'
 import { BunSQLDriver } from '../src/drivers/BunSQLDriver'
 import { ConnectionError } from '../src/errors'
 
-// Mock Bun.sql if not available
+// Mock Bun.SQL if not available
 // biome-ignore lint/suspicious/noExplicitAny: Mocking global
-const originalBunSql = (globalThis as any).Bun?.sql
+const originalBunSQL = (globalThis as any).Bun?.SQL
 
 describe('BunSQLDriver', () => {
-  let mockSql: any
+  let mockSQLClass: any
   let mockQuery: any
 
   beforeEach(() => {
@@ -29,7 +29,8 @@ describe('BunSQLDriver', () => {
       finalize: mock(() => {}),
     }
 
-    mockSql = mock(() => ({
+    // Mock SQL instance
+    const mockSQLInstance = {
       query: mockQuery,
       unsafe: mockQuery,
       simple: mockQuery, // Add simple() method for interpolated SQL
@@ -41,7 +42,10 @@ describe('BunSQLDriver', () => {
         active: 3,
         total: 5,
       },
-    }))
+    }
+
+    // Mock SQL class constructor
+    mockSQLClass = mock(() => mockSQLInstance)
 
     // Inject mock into global Bun object
     // biome-ignore lint/suspicious/noExplicitAny: Mocking global
@@ -50,17 +54,17 @@ describe('BunSQLDriver', () => {
       ;(globalThis as any).Bun = {}
     }
     // biome-ignore lint/suspicious/noExplicitAny: Mocking global
-    ;(globalThis as any).Bun.sql = mockSql
+    ;(globalThis as any).Bun.SQL = mockSQLClass
   })
 
   afterEach(() => {
-    // Restore original Bun.sql
-    if (originalBunSql) {
+    // Restore original Bun.SQL
+    if (originalBunSQL) {
       // biome-ignore lint/suspicious/noExplicitAny: Mocking global
-      ;(globalThis as any).Bun.sql = originalBunSql
+      ;(globalThis as any).Bun.SQL = originalBunSQL
     } else {
       // biome-ignore lint/suspicious/noExplicitAny: Mocking global
-      delete (globalThis as any).Bun.sql
+      delete (globalThis as any).Bun.SQL
     }
   })
 
@@ -77,10 +81,10 @@ describe('BunSQLDriver', () => {
     const driver = new BunSQLDriver(config)
     await driver.connect()
 
-    expect(mockSql).toHaveBeenCalled()
+    expect(mockSQLClass).toHaveBeenCalled()
     // Check if called with correct connection string
     // postgres://user:password@localhost:5432/test_db
-    const url = mockSql.mock.calls[0][0]
+    const url = mockSQLClass.mock.calls[0][0]
     expect(url).toContain('postgres://')
     expect(url).toContain('user:password@localhost:5432')
     expect(url).toContain('/test_db')
@@ -99,7 +103,7 @@ describe('BunSQLDriver', () => {
     const driver = new BunSQLDriver(config)
     await driver.connect()
 
-    const url = mockSql.mock.calls[0][0]
+    const url = mockSQLClass.mock.calls[0][0]
     expect(url).toContain('mysql://')
     expect(url).toContain('root@127.0.0.1:3306')
     expect(url).toContain('/my_app')
@@ -114,7 +118,7 @@ describe('BunSQLDriver', () => {
     const driver = new BunSQLDriver(config)
     await driver.connect()
 
-    const url = mockSql.mock.calls[0][0]
+    const url = mockSQLClass.mock.calls[0][0]
     expect(url).toBe('sqlite:mydb.sqlite')
   })
 
@@ -197,7 +201,7 @@ describe('BunSQLDriver', () => {
     const config = { driver: 'postgres' as const, database: 'test' }
     const driver = new BunSQLDriver(config)
 
-    mockSql.mockImplementation(() => {
+    mockSQLClass.mockImplementation(() => {
       throw new Error('Failed to load')
     })
 
@@ -391,7 +395,7 @@ describe('BunSQLDriver', () => {
       const driver = new BunSQLDriver(config)
       await driver.connect()
 
-      const url = mockSql.mock.calls[mockSql.mock.calls.length - 1][0]
+      const url = mockSQLClass.mock.calls[mockSQLClass.mock.calls.length - 1][0]
       expect(url).toContain('max=20')
       expect(url).toContain('idle_timeout=60000')
     })
@@ -407,7 +411,7 @@ describe('BunSQLDriver', () => {
       const driver = new BunSQLDriver(config)
       await driver.connect()
 
-      const url = mockSql.mock.calls[mockSql.mock.calls.length - 1][0]
+      const url = mockSQLClass.mock.calls[mockSQLClass.mock.calls.length - 1][0]
       expect(url).toContain('sslmode=require')
     })
   })
