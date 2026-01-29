@@ -541,11 +541,10 @@ export abstract class Grammar implements GrammarContract {
    * Compile a WHERE column comparison clause
    */
   protected compileWhereColumn(where: WhereClause): string {
-    const values = where.values ?? []
-    const first = this.wrapColumn(String(values[0] ?? ''))
+    const column = this.wrapColumn(where.column ?? '')
     const operator = where.operator ?? '='
-    const second = this.wrapColumn(String(values[1] ?? ''))
-    return `${first} ${operator} ${second}`
+    const second = this.wrapColumn(String(where.value ?? ''))
+    return `${column} ${operator} ${second}`
   }
 
   // ============================================================================
