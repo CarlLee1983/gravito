@@ -383,9 +383,9 @@ graph TB
 
 ## 🔗 相關文件
 
-- [整合成本矩陣](./INTEGRATION_COST.md)
-- [版本相容性表](./VERSION_COMPATIBILITY.md)
-- [整合指南](/docs/integration-guides/)
+
+
+- [整合指南](../GUIDE_1.0_INTEGRATION.md)
 
 ---
 
