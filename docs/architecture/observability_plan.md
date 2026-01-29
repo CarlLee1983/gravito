@@ -1,3 +1,11 @@
+---
+title: Atlas ORM Observability (OpenTelemetry) 設計規劃
+version: 1.0.0
+status: Stable
+tier: C
+last_updated: 2026-01-30
+---
+
 # Atlas ORM Observability (OpenTelemetry) 設計規劃
 
 ## 1. 目標
