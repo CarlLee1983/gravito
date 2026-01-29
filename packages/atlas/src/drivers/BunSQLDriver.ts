@@ -23,6 +23,7 @@ import type { BunSQLClient } from './types'
 
 export class BunSQLDriver implements DriverContract {
   private client: BunSQLClient | null = null
+  private bunSqlFunction: any = null // Store the Bun.sql function for tagged template calls
   private connected = false
   private transactionActive = false
   private preparedManager?: BunSQLPreparedStatementManager
@@ -55,7 +56,8 @@ export class BunSQLDriver implements DriverContract {
       }
 
       const url = this.getConnectionUrl()
-      // Initialize Bun.sql client
+      // Store both the function and the client instance
+      this.bunSqlFunction = bunSql
       this.client = bunSql(url)
 
       this.connected = true
@@ -106,21 +108,49 @@ export class BunSQLDriver implements DriverContract {
       // biome-ignore lint/suspicious/noExplicitAny: Result type varies by driver
       let result: any
 
-      // Priority 1: Use unsafe() for dynamic SQL (recommended for Bun 1.3+)
-      if (this.client?.unsafe) {
-        result = await this.client.unsafe(sql, bindings)
-      }
-      // Priority 2: Use query() method if available
-      else if (this.client?.query) {
-        result = await this.client.query(sql, bindings)
-      }
-      // Priority 3: Fallback to other execution methods
-      else if (this.client?.all) {
-        result = await this.client.all(sql, bindings)
-      } else if (this.client?.run) {
-        result = await this.client.run(sql, bindings)
+      // Bun.sql requires tagged template literals and doesn't support dynamic SQL
+      // We need to safely interpolate parameters into the SQL string
+      if (this.client) {
+        // Safely escape and interpolate parameters
+        let processedSql = sql
+        for (let i = 0; i < bindings.length; i++) {
+          const value = bindings[i]
+          let replacement: string
+
+          if (value === null || value === undefined) {
+            replacement = 'NULL'
+          } else if (typeof value === 'string') {
+            // Escape single quotes by doubling them (SQL standard)
+            replacement = `'${value.replace(/'/g, "''")}'`
+          } else if (typeof value === 'boolean') {
+            replacement = value ? '1' : '0'
+          } else if (typeof value === 'number') {
+            replacement = String(value)
+          } else if (value instanceof Date) {
+            replacement = `'${value.toISOString()}'`
+          } else if (typeof value === 'object') {
+            // Handle JSON objects
+            replacement = `'${JSON.stringify(value).replace(/'/g, "''")}'`
+          } else {
+            replacement = String(value)
+          }
+
+          // Replace the first occurrence of ?
+          processedSql = processedSql.replace('?', replacement)
+        }
+
+        // Execute using simple() method with fully interpolated SQL
+        // simple() is designed for non-parameterized queries
+        if (typeof this.client.simple === 'function') {
+          // Create a proper tagged template for simple()
+          const parts = [processedSql]
+          const templateStrings = Object.assign(parts, { raw: parts })
+          result = await this.client.simple(templateStrings)
+        } else {
+          throw new Error('Bun.sql does not support simple() method')
+        }
       } else {
-        throw new Error('Bun.sql does not support dynamic query execution in this environment')
+        throw new Error('Bun.sql is not available or not connected')
       }
 
       // Normalize result to rows array

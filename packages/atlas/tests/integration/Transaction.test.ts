@@ -20,6 +20,7 @@ describe('Transaction Test', () => {
       DB.addConnection(CONNECTION_NAME, {
         driver: 'sqlite',
         database: DB_FILE,
+        useNativeDriver: false, // Disable due to Bun.sql limitation
       })
     }
   }

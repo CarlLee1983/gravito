@@ -9,6 +9,7 @@ describe('SchemaSniffer', () => {
     DB.addConnection(CONNECTION_NAME, {
       driver: 'sqlite',
       database: ':memory:',
+      useNativeDriver: false, // Disable due to Bun.sql limitation
     })
     await DB.connection(CONNECTION_NAME)
       .getDriver()

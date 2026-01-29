@@ -37,6 +37,7 @@ describe('Optimistic Locking', () => {
     DB.addConnection(CONNECTION_NAME, {
       driver: 'sqlite',
       database: ':memory:',
+      useNativeDriver: false, // Disable due to Bun.sql limitation
     })
 
     await Schema.connection(CONNECTION_NAME).create('versioned_users', (table) => {

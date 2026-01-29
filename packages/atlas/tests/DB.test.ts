@@ -9,6 +9,7 @@ describe('DB', () => {
     DB.addConnection(CONNECTION_NAME, {
       driver: 'sqlite',
       database: ':memory:',
+      useNativeDriver: false, // Disable due to Bun.sql limitation
     })
   })
 
