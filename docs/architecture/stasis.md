@@ -1,3 +1,11 @@
+---
+title: Stasis Architecture 技術架構規格書
+version: 1.0.0
+status: Stable
+tier: C
+last_updated: 2026-01-29
+---
+
 # 🌌 Stasis Architecture 技術架構規格書 (v1.0)
 
 本文件詳述 `@gravito/stasis` 的內部架構、快取策略實作以及分散式鎖定機制。

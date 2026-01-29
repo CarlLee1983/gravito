@@ -1,3 +1,11 @@
+---
+title: OrbitSignal 架構技術規格書
+version: 1.0.0
+status: Stable
+tier: C
+last_updated: 2026-01-29
+---
+
 # OrbitSignal 架構技術規格書
 
 ## 1. 模組概覽

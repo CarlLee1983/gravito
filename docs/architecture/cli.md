@@ -1,3 +1,11 @@
+---
+title: Orbit Pulse (CLI) Architecture 技術架構規格書
+version: 1.0.0
+status: Stable
+tier: C
+last_updated: 2026-01-29
+---
+
 # 🌌 Orbit Pulse (CLI) Architecture 技術架構規格書 (v1.0)
 
 本文件詳述 `@gravito/pulse` (CLI) 的內部架構、命令調度機制以及 Scaffolding 系統設計。
@@ -37,7 +45,7 @@ Orbit Pulse 受到 Laravel Artisan 的啟發，旨在提供一個統一的命令
 - **流程**：
   1. **Resolve Stub**：根據執行環境 (Dev/Prod) 尋找 `stubs/` 目錄。
   2. **Normalize Name**：將使用者輸入轉換為 PascalCase/camelCase。
-  3. **Variable Replacement**：替換 Stub 中的 `{{ Name }}` 佔位符。
+  3. **Variable Replacement**：替換 Stub 中的 `Name` 佔位符。
   4. **Write File**：寫入目標路徑，防止覆蓋現有檔案。
 
 ### 2.4 Project Initialization (Create Command)

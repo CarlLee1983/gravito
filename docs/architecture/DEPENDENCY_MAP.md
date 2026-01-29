@@ -1,3 +1,11 @@
+---
+title: Gravito 模組依賴關係圖
+version: 1.0.0
+status: Stable
+tier: C
+last_updated: 2026-01-29
+---
+
 # Gravito 模組依賴關係圖
 
 > 自動生成於：2026-01-28T15:21:16.300Z

@@ -1,3 +1,11 @@
+---
+title: Constellation Architecture 技術架構規格書
+version: 1.0.0
+status: Stable
+tier: C
+last_updated: 2026-01-29
+---
+
 # 🌌 Constellation Architecture 技術架構規格書 (v1.0)
 
 本文件詳述 `@gravito/constellation` 的內部架構、串流生成 (Streaming Generation) 機制以及增量更新 (Incremental Update) 的演算法設計。

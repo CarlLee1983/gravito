@@ -1,3 +1,11 @@
+---
+title: Dark Matter Architecture 技術架構規格書
+version: 1.0.0
+status: Stable
+tier: C
+last_updated: 2026-01-29
+---
+
 # 🌌 Dark Matter Architecture 技術架構規格書 (v1.0)
 
 本文件詳述 `@gravito/dark-matter` 的內部架構、MongoDB 連線管理機制以及 Fluent Query Builder 的設計策略。

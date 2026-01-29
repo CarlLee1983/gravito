@@ -1,3 +1,11 @@
+---
+title: Monolith Architecture 技術架構規格書
+version: 1.0.0
+status: Stable
+tier: C
+last_updated: 2026-01-29
+---
+
 # 🌌 Monolith Architecture 技術架構規格書 (v1.0)
 
 本文件詳述 `@gravito/monolith` 的內部架構、檔案系統 CMS 實作以及與 MVC 模式的整合。

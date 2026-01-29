@@ -1,3 +1,11 @@
+---
+title: Radiance Architecture 技術架構規格書
+version: 1.0.0
+status: Stable
+tier: C
+last_updated: 2026-01-29
+---
+
 # 🌌 Radiance Architecture 技術架構規格書 (v1.0)
 
 本文件詳述 `@gravito/radiance` 的內部架構、廣播驅動機制以及與事件系統的深度整合。

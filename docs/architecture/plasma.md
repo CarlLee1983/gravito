@@ -1,3 +1,11 @@
+---
+title: Plasma Architecture 技術架構規格書
+version: 1.0.0
+status: Stable
+tier: C
+last_updated: 2026-01-29
+---
+
 # 🌌 Plasma Architecture 技術架構規格書 (v1.0)
 
 本文件詳述 `@gravito/plasma` 的內部架構、Bun 原生整合策略以及多連接管理機制。

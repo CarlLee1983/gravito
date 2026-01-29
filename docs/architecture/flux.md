@@ -1,3 +1,11 @@
+---
+title: Flux Architecture 技術架構規格書
+version: 1.0.0
+status: Stable
+tier: C
+last_updated: 2026-01-29
+---
+
 # 🌌 Flux Architecture 技術架構規格書 (v1.0)
 
 本文件詳述 `@gravito/flux` 的內部架構、狀態機實作以及 Saga 補償機制。

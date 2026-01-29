@@ -1,3 +1,11 @@
+---
+title: Enterprise Architecture 技術架構規格書
+version: 1.0.0
+status: Stable
+tier: C
+last_updated: 2026-01-29
+---
+
 # 🌌 Enterprise Architecture 技術架構規格書 (v1.0)
 
 本文件詳述 `@gravito/enterprise` 的內部架構、DDD (Domain-Driven Design) 與 CQRS 模式的基礎建設。

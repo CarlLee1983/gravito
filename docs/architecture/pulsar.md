@@ -1,4 +1,11 @@
+---
 title: Pulsar Architecture 技術架構規格書
+version: 1.0.0
+status: Stable
+tier: C
+last_updated: 2026-01-29
+---
+
 # Pulsar Architecture 技術架構規格書 (v3.0.1)
 
 本文件詳述 `@gravito/pulsar` 的內部架構、Session 生命週期管理以及安全防護機制。
