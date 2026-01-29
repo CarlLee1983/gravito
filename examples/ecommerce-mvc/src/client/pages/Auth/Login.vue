@@ -20,7 +20,7 @@ const submit = () => {
   router.post('/login', form.value, {
     onFinish: () => {
       isLoading.value = false
-    }
+    },
   })
 }
 </script>

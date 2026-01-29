@@ -1,33 +1,33 @@
 {
-    "name": "image-verification-example",
-    "private": true,
-    "scripts": {
-        "dev": "bun run src/index.ts",
-        "build": "bun tsc --noEmit",
-        "start": "bun run src/index.ts"
-    },
-    "dependencies": {
-        "@gravito/core": "workspace:*",
-        "@gravito/forge": "workspace:*",
-        "@gravito/nebula": "workspace:*",
-        "@gravito/stream": "workspace:*",
-        "@gravito/photon": "workspace:*"
-    },
-    "devDependencies": {
-        "@biomejs/biome": "^2.3.10",
-        "@changesets/cli": "^2.29.8",
-        "@types/node": "latest",
-        "bun-types": "latest",
-        "simple-git-hooks": "^2.13.1",
-        "typescript": "^5.9.3"
-    },
-    "simple-git-hooks": {
-        "pre-commit": "export PATH=\"$HOME/.bun/bin:$PATH\" && bunx lint-staged && bun run typecheck && bun run test"
-    },
-    "lint-staged": {
-        "*.{js,ts,cjs,mjs}": [
-            "biome check --write"
-        ]
-    },
-    "version": "0.5.4"
+  "name": "image-verification-example",
+  "private": true,
+  "scripts": {
+    "dev": "bun run src/index.ts",
+    "build": "bun tsc --noEmit",
+    "start": "bun run src/index.ts"
+  },
+  "dependencies": {
+    "@gravito/core": "workspace:*",
+    "@gravito/forge": "workspace:*",
+    "@gravito/nebula": "workspace:*",
+    "@gravito/stream": "workspace:*",
+    "@gravito/photon": "workspace:*"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.3.10",
+    "@changesets/cli": "^2.29.8",
+    "@types/node": "latest",
+    "bun-types": "latest",
+    "simple-git-hooks": "^2.13.1",
+    "typescript": "^5.9.3"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "export PATH=\"$HOME/.bun/bin:$PATH\" && bunx lint-staged && bun run typecheck && bun run test"
+  },
+  "lint-staged": {
+    "*.{js,ts,cjs,mjs}": [
+      "biome check --write"
+    ]
+  },
+  "version": "0.5.4"
 }

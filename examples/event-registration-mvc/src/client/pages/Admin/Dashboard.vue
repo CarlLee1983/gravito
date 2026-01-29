@@ -79,33 +79,50 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { Link } from '@inertiajs/vue3';
-import AdminLayout from '../../components/AdminLayout.vue';
-import { useI18n } from '../../composables/useI18n';
+import { computed } from 'vue'
+import { Link } from '@inertiajs/vue3'
+import AdminLayout from '../../components/AdminLayout.vue'
+import { useI18n } from '../../composables/useI18n'
 
-const { t } = useI18n();
+const { t } = useI18n()
 
 const props = defineProps<{
   stats: {
-    total_events: number;
-    total_registrations: number;
-    total_users: number;
-    recent_registrations: any[];
-  };
-}>();
+    total_events: number
+    total_registrations: number
+    total_users: number
+    recent_registrations: any[]
+  }
+}>()
 
 const statCards = computed(() => [
-  { label: t('admin.dashboard.active_events'), value: props.stats.total_events, trend: t('admin.dashboard.trend_up'), icon: 'i-carbon-calendar' },
-  { label: t('admin.dashboard.global_attendees'), value: props.stats.total_registrations, trend: '24%', icon: 'i-carbon-user-identification' },
-  { label: t('admin.dashboard.verified_users'), value: props.stats.total_users, trend: t('admin.dashboard.trend_stable'), icon: 'i-carbon-group' },
-]);
+  {
+    label: t('admin.dashboard.active_events'),
+    value: props.stats.total_events,
+    trend: t('admin.dashboard.trend_up'),
+    icon: 'i-carbon-calendar',
+  },
+  {
+    label: t('admin.dashboard.global_attendees'),
+    value: props.stats.total_registrations,
+    trend: '24%',
+    icon: 'i-carbon-user-identification',
+  },
+  {
+    label: t('admin.dashboard.verified_users'),
+    value: props.stats.total_users,
+    trend: t('admin.dashboard.trend_stable'),
+    icon: 'i-carbon-group',
+  },
+])
 
 const formatDate = (date: string) => {
   return new Date(date).toLocaleDateString(undefined, {
-    month: 'short', day: 'numeric', year: 'numeric'
-  });
-};
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
+}
 
 const getStatusClasses = (status: string) => {
   const classes: Record<string, string> = {
@@ -114,7 +131,7 @@ const getStatusClasses = (status: string) => {
     cancelled: 'bg-red-500 text-white',
     waitlist: 'bg-indigo-500 text-white',
     checked_in: 'bg-cyan-500 text-white',
-  };
-  return classes[status] || 'bg-gray-500 text-white';
-};
+  }
+  return classes[status] || 'bg-gray-500 text-white'
+}
 </script>

@@ -10,23 +10,23 @@ const steps = computed(() => [
   {
     title: t('returns.step1_title'),
     description: t('returns.step1_desc'),
-    icon: 'i-heroicons-chat-bubble-left-right'
+    icon: 'i-heroicons-chat-bubble-left-right',
   },
   {
     title: t('returns.step2_title'),
     description: t('returns.step2_desc'),
-    icon: 'i-heroicons-clipboard-document-check'
+    icon: 'i-heroicons-clipboard-document-check',
   },
   {
     title: t('returns.step3_title'),
     description: t('returns.step3_desc'),
-    icon: 'i-heroicons-gift'
+    icon: 'i-heroicons-gift',
   },
   {
     title: t('returns.step4_title'),
     description: t('returns.step4_desc'),
-    icon: 'i-heroicons-currency-dollar'
-  }
+    icon: 'i-heroicons-currency-dollar',
+  },
 ])
 </script>
 

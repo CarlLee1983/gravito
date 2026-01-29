@@ -41,40 +41,50 @@ const addToCart = async () => {
 }
 
 const toggleWishlist = async () => {
-    if (currentWishlistId.value) {
-        // Remove from wishlist
-        router.delete(`/account/wishlist/${currentWishlistId.value}`, {
-            preserveScroll: true,
+  if (currentWishlistId.value) {
+    // Remove from wishlist
+    router.delete(`/account/wishlist/${currentWishlistId.value}`, {
+      preserveScroll: true,
+      onSuccess: () => {
+        currentWishlistId.value = null
+      },
+    })
+  } else {
+    // Add to wishlist
+    router.post(
+      '/account/wishlist',
+      { product_id: props.product.id },
+      {
+        preserveScroll: true,
+        onSuccess: (page) => {
+          // We need to get the new wishlist ID.
+          // Since standard Inertia reload might be tricky if we don't pass it back in props instantly,
+          // simpler is to just reload the page props or trust the reload.
+          // Ideally, the controller store response should handle this, but Inertia form submission follows redirects.
+          // let's just create a full reload or assume success and wait for reactive update if we used a form.
+          // For now, let's force a partial reload to get updated props
+          router.reload({
+            only: ['wishlistId'],
             onSuccess: () => {
-                currentWishlistId.value = null
-            }
-        })
-    } else {
-        // Add to wishlist
-        router.post('/account/wishlist', { product_id: props.product.id }, {
-            preserveScroll: true,
-            onSuccess: (page) => {
-                 // We need to get the new wishlist ID. 
-                 // Since standard Inertia reload might be tricky if we don't pass it back in props instantly,
-                 // simpler is to just reload the page props or trust the reload.
-                 // Ideally, the controller store response should handle this, but Inertia form submission follows redirects.
-                 // let's just create a full reload or assume success and wait for reactive update if we used a form.
-                 // For now, let's force a partial reload to get updated props
-                 router.reload({ only: ['wishlistId'], onSuccess: () => {
-                     // Update local state from new props if needed, but the watcher/computed handles it if structured right.
-                     // Actually, router.post automatically reloads props. 
-                     // But we need to update currentWishlistId from the new prop value.
-                 }})
-            }
-        })
-    }
+              // Update local state from new props if needed, but the watcher/computed handles it if structured right.
+              // Actually, router.post automatically reloads props.
+              // But we need to update currentWishlistId from the new prop value.
+            },
+          })
+        },
+      }
+    )
+  }
 }
 
 // Watch for prop changes to update local state (in case of reloads)
 import { computed, watch } from 'vue'
-watch(() => props.wishlistId, (newId) => {
+watch(
+  () => props.wishlistId,
+  (newId) => {
     currentWishlistId.value = newId
-})
+  }
+)
 
 const discountPercent = () => {
   if (!props.product.compare_at_price) return 0

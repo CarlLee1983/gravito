@@ -103,17 +103,17 @@ const compiledMarkdown = computed(() => {
 })
 
 const themeClass = computed(() => {
-    const id = (route.params.id as string || '').toLowerCase()
-    if (id.includes('mongo')) return 'theme-mongodb'
-    if (id.includes('redis')) return 'theme-redis'
-    return ''
+  const id = ((route.params.id as string) || '').toLowerCase()
+  if (id.includes('mongo')) return 'theme-mongodb'
+  if (id.includes('redis')) return 'theme-redis'
+  return ''
 })
 
 // Scroll progress handler
 const handleScroll = () => {
-    const winScroll = document.documentElement.scrollTop
-    const height = document.documentElement.scrollHeight - document.documentElement.clientHeight
-    scrollProgress.value = (winScroll / height) * 100
+  const winScroll = document.documentElement.scrollTop
+  const height = document.documentElement.scrollHeight - document.documentElement.clientHeight
+  scrollProgress.value = (winScroll / height) * 100
 }
 
 // Use glob to find all markdown files
@@ -122,12 +122,9 @@ const docs = import.meta.glob('../docs/**/*.md', { query: '?raw', import: 'defau
 async function fetchContent() {
   const docId = route.params.id as string
   loading.value = true
-  
+
   // Try to find the file for current locale, fallback to 'en'
-  const paths = [
-    `../docs/${locale.value}/${docId}.md`,
-    `../docs/en/${docId}.md`
-  ]
+  const paths = [`../docs/${locale.value}/${docId}.md`, `../docs/en/${docId}.md`]
 
   let rawContent = ''
   let found = false
@@ -135,7 +132,7 @@ async function fetchContent() {
   for (const path of paths) {
     if (docs[path]) {
       try {
-        rawContent = await docs[path]() as string
+        rawContent = (await docs[path]()) as string
         found = true
         break
       } catch (e) {
@@ -149,7 +146,7 @@ async function fetchContent() {
   } else {
     content.value = `# 404 - Document Not Found\n\nThe requested cosmic guide does not exist in this sector.`
   }
-  
+
   loading.value = false
 }
 
@@ -164,7 +161,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-    window.removeEventListener('scroll', handleScroll)
+  window.removeEventListener('scroll', handleScroll)
 })
 </script>
 

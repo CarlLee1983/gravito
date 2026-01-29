@@ -20,11 +20,15 @@ const sort = ref('latest')
 const formatPrice = (price: number) => `NT$ ${(price / 100).toLocaleString()}`
 
 const applyFilters = () => {
-  router.get('/products', {
-    search: search.value || undefined,
-    category: category.value || undefined,
-    sort: sort.value,
-  }, { preserveState: true })
+  router.get(
+    '/products',
+    {
+      search: search.value || undefined,
+      category: category.value || undefined,
+      sort: sort.value,
+    },
+    { preserveState: true }
+  )
 }
 </script>
 

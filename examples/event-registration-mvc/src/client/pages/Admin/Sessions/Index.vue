@@ -174,18 +174,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue';
-import { Link, router } from '@inertiajs/vue3';
-import AdminLayout from '../../../components/AdminLayout.vue';
+import { ref, reactive } from 'vue'
+import { Link, router } from '@inertiajs/vue3'
+import AdminLayout from '../../../components/AdminLayout.vue'
 
 const props = defineProps<{
-  event: any;
-  sessions: any[];
-}>();
+  event: any
+  sessions: any[]
+}>()
 
-const showCreateModal = ref(false);
-const editingSession = ref<any>(null);
-const processing = ref(false);
+const showCreateModal = ref(false)
+const editingSession = ref<any>(null)
+const processing = ref(false)
 
 const form = reactive({
   title: '',
@@ -193,69 +193,81 @@ const form = reactive({
   end_time: '',
   capacity: 100,
   is_active: true,
-});
+})
 
-const formatDateTime = (date: string) => new Date(date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
-const formatTimeOnly = (date: string) => new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+const formatDateTime = (date: string) =>
+  new Date(date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+const formatTimeOnly = (date: string) =>
+  new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 
 const editSession = (session: any) => {
-  editingSession.value = session;
-  form.title = session.title;
-  form.start_time = formatDateTimeLocal(session.start_time);
-  form.end_time = formatDateTimeLocal(session.end_time);
-  form.capacity = session.capacity;
-  form.is_active = session.is_active;
-};
+  editingSession.value = session
+  form.title = session.title
+  form.start_time = formatDateTimeLocal(session.start_time)
+  form.end_time = formatDateTimeLocal(session.end_time)
+  form.capacity = session.capacity
+  form.is_active = session.is_active
+}
 
 function formatDateTimeLocal(dateString: string): string {
-  if (!dateString) return '';
-  const date = new Date(dateString);
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-  return `${year}-${month}-${day}T${hours}:${minutes}`;
+  if (!dateString) return ''
+  const date = new Date(dateString)
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  return `${year}-${month}-${day}T${hours}:${minutes}`
 }
 
 const closeModal = () => {
-  showCreateModal.value = false;
-  editingSession.value = null;
-  form.title = '';
-  form.start_time = '';
-  form.end_time = '';
-  form.capacity = 100;
-  form.is_active = true;
-};
+  showCreateModal.value = false
+  editingSession.value = null
+  form.title = ''
+  form.start_time = ''
+  form.end_time = ''
+  form.capacity = 100
+  form.is_active = true
+}
 
 const submit = () => {
-  processing.value = true;
-  const url = editingSession.value 
-    ? `/admin/sessions/${editingSession.value.id}/update` 
-    : `/admin/events/${props.event.id}/sessions`;
-  
+  processing.value = true
+  const url = editingSession.value
+    ? `/admin/sessions/${editingSession.value.id}/update`
+    : `/admin/events/${props.event.id}/sessions`
+
   // Use POST for both create and update (with /update suffix)
-  const method = 'post';
-  
+  const method = 'post'
+
   router[method](url, form, {
     onFinish: () => {
-      processing.value = false;
-      closeModal();
-    }
-  });
-};
+      processing.value = false
+      closeModal()
+    },
+  })
+}
 
 const formatDisplayDate = (val: string) => {
-  const d = new Date(val);
-  return d.toLocaleString(undefined, { 
-    month: 'short', day: 'numeric', year: 'numeric', 
-    hour: '2-digit', minute: '2-digit', hour12: false 
-  }).replace(',', '');
-};
+  const d = new Date(val)
+  return d
+    .toLocaleString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    })
+    .replace(',', '')
+}
 
 const deleteSession = (id: number) => {
-  if (confirm('Initiate segment purge? This action will disconnect all current registrations for this slot.')) {
-    router.delete(`/admin/sessions/${id}`);
+  if (
+    confirm(
+      'Initiate segment purge? This action will disconnect all current registrations for this slot.'
+    )
+  ) {
+    router.delete(`/admin/sessions/${id}`)
   }
-};
+}
 </script>

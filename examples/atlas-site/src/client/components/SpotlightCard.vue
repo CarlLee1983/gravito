@@ -7,11 +7,11 @@ const opacity = ref(0)
 
 const handleMouseMove = (e: MouseEvent) => {
   if (!container.value) return
-  
+
   const rect = container.value.getBoundingClientRect()
   position.value = {
     x: e.clientX - rect.left,
-    y: e.clientY - rect.top
+    y: e.clientY - rect.top,
   }
   opacity.value = 1
 }

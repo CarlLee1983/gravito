@@ -66,17 +66,29 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import Layout from '../../components/Layout.vue';
-import { useI18n } from '../../composables/useI18n';
+import { computed } from 'vue'
+import Layout from '../../components/Layout.vue'
+import { useI18n } from '../../composables/useI18n'
 
-const { t } = useI18n();
+const { t } = useI18n()
 
 const categories = computed(() => [
-  { title: t('info.help.categories.attendee'), desc: t('info.help.categories.attendee_desc'), icon: 'i-carbon-ticket' },
-  { title: t('info.help.categories.host'), desc: t('info.help.categories.host_desc'), icon: 'i-carbon-events' },
-  { title: t('info.help.categories.finance'), desc: t('info.help.categories.finance_desc'), icon: 'i-carbon-receipt' },
-]);
+  {
+    title: t('info.help.categories.attendee'),
+    desc: t('info.help.categories.attendee_desc'),
+    icon: 'i-carbon-ticket',
+  },
+  {
+    title: t('info.help.categories.host'),
+    desc: t('info.help.categories.host_desc'),
+    icon: 'i-carbon-events',
+  },
+  {
+    title: t('info.help.categories.finance'),
+    desc: t('info.help.categories.finance_desc'),
+    icon: 'i-carbon-receipt',
+  },
+])
 
 const faqs = computed(() => [
   { q: t('info.help.faq.q1') },
@@ -84,5 +96,5 @@ const faqs = computed(() => [
   { q: t('info.help.faq.q3') },
   { q: t('info.help.faq.q4') },
   { q: t('info.help.faq.q5') },
-]);
+])
 </script>

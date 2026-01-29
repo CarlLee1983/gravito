@@ -5,12 +5,7 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "skipLibCheck": true,
-    "types": [
-      "vite/client",
-      "bun-types"
-    ]
+    "types": ["vite/client", "bun-types"]
   },
-  "include": [
-    "src/**/*"
-  ]
+  "include": ["src/**/*"]
 }

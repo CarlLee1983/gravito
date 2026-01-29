@@ -31,7 +31,10 @@ const navLinks = [
   { label: 'Documentation', path: '/docs/introduction' },
   { label: 'Frameworks', path: '/docs/frameworks' },
   { label: 'Gravito Framework', path: 'https://gravito.dev/en/docs/guide/seo-engine' },
-  { label: 'GitHub', path: 'https://github.com/gravito-framework/gravito/tree/main/packages/luminosity' },
+  {
+    label: 'GitHub',
+    path: 'https://github.com/gravito-framework/gravito/tree/main/packages/luminosity',
+  },
 ]
 
 const toggleLang = () => {

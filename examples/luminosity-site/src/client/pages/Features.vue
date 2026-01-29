@@ -1,6 +1,16 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3'
-import { Activity, Code, Cpu, Layers, Share2, Shield, Terminal, Zap, ChevronRight } from 'lucide-vue-next'
+import {
+  Activity,
+  Code,
+  Cpu,
+  Layers,
+  Share2,
+  Shield,
+  Terminal,
+  Zap,
+  ChevronRight,
+} from 'lucide-vue-next'
 import { StaticLink } from '@gravito/freeze-vue'
 import Layout from '../components/Layout.vue'
 import { useI18n } from '../composables/useI18n'

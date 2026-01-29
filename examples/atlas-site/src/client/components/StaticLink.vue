@@ -24,15 +24,16 @@ const isStaticSite = (): boolean => {
   const port = window.location.port
 
   // 靜態預覽模式 (Vite preview 通常使用 4173)
-  if ((hostname === 'localhost' || hostname === '127.0.0.1') && (port === '4173' || port === '5000')) {
+  if (
+    (hostname === 'localhost' || hostname === '127.0.0.1') &&
+    (port === '4173' || port === '5000')
+  ) {
     return true
   }
 
   // 檢查是否在 GitHub Pages 或特定靜態 Domain
   const staticDomains = ['gravito.dev', 'github.io', 'vercel.app', 'netlify.app', 'pages.dev']
-  return staticDomains.some(
-    (domain) => hostname === domain || hostname.endsWith(`.${domain}`)
-  )
+  return staticDomains.some((domain) => hostname === domain || hostname.endsWith(`.${domain}`))
 }
 
 const target = computed(() => props.to || props.href || '#')

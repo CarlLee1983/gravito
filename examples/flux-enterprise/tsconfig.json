@@ -14,10 +14,5 @@
       "@gravito/core": ["../../packages/core/src/index.ts"]
     }
   },
-  "include": [
-    "src",
-    "tests",
-    "flux-enterprise.ts",
-    "scripts"
-  ]
+  "include": ["src", "tests", "flux-enterprise.ts", "scripts"]
 }

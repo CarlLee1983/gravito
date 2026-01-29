@@ -45,20 +45,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted } from 'vue'
 
 const props = defineProps<{
-  value: string;
-  label?: string;
-  downloadable?: boolean;
-  filename?: string;
-}>();
+  value: string
+  label?: string
+  downloadable?: boolean
+  filename?: string
+}>()
 
-const dataUrl = ref<string>('');
+const dataUrl = ref<string>('')
 
 onMounted(async () => {
   // Generate QR code on client side
-  const QRCode = (await import('qrcode')).default;
+  const QRCode = (await import('qrcode')).default
   try {
     dataUrl.value = await QRCode.toDataURL(props.value, {
       errorCorrectionLevel: 'H',
@@ -67,20 +67,20 @@ onMounted(async () => {
       margin: 2,
       color: {
         dark: '#1e1b4b', // gray-900
-        light: '#ffffff'
-      }
-    });
+        light: '#ffffff',
+      },
+    })
   } catch (error) {
-    console.error('Failed to generate QR code:', error);
+    console.error('Failed to generate QR code:', error)
   }
-});
+})
 
 const downloadQrCode = () => {
-  if (!dataUrl.value) return;
-  
-  const link = document.createElement('a');
-  link.href = dataUrl.value;
-  link.download = props.filename || `qrcode-${props.value}.png`;
-  link.click();
-};
+  if (!dataUrl.value) return
+
+  const link = document.createElement('a')
+  link.href = dataUrl.value
+  link.download = props.filename || `qrcode-${props.value}.png`
+  link.click()
+}
 </script>

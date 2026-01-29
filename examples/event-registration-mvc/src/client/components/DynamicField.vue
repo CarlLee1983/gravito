@@ -90,55 +90,55 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch } from 'vue'
 
 const props = defineProps<{
   field: {
-    id: number;
-    name: string;
-    label: string;
-    type: string;
-    options?: string;
-    required: boolean;
-  };
-  modelValue: string;
-}>();
+    id: number
+    name: string
+    label: string
+    type: string
+    options?: string
+    required: boolean
+  }
+  modelValue: string
+}>()
 
 const emit = defineEmits<{
-  (e: 'update:modelValue', value: string): void;
-}>();
+  (e: 'update:modelValue', value: string): void
+}>()
 
-const localValue = ref(props.modelValue || '');
+const localValue = ref(props.modelValue || '')
 
 watch(localValue, (newValue) => {
-  emit('update:modelValue', newValue);
-});
+  emit('update:modelValue', newValue)
+})
 
 const getOptions = (): string[] => {
-  if (!props.field.options) return [];
+  if (!props.field.options) return []
   try {
-    return JSON.parse(props.field.options);
+    return JSON.parse(props.field.options)
   } catch {
-    return [];
+    return []
   }
-};
+}
 
 const isChecked = (option: string): boolean => {
-  if (!localValue.value) return false;
-  const values = localValue.value.split(',');
-  return values.includes(option);
-};
+  if (!localValue.value) return false
+  const values = localValue.value.split(',')
+  return values.includes(option)
+}
 
 const toggleCheckbox = (option: string) => {
-  const values = localValue.value ? localValue.value.split(',') : [];
-  const index = values.indexOf(option);
-  
+  const values = localValue.value ? localValue.value.split(',') : []
+  const index = values.indexOf(option)
+
   if (index > -1) {
-    values.splice(index, 1);
+    values.splice(index, 1)
   } else {
-    values.push(option);
+    values.push(option)
   }
-  
-  localValue.value = values.filter(v => v).join(',');
-};
+
+  localValue.value = values.filter((v) => v).join(',')
+}
 </script>

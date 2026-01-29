@@ -1,21 +1,21 @@
 {
-    "name": "example-engine-atlas-microservice",
-    "version": "0.1.2",
-    "private": true,
-    "type": "module",
-    "scripts": {
-        "dev": "bun run --watch src/index.ts",
-        "start": "bun run src/index.ts",
-        "test": "bun test",
-        "bench": "oha -n 10000 -c 100 http://localhost:3000/users",
-        "typecheck": "bun tsc --noEmit"
-    },
-    "dependencies": {
-        "@gravito/core": "workspace:*",
-        "@gravito/atlas": "workspace:*"
-    },
-    "devDependencies": {
-        "bun-types": "latest",
-        "typescript": "^5.9.3"
-    }
+  "name": "example-engine-atlas-microservice",
+  "version": "0.1.2",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --watch src/index.ts",
+    "start": "bun run src/index.ts",
+    "test": "bun test",
+    "bench": "oha -n 10000 -c 100 http://localhost:3000/users",
+    "typecheck": "bun tsc --noEmit"
+  },
+  "dependencies": {
+    "@gravito/core": "workspace:*",
+    "@gravito/atlas": "workspace:*"
+  },
+  "devDependencies": {
+    "bun-types": "latest",
+    "typescript": "^5.9.3"
+  }
 }

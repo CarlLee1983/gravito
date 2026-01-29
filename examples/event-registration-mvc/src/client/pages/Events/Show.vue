@@ -174,66 +174,70 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue';
-import { Link, router, usePage } from '@inertiajs/vue3';
-import { PageProps } from '@inertiajs/core';
-import Layout from '../../components/Layout.vue';
-import { useI18n } from '../../composables/useI18n';
+import { ref, reactive, computed } from 'vue'
+import { Link, router, usePage } from '@inertiajs/vue3'
+import { PageProps } from '@inertiajs/core'
+import Layout from '../../components/Layout.vue'
+import { useI18n } from '../../composables/useI18n'
 
-const page = usePage<PageProps>();
-const user = computed(() => (page.props.auth as any)?.user);
+const page = usePage<PageProps>()
+const user = computed(() => (page.props.auth as any)?.user)
 
-const { t } = useI18n();
+const { t } = useI18n()
 
 const props = defineProps<{
-  event: any;
-}>();
+  event: any
+}>()
 
-const selectedSession = ref<any>(null);
+const selectedSession = ref<any>(null)
 
 const form = reactive({
   session_id: null,
   field_values: {} as Record<number, string>,
   notes: '',
-  processing: false
-});
+  processing: false,
+})
 
 const parseOptions = (options: string) => {
   try {
-    return JSON.parse(options);
+    return JSON.parse(options)
   } catch (e) {
-    return [];
+    return []
   }
-};
+}
 
 const formatDate = (date: string) => {
-  return new Date(date).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' });
-};
+  return new Date(date).toLocaleDateString(undefined, {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  })
+}
 
 const formatDateTime = (date: string) => {
-  return new Date(date).toLocaleString(undefined, { 
-    month: 'short', 
-    day: 'numeric', 
-    hour: '2-digit', 
-    minute: '2-digit' 
-  });
-};
+  return new Date(date).toLocaleString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
 
 const submitRegistration = () => {
-  if (!selectedSession.value) return;
-  
-  form.processing = true;
-  form.session_id = selectedSession.value.id;
-  
+  if (!selectedSession.value) return
+
+  form.processing = true
+  form.session_id = selectedSession.value.id
+
   router.post('/registrations', form, {
-    onFinish: () => form.processing = false,
+    onFinish: () => (form.processing = false),
     onSuccess: () => {
-      selectedSession.value = null;
-      form.notes = '';
-      form.field_values = {};
-    }
-  });
-};
+      selectedSession.value = null
+      form.notes = ''
+      form.field_values = {}
+    },
+  })
+}
 </script>
 
 <style scoped>

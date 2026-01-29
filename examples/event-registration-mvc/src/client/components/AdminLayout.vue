@@ -166,54 +166,59 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watchEffect } from 'vue';
-import { Link, usePage } from '@inertiajs/vue3';
-import { useI18n } from '../composables/useI18n';
+import { ref, onMounted, watchEffect } from 'vue'
+import { Link, usePage } from '@inertiajs/vue3'
+import { useI18n } from '../composables/useI18n'
 
-const { t, getLocale } = useI18n();
-const page = usePage();
+const { t, getLocale } = useI18n()
+const page = usePage()
 
 // THEME TERMINAL LOGIC
-const isDark = ref(false);
+const isDark = ref(false)
 const toggleDark = () => {
-  isDark.value = !isDark.value;
-  localStorage.setItem('theme', isDark.value ? 'dark' : 'light');
-};
+  isDark.value = !isDark.value
+  localStorage.setItem('theme', isDark.value ? 'dark' : 'light')
+}
 
 watchEffect(() => {
   if (typeof document !== 'undefined') {
-    document.documentElement.classList.toggle('dark', isDark.value);
+    document.documentElement.classList.toggle('dark', isDark.value)
   }
-});
+})
 
 const primaryNav = [
   { labelKey: 'admin.nav.overview', href: '/admin', icon: 'i-carbon-dashboard' },
   { labelKey: 'admin.nav.events', href: '/admin/events', icon: 'i-carbon-calendar' },
-  { labelKey: 'admin.nav.registrations', href: '/admin/registrations', icon: 'i-carbon-user-identification' },
+  {
+    labelKey: 'admin.nav.registrations',
+    href: '/admin/registrations',
+    icon: 'i-carbon-user-identification',
+  },
   { labelKey: 'admin.nav.users', href: '/admin/users', icon: 'i-carbon-group' },
-];
+]
 
 const isNavActive = (href: string) => {
-  if (href === '/admin') return page.url === '/admin';
-  return page.url.startsWith(href);
-};
+  if (href === '/admin') return page.url === '/admin'
+  return page.url.startsWith(href)
+}
 
 const getPageTitle = () => {
-  const item = primaryNav.find(i => isNavActive(i.href));
-  return item ? t(item.labelKey) : t('admin.nav.main_menu');
-};
+  const item = primaryNav.find((i) => isNavActive(i.href))
+  return item ? t(item.labelKey) : t('admin.nav.main_menu')
+}
 
 const getLanguageLink = (lang: string) => {
-  if (typeof window === 'undefined') return '#';
-  const url = new URL(window.location.href);
-  url.searchParams.set('lang', lang);
-  return url.pathname + url.search;
-};
+  if (typeof window === 'undefined') return '#'
+  const url = new URL(window.location.href)
+  url.searchParams.set('lang', lang)
+  return url.pathname + url.search
+}
 
 onMounted(() => {
-  isDark.value = localStorage.getItem('theme') === 'dark' || 
-    (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
-});
+  isDark.value =
+    localStorage.getItem('theme') === 'dark' ||
+    (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)
+})
 </script>
 
 <style>

@@ -12,11 +12,11 @@ const copyCommand = () => {
     bun: 'bun add @gravito/atlas',
     npm: 'npm install @gravito/atlas',
     yarn: 'yarn add @gravito/atlas',
-    pnpm: 'pnpm add @gravito/atlas'
+    pnpm: 'pnpm add @gravito/atlas',
   }
   navigator.clipboard.writeText(commands[activeTab.value])
   copied.value = true
-  setTimeout(() => copied.value = false, 2000)
+  setTimeout(() => (copied.value = false), 2000)
 }
 </script>
 

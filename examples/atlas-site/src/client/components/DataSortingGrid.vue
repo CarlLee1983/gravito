@@ -14,8 +14,8 @@ import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 const props = defineProps({
   withBackground: {
     type: Boolean,
-    default: false
-  }
+    default: false,
+  },
 })
 
 const containerRef = ref<HTMLElement | null>(null)
@@ -28,7 +28,7 @@ const containerStyle = computed(() => {
     backgroundImage: "url('/hero-bg.png')",
     backgroundSize: 'cover',
     backgroundPosition: 'center',
-    backgroundRepeat: 'no-repeat'
+    backgroundRepeat: 'no-repeat',
   }
 })
 
@@ -38,7 +38,7 @@ const COLOR_PALETTE = [
   '16, 185, 129', // Emerald 500
   '52, 211, 153', // Emerald 400
   '209, 250, 229', // Mint (High Light)
-  '5, 150, 105',  // Dark Emerald
+  '5, 150, 105', // Dark Emerald
 ]
 
 interface Particle {
@@ -69,7 +69,7 @@ onMounted(() => {
     height = canvas.height = containerRef.value?.clientHeight || window.innerHeight
     initParticles()
   }
-  
+
   const handleMouseMove = (e: MouseEvent) => {
     const rect = canvas.getBoundingClientRect()
     mouseX = e.clientX - rect.left
@@ -102,26 +102,26 @@ onMounted(() => {
       speed: 0.5 + z * 2.5, // Front particles move much faster
       angle: Math.random() * Math.PI * 2,
       color: COLOR_PALETTE[Math.floor(Math.random() * COLOR_PALETTE.length)],
-      size: 0.5 + z * 2
+      size: 0.5 + z * 2,
     }
   }
 
   const draw = () => {
     // 1. Motion Blur Effect (Trails)
     ctx.globalCompositeOperation = 'source-over'
-    ctx.fillStyle = 'rgba(2, 6, 23, 0.08)' 
+    ctx.fillStyle = 'rgba(2, 6, 23, 0.08)'
     ctx.fillRect(0, 0, width, height)
-    
+
     ctx.globalCompositeOperation = 'lighter'
     time += 0.002
 
     for (let i = 0; i < particles.length; i++) {
       const p = particles[i]
-      
+
       // 2. Flow Field Logic
       const noise = Math.sin(p.x * 0.005 + time) * Math.cos(p.y * 0.005 + time)
       p.angle = noise * Math.PI * 2
-      
+
       p.x += Math.cos(p.angle) * p.speed
       p.y += Math.sin(p.angle) * p.speed
 

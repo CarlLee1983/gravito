@@ -70,21 +70,24 @@
 </template>
 
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
-import AdminLayout from '../../../components/AdminLayout.vue';
-import { useI18n } from '../../../composables/useI18n';
+import { Link } from '@inertiajs/vue3'
+import AdminLayout from '../../../components/AdminLayout.vue'
+import { useI18n } from '../../../composables/useI18n'
 
-const { t } = useI18n();
+const { t } = useI18n()
 
 defineProps<{
-  registrations: any[];
-}>();
+  registrations: any[]
+}>()
 
 const formatDate = (date: string) => {
   return new Date(date).toLocaleString(undefined, {
-    month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-  });
-};
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
 
 const getStatusClasses = (status: string) => {
   const classes: Record<string, string> = {
@@ -93,7 +96,7 @@ const getStatusClasses = (status: string) => {
     cancelled: 'bg-red-500 text-white',
     waitlist: 'bg-indigo-500 text-white',
     checked_in: 'bg-cyan-500 text-white',
-  };
-  return classes[status] || 'bg-gray-500 text-white';
-};
+  }
+  return classes[status] || 'bg-gray-500 text-white'
+}
 </script>

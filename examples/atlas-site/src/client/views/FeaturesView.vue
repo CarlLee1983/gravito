@@ -529,7 +529,7 @@ import DataSortingGrid from '@/client/components/DataSortingGrid.vue'
 import StaticLink from '@/client/components/StaticLink.vue'
 
 defineOptions({
-  name: 'FeaturesView'
+  name: 'FeaturesView',
 })
 
 const { t } = useI18n()

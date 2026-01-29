@@ -1,5 +1,5 @@
-import express from 'express'
 import { gravitoSeo } from '@gravito/luminosity-adapter-express'
+import express from 'express'
 
 const app = express()
 const port = Number.parseInt(process.env.PORT ?? '3000', 10)
@@ -14,13 +14,13 @@ const seoMiddleware = gravitoSeo({
       fetch: () => [
         { url: '/', changefreq: 'daily', priority: 1 },
         { url: '/about', changefreq: 'weekly', priority: 0.7 },
-        { url: '/pricing', changefreq: 'monthly', priority: 0.6 }
-      ]
-    }
+        { url: '/pricing', changefreq: 'monthly', priority: 0.6 },
+      ],
+    },
   ],
   robots: {
-    rules: [{ userAgent: '*', allow: ['/'] }]
-  }
+    rules: [{ userAgent: '*', allow: ['/'] }],
+  },
 })
 
 app.get('/', (req, res) => {

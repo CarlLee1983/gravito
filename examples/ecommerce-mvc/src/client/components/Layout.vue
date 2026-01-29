@@ -14,7 +14,6 @@ const cart = computed(() => page.props.cart as any)
 const categories = computed(() => (page.props.categories || []) as any[])
 const seo = computed(() => page.props.seo as any)
 
-
 const toggleMenu = () => {
   isMenuOpen.value = !isMenuOpen.value
 }
@@ -41,11 +40,11 @@ const switchLanguage = (lang: string) => {
 const languages = [
   { code: 'zh-TW', name: '繁體中文' },
   { code: 'en', name: 'English' },
-  { code: 'ja', name: '日本語' }
+  { code: 'ja', name: '日本語' },
 ]
 
 const currentLanguageName = computed(() => {
-  return languages.find(l => l.code === locale.value)?.name || locale.value
+  return languages.find((l) => l.code === locale.value)?.name || locale.value
 })
 </script>
 

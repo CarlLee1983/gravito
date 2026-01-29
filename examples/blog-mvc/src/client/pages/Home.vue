@@ -1,6 +1,19 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3'
-import { Newspaper, ChevronRight, User, Calendar, LogIn, LogOut, PlusCircle, Edit, Trash2, Tag, Search, ChevronLeft } from 'lucide-vue-next'
+import {
+  Newspaper,
+  ChevronRight,
+  User,
+  Calendar,
+  LogIn,
+  LogOut,
+  PlusCircle,
+  Edit,
+  Trash2,
+  Tag,
+  Search,
+  ChevronLeft,
+} from 'lucide-vue-next'
 import { ref, watch } from 'vue'
 import ThemeSwitcher from '../components/ThemeSwitcher.vue'
 
@@ -50,39 +63,51 @@ const props = defineProps<{
 const search = ref(props.filters.search || '')
 
 watch(search, (value) => {
-  router.get('/', { 
-    search: value, 
-    category: props.filters.category 
-  }, { 
-    preserveState: true, 
-    replace: true 
-  })
+  router.get(
+    '/',
+    {
+      search: value,
+      category: props.filters.category,
+    },
+    {
+      preserveState: true,
+      replace: true,
+    }
+  )
 })
 
 const filterByCategory = (slug: string | null) => {
-  router.get('/', { 
-    search: search.value, 
-    category: slug 
-  }, { 
-    preserveState: true 
-  })
+  router.get(
+    '/',
+    {
+      search: search.value,
+      category: slug,
+    },
+    {
+      preserveState: true,
+    }
+  )
 }
 
 const navigate = (page: number) => {
-  router.get('/', { 
-    search: search.value, 
-    category: props.filters.category,
-    page
-  }, { 
-    preserveState: true 
-  })
+  router.get(
+    '/',
+    {
+      search: search.value,
+      category: props.filters.category,
+      page,
+    },
+    {
+      preserveState: true,
+    }
+  )
 }
 
 const formatDate = (date: string) => {
   return new Date(date).toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
-    year: 'numeric'
+    year: 'numeric',
   })
 }
 

@@ -3,16 +3,16 @@ import { useForm, Link } from '@inertiajs/vue3'
 import { Lock, Mail, ArrowRight, ShieldCheck, Gauge } from 'lucide-vue-next'
 
 const form = useForm({
-    email: 'admin@gravito.dev',
-    password: 'admin123',
+  email: 'admin@gravito.dev',
+  password: 'admin123',
 })
 
 const submit = () => {
-    form.post('/login', {
-        onSuccess: () => {
-            // Inertia handles redirect
-        },
-    })
+  form.post('/login', {
+    onSuccess: () => {
+      // Inertia handles redirect
+    },
+  })
 }
 </script>
 

@@ -1,6 +1,16 @@
 <script setup lang="ts">
 import { Head, useForm, Link } from '@inertiajs/vue3'
-import { ArrowLeft, Save, Loader2, AlertCircle, Eye, Edit3, Trash2, User, Tag } from 'lucide-vue-next'
+import {
+  ArrowLeft,
+  Save,
+  Loader2,
+  AlertCircle,
+  Eye,
+  Edit3,
+  Trash2,
+  User,
+  Tag,
+} from 'lucide-vue-next'
 import { computed, ref } from 'vue'
 import { marked } from 'marked'
 
@@ -32,7 +42,7 @@ const form = useForm({
   content: props.post.content,
   author: props.post.author,
   status: props.post.status || 'published',
-  feature_image: props.post.feature_image || ''
+  feature_image: props.post.feature_image || '',
 })
 
 const submit = () => {
@@ -50,7 +60,7 @@ const previewHtml = computed(() => {
 })
 
 const currentCategory = computed(() => {
-  return props.categories.find(c => c.id === form.category_id)?.name || 'Uncategorized'
+  return props.categories.find((c) => c.id === form.category_id)?.name || 'Uncategorized'
 })
 
 const generateSlug = () => {

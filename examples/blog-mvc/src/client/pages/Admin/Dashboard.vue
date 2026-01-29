@@ -1,24 +1,24 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3'
-import { 
-  LayoutDashboard, 
-  FileText, 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Eye, 
+import {
+  LayoutDashboard,
+  FileText,
+  Plus,
+  Edit,
+  Trash2,
+  Eye,
   LogOut,
   ChevronRight,
   TrendingUp,
   Users,
-  MessageSquare
+  MessageSquare,
 } from 'lucide-vue-next'
 
 defineProps<{
   posts: {
     data: any[]
     pagination: any
-  },
+  }
   stats: {
     totalPosts: number
     subscribers: number

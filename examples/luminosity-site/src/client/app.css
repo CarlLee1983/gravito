@@ -1,73 +1,105 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=Open+Sans:wght@300;400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=Open+Sans:wght@300;400;500;600;700&display=swap");
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
-    body {
-        @apply antialiased text-zinc-300 bg-void font-body selection:bg-singularity/30 selection:text-white;
-    }
+  body {
+    @apply antialiased text-zinc-300 bg-void font-body selection:bg-singularity/30 selection:text-white;
+  }
 
-    h1, h2, h3, h4, h5, h6 {
-        @apply font-heading text-white;
-    }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-heading text-white;
+  }
 
-    /* Custom Scrollbar for OLED Black */
-    ::-webkit-scrollbar {
-        width: 10px;
-    }
-    ::-webkit-scrollbar-track {
-        @apply bg-void;
-    }
-    ::-webkit-scrollbar-thumb {
-        @apply bg-zinc-800 border-2 border-void rounded-full hover:bg-zinc-700 transition-colors;
-    }
+  /* Custom Scrollbar for OLED Black */
+  ::-webkit-scrollbar {
+    width: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-void;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-zinc-800 border-2 border-void rounded-full hover:bg-zinc-700 transition-colors;
+  }
 
-    /* Focus Ring Styles */
-    :focus-visible {
-        @apply outline-none ring-2 ring-singularity ring-offset-2 ring-offset-void;
-    }
+  /* Focus Ring Styles */
+  :focus-visible {
+    @apply outline-none ring-2 ring-singularity ring-offset-2 ring-offset-void;
+  }
 }
 
 @layer utilities {
-    .bg-hex-grid {
-        background-image:
-            linear-gradient(30deg, rgba(255, 255, 255, 0.03) 12%, transparent 12.5%, transparent 87%, rgba(255, 255, 255, 0.03) 87.5%, rgba(255, 255, 255, 0.03) 100%),
-            linear-gradient(150deg, rgba(255, 255, 255, 0.03) 12%, transparent 12.5%, transparent 87%, rgba(255, 255, 255, 0.03) 87.5%, rgba(255, 255, 255, 0.03) 100%),
-            linear-gradient(90deg, rgba(255, 255, 255, 0.03) 12%, transparent 12.5%, transparent 87%, rgba(255, 255, 255, 0.03) 87.5%, rgba(255, 255, 255, 0.03) 100%);
-        background-size: 60px 104px, 60px 104px, 120px 60px;
-        background-position: 0 0, 0 0, 0 0;
-        mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%);
-    }
+  .bg-hex-grid {
+    background-image:
+      linear-gradient(
+        30deg,
+        rgba(255, 255, 255, 0.03) 12%,
+        transparent 12.5%,
+        transparent 87%,
+        rgba(255, 255, 255, 0.03) 87.5%,
+        rgba(255, 255, 255, 0.03) 100%
+      ),
+      linear-gradient(
+        150deg,
+        rgba(255, 255, 255, 0.03) 12%,
+        transparent 12.5%,
+        transparent 87%,
+        rgba(255, 255, 255, 0.03) 87.5%,
+        rgba(255, 255, 255, 0.03) 100%
+      ),
+      linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.03) 12%,
+        transparent 12.5%,
+        transparent 87%,
+        rgba(255, 255, 255, 0.03) 87.5%,
+        rgba(255, 255, 255, 0.03) 100%
+      );
+    background-size:
+      60px 104px,
+      60px 104px,
+      120px 60px;
+    background-position:
+      0 0,
+      0 0,
+      0 0;
+    mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%);
+  }
 
-    .tech-list {
-        @apply space-y-4 relative border-l border-white/5 ml-2 pl-6;
-    }
+  .tech-list {
+    @apply space-y-4 relative border-l border-white/5 ml-2 pl-6;
+  }
 
-    .tech-item {
-        @apply relative text-sm text-gray-400 font-medium;
-    }
+  .tech-item {
+    @apply relative text-sm text-gray-400 font-medium;
+  }
 
-    .tech-item::before {
-        content: "";
-        position: absolute;
-        left: -27px;
-        top: 0.375rem;
-        width: 0.375rem;
-        height: 0.375rem;
-        border-radius: 9999px;
-        @apply bg-emerald-500;
-        box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
-    }
+  .tech-item::before {
+    content: "";
+    position: absolute;
+    left: -27px;
+    top: 0.375rem;
+    width: 0.375rem;
+    height: 0.375rem;
+    border-radius: 9999px;
+    @apply bg-emerald-500;
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+  }
 
-    .tech-item-alt::before {
-        @apply bg-blue-500;
-        box-shadow: 0 0 8px rgba(59, 130, 246, 0.5);
-    }
+  .tech-item-alt::before {
+    @apply bg-blue-500;
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.5);
+  }
 
-    .tech-item-warning::before {
-        @apply bg-amber-500;
-        box-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
-    }
+  .tech-item-warning::before {
+    @apply bg-amber-500;
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
+  }
 }
