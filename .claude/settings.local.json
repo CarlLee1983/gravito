@@ -37,8 +37,5 @@
       "WebFetch(domain:bun.com)"
     ]
   },
-  "enabledMcpjsonServers": [
-    "pencil",
-    "context7"
-  ]
+  "enabledMcpjsonServers": ["pencil", "context7"]
 }

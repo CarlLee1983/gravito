@@ -1,44 +1,38 @@
 {
-    "$schema": "https://turbo.build/schema.json",
-    "tasks": {
-        "build": {
-            "dependsOn": [
-                "^build"
-            ],
-            "inputs": ["src/**", "package.json", "tsconfig.json"],
-            "outputs": [
-                "dist/**",
-                ".next/**",
-                "!.next/cache/**"
-            ]
-        },
-        "test": {
-            "dependsOn": [],
-            "inputs": ["src/**", "tests/**", "package.json", "tsconfig.json", "bunfig.toml"],
-            "outputs": []
-        },
-        "test:ci": {
-            "dependsOn": [],
-            "inputs": ["src/**", "tests/**", "package.json", "tsconfig.json", "bunfig.toml"],
-            "outputs": []
-        },
-        "test:coverage": {
-            "dependsOn": [],
-            "inputs": ["src/**", "tests/**", "package.json", "tsconfig.json", "bunfig.toml"],
-            "outputs": []
-        },
-        "typecheck": {
-            "dependsOn": ["^build"],
-            "inputs": ["src/**", "tests/**", "package.json", "tsconfig.json"],
-            "outputs": ["tsconfig.tsbuildinfo"]
-        },
-        "lint": {
-            "inputs": ["src/**", "tests/**", "package.json", "biome.json"],
-            "outputs": []
-        },
-        "dev": {
-            "cache": false,
-            "persistent": true
-        }
+  "$schema": "https://turbo.build/schema.json",
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "inputs": ["src/**", "package.json", "tsconfig.json"],
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
+    },
+    "test": {
+      "dependsOn": [],
+      "inputs": ["src/**", "tests/**", "package.json", "tsconfig.json", "bunfig.toml"],
+      "outputs": []
+    },
+    "test:ci": {
+      "dependsOn": [],
+      "inputs": ["src/**", "tests/**", "package.json", "tsconfig.json", "bunfig.toml"],
+      "outputs": []
+    },
+    "test:coverage": {
+      "dependsOn": [],
+      "inputs": ["src/**", "tests/**", "package.json", "tsconfig.json", "bunfig.toml"],
+      "outputs": []
+    },
+    "typecheck": {
+      "dependsOn": ["^build"],
+      "inputs": ["src/**", "tests/**", "package.json", "tsconfig.json"],
+      "outputs": ["tsconfig.tsbuildinfo"]
+    },
+    "lint": {
+      "inputs": ["src/**", "tests/**", "package.json", "biome.json"],
+      "outputs": []
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
     }
+  }
 }
