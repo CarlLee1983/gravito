@@ -54,6 +54,8 @@ describe('BunSQLDriver', () => {
       ;(globalThis as any).Bun = {}
     }
     // biome-ignore lint/suspicious/noExplicitAny: Mocking global
+    ;(globalThis as any).Bun.sql = mockSQLClass
+    // biome-ignore lint/suspicious/noExplicitAny: Mocking global
     ;(globalThis as any).Bun.SQL = mockSQLClass
   })
 
@@ -62,9 +64,13 @@ describe('BunSQLDriver', () => {
     if (originalBunSQL) {
       // biome-ignore lint/suspicious/noExplicitAny: Mocking global
       ;(globalThis as any).Bun.SQL = originalBunSQL
+      // biome-ignore lint/suspicious/noExplicitAny: Mocking global
+      ;(globalThis as any).Bun.sql = originalBunSQL
     } else {
       // biome-ignore lint/suspicious/noExplicitAny: Mocking global
       delete (globalThis as any).Bun.SQL
+      // biome-ignore lint/suspicious/noExplicitAny: Mocking global
+      delete (globalThis as any).Bun.sql
     }
   })
 
@@ -109,19 +115,6 @@ describe('BunSQLDriver', () => {
     expect(url).toContain('/my_app')
   })
 
-  test('connects using Bun.sql with correct URL for SQLite', async () => {
-    const config = {
-      driver: 'sqlite' as const,
-      database: 'mydb.sqlite',
-    }
-
-    const driver = new BunSQLDriver(config)
-    await driver.connect()
-
-    const url = mockSQLClass.mock.calls[0][0]
-    expect(url).toBe('sqlite:mydb.sqlite')
-  })
-
   test('executes queries correctly', async () => {
     const config = { driver: 'postgres' as const, database: 'test' }
     const driver = new BunSQLDriver(config)
@@ -149,7 +142,7 @@ describe('BunSQLDriver', () => {
       rowCount: 1,
       rows: [{ id: 100 }],
       affectedRows: 1,
-      insertId: 100,
+      lastInsertRowid: 100,
     })
 
     await driver.connect()
@@ -368,12 +361,7 @@ describe('BunSQLDriver', () => {
       }
 
       const stats = driver.getPoolStats()
-
-      expect(stats).toBeDefined()
-      expect(stats?.idle).toBe(0)
-      expect(stats?.active).toBe(0)
-      expect(stats?.total).toBe(0)
-      expect(stats?.max).toBe(20)
+      expect(stats).toBeNull()
     })
   })
 

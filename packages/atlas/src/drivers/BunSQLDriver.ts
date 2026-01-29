@@ -169,6 +169,7 @@ export class BunSQLDriver implements DriverContract {
     const params = new URLSearchParams()
     if (c.ssl) params.set('sslmode', 'require')
     if (c.pool?.max) params.set('max', String(c.pool.max))
+    if (c.pool?.idleTimeout) params.set('idle_timeout', String(c.pool.idleTimeout))
     const q = params.toString()
     return `${protocol}://${auth}${c.host ?? 'localhost'}${c.port ? `:${c.port}` : ''}/${c.database}${q ? '?' + q : ''}`
   }

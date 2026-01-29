@@ -188,6 +188,7 @@ export class WhereClause {
       column: first,
       operator,
       value: second,
+      values: [first, second],
       boolean,
     })
   }
