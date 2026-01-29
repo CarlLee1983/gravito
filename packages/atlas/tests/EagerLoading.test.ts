@@ -89,6 +89,7 @@ function createMockConnection(responses: MockResponses): ConnectionContract {
     execute: async (sql: string, bindings?: unknown[]) => mockDriver.execute(sql, bindings),
     transaction: async <T>(cb: (conn: ConnectionContract) => Promise<T>) => cb(connection),
     disconnect: async () => undefined,
+    getTracer: () => undefined,
   }
 
   return connection

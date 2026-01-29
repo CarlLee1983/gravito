@@ -18,6 +18,7 @@ describe('Caching Integration', () => {
       update: vi.fn(),
       delete: vi.fn(),
       table: vi.fn(),
+      getTracer: () => undefined,
       getDriver: vi.fn(() => ({
         getDriverName: () => 'mock',
         getGrammar: () => mockGrammar,
@@ -35,6 +36,7 @@ describe('Caching Integration', () => {
       wrapTable: vi.fn((table) => table),
       compileExists: vi.fn(),
       compileAggregate: vi.fn(),
+      getStructuralKey: vi.fn(() => 'users:select:*'),
     }
 
     // Chainable table() returning generic QueryBuilder

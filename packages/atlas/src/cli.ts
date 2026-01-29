@@ -6,6 +6,7 @@
  */
 
 import { resolve } from 'node:path'
+import { DoctorCommand } from './commands/DoctorCommand'
 import { MakeMigrationCommand } from './commands/MakeMigrationCommand'
 import { MakeModelCommand } from './commands/MakeModelCommand'
 import { TinkerCommand } from './commands/TinkerCommand'
@@ -145,6 +146,11 @@ async function main() {
         break
       }
 
+      case 'doctor': {
+        await new DoctorCommand().handle(flags)
+        break
+      }
+
       default:
         console.log(`
 Orbit Database CLI
@@ -160,11 +166,7 @@ Commands:
   seed                Run all seeders
   make:model <name>   Create a new model
   make:migration <n>  Create a new migration
-
-Flags:
-  --path <path>       Path to migrations/models directory
-  --seed-path <path>  Path to seeders directory
-  --step <n>          Number of batches to rollback (default: 1)
+  doctor              Diagnose database connection and config
 `)
     }
   } catch (error) {

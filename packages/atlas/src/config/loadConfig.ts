@@ -3,7 +3,7 @@
  * @description Load database configuration from various sources
  */
 
-import type { AtlasConfig } from './defineConfig'
+import type { AtlasConfig } from '../types'
 import { fromEnv } from './defineConfig'
 
 /**

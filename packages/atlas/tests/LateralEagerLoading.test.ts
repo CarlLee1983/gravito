@@ -27,6 +27,7 @@ describe('Lateral Eager Loading', () => {
   beforeEach(() => {
     mockConnection = {
       getName: () => 'postgres',
+      getTracer: () => undefined,
       getDriver: () => ({ getDriverName: () => 'postgres' }),
       getConfig: () => ({ driver: 'postgres' }),
       getGrammar: () => new PostgresGrammar(),

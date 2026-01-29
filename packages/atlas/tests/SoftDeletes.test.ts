@@ -28,6 +28,7 @@ describe('SoftDeletes', () => {
       compileSelect: jest.fn(() => 'SELECT * FROM users WHERE deleted_at IS NULL'),
       compileUpdate: jest.fn(() => 'UPDATE users SET deleted_at = ? WHERE id = ?'),
       compileDelete: jest.fn(() => 'DELETE FROM users WHERE id = ?'),
+      getStructuralKey: jest.fn(() => 'mock'),
     }
 
     mockConnection = {
@@ -37,6 +38,7 @@ describe('SoftDeletes', () => {
       },
       raw: jest.fn().mockResolvedValue({ rows: [] }),
       getGrammar: () => mockGrammar,
+      getTracer: () => undefined,
       getDriver: () => ({
         getGrammar: () => mockGrammar,
         execute: jest.fn().mockResolvedValue({ affectedRows: 1, rows: [] }),

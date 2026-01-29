@@ -1,6 +1,9 @@
 /**
- * Grammar - Abstract SQL Grammar Base Class
- * @description Base class for database-specific SQL generation
+ * Abstract SQL Grammar providing base logic for SQL generation.
+ *
+ * Handles the structural assembly of SELECT, INSERT, UPDATE, and DELETE
+ * statements. Includes a sophisticated compilation cache to minimize
+ * string manipulation overhead for repetitive query structures.
  */
 
 import { LRUCache } from 'lru-cache'
@@ -14,34 +17,30 @@ import type {
   WhereClause,
 } from '../types'
 
-/**
- * Abstract Grammar class
- * Provides base SQL compilation logic that can be extended for specific databases
- */
 export abstract class Grammar implements GrammarContract {
   /**
-   * The grammar table prefix
+   * Optional prefix for all table names.
    */
   protected tablePrefix = ''
 
   /**
-   * Column wrapper character
+   * Database-specific character for wrapping identifiers (e.g., " or `).
    */
   protected abstract wrapChar: string
 
   /**
-   * Cache for pre-compiled SQL statements
-   * Shared across all Grammar instances
+   * Internal cache for compiled SQL templates.
+   * Keyed by structural hash to allow reuse across different parameter values.
    */
   private static compilationCache = new LRUCache<string, string>({
-    max: 500, // Max 500 compiled queries (~50KB typical)
-    ttl: 1000 * 60 * 5, // 5 minute TTL
-    updateAgeOnGet: true, // Refresh TTL on access (LRU behavior)
+    max: 500,
+    ttl: 1000 * 60 * 5,
+    updateAgeOnGet: true,
     allowStale: false,
   })
 
   /**
-   * Cache statistics for monitoring
+   * Metrics for cache performance monitoring.
    */
   private static cacheStats = {
     hits: 0,
@@ -50,19 +49,17 @@ export abstract class Grammar implements GrammarContract {
   }
 
   /**
-   * Toggle for compilation cache
+   * Global toggle for SQL compilation caching.
    */
   public static useCache = true
 
   /**
-   * Cache scope
+   * Determines if the cache is shared globally or isolated per grammar instance.
    */
   public static cacheScope: 'global' | 'instance' = 'global'
 
-  // Instance-level cache for isolated scope
   private _instanceCache?: LRUCache<string, string>
 
-  // Instance-level cache statistics
   private _instanceCacheStats = {
     hits: 0,
     misses: 0,
@@ -70,20 +67,9 @@ export abstract class Grammar implements GrammarContract {
   }
 
   /**
-   * Retrieves comprehensive cache statistics for monitoring and optimization.
+   * Retrieves performance metrics for the compilation cache.
    *
-   * Provides detailed metrics including hit/miss rates, total requests,
-   * and cache utilization. Useful for identifying query patterns and
-   * tuning cache size for optimal performance.
-   *
-   * @returns Cache statistics object with hit/miss rates and utilization metrics
-   *
-   * @example
-   * ```typescript
-   * const stats = Grammar.getCacheStats();
-   * console.log(`Hit rate: ${stats.hitRate * 100}%`);
-   * console.log(`Cache utilization: ${stats.utilization * 100}%`);
-   * ```
+   * @returns Stats including hit rate and utilization.
    */
   static getCacheStats() {
     const cache = Grammar.compilationCache
@@ -104,24 +90,9 @@ export abstract class Grammar implements GrammarContract {
   }
 
   /**
-   * Retrieves cache statistics for instance-level cache.
+   * Retrieves metrics for the instance-level cache.
    *
-   * Returns null if instance-level caching is not enabled. Provides
-   * the same metrics as `getCacheStats()` but scoped to this specific
-   * Grammar instance.
-   *
-   * @returns Cache statistics object or null if instance cache not enabled
-   *
-   * @example
-   * ```typescript
-   * const grammar = new PostgresGrammar();
-   * Grammar.cacheScope = 'instance';
-   * // ... perform queries ...
-   * const stats = grammar.getInstanceCacheStats();
-   * if (stats) {
-   *   console.log(`Instance hit rate: ${stats.hitRate * 100}%`);
-   * }
-   * ```
+   * @returns Stats object or null if instance caching is disabled.
    */
   getInstanceCacheStats() {
     if (!this._instanceCache) {
@@ -146,17 +117,7 @@ export abstract class Grammar implements GrammarContract {
   }
 
   /**
-   * Resets all cache statistics counters to zero.
-   *
-   * Useful for benchmarking or starting a new measurement period.
-   * Does not clear the cache contents, only resets the counters.
-   *
-   * @example
-   * ```typescript
-   * Grammar.resetCacheStats();
-   * // ... perform operations ...
-   * const stats = Grammar.getCacheStats(); // Fresh statistics
-   * ```
+   * Flushes all performance counters.
    */
   static resetCacheStats(): void {
     Grammar.cacheStats = {
@@ -167,14 +128,16 @@ export abstract class Grammar implements GrammarContract {
   }
 
   /**
-   * Clear compilation cache (useful for tests)
+   * Wipes the compilation cache.
    */
   static clearCache(): void {
     Grammar.compilationCache.clear()
   }
 
   /**
-   * Configure cache size
+   * Resizes the global compilation cache.
+   *
+   * @param max - Maximum number of templates to store.
    */
   static setCacheSize(max: number): void {
     Grammar.compilationCache = new LRUCache({
@@ -186,7 +149,8 @@ export abstract class Grammar implements GrammarContract {
   }
 
   /**
-   * Get the appropriate cache instance
+   * Resolves the active cache instance based on scope configuration.
+   * @internal
    */
   protected getCompilationCache(): LRUCache<string, string> {
     if (Grammar.cacheScope === 'instance') {
@@ -204,16 +168,18 @@ export abstract class Grammar implements GrammarContract {
   }
 
   // ============================================================================
-  // Abstract Methods (Must be implemented by subclasses)
+  // Abstract Methods
   // ============================================================================
 
   /**
-   * Get the placeholder for a binding at a specific index
+   * Returns the database-specific placeholder (e.g., ?, $1, :name).
+   *
+   * @param index - The zero-based binding index.
    */
   abstract getPlaceholder(index: number): string
 
   /**
-   * Compile an INSERT and get ID statement
+   * Compiles an INSERT statement that returns the primary key.
    */
   abstract compileInsertGetId(
     query: CompiledQuery,
@@ -226,17 +192,20 @@ export abstract class Grammar implements GrammarContract {
   // ============================================================================
 
   /**
-   * Compile a SELECT statement
+   * Transforms a query structure into a SELECT SQL string.
+   *
+   * Leverages caching by generating a structural key that ignores binding values.
+   *
+   * @param query - The structural definition of the query.
+   * @returns The compiled SQL string.
    */
   compileSelect(query: CompiledQuery): string {
-    // 1. Try to get from cache first
     let cacheKey = ''
     if (Grammar.useCache) {
       cacheKey = this.getStructuralKey(query)
       const cache = this.getCompilationCache()
       const cached = cache.get(cacheKey)
 
-      // 追蹤統計資訊
       if (cached) {
         if (Grammar.cacheScope === 'instance' && this._instanceCache) {
           this._instanceCacheStats.hits++
@@ -244,67 +213,56 @@ export abstract class Grammar implements GrammarContract {
           Grammar.cacheStats.hits++
         }
         return cached
+      }
+
+      if (Grammar.cacheScope === 'instance' && this._instanceCache) {
+        this._instanceCacheStats.misses++
       } else {
-        if (Grammar.cacheScope === 'instance' && this._instanceCache) {
-          this._instanceCacheStats.misses++
-        } else {
-          Grammar.cacheStats.misses++
-        }
+        Grammar.cacheStats.misses++
       }
     }
 
     const parts: string[] = []
 
-    // SELECT [DISTINCT] columns
     parts.push(this.compileColumns(query))
     let currentBindingOffset = query.bindingCounts?.select ?? 0
 
-    // FROM table
     parts.push(this.compileFrom(query))
 
-    // JOINs
     if (query.joins.length > 0) {
       parts.push(this.compileJoins(query))
       currentBindingOffset += query.bindingCounts?.join ?? 0
     }
 
-    // WHERE
     if (query.wheres.length > 0) {
       parts.push(this.compileWheres(query, currentBindingOffset))
       currentBindingOffset += query.bindingCounts?.where ?? this.countAllWhereBindings(query.wheres)
     }
 
-    // GROUP BY
     if (query.groups.length > 0) {
       parts.push(this.compileGroups(query))
     }
 
-    // HAVING
     if (query.havings.length > 0) {
       parts.push(this.compileHavings(query, currentBindingOffset))
     }
 
-    // ORDER BY
     if (query.orders.length > 0) {
       parts.push(this.compileOrders(query))
     }
 
-    // LIMIT
     if (query.limit !== undefined) {
       parts.push(this.compileLimit(query))
     }
 
-    // OFFSET
     if (query.offset !== undefined) {
       parts.push(this.compileOffset(query))
     }
 
     const sql = parts.filter(Boolean).join(' ')
 
-    // 2. Store in cache
     if (Grammar.useCache && cacheKey) {
       this.getCompilationCache().set(cacheKey, sql)
-      // 追蹤統計資訊
       if (Grammar.cacheScope === 'instance' && this._instanceCache) {
         this._instanceCacheStats.sets++
       } else {
@@ -316,30 +274,21 @@ export abstract class Grammar implements GrammarContract {
   }
 
   /**
-   * Generates a unique cache key for a query structure (excluding bindings).
+   * Generates a unique hash representing the SQL structure.
    *
-   * Creates a deterministic key based on query structure (table, columns,
-   * wheres, joins, etc.) without including actual values. This allows
-   * caching compiled SQL for queries with different bindings but same structure.
+   * Ignores specific binding values to allow cache hits for similar queries.
+   * Uses efficient array joining for performance.
    *
-   * Optimized to use array building and join operations instead of string
-   * concatenation for better performance with large queries.
-   *
-   * @param query - Compiled query structure to generate key for
-   * @returns Unique string key representing the query structure
-   * @internal
+   * @param query - The query structure.
+   * @returns A deterministic string key.
    */
-  protected getStructuralKey(query: CompiledQuery): string {
-    // 使用陣列構建 key 部分，比字串拼接更高效
+  public getStructuralKey(query: CompiledQuery): string {
     const keyParts: string[] = [this.constructor.name, query.table]
 
-    // Columns
     keyParts.push(query.columns.length > 0 ? query.columns.join(',') : '*')
 
-    // Distinct flag
     keyParts.push(query.distinct ? '1' : '0')
 
-    // Wheres - 優化：只在有 wheres 時才構建字串
     if (query.wheres.length > 0) {
       const wheres = query.wheres
         .map(
@@ -352,7 +301,6 @@ export abstract class Grammar implements GrammarContract {
       keyParts.push('')
     }
 
-    // Joins
     if (query.joins.length > 0) {
       const joins = query.joins
         .map((j) => `${j.type}:${j.table}:${j.first}:${j.operator}:${j.second}`)
@@ -362,10 +310,8 @@ export abstract class Grammar implements GrammarContract {
       keyParts.push('')
     }
 
-    // Groups
     keyParts.push(query.groups.length > 0 ? query.groups.join(',') : '')
 
-    // Havings
     if (query.havings.length > 0) {
       const havings = query.havings
         .map((h) => `${h.type}:${h.column ?? ''}:${h.operator ?? ''}:${h.boolean ?? ''}`)
@@ -375,7 +321,6 @@ export abstract class Grammar implements GrammarContract {
       keyParts.push('')
     }
 
-    // Orders
     if (query.orders.length > 0) {
       const orders = query.orders.map((o) => `${o.column}:${o.direction}`).join('|')
       keyParts.push(orders)
@@ -383,16 +328,15 @@ export abstract class Grammar implements GrammarContract {
       keyParts.push('')
     }
 
-    // Limit & Offset
     keyParts.push(query.limit !== undefined ? `L${query.limit}` : 'X')
     keyParts.push(query.offset !== undefined ? `O${query.offset}` : 'X')
 
-    // 使用 join 比字串拼接更高效
     return keyParts.join('_')
   }
 
   /**
-   * Compile SELECT columns
+   * Compiles the SELECT list.
+   * @internal
    */
   protected compileColumns(query: CompiledQuery): string {
     const distinct = query.distinct ? 'DISTINCT ' : ''
@@ -405,7 +349,8 @@ export abstract class Grammar implements GrammarContract {
   }
 
   /**
-   * Compile FROM clause
+   * Compiles the FROM clause.
+   * @internal
    */
   protected compileFrom(query: CompiledQuery): string {
     return `FROM ${this.wrapTable(query.table)}`
@@ -416,7 +361,12 @@ export abstract class Grammar implements GrammarContract {
   // ============================================================================
 
   /**
-   * Compile WHERE clauses
+   * Compiles all WHERE constraints.
+   *
+   * @param query - The query definition.
+   * @param bindingOffset - Initial parameter index.
+   * @returns Compiled SQL snippet.
+   * @internal
    */
   protected compileWheres(query: CompiledQuery, bindingOffset = 0): string {
     if (query.wheres.length === 0) {
@@ -427,7 +377,6 @@ export abstract class Grammar implements GrammarContract {
     const clauses = query.wheres.map((where, index) => {
       const { sql, bindingsUsed } = this.compileWhereWithOffset(where, currentOffset)
       currentOffset += bindingsUsed
-      // Skip boolean for first clause
       return index === 0 ? sql : `${where.boolean.toUpperCase()} ${sql}`
     })
 
@@ -435,14 +384,15 @@ export abstract class Grammar implements GrammarContract {
   }
 
   /**
-   * Compile a single WHERE clause (deprecated, use compileWhereWithOffset)
+   * @deprecated Use compileWhereWithOffset.
    */
   protected compileWhere(where: WhereClause, _query: CompiledQuery): string {
     return this.compileWhereWithOffset(where, 0).sql
   }
 
   /**
-   * Compile a WHERE clause and return bindings used count
+   * Compiles a single WHERE clause with offset awareness.
+   * @internal
    */
   protected compileWhereWithOffset(
     where: WhereClause,
@@ -471,7 +421,8 @@ export abstract class Grammar implements GrammarContract {
   }
 
   /**
-   * Compile a basic WHERE clause with offset
+   * Compiles a standard equality or comparison clause.
+   * @internal
    */
   protected compileWhereBasicWithOffset(where: WhereClause, offset: number): string {
     const column = this.wrapColumn(where.column ?? '')
@@ -487,14 +438,14 @@ export abstract class Grammar implements GrammarContract {
   }
 
   /**
-   * Compile a WHERE IN clause with offset
+   * Compiles an IN clause.
+   * @internal
    */
   protected compileWhereInWithOffset(where: WhereClause, offset: number): string {
     const column = this.wrapColumn(where.column ?? '')
     const values = where.values ?? []
     const not = where.not ? 'NOT ' : ''
 
-    // Handle SubQuery in WHERE IN
     if (
       values.length === 1 &&
       values[0] instanceof Object &&
@@ -509,16 +460,17 @@ export abstract class Grammar implements GrammarContract {
   }
 
   /**
-   * Compile a nested WHERE clause
+   * Wraps nested SQL in parentheses.
+   * @internal
    */
   protected compileWhereNested(where: WhereClause): string {
-    // The nested query's wheres are compiled separately
     const nestedSql = where.sql ?? ''
     return `(${nestedSql})`
   }
 
   /**
-   * Compile a WHERE NULL clause
+   * Compiles IS NULL constraints.
+   * @internal
    */
   protected compileWhereNull(where: WhereClause): string {
     const column = this.wrapColumn(where.column ?? '')
@@ -527,7 +479,8 @@ export abstract class Grammar implements GrammarContract {
   }
 
   /**
-   * Compile a WHERE BETWEEN clause with offset
+   * Compiles BETWEEN constraints.
+   * @internal
    */
   protected compileWhereBetweenWithOffset(where: WhereClause, offset: number): string {
     const column = this.wrapColumn(where.column ?? '')
@@ -538,7 +491,8 @@ export abstract class Grammar implements GrammarContract {
   }
 
   /**
-   * Compile a WHERE column comparison clause
+   * Compiles column-to-column comparisons.
+   * @internal
    */
   protected compileWhereColumn(where: WhereClause): string {
     const values = where.values ?? []
@@ -553,14 +507,16 @@ export abstract class Grammar implements GrammarContract {
   // ============================================================================
 
   /**
-   * Compile JOINs
+   * Compiles all JOIN clauses.
+   * @internal
    */
   protected compileJoins(query: CompiledQuery): string {
     return query.joins.map((join) => this.compileJoin(join)).join(' ')
   }
 
   /**
-   * Compile a single JOIN
+   * Compiles a single JOIN relationship.
+   * @internal
    */
   protected compileJoin(join: JoinClause): string {
     const type = join.type.toUpperCase()
@@ -580,7 +536,8 @@ export abstract class Grammar implements GrammarContract {
   // ============================================================================
 
   /**
-   * Compile GROUP BY clause
+   * Compiles the GROUP BY clause.
+   * @internal
    */
   protected compileGroups(query: CompiledQuery): string {
     const columns = query.groups.map((col) => this.wrapColumn(col)).join(', ')
@@ -588,7 +545,8 @@ export abstract class Grammar implements GrammarContract {
   }
 
   /**
-   * Compile HAVING clauses
+   * Compiles all HAVING constraints.
+   * @internal
    */
   protected compileHavings(query: CompiledQuery, bindingOffset?: number): string {
     let currentOffset =
@@ -605,14 +563,16 @@ export abstract class Grammar implements GrammarContract {
   }
 
   /**
-   * Count all bindings in an array of WHERE clauses
+   * Sums bindings across all WHERE clauses.
+   * @internal
    */
   protected countAllWhereBindings(wheres: WhereClause[]): number {
     return wheres.reduce((count, where) => count + this.countWhereBindings(where), 0)
   }
 
   /**
-   * Count bindings used by a WHERE clause
+   * Counts bindings for a specific WHERE type.
+   * @internal
    */
   protected countWhereBindings(where: WhereClause): number {
     switch (where.type) {
@@ -632,7 +592,8 @@ export abstract class Grammar implements GrammarContract {
   }
 
   /**
-   * Compile a single HAVING clause with offset
+   * Compiles a single HAVING clause.
+   * @internal
    */
   protected compileHavingWithOffset(
     having: HavingClause,
@@ -649,7 +610,7 @@ export abstract class Grammar implements GrammarContract {
   }
 
   /**
-   * Compile a single HAVING clause (deprecated)
+   * @deprecated
    */
   protected compileHaving(having: HavingClause, _query: CompiledQuery): string {
     return this.compileHavingWithOffset(having, 0).sql
@@ -660,7 +621,8 @@ export abstract class Grammar implements GrammarContract {
   // ============================================================================
 
   /**
-   * Compile ORDER BY clause
+   * Compiles the full ORDER BY clause.
+   * @internal
    */
   protected compileOrders(query: CompiledQuery): string {
     const orders = query.orders.map((order) => this.compileOrder(order)).join(', ')
@@ -669,7 +631,8 @@ export abstract class Grammar implements GrammarContract {
   }
 
   /**
-   * Compile a single ORDER BY
+   * Compiles a single sorting rule.
+   * @internal
    */
   protected compileOrder(order: OrderClause): string {
     return `${this.wrapColumn(order.column)} ${order.direction.toUpperCase()}`
@@ -680,14 +643,16 @@ export abstract class Grammar implements GrammarContract {
   // ============================================================================
 
   /**
-   * Compile LIMIT clause
+   * Compiles the LIMIT clause.
+   * @internal
    */
   protected compileLimit(query: CompiledQuery): string {
     return `LIMIT ${query.limit}`
   }
 
   /**
-   * Compile OFFSET clause
+   * Compiles the OFFSET clause.
+   * @internal
    */
   protected compileOffset(query: CompiledQuery): string {
     return `OFFSET ${query.offset}`
@@ -698,7 +663,11 @@ export abstract class Grammar implements GrammarContract {
   // ============================================================================
 
   /**
-   * Compile an INSERT statement
+   * Compiles a multi-row INSERT statement.
+   *
+   * @param query - The query definition.
+   * @param values - Records to insert.
+   * @returns The SQL string.
    */
   compileInsert(query: CompiledQuery, values: Record<string, unknown>[]): string {
     if (values.length === 0) {
@@ -728,7 +697,11 @@ export abstract class Grammar implements GrammarContract {
   // ============================================================================
 
   /**
-   * Compile an UPDATE statement
+   * Compiles an UPDATE statement with WHERE constraints.
+   *
+   * @param query - The query definition.
+   * @param values - Fields and values to update.
+   * @returns The SQL string.
    */
   compileUpdate(query: CompiledQuery, values: Record<string, unknown>): string {
     let bindingIndex = 0
@@ -746,7 +719,6 @@ export abstract class Grammar implements GrammarContract {
 
     let sql = `UPDATE ${this.wrapTable(query.table)} SET ${setClause}`
 
-    // Compile WHEREs with offset bindings
     if (query.wheres.length > 0) {
       const wheres = this.compileWheres(query, bindingIndex)
       sql += ` ${wheres}`
@@ -756,10 +728,10 @@ export abstract class Grammar implements GrammarContract {
   }
 
   /**
-   * Offset placeholders in a SQL string
+   * Adjusts placeholders in a pre-compiled snippet.
+   * @internal
    */
   protected offsetPlaceholders(sql: string, _offset: number): string {
-    // Default implementation - subclasses may override
     return sql
   }
 
@@ -768,7 +740,7 @@ export abstract class Grammar implements GrammarContract {
   // ============================================================================
 
   /**
-   * Compile a DELETE statement
+   * Compiles a DELETE statement.
    */
   compileDelete(query: CompiledQuery): string {
     let sql = `DELETE FROM ${this.wrapTable(query.table)}`
@@ -785,7 +757,7 @@ export abstract class Grammar implements GrammarContract {
   // ============================================================================
 
   /**
-   * Compile a TRUNCATE statement
+   * Compiles a TRUNCATE statement to wipe a table.
    */
   compileTruncate(query: CompiledQuery): string {
     return `TRUNCATE TABLE ${this.wrapTable(query.table)}`
@@ -796,16 +768,14 @@ export abstract class Grammar implements GrammarContract {
   // ============================================================================
 
   /**
-   * Compile an aggregate query
+   * Compiles an aggregate function selection (COUNT, MAX, etc.).
    */
   compileAggregate(query: CompiledQuery, aggregate: { function: string; column: string }): string {
     const column = aggregate.column === '*' ? '*' : this.wrapColumn(aggregate.column)
     const func = aggregate.function.toUpperCase()
 
-    // Build aggregate SELECT
     const aggregateSelect = `SELECT ${func}(${column}) AS "aggregate"`
 
-    // Compile the rest of the query (FROM, WHERE, etc.)
     const from = this.compileFrom(query)
     const wheres = query.wheres.length > 0 ? ` ${this.compileWheres(query)}` : ''
     const groups = query.groups.length > 0 ? ` ${this.compileGroups(query)}` : ''
@@ -815,7 +785,7 @@ export abstract class Grammar implements GrammarContract {
   }
 
   /**
-   * Compile an EXISTS query
+   * Compiles an EXISTS check.
    */
   compileExists(query: CompiledQuery): string {
     const subquery = this.compileSelect(query)
@@ -827,26 +797,26 @@ export abstract class Grammar implements GrammarContract {
   // ============================================================================
 
   /**
-   * Wrap a column name
+   * Escapes a column name for SQL safety.
+   *
+   * Handles table aliases, raw expressions, and wildcards.
+   *
+   * @param column - The column identifier.
    */
   wrapColumn(column: string): string {
-    // Handle raw expressions
     if (typeof column === 'object' && column !== null && 'getValue' in column) {
       return (column as Expression).getValue()
     }
 
-    // Handle * wildcard
     if (column === '*') {
       return '*'
     }
 
-    // Handle table.column format
     if (column.includes('.')) {
       const parts = column.split('.')
       return parts.map((part) => (part === '*' ? '*' : this.wrapValue(part))).join('.')
     }
 
-    // Handle column aliases (column AS alias)
     if (column.toLowerCase().includes(' as ')) {
       const [col, alias] = column.split(/ as /i).map((s) => s.trim())
       return `${this.wrapValue(col ?? '')} AS ${this.wrapValue(alias ?? '')}`
@@ -856,10 +826,9 @@ export abstract class Grammar implements GrammarContract {
   }
 
   /**
-   * Wrap a table name
+   * Escapes a table name.
    */
   wrapTable(table: string): string {
-    // Handle table aliases (table AS alias)
     if (table.toLowerCase().includes(' as ')) {
       const [tbl, alias] = table.split(/ as /i).map((s) => s.trim())
       return `${this.wrapValue(this.tablePrefix + (tbl ?? ''))} AS ${this.wrapValue(alias ?? '')}`
@@ -869,7 +838,8 @@ export abstract class Grammar implements GrammarContract {
   }
 
   /**
-   * Wrap a value with the grammar's wrapper
+   * Internal string escaping.
+   * @internal
    */
   protected wrapValue(value: string): string {
     if (value === '*') {
@@ -879,7 +849,11 @@ export abstract class Grammar implements GrammarContract {
   }
 
   /**
-   * Quote a value for safe SQL insertion
+   * Manually quotes a value for literal injection.
+   *
+   * Warning: Prefer bindings over manual quoting for security.
+   *
+   * @param value - The value to quote.
    */
   quoteValue(value: unknown): string {
     if (value === null || value === undefined) {
@@ -902,27 +876,27 @@ export abstract class Grammar implements GrammarContract {
       return `'${value.toISOString()}'`
     }
 
-    // Escape single quotes
     const escaped = String(value).replace(/'/g, "''")
     return `'${escaped}'`
   }
 
   /**
-   * Set table prefix
+   * Configures a prefix for all table references.
    */
   setTablePrefix(prefix: string): void {
     this.tablePrefix = prefix
   }
 
   /**
-   * Get table prefix
+   * Retrieves the current table prefix.
    */
   getTablePrefix(): string {
     return this.tablePrefix
   }
 
   /**
-   * Compile a lateral eager load query (Not supported by default)
+   * Compiles a query for relationship lateral loading.
+   * @throws {Error} If unsupported by driver.
    */
   compileLateralEagerLoad(
     _table: string,
@@ -934,33 +908,36 @@ export abstract class Grammar implements GrammarContract {
   }
 
   // ============================================================================
-  // JSON Compilation (Default - Override in drivers)
+  // JSON Compilation
   // ============================================================================
 
   /**
-   * Compile a JSON path query
-   * Default implementation throws (not supported by all)
+   * Compiles a JSON path selector.
+   * @throws {Error} If unsupported.
    */
   compileJsonPath(_column: string, _value: unknown): string {
     throw new Error('JSON queries are not supported by this database driver.')
   }
 
   /**
-   * Compile a JSON contains query
+   * Compiles a JSON containment check.
+   * @throws {Error} If unsupported.
    */
   compileJsonContains(_column: string, _value: unknown): string {
     throw new Error('JSON contains queries are not supported by this database driver.')
   }
 
   /**
-   * Compile a JSON update query
+   * Compiles a partial JSON update.
+   * @throws {Error} If unsupported.
    */
   compileUpdateJson(_query: CompiledQuery, _column: string, _value: unknown): string {
     throw new Error('Partial JSON updates are not supported by this database driver.')
   }
 
   /**
-   * Compile an UPSERT statement
+   * Compiles an UPSERT statement.
+   * @throws {Error} If unsupported.
    */
   compileUpsert(
     _query: CompiledQuery,

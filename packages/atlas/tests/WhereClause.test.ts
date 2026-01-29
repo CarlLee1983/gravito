@@ -83,6 +83,7 @@ describe('WhereClause', () => {
     const clause = new WhereClause()
     clause.addColumn('updated_at', '>', 'created_at')
     expect(clause.toSQL()).toBe('WHERE "updated_at" > "created_at"')
+    expect(clause.getWheres()[0].values).toEqual(['updated_at', 'created_at'])
   })
 
   it('should reset state', () => {

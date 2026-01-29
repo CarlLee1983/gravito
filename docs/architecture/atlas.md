@@ -1,6 +1,6 @@
 ---
 title: Atlas ORM 架構技術規格書
-version: 1.5.0
+version: 1.5.1
 status: Stable
 tier: A
 last_updated: 2026-01-29
@@ -1279,14 +1279,21 @@ await transaction(async (trx) => {
      - 改進的連線 URL 建構（支援 SSL、Pool 配置）
      - 自動偵測並優先使用 Native Driver
 
-2. **增加子查詢物件支援** (Priority: Medium)
+2. ✅ **增加子查詢物件支援** (Priority: Medium) - **已完成 v1.5.1**
    - 增強 `where` 方法對 `SubQuery` 物件的支援，使複雜查詢更直觀。
+   - **已實作功能：**
+     - 支持在 `where`, `whereIn` 等方法中直接傳入 `QueryBuilder` 物件。
+     - 自動編譯巢狀 SQL 與處理 Bindings。
 
-3. **Observability** (Priority: Medium)
+3. **Observability** (Priority: High)
    - 整合 OpenTelemetry，提供更詳細的資料庫追蹤指標。
 
-4. **查詢結果快取** (Priority: Medium)
+4. ✅ **查詢結果快取** (Priority: Medium) - **已完成 v1.5.1**
    - 實作查詢級別的快取機制，支援 Redis/Memory 後端。
+   - **已實作功能：**
+     - `QueryBuilder.cache(ttl, key)` 方法。
+     - `DB.setCache()` 全域快取提供者管理。
+     - 支援 `ioredis` 與 `lru-cache` 驅動。
 
 ---
 
@@ -1294,6 +1301,12 @@ await transaction(async (trx) => {
 *版本：v1.5.0*
 
 ## 版本歷史
+
+### v1.5.1 (2026-01-29)
+- ✨ **新功能：子查詢與快取機制完善**
+  - 顯式支援 SubQuery 物件作為查詢條件
+  - 完善查詢結果快取（Query-level Caching）架構
+- 📝 **文檔：更新優化狀態與版本資訊**
 
 ### v1.5.0 (2026-01-29)
 - ✨ **新功能：完善 Native Driver 支援**

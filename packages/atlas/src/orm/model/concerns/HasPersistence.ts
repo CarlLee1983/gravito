@@ -33,32 +33,48 @@ export class HasPersistence {
    * ```
    */
   async save(): Promise<this> {
-    // Trigger saving event
-    await (this as any).emit('saving')
+    const modelCtor = this.constructor as any
+    const connection = DB.connection(modelCtor.connection)
+    const tracer = connection.getTracer()
+    const span = tracer?.startSpan(
+      `Atlas:${this._exists ? 'Update' : 'Insert'}:${modelCtor.name}`,
+      {
+        'db.system': connection.getDriver().getDriverName(),
+        'db.operation': this._exists ? 'update' : 'insert',
+        'db.sql.table': modelCtor.getTable(),
+      }
+    )
 
-    // Validate all dirty attributes
-    const dirtyTracker = (this as any)._dirtyTracker
-    if (dirtyTracker) {
-      const dirtyKeys = dirtyTracker.getDirty()
-      const attributes = (this as any)._attributes || {}
-      for (const key of dirtyKeys) {
-        const validateAttribute = (this as any)._validateAttribute
-        if (validateAttribute) {
-          await validateAttribute.call(this, key as string, attributes[key as string])
+    try {
+      // Trigger saving event
+      await (this as any).emit('saving')
+
+      // Validate all dirty attributes
+      const dirtyTracker = (this as any)._dirtyTracker
+      if (dirtyTracker) {
+        const dirtyKeys = dirtyTracker.getDirty()
+        const attributes = (this as any)._attributes || {}
+        for (const key of dirtyKeys) {
+          const validateAttribute = (this as any)._validateAttribute
+          if (validateAttribute) {
+            await validateAttribute.call(this, key as string, attributes[key as string])
+          }
         }
       }
-    }
 
-    let result: this
-    if (this._exists) {
-      result = await this._performUpdate()
-    } else {
-      result = await this._performInsert()
-    }
+      let result: this
+      if (this._exists) {
+        result = await this._performUpdate()
+      } else {
+        result = await this._performInsert()
+      }
 
-    // Trigger saved event
-    await (this as any).emit('saved')
-    return result
+      // Trigger saved event
+      await (this as any).emit('saved')
+      return result
+    } finally {
+      span?.end()
+    }
   }
 
   /**
@@ -228,31 +244,41 @@ export class HasPersistence {
       return false
     }
 
-    await (this as any).emit('deleting')
-
     const modelCtor = this.constructor as any
-    const softDeletes = modelCtor[SOFT_DELETES_KEY]
-    let result: boolean
+    const connection = DB.connection(modelCtor.connection)
+    const tracer = connection.getTracer()
+    const span = tracer?.startSpan(`Atlas:Delete:${modelCtor.name}`, {
+      'db.system': connection.getDriver().getDriverName(),
+      'db.operation': 'delete',
+      'db.sql.table': modelCtor.getTable(),
+    })
 
-    if (softDeletes) {
-      const column = softDeletes.column || 'deleted_at'
-      ;(this as any)._setAttribute(column, new Date())
-      await this.save()
-      result = true
-    } else {
-      const connection = DB.connection(modelCtor.connection)
-      const affected = await connection
-        .table(modelCtor.getTable())
-        .where(modelCtor.primaryKey, (this as any).getKey())
-        .delete()
-      result = affected > 0
-    }
-    if (result) {
-      this._exists = !softDeletes
-      await (this as any).emit('deleted')
-    }
+    try {
+      await (this as any).emit('deleting')
 
-    return result
+      const softDeletes = modelCtor[SOFT_DELETES_KEY]
+      let result: boolean
+
+      if (softDeletes) {
+        const column = softDeletes.column || 'deleted_at'
+        ;(this as any)._setAttribute(column, new Date())
+        await this.save()
+        result = true
+      } else {
+        const affected = await connection
+          .table(modelCtor.getTable())
+          .where(modelCtor.primaryKey, (this as any).getKey())
+          .delete()
+        result = affected > 0
+      }
+      if (result) {
+        this._exists = !softDeletes
+        await (this as any).emit('deleted')
+      }
+      return result
+    } finally {
+      span?.end()
+    }
   }
 
   /**

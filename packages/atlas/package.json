@@ -1,6 +1,6 @@
 {
   "name": "@gravito/atlas",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "The Standard Database Orbit - Custom Query Builder & ORM for Gravito",
   "type": "module",
   "main": "./dist/index.js",
@@ -19,7 +19,8 @@
     "build": "bun run build.ts",
     "test": "bun test --max-concurrency=1",
     "test:coverage": "bun test --coverage --coverage-threshold=75 --max-concurrency=1",
-    "test:ci": "bun test --coverage --coverage-threshold=75 --max-concurrency=1"
+    "test:ci": "bun test --coverage --coverage-threshold=75 --max-concurrency=1",
+    "docs:generate": "typedoc --out docs/api src/index.ts"
   },
   "files": [
     "dist",
@@ -38,6 +39,8 @@
   "author": "Gravito Team",
   "license": "MIT",
   "dependencies": {
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/semantic-conventions": "^1.39.0",
     "lru-cache": "^11.0.2"
   },
   "peerDependencies": {
@@ -77,7 +80,9 @@
     "mysql2": "^3.9.0",
     "pg": "^8.11.0",
     "tsup": "^8.5.1",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "mitata": "^1.0.34",
+    "typedoc": "^0.27.0"
   },
   "publishConfig": {
     "access": "public"

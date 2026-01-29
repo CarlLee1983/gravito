@@ -89,6 +89,7 @@ function createMockConnection(responses: Record<string, any[]>): any {
     table: (tableName: string) => new QueryBuilder(connection, grammar, tableName),
     raw: async (sql: string, bindings?: any[]) => mockDriver.query(sql, bindings),
     transaction: async (cb: any) => cb(connection),
+    getTracer: () => undefined,
   }
   return connection
 }

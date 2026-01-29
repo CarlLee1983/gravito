@@ -33,14 +33,14 @@ export class HasSerialization {
    * const json = user.toJSON()
    * ```
    */
-  toJSON(): any {
+  toJSON(): unknown {
     const modelCtor = this.constructor as typeof Model & {
       appends: string[]
       visible: string[]
       hidden: string[]
     }
     const attributes = { ...(this as any)._attributes }
-    const result: any = {}
+    const result: Record<string, unknown> = {}
 
     // 1. Process attributes (trigger accessors)
     for (const key of Object.keys(attributes)) {
@@ -85,7 +85,7 @@ export class HasSerialization {
 
     // 4. Filter visible/hidden
     if (modelCtor.visible && modelCtor.visible.length > 0) {
-      const filtered: any = {}
+      const filtered: Record<string, unknown> = {}
       for (const key of modelCtor.visible) {
         if (key in result) {
           filtered[key] = result[key]
@@ -110,7 +110,7 @@ export class HasSerialization {
    * @returns A plain object representation of the model
    */
   toObject(): Record<string, unknown> {
-    return this.toJSON()
+    return this.toJSON() as Record<string, unknown>
   }
 
   /**
@@ -120,7 +120,7 @@ export class HasSerialization {
    * @returns A plain object representation of the model
    */
   toArray(): Record<string, unknown> {
-    return this.toJSON()
+    return this.toJSON() as Record<string, unknown>
   }
 
   /**

@@ -39,6 +39,7 @@ describe('Model Observers', () => {
         compileInsert: () => ({ sql: '', bindings: [] }),
         compileUpdate: () => ({ sql: '', bindings: [] }),
       }),
+      getTracer: () => undefined,
       getDriver: () => ({
         getGrammar: () => ({}),
         getDriverName: () => 'mock',

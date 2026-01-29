@@ -12,6 +12,8 @@
  */
 export type DriverType = 'postgres' | 'mysql' | 'mariadb' | 'sqlite' | 'mongodb' | 'redis'
 
+import type { AtlasMetrics, AtlasTracer } from '../observability'
+
 /**
  * Base connection interface
  */
@@ -74,6 +76,18 @@ export interface BaseConnectionConfig {
    * @default false
    */
   useNativeDriver?: boolean
+
+  /**
+   * Pre-initialized tracer instance
+   * @internal
+   */
+  tracer?: AtlasTracer
+
+  /**
+   * Pre-initialized metrics instance
+   * @internal
+   */
+  metrics?: AtlasMetrics
 }
 
 /**
@@ -86,6 +100,19 @@ export type ConnectionConfig =
   | MongoDBConfig
   | RedisConfig
   | BaseConnectionConfig
+
+export interface AtlasObservabilityConfig {
+  enabled: boolean
+  tracing?: boolean
+  metrics?: boolean
+  serviceName?: string
+}
+
+export interface AtlasConfig {
+  default: string
+  connections: Record<string, ConnectionConfig>
+  observability?: AtlasObservabilityConfig
+}
 
 /**
  * PostgreSQL specific configuration
@@ -727,6 +754,11 @@ export interface ConnectionContract {
   getConfig(): ConnectionConfig
 
   /**
+   * Get the tracer instance for this connection
+   */
+  getTracer(): AtlasTracer | undefined
+
+  /**
    * Create a new query builder for the given table
    */
   table<T = Record<string, unknown>>(tableName: string): QueryBuilderContract<T>
@@ -1328,6 +1360,8 @@ export interface GrammarContract {
     parentKeys: unknown[],
     query: CompiledQuery
   ): { sql: string; bindings: unknown[] }
+
+  getStructuralKey(query: CompiledQuery): string
 
   /**
    * Compile a JSON path query

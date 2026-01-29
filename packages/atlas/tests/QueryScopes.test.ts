@@ -29,6 +29,7 @@ describe('QueryScopes', () => {
 
     mockGrammar = {
       compileSelect: jest.fn(() => 'SELECT * FROM users'),
+      getStructuralKey: jest.fn(() => 'mock'),
     }
 
     mockConnection = {
@@ -37,6 +38,7 @@ describe('QueryScopes', () => {
         return new QueryBuilder(mockConnection, mockGrammar, name)
       },
       getGrammar: () => mockGrammar,
+      getTracer: () => undefined,
       getDriver: () => ({
         getGrammar: () => mockGrammar,
       }),

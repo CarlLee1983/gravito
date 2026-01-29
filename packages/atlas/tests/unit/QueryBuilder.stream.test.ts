@@ -20,6 +20,7 @@ describe('QueryBuilder stream()', () => {
     mockConnection = {
       getName: () => 'test',
       getConfig: () => ({ driver: 'postgres', database: 'test' }),
+      getTracer: () => undefined,
       getDriver: () => ({
         getDriverName: () => 'postgres' as const,
         connect: async () => {},

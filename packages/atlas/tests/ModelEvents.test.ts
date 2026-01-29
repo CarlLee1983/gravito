@@ -54,6 +54,7 @@ describe('ModelEvents', () => {
       compileUpdate: jest.fn(() => 'UPDATE users SET name = ? WHERE id = ?'),
       compileInsert: jest.fn(() => 'INSERT INTO users (name) VALUES (?)'),
       compileDelete: jest.fn(() => 'DELETE FROM users WHERE id = ?'),
+      getStructuralKey: jest.fn(() => 'mock'),
     }
 
     mockConnection = {
@@ -63,6 +64,7 @@ describe('ModelEvents', () => {
       },
       raw: jest.fn().mockResolvedValue({ rows: [] }),
       getGrammar: () => mockGrammar,
+      getTracer: () => undefined,
       getDriver: () => ({
         getGrammar: () => mockGrammar,
         execute: jest.fn().mockResolvedValue({ affectedRows: 1, rows: [1] }),

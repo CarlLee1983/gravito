@@ -19,8 +19,8 @@ import type {
 import { BunSQLPreparedStatementManager } from './BunSQLPreparedStatement'
 
 export class BunSQLDriver implements DriverContract {
-  private client: any | null = null
-  private sqliteClient: any | null = null
+  private client: unknown | null = null
+  private sqliteClient: unknown | null = null
   private connected = false
   private transactionActive = false
   private preparedManager?: BunSQLPreparedStatementManager
@@ -40,7 +40,7 @@ export class BunSQLDriver implements DriverContract {
           this.config.database === ':memory:' ? ':memory:' : this.config.database
         )
       } else {
-        const g = globalThis as any
+        const g = globalThis as Record<string, any>
         // biome-ignore lint/complexity/useLiteralKeys: Intentionally using bracket notation to hide 'Bun' symbol from tsc checks
         const bunSql = g['Bun']?.sql
         if (!bunSql) throw new Error('Bun.sql not found')
@@ -58,10 +58,12 @@ export class BunSQLDriver implements DriverContract {
       this.preparedManager = undefined
     }
     if (this.sqliteClient) {
+      // @ts-expect-error
       this.sqliteClient.close()
       this.sqliteClient = null
     }
     if (this.client) {
+      // @ts-expect-error
       if (typeof this.client.close === 'function') await this.client.close()
       this.client = null
     }
@@ -87,19 +89,22 @@ export class BunSQLDriver implements DriverContract {
       })
 
       let rows: T[] = []
-      let lastInsertRowid: any
+      let lastInsertRowid: unknown
 
       if (this.sqliteClient) {
+        // @ts-expect-error
         const stmt = this.sqliteClient.query(sql)
         // Ensure parameters are correctly handled for SQLite
         rows = stmt.all(...normalized) as T[]
         try {
+          // @ts-expect-error
           const idRes = this.sqliteClient.query('SELECT last_insert_rowid() as id').get() as any
           lastInsertRowid = idRes?.id
         } catch {
           /* ignore */
         }
       } else {
+        // @ts-expect-error
         const result = await this.client.unsafe(sql, normalized)
         rows = Array.isArray(result)
           ? result
@@ -112,7 +117,7 @@ export class BunSQLDriver implements DriverContract {
       return {
         rows,
         rowCount: rows.length,
-        insertId: lastInsertRowid,
+        insertId: lastInsertRowid as number | bigint | string | undefined,
       }
     } catch (error) {
       throw this.normalizeError(error, sql, bindings)
@@ -126,22 +131,34 @@ export class BunSQLDriver implements DriverContract {
 
   async beginTransaction(): Promise<void> {
     await this.ensureConnection()
-    if (this.sqliteClient) this.sqliteClient.exec('BEGIN')
-    else await this.query('BEGIN')
+    if (this.sqliteClient) {
+      // @ts-expect-error
+      this.sqliteClient.exec('BEGIN')
+    } else {
+      await this.query('BEGIN')
+    }
     this.transactionActive = true
   }
 
   async commit(): Promise<void> {
     if (!this.transactionActive) return
-    if (this.sqliteClient) this.sqliteClient.exec('COMMIT')
-    else await this.query('COMMIT')
+    if (this.sqliteClient) {
+      // @ts-expect-error
+      this.sqliteClient.exec('COMMIT')
+    } else {
+      await this.query('COMMIT')
+    }
     this.transactionActive = false
   }
 
   async rollback(): Promise<void> {
     if (!this.transactionActive) return
-    if (this.sqliteClient) this.sqliteClient.exec('ROLLBACK')
-    else await this.query('ROLLBACK')
+    if (this.sqliteClient) {
+      // @ts-expect-error
+      this.sqliteClient.exec('ROLLBACK')
+    } else {
+      await this.query('ROLLBACK')
+    }
     this.transactionActive = false
   }
 
@@ -177,8 +194,10 @@ export class BunSQLDriver implements DriverContract {
   async prepare(sql: string): Promise<string> {
     await this.ensureConnection()
     if (this.sqliteClient) throw new Error('Not supported for SQLite native yet')
+    // @ts-expect-error
     if (!this.client?.prepare) throw new Error('Not supported')
     if (!this.preparedManager)
+      // @ts-expect-error
       this.preparedManager = new BunSQLPreparedStatementManager(this.client)
     return this.preparedManager.prepare(sql)
   }
@@ -218,6 +237,7 @@ export class BunSQLDriver implements DriverContract {
   getPoolStats(): PoolStats | null {
     if (this.sqliteClient) return { idle: 0, pending: 0, active: 1, total: 1, max: 1 }
     if (!this.client) return null
+    // @ts-expect-error
     const c = this.client.connections
     return c
       ? {

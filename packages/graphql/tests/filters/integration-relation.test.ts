@@ -29,10 +29,15 @@ describe('Relation Filter Integration', () => {
       ;(globalThis as unknown as Record<string, unknown>).__G_TEST_RELATIONS_FUNC__ = undefined
     }
 
-    if (!DB.getConnectionNames().includes('filt_rel')) {
-      DB.addConnection('filt_rel', {
+    const connName = `filt_rel_${Math.random().toString(36).slice(2)}`
+    RelUser.connection = connName
+    RelPost.connection = connName
+
+    if (!DB.getConnectionNames().includes(connName)) {
+      DB.addConnection(connName, {
         driver: 'sqlite',
         database: ':memory:',
+        useNativeDriver: true,
       })
     }
 
@@ -42,44 +47,44 @@ describe('Relation Filter Integration', () => {
       SchemaRegistry.init({ mode: 'jit' })
     }
 
-    await Schema.connection('filt_rel').create('users', (t) => {
+    await Schema.connection(connName).create('users', (t) => {
       t.id()
       t.string('name')
       t.timestamps()
     })
 
-    await Schema.connection('filt_rel').create('posts', (t) => {
+    await Schema.connection(connName).create('posts', (t) => {
       t.id()
       t.string('title')
       t.integer('user_id')
       t.timestamps()
     })
 
-    await DB.connection('filt_rel').table('users').insert({
+    await DB.connection(connName).table('users').insert({
       name: 'Alice',
       created_at: new Date(),
       updated_at: new Date(),
     })
-    await DB.connection('filt_rel').table('posts').insert({
+    await DB.connection(connName).table('posts').insert({
       title: 'Hello World',
       user_id: 1,
       created_at: new Date(),
       updated_at: new Date(),
     })
 
-    await DB.connection('filt_rel').table('users').insert({
+    await DB.connection(connName).table('users').insert({
       name: 'Bob',
       created_at: new Date(),
       updated_at: new Date(),
     })
-    await DB.connection('filt_rel').table('posts').insert({
+    await DB.connection(connName).table('posts').insert({
       title: 'Gravito Rocks',
       user_id: 2,
       created_at: new Date(),
       updated_at: new Date(),
     })
 
-    await DB.connection('filt_rel').table('users').insert({
+    await DB.connection(connName).table('users').insert({
       name: 'Charlie',
       created_at: new Date(),
       updated_at: new Date(),

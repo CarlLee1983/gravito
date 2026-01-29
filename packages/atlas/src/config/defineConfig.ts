@@ -1,19 +1,11 @@
-import type { ConnectionConfig, PostgresConfig } from '../types'
+import type {
+  AtlasConfig,
+  AtlasObservabilityConfig,
+  ConnectionConfig,
+  PostgresConfig,
+} from '../types'
 
-/**
- * Atlas configuration structure
- */
-export interface AtlasConfig {
-  /**
-   * The default connection name to use
-   */
-  default: string
-
-  /**
-   * Map of connection names to their configurations
-   */
-  connections: Record<string, ConnectionConfig>
-}
+export type { AtlasConfig, AtlasObservabilityConfig, ConnectionConfig, PostgresConfig }
 
 /**
  * Define configuration with type checking
@@ -97,11 +89,24 @@ export function fromEnv(connectionName = 'default', prefix = ''): AtlasConfig {
     }
   }
 
+  const observabilityEnabled = getEnv('DB_OBSERVABILITY_ENABLED') === 'true'
+  let observability: AtlasObservabilityConfig | undefined
+
+  if (observabilityEnabled) {
+    observability = {
+      enabled: true,
+      tracing: getEnv('DB_OBSERVABILITY_TRACING') !== 'false',
+      metrics: getEnv('DB_OBSERVABILITY_METRICS') !== 'false',
+      serviceName: getEnv('DB_SERVICE_NAME'),
+    }
+  }
+
   return {
     default: connectionName,
     connections: {
       [connectionName]: config,
     },
+    observability,
   }
 }
 

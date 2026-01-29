@@ -1,27 +1,43 @@
 /**
- * Dirty Tracker
- * @description Tracks dirty (modified) attributes on model instances
- */
-
-/**
- * Dirty Tracker
- * Tracks which attributes have been modified
+ * Dirty Tracker for monitoring attribute modifications on model instances.
+ *
+ * Maintains a snapshot of original values and tracks which keys have been
+ * changed. Supports optimized structural comparison and deep change detection
+ * for complex objects.
+ *
+ * @template T - The shape of the model attributes.
  */
 export class DirtyTracker<T extends Record<string, unknown>> {
+  /**
+   * Stores the initial values as retrieved from the database.
+   */
   private original: Map<keyof T, unknown> = new Map()
+
+  /**
+   * Tracks keys that differ from their original state.
+   */
   private dirty: Set<keyof T> = new Set()
+
+  /**
+   * When enabled, nested objects are compared recursively.
+   */
   private useDeepComparison = false
 
   /**
-   * Enable deep comparison for nested objects
-   * Note: Slower, only use if you modify nested objects
+   * Configures the comparison strategy for nested structures.
+   *
+   * @param enabled - True to enable recursive comparison.
    */
   setDeepComparison(enabled: boolean): void {
     this.useDeepComparison = enabled
   }
 
   /**
-   * Set the original values (from database)
+   * Records initial state and clears the dirty set.
+   *
+   * Called typically during hydration or after a successful save.
+   *
+   * @param data - The baseline values.
    */
   setOriginal(data: Partial<T>): void {
     this.original.clear()
@@ -32,22 +48,29 @@ export class DirtyTracker<T extends Record<string, unknown>> {
   }
 
   /**
-   * Mark an attribute as dirty
+   * Checks for changes and updates the dirty set accordingly.
+   *
+   * Compares the new value against the original. If they match, the key
+   * is removed from the dirty set (reversion).
+   *
+   * @param key - The attribute name.
+   * @param newValue - The proposed new value.
    */
   mark(key: keyof T, newValue: unknown): void {
     const original = this.original.get(key)
 
-    // Only mark as dirty if value actually changed
     if (!this.isEqual(original, newValue)) {
       this.dirty.add(key)
     } else {
-      // Value was reverted to original
       this.dirty.delete(key)
     }
   }
 
   /**
-   * Check if an attribute is dirty
+   * Indicates if any attributes or a specific attribute has been modified.
+   *
+   * @param key - Optional specific attribute to check.
+   * @returns True if changes are detected.
    */
   isDirty(key?: keyof T): boolean {
     if (key) {
@@ -57,14 +80,17 @@ export class DirtyTracker<T extends Record<string, unknown>> {
   }
 
   /**
-   * Get all dirty attribute names
+   * Returns a list of all modified attribute names.
    */
   getDirty(): Array<keyof T> {
     return Array.from(this.dirty)
   }
 
   /**
-   * Get the dirty values
+   * Extracts current values for all dirty attributes.
+   *
+   * @param current - The source object containing all current values.
+   * @returns An object with only the modified entries.
    */
   getDirtyValues(current: Partial<T>): Partial<T> {
     const result: Partial<T> = {}
@@ -75,14 +101,14 @@ export class DirtyTracker<T extends Record<string, unknown>> {
   }
 
   /**
-   * Get the original value of an attribute
+   * Retrieves the original value of an attribute from the snapshot.
    */
   getOriginal(key: keyof T): unknown {
     return this.original.get(key)
   }
 
   /**
-   * Get all original values
+   * Retrieves the complete original snapshot.
    */
   getOriginals(): Partial<T> {
     const result: Partial<T> = {}
@@ -93,21 +119,23 @@ export class DirtyTracker<T extends Record<string, unknown>> {
   }
 
   /**
-   * Clear dirty state (after save)
+   * Synchronizes the snapshot with the current state.
+   *
+   * @param data - The new baseline data.
    */
   sync(data: Partial<T>): void {
     this.setOriginal(data)
   }
 
   /**
-   * Reset a single attribute to original
+   * Reverts the dirty flag for a specific attribute.
    */
   reset(key: keyof T): void {
     this.dirty.delete(key)
   }
 
   /**
-   * Reset all dirty attributes
+   * Clears all tracking information.
    */
   resetAll(): void {
     this.dirty.clear()
@@ -116,43 +144,36 @@ export class DirtyTracker<T extends Record<string, unknown>> {
   /**
    * Compares two values for equality using optimized structural comparison.
    *
-   * Performs shallow comparison by default, with deep comparison available
-   * when enabled. Avoids JSON.stringify overhead by using recursive structural
-   * comparison, providing 60-80% performance improvement for large objects.
+   * Performs shallow comparison by default. Avoids JSON.stringify overhead
+   * by using recursive structural comparison for arrays, maps, and sets.
    *
-   * @param a - First value to compare
-   * @param b - Second value to compare
-   * @returns True if values are structurally equal
+   * @param a - First value.
+   * @param b - Second value.
+   * @returns True if equal.
    * @internal
    */
   private isEqual(a: unknown, b: unknown): boolean {
-    // Fast path: reference equality or primitive values
     if (a === b) {
       return true
     }
 
-    // Special object types - check before null checks to handle Date vs null correctly
-    // This handles Date vs null, Date vs Date, etc.
     if (a instanceof Date) {
       return b instanceof Date && a.getTime() === b.getTime()
     }
     if (b instanceof Date) {
-      return false // a is not Date but b is
+      return false
     }
 
-    // Null/undefined check after Date check
     if (a == null || b == null) {
       return a === b
     }
 
-    // Type mismatch - check before general object comparison
     const typeA = typeof a
     const typeB = typeof b
     if (typeA !== typeB) {
       return false
     }
 
-    // Primitive types already handled by ===
     if (typeA !== 'object') {
       return false
     }
@@ -161,19 +182,16 @@ export class DirtyTracker<T extends Record<string, unknown>> {
       return a.source === b.source && a.flags === b.flags
     }
 
-    // Array comparison
     if (Array.isArray(a) && Array.isArray(b)) {
       if (a.length !== b.length) {
         return false
       }
-      // 如果啟用深度比較，遞迴比較每個元素；否則使用淺層比較
       if (this.useDeepComparison) {
         return a.every((val, idx) => this.deepEqual(val, b[idx]))
       }
       return a.every((val, idx) => val === b[idx])
     }
 
-    // Map comparison
     if (a instanceof Map && b instanceof Map) {
       if (a.size !== b.size) {
         return false
@@ -194,13 +212,11 @@ export class DirtyTracker<T extends Record<string, unknown>> {
       return true
     }
 
-    // Set comparison
     if (a instanceof Set && b instanceof Set) {
       if (a.size !== b.size) {
         return false
       }
       if (this.useDeepComparison) {
-        // 對於 Set，需要轉換為陣列進行比較
         const arrA = Array.from(a)
         const arrB = Array.from(b)
         return arrA.every((val) => arrB.some((bVal) => this.deepEqual(val, bVal)))
@@ -213,7 +229,6 @@ export class DirtyTracker<T extends Record<string, unknown>> {
       return true
     }
 
-    // Plain object comparison
     const keysA = Object.keys(a as object)
     const keysB = Object.keys(b as object)
 
@@ -221,7 +236,6 @@ export class DirtyTracker<T extends Record<string, unknown>> {
       return false
     }
 
-    // 如果啟用深度比較，使用遞迴比較；否則使用淺層比較
     if (this.useDeepComparison) {
       return keysA.every((key) => {
         const valA = (a as Record<string, unknown>)[key]
@@ -233,26 +247,20 @@ export class DirtyTracker<T extends Record<string, unknown>> {
     return keysA.every((key) => {
       const valA = (a as Record<string, unknown>)[key]
       const valB = (b as Record<string, unknown>)[key]
-      // Shallow equality check
       return valA === valB
     })
   }
 
   /**
-   * Performs deep equality comparison with circular reference detection.
+   * Performs deep equality comparison with cycle detection.
    *
-   * Recursively compares nested structures while tracking visited objects
-   * to prevent infinite recursion on circular references. Handles all
-   * JavaScript value types including Date, RegExp, Map, Set, and plain objects.
-   *
-   * @param a - First value to compare
-   * @param b - Second value to compare
-   * @param visited - WeakSet tracking visited objects to prevent cycles
-   * @returns True if values are deeply equal
+   * @param a - First value.
+   * @param b - Second value.
+   * @param visited - Set tracking visited objects.
+   * @returns True if deeply equal.
    * @internal
    */
   private deepEqual(a: unknown, b: unknown, visited: WeakSet<object> = new WeakSet()): boolean {
-    // Fast path: reference equality or primitive values
     if (a === b) {
       return true
     }
@@ -260,23 +268,17 @@ export class DirtyTracker<T extends Record<string, unknown>> {
       return a === b
     }
 
-    // Type mismatch
     const typeA = typeof a
     const typeB = typeof b
     if (typeA !== typeB) {
       return false
     }
 
-    // Primitive types
     if (typeA !== 'object') {
       return false
     }
 
-    // 檢查循環引用
     if (typeof a === 'object' && typeof b === 'object') {
-      // 如果已經訪問過這個物件對，假設相等（避免無限遞迴）
-      // 注意：WeakSet 無法直接檢查，所以我們使用不同的策略
-      // 對於循環引用，我們假設如果引用相同則相等
       if (visited.has(a as object) || visited.has(b as object)) {
         return a === b
       }
@@ -284,7 +286,6 @@ export class DirtyTracker<T extends Record<string, unknown>> {
       visited.add(b as object)
     }
 
-    // Special object types
     if (a instanceof Date && b instanceof Date) {
       return a.getTime() === b.getTime()
     }
@@ -293,7 +294,6 @@ export class DirtyTracker<T extends Record<string, unknown>> {
       return a.source === b.source && a.flags === b.flags
     }
 
-    // Array comparison
     if (Array.isArray(a) && Array.isArray(b)) {
       if (a.length !== b.length) {
         return false
@@ -301,7 +301,6 @@ export class DirtyTracker<T extends Record<string, unknown>> {
       return a.every((val, idx) => this.deepEqual(val, b[idx], visited))
     }
 
-    // Map comparison
     if (a instanceof Map && b instanceof Map) {
       if (a.size !== b.size) {
         return false
@@ -314,7 +313,6 @@ export class DirtyTracker<T extends Record<string, unknown>> {
       return true
     }
 
-    // Set comparison
     if (a instanceof Set && b instanceof Set) {
       if (a.size !== b.size) {
         return false
@@ -324,7 +322,6 @@ export class DirtyTracker<T extends Record<string, unknown>> {
       return arrA.every((val) => arrB.some((bVal) => this.deepEqual(val, bVal, visited)))
     }
 
-    // Plain object comparison
     const keysA = Object.keys(a as object)
     const keysB = Object.keys(b as object)
 
@@ -340,19 +337,12 @@ export class DirtyTracker<T extends Record<string, unknown>> {
   }
 
   /**
-   * Clones a value for safe storage in the original values map.
+   * Clones a value to ensure the original snapshot remains immutable.
    *
-   * Uses optimized copying strategies for known immutable types (Date, RegExp).
-   * Performs deep cloning when deep comparison is enabled to ensure proper
-   * equality checks. Uses shallow copy for most ORM use cases where nested
-   * mutations are rare.
-   *
-   * @param value - Value to clone
-   * @returns Cloned value safe for storage
+   * @param value - Value to clone.
    * @internal
    */
   private cloneValue(value: unknown): unknown {
-    // Primitive values can be returned directly
     if (value === null || value === undefined) {
       return value
     }
@@ -360,7 +350,6 @@ export class DirtyTracker<T extends Record<string, unknown>> {
       return value
     }
 
-    // 對於已知不可變類型，使用專用複製方法（更快）
     if (value instanceof Date) {
       return new Date(value.getTime())
     }
@@ -369,12 +358,10 @@ export class DirtyTracker<T extends Record<string, unknown>> {
       return new RegExp(value.source, value.flags)
     }
 
-    // 如果啟用深度比較，則進行深度複製以確保正確的比較
     if (this.useDeepComparison) {
       return this.deepClone(value)
     }
 
-    // Fast path: shallow copy (sufficient for most ORM cases)
     if (Array.isArray(value)) {
       return value.slice()
     }
@@ -387,34 +374,22 @@ export class DirtyTracker<T extends Record<string, unknown>> {
       return new Set(value)
     }
 
-    // Plain object shallow copy
     return { ...value }
   }
 
   /**
-   * Performs deep cloning with circular reference handling.
-   *
-   * Recursively clones nested structures while tracking visited objects
-   * to prevent infinite recursion. Preserves object identity for circular
-   * references by reusing cloned instances from the visited map.
-   *
-   * @param value - Value to deep clone
-   * @param visited - WeakMap tracking cloned objects to handle cycles
-   * @returns Deeply cloned value with all nested structures copied
+   * Performs recursive deep cloning.
    * @internal
    */
   private deepClone(value: unknown, visited: WeakMap<object, unknown> = new WeakMap()): unknown {
-    // Primitive values
     if (value === null || value === undefined || typeof value !== 'object') {
       return value
     }
 
-    // 檢查是否已經複製過（處理循環引用）
     if (visited.has(value as object)) {
       return visited.get(value as object)
     }
 
-    // Special object types
     if (value instanceof Date) {
       const cloned = new Date(value.getTime())
       visited.set(value, cloned)
@@ -427,7 +402,6 @@ export class DirtyTracker<T extends Record<string, unknown>> {
       return cloned
     }
 
-    // Array
     if (Array.isArray(value)) {
       const cloned: unknown[] = []
       visited.set(value, cloned)
@@ -437,7 +411,6 @@ export class DirtyTracker<T extends Record<string, unknown>> {
       return cloned
     }
 
-    // Map
     if (value instanceof Map) {
       const cloned = new Map()
       visited.set(value, cloned)
@@ -447,7 +420,6 @@ export class DirtyTracker<T extends Record<string, unknown>> {
       return cloned
     }
 
-    // Set
     if (value instanceof Set) {
       const cloned = new Set()
       visited.set(value, cloned)
@@ -457,7 +429,6 @@ export class DirtyTracker<T extends Record<string, unknown>> {
       return cloned
     }
 
-    // Plain object
     const cloned: Record<string, unknown> = {}
     visited.set(value, cloned)
     for (const [key, val] of Object.entries(value)) {

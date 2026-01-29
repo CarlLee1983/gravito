@@ -115,6 +115,22 @@ describe('BunSQLDriver', () => {
     expect(url).toContain('/my_app')
   })
 
+  test('connects and queries using bun:sqlite for SQLite', async () => {
+    const config = {
+      driver: 'sqlite' as const,
+      database: ':memory:',
+    }
+
+    const driver = new BunSQLDriver(config)
+    await driver.connect()
+    expect(driver.isConnected()).toBe(true)
+
+    const result = await driver.query('SELECT 1')
+    expect(result.rows).toBeDefined()
+    await driver.disconnect()
+    expect(driver.isConnected()).toBe(false)
+  })
+
   test('executes queries correctly', async () => {
     const config = { driver: 'postgres' as const, database: 'test' }
     const driver = new BunSQLDriver(config)
@@ -132,6 +148,20 @@ describe('BunSQLDriver', () => {
     expect(mockQuery).toHaveBeenCalled()
     expect(result.rows).toEqual(mockResult.rows)
     expect(result.rowCount).toBe(1)
+  })
+
+  test('normalizes parameters correctly', async () => {
+    const config = { driver: 'postgres' as const, database: 'test' }
+    const driver = new BunSQLDriver(config)
+    await driver.connect()
+
+    const now = new Date()
+    await driver.query('SELECT * FROM users WHERE created_at = ? AND active = ?', [now, true])
+
+    expect(mockQuery).toHaveBeenCalled()
+    const args = mockQuery.mock.calls[0][1]
+    expect(args[0]).toBe(now.toISOString())
+    expect(args[1]).toBe(1)
   })
 
   test('handles execution results (INSERT/UPDATE)', async () => {

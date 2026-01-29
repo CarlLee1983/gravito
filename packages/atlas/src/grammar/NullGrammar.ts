@@ -74,6 +74,10 @@ export class NullGrammar implements GrammarContract {
     return { sql: '', bindings: [] }
   }
 
+  getStructuralKey(_query: CompiledQuery): string {
+    return 'null'
+  }
+
   compileJsonPath(column: string, _value: unknown): string {
     return column
   }

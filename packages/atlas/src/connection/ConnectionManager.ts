@@ -3,6 +3,7 @@
  * @description Manages multiple database connections
  */
 
+import { AtlasObservability } from '../observability'
 import type { ConnectionConfig, ConnectionContract } from '../types'
 import { Connection } from './Connection'
 
@@ -53,7 +54,18 @@ export class ConnectionManager {
       throw new Error(`Database connection "${connectionName}" is not configured`)
     }
 
-    const connection = new Connection(connectionName, config)
+    // Inject Observability (Tracer & Metrics) into config
+    // This allows the Connection instance to access them without global lookup
+    const tracer = AtlasObservability.getTracer()
+    const metrics = AtlasObservability.getMetrics()
+
+    const enrichedConfig: ConnectionConfig = {
+      ...config,
+      tracer,
+      metrics,
+    }
+
+    const connection = new Connection(connectionName, enrichedConfig)
 
     const proxy = new Proxy(connection, {
       get(target: Connection, prop: string | symbol) {

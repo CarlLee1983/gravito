@@ -5,7 +5,8 @@
 **@gravito/atlas** is a high-performance, developer-centric database toolkit for the Gravito ecosystem. It provides a fluent Query Builder, a robust Active Record ORM, and database versioning tools inspired by the best patterns of Laravel and Drizzle.
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Performance](https://img.shields.io/badge/performance-40k--models/sec-brightgreen)](../../docs/ATLAS_PERFORMANCE_WHITEPAPER.md)
+[![Version](https://img.shields.io/badge/version-1.5.0-orange)](package.json)
+[![Performance](https://img.shields.io/badge/performance-extreme-brightgreen)](../../docs/ATLAS_PERFORMANCE_WHITEPAPER.md)
 
 ## 📦 Installation
 
@@ -108,23 +109,34 @@ await user.delete() // soft delete
 await user.forceDelete() // hard delete
 ```
 
-## ✨ Core Features
+## ✨ New in v1.5.0
 
-### 🚀 Native Bun.sql Support (New!)
-Atlas now natively supports Bun 1.3's `Bun.sql` unified API. By leveraging the native driver, you can achieve even higher throughput and lower latency.
+### 🚀 Extreme Performance (CoW & Dirty Tracking)
+- **Copy-on-Write QueryBuilder**: Cloning a query is now near-instant (~170ns) and memory-efficient. Heavy arrays are only copied when modified.
+- **Optimized Dirty Tracking**: Up to 5x faster change detection using structural recursive comparison instead of JSON serialization.
+- **Metadata Caching**: Prototypes and string transformations are cached internally to minimize ORM overhead during hydration.
 
-Simply enable `useNativeDriver` in your configuration:
-```typescript
-DB.configure({
-  connections: {
-    postgres: {
-      driver: 'postgres',
-      useNativeDriver: true, // Enable native Bun.sql driver
-      // ...other config
-    }
-  }
-})
+### 🛡️ Smart Guard DX
+- **Intelligent Error Messages**: Missing a column? Atlas uses Levenshtein distance to suggest the correct column name (e.g., `Did you mean "email"?`).
+- **N+1 Detection**: Automatically warns you during development if it detects repetitive query patterns on the same table.
+- **Type-Safe Proxies**: Complete rewrite of the internal Proxy engine for better IDE support and type inference.
+
+### 🏥 Orbit Doctor
+A new diagnostic tool to verify your database health:
+```bash
+bun orbit doctor
 ```
+Checks connectivity, pending migrations, and reports internal cache statistics.
+
+### 📊 Observability
+Full **OpenTelemetry** integration. Atlas now provides standard spans for `save`, `delete`, and `select` operations, including `db.system`, `db.operation`, and `db.sql.table` metadata.
+
+---
+
+## 🔗 Core Features
+
+### 🚀 Native Bun.sql Support
+Atlas natively supports Bun 1.3's `Bun.sql` unified API. Simply enable `useNativeDriver` in your configuration for even higher throughput.
 
 ### 🛡️ Secure by Default
 Built-in protection against SQL injection via **Auto-Parameterization**. All user inputs are treated as bindings, never interpolated.
@@ -139,41 +151,11 @@ Atlas supports a comprehensive set of relationships:
 ### 🌱 Seeding & Factories
 Generate dummy data for testing with ease.
 
-```typescript
-import { Factory } from '@gravito/atlas'
-
-const userFactory = Factory.define(User, ({ faker }) => ({
-  name: faker.person.fullName(),
-  email: faker.internet.email(),
-}))
-
-// Create 10 users
-await userFactory.createMany(10)
-```
-
 ### 🧠 Memory Safe Streams
 Handle millions of records without heap overflows using our cursor-based streaming API.
-```typescript
-for await (const users of User.cursor(500)) {
-  for (const user of users) {
-    await process(user)
-  }
-}
-```
 
 ### 🛠️ Schema & Migrations
 Manage your database versioning with a familiar, expressive syntax.
-```typescript
-import { Schema } from '@gravito/atlas'
-
-await Schema.create('users', (table) => {
-  table.id()
-  table.string('email').unique()
-  table.json('settings').nullable()
-  table.softDeletes() // Adds deleted_at
-  table.timestamps()
-})
-```
 
 ### 💻 Command Line Interface (Orbit)
 Accelerate development with built-in scaffolding.
@@ -196,16 +178,19 @@ bun orbit migrate
 | **MySQL** | ✅ Supported | `mysql2` / `Bun.sql` (Native) |
 | **MariaDB** | ✅ Supported | `mysql2` / `Bun.sql` (Native) |
 | **SQLite** | ✅ Supported | `bun:sqlite` / `Bun.sql` |
+| **MongoDB** | ✅ Supported | `mongodb` |
+| **Redis** | ✅ Supported | `ioredis` |
 
 ## 📊 Performance
 
-Atlas is designed for the edge. In our benchmarks, it achieves:
-*   **1.1M+** Raw reads per second.
-*   **42,000+** Full Active Record hydrations per second.
-*   **Constant memory profile** during massive data streams.
+Atlas is designed for the edge. In our latest v1.5.0 benchmarks:
+*   **Query Cloning**: ~170 ns (Copy-on-Write)
+*   **Model Hydration**: ~1.9 µs per instance
+*   **Grammar Compilation**: ~800 ns (Cached)
 
 [Read the full Performance Whitepaper](../../docs/ATLAS_PERFORMANCE_WHITEPAPER.md)
 
 ## 📄 License
 
 MIT © Gravito Framework
+

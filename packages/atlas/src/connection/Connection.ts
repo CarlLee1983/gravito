@@ -14,6 +14,7 @@ import { MySQLGrammar } from '../grammar/MySQLGrammar'
 import { NullGrammar } from '../grammar/NullGrammar'
 import { PostgresGrammar } from '../grammar/PostgresGrammar'
 import { SQLiteGrammar } from '../grammar/SQLiteGrammar'
+import type { AtlasMetrics, AtlasTracer } from '../observability'
 import { QueryBuilder } from '../query/QueryBuilder'
 import type {
   BaseConnectionConfig,
@@ -37,6 +38,8 @@ export class Connection implements ConnectionContract {
   protected grammar: GrammarContract
   protected connected = false
   protected proxy?: ConnectionContract
+  protected tracer: AtlasTracer | undefined
+  protected metrics: AtlasMetrics | undefined
 
   /**
    * Static query listeners for global observation (e.g. debugging)
@@ -57,6 +60,8 @@ export class Connection implements ConnectionContract {
   ) {
     this.driver = this.createDriver()
     this.grammar = this.createGrammar()
+    this.tracer = (config as BaseConnectionConfig).tracer
+    this.metrics = (config as BaseConnectionConfig).metrics
 
     // Proxy driver methods (e.g. redis.set, mongodb.collection)
     // biome-ignore lint/correctness/noConstructorReturn: This proxy is intentional for dynamic driver method access
@@ -117,6 +122,13 @@ export class Connection implements ConnectionContract {
   }
 
   /**
+   * Get the tracer
+   */
+  getTracer(): AtlasTracer | undefined {
+    return this.tracer
+  }
+
+  /**
    * Create a new query builder for a table
    */
   table<T = Record<string, unknown>>(tableName: string): QueryBuilderContract<T> {
@@ -141,25 +153,43 @@ export class Connection implements ConnectionContract {
 
     const startTime = performance.now()
     const timestamp = Date.now()
-    const result = await this.driver.query<T>(sql, bindings)
 
-    const duration = performance.now() - startTime
+    try {
+      const result = await this.driver.query<T>(sql, bindings)
+      const duration = performance.now() - startTime
 
-    // Fire listeners
-    if (Connection.queryListeners.length > 0) {
-      const queryData = {
-        connection: this.name,
-        sql,
-        bindings,
-        duration,
-        timestamp,
+      // Record Metrics (Zero-Overhead check)
+      if (this.metrics) {
+        this.metrics.operationDuration?.record(duration, {
+          'db.system': this.config.driver,
+          'db.operation': 'query',
+        })
       }
-      for (const listener of Connection.queryListeners) {
-        listener(queryData)
+
+      // Fire listeners
+      if (Connection.queryListeners.length > 0) {
+        const queryData = {
+          connection: this.name,
+          sql,
+          bindings,
+          duration,
+          timestamp,
+        }
+        for (const listener of Connection.queryListeners) {
+          listener(queryData)
+        }
       }
+
+      return result
+    } catch (error) {
+      if (this.metrics) {
+        this.metrics.operationErrors?.add(1, {
+          'db.system': this.config.driver,
+          'db.operation': 'query',
+        })
+      }
+      throw error
     }
-
-    return result
   }
 
   /**
@@ -170,25 +200,43 @@ export class Connection implements ConnectionContract {
 
     const startTime = performance.now()
     const timestamp = Date.now()
-    const result = await this.driver.execute(sql, bindings)
 
-    const duration = performance.now() - startTime
+    try {
+      const result = await this.driver.execute(sql, bindings)
+      const duration = performance.now() - startTime
 
-    // Fire listeners
-    if (Connection.queryListeners.length > 0) {
-      const queryData = {
-        connection: this.name,
-        sql,
-        bindings,
-        duration,
-        timestamp,
+      // Record Metrics (Zero-Overhead check)
+      if (this.metrics) {
+        this.metrics.operationDuration?.record(duration, {
+          'db.system': this.config.driver,
+          'db.operation': 'execute',
+        })
       }
-      for (const listener of Connection.queryListeners) {
-        listener(queryData)
+
+      // Fire listeners
+      if (Connection.queryListeners.length > 0) {
+        const queryData = {
+          connection: this.name,
+          sql,
+          bindings,
+          duration,
+          timestamp,
+        }
+        for (const listener of Connection.queryListeners) {
+          listener(queryData)
+        }
       }
+
+      return result
+    } catch (error) {
+      if (this.metrics) {
+        this.metrics.operationErrors?.add(1, {
+          'db.system': this.config.driver,
+          'db.operation': 'execute',
+        })
+      }
+      throw error
     }
-
-    return result
   }
 
   /**
