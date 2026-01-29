@@ -1,5 +1,5 @@
 import { DB } from '../../../DB'
-import type { Model, ModelAttributes, ModelConstructor } from '../Model'
+import type { Model, ModelConstructor } from '../Model'
 import { ModelRegistry } from '../ModelRegistry'
 
 /**
