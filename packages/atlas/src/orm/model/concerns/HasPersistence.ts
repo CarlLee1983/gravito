@@ -350,7 +350,9 @@ export class HasPersistence {
       // Update attributes (from HasAttributes concern)
       const _attributes = (this as any)._attributes
       if (_attributes) {
-        Object.assign(_attributes, row)
+        // row is a Model instance, we need to extract its _attributes
+        const rowAttributes = (row as any)._attributes || row
+        Object.assign(_attributes, rowAttributes)
       }
 
       // Sync dirty tracker
