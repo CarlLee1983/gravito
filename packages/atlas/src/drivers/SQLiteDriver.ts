@@ -209,6 +209,7 @@ export class SQLiteDriver implements DriverContract {
       await this.connect()
     }
     if (process.env.DEBUG_ATLAS) {
+      // biome-ignore lint: Internal debug logging
       console.log('[SQLiteDriver] BEGIN')
     }
     this.client?.prepare('BEGIN').run()
@@ -220,6 +221,7 @@ export class SQLiteDriver implements DriverContract {
       return
     }
     if (process.env.DEBUG_ATLAS) {
+      // biome-ignore lint: Internal debug logging
       console.log('[SQLiteDriver] COMMIT')
     }
     this.client?.prepare('COMMIT').run()
@@ -231,6 +233,7 @@ export class SQLiteDriver implements DriverContract {
       return
     }
     if (process.env.DEBUG_ATLAS) {
+      // biome-ignore lint: Internal debug logging
       console.log('[SQLiteDriver] ROLLBACK')
     }
     this.client?.prepare('ROLLBACK').run()

@@ -1598,7 +1598,9 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
    * Logs SQL and Bindings to standard output.
    */
   dump(): this {
+    // biome-ignore lint: Internal debug tool
     console.log('SQL:', this.toSql())
+    // biome-ignore lint: Internal debug tool
     console.log('Bindings:', this.getBindings())
     return this
   }
