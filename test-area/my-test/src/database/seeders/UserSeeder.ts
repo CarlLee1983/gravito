@@ -6,6 +6,6 @@ export default async function seed(db: DBService): Promise<void> {
   // await db.raw.insert(users).values([
   //   { name: 'Admin', email: 'admin@example.com' }
   // ])
-  
+
   console.log('UserSeeder: Seeding complete')
 }

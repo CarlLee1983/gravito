@@ -1,26 +1,26 @@
 {
-    "name": "my-gravito-app",
-    "version": "0.1.5",
-    "type": "module",
-    "scripts": {
-        "dev": "bun run --watch src/index.ts",
-        "build": "bun build ./src/index.ts --outdir ./dist --target bun",
-        "start": "bun run src/index.ts",
-        "typecheck": "bun tsc --noEmit",
-        "lint": "biome check .",
-        "format": "biome format --write ."
-    },
-    "dependencies": {
-        "@gravito/core": "workspace:*",
-        "@gravito/beam": "workspace:*",
-        "@gravito/stasis": "workspace:*",
-        "@gravito/prism": "workspace:*",
-        "@gravito/photon": "workspace:*",
-        "@gravito/mass": "workspace:*"
-    },
-    "devDependencies": {
-        "@biomejs/biome": "1.9.4",
-        "bun-types": "latest",
-        "typescript": "^5.9.3"
-    }
+  "name": "my-gravito-app",
+  "version": "0.1.5",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --watch src/index.ts",
+    "build": "bun build ./src/index.ts --outdir ./dist --target bun",
+    "start": "bun run src/index.ts",
+    "typecheck": "bun tsc --noEmit",
+    "lint": "biome check .",
+    "format": "biome format --write ."
+  },
+  "dependencies": {
+    "@gravito/core": "workspace:*",
+    "@gravito/beam": "workspace:*",
+    "@gravito/stasis": "workspace:*",
+    "@gravito/prism": "workspace:*",
+    "@gravito/photon": "workspace:*",
+    "@gravito/mass": "workspace:*"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "1.9.4",
+    "bun-types": "latest",
+    "typescript": "^5.9.3"
+  }
 }
