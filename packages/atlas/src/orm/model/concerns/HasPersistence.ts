@@ -132,13 +132,34 @@ export class HasPersistence {
         ;(this as any)._attributes[modelCtor.primaryKey] = pk
       }
     } else if ((this as any)._attributes[modelCtor.primaryKey] === undefined) {
-      // Fallback 1: Try to get the last inserted ID using max()
+      // Fallback: If RETURNING failed, try to fetch the inserted record
+      // For SQLite, we need to use a different approach since we can't rely on max()
+      // in concurrent test environments
       try {
-        const lastId = await connection.table(modelCtor.getTable()).max(modelCtor.primaryKey)
+        // First, try to get the last insert ID using a raw query
+        // This is more reliable than max() in concurrent scenarios
+        const driver = connection.getDriver()
+        const driverName = driver.getDriverName()
+
+        let lastId: number | bigint | string | undefined
+
+        if (driverName === 'sqlite') {
+          // For SQLite, use last_insert_rowid()
+          const result = await connection.raw<{ id: number }>(
+            'SELECT last_insert_rowid() as id',
+            []
+          )
+          lastId = result.rows[0]?.id
+        } else {
+          // For other databases, use max() as fallback
+          const maxResult = await connection.table(modelCtor.getTable()).max(modelCtor.primaryKey)
+          lastId = maxResult ?? undefined
+        }
+
         if (lastId !== null && lastId !== undefined) {
           ;(this as any)._attributes[modelCtor.primaryKey] = lastId
 
-          // Fallback 2: If we got an ID, fetch the full record to get all attributes
+          // Fetch the full record to get all attributes (timestamps, version, etc.)
           const fullRecord = await connection
             .table<any>(modelCtor.getTable())
             .where(modelCtor.primaryKey, lastId)
@@ -146,7 +167,13 @@ export class HasPersistence {
 
           if (fullRecord) {
             Object.assign((this as any)._attributes, fullRecord)
+          } else {
+            throw new Error(
+              `Inserted record not found after insert for ${modelCtor.name} with ID ${lastId}`
+            )
           }
+        } else {
+          throw new Error(`Could not determine last insert ID for ${modelCtor.name}`)
         }
       } catch (e) {
         if (process.env.DEBUG_ATLAS) {
@@ -154,7 +181,7 @@ export class HasPersistence {
         }
         throw new Error(
           `Failed to set primary key after insert for ${modelCtor.name}. ` +
-            `This may indicate a driver compatibility issue with RETURNING clause.`
+            `Original error: ${e instanceof Error ? e.message : String(e)}`
         )
       }
     }
