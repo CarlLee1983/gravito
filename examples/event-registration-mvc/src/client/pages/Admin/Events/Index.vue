@@ -93,34 +93,38 @@
 </template>
 
 <script setup lang="ts">
-import { Link, router } from '@inertiajs/vue3';
-import AdminLayout from '../../../components/AdminLayout.vue';
-import { useI18n } from '../../../composables/useI18n';
+import { Link, router } from '@inertiajs/vue3'
+import AdminLayout from '../../../components/AdminLayout.vue'
+import { useI18n } from '../../../composables/useI18n'
 
-const { t } = useI18n();
+const { t } = useI18n()
 
 defineProps<{
-  events: any[];
-}>();
+  events: any[]
+}>()
 
 const formatDate = (date: string) => {
   return new Date(date).toLocaleDateString(undefined, {
-    month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit'
-  });
-};
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
 
 const getStatusClasses = (status: string) => {
   const classes: Record<string, string> = {
     draft: 'bg-amber-500 text-white',
     published: 'bg-indigo-600 text-white',
     cancelled: 'bg-red-600 text-white',
-  };
-  return classes[status] || 'bg-gray-500 text-white';
-};
+  }
+  return classes[status] || 'bg-gray-500 text-white'
+}
 
 const deleteEvent = (id: number) => {
   if (confirm(t('admin.common.confirm_delete'))) {
-    router.delete(`/admin/events/${id}`);
+    router.delete(`/admin/events/${id}`)
   }
-};
+}
 </script>

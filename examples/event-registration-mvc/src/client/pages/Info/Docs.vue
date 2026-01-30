@@ -91,12 +91,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { Link } from '@inertiajs/vue3';
-import Layout from '../../components/Layout.vue';
-import { useI18n } from '../../composables/useI18n';
+import { computed } from 'vue'
+import { Link } from '@inertiajs/vue3'
+import Layout from '../../components/Layout.vue'
+import { useI18n } from '../../composables/useI18n'
 
-const { t } = useI18n();
+const { t } = useI18n()
 
 const menu = computed(() => [
   {
@@ -105,7 +105,7 @@ const menu = computed(() => [
       { label: t('info.docs.menu.intro'), active: true },
       { label: t('info.docs.menu.install'), active: false },
       { label: t('info.docs.menu.quick'), active: false },
-    ]
+    ],
   },
   {
     title: t('info.docs.menu.manage'),
@@ -113,7 +113,7 @@ const menu = computed(() => [
       { label: t('info.docs.menu.events'), active: false },
       { label: t('info.docs.menu.sessions'), active: false },
       { label: t('info.docs.menu.forms'), active: false },
-    ]
+    ],
   },
   {
     title: t('info.docs.menu.integrate'),
@@ -121,13 +121,25 @@ const menu = computed(() => [
       { label: t('info.docs.menu.webhooks'), active: false },
       { label: t('info.docs.menu.api'), active: false },
       { label: t('info.docs.menu.auth'), active: false },
-    ]
-  }
-]);
+    ],
+  },
+])
 
 const concepts = computed(() => [
-  { title: t('info.docs.content.engine'), desc: t('info.docs.content.engine_desc'), icon: 'i-carbon-machine-learning' },
-  { title: t('info.docs.content.schema'), desc: t('info.docs.content.schema_desc'), icon: 'i-carbon-datastore' },
-  { title: t('info.docs.content.pipeline'), desc: t('info.docs.content.pipeline_desc'), icon: 'i-carbon-flow' }
-]);
+  {
+    title: t('info.docs.content.engine'),
+    desc: t('info.docs.content.engine_desc'),
+    icon: 'i-carbon-machine-learning',
+  },
+  {
+    title: t('info.docs.content.schema'),
+    desc: t('info.docs.content.schema_desc'),
+    icon: 'i-carbon-datastore',
+  },
+  {
+    title: t('info.docs.content.pipeline'),
+    desc: t('info.docs.content.pipeline_desc'),
+    icon: 'i-carbon-flow',
+  },
+])
 </script>

@@ -6,40 +6,38 @@ import { Model } from '../src/orm/model/Model'
 import { SchemaRegistry } from '../src/orm/schema/SchemaRegistry'
 import { Schema } from '../src/schema/Schema'
 
-const CONNECTION_NAME = `opt_lock_${Math.random().toString(36).slice(2)}`
-
-class VersionedUser extends Model {
-  static connection = CONNECTION_NAME
-  static table = 'versioned_users'
-
-  @column({ isPrimary: true })
-  declare id: number
-
-  @column()
-  declare name: string
-
-  @version()
-  declare version: number
-}
-
 describe('Optimistic Locking', () => {
-  beforeAll(() => {
-    // Force JIT mode for tests to avoid "Table not found in schema lock" errors in CI
-    // We do this once to avoid disrupting other tests
-    SchemaRegistry.init({ mode: 'jit' })
+  const TEST_CONN = `opt_lock_${Math.random().toString(36).slice(2)}`
 
-    if (!DB.initialized) {
-      DB.configure({ connections: {} })
-    }
+  class VersionedUser extends Model {
+    static override connection = TEST_CONN
+    static override table = 'versioned_users'
+    static override strictMode = false
+
+    @column({ isPrimary: true })
+    declare id: number
+
+    @column()
+    declare name: string
+
+    @version()
+    declare version: number
+  }
+
+  beforeAll(() => {
+    // Force JIT mode for tests
+    SchemaRegistry.init({ mode: 'jit' })
   })
 
   beforeEach(async () => {
-    DB.addConnection(CONNECTION_NAME, {
+    SchemaRegistry.getInstance().invalidateAll()
+    DB.addConnection(TEST_CONN, {
       driver: 'sqlite',
       database: ':memory:',
+      useNativeDriver: false,
     })
 
-    await Schema.connection(CONNECTION_NAME).create('versioned_users', (table) => {
+    await Schema.connection(TEST_CONN).create('versioned_users', (table) => {
       table.id()
       table.string('name')
       table.integer('version').default(1)
@@ -48,18 +46,15 @@ describe('Optimistic Locking', () => {
   })
 
   afterEach(async () => {
-    await DB.disconnect(CONNECTION_NAME)
-    Schema.reset() // Only resets connectionName and grammar, safe-ish
+    await DB.disconnect(TEST_CONN)
+    DB.purge(TEST_CONN)
+    Schema.reset()
   })
 
   it('should auto-increment version on update', async () => {
     const user = await VersionedUser.create({ name: 'Carl' })
 
-    expect(user.version).toBe(1) // Default value from DB default or 1 if set?
-    // Wait, if default is 1 in DB, and we didn't set it, it comes back as 1 after save if we refresh or return logic is used.
-    // In insert(), we don't reload unless needed.
-    // But default is handled by DB.
-    // If we want to check, we should fetch it.
+    expect(user.version).toBe(1)
     const fetched = (await VersionedUser.find(user.id))!
     expect(fetched.version).toBe(1)
 

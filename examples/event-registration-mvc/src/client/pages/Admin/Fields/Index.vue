@@ -197,18 +197,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue';
-import { Link, router } from '@inertiajs/vue3';
-import AdminLayout from '../../../components/AdminLayout.vue';
+import { ref, reactive, computed } from 'vue'
+import { Link, router } from '@inertiajs/vue3'
+import AdminLayout from '../../../components/AdminLayout.vue'
 
 const props = defineProps<{
-  event: any;
-  fields: any[];
-}>();
+  event: any
+  fields: any[]
+}>()
 
-const showCreateModal = ref(false);
-const editingField = ref<any>(null);
-const processing = ref(false);
+const showCreateModal = ref(false)
+const editingField = ref<any>(null)
+const processing = ref(false)
 
 const form = reactive({
   name: '',
@@ -216,7 +216,7 @@ const form = reactive({
   type: 'text',
   options: [] as string[],
   required: false,
-});
+})
 
 const fieldTypes = [
   { id: 'text', label: 'Short Text', icon: 'i-carbon-string-text' },
@@ -224,68 +224,78 @@ const fieldTypes = [
   { id: 'select', label: 'Dropdown', icon: 'i-carbon-list-dropdown' },
   { id: 'radio', label: 'Single', icon: 'i-carbon-radio-button-checked' },
   { id: 'checkbox', label: 'Multiple', icon: 'i-carbon-checkbox-checked' },
-];
+]
 
-const getFieldIcon = (type: string) => fieldTypes.find(t => t.id === type)?.icon || 'i-carbon-help';
+const getFieldIcon = (type: string) =>
+  fieldTypes.find((t) => t.id === type)?.icon || 'i-carbon-help'
 
-const optionsText = computed(() => form.options.join('\n'));
+const optionsText = computed(() => form.options.join('\n'))
 
 const updateOptions = (e: any) => {
-  form.options = e.target.value.split('\n').map((s: string) => s.trim()).filter((s: string) => s.length > 0);
-};
+  form.options = e.target.value
+    .split('\n')
+    .map((s: string) => s.trim())
+    .filter((s: string) => s.length > 0)
+}
 
 const parseOptions = (options: any) => {
-  if (!options) return [];
-  if (Array.isArray(options)) return options;
+  if (!options) return []
+  if (Array.isArray(options)) return options
   try {
-    return JSON.parse(options);
+    return JSON.parse(options)
   } catch (e) {
-    return String(options).split(',').filter(s => s.trim());
+    return String(options)
+      .split(',')
+      .filter((s) => s.trim())
   }
-};
+}
 
 const editField = (field: any) => {
-  editingField.value = field;
-  form.name = field.name;
-  form.label = field.label;
-  form.type = field.type;
-  form.options = parseOptions(field.options);
-  form.required = !!field.required;
-};
+  editingField.value = field
+  form.name = field.name
+  form.label = field.label
+  form.type = field.type
+  form.options = parseOptions(field.options)
+  form.required = !!field.required
+}
 
 const closeModal = () => {
-  showCreateModal.value = false;
-  editingField.value = null;
-  form.name = '';
-  form.label = '';
-  form.type = 'text';
-  form.options = [];
-  form.required = false;
-};
+  showCreateModal.value = false
+  editingField.value = null
+  form.name = ''
+  form.label = ''
+  form.type = 'text'
+  form.options = []
+  form.required = false
+}
 
 const submit = () => {
-  processing.value = true;
-  const url = editingField.value 
-    ? `/admin/fields/${editingField.value.id}/update` 
-    : `/admin/events/${props.event.id}/fields`;
-  
+  processing.value = true
+  const url = editingField.value
+    ? `/admin/fields/${editingField.value.id}/update`
+    : `/admin/events/${props.event.id}/fields`
+
   // Use POST for both create and update (with /update suffix)
-  const method = 'post';
-  
+  const method = 'post'
+
   // Send options as actual array (backend handles stringification if needed)
-  const data = { ...form, options: form.options };
-  
+  const data = { ...form, options: form.options }
+
   router[method](url, data, {
     onFinish: () => {
-      processing.value = false;
-      closeModal();
-    }
-  });
-};
+      processing.value = false
+      closeModal()
+    },
+  })
+}
 
 const deleteField = (id: number) => {
-  if (confirm('Initiate variable purge? Collected participant data for this variable will be archived.')) {
-    router.delete(`/admin/fields/${id}`);
+  if (
+    confirm(
+      'Initiate variable purge? Collected participant data for this variable will be archived.'
+    )
+  ) {
+    router.delete(`/admin/fields/${id}`)
   }
-};
+}
 </script>

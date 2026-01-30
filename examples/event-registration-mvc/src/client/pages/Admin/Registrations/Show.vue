@@ -138,32 +138,36 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { Link, router } from '@inertiajs/vue3';
-import AdminLayout from '../../../components/AdminLayout.vue';
-import QrCodeDisplay from '../../../components/QrCodeDisplay.vue';
-import { useI18n } from '../../../composables/useI18n';
+import { ref } from 'vue'
+import { Link, router } from '@inertiajs/vue3'
+import AdminLayout from '../../../components/AdminLayout.vue'
+import QrCodeDisplay from '../../../components/QrCodeDisplay.vue'
+import { useI18n } from '../../../composables/useI18n'
 
-const { t } = useI18n();
+const { t } = useI18n()
 
 const props = defineProps<{
-  registration: any;
-}>();
+  registration: any
+}>()
 
-const resending = ref(false);
+const resending = ref(false)
 
-const formatDate = (date: string) => new Date(date).toLocaleDateString();
-const formatDateTime = (date: string) => new Date(date).toLocaleString();
+const formatDate = (date: string) => new Date(date).toLocaleDateString()
+const formatDateTime = (date: string) => new Date(date).toLocaleString()
 
 const updateStatus = (e: any) => {
-  const status = e.target.value;
-  router.put(`/admin/registrations/${props.registration.id}/status`, { status });
-};
+  const status = e.target.value
+  router.put(`/admin/registrations/${props.registration.id}/status`, { status })
+}
 
 const resendEmail = () => {
-  resending.value = true;
-  router.post(`/admin/registrations/${props.registration.id}/resend`, {}, {
-    onFinish: () => resending.value = false
-  });
-};
+  resending.value = true
+  router.post(
+    `/admin/registrations/${props.registration.id}/resend`,
+    {},
+    {
+      onFinish: () => (resending.value = false),
+    }
+  )
+}
 </script>

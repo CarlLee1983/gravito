@@ -74,6 +74,10 @@ export class NullGrammar implements GrammarContract {
     return { sql: '', bindings: [] }
   }
 
+  getStructuralKey(_query: CompiledQuery): string {
+    return 'null'
+  }
+
   compileJsonPath(column: string, _value: unknown): string {
     return column
   }
@@ -84,5 +88,14 @@ export class NullGrammar implements GrammarContract {
 
   compileUpdateJson(_query: CompiledQuery, column: string, _value: unknown): string {
     return column
+  }
+
+  compileUpsert(
+    _query: CompiledQuery,
+    _values: Record<string, unknown>[],
+    _uniqueBy: string[],
+    _update: string[]
+  ): string {
+    throw new Error('Method not implemented for this driver.')
   }
 }

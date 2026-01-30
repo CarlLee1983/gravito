@@ -20,6 +20,8 @@
     "typecheck:validate": "bun run scripts/check-typecheck-config.ts",
     "typecheck:verify": "bun run scripts/verify-bunx-typecheck.ts",
     "version:check": "bun run scripts/check-versions.ts",
+    "docs:validate": "bun run scripts/validate-docs.ts",
+    "docs:test": "bun test scripts/tests/validate-docs.test.ts",
     "changeset": "changeset",
     "ci:version": "changeset version",
     "ci:publish": "bun scripts/ci-publish.js",
@@ -44,7 +46,8 @@
     "pug": "^3.0.3",
     "simple-git-hooks": "^2.13.1",
     "turbo": "latest",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "yaml": "^2.8.2"
   },
   "simple-git-hooks": {
     "pre-commit": "export PATH=\"$HOME/.bun/bin:$PATH\" && bunx lint-staged",

@@ -259,66 +259,73 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watchEffect, computed, watch } from 'vue';
-import { Link, usePage } from '@inertiajs/vue3';
-import { useI18n } from '../composables/useI18n';
+import { ref, onMounted, onUnmounted, watchEffect, computed, watch } from 'vue'
+import { Link, usePage } from '@inertiajs/vue3'
+import { useI18n } from '../composables/useI18n'
 
-const { t, getLocale } = useI18n();
-const isScrolled = ref(false);
-const isMobileMenuOpen = ref(false);
-const page = usePage();
-const successMessage = ref<any>(page.props.flash?.success);
-const errorMessage = ref<any>(page.props.flash?.error);
+const { t, getLocale } = useI18n()
+const isScrolled = ref(false)
+const isMobileMenuOpen = ref(false)
+const page = usePage()
+const successMessage = ref<any>(page.props.flash?.success)
+const errorMessage = ref<any>(page.props.flash?.error)
 
-watch(() => page.props.flash?.success, (val) => {
-  successMessage.value = val;
-  if (val) setTimeout(() => successMessage.value = null, 5000);
-});
+watch(
+  () => page.props.flash?.success,
+  (val) => {
+    successMessage.value = val
+    if (val) setTimeout(() => (successMessage.value = null), 5000)
+  }
+)
 
-watch(() => page.props.flash?.error, (val) => {
-  errorMessage.value = val;
-  if (val) setTimeout(() => errorMessage.value = null, 5000);
-});
+watch(
+  () => page.props.flash?.error,
+  (val) => {
+    errorMessage.value = val
+    if (val) setTimeout(() => (errorMessage.value = null), 5000)
+  }
+)
 
 // Dark Mode logic
-const isDark = ref(false);
+const isDark = ref(false)
 const toggleDark = () => {
-  isDark.value = !isDark.value;
-  localStorage.setItem('theme', isDark.value ? 'dark' : 'light');
-};
+  isDark.value = !isDark.value
+  localStorage.setItem('theme', isDark.value ? 'dark' : 'light')
+}
 
 watchEffect(() => {
   if (typeof document !== 'undefined') {
-    document.documentElement.classList.toggle('dark', isDark.value);
+    document.documentElement.classList.toggle('dark', isDark.value)
   }
-});
+})
 
 const navLinks = computed(() => [
   { label: t('common.home'), href: '/' },
   { label: t('common.explore'), href: '/events' },
-]);
+])
 
 const getLanguageLink = (lang: string) => {
-  if (typeof window === 'undefined') return '#';
-  const url = new URL(window.location.href);
-  url.searchParams.set('lang', lang);
-  return url.pathname + url.search;
-};
+  if (typeof window === 'undefined') return '#'
+  const url = new URL(window.location.href)
+  url.searchParams.set('lang', lang)
+  return url.pathname + url.search
+}
 
 const handleScroll = () => {
-  isScrolled.value = window.scrollY > 20;
-};
+  isScrolled.value = window.scrollY > 20
+}
 
 onMounted(() => {
-  window.addEventListener('scroll', handleScroll);
+  window.addEventListener('scroll', handleScroll)
   // Initialize theme from storage or system
-  isDark.value = localStorage.getItem('theme') === 'dark' || 
-    (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
-});
+  isDark.value =
+    localStorage.getItem('theme') === 'dark' ||
+    (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)
+})
 
 onUnmounted(() => {
-  window.removeEventListener('scroll', handleScroll);
-});
+  window.removeEventListener('scroll', handleScroll)
+})
 </script>
 
 <style>

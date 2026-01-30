@@ -157,11 +157,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue';
-import { Link, router } from '@inertiajs/vue3';
-import AdminLayout from '../../../components/AdminLayout.vue';
+import { ref, reactive } from 'vue'
+import { Link, router } from '@inertiajs/vue3'
+import AdminLayout from '../../../components/AdminLayout.vue'
 
-const processing = ref(false);
+const processing = ref(false)
 const form = reactive({
   title: '',
   description: '',
@@ -170,20 +170,26 @@ const form = reactive({
   status: 'draft',
   registration_start: '',
   registration_end: '',
-});
+})
 
 const submit = () => {
-  processing.value = true;
+  processing.value = true
   router.post('/admin/events', form, {
-    onFinish: () => processing.value = false
-  });
-};
+    onFinish: () => (processing.value = false),
+  })
+}
 
 const formatDisplayDate = (val: string) => {
-  const d = new Date(val);
-  return d.toLocaleString(undefined, { 
-    month: 'short', day: 'numeric', year: 'numeric', 
-    hour: '2-digit', minute: '2-digit', hour12: false 
-  }).replace(',', '');
-};
+  const d = new Date(val)
+  return d
+    .toLocaleString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    })
+    .replace(',', '')
+}
 </script>

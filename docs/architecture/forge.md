@@ -1,3 +1,11 @@
+---
+title: Forge Architecture 技術架構規格書
+version: 1.0.0
+status: Stable
+tier: C
+last_updated: 2026-01-29
+---
+
 # 🌌 Forge Architecture 技術架構規格書 (v1.0)
 
 本文件詳述 `@gravito/forge` 的內部架構、Fluent Pipeline API 設計以及即時進度追蹤機制。

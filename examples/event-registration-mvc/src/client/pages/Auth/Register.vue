@@ -131,31 +131,31 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, computed } from 'vue';
-import { Link, router } from '@inertiajs/vue3';
-import Layout from '../../components/Layout.vue';
-import { useI18n } from '../../composables/useI18n';
+import { reactive, computed } from 'vue'
+import { Link, router } from '@inertiajs/vue3'
+import Layout from '../../components/Layout.vue'
+import { useI18n } from '../../composables/useI18n'
 
-const { t } = useI18n();
+const { t } = useI18n()
 
 const form = reactive({
   name: '',
   email: '',
   password: '',
-  processing: false
-});
+  processing: false,
+})
 
 const features = computed(() => [
   t('auth.feature_1'),
   t('auth.feature_2'),
   t('auth.feature_3'),
-  t('auth.feature_4')
-]);
+  t('auth.feature_4'),
+])
 
 const submit = () => {
-  form.processing = true;
+  form.processing = true
   router.post('/register', form, {
-    onFinish: () => form.processing = false
-  });
-};
+    onFinish: () => (form.processing = false),
+  })
+}
 </script>

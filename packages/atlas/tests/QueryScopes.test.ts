@@ -19,16 +19,15 @@ class ScopedUser extends Model {
 }
 
 describe('QueryScopes', () => {
+  const TEST_CONN = `query_scopes_${Math.random().toString(36).slice(2)}`
   let mockConnection: any
   let mockGrammar: any
+  let connectionSpy: any
 
   beforeEach(() => {
-    // Reset DB
-    // @ts-expect-error
-    DB.initialized = false
-
     mockGrammar = {
       compileSelect: jest.fn(() => 'SELECT * FROM users'),
+      getStructuralKey: jest.fn(() => 'mock'),
     }
 
     mockConnection = {
@@ -36,19 +35,24 @@ describe('QueryScopes', () => {
         const { QueryBuilder } = require('../src/query/QueryBuilder')
         return new QueryBuilder(mockConnection, mockGrammar, name)
       },
+      raw: jest.fn().mockResolvedValue({ rows: [] }),
       getGrammar: () => mockGrammar,
-      getDriver: () => ({
-        getGrammar: () => mockGrammar,
-      }),
+      getTracer: () => undefined,
+      getDriver: () => ({ getDriverName: () => 'mock' }),
     }
 
-    spyOn(DB, 'connection').mockReturnValue(mockConnection)
-    // @ts-expect-error
-    DB.initialized = true
+    const originalConnection = DB.connection
+    connectionSpy = spyOn(DB, 'connection').mockImplementation((name?: string) => {
+      if (name === TEST_CONN) return mockConnection
+      return originalConnection.call(DB, name as any)
+    })
+
+    ScopedUser.connection = TEST_CONN
   })
 
-  afterEach(async () => {
-    // No-op
+  afterEach(() => {
+    connectionSpy.mockRestore()
+    ScopedUser.connection = undefined
   })
 
   test('local scope works via proxy', () => {

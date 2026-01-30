@@ -9,7 +9,7 @@ const form = useForm({
   name: '',
   email: '',
   subject: '',
-  message: ''
+  message: '',
 })
 
 const submit = () => {

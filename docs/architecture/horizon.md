@@ -1,3 +1,11 @@
+---
+title: Horizon Architecture 技術架構規格書
+version: 1.0.0
+status: Stable
+tier: C
+last_updated: 2026-01-29
+---
+
 # 🌌 Horizon Architecture 技術架構規格書 (v1.0)
 
 本文件詳述 `@gravito/horizon` 的內部架構、排程器 (Scheduler) 的設計模式以及分散式鎖定機制。

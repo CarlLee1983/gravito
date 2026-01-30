@@ -35,6 +35,7 @@ describe('Attribute Casting', () => {
         compileInsert: () => ({ sql: '', bindings: [] }),
         compileUpdate: () => ({ sql: '', bindings: [] }),
       }),
+      getTracer: () => undefined,
       getDriver: () => ({
         getGrammar: () => ({}),
       }),

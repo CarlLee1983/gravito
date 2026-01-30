@@ -49,14 +49,41 @@ export class SchemaSniffer {
     const columns = new Map<string, ColumnSchema>()
     const primaryKey: string[] = []
 
-    for (const row of columnsResult.rows as any[]) {
+    const rows = Array.isArray(columnsResult.rows)
+      ? columnsResult.rows
+      : Array.from(columnsResult.rows || columnsResult)
+
+    for (const row of rows as any[]) {
+      // Create a normalized version of the row with lowercase keys
+      const normalized: Record<string, any> = {}
+      try {
+        for (const key of Object.keys(row)) {
+          normalized[key.toLowerCase()] = row[key]
+        }
+      } catch {
+        // Fallback for Proxy objects that don't support Object.keys
+        normalized.name = row.name ?? row.NAME
+        normalized.type = row.type ?? row.TYPE
+        normalized.notnull = row.notnull ?? row.NOTNULL
+        normalized.pk = row.pk ?? row.PK
+        normalized.dflt_value = row.dflt_value ?? row.DFLT_VALUE
+      }
+
+      const name = normalized.name
+      const type = normalized.type ?? 'text'
+      const notnull = normalized.notnull ?? 0
+      const pk = normalized.pk ?? 0
+      const dflt_value = normalized.dflt_value
+
+      if (name === undefined) continue
+
       const column: ColumnSchema = {
-        name: row.name,
-        type: this.mapSQLiteType(row.type),
-        nullable: row.notnull === 0,
-        default: row.dflt_value,
-        primary: row.pk > 0,
-        unique: false, // Check indexes below
+        name: name,
+        type: this.mapSQLiteType(type),
+        nullable: notnull === 0,
+        default: dflt_value,
+        primary: pk > 0,
+        unique: false,
         autoIncrement: false,
       }
 
@@ -297,6 +324,7 @@ export class SchemaSniffer {
   }
 
   private mapSQLiteType(type: string): ColumnType {
+    if (!type) return 'string'
     const t = type.toLowerCase()
     if (t.includes('int')) {
       return 'integer'

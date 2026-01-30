@@ -1,3 +1,11 @@
+---
+title: Sentinel Architecture 技術架構規格書
+version: 1.0.0
+status: Stable
+tier: C
+last_updated: 2026-01-29
+---
+
 # 🌌 Sentinel Architecture 技術架構規格書 (v1.0)
 
 本文件詳述 `@gravito/sentinel` 的內部架構、多重 Guard 系統設計以及與核心安全機制的整合。

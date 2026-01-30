@@ -33,32 +33,48 @@ export class HasPersistence {
    * ```
    */
   async save(): Promise<this> {
-    // Trigger saving event
-    await (this as any).emit('saving')
+    const modelCtor = this.constructor as any
+    const connection = DB.connection(modelCtor.connection)
+    const tracer = connection.getTracer()
+    const span = tracer?.startSpan(
+      `Atlas:${this._exists ? 'Update' : 'Insert'}:${modelCtor.name}`,
+      {
+        'db.system': connection.getDriver().getDriverName(),
+        'db.operation': this._exists ? 'update' : 'insert',
+        'db.sql.table': modelCtor.getTable(),
+      }
+    )
 
-    // Validate all dirty attributes
-    const dirtyTracker = (this as any)._dirtyTracker
-    if (dirtyTracker) {
-      const dirtyKeys = dirtyTracker.getDirty()
-      const attributes = (this as any)._attributes || {}
-      for (const key of dirtyKeys) {
-        const validateAttribute = (this as any)._validateAttribute
-        if (validateAttribute) {
-          await validateAttribute.call(this, key as string, attributes[key as string])
+    try {
+      // Trigger saving event
+      await (this as any).emit('saving')
+
+      // Validate all dirty attributes
+      const dirtyTracker = (this as any)._dirtyTracker
+      if (dirtyTracker) {
+        const dirtyKeys = dirtyTracker.getDirty()
+        const attributes = (this as any)._attributes || {}
+        for (const key of dirtyKeys) {
+          const validateAttribute = (this as any)._validateAttribute
+          if (validateAttribute) {
+            await validateAttribute.call(this, key as string, attributes[key as string])
+          }
         }
       }
-    }
 
-    let result: this
-    if (this._exists) {
-      result = await this._performUpdate()
-    } else {
-      result = await this._performInsert()
-    }
+      let result: this
+      if (this._exists) {
+        result = await this._performUpdate()
+      } else {
+        result = await this._performInsert()
+      }
 
-    // Trigger saved event
-    await (this as any).emit('saved')
-    return result
+      // Trigger saved event
+      await (this as any).emit('saved')
+      return result
+    } finally {
+      span?.end()
+    }
   }
 
   /**
@@ -69,40 +85,11 @@ export class HasPersistence {
    */
   protected async _performInsert(): Promise<this> {
     const modelCtor = this.constructor as any
-    const connection = DB.connection(modelCtor.connection)
+    const connectionName = modelCtor.connection || 'default'
+    const connection = DB.connection(connectionName)
 
     // Trigger 'creating' event
     await (this as any).emit('creating')
-
-    // Handle Timestamps
-    if (modelCtor.timestamps) {
-      const now = new Date()
-      if (!(this as any)._attributes[modelCtor.createdAtColumn]) {
-        ;(this as any)._setAttribute(modelCtor.createdAtColumn, now)
-      }
-      // Only set updated_at if timestamps is not 'created_only'
-      if (
-        modelCtor.timestamps !== 'created_only' &&
-        !(this as any)._attributes[modelCtor.updatedAtColumn]
-      ) {
-        ;(this as any)._setAttribute(modelCtor.updatedAtColumn, now)
-      }
-    }
-
-    // Handle @column(autoCreate)
-    const columns = (modelCtor as any)[COLUMN_KEY]
-    if (columns) {
-      for (const [prop, options] of Object.entries(columns)) {
-        if ((options as any).autoCreate && !(this as any)._attributes[prop]) {
-          ;(this as any)._setAttribute(prop, new Date())
-        }
-      }
-    }
-
-    const versionKey = (modelCtor as any)[VERSION_KEY] as string | undefined
-    if (versionKey && (this as any)._attributes[versionKey] === undefined) {
-      ;(this as any)._setAttribute(versionKey, 1)
-    }
 
     const result = await connection.table(modelCtor.getTable()).insert((this as any)._attributes)
 
@@ -116,15 +103,78 @@ export class HasPersistence {
         ;(this as any)._attributes[modelCtor.primaryKey] = pk
       }
     } else if ((this as any)._attributes[modelCtor.primaryKey] === undefined) {
-      // Fallback: If result is empty but we don't have an ID, try to get it
-      // This helps with drivers that don't support RETURNING or return empty results
+      // Fallback: If RETURNING failed, try to fetch the inserted record
+      // For SQLite, we need to use a different approach since we can't rely on max()
+      // in concurrent test environments
       try {
-        const lastId = await connection.table(modelCtor.getTable()).max(modelCtor.primaryKey)
-        if (lastId) {
-          ;(this as any)._attributes[modelCtor.primaryKey] = lastId
+        const driver = connection.getDriver()
+        const driverName = driver.getDriverName()
+
+        let lastId: number | bigint | string | undefined
+
+        // First, check if the driver already determined the insert ID
+        const queryResult = (result as any)._queryResult
+        if (queryResult?.insertId !== undefined && queryResult?.insertId !== 0) {
+          lastId = queryResult.insertId
         }
-      } catch (_e) {
-        // Ignore fallback errors
+
+        if (lastId === undefined) {
+          if (driverName === 'sqlite') {
+            // For SQLite, use last_insert_rowid()
+            const idRes = await connection.raw<{ id: number }>(
+              'SELECT last_insert_rowid() as id',
+              []
+            )
+            lastId = idRes.rows[0]?.id
+          } else {
+            // For other databases, use max() as fallback
+            const maxResult = await connection.table(modelCtor.getTable()).max(modelCtor.primaryKey)
+            lastId = maxResult ?? undefined
+          }
+        }
+
+        if (lastId !== null && lastId !== undefined && lastId !== 0) {
+          ;(this as any)._attributes[modelCtor.primaryKey] = lastId
+
+          // Fetch the full record to get all attributes (timestamps, version, etc.)
+          const fullRecord = await connection
+            .table<any>(modelCtor.getTable())
+            .where(modelCtor.primaryKey, lastId)
+            .first()
+
+          if (fullRecord) {
+            Object.assign((this as any)._attributes, fullRecord)
+          } else {
+            throw new Error(
+              `Inserted record not found after insert for ${modelCtor.name} with ID ${lastId}. ` +
+                `Table: ${modelCtor.getTable()}, PK: ${modelCtor.primaryKey}`
+            )
+          }
+        } else {
+          throw new Error(
+            `Could not determine last insert ID for ${modelCtor.name}. ` +
+              `Driver: ${driverName}, ResultType: ${typeof result}`
+          )
+        }
+      } catch (e) {
+        const driver = connection.getDriver()
+        const driverName = driver.getDriverName()
+        const config = connection.getConfig()
+        if (process.env.DEBUG_ATLAS || process.env.CI) {
+          console.error(
+            `[Atlas] Fallback failed for ${modelCtor.name} on connection ${connectionName} (${driverName}):`,
+            e
+          )
+          console.error(
+            `[Atlas] Connection Config:`,
+            JSON.stringify({ ...config, password: '***' })
+          )
+        }
+        throw new Error(
+          `Failed to set primary key after insert for ${modelCtor.name}. ` +
+            `Conn: ${connectionName}, Driver: ${driverName}. ` +
+            `Original error: ${e instanceof Error ? e.message : String(e)}`
+        )
       }
     }
 
@@ -176,8 +226,12 @@ export class HasPersistence {
       if (currentVersion === undefined || currentVersion === null) {
         currentVersion = 1
       }
-      if (typeof currentVersion === 'number') {
-        ;(this as any)._setAttribute(versionKey, currentVersion + 1)
+      const numericVersion =
+        typeof currentVersion === 'string' ? Number.parseInt(currentVersion, 10) : currentVersion
+
+      if (typeof numericVersion === 'number' && !Number.isNaN(numericVersion)) {
+        ;(this as any)._setAttribute(versionKey, numericVersion + 1)
+        currentVersion = numericVersion
       }
     }
 
@@ -228,31 +282,41 @@ export class HasPersistence {
       return false
     }
 
-    await (this as any).emit('deleting')
-
     const modelCtor = this.constructor as any
-    const softDeletes = modelCtor[SOFT_DELETES_KEY]
-    let result: boolean
+    const connection = DB.connection(modelCtor.connection)
+    const tracer = connection.getTracer()
+    const span = tracer?.startSpan(`Atlas:Delete:${modelCtor.name}`, {
+      'db.system': connection.getDriver().getDriverName(),
+      'db.operation': 'delete',
+      'db.sql.table': modelCtor.getTable(),
+    })
 
-    if (softDeletes) {
-      const column = softDeletes.column || 'deleted_at'
-      ;(this as any)._setAttribute(column, new Date())
-      await this.save()
-      result = true
-    } else {
-      const connection = DB.connection(modelCtor.connection)
-      const affected = await connection
-        .table(modelCtor.getTable())
-        .where(modelCtor.primaryKey, (this as any).getKey())
-        .delete()
-      result = affected > 0
-    }
-    if (result) {
-      this._exists = !softDeletes
-      await (this as any).emit('deleted')
-    }
+    try {
+      await (this as any).emit('deleting')
 
-    return result
+      const softDeletes = modelCtor[SOFT_DELETES_KEY]
+      let result: boolean
+
+      if (softDeletes) {
+        const column = softDeletes.column || 'deleted_at'
+        ;(this as any)._setAttribute(column, new Date())
+        await this.save()
+        result = true
+      } else {
+        const affected = await connection
+          .table(modelCtor.getTable())
+          .where(modelCtor.primaryKey, (this as any).getKey())
+          .delete()
+        result = affected > 0
+      }
+      if (result) {
+        this._exists = !softDeletes
+        await (this as any).emit('deleted')
+      }
+      return result
+    } finally {
+      span?.end()
+    }
   }
 
   /**
@@ -350,7 +414,9 @@ export class HasPersistence {
       // Update attributes (from HasAttributes concern)
       const _attributes = (this as any)._attributes
       if (_attributes) {
-        Object.assign(_attributes, row)
+        // row is a Model instance, we need to extract its _attributes
+        const rowAttributes = (row as any)._attributes || row
+        Object.assign(_attributes, rowAttributes)
       }
 
       // Sync dirty tracker

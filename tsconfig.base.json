@@ -13,14 +13,14 @@
     "jsx": "react-jsx",
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
-    
+
     /* 嚴格檢查選項 - 防止未使用的代碼導致跨包依賴問題 */
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": false,
-    
+
     /* 路徑映射 */
     "baseUrl": ".",
     "paths": {
@@ -36,9 +36,5 @@
       "@gravito/impulse": ["packages/impulse/src/index.ts"]
     }
   },
-  "exclude": [
-    "node_modules",
-    "**/dist/**",
-    "**/node_modules/**"
-  ]
+  "exclude": ["node_modules", "**/dist/**", "**/node_modules/**"]
 }

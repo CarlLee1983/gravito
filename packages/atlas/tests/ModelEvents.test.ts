@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, jest, spyOn, test } from 'bun:test'
+import { afterEach, beforeAll, beforeEach, describe, expect, jest, spyOn, test } from 'bun:test'
 import { DB } from '../src/DB'
 import { Model } from '../src/orm/model/Model'
 
@@ -39,40 +39,51 @@ class EventUser extends Model {
 }
 
 describe('ModelEvents', () => {
-  let mockConnection: any
+  const TEST_CONN = `model_events_${Math.random().toString(36).slice(2)}`
   let mockGrammar: any
-  let connectionSpy: any
   let registrySpy: any
 
-  beforeEach(() => {
-    // Reset DB
+  beforeAll(async () => {
     // @ts-expect-error
-    DB.initialized = false
+    DB.initialized = true
+  })
 
+  beforeEach(() => {
     mockGrammar = {
       compileSelect: jest.fn(() => 'SELECT * FROM users'),
       compileUpdate: jest.fn(() => 'UPDATE users SET name = ? WHERE id = ?'),
       compileInsert: jest.fn(() => 'INSERT INTO users (name) VALUES (?)'),
       compileDelete: jest.fn(() => 'DELETE FROM users WHERE id = ?'),
+      compileAggregate: jest.fn(() => 'SELECT MAX(id) as aggregate FROM users'),
+      getStructuralKey: jest.fn(() => 'mock'),
+      wrapTable: jest.fn((t) => `"${t}"`),
+      wrapColumn: jest.fn((c) => `"${c}"`),
+      getPlaceholder: jest.fn(() => '?'),
     }
 
-    mockConnection = {
-      table: (name: string) => {
-        const { QueryBuilder } = require('../src/query/QueryBuilder')
-        return new QueryBuilder(mockConnection, mockGrammar, name)
-      },
-      raw: jest.fn().mockResolvedValue({ rows: [] }),
-      getGrammar: () => mockGrammar,
-      getDriver: () => ({
-        getGrammar: () => mockGrammar,
-        execute: jest.fn().mockResolvedValue({ affectedRows: 1, rows: [1] }),
-        getDriverName: () => 'mock',
-      }),
-    }
+    DB.addConnection(TEST_CONN, {
+      driver: 'sqlite',
+      database: ':memory:',
+    } as any)
 
-    connectionSpy = spyOn(DB, 'connection').mockReturnValue(mockConnection)
-    // @ts-expect-error
-    DB.initialized = true
+    const conn = DB.connection(TEST_CONN)
+    // @ts-expect-error - inject mock driver
+    conn.driver = {
+      getDriverName: () => 'mock',
+      connect: async () => {},
+      disconnect: async () => {},
+      isConnected: () => true,
+      query: async () => ({ rows: [{ id: 1, name: 'Carl' }], rowCount: 1 }),
+      execute: async () => ({ affectedRows: 1, insertId: 1 }),
+      beginTransaction: async () => {},
+      commit: async () => {},
+      rollback: async () => {},
+      inTransaction: () => false,
+    }
+    // @ts-expect-error - inject mock grammar
+    conn.grammar = mockGrammar
+
+    EventUser.connection = TEST_CONN
 
     const { SchemaRegistry } = require('../src/orm/schema/SchemaRegistry')
     registrySpy = spyOn(SchemaRegistry.prototype, 'get').mockResolvedValue({
@@ -88,8 +99,10 @@ describe('ModelEvents', () => {
   })
 
   afterEach(async () => {
-    connectionSpy.mockRestore()
     registrySpy.mockRestore()
+    await DB.disconnect(TEST_CONN)
+    DB.purge(TEST_CONN)
+    EventUser.connection = undefined
   })
 
   test('it triggers creating and saving events on insert', async () => {

@@ -1,12 +1,12 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Long+Cang&family=Noto+Serif+TC:wght@200;400;600&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Long+Cang&family=Noto+Serif+TC:wght@200;400;600&display=swap");
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 body {
-  background-color: #F2F0EB;
-  color: #0C0C0C;
+  background-color: #f2f0eb;
+  color: #0c0c0c;
   overflow-x: hidden;
 }
 
@@ -26,7 +26,7 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: #D1D5DB;
+  background-color: #d1d5db;
   border-radius: 20px;
 }
 

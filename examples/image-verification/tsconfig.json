@@ -7,9 +7,7 @@
     "skipLibCheck": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "types": [
-      "bun-types"
-    ],
+    "types": ["bun-types"],
     "baseUrl": ".",
     "paths": {
       "@gravito/forge": ["../../packages/forge/src/index.ts"],
@@ -18,7 +16,5 @@
       "@gravito/*": ["../../packages/*/src/index.ts"]
     }
   },
-  "include": [
-    "src/**/*"
-  ]
+  "include": ["src/**/*"]
 }

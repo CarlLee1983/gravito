@@ -74,13 +74,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted } from 'vue';
-import Layout from '../../components/Layout.vue';
-import { useI18n } from '../../composables/useI18n';
+import { computed, ref, onMounted } from 'vue'
+import Layout from '../../components/Layout.vue'
+import { useI18n } from '../../composables/useI18n'
 
-const { t } = useI18n();
+const { t } = useI18n()
 
-const currentTime = ref(new Date().toLocaleTimeString());
+const currentTime = ref(new Date().toLocaleTimeString())
 
 const systems = computed(() => [
   { name: t('info.status.systems.core'), icon: 'i-carbon-api' },
@@ -89,17 +89,13 @@ const systems = computed(() => [
   { name: t('info.status.systems.auth'), icon: 'i-carbon-user-identification' },
   { name: t('info.status.systems.cdn'), icon: 'i-carbon-cloud-satellite' },
   { name: t('info.status.systems.portal'), icon: 'i-carbon-application' },
-]);
+])
 
-const pastDays = [
-  'March 15, 2026',
-  'March 14, 2026',
-  'March 13, 2026',
-];
+const pastDays = ['March 15, 2026', 'March 14, 2026', 'March 13, 2026']
 
 onMounted(() => {
   setInterval(() => {
-    currentTime.value = new Date().toLocaleTimeString();
-  }, 1000);
-});
+    currentTime.value = new Date().toLocaleTimeString()
+  }, 1000)
+})
 </script>

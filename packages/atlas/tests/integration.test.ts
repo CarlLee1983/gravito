@@ -30,6 +30,9 @@ describe('Atlas Exhaustive Integration Test', () => {
       DB.addConnection(CONNECTION_NAME, {
         driver: 'sqlite',
         database: ':memory:',
+        // Disable native driver due to Bun.sql limitation with dynamic SQL
+        // Bun.sql requires tagged template literals and doesn't support parameterized queries
+        useNativeDriver: false,
       })
     }
     Schema.connection(CONNECTION_NAME)

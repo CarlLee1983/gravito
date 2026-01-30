@@ -149,32 +149,32 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onUnmounted } from 'vue';
-import { router } from '@inertiajs/vue3';
-import Layout from '../../components/Layout.vue';
-import { useI18n } from '../../composables/useI18n';
+import { ref, onUnmounted } from 'vue'
+import { router } from '@inertiajs/vue3'
+import Layout from '../../components/Layout.vue'
+import { useI18n } from '../../composables/useI18n'
 
-const { t } = useI18n();
-const scanning = ref(false);
+const { t } = useI18n()
+const scanning = ref(false)
 
 interface CheckinResponse {
-  registration?: any;
-  error?: string;
-  [key: string]: any;
+  registration?: any
+  error?: string
+  [key: string]: any
 }
 
-const verificationResult = ref<CheckinResponse | null>(null);
-const checkingIn = ref(false);
-let html5QrCode: any = null;
-let lastScannedCode = '';
+const verificationResult = ref<CheckinResponse | null>(null)
+const checkingIn = ref(false)
+let html5QrCode: any = null
+let lastScannedCode = ''
 
 const startScanning = async () => {
-  scanning.value = true;
-  verificationResult.value = null;
-  
-  const { Html5Qrcode } = await import('html5-qrcode');
-  html5QrCode = new Html5Qrcode('qr-reader');
-  
+  scanning.value = true
+  verificationResult.value = null
+
+  const { Html5Qrcode } = await import('html5-qrcode')
+  html5QrCode = new Html5Qrcode('qr-reader')
+
   try {
     await html5QrCode.start(
       { facingMode: 'environment' },
@@ -184,79 +184,79 @@ const startScanning = async () => {
       },
       onScanSuccess,
       onScanFailure
-    );
+    )
   } catch (error) {
-    console.error('Failed to start scanner:', error);
-    alert('Failed to start camera. Please check permissions.');
-    scanning.value = false;
+    console.error('Failed to start scanner:', error)
+    alert('Failed to start camera. Please check permissions.')
+    scanning.value = false
   }
-};
+}
 
 const stopScanning = async () => {
   if (html5QrCode) {
     try {
-      await html5QrCode.stop();
+      await html5QrCode.stop()
     } catch (e) {}
-    html5QrCode = null;
+    html5QrCode = null
   }
-  scanning.value = false;
-  lastScannedCode = '';
-};
+  scanning.value = false
+  lastScannedCode = ''
+}
 
 const resetScanner = async () => {
-  verificationResult.value = null;
-  lastScannedCode = '';
-  await startScanning();
-};
+  verificationResult.value = null
+  lastScannedCode = ''
+  await startScanning()
+}
 
 const onScanSuccess = async (decodedText: string) => {
-  if (decodedText === lastScannedCode) return;
-  lastScannedCode = decodedText;
-  
-  await stopScanning();
-  
+  if (decodedText === lastScannedCode) return
+  lastScannedCode = decodedText
+
+  await stopScanning()
+
   try {
     const response = await fetch('/checkin/verify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ qr_code: decodedText }),
-    });
-    
-    const data = (await response.json()) as any;
+    })
+
+    const data = (await response.json()) as any
     if (response.ok) {
-      verificationResult.value = data;
+      verificationResult.value = data
     } else {
-      verificationResult.value = { error: data.error || 'Invalid QR code' };
+      verificationResult.value = { error: data.error || 'Invalid QR code' }
     }
   } catch (error) {
-    verificationResult.value = { error: 'Failed to verify QR code' };
+    verificationResult.value = { error: 'Failed to verify QR code' }
   }
-};
+}
 
-const onScanFailure = () => {};
+const onScanFailure = () => {}
 
 const performCheckIn = async () => {
-  if (!verificationResult.value?.registration) return;
-  checkingIn.value = true;
-  
+  if (!verificationResult.value?.registration) return
+  checkingIn.value = true
+
   try {
     const response = await fetch(`/checkin/${lastScannedCode}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-    });
-    
+    })
+
     if (response.ok) {
-      verificationResult.value.registration.status = 'checked_in';
+      verificationResult.value.registration.status = 'checked_in'
     } else {
-      const data = (await response.json()) as any;
-      alert(data.error || 'Check-in failed');
+      const data = (await response.json()) as any
+      alert(data.error || 'Check-in failed')
     }
   } catch (error) {
-    alert('Failed to perform check-in');
+    alert('Failed to perform check-in')
   } finally {
-    checkingIn.value = false;
+    checkingIn.value = false
   }
-};
+}
 
 const getStatusClasses = (status: string) => {
   const classes: Record<string, string> = {
@@ -265,13 +265,13 @@ const getStatusClasses = (status: string) => {
     cancelled: 'bg-red-100 text-red-700',
     waitlist: 'bg-indigo-100 text-indigo-700',
     checked_in: 'bg-cyan-100 text-cyan-700',
-  };
-  return classes[status] || 'bg-gray-100 text-gray-700';
-};
+  }
+  return classes[status] || 'bg-gray-100 text-gray-700'
+}
 
 onUnmounted(() => {
-  if (html5QrCode) html5QrCode.stop();
-});
+  if (html5QrCode) html5QrCode.stop()
+})
 </script>
 
 <style>

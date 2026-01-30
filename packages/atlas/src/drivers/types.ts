@@ -139,14 +139,146 @@ export interface MongoCursor {
 }
 
 /**
- * Bun SQL Client
+ * Bun SQL Client (Enhanced for Bun 1.3+)
+ * @description Comprehensive type definitions for Bun.sql native driver
  */
 export interface BunSQLClient {
-  query?(sql: string, bindings?: unknown[]): Promise<unknown>
-  unsafe?(sql: string, bindings?: unknown[]): Promise<unknown>
+  // Tagged template literal query (primary API)
+  (strings: TemplateStringsArray, ...values: unknown[]): Promise<BunSQLResult>
+
+  // Dynamic query execution
+  unsafe?(sql: string, bindings?: unknown[]): Promise<BunSQLResult>
+  query?(sql: string, bindings?: unknown[]): Promise<BunSQLResult>
   all?(sql: string, bindings?: unknown[]): Promise<unknown[]>
-  run?(sql: string, bindings?: unknown[]): Promise<unknown>
-  close?(): void
-  end?(): void
-  (sql: string, ...bindings: unknown[]): Promise<unknown>
+  run?(sql: string, bindings?: unknown[]): Promise<BunSQLResult>
+  simple?(strings: TemplateStringsArray, ...values: unknown[]): Promise<BunSQLResult>
+
+  // Prepared statement support
+  prepare?(sql: string): BunSQLPreparedStatement
+
+  // Transaction support
+  transaction?<T>(callback: (sql: BunSQLClient) => Promise<T>): Promise<T>
+  begin?(): Promise<BunSQLTransaction>
+
+  // Connection management
+  close?(): Promise<void>
+  end?(): Promise<void>
+
+  // Connection pool info (read-only)
+  readonly connections?: {
+    idle: number
+    pending: number
+    active: number
+    total: number
+  }
+}
+
+/**
+ * Bun SQL Query Result
+ * @description Result structure returned by Bun.sql queries
+ */
+export interface BunSQLResult {
+  /**
+   * Result rows (iterable)
+   */
+  rows?: unknown[]
+
+  /**
+   * Number of rows affected/returned
+   */
+  rowCount?: number
+  count?: number
+
+  /**
+   * Last inserted ID (for INSERT operations)
+   */
+  lastInsertRowid?: number | bigint
+
+  /**
+   * Number of changed rows (for UPDATE operations)
+   */
+  changes?: number
+
+  /**
+   * Iterator support for streaming
+   */
+  [Symbol.iterator](): Iterator<unknown>
+}
+
+/**
+ * Bun SQL Prepared Statement
+ * @description Prepared statement interface for query optimization
+ */
+export interface BunSQLPreparedStatement {
+  /**
+   * Execute prepared statement and return result
+   */
+  run(...params: unknown[]): Promise<BunSQLResult>
+
+  /**
+   * Execute and return all rows
+   */
+  all(...params: unknown[]): Promise<unknown[]>
+
+  /**
+   * Execute and return first row
+   */
+  get(...params: unknown[]): Promise<unknown | undefined>
+
+  /**
+   * Finalize and release the prepared statement
+   */
+  finalize(): void
+}
+
+/**
+ * Bun SQL Transaction
+ * @description Transaction handle for advanced transaction control
+ */
+export interface BunSQLTransaction {
+  /**
+   * Commit the transaction
+   */
+  commit(): Promise<void>
+
+  /**
+   * Rollback the transaction
+   */
+  rollback(): Promise<void>
+
+  /**
+   * Create a savepoint
+   */
+  savepoint?(name: string): Promise<void>
+
+  /**
+   * Rollback to a savepoint
+   */
+  rollbackTo?(name: string): Promise<void>
+
+  /**
+   * Release a savepoint
+   */
+  release?(name: string): Promise<void>
+}
+
+/**
+ * Bun SQL Pool Configuration
+ * @description Configuration options for connection pool
+ */
+export interface BunSQLPoolConfig {
+  /**
+   * Maximum number of connections in the pool
+   */
+  max?: number
+
+  /**
+   * Maximum time (ms) a connection can be idle before being released
+   */
+  idleTimeout?: number
+
+  /**
+   * Maximum time (ms) to wait for a connection from the pool
+   */
+  connectionTimeout?: number
 }

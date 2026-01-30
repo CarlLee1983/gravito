@@ -107,22 +107,26 @@
 </template>
 
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
-import Layout from '../../components/Layout.vue';
-import QrCodeDisplay from '../../components/QrCodeDisplay.vue';
-import { useI18n } from '../../composables/useI18n';
+import { Link } from '@inertiajs/vue3'
+import Layout from '../../components/Layout.vue'
+import QrCodeDisplay from '../../components/QrCodeDisplay.vue'
+import { useI18n } from '../../composables/useI18n'
 
-const { t } = useI18n();
+const { t } = useI18n()
 
 defineProps<{
-  registration: any;
-}>();
+  registration: any
+}>()
 
 const formatDateTime = (date: string) => {
   return new Date(date).toLocaleString(undefined, {
-    month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit'
-  });
-};
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
 
 const getStatusClasses = (status: string) => {
   const classes: Record<string, string> = {
@@ -131,7 +135,7 @@ const getStatusClasses = (status: string) => {
     cancelled: 'bg-red-500/20 text-red-200',
     waitlist: 'bg-indigo-500/20 text-indigo-200',
     checked_in: 'bg-cyan-500/20 text-cyan-200',
-  };
-  return classes[status] || 'bg-white/10 text-white';
-};
+  }
+  return classes[status] || 'bg-white/10 text-white'
+}
 </script>

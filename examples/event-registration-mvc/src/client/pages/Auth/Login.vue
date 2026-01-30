@@ -115,23 +115,23 @@
 </template>
 
 <script setup lang="ts">
-import { reactive } from 'vue';
-import { Link, router } from '@inertiajs/vue3';
-import Layout from '../../components/Layout.vue';
-import { useI18n } from '../../composables/useI18n';
+import { reactive } from 'vue'
+import { Link, router } from '@inertiajs/vue3'
+import Layout from '../../components/Layout.vue'
+import { useI18n } from '../../composables/useI18n'
 
-const { t } = useI18n();
+const { t } = useI18n()
 
 const form = reactive({
   email: '',
   password: '',
-  processing: false
-});
+  processing: false,
+})
 
 const submit = () => {
-  form.processing = true;
+  form.processing = true
   router.post('/login', form, {
-    onFinish: () => form.processing = false
-  });
-};
+    onFinish: () => (form.processing = false),
+  })
+}
 </script>

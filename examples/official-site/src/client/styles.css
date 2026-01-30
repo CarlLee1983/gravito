@@ -7,366 +7,408 @@
  */
 
 @layer base {
-    :root {
-        --core-glow: #6366f1;
-        --core-glow-rgb: 99, 102, 241;
-        --bg-deep: #020305;
-        --stellar-white: #f8fafc;
-        --stellar-muted: #94a3b8;
-        
-        /* Cosmic Theme Variables */
-        --color-void: #030303;
-        --color-singularity: #00F0FF;
-        --color-event: #7000FF;
-        --color-panel: #1A1A1A;
-    }
+  :root {
+    --core-glow: #6366f1;
+    --core-glow-rgb: 99, 102, 241;
+    --bg-deep: #020305;
+    --stellar-white: #f8fafc;
+    --stellar-muted: #94a3b8;
 
-    body {
-        @apply antialiased text-gray-900 bg-void;
-        /* 
+    /* Cosmic Theme Variables */
+    --color-void: #030303;
+    --color-singularity: #00f0ff;
+    --color-event: #7000ff;
+    --color-panel: #1a1a1a;
+  }
+
+  body {
+    @apply antialiased text-gray-900 bg-void;
+    /* 
          * Smooth Entry:
          * Removed translateY(5px) to eliminate the "pop" jump effect reported by the user.
          */
-        animation: fadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-        font-feature-settings: "ss01", "ss02", "cv01", "cv02";
+    animation: fadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    font-feature-settings: "ss01", "ss02", "cv01", "cv02";
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+      filter: blur(10px);
     }
 
-    @keyframes fadeIn {
-        from {
-            opacity: 0;
-            transform: translateY(10px);
-            filter: blur(10px);
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0);
-            filter: blur(0);
-        }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+      filter: blur(0);
     }
+  }
 
-    /* 
+  /* 
      * 🔥 View Transitions:
      * Enable smooth cross-fade between pages for modern browsers,
      * making the static site feel like a high-end application.
      */
 
-    /* Dark mode support needs to be handled via media query or selector in v4 if not using variant */
-    @media (prefers-color-scheme: dark) {
-        body {
-            @apply bg-void text-gray-100;
-        }
+  /* Dark mode support needs to be handled via media query or selector in v4 if not using variant */
+  @media (prefers-color-scheme: dark) {
+    body {
+      @apply bg-void text-gray-100;
     }
+  }
 
-    /* 
+  /* 
      * Code Block & Syntax Highlighting Fixes 
      * 1. Prevent inline-code styles from leaking into pre blocks
      * 2. Fix line-background fragments in shiki/highlighted blocks
      */
-    .prose pre {
-        @apply !bg-transparent !p-0 !m-0 overflow-x-auto scroll-smooth;
-    }
+  .prose pre {
+    @apply !bg-transparent !p-0 !m-0 overflow-x-auto scroll-smooth;
+  }
 
-    .prose pre code {
-        @apply !bg-transparent !p-0 !font-normal;
-        display: block;
-        min-width: 100%;
-        line-height: 1.7;
-        min-height: 0 !important;
-        height: auto !important;
-        max-height: none !important;
-        font-family: 'JetBrains Mono', 'Fira Code', 'Menlo', 'Monaco', 'Consolas', monospace;
-        -webkit-font-smoothing: initial;
-    }
+  .prose pre code {
+    @apply !bg-transparent !p-0 !font-normal;
+    display: block;
+    min-width: 100%;
+    line-height: 1.7;
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    font-family: "JetBrains Mono", "Fira Code", "Menlo", "Monaco", "Consolas", monospace;
+    -webkit-font-smoothing: initial;
+  }
 
-    /* Fix shiki-generated div height issue inside code blocks */
-    /* Use display: contents to make div not affect layout */
-    .prose pre code>div,
-    .prose pre code div {
-        display: contents !important;
-    }
+  /* Fix shiki-generated div height issue inside code blocks */
+  /* Use display: contents to make div not affect layout */
+  .prose pre code > div,
+  .prose pre code div {
+    display: contents !important;
+  }
 
-    /* Fallback: if contents doesn't work, use block with forced height */
-    .prose pre code>div:not(:empty),
-    .prose pre code div:not(:empty) {
-        min-height: 0 !important;
-        height: fit-content !important;
-        max-height: none !important;
-        line-height: 1.5 !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        vertical-align: baseline !important;
-    }
+  /* Fallback: if contents doesn't work, use block with forced height */
+  .prose pre code > div:not(:empty),
+  .prose pre code div:not(:empty) {
+    min-height: 0 !important;
+    height: fit-content !important;
+    max-height: none !important;
+    line-height: 1.5 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    vertical-align: baseline !important;
+  }
 
-    /* Also fix for shiki-container wrapper */
-    .shiki-container pre code {
-        min-height: 0 !important;
-        height: auto !important;
-        max-height: none !important;
-    }
+  /* Also fix for shiki-container wrapper */
+  .shiki-container pre code {
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+  }
 
-    .shiki-container pre code>div,
-    .shiki-container pre code div {
-        display: contents !important;
-    }
+  .shiki-container pre code > div,
+  .shiki-container pre code div {
+    display: contents !important;
+  }
 
-    .prose pre code::before,
-    .prose pre code::after {
-        content: none !important;
-    }
+  .prose pre code::before,
+  .prose pre code::after {
+    content: none !important;
+  }
 
-    /* Styles specifically for INLINE code (not inside pre) */
-    .prose :not(pre)>code {
-        @apply text-cyan-400 bg-cyan-500/10 px-1.5 py-0.5 rounded font-mono border border-cyan-500/20;
-        font-size: 0.85em;
-        vertical-align: middle;
-    }
+  /* Styles specifically for INLINE code (not inside pre) */
+  .prose :not(pre) > code {
+    @apply text-cyan-400 bg-cyan-500/10 px-1.5 py-0.5 rounded font-mono border border-cyan-500/20;
+    font-size: 0.85em;
+    vertical-align: middle;
+  }
 
-    .prose :not(pre)>code::before,
-    .prose :not(pre)>code::after {
-        content: none !important;
-    }
+  .prose :not(pre) > code::before,
+  .prose :not(pre) > code::after {
+    content: none !important;
+  }
 
-    /* Prevents font-size leaks from prose into code blocks while preserving colors */
-    .prose pre * {
-        font-size: inherit !important;
-        font-weight: inherit !important;
-        font-family: inherit !important;
-        text-transform: none !important;
-    }
+  /* Prevents font-size leaks from prose into code blocks while preserving colors */
+  .prose pre * {
+    font-size: inherit !important;
+    font-weight: inherit !important;
+    font-family: inherit !important;
+    text-transform: none !important;
+  }
 
-    /* Target specific tags that the markdown parser/highlighter might use */
-    .prose pre h1,
-    .prose pre h2,
-    .prose pre h3,
-    .prose pre strong,
-    .prose pre em,
-    .prose pre b,
-    .prose pre i {
-        @apply !tracking-normal;
-        font-size: inherit !important;
-        font-weight: inherit !important;
-        font-style: inherit !important;
-    }
+  /* Target specific tags that the markdown parser/highlighter might use */
+  .prose pre h1,
+  .prose pre h2,
+  .prose pre h3,
+  .prose pre strong,
+  .prose pre em,
+  .prose pre b,
+  .prose pre i {
+    @apply !tracking-normal;
+    font-size: inherit !important;
+    font-weight: inherit !important;
+    font-style: inherit !important;
+  }
 
-    /* 
+  /* 
      * 🌌 Singularity Paradox: Aggressive Visual Effects
      */
-    .glitch-text {
-        mix-blend-mode: difference;
-        letter-spacing: -0.06em;
-        position: relative;
-    }
+  .glitch-text {
+    mix-blend-mode: difference;
+    letter-spacing: -0.06em;
+    position: relative;
+  }
 
-    .space-grid-warp {
-        position: fixed;
-        inset: 0;
-        z-index: -1;
-        perspective: 1000px;
-        pointer-events: none;
-        background: var(--bg-deep);
-    }
+  .space-grid-warp {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    perspective: 1000px;
+    pointer-events: none;
+    background: var(--bg-deep);
+  }
 
-    .grid-warp-inner {
-        position: absolute;
-        inset: -100%;
-        background-image: 
-            linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-        background-size: 80px 80px;
-        transform: rotateX(20deg);
-        mask-image: radial-gradient(circle at center, black 0%, transparent 80%);
-        -webkit-mask-image: radial-gradient(circle at center, black 0%, transparent 80%);
-    }
+  .grid-warp-inner {
+    position: absolute;
+    inset: -100%;
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 80px 80px;
+    transform: rotateX(20deg);
+    mask-image: radial-gradient(circle at center, black 0%, transparent 80%);
+    -webkit-mask-image: radial-gradient(circle at center, black 0%, transparent 80%);
+  }
 
-    /* 
+  /* 
      * Ecosystem Galaxy Cards 
      * Premium presentation for Kinetic Modules
      */
-    .ecosystem-grid {
-        @apply grid grid-cols-1 md:grid-cols-2 gap-8 my-16;
-    }
+  .ecosystem-grid {
+    @apply grid grid-cols-1 md:grid-cols-2 gap-8 my-16;
+  }
 
-    .module-card {
-        @apply relative overflow-hidden rounded-[2rem] border border-white/5 bg-white/[0.02] p-8 backdrop-blur-md transition-all duration-500 hover:border-singularity/30 hover:bg-white/[0.05];
-        box-shadow: 0 20px 40px -20px rgba(0, 0, 0, 0.5);
-    }
+  .module-card {
+    @apply relative overflow-hidden rounded-[2rem] border border-white/5 bg-white/[0.02] p-8 backdrop-blur-md transition-all duration-500 hover:border-singularity/30 hover:bg-white/[0.05];
+    box-shadow: 0 20px 40px -20px rgba(0, 0, 0, 0.5);
+  }
 
-    .module-card::before {
-        content: '';
-        @apply absolute inset-0 bg-gradient-to-br from-white/[0.05] to-transparent opacity-0 transition-opacity duration-500;
-    }
+  .module-card::before {
+    content: "";
+    @apply absolute inset-0 bg-gradient-to-br from-white/[0.05] to-transparent opacity-0 transition-opacity duration-500;
+  }
 
-    .module-card:hover::before {
-        @apply opacity-100;
-    }
+  .module-card:hover::before {
+    @apply opacity-100;
+  }
 
-    .module-card .card-accent {
-        @apply absolute top-0 left-0 w-1.5 h-full bg-gradient-to-b from-singularity to-transparent opacity-30 transition-all duration-500;
-    }
+  .module-card .card-accent {
+    @apply absolute top-0 left-0 w-1.5 h-full bg-gradient-to-b from-singularity to-transparent opacity-30 transition-all duration-500;
+  }
 
-    .module-card:hover .card-accent {
-        @apply opacity-100 w-2;
-    }
+  .module-card:hover .card-accent {
+    @apply opacity-100 w-2;
+  }
 
-    .module-card .module-code {
-        @apply text-[10px] font-black uppercase tracking-[0.3em] text-singularity mb-2 block;
-    }
+  .module-card .module-code {
+    @apply text-[10px] font-black uppercase tracking-[0.3em] text-singularity mb-2 block;
+  }
 
-    .module-card .module-title {
-        @apply text-2xl font-bold text-white mb-4 flex items-center gap-3;
-    }
+  .module-card .module-title {
+    @apply text-2xl font-bold text-white mb-4 flex items-center gap-3;
+  }
 
-    .module-card .module-pkg {
-        @apply font-mono text-[11px] text-gray-500 bg-black/40 px-3 py-1 rounded-full border border-white/5 mb-6 inline-block transition-colors;
-    }
+  .module-card .module-pkg {
+    @apply font-mono text-[11px] text-gray-500 bg-black/40 px-3 py-1 rounded-full border border-white/5 mb-6 inline-block transition-colors;
+  }
 
-    .module-card:hover .module-pkg {
-        @apply text-gray-300 border-white/10;
-    }
+  .module-card:hover .module-pkg {
+    @apply text-gray-300 border-white/10;
+  }
 
-    .module-card .module-desc {
-        @apply text-sm text-gray-400 leading-relaxed transition-colors;
-    }
+  .module-card .module-desc {
+    @apply text-sm text-gray-400 leading-relaxed transition-colors;
+  }
 
-    .module-card:hover .module-desc {
-        @apply text-gray-300;
-    }
+  .module-card:hover .module-desc {
+    @apply text-gray-300;
+  }
 
-    /* Modifiers for different module types */
-    .module-card.data .card-accent {
-        @apply from-amber-400;
-    }
+  /* Modifiers for different module types */
+  .module-card.data .card-accent {
+    @apply from-amber-400;
+  }
 
-    .module-card.data .module-code {
-        @apply text-amber-400;
-    }
+  .module-card.data .module-code {
+    @apply text-amber-400;
+  }
 
-    .module-card.frontend .card-accent {
-        @apply from-purple-500;
-    }
+  .module-card.frontend .card-accent {
+    @apply from-purple-500;
+  }
 
-    .module-card.frontend .module-code {
-        @apply text-purple-500;
-    }
+  .module-card.frontend .module-code {
+    @apply text-purple-500;
+  }
 
-    .module-card.security .card-accent {
-        @apply from-emerald-400;
-    }
+  .module-card.security .card-accent {
+    @apply from-emerald-400;
+  }
 
-    .module-card.security .module-code {
-        @apply text-emerald-400;
-    }
+  .module-card.security .module-code {
+    @apply text-emerald-400;
+  }
 
-    .module-card.comm .card-accent {
-        @apply from-orange-500;
-    }
+  .module-card.comm .card-accent {
+    @apply from-orange-500;
+  }
 
-    .module-card.comm .module-code {
-        @apply text-orange-500;
-    }
+  .module-card.comm .module-code {
+    @apply text-orange-500;
+  }
 
-    .module-card.env .card-accent {
-        @apply from-pink-500;
-    }
+  .module-card.env .card-accent {
+    @apply from-pink-500;
+  }
 
-    .module-card.env .module-code {
-        @apply text-pink-500;
-    }
+  .module-card.env .module-code {
+    @apply text-pink-500;
+  }
 }
 
 @layer utilities {
+  /* 高科技六角形網格背景 */
+  .bg-hex-grid {
+    background-image:
+      linear-gradient(
+        30deg,
+        rgba(255, 255, 255, 0.03) 12%,
+        transparent 12.5%,
+        transparent 87%,
+        rgba(255, 255, 255, 0.03) 87.5%,
+        rgba(255, 255, 255, 0.03) 100%
+      ),
+      linear-gradient(
+        150deg,
+        rgba(255, 255, 255, 0.03) 12%,
+        transparent 12.5%,
+        transparent 87%,
+        rgba(255, 255, 255, 0.03) 87.5%,
+        rgba(255, 255, 255, 0.03) 100%
+      ),
+      linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.03) 12%,
+        transparent 12.5%,
+        transparent 87%,
+        rgba(255, 255, 255, 0.03) 87.5%,
+        rgba(255, 255, 255, 0.03) 100%
+      );
+    background-size:
+      60px 104px,
+      60px 104px,
+      120px 60px;
+    background-position:
+      0 0,
+      0 0,
+      0 0;
+    /* 漸層遮罩，讓網格在上下邊緣淡出 */
+    mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%);
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      transparent 0%,
+      black 20%,
+      black 80%,
+      transparent 100%
+    );
+  }
 
-    /* 高科技六角形網格背景 */
-    .bg-hex-grid {
-        background-image:
-            linear-gradient(30deg, rgba(255, 255, 255, 0.03) 12%, transparent 12.5%, transparent 87%, rgba(255, 255, 255, 0.03) 87.5%, rgba(255, 255, 255, 0.03) 100%),
-            linear-gradient(150deg, rgba(255, 255, 255, 0.03) 12%, transparent 12.5%, transparent 87%, rgba(255, 255, 255, 0.03) 87.5%, rgba(255, 255, 255, 0.03) 100%),
-            linear-gradient(90deg, rgba(255, 255, 255, 0.03) 12%, transparent 12.5%, transparent 87%, rgba(255, 255, 255, 0.03) 87.5%, rgba(255, 255, 255, 0.03) 100%);
-        background-size: 60px 104px, 60px 104px, 120px 60px;
-        background-position: 0 0, 0 0, 0 0;
-        /* 漸層遮罩，讓網格在上下邊緣淡出 */
-        mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%);
-        -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%);
-    }
+  /* 簡化版：點狀網格（如果六角形太複雜） */
+  .bg-hex-grid-simple {
+    background-image: radial-gradient(
+      circle at center,
+      rgba(255, 255, 255, 0.03) 1px,
+      transparent 1px
+    );
+    background-size: 30px 30px;
+    /* 漸層遮罩，讓網格在上下邊緣淡出 */
+    mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%);
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      transparent 0%,
+      black 20%,
+      black 80%,
+      transparent 100%
+    );
+  }
 
-    /* 簡化版：點狀網格（如果六角形太複雜） */
-    .bg-hex-grid-simple {
-        background-image: radial-gradient(circle at center, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-        background-size: 30px 30px;
-        /* 漸層遮罩，讓網格在上下邊緣淡出 */
-        mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%);
-        -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%);
-    }
-
-    /* 
+  /* 
      * Documentation Table Overhaul 
      * Improving readability for property/type/description tables
      */
-    .docs-table-wrapper {
-        @apply my-12 overflow-hidden rounded-[2rem] border border-white/5 bg-panel/30 backdrop-blur-2xl transition-all duration-700 hover:border-white/10;
-        box-shadow: 0 32px 64px -16px rgba(0, 0, 0, 0.6);
-    }
+  .docs-table-wrapper {
+    @apply my-12 overflow-hidden rounded-[2rem] border border-white/5 bg-panel/30 backdrop-blur-2xl transition-all duration-700 hover:border-white/10;
+    box-shadow: 0 32px 64px -16px rgba(0, 0, 0, 0.6);
+  }
 
-    .docs-table {
-        @apply w-full border-collapse text-left table-auto;
-    }
+  .docs-table {
+    @apply w-full border-collapse text-left table-auto;
+  }
 
-    .docs-table th {
-        @apply border-b border-white/10 bg-white/[0.05] backdrop-blur-xl px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/40;
-    }
+  .docs-table th {
+    @apply border-b border-white/10 bg-white/[0.05] backdrop-blur-xl px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/40;
+  }
 
-    .docs-table td {
-        @apply border-b border-white/[0.04] px-8 py-6 text-[15px] leading-relaxed text-gray-400 align-top transition-all duration-500;
-    }
+  .docs-table td {
+    @apply border-b border-white/[0.04] px-8 py-6 text-[15px] leading-relaxed text-gray-400 align-top transition-all duration-500;
+  }
 
-    .docs-table tr:last-child td {
-        @apply border-b-0;
-    }
+  .docs-table tr:last-child td {
+    @apply border-b-0;
+  }
 
-    .docs-table tr:hover td {
-        @apply bg-white/[0.02] text-gray-100;
-    }
+  .docs-table tr:hover td {
+    @apply bg-white/[0.02] text-gray-100;
+  }
 
-    /* Column 1: Property Name - Architectural separation */
-    .docs-table td:first-child,
-    .docs-table th:first-child {
-        @apply w-[25%] min-w-[180px] font-mono font-bold text-[14px] text-singularity/90 tracking-tight border-r border-white/[0.03] break-all;
-    }
+  /* Column 1: Property Name - Architectural separation */
+  .docs-table td:first-child,
+  .docs-table th:first-child {
+    @apply w-[25%] min-w-[180px] font-mono font-bold text-[14px] text-singularity/90 tracking-tight border-r border-white/[0.03] break-all;
+  }
 
-    /* Column 2: Type Definition - Technical styling */
-    .docs-table .type-cell {
-        @apply w-[25%] min-w-[180px] font-mono text-[13px] text-purple-400/90 break-words;
-    }
+  /* Column 2: Type Definition - Technical styling */
+  .docs-table .type-cell {
+    @apply w-[25%] min-w-[180px] font-mono text-[13px] text-purple-400/90 break-words;
+  }
 
-    /* Column 3: Description */
-    .docs-table td:last-child {
-        @apply text-gray-400/80;
-    }
+  /* Column 3: Description */
+  .docs-table td:last-child {
+    @apply text-gray-400/80;
+  }
 
-    /* Custom Scrollbar */
-    .h-scrollbar::-webkit-scrollbar {
-        height: 6px;
-    }
+  /* Custom Scrollbar */
+  .h-scrollbar::-webkit-scrollbar {
+    height: 6px;
+  }
 
-    .h-scrollbar::-webkit-scrollbar-track {
-        @apply bg-void/80 rounded-full;
-    }
+  .h-scrollbar::-webkit-scrollbar-track {
+    @apply bg-void/80 rounded-full;
+  }
 
-    .h-scrollbar::-webkit-scrollbar-thumb {
-        @apply bg-white/5 rounded-full hover:bg-singularity/30 transition-all border-2 border-transparent bg-clip-padding;
-    }
+  .h-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-white/5 rounded-full hover:bg-singularity/30 transition-all border-2 border-transparent bg-clip-padding;
+  }
 
-    /* Scrollbar Hide Utility */
-    .scrollbar-hide {
-        -ms-overflow-style: none;
-        /* IE and Edge */
-        scrollbar-width: none;
-        /* Firefox */
-    }
+  /* Scrollbar Hide Utility */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
+  }
 
-    .scrollbar-hide::-webkit-scrollbar {
-        display: none;
-        /* Chrome, Safari and Opera */
-    }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+    /* Chrome, Safari and Opera */
+  }
 }

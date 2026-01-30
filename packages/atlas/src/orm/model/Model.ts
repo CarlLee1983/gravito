@@ -1,6 +1,6 @@
 import { DB } from '../../DB'
 import { Factory } from '../../seed/Factory'
-import type { QueryBuilderContract } from '../../types'
+import type { Operator, QueryBuilderContract } from '../../types'
 import { SchemaRegistry } from '../schema/SchemaRegistry'
 import type { ColumnType, TableSchema } from '../schema/types'
 import {
@@ -48,14 +48,17 @@ export interface ModelStatic<T extends Model> {
   query(): QueryBuilderContract<T>
   where(
     column: string | Record<string, unknown>,
-    operatorOrValue?: any,
+    operatorOrValue?: Operator | unknown,
     value?: unknown
   ): QueryBuilderContract<T>
 }
 
 /**
- * Base Model Class
- * Active Record implementation with Proxy-based Smart Guard
+ * Base Model Class providing Active Record implementation.
+ *
+ * Uses a Proxy-based Smart Guard to intercept property access, enabling
+ * dynamic attributes, accessors, mutators, and relationship lazy loading.
+ * Provides a fluent interface for database persistence and querying.
  *
  * @example
  * ```typescript
@@ -64,23 +67,15 @@ export interface ModelStatic<T extends Model> {
  *
  *   declare id: number
  *   declare name: string
- *   declare email: string
  * }
  *
- * // Create
+ * // Persistence
  * const user = new User()
  * user.name = 'Carl'
  * await user.save()
  *
- * // Find
+ * // Retrieval
  * const found = await User.find(1)
- *
- * // Update
- * found.name = 'Updated'
- * await found.save()
- *
- * // Delete
- * await found.delete()
  * ```
  */
 // biome-ignore lint/suspicious/noUnsafeDeclarationMerging: Intentional for Mixin pattern
@@ -92,33 +87,60 @@ export abstract class Model {
   // Static Configuration
   // ============================================================================
 
-  /** Table name */
+  /**
+   * Database table name associated with the model.
+   */
   static table: string
   static tableName: string
 
-  /** Primary key column */
+  /**
+   * Name of the primary key column.
+   */
   static primaryKey = 'id'
-  static hidden: string[] = []
-  static visible: string[] = []
-  static appends: string[] = []
-  static observers: any[] = []
 
-  /** Enable automatic timestamps
-   * - `true`: Automatically manage both `created_at` and `updated_at`
-   * - `false`: Disable automatic timestamps
-   * - `'created_only'`: Only automatically manage `created_at` (no `updated_at`)
+  /**
+   * Attributes that should be hidden from serialization.
+   */
+  static hidden: string[] = []
+
+  /**
+   * Attributes that should be visible in serialization, overriding hidden.
+   */
+  static visible: string[] = []
+
+  /**
+   * Custom accessors to append to serialized output.
+   */
+  static appends: string[] = []
+
+  /**
+   * Observer classes to monitor model lifecycle events.
+   */
+  static observers: unknown[] = []
+
+  /**
+   * Controls automatic timestamp management.
+   * - `true`: Manages both created_at and updated_at.
+   * - `false`: Disables timestamp management.
+   * - `'created_only'`: Manages created_at but ignores updated_at.
    */
   static timestamps: boolean | 'created_only' = true
   static createdAtColumn = 'created_at'
   static updatedAtColumn = 'updated_at'
 
-  /** Attribute casting definition */
+  /**
+   * Attribute type casting definitions.
+   */
   static casts: Record<string, string> = {}
 
-  /** Database connection name */
+  /**
+   * Database connection name to use for this model.
+   */
   static connection?: string
 
-  /** Enable strict mode (throw on unknown columns) */
+  /**
+   * When enabled, throws an error if an attribute is set that does not exist in schema.
+   */
   static strictMode = true
 
   // ============================================================================
@@ -126,8 +148,8 @@ export abstract class Model {
   // ============================================================================
 
   /**
-   * 快取屬性描述符查找結果，減少原型鏈遍歷
-   * Key: 原型鏈物件，Value: Map<屬性名稱, 描述符>
+   * Caches property descriptors to avoid expensive prototype chain traversals.
+   * Uses WeakMap to prevent memory leaks by keying off the prototype object.
    */
   private static _descriptorCache = new WeakMap<
     object,
@@ -135,8 +157,8 @@ export abstract class Model {
   >()
 
   /**
-   * 快取 studly case 轉換結果
-   * Key: 原始屬性名稱，Value: Studly case 轉換後的屬性名稱
+   * Caches property name transformations to StudlyCase.
+   * Prevents repeated regex execution for accessor/mutator lookups.
    */
   private static _studlyCache = new Map<string, string>()
 
@@ -144,13 +166,19 @@ export abstract class Model {
   // Instance State
   // ============================================================================
 
-  /** Model attributes */
+  /**
+   * Internal storage for model attribute values.
+   */
   protected _attributes: ModelAttributes = {}
 
-  /** Dirty tracker */
+  /**
+   * Tracks modified attributes for efficient delta updates.
+   */
   protected _dirtyTracker: DirtyTracker<ModelAttributes>
 
-  /** Cached schema */
+  /**
+   * Cached table schema metadata.
+   */
   private _schema?: TableSchema
   private _schemaPromise?: Promise<TableSchema>
 
@@ -163,15 +191,13 @@ export abstract class Model {
   // ============================================================================
 
   /**
-   * Converts property name to Studly case with caching for performance.
+   * Converts a property name to StudlyCase format with caching.
    *
-   * Transforms snake_case and camelCase to StudlyCase format used for
-   * accessor/mutator method names (e.g., "first_name" -> "FirstName").
-   * Caches results to avoid repeated regex operations, providing 15-25%
-   * performance improvement for frequent property access.
+   * Used primarily for resolving accessor/mutator methods (e.g., "first_name" -> "FirstName").
+   * Performance-critical as it's called on every property access through the Proxy.
    *
-   * @param prop - Property name to convert
-   * @returns Studly case formatted property name
+   * @param prop - The property name to transform.
+   * @returns The transformed name in StudlyCase.
    * @internal
    */
   private static _toStudlyCase(prop: string): string {
@@ -185,41 +211,37 @@ export abstract class Model {
   }
 
   /**
-   * Retrieves property descriptor from prototype chain with caching.
-   *
-   * Caches descriptor lookups to avoid repeated prototype chain traversal
-   * during Proxy property access. Uses WeakMap to prevent memory leaks while
-   * providing significant performance improvement for frequently accessed properties.
-   *
-   * @param proto - Prototype object to search
-   * @param prop - Property name or symbol to find
-   * @returns Property descriptor if found, undefined otherwise
-   * @internal
-   */
-  /**
-   * 屬性名稱：不快取 descriptor，以免測試中 spyOn 時仍取到舊引用
+   * Properties that should bypass the descriptor cache.
+   * Necessary for methods frequently mocked in tests (like spyOn).
    */
   private static _descriptorCacheSkip = new Set<string | symbol>(['save', 'delete', 'restore'])
 
+  /**
+   * Retrieves a property descriptor from the prototype chain with caching.
+   *
+   * Optimizes the Proxy 'get' trap by reducing prototype lookups for methods
+   * and computed properties.
+   *
+   * @param proto - The prototype object to search.
+   * @param prop - The property name or symbol.
+   * @returns The descriptor if found, otherwise undefined.
+   * @internal
+   */
   private static _getDescriptorFromPrototype(
     proto: object,
     prop: string | symbol
   ): PropertyDescriptor | undefined {
-    // 測試常用 spy 的屬性不快取，避免 spyOn 後仍取到舊 descriptor
     if (Model._descriptorCacheSkip.has(prop)) {
       return Object.getOwnPropertyDescriptor(proto, prop)
     }
 
-    // 檢查快取
     let protoCache = Model._descriptorCache.get(proto)
     if (protoCache?.has(prop)) {
       return protoCache.get(prop)
     }
 
-    // 如果沒有快取，進行查找
     const descriptor = Object.getOwnPropertyDescriptor(proto, prop)
 
-    // 建立或更新快取
     if (!protoCache) {
       protoCache = new Map()
       Model._descriptorCache.set(proto, protoCache)
@@ -234,11 +256,17 @@ export abstract class Model {
   // ============================================================================
 
   /**
-   * Instantiate a new model instance without persisting it to the database.
+   * Creates a new model instance without persisting it.
    *
-   * @template T - The model type.
-   * @param attributes - Initial attribute values.
+   * Wraps the instance in a Proxy to enable dynamic attribute handling.
+   *
+   * @param attributes - Initial data for the model.
    * @returns A proxied model instance.
+   *
+   * @example
+   * ```typescript
+   * const user = User.make({ name: 'Carl' });
+   * ```
    */
   static make<T extends Model>(
     this: ModelConstructor<T>,
@@ -249,11 +277,16 @@ export abstract class Model {
   }
 
   /**
-   * Create a new model instance and persist it to the database immediately.
+   * Creates and immediately persists a new model instance.
    *
-   * @template T - The model type.
-   * @param attributes - Initial attribute values.
-   * @returns Promise resolving to the saved model instance.
+   * @param attributes - Data for the new record.
+   * @returns The saved model instance.
+   * @throws {DatabaseError} If persistence fails.
+   *
+   * @example
+   * ```typescript
+   * const user = await User.create({ name: 'Carl' });
+   * ```
    */
   static async create<T extends Model>(
     this: ModelConstructor<T>,
@@ -265,32 +298,44 @@ export abstract class Model {
   }
 
   /**
-   * Create a model instance from a raw database row.
-   * Marks the model as existing and syncs the dirty tracker.
+   * Initializes a model instance from existing database data.
    *
-   * @template T - The model type.
-   * @param row - Raw data from the database.
-   * @returns A proxied model instance.
+   * Marks the model as existing and synchronizes the dirty tracker.
+   * Triggers the 'retrieved' event.
+   *
+   * @param row - Raw data retrieved from the database.
+   * @returns A proxied model instance ready for updates.
+   *
+   * @example
+   * ```typescript
+   * const user = User.hydrate(dbRow);
+   * ```
    */
   static hydrate<T extends Model>(this: ModelConstructor<T>, row: ModelAttributes): T {
     const instance = new this()
     const proxy = instance._createProxy(row, true)
 
-    // Trigger retrieved event (async)
     void (proxy as any).emit?.('retrieved')
 
     return proxy
   }
 
   /**
-   * Create proxy wrapper for Smart Guard
+   * Configures the Proxy wrapper for the model instance.
+   *
+   * Implements the Smart Guard pattern to route property access to attributes,
+   * relations, methods, or accessors based on priority.
+   *
+   * @param attributes - Initial attribute values.
+   * @param exists - Whether the model exists in the database.
+   * @returns The proxied instance.
+   * @internal
    */
   protected _createProxy<T extends Model>(
     this: T,
     attributes: Partial<ModelAttributes>,
     exists: boolean
   ): T {
-    // Cast initial attributes if they exist
     const modelCtor = this.constructor as typeof Model
     const castedAttributes = { ...attributes }
 
@@ -302,31 +347,25 @@ export abstract class Model {
       }
     }
 
-    // Set initial state
     this._attributes = castedAttributes
     ;(this as any)._exists = exists
 
     if (exists) {
-      this._dirtyTracker.setOriginal(attributes)
+      this._dirtyTracker.setOriginal(castedAttributes)
     }
 
     const model = this
 
     return new Proxy(this, {
       get(target, prop: string | symbol, receiver) {
-        // 1. Return internal properties (including _attributes, _exists, etc.)
         if (typeof prop === 'symbol' || (typeof prop === 'string' && prop.startsWith('_'))) {
           return Reflect.get(target, prop)
         }
 
-        // 2. Explicitly handle constructor to preserve class identity
         if (prop === 'constructor') {
           return target.constructor
         }
 
-        // 3. Check for instance getters/methods first
-        // We prioritize methods like save(), delete(), find() etc. from the prototype
-        // 使用快取減少原型鏈遍歷開銷
         let proto = Object.getPrototypeOf(target)
         while (proto && proto !== Object.prototype) {
           const descriptor = Model._getDescriptorFromPrototype(proto, prop)
@@ -339,27 +378,22 @@ export abstract class Model {
           proto = Object.getPrototypeOf(proto)
         }
 
-        // 4. Check for Accessors (get[Name]Attribute)
-        // 使用快取的 studly case 轉換
         if (typeof prop === 'string') {
           const studly = Model._toStudlyCase(prop)
           const accessor = `get${studly}Attribute`
-          // Check if accessor exists on the instance (prototype)
           if (typeof (target as any)[accessor] === 'function') {
             const raw = model._attributes[prop]
-            // Bind to receiver (the proxy) to allow access to other attributes
             return (target as any)[accessor].call(receiver, raw)
           }
         }
 
-        // 5. Return from attributes if it exists
         if (typeof prop === 'string' && prop in model._attributes) {
           return model._attributes[prop]
         }
 
         const relations = getRelationships(modelCtor)
         if (typeof prop === 'string' && relations.has(prop)) {
-          const builderFn = (..._args: any[]) => {
+          const builderFn = (..._args: unknown[]) => {
             const meta = relations.get(prop)!
             const type = meta.type
 
@@ -382,13 +416,14 @@ export abstract class Model {
             }
 
             const Related = meta.related?.()
-            // Call hasOne, hasMany, belongsTo, or belongsToMany
             return (receiver as any)[type](Related, meta.foreignKey, meta.localKey)
           }
 
-          // Make it thenable for property-style lazy loading: await user.posts
           // biome-ignore lint/suspicious/noThenProperty: Intentional thenable for property-style lazy loading
-          ;(builderFn as any).then = async (resolve: any, reject: any) => {
+          ;(builderFn as any).then = async (
+            resolve: (value: unknown) => void,
+            reject: (reason?: any) => void
+          ) => {
             try {
               await (receiver as any).load(prop)
               resolve((receiver as any)._attributes[prop])
@@ -400,7 +435,6 @@ export abstract class Model {
           return builderFn
         }
 
-        // 6. Return instance values
         if (Object.hasOwn(target, prop)) {
           const value = Reflect.get(target, prop)
           if (typeof value === 'function') {
@@ -409,7 +443,6 @@ export abstract class Model {
           return value
         }
 
-        // 7. Return static properties from the model constructor
         if (prop in modelCtor && !['name', 'prototype', 'length'].includes(prop as string)) {
           const value = Reflect.get(modelCtor, prop)
           if (typeof value === 'function') {
@@ -422,13 +455,10 @@ export abstract class Model {
       },
 
       set(target, prop: string | symbol, value, receiver) {
-        // 1. Allow internal property setting
         if (typeof prop === 'symbol' || (typeof prop === 'string' && prop.startsWith('_'))) {
           return Reflect.set(target, prop, value, receiver)
         }
 
-        // 2. Check for Mutators (set[Name]Attribute)
-        // 使用快取的 studly case 轉換
         if (typeof prop === 'string') {
           const studly = Model._toStudlyCase(prop)
           const mutator = `set${studly}Attribute`
@@ -438,12 +468,9 @@ export abstract class Model {
           }
         }
 
-        // 3. Prioritize setting attributes/relations
-        // Check if it's a defined column
         const columns = (model.constructor as any)[COLUMN_KEY]
         const isColumn = columns && typeof prop === 'string' && prop in columns
 
-        // If it's a column, or already an attribute, or if it's not in the target (instance), treat as attribute
         if (
           isColumn ||
           !(prop in target) ||
@@ -453,7 +480,6 @@ export abstract class Model {
           return true
         }
 
-        // 3. Set on instance (for non-attribute properties like events array)
         return Reflect.set(target, prop, value)
       },
 
@@ -487,31 +513,40 @@ export abstract class Model {
   // ============================================================================
 
   /**
-   * Set attribute with validation (Smart Guard)
+   * Sets an attribute value and marks it as dirty.
+   *
+   * Applies type casting automatically if defined in the model.
+   *
+   * @param key - The attribute name.
+   * @param value - The value to set.
+   * @internal
    */
   protected _setAttribute(key: string, value: unknown): void {
     const modelCtor = this.constructor as typeof Model
 
     if (modelCtor.strictMode) {
-      // Asynchronously validate - for now, skip schema check in sync setter
-      // Real validation happens in save()
-      // This allows setting attributes that will be validated before persist
-      void modelCtor.table // Referenced to avoid unused warning
+      void modelCtor.table
     }
 
-    // Mark dirty
-    this._dirtyTracker.mark(key, value)
-
-    // Cast value before setting
     const type = modelCtor.casts[key]
     const castedValue = type ? this._castAttribute(key, value, type) : value
 
-    // Set value
+    this._dirtyTracker.mark(key, castedValue)
+
     this._attributes[key] = castedValue
   }
 
   /**
-   * Validate attribute against schema
+   * Validates an attribute against the database schema.
+   *
+   * Performs nullability checks and type matching.
+   *
+   * @param key - The column name.
+   * @param value - The value to validate.
+   * @throws {ColumnNotFoundError} If the column does not exist in strict mode.
+   * @throws {NullableConstraintError} If a non-nullable column is set to null.
+   * @throws {TypeMismatchError} If the value type does not match schema requirements.
+   * @internal
    */
   protected async _validateAttribute(key: string, value: unknown): Promise<void> {
     const modelCtor = this.constructor as typeof Model
@@ -522,26 +557,21 @@ export abstract class Model {
 
     if (!column) {
       if (modelCtor.strictMode) {
-        // 提供可用欄位列表以改善錯誤訊息
         const availableColumns = Array.from(schema.columns.keys())
         throw new ColumnNotFoundError(table, key, availableColumns)
       }
       return
     }
 
-    // Null check
     if (value === null && !column.nullable) {
       throw new NullableConstraintError(modelCtor.table, key)
     }
 
-    // Type check (only if value is not null)
     if (value !== null && value !== undefined) {
       const jsType = this._getJSType(value)
       const expectedTypes = this._getExpectedJSTypes(column.type)
 
-      // SQLite specific: if column is string but we get an object, check if it might be JSON
       if (jsType === 'object' && expectedTypes.includes('string')) {
-        // Allow it - the driver will handle serialization
         return
       }
 
@@ -552,7 +582,12 @@ export abstract class Model {
   }
 
   /**
-   * Get JavaScript type of value
+   * Determines the logical JavaScript type of a value.
+   *
+   * Distinguishes between null, array, date, and basic types.
+   *
+   * @param value - The value to inspect.
+   * @returns A string representing the type.
    */
   private _getJSType(value: unknown): string {
     if (value === null) {
@@ -568,9 +603,14 @@ export abstract class Model {
   }
 
   /**
-   * Cast attribute value to its type
+   * Casts a raw value to the specified model type.
+   *
+   * @param _key - The attribute key (reserved for future use).
+   * @param value - The raw value.
+   * @param type - The target type identifier.
+   * @returns The casted value.
    */
-  private _castAttribute(_key: string, value: any, type: string): any {
+  private _castAttribute(_key: string, value: unknown, type: string): unknown {
     if (value === null || value === undefined) {
       return value
     }
@@ -584,14 +624,14 @@ export abstract class Model {
       case 'real':
       case 'float':
       case 'double':
-        return parseFloat(value)
+        return typeof value === 'string' ? parseFloat(value) : (value as number)
 
       case 'string':
         return String(value)
 
       case 'bool':
       case 'boolean':
-        return [true, 1, '1', 'true', 'on', 'yes'].includes(value)
+        return [true, 1, '1', 'true', 'on', 'yes'].includes(value as any)
 
       case 'object':
       case 'json':
@@ -599,13 +639,12 @@ export abstract class Model {
           return value
         }
         try {
-          return JSON.parse(value)
+          return JSON.parse(value as string)
         } catch (_e) {
           return value
         }
 
       case 'collection':
-        // Placeholder for Collection support
         return Array.isArray(value) ? value : [value]
 
       case 'date':
@@ -613,17 +652,22 @@ export abstract class Model {
         if (value instanceof Date) {
           return value
         }
-        return new Date(value)
+        return new Date(value as string | number)
 
       case 'timestamp':
-        return value instanceof Date ? value.getTime() : new Date(value).getTime()
+        return value instanceof Date
+          ? value.getTime()
+          : new Date(value as string | number).getTime()
     }
 
     return value
   }
 
   /**
-   * Get expected JavaScript types for column type
+   * Maps database column types to valid JavaScript types.
+   *
+   * @param columnType - The database-level type.
+   * @returns An array of acceptable JavaScript types.
    */
   private _getExpectedJSTypes(columnType: ColumnType): string[] {
     const typeMap: Record<ColumnType, string[]> = {
@@ -651,7 +695,10 @@ export abstract class Model {
   }
 
   /**
-   * Get the table name for this model
+   * Resolves the primary table name for the model.
+   *
+   * @returns The table name string.
+   * @throws {Error} If no table is defined on the class.
    */
   static getTable(): string {
     const self = this as any
@@ -663,7 +710,12 @@ export abstract class Model {
   }
 
   /**
-   * Get cached schema with race condition protection
+   * Fetches the table schema from the registry.
+   *
+   * Includes protection against race conditions for concurrent schema lookups.
+   *
+   * @returns The table schema metadata.
+   * @internal
    */
   protected async _getSchema(): Promise<TableSchema> {
     if (this._schema) {
@@ -679,7 +731,6 @@ export abstract class Model {
       const connection = DB.connection(modelCtor.connection)
       const table = modelCtor.getTable()
 
-      // Fast path for non-SQL drivers
       const driver = connection.getDriver()
       if (
         typeof driver.getDriverName === 'function' &&
@@ -706,34 +757,32 @@ export abstract class Model {
   // ============================================================================
 
   /**
-   * Check if any attributes have been modified since the last sync.
-   *
-   * @returns True if the model is dirty.
+   * Indicates if any model attributes have changed since the last sync.
    */
   get isDirty(): boolean {
     return this._dirtyTracker.isDirty()
   }
 
   /**
-   * Get the attributes that have been modified.
+   * Retrieves a record of attributes that have been modified.
    *
-   * @returns Object containing only dirty attributes and their current values.
+   * @returns An object containing only modified keys and their current values.
    */
   getDirty(): Partial<ModelAttributes> {
     return this._dirtyTracker.getDirtyValues(this._attributes)
   }
 
   /**
-   * Get the original attribute values as they were when the model was last synced.
+   * Retrieves the original values of the model attributes.
    *
-   * @returns Object containing original attribute values.
+   * @returns The attributes as they were when last synchronized with the database.
    */
   getOriginal(): Partial<ModelAttributes> {
     return this._dirtyTracker.getOriginals()
   }
 
   /**
-   * Get the value of the model's primary key.
+   * Retrieves the value of the primary key for this instance.
    *
    * @returns The primary key value.
    */
@@ -747,10 +796,14 @@ export abstract class Model {
   // ============================================================================
 
   /**
-   * Get the first record matching the current query.
+   * Executes a query to find the first matching record.
    *
-   * @template T - The model type.
-   * @returns Promise resolving to the first model instance or null.
+   * @returns The first model instance found, or null.
+   *
+   * @example
+   * ```typescript
+   * const user = await User.where('active', true).first();
+   * ```
    */
   static async first<T extends Model>(this: ModelConstructor<T> & typeof Model): Promise<T | null> {
     const result = await this.query().first()
@@ -758,11 +811,15 @@ export abstract class Model {
   }
 
   /**
-   * Find a model instance by its primary key.
+   * Finds a record by its primary key.
    *
-   * @template T - The model type.
    * @param key - The primary key value.
-   * @returns Promise resolving to the model instance or null.
+   * @returns The matching model instance, or null.
+   *
+   * @example
+   * ```typescript
+   * const user = await User.find(1);
+   * ```
    */
   static async find<T extends Model>(
     this: ModelConstructor<T> & typeof Model,
@@ -774,12 +831,16 @@ export abstract class Model {
   }
 
   /**
-   * Find a model instance by its primary key or throw an error if not found.
+   * Finds a record by its primary key or throws an error if not found.
    *
-   * @template T - The model type.
    * @param key - The primary key value.
-   * @returns Promise resolving to the model instance.
-   * @throws ModelNotFoundError if no record is found.
+   * @returns The matching model instance.
+   * @throws {ModelNotFoundError} If no record matches the key.
+   *
+   * @example
+   * ```typescript
+   * const user = await User.findOrFail(1);
+   * ```
    */
   static async findOrFail<T extends Model>(
     this: ModelConstructor<T> & typeof Model,
@@ -793,20 +854,19 @@ export abstract class Model {
   }
 
   /**
-   * Retrieve all records for this model.
-   * Note: This method includes a safety limit of 1000 records. Use `cursor()` for larger datasets.
+   * Retrieves all records for the model.
    *
-   * @template T - The model type.
-   * @returns Promise resolving to an array of model instances.
+   * Includes an automatic safety limit of 1000 records.
+   * Use `cursor()` or `lazyAll()` for larger datasets.
+   *
+   * @returns An array of model instances.
    */
   static async all<T extends Model>(this: ModelConstructor<T> & typeof Model): Promise<T[]> {
-    return this.query()
-      .limit(1000) // Auto-chunking defense
-      .get() as Promise<T[]>
+    return this.query().limit(1000).get() as Promise<T[]>
   }
 
   /**
-   * Alias for create()
+   * Alias for {@link create}.
    */
   static async createAndSave<T extends Model>(
     this: ModelConstructor<T> & typeof Model,
@@ -816,23 +876,18 @@ export abstract class Model {
   }
 
   /**
-   * Lazy hydration: returns an async generator that yields raw data
-   * Models are only instantiated when explicitly transformed
+   * Iterates through all records using memory-efficient lazy hydration.
+   *
+   * Returns an async generator that yields chunks of raw data.
+   * Models are only instantiated when explicitly needed.
+   *
+   * @param chunkSize - Number of records to fetch per iteration.
+   * @yields Chunks of raw attribute objects.
    *
    * @example
    * ```typescript
-   * // Memory efficient - rows stay as raw data until needed
-   * for await (const rawRows of User.lazyAll(100)) {
-   *   // Process raw data
-   *   const ids = rawRows.map(r => r.id)
-   *
-   *   // Hydrate only when needed
-   *   for (const row of rawRows) {
-   *     if (shouldProcess(row)) {
-   *       const user = User.hydrate(row)
-   *       await user.save()
-   *     }
-   *   }
+   * for await (const chunk of User.lazyAll(500)) {
+   *   // process chunk
    * }
    * ```
    */
@@ -845,14 +900,12 @@ export abstract class Model {
     while (true) {
       const query = this.query().orderBy(this.primaryKey).limit(chunkSize).offset(offset)
 
-      // Use raw results from the query builder
       const rows = (await (query as any).getRawResults?.()) || (await query.get())
 
       if (rows.length === 0) {
         break
       }
 
-      // Yield raw data - not hydrated yet
       yield rows
 
       if (rows.length < chunkSize) {
@@ -863,18 +916,12 @@ export abstract class Model {
   }
 
   /**
-   * Cursor-based iteration for memory-safe processing
-   * Yields chunks of models without loading all into memory
+   * Iterates through records using a cursor-based approach.
    *
-   * @param chunkSize - Number of rows per chunk (default: 1000)
-   * @example
-   * ```typescript
-   * for await (const users of User.cursor(100)) {
-   *   for (const user of users) {
-   *     await processUser(user)
-   *   }
-   * }
-   * ```
+   * Yields chunks of hydrated model instances. Memory-safe for large tables.
+   *
+   * @param chunkSize - Number of models per chunk.
+   * @yields Chunks of model instances.
    */
   static async *cursor<T extends Model>(
     this: ModelConstructor<T> & typeof Model,
@@ -882,13 +929,13 @@ export abstract class Model {
   ): AsyncGenerator<T[], void, unknown> {
     let offset = 0
     let safetyCounter = 0
-    const MAX_CHUNKS = 10000 // Safety limit: 10M records max for cursor
+    const MAX_CHUNKS = 10000
 
-    let lastFirstId: any = null
+    let lastFirstId: unknown = null
 
     while (safetyCounter < MAX_CHUNKS) {
       const rows = (await this.query()
-        .orderBy(this.primaryKey) // Deterministic ordering
+        .orderBy(this.primaryKey)
         .limit(chunkSize)
         .offset(offset)
         .get()) as T[]
@@ -897,10 +944,8 @@ export abstract class Model {
         break
       }
 
-      // Detect stuck cursor (offset ignored by driver)
       const currentFirstId = (rows[0] as any)[this.primaryKey]
       if (lastFirstId !== null && currentFirstId === lastFirstId) {
-        // console.warn(`Cursor stuck at offset ${offset}. Offset might be ignored by driver.`)
         break
       }
       lastFirstId = currentFirstId
@@ -916,26 +961,23 @@ export abstract class Model {
   }
 
   /**
-   * Get query builder for this model
-   * Allows fluent query building with model hydration
+   * Initializes a fluent query builder for the model.
+   *
+   * Automatically handles model hydration, soft delete filtering, and scope application.
+   *
+   * @returns A proxied query builder instance.
    *
    * @example
    * ```typescript
-   * const activeUsers = await User.query()
-   *   .where('active', true)
-   *   .orderBy('created_at', 'desc')
-   *   .limit(10)
-   *   .get()
+   * const users = await User.query().where('active', true).get();
    * ```
    */
   static query<T extends Model>(this: ModelConstructor<T> & typeof Model) {
     const connection = DB.connection(this.connection)
     const builder = connection.table<ModelAttributes>(this.getTable())
 
-    // Attach model context
     ;(builder as any).setModel(this)
 
-    // Check for Soft Deletes
     const softDeletes = (this as any)[SOFT_DELETES_KEY]
     if (softDeletes) {
       builder.applyScope('softDeletes', (query) => {
@@ -943,19 +985,16 @@ export abstract class Model {
       })
     }
 
-    // Wrap get() to hydrate results and handle eager loading
     const originalGet = builder.get.bind(builder)
     ;(builder as unknown as { get: () => Promise<T[]> }).get = async (): Promise<T[]> => {
       const rows = await originalGet()
 
-      // Fast Path: Skip hydration if read-only
       if ((builder as any).getIsReadOnly?.()) {
         return rows as unknown as T[]
       }
 
       const models = rows.map((row) => this.hydrate<T>(row)) as unknown as T[]
 
-      // Handle eager loading
       const eagerLoads = (builder as any).getEagerLoads?.()
       if (eagerLoads && eagerLoads.size > 0 && models.length > 0) {
         const { eagerLoadMany } = await import('./relationships')
@@ -965,7 +1004,6 @@ export abstract class Model {
       return models
     }
 
-    // Wrap first() to hydrate result and handle eager loading
     const originalFirst = builder.first.bind(builder)
     ;(builder as unknown as { first: () => Promise<T | null> }).first =
       async (): Promise<T | null> => {
@@ -974,14 +1012,12 @@ export abstract class Model {
           return null
         }
 
-        // Fast Path: Skip hydration if read-only
         if ((builder as any).getIsReadOnly?.()) {
           return row as unknown as T
         }
 
         const model = this.hydrate<T>(row)
 
-        // Handle eager loading for a single model
         const eagerLoads = (builder as any).getEagerLoads?.()
         if (eagerLoads && eagerLoads.size > 0) {
           const { eagerLoadMany } = await import('./relationships')
@@ -991,12 +1027,10 @@ export abstract class Model {
         return model
       }
 
-    // Support Local Scopes via Proxy
     const modelClass = this
     const proxy = new Proxy(builder, {
       get(target, prop: string | symbol) {
         if (typeof prop === 'string' && !(prop in target)) {
-          // Check for local scope: active -> scopeActive
           const scopeMethod = `scope${prop.charAt(0).toUpperCase()}${prop.slice(1)}`
           if (typeof (modelClass as any)[scopeMethod] === 'function') {
             return (...args: any[]) => {
@@ -1018,12 +1052,17 @@ export abstract class Model {
   }
 
   /**
-   * Start a query with a where clause
+   * Starts a query with a standard WHERE clause.
+   *
+   * @param column - Column name or an object of key-value pairs.
+   * @param operatorOrValue - Comparison operator or the value.
+   * @param value - Comparison value (if operator is specified).
+   * @returns The query builder.
    */
   static where<T extends Model>(
     this: ModelConstructor<T> & typeof Model,
     column: string | Record<string, unknown>,
-    operatorOrValue?: any,
+    operatorOrValue?: Operator | unknown,
     value?: unknown
   ): QueryBuilderContract<T> {
     return (this.query() as any).where(
@@ -1034,7 +1073,7 @@ export abstract class Model {
   }
 
   /**
-   * Start a query with a whereIn clause
+   * Starts a query with a WHERE IN clause.
    */
   static whereIn<T extends Model>(
     this: ModelConstructor<T> & typeof Model,
@@ -1045,7 +1084,7 @@ export abstract class Model {
   }
 
   /**
-   * Start a query with a whereNull clause
+   * Starts a query with a WHERE NULL clause.
    */
   static whereNull<T extends Model>(
     this: ModelConstructor<T> & typeof Model,
@@ -1055,7 +1094,7 @@ export abstract class Model {
   }
 
   /**
-   * Start a query with a whereNotNull clause
+   * Starts a query with a WHERE NOT NULL clause.
    */
   static whereNotNull<T extends Model>(
     this: ModelConstructor<T> & typeof Model,
@@ -1065,7 +1104,7 @@ export abstract class Model {
   }
 
   /**
-   * Start a query with an orderBy clause
+   * Configures query results ordering.
    */
   static orderBy<T extends Model>(
     this: ModelConstructor<T> & typeof Model,
@@ -1076,7 +1115,7 @@ export abstract class Model {
   }
 
   /**
-   * Start a query with a limit
+   * Sets a limit on the number of returned records.
    */
   static limit<T extends Model>(
     this: ModelConstructor<T> & typeof Model,
@@ -1086,7 +1125,7 @@ export abstract class Model {
   }
 
   /**
-   * Start a query with an offset
+   * Sets the number of records to skip.
    */
   static offset<T extends Model>(
     this: ModelConstructor<T> & typeof Model,
@@ -1096,7 +1135,7 @@ export abstract class Model {
   }
 
   /**
-   * Start a query with selected columns
+   * Specifies the columns to retrieve.
    */
   static select<T extends Model>(
     this: ModelConstructor<T> & typeof Model,
@@ -1106,7 +1145,9 @@ export abstract class Model {
   }
 
   /**
-   * Start a query with eager loading
+   * Configures eager loading for relationships.
+   *
+   * @param relation - The name of the relation or an array/object of relations.
    */
   static with<T extends Model>(
     this: ModelConstructor<T> & typeof Model,
@@ -1116,7 +1157,7 @@ export abstract class Model {
   }
 
   /**
-   * Start a query ordered by created_at desc
+   * Orders results by the creation timestamp in descending order.
    */
   static latest<T extends Model>(
     this: ModelConstructor<T> & typeof Model,
@@ -1126,7 +1167,7 @@ export abstract class Model {
   }
 
   /**
-   * Start a query ordered by created_at asc
+   * Orders results by the creation timestamp in ascending order.
    */
   static oldest<T extends Model>(
     this: ModelConstructor<T> & typeof Model,
@@ -1136,7 +1177,7 @@ export abstract class Model {
   }
 
   /**
-   * Get a factory instance for this model
+   * Initializes a factory instance for model seeding and testing.
    */
   static factory<T extends Model>(
     this: ModelConstructor<T> & typeof Model,
@@ -1146,14 +1187,14 @@ export abstract class Model {
   }
 
   /**
-   * Count records
+   * Counts the number of records matching the current state.
    */
   static async count(this: ModelConstructor<Model> & typeof Model): Promise<number> {
     return this.query().count()
   }
 
   /**
-   * Check if any records exist
+   * Checks if any records exist matching the current state.
    */
   static async exists(this: ModelConstructor<Model> & typeof Model): Promise<boolean> {
     return this.query().exists()
@@ -1161,6 +1202,6 @@ export abstract class Model {
 }
 
 /**
- * Apply mixins to the Model class for composition-based behavior
+ * Applies lifecycle, persistence, relationship, and serialization concerns to the base class.
  */
 applyMixins(Model as any, [HasEvents, HasPersistence, HasRelationships, HasSerialization])

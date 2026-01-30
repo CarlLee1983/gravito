@@ -33,6 +33,7 @@ function makeBuilder<T = Record<string, unknown>>(
     transaction: async <U>(callback: (conn: ConnectionContract) => Promise<U>) =>
       callback(connection),
     disconnect: async () => {},
+    getTracer: () => undefined,
   }
 
   return new QueryBuilder<T>(connection, grammar, 'users')

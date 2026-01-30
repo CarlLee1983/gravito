@@ -1,3 +1,11 @@
+---
+title: Nebula Architecture 技術架構規格書
+version: 1.0.0
+status: Stable
+tier: C
+last_updated: 2026-01-29
+---
+
 # 🌌 Nebula Architecture 技術架構規格書 (v1.0)
 
 本文件詳述 `@gravito/nebula` 的內部架構、Manager/Repository 模式實作以及安全防護機制。

@@ -1,3 +1,11 @@
+---
+title: Beam Architecture 技術架構規格書
+version: 1.0.0
+status: Stable
+tier: C
+last_updated: 2026-01-29
+---
+
 # 🌌 Beam Architecture 技術架構規格書 (v1.0)
 
 本文件詳述 `@gravito/beam` 的內部架構、型別推斷機制以及零運行時開銷 (Zero Runtime Overhead) 的設計策略。

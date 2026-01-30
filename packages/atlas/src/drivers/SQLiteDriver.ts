@@ -152,9 +152,19 @@ export class SQLiteDriver implements DriverContract {
       }
       const stmt = this.client.prepare(sql)
       const rows = stmt.all(...params) as T[]
+
+      let lastInsertId: any
+      try {
+        const idRes = this.client.prepare('SELECT last_insert_rowid() as id').get() as any
+        lastInsertId = idRes?.id
+      } catch {
+        /* ignore */
+      }
+
       return {
         rows,
         rowCount: rows.length,
+        insertId: lastInsertId,
       }
     } catch (error: unknown) {
       if (process.env.DEBUG_ATLAS) {
@@ -209,6 +219,7 @@ export class SQLiteDriver implements DriverContract {
       await this.connect()
     }
     if (process.env.DEBUG_ATLAS) {
+      // biome-ignore lint: Internal debug logging
       console.log('[SQLiteDriver] BEGIN')
     }
     this.client?.prepare('BEGIN').run()
@@ -220,6 +231,7 @@ export class SQLiteDriver implements DriverContract {
       return
     }
     if (process.env.DEBUG_ATLAS) {
+      // biome-ignore lint: Internal debug logging
       console.log('[SQLiteDriver] COMMIT')
     }
     this.client?.prepare('COMMIT').run()
@@ -231,6 +243,7 @@ export class SQLiteDriver implements DriverContract {
       return
     }
     if (process.env.DEBUG_ATLAS) {
+      // biome-ignore lint: Internal debug logging
       console.log('[SQLiteDriver] ROLLBACK')
     }
     this.client?.prepare('ROLLBACK').run()

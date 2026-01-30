@@ -14,6 +14,7 @@ import { MySQLGrammar } from '../grammar/MySQLGrammar'
 import { NullGrammar } from '../grammar/NullGrammar'
 import { PostgresGrammar } from '../grammar/PostgresGrammar'
 import { SQLiteGrammar } from '../grammar/SQLiteGrammar'
+import type { AtlasMetrics, AtlasTracer } from '../observability'
 import { QueryBuilder } from '../query/QueryBuilder'
 import type {
   BaseConnectionConfig,
@@ -22,6 +23,7 @@ import type {
   DriverContract,
   ExecuteResult,
   GrammarContract,
+  PoolStats,
   PostgresConfig,
   QueryBuilderContract,
   QueryResult,
@@ -36,6 +38,8 @@ export class Connection implements ConnectionContract {
   protected grammar: GrammarContract
   protected connected = false
   protected proxy?: ConnectionContract
+  protected tracer: AtlasTracer | undefined
+  protected metrics: AtlasMetrics | undefined
 
   /**
    * Static query listeners for global observation (e.g. debugging)
@@ -56,6 +60,8 @@ export class Connection implements ConnectionContract {
   ) {
     this.driver = this.createDriver()
     this.grammar = this.createGrammar()
+    this.tracer = (config as BaseConnectionConfig).tracer
+    this.metrics = (config as BaseConnectionConfig).metrics
 
     // Proxy driver methods (e.g. redis.set, mongodb.collection)
     // biome-ignore lint/correctness/noConstructorReturn: This proxy is intentional for dynamic driver method access
@@ -116,6 +122,13 @@ export class Connection implements ConnectionContract {
   }
 
   /**
+   * Get the tracer
+   */
+  getTracer(): AtlasTracer | undefined {
+    return this.tracer
+  }
+
+  /**
    * Create a new query builder for a table
    */
   table<T = Record<string, unknown>>(tableName: string): QueryBuilderContract<T> {
@@ -140,25 +153,43 @@ export class Connection implements ConnectionContract {
 
     const startTime = performance.now()
     const timestamp = Date.now()
-    const result = await this.driver.query<T>(sql, bindings)
 
-    const duration = performance.now() - startTime
+    try {
+      const result = await this.driver.query<T>(sql, bindings)
+      const duration = performance.now() - startTime
 
-    // Fire listeners
-    if (Connection.queryListeners.length > 0) {
-      const queryData = {
-        connection: this.name,
-        sql,
-        bindings,
-        duration,
-        timestamp,
+      // Record Metrics (Zero-Overhead check)
+      if (this.metrics) {
+        this.metrics.operationDuration?.record(duration, {
+          'db.system': this.config.driver,
+          'db.operation': 'query',
+        })
       }
-      for (const listener of Connection.queryListeners) {
-        listener(queryData)
+
+      // Fire listeners
+      if (Connection.queryListeners.length > 0) {
+        const queryData = {
+          connection: this.name,
+          sql,
+          bindings,
+          duration,
+          timestamp,
+        }
+        for (const listener of Connection.queryListeners) {
+          listener(queryData)
+        }
       }
+
+      return result
+    } catch (error) {
+      if (this.metrics) {
+        this.metrics.operationErrors?.add(1, {
+          'db.system': this.config.driver,
+          'db.operation': 'query',
+        })
+      }
+      throw error
     }
-
-    return result
   }
 
   /**
@@ -169,25 +200,43 @@ export class Connection implements ConnectionContract {
 
     const startTime = performance.now()
     const timestamp = Date.now()
-    const result = await this.driver.execute(sql, bindings)
 
-    const duration = performance.now() - startTime
+    try {
+      const result = await this.driver.execute(sql, bindings)
+      const duration = performance.now() - startTime
 
-    // Fire listeners
-    if (Connection.queryListeners.length > 0) {
-      const queryData = {
-        connection: this.name,
-        sql,
-        bindings,
-        duration,
-        timestamp,
+      // Record Metrics (Zero-Overhead check)
+      if (this.metrics) {
+        this.metrics.operationDuration?.record(duration, {
+          'db.system': this.config.driver,
+          'db.operation': 'execute',
+        })
       }
-      for (const listener of Connection.queryListeners) {
-        listener(queryData)
+
+      // Fire listeners
+      if (Connection.queryListeners.length > 0) {
+        const queryData = {
+          connection: this.name,
+          sql,
+          bindings,
+          duration,
+          timestamp,
+        }
+        for (const listener of Connection.queryListeners) {
+          listener(queryData)
+        }
       }
+
+      return result
+    } catch (error) {
+      if (this.metrics) {
+        this.metrics.operationErrors?.add(1, {
+          'db.system': this.config.driver,
+          'db.operation': 'execute',
+        })
+      }
+      throw error
     }
-
-    return result
   }
 
   /**
@@ -205,6 +254,49 @@ export class Connection implements ConnectionContract {
       await this.driver.rollback()
       throw error
     }
+  }
+
+  /**
+   * Stream query results for processing large datasets
+   * @param sql - SQL query
+   * @param bindings - Query parameters
+   * @returns Async iterable of result rows
+   */
+  async *stream<T = Record<string, unknown>>(
+    sql: string,
+    bindings: unknown[] = []
+  ): AsyncIterable<T> {
+    await this.ensureConnected()
+
+    // Check if driver supports streaming
+    const driver = this.driver as DriverContract & {
+      stream?: <U>(sql: string, bindings: unknown[]) => AsyncIterable<U>
+    }
+
+    if (typeof driver.stream === 'function') {
+      // Use native driver streaming
+      yield* driver.stream<T>(sql, bindings)
+    } else {
+      // Fallback: execute query and yield rows sequentially
+      const result = await this.raw<T>(sql, bindings)
+      for (const row of result.rows) {
+        yield row
+      }
+    }
+  }
+
+  /**
+   * Get connection pool statistics (if supported by driver)
+   * @returns Pool statistics or null if not supported
+   */
+  getPoolStats(): PoolStats | null {
+    const driver = this.driver as DriverContract & { getPoolStats?: () => PoolStats | null }
+
+    if (typeof driver.getPoolStats === 'function') {
+      return driver.getPoolStats()
+    }
+
+    return null
   }
 
   /**
@@ -238,21 +330,26 @@ export class Connection implements ConnectionContract {
 
   /**
    * Create the driver instance based on config
+   * Automatically prefers Bun.sql native driver when available (unless explicitly disabled)
    */
   protected createDriver(): DriverContract {
-    // Check for Bun Native Driver override
+    // Check for Bun Native Driver availability
     const g = globalThis as any
     // biome-ignore lint/complexity/useLiteralKeys: Intentionally using bracket notation to hide 'Bun' symbol from tsc
     const bunSql = g['Bun']?.sql
 
-    if (
-      this.config.useNativeDriver === true &&
+    // Auto-detect: prefer native driver when available and not explicitly disabled
+    const useNative =
+      this.config.useNativeDriver !== false &&
       bunSql &&
       ['postgres', 'mysql', 'mariadb', 'sqlite'].includes(this.config.driver)
-    ) {
+
+    if (useNative) {
+      console.debug?.(`[Atlas] Using Bun.sql native driver for ${this.config.driver}`)
       return new BunSQLDriver(this.config)
     }
 
+    // Fallback to traditional drivers
     switch (this.config.driver) {
       case 'postgres':
         return new PostgresDriver(this.config as PostgresConfig)

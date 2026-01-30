@@ -47,7 +47,9 @@ const updateProfile = async () => {
       errors.value = data.errors
     } else {
       successMessage.value = '個人資料已更新'
-      setTimeout(() => { successMessage.value = '' }, 3000)
+      setTimeout(() => {
+        successMessage.value = ''
+      }, 3000)
     }
   } finally {
     isUpdating.value = false
@@ -69,7 +71,9 @@ const updatePassword = async () => {
     } else {
       successMessage.value = '密碼已更新'
       passwordForm.value = { current_password: '', new_password: '', new_password_confirmation: '' }
-      setTimeout(() => { successMessage.value = '' }, 3000)
+      setTimeout(() => {
+        successMessage.value = ''
+      }, 3000)
     }
   } finally {
     isUpdatingPassword.value = false

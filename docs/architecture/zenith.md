@@ -1,3 +1,11 @@
+---
+title: Zenith Architecture 技術架構規格書
+version: 1.0.0
+status: Stable
+tier: C
+last_updated: 2026-01-29
+---
+
 # 🌌 Zenith Architecture 技術架構規格書 (v1.0)
 
 本文件詳述 `@gravito/zenith` (原 Flux Console) 的內部架構、全端整合模式以及即時監控機制。

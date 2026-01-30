@@ -1,18 +1,19 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3';
-import { StaticLink, useFreeze } from '@gravito/freeze-vue';
-import Layout from '../components/Layout.vue';
-import Logo from '../components/Logo.vue';
-import { Home, ChevronLeft, Search } from 'lucide-vue-next';
+import { Head } from '@inertiajs/vue3'
+import { StaticLink, useFreeze } from '@gravito/freeze-vue'
+import Layout from '../components/Layout.vue'
+import Logo from '../components/Logo.vue'
+import { Home, ChevronLeft, Search } from 'lucide-vue-next'
 
-const { locale } = useFreeze();
+const { locale } = useFreeze()
 
 const t = {
   en: {
     title: '404 - Page Not Found',
     heading: 'Lost in Space',
-    subheading: 'The page you\'re looking for has drifted beyond our orbit.',
-    description: 'It might have been moved, deleted, or perhaps it never existed in this dimension.',
+    subheading: "The page you're looking for has drifted beyond our orbit.",
+    description:
+      'It might have been moved, deleted, or perhaps it never existed in this dimension.',
     homeButton: 'Return Home',
     docsButton: 'Browse Docs',
   },
@@ -23,16 +24,16 @@ const t = {
     description: '它可能已被移動、刪除，或者根本不存在於這個維度。',
     homeButton: '返回首頁',
     docsButton: '瀏覽文件',
-  }
-};
+  },
+}
 
-const currentT = locale.value === 'zh' ? t.zh : t.en;
+const currentT = locale.value === 'zh' ? t.zh : t.en
 
 const goBack = () => {
   if (typeof window !== 'undefined') {
-    window.history.back();
+    window.history.back()
   }
-};
+}
 </script>
 
 <template>

@@ -164,15 +164,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue';
-import { Link, router } from '@inertiajs/vue3';
-import AdminLayout from '../../../components/AdminLayout.vue';
+import { ref, reactive } from 'vue'
+import { Link, router } from '@inertiajs/vue3'
+import AdminLayout from '../../../components/AdminLayout.vue'
 
 const props = defineProps<{
-  event: any;
-}>();
+  event: any
+}>()
 
-const processing = ref(false);
+const processing = ref(false)
 const form = reactive({
   title: props.event.title,
   description: props.event.description,
@@ -181,31 +181,37 @@ const form = reactive({
   status: props.event.status,
   registration_start: formatDateTimeLocal(props.event.registration_start),
   registration_end: formatDateTimeLocal(props.event.registration_end),
-});
+})
 
 function formatDateTimeLocal(dateString: string): string {
-  if (!dateString) return '';
-  const date = new Date(dateString);
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-  return `${year}-${month}-${day}T${hours}:${minutes}`;
+  if (!dateString) return ''
+  const date = new Date(dateString)
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  return `${year}-${month}-${day}T${hours}:${minutes}`
 }
 
 const submit = () => {
-  processing.value = true;
+  processing.value = true
   router.post(`/admin/events/${props.event.id}/update`, form, {
-    onFinish: () => processing.value = false
-  });
-};
+    onFinish: () => (processing.value = false),
+  })
+}
 
 const formatDisplayDate = (val: string) => {
-  const d = new Date(val);
-  return d.toLocaleString(undefined, { 
-    month: 'short', day: 'numeric', year: 'numeric', 
-    hour: '2-digit', minute: '2-digit', hour12: false 
-  }).replace(',', '');
-};
+  const d = new Date(val)
+  return d
+    .toLocaleString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    })
+    .replace(',', '')
+}
 </script>

@@ -1,6 +1,15 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3'
-import { ArrowLeft, User, Calendar, Share2, MessageSquare, Tag as TagIcon, Hash, ArrowRight } from 'lucide-vue-next'
+import {
+  ArrowLeft,
+  User,
+  Calendar,
+  Share2,
+  MessageSquare,
+  Tag as TagIcon,
+  Hash,
+  ArrowRight,
+} from 'lucide-vue-next'
 import { computed } from 'vue'
 import { marked } from 'marked'
 const props = defineProps<{
@@ -13,13 +22,13 @@ const props = defineProps<{
       id: number
       name: string
       slug: string
-    } | null,
+    } | null
     tags: Array<{
       id: number
       name: string
       slug: string
     }>
-  },
+  }
   relatedPosts: Array<{
     title: string
     slug: string
@@ -38,7 +47,7 @@ const formatDate = (date: string) => {
   return new Date(date).toLocaleDateString('en-US', {
     month: 'long',
     day: 'numeric',
-    year: 'numeric'
+    year: 'numeric',
   })
 }
 </script>

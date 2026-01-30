@@ -1,3 +1,11 @@
+---
+title: Launchpad Architecture 技術架構規格書
+version: 1.0.0
+status: Stable
+tier: C
+last_updated: 2026-01-29
+---
+
 # 🌌 Launchpad Architecture 技術架構規格書 (v1.0)
 
 本文件詳述 `@gravito/launchpad` 的內部架構、火箭池 (Rocket Pool) 機制以及零停機部署策略。

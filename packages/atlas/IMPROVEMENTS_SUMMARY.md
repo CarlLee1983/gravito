@@ -1,7 +1,8 @@
 # Atlas 性能與 DX 改進摘要
 
-**日期：** 2026-01-27  
+**日期：** 2026-01-29
 **分支：** feat/atlas-performance-dx-review
+**版本：** v1.5.0 ✅ (Performance & Type Safety Release)
 
 ---
 
@@ -11,7 +12,7 @@
 
 #### ColumnNotFoundError
 - **改進前：** 只顯示欄位名稱，沒有上下文
-- **改進後：** 
+- **改進後：**
   - 顯示相近欄位建議（使用 Levenshtein 距離）
   - 顯示所有可用欄位列表
   - 提供清晰的錯誤訊息格式
@@ -77,10 +78,93 @@
 **影響檔案：**
 - `src/query/QueryBuilder.ts`
 
-**測試結果：**
-- ✅ 所有 QueryBuilder 測試通過（40 pass, 0 fail）
-- ✅ Clone 獨立性測試通過
-- ✅ 性能基準測試更新以反映真實使用場景
+---
+
+### 3. DirtyTracker 深度比較優化 ✅
+
+**改進前：**
+- 使用 `JSON.stringify` 進行深度比較（慢）
+- `cloneValue` 使用淺層複製或簡單複製
+
+**改進後：**
+- 實現 `isEqual` 遞迴結構化比較，避免 `JSON.stringify`
+- 針對 `Date`, `RegExp`, `Map`, `Set` 進行特殊處理
+- 實現 `deepClone` 處理循環引用 (Circular References)
+
+**影響檔案：**
+- `src/orm/model/DirtyTracker.ts`
+
+---
+
+### 4. Model Hydration 優化 ✅
+
+**改進前：**
+- 每次屬性存取都遍歷原型鏈查找 Descriptor
+
+**改進後：**
+- 使用 `_descriptorCache` (WeakMap) 快取屬性描述符
+- 使用 `_studlyCache` 快取屬性名稱轉換 (snake_case -> StudlyCase)
+- 減少原型鏈遍歷開銷
+
+**影響檔案：**
+- `src/orm/model/Model.ts`
+
+---
+
+### 5. Grammar 編譯快取優化 ✅
+
+**改進前：**
+- 使用字串拼接生成 Key
+
+**改進後：**
+- 使用陣列 `join` 生成結構化 Key (`getStructuralKey`)
+- 使用 `LRUCache` 管理快取
+
+**影響檔案：**
+- `src/grammar/Grammar.ts`
+
+---
+
+### 6. 批量操作優化 ✅
+
+- **改進前：** 固定 chunk size
+- **改進後：** 實施 `calculateOptimalChunkSize` 根據欄位數量動態調整 chunk size (Max 65000 bindings / columns)
+
+**影響檔案：**
+- `src/query/QueryBuilder.ts`
+
+---
+
+### 7. 防護網與開發工具 (Protection Net) ✅
+
+#### 自動化性能回歸測試 (Regression Benchmarking)
+- **實作：** 建立 `bench/regression.bench.ts` 使用 `mitata` 測量核心路徑。
+- **指標：**
+  - QueryBuilder Clone (CoW): **~170 ns** (優化成果顯著)
+  - Model Hydration: **~1.9 µs**
+  - Grammar Cache Compilation: **~820 ns**
+
+#### N+1 查詢檢測工具
+- **實作：** `src/query/NPlusOneDetector.ts` 自動追蹤相似查詢。
+- **行為：** 在開發模式下，若 1 秒內對同張表執行超過 5 次相同結構的查詢，將發出警告並提供優化建議。
+
+---
+
+### 8. 生態系與觀察性 (Ecosystem & Observability) ✅
+
+#### Orbit Doctor 指令
+- **實作：** `bun orbit doctor`
+- **功能：** 自動診斷資料庫連線狀態、檢查未執行的 Migrations、回報 Grammar Cache 統計數據。
+
+#### OpenTelemetry 深度整合
+- **實作：** 為 `Model.save()`, `Model.delete()` 增加標準 Span。
+- **指標：** 包含 `db.system`, `db.operation`, `db.sql.table` 等標準屬性。
+- **版本更新：** `AtlasTracer` 已更新至 **v1.5.0** 以匹配 Package 版本。
+
+#### API 文檔自動化
+- **實作：** 整合 `TypeDoc`。
+- **指令：** `bun run docs:generate` 可自動從原始碼生成完整的 API 文件。
+- **高品質註解：** 核心模組（Model, DB, QueryBuilder, Grammar, DirtyTracker）已全面根據 `ts-jsdoc-expert` 標準完成英文 JSDoc 完善，包含語意化描述、異常註解與實用範例。
 
 ---
 
@@ -106,109 +190,41 @@
 1. **QueryBuilder Clone 優化**
    - 只讀 clone 操作性能提升 30-50%
    - 減少不必要的陣列複製
-   - 對於常見場景（pagination、count）特別有效
+
+2. **DirtyTracker & Model Hydration**
+   - 減少大量物件操作時的 CPU 開銷
+   - 避免 JSON 序列化瓶頸
 
 ---
 
 ## 待實施的改進
 
-詳細的改進建議請參考 `PERFORMANCE_DX_REVIEW.md`。
-
-### 高優先級（建議立即實施）
-
-1. **DirtyTracker 深度比較優化** ⚡
-   - 改進深度比較算法（避免 JSON.stringify）
-   - 預期提升：60-80% 深度比較性能
-   - 實施難度：中高
-   - 預期時間：4-6 小時
-
-2. **Model Hydration 優化** ⚡
-   - 快取屬性描述符
-   - 優化 Accessor 查找
-   - 預期提升：15-25% 屬性存取性能
-   - 實施難度：中
-   - 預期時間：3-4 小時
-
-### 中優先級（近期實施）
-
-3. **Grammar 快取優化** ⚡
-   - 改進 Key 生成（使用 hash）
-   - 動態調整 Cache 大小
-   - 預期提升：10-20% 查詢編譯性能
-   - 實施難度：中
-   - 預期時間：2-3 小時
-
-4. **批量操作優化** ⚡
-   - 動態 Chunk Size
-   - 並行處理（非 transaction 場景）
-   - 預期提升：20-40% 批量插入性能
-   - 實施難度：中
-   - 預期時間：3-4 小時
-
 ### 低優先級（長期改進）
 
-5. **TypeScript 類型改進** 📘
+1. **TypeScript 類型改進** 📘
    - 減少 `any` 使用
    - 改進類型推斷
    - 實施難度：中
    - 預期時間：持續改進
 
-6. **文檔改進** 📚
+2. **文檔改進** 📚
    - 添加完整的 API 文檔
    - 添加使用範例
    - 實施難度：低
    - 預期時間：持續改進
 
-7. **性能分析工具** 🛠️
+3. **性能分析工具** 🛠️
    - 追蹤慢查詢
-   - N+1 查詢檢測
    - 實施難度：高
    - 預期時間：1-2 週
 
 ---
 
-## 測試建議
+## 測試結果
 
-在實施進一步改進前，建議：
-
-1. **執行現有測試**
-   ```bash
-   cd packages/atlas
-   bun test
-   ```
-
-2. **驗證錯誤訊息改進**
-   - 測試各種錯誤情況
-   - 確認錯誤訊息清晰且有用
-
-3. **性能基準測試**
-   - 使用 `tests/performance/` 中的基準測試
-   - 確保改進不會導致性能回退
+- ✅ 所有測試通過 (443 pass, 0 fail)
+- ✅ 修正了測試 Mock Connection 缺少 `getTracer` 的問題
 
 ---
 
-## 下一步行動
-
-1. ✅ 完成錯誤訊息改進（已完成）
-2. ✅ 實施 QueryBuilder Clone 優化（已完成）
-3. ⏳ 實施 DirtyTracker 優化
-4. ⏳ 實施 Model Hydration 優化
-5. ⏳ 實施 Grammar 快取優化
-6. ⏳ 添加性能監控工具
-
----
-
-## 性能基準對比
-
-### QueryBuilder Clone（Baseline: 2026-01-17）
-
-| 測試項目 | Baseline | 優化後 | 改進 |
-|---------|----------|--------|------|
-| builder.clone() (50 wheres) | 9.78ms | 6.89ms* | ~30% 提升 |
-| cloned.where() (modification) | 12.56ms | 12.59ms | 基本持平 |
-
-*註：實際性能提升取決於使用場景。只讀 clone 操作（如 pagination）提升更明顯。
-
----
-
-**最後更新：** 2026-01-27
+**最後更新：** 2026-01-29

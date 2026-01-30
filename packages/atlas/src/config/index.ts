@@ -4,7 +4,6 @@
  */
 
 // Re-export for convenience
-export type { ConnectionConfig } from '../types'
-export type { AtlasConfig } from './defineConfig'
+export type { AtlasConfig, ConnectionConfig } from '../types'
 export { defineConfig, fromEnv } from './defineConfig'
 export { autoConfigure, loadConfig, loadConfigFile } from './loadConfig'

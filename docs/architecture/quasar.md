@@ -1,3 +1,11 @@
+---
+title: Quasar Architecture 技術架構規格書
+version: 1.0.0
+status: Stable
+tier: C
+last_updated: 2026-01-29
+---
+
 # 🌌 Quasar Architecture 技術架構規格書 (v1.0)
 
 本文件詳述 `@gravito/quasar` 的內部架構、Sidecar 模式實作以及與 Zenith 的通訊協議。

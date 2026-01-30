@@ -69,14 +69,14 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 
-type Line = { text: string, color: string }
+type Line = { text: string; color: string }
 
 const lines: Line[] = [
-  { text: "where('isActive', true)", color: "text-[#61afef]" },
-  { text: "with('posts', (q) => q.limit(5))", color: "text-[#61afef]" },
-  { text: "orderBy('created_at', 'desc')", color: "text-[#61afef]" },
-  { text: "limit(10)", color: "text-[#61afef]" },
-  { text: "get()", color: "text-[#e5c07b]" } // Changed to execute
+  { text: "where('isActive', true)", color: 'text-[#61afef]' },
+  { text: "with('posts', (q) => q.limit(5))", color: 'text-[#61afef]' },
+  { text: "orderBy('created_at', 'desc')", color: 'text-[#61afef]' },
+  { text: 'limit(10)', color: 'text-[#61afef]' },
+  { text: 'get()', color: 'text-[#e5c07b]' }, // Changed to execute
 ]
 
 const activeLines = ref<Line[]>([])
@@ -92,7 +92,7 @@ async function startAnimation() {
   for (const line of lines) {
     activeLines.value.push({ ...line, text: '' })
     const lastIndex = activeLines.value.length - 1
-    
+
     // Faster typing for modern feel
     const chars = line.text.split('')
     for (const char of chars) {
@@ -100,11 +100,11 @@ async function startAnimation() {
         activeLines.value[lastIndex].text += char
       }
       // Variable speed typing
-      await new Promise(r => setTimeout(r, Math.random() * 30 + 10))
+      await new Promise((r) => setTimeout(r, Math.random() * 30 + 10))
     }
-    await new Promise(r => setTimeout(r, 150))
+    await new Promise((r) => setTimeout(r, 150))
   }
-  
+
   isTyping.value = false
   setTimeout(() => {
     showResult.value = true

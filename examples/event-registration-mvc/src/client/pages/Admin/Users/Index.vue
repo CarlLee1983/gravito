@@ -58,18 +58,20 @@
 </template>
 
 <script setup lang="ts">
-import AdminLayout from '../../../components/AdminLayout.vue';
-import { useI18n } from '../../../composables/useI18n';
+import AdminLayout from '../../../components/AdminLayout.vue'
+import { useI18n } from '../../../composables/useI18n'
 
-const { t } = useI18n();
+const { t } = useI18n()
 
 defineProps<{
-  users: any[];
-}>();
+  users: any[]
+}>()
 
 const formatDate = (date: string) => {
   return new Date(date).toLocaleDateString(undefined, {
-    month: 'short', day: 'numeric', year: 'numeric'
-  });
-};
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
+}
 </script>

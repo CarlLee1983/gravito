@@ -26,12 +26,12 @@ const toggleActive = async (userId: number) => {
       method: 'POST',
     })
     const data = await response.json()
-    
+
     if (data.error) {
       alert(data.error)
       return
     }
-    
+
     router.reload()
   } catch (error) {
     alert('操作失敗')

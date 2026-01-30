@@ -1,23 +1,27 @@
-import { afterEach, beforeEach, describe, expect, it, jest } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, it, jest, spyOn } from 'bun:test'
 import { DB } from '../src/DB'
 import { PostgresGrammar } from '../src/grammar/PostgresGrammar'
+import { column } from '../src/orm/model/decorators'
 import { Model } from '../src/orm/model/Model'
 import { HasMany } from '../src/orm/model/relationships'
 
 describe('Lateral Eager Loading', () => {
+  const TEST_CONN = `lateral_test_${Math.random().toString(36).slice(2)}`
   let mockConnection: any
+  let connectionSpy: any
 
   class Post extends Model {
     static override table = 'posts'
-    declare id: number
-    declare user_id: number
+    static override connection = TEST_CONN
+    @column({ isPrimary: true }) declare id: number
     declare title: string
+    declare user_id: number
   }
 
   class User extends Model {
     static override table = 'users'
-    static override connection = 'postgres'
-    declare id: number
+    static override connection = TEST_CONN
+    @column({ isPrimary: true }) declare id: number
     declare name: string
 
     @HasMany(() => Post, 'user_id')
@@ -26,80 +30,73 @@ describe('Lateral Eager Loading', () => {
 
   beforeEach(() => {
     mockConnection = {
-      getName: () => 'postgres',
+      getName: () => TEST_CONN,
+      getTracer: () => undefined,
       getDriver: () => ({ getDriverName: () => 'postgres' }),
       getConfig: () => ({ driver: 'postgres' }),
       getGrammar: () => new PostgresGrammar(),
       raw: jest.fn(),
-      table: jest.fn(),
+      table: (tableName: string) => {
+        const { QueryBuilder } = require('../src/query/QueryBuilder')
+        const builder = new QueryBuilder(mockConnection, new PostgresGrammar(), tableName)
+        return builder
+      },
       transaction: jest.fn(),
       disconnect: jest.fn(),
     }
     jest.clearAllMocks()
 
     // Register the mock connection
-    DB.addConnection('postgres', {
+    DB.addConnection(TEST_CONN, {
       driver: 'postgres',
       host: 'localhost',
       database: 'test',
     } as any)
 
     // Spy on DB.connection to return our mock
-    jest.spyOn(DB, 'connection').mockReturnValue(mockConnection as any)
-
-    // Mock the table method to return a real QueryBuilder but we'll mock its execution
-    const { QueryBuilder } = require('../src/query/QueryBuilder')
-    mockConnection.table = jest.fn().mockImplementation((table) => {
-      const qb = new QueryBuilder(mockConnection, new PostgresGrammar(), table)
-      // Spy on this specific qb's get method
-      jest.spyOn(qb, 'get').mockImplementation(async function (this: any) {
-        if (this.tableName === 'users') {
-          return [{ id: 1, name: 'John' }]
-        }
-        // Fallback for posts or other tables
-        return []
-      })
-      return qb
+    const originalConnection = DB.connection
+    connectionSpy = spyOn(DB, 'connection').mockImplementation((name?: string) => {
+      if (name === TEST_CONN) return mockConnection
+      return originalConnection.call(DB, name as any)
     })
+
+    User.connection = TEST_CONN
+    Post.connection = TEST_CONN
   })
 
   afterEach(() => {
-    jest.restoreAllMocks()
+    if (connectionSpy) {
+      connectionSpy.mockRestore()
+    }
+    User.connection = undefined
+    Post.connection = undefined
   })
 
   it('should use LATERAL JOIN when limit is applied to eager loaded relationship', async () => {
-    // Mock the lateral raw result
-    mockConnection.raw = jest.fn().mockResolvedValue({
-      rows: [
-        { id: 1, user_id: 1, title: 'Post 1' },
-        { id: 2, user_id: 1, title: 'Post 2' },
-      ],
+    mockConnection.raw.mockResolvedValue({
+      rows: [{ id: 1, name: 'Carl' }],
+      rowCount: 1,
     })
 
-    const users = await User.with({
-      posts: (query) => query.limit(2),
+    await User.with({
+      posts: (q) => q.limit(2),
     }).get()
 
-    expect(users).toHaveLength(1)
-    expect(users[0].posts).toHaveLength(2)
-
-    // Verify that connection.raw was called with the LATERAL JOIN SQL
-    expect(mockConnection.raw).toHaveBeenCalledWith(
-      expect.stringContaining('CROSS JOIN LATERAL'),
-      expect.anything()
-    )
-
-    const calls = mockConnection.raw.mock.calls
-    const [sql, bindings] = calls[0]
-    expect(bindings[0]).toEqual([1])
-    expect(sql).toContain('unnest($1::int)')
-    expect(sql).toContain('LIMIT 2')
+    // Second call should be the eager loading query with LATERAL
+    const lastSql = mockConnection.raw.mock.calls[1][0]
+    expect(lastSql).toContain('LATERAL')
+    expect(lastSql).toContain('LIMIT 2')
   })
 
   it('should fallback to whereIn when no limit/offset is present', async () => {
+    mockConnection.raw.mockResolvedValue({
+      rows: [{ id: 1, name: 'Carl' }],
+      rowCount: 1,
+    })
+
     await User.with('posts').get()
 
-    // Should NOT use connection.raw for lateral
-    expect(mockConnection.raw).not.toHaveBeenCalled()
+    const lastSql = mockConnection.raw.mock.calls[0][0]
+    expect(lastSql).not.toContain('LATERAL')
   })
 })

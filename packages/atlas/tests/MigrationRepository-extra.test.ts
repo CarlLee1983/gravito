@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'bun:test'
+import { describe, expect, it, spyOn } from 'bun:test'
 import { DB } from '../src/DB'
 import { MigrationRepository } from '../src/migration/MigrationRepository'
 import { Schema } from '../src/schema/Schema'
@@ -6,9 +6,7 @@ import type { ConnectionContract } from '../src/types'
 
 describe('MigrationRepository', () => {
   it('tracks migrations using schema and db helpers', async () => {
-    const originalConnection = DB.connection
-    const originalSchemaConnection = Schema.connection
-
+    const TEST_CONN = `migration_repo_${Math.random().toString(36).slice(2)}`
     const calls: string[] = []
     const records = [
       { migration: '20240101_create_users', batch: 1 },
@@ -29,20 +27,37 @@ describe('MigrationRepository', () => {
       },
     }
 
-    const connection: ConnectionContract = {
-      getName: () => 'default',
-      getDriver: () => ({}) as any,
-      getConfig: () => ({ driver: 'postgres', database: 'test' }),
-      table: () => table as any,
-      raw: async () => ({ rows: [], rowCount: 0 }),
-      transaction: async (cb) => cb(connection),
-      disconnect: async () => {},
-    }
+    DB.addConnection(TEST_CONN, {
+      driver: 'sqlite',
+      database: ':memory:',
+    } as any)
 
-    try {
-      DB.connection = () => connection
-      Schema.connection = () =>
-        ({
+    const conn = DB.connection(TEST_CONN)
+    // @ts-expect-error - inject mock driver
+    conn.driver = {
+      getDriverName: () => 'mock',
+      connect: async () => {},
+      disconnect: async () => {},
+      isConnected: () => true,
+      query: async () => ({ rows: records, rowCount: records.length }),
+      execute: async () => ({ affectedRows: 1 }),
+      beginTransaction: async () => {},
+      commit: async () => {},
+      rollback: async () => {},
+      inTransaction: () => false,
+    }
+    // @ts-expect-error - inject mock table implementation
+    conn.table = () => table as any
+
+    // For Schema, we can't easily inject into the singleton without affecting others,
+    // but Schema.connection(name) creates a new instance.
+    // However, MigrationRepository calls Schema.connection(this.connection).
+    // We can mock the Schema.connection method LOCALLY for this test only if we are careful.
+
+    const originalSchemaConnection = Schema.connection
+    const schemaSpy = spyOn(Schema, 'connection').mockImplementation((name?: string) => {
+      if (name === TEST_CONN) {
+        return {
           create: async () => {
             calls.push('create')
             exists = true
@@ -51,9 +66,14 @@ describe('MigrationRepository', () => {
           dropIfExists: async () => {
             calls.push('drop')
           },
-        }) as any
+        } as any
+      }
+      return originalSchemaConnection.call(Schema, name as any)
+    })
 
-      const repo = new MigrationRepository()
+    try {
+      const repo = new MigrationRepository(TEST_CONN)
+
       await repo.createRepository()
       await repo.deleteRepository()
 
@@ -71,8 +91,9 @@ describe('MigrationRepository', () => {
       expect(calls).toContain('create')
       expect(calls).toContain('drop')
     } finally {
-      DB.connection = originalConnection
-      Schema.connection = originalSchemaConnection
+      schemaSpy.mockRestore()
+      await DB.disconnect(TEST_CONN)
+      DB.purge(TEST_CONN)
     }
   })
 })

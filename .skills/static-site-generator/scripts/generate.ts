@@ -18,8 +18,8 @@ import { promisify } from 'node:util'
 import type { PlanetCore } from '@gravito/core'
 
 // ============ 配置區域 ============
-const BOOTSTRAP_PATH = './src/bootstrap'  // 修改為你的 bootstrap 路徑
-const KNOWN_ROUTES = ['/', '/about']       // 已知路由，可擴展為自動掃描
+const BOOTSTRAP_PATH = './src/bootstrap' // 修改為你的 bootstrap 路徑
+const KNOWN_ROUTES = ['/', '/about'] // 已知路由，可擴展為自動掃描
 // ==================================
 
 const execAsync = promisify(exec)
@@ -33,7 +33,7 @@ interface GeneratorConfig {
 function getConfig(): GeneratorConfig {
   return {
     baseUrl: process.env.STATIC_SITE_BASE_URL || 'https://yourdomain.com',
-    outputDir: 'dist-static',  // 與官方 build-static.ts 一致
+    outputDir: 'dist-static', // 與官方 build-static.ts 一致
     staticDomains: process.env.STATIC_SITE_DOMAINS || '',
   }
 }
@@ -107,7 +107,7 @@ async function generate() {
   console.log('⚡ Building client assets (Vite)...')
   try {
     await execAsync('bun run build:client', {
-      env: { ...process.env, VITE_STATIC_SITE_DOMAINS: config.staticDomains }
+      env: { ...process.env, VITE_STATIC_SITE_DOMAINS: config.staticDomains },
     })
     console.log('✅ Client build complete.')
   } catch (e) {
@@ -130,7 +130,7 @@ async function generate() {
   console.log(`📋 Routes: ${routes.join(', ')}`)
 
   // 4. Sitemap Setup
-  let sitemapEntries: string[] = []
+  const sitemapEntries: string[] = []
 
   // 5. Render Routes
   for (const route of routes) {
@@ -159,12 +159,13 @@ async function generate() {
       // Apply ssg:rendered filter if registered
       try {
         html = await core.hooks.applyFilters('ssg:rendered', html)
-      } catch { /* filter not registered */ }
+      } catch {
+        /* filter not registered */
+      }
 
       const pathname = route.replace(/\/$/, '') || '/'
-      const filePath = route === '/'
-        ? join(outputDir, 'index.html')
-        : join(outputDir, pathname, 'index.html')
+      const filePath =
+        route === '/' ? join(outputDir, 'index.html') : join(outputDir, pathname, 'index.html')
 
       await mkdir(dirname(filePath), { recursive: true })
       await writeFile(filePath, html)
@@ -179,7 +180,7 @@ async function generate() {
   // 6. Generate Sitemap
   const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${sitemapEntries.map(url => `  <url><loc>${url}</loc></url>`).join('\n')}
+${sitemapEntries.map((url) => `  <url><loc>${url}</loc></url>`).join('\n')}
 </urlset>`
   await writeFile(join(outputDir, 'sitemap.xml'), sitemapXml)
   console.log('🗺️  Sitemap generated.')

@@ -1,10 +1,10 @@
 {
-    "name": "gravito-examples",
-    "private": true,
-    "type": "module",
-    "dependencies": {
-        "@gravito/core": "workspace:*",
-        "@gravito/stasis": "workspace:*",
-        "@gravito/photon": "workspace:*"
-    }
+  "name": "gravito-examples",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@gravito/core": "workspace:*",
+    "@gravito/stasis": "workspace:*",
+    "@gravito/photon": "workspace:*"
+  }
 }

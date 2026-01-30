@@ -13,6 +13,7 @@ class SoftUser extends Model {
 }
 
 describe('SoftDeletes', () => {
+  const TEST_CONN = `soft_deletes_${Math.random().toString(36).slice(2)}`
   let mockConnection: any
   let mockGrammar: any
   let connectionSpy: any
@@ -28,6 +29,7 @@ describe('SoftDeletes', () => {
       compileSelect: jest.fn(() => 'SELECT * FROM users WHERE deleted_at IS NULL'),
       compileUpdate: jest.fn(() => 'UPDATE users SET deleted_at = ? WHERE id = ?'),
       compileDelete: jest.fn(() => 'DELETE FROM users WHERE id = ?'),
+      getStructuralKey: jest.fn(() => 'mock'),
     }
 
     mockConnection = {
@@ -37,6 +39,7 @@ describe('SoftDeletes', () => {
       },
       raw: jest.fn().mockResolvedValue({ rows: [] }),
       getGrammar: () => mockGrammar,
+      getTracer: () => undefined,
       getDriver: () => ({
         getGrammar: () => mockGrammar,
         execute: jest.fn().mockResolvedValue({ affectedRows: 1, rows: [] }),
@@ -45,9 +48,15 @@ describe('SoftDeletes', () => {
     }
 
     // Mock DB.connection
-    connectionSpy = spyOn(DB, 'connection').mockReturnValue(mockConnection)
+    const originalConnection = DB.connection
+    connectionSpy = spyOn(DB, 'connection').mockImplementation((name?: string) => {
+      if (name === TEST_CONN) return mockConnection
+      return originalConnection.call(DB, name as any)
+    })
     // @ts-expect-error
     DB.initialized = true
+
+    SoftUser.connection = TEST_CONN
 
     // Mock SchemaRegistry to avoid real sniff
     const { SchemaRegistry } = require('../src/orm/schema/SchemaRegistry')
@@ -67,6 +76,7 @@ describe('SoftDeletes', () => {
   afterEach(async () => {
     connectionSpy.mockRestore()
     registrySpy.mockRestore()
+    SoftUser.connection = undefined
   })
 
   test('it appends deleted_at IS NULL by default', async () => {

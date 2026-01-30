@@ -22,7 +22,7 @@ const submit = () => {
   router.post('/register', form.value, {
     onFinish: () => {
       isLoading.value = false
-    }
+    },
   })
 }
 </script>

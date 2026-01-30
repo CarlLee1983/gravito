@@ -30,7 +30,7 @@ const form = useForm({
   author: props.auth.user?.name || 'Antigravity',
   status: 'published',
   feature_image: '',
-  feature_image_file: null as File | null
+  feature_image_file: null as File | null,
 })
 
 const submit = () => {
@@ -44,7 +44,7 @@ const previewHtml = computed(() => {
 })
 
 const currentCategory = computed(() => {
-  return props.categories.find(c => c.id === form.category_id)?.name || 'Uncategorized'
+  return props.categories.find((c) => c.id === form.category_id)?.name || 'Uncategorized'
 })
 
 // 簡單的 Slug 自動產生器
@@ -57,7 +57,6 @@ const generateSlug = () => {
       .replace(/^-+|-+$/g, '')
   }
 }
-
 
 const previewImage = ref('')
 

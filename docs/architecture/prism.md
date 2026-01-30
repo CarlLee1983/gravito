@@ -1,3 +1,11 @@
+---
+title: Prism View Engine 架構技術規格書
+version: 1.0.0
+status: Stable
+tier: C
+last_updated: 2026-01-29
+---
+
 # Prism View Engine 架構技術規格書
 
 ## 1. 模組概覽
@@ -19,7 +27,7 @@
 Prism 由三個主要子系統組成：
 
 1.  **Template Engine** (`src/core/TemplateCompiler.ts`)
-    -   負責解析 Blade 風格的模板語法 (`@if`, `@foreach`, `{{ variable }}`)。
+    -   負責解析 Blade 風格的模板語法 (`@if`, `@foreach`, `variable`)。
     -   實作 LRU 快取機制，將編譯後的函數緩存在記憶體中。
     -   支援 `<x-component>` 語法與 Slot 機制。
 2.  **Image Service** (`src/image/ImageService.ts`)
@@ -87,7 +95,7 @@ SSG 透過 `StaticSiteGenerator` 類別實作，其工作流如下：
 ## 4. 風險分析與潛在問題
 
 ### 4.1 XSS 風險
--   **問題**：`{{ variable }}` 預設會跳脫 HTML，但 `{!! variable !!}` (Raw Output) 不會。
+-   **問題**：`variable` 預設會跳脫 HTML，但 `{!! variable !!}` (Raw Output) 不會。
 -   **風險**：若開發者在 Raw Output 中輸出使用者輸入，可能導致 XSS。
 -   **建議**：在文檔中強烈警示 Raw Output 的使用場景，並提供 `Sanitizer` Helper。
 

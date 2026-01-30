@@ -24,7 +24,20 @@
       "Bash(bun test:coverage:*)",
       "Skill(skill-creator)",
       "Bash(touch:*)",
-      "Bash(python3 scripts/package_skill.py:*)"
+      "Bash(python3 scripts/package_skill.py:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(gh run view:*)",
+      "Bash(gh pr view:*)",
+      "Bash(git push)",
+      "Bash(bunx turbo run:*)",
+      "Bash(gh pr checks:*)",
+      "Bash(tee:*)",
+      "Bash(bun:*)",
+      "WebSearch",
+      "WebFetch(domain:bun.com)",
+      "Bash(sqlite3:*)",
+      "Bash(gh run list:*)",
+      "Bash(gh run:*)"
     ]
   },
   "enabledMcpjsonServers": [

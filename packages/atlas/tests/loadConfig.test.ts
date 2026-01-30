@@ -13,13 +13,19 @@ describe('loadConfig', () => {
   })
 
   it('should autoConfigure from env if file missing', async () => {
-    process.env.DB_DRIVER = 'sqlite'
-    process.env.DB_DATABASE = ':memory:'
+    const originalManager = (DB as any).manager
+    const originalInitialized = (DB as any).initialized
+    try {
+      process.env.DB_DRIVER = 'sqlite'
+      process.env.DB_DATABASE = ':memory:'
 
-    await autoConfigure()
-    expect(DB.connection().getConfig().driver).toBe('sqlite')
-
-    delete process.env.DB_DRIVER
-    delete process.env.DB_DATABASE
+      await autoConfigure()
+      expect(DB.connection().getConfig().driver).toBe('sqlite')
+    } finally {
+      delete process.env.DB_DRIVER
+      delete process.env.DB_DATABASE
+      ;(DB as any).manager = originalManager
+      ;(DB as any).initialized = originalInitialized
+    }
   })
 })

@@ -16,7 +16,7 @@ const form = useForm({
   district: '',
   street: '',
   zip_code: '',
-  is_default: false
+  is_default: false,
 })
 
 const showForm = ref(false)
@@ -26,7 +26,7 @@ const submit = () => {
     onSuccess: () => {
       form.reset()
       showForm.value = false
-    }
+    },
   })
 }
 
@@ -37,7 +37,7 @@ const remove = (id: number) => {
 }
 
 const setDefault = (id: number) => {
-    router.put(`/account/addresses/${id}/default`)
+  router.put(`/account/addresses/${id}/default`)
 }
 </script>
 

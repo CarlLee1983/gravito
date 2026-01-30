@@ -1,6 +1,5 @@
 /**
  * Bun Native SQL Driver
- * @description Driver implementation using Bun's native unified SQL API (Bun.sql)
  */
 
 import {
@@ -14,209 +13,276 @@ import type {
   DriverContract,
   DriverType,
   ExecuteResult,
+  PoolStats,
   QueryResult,
 } from '../types'
+import { BunSQLPreparedStatementManager } from './BunSQLPreparedStatement'
 
 export class BunSQLDriver implements DriverContract {
-  // biome-ignore lint/suspicious/noExplicitAny: Client type is dynamic
-  private client: any | null = null
+  private client: unknown | null = null
+  private sqliteClient: unknown | null = null
   private connected = false
   private transactionActive = false
+  private preparedManager?: BunSQLPreparedStatementManager
 
   constructor(private readonly config: ConnectionConfig) {}
 
-  /**
-   * Get driver name
-   */
   getDriverName(): DriverType {
     return this.config.driver as DriverType
   }
 
-  /**
-   * Connect to the database using Bun.sql
-   */
   async connect(): Promise<void> {
-    if (this.connected) {
-      return
-    }
-
+    if (this.connected) return
     try {
-      // Access via bracket notation to completely bypass tsc checks for the global Bun object
-      const g = globalThis as any
-      // biome-ignore lint/complexity/useLiteralKeys: Intentionally using bracket notation to hide 'Bun' symbol from tsc
-      const bunSql = g['Bun']?.sql
-
-      if (!bunSql) {
-        throw new Error('Bun.sql is not available in this environment')
+      if (this.config.driver === 'sqlite') {
+        const { Database } = await import('bun:sqlite')
+        this.sqliteClient = new Database(
+          this.config.database === ':memory:' ? ':memory:' : this.config.database
+        )
+      } else {
+        const g = globalThis as Record<string, any>
+        // biome-ignore lint/complexity/useLiteralKeys: Intentionally using bracket notation to hide 'Bun' symbol from tsc checks
+        const bunSql = g['Bun']?.sql
+        if (!bunSql) throw new Error('Bun.sql not found')
+        this.client = bunSql(this.getConnectionUrl())
       }
-
-      const url = this.getConnectionUrl()
-      // Initialize Bun.sql client
-      this.client = bunSql(url)
-
       this.connected = true
     } catch (error) {
-      throw new ConnectionError(`Could not connect to ${this.config.driver} using Bun.sql`, error)
+      throw new ConnectionError(`Failed to connect to ${this.config.driver}`, error)
     }
   }
 
-  /**
-   * Disconnect
-   */
   async disconnect(): Promise<void> {
+    if (this.preparedManager) {
+      await this.preparedManager.destroy()
+      this.preparedManager = undefined
+    }
+    if (this.sqliteClient) {
+      // @ts-expect-error
+      this.sqliteClient.close()
+      this.sqliteClient = null
+    }
     if (this.client) {
-      // Bun.sql connection pool closing
+      // @ts-expect-error
       if (typeof this.client.close === 'function') await this.client.close()
-      else if (typeof this.client.end === 'function') await this.client.end()
       this.client = null
     }
     this.connected = false
     this.transactionActive = false
   }
 
-  /**
-   * Check if connected
-   */
   isConnected(): boolean {
-    return this.connected && this.client !== null
+    return this.connected && (this.client !== null || this.sqliteClient !== null)
   }
 
-  /**
-   * Execute a query
-   */
   async query<T = Record<string, unknown>>(
     sql: string,
     bindings: unknown[] = []
   ): Promise<QueryResult<T>> {
     await this.ensureConnection()
-
     try {
-      // The definitive Bun 1.3 way to run dynamic SQL strings with parameters:
-      // Using Bun.sql.raw or the instance's unsafe method.
-      // If the client itself is not callable, we must find the execution method.
-
-      let result: any
-      if (typeof this.client === 'function') {
-        // If it's a callable template function, we try to use it with raw
-        result = await this.client(sql, ...bindings)
-      } else {
-        // Look for common execution methods in Bun's SQL Query instance
-        const exec = this.client.query || this.client.unsafe || this.client.all || this.client.run
-        if (typeof exec === 'function') {
-          result = await exec.call(this.client, sql, bindings)
-        } else {
-          // Absolute fallback: If Bun.sql is strictly tagged template, we can't easily
-          // use it with dynamic strings without Bun.sql.raw (which is unsafe for production)
-          // or a more complex template reconstruction.
-          throw new Error(
-            'Native Bun.sql does not support dynamic string execution in this version.'
-          )
-        }
-      }
+      const normalized = this.normalizeBindings(bindings)
 
       let rows: T[] = []
-      if (Array.isArray(result)) {
-        rows = result
-      } else if (result && typeof result === 'object') {
-        rows = (result.rows || result) as T[]
-        if (!Array.isArray(rows) && typeof (rows as any)[Symbol.iterator] === 'function') {
-          rows = Array.from(rows as any)
+      let lastInsertRowid: unknown
+
+      if (this.sqliteClient) {
+        // @ts-expect-error
+        const stmt = this.sqliteClient.query(sql)
+        // Ensure parameters are correctly handled for SQLite
+        rows = stmt.all(...normalized) as T[]
+        try {
+          // @ts-expect-error
+          const idRes = this.sqliteClient.query('SELECT last_insert_rowid() as id').get() as any
+          lastInsertRowid = idRes?.id
+        } catch {
+          /* ignore */
+        }
+      } else {
+        // @ts-expect-error
+        const result = await this.client.unsafe(sql, normalized)
+        rows = Array.isArray(result)
+          ? result
+          : result && typeof result[Symbol.iterator] === 'function'
+            ? Array.from(result)
+            : result?.rows || []
+
+        // Try to get insertId from result metadata or first row (common for Postgres RETURNING)
+        lastInsertRowid = result?.lastInsertRowid
+        if (lastInsertRowid === undefined && rows.length > 0) {
+          const firstRow = rows[0] as any
+          if (firstRow && (firstRow.id !== undefined || firstRow.ID !== undefined)) {
+            lastInsertRowid = firstRow.id ?? firstRow.ID
+          }
         }
       }
 
       return {
         rows,
-        rowCount: result?.rowCount ?? result?.count ?? rows.length,
+        rowCount: rows.length,
+        insertId: lastInsertRowid as number | bigint | string | undefined,
       }
     } catch (error) {
       throw this.normalizeError(error, sql, bindings)
     }
   }
 
-  /**
-   * Execute a statement (INSERT/UPDATE/DELETE)
-   */
   async execute(sql: string, bindings: unknown[] = []): Promise<ExecuteResult> {
-    const res = await this.query(sql, bindings)
-    const raw = (res as any)._raw || res
-    return {
-      affectedRows: res.rowCount ?? raw.count ?? raw.affectedRows ?? 0,
-      insertId: (res.rows?.[0] as any)?.id ?? raw.insertId ?? raw.lastInsertId,
+    await this.ensureConnection()
+    try {
+      if (this.sqliteClient) {
+        const normalized = this.normalizeBindings(bindings)
+        // @ts-expect-error
+        const stmt = this.sqliteClient.query(sql)
+        const result = stmt.run(...normalized)
+        return {
+          affectedRows: result.changes,
+          insertId: result.lastInsertRowid,
+        }
+      }
+
+      const res = await this.query(sql, bindings)
+      return { affectedRows: res.rowCount ?? 0, insertId: res.insertId }
+    } catch (error) {
+      throw this.normalizeError(error, sql, bindings)
     }
   }
 
-  /**
-   * Begin transaction
-   */
+  private normalizeBindings(bindings: unknown[]): unknown[] {
+    return bindings.map((b) => {
+      if (b instanceof Date) return b.toISOString()
+      if (b === undefined) return null
+      if (typeof b === 'boolean') return b ? 1 : 0
+      return b
+    })
+  }
+
   async beginTransaction(): Promise<void> {
     await this.ensureConnection()
-    await this.query('BEGIN')
+    if (this.sqliteClient) {
+      // @ts-expect-error
+      this.sqliteClient.exec('BEGIN')
+    } else {
+      await this.query('BEGIN')
+    }
     this.transactionActive = true
   }
 
-  /**
-   * Commit transaction
-   */
   async commit(): Promise<void> {
     if (!this.transactionActive) return
-    await this.query('COMMIT')
+    if (this.sqliteClient) {
+      // @ts-expect-error
+      this.sqliteClient.exec('COMMIT')
+    } else {
+      await this.query('COMMIT')
+    }
     this.transactionActive = false
   }
 
-  /**
-   * Rollback transaction
-   */
   async rollback(): Promise<void> {
     if (!this.transactionActive) return
-    await this.query('ROLLBACK')
+    if (this.sqliteClient) {
+      // @ts-expect-error
+      this.sqliteClient.exec('ROLLBACK')
+    } else {
+      await this.query('ROLLBACK')
+    }
     this.transactionActive = false
   }
 
-  /**
-   * Check transaction state
-   */
   inTransaction(): boolean {
     return this.transactionActive
   }
 
   private async ensureConnection() {
-    if (!this.connected || !this.client) {
-      await this.connect()
-    }
+    if (!this.connected || (!this.client && !this.sqliteClient)) await this.connect()
   }
 
   private getConnectionUrl(): string {
-    // biome-ignore lint/suspicious/noExplicitAny: Config is dynamic
-    const { driver, host, port, database, username, password } = this.config as any
+    const c = this.config as any
     const protocol =
-      driver === 'postgres'
+      c.driver === 'postgres'
         ? 'postgres'
-        : driver === 'mysql' || driver === 'mariadb'
+        : c.driver === 'mysql' || c.driver === 'mariadb'
           ? 'mysql'
           : 'sqlite'
-
-    if (protocol === 'sqlite') {
-      return `sqlite:${database}`
-    }
-
-    const auth = username ? (password ? `${username}:${password}@` : `${username}@`) : ''
-    const hostPart = host ?? 'localhost'
-    const portPart = port ? `:${port}` : ''
-
-    return `${protocol}://${auth}${hostPart}${portPart}/${database}`
+    const auth = c.username
+      ? c.password
+        ? `${c.username}:${encodeURIComponent(c.password)}@`
+        : `${c.username}@`
+      : ''
+    const params = new URLSearchParams()
+    if (c.ssl) params.set('sslmode', 'require')
+    if (c.pool?.max) params.set('max', String(c.pool.max))
+    if (c.pool?.idleTimeout) params.set('idle_timeout', String(c.pool.idleTimeout))
+    const q = params.toString()
+    return `${protocol}://${auth}${c.host ?? 'localhost'}${c.port ? `:${c.port}` : ''}/${c.database}${q ? '?' + q : ''}`
   }
 
-  // biome-ignore lint/suspicious/noExplicitAny: Error handling generic
+  async prepare(sql: string): Promise<string> {
+    await this.ensureConnection()
+    if (this.sqliteClient) throw new Error('Not supported for SQLite native yet')
+    // @ts-expect-error
+    if (!this.client?.prepare) throw new Error('Not supported')
+    if (!this.preparedManager)
+      // @ts-expect-error
+      this.preparedManager = new BunSQLPreparedStatementManager(this.client)
+    return this.preparedManager.prepare(sql)
+  }
+
+  async executePrepared<T = Record<string, unknown>>(
+    name: string,
+    bindings: unknown[] = []
+  ): Promise<QueryResult<T>> {
+    if (!this.preparedManager) throw new Error('No manager')
+    try {
+      const rows = await this.preparedManager.execute<T>(name, bindings)
+      return { rows, rowCount: rows.length }
+    } catch (error) {
+      throw this.normalizeError(error, `[Prepared: ${name}]`, bindings)
+    }
+  }
+
+  async clearPreparedStatements(): Promise<void> {
+    if (this.preparedManager) await this.preparedManager.clear()
+  }
+
+  async *stream<T = Record<string, unknown>>(
+    sql: string,
+    bindings: unknown[] = []
+  ): AsyncIterable<T> {
+    await this.ensureConnection()
+    try {
+      const result = await this.query(sql, bindings)
+      if (result.rows) {
+        for (const row of result.rows) yield row as T
+      }
+    } catch (error) {
+      throw this.normalizeError(error, sql, bindings)
+    }
+  }
+
+  getPoolStats(): PoolStats | null {
+    if (this.sqliteClient) return { idle: 0, pending: 0, active: 1, total: 1, max: 1 }
+    if (!this.client) return null
+    // @ts-expect-error
+    const c = this.client.connections
+    return c
+      ? {
+          idle: c.idle,
+          pending: c.pending,
+          active: c.active,
+          total: c.total,
+          max: (this.config as any).pool?.max ?? 10,
+        }
+      : null
+  }
+
   private normalizeError(error: any, sql: string, bindings: unknown[]): DatabaseError {
-    const msg = error.message?.toLowerCase() ?? ''
-
-    if (msg.includes('unique') || error.code === '23505') {
-      return new UniqueConstraintError(error.message, error, sql, bindings)
-    }
-    if (msg.includes('foreign key') || error.code === '23503') {
+    const m = error.message?.toLowerCase() ?? ''
+    if (m.includes('unique')) return new UniqueConstraintError(error.message, error, sql, bindings)
+    if (m.includes('foreign key'))
       return new ForeignKeyConstraintError(error.message, error, sql, bindings)
-    }
-
     return new DatabaseError(error.message, error, sql, bindings)
   }
 }

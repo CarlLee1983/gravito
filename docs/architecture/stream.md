@@ -1,3 +1,11 @@
+---
+title: Stream Architecture 技術架構規格書
+version: 1.0.0
+status: Stable
+tier: C
+last_updated: 2026-01-29
+---
+
 # 🌌 Stream Architecture 技術架構規格書 (v1.0)
 
 本文件詳述 `@gravito/stream` 的內部架構、異步作業處理機制以及與 Gravito 生態系的整合。

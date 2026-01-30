@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @theme {
-  --color-photon-gold: #FFB800;
+  --color-photon-gold: #ffb800;
   --font-display: "Syncopate", "Inter", sans-serif;
   --font-technical: "Fira Code", monospace;
 }
@@ -9,12 +9,12 @@
 /* --- THE SOURCE OF TRUTH: ADAPTIVE COLOR SYSTEM --- */
 :root {
   --bg-primary: #000000;
-  --surf-bg: #0C0C0D;
-  --text-primary: #F5F5F7;
-  --text-secondary: #A1A1A6;
+  --surf-bg: #0c0c0d;
+  --text-primary: #f5f5f7;
+  --text-secondary: #a1a1a6;
   --text-muted: #626267;
   --border-subtle: rgba(255, 255, 255, 0.05);
-  --photon-gold: #FFB800;
+  --photon-gold: #ffb800;
   --photon-gold-glow: rgba(255, 184, 0, 0.4);
   --glow-blend: screen;
   --hero-gradient-opacity: 0.06;
@@ -23,14 +23,14 @@
 }
 
 .light,
-[data-theme='light'] {
-  --bg-primary: #FBFBFC;
-  --surf-bg: #FFFFFF;
-  --text-primary: #1D1D1F;
+[data-theme="light"] {
+  --bg-primary: #fbfbfc;
+  --surf-bg: #ffffff;
+  --text-primary: #1d1d1f;
   --text-secondary: #424245;
-  --text-muted: #86868B;
+  --text-muted: #86868b;
   --border-subtle: rgba(0, 0, 0, 0.06);
-  --photon-gold: #D4A017;
+  --photon-gold: #d4a017;
   --photon-gold-glow: rgba(212, 160, 23, 0.15);
   --card-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.05), 0 5px 20px -5px rgba(0, 0, 0, 0.03);
   --nav-bg: rgba(251, 251, 252, 0.85);
@@ -42,7 +42,9 @@
   body {
     background-color: var(--bg-primary);
     color: var(--text-secondary);
-    transition: background-color 0.8s cubic-bezier(0.4, 0, 0.2, 1), color 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+      background-color 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+      color 0.8s cubic-bezier(0.4, 0, 0.2, 1);
     opacity: 1 !important;
     @apply antialiased selection:bg-photon-gold/20 selection:text-photon-gold;
   }
@@ -104,7 +106,7 @@
 }
 
 .photon-prose h2::after {
-  content: '';
+  content: "";
   @apply w-24 h-1.5 bg-photon-gold;
   box-shadow: 0 0 15px rgba(255, 184, 0, 0.3);
 }
@@ -115,7 +117,7 @@
 }
 
 .photon-prose h3::before {
-  content: '';
+  content: "";
   @apply w-6 h-1 bg-photon-gold/40;
 }
 
@@ -125,7 +127,7 @@
 }
 
 .photon-prose p::before {
-  content: '';
+  content: "";
   @apply absolute left-0 top-2 w-1 h-6 bg-current opacity-20 rounded-full;
 }
 
@@ -142,7 +144,9 @@
 /* --- PREMIUM TERMINAL SYSTEM --- */
 .terminal-window {
   @apply bg-[#16161A] border border-white/10 my-12 md:my-24 -mx-4 md:mx-0 overflow-hidden rounded-xl shadow-2xl relative transition-all duration-500;
-  box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.6), 0 18px 36px -18px rgba(0, 0, 0, 0.5);
+  box-shadow:
+    0 30px 60px -12px rgba(0, 0, 0, 0.6),
+    0 18px 36px -18px rgba(0, 0, 0, 0.5);
 }
 
 .terminal-header {
@@ -180,95 +184,95 @@
 
 .terminal-window code {
   @apply font-mono text-xs sm:text-[13px] md:text-[14px] lg:text-[15px] leading-[1.8] px-4 py-6 sm:px-6 sm:py-8 md:px-8 md:py-10 block;
-  color: #E0E0E0 !important;
+  color: #e0e0e0 !important;
   background-color: transparent;
   white-space: pre;
-  font-family: 'Fira Code', 'Courier New', monospace;
+  font-family: "Fira Code", "Courier New", monospace;
 }
 
 /* HTML Tag Highlighting */
 .terminal-window code .html-tag {
-  color: #E06C75 !important;
+  color: #e06c75 !important;
   font-weight: 600;
 }
 
 .terminal-window code .html-attr {
-  color: #98C379 !important;
+  color: #98c379 !important;
 }
 
 .terminal-window code .html-string {
-  color: #D19A66 !important;
+  color: #d19a66 !important;
 }
 
 .terminal-window code .prism-directive {
-  color: #C678DD !important;
+  color: #c678dd !important;
   font-weight: 600;
 }
 
 /* Syntax Color Palette (IDE-Grade) */
 .terminal-window code .keyword {
-  color: #C678DD !important;
+  color: #c678dd !important;
 }
 
 /* Purple */
 .terminal-window code .function {
-  color: #61AFEF !important;
+  color: #61afef !important;
 }
 
 /* Blue */
 .terminal-window code .string {
-  color: #98C379 !important;
+  color: #98c379 !important;
 }
 
 /* Green */
 .terminal-window code .number {
-  color: #D19A66 !important;
+  color: #d19a66 !important;
 }
 
 /* Orange */
 .terminal-window code .boolean {
-  color: #D19A66 !important;
+  color: #d19a66 !important;
 }
 
 /* Orange */
 .terminal-window code .comment {
-  color: #5C6370 !important;
+  color: #5c6370 !important;
   font-style: italic;
 }
 
 /* Gray */
 .terminal-window code .property {
-  color: #E06C75 !important;
+  color: #e06c75 !important;
 }
 
 /* Also apply to photon-prose for backward compatibility */
 .photon-prose .keyword {
-  color: #C678DD;
+  color: #c678dd;
 }
 
 .photon-prose .function {
-  color: #61AFEF;
+  color: #61afef;
 }
 
 .photon-prose .string {
-  color: #98C379;
+  color: #98c379;
 }
 
 .photon-prose .number {
-  color: #D19A66;
+  color: #d19a66;
 }
 
 .photon-prose .boolean {
-  color: #D19A66;
+  color: #d19a66;
 }
 
 .photon-prose .comment {
-  color: #5C6370;
+  color: #5c6370;
   font-style: italic;
 }
 
 .photon-prose .property {
-  color: #E06C75;
+  color: #e06c75;
 }
 
 /* Redish */
@@ -303,9 +307,12 @@
 
 .crt-overlay {
   @apply fixed inset-0 pointer-events-none z-100;
-  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%),
+  background:
+    linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%),
     linear-gradient(90deg, rgba(255, 0, 0, 0.01), rgba(0, 255, 0, 0.005), rgba(0, 0, 255, 0.01));
-  background-size: 100% 3px, 3px 100%;
+  background-size:
+    100% 3px,
+    3px 100%;
   opacity: 0.3;
 }
 
@@ -390,7 +397,7 @@
   .photon-prose [style*="margin: 48px 0"] {
     margin: 32px 0 !important;
   }
-  
+
   .photon-prose [style*="margin: 32px 0"] {
     margin: 28px 0 !important;
   }
@@ -400,7 +407,7 @@
   .photon-prose [style*="margin: 48px 0"] {
     margin: revert !important;
   }
-  
+
   .photon-prose [style*="margin: 32px 0"] {
     margin: revert !important;
   }

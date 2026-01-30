@@ -9,6 +9,7 @@ describe('DB', () => {
     DB.addConnection(CONNECTION_NAME, {
       driver: 'sqlite',
       database: ':memory:',
+      useNativeDriver: false, // Disable due to Bun.sql limitation
     })
   })
 
@@ -35,14 +36,16 @@ describe('DB', () => {
 
   it('should handle pretend mode', async () => {
     const oldDefault = DB.getDefaultConnection()
-    DB.setDefaultConnection(CONNECTION_NAME)
+    try {
+      DB.setDefaultConnection(CONNECTION_NAME)
 
-    await DB.connection().getDriver().execute('CREATE TABLE users (id INTEGER PRIMARY KEY)')
-    const { queries } = await DB.pretend(async () => {
-      await DB.table('users').where('id', 1).get()
-    })
-    expect(queries).toContain('SELECT * FROM "users" WHERE "id" = 1')
-
-    DB.setDefaultConnection(oldDefault)
+      await DB.connection().getDriver().execute('CREATE TABLE users (id INTEGER PRIMARY KEY)')
+      const { queries } = await DB.pretend(async () => {
+        await DB.table('users').where('id', 1).get()
+      })
+      expect(queries).toContain('SELECT * FROM "users" WHERE "id" = 1')
+    } finally {
+      DB.setDefaultConnection(oldDefault)
+    }
   })
 })

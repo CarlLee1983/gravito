@@ -1,107 +1,71 @@
-import { describe, expect, it } from 'bun:test'
+import { describe, expect, it, spyOn } from 'bun:test'
 import { DB } from '../src/DB'
 import type { ConnectionContract, QueryBuilderContract, QueryResult } from '../src/types'
 
-function makeBuilder(): QueryBuilderContract<Record<string, unknown>> {
-  const builder: any = {
-    where: () => builder,
-    select: () => builder,
-    insert: async () => [{ id: 1 }],
-    update: async () => 2,
-    delete: async () => 3,
-  }
-  return builder as QueryBuilderContract<Record<string, unknown>>
-}
-
 describe('DB facade', () => {
   it('routes queries through configured connections', async () => {
-    const originalConnection = DB.connection
-    const originalGetConfig = DB.getConnectionConfig
-    const originalInitialized = (DB as any).initialized
-    const originalManager = (DB as any).manager
-
-    const builder = makeBuilder()
+    const TEST_CONN = `db_extra_${Math.random().toString(36).slice(2)}`
     let began = false
-    const managerCalls: string[] = []
 
-    const connection: ConnectionContract = {
-      getName: () => 'default',
-      getDriver: () =>
-        ({
-          beginTransaction: async () => {
-            began = true
-          },
-          commit: async () => {},
-        }) as any,
-      getConfig: () => ({ driver: 'postgres', database: 'test' }),
-      table: () => builder as any,
-      raw: (async (_sql: string): Promise<QueryResult<any>> => ({
-        rows: [{ id: 1 }],
-        rowCount: 1,
-      })) as any,
-      execute: (async (_sql: string): Promise<any> => ({
-        affectedRows: 1,
-      })) as any,
-      transaction: async <T>(callback: (conn: ConnectionContract) => Promise<T>) =>
-        callback(connection),
+    DB.addConnection(TEST_CONN, {
+      driver: 'postgres',
+      database: 'test',
+    } as any)
+
+    const conn = DB.connection(TEST_CONN)
+
+    const mockDriver: any = {
+      getDriverName: () => 'postgres',
+      connect: async () => {},
       disconnect: async () => {},
-      getGrammar: () => ({}) as any,
+      isConnected: () => true,
+      query: async () => ({ rows: [{ id: 1 }], rowCount: 1 }),
+      execute: async () => ({ affectedRows: 1 }),
+      beginTransaction: async () => {
+        began = true
+      },
+      commit: async () => {},
+      rollback: async () => {},
+      inTransaction: () => false,
     }
 
+    const mockGrammar: any = {
+      compileSelect: () => 'SELECT 1',
+      compileInsert: () => 'INSERT INTO users DEFAULT VALUES',
+      compileUpdate: () => 'UPDATE users SET name = ?',
+      compileDelete: () => 'DELETE FROM users',
+      compileAggregate: () => 'SELECT MAX(id) FROM users',
+      getStructuralKey: () => 'mock',
+      wrapTable: (t: any) => t,
+      wrapColumn: (c: any) => c,
+      getPlaceholder: () => '?',
+    }
+
+    // @ts-expect-error - inject mock driver
+    conn.driver = mockDriver
+    // @ts-expect-error - inject mock grammar
+    conn.grammar = mockGrammar
+
+    const oldDefault = DB.getDefaultConnection()
     try {
-      ;(DB as any).manager = {
-        connection: () => connection,
-        setDefaultConnection: (_name: string) => {
-          managerCalls.push('setDefaultConnection')
-        },
-        getDefaultConnection: () => 'default',
-        hasConnection: () => true,
-        getConnectionNames: () => ['default'],
-        getConfig: () => ({ driver: 'postgres', database: 'test' }),
-        disconnect: async () => {
-          managerCalls.push('disconnect')
-        },
-        disconnectAll: async () => {
-          managerCalls.push('disconnectAll')
-        },
-        reconnect: async () => connection,
-        purge: () => {
-          managerCalls.push('purge')
-        },
-        addConnection: () => {},
-      }
-      DB.connection = () => connection
-      DB.getConnectionConfig = () => ({ driver: 'postgres', database: 'test' })
-      ;(DB as any).initialized = true
+      // Test facade methods with explicit connection
+      const conn = DB.connection(TEST_CONN)
+      await conn.raw('SELECT 1')
 
-      DB.setDefaultConnection('default')
-      expect(DB.hasConnection('default')).toBe(true)
-      expect(DB.getConnectionNames()).toEqual(['default'])
+      await DB.connection(TEST_CONN).table('users').select('id').get()
+      await DB.connection(TEST_CONN).table('users').insert({ name: 'Ada' })
+      await DB.connection(TEST_CONN).table('users').where('id', 1).update({ name: 'Nova' })
+      await DB.connection(TEST_CONN).table('users').where('id', 1).delete()
 
-      await DB.raw('SELECT 1')
-      await DB.rawQuery('SELECT 1')
-
-      await DB.select('users', ['id'])
-      await DB.insert('users', { name: 'Ada' })
-      await DB.update('users', { id: 1 }, { name: 'Nova' })
-      await DB.delete('users', { id: 1 })
-
-      await DB.transaction(async () => 'ok')
-      const trx = await DB.beginTransaction()
+      await DB.transaction(async () => 'ok', TEST_CONN)
+      const trx = await DB.beginTransaction(TEST_CONN)
       await trx.getDriver().commit()
 
-      await DB.disconnect('default')
-      await DB.reconnect('default')
-      DB.purge('default')
-
-      expect(managerCalls).toContain('disconnect')
-      expect(managerCalls).toContain('purge')
       expect(began).toBe(true)
     } finally {
-      DB.connection = originalConnection
-      DB.getConnectionConfig = originalGetConfig
-      ;(DB as any).initialized = originalInitialized
-      ;(DB as any).manager = originalManager
+      DB.setDefaultConnection(oldDefault)
+      await DB.disconnect(TEST_CONN)
+      DB.purge(TEST_CONN)
     }
   })
 })

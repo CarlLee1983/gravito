@@ -1,3 +1,11 @@
+---
+title: Monitor Architecture 技術架構規格書
+version: 1.0.0
+status: Stable
+tier: C
+last_updated: 2026-01-29
+---
+
 # 🌌 Monitor Architecture 技術架構規格書 (v1.0)
 
 本文件詳述 `@gravito/monitor` 的內部架構、可觀測性三支柱（Metrics, Tracing, Health）的實作機制以及 Kubernetes 整合策略。

@@ -100,21 +100,26 @@
 </template>
 
 <script setup lang="ts">
-import { Link, router } from '@inertiajs/vue3';
-import Layout from '../../components/Layout.vue';
-import { useI18n } from '../../composables/useI18n';
+import { Link, router } from '@inertiajs/vue3'
+import Layout from '../../components/Layout.vue'
+import { useI18n } from '../../composables/useI18n'
 
-const { t } = useI18n();
+const { t } = useI18n()
 
 defineProps<{
-  registrations: any[];
-}>();
+  registrations: any[]
+}>()
 
 const formatDateTime = (date: string) => {
   return new Date(date).toLocaleString(undefined, {
-    weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit'
-  });
-};
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
 
 const getStatusBg = (status: string) => {
   const bg: Record<string, string> = {
@@ -123,13 +128,13 @@ const getStatusBg = (status: string) => {
     cancelled: 'bg-red-500',
     waitlist: 'bg-indigo-500',
     checked_in: 'bg-cyan-500',
-  };
-  return bg[status] || 'bg-gray-500';
-};
+  }
+  return bg[status] || 'bg-gray-500'
+}
 
 const cancelRegistration = (id: number) => {
   if (confirm(t('profile.confirm_cancel'))) {
-    router.delete(`/registrations/${id}`);
+    router.delete(`/registrations/${id}`)
   }
-};
+}
 </script>

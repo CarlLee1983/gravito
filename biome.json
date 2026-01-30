@@ -27,7 +27,11 @@
       }
     },
     {
-      "includes": ["**/ion/src/*.js", "packages/**/bin/*.js", "packages/create-gravito-app/index.js"],
+      "includes": [
+        "**/ion/src/*.js",
+        "packages/**/bin/*.js",
+        "packages/create-gravito-app/index.js"
+      ],
       "linter": {
         "enabled": false
       },

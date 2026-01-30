@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { Head } from '@inertiajs/svelte'
-  import Layout from '../components/Layout.svelte'
-  import StaticLink from '../components/StaticLink.svelte'
+import { Head } from '@inertiajs/svelte'
+import Layout from '../components/Layout.svelte'
+import StaticLink from '../components/StaticLink.svelte'
 
-  let { msg, version }: { msg: string; version: string } = $props()
+let { msg, version }: { msg: string; version: string } = $props()
 
-  let count = $state(0)
+let count = $state(0)
 </script>
 
 <Layout>

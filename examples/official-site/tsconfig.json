@@ -1,54 +1,35 @@
 {
-    "compilerOptions": {
-        "target": "ESNext",
-        "module": "ESNext",
-        "moduleResolution": "bundler",
-        "lib": [
-            "ESNext",
-            "DOM",
-            "DOM.Iterable"
-        ],
-        "jsx": "react-jsx",
-        "types": [
-            "bun-types",
-            "node",
-            "vite/client",
-            "three",
-            "@react-three/fiber",
-            "react",
-            "react-dom"
-        ],
-        "strict": true,
-        "skipLibCheck": true,
-        "esModuleInterop": true,
-        "allowSyntheticDefaultImports": true,
-        "resolveJsonModule": true,
-        "noEmit": true,
-        "allowImportingTsExtensions": true,
-        "baseUrl": ".",
-        "paths": {
-            "@gravito/core": [
-                "../../packages/core/src/index.ts"
-            ],
-            "@gravito/core/compat": [
-                "../../packages/core/src/compat.ts"
-            ],
-            "@gravito/photon/client": [
-                "../../packages/photon/src/client.ts"
-            ],
-            "@gravito/photon/jwt": [
-                "../../packages/photon/src/jwt.ts"
-            ],
-            "@gravito/*": [
-                "../../packages/*/src/index.ts"
-            ]
-        }
-    },
-    "include": [
-        "src/**/*",
-        "build-static.ts"
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "types": [
+      "bun-types",
+      "node",
+      "vite/client",
+      "three",
+      "@react-three/fiber",
+      "react",
+      "react-dom"
     ],
-    "exclude": [
-        "node_modules"
-    ]
+    "strict": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "baseUrl": ".",
+    "paths": {
+      "@gravito/core": ["../../packages/core/src/index.ts"],
+      "@gravito/core/compat": ["../../packages/core/src/compat.ts"],
+      "@gravito/photon/client": ["../../packages/photon/src/client.ts"],
+      "@gravito/photon/jwt": ["../../packages/photon/src/jwt.ts"],
+      "@gravito/*": ["../../packages/*/src/index.ts"]
+    }
+  },
+  "include": ["src/**/*", "build-static.ts"],
+  "exclude": ["node_modules"]
 }

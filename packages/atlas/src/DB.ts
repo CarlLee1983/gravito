@@ -1,12 +1,9 @@
-/**
- * DB Facade
- * @description Static entry point for database operations (Laravel-style)
- */
-
 import { Connection } from './connection/Connection'
 import { ConnectionManager } from './connection/ConnectionManager'
 import { Grammar } from './grammar/Grammar'
+import { type AtlasMetrics, AtlasObservability, type AtlasTracer } from './observability'
 import type {
+  AtlasConfig,
   CacheInterface,
   ConnectionConfig,
   ConnectionContract,
@@ -15,33 +12,25 @@ import type {
 } from './types'
 
 /**
- * DB Facade
- * Provides a static interface for database operations
+ * DB Facade - Static entry point for database operations.
+ *
+ * Provides a Laravel-style static interface for managing connections,
+ * building queries, and executing transactions. Acts as the primary
+ * gateway for application-level database interaction.
  *
  * @example
  * ```typescript
- * // Initialize
- * DB.addConnection('default', {
- *   driver: 'postgres',
- *   host: 'localhost',
- *   database: 'myapp'
- * })
+ * // Setup
+ * DB.configure({
+ *   default: 'main',
+ *   connections: { main: { driver: 'sqlite', database: ':memory:' } }
+ * });
  *
- * // Query
- * const users = await DB.table('users').where('active', true).get()
- * const user = await DB.table('users').find(1)
+ * // Fluent Querying
+ * const users = await DB.table('users').where('id', 1).get();
  *
- * // Insert
- * await DB.table('users').insert({ name: 'John', email: 'john@example.com' })
- *
- * // Transaction
- * await DB.transaction(async (db) => {
- *   await db.table('accounts').where('id', 1).decrement('balance', 100)
- *   await db.table('accounts').where('id', 2).increment('balance', 100)
- * })
- *
- * // Raw SQL
- * const results = await DB.raw('SELECT * FROM users WHERE id = $1', [1])
+ * // Raw Execution
+ * const stats = await DB.raw('SELECT count(*) FROM users');
  * ```
  */
 export class DB {
@@ -65,43 +54,34 @@ export class DB {
   }) => void
 
   /**
-   * Set the global cache provider for query result caching.
+   * Sets the global cache provider for query results.
    *
-   * @param cache - The cache implementation to use.
-   * @example
-   * ```typescript
-   * DB.setCache(new RedisCache())
-   * ```
+   * @param cache - Implementation of CacheInterface (e.g., Redis, In-Memory).
    */
   static setCache(cache: CacheInterface) {
     DB.cache = cache
   }
 
   /**
-   * Get the current global cache provider.
+   * Retrieves the active global cache provider.
    *
-   * @returns The cache provider or undefined if not set.
+   * @returns The cache interface or undefined if none is configured.
    */
   static getCache(): CacheInterface | undefined {
     return DB.cache
   }
 
   /**
-   * Enable or disable debug mode.
-   * When enabled, all executed queries are logged with their bindings and duration.
+   * Toggles debug mode for query logging.
    *
-   * @param enabled - Whether to enable debug mode.
-   * @example
-   * ```typescript
-   * DB.debug(true)
-   * // ... run queries ...
-   * console.log(DB.getQueryLog())
-   * ```
+   * When enabled, executed queries are stored in an internal log with
+   * performance metrics.
+   *
+   * @param enabled - Whether to enable logging.
    */
   static debug(enabled = true): void {
     this._debug = enabled
     if (enabled) {
-      // Set up query listener to log queries
       if (!this.queryListener) {
         this.queryListener = (query) => {
           this.logQuery(query.sql, query.bindings, query.duration)
@@ -109,7 +89,6 @@ export class DB {
         Connection.queryListeners.push(this.queryListener)
       }
     } else {
-      // Remove query listener and clear log
       if (this.queryListener) {
         const index = Connection.queryListeners.indexOf(this.queryListener)
         if (index > -1) {
@@ -122,18 +101,18 @@ export class DB {
   }
 
   /**
-   * Check if debug mode is currently enabled.
-   *
-   * @returns True if debug mode is active.
+   * Indicates if debug mode is currently active.
    */
   static isDebug(): boolean {
     return this._debug
   }
 
   /**
-   * Get the SQL string of the last executed query with bindings interpolated.
+   * Retrieves the last executed SQL statement with interpolated values.
    *
-   * @returns The interpolated SQL string or null if no queries have been logged.
+   * Useful for debugging and integration testing.
+   *
+   * @returns The full SQL string or null if no queries were run.
    */
   static getLastQuery(): string | null {
     const last = this._queryLog[this._queryLog.length - 1]
@@ -141,27 +120,28 @@ export class DB {
   }
 
   /**
-   * Get the full history of executed queries in the current session.
+   * Retrieves the complete query log for the current session.
    *
-   * @returns Array of query log entries.
+   * @returns A copy of the query log array.
    */
   static getQueryLog(): typeof this._queryLog {
     return [...this._queryLog]
   }
 
   /**
-   * Clear the current query log history.
+   * Flushes the internal query log.
    */
   static clearQueryLog(): void {
     this._queryLog = []
   }
 
   /**
-   * Log a query execution (Internal use).
+   * Records a query execution event.
    *
-   * @param sql - The raw SQL string.
-   * @param bindings - The values bound to the query.
-   * @param duration - Execution time in milliseconds.
+   * @param sql - The SQL statement.
+   * @param bindings - The parameter values.
+   * @param duration - Time taken in ms.
+   * @internal
    */
   static logQuery(sql: string, bindings: unknown[], duration: number): void {
     if (!this._debug) {
@@ -175,12 +155,21 @@ export class DB {
       timestamp: Date.now(),
     })
 
-    // Prevent memory leak - keep only last N queries
     if (this._queryLog.length > this.MAX_LOG_SIZE) {
       this._queryLog.shift()
     }
   }
 
+  /**
+   * Interpolates bindings into a SQL string for display purposes.
+   *
+   * Warning: This is only for logging/debugging and NOT for execution
+   * to avoid SQL injection risks.
+   *
+   * @param sql - The SQL template with placeholders.
+   * @param bindings - The values to inject.
+   * @returns The readable SQL string.
+   */
   private static interpolateBindings(sql: string, bindings: unknown[]): string {
     let index = 0
     return sql.replace(/\?/g, () => {
@@ -203,17 +192,16 @@ export class DB {
   }
 
   /**
-   * Execute a callback in "pretend" mode.
-   * Queries will be captured and logged but NOT executed against the database.
+   * Executes a callback in "pretend" mode where queries are captured but not run.
    *
-   * @param callback - The async operations to pretend.
-   * @returns Object containing the captured queries.
+   * Ideal for verifying generated SQL without side effects.
+   *
+   * @param callback - Logic to simulate.
+   * @returns Captured SQL strings and the callback result.
+   *
    * @example
    * ```typescript
-   * const { queries } = await DB.pretend(async () => {
-   *   await DB.table('users').where('id', 1).update({ name: 'New Name' })
-   * })
-   * console.log(queries) // ['UPDATE "users" SET "name" = \'New Name\' WHERE "id" = 1']
+   * const { queries } = await DB.pretend(() => User.create({ name: 'Test' }));
    * ```
    */
   static async pretend<T>(callback: () => Promise<T>): Promise<{ queries: string[]; result?: T }> {
@@ -226,7 +214,6 @@ export class DB {
     const originalQuery = driver.query.bind(driver)
     const queries: string[] = []
 
-    // Intercept execute calls
     driver.execute = async (sql: string, bindings?: unknown[]) => {
       queries.push(this.interpolateBindings(sql, bindings || []))
       return { rows: [], affectedRows: 0 }
@@ -238,19 +225,15 @@ export class DB {
     }
 
     try {
-      await callback()
+      const result = await callback()
+      return { queries, result }
     } finally {
       driver.execute = originalExecute
       driver.query = originalQuery
       this._debug = originalDebug
     }
-
-    return { queries }
   }
 
-  /**
-   * Prevent instantiation
-   */
   private constructor() {}
 
   // ============================================================================
@@ -258,60 +241,64 @@ export class DB {
   // ============================================================================
 
   /**
-   * Get current cache performance statistics from the Grammar layer.
+   * Retrieves performance metrics from the SQL compiler cache.
    *
-   * @returns Object containing size, maxSize, and hitRate.
+   * @returns Stats including hit rate and cache utilization.
    */
   static getCacheStats(): { size: number; maxSize: number; hitRate: number } {
     return Grammar.getCacheStats()
   }
 
   /**
-   * Configure the database with connections.
-   * This is the primary way to initialize Atlas.
+   * Initializes the database subsystem with the provided configuration.
    *
-   * @param config - Configuration object containing default connection name and connection settings.
+   * Configures the connection manager and observability (Tracing/Metrics).
+   * This method must be called before any database operations.
    *
-   * @example
-   * ```typescript
-   * DB.configure({
-   *   default: 'postgres',
-   *   connections: {
-   *     postgres: {
-   *       driver: 'postgres',
-   *       host: 'localhost',
-   *       database: 'myapp'
-   *     }
-   *   }
-   * })
-   * ```
+   * @param config - The Atlas configuration object.
+   * @throws {Error} If configuration is invalid.
    */
-  static configure(config: {
-    default?: string
-    connections: Record<string, ConnectionConfig>
-  }): void {
+  static configure(config: AtlasConfig): void {
     DB.manager = new ConnectionManager(config.connections)
     if (config.default) {
       DB.manager.setDefaultConnection(config.default)
     }
+
+    if (config.observability?.enabled) {
+      AtlasObservability.getInstance().initialize({
+        tracing: {
+          enabled: config.observability.tracing !== false,
+          serviceName: config.observability.serviceName,
+        },
+        metrics: {
+          enabled: config.observability.metrics !== false,
+        },
+      })
+    }
+
     DB.initialized = true
   }
 
   /**
-   * Configure database from environment variables
-   * Supports DATABASE_URL or individual DB_* variables
+   * Retrieves the global tracer for manual span creation.
+   */
+  static getTracer(): AtlasTracer | undefined {
+    return AtlasObservability.getTracer()
+  }
+
+  /**
+   * Retrieves the global metrics reporter.
+   */
+  static getMetrics(): AtlasMetrics | undefined {
+    return AtlasObservability.getMetrics()
+  }
+
+  /**
+   * Configures the database using environment variables.
    *
-   * @example
-   * ```typescript
-   * // Using DATABASE_URL
-   * DB.configureFromEnv()
+   * Looks for standard DB_* variables or DATABASE_URL.
    *
-   * // Using individual variables
-   * // DB_DRIVER=postgres
-   * // DB_HOST=localhost
-   * // DB_DATABASE=myapp
-   * DB.configureFromEnv()
-   * ```
+   * @param connectionName - The name to assign to the primary connection.
    */
   static configureFromEnv(connectionName = 'default'): void {
     const { fromEnv } = require('./config/defineConfig')
@@ -320,28 +307,11 @@ export class DB {
   }
 
   /**
-   * Configure database from config file
-   * Tries to load from config/database.ts, config/database.js, etc.
+   * Loads configuration from a file.
    *
-   * @example
-   * ```typescript
-   * // config/database.ts
-   * import { defineConfig } from '@gravito/atlas'
+   * Automatically detects common patterns like config/database.ts.
    *
-   * export default defineConfig({
-   *   default: 'default',
-   *   connections: {
-   *     default: {
-   *       driver: 'postgres',
-   *       host: 'localhost',
-   *       database: 'myapp'
-   *     }
-   *   }
-   * })
-   *
-   * // Then in your app
-   * await DB.configureFromFile()
-   * ```
+   * @param configPath - Explicit path to the config file.
    */
   static async configureFromFile(configPath?: string): Promise<void> {
     const { loadConfigFile } = await import('./config/loadConfig')
@@ -350,14 +320,9 @@ export class DB {
   }
 
   /**
-   * Auto-configure database from config file or environment
-   * Tries config file first, then falls back to environment variables
+   * Best-effort configuration using file detection then environment variables.
    *
-   * @example
-   * ```typescript
-   * // Will try config/database.ts first, then environment variables
-   * await DB.autoConfigure()
-   * ```
+   * @param configPath - Optional path to try first.
    */
   static async autoConfigure(configPath?: string): Promise<void> {
     const { autoConfigure: autoConfigureImpl } = await import('./config/loadConfig')
@@ -365,14 +330,10 @@ export class DB {
   }
 
   /**
-   * Add a new connection configuration to the manager.
+   * Manually adds a connection to the manager.
    *
-   * @param name - Unique identifier for the connection.
-   * @param config - Connection settings (driver, host, etc.).
-   * @example
-   * ```typescript
-   * DB.addConnection('read-replica', { driver: 'postgres', host: 'replica.db.com' })
-   * ```
+   * @param name - Unique connection name.
+   * @param config - Connection settings.
    */
   static addConnection(name: string, config: ConnectionConfig): void {
     DB.manager.addConnection(name, config)
@@ -380,15 +341,10 @@ export class DB {
   }
 
   /**
-   * Add a connection by reading specific environment variables with a prefix.
+   * Adds a connection configured via prefixed environment variables.
    *
-   * @param name - Unique identifier for the connection.
-   * @param prefix - Environment variable prefix (e.g., 'READ_DB').
-   * @example
-   * ```typescript
-   * // Reads READ_DB_DRIVER, READ_DB_HOST, etc.
-   * DB.addConnectionFromEnv('read', 'READ_DB')
-   * ```
+   * @param name - Connection name.
+   * @param prefix - Env variable prefix (e.g. "READ_ONLY").
    */
   static addConnectionFromEnv(name: string, prefix = ''): void {
     const { fromEnv } = require('./config/defineConfig')
@@ -400,18 +356,16 @@ export class DB {
   }
 
   /**
-   * Set the name of the default connection to use when none is specified.
+   * Sets the global default connection.
    *
-   * @param name - The connection name.
+   * @param name - The connection identifier.
    */
   static setDefaultConnection(name: string): void {
     DB.manager.setDefaultConnection(name)
   }
 
   /**
-   * Get the name of the current default connection.
-   *
-   * @returns The default connection name.
+   * Returns the name of the current default connection.
    */
   static getDefaultConnection(): string {
     return DB.manager.getDefaultConnection()
@@ -422,12 +376,11 @@ export class DB {
   // ============================================================================
 
   /**
-   * Get a connection instance by name.
-   * If no name is provided, the default connection is returned.
+   * Retrieves a connection instance.
    *
-   * @param name - Optional connection name.
-   * @returns The connection instance implementing ConnectionContract.
-   * @throws Error if the connection is not configured.
+   * @param name - Name of the connection (defaults to the global default).
+   * @returns The active connection instance.
+   * @throws {Error} If DB is not configured or connection name is unknown.
    */
   static connection(name?: string): ConnectionContract {
     DB.ensureConfigured()
@@ -435,29 +388,21 @@ export class DB {
   }
 
   /**
-   * Check if a connection with the given name exists.
-   *
-   * @param name - The connection name to check.
-   * @returns True if configured.
+   * Checks if a specific connection has been configured.
    */
   static hasConnection(name: string): boolean {
     return DB.manager.hasConnection(name)
   }
 
   /**
-   * Get a list of all configured connection names.
-   *
-   * @returns Array of connection names.
+   * Lists all configured connection identifiers.
    */
   static getConnectionNames(): string[] {
     return DB.manager.getConnectionNames()
   }
 
   /**
-   * Get the configuration object for a specific connection.
-   *
-   * @param name - Optional connection name (defaults to default connection).
-   * @returns The connection configuration or undefined.
+   * Retrieves the raw configuration for a connection.
    */
   static getConnectionConfig(name?: string): ConnectionConfig | undefined {
     const connectionName = name ?? DB.manager.getDefaultConnection()
@@ -469,19 +414,11 @@ export class DB {
   // ============================================================================
 
   /**
-   * Begin a fluent query against a database table.
+   * Initializes a fluent query builder for a specific table.
    *
-   * @template T - The type of the record (defaults to Record<string, unknown>).
-   * @param tableName - The name of the table to query.
-   * @returns A new QueryBuilder instance for the specified table.
-   *
-   * @example
-   * ```typescript
-   * const users = await DB.table('users')
-   *   .where('status', 'active')
-   *   .orderBy('created_at', 'desc')
-   *   .get();
-   * ```
+   * @template T - The row type.
+   * @param tableName - The database table name.
+   * @returns A QueryBuilder instance.
    */
   static table<T = Record<string, unknown>>(tableName: string): QueryBuilderContract<T> {
     DB.ensureConfigured()
@@ -489,38 +426,39 @@ export class DB {
   }
 
   /**
-   * Execute a raw SQL query against the database.
+   * Executes a raw SQL statement with telemetry tracking.
    *
-   * @template T - The expected return type of the rows.
-   * @param sql - The raw SQL string (can contain placeholders like $1 or ?).
-   * @param bindings - Array of values to bind to the placeholders.
-   * @returns The raw query result containing rows and metadata.
+   * @template T - The expected row type.
+   * @param sql - The SQL string with placeholders.
+   * @param bindings - Array of values.
+   * @returns The raw query result.
    *
    * @example
    * ```typescript
-   * const result = await DB.raw('SELECT * FROM users WHERE id = ?', [1]);
-   * const user = result.rows[0];
+   * const users = await DB.raw('SELECT * FROM users WHERE active = ?', [true]);
    * ```
    */
   static async raw<T = Record<string, unknown>>(
     sql: string,
     bindings: unknown[] = []
   ): Promise<QueryResult<T>> {
-    return DB.connection().raw<T>(sql, bindings)
+    const tracer = DB.getTracer()
+    const span = tracer?.startSpan('Atlas:Raw', {
+      'db.operation': 'raw',
+    })
+
+    try {
+      if (span) {
+        span.setAttribute('db.statement', sql)
+      }
+      return await DB.connection().raw<T>(sql, bindings)
+    } finally {
+      span?.end()
+    }
   }
 
   /**
-   * Create a raw SQL expression that will not be escaped.
-   * Useful for complex `where` clauses or updates.
-   */
-  /**
-   * Execute a raw SQL query against the database.
-   * Alias for `raw()` to match Laravel/Eloquent style.
-   *
-   * @template T - The expected return type of the rows.
-   * @param sql - The raw SQL string.
-   * @param bindings - Array of values to bind.
-   * @returns The raw query result.
+   * Alias for {@link raw}.
    */
   static async rawQuery<T = Record<string, unknown>>(
     sql: string,
@@ -534,47 +472,38 @@ export class DB {
   // ============================================================================
 
   /**
-   * Execute a callback within a database transaction.
+   * Executes logic within a managed database transaction.
    *
-   * If the callback throws an exception, the transaction is automatically rolled back.
-   * If the callback returns successfully, the transaction is committed.
+   * Automatically commits on success and rolls back on error.
+   * Receives a connection instance scoped to the transaction.
    *
-   * @template T - The return type of the callback.
-   * @param callback - The function to execute within the transaction. Receives a transaction-scoped connection.
-   * @param connectionName - Optional connection name to use.
-   * @returns The value returned by the callback.
-   *
-   * @example
-   * ```typescript
-   * await DB.transaction(async (trx) => {
-   *   await trx.table('accounts').where('id', 1).decrement('balance', 100);
-   *   await trx.table('accounts').where('id', 2).increment('balance', 100);
-   * });
-   * ```
+   * @template T - Logic result type.
+   * @param callback - The transactional logic.
+   * @param connectionName - Optional specific connection.
+   * @returns The callback's return value.
    */
   static async transaction<T>(
     callback: (connection: ConnectionContract) => Promise<T>,
     connectionName?: string
   ): Promise<T> {
-    return DB.connection(connectionName).transaction(callback)
+    const tracer = DB.getTracer()
+    const span = tracer?.startSpan('Atlas:Transaction')
+
+    try {
+      return await DB.connection(connectionName).transaction(callback)
+    } finally {
+      span?.end()
+    }
   }
 
   /**
-   * Manually begin a database transaction.
+   * Manually starts a database transaction.
    *
-   * @param connectionName - Optional connection name.
-   * @returns A connection instance scoped to the transaction.
-   * @throws Error if the driver does not support transactions.
-   * @example
-   * ```typescript
-   * const trx = await DB.beginTransaction()
-   * try {
-   *   await trx.table('users').insert({ name: 'John' })
-   *   await trx.commit()
-   * } catch (e) {
-   *   await trx.rollback()
-   * }
-   * ```
+   * Caller is responsible for calling commit() or rollback().
+   *
+   * @param connectionName - Connection to use.
+   * @returns A transaction-scoped connection.
+   * @throws {Error} If the driver does not support transactions.
    */
   static async beginTransaction(connectionName?: string): Promise<ConnectionContract> {
     const connection = DB.connection(connectionName)
@@ -594,43 +523,35 @@ export class DB {
   // ============================================================================
 
   /**
-   * Close a specific database connection.
-   *
-   * @param name - Optional connection name.
+   * Closes the specified connection.
    */
   static async disconnect(name?: string): Promise<void> {
     await DB.manager.disconnect(name)
   }
 
   /**
-   * Close all active database connections.
+   * Closes all managed connections.
    */
   static async disconnectAll(): Promise<void> {
     await DB.manager.disconnectAll()
   }
 
   /**
-   * Shutdown the database manager, disconnecting all connections and stopping cleanup tasks.
-   * Should be called when the application is shutting down.
+   * Safely shuts down the database subsystem.
    */
   static async shutdown(): Promise<void> {
     await DB.manager.shutdown()
   }
 
   /**
-   * Force a reconnection to a specific connection.
-   *
-   * @param name - Optional connection name.
-   * @returns The new connection instance.
+   * Closes and re-opens a connection.
    */
   static async reconnect(name?: string): Promise<ConnectionContract> {
     return DB.manager.reconnect(name)
   }
 
   /**
-   * Remove a connection instance from the manager's internal cache.
-   *
-   * @param name - Optional connection name.
+   * Removes a connection from the internal cache without closing it.
    */
   static purge(name?: string): void {
     DB.manager.purge(name)
@@ -641,12 +562,7 @@ export class DB {
   // ============================================================================
 
   /**
-   * Begin a fluent query with a pre-selected set of columns.
-   *
-   * @template T - The record type.
-   * @param tableName - The table to query.
-   * @param columns - Array of column names (defaults to ['*']).
-   * @returns A QueryBuilder instance.
+   * Shortcut for starting a query with specific columns.
    */
   static select<T = Record<string, unknown>>(
     tableName: string,
@@ -656,12 +572,7 @@ export class DB {
   }
 
   /**
-   * Quickly insert one or more records into a table.
-   *
-   * @template T - The record type.
-   * @param tableName - The table name.
-   * @param data - Single record or array of records.
-   * @returns Promise resolving to the inserted records.
+   * Shortcut for inserting records.
    */
   static async insert<T = Record<string, unknown>>(
     tableName: string,
@@ -671,13 +582,7 @@ export class DB {
   }
 
   /**
-   * Quickly update records in a table matching a set of conditions.
-   *
-   * @template T - The record type.
-   * @param tableName - The table name.
-   * @param where - Object containing equality conditions.
-   * @param data - The attributes to update.
-   * @returns Promise resolving to the number of affected rows.
+   * Shortcut for updating records based on key-value filters.
    */
   static async update<T = Record<string, unknown>>(
     tableName: string,
@@ -692,11 +597,7 @@ export class DB {
   }
 
   /**
-   * Quickly delete records from a table matching a set of conditions.
-   *
-   * @param tableName - The table name.
-   * @param where - Object containing equality conditions.
-   * @returns Promise resolving to the number of affected rows.
+   * Shortcut for deleting records based on key-value filters.
    */
   static async delete(tableName: string, where: Record<string, unknown>): Promise<number> {
     let query = DB.table(tableName)
@@ -711,9 +612,7 @@ export class DB {
   // ============================================================================
 
   /**
-   * Ensure the database manager has been configured.
-   *
-   * @throws Error if not initialized.
+   * Ensures the DB facade is ready for use.
    */
   private static ensureConfigured(): void {
     if (!DB.initialized) {
@@ -722,9 +621,7 @@ export class DB {
   }
 
   /**
-   * Reset the DB facade state and disconnect all connections.
-   * Primarily used for testing purposes.
-   *
+   * Internal reset for testing.
    * @internal
    */
   static async _reset(): Promise<void> {

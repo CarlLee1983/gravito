@@ -1,4 +1,11 @@
+---
 title: Cosmos Architecture 技術架構規格書
+version: 1.0.0
+status: Stable
+tier: C
+last_updated: 2026-01-29
+---
+
 # Cosmos Architecture 技術架構規格書 (v3.1.0)
 
 本文件詳述 `@gravito/cosmos` 的內部架構、國際化 (i18n) 實作機制以及請求範疇 (Request-Scoped) 的設計策略。
