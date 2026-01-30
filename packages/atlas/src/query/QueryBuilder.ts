@@ -1016,17 +1016,7 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
         span.setAttribute('db.statement', sql)
       }
 
-      if (process.env.DEBUG_ATLAS) {
-        console.log('[Atlas] Executing INSERT:', sql)
-        console.log('[Atlas] Bindings:', allBindings)
-      }
-
       const result = await this.connection.raw<T>(sql, allBindings)
-
-      if (process.env.DEBUG_ATLAS) {
-        console.log('[Atlas] INSERT result.rows:', result.rows)
-      }
-
       return result.rows
     } finally {
       span?.end()

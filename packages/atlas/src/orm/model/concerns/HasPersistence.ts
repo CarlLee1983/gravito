@@ -122,15 +122,6 @@ export class HasPersistence {
 
     const result = await connection.table(modelCtor.getTable()).insert((this as any)._attributes)
 
-    if (process.env.DEBUG_ATLAS) {
-      console.log('[Atlas] Insert result:', {
-        isArray: Array.isArray(result),
-        length: result?.length,
-        firstItem: result?.[0],
-        table: modelCtor.getTable(),
-      })
-    }
-
     // Set primary key from result
     if (Array.isArray(result) && result.length > 0) {
       const pk = result[0]
@@ -141,15 +132,30 @@ export class HasPersistence {
         ;(this as any)._attributes[modelCtor.primaryKey] = pk
       }
     } else if ((this as any)._attributes[modelCtor.primaryKey] === undefined) {
-      // Fallback: If result is empty but we don't have an ID, try to get it
-      // This helps with drivers that don't support RETURNING or return empty results
+      // Fallback 1: Try to get the last inserted ID using max()
       try {
         const lastId = await connection.table(modelCtor.getTable()).max(modelCtor.primaryKey)
-        if (lastId) {
+        if (lastId !== null && lastId !== undefined) {
           ;(this as any)._attributes[modelCtor.primaryKey] = lastId
+
+          // Fallback 2: If we got an ID, fetch the full record to get all attributes
+          const fullRecord = await connection
+            .table<any>(modelCtor.getTable())
+            .where(modelCtor.primaryKey, lastId)
+            .first()
+
+          if (fullRecord) {
+            Object.assign((this as any)._attributes, fullRecord)
+          }
         }
-      } catch (_e) {
-        // Ignore fallback errors
+      } catch (e) {
+        if (process.env.DEBUG_ATLAS) {
+          console.error('[Atlas] Fallback failed:', e)
+        }
+        throw new Error(
+          `Failed to set primary key after insert for ${modelCtor.name}. ` +
+            `This may indicate a driver compatibility issue with RETURNING clause.`
+        )
       }
     }
 

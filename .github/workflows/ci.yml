@@ -88,8 +88,6 @@ jobs:
             --filter='./packages/*' \
             --filter='./satellites/*' \
             --concurrency=2
-        env:
-          DEBUG_ATLAS: 1
       
       # Check for unused imports and cross-package type issues
       - name: Check Unused Imports

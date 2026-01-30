@@ -344,15 +344,6 @@ export class Connection implements ConnectionContract {
       bunSql &&
       ['postgres', 'mysql', 'mariadb', 'sqlite'].includes(this.config.driver)
 
-    if (process.env.DEBUG_ATLAS) {
-      console.log(`[Atlas] createDriver for ${this.config.driver}:`, {
-        useNativeDriver: this.config.useNativeDriver,
-        'useNativeDriver !== false': this.config.useNativeDriver !== false,
-        hasBunSql: !!bunSql,
-        useNative,
-      })
-    }
-
     if (useNative) {
       console.debug?.(`[Atlas] Using Bun.sql native driver for ${this.config.driver}`)
       return new BunSQLDriver(this.config)
