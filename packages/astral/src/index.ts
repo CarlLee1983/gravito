@@ -275,10 +275,10 @@ export class OrbitAstral implements GravitoOrbit {
   async install(core: PlanetCore): Promise<void> {
     const router = core.router
 
-    // 1. Serve OpenAPI JSON
+    // 1. Serve OpenAPI JSON (with caching)
     router.get(this.config.jsonPath || '/openapi.json', (ctx: GravitoContext) => {
       const routes = router.compile()
-      const spec = this.generator.generate(routes)
+      const spec = this.generator.generateWithCache(routes)
       return ctx.json(spec)
     })
 
