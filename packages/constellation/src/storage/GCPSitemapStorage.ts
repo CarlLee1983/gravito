@@ -1,4 +1,7 @@
-import type { SitemapStorage } from '../types'
+import { Readable } from 'node:stream'
+import { pipeline } from 'node:stream/promises'
+import type { SitemapStorage, WriteStreamOptions } from '../types'
+import { createCompressionStream, toGzipFilename } from '../utils/Compression'
 
 /**
  * Options for configuring the `GCPSitemapStorage`.
@@ -108,6 +111,43 @@ export class GCPSitemapStorage implements SitemapStorage {
         cacheControl: 'public, max-age=3600',
       },
     })
+  }
+
+  /**
+   * 使用串流方式寫入 sitemap 至 GCP Cloud Storage，可選擇性啟用 gzip 壓縮。
+   *
+   * @param filename - 檔案名稱
+   * @param stream - XML 內容的 AsyncIterable
+   * @param options - 寫入選項（如壓縮、content type）
+   *
+   * @since 3.1.0
+   */
+  async writeStream(
+    filename: string,
+    stream: AsyncIterable<string>,
+    options?: WriteStreamOptions
+  ): Promise<void> {
+    const { bucket } = await this.getStorageClient()
+    const key = this.getKey(options?.compress ? toGzipFilename(filename) : filename)
+    const file = bucket.file(key)
+
+    const writeStream = file.createWriteStream({
+      resumable: false,
+      contentType: options?.compress ? 'application/gzip' : 'application/xml',
+      metadata: {
+        contentEncoding: options?.compress ? 'gzip' : undefined,
+        cacheControl: 'public, max-age=3600',
+      },
+    })
+
+    const readable = Readable.from(stream, { encoding: 'utf-8' })
+
+    if (options?.compress) {
+      const gzip = createCompressionStream()
+      await pipeline(readable, gzip, writeStream)
+    } else {
+      await pipeline(readable, writeStream)
+    }
   }
 
   /**

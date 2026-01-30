@@ -1,4 +1,5 @@
-import type { SitemapStorage } from '../types'
+import type { SitemapStorage, WriteStreamOptions } from '../types'
+import { compressToBuffer, toGzipFilename } from '../utils/Compression'
 
 /**
  * MemorySitemapStorage is a non-persistent, in-memory storage backend for sitemaps.
@@ -28,6 +29,41 @@ export class MemorySitemapStorage implements SitemapStorage {
    */
   async write(filename: string, content: string): Promise<void> {
     this.files.set(filename, content)
+  }
+
+  /**
+   * 使用串流方式寫入 sitemap 至記憶體，可選擇性啟用 gzip 壓縮。
+   * 記憶體儲存會收集串流為完整字串。
+   *
+   * @param filename - 檔案名稱
+   * @param stream - XML 內容的 AsyncIterable
+   * @param options - 寫入選項（如壓縮）
+   *
+   * @since 3.1.0
+   */
+  async writeStream(
+    filename: string,
+    stream: AsyncIterable<string>,
+    options?: WriteStreamOptions
+  ): Promise<void> {
+    const chunks: string[] = []
+    for await (const chunk of stream) {
+      chunks.push(chunk)
+    }
+    const content = chunks.join('')
+
+    const key = options?.compress ? toGzipFilename(filename) : filename
+
+    if (options?.compress) {
+      const compressed = await compressToBuffer(
+        (async function* () {
+          yield content
+        })()
+      )
+      this.files.set(key, compressed.toString('base64'))
+    } else {
+      this.files.set(key, content)
+    }
   }
 
   /**

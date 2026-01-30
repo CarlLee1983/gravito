@@ -1,4 +1,5 @@
-import type { SitemapStorage } from '../types'
+import type { SitemapStorage, WriteStreamOptions } from '../types'
+import { compressToBuffer, toGzipFilename } from '../utils/Compression'
 
 /**
  * Options for configuring the `S3SitemapStorage`.
@@ -131,6 +132,51 @@ export class S3SitemapStorage implements SitemapStorage {
         Key: key,
         Body: content,
         ContentType: 'application/xml',
+      })
+    )
+  }
+
+  /**
+   * 使用串流方式寫入 sitemap 至 S3，可選擇性啟用 gzip 壓縮。
+   * S3 需要知道 Content-Length，因此會先收集串流為 Buffer。
+   *
+   * @param filename - 檔案名稱
+   * @param stream - XML 內容的 AsyncIterable
+   * @param options - 寫入選項（如壓縮、content type）
+   *
+   * @since 3.1.0
+   */
+  async writeStream(
+    filename: string,
+    stream: AsyncIterable<string>,
+    options?: WriteStreamOptions
+  ): Promise<void> {
+    const s3 = await this.getS3Client()
+    const key = this.getKey(options?.compress ? toGzipFilename(filename) : filename)
+
+    let body: Buffer | string
+    const contentType = options?.contentType || 'application/xml'
+    let contentEncoding: string | undefined
+
+    if (options?.compress) {
+      body = await compressToBuffer(stream)
+      contentEncoding = 'gzip'
+    } else {
+      // 收集成字串
+      const chunks: string[] = []
+      for await (const chunk of stream) {
+        chunks.push(chunk)
+      }
+      body = chunks.join('')
+    }
+
+    await s3.client.send(
+      new s3.PutObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
+        Body: body,
+        ContentType: contentType,
+        ContentEncoding: contentEncoding,
       })
     )
   }

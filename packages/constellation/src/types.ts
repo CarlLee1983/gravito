@@ -193,6 +193,19 @@ export interface SitemapStreamOptions {
 }
 
 /**
+ * Options for stream-based write operations.
+ *
+ * @public
+ * @since 3.1.0
+ */
+export interface WriteStreamOptions {
+  /** Whether to enable gzip compression for the output. @default false */
+  compress?: boolean | undefined
+  /** Optional content type override. @default 'application/xml' */
+  contentType?: string | undefined
+}
+
+/**
  * Persistence layer for storing generated sitemap files.
  *
  * Supports atomic deployments via "shadow" areas and provides hooks for
@@ -209,6 +222,22 @@ export interface SitemapStorage {
    * @param content - The raw XML content.
    */
   write(filename: string, content: string): Promise<void>
+
+  /**
+   * Write sitemap content using a streaming approach to reduce memory usage.
+   *
+   * If implemented, this method will be preferred over `write()` for large sitemaps.
+   *
+   * @param filename - The destination filename.
+   * @param stream - An async iterable that yields XML string chunks.
+   * @param options - Optional write configuration including compression.
+   * @since 3.1.0
+   */
+  writeStream?(
+    filename: string,
+    stream: AsyncIterable<string>,
+    options?: WriteStreamOptions
+  ): Promise<void>
 
   /**
    * Read sitemap content from the storage backend.
@@ -554,4 +583,19 @@ export interface RedirectManager {
    * @returns The final destination URL, or null if no redirect matches.
    */
   resolve(url: string, followChains?: boolean, maxChainLength?: number): Promise<string | null>
+}
+
+/**
+ * Compression configuration options.
+ *
+ * @public
+ * @since 3.1.0
+ */
+export interface CompressionOptions {
+  /** Whether compression is enabled. @default false */
+  enabled: boolean
+  /** Compression format. @default 'gzip' */
+  format?: 'gzip' | undefined
+  /** Compression level (1-9, where 1 is fastest and 9 is best compression). @default 6 */
+  level?: number | undefined
 }

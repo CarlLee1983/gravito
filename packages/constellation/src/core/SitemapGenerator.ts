@@ -1,4 +1,5 @@
 import type {
+  CompressionOptions,
   ShardInfo,
   ShardManifest,
   SitemapEntry,
@@ -6,6 +7,7 @@ import type {
   SitemapStorage,
   SitemapStreamOptions,
 } from '../types'
+import { compressToBuffer, toGzipFilename } from '../utils/Compression'
 import type { ShadowProcessor } from './ShadowProcessor'
 import { ShadowProcessor as ShadowProcessorImpl } from './ShadowProcessor'
 import { SitemapIndex } from './SitemapIndex'
@@ -37,6 +39,8 @@ export interface SitemapGeneratorOptions extends SitemapStreamOptions {
   }
   /** Optional callback to track generation progress. */
   onProgress?: (progress: { processed: number; total: number; percentage: number }) => void
+  /** Compression configuration for reducing sitemap file sizes. @since 3.1.0 */
+  compression?: CompressionOptions
 }
 
 /**
@@ -107,11 +111,12 @@ export class SitemapGenerator {
 
       const baseName = this.options.filename?.replace(/\.xml$/, '')
       const filename = `${baseName}-${shardIndex}.xml`
-      const xml = currentStream.toXML()
       const entries = currentStream.getEntries()
 
+      const actualFilename = this.options.compression?.enabled ? toGzipFilename(filename) : filename
+
       shards.push({
-        filename,
+        filename: actualFilename,
         from: this.normalizeUrl(entries[0].url),
         to: this.normalizeUrl(entries[entries.length - 1].url),
         count: entries.length,
@@ -119,12 +124,15 @@ export class SitemapGenerator {
       })
 
       if (this.shadowProcessor) {
-        await this.shadowProcessor.addOperation({ filename, content: xml })
+        // Shadow processor 需要完整內容，使用 toXML()
+        const xml = currentStream.toXML()
+        await this.shadowProcessor.addOperation({ filename: actualFilename, content: xml })
       } else {
-        await this.options.storage.write(filename, xml)
+        // 直接寫入使用串流方法
+        await this.writeSitemap(currentStream, filename)
       }
 
-      const url = this.options.storage.getUrl(filename)
+      const url = this.options.storage.getUrl(actualFilename)
       index.add({
         url: url,
         lastmod: new Date(),
@@ -188,11 +196,13 @@ export class SitemapGenerator {
     }
 
     if (!isMultiFile) {
-      const xml = currentStream.toXML()
       const entries = currentStream.getEntries()
+      const actualFilename = this.options.compression?.enabled
+        ? toGzipFilename(this.options.filename!)
+        : this.options.filename!
 
       shards.push({
-        filename: this.options.filename!,
+        filename: actualFilename,
         from: entries[0] ? this.normalizeUrl(entries[0].url) : '',
         to: entries[entries.length - 1] ? this.normalizeUrl(entries[entries.length - 1].url) : '',
         count: entries.length,
@@ -200,14 +210,17 @@ export class SitemapGenerator {
       })
 
       if (this.shadowProcessor) {
+        // Shadow processor 需要完整內容，使用 toXML()
+        const xml = currentStream.toXML()
         await this.shadowProcessor.addOperation({
-          filename: this.options.filename!,
+          filename: actualFilename,
           content: xml,
         })
         await writeManifest()
         await this.shadowProcessor.commit()
       } else {
-        await this.options.storage.write(this.options.filename!, xml)
+        // 直接寫入使用串流方法
+        await this.writeSitemap(currentStream, this.options.filename!)
         await writeManifest()
       }
       return
@@ -229,6 +242,41 @@ export class SitemapGenerator {
     } else {
       await this.options.storage.write(this.options.filename!, indexXml)
       await writeManifest()
+    }
+  }
+
+  /**
+   * 統一的 sitemap 寫入方法，優先使用串流寫入以降低記憶體使用。
+   *
+   * @param stream - SitemapStream 實例
+   * @param filename - 檔案名稱
+   * @since 3.1.0
+   */
+  private async writeSitemap(stream: SitemapStream, filename: string): Promise<void> {
+    const { storage, compression } = this.options
+    const compress = compression?.enabled ?? false
+
+    // 優先使用串流寫入（如果 storage 支援）
+    if (storage.writeStream) {
+      const actualFilename = compress ? toGzipFilename(filename) : filename
+      await storage.writeStream(actualFilename, stream.toAsyncIterable(), {
+        compress,
+        contentType: 'application/xml',
+      })
+    } else {
+      // 回退到字串寫入
+      const xml = stream.toXML()
+      if (compress) {
+        const buffer = await compressToBuffer(
+          (async function* () {
+            yield xml
+          })(),
+          { level: compression?.level }
+        )
+        await storage.write(toGzipFilename(filename), buffer.toString('base64'))
+      } else {
+        await storage.write(filename, xml)
+      }
     }
   }
 
