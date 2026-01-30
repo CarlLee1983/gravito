@@ -85,40 +85,11 @@ export class HasPersistence {
    */
   protected async _performInsert(): Promise<this> {
     const modelCtor = this.constructor as any
-    const connection = DB.connection(modelCtor.connection)
+    const connectionName = modelCtor.connection || 'default'
+    const connection = DB.connection(connectionName)
 
     // Trigger 'creating' event
     await (this as any).emit('creating')
-
-    // Handle Timestamps
-    if (modelCtor.timestamps) {
-      const now = new Date()
-      if (!(this as any)._attributes[modelCtor.createdAtColumn]) {
-        ;(this as any)._setAttribute(modelCtor.createdAtColumn, now)
-      }
-      // Only set updated_at if timestamps is not 'created_only'
-      if (
-        modelCtor.timestamps !== 'created_only' &&
-        !(this as any)._attributes[modelCtor.updatedAtColumn]
-      ) {
-        ;(this as any)._setAttribute(modelCtor.updatedAtColumn, now)
-      }
-    }
-
-    // Handle @column(autoCreate)
-    const columns = (modelCtor as any)[COLUMN_KEY]
-    if (columns) {
-      for (const [prop, options] of Object.entries(columns)) {
-        if ((options as any).autoCreate && !(this as any)._attributes[prop]) {
-          ;(this as any)._setAttribute(prop, new Date())
-        }
-      }
-    }
-
-    const versionKey = (modelCtor as any)[VERSION_KEY] as string | undefined
-    if (versionKey && (this as any)._attributes[versionKey] === undefined) {
-      ;(this as any)._setAttribute(versionKey, 1)
-    }
 
     const result = await connection.table(modelCtor.getTable()).insert((this as any)._attributes)
 
@@ -186,11 +157,17 @@ export class HasPersistence {
           )
         }
       } catch (e) {
-        if (process.env.DEBUG_ATLAS) {
-          console.error('[Atlas] Fallback failed:', e)
+        const driver = connection.getDriver()
+        const driverName = driver.getDriverName()
+        if (process.env.DEBUG_ATLAS || process.env.CI) {
+          console.error(
+            `[Atlas] Fallback failed for ${modelCtor.name} on connection ${connectionName} (${driverName}):`,
+            e
+          )
         }
         throw new Error(
           `Failed to set primary key after insert for ${modelCtor.name}. ` +
+            `Conn: ${connectionName}, Driver: ${driverName}. ` +
             `Original error: ${e instanceof Error ? e.message : String(e)}`
         )
       }
