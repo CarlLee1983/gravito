@@ -42,6 +42,12 @@ describe('Optimistic Locking', () => {
       useNativeDriver: false, // Disable due to Bun.sql limitation
     })
 
+    const conn = DB.connection(CONNECTION_NAME)
+    const driverName = conn.getDriver().constructor.name
+    if (process.env.DEBUG_ATLAS) {
+      console.log(`[TEST] Using driver: ${driverName}`)
+    }
+
     await Schema.connection(CONNECTION_NAME).create('versioned_users', (table) => {
       table.id()
       table.string('name')

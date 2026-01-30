@@ -34,8 +34,14 @@
       "Bash(tee:*)",
       "Bash(bun:*)",
       "WebSearch",
-      "WebFetch(domain:bun.com)"
+      "WebFetch(domain:bun.com)",
+      "Bash(sqlite3:*)",
+      "Bash(gh run list:*)",
+      "Bash(gh run:*)"
     ]
   },
-  "enabledMcpjsonServers": ["pencil", "context7"]
+  "enabledMcpjsonServers": [
+    "pencil",
+    "context7"
+  ]
 }
