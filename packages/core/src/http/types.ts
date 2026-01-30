@@ -79,6 +79,14 @@ export interface GravitoVariables {
    */
   cookieJar?: unknown // CookieJar
 
+  /**
+   * Middleware scope tracking for Orbit isolation
+   * Tracks which Orbit/scope this request belongs to
+   * Used to prevent cross-Orbit middleware contamination
+   * @since 2.3.0
+   */
+  middlewareScope?: string // Orbit or scope name (e.g., 'api', 'blog', 'admin')
+
   /** @deprecated Use ctx.route() instead */
   route?: unknown
 

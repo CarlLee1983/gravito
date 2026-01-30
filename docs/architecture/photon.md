@@ -1076,16 +1076,42 @@ app.use('*', compress())
 - **緩解**：`@gravito/core` 透過 `HttpAdapter` 抽象層隔離了具體引擎。
 
 ### 中介軟體順序敏感性
-- **問題**：執行順序嚴格依賴註冊順序。
-- **風險**：在多 Orbit 掛載的大型應用中，全域 Middleware (如 `*`) 可能意外影響其他 Orbit。
-- **建議**：PlanetCore 層級應限制 Orbit 只能註冊在自己的 Path Scope 下。
+
+**問題**：執行順序嚴格依賴註冊順序。在多 Orbit 掛載的大型應用中，全域 Middleware (如 `app.use('*')`) 可能意外影響其他 Orbit。
+
+**解決方案**：v1.0.0-beta.1 開始，`HttpAdapter` 提供 `useScoped()` 方法強制執行 Orbit 級別的中介軟體隔離。
+
+#### useScoped() API
+
+```typescript
+// ✅ 正確：使用 useScoped() 註冊 Orbit 內部的中介軟體
+const apiOrbit = new PlanetCore()
+apiOrbit.adapter.useScoped('/api', '/users', authMiddleware)
+apiOrbit.adapter.useScoped('/api', '/posts', loggingMiddleware)
+
+// ❌ 錯誤：嘗試在 Orbit 內使用萬用字元 '*' 將被拒絕
+apiOrbit.adapter.useScoped('/api', '*', globalMiddleware) 
+// Error: Cannot use wildcard path '*' in Orbit-scoped middleware
+
+core.mountOrbit('/api', apiOrbit)
+```
+
+**行為限制**：
+- `useScoped(scope, path, ...middleware)` 會驗證 `path` 不為 `'*'` 或 `'*/*'`
+- 強制路徑必須包含 scope 前綴（如 `/api/users`）
+- 防止 Orbit 意外註冊全域中介軟體污染其他模組
+
+**建議實踐**：
+1. PlanetCore 主應用使用 `use('*')` 註冊全域中介軟體（如 CORS、安全標頭）
+2. Orbit 應用內部使用 `useScoped(scope, path)` 註冊路徑限定的中介軟體
+3. 避免在 Orbit 中使用 `use('*')`，以防跨 Orbit 污染
 
 ---
 
 ## 後續優化建議
 
-1. **Orbit 級別的 Middleware 隔離** (Priority: Medium)
-   - 實作輔助函數，確保中介軟體只作用於特定 Orbit 子樹。
+1. ~~**Orbit 級別的 Middleware 隔離**~~ ✅ **已實作** (v1.0.0-beta.1)
+   - `useScoped()` API 提供強制路徑驗證，確保中介軟體只作用於特定 Orbit 子樹。
 
 2. **HTTP/3 QUIC 支援** (Priority: Low)
    - 評估 Bun 的 HTTP/3 支援進度，適時暴露相關配置。

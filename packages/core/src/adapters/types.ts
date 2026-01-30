@@ -165,6 +165,34 @@ export interface HttpAdapter<V extends GravitoVariables = GravitoVariables> {
   useGlobal(...middleware: GravitoMiddleware<V>[]): void
 
   /**
+   * Register a scoped middleware for Orbit-level isolation
+   *
+   * Unlike regular `use()`, this method enforces stricter scoping rules:
+   * - REJECTS '*' wildcard paths (prevents global middleware in Orbits)
+   * - ENFORCES that all middleware paths must include the scope prefix
+   * - Throws error if attempting to register global middleware within an Orbit scope
+   *
+   * This is designed to prevent accidental middleware cross-contamination
+   * when multiple Orbits are mounted to a single PlanetCore instance.
+   *
+   * @param scope - The scope/path prefix (e.g., '/api', '/blog')
+   * @param path - Path pattern to match (cannot be '*')
+   * @param middleware - One or more middleware functions
+   * @throws {Error} If path is '*' when in Orbit scope
+   * @since 2.3.0
+   *
+   * @example
+   * ```typescript
+   * // Correct: Scoped to specific path
+   * adapter.useScoped('/api', '/users/*', authMiddleware)
+   *
+   * // Error: Cannot use wildcard in Orbit scope
+   * adapter.useScoped('/api', '*', loggerMiddleware)
+   * ```
+   */
+  useScoped(scope: string, path: string, ...middleware: GravitoMiddleware<V>[]): void
+
+  /**
    * Mount a sub-adapter at a path
    *
    * @param path - Mount path
