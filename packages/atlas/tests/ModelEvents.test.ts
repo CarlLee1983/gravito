@@ -39,16 +39,11 @@ class EventUser extends Model {
 }
 
 describe('ModelEvents', () => {
-  const TEST_CONN = 'model_events_test'
-  let mockConnection: any
+  const TEST_CONN = `model_events_${Math.random().toString(36).slice(2)}`
   let mockGrammar: any
   let registrySpy: any
 
   beforeEach(() => {
-    // Reset DB
-    // @ts-expect-error
-    DB.initialized = false
-
     mockGrammar = {
       compileSelect: jest.fn(() => 'SELECT * FROM users'),
       compileUpdate: jest.fn(() => 'UPDATE users SET name = ? WHERE id = ?'),
@@ -61,33 +56,27 @@ describe('ModelEvents', () => {
       getPlaceholder: jest.fn(() => '?'),
     }
 
-    mockConnection = {
-      getName: () => TEST_CONN,
-      table: (name: string) => {
-        const { QueryBuilder } = require('../src/query/QueryBuilder')
-        return new QueryBuilder(mockConnection, mockGrammar, name)
-      },
-      raw: jest.fn().mockResolvedValue({ rows: [{ id: 1, name: 'Carl' }] }),
-      getGrammar: () => mockGrammar,
-      getTracer: () => undefined,
-      getDriver: () => ({
-        getGrammar: () => mockGrammar,
-        execute: jest.fn().mockResolvedValue({ affectedRows: 1, rows: [{ id: 1 }] }),
-        getDriverName: () => 'mock',
-      }),
-    }
+    DB.addConnection(TEST_CONN, {
+      driver: 'sqlite',
+      database: ':memory:',
+    } as any)
 
-    const originalManager = (DB as any).manager
-    const mockManager = {
-      connection: (name?: string) => {
-        if (name === TEST_CONN || !name) return mockConnection
-        return originalManager.connection(name)
-      },
-      hasConnection: (name: string) => name === TEST_CONN,
-      getConfig: (name: string) => (name === TEST_CONN ? { driver: 'mock' } : undefined),
+    const conn = DB.connection(TEST_CONN)
+    // @ts-expect-error - inject mock driver
+    conn.driver = {
+      getDriverName: () => 'mock',
+      connect: async () => {},
+      disconnect: async () => {},
+      isConnected: () => true,
+      query: async () => ({ rows: [{ id: 1, name: 'Carl' }], rowCount: 1 }),
+      execute: async () => ({ affectedRows: 1, insertId: 1 }),
+      beginTransaction: async () => {},
+      commit: async () => {},
+      rollback: async () => {},
+      inTransaction: () => false,
     }
-    ;(DB as any).manager = mockManager
-    ;(DB as any).initialized = true
+    // @ts-expect-error - inject mock grammar
+    conn.grammar = mockGrammar
 
     EventUser.connection = TEST_CONN
 
@@ -106,11 +95,8 @@ describe('ModelEvents', () => {
 
   afterEach(async () => {
     registrySpy.mockRestore()
-    // Restore original manager
-    // @ts-expect-error - reset DB state
-    DB.manager = new (require('../src/connection/ConnectionManager').ConnectionManager)()
-    // @ts-expect-error
-    DB.initialized = false
+    await DB.disconnect(TEST_CONN)
+    DB.purge(TEST_CONN)
   })
 
   test('it triggers creating and saving events on insert', async () => {

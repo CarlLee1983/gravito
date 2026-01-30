@@ -13,6 +13,7 @@ class SoftUser extends Model {
 }
 
 describe('SoftDeletes', () => {
+  const TEST_CONN = `soft_deletes_${Math.random().toString(36).slice(2)}`
   let mockConnection: any
   let mockGrammar: any
   let connectionSpy: any
@@ -47,9 +48,15 @@ describe('SoftDeletes', () => {
     }
 
     // Mock DB.connection
-    connectionSpy = spyOn(DB, 'connection').mockReturnValue(mockConnection)
+    const originalConnection = DB.connection
+    connectionSpy = spyOn(DB, 'connection').mockImplementation((name?: string) => {
+      if (name === TEST_CONN) return mockConnection
+      return originalConnection.call(DB, name as any)
+    })
     // @ts-expect-error
     DB.initialized = true
+
+    SoftUser.connection = TEST_CONN
 
     // Mock SchemaRegistry to avoid real sniff
     const { SchemaRegistry } = require('../src/orm/schema/SchemaRegistry')
@@ -69,6 +76,7 @@ describe('SoftDeletes', () => {
   afterEach(async () => {
     connectionSpy.mockRestore()
     registrySpy.mockRestore()
+    SoftUser.connection = undefined
   })
 
   test('it appends deleted_at IS NULL by default', async () => {

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, spyOn } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, it, spyOn } from 'bun:test'
 import { column, DB, Model, ModelRegistry, MorphMany, MorphOne, MorphTo } from '../src'
 import { PostgresGrammar } from '../src/grammar/PostgresGrammar'
 import { QueryBuilder } from '../src/query/QueryBuilder'
@@ -95,33 +95,45 @@ function createMockConnection(responses: Record<string, any[]>): any {
 }
 
 describe('Polymorphic Relationships', () => {
+  const TEST_CONN = `poly_test_${Math.random().toString(36).slice(2)}`
+  let connectionSpy: any
+
   beforeEach(() => {
     // @ts-expect-error
     DB.initialized = true
-    ModelRegistry.clear()
-    // Explicit register for test
-    ModelRegistry.register(Post)
-    ModelRegistry.register(Video)
-    ModelRegistry.register(Comment)
-    ModelRegistry.register(Image)
+    Image.connection = TEST_CONN
+    Post.connection = TEST_CONN
+    Video.connection = TEST_CONN
+  })
+
+  afterEach(() => {
+    if (connectionSpy) {
+      connectionSpy.mockRestore()
+      connectionSpy = null
+    }
+    Image.connection = undefined
+    Post.connection = undefined
+    Video.connection = undefined
   })
 
   it('should lazy load morphTo (Post)', async () => {
-    const comment = Comment.hydrate({
-      id: 1,
-      body: 'Great post!',
-      commentable_id: 10,
-      commentable_type: 'Post',
+    const responses: any = {
+      images: [{ id: 1, imageable_id: 10, imageable_type: 'Post' }],
+      posts: [{ id: 10, title: 'Morph Post' }],
+    }
+    const mockConn = createMockConnection(responses)
+
+    const originalConnection = DB.connection
+    connectionSpy = spyOn(DB, 'connection').mockImplementation((name?: string) => {
+      if (name === TEST_CONN) return mockConn
+      return originalConnection.call(DB, name as any)
     })
 
-    const mockConn = createMockConnection({
-      posts: [{ id: 10, title: 'Atlas Rocks' }],
-    })
-    spyOn(DB, 'connection').mockReturnValue(mockConn)
+    const image = Image.hydrate<Image>(responses.images[0])
+    const imageable = await image.imageable
 
-    const post = (await comment.commentable) as Post
-    expect(post).toBeInstanceOf(Post)
-    expect(post.title).toBe('Atlas Rocks')
+    expect(imageable).toBeInstanceOf(Post)
+    expect(imageable.title).toBe('Morph Post')
   })
 
   it('should lazy load morphTo (Video)', async () => {

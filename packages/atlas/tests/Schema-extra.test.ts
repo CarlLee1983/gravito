@@ -5,10 +5,10 @@ import type { QueryResult } from '../src/types'
 
 describe('Schema facade', () => {
   it('executes schema operations via configured connection', async () => {
-    const TEST_CONN = 'schema_extra_test'
+    const TEST_CONN = `schema_extra_${Math.random().toString(36).slice(2)}`
     const rawCalls: string[] = []
 
-    const mockConnection = {
+    const mockConnection: any = {
       getName: () => TEST_CONN,
       getTracer: () => undefined,
       getDriver: () => ({ getDriverName: () => 'postgres' }),
@@ -26,20 +26,18 @@ describe('Schema facade', () => {
         }
         return { rows: [], rowCount: 0 }
       },
+      execute: async () => ({ affectedRows: 1 }),
     }
 
-    const originalManager = (DB as any).manager
-    const mockManager = {
-      connection: (name?: string) => {
-        if (name === TEST_CONN || !name) return mockConnection as any
-        return originalManager.connection(name)
-      },
-      hasConnection: (name: string) => name === TEST_CONN,
-      getConfig: (name: string) => (name === TEST_CONN ? { driver: 'postgres' } : undefined),
+    const originalConnection = DB.connection
+    // @ts-expect-error - mock connection
+    DB.connection = (name?: string) => {
+      if (name === TEST_CONN) return mockConnection
+      return originalConnection.call(DB, name)
     }
 
     try {
-      ;(DB as any).manager = mockManager
+      // Set the connection name on the facade
       Schema.connection(TEST_CONN)
 
       expect(await Schema.hasTable('users')).toBe(true)
@@ -62,7 +60,8 @@ describe('Schema facade', () => {
 
       expect(rawCalls.length).toBeGreaterThan(0)
     } finally {
-      ;(DB as any).manager = originalManager
+      DB.connection = originalConnection
+      Schema.reset()
     }
   })
 })
