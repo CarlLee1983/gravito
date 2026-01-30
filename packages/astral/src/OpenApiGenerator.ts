@@ -4,6 +4,7 @@ import { zodToJsonSchema } from 'zod-to-json-schema'
 import { SpecCache } from './cache'
 import { AstralSchemaError } from './errors'
 import { getStableSchemaKey } from './hash'
+import { RouteIndex } from './route-index'
 import type { AstralConfig, AstralOperation, AstralResource } from './types'
 
 /**
@@ -119,9 +120,12 @@ export class OpenApiGenerator {
       }
     }
 
+    // Build route index for O(1) lookup
+    const routeIndex = new RouteIndex(routes)
+
     // Process each contract/resource
     for (const resource of this.config.contracts || []) {
-      this.processResource(spec, resource, routes)
+      this.processResource(spec, resource, routeIndex)
     }
 
     return spec
@@ -191,14 +195,12 @@ export class OpenApiGenerator {
    *
    * @param spec - The root OpenAPI specification object.
    * @param resource - The Astral resource contract.
-   * @param routes - The array of discovered framework routes.
+   * @param routeIndex - The route index for O(1) lookup.
    * @private
    */
-  private processResource(spec: any, resource: AstralResource, routes: AstralRoute[]) {
-    // Find matching routes using precise path matching
-    const matchingRoutes = routes.filter((route) =>
-      this.isRouteMatchingResource(route.path, resource.path)
-    )
+  private processResource(spec: any, resource: AstralResource, routeIndex: RouteIndex) {
+    // Find matching routes using O(1) index lookup
+    const matchingRoutes = routeIndex.findByPrefix(resource.path)
 
     for (const route of matchingRoutes) {
       const path = this.normalizePath(route.path)
