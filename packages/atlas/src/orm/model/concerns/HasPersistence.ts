@@ -122,6 +122,15 @@ export class HasPersistence {
 
     const result = await connection.table(modelCtor.getTable()).insert((this as any)._attributes)
 
+    if (process.env.DEBUG_ATLAS) {
+      console.log('[Atlas] Insert result:', {
+        isArray: Array.isArray(result),
+        length: result?.length,
+        firstItem: result?.[0],
+        table: modelCtor.getTable(),
+      })
+    }
+
     // Set primary key from result
     if (Array.isArray(result) && result.length > 0) {
       const pk = result[0]
