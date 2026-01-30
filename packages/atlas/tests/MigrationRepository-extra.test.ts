@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'bun:test'
+import { describe, expect, it, spyOn } from 'bun:test'
 import { DB } from '../src/DB'
 import { MigrationRepository } from '../src/migration/MigrationRepository'
 import { Schema } from '../src/schema/Schema'
@@ -6,9 +6,6 @@ import type { ConnectionContract } from '../src/types'
 
 describe('MigrationRepository', () => {
   it('tracks migrations using schema and db helpers', async () => {
-    const originalConnection = DB.connection
-    const originalSchemaConnection = Schema.connection
-
     const calls: string[] = []
     const records = [
       { migration: '20240101_create_users', batch: 1 },
@@ -39,20 +36,19 @@ describe('MigrationRepository', () => {
       disconnect: async () => {},
     }
 
-    try {
-      DB.connection = () => connection
-      Schema.connection = () =>
-        ({
-          create: async () => {
-            calls.push('create')
-            exists = true
-          },
-          hasTable: async () => exists,
-          dropIfExists: async () => {
-            calls.push('drop')
-          },
-        }) as any
+    const connectionSpy = spyOn(DB, 'connection').mockReturnValue(connection)
+    const schemaSpy = spyOn(Schema, 'connection').mockReturnValue({
+      create: async () => {
+        calls.push('create')
+        exists = true
+      },
+      hasTable: async () => exists,
+      dropIfExists: async () => {
+        calls.push('drop')
+      },
+    } as any)
 
+    try {
       const repo = new MigrationRepository()
       await repo.createRepository()
       await repo.deleteRepository()
@@ -71,8 +67,8 @@ describe('MigrationRepository', () => {
       expect(calls).toContain('create')
       expect(calls).toContain('drop')
     } finally {
-      DB.connection = originalConnection
-      Schema.connection = originalSchemaConnection
+      connectionSpy.mockRestore()
+      schemaSpy.mockRestore()
     }
   })
 })
