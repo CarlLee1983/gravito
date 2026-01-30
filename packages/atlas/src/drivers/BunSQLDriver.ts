@@ -106,7 +106,15 @@ export class BunSQLDriver implements DriverContract {
           : result && typeof result[Symbol.iterator] === 'function'
             ? Array.from(result)
             : result?.rows || []
+
+        // Try to get insertId from result metadata or first row (common for Postgres RETURNING)
         lastInsertRowid = result?.lastInsertRowid
+        if (lastInsertRowid === undefined && rows.length > 0) {
+          const firstRow = rows[0] as any
+          if (firstRow && (firstRow.id !== undefined || firstRow.ID !== undefined)) {
+            lastInsertRowid = firstRow.id ?? firstRow.ID
+          }
+        }
       }
 
       return {

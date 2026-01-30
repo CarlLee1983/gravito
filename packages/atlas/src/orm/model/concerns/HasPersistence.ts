@@ -159,10 +159,15 @@ export class HasPersistence {
       } catch (e) {
         const driver = connection.getDriver()
         const driverName = driver.getDriverName()
+        const config = connection.getConfig()
         if (process.env.DEBUG_ATLAS || process.env.CI) {
           console.error(
             `[Atlas] Fallback failed for ${modelCtor.name} on connection ${connectionName} (${driverName}):`,
             e
+          )
+          console.error(
+            `[Atlas] Connection Config:`,
+            JSON.stringify({ ...config, password: '***' })
           )
         }
         throw new Error(
