@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'bun:test'
+import { describe, expect, it, spyOn } from 'bun:test'
 import { DB } from '../src/DB'
 import type { ConnectionContract, QueryBuilderContract, QueryResult } from '../src/types'
 
@@ -15,10 +15,8 @@ function makeBuilder(): QueryBuilderContract<Record<string, unknown>> {
 
 describe('DB facade', () => {
   it('routes queries through configured connections', async () => {
-    const originalConnection = DB.connection
-    const originalGetConfig = DB.getConnectionConfig
-    const originalInitialized = (DB as any).initialized
     const originalManager = (DB as any).manager
+    const originalInitialized = (DB as any).initialized
 
     const builder = makeBuilder()
     let began = false
@@ -48,30 +46,36 @@ describe('DB facade', () => {
       getGrammar: () => ({}) as any,
     }
 
+    const mockManager = {
+      connection: () => connection,
+      setDefaultConnection: (_name: string) => {
+        managerCalls.push('setDefaultConnection')
+      },
+      getDefaultConnection: () => 'default',
+      hasConnection: () => true,
+      getConnectionNames: () => ['default'],
+      getConfig: () => ({ driver: 'postgres', database: 'test' }),
+      disconnect: async () => {
+        managerCalls.push('disconnect')
+      },
+      disconnectAll: async () => {
+        managerCalls.push('disconnectAll')
+      },
+      reconnect: async () => connection,
+      purge: () => {
+        managerCalls.push('purge')
+      },
+      addConnection: () => {},
+    }
+
+    const connectionSpy = spyOn(DB, 'connection').mockReturnValue(connection)
+    const getConfigSpy = spyOn(DB, 'getConnectionConfig').mockReturnValue({
+      driver: 'postgres',
+      database: 'test',
+    })
+
     try {
-      ;(DB as any).manager = {
-        connection: () => connection,
-        setDefaultConnection: (_name: string) => {
-          managerCalls.push('setDefaultConnection')
-        },
-        getDefaultConnection: () => 'default',
-        hasConnection: () => true,
-        getConnectionNames: () => ['default'],
-        getConfig: () => ({ driver: 'postgres', database: 'test' }),
-        disconnect: async () => {
-          managerCalls.push('disconnect')
-        },
-        disconnectAll: async () => {
-          managerCalls.push('disconnectAll')
-        },
-        reconnect: async () => connection,
-        purge: () => {
-          managerCalls.push('purge')
-        },
-        addConnection: () => {},
-      }
-      DB.connection = () => connection
-      DB.getConnectionConfig = () => ({ driver: 'postgres', database: 'test' })
+      ;(DB as any).manager = mockManager
       ;(DB as any).initialized = true
 
       DB.setDefaultConnection('default')
@@ -98,8 +102,8 @@ describe('DB facade', () => {
       expect(managerCalls).toContain('purge')
       expect(began).toBe(true)
     } finally {
-      DB.connection = originalConnection
-      DB.getConnectionConfig = originalGetConfig
+      connectionSpy.mockRestore()
+      getConfigSpy.mockRestore()
       ;(DB as any).initialized = originalInitialized
       ;(DB as any).manager = originalManager
     }
