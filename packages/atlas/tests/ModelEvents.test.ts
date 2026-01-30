@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, jest, spyOn, test } from 'bun:test'
+import { afterEach, beforeAll, beforeEach, describe, expect, jest, spyOn, test } from 'bun:test'
 import { DB } from '../src/DB'
 import { Model } from '../src/orm/model/Model'
 
@@ -42,6 +42,11 @@ describe('ModelEvents', () => {
   const TEST_CONN = `model_events_${Math.random().toString(36).slice(2)}`
   let mockGrammar: any
   let registrySpy: any
+
+  beforeAll(async () => {
+    // @ts-expect-error
+    DB.initialized = true
+  })
 
   beforeEach(() => {
     mockGrammar = {
@@ -97,6 +102,7 @@ describe('ModelEvents', () => {
     registrySpy.mockRestore()
     await DB.disconnect(TEST_CONN)
     DB.purge(TEST_CONN)
+    EventUser.connection = undefined
   })
 
   test('it triggers creating and saving events on insert', async () => {
