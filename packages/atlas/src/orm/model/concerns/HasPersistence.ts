@@ -136,27 +136,33 @@ export class HasPersistence {
       // For SQLite, we need to use a different approach since we can't rely on max()
       // in concurrent test environments
       try {
-        // First, try to get the last insert ID using a raw query
-        // This is more reliable than max() in concurrent scenarios
         const driver = connection.getDriver()
         const driverName = driver.getDriverName()
 
         let lastId: number | bigint | string | undefined
 
-        if (driverName === 'sqlite') {
-          // For SQLite, use last_insert_rowid()
-          const result = await connection.raw<{ id: number }>(
-            'SELECT last_insert_rowid() as id',
-            []
-          )
-          lastId = result.rows[0]?.id
-        } else {
-          // For other databases, use max() as fallback
-          const maxResult = await connection.table(modelCtor.getTable()).max(modelCtor.primaryKey)
-          lastId = maxResult ?? undefined
+        // First, check if the driver already determined the insert ID
+        const queryResult = (result as any)._queryResult
+        if (queryResult?.insertId !== undefined && queryResult?.insertId !== 0) {
+          lastId = queryResult.insertId
         }
 
-        if (lastId !== null && lastId !== undefined) {
+        if (lastId === undefined) {
+          if (driverName === 'sqlite') {
+            // For SQLite, use last_insert_rowid()
+            const idRes = await connection.raw<{ id: number }>(
+              'SELECT last_insert_rowid() as id',
+              []
+            )
+            lastId = idRes.rows[0]?.id
+          } else {
+            // For other databases, use max() as fallback
+            const maxResult = await connection.table(modelCtor.getTable()).max(modelCtor.primaryKey)
+            lastId = maxResult ?? undefined
+          }
+        }
+
+        if (lastId !== null && lastId !== undefined && lastId !== 0) {
           ;(this as any)._attributes[modelCtor.primaryKey] = lastId
 
           // Fetch the full record to get all attributes (timestamps, version, etc.)
@@ -169,11 +175,15 @@ export class HasPersistence {
             Object.assign((this as any)._attributes, fullRecord)
           } else {
             throw new Error(
-              `Inserted record not found after insert for ${modelCtor.name} with ID ${lastId}`
+              `Inserted record not found after insert for ${modelCtor.name} with ID ${lastId}. ` +
+                `Table: ${modelCtor.getTable()}, PK: ${modelCtor.primaryKey}`
             )
           }
         } else {
-          throw new Error(`Could not determine last insert ID for ${modelCtor.name}`)
+          throw new Error(
+            `Could not determine last insert ID for ${modelCtor.name}. ` +
+              `Driver: ${driverName}, ResultType: ${typeof result}`
+          )
         }
       } catch (e) {
         if (process.env.DEBUG_ATLAS) {

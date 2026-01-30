@@ -1017,7 +1017,10 @@ export class QueryBuilder<T = Record<string, unknown>> implements QueryBuilderCo
       }
 
       const result = await this.connection.raw<T>(sql, allBindings)
-      return result.rows
+      const rows = result.rows as T[]
+      // biome-ignore lint/suspicious/noExplicitAny: Attaching metadata to array
+      ;(rows as any)._queryResult = result
+      return rows
     } finally {
       span?.end()
     }

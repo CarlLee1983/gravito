@@ -152,9 +152,19 @@ export class SQLiteDriver implements DriverContract {
       }
       const stmt = this.client.prepare(sql)
       const rows = stmt.all(...params) as T[]
+
+      let lastInsertId: any
+      try {
+        const idRes = this.client.prepare('SELECT last_insert_rowid() as id').get() as any
+        lastInsertId = idRes?.id
+      } catch {
+        /* ignore */
+      }
+
       return {
         rows,
         rowCount: rows.length,
+        insertId: lastInsertId,
       }
     } catch (error: unknown) {
       if (process.env.DEBUG_ATLAS) {
