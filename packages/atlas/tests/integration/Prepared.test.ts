@@ -10,24 +10,16 @@ class User extends Model {
 }
 
 describe('Prepared Statements Test', () => {
+  // Use a local DB instance or ensure we reset the global one
   const _ensurePostgres = () => {
-    // Only run if POSTGRES_URL is set or if we want to mock it.
-    // For local tests without PG, this might fail or skip.
-    // We'll mock the driver behavior if needed or skip if no env.
     if (!process.env.POSTGRES_URL) {
-      console.warn('Skipping Prepared Statements Test: POSTGRES_URL not set')
       return false
     }
 
-    DB.configure({
-      default: 'postgres',
-      connections: {
-        postgres: {
-          driver: 'postgres',
-          connectionString: process.env.POSTGRES_URL,
-        } as any,
-      },
-    })
+    DB.addConnection('postgres_prepared', {
+      driver: 'postgres',
+      connectionString: process.env.POSTGRES_URL,
+    } as any)
     return true
   }
 
