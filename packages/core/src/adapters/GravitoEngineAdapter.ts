@@ -86,4 +86,18 @@ export class GravitoEngineAdapter<V extends GravitoVariables = GravitoVariables>
     // Gravito engine has its own internal context management
     throw new Error('GravitoEngineAdapter manages context internally through pooling.')
   }
+
+  useScoped(scope: string, path: string, ...middleware: GravitoMiddleware<V>[]): void {
+    if (path === '*' || path === '*/*') {
+      throw new Error(
+        `useScoped(): Cannot use wildcard path '*' in Orbit-scoped middleware. ` +
+          `Use regular use('*') for global middleware, or specify explicit paths like '${scope}/*'`
+      )
+    }
+
+    const normalizedScope = scope.startsWith('/') ? scope : `/${scope}`
+    const fullPath = normalizedScope + (path.startsWith('/') ? '' : '/') + path
+
+    this.use(fullPath, ...middleware)
+  }
 }
