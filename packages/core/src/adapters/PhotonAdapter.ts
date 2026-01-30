@@ -642,6 +642,31 @@ export class PhotonAdapter<V extends GravitoVariables = GravitoVariables>
     this.use('*', ...middleware)
   }
 
+  useScoped(scope: string, path: string, ...middleware: GravitoMiddleware<V>[]): void {
+    if (path === '*' || path === '*/*') {
+      throw new Error(
+        `useScoped(): Cannot use wildcard path '*' in Orbit-scoped middleware. ` +
+          `Use regular use('*') for global middleware, or specify explicit paths like '${scope}/*'`
+      )
+    }
+
+    const normalizedScope = scope.startsWith('/') ? scope : `/${scope}`
+    const fullPath =
+      (this.config.basePath || '') + normalizedScope + (path.startsWith('/') ? '' : '/' + path)
+
+    if (!fullPath.includes(normalizedScope)) {
+      throw new Error(
+        `useScoped(): Path '${path}' must include scope prefix '${scope}'. ` +
+          `Expected path to be under '${scope}' (e.g., '${scope}${path}')`
+      )
+    }
+
+    const photonMiddleware = middleware.map((m) => toPhotonMiddleware<V>(m))
+    for (const m of photonMiddleware) {
+      this.app.use(fullPath, m)
+    }
+  }
+
   mount(path: string, subAdapter: HttpAdapter<V>): void {
     if (subAdapter.name === 'photon') {
       // Optimized path for Photon sub-adapters

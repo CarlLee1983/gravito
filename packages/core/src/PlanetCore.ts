@@ -326,7 +326,9 @@ export class PlanetCore {
       this._adapter = new PhotonAdapter()
     }
 
-    // Core Middleware for Context Injection
+    /**
+     * Core Middleware for Context Injection
+     */
     this.adapter.use('*', async (c, next) => {
       c.set('core', this)
       c.set('logger', this.logger)
@@ -345,6 +347,7 @@ export class PlanetCore {
 
       return result
     })
+
     // Router depends on `core.app` for route registration and optional global middleware.
     this.router = new Router(this)
 
@@ -511,7 +514,7 @@ export class PlanetCore {
     } else {
       // It's likely a native app instance (e.g. Hono)
       // Wrap it in PhotonAdapter to conform to HttpAdapter interface.
-      // PhotonAdapter.mount() will handle optimization if the parent is also Photon.
+      // PhotonAdapter.mount() will handle optimization if parent is also Photon.
       subAdapter = new PhotonAdapter({}, orbitApp)
     }
 
