@@ -192,8 +192,12 @@ export class HasPersistence {
       if (currentVersion === undefined || currentVersion === null) {
         currentVersion = 1
       }
-      if (typeof currentVersion === 'number') {
-        ;(this as any)._setAttribute(versionKey, currentVersion + 1)
+      const numericVersion =
+        typeof currentVersion === 'string' ? Number.parseInt(currentVersion, 10) : currentVersion
+
+      if (typeof numericVersion === 'number' && !Number.isNaN(numericVersion)) {
+        ;(this as any)._setAttribute(versionKey, numericVersion + 1)
+        currentVersion = numericVersion
       }
     }
 

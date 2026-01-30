@@ -351,7 +351,7 @@ export abstract class Model {
     ;(this as any)._exists = exists
 
     if (exists) {
-      this._dirtyTracker.setOriginal(attributes)
+      this._dirtyTracker.setOriginal(castedAttributes)
     }
 
     const model = this
@@ -528,10 +528,10 @@ export abstract class Model {
       void modelCtor.table
     }
 
-    this._dirtyTracker.mark(key, value)
-
     const type = modelCtor.casts[key]
     const castedValue = type ? this._castAttribute(key, value, type) : value
+
+    this._dirtyTracker.mark(key, castedValue)
 
     this._attributes[key] = castedValue
   }
