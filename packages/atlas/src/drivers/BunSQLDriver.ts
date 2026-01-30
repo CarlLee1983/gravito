@@ -81,12 +81,7 @@ export class BunSQLDriver implements DriverContract {
   ): Promise<QueryResult<T>> {
     await this.ensureConnection()
     try {
-      const normalized = bindings.map((b) => {
-        if (b instanceof Date) return b.toISOString()
-        if (b === undefined) return null
-        if (typeof b === 'boolean') return b ? 1 : 0
-        return b
-      })
+      const normalized = this.normalizeBindings(bindings)
 
       let rows: T[] = []
       let lastInsertRowid: unknown
@@ -125,8 +120,33 @@ export class BunSQLDriver implements DriverContract {
   }
 
   async execute(sql: string, bindings: unknown[] = []): Promise<ExecuteResult> {
-    const res = await this.query(sql, bindings)
-    return { affectedRows: res.rowCount ?? 0, insertId: res.insertId }
+    await this.ensureConnection()
+    try {
+      if (this.sqliteClient) {
+        const normalized = this.normalizeBindings(bindings)
+        // @ts-expect-error
+        const stmt = this.sqliteClient.query(sql)
+        const result = stmt.run(...normalized)
+        return {
+          affectedRows: result.changes,
+          insertId: result.lastInsertRowid,
+        }
+      }
+
+      const res = await this.query(sql, bindings)
+      return { affectedRows: res.rowCount ?? 0, insertId: res.insertId }
+    } catch (error) {
+      throw this.normalizeError(error, sql, bindings)
+    }
+  }
+
+  private normalizeBindings(bindings: unknown[]): unknown[] {
+    return bindings.map((b) => {
+      if (b instanceof Date) return b.toISOString()
+      if (b === undefined) return null
+      if (typeof b === 'boolean') return b ? 1 : 0
+      return b
+    })
   }
 
   async beginTransaction(): Promise<void> {

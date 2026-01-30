@@ -54,7 +54,11 @@ describe('ModelEvents', () => {
       compileUpdate: jest.fn(() => 'UPDATE users SET name = ? WHERE id = ?'),
       compileInsert: jest.fn(() => 'INSERT INTO users (name) VALUES (?)'),
       compileDelete: jest.fn(() => 'DELETE FROM users WHERE id = ?'),
+      compileAggregate: jest.fn(() => 'SELECT MAX(id) as aggregate FROM users'),
       getStructuralKey: jest.fn(() => 'mock'),
+      wrapTable: jest.fn((t) => `"${t}"`),
+      wrapColumn: jest.fn((c) => `"${c}"`),
+      getPlaceholder: jest.fn(() => '?'),
     }
 
     mockConnection = {
@@ -62,12 +66,12 @@ describe('ModelEvents', () => {
         const { QueryBuilder } = require('../src/query/QueryBuilder')
         return new QueryBuilder(mockConnection, mockGrammar, name)
       },
-      raw: jest.fn().mockResolvedValue({ rows: [] }),
+      raw: jest.fn().mockResolvedValue({ rows: [{ id: 1, name: 'Carl' }] }),
       getGrammar: () => mockGrammar,
       getTracer: () => undefined,
       getDriver: () => ({
         getGrammar: () => mockGrammar,
-        execute: jest.fn().mockResolvedValue({ affectedRows: 1, rows: [1] }),
+        execute: jest.fn().mockResolvedValue({ affectedRows: 1, rows: [{ id: 1 }] }),
         getDriverName: () => 'mock',
       }),
     }
