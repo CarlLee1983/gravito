@@ -11,6 +11,7 @@ const CONNECTION_NAME = `opt_lock_${Math.random().toString(36).slice(2)}`
 class VersionedUser extends Model {
   static connection = CONNECTION_NAME
   static table = 'versioned_users'
+  static strictMode = false
 
   @column({ isPrimary: true })
   declare id: number
@@ -34,6 +35,7 @@ describe('Optimistic Locking', () => {
   })
 
   beforeEach(async () => {
+    SchemaRegistry.getInstance().invalidateAll()
     DB.addConnection(CONNECTION_NAME, {
       driver: 'sqlite',
       database: ':memory:',
