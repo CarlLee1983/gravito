@@ -40,23 +40,50 @@ export class MakeCommand {
       this.stubsPath = stubsPath
       return
     }
-    // Resolve stubs relative to the compiled CLI executable or source
-    // In dev: src/commands/MakeCommand.ts -> ../../stubs
-    // In prod: dist/index.js -> ../stubs
+
+    // === Stub 查找優先級 ===
+    // 1. 專案根目錄的 stubs/ (最高優先級 - 使用者自定義)
+    // 2. 專案根目錄的 .gravito/stubs/ (隱藏目錄)
+    // 3. CLI 內建 stubs (開發模式)
+    // 4. CLI 內建 stubs (生產模式)
+    // 5. Monorepo 模式
+    const cwd = process.cwd()
     const devPath = path.resolve(__dirname, '../../stubs')
     const prodPath = path.resolve(__dirname, '../stubs')
-    const cwd = process.cwd()
+
     const candidates = [
+      // 使用者自定義 stubs (最高優先級)
+      path.resolve(cwd, 'stubs'),
+      path.resolve(cwd, '.gravito/stubs'),
+
+      // CLI 預設 stubs
       prodPath,
       devPath,
-      path.resolve(cwd, 'stubs'),
-      path.resolve(cwd, '../stubs'),
+
+      // Monorepo 模式
       path.resolve(cwd, 'packages/cli/stubs'),
       path.resolve(cwd, '../packages/cli/stubs'),
     ]
 
-    this.stubsPath =
-      candidates.find((candidate) => existsSync(path.join(candidate, 'controller.stub'))) ?? devPath
+    // 尋找第一個包含有效 stub 檔案的目錄
+    const validPath = candidates.find((candidate) =>
+      existsSync(path.join(candidate, 'controller.stub'))
+    )
+
+    if (validPath) {
+      this.stubsPath = validPath
+
+      // 如果使用的是使用者自定義 stubs，顯示提示
+      if (
+        validPath === path.resolve(cwd, 'stubs') ||
+        validPath === path.resolve(cwd, '.gravito/stubs')
+      ) {
+        console.log(pc.gray(`📁 使用自定義 stubs: ${validPath}`))
+      }
+    } else {
+      // Fallback
+      this.stubsPath = devPath
+    }
   }
 
   /**

@@ -7,9 +7,14 @@
  * @packageDocumentation
  */
 
-export * from './EnvironmentDetector'
 // Main API
 // Core Logic
+export {
+  DependencyValidator,
+  type PackageJson,
+  type ValidationResult,
+} from './DependencyValidator'
+export * from './EnvironmentDetector'
 export * from './FileMerger'
 // Generators
 export {
