@@ -1,5 +1,16 @@
 import type { FormRequestClass } from '@gravito/core'
+import type { OpenAPIV3_1 } from 'openapi-types'
 import type { ZodSchema } from 'zod'
+
+// 匯出 OpenAPI 3.1 標準型別別名，供內部使用
+export type OpenApiDocument = OpenAPIV3_1.Document
+export type OpenApiPathItem = OpenAPIV3_1.PathItemObject
+export type OpenApiOperation = OpenAPIV3_1.OperationObject
+export type OpenApiSchema = OpenAPIV3_1.SchemaObject
+export type OpenApiResponse = OpenAPIV3_1.ResponseObject
+export type OpenApiParameter = OpenAPIV3_1.ParameterObject
+export type OpenApiRequestBody = OpenAPIV3_1.RequestBodyObject
+export type OpenApiMediaType = OpenAPIV3_1.MediaTypeObject
 
 /**
  * OpenAPI Server object definition.

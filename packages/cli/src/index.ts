@@ -15,6 +15,7 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import { cancel, intro, isCancel, note, outro, select, spinner, text } from '@clack/prompts'
 import {
+  DependencyValidator,
   EnvironmentDetector,
   LockGenerator,
   ProfileResolver,
@@ -23,6 +24,8 @@ import {
 import cac from 'cac'
 import { downloadTemplate } from 'giget'
 import pc from 'picocolors'
+import { VersionChecker } from './utils/VersionChecker'
+import { VersionRegistry } from './utils/VersionRegistry'
 
 /**
  * Configuration for a new project being created.
@@ -653,23 +656,24 @@ cli
       // Update project name with a clean NPM-safe name
       pkg.name = packageName.toLowerCase().replace(/[^a-z0-9-_]/g, '-')
 
-      // Replace workspace:* with actual versions
-      const versionMap: Record<string, string> = {
-        '@gravito/core': '^1.2.1',
-        '@gravito/beam': '^1.0.0-alpha.2',
-        '@gravito/photon': '^1.0.0-beta.1',
-        '@gravito/prism': '^3.0.2',
-        '@gravito/stasis': '^3.0.1',
-        '@gravito/ion': '^3.0.1',
-        '@gravito/atlas': '^2.1.0',
-        '@gravito/constellation': '^3.0.2',
-        default: '^1.0.0', // Fallback for other orbits
-      }
+      // === 動態版本解析 (替換 workspace:*) ===
+      s.start('載入 package 版本資訊...')
+      const versionRegistry = new VersionRegistry()
+      await versionRegistry.initialize()
+      s.stop('版本資訊已載入')
 
       if (pkg.dependencies) {
         for (const dep of Object.keys(pkg.dependencies)) {
           if (pkg.dependencies[dep] === 'workspace:*') {
-            pkg.dependencies[dep] = versionMap[dep] || versionMap.default
+            pkg.dependencies[dep] = versionRegistry.get(dep)
+          }
+        }
+      }
+
+      if (pkg.devDependencies) {
+        for (const dep of Object.keys(pkg.devDependencies)) {
+          if (pkg.devDependencies[dep] === 'workspace:*') {
+            pkg.devDependencies[dep] = versionRegistry.get(dep)
           }
         }
       }
@@ -688,7 +692,7 @@ cli
         }
       }
 
-      // Generate gravito.lock.json
+      // Generate gravito.lock.json & Validate Dependencies
       try {
         const features = options.with ? options.with.split(',') : []
         const profileConfig = profileResolver.resolve(options.profile as ProfileType, features)
@@ -704,6 +708,36 @@ cli
         const lockPath = path.join(process.cwd(), targetDir, 'gravito.lock.json')
         await fs.writeFile(lockPath, lockContent)
         console.log(pc.green('✅ Generated gravito.lock.json'))
+
+        // === 依賴驗證 ===
+        const validator = new DependencyValidator()
+        const validationResult = validator.validate(profileConfig, pkg)
+
+        if (!validationResult.valid) {
+          console.log('')
+          console.log(pc.red('❌ 依賴驗證失敗:'))
+          validationResult.errors.forEach((err) => {
+            console.log(pc.red(`  - ${err}`))
+          })
+
+          const installCmd = DependencyValidator.suggestInstallCommand(validationResult)
+          if (installCmd) {
+            console.log('')
+            console.log(pc.yellow('💡 建議執行:'))
+            console.log(pc.cyan(`  ${installCmd}`))
+          }
+
+          console.log('')
+        }
+
+        if (validationResult.warnings.length > 0) {
+          console.log('')
+          console.log(pc.yellow('⚠️  警告:'))
+          validationResult.warnings.forEach((warn) => {
+            console.log(pc.yellow(`  - ${warn}`))
+          })
+          console.log('')
+        }
       } catch (err) {
         console.warn(pc.yellow('⚠️ Failed to generate lock file'), err)
       }
@@ -781,6 +815,11 @@ registerInitCommand(cli)
 cli
   .command('add:spectrum', 'Add Spectrum debug dashboard to current project')
   .action(() => addSpectrumCommand())
+
+// --- Stub Commands ---
+import { stubsInit } from './commands/stubsInit'
+
+cli.command('stub:init', 'Initialize custom stub templates').action(() => stubsInit())
 
 // --- Make Commands ---
 const make = new MakeCommand()
@@ -942,10 +981,7 @@ cli
 
 import { MaintenanceCommand } from './commands/maintenance'
 
-cli.command('doctor', 'Diagnose project issues').action(async () => {
-  const cmd = new MaintenanceCommand()
-  await cmd.doctor()
-})
+// doctor 命令已在上方註冊 (line 879-882)，此處移除重複註冊
 
 cli.command('add <feature>', 'Add a feature to the project').action(async (feature) => {
   const cmd = new MaintenanceCommand()
@@ -976,9 +1012,24 @@ cli.help()
 
 cli.version('1.0.0-beta.6')
 
-try {
-  cli.parse()
-} catch (error) {
-  console.error(error)
-  process.exit(1)
+// 版本檢查 + CLI 啟動
+async function main() {
+  // 版本檢查 (非阻塞)
+  try {
+    const checker = new VersionChecker()
+    const result = await checker.check()
+    checker.showUpgradeMessage(result)
+  } catch {
+    // 靜默失敗，不影響 CLI 使用
+  }
+
+  // 啟動 CLI
+  try {
+    cli.parse()
+  } catch (error) {
+    console.error(error)
+    process.exit(1)
+  }
 }
+
+main()
