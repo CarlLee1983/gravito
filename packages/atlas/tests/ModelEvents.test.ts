@@ -39,9 +39,9 @@ class EventUser extends Model {
 }
 
 describe('ModelEvents', () => {
+  const TEST_CONN = 'model_events_test'
   let mockConnection: any
   let mockGrammar: any
-  let connectionSpy: any
   let registrySpy: any
 
   beforeEach(() => {
@@ -62,6 +62,7 @@ describe('ModelEvents', () => {
     }
 
     mockConnection = {
+      getName: () => TEST_CONN,
       table: (name: string) => {
         const { QueryBuilder } = require('../src/query/QueryBuilder')
         return new QueryBuilder(mockConnection, mockGrammar, name)
@@ -76,9 +77,19 @@ describe('ModelEvents', () => {
       }),
     }
 
-    connectionSpy = spyOn(DB, 'connection').mockReturnValue(mockConnection)
-    // @ts-expect-error
-    DB.initialized = true
+    const originalManager = (DB as any).manager
+    const mockManager = {
+      connection: (name?: string) => {
+        if (name === TEST_CONN || !name) return mockConnection
+        return originalManager.connection(name)
+      },
+      hasConnection: (name: string) => name === TEST_CONN,
+      getConfig: (name: string) => (name === TEST_CONN ? { driver: 'mock' } : undefined),
+    }
+    ;(DB as any).manager = mockManager
+    ;(DB as any).initialized = true
+
+    EventUser.connection = TEST_CONN
 
     const { SchemaRegistry } = require('../src/orm/schema/SchemaRegistry')
     registrySpy = spyOn(SchemaRegistry.prototype, 'get').mockResolvedValue({
@@ -94,8 +105,12 @@ describe('ModelEvents', () => {
   })
 
   afterEach(async () => {
-    connectionSpy.mockRestore()
     registrySpy.mockRestore()
+    // Restore original manager
+    // @ts-expect-error - reset DB state
+    DB.manager = new (require('../src/connection/ConnectionManager').ConnectionManager)()
+    // @ts-expect-error
+    DB.initialized = false
   })
 
   test('it triggers creating and saving events on insert', async () => {

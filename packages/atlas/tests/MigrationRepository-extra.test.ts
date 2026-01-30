@@ -6,6 +6,7 @@ import type { ConnectionContract } from '../src/types'
 
 describe('MigrationRepository', () => {
   it('tracks migrations using schema and db helpers', async () => {
+    const TEST_CONN = 'migration_repo_test'
     const calls: string[] = []
     const records = [
       { migration: '20240101_create_users', batch: 1 },
@@ -26,18 +27,18 @@ describe('MigrationRepository', () => {
       },
     }
 
-    const connection: ConnectionContract = {
-      getName: () => 'default',
-      getDriver: () => ({}) as any,
+    const mockConnection: any = {
+      getName: () => TEST_CONN,
+      getTracer: () => undefined,
+      getDriver: () => ({ getDriverName: () => 'postgres' }),
       getConfig: () => ({ driver: 'postgres', database: 'test' }),
       table: () => table as any,
       raw: async () => ({ rows: [], rowCount: 0 }),
-      transaction: async (cb) => cb(connection),
+      transaction: async (cb: any) => cb(mockConnection),
       disconnect: async () => {},
     }
 
-    const connectionSpy = spyOn(DB, 'connection').mockReturnValue(connection)
-    const schemaSpy = spyOn(Schema, 'connection').mockReturnValue({
+    const mockSchemaBuilder = {
       create: async () => {
         calls.push('create')
         exists = true
@@ -46,10 +47,29 @@ describe('MigrationRepository', () => {
       dropIfExists: async () => {
         calls.push('drop')
       },
-    } as any)
+    }
+
+    const originalManager = (DB as any).manager
+    const mockManager = {
+      connection: (name?: string) => {
+        if (name === TEST_CONN || !name) return mockConnection
+        return originalManager.connection(name)
+      },
+      hasConnection: (name: string) => name === TEST_CONN,
+      getConfig: (name: string) => (name === TEST_CONN ? { driver: 'postgres' } : undefined),
+    }
+
+    const schemaSpy = spyOn(Schema, 'connection').mockImplementation((name) => {
+      if (name === TEST_CONN || !name) return mockSchemaBuilder as any
+      return schemaSpy.original.call(Schema, name)
+    })
 
     try {
+      ;(DB as any).manager = mockManager
       const repo = new MigrationRepository()
+      // @ts-expect-error
+      repo.connection = TEST_CONN
+
       await repo.createRepository()
       await repo.deleteRepository()
 
@@ -67,8 +87,8 @@ describe('MigrationRepository', () => {
       expect(calls).toContain('create')
       expect(calls).toContain('drop')
     } finally {
-      connectionSpy.mockRestore()
       schemaSpy.mockRestore()
+      ;(DB as any).manager = originalManager
     }
   })
 })

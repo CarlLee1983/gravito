@@ -15,6 +15,7 @@ function makeBuilder(): QueryBuilderContract<Record<string, unknown>> {
 
 describe('DB facade', () => {
   it('routes queries through configured connections', async () => {
+    const TEST_CONN = 'db_extra_test'
     const originalManager = (DB as any).manager
     const originalInitialized = (DB as any).initialized
 
@@ -23,13 +24,14 @@ describe('DB facade', () => {
     const managerCalls: string[] = []
 
     const connection: ConnectionContract = {
-      getName: () => 'default',
+      getName: () => TEST_CONN,
       getDriver: () =>
         ({
           beginTransaction: async () => {
             began = true
           },
           commit: async () => {},
+          getDriverName: () => 'postgres',
         }) as any,
       getConfig: () => ({ driver: 'postgres', database: 'test' }),
       table: () => builder as any,
@@ -47,14 +49,17 @@ describe('DB facade', () => {
     }
 
     const mockManager = {
-      connection: () => connection,
-      setDefaultConnection: (_name: string) => {
+      connection: (name?: string) => {
+        if (name === TEST_CONN || !name) return connection
+        return originalManager.connection(name)
+      },
+      setDefaultConnection: (name: string) => {
         managerCalls.push('setDefaultConnection')
       },
-      getDefaultConnection: () => 'default',
-      hasConnection: () => true,
-      getConnectionNames: () => ['default'],
-      getConfig: () => ({ driver: 'postgres', database: 'test' }),
+      getDefaultConnection: () => TEST_CONN,
+      hasConnection: (name: string) => name === TEST_CONN,
+      getConnectionNames: () => [TEST_CONN],
+      getConfig: (name: string) => (name === TEST_CONN ? { driver: 'postgres' } : undefined),
       disconnect: async () => {
         managerCalls.push('disconnect')
       },
@@ -68,19 +73,13 @@ describe('DB facade', () => {
       addConnection: () => {},
     }
 
-    const connectionSpy = spyOn(DB, 'connection').mockReturnValue(connection)
-    const getConfigSpy = spyOn(DB, 'getConnectionConfig').mockReturnValue({
-      driver: 'postgres',
-      database: 'test',
-    })
-
     try {
       ;(DB as any).manager = mockManager
       ;(DB as any).initialized = true
 
-      DB.setDefaultConnection('default')
-      expect(DB.hasConnection('default')).toBe(true)
-      expect(DB.getConnectionNames()).toEqual(['default'])
+      DB.setDefaultConnection(TEST_CONN)
+      expect(DB.hasConnection(TEST_CONN)).toBe(true)
+      expect(DB.getConnectionNames()).toContain(TEST_CONN)
 
       await DB.raw('SELECT 1')
       await DB.rawQuery('SELECT 1')
@@ -94,16 +93,14 @@ describe('DB facade', () => {
       const trx = await DB.beginTransaction()
       await trx.getDriver().commit()
 
-      await DB.disconnect('default')
-      await DB.reconnect('default')
-      DB.purge('default')
+      await DB.disconnect(TEST_CONN)
+      await DB.reconnect(TEST_CONN)
+      DB.purge(TEST_CONN)
 
       expect(managerCalls).toContain('disconnect')
       expect(managerCalls).toContain('purge')
       expect(began).toBe(true)
     } finally {
-      connectionSpy.mockRestore()
-      getConfigSpy.mockRestore()
       ;(DB as any).initialized = originalInitialized
       ;(DB as any).manager = originalManager
     }
