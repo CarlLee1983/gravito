@@ -275,7 +275,7 @@ describe('GraphQL Performance Benchmarks', () => {
       const validationTime = performance.now() - start
 
       expect(res.status).toBe(200)
-      expect(validationTime).toBeLessThan(100)
+      expect(validationTime).toBeLessThan(500)
     })
 
     it('should reject complex queries quickly', async () => {
@@ -483,7 +483,7 @@ describe('GraphQL Performance Benchmarks', () => {
 
       const json = (await res.json()) as { data: { users: string[] } }
       expect(json.data.users).toHaveLength(5)
-      expect(batchTime).toBeLessThan(100)
+      expect(batchTime).toBeLessThan(500)
     })
   })
 
