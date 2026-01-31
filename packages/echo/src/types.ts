@@ -20,90 +20,101 @@ import type { WebhookStore } from './storage/WebhookStore'
 /**
  * Configuration for a specific webhook provider.
  *
- * Used to define how Echo should identify and verify incoming requests from
- * external services like Stripe, GitHub, or custom implementations.
+ * Defines the identity and security parameters for processing incoming webhooks
+ * from external services. Echo uses this configuration to route requests to
+ * the correct provider implementation and verify their authenticity.
+ *
+ * @example
+ * ```typescript
+ * const config: WebhookProviderConfig = {
+ *   name: 'stripe',
+ *   secret: 'whsec_...',
+ *   signatureHeader: 'stripe-signature',
+ *   tolerance: 300
+ * };
+ * ```
  *
  * @public
  */
 export interface WebhookProviderConfig {
   /**
-   * The unique name of the provider.
+   * Unique identifier for the provider instance.
    */
   name: string
   /**
-   * The shared secret used to verify incoming webhook signatures.
+   * Shared secret key used to verify the authenticity of incoming requests.
    */
   secret: string
   /**
-   * The name of the HTTP header containing the signature.
+   * HTTP header name that contains the cryptographic signature.
    *
-   * @example 'stripe-signature'
+   * @example 'x-hub-signature-256'
    */
   signatureHeader?: string
   /**
-   * Maximum allowed time drift in seconds for timestamp validation.
+   * Maximum allowed age of a request in seconds to prevent replay attacks.
    *
-   * Prevents replay attacks by ensuring the request was sent recently.
    * @defaultValue 300
    */
   tolerance?: number
 }
 
 /**
- * The result of verifying an incoming webhook request.
+ * Result of the webhook verification process.
  *
- * Encapsulates the outcome of signature and timestamp validation,
- * providing the parsed payload if successful.
+ * Encapsulates the outcome of signature and timestamp validation, providing
+ * access to the authenticated payload and metadata if successful.
  *
  * @public
  */
 export interface WebhookVerificationResult {
   /**
-   * Indicates if the signature is valid and the timestamp is within tolerance.
+   * Whether the signature is valid and the request is within time tolerance.
    */
   valid: boolean
   /**
-   * Descriptive error message if the verification failed.
+   * Explanation of why verification failed, if applicable.
    */
   error?: string
   /**
-   * The parsed JSON payload from the request body.
+   * The authenticated JSON payload extracted from the request body.
    */
   payload?: unknown
   /**
-   * The specific event name extracted from the payload or headers.
+   * The semantic event name (e.g., 'user.created') derived from the payload.
    */
   eventType?: string
   /**
-   * The unique identifier for this webhook message, if provided by the source.
+   * The unique identifier assigned to this webhook by the source service.
    */
   webhookId?: string
 }
 
 /**
- * Interface that all webhook provider implementations must follow.
+ * Interface for implementing service-specific webhook verification logic.
  *
- * Providers encapsulate the service-specific logic for verifying signatures
- * and parsing event types (e.g., Stripe's HMAC-SHA256 vs GitHub's X-Hub-Signature).
+ * Implementations are responsible for the low-level details of parsing signatures,
+ * validating timestamps, and extracting event types for specific services like
+ * Stripe, GitHub, or Shopify.
  *
  * @public
  */
 export interface WebhookProvider {
   /**
-   * Uniquely identifies the provider type.
+   * The canonical name of the provider type.
    *
-   * @example 'stripe'
+   * @example 'github'
    */
   readonly name: string
 
   /**
-   * Validates the integrity and authenticity of an incoming request.
+   * Validates the cryptographic integrity and authenticity of a request.
    *
-   * @param payload - The raw request body.
-   * @param headers - The incoming HTTP headers.
-   * @param secret - The secret key used for verification.
-   * @returns A promise resolving to the verification result.
-   * @throws Error if verification logic encounters an unrecoverable failure.
+   * @param payload - Raw request body to be verified.
+   * @param headers - HTTP headers containing signatures and timestamps.
+   * @param secret - The configured secret key for this provider instance.
+   * @returns Verification outcome including parsed payload.
+   * @throws {Error} If verification logic fails unexpectedly.
    */
   verify(
     payload: string | Buffer,
@@ -112,10 +123,10 @@ export interface WebhookProvider {
   ): Promise<WebhookVerificationResult>
 
   /**
-   * Determines the event type from the validated payload.
+   * Derives the semantic event type from the validated payload.
    *
-   * @param payload - The parsed JSON body.
-   * @returns The event type string or undefined if not found.
+   * @param payload - Validated and parsed JSON data.
+   * @returns Event type string or undefined if not identifiable.
    */
   parseEventType?(payload: unknown): string | undefined
 }
@@ -128,44 +139,290 @@ export interface WebhookProvider {
 export type WebhookHandler<T = unknown> = (event: WebhookEvent<T>) => void | Promise<void>
 
 /**
- * Represents a normalized webhook event processed by Echo.
+ * Normalized representation of an incoming webhook event.
  *
- * Provides a consistent interface regardless of the source provider,
- * allowing handlers to be provider-agnostic where possible.
+ * Echo transforms provider-specific requests into this standard format,
+ * enabling handlers to process webhooks from different sources using
+ * a consistent interface.
+ *
+ * @example
+ * ```typescript
+ * const handler: WebhookHandler<Stripe.Event> = async (event) => {
+ *   console.log(`Received ${event.type} from ${event.provider}`);
+ *   processPayload(event.payload);
+ * };
+ * ```
  *
  * @public
  */
 export interface WebhookEvent<T = unknown> {
   /**
-   * Name of the provider that sent the event.
+   * The name of the registered provider instance that received the event.
    */
   provider: string
   /**
-   * The type of event.
-   *
-   * @example 'payment_intent.succeeded'
+   * The semantic type of the event (e.g., 'invoice.paid').
    */
   type: string
   /**
-   * The parsed and type-safe data payload.
+   * The parsed, type-safe data payload from the webhook.
    */
   payload: T
   /**
-   * The original HTTP headers received with the request.
+   * Original HTTP headers received with the request.
    */
   headers: Record<string, string | string[] | undefined>
   /**
-   * The raw, unparsed request body string.
+   * The unparsed request body for audit or manual re-verification.
    */
   rawBody: string
   /**
-   * The local system time when the webhook was received.
+   * Precision timestamp of when the event was processed by Echo.
    */
   receivedAt: Date
   /**
-   * Unique ID for the event, if provided by the source.
+   * The upstream unique identifier for the event.
    */
   id?: string
+}
+
+// ─────────────────────────────────────────────────────────────
+// Request Buffering (Phase 1.1)
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Buffered request containing raw body before parsing.
+ *
+ * Prevents framework auto-parsing from breaking signature verification
+ * by storing the original request body before any middleware processes it.
+ *
+ * @public
+ */
+export interface BufferedRequest {
+  /**
+   * Original raw body as string or Buffer.
+   */
+  rawBody: string | Buffer
+  /**
+   * Cached parsed JSON payload (lazy parsing).
+   */
+  parsedBody?: unknown
+  /**
+   * Original headers.
+   */
+  headers: Record<string, string | string[] | undefined>
+  /**
+   * Timestamp when buffered.
+   */
+  bufferedAt: Date
+}
+
+/**
+ * Configuration for request buffering.
+ *
+ * @public
+ */
+export interface RequestBufferConfig {
+  /**
+   * Enable request buffering middleware.
+   * @defaultValue true
+   */
+  enabled?: boolean
+  /**
+   * Maximum body size to buffer (in bytes).
+   * @defaultValue 10485760 (10MB)
+   */
+  maxBodySize?: number
+  /**
+   * Skip buffering for specific content types.
+   * @defaultValue ['multipart/form-data', 'application/octet-stream']
+   */
+  skipContentTypes?: string[]
+}
+
+// ─────────────────────────────────────────────────────────────
+// Circuit Breaker (Phase 2.1)
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Circuit breaker state.
+ *
+ * - CLOSED: Normal operation, all requests pass through
+ * - OPEN: Too many failures, reject all requests immediately
+ * - HALF_OPEN: Testing if service recovered, allow limited requests
+ *
+ * @public
+ */
+export type CircuitBreakerState = 'CLOSED' | 'OPEN' | 'HALF_OPEN'
+
+/**
+ * Circuit breaker configuration.
+ *
+ * Protects downstream services from being overwhelmed by stopping
+ * requests when failure rates exceed thresholds.
+ *
+ * @public
+ */
+export interface CircuitBreakerConfig {
+  /**
+   * Enable circuit breaker.
+   * @defaultValue true
+   */
+  enabled?: boolean
+  /**
+   * Number of failures to trigger open state.
+   * @defaultValue 5
+   */
+  failureThreshold?: number
+  /**
+   * Number of successes to close from half-open.
+   * @defaultValue 2
+   */
+  successThreshold?: number
+  /**
+   * Time window in milliseconds for counting failures.
+   * @defaultValue 60000 (1 minute)
+   */
+  windowSize?: number
+  /**
+   * Time to wait before attempting half-open from open.
+   * @defaultValue 30000 (30 seconds)
+   */
+  openTimeout?: number
+  /**
+   * Custom error handler when circuit is open.
+   */
+  onOpen?: (target: string) => void
+  /**
+   * Custom handler when circuit transitions to half-open.
+   */
+  onHalfOpen?: (target: string) => void
+  /**
+   * Custom handler when circuit closes.
+   */
+  onClose?: (target: string) => void
+}
+
+/**
+ * Circuit breaker metrics.
+ *
+ * Provides visibility into the current state and health of a circuit breaker.
+ *
+ * @public
+ */
+export interface CircuitBreakerMetrics {
+  /**
+   * Current state of the circuit breaker.
+   */
+  state: CircuitBreakerState
+  /**
+   * Number of failures in the current window.
+   */
+  failures: number
+  /**
+   * Number of successes in the current window.
+   */
+  successes: number
+  /**
+   * Timestamp of the last failure.
+   */
+  lastFailureAt?: Date
+  /**
+   * Timestamp of the last success.
+   */
+  lastSuccessAt?: Date
+  /**
+   * Timestamp when the circuit opened.
+   */
+  openedAt?: Date
+}
+
+// ─────────────────────────────────────────────────────────────
+// Key Rotation (Phase 3.1)
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Provider key entry with metadata.
+ *
+ * Represents a single version of a provider's secret key,
+ * including its validity period and status.
+ *
+ * @public
+ */
+export interface ProviderKeyEntry {
+  /**
+   * The secret key value.
+   */
+  key: string
+  /**
+   * When this key becomes active.
+   */
+  activeFrom: Date
+  /**
+   * When this key expires (optional).
+   */
+  expiresAt?: Date
+  /**
+   * Whether this is the current primary key.
+   */
+  isPrimary: boolean
+  /**
+   * Key version or identifier.
+   */
+  version: string
+}
+
+/**
+ * Key rotation configuration.
+ *
+ * Enables dynamic key rotation without application restart.
+ * Supports grace periods for smooth transition between keys.
+ *
+ * @public
+ */
+export interface KeyRotationConfig {
+  /**
+   * Enable key rotation support.
+   * @defaultValue false
+   */
+  enabled?: boolean
+  /**
+   * Automatic cleanup of expired keys.
+   * @defaultValue true
+   */
+  autoCleanup?: boolean
+  /**
+   * Grace period in milliseconds to keep old keys.
+   * @defaultValue 86400000 (24 hours)
+   */
+  gracePeriod?: number
+  /**
+   * Custom key provider function for dynamic fetching.
+   */
+  keyProvider?: (providerName: string) => Promise<ProviderKeyEntry[]>
+  /**
+   * Callback when key rotation occurs.
+   */
+  onRotate?: (providerName: string, newKey: ProviderKeyEntry) => void
+}
+
+/**
+ * Extended provider config with rotation support.
+ *
+ * Allows configuring multiple keys for a provider to support
+ * key rotation scenarios.
+ *
+ * @public
+ */
+export interface WebhookProviderConfigWithRotation extends WebhookProviderConfig {
+  /**
+   * Multiple keys for rotation support.
+   */
+  keys?: ProviderKeyEntry[]
+  /**
+   * Key rotation settings.
+   */
+  rotation?: KeyRotationConfig
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -293,6 +550,11 @@ export interface WebhookDispatcherConfig {
    * Custom User-Agent header for the outgoing request.
    */
   userAgent?: string
+  /**
+   * Circuit breaker configuration for protecting downstream services.
+   * @since v1.1
+   */
+  circuitBreaker?: CircuitBreakerConfig
 }
 
 /**
@@ -436,46 +698,76 @@ export interface EchoObservabilityConfig {
 }
 
 /**
- * Full configuration for the OrbitEcho module.
+ * Complete configuration for the OrbitEcho module.
+ *
+ * Use this to define the security, persistence, and reliability parameters
+ * for your application's webhook infrastructure.
+ *
+ * @example
+ * ```typescript
+ * const config: EchoConfig = {
+ *   providers: {
+ *     stripe: { name: 'stripe', secret: 'whsec_...' }
+ *   },
+ *   dispatcher: {
+ *     secret: 'my-outgoing-secret',
+ *     retry: { maxAttempts: 5 }
+ *   },
+ *   basePath: '/v1/webhooks'
+ * };
+ * ```
  *
  * @public
  */
 export interface EchoConfig {
   /**
-   * Map of named provider configurations for receiving webhooks.
+   * Registry of named provider configurations for incoming webhook processing.
    */
-  providers?: Record<string, WebhookProviderConfig>
+  providers?: Record<string, WebhookProviderConfig | WebhookProviderConfigWithRotation>
 
   /**
-   * Settings for sending webhooks to other services.
+   * Configuration for outgoing webhook delivery and signing.
    */
   dispatcher?: WebhookDispatcherConfig
 
   /**
-   * The URL prefix for the automatically generated webhook endpoints.
+   * URL prefix for the automatically managed webhook endpoints.
    *
-   * @example '/webhooks' will create '/webhooks/:provider'
    * @defaultValue '/webhooks'
    */
   basePath?: string
 
   /**
-   * Persistence store for events.
+   * Persistence layer for event auditing and replay capabilities.
    */
   store?: WebhookStore
 
   /**
-   * Dead letter queue for failed events.
+   * Queue for handling events that failed all processing attempts.
    */
   deadLetterQueue?: DeadLetterQueue
 
   /**
-   * Default batch dispatch options.
+   * Default execution parameters for batch webhook operations.
    */
   batch?: BatchDispatchOptions
 
   /**
-   * Observability settings.
+   * Configuration for monitoring, logging, and performance tracking.
    */
   observability?: EchoObservabilityConfig
+
+  /**
+   * Advanced buffering settings for signature integrity.
+   *
+   * @since 1.1.0
+   */
+  requestBuffer?: RequestBufferConfig
+
+  /**
+   * Policy and orchestration settings for dynamic key rotation.
+   *
+   * @since 1.2.0
+   */
+  keyRotation?: KeyRotationConfig
 }

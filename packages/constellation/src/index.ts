@@ -45,3 +45,10 @@ export {
 } from './storage/RedisProgressStorage'
 export { S3SitemapStorage, type S3SitemapStorageOptions } from './storage/S3SitemapStorage'
 export * from './types'
+export {
+  type CompressionConfig,
+  compressToBuffer,
+  createCompressionStream,
+  fromGzipFilename,
+  toGzipFilename,
+} from './utils/Compression'

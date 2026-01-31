@@ -4,6 +4,7 @@
  */
 
 import { type MongoNativeCollection, MongoQueryBuilder } from './MongoQueryBuilder'
+import type { MongoSchemaBuilder } from './MongoSchemaBuilder'
 import type {
   Document,
   MongoClientContract,
@@ -381,6 +382,40 @@ class MongoDatabaseWrapper implements MongoDatabaseContract {
       validator: schema.validator,
       validationLevel: schema.validationLevel ?? 'strict',
       validationAction: schema.validationAction ?? 'error',
+    })
+  }
+
+  /**
+   * 使用 Schema Builder 建立 Collection
+   *
+   * 提供友善的 API 來建立帶有 Schema 驗證的 Collection
+   *
+   * @param name - Collection 名稱
+   * @param schemaBuilder - Schema Builder 實例
+   * @param options - 驗證選項（驗證等級、動作）
+   *
+   * @example
+   * ```typescript
+   * import { schema } from '@gravito/dark-matter'
+   *
+   * const userSchema = schema()
+   *   .required('name', 'email')
+   *   .string('name')
+   *   .string('email')
+   *
+   * await Mongo.database().createCollectionWithSchema('users', userSchema)
+   * ```
+   */
+  async createCollectionWithSchema(
+    name: string,
+    schemaBuilder: MongoSchemaBuilder,
+    options?: {
+      validationLevel?: 'off' | 'strict' | 'moderate'
+      validationAction?: 'error' | 'warn'
+    }
+  ): Promise<void> {
+    await this.createCollection(name, {
+      schema: schemaBuilder.toValidationOptions(options),
     })
   }
 }

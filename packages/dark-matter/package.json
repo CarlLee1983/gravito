@@ -1,6 +1,6 @@
 {
   "name": "@gravito/dark-matter",
-  "version": "1.0.0",
+  "version": "1.1.1",
   "description": "MongoDB client for Gravito - Bun native, Laravel-style API",
   "type": "module",
   "main": "./dist/index.js",
@@ -17,7 +17,15 @@
     "test": "bun test",
     "typecheck": "bun tsc -p tsconfig.json --noEmit --skipLibCheck",
     "test:coverage": "bun test --coverage --coverage-threshold=80",
-    "test:ci": "bun test --coverage --coverage-threshold=80"
+    "test:ci": "bun test --coverage --coverage-threshold=80",
+    "bench": "MONGODB_URI=mongodb://localhost:27017 bun test benchmarks/*.bench.ts",
+    "bench:gridfs": "MONGODB_URI=mongodb://localhost:27017 bun test benchmarks/gridfs.bench.ts",
+    "bench:soft-delete": "MONGODB_URI=mongodb://localhost:27017 bun test benchmarks/soft-delete.bench.ts",
+    "bench:aggregation": "MONGODB_URI=mongodb://localhost:27017 bun test benchmarks/aggregation.bench.ts",
+    "bench:pool": "MONGODB_URI=mongodb://localhost:27017 bun test benchmarks/connection-pool.bench.ts",
+    "bench:schema": "MONGODB_URI=mongodb://localhost:27017 bun test benchmarks/schema-validation.bench.ts",
+    "bench:transactions": "MONGODB_URI=mongodb://localhost:27017 bun test benchmarks/transactions.bench.ts",
+    "bench:change-streams": "MONGODB_URI=mongodb://localhost:27017 bun test benchmarks/change-streams.bench.ts"
   },
   "files": [
     "dist",

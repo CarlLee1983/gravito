@@ -7,6 +7,7 @@
  */
 
 import type { DeadLetterQueue } from '../dlq/DeadLetterQueue'
+import type { EchoLogger } from '../observability/logging'
 import {
   EchoMetrics,
   type MetricsProvider,
@@ -15,10 +16,13 @@ import {
 } from '../observability/metrics'
 import { NoopTracer, SpanStatusCode, type Tracer } from '../observability/tracing'
 import { computeHmacSha256 } from '../receive/SignatureValidator'
+import { CircuitBreaker } from '../resilience/CircuitBreaker'
 import type { OutgoingWebhookRecord } from '../storage/WebhookStore'
 import type {
   BatchDispatchOptions,
   BatchDispatchResult,
+  CircuitBreakerConfig,
+  CircuitBreakerMetrics,
   RetryConfig,
   WebhookDeliveryResult,
   WebhookDispatcherConfig,
@@ -39,8 +43,9 @@ const DEFAULT_RETRY_CONFIG: Required<RetryConfig> = {
 /**
  * WebhookDispatcher handles the reliable delivery of webhooks to external targets.
  *
- * It supports HMAC-SHA256 signing of payloads, exponential backoff retries,
- * and integration with Dead Letter Queues (DLQ) for failed deliveries.
+ * It provides a high-level API for sending signed payloads to third-party services,
+ * incorporating advanced features like exponential backoff retries, circuit breaking,
+ * and Dead Letter Queue (DLQ) integration for maximum reliability.
  *
  * @example
  * ```typescript
@@ -49,15 +54,15 @@ const DEFAULT_RETRY_CONFIG: Required<RetryConfig> = {
  *   retry: { maxAttempts: 5 }
  * });
  *
- * // Send a single webhook
+ * // Dispatch an event to a consumer
  * const result = await dispatcher.dispatch({
- *   url: 'https://example.com/webhook',
- *   event: 'order.created',
- *   data: { orderId: 123 }
+ *   url: 'https://api.example.com/webhooks',
+ *   event: 'order.fulfilled',
+ *   data: { orderId: 'ORD-123' }
  * });
  *
- * if (result.success) {
- *   console.log('Delivered!');
+ * if (!result.success) {
+ *   console.error(`Dispatch failed: ${result.error}`);
  * }
  * ```
  *
@@ -71,24 +76,28 @@ export class WebhookDispatcher {
   private dlq?: DeadLetterQueue
   private metrics: MetricsProvider = new NoopMetricsProvider()
   private tracer: Tracer = new NoopTracer()
+  private logger?: EchoLogger
+  private circuitBreakers = new Map<string, CircuitBreaker>()
+  private circuitBreakerConfig?: CircuitBreakerConfig
 
   /**
-   * Initializes the dispatcher with the provided configuration.
+   * Initializes the dispatcher with security and reliability policies.
    *
-   * @param config - The configuration for signing, retries, and timeouts.
+   * @param config - Configuration for payload signing, retry strategies, and timeout limits.
    */
   constructor(config: WebhookDispatcherConfig) {
     this.secret = config.secret
     this.retryConfig = { ...DEFAULT_RETRY_CONFIG, ...config.retry }
     this.timeout = config.timeout ?? 30000
     this.userAgent = config.userAgent ?? 'Gravito-Echo/1.0'
+    this.circuitBreakerConfig = config.circuitBreaker
   }
 
   /**
-   * Configures the Dead Letter Queue for failed delivery attempts.
+   * Attaches a Dead Letter Queue for capturing permanently failed deliveries.
    *
-   * @param dlq - The DeadLetterQueue implementation to use.
-   * @returns The dispatcher instance for chaining.
+   * @param dlq - Implementation of the DeadLetterQueue interface.
+   * @returns Current instance for method chaining.
    */
   setDeadLetterQueue(dlq: DeadLetterQueue): this {
     this.dlq = dlq
@@ -96,10 +105,10 @@ export class WebhookDispatcher {
   }
 
   /**
-   * Configures the metrics provider for observability.
+   * Configures the metrics provider for performance and failure tracking.
    *
-   * @param metrics - The MetricsProvider implementation to use.
-   * @returns The dispatcher instance for chaining.
+   * @param metrics - Implementation of the MetricsProvider interface.
+   * @returns Current instance for method chaining.
    */
   setMetrics(metrics: MetricsProvider): this {
     this.metrics = metrics
@@ -107,10 +116,10 @@ export class WebhookDispatcher {
   }
 
   /**
-   * Configures the tracer for distributed tracing.
+   * Configures the tracer for end-to-end request observability.
    *
-   * @param tracer - The Tracer implementation to use.
-   * @returns The dispatcher instance for chaining.
+   * @param tracer - Implementation of the Tracer interface.
+   * @returns Current instance for method chaining.
    */
   setTracer(tracer: Tracer): this {
     this.tracer = tracer
@@ -118,14 +127,97 @@ export class WebhookDispatcher {
   }
 
   /**
-   * Dispatches a webhook to the specified URL with automatic retries.
+   * Configures the logger for diagnostic output and delivery auditing.
    *
-   * This method signs the payload, attempts delivery, and retries based on
-   * the configured retry strategy if the delivery fails.
+   * @param logger - Implementation of the EchoLogger interface.
+   * @returns Current instance for method chaining.
+   */
+  setLogger(logger: EchoLogger): this {
+    this.logger = logger
+    return this
+  }
+
+  /**
+   * Resolves or creates a circuit breaker instance for a specific host.
    *
-   * @param payload - The webhook payload including target URL and data.
-   * @returns A promise resolving to the delivery result.
-   * @throws Error if signing or network operations encounter an unrecoverable failure.
+   * Isolated circuit breakers prevent a single failing downstream service
+   * from impacting the delivery of webhooks to other targets.
+   *
+   * @param url - Destination URL used to extract the host.
+   * @returns The active circuit breaker or undefined if disabled.
+   */
+  private getCircuitBreaker(url: string): CircuitBreaker | undefined {
+    if (!this.circuitBreakerConfig?.enabled) {
+      return undefined
+    }
+
+    const host = new URL(url).host
+
+    if (!this.circuitBreakers.has(host)) {
+      const breaker = new CircuitBreaker(host, {
+        ...this.circuitBreakerConfig,
+        onOpen: (name) => {
+          this.logger?.warn(`Circuit breaker OPEN for ${name}`, {
+            component: 'dispatcher',
+            host: name,
+          })
+          this.circuitBreakerConfig?.onOpen?.(name)
+        },
+        onHalfOpen: (name) => {
+          this.logger?.info(`Circuit breaker HALF_OPEN for ${name}`, {
+            component: 'dispatcher',
+            host: name,
+          })
+          this.circuitBreakerConfig?.onHalfOpen?.(name)
+        },
+        onClose: (name) => {
+          this.logger?.info(`Circuit breaker CLOSED for ${name}`, {
+            component: 'dispatcher',
+            host: name,
+          })
+          this.circuitBreakerConfig?.onClose?.(name)
+        },
+      })
+      this.circuitBreakers.set(host, breaker)
+    }
+
+    return this.circuitBreakers.get(host)
+  }
+
+  /**
+   * Retrieves real-time health metrics for a specific target's circuit breaker.
+   *
+   * @param url - Target URL to query.
+   * @returns Current metrics or null if no circuit exists for the host.
+   */
+  getCircuitBreakerMetrics(url: string): CircuitBreakerMetrics | null {
+    const host = new URL(url).host
+    const breaker = this.circuitBreakers.get(host)
+    return breaker ? breaker.getMetrics() : null
+  }
+
+  /**
+   * Manually resets a circuit breaker to its CLOSED state for a target.
+   *
+   * Useful for manual recovery after a downstream service has been confirmed healthy.
+   *
+   * @param url - Target URL whose host circuit should be reset.
+   */
+  resetCircuitBreaker(url: string): void {
+    const host = new URL(url).host
+    const breaker = this.circuitBreakers.get(host)
+    breaker?.manualReset()
+  }
+
+  /**
+   * Executes the end-to-end delivery of a signed webhook payload.
+   *
+   * Signs the outgoing payload with HMAC-SHA256, attempts the HTTP POST request,
+   * and manages the retry lifecycle according to the configured policy.
+   *
+   * @param payload - Data and destination parameters for the webhook.
+   * @returns Final delivery outcome after all retry attempts.
+   * @throws {Error} If payload signing or critical network operations fail.
    */
   async dispatch<T = unknown>(payload: WebhookPayload<T>): Promise<WebhookDeliveryResult> {
     return this.tracer.withSpan('echo.dispatch_webhook', async (span) => {
@@ -246,11 +338,20 @@ export class WebhookDispatcher {
   }
 
   /**
-   * Dispatches a batch of webhooks concurrently.
+   * Dispatches a collection of webhooks concurrently using a worker pool pattern.
    *
-   * @param payloads - An array of webhook payloads to send.
-   * @param options - Options for concurrency and failure handling.
-   * @returns A promise resolving to the batch dispatch result.
+   * @param payloads - Array of payloads to be delivered.
+   * @param options - Concurrency limits and failure termination policies.
+   * @returns Summary of successful and failed deliveries in the batch.
+   *
+   * @example
+   * ```typescript
+   * const results = await dispatcher.dispatchBatch(payloads, {
+   *   concurrency: 10,
+   *   stopOnFirstFailure: false
+   * });
+   * console.log(`Dispatched ${results.succeeded} successfully`);
+   * ```
    */
   async dispatchBatch<T = unknown>(
     payloads: WebhookPayload<T>[],
@@ -310,10 +411,10 @@ export class WebhookDispatcher {
   }
 
   /**
-   * Retries a failed delivery from the Dead Letter Queue.
+   * Re-attempts the delivery of a previously failed webhook from the DLQ.
    *
-   * @param id - The unique identifier of the DLQ entry.
-   * @returns A promise resolving to the delivery result or null if not found.
+   * @param id - Unique identifier of the event within the Dead Letter Queue.
+   * @returns Outcome of the retry attempt, or null if the ID is not found.
    */
   async retryFromDlq(id: string): Promise<WebhookDeliveryResult | null> {
     if (!this.dlq) {
@@ -356,69 +457,94 @@ export class WebhookDispatcher {
     payload: WebhookPayload<T>,
     attempt: number
   ): Promise<WebhookDeliveryResult> {
-    const startTime = Date.now()
-    const timestamp = Math.floor(Date.now() / 1000)
-    const webhookId = payload.id ?? crypto.randomUUID()
+    const breaker = this.getCircuitBreaker(payload.url)
 
-    try {
-      // Build request body
-      const body = JSON.stringify({
-        id: webhookId,
-        type: payload.event,
-        timestamp,
-        data: payload.data,
-      })
-
-      // Compute signature
-      const signedPayload = `${timestamp}.${body}`
-      const signature = await computeHmacSha256(signedPayload, this.secret)
-
-      // Create abort controller for timeout
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), this.timeout)
+    const deliveryFn = async () => {
+      const startTime = Date.now()
+      const timestamp = Math.floor(Date.now() / 1000)
+      const webhookId = payload.id ?? crypto.randomUUID()
 
       try {
-        const response = await fetch(payload.url, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'User-Agent': this.userAgent,
-            'X-Webhook-ID': webhookId,
-            'X-Webhook-Timestamp': String(timestamp),
-            'X-Webhook-Signature': `t=${timestamp},v1=${signature}`,
-          },
-          body,
-          signal: controller.signal,
+        // Build request body
+        const body = JSON.stringify({
+          id: webhookId,
+          type: payload.event,
+          timestamp,
+          data: payload.data,
         })
 
-        clearTimeout(timeoutId)
+        // Compute signature
+        const signedPayload = `${timestamp}.${body}`
+        const signature = await computeHmacSha256(signedPayload, this.secret)
 
+        // Create abort controller for timeout
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), this.timeout)
+
+        try {
+          const response = await fetch(payload.url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'User-Agent': this.userAgent,
+              'X-Webhook-ID': webhookId,
+              'X-Webhook-Timestamp': String(timestamp),
+              'X-Webhook-Signature': `t=${timestamp},v1=${signature}`,
+            },
+            body,
+            signal: controller.signal,
+          })
+
+          clearTimeout(timeoutId)
+
+          const duration = Date.now() - startTime
+          const responseBody = await response.text()
+
+          return {
+            success: response.ok,
+            statusCode: response.status,
+            body: responseBody,
+            attempt,
+            duration,
+            deliveredAt: new Date(),
+            error: response.ok ? undefined : `HTTP ${response.status}`,
+          }
+        } finally {
+          clearTimeout(timeoutId)
+        }
+      } catch (error) {
         const duration = Date.now() - startTime
-        const responseBody = await response.text()
 
         return {
-          success: response.ok,
-          statusCode: response.status,
-          body: responseBody,
+          success: false,
           attempt,
           duration,
           deliveredAt: new Date(),
-          error: response.ok ? undefined : `HTTP ${response.status}`,
+          error: error instanceof Error ? error.message : 'Unknown error',
         }
-      } finally {
-        clearTimeout(timeoutId)
-      }
-    } catch (error) {
-      const duration = Date.now() - startTime
-
-      return {
-        success: false,
-        attempt,
-        duration,
-        deliveredAt: new Date(),
-        error: error instanceof Error ? error.message : 'Unknown error',
       }
     }
+
+    // Use circuit breaker if enabled
+    if (breaker) {
+      try {
+        return await breaker.execute(deliveryFn)
+      } catch (error) {
+        if (error instanceof Error && error.message.includes('Circuit breaker is OPEN')) {
+          return {
+            success: false,
+            attempt,
+            duration: 0,
+            deliveredAt: new Date(),
+            error: error.message,
+          }
+        }
+        throw error
+      }
+    }
+
+    // Fallback to direct execution if circuit breaker is disabled
+    return await deliveryFn()
   }
 
   /**

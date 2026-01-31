@@ -34,12 +34,18 @@ describe('ContentWatcher', () => {
     // Simulate change
     await writeFile(join(TMP_DIR, 'docs', 'en', 'test.md'), '# Changed')
 
-    // Wait for debounce
-    await new Promise((r) => setTimeout(r, 1000))
+    // Wait for cache invalidation (with retry loop for reliability)
+    let cleared = false
+    for (let i = 0; i < 20; i++) {
+      // @ts-expect-error
+      if (manager.cache.size === 0) {
+        cleared = true
+        break
+      }
+      await new Promise((r) => setTimeout(r, 100))
+    }
 
-    // Cache should be cleared for that item
-    // @ts-expect-error
-    expect(manager.cache.size).toBe(0)
+    expect(cleared).toBe(true)
 
     watcher.close()
   })

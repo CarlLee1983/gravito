@@ -1,17 +1,37 @@
 /**
  * @file packages/cosmos/src/loader.ts
  * @module @gravito/cosmos/loader
- * @description Utilities for loading translation files from the filesystem.
+ * @description 載入翻譯檔案的工具函數 (向後相容層)
+ *
+ * @deprecated 自 v3.1.0 起建議使用 FileSystemLoader 類別
+ * 這些函數將在 v4.0.0 中移除
+ *
+ * @example
+ * ```typescript
+ * // 舊寫法 (deprecated)
+ * import { loadLocale } from '@gravito/cosmos/loader'
+ * const translations = await loadLocale('/lang', 'zh-TW')
+ *
+ * // 新寫法 (推薦)
+ * import { FileSystemLoader } from '@gravito/cosmos'
+ * const loader = new FileSystemLoader({ baseDir: '/lang' })
+ * const translations = await loader.load('zh-TW')
+ * ```
  */
 
 import { readdir, readFile } from 'node:fs/promises'
 import { join, parse } from 'node:path'
 
 /**
- * Load translations from a directory.
+ * 從目錄載入所有翻譯檔案
  *
- * Scans the specified directory for JSON files and loads them as translation bundles.
- * The filename (without extension) is used as the locale key.
+ * 掃描指定目錄中的所有 JSON 檔案並載入為翻譯資源
+ * 檔案名稱(不含副檔名)將作為語言代碼
+ *
+ * @deprecated 自 v3.1.0 起,建議使用 FileSystemLoader
+ * @param directory - 翻譯目錄的絕對路徑
+ * @returns 語言代碼到翻譯資源的對應表
+ * @public
  *
  * @example
  * ```
@@ -19,10 +39,6 @@ import { join, parse } from 'node:path'
  *   /en.json    -> { "welcome": "Hello" }
  *   /zh-TW.json -> { "welcome": "你好" }
  * ```
- *
- * @param directory - The absolute path to the translations directory.
- * @returns A promise that resolves to a map of locale -> translations.
- * @public
  */
 export async function loadTranslations(
   directory: string
@@ -45,7 +61,7 @@ export async function loadTranslations(
     }
   } catch (_e) {
     console.warn(
-      `[Orbit-I18n] Could not load translations from ${directory}. Directory might not exist.`
+      `[Cosmos] Could not load translations from ${directory}. Directory might not exist.`
     )
   }
 
@@ -53,13 +69,14 @@ export async function loadTranslations(
 }
 
 /**
- * Load translations for a specific locale from a directory.
+ * 載入指定語言的翻譯資源
  *
- * Expects a file named `{locale}.json` in the given directory.
+ * 期望在指定目錄中找到 `{locale}.json` 格式的檔案
  *
- * @param directory - The directory containing translation files.
- * @param locale - The locale string to load.
- * @returns A promise that resolves to the translations map, or null if the file could not be read.
+ * @deprecated 自 v3.1.0 起,建議使用 FileSystemLoader
+ * @param directory - 包含翻譯檔案的目錄
+ * @param locale - 要載入的語言代碼
+ * @returns 翻譯資源,載入失敗則返回 null
  * @public
  */
 export async function loadLocale(

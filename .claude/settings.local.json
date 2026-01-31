@@ -37,7 +37,10 @@
       "WebFetch(domain:bun.com)",
       "Bash(sqlite3:*)",
       "Bash(gh run list:*)",
-      "Bash(gh run:*)"
+      "Bash(gh run:*)",
+      "Bash(git pull:*)",
+      "Bash(gh pr create:*)",
+      "Bash(bunx biome check:*)"
     ]
   },
   "enabledMcpjsonServers": ["pencil", "context7"]
