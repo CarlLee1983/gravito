@@ -77,5 +77,10 @@ export class OrbitCosmos implements GravitoOrbit {
  */
 export const I18nOrbit = OrbitCosmos
 
+export * from './HMRWatcher'
 export * from './I18nService'
 export * from './loader'
+export * from './loaders/ChainedLoader'
+export * from './loaders/FileSystemLoader'
+export * from './loaders/RemoteLoader'
+export * from './loaders/TranslationLoader'

@@ -6,7 +6,9 @@
 
 import type { GravitoMiddleware } from '@gravito/core'
 import { LRUCache } from 'lru-cache'
+import { type HMRConfig, HMRWatcher } from './HMRWatcher'
 import { loadLocale } from './loader'
+import type { TranslationLoader } from './loaders/TranslationLoader'
 
 /**
  * Interface for locale detectors used to determine the user's preferred locale from a request context.
@@ -64,6 +66,8 @@ export interface LazyLoadConfig {
   /**
    * Custom loader function for testing or specialized loading strategies.
    * If not provided, defaults to the filesystem loader.
+   *
+   * @deprecated 自 v3.1.0 起建議使用 loaders 陣列
    */
   loader?: (baseDir: string, locale: string) => Promise<Record<string, string> | null>
 }
@@ -115,6 +119,50 @@ export interface I18nConfig {
    * Configuration for fallback strategies and missing key handling.
    */
   fallback?: FallbackConfig
+  /**
+   * 翻譯載入器陣列
+   *
+   * 支援多個載入器的鏈式組合,實現降級策略
+   * 當第一個載入器失敗時,會自動嘗試下一個載入器
+   *
+   * @since 3.1.0
+   *
+   * @example
+   * ```typescript
+   * import { FileSystemLoader, RemoteLoader } from '@gravito/cosmos'
+   *
+   * const config: I18nConfig = {
+   *   defaultLocale: 'zh-TW',
+   *   supportedLocales: ['zh-TW', 'en'],
+   *   loaders: [
+   *     new FileSystemLoader({ baseDir: './lang' }),
+   *     new RemoteLoader({ url: 'https://api.example.com/i18n/:locale' })
+   *   ]
+   * }
+   * ```
+   */
+  loaders?: TranslationLoader[]
+  /**
+   * HMR (熱重載) 配置
+   *
+   * 在開發模式下啟用,可以在翻譯檔案變更時自動重新載入
+   *
+   * @since 3.1.0
+   *
+   * @example
+   * ```typescript
+   * const config: I18nConfig = {
+   *   defaultLocale: 'zh-TW',
+   *   supportedLocales: ['zh-TW', 'en'],
+   *   hmr: {
+   *     enabled: process.env.NODE_ENV === 'development',
+   *     watchDirs: ['./lang'],
+   *     debounce: 300
+   *   }
+   * }
+   * ```
+   */
+  hmr?: HMRConfig
 }
 
 /**
@@ -437,6 +485,8 @@ export class I18nManager<Schema = TranslationMap> implements I18nService<Schema>
   private cacheMisses = 0
   /** Default instance for global/CLI usage. */
   private globalInstance: I18nInstance<Schema>
+  /** HMR watcher for development mode. */
+  private hmrWatcher?: HMRWatcher
 
   /**
    * Create a new I18nManager.
@@ -452,6 +502,15 @@ export class I18nManager<Schema = TranslationMap> implements I18nService<Schema>
       ttl: 1000 * 60 * 60, // 1 hour
     })
     this.globalInstance = new I18nInstance(this, config.defaultLocale)
+
+    // 初始化 HMR
+    if (config.hmr?.enabled) {
+      this.hmrWatcher = new HMRWatcher(config.hmr)
+      this.hmrWatcher.onChange(async ({ locale }) => {
+        await this.reloadLocale(locale)
+      })
+      this.hmrWatcher.start()
+    }
   }
 
   // --- I18nService Implementation (Delegates to global instance) ---
@@ -562,8 +621,8 @@ export class I18nManager<Schema = TranslationMap> implements I18nService<Schema>
    * @param locale - Locale to load.
    */
   async ensureLocale(locale: string): Promise<void> {
-    // If already loaded or no lazy load config, skip
-    if (this.loadedLocales.has(locale) || !this.config.lazyLoad) {
+    // If already loaded, skip
+    if (this.loadedLocales.has(locale)) {
       return
     }
 
@@ -575,8 +634,24 @@ export class I18nManager<Schema = TranslationMap> implements I18nService<Schema>
     // Create a new load promise
     const loadPromise = (async () => {
       try {
-        const loaderFn = this.config.lazyLoad!.loader || loadLocale
-        const translations = await loaderFn(this.config.lazyLoad!.baseDir, locale)
+        let translations: TranslationMap | null = null
+
+        // 優先使用新的 loaders 配置
+        if (this.config.loaders && this.config.loaders.length > 0) {
+          // 嘗試每個載入器,直到成功載入
+          for (const loader of this.config.loaders) {
+            translations = await loader.load(locale)
+            if (translations) {
+              break
+            }
+          }
+        }
+        // 向後相容:使用舊的 lazyLoad 配置
+        else if (this.config.lazyLoad) {
+          const loaderFn = this.config.lazyLoad.loader || loadLocale
+          translations = await loaderFn(this.config.lazyLoad.baseDir, locale)
+        }
+
         if (translations) {
           this.addResource(locale, translations)
           this.loadedLocales.add(locale)
@@ -644,13 +719,44 @@ export class I18nManager<Schema = TranslationMap> implements I18nService<Schema>
   }
 
   /**
+   * 重新載入指定語言的翻譯資源
+   *
+   * 會清除該語言的快取並重新從載入器載入
+   * 主要用於 HMR 和手動重新載入場景
+   *
+   * @param locale - 要重新載入的語言代碼
+   * @returns Promise that resolves when reloading is complete
+   * @public
+   * @since 3.1.0
+   *
+   * @example
+   * ```typescript
+   * // 手動重新載入某個語言
+   * await i18nManager.reloadLocale('zh-TW')
+   *
+   * // HMR 自動觸發重新載入
+   * hmrWatcher.onChange(({ locale }) => {
+   *   i18nManager.reloadLocale(locale)
+   * })
+   * ```
+   */
+  async reloadLocale(locale: string): Promise<void> {
+    // 清除已載入標記
+    this.loadedLocales.delete(locale)
+    // 清除快取
+    this.invalidateCache(locale)
+    // 重新載入
+    return this.ensureLocale(locale)
+  }
+
+  /**
    * Get the plural form for a locale and count.
    */
   private getPluralForm(locale: string, count: number): string {
     if (!this.pluralRules.has(locale)) {
       this.pluralRules.set(locale, new Intl.PluralRules(locale))
     }
-    return this.pluralRules.get(locale)!.select(count)
+    return this.pluralRules.get(locale)?.select(count)
   }
 
   /**
@@ -678,7 +784,9 @@ export class I18nManager<Schema = TranslationMap> implements I18nService<Schema>
 
     for (const fallbackLocale of chain) {
       // Avoid infinite recursion if fallback points to itself
-      if (fallbackLocale === locale) continue
+      if (fallbackLocale === locale) {
+        continue
+      }
 
       const value = this.resolveKey(fallbackLocale, key)
       if (value !== undefined) {
