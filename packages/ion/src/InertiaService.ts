@@ -23,7 +23,7 @@ export interface InertiaConfig {
   /**
    * Asset version string. Used by Inertia to trigger a full page reload if the version changes.
    */
-  version?: string
+  version?: string | (() => string | Promise<string>)
 
   /**
    * Minimum logging level for internal operations.
@@ -35,6 +35,16 @@ export interface InertiaConfig {
    * Performance monitoring callback triggered after each render.
    */
   onRender?: (metrics: RenderMetrics) => void
+
+  /**
+   * SSR configuration options.
+   */
+  ssr?: {
+    /** Whether SSR is enabled. */
+    enabled: boolean
+    /** Function to handle SSR rendering. */
+    render?: (page: any) => Promise<{ head: string[]; body: string }>
+  }
 }
 
 /**
@@ -144,12 +154,12 @@ export class InertiaService {
    * return inertia.render('Dashboard', { stats: getStats() });
    * ```
    */
-  public render<T extends Record<string, unknown> = Record<string, unknown>>(
+  public async render<T extends Record<string, unknown> = Record<string, unknown>>(
     component: string,
     props?: T,
     rootVars: Record<string, unknown> = {},
     status?: number
-  ): Response {
+  ): Promise<Response> {
     const startTime = performance.now()
     const isInertiaRequest = Boolean(this.context.req.header('X-Inertia'))
 
@@ -168,22 +178,46 @@ export class InertiaService {
         pageUrl = this.context.req.url
       }
 
-      /**
-       * Resolves lazy props by executing any functional prop values.
-       */
-      const resolveProps = (p: Record<string, unknown>) => {
+      const resolveProps = async (p: Record<string, unknown>) => {
+        const partialData = this.context.req.header('X-Inertia-Partial-Data')
+        const partialExcept = this.context.req.header('X-Inertia-Partial-Except')
+        const partialComponent = this.context.req.header('X-Inertia-Partial-Component')
+
+        const only = partialData && partialComponent === component ? partialData.split(',') : []
+        const except =
+          partialExcept && partialComponent === component ? partialExcept.split(',') : []
+
         const resolved: Record<string, unknown> = {}
+
         for (const [key, value] of Object.entries(p)) {
-          resolved[key] = typeof value === 'function' ? value() : value
+          if (only.length > 0 && !only.includes(key)) {
+            continue
+          }
+
+          if (except.length > 0 && except.includes(key)) {
+            continue
+          }
+
+          resolved[key] = typeof value === 'function' ? await value() : value
         }
+
         return resolved
       }
 
+      const resolveVersion = async () => {
+        if (typeof this.config.version === 'function') {
+          return await this.config.version()
+        }
+        return this.config.version
+      }
+
+      const version = await resolveVersion()
+
       const page = {
         component,
-        props: resolveProps({ ...this.sharedProps, ...(props ?? {}) }),
+        props: await resolveProps({ ...this.sharedProps, ...(props ?? {}) }),
         url: pageUrl,
-        version: this.config.version,
+        version,
       }
 
       let pageJson: string
@@ -197,6 +231,12 @@ export class InertiaService {
       let response: Response
 
       if (isInertiaRequest) {
+        const clientVersion = this.context.req.header('X-Inertia-Version')
+        if (version && clientVersion && clientVersion !== version) {
+          this.context.header('X-Inertia-Location', pageUrl)
+          return new Response('', { status: 409 })
+        }
+
         this.context.header('X-Inertia', 'true')
         this.context.header('Vary', 'Accept')
         response = this.context.json(page, status)
@@ -211,6 +251,15 @@ export class InertiaService {
 
         const isDev = process.env.NODE_ENV !== 'production'
 
+        let ssrData = { head: [] as string[], body: '' }
+        if (this.config.ssr?.enabled && this.config.ssr.render) {
+          try {
+            ssrData = await this.config.ssr.render(page)
+          } catch (error) {
+            this.log('error', '[InertiaService] SSR rendering failed', { error })
+          }
+        }
+
         response = this.context.html(
           view.render(
             rootView,
@@ -218,6 +267,8 @@ export class InertiaService {
               ...rootVars,
               page: this.escapeForSingleQuotedHtmlAttribute(pageJson),
               isDev,
+              ssrHead: ssrData.head.join('\n'),
+              ssrBody: ssrData.body,
             },
             { layout: '' }
           ),

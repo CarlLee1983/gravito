@@ -46,7 +46,7 @@ export interface InertiaHelper {
     props?: T,
     rootVars?: Record<string, unknown>,
     status?: number
-  ): Response
+  ): Promise<Response>
 
   /**
    * Shares a single piece of data with all subsequent Inertia responses.
@@ -85,7 +85,7 @@ export interface InertiaHelper {
     props?: T,
     rootVars?: Record<string, unknown>,
     status?: number
-  ): Response
+  ): Promise<Response>
 
   /**
    * Direct access to the low-level InertiaService instance.
@@ -101,13 +101,23 @@ export interface OrbitIonOptions {
    * Asset version string used for cache busting and X-Inertia-Version checks.
    * @default '1.0.0' (or core config value)
    */
-  version?: string
+  version?: string | (() => string | Promise<string>)
 
   /**
    * The name of the root HTML template file (without extension).
    * @default 'app'
    */
   rootView?: string
+
+  /**
+   * SSR configuration options.
+   */
+  ssr?: {
+    /** Whether SSR is enabled. */
+    enabled: boolean
+    /** Function to handle SSR rendering. */
+    render?: (page: any) => Promise<{ head: string[]; body: string }>
+  }
 }
 
 /**
@@ -158,17 +168,18 @@ export class OrbitIon implements GravitoOrbit {
 
     core.adapter.use('*', async (c: GravitoContext, next: GravitoNext) => {
       const service = new InertiaService(c, {
-        version: String(appVersion),
+        version: appVersion as any,
         rootView,
+        ssr: this.options.ssr,
       })
 
-      const inertiaProxy = (
+      const inertiaProxy = async (
         component: string,
         props: Record<string, unknown> = {},
         rootVars: Record<string, unknown> = {},
         status?: number
       ) => {
-        return service.render(component, props, rootVars, status)
+        return await service.render(component, props, rootVars, status)
       }
 
       Object.assign(inertiaProxy, {
