@@ -10,6 +10,7 @@ export class AdaptiveHeartbeat {
   private currentInterval: number
   private timer: Timer | null = null
   private isRunning = false
+  private consecutiveFailures = 0
 
   constructor(
     private callback: () => Promise<void>,

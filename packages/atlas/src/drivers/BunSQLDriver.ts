@@ -62,14 +62,12 @@ export class BunSQLDriver implements DriverContract {
       this.preparedManager = undefined
     }
     if (this.sqliteClient) {
-      // @ts-expect-error
-      this.sqliteClient.close()
+      ;(this.sqliteClient as any).close()
       this.sqliteClient = null
     }
     if (this.client) {
-      // @ts-expect-error
-      if (typeof this.client.close === 'function') {
-        await this.client.close()
+      if (typeof (this.client as any).close === 'function') {
+        await (this.client as any).close()
       }
       this.client = null
     }
