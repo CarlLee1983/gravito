@@ -686,11 +686,13 @@ await client.chat.$send({ message: 'Hello' })
 - **v2.0**：可能包含破壞性變更，提供自動化遷移工具
 
 #### 遷移策略（v1 → v2）
-```typescript
 // 提供 Codemod 自動轉換
+```bash
 npx @gravito/beam-codemod migrate-to-v2
+```
 
 // 或提供相容層
+```typescript
 import { createBeam } from '@gravito/beam/compat'
 ```
 
