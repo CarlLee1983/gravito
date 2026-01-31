@@ -1,5 +1,37 @@
 # @gravito/flare
 
+## 3.4.1
+
+### Improved
+
+#### 測試覆蓋率提升
+- 提升整體測試覆蓋率從 89.62% 到 96.90%
+- NotificationManager.ts: 100% 覆蓋率
+- SmsChannel.ts: 100% 覆蓋率
+- RateLimitMiddleware.ts: 100% 覆蓋率
+- 新增 29 個測試案例（總計 207 個測試）
+
+#### 程式碼品質改進
+- 提取所有魔術數字為具名常數
+  - `DEFAULT_TIMEOUT_MS = 30_000`
+  - `SECONDS_PER_MINUTE = 60`
+  - `SECONDS_PER_HOUR = 3_600`
+  - `DEFAULT_CLEANUP_INTERVAL_MS = 60_000`
+- 改進 PreferenceMiddleware 日誌機制
+  - 新增 logger 依賴注入
+  - 保留 console.error 作為 fallback
+
+#### MemoryStore 增強
+- 新增定期清理機制（預設每 60 秒）
+- 新增 `destroy()` 方法正確釋放資源
+- 防止記憶體洩漏
+- 導出為公開 API
+
+### Tests
+- 207 個測試全部通過
+- 392 個斷言
+- 測試覆蓋率: 96.90%
+
 ## 3.4.0
 
 ### Added
