@@ -23,9 +23,11 @@ import { ShopifyProvider } from '../providers/ShopifyProvider'
 import { SlackProvider } from '../providers/SlackProvider'
 import { StripeProvider } from '../providers/StripeProvider'
 import { TwilioProvider } from '../providers/TwilioProvider'
+import type { KeyRotationManager } from '../rotation/KeyRotationManager'
 import type { WebhookStore } from '../storage/WebhookStore'
 import type {
   BufferedRequest,
+  ProviderKeyEntry,
   WebhookEvent,
   WebhookHandler,
   WebhookProvider,
@@ -69,6 +71,7 @@ export class WebhookReceiver {
   private metrics: MetricsProvider = new NoopMetricsProvider()
   private tracer: Tracer = new NoopTracer()
   private logger: EchoLogger = new ConsoleEchoLogger()
+  private keyRotationManager?: KeyRotationManager
 
   /**
    * Initializes the receiver and registers built-in providers.
@@ -133,6 +136,17 @@ export class WebhookReceiver {
   }
 
   /**
+   * Configures the key rotation manager.
+   *
+   * @param manager - The KeyRotationManager instance to use.
+   * @returns The receiver instance for chaining.
+   */
+  setKeyRotationManager(manager: KeyRotationManager): this {
+    this.keyRotationManager = manager
+    return this
+  }
+
+  /**
    * Registers a custom provider class that implements the WebhookProvider interface.
    *
    * @param name - The unique name for this provider type.
@@ -167,6 +181,46 @@ export class WebhookReceiver {
 
     const provider = new ProviderClass({ tolerance: options?.tolerance })
     this.providers.set(name, { provider, secret })
+    return this
+  }
+
+  /**
+   * Registers a provider with key rotation support.
+   *
+   * @param name - The unique name for this provider instance.
+   * @param keys - Array of key entries for rotation support.
+   * @param options - Optional configuration like provider type and timestamp tolerance.
+   * @returns The receiver instance for chaining.
+   * @throws Error if KeyRotationManager is not set or provider type is unknown.
+   */
+  registerProviderWithRotation(
+    name: string,
+    keys: ProviderKeyEntry[],
+    options?: { type?: string; tolerance?: number }
+  ): this {
+    if (!this.keyRotationManager) {
+      throw new Error('KeyRotationManager must be set before using key rotation')
+    }
+
+    const type = options?.type ?? name
+    const ProviderClass = this.providerTypes.get(type)
+
+    if (!ProviderClass) {
+      throw new Error(`Unknown provider type: ${type}`)
+    }
+
+    // Register keys with rotation manager
+    this.keyRotationManager.registerKeys(name, keys)
+
+    // Get primary key for initial registration
+    const primaryKey = this.keyRotationManager.getPrimaryKey(name)
+    if (!primaryKey) {
+      throw new Error(`No primary key found for provider ${name}`)
+    }
+
+    const provider = new ProviderClass({ tolerance: options?.tolerance })
+    this.providers.set(name, { provider, secret: primaryKey.key })
+
     return this
   }
 
@@ -273,7 +327,42 @@ export class WebhookReceiver {
 
         // Verify webhook using buffered body if available
         span.addEvent('verification_start')
-        const result = await provider.verify(actualBody, actualHeaders, secret)
+
+        // Try multi-key verification if rotation is enabled
+        let result: WebhookVerificationResult
+        if (this.keyRotationManager?.hasProvider(providerName)) {
+          const activeKeys = this.keyRotationManager.getActiveKeys(providerName)
+
+          // Try each active key until one succeeds
+          let verified = false
+          for (const keyEntry of activeKeys) {
+            const attemptResult = await provider.verify(actualBody, actualHeaders, keyEntry.key)
+            if (attemptResult.valid) {
+              result = attemptResult
+              verified = true
+
+              // Log if using non-primary key
+              if (!keyEntry.isPrimary) {
+                this.logger.info('Webhook verified with non-primary key', {
+                  component: 'receiver',
+                  provider: providerName,
+                  keyVersion: keyEntry.version,
+                })
+              }
+              break
+            }
+          }
+
+          if (!verified) {
+            result = {
+              valid: false,
+              error: 'Signature verification failed with all active keys',
+            }
+          }
+        } else {
+          // Fallback to single key verification
+          result = await provider.verify(actualBody, actualHeaders, secret)
+        }
 
         if (!result.valid) {
           span.setStatus({ code: SpanStatusCode.ERROR, message: result.error })

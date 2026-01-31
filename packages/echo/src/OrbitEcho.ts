@@ -1,8 +1,9 @@
 import type { GravitoOrbit, PlanetCore } from '@gravito/core'
 import { createRequestBufferMiddleware } from './middleware'
 import { WebhookReceiver } from './receive/WebhookReceiver'
+import { KeyRotationManager } from './rotation/KeyRotationManager'
 import { WebhookDispatcher } from './send/WebhookDispatcher'
-import type { EchoConfig } from './types'
+import type { EchoConfig, ProviderKeyEntry, WebhookProviderConfigWithRotation } from './types'
 
 /**
  * OrbitEcho is the official webhook orchestration module for Gravito.
@@ -35,6 +36,7 @@ export class OrbitEcho implements GravitoOrbit {
   private receiver: WebhookReceiver
   private dispatcher?: WebhookDispatcher
   private echoConfig: EchoConfig
+  private keyRotationManager?: KeyRotationManager
 
   /**
    * Initializes the Echo module with the provided configuration.
@@ -49,13 +51,30 @@ export class OrbitEcho implements GravitoOrbit {
     this.echoConfig = config
     this.receiver = new WebhookReceiver()
 
+    // Initialize key rotation if enabled
+    if (config.keyRotation?.enabled) {
+      this.keyRotationManager = new KeyRotationManager(config.keyRotation)
+      this.receiver.setKeyRotationManager(this.keyRotationManager)
+    }
+
     // Register providers
     if (config.providers) {
       for (const [name, providerConfig] of Object.entries(config.providers)) {
-        this.receiver.registerProvider(name, providerConfig.secret, {
-          type: providerConfig.name,
-          tolerance: providerConfig.tolerance,
-        })
+        const rotationConfig = providerConfig as WebhookProviderConfigWithRotation
+
+        // Check if provider has key rotation configured
+        if (rotationConfig.keys && rotationConfig.keys.length > 0 && this.keyRotationManager) {
+          this.receiver.registerProviderWithRotation(name, rotationConfig.keys, {
+            type: providerConfig.name,
+            tolerance: providerConfig.tolerance,
+          })
+        } else {
+          // Fallback to single key registration
+          this.receiver.registerProvider(name, providerConfig.secret, {
+            type: providerConfig.name,
+            tolerance: providerConfig.tolerance,
+          })
+        }
       }
     }
 
@@ -152,6 +171,33 @@ export class OrbitEcho implements GravitoOrbit {
    */
   getConfig(): EchoConfig {
     return this.echoConfig
+  }
+
+  /**
+   * Returns the key rotation manager, if enabled.
+   *
+   * @returns The KeyRotationManager instance or undefined if not enabled.
+   */
+  getKeyRotationManager(): KeyRotationManager | undefined {
+    return this.keyRotationManager
+  }
+
+  /**
+   * Rotates the primary key for a provider.
+   *
+   * @param providerName - The name of the provider.
+   * @param newKey - The new key entry (without isPrimary).
+   * @throws Error if key rotation is not enabled.
+   */
+  async rotateProviderKey(
+    providerName: string,
+    newKey: Omit<ProviderKeyEntry, 'isPrimary'>
+  ): Promise<void> {
+    if (!this.keyRotationManager) {
+      throw new Error('Key rotation is not enabled')
+    }
+
+    await this.keyRotationManager.rotatePrimaryKey(providerName, newKey)
   }
 }
 

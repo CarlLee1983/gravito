@@ -320,6 +320,94 @@ export interface CircuitBreakerMetrics {
 }
 
 // ─────────────────────────────────────────────────────────────
+// Key Rotation (Phase 3.1)
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Provider key entry with metadata.
+ *
+ * Represents a single version of a provider's secret key,
+ * including its validity period and status.
+ *
+ * @public
+ */
+export interface ProviderKeyEntry {
+  /**
+   * The secret key value.
+   */
+  key: string
+  /**
+   * When this key becomes active.
+   */
+  activeFrom: Date
+  /**
+   * When this key expires (optional).
+   */
+  expiresAt?: Date
+  /**
+   * Whether this is the current primary key.
+   */
+  isPrimary: boolean
+  /**
+   * Key version or identifier.
+   */
+  version: string
+}
+
+/**
+ * Key rotation configuration.
+ *
+ * Enables dynamic key rotation without application restart.
+ * Supports grace periods for smooth transition between keys.
+ *
+ * @public
+ */
+export interface KeyRotationConfig {
+  /**
+   * Enable key rotation support.
+   * @defaultValue false
+   */
+  enabled?: boolean
+  /**
+   * Automatic cleanup of expired keys.
+   * @defaultValue true
+   */
+  autoCleanup?: boolean
+  /**
+   * Grace period in milliseconds to keep old keys.
+   * @defaultValue 86400000 (24 hours)
+   */
+  gracePeriod?: number
+  /**
+   * Custom key provider function for dynamic fetching.
+   */
+  keyProvider?: (providerName: string) => Promise<ProviderKeyEntry[]>
+  /**
+   * Callback when key rotation occurs.
+   */
+  onRotate?: (providerName: string, newKey: ProviderKeyEntry) => void
+}
+
+/**
+ * Extended provider config with rotation support.
+ *
+ * Allows configuring multiple keys for a provider to support
+ * key rotation scenarios.
+ *
+ * @public
+ */
+export interface WebhookProviderConfigWithRotation extends WebhookProviderConfig {
+  /**
+   * Multiple keys for rotation support.
+   */
+  keys?: ProviderKeyEntry[]
+  /**
+   * Key rotation settings.
+   */
+  rotation?: KeyRotationConfig
+}
+
+// ─────────────────────────────────────────────────────────────
 // Webhook Sending
 // ─────────────────────────────────────────────────────────────
 
@@ -599,8 +687,10 @@ export interface EchoObservabilityConfig {
 export interface EchoConfig {
   /**
    * Map of named provider configurations for receiving webhooks.
+   *
+   * Supports both simple configs and configs with key rotation.
    */
-  providers?: Record<string, WebhookProviderConfig>
+  providers?: Record<string, WebhookProviderConfig | WebhookProviderConfigWithRotation>
 
   /**
    * Settings for sending webhooks to other services.
@@ -640,4 +730,10 @@ export interface EchoConfig {
    * @since v1.1
    */
   requestBuffer?: RequestBufferConfig
+
+  /**
+   * Key rotation configuration for dynamic key management.
+   * @since v1.2
+   */
+  keyRotation?: KeyRotationConfig
 }

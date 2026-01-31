@@ -82,6 +82,8 @@ export { WebhookReceiver } from './receive/WebhookReceiver'
 export { WebhookReplayService } from './replay/WebhookReplayService'
 // Resilience
 export { CircuitBreaker } from './resilience'
+// Rotation
+export { KeyRotationManager } from './rotation'
 
 // Types
 export type {
@@ -94,6 +96,9 @@ export type {
   // Config
   EchoConfig,
   EchoObservabilityConfig,
+  // Rotation
+  KeyRotationConfig,
+  ProviderKeyEntry,
   // Replay
   ReplayOptions,
   ReplayResult,
@@ -108,5 +113,6 @@ export type {
   // Receiving
   WebhookProvider,
   WebhookProviderConfig,
+  WebhookProviderConfigWithRotation,
   WebhookVerificationResult,
 } from './types'
