@@ -15,6 +15,7 @@ const tsup = spawn(
     '--format',
     'esm,cjs',
     '--dts',
+    '--shims',
     '--external',
     '@gravito/photon', // Photon is a peer dependency
     '--external',
@@ -48,6 +49,7 @@ const tsupEngine = spawn(
     '--format',
     'esm,cjs',
     '--dts',
+    '--shims',
     '--external',
     '@gravito/photon',
     '--external',

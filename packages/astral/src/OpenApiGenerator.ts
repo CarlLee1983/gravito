@@ -1,6 +1,10 @@
+import type { OpenAPIV3_1 } from 'openapi-types'
 import type { ZodSchema } from 'zod'
 import { zodToJsonSchema } from 'zod-to-json-schema'
+import { SpecCache } from './cache'
 import { AstralSchemaError } from './errors'
+import { getStableSchemaKey } from './hash'
+import { RouteIndex } from './route-index'
 import type { AstralConfig, AstralOperation, AstralResource } from './types'
 
 /**
@@ -31,7 +35,8 @@ export interface AstralRoute {
  * @since 3.0.0
  */
 export class OpenApiGenerator {
-  private schemaCache = new Map<string, any>()
+  private schemaCache = new Map<string, OpenAPIV3_1.SchemaObject>()
+  private specCache = new SpecCache()
 
   constructor(private config: AstralConfig) {}
 
@@ -41,28 +46,31 @@ export class OpenApiGenerator {
    * @param routes - An array of discovered routes to be documented.
    * @returns A plain object representing the OpenAPI 3.1.0 specification.
    */
-  generate(routes: AstralRoute[]): any {
-    const spec: any = {
+  generate(routes: AstralRoute[]): OpenAPIV3_1.Document {
+    const spec: OpenAPIV3_1.Document = {
       openapi: '3.1.0',
       info: {
         title: this.config.title || 'API Documentation',
         version: this.config.version || '1.0.0',
         description: this.config.description,
       },
-      paths: {},
+      paths: {} as OpenAPIV3_1.PathsObject,
       components: {
-        schemas: {},
+        schemas: {} as Record<string, OpenAPIV3_1.SchemaObject>,
       },
     }
 
     // Add servers if configured
     if (this.config.servers && this.config.servers.length > 0) {
-      spec.servers = this.config.servers
+      spec.servers = this.config.servers as OpenAPIV3_1.ServerObject[]
     }
 
     // Add security schemes to components
     if (this.config.securitySchemes) {
-      spec.components.securitySchemes = this.config.securitySchemes
+      spec.components!.securitySchemes = this.config.securitySchemes as Record<
+        string,
+        OpenAPIV3_1.SecuritySchemeObject
+      >
     }
 
     // Add global security requirements
@@ -84,40 +92,73 @@ export class OpenApiGenerator {
     if (this.config.components) {
       // Merge custom components with existing components
       if (this.config.components.schemas) {
-        spec.components.schemas = {
-          ...spec.components.schemas,
+        spec.components!.schemas = {
+          ...spec.components!.schemas,
           ...this.processComponentSchemas(this.config.components.schemas),
         }
       }
       if (this.config.components.responses) {
-        spec.components.responses = this.config.components.responses
+        spec.components!.responses = this.config.components.responses as any
       }
       if (this.config.components.parameters) {
-        spec.components.parameters = this.config.components.parameters
+        spec.components!.parameters = this.config.components.parameters as any
       }
       if (this.config.components.examples) {
-        spec.components.examples = this.config.components.examples
+        spec.components!.examples = this.config.components.examples as any
       }
       if (this.config.components.requestBodies) {
-        spec.components.requestBodies = this.config.components.requestBodies
+        spec.components!.requestBodies = this.config.components.requestBodies as any
       }
       if (this.config.components.headers) {
-        spec.components.headers = this.config.components.headers
+        spec.components!.headers = this.config.components.headers as any
       }
       if (this.config.components.links) {
-        spec.components.links = this.config.components.links
+        spec.components!.links = this.config.components.links as any
       }
       if (this.config.components.callbacks) {
-        spec.components.callbacks = this.config.components.callbacks
+        spec.components!.callbacks = this.config.components.callbacks as any
       }
     }
+
+    // Build route index for O(1) lookup
+    const routeIndex = new RouteIndex(routes)
 
     // Process each contract/resource
     for (const resource of this.config.contracts || []) {
-      this.processResource(spec, resource, routes)
+      this.processResource(spec, resource, routeIndex)
     }
 
     return spec
+  }
+
+  /**
+   * Generate an OpenAPI Specification with caching support.
+   * Returns cached result if routes haven't changed, otherwise generates a new spec.
+   *
+   * @param routes - An array of discovered routes to be documented.
+   * @returns A plain object representing the OpenAPI 3.1.0 specification.
+   * @public
+   */
+  generateWithCache(routes: AstralRoute[]): OpenAPIV3_1.Document {
+    const cached = this.specCache.get(routes)
+    if (cached) {
+      return cached
+    }
+
+    const spec = this.generate(routes)
+    this.specCache.set(routes, spec)
+    return spec
+  }
+
+  /**
+   * Clear all caches (both schema cache and spec cache).
+   * Useful for development mode or when forcing regeneration.
+   *
+   * @public
+   */
+  invalidateCache(): void {
+    this.specCache.invalidate()
+    this.schemaCache.clear()
   }
 
   /**
@@ -154,14 +195,12 @@ export class OpenApiGenerator {
    *
    * @param spec - The root OpenAPI specification object.
    * @param resource - The Astral resource contract.
-   * @param routes - The array of discovered framework routes.
+   * @param routeIndex - The route index for O(1) lookup.
    * @private
    */
-  private processResource(spec: any, resource: AstralResource, routes: AstralRoute[]) {
-    // Find matching routes using precise path matching
-    const matchingRoutes = routes.filter((route) =>
-      this.isRouteMatchingResource(route.path, resource.path)
-    )
+  private processResource(spec: any, resource: AstralResource, routeIndex: RouteIndex) {
+    // Find matching routes using O(1) index lookup
+    const matchingRoutes = routeIndex.findByPrefix(resource.path)
 
     for (const route of matchingRoutes) {
       const path = this.normalizePath(route.path)
@@ -257,8 +296,8 @@ export class OpenApiGenerator {
     resource: AstralResource,
     method: string,
     originalPath: string
-  ) {
-    const operation: any = {
+  ): OpenAPIV3_1.OperationObject {
+    const operation: OpenAPIV3_1.OperationObject = {
       summary: op.summary,
       description: op.description,
       tags: op.tags || resource.tags,
@@ -318,7 +357,7 @@ export class OpenApiGenerator {
     if (op.errors) {
       for (const [code, schema] of Object.entries(op.errors)) {
         try {
-          operation.responses[code] = {
+          operation.responses![code] = {
             description: typeof schema === 'string' ? schema : 'Error response',
             content: {
               'application/json': {
@@ -357,7 +396,10 @@ export class OpenApiGenerator {
           }
         } else {
           // Basic Query Params Support
-          const jsonSchema: any = zodToJsonSchema(inputSchema as ZodSchema, { target: 'openApi3' })
+          const jsonSchema = zodToJsonSchema(inputSchema as ZodSchema, { target: 'openApi3' }) as {
+            properties?: Record<string, OpenAPIV3_1.SchemaObject>
+            required?: string[]
+          }
           if (jsonSchema.properties) {
             operation.parameters = operation.parameters || []
             for (const [name, prop] of Object.entries(jsonSchema.properties)) {
@@ -365,7 +407,7 @@ export class OpenApiGenerator {
                 name,
                 in: 'query',
                 required: jsonSchema.required?.includes(name),
-                schema: prop,
+                schema: prop as any,
               })
             }
           }
@@ -381,10 +423,10 @@ export class OpenApiGenerator {
 
     // Add examples if provided
     if (op.examples) {
-      if (operation.requestBody && op.examples.request) {
-        operation.requestBody.content['application/json'].examples = op.examples.request
+      if (operation.requestBody && op.examples.request && 'content' in operation.requestBody) {
+        operation.requestBody.content['application/json'].examples = op.examples.request as any
       }
-      if (op.examples.response) {
+      if (op.examples.response && operation.responses) {
         for (const [statusCode, response] of Object.entries(operation.responses)) {
           const responseObj = response as any
           if (responseObj.content?.['application/json'] && op.examples.response[statusCode]) {
@@ -467,33 +509,14 @@ export class OpenApiGenerator {
 
   /**
    * Generate a unique cache key for a schema.
+   * Uses stable hashing to ensure consistent keys for identical schemas.
    *
    * @param schema - The schema object.
    * @returns A string key.
    * @private
    */
   private getSchemaKey(schema: any): string {
-    try {
-      if (Array.isArray(schema)) {
-        return `array:${this.getSchemaKey(schema[0])}`
-      }
-      // For Zod schemas, use the schema's definition to create a unique key
-      if (schema?._def) {
-        // Use the schema's definition structure and shape to create a unique identifier
-        const shape = schema._def.shape?.()
-        if (shape) {
-          // Create a key based on the shape's property names
-          const keys = Object.keys(shape).sort().join(',')
-          return `zod:${schema._def.typeName || 'object'}:${keys}`
-        }
-        return `zod:${schema._def.typeName || 'unknown'}:${Math.random()}`
-      }
-      // Fallback to JSON serialization
-      return JSON.stringify(schema)
-    } catch {
-      // Fallback to random key to avoid cache collision if serialization fails
-      return `ref:${Math.random()}`
-    }
+    return getStableSchemaKey(schema)
   }
 
   /**

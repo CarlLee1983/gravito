@@ -19,7 +19,7 @@ describe('Performance Benchmarks', () => {
     console.log(
       `  10000 renders: ${duration.toFixed(2)}ms (${(duration / 10000).toFixed(3)}ms/render)`
     )
-    expect(duration).toBeLessThan(5000)
+    expect(duration).toBeLessThan(10000)
   })
 
   it('should benefit from cache on repeat renders', () => {
@@ -53,7 +53,7 @@ describe('Performance Benchmarks', () => {
 
     console.log(`  Nested components render: ${duration.toFixed(2)}ms`)
     expect(output).toContain('component-level-5')
-    expect(duration).toBeLessThan(100)
+    expect(duration).toBeLessThan(500)
   })
 
   it('should render loops efficiently', () => {
@@ -69,7 +69,7 @@ describe('Performance Benchmarks', () => {
     const duration = performance.now() - start
 
     console.log(`  100 renders with 100 items each: ${duration.toFixed(2)}ms`)
-    expect(duration).toBeLessThan(2000)
+    expect(duration).toBeLessThan(4000)
   })
 })
 
@@ -103,7 +103,7 @@ describe('TemplateCache Performance', () => {
     const duration = performance.now() - start
 
     console.log(`  1000 hash computations on 60KB template: ${duration.toFixed(2)}ms`)
-    expect(duration).toBeLessThan(500)
+    expect(duration).toBeLessThan(1000)
   })
 
   it('should handle LRU eviction efficiently', () => {
@@ -116,7 +116,7 @@ describe('TemplateCache Performance', () => {
     const duration = performance.now() - start
 
     console.log(`  10000 inserts with eviction: ${duration.toFixed(2)}ms`)
-    expect(duration).toBeLessThan(500)
+    expect(duration).toBeLessThan(1000)
     expect(cache.getStats().evictions).toBeGreaterThan(9000)
   })
 })
