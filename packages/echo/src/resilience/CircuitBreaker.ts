@@ -1,17 +1,18 @@
 /**
- * Circuit Breaker Implementation
+ * Implementation of the Circuit Breaker pattern.
  *
- * 實作熔斷器模式，用於保護下游服務免於雪崩效應。
- * 當失敗率超過閾值時自動切斷請求，在一段時間後嘗試恢復。
+ * Protects downstream services from cascading failures by monitoring error rates
+ * and temporarily "tripping" the circuit when thresholds are exceeded. This
+ * prevents unnecessary load on struggling services and allows them time to recover.
  *
  * @module @gravito/echo/resilience
- * @since v1.1
+ * @since 1.1.0
  */
 
 import type { CircuitBreakerConfig, CircuitBreakerMetrics, CircuitBreakerState } from '../types'
 
 /**
- * 預設配置
+ * Default internal configuration for the circuit breaker.
  */
 const DEFAULT_CONFIG: Required<CircuitBreakerConfig> = {
   enabled: true,
@@ -25,27 +26,26 @@ const DEFAULT_CONFIG: Required<CircuitBreakerConfig> = {
 }
 
 /**
- * Circuit Breaker 實作
+ * State machine for managing service availability.
  *
- * 狀態機：
- * - CLOSED: 正常運作，所有請求通過
- * - OPEN: 失敗過多，立即拒絕所有請求
- * - HALF_OPEN: 測試服務是否恢復，允許有限的請求
+ * - CLOSED: Normal state, all requests are executed.
+ * - OPEN: Failure threshold exceeded, requests are immediately rejected.
+ * - HALF_OPEN: Recovery testing phase, allowing a limited number of requests.
  *
  * @example
  * ```typescript
- * const breaker = new CircuitBreaker('api.example.com', {
+ * const breaker = new CircuitBreaker('inventory-service', {
  *   failureThreshold: 5,
- *   openTimeout: 30000,
- * })
+ *   openTimeout: 60000
+ * });
  *
  * try {
  *   const result = await breaker.execute(async () => {
- *     return await fetch('https://api.example.com/data')
- *   })
+ *     return await apiClient.checkStock('SKU-123');
+ *   });
  * } catch (error) {
  *   if (error.message.includes('Circuit breaker is OPEN')) {
- *     // 熔斷器已開啟，服務暫時不可用
+ *     // Handle graceful degradation
  *   }
  * }
  * ```
@@ -63,6 +63,12 @@ export class CircuitBreaker {
 
   private config: Required<CircuitBreakerConfig>
 
+  /**
+   * Constructs a new CircuitBreaker for a specific resource or host.
+   *
+   * @param name - Semantic identifier for the target being protected.
+   * @param config - Policy settings for failure thresholds and timeouts.
+   */
   constructor(
     private readonly name: string,
     config: CircuitBreakerConfig = {}
@@ -71,11 +77,14 @@ export class CircuitBreaker {
   }
 
   /**
-   * 執行函式並提供熔斷器保護
+   * Executes an asynchronous operation within the safety of the circuit breaker.
    *
-   * @param fn - 要執行的非同步函式
-   * @returns 函式執行結果
-   * @throws Error 當熔斷器處於 OPEN 狀態時
+   * If the circuit is OPEN, this method throws an error immediately without
+   * attempting to execute the function.
+   *
+   * @param fn - The operation to protect.
+   * @returns Resolves to the result of the operation.
+   * @throws {Error} If the circuit is currently OPEN or the operation fails.
    */
   async execute<T>(fn: () => Promise<T>): Promise<T> {
     if (!this.config.enabled) {
@@ -99,7 +108,7 @@ export class CircuitBreaker {
   }
 
   /**
-   * 記錄成功執行
+   * Records a successful operation and updates the state machine.
    */
   private onSuccess(): void {
     this.lastSuccessAt = new Date()
@@ -112,24 +121,24 @@ export class CircuitBreaker {
         this.reset()
       }
     } else if (this.state === 'CLOSED') {
-      // 在 CLOSED 狀態下成功時重置失敗計數
+      // Reset failure count on success when in CLOSED state
       this.failures = 0
     }
   }
 
   /**
-   * 記錄失敗執行
+   * Records a failed operation and determines if the circuit should trip.
    */
   private onFailure(): void {
     this.lastFailureAt = new Date()
     this.failures++
 
     if (this.state === 'HALF_OPEN') {
-      // HALF_OPEN 狀態下失敗立即轉為 OPEN
+      // Any failure in HALF_OPEN immediately trips back to OPEN
       this.transitionTo('OPEN')
       this.openedAt = new Date()
     } else if (this.state === 'CLOSED') {
-      // CLOSED 狀態下達到失敗閾值轉為 OPEN
+      // Trip to OPEN if failure threshold is reached
       if (this.failures >= this.config.failureThreshold) {
         this.transitionTo('OPEN')
         this.openedAt = new Date()
@@ -138,7 +147,7 @@ export class CircuitBreaker {
   }
 
   /**
-   * 檢查是否應該從 OPEN 轉換到 HALF_OPEN
+   * Evaluates if enough time has passed to attempt recovery.
    */
   private checkStateTransition(): void {
     if (this.state === 'OPEN' && this.openedAt) {
@@ -149,7 +158,7 @@ export class CircuitBreaker {
       }
     }
 
-    // 時間窗口過期後重置失敗計數
+    // Reset failure counter if the sliding window has expired
     if (this.lastFailureAt) {
       const elapsed = Date.now() - this.lastFailureAt.getTime()
       if (elapsed >= this.config.windowSize) {
@@ -159,7 +168,7 @@ export class CircuitBreaker {
   }
 
   /**
-   * 轉換到新狀態並觸發回調
+   * Changes the state and triggers associated lifecycle callbacks.
    */
   private transitionTo(newState: CircuitBreakerState): void {
     this.state = newState
@@ -178,7 +187,7 @@ export class CircuitBreaker {
   }
 
   /**
-   * 重置所有計數器
+   * Resets all internal counters to their initial state.
    */
   private reset(): void {
     this.failures = 0
@@ -188,9 +197,9 @@ export class CircuitBreaker {
   }
 
   /**
-   * 獲取當前指標
+   * Retrieves the current health and performance metrics of the circuit.
    *
-   * @returns 熔斷器指標
+   * @returns Current metrics snapshot.
    */
   getMetrics(): CircuitBreakerMetrics {
     return {
@@ -204,10 +213,9 @@ export class CircuitBreaker {
   }
 
   /**
-   * 手動重置熔斷器
+   * Forcefully resets the circuit breaker to the CLOSED state.
    *
-   * 強制將熔斷器轉換為 CLOSED 狀態並重置所有計數器。
-   * 通常用於手動干預或系統恢復後。
+   * Typically used for manual recovery or after resolving underlying issues.
    */
   manualReset(): void {
     this.transitionTo('CLOSED')
@@ -215,14 +223,18 @@ export class CircuitBreaker {
   }
 
   /**
-   * 獲取當前狀態
+   * Returns the current state of the circuit breaker.
+   *
+   * @returns Current state ('CLOSED', 'OPEN', or 'HALF_OPEN').
    */
   getState(): CircuitBreakerState {
     return this.state
   }
 
   /**
-   * 獲取熔斷器名稱
+   * Returns the semantic name of the circuit breaker instance.
+   *
+   * @returns The name identifier.
    */
   getName(): string {
     return this.name

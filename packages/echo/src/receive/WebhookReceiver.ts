@@ -40,9 +40,9 @@ type ProviderClass = new (options?: Record<string, unknown>) => WebhookProvider
 /**
  * WebhookReceiver manages the lifecycle of incoming webhooks.
  *
- * It is responsible for registering providers, verifying signatures,
- * persisting events for audit trails, and routing validated events
- * to registered handlers.
+ * It acts as the primary entry point for all incoming webhook requests,
+ * handling provider-specific verification logic, event persistence,
+ * and routing validated events to their respective application handlers.
  *
  * @example
  * ```typescript
@@ -51,14 +51,10 @@ type ProviderClass = new (options?: Record<string, unknown>) => WebhookProvider
  * // Register a provider with its secret
  * receiver.registerProvider('stripe', 'whsec_...');
  *
- * // Register a handler for a specific event type
+ * // Listen for specific events
  * receiver.on('stripe', 'payment_intent.succeeded', async (event) => {
- *   const { id, amount } = event.payload;
- *   // Process payment...
+ *   console.log('Payment succeeded:', event.payload.id);
  * });
- *
- * // Manually handle an incoming request (usually done by OrbitEcho middleware)
- * const result = await receiver.handle('stripe', rawBody, headers);
  * ```
  *
  * @public
@@ -74,7 +70,7 @@ export class WebhookReceiver {
   private keyRotationManager?: KeyRotationManager
 
   /**
-   * Initializes the receiver and registers built-in providers.
+   * Initializes the receiver and registers default built-in providers.
    */
   constructor() {
     // Register built-in providers
@@ -92,10 +88,10 @@ export class WebhookReceiver {
   private providerTypes = new Map<string, ProviderClass>()
 
   /**
-   * Configures the storage backend for persisting incoming events.
+   * Assigns a storage engine for persisting incoming webhook data.
    *
-   * @param store - The WebhookStore implementation to use.
-   * @returns The receiver instance for chaining.
+   * @param store - Implementation of the WebhookStore interface.
+   * @returns Current instance for method chaining.
    */
   setStore(store: WebhookStore): this {
     this.store = store
@@ -103,10 +99,10 @@ export class WebhookReceiver {
   }
 
   /**
-   * Configures the metrics provider for observability.
+   * Configures the metrics provider for performance monitoring.
    *
-   * @param metrics - The MetricsProvider implementation to use.
-   * @returns The receiver instance for chaining.
+   * @param metrics - Implementation of the MetricsProvider interface.
+   * @returns Current instance for method chaining.
    */
   setMetrics(metrics: MetricsProvider): this {
     this.metrics = metrics
@@ -114,10 +110,10 @@ export class WebhookReceiver {
   }
 
   /**
-   * Configures the tracer for distributed tracing.
+   * Configures the distributed tracing provider for request observability.
    *
-   * @param tracer - The Tracer implementation to use.
-   * @returns The receiver instance for chaining.
+   * @param tracer - Implementation of the Tracer interface.
+   * @returns Current instance for method chaining.
    */
   setTracer(tracer: Tracer): this {
     this.tracer = tracer
@@ -125,10 +121,10 @@ export class WebhookReceiver {
   }
 
   /**
-   * Configures the logger for diagnostic output.
+   * Configures the logger for diagnostic and audit logging.
    *
-   * @param logger - The EchoLogger implementation to use.
-   * @returns The receiver instance for chaining.
+   * @param logger - Implementation of the EchoLogger interface.
+   * @returns Current instance for method chaining.
    */
   setLogger(logger: EchoLogger): this {
     this.logger = logger
@@ -136,10 +132,10 @@ export class WebhookReceiver {
   }
 
   /**
-   * Configures the key rotation manager.
+   * Attaches a key rotation manager for handling dynamic secret updates.
    *
-   * @param manager - The KeyRotationManager instance to use.
-   * @returns The receiver instance for chaining.
+   * @param manager - Instance of KeyRotationManager.
+   * @returns Current instance for method chaining.
    */
   setKeyRotationManager(manager: KeyRotationManager): this {
     this.keyRotationManager = manager
@@ -147,11 +143,11 @@ export class WebhookReceiver {
   }
 
   /**
-   * Registers a custom provider class that implements the WebhookProvider interface.
+   * Extends the receiver with a custom webhook provider implementation.
    *
-   * @param name - The unique name for this provider type.
-   * @param ProviderCls - The class constructor for the provider.
-   * @returns The receiver instance for chaining.
+   * @param name - Unique name for the provider type (e.g., 'my-custom-service').
+   * @param ProviderCls - Constructor for the class implementing WebhookProvider.
+   * @returns Current instance for method chaining.
    */
   registerProviderType(name: string, ProviderCls: ProviderClass): this {
     this.providerTypes.set(name, ProviderCls)
@@ -159,13 +155,13 @@ export class WebhookReceiver {
   }
 
   /**
-   * Registers a provider instance with a specific secret and options.
+   * Configures a named provider instance with a specific secret and parameters.
    *
-   * @param name - The unique name for this provider instance.
-   * @param secret - The secret key used for signature verification.
-   * @param options - Optional configuration like provider type and timestamp tolerance.
-   * @returns The receiver instance for chaining.
-   * @throws Error if the specified provider type is not registered.
+   * @param name - Unique name for this specific provider instance.
+   * @param secret - Cryptographic secret used for signature verification.
+   * @param options - Additional settings like provider type and time tolerance.
+   * @returns Current instance for method chaining.
+   * @throws {Error} If the specified provider type is not registered.
    */
   registerProvider(
     name: string,
@@ -185,13 +181,13 @@ export class WebhookReceiver {
   }
 
   /**
-   * Registers a provider with key rotation support.
+   * Registers a provider instance with support for multiple secrets and rotation.
    *
-   * @param name - The unique name for this provider instance.
-   * @param keys - Array of key entries for rotation support.
-   * @param options - Optional configuration like provider type and timestamp tolerance.
-   * @returns The receiver instance for chaining.
-   * @throws Error if KeyRotationManager is not set or provider type is unknown.
+   * @param name - Unique name for this specific provider instance.
+   * @param keys - Collection of valid keys with metadata for rotation support.
+   * @param options - Additional settings like provider type and time tolerance.
+   * @returns Current instance for method chaining.
+   * @throws {Error} If the KeyRotationManager is not configured or provider type is unknown.
    */
   registerProviderWithRotation(
     name: string,
@@ -225,12 +221,12 @@ export class WebhookReceiver {
   }
 
   /**
-   * Registers a handler for a specific event type from a provider.
+   * Registers a callback handler for a specific event type from a provider.
    *
-   * @param providerName - The name of the provider instance.
-   * @param eventType - The type of event to handle (e.g., 'checkout.session.completed').
-   * @param handler - The callback function to execute when the event is received.
-   * @returns The receiver instance for chaining.
+   * @param providerName - Name of the registered provider instance.
+   * @param eventType - Exact semantic type of the event (e.g., 'user.signup').
+   * @param handler - Function to execute when a matching event is validated.
+   * @returns Current instance for method chaining.
    */
   on<T = unknown>(providerName: string, eventType: string, handler: WebhookHandler<T>): this {
     if (!this.handlers.has(providerName)) {
@@ -253,11 +249,11 @@ export class WebhookReceiver {
   }
 
   /**
-   * Registers a handler for all events from a specific provider.
+   * Registers a catch-all handler for every valid event from a specific provider.
    *
-   * @param providerName - The name of the provider instance.
-   * @param handler - The callback function to execute for every valid event from this provider.
-   * @returns The receiver instance for chaining.
+   * @param providerName - Name of the registered provider instance.
+   * @param handler - Function to execute for every validated event from this provider.
+   * @returns Current instance for method chaining.
    */
   onAll<T = unknown>(providerName: string, handler: WebhookHandler<T>): this {
     if (!this.globalHandlers.has(providerName)) {
@@ -269,16 +265,18 @@ export class WebhookReceiver {
   }
 
   /**
-   * Processes an incoming webhook request.
+   * Orchestrates the verification and processing of an incoming webhook.
    *
-   * This method performs verification, persists the event if a store is configured,
-   * and executes all matching handlers.
+   * Performs signature validation (including multi-key rotation check),
+   * persists the event for audit logs, and invokes all matching handlers
+   * within an observability span.
    *
-   * @param providerName - The name of the provider instance.
-   * @param body - The raw request body.
-   * @param headers - The incoming HTTP headers.
-   * @returns A promise resolving to the verification result and processing status.
-   * @throws Error if any handler fails or if storage operations encounter an error.
+   * @param providerName - Target provider instance name for verification.
+   * @param body - The raw request payload received from the network.
+   * @param headers - HTTP headers containing signatures and metadata.
+   * @param context - Optional Gravito context for middleware integration.
+   * @returns Detailed processing result including verification status and event ID.
+   * @throws {Error} If any handler fails or storage persistence encounters an error.
    */
   async handle(
     providerName: string,

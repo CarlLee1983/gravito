@@ -1,40 +1,37 @@
 /**
- * @fileoverview \@gravito/echo - Enterprise Webhook Module
+ * @fileoverview \@gravito/echo - Enterprise Webhook Orchestration
  *
- * Secure webhook receiving and reliable webhook sending for Gravito.
- * Provides a unified orchestration layer for handling third-party webhooks
- * and dispatching outgoing events with robust retry logic.
+ * Echo provides a secure, reliable, and observable layer for handling webhooks
+ * in Gravito applications. It standardizes incoming webhook reception with
+ * signature verification and dynamic key rotation, while ensuring reliable
+ * outgoing delivery via exponential backoff and circuit breaking.
  *
- * @example Receiving webhooks
+ * @example Receiving webhooks from Stripe
  * ```typescript
  * import { OrbitEcho, WebhookReceiver } from '@gravito/echo'
  *
  * const core = new PlanetCore()
- *
  * core.install(new OrbitEcho({
  *   providers: {
- *     stripe: { name: 'stripe', secret: process.env.STRIPE_WEBHOOK_SECRET! }
+ *     stripe: { name: 'stripe', secret: process.env.STRIPE_SECRET! }
  *   }
  * }))
  *
  * const receiver = core.container.make<WebhookReceiver>('echo.receiver')
  * receiver.on('stripe', 'payment_intent.succeeded', async (event) => {
- *   console.log('Payment:', event.payload)
+ *   // Securely process validated payment
  * })
  * ```
  *
- * @example Sending webhooks
+ * @example Dispatching reliable outgoing webhooks
  * ```typescript
  * import { WebhookDispatcher } from '@gravito/echo'
  *
- * const dispatcher = new WebhookDispatcher({
- *   secret: 'my-secret'
- * })
- *
+ * const dispatcher = new WebhookDispatcher({ secret: 'app-secret' })
  * await dispatcher.dispatch({
- *   url: 'https://example.com/webhook',
+ *   url: 'https://consumer.com/hook',
  *   event: 'order.created',
- *   data: { orderId: 123 }
+ *   data: { id: 123 }
  * })
  * ```
  *
