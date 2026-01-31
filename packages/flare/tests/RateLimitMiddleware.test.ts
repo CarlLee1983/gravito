@@ -1,5 +1,5 @@
 import { describe, expect, it, jest } from 'bun:test'
-import { RateLimitMiddleware, MemoryStore } from '../src/middleware/RateLimitMiddleware'
+import { MemoryStore, RateLimitMiddleware } from '../src/middleware/RateLimitMiddleware'
 import { Notification } from '../src/Notification'
 import type { Notifiable } from '../src/types'
 

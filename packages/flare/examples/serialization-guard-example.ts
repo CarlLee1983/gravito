@@ -103,7 +103,9 @@ function example1_checkSerializable() {
   console.log('  可序列化:', badResult.serializable)
   console.log('  問題路徑:', badResult.problematicPaths)
   console.log('  警告訊息:')
-  badResult.warnings.forEach((warning) => console.log(`    - ${warning}`))
+  for (const warning of badResult.warnings) {
+    console.log(`    - ${warning}`)
+  }
   console.log()
 
   // 測試循環引用
@@ -114,7 +116,9 @@ function example1_checkSerializable() {
   console.log('  可序列化:', circularResult.serializable)
   console.log('  問題路徑:', circularResult.problematicPaths)
   console.log('  警告訊息:')
-  circularResult.warnings.forEach((warning) => console.log(`    - ${warning}`))
+  for (const warning of circularResult.warnings) {
+    console.log(`    - ${warning}`)
+  }
   console.log()
 }
 
@@ -166,7 +170,9 @@ function example3_integrationWithManager() {
     if (!result.serializable) {
       console.error('❌ 通知無法序列化，拒絕推送到佇列')
       console.error('問題路徑:', result.problematicPaths.join(', '))
-      result.warnings.forEach((warning) => console.error(`  - ${warning}`))
+      for (const warning of result.warnings) {
+        console.error(`  - ${warning}`)
+      }
       return false
     }
 
@@ -215,7 +221,9 @@ function example4_complexDataStructures() {
   console.log('  可序列化:', result.serializable)
   console.log('  問題路徑:', result.problematicPaths)
   console.log('  警告訊息:')
-  result.warnings.forEach((warning) => console.log(`    - ${warning}`))
+  for (const warning of result.warnings) {
+    console.log(`    - ${warning}`)
+  }
   console.log()
 }
 

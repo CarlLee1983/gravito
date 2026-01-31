@@ -18,7 +18,9 @@ const DEFAULT_CONFIG: Required<KeyRotationConfig> = {
   autoCleanup: true,
   gracePeriod: 24 * 60 * 60 * 1000, // 24 hours
   keyProvider: async () => [],
-  onRotate: () => {},
+  onRotate: () => {
+    /* Noop by default */
+  },
 }
 
 /**

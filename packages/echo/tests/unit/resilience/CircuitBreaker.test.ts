@@ -4,9 +4,8 @@
  * 測試熔斷器的所有狀態轉換和行為
  */
 
-import { beforeEach, describe, expect, it, mock } from 'bun:test'
+import { describe, expect, it, mock } from 'bun:test'
 import { CircuitBreaker } from '../../../src/resilience/CircuitBreaker'
-import type { CircuitBreakerState } from '../../../src/types'
 
 /**
  * 等待指定的毫秒數
@@ -32,7 +31,9 @@ describe('CircuitBreaker', () => {
 
   describe('CLOSED → OPEN 狀態轉換', () => {
     it('達到失敗閾值時應該開啟熔斷器', async () => {
-      const onOpen = mock(() => {})
+      const onOpen = mock(() => {
+        /* Noop */
+      })
       const breaker = new CircuitBreaker('test-service', {
         failureThreshold: 3,
         onOpen,
@@ -108,7 +109,9 @@ describe('CircuitBreaker', () => {
 
   describe('OPEN → HALF_OPEN 狀態轉換', () => {
     it('等待超時後應該轉換到 HALF_OPEN', async () => {
-      const onHalfOpen = mock(() => {})
+      const onHalfOpen = mock(() => {
+        /* Noop */
+      })
       const breaker = new CircuitBreaker('test-service', {
         failureThreshold: 2,
         openTimeout: 100, // 100ms
@@ -168,7 +171,9 @@ describe('CircuitBreaker', () => {
 
   describe('HALF_OPEN → CLOSED 狀態轉換', () => {
     it('連續成功後應該關閉熔斷器', async () => {
-      const onClose = mock(() => {})
+      const onClose = mock(() => {
+        /* Noop */
+      })
       const breaker = new CircuitBreaker('test-service', {
         failureThreshold: 2,
         successThreshold: 2,

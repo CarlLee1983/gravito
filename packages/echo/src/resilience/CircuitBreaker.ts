@@ -20,9 +20,15 @@ const DEFAULT_CONFIG: Required<CircuitBreakerConfig> = {
   successThreshold: 2,
   windowSize: 60000, // 1 minute
   openTimeout: 30000, // 30 seconds
-  onOpen: () => {},
-  onHalfOpen: () => {},
-  onClose: () => {},
+  onOpen: () => {
+    /* Noop by default */
+  },
+  onHalfOpen: () => {
+    /* Noop by default */
+  },
+  onClose: () => {
+    /* Noop by default */
+  },
 }
 
 /**

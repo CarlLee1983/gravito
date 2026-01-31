@@ -7,7 +7,7 @@
  */
 
 import type { Notification } from '../Notification'
-import type { Notifiable, SendResult } from './index'
+import type { Notifiable, SendResult } from '../types'
 
 /**
  * FlareHooks 事件名稱列舉
