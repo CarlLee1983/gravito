@@ -16,28 +16,28 @@ describe('BunSQLPreparedStatementManager', () => {
   beforeEach(() => {
     // Mock prepared statement
     mockPreparedStmt = {
-      run: mock(async (...params: unknown[]) => ({
+      run: mock(async (..._params: unknown[]) => ({
         rows: [{ id: 1, name: 'Test' }],
         rowCount: 1,
         [Symbol.iterator]: function* () {
           yield { id: 1, name: 'Test' }
         },
       })),
-      all: mock(async (...params: unknown[]) => [{ id: 1, name: 'Test' }]),
-      get: mock(async (...params: unknown[]) => ({ id: 1, name: 'Test' })),
+      all: mock(async (..._params: unknown[]) => [{ id: 1, name: 'Test' }]),
+      get: mock(async (..._params: unknown[]) => ({ id: 1, name: 'Test' })),
       finalize: mock(() => {}),
     }
 
     // Mock Bun.sql client
     mockClient = Object.assign(
-      mock(async (strings: TemplateStringsArray, ...values: unknown[]) => ({
+      mock(async (_strings: TemplateStringsArray, ..._values: unknown[]) => ({
         rows: [],
         rowCount: 0,
         [Symbol.iterator]: function* () {},
       })),
       {
-        prepare: mock((sql: string) => mockPreparedStmt),
-        unsafe: mock(async (sql: string, bindings?: unknown[]) => ({
+        prepare: mock((_sql: string) => mockPreparedStmt),
+        unsafe: mock(async (_sql: string, _bindings?: unknown[]) => ({
           rows: [],
           rowCount: 0,
           [Symbol.iterator]: function* () {},

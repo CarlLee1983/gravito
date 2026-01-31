@@ -97,14 +97,16 @@ describe('FluxEngine Saga Pattern', () => {
         'reserve-inventory',
         async (ctx) => {
           inventory.push(ctx.input.productId)
-          ctx.data.reservationId = 'res-' + ctx.input.productId
+          ctx.data.reservationId = `res-${ctx.input.productId}`
           logs.push('reserve')
         },
         {
           compensate: async (ctx) => {
             const index = inventory.indexOf(ctx.input.productId)
-            if (index > -1) inventory.splice(index, 1)
-            logs.push('release-' + ctx.data.reservationId)
+            if (index > -1) {
+              inventory.splice(index, 1)
+            }
+            logs.push(`release-${ctx.data.reservationId}`)
           },
         }
       )
@@ -112,14 +114,16 @@ describe('FluxEngine Saga Pattern', () => {
         'charge-payment',
         async (ctx) => {
           payments.push(ctx.input.price)
-          ctx.data.transactionId = 'tx-' + Date.now()
+          ctx.data.transactionId = `tx-${Date.now()}`
           logs.push('charge')
         },
         {
           compensate: async (ctx) => {
             const index = payments.indexOf(ctx.input.price)
-            if (index > -1) payments.splice(index, 1)
-            logs.push('refund-' + ctx.data.transactionId)
+            if (index > -1) {
+              payments.splice(index, 1)
+            }
+            logs.push(`refund-${ctx.data.transactionId}`)
           },
         }
       )

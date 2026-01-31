@@ -194,7 +194,9 @@ describe('Phase 1 Integration: Risk Mitigation', () => {
                 throw new Error('Inventory service timeout')
               }
               const index = inventory.indexOf(ctx.input.productId)
-              if (index > -1) inventory.splice(index, 1)
+              if (index > -1) {
+                inventory.splice(index, 1)
+              }
             },
           }
         )
@@ -211,7 +213,9 @@ describe('Phase 1 Integration: Risk Mitigation', () => {
                 throw new Error('Payment gateway timeout')
               }
               const index = payments.indexOf(ctx.input.amount)
-              if (index > -1) payments.splice(index, 1)
+              if (index > -1) {
+                payments.splice(index, 1)
+              }
             },
           }
         )
@@ -223,7 +227,9 @@ describe('Phase 1 Integration: Risk Mitigation', () => {
           {
             compensate: async (ctx) => {
               const index = emails.indexOf(ctx.input.userId)
-              if (index > -1) emails.splice(index, 1)
+              if (index > -1) {
+                emails.splice(index, 1)
+              }
             },
           }
         )

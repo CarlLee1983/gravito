@@ -9,7 +9,9 @@ const TMP_DIR = join(import.meta.dir, 'tmp_search')
 
 describe('ContentManager Search', () => {
   beforeEach(async () => {
-    if (existsSync(TMP_DIR)) await rm(TMP_DIR, { recursive: true, force: true })
+    if (existsSync(TMP_DIR)) {
+      await rm(TMP_DIR, { recursive: true, force: true })
+    }
     await mkdir(join(TMP_DIR, 'docs', 'en'), { recursive: true })
     await mkdir(join(TMP_DIR, 'blog', 'en'), { recursive: true })
 
@@ -24,7 +26,9 @@ describe('ContentManager Search', () => {
   })
 
   afterEach(async () => {
-    if (existsSync(TMP_DIR)) await rm(TMP_DIR, { recursive: true, force: true })
+    if (existsSync(TMP_DIR)) {
+      await rm(TMP_DIR, { recursive: true, force: true })
+    }
   })
 
   it('should find items by keyword', async () => {

@@ -8,7 +8,9 @@ describe('throttleAuth middleware', () => {
     const ctx = {
       req: {
         header: mock((name?: string) => {
-          if (name === 'x-forwarded-for') return ip
+          if (name === 'x-forwarded-for') {
+            return ip
+          }
           return {} as any
         }),
       },
@@ -18,7 +20,9 @@ describe('throttleAuth middleware', () => {
         res.status = code
       }),
       json: mock((body: any, status: number) => {
-        if (status) res.status = status
+        if (status) {
+          res.status = status
+        }
         return body
       }),
     }

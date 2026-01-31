@@ -75,7 +75,9 @@ export class SchemaSniffer {
       const pk = normalized.pk ?? 0
       const dflt_value = normalized.dflt_value
 
-      if (name === undefined) continue
+      if (name === undefined) {
+        continue
+      }
 
       const column: ColumnSchema = {
         name: name,
@@ -324,7 +326,9 @@ export class SchemaSniffer {
   }
 
   private mapSQLiteType(type: string): ColumnType {
-    if (!type) return 'string'
+    if (!type) {
+      return 'string'
+    }
     const t = type.toLowerCase()
     if (t.includes('int')) {
       return 'integer'

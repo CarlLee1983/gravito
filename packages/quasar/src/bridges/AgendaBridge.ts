@@ -15,9 +15,15 @@ export class AgendaBridge extends BaseZenithBridge {
     this.registerListener(agenda, 'fail', (err: Error, job: any) => this.handleJobFail(job, err))
 
     // Agenda emits events on the agenda instance
-    if (this.listeners[0]) agenda.on('start', this.listeners[0].handler)
-    if (this.listeners[1]) agenda.on('complete', this.listeners[1].handler)
-    if (this.listeners[2]) agenda.on('fail', this.listeners[2].handler)
+    if (this.listeners[0]) {
+      agenda.on('start', this.listeners[0].handler)
+    }
+    if (this.listeners[1]) {
+      agenda.on('complete', this.listeners[1].handler)
+    }
+    if (this.listeners[2]) {
+      agenda.on('fail', this.listeners[2].handler)
+    }
   }
 
   private handleJobStart(job: any): void {

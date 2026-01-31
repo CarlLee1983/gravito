@@ -6,13 +6,14 @@ import { WebhookDispatcher } from './send/WebhookDispatcher'
 import type { EchoConfig, ProviderKeyEntry, WebhookProviderConfigWithRotation } from './types'
 
 /**
- * OrbitEcho is the official webhook orchestration module for Gravito.
+ * OrbitEcho is the official webhook orchestration module for the Gravito ecosystem.
  *
  * It serves as a comprehensive hub for managing the entire webhook lifecycle,
- * including secure reception, signature verification, persistent storage,
- * and reliable outgoing dispatch with retry logic.
+ * including secure reception, signature verification across multiple providers,
+ * persistent storage for auditing, and reliable outgoing dispatch with
+ * exponential backoff and circuit breaking.
  *
- * @example
+ * @example Basic integration with PlanetCore
  * ```typescript
  * import { PlanetCore } from '@gravito/core';
  * import { OrbitEcho } from '@gravito/echo';
@@ -20,7 +21,10 @@ import type { EchoConfig, ProviderKeyEntry, WebhookProviderConfigWithRotation } 
  * const core = new PlanetCore();
  * const echo = new OrbitEcho({
  *   providers: {
- *     stripe: { name: 'stripe', secret: 'whsec_...' }
+ *     stripe: { name: 'stripe', secret: process.env.STRIPE_SECRET }
+ *   },
+ *   dispatcher: {
+ *     secret: process.env.APP_WEBHOOK_SECRET
  *   }
  * });
  *
@@ -38,10 +42,11 @@ export class OrbitEcho implements GravitoOrbit {
   /**
    * Constructs a new OrbitEcho instance with the specified configuration.
    *
-   * Initializes the core receiver component, sets up key rotation if enabled,
-   * registers providers, and configures observability and storage backends.
+   * This constructor initializes the core receiver component, sets up key rotation
+   * orchestration if enabled, registers defined providers, and connects the
+   * observability stack (metrics, tracing, logging).
    *
-   * @param config - Global configuration for providers, dispatchers, and infrastructure.
+   * @param config - The global configuration defining providers, dispatchers, and infrastructure.
    */
   constructor(config: EchoConfig = {}) {
     this.echoConfig = config
@@ -105,13 +110,15 @@ export class OrbitEcho implements GravitoOrbit {
   }
 
   /**
-   * Integrates the Echo module into the Gravito PlanetCore ecosystem.
+   * Integrates the Echo module into the Gravito application lifecycle.
    *
-   * Registers required middleware for request buffering and context injection,
-   * and binds Echo components to the service container for global accessibility.
+   * This method performs the following setup tasks:
+   * 1. Installs request buffering middleware (if enabled) to preserve raw bodies.
+   * 2. Binds Echo components to the service container (`echo`, `echo.receiver`).
+   * 3. Injects the Echo instance into the request context for easy access in handlers.
    *
-   * @param core - The PlanetCore instance managing the application lifecycle.
-   * @throws {Error} If the core adapter is missing or improperly initialized.
+   * @param core - The PlanetCore instance managing the application.
+   * @throws {Error} If the core adapter is missing or improperly configured.
    */
   install(core: PlanetCore): void {
     // Install request buffer middleware if enabled
@@ -140,7 +147,10 @@ export class OrbitEcho implements GravitoOrbit {
   /**
    * Retrieves the underlying receiver instance for manual webhook processing.
    *
-   * @returns The WebhookReceiver instance.
+   * Use this when you need fine-grained control over how incoming webhooks
+   * are routed or verified outside of the standard middleware flow.
+   *
+   * @returns The active WebhookReceiver instance.
    */
   getReceiver(): WebhookReceiver {
     return this.receiver
@@ -149,14 +159,14 @@ export class OrbitEcho implements GravitoOrbit {
   /**
    * Retrieves the dispatcher instance for sending outgoing webhooks.
    *
-   * @returns The dispatcher if configured, otherwise undefined.
+   * @returns The configured WebhookDispatcher, or undefined if dispatch is disabled.
    */
   getDispatcher(): WebhookDispatcher | undefined {
     return this.dispatcher
   }
 
   /**
-   * Returns the active configuration used by this Echo instance.
+   * Accesses the active configuration used by this OrbitEcho instance.
    *
    * @returns The immutable EchoConfig object.
    */
@@ -167,27 +177,28 @@ export class OrbitEcho implements GravitoOrbit {
   /**
    * Retrieves the key rotation manager responsible for secret lifecycle.
    *
-   * @returns The manager if enabled, otherwise undefined.
+   * @returns The manager instance, or undefined if key rotation is disabled.
    */
   getKeyRotationManager(): KeyRotationManager | undefined {
     return this.keyRotationManager
   }
 
   /**
-   * Triggers a primary key rotation for a specific webhook provider.
+   * Initiates a zero-downtime primary key rotation for a specific provider.
    *
-   * Allows for zero-downtime key updates by promoting a new key to primary
-   * status while optionally maintaining the old key for a grace period.
+   * This method promotes a new key to primary status while maintaining valid old keys
+   * for a grace period, ensuring that webhooks signed with either key are accepted
+   * during the transition.
    *
-   * @param providerName - Canonical name of the provider to update.
+   * @param providerName - The identifier of the provider to update.
    * @param newKey - Metadata and value for the replacement key.
-   * @throws {Error} If key rotation is not enabled in the global config.
+   * @throws {Error} If key rotation is not enabled in the global configuration.
    *
    * @example
    * ```typescript
    * await echo.rotateProviderKey('stripe', {
-   *   key: 'new_secret_...',
-   *   version: '2026-01-31',
+   *   key: 'whsec_new_secret',
+   *   version: 'v2',
    *   activeFrom: new Date()
    * });
    * ```

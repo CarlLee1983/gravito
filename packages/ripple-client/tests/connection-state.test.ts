@@ -24,7 +24,7 @@ describe('ConnectionStateManager Integration', () => {
     } as any
 
     const client = new RippleClient({ host: 'ws://localhost' })
-    const stateSpy = mock((state: ConnectionState) => {})
+    const stateSpy = mock((_state: ConnectionState) => {})
 
     const unsubscribe = client.onStateChange(stateSpy)
 

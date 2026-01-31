@@ -160,7 +160,9 @@ export class DefaultConnectionTracker implements ConnectionTracker {
    */
   getConnectionDuration(clientId: string): number | null {
     const connection = this.connections.get(clientId)
-    if (!connection) return null
+    if (!connection) {
+      return null
+    }
     return Date.now() - connection.connectedAt.getTime()
   }
 

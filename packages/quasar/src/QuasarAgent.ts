@@ -1,4 +1,4 @@
-import { EventEmitter } from 'events'
+import { EventEmitter } from 'node:events'
 import { Redis } from 'ioredis'
 import type { EventMapping } from './bridges/GenericBridge'
 import type { LogMiddleware, QueueBridge } from './bridges/types'
@@ -353,7 +353,9 @@ export class QuasarAgent {
     const prefix = `${this.prefix}${this.service}:*`
     const keys = await redis.keys(prefix)
 
-    if (keys.length === 0) return []
+    if (keys.length === 0) {
+      return []
+    }
 
     const values = await redis.mget(...keys)
     return values

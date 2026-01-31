@@ -37,7 +37,9 @@ describe('Gate Coverage', () => {
   it('allows everything for super admin via before() callback', async () => {
     const gate = new Gate()
     gate.before((user: any) => {
-      if (user.isAdmin) return true
+      if (user.isAdmin) {
+        return true
+      }
     })
     gate.define('some-ability', () => false)
 

@@ -4,7 +4,6 @@ export * from './ValibotValidator'
 export * from './ZodValidator'
 
 import { SchemaCache } from '../core/SchemaCache'
-import { SchemaCompilationCache } from '../core/SchemaCompilationCache'
 // Initialize default validators
 import { SchemaValidatorFactory } from './SchemaValidator'
 import { ValibotValidator } from './ValibotValidator'

@@ -66,13 +66,17 @@ export class MaintenancePlugin implements QuasarPlugin {
   }
 
   private async cleanupStaleNodes() {
-    if (!this.agent) return
+    if (!this.agent) {
+      return
+    }
     // Stale nodes are currently handled by Redis TTL (EX 30).
     // Custom cleanup logic can be added here if needed.
   }
 
   private async trimGlobalHistory() {
-    if (!this.agent) return
+    if (!this.agent) {
+      return
+    }
     const redis = (this.agent as any).transportRedis
     const historyKey = `${QUASAR_KEYS.ZENITH_LOG_PREFIX}logs:history`
 

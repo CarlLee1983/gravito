@@ -19,7 +19,9 @@ describe('AuthManager Caching', () => {
   const createMockContext = () =>
     ({
       get: mock((key: string) => {
-        if (key === 'session') return { get: () => null, put: () => {}, forget: () => {} }
+        if (key === 'session') {
+          return { get: () => null, put: () => {}, forget: () => {} }
+        }
         return null
       }),
       set: mock(() => {}),

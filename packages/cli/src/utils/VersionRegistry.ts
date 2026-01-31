@@ -136,14 +136,18 @@ export class VersionRegistry {
       const dirPath = pattern.replace('/*', '')
       const fullPath = path.join(rootPath, dirPath)
 
-      if (!existsSync(fullPath)) continue
+      if (!existsSync(fullPath)) {
+        continue
+      }
 
       const entries = await fs.readdir(fullPath)
 
       for (const entry of entries) {
         const pkgPath = path.join(fullPath, entry, 'package.json')
 
-        if (!existsSync(pkgPath)) continue
+        if (!existsSync(pkgPath)) {
+          continue
+        }
 
         try {
           const pkg = JSON.parse(await fs.readFile(pkgPath, 'utf-8'))

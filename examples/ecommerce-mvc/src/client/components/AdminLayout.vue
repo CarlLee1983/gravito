@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Link, usePage } from '@inertiajs/vue3'
+import { usePage } from '@inertiajs/vue3'
 import { computed, ref } from 'vue'
 
 const page = usePage()
@@ -20,7 +20,9 @@ const toggleSidebar = () => {
 
 const isActive = (href: string) => {
   const url = page.url
-  if (href === '/admin') return url === '/admin'
+  if (href === '/admin') {
+    return url === '/admin'
+  }
   return url.startsWith(href)
 }
 </script>

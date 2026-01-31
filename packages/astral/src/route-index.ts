@@ -30,18 +30,18 @@ export class RouteIndex {
       if (!this.exactIndex.has(route.path)) {
         this.exactIndex.set(route.path, [])
       }
-      this.exactIndex.get(route.path)!.push(route)
+      this.exactIndex.get(route.path)?.push(route)
 
       // 前綴索引（處理巢狀路由）
       // 例如 /api/users/posts 會建立索引：/api, /api/users, /api/users/posts
       const segments = route.path.split('/').filter(Boolean)
       let prefix = ''
       for (const segment of segments) {
-        prefix += '/' + segment
+        prefix += `/${segment}`
         if (!this.prefixIndex.has(prefix)) {
           this.prefixIndex.set(prefix, [])
         }
-        this.prefixIndex.get(prefix)!.push(route)
+        this.prefixIndex.get(prefix)?.push(route)
       }
     }
   }
@@ -89,10 +89,14 @@ export class RouteIndex {
    */
   private isValidMatch(routePath: string, resourcePath: string): boolean {
     // 完全匹配
-    if (routePath === resourcePath) return true
+    if (routePath === resourcePath) {
+      return true
+    }
 
     // 路由路徑必須以資源路徑開頭
-    if (!routePath.startsWith(resourcePath)) return false
+    if (!routePath.startsWith(resourcePath)) {
+      return false
+    }
 
     // 檢查剩餘部分是否以 / 開頭（確保是路徑分隔符）
     const remainder = routePath.slice(resourcePath.length)

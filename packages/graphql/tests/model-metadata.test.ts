@@ -8,7 +8,6 @@ import {
   extractAppendFields,
   extractModelMetadata,
   filterHiddenFields,
-  type ModelMetadata,
 } from '../src/utils/model-metadata'
 
 // 測試用 Model - 包含 hidden 和 appends

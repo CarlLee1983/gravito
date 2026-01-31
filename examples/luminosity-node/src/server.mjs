@@ -23,7 +23,7 @@ const seoMiddleware = gravitoSeo({
   },
 })
 
-app.get('/', (req, res) => {
+app.get('/', (_req, res) => {
   res.type('text/plain').send('Gravito Luminosity (Node + Express)')
 })
 

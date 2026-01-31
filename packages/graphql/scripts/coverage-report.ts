@@ -19,13 +19,13 @@ function parseLcov(lcovPath: string): FileCoverage[] {
     if (line.startsWith('SF:')) {
       currentFile = { file: line.substring(3) }
     } else if (line.startsWith('LF:')) {
-      currentFile.linesFound = Number.parseInt(line.substring(3))
+      currentFile.linesFound = Number.parseInt(line.substring(3), 10)
     } else if (line.startsWith('LH:')) {
-      currentFile.linesHit = Number.parseInt(line.substring(3))
+      currentFile.linesHit = Number.parseInt(line.substring(3), 10)
     } else if (line.startsWith('FNF:')) {
-      currentFile.functionsFound = Number.parseInt(line.substring(4))
+      currentFile.functionsFound = Number.parseInt(line.substring(4), 10)
     } else if (line.startsWith('FNH:')) {
-      currentFile.functionsHit = Number.parseInt(line.substring(4))
+      currentFile.functionsHit = Number.parseInt(line.substring(4), 10)
     } else if (line === 'end_of_record' && currentFile.file) {
       files.push(currentFile as FileCoverage)
       currentFile = {}

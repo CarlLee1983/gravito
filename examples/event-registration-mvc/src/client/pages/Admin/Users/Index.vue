@@ -58,7 +58,6 @@
 </template>
 
 <script setup lang="ts">
-import AdminLayout from '../../../components/AdminLayout.vue'
 import { useI18n } from '../../../composables/useI18n'
 
 const { t } = useI18n()

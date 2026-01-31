@@ -50,7 +50,9 @@ describe('SoftDeletes', () => {
     // Mock DB.connection
     const originalConnection = DB.connection
     connectionSpy = spyOn(DB, 'connection').mockImplementation((name?: string) => {
-      if (name === TEST_CONN) return mockConnection
+      if (name === TEST_CONN) {
+        return mockConnection
+      }
       return originalConnection.call(DB, name as any)
     })
     // @ts-expect-error

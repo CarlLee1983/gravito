@@ -58,8 +58,12 @@ async function benchmark() {
   const stats = smallStore.getStats()
   console.log(`Stats: Size=${stats.size}, Evictions=${stats.evictions}`)
 
-  if (stats.size !== 5000) console.error('❌ Size check failed!')
-  if (stats.evictions !== 5000) console.error('❌ Eviction check failed!')
+  if (stats.size !== 5000) {
+    console.error('❌ Size check failed!')
+  }
+  if (stats.evictions !== 5000) {
+    console.error('❌ Eviction check failed!')
+  }
 }
 
 benchmark().catch(console.error)

@@ -5,7 +5,7 @@ import { createBeam } from '../src/index'
 const app = new Photon()
   .get('/users', (c) => c.json({ users: [{ id: 1, name: 'Alice' }] }))
   .post('/users', (c) => c.json({ id: 2, name: 'Bob' }))
-  .get('/users/:id', (c) => c.json({ id: parseInt(c.req.param('id')), name: 'Alice' }))
+  .get('/users/:id', (c) => c.json({ id: parseInt(c.req.param('id'), 10), name: 'Alice' }))
   .post('/posts/:postId/comments', (c) => c.json({ id: 1, text: 'Hello' }))
 
 type AppType = typeof app

@@ -95,7 +95,9 @@ export class CronParser {
   }
 
   private static cleanupCache(): void {
-    if (this.cache.size <= this.MAX_CACHE_SIZE) return
+    if (this.cache.size <= this.MAX_CACHE_SIZE) {
+      return
+    }
 
     // Map iterates in insertion order, so the first key is the oldest (LRU)
     // We only need to remove one item because we check after every insertion

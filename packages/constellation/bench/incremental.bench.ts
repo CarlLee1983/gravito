@@ -1,4 +1,4 @@
-import { performance } from 'perf_hooks'
+import { performance } from 'node:perf_hooks'
 import { MemoryChangeTracker } from '../src/core/ChangeTracker'
 import { IncrementalGenerator } from '../src/core/IncrementalGenerator'
 import { MemorySitemapStorage } from '../src/storage/MemorySitemapStorage'

@@ -9,8 +9,8 @@
  * 3. 依賴統計與分析
  */
 
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
-import { basename, resolve } from 'node:path'
+import { readFileSync, writeFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { Glob } from 'bun'
 
 // ============================================================================
@@ -169,7 +169,9 @@ function detectCircularDependencies(
 
     for (const neighbor of graph.get(node) || []) {
       if (!visited.has(neighbor)) {
-        if (dfs(neighbor)) return true
+        if (dfs(neighbor)) {
+          return true
+        }
       } else if (recursionStack.has(neighbor)) {
         // 找到循環
         const cycleStart = path.indexOf(neighbor)
@@ -317,7 +319,7 @@ function generateMarkdownDoc(
   stats: DependencyStats
 ): string {
   let md = '# Gravito 模組依賴關係圖\n\n'
-  md += '> 自動生成於：' + new Date().toISOString() + '\n\n'
+  md += `> 自動生成於：${new Date().toISOString()}\n\n`
 
   // 摘要
   md += '## 📊 摘要統計\n\n'
@@ -385,7 +387,7 @@ function generateMarkdownDoc(
       const cycle = stats.circularDependencies[i]
       md += `### 循環 ${i + 1}\n\n`
       md += '```\n'
-      md += cycle.join(' → ') + '\n'
+      md += `${cycle.join(' → ')}\n`
       md += '```\n\n'
     }
   }
@@ -458,7 +460,7 @@ function generateMarkdownDoc(
   // 頁尾
   md += '---\n\n'
   md += '*此文件由 `scripts/generate-dependency-graph.ts` 自動生成*\n'
-  md += '*最後更新：' + new Date().toISOString() + '*\n'
+  md += `*最後更新：${new Date().toISOString()}*\n`
 
   return md
 }
@@ -501,7 +503,7 @@ async function main() {
   console.log(`✅ 已生成：${MARKDOWN_OUTPUT}`)
 
   // 6. 顯示摘要
-  console.log('\n' + '='.repeat(60))
+  console.log(`\n${'='.repeat(60)}`)
   console.log('📊 生成完成！摘要統計：')
   console.log('='.repeat(60))
   console.log(`總套件數：     ${stats.totalPackages}`)

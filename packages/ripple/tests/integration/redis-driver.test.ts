@@ -59,7 +59,7 @@ describe('RedisDriver Integration Tests', () => {
       if (!eventHandlers.has('subscriber')) {
         eventHandlers.set('subscriber', new Map())
       }
-      eventHandlers.get('subscriber')!.set(event, handler)
+      eventHandlers.get('subscriber')?.set(event, handler)
 
       if (event === 'message') {
         messageHandlers.set('subscriber', handler as any)
@@ -158,7 +158,7 @@ describe('RedisDriver Integration Tests', () => {
         data: { message: 'hello' },
       })
 
-      messageHandler!('test:test-channel', testMessage)
+      messageHandler?.('test:test-channel', testMessage)
 
       expect(callback).toHaveBeenCalledWith('TestEvent', { message: 'hello' })
       expect(receivedMessages).toHaveLength(1)
@@ -245,7 +245,7 @@ describe('RedisDriver Integration Tests', () => {
       expect(errorHandler).toBeDefined()
 
       const testError = new Error('Redis connection failed')
-      errorHandler!(testError)
+      errorHandler?.(testError)
 
       const status = driver.getStatus()
       expect(status.lastError).toContain('Redis connection failed')
@@ -255,7 +255,7 @@ describe('RedisDriver Integration Tests', () => {
       const closeHandler = eventHandlers.get('subscriber')?.get('close')
       expect(closeHandler).toBeDefined()
 
-      closeHandler!()
+      closeHandler?.()
 
       const status = driver.getStatus()
       expect(status.connected).toBe(false)

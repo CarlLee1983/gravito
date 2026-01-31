@@ -41,7 +41,9 @@ class S3MockProvider implements StorageProvider {
 
   async copy(from: string, to: string): Promise<void> {
     const data = await this.get(from)
-    if (data) await this.put(to, data)
+    if (data) {
+      await this.put(to, data)
+    }
   }
 
   async move(from: string, to: string): Promise<void> {
@@ -95,7 +97,9 @@ class GCSMockProvider implements StorageProvider {
 
   async copy(from: string, to: string): Promise<void> {
     const data = await this.get(from)
-    if (data) await this.put(to, data)
+    if (data) {
+      await this.put(to, data)
+    }
   }
 
   async move(from: string, to: string): Promise<void> {

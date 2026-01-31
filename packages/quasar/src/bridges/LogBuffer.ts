@@ -74,10 +74,14 @@ export class LogBuffer {
   }
 
   private truncateLog(log: ZenithLogPayload): ZenithLogPayload {
-    if (!this.options.maxPayloadSize || !log.context) return log
+    if (!this.options.maxPayloadSize || !log.context) {
+      return log
+    }
 
     const serialized = this.serializer.serialize(log)
-    if (serialized.length <= this.options.maxPayloadSize) return log
+    if (serialized.length <= this.options.maxPayloadSize) {
+      return log
+    }
 
     const truncatedLog = { ...log, context: { ...log.context } }
     const limit = this.options.maxPayloadSize / 2
@@ -98,7 +102,7 @@ export class LogBuffer {
         typeof truncatedLog.context.error === 'string'
           ? truncatedLog.context.error
           : JSON.stringify(truncatedLog.context.error)
-      truncatedLog.context.error = errorStr.substring(0, limit as number) + '... [TRUNCATED]'
+      truncatedLog.context.error = `${errorStr.substring(0, limit as number)}... [TRUNCATED]`
     }
 
     return truncatedLog

@@ -67,7 +67,9 @@ export class ContextExtractor {
     const spanContext = (ctx as any)
       .getValue?.(Symbol.for('OpenTelemetry Context Key Span'))
       ?.spanContext?.()
-    if (!spanContext) return true
+    if (!spanContext) {
+      return true
+    }
     return spanContext.traceId === '00000000000000000000000000000000'
   }
 }

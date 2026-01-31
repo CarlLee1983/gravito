@@ -4,6 +4,7 @@ import type { Context, MiddlewareHandler } from '@gravito/core/compat'
 import { BlueprintGenerator } from './core/BlueprintGenerator'
 import { DataExtractor, type DataSource } from './core/DataExtractor'
 import { SchemaValidatorFactory } from './validation/SchemaValidator'
+// Initialize validators (this must happen for the factory to work)
 import './validation/index'
 
 /**

@@ -1000,7 +1000,7 @@
     },
     "packages/flare": {
       "name": "@gravito/flare",
-      "version": "3.3.0",
+      "version": "4.0.0",
       "dependencies": {
         "@aws-sdk/client-sns": "^3.734.0",
         "@gravito/core": "workspace:*",

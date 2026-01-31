@@ -18,7 +18,9 @@ export class TwoFactorController extends BaseController {
 
   async setup(c: GravitoContext): Promise<Response> {
     const user = await this.getAuthUser(c)
-    if (!user) return this.error(c, FortifyError.unauthenticated())
+    if (!user) {
+      return this.error(c, FortifyError.unauthenticated())
+    }
 
     const secret = this.twoFactorService.generateSecret()
 
@@ -44,7 +46,9 @@ export class TwoFactorController extends BaseController {
 
   async confirm(c: GravitoContext): Promise<Response> {
     const user = await this.getAuthUser(c)
-    if (!user) return this.error(c, FortifyError.unauthenticated())
+    if (!user) {
+      return this.error(c, FortifyError.unauthenticated())
+    }
 
     const { code } = (await c.req.parseBody()) as { code?: string }
 
@@ -92,7 +96,9 @@ export class TwoFactorController extends BaseController {
 
   async disable(c: GravitoContext): Promise<Response> {
     const user = await this.getAuthUser(c)
-    if (!user) return this.error(c, FortifyError.unauthenticated())
+    if (!user) {
+      return this.error(c, FortifyError.unauthenticated())
+    }
 
     await this.db().table('users').where('id', user.id).update({
       two_factor_secret: null,

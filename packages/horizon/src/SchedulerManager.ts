@@ -158,9 +158,10 @@ export class SchedulerManager {
    *
    * Workflow:
    * 1. Check node role match (skip if mismatch)
-   * 2. Attempt lock acquisition (skip if already locked)
-   * 3. Execute task (foreground or background based on configuration)
-   * 4. Lock auto-expires after TTL (not manually released to prevent re-runs)
+   * 2. Check overlapping control (skip if task is still running)
+   * 3. Attempt lock acquisition (skip if already locked)
+   * 4. Execute task (foreground or background based on configuration)
+   * 5. Release running lock after completion
    *
    * @param task - Task configuration to execute
    * @param date - Reference time for lock key generation
@@ -174,16 +175,42 @@ export class SchedulerManager {
       return
     }
 
-    let acquiredLock = false
+    // === Overlapping Control ===
+    const runningLockKey = `task:running:${task.name}`
+
+    if (task.preventOverlapping) {
+      const isRunning = await this.lockManager.exists(runningLockKey)
+      if (isRunning) {
+        this.logger?.debug(
+          `[Horizon] Task "${task.name}" is still running, skipping this execution`
+        )
+        await this.hooks?.doAction('scheduler:task:skipped', {
+          name: task.name,
+          reason: 'overlapping',
+          timestamp: date,
+        })
+        return
+      }
+
+      // 取得執行鎖
+      await this.lockManager.forceAcquire(runningLockKey, task.overlappingExpiresAt)
+    }
+
+    // === Time-window Lock (onOneServer) ===
+    let acquiredTimeLock = false
     // Make lock key specific to the current minute to prevent re-runs within the same window
     const timestamp = `${date.getFullYear()}${(date.getMonth() + 1).toString().padStart(2, '0')}${date.getDate().toString().padStart(2, '0')}${date.getHours().toString().padStart(2, '0')}${date.getMinutes().toString().padStart(2, '0')}`
-    const lockKey = `task:${task.name}:${timestamp}`
+    const timeLockKey = `task:${task.name}:${timestamp}`
 
     // Mode B: Single-point (Locking)
     if (task.shouldRunOnOneServer) {
-      acquiredLock = await this.lockManager.acquire(lockKey, task.lockTtl)
+      acquiredTimeLock = await this.lockManager.acquire(timeLockKey, task.lockTtl)
 
-      if (!acquiredLock) {
+      if (!acquiredTimeLock) {
+        // 如果已取得執行鎖但拿不到時間鎖，需釋放執行鎖
+        if (task.preventOverlapping) {
+          await this.lockManager.release(runningLockKey)
+        }
         // Task running on another server or already completed for this window
         return
       }
@@ -191,21 +218,34 @@ export class SchedulerManager {
 
     try {
       if (task.background) {
-        this.executeTask(task).catch((err) => {
-          this.logger?.error(`Background task ${task.name} failed`, err)
-        })
+        this.executeTask(task)
+          .catch((err) => {
+            this.logger?.error(`Background task ${task.name} failed`, err)
+          })
+          .finally(async () => {
+            // 背景任務完成時釋放執行鎖
+            if (task.preventOverlapping) {
+              await this.lockManager.release(runningLockKey)
+            }
+          })
       } else {
         await this.executeTask(task)
+        // 前景任務完成時釋放執行鎖
+        if (task.preventOverlapping) {
+          await this.lockManager.release(runningLockKey)
+        }
       }
     } catch (err) {
-      // If execution failed before reaching executeTask's internal try-catch
-      // We might want to release the lock to allow retry, but executeTask handles most cases.
-      if (acquiredLock) {
-        await this.lockManager.release(lockKey)
+      // 執行失敗時釋放所有鎖
+      if (task.preventOverlapping) {
+        await this.lockManager.release(runningLockKey)
+      }
+      if (acquiredTimeLock) {
+        await this.lockManager.release(timeLockKey)
       }
       throw err
     }
-    // Note: We DO NOT release the lock here if successful.
+    // Note: We DO NOT release the time lock here if successful.
     // It will expire based on lockTtl, preventing other nodes from running it in the same minute window.
   }
 
@@ -270,7 +310,9 @@ export class SchedulerManager {
         lastError = err
         this.logger?.error(`Task ${task.name} failed (attempt ${attempt + 1})`, err)
       } finally {
-        if (timeoutId) clearTimeout(timeoutId)
+        if (timeoutId) {
+          clearTimeout(timeoutId)
+        }
       }
     }
 

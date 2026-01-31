@@ -3,7 +3,7 @@
  * @module @gravito/ripple-client
  */
 
-import type { ChannelEventMap, EventCallback, PresenceCallbacks, PresenceUser } from './types'
+import type { EventCallback, PresenceCallbacks, PresenceUser } from './types'
 
 /**
  * Base channel class for event subscription

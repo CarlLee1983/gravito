@@ -1,5 +1,5 @@
 import type { Notification } from '../Notification'
-import type { Notifiable, NotificationChannel } from '../types'
+import type { AbortableSendOptions, Notifiable, NotificationChannel } from '../types'
 
 /**
  * Database channel.
@@ -18,13 +18,18 @@ export class DatabaseChannel implements NotificationChannel {
     }
   ) {}
 
-  async send(notification: Notification, notifiable: Notifiable): Promise<void> {
+  async send(
+    notification: Notification,
+    notifiable: Notifiable,
+    _options?: AbortableSendOptions
+  ): Promise<void> {
     if (!notification.toDatabase) {
       throw new Error('Notification does not implement toDatabase method')
     }
 
     const dbNotification = notification.toDatabase(notifiable)
 
+    // Note: Database operations 通常不支援 AbortSignal
     await this.dbService.insertNotification({
       notifiableId: notifiable.getNotifiableId(),
       notifiableType: notifiable.getNotifiableType?.() || 'user',

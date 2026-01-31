@@ -84,7 +84,9 @@ export class IncrementalBuilder {
   }
 
   private loadManifest(): BuildManifest {
-    if (this.manifest) return this.manifest
+    if (this.manifest) {
+      return this.manifest
+    }
 
     if (!existsSync(this.manifestPath)) {
       return this.createEmptyManifest()
@@ -111,7 +113,9 @@ export class IncrementalBuilder {
   }
 
   private saveManifest(): void {
-    if (!this.manifest) return
+    if (!this.manifest) {
+      return
+    }
 
     this.manifest.buildTime = Date.now()
     writeFileSync(this.manifestPath, JSON.stringify(this.manifest, null, 2), 'utf-8')
@@ -171,7 +175,9 @@ export class IncrementalBuilder {
     const worker = async () => {
       while (queue.length > 0) {
         const route = queue.shift()
-        if (!route) break
+        if (!route) {
+          break
+        }
 
         try {
           const data = route.getData ? await route.getData() : {}

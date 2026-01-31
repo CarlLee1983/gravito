@@ -93,7 +93,7 @@ export class OpenApiGenerator {
       // Merge custom components with existing components
       if (this.config.components.schemas) {
         spec.components!.schemas = {
-          ...spec.components!.schemas,
+          ...spec.components?.schemas,
           ...this.processComponentSchemas(this.config.components.schemas),
         }
       }
@@ -216,31 +216,6 @@ export class OpenApiGenerator {
 
       spec.paths[path][method] = this.buildOperation(opMetadata, resource, method, route.path)
     }
-  }
-
-  /**
-   * Check if a framework route path matches a resource base path.
-   * Supports path parameter matching (e.g., /users/:id matches /users).
-   *
-   * @param routePath - The actual route path from the framework.
-   * @param resourcePath - The base path defined in the contract.
-   * @returns True if they match.
-   * @private
-   */
-  private isRouteMatchingResource(routePath: string, resourcePath: string): boolean {
-    // Exact match
-    if (routePath === resourcePath) {
-      return true
-    }
-
-    // Check if it's a sub-path of the resource
-    if (!routePath.startsWith(resourcePath)) {
-      return false
-    }
-
-    // Ensure it matches at a path separator to avoid /users matching /users2
-    const remainder = routePath.slice(resourcePath.length)
-    return remainder.startsWith('/')
   }
 
   /**

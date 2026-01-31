@@ -16,7 +16,7 @@ class BroadcastChannelMock {
     if (!channelRegistry.has(name)) {
       channelRegistry.set(name, [])
     }
-    channelRegistry.get(name)!.push(this)
+    channelRegistry.get(name)?.push(this)
   }
 
   postMessage(message: unknown) {

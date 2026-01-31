@@ -33,6 +33,5 @@
 </template>
 
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3'
-import Layout from '../components/Layout.vue'
+
 </script>

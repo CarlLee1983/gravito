@@ -1,14 +1,4 @@
-import {
-  afterAll,
-  afterEach,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  mock,
-  spyOn,
-} from 'bun:test'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, spyOn } from 'bun:test'
 import { DB } from '../src/DB'
 import { PostgresGrammar } from '../src/grammar/PostgresGrammar'
 import { column } from '../src/orm/model/decorators'
@@ -132,7 +122,9 @@ describe('Advanced Eager Loading', () => {
 
     const originalConnection = DB.connection
     connectionSpy = spyOn(DB, 'connection').mockImplementation((name?: string) => {
-      if (name === TEST_CONN) return mockConn
+      if (name === TEST_CONN) {
+        return mockConn
+      }
       return originalConnection.call(DB, name as any)
     })
 
@@ -153,7 +145,9 @@ describe('Advanced Eager Loading', () => {
 
     const originalConnection = DB.connection
     connectionSpy = spyOn(DB, 'connection').mockImplementation((name?: string) => {
-      if (name === TEST_CONN) return mockConn
+      if (name === TEST_CONN) {
+        return mockConn
+      }
       return originalConnection.call(DB, name as any)
     })
 
@@ -172,7 +166,9 @@ describe('Advanced Eager Loading', () => {
 
     const originalConnection = DB.connection
     connectionSpy = spyOn(DB, 'connection').mockImplementation((name?: string) => {
-      if (name === TEST_CONN) return mockConn
+      if (name === TEST_CONN) {
+        return mockConn
+      }
       return originalConnection.call(DB, name as any)
     })
 
@@ -190,7 +186,9 @@ describe('Advanced Eager Loading', () => {
 
     const originalConnection = DB.connection
     connectionSpy = spyOn(DB, 'connection').mockImplementation((name?: string) => {
-      if (name === TEST_CONN) return mockConn
+      if (name === TEST_CONN) {
+        return mockConn
+      }
       return originalConnection.call(DB, name as any)
     })
 

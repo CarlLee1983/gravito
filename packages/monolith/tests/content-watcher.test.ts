@@ -10,13 +10,17 @@ const TMP_DIR = join(import.meta.dir, 'tmp_watch')
 
 describe('ContentWatcher', () => {
   beforeEach(async () => {
-    if (existsSync(TMP_DIR)) await rm(TMP_DIR, { recursive: true, force: true })
+    if (existsSync(TMP_DIR)) {
+      await rm(TMP_DIR, { recursive: true, force: true })
+    }
     await mkdir(join(TMP_DIR, 'docs', 'en'), { recursive: true })
     await writeFile(join(TMP_DIR, 'docs', 'en', 'test.md'), '# Original')
   })
 
   afterEach(async () => {
-    if (existsSync(TMP_DIR)) await rm(TMP_DIR, { recursive: true, force: true })
+    if (existsSync(TMP_DIR)) {
+      await rm(TMP_DIR, { recursive: true, force: true })
+    }
   })
 
   it('should invalidate cache on file change', async () => {

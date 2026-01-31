@@ -67,7 +67,6 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import Layout from '../../components/Layout.vue'
 import { useI18n } from '../../composables/useI18n'
 
 const { t } = useI18n()

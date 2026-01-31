@@ -36,7 +36,7 @@ const productSchema = z.object({
 
 // Valibot mock schema (duck-typed interface)
 const mockValibotUserSchema = {
-  _run: (dataset: unknown) => ({
+  _run: (_dataset: unknown) => ({
     issues: [],
   }),
   parse: (data: unknown) => data as UserData,
@@ -58,7 +58,7 @@ class CreateUserRequestValibot extends ValibotFormRequest<UserData> {
 
 class CreateProductRequestValibot extends ValibotFormRequest<ProductData> {
   readonly schema = {
-    _run: (dataset: unknown) => ({ issues: [] }),
+    _run: (_dataset: unknown) => ({ issues: [] }),
     parse: (data: unknown) => data as ProductData,
   }
 }

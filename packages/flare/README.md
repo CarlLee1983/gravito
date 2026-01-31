@@ -2,17 +2,20 @@
 
 > Lightweight, high-performance notifications for Gravito with multi-channel delivery (mail, database, broadcast, Slack, SMS).
 
-**Status**: v3.3.0 - Production ready with advanced features (Retries, Metrics, Batching).
+**Status**: v3.4.0 - Production ready with advanced features (Retries, Metrics, Batching, Timeout, Rate Limiting, Preference Driver).
 
 ## Features
 
 - **Zero runtime overhead**: Pure type wrappers that delegate to channel drivers
 - **Multi-channel delivery**: Mail, database, broadcast, Slack, SMS (Twilio & AWS SNS)
 - **High Performance**: Parallel channel execution and batch sending capabilities
-- **Reliability**: Built-in retry mechanism with exponential backoff
+- **Reliability**: Built-in retry mechanism with exponential backoff and timeout protection
 - **Observability**: Comprehensive metrics with Prometheus support
 - **Developer Experience**: Strong typing, lifecycle hooks, and template system
-- **Queue support**: Works with `@gravito/stream` for async delivery
+- **Queue support**: Works with `@gravito/stream` for async delivery with Lazy Loading
+- **Rate Limiting**: Channel-level rate limiting with Token Bucket algorithm
+- **Preference Driver**: User notification preferences with automatic channel filtering
+- **Middleware System**: Extensible middleware chain for custom notification processing
 
 ## Installation
 
@@ -142,6 +145,135 @@ class OrderShipped extends TemplatedNotification {
     super('order-shipped', { orderId: order.id })
   }
 }
+```
+
+### Timeout Protection (v3.4.0)
+All channels support timeout configuration to prevent slow responses from blocking notifications:
+
+```typescript
+OrbitFlare.configure({
+  channels: {
+    slack: {
+      webhookUrl: process.env.SLACK_WEBHOOK_URL,
+      timeout: 5000, // 5 秒超時
+      onTimeout: (channel, notification) => {
+        console.error(`Timeout: ${channel}`)
+      }
+    }
+  }
+})
+```
+
+### Rate Limiting (v3.4.0)
+Protect downstream services with channel-level rate limiting:
+
+```typescript
+import { RateLimitMiddleware } from '@gravito/flare'
+
+const rateLimiter = new RateLimitMiddleware({
+  email: {
+    maxPerSecond: 10,
+    maxPerMinute: 100,
+    maxPerHour: 1000
+  },
+  sms: {
+    maxPerSecond: 5
+  }
+})
+
+notifications.use(rateLimiter)
+
+// 檢查狀態
+const status = rateLimiter.getStatus('email')
+console.log(`剩餘: ${status.second}/10`)
+```
+
+### Lazy Loading for Queue (v3.4.0)
+Optimize queue serialization with Lazy Loading pattern:
+
+```typescript
+import { LazyNotification } from '@gravito/flare'
+
+class OrderConfirmation extends LazyNotification<Order> {
+  constructor(private orderId: string) {
+    super()
+  }
+
+  protected async loadData(notifiable: Notifiable): Promise<Order> {
+    return await db.orders.find(this.orderId)
+  }
+
+  via(user: Notifiable): string[] {
+    return ['mail', 'database']
+  }
+
+  async toMail(user: Notifiable): Promise<MailMessage> {
+    const order = await this.ensureLoaded(user)
+    return {
+      subject: `訂單確認 #${order.id}`,
+      view: 'emails.order-confirmation',
+      data: { order },
+      to: user.email,
+    }
+  }
+}
+```
+
+### User Preferences (v3.4.0)
+Respect user notification preferences automatically:
+
+```typescript
+import { PreferenceMiddleware } from '@gravito/flare'
+
+// 方式 1: 在 OrbitFlare 配置中啟用
+OrbitFlare.configure({
+  enablePreference: true
+})
+
+// 方式 2: 使用自定義偏好提供者
+const preferenceMiddleware = new PreferenceMiddleware({
+  async getUserPreferences(notifiable) {
+    const prefs = await db.userPreferences.find(notifiable.id)
+    return {
+      enabledChannels: prefs.enabledChannels,
+      disabledChannels: prefs.disabledChannels,
+      disabledNotifications: prefs.disabledNotifications
+    }
+  }
+})
+
+notifications.use(preferenceMiddleware)
+
+// 方式 3: 在 Notifiable 物件中實作
+class User implements Notifiable {
+  async getNotificationPreferences() {
+    return {
+      enabledChannels: ['email', 'slack'],
+      disabledChannels: ['sms']
+    }
+  }
+}
+```
+
+### Middleware Chain (v3.4.0)
+Combine multiple middleware for powerful notification processing:
+
+```typescript
+import { RateLimitMiddleware, PreferenceMiddleware } from '@gravito/flare'
+
+// 建立中介層
+const rateLimiter = new RateLimitMiddleware({ /* ... */ })
+const preferenceFilter = new PreferenceMiddleware({ /* ... */ })
+
+// 註冊中介層（執行順序：由內而外）
+notifications
+  .use(rateLimiter)      // 先限流
+  .use(preferenceFilter) // 後過濾
+
+// 或在 OrbitFlare 配置中一次註冊
+OrbitFlare.configure({
+  middleware: [rateLimiter, preferenceFilter]
+})
 ```
 
 ## API Reference

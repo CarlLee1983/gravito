@@ -1,5 +1,4 @@
 import { z } from 'zod'
-import { OrbitAstral } from '../../src/index' // Relative path to src
 import { CreateUserSchema, UpdateUserSchema, UserSchema } from './schemas'
 
 // Define the contract

@@ -4,7 +4,7 @@
  * 測試密鑰輪換管理器的核心功能
  */
 
-import { beforeEach, describe, expect, it, mock } from 'bun:test'
+import { describe, expect, it, mock } from 'bun:test'
 import { KeyRotationManager } from '../../../src/rotation/KeyRotationManager'
 import type { ProviderKeyEntry } from '../../../src/types'
 
@@ -209,7 +209,9 @@ describe('KeyRotationManager', () => {
 
   describe('輪換主密鑰', () => {
     it('應該成功輪換主密鑰', async () => {
-      const onRotate = mock(() => {})
+      const onRotate = mock(() => {
+        /* Noop */
+      })
       const manager = new KeyRotationManager({ onRotate })
 
       const keys: ProviderKeyEntry[] = [

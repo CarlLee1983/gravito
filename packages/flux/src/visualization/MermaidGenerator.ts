@@ -313,10 +313,18 @@ export class MermaidGenerator {
 
     if (showDetails) {
       const meta: string[] = []
-      if (step.commit) meta.push('📝')
-      if (step.retries && step.retries > 0) meta.push(`↻${step.retries}`)
-      if (step.timeout) meta.push(`⏱${step.timeout}ms`)
-      if (step.when) meta.push('❓')
+      if (step.commit) {
+        meta.push('📝')
+      }
+      if (step.retries && step.retries > 0) {
+        meta.push(`↻${step.retries}`)
+      }
+      if (step.timeout) {
+        meta.push(`⏱${step.timeout}ms`)
+      }
+      if (step.when) {
+        meta.push('❓')
+      }
 
       if (meta.length > 0) {
         label += `<br/><small>${meta.join(' ')}</small>`
@@ -346,10 +354,18 @@ export class MermaidGenerator {
       }
     } else if (showDetails) {
       const meta: string[] = []
-      if (step.commit) meta.push('📝')
-      if (step.retries && step.retries > 0) meta.push(`↻${step.retries}`)
-      if (step.timeout) meta.push(`⏱${step.timeout}ms`)
-      if (step.when) meta.push('❓')
+      if (step.commit) {
+        meta.push('📝')
+      }
+      if (step.retries && step.retries > 0) {
+        meta.push(`↻${step.retries}`)
+      }
+      if (step.timeout) {
+        meta.push(`⏱${step.timeout}ms`)
+      }
+      if (step.when) {
+        meta.push('❓')
+      }
 
       if (meta.length > 0) {
         label += `<br/><small>${meta.join(' ')}</small>`

@@ -1,9 +1,7 @@
 <script setup lang="ts">
-import { StaticLink, useFreeze } from '@gravito/freeze-vue'
-import { ArrowUpRight, ChevronDown, Globe, Menu, X } from 'lucide-vue-next'
+import { useFreeze } from '@gravito/freeze-vue'
 import { onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from '../composables/useI18n'
-import Logo from './Logo.vue'
 
 const isMobileMenuOpen = ref(false)
 

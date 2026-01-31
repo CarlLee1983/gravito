@@ -33,10 +33,14 @@ export class MetricsAggregator {
         const log = JSON.parse(logStr)
         const logTime = new Date(log.timestamp).getTime()
 
-        if (logTime < cutoff) continue
+        if (logTime < cutoff) {
+          continue
+        }
 
         const logQueue = log.context?.queue || log.queue
-        if (logQueue !== queueName) continue
+        if (logQueue !== queueName) {
+          continue
+        }
 
         if (log.level === 'success' || (log.context && log.context.event === 'job_completed')) {
           completedCount++

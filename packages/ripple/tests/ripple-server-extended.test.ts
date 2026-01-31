@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'bun:test'
+import { afterEach, describe, expect, it, vi } from 'bun:test'
 import { RippleServer } from '../src/RippleServer'
 import { createMockWebSocket } from './helpers'
 
@@ -109,7 +109,7 @@ describe('RippleServer Additional Tests', () => {
 
     it('should handle presence channel authorization with user info', async () => {
       server = new RippleServer({
-        authorizer: async (channel, userId) => ({
+        authorizer: async (_channel, userId) => ({
           id: userId ?? 'anonymous',
           info: { name: 'Test User' },
         }),

@@ -38,6 +38,19 @@ export interface ScheduledTask {
   /** Delay between retry attempts in milliseconds (default: 1000) */
   retryDelay?: number
 
+  /**
+   * 是否啟用重疊控制
+   * true = 任務執行期間不會重複觸發
+   */
+  preventOverlapping: boolean
+
+  /**
+   * 重疊控制的最大等待時間（秒）
+   * 超過此時間，即使前次任務還在執行，也會強制執行
+   * 預設：3600（1小時）
+   */
+  overlappingExpiresAt: number
+
   /** Callbacks executed after successful task completion */
   onSuccessCallbacks: ActionCallback[]
   /** Callbacks executed after task failure */
@@ -76,6 +89,8 @@ export class TaskSchedule {
       shouldRunOnOneServer: false,
       lockTtl: 300, // 5 minutes default
       background: false, // Wait for task to finish by default
+      preventOverlapping: false,
+      overlappingExpiresAt: 3600, // 1 hour default
       onSuccessCallbacks: [],
       onFailureCallbacks: [],
     }
@@ -296,14 +311,28 @@ export class TaskSchedule {
   }
 
   /**
-   * Alias for onOneServer.
-   * Prevents overlapping executions of the same task.
+   * 防止任務重疊執行。
    *
-   * @param expiresAt - Lock TTL in seconds
+   * 當任務正在執行時，即使下一個排程時間到達也不會重複觸發。
+   * 與 onOneServer() 不同，此方法關注的是任務執行狀態，而非時間窗口。
+   *
+   * @param expiresAt - 最大等待時間（秒），預設 3600（1小時）
    * @returns The TaskSchedule instance.
+   *
+   * @example
+   * ```typescript
+   * // 每分鐘執行，但執行期間不重複觸發
+   * scheduler.task('heavy-sync', async () => {
+   *   await heavyOperation() // 可能執行 5 分鐘
+   * })
+   * .everyMinute()
+   * .withoutOverlapping(7200) // 最多等待 2 小時
+   * ```
    */
-  withoutOverlapping(expiresAt = 300): this {
-    return this.onOneServer(expiresAt)
+  withoutOverlapping(expiresAt = 3600): this {
+    this.task.preventOverlapping = true
+    this.task.overlappingExpiresAt = expiresAt
+    return this
   }
 
   /**

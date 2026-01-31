@@ -197,9 +197,8 @@
 </template>
 
 <script setup lang="ts">
-import { Link, router } from '@inertiajs/vue3'
+import { router } from '@inertiajs/vue3'
 import { computed, reactive, ref } from 'vue'
-import AdminLayout from '../../../components/AdminLayout.vue'
 
 const props = defineProps<{
   event: any
@@ -239,8 +238,12 @@ const updateOptions = (e: any) => {
 }
 
 const parseOptions = (options: any) => {
-  if (!options) return []
-  if (Array.isArray(options)) return options
+  if (!options) {
+    return []
+  }
+  if (Array.isArray(options)) {
+    return options
+  }
   try {
     return JSON.parse(options)
   } catch (e) {

@@ -1,5 +1,4 @@
 import type { Context } from '@gravito/core/compat'
-import { BlueprintGenerator } from '../core/BlueprintGenerator'
 import type { DataSource } from '../core/DataExtractor'
 import { DataExtractor } from '../core/DataExtractor'
 import type { FormRequestOptions } from '../FormRequest'

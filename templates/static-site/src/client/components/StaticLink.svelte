@@ -1,6 +1,4 @@
 <script lang="ts">
-import { Link } from '@inertiajs/svelte'
-
 const { href, className = '' }: { href: string; className?: string } = $props()
 
 function isStaticSite(): boolean {
