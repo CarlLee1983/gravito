@@ -4,6 +4,21 @@
  * @description Cloudflare Workers KV 載入器
  */
 
+/**
+ * Cloudflare Workers KV Namespace 類型聲明
+ * @see https://developers.cloudflare.com/workers/runtime-apis/kv/
+ */
+declare global {
+  interface KVNamespace {
+    get(key: string, type?: 'text'): Promise<string | null>
+    get(key: string, type: 'json'): Promise<any>
+    get(key: string, type: 'arrayBuffer'): Promise<ArrayBuffer | null>
+    get(key: string, type: 'stream'): Promise<ReadableStream | null>
+    put(key: string, value: string | ArrayBuffer | ArrayBufferView | ReadableStream): Promise<void>
+    delete(key: string): Promise<void>
+  }
+}
+
 import type { TranslationMap } from '../I18nService'
 import type { KVStorage } from './EdgeKVLoader'
 import { EdgeKVLoader } from './EdgeKVLoader'

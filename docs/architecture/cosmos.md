@@ -1,12 +1,12 @@
 ---
 title: Cosmos Architecture 技術架構規格書
-version: 1.2.0
+version: 2.0.0
 status: Stable
 tier: C
 last_updated: 2026-01-31
 ---
 
-# Cosmos Architecture 技術架構規格書 (v3.1.0)
+# Cosmos Architecture 技術架構規格書 (v3.2.0)
 
 本文件詳述 `@gravito/cosmos` 的內部架構、國際化 (i18n) 實作機制以及請求範疇 (Request-Scoped) 的設計策略。
 
@@ -178,25 +178,80 @@ app.post('/admin/reload-i18n/:locale', async (c) => {
 
 ---
 
-## 6. 後續優化建議
+## 6. v2.0 Edge Runtime 支援 ⭐ 已完成
 
-### 短期 (v1.1) ✅ 已完成
-1. ✅ **Loading Coalescing**：修復並發載入問題，確保同一語言的檔案讀取 Promise 被共用。
-2. ✅ **LRU Cache**：為翻譯結果快取引入 LRU 機制，防止記憶體過度膨脹。
+### 6.1 Runtime Detection
+建立統一的運行環境檢測機制,支援 Node.js、Edge Runtime 自動識別:
 
-### 中期 (v1.2) ✅ 已完成
-1. ✅ **Remote Backend**：支援從遠端 CMS (如 Contentful) 或資料庫載入翻譯 (透過 RemoteLoader)。
-2. ✅ **HMR Support**：在開發模式下支援翻譯檔案的熱重載 (透過 HMRWatcher)。
+- **detectRuntime()**: 檢測當前運行環境
+- **isNode()**, **isEdge()**: 輔助檢查函數
+- 支援 Cloudflare Workers、Vercel Edge、Deno Deploy
 
-### 長期 (v2.0) 🚧 規劃中
-1. **Edge Compatible**：移除對 Node.js `fs` 模組的硬依賴，改用與 Edge Runtime (Workers/Vercel) 相容的載入介面。
-   - 建立 EdgeLoader 類別
-   - 支援 Cloudflare Workers KV、Vercel KV 等儲存方案
-   - 條件化導出,根據環境自動選擇合適的實現
+### 6.2 Edge-Compatible Path Utils
+提供無需 Node.js `path` 模組的路徑操作工具:
 
-2. **資料庫載入器**：支援從 PostgreSQL、MongoDB 等資料庫載入翻譯。
+- `join()`, `basename()`, `dirname()`, `extname()`
+- `isAbsolute()`, `normalize()`
+- 完全 Edge Runtime 相容
 
-3. **WebSocket 實時推送**：支援翻譯變更的實時推送,無需重新載入。
+### 6.3 Edge Runtime Loaders
+
+**MemoryLoader**
+- 從記憶體載入靜態翻譯
+- 適合小型應用 (<100KB)
+- 最快的載入速度
+
+**EdgeKVLoader**
+- 通用 KV 儲存抽象
+- 支援任何 KVStorage 介面實現
+- 可擴展的設計
+
+**CloudflareKVLoader**
+- Cloudflare Workers KV 專用
+- 全球邊緣快取
+- 低延遲讀取
+
+**VercelKVLoader**
+- Vercel KV (基於 Redis) 專用
+- Edge 環境優化
+- TTL 支援
+
+### 6.4 條件化導出
+提供三個入口點,根據環境自動選擇:
+
+- `index.ts`: 通用入口 (包含所有功能)
+- `index.edge.ts`: Edge 專用 (排除 Node.js 依賴)
+- `index.node.ts`: Node.js 專用 (包含完整功能)
+
+### 6.5 運行時保護
+- **FileSystemLoader**: Edge 環境拋出明確錯誤
+- **HMRWatcher**: Edge 環境靜默停用並顯示警告
 
 ---
-*Created by Gravito Architect. Last updated: 2026-01-31*
+
+## 7. 後續優化建議
+
+### 短期 (v1.1) ✅ 已完成
+1. ✅ **Loading Coalescing**：修復並發載入問題
+2. ✅ **LRU Cache**：為翻譯結果快取引入 LRU 機制
+
+### 中期 (v1.2) ✅ 已完成
+1. ✅ **Remote Backend**：支援從遠端 CMS 載入翻譯
+2. ✅ **HMR Support**：支援翻譯檔案的熱重載
+
+### 長期 (v2.0) ✅ 已完成
+1. ✅ **Edge Compatible**：完整的 Edge Runtime 支援
+   - ✅ MemoryLoader, EdgeKVLoader
+   - ✅ CloudflareKVLoader, VercelKVLoader
+   - ✅ Runtime Detection
+   - ✅ Edge-Compatible Path Utils
+   - ✅ 條件化導出
+
+### 未來 (v3.0+)
+1. **資料庫載入器**：支援從 PostgreSQL、MongoDB 等資料庫載入翻譯
+2. **WebSocket 實時推送**：支援翻譯變更的實時推送,無需重新載入
+3. **AI 翻譯整合**：自動翻譯缺失的鍵值
+4. **翻譯管理介面**：視覺化的翻譯編輯器
+
+---
+*Created by Gravito Architect. Last updated: 2026-01-31 (v2.0.0)*

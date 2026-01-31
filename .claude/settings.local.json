@@ -38,7 +38,9 @@
       "Bash(sqlite3:*)",
       "Bash(gh run list:*)",
       "Bash(gh run:*)",
-      "Bash(git pull:*)"
+      "Bash(git pull:*)",
+      "Bash(gh pr create:*)",
+      "Bash(bunx biome check:*)"
     ]
   },
   "enabledMcpjsonServers": [
