@@ -19,7 +19,9 @@ export const ConnectionStatus = memo(function ConnectionStatus({
     []
   )
 
-  if (status === 'connected') return null
+  if (status === 'connected') {
+    return null
+  }
 
   return (
     <div className="px-4 py-2 bg-amber-50 border-b border-amber-100 flex items-center justify-between">

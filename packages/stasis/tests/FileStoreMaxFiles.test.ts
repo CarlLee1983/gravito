@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 import { rm } from 'node:fs/promises'
-import { join } from 'node:path'
 import { sleep } from '../src/locks'
 import { FileStore } from '../src/stores/FileStore'
 

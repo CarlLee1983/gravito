@@ -1,4 +1,3 @@
-import { Link } from '@inertiajs/react'
 import type React from 'react'
 import { StaticLink } from './StaticLink'
 

@@ -159,7 +159,9 @@ export function useVirtualScroll(options: VirtualScrollOptions): VirtualScrollRe
       const prevIndex = startIndex - 1
       const prevStart = itemPositions[prevIndex]
       const prevEnd = prevStart + getItemHeight(prevIndex)
-      if (prevEnd < viewportStart) break
+      if (prevEnd < viewportStart) {
+        break
+      }
       startIndex = prevIndex
     }
 

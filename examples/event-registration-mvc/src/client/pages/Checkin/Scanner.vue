@@ -149,9 +149,7 @@
 </template>
 
 <script setup lang="ts">
-import { router } from '@inertiajs/vue3'
 import { onUnmounted, ref } from 'vue'
-import Layout from '../../components/Layout.vue'
 import { useI18n } from '../../composables/useI18n'
 
 const { t } = useI18n()
@@ -210,7 +208,9 @@ const resetScanner = async () => {
 }
 
 const onScanSuccess = async (decodedText: string) => {
-  if (decodedText === lastScannedCode) return
+  if (decodedText === lastScannedCode) {
+    return
+  }
   lastScannedCode = decodedText
 
   await stopScanning()
@@ -236,7 +236,9 @@ const onScanSuccess = async (decodedText: string) => {
 const onScanFailure = () => {}
 
 const performCheckIn = async () => {
-  if (!verificationResult.value?.registration) return
+  if (!verificationResult.value?.registration) {
+    return
+  }
   checkingIn.value = true
 
   try {
@@ -270,7 +272,9 @@ const getStatusClasses = (status: string) => {
 }
 
 onUnmounted(() => {
-  if (html5QrCode) html5QrCode.stop()
+  if (html5QrCode) {
+    html5QrCode.stop()
+  }
 })
 </script>
 

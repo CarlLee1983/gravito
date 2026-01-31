@@ -46,7 +46,9 @@ export function useMessages(options: UseMessagesOptions): UseMessagesReturn {
    * Loads the initial set of messages for the current conversation.
    */
   const loadMessages = useCallback(async () => {
-    if (!conversationId) return
+    if (!conversationId) {
+      return
+    }
 
     setIsLoading(true)
     setError(null)
@@ -72,7 +74,9 @@ export function useMessages(options: UseMessagesOptions): UseMessagesReturn {
    * Loads the next page of older messages (pagination).
    */
   const loadMore = useCallback(async () => {
-    if (!conversationId || !hasMore || !nextCursor || isLoading) return
+    if (!conversationId || !hasMore || !nextCursor || isLoading) {
+      return
+    }
 
     setIsLoading(true)
     setError(null)
@@ -86,7 +90,7 @@ export function useMessages(options: UseMessagesOptions): UseMessagesReturn {
 
       if (result.success && result.data) {
         // Prepend older messages to the list
-        setMessages((prev) => [...result.data!.messages, ...prev])
+        setMessages((prev) => [...result.data.messages, ...prev])
         setHasMore(result.data.hasMore)
         setNextCursor(result.data.nextCursor)
       } else if (result.error) {

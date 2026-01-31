@@ -128,7 +128,7 @@ describe('Parallel Execution Integration', () => {
           handler: async (ctx) => {
             ctx.data.flightId = 'FL123'
           },
-          compensate: async (ctx) => {
+          compensate: async (_ctx) => {
             compensated.push('flight')
           },
         },
@@ -137,7 +137,7 @@ describe('Parallel Execution Integration', () => {
           handler: async (ctx) => {
             ctx.data.hotelId = 'HT456'
           },
-          compensate: async (ctx) => {
+          compensate: async (_ctx) => {
             compensated.push('hotel')
           },
         },
@@ -146,7 +146,7 @@ describe('Parallel Execution Integration', () => {
           handler: async (ctx) => {
             ctx.data.carId = 'CR789'
           },
-          compensate: async (ctx) => {
+          compensate: async (_ctx) => {
             compensated.push('car')
           },
         },
@@ -174,33 +174,33 @@ describe('Parallel Execution Integration', () => {
       .stepParallel([
         {
           name: 'group1-step1',
-          handler: async (ctx) => {
+          handler: async (_ctx) => {
             executionOrder.push('group1-step1')
             await new Promise((resolve) => setTimeout(resolve, 10))
           },
         },
         {
           name: 'group1-step2',
-          handler: async (ctx) => {
+          handler: async (_ctx) => {
             executionOrder.push('group1-step2')
             await new Promise((resolve) => setTimeout(resolve, 10))
           },
         },
       ])
-      .step('sequential-middle', async (ctx) => {
+      .step('sequential-middle', async (_ctx) => {
         executionOrder.push('sequential-middle')
       })
       .stepParallel([
         {
           name: 'group2-step1',
-          handler: async (ctx) => {
+          handler: async (_ctx) => {
             executionOrder.push('group2-step1')
             await new Promise((resolve) => setTimeout(resolve, 10))
           },
         },
         {
           name: 'group2-step2',
-          handler: async (ctx) => {
+          handler: async (_ctx) => {
             executionOrder.push('group2-step2')
             await new Promise((resolve) => setTimeout(resolve, 10))
           },

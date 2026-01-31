@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'bun:test'
 import type { PasswordRulesConfig } from '../../../src/config'
-import { StrengthValidator, type ValidationResult } from '../../../src/services/StrengthValidator'
+import { StrengthValidator } from '../../../src/services/StrengthValidator'
 
 describe('StrengthValidator', () => {
   let validator: StrengthValidator

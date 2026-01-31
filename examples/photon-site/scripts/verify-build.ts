@@ -222,9 +222,13 @@ function printResults() {
       console.log(`   ${result.details}`)
     }
 
-    if (result.status === 'pass') passCount++
-    else if (result.status === 'fail') failCount++
-    else warningCount++
+    if (result.status === 'pass') {
+      passCount++
+    } else if (result.status === 'fail') {
+      failCount++
+    } else {
+      warningCount++
+    }
   }
 
   console.log(`\n📈 統計:`)

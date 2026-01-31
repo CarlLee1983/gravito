@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, test } from 'bun:test'
-import { existsSync } from 'node:fs'
-import { rm, stat } from 'node:fs/promises'
+import { rm } from 'node:fs/promises'
 import { join } from 'node:path'
 import { FileStore } from '../src/stores/FileStore'
 

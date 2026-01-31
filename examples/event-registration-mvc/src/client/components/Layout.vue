@@ -259,7 +259,7 @@
 </template>
 
 <script setup lang="ts">
-import { Link, usePage } from '@inertiajs/vue3'
+import { usePage } from '@inertiajs/vue3'
 import { computed, onMounted, onUnmounted, ref, watch, watchEffect } from 'vue'
 import { useI18n } from '../composables/useI18n'
 
@@ -274,7 +274,9 @@ watch(
   () => page.props.flash?.success,
   (val) => {
     successMessage.value = val
-    if (val) setTimeout(() => (successMessage.value = null), 5000)
+    if (val) {
+      setTimeout(() => (successMessage.value = null), 5000)
+    }
   }
 )
 
@@ -282,7 +284,9 @@ watch(
   () => page.props.flash?.error,
   (val) => {
     errorMessage.value = val
-    if (val) setTimeout(() => (errorMessage.value = null), 5000)
+    if (val) {
+      setTimeout(() => (errorMessage.value = null), 5000)
+    }
   }
 )
 
@@ -305,7 +309,9 @@ const navLinks = computed(() => [
 ])
 
 const getLanguageLink = (lang: string) => {
-  if (typeof window === 'undefined') return '#'
+  if (typeof window === 'undefined') {
+    return '#'
+  }
   const url = new URL(window.location.href)
   url.searchParams.set('lang', lang)
   return url.pathname + url.search

@@ -101,7 +101,9 @@ export class StateDiff {
    * @private
    */
   private diffObject(prev: any, next: any, basePath: string, operations: PatchOperation[]): void {
-    if (this.deepEquals(prev, next)) return
+    if (this.deepEquals(prev, next)) {
+      return
+    }
 
     if (this.isPrimitive(prev) || this.isPrimitive(next)) {
       if (prev !== next) {
@@ -228,7 +230,9 @@ export class StateDiff {
    * @private
    */
   private getValue(obj: any, path: string): any {
-    if (path === '' || path === '/') return obj
+    if (path === '' || path === '/') {
+      return obj
+    }
 
     const segments = this.parsePath(path)
     let current = obj
@@ -280,7 +284,9 @@ export class StateDiff {
     let current = obj
 
     for (const segment of segments) {
-      if (current === null || current === undefined) return
+      if (current === null || current === undefined) {
+        return
+      }
       current = current[segment]
     }
 
@@ -296,7 +302,9 @@ export class StateDiff {
    * @private
    */
   private parsePath(path: string): string[] {
-    if (path === '' || path === '/') return []
+    if (path === '' || path === '/') {
+      return []
+    }
     if (!path.startsWith('/')) {
       throw Errors.invalidJsonPointer(path)
     }
@@ -334,11 +342,17 @@ export class StateDiff {
    * @private
    */
   private deepClone<T>(obj: T): T {
-    if (this.isPrimitive(obj)) return obj
+    if (this.isPrimitive(obj)) {
+      return obj
+    }
     // TypeScript limitation: Date constructor returns Date, not T
-    if (obj instanceof Date) return new Date(obj.getTime()) as T
+    if (obj instanceof Date) {
+      return new Date(obj.getTime()) as T
+    }
     // TypeScript limitation: Array.map returns Array, not T
-    if (Array.isArray(obj)) return obj.map((item) => this.deepClone(item)) as T
+    if (Array.isArray(obj)) {
+      return obj.map((item) => this.deepClone(item)) as T
+    }
     if (typeof obj === 'object') {
       const clone: any = {}
       for (const key in obj) {
@@ -356,19 +370,29 @@ export class StateDiff {
    * @private
    */
   private deepEquals(a: any, b: any): boolean {
-    if (a === b) return true
-    if (this.isPrimitive(a) || this.isPrimitive(b)) return a === b
-    if (a instanceof Date && b instanceof Date) return a.getTime() === b.getTime()
+    if (a === b) {
+      return true
+    }
+    if (this.isPrimitive(a) || this.isPrimitive(b)) {
+      return a === b
+    }
+    if (a instanceof Date && b instanceof Date) {
+      return a.getTime() === b.getTime()
+    }
 
     if (Array.isArray(a) && Array.isArray(b)) {
-      if (a.length !== b.length) return false
+      if (a.length !== b.length) {
+        return false
+      }
       return a.every((item, index) => this.deepEquals(item, b[index]))
     }
 
     if (typeof a === 'object' && typeof b === 'object') {
       const keysA = Object.keys(a)
       const keysB = Object.keys(b)
-      if (keysA.length !== keysB.length) return false
+      if (keysA.length !== keysB.length) {
+        return false
+      }
       return keysA.every((key) => this.deepEquals(a[key], b[key]))
     }
 

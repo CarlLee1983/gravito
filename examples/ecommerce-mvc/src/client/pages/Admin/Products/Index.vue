@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { Head, Link, router } from '@inertiajs/vue3'
+import { router } from '@inertiajs/vue3'
 import { ref } from 'vue'
 import AdminLayout from '../../../components/AdminLayout.vue'
-import GImage from '../../../components/GImage.vue'
 
 defineOptions({ layout: AdminLayout })
 
@@ -21,7 +20,9 @@ const doSearch = () => {
 }
 
 const deleteProduct = async (id: number) => {
-  if (!confirm('確定要刪除此商品嗎？')) return
+  if (!confirm('確定要刪除此商品嗎？')) {
+    return
+  }
   await fetch(`/admin/products/${id}`, { method: 'DELETE' })
   router.reload()
 }

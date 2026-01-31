@@ -61,17 +61,25 @@ export class TrendPlugin implements QuasarPlugin {
   }
 
   private calculateTrends(payload: any) {
-    if (!payload.queues || !Array.isArray(payload.queues)) return
+    if (!payload.queues || !Array.isArray(payload.queues)) {
+      return
+    }
 
     const collector = (this.agent as any).metricsCollector
-    if (!collector) return
+    if (!collector) {
+      return
+    }
 
     for (const queue of payload.queues) {
       const qName = queue.name
-      if (!queue.counts) continue
+      if (!queue.counts) {
+        continue
+      }
 
       for (const [key, value] of Object.entries(queue.counts)) {
-        if (typeof value !== 'number') continue
+        if (typeof value !== 'number') {
+          continue
+        }
 
         const trendKey = `queue_${qName}_${key}_ema`
         const currentTrend = this.trends.get(trendKey) ?? value

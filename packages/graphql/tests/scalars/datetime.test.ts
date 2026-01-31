@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { GraphQLError, Kind } from 'graphql'
+import { Kind } from 'graphql'
 import { DateTimeScalar } from '../../src/scalars/datetime'
 
 describe('DateTimeScalar', () => {

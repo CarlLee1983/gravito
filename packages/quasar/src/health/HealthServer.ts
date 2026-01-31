@@ -78,8 +78,11 @@ export class HealthServer {
         return
       }
       this.server.close((err) => {
-        if (err) reject(err)
-        else resolve()
+        if (err) {
+          reject(err)
+        } else {
+          resolve()
+        }
       })
     })
   }

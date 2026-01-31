@@ -51,7 +51,7 @@ export function decodeCursor(cursor: string): CursorData {
     return data as CursorData
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
-    throw new Error('Failed to decode cursor: ' + message)
+    throw new Error(`Failed to decode cursor: ${message}`)
   }
 }
 

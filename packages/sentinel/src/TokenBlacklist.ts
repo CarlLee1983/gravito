@@ -63,7 +63,9 @@ export class InMemoryTokenBlacklist implements TokenBlacklist {
    */
   async has(jti: string): Promise<boolean> {
     const expires = this.blacklist.get(jti)
-    if (!expires) return false
+    if (!expires) {
+      return false
+    }
 
     if (Date.now() > expires) {
       this.blacklist.delete(jti)

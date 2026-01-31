@@ -106,7 +106,9 @@ export class WorkflowExecutor {
           )
           currentCtx = updatedCtx
           currentCtx = await this.persist(currentCtx)
-          if (result) return result
+          if (result) {
+            return result
+          }
           i = lastIndex + 1
         } else {
           const { updatedCtx, shouldReturn, result } = await this.executeSequentialStep(
@@ -118,7 +120,9 @@ export class WorkflowExecutor {
           )
           currentCtx = updatedCtx
           currentCtx = await this.persist(currentCtx)
-          if (shouldReturn && result) return result
+          if (shouldReturn && result) {
+            return result
+          }
           i++
         }
       }
@@ -264,14 +268,14 @@ export class WorkflowExecutor {
       }
     }
 
-    const lastIndex = groupSteps[groupSteps.length - 1]!.index
+    const lastIndex = groupSteps[groupSteps.length - 1]?.index
     let currentCtx = ctx
 
     const executeStepWrapper = async (
       step: StepDefinition<TInput, TData>,
       stepCtx: WorkflowContext<TInput, TData>
     ) => {
-      const stepIndex = groupSteps.find((gs) => gs.step === step)!.index
+      const stepIndex = groupSteps.find((gs) => gs.step === step)?.index
       let execution = stepCtx.history[stepIndex]!
 
       const localCtx = this.contextManager.setStepName(stepCtx, stepIndex, step.name)
@@ -305,14 +309,14 @@ export class WorkflowExecutor {
       )
 
       for (const execution of parallelResult.successes) {
-        const stepIndex = groupSteps.find((gs) => gs.step.name === execution.name)!.index
+        const stepIndex = groupSteps.find((gs) => gs.step.name === execution.name)?.index
         currentCtx = updateWorkflowContext(currentCtx, {
           history: currentCtx.history.map((h, idx) => (idx === stepIndex ? execution : h)),
         })
       }
 
       for (const failure of parallelResult.failures) {
-        const stepIndex = groupSteps.find((gs) => gs.step.name === failure.step.name)!.index
+        const stepIndex = groupSteps.find((gs) => gs.step.name === failure.step.name)?.index
         currentCtx = updateWorkflowContext(currentCtx, {
           history: currentCtx.history.map((h, idx) => (idx === stepIndex ? failure.execution : h)),
         })

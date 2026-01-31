@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
+import { ref } from 'vue'
 
 const container = ref<HTMLElement | null>(null)
 const position = ref({ x: 0, y: 0 })
 const opacity = ref(0)
 
 const handleMouseMove = (e: MouseEvent) => {
-  if (!container.value) return
+  if (!container.value) {
+    return
+  }
 
   const rect = container.value.getBoundingClientRect()
   position.value = {

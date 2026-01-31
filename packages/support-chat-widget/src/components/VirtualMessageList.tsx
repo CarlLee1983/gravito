@@ -51,10 +51,14 @@ export const VirtualMessageList = memo(function VirtualMessageList({
   const getItemHeight = useCallback(
     (index: number): number => {
       const message = messages[index]
-      if (!message) return estimatedItemHeight
+      if (!message) {
+        return estimatedItemHeight
+      }
 
       const cached = heightCacheRef.current.get(message.id)
-      if (cached) return cached
+      if (cached) {
+        return cached
+      }
 
       return estimatedItemHeight
     },
@@ -106,7 +110,9 @@ export const VirtualMessageList = memo(function VirtualMessageList({
    */
   useEffect(() => {
     const container = containerRef.current
-    if (!container) return
+    if (!container) {
+      return
+    }
 
     const observer = new ResizeObserver((entries) => {
       const height = entries[0].contentRect.height
@@ -127,7 +133,9 @@ export const VirtualMessageList = memo(function VirtualMessageList({
    */
   useEffect(() => {
     const container = containerRef.current
-    if (!container || !onLoadMore || !hasMore || isLoading) return
+    if (!container || !onLoadMore || !hasMore || isLoading) {
+      return
+    }
 
     const handleScroll = () => {
       // 當滾動到距離頂部 100px 內時，觸發載入更多
@@ -180,7 +188,9 @@ export const VirtualMessageList = memo(function VirtualMessageList({
       >
         {virtualItems.map((virtualItem) => {
           const message = messages[virtualItem.index]
-          if (!message) return null
+          if (!message) {
+            return null
+          }
 
           return (
             <div

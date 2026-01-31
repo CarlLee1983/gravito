@@ -83,7 +83,9 @@ export class DiagnosticPlugin implements QuasarPlugin {
    */
   private collectDiagnostics() {
     const collector = (this.agent as any).metricsCollector
-    if (!collector) return
+    if (!collector) {
+      return
+    }
 
     const poolStats = BufferPool.getStats()
     for (const [size, stats] of Object.entries(poolStats)) {

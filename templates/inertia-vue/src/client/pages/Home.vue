@@ -41,15 +41,12 @@
 </template>
 
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3'
 import { ref } from 'vue'
-import Layout from '../components/Layout.vue'
-import StaticLink from '../components/StaticLink.vue'
 
 defineProps<{
   msg: string
   version: string
 }>()
 
-const count = ref(0)
+const _count = ref(0)
 </script>

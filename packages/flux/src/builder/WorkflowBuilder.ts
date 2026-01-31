@@ -1,6 +1,5 @@
 import * as Errors from '../errors'
 import type {
-  FluxWaitResult,
   StepDefinition,
   StepDescriptor,
   StepHandlerResult,

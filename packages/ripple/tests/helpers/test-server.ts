@@ -17,7 +17,9 @@ export async function createTestServer(config?: RippleConfig): Promise<TestServe
       const url = new URL(req.url)
       const userId = url.searchParams.get('userId')
 
-      if (server.upgrade(req, srv, { userId: userId ?? undefined })) return
+      if (server.upgrade(req, srv, { userId: userId ?? undefined })) {
+        return
+      }
       return new Response('Not found', { status: 404 })
     },
     websocket: server.getHandler(),

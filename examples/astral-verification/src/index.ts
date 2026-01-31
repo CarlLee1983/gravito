@@ -92,7 +92,7 @@ app.router.get('/auth/me', () =>
 )
 
 // Custom Errors
-app.router.get('/risky-items/:id', (ctx) => {
+app.router.get('/risky-items/:id', (_ctx) => {
   // Simulate an error
   return Response.json(
     {

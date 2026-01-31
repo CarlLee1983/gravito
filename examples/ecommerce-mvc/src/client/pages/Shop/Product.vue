@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { Head, router } from '@inertiajs/vue3'
+import { router } from '@inertiajs/vue3'
 import { ref } from 'vue'
-import GImage from '../../components/GImage.vue'
 import Layout from '../../components/Layout.vue'
 
 defineOptions({ layout: Layout })
@@ -56,7 +55,7 @@ const toggleWishlist = async () => {
       { product_id: props.product.id },
       {
         preserveScroll: true,
-        onSuccess: (page) => {
+        onSuccess: (_page) => {
           // We need to get the new wishlist ID.
           // Since standard Inertia reload might be tricky if we don't pass it back in props instantly,
           // simpler is to just reload the page props or trust the reload.
@@ -88,7 +87,9 @@ watch(
 )
 
 const discountPercent = () => {
-  if (!props.product.compare_at_price) return 0
+  if (!props.product.compare_at_price) {
+    return 0
+  }
   return Math.round((1 - props.product.price / props.product.compare_at_price) * 100)
 }
 </script>

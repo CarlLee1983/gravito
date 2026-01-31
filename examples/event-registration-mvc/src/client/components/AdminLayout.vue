@@ -166,7 +166,7 @@
 </template>
 
 <script setup lang="ts">
-import { Link, usePage } from '@inertiajs/vue3'
+import { usePage } from '@inertiajs/vue3'
 import { onMounted, ref, watchEffect } from 'vue'
 import { useI18n } from '../composables/useI18n'
 
@@ -198,7 +198,9 @@ const primaryNav = [
 ]
 
 const isNavActive = (href: string) => {
-  if (href === '/admin') return page.url === '/admin'
+  if (href === '/admin') {
+    return page.url === '/admin'
+  }
   return page.url.startsWith(href)
 }
 
@@ -208,7 +210,9 @@ const getPageTitle = () => {
 }
 
 const getLanguageLink = (lang: string) => {
-  if (typeof window === 'undefined') return '#'
+  if (typeof window === 'undefined') {
+    return '#'
+  }
   const url = new URL(window.location.href)
   url.searchParams.set('lang', lang)
   return url.pathname + url.search

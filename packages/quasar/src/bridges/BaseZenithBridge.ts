@@ -1,5 +1,5 @@
+import type { EventEmitter } from 'node:events'
 import type { Span } from '@opentelemetry/api'
-import type { EventEmitter } from 'events'
 import type { Redis } from 'ioredis'
 import type { QuasarTracing } from '../tracing/QuasarTracing'
 import type { LogSampler } from '../utils/LogSampler'
@@ -68,7 +68,9 @@ export abstract class BaseZenithBridge implements QueueBridge {
    * Start a span for a job and return trace context.
    */
   protected startJobSpan(jobId: string, jobData: any): void {
-    if (!this.tracing || !jobId) return
+    if (!this.tracing || !jobId) {
+      return
+    }
 
     const parentCtx = this.tracing.extractContext(jobData || {})
     const span = this.tracing.startSpan(`job:${jobId}`, parentCtx)
@@ -92,7 +94,9 @@ export abstract class BaseZenithBridge implements QueueBridge {
    * Inject trace context into payload if a span is active.
    */
   protected injectTraceContext(payload: ZenithLogPayload): ZenithLogPayload {
-    if (!payload.jobId) return payload
+    if (!payload.jobId) {
+      return payload
+    }
 
     const span = this.activeSpans.get(payload.jobId)
     if (span && this.tracing) {

@@ -1,5 +1,4 @@
 import { Image as PrismImage, type ImageProps as PrismImageProps } from '@gravito/prism'
-import type React from 'react'
 
 /**
  * GravitoImage - Official Site optimized image component.

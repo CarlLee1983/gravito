@@ -1,10 +1,5 @@
 import { describe, expect, it, jest } from 'bun:test'
-import {
-  DefaultDetectors,
-  type I18nService,
-  type LocaleDetector,
-  localeMiddleware,
-} from '../../src/I18nService'
+import { DefaultDetectors, type I18nService, localeMiddleware } from '../../src/I18nService'
 
 describe('Locale Detectors', () => {
   const mockContext = (params: any = {}) => ({

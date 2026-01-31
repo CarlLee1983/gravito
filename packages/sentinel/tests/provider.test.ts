@@ -1,4 +1,4 @@
-import { describe, expect, it, mock } from 'bun:test'
+import { describe, expect, it } from 'bun:test'
 import { CallbackUserProvider } from '../src/providers/CallbackUserProvider'
 
 describe('CallbackUserProvider', () => {

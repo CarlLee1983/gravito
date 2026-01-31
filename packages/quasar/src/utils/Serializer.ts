@@ -15,7 +15,9 @@ export class JsonSerializer implements Serializer {
 
   deserialize(data: string | Buffer): any {
     const str = typeof data === 'string' ? data : data.toString()
-    if (!str) return null
+    if (!str) {
+      return null
+    }
     return JSON.parse(str)
   }
 

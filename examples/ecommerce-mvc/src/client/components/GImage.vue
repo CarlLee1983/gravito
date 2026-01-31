@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { Image as PrismImage } from '@gravito/prism/vue'
-
 defineProps<{
   src: string
   alt: string

@@ -33,7 +33,9 @@ export class QuasarTracing {
    * Start a new span for a job.
    */
   startSpan(name: string, parentContext?: OTelContext): Span | undefined {
-    if (!this.tracer) return undefined
+    if (!this.tracer) {
+      return undefined
+    }
 
     return this.tracer.startSpan(
       name,
@@ -48,7 +50,9 @@ export class QuasarTracing {
    * Extract trace context from job data.
    */
   extractContext(carrier: Record<string, any>): OTelContext | undefined {
-    if (!this.enabled) return undefined
+    if (!this.enabled) {
+      return undefined
+    }
     return ContextExtractor.extract(carrier)
   }
 
@@ -56,7 +60,9 @@ export class QuasarTracing {
    * Inject trace context into a carrier (job data).
    */
   injectContext(carrier: Record<string, any>, ctx: OTelContext = context.active()): void {
-    if (!this.enabled) return
+    if (!this.enabled) {
+      return
+    }
     propagation.inject(ctx, carrier)
   }
 

@@ -1,4 +1,4 @@
-import { createHmac } from 'crypto'
+import { createHmac } from 'node:crypto'
 import type { Redis } from 'ioredis'
 import { QUASAR_CHANNELS, QUASAR_KEYS } from './constants'
 import { CleanQueueExecutor } from './executors/CleanQueueExecutor'
@@ -185,7 +185,9 @@ export class CommandListener {
   }
 
   private verifySignature(command: QuasarCommand): boolean {
-    if (!command.signature || !this.secret) return false
+    if (!command.signature || !this.secret) {
+      return false
+    }
 
     const { signature, ...rest } = command
     // Simple canonicalization: sort keys

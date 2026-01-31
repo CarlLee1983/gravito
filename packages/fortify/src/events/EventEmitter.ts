@@ -12,7 +12,7 @@ export class FortifyEventEmitter {
     if (!this.listeners.has(event)) {
       this.listeners.set(event, new Set())
     }
-    this.listeners.get(event)!.add(listener)
+    this.listeners.get(event)?.add(listener)
 
     return () => this.off(event, listener)
   }
@@ -23,7 +23,9 @@ export class FortifyEventEmitter {
 
   async emit<K extends keyof FortifyEvents>(event: K, data: FortifyEvents[K]): Promise<void> {
     const eventListeners = this.listeners.get(event)
-    if (!eventListeners || eventListeners.size === 0) return
+    if (!eventListeners || eventListeners.size === 0) {
+      return
+    }
 
     await Promise.all(Array.from(eventListeners).map((listener) => listener(data)))
   }

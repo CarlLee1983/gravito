@@ -194,7 +194,7 @@ describe('validate middleware', () => {
 
       app.post(
         '/test',
-        validate('json', schema, (result, c) => {
+        validate('json', schema, (_result, c) => {
           return c.json({ custom: 'error', code: 'VALIDATION_FAILED' }, 422)
         }),
         (c) => c.json({ success: true })

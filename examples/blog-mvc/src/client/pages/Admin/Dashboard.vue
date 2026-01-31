@@ -1,18 +1,5 @@
 <script setup lang="ts">
-import { Head, Link, router } from '@inertiajs/vue3'
-import {
-  ChevronRight,
-  Edit,
-  Eye,
-  FileText,
-  LayoutDashboard,
-  LogOut,
-  MessageSquare,
-  Plus,
-  Trash2,
-  TrendingUp,
-  Users,
-} from 'lucide-vue-next'
+import { router } from '@inertiajs/vue3'
 
 defineProps<{
   posts: {

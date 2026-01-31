@@ -25,11 +25,11 @@ async function run() {
   await healthServer.start()
   console.log('Quasar Health Server running on http://localhost:9999/health')
 
-  app.get('/', (req, res) => {
+  app.get('/', (_req, res) => {
     res.json({ message: 'Hello World' })
   })
 
-  app.get('/status', (req, res) => {
+  app.get('/status', (_req, res) => {
     // 3. You can also expose Quasar status via your own API
     res.json(agent.getStatus())
   })

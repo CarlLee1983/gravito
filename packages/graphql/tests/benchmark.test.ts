@@ -446,7 +446,9 @@ describe('GraphQL Performance Benchmarks', () => {
           Query: {
             users: async (_: unknown, { ids }: { ids: string[] }, context: GraphQLContext) => {
               const loader = context.loaders?.user as typeof batchLoader | undefined
-              if (!loader) return []
+              if (!loader) {
+                return []
+              }
 
               return Promise.all(ids.map((id) => loader.load(id)))
             },

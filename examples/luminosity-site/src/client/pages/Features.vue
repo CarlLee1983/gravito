@@ -1,19 +1,6 @@
 <script setup lang="ts">
-import { StaticLink } from '@gravito/freeze-vue'
-import { Head } from '@inertiajs/vue3'
-import {
-  Activity,
-  ChevronRight,
-  Code,
-  Cpu,
-  Layers,
-  Share2,
-  Shield,
-  Terminal,
-  Zap,
-} from 'lucide-vue-next'
+import { Activity, Layers, Share2, Zap } from 'lucide-vue-next'
 import { computed } from 'vue'
-import Layout from '../components/Layout.vue'
 import { useI18n } from '../composables/useI18n'
 
 const { t, locale } = useI18n()

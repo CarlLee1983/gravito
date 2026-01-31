@@ -1,11 +1,5 @@
 import { join } from 'node:path'
-import {
-  bodySizeLimit,
-  defineConfig,
-  GravitoEngineAdapter as GravitoAdapter,
-  PlanetCore,
-  securityHeaders,
-} from '@gravito/core'
+import { defineConfig, GravitoEngineAdapter as GravitoAdapter, PlanetCore } from '@gravito/core'
 import { OrbitIon } from '@gravito/ion'
 import { OrbitPrism } from '@gravito/prism'
 import { OrbitCache } from '@gravito/stasis'

@@ -8,8 +8,8 @@ describe('Ripple Binary Support', () => {
     global.WebSocket = class MockWebSocket {
       static OPEN = 1
       onopen = () => {}
-      onmessage = (ev: any) => {}
-      send = (data: any) => {}
+      onmessage = (_ev: any) => {}
+      send = (_data: any) => {}
       close = () => {}
       readyState = 1
       binaryType = 'blob'

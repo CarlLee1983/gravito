@@ -120,7 +120,9 @@ describe('Polymorphic Relationships', () => {
 
     const originalConnection = DB.connection
     connectionSpy = spyOn(DB, 'connection').mockImplementation((name?: string) => {
-      if (name === TEST_CONN) return mockConn
+      if (name === TEST_CONN) {
+        return mockConn
+      }
       return originalConnection.call(DB, name as any)
     })
 
@@ -140,7 +142,9 @@ describe('Polymorphic Relationships', () => {
 
     const originalConnection = DB.connection
     connectionSpy = spyOn(DB, 'connection').mockImplementation((name?: string) => {
-      if (name === TEST_CONN) return mockConn
+      if (name === TEST_CONN) {
+        return mockConn
+      }
       return originalConnection.call(DB, name as any)
     })
 
@@ -163,7 +167,9 @@ describe('Polymorphic Relationships', () => {
 
     const originalConnection = DB.connection
     connectionSpy = spyOn(DB, 'connection').mockImplementation((name?: string) => {
-      if (name === TEST_CONN) return mockConn
+      if (name === TEST_CONN) {
+        return mockConn
+      }
       return originalConnection.call(DB, name as any)
     })
 
@@ -185,7 +191,9 @@ describe('Polymorphic Relationships', () => {
 
     const originalConnection = DB.connection
     connectionSpy = spyOn(DB, 'connection').mockImplementation((name?: string) => {
-      if (name === TEST_CONN) return mockConn
+      if (name === TEST_CONN) {
+        return mockConn
+      }
       return originalConnection.call(DB, name as any)
     })
 

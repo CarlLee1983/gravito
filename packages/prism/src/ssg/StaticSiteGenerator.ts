@@ -132,7 +132,7 @@ export class StaticSiteGenerator {
   private async exportRoutes(
     routes: Array<{ path: string; getData?: () => Promise<any> }>,
     outputDir: string,
-    baseUrl: string,
+    _baseUrl: string,
     options: ExportOptions = {}
   ): Promise<void> {
     const concurrency = options.concurrency ?? 10
@@ -146,7 +146,9 @@ export class StaticSiteGenerator {
     const worker = async () => {
       while (queue.length > 0) {
         const route = queue.shift()
-        if (!route) break
+        if (!route) {
+          break
+        }
 
         try {
           const url = `http://localhost${route.path}`

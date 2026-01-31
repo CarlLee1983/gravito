@@ -100,8 +100,7 @@
 </template>
 
 <script setup lang="ts">
-import { Link, router } from '@inertiajs/vue3'
-import Layout from '../../components/Layout.vue'
+import { router } from '@inertiajs/vue3'
 import { useI18n } from '../../composables/useI18n'
 
 const { t } = useI18n()

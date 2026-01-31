@@ -30,7 +30,7 @@ export class KafkaProbe implements QueueProbe {
         for (const p of topic.partitions) {
           const high = parseInt(p.high, 10)
           const offset = parseInt(p.offset, 10)
-          if (!isNaN(high) && !isNaN(offset)) {
+          if (!Number.isNaN(high) && !Number.isNaN(offset)) {
             totalLag += Math.max(0, high - offset)
           }
         }

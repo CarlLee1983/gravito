@@ -2,7 +2,6 @@ import { describe, expect, it, spyOn } from 'bun:test'
 import { DB } from '../src/DB'
 import { MigrationRepository } from '../src/migration/MigrationRepository'
 import { Schema } from '../src/schema/Schema'
-import type { ConnectionContract } from '../src/types'
 
 describe('MigrationRepository', () => {
   it('tracks migrations using schema and db helpers', async () => {

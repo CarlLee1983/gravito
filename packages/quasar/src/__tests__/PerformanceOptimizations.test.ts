@@ -60,7 +60,7 @@ describe('Performance Optimizations', () => {
         maxPayloadSize: 100,
       })
 
-      const largeError = 'Error: ' + 'x'.repeat(200)
+      const largeError = `Error: ${'x'.repeat(200)}`
       const log = {
         level: 'error' as const,
         message: 'test',

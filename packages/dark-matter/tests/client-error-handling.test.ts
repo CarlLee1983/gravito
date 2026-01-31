@@ -38,7 +38,7 @@ class MongoClientMock {
   db(_name?: string) {
     return {
       collection: (name: string) => ({ name }),
-      command: async (cmd: any) => {
+      command: async (_cmd: any) => {
         if (shouldThrowError) {
           throw new Error('Command failed')
         }

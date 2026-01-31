@@ -66,7 +66,9 @@ describe('Automatic Persisted Queries', () => {
 
     // biome-ignore lint/suspicious/noExplicitAny: Test response type is dynamic
     const data2 = (await res2.json()) as any
-    if (data2.errors) console.log('DEBUG: APQ Step 2 Errors:', JSON.stringify(data2.errors))
+    if (data2.errors) {
+      console.log('DEBUG: APQ Step 2 Errors:', JSON.stringify(data2.errors))
+    }
     expect(data2.data?.ping).toBe('pong')
 
     // 3. Send Hash only (again)

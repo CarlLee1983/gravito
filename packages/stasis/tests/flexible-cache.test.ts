@@ -1,4 +1,4 @@
-import { describe, expect, it, mock, spyOn } from 'bun:test'
+import { describe, expect, it } from 'bun:test'
 import { CacheRepository } from '../src/CacheRepository'
 import { sleep } from '../src/locks'
 import { MemoryStore } from '../src/stores/MemoryStore'

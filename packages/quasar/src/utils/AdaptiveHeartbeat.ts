@@ -8,7 +8,6 @@ export interface HeartbeatOptions {
 
 export class AdaptiveHeartbeat {
   private currentInterval: number
-  private consecutiveFailures = 0
   private timer: Timer | null = null
   private isRunning = false
 
@@ -26,7 +25,9 @@ export class AdaptiveHeartbeat {
   }
 
   start() {
-    if (this.isRunning) return
+    if (this.isRunning) {
+      return
+    }
     this.isRunning = true
     this.scheduleNext()
   }
@@ -59,7 +60,9 @@ export class AdaptiveHeartbeat {
   }
 
   private scheduleNext() {
-    if (!this.isRunning) return
+    if (!this.isRunning) {
+      return
+    }
 
     const interval = this.applyJitter(this.calculateNextInterval())
 

@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, test } from 'bun:test'
 import { LockManager } from '../src/locks/LockManager'
 import { SchedulerManager } from '../src/SchedulerManager'
-import { TaskSchedule } from '../src/TaskSchedule'
 
 describe('P1: Time Validation Fixes', () => {
   let scheduler: SchedulerManager

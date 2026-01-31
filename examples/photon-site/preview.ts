@@ -8,7 +8,7 @@ import { existsSync } from 'node:fs'
 import path from 'node:path'
 
 const outputDir = path.join(process.cwd(), 'dist/static')
-const port = process.env.PORT ? parseInt(process.env.PORT) : 8000
+const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 8000
 
 // 檢查輸出目錄是否存在
 if (!existsSync(outputDir)) {

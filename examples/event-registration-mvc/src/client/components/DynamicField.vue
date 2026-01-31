@@ -113,7 +113,9 @@ watch(localValue, (newValue) => {
 })
 
 const getOptions = (): string[] => {
-  if (!props.field.options) return []
+  if (!props.field.options) {
+    return []
+  }
   try {
     return JSON.parse(props.field.options)
   } catch {
@@ -122,7 +124,9 @@ const getOptions = (): string[] => {
 }
 
 const isChecked = (option: string): boolean => {
-  if (!localValue.value) return false
+  if (!localValue.value) {
+    return false
+  }
   const values = localValue.value.split(',')
   return values.includes(option)
 }
