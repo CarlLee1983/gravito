@@ -2,6 +2,7 @@
 import { Command } from 'commander'
 
 import { version } from '../package.json'
+import { analyzeCommand } from '../src/commands/analyze'
 import { compactCommand } from '../src/commands/compact'
 import { generateCommand } from '../src/commands/generate'
 import { initCommand } from '../src/commands/init'
@@ -34,6 +35,15 @@ program
   .option('-c, --config <path>', 'Path to config file')
   .action(async (options) => {
     await compactCommand(options)
+  })
+
+program
+  .command('analyze')
+  .description('Analyze WAL log health and provide recommendations')
+  .option('-c, --config <path>', 'Path to config file')
+  .option('-v, --verbose', 'Show verbose output')
+  .action(async (options) => {
+    await analyzeCommand(options)
   })
 
 program.parse()
