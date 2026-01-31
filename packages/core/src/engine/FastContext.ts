@@ -19,6 +19,7 @@ class FastRequestImpl implements FastRequest {
   private _request!: Request
   private _params!: Record<string, string>
   private _path!: string
+  private _routePattern?: string
   private _url: URL | null = null
   private _query: URLSearchParams | null = null
   private _headers: Record<string, string> | null = null
@@ -34,10 +35,16 @@ class FastRequestImpl implements FastRequest {
   /**
    * Initialize for new request
    */
-  init(request: Request, params: Record<string, string> = {}, path = ''): this {
+  init(
+    request: Request,
+    params: Record<string, string> = {},
+    path = '',
+    routePattern?: string
+  ): this {
     this._request = request
     this._params = params
     this._path = path
+    this._routePattern = routePattern
     this._url = null
     this._query = null
     this._headers = null
@@ -83,6 +90,11 @@ class FastRequestImpl implements FastRequest {
   get path(): string {
     this.checkReleased()
     return this._path
+  }
+
+  get routePattern(): string | undefined {
+    this.checkReleased()
+    return this._routePattern
   }
 
   param(name: string): string | undefined {
@@ -189,9 +201,14 @@ export class FastContext implements IFastContext {
    *
    * This is called when acquiring from the pool.
    */
-  init(request: Request, params: Record<string, string> = {}, path = ''): this {
+  init(
+    request: Request,
+    params: Record<string, string> = {},
+    path = '',
+    routePattern?: string
+  ): this {
     this._isReleased = false
-    this.req.init(request, params, path)
+    this.req.init(request, params, path, routePattern)
     // Optimization: Creating new Headers is faster than iterating to delete in Bun
     // But for strict object pooling, we might want to reconsider.
     // For now, new Headers() is safe and fast enough.

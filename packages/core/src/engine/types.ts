@@ -47,7 +47,12 @@ export interface FastContext {
   readonly native: any
 
   /** Internal initialization for pooling */
-  init(request: Request, params?: Record<string, string>, path?: string): this
+  init(
+    request: Request,
+    params?: Record<string, string>,
+    path?: string,
+    routePattern?: string
+  ): this
 
   /** Internal cleanup for pooling */
   reset(): void
@@ -65,6 +70,12 @@ export interface FastRequest {
 
   /** Path without query */
   readonly path: string
+
+  /**
+   * Route pattern (e.g., /users/:id) for metrics labeling
+   * Prevents high cardinality issues in monitoring systems
+   */
+  readonly routePattern?: string
 
   /** Get route parameter */
   param(name: string): string | undefined

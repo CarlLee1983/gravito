@@ -24,7 +24,9 @@ export function createHttpMetricsMiddleware(registry: MetricsRegistry) {
 
   return async (c: GravitoContext, next: () => Promise<void>): Promise<Response | undefined> => {
     const method = c.req.method
-    const path = normalizePath(c.req.path)
+    // 優先使用 routePattern（參數化路由模式），降級至 normalizePath
+    // routePattern 由 Router 提供，可防止高基數問題
+    const path = c.req.routePattern ?? normalizePath(c.req.path)
     const start = performance.now()
 
     await next()

@@ -279,7 +279,7 @@ export class Gravito {
     if (staticRoute) {
       if (staticRoute.useMinimal) {
         // Ultra-fast path: no middleware, minimal context
-        const ctx = new MinimalContext(request, {}, path)
+        const ctx = new MinimalContext(request, {}, path, path) // Static routes: routePattern === path
 
         try {
           const result = staticRoute.handler(ctx)
@@ -312,7 +312,7 @@ export class Gravito {
     const ctx = this.contextPool.acquire()
 
     try {
-      ctx.init(request, {}, path)
+      ctx.init(request, {}, path, path) // Static routes: routePattern === path
 
       if (route.compiled) {
         return await route.compiled(ctx)
@@ -364,7 +364,7 @@ export class Gravito {
 
     const execute = async (): Promise<Response> => {
       try {
-        ctx.init(request, match.params, path)
+        ctx.init(request, match.params, path, match.routePattern)
         return await entry?.compiled(ctx)
       } catch (error) {
         return await this.handleError(error as Error, ctx)

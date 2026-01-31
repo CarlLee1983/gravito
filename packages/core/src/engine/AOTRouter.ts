@@ -48,6 +48,10 @@ export class AOTRouter {
   /** @internal */
   public readonly pathMiddleware = new Map<string, Middleware[]>()
 
+  // Dynamic route patterns: handler function -> route pattern
+  // 用於追蹤動態路由的模式，防止高基數問題
+  private dynamicRoutePatterns = new Map<Function, string>()
+
   private middlewareCache = new Map<string, { data: Middleware[]; version: number }>()
   private cacheMaxSize = 1000
   private version = 0
@@ -79,6 +83,9 @@ export class AOTRouter {
       // Wrap handler to match our Handler type
       const wrappedHandler = handler as unknown as Function
       this.dynamicRouter.add(normalizedMethod, path, [wrappedHandler])
+
+      // Store route pattern for this handler
+      this.dynamicRoutePatterns.set(wrappedHandler, path)
 
       // Store middleware separately
       if (middleware.length > 0) {
@@ -197,14 +204,18 @@ export class AOTRouter {
 
     if (match && match.handlers.length > 0) {
       const handler = match.handlers[0] as unknown as Handler
-      const routeKey = this.findDynamicRouteKey(normalizedMethod, path)
+      const wrappedHandler = match.handlers[0]
+
+      // 從 Map 中取得路由模式
+      const routePattern = this.dynamicRoutePatterns.get(wrappedHandler)
+      const routeKey = routePattern ? `${normalizedMethod}:${routePattern}` : null
       const routeMiddleware = routeKey ? (this.pathMiddleware.get(routeKey) ?? []) : []
 
       return {
         handler,
         params: match.params,
         middleware: this.collectMiddleware(path, routeMiddleware),
-        routePattern: routeKey ?? undefined,
+        routePattern,
       }
     }
 
@@ -312,27 +323,6 @@ export class AOTRouter {
     }
 
     return false
-  }
-
-  /**
-   * Find the original route key for a matched dynamic route
-   *
-   * This is needed to look up route-specific middleware.
-   * It's a bit of a hack, but avoids storing duplicate data.
-   *
-   * @param method - HTTP method
-   * @param path - Matched path
-   * @returns Route key or null
-   */
-  private findDynamicRouteKey(method: HttpMethod, _path: string): string | null {
-    // This is a simple implementation
-    // In production, we might want to store a reverse mapping
-    for (const key of this.pathMiddleware.keys()) {
-      if (key.startsWith(`${method}:`)) {
-        return key
-      }
-    }
-    return null
   }
 
   /**
