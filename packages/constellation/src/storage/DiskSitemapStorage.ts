@@ -1,7 +1,10 @@
-import { createReadStream } from 'node:fs'
+import { createReadStream, createWriteStream } from 'node:fs'
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import type { SitemapStorage } from '../types'
+import { Readable } from 'node:stream'
+import { pipeline } from 'node:stream/promises'
+import type { SitemapStorage, WriteStreamOptions } from '../types'
+import { createCompressionStream, toGzipFilename } from '../utils/Compression'
 
 function sanitizeFilename(filename: string): string {
   if (!filename) {
@@ -51,6 +54,37 @@ export class DiskSitemapStorage implements SitemapStorage {
     const safeName = sanitizeFilename(filename)
     await fs.mkdir(this.outDir, { recursive: true })
     await fs.writeFile(path.join(this.outDir, safeName), content)
+  }
+
+  /**
+   * 使用串流方式寫入 sitemap 檔案，可選擇性啟用 gzip 壓縮。
+   * 此方法可大幅降低大型 sitemap 的記憶體峰值。
+   *
+   * @param filename - 檔案名稱
+   * @param stream - XML 內容的 AsyncIterable
+   * @param options - 寫入選項（如壓縮、content type）
+   *
+   * @since 3.1.0
+   */
+  async writeStream(
+    filename: string,
+    stream: AsyncIterable<string>,
+    options?: WriteStreamOptions
+  ): Promise<void> {
+    const safeName = sanitizeFilename(options?.compress ? toGzipFilename(filename) : filename)
+    await fs.mkdir(this.outDir, { recursive: true })
+
+    const filePath = path.join(this.outDir, safeName)
+    const writeStream = createWriteStream(filePath)
+
+    const readable = Readable.from(stream, { encoding: 'utf-8' })
+
+    if (options?.compress) {
+      const gzip = createCompressionStream()
+      await pipeline(readable, gzip, writeStream)
+    } else {
+      await pipeline(readable, writeStream)
+    }
   }
 
   /**

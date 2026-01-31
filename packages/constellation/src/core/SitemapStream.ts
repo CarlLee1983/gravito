@@ -86,10 +86,70 @@ export class SitemapStream {
    * @returns The complete XML string for the sitemap.
    */
   toXML(): string {
+    const parts: string[] = []
+    for (const chunk of this.toSyncIterable()) {
+      parts.push(chunk)
+    }
+    return parts.join('')
+  }
+
+  /**
+   * 以 AsyncGenerator 方式產生 XML 內容。
+   * 每次 yield 一個邏輯區塊，適合串流寫入場景，可減少記憶體峰值。
+   *
+   * @returns AsyncGenerator 產生 XML 字串片段
+   *
+   * @example
+   * ```typescript
+   * const stream = new SitemapStream({ baseUrl: 'https://example.com' })
+   * stream.add({ url: '/page1' })
+   * stream.add({ url: '/page2' })
+   *
+   * for await (const chunk of stream.toAsyncIterable()) {
+   *   process.stdout.write(chunk)
+   * }
+   * ```
+   *
+   * @since 3.1.0
+   */
+  async *toAsyncIterable(): AsyncGenerator<string, void, unknown> {
+    // Yield XML 宣告
+    yield '<?xml version="1.0" encoding="UTF-8"?>\n'
+
+    // Yield urlset 開標籤與命名空間
+    yield this.buildUrlsetOpenTag()
+
+    // 逐條 yield entry XML
     const { baseUrl, pretty } = this.options
+    for (const entry of this.entries) {
+      yield this.renderUrl(entry, baseUrl, pretty)
+    }
+
+    // Yield 閉標籤
+    yield '</urlset>'
+  }
+
+  /**
+   * 同步版本的 iterable，供 toXML() 使用。
+   */
+  private *toSyncIterable(): Generator<string> {
+    yield '<?xml version="1.0" encoding="UTF-8"?>\n'
+    yield this.buildUrlsetOpenTag()
+
+    const { baseUrl, pretty } = this.options
+    for (const entry of this.entries) {
+      yield this.renderUrl(entry, baseUrl, pretty)
+    }
+
+    yield '</urlset>'
+  }
+
+  /**
+   * 建立 urlset 開標籤與所有必要的 XML 命名空間。
+   */
+  private buildUrlsetOpenTag(): string {
     const parts: string[] = []
 
-    parts.push('<?xml version="1.0" encoding="UTF-8"?>\n')
     parts.push('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"')
 
     if (this.flags.hasImages) {
@@ -106,12 +166,6 @@ export class SitemapStream {
     }
 
     parts.push('>\n')
-
-    for (const entry of this.entries) {
-      parts.push(this.renderUrl(entry, baseUrl, pretty))
-    }
-
-    parts.push('</urlset>')
 
     return parts.join('')
   }
