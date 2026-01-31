@@ -7,6 +7,7 @@
  */
 
 import type { DeadLetterQueue } from '../dlq/DeadLetterQueue'
+import type { EchoLogger } from '../observability/logging'
 import {
   EchoMetrics,
   type MetricsProvider,
@@ -15,10 +16,13 @@ import {
 } from '../observability/metrics'
 import { NoopTracer, SpanStatusCode, type Tracer } from '../observability/tracing'
 import { computeHmacSha256 } from '../receive/SignatureValidator'
+import { CircuitBreaker } from '../resilience/CircuitBreaker'
 import type { OutgoingWebhookRecord } from '../storage/WebhookStore'
 import type {
   BatchDispatchOptions,
   BatchDispatchResult,
+  CircuitBreakerConfig,
+  CircuitBreakerMetrics,
   RetryConfig,
   WebhookDeliveryResult,
   WebhookDispatcherConfig,
@@ -71,6 +75,9 @@ export class WebhookDispatcher {
   private dlq?: DeadLetterQueue
   private metrics: MetricsProvider = new NoopMetricsProvider()
   private tracer: Tracer = new NoopTracer()
+  private logger?: EchoLogger
+  private circuitBreakers = new Map<string, CircuitBreaker>()
+  private circuitBreakerConfig?: CircuitBreakerConfig
 
   /**
    * Initializes the dispatcher with the provided configuration.
@@ -82,6 +89,7 @@ export class WebhookDispatcher {
     this.retryConfig = { ...DEFAULT_RETRY_CONFIG, ...config.retry }
     this.timeout = config.timeout ?? 30000
     this.userAgent = config.userAgent ?? 'Gravito-Echo/1.0'
+    this.circuitBreakerConfig = config.circuitBreaker
   }
 
   /**
@@ -115,6 +123,87 @@ export class WebhookDispatcher {
   setTracer(tracer: Tracer): this {
     this.tracer = tracer
     return this
+  }
+
+  /**
+   * Configures the logger for diagnostic output.
+   *
+   * @param logger - The EchoLogger implementation to use.
+   * @returns The dispatcher instance for chaining.
+   */
+  setLogger(logger: EchoLogger): this {
+    this.logger = logger
+    return this
+  }
+
+  /**
+   * Get or create circuit breaker for a target URL.
+   *
+   * Circuit breakers are isolated per host to prevent failures
+   * on one endpoint from affecting others.
+   *
+   * @param url - The target URL
+   * @returns Circuit breaker instance or undefined if disabled
+   */
+  private getCircuitBreaker(url: string): CircuitBreaker | undefined {
+    if (!this.circuitBreakerConfig?.enabled) {
+      return undefined
+    }
+
+    const host = new URL(url).host
+
+    if (!this.circuitBreakers.has(host)) {
+      const breaker = new CircuitBreaker(host, {
+        ...this.circuitBreakerConfig,
+        onOpen: (name) => {
+          this.logger?.warn(`Circuit breaker OPEN for ${name}`, {
+            component: 'dispatcher',
+            host: name,
+          })
+          this.circuitBreakerConfig?.onOpen?.(name)
+        },
+        onHalfOpen: (name) => {
+          this.logger?.info(`Circuit breaker HALF_OPEN for ${name}`, {
+            component: 'dispatcher',
+            host: name,
+          })
+          this.circuitBreakerConfig?.onHalfOpen?.(name)
+        },
+        onClose: (name) => {
+          this.logger?.info(`Circuit breaker CLOSED for ${name}`, {
+            component: 'dispatcher',
+            host: name,
+          })
+          this.circuitBreakerConfig?.onClose?.(name)
+        },
+      })
+      this.circuitBreakers.set(host, breaker)
+    }
+
+    return this.circuitBreakers.get(host)
+  }
+
+  /**
+   * Get circuit breaker metrics for a URL.
+   *
+   * @param url - The target URL
+   * @returns Circuit breaker metrics or null if not found
+   */
+  getCircuitBreakerMetrics(url: string): CircuitBreakerMetrics | null {
+    const host = new URL(url).host
+    const breaker = this.circuitBreakers.get(host)
+    return breaker ? breaker.getMetrics() : null
+  }
+
+  /**
+   * Manually reset circuit breaker for a URL.
+   *
+   * @param url - The target URL
+   */
+  resetCircuitBreaker(url: string): void {
+    const host = new URL(url).host
+    const breaker = this.circuitBreakers.get(host)
+    breaker?.manualReset()
   }
 
   /**
@@ -356,69 +445,94 @@ export class WebhookDispatcher {
     payload: WebhookPayload<T>,
     attempt: number
   ): Promise<WebhookDeliveryResult> {
-    const startTime = Date.now()
-    const timestamp = Math.floor(Date.now() / 1000)
-    const webhookId = payload.id ?? crypto.randomUUID()
+    const breaker = this.getCircuitBreaker(payload.url)
 
-    try {
-      // Build request body
-      const body = JSON.stringify({
-        id: webhookId,
-        type: payload.event,
-        timestamp,
-        data: payload.data,
-      })
-
-      // Compute signature
-      const signedPayload = `${timestamp}.${body}`
-      const signature = await computeHmacSha256(signedPayload, this.secret)
-
-      // Create abort controller for timeout
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), this.timeout)
+    const deliveryFn = async () => {
+      const startTime = Date.now()
+      const timestamp = Math.floor(Date.now() / 1000)
+      const webhookId = payload.id ?? crypto.randomUUID()
 
       try {
-        const response = await fetch(payload.url, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'User-Agent': this.userAgent,
-            'X-Webhook-ID': webhookId,
-            'X-Webhook-Timestamp': String(timestamp),
-            'X-Webhook-Signature': `t=${timestamp},v1=${signature}`,
-          },
-          body,
-          signal: controller.signal,
+        // Build request body
+        const body = JSON.stringify({
+          id: webhookId,
+          type: payload.event,
+          timestamp,
+          data: payload.data,
         })
 
-        clearTimeout(timeoutId)
+        // Compute signature
+        const signedPayload = `${timestamp}.${body}`
+        const signature = await computeHmacSha256(signedPayload, this.secret)
 
+        // Create abort controller for timeout
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), this.timeout)
+
+        try {
+          const response = await fetch(payload.url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'User-Agent': this.userAgent,
+              'X-Webhook-ID': webhookId,
+              'X-Webhook-Timestamp': String(timestamp),
+              'X-Webhook-Signature': `t=${timestamp},v1=${signature}`,
+            },
+            body,
+            signal: controller.signal,
+          })
+
+          clearTimeout(timeoutId)
+
+          const duration = Date.now() - startTime
+          const responseBody = await response.text()
+
+          return {
+            success: response.ok,
+            statusCode: response.status,
+            body: responseBody,
+            attempt,
+            duration,
+            deliveredAt: new Date(),
+            error: response.ok ? undefined : `HTTP ${response.status}`,
+          }
+        } finally {
+          clearTimeout(timeoutId)
+        }
+      } catch (error) {
         const duration = Date.now() - startTime
-        const responseBody = await response.text()
 
         return {
-          success: response.ok,
-          statusCode: response.status,
-          body: responseBody,
+          success: false,
           attempt,
           duration,
           deliveredAt: new Date(),
-          error: response.ok ? undefined : `HTTP ${response.status}`,
+          error: error instanceof Error ? error.message : 'Unknown error',
         }
-      } finally {
-        clearTimeout(timeoutId)
-      }
-    } catch (error) {
-      const duration = Date.now() - startTime
-
-      return {
-        success: false,
-        attempt,
-        duration,
-        deliveredAt: new Date(),
-        error: error instanceof Error ? error.message : 'Unknown error',
       }
     }
+
+    // Use circuit breaker if enabled
+    if (breaker) {
+      try {
+        return await breaker.execute(deliveryFn)
+      } catch (error) {
+        if (error instanceof Error && error.message.includes('Circuit breaker is OPEN')) {
+          return {
+            success: false,
+            attempt,
+            duration: 0,
+            deliveredAt: new Date(),
+            error: error.message,
+          }
+        }
+        throw error
+      }
+    }
+
+    // Fallback to direct execution if circuit breaker is disabled
+    return await deliveryFn()
   }
 
   /**

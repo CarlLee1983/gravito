@@ -80,11 +80,17 @@ export {
 export { WebhookReceiver } from './receive/WebhookReceiver'
 // Replay
 export { WebhookReplayService } from './replay/WebhookReplayService'
+// Resilience
+export { CircuitBreaker } from './resilience'
 
 // Types
 export type {
   // Middleware
   BufferedRequest,
+  // Resilience
+  CircuitBreakerConfig,
+  CircuitBreakerMetrics,
+  CircuitBreakerState,
   // Config
   EchoConfig,
   EchoObservabilityConfig,

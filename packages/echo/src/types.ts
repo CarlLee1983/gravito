@@ -223,6 +223,103 @@ export interface RequestBufferConfig {
 }
 
 // ─────────────────────────────────────────────────────────────
+// Circuit Breaker (Phase 2.1)
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Circuit breaker state.
+ *
+ * - CLOSED: Normal operation, all requests pass through
+ * - OPEN: Too many failures, reject all requests immediately
+ * - HALF_OPEN: Testing if service recovered, allow limited requests
+ *
+ * @public
+ */
+export type CircuitBreakerState = 'CLOSED' | 'OPEN' | 'HALF_OPEN'
+
+/**
+ * Circuit breaker configuration.
+ *
+ * Protects downstream services from being overwhelmed by stopping
+ * requests when failure rates exceed thresholds.
+ *
+ * @public
+ */
+export interface CircuitBreakerConfig {
+  /**
+   * Enable circuit breaker.
+   * @defaultValue true
+   */
+  enabled?: boolean
+  /**
+   * Number of failures to trigger open state.
+   * @defaultValue 5
+   */
+  failureThreshold?: number
+  /**
+   * Number of successes to close from half-open.
+   * @defaultValue 2
+   */
+  successThreshold?: number
+  /**
+   * Time window in milliseconds for counting failures.
+   * @defaultValue 60000 (1 minute)
+   */
+  windowSize?: number
+  /**
+   * Time to wait before attempting half-open from open.
+   * @defaultValue 30000 (30 seconds)
+   */
+  openTimeout?: number
+  /**
+   * Custom error handler when circuit is open.
+   */
+  onOpen?: (target: string) => void
+  /**
+   * Custom handler when circuit transitions to half-open.
+   */
+  onHalfOpen?: (target: string) => void
+  /**
+   * Custom handler when circuit closes.
+   */
+  onClose?: (target: string) => void
+}
+
+/**
+ * Circuit breaker metrics.
+ *
+ * Provides visibility into the current state and health of a circuit breaker.
+ *
+ * @public
+ */
+export interface CircuitBreakerMetrics {
+  /**
+   * Current state of the circuit breaker.
+   */
+  state: CircuitBreakerState
+  /**
+   * Number of failures in the current window.
+   */
+  failures: number
+  /**
+   * Number of successes in the current window.
+   */
+  successes: number
+  /**
+   * Timestamp of the last failure.
+   */
+  lastFailureAt?: Date
+  /**
+   * Timestamp of the last success.
+   */
+  lastSuccessAt?: Date
+  /**
+   * Timestamp when the circuit opened.
+   */
+  openedAt?: Date
+}
+
+// ─────────────────────────────────────────────────────────────
 // Webhook Sending
 // ─────────────────────────────────────────────────────────────
 
@@ -347,6 +444,11 @@ export interface WebhookDispatcherConfig {
    * Custom User-Agent header for the outgoing request.
    */
   userAgent?: string
+  /**
+   * Circuit breaker configuration for protecting downstream services.
+   * @since v1.1
+   */
+  circuitBreaker?: CircuitBreakerConfig
 }
 
 /**
