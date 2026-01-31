@@ -18,18 +18,37 @@ last_updated: 2026-01-29
 - **Static Site Generation (SSG)**：支援完整靜態匯出、增量建構 (Incremental Builds) 與動態路由解析。
 - **Performance**：LRU 模板快取與 Hash-based Invalidation 機制。
 
+## 2. 快速開始
+
+### 安裝
+```bash
+bun add @gravito/prism
+```
+
+### 基本用法
+```typescript
+import { OrbitPrism } from '@gravito/prism';
+
+const prism = new OrbitPrism({
+  viewsDir: './views',
+  cache: true
+});
+
+const html = await prism.render('home', { title: 'Hello Gravito' });
+```
+
 ---
 
-## 2. 技術規格與架構設計
+## 3. 技術規格與架構設計
 
-### 2.1 核心元件
+### 3.1 核心元件
 
 Prism 由三個主要子系統組成：
 
 1.  **Template Engine** (`src/core/TemplateCompiler.ts`)
     -   負責解析 Blade 風格的模板語法 (`@if`, `@foreach`, `variable`)。
     -   實作 LRU 快取機制，將編譯後的函數緩存在記憶體中。
-    -   支援 `<x-component>` 語法與 Slot 機制。
+    -   支援 `<x-component>` 語法與 Slot 機制.
 2.  **Image Service** (`src/image/ImageService.ts`)
     -   負責生成最佳化的 `<img>` 與 `<picture>` 標籤。
     -   處理格式協商 (Format Negotiation)、藝術指導 (Art Direction) 與 Fetch Priority。
@@ -37,7 +56,7 @@ Prism 由三個主要子系統組成：
     -   爬蟲引擎，負責掃描路由並生成靜態 HTML。
     -   支援 Loopback Rendering（透過 `adapter.fetch` 請求自身）以確保 Middleware 正確執行。
 
-### 2.2 渲染流程 (Render Pipeline)
+### 3.2 渲染流程 (Render Pipeline)
 
 ```mermaid
 graph LR
@@ -57,7 +76,7 @@ graph LR
     HTML --> Response
 ```
 
-### 2.3 SSG 架構
+### 3.3 SSG 架構
 
 SSG 透過 `StaticSiteGenerator` 類別實作，其工作流如下：
 
@@ -69,22 +88,22 @@ SSG 透過 `StaticSiteGenerator` 類別實作，其工作流如下：
 
 ---
 
-## 3. 關鍵設計決策
+## 4. 關鍵設計決策
 
-### 3.1 Loopback Rendering for SSG
+### 4.1 Loopback Rendering for SSG
 **決策**：SSG 透過 HTTP 請求 (`adapter.fetch`) 訪問自身應用來獲取 HTML，而非直接呼叫渲染函數。
 **原因**：
 -   **完整性**：確保經過所有 Middleware (Auth, I18n, Data Fetching)。
 -   **一致性**：開發環境 (SSR) 與建構結果 (SSG) 保證一致。
 -   **解耦**：SSG 模組不需要知道具體的 Controller 邏輯，只需知道 URL。
 
-### 3.2 Blade-inspired Syntax
+### 4.2 Blade-inspired Syntax
 **決策**：採用類似 Laravel Blade 的語法 (`@section`, `@yield`)。
 **原因**：
 -   **可讀性**：比 EJS (`<% %>`) 更簡潔，且對非前端開發者更友善。
 -   **Layout Inheritance**：原生的繼承機制非常適合構建複雜的 Admin Dashboard 或文檔網站。
 
-### 3.3 圖片優化策略
+### 4.3 圖片優化策略
 **決策**：不直接處理圖片壓縮（Runtime Image Processing），而是生成最佳化的 HTML 標籤。
 **原因**：
 -   **效能**：Node.js/Bun 處理圖片極其消耗 CPU，不適合在 Edge 環境執行。
@@ -92,19 +111,17 @@ SSG 透過 `StaticSiteGenerator` 類別實作，其工作流如下：
 
 ---
 
-## 4. 風險分析與潛在問題
+## 5. 風險分析與潛在問題
 
-## 4. 風險分析與潛在問題
+### 5.1 XSS 風險
 
-### 4.1 XSS 風險
-
-**問題**：`{{ variable }}` 預設會跳脫 HTML，但 `{{{ variable }}}` (Raw Output) 不會。
+**問題**：`{ { variable } }` 預設會跳脫 HTML，但 `{ { { variable } } }` (Raw Output) 不會。
 
 **風險**：若開發者在 Raw Output 中輸出使用者輸入，可能導致 XSS 攻擊。
 
 **已實作的緩解措施 (v3.2.0)**：
 - **Sanitizer 工具類別** (`src/security/Sanitizer.ts`)：提供基於白名單的 HTML 淨化機制，自動移除危險標籤 (`<script>`, `<iframe>`) 與事件處理器 (`onclick`, `onerror`)。
-- **Template Helper**：新增 `{{sanitize}}` 輔助函數，可直接在模板中淨化使用者輸入。
+- **Template Helper**：新增 `{ { sanitize } }` 輔助函數，可直接在模板中淨化使用者輸入。
   ```handlebars
   <!-- 預設模式：允許安全的格式化標籤 -->
   {{sanitize html=userContent}}
@@ -118,15 +135,15 @@ SSG 透過 `StaticSiteGenerator` 類別實作，其工作流如下：
 - **程式化 API**：開發者可在 Controller 層使用 `sanitizeHtml()` 或 `Sanitizer` 類別進行預處理。
 
 **最佳實踐指引**：
-1. **避免 Raw Output**：除非處理信任的內容（如後端產生的 HTML），否則應使用 `{{ variable }}` 而非 `{{{ variable }}}`。
+1. **避免 Raw Output**：除非處理信任的內容（如後端產生的 HTML），否則應使用 `{ { variable } }` 而非 `{ { { variable } } }`。
 2. **淨化使用者輸入**：對於 Rich Text Editor 或 Markdown 轉換後的 HTML，應先使用 `sanitizeHtml()` 處理再渲染。
 3. **CSP (Content Security Policy)**：建議搭配 CSP Header 進一步限制 inline script 執行。
 
 **殘餘風險**：
-- `{{{ variable }}}` 仍可繞過淨化，開發者需自行避免在此語法中輸出使用者輸入。
+- `{ { { variable } } }` 仍可繞過淨化，開發者需自行避免在此語法中輸出使用者輸入。
 - Sanitizer 基於正則表達式解析，對於極端複雜或惡意構造的 HTML 可能存在邊界情況。建議搭配 CSP 作為防禦深度策略。
 
-### 4.2 SSG 記憶體消耗
+### 5.2 SSG 記憶體消耗
 
 **問題**：`StaticSiteGenerator` 使用陣列儲存待處理路由。
 
@@ -158,7 +175,7 @@ await ssg.export('./dist', 'https://example.com', [], {
 - 單一路由渲染結果過大 (如包含數 MB 的 Base64 圖片) 仍可能導致記憶體峰值。
 - 批次大小需根據實際路由複雜度與機器資源手動調整，無自動調適機制。
 
-### 4.3 增量建構的依賴追蹤
+### 5.3 增量建構的依賴追蹤
 
 **問題**：目前的增量建構主要依賴檔案存在與否或簡單的時間戳。
 
@@ -200,9 +217,9 @@ await ssg.export('./dist', 'https://example.com', [], {
 
 ---
 
-## 5. 效能與擴展性
+## 6. 效能與擴展性
 
-### 5.1 模板編譯快取機制
+### 6.1 模板編譯快取機制
 
 Prism 採用雙層 LRU 快取架構，將模板編譯與原始檔案讀取分離，最大化渲染效能。
 
@@ -233,7 +250,7 @@ Prism 採用雙層 LRU 快取架構，將模板編譯與原始檔案讀取分離
 
 ---
 
-### 5.2 圖片優化策略
+### 6.2 圖片優化策略
 
 `ImageService` 專注於生成高效能的 `<img>` 與 `<picture>` 標籤，而非執行實際圖片處理（將圖片壓縮交由 CDN 或 Build-time 工具）。
 
@@ -270,7 +287,7 @@ Prism 採用雙層 LRU 快取架構，將模板編譯與原始檔案讀取分離
 
 ---
 
-### 5.3 SSG 並發渲染與增量建構
+### 6.3 SSG 並發渲染與增量建構
 
 `StaticSiteGenerator` 使用 Loopback Rendering 模式，透過 HTTP 請求自身應用來獲取 HTML，確保完整性與一致性。
 
@@ -308,7 +325,7 @@ Prism 採用雙層 LRU 快取架構，將模板編譯與原始檔案讀取分離
 
 ---
 
-### 5.4 記憶體管理與限制
+### 6.4 記憶體管理與限制
 
 #### 快取容量上限
 
@@ -327,7 +344,7 @@ Prism 採用雙層 LRU 快取架構，將模板編譯與原始檔案讀取分離
 
 -   **問題**：大量路由 (10 萬級) 時，傳統陣列式儲存會導致記憶體用量飆升至 8GB+。
 -   **解決方案**：已實作 **Async Generator 批次處理機制** (Section 4.2)：
-    -   使用 `async* generateRouteBatches()` 以串流方式處理路由。
+    -   使用 `async* generateRouteBatches()` 以串流方式處理路由.
     -   可配置批次大小：`batchSize: 100`（預設）。
     -   支援記憶體監控：`logMemoryUsage: true`。
     -   可選 GC 觸發：批次間執行 `global.gc()`。
@@ -343,7 +360,7 @@ Prism 採用雙層 LRU 快取架構，將模板編譯與原始檔案讀取分離
 
 ---
 
-### 5.5 效能特性與基準測試
+### 6.5 效能特性與基準測試
 
 #### 模板渲染速度
 
@@ -391,7 +408,7 @@ Prism 採用雙層 LRU 快取架構，將模板編譯與原始檔案讀取分離
 
 ---
 
-### 5.6 效能調優指南
+### 6.6 效能調優指南
 
 #### 何時調整快取大小
 
@@ -434,7 +451,16 @@ Prism 採用雙層 LRU 快取架構，將模板編譯與原始檔案讀取分離
 
 ---
 
-## 6. 後續優化建議
+## 7. API 參考
+
+### OrbitPrism
+- `constructor(options: PrismOptions)`
+- `render(name: string, data: Record<string, any>): Promise<string>`
+
+### StaticSiteGenerator
+- `export(outDir: string, baseUrl: string, routes: string[]): Promise<void>`
+
+## 8. 後續優化建議
 
 1.  **Hydration 支援 (Island Architecture)** (Priority: High)
     -   引入類似 Astro 的 Island 架構，允許在靜態 HTML 中嵌入互動式 React/Vue 組件 (`<x-react-component client:load />`)。
