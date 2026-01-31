@@ -16,6 +16,7 @@ import type {
   ShouldRetry,
 } from './types'
 import type { ChannelMiddleware } from './types/middleware'
+import { createHookEmitter, type HookEmitter } from './utils/hookEmitter'
 import { isRetryableError, withRetry } from './utils/retry'
 import { deepSerialize } from './utils/serialization'
 
@@ -49,7 +50,14 @@ export class NotificationManager {
       }
     | undefined
 
-  constructor(private core: PlanetCore) {}
+  /**
+   * 型別安全的 hook emitter
+   */
+  private hookEmitter: HookEmitter
+
+  constructor(private core: PlanetCore) {
+    this.hookEmitter = createHookEmitter(core)
+  }
 
   private metrics?: NotificationMetricsCollector
 
@@ -139,8 +147,7 @@ export class NotificationManager {
     const channels = notification.via(notifiable)
     const startTime = Date.now()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (this.core.hooks as any).emit('notification:sending', {
+    await this.hookEmitter.emit('notification:sending', {
       notification,
       notifiable,
       channels,
@@ -148,8 +155,7 @@ export class NotificationManager {
 
     // Check whether it should be queued.
     if (notification.shouldQueue() && this.queueManager) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (this.core.hooks as any).emit('notification:queued', {
+      await this.hookEmitter.emit('notification:queued', {
         notification,
         notifiable,
         channels,
@@ -189,8 +195,7 @@ export class NotificationManager {
     const results = await this.sendNow(notifiable, notification, channels, options)
     const totalDuration = Date.now() - startTime
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (this.core.hooks as any).emit('notification:sent', {
+    await this.hookEmitter.emit('notification:sent', {
       notification,
       notifiable,
       results,
@@ -235,8 +240,7 @@ export class NotificationManager {
     const startTime = Date.now()
     const results: NotificationResult[] = []
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (this.core.hooks as any).emit('notification:batch:start', {
+    await this.hookEmitter.emit('notification:batch:start', {
       notification,
       count: notifiables.length,
     })
@@ -252,8 +256,7 @@ export class NotificationManager {
     const duration = Date.now() - startTime
     const successCount = results.filter((r) => r.allSuccess).length
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (this.core.hooks as any).emit('notification:batch:complete', {
+    await this.hookEmitter.emit('notification:batch:complete', {
       notification,
       total: notifiables.length,
       success: successCount,
@@ -428,8 +431,7 @@ export class NotificationManager {
                   `retrying (${attempt}/${retry.maxAttempts}) in ${delay}ms`,
                 error
               )
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              ;(this.core.hooks as any).emit('notification:channel:retry', {
+              this.hookEmitter.emit('notification:channel:retry', {
                 notification,
                 notifiable,
                 channel: channelName,
@@ -465,8 +467,7 @@ export class NotificationManager {
       const duration = Date.now() - startTime
       const err = error instanceof Error ? error : new Error(String(error))
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (this.core.hooks as any).emit('notification:channel:failed', {
+      await this.hookEmitter.emit('notification:channel:failed', {
         notification,
         notifiable,
         channel: channelName,
@@ -505,8 +506,7 @@ export class NotificationManager {
     notifiable: Notifiable,
     channelName: string
   ): Promise<void> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (this.core.hooks as any).emit('notification:channel:sending', {
+    await this.hookEmitter.emit('notification:channel:sending', {
       notification,
       notifiable,
       channel: channelName,
@@ -522,8 +522,7 @@ export class NotificationManager {
     await executeWithMiddleware()
     const duration = 0 // Approximate for inner call, total calculated in wrapper
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (this.core.hooks as any).emit('notification:channel:sent', {
+    await this.hookEmitter.emit('notification:channel:sent', {
       notification,
       notifiable,
       channel: channelName,

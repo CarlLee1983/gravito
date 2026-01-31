@@ -23,7 +23,7 @@ export type {
   ChannelRateLimitConfig,
   RateLimitConfig,
 } from './middleware/RateLimitMiddleware'
-export { RateLimitMiddleware, MemoryStore } from './middleware/RateLimitMiddleware'
+export { MemoryStore, RateLimitMiddleware } from './middleware/RateLimitMiddleware'
 export type { ShouldQueue } from './Notification'
 export { Notification } from './Notification'
 export { NotificationManager } from './NotificationManager'
@@ -54,8 +54,11 @@ export type {
   SlackMessage,
   SmsMessage,
 } from './types'
+// Hooks Types
+export type { FlareHookEvent, FlareHookPayloads, FlareHooks } from './types/hooks'
 // Middleware
 export type { ChannelMiddleware } from './types/middleware'
+export { createHookEmitter, type HookEmitter } from './utils/hookEmitter'
 // Lazy Loading & Serialization Utilities
 export { LazyNotification } from './utils/LazyNotification'
 export { deepDeserialize, deepSerialize } from './utils/serialization'
