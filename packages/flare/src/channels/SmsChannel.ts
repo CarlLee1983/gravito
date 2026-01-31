@@ -102,7 +102,7 @@ export class SmsChannel implements NotificationChannel {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
         body: new URLSearchParams({
-          From: this.config.from || '',
+          From: message.from || this.config.from || '',
           To: message.to,
           Body: message.message,
         }),
