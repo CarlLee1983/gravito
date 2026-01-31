@@ -3,6 +3,11 @@ import type { Notifiable, NotificationChannel } from '../types'
 import { TimeoutChannel } from './TimeoutChannel'
 
 /**
+ * 預設 timeout 時間（毫秒）
+ */
+const DEFAULT_TIMEOUT_MS = 30_000 // 30 秒
+
+/**
  * Slack channel configuration.
  */
 export interface SlackChannelConfig {
@@ -57,8 +62,8 @@ export class SlackChannel implements NotificationChannel {
       },
     }
 
-    // 使用 TimeoutChannel 包裝，預設 30 秒
-    const timeout = this.config.timeout ?? 30000
+    // 使用 TimeoutChannel 包裝
+    const timeout = this.config.timeout ?? DEFAULT_TIMEOUT_MS
     this.timeoutChannel = new TimeoutChannel(innerChannel, {
       timeout,
       onTimeout: this.config.onTimeout,

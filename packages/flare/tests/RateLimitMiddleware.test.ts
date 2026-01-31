@@ -1,5 +1,5 @@
 import { describe, expect, it, jest } from 'bun:test'
-import { RateLimitMiddleware } from '../src/middleware/RateLimitMiddleware'
+import { RateLimitMiddleware, MemoryStore } from '../src/middleware/RateLimitMiddleware'
 import { Notification } from '../src/Notification'
 import type { Notifiable } from '../src/types'
 
@@ -347,6 +347,171 @@ describe('RateLimitMiddleware', () => {
       }
 
       expect(success).toBe(true)
+    })
+  })
+
+  describe('MemoryStore', () => {
+    // 我們需要測試 MemoryStore 的內部行為
+    // 由於 MemoryStore 是 internal class，我們通過 middleware 間接測試
+
+    it('MemoryStore.get() 應該返回存在的值', async () => {
+      // 使用 reflection 存取內部 MemoryStore
+      const middleware = new RateLimitMiddleware({
+        email: { maxPerSecond: 10 },
+      }) as any
+
+      const store = middleware.store
+
+      await store.put('test-key', 'test-value', 60)
+      const value = await store.get('test-key')
+
+      expect(value).toBe('test-value')
+    })
+
+    it('MemoryStore.get() 應該在 key 不存在時返回 null', async () => {
+      const middleware = new RateLimitMiddleware({
+        email: { maxPerSecond: 10 },
+      }) as any
+
+      const store = middleware.store
+
+      const value = await store.get('non-existent-key')
+      expect(value).toBeNull()
+    })
+
+    it('MemoryStore.get() 應該在項目過期時返回 null', async () => {
+      const middleware = new RateLimitMiddleware({
+        email: { maxPerSecond: 10 },
+      }) as any
+
+      const store = middleware.store
+
+      // 設定 TTL 為 0.1 秒
+      await store.put('expiring-key', 'expiring-value', 0.1)
+
+      // 立即讀取應該成功
+      const valueBefore = await store.get('expiring-key')
+      expect(valueBefore).toBe('expiring-value')
+
+      // 等待過期
+      await new Promise((resolve) => setTimeout(resolve, 150))
+
+      // 過期後應該返回 null
+      const valueAfter = await store.get('expiring-key')
+      expect(valueAfter).toBeNull()
+    })
+
+    it('MemoryStore.put() 應該儲存值', async () => {
+      const middleware = new RateLimitMiddleware({
+        email: { maxPerSecond: 10 },
+      }) as any
+
+      const store = middleware.store
+
+      await store.put('key1', { data: 'complex-value' }, 60)
+      const value = await store.get('key1')
+
+      expect(value).toEqual({ data: 'complex-value' })
+    })
+
+    it('MemoryStore.put() 應該覆蓋已存在的 key', async () => {
+      const middleware = new RateLimitMiddleware({
+        email: { maxPerSecond: 10 },
+      }) as any
+
+      const store = middleware.store
+
+      await store.put('key1', 'value1', 60)
+      await store.put('key1', 'value2', 60)
+
+      const value = await store.get('key1')
+      expect(value).toBe('value2')
+    })
+
+    it('MemoryStore.forget() 應該刪除 key', async () => {
+      const middleware = new RateLimitMiddleware({
+        email: { maxPerSecond: 10 },
+      }) as any
+
+      const store = middleware.store
+
+      await store.put('key-to-delete', 'value', 60)
+      await store.forget('key-to-delete')
+
+      const value = await store.get('key-to-delete')
+      expect(value).toBeNull()
+    })
+
+    it('MemoryStore.forget() 在 key 不存在時應該安全地不執行任何操作', async () => {
+      const middleware = new RateLimitMiddleware({
+        email: { maxPerSecond: 10 },
+      }) as any
+
+      const store = middleware.store
+
+      // 不應該拋出錯誤
+      await expect(store.forget('non-existent-key')).resolves.toBeUndefined()
+    })
+
+    it('MemoryStore 應該定期清理過期項目', async () => {
+      // 創建一個清理間隔較短的 MemoryStore（100ms）
+      const store = new MemoryStore(100)
+
+      // 設定多個短 TTL 的項目
+      await store.put('expire1', 'value1', 0.1)
+      await store.put('expire2', 'value2', 0.1)
+      await store.put('expire3', 'value3', 0.1)
+
+      // 等待清理週期（100ms 間隔 + 過期時間 100ms + 緩衝）
+      await new Promise((resolve) => setTimeout(resolve, 250))
+
+      // 檢查快取大小（通過反射存取內部 cache）
+      const cacheSize = (store as any).cache.size
+      expect(cacheSize).toBe(0)
+
+      // 清理資源
+      store.destroy()
+    })
+
+    it('MemoryStore 清理不應該影響未過期的項目', async () => {
+      // 創建一個清理間隔較短的 MemoryStore（100ms）
+      const store = new MemoryStore(100)
+
+      // 設定一個長 TTL 的項目和一個短 TTL 的項目
+      await store.put('long-lived', 'value-long', 10)
+      await store.put('short-lived', 'value-short', 0.1)
+
+      // 等待清理週期（100ms 間隔 + 過期時間 100ms + 緩衝）
+      await new Promise((resolve) => setTimeout(resolve, 250))
+
+      // 長 TTL 的項目應該還存在
+      const longValue = await store.get('long-lived')
+      expect(longValue).toBe('value-long')
+
+      // 短 TTL 的項目應該被清理
+      const shortValue = await store.get('short-lived')
+      expect(shortValue).toBeNull()
+
+      // 清理資源
+      store.destroy()
+    })
+
+    it('MemoryStore.destroy() 應該清理所有資源', async () => {
+      const store = new MemoryStore(100)
+
+      await store.put('key1', 'value1', 60)
+      await store.put('key2', 'value2', 60)
+
+      // 呼叫 destroy
+      store.destroy()
+
+      // 所有項目應該被清除
+      const cacheSize = (store as any).cache.size
+      expect(cacheSize).toBe(0)
+
+      // cleanup interval 應該被停止
+      const cleanupInterval = (store as any).cleanupInterval
+      expect(cleanupInterval).toBeUndefined()
     })
   })
 

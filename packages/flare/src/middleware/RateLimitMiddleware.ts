@@ -13,6 +13,17 @@ import type { ChannelMiddleware } from '../types/middleware'
 import { TokenBucket } from '../utils/TokenBucket'
 
 /**
+ * 時間常數（秒）
+ */
+const SECONDS_PER_MINUTE = 60
+const SECONDS_PER_HOUR = 3_600
+
+/**
+ * MemoryStore 清理間隔（毫秒）
+ */
+const DEFAULT_CLEANUP_INTERVAL_MS = 60_000 // 1 分鐘
+
+/**
  * Rate limit configuration for a specific channel.
  *
  * 通道限流配置，支援多個時間窗口的限流。
@@ -70,10 +81,23 @@ export interface CacheStore {
  * 簡單的記憶體快取實作，用於單機環境。
  * 生產環境建議使用 Redis 等分散式快取。
  *
- * @internal
+ * @public
  */
-class MemoryStore implements CacheStore {
+export class MemoryStore implements CacheStore {
   private cache = new Map<string, { value: any; expiry: number }>()
+  private cleanupInterval?: NodeJS.Timeout
+
+  constructor(cleanupIntervalMs = DEFAULT_CLEANUP_INTERVAL_MS) {
+    // 定期清理過期項目
+    this.cleanupInterval = setInterval(() => {
+      const now = Date.now()
+      for (const [key, item] of this.cache.entries()) {
+        if (now > item.expiry) {
+          this.cache.delete(key)
+        }
+      }
+    }, cleanupIntervalMs)
+  }
 
   async get<T>(key: string): Promise<T | null> {
     const item = this.cache.get(key)
@@ -98,6 +122,17 @@ class MemoryStore implements CacheStore {
 
   async forget(key: string): Promise<void> {
     this.cache.delete(key)
+  }
+
+  /**
+   * 清理所有資源，停止清理計時器
+   */
+  destroy(): void {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval)
+      this.cleanupInterval = undefined
+    }
+    this.cache.clear()
   }
 }
 
@@ -186,14 +221,20 @@ export class RateLimitMiddleware implements ChannelMiddleware {
 
       if (limits.maxPerMinute) {
         const key = `${channel}:minute`
-        // 每分鐘 = 每秒補充 rate/60
-        this.buckets.set(key, new TokenBucket(limits.maxPerMinute, limits.maxPerMinute / 60))
+        // 每分鐘 = 每秒補充 rate/SECONDS_PER_MINUTE
+        this.buckets.set(
+          key,
+          new TokenBucket(limits.maxPerMinute, limits.maxPerMinute / SECONDS_PER_MINUTE)
+        )
       }
 
       if (limits.maxPerHour) {
         const key = `${channel}:hour`
-        // 每小時 = 每秒補充 rate/3600
-        this.buckets.set(key, new TokenBucket(limits.maxPerHour, limits.maxPerHour / 3600))
+        // 每小時 = 每秒補充 rate/SECONDS_PER_HOUR
+        this.buckets.set(
+          key,
+          new TokenBucket(limits.maxPerHour, limits.maxPerHour / SECONDS_PER_HOUR)
+        )
       }
     }
   }
@@ -313,7 +354,7 @@ export class RateLimitMiddleware implements ChannelMiddleware {
       const key = `${channel}:minute`
       this.buckets.set(
         key,
-        new TokenBucket(channelConfig.maxPerMinute, channelConfig.maxPerMinute / 60)
+        new TokenBucket(channelConfig.maxPerMinute, channelConfig.maxPerMinute / SECONDS_PER_MINUTE)
       )
     }
 
@@ -321,7 +362,7 @@ export class RateLimitMiddleware implements ChannelMiddleware {
       const key = `${channel}:hour`
       this.buckets.set(
         key,
-        new TokenBucket(channelConfig.maxPerHour, channelConfig.maxPerHour / 3600)
+        new TokenBucket(channelConfig.maxPerHour, channelConfig.maxPerHour / SECONDS_PER_HOUR)
       )
     }
   }

@@ -23,7 +23,7 @@ export type {
   ChannelRateLimitConfig,
   RateLimitConfig,
 } from './middleware/RateLimitMiddleware'
-export { RateLimitMiddleware } from './middleware/RateLimitMiddleware'
+export { RateLimitMiddleware, MemoryStore } from './middleware/RateLimitMiddleware'
 export type { ShouldQueue } from './Notification'
 export { Notification } from './Notification'
 export { NotificationManager } from './NotificationManager'
