@@ -57,7 +57,8 @@ export type {
 // Hooks Types
 export type { FlareHookEvent, FlareHookPayloads, FlareHooks } from './types/hooks'
 // Middleware
-export type { ChannelMiddleware } from './types/middleware'
+export type { ChannelMiddleware, MiddlewarePriorityValue } from './types/middleware'
+export { MiddlewarePriority } from './types/middleware'
 export { createHookEmitter, type HookEmitter } from './utils/hookEmitter'
 // Lazy Loading & Serialization Utilities
 export { LazyNotification } from './utils/LazyNotification'

@@ -15,6 +15,48 @@ import type { Notification } from '../Notification'
 import type { Notifiable } from '../types'
 
 /**
+ * 中介層優先級常數
+ *
+ * 提供預定義的優先級值，用於控制中介層的執行順序。
+ * 優先級越高（數字越大）越先執行。
+ *
+ * @example
+ * ```typescript
+ * const securityMiddleware: ChannelMiddleware = {
+ *   name: 'security',
+ *   priority: MiddlewarePriority.SECURITY, // 最高優先級，最先執行
+ *   async handle(notification, notifiable, channel, next) {
+ *     // 安全檢查...
+ *     await next()
+ *   }
+ * }
+ * ```
+ *
+ * @public
+ */
+export const MiddlewarePriority = {
+  /** 最高優先級：安全檢查 (100) */
+  SECURITY: 100,
+  /** 高優先級：限流 (80) */
+  RATE_LIMIT: 80,
+  /** 中等優先級：驗證 (50) */
+  VALIDATION: 50,
+  /** 預設優先級 (0) */
+  DEFAULT: 0,
+  /** 低優先級：日誌記錄 (-50) */
+  LOGGING: -50,
+  /** 最低優先級：監控 (-100) */
+  MONITORING: -100,
+} as const
+
+/**
+ * 中介層優先級值型別
+ *
+ * @public
+ */
+export type MiddlewarePriorityValue = (typeof MiddlewarePriority)[keyof typeof MiddlewarePriority]
+
+/**
  * Channel middleware interface.
  *
  * 中介層提供一個統一的擴展機制，允許在通知發送到特定通道時執行額外的邏輯。
@@ -48,6 +90,50 @@ export interface ChannelMiddleware {
    * 中介層名稱，用於除錯和識別。
    */
   name: string
+
+  /**
+   * Middleware priority (optional, default: 0).
+   *
+   * 中介層優先級，數字越大越先執行。
+   * 預設為 0。相同優先級的中介層按照註冊順序執行。
+   *
+   * @default 0
+   *
+   * @example
+   * ```typescript
+   * // 安全檢查應該最先執行
+   * const securityMiddleware: ChannelMiddleware = {
+   *   name: 'security',
+   *   priority: MiddlewarePriority.SECURITY, // 100
+   *   async handle(notification, notifiable, channel, next) {
+   *     // 檢查權限...
+   *     await next()
+   *   }
+   * }
+   *
+   * // 限流應該在安全檢查之後
+   * const rateLimitMiddleware: ChannelMiddleware = {
+   *   name: 'rate-limit',
+   *   priority: MiddlewarePriority.RATE_LIMIT, // 80
+   *   async handle(notification, notifiable, channel, next) {
+   *     // 檢查限流...
+   *     await next()
+   *   }
+   * }
+   *
+   * // 日誌記錄應該最後執行
+   * const loggingMiddleware: ChannelMiddleware = {
+   *   name: 'logging',
+   *   priority: MiddlewarePriority.LOGGING, // -50
+   *   async handle(notification, notifiable, channel, next) {
+   *     console.log('Sending...')
+   *     await next()
+   *     console.log('Sent!')
+   *   }
+   * }
+   * ```
+   */
+  priority?: number
 
   /**
    * Handle the notification before it's sent to the channel.

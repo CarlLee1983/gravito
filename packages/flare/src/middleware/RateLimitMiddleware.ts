@@ -9,7 +9,7 @@
 
 import type { Notification } from '../Notification'
 import type { Notifiable } from '../types'
-import type { ChannelMiddleware } from '../types/middleware'
+import { type ChannelMiddleware, MiddlewarePriority } from '../types/middleware'
 import { TokenBucket } from '../utils/TokenBucket'
 
 /**
@@ -166,6 +166,12 @@ export class RateLimitMiddleware implements ChannelMiddleware {
    * Middleware name.
    */
   readonly name = 'rate-limit'
+
+  /**
+   * Middleware priority (high priority, executes early in the chain).
+   * 中介層優先級（高優先級，在鏈中較早執行）
+   */
+  readonly priority = MiddlewarePriority.RATE_LIMIT
 
   /**
    * Token buckets for each channel and time window.

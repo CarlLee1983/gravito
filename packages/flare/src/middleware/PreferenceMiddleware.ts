@@ -9,7 +9,7 @@
 
 import type { Notification } from '../Notification'
 import type { Notifiable, NotificationPreference } from '../types'
-import type { ChannelMiddleware } from '../types/middleware'
+import { type ChannelMiddleware, MiddlewarePriority } from '../types/middleware'
 
 /**
  * User preference middleware for filtering notification channels.
@@ -42,6 +42,12 @@ export class PreferenceMiddleware implements ChannelMiddleware {
    * Middleware name.
    */
   readonly name = 'preference'
+
+  /**
+   * Middleware priority (medium priority for validation).
+   * 中介層優先級（中等優先級，用於驗證）
+   */
+  readonly priority = MiddlewarePriority.VALIDATION
 
   /**
    * Create a new PreferenceMiddleware instance.

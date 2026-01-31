@@ -37,6 +37,11 @@ export class NotificationManager {
   private middlewares: ChannelMiddleware[] = []
 
   /**
+   * 是否需要重新排序中介層
+   */
+  private middlewaresDirty = false
+
+  /**
    * Queue manager (optional, injected by `orbit-queue`).
    */
   private queueManager?:
@@ -114,6 +119,7 @@ export class NotificationManager {
    */
   use(middleware: ChannelMiddleware): void {
     this.middlewares.push(middleware)
+    this.middlewaresDirty = true
   }
 
   /**
@@ -531,6 +537,33 @@ export class NotificationManager {
   }
 
   /**
+   * 取得已排序的中介層列表（Lazy sorting）
+   *
+   * 使用 lazy evaluation 策略：只在需要時排序，避免每次 use() 都重新排序。
+   * 排序規則：
+   * 1. 優先級高的（數字大）先執行
+   * 2. 同優先級維持註冊順序（stable sort）
+   *
+   * @returns 排序後的中介層列表
+   * @private
+   */
+  private getSortedMiddlewares(): ChannelMiddleware[] {
+    if (!this.middlewaresDirty) {
+      return this.middlewares
+    }
+
+    // 按優先級降序排序（同優先級維持原順序）
+    this.middlewares.sort((a, b) => {
+      const priorityA = a.priority ?? 0
+      const priorityB = b.priority ?? 0
+      return priorityB - priorityA // 降序：高優先級先執行
+    })
+
+    this.middlewaresDirty = false
+    return this.middlewares
+  }
+
+  /**
    * Execute middleware chain recursively.
    *
    * @param index - Current middleware index
@@ -547,14 +580,16 @@ export class NotificationManager {
     channelName: string,
     finalHandler: () => Promise<void>
   ): Promise<void> {
+    const sortedMiddlewares = this.getSortedMiddlewares()
+
     // If we've executed all middleware, run the final handler
-    if (index >= this.middlewares.length) {
+    if (index >= sortedMiddlewares.length) {
       await finalHandler()
       return
     }
 
     // Get current middleware
-    const middleware = this.middlewares[index]
+    const middleware = sortedMiddlewares[index]
 
     // Execute middleware with next() function
     await middleware.handle(notification, notifiable, channelName, async () => {
