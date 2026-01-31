@@ -158,6 +158,16 @@ export interface ConsumerOptions {
    * @default false
    */
   debug?: boolean
+
+  /**
+   * 最大處理請求數量。
+   *
+   * 當 consumer 處理完這個數量的 job 後會自動停止（觸發 max_requests_reached 事件）。
+   * 適用於需要定期重啟 worker 的場景（避免記憶體累積、載入最新程式碼等）。
+   *
+   * @default undefined (無限制)
+   */
+  maxRequests?: number
 }
 
 /**
@@ -185,11 +195,19 @@ export interface ConsumerOptions {
  * @emits job:failed_permanently - When a job fails all attempts. Payload: { job: Job, error: Error }
  */
 export class Consumer extends EventEmitter {
+  /**
+   * Group limiter 的存活時間（毫秒）。
+   * 超過此時間未使用的 group limiter 會被清理，避免記憶體洩漏。
+   */
+  private static readonly GROUP_LIMITER_TTL = 60000
+
   private running = false
   private stopRequested = false
   private workerId = `worker-${crypto.randomUUID()}`
   private heartbeatTimer: ReturnType<typeof setTimeout> | null = null
+  private cleanupTimer: ReturnType<typeof setTimeout> | null = null
   private groupLimiters = new Map<string, ReturnType<typeof pLimit>>()
+  private groupLimiterLastUsed = new Map<string, number>()
   private stats = {
     processed: 0,
     failed: 0,
@@ -265,6 +283,9 @@ export class Consumer extends EventEmitter {
         `Consumer started on [${this.options.queues.join(', ')}] with concurrency ${concurrency}`
       )
     }
+
+    // 啟動 group limiter 清理計時器
+    this.startCleanupTimer()
 
     // Main loop
     while (this.running && !this.stopRequested) {
@@ -385,6 +406,7 @@ export class Consumer extends EventEmitter {
 
     this.running = false
     this.stopHeartbeat()
+    this.stopCleanupTimer()
     if (this.options.monitor) {
       await this.publishLog('info', 'Consumer stopped')
     }
@@ -407,6 +429,9 @@ export class Consumer extends EventEmitter {
       this.groupLimiters.set(job.groupId, limiter)
     }
 
+    // 更新 group limiter 的最後使用時間
+    this.groupLimiterLastUsed.set(job.groupId, Date.now())
+
     if (limiter.pendingCount > 0) {
       this.log(`Job ${job.id} queued behind group ${job.groupId}`)
     }
@@ -419,6 +444,7 @@ export class Consumer extends EventEmitter {
     // Cleanup limiter if empty
     if (limiter.activeCount === 0 && limiter.pendingCount === 0) {
       this.groupLimiters.delete(job.groupId)
+      this.groupLimiterLastUsed.delete(job.groupId)
     }
   }
 
@@ -447,6 +473,19 @@ export class Consumer extends EventEmitter {
 
       if (this.options.monitor) {
         await this.publishLog('success', `Completed job: ${job.id}`, job.id)
+      }
+
+      // 檢查是否達到最大請求數量
+      if (this.options.maxRequests && this.stats.processed >= this.options.maxRequests) {
+        this.log(`Max requests reached: ${this.stats.processed}/${this.options.maxRequests}`)
+        this.stopRequested = true
+        this.emit('max_requests_reached', {
+          processed: this.stats.processed,
+          maxRequests: this.options.maxRequests,
+        })
+        if (this.options.monitor) {
+          await this.publishLog('info', `Max requests reached: ${this.stats.processed}`, job.id)
+        }
       }
     } catch (err: unknown) {
       const error = err as Error
@@ -549,6 +588,62 @@ export class Consumer extends EventEmitter {
     }
   }
 
+  /**
+   * 清理閒置的 group limiters。
+   *
+   * 定期檢查並移除超過 TTL 且沒有 active/pending jobs 的 group limiters，
+   * 避免記憶體洩漏。
+   */
+  private cleanupGroupLimiters(): void {
+    const now = Date.now()
+    const groupsToDelete: string[] = []
+
+    for (const [groupId, lastUsed] of this.groupLimiterLastUsed.entries()) {
+      const limiter = this.groupLimiters.get(groupId)
+      if (!limiter) {
+        // Limiter 已被刪除，清理追蹤記錄
+        groupsToDelete.push(groupId)
+        continue
+      }
+
+      // 檢查是否超過 TTL 且沒有 active/pending jobs
+      if (
+        now - lastUsed > Consumer.GROUP_LIMITER_TTL &&
+        limiter.activeCount === 0 &&
+        limiter.pendingCount === 0
+      ) {
+        this.groupLimiters.delete(groupId)
+        groupsToDelete.push(groupId)
+        this.log(`Cleaned up inactive group limiter: ${groupId}`)
+      }
+    }
+
+    // 批次刪除追蹤記錄
+    for (const groupId of groupsToDelete) {
+      this.groupLimiterLastUsed.delete(groupId)
+    }
+  }
+
+  /**
+   * 啟動 group limiter 清理計時器。
+   */
+  private startCleanupTimer(): void {
+    // 每 30 秒清理一次閒置的 group limiters
+    this.cleanupTimer = setInterval(() => {
+      this.cleanupGroupLimiters()
+    }, 30000)
+  }
+
+  /**
+   * 停止 group limiter 清理計時器。
+   */
+  private stopCleanupTimer(): void {
+    if (this.cleanupTimer) {
+      clearInterval(this.cleanupTimer)
+      this.cleanupTimer = null
+    }
+  }
+
   private async publishLog(level: string, message: string, jobId?: string) {
     try {
       const driver = this.queueManager.getDriver(this.connectionName)
@@ -582,6 +677,9 @@ export class Consumer extends EventEmitter {
   async stop(): Promise<void> {
     this.log('Stopping...')
     this.stopRequested = true
+
+    // 立即停止清理計時器
+    this.stopCleanupTimer()
 
     // Wait for current processing to finish
     while (this.running) {
