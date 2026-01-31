@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.6.0 (2026-01-31)
+
+### Minor Changes
+
+- **feat: 新增 routePattern 支援防止 metrics 高基數問題**
+  - 新增 `FastRequest.routePattern` 和 `GravitoRequest.routePattern` 屬性
+  - 更新 `FastContext` 和 `MinimalContext` 支援 routePattern 傳遞
+  - 修改 `AOTRouter` 追蹤並返回動態路由的 pattern
+  - 靜態路由的 routePattern 等於 path
+  - 動態路由的 routePattern 包含參數模式（如 `/users/:id`）
+
+### Patch Changes
+
+- **fix: 修復指標基數爆炸風險（CRITICAL）**
+  - AOTRouter 現在正確追蹤並返回路由模式
+  - Gravito.ts 在初始化 context 時傳遞 routePattern
+  - 完全防止動態路徑導致的 Prometheus 指標無限增長
+
 ## 1.3.0
 
 ### Minor Changes

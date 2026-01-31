@@ -111,7 +111,7 @@ export const defaultConfig: Required<MonitorConfig> = {
     readyPath: '/ready',
     livePath: '/live',
     timeout: 5000,
-    cacheTtl: 0,
+    cacheTtl: 10000, // 預設 10 秒快取，防止高頻 Probe 造成雪崩
   },
   metrics: {
     enabled: true,

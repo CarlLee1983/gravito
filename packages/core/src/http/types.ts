@@ -139,6 +139,21 @@ export interface GravitoRequest {
   /** Request path without query string */
   readonly path: string
 
+  /**
+   * Route pattern (e.g., /users/:id) for the matched route
+   *
+   * This provides the parameterized route pattern instead of the concrete path,
+   * which is critical for preventing high cardinality issues in metrics systems.
+   *
+   * @example
+   * ```typescript
+   * // For request: GET /users/123
+   * ctx.req.path          // => "/users/123"
+   * ctx.req.routePattern  // => "/users/:id"
+   * ```
+   */
+  readonly routePattern?: string
+
   // ─────────────────────────────────────────────
   // Parameter Access
   // ─────────────────────────────────────────────

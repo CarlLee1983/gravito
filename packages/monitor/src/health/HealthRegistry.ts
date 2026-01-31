@@ -23,6 +23,15 @@ const DEFAULTS = {
 }
 
 /**
+ * Cache statistics
+ */
+export interface CacheStats {
+  hits: number
+  misses: number
+  hitRate: number
+}
+
+/**
  * HealthRegistry manages all health checks
  */
 export class HealthRegistry {
@@ -32,6 +41,8 @@ export class HealthRegistry {
   private cacheExpiry = 0
   private timeout: number
   private cacheTtl: number
+  private cacheHits = 0
+  private cacheMisses = 0
 
   constructor(config: HealthConfig = {}) {
     this.timeout = config.timeout ?? DEFAULTS.timeout
@@ -103,8 +114,11 @@ export class HealthRegistry {
   async check(): Promise<HealthReport> {
     // Return cached report if valid
     if (this.cacheTtl > 0 && this.cachedReport && Date.now() < this.cacheExpiry) {
+      this.cacheHits++
       return this.cachedReport
     }
+
+    this.cacheMisses++
 
     const results = await Promise.all(
       Array.from(this.checks.entries()).map(([name, check]) => this.executeCheck(name, check))
@@ -169,5 +183,19 @@ export class HealthRegistry {
     }
 
     return { status: 'healthy' }
+  }
+
+  /**
+   * Get cache statistics
+   *
+   * Useful for monitoring cache effectiveness and tuning cacheTtl
+   */
+  getCacheStats(): CacheStats {
+    const total = this.cacheHits + this.cacheMisses
+    return {
+      hits: this.cacheHits,
+      misses: this.cacheMisses,
+      hitRate: total > 0 ? this.cacheHits / total : 0,
+    }
   }
 }

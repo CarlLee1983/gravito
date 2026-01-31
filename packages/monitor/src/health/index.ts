@@ -5,7 +5,7 @@
 import type { HealthCheckFn, HealthCheckResult } from '../config'
 
 // Re-export types from HealthRegistry
-export type { HealthReport } from './HealthRegistry'
+export type { CacheStats, HealthReport } from './HealthRegistry'
 
 /**
  * Create a database health check

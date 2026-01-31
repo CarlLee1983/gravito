@@ -109,9 +109,48 @@ export class MonitorOrbit implements GravitoOrbit {
       const metricsController = new MetricsController(this.metricsRegistry)
       router.get(metricsPath, (c) => metricsController.metrics(c))
       console.log(`[Monitor] Metrics endpoint: ${metricsPath}`)
+
+      // 如果 health 也啟用，註冊 health cache metrics
+      if (healthEnabled && this.healthRegistry) {
+        this.registerHealthCacheMetrics(this.metricsRegistry, this.healthRegistry)
+      }
     }
 
     console.log('[Monitor] Observability services initialized')
+  }
+
+  /**
+   * 註冊 health cache metrics
+   *
+   * 建立 metrics 來追蹤 health check cache 的效能
+   */
+  private registerHealthCacheMetrics(
+    metricsRegistry: MetricsRegistry,
+    healthRegistry: HealthRegistry
+  ): void {
+    // 使用 Gauge（而非 Counter）因為這些值可能重置
+    const cacheHitsGauge = metricsRegistry.gauge({
+      name: 'health_cache_hits_total',
+      help: 'Total number of health check cache hits',
+    })
+
+    const cacheMissesGauge = metricsRegistry.gauge({
+      name: 'health_cache_misses_total',
+      help: 'Total number of health check cache misses',
+    })
+
+    const cacheHitRateGauge = metricsRegistry.gauge({
+      name: 'health_cache_hit_rate',
+      help: 'Health check cache hit rate (0.0 to 1.0)',
+    })
+
+    // 儲存 gauge 引用供 MetricsController 使用
+    ;(metricsRegistry as any)._healthCacheMetrics = {
+      hits: cacheHitsGauge,
+      misses: cacheMissesGauge,
+      hitRate: cacheHitRateGauge,
+      registry: healthRegistry,
+    }
   }
 
   /**
