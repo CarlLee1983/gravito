@@ -81,6 +81,15 @@ export * from './HMRWatcher'
 export * from './I18nService'
 export * from './loader'
 export * from './loaders/ChainedLoader'
+export * from './loaders/CloudflareKVLoader'
+export * from './loaders/EdgeKVLoader'
 export * from './loaders/FileSystemLoader'
+export * from './loaders/MemoryLoader'
 export * from './loaders/RemoteLoader'
+// Loaders
 export * from './loaders/TranslationLoader'
+export * from './loaders/VercelKVLoader'
+
+// Runtime utilities
+export * from './runtime/detector'
+export * from './runtime/path-utils'

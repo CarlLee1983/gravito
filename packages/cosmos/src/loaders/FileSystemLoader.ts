@@ -2,11 +2,24 @@
  * @file packages/cosmos/src/loaders/FileSystemLoader.ts
  * @module @gravito/cosmos/loaders
  * @description 從檔案系統載入翻譯資源的實現
+ *
+ * ⚠️ **Node.js Only**
+ *
+ * 此載入器依賴 Node.js 的 fs 模組，無法在 Edge Runtime 使用
+ *
+ * Edge Runtime 替代方案:
+ * - MemoryLoader: 靜態翻譯
+ * - RemoteLoader: HTTP API
+ * - EdgeKVLoader: KV 儲存
+ *
+ * @since 3.1.0
+ * @platform node
  */
 
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { TranslationMap } from '../I18nService'
+import { detectRuntime } from '../runtime/detector'
 import type { LoaderConfig, TranslationLoader, TranslationLoaderChain } from './TranslationLoader'
 
 /**
@@ -61,8 +74,18 @@ export class FileSystemLoader implements TranslationLoaderChain {
    * 建立檔案系統載入器實例
    *
    * @param config - 載入器配置
+   * @throws {Error} 如果在 Edge Runtime 環境中使用
    */
   constructor(config: FileSystemLoaderConfig) {
+    // 運行時檢查
+    const runtime = detectRuntime()
+    if (runtime === 'edge') {
+      throw new Error(
+        '[FileSystemLoader] This loader requires Node.js and cannot run in Edge Runtime. ' +
+          'Use MemoryLoader, RemoteLoader, or EdgeKVLoader instead.'
+      )
+    }
+
     this.name = config.name || 'FileSystemLoader'
     this.baseDir = config.baseDir
     this.extension = config.extension || '.json'

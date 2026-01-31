@@ -2,11 +2,21 @@
  * @file packages/cosmos/src/HMRWatcher.ts
  * @module @gravito/cosmos/hmr
  * @description 翻譯檔案的熱重載 (Hot Module Replacement) 監視器
+ *
+ * ⚠️ **Node.js Only**
+ *
+ * HMR 功能依賴 Node.js 的 fs.watch，無法在 Edge Runtime 使用
+ *
+ * Edge Runtime 環境請使用 RemoteLoader 的 ETag 快取機制
+ *
+ * @since 3.1.0
+ * @platform node
  */
 
 import type { FSWatcher } from 'node:fs'
 import { watch } from 'node:fs'
 import { join } from 'node:path'
+import { detectRuntime } from './runtime/detector'
 
 /**
  * HMR 配置
@@ -117,6 +127,26 @@ export class HMRWatcher {
    * @param config - HMR 配置
    */
   constructor(config: HMRConfig) {
+    // 運行時檢查 - Edge 環境靜默失敗
+    const runtime = detectRuntime()
+    if (runtime === 'edge') {
+      if (config.verbose ?? true) {
+        console.warn(
+          '[HMRWatcher] HMR is not supported in Edge Runtime. ' +
+            'Consider using RemoteLoader with ETag caching instead.'
+        )
+      }
+      // 靜默處理，不拋出錯誤
+      this.config = {
+        enabled: false, // 強制停用
+        watchDirs: [],
+        debounce: 300,
+        extensions: ['.json'],
+        verbose: false,
+      }
+      return
+    }
+
     this.config = {
       enabled: config.enabled,
       watchDirs: config.watchDirs,
