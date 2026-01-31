@@ -44,6 +44,8 @@
 export type { DeadLetterEvent, DeadLetterQueue } from './dlq/DeadLetterQueue'
 // DLQ
 export { MemoryDeadLetterQueue } from './dlq/MemoryDeadLetterQueue'
+// Middleware
+export { createRequestBufferMiddleware, RequestBufferMiddleware } from './middleware'
 // Core
 export { OrbitEcho } from './OrbitEcho'
 export type { EchoLogEvent, EchoLogger } from './observability/logging'
@@ -81,12 +83,15 @@ export { WebhookReplayService } from './replay/WebhookReplayService'
 
 // Types
 export type {
+  // Middleware
+  BufferedRequest,
   // Config
   EchoConfig,
   EchoObservabilityConfig,
   // Replay
   ReplayOptions,
   ReplayResult,
+  RequestBufferConfig,
   RetryConfig,
   WebhookDeliveryResult,
   WebhookDispatcherConfig,

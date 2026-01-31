@@ -169,6 +169,60 @@ export interface WebhookEvent<T = unknown> {
 }
 
 // ─────────────────────────────────────────────────────────────
+// Request Buffering (Phase 1.1)
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Buffered request containing raw body before parsing.
+ *
+ * Prevents framework auto-parsing from breaking signature verification
+ * by storing the original request body before any middleware processes it.
+ *
+ * @public
+ */
+export interface BufferedRequest {
+  /**
+   * Original raw body as string or Buffer.
+   */
+  rawBody: string | Buffer
+  /**
+   * Cached parsed JSON payload (lazy parsing).
+   */
+  parsedBody?: unknown
+  /**
+   * Original headers.
+   */
+  headers: Record<string, string | string[] | undefined>
+  /**
+   * Timestamp when buffered.
+   */
+  bufferedAt: Date
+}
+
+/**
+ * Configuration for request buffering.
+ *
+ * @public
+ */
+export interface RequestBufferConfig {
+  /**
+   * Enable request buffering middleware.
+   * @defaultValue true
+   */
+  enabled?: boolean
+  /**
+   * Maximum body size to buffer (in bytes).
+   * @defaultValue 10485760 (10MB)
+   */
+  maxBodySize?: number
+  /**
+   * Skip buffering for specific content types.
+   * @defaultValue ['multipart/form-data', 'application/octet-stream']
+   */
+  skipContentTypes?: string[]
+}
+
+// ─────────────────────────────────────────────────────────────
 // Webhook Sending
 // ─────────────────────────────────────────────────────────────
 
@@ -478,4 +532,10 @@ export interface EchoConfig {
    * Observability settings.
    */
   observability?: EchoObservabilityConfig
+
+  /**
+   * Request buffer configuration for signature verification.
+   * @since v1.1
+   */
+  requestBuffer?: RequestBufferConfig
 }

@@ -1,4 +1,5 @@
 import type { GravitoOrbit, PlanetCore } from '@gravito/core'
+import { createRequestBufferMiddleware } from './middleware'
 import { WebhookReceiver } from './receive/WebhookReceiver'
 import { WebhookDispatcher } from './send/WebhookDispatcher'
 import type { EchoConfig } from './types'
@@ -99,6 +100,13 @@ export class OrbitEcho implements GravitoOrbit {
    * @throws Error if the core adapter is not initialized.
    */
   install(core: PlanetCore): void {
+    // Install request buffer middleware if enabled
+    if (this.echoConfig.requestBuffer?.enabled !== false) {
+      const bufferMiddleware = createRequestBufferMiddleware(this.echoConfig.requestBuffer)
+      core.adapter.use('*', bufferMiddleware)
+      core.logger.info('[OrbitEcho] Request buffer middleware installed')
+    }
+
     // Bind instances to container
     core.container.instance('echo', this)
     core.container.instance('echo.receiver', this.receiver)

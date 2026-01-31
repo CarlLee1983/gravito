@@ -6,6 +6,7 @@
  * @module @gravito/echo/receive
  */
 
+import type { GravitoContext } from '@gravito/core'
 import { ConsoleEchoLogger, type EchoLogger } from '../observability/logging'
 import {
   EchoMetrics,
@@ -24,6 +25,7 @@ import { StripeProvider } from '../providers/StripeProvider'
 import { TwilioProvider } from '../providers/TwilioProvider'
 import type { WebhookStore } from '../storage/WebhookStore'
 import type {
+  BufferedRequest,
   WebhookEvent,
   WebhookHandler,
   WebhookProvider,
@@ -227,8 +229,14 @@ export class WebhookReceiver {
   async handle(
     providerName: string,
     body: string | Buffer,
-    headers: Record<string, string | string[] | undefined>
+    headers: Record<string, string | string[] | undefined>,
+    context?: GravitoContext
   ): Promise<WebhookVerificationResult & { handled: boolean; eventId?: string }> {
+    // Prefer buffered body from middleware if available
+    const buffered = context?.get('bufferedRequest') as BufferedRequest | undefined
+    const actualBody = buffered?.rawBody ?? body
+    const actualHeaders = buffered?.headers ?? headers
+
     return this.tracer.withSpan('echo.receive_webhook', async (span) => {
       const startTime = performance.now()
       const labels: WebhookMetricLabels = { provider: providerName }
@@ -236,11 +244,13 @@ export class WebhookReceiver {
       span.setAttributes({
         'echo.provider': providerName,
         'echo.direction': 'incoming',
+        'echo.buffered': buffered !== undefined,
       })
 
       this.logger.debug('Webhook received', {
         component: 'receiver',
         provider: providerName,
+        buffered: buffered !== undefined,
       })
 
       try {
@@ -261,9 +271,9 @@ export class WebhookReceiver {
 
         const { provider, secret } = config
 
-        // Verify webhook
+        // Verify webhook using buffered body if available
         span.addEvent('verification_start')
-        const result = await provider.verify(body, headers, secret)
+        const result = await provider.verify(actualBody, actualHeaders, secret)
 
         if (!result.valid) {
           span.setStatus({ code: SpanStatusCode.ERROR, message: result.error })
@@ -307,9 +317,9 @@ export class WebhookReceiver {
             eventType: result.eventType ?? 'unknown',
             payload: result.payload,
             headers: Object.fromEntries(
-              Object.entries(headers).map(([k, v]) => [k, Array.isArray(v) ? v[0] : v])
+              Object.entries(actualHeaders).map(([k, v]) => [k, Array.isArray(v) ? v[0] : v])
             ),
-            rawBody: typeof body === 'string' ? body : body.toString('utf-8'),
+            rawBody: typeof actualBody === 'string' ? actualBody : actualBody.toString('utf-8'),
             receivedAt: new Date(),
             status: 'pending',
           })
@@ -320,8 +330,8 @@ export class WebhookReceiver {
           provider: providerName,
           type: result.eventType ?? 'unknown',
           payload: result.payload,
-          headers,
-          rawBody: typeof body === 'string' ? body : body.toString('utf-8'),
+          headers: actualHeaders,
+          rawBody: typeof actualBody === 'string' ? actualBody : actualBody.toString('utf-8'),
           receivedAt: new Date(),
           id: result.webhookId,
         }
