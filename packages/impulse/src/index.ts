@@ -1,24 +1,15 @@
 /**
  * @gravito/impulse
  *
- * A declarative request validation library similar to Laravel FormRequest.
+ * A declarative request validation library for the Gravito framework.
  *
- * Provides an elegant way to validate HTTP request data, separating validation logic from controllers.
- * Supports both Zod and Valibot, two mainstream TypeScript schema validation libraries.
- *
- * Core Features:
- * - **Declarative Validation**: Define validation rules using classes to improve code readability and maintainability.
- * - **Authorization Integration**: Handle authorization and validation logic within the same class.
- * - **Type Safety**: Full TypeScript type inference; validated data automatically obtains the correct type.
- * - **Custom Messages**: Support for field-level custom error messages and internationalization.
- * - **Blueprint**: Extract validation rules for frontend use, ensuring consistency between frontend and backend validation.
- * - **Performance Optimization**: Built-in multi-layer caching mechanisms significantly improve the performance of repeated validations.
+ * Impulse provides a type-safe way to validate HTTP request data, separating validation
+ * logic from controllers. It supports both Zod and Valibot for schema definition.
  *
  * @packageDocumentation
  *
  * @example
  * ```typescript
- * // Basic usage example
  * import { ZodFormRequest, validateRequest } from '@gravito/impulse'
  * import { z } from 'zod'
  *
@@ -53,6 +44,42 @@ export * from './core/FormRequestBase'
 export * from './core/FormRequestInstanceCache'
 export * from './core/MessageCache'
 export * from './core/SchemaCache'
+export * from './core/SchemaCompilationCache'
+
+/**
+ * Global management for Impulse internal state.
+ *
+ * Provides utilities to control caching behavior, which is essential for
+ * development environments where schemas might change frequently (HMR).
+ *
+ * @public
+ */
+export class Impulse {
+  /**
+   * Purges all internal validation and schema caches.
+   *
+   * Forces re-instantiation of FormRequests and re-compilation of schemas.
+   * Use this in HMR handlers to ensure code changes are reflected.
+   *
+   * @example
+   * ```typescript
+   * // In a Dev Server hook or HMR handler
+   * Impulse.clearAllCaches()
+   * ```
+   */
+  static clearAllCaches(): void {
+    // Import lazily to avoid circular dependencies and ensure all modules are loaded
+    const { FormRequestInstanceCache } = require('./core/FormRequestInstanceCache')
+    const { SchemaCache } = require('./core/SchemaCache')
+    const { SchemaCompilationCache } = require('./core/SchemaCompilationCache')
+    const { MessageCache } = require('./core/MessageCache')
+
+    FormRequestInstanceCache.clearCache()
+    SchemaCache.clearCache()
+    SchemaCompilationCache.clearCache()
+    MessageCache.clearCache()
+  }
+}
 // Export type utilities for advanced usage
 export * from './core/TypeUtils'
 export * from './core/ValibotFormRequest'

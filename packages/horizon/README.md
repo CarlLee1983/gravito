@@ -83,11 +83,30 @@ scheduler.exec('sync-storage', 'aws s3 sync ./local s3://bucket')
 - `monthly()`, `monthlyOn(date, 'HH:mm')`: Once per month.
 - `cron('expression')`: Custom 5-part cron expression.
 
-### Constraints & Constraints
+### Constraints & Execution Control
 - `timezone('Asia/Taipei')`: Set execution timezone (defaults to UTC).
-- `onOneServer(lockTtl?)`: Ensure only one instance of this task runs globally at a time.
+- `onOneServer(lockTtl?)`: Ensure only one instance of this task runs globally at a time (time-window lock).
+- `withoutOverlapping(ttl?)`: Prevent task from executing if previous instance is still running (execution lock).
 - `onNode(role)`: Only run this task if the current node's role matches.
 - `runInBackground()`: Don't wait for task completion in the main scheduler loop.
+
+#### Overlapping Control vs. OnOneServer
+
+- **`onOneServer()`**: Uses a **time-window lock** to prevent multiple servers from executing the same task in the same minute window. Lock key is based on `task:{name}:{timestamp_minute}`.
+- **`withoutOverlapping()`**: Uses an **execution lock** to prevent a task from running if the previous execution hasn't completed yet. Lock key is `task:running:{name}`.
+
+You can use both together for comprehensive protection:
+
+```typescript
+scheduler.task('heavy-sync', async () => {
+  // Long-running task (may take 5+ minutes)
+  await syncLargeDataset()
+})
+.everyMinute()
+.onOneServer()         // Prevent multi-server execution
+.withoutOverlapping()  // Prevent overlapping executions
+.timeout(600000)       // 10 minute timeout
+```
 
 ### Reliability & Lifecycle
 - `timeout(ms)`: Set maximum execution time (defaults to 1 hour).
@@ -125,6 +144,7 @@ Subscribe to hooks via `core.hooks` to build monitoring dashboards or alerts:
 | `scheduler:run:start` | `{ date }` | Scheduler evaluation started. |
 | `scheduler:run:complete` | `{ date, dueCount }` | Scheduler evaluation finished. |
 | `scheduler:task:start` | `{ name, startTime }` | Individual task started. |
+| `scheduler:task:skipped` | `{ name, reason, timestamp }` | Task was skipped (e.g., due to overlapping execution). |
 | `scheduler:task:retry` | `{ name, attempt, error }` | Task failed and is retrying. |
 | `scheduler:task:success` | `{ name, duration, attempts }` | Task finished successfully. |
 | `scheduler:task:failure` | `{ name, error, duration }` | Task failed after all retries. |

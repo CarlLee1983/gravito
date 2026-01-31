@@ -39,7 +39,9 @@ describe('PoolManager', () => {
   test('assigns missions to idle rockets or creates new ones', async () => {
     const docker = new FakeDocker()
     const repo = new InMemoryRocketRepository()
-    const pool = new PoolManager(docker as any, repo)
+    const pool = new PoolManager(docker as any, repo, undefined, undefined, {
+      exhaustionStrategy: 'dynamic',
+    })
 
     const mission = Mission.create({
       id: 'mission-2',

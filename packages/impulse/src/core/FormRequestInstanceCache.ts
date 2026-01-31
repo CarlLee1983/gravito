@@ -37,7 +37,7 @@ export class FormRequestInstanceCache {
   }
 
   /**
-   * Clear the cache (useful for testing).
+   * Clear the cache (useful for testing or hot reloading).
    * In production, the WeakMap will automatically clean up when constructors are GC'd.
    */
   static clearCache(): void {

@@ -50,3 +50,49 @@ export class RefurbishmentCompleted extends DomainEvent {
     super()
   }
 }
+
+/**
+ * Event emitted when the rocket pool is exhausted.
+ *
+ * @public
+ * @since 1.3.0
+ */
+export class PoolExhausted extends DomainEvent {
+  constructor(
+    public readonly totalRockets: number,
+    public readonly maxRockets: number,
+    public readonly queueLength: number
+  ) {
+    super()
+  }
+}
+
+/**
+ * Event emitted when a mission is queued due to pool exhaustion.
+ *
+ * @public
+ * @since 1.3.0
+ */
+export class MissionQueued extends DomainEvent {
+  constructor(
+    public readonly missionId: string,
+    public readonly queuePosition: number
+  ) {
+    super()
+  }
+}
+
+/**
+ * Event emitted when a queued mission times out.
+ *
+ * @public
+ * @since 1.3.0
+ */
+export class MissionQueueTimeout extends DomainEvent {
+  constructor(
+    public readonly missionId: string,
+    public readonly waitTimeMs: number
+  ) {
+    super()
+  }
+}

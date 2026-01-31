@@ -1,12 +1,12 @@
 ---
 title: Horizon Architecture 技術架構規格書
-version: 1.0.0
+version: 1.1.0
 status: Stable
 tier: C
-last_updated: 2026-01-29
+last_updated: 2026-01-31
 ---
 
-# 🌌 Horizon Architecture 技術架構規格書 (v1.0)
+# 🌌 Horizon Architecture 技術架構規格書 (v1.1)
 
 本文件詳述 `@gravito/horizon` 的內部架構、排程器 (Scheduler) 的設計模式以及分散式鎖定機制。
 
@@ -44,7 +44,7 @@ Horizon 是 Gravito 的任務排程核心，旨在解決在多伺服器環境下
 - **職責**：定義單一任務的屬性。
 - **位置**：`src/TaskSchedule.ts`
 - **特性**：
-  - **Constraints**: `onOneServer`, `onNode`, `timezone`。
+  - **Constraints**: `onOneServer`, `withoutOverlapping`, `onNode`, `timezone`。
   - **Reliability**: `retry`, `timeout`。
   - **Hooks**: `onSuccess`, `onFailure`。
 
@@ -61,10 +61,31 @@ Horizon 是 Gravito 的任務排程核心，旨在解決在多伺服器環境下
 ## 3. 技術規格與設計決策
 
 ### 3.1 分散式鎖 (Distributed Locking)
-為了防止多個 Worker 同時執行同一個排程任務：
-- **Lock Key**: `task:{name}:{timestamp_minute}`。
-- **TTL**: 預設 300 秒，或是任務預估執行時間。
-- **原子性**: 依賴底層 Storage (Redis `SET NX` 或 Cache Atomic Add) 保證互斥。
+
+Horizon 使用兩種鎖機制來確保任務正確執行：
+
+#### 3.1.1 時間窗口鎖 (Time-window Lock)
+用於 `onOneServer()` 功能，防止多個 Worker 在同一分鐘內執行同一個排程任務：
+- **Lock Key**: `task:{name}:{timestamp_minute}`
+- **TTL**: 預設 300 秒，或是任務預估執行時間
+- **原子性**: 依賴底層 Storage (Redis `SET NX` 或 Cache Atomic Add) 保證互斥
+- **釋放策略**: TTL 自動過期，不主動釋放（防止同一分鐘內重複執行）
+
+#### 3.1.2 執行鎖 (Execution Lock)
+用於 `withoutOverlapping()` 功能，防止任務在前次執行未完成時重複觸發：
+- **Lock Key**: `task:running:{name}`
+- **TTL**: 預設 3600 秒（1 小時），可自訂
+- **原子性**: 使用 `forceAcquire` 強制取得，確保任務開始時一定有鎖
+- **釋放策略**: 任務完成後主動釋放，失敗時也釋放
+- **容錯**: TTL 作為保底機制，防止鎖永久占用
+
+兩種鎖可以同時使用，提供全面的執行保護：
+```typescript
+scheduler.task('heavy-task', callback)
+  .everyMinute()
+  .onOneServer()         // 時間窗口鎖
+  .withoutOverlapping()  // 執行鎖
+```
 
 ### 3.2 節點角色 (Node Roles)
 在微服務架構中，我們可能不希望 API 節點執行重型 Cron Job。
@@ -94,11 +115,17 @@ Horizon 支援兩種執行模式：
 
 ## 5. 後續優化建議
 
-### 短期 (v1.1)
-1. **Sub-minute Scheduling**：支援秒級排程 (如每 10 秒)，需改變 Loop 機制與鎖策略。
-2. **Overlapping Control**：實作 `withoutOverlapping()`，在任務尚未結束前，即使下一分鐘到了也不執行。
+### ✅ 已完成 (v1.1)
+1. **Overlapping Control**：已實作 `withoutOverlapping()`，在任務尚未結束前，即使下一分鐘到了也不執行。
+   - 使用執行鎖 (`task:running:{name}`) 追蹤任務狀態
+   - 支援自訂 TTL，預設 3600 秒
+   - 任務完成後主動釋放鎖
+   - 新增 `scheduler:task:skipped` Hook 事件
 
-### 中期 (v1.2)
+### 短期 (v1.2)
+1. **Sub-minute Scheduling**：支援秒級排程 (如每 10 秒)，需改變 Loop 機制與鎖策略。
+
+### 中期 (v1.3)
 1. **Dashboard**：整合到 `Zenith` 控制台，顯示排程任務的下次執行時間與歷史結果。
 
 ### 長期 (v2.0)

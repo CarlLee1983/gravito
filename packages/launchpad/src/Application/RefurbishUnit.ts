@@ -1,4 +1,5 @@
-import type { IDockerAdapter } from '../Domain/Interfaces'
+import type { IDockerAdapter, RefurbishConfig } from '../Domain/Interfaces'
+import { DEFAULT_REFURBISH_CONFIG } from '../Domain/Interfaces'
 import type { Rocket } from '../Domain/Rocket'
 
 /**
@@ -12,36 +13,47 @@ import type { Rocket } from '../Domain/Rocket'
  * @since 3.0.0
  */
 export class RefurbishUnit {
-  constructor(private docker: IDockerAdapter) {}
+  private readonly config: RefurbishConfig
+
+  constructor(
+    private docker: IDockerAdapter,
+    config?: Partial<RefurbishConfig>
+  ) {
+    this.config = { ...DEFAULT_REFURBISH_CONFIG, ...config }
+  }
 
   /**
    * 執行火箭翻新邏輯
    */
   async refurbish(rocket: Rocket): Promise<void> {
-    console.log(`[RefurbishUnit] 正在翻新火箭: ${rocket.id} (容器: ${rocket.containerId})`)
+    console.log(
+      `[RefurbishUnit] 正在翻新火箭: ${rocket.id} ` +
+        `(策略: ${this.config.strategy}, 容器: ${rocket.containerId})`
+    )
 
     // 1. 進入狀態機的回收階段
     rocket.splashDown()
 
     try {
       // 2. 執行深度清理指令
-      // - 刪除 /app 目錄 (注入的代碼)
-      // - 殺掉所有除了 tail 以外的 bun 進程
-      // - 清理暫存檔
-      const cleanupCommands = ['sh', '-c', 'rm -rf /app/* && pkill -f bun || true && rm -rf /tmp/*']
+      const commands = this.config.cleanupCommands ?? []
+      const fullCommand = commands.join(' && ')
 
-      const result = await this.docker.executeCommand(rocket.containerId, cleanupCommands)
+      const result = await this.docker.executeCommand(rocket.containerId, ['sh', '-c', fullCommand])
 
       if (result.exitCode !== 0) {
         console.error(`[RefurbishUnit] 清理失敗: ${result.stderr}`)
-        // 這裡可以選擇將火箭標記為 DECOMMISSIONED
-        rocket.decommission()
-        return
+
+        if (this.config.failureAction === 'decommission') {
+          rocket.decommission()
+          return
+        }
+        // retry 策略在後續版本實現
       }
 
       // 3. 翻新完成，回歸池中
       rocket.finishRefurbishment()
-      console.log(`[RefurbishUnit] 火箭 ${rocket.id} 翻新完成，已進入 IDLE 狀態。`)
+      console.log(`[RefurbishUnit] 火箭 ${rocket.id} 翻新完成，已進入 IDLE 狀態`)
     } catch (error) {
       console.error(`[RefurbishUnit] 回收過程發生異常:`, error)
       rocket.decommission()
