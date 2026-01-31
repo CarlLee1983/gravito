@@ -77,6 +77,19 @@ export class StepExecutor {
    * @returns The result of the execution and the updated execution record.
    *
    * @throws {Error} If the step handler throws an unrecoverable error or times out.
+   *
+   * @example
+   * ```typescript
+   * const { result, execution } = await executor.execute(
+   *   stepDefinition,
+   *   currentContext,
+   *   currentExecution
+   * );
+   *
+   * if (!result.success) {
+   *   console.error(result.error);
+   * }
+   * ```
    */
   async execute<TInput, TData extends Record<string, any>>(
     step: StepDefinition<TInput, TData>,
@@ -192,6 +205,7 @@ export class StepExecutor {
    * @param timeout - Maximum time allowed for execution in milliseconds.
    * @returns The handler result or a suspension signal.
    * @throws {Error} If the timeout is reached before the handler completes.
+   * @private
    */
   private async executeWithTimeout<TInput, TData extends Record<string, any>>(
     handler: StepDefinition<TInput, TData>['handler'],
@@ -216,8 +230,9 @@ export class StepExecutor {
    * Pauses execution for a specified duration.
    *
    * @param ms - Milliseconds to sleep.
+   * @private
    */
-  private sleep(ms: number): Promise<void> {
+  private async sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms))
   }
 }

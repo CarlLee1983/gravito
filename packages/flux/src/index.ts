@@ -34,6 +34,25 @@ export { StateMachine } from './core/StateMachine'
 export { StepExecutor } from './core/StepExecutor'
 // Core
 export { FluxEngine } from './engine/FluxEngine'
+// Errors
+export {
+  cannotRemoveRoot,
+  cannotReplaceRoot,
+  emptyWorkflow,
+  FluxError,
+  FluxErrorCode,
+  invalidInput,
+  invalidJsonPointer,
+  invalidPathTraversal,
+  invalidStateTransition,
+  invalidStepIndex,
+  noRecoveryAction,
+  stepNotFound,
+  workflowDefinitionChanged,
+  workflowNameMismatch,
+  workflowNotFound,
+  workflowNotSuspended,
+} from './errors'
 // Logger
 export { FluxConsoleLogger, FluxSilentLogger } from './logger/FluxLogger'
 // Gravito Integration
@@ -47,9 +66,9 @@ export {
 export { BunSQLiteStorage, type BunSQLiteStorageOptions } from './storage/BunSQLiteStorage'
 // Storage
 export { MemoryStorage } from './storage/MemoryStorage'
+export { PostgreSQLStorage, type PostgreSQLStorageOptions } from './storage/PostgreSQLStorage'
 // Trace
 export { JsonFileTraceSink } from './trace/JsonFileTraceSink'
-
 // Types
 export type {
   // Config
@@ -78,6 +97,8 @@ export type {
   // Storage
   WorkflowStorage,
 } from './types'
+// Visualization
+export { MermaidGenerator, type MermaidOptions } from './visualization/MermaidGenerator'
 
 /**
  * Flux helper utilities for workflow control flow.

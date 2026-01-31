@@ -118,6 +118,8 @@ export interface StepDefinition<TInput = unknown, TData = Record<string, any>> {
   when?: (ctx: WorkflowContext<TInput, TData>) => boolean
   /** If true, the step is considered a side-effect that should not be re-run on replay. */
   commit?: boolean
+  /** If set, this step belongs to a parallel execution group with this ID. */
+  parallelGroup?: string
 }
 
 /**
@@ -340,7 +342,7 @@ export interface FluxTraceSink {
 /**
  * Global configuration for the Flux engine instance.
  */
-export interface FluxConfig {
+export interface FluxConfig<TData = Record<string, any>> {
   /** Persistence provider for workflow states. */
   storage?: WorkflowStorage
   /** Logger for internal engine operations. */
@@ -355,11 +357,19 @@ export interface FluxConfig {
   parallel?: boolean
   /** Lifecycle hooks for custom logic at specific execution points. */
   on?: {
-    stepStart?: (step: string, ctx: WorkflowContext) => void
-    stepComplete?: (step: string, ctx: WorkflowContext, result: StepResult) => void
-    stepError?: (step: string, ctx: WorkflowContext, error: Error) => void
-    workflowComplete?: (ctx: WorkflowContext) => void
-    workflowError?: (ctx: WorkflowContext, error: Error) => void
+    stepStart?: <TInput = unknown>(step: string, ctx: WorkflowContext<TInput, TData>) => void
+    stepComplete?: <TInput = unknown>(
+      step: string,
+      ctx: WorkflowContext<TInput, TData>,
+      result: StepResult
+    ) => void
+    stepError?: <TInput = unknown>(
+      step: string,
+      ctx: WorkflowContext<TInput, TData>,
+      error: Error
+    ) => void
+    workflowComplete?: <TInput = unknown>(ctx: WorkflowContext<TInput, TData>) => void
+    workflowError?: <TInput = unknown>(ctx: WorkflowContext<TInput, TData>, error: Error) => void
   }
 }
 
