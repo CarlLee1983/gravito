@@ -192,7 +192,7 @@ export class SchemaCompilationCache {
   }
 
   /**
-   * Clear the compilation cache (useful for testing).
+   * Clear the compilation cache (useful for testing or hot reloading).
    * In production, the WeakMap will automatically clean up when schemas are GC'd.
    */
   static clearCache(): void {
