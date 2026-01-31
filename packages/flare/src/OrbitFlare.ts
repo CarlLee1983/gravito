@@ -5,7 +5,8 @@ import { MailChannel } from './channels/MailChannel'
 import { SlackChannel } from './channels/SlackChannel'
 import { SmsChannel } from './channels/SmsChannel'
 import { NotificationManager } from './NotificationManager'
-import type { BroadcastService, DatabaseService, MailService, QueueService } from './types'
+import type { BroadcastService, DatabaseService, MailService, NotificationPreference, QueueService } from './types'
+import type { ChannelMiddleware } from './types/middleware'
 
 /**
  * Options for configuring OrbitFlare.
@@ -24,6 +25,12 @@ export interface OrbitFlareOptions {
   enableSms?: boolean
   /** Custom channel configuration records for flexible extension. */
   channels?: Record<string, unknown>
+  /** Channel middleware to apply to all notifications. */
+  middleware?: ChannelMiddleware[]
+  /** Custom notification preference provider. */
+  preferenceProvider?: NotificationPreference
+  /** Enable automatic preference filtering middleware (default: false). */
+  enablePreference?: boolean
 }
 
 /**
@@ -139,6 +146,9 @@ export class OrbitFlare implements GravitoOrbit {
       this.setupSmsChannel(core, manager)
     }
 
+    // Register middleware
+    this.setupMiddleware(core, manager)
+
     // Register into core container
     core.container.instance('notifications', manager)
 
@@ -236,6 +246,24 @@ export class OrbitFlare implements GravitoOrbit {
           await queue.push(job, queueName, connection, delay)
         },
       })
+    }
+  }
+
+  private setupMiddleware(core: PlanetCore, manager: NotificationManager): void {
+    // 註冊自定義中介層
+    if (this.options.middleware) {
+      for (const middleware of this.options.middleware) {
+        manager.use(middleware)
+      }
+    }
+
+    // 如果啟用偏好過濾，自動註冊 PreferenceMiddleware
+    if (this.options.enablePreference) {
+      // 動態導入 PreferenceMiddleware 以避免循環依賴
+      const { PreferenceMiddleware } = require('./middleware/PreferenceMiddleware')
+      const preferenceMiddleware = new PreferenceMiddleware(this.options.preferenceProvider)
+      manager.use(preferenceMiddleware)
+      core.logger.info('[OrbitFlare] Preference middleware enabled')
     }
   }
 

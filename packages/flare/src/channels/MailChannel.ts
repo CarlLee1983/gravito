@@ -1,5 +1,20 @@
 import type { Notification } from '../Notification'
 import type { Notifiable, NotificationChannel } from '../types'
+import { TimeoutChannel } from './TimeoutChannel'
+
+/**
+ * Mail channel 配置選項。
+ */
+export interface MailChannelConfig {
+  /**
+   * Timeout 時間（毫秒），預設 30000ms (30秒)。
+   */
+  timeout?: number
+  /**
+   * Timeout 發生時的回調函數。
+   */
+  onTimeout?: (channel: string, notification: Notification) => void
+}
 
 /**
  * Mail channel.
@@ -7,18 +22,35 @@ import type { Notifiable, NotificationChannel } from '../types'
  * Sends notifications via the mail service.
  */
 export class MailChannel implements NotificationChannel {
+  private timeoutChannel: TimeoutChannel
+
   constructor(
     private mailService: {
       send(message: import('../types').MailMessage): Promise<void>
+    },
+    private config?: MailChannelConfig
+  ) {
+    // 建立內部 channel
+    const innerChannel: NotificationChannel = {
+      send: async (notification: Notification, notifiable: Notifiable) => {
+        if (!notification.toMail) {
+          throw new Error('Notification does not implement toMail method')
+        }
+
+        const message = notification.toMail(notifiable)
+        await this.mailService.send(message)
+      },
     }
-  ) {}
+
+    // 使用 TimeoutChannel 包裝，預設 30 秒
+    const timeout = this.config?.timeout ?? 30000
+    this.timeoutChannel = new TimeoutChannel(innerChannel, {
+      timeout,
+      onTimeout: this.config?.onTimeout,
+    })
+  }
 
   async send(notification: Notification, notifiable: Notifiable): Promise<void> {
-    if (!notification.toMail) {
-      throw new Error('Notification does not implement toMail method')
-    }
-
-    const message = notification.toMail(notifiable)
-    await this.mailService.send(message)
+    return this.timeoutChannel.send(notification, notifiable)
   }
 }

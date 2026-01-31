@@ -1,5 +1,6 @@
 import type { Notification } from '../Notification'
 import type { Notifiable, NotificationChannel, SmsMessage } from '../types'
+import { TimeoutChannel } from './TimeoutChannel'
 
 /**
  * SMS channel configuration.
@@ -14,6 +15,14 @@ export interface SmsChannelConfig {
   region?: string
   accessKeyId?: string
   secretAccessKey?: string
+  /**
+   * Timeout 時間（毫秒），預設 30000ms (30秒)。
+   */
+  timeout?: number
+  /**
+   * Timeout 發生時的回調函數。
+   */
+  onTimeout?: (channel: string, notification: Notification) => void
 }
 
 /**
@@ -22,26 +31,42 @@ export interface SmsChannelConfig {
  * Sends notifications via an SMS provider.
  */
 export class SmsChannel implements NotificationChannel {
-  constructor(private config: SmsChannelConfig) {}
+  private timeoutChannel: TimeoutChannel
+
+  constructor(private config: SmsChannelConfig) {
+    // 建立內部 channel
+    const innerChannel: NotificationChannel = {
+      send: async (notification: Notification, notifiable: Notifiable) => {
+        if (!notification.toSms) {
+          throw new Error('Notification does not implement toSms method')
+        }
+
+        const smsMessage = notification.toSms(notifiable)
+
+        // Implement per provider.
+        switch (this.config.provider) {
+          case 'twilio':
+            await this.sendViaTwilio(smsMessage)
+            break
+          case 'aws-sns':
+            await this.sendViaAwsSns(smsMessage)
+            break
+          default:
+            throw new Error(`Unsupported SMS provider: ${this.config.provider}`)
+        }
+      },
+    }
+
+    // 使用 TimeoutChannel 包裝，預設 30 秒
+    const timeout = this.config.timeout ?? 30000
+    this.timeoutChannel = new TimeoutChannel(innerChannel, {
+      timeout,
+      onTimeout: this.config.onTimeout,
+    })
+  }
 
   async send(notification: Notification, notifiable: Notifiable): Promise<void> {
-    if (!notification.toSms) {
-      throw new Error('Notification does not implement toSms method')
-    }
-
-    const smsMessage = notification.toSms(notifiable)
-
-    // Implement per provider.
-    switch (this.config.provider) {
-      case 'twilio':
-        await this.sendViaTwilio(smsMessage)
-        break
-      case 'aws-sns':
-        await this.sendViaAwsSns(smsMessage)
-        break
-      default:
-        throw new Error(`Unsupported SMS provider: ${this.config.provider}`)
-    }
+    return this.timeoutChannel.send(notification, notifiable)
   }
 
   /**

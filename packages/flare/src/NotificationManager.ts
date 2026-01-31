@@ -15,6 +15,7 @@ import type {
   SendResult,
   ShouldRetry,
 } from './types'
+import type { ChannelMiddleware } from './types/middleware'
 import { isRetryableError, withRetry } from './utils/retry'
 import { deepSerialize } from './utils/serialization'
 
@@ -28,6 +29,11 @@ export class NotificationManager {
    * Channel registry.
    */
   private channels = new Map<string, NotificationChannel>()
+
+  /**
+   * Middleware stack for intercepting channel sends.
+   */
+  private middlewares: ChannelMiddleware[] = []
 
   /**
    * Queue manager (optional, injected by `orbit-queue`).
@@ -76,6 +82,30 @@ export class NotificationManager {
    */
   channel(name: string, channel: NotificationChannel): void {
     this.channels.set(name, channel)
+  }
+
+  /**
+   * Register a middleware for intercepting channel sends.
+   *
+   * Middleware will be executed in the order they are registered.
+   * Each middleware can modify, block, or monitor the notification flow.
+   *
+   * @param middleware - The middleware instance to register.
+   *
+   * @example
+   * ```typescript
+   * import { RateLimitMiddleware } from '@gravito/flare'
+   *
+   * const rateLimiter = new RateLimitMiddleware({
+   *   email: { maxPerSecond: 10 },
+   *   sms: { maxPerSecond: 5 }
+   * })
+   *
+   * manager.use(rateLimiter)
+   * ```
+   */
+  use(middleware: ChannelMiddleware): void {
+    this.middlewares.push(middleware)
   }
 
   /**
@@ -482,7 +512,20 @@ export class NotificationManager {
       channel: channelName,
     })
 
-    await channel.send(notification, notifiable)
+    // Execute middleware chain
+    const executeWithMiddleware = async () => {
+      await this.executeMiddlewareChain(
+        0,
+        notification,
+        notifiable,
+        channelName,
+        async () => {
+          await channel.send(notification, notifiable)
+        }
+      )
+    }
+
+    await executeWithMiddleware()
     const duration = 0 // Approximate for inner call, total calculated in wrapper
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -491,6 +534,39 @@ export class NotificationManager {
       notifiable,
       channel: channelName,
       duration,
+    })
+  }
+
+  /**
+   * Execute middleware chain recursively.
+   *
+   * @param index - Current middleware index
+   * @param notification - The notification being sent
+   * @param notifiable - The recipient
+   * @param channelName - The channel name
+   * @param finalHandler - The final handler to execute (actual channel.send)
+   * @private
+   */
+  private async executeMiddlewareChain(
+    index: number,
+    notification: Notification,
+    notifiable: Notifiable,
+    channelName: string,
+    finalHandler: () => Promise<void>
+  ): Promise<void> {
+    // If we've executed all middleware, run the final handler
+    if (index >= this.middlewares.length) {
+      await finalHandler()
+      return
+    }
+
+    // Get current middleware
+    const middleware = this.middlewares[index]
+
+    // Execute middleware with next() function
+    await middleware.handle(notification, notifiable, channelName, async () => {
+      // next() calls the next middleware in the chain
+      await this.executeMiddlewareChain(index + 1, notification, notifiable, channelName, finalHandler)
     })
   }
 

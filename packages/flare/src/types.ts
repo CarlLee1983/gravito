@@ -37,6 +37,19 @@ export interface Notifiable {
    * Optional list of preferred channels for this specific recipient.
    */
   preferredNotificationChannels?(): string[]
+
+  /**
+   * Optional notification preferences for this specific recipient.
+   * 取得用戶的通知偏好設定，用於控制通知的發送行為。
+   */
+  getNotificationPreferences?(): Promise<{
+    /** 啟用的通道列表（如果設定，則只允許這些通道） */
+    enabledChannels?: string[]
+    /** 禁用的通道列表（優先於 enabledChannels） */
+    disabledChannels?: string[]
+    /** 禁用的通知類型列表（Notification class names） */
+    disabledNotifications?: string[]
+  }>
 }
 
 /**
@@ -264,4 +277,47 @@ export interface BroadcastService {
 
 export interface QueueService {
   push(job: unknown, queue?: string, connection?: string, delay?: number): Promise<void>
+}
+
+/**
+ * Notification preference provider interface.
+ *
+ * 用於提供用戶通知偏好的介面。可以從資料庫、快取或其他來源載入用戶的偏好設定。
+ *
+ * @public
+ */
+export interface NotificationPreference {
+  /**
+   * Get user notification preferences.
+   *
+   * 獲取用戶的通知偏好設定。
+   *
+   * @param notifiable - 接收通知的用戶
+   * @returns 用戶的通知偏好設定
+   *
+   * @example
+   * ```typescript
+   * class DatabasePreferenceProvider implements NotificationPreference {
+   *   async getUserPreferences(notifiable: Notifiable) {
+   *     const prefs = await db.query(
+   *       'SELECT * FROM user_preferences WHERE user_id = ?',
+   *       [notifiable.getNotifiableId()]
+   *     )
+   *     return {
+   *       enabledChannels: prefs.enabled_channels,
+   *       disabledChannels: prefs.disabled_channels,
+   *       disabledNotifications: prefs.disabled_notifications
+   *     }
+   *   }
+   * }
+   * ```
+   */
+  getUserPreferences(notifiable: Notifiable): Promise<{
+    /** 啟用的通道列表（如果設定，則只允許這些通道） */
+    enabledChannels: string[]
+    /** 禁用的通道列表（優先於 enabledChannels） */
+    disabledChannels: string[]
+    /** 禁用的通知類型列表（Notification class names） */
+    disabledNotifications: string[]
+  }>
 }

@@ -40,7 +40,8 @@
       "Bash(gh run:*)",
       "Bash(git pull:*)",
       "Bash(gh pr create:*)",
-      "Bash(bunx biome check:*)"
+      "Bash(bunx biome check:*)",
+      "Bash(git reset:*)"
     ]
   },
   "enabledMcpjsonServers": [
