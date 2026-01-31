@@ -145,7 +145,7 @@ export class KeyRotationManager {
     const existingKeys = this.providerKeys.get(providerName) ?? []
 
     // 標記舊的主密鑰為非主密鑰並設定過期時間
-    const updatedKeys = existingKeys.map((key) => ({
+    const updatedKeys: ProviderKeyEntry[] = existingKeys.map((key) => ({
       ...key,
       isPrimary: false,
       expiresAt: key.isPrimary ? new Date(Date.now() + this.config.gracePeriod) : key.expiresAt,

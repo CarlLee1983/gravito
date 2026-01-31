@@ -8,6 +8,9 @@
 - **Built-in Providers** - Stripe, GitHub, and generic provider support
 - **Reliable Sending** - Exponential backoff retry with configurable strategy
 - **Gravito Integration** - First-class OrbitEcho module for PlanetCore
+- **Request Buffering (v1.1)** - Prevents signature verification failures from framework auto-parsing
+- **Circuit Breaker (v1.1)** - Protects downstream services with automatic failure detection
+- **Key Rotation (v1.2)** - Zero-downtime key updates with multi-version support
 
 ## Installation
 
@@ -135,6 +138,129 @@ const echoWithObservability = new OrbitEcho({
 })
 ```
 
+## Advanced Features (v1.1+)
+
+### Request Buffer Middleware
+
+防止框架自動解析 JSON 導致簽章驗證失敗。預設啟用，會在驗證前緩存原始 request body。
+
+```typescript
+const echo = new OrbitEcho({
+  providers: { /* ... */ },
+  requestBuffer: {
+    enabled: true,              // 預設 true
+    maxBodySize: 10485760,      // 預設 10MB
+    skipContentTypes: [         // 跳過特定 content types
+      'multipart/form-data',
+      'application/octet-stream'
+    ]
+  }
+})
+```
+
+Request Buffer 會自動整合到接收流程，無需額外配置。若需停用：
+
+```typescript
+const echo = new OrbitEcho({
+  providers: { /* ... */ },
+  requestBuffer: { enabled: false }
+})
+```
+
+### Circuit Breaker
+
+保護下游服務免於雪崩效應，當失敗率超過閾值時自動斷路。
+
+```typescript
+import { WebhookDispatcher } from '@gravito/echo'
+
+const dispatcher = new WebhookDispatcher({
+  secret: process.env.OUTGOING_WEBHOOK_SECRET!,
+  circuitBreaker: {
+    enabled: true,              // 預設 true
+    failureThreshold: 5,        // 預設 5 次失敗後開路
+    successThreshold: 2,        // 預設 2 次成功後關路
+    windowSize: 60000,          // 預設 1 分鐘窗口
+    openTimeout: 30000,         // 預設 30 秒後嘗試半開
+    // 可選的狀態變更回調
+    onOpen: (target) => console.log(`Circuit opened for ${target}`),
+    onHalfOpen: (target) => console.log(`Circuit half-open for ${target}`),
+    onClose: (target) => console.log(`Circuit closed for ${target}`)
+  }
+})
+
+// 檢查熔斷器狀態
+const metrics = dispatcher.getCircuitBreakerMetrics('example.com')
+console.log(metrics.state) // 'CLOSED' | 'OPEN' | 'HALF_OPEN'
+
+// 手動重置熔斷器
+dispatcher.resetCircuitBreaker('example.com')
+```
+
+**熔斷器運作邏輯**：
+- **CLOSED（關路）**：正常運作，所有請求通過
+- **OPEN（開路）**：失敗次數超過閾值，立即拒絕所有請求
+- **HALF_OPEN（半開）**：嘗試恢復，允許有限請求測試服務狀態
+
+每個目標 host 使用獨立的熔斷器，避免單點故障影響全域。
+
+### Key Rotation
+
+支援 Provider 密鑰的動態輪換，無需重啟應用。
+
+```typescript
+import { OrbitEcho } from '@gravito/echo'
+
+const echo = new OrbitEcho({
+  // 啟用密鑰輪換功能
+  keyRotation: {
+    enabled: true,
+    autoCleanup: true,          // 自動清理過期密鑰
+    gracePeriod: 86400000,      // 24 小時寬限期
+    onRotate: (provider, newKey) => {
+      console.log(`Key rotated for ${provider}: ${newKey.version}`)
+    }
+  },
+  // 使用多密鑰配置 Provider
+  providers: {
+    stripe: {
+      name: 'stripe',
+      secret: '', // 主密鑰會從 keys 中自動設定
+      keys: [
+        {
+          key: 'whsec_new_key',
+          version: 'v2',
+          isPrimary: true,
+          activeFrom: new Date('2026-01-15')
+        },
+        {
+          key: 'whsec_old_key',
+          version: 'v1',
+          isPrimary: false,
+          activeFrom: new Date('2025-01-01'),
+          expiresAt: new Date('2026-02-15') // 寬限期結束時間
+        }
+      ]
+    }
+  }
+})
+
+// 執行密鑰輪換
+await echo.rotateProviderKey('stripe', {
+  key: 'whsec_newest_key',
+  version: 'v3',
+  activeFrom: new Date()
+})
+```
+
+**密鑰輪換運作邏輯**：
+1. 在輪換期間，系統同時接受新舊密鑰驗證
+2. 舊主密鑰自動降級為輔助密鑰，並設定過期時間（當前時間 + gracePeriod）
+3. 新密鑰成為主密鑰，用於所有新的簽章驗證
+4. 過期密鑰會自動清理（若啟用 autoCleanup）
+
+這確保了正在傳輸中的 Webhook 不會因密鑰輪換而失敗。
+
 ## Providers
 
 ### Built-in Providers
@@ -193,6 +319,18 @@ interface WebhookDispatcherConfig {
 
   /** Custom User-Agent */
   userAgent?: string
+
+  /** Circuit breaker configuration (v1.1+) */
+  circuitBreaker?: {
+    enabled?: boolean           // default: true
+    failureThreshold?: number   // default: 5
+    successThreshold?: number   // default: 2
+    windowSize?: number         // default: 60000 (1 minute)
+    openTimeout?: number        // default: 30000 (30 seconds)
+    onOpen?: (target: string) => void
+    onHalfOpen?: (target: string) => void
+    onClose?: (target: string) => void
+  }
 }
 ```
 
@@ -205,6 +343,14 @@ interface EchoConfig {
     name: string
     secret: string
     tolerance?: number  // timestamp tolerance in seconds
+    // Key rotation support (v1.2+)
+    keys?: Array<{
+      key: string
+      version: string
+      isPrimary: boolean
+      activeFrom: Date
+      expiresAt?: Date
+    }>
   }>
 
   /** Dispatcher configuration */
@@ -212,6 +358,21 @@ interface EchoConfig {
 
   /** Base path for webhook endpoints */
   basePath?: string  // default: '/webhooks'
+
+  /** Request buffer configuration (v1.1+) */
+  requestBuffer?: {
+    enabled?: boolean           // default: true
+    maxBodySize?: number        // default: 10485760 (10MB)
+    skipContentTypes?: string[] // default: ['multipart/form-data', 'application/octet-stream']
+  }
+
+  /** Key rotation configuration (v1.2+) */
+  keyRotation?: {
+    enabled?: boolean           // default: false
+    autoCleanup?: boolean       // default: true
+    gracePeriod?: number        // default: 86400000 (24 hours)
+    onRotate?: (providerName: string, newKey: ProviderKeyEntry) => void
+  }
 }
 ```
 

@@ -47,7 +47,7 @@ export class RequestBufferMiddleware {
    * @returns 中介軟體處理函式
    */
   handler() {
-    return async (c: GravitoContext, next: () => Promise<Response>) => {
+    return async (c: GravitoContext, next: () => Promise<Response | undefined>) => {
       if (!this.config.enabled) {
         return await next()
       }

@@ -329,7 +329,11 @@ export class WebhookReceiver {
         span.addEvent('verification_start')
 
         // Try multi-key verification if rotation is enabled
-        let result: WebhookVerificationResult
+        let result: WebhookVerificationResult = {
+          valid: false,
+          error: 'No verification performed',
+        }
+
         if (this.keyRotationManager?.hasProvider(providerName)) {
           const activeKeys = this.keyRotationManager.getActiveKeys(providerName)
 
