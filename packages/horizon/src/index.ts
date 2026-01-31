@@ -1,40 +1,37 @@
 /**
  * @packageDocumentation
- * Enterprise-grade distributed task scheduler for Gravito framework.
+ * Enterprise-grade distributed task scheduler for the Gravito framework.
  *
- * Provides fluent API for defining cron-based scheduled tasks with distributed locking,
- * node role targeting, retry mechanisms, and comprehensive monitoring hooks.
+ * This package provides a robust infrastructure for managing recurring jobs (Cron)
+ * in a distributed environment. It features a fluent API for schedule definition,
+ * pluggable locking mechanisms (Memory/Redis), node role filtering, and granular
+ * monitoring via lifecycle hooks.
+ *
+ * Core Features:
+ * - Distributed Locking: Prevents duplicate execution across multi-node clusters.
+ * - Fluent API: Human-readable syntax for complex scheduling logic.
+ * - Reliability: Built-in support for task timeouts and automatic retries.
+ * - Cross-Runtime: Consistent behavior across Bun and Node.js environments.
  *
  * @example
- * Basic task scheduling:
+ * Basic task registration:
  * ```typescript
- * import { OrbitHorizon } from '@gravito/horizon'
+ * import { OrbitHorizon } from '@gravito/horizon';
  *
- * await PlanetCore.boot({
- *   config: {
- *     scheduler: {
- *       lock: { driver: 'cache' },
- *       nodeRole: 'worker'
- *     }
- *   },
- *   orbits: [OrbitHorizon]
+ * // Registered via core orbits
+ * scheduler.task('cleanup', async () => {
+ *   await db.purge();
  * })
- *
- * const scheduler = core.container.make('scheduler')
- * scheduler.task('daily-cleanup', async () => {
- *   await db.cleanup()
- * })
- * .daily()
- * .at('02:00')
- * .onOneServer() // Distributed lock
+ * .dailyAt('02:00')
+ * .onOneServer();
  * ```
  *
  * @example
- * Shell command execution with node targeting:
+ * Executing shell commands on specific nodes:
  * ```typescript
- * scheduler.exec('migrate', 'bun run db:migrate')
- *   .onNode('worker')
- *   .onOneServer()
+ * scheduler.exec('rotate-logs', 'logrotate -f /etc/logrotate.conf')
+ *   .weekly()
+ *   .onNode('worker');
  * ```
  */
 

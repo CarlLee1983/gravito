@@ -1,9 +1,30 @@
 /**
- * Simple, high-performance cron parser for standard expressions.
+ * Lightweight, zero-dependency cron parser for standard expressions.
+ *
+ * Designed for high-frequency evaluation of standard 5-part cron expressions.
+ * Supports wildcards (*), lists (,), ranges (-), and steps (/).
+ *
+ * Performance considerations:
+ * - Optimized for standard syntax to avoid overhead of complex parsers.
+ * - Synchronous evaluation for O(1) time complexity per check.
+ * - Used as the first tier in the `CronParser` evaluation strategy.
+ *
+ * @internal
  */
 export class SimpleCronParser {
   /**
-   * Check if a cron expression is due at the given date/time
+   * Evaluates if a cron expression matches the specified date and timezone.
+   *
+   * @param expression - Standard 5-part cron expression.
+   * @param timezone - Target timezone for comparison (default: "UTC").
+   * @param date - Reference date to check (default: now).
+   * @returns True if the expression is due at the given minute.
+   * @throws {Error} If the expression is malformed or the timezone is invalid.
+   *
+   * @example
+   * ```typescript
+   * const isDue = SimpleCronParser.isDue('0 * * * *', 'Asia/Taipei');
+   * ```
    */
   static isDue(expression: string, timezone = 'UTC', date: Date = new Date()): boolean {
     const parts = expression.trim().split(/\s+/)
@@ -28,6 +49,18 @@ export class SimpleCronParser {
     )
   }
 
+  /**
+   * Internal pattern matching logic for individual cron fields.
+   *
+   * @param pattern - Cron sub-expression (e.g., "1-5").
+   * @param value - Extracted date component value.
+   * @param _min - Field minimum boundary.
+   * @param _max - Field maximum boundary.
+   * @param isDayOfWeek - Special handling for Sunday (0 and 7).
+   * @returns Boolean indicating a match.
+   *
+   * @internal
+   */
   private static match(
     pattern: string,
     value: number,
@@ -66,6 +99,16 @@ export class SimpleCronParser {
     return patternVal === value
   }
 
+  /**
+   * Resolves a Date object to the specified timezone.
+   *
+   * @param date - Source UTC date.
+   * @param timezone - Target timezone string.
+   * @returns Localized Date object.
+   * @throws {Error} If the timezone is invalid.
+   *
+   * @internal
+   */
   private static getDateInTimezone(date: Date, timezone: string): Date {
     try {
       const tzDate = new Date(date.toLocaleString('en-US', { timeZone: timezone }))

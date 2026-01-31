@@ -7,65 +7,113 @@ import {
 } from './utils/validation'
 
 /**
- * Represents a configuration for a scheduled task (Cron job).
+ * Represents the configuration and state of a scheduled task.
+ *
+ * Encapsulates all metadata required by the scheduler to evaluate frequency,
+ * manage distributed locking, and execute task logic with reliability controls.
  *
  * @public
  * @since 3.0.0
  */
 export interface ScheduledTask {
-  /** Unique name for the task */
+  /**
+   * Unique identifier for the task.
+   * Used for logging, hook identification, and as part of the lock key.
+   */
   name: string
-  /** Standard cron expression mapping the frequency */
+  /**
+   * Standard 5-part cron expression defining execution frequency.
+   * Format: "minute hour day month weekday"
+   */
   expression: string
-  /** Timezone for evaluating the cron expression (default: UTC) */
+  /**
+   * Timezone identifier for evaluating the cron expression.
+   * @defaultValue "UTC"
+   */
   timezone: string
-  /** The function or task to execute */
+  /**
+   * The asynchronous task logic to be executed.
+   */
   callback: () => void | Promise<void>
-  /** If true, uses a distributed lock to ensure only one server runs the task */
+  /**
+   * Whether to ensure single-point execution across a distributed environment.
+   * When true, uses a time-window lock to prevent multiple servers from running
+   * the same task in the same scheduling window.
+   */
   shouldRunOnOneServer: boolean
-  /** Time-to-live for the distributed lock in seconds (default: 300) */
+  /**
+   * Duration in seconds to hold the distributed time-window lock.
+   * @defaultValue 300
+   */
   lockTtl: number
-  /** If true, the task runs in the background and doesn't block the scheduler loop */
+  /**
+   * Whether to execute the task in a non-blocking background mode.
+   * If true, the scheduler won't wait for completion before processing the next task.
+   */
   background: boolean
-  /** Optional node role required to run this task (e.g., 'worker') */
+  /**
+   * Optional target node role required for execution.
+   * Tasks will only run if the current node matches this role.
+   */
   nodeRole?: string
-  /** Command string if the task was registered via a shell command */
+  /**
+   * Raw shell command if the task was created via `scheduler.exec()`.
+   */
   command?: string
-  /** Task execution timeout in milliseconds (default: 3600000 - 1 hour) */
+  /**
+   * Maximum execution time in milliseconds before the task is aborted.
+   * @defaultValue 3600000
+   */
   timeout?: number
-  /** Maximum number of retry attempts on failure (default: 0 - no retry) */
+  /**
+   * Number of times to retry a failed task.
+   * @defaultValue 0
+   */
   retries?: number
-  /** Delay between retry attempts in milliseconds (default: 1000) */
+  /**
+   * Delay between retry attempts in milliseconds.
+   * @defaultValue 1000
+   */
   retryDelay?: number
 
   /**
-   * 是否啟用重疊控制
-   * true = 任務執行期間不會重複觸發
+   * Whether to prevent concurrent executions of the same task.
+   * If true, a new instance won't start if the previous one is still running.
    */
   preventOverlapping: boolean
 
   /**
-   * 重疊控制的最大等待時間（秒）
-   * 超過此時間，即使前次任務還在執行，也會強制執行
-   * 預設：3600（1小時）
+   * Maximum duration in seconds for the execution lock.
+   * Prevents deadlocks if a task crashes without releasing the lock.
+   * @defaultValue 3600
    */
   overlappingExpiresAt: number
 
-  /** Callbacks executed after successful task completion */
+  /**
+   * Collection of callbacks executed upon successful task completion.
+   */
   onSuccessCallbacks: ActionCallback[]
-  /** Callbacks executed after task failure */
+  /**
+   * Collection of callbacks executed when the task fails after all retries.
+   */
   onFailureCallbacks: ActionCallback[]
 }
 
 /**
- * Fluent API for defining task schedules.
+ * Fluent builder for defining and configuring scheduled tasks.
+ *
+ * Provides a human-readable API for setting execution frequency, constraints,
+ * reliability settings, and lifecycle hooks.
  *
  * @example
  * ```typescript
- * scheduler.task('backup')
- *   .daily()
- *   .at('02:00')
- *   .onOneServer();
+ * scheduler.task('backup-db', async () => {
+ *   await db.backup();
+ * })
+ * .dailyAt('03:00')
+ * .onOneServer()
+ * .withoutOverlapping()
+ * .retry(3, 5000);
  * ```
  *
  * @public
@@ -75,10 +123,10 @@ export class TaskSchedule {
   private task: ScheduledTask
 
   /**
-   * Create a new TaskSchedule instance.
+   * Initializes a new schedule instance with default settings.
    *
-   * @param name - The unique name of the task.
-   * @param callback - The function to execute.
+   * @param name - Unique task name used for identification and locking.
+   * @param callback - Logic to execute on schedule.
    */
   constructor(name: string, callback: () => void | Promise<void>) {
     this.task = {
@@ -99,10 +147,16 @@ export class TaskSchedule {
   // --- Frequency Methods ---
 
   /**
-   * Set a custom cron expression.
+   * Configures a raw 5-part cron expression.
    *
-   * @param expression - Standard cron expression (e.g., "* * * * *")
-   * @returns The TaskSchedule instance.
+   * @param expression - Cron string (e.g., "0 0 * * *").
+   * @returns The TaskSchedule instance for chaining.
+   * @throws {Error} If expression format is invalid or contains forbidden characters.
+   *
+   * @example
+   * ```typescript
+   * schedule.cron('0 9-17 * * 1-5'); // 9-5 on weekdays
+   * ```
    */
   cron(expression: string): this {
     const parts = expression.trim().split(/\s+/)
@@ -130,64 +184,65 @@ export class TaskSchedule {
   }
 
   /**
-   * Run the task every minute.
+   * Schedules execution every minute.
    *
-   * @returns The TaskSchedule instance.
+   * @returns The TaskSchedule instance for chaining.
    */
   everyMinute(): this {
     return this.cron('* * * * *')
   }
 
   /**
-   * Run the task every 5 minutes.
+   * Schedules execution every five minutes.
    *
-   * @returns The TaskSchedule instance.
+   * @returns The TaskSchedule instance for chaining.
    */
   everyFiveMinutes(): this {
     return this.cron('*/5 * * * *')
   }
 
   /**
-   * Run the task every 10 minutes.
+   * Schedules execution every ten minutes.
    *
-   * @returns The TaskSchedule instance.
+   * @returns The TaskSchedule instance for chaining.
    */
   everyTenMinutes(): this {
     return this.cron('*/10 * * * *')
   }
 
   /**
-   * Run the task every 15 minutes.
+   * Schedules execution every fifteen minutes.
    *
-   * @returns The TaskSchedule instance.
+   * @returns The TaskSchedule instance for chaining.
    */
   everyFifteenMinutes(): this {
     return this.cron('*/15 * * * *')
   }
 
   /**
-   * Run the task every 30 minutes.
+   * Schedules execution every thirty minutes.
    *
-   * @returns The TaskSchedule instance.
+   * @returns The TaskSchedule instance for chaining.
    */
   everyThirtyMinutes(): this {
     return this.cron('0,30 * * * *')
   }
 
   /**
-   * Run the task hourly (at minute 0).
+   * Schedules execution hourly at the top of the hour.
    *
-   * @returns The TaskSchedule instance.
+   * @returns The TaskSchedule instance for chaining.
    */
   hourly(): this {
     return this.cron('0 * * * *')
   }
 
   /**
-   * Run the task hourly at a specific minute.
+   * Schedules execution hourly at a specific minute.
    *
-   * @param minute - Minute (0-59)
-   * @returns The TaskSchedule instance.
+   * @param minute - Target minute (0-59).
+   * @returns The TaskSchedule instance for chaining.
+   * @throws {Error} If minute is outside 0-59 range.
    */
   hourlyAt(minute: number): this {
     validateMinute(minute)
@@ -195,19 +250,25 @@ export class TaskSchedule {
   }
 
   /**
-   * Run the task daily at midnight (00:00).
+   * Schedules execution daily at midnight.
    *
-   * @returns The TaskSchedule instance.
+   * @returns The TaskSchedule instance for chaining.
    */
   daily(): this {
     return this.cron('0 0 * * *')
   }
 
   /**
-   * Run the task daily at a specific time.
+   * Schedules execution daily at a specific time.
    *
-   * @param time - Time in "HH:mm" format (24h)
-   * @returns The TaskSchedule instance.
+   * @param time - 24-hour time string in "HH:mm" format.
+   * @returns The TaskSchedule instance for chaining.
+   * @throws {Error} If time format is invalid or values are out of range.
+   *
+   * @example
+   * ```typescript
+   * schedule.dailyAt('14:30');
+   * ```
    */
   dailyAt(time: string): this {
     const { hour, minute } = parseTime(time)
@@ -215,20 +276,26 @@ export class TaskSchedule {
   }
 
   /**
-   * Run the task weekly on Sunday at midnight.
+   * Schedules execution weekly on Sunday at midnight.
    *
-   * @returns The TaskSchedule instance.
+   * @returns The TaskSchedule instance for chaining.
    */
   weekly(): this {
     return this.cron('0 0 * * 0')
   }
 
   /**
-   * Run the task weekly on a specific day and time.
+   * Schedules execution weekly on a specific day and time.
    *
-   * @param day - Day of week (0-7, 0 or 7 is Sunday)
-   * @param time - Time in "HH:mm" format (default "00:00")
-   * @returns The TaskSchedule instance.
+   * @param day - Day index (0-6, where 0 is Sunday).
+   * @param time - Optional 24-hour time string "HH:mm" (default "00:00").
+   * @returns The TaskSchedule instance for chaining.
+   * @throws {Error} If day index or time format is invalid.
+   *
+   * @example
+   * ```typescript
+   * schedule.weeklyOn(1, '09:00'); // Mondays at 9 AM
+   * ```
    */
   weeklyOn(day: number, time = '00:00'): this {
     validateDayOfWeek(day)
@@ -237,20 +304,21 @@ export class TaskSchedule {
   }
 
   /**
-   * Run the task monthly on the 1st day at midnight.
+   * Schedules execution monthly on the first day at midnight.
    *
-   * @returns The TaskSchedule instance.
+   * @returns The TaskSchedule instance for chaining.
    */
   monthly(): this {
     return this.cron('0 0 1 * *')
   }
 
   /**
-   * Run the task monthly on a specific day and time.
+   * Schedules execution monthly on a specific day and time.
    *
-   * @param day - Day of month (1-31)
-   * @param time - Time in "HH:mm" format (default "00:00")
-   * @returns The TaskSchedule instance.
+   * @param day - Day of month (1-31).
+   * @param time - Optional 24-hour time string "HH:mm" (default "00:00").
+   * @returns The TaskSchedule instance for chaining.
+   * @throws {Error} If day or time format is invalid.
    */
   monthlyOn(day: number, time = '00:00'): this {
     validateDayOfMonth(day)
@@ -261,10 +329,11 @@ export class TaskSchedule {
   // --- Constraints ---
 
   /**
-   * Set timezone for evaluating cron expressions.
+   * Specifies the timezone for evaluating schedule frequency.
    *
-   * @param timezone - Timezone identifier (e.g., "Asia/Taipei", "UTC")
-   * @returns The TaskSchedule instance.
+   * @param timezone - IANA timezone identifier (e.g., "America/New_York").
+   * @returns The TaskSchedule instance for chaining.
+   * @throws {Error} If the timezone identifier is not recognized by the system.
    */
   timezone(timezone: string): this {
     try {
@@ -280,11 +349,12 @@ export class TaskSchedule {
   }
 
   /**
-   * Set the time of execution for the current frequency.
-   * Useful when chaining with daily(), weekly(), etc.
+   * Modifies the execution time of the existing frequency.
+   * Typically used after frequency methods like daily() or weekly().
    *
-   * @param time - Time in "HH:mm" format
-   * @returns The TaskSchedule instance.
+   * @param time - 24-hour time string in "HH:mm" format.
+   * @returns The TaskSchedule instance for chaining.
+   * @throws {Error} If time format is invalid.
    */
   at(time: string): this {
     const { hour, minute } = parseTime(time)
@@ -298,11 +368,11 @@ export class TaskSchedule {
   }
 
   /**
-   * Ensure task runs on only one server at a time (Distributed Locking).
-   * Requires a configured LockStore (Cache or Redis).
+   * Enables distributed locking to ensure only one instance runs globally.
+   * Prevents duplicate execution when multiple servers are polling the same schedule.
    *
-   * @param lockTtlSeconds - Time in seconds to hold the lock (default 300)
-   * @returns The TaskSchedule instance.
+   * @param lockTtlSeconds - Duration in seconds to hold the window lock (default 300).
+   * @returns The TaskSchedule instance for chaining.
    */
   onOneServer(lockTtlSeconds = 300): this {
     this.task.shouldRunOnOneServer = true
@@ -311,22 +381,20 @@ export class TaskSchedule {
   }
 
   /**
-   * 防止任務重疊執行。
+   * Prevents a new task instance from starting if the previous one is still running.
    *
-   * 當任務正在執行時，即使下一個排程時間到達也不會重複觸發。
-   * 與 onOneServer() 不同，此方法關注的是任務執行狀態，而非時間窗口。
+   * Unlike `onOneServer()` which uses a time-window lock, this uses an execution lock
+   * to handle long-running tasks that might span multiple scheduling intervals.
    *
-   * @param expiresAt - 最大等待時間（秒），預設 3600（1小時）
-   * @returns The TaskSchedule instance.
+   * @param expiresAt - Max duration in seconds to keep the execution lock (default 3600).
+   * @returns The TaskSchedule instance for chaining.
    *
    * @example
    * ```typescript
-   * // 每分鐘執行，但執行期間不重複觸發
-   * scheduler.task('heavy-sync', async () => {
-   *   await heavyOperation() // 可能執行 5 分鐘
-   * })
-   * .everyMinute()
-   * .withoutOverlapping(7200) // 最多等待 2 小時
+   * // Prevents overlapping if the heavy operation takes > 1 minute
+   * scheduler.task('data-sync', heavySync)
+   *   .everyMinute()
+   *   .withoutOverlapping();
    * ```
    */
   withoutOverlapping(expiresAt = 3600): this {
@@ -336,11 +404,10 @@ export class TaskSchedule {
   }
 
   /**
-   * Run task in background (do not wait for completion in the loop).
-   * Note: In Node.js non-blocking environment this is largely semantic,
-   * but affects how we handle error catching and lock release.
+   * Executes the task in background mode.
+   * The scheduler will not wait for this task to finish before proceeding to the next.
    *
-   * @returns The TaskSchedule instance.
+   * @returns The TaskSchedule instance for chaining.
    */
   runInBackground(): this {
     this.task.background = true
@@ -348,10 +415,10 @@ export class TaskSchedule {
   }
 
   /**
-   * Restrict task execution to a specific node role.
+   * Restricts task execution to nodes with a specific role.
    *
-   * @param role - The required node role (e.g., 'api', 'worker')
-   * @returns The TaskSchedule instance.
+   * @param role - Target role identifier (e.g., "worker").
+   * @returns The TaskSchedule instance for chaining.
    */
   onNode(role: string): this {
     this.task.nodeRole = role
@@ -359,10 +426,11 @@ export class TaskSchedule {
   }
 
   /**
-   * Set task execution timeout.
+   * Defines a maximum execution time for the task.
    *
-   * @param ms - Timeout in milliseconds
-   * @returns The TaskSchedule instance.
+   * @param ms - Timeout duration in milliseconds.
+   * @returns The TaskSchedule instance for chaining.
+   * @throws {Error} If timeout is not a positive number.
    */
   timeout(ms: number): this {
     if (ms <= 0) {
@@ -373,11 +441,12 @@ export class TaskSchedule {
   }
 
   /**
-   * Set retry configuration for the task.
+   * Configures automatic retry behavior for failed executions.
    *
-   * @param attempts - Maximum number of retry attempts (default: 3)
-   * @param delayMs - Delay between retries in milliseconds (default: 1000)
-   * @returns The TaskSchedule instance.
+   * @param attempts - Max number of retries (default 3).
+   * @param delayMs - Wait time between retries in milliseconds (default 1000).
+   * @returns The TaskSchedule instance for chaining.
+   * @throws {Error} If attempts or delay are negative.
    */
   retry(attempts = 3, delayMs = 1000): this {
     if (attempts < 0) {
@@ -392,10 +461,10 @@ export class TaskSchedule {
   }
 
   /**
-   * Set the command string for exec tasks.
+   * Sets the shell command for execution-based tasks.
    *
    * @param command - The command string.
-   * @returns The TaskSchedule instance.
+   * @returns The TaskSchedule instance for chaining.
    * @internal
    */
   setCommand(command: string): this {
@@ -406,10 +475,10 @@ export class TaskSchedule {
   // --- Hooks ---
 
   /**
-   * Register a callback to run on task success.
+   * Registers a callback to execute upon successful task completion.
    *
-   * @param callback - The callback function.
-   * @returns The TaskSchedule instance.
+   * @param callback - Function to run on success.
+   * @returns The TaskSchedule instance for chaining.
    */
   onSuccess(callback: ActionCallback): this {
     this.task.onSuccessCallbacks.push(callback)
@@ -417,10 +486,10 @@ export class TaskSchedule {
   }
 
   /**
-   * Register a callback to run on task failure.
+   * Registers a callback to execute when the task fails.
    *
-   * @param callback - The callback function.
-   * @returns The TaskSchedule instance.
+   * @param callback - Function to run on failure.
+   * @returns The TaskSchedule instance for chaining.
    */
   onFailure(callback: ActionCallback): this {
     this.task.onFailureCallbacks.push(callback)
@@ -428,23 +497,21 @@ export class TaskSchedule {
   }
 
   /**
-   * Set a description for the task (useful for listing).
+   * Attaches a human-readable description to the task.
    *
-   * @param _text - The description text.
-   * @returns The TaskSchedule instance.
+   * @param _text - Description text.
+   * @returns The TaskSchedule instance for chaining.
    */
   description(_text: string): this {
-    // Description logic if we want to store it (currently not in ScheduledTask interface but useful for CLI)
-    // For now we just return this
     return this
   }
 
   // --- Accessor ---
 
   /**
-   * Get the underlying task configuration.
+   * Returns the final task configuration.
    *
-   * @returns The ScheduledTask object.
+   * @returns The constructed ScheduledTask object.
    */
   getTask(): ScheduledTask {
     return this.task
