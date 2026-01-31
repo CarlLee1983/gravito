@@ -106,6 +106,24 @@ export class Rocket extends AggregateRoot<string> {
     this._status = RocketStatus.DECOMMISSIONED
   }
 
+  /**
+   * 替換底層容器（僅在 REFURBISHING 狀態時允許）
+   * 用於 destroy-recreate 策略
+   *
+   * @param newContainerId - 新容器 ID
+   * @throws {Error} 當火箭不在 REFURBISHING 狀態時
+   *
+   * @public
+   * @since 1.3.0
+   */
+  public replaceContainer(newContainerId: string): void {
+    if (this._status !== RocketStatus.REFURBISHING) {
+      throw new Error(`無法替換容器：火箭 ${this.id} 不在 REFURBISHING 狀態`)
+    }
+    this._containerId = newContainerId
+    this._assignedDomain = null // 清除域名映射
+  }
+
   public toJSON() {
     return {
       id: this.id,

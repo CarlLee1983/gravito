@@ -23,11 +23,15 @@ describe('MissionQueue', () => {
     const promise = queue.enqueue(mission)
     expect(queue.length).toBe(1)
     expect(promise).toBeInstanceOf(Promise)
+
+    // 清理：dequeue 或 catch 錯誤以避免 unhandled rejection
+    promise.catch(() => {})
   })
 
   test('should reject when queue is full', async () => {
+    const promises = []
     for (let i = 0; i < 3; i++) {
-      queue.enqueue(
+      const promise = queue.enqueue(
         Mission.create({
           id: `pr-${i}`,
           repoUrl: 'https://github.com/test/repo',
@@ -35,6 +39,9 @@ describe('MissionQueue', () => {
           commitSha: 'abc123',
         })
       )
+      // 捕獲超時錯誤以避免 unhandled rejection
+      promise.catch(() => {})
+      promises.push(promise)
     }
 
     const mission = Mission.create({
@@ -61,8 +68,8 @@ describe('MissionQueue', () => {
       commitSha: 'abc123',
     })
 
-    queue.enqueue(m1)
-    queue.enqueue(m2)
+    const p1 = queue.enqueue(m1)
+    const p2 = queue.enqueue(m2)
 
     const first = queue.dequeue()
     expect(first?.mission.id).toBe('pr-1')
@@ -72,10 +79,14 @@ describe('MissionQueue', () => {
 
     const empty = queue.dequeue()
     expect(empty).toBeNull()
+
+    // 清理未使用的 promises
+    p1.catch(() => {})
+    p2.catch(() => {})
   })
 
   test('should provide stats', async () => {
-    queue.enqueue(
+    const promise = queue.enqueue(
       Mission.create({
         id: 'pr-1',
         repoUrl: 'https://github.com/test/repo',
@@ -91,6 +102,9 @@ describe('MissionQueue', () => {
     expect(stats.length).toBe(1)
     expect(stats.maxSize).toBe(3)
     expect(stats.oldestWaitMs).toBeGreaterThanOrEqual(0)
+
+    // 清理
+    promise.catch(() => {})
   })
 })
 
