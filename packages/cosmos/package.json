@@ -1,6 +1,6 @@
 {
   "name": "@gravito/cosmos",
-  "version": "3.1.0",
+  "version": "3.2.0",
   "description": "Internationalization orbit for Gravito framework",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -12,6 +12,16 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
+    },
+    "./edge": {
+      "types": "./dist/index.edge.d.ts",
+      "import": "./dist/index.edge.js",
+      "require": "./dist/index.edge.cjs"
+    },
+    "./node": {
+      "types": "./dist/index.node.d.ts",
+      "import": "./dist/index.node.js",
+      "require": "./dist/index.node.cjs"
     }
   },
   "scripts": {
