@@ -37,7 +37,7 @@ export class NotificationManager {
   private middlewares: ChannelMiddleware[] = []
 
   /**
-   * 是否需要重新排序中介層
+   * Indicates whether the middleware stack needs re-sorting.
    */
   private middlewaresDirty = false
 
@@ -56,7 +56,7 @@ export class NotificationManager {
     | undefined
 
   /**
-   * 型別安全的 hook emitter
+   * Type-safe hook emitter for notification events.
    */
   private hookEmitter: HookEmitter
 
@@ -537,14 +537,15 @@ export class NotificationManager {
   }
 
   /**
-   * 取得已排序的中介層列表（Lazy sorting）
+   * Retrieves the sorted list of middleware (Lazy sorting).
    *
-   * 使用 lazy evaluation 策略：只在需要時排序，避免每次 use() 都重新排序。
-   * 排序規則：
-   * 1. 優先級高的（數字大）先執行
-   * 2. 同優先級維持註冊順序（stable sort）
+   * Uses a lazy evaluation strategy: sorting only happens when needed to avoid
+   * overhead on every `use()` call.
+   * Sorting rules:
+   * 1. Higher priority (larger number) executes first.
+   * 2. Stable sort is maintained for identical priorities (registration order).
    *
-   * @returns 排序後的中介層列表
+   * @returns The sorted list of middleware.
    * @private
    */
   private getSortedMiddlewares(): ChannelMiddleware[] {
@@ -552,11 +553,11 @@ export class NotificationManager {
       return this.middlewares
     }
 
-    // 按優先級降序排序（同優先級維持原順序）
+    // Sort by priority descending (stable sort maintained for same priority)
     this.middlewares.sort((a, b) => {
       const priorityA = a.priority ?? 0
       const priorityB = b.priority ?? 0
-      return priorityB - priorityA // 降序：高優先級先執行
+      return priorityB - priorityA // Descending: high priority first
     })
 
     this.middlewaresDirty = false
