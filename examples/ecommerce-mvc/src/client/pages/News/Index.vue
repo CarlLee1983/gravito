@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import Layout from '../../components/Layout.vue'
 import { Head, Link } from '@inertiajs/vue3'
-import { useI18n } from '../../composables/useI18n'
 import GImage from '../../components/GImage.vue'
+import Layout from '../../components/Layout.vue'
+import { useI18n } from '../../composables/useI18n'
 
 const { t } = useI18n()
 

@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3'
 import { StaticLink, useFreeze } from '@gravito/freeze-vue'
+import { Head } from '@inertiajs/vue3'
+import { ChevronLeft, Home, Search } from 'lucide-vue-next'
 import Layout from '../components/Layout.vue'
 import Logo from '../components/Logo.vue'
-import { Home, ChevronLeft, Search } from 'lucide-vue-next'
 
 const { locale } = useFreeze()
 

@@ -104,9 +104,7 @@ const props = defineProps<{
   modelValue: string
 }>()
 
-const emit = defineEmits<{
-  (e: 'update:modelValue', value: string): void
-}>()
+const emit = defineEmits<(e: 'update:modelValue', value: string) => void>()
 
 const localValue = ref(props.modelValue || '')
 

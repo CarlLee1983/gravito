@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3'
-import { Scale, AlertTriangle, CheckCircle } from 'lucide-vue-next'
+import { AlertTriangle, CheckCircle, Scale } from 'lucide-vue-next'
 import Layout from '../components/Layout.vue'
 import { useI18n } from '../composables/useI18n'
 

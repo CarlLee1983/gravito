@@ -40,8 +40,5 @@
       "Bash(gh run:*)"
     ]
   },
-  "enabledMcpjsonServers": [
-    "pencil",
-    "context7"
-  ]
+  "enabledMcpjsonServers": ["pencil", "context7"]
 }

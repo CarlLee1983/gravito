@@ -1,14 +1,15 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useI18n } from 'vue-i18n'
-
-const { t } = useI18n()
 
 // 3D Tilt Logic
 const cards = ref<HTMLElement[]>([])
+
+// biome-ignore lint/correctness/noUnusedVariables: Used in template
 function handleTilt(e: MouseEvent, index: number) {
   const card = cards.value[index]
-  if (!card) return
+  if (!card) {
+    return
+  }
 
   const rect = card.getBoundingClientRect()
   const x = e.clientX - rect.left
@@ -23,9 +24,12 @@ function handleTilt(e: MouseEvent, index: number) {
   card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`
 }
 
+// biome-ignore lint/correctness/noUnusedVariables: Used in template
 function resetTilt(index: number) {
   const card = cards.value[index]
-  if (!card) return
+  if (!card) {
+    return
+  }
   card.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`
 }
 </script>

@@ -174,9 +174,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue'
+import type { PageProps } from '@inertiajs/core'
 import { Link, router, usePage } from '@inertiajs/vue3'
-import { PageProps } from '@inertiajs/core'
+import { computed, reactive, ref } from 'vue'
 import Layout from '../../components/Layout.vue'
 import { useI18n } from '../../composables/useI18n'
 

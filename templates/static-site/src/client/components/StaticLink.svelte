@@ -1,7 +1,7 @@
 <script lang="ts">
 import { Link } from '@inertiajs/svelte'
 
-let { href, className = '' }: { href: string; className?: string } = $props()
+const { href, className = '' }: { href: string; className?: string } = $props()
 
 function isStaticSite(): boolean {
   if (typeof window === 'undefined') {

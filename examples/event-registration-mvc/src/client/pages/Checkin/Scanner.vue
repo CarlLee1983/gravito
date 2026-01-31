@@ -149,8 +149,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onUnmounted } from 'vue'
 import { router } from '@inertiajs/vue3'
+import { onUnmounted, ref } from 'vue'
 import Layout from '../../components/Layout.vue'
 import { useI18n } from '../../composables/useI18n'
 

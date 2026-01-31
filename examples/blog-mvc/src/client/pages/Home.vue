@@ -1,18 +1,18 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3'
 import {
-  Newspaper,
-  ChevronRight,
-  User,
   Calendar,
+  ChevronLeft,
+  ChevronRight,
+  Edit,
   LogIn,
   LogOut,
+  Newspaper,
   PlusCircle,
-  Edit,
-  Trash2,
-  Tag,
   Search,
-  ChevronLeft,
+  Tag,
+  Trash2,
+  User,
 } from 'lucide-vue-next'
 import { ref, watch } from 'vue'
 import ThemeSwitcher from '../components/ThemeSwitcher.vue'

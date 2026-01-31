@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 
 const container = ref<HTMLElement | null>(null)
 const position = ref({ x: 0, y: 0 })

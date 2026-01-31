@@ -157,8 +157,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
+import { reactive, ref } from 'vue'
 import AdminLayout from '../../../components/AdminLayout.vue'
 
 const processing = ref(false)

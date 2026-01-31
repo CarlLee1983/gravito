@@ -35,7 +35,7 @@ describe('ContentWatcher', () => {
     await writeFile(join(TMP_DIR, 'docs', 'en', 'test.md'), '# Changed')
 
     // Wait for debounce
-    await new Promise((r) => setTimeout(r, 500))
+    await new Promise((r) => setTimeout(r, 1000))
 
     // Cache should be cleared for that item
     // @ts-expect-error

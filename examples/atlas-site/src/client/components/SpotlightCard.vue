@@ -5,8 +5,10 @@ const container = ref<HTMLElement | null>(null)
 const position = ref({ x: 0, y: 0 })
 const opacity = ref(0)
 
-const handleMouseMove = (e: MouseEvent) => {
-  if (!container.value) return
+const _handleMouseMove = (e: MouseEvent) => {
+  if (!container.value) {
+    return
+  }
 
   const rect = container.value.getBoundingClientRect()
   position.value = {
@@ -16,7 +18,7 @@ const handleMouseMove = (e: MouseEvent) => {
   opacity.value = 1
 }
 
-const handleMouseLeave = () => {
+const _handleMouseLeave = () => {
   opacity.value = 0
 }
 </script>

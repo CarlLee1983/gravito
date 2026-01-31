@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref } from 'vue'
 import { Head, router } from '@inertiajs/vue3'
-import Layout from '../../components/Layout.vue'
+import { ref } from 'vue'
 import GImage from '../../components/GImage.vue'
+import Layout from '../../components/Layout.vue'
 
 defineOptions({ layout: Layout })
 
@@ -79,6 +79,7 @@ const toggleWishlist = async () => {
 
 // Watch for prop changes to update local state (in case of reloads)
 import { computed, watch } from 'vue'
+
 watch(
   () => props.wishlistId,
   (newId) => {

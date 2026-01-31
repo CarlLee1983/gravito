@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref } from 'vue'
 import { Head, Link, router } from '@inertiajs/vue3'
+import { ref } from 'vue'
 import AdminLayout from '../../../components/AdminLayout.vue'
 
 defineOptions({ layout: AdminLayout })

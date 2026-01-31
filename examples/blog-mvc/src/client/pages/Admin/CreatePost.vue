@@ -1,10 +1,8 @@
 <script setup lang="ts">
-import { Head, useForm } from '@inertiajs/vue3'
-import { ArrowLeft, Save, Loader2, AlertCircle, Eye, Edit3, User, Tag } from 'lucide-vue-next'
-import { Link } from '@inertiajs/vue3'
-
-import { computed, ref } from 'vue'
+import { Head, Link, useForm } from '@inertiajs/vue3'
+import { AlertCircle, ArrowLeft, Edit3, Eye, Loader2, Save, Tag, User } from 'lucide-vue-next'
 import { marked } from 'marked'
+import { computed, ref } from 'vue'
 
 const props = defineProps<{
   auth: {

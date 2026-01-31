@@ -49,6 +49,16 @@
           "enabled": false
         }
       }
+    },
+    {
+      "includes": ["examples/**/*.vue", "templates/**/*.vue", "templates/**/*.svelte"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "noUnusedVariables": "off"
+          }
+        }
+      }
     }
   ],
   "linter": {

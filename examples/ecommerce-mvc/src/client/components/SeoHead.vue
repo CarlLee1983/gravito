@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3'
 import type { PageSeoConfig } from '@gravito/luminosity'
+import { Head } from '@inertiajs/vue3'
 
 defineProps<{
   seo?: PageSeoConfig
