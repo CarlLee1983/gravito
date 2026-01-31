@@ -43,6 +43,7 @@ await Mongo.disconnect()
 - 📊 **Aggregation Pipeline** - Fluent aggregation API
 - 🔌 **Multi-connection** - Named connections support
 - 🛡️ **Transactions** - ACID transactions with convenient API
+- 🗑️ **Soft Deletes** - Built-in soft delete support with restore capability
 - 📦 **GridFS** - Handle large file uploads/downloads
 - ⚡ **Change Streams** - Real-time database event listening
 - ✅ **Schema Validation** - JSON Schema enforcement
@@ -122,6 +123,52 @@ await Mongo.collection('logs').bulkWrite([
   { deleteOne: { filter: { status: 'old' } } }
 ])
 ```
+
+### Soft Deletes
+
+Dark Matter 支援開箱即用的軟刪除功能：
+
+```typescript
+// 軟刪除一筆記錄（設置 deletedAt）
+await Mongo.collection('users')
+  .where('_id', userId)
+  .softDelete()
+
+// 查詢時自動排除已軟刪除的記錄
+const activeUsers = await Mongo.collection('users').get()
+
+// 包含已軟刪除的記錄
+const allUsers = await Mongo.collection('users')
+  .withTrashed()
+  .get()
+
+// 只查詢已軟刪除的記錄
+const trashedUsers = await Mongo.collection('users')
+  .onlyTrashed()
+  .get()
+
+// 恢復軟刪除的記錄
+await Mongo.collection('users')
+  .where('_id', userId)
+  .restore()
+
+// 批次軟刪除
+await Mongo.collection('users')
+  .where('status', 'inactive')
+  .softDeleteMany()
+
+// 批次恢復
+await Mongo.collection('users')
+  .onlyTrashed()
+  .restoreMany()
+
+// 永久刪除記錄
+await Mongo.collection('users')
+  .where('_id', userId)
+  .forceDelete()
+```
+
+**注意**：軟刪除使用 `deletedAt` 欄位（`Date | null`）。請確保在文檔中加入此欄位。
 
 ### Aggregation Pipeline
 

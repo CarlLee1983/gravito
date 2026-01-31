@@ -347,6 +347,47 @@ export interface MongoCollectionContract<T = Document> {
   bulkWrite(operations: BulkWriteOperation<T>[]): Promise<BulkWriteResult>
   watch(pipeline?: PipelineStage[], options?: ChangeStreamOptions): AsyncIterable<ChangeEvent<T>>
 
+  // Soft Delete Methods
+  /**
+   * 包含已軟刪除的記錄
+   */
+  withTrashed(): this
+
+  /**
+   * 只查詢已軟刪除的記錄
+   */
+  onlyTrashed(): this
+
+  /**
+   * 軟刪除單一記錄（設置 deletedAt）
+   */
+  softDelete(): Promise<UpdateResult>
+
+  /**
+   * 批次軟刪除
+   */
+  softDeleteMany(): Promise<UpdateResult>
+
+  /**
+   * 恢復軟刪除的記錄
+   */
+  restore(): Promise<UpdateResult>
+
+  /**
+   * 批次恢復
+   */
+  restoreMany(): Promise<UpdateResult>
+
+  /**
+   * 強制刪除（真正刪除記錄）
+   */
+  forceDelete(): Promise<DeleteResult>
+
+  /**
+   * 批次強制刪除
+   */
+  forceDeleteMany(): Promise<DeleteResult>
+
   // Aggregation
   aggregate(): MongoAggregateContract<T>
 
@@ -427,4 +468,11 @@ export interface MongoDatabaseContract {
 export interface Document {
   _id?: string
   [key: string]: unknown
+}
+
+/**
+ * 支援軟刪除的文檔類型
+ */
+export interface SoftDeletableDocument extends Document {
+  deletedAt?: Date | null
 }
