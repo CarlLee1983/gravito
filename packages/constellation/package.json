@@ -1,6 +1,6 @@
 {
   "name": "@gravito/constellation",
-  "version": "3.0.2",
+  "version": "3.1.0",
   "description": "Powerful sitemap generation for Gravito applications with dynamic/static support, sharding, and caching.",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
