@@ -105,13 +105,13 @@ const _flareManual = new OrbitFlare({
 // 範例 4: 禁用特定通知類型
 // ===========================
 
-class MarketingNotification extends Notification {
+export class MarketingNotification extends Notification {
   via(_notifiable: Notifiable): string[] {
     return ['email', 'sms']
   }
 }
 
-class SecurityAlertNotification extends Notification {
+export class SecurityAlertNotification extends Notification {
   via(_notifiable: Notifiable): string[] {
     return ['email', 'sms', 'database']
   }
@@ -264,7 +264,7 @@ const _flareWithCache = new OrbitFlare({
 // 範例 9: 容錯處理
 // ===========================
 
-class FallbackPreferenceProvider implements NotificationPreference {
+export class FallbackPreferenceProvider implements NotificationPreference {
   async getUserPreferences(notifiable: Notifiable) {
     try {
       // 嘗試從主資料庫載入

@@ -83,10 +83,12 @@ const _timeoutChannel = new TimeoutChannel(customChannel, {
 })
 
 // ==========================================
-// 範例 5: 動態調整 Timeout
+// 範例 3: 自定義通道類別 (封裝超時邏輯)
 // ==========================================
 
-class AdaptiveSlackChannel {
+export class AdaptiveSlackChannel {
+  private channel: SlackChannel
+
   constructor(private baseTimeout = 5000) {
     this.channel = new SlackChannel({
       webhookUrl: 'https://hooks.slack.com/services/YOUR/WEBHOOK/URL',

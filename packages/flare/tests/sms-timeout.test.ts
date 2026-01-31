@@ -270,6 +270,32 @@ describe('SmsChannel', () => {
 
       global.fetch = originalFetch
     })
+
+    it('應該支援從 Notification 自定義 From 地址', async () => {
+      global.fetch = jest.fn(() =>
+        Promise.resolve({
+          ok: true,
+          statusText: 'OK',
+          text: () => Promise.resolve('{"sid":"SM123"}'),
+        } as Response)
+      )
+
+      const channel = new SmsChannel({
+        provider: 'twilio',
+        apiKey: 'test-sid',
+        apiSecret: 'test-token',
+        from: '+0987654321', // 預設 from
+      })
+
+      await channel.send(new SmsNotificationWithFrom(), notifiable)
+
+      const callArgs = (global.fetch as jest.Mock).mock.calls[0]
+      const body = callArgs[1].body
+      expect(body.get('From')).toBe('+9999999999') // 應該使用通知中定義的 from
+      expect(body.get('Body')).toBe('Test message with custom from')
+
+      global.fetch = originalFetch
+    })
   })
 
   describe('AWS SNS Provider', () => {

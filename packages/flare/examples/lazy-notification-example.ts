@@ -170,7 +170,7 @@ async function example() {
 /**
  * 使用 ensureLoaded 的進階範例
  */
-class SmartInvoiceNotification extends LazyNotification<{ invoice: any }> {
+export class SmartInvoiceNotification extends LazyNotification<{ invoice: any }> {
   constructor(private invoiceId: string) {
     super()
   }
