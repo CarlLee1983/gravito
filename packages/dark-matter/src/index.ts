@@ -10,6 +10,7 @@ export { MongoGridFS } from './MongoGridFS'
 export { MongoManager } from './MongoManager'
 export { MongoPoolMonitor } from './MongoPoolMetrics'
 export { MongoAggregateBuilder, MongoQueryBuilder } from './MongoQueryBuilder'
+export { MongoSchemaBuilder, schema } from './MongoSchemaBuilder'
 
 // Type exports
 export type {
@@ -35,6 +36,8 @@ export type {
   PoolMetrics,
   Projection,
   RetryConfig,
+  SchemaValidationOptions,
+  SoftDeletableDocument,
   SortDirection,
   SortSpec,
   TransactionOptions,

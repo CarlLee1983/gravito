@@ -46,7 +46,7 @@ await Mongo.disconnect()
 - 🗑️ **Soft Deletes** - Built-in soft delete support with restore capability
 - 📦 **GridFS** - Handle large file uploads/downloads
 - ⚡ **Change Streams** - Real-time database event listening
-- ✅ **Schema Validation** - JSON Schema enforcement
+- ✅ **Schema Validation** - Type-safe Schema Builder API for MongoDB validation
 
 ## API Reference
 
@@ -197,6 +197,54 @@ const ordersWithCustomers = await Mongo.collection('orders')
   })
   .unwind('$customer')
   .get()
+```
+
+### Schema Validation
+
+使用友善的 Schema Builder API 建立型別安全的 MongoDB Schema 驗證：
+
+```typescript
+import { schema } from '@gravito/dark-matter'
+
+// 建構 Schema
+const userSchema = schema()
+  .required('username', 'email', 'createdAt')
+  .string('username', { minLength: 3, maxLength: 50 })
+  .string('email', { pattern: '^.+@.+$' })
+  .integer('age', { minimum: 0, maximum: 150 })
+  .boolean('isActive')
+  .date('createdAt')
+  .array('roles', 'string', { minItems: 1 })
+  .object('profile', (s) =>
+    s
+      .string('bio', { maxLength: 500 })
+      .string('avatar')
+      .integer('followers')
+  )
+
+// 建立帶有 Schema 驗證的 Collection
+await Mongo.database().createCollectionWithSchema('users', userSchema)
+
+// 或使用原生 API
+await Mongo.database().createCollection('users', {
+  schema: userSchema.toValidationOptions({
+    validationLevel: 'strict',
+    validationAction: 'error'
+  })
+})
+```
+
+#### 支援的欄位類型
+
+```typescript
+schema()
+  .string('field', { minLength, maxLength, pattern, enum })
+  .number('field', { minimum, maximum, exclusiveMinimum, exclusiveMaximum })
+  .integer('field', { minimum, maximum })
+  .boolean('field')
+  .date('field')
+  .array('field', 'string', { minItems, maxItems, uniqueItems })
+  .object('field', (s) => s.string('nested'))
 ```
 
 ### Advanced Features

@@ -460,6 +460,14 @@ export interface MongoDatabaseContract {
   dropCollection(name: string): Promise<boolean>
   createCollection(name: string, options?: { schema?: SchemaValidationOptions }): Promise<void>
   setValidation(collectionName: string, schema: SchemaValidationOptions): Promise<void>
+  createCollectionWithSchema(
+    name: string,
+    schemaBuilder: unknown,
+    options?: {
+      validationLevel?: 'off' | 'strict' | 'moderate'
+      validationAction?: 'error' | 'warn'
+    }
+  ): Promise<void>
 }
 
 /**
