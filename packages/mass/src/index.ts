@@ -76,12 +76,53 @@ export { tbValidator as validator } from '@hono/typebox-validator'
 export type { Static, TSchema } from '@sinclair/typebox'
 // Re-export TypeBox Schema builder as Schema
 export * as Schema from '@sinclair/typebox'
-export { formatErrors, MassValidationError } from './errors'
+// Export coercion helpers
+export {
+  CoercibleBoolean,
+  CoercibleInteger,
+  CoercibleNumber,
+  coerceBoolean,
+  coerceData,
+  coerceDate,
+  coerceInteger,
+  coerceNumber,
+  validateWithCoercion,
+} from './coercion'
+// Export error handling
+export {
+  createErrorFormatter,
+  ERROR_MESSAGES_EN,
+  ERROR_MESSAGES_ZH_TW,
+  type ErrorFormatter,
+  enhanceError,
+  formatErrors,
+  MassValidationError,
+} from './errors'
+// Export format registry
+export {
+  getFormatValidator,
+  isFormatRegistered,
+  REGISTERED_FORMATS,
+  type RegisteredFormat,
+  registerAllFormats,
+  registerFormat,
+  unregisterFormat,
+} from './formats'
+// Export OpenAPI utilities
+export {
+  type AstralResource,
+  createAstralResource,
+  createCrudResources,
+  type OpenApiSchema,
+  typeboxToOpenApi,
+} from './openapi'
+// Export types
 export type {
   ValidationError,
   ValidationHook,
   ValidationResult,
 } from './types'
+// Export utility functions
 export { partial } from './utils'
-// Export validate function
+// Export validation functions
 export { type ValidationSource, validate } from './validator'
