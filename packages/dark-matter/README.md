@@ -279,14 +279,53 @@ for await (const event of stream) {
 
 #### GridFS (File Storage)
 
+GridFS 支援大檔案（>16MB）的儲存與串流處理：
+
 ```typescript
+import { MongoGridFS } from '@gravito/dark-matter'
+
 const grid = new MongoGridFS(Mongo.database())
 
-// Upload
-const fileId = await grid.upload(Buffer.from('Hello'), { filename: 'hello.txt' })
-
-// Download
+// 基本上傳下載
+const fileId = await grid.upload(Buffer.from('Hello'), {
+  filename: 'hello.txt',
+  contentType: 'text/plain',
+  metadata: { author: 'John' }
+})
 const content = await grid.download(fileId)
+
+// 串流上傳（適合大檔案）
+const stream = file.stream()
+const fileId = await grid.uploadStream(stream, {
+  filename: 'large-video.mp4'
+}, (progress) => {
+  console.log(`上傳進度: ${progress.bytesWritten} bytes`)
+})
+
+// 串流下載
+const downloadStream = grid.downloadStream(fileId)
+const reader = downloadStream.getReader()
+while (true) {
+  const { done, value } = await reader.read()
+  if (done) break
+  // 處理 chunk
+}
+
+// 大檔案分片上傳（帶進度追蹤）
+const fileId = await grid.uploadLargeFile(largeFile, {
+  filename: 'movie.mp4',
+  chunkSizeBytes: 255 * 1024 // 255 KB
+}, (progress) => {
+  console.log(`進度: ${progress.percentage}%`)
+  console.log(`已上傳: ${progress.bytesWritten} / ${progress.totalBytes}`)
+})
+
+// 取得檔案中繼資料
+const fileInfo = await grid.findById(fileId)
+console.log(fileInfo.filename, fileInfo.length, fileInfo.uploadDate)
+
+// 刪除檔案
+await grid.delete(fileId)
 ```
 
 #### Schema Validation

@@ -22,6 +22,7 @@ export type {
   FilterOperator,
   GridFSFile,
   GridFSUploadOptions,
+  GridFSUploadProgress,
   InsertManyResult,
   InsertResult,
   LookupOptions,

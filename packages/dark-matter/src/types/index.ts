@@ -294,6 +294,18 @@ export interface GridFSFile {
   contentType?: string
 }
 
+/**
+ * GridFS 上傳進度資訊
+ */
+export interface GridFSUploadProgress {
+  /** 已寫入的位元組數 */
+  bytesWritten: number
+  /** 總位元組數（串流模式下可能為 0） */
+  totalBytes: number
+  /** 完成百分比（0-100） */
+  percentage: number
+}
+
 // ============================================================================
 // Contract Interfaces
 
