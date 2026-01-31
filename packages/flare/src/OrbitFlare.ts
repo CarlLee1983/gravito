@@ -256,16 +256,16 @@ export class OrbitFlare implements GravitoOrbit {
   }
 
   private setupMiddleware(core: PlanetCore, manager: NotificationManager): void {
-    // 註冊自定義中介層
+    // Register custom middleware
     if (this.options.middleware) {
       for (const middleware of this.options.middleware) {
         manager.use(middleware)
       }
     }
 
-    // 如果啟用偏好過濾，自動註冊 PreferenceMiddleware
+    // Automatically register PreferenceMiddleware if enabled
     if (this.options.enablePreference) {
-      // 動態導入 PreferenceMiddleware 以避免循環依賴
+      // Dynamic import to avoid circular dependency
       const { PreferenceMiddleware } = require('./middleware/PreferenceMiddleware')
       const preferenceMiddleware = new PreferenceMiddleware(this.options.preferenceProvider)
       manager.use(preferenceMiddleware)

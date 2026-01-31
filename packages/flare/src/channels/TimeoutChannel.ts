@@ -2,24 +2,25 @@ import type { Notification } from '../Notification'
 import type { AbortableSendOptions, Notifiable, NotificationChannel } from '../types'
 
 /**
- * Timeout 配置選項。
+ * Configuration options for TimeoutChannel.
  */
 export interface TimeoutConfig {
   /**
-   * Timeout 時間（毫秒）。
+   * Timeout duration in milliseconds.
    */
   timeout: number
 
   /**
-   * Timeout 發生時的回調函數。
-   * @param channel - Channel 名稱
-   * @param notification - 通知實例
+   * Optional callback function triggered when a timeout occurs.
+   *
+   * @param channel - The name of the channel that timed out.
+   * @param notification - The notification instance that was being sent.
    */
   onTimeout?: (channel: string, notification: Notification) => void
 }
 
 /**
- * Timeout 錯誤類別。
+ * Exception thrown when a notification send operation exceeds the configured timeout.
  */
 export class TimeoutError extends Error {
   constructor(message: string) {
@@ -29,9 +30,7 @@ export class TimeoutError extends Error {
 }
 
 /**
- * Abort 錯誤類別。
- *
- * 當請求被外部 AbortController 取消時拋出。
+ * Exception thrown when a request is aborted by an external AbortController signal.
  */
 export class AbortError extends Error {
   constructor(message: string) {
@@ -41,33 +40,34 @@ export class AbortError extends Error {
 }
 
 /**
- * Timeout Channel 裝飾器（v4.0.0 支援真正的請求取消）
+ * Decorator for notification channels that adds timeout and cancellation support.
  *
- * 為任何 NotificationChannel 加上 timeout 功能。
- * 使用 AbortController 實現真正的請求取消，並結合 Promise.race 確保及時拋出錯誤。
+ * Implements actual request cancellation using AbortController and Promise.race.
+ * Compatible with v4.0.0+ cancellation architecture.
  *
  * @example
- * ```ts
- * const slackChannel = new SlackChannel(config)
+ * ```typescript
+ * const slackChannel = new SlackChannel(config);
  * const timeoutChannel = new TimeoutChannel(slackChannel, {
- *   timeout: 5000, // 5 秒
+ *   timeout: 5000,
  *   onTimeout: (channel, notification) => {
- *     console.log(`Channel ${channel} timeout`)
+ *     console.error(`Channel ${channel} timed out`);
  *   }
- * })
+ * });
  *
- * // 使用 timeout
- * await timeoutChannel.send(notification, user)
+ * // Send with timeout
+ * await timeoutChannel.send(notification, user);
  *
- * // 支援外部 abort
- * const controller = new AbortController()
- * setTimeout(() => controller.abort(), 3000)
- * await timeoutChannel.send(notification, user, { signal: controller.signal })
+ * // Support external manual abort
+ * const controller = new AbortController();
+ * setTimeout(() => controller.abort(), 3000);
+ * await timeoutChannel.send(notification, user, { signal: controller.signal });
  * ```
  *
  * @remarks
- * v4.0.0 新增：使用 AbortController 讓底層 fetch 請求可以被真正取消，
- * 同時使用 Promise.race 確保 timeout 時立即拋出錯誤，不等待底層請求完成。
+ * In v4.0.0, this class uses AbortController to allow underlying fetch requests
+ * to be physically cancelled, while using Promise.race to ensure the timeout
+ * error is thrown immediately without waiting for the underlying request to finish.
  */
 export class TimeoutChannel implements NotificationChannel {
   constructor(
@@ -75,6 +75,16 @@ export class TimeoutChannel implements NotificationChannel {
     private config: TimeoutConfig
   ) {}
 
+  /**
+   * Sends a notification through the inner channel with a timeout guard.
+   *
+   * @param notification - The notification to send.
+   * @param notifiable - The recipient of the notification.
+   * @param options - Send options including an optional AbortSignal.
+   * @returns A promise that resolves when the notification is sent.
+   * @throws {TimeoutError} Thrown if the operation exceeds the configured timeout.
+   * @throws {AbortError} Thrown if the operation is aborted via the provided signal.
+   */
   async send(
     notification: Notification,
     notifiable: Notifiable,
