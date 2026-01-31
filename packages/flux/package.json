@@ -46,16 +46,22 @@
     "test:ci": "bun test --coverage --coverage-threshold=70"
   },
   "peerDependencies": {
-    "@gravito/core": "workspace:*"
+    "@gravito/core": "workspace:*",
+    "pg": "^8.18.0"
   },
   "peerDependenciesMeta": {
     "@gravito/core": {
       "optional": true
+    },
+    "pg": {
+      "optional": true
     }
   },
   "devDependencies": {
-    "bun-types": "latest",
     "@gravito/core": "workspace:*",
+    "@types/pg": "^8.16.0",
+    "bun-types": "latest",
+    "pg": "^8.18.0",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3"
   },

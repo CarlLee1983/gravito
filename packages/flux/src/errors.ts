@@ -24,6 +24,18 @@ export enum FluxErrorCode {
   STEP_NOT_FOUND = 'STEP_NOT_FOUND',
   /** Multiple concurrent attempts to modify the same workflow instance were detected. */
   CONCURRENT_MODIFICATION = 'CONCURRENT_MODIFICATION',
+  /** A workflow definition must contain at least one step to be executable. */
+  EMPTY_WORKFLOW = 'EMPTY_WORKFLOW',
+  /** No recovery action is registered for a step that requires recovery. */
+  NO_RECOVERY_ACTION = 'NO_RECOVERY_ACTION',
+  /** An invalid JSON Pointer was provided for state manipulation. */
+  INVALID_JSON_POINTER = 'INVALID_JSON_POINTER',
+  /** Cannot access a property on a non-object value in the state tree. */
+  INVALID_PATH_TRAVERSAL = 'INVALID_PATH_TRAVERSAL',
+  /** Cannot replace the root object of the workflow state. */
+  CANNOT_REPLACE_ROOT = 'CANNOT_REPLACE_ROOT',
+  /** Cannot remove the root object of the workflow state. */
+  CANNOT_REMOVE_ROOT = 'CANNOT_REMOVE_ROOT',
 }
 
 /**
@@ -175,4 +187,75 @@ export function stepNotFound(step: string | number): FluxError {
  */
 export function invalidStepIndex(index: number): FluxError {
   return new FluxError(`Invalid step index: ${index}`, FluxErrorCode.INVALID_STEP_INDEX, { index })
+}
+
+/**
+ * Creates a FluxError for an empty workflow (no steps defined).
+ *
+ * @param workflowName - The name of the workflow.
+ * @returns A FluxError with the EMPTY_WORKFLOW code.
+ */
+export function emptyWorkflow(workflowName: string): FluxError {
+  return new FluxError(`Workflow "${workflowName}" has no steps`, FluxErrorCode.EMPTY_WORKFLOW, {
+    workflowName,
+  })
+}
+
+/**
+ * Creates a FluxError when no recovery action is registered for a step.
+ *
+ * @param stepName - The name of the step requiring recovery.
+ * @returns A FluxError with the NO_RECOVERY_ACTION code.
+ */
+export function noRecoveryAction(stepName: string): FluxError {
+  return new FluxError(
+    `No recovery action registered for step: ${stepName}`,
+    FluxErrorCode.NO_RECOVERY_ACTION,
+    { stepName }
+  )
+}
+
+/**
+ * Creates a FluxError for invalid JSON Pointer syntax.
+ *
+ * @param path - The invalid JSON Pointer.
+ * @returns A FluxError with the INVALID_JSON_POINTER code.
+ */
+export function invalidJsonPointer(path: string): FluxError {
+  return new FluxError(`Invalid JSON Pointer: ${path}`, FluxErrorCode.INVALID_JSON_POINTER, {
+    path,
+  })
+}
+
+/**
+ * Creates a FluxError when attempting to traverse a non-object value.
+ *
+ * @param segment - The property being accessed.
+ * @param current - The current value type.
+ * @returns A FluxError with the INVALID_PATH_TRAVERSAL code.
+ */
+export function invalidPathTraversal(segment: string, current: unknown): FluxError {
+  return new FluxError(
+    `Cannot access property '${segment}' on ${current}`,
+    FluxErrorCode.INVALID_PATH_TRAVERSAL,
+    { segment, currentType: typeof current }
+  )
+}
+
+/**
+ * Creates a FluxError when attempting to replace the root object.
+ *
+ * @returns A FluxError with the CANNOT_REPLACE_ROOT code.
+ */
+export function cannotReplaceRoot(): FluxError {
+  return new FluxError('Cannot replace root object', FluxErrorCode.CANNOT_REPLACE_ROOT)
+}
+
+/**
+ * Creates a FluxError when attempting to remove the root object.
+ *
+ * @returns A FluxError with the CANNOT_REMOVE_ROOT code.
+ */
+export function cannotRemoveRoot(): FluxError {
+  return new FluxError('Cannot remove root object', FluxErrorCode.CANNOT_REMOVE_ROOT)
 }

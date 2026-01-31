@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3'
-import Layout from '../../components/Layout.vue'
 import GImage from '../../components/GImage.vue'
+import Layout from '../../components/Layout.vue'
 
 defineOptions({ layout: Layout })
 

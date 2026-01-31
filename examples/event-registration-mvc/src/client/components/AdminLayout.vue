@@ -166,8 +166,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watchEffect } from 'vue'
 import { Link, usePage } from '@inertiajs/vue3'
+import { onMounted, ref, watchEffect } from 'vue'
 import { useI18n } from '../composables/useI18n'
 
 const { t, getLocale } = useI18n()

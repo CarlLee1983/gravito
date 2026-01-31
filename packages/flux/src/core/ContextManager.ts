@@ -124,6 +124,11 @@ export class ContextManager {
    * @param ctx - The current context.
    * @param status - The new status to apply.
    * @returns A new context instance with the updated status.
+   *
+   * @example
+   * ```typescript
+   * const runningCtx = manager.updateStatus(ctx, 'running');
+   * ```
    */
   updateStatus<TInput, TData extends Record<string, any>>(
     ctx: WorkflowContext<TInput, TData>,
@@ -140,6 +145,12 @@ export class ContextManager {
    *
    * @param ctx - The current context.
    * @returns A new context instance pointing to the next step.
+   *
+   * @example
+   * ```typescript
+   * const nextStepCtx = manager.advanceStep(ctx);
+   * console.log(nextStepCtx.currentStep); // ctx.currentStep + 1
+   * ```
    */
   advanceStep<TInput, TData extends Record<string, any>>(
     ctx: WorkflowContext<TInput, TData>
@@ -159,6 +170,12 @@ export class ContextManager {
    * @param index - The index of the step in the history array.
    * @param name - The name to assign to the step.
    * @returns A new context instance with the updated history.
+   *
+   * @example
+   * ```typescript
+   * const namedCtx = manager.setStepName(ctx, 0, 'validate-user');
+   * console.log(namedCtx.history[0].name); // 'validate-user'
+   * ```
    */
   setStepName<TInput, TData extends Record<string, any>>(
     ctx: WorkflowContext<TInput, TData>,

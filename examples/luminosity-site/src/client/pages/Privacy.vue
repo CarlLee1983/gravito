@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3'
-import { Shield, Lock, Eye } from 'lucide-vue-next'
+import { Eye, Lock, Shield } from 'lucide-vue-next'
 import Layout from '../components/Layout.vue'
 import { useI18n } from '../composables/useI18n'
 

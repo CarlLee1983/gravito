@@ -43,9 +43,10 @@ await Mongo.disconnect()
 - 📊 **Aggregation Pipeline** - Fluent aggregation API
 - 🔌 **Multi-connection** - Named connections support
 - 🛡️ **Transactions** - ACID transactions with convenient API
+- 🗑️ **Soft Deletes** - Built-in soft delete support with restore capability
 - 📦 **GridFS** - Handle large file uploads/downloads
 - ⚡ **Change Streams** - Real-time database event listening
-- ✅ **Schema Validation** - JSON Schema enforcement
+- ✅ **Schema Validation** - Type-safe Schema Builder API for MongoDB validation
 
 ## API Reference
 
@@ -123,6 +124,52 @@ await Mongo.collection('logs').bulkWrite([
 ])
 ```
 
+### Soft Deletes
+
+Dark Matter 支援開箱即用的軟刪除功能：
+
+```typescript
+// 軟刪除一筆記錄（設置 deletedAt）
+await Mongo.collection('users')
+  .where('_id', userId)
+  .softDelete()
+
+// 查詢時自動排除已軟刪除的記錄
+const activeUsers = await Mongo.collection('users').get()
+
+// 包含已軟刪除的記錄
+const allUsers = await Mongo.collection('users')
+  .withTrashed()
+  .get()
+
+// 只查詢已軟刪除的記錄
+const trashedUsers = await Mongo.collection('users')
+  .onlyTrashed()
+  .get()
+
+// 恢復軟刪除的記錄
+await Mongo.collection('users')
+  .where('_id', userId)
+  .restore()
+
+// 批次軟刪除
+await Mongo.collection('users')
+  .where('status', 'inactive')
+  .softDeleteMany()
+
+// 批次恢復
+await Mongo.collection('users')
+  .onlyTrashed()
+  .restoreMany()
+
+// 永久刪除記錄
+await Mongo.collection('users')
+  .where('_id', userId)
+  .forceDelete()
+```
+
+**注意**：軟刪除使用 `deletedAt` 欄位（`Date | null`）。請確保在文檔中加入此欄位。
+
 ### Aggregation Pipeline
 
 ```typescript
@@ -150,6 +197,54 @@ const ordersWithCustomers = await Mongo.collection('orders')
   })
   .unwind('$customer')
   .get()
+```
+
+### Schema Validation
+
+使用友善的 Schema Builder API 建立型別安全的 MongoDB Schema 驗證：
+
+```typescript
+import { schema } from '@gravito/dark-matter'
+
+// 建構 Schema
+const userSchema = schema()
+  .required('username', 'email', 'createdAt')
+  .string('username', { minLength: 3, maxLength: 50 })
+  .string('email', { pattern: '^.+@.+$' })
+  .integer('age', { minimum: 0, maximum: 150 })
+  .boolean('isActive')
+  .date('createdAt')
+  .array('roles', 'string', { minItems: 1 })
+  .object('profile', (s) =>
+    s
+      .string('bio', { maxLength: 500 })
+      .string('avatar')
+      .integer('followers')
+  )
+
+// 建立帶有 Schema 驗證的 Collection
+await Mongo.database().createCollectionWithSchema('users', userSchema)
+
+// 或使用原生 API
+await Mongo.database().createCollection('users', {
+  schema: userSchema.toValidationOptions({
+    validationLevel: 'strict',
+    validationAction: 'error'
+  })
+})
+```
+
+#### 支援的欄位類型
+
+```typescript
+schema()
+  .string('field', { minLength, maxLength, pattern, enum })
+  .number('field', { minimum, maximum, exclusiveMinimum, exclusiveMaximum })
+  .integer('field', { minimum, maximum })
+  .boolean('field')
+  .date('field')
+  .array('field', 'string', { minItems, maxItems, uniqueItems })
+  .object('field', (s) => s.string('nested'))
 ```
 
 ### Advanced Features
@@ -184,14 +279,53 @@ for await (const event of stream) {
 
 #### GridFS (File Storage)
 
+GridFS 支援大檔案（>16MB）的儲存與串流處理：
+
 ```typescript
+import { MongoGridFS } from '@gravito/dark-matter'
+
 const grid = new MongoGridFS(Mongo.database())
 
-// Upload
-const fileId = await grid.upload(Buffer.from('Hello'), { filename: 'hello.txt' })
-
-// Download
+// 基本上傳下載
+const fileId = await grid.upload(Buffer.from('Hello'), {
+  filename: 'hello.txt',
+  contentType: 'text/plain',
+  metadata: { author: 'John' }
+})
 const content = await grid.download(fileId)
+
+// 串流上傳（適合大檔案）
+const stream = file.stream()
+const fileId = await grid.uploadStream(stream, {
+  filename: 'large-video.mp4'
+}, (progress) => {
+  console.log(`上傳進度: ${progress.bytesWritten} bytes`)
+})
+
+// 串流下載
+const downloadStream = grid.downloadStream(fileId)
+const reader = downloadStream.getReader()
+while (true) {
+  const { done, value } = await reader.read()
+  if (done) break
+  // 處理 chunk
+}
+
+// 大檔案分片上傳（帶進度追蹤）
+const fileId = await grid.uploadLargeFile(largeFile, {
+  filename: 'movie.mp4',
+  chunkSizeBytes: 255 * 1024 // 255 KB
+}, (progress) => {
+  console.log(`進度: ${progress.percentage}%`)
+  console.log(`已上傳: ${progress.bytesWritten} / ${progress.totalBytes}`)
+})
+
+// 取得檔案中繼資料
+const fileInfo = await grid.findById(fileId)
+console.log(fileInfo.filename, fileInfo.length, fileInfo.uploadDate)
+
+// 刪除檔案
+await grid.delete(fileId)
 ```
 
 #### Schema Validation
@@ -227,6 +361,77 @@ const health = await Mongo.connection().getHealthStatus()
 console.log(health.latencyMs) // e.g. 15
 ```
 
+## Performance Optimization
+
+### Indexing
+
+```typescript
+// Create indexes for frequently queried fields
+await Mongo.collection('users').createIndex({ email: 1 }, { unique: true })
+await Mongo.collection('users').createIndex({ status: 1, createdAt: -1 })
+```
+
+### Query Optimization
+
+```typescript
+// Use projection to reduce data transfer
+const users = await Mongo.collection('users')
+  .select('name', 'email')  // Only fetch needed fields
+  .where('status', 'active')
+  .get()
+
+// Use limit for large result sets
+const recentPosts = await Mongo.collection('posts')
+  .orderBy('createdAt', 'desc')
+  .limit(20)  // Prevent fetching too much data
+  .get()
+```
+
+### Connection Pool
+
+```typescript
+Mongo.configure({
+  default: 'main',
+  connections: {
+    main: {
+      uri: 'mongodb://localhost:27017',
+      database: 'myapp',
+      maxPoolSize: 50,      // Adjust based on load
+      minPoolSize: 10,      // Keep minimum connections
+      maxIdleTimeMS: 30000  // Idle connection timeout
+    }
+  }
+})
+```
+
+### Batch Operations
+
+```typescript
+// Use bulkWrite to reduce round trips
+await Mongo.collection('logs').bulkWrite([
+  { insertOne: { document: { event: 'login', userId: 1 } } },
+  { updateOne: { filter: { _id: 2 }, update: { $set: { status: 'active' } } } },
+  { deleteOne: { filter: { _id: 3 } } }
+])
+```
+
+### Monitoring
+
+```typescript
+import { MongoPoolMonitor } from '@gravito/dark-matter'
+
+const monitor = new MongoPoolMonitor(Mongo.connection())
+const metrics = monitor.getMetrics()
+
+console.log('Pool status:', {
+  totalConnections: metrics.totalConnections,
+  availableConnections: metrics.availableConnections,
+  waitQueueSize: metrics.waitQueueSize
+})
+```
+
+詳細的效能調優指南請參考 [docs/performance-analysis.md](./docs/performance-analysis.md)
+
 ## Roadmap
 
 - [x] Connection retry & health check
@@ -234,6 +439,9 @@ console.log(health.latencyMs) // e.g. 15
 - [x] Schema validation
 - [x] Change streams
 - [x] GridFS support
+- [x] Soft deletes
+- [x] Schema Builder API
+- [x] GridFS streaming & progress tracking
 
 ## License
 

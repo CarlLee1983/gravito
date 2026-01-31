@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import { StaticLink } from '@gravito/freeze-vue'
 import { Head } from '@inertiajs/vue3'
 import {
   Activity,
+  ChevronRight,
   Code,
   Cpu,
   Layers,
@@ -9,12 +11,10 @@ import {
   Shield,
   Terminal,
   Zap,
-  ChevronRight,
 } from 'lucide-vue-next'
-import { StaticLink } from '@gravito/freeze-vue'
+import { computed } from 'vue'
 import Layout from '../components/Layout.vue'
 import { useI18n } from '../composables/useI18n'
-import { computed } from 'vue'
 
 const { t, locale } = useI18n()
 

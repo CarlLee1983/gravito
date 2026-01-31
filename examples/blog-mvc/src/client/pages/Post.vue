@@ -2,16 +2,17 @@
 import { Head, Link } from '@inertiajs/vue3'
 import {
   ArrowLeft,
-  User,
-  Calendar,
-  Share2,
-  MessageSquare,
-  Tag as TagIcon,
-  Hash,
   ArrowRight,
+  Calendar,
+  Hash,
+  MessageSquare,
+  Share2,
+  Tag as TagIcon,
+  User,
 } from 'lucide-vue-next'
-import { computed } from 'vue'
 import { marked } from 'marked'
+import { computed } from 'vue'
+
 const props = defineProps<{
   post: {
     title: string

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { Head, usePage, router } from '@inertiajs/vue3'
+import { Head, router, usePage } from '@inertiajs/vue3'
+import { computed, ref } from 'vue'
 import Layout from '../../components/Layout.vue'
 
 defineOptions({ layout: Layout })

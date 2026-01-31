@@ -1,3 +1,4 @@
+import * as Errors from '../errors'
 import type {
   FluxWaitResult,
   StepDefinition,
@@ -23,6 +24,20 @@ export interface StepOptions<TInput = unknown, TData = Record<string, any>> {
   compensate?: (ctx: WorkflowContext<TInput, TData>) => Promise<void> | void
 }
 
+export interface ParallelStepConfig<TInput = unknown, TData = Record<string, any>> {
+  name: string
+  handler: (ctx: WorkflowContext<TInput, TData>) => StepHandlerResult
+  options?: StepOptions<TInput, TData>
+  /** Shorthand for options.compensate - rollback logic if subsequent steps fail */
+  compensate?: (ctx: WorkflowContext<TInput, TData>) => Promise<void> | void
+  /** Shorthand for options.retries */
+  retries?: number
+  /** Shorthand for options.timeout */
+  timeout?: number
+  /** Shorthand for options.when */
+  when?: (ctx: WorkflowContext<TInput, TData>) => boolean
+}
+
 /**
  * A fluent API for defining workflows in a type-safe manner.
  * The builder pattern ensures that workflows are constructed with all necessary components
@@ -40,6 +55,7 @@ export class WorkflowBuilder<TInput = unknown, TData = Record<string, any>> {
   private _name: string
   private _steps: StepDefinition[] = []
   private _validateInput?: (input: unknown) => input is TInput
+  private _parallelGroupCounter = 0
 
   /**
    * Initializes a new workflow builder with a unique name.
@@ -105,6 +121,49 @@ export class WorkflowBuilder<TInput = unknown, TData = Record<string, any>> {
   }
 
   /**
+   * Adds multiple steps that execute in parallel.
+   * All steps in a parallel group will run concurrently and must all succeed before proceeding.
+   *
+   * @param steps - Array of step configurations to execute in parallel.
+   * @returns The builder instance for chaining.
+   *
+   * @example
+   * ```typescript
+   * workflow.stepParallel([
+   *   { name: 'fetch-user', handler: async (ctx) => { ctx.data.user = await getUser() } },
+   *   { name: 'fetch-orders', handler: async (ctx) => { ctx.data.orders = await getOrders() } },
+   *   { name: 'fetch-profile', handler: async (ctx) => { ctx.data.profile = await getProfile() } }
+   * ])
+   * ```
+   */
+  stepParallel(steps: ParallelStepConfig<TInput, TData>[]): this {
+    if (steps.length === 0) {
+      return this
+    }
+
+    const groupId = `parallel-${this._parallelGroupCounter++}`
+
+    for (const stepConfig of steps) {
+      this._steps.push({
+        name: stepConfig.name,
+        handler: stepConfig.handler as (ctx: WorkflowContext) => StepHandlerResult,
+        retries: stepConfig.retries ?? stepConfig.options?.retries,
+        timeout: stepConfig.timeout ?? stepConfig.options?.timeout,
+        when: (stepConfig.when ?? stepConfig.options?.when) as
+          | ((ctx: WorkflowContext) => boolean)
+          | undefined,
+        compensate: (stepConfig.compensate ?? stepConfig.options?.compensate) as
+          | ((ctx: WorkflowContext) => Promise<void> | void)
+          | undefined,
+        commit: false,
+        parallelGroup: groupId,
+      })
+    }
+
+    return this
+  }
+
+  /**
    * Adds a "commit" step that represents a permanent side-effect.
    * Commit steps are intended for operations that should not be rolled back
    * or re-executed during certain replay scenarios.
@@ -137,7 +196,7 @@ export class WorkflowBuilder<TInput = unknown, TData = Record<string, any>> {
    */
   build(): WorkflowDefinition<TInput, TData> {
     if (this._steps.length === 0) {
-      throw new Error(`Workflow "${this._name}" has no steps`)
+      throw Errors.emptyWorkflow(this._name)
     }
 
     return {

@@ -197,8 +197,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
+import { computed, reactive, ref } from 'vue'
 import AdminLayout from '../../../components/AdminLayout.vue'
 
 const props = defineProps<{

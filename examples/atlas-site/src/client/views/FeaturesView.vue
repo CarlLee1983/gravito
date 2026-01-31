@@ -525,13 +525,12 @@ Factory.<span class="text-blue-300">define</span>(User, ({ <span class="text-ora
 
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import DataSortingGrid from '@/client/components/DataSortingGrid.vue'
-import StaticLink from '@/client/components/StaticLink.vue'
 
 defineOptions({
   name: 'FeaturesView',
 })
 
+// biome-ignore lint/correctness/noUnusedVariables: Used in template
 const { t } = useI18n()
 </script>
 

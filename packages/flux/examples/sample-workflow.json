@@ -1,0 +1,32 @@
+{
+  "name": "order-process",
+  "steps": [
+    {
+      "name": "validate",
+      "handler": "async (ctx) => { /* validate order */ }",
+      "commit": false,
+      "retries": 3,
+      "timeout": 5000
+    },
+    {
+      "name": "reserve-inventory",
+      "handler": "async (ctx) => { /* reserve items */ }",
+      "commit": false,
+      "compensate": "async (ctx) => { /* release items */ }",
+      "retries": 2
+    },
+    {
+      "name": "process-payment",
+      "handler": "async (ctx) => { /* charge card */ }",
+      "commit": true,
+      "retries": 3,
+      "timeout": 30000
+    },
+    {
+      "name": "send-confirmation",
+      "handler": "async (ctx) => { /* email customer */ }",
+      "commit": true,
+      "when": "ctx.data.paymentSucceeded"
+    }
+  ]
+}

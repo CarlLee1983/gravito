@@ -12,12 +12,36 @@ const help = () => {
 
 Usage:
   flux dev --trace ./.flux/trace.ndjson --port 4280
+  flux visualize --definition <path> [options]
+  
+Commands:
+  dev         Start development viewer for trace files
+  visualize   Generate Mermaid diagrams from workflow definitions
+  
+Run 'flux <command> --help' for command-specific help
 `)
 }
 
 if (!command || command === '--help' || command === '-h') {
   help()
   process.exit(0)
+}
+
+if (command === 'visualize') {
+  const { fileURLToPath } = await import('node:url')
+  const { dirname, join } = await import('node:path')
+  const { spawn } = await import('node:child_process')
+  
+  const __filename = fileURLToPath(import.meta.url)
+  const __dirname = dirname(__filename)
+  const visualizeScript = join(__dirname, '..', 'dist', 'cli', 'flux-visualize.js')
+  
+  const child = spawn('node', [visualizeScript, ...args.slice(1)], {
+    stdio: 'inherit',
+  })
+  
+  child.on('exit', (code) => process.exit(code || 0))
+  await new Promise(() => {})
 }
 
 if (command !== 'dev') {

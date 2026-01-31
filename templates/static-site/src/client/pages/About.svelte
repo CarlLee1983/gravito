@@ -3,7 +3,7 @@ import { Head } from '@inertiajs/svelte'
 import Layout from '../components/Layout.svelte'
 import StaticLink from '../components/StaticLink.svelte'
 
-let { version }: { version: string } = $props()
+const { version }: { version: string } = $props()
 </script>
 
 <Layout>

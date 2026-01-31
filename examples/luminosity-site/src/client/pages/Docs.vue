@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3'
 import { StaticLink } from '@gravito/freeze-vue'
+import { Head } from '@inertiajs/vue3'
 import { ChevronRight, Clock, Clock3, Edit2, Github, MapPin } from 'lucide-vue-next'
 import Layout from '../components/Layout.vue'
 

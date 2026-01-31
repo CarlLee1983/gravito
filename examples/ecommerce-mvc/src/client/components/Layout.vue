@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { Link, usePage, router } from '@inertiajs/vue3'
+import { Link, router, usePage } from '@inertiajs/vue3'
+import { computed, ref } from 'vue'
 import { useI18n } from '../composables/useI18n'
 import SeoHead from './SeoHead.vue'
 

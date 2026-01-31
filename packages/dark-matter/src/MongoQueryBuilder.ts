@@ -58,6 +58,7 @@ export class MongoQueryBuilder<T = Document> implements MongoCollectionContract<
   private sortSpec: Record<string, 1 | -1> = {}
   private limitCount: number | undefined
   private skipCount: number | undefined
+  private softDeleteMode: 'exclude' | 'include' | 'only' = 'exclude'
 
   constructor(
     private readonly nativeCollection: MongoNativeCollection,
@@ -696,6 +697,172 @@ export class MongoQueryBuilder<T = Document> implements MongoCollectionContract<
     }
   }
 
+  // ============================================================================
+  // Soft Delete Methods
+  // ============================================================================
+
+  /**
+   * 包含已軟刪除的記錄
+   *
+   * 查詢時包含所有記錄，不過濾已刪除的文檔
+   *
+   * @returns 當前查詢建構器實例，支援鏈式調用
+   *
+   * @example
+   * ```typescript
+   * const allUsers = await query.withTrashed().get();
+   * ```
+   */
+  withTrashed(): this {
+    this.softDeleteMode = 'include'
+    return this
+  }
+
+  /**
+   * 只查詢已軟刪除的記錄
+   *
+   * 只返回 deletedAt 不為 null 的文檔
+   *
+   * @returns 當前查詢建構器實例，支援鏈式調用
+   *
+   * @example
+   * ```typescript
+   * const trashedUsers = await query.onlyTrashed().get();
+   * ```
+   */
+  onlyTrashed(): this {
+    this.softDeleteMode = 'only'
+    return this
+  }
+
+  /**
+   * 軟刪除單一記錄
+   *
+   * 設置 deletedAt 為當前時間，而非真正刪除記錄
+   *
+   * @returns Promise 解析為更新結果
+   *
+   * @example
+   * ```typescript
+   * await query.where('_id', userId).softDelete();
+   * ```
+   */
+  async softDelete(): Promise<UpdateResult> {
+    const updateDoc = { $set: { deletedAt: new Date() } }
+    const result = await this.nativeCollection.updateOne(this.toFilter(), updateDoc, {
+      session: this.session,
+    })
+    return {
+      matchedCount: result.matchedCount,
+      modifiedCount: result.modifiedCount,
+      acknowledged: result.acknowledged,
+    }
+  }
+
+  /**
+   * 批次軟刪除
+   *
+   * 設置所有符合條件的文檔的 deletedAt 為當前時間
+   *
+   * @returns Promise 解析為更新結果
+   *
+   * @example
+   * ```typescript
+   * await query.where('status', 'inactive').softDeleteMany();
+   * ```
+   */
+  async softDeleteMany(): Promise<UpdateResult> {
+    const updateDoc = { $set: { deletedAt: new Date() } }
+    const result = await this.nativeCollection.updateMany(this.toFilter(), updateDoc, {
+      session: this.session,
+    })
+    return {
+      matchedCount: result.matchedCount,
+      modifiedCount: result.modifiedCount,
+      acknowledged: result.acknowledged,
+    }
+  }
+
+  /**
+   * 恢復軟刪除的記錄
+   *
+   * 將 deletedAt 設置為 null，恢復軟刪除的文檔
+   *
+   * @returns Promise 解析為更新結果
+   *
+   * @example
+   * ```typescript
+   * await query.where('_id', userId).restore();
+   * ```
+   */
+  async restore(): Promise<UpdateResult> {
+    const updateDoc = { $set: { deletedAt: null } }
+    const result = await this.nativeCollection.updateOne(this.toFilter(), updateDoc, {
+      session: this.session,
+    })
+    return {
+      matchedCount: result.matchedCount,
+      modifiedCount: result.modifiedCount,
+      acknowledged: result.acknowledged,
+    }
+  }
+
+  /**
+   * 批次恢復軟刪除的記錄
+   *
+   * 將所有符合條件的文檔的 deletedAt 設置為 null
+   *
+   * @returns Promise 解析為更新結果
+   *
+   * @example
+   * ```typescript
+   * await query.onlyTrashed().restoreMany();
+   * ```
+   */
+  async restoreMany(): Promise<UpdateResult> {
+    const updateDoc = { $set: { deletedAt: null } }
+    const result = await this.nativeCollection.updateMany(this.toFilter(), updateDoc, {
+      session: this.session,
+    })
+    return {
+      matchedCount: result.matchedCount,
+      modifiedCount: result.modifiedCount,
+      acknowledged: result.acknowledged,
+    }
+  }
+
+  /**
+   * 強制刪除（真正刪除記錄）
+   *
+   * 永久刪除單一文檔，無法恢復
+   *
+   * @returns Promise 解析為刪除結果
+   *
+   * @example
+   * ```typescript
+   * await query.where('_id', userId).forceDelete();
+   * ```
+   */
+  async forceDelete(): Promise<DeleteResult> {
+    return await this.delete()
+  }
+
+  /**
+   * 批次強制刪除
+   *
+   * 永久刪除所有符合條件的文檔，無法恢復
+   *
+   * @returns Promise 解析為刪除結果
+   *
+   * @example
+   * ```typescript
+   * await query.where('createdAt', '<', oneYearAgo).forceDeleteMany();
+   * ```
+   */
+  async forceDeleteMany(): Promise<DeleteResult> {
+    return await this.deleteMany()
+  }
+
   /**
    * Executes a bulk write operation.
    *
@@ -812,19 +979,18 @@ export class MongoQueryBuilder<T = Document> implements MongoCollectionContract<
     const hasMainFilters = Object.keys(this.filters).length > 0
     const hasOrFilters = this.orFilters.length > 0
 
+    let baseFilter: FilterDocument
+
     if (!hasOrFilters) {
-      return { ...this.filters }
+      baseFilter = { ...this.filters }
+    } else if (!hasMainFilters) {
+      baseFilter = { $or: this.orFilters }
+    } else {
+      baseFilter = { $or: [this.filters, ...this.orFilters] }
     }
 
-    if (!hasMainFilters) {
-      return {
-        $or: this.orFilters,
-      }
-    }
-
-    return {
-      $or: [this.filters, ...this.orFilters],
-    }
+    // 應用軟刪除過濾
+    return this.applySoftDeleteFilter(baseFilter)
   }
 
   /**
@@ -853,6 +1019,7 @@ export class MongoQueryBuilder<T = Document> implements MongoCollectionContract<
     cloned.sortSpec = { ...this.sortSpec }
     cloned.limitCount = this.limitCount
     cloned.skipCount = this.skipCount
+    cloned.softDeleteMode = this.softDeleteMode
     return cloned
   }
 
@@ -894,6 +1061,45 @@ export class MongoQueryBuilder<T = Document> implements MongoCollectionContract<
       return update
     }
     return { $set: update }
+  }
+
+  /**
+   * 應用軟刪除過濾
+   *
+   * 根據 softDeleteMode 自動過濾已刪除的記錄
+   *
+   * @param filter - 基礎過濾條件
+   * @returns 包含軟刪除過濾的完整過濾條件
+   */
+  private applySoftDeleteFilter(filter: FilterDocument): FilterDocument {
+    if (this.softDeleteMode === 'include') {
+      // 包含所有記錄，不額外過濾
+      return filter
+    }
+
+    if (this.softDeleteMode === 'only') {
+      // 只查詢已刪除的記錄
+      return {
+        ...filter,
+        deletedAt: { $ne: null },
+      }
+    }
+
+    // 預設：排除已刪除的記錄
+    // 處理 deletedAt 不存在或為 null 的情況
+    const softDeleteFilter: FilterDocument = {
+      $or: [{ deletedAt: null }, { deletedAt: { $exists: false } }],
+    }
+
+    // 如果沒有其他過濾條件，直接返回軟刪除過濾
+    if (Object.keys(filter).length === 0) {
+      return softDeleteFilter
+    }
+
+    // 合併現有過濾條件與軟刪除過濾
+    return {
+      $and: [filter, softDeleteFilter],
+    }
   }
 
   private async getObjectId(): Promise<MongoObjectIdConstructor> {

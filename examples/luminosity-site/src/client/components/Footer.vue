@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { StaticLink } from '@gravito/freeze-vue'
-import Logo from './Logo.vue'
 import { useI18n } from '../composables/useI18n'
+import Logo from './Logo.vue'
 
 const { locale } = useI18n()
 

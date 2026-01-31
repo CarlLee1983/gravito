@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
 import { Link, usePage } from '@inertiajs/vue3'
+import { computed, ref } from 'vue'
 
 const page = usePage()
 const isSidebarOpen = ref(true)

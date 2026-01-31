@@ -18,7 +18,9 @@ const route = useRoute()
  * 檢測是否在靜態網站環境中
  */
 const isStaticSite = (): boolean => {
-  if (typeof window === 'undefined') return false
+  if (typeof window === 'undefined') {
+    return false
+  }
 
   const hostname = window.location.hostname
   const port = window.location.port
@@ -37,7 +39,7 @@ const isStaticSite = (): boolean => {
 }
 
 const target = computed(() => props.to || props.href || '#')
-const isStatic = computed(() => isStaticSite())
+const _isStatic = computed(() => isStaticSite())
 
 // 判斷是否為外部連結
 const isExternal = computed(() => {
@@ -46,7 +48,7 @@ const isExternal = computed(() => {
 
 const basePath = computed(() => import.meta.env.BASE_URL || '/')
 
-const staticTarget = computed(() => {
+const _staticTarget = computed(() => {
   if (isExternal.value || target.value.startsWith('#')) {
     return target.value
   }
@@ -58,7 +60,7 @@ const staticTarget = computed(() => {
 })
 
 const isActive = computed(() => route.path === target.value)
-const staticClass = computed(() => {
+const _staticClass = computed(() => {
   if (!props.activeClass) {
     return props.class
   }

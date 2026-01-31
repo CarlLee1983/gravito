@@ -117,11 +117,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import Footer from './components/Footer.vue'
-import StaticLink from './components/StaticLink.vue'
 
+// biome-ignore lint/correctness/noUnusedVariables: Used in template
 const { t, locale } = useI18n()
 
 const mouseX = ref(0)
@@ -140,12 +139,14 @@ onUnmounted(() => {
   window.removeEventListener('mousemove', handleMouseMove)
 })
 
+// biome-ignore lint/correctness/noUnusedVariables: Used in template
 const navLinks = [
   { name: 'nav.home', path: '/' },
   { name: 'nav.features', path: '/features' },
   { name: 'nav.docs', path: 'https://gravito.dev/en/docs/guide/orm-usage', external: true },
 ]
 
+// biome-ignore lint/correctness/noUnusedVariables: Used in template
 function toggleLang() {
   locale.value = locale.value === 'en' ? 'zh-TW' : 'en'
 }

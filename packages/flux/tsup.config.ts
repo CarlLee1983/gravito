@@ -1,7 +1,7 @@
 import { defineConfig } from 'tsup'
 
 export default defineConfig({
-  entry: ['src/index.ts', 'src/bun.ts', 'src/index.node.ts'],
+  entry: ['src/index.ts', 'src/bun.ts', 'src/index.node.ts', 'src/cli/flux-visualize.ts'],
   format: ['esm', 'cjs'],
   dts: true,
   splitting: true,

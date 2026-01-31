@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n'
 import { computed } from 'vue'
-import StaticLink from './StaticLink.vue'
+import { useI18n } from 'vue-i18n'
+
+// biome-ignore lint/correctness/noUnusedVariables: Used in template
 const { t, locale } = useI18n()
 
+// biome-ignore lint/correctness/noUnusedVariables: Used in template
 const apiLink = computed(() => {
   const lang = locale.value === 'zh-TW' ? 'zh-TW' : 'en'
   return `https://gravito.dev/${lang}/docs/guide/database/overview`

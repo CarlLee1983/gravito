@@ -294,6 +294,18 @@ export interface GridFSFile {
   contentType?: string
 }
 
+/**
+ * GridFS 上傳進度資訊
+ */
+export interface GridFSUploadProgress {
+  /** 已寫入的位元組數 */
+  bytesWritten: number
+  /** 總位元組數（串流模式下可能為 0） */
+  totalBytes: number
+  /** 完成百分比（0-100） */
+  percentage: number
+}
+
 // ============================================================================
 // Contract Interfaces
 
@@ -346,6 +358,47 @@ export interface MongoCollectionContract<T = Document> {
   deleteMany(): Promise<DeleteResult>
   bulkWrite(operations: BulkWriteOperation<T>[]): Promise<BulkWriteResult>
   watch(pipeline?: PipelineStage[], options?: ChangeStreamOptions): AsyncIterable<ChangeEvent<T>>
+
+  // Soft Delete Methods
+  /**
+   * 包含已軟刪除的記錄
+   */
+  withTrashed(): this
+
+  /**
+   * 只查詢已軟刪除的記錄
+   */
+  onlyTrashed(): this
+
+  /**
+   * 軟刪除單一記錄（設置 deletedAt）
+   */
+  softDelete(): Promise<UpdateResult>
+
+  /**
+   * 批次軟刪除
+   */
+  softDeleteMany(): Promise<UpdateResult>
+
+  /**
+   * 恢復軟刪除的記錄
+   */
+  restore(): Promise<UpdateResult>
+
+  /**
+   * 批次恢復
+   */
+  restoreMany(): Promise<UpdateResult>
+
+  /**
+   * 強制刪除（真正刪除記錄）
+   */
+  forceDelete(): Promise<DeleteResult>
+
+  /**
+   * 批次強制刪除
+   */
+  forceDeleteMany(): Promise<DeleteResult>
 
   // Aggregation
   aggregate(): MongoAggregateContract<T>
@@ -419,6 +472,14 @@ export interface MongoDatabaseContract {
   dropCollection(name: string): Promise<boolean>
   createCollection(name: string, options?: { schema?: SchemaValidationOptions }): Promise<void>
   setValidation(collectionName: string, schema: SchemaValidationOptions): Promise<void>
+  createCollectionWithSchema(
+    name: string,
+    schemaBuilder: unknown,
+    options?: {
+      validationLevel?: 'off' | 'strict' | 'moderate'
+      validationAction?: 'error' | 'warn'
+    }
+  ): Promise<void>
 }
 
 /**
@@ -427,4 +488,11 @@ export interface MongoDatabaseContract {
 export interface Document {
   _id?: string
   [key: string]: unknown
+}
+
+/**
+ * 支援軟刪除的文檔類型
+ */
+export interface SoftDeletableDocument extends Document {
+  deletedAt?: Date | null
 }
