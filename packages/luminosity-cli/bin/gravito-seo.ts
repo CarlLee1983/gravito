@@ -6,6 +6,7 @@ import { analyzeCommand } from '../src/commands/analyze'
 import { compactCommand } from '../src/commands/compact'
 import { generateCommand } from '../src/commands/generate'
 import { initCommand } from '../src/commands/init'
+import { submitCommand } from '../src/commands/submit'
 import { showLogo } from '../src/ui/logo'
 
 const program = new Command()
@@ -44,6 +45,21 @@ program
   .option('-v, --verbose', 'Show verbose output')
   .action(async (options) => {
     await analyzeCommand(options)
+  })
+
+program
+  .command('submit')
+  .description('Submit sitemap URLs to search engines')
+  .option('-c, --config <path>', 'Path to config file')
+  .option('--google', 'Submit to Google Indexing API')
+  .option('--bing', 'Submit to Bing IndexNow')
+  .option('--google-service-account <path>', 'Path to Google Service Account JSON')
+  .option('--bing-api-key <key>', 'Bing IndexNow API key')
+  .option('--bing-host <host>', 'Website host for Bing (e.g., example.com)')
+  .option('--limit <number>', 'Limit number of URLs to submit', parseInt)
+  .option('--dry-run', 'Test without actually submitting')
+  .action(async (options) => {
+    await submitCommand(options)
   })
 
 program.parse()
