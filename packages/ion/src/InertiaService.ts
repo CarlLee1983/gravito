@@ -12,69 +12,107 @@ import { InertiaError } from './errors'
 
 /**
  * Configuration options for the InertiaService instance.
+ *
+ * Defines how the service interacts with the root template, manages asset versioning,
+ * and handles Server-Side Rendering (SSR).
  */
 export interface InertiaConfig {
   /**
    * The name of the root view template used for the initial page load.
-   * @default 'app'
+   *
+   * This template must contain the `{{{ page }}}` placeholder to inject the
+   * Inertia page object.
+   *
+   * @defaultValue 'app'
    */
   rootView?: string
 
   /**
-   * Asset version string. Used by Inertia to trigger a full page reload if the version changes.
+   * Asset version string or resolver.
+   *
+   * Used by Inertia to detect if the client-side assets are out of sync with the server.
+   * If the version sent by the client (X-Inertia-Version) doesn't match, the server
+   * triggers a full page reload via a 409 Conflict response.
    */
   version?: string | (() => string | Promise<string>)
 
   /**
    * Minimum logging level for internal operations.
-   * @default 'info'
+   *
+   * @defaultValue 'info'
    */
   logLevel?: 'debug' | 'info' | 'warn' | 'error' | 'silent'
 
   /**
    * Performance monitoring callback triggered after each render.
+   *
+   * Useful for tracking rendering latency and prop payload sizes in production.
    */
   onRender?: (metrics: RenderMetrics) => void
 
   /**
    * SSR configuration options.
+   *
+   * Enables pre-rendering of components on the server to improve SEO and
+   * initial load performance.
    */
   ssr?: {
-    /** Whether SSR is enabled. */
+    /** Whether SSR is enabled for the current environment. */
     enabled: boolean
-    /** Function to handle SSR rendering. */
+    /**
+     * Function to handle SSR rendering.
+     *
+     * Should interface with your frontend framework's SSR renderer (e.g., React's `renderToString`).
+     */
     render?: (page: any) => Promise<{ head: string[]; body: string }>
   }
 }
 
 /**
  * Encapsulates performance and status metrics for a single render operation.
+ *
+ * Provides insights into the rendering lifecycle, including component name,
+ * execution time, and payload complexity.
  */
 export interface RenderMetrics {
   /** Name of the frontend component rendered. */
   component: string
-  /** Time taken in milliseconds. */
+  /** Time taken in milliseconds for the entire render lifecycle. */
   duration: number
-  /** Whether the request was a partial Inertia AJAX request. */
+  /** Indicates if the request was an Inertia AJAX request (true) or a full page load (false). */
   isInertiaRequest: boolean
-  /** Number of top-level props passed to the component. */
+  /** Number of top-level props passed to the component after resolution. */
   propsCount: number
-  /** Epoch timestamp of the operation. */
+  /** Epoch timestamp of when the operation completed. */
   timestamp: number
-  /** Resulting HTTP status code. */
+  /** Resulting HTTP status code of the response. */
   status?: number
 }
 
 /**
- * InertiaService - Server-side adapter for the Inertia.js protocol.
+ * Server-side adapter for the Inertia.js protocol.
  *
- * This service handles component resolution, prop merging (including lazy props),
- * asset versioning, and initial HTML generation using the Gravito ViewService.
+ * The `InertiaService` is responsible for:
+ * 1. Resolving component props (including lazy/async props).
+ * 2. Handling partial reloads (filtering props based on `X-Inertia-Partial-Data`).
+ * 3. Managing asset versioning to ensure client-server synchronization.
+ * 4. Orchestrating SSR pre-rendering when enabled.
+ * 5. Generating the final HTTP response (JSON for AJAX, HTML for initial load).
  *
  * @example
  * ```typescript
- * const service = new InertiaService(ctx, { version: '1.0' });
- * return service.render('Welcome', { user: 'Carl' });
+ * const inertia = new InertiaService(ctx, {
+ *   version: () => getGitHash(),
+ *   rootView: 'main'
+ * });
+ *
+ * // Share global data
+ * inertia.share('user', ctx.get('user'));
+ *
+ * // Render a component
+ * return await inertia.render('Dashboard/Index', {
+ *   stats: async () => await fetchStats() // Lazy prop
+ * });
  * ```
  */
 export class InertiaService {
@@ -85,8 +123,8 @@ export class InertiaService {
   /**
    * Initializes a new instance of the Inertia service.
    *
-   * @param context - The current Gravito request context
-   * @param config - Instance configuration options
+   * @param context - The current Gravito request context.
+   * @param config - Instance configuration options.
    */
   constructor(
     private context: GravitoContext<GravitoVariables>,
@@ -99,9 +137,11 @@ export class InertiaService {
   /**
    * Internal logging helper that respects the configured log level.
    *
-   * @param level - Log severity level
-   * @param message - Descriptive message
-   * @param data - Optional metadata for the log
+   * Routes logs to the Gravito context logger if available.
+   *
+   * @param level - Log severity level.
+   * @param message - Descriptive message.
+   * @param data - Optional metadata for the log.
    */
   private log(level: 'debug' | 'info' | 'warn' | 'error', message: string, data?: unknown): void {
     const levels = ['debug', 'info', 'warn', 'error', 'silent']
@@ -124,10 +164,11 @@ export class InertiaService {
    * Escapes a string for safe embedding into a single-quoted HTML attribute.
    *
    * This ensures that JSON strings can be safely passed to the frontend
-   * via the `data-page` attribute without breaking the HTML structure.
+   * via the `data-page` attribute without breaking the HTML structure or
+   * introducing XSS vulnerabilities.
    *
-   * @param value - Raw JSON or text string
-   * @returns Safely escaped HTML attribute value
+   * @param value - Raw JSON or text string.
+   * @returns Safely escaped HTML attribute value.
    */
   private escapeForSingleQuotedHtmlAttribute(value: string): string {
     return value
@@ -139,19 +180,36 @@ export class InertiaService {
   }
 
   /**
-   * Renders an Inertia component by either returning a JSON response (for AJAX)
-   * or a full HTML document (for initial load).
+   * Renders an Inertia component and returns the appropriate HTTP response.
    *
-   * @param component - Frontend component name
-   * @param props - Data passed to the component
-   * @param rootVars - Variables for the root template
-   * @param status - HTTP status code
-   * @returns Gravito HTTP Response
-   * @throws {InertiaError} If serialization fails or the ViewService is missing
+   * This method handles the entire Inertia lifecycle:
+   * - Detects if the request is an Inertia AJAX request.
+   * - Validates asset versions.
+   * - Resolves props (executes functions, handles partial reloads).
+   * - Performs SSR if configured.
+   * - Wraps the result in a JSON response or the root HTML template.
+   *
+   * @param component - Frontend component name (e.g., 'Users/Profile').
+   * @param props - Data passed to the component. Can include functions for lazy evaluation.
+   * @param rootVars - Variables passed to the root HTML template (only used on initial load).
+   * @param status - Optional HTTP status code.
+   * @returns A promise that resolves to a Gravito HTTP Response.
+   *
+   * @throws {@link InertiaError}
+   * Thrown if:
+   * - The `ViewService` is missing from the context (required for initial load).
+   * - Prop serialization fails due to circular references or non-serializable data.
    *
    * @example
    * ```typescript
-   * return inertia.render('Dashboard', { stats: getStats() });
+   * // Standard render
+   * return await inertia.render('Welcome', { name: 'Guest' });
+   *
+   * // Partial reload support (only 'stats' will be resolved if requested)
+   * return await inertia.render('Dashboard', {
+   *   user: auth.user,
+   *   stats: () => db.getStats()
+   * });
    * ```
    */
   public async render<T extends Record<string, unknown> = Record<string, unknown>>(
@@ -320,17 +378,19 @@ export class InertiaService {
   }
 
   /**
-   * Registers a piece of data to be shared with all Inertia responses.
+   * Registers a piece of data to be shared with all Inertia responses for the current request.
    *
-   * Shared props are automatically merged with component props during render.
-   * This is useful for global data like authenticated user info or flash messages.
+   * Shared props are automatically merged with component-specific props during the render phase.
+   * This is the primary mechanism for providing global state like authentication details,
+   * flash messages, or configuration to the frontend.
    *
-   * @param key - Identifier for the shared prop
-   * @param value - Value to share (must be JSON serializable)
+   * @param key - Identifier for the shared prop.
+   * @param value - Value to share. Must be JSON serializable.
    *
    * @example
    * ```typescript
-   * inertia.share('auth', { user: 'Carl' });
+   * inertia.share('appName', 'Gravito Store');
+   * inertia.share('auth', { user: ctx.get('user') });
    * ```
    */
   public share(key: string, value: unknown): void {
@@ -340,15 +400,17 @@ export class InertiaService {
   /**
    * Shares multiple props in a single operation.
    *
-   * Merges the provided object into the existing shared props state.
+   * Merges the provided object into the existing shared props state. Existing keys
+   * with the same name will be overwritten.
    *
-   * @param props - Object containing props to merge into the shared state
+   * @param props - Object containing key-value pairs to merge into the shared state.
    *
    * @example
    * ```typescript
    * inertia.shareAll({
-   *   appName: 'Gravito Store',
-   *   version: '1.0.0'
+   *   version: '1.2.0',
+   *   environment: 'production',
+   *   features: ['chat', 'search']
    * });
    * ```
    */
@@ -357,16 +419,18 @@ export class InertiaService {
   }
 
   /**
-   * Returns a copy of the current shared props.
+   * Returns a shallow copy of the current shared props.
    *
-   * Useful for debugging or inspecting the state before rendering.
+   * Useful for inspecting the shared state or for manual prop merging in advanced scenarios.
    *
-   * @returns Current shared props dictionary
+   * @returns A dictionary containing all currently registered shared props.
    *
    * @example
    * ```typescript
-   * const currentShared = inertia.getSharedProps();
-   * console.log(currentShared.auth);
+   * const shared = inertia.getSharedProps();
+   * if (!shared.auth) {
+   *   console.warn('Authentication data is missing from shared props');
+   * }
    * ```
    */
   public getSharedProps(): Record<string, unknown> {
