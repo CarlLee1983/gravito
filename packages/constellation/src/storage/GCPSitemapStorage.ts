@@ -133,7 +133,7 @@ export class GCPSitemapStorage implements SitemapStorage {
 
     const writeStream = file.createWriteStream({
       resumable: false,
-      contentType: options?.compress ? 'application/gzip' : 'application/xml',
+      contentType: 'application/xml',
       metadata: {
         contentEncoding: options?.compress ? 'gzip' : undefined,
         cacheControl: 'public, max-age=3600',

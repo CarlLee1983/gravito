@@ -97,6 +97,30 @@ describe('Compression Utilities', () => {
       const compressed = Buffer.concat(chunks)
       expect(compressed).toBeInstanceOf(Buffer)
     })
+
+    it('應該拒絕無效的壓縮等級', () => {
+      expect(() => createCompressionStream({ level: 0 })).toThrow(/Invalid compression level/)
+      expect(() => createCompressionStream({ level: 10 })).toThrow(/Invalid compression level/)
+      expect(() => createCompressionStream({ level: -1 })).toThrow(/Invalid compression level/)
+    })
+  })
+
+  describe('Edge Cases', () => {
+    it('應該處理空串流', async () => {
+      const source = (async function* () {})()
+      const compressed = await compressToBuffer(source)
+      // gzip header 仍會存在
+      expect(compressed.length).toBeGreaterThan(0)
+    })
+
+    it('應該拒絕 compressToBuffer 的無效壓縮等級', async () => {
+      const source = (async function* () {
+        yield 'test'
+      })()
+      await expect(compressToBuffer(source, { level: 10 })).rejects.toThrow(
+        /Invalid compression level/
+      )
+    })
   })
 })
 

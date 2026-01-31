@@ -5,8 +5,7 @@
  */
 
 import { Readable, type Transform } from 'node:stream'
-import { pipeline } from 'node:stream/promises'
-import { createGzip, type ZlibOptions } from 'node:zlib'
+import { createGzip } from 'node:zlib'
 
 /**
  * Compression configuration.
@@ -39,18 +38,29 @@ export async function compressToBuffer(
   source: AsyncIterable<string>,
   config?: CompressionConfig
 ): Promise<Buffer> {
-  const chunks: Buffer[] = []
-  const gzip = createGzip({ level: config?.level ?? 6 })
-
-  const readable = Readable.from(source, { encoding: 'utf-8' })
-
-  readable.pipe(gzip)
-
-  for await (const chunk of gzip) {
-    chunks.push(chunk as Buffer)
+  const level = config?.level ?? 6
+  if (level < 1 || level > 9) {
+    throw new Error(`Invalid compression level: ${level}. Must be between 1 and 9.`)
   }
 
-  return Buffer.concat(chunks)
+  const chunks: Buffer[] = []
+  const gzip = createGzip({ level })
+  const readable = Readable.from(source, { encoding: 'utf-8' })
+
+  try {
+    readable.pipe(gzip)
+
+    for await (const chunk of gzip) {
+      chunks.push(chunk as Buffer)
+    }
+
+    return Buffer.concat(chunks)
+  } catch (error) {
+    // 確保串流被銷毀
+    readable.destroy()
+    gzip.destroy()
+    throw error
+  }
 }
 
 /**
@@ -69,7 +79,11 @@ export async function compressToBuffer(
  * ```
  */
 export function createCompressionStream(config?: CompressionConfig): Transform {
-  return createGzip({ level: config?.level ?? 6 })
+  const level = config?.level ?? 6
+  if (level < 1 || level > 9) {
+    throw new Error(`Invalid compression level: ${level}. Must be between 1 and 9.`)
+  }
+  return createGzip({ level })
 }
 
 /**
