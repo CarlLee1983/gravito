@@ -98,6 +98,8 @@ const INTERPOLATE_REGEX = /\{\{\{?\s*([\w.]+)\s*\}?\}\}/g
  * @since 3.1.0
  */
 export class TemplateCompiler {
+  private options: CompilerOptions
+
   /**
    * Create a new TemplateCompiler instance.
    *

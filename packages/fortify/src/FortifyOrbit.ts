@@ -82,17 +82,17 @@ export class FortifyOrbit implements GravitoOrbit {
     const rateLimiterStorage = new MemoryRateLimiterStorage()
     const loginRateLimiter = new RateLimiter(
       rateLimiterStorage,
-      this.config.security?.rateLimit?.login ?? defaultFortifyConfig.security?.rateLimit?.login
+      this.config.security?.rateLimit?.login ?? defaultFortifyConfig.security!.rateLimit!.login!
     )
     const passwordResetRateLimiter = new RateLimiter(
       rateLimiterStorage,
       this.config.security?.rateLimit?.passwordReset ??
-        defaultFortifyConfig.security?.rateLimit?.passwordReset
+        defaultFortifyConfig.security!.rateLimit!.passwordReset!
     )
     const emailVerificationRateLimiter = new RateLimiter(
       rateLimiterStorage,
       this.config.security?.rateLimit?.emailVerification ??
-        defaultFortifyConfig.security?.rateLimit?.emailVerification
+        defaultFortifyConfig.security!.rateLimit!.emailVerification!
     )
 
     core.container.singleton('fortify.rateLimiter.login', () => loginRateLimiter)
@@ -103,7 +103,7 @@ export class FortifyOrbit implements GravitoOrbit {
     )
 
     const strengthValidator = new StrengthValidator(
-      this.config.security?.passwordRules ?? defaultFortifyConfig.security?.passwordRules
+      this.config.security?.passwordRules ?? defaultFortifyConfig.security!.passwordRules!
     )
     core.container.singleton('fortify.strengthValidator', () => strengthValidator)
 

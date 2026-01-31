@@ -20,7 +20,7 @@ defineProps<{
       :alt="alt"
       loading="lazy"
       class="w-full h-full object-cover transition-all duration-700 ease-in-out"
-      :class="props.class"
+      :class="$props.class"
       formatNegotiation
       usePicture
       placeholder="blur"

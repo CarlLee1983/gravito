@@ -35,6 +35,6 @@ import { usePage } from '@inertiajs/vue3'
 import { computed } from 'vue'
 
 const page = usePage()
-const _isHome = computed(() => page.url === '/')
-const _isAbout = computed(() => page.url.startsWith('/about'))
+const isHome = computed(() => page.url === '/')
+const isAbout = computed(() => page.url.startsWith('/about'))
 </script>

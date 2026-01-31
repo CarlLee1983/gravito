@@ -90,7 +90,8 @@ export function useMessages(options: UseMessagesOptions): UseMessagesReturn {
 
       if (result.success && result.data) {
         // Prepend older messages to the list
-        setMessages((prev) => [...result.data.messages, ...prev])
+        const newMessages = result.data.messages
+        setMessages((prev) => [...newMessages, ...prev])
         setHasMore(result.data.hasMore)
         setNextCursor(result.data.nextCursor)
       } else if (result.error) {

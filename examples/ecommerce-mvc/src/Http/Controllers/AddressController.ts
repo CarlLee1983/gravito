@@ -17,7 +17,7 @@ export class AddressController {
 
     return inertia.render('Account/Addresses', {
       addresses: addresses.map((a: Address) => ({
-        ...a.toJSON(),
+        ...(a.toJSON() as any),
         formatted_address: a.formattedAddress,
       })),
     })

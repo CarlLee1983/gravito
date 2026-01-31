@@ -276,13 +276,13 @@ export class WorkflowExecutor {
       stepCtx: WorkflowContext<TInput, TData>
     ) => {
       const stepIndex = groupSteps.find((gs) => gs.step === step)?.index
-      let execution = stepCtx.history[stepIndex]!
+      let execution = stepCtx.history[stepIndex!]!
 
-      const localCtx = this.contextManager.setStepName(stepCtx, stepIndex, step.name)
-      execution = localCtx.history[stepIndex]!
+      const localCtx = this.contextManager.setStepName(stepCtx, stepIndex!, step.name)
+      execution = localCtx.history[stepIndex!]!
 
       this.config.on?.stepStart?.(step.name, localCtx)
-      await this.traceEmitter.stepStart(localCtx, step.name, stepIndex, Boolean(step.commit))
+      await this.traceEmitter.stepStart(localCtx, step.name, stepIndex!, Boolean(step.commit))
 
       const { result, execution: updatedExecution } = await this.stepExecutor.execute(
         step,
@@ -292,9 +292,9 @@ export class WorkflowExecutor {
 
       if (result.success) {
         this.config.on?.stepComplete?.(step.name, localCtx, result)
-        await this.traceEmitter.stepComplete(localCtx, step.name, stepIndex, result)
+        await this.traceEmitter.stepComplete(localCtx, step.name, stepIndex!, result)
       } else {
-        await this.traceEmitter.stepError(localCtx, step.name, stepIndex, result)
+        await this.traceEmitter.stepError(localCtx, step.name, stepIndex!, result)
         throw result.error || new Error(`Step ${step.name} failed`)
       }
 

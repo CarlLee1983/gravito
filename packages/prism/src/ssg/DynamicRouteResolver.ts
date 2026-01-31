@@ -64,7 +64,7 @@ export class DynamicRouteResolver {
 
         resolved.push({
           path,
-          getData: route.getData ? () => route.getData?.(params) : undefined,
+          getData: route.getData ? () => route.getData!(params) : undefined,
         })
       }
     }
