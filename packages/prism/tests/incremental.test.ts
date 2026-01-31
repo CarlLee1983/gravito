@@ -24,6 +24,9 @@ const mockCore = {
       return new Response('<html>Generic</html>', { status: 200 })
     }),
   },
+  config: {
+    get: mock((key: string, defaultValue: string) => defaultValue),
+  },
 }
 
 describe('IncrementalBuilder', () => {

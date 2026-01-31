@@ -14,7 +14,7 @@
  */
 
 import { createHash } from 'node:crypto'
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import type { PlanetCore } from '@gravito/core'
@@ -36,22 +36,22 @@ interface PageEntry {
   path: string
   hash: string
   sourceHash: string
+  templateHash?: string
   lastBuilt: number
   size: number
+  dependencies?: string[]
 }
 
 /**
  * Options for the incremental builder.
  */
 interface IncrementalOptions {
-  /** Force a full rebuild, ignoring the manifest. */
   force?: boolean
-  /** Custom path for the manifest file. */
   manifestPath?: string
-  /** Number of concurrent workers. */
   concurrency?: number
-  /** Request timeout in milliseconds. */
   timeout?: number
+  trackTemplateDependencies?: boolean
+  viewsDir?: string
 }
 
 /**
@@ -67,6 +67,9 @@ interface IncrementalOptions {
 export class IncrementalBuilder {
   private manifest: BuildManifest | null = null
   private manifestPath: string
+  private trackDependencies: boolean
+  private viewsDir: string
+  private templateHashCache: Map<string, { hash: string; mtime: number }> = new Map()
 
   /**
    * Create a new IncrementalBuilder.
@@ -81,6 +84,8 @@ export class IncrementalBuilder {
     options: IncrementalOptions = {}
   ) {
     this.manifestPath = options.manifestPath ?? `${outputDir}/.build-manifest.json`
+    this.trackDependencies = options.trackTemplateDependencies ?? false
+    this.viewsDir = options.viewsDir ?? core.config.get<string>('VIEW_DIR', 'src/views')
   }
 
   private loadManifest(): BuildManifest {
@@ -126,7 +131,51 @@ export class IncrementalBuilder {
     return createHash('sha256').update(content).digest('hex').substring(0, 16)
   }
 
-  private needsRebuild(path: string, sourceHash: string): boolean {
+  private extractTemplateFromPath(routePath: string): string | null {
+    if (routePath === '/') {
+      return 'home'
+    }
+
+    const cleaned = routePath.replace(/^\//, '').replace(/\/$/, '')
+
+    if (!cleaned) {
+      return null
+    }
+
+    return cleaned.replace(/\//g, '.')
+  }
+
+  private computeTemplateHash(templatePath: string): string | null {
+    if (!this.trackDependencies) {
+      return null
+    }
+
+    try {
+      const fullPath = join(this.viewsDir, `${templatePath}.html`)
+
+      if (!existsSync(fullPath)) {
+        return null
+      }
+
+      const stats = statSync(fullPath)
+      const mtime = stats.mtimeMs
+
+      const cached = this.templateHashCache.get(fullPath)
+      if (cached && cached.mtime === mtime) {
+        return cached.hash
+      }
+
+      const content = readFileSync(fullPath, 'utf-8')
+      const hash = this.computeHash(content)
+
+      this.templateHashCache.set(fullPath, { hash, mtime })
+      return hash
+    } catch {
+      return null
+    }
+  }
+
+  private needsRebuild(path: string, sourceHash: string, templateHash: string | null): boolean {
     if (!this.manifest?.pages[path]) {
       return true
     }
@@ -134,7 +183,12 @@ export class IncrementalBuilder {
     const existing = this.manifest.pages[path]
 
     if (existing.sourceHash !== sourceHash) {
-      this.core.logger.debug(`[IncrementalBuilder] Source changed: ${path}`)
+      this.core.logger.debug(`[IncrementalBuilder] Data changed: ${path}`)
+      return true
+    }
+
+    if (this.trackDependencies && templateHash && existing.templateHash !== templateHash) {
+      this.core.logger.debug(`[IncrementalBuilder] Template changed: ${path}`)
       return true
     }
 
@@ -184,7 +238,10 @@ export class IncrementalBuilder {
           const dataString = JSON.stringify(data)
           const sourceHash = this.computeHash(dataString)
 
-          if (!force && !this.needsRebuild(route.path, sourceHash)) {
+          const routeTemplate = this.extractTemplateFromPath(route.path)
+          const templateHash = routeTemplate ? this.computeTemplateHash(routeTemplate) : null
+
+          if (!force && !this.needsRebuild(route.path, sourceHash, templateHash)) {
             skipped++
             this.core.logger.debug(
               `[IncrementalBuilder] ⏭️  Skipped (${built + skipped + failed}/${total}): ${route.path}`
@@ -245,6 +302,7 @@ export class IncrementalBuilder {
             path: route.path,
             hash: contentHash,
             sourceHash,
+            templateHash: templateHash ?? undefined,
             lastBuilt: Date.now(),
             size: Buffer.byteLength(html, 'utf-8'),
           }
