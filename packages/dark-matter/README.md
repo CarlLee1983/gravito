@@ -361,6 +361,77 @@ const health = await Mongo.connection().getHealthStatus()
 console.log(health.latencyMs) // e.g. 15
 ```
 
+## Performance Optimization
+
+### Indexing
+
+```typescript
+// Create indexes for frequently queried fields
+await Mongo.collection('users').createIndex({ email: 1 }, { unique: true })
+await Mongo.collection('users').createIndex({ status: 1, createdAt: -1 })
+```
+
+### Query Optimization
+
+```typescript
+// Use projection to reduce data transfer
+const users = await Mongo.collection('users')
+  .select('name', 'email')  // Only fetch needed fields
+  .where('status', 'active')
+  .get()
+
+// Use limit for large result sets
+const recentPosts = await Mongo.collection('posts')
+  .orderBy('createdAt', 'desc')
+  .limit(20)  // Prevent fetching too much data
+  .get()
+```
+
+### Connection Pool
+
+```typescript
+Mongo.configure({
+  default: 'main',
+  connections: {
+    main: {
+      uri: 'mongodb://localhost:27017',
+      database: 'myapp',
+      maxPoolSize: 50,      // Adjust based on load
+      minPoolSize: 10,      // Keep minimum connections
+      maxIdleTimeMS: 30000  // Idle connection timeout
+    }
+  }
+})
+```
+
+### Batch Operations
+
+```typescript
+// Use bulkWrite to reduce round trips
+await Mongo.collection('logs').bulkWrite([
+  { insertOne: { document: { event: 'login', userId: 1 } } },
+  { updateOne: { filter: { _id: 2 }, update: { $set: { status: 'active' } } } },
+  { deleteOne: { filter: { _id: 3 } } }
+])
+```
+
+### Monitoring
+
+```typescript
+import { MongoPoolMonitor } from '@gravito/dark-matter'
+
+const monitor = new MongoPoolMonitor(Mongo.connection())
+const metrics = monitor.getMetrics()
+
+console.log('Pool status:', {
+  totalConnections: metrics.totalConnections,
+  availableConnections: metrics.availableConnections,
+  waitQueueSize: metrics.waitQueueSize
+})
+```
+
+詳細的效能調優指南請參考 [docs/performance-analysis.md](./docs/performance-analysis.md)
+
 ## Roadmap
 
 - [x] Connection retry & health check
@@ -368,6 +439,9 @@ console.log(health.latencyMs) // e.g. 15
 - [x] Schema validation
 - [x] Change streams
 - [x] GridFS support
+- [x] Soft deletes
+- [x] Schema Builder API
+- [x] GridFS streaming & progress tracking
 
 ## License
 
