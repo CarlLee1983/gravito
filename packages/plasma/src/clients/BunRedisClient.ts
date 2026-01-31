@@ -347,13 +347,13 @@ export class BunRedisClient implements RedisClientContract {
     const prefixedKey = this.prefixKey(key)
     const client = this.getClient()
 
-    const args: string[] = [value]
+    const args: (string | number)[] = []
     if (options) {
       if (options.ex) {
-        args.push('EX', String(options.ex))
+        args.push('EX', options.ex)
       }
       if (options.px) {
-        args.push('PX', String(options.px))
+        args.push('PX', options.px)
       }
       if (options.nx) {
         args.push('NX')
@@ -363,10 +363,9 @@ export class BunRedisClient implements RedisClientContract {
       }
     }
 
-    if (args.length > 1) {
+    if (args.length > 0) {
       try {
-        // @ts-expect-error
-        const result = await client.set(prefixedKey, ...args)
+        const result = await client.set(prefixedKey, value, ...args)
         return result === 'OK' ? 'OK' : null
       } catch (error) {
         throw this.handleException(error, 'SET')
@@ -1160,11 +1159,7 @@ interface RedisClient {
   close(): void | Promise<void>
   ping(): Promise<string>
   get(key: string): Promise<string | null>
-  set(
-    key: string,
-    value: string,
-    options?: { ex?: number; px?: number; nx?: boolean; xx?: boolean }
-  ): Promise<string | null>
+  set(key: string, value: string | number, ...args: (string | number)[]): Promise<string | null>
   del(...keys: string[]): Promise<number>
   exists(...keys: string[]): Promise<boolean>
   incr(key: string): Promise<number>
