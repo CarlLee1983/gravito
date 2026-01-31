@@ -74,7 +74,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import Layout from '../../components/Layout.vue'
 import { useI18n } from '../../composables/useI18n'
 

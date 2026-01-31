@@ -115,8 +115,8 @@
 </template>
 
 <script setup lang="ts">
-import { reactive } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
+import { reactive } from 'vue'
 import Layout from '../../components/Layout.vue'
 import { useI18n } from '../../composables/useI18n'
 

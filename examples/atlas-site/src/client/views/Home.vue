@@ -127,13 +127,8 @@
 
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import Features from '@/client/components/Features.vue'
-import Installation from '@/client/components/Installation.vue'
-import LiveConsole from '@/client/components/LiveConsole.vue'
-import DataSortingGrid from '@/client/components/DataSortingGrid.vue'
-import StaticLink from '@/client/components/StaticLink.vue'
-import SpotlightCard from '@/client/components/SpotlightCard.vue'
 
+// biome-ignore lint/correctness/noUnusedVariables: Used in template
 const { t } = useI18n()
 </script>
 

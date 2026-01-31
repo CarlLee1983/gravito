@@ -9,7 +9,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 
 const props = defineProps({
   withBackground: {
@@ -22,8 +22,10 @@ const containerRef = ref<HTMLElement | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 let animationFrameId: number
 
-const containerStyle = computed(() => {
-  if (!props.withBackground) return {}
+const _containerStyle = computed(() => {
+  if (!props.withBackground) {
+    return {}
+  }
   return {
     backgroundImage: "url('/hero-bg.png')",
     backgroundSize: 'cover',
@@ -59,10 +61,14 @@ let mouseY = -1000
 let time = 0
 
 onMounted(() => {
-  if (!canvasRef.value || !containerRef.value) return
+  if (!canvasRef.value || !containerRef.value) {
+    return
+  }
   const canvas = canvasRef.value
   const ctx = canvas.getContext('2d')
-  if (!ctx) return
+  if (!ctx) {
+    return
+  }
 
   const resize = () => {
     width = canvas.width = containerRef.value?.clientWidth || window.innerWidth
@@ -136,10 +142,18 @@ onMounted(() => {
       }
 
       // Wrap around screen
-      if (p.x < -50) p.x = width + 50
-      if (p.x > width + 50) p.x = -50
-      if (p.y < -50) p.y = height + 50
-      if (p.y > height + 50) p.y = -50
+      if (p.x < -50) {
+        p.x = width + 50
+      }
+      if (p.x > width + 50) {
+        p.x = -50
+      }
+      if (p.y < -50) {
+        p.y = height + 50
+      }
+      if (p.y > height + 50) {
+        p.y = -50
+      }
 
       // 3. Render High-Quality "Glow Stream"
       const alpha = 0.1 + p.z * 0.6

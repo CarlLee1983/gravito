@@ -14,9 +14,10 @@ import Visit from './pages/Visit'
 // Scroll to top on route change
 const ScrollToTop = () => {
   const { pathname } = useLocation()
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Scroll on route change
   useEffect(() => {
     window.scrollTo(0, 0)
-  }, [])
+  }, [pathname])
   return null
 }
 

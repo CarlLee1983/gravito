@@ -6,6 +6,7 @@
  * @module @gravito/flux/core
  */
 
+import * as Errors from '../errors'
 import type { WorkflowStatus } from '../types'
 
 /**
@@ -53,6 +54,13 @@ export class StateMachine extends EventTarget {
    *
    * @param to - The target status to check.
    * @returns True if the transition is permitted by the transition map.
+   *
+   * @example
+   * ```typescript
+   * if (sm.canTransition('completed')) {
+   *   sm.transition('completed');
+   * }
+   * ```
    */
   canTransition(to: WorkflowStatus): boolean {
     return TRANSITIONS[this._status].includes(to)
@@ -75,7 +83,7 @@ export class StateMachine extends EventTarget {
    */
   transition(to: WorkflowStatus): void {
     if (!this.canTransition(to)) {
-      throw new Error(`Invalid state transition: ${this._status} → ${to}`)
+      throw Errors.invalidStateTransition(this._status, to)
     }
 
     const from = this._status
@@ -96,6 +104,12 @@ export class StateMachine extends EventTarget {
    * or when replaying history where the state is already known to be valid.
    *
    * @param status - The status to force set.
+   *
+   * @example
+   * ```typescript
+   * // Restore state from database
+   * sm.forceStatus(storedState.status);
+   * ```
    */
   forceStatus(status: WorkflowStatus): void {
     this._status = status
@@ -105,6 +119,13 @@ export class StateMachine extends EventTarget {
    * Determines if the workflow has reached a state where no further execution is possible.
    *
    * @returns True if the status is 'completed', 'failed', or 'rolled_back'.
+   *
+   * @example
+   * ```typescript
+   * if (sm.isTerminal()) {
+   *   console.log('Workflow finished');
+   * }
+   * ```
    */
   isTerminal(): boolean {
     return (
@@ -116,6 +137,13 @@ export class StateMachine extends EventTarget {
    * Checks if the workflow is in a state that allows for execution or resumption.
    *
    * @returns True if the workflow can be started or resumed.
+   *
+   * @example
+   * ```typescript
+   * if (sm.canExecute()) {
+   *   await engine.run();
+   * }
+   * ```
    */
   canExecute(): boolean {
     return this._status === 'pending' || this._status === 'paused' || this._status === 'suspended'

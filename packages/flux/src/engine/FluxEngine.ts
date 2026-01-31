@@ -1,6 +1,7 @@
 import type { WorkflowBuilder } from '../builder/WorkflowBuilder'
 import { ContextManager } from '../core/ContextManager'
 import { StateMachine } from '../core/StateMachine'
+import { CompensationRetryPolicy } from '../engine/CompensationRetryPolicy'
 import * as Errors from '../errors'
 import { MemoryStorage } from '../storage/MemoryStorage'
 import type {
@@ -74,7 +75,12 @@ export class FluxEngine {
       this.storage,
       this.contextManager,
       this.traceEmitter,
-      persist
+      persist,
+      {
+        retryPolicy: new CompensationRetryPolicy({
+          maxAttempts: config.defaultRetries !== undefined ? config.defaultRetries : 3,
+        }),
+      }
     )
   }
 
@@ -105,7 +111,14 @@ export class FluxEngine {
     ctx = await this.persist(ctx)
 
     const result = await this.executor.execute(definition, ctx, new StateMachine(), startTime, 0)
-    return handleExecutionResult(definition, ctx, result, this.contextManager, this.rollbackManager)
+    return handleExecutionResult(
+      definition,
+      ctx,
+      result,
+      this.contextManager,
+      this.rollbackManager,
+      this.storage
+    )
   }
 
   /**
@@ -151,7 +164,14 @@ export class FluxEngine {
         fromStep: startIndex,
       }
     )
-    return handleExecutionResult(definition, ctx, result, this.contextManager, this.rollbackManager)
+    return handleExecutionResult(
+      definition,
+      ctx,
+      result,
+      this.contextManager,
+      this.rollbackManager,
+      this.storage
+    )
   }
 
   /**
@@ -217,7 +237,14 @@ export class FluxEngine {
         fromStep: nextStepIndex,
       }
     )
-    return handleExecutionResult(definition, ctx, result, this.contextManager, this.rollbackManager)
+    return handleExecutionResult(
+      definition,
+      ctx,
+      result,
+      this.contextManager,
+      this.rollbackManager,
+      this.storage
+    )
   }
 
   /**
@@ -260,7 +287,14 @@ export class FluxEngine {
         fromStep: startIndex,
       }
     )
-    return handleExecutionResult(definition, ctx, result, this.contextManager, this.rollbackManager)
+    return handleExecutionResult(
+      definition,
+      ctx,
+      result,
+      this.contextManager,
+      this.rollbackManager,
+      this.storage
+    )
   }
 
   /**

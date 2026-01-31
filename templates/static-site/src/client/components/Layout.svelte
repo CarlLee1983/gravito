@@ -1,7 +1,7 @@
 <script lang="ts">
 import StaticLink from './StaticLink.svelte'
 
-let path = $state(typeof window !== 'undefined' ? window.location.pathname : '/')
+const path = $state(typeof window !== 'undefined' ? window.location.pathname : '/')
 </script>
 
 <div class="app-layout">

@@ -14,6 +14,7 @@ export { FluxEngine } from './engine/FluxEngine'
 
 // Storage (Node-compatible only)
 export { MemoryStorage } from './storage/MemoryStorage'
+export { PostgreSQLStorage, type PostgreSQLStorageOptions } from './storage/PostgreSQLStorage'
 // Trace
 export { JsonFileTraceSink } from './trace/JsonFileTraceSink'
 

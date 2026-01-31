@@ -2,11 +2,13 @@
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+// biome-ignore lint/correctness/noUnusedVariables: Used in template
 const { t } = useI18n()
 const activeTab = ref<'bun' | 'npm' | 'yarn' | 'pnpm'>('bun')
 
 const copied = ref(false)
 
+// biome-ignore lint/correctness/noUnusedVariables: Used in template
 const copyCommand = () => {
   const commands = {
     bun: 'bun add @gravito/atlas',

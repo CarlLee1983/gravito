@@ -43,8 +43,5 @@
       "Bash(bunx biome check:*)"
     ]
   },
-  "enabledMcpjsonServers": [
-    "pencil",
-    "context7"
-  ]
+  "enabledMcpjsonServers": ["pencil", "context7"]
 }

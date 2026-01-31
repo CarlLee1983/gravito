@@ -86,11 +86,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
-import { useRoute } from 'vue-router'
-import { useI18n } from 'vue-i18n'
 import { marked } from 'marked'
-import StaticLink from '@/client/components/StaticLink.vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useRoute } from 'vue-router'
 
 const { locale } = useI18n()
 const route = useRoute()
@@ -98,14 +97,18 @@ const content = ref('')
 const loading = ref(true)
 const scrollProgress = ref(0)
 
-const compiledMarkdown = computed(() => {
+const _compiledMarkdown = computed(() => {
   return marked.parse(content.value)
 })
 
-const themeClass = computed(() => {
+const _themeClass = computed(() => {
   const id = ((route.params.id as string) || '').toLowerCase()
-  if (id.includes('mongo')) return 'theme-mongodb'
-  if (id.includes('redis')) return 'theme-redis'
+  if (id.includes('mongo')) {
+    return 'theme-mongodb'
+  }
+  if (id.includes('redis')) {
+    return 'theme-redis'
+  }
   return ''
 })
 
